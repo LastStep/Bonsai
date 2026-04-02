@@ -1,0 +1,3 @@
+name: session-start
+description: Ordered startup sequence — what to read and check every session
+agents: all

@@ -1,0 +1,3 @@
+name: session-logging
+description: End-of-session log — what was done, decisions made, open items
+agents: all

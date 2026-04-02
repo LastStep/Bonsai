@@ -1,0 +1,16 @@
+name: frontend
+display_name: Frontend Agent
+description: Executes frontend plans — UI components, state management, styling
+defaults:
+  skills:
+    - coding-standards
+    - testing
+    - design-guide
+  workflows:
+    - plan-execution
+    - reporting
+    - session-logging
+  protocols:
+    - session-start
+    - security
+    - scope-boundaries

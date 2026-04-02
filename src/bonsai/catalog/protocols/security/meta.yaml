@@ -1,0 +1,3 @@
+name: security
+description: Security enforcement — hard stops and hard enforcers
+agents: all

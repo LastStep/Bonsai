@@ -1,0 +1,3 @@
+name: database-conventions
+description: SQL naming, migration patterns, schema design rules
+agents: [backend, tech-lead]

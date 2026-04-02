@@ -1,0 +1,14 @@
+name: tech-lead
+display_name: Tech Lead Agent
+description: Architects the system, writes plans, reviews agent output — never writes application code
+defaults:
+  skills:
+    - planning-template
+  workflows:
+    - planning
+    - code-review
+    - session-logging
+  protocols:
+    - session-start
+    - security
+    - scope-boundaries

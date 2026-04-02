@@ -1,0 +1,16 @@
+name: backend
+display_name: Backend Agent
+description: Executes backend plans — API, database, server-side logic
+defaults:
+  skills:
+    - coding-standards
+    - testing
+    - database-conventions
+  workflows:
+    - plan-execution
+    - reporting
+    - session-logging
+  protocols:
+    - session-start
+    - security
+    - scope-boundaries
