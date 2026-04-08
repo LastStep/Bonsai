@@ -15,7 +15,9 @@ Bonsai sets up the file structure, instructions, and automation that Claude Code
 ## Install
 
 ```bash
-pip install -e .
+git clone https://github.com/LastStep/Bonsai.git
+cd Bonsai
+pip install .
 ```
 
 Requires Python 3.10+.
