@@ -5,11 +5,15 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-import questionary
 import typer
-from rich import print as rprint
+from InquirerPy import inquirer
+from InquirerPy.separator import Separator
 from rich.console import Console
+from rich.panel import Panel
+from rich.rule import Rule
 from rich.table import Table
+from rich.text import Text
+from rich.tree import Tree
 
 from bonsai.catalog import Catalog
 from bonsai.generator import (
@@ -37,11 +41,26 @@ def _require_config() -> tuple[Path, ProjectConfig]:
     """Load .bonsai.yaml or exit with an error."""
     config_path = Path.cwd() / CONFIG_FILE
     if not config_path.exists():
-        rprint(
-            f"[red]No {CONFIG_FILE} found. Run [bold]bonsai init[/bold] first.[/red]"
+        console.print(
+            Panel(
+                f"No {CONFIG_FILE} found.\nRun [bold]bonsai init[/bold] first.",
+                border_style="red",
+                title="Error",
+            )
         )
         raise typer.Exit(1)
     return config_path, ProjectConfig.load(config_path)
+
+
+def _prompt_text(message: str, default: str = "", validate: bool = False) -> str:
+    """Text prompt with InquirerPy."""
+    kwargs: dict = {"message": message, "default": default}
+    if validate:
+        kwargs["validate"] = lambda x: len(x.strip()) > 0 or "Cannot be empty"
+    result = inquirer.text(**kwargs).execute()
+    if result is None:
+        raise typer.Abort()
+    return result
 
 
 def _pick_items(
@@ -49,25 +68,57 @@ def _pick_items(
     available: list[CatalogItem],
     defaults: list[str],
 ) -> list[str]:
-    """Show an interactive checkbox for a list of catalog items. Returns selected names."""
+    """Show an interactive checkbox for a list of catalog items."""
     if not available:
         return []
 
+    console.print()
+    console.print(Rule(f"[bold]{label}", style="dim"))
+    console.print()
+
     choices = [
-        questionary.Choice(
-            title=f"{item.name} — {item.description}",
-            value=item.name,
-            checked=item.name in defaults,
-        )
+        {
+            "name": f"{item.name} — {item.description}",
+            "value": item.name,
+            "enabled": item.name in defaults,
+        }
         for item in available
     ]
-    selected = questionary.checkbox(
-        f"{label} (space to toggle, enter to confirm):",
+    selected = inquirer.checkbox(
+        message=f"Select {label.lower()}:",
         choices=choices,
-    ).ask()
+        cycle=True,
+        instruction="(space to toggle, enter to confirm)",
+        transformer=lambda results: ", ".join(
+            r.split(" — ")[0] for r in results
+        ) if results else "none",
+    ).execute()
     if selected is None:
         raise typer.Abort()
     return selected
+
+
+def _build_file_tree(files: list[str], root_label: str) -> Tree:
+    """Build a Rich Tree from a flat list of relative file paths."""
+    tree = Tree(f"[bold]{root_label}")
+    nodes: dict[str, Tree] = {}
+
+    for filepath in sorted(files):
+        parts = filepath.split("/")
+        current_key = ""
+        parent = tree
+        for i, part in enumerate(parts):
+            current_key = f"{current_key}/{part}" if current_key else part
+            if i == len(parts) - 1:
+                # Leaf file
+                parent.add(f"[dim]{part}")
+            elif current_key not in nodes:
+                nodes[current_key] = parent.add(f"[bold cyan]{part}/")
+                parent = nodes[current_key]
+            else:
+                parent = nodes[current_key]
+
+    return tree
 
 
 # ── commands ─────────────────────────────────────────────────────────────────
@@ -79,27 +130,24 @@ def init() -> None:
     config_path = Path.cwd() / CONFIG_FILE
 
     if config_path.exists():
-        rprint(f"[yellow]{CONFIG_FILE} already exists. Skipping init.[/yellow]")
+        console.print(
+            Panel(
+                f"{CONFIG_FILE} already exists. Skipping init.",
+                border_style="yellow",
+                title="Warning",
+            )
+        )
         raise typer.Exit(0)
 
-    project_name = questionary.text(
-        "Project name:",
-        validate=lambda x: len(x.strip()) > 0 or "Name cannot be empty",
-    ).ask()
-    if project_name is None:
-        raise typer.Abort()
+    console.print()
+    console.print(Rule("[bold]Initialize Project", style="blue"))
+    console.print()
 
-    description = questionary.text(
-        "Project description (optional):",
-    ).ask()
-    if description is None:
-        raise typer.Abort()
-
-    docs_path = questionary.text(
-        "Where should project docs live? (leave blank for project root, or e.g. 'docs/'):",
-    ).ask()
-    if docs_path is None:
-        raise typer.Abort()
+    project_name = _prompt_text("Project name:", validate=True)
+    description = _prompt_text("Description (optional):")
+    docs_path = _prompt_text(
+        "Docs directory (blank for root, e.g. 'docs/'):"
+    )
     docs_path = docs_path.strip()
     if docs_path and not docs_path.endswith("/"):
         docs_path += "/"
@@ -112,17 +160,20 @@ def init() -> None:
     config.save(config_path)
 
     project_root = Path.cwd()
-    generate_root_claude_md(project_root, config)
-    created = generate_scaffolding(project_root, config)
 
-    rprint(f"\n[green]Initialized Bonsai for [bold]{project_name}[/bold].[/green]")
+    with console.status("[bold]Generating project files..."):
+        generate_root_claude_md(project_root, config)
+        created = generate_scaffolding(project_root, config)
+
+    console.print()
     if created:
-        rprint(f"  Created {len(created)} project files in '{docs_path or '.'}':")
-        for f in created[:8]:
-            rprint(f"    {f}")
-        if len(created) > 8:
-            rprint(f"    ... and {len(created) - 8} more")
-    rprint("\nNext: run [bold]bonsai add[/bold] to add an agent.")
+        tree = _build_file_tree(created, docs_path or ".")
+        console.print(Panel(tree, title="Created Files", border_style="green"))
+
+    console.print()
+    console.print(f"  [green]✓[/green] Initialized [bold]{project_name}[/bold]")
+    console.print(f"  [dim]Next: run [bold]bonsai add[/bold] to add an agent.[/dim]")
+    console.print()
 
 
 @app.command()
@@ -131,49 +182,63 @@ def add() -> None:
     config_path, config = _require_config()
     cat = Catalog()
 
+    console.print()
+    console.print(Rule("[bold]Add Agent", style="blue"))
+    console.print()
+
     # 1. Pick agent type
     agent_choices = [
-        questionary.Choice(
-            title=f"{a.display_name} — {a.description}",
-            value=a.name,
-        )
+        {
+            "name": f"{a.display_name} — {a.description}",
+            "value": a.name,
+        }
         for a in cat.agents
     ]
-    agent_type = questionary.select(
-        "Which agent type?",
+    agent_type = inquirer.select(
+        message="Agent type:",
         choices=agent_choices,
-    ).ask()
+        cycle=True,
+    ).execute()
     if agent_type is None:
         raise typer.Abort()
 
     if agent_type in config.agents:
-        rprint(f"[yellow]Agent '{agent_type}' is already installed.[/yellow]")
+        console.print(
+            Panel(
+                f"Agent [bold]{agent_type}[/bold] is already installed.",
+                border_style="yellow",
+                title="Warning",
+            )
+        )
         raise typer.Exit(0)
 
     agent_def = cat.get_agent(agent_type)
     if agent_def is None:
-        rprint(f"[red]Unknown agent type: {agent_type}[/red]")
+        console.print(f"  [red]✗[/red] Unknown agent type: {agent_type}")
         raise typer.Exit(1)
 
-    # 2. Ask workspace directory
+    # 2. Workspace directory
     existing_workspaces = {a.workspace for a in config.agents.values()}
-    workspace = questionary.text(
-        "Workspace directory (e.g. backend/):",
-        validate=lambda x: (
-            len(x.strip()) > 0 or "Cannot be empty"
-        ),
-    ).ask()
+    workspace = inquirer.text(
+        message="Workspace directory (e.g. backend/):",
+        validate=lambda x: len(x.strip()) > 0 or "Workspace cannot be empty",
+        default=f"{agent_type}/",
+    ).execute()
     if workspace is None:
         raise typer.Abort()
     workspace = workspace.strip().rstrip("/") + "/"
 
     if workspace in existing_workspaces:
-        rprint(
-            f"[red]Workspace '{workspace}' is already used by another agent.[/red]"
+        console.print(
+            Panel(
+                f"Workspace [bold]{workspace}[/bold] is already in use.",
+                border_style="red",
+                title="Error",
+            )
         )
         raise typer.Exit(1)
 
-    # 3. Pick skills, workflows, protocols
+    # 3. Pick components
     selected_skills = _pick_items(
         "Skills", cat.skills_for(agent_type), agent_def.default_skills
     )
@@ -187,16 +252,35 @@ def add() -> None:
         "Sensors", cat.sensors_for(agent_type), agent_def.default_sensors
     )
 
-    # 4. Confirm
-    rprint(f"\n[bold]Summary:[/bold]")
-    rprint(f"  Agent:     {agent_def.display_name}")
-    rprint(f"  Workspace: {workspace}")
-    rprint(f"  Skills:    {', '.join(selected_skills) or '(none)'}")
-    rprint(f"  Workflows: {', '.join(selected_workflows) or '(none)'}")
-    rprint(f"  Protocols: {', '.join(selected_protocols) or '(none)'}")
-    rprint(f"  Sensors:   {', '.join(selected_sensors) or '(none)'}")
+    # 4. Confirm — build a rich summary
+    def _item_desc(name: str) -> str:
+        item = cat.get_item(name) or cat.get_sensor(name)
+        return item.description if item else ""
 
-    proceed = questionary.confirm("Generate files?", default=True).ask()
+    summary_tree = Tree(
+        f"[bold cyan]{agent_def.display_name}[/bold cyan]  [dim]→ {workspace}[/dim]"
+    )
+
+    categories = [
+        ("Skills", selected_skills),
+        ("Workflows", selected_workflows),
+        ("Protocols", selected_protocols),
+        ("Sensors", selected_sensors),
+    ]
+    for cat_label, items in categories:
+        if items:
+            branch = summary_tree.add(f"[bold]{cat_label}[/bold] [dim]({len(items)})[/dim]")
+            for item in items:
+                desc = _item_desc(item)
+                branch.add(f"{item}  [dim]{desc}[/dim]")
+        else:
+            summary_tree.add(f"[dim]{cat_label} — none[/dim]")
+
+    console.print()
+    console.print(Panel(summary_tree, title="Review", border_style="blue", padding=(1, 2)))
+    console.print()
+
+    proceed = inquirer.confirm(message="Generate files?", default=True).execute()
     if not proceed:
         raise typer.Abort()
 
@@ -213,14 +297,18 @@ def add() -> None:
     config.save(config_path)
 
     project_root = Path.cwd()
-    generate_agent_workspace(project_root, agent_def, installed, config, cat)
-    generate_root_claude_md(project_root, config)
-    generate_settings_json(project_root, config, cat)
 
-    rprint(
-        f"\n[green]Added [bold]{agent_def.display_name}[/bold] "
-        f"at [bold]{workspace}[/bold][/green]"
+    with console.status("[bold]Generating workspace..."):
+        generate_agent_workspace(project_root, agent_def, installed, config, cat)
+        generate_root_claude_md(project_root, config)
+        generate_settings_json(project_root, config, cat)
+
+    console.print()
+    console.print(
+        f"  [green]✓[/green] Added [bold]{agent_def.display_name}[/bold] "
+        f"at [dim]{workspace}[/dim]"
     )
+    console.print()
 
 
 @app.command()
@@ -237,15 +325,16 @@ def remove(
     config_path, config = _require_config()
 
     if agent_name not in config.agents:
-        rprint(f"[red]Agent '{agent_name}' is not installed.[/red]")
+        console.print(f"  [red]✗[/red] Agent [bold]{agent_name}[/bold] is not installed.")
         raise typer.Exit(1)
 
     agent = config.agents[agent_name]
     workspace = agent.workspace
 
-    proceed = questionary.confirm(
-        f"Remove {agent_name} (workspace: {workspace})?", default=False
-    ).ask()
+    proceed = inquirer.confirm(
+        message=f"Remove {agent_name} (workspace: {workspace})?",
+        default=False,
+    ).execute()
     if not proceed:
         raise typer.Abort()
 
@@ -262,12 +351,13 @@ def remove(
         claude_md = Path.cwd() / workspace / "CLAUDE.md"
         if agent_dir.exists():
             shutil.rmtree(agent_dir)
-            rprint(f"  Deleted {agent_dir}")
+            console.print(f"  [dim]Deleted {agent_dir}[/dim]")
         if claude_md.exists():
             claude_md.unlink()
-            rprint(f"  Deleted {claude_md}")
+            console.print(f"  [dim]Deleted {claude_md}[/dim]")
 
-    rprint(f"[green]Removed [bold]{agent_name}[/bold].[/green]")
+    console.print(f"  [green]✓[/green] Removed [bold]{agent_name}[/bold]")
+    console.print()
 
 
 @app.command("list")
@@ -276,28 +366,48 @@ def list_agents() -> None:
     _, config = _require_config()
 
     if not config.agents:
-        rprint("[yellow]No agents installed. Run [bold]bonsai add[/bold].[/yellow]")
+        console.print()
+        console.print(
+            Panel(
+                "No agents installed.\nRun [bold]bonsai add[/bold] to get started.",
+                border_style="dim",
+                title="Empty",
+            )
+        )
         return
 
-    table = Table(title=f"{config.project_name} — Installed Agents")
-    table.add_column("Agent", style="bold cyan")
-    table.add_column("Workspace", style="dim")
-    table.add_column("Skills")
-    table.add_column("Workflows")
-    table.add_column("Protocols")
-    table.add_column("Sensors")
-
+    console.print()
     for name, agent in config.agents.items():
-        table.add_row(
-            name,
-            agent.workspace,
-            "\n".join(agent.skills) or "—",
-            "\n".join(agent.workflows) or "—",
-            "\n".join(agent.protocols) or "—",
-            "\n".join(agent.sensors) or "—",
-        )
+        header = Text()
+        header.append(f"{name}", style="bold cyan")
+        header.append(f"  {agent.workspace}", style="dim")
 
-    console.print(table)
+        tree = Tree(header)
+
+        if agent.skills:
+            skills_branch = tree.add("[bold]Skills")
+            for s in agent.skills:
+                skills_branch.add(f"[dim]{s}")
+
+        if agent.workflows:
+            wf_branch = tree.add("[bold]Workflows")
+            for w in agent.workflows:
+                wf_branch.add(f"[dim]{w}")
+
+        if agent.protocols:
+            proto_branch = tree.add("[bold]Protocols")
+            for p in agent.protocols:
+                proto_branch.add(f"[dim]{p}")
+
+        if agent.sensors:
+            sensor_branch = tree.add("[bold]Sensors")
+            for s in agent.sensors:
+                sensor_branch.add(f"[dim]{s}")
+
+        console.print(
+            Panel(tree, title=config.project_name, border_style="blue")
+        )
+    console.print()
 
 
 @app.command("catalog")
@@ -309,60 +419,47 @@ def show_catalog(
 ) -> None:
     """Browse available agents, skills, workflows, and protocols."""
     cat = Catalog()
+    suffix = f" [dim](for {agent})[/dim]" if agent else ""
 
-    # Agents table
-    agent_table = Table(title="Agents")
-    agent_table.add_column("Name", style="bold cyan")
-    agent_table.add_column("Description")
-    agent_table.add_column("Default Skills", style="dim")
-    agent_table.add_column("Default Workflows", style="dim")
-    agent_table.add_column("Default Protocols", style="dim")
-    agent_table.add_column("Default Sensors", style="dim")
-    for a in cat.agents:
-        agent_table.add_row(
-            a.name,
-            a.description,
-            ", ".join(a.default_skills) or "—",
-            ", ".join(a.default_workflows) or "—",
-            ", ".join(a.default_protocols) or "—",
-            ", ".join(a.default_sensors) or "—",
-        )
-    console.print(agent_table)
     console.print()
 
-    # Items tables
+    # Agents
+    console.print(Rule(f"[bold]Agents", style="blue"))
+    console.print()
+    for a in cat.agents:
+        console.print(f"  [bold cyan]{a.name}[/bold cyan]  [dim]{a.description}[/dim]")
+    console.print()
+
+    # Items
     for label, items_fn in [
         ("Skills", cat.skills_for if agent else lambda _: cat.skills),
         ("Workflows", cat.workflows_for if agent else lambda _: cat.workflows),
         ("Protocols", cat.protocols_for if agent else lambda _: cat.protocols),
     ]:
         items = items_fn(agent) if agent else items_fn(None)
-        table = Table(title=f"{label}" + (f" (for {agent})" if agent else ""))
-        table.add_column("Name", style="bold")
-        table.add_column("Description")
-        table.add_column("Compatible Agents", style="dim")
+        console.print(Rule(f"[bold]{label}{suffix}", style="blue"))
+        console.print()
         for item in items:
             agents_str = (
-                "all" if item.agents == "all" else ", ".join(item.agents)
+                "[dim]all[/dim]" if item.agents == "all"
+                else f"[dim]{', '.join(item.agents)}[/dim]"
             )
-            table.add_row(item.name, item.description, agents_str)
-        console.print(table)
+            console.print(f"  [bold]{item.name}[/bold]  {item.description}  {agents_str}")
         console.print()
 
-    # Sensors table
+    # Sensors
     sensors = cat.sensors_for(agent) if agent else cat.sensors
-    sensor_table = Table(title="Sensors" + (f" (for {agent})" if agent else ""))
-    sensor_table.add_column("Name", style="bold")
-    sensor_table.add_column("Description")
-    sensor_table.add_column("Event", style="cyan")
-    sensor_table.add_column("Matcher", style="dim")
-    sensor_table.add_column("Compatible Agents", style="dim")
+    console.print(Rule(f"[bold]Sensors{suffix}", style="blue"))
+    console.print()
     for s in sensors:
-        agents_str = "all" if s.agents == "all" else ", ".join(s.agents)
-        sensor_table.add_row(
-            s.name, s.description, s.event, s.matcher or "—", agents_str
+        agents_str = (
+            "[dim]all[/dim]" if s.agents == "all"
+            else f"[dim]{', '.join(s.agents)}[/dim]"
         )
-    console.print(sensor_table)
+        event_str = f"[cyan]{s.event}[/cyan]"
+        if s.matcher:
+            event_str += f" [dim]({s.matcher})[/dim]"
+        console.print(f"  [bold]{s.name}[/bold]  {s.description}  {event_str}  {agents_str}")
     console.print()
 
 
