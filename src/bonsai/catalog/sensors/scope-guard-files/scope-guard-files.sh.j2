@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Scope Guard — File Edits
+# Blocks {{ agent_display_name }} from editing files outside {{ workspace }}
+# Exit 2 = block the tool call.
+
+input=$(cat)
+file_path=$(echo "$input" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))" 2>/dev/null)
+
+if [[ -z "$file_path" ]]; then
+  exit 0
+fi
+{% for other in other_agents %}
+
+# Block writes to {{ other.workspace }}
+if [[ "$file_path" == *"{{ other.workspace }}"* ]]; then
+  echo "BLOCKED: {{ agent_display_name }} cannot modify files in {{ other.workspace }}. Dispatch to the appropriate agent."
+  exit 2
+fi
+{% endfor %}
+
+# Block writes to .env files
+basename_file=$(basename "$file_path")
+if [[ "$basename_file" == .env* ]]; then
+  echo "BLOCKED: {{ agent_display_name }} cannot modify .env files."
+  exit 2
+fi
+
+exit 0

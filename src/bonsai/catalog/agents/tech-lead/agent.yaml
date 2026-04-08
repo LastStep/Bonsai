@@ -12,3 +12,8 @@ defaults:
     - session-start
     - security
     - scope-boundaries
+  sensors:
+    - session-context
+    - scope-guard-files
+    - scope-guard-commands
+    - agent-review

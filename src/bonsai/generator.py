@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -76,6 +77,51 @@ def generate_scaffolding(project_root: Path, config: ProjectConfig) -> list[str]
         created.append(str(final_dest.relative_to(project_root)))
 
     return created
+
+
+def generate_settings_json(project_root: Path, config: ProjectConfig, catalog: Catalog) -> None:
+    """Generate or update .claude/settings.json with hook entries for all installed sensors."""
+    settings_path = project_root / ".claude" / "settings.json"
+
+    # Load existing settings (preserve non-hook keys like enabledPlugins)
+    existing: dict = {}
+    if settings_path.exists():
+        try:
+            existing = json.loads(settings_path.read_text())
+        except json.JSONDecodeError:
+            existing = {}
+
+    # Rebuild the hooks section from scratch based on current config
+    # Group by (event, matcher) → list of commands
+    hook_groups: dict[tuple[str, str | None], list[str]] = {}
+
+    for _agent_name, installed in config.agents.items():
+        for sensor_name in installed.sensors:
+            sensor = catalog.get_sensor(sensor_name)
+            if not sensor:
+                continue
+            key = (sensor.event, sensor.matcher)
+            script_path = f"{installed.workspace}agent/Sensors/{sensor_name}.sh"
+            hook_groups.setdefault(key, []).append(f"bash {script_path}")
+
+    # Build the hooks config structure
+    hooks_config: dict[str, list] = {}
+    for (event, matcher), commands in hook_groups.items():
+        entry: dict = {
+            "hooks": [{"type": "command", "command": cmd} for cmd in commands],
+        }
+        if matcher:
+            entry["matcher"] = matcher
+        hooks_config.setdefault(event, []).append(entry)
+
+    if hooks_config:
+        existing["hooks"] = hooks_config
+    elif "hooks" in existing:
+        del existing["hooks"]
+
+    # Write settings
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    settings_path.write_text(json.dumps(existing, indent=2) + "\n")
 
 
 def generate_root_claude_md(project_root: Path, config: ProjectConfig) -> None:
@@ -211,6 +257,28 @@ def generate_workspace_claude_md(
             lines.append(f"| {skill_descs[s]} | `agent/Skills/{s}.md` |")
         lines.append("")
 
+    if installed.sensors:
+        lines.extend([
+            "### Sensors (auto-enforced via hooks)",
+            "",
+            "| Sensor | Event | What it does |",
+            "|--------|-------|-------------|",
+        ])
+        for sensor_name in installed.sensors:
+            sensor = catalog.get_sensor(sensor_name)
+            if sensor:
+                event_str = sensor.event
+                if sensor.matcher:
+                    event_str += f" ({sensor.matcher})"
+                lines.append(
+                    f"| `agent/Sensors/{sensor_name}.sh` | {event_str} | {sensor.description} |"
+                )
+        lines.extend([
+            "",
+            "> Sensors run automatically — they are configured in `.claude/settings.json`.",
+            "",
+        ])
+
     # External references — point to project docs
     lines.extend([
         "### External References",
@@ -285,7 +353,26 @@ def generate_agent_workspace(
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(item.content_path.read_text())
 
-    # 5. Generate workspace CLAUDE.md
+    # 5. Render selected sensors
+    sensor_context = {
+        **context,
+        "workspace": installed.workspace,
+        "docs_path": config.docs_path or "",
+        "protocols": installed.protocols,
+        "skills": installed.skills,
+        "workflows": installed.workflows,
+    }
+    for sensor_name in installed.sensors:
+        sensor = catalog.get_sensor(sensor_name)
+        if sensor:
+            dest = agent_dir / "Sensors" / sensor.content_path.name
+            _copy_or_render(sensor.content_path, dest, sensor_context)
+            # Make rendered scripts executable
+            final = dest.with_suffix("") if dest.suffix == ".j2" else dest
+            if final.exists():
+                final.chmod(final.stat().st_mode | 0o111)
+
+    # 6. Generate workspace CLAUDE.md
     generate_workspace_claude_md(
         workspace_root, agent_def, installed, config, catalog
     )

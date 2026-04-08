@@ -22,6 +22,16 @@ class CatalogItem(BaseModel):
         return self.agents == "all" or agent_type in self.agents
 
 
+class SensorItem(CatalogItem):
+    """A sensor (hook) — auto-enforced behavior via Claude Code hooks.
+
+    content_path points to a script template (.sh.j2 or .sh).
+    """
+
+    event: str  # Hook event: SessionStart, PreToolUse, PostToolUse, etc.
+    matcher: str | None = None  # Tool matcher for Pre/PostToolUse (e.g. "Edit|Write")
+
+
 class AgentDef(BaseModel):
     """An agent type definition from the catalog."""
 
@@ -33,6 +43,7 @@ class AgentDef(BaseModel):
     default_skills: list[str]
     default_workflows: list[str]
     default_protocols: list[str]
+    default_sensors: list[str]
     core_dir: Path  # resolved absolute path to core/ template dir
 
 
@@ -44,6 +55,7 @@ class InstalledAgent(BaseModel):
     skills: list[str]
     workflows: list[str]
     protocols: list[str]
+    sensors: list[str] = []
 
 
 class ProjectConfig(BaseModel):

@@ -1,0 +1,6 @@
+name: agent-review
+description: Outputs a review checklist after a dispatched agent completes work
+agents:
+  - tech-lead
+event: PostToolUse
+matcher: Agent

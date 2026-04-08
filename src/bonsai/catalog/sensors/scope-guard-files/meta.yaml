@@ -1,0 +1,5 @@
+name: scope-guard-files
+description: Blocks agent from editing files outside its workspace
+agents: all
+event: PreToolUse
+matcher: "Edit|Write"

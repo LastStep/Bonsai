@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# Session Start — {{ agent_display_name }}
+# Injects required context at the start of every session.
+
+WORKSPACE="{{ workspace }}"
+DOCS="{{ docs_path }}"
+
+# ── Core identity ───────────────────────────────────────────────────────────
+
+if [[ -f "${WORKSPACE}agent/Core/identity.md" ]]; then
+  echo "=== CORE: identity.md ==="
+  cat "${WORKSPACE}agent/Core/identity.md"
+fi
+
+if [[ -f "${WORKSPACE}agent/Core/memory.md" ]]; then
+  echo ""
+  echo "=== CORE: memory.md ==="
+  cat "${WORKSPACE}agent/Core/memory.md"
+fi
+
+if [[ -f "${WORKSPACE}agent/Core/self-awareness.md" ]]; then
+  echo ""
+  echo "=== CORE: self-awareness.md ==="
+  cat "${WORKSPACE}agent/Core/self-awareness.md"
+fi
+
+# ── Project status ──────────────────────────────────────────────────────────
+
+if [[ -n "$DOCS" ]]; then
+  if [[ -f "${DOCS}INDEX.md" ]]; then
+    echo ""
+    echo "=== INDEX.md ==="
+    cat "${DOCS}INDEX.md"
+  fi
+
+  if [[ -f "${DOCS}Playbook/Status.md" ]]; then
+    echo ""
+    echo "=== Playbook/Status.md ==="
+    cat "${DOCS}Playbook/Status.md"
+  fi
+
+  if [[ -f "${DOCS}Logs/FieldNotes.md" ]]; then
+    echo ""
+    echo "=== Logs/FieldNotes.md ==="
+    cat "${DOCS}Logs/FieldNotes.md"
+  fi
+
+  # Pending reports
+  if [[ -d "${DOCS}Reports/Pending/" ]] && [ -n "$(ls -A "${DOCS}Reports/Pending/" 2>/dev/null)" ]; then
+    echo ""
+    echo "=== Reports/Pending/ ==="
+    for f in "${DOCS}Reports/Pending/"*; do
+      echo ""
+      echo "--- $(basename "$f") ---"
+      cat "$f"
+    done
+  fi
+fi
+
+# ── Protocols ───────────────────────────────────────────────────────────────
+{% for proto in protocols %}
+
+if [[ -f "${WORKSPACE}agent/Protocols/{{ proto }}.md" ]]; then
+  echo ""
+  echo "=== PROTOCOL: {{ proto }}.md ==="
+  cat "${WORKSPACE}agent/Protocols/{{ proto }}.md"
+fi
+{% endfor %}
+
+# ── Health checks ───────────────────────────────────────────────────────────
+
+echo ""
+echo "=== SESSION HEALTH CHECK ==="
+
+# Check memory staleness
+if [[ -f "${WORKSPACE}agent/Core/memory.md" ]]; then
+  last_mod=$(stat -c %Y "${WORKSPACE}agent/Core/memory.md" 2>/dev/null || stat -f %m "${WORKSPACE}agent/Core/memory.md" 2>/dev/null)
+  now=$(date +%s)
+  days_stale=$(( (now - last_mod) / 86400 ))
+  if [[ $days_stale -ge 2 ]]; then
+    echo "WARNING: memory.md last updated $days_stale days ago — review and update work state"
+  fi
+fi
+
+# Pending reports count
+if [[ -n "$DOCS" ]] && [[ -d "${DOCS}Reports/Pending/" ]]; then
+  pending_count=$(ls -1 "${DOCS}Reports/Pending/" 2>/dev/null | wc -l)
+  if [[ $pending_count -gt 0 ]]; then
+    echo "WARNING: $pending_count pending report(s) in Reports/Pending/"
+  fi
+fi
+
+# End-of-session reminder
+today=$(date +%Y-%m-%d)
+echo ""
+echo "REMINDER: Before ending this session:"
+echo "  - Update memory.md with current work state"
+echo "  - Update Status.md if any tasks changed status"
+echo "  - Write session log if significant work was done"

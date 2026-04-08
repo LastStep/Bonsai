@@ -16,6 +16,7 @@ from bonsai.generator import (
     generate_agent_workspace,
     generate_root_claude_md,
     generate_scaffolding,
+    generate_settings_json,
 )
 from bonsai.models import CatalogItem, InstalledAgent, ProjectConfig
 
@@ -182,6 +183,9 @@ def add() -> None:
     selected_protocols = _pick_items(
         "Protocols", cat.protocols_for(agent_type), agent_def.default_protocols
     )
+    selected_sensors = _pick_items(
+        "Sensors", cat.sensors_for(agent_type), agent_def.default_sensors
+    )
 
     # 4. Confirm
     rprint(f"\n[bold]Summary:[/bold]")
@@ -190,6 +194,7 @@ def add() -> None:
     rprint(f"  Skills:    {', '.join(selected_skills) or '(none)'}")
     rprint(f"  Workflows: {', '.join(selected_workflows) or '(none)'}")
     rprint(f"  Protocols: {', '.join(selected_protocols) or '(none)'}")
+    rprint(f"  Sensors:   {', '.join(selected_sensors) or '(none)'}")
 
     proceed = questionary.confirm("Generate files?", default=True).ask()
     if not proceed:
@@ -202,6 +207,7 @@ def add() -> None:
         skills=selected_skills,
         workflows=selected_workflows,
         protocols=selected_protocols,
+        sensors=selected_sensors,
     )
     config.agents[agent_type] = installed
     config.save(config_path)
@@ -209,6 +215,7 @@ def add() -> None:
     project_root = Path.cwd()
     generate_agent_workspace(project_root, agent_def, installed, config, cat)
     generate_root_claude_md(project_root, config)
+    generate_settings_json(project_root, config, cat)
 
     rprint(
         f"\n[green]Added [bold]{agent_def.display_name}[/bold] "
@@ -245,7 +252,9 @@ def remove(
     # Remove from config
     del config.agents[agent_name]
     config.save(config_path)
-    generate_root_claude_md(Path.cwd(), config)
+    project_root = Path.cwd()
+    generate_root_claude_md(project_root, config)
+    generate_settings_json(project_root, config, Catalog())
 
     # Optionally delete generated files
     if delete_files:
@@ -276,6 +285,7 @@ def list_agents() -> None:
     table.add_column("Skills")
     table.add_column("Workflows")
     table.add_column("Protocols")
+    table.add_column("Sensors")
 
     for name, agent in config.agents.items():
         table.add_row(
@@ -284,6 +294,7 @@ def list_agents() -> None:
             "\n".join(agent.skills) or "—",
             "\n".join(agent.workflows) or "—",
             "\n".join(agent.protocols) or "—",
+            "\n".join(agent.sensors) or "—",
         )
 
     console.print(table)
@@ -306,6 +317,7 @@ def show_catalog(
     agent_table.add_column("Default Skills", style="dim")
     agent_table.add_column("Default Workflows", style="dim")
     agent_table.add_column("Default Protocols", style="dim")
+    agent_table.add_column("Default Sensors", style="dim")
     for a in cat.agents:
         agent_table.add_row(
             a.name,
@@ -313,6 +325,7 @@ def show_catalog(
             ", ".join(a.default_skills) or "—",
             ", ".join(a.default_workflows) or "—",
             ", ".join(a.default_protocols) or "—",
+            ", ".join(a.default_sensors) or "—",
         )
     console.print(agent_table)
     console.print()
@@ -335,6 +348,22 @@ def show_catalog(
             table.add_row(item.name, item.description, agents_str)
         console.print(table)
         console.print()
+
+    # Sensors table
+    sensors = cat.sensors_for(agent) if agent else cat.sensors
+    sensor_table = Table(title="Sensors" + (f" (for {agent})" if agent else ""))
+    sensor_table.add_column("Name", style="bold")
+    sensor_table.add_column("Description")
+    sensor_table.add_column("Event", style="cyan")
+    sensor_table.add_column("Matcher", style="dim")
+    sensor_table.add_column("Compatible Agents", style="dim")
+    for s in sensors:
+        agents_str = "all" if s.agents == "all" else ", ".join(s.agents)
+        sensor_table.add_row(
+            s.name, s.description, s.event, s.matcher or "—", agents_str
+        )
+    console.print(sensor_table)
+    console.print()
 
 
 def main() -> None:
