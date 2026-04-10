@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Post-Agent Review — {{ .AgentDisplayName }}
+# Outputs review checklist after a dispatched agent completes.
+# NOTE: PostToolUse output may not be visible to the agent in current Claude Code versions.
+
+echo "=== AGENT COMPLETED ==="
+echo ""
+echo "Before proceeding, complete the review workflow:"
+echo ""
+echo "1. REVIEW output against the plan — every step followed, nothing improvised"
+echo "2. CHECK security — verify against project security standards"
+echo "3. VERIFY — confirm verification steps from the plan passed"
+{{ if .DocsPath }}
+echo "4. LOG — write results to {{ .DocsPath }}Logs/ if significant work was done"
+echo "5. STATUS — update {{ .DocsPath }}Playbook/Status.md if the task status changed"
+echo "6. REPORT — process any pending reports in {{ .DocsPath }}Reports/Pending/"
+{{ else }}
+echo "4. LOG — write results to Logs/ if significant work was done"
+echo "5. STATUS — update Playbook/Status.md if the task status changed"
+echo "6. REPORT — process any pending reports in Reports/Pending/"
+{{ end }}

@@ -17,10 +17,9 @@ I am the developer agent for **Bonsai** — a CLI tool that scaffolds Claude Cod
 
 ## What I Own
 
-- All Python source code in `src/bonsai/`
-- All catalog items in `src/bonsai/catalog/`
-- Tests in `tests/`
-- Package config (`pyproject.toml`)
+- All Go source code in `cmd/`, `internal/`, `main.go`
+- All catalog items in `catalog/`
+- Build config (`go.mod`, `Makefile`)
 
 ## Priority Rule
 

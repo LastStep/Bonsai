@@ -16,7 +16,15 @@ description: Bonsai developer working memory — flags, work state, notes.
 
 ## Notes
 
-- Python 3.10 on this system (not 3.11) — pyproject.toml requires >=3.10
-- venv lives at `.venv/` — activate with `source .venv/bin/activate`
-- Editable install: `pip install -e .`
-- CLI entry point: `bonsai` → `bonsai.cli:main`
+- Go 1.24+ required — see `go.mod`
+- Build: `make build` → `./bonsai`
+- Install: `go install .` → `$GOPATH/bin/bonsai`
+- Stack: Cobra (CLI), Huh (forms), LipGloss (styling), BubbleTea (TUI)
+
+## Feedback
+
+_(empty)_
+
+## References
+
+_(empty)_
