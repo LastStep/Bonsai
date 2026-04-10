@@ -29,7 +29,7 @@ var addCmd = &cobra.Command{
 func toItemOptions(items []catalog.CatalogItem, agentType string) []tui.ItemOption {
 	result := make([]tui.ItemOption, len(items))
 	for i, item := range items {
-		result[i] = tui.ItemOption{Name: item.Name, Desc: item.Description, Required: item.Required.CompatibleWith(agentType)}
+		result[i] = tui.ItemOption{Name: item.DisplayName, Value: item.Name, Desc: item.Description, Required: item.Required.CompatibleWith(agentType)}
 	}
 	return result
 }
@@ -37,7 +37,7 @@ func toItemOptions(items []catalog.CatalogItem, agentType string) []tui.ItemOpti
 func toSensorOptions(items []catalog.SensorItem, agentType string) []tui.ItemOption {
 	result := make([]tui.ItemOption, len(items))
 	for i, item := range items {
-		result[i] = tui.ItemOption{Name: item.Name, Desc: item.Description, Required: item.Required.CompatibleWith(agentType)}
+		result[i] = tui.ItemOption{Name: item.DisplayName, Value: item.Name, Desc: item.Description, Required: item.Required.CompatibleWith(agentType)}
 	}
 	return result
 }
@@ -49,7 +49,7 @@ func toRoutineOptions(items []catalog.RoutineItem, agentType string) []tui.ItemO
 		if item.Frequency != "" {
 			desc += " (every " + item.Frequency + ")"
 		}
-		result[i] = tui.ItemOption{Name: item.Name, Desc: desc, Required: item.Required.CompatibleWith(agentType)}
+		result[i] = tui.ItemOption{Name: item.DisplayName, Value: item.Name, Desc: desc, Required: item.Required.CompatibleWith(agentType)}
 	}
 	return result
 }

@@ -25,7 +25,7 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	tui.SectionHeader("Agents")
 	var agentRows [][]string
 	for _, a := range cat.Agents {
-		agentRows = append(agentRows, []string{a.Name, a.Description})
+		agentRows = append(agentRows, []string{a.DisplayName, a.Description})
 	}
 	tui.CatalogTable([]string{"Name", "Description"}, agentRows)
 
@@ -42,7 +42,7 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	tui.SectionHeader("Skills" + suffix)
 	var skillRows [][]string
 	for _, s := range skills {
-		skillRows = append(skillRows, []string{s.Name, s.Description, s.Agents.String(), s.Required.String()})
+		skillRows = append(skillRows, []string{s.DisplayName, s.Description, s.Agents.String(), s.Required.String()})
 	}
 	tui.CatalogTable([]string{"Name", "Description", "Agents", "Required"}, skillRows)
 
@@ -54,7 +54,7 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	tui.SectionHeader("Workflows" + suffix)
 	var wfRows [][]string
 	for _, w := range workflows {
-		wfRows = append(wfRows, []string{w.Name, w.Description, w.Agents.String(), w.Required.String()})
+		wfRows = append(wfRows, []string{w.DisplayName, w.Description, w.Agents.String(), w.Required.String()})
 	}
 	tui.CatalogTable([]string{"Name", "Description", "Agents", "Required"}, wfRows)
 
@@ -66,7 +66,7 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	tui.SectionHeader("Protocols" + suffix)
 	var protoRows [][]string
 	for _, p := range protocols {
-		protoRows = append(protoRows, []string{p.Name, p.Description, p.Agents.String(), p.Required.String()})
+		protoRows = append(protoRows, []string{p.DisplayName, p.Description, p.Agents.String(), p.Required.String()})
 	}
 	tui.CatalogTable([]string{"Name", "Description", "Agents", "Required"}, protoRows)
 
@@ -82,7 +82,7 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 		if s.Matcher != "" {
 			event += " (" + s.Matcher + ")"
 		}
-		sensorRows = append(sensorRows, []string{s.Name, s.Description, event, s.Agents.String(), s.Required.String()})
+		sensorRows = append(sensorRows, []string{s.DisplayName, s.Description, event, s.Agents.String(), s.Required.String()})
 	}
 	tui.CatalogTable([]string{"Name", "Description", "Event", "Agents", "Required"}, sensorRows)
 
@@ -94,7 +94,7 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	tui.SectionHeader("Routines" + suffix)
 	var routineRows [][]string
 	for _, r := range routines {
-		routineRows = append(routineRows, []string{r.Name, r.Description, r.Frequency, r.Agents.String(), r.Required.String()})
+		routineRows = append(routineRows, []string{r.DisplayName, r.Description, r.Frequency, r.Agents.String(), r.Required.String()})
 	}
 	tui.CatalogTable([]string{"Name", "Description", "Frequency", "Agents", "Required"}, routineRows)
 
@@ -106,7 +106,7 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 		if s.Required {
 			req = "yes"
 		}
-		scaffoldRows = append(scaffoldRows, []string{s.Name, s.Description, req, s.Affects})
+		scaffoldRows = append(scaffoldRows, []string{s.DisplayName, s.Description, req, s.Affects})
 	}
 	tui.CatalogTable([]string{"Name", "Description", "Required", "If Removed"}, scaffoldRows)
 

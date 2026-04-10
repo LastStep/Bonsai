@@ -150,3 +150,26 @@ mkdir /tmp/test && cd /tmp/test
 - Go structs for all data shapes (config, catalog models)
 - Don't break the existing CLI commands — they're the public API
 - TUI styling uses LipGloss — styles defined in `internal/tui/styles.go`
+
+### Naming Standard
+
+**`name`** (machine identifier):
+- Characters: `[a-z0-9-]` only — lowercase, digits, hyphens
+- Style: kebab-case (`scope-guard-files`, `coding-standards`)
+- Unique within its type — two types CAN share a name (e.g. `memory` protocol and `memory` skill)
+- No type prefixes (`design-guide`, not `skill-design-guide`)
+- No agent prefixes (`design-guide`, not `frontend-design-guide`) — the `agents:` field handles compatibility
+- Used in: config files (`.bonsai.yaml`), file paths, template context lists, internal lookups
+
+**`display_name`** (human-readable label):
+- Optional in all `meta.yaml` / `agent.yaml` files
+- If omitted, auto-derived from `name`: hyphens → spaces, title-cased (`scope-guard-files` → "Scope Guard Files")
+- Derivation function: `catalog.DisplayNameFrom()` in `internal/catalog/catalog.go`
+- Used in: TUI pickers, catalog tables, list output, generated CLAUDE.md headings
+- Never stored in config — purely cosmetic
+
+**Informal word patterns** (not enforced, but encouraged for consistency):
+- `*-guard-*` — sensors that block/prevent actions
+- `*-check`, `*-hygiene`, `*-accuracy` — routines that audit
+- `*-standards`, `*-conventions`, `*-guide` — skills that define rules
+- `*-logging`, `*-reporting`, `*-review` — workflows that produce output

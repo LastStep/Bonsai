@@ -62,7 +62,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 			desc += " · if removed: " + item.Affects
 		}
 		scaffoldingOptions = append(scaffoldingOptions, tui.ItemOption{
-			Name:     item.Name,
+			Name:     item.DisplayName,
+			Value:    item.Name,
 			Desc:     desc,
 			Required: item.Required,
 		})

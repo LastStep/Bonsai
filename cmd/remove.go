@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 
+	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/generate"
 	"github.com/LastStep/Bonsai/internal/tui"
 )
@@ -38,8 +39,15 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
+	cat := loadCatalog()
+
+	agentDisplayName := catalog.DisplayNameFrom(agentName)
+	if agentDef := cat.GetAgent(agentName); agentDef != nil {
+		agentDisplayName = agentDef.DisplayName
+	}
+
 	preview := tui.ItemTree(
-		tui.StyleLabel.Render(agentName)+" "+tui.StyleMuted.Render(tui.GlyphArrow+" "+agent.Workspace),
+		tui.StyleLabel.Render(agentDisplayName)+" "+tui.StyleMuted.Render(tui.GlyphArrow+" "+agent.Workspace),
 		[]tui.Category{
 			{Name: "Skills", Items: agent.Skills},
 			{Name: "Workflows", Items: agent.Workflows},
@@ -53,12 +61,10 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	tui.TitledPanel("Remove", preview, tui.Amber)
 	tui.Blank()
 
-	confirmed, err := tui.AskConfirm("Remove "+agentName+"?", false)
+	confirmed, err := tui.AskConfirm("Remove "+agentDisplayName+"?", false)
 	if err != nil || !confirmed {
 		return nil
 	}
-
-	cat := loadCatalog()
 
 	_ = spinner.New().
 		Title("Removing agent...").
@@ -82,6 +88,6 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	tui.Success("Removed " + agentName)
+	tui.Success("Removed " + agentDisplayName)
 	return nil
 }

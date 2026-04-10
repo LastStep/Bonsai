@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/tui"
 )
 
@@ -31,7 +32,11 @@ func runList(cmd *cobra.Command, args []string) error {
 	tui.Heading(cfg.ProjectName)
 
 	if len(cfg.Scaffolding) > 0 {
-		tui.Info("Scaffolding: " + strings.Join(cfg.Scaffolding, ", "))
+		scaffoldDisplay := make([]string, len(cfg.Scaffolding))
+		for i, s := range cfg.Scaffolding {
+			scaffoldDisplay[i] = catalog.DisplayNameFrom(s)
+		}
+		tui.Info("Scaffolding: " + strings.Join(scaffoldDisplay, ", "))
 	}
 
 	if len(cfg.Agents) == 0 {
@@ -42,6 +47,18 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	cat := loadCatalog()
 
+	displayNames := func(names []string, lookup func(string) string) string {
+		display := make([]string, len(names))
+		for i, n := range names {
+			if dn := lookup(n); dn != "" {
+				display[i] = dn
+			} else {
+				display[i] = catalog.DisplayNameFrom(n)
+			}
+		}
+		return strings.Join(display, ", ")
+	}
+
 	for name, agent := range cfg.Agents {
 		displayName := name
 		if agentDef := cat.GetAgent(name); agentDef != nil {
@@ -50,19 +67,29 @@ func runList(cmd *cobra.Command, args []string) error {
 
 		pairs := [][2]string{{"Workspace", agent.Workspace}}
 		if len(agent.Skills) > 0 {
-			pairs = append(pairs, [2]string{"Skills", strings.Join(agent.Skills, ", ")})
+			pairs = append(pairs, [2]string{"Skills", displayNames(agent.Skills, func(n string) string {
+				if s := cat.GetSkill(n); s != nil { return s.DisplayName }; return ""
+			})})
 		}
 		if len(agent.Workflows) > 0 {
-			pairs = append(pairs, [2]string{"Workflows", strings.Join(agent.Workflows, ", ")})
+			pairs = append(pairs, [2]string{"Workflows", displayNames(agent.Workflows, func(n string) string {
+				if w := cat.GetWorkflow(n); w != nil { return w.DisplayName }; return ""
+			})})
 		}
 		if len(agent.Protocols) > 0 {
-			pairs = append(pairs, [2]string{"Protocols", strings.Join(agent.Protocols, ", ")})
+			pairs = append(pairs, [2]string{"Protocols", displayNames(agent.Protocols, func(n string) string {
+				if p := cat.GetProtocol(n); p != nil { return p.DisplayName }; return ""
+			})})
 		}
 		if len(agent.Sensors) > 0 {
-			pairs = append(pairs, [2]string{"Sensors", strings.Join(agent.Sensors, ", ")})
+			pairs = append(pairs, [2]string{"Sensors", displayNames(agent.Sensors, func(n string) string {
+				if s := cat.GetSensor(n); s != nil { return s.DisplayName }; return ""
+			})})
 		}
 		if len(agent.Routines) > 0 {
-			pairs = append(pairs, [2]string{"Routines", strings.Join(agent.Routines, ", ")})
+			pairs = append(pairs, [2]string{"Routines", displayNames(agent.Routines, func(n string) string {
+				if r := cat.GetRoutine(n); r != nil { return r.DisplayName }; return ""
+			})})
 		}
 
 		content := tui.CardFields(pairs)

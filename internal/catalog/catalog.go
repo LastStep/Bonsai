@@ -4,9 +4,34 @@ import (
 	"io/fs"
 	"sort"
 	"strings"
+	"unicode"
 
 	"gopkg.in/yaml.v3"
 )
+
+// DisplayNameFrom derives a human-readable display name from a kebab-case machine name.
+// "scope-guard-files" → "Scope Guard Files"
+func DisplayNameFrom(name string) string {
+	var result strings.Builder
+	capitalize := true
+	for _, r := range name {
+		if r == '-' {
+			result.WriteRune(' ')
+			capitalize = true
+			continue
+		}
+		if capitalize {
+			result.WriteRune(unicode.ToUpper(r))
+			capitalize = false
+		} else {
+			result.WriteRune(r)
+		}
+		if r == ' ' {
+			capitalize = true
+		}
+	}
+	return result.String()
+}
 
 // AgentCompat handles the YAML "agents" field which can be "all" or a list of strings.
 type AgentCompat struct {
@@ -44,6 +69,7 @@ func (a AgentCompat) String() string {
 // CatalogItem represents a skill, workflow, or protocol.
 type CatalogItem struct {
 	Name        string      `yaml:"name"`
+	DisplayName string      `yaml:"display_name"`
 	Description string      `yaml:"description"`
 	Agents      AgentCompat `yaml:"agents"`
 	Required    AgentCompat `yaml:"required"`
@@ -53,6 +79,7 @@ type CatalogItem struct {
 // SensorItem represents a sensor (hook).
 type SensorItem struct {
 	Name        string      `yaml:"name"`
+	DisplayName string      `yaml:"display_name"`
 	Description string      `yaml:"description"`
 	Agents      AgentCompat `yaml:"agents"`
 	Required    AgentCompat `yaml:"required"`
@@ -64,6 +91,7 @@ type SensorItem struct {
 // RoutineItem represents a periodic self-maintenance routine.
 type RoutineItem struct {
 	Name        string      `yaml:"name"`
+	DisplayName string      `yaml:"display_name"`
 	Description string      `yaml:"description"`
 	Agents      AgentCompat `yaml:"agents"`
 	Required    AgentCompat `yaml:"required"`
@@ -74,6 +102,7 @@ type RoutineItem struct {
 // ScaffoldingItem represents a project scaffolding group (e.g. logs, playbook, reports).
 type ScaffoldingItem struct {
 	Name        string   `yaml:"name"`
+	DisplayName string   `yaml:"display_name"`
 	Description string   `yaml:"description"`
 	Required    bool     `yaml:"required"`
 	Affects     string   `yaml:"affects"`
@@ -257,6 +286,9 @@ func loadItems(fsys fs.FS, category string) []CatalogItem {
 		if err := yaml.Unmarshal(data, &item); err != nil || item.Name == "" {
 			continue
 		}
+		if item.DisplayName == "" {
+			item.DisplayName = DisplayNameFrom(item.Name)
+		}
 
 		// Find content .md file
 		itemDir := category + "/" + name
@@ -304,6 +336,9 @@ func loadSensors(fsys fs.FS) []SensorItem {
 		var sensor SensorItem
 		if err := yaml.Unmarshal(data, &sensor); err != nil || sensor.Name == "" || sensor.Event == "" {
 			continue
+		}
+		if sensor.DisplayName == "" {
+			sensor.DisplayName = DisplayNameFrom(sensor.Name)
 		}
 
 		// Find script file
@@ -353,6 +388,9 @@ func loadRoutines(fsys fs.FS) []RoutineItem {
 		if err := yaml.Unmarshal(data, &routine); err != nil || routine.Name == "" || routine.Frequency == "" {
 			continue
 		}
+		if routine.DisplayName == "" {
+			routine.DisplayName = DisplayNameFrom(routine.Name)
+		}
 
 		// Find content file (.md or .md.tmpl)
 		itemDir := "routines/" + name
@@ -383,6 +421,11 @@ func loadScaffolding(fsys fs.FS) []ScaffoldingItem {
 	var items []ScaffoldingItem
 	if err := yaml.Unmarshal(data, &items); err != nil {
 		return nil
+	}
+	for i := range items {
+		if items[i].DisplayName == "" {
+			items[i].DisplayName = DisplayNameFrom(items[i].Name)
+		}
 	}
 	return items
 }
@@ -416,7 +459,7 @@ func loadAgents(fsys fs.FS) []AgentDef {
 
 		displayName := raw.DisplayName
 		if displayName == "" {
-			displayName = raw.Name
+			displayName = DisplayNameFrom(raw.Name)
 		}
 
 		agents = append(agents, AgentDef{

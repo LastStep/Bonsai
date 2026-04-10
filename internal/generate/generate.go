@@ -118,7 +118,7 @@ func descFor(names []string, cat *catalog.Catalog, category string) map[string]s
 			}
 		}
 		if desc == "" {
-			desc = titleCase(strings.ReplaceAll(name, "-", " "))
+			desc = catalog.DisplayNameFrom(name)
 		}
 		result[name] = desc
 	}
@@ -425,11 +425,13 @@ func WorkspaceClaudeMD(workspaceRoot string, agentDef *catalog.AgentDef, install
 		)
 		for _, r := range installed.Routines {
 			freq := ""
+			displayName := catalog.DisplayNameFrom(r)
 			if routine := cat.GetRoutine(r); routine != nil {
 				freq = routine.Frequency
+				displayName = routine.DisplayName
 			}
 			lines = append(lines, fmt.Sprintf("| %s | %s | `agent/Routines/%s.md` |",
-				titleCase(strings.ReplaceAll(r, "-", " ")), freq, r))
+				displayName, freq, r))
 		}
 		lines = append(lines, "",
 			"> Routines are opt-in — check `agent/Core/routines.md` for the dashboard and procedures.", "")
@@ -584,7 +586,7 @@ func RoutineDashboard(workspaceRoot string, installed *config.InstalledAgent, ca
 		if routine == nil {
 			continue
 		}
-		displayName := titleCase(strings.ReplaceAll(routineName, "-", " "))
+		displayName := routine.DisplayName
 		lastRan := "_never_"
 		nextDue := "_overdue_"
 		status := "pending"
@@ -619,7 +621,10 @@ func RoutineDashboard(workspaceRoot string, installed *config.InstalledAgent, ca
 	)
 
 	for _, routineName := range installed.Routines {
-		displayName := titleCase(strings.ReplaceAll(routineName, "-", " "))
+		displayName := catalog.DisplayNameFrom(routineName)
+		if routine := cat.GetRoutine(routineName); routine != nil {
+			displayName = routine.DisplayName
+		}
 		lines = append(lines, fmt.Sprintf("| %s | `agent/Routines/%s.md` |", displayName, routineName))
 	}
 

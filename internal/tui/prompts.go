@@ -49,8 +49,11 @@ func BonsaiTheme() *huh.Theme {
 }
 
 // ItemOption describes an item for multi-select prompts.
+// Name is the human-readable display label. Value is the machine identifier
+// returned as the selection result; if empty, Name is used.
 type ItemOption struct {
 	Name     string
+	Value    string
 	Desc     string
 	Required bool
 }
@@ -131,9 +134,17 @@ func AskConfirm(title string, defaultVal bool) (bool, error) {
 // PickItems shows a section heading and multi-select for catalog items.
 // Items whose names appear in defaults are pre-selected.
 // Items marked Required are auto-included and shown as a locked info line.
+// Returns machine identifiers (Value fields), not display names.
 func PickItems(label string, available []ItemOption, defaults []string) ([]string, error) {
 	if len(available) == 0 {
 		return nil, nil
+	}
+
+	valueOf := func(item ItemOption) string {
+		if item.Value != "" {
+			return item.Value
+		}
+		return item.Name
 	}
 
 	// Split into required and optional
@@ -161,10 +172,10 @@ func PickItems(label string, available []ItemOption, defaults []string) ([]strin
 		}
 	}
 
-	// Collect required names
+	// Collect required values (machine identifiers)
 	var result []string
 	for _, r := range required {
-		result = append(result, r.Name)
+		result = append(result, valueOf(r))
 	}
 
 	// If there are optional items, show multi-select
@@ -176,8 +187,8 @@ func PickItems(label string, available []ItemOption, defaults []string) ([]strin
 
 		var options []huh.Option[string]
 		for _, item := range optional {
-			opt := huh.NewOption(item.Name+" "+StyleMuted.Render(GlyphDash+" "+item.Desc), item.Name)
-			if defaultSet[item.Name] {
+			opt := huh.NewOption(item.Name+" "+StyleMuted.Render(GlyphDash+" "+item.Desc), valueOf(item))
+			if defaultSet[valueOf(item)] {
 				opt = opt.Selected(true)
 			}
 			options = append(options, opt)
