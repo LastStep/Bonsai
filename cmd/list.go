@@ -28,6 +28,12 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	tui.Heading(cfg.ProjectName)
+
+	if len(cfg.Scaffolding) > 0 {
+		tui.Info("Scaffolding: " + strings.Join(cfg.Scaffolding, ", "))
+	}
+
 	if len(cfg.Agents) == 0 {
 		tui.Blank()
 		tui.EmptyPanel("No agents installed.\nRun bonsai add to get started.")
@@ -35,7 +41,6 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	cat := loadCatalog()
-	tui.Heading(cfg.ProjectName)
 
 	for name, agent := range cfg.Agents {
 		displayName := name

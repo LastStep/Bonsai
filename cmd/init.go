@@ -32,6 +32,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	cat := loadCatalog()
+
 	tui.Banner()
 	tui.Heading("Initialize Project")
 
@@ -52,10 +54,29 @@ func runInit(cmd *cobra.Command, args []string) error {
 		docsPath += "/"
 	}
 
+	// Scaffolding selection
+	var scaffoldingOptions []tui.ItemOption
+	for _, item := range cat.Scaffolding {
+		desc := item.Description
+		if !item.Required && item.Affects != "" {
+			desc += " · if removed: " + item.Affects
+		}
+		scaffoldingOptions = append(scaffoldingOptions, tui.ItemOption{
+			Name:     item.Name,
+			Desc:     desc,
+			Required: item.Required,
+		})
+	}
+	selectedScaffolding, err := tui.PickItems("Project Scaffolding", scaffoldingOptions, nil)
+	if err != nil {
+		return err
+	}
+
 	cfg := &config.ProjectConfig{
 		ProjectName: strings.TrimSpace(projectName),
 		Description: strings.TrimSpace(description),
 		DocsPath:    docsPath,
+		Scaffolding: selectedScaffolding,
 		Agents:      make(map[string]*config.InstalledAgent),
 	}
 
@@ -68,7 +89,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		Title("Generating project files...").
 		Action(func() {
 			_ = generate.RootClaudeMD(cwd, cfg)
-			created, _ = generate.Scaffolding(cwd, cfg, catalogFS)
+			created, _ = generate.Scaffolding(cwd, cfg, cat)
 		}).
 		Run()
 

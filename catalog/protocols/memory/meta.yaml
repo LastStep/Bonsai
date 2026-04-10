@@ -1,3 +1,4 @@
 name: memory
 description: How to read, write, and maintain working memory between sessions
 agents: all
+required: all

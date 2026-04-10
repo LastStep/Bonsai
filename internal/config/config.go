@@ -22,6 +22,7 @@ type ProjectConfig struct {
 	ProjectName string                     `yaml:"project_name"`
 	Description string                     `yaml:"description,omitempty"`
 	DocsPath    string                     `yaml:"docs_path,omitempty"`
+	Scaffolding []string                   `yaml:"scaffolding,omitempty"`
 	Agents      map[string]*InstalledAgent `yaml:"agents,omitempty"`
 }
 

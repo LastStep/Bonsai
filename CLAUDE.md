@@ -45,6 +45,7 @@ Bonsai/
 │   ├── sensors/              ← auto-enforced hooks (meta.yaml + script.sh.tmpl)
 │   ├── routines/             ← periodic maintenance routines (meta.yaml + content.md.tmpl)
 │   └── scaffolding/          ← project management infrastructure templates
+│       ├── manifest.yaml     ← scaffolding item definitions (name, description, required, affects)
 │       ├── INDEX.md.tmpl
 │       ├── Playbook/         ← Status, Roadmap, Plans, SecurityStandards
 │       ├── Logs/             ← FieldNotes, KeyDecisionLog, RoutineLog
@@ -77,13 +78,14 @@ When you would normally write to auto-memory (feedback, references, project cont
 
 ## Key Concepts
 
-- **Catalog items** (skills, workflows, protocols) each have a `meta.yaml` with `name`, `description`, `agents` (list or `"all"`) and a companion `.md` content file
+- **Catalog items** (skills, workflows, protocols) each have a `meta.yaml` with `name`, `description`, `agents` (list or `"all"`), optional `required` (same format) and a companion `.md` content file
 - **Sensors** are auto-enforced hooks — `meta.yaml` adds `event` (hook event) and optional `matcher` (tool filter), with a companion `.sh.tmpl` script template instead of `.md`
 - **Routines** are periodic self-maintenance tasks — `meta.yaml` adds `frequency` (e.g. `"5 days"`), with a companion `.md.tmpl` content template. Installed to `agent/Routines/` with a managed dashboard at `agent/Core/routines.md`
 - **`routine-check` sensor** is auto-installed when any routines are present, auto-removed when the last routine is removed — parses the dashboard at session start and flags overdue routines
 - **Agent definitions** have an `agent.yaml` with `name`, `display_name`, `description`, `defaults` and a `core/` directory with `.tmpl` identity templates
 - **Templates** use Go `text/template` (`.tmpl` extension) with `{{ .ProjectName }}`, `{{ .ProjectDescription }}`, `{{ .Routines }}` context vars
-- **`.bonsai.yaml`** is the project config generated in the user's target project — tracks installed agents and docs_path
+- **Scaffolding** is project infrastructure (INDEX, Playbook, Logs, Reports) — defined in `catalog/scaffolding/manifest.yaml` with `name`, `description`, `required`, `affects`, and `files`. Selected during `bonsai init`, some items are required
+- **`.bonsai.yaml`** is the project config generated in the user's target project — tracks installed agents, scaffolding selections, and docs_path
 - **`.claude/settings.json`** is auto-generated with hook entries for all installed sensors
 - **Generator** never overwrites existing files — safe to re-run (except settings.json hooks and routines.md dashboard, which are rebuilt from config)
 - **Catalog is embedded** via `embed.FS` in `main.go` — ships inside the binary
@@ -142,7 +144,8 @@ mkdir /tmp/test && cd /tmp/test
 ## Conventions
 
 - Keep CLI interactive — use Huh forms for all user input
-- All catalog items use the same base `meta.yaml` shape: `name`, `description`, `agents` — sensors add `event` and `matcher`, routines add `frequency`
+- All catalog items use the same base `meta.yaml` shape: `name`, `description`, `agents`, `required` — sensors add `event` and `matcher`, routines add `frequency`
+- **`required`** uses the same format as `agents` (`all` or list of agent types) — required items are auto-installed during `bonsai add` and can't be unchecked
 - Generator functions in `internal/generate/`, catalog loading in `internal/catalog/`, commands in `cmd/`
 - Go structs for all data shapes (config, catalog models)
 - Don't break the existing CLI commands — they're the public API

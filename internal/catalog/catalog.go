@@ -46,6 +46,7 @@ type CatalogItem struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
 	Agents      AgentCompat `yaml:"agents"`
+	Required    AgentCompat `yaml:"required"`
 	ContentPath string      `yaml:"-"`
 }
 
@@ -54,6 +55,7 @@ type SensorItem struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
 	Agents      AgentCompat `yaml:"agents"`
+	Required    AgentCompat `yaml:"required"`
 	Event       string      `yaml:"event"`
 	Matcher     string      `yaml:"matcher,omitempty"`
 	ContentPath string      `yaml:"-"`
@@ -64,8 +66,18 @@ type RoutineItem struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
 	Agents      AgentCompat `yaml:"agents"`
+	Required    AgentCompat `yaml:"required"`
 	Frequency   string      `yaml:"frequency"`
 	ContentPath string      `yaml:"-"`
+}
+
+// ScaffoldingItem represents a project scaffolding group (e.g. logs, playbook, reports).
+type ScaffoldingItem struct {
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description"`
+	Required    bool     `yaml:"required"`
+	Affects     string   `yaml:"affects"`
+	Files       []string `yaml:"files"`
 }
 
 // AgentDef represents an agent type definition from the catalog.
@@ -96,20 +108,22 @@ type agentYAML struct {
 
 // Catalog holds all loaded catalog data with lookup helpers.
 type Catalog struct {
-	Agents    []AgentDef
-	Skills    []CatalogItem
-	Workflows []CatalogItem
-	Protocols []CatalogItem
-	Sensors   []SensorItem
-	Routines  []RoutineItem
+	Agents       []AgentDef
+	Skills       []CatalogItem
+	Workflows    []CatalogItem
+	Protocols    []CatalogItem
+	Sensors      []SensorItem
+	Routines     []RoutineItem
+	Scaffolding  []ScaffoldingItem
 
 	fsys fs.FS
 
-	skillsByName    map[string]*CatalogItem
-	workflowsByName map[string]*CatalogItem
-	protocolsByName map[string]*CatalogItem
-	sensorsByName   map[string]*SensorItem
-	routinesByName  map[string]*RoutineItem
+	skillsByName       map[string]*CatalogItem
+	workflowsByName    map[string]*CatalogItem
+	protocolsByName    map[string]*CatalogItem
+	sensorsByName      map[string]*SensorItem
+	routinesByName     map[string]*RoutineItem
+	scaffoldingByName  map[string]*ScaffoldingItem
 }
 
 // New loads the full catalog from an embedded filesystem.
@@ -122,6 +136,7 @@ func New(fsys fs.FS) (*Catalog, error) {
 	c.Protocols = loadItems(fsys, "protocols")
 	c.Sensors = loadSensors(fsys)
 	c.Routines = loadRoutines(fsys)
+	c.Scaffolding = loadScaffolding(fsys)
 
 	c.skillsByName = make(map[string]*CatalogItem)
 	for i := range c.Skills {
@@ -143,6 +158,10 @@ func New(fsys fs.FS) (*Catalog, error) {
 	for i := range c.Routines {
 		c.routinesByName[c.Routines[i].Name] = &c.Routines[i]
 	}
+	c.scaffoldingByName = make(map[string]*ScaffoldingItem)
+	for i := range c.Scaffolding {
+		c.scaffoldingByName[c.Scaffolding[i].Name] = &c.Scaffolding[i]
+	}
 
 	return c, nil
 }
@@ -152,7 +171,8 @@ func (c *Catalog) GetSkill(name string) *CatalogItem     { return c.skillsByName
 func (c *Catalog) GetWorkflow(name string) *CatalogItem   { return c.workflowsByName[name] }
 func (c *Catalog) GetProtocol(name string) *CatalogItem   { return c.protocolsByName[name] }
 func (c *Catalog) GetSensor(name string) *SensorItem      { return c.sensorsByName[name] }
-func (c *Catalog) GetRoutine(name string) *RoutineItem    { return c.routinesByName[name] }
+func (c *Catalog) GetRoutine(name string) *RoutineItem         { return c.routinesByName[name] }
+func (c *Catalog) GetScaffolding(name string) *ScaffoldingItem { return c.scaffoldingByName[name] }
 
 func (c *Catalog) GetAgent(name string) *AgentDef {
 	for i := range c.Agents {
@@ -353,6 +373,18 @@ func loadRoutines(fsys fs.FS) []RoutineItem {
 		routines = append(routines, routine)
 	}
 	return routines
+}
+
+func loadScaffolding(fsys fs.FS) []ScaffoldingItem {
+	data, err := fs.ReadFile(fsys, "scaffolding/manifest.yaml")
+	if err != nil {
+		return nil
+	}
+	var items []ScaffoldingItem
+	if err := yaml.Unmarshal(data, &items); err != nil {
+		return nil
+	}
+	return items
 }
 
 func loadAgents(fsys fs.FS) []AgentDef {

@@ -26,30 +26,30 @@ var addCmd = &cobra.Command{
 	RunE:  runAdd,
 }
 
-func toItemOptions(items []catalog.CatalogItem) []tui.ItemOption {
+func toItemOptions(items []catalog.CatalogItem, agentType string) []tui.ItemOption {
 	result := make([]tui.ItemOption, len(items))
 	for i, item := range items {
-		result[i] = tui.ItemOption{Name: item.Name, Desc: item.Description}
+		result[i] = tui.ItemOption{Name: item.Name, Desc: item.Description, Required: item.Required.CompatibleWith(agentType)}
 	}
 	return result
 }
 
-func toSensorOptions(items []catalog.SensorItem) []tui.ItemOption {
+func toSensorOptions(items []catalog.SensorItem, agentType string) []tui.ItemOption {
 	result := make([]tui.ItemOption, len(items))
 	for i, item := range items {
-		result[i] = tui.ItemOption{Name: item.Name, Desc: item.Description}
+		result[i] = tui.ItemOption{Name: item.Name, Desc: item.Description, Required: item.Required.CompatibleWith(agentType)}
 	}
 	return result
 }
 
-func toRoutineOptions(items []catalog.RoutineItem) []tui.ItemOption {
+func toRoutineOptions(items []catalog.RoutineItem, agentType string) []tui.ItemOption {
 	result := make([]tui.ItemOption, len(items))
 	for i, item := range items {
 		desc := item.Description
 		if item.Frequency != "" {
 			desc += " (every " + item.Frequency + ")"
 		}
-		result[i] = tui.ItemOption{Name: item.Name, Desc: desc}
+		result[i] = tui.ItemOption{Name: item.Name, Desc: desc, Required: item.Required.CompatibleWith(agentType)}
 	}
 	return result
 }
@@ -107,15 +107,15 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	// 3. Pick components
-	selectedSkills, err := tui.PickItems("Skills", toItemOptions(cat.SkillsFor(agentType)), agentDef.DefaultSkills)
+	selectedSkills, err := tui.PickItems("Skills", toItemOptions(cat.SkillsFor(agentType), agentType), agentDef.DefaultSkills)
 	if err != nil {
 		return err
 	}
-	selectedWorkflows, err := tui.PickItems("Workflows", toItemOptions(cat.WorkflowsFor(agentType)), agentDef.DefaultWorkflows)
+	selectedWorkflows, err := tui.PickItems("Workflows", toItemOptions(cat.WorkflowsFor(agentType), agentType), agentDef.DefaultWorkflows)
 	if err != nil {
 		return err
 	}
-	selectedProtocols, err := tui.PickItems("Protocols", toItemOptions(cat.ProtocolsFor(agentType)), agentDef.DefaultProtocols)
+	selectedProtocols, err := tui.PickItems("Protocols", toItemOptions(cat.ProtocolsFor(agentType), agentType), agentDef.DefaultProtocols)
 	if err != nil {
 		return err
 	}
@@ -127,11 +127,11 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			userSensors = append(userSensors, s)
 		}
 	}
-	selectedSensors, err := tui.PickItems("Sensors", toSensorOptions(userSensors), agentDef.DefaultSensors)
+	selectedSensors, err := tui.PickItems("Sensors", toSensorOptions(userSensors, agentType), agentDef.DefaultSensors)
 	if err != nil {
 		return err
 	}
-	selectedRoutines, err := tui.PickItems("Routines", toRoutineOptions(cat.RoutinesFor(agentType)), agentDef.DefaultRoutines)
+	selectedRoutines, err := tui.PickItems("Routines", toRoutineOptions(cat.RoutinesFor(agentType), agentType), agentDef.DefaultRoutines)
 	if err != nil {
 		return err
 	}

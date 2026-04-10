@@ -50,8 +50,9 @@ func BonsaiTheme() *huh.Theme {
 
 // ItemOption describes an item for multi-select prompts.
 type ItemOption struct {
-	Name string
-	Desc string
+	Name     string
+	Desc     string
+	Required bool
 }
 
 // AskText prompts for text input.
@@ -129,26 +130,65 @@ func AskConfirm(title string, defaultVal bool) (bool, error) {
 
 // PickItems shows a section heading and multi-select for catalog items.
 // Items whose names appear in defaults are pre-selected.
+// Items marked Required are auto-included and shown as a locked info line.
 func PickItems(label string, available []ItemOption, defaults []string) ([]string, error) {
 	if len(available) == 0 {
 		return nil, nil
 	}
 
-	defaultSet := make(map[string]bool)
-	for _, d := range defaults {
-		defaultSet[d] = true
+	// Split into required and optional
+	var required []ItemOption
+	var optional []ItemOption
+	for _, item := range available {
+		if item.Required {
+			required = append(required, item)
+		} else {
+			optional = append(optional, item)
+		}
 	}
 
 	Section(label)
 
-	var options []huh.Option[string]
-	for _, item := range available {
-		opt := huh.NewOption(item.Name+" "+StyleMuted.Render(GlyphDash+" "+item.Desc), item.Name)
-		if defaultSet[item.Name] {
-			opt = opt.Selected(true)
+	// Show required items as locked info — one per line with description
+	if len(required) > 0 {
+		for _, r := range required {
+			line := "    " + StyleSuccess.Render(GlyphCheck) + " " + r.Name
+			if r.Desc != "" {
+				line += " " + StyleMuted.Render(GlyphDash+" "+r.Desc)
+			}
+			line += " " + StyleAccent.Render("(required)")
+			fmt.Println(line)
 		}
-		options = append(options, opt)
 	}
 
-	return AskMultiSelect("", options)
+	// Collect required names
+	var result []string
+	for _, r := range required {
+		result = append(result, r.Name)
+	}
+
+	// If there are optional items, show multi-select
+	if len(optional) > 0 {
+		defaultSet := make(map[string]bool)
+		for _, d := range defaults {
+			defaultSet[d] = true
+		}
+
+		var options []huh.Option[string]
+		for _, item := range optional {
+			opt := huh.NewOption(item.Name+" "+StyleMuted.Render(GlyphDash+" "+item.Desc), item.Name)
+			if defaultSet[item.Name] {
+				opt = opt.Selected(true)
+			}
+			options = append(options, opt)
+		}
+
+		selected, err := AskMultiSelect("", options)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, selected...)
+	}
+
+	return result, nil
 }

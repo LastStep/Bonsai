@@ -1,0 +1,33 @@
+- name: index
+  description: "Project snapshot — high-level overview of what the project is, who the agents are, and where everything lives"
+  required: true
+  affects: "session-start protocol, session-context sensor, all agent workspace CLAUDE.md files, and every agent's first-read entry point"
+  files:
+    - INDEX.md.tmpl
+
+- name: playbook
+  description: "Operational playbook — status tracking, roadmap, implementation plans, and security standards"
+  required: true
+  affects: "session-start protocol, session-context sensor, status-hygiene routine, roadmap-accuracy routine, planning workflow, security protocol, and all agent workspace CLAUDE.md files"
+  files:
+    - Playbook/Status.md.tmpl
+    - Playbook/Roadmap.md.tmpl
+    - Playbook/Standards/SecurityStandards.md.tmpl
+    - Playbook/Plans/Active/
+
+- name: logs
+  description: "Decision and activity logs — field notes, key decisions, and routine execution history"
+  required: true
+  affects: "session-start protocol, session-context sensor, session-logging workflow, all four routines (they log results here), and agent workspace CLAUDE.md files"
+  files:
+    - Logs/FieldNotes.md
+    - Logs/KeyDecisionLog.md.tmpl
+    - Logs/RoutineLog.md
+
+- name: reports
+  description: "Completion reports — template and staging area for structured agent work summaries"
+  required: false
+  affects: "reporting workflow, agent-review sensor, session-context sensor, and session-start protocol all reference Reports/Pending/ — they will still function but report submission steps become no-ops"
+  files:
+    - Reports/report-template.md
+    - Reports/Pending/

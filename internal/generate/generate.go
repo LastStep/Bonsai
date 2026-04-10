@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -124,9 +125,24 @@ func descFor(names []string, cat *catalog.Catalog, category string) map[string]s
 	return result
 }
 
-// Scaffolding generates project management infrastructure files.
+// hasScaffolding checks if a scaffolding item is selected in the project config.
+// Returns true if scaffolding list is empty (backward compat: old configs without the field).
+func hasScaffolding(cfg *config.ProjectConfig, name string) bool {
+	if len(cfg.Scaffolding) == 0 {
+		return true
+	}
+	for _, s := range cfg.Scaffolding {
+		if s == name {
+			return true
+		}
+	}
+	return false
+}
+
+// Scaffolding generates project management infrastructure files for selected items.
 // Returns a list of created file paths relative to projectRoot.
-func Scaffolding(projectRoot string, cfg *config.ProjectConfig, catFS fs.FS) ([]string, error) {
+func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog) ([]string, error) {
+	catFS := cat.FS()
 	docsRoot := projectRoot
 	if cfg.DocsPath != "" {
 		docsRoot = filepath.Join(projectRoot, cfg.DocsPath)
@@ -136,6 +152,18 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, catFS fs.FS) ([]
 		ProjectDescription: cfg.Description,
 	}
 
+	// Build set of allowed file prefixes from selected scaffolding items
+	allowedFiles := make(map[string]bool)
+	for _, name := range cfg.Scaffolding {
+		item := cat.GetScaffolding(name)
+		if item == nil {
+			continue
+		}
+		for _, f := range item.Files {
+			allowedFiles[f] = true
+		}
+	}
+
 	var created []string
 
 	err := fs.WalkDir(catFS, "scaffolding", func(path string, d fs.DirEntry, err error) error {
@@ -143,6 +171,15 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, catFS fs.FS) ([]
 			return err
 		}
 		rel := strings.TrimPrefix(path, "scaffolding/")
+		if rel == "manifest.yaml" {
+			return nil // skip the manifest itself
+		}
+
+		// Check if this file belongs to a selected scaffolding item
+		if !isAllowedScaffoldingFile(rel, allowedFiles) {
+			return nil
+		}
+
 		dest := filepath.Join(docsRoot, rel)
 
 		finalDest := dest
@@ -162,7 +199,48 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, catFS fs.FS) ([]
 		return nil
 	})
 
+	// Create empty directories listed in selected items (e.g. Plans/Active/, Reports/Pending/)
+	for _, f := range sortedKeys(allowedFiles) {
+		if strings.HasSuffix(f, "/") {
+			dirPath := filepath.Join(docsRoot, f)
+			_ = os.MkdirAll(dirPath, 0755)
+		}
+	}
+
 	return created, err
+}
+
+// isAllowedScaffoldingFile checks if a file path matches any allowed file entry.
+// Handles both exact file matches and directory prefix matches (entries ending with /).
+func isAllowedScaffoldingFile(rel string, allowed map[string]bool) bool {
+	// Exact match (with or without .tmpl suffix)
+	if allowed[rel] {
+		return true
+	}
+	if allowed[rel+".tmpl"] {
+		return true
+	}
+	if strings.HasSuffix(rel, ".tmpl") {
+		if allowed[strings.TrimSuffix(rel, ".tmpl")] {
+			return true
+		}
+	}
+	// Directory prefix match — file is under an allowed directory
+	for f := range allowed {
+		if strings.HasSuffix(f, "/") && strings.HasPrefix(rel, f) {
+			return true
+		}
+	}
+	return false
+}
+
+func sortedKeys(m map[string]bool) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 // SettingsJSON generates or updates .claude/settings.json with sensor hooks.
@@ -393,8 +471,11 @@ func WorkspaceClaudeMD(workspaceRoot string, agentDef *catalog.AgentDef, install
 		fmt.Sprintf("| Security standards | `%sPlaybook/Standards/SecurityStandards.md` |", docsPrefix),
 		fmt.Sprintf("| Your assigned plan | `%sPlaybook/Plans/Active/` |", docsPrefix),
 		fmt.Sprintf("| Prior decisions | `%sLogs/KeyDecisionLog.md` |", docsPrefix),
-		fmt.Sprintf("| Submit report | `%sReports/Pending/` |", docsPrefix), "",
 	)
+	if hasScaffolding(cfg, "reports") {
+		lines = append(lines, fmt.Sprintf("| Submit report | `%sReports/Pending/` |", docsPrefix))
+	}
+	lines = append(lines, "")
 
 	return os.WriteFile(filepath.Join(workspaceRoot, "CLAUDE.md"), []byte(strings.Join(lines, "\n")), 0644)
 }
