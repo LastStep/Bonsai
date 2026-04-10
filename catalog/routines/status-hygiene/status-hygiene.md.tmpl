@@ -1,0 +1,32 @@
+---
+tags: [routine]
+description: Keep Playbook/Status.md clean — archive old Done items, validate Pending items.
+frequency: 5 days
+---
+
+# Routine: Status Hygiene
+
+**Frequency:** Every 5 days
+
+## Purpose
+
+Keep `{{ .DocsPath }}Playbook/Status.md` clean — archive old Done items, validate Pending items, verify Plans Index consistency.
+
+## Procedure
+
+1. **Archive old Done items:**
+   - Move Done items older than 14 days from Status.md to `{{ .DocsPath }}Playbook/StatusArchive.md`
+   - Keep the most recent 10 Done items in Status.md for context
+
+2. **Validate Pending items:**
+   - For each Pending item, check if it's still relevant against current roadmap
+   - Check if any Pending items have been completed but not moved to Done
+   - Flag items that have been Pending for 30+ days without progress
+
+3. **Check Plans Index:**
+   - Verify every plan listed in the Plans Index has a matching file in `{{ .DocsPath }}Playbook/Plans/Active/` or `{{ .DocsPath }}Playbook/Plans/Archive/`
+   - Flag any orphaned plan files not listed in the index
+
+4. **Log results** to `{{ .DocsPath }}Logs/RoutineLog.md`
+
+5. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`

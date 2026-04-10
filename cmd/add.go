@@ -42,6 +42,18 @@ func toSensorOptions(items []catalog.SensorItem) []tui.ItemOption {
 	return result
 }
 
+func toRoutineOptions(items []catalog.RoutineItem) []tui.ItemOption {
+	result := make([]tui.ItemOption, len(items))
+	for i, item := range items {
+		desc := item.Description
+		if item.Frequency != "" {
+			desc += " (every " + item.Frequency + ")"
+		}
+		result[i] = tui.ItemOption{Name: item.Name, Desc: desc}
+	}
+	return result
+}
+
 func runAdd(cmd *cobra.Command, args []string) error {
 	cwd, _ := os.Getwd()
 	configPath := filepath.Join(cwd, configFile)
@@ -107,7 +119,19 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	selectedSensors, err := tui.PickItems("Sensors", toSensorOptions(cat.SensorsFor(agentType)), agentDef.DefaultSensors)
+	// Filter out auto-managed sensors (routine-check is added/removed automatically)
+	availableSensors := cat.SensorsFor(agentType)
+	var userSensors []catalog.SensorItem
+	for _, s := range availableSensors {
+		if s.Name != "routine-check" {
+			userSensors = append(userSensors, s)
+		}
+	}
+	selectedSensors, err := tui.PickItems("Sensors", toSensorOptions(userSensors), agentDef.DefaultSensors)
+	if err != nil {
+		return err
+	}
+	selectedRoutines, err := tui.PickItems("Routines", toRoutineOptions(cat.RoutinesFor(agentType)), agentDef.DefaultRoutines)
 	if err != nil {
 		return err
 	}
@@ -120,6 +144,9 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		if sensor := cat.GetSensor(name); sensor != nil {
 			return sensor.Description
 		}
+		if routine := cat.GetRoutine(name); routine != nil {
+			return routine.Description
+		}
 		return ""
 	}
 
@@ -130,6 +157,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			{Name: "Workflows", Items: selectedWorkflows},
 			{Name: "Protocols", Items: selectedProtocols},
 			{Name: "Sensors", Items: selectedSensors},
+			{Name: "Routines", Items: selectedRoutines},
 		},
 		describer,
 	)
@@ -150,7 +178,9 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		Workflows: selectedWorkflows,
 		Protocols: selectedProtocols,
 		Sensors:   selectedSensors,
+		Routines:  selectedRoutines,
 	}
+	generate.EnsureRoutineCheckSensor(installed)
 	cfg.Agents[agentType] = installed
 	if err := cfg.Save(configPath); err != nil {
 		return err

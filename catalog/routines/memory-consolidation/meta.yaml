@@ -1,0 +1,4 @@
+name: memory-consolidation
+description: Bridge Claude Code auto-memory into agent/Core/memory.md — validate facts, clean redundant entries
+agents: all
+frequency: 5 days

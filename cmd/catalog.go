@@ -13,7 +13,7 @@ func init() {
 
 var catalogCmd = &cobra.Command{
 	Use:   "catalog",
-	Short: "Browse available agents, skills, workflows, and protocols.",
+	Short: "Browse available agents, skills, workflows, protocols, and routines.",
 	RunE:  runCatalog,
 }
 
@@ -85,6 +85,18 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 		sensorRows = append(sensorRows, []string{s.Name, s.Description, event, s.Agents.String()})
 	}
 	tui.CatalogTable([]string{"Name", "Description", "Event", "Agents"}, sensorRows)
+
+	// Routines
+	routines := cat.Routines
+	if agentFilter != "" {
+		routines = cat.RoutinesFor(agentFilter)
+	}
+	tui.SectionHeader("Routines" + suffix)
+	var routineRows [][]string
+	for _, r := range routines {
+		routineRows = append(routineRows, []string{r.Name, r.Description, r.Frequency, r.Agents.String()})
+	}
+	tui.CatalogTable([]string{"Name", "Description", "Frequency", "Agents"}, routineRows)
 
 	tui.Blank()
 	return nil

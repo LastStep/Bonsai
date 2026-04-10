@@ -59,6 +59,15 @@ type SensorItem struct {
 	ContentPath string      `yaml:"-"`
 }
 
+// RoutineItem represents a periodic self-maintenance routine.
+type RoutineItem struct {
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description"`
+	Agents      AgentCompat `yaml:"agents"`
+	Frequency   string      `yaml:"frequency"`
+	ContentPath string      `yaml:"-"`
+}
+
 // AgentDef represents an agent type definition from the catalog.
 type AgentDef struct {
 	Name             string
@@ -68,6 +77,7 @@ type AgentDef struct {
 	DefaultWorkflows []string
 	DefaultProtocols []string
 	DefaultSensors   []string
+	DefaultRoutines  []string
 	CoreDir          string // path within FS to core/ directory
 }
 
@@ -80,6 +90,7 @@ type agentYAML struct {
 		Workflows []string `yaml:"workflows"`
 		Protocols []string `yaml:"protocols"`
 		Sensors   []string `yaml:"sensors"`
+		Routines  []string `yaml:"routines"`
 	} `yaml:"defaults"`
 }
 
@@ -90,6 +101,7 @@ type Catalog struct {
 	Workflows []CatalogItem
 	Protocols []CatalogItem
 	Sensors   []SensorItem
+	Routines  []RoutineItem
 
 	fsys fs.FS
 
@@ -97,6 +109,7 @@ type Catalog struct {
 	workflowsByName map[string]*CatalogItem
 	protocolsByName map[string]*CatalogItem
 	sensorsByName   map[string]*SensorItem
+	routinesByName  map[string]*RoutineItem
 }
 
 // New loads the full catalog from an embedded filesystem.
@@ -108,6 +121,7 @@ func New(fsys fs.FS) (*Catalog, error) {
 	c.Workflows = loadItems(fsys, "workflows")
 	c.Protocols = loadItems(fsys, "protocols")
 	c.Sensors = loadSensors(fsys)
+	c.Routines = loadRoutines(fsys)
 
 	c.skillsByName = make(map[string]*CatalogItem)
 	for i := range c.Skills {
@@ -125,15 +139,20 @@ func New(fsys fs.FS) (*Catalog, error) {
 	for i := range c.Sensors {
 		c.sensorsByName[c.Sensors[i].Name] = &c.Sensors[i]
 	}
+	c.routinesByName = make(map[string]*RoutineItem)
+	for i := range c.Routines {
+		c.routinesByName[c.Routines[i].Name] = &c.Routines[i]
+	}
 
 	return c, nil
 }
 
-func (c *Catalog) FS() fs.FS                          { return c.fsys }
-func (c *Catalog) GetSkill(name string) *CatalogItem   { return c.skillsByName[name] }
-func (c *Catalog) GetWorkflow(name string) *CatalogItem { return c.workflowsByName[name] }
-func (c *Catalog) GetProtocol(name string) *CatalogItem { return c.protocolsByName[name] }
-func (c *Catalog) GetSensor(name string) *SensorItem    { return c.sensorsByName[name] }
+func (c *Catalog) FS() fs.FS                            { return c.fsys }
+func (c *Catalog) GetSkill(name string) *CatalogItem     { return c.skillsByName[name] }
+func (c *Catalog) GetWorkflow(name string) *CatalogItem   { return c.workflowsByName[name] }
+func (c *Catalog) GetProtocol(name string) *CatalogItem   { return c.protocolsByName[name] }
+func (c *Catalog) GetSensor(name string) *SensorItem      { return c.sensorsByName[name] }
+func (c *Catalog) GetRoutine(name string) *RoutineItem    { return c.routinesByName[name] }
 
 func (c *Catalog) GetAgent(name string) *AgentDef {
 	for i := range c.Agents {
@@ -168,6 +187,15 @@ func (c *Catalog) SensorsFor(agentType string) []SensorItem {
 	for _, s := range c.Sensors {
 		if s.Agents.CompatibleWith(agentType) {
 			result = append(result, s)
+		}
+	}
+	return result
+}
+func (c *Catalog) RoutinesFor(agentType string) []RoutineItem {
+	var result []RoutineItem
+	for _, r := range c.Routines {
+		if r.Agents.CompatibleWith(agentType) {
+			result = append(result, r)
 		}
 	}
 	return result
@@ -279,6 +307,54 @@ func loadSensors(fsys fs.FS) []SensorItem {
 	return sensors
 }
 
+func loadRoutines(fsys fs.FS) []RoutineItem {
+	entries, err := fs.ReadDir(fsys, "routines")
+	if err != nil {
+		return nil
+	}
+
+	var names []string
+	for _, e := range entries {
+		if e.IsDir() {
+			names = append(names, e.Name())
+		}
+	}
+	sort.Strings(names)
+
+	var routines []RoutineItem
+	for _, name := range names {
+		metaPath := "routines/" + name + "/meta.yaml"
+		data, err := fs.ReadFile(fsys, metaPath)
+		if err != nil {
+			continue
+		}
+
+		var routine RoutineItem
+		if err := yaml.Unmarshal(data, &routine); err != nil || routine.Name == "" || routine.Frequency == "" {
+			continue
+		}
+
+		// Find content file (.md or .md.tmpl)
+		itemDir := "routines/" + name
+		dirEntries, err := fs.ReadDir(fsys, itemDir)
+		if err != nil {
+			continue
+		}
+		for _, f := range dirEntries {
+			if !f.IsDir() && f.Name() != "meta.yaml" {
+				routine.ContentPath = itemDir + "/" + f.Name()
+				break
+			}
+		}
+		if routine.ContentPath == "" {
+			continue
+		}
+
+		routines = append(routines, routine)
+	}
+	return routines
+}
+
 func loadAgents(fsys fs.FS) []AgentDef {
 	entries, err := fs.ReadDir(fsys, "agents")
 	if err != nil {
@@ -319,6 +395,7 @@ func loadAgents(fsys fs.FS) []AgentDef {
 			DefaultWorkflows: raw.Defaults.Workflows,
 			DefaultProtocols: raw.Defaults.Protocols,
 			DefaultSensors:   raw.Defaults.Sensors,
+			DefaultRoutines:  raw.Defaults.Routines,
 			CoreDir:          "agents/" + name + "/core",
 		})
 	}

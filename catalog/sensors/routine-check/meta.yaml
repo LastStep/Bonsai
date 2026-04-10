@@ -1,0 +1,4 @@
+name: routine-check
+description: Checks routine dashboard at session start and flags overdue maintenance routines
+agents: all
+event: SessionStart

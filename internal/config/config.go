@@ -14,6 +14,7 @@ type InstalledAgent struct {
 	Workflows []string `yaml:"workflows"`
 	Protocols []string `yaml:"protocols"`
 	Sensors   []string `yaml:"sensors"`
+	Routines  []string `yaml:"routines"`
 }
 
 // ProjectConfig is the root project config serialized to .bonsai.yaml.

@@ -1,0 +1,46 @@
+---
+tags: [routine]
+description: Bridge Claude Code auto-memory into agent/Core/memory.md. Validate facts against codebase. Clean redundant entries.
+frequency: 5 days
+---
+
+# Routine: Memory Consolidation
+
+**Frequency:** Every 5 days
+
+## Purpose
+
+Bridge Claude Code auto-memory and `agent/Core/memory.md`. Validate facts against codebase. Clean redundant entries. This is the primary mechanism for preventing memory drift between Claude Code's built-in system and our version-controlled agent memory.
+
+## Procedure
+
+1. **Read auto-memory sources:**
+   - `~/.claude/projects/*/memory/MEMORY.md` (scan for project directories matching `{{ .ProjectName }}`)
+   - Read any individual memory files referenced by the MEMORY.md index
+
+2. **Read current agent memory:**
+   - `agent/Core/memory.md` — all sections (Flags, Work State, Notes, Feedback, References)
+
+3. **For each entry in auto-memory, apply consolidation decision:**
+   - **keep** — already exists in agent memory, still accurate — no action
+   - **update** — exists in agent memory but auto-memory has newer/better info — update agent memory
+   - **archive** — outdated or contradicted by current codebase — note as archived in log, remove from both
+   - **insert_new** — useful fact not in agent memory — add to appropriate section
+
+4. **Validate agent memory against codebase:**
+   - If an entry references a file path — verify the file exists
+   - If an entry references a function, endpoint, or config — grep to confirm it still exists
+   - If an entry describes architecture or behavior — spot-check against current code
+   - Mark any stale entries with `(stale — [reason])` rather than deleting
+
+5. **Check memory protocol compliance:**
+   - Any entry persisting 3+ sessions without action — escalate or remove
+   - Every flag must have a resolution path — addressed, handed off, or marked irrelevant
+
+6. **Clean auto-memory:**
+   - After merging useful entries into agent memory, clean auto-memory files
+   - Keep `MEMORY.md` index files minimal — they exist for Claude Code's system, not ours
+
+7. **Log results** to `{{ .DocsPath }}Logs/RoutineLog.md`
+
+8. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`

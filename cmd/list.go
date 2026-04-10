@@ -56,6 +56,9 @@ func runList(cmd *cobra.Command, args []string) error {
 		if len(agent.Sensors) > 0 {
 			pairs = append(pairs, [2]string{"Sensors", strings.Join(agent.Sensors, ", ")})
 		}
+		if len(agent.Routines) > 0 {
+			pairs = append(pairs, [2]string{"Routines", strings.Join(agent.Routines, ", ")})
+		}
 
 		content := tui.CardFields(pairs)
 		tui.TitledPanel(displayName, content, tui.Water)

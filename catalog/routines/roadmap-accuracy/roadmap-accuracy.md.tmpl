@@ -1,0 +1,36 @@
+---
+tags: [routine]
+description: Ensure Playbook/Roadmap.md reflects what's actually built and what's actually next.
+frequency: 14 days
+---
+
+# Routine: Roadmap Accuracy
+
+**Frequency:** Every 14 days
+
+## Purpose
+
+Ensure `{{ .DocsPath }}Playbook/Roadmap.md` reflects what's actually built and what's actually next. Catches roadmap drift from decisions, completed work, or changed priorities.
+
+## Procedure
+
+1. **Compare Roadmap against current state:**
+   - Read `{{ .DocsPath }}Playbook/Roadmap.md`
+   - Check if roadmap phases marked as "done" match what's actually been built
+   - Check if "current" phase aligns with recent `{{ .DocsPath }}Playbook/Status.md` work
+
+2. **Check milestone accuracy:**
+   - Are the next milestones still the right priority?
+   - Has any planned work been superseded by other decisions?
+   - Flag any roadmap items that reference deprecated approaches
+
+3. **Cross-check against Key Decision Log:**
+   - Read `{{ .DocsPath }}Logs/KeyDecisionLog.md`
+   - Check if any recent decisions invalidate roadmap items
+
+4. **Report findings:**
+   - List mismatches with specific corrections needed
+   - Don't modify Roadmap.md directly — flag for user review
+   - Log to `{{ .DocsPath }}Logs/RoutineLog.md`
+
+5. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`

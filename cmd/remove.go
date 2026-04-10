@@ -45,6 +45,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 			{Name: "Workflows", Items: agent.Workflows},
 			{Name: "Protocols", Items: agent.Protocols},
 			{Name: "Sensors", Items: agent.Sensors},
+			{Name: "Routines", Items: agent.Routines},
 		},
 		nil,
 	)
