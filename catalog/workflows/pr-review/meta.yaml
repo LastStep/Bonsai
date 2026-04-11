@@ -1,0 +1,3 @@
+name: pr-review
+description: Review a pull request — context, scope, correctness, security, performance, standards
+agents: [tech-lead]

@@ -1,0 +1,3 @@
+name: api-development
+description: Spec-first API development — define contract, generate scaffolding, implement, test, document
+agents: [backend, fullstack]

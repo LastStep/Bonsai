@@ -17,7 +17,7 @@ description: Bonsai developer working memory — flags, work state, notes.
 **Progress:**
 - Phase 1 (skills): DONE, committed — api-design-standards, auth-patterns, test-strategy, review-checklist
 - Phase 2 (agents): DONE, committed — fullstack, devops, security agents + all dependencies
-- Phase 3 (cross-cutting): NOT STARTED
+- Phase 3 (cross-cutting): DONE — cli-conventions, mobile-patterns skills + api-development, test-plan, pr-review workflows + test-integrity-guard sensor
 
 **Decision:** Defer reviewer, qa, docs agents — they overlap with tech-lead. Final agent lineup: tech-lead, fullstack, backend, frontend, devops, security.
 

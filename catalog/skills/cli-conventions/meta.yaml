@@ -1,0 +1,3 @@
+name: cli-conventions
+description: CLI design conventions — structure, flags, output, exit codes, configuration
+agents: [backend, fullstack]

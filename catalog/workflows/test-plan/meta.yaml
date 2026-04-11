@@ -1,0 +1,3 @@
+name: test-plan
+description: Design a structured test plan for a feature — scope, prioritize, allocate test types
+agents: [tech-lead]

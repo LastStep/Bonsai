@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# test-integrity-guard — detects test quality issues in code changes
+# Agent: {{ .AgentDisplayName }}
+
+INPUT=$(cat)
+
+# Extract file path
+FILEPATH=$(echo "$INPUT" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(data.get('tool_input', {}).get('file_path', ''))
+" 2>/dev/null || true)
+
+# Only check test files
+case "$FILEPATH" in
+  *test*|*spec*|*__tests__*|*_test.go|*_test.py|*.test.ts|*.test.js|*.test.tsx|*.test.jsx|*.spec.ts|*.spec.js|*.spec.tsx|*.spec.jsx) ;;
+  *) exit 0 ;;
+esac
+
+# Extract the content being written/edited
+CONTENT=$(echo "$INPUT" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+ti = data.get('tool_input', {})
+print(ti.get('new_string', '') or ti.get('content', ''))
+" 2>/dev/null || true)
+
+if [ -z "$CONTENT" ]; then
+  exit 0
+fi
+
+echo "$CONTENT" | python3 -c "
+import sys, re
+
+content = sys.stdin.read()
+warnings = []
+blocks = []
+
+# --- BLOCK: Removing assertions ---
+# Detect commented-out assertions (common patterns across frameworks)
+commented_assertions = [
+    r'//\s*(?:assert|expect|should)\b',
+    r'#\s*(?:assert|self\.assert)',
+    r'//\s*\.(?:toBe|toEqual|toHaveBeenCalled|toThrow|toMatch|toContain)',
+]
+for pattern in commented_assertions:
+    if re.search(pattern, content):
+        blocks.append('Commented-out assertion detected. Do not remove or disable assertions — fix the test or delete it entirely.')
+        break
+
+# --- BLOCK: .skip or .only without reason ---
+skip_only = re.findall(r'\b(?:describe|it|test|context)\.(?:skip|only)\s*\(', content)
+if skip_only:
+    # Check if there's a comment on the same or preceding line explaining why
+    lines = content.split('\n')
+    for i, line in enumerate(lines):
+        if re.search(r'\b(?:describe|it|test|context)\.(?:skip|only)\s*\(', line):
+            has_reason = False
+            # Check current line for inline comment
+            if re.search(r'//.*\w{3,}', line.split('.skip')[0] if '.skip' in line else line.split('.only')[0]):
+                has_reason = True
+            # Check preceding line for comment
+            if i > 0 and re.search(r'^\s*(?://|#|/\*)', lines[i-1]):
+                has_reason = True
+            if not has_reason:
+                blocks.append(f'.skip or .only detected without documented reason. Add a comment explaining why, or remove it.')
+                break
+
+# --- BLOCK: Empty test bodies ---
+# Match test/it/describe with empty body
+empty_patterns = [
+    r'(?:it|test)\s*\([^)]*,\s*(?:async\s*)?\(\)\s*=>\s*\{\s*\}\)',
+    r'(?:it|test)\s*\([^)]*,\s*(?:async\s*)?function\s*\(\)\s*\{\s*\}\)',
+    r'def\s+test_\w+\s*\(self\)\s*:\s*\n\s*pass\b',
+    r'func\s+Test\w+\(t\s+\*testing\.T\)\s*\{\s*\}',
+]
+for pattern in empty_patterns:
+    if re.search(pattern, content, re.MULTILINE):
+        blocks.append('Empty test body detected. Every test must contain at least one assertion.')
+        break
+
+# --- BLOCK: Catch-all error swallowing in tests ---
+if re.search(r'catch\s*\(\s*\w*\s*\)\s*\{\s*\}', content):
+    blocks.append('Empty catch block in test code. Tests should not swallow errors — let them fail or assert on the error.')
+
+# --- WARN: sleep/setTimeout with hardcoded delays ---
+sleep_match = re.search(r'(?:sleep|setTimeout|time\.sleep|Thread\.sleep)\s*\(\s*(\d+)', content)
+if sleep_match:
+    delay = int(sleep_match.group(1))
+    # setTimeout uses ms, sleep uses seconds — check both scales
+    if delay > 100 or (delay > 0 and 'sleep' in sleep_match.group(0).lower() and 'setTimeout' not in sleep_match.group(0)):
+        warnings.append(f'Hardcoded delay ({delay}) in test. Use explicit waits or polling instead of fixed sleeps.')
+
+# --- WARN: console.log/print in test code ---
+if re.search(r'(?:console\.log|console\.debug|console\.info|print)\s*\(', content):
+    warnings.append('Debug output (console.log/print) in test code. Remove before committing — use test framework logging if needed.')
+
+# --- WARN: Commented-out test code (3+ consecutive comment lines) ---
+lines = content.split('\n')
+consecutive_comments = 0
+for line in lines:
+    stripped = line.strip()
+    if stripped.startswith('//') or stripped.startswith('#'):
+        consecutive_comments += 1
+        if consecutive_comments >= 3:
+            warnings.append('Block of commented-out code in test file (3+ lines). Delete dead code rather than commenting it out.')
+            break
+    else:
+        consecutive_comments = 0
+
+# --- Output ---
+if blocks:
+    for b in blocks:
+        print(f'BLOCKED: {b}', file=sys.stderr)
+    sys.exit(2)
+
+if warnings:
+    print(f'TEST INTEGRITY ({len(warnings)} warning{\"s\" if len(warnings) > 1 else \"\"}):' , file=sys.stderr)
+    for w in warnings:
+        print(f'  - {w}', file=sys.stderr)
+
+sys.exit(0)
+"

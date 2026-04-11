@@ -1,0 +1,5 @@
+name: test-integrity-guard
+description: Detects test quality issues — removed assertions, .skip/.only, empty test bodies, debug artifacts
+agents: [backend, frontend, fullstack]
+event: PreToolUse
+matcher: "Edit|Write"
