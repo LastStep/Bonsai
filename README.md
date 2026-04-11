@@ -2,15 +2,11 @@
 
 **CLI tool for scaffolding Claude Code agent workspaces.**
 
-Bonsai sets up the file structure, instructions, and automation that Claude Code agents need to work effectively in your project. Pick an agent type, select its skills, workflows, protocols, and sensors — Bonsai generates the workspace with everything wired up.
+Bonsai generates the file structure, instructions, and automation that Claude Code agents need to work effectively in your project. Pick an agent type, choose its skills, workflows, protocols, sensors, and routines — Bonsai wires everything up into a ready-to-use workspace.
 
-## What it does
+One binary. No runtime dependencies. Works with any project.
 
-- Generates agent workspaces with identity, memory, and self-awareness templates
-- Installs skills (coding standards, testing), workflows (planning, code review), and protocols (security, scope boundaries)
-- Sets up **sensors** — auto-enforced hooks that inject context at session start and block out-of-scope actions
-- Creates project management scaffolding (status tracking, plans, logs, reports)
-- Wires everything into `CLAUDE.md` navigation files and `.claude/settings.json`
+> **New to Bonsai?** Read the [Handbook](HANDBOOK.md) for a walkthrough of how the agent system works and how to get the best results from it.
 
 ## Install
 
@@ -20,23 +16,59 @@ go install github.com/LastStep/Bonsai@latest
 
 Requires Go 1.24+.
 
-## Usage
+## Quick Start
+
+### 1. Initialize your project
 
 ```bash
-# Initialize in your project
+cd your-project
 bonsai init
+```
 
-# Add an agent — interactive selection of type, skills, workflows, protocols, sensors
+You'll be prompted for your project name, description, and docs directory. Then you'll select which scaffolding to include (status tracking, plans, logs, reports). Some scaffolding is required — Bonsai will tell you which.
+
+### 2. Add an agent
+
+```bash
 bonsai add
+```
 
-# See what's installed
+Interactive walkthrough:
+1. **Pick an agent type** — tech-lead, backend, frontend, fullstack, devops, or security
+2. **Set the workspace directory** — where the agent's files live (e.g. `backend/`)
+3. **Select components** — skills, workflows, protocols, sensors, and routines. Each agent type comes with smart defaults; you just confirm or customize.
+4. **Review and confirm** — see a summary tree before anything is generated
+
+Repeat `bonsai add` for each agent you want.
+
+### 3. See what's installed
+
+```bash
 bonsai list
+```
 
-# Browse the full catalog
+Shows all installed agents with their workspace paths and selected components.
+
+### 4. Browse the catalog
+
+```bash
+# Full catalog
 bonsai catalog
 
-# Remove an agent
+# Filter by agent type
+bonsai catalog --agent backend
+```
+
+Shows every available agent, skill, workflow, protocol, sensor, and routine in formatted tables.
+
+### 5. Remove an agent
+
+```bash
+# Remove from config (keeps generated files)
 bonsai remove backend
+
+# Remove config and delete generated files
+bonsai remove backend --delete-files
 ```
 
 ## Agent Types
@@ -52,39 +84,69 @@ bonsai remove backend
 
 ## Catalog
 
-Components are mix-and-match per agent:
+Every component is mix-and-match. Each has an agent compatibility list — Bonsai only shows you what's relevant.
 
-- **Skills** — coding-standards, testing, database-conventions, design-guide, planning-template, api-design-standards, auth-patterns, and more
-- **Workflows** — planning, plan-execution, code-review, reporting, session-logging, security-audit, and more
-- **Protocols** — session-start, security, scope-boundaries, memory
-- **Sensors** — session-context, scope-guard-files, scope-guard-commands, dispatch-guard, subagent-stop-review, api-security-check, and more
-- **Routines** — doc-freshness-check, status-hygiene, roadmap-accuracy, memory-consolidation, and more
+| Category | What it is | Examples |
+|----------|-----------|----------|
+| **Skills** | Domain knowledge and coding standards | coding-standards, testing, database-conventions, api-design-standards, auth-patterns, design-guide |
+| **Workflows** | Step-by-step procedures for specific tasks | planning, plan-execution, code-review, reporting, security-audit, session-logging |
+| **Protocols** | Hard rules enforced every session | session-start, security, scope-boundaries, memory |
+| **Sensors** | Automated hooks that run on Claude Code events | session-context, scope-guard-files, dispatch-guard, api-security-check, test-integrity-guard |
+| **Routines** | Periodic self-maintenance tasks | dependency-audit, vulnerability-scan, doc-freshness-check, status-hygiene, memory-consolidation |
 
-## Generated Structure
+Run `bonsai catalog` to see the full list with descriptions.
 
-After `bonsai init` + `bonsai add` (backend agent), your project gets:
+## What Gets Generated
+
+After `bonsai init` + `bonsai add` for a backend agent with docs at `docs/`:
 
 ```
 your-project/
-├── .bonsai.yaml              # Project config
+├── .bonsai.yaml                  # Project config — tracks all installed agents
 ├── .claude/
-│   └── settings.json         # Auto-generated hook wiring for sensors
-├── CLAUDE.md                 # Root router — directs agents to their workspace
+│   └── settings.json             # Auto-wired sensor hooks
+├── CLAUDE.md                     # Root navigation — routes agents to their workspace
 ├── docs/
-│   ├── INDEX.md
-│   ├── Playbook/             # Status, Roadmap, Plans, SecurityStandards
-│   ├── Logs/                 # FieldNotes, KeyDecisionLog
-│   └── Reports/              # Pending reports
+│   ├── INDEX.md                  # Project snapshot and document registry
+│   ├── Playbook/
+│   │   ├── Status.md             # Live task tracker
+│   │   ├── Roadmap.md            # Long-term milestones
+│   │   ├── Plans/Active/         # Implementation plans go here
+│   │   └── Standards/
+│   │       └── SecurityStandards.md
+│   ├── Logs/
+│   │   ├── FieldNotes.md         # Notes from work outside agent sessions
+│   │   ├── KeyDecisionLog.md     # Settled architectural decisions
+│   │   └── RoutineLog.md         # Routine execution history
+│   └── Reports/
+│       ├── report-template.md
+│       └── Pending/              # Unreviewed agent completion reports
 └── backend/
-    ├── CLAUDE.md             # Agent-specific navigation
+    ├── CLAUDE.md                 # Agent-specific navigation
     └── agent/
-        ├── Core/             # identity.md, memory.md, self-awareness.md
-        ├── Skills/           # Selected skill files
-        ├── Workflows/        # Selected workflow files
-        ├── Protocols/        # Selected protocol files
-        └── Sensors/          # Rendered hook scripts
+        ├── Core/
+        │   ├── identity.md       # Role, mindset, relationships
+        │   ├── memory.md         # Working memory across sessions
+        │   └── self-awareness.md # Context window monitoring
+        ├── Skills/               # Domain knowledge files
+        ├── Workflows/            # Task procedure files
+        ├── Protocols/            # Hard-enforced rule files
+        └── Sensors/              # Rendered hook scripts (.sh)
 ```
 
-## License
+Agents with routines also get `agent/Routines/` and a managed dashboard at `agent/Core/routines.md`.
 
-MIT
+## CLI Reference
+
+| Command | Description | Flags |
+|---------|-------------|-------|
+| `bonsai init` | Initialize Bonsai in the current project | — |
+| `bonsai add` | Add an agent (interactive) | — |
+| `bonsai remove <agent>` | Remove an installed agent | `--delete-files`, `-d` |
+| `bonsai list` | Show installed agents and components | — |
+| `bonsai catalog` | Browse available catalog items | `--agent <type>`, `-a` |
+
+## Learn More
+
+- **[Handbook](HANDBOOK.md)** — How the agent system works, interaction patterns, and tips for getting the best results
+- **[License](LICENSE)** — MIT
