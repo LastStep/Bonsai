@@ -7,8 +7,6 @@ bonsai.exe
 *.out
 vendor/
 
-# Python (legacy)
-.venv/
 
 # Research / scratch
 RESEARCH*.md
