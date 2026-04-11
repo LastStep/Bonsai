@@ -28,7 +28,7 @@ Bonsai is a **generator**, not a runtime. It runs once to set up the instruction
 | **Workflows** | Step-by-step procedures — planning, code review, reporting |
 | **Skills** | Domain knowledge — coding standards, API design, auth patterns |
 | **Sensors** | Shell scripts wired into Claude Code hooks — auto-enforce boundaries |
-| **Routines** | Periodic maintenance with a tracked dashboard |
+| **Routines** | Periodic maintenance with a tracked dashboard (Tech Lead only) |
 | **Scaffolding** | Shared docs — status tracker, roadmap, plans, decision log, reports |
 
 > [!NOTE]
@@ -37,6 +37,15 @@ Bonsai is a **generator**, not a runtime. It runs once to set up the instruction
 ---
 
 ## The Mental Model
+
+### The Station
+
+Every Bonsai project has a **station** — a single directory (default `station/`) that serves as the command center. It contains:
+
+- **Project scaffolding** — status tracker, roadmap, plans, logs, reports
+- **Tech Lead agent** — the primary agent that orchestrates everything
+
+The station is where all coordination happens. Code agents (backend, frontend, etc.) get their own separate workspaces, but they all reference the station for plans, status, and standards.
 
 ### Agents as Team Members
 
@@ -49,7 +58,7 @@ Think of each agent as a new hire. They need:
 | Playbooks | **Workflows** — how to plan, review, report |
 | Domain training | **Skills** — standards, patterns, conventions |
 | Automated guardrails | **Sensors** — catch mistakes before they happen |
-| Maintenance duties | **Routines** — periodic tasks on a schedule |
+| Maintenance duties | **Routines** — periodic tasks on a schedule (Tech Lead only) |
 
 When an agent starts a session, it reads its identity, checks its memory, follows its startup protocol, and gets context injected by sensors — all before you ask it anything.
 
@@ -59,7 +68,7 @@ Each agent's instructions are layered, from foundational to automated:
 
 ```
   Layer 6 │ Sensors       │ Automated enforcement (hook scripts)
-  Layer 5 │ Routines      │ Periodic maintenance procedures
+  Layer 5 │ Routines      │ Periodic maintenance procedures (Tech Lead)
   Layer 4 │ Skills        │ Domain knowledge and standards
   Layer 3 │ Workflows     │ Step-by-step task procedures
   Layer 2 │ Protocols     │ Hard rules (security, scope, startup)
@@ -72,52 +81,53 @@ Each agent's instructions are layered, from foundational to automated:
 | **Protocols** | Every session, via startup | No — non-negotiable rules |
 | **Workflows** | When performing a specific task | Agent follows the procedure |
 | **Skills** | Referenced as needed during work | Knowledge, not instructions |
-| **Routines** | Flagged at session start if overdue | Agent runs on request |
+| **Routines** | Flagged at session start if overdue | Tech Lead runs on request |
 | **Sensors** | Automatically, on Claude Code events | Agent can't bypass them |
 
-### The Orchestra Model
+### How It Works
 
-Bonsai supports two working styles:
-
-**Solo agent** — one agent (usually fullstack) handles everything. Simpler setup, good for smaller projects.
-
-**Multi-agent team** — a tech-lead orchestrates, code agents execute:
+`bonsai init` sets up the station with the Tech Lead. You talk to the Tech Lead; it plans, orchestrates, and reviews. Code agents execute.
 
 ```
   You (human)
-   └── Tech Lead            plans, reviews, orchestrates
-        ├── Backend          API, database, server logic
-        ├── Frontend         UI, components, styling
-        ├── DevOps           infrastructure, CI/CD
-        └── Security         audits, scanning
+   └── Tech Lead (station/)      plans, reviews, orchestrates, runs routines
+        ├── Backend (backend/)    API, database, server logic
+        ├── Frontend (frontend/)  UI, components, styling
+        ├── DevOps (devops/)      infrastructure, CI/CD
+        └── Security (security/)  audits, scanning
 ```
 
 > [!IMPORTANT]
-> The tech-lead **never writes application code**. It creates plans, dispatches them to code agents via worktree-isolated subagents, and reviews the output. The `dispatch-guard` sensor enforces that every dispatch has a plan and uses isolation. The `subagent-stop-review` sensor triggers a review checklist when a code agent finishes.
+> The Tech Lead **never writes application code**. It creates plans, dispatches them to code agents via worktree-isolated subagents, and reviews the output. The `dispatch-guard` sensor enforces that every dispatch has a plan and uses isolation. The `subagent-stop-review` sensor triggers a review checklist when a code agent finishes.
+
+> [!NOTE]
+> **You don't have to go through the Tech Lead for everything.** Quick fixes and small tasks work fine directly with a code agent. The Tech Lead shines when work needs planning, coordination, or cross-agent review.
 
 ---
 
 ## How the Pieces Fit Together
 
-### Project Scaffolding — The Shared Layer
+### The Station — Command Center
 
-Created by `bonsai init`. All agents reference these:
+Created by `bonsai init`. The Tech Lead lives here alongside the project scaffolding:
 
 | File | Purpose | Used by |
 |:-----|:--------|:--------|
-| `INDEX.md` | Project snapshot — tech stack, phase, document registry | Every agent at session start |
-| `Playbook/Status.md` | Live task tracker — in progress, pending, done | Agents check before starting work |
-| `Playbook/Roadmap.md` | Long-term milestones and phases | Context for where tasks fit |
-| `Playbook/Plans/Active/` | Numbered implementation plans | Tech-lead writes, code agents execute |
-| `Playbook/Standards/SecurityStandards.md` | Hard security rules across all agents | Security protocol references this |
-| `Logs/FieldNotes.md` | **Your** notes to the agents | Read every session start |
-| `Logs/KeyDecisionLog.md` | Settled architectural decisions | Checked before proposing alternatives |
-| `Logs/RoutineLog.md` | Routine execution history | Updated after each routine run |
-| `Reports/Pending/` | Unreviewed completion reports | Tech-lead reviews during code review |
+| `station/CLAUDE.md` | Tech Lead agent navigation | Tech Lead |
+| `station/agent/` | Tech Lead instruction layer (Core, Protocols, Workflows, etc.) | Tech Lead |
+| `station/INDEX.md` | Project snapshot — tech stack, phase, document registry | Every agent at session start |
+| `station/Playbook/Status.md` | Live task tracker — in progress, pending, done | Agents check before starting work |
+| `station/Playbook/Roadmap.md` | Long-term milestones and phases | Context for where tasks fit |
+| `station/Playbook/Plans/Active/` | Numbered implementation plans | Tech Lead writes, code agents execute |
+| `station/Playbook/Standards/SecurityStandards.md` | Hard security rules across all agents | Security protocol references this |
+| `station/Logs/FieldNotes.md` | **Your** notes to the agents | Read every session start |
+| `station/Logs/KeyDecisionLog.md` | Settled architectural decisions | Checked before proposing alternatives |
+| `station/Logs/RoutineLog.md` | Routine execution history | Updated after each routine run |
+| `station/Reports/Pending/` | Unreviewed completion reports | Tech Lead reviews during code review |
 
-### Agent Workspaces — The Private Layer
+### Code Agent Workspaces — The Private Layer
 
-Each agent gets its own directory. This is what it owns and is allowed to modify:
+Each code agent gets its own directory. This is what it owns and is allowed to modify:
 
 ```
 backend/
@@ -127,15 +137,14 @@ backend/
     ├── Protocols/         # hard rules
     ├── Workflows/         # task procedures
     ├── Skills/            # domain knowledge
-    ├── Sensors/           # rendered hook scripts (.sh)
-    └── Routines/          # maintenance procedures + Core/routines.md dashboard
+    └── Sensors/           # rendered hook scripts (.sh)
 ```
 
 ### Config and Hooks
 
 | File | What it does | Managed by |
 |:-----|:------------|:-----------|
-| `.bonsai.yaml` | Single source of truth — all agents, components, paths | `bonsai add` / `bonsai remove` |
+| `.bonsai.yaml` | Single source of truth — all agents, components, paths | `bonsai init` / `bonsai add` / `bonsai remove` |
 | `.claude/settings.json` | Hook entries for every sensor | Auto-generated by Bonsai |
 
 ---
@@ -165,7 +174,7 @@ You:    Great. Now here's what I need...
 | 1 | `session-context` sensor | Injects identity, memory, protocols, INDEX, status, field notes |
 | 2 | `session-start` protocol | Agent reads `Core/identity.md` and `Core/memory.md` |
 | 3 | Agent initiative | Checks `Status.md`, `FieldNotes.md`, reviews warnings |
-| 4 | `routine-check` sensor | Flags overdue routines (if routines installed) |
+| 4 | `routine-check` sensor | Flags overdue routines (Tech Lead only) |
 
 After this, the agent knows who it is, what happened last session, and what the current state looks like.
 
@@ -193,7 +202,7 @@ Lead:   [researches codebase, asks clarifying questions, writes plan, self-revie
 | Bug fix | _"We have a bug where [symptom]. Investigate and plan a fix."_ |
 | Refactor | _"Refactor [area] to [goal]. Keep backward compatibility."_ |
 
-The plan ends up in `Playbook/Plans/Active/` as a numbered document. **Review it before dispatching** — it's cheaper to fix a plan than to fix code.
+The plan ends up in `station/Playbook/Plans/Active/` as a numbered document. **Review it before dispatching** — it's cheaper to fix a plan than to fix code.
 
 ---
 
@@ -203,7 +212,7 @@ The plan ends up in `Playbook/Plans/Active/` as a numbered document. **Review it
 
 ```
 You:    Dispatch plan 003 to the backend agent
-Lead:   [dispatch-guard validates → dispatches with worktree isolation]
+Lead:   [dispatch-guard validates -> dispatches with worktree isolation]
 ```
 
 The `dispatch-guard` sensor enforces three things:
@@ -231,15 +240,15 @@ The `dispatch-guard` sensor enforces three things:
 You:    Hi, get started
 Agent:  [processes startup context]
 You:    Execute plan 003
-Agent:  [reads plan → implements step by step → tests → reports]
+Agent:  [reads plan -> implements step by step -> tests -> reports]
 ```
 
 The agent will:
 1. Read and understand all steps in the plan
 2. Implement each step, checking off as it goes
 3. Run tests
-4. Write a completion report to `Reports/Pending/`
-5. Update `Status.md`
+4. Write a completion report to `station/Reports/Pending/`
+5. Update `station/Playbook/Status.md`
 
 **For partial execution:** `"Execute steps 1-3 of plan 003"` or `"Just do the database migration part"`
 
@@ -253,7 +262,7 @@ The agent will:
 You:    Hi, get started
 Lead:   [notices pending reports in Reports/Pending/]
 You:    Review the backend agent's work on plan 003
-Lead:   [loads plan → checks completeness → reviews quality + security → verdict]
+Lead:   [loads plan -> checks completeness -> reviews quality + security -> verdict]
 ```
 
 **Review verdicts:**
@@ -279,7 +288,7 @@ Lead:   [loads plan → checks completeness → reviews quality + security → v
 You:    Hi, get started
 Agent:  [processes startup context]
 You:    Run a security audit on the authentication module
-Agent:  [secrets scan → dependency audit → SAST → config review → access control]
+Agent:  [secrets scan -> dependency audit -> SAST -> config review -> access control]
 ```
 
 > [!TIP]
@@ -292,11 +301,15 @@ Agent:  [secrets scan → dependency audit → SAST → config review → access
 
 ### Routines
 
+> _Use with: **Tech Lead**_
+
+Routines are periodic maintenance tasks that only the Tech Lead runs. They keep the project healthy — documentation, dependencies, security, infrastructure.
+
 ```
 You:    Hi, get started
-Agent:  [startup flags: "OVERDUE: dependency-audit (last ran 12 days ago, due every 7)"]
+Lead:   [startup flags: "OVERDUE: dependency-audit (last ran 12 days ago, due every 7)"]
 You:    Run the dependency audit
-Agent:  [follows procedure → logs to RoutineLog.md → updates dashboard]
+Lead:   [follows procedure -> logs to RoutineLog.md -> updates dashboard]
 ```
 
 **Proactive prompts:**
@@ -312,7 +325,7 @@ Each routine has a concrete, step-by-step procedure — the agent doesn't improv
 
 ```
 You:    What's the current project status?
-Agent:  [reads Status.md, Roadmap.md, checks pending reports, reviews logs]
+Lead:   [reads Status.md, Roadmap.md, checks pending reports, reviews logs]
 ```
 
 | What you want | What to say |
@@ -331,8 +344,8 @@ The agent's memory resets each conversation. Three things bridge the gap:
 | Bridge | Who writes it | What it does |
 |:-------|:-------------|:-------------|
 | `Core/memory.md` | The agent | Working memory — current state, flags, notes |
-| `Logs/FieldNotes.md` | **You** | Your notes — changes outside sessions, new requirements |
-| `Playbook/Status.md` | The agent | Task tracker — done, in progress, pending |
+| `station/Logs/FieldNotes.md` | **You** | Your notes — changes outside sessions, new requirements |
+| `station/Playbook/Status.md` | The agent | Task tracker — done, in progress, pending |
 
 > [!TIP]
 > If the agent seems to have lost context:
@@ -346,7 +359,7 @@ The agent's memory resets each conversation. Three things bridge the gap:
 
 ```
 You:    Let's wrap up this session
-Agent:  [updates memory.md → writes session log → files report → updates Status.md]
+Agent:  [updates memory.md -> writes session log -> files report -> updates Status.md]
 ```
 
 This ensures the next session starts with full context. If you forget, startup still works — but the context will be less precise.
@@ -355,7 +368,7 @@ This ensures the next session starts with full context. If you forget, startup s
 
 ### Multi-Agent Workflow
 
-A typical feature cycle with the tech-lead orchestrating:
+A typical feature cycle with the Tech Lead orchestrating:
 
 ```
 Session 1 — Planning
@@ -376,15 +389,6 @@ Session 3 — Integration
   You:    Hi, get started
   You:    Review frontend work, then security review both
 ```
-
-> [!NOTE]
-> **You don't have to go through the tech-lead for everything.** Quick fixes and small tasks work fine directly with a code agent:
-> ```
-> You:    Hi, get started
-> You:    Fix the pagination bug in /users — duplicates when sorting by created_at
-> Agent:  [investigates → fixes → tests → reports]
-> ```
-> The tech-lead shines when work needs planning, coordination, or cross-agent review.
 
 ---
 
@@ -421,59 +425,59 @@ Sensors are shell scripts wired into Claude Code's hook system. They fire automa
 
 ## Understanding Routines
 
-Periodic maintenance tasks that keep the project healthy.
+Periodic maintenance tasks that keep the project healthy. **Routines are managed exclusively by the Tech Lead** — code agents don't run them.
 
 ### How They Work
 
 ```
 1. Each routine has a frequency and a concrete procedure
-2. Dashboard at agent/Core/routines.md tracks last-ran and next-due
+2. Dashboard at station/agent/Core/routines.md tracks last-ran and next-due
 3. routine-check sensor flags overdue items at session start
-4. You tell the agent to run it → agent follows procedure → updates dashboard
+4. You tell the Tech Lead to run it -> follows procedure -> updates dashboard
 ```
 
 > The `routine-check` sensor is auto-managed — Bonsai adds it when you install routines, removes it when you remove all routines.
 
 ### Routine Reference
 
-| Routine | Freq | Agents | What it does |
-|:--------|:-----|:-------|:-------------|
-| **dependency-audit** | 7d | devops, security | Scan dependencies for known CVEs + unmaintained packages |
-| **vulnerability-scan** | 7d | security | SAST scan, secrets scan, dependency cross-reference |
-| **doc-freshness-check** | 7d | all | Find docs that drifted from recent code changes |
-| **infra-drift-check** | 7d | devops | Compare declared IaC state vs actual cloud resources |
-| **status-hygiene** | 5d | all | Archive done items, validate pending items in Status.md |
-| **memory-consolidation** | 5d | all | Clean up and validate working memory entries |
-| **roadmap-accuracy** | 14d | all | Ensure Roadmap.md matches what's actually built + planned |
+| Routine | Freq | What it does |
+|:--------|:-----|:-------------|
+| **dependency-audit** | 7d | Scan dependencies for known CVEs + unmaintained packages |
+| **vulnerability-scan** | 7d | SAST scan, secrets scan, dependency cross-reference |
+| **doc-freshness-check** | 7d | Find docs that drifted from recent code changes |
+| **infra-drift-check** | 7d | Compare declared IaC state vs actual cloud resources |
+| **status-hygiene** | 5d | Archive done items, validate pending items in Status.md |
+| **memory-consolidation** | 5d | Clean up and validate working memory entries |
+| **roadmap-accuracy** | 14d | Ensure Roadmap.md matches what's actually built + planned |
 
 ---
 
 ## Choosing the Right Setup
 
-| Scenario | Agents | Why |
-|:---------|:-------|:----|
-| **Solo developer** | `fullstack` | One agent covers UI, API, DB, auth, tests |
-| **Solo + planning** | `tech-lead` + `fullstack` | Forces plan-before-build discipline |
-| **Separated concerns** | `tech-lead` + `backend` + `frontend` | Domain-specific conventions and skills |
-| **With infrastructure** | + `devops` | IaC sensors (`iac-safety-guard`) + routines (`infra-drift-check`) |
+Tech Lead is always installed during `bonsai init`. After that, add the code agents your project needs:
+
+| Scenario | Code agents to add | Why |
+|:---------|:-------------------|:----|
+| **Solo developer** | `fullstack` | One code agent covers UI, API, DB, auth, tests |
+| **Separated concerns** | `backend` + `frontend` | Domain-specific conventions and skills |
+| **With infrastructure** | + `devops` | IaC sensors (`iac-safety-guard`) + infra-drift routine |
 | **Security-conscious** | + `security` | Vulnerability scanning, dependency audits, security-audit workflow |
 
 <details>
 <summary><strong>Full team setup</strong></summary>
 
 ```bash
-bonsai init
-bonsai add    # tech-lead   — plans, reviews, orchestrates
-bonsai add    # backend     — API, database, server logic
-bonsai add    # frontend    — UI, state management, styling
-bonsai add    # devops      — infrastructure, CI/CD, containers
-bonsai add    # security    — audits, scanning, compliance
+bonsai init       # station + Tech Lead
+bonsai add        # backend     — API, database, server logic
+bonsai add        # frontend    — UI, state management, styling
+bonsai add        # devops      — infrastructure, CI/CD, containers
+bonsai add        # security    — audits, scanning, compliance
 ```
 
 </details>
 
 > [!TIP]
-> **Start small.** You don't need every agent from day one. Begin with one or two, add more as complexity demands. `bonsai add` is designed to be run incrementally.
+> **Start small.** You don't need every code agent from day one. Begin with one, add more as complexity demands. `bonsai add` is designed to be run incrementally.
 
 ---
 
@@ -490,4 +494,4 @@ bonsai add    # security    — audits, scanning, compliance
 | **End with "let's wrap up"** | Agent updates memory + writes session log for next time |
 | **Run overdue routines** | They catch real issues — stale docs, vulnerable deps, drifted infra |
 | **Check `Reports/Pending/`** | Review queue for code agent completion reports |
-| **Don't fight scope boundaries** | If a sensor blocks it, it's usually right — plan cross-workspace work through the tech-lead |
+| **Don't fight scope boundaries** | If a sensor blocks it, it's usually right — plan cross-workspace work through the Tech Lead |

@@ -82,6 +82,14 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	// Require tech-lead before adding other agents
+	if agentType != "tech-lead" {
+		if _, hasTechLead := cfg.Agents["tech-lead"]; !hasTechLead {
+			tui.ErrorPanel("Tech Lead agent must be installed first.\nRun bonsai init to set up your project with Tech Lead.")
+			return nil
+		}
+	}
+
 	agentDef := cat.GetAgent(agentType)
 	if agentDef == nil {
 		tui.Error("Unknown agent type: " + agentType)
@@ -94,12 +102,22 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		existingWorkspaces[a.Workspace] = true
 	}
 
-	workspace, err := tui.AskText("Workspace directory (e.g. backend/):", agentType+"/", true)
-	if err != nil {
-		return err
+	var workspace string
+	if agentType == "tech-lead" {
+		// Tech-lead always lives in the station directory
+		workspace = cfg.DocsPath
+		if workspace == "" {
+			workspace = "station/"
+		}
+		tui.Info("Tech Lead workspace: " + workspace)
+	} else {
+		workspace, err = tui.AskText("Workspace directory (e.g. backend/):", agentType+"/", true)
+		if err != nil {
+			return err
+		}
+		workspace = strings.TrimSpace(workspace)
+		workspace = strings.TrimRight(workspace, "/") + "/"
 	}
-	workspace = strings.TrimSpace(workspace)
-	workspace = strings.TrimRight(workspace, "/") + "/"
 
 	if existingWorkspaces[workspace] {
 		tui.ErrorPanel("Workspace " + workspace + " is already in use.")

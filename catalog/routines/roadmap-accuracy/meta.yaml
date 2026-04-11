@@ -1,4 +1,4 @@
 name: roadmap-accuracy
 description: Ensure Playbook/Roadmap.md reflects what's actually built and what's actually next
-agents: all
+agents: [tech-lead]
 frequency: 14 days

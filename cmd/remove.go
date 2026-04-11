@@ -39,6 +39,12 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
+	// Prevent removing tech-lead while other agents depend on it
+	if agentName == "tech-lead" && len(cfg.Agents) > 1 {
+		tui.ErrorPanel("Cannot remove Tech Lead while other agents are installed.\nRemove other agents first.")
+		return nil
+	}
+
 	cat := loadCatalog()
 
 	agentDisplayName := catalog.DisplayNameFrom(agentName)

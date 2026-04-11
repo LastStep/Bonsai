@@ -1,4 +1,4 @@
 name: status-hygiene
 description: Keep Playbook/Status.md clean — archive old Done items, validate Pending items
-agents: all
+agents: [tech-lead]
 frequency: 5 days
