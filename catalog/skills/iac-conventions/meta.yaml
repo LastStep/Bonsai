@@ -1,0 +1,3 @@
+name: iac-conventions
+description: Infrastructure-as-code conventions — Terraform naming, state management, modules, tagging
+agents: [devops]

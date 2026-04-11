@@ -1,0 +1,3 @@
+name: security-audit
+description: Security audit — secrets scan, dependency audit, SAST, config review, access control, infrastructure
+agents: [devops, security, tech-lead]

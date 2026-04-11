@@ -1,0 +1,5 @@
+name: iac-safety-guard
+description: Blocks dangerous infrastructure commands — terraform destroy, kubectl delete namespace, unsafe docker ops
+agents: [devops]
+event: PreToolUse
+matcher: Bash

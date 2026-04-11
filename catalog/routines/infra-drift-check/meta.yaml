@@ -1,0 +1,4 @@
+name: infra-drift-check
+description: Detect infrastructure drift — compare declared IaC state against actual cloud resources
+agents: [devops]
+frequency: 7 days

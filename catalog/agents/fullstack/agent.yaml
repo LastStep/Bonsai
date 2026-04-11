@@ -1,0 +1,22 @@
+name: fullstack
+display_name: Full-Stack Agent
+description: Implements full-stack features end-to-end — UI, API routes, database, auth, tests
+defaults:
+  skills:
+    - coding-standards
+    - testing
+    - design-guide
+    - database-conventions
+    - api-design-standards
+    - auth-patterns
+  workflows:
+    - plan-execution
+    - reporting
+    - session-logging
+  protocols:
+    - session-start
+    - security
+    - scope-boundaries
+  sensors:
+    - session-context
+    - scope-guard-files

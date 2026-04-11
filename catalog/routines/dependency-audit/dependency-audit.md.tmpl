@@ -1,0 +1,39 @@
+---
+tags: [routine]
+description: Scan dependencies for known vulnerabilities and unmaintained packages.
+frequency: 7 days
+---
+
+# Routine: Dependency Audit
+
+**Frequency:** Every 7 days
+
+## Purpose
+
+Detect vulnerable and unmaintained dependencies before they become incidents. Run the appropriate audit tool for each package manager present in the project.
+
+## Procedure
+
+1. **Identify package managers:**
+   - Check for: `package.json` (npm/yarn/pnpm), `requirements.txt`/`pyproject.toml` (pip), `go.mod` (Go), `Cargo.toml` (Rust), `Gemfile` (Ruby)
+   - Run the matching audit tool for each one found
+
+2. **Run audit scans:**
+   - **Node.js:** `npm audit --json` or `yarn audit --json`
+   - **Python:** `pip-audit` or `safety check`
+   - **Go:** `govulncheck ./...`
+   - **Rust:** `cargo audit`
+   - If a tool is not installed, note it and move to the next
+
+3. **Triage findings:**
+   - **Critical/High CVE in direct dependency** — flag for immediate action, include CVE ID and fix version
+   - **Critical/High CVE in transitive dependency** — flag with upgrade path if available
+   - **Medium/Low** — log for tracking, no immediate action required
+   - **Unmaintained dependency** (no commits/releases in 12+ months) — flag with alternatives if known
+
+4. **Log results:**
+   - Record findings in `{{ .DocsPath }}Logs/RoutineLog.md`
+   - Format: date, routine name, summary of findings (count by severity), action items
+   - If no vulnerabilities found, log clean audit result
+
+5. **Update dashboard** — set `last_ran` to today's date in `{{ .Workspace }}agent/Core/routines.md`

@@ -1,0 +1,3 @@
+name: container-standards
+description: Container and orchestration standards — Docker multi-stage builds, image security, Kubernetes manifests
+agents: [devops]

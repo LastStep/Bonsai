@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# iac-safety-guard — blocks dangerous infrastructure commands
+# Agent: {{ .AgentDisplayName }}
+
+INPUT=$(cat)
+COMMAND=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null || true)
+
+if [ -z "$COMMAND" ]; then
+  exit 0
+fi
+
+# Helper: check if a pattern matches at command position (start, or after &&, ||, ;, |)
+matches_cmd() {
+  echo "$COMMAND" | python3 -c "
+import sys, re
+cmd = sys.stdin.read().strip()
+pattern = sys.argv[1]
+if re.search(r'(^|&&|\|\||;|\|)\s*' + pattern, cmd):
+    sys.exit(0)
+sys.exit(1)
+" "$1" 2>/dev/null
+}
+
+# --- Terraform ---
+
+if matches_cmd 'terraform\s+destroy(?!\s+.*-target)'; then
+  echo "BLOCKED: 'terraform destroy' without -target is not allowed. Use -target to destroy specific resources, or get explicit user approval." >&2
+  exit 2
+fi
+
+if matches_cmd 'terraform\s+apply\s+.*-auto-approve'; then
+  echo "BLOCKED: 'terraform apply -auto-approve' is not allowed. Always review the plan before applying." >&2
+  exit 2
+fi
+
+if matches_cmd 'terraform\s+state\s+rm'; then
+  echo "BLOCKED: 'terraform state rm' can cause state drift. Get explicit user approval before removing state." >&2
+  exit 2
+fi
+
+if matches_cmd 'terraform\s+force-unlock'; then
+  echo "BLOCKED: 'terraform force-unlock' can corrupt state. Get explicit user approval." >&2
+  exit 2
+fi
+
+# --- Kubectl ---
+
+if matches_cmd 'kubectl\s+delete\s+namespace'; then
+  echo "BLOCKED: 'kubectl delete namespace' destroys all resources in the namespace. Get explicit user approval." >&2
+  exit 2
+fi
+
+if matches_cmd 'kubectl\s+delete\s+deployment(?!\s+.*--dry-run)'; then
+  echo "BLOCKED: 'kubectl delete deployment' without --dry-run is not allowed. Use --dry-run=client first, or get explicit user approval." >&2
+  exit 2
+fi
+
+if matches_cmd 'kubectl\s+delete\s+pv\b'; then
+  echo "BLOCKED: 'kubectl delete pv' destroys persistent volumes. Get explicit user approval." >&2
+  exit 2
+fi
+
+if matches_cmd 'kubectl\s+delete\s+--all'; then
+  echo "BLOCKED: 'kubectl delete --all' is a bulk-delete operation. Get explicit user approval." >&2
+  exit 2
+fi
+
+# --- Docker ---
+
+if matches_cmd 'docker\s+system\s+prune\s+-a'; then
+  echo "BLOCKED: 'docker system prune -a' removes all unused images and containers. Get explicit user approval." >&2
+  exit 2
+fi
+
+if matches_cmd 'docker\s+volume\s+rm'; then
+  echo "BLOCKED: 'docker volume rm' destroys persistent data. Get explicit user approval." >&2
+  exit 2
+fi
+
+# --- Cloud CLI ---
+
+if matches_cmd 'aws\s+s3\s+rb\s+.*--force'; then
+  echo "BLOCKED: 'aws s3 rb --force' permanently deletes a bucket and all contents. Get explicit user approval." >&2
+  exit 2
+fi
+
+if matches_cmd 'gcloud\s+projects\s+delete'; then
+  echo "BLOCKED: 'gcloud projects delete' destroys an entire GCP project. Get explicit user approval." >&2
+  exit 2
+fi
+
+if matches_cmd 'az\s+group\s+delete'; then
+  echo "BLOCKED: 'az group delete' destroys an entire resource group. Get explicit user approval." >&2
+  exit 2
+fi
+
+exit 0

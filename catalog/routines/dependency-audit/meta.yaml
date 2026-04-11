@@ -1,0 +1,4 @@
+name: dependency-audit
+description: Scan dependencies for known vulnerabilities and unmaintained packages
+agents: [devops, security]
+frequency: 7 days

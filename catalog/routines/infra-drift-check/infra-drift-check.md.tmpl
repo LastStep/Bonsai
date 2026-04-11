@@ -1,0 +1,39 @@
+---
+tags: [routine]
+description: Detect infrastructure drift — compare declared IaC state against actual cloud resources.
+frequency: 7 days
+---
+
+# Routine: Infrastructure Drift Check
+
+**Frequency:** Every 7 days
+
+## Purpose
+
+Detect drift between declared infrastructure-as-code and actual cloud state. Catches resources added outside Terraform, manually modified resources, and deleted resources before they cause incidents.
+
+## Procedure
+
+1. **Identify IaC roots:**
+   - Find all directories containing Terraform configuration (`.tf` files)
+   - Note which environment each state file represents (dev, staging, prod)
+
+2. **Run drift detection:**
+   - For each Terraform root: `terraform plan -detailed-exitcode` (read-only, no changes applied)
+     - Exit code 0 = no changes (in sync)
+     - Exit code 2 = changes detected (drift)
+   - If Terraform is not initialized, run `terraform init -backend=true` first
+   - Do NOT run `terraform apply` — this routine is read-only
+
+3. **Analyze drift:**
+   - **Resources to create** — resource exists in config but not in cloud (may have been manually deleted)
+   - **Resources to destroy** — resource exists in cloud but not in config (may have been manually created)
+   - **Resources to update** — resource exists in both but attributes differ (may have been manually modified)
+   - Flag any drift in stateful resources (databases, storage, encryption keys) as high priority
+
+4. **Log results:**
+   - Record findings in `{{ .DocsPath }}Logs/RoutineLog.md`
+   - Format: date, routine name, environment, drift summary (resources in sync / drifted), action items
+   - If no drift found, log clean check result
+
+5. **Update dashboard** — set `last_ran` to today's date in `{{ .Workspace }}agent/Core/routines.md`

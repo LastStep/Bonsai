@@ -1,0 +1,24 @@
+name: devops
+display_name: DevOps Agent
+description: Manages infrastructure-as-code, CI/CD pipelines, containers, and deployment automation
+defaults:
+  skills:
+    - coding-standards
+    - iac-conventions
+    - container-standards
+  workflows:
+    - plan-execution
+    - reporting
+    - session-logging
+    - security-audit
+  protocols:
+    - session-start
+    - security
+    - scope-boundaries
+  sensors:
+    - session-context
+    - scope-guard-files
+    - iac-safety-guard
+  routines:
+    - dependency-audit
+    - infra-drift-check
