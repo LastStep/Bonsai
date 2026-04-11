@@ -1,0 +1,3 @@
+name: test-strategy
+description: Test architecture — which tests to write, when, and why; pyramid, coverage, anti-patterns
+agents: [backend, frontend]

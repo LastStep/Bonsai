@@ -1,0 +1,3 @@
+name: api-design-standards
+description: REST API design conventions — URLs, methods, errors, pagination, versioning
+agents: [backend, tech-lead]
