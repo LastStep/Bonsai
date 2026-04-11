@@ -9,3 +9,7 @@ vendor/
 
 # Python (legacy)
 .venv/
+
+# Research / scratch
+RESEARCH*.md
+*.png
