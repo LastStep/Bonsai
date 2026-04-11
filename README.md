@@ -15,12 +15,10 @@ Bonsai sets up the file structure, instructions, and automation that Claude Code
 ## Install
 
 ```bash
-git clone https://github.com/LastStep/Bonsai.git
-cd Bonsai
-pip install .
+go install github.com/LastStep/Bonsai@latest
 ```
 
-Requires Python 3.10+.
+Requires Go 1.24+.
 
 ## Usage
 
@@ -48,15 +46,19 @@ bonsai remove backend
 | **Tech Lead** | Architects the system, writes plans, reviews agent output — never writes application code |
 | **Backend** | Executes backend plans — API, database, server-side logic |
 | **Frontend** | Executes frontend plans — UI components, state management, styling |
+| **Full-Stack** | Implements full-stack features end-to-end — UI, API routes, database, auth, tests |
+| **DevOps** | Manages infrastructure-as-code, CI/CD pipelines, containers, and deployment automation |
+| **Security** | Audits code for vulnerabilities, reviews auth patterns, scans dependencies |
 
 ## Catalog
 
 Components are mix-and-match per agent:
 
-- **Skills** — coding-standards, testing, database-conventions, design-guide, planning-template
-- **Workflows** — planning, plan-execution, code-review, reporting, session-logging
+- **Skills** — coding-standards, testing, database-conventions, design-guide, planning-template, api-design-standards, auth-patterns, and more
+- **Workflows** — planning, plan-execution, code-review, reporting, session-logging, security-audit, and more
 - **Protocols** — session-start, security, scope-boundaries, memory
-- **Sensors** — session-context, scope-guard-files, scope-guard-commands, agent-review
+- **Sensors** — session-context, scope-guard-files, scope-guard-commands, dispatch-guard, subagent-stop-review, api-security-check, and more
+- **Routines** — doc-freshness-check, status-hygiene, roadmap-accuracy, memory-consolidation, and more
 
 ## Generated Structure
 

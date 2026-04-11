@@ -27,7 +27,7 @@
 - name: reports
   description: "Completion reports — template and staging area for structured agent work summaries"
   required: false
-  affects: "reporting workflow, agent-review sensor, session-context sensor, and session-start protocol all reference Reports/Pending/ — they will still function but report submission steps become no-ops"
+  affects: "reporting workflow, subagent-stop-review sensor, session-context sensor, and session-start protocol all reference Reports/Pending/ — they will still function but report submission steps become no-ops"
   files:
     - Reports/report-template.md
     - Reports/Pending/

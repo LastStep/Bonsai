@@ -72,6 +72,8 @@ fi
 echo ""
 echo "=== SESSION HEALTH CHECK ==="
 
+today=$(date +%Y-%m-%d)
+
 # Check memory staleness
 if [[ -f "${WORKSPACE}agent/Core/memory.md" ]]; then
   last_mod=$(stat -c %Y "${WORKSPACE}agent/Core/memory.md" 2>/dev/null || stat -f %m "${WORKSPACE}agent/Core/memory.md" 2>/dev/null)
@@ -86,12 +88,25 @@ fi
 if [[ -n "$DOCS" ]] && [[ -d "${DOCS}Reports/Pending/" ]]; then
   pending_count=$(ls -1 "${DOCS}Reports/Pending/" 2>/dev/null | wc -l)
   if [[ $pending_count -gt 0 ]]; then
-    echo "WARNING: $pending_count pending report(s) in Reports/Pending/"
+    echo "WARNING: $pending_count pending report(s) in Reports/Pending/ — process before starting new work"
+  fi
+fi
+
+# Log freshness check
+if [[ -n "$DOCS" ]] && [[ -d "${DOCS}Logs/" ]]; then
+  yesterday=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d 2>/dev/null)
+  has_recent_log=false
+  [[ -f "${DOCS}Logs/${today}.md" ]] && has_recent_log=true
+  [[ -f "${DOCS}Logs/${yesterday}.md" ]] && has_recent_log=true
+  if [[ "$has_recent_log" == "false" ]]; then
+    latest_log=$(ls -1 "${DOCS}Logs/"20*.md 2>/dev/null | sort -r | head -1)
+    if [[ -n "$latest_log" ]]; then
+      echo "WARNING: Last session log is $(basename "$latest_log") — no log for yesterday or today"
+    fi
   fi
 fi
 
 # End-of-session reminder
-today=$(date +%Y-%m-%d)
 echo ""
 echo "REMINDER: Before ending this session:"
 echo "  - Update memory.md with current work state"

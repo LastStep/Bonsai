@@ -1,0 +1,6 @@
+name: dispatch-guard
+description: Validates code agent dispatches — requires worktree isolation, plan reference, and plan existence before execution
+agents:
+  - tech-lead
+event: PreToolUse
+matcher: Agent
