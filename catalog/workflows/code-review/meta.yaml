@@ -1,3 +1,3 @@
 name: code-review
 description: Review agent output against the plan — correctness, standards, security
-agents: [tech-lead]
+agents: [security, tech-lead]

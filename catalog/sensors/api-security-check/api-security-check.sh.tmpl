@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# api-security-check — detects security anti-patterns in code changes
+# Agent: {{ .AgentDisplayName }}
+
+INPUT=$(cat)
+
+# Extract the content being written/edited
+CONTENT=$(echo "$INPUT" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+ti = data.get('tool_input', {})
+# Edit: check new_string; Write: check content
+print(ti.get('new_string', '') or ti.get('content', ''))
+" 2>/dev/null || true)
+
+if [ -z "$CONTENT" ]; then
+  exit 0
+fi
+
+# Extract file path to skip non-code files
+FILEPATH=$(echo "$INPUT" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(data.get('tool_input', {}).get('file_path', ''))
+" 2>/dev/null || true)
+
+# Skip non-code files (markdown, yaml, config, etc.)
+case "$FILEPATH" in
+  *.md|*.yaml|*.yml|*.json|*.toml|*.txt|*.csv|*.lock|*.sum) exit 0 ;;
+esac
+
+echo "$CONTENT" | python3 -c "
+import sys, re
+
+content = sys.stdin.read()
+warnings = []
+blocks = []
+
+# --- BLOCK: Hardcoded secrets ---
+secret_patterns = [
+    (r'(?:password|passwd|pwd)\s*=\s*[\"'\''][^\"\'\s]{3,}[\"'\'']', 'hardcoded password'),
+    (r'(?:api_key|apikey|api_secret)\s*=\s*[\"'\''][^\"\'\s]{3,}[\"'\'']', 'hardcoded API key'),
+    (r'(?:secret_key|secret)\s*=\s*[\"'\''][^\"\'\s]{8,}[\"'\'']', 'hardcoded secret'),
+    (r'(?:token|access_token|auth_token)\s*=\s*[\"'\''][^\"\'\s]{8,}[\"'\'']', 'hardcoded token'),
+    (r'(?:private_key)\s*=\s*[\"'\'']-----BEGIN', 'hardcoded private key'),
+]
+for pattern, label in secret_patterns:
+    if re.search(pattern, content, re.IGNORECASE):
+        blocks.append(f'Hardcoded credential detected: {label}. Use environment variables or a secrets manager.')
+
+# --- WARN: SQL string concatenation ---
+sql_concat = [
+    r'[\"'\'']SELECT\s.*[\"\'\']\s*\+',
+    r'[\"'\'']INSERT\s.*[\"\'\']\s*\+',
+    r'[\"'\'']UPDATE\s.*[\"\'\']\s*\+',
+    r'[\"'\'']DELETE\s.*[\"\'\']\s*\+',
+    r'f[\"'\'']SELECT\s',
+    r'f[\"'\'']INSERT\s',
+    r'f[\"'\'']UPDATE\s',
+    r'f[\"'\'']DELETE\s',
+]
+for pattern in sql_concat:
+    if re.search(pattern, content, re.IGNORECASE):
+        warnings.append('Possible SQL injection: string concatenation/interpolation in SQL query. Use parameterized queries.')
+        break
+
+# --- WARN: eval/exec/Function with dynamic input ---
+if re.search(r'\beval\s*\(', content) or re.search(r'\bexec\s*\(', content) or re.search(r'\bnew\s+Function\s*\(', content):
+    warnings.append('Dangerous function: eval()/exec()/new Function() detected. Avoid executing dynamic code.')
+
+# --- WARN: CORS wildcard ---
+if re.search(r'origin:\s*[\"\'\']\*[\"'\'']', content) or re.search(r'Access-Control-Allow-Origin.*\*', content):
+    warnings.append('CORS wildcard origin detected. Use an explicit allowlist in production.')
+
+# --- WARN: User input to filesystem ---
+if re.search(r'(?:readFile|readFileSync|writeFile|writeFileSync|createReadStream)\s*\(\s*(?:req\.|request\.|params\.|query\.)', content):
+    warnings.append('User input passed to filesystem operation. Validate and sanitize the path (path traversal risk).')
+
+# --- WARN: Mass assignment ---
+if re.search(r'\.(?:create|update|insert)\s*\(\s*(?:req\.body|request\.body|ctx\.request\.body)', content):
+    warnings.append('Mass assignment risk: raw request body passed to ORM create/update. Explicitly pick allowed fields.')
+
+# --- WARN: SSRF — user-controlled URLs to HTTP clients ---
+if re.search(r'(?:fetch|axios|http\.get|http\.post|requests\.get|requests\.post|urllib\.request\.urlopen)\s*\(\s*(?:req\.|request\.|params\.|query\.|user)', content):
+    warnings.append('Possible SSRF: user-controlled URL passed to HTTP client. Validate against an allowlist.')
+
+# --- WARN: Disabled security headers ---
+if re.search(r'(?:helmet|csp|contentSecurityPolicy|hsts|strictTransportSecurity|frameguard|xFrameOptions)', content, re.IGNORECASE) and re.search(r'(?:false|disable|remove|delete|comment)', content, re.IGNORECASE):
+    warnings.append('Security header may be disabled. Verify helmet/HSTS/CSP/X-Frame-Options are not being removed.')
+
+# --- WARN: Sensitive data in logs ---
+if re.search(r'(?:console\.log|logger\.(?:info|debug|warn|error)|print)\s*\(.*(?:password|secret|token|api_key|private_key)', content, re.IGNORECASE):
+    warnings.append('Sensitive data may be logged. Remove credentials from log statements.')
+
+# --- Output ---
+if blocks:
+    for b in blocks:
+        print(f'BLOCKED: {b}', file=sys.stderr)
+    sys.exit(2)
+
+if warnings:
+    print(f'SECURITY ({len(warnings)} warning{\"s\" if len(warnings) > 1 else \"\"}):' , file=sys.stderr)
+    for w in warnings:
+        print(f'  - {w}', file=sys.stderr)
+
+sys.exit(0)
+"

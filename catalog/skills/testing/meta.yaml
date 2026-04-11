@@ -1,3 +1,3 @@
 name: testing
 description: Testing conventions — frameworks, patterns, coverage requirements
-agents: [backend, frontend, fullstack]
+agents: [backend, frontend, fullstack, security]

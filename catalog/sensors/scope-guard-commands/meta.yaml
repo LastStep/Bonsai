@@ -1,6 +1,7 @@
 name: scope-guard-commands
 description: Blocks agent from running application execution commands (tests, builds, servers)
 agents:
+  - security
   - tech-lead
 event: PreToolUse
 matcher: Bash

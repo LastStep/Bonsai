@@ -1,0 +1,26 @@
+name: security
+display_name: Security Agent
+description: Audits code for vulnerabilities, reviews auth patterns, scans dependencies, enforces security standards
+defaults:
+  skills:
+    - coding-standards
+    - testing
+    - auth-patterns
+    - review-checklist
+  workflows:
+    - code-review
+    - reporting
+    - session-logging
+    - security-audit
+  protocols:
+    - session-start
+    - security
+    - scope-boundaries
+  sensors:
+    - session-context
+    - scope-guard-files
+    - scope-guard-commands
+    - api-security-check
+  routines:
+    - vulnerability-scan
+    - dependency-audit

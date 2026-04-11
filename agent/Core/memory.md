@@ -7,7 +7,7 @@ description: Bonsai developer working memory — flags, work state, notes.
 
 ## Flags
 
-- [UNCOMMITTED] fullstack + devops agents and all dependencies are built but not committed
+(none)
 
 ## Work State
 
@@ -16,15 +16,10 @@ description: Bonsai developer working memory — flags, work state, notes.
 
 **Progress:**
 - Phase 1 (skills): DONE, committed — api-design-standards, auth-patterns, test-strategy, review-checklist
-- Phase 2 (agents): IN PROGRESS
-  - fullstack agent: DONE, not committed — 4 core files + 7 skill updates + 2 workflow updates
-  - devops agent: DONE, not committed — 4 core files + 6 new catalog items (iac-conventions, container-standards, iac-safety-guard, security-audit, dependency-audit, infra-drift-check) + 3 existing item updates
-  - security agent: NOT STARTED — next up
+- Phase 2 (agents): DONE, committed — fullstack, devops, security agents + all dependencies
 - Phase 3 (cross-cutting): NOT STARTED
 
 **Decision:** Defer reviewer, qa, docs agents — they overlap with tech-lead. Final agent lineup: tech-lead, fullstack, backend, frontend, devops, security.
-
-**Also fixed:** review-checklist agents [tech-lead] → [reviewer, tech-lead]
 
 ## Notes
 

@@ -1,3 +1,3 @@
 name: coding-standards
 description: Language-specific coding standards — formatting, linting, patterns
-agents: [backend, devops, frontend, fullstack]
+agents: [backend, devops, frontend, fullstack, security]
