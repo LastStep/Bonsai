@@ -43,7 +43,6 @@ description: Prioritized backlog — bugs, features, debt, research, and improve
 ## P1 — High
 
 - **[improvement] File overwrite handling** — When a file like `.claude/settings.json` already exists: inform user, ask skip/overwrite/merge, show which settings get overwritten per-item. *(added 2026-04-13, source: user)*
-- **[feature] Individual item removal** — Currently can only remove complete agents. Need `bonsai remove skill <name>` etc. Must update stale references and warn user about effects before proceeding. *(added 2026-04-13, source: user)*
 - **[improvement] Better trigger sections** — Each workflow/protocol/skill needs clearer trigger conditions with examples so they actually fire reliably in agent sessions. *(added 2026-04-13, source: user)*
 
 ## P2 — Medium
