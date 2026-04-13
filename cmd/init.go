@@ -52,6 +52,10 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	docsPath = strings.TrimSpace(docsPath)
+	if docsPath == "" || docsPath == "/" {
+		tui.ErrorPanel("Station directory cannot be empty or root. Use a subdirectory like station/.")
+		os.Exit(1)
+	}
 	if !strings.HasSuffix(docsPath, "/") {
 		docsPath += "/"
 	}
@@ -178,7 +182,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 	_ = spinner.New().
 		Title("Generating project files...").
 		Action(func() {
-			_ = generate.RootClaudeMD(cwd, cfg, lock, &wr, false)
 			_ = generate.Scaffolding(cwd, cfg, cat, lock, &wr, false)
 			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)

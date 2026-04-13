@@ -211,7 +211,6 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		Title("Generating workspace...").
 		Action(func() {
 			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
-			_ = generate.RootClaudeMD(cwd, cfg, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()

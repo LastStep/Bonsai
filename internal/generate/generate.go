@@ -447,61 +447,6 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 	return nil
 }
 
-// RootClaudeMD generates the root CLAUDE.md routing file.
-func RootClaudeMD(projectRoot string, cfg *config.ProjectConfig, lock *config.LockFile, result *WriteResult, force bool) error {
-	docsPrefix := cfg.DocsPath
-
-	var lines []string
-	lines = append(lines, fmt.Sprintf("# %s — Project Router", cfg.ProjectName), "")
-
-	if len(cfg.Agents) > 0 {
-		lines = append(lines,
-			"## Routing", "",
-			"| Working in | Read | Do NOT read |",
-			"|------------|------|-------------|",
-		)
-		for name, agent := range cfg.Agents {
-			read := fmt.Sprintf("`%sCLAUDE.md`", agent.Workspace)
-			var doNotRead []string
-			for otherName, other := range cfg.Agents {
-				if otherName != name {
-					doNotRead = append(doNotRead, fmt.Sprintf("`%sCLAUDE.md`", other.Workspace))
-				}
-			}
-			dnr := "—"
-			if len(doNotRead) > 0 {
-				dnr = strings.Join(doNotRead, ", ")
-			}
-			lines = append(lines, fmt.Sprintf("| `%s` | %s | %s |", agent.Workspace, read, dnr))
-		}
-		lines = append(lines, "",
-			"> Read ONLY the CLAUDE.md for your workspace. Each workspace has its own agent/ directory.", "")
-	}
-
-	lines = append(lines,
-		"## Universal Rules", "",
-		"- **Never touch another workspace's files** — stay in your lane",
-		fmt.Sprintf("- **Plans live in `%sPlaybook/Plans/`** — read your assigned plan before writing code", docsPrefix),
-		fmt.Sprintf("- **Security rules live in `%sPlaybook/Standards/SecurityStandards.md`** — read every session", docsPrefix),
-		fmt.Sprintf("- **Backlog lives in `%sPlaybook/Backlog.md`** — add discovered bugs, debt, and ideas here; don't fix out-of-scope issues inline", docsPrefix),
-		fmt.Sprintf("- **Logs go to `%sLogs/`** — write a log after completing any plan", docsPrefix),
-		"- **Attribution required** — anything written under the user's name must end with:",
-		"  ```",
-		"  ---",
-		"  Written by **[Agent Name]** · Initiated by [source]",
-		"  ```", "",
-		"## Triggers", "",
-		"| Trigger | Action |",
-		"|---------|--------|",
-		fmt.Sprintf("| `status` | Read `%sPlaybook/Status.md` and show current In Progress / Pending |", docsPrefix),
-		"| `verify` | Run the verification suite for the current workspace |", "",
-	)
-
-	content := []byte(strings.Join(lines, "\n"))
-	r := writeFile(projectRoot, "CLAUDE.md", content, "generated:root-claude-md", lock, force)
-	result.Add(r)
-	return nil
-}
 
 // WorkspaceClaudeMD generates the workspace CLAUDE.md with navigation tables.
 func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {

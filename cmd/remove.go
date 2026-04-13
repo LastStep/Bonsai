@@ -103,7 +103,6 @@ func runRemove(cmd *cobra.Command, args []string) error {
 			}
 			delete(cfg.Agents, agentName)
 			_ = cfg.Save(configPath)
-			_ = generate.RootClaudeMD(cwd, cfg, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()
@@ -328,7 +327,6 @@ func runRemoveItem(name string, it itemType) error {
 			}
 
 			_ = cfg.Save(configPath)
-			_ = generate.RootClaudeMD(cwd, cfg, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()
