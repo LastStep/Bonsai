@@ -19,6 +19,7 @@ description: Bonsai developer working memory — flags, work state, notes.
 - Final agent lineup: tech-lead, fullstack, backend, frontend, devops, security
 - Managed Agents analysis — decided to defer cloud integration until local foundation is solid
 - Lock file conflict handling — `.bonsai-lock.yaml` tracks generated files with sha256 hashes, prevents silent overwrites of user-modified files
+- Awareness Framework — `status-bar` (Stop) + `context-guard` (UserPromptSubmit) sensors, updated self-awareness.md. Resolves P1 session-done trigger and P2 context-aware self-awareness.
 
 ## Notes
 

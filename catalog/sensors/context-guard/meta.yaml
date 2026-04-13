@@ -1,0 +1,5 @@
+name: context-guard
+description: Injects context-aware behavioral constraints and detects session wrap-up trigger words before each prompt
+agents: all
+required: all
+event: UserPromptSubmit

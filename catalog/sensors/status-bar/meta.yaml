@@ -1,0 +1,5 @@
+name: status-bar
+description: Persistent status line showing context usage, session health, and git state after every response
+agents: all
+required: all
+event: Stop

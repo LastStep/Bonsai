@@ -401,14 +401,18 @@ Sensors are shell scripts wired into Claude Code's hook system. They fire automa
 | Event | When it fires | Can block? |
 |:------|:-------------|:-----------|
 | `SessionStart` | Beginning of a conversation | No |
+| `UserPromptSubmit` | Before Claude processes a user message | **Yes** (exit code 2) |
 | `PreToolUse` | Before a tool executes | **Yes** (exit code 2) |
 | `PostToolUse` | After a tool executes | No |
+| `Stop` | After every Claude response | **Yes** (exit code 2) |
 | `SubagentStop` | When a dispatched subagent finishes | No |
 
 ### Sensor Reference
 
 | Sensor | Event | Matcher | Agents | What it does |
 |:-------|:------|:--------|:-------|:-------------|
+| **status-bar** | `Stop` | — | all | Persistent status: context %, turns, tools, git state, memory/routine health |
+| **context-guard** | `UserPromptSubmit` | — | all | Injects tiered behavioral constraints + detects "session done" trigger words |
 | **session-context** | `SessionStart` | — | all | Injects identity, memory, protocols, INDEX, status, field notes, health warnings |
 | **scope-guard-files** | `PreToolUse` | `Edit\|Write` | all | **Blocks** edits outside workspace + `.env` files |
 | **scope-guard-commands** | `PreToolUse` | `Bash` | tech-lead, security | **Blocks** app execution commands (tests, builds, servers) |
@@ -420,6 +424,15 @@ Sensors are shell scripts wired into Claude Code's hook system. They fire automa
 
 > [!IMPORTANT]
 > `PreToolUse` sensors can **block actions** by exiting with code 2. The tool call is rejected before it happens. This is how `scope-guard-files` prevents cross-workspace edits — the agent can't bypass it.
+
+### Awareness Sensors
+
+Two sensors work as a pair to give agents real-time self-awareness:
+
+- **status-bar** fires after every response — shows the user a compact status line with context usage %, turn count, and session health warnings (uncommitted files, stale memory, overdue routines)
+- **context-guard** fires before every prompt — reads session state and injects behavioral constraints the agent must follow. At 30% context, it nudges toward conciseness. At 70%+, it restricts the agent to current-task-only. At 85%+, it tells the agent to refuse new work.
+
+**Session wrap-up:** When the user says "session done" (or similar), context-guard injects a structured checklist — commit check, memory update, backlog review, status update, session notes.
 
 ---
 

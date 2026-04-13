@@ -44,15 +44,12 @@ description: Prioritized backlog — bugs, features, debt, research, and improve
 
 - **[improvement] Better trigger sections** — Each workflow/protocol/skill needs clearer trigger conditions with examples so they actually fire reliably in agent sessions. *(added 2026-04-13, source: user)*
 
-- **[feature] Session-done trigger** — End-of-session checklist triggered by human input (e.g. "session done"). Two layers: (1) a trigger word in CLAUDE.md that runs a wrap-up procedure (commit check, memory update, backlog review, etc.), (2) a `Stop` event sensor as a safety net for critical checks (uncommitted changes, stale memory). The trigger word approach is a workflow/routine; the `Stop` hook is a sensor. Could ship both. *(added 2026-04-13, source: user)*
-
 ## P2 — Medium
 
 - **[improvement] UI overhaul** — Current TUI is rough. Needs polish pass. *(added 2026-04-13, source: user)*
 - **[feature] Usage instructions** — Add guidance on best practices: running routines at first start to fix references, how to trigger specific effects, proper explanation of each catalog item. *(added 2026-04-13, source: user)*
 - **[feature] Custom item detection** — Detect user-created skills/workflows/protocols that aren't from the catalog. *(added 2026-04-13, source: user)*
 - **[improvement] Self-update mechanism** — Skills and workflows should be able to self-heal or flag when they have issues. *(added 2026-04-13, source: user)*
-- **[feature] Context-aware self-awareness** — Improve self-awareness.md concept with real context consumption warnings. Warn user at 40%, 60%, 80% context usage before starting large tasks. Needs a hook/sensor approach — possibly a PostToolUse or periodic sensor that tracks conversation size and injects warnings. Research how Claude Code exposes context usage to hooks. Agent should refuse ambitious work at 80%+ and suggest a new session instead. *(added 2026-04-13, source: user)*
 
 ## P3 — Ideas & Research
 
