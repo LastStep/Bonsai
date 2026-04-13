@@ -172,25 +172,32 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	var created []string
+	lock, _ := config.LoadLockFile(cwd)
+	var wr generate.WriteResult
+
 	_ = spinner.New().
 		Title("Generating project files...").
 		Action(func() {
-			_ = generate.RootClaudeMD(cwd, cfg)
-			created, _ = generate.Scaffolding(cwd, cfg, cat)
-			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat)
-			_ = generate.SettingsJSON(cwd, cfg, cat)
+			_ = generate.RootClaudeMD(cwd, cfg, lock, &wr, false)
+			_ = generate.Scaffolding(cwd, cfg, cat, lock, &wr, false)
+			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
+			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()
 
-	if len(created) > 0 {
-		root := docsPath
-		if root == "" {
-			root = "."
-		}
-		tree := tui.FileTree(created, root)
-		tui.TitledPanel("Created Files", tree, tui.Moss)
+	if wr.HasConflicts() {
+		resolveConflicts(&wr, lock, cwd)
 	}
+
+	if err := lock.Save(cwd); err != nil {
+		tui.Warning("Could not save lock file: " + err.Error())
+	}
+
+	root := docsPath
+	if root == "" {
+		root = "."
+	}
+	showWriteResults(&wr, root)
 
 	tui.Success(fmt.Sprintf("Initialized %s with %s", cfg.ProjectName, agentDef.DisplayName))
 	tui.Hint("Next: run bonsai add to add code agents (backend, frontend, etc.).")

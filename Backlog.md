@@ -42,8 +42,9 @@ description: Prioritized backlog — bugs, features, debt, research, and improve
 
 ## P1 — High
 
-- **[improvement] File overwrite handling** — When a file like `.claude/settings.json` already exists: inform user, ask skip/overwrite/merge, show which settings get overwritten per-item. *(added 2026-04-13, source: user)*
 - **[improvement] Better trigger sections** — Each workflow/protocol/skill needs clearer trigger conditions with examples so they actually fire reliably in agent sessions. *(added 2026-04-13, source: user)*
+
+- **[feature] Session-done trigger** — End-of-session checklist triggered by human input (e.g. "session done"). Two layers: (1) a trigger word in CLAUDE.md that runs a wrap-up procedure (commit check, memory update, backlog review, etc.), (2) a `Stop` event sensor as a safety net for critical checks (uncommitted changes, stale memory). The trigger word approach is a workflow/routine; the `Stop` hook is a sensor. Could ship both. *(added 2026-04-13, source: user)*
 
 ## P2 — Medium
 

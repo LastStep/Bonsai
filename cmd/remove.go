@@ -88,15 +88,33 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	lock, _ := config.LoadLockFile(cwd)
+	var wr generate.WriteResult
+
 	_ = spinner.New().
 		Title("Removing agent...").
 		Action(func() {
+			// Untrack all files for this agent's workspace from lock
+			wsPrefix := agent.Workspace
+			for relPath := range lock.Files {
+				if strings.HasPrefix(relPath, wsPrefix) {
+					lock.Untrack(relPath)
+				}
+			}
 			delete(cfg.Agents, agentName)
 			_ = cfg.Save(configPath)
-			_ = generate.RootClaudeMD(cwd, cfg)
-			_ = generate.SettingsJSON(cwd, cfg, cat)
+			_ = generate.RootClaudeMD(cwd, cfg, lock, &wr, false)
+			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()
+
+	if wr.HasConflicts() {
+		resolveConflicts(&wr, lock, cwd)
+	}
+
+	if err := lock.Save(cwd); err != nil {
+		tui.Warning("Could not save lock file: " + err.Error())
+	}
 
 	deleteFiles, _ := cmd.Flags().GetBool("delete-files")
 	if deleteFiles {
@@ -275,39 +293,53 @@ func runRemoveItem(name string, it itemType) error {
 		return nil
 	}
 
+	lock, _ := config.LoadLockFile(cwd)
+	var wr generate.WriteResult
+
 	_ = spinner.New().
 		Title("Removing "+it.singular+"...").
 		Action(func() {
 			for _, t := range targets {
 				removeFromItemList(t.agent, name, it)
 
-				// Delete the generated file
-				filePath := filepath.Join(cwd, t.agent.Workspace, "agent", it.dir, name+it.ext)
-				_ = os.Remove(filePath)
+				// Untrack and delete the generated file
+				relPath := filepath.Join(t.agent.Workspace, "agent", it.dir, name+it.ext)
+				lock.Untrack(relPath)
+				_ = os.Remove(filepath.Join(cwd, relPath))
 
 				// Routine-specific: update auto-sensor and dashboard
 				if it.singular == "routine" {
 					generate.EnsureRoutineCheckSensor(t.agent)
 					workspaceRoot := filepath.Join(cwd, t.agent.Workspace)
 					if len(t.agent.Routines) > 0 {
-						_ = generate.RoutineDashboard(workspaceRoot, t.agent, cat)
+						_ = generate.RoutineDashboard(cwd, workspaceRoot, t.agent, cat, lock, &wr, false)
 					} else {
-						_ = os.Remove(filepath.Join(workspaceRoot, "agent", "Core", "routines.md"))
+						dashPath := filepath.Join(t.agent.Workspace, "agent", "Core", "routines.md")
+						lock.Untrack(dashPath)
+						_ = os.Remove(filepath.Join(cwd, dashPath))
 					}
 				}
 
 				// Regenerate workspace CLAUDE.md
 				if agentDef := cat.GetAgent(t.name); agentDef != nil {
 					workspaceRoot := filepath.Join(cwd, t.agent.Workspace)
-					_ = generate.WorkspaceClaudeMD(workspaceRoot, agentDef, t.agent, cfg, cat)
+					_ = generate.WorkspaceClaudeMD(cwd, workspaceRoot, agentDef, t.agent, cfg, cat, lock, &wr, false)
 				}
 			}
 
 			_ = cfg.Save(configPath)
-			_ = generate.RootClaudeMD(cwd, cfg)
-			_ = generate.SettingsJSON(cwd, cfg, cat)
+			_ = generate.RootClaudeMD(cwd, cfg, lock, &wr, false)
+			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()
+
+	if wr.HasConflicts() {
+		resolveConflicts(&wr, lock, cwd)
+	}
+
+	if err := lock.Save(cwd); err != nil {
+		tui.Warning("Could not save lock file: " + err.Error())
+	}
 
 	tui.Success("Removed " + displayName)
 	return nil

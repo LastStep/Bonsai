@@ -204,14 +204,27 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	lock, _ := config.LoadLockFile(cwd)
+	var wr generate.WriteResult
+
 	_ = spinner.New().
 		Title("Generating workspace...").
 		Action(func() {
-			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat)
-			_ = generate.RootClaudeMD(cwd, cfg)
-			_ = generate.SettingsJSON(cwd, cfg, cat)
+			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
+			_ = generate.RootClaudeMD(cwd, cfg, lock, &wr, false)
+			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()
+
+	if wr.HasConflicts() {
+		resolveConflicts(&wr, lock, cwd)
+	}
+
+	if err := lock.Save(cwd); err != nil {
+		tui.Warning("Could not save lock file: " + err.Error())
+	}
+
+	showWriteResults(&wr, workspace)
 
 	tui.Success(fmt.Sprintf("Added %s at %s", agentDef.DisplayName, workspace))
 	return nil

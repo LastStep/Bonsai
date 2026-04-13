@@ -76,25 +76,6 @@ func renderTemplate(fsys fs.FS, tmplPath string, ctx interface{}) (string, error
 	return buf.String(), nil
 }
 
-func copyOrRender(fsys fs.FS, srcPath, destPath string, ctx interface{}) error {
-	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-		return err
-	}
-	if strings.HasSuffix(srcPath, ".tmpl") {
-		content, err := renderTemplate(fsys, srcPath, ctx)
-		if err != nil {
-			return err
-		}
-		outPath := strings.TrimSuffix(destPath, ".tmpl")
-		return os.WriteFile(outPath, []byte(content), 0644)
-	}
-	data, err := fs.ReadFile(fsys, srcPath)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(destPath, data, 0644)
-}
-
 func descFor(names []string, cat *catalog.Catalog, category string) map[string]string {
 	result := make(map[string]string)
 	for _, name := range names {
@@ -125,6 +106,160 @@ func descFor(names []string, cat *catalog.Catalog, category string) map[string]s
 	return result
 }
 
+// ─── Write result types ────────────────────────────────────────────────
+
+// FileAction describes what happened to a single file during generation.
+type FileAction int
+
+const (
+	ActionCreated  FileAction = iota // new file written
+	ActionUpdated                    // existing unmodified file overwritten
+	ActionSkipped                    // file already exists (scaffolding write-once)
+	ActionConflict                   // file modified by user, not overwritten
+	ActionForced                     // conflict overridden by user, overwritten
+)
+
+// FileResult describes the outcome for one file.
+type FileResult struct {
+	RelPath string
+	Action  FileAction
+	Source  string
+	content []byte      // stashed for force-retry on conflicts
+	perm    os.FileMode // stashed for chmod on force-retry
+}
+
+// WriteResult collects all file outcomes from a generation operation.
+type WriteResult struct {
+	Files []FileResult
+}
+
+// Add appends a file result.
+func (wr *WriteResult) Add(r FileResult) {
+	wr.Files = append(wr.Files, r)
+}
+
+// Conflicts returns only the conflict entries.
+func (wr *WriteResult) Conflicts() []FileResult {
+	var out []FileResult
+	for _, f := range wr.Files {
+		if f.Action == ActionConflict {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// HasConflicts returns true if any files had conflicts.
+func (wr *WriteResult) HasConflicts() bool {
+	for _, f := range wr.Files {
+		if f.Action == ActionConflict {
+			return true
+		}
+	}
+	return false
+}
+
+// Summary returns counts by action type.
+func (wr *WriteResult) Summary() (created, updated, skipped, conflicts int) {
+	for _, f := range wr.Files {
+		switch f.Action {
+		case ActionCreated:
+			created++
+		case ActionUpdated, ActionForced:
+			updated++
+		case ActionSkipped:
+			skipped++
+		case ActionConflict:
+			conflicts++
+		}
+	}
+	return
+}
+
+// ForceConflicts overwrites all conflict files using stashed content.
+// Call after user confirmation.
+func (wr *WriteResult) ForceConflicts(projectRoot string, lock *config.LockFile) {
+	for i, f := range wr.Files {
+		if f.Action != ActionConflict || f.content == nil {
+			continue
+		}
+		absPath := filepath.Join(projectRoot, f.RelPath)
+		if err := os.MkdirAll(filepath.Dir(absPath), 0755); err != nil {
+			continue
+		}
+		if err := os.WriteFile(absPath, f.content, 0644); err != nil {
+			continue
+		}
+		if f.perm != 0 {
+			_ = os.Chmod(absPath, f.perm)
+		}
+		lock.Track(f.RelPath, f.content, f.Source)
+		wr.Files[i].Action = ActionForced
+	}
+}
+
+// ─── Lock-aware write primitives ───────────────────────────────────────
+
+// writeFile implements the lock-aware write policy.
+// If force is true, modified files are overwritten.
+func writeFile(projectRoot, relPath string, content []byte, source string, lock *config.LockFile, force bool) FileResult {
+	absPath := filepath.Join(projectRoot, relPath)
+	exists, modified := lock.IsModified(projectRoot, relPath)
+
+	if !exists {
+		if err := os.MkdirAll(filepath.Dir(absPath), 0755); err != nil {
+			return FileResult{RelPath: relPath, Action: ActionConflict, Source: source}
+		}
+		if err := os.WriteFile(absPath, content, 0644); err != nil {
+			return FileResult{RelPath: relPath, Action: ActionConflict, Source: source}
+		}
+		lock.Track(relPath, content, source)
+		return FileResult{RelPath: relPath, Action: ActionCreated, Source: source}
+	}
+
+	if modified && !force {
+		return FileResult{RelPath: relPath, Action: ActionConflict, Source: source, content: content}
+	}
+
+	if err := os.WriteFile(absPath, content, 0644); err != nil {
+		return FileResult{RelPath: relPath, Action: ActionConflict, Source: source, content: content}
+	}
+	lock.Track(relPath, content, source)
+
+	action := ActionUpdated
+	if force && modified {
+		action = ActionForced
+	}
+	return FileResult{RelPath: relPath, Action: action, Source: source}
+}
+
+// writeFileChmod is like writeFile but also sets file permissions (for sensor scripts).
+func writeFileChmod(projectRoot, relPath string, content []byte, source string, lock *config.LockFile, force bool, perm os.FileMode) FileResult {
+	result := writeFile(projectRoot, relPath, content, source, lock, force)
+	if result.Action == ActionCreated || result.Action == ActionUpdated || result.Action == ActionForced {
+		absPath := filepath.Join(projectRoot, relPath)
+		_ = os.Chmod(absPath, perm)
+	}
+	// Stash perm for force-retry
+	result.perm = perm
+	return result
+}
+
+// renderContent renders a template or reads a raw file from the catalog FS,
+// returning the content bytes without writing to disk.
+func renderContent(fsys fs.FS, srcPath string, ctx interface{}) ([]byte, error) {
+	if strings.HasSuffix(srcPath, ".tmpl") {
+		content, err := renderTemplate(fsys, srcPath, ctx)
+		if err != nil {
+			return nil, err
+		}
+		return []byte(content), nil
+	}
+	return fs.ReadFile(fsys, srcPath)
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────
+
 // hasScaffolding checks if a scaffolding item is selected in the project config.
 // Returns true if scaffolding list is empty (backward compat: old configs without the field).
 func hasScaffolding(cfg *config.ProjectConfig, name string) bool {
@@ -140,8 +275,8 @@ func hasScaffolding(cfg *config.ProjectConfig, name string) bool {
 }
 
 // Scaffolding generates project management infrastructure files for selected items.
-// Returns a list of created file paths relative to projectRoot.
-func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog) ([]string, error) {
+// Scaffolding files are write-once: if a file already exists, it is skipped (not conflicted).
+func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	catFS := cat.FS()
 	docsRoot := projectRoot
 	if cfg.DocsPath != "" {
@@ -164,8 +299,6 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Cat
 		}
 	}
 
-	var created []string
-
 	err := fs.WalkDir(catFS, "scaffolding", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
@@ -175,27 +308,32 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Cat
 			return nil // skip the manifest itself
 		}
 
-		// Check if this file belongs to a selected scaffolding item
 		if !isAllowedScaffoldingFile(rel, allowedFiles) {
 			return nil
 		}
 
-		dest := filepath.Join(docsRoot, rel)
-
-		finalDest := dest
-		if strings.HasSuffix(finalDest, ".tmpl") {
-			finalDest = strings.TrimSuffix(finalDest, ".tmpl")
-		}
-		if _, statErr := os.Stat(finalDest); statErr == nil {
-			return nil // don't overwrite
-		}
-
-		if err := copyOrRender(catFS, path, dest, ctx); err != nil {
+		content, err := renderContent(catFS, path, ctx)
+		if err != nil {
 			return err
 		}
 
-		relToProject, _ := filepath.Rel(projectRoot, finalDest)
-		created = append(created, relToProject)
+		relToProject := rel
+		if strings.HasSuffix(relToProject, ".tmpl") {
+			relToProject = strings.TrimSuffix(relToProject, ".tmpl")
+		}
+		if cfg.DocsPath != "" {
+			relToProject = filepath.Join(cfg.DocsPath, relToProject)
+		}
+
+		// Scaffolding is write-once: if file exists, skip (don't conflict)
+		absPath := filepath.Join(projectRoot, relToProject)
+		if _, statErr := os.Stat(absPath); statErr == nil {
+			result.Add(FileResult{RelPath: relToProject, Action: ActionSkipped, Source: "scaffolding:" + rel})
+			return nil
+		}
+
+		r := writeFile(projectRoot, relToProject, content, "scaffolding:"+rel, lock, force)
+		result.Add(r)
 		return nil
 	})
 
@@ -207,7 +345,7 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Cat
 		}
 	}
 
-	return created, err
+	return err
 }
 
 // isAllowedScaffoldingFile checks if a file path matches any allowed file entry.
@@ -244,7 +382,7 @@ func sortedKeys(m map[string]bool) []string {
 }
 
 // SettingsJSON generates or updates .claude/settings.json with sensor hooks.
-func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog) error {
+func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	settingsPath := filepath.Join(projectRoot, ".claude", "settings.json")
 
 	existing := make(map[string]interface{})
@@ -302,11 +440,15 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(settingsPath, append(data, '\n'), 0644)
+	content := append(data, '\n')
+	relPath := filepath.Join(".claude", "settings.json")
+	r := writeFile(projectRoot, relPath, content, "generated:settings-json", lock, force)
+	result.Add(r)
+	return nil
 }
 
 // RootClaudeMD generates the root CLAUDE.md routing file.
-func RootClaudeMD(projectRoot string, cfg *config.ProjectConfig) error {
+func RootClaudeMD(projectRoot string, cfg *config.ProjectConfig, lock *config.LockFile, result *WriteResult, force bool) error {
 	docsPrefix := cfg.DocsPath
 
 	var lines []string
@@ -355,11 +497,14 @@ func RootClaudeMD(projectRoot string, cfg *config.ProjectConfig) error {
 		"| `verify` | Run the verification suite for the current workspace |", "",
 	)
 
-	return os.WriteFile(filepath.Join(projectRoot, "CLAUDE.md"), []byte(strings.Join(lines, "\n")), 0644)
+	content := []byte(strings.Join(lines, "\n"))
+	r := writeFile(projectRoot, "CLAUDE.md", content, "generated:root-claude-md", lock, force)
+	result.Add(r)
+	return nil
 }
 
 // WorkspaceClaudeMD generates the workspace CLAUDE.md with navigation tables.
-func WorkspaceClaudeMD(workspaceRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog) error {
+func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	docsPrefix := cfg.DocsPath
 
 	var lines []string
@@ -481,7 +626,11 @@ func WorkspaceClaudeMD(workspaceRoot string, agentDef *catalog.AgentDef, install
 	}
 	lines = append(lines, "")
 
-	return os.WriteFile(filepath.Join(workspaceRoot, "CLAUDE.md"), []byte(strings.Join(lines, "\n")), 0644)
+	content := []byte(strings.Join(lines, "\n"))
+	relPath, _ := filepath.Rel(projectRoot, filepath.Join(workspaceRoot, "CLAUDE.md"))
+	r := writeFile(projectRoot, relPath, content, "generated:workspace-claude-md", lock, force)
+	result.Add(r)
+	return nil
 }
 
 // EnsureRoutineCheckSensor adds or removes the routine-check sensor based on whether routines are installed.
@@ -523,8 +672,8 @@ func parseFrequencyDays(freq string) int {
 }
 
 // RoutineDashboard generates or updates agent/Core/routines.md with the current routine configuration.
-// This is a managed file — rebuilt when routines are added/removed but preserves last_ran dates.
-func RoutineDashboard(workspaceRoot string, installed *config.InstalledAgent, cat *catalog.Catalog) error {
+// Preserves last_ran dates from the existing dashboard.
+func RoutineDashboard(projectRoot string, workspaceRoot string, installed *config.InstalledAgent, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	dashPath := filepath.Join(workspaceRoot, "agent", "Core", "routines.md")
 
 	// Parse existing dashboard to preserve last_ran dates
@@ -632,14 +781,15 @@ func RoutineDashboard(workspaceRoot string, installed *config.InstalledAgent, ca
 
 	lines = append(lines, "")
 
-	if err := os.MkdirAll(filepath.Dir(dashPath), 0755); err != nil {
-		return err
-	}
-	return os.WriteFile(dashPath, []byte(strings.Join(lines, "\n")), 0644)
+	content := []byte(strings.Join(lines, "\n"))
+	relPath, _ := filepath.Rel(projectRoot, dashPath)
+	r := writeFile(projectRoot, relPath, content, "generated:routine-dashboard", lock, force)
+	result.Add(r)
+	return nil
 }
 
 // AgentWorkspace generates the full agent/ directory in a workspace.
-func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog) error {
+func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	workspaceRoot := filepath.Join(projectRoot, installed.Workspace)
 	agentDir := filepath.Join(workspaceRoot, "agent")
 	catFS := cat.FS()
@@ -684,10 +834,14 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 			if agentCoreFiles[e.Name()] {
 				src = agentDef.CoreDir + "/" + e.Name() // agent override
 			}
-			dest := filepath.Join(coreDir, e.Name())
-			if err := copyOrRender(catFS, src, dest, ctx); err != nil {
+			content, err := renderContent(catFS, src, ctx)
+			if err != nil {
 				return fmt.Errorf("core file %s: %w", e.Name(), err)
 			}
+			destName := strings.TrimSuffix(e.Name(), ".tmpl")
+			relPath, _ := filepath.Rel(projectRoot, filepath.Join(coreDir, destName))
+			r := writeFile(projectRoot, relPath, content, "catalog:core/"+destName, lock, force)
+			result.Add(r)
 		}
 	}
 
@@ -710,10 +864,14 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 			}
 		}
 		src := agentDef.CoreDir + "/" + e.Name()
-		dest := filepath.Join(coreDir, e.Name())
-		if err := copyOrRender(catFS, src, dest, ctx); err != nil {
+		content, err := renderContent(catFS, src, ctx)
+		if err != nil {
 			return fmt.Errorf("core file %s: %w", e.Name(), err)
 		}
+		destName := strings.TrimSuffix(e.Name(), ".tmpl")
+		relPath, _ := filepath.Rel(projectRoot, filepath.Join(coreDir, destName))
+		r := writeFile(projectRoot, relPath, content, "catalog:core/"+destName, lock, force)
+		result.Add(r)
 	}
 
 	// 2. Skills
@@ -722,17 +880,13 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if item == nil {
 			continue
 		}
-		dest := filepath.Join(agentDir, "Skills", skillName+".md")
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			return err
-		}
 		data, err := fs.ReadFile(catFS, item.ContentPath)
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(dest, data, 0644); err != nil {
-			return err
-		}
+		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Skills", skillName+".md"))
+		r := writeFile(projectRoot, relPath, data, "catalog:skills/"+skillName, lock, force)
+		result.Add(r)
 	}
 
 	// 3. Workflows
@@ -741,17 +895,13 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if item == nil {
 			continue
 		}
-		dest := filepath.Join(agentDir, "Workflows", wfName+".md")
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			return err
-		}
 		data, err := fs.ReadFile(catFS, item.ContentPath)
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(dest, data, 0644); err != nil {
-			return err
-		}
+		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Workflows", wfName+".md"))
+		r := writeFile(projectRoot, relPath, data, "catalog:workflows/"+wfName, lock, force)
+		result.Add(r)
 	}
 
 	// 4. Protocols
@@ -760,17 +910,13 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if item == nil {
 			continue
 		}
-		dest := filepath.Join(agentDir, "Protocols", protoName+".md")
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			return err
-		}
 		data, err := fs.ReadFile(catFS, item.ContentPath)
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(dest, data, 0644); err != nil {
-			return err
-		}
+		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Protocols", protoName+".md"))
+		r := writeFile(projectRoot, relPath, data, "catalog:protocols/"+protoName, lock, force)
+		result.Add(r)
 	}
 
 	// 5. Sensors (rendered through templates)
@@ -794,16 +940,14 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if sensor == nil {
 			continue
 		}
-		destName := filepath.Base(sensor.ContentPath)
-		dest := filepath.Join(agentDir, "Sensors", destName)
-		if err := copyOrRender(catFS, sensor.ContentPath, dest, sensorCtx); err != nil {
+		content, err := renderContent(catFS, sensor.ContentPath, sensorCtx)
+		if err != nil {
 			return fmt.Errorf("sensor %s: %w", sensorName, err)
 		}
-		finalDest := dest
-		if strings.HasSuffix(finalDest, ".tmpl") {
-			finalDest = strings.TrimSuffix(finalDest, ".tmpl")
-		}
-		_ = os.Chmod(finalDest, 0755)
+		destName := strings.TrimSuffix(filepath.Base(sensor.ContentPath), ".tmpl")
+		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Sensors", destName))
+		r := writeFileChmod(projectRoot, relPath, content, "catalog:sensors/"+sensorName, lock, force, 0755)
+		result.Add(r)
 	}
 
 	// 6. Routines (rendered through templates, like sensors)
@@ -812,35 +956,22 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if routine == nil {
 			continue
 		}
-		destName := routineName + ".md"
-		if strings.HasSuffix(routine.ContentPath, ".tmpl") {
-			// Will be rendered, output drops .tmpl
-			dest := filepath.Join(agentDir, "Routines", routineName+".md.tmpl")
-			if err := copyOrRender(catFS, routine.ContentPath, dest, sensorCtx); err != nil {
-				return fmt.Errorf("routine %s: %w", routineName, err)
-			}
-		} else {
-			dest := filepath.Join(agentDir, "Routines", destName)
-			if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-				return err
-			}
-			data, err := fs.ReadFile(catFS, routine.ContentPath)
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(dest, data, 0644); err != nil {
-				return err
-			}
+		content, err := renderContent(catFS, routine.ContentPath, sensorCtx)
+		if err != nil {
+			return fmt.Errorf("routine %s: %w", routineName, err)
 		}
+		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Routines", routineName+".md"))
+		r := writeFile(projectRoot, relPath, content, "catalog:routines/"+routineName, lock, force)
+		result.Add(r)
 	}
 
-	// 7. Routine dashboard (managed file — rebuilt on every generate)
+	// 7. Routine dashboard
 	if len(installed.Routines) > 0 {
-		if err := RoutineDashboard(workspaceRoot, installed, cat); err != nil {
+		if err := RoutineDashboard(projectRoot, workspaceRoot, installed, cat, lock, result, force); err != nil {
 			return fmt.Errorf("routine dashboard: %w", err)
 		}
 	}
 
 	// 8. Workspace CLAUDE.md
-	return WorkspaceClaudeMD(workspaceRoot, agentDef, installed, cfg, cat)
+	return WorkspaceClaudeMD(projectRoot, workspaceRoot, agentDef, installed, cfg, cat, lock, result, force)
 }

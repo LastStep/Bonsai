@@ -94,7 +94,8 @@ When you discover bugs, improvement ideas, tech debt, or feature requests outsid
 - **Scaffolding** is project infrastructure (INDEX, Playbook, Logs, Reports) — defined in `catalog/scaffolding/manifest.yaml` with `name`, `description`, `required`, `affects`, and `files`. Selected during `bonsai init`, some items are required
 - **`.bonsai.yaml`** is the project config generated in the user's target project — tracks installed agents, scaffolding selections, and docs_path
 - **`.claude/settings.json`** is auto-generated with hook entries for all installed sensors
-- **Generator** never overwrites existing files — safe to re-run (except settings.json hooks and routines.md dashboard, which are rebuilt from config)
+- **`.bonsai-lock.yaml`** tracks generated files with content hashes — enables conflict detection on re-run
+- **Generator** uses lock-aware writes: new files are created, unmodified files are updated silently, user-modified files trigger a conflict prompt (skip / overwrite / backup & overwrite). Scaffolding files are always write-once (skip if exists).
 - **Catalog is embedded** via `embed.FS` in `main.go` — ships inside the binary
 
 ---

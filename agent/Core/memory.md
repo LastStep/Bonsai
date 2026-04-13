@@ -18,6 +18,7 @@ description: Bonsai developer working memory — flags, work state, notes.
 - Catalog expansion (all 3 phases) — see RESEARCH-catalog-expansion.md
 - Final agent lineup: tech-lead, fullstack, backend, frontend, devops, security
 - Managed Agents analysis — decided to defer cloud integration until local foundation is solid
+- Lock file conflict handling — `.bonsai-lock.yaml` tracks generated files with sha256 hashes, prevents silent overwrites of user-modified files
 
 ## Notes
 

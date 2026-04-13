@@ -45,7 +45,9 @@ func TestCoreFilesLayeredResolution(t *testing.T) {
 		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
 	}
 
-	err = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat)
+	lock := config.NewLockFile()
+	var wr WriteResult
+	err = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
 	if err != nil {
 		t.Fatalf("AgentWorkspace: %v", err)
 	}
@@ -83,7 +85,7 @@ func TestCoreFilesLayeredResolution(t *testing.T) {
 func TestCoreFilesAgentOverride(t *testing.T) {
 	// Agent overrides self-awareness.md
 	cat, err := buildTestCatalog(map[string]string{
-		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+		"identity.md.tmpl":  "I am {{ .AgentDisplayName }}",
 		"self-awareness.md": "custom self-awareness for this agent",
 	})
 	if err != nil {
@@ -98,7 +100,9 @@ func TestCoreFilesAgentOverride(t *testing.T) {
 		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
 	}
 
-	err = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat)
+	lock := config.NewLockFile()
+	var wr WriteResult
+	err = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
 	if err != nil {
 		t.Fatalf("AgentWorkspace: %v", err)
 	}
@@ -121,5 +125,252 @@ func TestCoreFilesAgentOverride(t *testing.T) {
 	}
 	if !strings.Contains(string(memory), "memory for Test Agent") {
 		t.Errorf("memory.md unexpected content: %s", memory)
+	}
+}
+
+// ─── Lock-aware tests ─────────────────────────────────────────────────
+
+func TestAgentWorkspaceNewFiles(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	err = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
+	if err != nil {
+		t.Fatalf("AgentWorkspace: %v", err)
+	}
+
+	// All files should be ActionCreated
+	for _, f := range wr.Files {
+		if f.Action != ActionCreated {
+			t.Errorf("file %s action = %d, want Created", f.RelPath, f.Action)
+		}
+	}
+
+	// Lock should have entries for all written files
+	if len(lock.Files) == 0 {
+		t.Error("lock file should have tracked files")
+	}
+	if len(lock.Files) != len(wr.Files) {
+		t.Errorf("lock entries (%d) != write results (%d)", len(lock.Files), len(wr.Files))
+	}
+}
+
+func TestAgentWorkspaceUnmodifiedUpdate(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr1 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr1, false)
+
+	// Run again — files are unmodified, should be Updated
+	var wr2 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr2, false)
+	for _, f := range wr2.Files {
+		if f.Action != ActionUpdated {
+			t.Errorf("file %s action = %d, want Updated", f.RelPath, f.Action)
+		}
+	}
+}
+
+func TestAgentWorkspaceModifiedConflict(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr1 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr1, false)
+
+	// Modify identity.md
+	identityPath := filepath.Join(tmpDir, "agent", "Core", "identity.md")
+	_ = os.WriteFile(identityPath, []byte("user edited this"), 0644)
+
+	// Run again — identity.md should be Conflict
+	var wr2 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr2, false)
+
+	found := false
+	for _, f := range wr2.Files {
+		if strings.Contains(f.RelPath, "identity.md") {
+			if f.Action != ActionConflict {
+				t.Errorf("identity.md action = %d, want Conflict", f.Action)
+			}
+			found = true
+		}
+	}
+	if !found {
+		t.Error("identity.md not found in results")
+	}
+
+	// Verify file was NOT overwritten
+	data, _ := os.ReadFile(identityPath)
+	if !strings.Contains(string(data), "user edited") {
+		t.Error("identity.md should not have been overwritten")
+	}
+}
+
+func TestAgentWorkspaceForceOverwrite(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr1 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr1, false)
+
+	// Modify identity.md
+	identityPath := filepath.Join(tmpDir, "agent", "Core", "identity.md")
+	_ = os.WriteFile(identityPath, []byte("user edited this"), 0644)
+
+	// Force overwrite — should succeed
+	var wr2 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr2, true)
+	for _, f := range wr2.Files {
+		if strings.Contains(f.RelPath, "identity.md") {
+			if f.Action != ActionForced {
+				t.Errorf("identity.md action = %d, want Forced", f.Action)
+			}
+		}
+	}
+
+	// Verify file was actually overwritten
+	data, _ := os.ReadFile(identityPath)
+	if strings.Contains(string(data), "user edited") {
+		t.Error("identity.md should have been overwritten")
+	}
+}
+
+func TestForceConflictsReplay(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr1 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr1, false)
+
+	// Modify identity.md
+	identityPath := filepath.Join(tmpDir, "agent", "Core", "identity.md")
+	_ = os.WriteFile(identityPath, []byte("user edited this"), 0644)
+
+	// Run without force — get conflicts
+	var wr2 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr2, false)
+
+	if !wr2.HasConflicts() {
+		t.Fatal("expected conflicts")
+	}
+
+	// Now replay with ForceConflicts
+	wr2.ForceConflicts(tmpDir, lock)
+
+	// Verify the conflict was resolved
+	for _, f := range wr2.Files {
+		if strings.Contains(f.RelPath, "identity.md") {
+			if f.Action != ActionForced {
+				t.Errorf("after ForceConflicts, identity.md action = %d, want Forced", f.Action)
+			}
+		}
+	}
+
+	// Verify file was overwritten
+	data, _ := os.ReadFile(identityPath)
+	if strings.Contains(string(data), "user edited") {
+		t.Error("identity.md should have been overwritten after ForceConflicts")
+	}
+
+	// Verify lock was updated
+	exists, modified := lock.IsModified(tmpDir, "agent/Core/identity.md")
+	if !exists {
+		t.Error("identity.md should exist after ForceConflicts")
+	}
+	if modified {
+		t.Error("identity.md should not be modified after ForceConflicts updated the lock")
+	}
+}
+
+func TestWriteResultSummary(t *testing.T) {
+	wr := WriteResult{
+		Files: []FileResult{
+			{Action: ActionCreated},
+			{Action: ActionCreated},
+			{Action: ActionUpdated},
+			{Action: ActionSkipped},
+			{Action: ActionConflict},
+			{Action: ActionForced},
+		},
+	}
+	created, updated, skipped, conflicts := wr.Summary()
+	if created != 2 {
+		t.Errorf("created = %d, want 2", created)
+	}
+	if updated != 2 { // Updated + Forced
+		t.Errorf("updated = %d, want 2", updated)
+	}
+	if skipped != 1 {
+		t.Errorf("skipped = %d, want 1", skipped)
+	}
+	if conflicts != 1 {
+		t.Errorf("conflicts = %d, want 1", conflicts)
 	}
 }
