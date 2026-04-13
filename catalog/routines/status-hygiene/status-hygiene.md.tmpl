@@ -27,6 +27,11 @@ Keep `{{ .DocsPath }}Playbook/Status.md` clean — archive old Done items, valid
    - Verify every plan listed in the Plans Index has a matching file in `{{ .DocsPath }}Playbook/Plans/Active/` or `{{ .DocsPath }}Playbook/Plans/Archive/`
    - Flag any orphaned plan files not listed in the index
 
-4. **Log results** to `{{ .DocsPath }}Logs/RoutineLog.md`
+4. **Cross-reference with Backlog:**
+   - Check if any Recently Done items in Status.md resolve items in `{{ .DocsPath }}Playbook/Backlog.md`
+   - If so, remove the resolved Backlog items
+   - Check if any Pending items stalled 30+ days should be demoted back to Backlog (flag for user review, don't move automatically)
 
-5. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`
+5. **Log results** to `{{ .DocsPath }}Logs/RoutineLog.md`
+
+6. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`

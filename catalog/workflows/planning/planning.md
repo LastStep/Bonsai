@@ -20,6 +20,7 @@ When a new task, feature, or fix needs a plan before agents can execute.
 - What does the user want?
 - What's the scope? (single-domain or multi-domain)
 - What tier? (Tier 1 Patch or Tier 2 Feature — see `agent/Skills/planning-template.md`)
+- Check `Playbook/Backlog.md` — is this request already captured? Are there related P0/P1 items that should be bundled?
 
 ### 2. Research
 

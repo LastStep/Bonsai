@@ -17,13 +17,15 @@ description: Ordered startup sequence — always steps + conditional loading by 
 3. Read `agent/Core/self-awareness.md` — refresh context monitoring rules
 4. Read `INDEX.md` — get project snapshot
 5. Read `Playbook/Status.md` — see what's in progress and pending
-6. Read `Logs/FieldNotes.md` — check for user updates since last session
-7. Check `Reports/Pending/` — process any unreviewed agent reports
-8. Read `agent/Protocols/security.md` — refresh security constraints (if installed)
-9. Read `agent/Protocols/scope-boundaries.md` — refresh what you own (if installed)
+6. Scan `Playbook/Backlog.md` — check for P0 items not yet in Status.md (escalate immediately if found)
+7. Read `Logs/FieldNotes.md` — check for user updates since last session
+8. Check `Reports/Pending/` — process any unreviewed agent reports
+9. Read `agent/Protocols/security.md` — refresh security constraints (if installed)
+10. Read `agent/Protocols/scope-boundaries.md` — refresh what you own (if installed)
 
 > [!note]
 > Paths like `INDEX.md`, `Playbook/`, `Logs/`, and `Reports/` refer to the project docs location configured during `bonsai init`. Check your workspace CLAUDE.md → External References for the exact paths.
+> Backlog.md is a scan, not a full read — look for P0 items only. Full backlog review is handled by the backlog-hygiene routine.
 
 ---
 

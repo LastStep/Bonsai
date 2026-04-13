@@ -31,3 +31,4 @@ After completing a plan or significant task. Submit this report for review.
 - Include coverage numbers
 - Include all files created and modified
 - Note anything the next session or another agent needs to know
+- If you discovered bugs, debt, or improvement opportunities outside the plan's scope, add them to `Playbook/Backlog.md` rather than noting them only in the report

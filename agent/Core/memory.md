@@ -11,15 +11,13 @@ description: Bonsai developer working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Catalog expansion (RESEARCH-catalog-expansion.md)
+**Current task:** None active
 **Blocked on:** (nothing)
 
-**Progress:**
-- Phase 1 (skills): DONE, committed — api-design-standards, auth-patterns, test-strategy, review-checklist
-- Phase 2 (agents): DONE, committed — fullstack, devops, security agents + all dependencies
-- Phase 3 (cross-cutting): DONE — cli-conventions, mobile-patterns skills + api-development, test-plan, pr-review workflows + test-integrity-guard sensor
-
-**Decision:** Defer reviewer, qa, docs agents — they overlap with tech-lead. Final agent lineup: tech-lead, fullstack, backend, frontend, devops, security.
+**Completed:**
+- Catalog expansion (all 3 phases) — see RESEARCH-catalog-expansion.md
+- Final agent lineup: tech-lead, fullstack, backend, frontend, devops, security
+- Managed Agents analysis — decided to defer cloud integration until local foundation is solid
 
 ## Notes
 
@@ -36,4 +34,8 @@ _(empty)_
 
 ## References
 
+- Backlog.md — prioritized todo queue (bugs, features, debt, research). Add items here, not in memory.md
 - RESEARCH-catalog-expansion.md — full spec for all new agents, skills, sensors, workflows, routines
+- DESIGN-companion-app.md — Greenhouse design doc (architecture, tech stack, integration, UI, data model)
+- Claude Code Agent SDK docs — https://code.claude.com/docs/en/agent-sdk/overview
+- Claude Managed Agents — https://platform.claude.com/docs/en/managed-agents/overview (future cloud integration)

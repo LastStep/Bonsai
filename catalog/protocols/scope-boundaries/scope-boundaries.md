@@ -24,7 +24,8 @@ You operate ONLY within your designated workspace directory. This is your bounda
 
 ## When You See Something Wrong
 
-If you notice a problem outside your workspace:
-1. Do NOT fix it
-2. Note it in your report
-3. Let the Tech Lead or user decide how to handle it
+If you notice a bug, tech debt, or improvement opportunity outside your current task scope:
+1. Do NOT fix it inline
+2. Add it to `Playbook/Backlog.md` with the appropriate priority and category
+3. Note it in your report
+4. Let the Tech Lead or user decide when to address it

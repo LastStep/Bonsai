@@ -1,0 +1,4 @@
+name: backlog-hygiene
+description: Review and maintain Playbook/Backlog.md — flag stale items, escalate P0s, cross-reference with Status and Roadmap
+agents: [tech-lead]
+frequency: 7 days

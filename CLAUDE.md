@@ -14,6 +14,7 @@
 ```
 Bonsai/
 ├── CLAUDE.md               ← you are here
+├── Backlog.md               ← prioritized todo queue (bugs, features, debt, research)
 ├── main.go                  ← entry point, embeds catalog/ via embed.FS
 ├── go.mod / go.sum          ← module config
 ├── Makefile                 ← build, install, clean
@@ -47,7 +48,7 @@ Bonsai/
 │   └── scaffolding/          ← project management infrastructure templates
 │       ├── manifest.yaml     ← scaffolding item definitions (name, description, required, affects)
 │       ├── INDEX.md.tmpl
-│       ├── Playbook/         ← Status, Roadmap, Plans, SecurityStandards
+│       ├── Playbook/         ← Status, Roadmap, Backlog, Plans, SecurityStandards
 │       ├── Logs/             ← FieldNotes, KeyDecisionLog, RoutineLog
 │       └── Reports/          ← report-template, Pending/
 └── agent/                    ← agent instructions (this agent)
@@ -73,6 +74,8 @@ References for each skill live in a subdirectory (e.g. `agent/Skills/bubbletea/`
 > **Do NOT use Claude Code's auto-memory system** (`~/.claude/projects/*/memory/`). All persistent memory goes in `agent/Core/memory.md` — version-controlled, auditable, inside the project.
 
 When you would normally write to auto-memory (feedback, references, project context, flags), write to the appropriate section in `agent/Core/memory.md` instead.
+
+When you discover bugs, improvement ideas, tech debt, or feature requests outside your current task scope, add them to `Backlog.md` instead of fixing them inline or noting them only in memory.
 
 ---
 

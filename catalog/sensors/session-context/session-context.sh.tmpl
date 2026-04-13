@@ -84,6 +84,15 @@ if [[ -f "${WORKSPACE}agent/Core/memory.md" ]]; then
   fi
 fi
 
+# Backlog P0 check
+if [[ -n "$DOCS" ]] && [[ -f "${DOCS}Playbook/Backlog.md" ]]; then
+  p0_items=$(sed -n '/^## P0/,/^## P[1-3]/p' "${DOCS}Playbook/Backlog.md" | grep -c '^- ' || true)
+  if [[ $p0_items -gt 0 ]]; then
+    echo "WARNING: $p0_items P0 (critical) item(s) in Playbook/Backlog.md — escalate to Status.md if not already there"
+    sed -n '/^## P0/,/^## P[1-3]/p' "${DOCS}Playbook/Backlog.md" | grep '^- '
+  fi
+fi
+
 # Pending reports count
 if [[ -n "$DOCS" ]] && [[ -d "${DOCS}Reports/Pending/" ]]; then
   pending_count=$(ls -1 "${DOCS}Reports/Pending/" 2>/dev/null | wc -l)

@@ -341,6 +341,7 @@ func RootClaudeMD(projectRoot string, cfg *config.ProjectConfig) error {
 		"- **Never touch another workspace's files** — stay in your lane",
 		fmt.Sprintf("- **Plans live in `%sPlaybook/Plans/`** — read your assigned plan before writing code", docsPrefix),
 		fmt.Sprintf("- **Security rules live in `%sPlaybook/Standards/SecurityStandards.md`** — read every session", docsPrefix),
+		fmt.Sprintf("- **Backlog lives in `%sPlaybook/Backlog.md`** — add discovered bugs, debt, and ideas here; don't fix out-of-scope issues inline", docsPrefix),
 		fmt.Sprintf("- **Logs go to `%sLogs/`** — write a log after completing any plan", docsPrefix),
 		"- **Attribution required** — anything written under the user's name must end with:",
 		"  ```",
@@ -472,6 +473,7 @@ func WorkspaceClaudeMD(workspaceRoot string, agentDef *catalog.AgentDef, install
 		fmt.Sprintf("| Long-term direction | `%sPlaybook/Roadmap.md` |", docsPrefix),
 		fmt.Sprintf("| Security standards | `%sPlaybook/Standards/SecurityStandards.md` |", docsPrefix),
 		fmt.Sprintf("| Your assigned plan | `%sPlaybook/Plans/Active/` |", docsPrefix),
+		fmt.Sprintf("| Backlog | `%sPlaybook/Backlog.md` |", docsPrefix),
 		fmt.Sprintf("| Prior decisions | `%sLogs/KeyDecisionLog.md` |", docsPrefix),
 	)
 	if hasScaffolding(cfg, "reports") {
