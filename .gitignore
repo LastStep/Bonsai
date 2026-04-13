@@ -1,6 +1,10 @@
 # Binary
 bonsai
 bonsai.exe
+Bonsai
+
+# Python
+.venv/
 
 # Go
 *.test
