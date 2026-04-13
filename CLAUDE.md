@@ -31,12 +31,14 @@ Bonsai/
 │   ├── config/
 │   │   └── config.go        ← ProjectConfig, InstalledAgent + YAML I/O
 │   ├── generate/
-│   │   └── generate.go      ← renders templates, writes files to target project
+│   │   ├── generate.go      ← renders templates, writes files to target project
+│   │   └── generate_test.go ← tests for core file generation
 │   └── tui/
 │       ├── styles.go         ← LipGloss styles, panels, trees, display helpers
 │       └── prompts.go        ← Huh form wrappers (text, select, multi-select, confirm)
 ├── catalog/                  ← bundled catalog (embedded into binary)
-│   ├── agents/               ← agent type definitions + core templates
+│   ├── core/                 ← shared core files (memory, self-awareness)
+│   ├── agents/               ← agent type definitions + identity templates
 │   │   ├── tech-lead/
 │   │   ├── backend/
 │   │   └── frontend/
@@ -85,8 +87,10 @@ When you discover bugs, improvement ideas, tech debt, or feature requests outsid
 - **Sensors** are auto-enforced hooks — `meta.yaml` adds `event` (hook event) and optional `matcher` (tool filter), with a companion `.sh.tmpl` script template instead of `.md`
 - **Routines** are periodic self-maintenance tasks — `meta.yaml` adds `frequency` (e.g. `"5 days"`), with a companion `.md.tmpl` content template. Installed to `agent/Routines/` with a managed dashboard at `agent/Core/routines.md`
 - **`routine-check` sensor** is auto-installed when any routines are present, auto-removed when the last routine is removed — parses the dashboard at session start and flags overdue routines
-- **Agent definitions** have an `agent.yaml` with `name`, `display_name`, `description`, `defaults` and a `core/` directory with `.tmpl` identity templates
-- **Templates** use Go `text/template` (`.tmpl` extension) with `{{ .ProjectName }}`, `{{ .ProjectDescription }}`, `{{ .Routines }}` context vars
+- **Shared core files** live in `catalog/core/` (memory, self-awareness) — used by all agents. An agent can override any shared file by placing a same-named file in its own `core/` directory. Generator checks agent first, falls back to shared.
+- **Agent definitions** have an `agent.yaml` with `name`, `display_name`, `description`, `defaults` and a `core/` directory with agent-specific files (at minimum `identity.md.tmpl`)
+- **`.tmpl` extension rule** — files ending in `.tmpl` contain Go template variables (`{{ }}`), are rendered at generation time, and have the `.tmpl` extension stripped from output. Files without `.tmpl` are copied as-is.
+- **Templates** use Go `text/template` with `{{ .ProjectName }}`, `{{ .ProjectDescription }}`, `{{ .Routines }}` context vars
 - **Scaffolding** is project infrastructure (INDEX, Playbook, Logs, Reports) — defined in `catalog/scaffolding/manifest.yaml` with `name`, `description`, `required`, `affects`, and `files`. Selected during `bonsai init`, some items are required
 - **`.bonsai.yaml`** is the project config generated in the user's target project — tracks installed agents, scaffolding selections, and docs_path
 - **`.claude/settings.json`** is auto-generated with hook entries for all installed sensors

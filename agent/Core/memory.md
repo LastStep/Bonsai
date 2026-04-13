@@ -25,7 +25,7 @@ description: Bonsai developer working memory — flags, work state, notes.
 - Build: `make build` → `./bonsai`
 - Install: `go install .` → `$GOPATH/bin/bonsai`
 - Stack: Cobra (CLI), Huh (forms), LipGloss (styling), BubbleTea (TUI)
-- security-audit workflow already created (shared between devops and future security agent)
+- security-audit workflow already created (shared between devops and security agents)
 - Routine .md.tmpl format: `1. **Bold step:**` with sub-bullets, not H3 headers. Include `**Frequency:** Every N days` after H1.
 
 ## Feedback

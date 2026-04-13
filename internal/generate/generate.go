@@ -661,18 +661,58 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		}
 	}
 
-	// 1. Core files
+	// 1. Core files (layered: shared defaults from catalog/core/, agent overrides from agent core/)
 	coreDir := filepath.Join(agentDir, "Core")
-	entries, err := fs.ReadDir(catFS, agentDef.CoreDir)
+
+	// Build set of agent-specific core files (for override detection)
+	agentCoreFiles := make(map[string]bool)
+	agentEntries, _ := fs.ReadDir(catFS, agentDef.CoreDir)
+	for _, e := range agentEntries {
+		if !e.IsDir() {
+			agentCoreFiles[e.Name()] = true
+		}
+	}
+
+	// Shared core files — use agent override if present, otherwise shared
+	sharedEntries, err := fs.ReadDir(catFS, catalog.SharedCoreDir)
 	if err == nil {
-		for _, e := range entries {
-			if !e.IsDir() {
-				src := agentDef.CoreDir + "/" + e.Name()
-				dest := filepath.Join(coreDir, e.Name())
-				if err := copyOrRender(catFS, src, dest, ctx); err != nil {
-					return fmt.Errorf("core file %s: %w", e.Name(), err)
+		for _, e := range sharedEntries {
+			if e.IsDir() {
+				continue
+			}
+			src := catalog.SharedCoreDir + "/" + e.Name()
+			if agentCoreFiles[e.Name()] {
+				src = agentDef.CoreDir + "/" + e.Name() // agent override
+			}
+			dest := filepath.Join(coreDir, e.Name())
+			if err := copyOrRender(catFS, src, dest, ctx); err != nil {
+				return fmt.Errorf("core file %s: %w", e.Name(), err)
+			}
+		}
+	}
+
+	// Agent-specific core files not in shared set (e.g. identity.md.tmpl)
+	for _, e := range agentEntries {
+		if e.IsDir() {
+			continue
+		}
+		// Skip files already handled by shared loop
+		if sharedEntries != nil {
+			found := false
+			for _, se := range sharedEntries {
+				if se.Name() == e.Name() {
+					found = true
+					break
 				}
 			}
+			if found {
+				continue
+			}
+		}
+		src := agentDef.CoreDir + "/" + e.Name()
+		dest := filepath.Join(coreDir, e.Name())
+		if err := copyOrRender(catFS, src, dest, ctx); err != nil {
+			return fmt.Errorf("core file %s: %w", e.Name(), err)
 		}
 	}
 

@@ -109,6 +109,10 @@ type ScaffoldingItem struct {
 	Files       []string `yaml:"files"`
 }
 
+// SharedCoreDir is the path within the embedded FS to shared core files
+// (memory, self-awareness). Agent-specific core/ dirs can override any shared file.
+const SharedCoreDir = "core"
+
 // AgentDef represents an agent type definition from the catalog.
 type AgentDef struct {
 	Name             string
