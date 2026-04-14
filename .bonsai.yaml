@@ -1,0 +1,42 @@
+project_name: Bonsai
+description: CLI tool for scaffolding Claude Code agent workspaces
+docs_path: station/
+scaffolding:
+    - index
+    - playbook
+    - logs
+    - reports
+agents:
+    tech-lead:
+        agent_type: tech-lead
+        workspace: station/
+        skills:
+            - planning-template
+            - review-checklist
+        workflows:
+            - code-review
+            - planning
+            - pr-review
+            - security-audit
+            - session-logging
+            - test-plan
+        protocols:
+            - memory
+            - scope-boundaries
+            - security
+            - session-start
+        sensors:
+            - context-guard
+            - scope-guard-files
+            - session-context
+            - status-bar
+            - routine-check
+        routines:
+            - backlog-hygiene
+            - dependency-audit
+            - doc-freshness-check
+            - infra-drift-check
+            - memory-consolidation
+            - roadmap-accuracy
+            - status-hygiene
+            - vulnerability-scan

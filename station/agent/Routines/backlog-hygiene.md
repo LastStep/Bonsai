@@ -1,0 +1,44 @@
+---
+tags: [routine]
+description: Review and maintain Playbook/Backlog.md — flag stale items, escalate P0s, cross-reference with Status and Roadmap.
+frequency: 7 days
+---
+
+# Routine: Backlog Hygiene
+
+**Frequency:** Every 7 days
+
+## Purpose
+
+Keep `station/Playbook/Backlog.md` accurate and actionable — escalate critical items, remove resolved work, flag stale entries, and ensure the backlog reflects current project priorities.
+
+## Procedure
+
+1. **Escalate misplaced P0s:**
+   - Read `station/Playbook/Backlog.md` — scan the P0 section
+   - For each P0 item, check if it already appears in `station/Playbook/Status.md` (In Progress or Pending)
+   - If a P0 exists in Backlog but NOT in Status.md — flag it to the user for immediate promotion
+
+2. **Cross-reference with Status.md:**
+   - Read `station/Playbook/Status.md`
+   - Remove any Backlog items that match items already In Progress or Recently Done in Status.md
+   - Check if any Status.md Pending items with "Blocked By" could be unblocked by resolving a Backlog item
+
+3. **Cross-reference with Roadmap.md:**
+   - Read `station/Playbook/Roadmap.md`
+   - Tag P2/P3 items that align with the current phase milestones — consider promoting to P1
+   - Flag items that reference deprecated approaches or completed phases
+
+4. **Flag stale items:**
+   - Items at the same priority for 30+ days without progress — flag for re-prioritization
+   - Items with no clear context or rationale — flag for clarification or removal
+   - Check for near-duplicates (similar descriptions across priority tiers)
+
+5. **Check for routine-generated items:**
+   - Read recent entries in `station/Logs/RoutineLog.md` (since last backlog-hygiene run)
+   - If any routine flagged issues that warrant backlog items (vulnerability findings, drift detections, doc staleness), verify they've been captured in the Backlog
+   - Don't auto-add — flag uncaptured findings for user review
+
+6. **Log results** to `station/Logs/RoutineLog.md`
+
+7. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`

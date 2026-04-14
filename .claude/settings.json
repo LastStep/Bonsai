@@ -1,0 +1,49 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash station/agent/Sensors/scope-guard-files.sh"
+          }
+        ],
+        "matcher": "Edit|Write"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash station/agent/Sensors/session-context.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash station/agent/Sensors/routine-check.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash station/agent/Sensors/status-bar.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash station/agent/Sensors/context-guard.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

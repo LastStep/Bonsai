@@ -3,14 +3,17 @@ bonsai
 bonsai.exe
 Bonsai
 
-# Python
-.venv/
-
 # Go
 *.test
 *.out
 vendor/
 
+# Bonsai
+.bonsai-lock.yaml
+*.bak
+
+# Legacy
+.venv/
 
 # Research / scratch
 RESEARCH*.md
