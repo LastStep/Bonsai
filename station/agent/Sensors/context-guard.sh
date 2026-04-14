@@ -71,14 +71,28 @@ elif context_pct >= 30:
 
 # ── Session-done trigger word detection ─────────────────────────────────────
 
-trigger_words = [
-    'session done', 'wrap up', 'wrapping up', 'end session',
-    'session over', \"we're done\", \"i'm done\", 'finish up',
-    \"let's wrap\", 'call it', \"that's all\",
+import re
+
+# Normalize: strip apostrophes, lowercase
+normalized = re.sub(r\"'\", '', prompt).lower()
+
+# Regex patterns — anchored to end-of-prompt to prevent false positives
+# e.g. \"thats all\" triggers, but \"thats all I need to change\" does not
+# Handles contractions (thats/that's/that is) via apostrophe stripping
+eol = r'[\\s.!?]*$'
+trigger_patterns = [
+    r'\\b(thats|that is)\\s+all' + eol,
+    r'\\b(were|we are)\\s+done' + eol,
+    r'\\b(im|i am)\\s+done' + eol,
+    r'\\b(lets|let us)\\s+(wrap|wrap up)' + eol,
+    r'\\bsession\\s+(done|over)' + eol,
+    r'\\bend\\s+session' + eol,
+    r'\\b(wrap|wrapping)\\s+up' + eol,
+    r'\\bfinish\\s+up' + eol,
+    r'\\bcall\\s+it' + eol,
 ]
 
-prompt_lower = prompt.lower()
-triggered = any(tw in prompt_lower for tw in trigger_words)
+triggered = any(re.search(p, normalized) for p in trigger_patterns)
 
 if triggered:
     wrapup = (
