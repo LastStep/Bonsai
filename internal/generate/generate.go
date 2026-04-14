@@ -76,7 +76,7 @@ func renderTemplate(fsys fs.FS, tmplPath string, ctx interface{}) (string, error
 	return buf.String(), nil
 }
 
-func descFor(names []string, cat *catalog.Catalog, category string) map[string]string {
+func descFor(names []string, cat *catalog.Catalog, category string, customItems map[string]*config.CustomItemMeta) map[string]string {
 	result := make(map[string]string)
 	for _, name := range names {
 		var desc string
@@ -96,6 +96,12 @@ func descFor(names []string, cat *catalog.Catalog, category string) map[string]s
 		case "routine":
 			if item := cat.GetRoutine(name); item != nil {
 				desc = item.Description
+			}
+		}
+		// Fall back to custom item metadata
+		if desc == "" && customItems != nil {
+			if meta, ok := customItems[name]; ok && meta.Description != "" {
+				desc = meta.Description
 			}
 		}
 		if desc == "" {
@@ -404,11 +410,20 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 
 	for _, installed := range cfg.Agents {
 		for _, sensorName := range installed.Sensors {
-			sensor := cat.GetSensor(sensorName)
-			if sensor == nil {
+			var event, matcher string
+			if sensor := cat.GetSensor(sensorName); sensor != nil {
+				event = sensor.Event
+				matcher = sensor.Matcher
+			} else if installed.CustomItems != nil {
+				if meta, ok := installed.CustomItems[sensorName]; ok && meta.Event != "" {
+					event = meta.Event
+					matcher = meta.Matcher
+				}
+			}
+			if event == "" {
 				continue
 			}
-			k := groupKey{sensor.Event, sensor.Matcher}
+			k := groupKey{event, matcher}
 			scriptPath := installed.Workspace + "agent/Sensors/" + sensorName + ".sh"
 			groups[k] = append(groups[k], "bash "+scriptPath)
 		}
@@ -448,9 +463,17 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 }
 
 
+const (
+	bonsaiStartMarker = "<!-- BONSAI_START -->"
+	bonsaiEndMarker   = "<!-- BONSAI_END -->"
+)
+
 // WorkspaceClaudeMD generates the workspace CLAUDE.md with navigation tables.
+// Includes section markers for safe partial updates. Custom items from
+// installed.CustomItems are included in nav tables alongside catalog items.
 func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	docsPrefix := cfg.DocsPath
+	custom := installed.CustomItems // may be nil
 
 	var lines []string
 	lines = append(lines,
@@ -470,7 +493,7 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 	)
 
 	if len(installed.Protocols) > 0 {
-		protoDescs := descFor(installed.Protocols, cat, "protocol")
+		protoDescs := descFor(installed.Protocols, cat, "protocol", custom)
 		lines = append(lines,
 			"### Protocols (load after Core, every session)", "",
 			"| File | Purpose |",
@@ -483,7 +506,7 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 	}
 
 	if len(installed.Workflows) > 0 {
-		wfDescs := descFor(installed.Workflows, cat, "workflow")
+		wfDescs := descFor(installed.Workflows, cat, "workflow", custom)
 		lines = append(lines,
 			"### Workflows (load when starting an activity)", "",
 			"| Activity | Read this |",
@@ -496,7 +519,7 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 	}
 
 	if len(installed.Skills) > 0 {
-		skillDescs := descFor(installed.Skills, cat, "skill")
+		skillDescs := descFor(installed.Skills, cat, "skill", custom)
 		lines = append(lines,
 			"### Skills (load when doing specific work)", "",
 			"| Need | Read this |",
@@ -520,6 +543,15 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 			if routine := cat.GetRoutine(r); routine != nil {
 				freq = routine.Frequency
 				displayName = routine.DisplayName
+			} else if custom != nil {
+				if meta, ok := custom[r]; ok {
+					if meta.Frequency != "" {
+						freq = meta.Frequency
+					}
+					if meta.DisplayName != "" {
+						displayName = meta.DisplayName
+					}
+				}
 			}
 			lines = append(lines, fmt.Sprintf("| %s | %s | `agent/Routines/%s.md` |",
 				displayName, freq, r))
@@ -542,6 +574,18 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 					eventStr += fmt.Sprintf(" (%s)", sensor.Matcher)
 				}
 				lines = append(lines, fmt.Sprintf("| `agent/Sensors/%s.sh` | %s | %s |", sensorName, eventStr, sensor.Description))
+			} else if custom != nil {
+				if meta, ok := custom[sensorName]; ok && meta.Event != "" {
+					eventStr := meta.Event
+					if meta.Matcher != "" {
+						eventStr += fmt.Sprintf(" (%s)", meta.Matcher)
+					}
+					desc := meta.Description
+					if desc == "" {
+						desc = catalog.DisplayNameFrom(sensorName)
+					}
+					lines = append(lines, fmt.Sprintf("| `agent/Sensors/%s.sh` | %s | %s |", sensorName, eventStr, desc))
+				}
 			}
 		}
 		lines = append(lines, "",
@@ -571,9 +615,36 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 	}
 	lines = append(lines, "")
 
-	content := []byte(strings.Join(lines, "\n"))
+	generatedContent := strings.Join(lines, "\n")
 	relPath, _ := filepath.Rel(projectRoot, filepath.Join(workspaceRoot, "CLAUDE.md"))
-	r := writeFile(projectRoot, relPath, content, "generated:workspace-claude-md", lock, force)
+	absPath := filepath.Join(projectRoot, relPath)
+
+	// Check for existing file with markers — preserve user content outside markers
+	if existing, err := os.ReadFile(absPath); err == nil {
+		existingStr := string(existing)
+		startIdx := strings.Index(existingStr, bonsaiStartMarker)
+		endIdx := strings.Index(existingStr, bonsaiEndMarker)
+
+		if startIdx >= 0 && endIdx >= 0 && endIdx > startIdx {
+			// Markers found — splice in new content, preserve content outside markers
+			beforeMarkers := existingStr[:startIdx]
+			afterMarkers := existingStr[endIdx+len(bonsaiEndMarker):]
+
+			fullContent := beforeMarkers + bonsaiStartMarker + "\n" + generatedContent + bonsaiEndMarker + afterMarkers
+			contentBytes := []byte(fullContent)
+
+			if err := os.WriteFile(absPath, contentBytes, 0644); err != nil {
+				return err
+			}
+			lock.Track(relPath, contentBytes, "generated:workspace-claude-md")
+			result.Add(FileResult{RelPath: relPath, Action: ActionUpdated, Source: "generated:workspace-claude-md"})
+			return nil
+		}
+	}
+
+	// No markers or no existing file — full generation with markers, use lock-aware write
+	fullContent := []byte(bonsaiStartMarker + "\n" + generatedContent + bonsaiEndMarker + "\n")
+	r := writeFile(projectRoot, relPath, fullContent, "generated:workspace-claude-md", lock, force)
 	result.Add(r)
 	return nil
 }
@@ -624,15 +695,27 @@ func RoutineDashboard(projectRoot string, workspaceRoot string, installed *confi
 	// Parse existing dashboard to preserve last_ran dates
 	existing := make(map[string]string) // routine name → last_ran date
 	if data, err := os.ReadFile(dashPath); err == nil {
+		inDashboard := false
 		for _, line := range strings.Split(string(data), "\n") {
-			if !strings.HasPrefix(line, "|") || strings.Contains(line, "Routine") || strings.Contains(line, "---") {
+			if strings.Contains(line, "ROUTINE_DASHBOARD_START") {
+				inDashboard = true
+				continue
+			}
+			if strings.Contains(line, "ROUTINE_DASHBOARD_END") {
+				break
+			}
+			if !inDashboard || !strings.HasPrefix(line, "|") {
+				continue
+			}
+			// Skip header and separator rows
+			if strings.Contains(line, "---|") {
 				continue
 			}
 			fields := strings.Split(line, "|")
 			if len(fields) >= 5 {
 				name := strings.TrimSpace(fields[1])
 				lastRan := strings.TrimSpace(fields[3])
-				if name != "" && lastRan != "" {
+				if name != "" && lastRan != "" && name != "Routine" {
 					existing[name] = lastRan
 				}
 			}
@@ -678,11 +761,26 @@ func RoutineDashboard(projectRoot string, workspaceRoot string, installed *confi
 	)
 
 	for _, routineName := range installed.Routines {
+		displayName := catalog.DisplayNameFrom(routineName)
+		freq := ""
+
 		routine := cat.GetRoutine(routineName)
-		if routine == nil {
-			continue
+		if routine != nil {
+			displayName = routine.DisplayName
+			freq = routine.Frequency
+		} else if installed.CustomItems != nil {
+			if meta, ok := installed.CustomItems[routineName]; ok {
+				if meta.DisplayName != "" {
+					displayName = meta.DisplayName
+				}
+				freq = meta.Frequency
+			}
 		}
-		displayName := routine.DisplayName
+
+		if freq == "" {
+			continue // can't compute dashboard without frequency
+		}
+
 		lastRan := "_never_"
 		nextDue := "_overdue_"
 		status := "pending"
@@ -691,7 +789,7 @@ func RoutineDashboard(projectRoot string, workspaceRoot string, installed *confi
 			lastRan = prev
 			// Compute nextDue from last_ran + frequency
 			if t, err := time.Parse("2006-01-02", lastRan); err == nil {
-				freqDays := parseFrequencyDays(routine.Frequency)
+				freqDays := parseFrequencyDays(freq)
 				due := t.AddDate(0, 0, freqDays)
 				nextDue = due.Format("2006-01-02")
 				if time.Now().Before(due) {
@@ -701,7 +799,7 @@ func RoutineDashboard(projectRoot string, workspaceRoot string, installed *confi
 		}
 
 		lines = append(lines, fmt.Sprintf("| %s | %s | %s | %s | %s |",
-			displayName, routine.Frequency, lastRan, nextDue, status))
+			displayName, freq, lastRan, nextDue, status))
 	}
 
 	lines = append(lines,
@@ -720,6 +818,10 @@ func RoutineDashboard(projectRoot string, workspaceRoot string, installed *confi
 		displayName := catalog.DisplayNameFrom(routineName)
 		if routine := cat.GetRoutine(routineName); routine != nil {
 			displayName = routine.DisplayName
+		} else if installed.CustomItems != nil {
+			if meta, ok := installed.CustomItems[routineName]; ok && meta.DisplayName != "" {
+				displayName = meta.DisplayName
+			}
 		}
 		lines = append(lines, fmt.Sprintf("| %s | `agent/Routines/%s.md` |", displayName, routineName))
 	}

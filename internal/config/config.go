@@ -6,15 +6,25 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// CustomItemMeta holds metadata for user-created custom items (parsed from frontmatter).
+type CustomItemMeta struct {
+	DisplayName string `yaml:"display_name,omitempty"`
+	Description string `yaml:"description"`
+	Event       string `yaml:"event,omitempty"`     // sensors only
+	Matcher     string `yaml:"matcher,omitempty"`    // sensors only
+	Frequency   string `yaml:"frequency,omitempty"`  // routines only
+}
+
 // InstalledAgent represents an agent installed in a project.
 type InstalledAgent struct {
-	AgentType string   `yaml:"agent_type"`
-	Workspace string   `yaml:"workspace"`
-	Skills    []string `yaml:"skills"`
-	Workflows []string `yaml:"workflows"`
-	Protocols []string `yaml:"protocols"`
-	Sensors   []string `yaml:"sensors"`
-	Routines  []string `yaml:"routines"`
+	AgentType   string                      `yaml:"agent_type"`
+	Workspace   string                      `yaml:"workspace"`
+	Skills      []string                    `yaml:"skills"`
+	Workflows   []string                    `yaml:"workflows"`
+	Protocols   []string                    `yaml:"protocols"`
+	Sensors     []string                    `yaml:"sensors"`
+	Routines    []string                    `yaml:"routines"`
+	CustomItems map[string]*CustomItemMeta  `yaml:"custom_items,omitempty"`
 }
 
 // ProjectConfig is the root project config serialized to .bonsai.yaml.

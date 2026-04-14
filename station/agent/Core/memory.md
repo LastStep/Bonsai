@@ -15,6 +15,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 **Blocked on:** (nothing)
 
 **Completed:**
+- `bonsai update` command — custom file detection, frontmatter parsing, CLAUDE.md section markers, re-render catalog items, settings/dashboard sync
 - Catalog expansion (all 3 phases) — see RESEARCH-catalog-expansion.md
 - Final agent lineup: tech-lead, fullstack, backend, frontend, devops, security
 - Managed Agents analysis — decided to defer cloud integration until local foundation is solid
@@ -33,7 +34,9 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 - Stack: Cobra (CLI), Huh (forms), LipGloss (styling), BubbleTea (TUI)
 - security-audit workflow already created (shared between devops and security agents)
 - Routine .md.tmpl format: `1. **Bold step:**` with sub-bullets, not H3 headers. Include `**Frequency:** Every N days` after H1.
-- session-wrapup.md is a custom workflow (not in catalog) — `.bonsai.yaml` only tracks catalog items, so it's not listed there. This is expected until custom item detection is built (P2 backlog).
+- session-wrapup.md is a custom workflow (not in catalog) — run `bonsai update` to detect and track it.
+- Custom files use YAML frontmatter for metadata (description, display_name, event, matcher, frequency). Guide at `docs/custom-files.md`.
+- CLAUDE.md now uses `<!-- BONSAI_START/END -->` markers — user content after end marker is preserved across updates.
 
 ## Feedback
 

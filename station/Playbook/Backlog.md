@@ -50,8 +50,11 @@ description: Prioritized backlog — bugs, features, debt, research, and improve
 
 - **[improvement] UI overhaul** — Current TUI is rough. Needs polish pass. *(added 2026-04-13, source: user)*
 - **[feature] Usage instructions** — Add guidance on best practices: running routines at first start to fix references, how to trigger specific effects, proper explanation of each catalog item. *(added 2026-04-13, source: user)*
-- **[feature] Custom item detection** — Detect user-created skills/workflows/protocols that aren't from the catalog. *(added 2026-04-13, source: user)*
+- **[feature] ~~Custom item detection~~** — Done. Shipped as `bonsai update`. *(added 2026-04-13, completed 2026-04-14)*
 - **[improvement] Self-update mechanism** — Skills and workflows should be able to self-heal or flag when they have issues. *(added 2026-04-13, source: user)*
+- **[feature] `bonsai guide` command** — Surface the custom files guide (`docs/custom-files.md`) as a terminal command. Keep doc and command output in sync. *(added 2026-04-14, source: user)*
+- **[feature] Custom item creator** — Interactive TUI for creating custom items (skill, workflow, protocol, sensor, routine) with frontmatter scaffolding — similar to Claude's skill creator. *(added 2026-04-14, source: user)*
+- **[improvement] Catalog display_name audit** — Add explicit `display_name` to all catalog `meta.yaml` files. Research other metadata fields that could be useful (e.g., `version`, `tags`, `dependencies`, `examples`). *(added 2026-04-14, source: user)*
 
 ## P3 — Ideas & Research
 

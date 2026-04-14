@@ -374,3 +374,119 @@ func TestWriteResultSummary(t *testing.T) {
 		t.Errorf("conflicts = %d, want 1", conflicts)
 	}
 }
+
+// ─── CLAUDE.md marker tests ──────────────────────────────────────────
+
+func TestClaudeMDHasMarkers(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
+
+	claudeMD, err := os.ReadFile(filepath.Join(tmpDir, "CLAUDE.md"))
+	if err != nil {
+		t.Fatalf("read CLAUDE.md: %v", err)
+	}
+	content := string(claudeMD)
+
+	if !strings.Contains(content, "<!-- BONSAI_START -->") {
+		t.Error("CLAUDE.md missing start marker")
+	}
+	if !strings.Contains(content, "<!-- BONSAI_END -->") {
+		t.Error("CLAUDE.md missing end marker")
+	}
+}
+
+func TestClaudeMDPreservesUserContent(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr1 WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr1, false)
+
+	// Append user content after end marker
+	claudePath := filepath.Join(tmpDir, "CLAUDE.md")
+	existing, _ := os.ReadFile(claudePath)
+	userContent := "\n\n### My Custom Section\n\nUser-added content here.\n"
+	_ = os.WriteFile(claudePath, append(existing, []byte(userContent)...), 0644)
+
+	// Run again — markers should be found, user content preserved
+	var wr2 WriteResult
+	_ = WorkspaceClaudeMD(tmpDir, tmpDir, agentDef, installed, cfg, cat, lock, &wr2, false)
+
+	updated, _ := os.ReadFile(claudePath)
+	if !strings.Contains(string(updated), "User-added content here.") {
+		t.Error("user content after end marker was not preserved")
+	}
+	if !strings.Contains(string(updated), "<!-- BONSAI_START -->") {
+		t.Error("start marker missing after update")
+	}
+}
+
+func TestClaudeMDIncludesCustomItems(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: ".",
+		Workflows: []string{"my-custom-wf"},
+		CustomItems: map[string]*config.CustomItemMeta{
+			"my-custom-wf": {
+				Description: "A custom workflow for testing",
+				DisplayName: "My Custom WF",
+			},
+		},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	_ = WorkspaceClaudeMD(tmpDir, tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
+
+	claudeMD, _ := os.ReadFile(filepath.Join(tmpDir, "CLAUDE.md"))
+	content := string(claudeMD)
+
+	if !strings.Contains(content, "my-custom-wf") {
+		t.Error("CLAUDE.md does not include custom workflow filename")
+	}
+	if !strings.Contains(content, "A custom workflow for testing") {
+		t.Error("CLAUDE.md does not include custom workflow description")
+	}
+}
