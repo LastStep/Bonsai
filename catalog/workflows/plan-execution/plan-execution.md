@@ -43,5 +43,5 @@ When you have been assigned a plan to implement.
 
 ### 5. Report
 
-- Write a completion report using `agent/Workflows/reporting.md`
+- Write a completion report using [agent/Workflows/reporting.md](reporting.md)
 - Include what was done, what was tested, any issues encountered

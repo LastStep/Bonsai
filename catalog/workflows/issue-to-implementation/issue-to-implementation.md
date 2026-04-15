@@ -18,9 +18,9 @@ description: End-to-end autonomous workflow — issue intake to shipped code via
 
 Load before starting:
 
-- `agent/Skills/issue-classification.md` — issue types, importance levels
-- `agent/Skills/dispatch.md` — triage rules, agent prompt structure
-- `agent/Skills/planning-template.md` — plan format and tier rules
+- [agent/Skills/issue-classification.md](../Skills/issue-classification.md) — issue types, importance levels
+- [agent/Skills/dispatch.md](../Skills/dispatch.md) — triage rules, agent prompt structure
+- [agent/Skills/planning-template.md](../Skills/planning-template.md) — plan format and tier rules
 
 ---
 
@@ -46,7 +46,7 @@ The user sets the mode at the start. When in doubt, default to supervised.
 ## Phase 0: Pre-Flight
 
 1. Run `git status`. If the working tree has uncommitted changes, **stop and warn the user**. Suggest committing or stashing before proceeding.
-2. Check `Playbook/Status.md` — if there's in-progress work that could conflict, flag it before starting.
+2. Check [Playbook/Status.md](../../Playbook/Status.md) — if there's in-progress work that could conflict, flag it before starting.
 
 ---
 
@@ -66,7 +66,7 @@ The user sets the mode at the start. When in doubt, default to supervised.
 
 ### Classify
 
-Use `agent/Skills/issue-classification.md`:
+Use [agent/Skills/issue-classification.md](../Skills/issue-classification.md):
 
 - **Type:** bug, feature, change, debt, research
 - **Domains:** which parts of the codebase are affected
@@ -81,9 +81,9 @@ Understand what the issue touches before planning anything.
 1. **Trace** — use Explore agents or Grep/Read to find affected files, functions, modules
 2. **Blast radius** — what files change, what tests are affected, what depends on the changed code
 3. **Architecture** — read relevant architecture docs, schemas, API specs
-4. **Overlap** — check `Playbook/Status.md` for in-progress work that conflicts
-5. **Related items** — check `Playbook/Backlog.md` for items that should be bundled with this work
-6. **Prior decisions** — check `Logs/KeyDecisionLog.md` for constraints on the approach
+4. **Overlap** — check [Playbook/Status.md](../../Playbook/Status.md) for in-progress work that conflicts
+5. **Related items** — check [Playbook/Backlog.md](../../Playbook/Backlog.md) for items that should be bundled with this work
+6. **Prior decisions** — check [Logs/KeyDecisionLog.md](../../Logs/KeyDecisionLog.md) for constraints on the approach
 
 ---
 
@@ -159,7 +159,7 @@ Fix every issue before proceeding. Do not carry known problems into dispatch.
 
 ## Phase 7: Triage
 
-Use the decision tree from `agent/Skills/dispatch.md`.
+Use the decision tree from [agent/Skills/dispatch.md](../Skills/dispatch.md).
 
 ### Self-dispatch when ALL true:
 
@@ -188,7 +188,7 @@ Use the decision tree from `agent/Skills/dispatch.md`.
 > [!warning]
 > **You do not write code.** Every implementation change — no matter how small — is dispatched to a subagent running in an isolated worktree. You orchestrate; they implement.
 
-Dispatch implementation agents using the dispatch skill. See `agent/Skills/dispatch.md` for full prompt structure and syntax.
+Dispatch implementation agents using the dispatch skill. See [agent/Skills/dispatch.md](../Skills/dispatch.md) for full prompt structure and syntax.
 
 ### Worktree isolation
 
@@ -395,7 +395,7 @@ Only merge after all audits in Phase 11 pass. The draft PR has existed since Pha
 
 ### 1. Review the PR
 
-Use the PR review workflow (`agent/Workflows/pr-review.md`):
+Use the PR review workflow ([agent/Workflows/pr-review.md](pr-review.md)):
 
 ```bash
 gh pr view {pr_number} --json title,body,files,additions,deletions

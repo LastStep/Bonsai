@@ -567,16 +567,16 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 		fmt.Sprintf("# %s — %s", cfg.ProjectName, agentDef.DisplayName), "",
 		fmt.Sprintf("**Working directory:** `%s`", installed.Workspace), "",
 		"> [!warning]",
-		"> **FIRST:** Read `agent/Core/identity.md`, then `agent/Core/memory.md`.", "",
+		"> **FIRST:** Read [agent/Core/identity.md](agent/Core/identity.md), then [agent/Core/memory.md](agent/Core/memory.md).", "",
 		"---", "",
 		"## Navigation", "",
 		"> All agent instruction files live in `agent/`.", "",
 		"### Core (load first, every session)", "",
 		"| File | Purpose |",
 		"|------|---------|",
-		"| `agent/Core/identity.md` | Who I am, relationships, mindset |",
-		"| `agent/Core/memory.md` | Working memory — flags, work state, notes |",
-		"| `agent/Core/self-awareness.md` | Context monitoring, hard thresholds |", "",
+		"| [agent/Core/identity.md](agent/Core/identity.md) | Who I am, relationships, mindset |",
+		"| [agent/Core/memory.md](agent/Core/memory.md) | Working memory — flags, work state, notes |",
+		"| [agent/Core/self-awareness.md](agent/Core/self-awareness.md) | Context monitoring, hard thresholds |", "",
 	)
 
 	if len(installed.Protocols) > 0 {
@@ -587,7 +587,7 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 			"|------|---------|",
 		)
 		for _, p := range installed.Protocols {
-			lines = append(lines, fmt.Sprintf("| `agent/Protocols/%s.md` | %s |", p, protoDescs[p]))
+			lines = append(lines, fmt.Sprintf("| [agent/Protocols/%s.md](agent/Protocols/%s.md) | %s |", p, p, protoDescs[p]))
 		}
 		lines = append(lines, "")
 	}
@@ -600,7 +600,7 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 			"|----------|-----------|",
 		)
 		for _, w := range installed.Workflows {
-			lines = append(lines, fmt.Sprintf("| %s | `agent/Workflows/%s.md` |", wfDescs[w], w))
+			lines = append(lines, fmt.Sprintf("| %s | [agent/Workflows/%s.md](agent/Workflows/%s.md) |", wfDescs[w], w, w))
 		}
 		lines = append(lines, "")
 	}
@@ -613,7 +613,7 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 			"|------|-----------|",
 		)
 		for _, s := range installed.Skills {
-			lines = append(lines, fmt.Sprintf("| %s | `agent/Skills/%s.md` |", skillDescs[s], s))
+			lines = append(lines, fmt.Sprintf("| %s | [agent/Skills/%s.md](agent/Skills/%s.md) |", skillDescs[s], s, s))
 		}
 		lines = append(lines, "")
 	}
@@ -640,11 +640,11 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 					}
 				}
 			}
-			lines = append(lines, fmt.Sprintf("| %s | %s | `agent/Routines/%s.md` |",
-				displayName, freq, r))
+			lines = append(lines, fmt.Sprintf("| %s | %s | [agent/Routines/%s.md](agent/Routines/%s.md) |",
+				displayName, freq, r, r))
 		}
 		lines = append(lines, "",
-			"> Routines are opt-in — check `agent/Core/routines.md` for the dashboard and procedures.", "")
+			"> Routines are opt-in — check [agent/Core/routines.md](agent/Core/routines.md) for the dashboard and procedures.", "")
 	}
 
 	if len(installed.Sensors) > 0 {
@@ -660,7 +660,7 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 				if sensor.Matcher != "" {
 					eventStr += fmt.Sprintf(" (%s)", sensor.Matcher)
 				}
-				lines = append(lines, fmt.Sprintf("| `agent/Sensors/%s.sh` | %s | %s |", sensorName, eventStr, sensor.Description))
+				lines = append(lines, fmt.Sprintf("| [agent/Sensors/%s.sh](agent/Sensors/%s.sh) | %s | %s |", sensorName, sensorName, eventStr, sensor.Description))
 			} else if custom != nil {
 				if meta, ok := custom[sensorName]; ok && meta.Event != "" {
 					eventStr := meta.Event
@@ -671,7 +671,7 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 					if desc == "" {
 						desc = catalog.DisplayNameFrom(sensorName)
 					}
-					lines = append(lines, fmt.Sprintf("| `agent/Sensors/%s.sh` | %s | %s |", sensorName, eventStr, desc))
+					lines = append(lines, fmt.Sprintf("| [agent/Sensors/%s.sh](agent/Sensors/%s.sh) | %s | %s |", sensorName, sensorName, eventStr, desc))
 				}
 			}
 		}
@@ -694,22 +694,36 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 		"---", "",
 		"## Memory", "",
 		"> [!warning]",
-		"> **Do NOT use Claude Code's auto-memory system** (`~/.claude/projects/*/memory/`). All persistent memory goes in `agent/Core/memory.md` — version-controlled, auditable, inside the project.", "",
-		"When you would normally write to auto-memory (feedback, references, project context, flags), write to the appropriate section in `agent/Core/memory.md` instead.", "",
+		"> **Do NOT use Claude Code's auto-memory system** (`~/.claude/projects/*/memory/`). All persistent memory goes in [agent/Core/memory.md](agent/Core/memory.md) — version-controlled, auditable, inside the project.", "",
+		"When you would normally write to auto-memory (feedback, references, project context, flags), write to the appropriate section in [agent/Core/memory.md](agent/Core/memory.md) instead.", "",
 		"---", "",
 		"### External References", "",
 		"| Need | Read this |",
 		"|------|-----------|",
-		fmt.Sprintf("| Project snapshot | `%sINDEX.md` |", docsPrefix),
-		fmt.Sprintf("| Current work status | `%sPlaybook/Status.md` |", docsPrefix),
-		fmt.Sprintf("| Long-term direction | `%sPlaybook/Roadmap.md` |", docsPrefix),
-		fmt.Sprintf("| Security standards | `%sPlaybook/Standards/SecurityStandards.md` |", docsPrefix),
-		fmt.Sprintf("| Your assigned plan | `%sPlaybook/Plans/Active/` |", docsPrefix),
-		fmt.Sprintf("| Backlog | `%sPlaybook/Backlog.md` |", docsPrefix),
-		fmt.Sprintf("| Prior decisions | `%sLogs/KeyDecisionLog.md` |", docsPrefix),
+	)
+
+	// extRef computes the relative path from the workspace root (where CLAUDE.md lives)
+	// to a file inside DocsPath. Display text keeps docsPrefix for agent context.
+	extRef := func(target string) string {
+		full := filepath.Join(cfg.DocsPath, target)
+		rel, err := filepath.Rel(installed.Workspace, full)
+		if err != nil {
+			return target
+		}
+		return filepath.ToSlash(rel)
+	}
+
+	lines = append(lines,
+		fmt.Sprintf("| Project snapshot | [%sINDEX.md](%s) |", docsPrefix, extRef("INDEX.md")),
+		fmt.Sprintf("| Current work status | [%sPlaybook/Status.md](%s) |", docsPrefix, extRef("Playbook/Status.md")),
+		fmt.Sprintf("| Long-term direction | [%sPlaybook/Roadmap.md](%s) |", docsPrefix, extRef("Playbook/Roadmap.md")),
+		fmt.Sprintf("| Security standards | [%sPlaybook/Standards/SecurityStandards.md](%s) |", docsPrefix, extRef("Playbook/Standards/SecurityStandards.md")),
+		fmt.Sprintf("| Your assigned plan | [%sPlaybook/Plans/Active/](%s) |", docsPrefix, extRef("Playbook/Plans/Active/")),
+		fmt.Sprintf("| Backlog | [%sPlaybook/Backlog.md](%s) |", docsPrefix, extRef("Playbook/Backlog.md")),
+		fmt.Sprintf("| Prior decisions | [%sLogs/KeyDecisionLog.md](%s) |", docsPrefix, extRef("Logs/KeyDecisionLog.md")),
 	)
 	if hasScaffolding(cfg, "reports") {
-		lines = append(lines, fmt.Sprintf("| Submit report | `%sReports/Pending/` |", docsPrefix))
+		lines = append(lines, fmt.Sprintf("| Submit report | [%sReports/Pending/](%s) |", docsPrefix, extRef("Reports/Pending/")))
 	}
 	lines = append(lines, "")
 

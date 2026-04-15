@@ -9,7 +9,7 @@ description: How to read, write, and clean working memory.
 
 ## Reading Memory
 
-At session start, read `agent/Core/memory.md` and act on any flags:
+At session start, read [agent/Core/memory.md](../Core/memory.md) and act on any flags:
 
 - **Flags** — unresolved items from prior sessions. Address or escalate each one.
 - **Work state** — what was in progress. Resume or confirm completion.
