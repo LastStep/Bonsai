@@ -42,6 +42,8 @@ description: Prioritized backlog — bugs, features, debt, research, and improve
 
 ## P0 — Critical
 
+- **[bug] Case-insensitive file collision blocks `go install`** — `station/INDEX.md` and `station/index.md` both exist, causing a case-insensitive collision that prevents the Go module proxy from indexing the package. `go install github.com/LastStep/Bonsai@latest` fails, pkg.go.dev returns 404. Fix: rename `station/index.md` to avoid collision (e.g., `station/code-index.md` or `station/source-index.md`). Update all references in CLAUDE.md, session-context sensor, and any cross-links. Once fixed, re-trigger proxy indexing and restore the Go Reference badge in README. *(added 2026-04-16, source: session)*
+
 ## P1 — High
 
 <!-- "CI workflow + branch protection" implemented — removed 2026-04-15, issue-to-implementation workflow, PR #6 -->
