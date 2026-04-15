@@ -10,7 +10,7 @@ frequency: 5 days
 
 ## Purpose
 
-Bridge Claude Code auto-memory and `agent/Core/memory.md`. Validate facts against codebase. Clean redundant entries. This is the primary mechanism for preventing memory drift between Claude Code's built-in system and our version-controlled agent memory.
+Bridge Claude Code auto-memory and [agent/Core/memory.md](../Core/memory.md). Validate facts against codebase. Clean redundant entries. This is the primary mechanism for preventing memory drift between Claude Code's built-in system and our version-controlled agent memory.
 
 ## Procedure
 
@@ -19,7 +19,7 @@ Bridge Claude Code auto-memory and `agent/Core/memory.md`. Validate facts agains
    - Read any individual memory files referenced by the MEMORY.md index
 
 2. **Read current agent memory:**
-   - `agent/Core/memory.md` — all sections (Flags, Work State, Notes, Feedback, References)
+   - [agent/Core/memory.md](../Core/memory.md) — all sections (Flags, Work State, Notes, Feedback, References)
 
 3. **For each entry in auto-memory, apply consolidation decision:**
    - **keep** — already exists in agent memory, still accurate — no action

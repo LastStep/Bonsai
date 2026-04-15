@@ -15,7 +15,7 @@ After completing a plan or significant task. Submit this report for review.
 
 ## Steps
 
-1. Read the report template at `Reports/report-template.md`
+1. Read the report template at [Reports/report-template.md](../../Reports/report-template.md)
 2. Fill in all sections — be specific
 3. Save the report to `Reports/Pending/` with the naming convention: `YYYY-MM-DD-plan-NN-agent.md`
 

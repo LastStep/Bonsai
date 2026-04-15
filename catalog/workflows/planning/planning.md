@@ -19,8 +19,8 @@ When a new task, feature, or fix needs a plan before agents can execute.
 
 - What does the user want?
 - What's the scope? (single-domain or multi-domain)
-- What tier? (Tier 1 Patch or Tier 2 Feature — see `agent/Skills/planning-template.md`)
-- Check `Playbook/Backlog.md` — is this request already captured? Are there related P0/P1 items that should be bundled?
+- What tier? (Tier 1 Patch or Tier 2 Feature — see [agent/Skills/planning-template.md](../Skills/planning-template.md))
+- Check [Playbook/Backlog.md](../../Playbook/Backlog.md) — is this request already captured? Are there related P0/P1 items that should be bundled?
 
 ### 2. Research
 
@@ -34,7 +34,7 @@ If you see a design fork — raise it. Don't wait for the user to ask.
 
 ### 4. Write the Plan
 
-- Use the appropriate tier template from `agent/Skills/planning-template.md`
+- Use the appropriate tier template from [agent/Skills/planning-template.md](../Skills/planning-template.md)
 - Steps must be specific enough that agents don't make design decisions
 
 ### 5. Self-Review
