@@ -7,7 +7,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/LastStep/Bonsai?style=flat&color=blue)](https://github.com/LastStep/Bonsai/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/LastStep/Bonsai/ci.yml?label=CI)](https://github.com/LastStep/Bonsai/actions?query=workflow%3ACI)
-[![Go 1.24+](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Go Reference](https://pkg.go.dev/badge/github.com/LastStep/Bonsai.svg)](https://pkg.go.dev/github.com/LastStep/Bonsai)
 [![Go Report Card](https://goreportcard.com/badge/github.com/LastStep/Bonsai)](https://goreportcard.com/report/github.com/LastStep/Bonsai)
 
 Give your Claude Code agents identity, memory, protocols, and purpose —<br>
