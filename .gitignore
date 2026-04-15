@@ -21,3 +21,4 @@ vendor/
 # Research / scratch
 RESEARCH*.md
 *.png
+!docs/assets/*.png
