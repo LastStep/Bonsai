@@ -1,6 +1,6 @@
 # Custom Files Guide
 
-Bonsai installs catalog items (skills, workflows, protocols, sensors, routines) from its built-in catalog. You can also create **custom files** — your own items that live alongside catalog items and are tracked by Bonsai.
+Bonsai installs abilities (skills, workflows, protocols, sensors, routines) from its built-in catalog. You can also create **custom files** — your own abilities that live alongside catalog-provided ones and are tracked by Bonsai.
 
 ## How It Works
 

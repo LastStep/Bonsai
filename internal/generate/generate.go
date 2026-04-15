@@ -501,7 +501,7 @@ const (
 
 // WorkspaceClaudeMD generates the workspace CLAUDE.md with navigation tables.
 // Includes section markers for safe partial updates. Custom items from
-// installed.CustomItems are included in nav tables alongside catalog items.
+// installed.CustomItems are included in nav tables alongside abilities.
 func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	docsPrefix := cfg.DocsPath
 	custom := installed.CustomItems // may be nil

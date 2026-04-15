@@ -13,7 +13,7 @@ func init() {
 
 var catalogCmd = &cobra.Command{
 	Use:   "catalog",
-	Short: "Browse available agents, skills, workflows, protocols, and routines.",
+	Short: "Browse available abilities — agents, skills, workflows, protocols, and routines.",
 	RunE:  runCatalog,
 }
 

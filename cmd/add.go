@@ -237,7 +237,7 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 		os.Exit(1)
 	}
 
-	tui.Info(fmt.Sprintf("%s is already installed at %s — showing uninstalled items.", agentDef.DisplayName, installed.Workspace))
+	tui.Info(fmt.Sprintf("%s is already installed at %s — showing uninstalled abilities.", agentDef.DisplayName, installed.Workspace))
 	tui.Blank()
 
 	installedSet := func(items []string) map[string]bool {
@@ -290,7 +290,7 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 
 	totalAvailable := len(newSkills) + len(newWorkflows) + len(newProtocols) + len(newSensors) + len(newRoutines)
 	if totalAvailable == 0 {
-		tui.SuccessPanel("All available items are already installed.", "")
+		tui.SuccessPanel("All available abilities are already installed.", "")
 		return nil
 	}
 
@@ -320,11 +320,11 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 
 	totalSelected := len(selectedSkills) + len(selectedWorkflows) + len(selectedProtocols) + len(selectedSensors) + len(selectedRoutines)
 	if totalSelected == 0 {
-		tui.Info("No new items selected.")
+		tui.Info("No new abilities selected.")
 		return nil
 	}
 
-	// Review summary — show only the new items being added
+	// Review summary — show only the new abilities being added
 	describer := func(name string) string {
 		if item := cat.GetItem(name); item != nil {
 			return item.Description
@@ -392,6 +392,6 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 
 	showWriteResults(&wr, installed.Workspace)
 
-	tui.Success(fmt.Sprintf("Added %d items to %s", totalSelected, agentDef.DisplayName))
+	tui.Success(fmt.Sprintf("Added %d abilities to %s", totalSelected, agentDef.DisplayName))
 	return nil
 }

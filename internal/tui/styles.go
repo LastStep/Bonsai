@@ -365,7 +365,7 @@ func FileTree(files []string, rootLabel string) string {
 	return buf.String()
 }
 
-// CatalogTable renders a styled table for catalog items.
+// CatalogTable renders a styled table for abilities.
 func CatalogTable(headers []string, rows [][]string) {
 	if len(rows) == 0 {
 		Info("  (none)")

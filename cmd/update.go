@@ -21,7 +21,7 @@ func init() {
 
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Sync workspace — detect custom files, re-render catalog items, refresh CLAUDE.md.",
+	Short: "Sync workspace — detect custom files, re-render abilities, refresh CLAUDE.md.",
 	RunE:  runUpdate,
 }
 
@@ -143,7 +143,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// 2. Re-render catalog items + CLAUDE.md + settings.json for all agents
+	// 2. Re-render abilities + CLAUDE.md + settings.json for all agents
 	var wr generate.WriteResult
 
 	_ = spinner.New().
