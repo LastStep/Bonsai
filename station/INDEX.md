@@ -22,15 +22,15 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 | TUI components | BubbleTea (Charm) |
 | Config format | YAML (`gopkg.in/yaml.v3`) |
 | Template engine | Go `text/template` (stdlib) |
-| Distribution | Single binary via `go install` / `embed.FS` |
+| Distribution | Single binary — Homebrew, GitHub Releases, `go install` / `embed.FS` |
 
 ### Key Metrics
 
 | Metric | Value |
 |--------|-------|
 | Agent types | 6 (tech-lead, fullstack, backend, frontend, devops, security) |
-| Catalog items | ~30 (skills, workflows, protocols, sensors, routines) |
-| CLI commands | 5 (init, add, remove, list, catalog) |
+| Catalog items | ~50 (skills, workflows, protocols, sensors, routines) |
+| CLI commands | 7 (init, add, remove, list, catalog, update, guide) |
 
 ---
 

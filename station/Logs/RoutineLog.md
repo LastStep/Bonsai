@@ -117,3 +117,21 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Iterations:** 1 execute-review cycle
 - **Issues found:** none
 - **Result:** completed — PR #2, reviewed and marked ready
+
+### 2026-04-15 — CI workflow (issue-to-implementation)
+- **Plan:** No plan — Tier 1 patch
+- **Iterations:** 1 execute-review cycle
+- **Issues found:** none
+- **Result:** completed — PR #6, reviewed and marked ready
+
+### 2026-04-15 — Release pipeline (issue-to-implementation)
+- **Plan:** Plans/Active/04-release-pipeline.md
+- **Iterations:** 1 execute-review cycle
+- **Issues found:** none (reviewer noted 2 minor observations: unused exported `Version` var in cmd, Actions pinned to major versions not SHAs — neither blocking)
+- **Result:** completed — PR #5 (draft)
+
+### 2026-04-16 — Plan 05: AI Operational Intelligence (issue-to-implementation)
+- **Plan:** Plans/Active/05-usage-instructions.md
+- **Iterations:** 1 execute-review cycle
+- **Issues found:** Agent created PR on `feat/usage-instructions` branch but also left a stale `worktree-agent-ad11a6d4` branch ref — cleaned up during review
+- **Result:** completed — PR #7 (ready for review)

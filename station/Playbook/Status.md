@@ -14,7 +14,8 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| — | — | — | — |
+| Cross-link generated files with Obsidian-compatible markdown links | 03 | tech-lead | PR #4 — draft, ready for review |
+<!-- Release pipeline moved to Recently Done — merged + released v0.1.0 2026-04-15 -->
 
 ## Pending
 
@@ -27,6 +28,8 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| AI operational intelligence — How to Work + workspace-guide skill | 05 | tech-lead | 2026-04-16 |
+| Release pipeline — GoReleaser + GitHub Actions + Homebrew Tap | 04 | tech-lead | 2026-04-15 |
 | Rename "catalog items" to "abilities" — CLI, TUI, README, docs, comments | — | tech-lead | 2026-04-15 |
 | `bonsai guide` command — render custom files guide in terminal | 02 | tech-lead | 2026-04-15 |
 | CLAUDE.md marker migration — backup + overwrite for marker-less files | 01 | tech-lead | 2026-04-15 |

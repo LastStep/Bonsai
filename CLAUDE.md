@@ -19,13 +19,18 @@ Bonsai/
 ├── main.go                  ← entry point, embeds catalog/ via embed.FS
 ├── go.mod / go.sum          ← module config
 ├── Makefile                 ← build, install, clean
+├── .goreleaser.yaml         ← GoReleaser v2 config (cross-platform builds, Homebrew)
+├── .github/workflows/
+│   └── release.yml          ← GitHub Actions — tag-triggered release pipeline
 ├── cmd/                     ← Cobra commands
-│   ├── root.go              ← root command, shared helpers
+│   ├── root.go              ← root command, version, shared helpers
 │   ├── init.go              ← bonsai init
 │   ├── add.go               ← bonsai add
 │   ├── remove.go            ← bonsai remove
 │   ├── list.go              ← bonsai list
-│   └── catalog.go           ← bonsai catalog
+│   ├── catalog.go           ← bonsai catalog
+│   ├── update.go            ← bonsai update
+│   └── guide.go             ← bonsai guide
 ├── internal/
 │   ├── catalog/
 │   │   └── catalog.go       ← loads YAML metadata from embedded catalog/

@@ -25,6 +25,8 @@ description: High-level project phases and goals. This is the long-term plan, no
 - [ ] Better trigger sections — clearer activation conditions for catalog items
 - [ ] UI overhaul — polish TUI for public-facing quality
 - [ ] Usage instructions — best practices, first-run guidance, catalog item explanations
+- [x] Release pipeline — GoReleaser + GitHub Actions + Homebrew Tap for cross-platform binary distribution
+- [ ] Community health files — ISSUE_TEMPLATE, CONTRIBUTING.md, CODE_OF_CONDUCT.md
 
 ---
 
@@ -37,6 +39,7 @@ description: High-level project phases and goals. This is the long-term plan, no
 - [ ] Custom item detection — recognize user-created skills/workflows/protocols outside the catalog
 - [ ] Self-update mechanism — catalog items can flag when they're stale or have issues
 - [ ] Template variables expansion — richer context available in templates
+- [ ] Micro-task fast path — lightweight protocol bypass for trivial changes
 
 ### Phase 3 — Cloud & Orchestration
 

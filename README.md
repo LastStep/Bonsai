@@ -13,11 +13,19 @@ One binary. No runtime dependencies. Works with any project.
 
 ## Install
 
+**Homebrew** (macOS / Linux):
+
+```bash
+brew install LastStep/tap/bonsai
+```
+
+**Binary download** — grab the latest from [GitHub Releases](https://github.com/LastStep/Bonsai/releases). Download the archive for your platform, extract, and move to your PATH.
+
+**From source** (requires Go 1.24+):
+
 ```bash
 go install github.com/LastStep/Bonsai@latest
 ```
-
-> Requires Go 1.24+
 
 ---
 
@@ -141,6 +149,9 @@ your-project/
 | `bonsai remove <agent>` | Remove an installed agent | `-d` `--delete-files` |
 | `bonsai list` | Show installed agents + components | |
 | `bonsai catalog` | Browse available abilities | `-a` `--agent <type>` |
+| `bonsai update` | Detect custom files and sync workspace | |
+| `bonsai guide` | Render the custom files guide in the terminal | |
+| `bonsai --version` | Print the current version | |
 
 ---
 
