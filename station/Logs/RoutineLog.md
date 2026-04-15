@@ -20,6 +20,12 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-16 — PR #8: Fix case-insensitive file collision (issue-to-implementation)
+- **Plan:** Plans/Active/06-case-insensitive-file-collision.md
+- **Iterations:** 1 execute-review cycle
+- **Issues found:** none
+- **Result:** completed — merged via squash, PR #8
+
 ### 2026-04-15 — Selective file update in conflict resolution (issue-to-implementation)
 - **Outcome:** completed
 - **Plan:** Tier 1 (Patch) — no plan file needed

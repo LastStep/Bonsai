@@ -15,6 +15,7 @@ description: Live task tracker. Update this file at the start and end of every w
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
 <!-- Cross-link moved to Recently Done — merged 2026-04-16, PR #4 -->
+<!-- P0 file collision fix — merged 2026-04-16, PR #8 -->
 
 ## Pending
 
@@ -27,6 +28,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Fix case-insensitive file collision (index.md / INDEX.md) | 06 | tech-lead | 2026-04-16 |
 | README rewrite for open-source release | — | tech-lead | 2026-04-16 |
 | Cross-link generated files — Obsidian-compatible markdown links | 03 | tech-lead | 2026-04-16 |
 | AI operational intelligence — How to Work + workspace-guide skill | 05 | tech-lead | 2026-04-16 |

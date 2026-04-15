@@ -39,6 +39,12 @@ Keep `{{ .DocsPath }}Playbook/Backlog.md` accurate and actionable — escalate c
    - If any routine flagged issues that warrant backlog items (vulnerability findings, drift detections, doc staleness), verify they've been captured in the Backlog
    - Don't auto-add — flag uncaptured findings for user review
 
-6. **Log results** to `{{ .DocsPath }}Logs/RoutineLog.md`
+6. **Promote ready items via issue-to-implementation:**
+   - If any item is approved for implementation (user says to pick it up, or a P0 needs immediate action), route it through the **issue-to-implementation workflow** rather than just moving it to Status.md
+   - The workflow handles: intake → analysis → planning → dispatch → review → merge → logging
+   - This ensures every promoted item gets a plan, proper execution, and audit trail
+   - Present the item to the user and confirm before starting the workflow
 
-7. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`
+7. **Log results** to `{{ .DocsPath }}Logs/RoutineLog.md`
+
+8. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`
