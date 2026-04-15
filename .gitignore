@@ -3,6 +3,9 @@ bonsai
 bonsai.exe
 Bonsai
 
+# GoReleaser
+dist/
+
 # Go
 *.test
 *.out
