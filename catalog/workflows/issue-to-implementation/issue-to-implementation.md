@@ -7,6 +7,11 @@ description: End-to-end autonomous workflow — issue intake to shipped code via
 
 > The Tech Lead's primary orchestration workflow. Issue → shipped code.
 
+> [!warning]
+> **Hard rules:**
+> 1. **You never write code.** All implementation goes to subagents. You plan, orchestrate, and review.
+> 2. **All code changes happen in isolated worktrees.** Nothing touches the main working tree until the final merge after all audits pass.
+
 ---
 
 ## Prerequisites
@@ -180,67 +185,99 @@ Use the decision tree from `agent/Skills/dispatch.md`.
 
 ## Phase 8: Execute
 
+> [!warning]
+> **You do not write code.** Every implementation change — no matter how small — is dispatched to a subagent running in an isolated worktree. You orchestrate; they implement.
+
 Dispatch implementation agents using the dispatch skill. See `agent/Skills/dispatch.md` for full prompt structure and syntax.
 
-### Single-domain
+### Worktree isolation
+
+Every implementation agent **must** use `isolation: "worktree"`. This creates a temporary git worktree on a fresh branch. The main working tree stays clean until the explicit merge in Phase 12.
+
+- Worktrees are auto-cleaned if the agent makes no changes
+- If the agent succeeds, you get back the worktree path and branch name — use these for review and merge
+- Never ask an agent to write to the main working tree
+
+### Dispatch patterns
+
+**Single task:**
 
 ```
 Agent(subagent_type: "general-purpose", isolation: "worktree", prompt: "...")
 ```
 
-### Multi-domain (parallel)
+**Independent parallel tasks** (send in a single message so they run concurrently):
 
 ```
-Agent(subagent_type: "general-purpose", isolation: "worktree", run_in_background: true, prompt: "backend steps...")
-Agent(subagent_type: "general-purpose", isolation: "worktree", run_in_background: true, prompt: "frontend steps...")
+Agent(subagent_type: "general-purpose", isolation: "worktree", run_in_background: true, prompt: "task A...")
+Agent(subagent_type: "general-purpose", isolation: "worktree", run_in_background: true, prompt: "task B...")
 ```
 
-Sequential if there's a dependency (e.g., backend API must exist before frontend calls it).
+**Sequential dependent tasks** (wait for the first to finish, pass its branch to the next):
+
+```
+# First: dispatch agent A, wait for result
+Agent(subagent_type: "general-purpose", isolation: "worktree", prompt: "task A...")
+# Then: dispatch agent B on agent A's branch or with its output as context
+Agent(subagent_type: "general-purpose", isolation: "worktree", prompt: "task B... Agent A's branch: {branch}...")
+```
 
 ### Agent prompt structure
 
-1. **Workspace bootstrap** — "Read `{workspace}/CLAUDE.md` first."
+1. **Workspace bootstrap** — "Read `CLAUDE.md` at the project root first, then `{workspace}/CLAUDE.md`."
 2. **Context** — the problem being solved (from the issue)
 3. **Plan steps** — only this agent's steps, copied verbatim from the plan
 4. **Plan location** — path to the plan file
-5. **Verification** — what to run after completing
-6. **Constraints** — scope limits, no design decisions, stop-and-report on ambiguity
+5. **Verification** — what to run after completing (e.g., `make build && go test ./...`)
+6. **Constraints:**
+   ```
+   - Don't modify files outside the scope of the plan
+   - Don't make design decisions — if the plan is ambiguous, stop and report
+   - Don't add features, refactor code, or make improvements beyond what the plan specifies
+   - If something is unclear, stop and report — don't guess
+   - Run verification steps before reporting completion
+   ```
 
 Do NOT include: conversation history, other agents' steps, or unnecessary context.
 
-After dispatch, wait for the agent notification — don't poll.
+### After dispatch
+
+Wait for the agent notification — don't poll. When it returns:
+1. Note the worktree path and branch name from the result
+2. Proceed to Phase 9 (Review Loop)
 
 ---
 
 ## Phase 9: Review Loop
 
-When the execution agent finishes, enter the review cycle.
+When the execution agent finishes, enter the review cycle. All review happens against the worktree branch — the main tree is still untouched.
 
 ### Step 1 — Self-review the output
 
 - Read the agent's summary
-- Diff the worktree against the plan — every step followed, nothing improvised
+- Diff the worktree branch against main — `git diff main...{branch}`
+- Check every plan step was followed, nothing improvised
 - Check for scope creep (changes not in the plan)
 
 ### Step 2 — Dispatch review agent(s)
 
-For substantial changes, dispatch an independent review agent:
+For substantial changes, dispatch an independent review agent (no worktree needed — reviewers only read):
 
 ```
 Agent(subagent_type: "general-purpose", prompt:
   "Review the changes on branch {branch}.
    Read the plan at {plan-path}.
-   Use the review checklist at agent/Skills/review-checklist.md.
+   Use the review checklist at {workspace}/agent/Skills/review-checklist.md.
    Check: correctness, security, test coverage, standards compliance.
    Report pass/fail with specific issues found.")
 ```
 
-For security-sensitive changes, also dispatch a security review:
+For security-sensitive changes, also dispatch a security review in parallel:
 
 ```
 Agent(subagent_type: "general-purpose", prompt:
   "Security review of changes on branch {branch}.
-   Check against Playbook/Standards/SecurityStandards.md.
+   Check against {workspace}/Playbook/Standards/SecurityStandards.md.
    Focus on: input validation, auth, secrets, error handling, dependency safety.
    Report pass/fail with specific findings.")
 ```
@@ -250,8 +287,19 @@ Agent(subagent_type: "general-purpose", prompt:
 | Result | Action |
 |--------|--------|
 | All checks pass | Proceed to Logging |
-| Minor issues found | Dispatch fix agent on the same worktree, then re-review from Step 2 |
+| Minor issues found | Dispatch a **fix agent in a new worktree based on the same branch**, then re-review from Step 2 |
 | Major issues found | Escalate to user with specific problems listed |
+
+When dispatching a fix agent for minor issues:
+
+```
+Agent(subagent_type: "general-purpose", isolation: "worktree", prompt:
+  "You are fixing review findings on branch {branch}.
+   Git checkout {branch} first, then apply these fixes:
+   {specific issues from review}
+   Run verification: make build && go test ./...
+   Constraints: only fix what's listed, nothing else.")
+```
 
 ### Iteration limits
 
@@ -324,15 +372,33 @@ If any check fails: fix it, re-verify the fix, and document what was caught in t
 
 ## Phase 12: Merge & Close
 
-1. **Merge** worktree branch(es) into the working branch
-2. **Post-merge verification** — run tests again after merge to catch integration issues
-3. **Close GitHub Issue** — if applicable, close with a final comment:
-   - Confirmation that work is complete
-   - Link to the plan
-   - Follow-up items filed as new issues (if any)
-4. **Update Status.md** — ensure Recently Done entry exists
-5. **Update memory** — if significant architectural decisions were made, update `agent/Core/memory.md`
-6. **Notify user** — concise summary: what was done, how many iterations, any follow-ups
+Only merge after all audits in Phase 11 pass. The main working tree has been clean this entire time — this is the first moment code lands on the working branch.
+
+### Merge worktree branches
+
+```bash
+# For each worktree branch:
+git merge {branch} --no-ff -m "merge: {short description of what this branch did}"
+```
+
+If multiple worktree branches exist (parallel tasks), merge them one at a time. If a merge conflict occurs, resolve it or dispatch a subagent to resolve it in a fresh worktree.
+
+### Post-merge verification
+
+Run the full test suite and build again after merge — integration issues can surface here:
+
+```bash
+make build && go test ./...
+```
+
+If post-merge tests fail: revert the merge, fix in the worktree, re-audit, merge again.
+
+### Close out
+
+1. **Close GitHub Issue** — if applicable, close with a final comment (what was done, link to plan, follow-ups)
+2. **Update Status.md** — ensure Recently Done entry exists
+3. **Update memory** — if significant architectural decisions were made, update `agent/Core/memory.md`
+4. **Notify user** — concise summary: what was done, how many iterations, any follow-ups
 
 ---
 
