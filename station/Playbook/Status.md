@@ -27,6 +27,9 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Rename "catalog items" to "abilities" — CLI, TUI, README, docs, comments | — | tech-lead | 2026-04-15 |
+| `bonsai guide` command — render custom files guide in terminal | 02 | tech-lead | 2026-04-15 |
+| CLAUDE.md marker migration — backup + overwrite for marker-less files | 01 | tech-lead | 2026-04-15 |
 | Selective file update — multi-select conflict picker | — | tech-lead | 2026-04-15 |
 | Fix doubled path prefix in `bonsai add` output panels | — | tech-lead | 2026-04-15 |
 | `bonsai update` — custom file detection + workspace sync | — | tech-lead | 2026-04-14 |

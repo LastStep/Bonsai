@@ -99,3 +99,21 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** no changes made (audit-only routine)
 - **Flags:** 4 findings — `.env` missing from `.gitignore` (low); 3 Go stdlib vulns via govulncheck (GO-2025-3956 medium, GO-2025-3750 low/Windows-only, GO-2026-4602 low). No SAST issues, no hardcoded secrets, no third-party dependency vulns. Stdlib findings cross-referenced with dependency-audit routine.
 - **Report:** `Reports/Pending/2026-04-14-vulnerability-scan.md`
+
+### 2026-04-15 — `bonsai guide` command (issue-to-implementation)
+- **Plan:** Plans/Active/02-bonsai-guide-command.md
+- **Iterations:** 1 execute-review cycle
+- **Issues found:** none
+- **Result:** completed — PR #3 (draft)
+
+### 2026-04-15 — CLAUDE.md marker migration (issue-to-implementation)
+- **Plan:** Plans/Active/01-claudemd-marker-migration.md
+- **Iterations:** 1 execute-review cycle
+- **Issues found:** none
+- **Result:** completed — PR #1 (draft)
+
+### 2026-04-15 — Rename "catalog items" to "abilities" (issue-to-implementation)
+- **Plan:** No plan — Tier 1 patch
+- **Iterations:** 1 execute-review cycle
+- **Issues found:** none
+- **Result:** completed — PR #2, reviewed and marked ready

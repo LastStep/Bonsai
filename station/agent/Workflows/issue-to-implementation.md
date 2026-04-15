@@ -402,9 +402,12 @@ If any check fails: fix it, re-verify the fix, and document what was caught in t
 
 ---
 
-## Phase 12: Review PR & Merge
+## Phase 12: Review PR
 
-Only merge after all audits in Phase 11 pass. The draft PR has existed since Phase 8 — now it's time to review, promote, and merge it.
+> [!warning]
+> **Do NOT merge PRs.** The tech lead reviews and comments — the user merges PRs in batch later. This enables parallel work on multiple issues without cross-conflicts between worktree branches.
+
+The draft PR has existed since Phase 8 — now review it and leave findings as comments.
 
 ### 1. Review the PR
 
@@ -419,36 +422,29 @@ Review passes: scope check, correctness, security, performance, maintainability,
 
 If issues are found, dispatch a fix agent on the same branch, push the fix, and re-review.
 
-### 2. Promote and merge
+### 2. Mark ready and comment
 
 ```bash
-# Mark ready for review
+# Mark ready for review (no longer draft)
 gh pr ready {pr_number}
 
-# Merge (squash for clean history on small PRs, merge commit for multi-commit branches)
-gh pr merge {pr_number} --squash --delete-branch
-# or for larger feature branches:
-gh pr merge {pr_number} --merge --delete-branch
+# Add review comment summarizing findings
+gh pr review {pr_number} --approve --body "..."
+# or if issues remain:
+gh pr review {pr_number} --request-changes --body "..."
 ```
 
-If merge conflicts exist: checkout the branch locally, rebase onto main, force-push, then merge.
+Leave a structured review comment:
+- **Verdict:** approve / request changes
+- **Findings:** what the review caught (or "clean — no issues")
+- **Audit:** build, tests, scope check results
+- **Notes:** anything the user should know before merging
 
-### 3. Post-merge verification
+### 3. Close out
 
-Run the full test suite and build on main after merge:
-
-```bash
-git pull && make build && go test ./...
-```
-
-If post-merge tests fail: revert the merge commit, fix on the branch, create a new PR, re-audit.
-
-### 4. Close out
-
-1. **GitHub Issue** — should auto-close from `Closes #N` in the PR. If not, close manually with `gh issue close N -R LastStep/Bonsai -c "..."`.
-2. **Update Status.md** — ensure Recently Done entry exists
-3. **Update memory** — if significant architectural decisions were made, update `agent/Core/memory.md`
-4. **Notify user** — concise summary: what was done, how many iterations, PR link, any follow-ups
+1. **Update Status.md** — move to Recently Done with today's date
+2. **Update memory** — if significant architectural decisions were made, update `agent/Core/memory.md`
+3. **Notify user** — concise summary: what was done, how many iterations, PR link, review verdict
 
 ---
 
@@ -468,7 +464,7 @@ If post-merge tests fail: revert the merge commit, fix on the branch, create a n
 | Review | Review agents, diff | All reviews pass (max 3 cycles) |
 | Logging | Status.md, GitHub, logs | All systems updated |
 | Final Audit | Tests, lint, build | All green |
-| Review PR & Merge | `gh pr`, pr-review workflow | PR merged, issue closed |
+| Review PR | `gh pr`, pr-review workflow | PR reviewed, marked ready |
 
 ---
 
@@ -479,8 +475,7 @@ If post-merge tests fail: revert the merge commit, fix on the branch, create a n
 | Research confidence stays < 4 after 3 passes | Proceed with explicit caveats in plan; flag gaps to user at Triage |
 | Execute-review loop hits 3 iterations | Stop and escalate — the plan likely needs revision, not just the code |
 | Subagent fails to create draft PR | Push the branch yourself and create the draft PR manually |
-| PR has merge conflicts | Rebase branch onto main, force-push, re-run verification |
-| Post-merge tests fail | Revert the merge commit, fix on branch, new PR, re-audit |
+| PR has merge conflicts | Flag in review comment — user resolves at merge time |
 | Agent produces output outside plan scope | Reject the output. Re-dispatch with tighter constraints |
 | Conflicting in-progress work discovered | Stop. Coordinate with user before proceeding |
 | Agent fails or times out | Check agent summary for partial work. Decide: resume on same worktree or start fresh |

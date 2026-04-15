@@ -40,7 +40,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Feedback
 
-_(empty)_
+- **Never merge PRs.** Review, comment, mark ready — but leave merging to the user. Enables parallel issue work without cross-conflicts between worktree branches. *(2026-04-15)*
 
 ## References
 
