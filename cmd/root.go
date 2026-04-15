@@ -18,6 +18,9 @@ import (
 
 const configFile = ".bonsai.yaml"
 
+// Version is the current CLI version, set via SetVersion at startup.
+var Version = "dev"
+
 var catalogFS fs.FS
 var guideMarkdown string
 
@@ -41,6 +44,11 @@ func requireConfig(configPath string) (*config.ProjectConfig, error) {
 		os.Exit(1)
 	}
 	return config.Load(configPath)
+}
+
+// SetVersion sets the version string on the root command.
+func SetVersion(v string) {
+	rootCmd.Version = v
 }
 
 // Execute is the main entry point for the CLI.
