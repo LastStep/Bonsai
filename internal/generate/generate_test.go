@@ -450,6 +450,63 @@ func TestClaudeMDPreservesUserContent(t *testing.T) {
 	}
 }
 
+func TestClaudeMDMigratesMarkerlessFile(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	// Write a CLAUDE.md without markers — simulates user-customized file
+	claudePath := filepath.Join(tmpDir, "CLAUDE.md")
+	oldContent := "# Custom Project — Test Agent\n\nCustom content without markers.\n\n## Navigation\n\nOld nav tables here.\n"
+	if err := os.WriteFile(claudePath, []byte(oldContent), 0644); err != nil {
+		t.Fatalf("write markerless CLAUDE.md: %v", err)
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	err = WorkspaceClaudeMD(tmpDir, tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
+	if err != nil {
+		t.Fatalf("WorkspaceClaudeMD: %v", err)
+	}
+
+	// Assert: backup file was created with old content
+	bakContent, err := os.ReadFile(claudePath + ".bak")
+	if err != nil {
+		t.Fatalf("CLAUDE.md.bak not created: %v", err)
+	}
+	if !strings.Contains(string(bakContent), "Custom content without markers") {
+		t.Error("backup file does not contain original content")
+	}
+
+	// Assert: new file has markers and correct content
+	updated, err := os.ReadFile(claudePath)
+	if err != nil {
+		t.Fatalf("read updated CLAUDE.md: %v", err)
+	}
+	content := string(updated)
+
+	if !strings.Contains(content, "<!-- BONSAI_START -->") {
+		t.Error("CLAUDE.md missing start marker after migration")
+	}
+	if !strings.Contains(content, "<!-- BONSAI_END -->") {
+		t.Error("CLAUDE.md missing end marker after migration")
+	}
+	if !strings.Contains(content, "TestProject") {
+		t.Error("CLAUDE.md does not contain project name after migration")
+	}
+}
+
 func TestClaudeMDIncludesCustomItems(t *testing.T) {
 	cat, err := buildTestCatalog(map[string]string{
 		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",

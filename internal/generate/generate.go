@@ -640,9 +640,19 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 			result.Add(FileResult{RelPath: relPath, Action: ActionUpdated, Source: "generated:workspace-claude-md"})
 			return nil
 		}
+
+		// File exists but no markers — migrate: backup + overwrite with markers
+		_ = os.WriteFile(absPath+".bak", existing, 0644)
+		fullContent := []byte(bonsaiStartMarker + "\n" + generatedContent + bonsaiEndMarker + "\n")
+		if err := os.WriteFile(absPath, fullContent, 0644); err != nil {
+			return err
+		}
+		lock.Track(relPath, fullContent, "generated:workspace-claude-md")
+		result.Add(FileResult{RelPath: relPath, Action: ActionUpdated, Source: "generated:workspace-claude-md"})
+		return nil
 	}
 
-	// No markers or no existing file — full generation with markers, use lock-aware write
+	// No existing file — create with markers via lock-aware write
 	fullContent := []byte(bonsaiStartMarker + "\n" + generatedContent + bonsaiEndMarker + "\n")
 	r := writeFile(projectRoot, relPath, fullContent, "generated:workspace-claude-md", lock, force)
 	result.Add(r)
