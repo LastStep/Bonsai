@@ -18,7 +18,8 @@ if [[ -z "$TRANSCRIPT" || ! -f "$TRANSCRIPT" ]]; then
   exit 0
 fi
 
-WORKSPACE="station/"
+ROOT="${1:-.}"
+WORKSPACE="${ROOT}/station/"
 STATE_FILE="/tmp/bonsai-awareness-${SESSION_ID}.json"
 
 # ── Main analysis (Python) ──────────────────────────────────────────────────

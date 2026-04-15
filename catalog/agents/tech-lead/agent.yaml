@@ -4,7 +4,11 @@ description: Architects the system, writes plans, reviews agent output — never
 defaults:
   skills:
     - planning-template
+    - issue-classification
+    - dispatch
+    - review-checklist
   workflows:
+    - issue-to-implementation
     - planning
     - code-review
     - session-logging

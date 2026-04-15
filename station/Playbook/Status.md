@@ -27,6 +27,8 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Selective file update — multi-select conflict picker | — | tech-lead | 2026-04-15 |
+| Fix doubled path prefix in `bonsai add` output panels | — | tech-lead | 2026-04-15 |
 | `bonsai update` — custom file detection + workspace sync | — | tech-lead | 2026-04-14 |
 | Dogfooding — station workspace setup + customization | — | tech-lead | 2026-04-14 |
 | Session wrap-up workflow + context-guard wiring | — | tech-lead | 2026-04-14 |

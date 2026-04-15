@@ -1,0 +1,3 @@
+name: issue-to-implementation
+description: End-to-end autonomous workflow — issue intake, analysis, research, planning, agent dispatch, review loop, logging, audit, and close
+agents: [tech-lead]

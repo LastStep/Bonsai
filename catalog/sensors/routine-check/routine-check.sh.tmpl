@@ -2,7 +2,8 @@
 # Routine Check — {{ .AgentDisplayName }}
 # Parses the routine dashboard and flags overdue routines at session start.
 
-WORKSPACE="{{ .Workspace }}"
+ROOT="${1:-.}"
+WORKSPACE="${ROOT}/{{ .Workspace }}"
 DASHBOARD="${WORKSPACE}agent/Core/routines.md"
 
 if [[ ! -f "$DASHBOARD" ]]; then

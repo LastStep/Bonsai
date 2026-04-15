@@ -2,7 +2,8 @@
 # Routine Check — Tech Lead Agent
 # Parses the routine dashboard and flags overdue routines at session start.
 
-WORKSPACE="station/"
+ROOT="${1:-.}"
+WORKSPACE="${ROOT}/station/"
 DASHBOARD="${WORKSPACE}agent/Core/routines.md"
 
 if [[ ! -f "$DASHBOARD" ]]; then

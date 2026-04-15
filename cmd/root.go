@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -49,67 +50,65 @@ func Execute(fsys fs.FS) {
 	}
 }
 
-// resolveConflicts shows conflict TUI and lets user choose how to handle modified files.
+// resolveConflicts shows a multi-select picker for user-modified files.
+// Users check the files they want to update (overwrite) and uncheck to skip.
 func resolveConflicts(wr *generate.WriteResult, lock *config.LockFile, projectRoot string) {
 	conflicts := wr.Conflicts()
 	if len(conflicts) == 0 {
 		return
 	}
 
-	var paths []string
-	for _, c := range conflicts {
-		paths = append(paths, c.RelPath)
-	}
-
-	tree := tui.FileTree(paths, ".")
-	tui.TitledPanel("Modified Files", tree, tui.Amber)
 	tui.Blank()
-	tui.Warning(fmt.Sprintf("%d file(s) have been modified since Bonsai generated them.", len(conflicts)))
-	tui.Info("Overwriting will replace your changes.")
+	tui.Warning(fmt.Sprintf("%d file(s) modified since Bonsai generated them.", len(conflicts)))
+	tui.Info("Select which files to update. Unchecked files keep your changes.")
+	tui.Blank()
 
-	options := []huh.Option[string]{
-		huh.NewOption("Skip all "+tui.StyleMuted.Render(tui.GlyphDash+" keep my changes"), "skip"),
-		huh.NewOption("Overwrite all "+tui.StyleMuted.Render(tui.GlyphDash+" use Bonsai's version"), "overwrite"),
-		huh.NewOption("Back up & overwrite "+tui.StyleMuted.Render(tui.GlyphDash+" save .bak copies first"), "backup"),
+	// Build multi-select options — all pre-selected for update
+	var options []huh.Option[string]
+	for _, c := range conflicts {
+		options = append(options, huh.NewOption(c.RelPath, c.RelPath).Selected(true))
 	}
 
-	choice, err := tui.AskSelect("How should Bonsai handle these files?", options)
+	selected, err := tui.AskMultiSelect("Update these files?", options)
+	if err != nil || len(selected) == 0 {
+		return // user cancelled or unchecked everything
+	}
+
+	// Offer backup for the selected files
+	backup, err := tui.AskConfirm("Create .bak backups before overwriting?", false)
 	if err != nil {
-		return // user cancelled
-	}
-
-	switch choice {
-	case "skip":
 		return
-
-	case "backup":
-		for _, c := range conflicts {
-			abs := filepath.Join(projectRoot, c.RelPath)
-			bakPath := abs + ".bak"
+	}
+	if backup {
+		for _, relPath := range selected {
+			abs := filepath.Join(projectRoot, relPath)
 			data, readErr := os.ReadFile(abs)
 			if readErr == nil {
-				_ = os.WriteFile(bakPath, data, 0644)
+				_ = os.WriteFile(abs+".bak", data, 0644)
 			}
 		}
-		tui.Info(fmt.Sprintf("Backed up %d file(s) with .bak extension.", len(conflicts)))
-		wr.ForceConflicts(projectRoot, lock)
-
-	case "overwrite":
-		wr.ForceConflicts(projectRoot, lock)
+		tui.Info(fmt.Sprintf("Backed up %d file(s) with .bak extension.", len(selected)))
 	}
+
+	wr.ForceSelected(selected, projectRoot, lock)
 }
 
 // showWriteResults displays categorized file trees for generation outcomes.
 func showWriteResults(wr *generate.WriteResult, rootLabel string) {
+	// Normalize prefix for stripping (e.g. "station/" → "station")
+	prefix := strings.TrimRight(rootLabel, "/")
+
 	var created, updated, conflicted []string
 	for _, f := range wr.Files {
+		// Strip the workspace prefix so the tree doesn't double it
+		rel := strings.TrimPrefix(f.RelPath, prefix+"/")
 		switch f.Action {
 		case generate.ActionCreated:
-			created = append(created, f.RelPath)
+			created = append(created, rel)
 		case generate.ActionUpdated, generate.ActionForced:
-			updated = append(updated, f.RelPath)
+			updated = append(updated, rel)
 		case generate.ActionConflict:
-			conflicted = append(conflicted, f.RelPath)
+			conflicted = append(conflicted, rel)
 		}
 	}
 	if rootLabel == "" {

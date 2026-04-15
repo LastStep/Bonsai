@@ -204,6 +204,32 @@ func (wr *WriteResult) ForceConflicts(projectRoot string, lock *config.LockFile)
 	}
 }
 
+// ForceSelected overwrites only the conflict files whose RelPath appears in paths.
+// Unmatched conflicts remain as ActionConflict.
+func (wr *WriteResult) ForceSelected(paths []string, projectRoot string, lock *config.LockFile) {
+	selected := make(map[string]bool, len(paths))
+	for _, p := range paths {
+		selected[p] = true
+	}
+	for i, f := range wr.Files {
+		if f.Action != ActionConflict || f.content == nil || !selected[f.RelPath] {
+			continue
+		}
+		absPath := filepath.Join(projectRoot, f.RelPath)
+		if err := os.MkdirAll(filepath.Dir(absPath), 0755); err != nil {
+			continue
+		}
+		if err := os.WriteFile(absPath, f.content, 0644); err != nil {
+			continue
+		}
+		if f.perm != 0 {
+			_ = os.Chmod(absPath, f.perm)
+		}
+		lock.Track(f.RelPath, f.content, f.Source)
+		wr.Files[i].Action = ActionForced
+	}
+}
+
 // ─── Lock-aware write primitives ───────────────────────────────────────
 
 // writeFile implements the lock-aware write policy.
@@ -388,14 +414,8 @@ func sortedKeys(m map[string]bool) []string {
 }
 
 // SettingsJSON generates or updates .claude/settings.json with sensor hooks.
+// Settings are written per-workspace so users can launch Claude Code from there directly.
 func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
-	settingsPath := filepath.Join(projectRoot, ".claude", "settings.json")
-
-	existing := make(map[string]interface{})
-	if data, err := os.ReadFile(settingsPath); err == nil {
-		_ = json.Unmarshal(data, &existing)
-	}
-
 	type hookEntry struct {
 		Type    string `json:"type"`
 		Command string `json:"command"`
@@ -404,11 +424,18 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 		Hooks   []hookEntry `json:"hooks"`
 		Matcher string      `json:"matcher,omitempty"`
 	}
-
 	type groupKey struct{ event, matcher string }
-	groups := make(map[groupKey][]string)
 
 	for _, installed := range cfg.Agents {
+		settingsPath := filepath.Join(projectRoot, installed.Workspace, ".claude", "settings.json")
+
+		existing := make(map[string]interface{})
+		if data, err := os.ReadFile(settingsPath); err == nil {
+			_ = json.Unmarshal(data, &existing)
+		}
+
+		groups := make(map[groupKey][]string)
+
 		for _, sensorName := range installed.Sensors {
 			var event, matcher string
 			if sensor := cat.GetSensor(sensorName); sensor != nil {
@@ -425,40 +452,44 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 			}
 			k := groupKey{event, matcher}
 			scriptPath := installed.Workspace + "agent/Sensors/" + sensorName + ".sh"
-			groups[k] = append(groups[k], "bash "+scriptPath)
+			cmd := fmt.Sprintf(
+				`bash -c 'r="$PWD"; while [ "$r" != "/" ] && [ ! -f "$r/.bonsai.yaml" ]; do r=$(dirname "$r"); done; bash "$r/%s" "$r"'`,
+				scriptPath,
+			)
+			groups[k] = append(groups[k], cmd)
 		}
-	}
 
-	hooksConfig := make(map[string][]hookGroup)
-	for k, commands := range groups {
-		var hooks []hookEntry
-		for _, cmd := range commands {
-			hooks = append(hooks, hookEntry{Type: "command", Command: cmd})
+		hooksConfig := make(map[string][]hookGroup)
+		for k, commands := range groups {
+			var hooks []hookEntry
+			for _, cmd := range commands {
+				hooks = append(hooks, hookEntry{Type: "command", Command: cmd})
+			}
+			g := hookGroup{Hooks: hooks}
+			if k.matcher != "" {
+				g.Matcher = k.matcher
+			}
+			hooksConfig[k.event] = append(hooksConfig[k.event], g)
 		}
-		g := hookGroup{Hooks: hooks}
-		if k.matcher != "" {
-			g.Matcher = k.matcher
+
+		if len(hooksConfig) > 0 {
+			existing["hooks"] = hooksConfig
+		} else {
+			delete(existing, "hooks")
 		}
-		hooksConfig[k.event] = append(hooksConfig[k.event], g)
-	}
 
-	if len(hooksConfig) > 0 {
-		existing["hooks"] = hooksConfig
-	} else {
-		delete(existing, "hooks")
+		if err := os.MkdirAll(filepath.Dir(settingsPath), 0755); err != nil {
+			return err
+		}
+		data, err := json.MarshalIndent(existing, "", "  ")
+		if err != nil {
+			return err
+		}
+		content := append(data, '\n')
+		relPath := filepath.Join(installed.Workspace, ".claude", "settings.json")
+		r := writeFile(projectRoot, relPath, content, "generated:settings-json", lock, force)
+		result.Add(r)
 	}
-
-	if err := os.MkdirAll(filepath.Dir(settingsPath), 0755); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(existing, "", "  ")
-	if err != nil {
-		return err
-	}
-	content := append(data, '\n')
-	relPath := filepath.Join(".claude", "settings.json")
-	r := writeFile(projectRoot, relPath, content, "generated:settings-json", lock, force)
-	result.Add(r)
 	return nil
 }
 

@@ -39,6 +39,7 @@
 | End-of-session log — what was done, decisions made, open items | `agent/Workflows/session-logging.md` |
 | Design a structured test plan for a feature — scope, prioritize, allocate test types | `agent/Workflows/test-plan.md` |
 | Session wrap-up — verify work, check for mistakes, fix issues, cleanup, summary | `agent/Workflows/session-wrapup.md` |
+| End-to-end autonomous issue execution — intake, analysis, research, plan, dispatch, review loop, logging, audit, close | `agent/Workflows/issue-to-implementation.md` |
 
 ### Skills (load when doing specific work)
 
@@ -46,6 +47,7 @@
 |------|-----------|
 | Plan format, tier rules, and template for writing implementation plans | `agent/Skills/planning-template.md` |
 | Structured code review checklist — correctness, security, performance, maintainability | `agent/Skills/review-checklist.md` |
+| Issue types, importance levels, domain labels, and classification heuristics | `agent/Skills/issue-classification.md` |
 | BubbleTea TUI development | `agent/Skills/bubbletea.md` |
 
 > BubbleTea skill references live in `agent/Skills/bubbletea/` — load progressively as needed.

@@ -32,14 +32,14 @@ description: Periodic self-maintenance routines — schedules, dashboard, execut
 
 | Routine | Frequency | Last Ran | Next Due | Status |
 |---------|-----------|----------|----------|--------|
-| Backlog Hygiene | 7 days | _never_ | _overdue_ | pending |
-| Dependency Audit | 7 days | _never_ | _overdue_ | pending |
-| Doc Freshness Check | 7 days | _never_ | _overdue_ | pending |
-| Infra Drift Check | 7 days | _never_ | _overdue_ | pending |
-| Memory Consolidation | 5 days | _never_ | _overdue_ | pending |
-| Roadmap Accuracy | 14 days | _never_ | _overdue_ | pending |
-| Status Hygiene | 5 days | _never_ | _overdue_ | pending |
-| Vulnerability Scan | 7 days | _never_ | _overdue_ | pending |
+| Backlog Hygiene | 7 days | 2026-04-14 | 2026-04-21 | done |
+| Dependency Audit | 7 days | 2026-04-14 | 2026-04-21 | done |
+| Doc Freshness Check | 7 days | 2026-04-14 | 2026-04-21 | done |
+| Infra Drift Check | 7 days | 2026-04-14 | 2026-04-21 | done |
+| Memory Consolidation | 5 days | 2026-04-14 | 2026-04-19 | done |
+| Roadmap Accuracy | 14 days | 2026-04-14 | 2026-04-28 | done |
+| Status Hygiene | 5 days | 2026-04-14 | 2026-04-19 | done |
+| Vulnerability Scan | 7 days | 2026-04-14 | 2026-04-21 | done |
 
 <!-- ROUTINE_DASHBOARD_END -->
 
