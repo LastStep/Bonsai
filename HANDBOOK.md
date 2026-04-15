@@ -496,6 +496,9 @@ bonsai add        # security    — audits, scanning, compliance
 
 ## Tips and Best Practices
 
+> [!TIP]
+> For a deeper guide on communication patterns — framing, triggers, session rhythm, delegation, and quality gates — see **[Working With Agents](docs/working-with-agents.md)**.
+
 | Practice | Why it matters |
 |:---------|:--------------|
 | **Always say "Hi, get started"** | Ensures the agent processes full startup context before working |

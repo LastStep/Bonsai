@@ -326,6 +326,7 @@ Bonsai workspaces are designed to be extended. After generation, you own the fil
 | Guide | What you'll learn |
 |:------|:-----------------|
 | **[Handbook](HANDBOOK.md)** | Mental model, interaction patterns, sensor/routine deep dives, best practices |
+| **[Working With Agents](docs/working-with-agents.md)** | Communication patterns, framing techniques, and collaboration rhythms that get the best results |
 | **[Custom Files](docs/custom-files.md)** | How to create your own abilities — meta.yaml format, frontmatter, templates |
 
 ---
