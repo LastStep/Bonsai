@@ -49,7 +49,7 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 | `Logs/KeyDecisionLog.md` | Settled architectural decisions | When planning or when a topic comes up |
 | `Reports/Pending/` | Unprocessed agent completion reports | Check every session start |
 | `Reports/report-template.md` | Structured report format for agents | When submitting a completion report |
-| `index.md` | Code index — quick-nav to Go source functions | When navigating the codebase |
+| `code-index.md` | Code index — quick-nav to Go source functions | When navigating the codebase |
 
 ---
 
