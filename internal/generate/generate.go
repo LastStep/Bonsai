@@ -493,7 +493,6 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 	return nil
 }
 
-
 // howToWorkLines generates the compact "How to Work" heuristics section for the workspace CLAUDE.md.
 func howToWorkLines(agentName string, docsPrefix string, hasRoutines bool, hasWorkspaceGuide bool) []string {
 	var lines []string

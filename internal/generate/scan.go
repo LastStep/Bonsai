@@ -10,11 +10,11 @@ import (
 
 // DiscoveredFile represents a custom file found in a workspace that isn't tracked by Bonsai.
 type DiscoveredFile struct {
-	Name    string                // kebab-case name derived from filename
-	Type    string                // "skill", "workflow", "protocol", "sensor", "routine"
-	RelPath string                // relative path from project root
+	Name    string                 // kebab-case name derived from filename
+	Type    string                 // "skill", "workflow", "protocol", "sensor", "routine"
+	RelPath string                 // relative path from project root
 	Meta    *config.CustomItemMeta // parsed frontmatter (nil if parsing failed)
-	Error   string                // validation error, if any
+	Error   string                 // validation error, if any
 }
 
 // ScanCustomFiles finds untracked custom files in an agent's workspace directories.

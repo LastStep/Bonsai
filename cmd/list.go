@@ -68,27 +68,42 @@ func runList(cmd *cobra.Command, args []string) error {
 		pairs := [][2]string{{"Workspace", agent.Workspace}}
 		if len(agent.Skills) > 0 {
 			pairs = append(pairs, [2]string{"Skills", displayNames(agent.Skills, func(n string) string {
-				if s := cat.GetSkill(n); s != nil { return s.DisplayName }; return ""
+				if s := cat.GetSkill(n); s != nil {
+					return s.DisplayName
+				}
+				return ""
 			})})
 		}
 		if len(agent.Workflows) > 0 {
 			pairs = append(pairs, [2]string{"Workflows", displayNames(agent.Workflows, func(n string) string {
-				if w := cat.GetWorkflow(n); w != nil { return w.DisplayName }; return ""
+				if w := cat.GetWorkflow(n); w != nil {
+					return w.DisplayName
+				}
+				return ""
 			})})
 		}
 		if len(agent.Protocols) > 0 {
 			pairs = append(pairs, [2]string{"Protocols", displayNames(agent.Protocols, func(n string) string {
-				if p := cat.GetProtocol(n); p != nil { return p.DisplayName }; return ""
+				if p := cat.GetProtocol(n); p != nil {
+					return p.DisplayName
+				}
+				return ""
 			})})
 		}
 		if len(agent.Sensors) > 0 {
 			pairs = append(pairs, [2]string{"Sensors", displayNames(agent.Sensors, func(n string) string {
-				if s := cat.GetSensor(n); s != nil { return s.DisplayName }; return ""
+				if s := cat.GetSensor(n); s != nil {
+					return s.DisplayName
+				}
+				return ""
 			})})
 		}
 		if len(agent.Routines) > 0 {
 			pairs = append(pairs, [2]string{"Routines", displayNames(agent.Routines, func(n string) string {
-				if r := cat.GetRoutine(n); r != nil { return r.DisplayName }; return ""
+				if r := cat.GetRoutine(n); r != nil {
+					return r.DisplayName
+				}
+				return ""
 			})})
 		}
 

@@ -141,22 +141,22 @@ type agentYAML struct {
 
 // Catalog holds all loaded catalog data with lookup helpers.
 type Catalog struct {
-	Agents       []AgentDef
-	Skills       []CatalogItem
-	Workflows    []CatalogItem
-	Protocols    []CatalogItem
-	Sensors      []SensorItem
-	Routines     []RoutineItem
-	Scaffolding  []ScaffoldingItem
+	Agents      []AgentDef
+	Skills      []CatalogItem
+	Workflows   []CatalogItem
+	Protocols   []CatalogItem
+	Sensors     []SensorItem
+	Routines    []RoutineItem
+	Scaffolding []ScaffoldingItem
 
 	fsys fs.FS
 
-	skillsByName       map[string]*CatalogItem
-	workflowsByName    map[string]*CatalogItem
-	protocolsByName    map[string]*CatalogItem
-	sensorsByName      map[string]*SensorItem
-	routinesByName     map[string]*RoutineItem
-	scaffoldingByName  map[string]*ScaffoldingItem
+	skillsByName      map[string]*CatalogItem
+	workflowsByName   map[string]*CatalogItem
+	protocolsByName   map[string]*CatalogItem
+	sensorsByName     map[string]*SensorItem
+	routinesByName    map[string]*RoutineItem
+	scaffoldingByName map[string]*ScaffoldingItem
 }
 
 // New loads the full catalog from an embedded filesystem.
@@ -199,11 +199,11 @@ func New(fsys fs.FS) (*Catalog, error) {
 	return c, nil
 }
 
-func (c *Catalog) FS() fs.FS                            { return c.fsys }
-func (c *Catalog) GetSkill(name string) *CatalogItem     { return c.skillsByName[name] }
-func (c *Catalog) GetWorkflow(name string) *CatalogItem   { return c.workflowsByName[name] }
-func (c *Catalog) GetProtocol(name string) *CatalogItem   { return c.protocolsByName[name] }
-func (c *Catalog) GetSensor(name string) *SensorItem      { return c.sensorsByName[name] }
+func (c *Catalog) FS() fs.FS                                   { return c.fsys }
+func (c *Catalog) GetSkill(name string) *CatalogItem           { return c.skillsByName[name] }
+func (c *Catalog) GetWorkflow(name string) *CatalogItem        { return c.workflowsByName[name] }
+func (c *Catalog) GetProtocol(name string) *CatalogItem        { return c.protocolsByName[name] }
+func (c *Catalog) GetSensor(name string) *SensorItem           { return c.sensorsByName[name] }
 func (c *Catalog) GetRoutine(name string) *RoutineItem         { return c.routinesByName[name] }
 func (c *Catalog) GetScaffolding(name string) *ScaffoldingItem { return c.scaffoldingByName[name] }
 

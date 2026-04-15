@@ -296,7 +296,7 @@ func runRemoveItem(name string, it itemType) error {
 	var wr generate.WriteResult
 
 	_ = spinner.New().
-		Title("Removing "+it.singular+"...").
+		Title("Removing " + it.singular + "...").
 		Action(func() {
 			for _, t := range targets {
 				removeFromItemList(t.agent, name, it)
