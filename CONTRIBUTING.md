@@ -1,0 +1,78 @@
+# Contributing to Bonsai
+
+Thanks for your interest in contributing to Bonsai! This guide covers everything you need to get started.
+
+## Development Setup
+
+**Requirements:** Go 1.24+
+
+```bash
+git clone https://github.com/LastStep/Bonsai.git
+cd Bonsai
+make build        # builds ./bonsai binary
+./bonsai --help   # verify it works
+```
+
+## Making Changes
+
+1. **Fork** the repo and create a branch from `main`
+2. Make your changes
+3. Run `make build` to verify the binary compiles
+4. Test your changes manually (see below)
+5. Submit a pull request
+
+### Testing Changes
+
+The catalog is embedded in the binary, so you need to rebuild after editing catalog files:
+
+```bash
+make build
+mkdir /tmp/test-project && cd /tmp/test-project
+/path/to/bonsai init
+/path/to/bonsai add
+/path/to/bonsai list
+```
+
+## Adding Catalog Items
+
+Bonsai's catalog lives in `catalog/`. Each category follows the same pattern:
+
+### Skills, Workflows, Protocols
+
+1. Create `catalog/{category}/{item-name}/meta.yaml` with `name`, `description`, and `agents`
+2. Create `catalog/{category}/{item-name}/{item-name}.md` with the content
+3. Set `agents:` to a list of compatible agent types, or `"all"`
+
+### Sensors
+
+1. Create `catalog/sensors/{name}/meta.yaml` — include `event` and optionally `matcher`
+2. Create `catalog/sensors/{name}/{name}.sh.tmpl` — hook script template
+
+### Routines
+
+1. Create `catalog/routines/{name}/meta.yaml` — include `frequency` (e.g. `"5 days"`)
+2. Create `catalog/routines/{name}/{name}.md.tmpl` — procedure template
+
+See `CLAUDE.md` for the full naming conventions and template context variables.
+
+## Pull Request Process
+
+- **One feature or fix per PR** — keep changes focused
+- **Open an issue first** for significant changes so we can discuss the approach
+- **Write a clear PR description** — what changed and why
+- **Test manually** — `make build` must pass, and test the affected commands
+
+## Code Style
+
+- Follow standard Go conventions (`gofmt`, `go vet`)
+- Keep the CLI interactive — use Huh forms for user input
+- Generator functions go in `internal/generate/`, catalog loading in `internal/catalog/`, commands in `cmd/`
+- All data shapes use Go structs
+
+## Development with Claude Code
+
+Bonsai dogfoods itself — the repo has a full Bonsai workspace in `station/`. If you use Claude Code for development, the agent instructions in `station/agent/` provide context about the codebase and conventions.
+
+## Questions?
+
+Open an [issue](https://github.com/LastStep/Bonsai/issues) or start a [discussion](https://github.com/LastStep/Bonsai/discussions) — we're happy to help.
