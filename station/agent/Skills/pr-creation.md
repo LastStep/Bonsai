@@ -99,7 +99,7 @@ Closes #{issue_number}
 
 ## Plan
 
-station/Playbook/Plans/Active/NN-name.md (or "No plan — Tier 1 patch.")
+{plan link or "No plan — Tier 1 patch."}
 
 ## Verification
 

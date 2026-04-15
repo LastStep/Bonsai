@@ -18,7 +18,7 @@ Follow any context advisories injected into your prompt — they are calibrated 
 
 These are not automated. Follow them yourself:
 
-- If you're losing track of the task, re-read `agent/Core/memory.md`.
+- If you're losing track of the task, re-read [agent/Core/memory.md](memory.md).
 - If a task has more than 10 steps, break it into sub-tasks before starting.
 - Never continue if you're unsure what the plan says — re-read it.
 - If you've already read a file this session, don't re-read it unless it changed.

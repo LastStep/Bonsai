@@ -18,9 +18,9 @@ description: End-to-end autonomous workflow — issue intake to shipped code via
 
 Load before starting:
 
-- `agent/Skills/issue-classification.md` — issue types, importance levels, Bonsai domain labels
-- `agent/Skills/planning-template.md` — plan format and tier rules
-- `agent/Skills/review-checklist.md` — code review passes (referenced in review loop)
+- [agent/Skills/issue-classification.md](../Skills/issue-classification.md) — issue types, importance levels
+- [agent/Skills/dispatch.md](../Skills/dispatch.md) — triage rules, agent prompt structure
+- [agent/Skills/planning-template.md](../Skills/planning-template.md) — plan format and tier rules
 
 ---
 
@@ -46,7 +46,7 @@ The user sets the mode at the start. When in doubt, default to supervised.
 ## Phase 0: Pre-Flight
 
 1. Run `git status`. If the working tree has uncommitted changes, **stop and warn the user**. Suggest committing or stashing before proceeding.
-2. Check `Playbook/Status.md` — if there's in-progress work that could conflict, flag it before starting.
+2. Check [Playbook/Status.md](../../Playbook/Status.md) — if there's in-progress work that could conflict, flag it before starting.
 
 ---
 
@@ -56,8 +56,7 @@ The user sets the mode at the start. When in doubt, default to supervised.
 
 ### From GitHub Issues
 
-- **Repo:** `LastStep/Bonsai`
-- Use `gh issue list -R LastStep/Bonsai` / `gh issue view N -R LastStep/Bonsai` to read the issue
+- Use `gh issue list` / `gh issue view` to read the issue
 - Extract: title, body, labels, comments, linked issues
 
 ### From Backlog.md
@@ -67,7 +66,7 @@ The user sets the mode at the start. When in doubt, default to supervised.
 
 ### Classify
 
-Use `agent/Skills/issue-classification.md`:
+Use [agent/Skills/issue-classification.md](../Skills/issue-classification.md):
 
 - **Type:** bug, feature, change, debt, research
 - **Domains:** which parts of the codebase are affected
@@ -79,19 +78,12 @@ Use `agent/Skills/issue-classification.md`:
 
 Understand what the issue touches before planning anything.
 
-1. **Trace** — use Explore agents or Grep/Read to find affected files, functions, modules. Key entry points:
-   - CLI commands: `cmd/*.go`
-   - Catalog loading: `internal/catalog/catalog.go`
-   - Config/lock: `internal/config/config.go`, `internal/config/lockfile.go`
-   - Generation: `internal/generate/generate.go`
-   - TUI: `internal/tui/styles.go`, `internal/tui/prompts.go`
-   - Catalog items: `catalog/{agents,skills,workflows,protocols,sensors,routines,scaffolding}/`
-   - Code index: `station/index.md`
-2. **Blast radius** — what files change, what tests are affected (`internal/generate/generate_test.go`, `internal/config/*_test.go`), what depends on the changed code
-3. **Architecture** — check `station/INDEX.md` for the architecture overview; check research docs (`RESEARCH.md`, `RESEARCH-concepts.md`, `RESEARCH-catalog-expansion.md`) if touching design decisions
-4. **Overlap** — check `Playbook/Status.md` for in-progress work that conflicts
-5. **Related items** — check `Playbook/Backlog.md` for items that should be bundled with this work
-6. **Prior decisions** — check `Logs/KeyDecisionLog.md` for constraints on the approach
+1. **Trace** — use Explore agents or Grep/Read to find affected files, functions, modules
+2. **Blast radius** — what files change, what tests are affected, what depends on the changed code
+3. **Architecture** — read relevant architecture docs, schemas, API specs
+4. **Overlap** — check [Playbook/Status.md](../../Playbook/Status.md) for in-progress work that conflicts
+5. **Related items** — check [Playbook/Backlog.md](../../Playbook/Backlog.md) for items that should be bundled with this work
+6. **Prior decisions** — check [Logs/KeyDecisionLog.md](../../Logs/KeyDecisionLog.md) for constraints on the approach
 
 ---
 
@@ -167,6 +159,8 @@ Fix every issue before proceeding. Do not carry known problems into dispatch.
 
 ## Phase 7: Triage
 
+Use the decision tree from [agent/Skills/dispatch.md](../Skills/dispatch.md).
+
 ### Self-dispatch when ALL true:
 
 - Limited scope, well-defined changes
@@ -193,6 +187,8 @@ Fix every issue before proceeding. Do not carry known problems into dispatch.
 
 > [!warning]
 > **You do not write code.** Every implementation change — no matter how small — is dispatched to a subagent running in an isolated worktree. You orchestrate; they implement.
+
+Dispatch implementation agents using the dispatch skill. See [agent/Skills/dispatch.md](../Skills/dispatch.md) for full prompt structure and syntax.
 
 ### Worktree isolation
 
@@ -222,19 +218,17 @@ Agent(subagent_type: "general-purpose", isolation: "worktree", run_in_background
 ```
 # First: dispatch agent A, wait for result
 Agent(subagent_type: "general-purpose", isolation: "worktree", prompt: "task A...")
-# Then: dispatch agent B on agent A's branch
-Agent(subagent_type: "general-purpose", isolation: "worktree", prompt: "task B... checkout branch {branch} from agent A first...")
+# Then: dispatch agent B on agent A's branch or with its output as context
+Agent(subagent_type: "general-purpose", isolation: "worktree", prompt: "task B... Agent A's branch: {branch}...")
 ```
 
 ### Agent prompt structure
 
-Include in this order:
-
-1. **Bootstrap** — "Read `CLAUDE.md` at the project root first, then `station/CLAUDE.md`."
+1. **Workspace bootstrap** — "Read `CLAUDE.md` at the project root first, then `{workspace}/CLAUDE.md`."
 2. **Context** — the problem being solved (from the issue)
-3. **Plan steps** — the specific steps to execute, copied verbatim from the plan
-4. **Plan location** — `station/Playbook/Plans/Active/NN-name.md`
-5. **Verification** — "Run `make build` and `go test ./...` before reporting completion."
+3. **Plan steps** — only this agent's steps, copied verbatim from the plan
+4. **Plan location** — path to the plan file
+5. **Verification** — what to run after completing (e.g., `make build && go test ./...`)
 6. **PR creation** — "After verification passes, push your branch and create a **draft PR** targeting `main`. Use this format for the PR body:"
    ```
    ## Summary
@@ -245,7 +239,7 @@ Include in this order:
    - `path/file` — what changed
 
    ## Plan
-   station/Playbook/Plans/Active/NN-name.md (or "No plan — Tier 1 patch.")
+   {link to plan file or "No plan — Tier 1 patch."}
 
    ## Verification
    - [x] `make build` — passes
@@ -262,7 +256,7 @@ Include in this order:
    - Create a draft PR after verification — never merge directly
    ```
 
-Do NOT include: conversation history, unrelated context, or vague instructions.
+Do NOT include: conversation history, other agents' steps, or unnecessary context.
 
 ### After dispatch
 
@@ -292,7 +286,7 @@ For substantial changes, dispatch an independent review agent (no worktree neede
 Agent(subagent_type: "general-purpose", prompt:
   "Review the changes on branch {branch}.
    Read the plan at {plan-path}.
-   Use the review checklist at station/agent/Skills/review-checklist.md.
+   Use the review checklist at {workspace}/agent/Skills/review-checklist.md.
    Check: correctness, security, test coverage, standards compliance.
    Report pass/fail with specific issues found.")
 ```
@@ -302,8 +296,8 @@ For security-sensitive changes, also dispatch a security review in parallel:
 ```
 Agent(subagent_type: "general-purpose", prompt:
   "Security review of changes on branch {branch}.
-   Check against station/Playbook/Standards/SecurityStandards.md.
-   Focus on: input validation, secrets in templates, error handling, embed.FS safety, dependency safety.
+   Check against {workspace}/Playbook/Standards/SecurityStandards.md.
+   Focus on: input validation, auth, secrets, error handling, dependency safety.
    Report pass/fail with specific findings.")
 ```
 
@@ -383,35 +377,25 @@ If reports scaffolding is installed, submit a report to `Reports/Pending/` using
 
 Before merging, verify holistically:
 
-1. **Build** — `make build` — must succeed with no errors
-2. **Tests** — `go test ./...` — full suite, not just new tests
-3. **CLI smoke test** — if CLI behavior changed, test interactively in a temp dir:
-   ```bash
-   mkdir /tmp/bonsai-test && cd /tmp/bonsai-test && git init
-   /path/to/bonsai init   # walk through the flow
-   /path/to/bonsai add    # verify new items appear
-   /path/to/bonsai list   # verify installed items
-   ```
-4. **Scope check** — `git diff` should match the plan; flag anything extra
-5. **Security scan** — no secrets in templates, no hardcoded paths, no `.env` files committed
-6. **Stale references** — no broken imports, no references to removed or renamed catalog items, no dangling template vars
-7. **Catalog consistency** — if catalog items changed, verify `meta.yaml` fields (`name`, `description`, `agents`) are correct and `bonsai catalog` renders properly
-8. **Documentation** — if behavior changed, are `station/INDEX.md`, `CLAUDE.md`, or `station/CLAUDE.md` updated?
+1. **Tests** — run the full test suite, not just new tests
+2. **Lint & format** — run project linters and formatters
+3. **Build** — verify a clean build with no warnings
+4. **Scope check** — the diff should match the plan; flag anything extra
+5. **Security scan** — no secrets committed, no new vulnerable dependencies
+6. **Stale references** — no broken imports, no references to removed or renamed code
+7. **Documentation** — if behavior changed, are docs updated?
 
 If any check fails: fix it, re-verify the fix, and document what was caught in the execution log.
 
 ---
 
-## Phase 12: Review PR
+## Phase 12: Review PR & Merge
 
-> [!warning]
-> **Do NOT merge PRs.** The tech lead reviews and comments — the user merges PRs in batch later. This enables parallel work on multiple issues without cross-conflicts between worktree branches.
-
-The draft PR has existed since Phase 8 — now review it and leave findings as comments.
+Only merge after all audits in Phase 11 pass. The draft PR has existed since Phase 8 — now it's time to review, promote, and merge it.
 
 ### 1. Review the PR
 
-Use the PR review workflow (`agent/Workflows/pr-review.md`):
+Use the PR review workflow ([agent/Workflows/pr-review.md](pr-review.md)):
 
 ```bash
 gh pr view {pr_number} --json title,body,files,additions,deletions
@@ -422,29 +406,36 @@ Review passes: scope check, correctness, security, performance, maintainability,
 
 If issues are found, dispatch a fix agent on the same branch, push the fix, and re-review.
 
-### 2. Mark ready and comment
+### 2. Promote and merge
 
 ```bash
-# Mark ready for review (no longer draft)
+# Mark ready for review
 gh pr ready {pr_number}
 
-# Add review comment summarizing findings
-gh pr review {pr_number} --approve --body "..."
-# or if issues remain:
-gh pr review {pr_number} --request-changes --body "..."
+# Merge (squash for clean history on small PRs, merge commit for multi-commit branches)
+gh pr merge {pr_number} --squash --delete-branch
+# or for larger feature branches:
+gh pr merge {pr_number} --merge --delete-branch
 ```
 
-Leave a structured review comment:
-- **Verdict:** approve / request changes
-- **Findings:** what the review caught (or "clean — no issues")
-- **Audit:** build, tests, scope check results
-- **Notes:** anything the user should know before merging
+If merge conflicts exist: checkout the branch locally, rebase onto main, force-push, then merge.
 
-### 3. Close out
+### 3. Post-merge verification
 
-1. **Update Status.md** — move to Recently Done with today's date
-2. **Update memory** — if significant architectural decisions were made, update `agent/Core/memory.md`
-3. **Notify user** — concise summary: what was done, how many iterations, PR link, review verdict
+Run the full test suite and build on main after merge:
+
+```bash
+git pull && make build && go test ./...
+```
+
+If post-merge tests fail: revert the merge commit, fix on the branch, create a new PR, re-audit.
+
+### 4. Close out
+
+1. **GitHub Issue** — should auto-close from `Closes #N` in the PR. If not, close manually with a comment.
+2. **Update Status.md** — ensure Recently Done entry exists
+3. **Update memory** — if significant architectural decisions were made, update `agent/Core/memory.md`
+4. **Notify user** — concise summary: what was done, how many iterations, PR link, any follow-ups
 
 ---
 
@@ -464,7 +455,7 @@ Leave a structured review comment:
 | Review | Review agents, diff | All reviews pass (max 3 cycles) |
 | Logging | Status.md, GitHub, logs | All systems updated |
 | Final Audit | Tests, lint, build | All green |
-| Review PR | `gh pr`, pr-review workflow | PR reviewed, marked ready |
+| Review PR & Merge | `gh pr`, pr-review workflow | PR merged, issue closed |
 
 ---
 
@@ -475,7 +466,8 @@ Leave a structured review comment:
 | Research confidence stays < 4 after 3 passes | Proceed with explicit caveats in plan; flag gaps to user at Triage |
 | Execute-review loop hits 3 iterations | Stop and escalate — the plan likely needs revision, not just the code |
 | Subagent fails to create draft PR | Push the branch yourself and create the draft PR manually |
-| PR has merge conflicts | Flag in review comment — user resolves at merge time |
+| PR has merge conflicts | Rebase branch onto main, force-push, re-run verification |
+| Post-merge tests fail | Revert the merge commit, fix on branch, new PR, re-audit |
 | Agent produces output outside plan scope | Reject the output. Re-dispatch with tighter constraints |
 | Conflicting in-progress work discovered | Stop. Coordinate with user before proceeding |
 | Agent fails or times out | Check agent summary for partial work. Decide: resume on same worktree or start fresh |

@@ -97,12 +97,24 @@ trigger_patterns = [
 triggered = any(re.search(p, normalized) for p in trigger_patterns)
 
 if triggered:
-    wrapup = (
-        '\\nSESSION WRAP-UP TRIGGERED. '
-        'Read and follow agent/Workflows/session-wrapup.md NOW — every step, in order. '
-        'Do not skip steps or ask if you should run it. Just do it.'
+    checklist = (
+        '\\nSESSION WRAP-UP REQUESTED. Complete this checklist before ending:\\n'
+        '1. Run git status - if uncommitted changes exist, ask user about committing\\n'
+        '2. Update agent/Core/memory.md with current work state\\n'
     )
-    injection = (injection + '\\n' + wrapup) if injection else wrapup
+    if docs_path:
+        checklist += (
+            f'3. Review {docs_path}Playbook/Backlog.md - add any items discovered this session\\n'
+            f'4. Update {docs_path}Playbook/Status.md if any task status changed\\n'
+            f'5. Write session notes to {docs_path}Logs/ if significant work was done'
+        )
+    else:
+        checklist += (
+            '3. Review Backlog.md - add any items discovered this session\\n'
+            '4. Update project status if any task status changed\\n'
+            '5. Write session notes if significant work was done'
+        )
+    injection = (injection + '\\n' + checklist) if injection else checklist
 
 # ── Output ──────────────────────────────────────────────────────────────────
 

@@ -32,7 +32,7 @@ description: Security enforcement — hard stops and hard enforcers.
 ## Full Reference
 
 For the complete security standard, read:
-`Playbook/Standards/SecurityStandards.md`
+[Playbook/Standards/SecurityStandards.md](../../Playbook/Standards/SecurityStandards.md)
 
 > [!note]
 > The path above is relative to the project docs location. Check your workspace CLAUDE.md → External References for the exact path.

@@ -36,4 +36,4 @@ Detect vulnerable and unmaintained dependencies before they become incidents. Ru
    - Format: date, routine name, summary of findings (count by severity), action items
    - If no vulnerabilities found, log clean audit result
 
-5. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`
+5. **Update dashboard** — set `last_ran` to today's date in `station/agent/Core/routines.md`

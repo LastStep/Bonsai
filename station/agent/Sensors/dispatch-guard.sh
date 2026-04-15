@@ -22,10 +22,6 @@ if not prompt:
     sys.exit(0)
 
 # Detect target workspace from CLAUDE.md bootstrap reference
-# Maps workspace path -> agent name. Empty until code agents are added.
-# Example when agents exist:
-#   'backend/': 'Backend Agent',
-#   'frontend/': 'Frontend Agent',
 workspaces = {
 }
 

@@ -24,7 +24,7 @@ Detect documentation drift — docs that are stale relative to recent code chang
 
 3. **Check navigation links:**
    - Verify all links in `station/CLAUDE.md` navigation tables resolve to real files
-   - Verify all links in `agent/Core/`, `agent/Protocols/`, `agent/Workflows/`, `agent/Skills/` resolve
+   - Verify all links in [agent/Core/](../Core/), [agent/Protocols/](../Protocols/), [agent/Workflows/](../Workflows/), [agent/Skills/](../Skills/) resolve
 
 4. **Report findings:**
    - List stale docs with specific drift description

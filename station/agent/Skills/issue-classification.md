@@ -11,11 +11,11 @@ description: Issue types, importance levels, domain labels, and classification h
 
 | Type | Description | Examples |
 |------|-------------|----------|
-| bug | Something is broken or behaves incorrectly | Template rendering error, wrong file paths in output, lock file hash mismatch |
-| feature | New capability that doesn't exist yet | New CLI command, new catalog item type, new agent type |
-| change | Modification to existing behavior | Change picker defaults, rename config fields, update template vars |
-| debt | Technical cleanup with no user-facing change | Refactor generate.go, add tests for catalog loader, remove dead code |
-| research | Investigation that produces findings, not code | Evaluate Managed Agents integration, benchmark TUI frameworks, design companion app |
+| bug | Something is broken or behaves incorrectly | Crash, wrong output, regression, data corruption |
+| feature | New capability that doesn't exist yet | New endpoint, new UI component, new CLI command |
+| change | Modification to existing behavior | Rename field, change validation rules, update flow |
+| debt | Technical cleanup with no user-facing change | Refactor, remove dead code, improve test coverage |
+| research | Investigation that produces findings, not code | Evaluate library, benchmark approaches, document architecture |
 
 ---
 
@@ -32,18 +32,14 @@ description: Issue types, importance levels, domain labels, and classification h
 
 ## Domain Labels
 
-Domains represent which part of the Bonsai codebase is affected:
+Domains represent which part of the codebase is affected. Common domains:
 
-- `cli` — Cobra commands in `cmd/` (init, add, remove, list, catalog, update)
-- `catalog` — catalog item definitions in `catalog/` (agents, skills, workflows, protocols, sensors, routines, scaffolding)
-- `generator` — template rendering and file generation in `internal/generate/`
-- `config` — project config and lock file handling in `internal/config/` (`.bonsai.yaml`, `.bonsai-lock.yaml`)
-- `tui` — TUI forms, styling, and display in `internal/tui/` (Huh, LipGloss, BubbleTea)
-- `catalog-loader` — catalog metadata loading in `internal/catalog/`
-- `sensors` — hook scripts in `catalog/sensors/` (scope guards, context injection, status bar)
-- `routines` — maintenance procedure templates in `catalog/routines/`
-- `scaffolding` — project infrastructure templates in `catalog/scaffolding/`
-- `docs` — station workspace docs, research files, design docs
+- `frontend` — UI, components, client-side logic
+- `backend` — API, server-side logic, business rules
+- `database` — schema, migrations, queries
+- `infrastructure` — CI/CD, deployment, containers
+- `cli` — command-line interface, flags, output
+- `docs` — documentation, guides, references
 
 An issue can span multiple domains. When it does, the plan should have separate step sections per domain with explicit sequencing.
 
@@ -63,10 +59,8 @@ An issue can span multiple domains. When it does, the plan should have separate 
 
 ## GitHub Label Mapping
 
-**Repo:** `LastStep/Bonsai`
-
 When working with GitHub Issues, map classifications to labels:
 
 - **Type** → `bug`, `feature`, `change`, `debt`, `research`
 - **Importance** → `critical`, `high`, `medium`, `low`
-- **Domain** → `cli`, `catalog`, `generator`, `config`, `tui`, `sensors`, `routines`, `scaffolding`, `docs`
+- **Domain** → `frontend`, `backend`, `database`, `infra`, `cli`, `docs`

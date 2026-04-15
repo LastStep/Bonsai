@@ -7,6 +7,8 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Flags
 
+<!-- Active flags go here. Format: - [FLAG] description -->
+
 (none)
 
 ## Work State
@@ -14,48 +16,18 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 **Current task:** (none)
 **Blocked on:** (nothing)
 
-**Completed:**
-- AI operational intelligence — How to Work CLAUDE.md section + workspace-guide skill, `.md.tmpl` skill rendering support (PR #7)
-- CI workflow — `go test` + `go vet` on PRs, enables required status checks (PR #6)
-- Release pipeline — GoReleaser + GitHub Actions + Homebrew Tap, v0.1.0 shipped (PR #5)
-- `bonsai update` command — custom file detection, frontmatter parsing, CLAUDE.md section markers, re-render catalog items, settings/dashboard sync
-- Catalog expansion (all 3 phases) — see RESEARCH-catalog-expansion.md
-- Final agent lineup: tech-lead, fullstack, backend, frontend, devops, security
-- Managed Agents analysis — decided to defer cloud integration until local foundation is solid
-- Lock file conflict handling — `.bonsai-lock.yaml` tracks generated files with sha256 hashes, prevents silent overwrites of user-modified files
-- Awareness Framework — `status-bar` (Stop) + `context-guard` (UserPromptSubmit) sensors, updated self-awareness.md
-- Dogfooding — ran `bonsai init` on itself, generated station/ workspace with tech-lead, migrated all content from hand-crafted agent/ to generated station/agent/
-- Station customization — tailored INDEX.md, Roadmap.md, Status.md, KeyDecisionLog.md, SecurityStandards.md from generic templates to Bonsai-specific content
-- Session wrap-up workflow — created agent/Workflows/session-wrapup.md, wired to context-guard trigger detection
-- Stale artifact cleanup — rewrote agent/index.md for Go codebase, fixed Python references in RESEARCH.md
-
 ## Notes
 
-- Go 1.24+ required — see `go.mod`
-- Build: `make build` → `./bonsai`
-- Install: `go install .` → `$GOPATH/bin/bonsai`
-- Stack: Cobra (CLI), Huh (forms), LipGloss (styling), BubbleTea (TUI)
-- security-audit workflow already created (shared between devops, security, and tech-lead agents)
-- Routine .md.tmpl format: `1. **Bold step:**` with sub-bullets, not H3 headers. Include `**Frequency:** Every N days` after H1.
-- session-wrapup.md is a custom workflow (not in catalog) — run `bonsai update` to detect and track it.
-- Custom files use YAML frontmatter for metadata (description, display_name, event, matcher, frequency). Guide at `docs/custom-files.md`.
-- CLAUDE.md now uses `<!-- BONSAI_START/END -->` markers — user content after end marker is preserved across updates.
-- Skills can now use `.md.tmpl` files (Go templates rendered at generation time) — same as sensors and routines. catalog.go `loadItems()` matches both `.md` and `.md.tmpl`.
-
-- Branch protection enabled on main — requires PRs, blocks force pushes. Status check `test` pending configuration in GitHub ruleset.
-- Release process: `git tag vX.Y.Z && git push origin vX.Y.Z` → GoReleaser builds + publishes to GitHub Releases + Homebrew Tap (`LastStep/homebrew-tap`)
+<!-- Session-to-session notes. Keep concise. -->
 
 ## Feedback
 
-- **Never merge PRs.** Review, comment, mark ready — but leave merging to the user. Enables parallel issue work without cross-conflicts between worktree branches. *(2026-04-15)*
+<!-- User corrections and confirmed approaches that persist across sessions. Only record what isn't already in CLAUDE.md, workflows, or protocols. -->
+
+_(empty)_
 
 ## References
 
-- RESEARCH.md — landscape analysis: Bonsai's position vs. GSD/ECC, identity/coordination layer philosophy
-- RESEARCH-concepts.md — core concept decisions: ambient vs. command-driven, catalog ownership, meta-layer, talents taxonomy
-- RESEARCH-evals.md — eval system concept: scenarios, evaluators (deterministic + LLM-as-judge), behavioral benchmarks
-- RESEARCH-catalog-expansion.md — full spec for all new agents, skills, sensors, workflows, routines
-- DESIGN-companion-app.md — Greenhouse design doc (architecture, tech stack, integration, UI, data model)
-- RESEARCH-trigger-system.md — Trigger system research: determinism taxonomy, proposed hybrid design
-- Claude Code Agent SDK docs — https://code.claude.com/docs/en/agent-sdk/overview
-- Claude Managed Agents — https://platform.claude.com/docs/en/managed-agents/overview (future cloud integration)
+<!-- Pointers to external resources not documented elsewhere in the project. -->
+
+_(empty)_

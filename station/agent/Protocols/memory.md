@@ -9,7 +9,7 @@ description: How to read, write, and clean working memory.
 
 ## Reading Memory
 
-At session start, read `agent/Core/memory.md` and act on any flags:
+At session start, read [agent/Core/memory.md](../Core/memory.md) and act on any flags:
 
 - **Flags** — unresolved items from prior sessions. Address or escalate each one.
 - **Work state** — what was in progress. Resume or confirm completion.
@@ -32,7 +32,7 @@ Update `agent/Core/memory.md` when:
 
 ## Rules
 
-- **Do NOT use Claude Code's auto-memory system** (`~/.claude/projects/*/memory/`). All persistent memory goes in `agent/Core/memory.md` — version-controlled, auditable, inside the project.
+- **Do NOT use Claude Code's auto-memory system** (`~/.claude/projects/*/memory/`). All persistent memory goes in [agent/Core/memory.md](../Core/memory.md) — version-controlled, auditable, inside the project.
 - Memory is for cross-session continuity, not session logs
 - Keep it short — if memory exceeds 30 lines, prune aggressively
 - Never store secrets or credentials in memory

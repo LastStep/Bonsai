@@ -47,7 +47,7 @@ One sentence: what does "done" look like?
 ## Security
 
 > [!warning]
-> Refer to `Playbook/Standards/SecurityStandards.md` for all security requirements.
+> Refer to SecurityStandards.md for all security requirements.
 
 ## Verification
 

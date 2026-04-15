@@ -36,4 +36,4 @@ Detect drift between declared infrastructure-as-code and actual cloud state. Cat
    - Format: date, routine name, environment, drift summary (resources in sync / drifted), action items
    - If no drift found, log clean check result
 
-5. **Update dashboard** — set `last_ran` to today's date in `agent/Core/routines.md`
+5. **Update dashboard** — set `last_ran` to today's date in `station/agent/Core/routines.md`
