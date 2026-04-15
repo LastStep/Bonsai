@@ -229,13 +229,31 @@ Agent(subagent_type: "general-purpose", isolation: "worktree", prompt: "task B..
 3. **Plan steps** — only this agent's steps, copied verbatim from the plan
 4. **Plan location** — path to the plan file
 5. **Verification** — what to run after completing (e.g., `make build && go test ./...`)
-6. **Constraints:**
+6. **PR creation** — "After verification passes, push your branch and create a **draft PR** targeting `main`. Use this format for the PR body:"
+   ```
+   ## Summary
+   {what and why, 1-3 sentences}
+   Closes #{issue_number}
+
+   ## Changes
+   - `path/file` — what changed
+
+   ## Plan
+   {link to plan file or "No plan — Tier 1 patch."}
+
+   ## Verification
+   - [x] `make build` — passes
+   - [x] `go test ./...` — passes
+   ```
+   "Report the PR URL back to me."
+7. **Constraints:**
    ```
    - Don't modify files outside the scope of the plan
    - Don't make design decisions — if the plan is ambiguous, stop and report
    - Don't add features, refactor code, or make improvements beyond what the plan specifies
    - If something is unclear, stop and report — don't guess
    - Run verification steps before reporting completion
+   - Create a draft PR after verification — never merge directly
    ```
 
 Do NOT include: conversation history, other agents' steps, or unnecessary context.
@@ -243,8 +261,9 @@ Do NOT include: conversation history, other agents' steps, or unnecessary contex
 ### After dispatch
 
 Wait for the agent notification — don't poll. When it returns:
-1. Note the worktree path and branch name from the result
-2. Proceed to Phase 9 (Review Loop)
+1. Note the **draft PR URL** and branch name from the result
+2. If the agent failed to create a PR, push the branch and create it yourself
+3. Proceed to Phase 9 (Review Loop)
 
 ---
 
@@ -370,35 +389,53 @@ If any check fails: fix it, re-verify the fix, and document what was caught in t
 
 ---
 
-## Phase 12: Merge & Close
+## Phase 12: Review PR & Merge
 
-Only merge after all audits in Phase 11 pass. The main working tree has been clean this entire time — this is the first moment code lands on the working branch.
+Only merge after all audits in Phase 11 pass. The draft PR has existed since Phase 8 — now it's time to review, promote, and merge it.
 
-### Merge worktree branches
+### 1. Review the PR
 
-```bash
-# For each worktree branch:
-git merge {branch} --no-ff -m "merge: {short description of what this branch did}"
-```
-
-If multiple worktree branches exist (parallel tasks), merge them one at a time. If a merge conflict occurs, resolve it or dispatch a subagent to resolve it in a fresh worktree.
-
-### Post-merge verification
-
-Run the full test suite and build again after merge — integration issues can surface here:
+Use the PR review workflow (`agent/Workflows/pr-review.md`):
 
 ```bash
-make build && go test ./...
+gh pr view {pr_number} --json title,body,files,additions,deletions
+gh pr diff {pr_number}
 ```
 
-If post-merge tests fail: revert the merge, fix in the worktree, re-audit, merge again.
+Review passes: scope check, correctness, security, performance, maintainability, standards.
 
-### Close out
+If issues are found, dispatch a fix agent on the same branch, push the fix, and re-review.
 
-1. **Close GitHub Issue** — if applicable, close with a final comment (what was done, link to plan, follow-ups)
+### 2. Promote and merge
+
+```bash
+# Mark ready for review
+gh pr ready {pr_number}
+
+# Merge (squash for clean history on small PRs, merge commit for multi-commit branches)
+gh pr merge {pr_number} --squash --delete-branch
+# or for larger feature branches:
+gh pr merge {pr_number} --merge --delete-branch
+```
+
+If merge conflicts exist: checkout the branch locally, rebase onto main, force-push, then merge.
+
+### 3. Post-merge verification
+
+Run the full test suite and build on main after merge:
+
+```bash
+git pull && make build && go test ./...
+```
+
+If post-merge tests fail: revert the merge commit, fix on the branch, create a new PR, re-audit.
+
+### 4. Close out
+
+1. **GitHub Issue** — should auto-close from `Closes #N` in the PR. If not, close manually with a comment.
 2. **Update Status.md** — ensure Recently Done entry exists
 3. **Update memory** — if significant architectural decisions were made, update `agent/Core/memory.md`
-4. **Notify user** — concise summary: what was done, how many iterations, any follow-ups
+4. **Notify user** — concise summary: what was done, how many iterations, PR link, any follow-ups
 
 ---
 
@@ -414,11 +451,11 @@ If post-merge tests fail: revert the merge, fix in the worktree, re-audit, merge
 | Plan | Write tool | Plan file written |
 | Self-Review | Internal checklist | All checks pass |
 | Triage | Decision tree | Dispatch or escalate decided |
-| Execute | Agent tool (worktree) | Agent(s) complete |
+| Execute | Agent tool (worktree) | Agent(s) complete, draft PR(s) created |
 | Review | Review agents, diff | All reviews pass (max 3 cycles) |
 | Logging | Status.md, GitHub, logs | All systems updated |
 | Final Audit | Tests, lint, build | All green |
-| Merge & Close | Git, GitHub | Issue closed, branch merged |
+| Review PR & Merge | `gh pr`, pr-review workflow | PR merged, issue closed |
 
 ---
 
@@ -428,7 +465,9 @@ If post-merge tests fail: revert the merge, fix in the worktree, re-audit, merge
 |-----------|--------|
 | Research confidence stays < 4 after 3 passes | Proceed with explicit caveats in plan; flag gaps to user at Triage |
 | Execute-review loop hits 3 iterations | Stop and escalate — the plan likely needs revision, not just the code |
-| Post-merge tests fail | Revert merge, fix in worktree, re-audit, merge again |
+| Subagent fails to create draft PR | Push the branch yourself and create the draft PR manually |
+| PR has merge conflicts | Rebase branch onto main, force-push, re-run verification |
+| Post-merge tests fail | Revert the merge commit, fix on branch, new PR, re-audit |
 | Agent produces output outside plan scope | Reject the output. Re-dispatch with tighter constraints |
 | Conflicting in-progress work discovered | Stop. Coordinate with user before proceeding |
 | Agent fails or times out | Check agent summary for partial work. Decide: resume on same worktree or start fresh |

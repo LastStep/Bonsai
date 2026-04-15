@@ -77,6 +77,8 @@ Include in this order:
 5. **Verification** — what to run after completing (tests, build, lint)
 6. **Constraints** — scope limits and behavioral rules
 
+7. **PR creation** — "After verification passes, create a draft PR using the pr-creation skill format. Report the PR URL."
+
 ### Constraint block (always include):
 
 ```
@@ -86,6 +88,7 @@ Constraints:
 - Don't add features, refactor code, or make improvements beyond what the plan specifies
 - If something is unclear, stop and report — don't guess
 - Run verification steps before reporting completion
+- Create a draft PR after verification passes — never merge directly
 ```
 
 ### Do NOT include:
@@ -131,7 +134,9 @@ Iteration 3: fix dispatch → re-review → [pass/fail + issues]
 After each agent completes:
 
 - [ ] Read agent summary
+- [ ] Confirm draft PR was created — note the PR URL and branch
 - [ ] Diff worktree against plan — every step followed, nothing improvised
 - [ ] Check for scope creep — changes not in the plan
 - [ ] Run verification commands from the plan
 - [ ] Dispatch independent review agent if changes are substantial
+- [ ] After review passes, promote draft PR to ready-for-review and merge

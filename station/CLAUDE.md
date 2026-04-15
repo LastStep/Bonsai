@@ -48,6 +48,7 @@
 | Plan format, tier rules, and template for writing implementation plans | `agent/Skills/planning-template.md` |
 | Structured code review checklist — correctness, security, performance, maintainability | `agent/Skills/review-checklist.md` |
 | Issue types, importance levels, domain labels, and classification heuristics | `agent/Skills/issue-classification.md` |
+| How to create well-structured draft PRs — title, body template, gh commands | `agent/Skills/pr-creation.md` |
 | BubbleTea TUI development | `agent/Skills/bubbletea.md` |
 
 > BubbleTea skill references live in `agent/Skills/bubbletea/` — load progressively as needed.
