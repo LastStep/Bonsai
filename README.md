@@ -82,6 +82,12 @@ sudo mv bonsai /usr/local/bin/
 go install github.com/LastStep/Bonsai@latest
 ```
 
+**Verify:**
+
+```bash
+bonsai --version
+```
+
 ---
 
 ## Quick Start
@@ -328,12 +334,13 @@ Bonsai workspaces are designed to be extended. After generation, you own the fil
 | **[Handbook](HANDBOOK.md)** | Mental model, interaction patterns, sensor/routine deep dives, best practices |
 | **[Working With Agents](docs/working-with-agents.md)** | Communication patterns, framing techniques, and collaboration rhythms that get the best results |
 | **[Custom Files](docs/custom-files.md)** | How to create your own abilities — meta.yaml format, frontmatter, templates |
+| **[Contributing](CONTRIBUTING.md)** | How to set up for development, add catalog items, and submit PRs |
 
 ---
 
 ## Contributing
 
-Bonsai is early-stage and evolving fast. If you have ideas, find bugs, or want to add catalog items:
+Bonsai is early-stage and evolving fast. If you have ideas, find bugs, or want to add catalog items — see [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 1. Open an [issue](https://github.com/LastStep/Bonsai/issues) to discuss
 2. Fork, branch, and submit a PR
@@ -345,6 +352,7 @@ Bonsai is early-stage and evolving fast. If you have ideas, find bugs, or want t
 
 **[GitHub](https://github.com/LastStep/Bonsai)** · **[Releases](https://github.com/LastStep/Bonsai/releases)** · **[MIT License](LICENSE)**
 
-Built with [Cobra](https://github.com/spf13/cobra), [Huh](https://github.com/charmbracelet/huh), [LipGloss](https://github.com/charmbracelet/lipgloss), and [BubbleTea](https://github.com/charmbracelet/bubbletea).
+Built with [Cobra](https://github.com/spf13/cobra), [Huh](https://github.com/charmbracelet/huh), [LipGloss](https://github.com/charmbracelet/lipgloss), and [BubbleTea](https://github.com/charmbracelet/bubbletea).<br>
+Developed with [Claude Code](https://claude.ai/code).
 
 </div>

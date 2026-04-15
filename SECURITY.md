@@ -1,0 +1,29 @@
+# Security Policy
+
+## Reporting a Vulnerability
+
+If you discover a security vulnerability in Bonsai, please report it through [GitHub's private vulnerability reporting](https://github.com/LastStep/Bonsai/security/advisories/new).
+
+**Do not open a public issue for security vulnerabilities.**
+
+We will acknowledge your report within 48 hours and provide an initial assessment of the issue.
+
+## Scope
+
+The following are in scope for security reports:
+
+- **CLI binary** — command injection, path traversal, unsafe file operations
+- **Embedded catalog** — template injection, unsafe defaults in generated files
+- **Generated hook scripts** — script injection, privilege escalation
+- **Template rendering** — arbitrary code execution via template variables
+- **Configuration files** — sensitive data exposure in `.bonsai.yaml` or generated configs
+
+## Out of Scope
+
+- **User-customized files** — files you modify after generation are your responsibility
+- **Third-party dependencies** — report these to the upstream maintainer directly
+- **Claude Code itself** — report issues with Claude Code at [anthropics/claude-code](https://github.com/anthropics/claude-code/issues)
+
+## Supported Versions
+
+Only the latest release is supported with security updates.
