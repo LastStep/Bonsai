@@ -547,3 +547,83 @@ func TestClaudeMDIncludesCustomItems(t *testing.T) {
 		t.Error("CLAUDE.md does not include custom workflow description")
 	}
 }
+
+// ─── How to Work tests ──────────────────────────────────────────────
+
+func TestHowToWorkSectionExists(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
+
+	claudeMD, err := os.ReadFile(filepath.Join(tmpDir, "CLAUDE.md"))
+	if err != nil {
+		t.Fatalf("read CLAUDE.md: %v", err)
+	}
+	content := string(claudeMD)
+
+	if !strings.Contains(content, "### How to Work") {
+		t.Error("CLAUDE.md missing '### How to Work' section")
+	}
+	if !strings.Contains(content, "Decision heuristics") {
+		t.Error("CLAUDE.md missing How to Work description line")
+	}
+}
+
+func TestHowToWorkTechLeadHeuristics(t *testing.T) {
+	lines := howToWorkLines("tech-lead", "station/", true, false)
+	content := strings.Join(lines, "\n")
+
+	if !strings.Contains(content, "orchestrate") {
+		t.Error("tech-lead heuristics should contain 'orchestrate'")
+	}
+	if !strings.Contains(content, "Backlog") {
+		t.Error("tech-lead heuristics should contain 'Backlog'")
+	}
+}
+
+func TestHowToWorkCodeAgentHeuristics(t *testing.T) {
+	lines := howToWorkLines("backend", "docs/", false, false)
+	content := strings.Join(lines, "\n")
+
+	if !strings.Contains(content, "Plan first") {
+		t.Error("backend heuristics should contain 'Plan first'")
+	}
+	if !strings.Contains(content, "scope") {
+		t.Error("backend heuristics should contain 'scope'")
+	}
+	// Should NOT contain tech-lead heuristics
+	if strings.Contains(content, "orchestrate") {
+		t.Error("backend heuristics should not contain tech-lead 'orchestrate'")
+	}
+}
+
+func TestHowToWorkGuidePointer(t *testing.T) {
+	// With workspace-guide installed
+	lines := howToWorkLines("backend", "", false, true)
+	content := strings.Join(lines, "\n")
+	if !strings.Contains(content, "workspace-guide.md") {
+		t.Error("workspace-guide pointer should appear when hasWorkspaceGuide is true")
+	}
+
+	// Without workspace-guide installed
+	lines = howToWorkLines("backend", "", false, false)
+	content = strings.Join(lines, "\n")
+	if strings.Contains(content, "workspace-guide.md") {
+		t.Error("workspace-guide pointer should NOT appear when hasWorkspaceGuide is false")
+	}
+}

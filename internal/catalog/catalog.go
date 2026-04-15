@@ -301,7 +301,7 @@ func loadItems(fsys fs.FS, category string) []CatalogItem {
 			continue
 		}
 		for _, f := range dirEntries {
-			if !f.IsDir() && strings.HasSuffix(f.Name(), ".md") {
+			if !f.IsDir() && (strings.HasSuffix(f.Name(), ".md") || strings.HasSuffix(f.Name(), ".md.tmpl")) {
 				item.ContentPath = itemDir + "/" + f.Name()
 				break
 			}

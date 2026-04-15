@@ -1,0 +1,174 @@
+---
+tags: [skill, workspace]
+description: How to operate effectively in a Bonsai workspace — decision patterns, system mechanics, workspace evolution.
+---
+
+# Workspace Guide
+
+> Operational reference for working in a Bonsai-managed workspace. Load this skill when you need deeper understanding of how the workspace systems work together.
+
+---
+
+## How This Workspace Is Organized
+
+Your workspace follows a layered loading model:
+
+1. **Core** (`agent/Core/`) — Identity, memory, self-awareness. Loaded every session, defines who you are.
+2. **Protocols** (`agent/Protocols/`) — Session-start procedures, scope boundaries, security rules, memory management. Loaded every session after Core.
+3. **Skills** (`agent/Skills/`) — Reference standards for specific domains (coding style, API design, test strategy). Loaded on-demand when relevant.
+4. **Workflows** (`agent/Workflows/`) — Multi-step procedures for activities (planning, reviewing, auditing, reporting). Loaded on-demand when starting an activity.
+5. **Sensors** (`agent/Sensors/`) — Event-driven hooks that run automatically. You never load these manually.
+6. **Routines** (`agent/Routines/`) — Periodic maintenance tasks. Checked at session start, executed when the user approves.
+
+The **CLAUDE.md** at your workspace root is your navigation hub — it has tables listing every installed file with descriptions.
+
+---
+
+## When to Load What
+
+**Load a Workflow when:**
+- You are starting a multi-step activity: planning a feature, reviewing code, auditing security, writing a session log.
+- Follow the workflow end-to-end — it defines the complete procedure.
+- Check the "Workflows" table in CLAUDE.md for the full list.
+
+**Load a Skill when:**
+- You need reference standards for a specific domain: coding conventions, API design patterns, test strategy.
+- Load it, apply the standards, then move on. Skills are reference material, not procedures.
+- Check the "Skills" table in CLAUDE.md for the full list.
+
+**Load both when:**
+- A workflow references a skill (e.g., code-review workflow references review-checklist skill).
+- The workflow tells you when to load supporting skills.
+
+---
+
+## Using the Playbook
+
+The Playbook is your project management hub:
+
+| File | Purpose | When to use |
+|------|---------|-------------|
+| `{{ .DocsPath }}Playbook/Status.md` | Task tracker | Check at session start for assigned work |
+| `{{ .DocsPath }}Playbook/Backlog.md` | Intake queue | Add out-of-scope findings here — never fix inline |
+| `{{ .DocsPath }}Playbook/Roadmap.md` | Long-term direction | Check before proposing new features |
+| `{{ .DocsPath }}Playbook/Plans/Active/` | Implementation plans | Read your assigned plan before starting work |
+| `{{ .DocsPath }}Logs/KeyDecisionLog.md` | Decision log | Log significant architectural decisions |
+| `{{ .DocsPath }}Playbook/Standards/SecurityStandards.md` | Security constraints | Hard security rules — always applies |
+
+**Key rule:** When you discover bugs, improvements, or tech debt outside your current task, add them to `Backlog.md`. Don't fix them inline — stay focused on your assigned work.
+
+---
+{{ if .Routines }}
+## How Routines Work
+
+Routines are periodic self-maintenance tasks that keep the workspace healthy.
+
+**Lifecycle:**
+1. **Session start:** The `routine-check` sensor parses `agent/Core/routines.md`, compares `last_ran` dates against frequencies, and flags overdue routines.
+2. **User decides:** You report which routines are overdue. The user decides whether to run them now or defer.
+3. **Execution:** Read the routine's procedure file in `agent/Routines/`, follow each step.
+4. **Logging:** Append results to `{{ .DocsPath }}Logs/RoutineLog.md` with date, routine name, outcome, and notes.
+5. **Dashboard update:** Set `last_ran` to today's date in `agent/Core/routines.md`.
+
+**Rules:**
+- Every routine must be **idempotent** — safe to re-run if interrupted.
+- When validating facts, **mark stale entries as outdated** rather than deleting.
+- Never run a routine without user approval.
+
+---
+{{ end }}
+## How Sensors Work
+
+Sensors are event-driven hooks configured in `.claude/settings.json`. They fire automatically — you don't invoke them.
+
+**Event types:**
+- `SessionStart` — fires once when the session begins (e.g., inject context, check routines)
+- `PreToolUse` — fires before a tool is used (e.g., block edits outside workspace)
+- `PostToolUse` — fires after a tool is used
+- `UserPromptSubmit` — fires before each user prompt is processed (e.g., inject behavioral constraints)
+- `Stop` — fires after each response (e.g., display status bar)
+
+**Behavior types:**
+- **Blocking sensors** (scope guards) — prevent actions that violate rules. If a sensor blocks you, read the rule it's enforcing.
+- **Injecting sensors** (session-context) — add information to your context at specific events.
+- **Feedback sensors** (status-bar) — provide status information after responses.
+
+**Key rule:** Don't fight sensors. If a sensor blocks an action, it's enforcing a workspace rule. Read the sensor's description in your CLAUDE.md to understand why.
+
+---
+
+## Working with Memory
+
+`agent/Core/memory.md` is your persistent memory between sessions.
+
+**Structure:**
+- **Flags** — Temporary signals for the current work cycle (clear when resolved)
+- **Work State** — Current task, branch, what you're doing
+- **Notes** — Stable facts about the project that future sessions need
+- **Feedback** — User corrections and preferences
+- **References** — External pointers (URLs, file paths, configs)
+
+**When to write:**
+- You learn something future sessions need to know
+- The user corrects your behavior or provides preferences
+- You start or finish a task (update Work State)
+- You discover a project fact that isn't documented elsewhere
+
+**When to read:**
+- Every session start — restore context from previous sessions
+- The session-start protocol handles this automatically
+
+**Key rule:** Never use Claude Code's auto-memory system (`~/.claude/projects/*/memory/`). All persistent memory goes in `agent/Core/memory.md`.
+
+---
+
+## Evolving the Workspace
+
+The workspace is managed by the `bonsai` CLI:
+
+| Command | What it does |
+|---------|-------------|
+| `bonsai add` | Install new agents or add abilities (skills, workflows, protocols, sensors, routines) to existing agents |
+| `bonsai remove` | Remove agents or individual abilities |
+| `bonsai update` | Sync workspace after creating custom files with YAML frontmatter |
+| `bonsai guide` | View the custom files guide for creating your own abilities |
+| `bonsai list` | See what's installed in the current project |
+| `bonsai catalog` | Browse all available abilities |
+
+**Custom files:** You can create custom skills, workflows, protocols, sensors, or routines by placing files with YAML frontmatter in the appropriate `agent/` subdirectory, then running `bonsai update` to register them.
+
+---
+
+## Agent-Specific Patterns
+{{ if eq .AgentName "tech-lead" }}
+### Tech Lead Operating Model
+
+- **You plan and orchestrate** — never write application code directly. Your job is to break down features, create plans, dispatch to code agents, and review their output.
+- **Dispatch via worktrees** — each code agent works in an isolated worktree. Use the dispatch skill to send work.
+- **Check Backlog first** — before creating new work items, check `{{ .DocsPath }}Playbook/Backlog.md` for existing entries to avoid duplicates.
+- **Update Status after work** — when tasks complete, update `{{ .DocsPath }}Playbook/Status.md` and log results.
+- **Use issue-to-implementation** — for end-to-end feature delivery, follow the issue-to-implementation workflow from intake through close.
+- **Review all output** — before marking work done, review agent output against the plan for correctness, standards compliance, and security.
+{{ end }}{{ if or (eq .AgentName "backend") (eq .AgentName "frontend") (eq .AgentName "fullstack") }}
+### Code Agent Operating Model
+
+- **Read your plan first** — check `{{ .DocsPath }}Playbook/Plans/Active/` for your assigned implementation plan before writing any code. Follow it exactly.
+- **Stop if ambiguous** — if the plan is unclear or you face a decision not covered by the plan, stop and report to the tech lead. Don't guess or make architectural decisions.
+- **Stay in scope** — only modify files within your workspace boundary. The scope-guard sensor enforces this.
+- **Report completion** — use the reporting workflow to communicate results back to the tech lead.
+- **Don't make architectural decisions** — that's the tech lead's job. Your job is to implement the plan precisely.
+{{ end }}{{ if eq .AgentName "devops" }}
+### DevOps Operating Model
+
+- **Plan before apply** — never auto-approve destructive infrastructure operations. Always plan first, show the user what will change, and require explicit confirmation.
+- **Explicit confirmation for destructive ops** — any operation that deletes, replaces, or modifies live infrastructure requires the user to explicitly approve.
+- **Work with safety guards** — the iac-safety-guard sensor blocks dangerous commands. If it blocks you, the operation needs explicit approval.
+- **Stay in scope** — only modify infrastructure and deployment files within your workspace boundary.
+{{ end }}{{ if eq .AgentName "security" }}
+### Security Agent Operating Model
+
+- **Audit and report** — you read the entire codebase but only modify security-owned files. Never implement application features.
+- **Evidence-based findings** — every finding must include: specific file path, line number, and standard reference (OWASP, CWE, CVE).
+- **Only modify security-owned files** — security policies, audit reports, security configurations. Never modify application code.
+- **Use security-audit workflow** — for structured audits, follow the security-audit workflow end-to-end.
+{{ end }}

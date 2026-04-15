@@ -494,6 +494,62 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 }
 
 
+// howToWorkLines generates the compact "How to Work" heuristics section for the workspace CLAUDE.md.
+func howToWorkLines(agentName string, docsPrefix string, hasRoutines bool, hasWorkspaceGuide bool) []string {
+	var lines []string
+	lines = append(lines,
+		"### How to Work", "",
+		"> Decision heuristics — how to use this workspace effectively.", "",
+	)
+
+	// Shared heuristics (all agents)
+	lines = append(lines,
+		fmt.Sprintf("- **Before starting work:** Check `%sPlaybook/Status.md` for assigned tasks and `%sPlaybook/Plans/Active/` for your current plan.", docsPrefix, docsPrefix),
+		"- **When to load a Workflow:** You are starting a multi-step activity (planning, reviewing, auditing). Load the matching workflow from the table above and follow it end-to-end.",
+		"- **When to load a Skill:** You need reference standards for a specific domain (coding style, API design, test strategy). Load it, use it, move on.",
+		fmt.Sprintf("- **Decision logging:** When you make or observe a significant architectural decision, append it to `%sLogs/KeyDecisionLog.md`.", docsPrefix),
+		fmt.Sprintf("- **Out-of-scope findings:** Don't fix bugs, debt, or improvements outside your current task. Add them to `%sPlaybook/Backlog.md`.", docsPrefix),
+		"- **Workspace evolution:** `bonsai add` (new abilities), `bonsai remove` (uninstall), `bonsai update` (sync custom files), `bonsai list` (see installed), `bonsai catalog` (browse available).",
+	)
+
+	// Agent-type-specific heuristics
+	switch agentName {
+	case "tech-lead":
+		lines = append(lines,
+			"- **You orchestrate, not implement.** Plan features, dispatch to code agents via worktrees, review their output. Never write application code directly.",
+			fmt.Sprintf("- **Check Backlog first:** Before creating new work items, check `%sPlaybook/Backlog.md` for existing entries.", docsPrefix),
+			fmt.Sprintf("- **After completing work:** Update `%sPlaybook/Status.md` and log results.", docsPrefix),
+		)
+	case "backend", "frontend", "fullstack":
+		lines = append(lines,
+			fmt.Sprintf("- **Plan first:** Read your assigned plan in `%sPlaybook/Plans/Active/` before writing any code. Follow it exactly.", docsPrefix),
+			"- **When stuck:** If the plan is ambiguous, stop and report — don't guess or make design decisions.",
+			"- **Stay in scope:** Only modify files within your workspace boundary.",
+		)
+	case "devops":
+		lines = append(lines,
+			"- **Plan before apply:** Never auto-approve destructive infrastructure operations. Require explicit user confirmation.",
+			"- **Stay in scope:** Only modify infrastructure and deployment files within your workspace boundary.",
+		)
+	case "security":
+		lines = append(lines,
+			"- **Audit and report.** You read the entire codebase but only modify security-owned files.",
+			"- **Evidence-based findings:** Every finding must reference a specific file, line, and standard (OWASP, CWE, CVE).",
+		)
+	}
+
+	// Workspace guide pointer
+	if hasWorkspaceGuide {
+		lines = append(lines,
+			"- **New to this workspace?** Load `agent/Skills/workspace-guide.md` for a full operational reference.",
+		)
+	}
+
+	lines = append(lines, "")
+
+	return lines
+}
+
 const (
 	bonsaiStartMarker = "<!-- BONSAI_START -->"
 	bonsaiEndMarker   = "<!-- BONSAI_END -->"
@@ -622,6 +678,17 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 		lines = append(lines, "",
 			"> Sensors run automatically — they are configured in `.claude/settings.json`.", "")
 	}
+
+	// How to Work section
+	hasWorkspaceGuide := false
+	for _, s := range installed.Skills {
+		if s == "workspace-guide" {
+			hasWorkspaceGuide = true
+			break
+		}
+	}
+	htw := howToWorkLines(agentDef.Name, docsPrefix, len(installed.Routines) > 0, hasWorkspaceGuide)
+	lines = append(lines, htw...)
 
 	lines = append(lines,
 		"---", "",
@@ -962,18 +1029,34 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		result.Add(r)
 	}
 
-	// 2. Skills
+	// Full template context — used by skills, sensors, and routines that have .tmpl files
+	fullCtx := &TemplateContext{
+		ProjectName:        cfg.ProjectName,
+		ProjectDescription: cfg.Description,
+		AgentName:          agentDef.Name,
+		AgentDisplayName:   agentDef.DisplayName,
+		AgentDescription:   agentDef.Description,
+		Workspace:          installed.Workspace,
+		DocsPath:           cfg.DocsPath,
+		Protocols:          installed.Protocols,
+		Skills:             installed.Skills,
+		Workflows:          installed.Workflows,
+		Routines:           installed.Routines,
+		OtherAgents:        ctx.OtherAgents,
+	}
+
+	// 2. Skills (rendered through templates if .tmpl, otherwise copied as-is)
 	for _, skillName := range installed.Skills {
 		item := cat.GetSkill(skillName)
 		if item == nil {
 			continue
 		}
-		data, err := fs.ReadFile(catFS, item.ContentPath)
+		content, err := renderContent(catFS, item.ContentPath, fullCtx)
 		if err != nil {
-			return err
+			return fmt.Errorf("skill %s: %w", skillName, err)
 		}
 		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Skills", skillName+".md"))
-		r := writeFile(projectRoot, relPath, data, "catalog:skills/"+skillName, lock, force)
+		r := writeFile(projectRoot, relPath, content, "catalog:skills/"+skillName, lock, force)
 		result.Add(r)
 	}
 
@@ -1008,27 +1091,12 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 	}
 
 	// 5. Sensors (rendered through templates)
-	sensorCtx := &TemplateContext{
-		ProjectName:        cfg.ProjectName,
-		ProjectDescription: cfg.Description,
-		AgentName:          agentDef.Name,
-		AgentDisplayName:   agentDef.DisplayName,
-		AgentDescription:   agentDef.Description,
-		Workspace:          installed.Workspace,
-		DocsPath:           cfg.DocsPath,
-		Protocols:          installed.Protocols,
-		Skills:             installed.Skills,
-		Workflows:          installed.Workflows,
-		Routines:           installed.Routines,
-		OtherAgents:        ctx.OtherAgents,
-	}
-
 	for _, sensorName := range installed.Sensors {
 		sensor := cat.GetSensor(sensorName)
 		if sensor == nil {
 			continue
 		}
-		content, err := renderContent(catFS, sensor.ContentPath, sensorCtx)
+		content, err := renderContent(catFS, sensor.ContentPath, fullCtx)
 		if err != nil {
 			return fmt.Errorf("sensor %s: %w", sensorName, err)
 		}
@@ -1044,7 +1112,7 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if routine == nil {
 			continue
 		}
-		content, err := renderContent(catFS, routine.ContentPath, sensorCtx)
+		content, err := renderContent(catFS, routine.ContentPath, fullCtx)
 		if err != nil {
 			return fmt.Errorf("routine %s: %w", routineName, err)
 		}
