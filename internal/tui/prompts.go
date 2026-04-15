@@ -131,7 +131,7 @@ func AskConfirm(title string, defaultVal bool) (bool, error) {
 	return value, err
 }
 
-// PickItems shows a section heading and multi-select for catalog items.
+// PickItems shows a section heading and multi-select for abilities.
 // Items whose names appear in defaults are pre-selected.
 // Items marked Required are auto-included and shown as a locked info line.
 // Returns machine identifiers (Value fields), not display names.

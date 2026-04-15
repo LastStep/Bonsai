@@ -77,9 +77,9 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if _, exists := cfg.Agents[agentType]; exists {
-		tui.WarningPanel("Agent " + agentType + " is already installed.")
-		return nil
+	// If agent is already installed, pivot to "add items" flow
+	if existing, exists := cfg.Agents[agentType]; exists {
+		return runAddItems(cwd, configPath, cfg, cat, agentType, existing)
 	}
 
 	// Require tech-lead before adding other agents
@@ -226,5 +226,172 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	showWriteResults(&wr, workspace)
 
 	tui.Success(fmt.Sprintf("Added %s at %s", agentDef.DisplayName, workspace))
+	return nil
+}
+
+// runAddItems handles adding new catalog items to an already-installed agent.
+func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Catalog, agentType string, installed *config.InstalledAgent) error {
+	agentDef := cat.GetAgent(agentType)
+	if agentDef == nil {
+		tui.Error("Unknown agent type: " + agentType)
+		os.Exit(1)
+	}
+
+	tui.Info(fmt.Sprintf("%s is already installed at %s — showing uninstalled abilities.", agentDef.DisplayName, installed.Workspace))
+	tui.Blank()
+
+	installedSet := func(items []string) map[string]bool {
+		m := make(map[string]bool, len(items))
+		for _, item := range items {
+			m[item] = true
+		}
+		return m
+	}
+
+	// Filter each category to exclude already-installed items
+	filterItems := func(available []catalog.CatalogItem, existing []string) []catalog.CatalogItem {
+		have := installedSet(existing)
+		var result []catalog.CatalogItem
+		for _, item := range available {
+			if !have[item.Name] {
+				result = append(result, item)
+			}
+		}
+		return result
+	}
+
+	filterSensors := func(available []catalog.SensorItem, existing []string) []catalog.SensorItem {
+		have := installedSet(existing)
+		var result []catalog.SensorItem
+		for _, item := range available {
+			if !have[item.Name] && item.Name != "routine-check" {
+				result = append(result, item)
+			}
+		}
+		return result
+	}
+
+	filterRoutines := func(available []catalog.RoutineItem, existing []string) []catalog.RoutineItem {
+		have := installedSet(existing)
+		var result []catalog.RoutineItem
+		for _, item := range available {
+			if !have[item.Name] {
+				result = append(result, item)
+			}
+		}
+		return result
+	}
+
+	newSkills := filterItems(cat.SkillsFor(agentType), installed.Skills)
+	newWorkflows := filterItems(cat.WorkflowsFor(agentType), installed.Workflows)
+	newProtocols := filterItems(cat.ProtocolsFor(agentType), installed.Protocols)
+	newSensors := filterSensors(cat.SensorsFor(agentType), installed.Sensors)
+	newRoutines := filterRoutines(cat.RoutinesFor(agentType), installed.Routines)
+
+	totalAvailable := len(newSkills) + len(newWorkflows) + len(newProtocols) + len(newSensors) + len(newRoutines)
+	if totalAvailable == 0 {
+		tui.SuccessPanel("All available abilities are already installed.", "")
+		return nil
+	}
+
+	// Show pickers — nothing pre-selected since these are additions
+	var noDefaults []string
+
+	selectedSkills, err := tui.PickItems("Skills", toItemOptions(newSkills, agentType), noDefaults)
+	if err != nil {
+		return err
+	}
+	selectedWorkflows, err := tui.PickItems("Workflows", toItemOptions(newWorkflows, agentType), noDefaults)
+	if err != nil {
+		return err
+	}
+	selectedProtocols, err := tui.PickItems("Protocols", toItemOptions(newProtocols, agentType), noDefaults)
+	if err != nil {
+		return err
+	}
+	selectedSensors, err := tui.PickItems("Sensors", toSensorOptions(newSensors, agentType), noDefaults)
+	if err != nil {
+		return err
+	}
+	selectedRoutines, err := tui.PickItems("Routines", toRoutineOptions(newRoutines, agentType), noDefaults)
+	if err != nil {
+		return err
+	}
+
+	totalSelected := len(selectedSkills) + len(selectedWorkflows) + len(selectedProtocols) + len(selectedSensors) + len(selectedRoutines)
+	if totalSelected == 0 {
+		tui.Info("No new abilities selected.")
+		return nil
+	}
+
+	// Review summary — show only the new abilities being added
+	describer := func(name string) string {
+		if item := cat.GetItem(name); item != nil {
+			return item.Description
+		}
+		if sensor := cat.GetSensor(name); sensor != nil {
+			return sensor.Description
+		}
+		if routine := cat.GetRoutine(name); routine != nil {
+			return routine.Description
+		}
+		return ""
+	}
+
+	summary := tui.ItemTree(
+		tui.StyleLabel.Render(agentDef.DisplayName)+" "+tui.StyleMuted.Render(tui.GlyphArrow+" "+installed.Workspace),
+		[]tui.Category{
+			{Name: "Skills", Items: selectedSkills},
+			{Name: "Workflows", Items: selectedWorkflows},
+			{Name: "Protocols", Items: selectedProtocols},
+			{Name: "Sensors", Items: selectedSensors},
+			{Name: "Routines", Items: selectedRoutines},
+		},
+		describer,
+	)
+
+	tui.TitledPanel("Adding", summary, tui.Water)
+	tui.Blank()
+
+	confirmed, err := tui.AskConfirm("Generate files?", true)
+	if err != nil || !confirmed {
+		return nil
+	}
+
+	// Append new selections to existing config
+	installed.Skills = append(installed.Skills, selectedSkills...)
+	installed.Workflows = append(installed.Workflows, selectedWorkflows...)
+	installed.Protocols = append(installed.Protocols, selectedProtocols...)
+	installed.Sensors = append(installed.Sensors, selectedSensors...)
+	installed.Routines = append(installed.Routines, selectedRoutines...)
+
+	generate.EnsureRoutineCheckSensor(installed)
+
+	if err := cfg.Save(configPath); err != nil {
+		return err
+	}
+
+	lock, _ := config.LoadLockFile(cwd)
+	var wr generate.WriteResult
+
+	_ = spinner.New().
+		Title("Generating files...").
+		Action(func() {
+			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
+			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
+		}).
+		Run()
+
+	if wr.HasConflicts() {
+		resolveConflicts(&wr, lock, cwd)
+	}
+
+	if err := lock.Save(cwd); err != nil {
+		tui.Warning("Could not save lock file: " + err.Error())
+	}
+
+	showWriteResults(&wr, installed.Workspace)
+
+	tui.Success(fmt.Sprintf("Added %d abilities to %s", totalSelected, agentDef.DisplayName))
 	return nil
 }

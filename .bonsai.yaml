@@ -13,6 +13,7 @@ agents:
         skills:
             - planning-template
             - review-checklist
+            - issue-classification
         workflows:
             - code-review
             - planning
@@ -20,6 +21,8 @@ agents:
             - security-audit
             - session-logging
             - test-plan
+            - session-wrapup
+            - issue-to-implementation
         protocols:
             - memory
             - scope-boundaries
@@ -31,6 +34,9 @@ agents:
             - session-context
             - status-bar
             - routine-check
+            - agent-review
+            - dispatch-guard
+            - subagent-stop-review
         routines:
             - backlog-hygiene
             - dependency-audit
@@ -40,3 +46,6 @@ agents:
             - roadmap-accuracy
             - status-hygiene
             - vulnerability-scan
+        custom_items:
+            session-wrapup:
+                description: End-of-session verification, review, cleanup, and summary — triggered by session wrap-up phrases.

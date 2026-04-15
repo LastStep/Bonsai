@@ -11,6 +11,7 @@ if [[ -z "$SESSION_ID" ]]; then
   exit 0
 fi
 
+ROOT="${1:-.}"
 STATE_FILE="/tmp/bonsai-awareness-${SESSION_ID}.json"
 PROMPT=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('prompt',''))" 2>/dev/null)
 
@@ -21,7 +22,8 @@ import json, sys, os
 
 state_file = sys.argv[1]
 prompt = sys.argv[2]
-docs_path = 'station/'
+root = sys.argv[3] if len(sys.argv) > 3 else '.'
+docs_path = os.path.join(root, 'station/')
 
 # ── Load state file ─────────────────────────────────────────────────────────
 
@@ -114,6 +116,6 @@ output = {
     }
 }
 print(json.dumps(output))
-" "$STATE_FILE" "$PROMPT" 2>/dev/null
+" "$STATE_FILE" "$PROMPT" "$ROOT" 2>/dev/null
 
 exit 0

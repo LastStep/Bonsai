@@ -1,6 +1,26 @@
 {
   "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/agent-review.sh\" \"$r\"'"
+          }
+        ],
+        "matcher": "Agent"
+      }
+    ],
     "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/dispatch-guard.sh\" \"$r\"'"
+          }
+        ],
+        "matcher": "Agent"
+      },
       {
         "hooks": [
           {
@@ -31,6 +51,16 @@
           {
             "type": "command",
             "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/status-bar.sh\" \"$r\"'"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/subagent-stop-review.sh\" \"$r\"'"
           }
         ]
       }

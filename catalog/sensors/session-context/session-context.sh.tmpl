@@ -2,8 +2,9 @@
 # Session Start — {{ .AgentDisplayName }}
 # Injects required context at the start of every session.
 
-WORKSPACE="{{ .Workspace }}"
-DOCS="{{ .DocsPath }}"
+ROOT="${1:-.}"
+WORKSPACE="${ROOT}/{{ .Workspace }}"
+DOCS="${ROOT}/{{ .DocsPath }}"
 
 # ── Core identity ───────────────────────────────────────────────────────────
 

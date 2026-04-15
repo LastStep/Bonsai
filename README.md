@@ -45,7 +45,7 @@ bonsai add
 
 ```bash
 bonsai list                    # see what's installed
-bonsai catalog                 # browse all available items
+bonsai catalog                 # browse all available abilities
 bonsai catalog --agent backend # filter by agent type
 bonsai remove backend          # remove agent from config
 bonsai remove backend -d       # also delete generated files
@@ -140,7 +140,7 @@ your-project/
 | `bonsai add` | Add a code agent (interactive) | |
 | `bonsai remove <agent>` | Remove an installed agent | `-d` `--delete-files` |
 | `bonsai list` | Show installed agents + components | |
-| `bonsai catalog` | Browse available catalog items | `-a` `--agent <type>` |
+| `bonsai catalog` | Browse available abilities | `-a` `--agent <type>` |
 
 ---
 

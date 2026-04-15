@@ -84,7 +84,7 @@ When you discover bugs, improvement ideas, tech debt, or feature requests outsid
 
 ## Key Concepts
 
-- **Catalog items** (skills, workflows, protocols) each have a `meta.yaml` with `name`, `description`, `agents` (list or `"all"`), optional `required` (same format) and a companion `.md` content file
+- **Abilities** (skills, workflows, protocols) each have a `meta.yaml` with `name`, `description`, `agents` (list or `"all"`), optional `required` (same format) and a companion `.md` content file
 - **Sensors** are auto-enforced hooks — `meta.yaml` adds `event` (hook event) and optional `matcher` (tool filter), with a companion `.sh.tmpl` script template instead of `.md`
 - **Routines** are periodic self-maintenance tasks — `meta.yaml` adds `frequency` (e.g. `"5 days"`), with a companion `.md.tmpl` content template. Installed to `agent/Routines/` with a managed dashboard at `agent/Core/routines.md`
 - **`routine-check` sensor** is auto-installed when any routines are present, auto-removed when the last routine is removed — parses the dashboard at session start and flags overdue routines
@@ -109,7 +109,7 @@ make build             # builds ./bonsai binary
 go install .           # install to $GOPATH/bin
 ```
 
-### Testing changes to catalog items
+### Testing changes to abilities
 
 Edit files in `catalog/`, then rebuild and test in a temp dir:
 ```bash
@@ -120,7 +120,7 @@ mkdir /tmp/test && cd /tmp/test
 /path/to/bonsai list
 ```
 
-### Adding a new catalog item (skill, workflow, protocol)
+### Adding a new ability (skill, workflow, protocol)
 
 1. Create `catalog/{category}/{item-name}/meta.yaml`
 2. Create `catalog/{category}/{item-name}/{item-name}.md`
@@ -153,7 +153,7 @@ mkdir /tmp/test && cd /tmp/test
 ## Conventions
 
 - Keep CLI interactive — use Huh forms for all user input
-- All catalog items use the same base `meta.yaml` shape: `name`, `description`, `agents`, `required` — sensors add `event` and `matcher`, routines add `frequency`
+- All abilities use the same base `meta.yaml` shape: `name`, `description`, `agents`, `required` — sensors add `event` and `matcher`, routines add `frequency`
 - **`required`** uses the same format as `agents` (`all` or list of agent types) — required items are auto-installed during `bonsai add` and can't be unchecked
 - Generator functions in `internal/generate/`, catalog loading in `internal/catalog/`, commands in `cmd/`
 - Go structs for all data shapes (config, catalog models)

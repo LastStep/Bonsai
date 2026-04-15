@@ -1,0 +1,3 @@
+name: dispatch
+description: How to dispatch work to code agents — triage rules, prompt structure, iteration tracking
+agents: [tech-lead]

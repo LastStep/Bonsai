@@ -32,7 +32,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 - Build: `make build` → `./bonsai`
 - Install: `go install .` → `$GOPATH/bin/bonsai`
 - Stack: Cobra (CLI), Huh (forms), LipGloss (styling), BubbleTea (TUI)
-- security-audit workflow already created (shared between devops and security agents)
+- security-audit workflow already created (shared between devops, security, and tech-lead agents)
 - Routine .md.tmpl format: `1. **Bold step:**` with sub-bullets, not H3 headers. Include `**Frequency:** Every N days` after H1.
 - session-wrapup.md is a custom workflow (not in catalog) — run `bonsai update` to detect and track it.
 - Custom files use YAML frontmatter for metadata (description, display_name, event, matcher, frequency). Guide at `docs/custom-files.md`.
@@ -44,6 +44,9 @@ _(empty)_
 
 ## References
 
+- RESEARCH.md — landscape analysis: Bonsai's position vs. GSD/ECC, identity/coordination layer philosophy
+- RESEARCH-concepts.md — core concept decisions: ambient vs. command-driven, catalog ownership, meta-layer, talents taxonomy
+- RESEARCH-evals.md — eval system concept: scenarios, evaluators (deterministic + LLM-as-judge), behavioral benchmarks
 - RESEARCH-catalog-expansion.md — full spec for all new agents, skills, sensors, workflows, routines
 - DESIGN-companion-app.md — Greenhouse design doc (architecture, tech stack, integration, UI, data model)
 - RESEARCH-trigger-system.md — Trigger system research: determinism taxonomy, proposed hybrid design

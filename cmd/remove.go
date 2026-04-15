@@ -30,7 +30,7 @@ func init() {
 
 var removeCmd = &cobra.Command{
 	Use:   "remove <agent | skill|workflow|protocol|sensor|routine <name>>",
-	Short: "Remove an installed agent or individual item from the project.",
+	Short: "Remove an installed agent or individual ability from the project.",
 	RunE:  runRemove,
 }
 

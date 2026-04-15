@@ -2,8 +2,9 @@
 # Session Start — Tech Lead Agent
 # Injects required context at the start of every session.
 
-WORKSPACE="station/"
-DOCS="station/"
+ROOT="${1:-.}"
+WORKSPACE="${ROOT}/station/"
+DOCS="${ROOT}/station/"
 
 # ── Core identity ───────────────────────────────────────────────────────────
 
