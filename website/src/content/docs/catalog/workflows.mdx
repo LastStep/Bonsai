@@ -1,8 +1,73 @@
 ---
 title: Workflows Catalog
-description: Workflows catalog — step-by-step procedures
+description: All 10 Bonsai workflows — step-by-step procedures for planning, code review, security audits, and more.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Workflows are step-by-step procedures that agents follow when performing multi-step activities. Unlike [skills](/Bonsai/catalog/skills/) (reference knowledge), workflows define a sequence of actions to execute from start to finish.
+
+## All Workflows
+
+| Name | Description | Compatible Agents | Slash Command |
+|:-----|:-----------|:-----------------|:-------------|
+| api-development | Spec-first API development — define contract, generate scaffolding, implement, test, document | backend, fullstack | |
+| code-review | Review agent output against the plan — correctness, standards, security | security, tech-lead | `/code-review` |
+| issue-to-implementation | End-to-end autonomous workflow — issue intake, analysis, research, planning, agent dispatch, review loop, logging, audit, and close | tech-lead | `/issue-to-implementation` |
+| plan-execution | Execute an assigned plan step by step — implement, test, report | backend, devops, frontend, fullstack | `/plan-execution` |
+| planning | End-to-end planning process — from request to dispatch-ready plan | tech-lead | `/planning` |
+| pr-review | Review a pull request — context, scope, correctness, security, performance, standards | tech-lead | `/pr-review` |
+| reporting | Completion report format — what was done, tested, issues encountered | backend, devops, frontend, fullstack, security | |
+| security-audit | Security audit — secrets scan, dependency audit, SAST, config review, access control, infrastructure | devops, security, tech-lead | `/security-audit` |
+| session-logging | End-of-session log — what was done, decisions made, open items | all | |
+| test-plan | Design a structured test plan for a feature — scope, prioritize, allocate test types | tech-lead | `/test-plan` |
+
+## Slash Commands
+
+Seven workflows are curated as **slash commands**, meaning they can be invoked directly from the Claude Code prompt using `/<name>` syntax. These are registered as Claude Code skills (via `.claude/skills/` files) during workspace generation.
+
+The curated slash command workflows are:
+
+- `/planning` — Start end-to-end planning for a new feature
+- `/code-review` — Review agent output against the plan
+- `/pr-review` — Review a pull request for correctness and standards
+- `/security-audit` — Run a security audit on the codebase
+- `/issue-to-implementation` — Take an issue from intake through to shipped code
+- `/test-plan` — Design a structured test plan for a feature
+- `/plan-execution` — Execute an assigned plan step by step
+
+<Aside type="tip">
+Not every workflow is a slash command. The curated set is intentionally small to keep context usage low — each slash command consumes context budget at session start. Workflows like `session-logging` and `reporting` are loaded on demand.
+</Aside>
+
+## Workflows by Role
+
+### Orchestration (Tech Lead)
+
+- **planning** — Translates requirements into a structured implementation plan with tiers, phases, and verification steps.
+- **issue-to-implementation** — The full autonomous workflow: intake an issue, analyze it, plan, dispatch to code agents, review, iterate, and close.
+- **code-review** — Reviews agent output against the plan for correctness, standards, and security compliance.
+- **pr-review** — Reviews a pull request: scope, correctness, security, performance, test coverage.
+- **test-plan** — Designs test coverage strategy: scope, priorities, and allocation across test types.
+
+### Execution (Code Agents)
+
+- **plan-execution** — Reads an assigned plan and executes it step by step, reporting progress.
+- **api-development** — Spec-first API workflow: define the contract, generate scaffolding, implement, test, and document.
+- **reporting** — Generates a structured completion report: what was done, what was tested, issues encountered.
+
+### Universal
+
+- **session-logging** — Records what was done, decisions made, and open items at end of session. Compatible with all agents.
+- **security-audit** — Full security audit: secrets scan, dependency audit, SAST, config review. Available to tech-lead, security, and devops agents.
+
+## Default Workflows by Agent Type
+
+| Agent Type | Default Workflows |
+|:-----------|:------------------|
+| Tech Lead | issue-to-implementation, planning, code-review, session-logging |
+| Backend | plan-execution, reporting, session-logging |
+| Frontend | plan-execution, reporting, session-logging |
+| Full-Stack | plan-execution, reporting, session-logging |
+| DevOps | plan-execution, reporting, session-logging, security-audit |
+| Security | code-review, reporting, session-logging, security-audit |

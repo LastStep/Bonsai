@@ -1,8 +1,71 @@
 ---
 title: Glossary
-description: Glossary of Bonsai terms
+description: Definitions of all Bonsai-specific terms — abilities, agents, sensors, routines, and more.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+All Bonsai-specific terms defined in one place. Each entry links to the relevant concept or reference page for further reading.
 
-<Aside type="caution">This page is under construction.</Aside>
+---
+
+**Ability**
+A modular instruction unit installed into an agent's workspace. There are three ability types: [skills](/Bonsai/catalog/skills/) (domain knowledge), [workflows](/Bonsai/catalog/workflows/) (step-by-step procedures), and [protocols](/Bonsai/catalog/protocols/) (hard rules). Managed via `bonsai add` and `bonsai remove`.
+
+**Agent**
+An AI persona with a defined identity, role, and set of installed abilities. Bonsai supports [6 agent types](/Bonsai/catalog/agent-types/): one orchestrator (Tech Lead) and five code agents (Backend, Frontend, Full-Stack, DevOps, Security). Each agent gets its own workspace.
+
+**Catalog**
+The embedded collection of agents, abilities, sensors, routines, and scaffolding that ships inside the Bonsai binary. Browse it with `bonsai catalog` or in the [Catalog](/Bonsai/catalog/overview/) section of this documentation.
+
+**Core**
+The foundational layer of an agent's instruction stack: identity, memory, and self-awareness. Core files are loaded first, every session, and cannot be overridden by other layers. See [How Bonsai Works](/Bonsai/concepts/how-bonsai-works/).
+
+**Custom Item**
+A user-created ability (skill, workflow, sensor, or routine) that exists outside the catalog. Custom items are detected by `bonsai update` via YAML frontmatter in the file. Their metadata is stored in the `custom_items` field of [.bonsai.yaml](/Bonsai/reference/configuration/).
+
+**Dashboard**
+The routine tracking file at `agent/Core/routines.md`. Contains a table with each routine's name, frequency, last-run date, next-due date, and status. Parsed by the [routine-check sensor](/Bonsai/catalog/sensors/) at session start to flag overdue routines.
+
+**Dispatch**
+The act of sending work from the Tech Lead to a code agent. The Tech Lead creates a plan, then dispatches specific steps to code agents running in worktree-isolated subagent sessions. The [dispatch-guard sensor](/Bonsai/catalog/sensors/) validates dispatches before execution.
+
+**Identity**
+The `agent/Core/identity.md` file that defines who an agent is: its role, relationships to other agents, and operational mindset. Generated from the `identity.md.tmpl` template in the agent's [catalog definition](/Bonsai/reference/agent-yaml-schema/).
+
+**Lock File**
+The `.bonsai-lock.yaml` file that tracks SHA-256 hashes of all generated files. Used for conflict detection when re-running Bonsai commands. See the [Lock File reference](/Bonsai/reference/lock-file/).
+
+**Matcher**
+An optional filter on [sensor](/Bonsai/catalog/sensors/) hooks that restricts which tools trigger the sensor. For example, `Edit|Write` means the sensor only fires when the Edit or Write tool is used. Specified in the sensor's [meta.yaml](/Bonsai/reference/meta-yaml-schema/).
+
+**Memory**
+The `agent/Core/memory.md` file that serves as an agent's persistent working memory between sessions. Version-controlled inside the project (not stored in Claude Code's auto-memory). Managed by the [memory protocol](/Bonsai/catalog/protocols/).
+
+**Playbook**
+The project management directory within the station: `Playbook/Status.md` (current work), `Playbook/Roadmap.md` (long-term direction), `Playbook/Backlog.md` (work items), `Playbook/Plans/Active/` (implementation plans), and `Playbook/Standards/` (security and coding standards). Part of the [scaffolding](/Bonsai/concepts/scaffolding/) system.
+
+**Protocol**
+A non-negotiable rule that every agent loads at the start of every session. The 4 protocols cover [memory management, scope boundaries, security enforcement, and session startup](/Bonsai/catalog/protocols/). Protocols are always required and cannot be removed.
+
+**Routine**
+A periodic self-maintenance task with a defined frequency. Routines are tracked in the routine dashboard (`agent/Core/routines.md`), flagged when overdue, and executed only with user approval. See the [Routines catalog](/Bonsai/catalog/routines/).
+
+**Scaffolding**
+Project infrastructure generated during `bonsai init`: INDEX.md, Playbook (status, roadmap, backlog, plans, standards), Logs (field notes, decisions, routine log), and Reports (templates, pending). Scaffolding files are write-once — Bonsai never overwrites them after creation.
+
+**Sensor**
+An automated shell script wired into Claude Code's hook system. Sensors run on specific events (SessionStart, PreToolUse, PostToolUse, Stop, etc.) and enforce boundaries, inject context, or review output. Agents cannot bypass sensors. See the [Sensors catalog](/Bonsai/catalog/sensors/).
+
+**Skill**
+Domain knowledge that agents reference when doing specific work. Skills define standards, conventions, and patterns — they are loaded on demand, not every session. See the [Skills catalog](/Bonsai/catalog/skills/).
+
+**Station**
+The Tech Lead's workspace directory (default `station/`). Contains the Tech Lead agent, project scaffolding (Playbook, Logs, Reports), and serves as the coordination hub for the entire project. Created during `bonsai init`.
+
+**Template Context**
+The data structure passed to Go templates during file generation. Contains project-level fields (ProjectName, Description, DocsPath) and agent-level fields (AgentName, AgentDisplayName, installed abilities). See the [Template Variables reference](/Bonsai/reference/template-variables/).
+
+**Workspace**
+A directory owned by a single agent, containing its `CLAUDE.md` navigation file and `agent/` subdirectory with all instruction files. Each agent gets a separate workspace (e.g., `station/` for Tech Lead, `backend/` for Backend). See [How Bonsai Works](/Bonsai/concepts/how-bonsai-works/).
+
+**Workflow**
+A step-by-step procedure that agents follow when performing multi-step activities like planning, code review, or security audits. Loaded on demand when the activity starts. Some workflows are available as [slash commands](/Bonsai/catalog/workflows/). See the [Workflows catalog](/Bonsai/catalog/workflows/).

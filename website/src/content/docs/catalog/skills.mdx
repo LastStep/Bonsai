@@ -1,8 +1,84 @@
 ---
 title: Skills Catalog
-description: Skills catalog — domain knowledge and standards
+description: All 17 Bonsai skills — domain knowledge and standards for coding, infrastructure, design, testing, and project management.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Skills are domain knowledge files that agents load as reference material when doing specific work. They define standards, conventions, and patterns — not step-by-step procedures (that's what [workflows](/Bonsai/catalog/workflows/) are for).
+
+## All Skills
+
+| Name | Description | Compatible Agents |
+|:-----|:-----------|:-----------------|
+| api-design-standards | REST API design conventions — URLs, methods, errors, pagination, versioning | backend, fullstack, tech-lead |
+| auth-patterns | Authentication and authorization patterns — flows, tokens, passwords, sessions, access control | backend, fullstack, security |
+| cli-conventions | CLI design conventions — structure, flags, output, exit codes, configuration | backend, fullstack |
+| coding-standards | Language-specific coding standards — formatting, linting, patterns | backend, devops, frontend, fullstack, security |
+| container-standards | Container and orchestration standards — Docker multi-stage builds, image security, Kubernetes manifests | devops |
+| database-conventions | SQL naming, migration patterns, schema design rules | backend, fullstack, tech-lead |
+| design-guide | UI/UX design patterns, component conventions, accessibility rules | frontend, fullstack |
+| dispatch | How to dispatch work to code agents — triage rules, prompt structure, iteration tracking | tech-lead |
+| iac-conventions | Infrastructure-as-code conventions — Terraform naming, state management, modules, tagging | devops |
+| issue-classification | Issue types, importance levels, domain labels, and classification heuristics | tech-lead |
+| mobile-patterns | Mobile development patterns — state management, offline-first, navigation, performance | fullstack |
+| planning-template | Plan format, tier rules, and template for writing implementation plans | tech-lead |
+| pr-creation | How to create well-structured pull requests — branch naming, title conventions, body template, draft workflow | tech-lead, fullstack, backend, frontend |
+| review-checklist | Structured code review checklist — correctness, security, performance, maintainability | security, tech-lead |
+| test-strategy | Test architecture — which tests to write, when, and why; pyramid, coverage, anti-patterns | backend, frontend, fullstack |
+| testing | Testing conventions — frameworks, patterns, coverage requirements | backend, frontend, fullstack, security |
+| workspace-guide | Bonsai workspace operational guide — how to use workflows, skills, routines, sensors, and the Playbook effectively | all |
+
+## Skills by Domain
+
+### Coding and Standards
+
+These skills define how code should be written across different contexts:
+
+- **coding-standards** — Language-agnostic formatting, linting, and naming conventions. Default for all code agents.
+- **testing** — Test framework conventions, patterns, and coverage rules. Default for backend, frontend, fullstack, and security agents.
+- **test-strategy** — Higher-level test architecture: which tests to write, the testing pyramid, and anti-patterns.
+- **cli-conventions** — How to structure CLI commands, flags, output formatting, and exit codes.
+
+### API and Backend
+
+- **api-design-standards** — REST API conventions: URL structure, HTTP methods, error formats, pagination, and versioning. Default for fullstack.
+- **auth-patterns** — Authentication flows (OAuth, JWT, sessions), password handling, and access control. Default for fullstack and security.
+- **database-conventions** — SQL naming rules, migration patterns, and schema design. Default for backend and fullstack.
+
+### Frontend and Design
+
+- **design-guide** — UI/UX patterns, component conventions, and accessibility standards. Default for frontend and fullstack.
+- **mobile-patterns** — Mobile-specific patterns: state management, offline-first, navigation, and platform APIs.
+
+### Infrastructure
+
+- **iac-conventions** — Terraform naming, state management, module structure, and resource tagging. Default for devops.
+- **container-standards** — Docker multi-stage builds, image security, and Kubernetes manifest conventions. Default for devops.
+
+### Project Management (Tech Lead)
+
+- **planning-template** — The standard plan format with tier rules and verification steps. Default for tech-lead.
+- **dispatch** — Rules for dispatching work to code agents: triage, prompt structure, and iteration tracking. Default for tech-lead.
+- **issue-classification** — How to classify issues by type, importance, and domain. Default for tech-lead.
+- **review-checklist** — Structured checklist for code review: correctness, security, performance, and maintainability. Default for tech-lead and security.
+- **pr-creation** — Pull request conventions: branch naming, title format, body template, and draft workflow.
+
+### Universal
+
+- **workspace-guide** — Operational guide for the Bonsai workspace. How to use workflows, skills, routines, sensors, and the Playbook. Compatible with all agent types.
+
+## Default Skills by Agent Type
+
+| Agent Type | Default Skills |
+|:-----------|:---------------|
+| Tech Lead | planning-template, issue-classification, dispatch, review-checklist |
+| Backend | coding-standards, testing, database-conventions |
+| Frontend | coding-standards, testing, design-guide |
+| Full-Stack | coding-standards, testing, design-guide, database-conventions, api-design-standards, auth-patterns |
+| DevOps | coding-standards, iac-conventions, container-standards |
+| Security | coding-standards, testing, auth-patterns, review-checklist |
+
+<Aside type="tip">
+Defaults are pre-selected during `bonsai add`, but you can add or remove any compatible skill during the interactive picker. Skills with path triggers auto-load when agents work with matching files.
+</Aside>

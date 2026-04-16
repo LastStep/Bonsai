@@ -1,8 +1,184 @@
 ---
 title: meta.yaml Schema
-description: meta.yaml schema reference
+description: Complete meta.yaml schema reference — base fields, sensor additions, routine additions, and trigger metadata for all ability types.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Every catalog ability (skill, workflow, protocol, sensor, routine) has a `meta.yaml` file that defines its metadata. The schema has a common base with type-specific additions.
+
+## Base Fields (All Types)
+
+These fields are shared across skills, workflows, protocols, sensors, and routines.
+
+| Field | Type | Required | Description |
+|:------|:-----|:---------|:-----------|
+| `name` | string | Yes | Machine identifier. Lowercase, digits, hyphens only (`[a-z0-9-]`). Must be unique within its type. |
+| `description` | string | Yes | Human-readable description of the ability. |
+| `display_name` | string | No | Human-readable label. If omitted, auto-derived from `name`: hyphens become spaces, title-cased (e.g., `scope-guard-files` becomes "Scope Guard Files"). |
+| `agents` | string or []string | Yes | Compatible agent types. Either `"all"` (a string) or a list of agent type names (e.g., `[backend, fullstack]`). |
+| `required` | string or []string | No | Agent types where this item is auto-installed and cannot be unchecked. Same format as `agents`: `"all"` or a list. |
+
+<Aside>
+The `agents` and `required` fields use the same flexible format. When set to the string `"all"`, the item is compatible with (or required by) every agent type. When set to a list, only the named agent types are affected.
+</Aside>
+
+## Type-Specific Fields
+
+<Tabs>
+  <TabItem label="Skill">
+    Skills use the base fields plus optional trigger metadata.
+
+    ```yaml
+    name: coding-standards
+    description: Language-specific coding standards — formatting, linting, patterns
+    agents: [backend, devops, frontend, fullstack, security]
+    triggers:
+      scenarios:
+        - Writing or reviewing source code in any language
+        - Applying formatting, linting, or naming conventions
+      paths:
+        - "*.go"
+        - "*.py"
+        - "*.js"
+        - "*.ts"
+    ```
+
+    **Trigger fields** (optional, under `triggers:`):
+
+    | Field | Type | Description |
+    |:------|:-----|:-----------|
+    | `triggers.scenarios` | []string | Activation scenarios — when this skill should be loaded |
+    | `triggers.paths` | []string | File glob patterns — skill auto-loads when agent reads matching files |
+  </TabItem>
+  <TabItem label="Workflow">
+    Workflows use the base fields plus optional trigger metadata with examples.
+
+    ```yaml
+    name: planning
+    description: End-to-end planning process — from request to dispatch-ready plan
+    agents: [tech-lead]
+    triggers:
+      scenarios:
+        - Starting end-to-end planning for a new feature or task
+        - Translating requirements into a structured implementation plan
+      examples:
+        - prompt: "Plan the new caching layer"
+          action: "Load planning workflow, analyze requirements, write plan"
+    ```
+
+    **Trigger fields** (optional, under `triggers:`):
+
+    | Field | Type | Description |
+    |:------|:-----|:-----------|
+    | `triggers.scenarios` | []string | Activation scenarios — when this workflow should be loaded |
+    | `triggers.examples` | []TriggerExample | Prompt-action pairs showing how the workflow activates |
+
+    Each `TriggerExample` has:
+
+    | Field | Type | Description |
+    |:------|:-----|:-----------|
+    | `prompt` | string | Example user message that triggers this workflow |
+    | `action` | string | What the agent does in response |
+  </TabItem>
+  <TabItem label="Protocol">
+    Protocols use only the base fields. All current protocols are required for all agents.
+
+    ```yaml
+    name: memory
+    description: How to read, write, and maintain working memory between sessions
+    agents: all
+    required: all
+    ```
+  </TabItem>
+  <TabItem label="Sensor">
+    Sensors add `event` (required) and `matcher` (optional) to the base fields.
+
+    ```yaml
+    name: scope-guard-files
+    description: Blocks agent from editing files outside its workspace
+    agents: all
+    required: all
+    event: PreToolUse
+    matcher: "Edit|Write"
+    ```
+
+    **Sensor-specific fields:**
+
+    | Field | Type | Required | Description |
+    |:------|:-----|:---------|:-----------|
+    | `event` | string | Yes | The Claude Code hook event that triggers this sensor |
+    | `matcher` | string | No | Tool filter — only triggers for matching tool names (pipe-separated) |
+
+    Available events: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop`, `SubagentStop`
+  </TabItem>
+  <TabItem label="Routine">
+    Routines add `frequency` (required) to the base fields.
+
+    ```yaml
+    name: backlog-hygiene
+    description: >-
+      Review and maintain Playbook/Backlog.md — flag stale items,
+      escalate P0s, cross-reference with Status and Roadmap
+    agents: [tech-lead]
+    frequency: 7 days
+    ```
+
+    **Routine-specific fields:**
+
+    | Field | Type | Required | Description |
+    |:------|:-----|:---------|:-----------|
+    | `frequency` | string | Yes | How often the routine should run (e.g., `"5 days"`, `"7 days"`, `"14 days"`) |
+  </TabItem>
+</Tabs>
+
+## Naming Conventions
+
+The `name` field follows strict conventions:
+
+- **Characters:** `[a-z0-9-]` only — lowercase, digits, hyphens
+- **Style:** kebab-case (e.g., `scope-guard-files`, `coding-standards`)
+- **Uniqueness:** Must be unique within its type. Two types can share a name (e.g., a `memory` protocol and a `memory` skill).
+- **No type prefixes:** Use `design-guide`, not `skill-design-guide`
+- **No agent prefixes:** Use `design-guide`, not `frontend-design-guide` — the `agents` field handles compatibility
+
+### Informal Naming Patterns
+
+These patterns are not enforced but encouraged for consistency:
+
+| Pattern | Used for | Examples |
+|:--------|:---------|:---------|
+| `*-guard-*` | Sensors that block/prevent actions | scope-guard-files, iac-safety-guard |
+| `*-check`, `*-hygiene`, `*-accuracy` | Routines that audit | routine-check, backlog-hygiene, roadmap-accuracy |
+| `*-standards`, `*-conventions`, `*-guide` | Skills that define rules | coding-standards, iac-conventions, design-guide |
+| `*-logging`, `*-reporting`, `*-review` | Workflows that produce output | session-logging, reporting, code-review |
+
+## Display Name Derivation
+
+When `display_name` is omitted, it is auto-derived from `name` using the `DisplayNameFrom()` function:
+
+1. Replace hyphens with spaces
+2. Capitalize the first letter of each word
+
+Examples:
+- `scope-guard-files` becomes "Scope Guard Files"
+- `coding-standards` becomes "Coding Standards"
+- `api-design-standards` becomes "Api Design Standards"
+
+## Companion Files
+
+Each `meta.yaml` has a companion content file in the same directory:
+
+| Type | Companion file | Notes |
+|:-----|:--------------|:------|
+| Skill | `<name>.md` or `<name>.md.tmpl` | Domain knowledge content |
+| Workflow | `<name>.md` | Step-by-step procedure |
+| Protocol | `<name>.md` | Hard rules definition |
+| Sensor | `<name>.sh.tmpl` | Shell script template (rendered, made executable) |
+| Routine | `<name>.md.tmpl` | Procedure template (rendered with full TemplateContext) |
+
+## Related
+
+- [Template Variables](/Bonsai/reference/template-variables/) — Variables available in `.tmpl` files
+- [agent.yaml Schema](/Bonsai/reference/agent-yaml-schema/) — Agent definition format
+- [Configuration](/Bonsai/reference/configuration/) — How installed abilities are tracked in `.bonsai.yaml`

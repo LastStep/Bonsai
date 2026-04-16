@@ -1,8 +1,135 @@
 ---
 title: agent.yaml Schema
-description: agent.yaml schema reference
+description: Complete agent.yaml schema reference — agent definition format, defaults, core directory structure, and examples.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, FileTree } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Every agent type in the Bonsai catalog is defined by an `agent.yaml` file and a companion `core/` directory. The `agent.yaml` declares the agent's identity and default abilities.
+
+## Schema
+
+| Field | Type | Required | Description |
+|:------|:-----|:---------|:-----------|
+| `name` | string | Yes | Machine identifier for the agent type. Lowercase, hyphens only (e.g., `tech-lead`, `backend`). |
+| `display_name` | string | No | Human-readable name (e.g., `Tech Lead Agent`). If omitted, auto-derived from `name`. |
+| `description` | string | Yes | One-line description of the agent's role. |
+| `defaults` | Defaults | Yes | Pre-selected abilities for this agent type. |
+
+### Defaults
+
+The `defaults` object specifies which abilities are pre-selected when installing this agent type. Users can add or remove items during the interactive picker (except required items).
+
+| Field | Type | Required | Description |
+|:------|:-----|:---------|:-----------|
+| `defaults.skills` | []string | No | Default skill names to pre-select |
+| `defaults.workflows` | []string | No | Default workflow names to pre-select |
+| `defaults.protocols` | []string | No | Default protocol names to pre-select |
+| `defaults.sensors` | []string | No | Default sensor names to pre-select |
+| `defaults.routines` | []string | No | Default routine names to pre-select |
+
+<Aside>
+Defaults are **pre-selected**, not mandatory. The user can uncheck them during `bonsai add`. However, items marked as `required: all` in their own `meta.yaml` (like protocols and core sensors) cannot be unchecked regardless of whether they appear in defaults.
+</Aside>
+
+## Core Directory
+
+Each agent type has a `core/` directory alongside its `agent.yaml` that contains identity and memory templates.
+
+<FileTree>
+- catalog/agents/tech-lead/
+  - agent.yaml
+  - core/
+    - identity.md.tmpl _(required — defines who the agent is)_
+</FileTree>
+
+### Core File Resolution
+
+Bonsai uses a layered system for core files:
+
+1. **Shared core files** in `catalog/core/` provide defaults (memory, self-awareness)
+2. **Agent-specific core files** in `catalog/agents/<name>/core/` can override any shared file by using the same filename
+
+For example, if both `catalog/core/memory.md.tmpl` and `catalog/agents/tech-lead/core/memory.md.tmpl` exist, the Tech Lead gets the agent-specific version while other agents get the shared version.
+
+### Required Core Files
+
+| File | Required | Description |
+|:-----|:---------|:-----------|
+| `identity.md.tmpl` | Yes | Defines the agent's identity, role, relationships, and mindset. Always agent-specific. |
+| `memory.md.tmpl` | No | Working memory template. Falls back to shared `catalog/core/memory.md.tmpl` if not provided. |
+| `self-awareness.md` | No | Context monitoring and hard thresholds. Falls back to shared `catalog/core/self-awareness.md` if not provided. |
+
+## Complete Example
+
+Here is the actual `agent.yaml` for the Tech Lead agent:
+
+```yaml
+name: tech-lead
+display_name: Tech Lead Agent
+description: >-
+  Architects the system, writes plans, reviews agent output —
+  never writes application code
+defaults:
+  skills:
+    - planning-template
+    - issue-classification
+    - dispatch
+    - review-checklist
+  workflows:
+    - issue-to-implementation
+    - planning
+    - code-review
+    - session-logging
+  protocols:
+    - session-start
+    - security
+    - scope-boundaries
+  sensors:
+    - session-context
+    - scope-guard-files
+    - scope-guard-commands
+    - dispatch-guard
+    - subagent-stop-review
+```
+
+And here is a code agent example (Backend):
+
+```yaml
+name: backend
+display_name: Backend Agent
+description: Executes backend plans — API, database, server-side logic
+defaults:
+  skills:
+    - coding-standards
+    - testing
+    - database-conventions
+  workflows:
+    - plan-execution
+    - reporting
+    - session-logging
+  protocols:
+    - session-start
+    - security
+    - scope-boundaries
+  sensors:
+    - session-context
+    - scope-guard-files
+```
+
+## All Agent Types
+
+| Name | Display Name | Description |
+|:-----|:------------|:-----------|
+| tech-lead | Tech Lead Agent | Architects the system, writes plans, reviews agent output — never writes application code |
+| backend | Backend Agent | Executes backend plans — API, database, server-side logic |
+| frontend | Frontend Agent | Executes frontend plans — UI components, state management, styling |
+| fullstack | Full-Stack Agent | Implements full-stack features end-to-end — UI, API routes, database, auth, tests |
+| devops | DevOps Agent | Manages infrastructure-as-code, CI/CD pipelines, containers, and deployment automation |
+| security | Security Agent | Audits code for vulnerabilities, reviews auth patterns, scans dependencies, enforces security standards |
+
+## Related
+
+- [Agent Types](/Bonsai/catalog/agent-types/) — Detailed descriptions and default tables for all 6 agents
+- [meta.yaml Schema](/Bonsai/reference/meta-yaml-schema/) — The metadata format for abilities referenced in defaults
+- [Template Variables](/Bonsai/reference/template-variables/) — Variables available in core `.tmpl` files
