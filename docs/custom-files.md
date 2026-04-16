@@ -155,3 +155,7 @@ After running `bonsai update`, the workflow appears in:
 | Re-renderable | Yes — templates re-rendered on update | No — your file is yours, never overwritten |
 | Tracked in config | Item name in skills/workflows/etc. list | Item name in list + metadata in `custom_items` |
 | Lock source | `catalog:skills/name` | `custom:skills/name` |
+
+---
+
+> **Full documentation:** For comprehensive guides on creating custom abilities, visit [laststep.github.io/Bonsai](https://laststep.github.io/Bonsai/guides/creating-custom-skills/).

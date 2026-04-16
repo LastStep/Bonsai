@@ -1,5 +1,7 @@
 # Bonsai Handbook
 
+> **Note:** The latest version of this handbook is at [laststep.github.io/Bonsai](https://laststep.github.io/Bonsai/concepts/how-bonsai-works/).
+
 A guide to understanding and using the agent workspaces Bonsai generates. If you haven't installed Bonsai yet, start with the [README](README.md).
 
 ---
