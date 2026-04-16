@@ -39,7 +39,11 @@ Bonsai/
 │   │   └── lockfile.go      ← LockFile, content hashing, conflict detection
 │   ├── generate/
 │   │   ├── generate.go      ← renders templates, writes files to target project
-│   │   └── generate_test.go ← tests for core file generation
+│   │   ├── generate_test.go ← tests for core file generation
+│   │   ├── frontmatter.go   ← BONSAI marker parsing for generated files
+│   │   ├── frontmatter_test.go ← tests for frontmatter parsing
+│   │   ├── scan.go          ← custom file discovery (user-created abilities)
+│   │   └── scan_test.go     ← tests for custom file scanning
 │   └── tui/
 │       ├── styles.go         ← LipGloss styles, panels, trees, display helpers
 │       └── prompts.go        ← Huh form wrappers (text, select, multi-select, confirm)
