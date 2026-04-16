@@ -1,0 +1,74 @@
+---
+title: Getting Started
+description: Quick start guide — set up your first Bonsai workspace in under a minute.
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+<Steps>
+
+1. **Install Bonsai**
+
+   ```bash
+   brew install LastStep/tap/bonsai
+   ```
+
+   See the [Installation](/Bonsai/installation/) page for other methods.
+
+2. **Initialize your project**
+
+   ```bash
+   cd your-project
+   bonsai init
+   ```
+
+   You'll be prompted for:
+   - Project name and description
+   - Station directory (default `station/`)
+   - Agent type (Tech Lead is always first)
+   - Components to install — skills, workflows, sensors, routines
+
+3. **Add a code agent**
+
+   ```bash
+   bonsai add
+   ```
+
+   Pick from backend, frontend, fullstack, devops, or security. Each gets its own workspace with domain-specific abilities.
+
+4. **Start working**
+
+   Open your project in Claude Code and start a session:
+
+   ```
+   You:    Hi, get started
+   Agent:  [reads identity, checks memory, loads protocols, reviews status...]
+   ```
+
+</Steps>
+
+<Aside type="tip">
+That's it. Your project now has a full agent workspace with cross-linked navigation, auto-enforced hooks, and shared project scaffolding. Open it in Claude Code and start working.
+</Aside>
+
+## What happens during `bonsai init`
+
+Bonsai generates everything: identity files, protocol docs, hook scripts, navigation tables, project scaffolding — all cross-linked with relative markdown paths that work in GitHub, VS Code, and Obsidian.
+
+## All commands
+
+| Command | What it does |
+|:--------|:------------|
+| `bonsai init` | Initialize project — station, scaffolding, Tech Lead agent |
+| `bonsai add` | Add a code agent (interactive picker) |
+| `bonsai remove <agent>` | Remove an agent (`-d` to delete files) |
+| `bonsai list` | Show installed agents and components |
+| `bonsai catalog` | Browse all available abilities |
+| `bonsai update` | Detect custom files, re-render abilities, sync workspace |
+| `bonsai guide` | Render the custom files guide in the terminal |
+
+## Next steps
+
+- Read [How Bonsai Works](/Bonsai/concepts/how-bonsai-works/) to understand the architecture
+- Browse the [Catalog](/Bonsai/catalog/overview/) to see all available abilities
+- Learn about [Working With Agents](/Bonsai/guides/working-with-agents/) for communication patterns

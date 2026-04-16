@@ -1,0 +1,74 @@
+---
+title: Agents
+description: Agent types — six specialized roles that work as a team, from Tech Lead to Security.
+---
+
+import { Card, CardGrid, Aside } from '@astrojs/starlight/components';
+
+Think of each agent as a new hire. They need:
+
+| What they need | Bonsai equivalent |
+|:---------------|:-----------------|
+| Role description | **Identity** — job, mindset, relationships |
+| Company rules | **Protocols** — security policy, boundaries |
+| Playbooks | **Workflows** — how to plan, review, report |
+| Domain training | **Skills** — standards, patterns, conventions |
+| Automated guardrails | **Sensors** — catch mistakes before they happen |
+| Maintenance duties | **Routines** — periodic tasks on a schedule (Tech Lead only) |
+
+When an agent starts a session, it reads its identity, checks its memory, follows its startup protocol, and gets context injected by sensors — all before you ask it anything.
+
+## Agent Types
+
+<CardGrid>
+  <Card title="Tech Lead" icon="star">
+    Architects, plans, reviews — never writes application code. Install with `bonsai init`.
+  </Card>
+  <Card title="Backend" icon="server">
+    API, database, server-side logic. Install with `bonsai add`.
+  </Card>
+  <Card title="Frontend" icon="laptop">
+    UI components, state management, styling. Install with `bonsai add`.
+  </Card>
+  <Card title="Full-Stack" icon="puzzle">
+    End-to-end — UI, API, database, auth, tests. Install with `bonsai add`.
+  </Card>
+  <Card title="DevOps" icon="setting">
+    Infrastructure-as-code, CI/CD, containers. Install with `bonsai add`.
+  </Card>
+  <Card title="Security" icon="warning">
+    Vulnerability audits, auth review, dependency scanning. Install with `bonsai add`.
+  </Card>
+</CardGrid>
+
+<Aside type="tip">
+You talk to the Tech Lead. It writes plans and dispatches work to code agents. You can also work directly with code agents for quick fixes.
+</Aside>
+
+## How Agents Interact
+
+```
+  You (human)
+   └── Tech Lead (station/)      plans, reviews, orchestrates, runs routines
+        ├── Backend (backend/)    API, database, server logic
+        ├── Frontend (frontend/)  UI, components, styling
+        ├── DevOps (devops/)      infrastructure, CI/CD
+        └── Security (security/)  audits, scanning
+```
+
+The Tech Lead **never writes application code**. It creates plans, dispatches them to code agents via worktree-isolated subagents, and reviews the output. The `dispatch-guard` sensor enforces that every dispatch has a plan and uses isolation. The `subagent-stop-review` sensor triggers a review checklist when a code agent finishes.
+
+## Choosing the Right Setup
+
+Tech Lead is always installed during `bonsai init`. After that, add the code agents your project needs:
+
+| Scenario | Code agents to add | Why |
+|:---------|:-------------------|:----|
+| **Solo developer** | `fullstack` | One code agent covers UI, API, DB, auth, tests |
+| **Separated concerns** | `backend` + `frontend` | Domain-specific conventions and skills |
+| **With infrastructure** | + `devops` | IaC sensors (`iac-safety-guard`) + infra-drift routine |
+| **Security-conscious** | + `security` | Vulnerability scanning, dependency audits, security-audit workflow |
+
+<Aside type="tip">
+**Start small.** You don't need every code agent from day one. Begin with one, add more as complexity demands. `bonsai add` is designed to be run incrementally.
+</Aside>

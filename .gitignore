@@ -22,3 +22,9 @@ vendor/
 RESEARCH*.md
 *.png
 !docs/assets/*.png
+!website/src/assets/*.png
+
+# Website (Starlight docs)
+website/node_modules/
+website/dist/
+website/.astro/

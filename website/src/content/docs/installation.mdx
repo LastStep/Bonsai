@@ -1,0 +1,41 @@
+---
+title: Installation
+description: Install Bonsai via Homebrew, binary download, or from source.
+---
+
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="Homebrew">
+    ```bash
+    brew install LastStep/tap/bonsai
+    ```
+  </TabItem>
+  <TabItem label="Binary download">
+    Grab the latest from [GitHub Releases](https://github.com/LastStep/Bonsai/releases):
+
+    ```bash
+    # Example for Linux amd64
+    curl -sL https://github.com/LastStep/Bonsai/releases/latest/download/bonsai_Linux_amd64.tar.gz | tar xz
+    sudo mv bonsai /usr/local/bin/
+    ```
+  </TabItem>
+  <TabItem label="From source">
+    Requires Go 1.24+:
+
+    ```bash
+    go install github.com/LastStep/Bonsai@latest
+    ```
+  </TabItem>
+</Tabs>
+
+## Verify
+
+```bash
+bonsai --version
+```
+
+## Prerequisites
+
+- **Claude Code** — Bonsai generates instruction files for Claude Code agents. You need Claude Code installed and configured in your project.
+- **Go 1.24+** — only required if installing from source.
