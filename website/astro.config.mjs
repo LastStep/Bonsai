@@ -22,7 +22,38 @@ export default defineConfig({
       },
       lastUpdated: true,
       customCss: ['./src/styles/custom.css'],
-      plugins: [starlightLlmsTxt(), starlightLinksValidator()],
+      plugins: [
+        starlightLlmsTxt({
+          projectName: 'Bonsai',
+          description: `Bonsai is a CLI tool for scaffolding Claude Code agent workspaces. It generates structured instruction files — identity, memory, protocols, skills, workflows, sensors, and routines — so AI agents work like teammates, not tools.`,
+          details: `- Install: \`go install github.com/LastStep/Bonsai@latest\` or \`brew install LastStep/tap/bonsai\`
+- 6 agent types: tech-lead, backend, frontend, fullstack, devops, security
+- Abilities are modular: skills (reference), workflows (multi-step), protocols (rules), sensors (hooks), routines (periodic)`,
+          customSets: [
+            {
+              label: 'Concepts',
+              description: 'How Bonsai works — agents, abilities, sensors, routines, scaffolding, workspaces',
+              paths: ['concepts/**'],
+            },
+            {
+              label: 'Commands',
+              description: 'CLI reference for all 7 commands with flags and examples',
+              paths: ['commands/**'],
+            },
+            {
+              label: 'Catalog',
+              description: 'All 6 agent types, 17 skills, 10 workflows, 4 protocols, 12 sensors, 8 routines with descriptions and compatibility',
+              paths: ['catalog/**'],
+            },
+            {
+              label: 'Configuration',
+              description: '.bonsai.yaml, .bonsai-lock.yaml, meta.yaml, and agent.yaml schemas',
+              paths: ['reference/**'],
+            },
+          ],
+        }),
+        starlightLinksValidator(),
+      ],
       sidebar: [
         {
           label: 'Start Here',

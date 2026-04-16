@@ -13,20 +13,22 @@ Sensors marked as **required** are auto-installed for all compatible agents and 
 
 ## All Sensors
 
+{/* CATALOG-TABLE-START */}
 | Name | Description | Event | Matcher | Compatible Agents | Required |
 |:-----|:-----------|:------|:--------|:-----------------|:---------|
-| context-guard | Injects context-aware behavioral constraints and detects session wrap-up trigger words before each prompt | UserPromptSubmit | | all | Yes (all) |
-| scope-guard-files | Blocks agent from editing files outside its workspace | PreToolUse | Edit\|Write | all | Yes (all) |
-| session-context | Injects core identity, memory, protocols, and project status at session start | SessionStart | | all | Yes (all) |
-| status-bar | Persistent status line showing context usage, session health, and git state after every response | Stop | | all | Yes (all) |
-| routine-check | Checks routine dashboard at session start and flags overdue maintenance routines | SessionStart | | all | Auto-managed |
-| scope-guard-commands | Blocks agent from running application execution commands (tests, builds, servers) | PreToolUse | Bash | security, tech-lead | No |
-| dispatch-guard | Validates code agent dispatches — requires worktree isolation, plan reference, and plan existence before execution | PreToolUse | Agent | tech-lead | No |
 | agent-review | Outputs a review checklist after a dispatched agent completes work | PostToolUse | Agent | tech-lead | No |
-| subagent-stop-review | Outputs a structured review checklist when a dispatched agent finishes work | SubagentStop | | tech-lead | No |
-| api-security-check | Detects security anti-patterns in code changes — SQL injection, hardcoded secrets, eval, CORS wildcards | PreToolUse | Edit\|Write | backend, fullstack, security | No |
+| api-security-check | Detects security anti-patterns in code changes — SQL injection, hardcoded secrets, eval, CORS wildcards | PreToolUse | Edit|Write | backend, fullstack, security | No |
+| context-guard | Injects context-aware behavioral constraints and detects session wrap-up trigger words before each prompt | UserPromptSubmit |  | all | Yes (all) |
+| dispatch-guard | Validates code agent dispatches — requires worktree isolation, plan reference, and plan existence before execution | PreToolUse | Agent | tech-lead | No |
 | iac-safety-guard | Blocks dangerous infrastructure commands — terraform destroy, kubectl delete namespace, unsafe docker ops | PreToolUse | Bash | devops | No |
-| test-integrity-guard | Detects test quality issues — removed assertions, .skip/.only, empty test bodies, debug artifacts | PreToolUse | Edit\|Write | backend, frontend, fullstack | No |
+| routine-check | Checks routine dashboard at session start and flags overdue maintenance routines | SessionStart |  | all | Auto-managed |
+| scope-guard-commands | Blocks agent from running application execution commands (tests, builds, servers) | PreToolUse | Bash | security, tech-lead | No |
+| scope-guard-files | Blocks agent from editing files outside its workspace | PreToolUse | Edit|Write | all | Yes (all) |
+| session-context | Injects core identity, memory, protocols, and project status at session start | SessionStart |  | all | Yes (all) |
+| status-bar | Persistent status line showing context usage, session health, and git state after every response | Stop |  | all | Yes (all) |
+| subagent-stop-review | Outputs a structured review checklist when a dispatched agent finishes work | SubagentStop |  | tech-lead | No |
+| test-integrity-guard | Detects test quality issues — removed assertions, .skip/.only, empty test bodies, debug artifacts | PreToolUse | Edit|Write | backend, frontend, fullstack | No |
+{/* CATALOG-TABLE-END */}
 
 ## Sensors by Function
 

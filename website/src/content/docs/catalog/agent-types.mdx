@@ -7,11 +7,12 @@ import { Aside } from '@astrojs/starlight/components';
 
 Bonsai ships with 6 agent types, each specialized for a different role. One orchestrates; the rest execute.
 
+{/* AGENT-DEFAULTS-START */}
 ## The Orchestrator
 
 ### Tech Lead Agent
 
-**Description:** Architects the system, writes plans, reviews agent output — never writes application code.
+**Description:** Architects the system, writes plans, reviews agent output — never writes application code
 
 **Best for:** Project leads who need an agent that plans features, dispatches work to code agents, and reviews their output.
 
@@ -35,7 +36,7 @@ Code agents execute plans created by the Tech Lead. Each has domain-specific ski
 
 ### Backend Agent
 
-**Description:** Executes backend plans — API, database, server-side logic.
+**Description:** Executes backend plans — API, database, server-side logic
 
 **Best for:** API development, database work, server-side business logic, and backend infrastructure.
 
@@ -49,9 +50,25 @@ Code agents execute plans created by the Tech Lead. Each has domain-specific ski
 
 ---
 
+### DevOps Agent
+
+**Description:** Manages infrastructure-as-code, CI/CD pipelines, containers, and deployment automation
+
+**Best for:** Terraform, Docker, Kubernetes, CI/CD pipelines, and deployment configuration.
+
+| Category | Defaults |
+|:---------|:---------|
+| **Skills** | coding-standards, iac-conventions, container-standards |
+| **Workflows** | plan-execution, reporting, session-logging, security-audit |
+| **Protocols** | session-start, security, scope-boundaries |
+| **Sensors** | session-context, scope-guard-files, iac-safety-guard |
+| **Routines** | dependency-audit, infra-drift-check |
+
+---
+
 ### Frontend Agent
 
-**Description:** Executes frontend plans — UI components, state management, styling.
+**Description:** Executes frontend plans — UI components, state management, styling
 
 **Best for:** UI component development, state management, CSS/styling, and frontend architecture.
 
@@ -67,7 +84,7 @@ Code agents execute plans created by the Tech Lead. Each has domain-specific ski
 
 ### Full-Stack Agent
 
-**Description:** Implements full-stack features end-to-end — UI, API routes, database, auth, tests.
+**Description:** Implements full-stack features end-to-end — UI, API routes, database, auth, tests
 
 **Best for:** Features that span the entire stack, when you want one agent handling frontend through database.
 
@@ -81,25 +98,9 @@ Code agents execute plans created by the Tech Lead. Each has domain-specific ski
 
 ---
 
-### DevOps Agent
-
-**Description:** Manages infrastructure-as-code, CI/CD pipelines, containers, and deployment automation.
-
-**Best for:** Terraform, Docker, Kubernetes, CI/CD pipelines, and deployment configuration.
-
-| Category | Defaults |
-|:---------|:---------|
-| **Skills** | coding-standards, iac-conventions, container-standards |
-| **Workflows** | plan-execution, reporting, session-logging, security-audit |
-| **Protocols** | session-start, security, scope-boundaries |
-| **Sensors** | session-context, scope-guard-files, iac-safety-guard |
-| **Routines** | dependency-audit, infra-drift-check |
-
----
-
 ### Security Agent
 
-**Description:** Audits code for vulnerabilities, reviews auth patterns, scans dependencies, enforces security standards.
+**Description:** Audits code for vulnerabilities, reviews auth patterns, scans dependencies, enforces security standards
 
 **Best for:** Security audits, vulnerability scanning, dependency review, and auth pattern enforcement.
 
@@ -110,6 +111,7 @@ Code agents execute plans created by the Tech Lead. Each has domain-specific ski
 | **Protocols** | session-start, security, scope-boundaries |
 | **Sensors** | session-context, scope-guard-files, scope-guard-commands, api-security-check |
 | **Routines** | vulnerability-scan, dependency-audit |
+{/* AGENT-DEFAULTS-END */}
 
 ---
 
