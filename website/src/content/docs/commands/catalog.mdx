@@ -1,8 +1,76 @@
 ---
 title: bonsai catalog
-description: bonsai catalog — browse available abilities
+description: Browse all available abilities in the embedded catalog — agents, skills, workflows, protocols, sensors, routines, and scaffolding.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+## Synopsis
+
+```
+bonsai catalog [--agent <type>]
+```
+
+## Description
+
+`bonsai catalog` displays the full contents of Bonsai's embedded catalog in formatted tables. The catalog is bundled inside the binary and includes all available agent types, skills, workflows, protocols, sensors, routines, and scaffolding items.
+
+Each section is printed as a table showing names, descriptions, and relevant metadata. For example, sensors show their hook event and matcher, routines show their frequency, and all ability types show which agent types they are compatible with and whether they are required.
+
+Use the `--agent` flag to filter the catalog to items compatible with a specific agent type. Agent types are always shown unfiltered.
+
+This is a read-only command with no interactive prompts and no side effects.
+
+## Flags
+
+| Flag | Short | Type | Default | Description |
+|:-----|:------|:-----|:--------|:------------|
+| `--agent` | `-a` | string | `""` | Filter to items compatible with a specific agent type |
+
+## Examples
+
+**Browse the full catalog:**
+
+```bash
+bonsai catalog
+```
+
+Displays all sections: Agents, Skills, Workflows, Protocols, Sensors, Routines, and Scaffolding.
+
+**Filter to a specific agent type:**
+
+```bash
+bonsai catalog --agent backend
+```
+
+Shows all agent types (unfiltered), then shows only skills, workflows, protocols, sensors, and routines that are compatible with the `backend` agent type. Each filtered section includes a note like `(for backend)`.
+
+**Using the short flag:**
+
+```bash
+bonsai catalog -a security
+```
+
+<Aside type="tip">
+The catalog shows what is **available**, not what is installed. Use [`bonsai list`](/Bonsai/commands/list/) to see what is currently installed in your project.
+</Aside>
+
+### Catalog Sections
+
+The output includes these tables:
+
+| Section | Columns |
+|:--------|:--------|
+| **Agents** | Name, Description |
+| **Skills** | Name, Description, Agents, Required |
+| **Workflows** | Name, Description, Agents, Required |
+| **Protocols** | Name, Description, Agents, Required |
+| **Sensors** | Name, Description, Event, Agents, Required |
+| **Routines** | Name, Description, Frequency, Agents, Required |
+| **Scaffolding** | Name, Description, Required, If Removed |
+
+## See Also
+
+- [`bonsai add`](/Bonsai/commands/add/) -- install abilities from the catalog into your project
+- [`bonsai list`](/Bonsai/commands/list/) -- see what is currently installed
+- [Catalog Overview](/Bonsai/catalog/overview/) -- browse the catalog in the documentation

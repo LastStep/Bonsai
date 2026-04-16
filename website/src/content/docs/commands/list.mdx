@@ -1,8 +1,84 @@
 ---
 title: bonsai list
-description: bonsai list — show installed components
+description: Display all installed agents and their abilities — skills, workflows, protocols, sensors, and routines.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+## Synopsis
+
+```
+bonsai list
+```
+
+## Description
+
+`bonsai list` displays the current state of your Bonsai project. It reads `.bonsai.yaml` and shows:
+
+- The **project name** as a heading
+- **Scaffolding** items that were selected during init (Index, Playbook, Logs, Reports)
+- A **card for each installed agent** showing its workspace directory and all installed abilities grouped by category
+
+This is a read-only command with no interactive prompts and no side effects. It does not modify any files.
+
+If no agents are installed, Bonsai displays an empty state message suggesting you run `bonsai add`.
+
+## Flags
+
+This command has no flags.
+
+## Examples
+
+**List installed agents:**
+
+```bash
+bonsai list
+```
+
+Example output:
+
+```
+  My Project
+
+  Scaffolding: Index, Playbook, Logs, Reports
+
+  ┌ Tech Lead ─────────────────────────────────────────┐
+  │ Workspace   station/                                │
+  │ Skills      Planning Template, Review Checklist,    │
+  │             Issue Classification, PR Creation       │
+  │ Workflows   Code Review, Planning, PR Review,      │
+  │             Security Audit, Session Logging, ...    │
+  │ Protocols   Memory, Scope Boundaries, Security,    │
+  │             Session Start                           │
+  │ Sensors     Context Guard, Scope Guard Files,      │
+  │             Session Context, Status Bar, ...        │
+  │ Routines    Backlog Hygiene, Dependency Audit, ...  │
+  └────────────────────────────────────────────────────-┘
+
+  ┌ Backend ───────────────────────────────────────────-┐
+  │ Workspace   backend/                                │
+  │ Skills      Coding Standards                        │
+  │ Workflows   Code Review, Session Logging            │
+  │ Protocols   Memory, Scope Boundaries, Security,    │
+  │             Session Start                           │
+  │ Sensors     Context Guard, Scope Guard Files,      │
+  │             Session Context, Status Bar             │
+  └────────────────────────────────────────────────────-┘
+```
+
+<Aside type="tip">
+All ability names shown in the output use display names (title-cased, human-readable), not the kebab-case machine identifiers used in config files. For example, `scope-guard-files` appears as "Scope Guard Files".
+</Aside>
+
+**Empty project:**
+
+```bash
+bonsai list
+# No agents installed.
+# Run bonsai add to get started.
+```
+
+## See Also
+
+- [`bonsai catalog`](/Bonsai/commands/catalog/) -- browse all available abilities (not just installed ones)
+- [`bonsai add`](/Bonsai/commands/add/) -- add agents or abilities to the project

@@ -1,8 +1,118 @@
 ---
 title: bonsai remove
-description: bonsai remove — remove agents or abilities
+description: Remove an installed agent or a specific ability (skill, workflow, protocol, sensor, routine) from the project.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Steps, Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+## Synopsis
+
+```
+bonsai remove <agent>
+bonsai remove skill <name>
+bonsai remove workflow <name>
+bonsai remove protocol <name>
+bonsai remove sensor <name>
+bonsai remove routine <name>
+```
+
+## Description
+
+`bonsai remove` operates in two modes:
+
+**Agent removal** -- pass an agent type name (e.g. `backend`) to remove the entire agent from the project. Bonsai shows a preview of everything that will be removed and asks for confirmation. Optionally, the `--delete-files` flag also deletes the generated agent directory and CLAUDE.md from disk.
+
+**Ability removal** -- use a subcommand (`skill`, `workflow`, `protocol`, `sensor`, `routine`) followed by the item name to remove a single ability. Bonsai finds which agents have the item installed. If multiple agents have it, you are asked which agent to remove it from (or all). The generated file is deleted from disk and untracked from the lock file.
+
+<Aside type="caution">
+You cannot remove the Tech Lead while other agents are still installed. Remove all other agents first, then remove Tech Lead.
+</Aside>
+
+### Safety Checks
+
+- **Required items cannot be removed.** If an ability is marked as required for an agent type, Bonsai blocks removal and displays a warning.
+- **`routine-check` sensor is auto-managed.** You cannot remove it directly. It is automatically removed when the last routine is removed from an agent, and automatically added when the first routine is added.
+- **Agent removal blocks Tech Lead while dependents exist.** The Tech Lead is the orchestration hub; removing it while code agents are installed would break the project structure.
+
+## Interactive Flow: Agent Removal
+
+<Steps>
+
+1. **Preview** -- Bonsai displays a formatted tree of the agent and all its installed abilities (skills, workflows, protocols, sensors, routines).
+
+2. **Confirm** -- yes/no prompt (defaults to "no" for safety). Declining exits without changes.
+
+3. **File deletion** -- if `--delete-files` was passed, Bonsai deletes the agent's `agent/` directory, `CLAUDE.md`, and `.claude/` directory from the workspace.
+
+</Steps>
+
+## Interactive Flow: Ability Removal
+
+<Steps>
+
+1. **Agent selection** -- if the item is installed in multiple agents, Bonsai presents a picker: choose a specific agent or "All agents".
+
+2. **Required check** -- Bonsai checks if the item is required for each target agent. Required items are skipped with a warning.
+
+3. **Preview** -- a summary card showing the item name, type, and which agent(s) it will be removed from.
+
+4. **Confirm** -- yes/no prompt (defaults to "no"). Declining exits without changes.
+
+</Steps>
+
+After confirmation, Bonsai removes the item from the config, deletes the generated file, untracks it from the lock file, regenerates the workspace `CLAUDE.md` navigation, and updates `.claude/settings.json`.
+
+<Aside type="tip">
+When removing a routine, Bonsai also updates the routine dashboard (`agent/Core/routines.md`). If the last routine is removed, the dashboard file is deleted and the `routine-check` sensor is automatically removed.
+</Aside>
+
+## Flags
+
+| Flag | Short | Type | Default | Description |
+|:-----|:------|:-----|:--------|:------------|
+| `--delete-files` | `-d` | bool | `false` | Also delete the generated `agent/` directory, `CLAUDE.md`, and `.claude/` directory (agent removal only) |
+
+## Examples
+
+**Remove a backend agent (config only):**
+
+```bash
+bonsai remove backend
+# Shows preview of Backend agent and all abilities
+# Confirm: Remove Backend? (y/N)
+```
+
+Removes the agent from `.bonsai.yaml` and updates `.claude/settings.json`. The workspace files remain on disk.
+
+**Remove a backend agent and delete files:**
+
+```bash
+bonsai remove backend --delete-files
+# Shows preview, confirms, then deletes:
+#   backend/agent/
+#   backend/CLAUDE.md
+#   backend/.claude/
+```
+
+**Remove a skill from an agent:**
+
+```bash
+bonsai remove skill coding-standards
+# If installed in one agent: shows summary and confirms
+# If installed in multiple: asks which agent (or all)
+```
+
+Deletes the skill file, removes it from config, and regenerates the agent's `CLAUDE.md`.
+
+**Attempt to remove a required item:**
+
+```bash
+bonsai remove protocol security
+# ⚠ Security is required for Backend — skipping.
+# ✗ Security is required and cannot be removed.
+```
+
+## See Also
+
+- [`bonsai add`](/Bonsai/commands/add/) -- add agents or abilities
+- [`bonsai list`](/Bonsai/commands/list/) -- see what is currently installed
