@@ -14,20 +14,23 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
+| Better trigger sections — Phase B (documentation) | 08 | tech-lead | Phase A merged (PR #10), Phase B next |
 <!-- Cross-link moved to Recently Done — merged 2026-04-16, PR #4 -->
 <!-- P0 file collision fix — merged 2026-04-16, PR #8 -->
+<!-- Docs & repo polish — merged 2026-04-16, PR #9 -->
 
 ## Pending
 
 | Task | Plan | Agent | Blocked By |
 |------|------|-------|------------|
-| Better trigger sections (P1) | — | tech-lead | — |
+<!-- Better trigger sections promoted to In Progress — 2026-04-16, planning session -->
 | UI overhaul (P2) | — | tech-lead | — |
 
 ## Recently Done
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Community health files + README polish for public release | 07 | tech-lead | 2026-04-16 |
 | Fix case-insensitive file collision (index.md / INDEX.md) | 06 | tech-lead | 2026-04-16 |
 | README rewrite for open-source release | — | tech-lead | 2026-04-16 |
 | Cross-link generated files — Obsidian-compatible markdown links | 03 | tech-lead | 2026-04-16 |
