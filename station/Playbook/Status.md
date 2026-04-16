@@ -14,9 +14,9 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| Documentation site (Starlight) — Phase B complete, Phase C next | 10 | tech-lead | Phase A (PR #13), Phase B (PRs #15-17) — content gaps filled |
+| Documentation site (Starlight) — Phase C complete, Phase D next | 10 | tech-lead | Phase A (PR #13), Phase B (PRs #15-17), Phase C (PR #18) — catalog gen + LLM layer |
 | Better trigger sections — Phase C (new sensors) | 08 | tech-lead | Phase A (PR #10) + Phase B (PR #11) merged, Phase C next |
-| UI/UX overhaul — Phase 2 (remaining polish) | 11 | tech-lead | Phase 1 (PR #14) — foundation shipped |
+| UI/UX overhaul — Phase 2 (consistency: hints, counts, no-op detection, structured errors) | 12 | tech-lead | Plan drafted 2026-04-17. Phase 1 (PR #14) shipped. |
 <!-- Code index refresh — completed 2026-04-16, PR #12 -->
 <!-- Cross-link moved to Recently Done — merged 2026-04-16, PR #4 -->
 <!-- P0 file collision fix — merged 2026-04-16, PR #8 -->
@@ -33,6 +33,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Documentation site (Starlight) — Phase C (catalog auto-generation + LLM layer) | 10 | tech-lead | 2026-04-17 |
 | Documentation site (Starlight) — Phase B (fill content gaps, 30 pages) | 10 | tech-lead | 2026-04-17 |
 | UI/UX overhaul — Phase 1 (adaptive palette, NO_COLOR, FatalPanel, version banner) | 11 | tech-lead | 2026-04-17 |
 | Code index refresh — fix line drift + missing entries | 09 | tech-lead | 2026-04-16 |
