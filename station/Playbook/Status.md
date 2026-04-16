@@ -14,9 +14,9 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| Documentation site (Starlight) — Phase C complete, Phase D next | 10 | tech-lead | Phase A (PR #13), Phase B (PRs #15-17), Phase C (PR #18) — catalog gen + LLM layer |
+<!-- Documentation site (Starlight) — Plan 10 complete, all phases shipped (PRs #13-19) -->
 | Better trigger sections — Phase C (new sensors) | 08 | tech-lead | Phase A (PR #10) + Phase B (PR #11) merged, Phase C next |
-| UI/UX overhaul — Phase 2 (consistency: hints, counts, no-op detection, structured errors) | 12 | tech-lead | Plan drafted 2026-04-17. Phase 1 (PR #14) shipped. |
+| UI/UX overhaul — Phase 2 (consistency: hints, counts, no-op detection, structured errors) | 12 | tech-lead | **PR #20 open (draft, both reviews approve, CI green) — pending next-session merge.** Phase 1 (PR #14) shipped. |
 <!-- Code index refresh — completed 2026-04-16, PR #12 -->
 <!-- Cross-link moved to Recently Done — merged 2026-04-16, PR #4 -->
 <!-- P0 file collision fix — merged 2026-04-16, PR #8 -->
@@ -27,12 +27,14 @@ description: Live task tracker. Update this file at the start and end of every w
 | Task | Plan | Agent | Blocked By |
 |------|------|-------|------------|
 <!-- Better trigger sections promoted to In Progress — 2026-04-16, planning session -->
-| UI overhaul (P2) | — | tech-lead | — |
+<!-- UI overhaul (P2) — promoted to In Progress as Plan 12, removed 2026-04-17 -->
+| (none) | — | — | — |
 
 ## Recently Done
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Documentation site (Starlight) — Phase D (deploy & CI) — **Plan 10 complete** | 10 | tech-lead | 2026-04-17 |
 | Documentation site (Starlight) — Phase C (catalog auto-generation + LLM layer) | 10 | tech-lead | 2026-04-17 |
 | Documentation site (Starlight) — Phase B (fill content gaps, 30 pages) | 10 | tech-lead | 2026-04-17 |
 | UI/UX overhaul — Phase 1 (adaptive palette, NO_COLOR, FatalPanel, version banner) | 11 | tech-lead | 2026-04-17 |

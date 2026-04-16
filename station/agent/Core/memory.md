@@ -13,13 +13,16 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Multiple in progress — Plan 10 Phase C next (catalog generation & LLM layer), Plan 08 Phase C (new sensors), Plan 11 Phase 2 (UI polish)
+**Current task:** Plan 12 Phase 2 PR #20 awaiting merge (draft, both reviews APPROVE, CI green); Plan 08 Phase C (new sensors) next
 **Blocked on:** —
-**Last completed:** Plan 10 Phase B shipped (PRs #15-17 merged) — 30 pages of content across concepts, commands, guides, catalog, reference, FAQ, troubleshooting (2026-04-17)
+**Last completed:** Plan 10 complete — all 4 phases shipped (PRs #13-19) (2026-04-17)
 
 ## Notes
 
 <!-- Session-to-session notes. Keep concise. -->
+
+- **Next session — first action:** Re-review PR #20 (8 files, +125/-29) and merge if still approved. Branch: `worktree-agent-a2c20c09`. Two non-blocking test nits filed in Backlog.md Group B for follow-up.
+- **Pre-flight learning:** Worktrees inherit only committed HEAD — uncommitted plans/docs in main tree are invisible to dispatched agents. Commit station/ planning artifacts before dispatch (done 2026-04-17 in `1a5b5d1`).
 
 ## Feedback
 
