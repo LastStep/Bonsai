@@ -101,6 +101,7 @@ Items that should be worked together are tagged with a group letter. See the gro
 ### Ungrouped P2
 
 - **[feature] Routine report template** — Add a `routine-report-template.md` to `station/Reports/` alongside the existing `report-template.md`. Routine reports have a different shape than plan completion reports. The template in `loop.md` defines the format; this makes it a first-class project artifact. *(added 2026-04-14, source: user)*
+- **[improvement] Split design-guide: generic catalog skill + Bonsai-specific station override** — Plan 11 replaces `catalog/skills/design-guide` with Bonsai-specific TUI/CLI rules (paths like `internal/tui/**`, palette tokens). That's useful for dogfooding but irrelevant when external users install the skill. Follow-up: restore a generic Charm/Go CLI design-guide to the catalog (palette patterns, NO_COLOR support, panel vocabulary as principles — not specific paths), and move Bonsai's own rules into `station/agent/Skills/design-guide.md` as a local override. *(added 2026-04-17, source: plan-11 audit)*
 - **[improvement] Install semgrep and/or gitleaks for better scanning** — Vulnerability scan and secrets scan routines currently use manual pattern-based Grep scanning. Installing semgrep (SAST) and/or gitleaks (secrets) would improve coverage and reduce false negatives. *(added 2026-04-16, source: routine-digest)*
 
 ## P3 — Ideas & Research
