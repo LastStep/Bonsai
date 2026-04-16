@@ -1,8 +1,134 @@
 ---
 title: Customizing Abilities
-description: Customizing installed abilities
+description: How to edit installed abilities, how the lock file tracks changes, and what happens during conflict resolution on update.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, Steps } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+After Bonsai generates your workspace, you own the files. Skills, workflows, protocols, and sensors are all editable markdown (or shell scripts) sitting in your `agent/` directory. This guide covers how to modify installed abilities and what happens when Bonsai detects your changes.
+
+## Editing Installed Abilities
+
+Every installed ability is a regular file in your agent's workspace:
+
+| Type | Location | Extension |
+|:-----|:---------|:----------|
+| Skills | `agent/Skills/` | `.md` |
+| Workflows | `agent/Workflows/` | `.md` |
+| Protocols | `agent/Protocols/` | `.md` |
+| Sensors | `agent/Sensors/` | `.sh` |
+| Routines | `agent/Routines/` | `.md` |
+
+Open any file and edit it directly. Common customizations:
+
+- Adding project-specific conventions to `coding-standards.md`
+- Extending the `planning.md` workflow with your team's review process
+- Tweaking `session-logging.md` to include fields specific to your project
+- Adding commands to the block list in `scope-guard-files.sh`
+
+<Aside type="tip">
+Abilities from the catalog are fully rendered at generation time — no template variables remain. What you see in the file is what the agent reads. Edit freely.
+</Aside>
+
+## How the Lock File Tracks Changes
+
+Bonsai uses `.bonsai-lock.yaml` to track every generated file. Each entry contains:
+
+| Field | What it stores |
+|:------|:-------------- |
+| **path** | Relative path to the file (e.g., `station/agent/Skills/coding-standards.md`) |
+| **hash** | SHA-256 hash of the file's content at generation time |
+| **source** | Where the file came from (e.g., `catalog:skills/coding-standards` or `custom:workflows/my-workflow`) |
+
+When you edit a file, the content hash changes. Bonsai can detect this difference the next time it runs — this is the foundation of conflict detection.
+
+## What Happens on `bonsai update`
+
+Running `bonsai update` triggers several things:
+
+<Steps>
+
+1. **Scan for custom files**
+
+   Bonsai scans each agent's workspace for files that aren't tracked yet — your custom additions. It offers to track them in `.bonsai.yaml` and `.bonsai-lock.yaml`.
+
+2. **Re-render catalog abilities**
+
+   Bonsai re-renders all catalog-sourced abilities from the latest embedded templates. This catches updates when you upgrade Bonsai to a newer version with improved templates.
+
+3. **Detect conflicts**
+
+   For each catalog file, Bonsai compares the current file hash against the lock file hash:
+
+   - **Hash matches** (you haven't edited the file): Updated silently
+   - **Hash differs** (you've edited the file): Conflict detected — you're prompted
+
+4. **Resolve conflicts**
+
+   For each conflicted file, you choose:
+
+   | Option | What it does |
+   |:-------|:-------------|
+   | **Skip** | Keep your version, don't update this file |
+   | **Overwrite** | Replace with the new catalog version (your changes are lost) |
+   | **Backup & overwrite** | Save your version as `filename.backup.md`, then write the new version |
+
+5. **Refresh navigation and hooks**
+
+   Bonsai regenerates `CLAUDE.md` navigation tables (including both catalog and custom items) and updates `.claude/settings.json` with any new or changed sensor hooks.
+
+</Steps>
+
+<Aside>
+**Custom files are never overwritten.** The conflict resolution flow only applies to catalog-sourced files. Files you created yourself (custom skills, workflows, etc.) are tracked but never re-rendered or modified by Bonsai.
+</Aside>
+
+## When to Customize vs. Create New
+
+| Situation | Approach |
+|:----------|:---------|
+| Adding project-specific rules to an existing standard | **Customize** — edit `coding-standards.md` directly |
+| Creating an entirely new domain of knowledge | **Create new** — add a new file to `agent/Skills/` |
+| Tweaking a workflow's steps for your team | **Customize** — edit the workflow file |
+| Building a completely different process | **Create new** — add a new file to `agent/Workflows/` |
+| Adding entries to a sensor's block list | **Customize** — edit the `.sh` file |
+| Creating a new automated check | **Create new** — add a new file to `agent/Sensors/` |
+
+**Rule of thumb:** If you're adding to or tweaking something that already exists, customize the installed file. If you're building something the catalog doesn't cover, create a new custom file.
+
+### Trade-offs of Customizing
+
+When you customize a catalog file, you opt out of automatic updates for that file. If a future Bonsai release improves the template, `bonsai update` will flag the conflict and let you decide — but you'll need to manually merge any improvements.
+
+If you're making minor additions (appending project rules to a standards file), this trade-off is usually worth it. If you're making heavy modifications, consider creating a new custom file instead — that way you keep getting catalog updates for the original while maintaining your custom version separately.
+
+## Creating Custom Abilities
+
+To create a brand-new ability:
+
+1. Add a file in the right directory with the right extension
+2. Include YAML frontmatter with at least a `description` field
+3. Run `bonsai update` — it detects the new file and offers to track it
+
+```markdown
+---
+description: GraphQL schema conventions and resolver patterns
+display_name: GraphQL Standards
+---
+
+# GraphQL Standards
+
+## Schema Conventions
+...
+```
+
+Once tracked, custom items appear in:
+- `.bonsai.yaml` under the agent's ability lists and `custom_items`
+- `CLAUDE.md` navigation table
+- `.bonsai-lock.yaml` with a `custom:` source prefix
+
+For detailed guides on creating specific types of custom abilities, see:
+
+- [Creating Custom Skills](/Bonsai/guides/creating-custom-skills/)
+- [Creating Custom Sensors](/Bonsai/guides/creating-custom-sensors/)
+- [Creating Custom Routines](/Bonsai/guides/creating-custom-routines/)
