@@ -1,8 +1,133 @@
 ---
 title: Agent Types
-description: Agent types — 6 specialized roles
+description: All 6 Bonsai agent types — roles, descriptions, default abilities, and guidance on which to choose.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Bonsai ships with 6 agent types, each specialized for a different role. One orchestrates; the rest execute.
+
+## The Orchestrator
+
+### Tech Lead Agent
+
+**Description:** Architects the system, writes plans, reviews agent output — never writes application code.
+
+**Best for:** Project leads who need an agent that plans features, dispatches work to code agents, and reviews their output.
+
+<Aside type="caution">
+The Tech Lead never writes application code directly. It creates plans, dispatches them to code agents via worktree-isolated subagents, and reviews the results.
+</Aside>
+
+| Category | Defaults |
+|:---------|:---------|
+| **Skills** | planning-template, issue-classification, dispatch, review-checklist |
+| **Workflows** | issue-to-implementation, planning, code-review, session-logging |
+| **Protocols** | session-start, security, scope-boundaries |
+| **Sensors** | session-context, scope-guard-files, scope-guard-commands, dispatch-guard, subagent-stop-review |
+| **Routines** | _(none by default — all 8 catalog routines are compatible)_ |
+
+---
+
+## Code Agents
+
+Code agents execute plans created by the Tech Lead. Each has domain-specific skills and a focused scope.
+
+### Backend Agent
+
+**Description:** Executes backend plans — API, database, server-side logic.
+
+**Best for:** API development, database work, server-side business logic, and backend infrastructure.
+
+| Category | Defaults |
+|:---------|:---------|
+| **Skills** | coding-standards, testing, database-conventions |
+| **Workflows** | plan-execution, reporting, session-logging |
+| **Protocols** | session-start, security, scope-boundaries |
+| **Sensors** | session-context, scope-guard-files |
+| **Routines** | _(none)_ |
+
+---
+
+### Frontend Agent
+
+**Description:** Executes frontend plans — UI components, state management, styling.
+
+**Best for:** UI component development, state management, CSS/styling, and frontend architecture.
+
+| Category | Defaults |
+|:---------|:---------|
+| **Skills** | coding-standards, testing, design-guide |
+| **Workflows** | plan-execution, reporting, session-logging |
+| **Protocols** | session-start, security, scope-boundaries |
+| **Sensors** | session-context, scope-guard-files |
+| **Routines** | _(none)_ |
+
+---
+
+### Full-Stack Agent
+
+**Description:** Implements full-stack features end-to-end — UI, API routes, database, auth, tests.
+
+**Best for:** Features that span the entire stack, when you want one agent handling frontend through database.
+
+| Category | Defaults |
+|:---------|:---------|
+| **Skills** | coding-standards, testing, design-guide, database-conventions, api-design-standards, auth-patterns |
+| **Workflows** | plan-execution, reporting, session-logging |
+| **Protocols** | session-start, security, scope-boundaries |
+| **Sensors** | session-context, scope-guard-files |
+| **Routines** | _(none)_ |
+
+---
+
+### DevOps Agent
+
+**Description:** Manages infrastructure-as-code, CI/CD pipelines, containers, and deployment automation.
+
+**Best for:** Terraform, Docker, Kubernetes, CI/CD pipelines, and deployment configuration.
+
+| Category | Defaults |
+|:---------|:---------|
+| **Skills** | coding-standards, iac-conventions, container-standards |
+| **Workflows** | plan-execution, reporting, session-logging, security-audit |
+| **Protocols** | session-start, security, scope-boundaries |
+| **Sensors** | session-context, scope-guard-files, iac-safety-guard |
+| **Routines** | dependency-audit, infra-drift-check |
+
+---
+
+### Security Agent
+
+**Description:** Audits code for vulnerabilities, reviews auth patterns, scans dependencies, enforces security standards.
+
+**Best for:** Security audits, vulnerability scanning, dependency review, and auth pattern enforcement.
+
+| Category | Defaults |
+|:---------|:---------|
+| **Skills** | coding-standards, testing, auth-patterns, review-checklist |
+| **Workflows** | code-review, reporting, session-logging, security-audit |
+| **Protocols** | session-start, security, scope-boundaries |
+| **Sensors** | session-context, scope-guard-files, scope-guard-commands, api-security-check |
+| **Routines** | vulnerability-scan, dependency-audit |
+
+---
+
+## Which Agent Do I Need?
+
+| If you need... | Use this agent |
+|:---------------|:---------------|
+| Planning, orchestration, and code review | **Tech Lead** |
+| API endpoints, database queries, server logic | **Backend** |
+| UI components, styling, state management | **Frontend** |
+| End-to-end features across the full stack | **Full-Stack** |
+| Infrastructure, CI/CD, containers | **DevOps** |
+| Security audits, vulnerability scanning | **Security** |
+
+<Aside type="tip">
+Start with the **Tech Lead** (installed during `bonsai init`). Add code agents as needed with `bonsai add`. You can have multiple code agents in the same project — each gets its own isolated workspace.
+</Aside>
+
+## Agent Definition Format
+
+Each agent is defined by an `agent.yaml` file and a `core/` directory containing identity templates. See the [agent.yaml Schema](/Bonsai/reference/agent-yaml-schema/) reference for the full format.

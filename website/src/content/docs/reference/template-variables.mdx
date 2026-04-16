@@ -1,8 +1,147 @@
 ---
 title: Template Variables
-description: Template variables reference
+description: All Go template variables available in Bonsai templates — TemplateContext fields, custom functions, and usage examples.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Bonsai uses Go's `text/template` engine to render `.tmpl` files at generation time. Every template has access to a `TemplateContext` that provides project and agent information.
+
+## TemplateContext Fields
+
+| Variable | Type | Description |
+|:---------|:-----|:-----------|
+| `{{ .ProjectName }}` | string | Project name from `.bonsai.yaml` |
+| `{{ .ProjectDescription }}` | string | Project description from `.bonsai.yaml` |
+| `{{ .AgentName }}` | string | Agent type identifier (e.g., `tech-lead`, `backend`) |
+| `{{ .AgentDisplayName }}` | string | Human-readable agent name (e.g., `Tech Lead Agent`, `Backend Agent`) |
+| `{{ .AgentDescription }}` | string | Agent description from `agent.yaml` |
+| `{{ .OtherAgents }}` | []OtherAgent | List of sibling agents installed in the same project |
+| `{{ .Workspace }}` | string | Agent's workspace directory path (e.g., `station/`, `backend/`) |
+| `{{ .DocsPath }}` | string | Project docs path from `.bonsai.yaml` (e.g., `station/`) |
+| `{{ .Protocols }}` | []string | List of installed protocol names for this agent |
+| `{{ .Skills }}` | []string | List of installed skill names for this agent |
+| `{{ .Workflows }}` | []string | List of installed workflow names for this agent |
+| `{{ .Routines }}` | []string | List of installed routine names for this agent |
+
+## OtherAgent Fields
+
+Each item in the `{{ .OtherAgents }}` list has:
+
+| Field | Type | Description |
+|:------|:-----|:-----------|
+| `{{ .AgentType }}` | string | Agent type identifier (e.g., `backend`) |
+| `{{ .Workspace }}` | string | Agent's workspace directory path (e.g., `backend/`) |
+
+## Custom Template Functions
+
+| Function | Description | Example |
+|:---------|:-----------|:--------|
+| `{{ title .AgentName }}` | Converts a kebab-case string to Title Case. Capitalizes the first letter of each word (split on hyphens and spaces). | `tech-lead` becomes `Tech-Lead` |
+
+<Aside>
+The `title` function capitalizes the first letter after each hyphen or space but preserves the delimiter. This means `tech-lead` renders as `Tech-Lead`, not `Tech Lead`. For display names without hyphens, use `{{ .AgentDisplayName }}` instead.
+</Aside>
+
+## Usage Examples
+
+### Simple variable substitution
+
+**Template:**
+```
+# {{ .ProjectName }} — {{ .AgentDisplayName }}
+```
+
+**Rendered (for the Bonsai project, Tech Lead agent):**
+```
+# Bonsai — Tech Lead Agent
+```
+
+### Conditional content
+
+**Template:**
+```
+{{ if .Routines }}
+## Routines
+
+This agent has {{ len .Routines }} routines installed.
+{{ end }}
+```
+
+**Rendered (for an agent with routines):**
+```
+## Routines
+
+This agent has 7 routines installed.
+```
+
+### Iterating over lists
+
+**Template:**
+```
+Installed protocols:
+{{ range .Protocols }}- {{ . }}
+{{ end }}
+```
+
+**Rendered:**
+```
+Installed protocols:
+- memory
+- scope-boundaries
+- security
+- session-start
+```
+
+### Using OtherAgents
+
+**Template:**
+```
+{{ if .OtherAgents }}
+## Sibling Agents
+
+{{ range .OtherAgents }}- **{{ title .AgentType }}** at `{{ .Workspace }}`
+{{ end }}{{ end }}
+```
+
+**Rendered (for a project with backend and frontend agents):**
+```
+## Sibling Agents
+
+- **Backend** at `backend/`
+- **Frontend** at `frontend/`
+```
+
+### Referencing the workspace path
+
+**Template:**
+```
+Your assigned plan lives at `{{ .DocsPath }}Playbook/Plans/Active/`.
+Check `{{ .Workspace }}agent/Core/memory.md` for working memory.
+```
+
+**Rendered:**
+```
+Your assigned plan lives at `station/Playbook/Plans/Active/`.
+Check `station/agent/Core/memory.md` for working memory.
+```
+
+## Where Templates Are Used
+
+Files ending in `.tmpl` are rendered through the template engine during generation. The `.tmpl` extension is stripped from the output filename.
+
+| File type | Template extension | Example |
+|:----------|:-------------------|:--------|
+| Agent identity | `.md.tmpl` | `identity.md.tmpl` renders to `identity.md` |
+| Agent memory | `.md.tmpl` | `memory.md.tmpl` renders to `memory.md` |
+| Sensor scripts | `.sh.tmpl` | `session-context.sh.tmpl` renders to `session-context.sh` |
+| Routine procedures | `.md.tmpl` | `backlog-hygiene.md.tmpl` renders to `backlog-hygiene.md` |
+| Scaffolding templates | `.md.tmpl` | `Status.md.tmpl` renders to `Status.md` |
+
+Files without `.tmpl` are copied as-is — no template rendering is applied.
+
+## Related
+
+- [meta.yaml Schema](/Bonsai/reference/meta-yaml-schema/) — The metadata format that defines abilities
+- [agent.yaml Schema](/Bonsai/reference/agent-yaml-schema/) — The agent definition that populates agent-specific variables
+- [Configuration](/Bonsai/reference/configuration/) — The project config that populates project-level variables

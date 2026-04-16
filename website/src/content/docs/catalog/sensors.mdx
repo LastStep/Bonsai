@@ -1,8 +1,94 @@
 ---
 title: Sensors Catalog
-description: Sensors catalog — automated hooks
+description: All 12 Bonsai sensors — automated hook scripts that enforce boundaries, inject context, review output, and guard code quality.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Sensors are shell scripts wired into Claude Code's hook system. They run automatically on specific events — agents cannot bypass them. Each sensor has an **event** that triggers it and an optional **matcher** that filters which tools it applies to.
+
+<Aside>
+Sensors marked as **required** are auto-installed for all compatible agents and cannot be unchecked in the interactive picker. They are the enforcement layer of the Bonsai instruction stack.
+</Aside>
+
+## All Sensors
+
+| Name | Description | Event | Matcher | Compatible Agents | Required |
+|:-----|:-----------|:------|:--------|:-----------------|:---------|
+| context-guard | Injects context-aware behavioral constraints and detects session wrap-up trigger words before each prompt | UserPromptSubmit | | all | Yes (all) |
+| scope-guard-files | Blocks agent from editing files outside its workspace | PreToolUse | Edit\|Write | all | Yes (all) |
+| session-context | Injects core identity, memory, protocols, and project status at session start | SessionStart | | all | Yes (all) |
+| status-bar | Persistent status line showing context usage, session health, and git state after every response | Stop | | all | Yes (all) |
+| routine-check | Checks routine dashboard at session start and flags overdue maintenance routines | SessionStart | | all | Auto-managed |
+| scope-guard-commands | Blocks agent from running application execution commands (tests, builds, servers) | PreToolUse | Bash | security, tech-lead | No |
+| dispatch-guard | Validates code agent dispatches — requires worktree isolation, plan reference, and plan existence before execution | PreToolUse | Agent | tech-lead | No |
+| agent-review | Outputs a review checklist after a dispatched agent completes work | PostToolUse | Agent | tech-lead | No |
+| subagent-stop-review | Outputs a structured review checklist when a dispatched agent finishes work | SubagentStop | | tech-lead | No |
+| api-security-check | Detects security anti-patterns in code changes — SQL injection, hardcoded secrets, eval, CORS wildcards | PreToolUse | Edit\|Write | backend, fullstack, security | No |
+| iac-safety-guard | Blocks dangerous infrastructure commands — terraform destroy, kubectl delete namespace, unsafe docker ops | PreToolUse | Bash | devops | No |
+| test-integrity-guard | Detects test quality issues — removed assertions, .skip/.only, empty test bodies, debug artifacts | PreToolUse | Edit\|Write | backend, frontend, fullstack | No |
+
+## Sensors by Function
+
+### Guards
+
+Guards **block** actions that violate boundaries or safety rules. They intercept tool calls before they execute and prevent dangerous operations.
+
+- **scope-guard-files** (required) — Prevents agents from editing files outside their workspace directory. This is the primary workspace isolation mechanism.
+- **scope-guard-commands** — Prevents the Tech Lead and Security agents from running application execution commands (tests, builds, servers) — these agents orchestrate, not execute.
+- **dispatch-guard** — Validates that code agent dispatches use worktree isolation, reference a plan, and that the plan file exists. Tech Lead only.
+- **iac-safety-guard** — Blocks destructive infrastructure commands like `terraform destroy` and `kubectl delete namespace`. DevOps only.
+
+### Context Injection
+
+Context injection sensors **add information** at key moments — session start, before prompts, or after responses.
+
+- **session-context** (required) — Injects the agent's core identity, working memory, protocols, and current project status at session start. This is how agents "wake up" with context.
+- **context-guard** (required) — Injects behavioral constraints before each user prompt and detects session wrap-up trigger words (e.g., "that's all", "wrap up").
+- **status-bar** (required) — Displays a persistent status line after every response showing context usage percentage, session health, and current git state.
+
+### Review
+
+Review sensors **output checklists** after agents complete work, prompting the Tech Lead to verify quality.
+
+- **agent-review** — Outputs a review checklist after a dispatched code agent completes work via the Agent tool (PostToolUse).
+- **subagent-stop-review** — Outputs a structured review checklist when a dispatched agent finishes work (SubagentStop event).
+
+### Code Quality
+
+Code quality sensors **detect anti-patterns** in code changes before they are written.
+
+- **api-security-check** — Scans code edits for security anti-patterns: SQL injection, hardcoded secrets, `eval()`, CORS wildcards, and similar issues.
+- **test-integrity-guard** — Catches test quality issues: removed assertions, `.skip`/`.only` left in tests, empty test bodies, and debug artifacts.
+
+### Routine Monitoring
+
+- **routine-check** — Parses the routine dashboard at session start and flags any overdue maintenance routines. This sensor is **auto-managed**: it is installed when any routines are present and removed when the last routine is removed. You do not install or remove it manually.
+
+## Hook Events
+
+Sensors listen to Claude Code hook events. The available events are:
+
+| Event | When it fires |
+|:------|:-------------|
+| `SessionStart` | Once at the beginning of a new session |
+| `UserPromptSubmit` | Before each user message is processed |
+| `PreToolUse` | Before a tool call executes (use `matcher` to filter by tool) |
+| `PostToolUse` | After a tool call completes (use `matcher` to filter by tool) |
+| `Stop` | After each agent response |
+| `SubagentStop` | When a dispatched subagent finishes |
+
+## Default Sensors by Agent Type
+
+| Agent Type | Default Sensors |
+|:-----------|:----------------|
+| Tech Lead | session-context, scope-guard-files, scope-guard-commands, dispatch-guard, subagent-stop-review |
+| Backend | session-context, scope-guard-files |
+| Frontend | session-context, scope-guard-files |
+| Full-Stack | session-context, scope-guard-files |
+| DevOps | session-context, scope-guard-files, iac-safety-guard |
+| Security | session-context, scope-guard-files, scope-guard-commands, api-security-check |
+
+<Aside type="tip">
+The 4 required sensors (context-guard, scope-guard-files, session-context, status-bar) are always installed for all agents. The table above shows the **additional** default sensors per agent type.
+</Aside>

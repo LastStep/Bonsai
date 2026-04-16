@@ -1,8 +1,82 @@
 ---
 title: Routines Catalog
-description: Routines catalog — periodic maintenance
+description: All 8 Bonsai routines — periodic self-maintenance tasks for backlog hygiene, dependency audits, doc freshness, and more.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Routines are periodic self-maintenance tasks that agents check at session start. When a routine is overdue, the agent flags it — but execution is always opt-in. The user decides whether to run it now, defer, or skip.
+
+<Aside>
+Most routines are currently designed for the **Tech Lead** agent, which manages project-level documentation and coordination. The DevOps and Security agents have their own specialized routines for infrastructure and vulnerability scanning.
+</Aside>
+
+## All Routines
+
+| Name | Description | Frequency | Compatible Agents |
+|:-----|:-----------|:----------|:-----------------|
+| backlog-hygiene | Review and maintain Playbook/Backlog.md — flag stale items, escalate P0s, cross-reference with Status and Roadmap | 7 days | tech-lead |
+| dependency-audit | Scan dependencies for known vulnerabilities and unmaintained packages | 7 days | tech-lead |
+| doc-freshness-check | Detect documentation drift — docs that are stale relative to recent code changes | 7 days | tech-lead |
+| infra-drift-check | Detect infrastructure drift — compare declared IaC state against actual cloud resources | 7 days | tech-lead |
+| memory-consolidation | Bridge Claude Code auto-memory into agent/Core/memory.md — validate facts, clean redundant entries | 5 days | tech-lead |
+| roadmap-accuracy | Ensure Playbook/Roadmap.md reflects what's actually built and what's actually next | 14 days | tech-lead |
+| status-hygiene | Keep Playbook/Status.md clean — archive old Done items, validate Pending items | 5 days | tech-lead |
+| vulnerability-scan | SAST scan, secrets scan, and dependency audit — flag new, resolved, and persistent vulnerabilities | 7 days | tech-lead |
+
+## Routine Details
+
+### backlog-hygiene
+
+Reviews `Playbook/Backlog.md` for stale items that have been sitting too long, escalates any P0 items that need immediate attention, and cross-references against `Status.md` and `Roadmap.md` to ensure consistency. Runs every **7 days**.
+
+### dependency-audit
+
+Scans the project's dependency files (go.mod, package.json, etc.) for known vulnerabilities using available audit tools and flags unmaintained packages. Runs every **7 days**.
+
+### doc-freshness-check
+
+Compares documentation files against recent code changes to detect drift. Flags docs that reference files, functions, or structures that have changed since the doc was last updated. Runs every **7 days**.
+
+### infra-drift-check
+
+Compares declared infrastructure-as-code state (Terraform plans, Kubernetes manifests) against actual cloud resources to detect configuration drift. Runs every **7 days**.
+
+### memory-consolidation
+
+Reviews Claude Code's auto-memory entries and validates them against the codebase. Migrates accurate facts into the agent's version-controlled `agent/Core/memory.md`, cleans redundant entries, and archives outdated information. Runs every **5 days**.
+
+### roadmap-accuracy
+
+Checks `Playbook/Roadmap.md` against the current state of the codebase and completed work. Ensures the roadmap reflects what has actually been built and what is genuinely planned next. Runs every **14 days**.
+
+### status-hygiene
+
+Cleans up `Playbook/Status.md` by archiving old "Done" items, validating that "Pending" and "In Progress" items are still accurate, and removing stale entries. Runs every **5 days**.
+
+### vulnerability-scan
+
+Performs a comprehensive security scan: static analysis (SAST), secrets detection, and dependency vulnerability audit. Flags new vulnerabilities, tracks resolved ones, and monitors persistent issues. Runs every **7 days**.
+
+## How Routines Work
+
+1. **Session start** — The [routine-check](/Bonsai/catalog/sensors/) sensor parses the routine dashboard (`agent/Core/routines.md`), compares `last_ran` dates against each routine's frequency, and flags any that are overdue.
+2. **User decides** — The agent presents overdue routines. The user chooses to run now, defer, or skip.
+3. **Execution** — The agent reads the routine's definition file in `agent/Routines/` and follows the procedure step by step.
+4. **Log** — Results are appended to `Logs/RoutineLog.md` with the date, routine name, outcome, and notes.
+5. **Update** — The `last_ran` date in the dashboard is set to today.
+
+<Aside type="tip">
+Every routine is **idempotent** — safe to re-run if interrupted mid-session. Routines validate facts against the codebase and mark stale entries as outdated rather than deleting them, preserving the audit trail.
+</Aside>
+
+## Default Routines by Agent Type
+
+| Agent Type | Default Routines |
+|:-----------|:-----------------|
+| Tech Lead | _(none by default — all 8 are compatible and selectable)_ |
+| DevOps | dependency-audit, infra-drift-check |
+| Security | vulnerability-scan, dependency-audit |
+| Backend | _(none)_ |
+| Frontend | _(none)_ |
+| Full-Stack | _(none)_ |

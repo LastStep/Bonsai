@@ -1,8 +1,48 @@
 ---
 title: Protocols Catalog
-description: Protocols catalog — hard rules and enforcement
+description: All 4 Bonsai protocols — hard rules that every agent must follow for memory, scope, security, and session startup.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Protocols are non-negotiable rules that every agent loads at the start of every session. Unlike skills (reference knowledge) or workflows (step-by-step procedures), protocols define **hard boundaries** that agents cannot override or opt out of.
+
+<Aside>
+All 4 protocols are **required for all agent types**. They are auto-installed during `bonsai init` and `bonsai add` and cannot be unchecked in the interactive picker.
+</Aside>
+
+## All Protocols
+
+| Name | Description | Required |
+|:-----|:-----------|:---------|
+| memory | How to read, write, and maintain working memory between sessions | Yes (all agents) |
+| scope-boundaries | What you own, what you never touch, workspace boundaries | Yes (all agents) |
+| security | Security enforcement — hard stops and hard enforcers | Yes (all agents) |
+| session-start | Ordered startup sequence — what to read and check every session | Yes (all agents) |
+
+## Protocol Details
+
+### memory
+
+Defines how agents manage their working memory file (`agent/Core/memory.md`). Covers reading memory at session start, writing updates during work, and maintaining the file between sessions. This protocol ensures agents use version-controlled memory inside the project instead of Claude Code's auto-memory system.
+
+### scope-boundaries
+
+Establishes what each agent owns and what it must never touch. Defines workspace boundaries so agents stay within their designated directories. Prevents agents from modifying files outside their scope — the [scope-guard-files](/Bonsai/catalog/sensors/) sensor enforces this automatically.
+
+### security
+
+Hard security rules: what agents must never do, what they must always check, and what requires human approval. Covers secrets handling, credential management, and security-critical operations. This is the foundation that the [security-audit](/Bonsai/catalog/workflows/) workflow builds on.
+
+### session-start
+
+The ordered startup sequence every agent follows at the beginning of each session. Specifies exactly which files to read and in what order: identity first, then memory, then protocols, then project status. Ensures consistent behavior across sessions.
+
+## How Protocols Differ from Other Abilities
+
+| Aspect | Protocols | Skills | Workflows |
+|:-------|:----------|:-------|:----------|
+| **Loaded when** | Every session, automatically | On demand, during specific work | When starting a multi-step activity |
+| **Required** | Yes — cannot be removed | No — optional per agent | No — optional per agent |
+| **Purpose** | Hard rules and boundaries | Domain knowledge and standards | Step-by-step procedures |
+| **Can be overridden** | No | Agent adapts to context | Agent follows the steps |

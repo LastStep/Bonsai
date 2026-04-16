@@ -1,8 +1,91 @@
 ---
 title: Catalog Overview
-description: Catalog overview — browsing available abilities
+description: Browse the full Bonsai catalog — agents, skills, workflows, protocols, sensors, and routines available for installation.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Card, CardGrid, Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+The Bonsai catalog is the embedded collection of agents, abilities, and automation that ships inside the binary. Everything in the catalog is available to install into your project using the CLI.
+
+## What's in the Catalog
+
+<CardGrid>
+  <Card title="Agent Types" icon="rocket">
+    **6 agents** — Tech Lead, Backend, Frontend, Full-Stack, DevOps, Security. Each has a specialized identity, defaults, and role.
+
+    [Browse agent types](/Bonsai/catalog/agent-types/)
+  </Card>
+  <Card title="Skills" icon="open-book">
+    **17 skills** — Domain knowledge and standards. Coding conventions, API design, testing strategy, infrastructure patterns, and more.
+
+    [Browse skills](/Bonsai/catalog/skills/)
+  </Card>
+  <Card title="Workflows" icon="list-format">
+    **10 workflows** — Step-by-step procedures for planning, code review, security audits, PR review, reporting, and implementation.
+
+    [Browse workflows](/Bonsai/catalog/workflows/)
+  </Card>
+  <Card title="Protocols" icon="warning">
+    **4 protocols** — Hard rules that every agent must follow. Memory management, scope boundaries, security enforcement, and session startup.
+
+    [Browse protocols](/Bonsai/catalog/protocols/)
+  </Card>
+  <Card title="Sensors" icon="seti:config">
+    **12 sensors** — Automated hook scripts that enforce boundaries, inject context, review output, and monitor code quality.
+
+    [Browse sensors](/Bonsai/catalog/sensors/)
+  </Card>
+  <Card title="Routines" icon="seti:clock">
+    **8 routines** — Periodic self-maintenance tasks. Backlog hygiene, dependency audits, doc freshness checks, vulnerability scans, and more.
+
+    [Browse routines](/Bonsai/catalog/routines/)
+  </Card>
+</CardGrid>
+
+## How to Browse the Catalog
+
+**From the CLI:**
+
+```bash
+bonsai catalog
+```
+
+This displays a table of all available items grouped by type, with descriptions and compatible agent types.
+
+**From this documentation:** Use the links above or the sidebar to navigate to any category page.
+
+## How to Install Catalog Items
+
+Items are installed during `bonsai init` (for the first agent) and `bonsai add` (for additional agents). Both commands present an interactive picker where you select which skills, workflows, sensors, and routines to install.
+
+```bash
+# Initialize project with Tech Lead — picks abilities interactively
+bonsai init
+
+# Add another agent — picks abilities for that agent type
+bonsai add
+```
+
+Each agent type has **defaults** pre-selected in the picker. Required items (like protocols and core sensors) are auto-installed and cannot be unchecked.
+
+<Aside type="tip">
+After initial setup, you can run `bonsai add` again to install additional abilities for an existing agent, or `bonsai remove` to uninstall an agent entirely.
+</Aside>
+
+## Catalog Structure
+
+The catalog is embedded into the Bonsai binary at build time from the `catalog/` directory in the source repo:
+
+```
+catalog/
+├── core/          # Shared core files (memory, self-awareness)
+├── agents/        # Agent type definitions + identity templates
+├── skills/        # Domain knowledge (meta.yaml + content.md)
+├── workflows/     # Step-by-step procedures (meta.yaml + content.md)
+├── protocols/     # Hard rules (meta.yaml + content.md)
+├── sensors/       # Hook scripts (meta.yaml + script.sh.tmpl)
+├── routines/      # Periodic tasks (meta.yaml + content.md.tmpl)
+└── scaffolding/   # Project infrastructure templates
+```
+
+Every catalog item has a `meta.yaml` that defines its name, description, and compatible agent types. See the [meta.yaml Schema](/Bonsai/reference/meta-yaml-schema/) reference for the full format.

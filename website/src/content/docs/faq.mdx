@@ -1,8 +1,120 @@
 ---
 title: FAQ
-description: Frequently asked questions
+description: Frequently asked questions about Bonsai — what it is, how it works, and common setup questions.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+## What is Bonsai?
+
+Bonsai is a CLI tool that scaffolds structured agent workspaces for Claude Code. It generates instruction files — identity, memory, protocols, skills, workflows, sensors, and routines — so AI agents work like teammates with clear roles, boundaries, and coordination patterns.
+
+## How is Bonsai different from just using Claude Code?
+
+Claude Code works out of the box, but without structure, agents lack persistent identity, consistent behavior, and coordination patterns. Bonsai adds:
+
+- **Persistent identity and memory** — Agents remember context between sessions via version-controlled files, not ephemeral auto-memory.
+- **Layered instructions** — Protocols define hard rules, workflows define procedures, skills provide domain knowledge. Each layer loads at the right time.
+- **Automated enforcement** — Sensors (hook scripts) enforce scope boundaries, inject context, and review output automatically. Agents cannot bypass them.
+- **Multi-agent coordination** — The Tech Lead plans and dispatches to code agents, each in their own workspace with specific abilities.
+- **Project scaffolding** — Shared status tracking, roadmaps, plans, decision logs, and reports that all agents reference.
+
+## Do I need to know Go to use Bonsai?
+
+No. Bonsai is a pre-built binary — you install it and run CLI commands. No Go knowledge is required to use it. The generated files are all Markdown and shell scripts.
+
+If you want to **contribute to Bonsai itself** (the CLI tool), you will need Go 1.24+ and familiarity with the Cobra, Huh, and BubbleTea libraries.
+
+## Can I use Bonsai with models other than Claude?
+
+Bonsai is designed specifically for Claude Code. The generated sensors wire into Claude Code's hook system, the instruction files follow Claude's conventions, and the workspace structure is optimized for Claude Code's file-reading patterns.
+
+While the generated Markdown files are model-agnostic in principle, the sensor scripts and hook integration are Claude Code-specific.
+
+## How do I update my workspace when Bonsai releases new catalog items?
+
+Run `bonsai add` to browse and install new abilities. If Bonsai updates existing catalog items, run `bonsai update` to sync your workspace. If you have modified generated files, Bonsai will detect the conflict and let you choose to skip, overwrite, or backup and overwrite.
+
+```bash
+# Install new abilities
+bonsai add
+
+# Sync workspace with latest catalog
+bonsai update
+```
+
+## Can I create my own skills, sensors, and routines?
+
+Yes. Place custom files in the appropriate `agent/` subdirectory with YAML frontmatter, then run `bonsai update` to register them. Bonsai detects custom files automatically and adds them to the navigation and configuration.
+
+- **Custom skills:** Add a `.md` file to `agent/Skills/` with `description` frontmatter
+- **Custom sensors:** Add a `.sh` file to `agent/Sensors/` with `description`, `event`, and optionally `matcher` frontmatter
+- **Custom routines:** Add a `.md` file to `agent/Routines/` with `description` and `frequency` frontmatter
+
+See the [Creating Custom Skills](/Bonsai/guides/creating-custom-skills/), [Creating Custom Sensors](/Bonsai/guides/creating-custom-sensors/), and [Creating Custom Routines](/Bonsai/guides/creating-custom-routines/) guides for details.
+
+## What happens if I edit a generated file?
+
+Bonsai tracks generated files in `.bonsai-lock.yaml` using SHA-256 hashes. The next time you run a Bonsai command that regenerates that file, it detects that your version differs from the original and prompts you with three options:
+
+- **Skip** — Keep your version, do not update
+- **Overwrite** — Replace with the new generated version
+- **Backup & Overwrite** — Save your version as `filename.bak`, then write the new version
+
+Scaffolding files (INDEX.md, Playbook, Logs, Reports) use a write-once policy: they are never overwritten after initial creation.
+
+## Can multiple agents work on the same project?
+
+Yes — that is one of Bonsai's core design goals. Each agent gets its own workspace directory with isolated instruction files. The Tech Lead orchestrates by creating plans and dispatching work to code agents via worktree-isolated subagent sessions.
+
+A typical multi-agent project looks like:
+
+```
+your-project/
+├── station/     # Tech Lead — plans, reviews, coordinates
+├── backend/     # Backend Agent — API, database, server logic
+├── frontend/    # Frontend Agent — UI, components, styling
+└── devops/      # DevOps Agent — infrastructure, CI/CD
+```
+
+## Is Bonsai free and open source?
+
+Yes. Bonsai is open source under the MIT license and free to use. The source code is at [github.com/LastStep/Bonsai](https://github.com/LastStep/Bonsai).
+
+## Where are generated files stored?
+
+All generated files live inside your project directory. Nothing is stored in hidden system directories or cloud services. The key locations are:
+
+| File/Directory | Purpose |
+|:---------------|:--------|
+| `.bonsai.yaml` | Project configuration |
+| `.bonsai-lock.yaml` | File tracking (content hashes) |
+| `.claude/settings.json` | Auto-wired sensor hooks |
+| `station/` | Tech Lead workspace + project scaffolding |
+| `<agent>/` | Code agent workspaces (e.g., `backend/`, `frontend/`) |
+
+## How do I uninstall Bonsai from a project?
+
+To remove a specific agent:
+
+```bash
+bonsai remove backend        # Remove agent, keep files
+bonsai remove backend -d     # Remove agent and delete its workspace files
+```
+
+To fully remove Bonsai from a project, delete the generated files:
+
+```bash
+# Remove config files
+rm .bonsai.yaml .bonsai-lock.yaml
+
+# Remove generated workspace directories
+rm -rf station/ backend/ frontend/
+
+# Remove hook configuration
+rm -rf .claude/
+```
+
+<Aside type="caution">
+The Tech Lead must be the last agent removed — you cannot remove it while other agents are still installed, because they depend on the station's shared scaffolding.
+</Aside>
