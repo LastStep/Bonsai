@@ -186,5 +186,6 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	} else {
 		tui.Success("Update complete — workspace synced")
 	}
+	tui.Blank()
 	return nil
 }

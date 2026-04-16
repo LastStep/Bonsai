@@ -36,7 +36,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	cat := loadCatalog()
 
-	tui.Banner()
+	tui.Banner(Version)
 	tui.Heading("Initialize Project")
 
 	projectName, err := tui.AskText("Project name:", "", true)
@@ -53,8 +53,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 	docsPath = strings.TrimSpace(docsPath)
 	if docsPath == "" || docsPath == "/" {
-		tui.ErrorPanel("Station directory cannot be empty or root. Use a subdirectory like station/.")
-		os.Exit(1)
+		tui.FatalPanel("Invalid station directory", "Cannot be empty or root.", "Use a subdirectory like: station/")
 	}
 	if !strings.HasSuffix(docsPath, "/") {
 		docsPath += "/"
@@ -86,8 +85,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	const techLeadType = "tech-lead"
 	agentDef := cat.GetAgent(techLeadType)
 	if agentDef == nil {
-		tui.ErrorPanel("Tech Lead agent not found in catalog.")
-		os.Exit(1)
+		tui.FatalPanel("Tech Lead agent not found", "The built-in catalog is missing the tech-lead agent.", "This is a bug — please report it.")
 	}
 
 	workspace := docsPath
@@ -145,7 +143,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 		describer,
 	)
 	tui.TitledPanel("Review", summary, tui.Water)
-	tui.Blank()
 
 	confirmed, err := tui.AskConfirm("Generate project?", true)
 	if err != nil || !confirmed {

@@ -27,27 +27,35 @@ var guideMarkdown string
 var rootCmd = &cobra.Command{
 	Use:   "bonsai",
 	Short: "Scaffold Claude Code agent workspaces for your project.",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if noColor, _ := cmd.Flags().GetBool("no-color"); noColor {
+			tui.DisableColor()
+		}
+	},
+}
+
+func init() {
+	rootCmd.PersistentFlags().Bool("no-color", false, "Disable colored output")
 }
 
 func loadCatalog() *catalog.Catalog {
 	cat, err := catalog.New(catalogFS)
 	if err != nil {
-		tui.ErrorPanel("Failed to load catalog: " + err.Error())
-		os.Exit(1)
+		tui.FatalPanel("Failed to load catalog", err.Error(), "This is a bug — please report it.")
 	}
 	return cat
 }
 
 func requireConfig(configPath string) (*config.ProjectConfig, error) {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		tui.ErrorPanel("No " + configFile + " found.\nRun bonsai init first.")
-		os.Exit(1)
+		tui.FatalPanel("No "+configFile+" found", "This command requires an initialized project.", "Run: bonsai init")
 	}
 	return config.Load(configPath)
 }
 
 // SetVersion sets the version string on the root command.
 func SetVersion(v string) {
+	Version = v
 	rootCmd.Version = v
 }
 

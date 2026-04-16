@@ -2,24 +2,40 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/mattn/go-isatty"
+	"github.com/muesli/termenv"
 )
+
+// ─── Color Profile ────────────────────────────────────────────────────────
+
+func init() {
+	if !isatty.IsTerminal(os.Stdout.Fd()) || termenv.EnvNoColor() {
+		DisableColor()
+	}
+}
+
+// DisableColor forces all output to plain text (no ANSI escapes).
+func DisableColor() {
+	lipgloss.SetColorProfile(termenv.Ascii)
+}
 
 // ─── Zen Garden Palette ───────────────────────────────────────────────────
 
 var (
-	Leaf  = lipgloss.Color("#4A9E6F")
-	Bark  = lipgloss.Color("#D4A76A")
-	Stone = lipgloss.Color("#6B7280")
-	Water = lipgloss.Color("#7EC8E3")
-	Moss  = lipgloss.Color("#73D677")
-	Ember = lipgloss.Color("#E36F6F")
-	Amber = lipgloss.Color("#E3C16F")
-	Sand  = lipgloss.Color("#C4B7A6")
-	Petal = lipgloss.Color("#D4A0C0")
+	Leaf  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#4A9E6F", Light: "#2D7A4B"}
+	Bark  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#D4A76A", Light: "#8B6914"}
+	Stone lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#6B7280", Light: "#4B5563"}
+	Water lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#7EC8E3", Light: "#1A7FA0"}
+	Moss  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#73D677", Light: "#2D8A3E"}
+	Ember lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#E36F6F", Light: "#C53030"}
+	Amber lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#E3C16F", Light: "#B7791F"}
+	Sand  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#C4B7A6", Light: "#6B5E4F"}
+	Petal lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#D4A0C0", Light: "#9B4D8A"}
 )
 
 // ─── Styles ───────────────────────────────────────────────────────────────
@@ -74,9 +90,13 @@ const (
 // ─── Banner ───────────────────────────────────────────────────────────────
 
 // Banner prints the Bonsai welcome banner.
-func Banner() {
+func Banner(version string) {
 	title := lipgloss.NewStyle().Bold(true).Foreground(Leaf).Render("B O N S A I")
-	sub := StyleMuted.Render("agent scaffolder")
+	subtitle := "agent scaffolder"
+	if version != "" && version != "dev" {
+		subtitle += " " + GlyphDot + " v" + version
+	}
+	sub := StyleMuted.Render(subtitle)
 
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -148,6 +168,19 @@ func SuccessPanel(content, title string) {
 // ErrorPanel renders a red-bordered panel.
 func ErrorPanel(msg string) {
 	fmt.Println("\n" + indent(PanelError.Render(msg), 2))
+}
+
+// FatalPanel renders a structured error and exits. title: what happened. detail: why. hint: how to fix.
+func FatalPanel(title, detail, hint string) {
+	content := StyleError.Bold(true).Render(title)
+	if detail != "" {
+		content += "\n" + detail
+	}
+	if hint != "" {
+		content += "\n" + StyleMuted.Render(hint)
+	}
+	fmt.Println("\n" + indent(PanelError.Render(content), 2))
+	os.Exit(1)
 }
 
 // WarningPanel renders a yellow-bordered panel.
