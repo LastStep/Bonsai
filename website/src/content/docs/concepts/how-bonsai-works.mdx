@@ -1,0 +1,111 @@
+---
+title: How Bonsai Works
+description: The mental model — stations, agents, the instruction stack, and how everything connects.
+---
+
+import { FileTree, Aside } from '@astrojs/starlight/components';
+
+Bonsai is a **generator**, not a runtime. It runs once to set up the instruction layer that Claude Code agents read when they work in your project. After that, the agents operate using the files it created.
+
+| Generated layer | Purpose |
+|:----------------|:--------|
+| **Identity + Memory** | Who the agent is, what it remembers from last session |
+| **Protocols** | Hard rules — security, scope boundaries, startup sequence |
+| **Workflows** | Step-by-step procedures — planning, code review, reporting |
+| **Skills** | Domain knowledge — coding standards, API design, auth patterns |
+| **Sensors** | Shell scripts wired into Claude Code hooks — auto-enforce boundaries |
+| **Routines** | Periodic maintenance with a tracked dashboard (Tech Lead only) |
+| **Scaffolding** | Shared docs — status tracker, roadmap, plans, decision log, reports |
+
+<Aside>
+Claude Code agents are only as good as the instructions they have access to. Bonsai gives them a structured, layered instruction set so they behave consistently, stay in scope, and coordinate with each other.
+</Aside>
+
+## The Station
+
+Every Bonsai project has a **station** — a single directory (default `station/`) that serves as the command center. It contains:
+
+- **Project scaffolding** — status tracker, roadmap, plans, logs, reports
+- **Tech Lead agent** — the primary agent that orchestrates everything
+
+The station is where all coordination happens. Code agents (backend, frontend, etc.) get their own separate workspaces, but they all reference the station for plans, status, and standards.
+
+## The Instruction Stack
+
+Each agent's instructions are layered, from foundational to automated:
+
+```
+  Layer 6 │ Sensors       │ Automated enforcement (hook scripts)
+  Layer 5 │ Routines      │ Periodic maintenance procedures (Tech Lead)
+  Layer 4 │ Skills        │ Domain knowledge and standards
+  Layer 3 │ Workflows     │ Step-by-step task procedures
+  Layer 2 │ Protocols     │ Hard rules (security, scope, startup)
+  Layer 1 │ Core          │ Identity + memory + self-awareness
+```
+
+| Layer | Loaded when | Can override? |
+|:------|:-----------|:-------------|
+| **Core** | Every session, first thing | No — this is the foundation |
+| **Protocols** | Every session, via startup | No — non-negotiable rules |
+| **Workflows** | When performing a specific task | Agent follows the procedure |
+| **Skills** | Referenced as needed during work | Knowledge, not instructions |
+| **Routines** | Flagged at session start if overdue | Tech Lead runs on request |
+| **Sensors** | Automatically, on Claude Code events | Agent can't bypass them |
+
+## How It Works
+
+`bonsai init` sets up the station with the Tech Lead. You talk to the Tech Lead; it plans, orchestrates, and reviews. Code agents execute.
+
+```
+  You (human)
+   └── Tech Lead (station/)      plans, reviews, orchestrates, runs routines
+        ├── Backend (backend/)    API, database, server logic
+        ├── Frontend (frontend/)  UI, components, styling
+        ├── DevOps (devops/)      infrastructure, CI/CD
+        └── Security (security/)  audits, scanning
+```
+
+<Aside type="caution">
+The Tech Lead **never writes application code**. It creates plans, dispatches them to code agents via worktree-isolated subagents, and reviews the output.
+</Aside>
+
+<Aside type="tip">
+You don't have to go through the Tech Lead for everything. Quick fixes and small tasks work fine directly with a code agent. The Tech Lead shines when work needs planning, coordination, or cross-agent review.
+</Aside>
+
+## What Gets Generated
+
+After `bonsai init` + `bonsai add` (backend agent):
+
+<FileTree>
+
+- your-project/
+  - .bonsai.yaml — project config
+  - .bonsai-lock.yaml — file tracking (hashes for conflict detection)
+  - .claude/settings.json — auto-wired sensor hooks
+  - CLAUDE.md — root navigation
+  - station/ — Tech Lead workspace + project scaffolding
+    - CLAUDE.md — navigation (cross-linked)
+    - INDEX.md — project snapshot
+    - agent/
+      - Core/ — identity, memory, self-awareness
+      - Protocols/ — security, scope, startup sequence
+      - Workflows/ — planning, code-review, audit, etc.
+      - Skills/ — standards, patterns, checklists
+      - Sensors/ — hook scripts (.sh)
+      - Routines/ — maintenance procedures
+    - Playbook/ — status, roadmap, plans, standards
+    - Logs/ — field notes, decisions, routine log
+    - Reports/ — completion reports
+  - backend/ — code agent workspace
+    - CLAUDE.md — agent-specific navigation
+    - agent/
+      - Core/ — identity, memory, self-awareness
+      - Protocols/ — hard rules
+      - Workflows/ — task procedures
+      - Skills/ — domain knowledge
+      - Sensors/ — hook scripts
+
+</FileTree>
+
+Every file reference is a clickable markdown link — open the workspace in Obsidian to see the full knowledge graph, or browse it on GitHub.

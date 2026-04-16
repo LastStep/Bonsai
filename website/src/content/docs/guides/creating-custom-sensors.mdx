@@ -1,0 +1,74 @@
+---
+title: Creating Custom Sensors
+description: How to create custom sensors — event types, matchers, shell script format, and hook integration.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Sensors are shell scripts that run as Claude Code hooks. You can create custom sensors alongside catalog-provided ones.
+
+## How It Works
+
+1. Create a file in `agent/Sensors/` (e.g., `agent/Sensors/my-sensor.sh`)
+2. Add YAML frontmatter with `description`, `event`, and optionally `matcher`
+3. Run `bonsai update` — it detects untracked files and offers to track them
+4. Once tracked, custom sensors appear in CLAUDE.md, `.bonsai.yaml`, and `.claude/settings.json`
+
+## Frontmatter Format
+
+Sensors need extra fields compared to skills:
+
+```yaml
+---
+description: Blocks risky operations on Fridays
+display_name: Friday Guard
+event: PreToolUse
+matcher: Bash
+---
+
+#!/usr/bin/env bash
+# Script content here
+...
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `description` | Yes | Shown in CLAUDE.md nav tables |
+| `display_name` | No | Human-readable name |
+| `event` | Yes | Hook event: `SessionStart`, `PreToolUse`, `PostToolUse`, `Stop`, `UserPromptSubmit`, `SubagentStop` |
+| `matcher` | No | Tool filter (e.g., `Bash`, `Edit`, `Write`, `Edit\|Write`) |
+
+## Available Events
+
+| Event | When it fires | Can block? |
+|:------|:-------------|:-----------|
+| `SessionStart` | Beginning of a conversation | No |
+| `UserPromptSubmit` | Before Claude processes a user message | **Yes** (exit code 2) |
+| `PreToolUse` | Before a tool executes | **Yes** (exit code 2) |
+| `PostToolUse` | After a tool executes | No |
+| `Stop` | After every Claude response | **Yes** (exit code 2) |
+| `SubagentStop` | When a dispatched subagent finishes | No |
+
+<Aside type="caution">
+`PreToolUse` and `UserPromptSubmit` sensors can **block actions** by exiting with code 2. The tool call or prompt is rejected before it executes.
+</Aside>
+
+## File Naming
+
+- Use **kebab-case** for filenames: `my-custom-sensor.sh`, not `MyCustomSensor.sh`
+- The filename (minus extension) becomes the item's machine name
+- Use `.sh` extension
+
+## What `bonsai update` Does for Sensors
+
+When you run `bonsai update` with custom sensors:
+
+1. Detects untracked `.sh` files in `agent/Sensors/`
+2. Validates frontmatter — warns if `event` is missing
+3. Tracks in `.bonsai.yaml` and `.bonsai-lock.yaml`
+4. **Syncs** `.claude/settings.json` hooks — adds hook entries for custom sensors
+5. Refreshes CLAUDE.md nav tables
+
+<Aside type="tip">
+Custom sensors are automatically wired into `.claude/settings.json` hooks. You don't need to manually configure the hook entries.
+</Aside>

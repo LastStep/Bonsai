@@ -1,0 +1,43 @@
+---
+title: Why Bonsai
+description: The problem Bonsai solves and how it structures agent instructions as a layered system.
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## The Problem
+
+Claude Code is powerful out of the box. But the moment you need agents to **coordinate**, **stay consistent across sessions**, or **follow your team's standards** — you're writing walls of markdown by hand. Every project rediscovers the same patterns: identity files, memory protocols, security rules, scope boundaries, review checklists.
+
+And if you want multiple agents working in the same codebase? You're maintaining parallel instruction sets that drift apart.
+
+## What Bonsai Does
+
+Bonsai treats agent instructions as a **structured language** — not a pile of markdown files, but a layered system with clear semantics:
+
+```
+  Layer 6 │ Sensors       │ Automated enforcement via Claude Code hooks
+  Layer 5 │ Routines      │ Periodic self-maintenance on a schedule
+  Layer 4 │ Skills        │ Domain knowledge — standards, patterns, conventions
+  Layer 3 │ Workflows     │ Step-by-step procedures — planning, review, audit
+  Layer 2 │ Protocols     │ Hard rules — security, scope, memory, startup
+  Layer 1 │ Core          │ Identity, memory, self-awareness
+```
+
+You pick the components. Bonsai generates a complete, wired-up workspace — with cross-linked navigation, auto-enforced hooks, and a shared project scaffold that keeps every agent on the same page.
+
+One binary. No runtime. Works with any project.
+
+## Who It's For
+
+<CardGrid>
+  <Card title="Solo developers" icon="laptop">
+    Want your Claude Code agent to behave consistently, remember context between sessions, and follow project-specific standards.
+  </Card>
+  <Card title="Teams" icon="group">
+    Coordinating multiple agents across a codebase — backend, frontend, devops — with a shared source of truth.
+  </Card>
+  <Card title="Anyone tired of copy-pasting" icon="document">
+    Stop copying agent instructions between projects. Bonsai generates everything from a catalog of battle-tested components.
+  </Card>
+</CardGrid>

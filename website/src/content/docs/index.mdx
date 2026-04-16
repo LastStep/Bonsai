@@ -1,0 +1,54 @@
+---
+title: Bonsai
+description: A structured language for working with AI agents. Give your Claude Code agents identity, memory, protocols, and purpose.
+template: splash
+hero:
+  title: Bonsai
+  tagline: A structured language for working with AI agents
+  image:
+    file: ../../assets/graph-view.png
+  actions:
+    - text: Get Started
+      link: /Bonsai/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: Browse Catalog
+      link: /Bonsai/catalog/overview/
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## The 6-Layer Architecture
+
+Bonsai treats agent instructions as a structured language — not a pile of markdown files, but a layered system with clear semantics.
+
+<CardGrid>
+  <Card title="Core" icon="star">
+    Identity, memory, and self-awareness — the foundation every agent loads first.
+  </Card>
+  <Card title="Protocols" icon="warning">
+    Hard rules — security, scope boundaries, startup sequence. Non-negotiable, every session.
+  </Card>
+  <Card title="Workflows" icon="list-format">
+    Step-by-step procedures — planning, code review, security audits, reporting.
+  </Card>
+  <Card title="Skills" icon="open-book">
+    Domain knowledge — coding standards, API design, auth patterns, test strategy.
+  </Card>
+  <Card title="Routines" icon="seti:clock">
+    Periodic self-maintenance on a schedule — dependency audits, doc freshness, backlog hygiene.
+  </Card>
+  <Card title="Sensors" icon="setting">
+    Automated enforcement via Claude Code hooks — scope guards, context injection, status tracking.
+  </Card>
+</CardGrid>
+
+## Explore
+
+<CardGrid>
+  <LinkCard title="Core Concepts" href="/Bonsai/concepts/how-bonsai-works/" description="Understand stations, agents, the instruction stack, and how everything connects." />
+  <LinkCard title="Commands" href="/Bonsai/commands/init/" description="Full CLI reference for all 7 commands — init, add, remove, list, catalog, update, guide." />
+  <LinkCard title="Guides" href="/Bonsai/guides/working-with-agents/" description="Communication patterns, triggers, custom abilities, and collaboration rhythms." />
+  <LinkCard title="Catalog" href="/Bonsai/catalog/overview/" description="Browse all available agent types, skills, workflows, protocols, sensors, and routines." />
+</CardGrid>

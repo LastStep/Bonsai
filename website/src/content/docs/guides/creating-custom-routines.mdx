@@ -1,0 +1,75 @@
+---
+title: Creating Custom Routines
+description: How to create custom routines — frequency, procedure format, dashboard tracking, and the routine lifecycle.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Routines are periodic maintenance tasks with a frequency. You can create custom routines alongside catalog-provided ones.
+
+## How It Works
+
+1. Create a file in `agent/Routines/` (e.g., `agent/Routines/branch-cleanup.md`)
+2. Add YAML frontmatter with `description` and `frequency`
+3. Run `bonsai update` — it detects untracked files and offers to track them
+4. Once tracked, custom routines appear in CLAUDE.md, `.bonsai.yaml`, and the routine dashboard
+
+## Frontmatter Format
+
+Routines need a `frequency` field:
+
+```yaml
+---
+description: Review and clean up stale feature branches
+display_name: Branch Cleanup
+frequency: 14 days
+---
+
+# Branch Cleanup
+
+**Frequency:** Every 14 days
+
+1. **List stale branches:**
+   - Run `git branch --merged` to find branches already merged
+   ...
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `description` | Yes | Shown in CLAUDE.md nav tables |
+| `display_name` | No | Human-readable name |
+| `frequency` | Yes | How often to run (e.g., `5 days`, `7 days`, `14 days`) |
+
+## File Naming
+
+- Use **kebab-case** for filenames: `branch-cleanup.md`, not `BranchCleanup.md`
+- The filename (minus extension) becomes the item's machine name
+- Use `.md` extension
+
+## The Routine Dashboard
+
+Custom routines are automatically added to the routine dashboard at `agent/Core/routines.md`. The dashboard tracks:
+
+- When the routine last ran
+- When it's next due
+- Whether it's overdue
+
+The `routine-check` sensor reads this dashboard at session start and flags overdue routines.
+
+## What `bonsai update` Does for Routines
+
+When you run `bonsai update` with custom routines:
+
+1. Detects untracked `.md` files in `agent/Routines/`
+2. Validates frontmatter — warns if `frequency` is missing
+3. Tracks in `.bonsai.yaml` and `.bonsai-lock.yaml`
+4. Updates the routine dashboard at `agent/Core/routines.md`
+5. Refreshes CLAUDE.md nav tables
+
+<Aside>
+The `routine-check` sensor is auto-managed — Bonsai adds it when routines are present, removes it when all routines are removed.
+</Aside>
+
+<Aside type="tip">
+Routine procedures should be concrete, idempotent, and reference specific file paths. Each step should be something the agent can execute without ambiguity.
+</Aside>

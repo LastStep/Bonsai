@@ -1,0 +1,65 @@
+---
+title: Creating Custom Skills
+description: How to create custom skills — frontmatter format, file naming, directory placement, and tracking with bonsai update.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Bonsai installs abilities from its built-in catalog. You can also create **custom skills** — your own skills that live alongside catalog-provided ones and are tracked by Bonsai.
+
+## How It Works
+
+1. Create a file in `agent/Skills/` (e.g., `agent/Skills/my-custom-skill.md`)
+2. Add YAML frontmatter with at least a `description` field
+3. Run `bonsai update` — it detects untracked files and offers to track them
+4. Once tracked, custom items appear in CLAUDE.md nav tables and `.bonsai.yaml`
+
+## Frontmatter Format
+
+Every custom skill needs YAML frontmatter at the top, delimited by `---`:
+
+```yaml
+---
+description: What this skill does — shown in CLAUDE.md nav tables
+display_name: My Custom Skill
+---
+
+# Content starts here
+...
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `description` | Yes | Shown in CLAUDE.md nav tables |
+| `display_name` | No | Human-readable name. If omitted, derived from filename (`my-skill` becomes "My Skill") |
+
+## File Naming
+
+- Use **kebab-case** for filenames: `my-custom-skill.md`, not `MyCustomSkill.md`
+- The filename (minus extension) becomes the item's machine name
+- Use `.md` extension
+
+## What `bonsai update` Does
+
+When you run `bonsai update`:
+
+1. **Scans** each agent's workspace for files not yet tracked by Bonsai
+2. **Validates** frontmatter — shows warnings for files missing required fields
+3. **Prompts** you to select which files to track (multi-select, all pre-selected)
+4. **Tracks** selected files in `.bonsai.yaml` (config) and `.bonsai-lock.yaml` (lock)
+5. **Re-renders** catalog items from the latest embedded templates
+6. **Refreshes** CLAUDE.md nav tables (includes both catalog and custom items)
+
+## Catalog vs Custom
+
+| Aspect | Catalog Items | Custom Items |
+|--------|--------------|--------------|
+| Source | Built into the Bonsai binary | Created by you in your workspace |
+| Metadata | Separate `meta.yaml` file | YAML frontmatter in the file itself |
+| Re-renderable | Yes — templates re-rendered on update | No — your file is yours, never overwritten |
+| Tracked in config | Item name in skills list | Item name in list + metadata in `custom_items` |
+| Lock source | `catalog:skills/name` | `custom:skills/name` |
+
+<Aside type="tip">
+Custom skills are never overwritten by Bonsai. Once tracked, they are fully yours to maintain and modify.
+</Aside>

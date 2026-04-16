@@ -1,0 +1,19 @@
+{
+  "name": "bonsai-docs",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "latest",
+    "astro": "latest",
+    "js-yaml": "latest",
+    "starlight-links-validator": "latest",
+    "starlight-llms-txt": "latest"
+  }
+}

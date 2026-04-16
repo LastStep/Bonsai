@@ -1,0 +1,48 @@
+---
+title: Routines
+description: Periodic self-maintenance tasks — frequency, dashboards, and the routine lifecycle.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Periodic maintenance tasks that keep the project healthy. **Routines are managed exclusively by the Tech Lead** — code agents don't run them.
+
+## How They Work
+
+1. Each routine has a frequency and a concrete procedure
+2. Dashboard at `station/agent/Core/routines.md` tracks last-ran and next-due
+3. `routine-check` sensor flags overdue items at session start
+4. You tell the Tech Lead to run it — it follows the procedure and updates the dashboard
+
+<Aside>
+The `routine-check` sensor is auto-managed — Bonsai adds it when you install routines, removes it when you remove all routines.
+</Aside>
+
+## Routine Reference
+
+| Routine | Freq | What it does |
+|:--------|:-----|:-------------|
+| **dependency-audit** | 7d | Scan dependencies for known CVEs + unmaintained packages |
+| **vulnerability-scan** | 7d | SAST scan, secrets scan, dependency cross-reference |
+| **doc-freshness-check** | 7d | Find docs that drifted from recent code changes |
+| **infra-drift-check** | 7d | Compare declared IaC state vs actual cloud resources |
+| **backlog-hygiene** | 7d | Flag stale items, escalate P0s |
+| **status-hygiene** | 5d | Archive done items, validate pending items in Status.md |
+| **memory-consolidation** | 5d | Clean up and validate working memory entries |
+| **roadmap-accuracy** | 14d | Ensure Roadmap.md matches what's actually built + planned |
+
+## Running Routines
+
+```
+You:    Hi, get started
+Lead:   [startup flags: "OVERDUE: dependency-audit (last ran 12 days ago, due every 7)"]
+You:    Run the dependency audit
+Lead:   [follows procedure -> logs to RoutineLog.md -> updates dashboard]
+```
+
+**Proactive prompts:**
+- "Are any routines overdue?"
+- "Run all overdue routines"
+- "Run the vulnerability scan"
+
+Each routine has a concrete, step-by-step procedure — the agent doesn't improvise.
