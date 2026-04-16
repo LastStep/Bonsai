@@ -51,8 +51,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 
 	agent, exists := cfg.Agents[agentName]
 	if !exists {
-		tui.Error("Agent " + agentName + " is not installed.")
-		os.Exit(1)
+		tui.FatalPanel("Agent not installed", agentName+" is not in the current project.", "Run: bonsai list")
 	}
 
 	// Prevent removing tech-lead while other agents depend on it
@@ -81,7 +80,6 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	)
 
 	tui.TitledPanel("Remove", preview, tui.Amber)
-	tui.Blank()
 
 	confirmed, err := tui.AskConfirm("Remove "+agentDisplayName+"?", false)
 	if err != nil || !confirmed {
@@ -132,6 +130,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	tui.Success("Removed " + agentDisplayName)
+	tui.Blank()
 	return nil
 }
 
@@ -289,7 +288,6 @@ func runRemoveItem(name string, it itemType) error {
 		{"From", strings.Join(fromLabels, ", ")},
 	})
 	tui.TitledPanel("Remove Item", content, tui.Amber)
-	tui.Blank()
 
 	confirmed, err := tui.AskConfirm("Remove "+displayName+"?", false)
 	if err != nil || !confirmed {
@@ -358,6 +356,7 @@ func runRemoveItem(name string, it itemType) error {
 	}
 
 	tui.Success("Removed " + displayName)
+	tui.Blank()
 	return nil
 }
 

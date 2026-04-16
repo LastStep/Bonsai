@@ -92,8 +92,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 	agentDef := cat.GetAgent(agentType)
 	if agentDef == nil {
-		tui.Error("Unknown agent type: " + agentType)
-		os.Exit(1)
+		tui.FatalPanel("Unknown agent type", agentType+" is not in the catalog.", "Run: bonsai catalog")
 	}
 
 	// 2. Workspace directory
@@ -120,8 +119,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	if existingWorkspaces[workspace] {
-		tui.ErrorPanel("Workspace " + workspace + " is already in use.")
-		os.Exit(1)
+		tui.FatalPanel("Workspace conflict", workspace+" is already in use by another agent.", "Choose a different directory.")
 	}
 
 	// 3. Pick components
@@ -181,7 +179,6 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	)
 
 	tui.TitledPanel("Review", summary, tui.Water)
-	tui.Blank()
 
 	confirmed, err := tui.AskConfirm("Generate files?", true)
 	if err != nil || !confirmed {
@@ -228,6 +225,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	showWriteResults(&wr, workspace)
 
 	tui.Success(fmt.Sprintf("Added %s at %s", agentDef.DisplayName, workspace))
+	tui.Blank()
 	return nil
 }
 
@@ -235,8 +233,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Catalog, agentType string, installed *config.InstalledAgent) error {
 	agentDef := cat.GetAgent(agentType)
 	if agentDef == nil {
-		tui.Error("Unknown agent type: " + agentType)
-		os.Exit(1)
+		tui.FatalPanel("Unknown agent type", agentType+" is not in the catalog.", "Run: bonsai catalog")
 	}
 
 	tui.Info(fmt.Sprintf("%s is already installed at %s — showing uninstalled abilities.", agentDef.DisplayName, installed.Workspace))
@@ -353,7 +350,6 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 	)
 
 	tui.TitledPanel("Adding", summary, tui.Water)
-	tui.Blank()
 
 	confirmed, err := tui.AskConfirm("Generate files?", true)
 	if err != nil || !confirmed {
@@ -397,5 +393,6 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 	showWriteResults(&wr, installed.Workspace)
 
 	tui.Success(fmt.Sprintf("Added %d abilities to %s", totalSelected, agentDef.DisplayName))
+	tui.Blank()
 	return nil
 }

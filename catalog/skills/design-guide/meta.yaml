@@ -1,12 +1,10 @@
 name: design-guide
-description: UI/UX design patterns, component conventions, accessibility rules
-agents: [frontend, fullstack]
+description: Bonsai CLI design system — palette, spacing, panels, errors, command flow
+agents: [tech-lead, backend, frontend, fullstack]
 triggers:
   scenarios:
-    - Building or reviewing UI components, layouts, or visual styling
-    - Working with CSS, design tokens, or component libraries
+    - Modifying TUI styles, panels, display helpers, or color definitions
+    - Adding or changing CLI output formatting in any command
   paths:
-    - "**/components/**"
-    - "**/*.css"
-    - "**/*.scss"
-    - "**/styles/**"
+    - "internal/tui/**"
+    - "cmd/*.go"
