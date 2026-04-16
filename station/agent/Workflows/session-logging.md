@@ -3,6 +3,18 @@ tags: [workflow, logging]
 description: End-of-session log — what was done, decisions made, open items.
 ---
 
+## Triggers
+
+**Activate when:**
+- Writing an end-of-session log entry
+- Recording decisions made and open items from the current session
+
+**Examples:**
+> **User:** "Log what we did today"
+> **Action:** Load session-logging workflow, compile session summary, append to logs
+
+---
+
 # Workflow: Session Logging
 
 ---

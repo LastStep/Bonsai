@@ -3,6 +3,14 @@ tags: [skill, issues]
 description: Issue types, importance levels, domain labels, and classification heuristics for intake triage.
 ---
 
+## Triggers
+
+**Activate when:**
+- Classifying or triaging a new issue or bug report
+- Determining issue type, importance, and domain labels
+
+---
+
 # Skill: Issue Classification
 
 ---

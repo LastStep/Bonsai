@@ -3,6 +3,14 @@ tags: [skill, pr, workflow]
 description: How to create well-structured pull requests — branch naming, title conventions, body template, draft workflow.
 ---
 
+## Triggers
+
+**Activate when:**
+- Creating a pull request with proper conventions
+- Setting up branch naming, PR title, and body template
+
+---
+
 # Skill: PR Creation
 
 ---

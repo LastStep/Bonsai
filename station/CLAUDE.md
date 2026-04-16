@@ -20,6 +20,23 @@
 | [agent/Core/memory.md](agent/Core/memory.md) | Working memory — flags, work state, notes |
 | [agent/Core/self-awareness.md](agent/Core/self-awareness.md) | Context monitoring, hard thresholds |
 
+### Quick Triggers
+
+> Common phrases and commands that activate specific behaviors.
+
+| You want to... | Say or do this |
+|----------------|---------------|
+| Start a session | "Hi, get started" |
+| Reviewing agent output against the plan for correctness and standards | "[describe task]" or `/code-review` |
+| Starting end-to-end planning for a new feature or task | "[describe task]" or `/planning` |
+| Reviewing a pull request for correctness, security, and standards | "[describe task]" or `/pr-review` |
+| Running a security audit on the codebase or recent changes | "[describe task]" or `/security-audit` |
+| Designing a structured test plan for a feature or module | "[describe task]" or `/test-plan` |
+| Taking an issue from intake through to shipped code | "[describe task]" or `/issue-to-implementation` |
+| Self-review before shipping | "Verify everything" |
+| End session | "That's all" |
+
+
 ### Protocols (load after Core, every session)
 
 | File | Purpose |
@@ -31,25 +48,26 @@
 
 ### Workflows (load when starting an activity)
 
-| Activity | Read this |
-|----------|-----------|
-| Review agent output against the plan — correctness, standards, security | [agent/Workflows/code-review.md](agent/Workflows/code-review.md) |
-| End-to-end planning process — from request to dispatch-ready plan | [agent/Workflows/planning.md](agent/Workflows/planning.md) |
-| Review a pull request — context, scope, correctness, security, performance, standards | [agent/Workflows/pr-review.md](agent/Workflows/pr-review.md) |
-| Security audit — secrets scan, dependency audit, SAST, config review, access control, infrastructure | [agent/Workflows/security-audit.md](agent/Workflows/security-audit.md) |
-| End-of-session log — what was done, decisions made, open items | [agent/Workflows/session-logging.md](agent/Workflows/session-logging.md) |
-| Design a structured test plan for a feature — scope, prioritize, allocate test types | [agent/Workflows/test-plan.md](agent/Workflows/test-plan.md) |
+| Activate when... | Read this |
+|------------------|-----------|
+| Reviewing agent output against the plan for correctness and standards; Checking implementation changes before merging | [agent/Workflows/code-review.md](agent/Workflows/code-review.md) |
+| Starting end-to-end planning for a new feature or task; Translating requirements into a structured implementation plan | [agent/Workflows/planning.md](agent/Workflows/planning.md) |
+| Reviewing a pull request for correctness, security, and standards; Evaluating PR scope, changes, and test coverage | [agent/Workflows/pr-review.md](agent/Workflows/pr-review.md) |
+| Running a security audit on the codebase or recent changes; Checking for secrets, vulnerable dependencies, or unsafe patterns | [agent/Workflows/security-audit.md](agent/Workflows/security-audit.md) |
+| Writing an end-of-session log entry; Recording decisions made and open items from the current session | [agent/Workflows/session-logging.md](agent/Workflows/session-logging.md) |
+| Designing a structured test plan for a feature or module; Deciding test scope, priorities, and test type allocation | [agent/Workflows/test-plan.md](agent/Workflows/test-plan.md) |
 | End-of-session verification, review, cleanup, and summary — triggered by session wrap-up phrases. | [agent/Workflows/session-wrapup.md](agent/Workflows/session-wrapup.md) |
-| End-to-end autonomous workflow — issue intake, analysis, research, planning, agent dispatch, review loop, logging, audit, and close | [agent/Workflows/issue-to-implementation.md](agent/Workflows/issue-to-implementation.md) |
+| Taking an issue from intake through to shipped code; Running the full autonomous implementation workflow | [agent/Workflows/issue-to-implementation.md](agent/Workflows/issue-to-implementation.md) |
+| Synthesize all pending routine reports into a consolidated digest — extract actionable items, present interactive Q&A for decisions, route results to plans or backlog. | [agent/Workflows/routine-digest.md](agent/Workflows/routine-digest.md) |
 
 ### Skills (load when doing specific work)
 
-| Need | Read this |
-|------|-----------|
-| Plan format, tier rules, and template for writing implementation plans | [agent/Skills/planning-template.md](agent/Skills/planning-template.md) |
-| Structured code review checklist — correctness, security, performance, maintainability | [agent/Skills/review-checklist.md](agent/Skills/review-checklist.md) |
-| Issue types, importance levels, domain labels, and classification heuristics | [agent/Skills/issue-classification.md](agent/Skills/issue-classification.md) |
-| How to create well-structured pull requests — branch naming, title conventions, body template, draft workflow | [agent/Skills/pr-creation.md](agent/Skills/pr-creation.md) |
+| Activate when... | Read this |
+|------------------|-----------|
+| Writing a new implementation plan; Structuring a plan with tier rules and verification steps | [agent/Skills/planning-template.md](agent/Skills/planning-template.md) |
+| Performing a structured code review; Checking correctness, security, performance, and maintainability | [agent/Skills/review-checklist.md](agent/Skills/review-checklist.md) |
+| Classifying or triaging a new issue or bug report; Determining issue type, importance, and domain labels | [agent/Skills/issue-classification.md](agent/Skills/issue-classification.md) |
+| Creating a pull request with proper conventions; Setting up branch naming, PR title, and body template | [agent/Skills/pr-creation.md](agent/Skills/pr-creation.md) |
 
 ### Routines (periodic self-maintenance)
 
@@ -58,7 +76,7 @@
 | Backlog Hygiene | 7 days | [agent/Routines/backlog-hygiene.md](agent/Routines/backlog-hygiene.md) |
 | Dependency Audit | 7 days | [agent/Routines/dependency-audit.md](agent/Routines/dependency-audit.md) |
 | Doc Freshness Check | 7 days | [agent/Routines/doc-freshness-check.md](agent/Routines/doc-freshness-check.md) |
-| Infra Drift Check | 7 days | [agent/Routines/infra-drift-check.md](agent/Routines/infra-drift-check.md) |
+
 | Memory Consolidation | 5 days | [agent/Routines/memory-consolidation.md](agent/Routines/memory-consolidation.md) |
 | Roadmap Accuracy | 14 days | [agent/Routines/roadmap-accuracy.md](agent/Routines/roadmap-accuracy.md) |
 | Status Hygiene | 5 days | [agent/Routines/status-hygiene.md](agent/Routines/status-hygiene.md) |
@@ -80,6 +98,20 @@
 | [agent/Sensors/subagent-stop-review.sh](agent/Sensors/subagent-stop-review.sh) | SubagentStop | Outputs a structured review checklist when a dispatched agent finishes work |
 
 > Sensors run automatically — they are configured in `.claude/settings.json`.
+
+### How to Work
+
+> Decision heuristics — how to use this workspace effectively.
+
+- **Before starting work:** Check `station/Playbook/Status.md` for assigned tasks and `station/Playbook/Plans/Active/` for your current plan.
+- **When to load a Workflow:** You are starting a multi-step activity (planning, reviewing, auditing). Load the matching workflow from the table above and follow it end-to-end.
+- **When to load a Skill:** You need reference standards for a specific domain (coding style, API design, test strategy). Load it, use it, move on.
+- **Decision logging:** When you make or observe a significant architectural decision, append it to `station/Logs/KeyDecisionLog.md`.
+- **Out-of-scope findings:** Don't fix bugs, debt, or improvements outside your current task. Add them to `station/Playbook/Backlog.md`.
+- **Workspace evolution:** `bonsai add` (new abilities), `bonsai remove` (uninstall), `bonsai update` (sync custom files), `bonsai list` (see installed), `bonsai catalog` (browse available).
+- **You orchestrate, not implement.** Plan features, dispatch to code agents via worktrees, review their output. Never write application code directly.
+- **Check Backlog first:** Before creating new work items, check `station/Playbook/Backlog.md` for existing entries.
+- **After completing work:** Update `station/Playbook/Status.md` and log results.
 
 ---
 

@@ -3,6 +3,19 @@ tags: [workflow, review]
 description: Review a pull request — context, scope, correctness, security, performance, standards.
 ---
 
+## Triggers
+
+**Slash command:** `/pr-review`
+**Activate when:**
+- Reviewing a pull request for correctness, security, and standards
+- Evaluating PR scope, changes, and test coverage
+
+**Examples:**
+> **User:** "Review PR #42"
+> **Action:** Load pr-review workflow, fetch PR details, review against checklist
+
+---
+
 # Workflow: PR Review
 
 ---

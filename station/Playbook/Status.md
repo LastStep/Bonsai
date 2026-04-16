@@ -14,7 +14,8 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| Better trigger sections — Phase B (documentation) | 08 | tech-lead | Phase A merged (PR #10), Phase B next |
+| Better trigger sections — Phase C (new sensors) | 08 | tech-lead | Phase A (PR #10) + Phase B (PR #11) merged, Phase C next |
+<!-- Code index refresh — completed 2026-04-16, PR #12 -->
 <!-- Cross-link moved to Recently Done — merged 2026-04-16, PR #4 -->
 <!-- P0 file collision fix — merged 2026-04-16, PR #8 -->
 <!-- Docs & repo polish — merged 2026-04-16, PR #9 -->
@@ -30,6 +31,9 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Code index refresh — fix line drift + missing entries | 09 | tech-lead | 2026-04-16 |
+| Better trigger sections — Phase B (trigger documentation) | 08 | tech-lead | 2026-04-16 |
+| Better trigger sections — Phase A (trigger metadata system) | 08 | tech-lead | 2026-04-16 |
 | Community health files + README polish for public release | 07 | tech-lead | 2026-04-16 |
 | Fix case-insensitive file collision (index.md / INDEX.md) | 06 | tech-lead | 2026-04-16 |
 | README rewrite for open-source release | — | tech-lead | 2026-04-16 |

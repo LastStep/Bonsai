@@ -1,3 +1,10 @@
+## Triggers
+
+**Activate when:**
+- Performing a structured code review
+- Checking correctness, security, performance, and maintainability
+
+---
 # Review Checklist
 
 > [!important]

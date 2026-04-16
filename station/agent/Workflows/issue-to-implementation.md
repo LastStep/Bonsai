@@ -3,6 +3,19 @@ tags: [workflow, orchestration]
 description: End-to-end autonomous workflow — issue intake to shipped code via research, planning, agent dispatch, review loops, and structured logging.
 ---
 
+## Triggers
+
+**Slash command:** `/issue-to-implementation`
+**Activate when:**
+- Taking an issue from intake through to shipped code
+- Running the full autonomous implementation workflow
+
+**Examples:**
+> **User:** "Pick up issue #15 and ship it"
+> **Action:** Load issue-to-implementation workflow, analyze issue, plan, dispatch, review, merge
+
+---
+
 # Workflow: Issue to Implementation
 
 > The Tech Lead's primary orchestration workflow. Issue → shipped code.

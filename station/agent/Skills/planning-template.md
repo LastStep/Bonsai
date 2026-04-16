@@ -1,3 +1,10 @@
+## Triggers
+
+**Activate when:**
+- Writing a new implementation plan
+- Structuring a plan with tier rules and verification steps
+
+---
 # Skill: Planning Template
 
 ---

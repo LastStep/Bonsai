@@ -35,7 +35,7 @@ description: Periodic self-maintenance routines — schedules, dashboard, execut
 | Backlog Hygiene | 7 days | 2026-04-14 | 2026-04-21 | done |
 | Dependency Audit | 7 days | 2026-04-14 | 2026-04-21 | done |
 | Doc Freshness Check | 7 days | 2026-04-14 | 2026-04-21 | done |
-| Infra Drift Check | 7 days | 2026-04-14 | 2026-04-21 | done |
+
 | Memory Consolidation | 5 days | 2026-04-14 | 2026-04-19 | done |
 | Roadmap Accuracy | 14 days | 2026-04-14 | 2026-04-28 | done |
 | Status Hygiene | 5 days | 2026-04-14 | 2026-04-19 | done |
@@ -52,7 +52,7 @@ description: Periodic self-maintenance routines — schedules, dashboard, execut
 | Backlog Hygiene | `agent/Routines/backlog-hygiene.md` |
 | Dependency Audit | `agent/Routines/dependency-audit.md` |
 | Doc Freshness Check | `agent/Routines/doc-freshness-check.md` |
-| Infra Drift Check | `agent/Routines/infra-drift-check.md` |
+
 | Memory Consolidation | `agent/Routines/memory-consolidation.md` |
 | Roadmap Accuracy | `agent/Routines/roadmap-accuracy.md` |
 | Status Hygiene | `agent/Routines/status-hygiene.md` |

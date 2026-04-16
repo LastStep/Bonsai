@@ -3,6 +3,19 @@ tags: [workflow, testing]
 description: Design a structured test plan for a feature — scope, prioritize, allocate test types.
 ---
 
+## Triggers
+
+**Slash command:** `/test-plan`
+**Activate when:**
+- Designing a structured test plan for a feature or module
+- Deciding test scope, priorities, and test type allocation
+
+**Examples:**
+> **User:** "Plan the tests for the new API endpoints"
+> **Action:** Load test-plan workflow, analyze feature, design test coverage strategy
+
+---
+
 # Workflow: Test Plan
 
 ---

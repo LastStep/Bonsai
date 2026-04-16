@@ -3,6 +3,19 @@ tags: [workflow, planning]
 description: End-to-end planning process — from request to dispatch-ready plan.
 ---
 
+## Triggers
+
+**Slash command:** `/planning`
+**Activate when:**
+- Starting end-to-end planning for a new feature or task
+- Translating requirements into a structured implementation plan
+
+**Examples:**
+> **User:** "Plan the new caching layer"
+> **Action:** Load planning workflow, analyze requirements, write plan to Plans/Active/
+
+---
+
 # Workflow: Planning
 
 ---

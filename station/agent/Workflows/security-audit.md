@@ -3,6 +3,19 @@ tags: [workflow, security]
 description: Security audit — secrets scan, dependency audit, SAST, config review, access control, infrastructure.
 ---
 
+## Triggers
+
+**Slash command:** `/security-audit`
+**Activate when:**
+- Running a security audit on the codebase or recent changes
+- Checking for secrets, vulnerable dependencies, or unsafe patterns
+
+**Examples:**
+> **User:** "Check the project for security issues"
+> **Action:** Load security-audit workflow, scan secrets, audit deps, review config
+
+---
+
 # Workflow: Security Audit
 
 ---

@@ -3,6 +3,19 @@ tags: [workflow, review]
 description: Review agent output against the plan — correctness, standards, security.
 ---
 
+## Triggers
+
+**Slash command:** `/code-review`
+**Activate when:**
+- Reviewing agent output against the plan for correctness and standards
+- Checking implementation changes before merging
+
+**Examples:**
+> **User:** "Review the changes on the feature branch"
+> **Action:** Load code-review workflow, diff branch against main, check plan compliance
+
+---
+
 # Workflow: Code Review
 
 ---
