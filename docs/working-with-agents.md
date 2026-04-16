@@ -33,6 +33,8 @@ Every productive session follows a four-beat pattern:
 
 This rhythm works because it maps to how the agent is designed to operate. The orient phase triggers startup protocols. The commit phase gives the agent a clear objective. The verify phase activates self-review. The ship phase triggers session wrap-up.
 
+Each phase can also be triggered via slash command for workflows that map to it — `/planning` for COMMIT, `/security-audit` or `/code-review` for VERIFY, `/pr-review` before SHIP. See [Slash Commands](#slash-commands) for the full list.
+
 You don't need to follow this rigidly, but sessions that skip phases — especially orient and verify — consistently produce worse results.
 
 ---
@@ -351,13 +353,13 @@ These sentences propagate. The agent will apply the principle to decisions you h
 
 ### The Five Essential Phrases
 
-| Phrase | When | What it does |
-|:-------|:-----|:-------------|
-| `"Hi, get started"` | Session open | Triggers full startup sequence |
-| `"Verify everything"` | Before shipping | Activates self-review — catches real bugs |
-| `"You can design this yourself"` | Complex features | Delegates creative authority |
-| `"Thoughts?"` | After stating a position | Invites expertise without yielding authority |
-| `"That's all for the session"` | Session close | Triggers memory update, logging, cleanup |
+| Phrase | When | What it does | Slash alternative |
+|:-------|:-----|:-------------|:-----------------|
+| `"Hi, get started"` | Session open | Triggers full startup sequence | -- |
+| `"Verify everything"` | Before shipping | Activates self-review — catches real bugs | `/security-audit`, `/code-review` |
+| `"You can design this yourself"` | Complex features | Delegates creative authority | `/planning` |
+| `"Thoughts?"` | After stating a position | Invites expertise without yielding authority | -- |
+| `"That's all for the session"` | Session close | Triggers memory update, logging, cleanup | -- |
 
 ### Session Cheat Sheet
 
@@ -381,3 +383,21 @@ Verify:    "Verify everything"
 Ship:      "Commit and push"
            "That's all for the session"
 ```
+
+### Slash Commands
+
+Seven curated workflows are available as `/slash-commands` for explicit invocation:
+
+| Command | What it does |
+|:--------|:-------------|
+| `/planning` | End-to-end planning — from request to dispatch-ready plan |
+| `/code-review` | Review agent output against the plan — correctness, standards, security |
+| `/pr-review` | Review a pull request — scope, correctness, security, performance |
+| `/security-audit` | Security audit — secrets scan, dependency audit, SAST, config review |
+| `/issue-to-implementation` | End-to-end autonomous workflow — issue intake through to shipped code |
+| `/test-plan` | Design a structured test plan — scope, prioritize, allocate test types |
+| `/plan-execution` | Execute an assigned plan step by step — implement, test, report |
+
+Slash commands bypass auto-detection and invoke the workflow directly. Use them when you know exactly which workflow you want.
+
+> For the complete trigger reference — path-based auto-loading, scenario descriptions, and customization — see **[Triggers](triggers.md)**.
