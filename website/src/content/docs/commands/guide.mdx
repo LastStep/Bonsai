@@ -1,8 +1,59 @@
 ---
 title: bonsai guide
-description: bonsai guide — view the custom files guide
+description: View the custom files guide in your terminal — learn how to create custom skills, workflows, protocols, sensors, and routines.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+## Synopsis
+
+```
+bonsai guide
+```
+
+## Description
+
+`bonsai guide` renders the custom files guide directly in your terminal using [Glamour](https://github.com/charmbracelet/glamour) markdown rendering. The guide explains how to create custom skills, workflows, protocols, sensors, and routines that Bonsai can detect and track via [`bonsai update`](/Bonsai/commands/update/).
+
+The guide content is embedded in the Bonsai binary alongside the catalog. It covers:
+
+- The BONSAI frontmatter format required for custom files
+- File naming conventions (kebab-case, correct extensions)
+- Directory placement for each ability type
+- Required and optional frontmatter fields per type
+- Examples of custom skills, sensors, and routines
+
+This is a read-only command with no interactive prompts and no side effects. If the guide content contains YAML frontmatter, it is automatically stripped before rendering.
+
+<Aside type="tip">
+The guide output adapts to your terminal's color scheme. Glamour auto-detects whether you are using a light or dark terminal theme and renders accordingly.
+</Aside>
+
+## Flags
+
+This command has no flags.
+
+## Examples
+
+**View the guide:**
+
+```bash
+bonsai guide
+```
+
+Renders the full custom files guide with styled headings, code blocks, and tables in your terminal. The output is word-wrapped to 100 columns for readability.
+
+**Pipe to a pager for long output:**
+
+```bash
+bonsai guide | less -R
+```
+
+The `-R` flag preserves ANSI color codes when piping through `less`.
+
+## See Also
+
+- [`bonsai update`](/Bonsai/commands/update/) -- detect and track custom files after creating them
+- [Creating Custom Skills](/Bonsai/guides/creating-custom-skills/) -- detailed web guide for custom skills
+- [Creating Custom Sensors](/Bonsai/guides/creating-custom-sensors/) -- detailed web guide for custom sensors
+- [Creating Custom Routines](/Bonsai/guides/creating-custom-routines/) -- detailed web guide for custom routines

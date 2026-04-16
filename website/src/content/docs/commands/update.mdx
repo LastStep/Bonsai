@@ -1,8 +1,96 @@
 ---
 title: bonsai update
-description: bonsai update — sync workspace changes
+description: Sync workspace — detect custom files, re-render all generated abilities, and refresh CLAUDE.md navigation.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Steps, Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+## Synopsis
+
+```
+bonsai update
+```
+
+## Description
+
+`bonsai update` synchronizes your workspace by performing two operations:
+
+1. **Custom file detection** -- scans each agent's workspace directories (`agent/Skills/`, `agent/Workflows/`, `agent/Protocols/`, `agent/Sensors/`, `agent/Routines/`) for files that are not tracked by Bonsai. If valid custom files are found, you can choose to track them in the project config.
+
+2. **Workspace re-render** -- regenerates all agent files (abilities, CLAUDE.md navigation, `.claude/settings.json`, path-scoped rules, workflow skills). Files that have not been modified by the user are updated silently. Files that have been modified since Bonsai generated them trigger a conflict resolution flow.
+
+Run `bonsai update` after:
+- Creating a custom skill, workflow, protocol, sensor, or routine file in an agent's workspace
+- Upgrading Bonsai to a new version (to pick up updated catalog templates)
+- Manually editing `.bonsai.yaml` to add or change items
+
+## Interactive Flow
+
+<Steps>
+
+1. **Scan for custom files** -- Bonsai walks each agent's ability directories looking for untracked files. Files are matched by extension (`.md` for skills/workflows/protocols/routines, `.sh` for sensors) and checked against the config and lock file.
+
+2. **Show invalid files** -- files missing required frontmatter are flagged with a warning. Skills, workflows, and protocols need at minimum a `description` field. Sensors additionally require `event`. Routines additionally require `frequency`. Invalid files are skipped.
+
+3. **Multi-select picker** -- valid custom files are shown in a multi-select picker grouped by type (e.g. `[skill] My Custom Skill`). All are pre-selected. Uncheck any you do not want to track.
+
+4. **Regenerate workspace** -- Bonsai re-renders all generated files for all agents. This includes ability files, CLAUDE.md navigation, `.claude/settings.json`, path-scoped rules, and workflow skill files.
+
+5. **Handle conflicts** -- if any generated files have been modified by the user since the last generation, Bonsai presents a conflict resolution flow:
+   - A multi-select picker shows all conflicted files (pre-selected for update)
+   - Uncheck files you want to keep as-is
+   - Optionally create `.bak` backups before overwriting
+
+</Steps>
+
+<Aside type="tip">
+Custom files must include BONSAI frontmatter at the top of the file for Bonsai to recognize them. See [`bonsai guide`](/Bonsai/commands/guide/) for the required format, or run `bonsai guide` in your terminal.
+</Aside>
+
+## Flags
+
+This command has no flags.
+
+## Examples
+
+**Update after creating a custom skill:**
+
+Create a file at `backend/agent/Skills/my-pattern.md` with proper frontmatter, then run:
+
+```bash
+bonsai update
+# Custom files found — Backend
+# [skill] My Pattern — description from frontmatter
+# Track these custom files? (multi-select)
+# Syncing workspace...
+# ✓ Update complete — custom files tracked
+```
+
+The custom skill is added to `.bonsai.yaml` under the Backend agent's skills list, tracked in the lock file, and included in the regenerated `CLAUDE.md` navigation.
+
+**Update after upgrading Bonsai:**
+
+```bash
+bonsai update
+# Syncing workspace...
+# Updated: 12 files
+# ✓ Update complete — workspace synced
+```
+
+If no custom files are found, Bonsai skips the detection phase and proceeds directly to re-rendering.
+
+**Handling conflicts:**
+
+```bash
+bonsai update
+# 3 file(s) modified since Bonsai generated them.
+# Select which files to update. Unchecked files keep your changes.
+# (multi-select picker with conflicted files)
+# Create .bak backups before overwriting? (y/N)
+```
+
+## See Also
+
+- [`bonsai add`](/Bonsai/commands/add/) -- add catalog abilities (update handles custom files)
+- [`bonsai guide`](/Bonsai/commands/guide/) -- view the custom files format guide
+- [Abilities](/Bonsai/concepts/abilities/) -- understand skills, workflows, and protocols

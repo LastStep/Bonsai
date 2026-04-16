@@ -1,8 +1,140 @@
 ---
 title: bonsai add
-description: bonsai add — add agents or abilities
+description: Add a new agent to the project or add abilities to an existing agent.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Steps, FileTree, Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+## Synopsis
+
+```
+bonsai add
+```
+
+## Description
+
+`bonsai add` operates in two modes depending on the state of your project:
+
+1. **New agent mode** -- if the selected agent type is not yet installed, Bonsai walks you through the full setup: workspace directory, skills, workflows, protocols, sensors, and routines. It then generates the complete agent workspace.
+
+2. **Add abilities mode** -- if the selected agent type is already installed, Bonsai detects this and pivots to showing only uninstalled abilities. You pick which new items to add, and Bonsai appends them to the existing agent configuration and generates the new files.
+
+A `.bonsai.yaml` must exist before running this command. If it does not, Bonsai exits with an error directing you to run [`bonsai init`](/Bonsai/commands/init/) first.
+
+<Aside>
+The Tech Lead agent must be installed before you can add any other agent type. If Tech Lead is not present, Bonsai blocks the operation (except when adding Tech Lead itself via `bonsai add`).
+</Aside>
+
+## Interactive Flow: New Agent
+
+<Steps>
+
+1. **Agent type picker** -- select from available agent types (Tech Lead, Backend, Frontend, Fullstack, DevOps, Security). Each option shows the agent's description.
+
+2. **Workspace directory** -- text input. Where this agent's files will live (e.g. `backend/`). Defaults to the agent type name with a trailing slash. Tech Lead always uses the station directory. Bonsai blocks duplicate workspaces.
+
+3. **Skills picker** -- multi-select. Shows skills compatible with the selected agent type. Agent defaults are pre-selected. Required items are locked.
+
+4. **Workflows picker** -- multi-select. Shows compatible workflows with defaults pre-selected.
+
+5. **Protocols picker** -- multi-select. Shows compatible protocols with defaults pre-selected.
+
+6. **Sensors picker** -- multi-select. Shows compatible sensors (excluding `routine-check`, which is auto-managed). Defaults pre-selected.
+
+7. **Routines picker** -- multi-select. Shows compatible routines with execution frequency displayed. Defaults pre-selected.
+
+8. **Review summary** -- formatted tree of all selected abilities, grouped by category.
+
+9. **Confirm** -- yes/no. Declining exits without generating files.
+
+</Steps>
+
+## Interactive Flow: Add Abilities to Existing Agent
+
+When you select an agent type that is already installed, the flow changes:
+
+<Steps>
+
+1. **Agent type picker** -- same as above. Bonsai detects the agent is already installed and displays a notice.
+
+2. **Abilities pickers** -- Bonsai filters each category (skills, workflows, protocols, sensors, routines) to show only items that are **not yet installed**. Nothing is pre-selected since these are additions. If all available abilities are already installed, Bonsai reports this and exits.
+
+3. **Review summary** -- shows only the new abilities being added.
+
+4. **Confirm** -- yes/no. Declining exits without changes.
+
+</Steps>
+
+<Aside type="tip">
+If any routines are selected (in either mode), the `routine-check` sensor is automatically added to the agent's sensor list. It is also automatically removed if all routines are later removed.
+</Aside>
+
+## Flags
+
+This command has no flags.
+
+## Examples
+
+**Add a backend agent:**
+
+```bash
+bonsai add
+# Select "Backend" from the agent type picker
+# Enter workspace directory: backend/
+# Pick skills, workflows, protocols, sensors
+# Review and confirm
+```
+
+Generates the full `backend/` workspace with identity, protocols, skills, and sensors.
+
+**Add skills to an existing agent:**
+
+```bash
+bonsai add
+# Select "Backend" (already installed)
+# → "Backend is already installed at backend/ — showing uninstalled abilities."
+# Pick new skills/workflows to add
+# Review and confirm
+```
+
+Only new abilities are shown in the pickers. Selected items are appended to the existing configuration.
+
+**All abilities already installed:**
+
+```bash
+bonsai add
+# Select "Backend" (already installed, everything added)
+# → "All available abilities are already installed."
+```
+
+## What Gets Generated
+
+When adding a new agent (e.g. Backend at `backend/`):
+
+<FileTree>
+
+- backend/
+  - CLAUDE.md -- agent navigation (cross-linked)
+  - .claude/
+    - rules/ -- path-scoped rule files for skills with triggers
+    - skills/ -- workflow slash-command skill files
+  - agent/
+    - Core/
+      - identity.md
+      - memory.md
+      - self-awareness.md
+    - Protocols/ -- security, scope, startup, memory
+    - Workflows/ -- code-review, session-logging, etc.
+    - Skills/ -- coding-standards, etc.
+    - Sensors/ -- context-guard.sh, scope-guard-files.sh, etc.
+
+</FileTree>
+
+The root `.claude/settings.json` is also updated to include hook entries for the new agent's sensors.
+
+## See Also
+
+- [`bonsai init`](/Bonsai/commands/init/) -- must be run before add
+- [`bonsai remove`](/Bonsai/commands/remove/) -- remove agents or individual abilities
+- [`bonsai list`](/Bonsai/commands/list/) -- see what is currently installed
+- [`bonsai catalog`](/Bonsai/commands/catalog/) -- browse all available abilities before adding

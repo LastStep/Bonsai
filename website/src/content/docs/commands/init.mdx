@@ -1,8 +1,130 @@
 ---
 title: bonsai init
-description: bonsai init — create a new agent workspace
+description: Initialize Bonsai in the current project — set up project config, Tech Lead agent, and scaffolding.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Steps, FileTree, Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+## Synopsis
+
+```
+bonsai init
+```
+
+## Description
+
+`bonsai init` bootstraps Bonsai in your current project directory. It creates the project configuration file (`.bonsai.yaml`), installs the Tech Lead agent as the primary orchestrator, and generates project scaffolding (status tracker, roadmap, plans, logs).
+
+This is the first command you run in any new project. It walks you through an interactive setup that configures the project name, station directory, scaffolding selection, and Tech Lead abilities. After init completes, your project has a fully wired agent workspace ready for Claude Code sessions.
+
+If a `.bonsai.yaml` file already exists in the current directory, init exits with a warning and makes no changes. To add more agents after initialization, use [`bonsai add`](/Bonsai/commands/add/).
+
+## Interactive Flow
+
+<Steps>
+
+1. **Project name** -- text input, required. This is stored in `.bonsai.yaml` and used in generated file headings and navigation.
+
+2. **Description** -- text input, optional. A short description of the project.
+
+3. **Station directory** -- text input, defaults to `station/`. This is the root directory for the Tech Lead workspace and all project scaffolding. Must be a subdirectory (not empty or `/`).
+
+4. **Scaffolding picker** -- multi-select. Choose which project infrastructure to generate. Some items are required and cannot be unchecked:
+   - **Index** (required) -- project snapshot overview
+   - **Playbook** (required) -- status, roadmap, backlog, plans, standards
+   - **Logs** (required) -- field notes, decisions, routine log
+   - **Reports** (optional) -- completion report templates and staging area
+
+5. **Skills picker** -- multi-select. Choose skills for the Tech Lead agent. Agent defaults are pre-selected. Required items are locked.
+
+6. **Workflows picker** -- multi-select. Choose workflows for the Tech Lead. Includes procedures like planning, code review, security audit, and session logging.
+
+7. **Protocols picker** -- multi-select. Choose protocols for the Tech Lead. Protocols are hard rules (security, scope, startup sequence).
+
+8. **Sensors picker** -- multi-select. Choose sensors (automated hook scripts). The `routine-check` sensor is managed automatically and does not appear in the picker.
+
+9. **Routines picker** -- multi-select. Choose periodic maintenance routines (backlog hygiene, dependency audit, etc.). Each shows its execution frequency.
+
+10. **Review summary** -- a formatted tree showing all selected abilities organized by category. Inspect your choices before generating.
+
+11. **Confirm** -- yes/no prompt. Selecting "no" exits without generating any files.
+
+</Steps>
+
+<Aside type="tip">
+If any routines are selected, the `routine-check` sensor is automatically added to the Tech Lead's sensor list. You never need to install or manage it manually.
+</Aside>
+
+## Flags
+
+This command has no flags.
+
+## Examples
+
+**Basic initialization:**
+
+```bash
+cd my-project
+bonsai init
+```
+
+Walks through the full interactive flow and generates the workspace.
+
+**Init in a project that already has Bonsai:**
+
+```bash
+bonsai init
+# ⚠ .bonsai.yaml already exists. Skipping init.
+```
+
+If `.bonsai.yaml` is already present, init exits immediately with no changes.
+
+## What Gets Generated
+
+After completing `bonsai init` with default settings:
+
+<FileTree>
+
+- my-project/
+  - .bonsai.yaml -- project config (agents, scaffolding, docs path)
+  - .bonsai-lock.yaml -- file tracking (content hashes for conflict detection)
+  - .claude/
+    - settings.json -- auto-wired sensor hooks
+  - station/
+    - CLAUDE.md -- Tech Lead navigation (cross-linked)
+    - INDEX.md -- project snapshot
+    - agent/
+      - Core/
+        - identity.md
+        - memory.md
+        - self-awareness.md
+        - routines.md -- routine dashboard (if routines selected)
+      - Protocols/ -- security, scope, startup, memory
+      - Workflows/ -- planning, code-review, session-logging, etc.
+      - Skills/ -- planning-template, review-checklist, etc.
+      - Sensors/ -- context-guard.sh, scope-guard-files.sh, etc.
+      - Routines/ -- backlog-hygiene.md, dependency-audit.md, etc.
+    - Playbook/
+      - Status.md
+      - Roadmap.md
+      - Backlog.md
+      - Standards/
+        - SecurityStandards.md
+      - Plans/
+        - Active/
+    - Logs/
+      - FieldNotes.md
+      - KeyDecisionLog.md
+      - RoutineLog.md
+    - Reports/ -- (if selected)
+      - report-template.md
+      - Pending/
+
+</FileTree>
+
+## See Also
+
+- [`bonsai add`](/Bonsai/commands/add/) -- add code agents or abilities after initialization
+- [`bonsai list`](/Bonsai/commands/list/) -- see what is currently installed
+- [How Bonsai Works](/Bonsai/concepts/how-bonsai-works/) -- the mental model behind stations, agents, and the instruction stack
+- [Workspaces](/Bonsai/concepts/workspaces/) -- how agent workspaces are structured
