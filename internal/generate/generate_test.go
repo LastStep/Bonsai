@@ -627,3 +627,364 @@ func TestHowToWorkGuidePointer(t *testing.T) {
 		t.Error("workspace-guide pointer should NOT appear when hasWorkspaceGuide is false")
 	}
 }
+
+// ─── Trigger tests ──────────────────────────────────────────────────
+
+// buildTestCatalogWithItems creates a catalog with skills and workflows for trigger testing.
+func buildTestCatalogWithItems(extraFiles map[string]string) (*catalog.Catalog, error) {
+	fsys := fstest.MapFS{
+		// Shared core files
+		"core/memory.md.tmpl":    &fstest.MapFile{Data: []byte("memory for {{ .AgentDisplayName }}")},
+		"core/self-awareness.md": &fstest.MapFile{Data: []byte("self-awareness content")},
+		// Agent definition
+		"agents/test-agent/agent.yaml":            &fstest.MapFile{Data: []byte("name: test-agent\ndescription: test\n")},
+		"agents/test-agent/core/identity.md.tmpl": &fstest.MapFile{Data: []byte("I am {{ .AgentDisplayName }}")},
+	}
+	for k, v := range extraFiles {
+		fsys[k] = &fstest.MapFile{Data: []byte(v)}
+	}
+	return catalog.New(fsys)
+}
+
+func TestScenariosDescFallback(t *testing.T) {
+	// nil triggers → falls back to description
+	item := &catalog.CatalogItem{Description: "A test description"}
+	result := scenariosDesc(item)
+	if result != "A test description" {
+		t.Errorf("expected description fallback, got %q", result)
+	}
+
+	// non-nil triggers with scenarios → uses scenarios
+	item.Triggers = &catalog.Triggers{
+		Scenarios: []string{"When doing X"},
+	}
+	result = scenariosDesc(item)
+	if result != "When doing X" {
+		t.Errorf("expected scenario, got %q", result)
+	}
+
+	// nil item → empty string
+	result = scenariosDesc(nil)
+	if result != "" {
+		t.Errorf("expected empty string for nil item, got %q", result)
+	}
+}
+
+func TestScenariosDescJoinsScenarios(t *testing.T) {
+	item := &catalog.CatalogItem{
+		Description: "fallback",
+		Triggers: &catalog.Triggers{
+			Scenarios: []string{"Scenario A", "Scenario B", "Scenario C"},
+		},
+	}
+	result := scenariosDesc(item)
+	expected := "Scenario A; Scenario B; Scenario C"
+	if result != expected {
+		t.Errorf("expected %q, got %q", expected, result)
+	}
+}
+
+func TestClaudeMDUsesScenarios(t *testing.T) {
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"skills/test-skill/meta.yaml":     "name: test-skill\ndescription: A test skill\nagents: all\ntriggers:\n  scenarios:\n    - Testing trigger scenarios\n  paths:\n    - \"*.test\"\n",
+		"skills/test-skill/test-skill.md": "# Test Skill\n\nSkill content here.\n",
+		"workflows/planning/meta.yaml":    "name: planning\ndescription: End-to-end planning\nagents: all\ntriggers:\n  scenarios:\n    - Starting end-to-end planning\n    - Translating requirements into a plan\n  examples:\n    - prompt: \"Plan the caching layer\"\n      action: \"Load planning workflow\"\n",
+		"workflows/planning/planning.md":  "# Planning Workflow\n\nWorkflow content here.\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: ".",
+		Skills:    []string{"test-skill"},
+		Workflows: []string{"planning"},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	_ = WorkspaceClaudeMD(tmpDir, tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
+
+	claudeMD, err := os.ReadFile(filepath.Join(tmpDir, "CLAUDE.md"))
+	if err != nil {
+		t.Fatalf("read CLAUDE.md: %v", err)
+	}
+	content := string(claudeMD)
+
+	if !strings.Contains(content, "Activate when...") {
+		t.Error("CLAUDE.md should have 'Activate when...' header")
+	}
+	if !strings.Contains(content, "Testing trigger scenarios") {
+		t.Error("CLAUDE.md should contain skill scenario text")
+	}
+	if !strings.Contains(content, "Starting end-to-end planning") {
+		t.Error("CLAUDE.md should contain workflow scenario text")
+	}
+}
+
+func TestPathScopedRulesGenerated(t *testing.T) {
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"skills/test-skill/meta.yaml":     "name: test-skill\ndescription: A test skill\nagents: all\ntriggers:\n  scenarios:\n    - Testing trigger scenarios\n  paths:\n    - \"*.test\"\n    - \"**/test/**\"\n",
+		"skills/test-skill/test-skill.md": "# Test Skill\n\nSkill content here.\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: "station/",
+		Skills:    []string{"test-skill"},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	err = PathScopedRules(tmpDir, cfg, cat, lock, &wr, false)
+	if err != nil {
+		t.Fatalf("PathScopedRules: %v", err)
+	}
+
+	rulePath := filepath.Join(tmpDir, "station", ".claude", "rules", "skill-test-skill.md")
+	data, err := os.ReadFile(rulePath)
+	if err != nil {
+		t.Fatalf("rule file not created: %v", err)
+	}
+	content := string(data)
+
+	if !strings.Contains(content, "paths:") {
+		t.Error("rule file should contain paths: frontmatter")
+	}
+	if !strings.Contains(content, "*.test") {
+		t.Error("rule file should contain the path glob")
+	}
+	if !strings.Contains(content, "Testing trigger scenarios") {
+		t.Error("rule file should contain scenario text")
+	}
+}
+
+func TestPathScopedRulesSkippedWhenNoPaths(t *testing.T) {
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"skills/no-paths/meta.yaml":   "name: no-paths\ndescription: A skill without paths\nagents: all\ntriggers:\n  scenarios:\n    - No paths skill\n",
+		"skills/no-paths/no-paths.md": "# No Paths Skill\n\nContent.\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: "station/",
+		Skills:    []string{"no-paths"},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	_ = PathScopedRules(tmpDir, cfg, cat, lock, &wr, false)
+
+	rulePath := filepath.Join(tmpDir, "station", ".claude", "rules", "skill-no-paths.md")
+	if _, err := os.Stat(rulePath); err == nil {
+		t.Error("rule file should NOT be created for skill without paths")
+	}
+}
+
+func TestWorkflowSkillsGenerated(t *testing.T) {
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"workflows/planning/meta.yaml":   "name: planning\ndescription: End-to-end planning\nagents: all\ntriggers:\n  scenarios:\n    - Starting end-to-end planning\n  examples:\n    - prompt: \"Plan the caching layer\"\n      action: \"Load planning workflow\"\n",
+		"workflows/planning/planning.md": "# Planning Workflow\n\nWorkflow content here.\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: "station/",
+		Workflows: []string{"planning"},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	err = WorkflowSkills(tmpDir, cfg, cat, lock, &wr, false)
+	if err != nil {
+		t.Fatalf("WorkflowSkills: %v", err)
+	}
+
+	skillPath := filepath.Join(tmpDir, "station", ".claude", "skills", "planning", "SKILL.md")
+	data, err := os.ReadFile(skillPath)
+	if err != nil {
+		t.Fatalf("SKILL.md not created: %v", err)
+	}
+	content := string(data)
+
+	if !strings.Contains(content, "name: planning") {
+		t.Error("SKILL.md should contain workflow name")
+	}
+	if !strings.Contains(content, "Starting end-to-end planning") {
+		t.Error("SKILL.md should contain scenario description")
+	}
+	if !strings.Contains(content, "Plan the caching layer") {
+		t.Error("SKILL.md should contain example prompt")
+	}
+}
+
+func TestWorkflowSkillsSkippedWhenNotCurated(t *testing.T) {
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"workflows/session-logging/meta.yaml":          "name: session-logging\ndescription: End-of-session log\nagents: all\ntriggers:\n  scenarios:\n    - Logging session\n",
+		"workflows/session-logging/session-logging.md": "# Session Logging\n\nContent.\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: "station/",
+		Workflows: []string{"session-logging"},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	_ = WorkflowSkills(tmpDir, cfg, cat, lock, &wr, false)
+
+	skillPath := filepath.Join(tmpDir, "station", ".claude", "skills", "session-logging", "SKILL.md")
+	if _, err := os.Stat(skillPath); err == nil {
+		t.Error("SKILL.md should NOT be created for non-curated workflow")
+	}
+}
+
+func TestTriggerSectionPrepended(t *testing.T) {
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"skills/test-skill/meta.yaml":     "name: test-skill\ndescription: A test skill\nagents: all\ntriggers:\n  scenarios:\n    - Testing trigger scenarios\n  paths:\n    - \"*.test\"\n",
+		"skills/test-skill/test-skill.md": "# Test Skill\n\nSkill content here.\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: ".",
+		Skills:    []string{"test-skill"},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	err = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
+	if err != nil {
+		t.Fatalf("AgentWorkspace: %v", err)
+	}
+
+	skillPath := filepath.Join(tmpDir, "agent", "Skills", "test-skill.md")
+	data, err := os.ReadFile(skillPath)
+	if err != nil {
+		t.Fatalf("read skill file: %v", err)
+	}
+	content := string(data)
+
+	if !strings.HasPrefix(content, "## Triggers") {
+		t.Error("skill file should start with '## Triggers' section")
+	}
+	if !strings.Contains(content, "Testing trigger scenarios") {
+		t.Error("skill file should contain scenario text in trigger section")
+	}
+	if !strings.Contains(content, "# Test Skill") {
+		t.Error("skill file should still contain original content after trigger section")
+	}
+}
+
+func TestBackwardCompatNilTriggers(t *testing.T) {
+	// Build catalog with NO triggers — should work fine
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"skills/plain-skill/meta.yaml":      "name: plain-skill\ndescription: A plain skill\nagents: all\n",
+		"skills/plain-skill/plain-skill.md": "# Plain Skill\n\nContent.\n",
+		"workflows/plain-wf/meta.yaml":      "name: plain-wf\ndescription: A plain workflow\nagents: all\n",
+		"workflows/plain-wf/plain-wf.md":    "# Plain Workflow\n\nContent.\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: ".",
+		Skills:    []string{"plain-skill"},
+		Workflows: []string{"plain-wf"},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+
+	// AgentWorkspace should not crash
+	err = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr, false)
+	if err != nil {
+		t.Fatalf("AgentWorkspace with nil triggers should not error: %v", err)
+	}
+
+	// PathScopedRules should not crash or create files
+	var wr2 WriteResult
+	err = PathScopedRules(tmpDir, cfg, cat, lock, &wr2, false)
+	if err != nil {
+		t.Fatalf("PathScopedRules with nil triggers should not error: %v", err)
+	}
+	for _, f := range wr2.Files {
+		if strings.Contains(f.RelPath, "rules") {
+			t.Error("should not create rule files when no paths triggers")
+		}
+	}
+
+	// WorkflowSkills should not crash (plain-wf is not curated)
+	var wr3 WriteResult
+	err = WorkflowSkills(tmpDir, cfg, cat, lock, &wr3, false)
+	if err != nil {
+		t.Fatalf("WorkflowSkills with nil triggers should not error: %v", err)
+	}
+
+	// Verify skill file does NOT have trigger section
+	skillPath := filepath.Join(tmpDir, "agent", "Skills", "plain-skill.md")
+	data, err := os.ReadFile(skillPath)
+	if err != nil {
+		t.Fatalf("read skill file: %v", err)
+	}
+	if strings.HasPrefix(string(data), "## Triggers") {
+		t.Error("skill file without triggers should not start with trigger section")
+	}
+}

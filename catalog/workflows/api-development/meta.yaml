@@ -1,3 +1,10 @@
 name: api-development
 description: Spec-first API development — define contract, generate scaffolding, implement, test, document
 agents: [backend, fullstack]
+triggers:
+  scenarios:
+    - Building a new API endpoint or service from requirements
+    - Implementing CRUD operations, middleware, or API integrations
+  examples:
+    - prompt: "Build the user management API"
+      action: "Load api-development workflow, design endpoints, implement handlers"

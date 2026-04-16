@@ -1,3 +1,10 @@
 name: session-logging
 description: End-of-session log — what was done, decisions made, open items
 agents: all
+triggers:
+  scenarios:
+    - Writing an end-of-session log entry
+    - Recording decisions made and open items from the current session
+  examples:
+    - prompt: "Log what we did today"
+      action: "Load session-logging workflow, compile session summary, append to logs"

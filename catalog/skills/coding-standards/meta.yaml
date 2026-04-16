@@ -1,3 +1,14 @@
 name: coding-standards
 description: Language-specific coding standards — formatting, linting, patterns
 agents: [backend, devops, frontend, fullstack, security]
+triggers:
+  scenarios:
+    - Writing or reviewing source code in any language
+    - Applying formatting, linting, or naming conventions
+  paths:
+    - "*.go"
+    - "*.py"
+    - "*.js"
+    - "*.ts"
+    - "*.java"
+    - "*.rs"

@@ -112,6 +112,27 @@ func descFor(names []string, cat *catalog.Catalog, category string, customItems 
 	return result
 }
 
+// scenariosDesc returns a trigger-aware description for CLAUDE.md tables.
+// Uses triggers.scenarios (joined with "; ") if available, falls back to description.
+func scenariosDesc(item *catalog.CatalogItem) string {
+	if item != nil && item.Triggers != nil && len(item.Triggers.Scenarios) > 0 {
+		return strings.Join(item.Triggers.Scenarios, "; ")
+	}
+	if item != nil {
+		return item.Description
+	}
+	return ""
+}
+
+// CuratedSlashWorkflows is the set of workflows that get .claude/skills/ files
+// and appear in the Quick Triggers table. Keep this small — each entry consumes
+// ~1,536 chars of context budget at session start.
+var CuratedSlashWorkflows = map[string]bool{
+	"planning": true, "code-review": true, "pr-review": true,
+	"security-audit": true, "issue-to-implementation": true,
+	"test-plan": true, "plan-execution": true,
+}
+
 // ─── Write result types ────────────────────────────────────────────────
 
 // FileAction describes what happened to a single file during generation.
@@ -549,6 +570,40 @@ func howToWorkLines(agentName string, docsPrefix string, hasRoutines bool, hasWo
 	return lines
 }
 
+func quickTriggersLines(installed *config.InstalledAgent, cat *catalog.Catalog) []string {
+	var lines []string
+	lines = append(lines,
+		"### Quick Triggers", "",
+		"> Common phrases and commands that activate specific behaviors.", "",
+		"| You want to... | Say or do this |",
+		"|----------------|---------------|",
+		"| Start a session | \"Hi, get started\" |",
+	)
+
+	// Add workflow-based triggers from curated set — derive descriptions from catalog
+	for _, w := range installed.Workflows {
+		if !CuratedSlashWorkflows[w] {
+			continue
+		}
+		desc := catalog.DisplayNameFrom(w)
+		if item := cat.GetWorkflow(w); item != nil {
+			if item.Triggers != nil && len(item.Triggers.Scenarios) > 0 {
+				desc = item.Triggers.Scenarios[0]
+			} else {
+				desc = item.Description
+			}
+		}
+		lines = append(lines, fmt.Sprintf("| %s | \"[describe task]\" or `/%s` |", desc, w))
+	}
+
+	lines = append(lines,
+		"| Self-review before shipping | \"Verify everything\" |",
+		"| End session | \"That's all\" |",
+		"", "",
+	)
+	return lines
+}
+
 const (
 	bonsaiStartMarker = "<!-- BONSAI_START -->"
 	bonsaiEndMarker   = "<!-- BONSAI_END -->"
@@ -578,6 +633,10 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 		"| [agent/Core/self-awareness.md](agent/Core/self-awareness.md) | Context monitoring, hard thresholds |", "",
 	)
 
+	// Quick Triggers reference
+	qt := quickTriggersLines(installed, cat)
+	lines = append(lines, qt...)
+
 	if len(installed.Protocols) > 0 {
 		protoDescs := descFor(installed.Protocols, cat, "protocol", custom)
 		lines = append(lines,
@@ -595,11 +654,17 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 		wfDescs := descFor(installed.Workflows, cat, "workflow", custom)
 		lines = append(lines,
 			"### Workflows (load when starting an activity)", "",
-			"| Activity | Read this |",
-			"|----------|-----------|",
+			"| Activate when... | Read this |",
+			"|------------------|-----------|",
 		)
 		for _, w := range installed.Workflows {
-			lines = append(lines, fmt.Sprintf("| %s | [agent/Workflows/%s.md](agent/Workflows/%s.md) |", wfDescs[w], w, w))
+			desc := wfDescs[w]
+			if item := cat.GetWorkflow(w); item != nil {
+				if sd := scenariosDesc(item); sd != "" {
+					desc = sd
+				}
+			}
+			lines = append(lines, fmt.Sprintf("| %s | [agent/Workflows/%s.md](agent/Workflows/%s.md) |", desc, w, w))
 		}
 		lines = append(lines, "")
 	}
@@ -608,11 +673,17 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 		skillDescs := descFor(installed.Skills, cat, "skill", custom)
 		lines = append(lines,
 			"### Skills (load when doing specific work)", "",
-			"| Need | Read this |",
-			"|------|-----------|",
+			"| Activate when... | Read this |",
+			"|------------------|-----------|",
 		)
 		for _, s := range installed.Skills {
-			lines = append(lines, fmt.Sprintf("| %s | [agent/Skills/%s.md](agent/Skills/%s.md) |", skillDescs[s], s, s))
+			desc := skillDescs[s]
+			if item := cat.GetSkill(s); item != nil {
+				if sd := scenariosDesc(item); sd != "" {
+					desc = sd
+				}
+			}
+			lines = append(lines, fmt.Sprintf("| %s | [agent/Skills/%s.md](agent/Skills/%s.md) |", desc, s, s))
 		}
 		lines = append(lines, "")
 	}
@@ -956,6 +1027,134 @@ func RoutineDashboard(projectRoot string, workspaceRoot string, installed *confi
 	return nil
 }
 
+// PathScopedRules generates .claude/rules/skill-{name}.md files for skills
+// that have triggers.paths defined. These auto-load when Claude reads matching files.
+func PathScopedRules(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
+	for _, installed := range cfg.Agents {
+		for _, skillName := range installed.Skills {
+			item := cat.GetSkill(skillName)
+			if item == nil || item.Triggers == nil || len(item.Triggers.Paths) == 0 {
+				continue
+			}
+
+			// Build content
+			var lines []string
+			lines = append(lines, "---")
+			lines = append(lines, "paths:")
+			for _, p := range item.Triggers.Paths {
+				lines = append(lines, fmt.Sprintf("  - \"%s\"", p))
+			}
+			lines = append(lines, "---", "")
+			lines = append(lines, fmt.Sprintf("When working with files matching these paths, load and follow the **%s** skill at `%sagent/Skills/%s.md`.",
+				item.DisplayName, installed.Workspace, skillName))
+
+			if len(item.Triggers.Scenarios) > 0 {
+				lines = append(lines, "", "Activate when:")
+				for _, s := range item.Triggers.Scenarios {
+					lines = append(lines, "- "+s)
+				}
+			}
+			lines = append(lines, "")
+
+			content := []byte(strings.Join(lines, "\n"))
+			relPath := filepath.Join(installed.Workspace, ".claude", "rules", "skill-"+skillName+".md")
+			r := writeFile(projectRoot, relPath, content, "generated:rule-skill-"+skillName, lock, force)
+			result.Add(r)
+		}
+	}
+	return nil
+}
+
+// WorkflowSkills generates .claude/skills/{name}/SKILL.md files for curated
+// workflows, enabling /slash-command invocation and description-based auto-invocation.
+func WorkflowSkills(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
+	for _, installed := range cfg.Agents {
+		for _, wfName := range installed.Workflows {
+			if !CuratedSlashWorkflows[wfName] {
+				continue
+			}
+			item := cat.GetWorkflow(wfName)
+			if item == nil {
+				continue
+			}
+
+			var lines []string
+			lines = append(lines, "---")
+			lines = append(lines, fmt.Sprintf("name: %s", wfName))
+
+			// Description from scenarios or fallback
+			desc := item.Description
+			if item.Triggers != nil && len(item.Triggers.Scenarios) > 0 {
+				desc = strings.Join(item.Triggers.Scenarios, ". ")
+			}
+			lines = append(lines, fmt.Sprintf("description: %s", desc))
+
+			// when_to_use from scenarios
+			if item.Triggers != nil && len(item.Triggers.Scenarios) > 0 {
+				lines = append(lines, fmt.Sprintf("when_to_use: %s", strings.Join(item.Triggers.Scenarios, "; ")))
+			}
+
+			lines = append(lines, "---", "")
+			lines = append(lines, fmt.Sprintf("Load and follow the **%s** workflow at `%sagent/Workflows/%s.md`.",
+				item.DisplayName, installed.Workspace, wfName))
+
+			// Examples section
+			if item.Triggers != nil && len(item.Triggers.Examples) > 0 {
+				lines = append(lines, "", "## Examples", "")
+				for _, ex := range item.Triggers.Examples {
+					lines = append(lines, fmt.Sprintf("> **User:** \"%s\"", ex.Prompt))
+					lines = append(lines, fmt.Sprintf("> **Action:** %s", ex.Action))
+					lines = append(lines, "")
+				}
+			}
+			lines = append(lines, "")
+
+			content := []byte(strings.Join(lines, "\n"))
+			relPath := filepath.Join(installed.Workspace, ".claude", "skills", wfName, "SKILL.md")
+			r := writeFile(projectRoot, relPath, content, "generated:skill-workflow-"+wfName, lock, force)
+			result.Add(r)
+		}
+	}
+	return nil
+}
+
+// triggerSection generates a markdown trigger header from catalog triggers metadata.
+func triggerSection(item *catalog.CatalogItem, workspace string, category string, isSlashCommand bool) string {
+	if item.Triggers == nil {
+		return ""
+	}
+	t := item.Triggers
+
+	var lines []string
+	lines = append(lines, "## Triggers", "")
+
+	if isSlashCommand {
+		lines = append(lines, fmt.Sprintf("**Slash command:** `/%s`", item.Name))
+	}
+
+	if len(t.Paths) > 0 {
+		lines = append(lines, fmt.Sprintf("**Auto-loads when reading:** %s", strings.Join(t.Paths, ", ")))
+	}
+
+	if len(t.Scenarios) > 0 {
+		lines = append(lines, "**Activate when:**")
+		for _, s := range t.Scenarios {
+			lines = append(lines, "- "+s)
+		}
+	}
+
+	if len(t.Examples) > 0 {
+		lines = append(lines, "", "**Examples:**")
+		for _, ex := range t.Examples {
+			lines = append(lines, fmt.Sprintf("> **User:** \"%s\"", ex.Prompt))
+			lines = append(lines, fmt.Sprintf("> **Action:** %s", ex.Action))
+		}
+	}
+
+	lines = append(lines, "", "---", "")
+	return strings.Join(lines, "\n")
+}
+
 // AgentWorkspace generates the full agent/ directory in a workspace.
 func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	workspaceRoot := filepath.Join(projectRoot, installed.Workspace)
@@ -1068,6 +1267,12 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if err != nil {
 			return fmt.Errorf("skill %s: %w", skillName, err)
 		}
+
+		// Prepend trigger section if triggers exist
+		if ts := triggerSection(item, installed.Workspace, "skill", false); ts != "" {
+			content = append([]byte(ts), content...)
+		}
+
 		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Skills", skillName+".md"))
 		r := writeFile(projectRoot, relPath, content, "catalog:skills/"+skillName, lock, force)
 		result.Add(r)
@@ -1083,6 +1288,12 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if err != nil {
 			return err
 		}
+
+		// Prepend trigger section if triggers exist
+		if ts := triggerSection(item, installed.Workspace, "workflow", CuratedSlashWorkflows[wfName]); ts != "" {
+			data = append([]byte(ts), data...)
+		}
+
 		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Workflows", wfName+".md"))
 		r := writeFile(projectRoot, relPath, data, "catalog:workflows/"+wfName, lock, force)
 		result.Add(r)

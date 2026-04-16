@@ -1,3 +1,11 @@
 name: container-standards
 description: Container and orchestration standards — Docker multi-stage builds, image security, Kubernetes manifests
 agents: [devops]
+triggers:
+  scenarios:
+    - Writing or reviewing Dockerfiles, docker-compose, or Kubernetes manifests
+    - Configuring container builds, images, or orchestration
+  paths:
+    - "**/Dockerfile*"
+    - "**/docker-compose*"
+    - "**/k8s/**"

@@ -1,3 +1,7 @@
 name: dispatch
 description: How to dispatch work to code agents — triage rules, prompt structure, iteration tracking
 agents: [tech-lead]
+triggers:
+  scenarios:
+    - Dispatching work to a code agent via worktree
+    - Writing an agent dispatch prompt with plan steps

@@ -1,3 +1,10 @@
 name: planning
 description: End-to-end planning process — from request to dispatch-ready plan
 agents: [tech-lead]
+triggers:
+  scenarios:
+    - Starting end-to-end planning for a new feature or task
+    - Translating requirements into a structured implementation plan
+  examples:
+    - prompt: "Plan the new caching layer"
+      action: "Load planning workflow, analyze requirements, write plan to Plans/Active/"

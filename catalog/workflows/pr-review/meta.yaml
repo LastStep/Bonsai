@@ -1,3 +1,10 @@
 name: pr-review
 description: Review a pull request — context, scope, correctness, security, performance, standards
 agents: [tech-lead]
+triggers:
+  scenarios:
+    - Reviewing a pull request for correctness, security, and standards
+    - Evaluating PR scope, changes, and test coverage
+  examples:
+    - prompt: "Review PR #42"
+      action: "Load pr-review workflow, fetch PR details, review against checklist"

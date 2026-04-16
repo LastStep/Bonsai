@@ -1,3 +1,12 @@
 name: design-guide
 description: UI/UX design patterns, component conventions, accessibility rules
 agents: [frontend, fullstack]
+triggers:
+  scenarios:
+    - Building or reviewing UI components, layouts, or visual styling
+    - Working with CSS, design tokens, or component libraries
+  paths:
+    - "**/components/**"
+    - "**/*.css"
+    - "**/*.scss"
+    - "**/styles/**"

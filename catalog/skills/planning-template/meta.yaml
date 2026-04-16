@@ -1,3 +1,7 @@
 name: planning-template
 description: Plan format, tier rules, and template for writing implementation plans
 agents: [tech-lead]
+triggers:
+  scenarios:
+    - Writing a new implementation plan
+    - Structuring a plan with tier rules and verification steps

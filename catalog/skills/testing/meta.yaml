@@ -1,3 +1,12 @@
 name: testing
 description: Testing conventions — frameworks, patterns, coverage requirements
 agents: [backend, frontend, fullstack, security]
+triggers:
+  scenarios:
+    - Writing or reviewing unit tests, integration tests, or test fixtures
+    - Evaluating test coverage or test quality
+  paths:
+    - "**/*_test.go"
+    - "**/*.test.*"
+    - "**/*.spec.*"
+    - "**/test/**"

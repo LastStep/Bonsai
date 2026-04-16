@@ -1,3 +1,10 @@
 name: test-plan
 description: Design a structured test plan for a feature — scope, prioritize, allocate test types
 agents: [tech-lead]
+triggers:
+  scenarios:
+    - Designing a structured test plan for a feature or module
+    - Deciding test scope, priorities, and test type allocation
+  examples:
+    - prompt: "Plan the tests for the new API endpoints"
+      action: "Load test-plan workflow, analyze feature, design test coverage strategy"

@@ -158,6 +158,8 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 				generate.EnsureRoutineCheckSensor(installed)
 				_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
 			}
+			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
+			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()

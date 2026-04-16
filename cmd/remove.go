@@ -119,11 +119,15 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	if deleteFiles {
 		agentDir := filepath.Join(cwd, agent.Workspace, "agent")
 		claudeMD := filepath.Join(cwd, agent.Workspace, "CLAUDE.md")
+		claudeDir := filepath.Join(cwd, agent.Workspace, ".claude")
 		if err := os.RemoveAll(agentDir); err == nil {
 			tui.Info("Deleted " + agentDir)
 		}
 		if err := os.Remove(claudeMD); err == nil {
 			tui.Info("Deleted " + claudeMD)
+		}
+		if err := os.RemoveAll(claudeDir); err == nil {
+			tui.Info("Deleted " + claudeDir)
 		}
 	}
 
@@ -305,6 +309,20 @@ func runRemoveItem(name string, it itemType) error {
 				relPath := filepath.Join(t.agent.Workspace, "agent", it.dir, name+it.ext)
 				lock.Untrack(relPath)
 				_ = os.Remove(filepath.Join(cwd, relPath))
+
+				// Clean up generated trigger files
+				if it.singular == "skill" {
+					rulePath := filepath.Join(t.agent.Workspace, ".claude", "rules", "skill-"+name+".md")
+					lock.Untrack(rulePath)
+					_ = os.Remove(filepath.Join(cwd, rulePath))
+				}
+				if it.singular == "workflow" {
+					skillDir := filepath.Join(t.agent.Workspace, ".claude", "skills", name)
+					skillPath := filepath.Join(skillDir, "SKILL.md")
+					lock.Untrack(filepath.Join(t.agent.Workspace, ".claude", "skills", name, "SKILL.md"))
+					_ = os.Remove(filepath.Join(cwd, skillPath))
+					_ = os.Remove(filepath.Join(cwd, skillDir)) // remove empty dir
+				}
 
 				// Routine-specific: update auto-sensor and dashboard
 				if it.singular == "routine" {

@@ -1,3 +1,12 @@
 name: auth-patterns
 description: Authentication and authorization patterns — flows, tokens, passwords, sessions, access control
 agents: [backend, fullstack, security]
+triggers:
+  scenarios:
+    - Implementing or reviewing authentication or authorization logic
+    - Working with session management, tokens, or access control
+  paths:
+    - "**/auth/**"
+    - "**/middleware/auth*"
+    - "**/login*"
+    - "**/session*"

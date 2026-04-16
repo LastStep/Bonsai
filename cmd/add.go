@@ -211,6 +211,8 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		Title("Generating workspace...").
 		Action(func() {
 			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
+			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
+			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()
@@ -378,6 +380,8 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 		Title("Generating files...").
 		Action(func() {
 			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
+			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
+			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()

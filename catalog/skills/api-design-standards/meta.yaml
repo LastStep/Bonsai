@@ -1,3 +1,12 @@
 name: api-design-standards
 description: REST API design conventions — URLs, methods, errors, pagination, versioning
 agents: [backend, fullstack, tech-lead]
+triggers:
+  scenarios:
+    - Designing or reviewing REST/GraphQL API endpoints
+    - Defining request/response schemas or versioning strategy
+  paths:
+    - "**/routes/**"
+    - "**/handlers/**"
+    - "**/controllers/**"
+    - "**/api/**"

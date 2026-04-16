@@ -1,3 +1,10 @@
 name: security-audit
 description: Security audit — secrets scan, dependency audit, SAST, config review, access control, infrastructure
 agents: [devops, security, tech-lead]
+triggers:
+  scenarios:
+    - Running a security audit on the codebase or recent changes
+    - Checking for secrets, vulnerable dependencies, or unsafe patterns
+  examples:
+    - prompt: "Check the project for security issues"
+      action: "Load security-audit workflow, scan secrets, audit deps, review config"
