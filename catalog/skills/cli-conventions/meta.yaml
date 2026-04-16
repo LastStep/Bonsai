@@ -1,3 +1,11 @@
 name: cli-conventions
 description: CLI design conventions — structure, flags, output, exit codes, configuration
 agents: [backend, fullstack]
+triggers:
+  scenarios:
+    - Building or reviewing CLI commands, flags, or argument parsing
+    - Designing command-line user experience
+  paths:
+    - "cmd/**"
+    - "**/cli/**"
+    - "**/*command*"

@@ -1,3 +1,7 @@
 name: workspace-guide
 description: Bonsai workspace operational guide — how to use workflows, skills, routines, sensors, and the Playbook effectively
 agents: all
+triggers:
+  scenarios:
+    - Learning how this agent workspace is organized
+    - Understanding workspace conventions and file purposes

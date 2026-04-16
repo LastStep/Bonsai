@@ -73,6 +73,7 @@ type CatalogItem struct {
 	Description string      `yaml:"description"`
 	Agents      AgentCompat `yaml:"agents"`
 	Required    AgentCompat `yaml:"required"`
+	Triggers    *Triggers   `yaml:"triggers,omitempty"`
 	ContentPath string      `yaml:"-"`
 }
 
@@ -86,6 +87,19 @@ type SensorItem struct {
 	Event       string      `yaml:"event"`
 	Matcher     string      `yaml:"matcher,omitempty"`
 	ContentPath string      `yaml:"-"`
+}
+
+// TriggerExample is a prompt-action pair showing how an ability activates.
+type TriggerExample struct {
+	Prompt string `yaml:"prompt"`
+	Action string `yaml:"action"`
+}
+
+// Triggers holds activation metadata for skills and workflows.
+type Triggers struct {
+	Scenarios []string         `yaml:"scenarios,omitempty"`
+	Examples  []TriggerExample `yaml:"examples,omitempty"`
+	Paths     []string         `yaml:"paths,omitempty"`
 }
 
 // RoutineItem represents a periodic self-maintenance routine.

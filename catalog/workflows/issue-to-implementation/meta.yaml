@@ -1,3 +1,10 @@
 name: issue-to-implementation
 description: End-to-end autonomous workflow — issue intake, analysis, research, planning, agent dispatch, review loop, logging, audit, and close
 agents: [tech-lead]
+triggers:
+  scenarios:
+    - Taking an issue from intake through to shipped code
+    - Running the full autonomous implementation workflow
+  examples:
+    - prompt: "Pick up issue #15 and ship it"
+      action: "Load issue-to-implementation workflow, analyze issue, plan, dispatch, review, merge"

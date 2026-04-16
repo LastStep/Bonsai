@@ -184,6 +184,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 		Action(func() {
 			_ = generate.Scaffolding(cwd, cfg, cat, lock, &wr, false)
 			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
+			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
+			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
 		}).
 		Run()

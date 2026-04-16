@@ -1,3 +1,10 @@
 name: reporting
 description: Completion report format — what was done, tested, issues encountered
 agents: [backend, devops, frontend, fullstack, security]
+triggers:
+  scenarios:
+    - Generating a structured completion or status report
+    - Documenting project progress, findings, or audit results
+  examples:
+    - prompt: "Write the completion report for this task"
+      action: "Load reporting workflow, compile findings, write to Reports/Pending/"

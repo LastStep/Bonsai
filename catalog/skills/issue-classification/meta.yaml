@@ -1,3 +1,7 @@
 name: issue-classification
 description: Issue types, importance levels, domain labels, and classification heuristics
 agents: [tech-lead]
+triggers:
+  scenarios:
+    - Classifying or triaging a new issue or bug report
+    - Determining issue type, importance, and domain labels

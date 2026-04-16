@@ -1,3 +1,12 @@
 name: mobile-patterns
 description: Mobile development patterns — state management, offline-first, navigation, performance
 agents: [fullstack]
+triggers:
+  scenarios:
+    - Developing or reviewing iOS or Android application code
+    - Working with mobile-specific patterns, navigation, or platform APIs
+  paths:
+    - "**/ios/**"
+    - "**/android/**"
+    - "**/*.swift"
+    - "**/*.kt"

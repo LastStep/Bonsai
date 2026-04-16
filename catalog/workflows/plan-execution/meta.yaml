@@ -1,3 +1,10 @@
 name: plan-execution
 description: Execute an assigned plan step by step — implement, test, report
 agents: [backend, devops, frontend, fullstack]
+triggers:
+  scenarios:
+    - Executing an approved implementation plan step by step
+    - Dispatching agents and tracking plan completion
+  examples:
+    - prompt: "Execute plan 08 phase A"
+      action: "Load plan-execution workflow, read plan, dispatch agents, track progress"

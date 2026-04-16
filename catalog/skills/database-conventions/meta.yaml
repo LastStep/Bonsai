@@ -1,3 +1,12 @@
 name: database-conventions
 description: SQL naming, migration patterns, schema design rules
 agents: [backend, fullstack, tech-lead]
+triggers:
+  scenarios:
+    - Writing or reviewing SQL migrations or database schemas
+    - Designing data models or query patterns
+  paths:
+    - "*.sql"
+    - "migrations/**"
+    - "**/schema.*"
+    - "**/models/**"
