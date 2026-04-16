@@ -1,8 +1,144 @@
 ---
 title: Dogfooding
-description: Dogfooding — how Bonsai manages itself
+description: How Bonsai manages itself — the station/ workspace is a real Tech Lead setup, and every feature is tested on the project that builds it.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { FileTree, Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Bonsai manages itself. The repository contains a `.bonsai.yaml` config and a full `station/` workspace — the same setup that users get when they run `bonsai init`. This means every feature Bonsai generates is tested on the project that builds it.
+
+## The Setup
+
+At the root of the Bonsai repo:
+
+```yaml
+# .bonsai.yaml
+project_name: Bonsai
+description: CLI tool for scaffolding Claude Code agent workspaces
+docs_path: station/
+scaffolding:
+  - index
+  - playbook
+  - logs
+  - reports
+agents:
+  tech-lead:
+    agent_type: tech-lead
+    workspace: station/
+    skills: [planning-template, review-checklist, issue-classification, pr-creation]
+    workflows: [code-review, planning, pr-review, security-audit, session-logging, ...]
+    sensors: [context-guard, scope-guard-files, session-context, status-bar, ...]
+    routines: [backlog-hygiene, dependency-audit, doc-freshness-check, ...]
+```
+
+The Tech Lead agent lives in `station/` and manages Bonsai's own development — planning features, reviewing code, running maintenance routines, and tracking project status.
+
+## The station/ Workspace
+
+The `station/` directory is a complete, real-world Tech Lead workspace:
+
+<FileTree>
+
+- station/
+  - CLAUDE.md — Tech Lead navigation (auto-generated, then customized)
+  - INDEX.md — project snapshot
+  - code-index.md — quick-nav to Go source files
+  - agent/
+    - Core/
+      - identity.md — who the Tech Lead is
+      - memory.md — working memory across sessions
+      - self-awareness.md — context monitoring thresholds
+      - routines.md — routine dashboard
+    - Skills/
+      - planning-template.md
+      - review-checklist.md
+      - issue-classification.md
+      - pr-creation.md
+    - Workflows/
+      - code-review.md
+      - planning.md
+      - pr-review.md
+      - security-audit.md
+      - session-logging.md
+      - session-wrapup.md (custom)
+      - issue-to-implementation.md
+      - routine-digest.md (custom)
+    - Protocols/
+      - memory.md
+      - scope-boundaries.md
+      - security.md
+      - session-start.md
+    - Sensors/
+      - context-guard.sh
+      - scope-guard-files.sh
+      - session-context.sh
+      - status-bar.sh
+      - dispatch-guard.sh
+      - routine-check.sh
+      - agent-review.sh
+      - subagent-stop-review.sh
+    - Routines/
+      - backlog-hygiene.md
+      - dependency-audit.md
+      - doc-freshness-check.md
+      - memory-consolidation.md
+      - roadmap-accuracy.md
+      - status-hygiene.md
+      - vulnerability-scan.md
+  - Playbook/
+    - Status.md — current tasks and progress
+    - Roadmap.md — milestones and phases
+    - Backlog.md — ideas, bugs, debt
+    - Plans/
+      - Active/ — numbered implementation plans
+    - Standards/
+      - SecurityStandards.md
+  - Logs/
+    - FieldNotes.md
+    - KeyDecisionLog.md
+    - RoutineLog.md
+  - Reports/
+    - Pending/
+
+</FileTree>
+
+## What the Tech Lead Does
+
+In the Bonsai project, the Tech Lead agent:
+
+- **Reads identity and memory** at session start — knows it's the Bonsai project's Tech Lead, recalls what happened in previous sessions
+- **Checks project status** — reviews `Status.md` for in-progress work, pending items, and recently completed tasks
+- **Works on plans** — reads active plans from `Playbook/Plans/Active/`, creates new plans following the planning-template skill
+- **Dispatches code agents** — sends implementation work to code agents via worktree-isolated subagents, with the dispatch-guard sensor enforcing plan references
+- **Reviews output** — checks code agent work against plans using the code-review and pr-review workflows
+- **Runs routines** — executes periodic maintenance (dependency audits, backlog hygiene, doc freshness checks) when flagged as overdue
+- **Maintains scaffolding** — updates Status.md, logs decisions to KeyDecisionLog.md, manages the Backlog
+
+<Aside>
+The Tech Lead also has two **custom abilities** that were created by the project team — `session-wrapup` (a structured end-of-session workflow) and `routine-digest` (synthesizes routine reports into actionable items). These were added by creating files in `agent/Workflows/` and running `bonsai update`.
+</Aside>
+
+## Why Dogfooding Matters
+
+Dogfooding creates a tight feedback loop:
+
+| Benefit | How it works |
+|:--------|:-------------|
+| **Realistic testing** | Every generated feature is used in a real project context, not just verified in a test directory |
+| **Immediate discovery** | If a generated file has a broken reference or a sensor has a bug, the team notices during normal work |
+| **Template accuracy** | Template variables like `{{ .ProjectName }}` are exercised in production — drift between templates and output is caught naturally |
+| **Workflow validation** | The planning, code-review, and dispatch workflows are the actual workflows used to develop Bonsai — they're battle-tested |
+| **Routine coverage** | Maintenance routines (dependency audit, doc freshness, backlog hygiene) run on real project data, not synthetic examples |
+
+The core principle: **if Bonsai can't manage itself effectively, it can't manage your project effectively.** Every pain point experienced during development becomes a feature improvement or bug fix.
+
+## Custom Additions
+
+The Bonsai project's workspace includes a few additions beyond the default Tech Lead setup:
+
+- **`pr-creation` skill** — a custom skill defining branch naming, title conventions, and PR body templates for the project
+- **`session-wrapup` workflow** — a custom end-of-session procedure with verification, cleanup, and summary steps
+- **`routine-digest` workflow** — a custom workflow for synthesizing routine reports into consolidated actionable digests
+- **`code-index.md`** — a manually maintained quick-navigation file mapping to Go source files (not part of standard scaffolding)
+
+These demonstrate how a real project extends the base workspace with project-specific abilities. See [Customizing Abilities](/Bonsai/guides/customizing-abilities/) for how to do this in your own workspace.

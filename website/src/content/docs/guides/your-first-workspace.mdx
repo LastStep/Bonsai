@@ -1,8 +1,240 @@
 ---
 title: Your First Workspace
-description: Your first workspace — end-to-end tutorial
+description: End-to-end tutorial — install Bonsai, create your first workspace, add a code agent, and start your first session.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Steps, Tabs, TabItem, FileTree, Aside } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+This guide walks you through setting up a complete Bonsai workspace from scratch — from installation to your first agent session.
+
+## Prerequisites
+
+- **Claude Code** — installed and configured in your project. Bonsai generates instruction files that Claude Code agents read.
+- **Go 1.24+** — only required if installing from source.
+
+## Install Bonsai
+
+<Tabs>
+  <TabItem label="Homebrew">
+    ```bash
+    brew install LastStep/tap/bonsai
+    ```
+  </TabItem>
+  <TabItem label="Binary download">
+    Grab the latest from [GitHub Releases](https://github.com/LastStep/Bonsai/releases):
+
+    ```bash
+    # Example for Linux amd64
+    curl -sL https://github.com/LastStep/Bonsai/releases/latest/download/bonsai_Linux_amd64.tar.gz | tar xz
+    sudo mv bonsai /usr/local/bin/
+    ```
+  </TabItem>
+  <TabItem label="From source">
+    Requires Go 1.24+:
+
+    ```bash
+    go install github.com/LastStep/Bonsai@latest
+    ```
+  </TabItem>
+</Tabs>
+
+Verify the installation:
+
+```bash
+bonsai --version
+```
+
+## Initialize Your Project
+
+<Steps>
+
+1. **Navigate to your project**
+
+   ```bash
+   cd your-project
+   bonsai init
+   ```
+
+   Bonsai launches an interactive TUI that walks you through setup.
+
+2. **Project name and description**
+
+   Enter a name and a short description for your project. These are used in generated files — the project name appears in agent identity files, and the description appears in INDEX.md.
+
+   ```
+   ? Project name: my-app
+   ? Project description: A task management API with a React frontend
+   ```
+
+3. **Station directory**
+
+   Choose where the station (command center) lives. The default is `station/` — this is where the Tech Lead agent and project scaffolding are generated.
+
+   ```
+   ? Station directory: station/
+   ```
+
+4. **Scaffolding selection**
+
+   Pick which project infrastructure modules to include. Three are required (INDEX, Playbook, Logs); Reports is optional.
+
+   ```
+   ? Select scaffolding:
+     [x] index      — Project snapshot
+     [x] playbook   — Status, roadmap, plans, standards
+     [x] logs       — Field notes, decisions, routine log
+     [ ] reports    — Completion reports (optional)
+   ```
+
+5. **Tech Lead abilities**
+
+   The Tech Lead is always installed first. You'll see four pickers — one each for skills, workflows, sensors, and routines. Defaults are pre-selected based on the Tech Lead agent type. Required items (protocols, core sensors) are checked and locked.
+
+   - **Skills picker**: planning-template, issue-classification, dispatch, review-checklist (defaults)
+   - **Workflows picker**: issue-to-implementation, planning, code-review, session-logging (defaults)
+   - **Sensors picker**: session-context, scope-guard-files, context-guard, status-bar (required), plus dispatch-guard, scope-guard-commands, subagent-stop-review (defaults)
+   - **Routines picker**: backlog-hygiene, dependency-audit, doc-freshness-check, memory-consolidation, roadmap-accuracy, status-hygiene, vulnerability-scan
+
+   You can add or remove items from the defaults. Required items cannot be unchecked.
+
+6. **Review and confirm**
+
+   Bonsai shows a summary of everything that will be generated — files, directories, hooks. Review it and confirm.
+
+</Steps>
+
+## What Got Generated
+
+After `bonsai init` completes, your project has this structure:
+
+<FileTree>
+
+- your-project/
+  - .bonsai.yaml — project config (tracks all agents and components)
+  - .bonsai-lock.yaml — file hashes for conflict detection
+  - .claude/
+    - settings.json — auto-wired sensor hooks
+  - CLAUDE.md — root navigation (points agents to their workspaces)
+  - station/ — Tech Lead workspace + project scaffolding
+    - CLAUDE.md — Tech Lead navigation table
+    - INDEX.md — project snapshot
+    - agent/
+      - Core/ — identity.md, memory.md, self-awareness.md, routines.md
+      - Protocols/ — memory.md, security.md, scope-boundaries.md, session-start.md
+      - Workflows/ — planning.md, code-review.md, session-logging.md, ...
+      - Skills/ — planning-template.md, review-checklist.md, ...
+      - Sensors/ — session-context.sh, scope-guard-files.sh, dispatch-guard.sh, ...
+      - Routines/ — backlog-hygiene.md, dependency-audit.md, ...
+    - Playbook/
+      - Status.md
+      - Roadmap.md
+      - Backlog.md
+      - Plans/
+        - Active/
+      - Standards/
+        - SecurityStandards.md
+    - Logs/
+      - FieldNotes.md
+      - KeyDecisionLog.md
+      - RoutineLog.md
+    - Reports/
+      - report-template.md
+      - Pending/
+
+</FileTree>
+
+Every file reference inside the workspace is a clickable markdown link — you can browse the structure in GitHub, VS Code, or Obsidian.
+
+## Add a Code Agent
+
+Now add a code agent to do the actual implementation work:
+
+<Steps>
+
+1. **Run `bonsai add`**
+
+   ```bash
+   bonsai add
+   ```
+
+2. **Pick an agent type**
+
+   ```
+   ? Agent type:
+     > backend
+       frontend
+       fullstack
+       devops
+       security
+   ```
+
+   For this tutorial, pick **backend**. If you're unsure, **fullstack** is a safe default for any project.
+
+3. **Customize abilities**
+
+   Just like during `bonsai init`, you'll see pickers for skills, workflows, and sensors. Defaults are pre-selected based on the agent type. For a backend agent:
+
+   - **Skills**: coding-standards, testing, database-conventions
+   - **Workflows**: plan-execution, reporting, session-logging
+   - **Sensors**: session-context, scope-guard-files (required), plus any extras you want
+
+4. **Review and confirm**
+
+   Bonsai generates the code agent's workspace in a new directory (e.g., `backend/`).
+
+</Steps>
+
+After adding the backend agent, your project now has:
+
+<FileTree>
+
+- your-project/
+  - .bonsai.yaml — updated with the new agent
+  - .claude/settings.json — updated with new sensor hooks
+  - station/ — Tech Lead workspace (unchanged)
+  - backend/ — new code agent workspace
+    - CLAUDE.md — backend agent navigation
+    - agent/
+      - Core/ — identity.md, memory.md, self-awareness.md
+      - Protocols/ — memory.md, security.md, scope-boundaries.md, session-start.md
+      - Workflows/ — plan-execution.md, reporting.md, session-logging.md
+      - Skills/ — coding-standards.md, testing.md, database-conventions.md
+      - Sensors/ — session-context.sh, scope-guard-files.sh
+
+</FileTree>
+
+## Start Your First Session
+
+Open your project in Claude Code and start a conversation:
+
+```
+You:    Hi, get started
+Agent:  [reads identity, checks memory, loads protocols, reviews status,
+         flags any overdue routines...]
+```
+
+<Aside type="caution">
+Always start with a greeting like "Hi, get started" before diving into tasks. The greeting triggers the full startup sequence — identity loading, memory recall, protocol enforcement, and status review. Jumping straight to a task risks the agent working without full context.
+</Aside>
+
+Wait for the agent to report its status, then give it work:
+
+```
+You:    I need a REST API for user profiles — CRUD endpoints with pagination
+Lead:   [asks clarifying questions, researches codebase, writes plan]
+```
+
+The Tech Lead will write an implementation plan to `station/Playbook/Plans/Active/`. Review the plan, then dispatch it:
+
+```
+You:    Looks good. Dispatch to the backend agent.
+Lead:   [dispatch-guard validates -> dispatches with worktree isolation]
+```
+
+## What to Try Next
+
+- Read [How Bonsai Works](/Bonsai/concepts/how-bonsai-works/) to understand the full architecture
+- Learn about [Abilities](/Bonsai/concepts/abilities/) — skills, workflows, and protocols
+- Study [Working With Agents](/Bonsai/guides/working-with-agents/) for communication patterns that get the best results
+- Browse the [Catalog](/Bonsai/catalog/overview/) to see all available abilities, sensors, and routines
+- Explore [Customizing Abilities](/Bonsai/guides/customizing-abilities/) to tailor the workspace to your project

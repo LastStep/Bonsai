@@ -1,47 +1,128 @@
 ---
 title: Sensors
-description: Automated enforcement via Claude Code hooks — events, matchers, blocking, and the full sensor reference.
+description: Automated enforcement via Claude Code hooks — how sensors work, the six hook events, and a complete reference of all 12 catalog sensors.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-Sensors are shell scripts wired into Claude Code's hook system. They fire automatically — you don't invoke them.
+Sensors are shell scripts wired into Claude Code's hook system. They fire automatically on specific events — you don't invoke them, and the agent can't bypass them. Sensors enforce boundaries, inject context, and monitor session health without any manual intervention.
 
-## Events
+## How Sensors Work
 
-| Event | When it fires | Can block? |
-|:------|:-------------|:-----------|
-| `SessionStart` | Beginning of a conversation | No |
-| `UserPromptSubmit` | Before Claude processes a user message | **Yes** (exit code 2) |
-| `PreToolUse` | Before a tool executes | **Yes** (exit code 2) |
-| `PostToolUse` | After a tool executes | No |
-| `Stop` | After every Claude response | **Yes** (exit code 2) |
-| `SubagentStop` | When a dispatched subagent finishes | No |
+The mechanical flow is:
+
+1. A **hook event** fires in Claude Code (e.g., the agent is about to edit a file)
+2. Claude Code checks `.claude/settings.json` for any hooks registered to that event
+3. If a hook has a **matcher**, it only fires when the tool name matches (e.g., `Edit|Write`)
+4. The sensor's **shell script** runs with the event context piped to stdin
+5. The script can output text (injected as context the agent must read), or exit with code 2 to **block the action**
+
+Bonsai generates the shell scripts from templates during `bonsai init` and `bonsai add`, and automatically wires them into `.claude/settings.json`. You never need to configure hooks manually.
+
+## Hook Events
+
+Claude Code provides six hook events that sensors can listen to:
+
+| Event | When it fires | Can block? | Use case |
+|:------|:-------------|:-----------|:---------|
+| `SessionStart` | Beginning of a conversation | No | Inject startup context, check routine dashboard |
+| `UserPromptSubmit` | Before Claude processes a user message | **Yes** (exit code 2) | Inject behavioral constraints, detect session wrap-up |
+| `PreToolUse` | Before a tool executes | **Yes** (exit code 2) | Block dangerous commands, validate dispatches, check code |
+| `PostToolUse` | After a tool executes | No | Review completed agent work |
+| `Stop` | After every Claude response | **Yes** (exit code 2) | Show status bar, monitor session health |
+| `SubagentStop` | When a dispatched subagent finishes | No | Trigger review checklist for completed work |
 
 <Aside type="caution">
-`PreToolUse` sensors can **block actions** by exiting with code 2. The tool call is rejected before it happens. This is how `scope-guard-files` prevents cross-workspace edits — the agent can't bypass it.
+`PreToolUse` sensors can **block actions** by exiting with code 2. The tool call is rejected before it happens. This is how `scope-guard-files` prevents cross-workspace edits and `dispatch-guard` enforces plan-based dispatching — the agent literally cannot bypass these guards.
 </Aside>
 
-## Sensor Reference
+### Matchers
+
+`PreToolUse` and `PostToolUse` sensors can include a **matcher** to filter which tools they apply to. Without a matcher, the sensor fires for every tool use on that event.
+
+| Matcher | Tools matched |
+|:--------|:-------------|
+| `Edit\|Write` | File editing and writing tools |
+| `Bash` | Shell command execution |
+| `Agent` | Subagent dispatch tool |
+
+## Complete Sensor Reference
+
+All 12 sensors in the Bonsai catalog, grouped by function.
+
+### Guards — Block Dangerous Actions
+
+These sensors use `PreToolUse` to intercept and block actions before they happen.
 
 | Sensor | Event | Matcher | Agents | What it does |
 |:-------|:------|:--------|:-------|:-------------|
-| **status-bar** | `Stop` | — | all | Persistent status: context %, turns, tools, git state, memory/routine health |
-| **context-guard** | `UserPromptSubmit` | — | all | Injects tiered behavioral constraints + detects "session done" trigger words |
-| **session-context** | `SessionStart` | — | all | Injects identity, memory, protocols, INDEX, status, field notes, health warnings |
-| **scope-guard-files** | `PreToolUse` | `Edit\|Write` | all | **Blocks** edits outside workspace + `.env` files |
-| **scope-guard-commands** | `PreToolUse` | `Bash` | tech-lead, security | **Blocks** app execution commands (tests, builds, servers) |
-| **dispatch-guard** | `PreToolUse` | `Agent` | tech-lead | **Blocks** dispatches without worktree isolation or plan reference |
-| **subagent-stop-review** | `SubagentStop` | — | tech-lead | Outputs review checklist when subagent finishes |
-| **api-security-check** | `PreToolUse` | `Edit\|Write` | backend, fullstack, security | Detects SQL injection, hardcoded secrets, `eval()`, CORS wildcards |
-| **test-integrity-guard** | `PreToolUse` | `Edit\|Write` | backend, frontend, fullstack | Catches `.skip()`, `.only()`, removed assertions, empty tests |
-| **iac-safety-guard** | `PreToolUse` | `Bash` | devops | **Blocks** `terraform destroy`, `kubectl delete namespace`, unsafe docker ops |
+| **scope-guard-files** | `PreToolUse` | `Edit\|Write` | all | **Blocks** edits outside the agent's workspace and `.env` files. Required for all agents. |
+| **scope-guard-commands** | `PreToolUse` | `Bash` | tech-lead, security | **Blocks** application execution commands (tests, builds, servers). Prevents non-code agents from running the app. |
+| **dispatch-guard** | `PreToolUse` | `Agent` | tech-lead | **Blocks** dispatches that lack worktree isolation or a plan reference. Enforces structured orchestration. |
+| **iac-safety-guard** | `PreToolUse` | `Bash` | devops | **Blocks** dangerous infrastructure commands — `terraform destroy`, `kubectl delete namespace`, unsafe docker operations. |
+
+### Context Injection — Add Information at Key Moments
+
+These sensors inject context that the agent reads and acts on.
+
+| Sensor | Event | Matcher | Agents | What it does |
+|:-------|:------|:--------|:-------|:-------------|
+| **session-context** | `SessionStart` | — | all | Injects identity, memory, protocols, INDEX, status, field notes, and health warnings at conversation start. Required for all agents. |
+| **context-guard** | `UserPromptSubmit` | — | all | Injects tiered behavioral constraints before each prompt. At 30% context usage, nudges conciseness. At 70%+, restricts to current task only. At 85%+, refuses new work. Also detects session wrap-up trigger words. Required for all agents. |
+| **routine-check** | `SessionStart` | — | all | Parses the routine dashboard (`agent/Core/routines.md`) and flags overdue routines. Auto-installed when routines are present, auto-removed when the last routine is removed. |
+
+### Review — Evaluate Completed Work
+
+These sensors trigger review processes after agents finish work.
+
+| Sensor | Event | Matcher | Agents | What it does |
+|:-------|:------|:--------|:-------|:-------------|
+| **agent-review** | `PostToolUse` | `Agent` | tech-lead | Outputs a review checklist after a dispatched agent completes work. |
+| **subagent-stop-review** | `SubagentStop` | — | tech-lead | Outputs a structured review checklist when a dispatched subagent finishes — checks plan compliance, security, verification steps. |
+
+### Monitoring — Track Session Health
+
+| Sensor | Event | Matcher | Agents | What it does |
+|:-------|:------|:--------|:-------|:-------------|
+| **status-bar** | `Stop` | — | all | Shows a compact status line after every response — context usage %, turn count, git state, memory health, and routine status. Required for all agents. |
+
+### Code Quality — Catch Issues in Edits
+
+These sensors inspect code changes as they happen.
+
+| Sensor | Event | Matcher | Agents | What it does |
+|:-------|:------|:--------|:-------|:-------------|
+| **api-security-check** | `PreToolUse` | `Edit\|Write` | backend, fullstack, security | Detects security anti-patterns — SQL injection, hardcoded secrets, `eval()`, CORS wildcards. |
+| **test-integrity-guard** | `PreToolUse` | `Edit\|Write` | backend, frontend, fullstack | Catches test quality issues — `.skip()`, `.only()`, removed assertions, empty test bodies, debug artifacts. |
+
+## Required Sensors
+
+Four sensors are required for all agent types and cannot be unchecked during installation:
+
+| Sensor | Why it's required |
+|:-------|:-----------------|
+| **session-context** | Without startup context injection, the agent doesn't know who it is or what to do |
+| **scope-guard-files** | Without file scope enforcement, agents could edit files in other agents' workspaces |
+| **context-guard** | Without behavioral constraints, agents don't self-regulate context usage or handle session wrap-up |
+| **status-bar** | Without the status line, users have no visibility into session health |
 
 ## Awareness Sensors
 
 Two sensors work as a pair to give agents real-time self-awareness:
 
-- **status-bar** fires after every response — shows the user a compact status line with context usage %, turn count, and session health warnings (uncommitted files, stale memory, overdue routines)
-- **context-guard** fires before every prompt — reads session state and injects behavioral constraints the agent must follow. At 30% context, it nudges toward conciseness. At 70%+, it restricts the agent to current-task-only. At 85%+, it tells the agent to refuse new work.
+**status-bar** fires after every response. It shows the user a compact status line with context usage %, turn count, and session health warnings — uncommitted files, stale memory, overdue routines.
 
-**Session wrap-up:** When the user says "session done" (or similar), context-guard injects a structured checklist — commit check, memory update, backlog review, status update, session notes.
+**context-guard** fires before every prompt. It reads session state and injects behavioral constraints the agent must follow:
+
+| Context usage | Constraint injected |
+|:-------------|:-------------------|
+| Below 30% | Normal operation |
+| 30-70% | Nudges toward conciseness |
+| 70-85% | Restricts to current task only |
+| Above 85% | Refuses new work, pushes to wrap up |
+
+**Session wrap-up:** When the user says "session done", "that's all", or similar phrases, the context-guard injects a structured wrap-up checklist — commit check, memory update, backlog review, status update, session notes.
+
+## Creating Custom Sensors
+
+You can create your own sensors by adding shell scripts with YAML frontmatter to `agent/Sensors/`. See [Creating Custom Sensors](/Bonsai/guides/creating-custom-sensors/) for the full guide.

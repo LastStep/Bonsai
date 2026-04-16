@@ -1,8 +1,149 @@
 ---
 title: Abilities
-description: Understanding abilities — skills, workflows, and protocols
+description: Skills, workflows, and protocols — the three types of abilities that give agents domain knowledge, task procedures, and hard rules.
 ---
 
-import { Aside } from '@astrojs/starlight/components';
+import { Aside, Card, CardGrid, Tabs, TabItem } from '@astrojs/starlight/components';
 
-<Aside type="caution">This page is under construction.</Aside>
+Abilities are the instruction files that tell an agent **what it knows**, **how to do things**, and **what rules to follow**. Every ability is a markdown file installed into an agent's workspace under `agent/`.
+
+There are three types:
+
+<CardGrid>
+  <Card title="Skills" icon="open-book">
+    **Domain knowledge and standards.** Reference material the agent consults when doing specific work — coding conventions, API design rules, testing patterns.
+  </Card>
+  <Card title="Workflows" icon="list-format">
+    **Step-by-step procedures.** Multi-step task guides the agent follows end-to-end — planning a feature, reviewing code, running a security audit.
+  </Card>
+  <Card title="Protocols" icon="warning">
+    **Hard rules.** Non-negotiable constraints enforced every session — security policy, scope boundaries, memory management, startup sequence.
+  </Card>
+</CardGrid>
+
+## When to Use What
+
+The key distinction is **how the agent uses the content**:
+
+| | Skills | Workflows | Protocols |
+|:--|:-------|:----------|:----------|
+| **Purpose** | Reference knowledge | Task procedure | Enforced rules |
+| **When loaded** | On demand, during relevant work | When starting a specific activity | Every session, automatically |
+| **How activated** | Agent recognizes relevant context, or user asks | User says "plan the feature" or triggers via slash command | Startup sequence loads them |
+| **Tone** | "Here are the standards" | "Follow these steps" | "You must always / never" |
+| **Can override?** | Agent applies judgment | Agent follows the procedure | Non-negotiable |
+| **Example** | Coding Standards | Planning Workflow | Security Protocol |
+
+### Decision Matrix
+
+Use this to pick the right type for a new ability:
+
+| If you need... | Use a... | Because... |
+|:---------------|:---------|:-----------|
+| Conventions for how code should look | **Skill** | It's reference material, not a procedure |
+| A repeatable process with ordered steps | **Workflow** | It needs to be followed end-to-end |
+| A rule that must never be violated | **Protocol** | It's enforced, not optional |
+| Domain expertise the agent should have | **Skill** | Skills are knowledge, not instructions |
+| A structured review or audit process | **Workflow** | Audits have ordered phases |
+| Boundaries on what the agent can do | **Protocol** | Boundaries are non-negotiable |
+
+## How Abilities Work
+
+### Installation
+
+Abilities come from the Bonsai catalog — a library of pre-built items embedded in the binary. During setup, you pick the ones you want:
+
+- **`bonsai init`** installs the Tech Lead with its default abilities
+- **`bonsai add`** installs a code agent with its defaults, then lets you customize
+- Each agent type has sensible defaults pre-selected (see [Agent Types](/Bonsai/concepts/agents/))
+
+The interactive picker shows all compatible abilities. Some are pre-selected as defaults; some are marked as required and cannot be unchecked.
+
+### Where They Live
+
+After installation, abilities are markdown files in the agent's workspace:
+
+```
+station/agent/
+├── Skills/           # .md files — domain knowledge
+│   ├── planning-template.md
+│   ├── review-checklist.md
+│   └── issue-classification.md
+├── Workflows/        # .md files — task procedures
+│   ├── planning.md
+│   ├── code-review.md
+│   └── session-logging.md
+└── Protocols/        # .md files — hard rules
+    ├── memory.md
+    ├── security.md
+    ├── scope-boundaries.md
+    └── session-start.md
+```
+
+### Browsing and Managing
+
+| Command | What it does |
+|:--------|:------------|
+| `bonsai catalog` | Browse all available abilities with descriptions and compatibility |
+| `bonsai list` | Show what's installed for each agent |
+| `bonsai add` | Add a new agent with abilities, or add abilities to an existing agent |
+| `bonsai remove` | Remove an agent and its abilities |
+| `bonsai update` | Re-render catalog abilities and detect custom files |
+
+### Compatibility Filtering
+
+Not every ability works with every agent type. Each ability declares which agents it supports:
+
+- `agents: all` — available to every agent type
+- `agents: [backend, fullstack]` — only available to those specific types
+
+When you use the interactive picker during `bonsai add`, Bonsai automatically filters the list to show only compatible items.
+
+### Required Abilities
+
+Some abilities are marked `required: all` — they're auto-installed for every agent and cannot be unchecked. All four protocols are required:
+
+| Protocol | What it enforces |
+|:---------|:----------------|
+| Memory | How to read and write working memory between sessions |
+| Scope Boundaries | What the agent owns and what it never touches |
+| Security | Hard stops — secrets, credentials, dangerous operations |
+| Session Start | Ordered startup sequence — what to read and check |
+
+Four sensors are also required for all agents: session-context, scope-guard-files, context-guard, and status-bar. See [Sensors](/Bonsai/concepts/sensors/) for details.
+
+## Customizing Abilities
+
+After installation, you own the files. You can:
+
+- **Edit installed abilities** directly — Bonsai tracks changes via content hashes in `.bonsai-lock.yaml`
+- **Create custom abilities** — add new `.md` files with YAML frontmatter, then run `bonsai update` to track them
+- **Handle conflicts** on re-render — if you've edited a catalog file and run `bonsai update`, you'll be prompted to skip, overwrite, or backup
+
+See the [Customizing Abilities](/Bonsai/guides/customizing-abilities/) guide for the full workflow.
+
+## What's in the Catalog
+
+The Bonsai catalog ships with:
+
+- **17 skills** — from coding standards to API design to infrastructure conventions
+- **10 workflows** — planning, code review, security audits, PR review, and more
+- **4 protocols** — memory, security, scope boundaries, session start (all required)
+
+Browse the full catalog:
+
+<CardGrid>
+  <Card title="Skills" icon="open-book">
+    Domain knowledge across coding, infrastructure, testing, and management. [Browse skills](/Bonsai/catalog/skills/)
+  </Card>
+  <Card title="Workflows" icon="list-format">
+    Task procedures for planning, reviewing, auditing, and reporting. [Browse workflows](/Bonsai/catalog/workflows/)
+  </Card>
+  <Card title="Protocols" icon="warning">
+    Hard rules enforced every session for every agent. [Browse protocols](/Bonsai/catalog/protocols/)
+  </Card>
+</CardGrid>
+
+<Aside type="tip">
+Abilities are just one part of the instruction stack. [Sensors](/Bonsai/concepts/sensors/) provide automated enforcement via hooks, and [Routines](/Bonsai/concepts/routines/) add periodic self-maintenance. Together they form the complete agent instruction layer.
+</Aside>
