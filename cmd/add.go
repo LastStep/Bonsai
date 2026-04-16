@@ -85,7 +85,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	// Require tech-lead before adding other agents
 	if agentType != "tech-lead" {
 		if _, hasTechLead := cfg.Agents["tech-lead"]; !hasTechLead {
-			tui.ErrorPanel("Tech Lead agent must be installed first.\nRun bonsai init to set up your project with Tech Lead.")
+			tui.ErrorDetail("Tech Lead required", "No tech-lead agent is installed yet.", "Run: bonsai init")
 			return nil
 		}
 	}
@@ -225,6 +225,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	showWriteResults(&wr, workspace)
 
 	tui.Success(fmt.Sprintf("Added %s at %s", agentDef.DisplayName, workspace))
+	tui.Hint("Run: bonsai list to see your full setup.")
 	tui.Blank()
 	return nil
 }
@@ -289,7 +290,7 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 
 	totalAvailable := len(newSkills) + len(newWorkflows) + len(newProtocols) + len(newSensors) + len(newRoutines)
 	if totalAvailable == 0 {
-		tui.SuccessPanel("All available abilities are already installed.", "")
+		tui.EmptyPanel("All available abilities are already installed.\nBrowse more with: bonsai catalog")
 		return nil
 	}
 
@@ -393,6 +394,7 @@ func runAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog
 	showWriteResults(&wr, installed.Workspace)
 
 	tui.Success(fmt.Sprintf("Added %d abilities to %s", totalSelected, agentDef.DisplayName))
+	tui.Hint("Run: bonsai list to see your full setup.")
 	tui.Blank()
 	return nil
 }
