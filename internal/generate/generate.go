@@ -300,7 +300,7 @@ func writeFile(projectRoot, relPath string, content []byte, source string, lock 
 // writeFileChmod is like writeFile but also sets file permissions (for sensor scripts).
 func writeFileChmod(projectRoot, relPath string, content []byte, source string, lock *config.LockFile, force bool, perm os.FileMode) FileResult {
 	result := writeFile(projectRoot, relPath, content, source, lock, force)
-	if result.Action == ActionCreated || result.Action == ActionUpdated || result.Action == ActionForced {
+	if result.Action == ActionCreated || result.Action == ActionUpdated || result.Action == ActionForced || result.Action == ActionUnchanged {
 		absPath := filepath.Join(projectRoot, relPath)
 		_ = os.Chmod(absPath, perm)
 	}
