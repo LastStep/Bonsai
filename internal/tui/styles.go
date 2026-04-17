@@ -38,17 +38,35 @@ var (
 	Petal lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#D4A0C0", Light: "#9B4D8A"}
 )
 
+// ─── Semantic Tokens ──────────────────────────────────────────────────────
+//
+// Semantic aliases backed by the Zen Garden palette. Prefer these in new code
+// and migrate existing callsites on touch. Swap the palette value here to
+// re-theme the whole TUI in one place.
+
+var (
+	ColorPrimary   = Leaf  // Brand accent — headings, primary action, banner title
+	ColorSecondary = Bark  // Field labels, category headers
+	ColorAccent    = Petal // Interactive chrome — cursor, selectors, next/prev
+	ColorSubtle    = Sand  // Body text, option labels
+	ColorMuted     = Stone // Hints, descriptions, at-rest borders
+	ColorSuccess   = Moss  // Success states
+	ColorDanger    = Ember // Errors
+	ColorWarning   = Amber // Warnings
+	ColorInfo      = Water // Info panels, review box
+)
+
 // ─── Styles ───────────────────────────────────────────────────────────────
 
 var (
-	StyleTitle   = lipgloss.NewStyle().Bold(true).Foreground(Leaf)
-	StyleLabel   = lipgloss.NewStyle().Bold(true).Foreground(Bark)
-	StyleMuted   = lipgloss.NewStyle().Foreground(Stone)
-	StyleSuccess = lipgloss.NewStyle().Foreground(Moss)
-	StyleError   = lipgloss.NewStyle().Foreground(Ember)
-	StyleWarning = lipgloss.NewStyle().Foreground(Amber)
-	StyleAccent  = lipgloss.NewStyle().Foreground(Water)
-	StyleSand    = lipgloss.NewStyle().Foreground(Sand)
+	StyleTitle   = lipgloss.NewStyle().Bold(true).Foreground(ColorPrimary)
+	StyleLabel   = lipgloss.NewStyle().Bold(true).Foreground(ColorSecondary)
+	StyleMuted   = lipgloss.NewStyle().Foreground(ColorMuted)
+	StyleSuccess = lipgloss.NewStyle().Foreground(ColorSuccess)
+	StyleError   = lipgloss.NewStyle().Foreground(ColorDanger)
+	StyleWarning = lipgloss.NewStyle().Foreground(ColorWarning)
+	StyleAccent  = lipgloss.NewStyle().Foreground(ColorInfo)
+	StyleSand    = lipgloss.NewStyle().Foreground(ColorSubtle)
 )
 
 // ─── Panels ───────────────────────────────────────────────────────────────
@@ -56,23 +74,23 @@ var (
 var (
 	PanelSuccess = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(Moss).
+			BorderForeground(ColorSuccess).
 			Padding(1, 2)
 	PanelError = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(Ember).
+			BorderForeground(ColorDanger).
 			Padding(1, 2)
 	PanelWarning = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(Amber).
+			BorderForeground(ColorWarning).
 			Padding(1, 2)
 	PanelInfo = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(Water).
+			BorderForeground(ColorInfo).
 			Padding(1, 2)
 	PanelEmpty = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(Stone).
+			BorderForeground(ColorMuted).
 			Padding(1, 2)
 )
 
@@ -90,22 +108,36 @@ const (
 // ─── Banner ───────────────────────────────────────────────────────────────
 
 // Banner prints the Bonsai welcome banner.
-func Banner(version string) {
-	title := lipgloss.NewStyle().Bold(true).Foreground(Leaf).Render("B O N S A I")
-	subtitle := "agent scaffolder"
+// version is the build version (pass "" or "dev" to hide).
+// action is an optional contextual sub-line (e.g., "Initializing new project").
+// Pass "" for no action line.
+func Banner(version, action string) {
+	title := lipgloss.NewStyle().Bold(true).Foreground(ColorPrimary).Render("BONSAI")
+	tagline := StyleMuted.Render("agent scaffolder")
+	header := title + "  " + tagline
+
+	var lines []string
+	lines = append(lines, header)
+
 	if version != "" && version != "dev" {
-		subtitle += " " + GlyphDot + " v" + version
+		ver := StyleMuted.Render("v" + version)
+		lines = append(lines, ver)
 	}
-	sub := StyleMuted.Render(subtitle)
+
+	if action != "" {
+		lines = append(lines, "")
+		lines = append(lines, lipgloss.NewStyle().Foreground(ColorInfo).Render(action))
+	}
+
+	content := strings.Join(lines, "\n")
 
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(Leaf).
-		Padding(1, 5).
-		Align(lipgloss.Center).
-		Render(title + "\n" + sub)
+		BorderForeground(ColorPrimary).
+		Padding(1, 3).
+		Render(content)
 
-	fmt.Println("\n" + indent(box, 3))
+	fmt.Println("\n" + indent(box, 2))
 }
 
 // ─── Display Helpers ──────────────────────────────────────────────────────
@@ -131,6 +163,20 @@ func Warning(msg string) {
 // Hint prints dimmed helper text, aligned with message text.
 func Hint(msg string) {
 	fmt.Println("    " + StyleMuted.Render(msg))
+}
+
+// Answer prints a compact styled summary of an answered prompt so prior answers
+// stay visible as the user advances through a multi-step flow.
+// Example output:   ▸ Project name   my-project
+func Answer(label, value string) {
+	key := StyleLabel.Render(label)
+	val := value
+	if strings.TrimSpace(value) == "" {
+		val = StyleMuted.Render("(skipped)")
+	} else {
+		val = StyleSuccess.Render(value)
+	}
+	fmt.Println("  " + StyleMuted.Render(GlyphArrow) + " " + key + "  " + val)
 }
 
 // Info prints dimmed informational text.
@@ -320,7 +366,7 @@ func ItemTree(root string, categories []Category, describe func(string) string) 
 		}
 	}
 
-	bc := lipgloss.NewStyle().Foreground(Stone)
+	bc := lipgloss.NewStyle().Foreground(ColorMuted)
 
 	for i, cat := range nonEmpty {
 		isLast := i == len(nonEmpty)-1
@@ -328,7 +374,8 @@ func ItemTree(root string, categories []Category, describe func(string) string) 
 		if isLast {
 			branch = "└── "
 		}
-		buf.WriteString("  " + bc.Render(branch) + StyleLabel.Render(cat.Name) + "\n")
+		header := StyleLabel.Render(cat.Name) + " " + StyleMuted.Render(fmt.Sprintf("(%d)", len(cat.Items)))
+		buf.WriteString("  " + bc.Render(branch) + header + "\n")
 
 		childPrefix := "│   "
 		if isLast {
@@ -379,7 +426,7 @@ func FileTree(files []string, rootLabel string) string {
 		}
 	}
 
-	bc := lipgloss.NewStyle().Foreground(Stone)
+	bc := lipgloss.NewStyle().Foreground(ColorMuted)
 	var buf strings.Builder
 	buf.WriteString("  " + StyleLabel.Render(rootLabel) + "\n")
 
@@ -420,19 +467,19 @@ func CatalogTable(headers []string, rows [][]string) {
 
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(Stone)).
+		BorderStyle(lipgloss.NewStyle().Foreground(ColorMuted)).
 		Headers(headers...).
 		Rows(rows...).
 		BorderRow(false).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			s := lipgloss.NewStyle().PaddingLeft(1).PaddingRight(1)
 			if row == table.HeaderRow {
-				return s.Foreground(Bark).Bold(true)
+				return s.Foreground(ColorSecondary).Bold(true)
 			}
 			if col == 0 {
-				return s.Foreground(Leaf)
+				return s.Foreground(ColorPrimary)
 			}
-			return s.Foreground(Stone)
+			return s.Foreground(ColorMuted)
 		})
 
 	fmt.Println(indent(t.Render(), 2))

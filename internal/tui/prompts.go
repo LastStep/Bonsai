@@ -16,29 +16,32 @@ func BonsaiTheme() *huh.Theme {
 		lipgloss.AdaptiveColor{Dark: "#3A5F4A", Light: "#5A7F6A"},
 	)
 	t.Focused.Card = t.Focused.Base
-	t.Focused.Title = t.Focused.Title.Foreground(Bark).Bold(true)
-	t.Focused.NoteTitle = t.Focused.NoteTitle.Foreground(Bark).Bold(true).MarginBottom(1)
-	t.Focused.Description = t.Focused.Description.Foreground(Stone)
-	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(Ember)
-	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(Ember)
-	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(Petal)
-	t.Focused.NextIndicator = t.Focused.NextIndicator.Foreground(Petal)
-	t.Focused.PrevIndicator = t.Focused.PrevIndicator.Foreground(Petal)
-	t.Focused.Option = t.Focused.Option.Foreground(Sand)
-	t.Focused.MultiSelectSelector = t.Focused.MultiSelectSelector.Foreground(Petal)
-	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(Moss)
-	t.Focused.SelectedPrefix = lipgloss.NewStyle().Foreground(Moss).SetString("✓ ")
-	t.Focused.UnselectedPrefix = lipgloss.NewStyle().Foreground(Stone).SetString("· ")
-	t.Focused.UnselectedOption = t.Focused.UnselectedOption.Foreground(Sand)
-	t.Focused.FocusedButton = t.Focused.FocusedButton.Foreground(lipgloss.Color("#FFFFFF")).Background(Leaf)
-	t.Focused.BlurredButton = t.Focused.BlurredButton.Foreground(Sand).Background(
+	t.Focused.Title = t.Focused.Title.Foreground(ColorSecondary).Bold(true)
+	t.Focused.Title = t.Focused.Title.MarginBottom(0)
+	t.Focused.NoteTitle = t.Focused.NoteTitle.Foreground(ColorSecondary).Bold(true).MarginBottom(1)
+	t.Focused.Description = t.Focused.Description.Foreground(ColorMuted)
+	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(ColorDanger)
+	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(ColorDanger)
+	t.Focused.SelectSelector = t.Focused.SelectSelector.Foreground(ColorAccent)
+	t.Focused.NextIndicator = t.Focused.NextIndicator.Foreground(ColorAccent)
+	t.Focused.PrevIndicator = t.Focused.PrevIndicator.Foreground(ColorAccent)
+	t.Focused.Option = t.Focused.Option.Foreground(ColorSubtle)
+	t.Focused.MultiSelectSelector = t.Focused.MultiSelectSelector.Foreground(ColorAccent)
+	t.Focused.SelectedOption = t.Focused.SelectedOption.Foreground(ColorSuccess)
+	t.Focused.SelectedPrefix = lipgloss.NewStyle().Foreground(ColorSuccess).SetString("✓ ")
+	t.Focused.UnselectedPrefix = lipgloss.NewStyle().Foreground(ColorMuted).SetString("· ")
+	t.Focused.UnselectedOption = t.Focused.UnselectedOption.Foreground(ColorSubtle)
+	t.Focused.FocusedButton = t.Focused.FocusedButton.Foreground(lipgloss.Color("#FFFFFF")).Background(ColorPrimary)
+	t.Focused.BlurredButton = t.Focused.BlurredButton.Foreground(ColorSubtle).Background(
 		lipgloss.AdaptiveColor{Dark: "#2D2D3D", Light: "#E5E7EB"},
 	)
 	t.Focused.Next = t.Focused.FocusedButton
 
-	t.Focused.TextInput.Cursor = t.Focused.TextInput.Cursor.Foreground(Leaf)
-	t.Focused.TextInput.Placeholder = t.Focused.TextInput.Placeholder.Foreground(Stone)
-	t.Focused.TextInput.Prompt = t.Focused.TextInput.Prompt.Foreground(Petal)
+	t.Focused.TextInput.Cursor = t.Focused.TextInput.Cursor.
+		Foreground(ColorPrimary).
+		Bold(true)
+	t.Focused.TextInput.Placeholder = t.Focused.TextInput.Placeholder.Foreground(ColorMuted)
+	t.Focused.TextInput.Prompt = t.Focused.TextInput.Prompt.Foreground(ColorAccent)
 
 	t.Blurred = t.Focused
 	t.Blurred.Base = t.Blurred.Base.BorderStyle(lipgloss.HiddenBorder())
@@ -48,6 +51,7 @@ func BonsaiTheme() *huh.Theme {
 
 	t.Group.Title = t.Focused.Title
 	t.Group.Description = t.Focused.Description
+	t.Focused.Base = t.Focused.Base.PaddingLeft(1)
 
 	return t
 }
@@ -174,6 +178,16 @@ func PickItems(label string, available []ItemOption, defaults []string) ([]strin
 			line += " " + StyleAccent.Render("(required)")
 			fmt.Println(line)
 		}
+	}
+
+	// If all items are required (no optional picker to show), give explicit
+	// feedback so the user knows the section was processed, not silently skipped.
+	if len(optional) == 0 && len(required) > 0 {
+		plural := "s"
+		if len(required) == 1 {
+			plural = ""
+		}
+		fmt.Println("    " + StyleMuted.Render(fmt.Sprintf("(%d required item%s auto-included)", len(required), plural)))
 	}
 
 	// Collect required values (machine identifiers)
