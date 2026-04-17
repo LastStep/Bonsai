@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Plan 14 (UI/UX Overhaul Phase 3 — visual identity + init polish) — iteration batch 2 landed
+**Current task:** Plan 15 (BubbleTea foundation + theme system) — drafted 2026-04-17, awaiting dispatch for iter 1
 **Blocked on:** —
 **Last completed:** Plan 14 iteration 2 — width-aware TitledPanel, collapsed required-only chip line, `mustCwd()` error surfacing (`63a3709`) (2026-04-17)
 
@@ -30,7 +30,9 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- User corrections and confirmed approaches that persist across sessions. Only record what isn't already in CLAUDE.md, workflows, or protocols. -->
 
-_(empty)_
+- **Backlog.md at session start is a P0 *scan*, not a full read.**
+    - **Why:** During the 2026-04-17 context audit, the CLI session-start payload was ~4k heavier than the app's, and the delta was traced to my having `Read` Backlog.md in full (~200 lines, ~4k tokens) when session-start protocol explicitly says "scan, look for P0 items only." Full backlog review is the backlog-hygiene routine's job. On a 200k window that's ~4% of headroom burned for zero benefit.
+    - **How to apply:** At session start, use `Grep -n "^## P0" Playbook/Backlog.md` (or read with `limit:` bracketed to the P0 section) instead of `Read` on the whole file. Only full-read Backlog when explicitly running backlog-hygiene or planning across multiple groups.
 
 ## References
 
