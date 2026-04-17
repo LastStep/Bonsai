@@ -13,9 +13,9 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Plan 16 (go install binary name fix) — draft [PR #23](https://github.com/LastStep/Bonsai/pull/23) open, awaiting user merge. Plan 15 (BubbleTea foundation) still drafted, awaiting dispatch.
-**Blocked on:** Plan 16 → user merge on PR #23 (subagents lacked `gh`; user will click-merge via web)
-**Last completed:** Plan 14 iteration 2 — width-aware TitledPanel, collapsed required-only chip line, `mustCwd()` error surfacing (`63a3709`) (2026-04-17)
+**Current task:** Plan 17 (release prep — Go toolchain + triggerSection + OSS polish) — draft [PR #24](https://github.com/LastStep/Bonsai/pull/24) on `release-prep` branch. Dispatch + independent review PASS. Awaiting CI + merge-to-`release-prep` (NOT main). Plan 16 PR #23 still awaiting user merge.
+**Blocked on:** Plan 17 → CI verification on PR #24, then user merge to `release-prep`. Plan 16 → user merge on PR #23.
+**Last completed:** Plan 17 dispatch + review (commit `5451196` on `plan-17/release-prep`) (2026-04-17)
 
 ## Notes
 
@@ -26,6 +26,8 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 - **Pre-flight learning:** Worktrees inherit only committed HEAD — uncommitted plans/docs in main tree are invisible to dispatched agents. Commit station/ planning artifacts before dispatch.
 - **PR review memory hygiene:** "both reviews APPROVE" from prior session was dispatched review agents, not GitHub reviews. `gh pr view --json reviews` returned empty. When noting review status, distinguish agent-dispatched reviews (in `Reports/`) from GitHub formal reviews.
 - **Subagent tool inheritance is flaky.** On 2026-04-17, the original executing agent (worktree, `gh` authed) successfully created draft PR #23, but every subsequent subagent I spawned for merge/verification reported `gh: command not found` — the environment wasn't inherited from the spawning agent or from my own shell (Windows Git Bash over WSL UNC path, no `gh` on PATH). Implication: for PR-flow tasks, bundle **all** gh operations (push, create PR, mark ready, merge, delete branch) into a **single** agent dispatch rather than splitting across agents. Second-best: ask the user to click-merge via web UI when a subagent-less step is needed.
+- **Plan 17 confirmed the gh-inheritance pain persists even with user's WSL gh auth.** User installed/authed `gh` in their own WSL on 2026-04-17, but dispatched subagents (tested via `which gh`, `/usr/bin/gh`, `/usr/local/bin/gh`, `/mnt/c/Program Files/GitHub CLI/gh.exe`) still couldn't find any `gh` binary. Subagents evidently run in a separate filesystem namespace from the user's WSL — installing tools in user WSL doesn't help subagents. For now: user click-creates PRs via web, or user runs `gh` locally from their terminal. Ongoing research.
+- **Parallel session coexistence (2026-04-17).** Two Claude sessions ran concurrently: one on `ui-ux-testing` (Plan 15 iter 1), one on `release-prep` (Plan 17 / PR #24). Branches touch disjoint file sets (UI/UX on `internal/tui/*` + `cmd/*`; release-prep on `go.mod` + `internal/generate/*` + tooling), so no merge conflicts. Memory and Status.md updates MUST stay branch-scoped — don't cross-pollinate Plan 15 notes into release-prep's planning docs or vice versa, or rebase-to-main later gets messy.
 
 ## Feedback
 
