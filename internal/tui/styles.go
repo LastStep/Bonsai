@@ -106,6 +106,19 @@ var (
 			Padding(1, 2)
 )
 
+// ─── Harness Styles ──────────────────────────────────────────────────────
+//
+// Used exclusively by the long-lived `internal/tui/harness` package to render
+// the persistent header/footer that frames the active step inside AltScreen.
+// Kept here (not in the harness package) so palette changes ripple through one
+// file and so non-harness callsites can compose with the same tokens if needed.
+
+var (
+	HarnessHeader = lipgloss.NewStyle().Padding(0, 2).Foreground(ColorMuted)
+	HarnessCrumb  = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true)
+	HarnessFooter = lipgloss.NewStyle().Padding(0, 2).Foreground(ColorMuted)
+)
+
 // ─── Glyphs ───────────────────────────────────────────────────────────────
 
 const (

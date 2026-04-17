@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/config"
 	"github.com/LastStep/Bonsai/internal/generate"
 	"github.com/LastStep/Bonsai/internal/tui"
+	"github.com/LastStep/Bonsai/internal/tui/harness"
 )
 
 func init() {
@@ -23,6 +25,97 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize Bonsai in the current project.",
 	RunE:  runInit,
+}
+
+// stationDirValidator rejects empty / root paths up-front so the user can
+// correct in place inside the harness rather than crashing after collection.
+// Trim semantics intentionally match the post-collection normalisation below.
+func stationDirValidator(s string) error {
+	v := strings.TrimSpace(s)
+	if v == "" || v == "/" {
+		return fmt.Errorf("must be a subdirectory like: station/")
+	}
+	return nil
+}
+
+// normaliseDocsPath applies the same trim + trailing-slash rule that lived
+// inline in the old runInit. Kept as a free function so the post-harness
+// pipeline stays small.
+func normaliseDocsPath(s string) string {
+	v := strings.TrimSpace(s)
+	if !strings.HasSuffix(v, "/") {
+		v += "/"
+	}
+	return v
+}
+
+// scaffoldingOptions lifts the catalog scaffolding entries into the
+// tui.ItemOption shape consumed by MultiSelectStep.
+func scaffoldingOptions(cat *catalog.Catalog) []tui.ItemOption {
+	out := make([]tui.ItemOption, 0, len(cat.Scaffolding))
+	for _, item := range cat.Scaffolding {
+		desc := item.Description
+		if !item.Required && item.Affects != "" {
+			desc += " · if removed: " + item.Affects
+		}
+		out = append(out, tui.ItemOption{
+			Name:     item.DisplayName,
+			Value:    item.Name,
+			Desc:     desc,
+			Required: item.Required,
+		})
+	}
+	return out
+}
+
+// userSensorOptions filters out the auto-managed routine-check sensor so the
+// user only picks from sensors they actually choose. Mirrors the inline filter
+// in the pre-harness runInit.
+func userSensorOptions(cat *catalog.Catalog, agentType string) []tui.ItemOption {
+	available := cat.SensorsFor(agentType)
+	filtered := make([]catalog.SensorItem, 0, len(available))
+	for _, s := range available {
+		if s.Name != "routine-check" {
+			filtered = append(filtered, s)
+		}
+	}
+	return toSensorOptions(filtered, agentType)
+}
+
+// asString safely extracts a string result from a harness step. Returns ""
+// for nil to keep call-site logic short — empty input is already meaningful
+// (e.g., optional Description field).
+func asString(v any) string {
+	if v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return ""
+}
+
+// asStringSlice safely extracts a []string result. Returns nil for absent
+// results so downstream nil checks behave as before the harness migration.
+func asStringSlice(v any) []string {
+	if v == nil {
+		return nil
+	}
+	if s, ok := v.([]string); ok {
+		return s
+	}
+	return nil
+}
+
+// asBool safely extracts a bool result.
+func asBool(v any) bool {
+	if v == nil {
+		return false
+	}
+	if b, ok := v.(bool); ok {
+		return b
+	}
+	return false
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
@@ -36,121 +129,62 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	cat := loadCatalog()
 
-	tui.Banner(Version, "Initializing new project")
-	tui.Heading("Initialize Project")
-
-	projectName, err := tui.AskText("Project name:", "", true)
-	if err != nil {
-		return err
-	}
-	tui.Answer("Project name", projectName)
-	description, err := tui.AskText("Description (optional):", "", false)
-	if err != nil {
-		return err
-	}
-	tui.Answer("Description", description)
-	docsPath, err := tui.AskText("Station directory:", "station/", true)
-	if err != nil {
-		return err
-	}
-	tui.Answer("Station directory", docsPath)
-	docsPath = strings.TrimSpace(docsPath)
-	if docsPath == "" || docsPath == "/" {
-		tui.FatalPanel("Invalid station directory", "Cannot be empty or root.", "Use a subdirectory like: station/")
-	}
-	if !strings.HasSuffix(docsPath, "/") {
-		docsPath += "/"
-	}
-
-	// Scaffolding selection
-	var scaffoldingOptions []tui.ItemOption
-	for _, item := range cat.Scaffolding {
-		desc := item.Description
-		if !item.Required && item.Affects != "" {
-			desc += " · if removed: " + item.Affects
-		}
-		scaffoldingOptions = append(scaffoldingOptions, tui.ItemOption{
-			Name:     item.DisplayName,
-			Value:    item.Name,
-			Desc:     desc,
-			Required: item.Required,
-		})
-	}
-	selectedScaffolding, err := tui.PickItems("Project Scaffolding", scaffoldingOptions, nil)
-	if err != nil {
-		return err
-	}
-
-	// Tech Lead setup (required — primary agent for all projects)
-	tui.Heading("Tech Lead Agent")
-	tui.Info("Tech Lead is your project's primary agent — it architects the system and dispatches work to other agents.")
-
 	const techLeadType = "tech-lead"
 	agentDef := cat.GetAgent(techLeadType)
 	if agentDef == nil {
 		tui.FatalPanel("Tech Lead agent not found", "The built-in catalog is missing the tech-lead agent.", "This is a bug — please report it.")
 	}
 
-	workspace := docsPath
-
-	selectedSkills, err := tui.PickItems("Skills", toItemOptions(cat.SkillsFor(techLeadType), techLeadType), agentDef.DefaultSkills)
-	if err != nil {
-		return err
-	}
-	selectedWorkflows, err := tui.PickItems("Workflows", toItemOptions(cat.WorkflowsFor(techLeadType), techLeadType), agentDef.DefaultWorkflows)
-	if err != nil {
-		return err
-	}
-	selectedProtocols, err := tui.PickItems("Protocols", toItemOptions(cat.ProtocolsFor(techLeadType), techLeadType), agentDef.DefaultProtocols)
-	if err != nil {
-		return err
-	}
-	availableSensors := cat.SensorsFor(techLeadType)
-	var userSensors []catalog.SensorItem
-	for _, s := range availableSensors {
-		if s.Name != "routine-check" {
-			userSensors = append(userSensors, s)
-		}
-	}
-	selectedSensors, err := tui.PickItems("Sensors", toSensorOptions(userSensors, techLeadType), agentDef.DefaultSensors)
-	if err != nil {
-		return err
-	}
-	selectedRoutines, err := tui.PickItems("Routines", toRoutineOptions(cat.RoutinesFor(techLeadType), techLeadType), agentDef.DefaultRoutines)
-	if err != nil {
-		return err
+	// Build the step stack. The review step is lazy so it can read every
+	// prior selection without leaving AltScreen.
+	steps := []harness.Step{
+		harness.NewText("Project name", "Project name:", "", true),
+		harness.NewText("Description", "Description (optional):", "", false),
+		harness.NewText("Station directory", "Station directory:", "station/", true, stationDirValidator),
+		harness.NewMultiSelect("Scaffolding", "Project Scaffolding", scaffoldingOptions(cat), nil),
+		harness.NewMultiSelect("Skills", "Skills", toItemOptions(cat.SkillsFor(techLeadType), techLeadType), agentDef.DefaultSkills),
+		harness.NewMultiSelect("Workflows", "Workflows", toItemOptions(cat.WorkflowsFor(techLeadType), techLeadType), agentDef.DefaultWorkflows),
+		harness.NewMultiSelect("Protocols", "Protocols", toItemOptions(cat.ProtocolsFor(techLeadType), techLeadType), agentDef.DefaultProtocols),
+		harness.NewMultiSelect("Sensors", "Sensors", userSensorOptions(cat, techLeadType), agentDef.DefaultSensors),
+		harness.NewMultiSelect("Routines", "Routines", toRoutineOptions(cat.RoutinesFor(techLeadType), techLeadType), agentDef.DefaultRoutines),
+		harness.NewLazy("Review", func(prev []any) harness.Step {
+			workspace := normaliseDocsPath(asString(prev[2]))
+			panel := buildReviewPanel(cat, agentDef, workspace, prev)
+			return harness.NewReview("Review", panel, "Generate project?", true)
+		}),
 	}
 
-	// Review summary
-	describer := func(name string) string {
-		if item := cat.GetItem(name); item != nil {
-			return item.Description
-		}
-		if sensor := cat.GetSensor(name); sensor != nil {
-			return sensor.Description
-		}
-		if routine := cat.GetRoutine(name); routine != nil {
-			return routine.Description
-		}
-		return ""
+	bannerLine := "BONSAI"
+	if Version != "" && Version != "dev" {
+		bannerLine = fmt.Sprintf("BONSAI v%s", Version)
 	}
-	summary := tui.ItemTree(
-		tui.StyleLabel.Render(agentDef.DisplayName)+" "+tui.StyleMuted.Render(tui.GlyphArrow+" "+workspace),
-		[]tui.Category{
-			{Name: "Skills", Items: selectedSkills},
-			{Name: "Workflows", Items: selectedWorkflows},
-			{Name: "Protocols", Items: selectedProtocols},
-			{Name: "Sensors", Items: selectedSensors},
-			{Name: "Routines", Items: selectedRoutines},
-		},
-		describer,
-	)
-	tui.TitledPanel("Review", summary, tui.ColorInfo)
 
-	confirmed, err := tui.AskConfirm("Generate project?", true)
-	if err != nil || !confirmed {
+	results, err := harness.Run(bannerLine, "Initializing new project", steps)
+	if err != nil {
+		if errors.Is(err, harness.ErrAborted) {
+			// Ctrl-C — exit cleanly with no .bonsai.yaml or partial files.
+			return nil
+		}
+		return err
+	}
+
+	if !asBool(results[len(results)-1]) {
+		// User declined the review confirm.
 		return nil
 	}
+
+	// Pull typed results in declaration order.
+	projectName := asString(results[0])
+	description := asString(results[1])
+	docsPath := normaliseDocsPath(asString(results[2]))
+	selectedScaffolding := asStringSlice(results[3])
+	selectedSkills := asStringSlice(results[4])
+	selectedWorkflows := asStringSlice(results[5])
+	selectedProtocols := asStringSlice(results[6])
+	selectedSensors := asStringSlice(results[7])
+	selectedRoutines := asStringSlice(results[8])
+
+	workspace := docsPath
 
 	// Build config with tech-lead agent
 	installed := &config.InstalledAgent{
@@ -208,4 +242,47 @@ func runInit(cmd *cobra.Command, args []string) error {
 	tui.Hint("Next: run bonsai add to add code agents (backend, frontend, etc.).")
 	tui.Blank()
 	return nil
+}
+
+// buildReviewPanel composes the static review block shown by the lazy
+// ReviewStep. It mirrors the original pre-harness layout: a TitledPanel-style
+// header line plus the categorised ItemTree for every selection.
+func buildReviewPanel(cat *catalog.Catalog, agentDef *catalog.AgentDef, workspace string, prev []any) string {
+	// prev indices match the step declaration order in runInit.
+	selectedSkills := asStringSlice(prev[4])
+	selectedWorkflows := asStringSlice(prev[5])
+	selectedProtocols := asStringSlice(prev[6])
+	selectedSensors := asStringSlice(prev[7])
+	selectedRoutines := asStringSlice(prev[8])
+
+	describer := func(name string) string {
+		if item := cat.GetItem(name); item != nil {
+			return item.Description
+		}
+		if sensor := cat.GetSensor(name); sensor != nil {
+			return sensor.Description
+		}
+		if routine := cat.GetRoutine(name); routine != nil {
+			return routine.Description
+		}
+		return ""
+	}
+
+	tree := tui.ItemTree(
+		tui.StyleLabel.Render(agentDef.DisplayName)+" "+tui.StyleMuted.Render(tui.GlyphArrow+" "+workspace),
+		[]tui.Category{
+			{Name: "Skills", Items: selectedSkills},
+			{Name: "Workflows", Items: selectedWorkflows},
+			{Name: "Protocols", Items: selectedProtocols},
+			{Name: "Sensors", Items: selectedSensors},
+			{Name: "Routines", Items: selectedRoutines},
+		},
+		describer,
+	)
+
+	// In-screen panel: tinted heading + the tree, no full bordered TitledPanel
+	// (which writes directly to stdout via fmt.Println). Inside AltScreen we
+	// just want a string, so we render a lightweight equivalent.
+	heading := tui.StyleAccent.Bold(true).Render("Review")
+	return "  " + heading + "\n" + tree
 }
