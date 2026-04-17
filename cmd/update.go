@@ -179,6 +179,17 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		tui.Warning("Could not save lock file: " + err.Error())
 	}
 
+	created, updated, _, _, conflicts := wr.Summary()
+	hadChanges := configChanged || created > 0 || updated > 0 || conflicts > 0
+
+	if !hadChanges {
+		tui.TitledPanel("Up to date",
+			"Workspace is in sync with the catalog.\nNo files needed updating.",
+			tui.Moss)
+		tui.Blank()
+		return nil
+	}
+
 	showWriteResults(&wr, ".")
 
 	if configChanged {
@@ -186,6 +197,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	} else {
 		tui.Success("Update complete — workspace synced")
 	}
+	tui.Hint("Review changes with: bonsai list")
 	tui.Blank()
 	return nil
 }

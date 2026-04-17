@@ -189,12 +189,12 @@ func TestAgentWorkspaceUnmodifiedUpdate(t *testing.T) {
 	var wr1 WriteResult
 	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr1, false)
 
-	// Run again — files are unmodified, should be Updated
+	// Run again — files are unmodified and content matches, should be Unchanged
 	var wr2 WriteResult
 	_ = AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr2, false)
 	for _, f := range wr2.Files {
-		if f.Action != ActionUpdated {
-			t.Errorf("file %s action = %d, want Updated", f.RelPath, f.Action)
+		if f.Action != ActionUnchanged {
+			t.Errorf("file %s action = %d, want Unchanged", f.RelPath, f.Action)
 		}
 	}
 }
@@ -360,7 +360,7 @@ func TestWriteResultSummary(t *testing.T) {
 			{Action: ActionForced},
 		},
 	}
-	created, updated, skipped, conflicts := wr.Summary()
+	created, updated, _, skipped, conflicts := wr.Summary()
 	if created != 2 {
 		t.Errorf("created = %d, want 2", created)
 	}

@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -139,11 +140,12 @@ var CuratedSlashWorkflows = map[string]bool{
 type FileAction int
 
 const (
-	ActionCreated  FileAction = iota // new file written
-	ActionUpdated                    // existing unmodified file overwritten
-	ActionSkipped                    // file already exists (scaffolding write-once)
-	ActionConflict                   // file modified by user, not overwritten
-	ActionForced                     // conflict overridden by user, overwritten
+	ActionCreated   FileAction = iota // new file written
+	ActionUpdated                     // existing unmodified file overwritten with new content
+	ActionUnchanged                   // existing file identical to rendered content — no write
+	ActionSkipped                     // file already exists (scaffolding write-once)
+	ActionConflict                    // file modified by user, not overwritten
+	ActionForced                      // conflict overridden by user, overwritten
 )
 
 // FileResult describes the outcome for one file.
@@ -187,13 +189,15 @@ func (wr *WriteResult) HasConflicts() bool {
 }
 
 // Summary returns counts by action type.
-func (wr *WriteResult) Summary() (created, updated, skipped, conflicts int) {
+func (wr *WriteResult) Summary() (created, updated, unchanged, skipped, conflicts int) {
 	for _, f := range wr.Files {
 		switch f.Action {
 		case ActionCreated:
 			created++
 		case ActionUpdated, ActionForced:
 			updated++
+		case ActionUnchanged:
+			unchanged++
 		case ActionSkipped:
 			skipped++
 		case ActionConflict:
@@ -272,6 +276,13 @@ func writeFile(projectRoot, relPath string, content []byte, source string, lock 
 
 	if modified && !force {
 		return FileResult{RelPath: relPath, Action: ActionConflict, Source: source, content: content}
+	}
+
+	// If file exists, is not user-modified, and content matches rendered output, skip the write.
+	if !modified {
+		if existing, err := os.ReadFile(absPath); err == nil && bytes.Equal(existing, content) {
+			return FileResult{RelPath: relPath, Action: ActionUnchanged, Source: source}
+		}
 	}
 
 	if err := os.WriteFile(absPath, content, 0644); err != nil {
@@ -814,6 +825,12 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 
 			fullContent := beforeMarkers + bonsaiStartMarker + "\n" + generatedContent + bonsaiEndMarker + afterMarkers
 			contentBytes := []byte(fullContent)
+
+			// Short-circuit if content is already identical
+			if bytes.Equal(existing, contentBytes) {
+				result.Add(FileResult{RelPath: relPath, Action: ActionUnchanged, Source: "generated:workspace-claude-md"})
+				return nil
+			}
 
 			if err := os.WriteFile(absPath, contentBytes, 0644); err != nil {
 				return err

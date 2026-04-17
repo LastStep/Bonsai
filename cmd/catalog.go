@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/LastStep/Bonsai/internal/tui"
@@ -22,24 +24,23 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	agentFilter, _ := cmd.Flags().GetString("agent")
 
 	// Agents
-	tui.SectionHeader("Agents")
+	tui.SectionHeader(fmt.Sprintf("Agents (%d)", len(cat.Agents)))
 	var agentRows [][]string
 	for _, a := range cat.Agents {
 		agentRows = append(agentRows, []string{a.DisplayName, a.Description})
 	}
 	tui.CatalogTable([]string{"Name", "Description"}, agentRows)
 
-	suffix := ""
-	if agentFilter != "" {
-		suffix = " " + tui.StyleMuted.Render("(for "+agentFilter+")")
-	}
-
 	// Skills
 	skills := cat.Skills
 	if agentFilter != "" {
 		skills = cat.SkillsFor(agentFilter)
 	}
-	tui.SectionHeader("Skills" + suffix)
+	skillsSuffix := fmt.Sprintf(" (%d)", len(skills))
+	if agentFilter != "" {
+		skillsSuffix = fmt.Sprintf(" (%d for %s)", len(skills), agentFilter)
+	}
+	tui.SectionHeader("Skills" + skillsSuffix)
 	var skillRows [][]string
 	for _, s := range skills {
 		skillRows = append(skillRows, []string{s.DisplayName, s.Description, s.Agents.String(), s.Required.String()})
@@ -51,7 +52,11 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	if agentFilter != "" {
 		workflows = cat.WorkflowsFor(agentFilter)
 	}
-	tui.SectionHeader("Workflows" + suffix)
+	workflowsSuffix := fmt.Sprintf(" (%d)", len(workflows))
+	if agentFilter != "" {
+		workflowsSuffix = fmt.Sprintf(" (%d for %s)", len(workflows), agentFilter)
+	}
+	tui.SectionHeader("Workflows" + workflowsSuffix)
 	var wfRows [][]string
 	for _, w := range workflows {
 		wfRows = append(wfRows, []string{w.DisplayName, w.Description, w.Agents.String(), w.Required.String()})
@@ -63,7 +68,11 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	if agentFilter != "" {
 		protocols = cat.ProtocolsFor(agentFilter)
 	}
-	tui.SectionHeader("Protocols" + suffix)
+	protocolsSuffix := fmt.Sprintf(" (%d)", len(protocols))
+	if agentFilter != "" {
+		protocolsSuffix = fmt.Sprintf(" (%d for %s)", len(protocols), agentFilter)
+	}
+	tui.SectionHeader("Protocols" + protocolsSuffix)
 	var protoRows [][]string
 	for _, p := range protocols {
 		protoRows = append(protoRows, []string{p.DisplayName, p.Description, p.Agents.String(), p.Required.String()})
@@ -75,7 +84,11 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	if agentFilter != "" {
 		sensors = cat.SensorsFor(agentFilter)
 	}
-	tui.SectionHeader("Sensors" + suffix)
+	sensorsSuffix := fmt.Sprintf(" (%d)", len(sensors))
+	if agentFilter != "" {
+		sensorsSuffix = fmt.Sprintf(" (%d for %s)", len(sensors), agentFilter)
+	}
+	tui.SectionHeader("Sensors" + sensorsSuffix)
 	var sensorRows [][]string
 	for _, s := range sensors {
 		event := s.Event
@@ -91,7 +104,11 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	if agentFilter != "" {
 		routines = cat.RoutinesFor(agentFilter)
 	}
-	tui.SectionHeader("Routines" + suffix)
+	routinesSuffix := fmt.Sprintf(" (%d)", len(routines))
+	if agentFilter != "" {
+		routinesSuffix = fmt.Sprintf(" (%d for %s)", len(routines), agentFilter)
+	}
+	tui.SectionHeader("Routines" + routinesSuffix)
 	var routineRows [][]string
 	for _, r := range routines {
 		routineRows = append(routineRows, []string{r.DisplayName, r.Description, r.Frequency, r.Agents.String(), r.Required.String()})
@@ -99,7 +116,7 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 	tui.CatalogTable([]string{"Name", "Description", "Frequency", "Agents", "Required"}, routineRows)
 
 	// Scaffolding
-	tui.SectionHeader("Scaffolding")
+	tui.SectionHeader(fmt.Sprintf("Scaffolding (%d)", len(cat.Scaffolding)))
 	var scaffoldRows [][]string
 	for _, s := range cat.Scaffolding {
 		req := ""

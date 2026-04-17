@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -59,7 +61,14 @@ func runList(cmd *cobra.Command, args []string) error {
 		return strings.Join(display, ", ")
 	}
 
-	for name, agent := range cfg.Agents {
+	agentNames := make([]string, 0, len(cfg.Agents))
+	for name := range cfg.Agents {
+		agentNames = append(agentNames, name)
+	}
+	sort.Strings(agentNames)
+
+	for _, name := range agentNames {
+		agent := cfg.Agents[name]
 		displayName := name
 		if agentDef := cat.GetAgent(name); agentDef != nil {
 			displayName = agentDef.DisplayName
@@ -111,6 +120,32 @@ func runList(cmd *cobra.Command, args []string) error {
 		tui.TitledPanel(displayName, content, tui.Water)
 	}
 
+	totalSkills, totalWorkflows, totalProtocols, totalSensors, totalRoutines := 0, 0, 0, 0, 0
+	for _, a := range cfg.Agents {
+		totalSkills += len(a.Skills)
+		totalWorkflows += len(a.Workflows)
+		totalProtocols += len(a.Protocols)
+		totalSensors += len(a.Sensors)
+		totalRoutines += len(a.Routines)
+	}
+
+	parts := []string{
+		pluralize(len(cfg.Agents), "agent", "agents"),
+		pluralize(totalSkills, "skill", "skills"),
+		pluralize(totalWorkflows, "workflow", "workflows"),
+		pluralize(totalProtocols, "protocol", "protocols"),
+		pluralize(totalSensors, "sensor", "sensors"),
+		pluralize(totalRoutines, "routine", "routines"),
+	}
+	fmt.Println("\n  " + tui.StyleMuted.Render(strings.Join(parts, " "+tui.GlyphDot+" ")))
+
 	tui.Blank()
 	return nil
+}
+
+func pluralize(n int, singular, plural string) string {
+	if n == 1 {
+		return fmt.Sprintf("%d %s", n, singular)
+	}
+	return fmt.Sprintf("%d %s", n, plural)
 }

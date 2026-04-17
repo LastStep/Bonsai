@@ -56,7 +56,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 
 	// Prevent removing tech-lead while other agents depend on it
 	if agentName == "tech-lead" && len(cfg.Agents) > 1 {
-		tui.ErrorPanel("Cannot remove Tech Lead while other agents are installed.\nRemove other agents first.")
+		tui.ErrorDetail("Tech Lead in use", "Other agents depend on Tech Lead. Remove them first.", "Run: bonsai list")
 		return nil
 	}
 
@@ -197,7 +197,7 @@ type agentMatch struct {
 func runRemoveItem(name string, it itemType) error {
 	// Block auto-managed sensors
 	if it.singular == "sensor" && name == "routine-check" {
-		tui.ErrorPanel("routine-check is auto-managed.\nIt is added/removed automatically when routines change.")
+		tui.ErrorDetail("Auto-managed sensor", "routine-check is added and removed automatically when routines change.", "")
 		return nil
 	}
 
@@ -225,7 +225,7 @@ func runRemoveItem(name string, it itemType) error {
 	}
 
 	if len(matches) == 0 {
-		tui.ErrorPanel(fmt.Sprintf("%s %q is not installed in any agent.", it.singular, name))
+		tui.ErrorDetail(it.singular+" not installed", fmt.Sprintf("%q is not in any agent.", name), "Run: bonsai list")
 		return nil
 	}
 
@@ -269,7 +269,7 @@ func runRemoveItem(name string, it itemType) error {
 		}
 	}
 	if len(allowed) == 0 {
-		tui.ErrorPanel(fmt.Sprintf("%s is required and cannot be removed.", itemDisplayName(cat, name, it)))
+		tui.ErrorDetail("Required item", fmt.Sprintf("%s is required by all agents that have it.", itemDisplayName(cat, name, it)), "")
 		return nil
 	}
 	targets = allowed

@@ -183,6 +183,19 @@ func FatalPanel(title, detail, hint string) {
 	os.Exit(1)
 }
 
+// ErrorDetail renders a structured non-fatal error. Same shape as FatalPanel but does not exit.
+// title: what happened (bold, error color). detail: why. hint: how to fix (muted).
+func ErrorDetail(title, detail, hint string) {
+	content := StyleError.Bold(true).Render(title)
+	if detail != "" {
+		content += "\n" + detail
+	}
+	if hint != "" {
+		content += "\n" + StyleMuted.Render(hint)
+	}
+	fmt.Println("\n" + indent(PanelError.Render(content), 2))
+}
+
 // WarningPanel renders a yellow-bordered panel.
 func WarningPanel(msg string) {
 	fmt.Println("\n" + indent(PanelWarning.Render(msg), 2))
