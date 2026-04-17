@@ -26,7 +26,7 @@ var initCmd = &cobra.Command{
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	cwd, _ := os.Getwd()
+	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 
 	if _, err := os.Stat(configPath); err == nil {
@@ -36,21 +36,24 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	cat := loadCatalog()
 
-	tui.Banner(Version)
+	tui.Banner(Version, "Initializing new project")
 	tui.Heading("Initialize Project")
 
 	projectName, err := tui.AskText("Project name:", "", true)
 	if err != nil {
 		return err
 	}
+	tui.Answer("Project name", projectName)
 	description, err := tui.AskText("Description (optional):", "", false)
 	if err != nil {
 		return err
 	}
+	tui.Answer("Description", description)
 	docsPath, err := tui.AskText("Station directory:", "station/", true)
 	if err != nil {
 		return err
 	}
+	tui.Answer("Station directory", docsPath)
 	docsPath = strings.TrimSpace(docsPath)
 	if docsPath == "" || docsPath == "/" {
 		tui.FatalPanel("Invalid station directory", "Cannot be empty or root.", "Use a subdirectory like: station/")
@@ -142,7 +145,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		},
 		describer,
 	)
-	tui.TitledPanel("Review", summary, tui.Water)
+	tui.TitledPanel("Review", summary, tui.ColorInfo)
 
 	confirmed, err := tui.AskConfirm("Generate project?", true)
 	if err != nil || !confirmed {

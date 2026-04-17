@@ -1172,6 +1172,30 @@ func triggerSection(item *catalog.CatalogItem, workspace string, category string
 	return strings.Join(lines, "\n")
 }
 
+// injectTriggerSection inserts the trigger section after YAML frontmatter
+// when present, otherwise prepends it. A YAML frontmatter block is
+// recognized when content starts with "---\n" and contains a closing
+// "\n---\n" before any other content. Returns the original content
+// unchanged when ts is empty.
+func injectTriggerSection(ts string, content []byte) []byte {
+	if ts == "" {
+		return content
+	}
+	const open = "---\n"
+	if bytes.HasPrefix(content, []byte(open)) {
+		rest := content[len(open):]
+		if idx := bytes.Index(rest, []byte("\n---\n")); idx >= 0 {
+			end := len(open) + idx + len("\n---\n")
+			out := make([]byte, 0, len(content)+len(ts))
+			out = append(out, content[:end]...)
+			out = append(out, []byte(ts)...)
+			out = append(out, content[end:]...)
+			return out
+		}
+	}
+	return append([]byte(ts), content...)
+}
+
 // AgentWorkspace generates the full agent/ directory in a workspace.
 func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	workspaceRoot := filepath.Join(projectRoot, installed.Workspace)
@@ -1286,9 +1310,7 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		}
 
 		// Prepend trigger section if triggers exist
-		if ts := triggerSection(item, installed.Workspace, "skill", false); ts != "" {
-			content = append([]byte(ts), content...)
-		}
+		content = injectTriggerSection(triggerSection(item, installed.Workspace, "skill", false), content)
 
 		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Skills", skillName+".md"))
 		r := writeFile(projectRoot, relPath, content, "catalog:skills/"+skillName, lock, force)
@@ -1307,9 +1329,7 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		}
 
 		// Prepend trigger section if triggers exist
-		if ts := triggerSection(item, installed.Workspace, "workflow", CuratedSlashWorkflows[wfName]); ts != "" {
-			data = append([]byte(ts), data...)
-		}
+		data = injectTriggerSection(triggerSection(item, installed.Workspace, "workflow", CuratedSlashWorkflows[wfName]), data)
 
 		relPath, _ := filepath.Rel(projectRoot, filepath.Join(agentDir, "Workflows", wfName+".md"))
 		r := writeFile(projectRoot, relPath, data, "catalog:workflows/"+wfName, lock, force)

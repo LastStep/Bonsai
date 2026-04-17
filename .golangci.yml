@@ -1,0 +1,27 @@
+# golangci-lint v1 config
+# https://golangci-lint.run/usage/configuration/
+# CI pins v1.64.x via golangci/golangci-lint-action@v6. The `version: latest`
+# input on that action resolves to the v1 latest, not v2. When we move to v2
+# (separate PR), this file needs the v2 schema (version/formatters/linters.default).
+
+run:
+  timeout: 3m
+  tests: true
+
+linters:
+  disable-all: true
+  # Conservative initial set. `staticcheck` and `ineffassign` are intentionally
+  # omitted at release-prep time because they flag findings in pre-existing code
+  # that is out of scope for Plan 17. Enable in a follow-up PR alongside the
+  # code cleanups.
+  enable:
+    - errcheck      # unchecked errors
+    - govet         # suspicious constructs
+    - unused        # unused code
+    - misspell      # typos in comments/strings
+    - gofmt         # formatting
+    - goimports     # import ordering
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
