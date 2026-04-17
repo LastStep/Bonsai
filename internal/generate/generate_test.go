@@ -1111,3 +1111,46 @@ func TestWriteFileChmodRestoresPermOnUnchanged(t *testing.T) {
 		t.Errorf("mode after unchanged run = %v, want 0755 (perm should be restored)", info.Mode()&0777)
 	}
 }
+
+func TestInjectTriggerSection(t *testing.T) {
+	ts := "## Triggers\n\n**Slash command:** `/foo`\n\n---\n\n"
+	tests := []struct {
+		name    string
+		ts      string
+		content string
+		want    string
+	}{
+		{
+			name:    "empty ts returns content unchanged",
+			ts:      "",
+			content: "---\nfoo: bar\n---\n# Title\n",
+			want:    "---\nfoo: bar\n---\n# Title\n",
+		},
+		{
+			name:    "no frontmatter prepends as before",
+			ts:      ts,
+			content: "# Title\nbody\n",
+			want:    ts + "# Title\nbody\n",
+		},
+		{
+			name:    "frontmatter present: ts lands after closing ---",
+			ts:      ts,
+			content: "---\nfoo: bar\n---\n# Title\nbody\n",
+			want:    "---\nfoo: bar\n---\n" + ts + "# Title\nbody\n",
+		},
+		{
+			name:    "opens with --- but no closing fence: prepend",
+			ts:      ts,
+			content: "---\nfoo: bar\n# Title\n",
+			want:    ts + "---\nfoo: bar\n# Title\n",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := string(injectTriggerSection(tc.ts, []byte(tc.content)))
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
