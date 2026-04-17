@@ -13,15 +13,20 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Plan 16 (go install binary name fix) — draft [PR #23](https://github.com/LastStep/Bonsai/pull/23) open, awaiting user merge. Plan 15 (BubbleTea foundation) still drafted, awaiting dispatch.
-**Blocked on:** Plan 16 → user merge on PR #23 (subagents lacked `gh`; user will click-merge via web)
-**Last completed:** Plan 14 iteration 2 — width-aware TitledPanel, collapsed required-only chip line, `mustCwd()` error surfacing (`63a3709`) (2026-04-17)
+**Current task:** None in-session. Awaiting next pickup.
+**In flight (other tracks):**
+- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch, parallel session driving iter 2/3
+- Plan 16 (go install binary name) — draft PR #23 still open, awaiting user merge
+**Blocked on:** Nothing in this session.
+**Last completed:** Plan 17 merged to main via PR #24 (`bc565bf`, 2026-04-17). Bundled: go toolchain 1.24.3→1.24.13, triggerSection frontmatter fix (`injectTriggerSection` helper + 4-case test), `.golangci.yml` + Makefile test/lint/fmt/tidy + parallel CI lint job, and Plan 14 TUI code (palette tokens, banner, width-aware panels, mustCwd error surfacing).
 
 ## Notes
 
 <!-- Session-to-session notes. Keep concise. -->
 
-- **Plan 14 still open for iteration.** Local-only, no PR. Taste-heavy — user drives iterations batch by batch. Iteration 2 (2026-04-17) shipped A/B/C: `mustCwd()` error surfacing in all cmd files, collapsed required-only chip line in `PickItems`, width-aware `TitledPanel` with `ansi.Truncate`. Deferred: palette rebalance (D), heading rhythm / step separators (E) — pending user steer. Phase 4+ (screen lifecycle, progressive disclosure, go-back nav, flow redesign) still in Plan 14 "Out of Scope".
+- **Plan 14 code shipped to main via PR #24 bundle (2026-04-17).** Iterations 1 + 2 (palette tokens, banner, answered-prompt persistence, required-only feedback, category counts, prompt polish, mustCwd error surfacing, width-aware TitledPanel) merged along with Plan 17's release-prep work. Phase 4+ scope (screen lifecycle, progressive disclosure, go-back nav, flow redesign) still deferred — Plan 15's BubbleTea harness is the likely vehicle for those.
+- **Parallel session convention.** `ui-ux-testing` branch is where Plan 15 iterations land (separate session). Don't cross-pollinate planning-doc edits between branches — each branch's Status.md/memory.md should stay scoped to its own track. Merging to main collapses everything cleanly.
+- **CI lint gotcha.** `golangci/golangci-lint-action@v6` with `version: latest` resolves to v1.x, not v2. `.golangci.yml` must use v1 schema (`linters.disable-all: true`, no `version:`/`formatters:` keys). If we ever move to v2, update both the action pin (`version: v2.x`) and the config schema together. Learned from PR #24 `66a6304`.
 - **Plan 08 Phase C (new sensors) paused** — moved back to Pending while Plan 14 ships. Resume once UI/UX overhaul series wraps or explicitly requested.
 - **Pre-flight learning:** Worktrees inherit only committed HEAD — uncommitted plans/docs in main tree are invisible to dispatched agents. Commit station/ planning artifacts before dispatch.
 - **PR review memory hygiene:** "both reviews APPROVE" from prior session was dispatched review agents, not GitHub reviews. `gh pr view --json reviews` returned empty. When noting review status, distinguish agent-dispatched reviews (in `Reports/`) from GitHub formal reviews.

@@ -17,9 +17,10 @@ description: Live task tracker. Update this file at the start and end of every w
 <!-- Documentation site (Starlight) — Plan 10 complete, all phases shipped (PRs #13-19) -->
 <!-- UI/UX overhaul Phase 2 — merged PR #20, moved to Recently Done 2026-04-17 -->
 <!-- ActionUnchanged follow-ups — merged PR #22, moved to Recently Done 2026-04-17 -->
-| UI/UX Overhaul Phase 3 — visual identity + init polish | 14 | general-purpose | Local-only iteration (no PR); palette tokens + banner + answered-prompt persistence + required-only feedback + category counts + prompt polish |
-| BubbleTea foundation + theme system (migrate init/add/remove/update onto shared harness) | 15 | general-purpose | Local-only; 3 iterations planned. Iter 1 = harness + theme + init migration |
-| Fix `go install` binary name (module path → `/cmd/bonsai`) | 16 | general-purpose | Executed + reviewed (PASS); draft [PR #23](https://github.com/LastStep/Bonsai/pull/23) awaiting user merge. Post-merge verification pending. |
+| BubbleTea foundation + theme system (migrate init/add/remove/update onto shared harness) | 15 | general-purpose | On `ui-ux-testing` branch. 3 iterations planned. Iter 1 = harness + theme + init migration |
+| Fix `go install` binary name (module path → `/cmd/bonsai`) | 16 | general-purpose | Draft [PR #23](https://github.com/LastStep/Bonsai/pull/23) still open, awaiting user merge. |
+<!-- UI/UX Overhaul Phase 3 (Plan 14) — merged via PR #24, moved to Recently Done 2026-04-17 -->
+<!-- Release prep (Plan 17) — merged PR #24, moved to Recently Done 2026-04-17 -->
 <!-- Code index refresh — completed 2026-04-16, PR #12 -->
 <!-- Cross-link moved to Recently Done — merged 2026-04-16, PR #4 -->
 <!-- P0 file collision fix — merged 2026-04-16, PR #8 -->
@@ -37,6 +38,8 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Release prep — Go toolchain 1.24.13 + triggerSection frontmatter fix + OSS polish (PR #24) | 17 | general-purpose | 2026-04-17 |
+| UI/UX overhaul — Phase 3 visual identity + init polish (merged via PR #24 bundle) | 14 | general-purpose | 2026-04-17 |
 | ActionUnchanged follow-ups — chmod bug + test gaps (PR #22) | 13 | tech-lead | 2026-04-17 |
 | UI/UX overhaul — Phase 2 (consistency: hints, counts, no-op detection, structured errors) | 12 | tech-lead | 2026-04-17 |
 | Documentation site (Starlight) — Phase D (deploy & CI) — **Plan 10 complete** | 10 | tech-lead | 2026-04-17 |
