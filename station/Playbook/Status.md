@@ -16,6 +16,7 @@ description: Live task tracker. Update this file at the start and end of every w
 |------|------|-------|-------|
 <!-- Documentation site (Starlight) — Plan 10 complete, all phases shipped (PRs #13-19) -->
 <!-- UI/UX overhaul Phase 2 — merged PR #20, moved to Recently Done 2026-04-17 -->
+| ActionUnchanged follow-ups (chmod bug + test gaps) | 13 | tech-lead | Plan 12 PR #20 review follow-ups |
 | Better trigger sections — Phase C (new sensors) | 08 | tech-lead | Phase A (PR #10) + Phase B (PR #11) merged, Phase C next |
 <!-- Code index refresh — completed 2026-04-16, PR #12 -->
 <!-- Cross-link moved to Recently Done — merged 2026-04-16, PR #4 -->
