@@ -18,8 +18,11 @@ import (
 // the empty-input guard is prepended automatically.
 type TextStep struct {
 	title      string
+	prompt     string
 	value      string
 	defaultVal string
+	required   bool
+	validators []func(string) error
 	form       *huh.Form
 }
 
@@ -36,32 +39,47 @@ type TextStep struct {
 func NewText(title, prompt, defaultVal string, required bool, validators ...func(string) error) *TextStep {
 	step := &TextStep{
 		title:      title,
+		prompt:     prompt,
 		defaultVal: defaultVal,
+		required:   required,
+		validators: validators,
 	}
+	step.form = step.buildForm()
+	return step
+}
 
+// buildForm constructs a fresh *huh.Form wired to this step's value pointer.
+// Called from NewText and from Reset() — rebuilding (rather than flipping
+// form.State) is required because huh sets the unexported field f.quitting=true
+// on submit, and Form.View() returns "" while f.quitting is true. f.quitting
+// is not reachable from outside the huh package, so on Esc-back we construct a
+// new form with the same value pointer and validators and let it render
+// normally. See huh form.go:560,576,649 and huh form.go:505 (Init does not
+// clear f.quitting).
+func (s *TextStep) buildForm() *huh.Form {
 	input := huh.NewInput().
-		Title(prompt).
-		Value(&step.value)
+		Title(s.prompt).
+		Value(&s.value)
 
-	if defaultVal != "" {
-		input.Placeholder(defaultVal)
+	if s.defaultVal != "" {
+		input.Placeholder(s.defaultVal)
 	}
 
-	chain := make([]func(string) error, 0, len(validators)+1)
-	if required {
-		chain = append(chain, func(s string) error {
-			if strings.TrimSpace(s) == "" {
+	chain := make([]func(string) error, 0, len(s.validators)+1)
+	if s.required {
+		chain = append(chain, func(v string) error {
+			if strings.TrimSpace(v) == "" {
 				return fmt.Errorf("required")
 			}
 			return nil
 		})
 	}
-	chain = append(chain, validators...)
+	chain = append(chain, s.validators...)
 
 	if len(chain) > 0 {
-		input.Validate(func(s string) error {
-			for _, v := range chain {
-				if err := v(s); err != nil {
+		input.Validate(func(v string) error {
+			for _, fn := range chain {
+				if err := fn(v); err != nil {
 					return err
 				}
 			}
@@ -69,8 +87,7 @@ func NewText(title, prompt, defaultVal string, required bool, validators ...func
 		})
 	}
 
-	step.form = huh.NewForm(huh.NewGroup(input)).WithTheme(tui.BonsaiTheme())
-	return step
+	return huh.NewForm(huh.NewGroup(input)).WithTheme(tui.BonsaiTheme())
 }
 
 // Title implements Step.
@@ -102,9 +119,11 @@ func (s *TextStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View implements tea.Model.
 func (s *TextStep) View() string { return s.form.View() }
 
-// Reset returns the form to StateNormal so the user can edit on re-entry.
+// Reset rebuilds the step's *huh.Form so the user sees the prior input on
+// re-entry. The value pointer (&s.value) stays the same, so whatever the user
+// typed before Esc-back still shows in the field.
 func (s *TextStep) Reset() tea.Cmd {
-	s.form.State = huh.StateNormal
+	s.form = s.buildForm()
 	return s.form.Init()
 }
 
@@ -112,20 +131,32 @@ func (s *TextStep) Reset() tea.Cmd {
 
 // SelectStep wraps huh.NewSelect[string].
 type SelectStep struct {
-	title string
-	value string
-	form  *huh.Form
+	title   string
+	prompt  string
+	value   string
+	options []huh.Option[string]
+	form    *huh.Form
 }
 
 // NewSelect constructs a SelectStep.
 func NewSelect(title, prompt string, options []huh.Option[string]) *SelectStep {
-	step := &SelectStep{title: title}
-	sel := huh.NewSelect[string]().
-		Title(prompt).
-		Options(options...).
-		Value(&step.value)
-	step.form = huh.NewForm(huh.NewGroup(sel)).WithTheme(tui.BonsaiTheme())
+	step := &SelectStep{
+		title:   title,
+		prompt:  prompt,
+		options: options,
+	}
+	step.form = step.buildForm()
 	return step
+}
+
+// buildForm constructs a fresh *huh.Form. See TextStep.buildForm for why we
+// rebuild instead of toggling form.State on Reset.
+func (s *SelectStep) buildForm() *huh.Form {
+	sel := huh.NewSelect[string]().
+		Title(s.prompt).
+		Options(s.options...).
+		Value(&s.value)
+	return huh.NewForm(huh.NewGroup(sel)).WithTheme(tui.BonsaiTheme())
 }
 
 func (s *SelectStep) Title() string { return s.title }
@@ -141,9 +172,10 @@ func (s *SelectStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, cmd
 }
 
-// Reset returns the form to StateNormal so the user can re-pick on re-entry.
+// Reset rebuilds the form so the selection list is visible on re-entry with
+// the prior pick still highlighted (value pointer preserved).
 func (s *SelectStep) Reset() tea.Cmd {
-	s.form.State = huh.StateNormal
+	s.form = s.buildForm()
 	return s.form.Init()
 }
 
@@ -157,16 +189,17 @@ func (s *SelectStep) Reset() tea.Cmd {
 //   - the visual chip line / per-item display matches the existing PickItems
 //     output so users see the same shape inside or outside AltScreen.
 type MultiSelectStep struct {
-	title       string
-	label       string
-	required    []tui.ItemOption
-	optional    []tui.ItemOption
-	defaults    []string
-	header      string // pre-rendered required-item display
-	selected    []string
-	form        *huh.Form
-	auto        bool // true when no optional items — auto-complete on entry
-	autoFlipped bool // already flipped to Done()
+	title            string
+	label            string
+	required         []tui.ItemOption
+	optional         []tui.ItemOption
+	defaults         []string
+	header           string // pre-rendered required-item display
+	selected         []string
+	optionalSelected []string // slice the form writes picks into; reused across rebuilds
+	form             *huh.Form
+	auto             bool // true when no optional items — auto-complete on entry
+	autoFlipped      bool // already flipped to Done()
 }
 
 // NewMultiSelect constructs a MultiSelectStep.
@@ -205,40 +238,63 @@ func NewMultiSelect(title, label string, available []tui.ItemOption, defaults []
 		return step
 	}
 
-	defaultSet := make(map[string]bool, len(defaults))
-	for _, d := range defaults {
-		defaultSet[d] = true
+	step.form = step.buildForm()
+	return step
+}
+
+// buildForm constructs a fresh *huh.Form for the optional-picks portion of the
+// multi-select. Called from NewMultiSelect and from Reset() — rebuilding (vs.
+// flipping form.State) is required because huh's form.View() returns "" while
+// its unexported f.quitting=true after submit. On re-entry, prior picks (held
+// in s.optionalSelected) are re-applied via Selected(true) so the user's
+// selections visibly persist.
+func (s *MultiSelectStep) buildForm() *huh.Form {
+	// Build a set of the user's currently-selected optional values. On first
+	// build this starts empty and falls back to the provided defaults; on
+	// subsequent rebuilds (Esc-back) it reflects whatever the user picked
+	// before popping.
+	pickSet := make(map[string]bool, len(s.optionalSelected))
+	if len(s.optionalSelected) > 0 {
+		for _, v := range s.optionalSelected {
+			pickSet[v] = true
+		}
+	} else {
+		for _, d := range s.defaults {
+			pickSet[d] = true
+		}
 	}
 
-	var options []huh.Option[string]
-	for _, item := range step.optional {
+	options := make([]huh.Option[string], 0, len(s.optional))
+	for _, item := range s.optional {
 		labelText := item.Name + " " + tui.StyleMuted.Render(tui.GlyphDash+" "+item.Desc)
 		opt := huh.NewOption(labelText, valueOf(item))
-		if defaultSet[valueOf(item)] {
+		if pickSet[valueOf(item)] {
 			opt = opt.Selected(true)
 		}
 		options = append(options, opt)
 	}
 
-	var optionalSelected []string
+	// Reset the slice length but keep the underlying array so the *huh.Form's
+	// value pointer continues to point at the same destination across rebuilds.
+	s.optionalSelected = s.optionalSelected[:0]
+
 	ms := huh.NewMultiSelect[string]().
 		Title("").
 		Options(options...).
-		Value(&optionalSelected)
+		Value(&s.optionalSelected)
 
-	step.form = huh.NewForm(huh.NewGroup(ms)).WithTheme(tui.BonsaiTheme())
+	form := huh.NewForm(huh.NewGroup(ms)).WithTheme(tui.BonsaiTheme())
 
 	// When the form completes, fold optional picks into selected on top of
 	// the required prefix already seeded above.
-	requiredCount := len(step.required)
-	step.form.SubmitCmd = func() tea.Msg {
+	requiredCount := len(s.required)
+	form.SubmitCmd = func() tea.Msg {
 		// Truncate any prior optional picks (re-entry via Esc) and re-append.
-		step.selected = step.selected[:requiredCount]
-		step.selected = append(step.selected, optionalSelected...)
+		s.selected = s.selected[:requiredCount]
+		s.selected = append(s.selected, s.optionalSelected...)
 		return nil
 	}
-
-	return step
+	return form
 }
 
 func (s *MultiSelectStep) Title() string { return s.title }
@@ -288,13 +344,14 @@ func (s *MultiSelectStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, cmd
 }
 
-// Reset returns the form to StateNormal on re-entry. Auto-completing steps
-// (no optional items) stay completed — the user can't change anything.
+// Reset rebuilds the form so the list of options is visible again on re-entry
+// with the user's prior picks still highlighted. Auto-completing steps (no
+// optional items) have no interactive form to rebuild — keep them completed.
 func (s *MultiSelectStep) Reset() tea.Cmd {
 	if s.auto {
 		return nil
 	}
-	s.form.State = huh.StateNormal
+	s.form = s.buildForm()
 	return s.form.Init()
 }
 
@@ -306,21 +363,28 @@ func (s *MultiSelectStep) AutoComplete() bool { return s.auto }
 
 // ConfirmStep wraps huh.NewConfirm.
 type ConfirmStep struct {
-	title string
-	value bool
-	form  *huh.Form
+	title  string
+	prompt string
+	value  bool
+	form   *huh.Form
 }
 
 // NewConfirm constructs a ConfirmStep.
 func NewConfirm(title, prompt string, defaultVal bool) *ConfirmStep {
-	step := &ConfirmStep{title: title, value: defaultVal}
+	step := &ConfirmStep{title: title, prompt: prompt, value: defaultVal}
+	step.form = step.buildForm()
+	return step
+}
+
+// buildForm constructs a fresh *huh.Form. See TextStep.buildForm for why we
+// rebuild instead of toggling form.State on Reset.
+func (s *ConfirmStep) buildForm() *huh.Form {
 	c := huh.NewConfirm().
-		Title(prompt).
+		Title(s.prompt).
 		Affirmative("Yes").
 		Negative("No").
-		Value(&step.value)
-	step.form = huh.NewForm(huh.NewGroup(c)).WithTheme(tui.BonsaiTheme())
-	return step
+		Value(&s.value)
+	return huh.NewForm(huh.NewGroup(c)).WithTheme(tui.BonsaiTheme())
 }
 
 func (s *ConfirmStep) Title() string { return s.title }
@@ -336,9 +400,10 @@ func (s *ConfirmStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, cmd
 }
 
-// Reset returns the form to StateNormal so the user can re-confirm on re-entry.
+// Reset rebuilds the form so the confirm prompt is visible again on re-entry,
+// with the user's prior choice preserved via &s.value.
 func (s *ConfirmStep) Reset() tea.Cmd {
-	s.form.State = huh.StateNormal
+	s.form = s.buildForm()
 	return s.form.Init()
 }
 
@@ -348,10 +413,11 @@ func (s *ConfirmStep) Reset() tea.Cmd {
 // TitledPanel) above a confirm prompt. The panel content is supplied at
 // construction time; ReviewStep itself does not synthesise the tree.
 type ReviewStep struct {
-	title string
-	panel string
-	value bool
-	form  *huh.Form
+	title  string
+	prompt string
+	panel  string
+	value  bool
+	form   *huh.Form
 }
 
 // NewReview constructs a ReviewStep.
@@ -362,14 +428,20 @@ type ReviewStep struct {
 //   - prompt: confirm question.
 //   - defaultVal: yes/no default.
 func NewReview(title, panel, prompt string, defaultVal bool) *ReviewStep {
-	step := &ReviewStep{title: title, panel: panel, value: defaultVal}
+	step := &ReviewStep{title: title, prompt: prompt, panel: panel, value: defaultVal}
+	step.form = step.buildForm()
+	return step
+}
+
+// buildForm constructs a fresh *huh.Form for the confirm prompt. See
+// TextStep.buildForm for why we rebuild instead of toggling form.State.
+func (s *ReviewStep) buildForm() *huh.Form {
 	c := huh.NewConfirm().
-		Title(prompt).
+		Title(s.prompt).
 		Affirmative("Yes").
 		Negative("No").
-		Value(&step.value)
-	step.form = huh.NewForm(huh.NewGroup(c)).WithTheme(tui.BonsaiTheme())
-	return step
+		Value(&s.value)
+	return huh.NewForm(huh.NewGroup(c)).WithTheme(tui.BonsaiTheme())
 }
 
 func (s *ReviewStep) Title() string { return s.title }
@@ -390,9 +462,10 @@ func (s *ReviewStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, cmd
 }
 
-// Reset returns the confirm form to StateNormal on re-entry.
+// Reset rebuilds the confirm form so it renders on re-entry, with prior
+// choice preserved via &s.value.
 func (s *ReviewStep) Reset() tea.Cmd {
-	s.form.State = huh.StateNormal
+	s.form = s.buildForm()
 	return s.form.Init()
 }
 

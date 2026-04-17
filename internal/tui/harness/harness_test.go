@@ -34,6 +34,36 @@ func (f *fakeStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func newFake(title string) *fakeStep { return &fakeStep{title: title} }
 
+// fakeResetStep satisfies Step + the resetter interface used by the harness
+// on Esc-back. It counts Reset() invocations and returns a sentinel tea.Cmd
+// so the test can verify the harness folds it into its batch return.
+type fakeResetStep struct {
+	fakeStep
+	resetCount int
+	resetCmd   tea.Cmd
+}
+
+func (f *fakeResetStep) Reset() tea.Cmd {
+	f.resetCount++
+	return f.resetCmd
+}
+
+// Override Update so the embedded fakeStep's Update returns a pointer to the
+// outer fakeResetStep (the harness expects the updated Step to satisfy Step —
+// returning *fakeStep would drop the resetter implementation on the next tick).
+func (f *fakeResetStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	f.received = append(f.received, msg)
+	if w, ok := msg.(tea.WindowSizeMsg); ok {
+		f.width = w.Width
+		f.height = w.Height
+	}
+	return f, nil
+}
+
+// resetSentinelMsg is produced by the fake reset step's returned tea.Cmd so
+// TestEscPopReinitsActiveStep can assert it made it into the harness's batch.
+type resetSentinelMsg struct{}
+
 // runeKey constructs a tea.KeyMsg the harness will see for a printable rune.
 func runeKey(r rune) tea.KeyMsg {
 	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}}
@@ -183,6 +213,75 @@ func TestLazyStepBuildsOnEntry(t *testing.T) {
 	if built {
 		t.Fatalf("Build must be invoked exactly once")
 	}
+}
+
+// TestEscPopReinitsActiveStep verifies that when Esc pops the cursor back, the
+// step being popped onto has its Reset() called exactly once and the tea.Cmd
+// Reset() returns is included in the harness's batch return. This guards the
+// fix for the Plan 15 iter 1 regression where huh's unexported f.quitting=true
+// made the popped-onto form render as an empty string.
+func TestEscPopReinitsActiveStep(t *testing.T) {
+	a := &fakeResetStep{fakeStep: fakeStep{title: "a"}}
+
+	// b is the step being popped onto. Give its Reset() a sentinel cmd so
+	// we can verify the harness batches it into the return.
+	b := &fakeResetStep{fakeStep: fakeStep{title: "b"}}
+	b.resetCmd = func() tea.Msg { return resetSentinelMsg{} }
+
+	c := &fakeResetStep{fakeStep: fakeStep{title: "c"}}
+
+	h := New("BANNER", "TEST", []Step{a, b, c})
+	h.cursor = 2
+
+	updated, cmd := h.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	hh := updated.(*Harness)
+
+	if hh.cursor != 1 {
+		t.Fatalf("expected cursor=1 after Esc, got %d", hh.cursor)
+	}
+	if b.resetCount != 1 {
+		t.Fatalf("expected popped-onto step Reset() count=1, got %d", b.resetCount)
+	}
+	if a.resetCount != 0 {
+		t.Fatalf("step before the new cursor must not be reset; got count=%d", a.resetCount)
+	}
+	// c was at the original cursor position — the harness reducer only
+	// resets steps in [new_cursor, orig_cursor) so c at index 2 is untouched.
+	// This is fine — c gets rebuilt by its own Reset() if the user Escs onto
+	// it again, and on forward re-entry its form is still in whatever state
+	// the user left it (StateNormal if never submitted).
+	if c.resetCount != 0 {
+		t.Fatalf("step at original cursor position must not be reset; got count=%d", c.resetCount)
+	}
+	if cmd == nil {
+		t.Fatalf("expected harness to return a tea.Cmd batching the popped-onto step's Reset() cmd")
+	}
+	if !cmdContainsSentinel(cmd) {
+		t.Fatalf("expected Reset()'s tea.Cmd sentinel to surface in the harness's batch return")
+	}
+}
+
+// cmdContainsSentinel walks a tea.Cmd (expanding tea.BatchMsg one level) and
+// returns true if any produced message is a resetSentinelMsg.
+func cmdContainsSentinel(cmd tea.Cmd) bool {
+	if cmd == nil {
+		return false
+	}
+	msg := cmd()
+	if msg == nil {
+		return false
+	}
+	if _, ok := msg.(resetSentinelMsg); ok {
+		return true
+	}
+	if batch, ok := msg.(tea.BatchMsg); ok {
+		for _, sub := range batch {
+			if cmdContainsSentinel(sub) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // cmdContainsQuit walks the result of executing a tea.Cmd and returns true if
