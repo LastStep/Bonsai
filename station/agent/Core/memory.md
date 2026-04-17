@@ -15,13 +15,13 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 **Current task:** Plan 08 Phase C (new sensors) next
 **Blocked on:** —
-**Last completed:** Plan 12 Phase 2 merged (PR #20, `dffe6e2`) (2026-04-17)
+**Last completed:** Plan 13 ActionUnchanged follow-ups merged (PR #22, `86e7adf`) (2026-04-17)
 
 ## Notes
 
 <!-- Session-to-session notes. Keep concise. -->
 
-- **Next session — first action:** Plan 08 Phase C (new sensors). Phase A (PR #10) + Phase B (PR #11) already merged.
+- **Next session — first action:** Plan 08 Phase C (new sensors). Phase A (PR #10) + Phase B (PR #11) already merged. Plan 13 shipped as a small cleanup after Plan 12 (PR #22).
 - **Pre-flight learning:** Worktrees inherit only committed HEAD — uncommitted plans/docs in main tree are invisible to dispatched agents. Commit station/ planning artifacts before dispatch.
 - **PR review memory hygiene:** "both reviews APPROVE" from prior session was dispatched review agents, not GitHub reviews. `gh pr view --json reviews` returned empty. When noting review status, distinguish agent-dispatched reviews (in `Reports/`) from GitHub formal reviews.
 
