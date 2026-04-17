@@ -19,6 +19,7 @@ description: Live task tracker. Update this file at the start and end of every w
 <!-- ActionUnchanged follow-ups — merged PR #22, moved to Recently Done 2026-04-17 -->
 | UI/UX Overhaul Phase 3 — visual identity + init polish | 14 | general-purpose | Local-only iteration (no PR); palette tokens + banner + answered-prompt persistence + required-only feedback + category counts + prompt polish |
 | BubbleTea foundation + theme system (migrate init/add/remove/update onto shared harness) | 15 | general-purpose | Local-only; 3 iterations planned. Iter 1 = harness + theme + init migration |
+| Fix `go install` binary name (module path → `/cmd/bonsai`) | 16 | general-purpose | Executed + reviewed (PASS); draft [PR #23](https://github.com/LastStep/Bonsai/pull/23) awaiting user merge. Post-merge verification pending. |
 <!-- Code index refresh — completed 2026-04-16, PR #12 -->
 <!-- Cross-link moved to Recently Done — merged 2026-04-16, PR #4 -->
 <!-- P0 file collision fix — merged 2026-04-16, PR #8 -->

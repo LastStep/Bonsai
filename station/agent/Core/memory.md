@@ -13,8 +13,8 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Plan 15 (BubbleTea foundation + theme system) — drafted 2026-04-17, awaiting dispatch for iter 1
-**Blocked on:** —
+**Current task:** Plan 16 (go install binary name fix) — draft [PR #23](https://github.com/LastStep/Bonsai/pull/23) open, awaiting user merge. Plan 15 (BubbleTea foundation) still drafted, awaiting dispatch.
+**Blocked on:** Plan 16 → user merge on PR #23 (subagents lacked `gh`; user will click-merge via web)
 **Last completed:** Plan 14 iteration 2 — width-aware TitledPanel, collapsed required-only chip line, `mustCwd()` error surfacing (`63a3709`) (2026-04-17)
 
 ## Notes
@@ -25,6 +25,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 - **Plan 08 Phase C (new sensors) paused** — moved back to Pending while Plan 14 ships. Resume once UI/UX overhaul series wraps or explicitly requested.
 - **Pre-flight learning:** Worktrees inherit only committed HEAD — uncommitted plans/docs in main tree are invisible to dispatched agents. Commit station/ planning artifacts before dispatch.
 - **PR review memory hygiene:** "both reviews APPROVE" from prior session was dispatched review agents, not GitHub reviews. `gh pr view --json reviews` returned empty. When noting review status, distinguish agent-dispatched reviews (in `Reports/`) from GitHub formal reviews.
+- **Subagent tool inheritance is flaky.** On 2026-04-17, the original executing agent (worktree, `gh` authed) successfully created draft PR #23, but every subsequent subagent I spawned for merge/verification reported `gh: command not found` — the environment wasn't inherited from the spawning agent or from my own shell (Windows Git Bash over WSL UNC path, no `gh` on PATH). Implication: for PR-flow tasks, bundle **all** gh operations (push, create PR, mark ready, merge, delete branch) into a **single** agent dispatch rather than splitting across agents. Second-best: ask the user to click-merge via web UI when a subagent-less step is needed.
 
 ## Feedback
 
