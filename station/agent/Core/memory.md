@@ -15,7 +15,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 **Current task:** Plan 14 (UI/UX Overhaul Phase 3 — visual identity + init polish) — iteration batch 2 landed
 **Blocked on:** —
-**Last completed:** Plan 14 iteration 2 — width-aware TitledPanel, collapsed required-only chip line, mustCwd() error surfacing (local-only, uncommitted at time of note) (2026-04-17)
+**Last completed:** Plan 14 iteration 2 — width-aware TitledPanel, collapsed required-only chip line, `mustCwd()` error surfacing (`63a3709`) (2026-04-17)
 
 ## Notes
 
