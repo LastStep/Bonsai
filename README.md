@@ -65,7 +65,7 @@ sudo mv bonsai /usr/local/bin/
 **From source** (Go 1.24+):
 
 ```bash
-go install github.com/LastStep/Bonsai@latest
+go install github.com/LastStep/Bonsai/cmd/bonsai@latest
 ```
 
 ---

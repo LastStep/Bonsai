@@ -115,7 +115,7 @@ When you discover bugs, improvement ideas, tech debt, or feature requests outsid
 ```bash
 make build             # builds ./bonsai binary
 ./bonsai --help        # verify CLI works
-go install .           # install to $GOPATH/bin
+go install ./cmd/bonsai    # install to $GOPATH/bin
 ```
 
 ### Testing changes to abilities

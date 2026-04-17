@@ -1,7 +1,7 @@
 # Binary
-bonsai
-bonsai.exe
-Bonsai
+/bonsai
+/bonsai.exe
+/Bonsai
 
 # GoReleaser
 dist/
