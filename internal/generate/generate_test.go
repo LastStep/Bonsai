@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/config"
@@ -358,14 +359,18 @@ func TestWriteResultSummary(t *testing.T) {
 			{Action: ActionSkipped},
 			{Action: ActionConflict},
 			{Action: ActionForced},
+			{Action: ActionUnchanged},
 		},
 	}
-	created, updated, _, skipped, conflicts := wr.Summary()
+	created, updated, unchanged, skipped, conflicts := wr.Summary()
 	if created != 2 {
 		t.Errorf("created = %d, want 2", created)
 	}
 	if updated != 2 { // Updated + Forced
 		t.Errorf("updated = %d, want 2", updated)
+	}
+	if unchanged != 1 {
+		t.Errorf("unchanged = %d, want 1", unchanged)
 	}
 	if skipped != 1 {
 		t.Errorf("skipped = %d, want 1", skipped)
@@ -986,5 +991,123 @@ func TestBackwardCompatNilTriggers(t *testing.T) {
 	}
 	if strings.HasPrefix(string(data), "## Triggers") {
 		t.Error("skill file without triggers should not start with trigger section")
+	}
+}
+
+// TestWorkspaceClaudeMDUnchangedShortCircuit verifies that calling
+// WorkspaceClaudeMD twice with identical inputs hits the short-circuit at
+// generate.go:829-833 — the second call records ActionUnchanged and does
+// not rewrite the file (mtime is preserved).
+func TestWorkspaceClaudeMDUnchangedShortCircuit(t *testing.T) {
+	cat, err := buildTestCatalog(map[string]string{
+		"identity.md.tmpl": "I am {{ .AgentDisplayName }}",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{AgentType: "test-agent", Workspace: "."}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+
+	// First call — creates CLAUDE.md with markers.
+	var wr1 WriteResult
+	if err := WorkspaceClaudeMD(tmpDir, tmpDir, agentDef, installed, cfg, cat, lock, &wr1, false); err != nil {
+		t.Fatalf("first WorkspaceClaudeMD: %v", err)
+	}
+
+	claudePath := filepath.Join(tmpDir, "CLAUDE.md")
+	info1, err := os.Stat(claudePath)
+	if err != nil {
+		t.Fatalf("stat CLAUDE.md after first call: %v", err)
+	}
+	mtime1 := info1.ModTime()
+
+	// Back-date the file so that a rewrite (if it happened) would be
+	// detectable via mtime even on filesystems with coarse timestamps.
+	past := mtime1.Add(-2 * time.Second)
+	if err := os.Chtimes(claudePath, past, past); err != nil {
+		t.Fatalf("chtimes: %v", err)
+	}
+	info1, err = os.Stat(claudePath)
+	if err != nil {
+		t.Fatalf("stat after chtimes: %v", err)
+	}
+	mtime1 = info1.ModTime()
+
+	// Second call — identical inputs, should short-circuit.
+	var wr2 WriteResult
+	if err := WorkspaceClaudeMD(tmpDir, tmpDir, agentDef, installed, cfg, cat, lock, &wr2, false); err != nil {
+		t.Fatalf("second WorkspaceClaudeMD: %v", err)
+	}
+
+	if len(wr2.Files) == 0 {
+		t.Fatal("second WorkspaceClaudeMD produced no FileResults")
+	}
+	last := wr2.Files[len(wr2.Files)-1]
+	if last.Action != ActionUnchanged {
+		t.Errorf("last FileResult.Action = %v, want ActionUnchanged", last.Action)
+	}
+
+	info2, err := os.Stat(claudePath)
+	if err != nil {
+		t.Fatalf("stat CLAUDE.md after second call: %v", err)
+	}
+	if !info2.ModTime().Equal(mtime1) {
+		t.Errorf("CLAUDE.md mtime changed: before=%v after=%v (expected no rewrite)", mtime1, info2.ModTime())
+	}
+}
+
+// TestWriteFileChmodRestoresPermOnUnchanged is a regression test for the
+// Plan 13 fix: when content is unchanged but the file's exec bit was
+// stripped externally, writeFileChmod must still re-apply the declared
+// perm. Previously the chmod gate excluded ActionUnchanged, so sensor
+// scripts stayed non-executable across bonsai update runs.
+func TestWriteFileChmodRestoresPermOnUnchanged(t *testing.T) {
+	tmpDir := t.TempDir()
+	relPath := "agent/Sensors/test.sh"
+	content := []byte("#!/bin/sh\necho hi\n")
+	lock := config.NewLockFile()
+
+	// 1. Create the file with 0755.
+	r1 := writeFileChmod(tmpDir, relPath, content, "catalog:sensors/test", lock, false, 0755)
+	if r1.Action != ActionCreated {
+		t.Fatalf("first writeFileChmod action = %v, want ActionCreated", r1.Action)
+	}
+	absPath := filepath.Join(tmpDir, relPath)
+	info, err := os.Stat(absPath)
+	if err != nil {
+		t.Fatalf("stat after create: %v", err)
+	}
+	if info.Mode()&0777 != 0755 {
+		t.Fatalf("mode after create = %v, want 0755", info.Mode()&0777)
+	}
+
+	// 2. Externally strip the exec bit.
+	if err := os.Chmod(absPath, 0644); err != nil {
+		t.Fatalf("chmod 0644: %v", err)
+	}
+
+	// 3. Call again with identical content + perm.
+	r2 := writeFileChmod(tmpDir, relPath, content, "catalog:sensors/test", lock, false, 0755)
+
+	// 4. Should report ActionUnchanged (content is identical).
+	if r2.Action != ActionUnchanged {
+		t.Errorf("second writeFileChmod action = %v, want ActionUnchanged", r2.Action)
+	}
+
+	// 5. Mode must be restored to 0755.
+	info, err = os.Stat(absPath)
+	if err != nil {
+		t.Fatalf("stat after second call: %v", err)
+	}
+	if info.Mode()&0777 != 0755 {
+		t.Errorf("mode after unchanged run = %v, want 0755 (perm should be restored)", info.Mode()&0777)
 	}
 }
