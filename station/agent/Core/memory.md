@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Plan 08 Phase C (new sensors) next
+**Current task:** Plan 14 (UI/UX Overhaul Phase 3 — visual identity + init polish)
 **Blocked on:** —
 **Last completed:** Plan 13 ActionUnchanged follow-ups merged (PR #22, `86e7adf`) (2026-04-17)
 
@@ -21,7 +21,8 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Session-to-session notes. Keep concise. -->
 
-- **Next session — first action:** Plan 08 Phase C (new sensors). Phase A (PR #10) + Phase B (PR #11) already merged. Plan 13 shipped as a small cleanup after Plan 12 (PR #22).
+- **Current session — UI/UX dogfooding.** User is driving a taste-heavy design iteration against `bonsai init`. Plan 14 is local-only (no PR) — fast loop: dispatch → build → user tests → feedback. Phase 4+ items (screen lifecycle, progressive disclosure, go-back nav, flow redesign) listed in Plan 14 "Out of Scope".
+- **Plan 08 Phase C (new sensors) paused** — moved back to Pending while Plan 14 ships. Resume once UI/UX overhaul series wraps or explicitly requested.
 - **Pre-flight learning:** Worktrees inherit only committed HEAD — uncommitted plans/docs in main tree are invisible to dispatched agents. Commit station/ planning artifacts before dispatch.
 - **PR review memory hygiene:** "both reviews APPROVE" from prior session was dispatched review agents, not GitHub reviews. `gh pr view --json reviews` returned empty. When noting review status, distinguish agent-dispatched reviews (in `Reports/`) from GitHub formal reviews.
 
