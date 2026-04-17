@@ -26,7 +26,7 @@ var initCmd = &cobra.Command{
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	cwd, _ := os.Getwd()
+	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 
 	if _, err := os.Stat(configPath); err == nil {

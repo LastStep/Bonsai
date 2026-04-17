@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -24,7 +23,7 @@ var listCmd = &cobra.Command{
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	cwd, _ := os.Getwd()
+	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 	cfg, err := requireConfig(configPath)
 	if err != nil {

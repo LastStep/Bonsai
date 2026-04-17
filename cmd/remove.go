@@ -42,7 +42,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	agentName := args[0]
-	cwd, _ := os.Getwd()
+	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 	cfg, err := requireConfig(configPath)
 	if err != nil {
@@ -201,7 +201,7 @@ func runRemoveItem(name string, it itemType) error {
 		return nil
 	}
 
-	cwd, _ := os.Getwd()
+	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 	cfg, err := requireConfig(configPath)
 	if err != nil {

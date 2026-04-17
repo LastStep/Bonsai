@@ -26,7 +26,7 @@ var updateCmd = &cobra.Command{
 }
 
 func runUpdate(cmd *cobra.Command, args []string) error {
-	cwd, _ := os.Getwd()
+	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 	cfg, err := requireConfig(configPath)
 	if err != nil {

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -55,7 +54,7 @@ func toRoutineOptions(items []catalog.RoutineItem, agentType string) []tui.ItemO
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
-	cwd, _ := os.Getwd()
+	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 	cfg, err := requireConfig(configPath)
 	if err != nil {

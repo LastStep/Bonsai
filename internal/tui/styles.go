@@ -7,9 +7,21 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/mattn/go-isatty"
 	"github.com/muesli/termenv"
+	"golang.org/x/term"
 )
+
+// termWidth returns the terminal width in columns, or 80 if stdout isn't a tty
+// or the size can't be determined.
+func termWidth() int {
+	w, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || w <= 0 {
+		return 80
+	}
+	return w
+}
 
 // ─── Color Profile ────────────────────────────────────────────────────────
 
@@ -261,13 +273,23 @@ func EmptyPanel(msg string) {
 }
 
 // TitledPanel renders a bordered panel with the title embedded in the top border.
+// The panel is capped to the terminal width so borders don't break when content
+// is wider than the visible columns; over-long lines are truncated with an ellipsis.
 func TitledPanel(title, content string, color lipgloss.TerminalColor) {
 	bdr := lipgloss.NewStyle().Foreground(color)
 	ttl := lipgloss.NewStyle().Foreground(color).Bold(true)
 
 	contentLines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 
-	// Calculate inner width from content
+	// Panel layout: "  │  <line><pad>  │"
+	// The leading indent is 2, each border is 1 wide, and the line gets 2 columns
+	// of left padding inside the box. So the box's outer width is innerW + 2
+	// (two border chars), and we reserve 2 columns at the front of the window.
+	const leadingIndent = 2
+	const borderCols = 2
+	const leftPad = 2
+
+	// Compute natural inner width from content
 	maxW := 0
 	for _, l := range contentLines {
 		if w := lipgloss.Width(l); w > maxW {
@@ -279,6 +301,18 @@ func TitledPanel(title, content string, color lipgloss.TerminalColor) {
 	if minW := titleVisualW + 4; innerW < minW {
 		innerW = minW
 	}
+
+	// Cap against terminal width so right border doesn't fall off-screen
+	maxInner := termWidth() - leadingIndent - borderCols
+	if maxInner < titleVisualW+4 {
+		maxInner = titleVisualW + 4
+	}
+	if innerW > maxInner {
+		innerW = maxInner
+	}
+
+	// Max visible width for content text (after the left padding)
+	lineBudget := innerW - leftPad
 
 	// Top border: ╭─ Title ──...──╮
 	dashesAfter := innerW - 1 - titleVisualW
@@ -293,8 +327,11 @@ func TitledPanel(title, content string, color lipgloss.TerminalColor) {
 	buf.WriteString("  " + top + "\n")
 	buf.WriteString("  " + emptyLine + "\n")
 	for _, line := range contentLines {
+		if lipgloss.Width(line) > lineBudget {
+			line = ansi.Truncate(line, lineBudget, "…")
+		}
 		w := lipgloss.Width(line)
-		pad := innerW - 2 - w
+		pad := lineBudget - w
 		if pad < 0 {
 			pad = 0
 		}

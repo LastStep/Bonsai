@@ -168,8 +168,25 @@ func PickItems(label string, available []ItemOption, defaults []string) ([]strin
 
 	Section(label)
 
-	// Show required items as locked info — one per line with description
-	if len(required) > 0 {
+	// When every item in the section is required, the user has no decision to
+	// make — collapse to a single chip line so the flow doesn't read as a wall
+	// of descriptions. When some are optional, show required items in full so
+	// the user knows what's already in the bundle before they pick the rest.
+	if len(optional) == 0 && len(required) > 0 {
+		names := make([]string, len(required))
+		for i, r := range required {
+			names[i] = r.Name
+		}
+		plural := "s"
+		if len(required) == 1 {
+			plural = ""
+		}
+		head := StyleSuccess.Render(GlyphCheck) + " " +
+			StyleSand.Render(fmt.Sprintf("%d item%s auto-included", len(required), plural))
+		chips := StyleMuted.Render(strings.Join(names, "  "+GlyphDot+"  "))
+		fmt.Println("    " + head)
+		fmt.Println("    " + chips)
+	} else if len(required) > 0 {
 		for _, r := range required {
 			line := "    " + StyleSuccess.Render(GlyphCheck) + " " + r.Name
 			if r.Desc != "" {
@@ -178,16 +195,6 @@ func PickItems(label string, available []ItemOption, defaults []string) ([]strin
 			line += " " + StyleAccent.Render("(required)")
 			fmt.Println(line)
 		}
-	}
-
-	// If all items are required (no optional picker to show), give explicit
-	// feedback so the user knows the section was processed, not silently skipped.
-	if len(optional) == 0 && len(required) > 0 {
-		plural := "s"
-		if len(required) == 1 {
-			plural = ""
-		}
-		fmt.Println("    " + StyleMuted.Render(fmt.Sprintf("(%d required item%s auto-included)", len(required), plural)))
 	}
 
 	// Collect required values (machine identifiers)

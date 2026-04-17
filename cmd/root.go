@@ -53,6 +53,22 @@ func requireConfig(configPath string) (*config.ProjectConfig, error) {
 	return config.Load(configPath)
 }
 
+// mustCwd returns the current working directory or aborts with a structured error.
+// Getwd can fail if the cwd was deleted or is otherwise unreadable; silently
+// dropping that error produces a relative path in downstream writes that surfaces
+// as a confusing "no such file or directory" message.
+func mustCwd() string {
+	cwd, err := os.Getwd()
+	if err != nil || cwd == "" {
+		detail := "Could not resolve current directory."
+		if err != nil {
+			detail = err.Error()
+		}
+		tui.FatalPanel("Cannot determine working directory", detail, "cd into a valid directory and retry.")
+	}
+	return cwd
+}
+
 // SetVersion sets the version string on the root command.
 func SetVersion(v string) {
 	Version = v
