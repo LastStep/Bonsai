@@ -78,8 +78,8 @@ Plan 15 introduces a single long-lived BubbleTea harness that owns the screen fo
 | Iter | Scope | Status |
 |------|-------|--------|
 | 1 | Harness package + theme + `cmd/init.go` migration | Shipped (ui-ux-testing @ 2d7a947) |
-| 2 | Migrate `cmd/add.go` (incl. `runAddItems` pivot) + `NoteStep` + `TitledPanelString` + harness `LazyGroup` splice | Planned |
-| 3 | Migrate `cmd/remove.go` + `cmd/update.go` (custom-file scan, conflict picker, spinner step) | Outlined |
+| 2 | Migrate `cmd/add.go` (incl. `runAddItems` pivot) + `NoteStep` + `TitledPanelString` + harness `LazyGroup` splice | Shipped (ui-ux-testing @ 4011882) |
+| 3 | Migrate `cmd/remove.go` + `cmd/update.go` (custom-file scan, conflict picker, spinner step) + iter-2 reviewer nits (nested-splicer docstring, WindowSizeMsg re-broadcast after splice, LazyStep-in-LazyGroup unit test) | Outlined |
 
 ---
 

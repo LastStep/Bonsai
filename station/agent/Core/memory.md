@@ -13,11 +13,11 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Plan 15 iter 2 — dispatching now. Scope: migrate `cmd/add.go` (both runAdd + runAddItems) onto the harness; add `NoteStep` adapter + `tui.TitledPanelString` helper + harness `LazyGroup` splicer. Plan doc detailed steps committed at `1af8a36`.
+**Current task:** Idle between Plan 15 iterations. Iter 2 merged to `ui-ux-testing` locally at `4011882` (2026-04-20). Iter 3 still pending (`remove.go` + `update.go` migration + iter-2 reviewer follow-ups).
 **In flight (other tracks):**
-- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch, **this session driving iter 2** (parallel-session convention broken by user pickup this session). Branch is `main + 4 commits` after rebase 2026-04-20: iter 1 harness foundation (`63b97b1`), Esc-back fix (`150d1d3`), iter 1 reports (`8525bc5`), iter 2 plan docs (`1af8a36`). Safety branches: `ui-ux-testing-pre-rebase` (pre-first-rebase, `2fa91d0`) + `ui-ux-testing-pre-iter2-rebase` (pre-second-rebase, `2d7a947`) — keep both ~30d.
-**Blocked on:** Nothing in this session.
-**Last completed:** Plan 16 merged to main via PR #23 (`28d181e`, 2026-04-20). Moved `main.go` → `cmd/bonsai/main.go` + introduced root `embed.go` package (keeps `//go:embed catalog/` and `docs/custom-files.md` resolving from repo root). `go install github.com/LastStep/Bonsai/cmd/bonsai@latest` now produces lowercase `bonsai` binary on PATH. Verified locally before merge.
+- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch. Iter 1 + iter 2 shipped locally (no PR yet; whole branch merges to main when iter 3 completes). Commits on branch: `63b97b1` iter-1 harness, `150d1d3` iter-1 Esc-back fix, `8525bc5` iter-1 reports, `1af8a36` iter-2 plan, `c1cabe9` memory dispatch-state, `ae86c24` iter-2 self-review cleanup, `4011882` iter-2 add-migration, plus iter-2 artefact commit pending. Safety branches: `ui-ux-testing-pre-rebase` (`2fa91d0`) + `ui-ux-testing-pre-iter2-rebase` (`2d7a947`) — keep ~30d.
+**Blocked on:** Nothing.
+**Last completed:** Plan 15 iter 2 — migrated `cmd/add.go` onto the harness (both `runAdd` + `runAddItems` branches) via a `LazyGroup` splice; added `NoteStep` adapter + `tui.TitledPanelString` helper + harness `splicer` interface / `expandSplicer` reducer. Independent reviewer APPROVED with 4 non-blocking nits (all unreachable from current callers) — filed under iter 3 scope. Report: `Reports/Archive/2026-04-20-plan-15-iter-2-add-migration.md`.
 
 ## Notes
 
