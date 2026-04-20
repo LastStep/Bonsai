@@ -1,8 +1,8 @@
 module github.com/LastStep/Bonsai
 
-go 1.24.2
+go 1.25.0
 
-toolchain go1.24.13
+toolchain go1.25.8
 
 // v0.1.0 has a case-insensitive file collision (station/index.md vs station/INDEX.md)
 // that prevents the Go module proxy from creating a valid zip.
