@@ -22,7 +22,7 @@ const configFile = ".bonsai.yaml"
 var Version = "dev"
 
 var catalogFS fs.FS
-var guideMarkdown string
+var guideContents map[string]string
 
 var rootCmd = &cobra.Command{
 	Use:   "bonsai",
@@ -76,9 +76,9 @@ func SetVersion(v string) {
 }
 
 // Execute is the main entry point for the CLI.
-func Execute(fsys fs.FS, guide string) {
+func Execute(fsys fs.FS, guides map[string]string) {
 	catalogFS = fsys
-	guideMarkdown = guide
+	guideContents = guides
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

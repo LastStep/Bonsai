@@ -129,7 +129,7 @@ After generation, you own the files. Add custom skills, workflows, or sensors â€
 | `bonsai list` | Show installed agents and components |
 | `bonsai catalog` | Browse all available abilities |
 | `bonsai update` | Detect custom files, sync workspace |
-| `bonsai guide` | Render the custom files guide in terminal |
+| `bonsai guide` | View bundled guides: quickstart, concepts, cli, custom-files |
 
 > **[Command Reference](https://laststep.github.io/Bonsai/commands/init/)** â€” full documentation with flags, interactive flows, and examples.
 

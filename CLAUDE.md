@@ -16,7 +16,8 @@ Bonsai/
 ├── CLAUDE.md               ← you are here
 ├── .bonsai.yaml             ← project config (dogfooding — Bonsai manages itself)
 ├── .bonsai-lock.yaml        ← file tracking (hashes + sources)
-├── main.go                  ← entry point, embeds catalog/ via embed.FS
+├── cmd/bonsai/main.go       ← entry point
+├── embed.go                 ← root embed package (CatalogFS + guide vars)
 ├── go.mod / go.sum          ← module config
 ├── Makefile                 ← build, install, clean
 ├── .goreleaser.yaml         ← GoReleaser v2 config (cross-platform builds, Homebrew)
@@ -106,7 +107,7 @@ When you discover bugs, improvement ideas, tech debt, or feature requests outsid
 - **`.claude/settings.json`** is auto-generated with hook entries for all installed sensors
 - **`.bonsai-lock.yaml`** tracks generated files with content hashes — enables conflict detection on re-run
 - **Generator** uses lock-aware writes: new files are created, unmodified files are updated silently, user-modified files trigger a conflict prompt (skip / overwrite / backup & overwrite). Scaffolding files are always write-once (skip if exists).
-- **Catalog is embedded** via `embed.FS` in `main.go` — ships inside the binary
+- **Catalog is embedded** via `embed.FS` in `embed.go` (package `bonsai` at repo root) — ships inside the binary
 
 ---
 
