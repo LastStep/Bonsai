@@ -20,6 +20,22 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-21 — Plan 20: Security Scanning Infrastructure (session)
+- **Outcome:** success
+- **Execution mode:** tech-lead supervised, 5 general-purpose worktree dispatches + 1 local gitleaks one-shot
+- **Duration:** ~1 hr wall
+- **Changes:** 6 PRs merged — #30 (pre-flight station chore), #29 (golangci-lint v1→v2 migration), #28 (Go 1.24.13 → 1.25.8 + lint pin v2.1→v2.11.4, bundled), #31 (Dependabot config: gomod + github-actions, weekly), #40 (govulncheck CI job), #41 (CodeQL workflow for Go SAST, PR + push + weekly)
+- **Flags:**
+  - CI lint gotcha rediscovered: golangci-lint v2.1 binary built on Go 1.24 still can't parse Go 1.25 targets; must pin to v2.11.4 (or later v2.x built on Go 1.25). Memory updated.
+  - gh pr merge --delete-branch silently leaves remote branch behind when branch is checked out in locked worktree — had to `git push origin --delete` + force-remove worktree every time. 4 rounds this session.
+  - Dependabot fired immediately after PR #31 merged — 8 auto-PRs (#32-#39) opened. Added to Backlog as [debt] Group G for next-session triage.
+  - gitleaks one-shot history audit: 0 findings across 156 commits (6.58 MB). History tag-ready.
+  - govulncheck on main (post Go 1.25.8): 0 reachable findings. 2 previously-reachable CVEs (GO-2026-4602, GO-2026-4601) cleared.
+- **Plan:** `Playbook/Plans/Active/20-security-scanning-infra.md` (status: Complete)
+- **Notes:** Plan originally 4 PRs (#1-#4). Grew to 6 PRs mid-execution because of coupled blockers: PR #0 (pre-flight was only local, needed its own PR) and PR #1a (lint v1→v2 migration required before Go 1.25 bump could pass CI). Lint pin bump got bundled into #28 as paired change. All sequential, all green, all squash-merged.
+
+---
+
 ### 2026-04-21 — Vulnerability Scan
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)

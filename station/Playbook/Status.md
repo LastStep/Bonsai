@@ -41,6 +41,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Security scanning infra — Go 1.25.8 bump, golangci-lint v2 + pin, Dependabot, govulncheck CI, CodeQL workflow, gitleaks history audit clean (PRs #28 #29 #30 #31 #40 #41) | 20 | general-purpose | 2026-04-21 |
 | Pre-launch bug sweep — 8 OSS-blocker fixes: CRLF, cross-workspace tree, dedup, spinner errors.Join, harness polish (PR #27 squash `a44e447`) | 19 | general-purpose | 2026-04-21 |
 | BubbleTea foundation + theme system — harness migration across init/add/remove/update (PR #26 squash `2ce63f6`) | 15 | general-purpose | 2026-04-20 |
 | `bonsai guide` multi-topic — 3 cheatsheets + delete 3 orphan docs (1,213L) + CLI refactor (PR #25) | 18 | general-purpose | 2026-04-20 |
