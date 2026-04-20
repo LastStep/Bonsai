@@ -13,10 +13,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Plan 15 shipped to main via PR #26 squash-merge `2ce63f6` (2026-04-20). BubbleTea harness migration complete; init/add/remove/update all on shared harness.
+**Current task:** Idle. Plan 15 shipped + post-merge cleanup complete.
 **In flight (other tracks):** None.
 **Blocked on:** Nothing.
-**Last completed:** Plan 15 merged to main — PR #26 squash `2ce63f6` (2026-04-20). Flow: merged `main` → `ui-ux-testing` (conflicts in Status.md + memory.md resolved by keeping HEAD's Plan 15 work-state and folding Plan 18 notes in). First CI run failed on `cmd/root.go:90 resolveConflicts unused` — legacy pre-harness function left behind from iter 3 migration. Removed function + dead `huh` import in `070bcd0`; CI iter 2 green. Remote `ui-ux-testing` deleted post-merge. This worktree (`Bonsai-uiux`) now orphaned — local `ui-ux-testing` branch still checked out here; safety branches `ui-ux-testing-pre-rebase` + `ui-ux-testing-pre-iter2-rebase` retained ~30d per prior convention. Docs updates (Status.md move-to-done, memory.md update, session log) made on this branch post-merge — need cherry-pick or manual re-apply in main worktree next session.
+**Last completed:** Post-Plan-15 cleanup in main worktree (2026-04-20). (1) Pulled PR #26 squash `2ce63f6` (BubbleTea harness — init/add/remove/update on shared harness, +5764 lines). (2) Cherry-picked `9ee5e5d` wrap-up (`b3db672` on main) — Status.md move-to-done, memory idle-state, new `Logs/2026-04-20-plan-15-merge-to-main.md`, 2 new learnings. (3) Removed `/home/rohan/ZenGarden/Bonsai-uiux` worktree. (4) Deleted local `ui-ux-testing` branch (content preserved via squash). (5) Updated Backlog spinner-swallowing entry (harness now supports `func() error`, ~30 callsites still use `_ =` for parity — see `cmd/remove.go:runRemoveItemAction` comment). (6) Pushed main (`5e9255f`). Safety branches `ui-ux-testing-pre-rebase` + `ui-ux-testing-pre-iter2-rebase` retained — delete ~2026-05-20.
 
 ## Notes
 
