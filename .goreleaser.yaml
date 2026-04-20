@@ -4,7 +4,7 @@ project_name: bonsai
 
 builds:
   - id: bonsai
-    main: .
+    main: ./cmd/bonsai
     binary: bonsai
     env:
       - CGO_ENABLED=0
