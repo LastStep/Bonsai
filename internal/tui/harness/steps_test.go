@@ -406,6 +406,82 @@ func TestConditionalStepResetReevaluates(t *testing.T) {
 	}
 }
 
+// TestSpinnerStepRecoversFromPanic verifies that a panic thrown inside the
+// SpinnerStep action closure is captured by the tea.Cmd goroutine's deferred
+// recover and translated into a spinnerDoneMsg carrying a descriptive error
+// — rather than crashing the BubbleTea event loop.
+func TestSpinnerStepRecoversFromPanic(t *testing.T) {
+	s := NewSpinner("Generating", "Generating files...", func() error {
+		panic("boom")
+	})
+
+	cmd := s.Init()
+	if cmd == nil {
+		t.Fatalf("SpinnerStep.Init() returned nil cmd")
+	}
+
+	// tea.Batch returns a single Cmd that, when executed, returns a
+	// BatchMsg containing further commands. Drive them until we find the
+	// spinnerDoneMsg (the worker function) without crashing on the panic.
+	msg := cmd()
+	var done spinnerDoneMsg
+	found := false
+
+	// tea.BatchMsg is []tea.Cmd. Walk it and execute each sub-Cmd.
+	if batch, ok := msg.(tea.BatchMsg); ok {
+		for _, sub := range batch {
+			if sub == nil {
+				continue
+			}
+			out := sub()
+			if sd, ok := out.(spinnerDoneMsg); ok {
+				done = sd
+				found = true
+				break
+			}
+		}
+	} else if sd, ok := msg.(spinnerDoneMsg); ok {
+		// Non-batch execution path (defensive).
+		done = sd
+		found = true
+	}
+
+	if !found {
+		t.Fatalf("did not receive spinnerDoneMsg from Init batch")
+	}
+	if done.err == nil {
+		t.Fatalf("expected non-nil err after action panic")
+	}
+	if !strings.Contains(done.err.Error(), "spinner action panic") {
+		t.Fatalf("expected err to mention panic recovery, got %v", done.err)
+	}
+}
+
+// TestConditionalNilPredicateDefaultsToShow verifies that NewConditional
+// tolerates a nil predicate — the default path is to SHOW the wrapped step
+// (safer than silently skipping, which could hide steps the user expected
+// to complete).
+func TestConditionalNilPredicateDefaultsToShow(t *testing.T) {
+	innerInited := false
+	inner := &fakeInitStep{
+		fakeStep: fakeStep{title: "inner"},
+		onInit:   func() { innerInited = true },
+	}
+
+	c := NewConditional(inner, nil)
+	c.SetPrior(nil)
+	_ = c.Init()
+
+	if !innerInited {
+		t.Fatalf("expected inner Init to run when predicate is nil (show path)")
+	}
+	// With predicate defaulted to always-true, Done() should mirror the inner
+	// step, which has not completed yet.
+	if c.Done() {
+		t.Fatalf("expected Done()=false (predicate defaulted to show, inner not done)")
+	}
+}
+
 // fakeInitStep wraps fakeStep with a callback that fires when Init is
 // invoked, so tests can verify whether the harness drove Init on a wrapped
 // step.

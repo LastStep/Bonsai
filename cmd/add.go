@@ -144,13 +144,12 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			}
 			// Require tech-lead before adding other agents. The user can still
 			// pick "tech-lead" here to bootstrap — we only block when the pick
-			// is a non-tech-lead agent and no tech-lead is installed yet.
+			// is a non-tech-lead agent and no tech-lead is installed yet. The
+			// error surfaces post-harness on stdout (see ErrorDetail below) so
+			// it persists after AltScreen exits — no in-harness NoteStep.
 			if agentType != "tech-lead" {
 				if _, hasTechLead := cfg.Agents["tech-lead"]; !hasTechLead {
-					return []harness.Step{harness.NewNote(
-						"Tech Lead required",
-						"No tech-lead agent is installed yet.\nRun: bonsai init to set up a Tech Lead workspace first.",
-					)}
+					return nil
 				}
 			}
 			return buildNewAgentSteps(cat, cfg, agentType, existingWorkspaces)
@@ -260,7 +259,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		tui.Warning("Could not save lock file: " + err.Error())
 	}
 
-	showWriteResults(&wr, addOutcome.workspace)
+	showWriteResults(&wr)
 
 	if addOutcome.newAgent {
 		tui.Success(fmt.Sprintf("Added %s at %s", addOutcome.agentDef.DisplayName, addOutcome.workspace))
@@ -331,10 +330,15 @@ func runAddSpinner(prev []any, cwd, configPath string, cfg *config.ProjectConfig
 			return err
 		}
 
-		_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, wr, false)
-		_ = generate.PathScopedRules(cwd, cfg, cat, lock, wr, false)
-		_ = generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false)
-		_ = generate.SettingsJSON(cwd, cfg, cat, lock, wr, false)
+		var errs []error
+		errs = append(errs, generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, wr, false))
+		errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, wr, false))
+		errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false))
+		errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, wr, false))
+		if joined := errors.Join(errs...); joined != nil {
+			outcome.spinnerErr = joined
+			return joined
+		}
 
 		outcome.workspace = installed.Workspace
 		outcome.totalSelected = totalSelected
@@ -372,10 +376,15 @@ func runAddSpinner(prev []any, cwd, configPath string, cfg *config.ProjectConfig
 		return err
 	}
 
-	_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, wr, false)
-	_ = generate.PathScopedRules(cwd, cfg, cat, lock, wr, false)
-	_ = generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false)
-	_ = generate.SettingsJSON(cwd, cfg, cat, lock, wr, false)
+	var errs []error
+	errs = append(errs, generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, wr, false))
+	errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, wr, false))
+	errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false))
+	errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, wr, false))
+	if joined := errors.Join(errs...); joined != nil {
+		outcome.spinnerErr = joined
+		return joined
+	}
 
 	outcome.workspace = workspace
 	outcome.newAgent = true

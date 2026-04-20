@@ -526,6 +526,90 @@ func TestLazyStepInsideLazyGroupBuilds(t *testing.T) {
 	}
 }
 
+// TestEscBackReevaluatesConditional covers Plan 19 Step 7 — when the user
+// Esc-backs past a ConditionalStep to a preceding step, changes the upstream
+// selection, and advances forward again, the conditional's predicate must
+// re-evaluate against the NEW selection. Without the SetPrior-before-Reset
+// fix in the harness + the predicate re-eval in ConditionalStep.Reset, the
+// conditional would still use its stale initPrev snapshot and render (or
+// skip) the wrong branch.
+func TestEscBackReevaluatesConditional(t *testing.T) {
+	// Step 0: a fake Select whose Result() returns the "picked" value. We
+	// simulate the user changing the selection by mutating pick.result.
+	pick := &fakeStep{title: "Select"}
+	pick.result = "a"
+	pick.done = true // gate forward advancement
+
+	// Step 1: a ConditionalStep wrapping an inner fakeInitStep. Predicate
+	// fires when the latest selection at prev[0] == "a".
+	innerInitCount := 0
+	inner := &fakeInitStep{
+		fakeStep: fakeStep{title: "inner"},
+		onInit:   func() { innerInitCount++ },
+	}
+	cond := NewConditional(inner, func(prev []any) bool {
+		if len(prev) == 0 {
+			return false
+		}
+		s, _ := prev[0].(string)
+		return s == "a"
+	})
+
+	h := New("BANNER", "TEST", []Step{pick, cond})
+
+	// Drive the harness forward off step 0 onto the conditional. With
+	// pick.result == "a", predicate is true → inner shows.
+	_, _ = h.Update(runeKey('x'))
+	if h.cursor != 1 {
+		t.Fatalf("setup: expected cursor=1 after forward advance, got %d", h.cursor)
+	}
+	if innerInitCount != 1 {
+		t.Fatalf("setup: expected inner Init to run once on first entry (pick='a'), got %d", innerInitCount)
+	}
+	if cond.skip {
+		t.Fatalf("setup: conditional must not skip when predicate true")
+	}
+
+	// User Esc-backs to the Select step. The inner step is a fakeInitStep
+	// (NOT a resetter) so only the SetPrior/Reset walk for the Conditional
+	// itself runs here. The harness's Esc-back loop calls SetPrior on every
+	// step in [newCursor, origCursor] before Reset.
+	_, _ = h.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	if h.cursor != 0 {
+		t.Fatalf("after Esc: expected cursor=0, got %d", h.cursor)
+	}
+
+	// User changes the pick to "b" → predicate should now return false and
+	// the conditional should skip on the next forward pass.
+	pick.result = "b"
+	pick.done = true
+
+	// Advance forward again. The Conditional is now active; its Reset ran
+	// during the Esc loop with the fresh prior snapshot (pick="b"), so
+	// c.skip should already be true. Done() is true via skipDone, and the
+	// harness's auto-advance loop should sail past the conditional to the
+	// end-of-steps quit path.
+	_, cmd := h.Update(runeKey('y'))
+
+	// With only two steps and the conditional skipping, the harness should
+	// have advanced past both and started quitting.
+	if !h.quitting {
+		t.Fatalf("expected harness to quit after advancing past skipped conditional; cursor=%d, skip=%v",
+			h.cursor, cond.skip)
+	}
+	if !cond.skip {
+		t.Fatalf("expected conditional to skip with new pick='b', skip=%v", cond.skip)
+	}
+	// Inner Init must NOT have fired a second time (because the conditional
+	// skipped on this forward pass).
+	if innerInitCount != 1 {
+		t.Fatalf("expected inner Init to NOT re-run after skip re-eval (total %d, want 1)", innerInitCount)
+	}
+	if !cmdContainsQuit(cmd) {
+		t.Fatalf("expected tea.Quit in batch once harness runs off the end")
+	}
+}
+
 // cmdContainsSentinel walks a tea.Cmd (expanding tea.BatchMsg one level) and
 // returns true if any produced message is a resetSentinelMsg.
 func cmdContainsSentinel(cmd tea.Cmd) bool {

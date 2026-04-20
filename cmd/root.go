@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -163,36 +164,74 @@ func applyConflictPicks(results []any, confIdx int, wr *generate.WriteResult,
 }
 
 // showWriteResults displays categorized file trees for generation outcomes.
-func showWriteResults(wr *generate.WriteResult, rootLabel string) {
-	// Normalize prefix for stripping (e.g. "station/" → "station")
-	prefix := strings.TrimRight(rootLabel, "/")
+// Files are grouped by top-level path segment (e.g. "station", "src") and each
+// group is rendered as a separate tree rooted at that segment. This avoids
+// cross-workspace leakage when a single run writes to multiple roots (e.g.
+// `bonsai add` for a code agent that also touches the tech-lead's station/).
+func showWriteResults(wr *generate.WriteResult) {
+	// Bucket per top-level segment, preserving Created/Updated/Conflict split.
+	type bucket struct {
+		created, updated, conflicted []string
+	}
+	buckets := make(map[string]*bucket)
+	ensure := func(root string) *bucket {
+		b, ok := buckets[root]
+		if !ok {
+			b = &bucket{}
+			buckets[root] = b
+		}
+		return b
+	}
 
-	var created, updated, conflicted []string
 	for _, f := range wr.Files {
-		// Strip the workspace prefix so the tree doesn't double it
-		rel := strings.TrimPrefix(f.RelPath, prefix+"/")
+		root, rel := splitTopSegment(f.RelPath)
+		b := ensure(root)
 		switch f.Action {
 		case generate.ActionCreated:
-			created = append(created, rel)
+			b.created = append(b.created, rel)
 		case generate.ActionUpdated, generate.ActionForced:
-			updated = append(updated, rel)
+			b.updated = append(b.updated, rel)
 		case generate.ActionConflict:
-			conflicted = append(conflicted, rel)
+			b.conflicted = append(b.conflicted, rel)
 		}
 	}
-	if rootLabel == "" {
-		rootLabel = "."
+
+	// Stable, alphabetical ordering across groups.
+	roots := make([]string, 0, len(buckets))
+	for r := range buckets {
+		roots = append(roots, r)
 	}
-	if len(created) > 0 {
-		tree := tui.FileTree(created, rootLabel)
-		tui.TitledPanel("Created", tree, tui.Moss)
+	sort.Strings(roots)
+
+	for _, root := range roots {
+		b := buckets[root]
+		label := root
+		if label == "" {
+			label = "."
+		}
+		if len(b.created) > 0 {
+			tree := tui.FileTree(b.created, label)
+			tui.TitledPanel("Created", tree, tui.Moss)
+		}
+		if len(b.updated) > 0 {
+			tree := tui.FileTree(b.updated, label)
+			tui.TitledPanel("Updated", tree, tui.Water)
+		}
+		if len(b.conflicted) > 0 {
+			tree := tui.FileTree(b.conflicted, label)
+			tui.TitledPanel("Skipped (user modified)", tree, tui.Amber)
+		}
 	}
-	if len(updated) > 0 {
-		tree := tui.FileTree(updated, rootLabel)
-		tui.TitledPanel("Updated", tree, tui.Water)
+}
+
+// splitTopSegment splits a relative path into its first path component and
+// the remainder. "station/agent/foo.md" → ("station", "agent/foo.md"). A path
+// with no separator returns ("", path) so single-file outputs still render
+// under a root panel.
+func splitTopSegment(rel string) (string, string) {
+	idx := strings.Index(rel, "/")
+	if idx < 0 {
+		return "", rel
 	}
-	if len(conflicted) > 0 {
-		tree := tui.FileTree(conflicted, rootLabel)
-		tui.TitledPanel("Skipped (user modified)", tree, tui.Amber)
-	}
+	return rel[:idx], rel[idx+1:]
 }

@@ -1,0 +1,7 @@
+# Force LF on anything that ends up in a generated shell hook or gets shelled out.
+*.sh         text eol=lf
+*.sh.tmpl    text eol=lf
+
+# Keep lockfiles + generated-preview goldens predictable across checkouts.
+go.sum       text eol=lf
+*.yaml       text eol=lf

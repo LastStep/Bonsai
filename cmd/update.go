@@ -124,6 +124,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 				}
 			}
 
+			var errs []error
 			for _, agentName := range agentNames {
 				installed := cfg.Agents[agentName]
 				agentDef := cat.GetAgent(installed.AgentType)
@@ -131,12 +132,12 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 					continue
 				}
 				generate.EnsureRoutineCheckSensor(installed)
-				_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
+				errs = append(errs, generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false))
 			}
-			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
-			return nil
+			errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false))
+			errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false))
+			errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false))
+			return errors.Join(errs...)
 		}),
 
 		harness.NewLazyGroup("Resolve conflicts", func(prev []any) []harness.Step {
@@ -167,6 +168,19 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Spinner slot sits immediately after the per-agent custom-file pickers.
+	// Surface any aggregated generator error post-harness so a silent failure
+	// no longer masquerades as a successful sync.
+	spinnerIdx := len(agentsWithDiscoveries)
+	if spinnerIdx < len(results) {
+		if errVal := results[spinnerIdx]; errVal != nil {
+			if e, ok := errVal.(error); ok && e != nil {
+				tui.Warning("Update error: " + e.Error())
+				return nil
+			}
+		}
+	}
+
 	// Conflict picker, if it spliced in steps, lands at index
 	// len(agentsWithDiscoveries) + 1 (one slot per per-agent picker, plus the
 	// spinner). The MultiSelectStep produced by buildConflictSteps lives there.
@@ -194,7 +208,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	showWriteResults(&wr, ".")
+	showWriteResults(&wr)
 
 	if configChanged {
 		tui.Success("Update complete — custom files tracked")
@@ -238,6 +252,20 @@ func buildCustomFileDefaults(valid []generate.DiscoveredFile) []string {
 	return defaults
 }
 
+// appendUnique appends name to slice unless it is already present. The ability
+// lists on config.InstalledAgent are small (bounded by catalog size), so a
+// linear scan is cheaper than maintaining a parallel set. Guards against
+// accumulating duplicates when `bonsai update` is re-run over the same
+// user-selected custom files.
+func appendUnique(slice []string, name string) []string {
+	for _, existing := range slice {
+		if existing == name {
+			return slice
+		}
+	}
+	return append(slice, name)
+}
+
 // applyCustomFileSelection mutates installed + lock for the given agent based on
 // the user-selected keys. Returns true if any selections were applied (so the
 // caller can flip configChanged). Lifted from the inline body at
@@ -257,15 +285,15 @@ func applyCustomFileSelection(installed *config.InstalledAgent, valid []generate
 
 		switch d.Type {
 		case "skill":
-			installed.Skills = append(installed.Skills, d.Name)
+			installed.Skills = appendUnique(installed.Skills, d.Name)
 		case "workflow":
-			installed.Workflows = append(installed.Workflows, d.Name)
+			installed.Workflows = appendUnique(installed.Workflows, d.Name)
 		case "protocol":
-			installed.Protocols = append(installed.Protocols, d.Name)
+			installed.Protocols = appendUnique(installed.Protocols, d.Name)
 		case "sensor":
-			installed.Sensors = append(installed.Sensors, d.Name)
+			installed.Sensors = appendUnique(installed.Sensors, d.Name)
 		case "routine":
-			installed.Routines = append(installed.Routines, d.Name)
+			installed.Routines = appendUnique(installed.Routines, d.Name)
 		}
 
 		if installed.CustomItems == nil {

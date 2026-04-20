@@ -752,7 +752,18 @@ func (s *SpinnerStep) Init() tea.Cmd {
 	}
 	return tea.Batch(
 		s.sp.Tick,
-		func() tea.Msg { return spinnerDoneMsg{err: runner()} },
+		func() (msg tea.Msg) {
+			// Guard against panics inside the action closure. Plan 15 iter 3
+			// added recoverBuilder for Build/Splice; this is the symmetric
+			// guard for the SpinnerStep's tea.Cmd goroutine, which would
+			// otherwise crash the BubbleTea event loop with no panel.
+			defer func() {
+				if r := recover(); r != nil {
+					msg = spinnerDoneMsg{err: fmt.Errorf("spinner action panic: %v", r)}
+				}
+			}()
+			return spinnerDoneMsg{err: runner()}
+		},
 	)
 }
 
@@ -805,6 +816,10 @@ type ConditionalStep struct {
 
 // NewConditional constructs a ConditionalStep.
 func NewConditional(inner Step, predicate func(prev []any) bool) *ConditionalStep {
+	if predicate == nil {
+		// nil predicate = always show (safer default than skip)
+		predicate = func(prev []any) bool { return true }
+	}
 	return &ConditionalStep{inner: inner, predicate: predicate}
 }
 
@@ -861,7 +876,16 @@ func (c *ConditionalStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (c *ConditionalStep) Reset() tea.Cmd {
-	c.skip = false
+	// Re-evaluate the predicate against the freshest prior-results snapshot
+	// (the harness calls SetPrior immediately before Reset on Esc-back). This
+	// lets Done() reflect the new predicate result synchronously so the
+	// harness's auto-skip logic lands on the right step without waiting for
+	// a later Init() to re-evaluate.
+	c.skip = !c.predicate(c.initPrev)
+	if c.skip {
+		c.skipDone = true
+		return nil
+	}
 	c.skipDone = false
 	if r, ok := c.inner.(resetter); ok {
 		return r.Reset()

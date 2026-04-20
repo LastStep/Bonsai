@@ -194,15 +194,19 @@ func runInit(cmd *cobra.Command, args []string) error {
 						Scaffolding: selectedScaffolding,
 						Agents:      map[string]*config.InstalledAgent{techLeadType: installed},
 					}
+					// Save .bonsai.yaml first — Scaffolding depends on it
+					// existing, and early-returning here leaves no partial
+					// config on disk if Save fails.
 					if err := cfg.Save(configPath); err != nil {
 						return err
 					}
-					_ = generate.Scaffolding(cwd, cfg, cat, lock, &wr, false)
-					_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
-					_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
-					_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
-					_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
-					return nil
+					var errs []error
+					errs = append(errs, generate.Scaffolding(cwd, cfg, cat, lock, &wr, false))
+					errs = append(errs, generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false))
+					errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false))
+					errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false))
+					errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false))
+					return errors.Join(errs...)
 				}),
 			func(prev []any) bool {
 				if len(prev) == 0 {
@@ -264,14 +268,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		tui.Warning("Could not save lock file: " + err.Error())
 	}
 
-	root := ""
-	if cfg != nil {
-		root = cfg.DocsPath
-	}
-	if root == "" {
-		root = "."
-	}
-	showWriteResults(&wr, root)
+	showWriteResults(&wr)
 
 	if cfg != nil {
 		tui.Success(fmt.Sprintf("Initialized %s with %s", cfg.ProjectName, agentDef.DisplayName))
