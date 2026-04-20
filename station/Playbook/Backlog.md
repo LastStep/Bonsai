@@ -51,7 +51,8 @@ Items that should be worked together are tagged with a group letter. See the gro
 ## P1 — High
 
 <!-- "Silent error swallowing in spinner callbacks" — fixed 2026-04-21 via Plan 19 / PR #27 (squash a44e447): errors.Join aggregation at all ~30 sites + Warning surfaces in init/add/remove/update -->
-- **[security] Upgrade Go toolchain 1.24.13 → 1.25.9** — Clears 2 reachable stdlib CVEs (GO-2026-4602 in `internal/generate/scan.go:44`, GO-2026-4601 in `cmd/guide.go:92`) plus 7 latent stdlib CVEs flagged by govulncheck. Bump `go` directive in `go.mod`, update Go matrix in `.github/workflows/release.yml` (and any CI pins), verify `govulncheck ./...` returns clean, run `make test`. Low-risk bump; supersedes earlier "Monitor GO-2026-4602" watch item. *(added 2026-04-16, rewritten 2026-04-21 post-routine-digest, source: routine-digest)*
+<!-- "Upgrade Go toolchain 1.24.13 → 1.25.9" — shipped 2026-04-21 via Plan 20 / PR #28 (Go 1.25.8 + golangci-lint pin v2.11.4); govulncheck now 0 reachable findings in CI -->
+- **[debt] Triage Dependabot auto-PRs #32–#39** `[Group G]` — First weekly Dependabot run (triggered by Plan 20 PR #31 landing) opened 8 PRs: 3 gomod (x/term 0.36→0.42, charmbracelet/x/ansi 0.11.6→0.11.7, go-isatty 0.0.20→0.0.21) + 5 github-actions (golangci-lint-action 8→9, setup-go 5→6, setup-node 4→6, upload-pages-artifact 3→5, goreleaser-action 6→7). Review each for breaking changes, merge the trivial ones, hold or pin the majors (golangci-lint-action 9 may need config check; goreleaser-action 7 may need `.goreleaser.yaml` migration). *(added 2026-04-21, source: session — Plan 20 shipment)*
 <!-- "triggerSection() prepends before YAML frontmatter" — fixed 2026-04-17 via injectTriggerSection helper, Plan 17 / PR #24 -->
 <!-- "Upgrade Go toolchain from 1.24.3 to 1.24.13+" — fixed 2026-04-17, Plan 17 / PR #24 -->
 <!-- "Spinner error swallowing" — scope-deferred to Plan 15 harness work, 2026-04-17 -->
