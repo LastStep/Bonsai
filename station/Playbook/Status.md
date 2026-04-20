@@ -18,7 +18,8 @@ description: Live task tracker. Update this file at the start and end of every w
 <!-- UI/UX overhaul Phase 2 — merged PR #20, moved to Recently Done 2026-04-17 -->
 <!-- ActionUnchanged follow-ups — merged PR #22, moved to Recently Done 2026-04-17 -->
 | BubbleTea foundation + theme system (migrate init/add/remove/update onto shared harness) | 15 | general-purpose | On `ui-ux-testing` branch. 3 iterations planned. Iter 1 = harness + theme + init migration |
-| Fix `go install` binary name (module path → `/cmd/bonsai`) | 16 | general-purpose | Draft [PR #23](https://github.com/LastStep/Bonsai/pull/23) still open, awaiting user merge. |
+<!-- Plan 16 (`go install` binary name) — merged PR #23 2026-04-20, moved to Recently Done -->
+
 <!-- UI/UX Overhaul Phase 3 (Plan 14) — merged via PR #24, moved to Recently Done 2026-04-17 -->
 <!-- Release prep (Plan 17) — merged PR #24, moved to Recently Done 2026-04-17 -->
 <!-- Code index refresh — completed 2026-04-16, PR #12 -->
@@ -38,6 +39,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Fix `go install` binary name — main.go → cmd/bonsai/ + root embed package (PR #23) | 16 | general-purpose | 2026-04-20 |
 | Release prep — Go toolchain 1.24.13 + triggerSection frontmatter fix + OSS polish (PR #24) | 17 | general-purpose | 2026-04-17 |
 | UI/UX overhaul — Phase 3 visual identity + init polish (merged via PR #24 bundle) | 14 | general-purpose | 2026-04-17 |
 | ActionUnchanged follow-ups — chmod bug + test gaps (PR #22) | 13 | tech-lead | 2026-04-17 |

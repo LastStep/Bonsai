@@ -1,7 +1,7 @@
 # Plan 16 — Fix `go install` binary name
 
 **Tier:** 1 (Patch)
-**Status:** Active
+**Status:** Shipped — PR #23 merged 2026-04-20 (squash `28d181e`)
 **Agent:** general-purpose
 **Source:** `Playbook/Backlog.md` P1 bug (added 2026-04-17)
 
