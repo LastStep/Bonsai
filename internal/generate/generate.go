@@ -257,9 +257,24 @@ func (wr *WriteResult) ForceSelected(paths []string, projectRoot string, lock *c
 
 // ─── Lock-aware write primitives ───────────────────────────────────────
 
+// normalizeShellLF strips carriage returns from shell script content. It is a
+// belt-and-braces defence against CRLF sneaking through git clients that
+// ignore `.gitattributes` — bash refuses scripts whose shebang ends in `\r`.
+// No-op for non-`.sh` paths.
+func normalizeShellLF(data []byte, rel string) []byte {
+	if !strings.HasSuffix(rel, ".sh") {
+		return data
+	}
+	// Replace CRLF with LF first, then drop any remaining standalone CR.
+	data = bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))
+	data = bytes.ReplaceAll(data, []byte("\r"), nil)
+	return data
+}
+
 // writeFile implements the lock-aware write policy.
 // If force is true, modified files are overwritten.
 func writeFile(projectRoot, relPath string, content []byte, source string, lock *config.LockFile, force bool) FileResult {
+	content = normalizeShellLF(content, relPath)
 	absPath := filepath.Join(projectRoot, relPath)
 	exists, modified := lock.IsModified(projectRoot, relPath)
 
@@ -299,6 +314,7 @@ func writeFile(projectRoot, relPath string, content []byte, source string, lock 
 
 // writeFileChmod is like writeFile but also sets file permissions (for sensor scripts).
 func writeFileChmod(projectRoot, relPath string, content []byte, source string, lock *config.LockFile, force bool, perm os.FileMode) FileResult {
+	content = normalizeShellLF(content, relPath)
 	result := writeFile(projectRoot, relPath, content, source, lock, force)
 	if result.Action == ActionCreated || result.Action == ActionUpdated || result.Action == ActionForced || result.Action == ActionUnchanged {
 		absPath := filepath.Join(projectRoot, relPath)

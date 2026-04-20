@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1109,6 +1110,79 @@ func TestWriteFileChmodRestoresPermOnUnchanged(t *testing.T) {
 	}
 	if info.Mode()&0777 != 0755 {
 		t.Errorf("mode after unchanged run = %v, want 0755 (perm should be restored)", info.Mode()&0777)
+	}
+}
+
+// TestShellScriptLF verifies that sensor scripts written during AgentWorkspace
+// generation contain no carriage-return bytes, regardless of the source CRLF
+// state. Covers the normalizeShellLF belt-and-braces defence for Step 1 of
+// Plan 19 — protects against CRLF sneaking in via a git client that ignores
+// .gitattributes.
+func TestShellScriptLF(t *testing.T) {
+	// Build a catalog with shared core, one agent, and one sensor whose
+	// script template contains CRLF line endings.
+	fsys := fstest.MapFS{
+		"core/memory.md.tmpl":                     &fstest.MapFile{Data: []byte("memory for {{ .AgentDisplayName }}")},
+		"core/self-awareness.md":                  &fstest.MapFile{Data: []byte("self-awareness content")},
+		"agents/test-agent/agent.yaml":            &fstest.MapFile{Data: []byte("name: test-agent\ndescription: test\n")},
+		"agents/test-agent/core/identity.md.tmpl": &fstest.MapFile{Data: []byte("I am {{ .AgentDisplayName }}")},
+		"sensors/crlf-sensor/meta.yaml": &fstest.MapFile{Data: []byte(
+			"name: crlf-sensor\ndescription: test sensor\nagents: all\nevent: SessionStart\n",
+		)},
+		// Script template with CRLF line endings — simulates a hostile checkout.
+		"sensors/crlf-sensor/crlf-sensor.sh.tmpl": &fstest.MapFile{Data: []byte(
+			"#!/bin/bash\r\necho {{ .AgentName }}\r\nexit 0\r\n",
+		)},
+	}
+	cat, err := catalog.New(fsys)
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	agentDef := cat.GetAgent("test-agent")
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: ".",
+		Sensors:   []string{"crlf-sensor"},
+	}
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents:      map[string]*config.InstalledAgent{"test-agent": installed},
+	}
+
+	lock := config.NewLockFile()
+	var wr WriteResult
+	if err := AgentWorkspace(tmpDir, agentDef, installed, cfg, cat, lock, &wr, false); err != nil {
+		t.Fatalf("AgentWorkspace: %v", err)
+	}
+
+	sensorsDir := filepath.Join(tmpDir, "agent", "Sensors")
+	entries, err := os.ReadDir(sensorsDir)
+	if err != nil {
+		t.Fatalf("read sensors dir: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatal("no sensor scripts written — AgentWorkspace did not install crlf-sensor")
+	}
+
+	foundSh := false
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".sh") {
+			continue
+		}
+		foundSh = true
+		path := filepath.Join(sensorsDir, e.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read %s: %v", path, err)
+		}
+		if bytes.Contains(data, []byte("\r")) {
+			t.Errorf("sensor script %s contains carriage return bytes; want LF-only", e.Name())
+		}
+	}
+	if !foundSh {
+		t.Fatal("no .sh files found under agent/Sensors")
 	}
 }
 

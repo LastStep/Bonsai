@@ -283,6 +283,14 @@ func (h *Harness) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			//      rather than the stale pre-Esc snapshot.
 			var cmds []tea.Cmd
 			for i := h.cursor; i <= origCursor && i < len(h.steps); i++ {
+				// Refresh prior-results snapshot BEFORE Reset so a
+				// ConditionalStep's predicate can re-evaluate against the
+				// user's newly-chosen upstream picks. Without this, the
+				// predicate still sees the stale snapshot captured during
+				// the original forward traversal.
+				if pa, ok := h.steps[i].(priorAware); ok {
+					pa.SetPrior(h.priorResults())
+				}
 				if r, ok := h.steps[i].(resetter); ok {
 					if cmd := r.Reset(); cmd != nil && i == h.cursor {
 						// Only the active step's Init cmd needs to fire now.

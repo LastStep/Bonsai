@@ -100,9 +100,10 @@ func runRemove(cmd *cobra.Command, args []string) error {
 					}
 				}
 				delete(cfg.Agents, agentName)
-				_ = cfg.Save(configPath)
-				_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
-				return nil
+				var errs []error
+				errs = append(errs, cfg.Save(configPath))
+				errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false))
+				return errors.Join(errs...)
 			}),
 			func(prev []any) bool { return asBool(prev[0]) },
 		),
@@ -140,6 +141,17 @@ func runRemove(cmd *cobra.Command, args []string) error {
 
 	if !asBool(results[0]) {
 		return nil
+	}
+
+	// Spinner result at slot 1 — surface any aggregated generator error so
+	// the user sees permission / IO failures rather than a silent success.
+	if len(results) > 1 {
+		if errVal := results[1]; errVal != nil {
+			if e, ok := errVal.(error); ok && e != nil {
+				tui.Warning("Removal error: " + e.Error())
+				return nil
+			}
+		}
 	}
 
 	// Conflict-picker LazyGroup at slot 2 expands to [MultiSelect, Conditional]
@@ -354,6 +366,17 @@ func runRemoveItem(name string, it itemType) error {
 		return nil
 	}
 
+	// Spinner result at slot 2 — surface any aggregated generator error so
+	// the user sees permission / IO failures rather than a silent success.
+	if len(results) > 2 {
+		if errVal := results[2]; errVal != nil {
+			if e, ok := errVal.(error); ok && e != nil {
+				tui.Warning("Removal error: " + e.Error())
+				return nil
+			}
+		}
+	}
+
 	// Conflict-picker LazyGroup at slot 3 expands to [MultiSelect, Conditional]
 	// in place. The MultiSelect (the actual conflict picks) lands at index 3.
 	applyConflictPicks(results, 3, &wr, lock, cwd)
@@ -436,12 +459,14 @@ func buildItemSummary(displayName string, it itemType, cat *catalog.Catalog, tar
 
 // runRemoveItemAction is the body of the legacy spinner.Action closure,
 // extracted so it can be invoked from a SpinnerStep closure (which expects an
-// error-returning function rather than a bare func()). The body still uses
-// the `_ =` swallow pattern for parity with the legacy code — surfacing
-// individual write errors from this loop is tracked separately in Backlog.
+// error-returning function rather than a bare func()). Generator calls are
+// aggregated via errors.Join so any IO or permission failure surfaces
+// post-harness; os.Remove swallows are kept because ENOENT after a lock
+// Untrack is legitimate (the file may already be gone).
 func runRemoveItemAction(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog,
 	lock *config.LockFile, wr *generate.WriteResult, configPath, name string,
 	it itemType, targets []agentMatch) error {
+	var errs []error
 	for _, t := range targets {
 		removeFromItemList(t.agent, name, it)
 
@@ -469,7 +494,7 @@ func runRemoveItemAction(cwd string, cfg *config.ProjectConfig, cat *catalog.Cat
 			generate.EnsureRoutineCheckSensor(t.agent)
 			workspaceRoot := filepath.Join(cwd, t.agent.Workspace)
 			if len(t.agent.Routines) > 0 {
-				_ = generate.RoutineDashboard(cwd, workspaceRoot, t.agent, cat, lock, wr, false)
+				errs = append(errs, generate.RoutineDashboard(cwd, workspaceRoot, t.agent, cat, lock, wr, false))
 			} else {
 				dashPath := filepath.Join(t.agent.Workspace, "agent", "Core", "routines.md")
 				lock.Untrack(dashPath)
@@ -480,13 +505,13 @@ func runRemoveItemAction(cwd string, cfg *config.ProjectConfig, cat *catalog.Cat
 		// Regenerate workspace CLAUDE.md
 		if agentDef := cat.GetAgent(t.name); agentDef != nil {
 			workspaceRoot := filepath.Join(cwd, t.agent.Workspace)
-			_ = generate.WorkspaceClaudeMD(cwd, workspaceRoot, agentDef, t.agent, cfg, cat, lock, wr, false)
+			errs = append(errs, generate.WorkspaceClaudeMD(cwd, workspaceRoot, agentDef, t.agent, cfg, cat, lock, wr, false))
 		}
 	}
 
-	_ = cfg.Save(configPath)
-	_ = generate.SettingsJSON(cwd, cfg, cat, lock, wr, false)
-	return nil
+	errs = append(errs, cfg.Save(configPath))
+	errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, wr, false))
+	return errors.Join(errs...)
 }
 
 // ─── Item list helpers ──────────────────────────────────────────────────
