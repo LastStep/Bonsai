@@ -13,11 +13,11 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle between Plan 15 iterations. Iter 2 merged to `ui-ux-testing` locally at `4011882` (2026-04-20). Iter 3 still pending (`remove.go` + `update.go` migration + iter-2 reviewer follow-ups).
+**Current task:** Idle between Plan 15 iterations. Iter 2 + follow-up iter 2.1 fixes shipped on `ui-ux-testing` at `d0e6256` (2026-04-20). Iter 3 still pending (`remove.go` + `update.go` migration + carry-forward reviewer nits).
 **In flight (other tracks):**
-- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch. Iter 1 + iter 2 shipped locally (no PR yet; whole branch merges to main when iter 3 completes). Commits on branch: `63b97b1` iter-1 harness, `150d1d3` iter-1 Esc-back fix, `8525bc5` iter-1 reports, `1af8a36` iter-2 plan, `c1cabe9` memory dispatch-state, `ae86c24` iter-2 self-review cleanup, `4011882` iter-2 add-migration, plus iter-2 artefact commit pending. Safety branches: `ui-ux-testing-pre-rebase` (`2fa91d0`) + `ui-ux-testing-pre-iter2-rebase` (`2d7a947`) — keep ~30d.
+- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch. Iter 1 + iter 2 + iter 2.1 shipped locally (no PR yet; whole branch merges to main when iter 3 completes). Commits on branch: `63b97b1` iter-1 harness, `150d1d3` iter-1 Esc-back fix, `8525bc5` iter-1 reports, `1af8a36` iter-2 plan, `c1cabe9` memory dispatch-state, `ae86c24` iter-2 self-review cleanup, `4011882` iter-2 add-migration, `c5f4265` iter-2 ship docs, `d0e6256` iter-2.1 reviewer fixes, plus pending iter-2.1 doc-reconcile commit. Safety branches: `ui-ux-testing-pre-rebase` (`2fa91d0`) + `ui-ux-testing-pre-iter2-rebase` (`2d7a947`) — keep ~30d.
 **Blocked on:** Nothing.
-**Last completed:** Plan 15 iter 2 — migrated `cmd/add.go` onto the harness (both `runAdd` + `runAddItems` branches) via a `LazyGroup` splice; added `NoteStep` adapter + `tui.TitledPanelString` helper + harness `splicer` interface / `expandSplicer` reducer. Independent reviewer APPROVED with 4 non-blocking nits (all unreachable from current callers) — filed under iter 3 scope. Report: `Reports/Archive/2026-04-20-plan-15-iter-2-add-migration.md`.
+**Last completed:** Plan 15 iter 2.1 — three independent post-ship reviewers of iter 2 surfaced 4 real regressions (stale review panel on Esc-back, tech-lead bootstrap unconditional block, all-installed stdin block, panic-on-nil-splice-step) + 1 tiny-terminal UX miss. All fixed in `d0e6256`; new `TestLazyStepRebuildsOnReset` test guards the Reset contract; existing `TestEscPopReinitsActiveStep` updated for inclusive reset bound. `go build`/`vet`/`fmt`/`test` all clean. 6 non-fix follow-ups filed to Backlog Group F (spinner Ctrl-C partial-write, workspace validator normalization, panic recovery around Splice/Build, ConditionalStep adapter, AltScreen release-note, deviations-list hygiene).
 
 ## Notes
 

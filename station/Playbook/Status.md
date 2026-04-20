@@ -17,7 +17,7 @@ description: Live task tracker. Update this file at the start and end of every w
 <!-- Documentation site (Starlight) — Plan 10 complete, all phases shipped (PRs #13-19) -->
 <!-- UI/UX overhaul Phase 2 — merged PR #20, moved to Recently Done 2026-04-17 -->
 <!-- ActionUnchanged follow-ups — merged PR #22, moved to Recently Done 2026-04-17 -->
-| BubbleTea foundation + theme system (migrate init/add/remove/update onto shared harness) | 15 | general-purpose | On `ui-ux-testing` branch. Iter 1 (init) + iter 2 (add) shipped locally. Iter 3 remains: `remove.go` + `update.go` + reviewer nits |
+| BubbleTea foundation + theme system (migrate init/add/remove/update onto shared harness) | 15 | general-purpose | On `ui-ux-testing` branch. Iter 1 (init) + iter 2 (add) + iter 2.1 (reviewer fixes) shipped locally @ `d0e6256`. Iter 3 remains: `remove.go` + `update.go` + carry-forward nits |
 <!-- Plan 16 (`go install` binary name) — merged PR #23 2026-04-20, moved to Recently Done -->
 
 <!-- UI/UX Overhaul Phase 3 (Plan 14) — merged via PR #24, moved to Recently Done 2026-04-17 -->

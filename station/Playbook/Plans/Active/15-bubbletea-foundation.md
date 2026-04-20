@@ -77,9 +77,10 @@ Plan 15 introduces a single long-lived BubbleTea harness that owns the screen fo
 
 | Iter | Scope | Status |
 |------|-------|--------|
-| 1 | Harness package + theme + `cmd/init.go` migration | Shipped (ui-ux-testing @ 2d7a947) |
+| 1 | Harness package + theme + `cmd/init.go` migration | Shipped (ui-ux-testing @ 150d1d3) |
 | 2 | Migrate `cmd/add.go` (incl. `runAddItems` pivot) + `NoteStep` + `TitledPanelString` + harness `LazyGroup` splice | Shipped (ui-ux-testing @ 4011882) |
-| 3 | Migrate `cmd/remove.go` + `cmd/update.go` (custom-file scan, conflict picker, spinner step) + iter-2 reviewer nits (nested-splicer docstring, WindowSizeMsg re-broadcast after splice, LazyStep-in-LazyGroup unit test) | Outlined |
+| 2.1 | Post-ship reviewer fixes — stale review panel on Esc-back, tech-lead bootstrap, all-installed zero-keystroke, defensive harness guards | Shipped (ui-ux-testing @ d0e6256) |
+| 3 | Migrate `cmd/remove.go` + `cmd/update.go` (custom-file scan, conflict picker, spinner step) + carry-forward reviewer nits (nested-splicer docstring, WindowSizeMsg re-broadcast after splice, LazyStep-in-LazyGroup unit test, conditional-skip step, workspace validator normalization) | Outlined |
 
 ---
 
@@ -513,10 +514,12 @@ steps := []harness.Step{
 
 #### Build & Test
 
-- [ ] `make build` — clean compile.
-- [ ] `go test ./...` — all tests green, incl. new `LazyGroup`, `NoteStep`, `TitledPanelString` cases.
-- [ ] `gofmt -s -l .` — no output.
-- [ ] `go vet ./...` — no issues.
+- [x] `make build` — clean compile. ✅ (verified @ 4011882 and re-verified @ d0e6256 post iter-2.1)
+- [x] `go test ./...` — all tests green, incl. new `LazyGroup`, `NoteStep`, `TitledPanelString` cases. ✅
+- [x] `gofmt -s -l .` — no output. ✅
+- [x] `go vet ./...` — no issues. ✅
+
+> **Manual smoke sections below are deferred to the whole-branch merge audit before `ui-ux-testing → main`.** No PTY in dispatched environment; tech lead to walk the flows locally at iter-3 completion.
 
 #### Manual — `bonsai add` flow (new agent)
 
@@ -548,6 +551,41 @@ Run in a temp project after `bonsai init`:
 - [ ] `bonsai remove` — unchanged (still on stateless path; iter 3 migrates it).
 - [ ] `bonsai update` — unchanged.
 - [ ] `bonsai list` / `bonsai catalog` — unchanged.
+
+---
+
+## Iter 2.1 — Fixes (shipped)
+
+Three independent post-ship reviews of iter 2 (commit `4011882`) surfaced four real regressions / UX misses. All landed as a single follow-up commit `d0e6256` on `ui-ux-testing`.
+
+### Fixes landed
+
+**A. Stale review panel after Esc-back.** `LazyStep.Reset()` now clears `built=false` and drops `inner` so the builder closure re-runs against current prior results on re-entry. The harness Esc reset loop was also extended from `[new_cursor, origCursor)` to `[new_cursor, origCursor]` inclusive — a tail `LazyStep` (review) at `origCursor` needs `Reset()` so its next activation rebuilds the panel after the user edits upstream picks. New test `TestLazyStepRebuildsOnReset`; existing `TestEscPopReinitsActiveStep` updated to reflect the new inclusive bound. Affects both `cmd/init.go` and `cmd/add.go` review steps.
+
+**B. Tech-lead bootstrap regression.** Iter 2's pre-harness "require tech-lead" gate blocked `bonsai add` from running at all without a tech-lead — but the catalog's intent is that users *pick* tech-lead from the list to bootstrap. Removed the pre-harness unconditional block. Non-tech-lead picks without an installed tech-lead now show an in-harness `NoteStep` (cosmetic) plus a post-harness `tui.ErrorDetail` to stdout (durable scrollback record, matches pre-iter-2 error UX).
+
+**C. "All installed" path no longer blocks on stdin.** Filter logic lifted into a shared `availableAddItems` helper (+ `availableAddSet` type). The `LazyGroup` splicer now returns a nil / empty slice when every category filters empty; the post-harness path detects this and renders `tui.EmptyPanel` to stdout with zero keystrokes (matches pre-iter-2 behaviour — iter 2 regressed by forcing the user to Enter-past a NoteStep before printing the empty banner).
+
+**D. Defensive harness guards.** `expandSplicer` filters `nil` steps from splice output before installing them (was a panic if any builder returned a slice with a nil element). `View()` short-circuits with a muted "terminal too small" notice when available body height drops below 3 rows, so tiny terminals get a readable message instead of a broken frame.
+
+### Verification (re-run after 2.1)
+
+- [x] `go build ./...` — clean ✅
+- [x] `go vet ./...` — clean ✅
+- [x] `gofmt -s -l .` — no output ✅
+- [x] `go test ./... -count=1` — all packages pass (4 ok, 0 failed) ✅
+
+### Deferred to iter 3 (or beyond)
+
+Reviewer findings that were NOT hotfixed in 2.1:
+- **Nested splicers silently unsupported** (iter-2 nit #1) — docstring note needed on `splicer` interface; no caller hits this yet.
+- **Empty-splice re-entry edge case** (iter-2 nit #2) — cursor lands on former `cursor+1` without another `expandSplicer()` call; same shape as above, safe for current callers.
+- **`WindowSizeMsg` not re-broadcast after splice** (iter-2 nit #3) — first-frame layout on spliced step *may* be briefly wrong at narrow widths until huh's next update cycle.
+- **No unit test for `LazyStep` nested inside a `LazyGroup` result** (iter-2 nit #4) — exercised at runtime via `cmd/add.go` but not isolated.
+- **Workspace validator normalization** — current `workspaceUniqueValidator` compares raw user input against existing paths; trailing-slash and `./` variants slip past. Filed to Backlog Group F.
+- **Conditional-skip step** — `buildAddItemsSteps` filters zero-item categories manually; a reusable `ConditionalStep` adapter would be cleaner. Filed to Backlog Group F.
+- **Panic recovery around `Splice`/`Build`** — a builder that panics today will crash the whole `tea.Program`. Filed to Backlog Group F.
+- **Spinner Ctrl-C partial-write window** — pre-existing in `cmd/add.go` and `cmd/init.go`; the `huh/spinner` block runs outside the harness, so Ctrl-C during generation can leave partial files. Iter 3 `SpinnerStep` migration addresses this. Filed to Backlog Group F as a waypoint.
 
 ---
 
