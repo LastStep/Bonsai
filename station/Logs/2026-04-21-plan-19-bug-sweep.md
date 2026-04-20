@@ -52,3 +52,11 @@ Ship eight fresh-install blocker + harness polish fixes as one PR before OSS lau
 - **Drop `rootLabel` param from `showWriteResults` entirely** rather than making it optional. Rationale: every caller was passing a static string anyway; the function can derive roots from `wr.Files` with zero ambiguity. Dropping the param forces callers off the stale pattern and prevents the bug class (single-root assumption) from recurring.
 - **Keep `os.Remove` `_ =` swallows** in `cmd/remove.go` (L451, 457, 463, 464) + backup writes in `cmd/root.go:157`. Rationale: these are best-effort filesystem cleanups where ENOENT is expected / irrelevant. Aggregating them into `errors.Join` would produce user-facing noise for a case that's fine.
 - **`NewConditional(nil)` defaults to show, not skip.** Rationale: silent-skip is a footgun — a ConditionalStep that disappears on nil predicate masks the bug and produces a smaller output instead of a louder one. Defaulting to show means the bug is visible (step runs when it shouldn't) → faster fix.
+
+## Post-Merge (2026-04-21)
+
+- PR #27 merged squash `a44e447`. Main advanced to `fd55ed4` with wrap-up doc commit.
+- **Merge cleanup gotcha:** `gh pr merge 27 --squash --delete-branch` failed local-branch delete because worktree had `plan-19-bug-sweep` checked out. Resolved: `git worktree remove <path> -f -f` → `git branch -D plan-19-bug-sweep`. Matches Plan 15 precedent in memory.md notes.
+- **Verify-everything audit:** main `go build` + `go vet` + `go test ./...` + scoped `gofmt -l cmd/ internal/ embed.go` all clean. All 8 items verified in merged code. Branches `plan-19-bug-sweep` + `worktree-agent-ab0d06b6` gone remote+local.
+- **`gofmt -l` from repo root false-positives** on stale `.claude/worktrees/agent-*` — pre-existing debt, unrelated to Plan 19. Scope to `cmd/ internal/ embed.go` for clean repo-level check.
+- **Autonomous routine side-effects during session:** 4 routine reports appeared in `Reports/Pending/` (backlog-hygiene, dependency-audit, doc-freshness-check, vulnerability-scan, all 2026-04-21) + `Core/routines.md` + `Logs/RoutineLog.md` dashboard auto-updated. Left uncommitted — triage via `/routine-digest` next session, not Plan 19 scope.

@@ -13,10 +13,13 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Plan 19 shipped; OSS launch gating items reduced from 8 blockers to 0.
+**Current task:** Idle. Plan 19 shipped + post-merge audit clean.
 **In flight (other tracks):** None.
 **Blocked on:** Nothing.
-**Last completed:** Plan 19 — Pre-launch bug sweep (2026-04-21, PR #27 squash `a44e447`, +541 / -73 across 13 files). Bundled 4 Tier 1 fresh-install blockers (CRLF defence via .gitattributes + `normalizeShellLF`; `showWriteResults` cross-workspace bucket-by-top-segment; `applyCustomFileSelection` dedup via `appendUnique`; spinner `errors.Join` at ~30 sites + Warning surfaces) with 4 Tier 2 harness polish items (SpinnerStep goroutine `recover`; `NewConditional` nil-predicate guard; Esc-back predicate re-eval via harness SetPrior-before-Reset + `Conditional.Reset` re-evaluation; `bonsai add` drop duplicate NoteStep). Issue-to-implementation workflow end-to-end, worktree-isolated dispatch (general-purpose agent, ~15min wall), 6 new tests + 3 subtests all green. Plan doc: `Plans/Active/19-pre-launch-bug-sweep.md`. Session log: `Logs/2026-04-21-plan-19-bug-sweep.md`.
+**Loose ends (uncommitted):** 4 routine reports in `Reports/Pending/` from autonomous 2026-04-21 runs (backlog-hygiene, dependency-audit, doc-freshness-check, vulnerability-scan) + `Core/routines.md` + `Logs/RoutineLog.md` dashboard updates. Triage via `/routine-digest` next session.
+**Last completed:** Plan 19 — Pre-launch bug sweep (2026-04-21, PR #27 squash `a44e447`, +541 / -73 across 13 files). Post-merge audit: main build/vet/test/gofmt clean, all 8 items verified in merged code, branches cleaned remote+local.
+
+Bundle: 4 Tier 1 fresh-install blockers (CRLF defence via .gitattributes + `normalizeShellLF`; `showWriteResults` cross-workspace bucket-by-top-segment; `applyCustomFileSelection` dedup via `appendUnique`; spinner `errors.Join` at ~30 sites + Warning surfaces) with 4 Tier 2 harness polish items (SpinnerStep goroutine `recover`; `NewConditional` nil-predicate guard; Esc-back predicate re-eval via harness SetPrior-before-Reset + `Conditional.Reset` re-evaluation; `bonsai add` drop duplicate NoteStep). Issue-to-implementation workflow end-to-end, worktree-isolated dispatch (general-purpose agent, ~15min wall), 6 new tests + 3 subtests all green. Plan doc: `Plans/Active/19-pre-launch-bug-sweep.md`. Session log: `Logs/2026-04-21-plan-19-bug-sweep.md`.
 
 ## Notes
 
