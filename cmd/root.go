@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
@@ -83,49 +82,6 @@ func Execute(fsys fs.FS, guides map[string]string) {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
-}
-
-// resolveConflicts shows a multi-select picker for user-modified files.
-// Users check the files they want to update (overwrite) and uncheck to skip.
-func resolveConflicts(wr *generate.WriteResult, lock *config.LockFile, projectRoot string) {
-	conflicts := wr.Conflicts()
-	if len(conflicts) == 0 {
-		return
-	}
-
-	tui.Blank()
-	tui.Warning(fmt.Sprintf("%d file(s) modified since Bonsai generated them.", len(conflicts)))
-	tui.Info("Select which files to update. Unchecked files keep your changes.")
-	tui.Blank()
-
-	// Build multi-select options — all pre-selected for update
-	var options []huh.Option[string]
-	for _, c := range conflicts {
-		options = append(options, huh.NewOption(c.RelPath, c.RelPath).Selected(true))
-	}
-
-	selected, err := tui.AskMultiSelect("Update these files?", options)
-	if err != nil || len(selected) == 0 {
-		return // user cancelled or unchecked everything
-	}
-
-	// Offer backup for the selected files
-	backup, err := tui.AskConfirm("Create .bak backups before overwriting?", false)
-	if err != nil {
-		return
-	}
-	if backup {
-		for _, relPath := range selected {
-			abs := filepath.Join(projectRoot, relPath)
-			data, readErr := os.ReadFile(abs)
-			if readErr == nil {
-				_ = os.WriteFile(abs+".bak", data, 0644)
-			}
-		}
-		tui.Info(fmt.Sprintf("Backed up %d file(s) with .bak extension.", len(selected)))
-	}
-
-	wr.ForceSelected(selected, projectRoot, lock)
 }
 
 // buildConflictSteps returns the harness steps for the conflict-resolution
