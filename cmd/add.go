@@ -244,10 +244,17 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Conflict picker LazyGroup at slot 3 expands to [MultiSelect, Conditional]
-	// in place. The MultiSelect (the actual conflict picks) lands at index 3
-	// only when the splice succeeded — applyConflictPicks tolerates absence.
-	applyConflictPicks(results, 3, &wr, lock, cwd)
+	// The conflict picker is the trailing LazyGroup; when it splices it adds
+	// exactly two slots (MultiSelect, then a Conditional-wrapped Confirm). The
+	// agent-flow splice above produces a variable number of slots, so compute
+	// the picker index from the tail rather than declaring a fixed slot. When
+	// there are no conflicts the LazyGroup splices nothing and we pass -1 so
+	// applyConflictPicks no-ops cleanly.
+	confIdx := -1
+	if wr.HasConflicts() {
+		confIdx = len(results) - 2
+	}
+	applyConflictPicks(results, confIdx, &wr, lock, cwd)
 
 	if err := lock.Save(cwd); err != nil {
 		tui.Warning("Could not save lock file: " + err.Error())
