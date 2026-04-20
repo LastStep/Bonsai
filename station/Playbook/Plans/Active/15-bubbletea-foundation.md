@@ -376,7 +376,11 @@ func (s *NoteStep) Done() bool                                 { return s.form.S
 func (s *NoteStep) Result() any                                { return nil }
 func (s *NoteStep) Init() tea.Cmd                              { return s.form.Init() }
 func (s *NoteStep) View() string                               { return s.form.View() }
-func (s *NoteStep) Update(msg tea.Msg) (tea.Model, tea.Cmd)    { /* standard form-delegation */ }
+func (s *NoteStep) Update(msg tea.Msg) (tea.Model, tea.Cmd)    {
+    f, cmd := s.form.Update(msg)
+    if ff, ok := f.(*huh.Form); ok { s.form = ff }
+    return s, cmd
+}
 func (s *NoteStep) Reset() tea.Cmd                             { s.form = s.buildForm(); return s.form.Init() }
 ```
 
@@ -435,13 +439,11 @@ return tui.TitledPanelString("Review", tree, tui.Water)
 
 **Pre-harness (runs before `harness.Run`):**
 
-1. `cwd := mustCwd()`, load config + catalog, early-exit guards (`requireConfig`, unknown agent type guard stays unchanged).
+1. `cwd := mustCwd()`, load config + catalog, early-exit guards (`requireConfig`) unchanged.
 2. Remove the standalone `tui.Heading("Add Agent")` call — the harness header replaces it.
-3. The tech-lead pre-check (`if agentType != "tech-lead" && !hasTechLead`) must move to a post-select branch — it depends on the user's selection. Rendering in-harness is awkward; handle it by making the branch return a single `NoteStep` that shows the error, and have the flow terminate after that one note (see Step 4b).
-
-Actually cleaner: keep the tech-lead-required check *inside* the splice so the failure is rendered as a NoteStep with `tui.ErrorDetail`-equivalent copy, and the flow short-circuits by returning a single NoteStep. But ErrorDetail is intrinsically a stdout write. Preferred path: **after `harness.Run` returns**, re-check `agentType == "tech-lead"` vs installed agents and render `ErrorDetail` in normal stdout exactly as today, then return. That means the splicer builds the full `runAdd` flow unconditionally; the tech-lead-required validation happens after harness exit with no state written. (Harness is essentially "gather answers"; execution stays outside.)
-
-**Decision:** Move the tech-lead-required check *after* `harness.Run` returns, before persisting config. User flow: they pick `backend`, walk through the whole add-agent wizard, click Yes on review; harness exits; we then see "no tech-lead installed" and render `ErrorDetail`. Slightly late but only a pathological case (no one runs `bonsai add backend` before `bonsai init`). Acceptable for iter 2. **Alternative** (if objectionable during self-review): short-circuit pre-harness via an agent-catalog-independent check — read `cfg.Agents` right after `requireConfig` and refuse to offer non-tech-lead options when no tech-lead is installed. Cleaner but changes the option list.
+3. Build `agentOptions` (same as today).
+4. Build `existingWorkspaces` map once (used by the workspace-step validator inside the splice).
+5. **Pre-flight: require tech-lead.** If `cfg.Agents["tech-lead"]` doesn't exist, render `tui.ErrorDetail("Tech Lead required", "No tech-lead agent is installed yet.", "Run: bonsai init")` and return `nil` *without entering the harness*. This is the existing behaviour at `cmd/add.go:85-90` — keep it pre-harness so the user isn't invited into AltScreen only to be rejected. Consequence: we never reach the harness without at least tech-lead installed, so the `agentType != "tech-lead" && !hasTechLead` check inside the splice is unnecessary.
 
 **In-harness step list:**
 
@@ -453,56 +455,36 @@ steps := []harness.Step{
         if _, exists := cfg.Agents[agentType]; exists {
             return buildAddItemsSteps(cat, cfg, agentType) // runAddItems branch
         }
-        return buildNewAgentSteps(cat, cfg, agentType)     // runAdd branch
+        return buildNewAgentSteps(cat, cfg, agentType, existingWorkspaces)
     }),
 }
 ```
 
-**`buildNewAgentSteps(cat, cfg, agentType)` (runAdd branch):**
+**`buildNewAgentSteps(cat, cfg, agentType, existingWorkspaces)` (runAdd branch):**
 
-1. **Workspace step** — built via `harness.NewLazy` (single-step lazy) so it can branch:
-   - If `agentType == "tech-lead"`: `NoteStep` with body "Tech Lead workspace: {cfg.DocsPath or 'station/'}".
-   - Else: `TextStep` with prompt "Workspace directory (e.g. backend/):", default `agentType + "/"`, required, plus a validator that rejects any path already in `existingWorkspaces[]` (reject in-place so the user can correct without crashing after the form).
-2. `MultiSelectStep` × 5 — Skills, Workflows, Protocols, Sensors (filtered to exclude `routine-check`), Routines.
-3. `LazyStep` — Review: builds a `ReviewStep` using `tui.TitledPanelString("Review", tree, tui.Water)`.
+1. **Workspace step** — built via `harness.NewLazy` (single-step lazy, already shipped in iter 1) so it can branch on agent type:
+   - If `agentType == "tech-lead"`: `NoteStep(title="Workspace", body="Tech Lead workspace: {cfg.DocsPath or 'station/'}")`.
+   - Else: `TextStep(title="Workspace", prompt="Workspace directory (e.g. backend/):", default=agentType+"/", required=true, validator=workspaceUniqueValidator(existingWorkspaces))`. The validator rejects any path already in `existingWorkspaces[]` so the user corrects in-place without a crash after collection.
+2. `MultiSelectStep` × 5 — Skills, Workflows, Protocols, Sensors (filtered to exclude `routine-check`, same as `cmd/add.go:137-144`), Routines. Same defaults as today (`agentDef.DefaultSkills` etc.).
+3. `LazyStep` — Review: builds a `ReviewStep(title="Review", panel=tui.TitledPanelString("Review", tree, tui.Water), prompt="Generate files?", default=true)` where `tree = tui.ItemTree(...)` mirrors `cmd/add.go:168-178`.
 
 **`buildAddItemsSteps(cat, cfg, agentType)` (runAddItems branch):**
 
-1. `NoteStep` — "{agentDef.DisplayName} is already installed at {installed.Workspace} — showing uninstalled abilities."
-2. `MultiSelectStep` for each of Skills/Workflows/Protocols/Sensors/Routines *only if the filtered list is non-empty* — zero-item categories are omitted from the step list entirely (clean, avoids auto-complete headers with nothing to show).
-3. `LazyStep` — Review: builds a `ReviewStep` titled "Adding" with the tree of newly-selected items.
-
-**Pre-harness short-circuit for runAddItems:** after computing filter counts in `buildAddItemsSteps`, if `totalAvailable == 0`, we can't short-circuit inside the splicer (no way to cancel the flow cleanly from there). Instead, do this check **before** entering the harness: before constructing the step list, peek at whether the agent exists AND whether it has any uninstalled abilities; if both true and count is 0, render `EmptyPanel(...)` in normal stdout and return.
-
-This means the pre-harness pipeline in `runAdd` looks like:
-
-```go
-func runAdd(cmd *cobra.Command, args []string) error {
-    cwd, cfg, cat, configPath, err := setupAdd()  // existing guards
-    if err != nil { return err }
-
-    // NOTE: agent-type selection is inside the harness now; we can't
-    // short-circuit empty add-items pre-harness without asking the user first.
-    // So: let the user pick agent type in-harness, then after harness exit, if
-    // the branch was runAddItems AND nothing was selected, show EmptyPanel and
-    // return. The splicer still needs to build *some* flow, so when the filter
-    // count is 0 it returns a single NoteStep with the "everything installed"
-    // message and the review step is skipped. Post-harness sees no selections
-    // and returns without writing.
-
-    // ... build step list, call harness.Run ...
-    // ... pull results, persist config, generate, etc. ...
-}
-```
-
-**Decision on empty-add-items UX:** When all filter counts are zero in the add-items branch, `buildAddItemsSteps` returns `[]Step{ NoteStep("All installed", "All available abilities are already installed. Browse more with: bonsai catalog") }`. The user presses Enter, the flow ends, nothing is written. Cleaner than a separate pre-harness EmptyPanel because the flow stays in AltScreen.
+1. Compute filtered lists (`filterItems`/`filterSensors`/`filterRoutines` — lift the existing closures from `cmd/add.go:251-282` into package-level helpers).
+2. If `len(newSkills)+len(newWorkflows)+len(newProtocols)+len(newSensors)+len(newRoutines) == 0`: return `[]Step{NoteStep("All installed", "All available abilities are already installed.\nBrowse more with: bonsai catalog")}` — the splice becomes a single NoteStep, user presses Enter, flow ends with no writes.
+3. Otherwise, return:
+   - `NoteStep(title="Adding to {agent}", body="{agentDef.DisplayName} is already installed at {installed.Workspace} — showing uninstalled abilities.")`
+   - `MultiSelectStep` for each category *only if the filtered list is non-empty* — zero-item categories omitted from the step list entirely (no empty-picker step).
+   - `LazyStep` — Review: builds a `ReviewStep(title="Adding", panel=tui.TitledPanelString("Adding", tree, tui.Water), prompt="Generate files?", default=true)` where tree shows only newly-selected items.
 
 **Post-harness (runs after `harness.Run`):**
 
-1. Pull typed results.
-2. Branch on agent type + existence:
-   - **New agent:** validate workspace uniqueness (delayed tech-lead-required check here too), build `InstalledAgent`, save config, run spinner + generate, render `TitledPanel("Adding") via TitledPanel(...)` — wait, the review is already shown in-harness; post-harness just runs the write pipeline + success banner.
-   - **Existing agent:** append new selections to `installed.*`, save config, run spinner + generate, success banner.
+1. Handle `ErrAborted` (Ctrl-C) → return `nil`.
+2. Branch on whether the agent existed pre-harness (recompute `_, exists := cfg.Agents[agentType]`):
+   - **New agent:** extract workspace (string from NoteStep result is `nil`, so for tech-lead use the pre-computed `cfg.DocsPath or "station/"` directly; for others pull from `asString(results[...])`), validate workspace uniqueness against `existingWorkspaces` once more (defence-in-depth — the validator already blocked duplicates, but the check is cheap), extract the 5 picker results, build `InstalledAgent`, call `generate.EnsureRoutineCheckSensor`, save config, run spinner + 4 `generate.*` calls + `resolveConflicts` + `lock.Save` + `showWriteResults` + `tui.Success("Added X at Y")` + `tui.Hint("bonsai list…")` — exactly the pipeline at `cmd/add.go:188-228`.
+   - **Existing agent:** if the splice short-circuited with the "All installed" NoteStep, `results[...]` for the review slot is absent (or the review confirm never happened) — detect by checking whether any picker produced a non-empty slice. If all empty, return `nil` with no writes. Otherwise append selections to `installed.*` slices, re-run `EnsureRoutineCheckSensor`, save config, same spinner + generate + conflict + lock + write-results + `tui.Success("Added N abilities to X")` + hint — exactly `cmd/add.go:360-397`.
+
+**Helper extraction:** The `describer` closure (currently inlined twice at `cmd/add.go:155-166` and `:327-338`) should be lifted to a package-level `func newDescriber(cat *catalog.Catalog) func(string) string` so both branches and the review builders share one. Small cleanup, within scope because both flows now call it from the `LazyStep` review builder.
 
 **Shared post-harness pipeline** (same as iter 1 init):
 - `spinner.New().Action(...).Run()` for generation
