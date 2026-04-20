@@ -78,7 +78,7 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 ### Group B: Code Quality & Testing
 
-> Logical ordering: split the big file first (makes testing easier), then add tests, then fix error handling. The two P1 bugs (triggerSection frontmatter, spinner error swallowing) can be fixed independently at any time.
+> Logical ordering: split the big file first (makes testing easier), then add tests, then fix error handling. The remaining P1 bug (spinner error swallowing) can be fixed independently at any time. (triggerSection frontmatter bug fixed in Plan 17 / PR #24.)
 
 - **[debt] Break up `generate.go` — 1,357 lines, highest churn file** — `internal/generate/generate.go` is both the largest Go file and the most frequently modified. It handles file writing, template rendering, conflict resolution, lock management, sensor/routine wiring, and scaffolding — too many responsibilities in one file. Split along natural seams: (1) template rendering, (2) file writing + conflict resolution, (3) lock management, (4) sensor/routine wiring. Would improve testability and reduce merge friction for agent dispatches. *(added 2026-04-16, source: repo-analytics)*
 - **[debt] `internal/catalog/` test coverage — 496 lines, 0%** — Catalog loading (`LoadCatalog()`, `DisplayNameFrom()`, meta.yaml parsing) is the bridge between embedded YAML and the rest of the system. A malformed `meta.yaml` in the catalog would break at runtime with no test to catch it. Basic tests for catalog loading, display name derivation, and agent compatibility filtering would catch regressions cheaply. *(added 2026-04-16, source: repo-analytics)*
