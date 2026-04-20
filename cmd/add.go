@@ -115,14 +115,6 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			huh.NewOption(a.DisplayName+" "+tui.StyleMuted.Render(tui.GlyphDash+" "+a.Description), a.Name))
 	}
 
-	// Pre-flight: require tech-lead. We check before entering AltScreen so the
-	// user isn't invited into the harness only to be rejected.
-	if _, hasTechLead := cfg.Agents["tech-lead"]; !hasTechLead {
-		// If the only selectable agent is tech-lead, no need for the guard.
-		tui.ErrorDetail("Tech Lead required", "No tech-lead agent is installed yet.", "Run: bonsai init")
-		return nil
-	}
-
 	existingWorkspaces := make(map[string]bool)
 	for _, a := range cfg.Agents {
 		existingWorkspaces[a.Workspace] = true
@@ -139,6 +131,17 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			agentType := asString(prev[0])
 			if installed, exists := cfg.Agents[agentType]; exists {
 				return buildAddItemsSteps(cat, agentType, installed)
+			}
+			// Require tech-lead before adding other agents. The user can still
+			// pick "tech-lead" here to bootstrap — we only block when the pick
+			// is a non-tech-lead agent and no tech-lead is installed yet.
+			if agentType != "tech-lead" {
+				if _, hasTechLead := cfg.Agents["tech-lead"]; !hasTechLead {
+					return []harness.Step{harness.NewNote(
+						"Tech Lead required",
+						"No tech-lead agent is installed yet.\nRun: bonsai init to set up a Tech Lead workspace first.",
+					)}
+				}
 			}
 			return buildNewAgentSteps(cat, cfg, agentType, existingWorkspaces)
 		}),
@@ -159,8 +162,27 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	if installed, exists := cfg.Agents[agentType]; exists {
+		// "All installed" short-circuit: if every category filtered empty, the
+		// splicer returned zero steps — there's nothing to finalise, just
+		// render the durable panel on normal stdout.
+		if availableAddItems(cat, installed).Total() == 0 {
+			tui.EmptyPanel("All available abilities are already installed.\nBrowse more with: bonsai catalog")
+			return nil
+		}
 		return finaliseAddItems(cwd, configPath, cfg, cat, agentDef, installed, results)
 	}
+
+	// Post-harness tech-lead guard: the in-harness NoteStep provides cosmetic
+	// feedback inside AltScreen, but AltScreen tears down on exit and leaves
+	// no scrollback trace. ErrorDetail to stdout gives the user a durable
+	// record of why nothing was installed.
+	if agentType != "tech-lead" {
+		if _, hasTechLead := cfg.Agents["tech-lead"]; !hasTechLead {
+			tui.ErrorDetail("Tech Lead required", "No tech-lead agent is installed yet.", "Run: bonsai init")
+			return nil
+		}
+	}
+
 	return finaliseNewAgent(cwd, configPath, cfg, cat, agentDef, agentType, existingWorkspaces, results)
 }
 
@@ -238,14 +260,28 @@ func newAgentWorkspace(cfg *config.ProjectConfig, agentType string, prev []any) 
 	return normaliseWorkspace(asString(prev[0]))
 }
 
-// buildAddItemsSteps returns the sub-sequence for appending abilities to an
-// already-installed agent. Categories with zero uninstalled items are omitted
-// entirely so the user doesn't page through empty pickers.
-func buildAddItemsSteps(cat *catalog.Catalog, agentType string, installed *config.InstalledAgent) []harness.Step {
-	agentDef := cat.GetAgent(agentType)
-	if agentDef == nil {
-		return []harness.Step{harness.NewNote("Unknown agent type", agentType+" is not in the catalog. Run: bonsai catalog")}
-	}
+// availableAddSet is the result of filtering the catalog against an installed
+// agent: only the items not already installed in each category.
+type availableAddSet struct {
+	Skills    []catalog.CatalogItem
+	Workflows []catalog.CatalogItem
+	Protocols []catalog.CatalogItem
+	Sensors   []catalog.SensorItem
+	Routines  []catalog.RoutineItem
+}
+
+// Total reports the total count across all categories — used by the "all
+// installed" short-circuit.
+func (a availableAddSet) Total() int {
+	return len(a.Skills) + len(a.Workflows) + len(a.Protocols) + len(a.Sensors) + len(a.Routines)
+}
+
+// availableAddItems computes the uninstalled-per-category slices for an
+// already-installed agent. Shared by buildAddItemsSteps, the LazyGroup
+// splicer's empty-check, and the post-harness "all installed" renderer so all
+// three see the same filter result.
+func availableAddItems(cat *catalog.Catalog, installed *config.InstalledAgent) availableAddSet {
+	agentType := installed.AgentType
 
 	installedSet := func(items []string) map[string]bool {
 		m := make(map[string]bool, len(items))
@@ -288,17 +324,38 @@ func buildAddItemsSteps(cat *catalog.Catalog, agentType string, installed *confi
 		return result
 	}
 
-	newSkills := filterItems(cat.SkillsFor(agentType), installed.Skills)
-	newWorkflows := filterItems(cat.WorkflowsFor(agentType), installed.Workflows)
-	newProtocols := filterItems(cat.ProtocolsFor(agentType), installed.Protocols)
-	newSensors := filterSensors(cat.SensorsFor(agentType), installed.Sensors)
-	newRoutines := filterRoutines(cat.RoutinesFor(agentType), installed.Routines)
+	return availableAddSet{
+		Skills:    filterItems(cat.SkillsFor(agentType), installed.Skills),
+		Workflows: filterItems(cat.WorkflowsFor(agentType), installed.Workflows),
+		Protocols: filterItems(cat.ProtocolsFor(agentType), installed.Protocols),
+		Sensors:   filterSensors(cat.SensorsFor(agentType), installed.Sensors),
+		Routines:  filterRoutines(cat.RoutinesFor(agentType), installed.Routines),
+	}
+}
 
-	total := len(newSkills) + len(newWorkflows) + len(newProtocols) + len(newSensors) + len(newRoutines)
-	if total == 0 {
-		return []harness.Step{
-			harness.NewNote("All installed", "All available abilities are already installed.\nBrowse more with: bonsai catalog"),
-		}
+// buildAddItemsSteps returns the sub-sequence for appending abilities to an
+// already-installed agent. Categories with zero uninstalled items are omitted
+// entirely so the user doesn't page through empty pickers. If every category
+// is empty the function returns nil — the splicer collapses to zero steps and
+// the post-harness pipeline renders the "All installed" panel to stdout.
+func buildAddItemsSteps(cat *catalog.Catalog, agentType string, installed *config.InstalledAgent) []harness.Step {
+	agentDef := cat.GetAgent(agentType)
+	if agentDef == nil {
+		return []harness.Step{harness.NewNote("Unknown agent type", agentType+" is not in the catalog. Run: bonsai catalog")}
+	}
+
+	avail := availableAddItems(cat, installed)
+	newSkills := avail.Skills
+	newWorkflows := avail.Workflows
+	newProtocols := avail.Protocols
+	newSensors := avail.Sensors
+	newRoutines := avail.Routines
+
+	if avail.Total() == 0 {
+		// Empty splice — harness expands to zero steps. The "All installed"
+		// panel is rendered post-harness on normal stdout so the user has a
+		// durable record after AltScreen tears down.
+		return nil
 	}
 
 	steps := []harness.Step{

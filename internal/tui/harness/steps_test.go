@@ -135,6 +135,65 @@ func TestNoteStepResetRestoresView(t *testing.T) {
 	}
 }
 
+// TestLazyStepRebuildsOnReset verifies the Plan 15 iter 2.1 fix: after Reset,
+// Build must re-run the closure against the current prior results so a review
+// panel reflects the user's NEW picks rather than the pre-Esc snapshot.
+func TestLazyStepRebuildsOnReset(t *testing.T) {
+	var lastPrev []any
+	lazy := NewLazy("Review", func(prev []any) Step {
+		// Copy so a later mutation of the outer slice doesn't change what we
+		// stored; the fix cares about the value captured at build time.
+		copied := append([]any(nil), prev...)
+		lastPrev = copied
+		// Encode the prior-results slice into the ReviewStep's panel so View
+		// reflects what the builder saw.
+		panel := ""
+		for i, p := range prev {
+			if i > 0 {
+				panel += ","
+			}
+			if s, ok := p.(string); ok {
+				panel += s
+			}
+		}
+		return NewReview("Review", panel, "OK?", true)
+	})
+
+	lazy.Build([]any{"v1"})
+	if !lazy.Built() {
+		t.Fatalf("expected Built()=true after first Build")
+	}
+	firstView := lazy.View()
+	if !strings.Contains(firstView, "v1") {
+		t.Fatalf("first view must contain %q; got:\n%s", "v1", firstView)
+	}
+	if got, want := lastPrev, []any{"v1"}; len(got) != 1 || got[0] != want[0] {
+		t.Fatalf("first Build prev mismatch: got %v", got)
+	}
+
+	// Reset must clear the built flag and drop the inner so the next Build
+	// re-runs the closure.
+	lazy.Reset()
+	if lazy.Built() {
+		t.Fatalf("expected Built()=false after Reset")
+	}
+	if lazy.inner != nil {
+		t.Fatalf("expected inner to be nil after Reset; got %T", lazy.inner)
+	}
+
+	lazy.Build([]any{"v2"})
+	secondView := lazy.View()
+	if !strings.Contains(secondView, "v2") {
+		t.Fatalf("second view must contain %q (the NEW prior result); got:\n%s", "v2", secondView)
+	}
+	if strings.Contains(secondView, "v1") {
+		t.Fatalf("second view must NOT contain the stale %q; got:\n%s", "v1", secondView)
+	}
+	if got, want := lastPrev, []any{"v2"}; len(got) != 1 || got[0] != want[0] {
+		t.Fatalf("second Build prev mismatch: got %v", got)
+	}
+}
+
 // TestMultiSelectStepResetPreservesPicks verifies that on re-entry after Esc,
 // the builder re-applies Selected(true) to options matching the user's prior
 // picks. huh's MultiSelect eagerly populates the value slice on Focus (see

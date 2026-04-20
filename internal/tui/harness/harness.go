@@ -124,6 +124,16 @@ func (h *Harness) expandSplicer() {
 		return
 	}
 	inserted := sp.Splice(h.priorResults())
+	// Defensive: drop any nil entries so callers can use `nil` or `append`-of-
+	// nothing as an "empty splice" signal without tripping a nil-method panic
+	// downstream.
+	filtered := inserted[:0]
+	for _, s := range inserted {
+		if s != nil {
+			filtered = append(filtered, s)
+		}
+	}
+	inserted = filtered
 	head := append([]Step{}, h.steps[:h.cursor]...)
 	tail := append([]Step(nil), h.steps[h.cursor+1:]...)
 	h.steps = append(append(head, inserted...), tail...)
@@ -166,14 +176,19 @@ func (h *Harness) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if h.cursor == origCursor {
 				return h, nil
 			}
-			// Reset every step from the new cursor onward so that:
+			// Reset every step from the new cursor through origCursor
+			// (inclusive) so that:
 			//   1. The active step's form leaves StateCompleted (otherwise
 			//      the next keypress immediately re-advances).
 			//   2. Stepping forward again re-shows downstream steps so the
 			//      user can review/edit them, rather than auto-skipping
 			//      straight to the review.
+			//   3. A LazyStep at origCursor (typical for a review-panel step
+			//      that captured prior results at build time) rebuilds on
+			//      re-entry so its panel reflects the user's NEW picks
+			//      rather than the stale pre-Esc snapshot.
 			var cmds []tea.Cmd
-			for i := h.cursor; i < origCursor && i < len(h.steps); i++ {
+			for i := h.cursor; i <= origCursor && i < len(h.steps); i++ {
 				if r, ok := h.steps[i].(resetter); ok {
 					if cmd := r.Reset(); cmd != nil && i == h.cursor {
 						// Only the active step's Init cmd needs to fire now.
@@ -250,6 +265,15 @@ func (h *Harness) View() string {
 	// surfaced via WindowSizeMsg, so this calculation is informational only.
 	const chromeLines = 4
 	avail := h.height - chromeLines
+	// Small-terminal guard: below the minimum viable height, the chrome would
+	// overlap the body or clip everything. Show a plain notice instead of
+	// panicking or rendering a broken frame. h.height=0 before the first
+	// WindowSizeMsg, so this only triggers for genuinely tiny terminals.
+	if h.height > 0 && avail < 3 {
+		return lipgloss.NewStyle().
+			Foreground(tui.ColorMuted).
+			Render("Terminal too small — please resize to at least 8 rows.")
+	}
 	if avail > 0 {
 		bodyLines := strings.Split(body, "\n")
 		if len(bodyLines) > avail {

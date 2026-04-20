@@ -550,14 +550,13 @@ func (l *LazyStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return l, cmd
 }
 
-// Reset delegates to the inner step if it has been built.
+// Reset clears the built flag and drops the inner step so the next entry
+// rebuilds the closure against current prior results. Necessary because the
+// review panel content is captured at build time — without a fresh rebuild,
+// Esc-back + edit-picks would show stale content on re-entry.
 func (l *LazyStep) Reset() tea.Cmd {
-	if l.inner == nil {
-		return nil
-	}
-	if r, ok := l.inner.(resetter); ok {
-		return r.Reset()
-	}
+	l.built = false
+	l.inner = nil
 	return nil
 }
 

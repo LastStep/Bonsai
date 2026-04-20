@@ -245,13 +245,13 @@ func TestEscPopReinitsActiveStep(t *testing.T) {
 	if a.resetCount != 0 {
 		t.Fatalf("step before the new cursor must not be reset; got count=%d", a.resetCount)
 	}
-	// c was at the original cursor position — the harness reducer only
-	// resets steps in [new_cursor, orig_cursor) so c at index 2 is untouched.
-	// This is fine — c gets rebuilt by its own Reset() if the user Escs onto
-	// it again, and on forward re-entry its form is still in whatever state
-	// the user left it (StateNormal if never submitted).
-	if c.resetCount != 0 {
-		t.Fatalf("step at original cursor position must not be reset; got count=%d", c.resetCount)
+	// c was at the original cursor position. Plan 15 iter 2.1: the harness
+	// now resets steps in [new_cursor, orig_cursor] (inclusive) so a
+	// review-style LazyStep at origCursor rebuilds its closure on re-entry
+	// rather than showing stale pre-Esc content. Reset() on a non-lazy step
+	// is a cheap form rebuild that preserves the user's value pointer.
+	if c.resetCount != 1 {
+		t.Fatalf("step at original cursor position must be reset once (iter 2.1 inclusive-bound); got count=%d", c.resetCount)
 	}
 	if cmd == nil {
 		t.Fatalf("expected harness to return a tea.Cmd batching the popped-onto step's Reset() cmd")
