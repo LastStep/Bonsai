@@ -1,9 +1,11 @@
 package harness
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 
 	"github.com/LastStep/Bonsai/internal/tui"
@@ -228,4 +230,202 @@ func TestMultiSelectStepResetPreservesPicks(t *testing.T) {
 	if !strings.Contains(view, "skill-b") {
 		t.Fatalf("expected skill-b to appear in rebuilt view; got:\n%s", view)
 	}
+}
+
+// ─── SpinnerStep tests ─────────────────────────────────────────────────────
+
+// TestSpinnerStepCompletesAction verifies that once the spinnerDoneMsg
+// arrives via Update, the step flips Done()=true and Result() returns nil
+// for a successful action.
+func TestSpinnerStepCompletesAction(t *testing.T) {
+	s := NewSpinner("Generating", "Generating files...", func() error { return nil })
+
+	// Init must return a non-nil cmd (the spinner tick + the worker goroutine).
+	if cmd := s.Init(); cmd == nil {
+		t.Fatalf("SpinnerStep.Init() returned nil cmd; expected tick + worker batch")
+	}
+
+	// Synthesise the worker completion message the harness would deliver.
+	updated, _ := s.Update(spinnerDoneMsg{err: nil})
+	if _, ok := updated.(*SpinnerStep); !ok {
+		t.Fatalf("Update did not return *SpinnerStep; got %T", updated)
+	}
+
+	if !s.Done() {
+		t.Fatalf("expected Done()=true after spinnerDoneMsg, got false")
+	}
+	if s.Result() != nil {
+		// Result is the (interface) error; an untyped nil action error stored
+		// in an `error` field reads as nil through any().
+		t.Fatalf("expected Result()=nil for successful action, got %v", s.Result())
+	}
+}
+
+// TestSpinnerStepReportsActionError verifies that an error returned by the
+// action surfaces through Result() unchanged.
+func TestSpinnerStepReportsActionError(t *testing.T) {
+	wantErr := errors.New("boom")
+	s := NewSpinner("Generating", "Generating files...", func() error { return wantErr })
+
+	_, _ = s.Update(spinnerDoneMsg{err: wantErr})
+	if !s.Done() {
+		t.Fatalf("expected Done()=true after error spinnerDoneMsg, got false")
+	}
+	got, ok := s.Result().(error)
+	if !ok {
+		t.Fatalf("expected Result() to be an error, got %T (%v)", s.Result(), s.Result())
+	}
+	if !errors.Is(got, wantErr) {
+		t.Fatalf("expected Result() == wantErr, got %v", got)
+	}
+}
+
+// TestSpinnerStepResetIsNoop verifies that popping back via Esc onto a
+// completed spinner does NOT re-trigger the action — Reset returns nil and
+// Done() stays true so the harness's Esc-skip walks past.
+func TestSpinnerStepResetIsNoop(t *testing.T) {
+	calls := 0
+	s := NewSpinner("Generating", "Generating files...", func() error {
+		calls++
+		return nil
+	})
+	// Pretend the action ran already.
+	_, _ = s.Update(spinnerDoneMsg{err: nil})
+	if !s.Done() {
+		t.Fatalf("setup: expected Done()=true after spinnerDoneMsg")
+	}
+
+	if cmd := s.Reset(); cmd != nil {
+		t.Fatalf("SpinnerStep.Reset() must return nil; got non-nil cmd")
+	}
+	if !s.Done() {
+		t.Fatalf("Done() must stay true after Reset (no re-trigger of action)")
+	}
+	if !s.AutoComplete() {
+		t.Fatalf("AutoComplete() must be true once done so Esc-back skips past")
+	}
+	if calls != 0 {
+		t.Fatalf("action must not run as a side-effect of Reset; got %d calls", calls)
+	}
+}
+
+// ─── ConditionalStep tests ─────────────────────────────────────────────────
+
+// TestConditionalStepSkipsWhenPredicateFalse verifies that when the
+// predicate returns false at Init time, the inner step's Init is never
+// invoked and the conditional reports Done immediately so the harness
+// advances past it in one step.
+func TestConditionalStepSkipsWhenPredicateFalse(t *testing.T) {
+	innerInited := false
+	inner := &fakeInitStep{
+		fakeStep: fakeStep{title: "inner"},
+		onInit: func() {
+			innerInited = true
+		},
+	}
+
+	c := NewConditional(inner, func(prev []any) bool { return false })
+	c.SetPrior(nil)
+
+	cmd := c.Init()
+	if cmd != nil {
+		t.Fatalf("expected nil cmd when predicate is false, got non-nil")
+	}
+	if innerInited {
+		t.Fatalf("inner.Init must NOT be called when predicate is false")
+	}
+	if !c.Done() {
+		t.Fatalf("expected Done()=true on Init when predicate is false")
+	}
+	if c.Result() != nil {
+		t.Fatalf("expected Result()=nil when predicate is false, got %v", c.Result())
+	}
+	if !c.AutoComplete() {
+		t.Fatalf("expected AutoComplete()=true when predicate is false")
+	}
+}
+
+// TestConditionalStepDelegatesWhenPredicateTrue verifies that when the
+// predicate returns true, the inner step is initialised and method calls
+// delegate verbatim.
+func TestConditionalStepDelegatesWhenPredicateTrue(t *testing.T) {
+	innerInited := false
+	inner := &fakeInitStep{
+		fakeStep: fakeStep{title: "inner"},
+		onInit: func() {
+			innerInited = true
+		},
+	}
+
+	c := NewConditional(inner, func(prev []any) bool { return true })
+	c.SetPrior(nil)
+
+	_ = c.Init()
+	if !innerInited {
+		t.Fatalf("inner.Init must run when predicate is true")
+	}
+	if c.Done() {
+		t.Fatalf("Done() must mirror inner (false) when predicate is true")
+	}
+	// View should delegate to inner.View now.
+	if got := c.View(); got != "fake:inner" {
+		t.Fatalf("expected View() to delegate to inner, got %q", got)
+	}
+	// Update must forward to inner — record the message in the inner's slice.
+	_, _ = c.Update(runeKey('z'))
+	if len(inner.received) == 0 {
+		t.Fatalf("expected inner.Update to receive the forwarded message")
+	}
+}
+
+// TestConditionalStepResetReevaluates verifies that after Reset the
+// predicate is re-evaluated against the current prior-results snapshot.
+// Captures a slice that the test mutates between the first Init and the
+// second Init+Reset cycle.
+func TestConditionalStepResetReevaluates(t *testing.T) {
+	flag := []bool{false}
+	inner := &fakeInitStep{fakeStep: fakeStep{title: "inner"}}
+	c := NewConditional(inner, func(prev []any) bool {
+		return flag[0]
+	})
+
+	// First entry: flag=false → skip.
+	c.SetPrior(nil)
+	_ = c.Init()
+	if !c.Done() {
+		t.Fatalf("first Init expected to skip (Done=true)")
+	}
+
+	// User Esc-backs and changes upstream picks; predicate result flips.
+	flag[0] = true
+	_ = c.Reset()
+	c.SetPrior(nil)
+	_ = c.Init()
+	if c.Done() {
+		t.Fatalf("after Reset+flag flip, expected Done() to mirror inner (false)")
+	}
+}
+
+// fakeInitStep wraps fakeStep with a callback that fires when Init is
+// invoked, so tests can verify whether the harness drove Init on a wrapped
+// step.
+type fakeInitStep struct {
+	fakeStep
+	onInit func()
+}
+
+func (f *fakeInitStep) Init() tea.Cmd {
+	if f.onInit != nil {
+		f.onInit()
+	}
+	return nil
+}
+
+func (f *fakeInitStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	f.received = append(f.received, msg)
+	if w, ok := msg.(tea.WindowSizeMsg); ok {
+		f.width = w.Width
+		f.height = w.Height
+	}
+	return f, nil
 }

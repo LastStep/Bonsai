@@ -18,6 +18,7 @@ package harness
 import (
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,6 +29,20 @@ import (
 
 // ErrAborted is returned by Run when the user pressed Ctrl-C.
 var ErrAborted = errors.New("flow aborted by user")
+
+// BuilderPanicError is returned by Run when a builder closure (LazyStep.Build
+// or LazyGroup.Splice) panicked. The harness recovers, exits AltScreen
+// cleanly, and surfaces the panic as a typed error so the caller can render
+// a structured FatalPanel instead of a stacktrace dumped mid-AltScreen.
+type BuilderPanicError struct {
+	Step  string // step title at the time of panic
+	Value any    // recovered value
+	Stack string // captured at recovery time via debug.Stack()
+}
+
+func (e *BuilderPanicError) Error() string {
+	return fmt.Sprintf("harness: builder for step %q panicked: %v", e.Step, e.Value)
+}
 
 // Step is the contract every harness step satisfies. It is a tea.Model with
 // extra metadata so the harness can render breadcrumbs and detect completion.
@@ -56,9 +71,25 @@ type lazyBuilder interface {
 // cursor stays at the same index (now pointing at the first of the new steps).
 // Used for multi-step branches where the shape of the sub-sequence depends on
 // prior answers.
+//
+// Limitations:
+//   - Nested splicers are NOT supported. If Splice() returns a slice that
+//     itself contains another splicer at the cursor position, the inner
+//     splicer's Splice() will not run automatically — the harness only calls
+//     expandSplicer() once per advance. Either flatten the splice to a single
+//     level, or build the splice eagerly in the outer builder.
 type splicer interface {
 	Splice(prev []any) []Step
 	Spliced() bool
+}
+
+// priorAware is an optional Step capability. When implemented, the harness
+// invokes SetPrior(prev) immediately before Init/Build so the step can capture
+// the up-to-date prior-results snapshot. Used by SpinnerStep (action body
+// reads upstream picks) and ConditionalStep (predicate evaluates against
+// upstream answers).
+type priorAware interface {
+	SetPrior(prev []any)
 }
 
 // resetter is an optional Step capability. The harness calls Reset() on a step
@@ -73,14 +104,15 @@ type resetter interface {
 
 // Harness is the root tea.Model that frames the active step.
 type Harness struct {
-	steps    []Step
-	cursor   int
-	width    int
-	height   int
-	banner   string // e.g. "BONSAI v0.1.3"
-	action   string // e.g. "Initializing new project"
-	quitting bool
-	aborted  bool
+	steps        []Step
+	cursor       int
+	width        int
+	height       int
+	banner       string // e.g. "BONSAI v0.1.3"
+	action       string // e.g. "Initializing new project"
+	quitting     bool
+	aborted      bool
+	builderPanic *BuilderPanicError
 }
 
 // New constructs a Harness. The caller should usually invoke Run rather than
@@ -96,25 +128,58 @@ func New(banner, action string, steps []Step) *Harness {
 // Aborted reports whether the user pressed Ctrl-C.
 func (h *Harness) Aborted() bool { return h.aborted }
 
+// recoverBuilder installs a deferred recovery for a builder closure call. On
+// panic, it stores a BuilderPanicError on the harness and flips quitting=true
+// so the next Update returns tea.Quit. aborted stays false — this is a
+// distinct exit reason from a user Ctrl-C.
+func (h *Harness) recoverBuilder(stepTitle string) {
+	if r := recover(); r != nil {
+		h.builderPanic = &BuilderPanicError{
+			Step:  stepTitle,
+			Value: r,
+			Stack: string(debug.Stack()),
+		}
+		h.aborted = false
+		h.quitting = true
+	}
+}
+
+// invokeBuild calls Build on a lazyBuilder under recoverBuilder so a panic
+// in the builder closure exits AltScreen cleanly instead of dumping a stack.
+func (h *Harness) invokeBuild(lb lazyBuilder, stepTitle string) {
+	defer h.recoverBuilder(stepTitle)
+	lb.Build(h.priorResults())
+}
+
 // Init implements tea.Model.
 func (h *Harness) Init() tea.Cmd {
 	if len(h.steps) == 0 {
 		return tea.Quit
 	}
 	h.expandSplicer()
-	if len(h.steps) == 0 {
+	if h.builderPanic != nil || len(h.steps) == 0 {
 		return tea.Quit
 	}
+	if pa, ok := h.steps[0].(priorAware); ok {
+		pa.SetPrior(h.priorResults())
+	}
 	if lb, ok := h.steps[0].(lazyBuilder); ok && !lb.Built() {
-		lb.Build(h.priorResults())
+		h.invokeBuild(lb, h.steps[0].Title())
+		if h.builderPanic != nil {
+			return tea.Quit
+		}
 	}
 	return h.steps[0].Init()
+	// NOTE: WindowSize re-broadcast on the very first Init is intentionally
+	// skipped — h.width/h.height are zero before the first WindowSizeMsg, so
+	// there's nothing useful to forward.
 }
 
 // expandSplicer replaces the step at h.cursor with its splice expansion if the
 // step is a not-yet-spliced splicer. After splice the cursor stays at the same
 // index, now pointing at the first of the new steps. Idempotent and guarded by
-// Spliced().
+// Spliced(). On panic in the builder closure, sets h.builderPanic and returns
+// without mutating h.steps so the next Update can return tea.Quit cleanly.
 func (h *Harness) expandSplicer() {
 	if h.cursor >= len(h.steps) {
 		return
@@ -123,7 +188,15 @@ func (h *Harness) expandSplicer() {
 	if !ok || sp.Spliced() {
 		return
 	}
-	inserted := sp.Splice(h.priorResults())
+	stepTitle := h.steps[h.cursor].Title()
+	var inserted []Step
+	func() {
+		defer h.recoverBuilder(stepTitle)
+		inserted = sp.Splice(h.priorResults())
+	}()
+	if h.builderPanic != nil {
+		return
+	}
 	// Defensive: drop any nil entries so callers can use `nil` or `append`-of-
 	// nothing as an "empty splice" signal without tripping a nil-method panic
 	// downstream.
@@ -137,6 +210,27 @@ func (h *Harness) expandSplicer() {
 	head := append([]Step{}, h.steps[:h.cursor]...)
 	tail := append([]Step(nil), h.steps[h.cursor+1:]...)
 	h.steps = append(append(head, inserted...), tail...)
+}
+
+// rebroadcastWindowSize forwards a synthetic WindowSizeMsg with the harness's
+// stored width/height to the active step so its first frame computes layout
+// against the right dimensions instead of waiting for the next user keystroke.
+// No-op if width/height haven't been initialised yet.
+func (h *Harness) rebroadcastWindowSize() tea.Cmd {
+	if h.width <= 0 || h.height <= 0 {
+		return nil
+	}
+	if h.cursor >= len(h.steps) {
+		return nil
+	}
+	updated, sizeCmd := h.steps[h.cursor].Update(tea.WindowSizeMsg{
+		Width:  h.width,
+		Height: h.height,
+	})
+	if step, ok := updated.(Step); ok {
+		h.steps[h.cursor] = step
+	}
+	return sizeCmd
 }
 
 // Update implements tea.Model.
@@ -225,18 +319,37 @@ func (h *Harness) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Expand a LazyGroup in place before any further setup. The cursor
 		// stays at the same index, now pointing at the first spliced step.
 		h.expandSplicer()
+		if h.builderPanic != nil {
+			h.quitting = true
+			return h, tea.Batch(cmd, tea.Quit)
+		}
 		if h.cursor >= len(h.steps) {
 			h.quitting = true
 			return h, tea.Batch(cmd, tea.Quit)
 		}
+		// Forward prior-results into priorAware steps before Build/Init so the
+		// closure body can read upstream picks.
+		if pa, ok := h.steps[h.cursor].(priorAware); ok {
+			pa.SetPrior(h.priorResults())
+		}
 		// Build LazyStep on entry.
 		if lb, ok := h.steps[h.cursor].(lazyBuilder); ok && !lb.Built() {
-			lb.Build(h.priorResults())
+			h.invokeBuild(lb, h.steps[h.cursor].Title())
+			if h.builderPanic != nil {
+				h.quitting = true
+				return h, tea.Batch(cmd, tea.Quit)
+			}
 		}
 		// Initialise the newly-active step (Huh forms need this so their
 		// first field is focused).
 		if init := h.steps[h.cursor].Init(); init != nil {
 			cmd = tea.Batch(cmd, init)
+		}
+		// Re-broadcast WindowSize so the spliced/lazy step computes layout at
+		// the harness's known dimensions instead of waiting for huh's next
+		// update cycle. No-op until the first WindowSizeMsg has arrived.
+		if sizeCmd := h.rebroadcastWindowSize(); sizeCmd != nil {
+			cmd = tea.Batch(cmd, sizeCmd)
 		}
 	}
 
@@ -393,6 +506,9 @@ func Run(banner, action string, steps []Step) ([]any, error) {
 	model, ok := final.(*Harness)
 	if !ok {
 		return nil, fmt.Errorf("harness: unexpected final model type %T", final)
+	}
+	if model.builderPanic != nil {
+		return nil, model.builderPanic
 	}
 	if model.aborted {
 		return nil, ErrAborted

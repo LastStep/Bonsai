@@ -355,6 +355,177 @@ func TestLazyGroupPassesPriorResults(t *testing.T) {
 	}
 }
 
+// TestSpliceRebroadcastsWindowSize verifies that when a LazyGroup splices in
+// new steps, the harness immediately re-broadcasts a synthesised
+// WindowSizeMsg to the newly-active step using the harness's stored
+// width/height — without waiting for another real WindowSizeMsg.
+func TestSpliceRebroadcastsWindowSize(t *testing.T) {
+	a := newFake("a")
+	spliced := newFake("spliced")
+	group := NewLazyGroup("Branch", func(prev []any) []Step {
+		return []Step{spliced}
+	})
+	tail := newFake("tail")
+	h := New("BANNER", "TEST", []Step{a, group, tail})
+
+	// Seed harness dimensions as if we'd received a WindowSizeMsg already.
+	_, _ = h.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
+	// spliced has not yet been visited, so its width/height must still be 0.
+	if spliced.width != 0 {
+		t.Fatalf("setup: spliced step must not have received a size before activation")
+	}
+
+	// Drive the advance so the cursor moves past `a` and onto the splicer
+	// expansion (which puts `spliced` at h.cursor).
+	a.done = true
+	_, _ = h.Update(runeKey('x'))
+
+	if spliced.width != 120 || spliced.height != 40 {
+		t.Fatalf("expected spliced step to receive re-broadcast WindowSize 120/40, got %d/%d",
+			spliced.width, spliced.height)
+	}
+}
+
+// panicSplicer is a splicer that panics inside Splice() so tests can verify
+// the harness's recoverBuilder path.
+type panicSplicer struct {
+	title    string
+	value    any
+	splicedF bool
+}
+
+func (p *panicSplicer) Title() string                           { return p.title }
+func (p *panicSplicer) Done() bool                              { return false }
+func (p *panicSplicer) Result() any                             { return nil }
+func (p *panicSplicer) Init() tea.Cmd                           { return nil }
+func (p *panicSplicer) View() string                            { return "" }
+func (p *panicSplicer) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return p, nil }
+func (p *panicSplicer) Splice(prev []any) []Step {
+	p.splicedF = true
+	panic(p.value)
+}
+func (p *panicSplicer) Spliced() bool { return p.splicedF }
+
+// TestSpliceBuilderPanicReturnsTypedError verifies that a panic inside the
+// LazyGroup's Splice closure is recovered, the harness flips quitting=true,
+// and a *BuilderPanicError is recorded on the model.
+func TestSpliceBuilderPanicReturnsTypedError(t *testing.T) {
+	a := newFake("a")
+	group := &panicSplicer{title: "boom-group", value: "boom"}
+	h := New("BANNER", "TEST", []Step{a, group})
+
+	a.done = true
+	_, cmd := h.Update(runeKey('x'))
+
+	if h.builderPanic == nil {
+		t.Fatalf("expected harness.builderPanic to be set after Splice panic")
+	}
+	if h.builderPanic.Step != "boom-group" {
+		t.Fatalf("expected panic recorded against step %q, got %q", "boom-group", h.builderPanic.Step)
+	}
+	if h.builderPanic.Value != "boom" {
+		t.Fatalf("expected panic value %q, got %v", "boom", h.builderPanic.Value)
+	}
+	if !h.quitting {
+		t.Fatalf("expected harness.quitting=true after panic")
+	}
+	if h.aborted {
+		t.Fatalf("panic must NOT set aborted (distinct from user Ctrl-C)")
+	}
+	if !cmdContainsQuit(cmd) {
+		t.Fatalf("expected reducer to return tea.Quit after builder panic")
+	}
+}
+
+// TestLazyBuilderPanicReturnsTypedError — same shape, but the panic is in a
+// LazyStep's Build closure rather than a LazyGroup's Splice closure.
+func TestLazyBuilderPanicReturnsTypedError(t *testing.T) {
+	a := newFake("a")
+	lazy := NewLazy("boom-lazy", func(prev []any) Step {
+		panic("kaboom")
+	})
+	h := New("BANNER", "TEST", []Step{a, lazy})
+
+	a.done = true
+	_, cmd := h.Update(runeKey('x'))
+
+	if h.builderPanic == nil {
+		t.Fatalf("expected harness.builderPanic to be set after Build panic")
+	}
+	if h.builderPanic.Step != "boom-lazy" {
+		t.Fatalf("expected panic recorded against step %q, got %q", "boom-lazy", h.builderPanic.Step)
+	}
+	if h.builderPanic.Value != "kaboom" {
+		t.Fatalf("expected panic value %q, got %v", "kaboom", h.builderPanic.Value)
+	}
+	if !h.quitting {
+		t.Fatalf("expected harness.quitting=true after panic")
+	}
+	if !cmdContainsQuit(cmd) {
+		t.Fatalf("expected reducer to return tea.Quit after lazy build panic")
+	}
+}
+
+// TestLazyStepInsideLazyGroupBuilds exercises the runtime pattern used by
+// cmd/add.go and the iter-3 flows: a LazyGroup whose Splice() returns a slice
+// that itself contains a LazyStep. The harness must, after splice, build the
+// LazyStep on entry with the correct prior results, and Reset must rebuild
+// the inner step against fresh prior results on re-entry.
+func TestLazyStepInsideLazyGroupBuilds(t *testing.T) {
+	a := newFake("a")
+	a.result = "agent-x"
+
+	first := newFake("first-spliced")
+
+	var innerBuildCount int
+	var innerCapturedPrev []any
+	innerStep := newFake("inner-of-lazy")
+	lazy := NewLazy("nested-lazy", func(prev []any) Step {
+		innerBuildCount++
+		// Snapshot prev so a later mutation by the harness doesn't affect what
+		// we asserted on.
+		innerCapturedPrev = append([]any(nil), prev...)
+		return innerStep
+	})
+
+	group := NewLazyGroup("Branch", func(prev []any) []Step {
+		return []Step{first, lazy}
+	})
+
+	h := New("BANNER", "TEST", []Step{a, group, newFake("tail")})
+
+	// Drive past `a`. The splice expansion runs, cursor stays at index 1
+	// (now `first-spliced`).
+	a.done = true
+	_, _ = h.Update(runeKey('x'))
+	if h.cursor != 1 {
+		t.Fatalf("expected cursor=1 after splice, got %d", h.cursor)
+	}
+	if innerBuildCount != 0 {
+		t.Fatalf("inner LazyStep must NOT build until cursor advances onto it")
+	}
+
+	// Drive past `first-spliced` so cursor lands on the LazyStep inside the
+	// splice expansion.
+	first.done = true
+	_, _ = h.Update(runeKey('y'))
+	if h.cursor != 2 {
+		t.Fatalf("expected cursor=2 (LazyStep active), got %d", h.cursor)
+	}
+	if innerBuildCount != 1 {
+		t.Fatalf("expected inner LazyStep to build exactly once, got %d", innerBuildCount)
+	}
+	// prev at this point should contain results from `a` (slot 0) and
+	// `first-spliced` (slot 1).
+	if got := len(innerCapturedPrev); got != 2 {
+		t.Fatalf("expected 2 prior results visible to the inner build, got %d", got)
+	}
+	if innerCapturedPrev[0] != "agent-x" {
+		t.Fatalf("expected prev[0]=%q, got %v", "agent-x", innerCapturedPrev[0])
+	}
+}
+
 // cmdContainsSentinel walks a tea.Cmd (expanding tea.BatchMsg one level) and
 // returns true if any produced message is a resetSentinelMsg.
 func cmdContainsSentinel(cmd tea.Cmd) bool {

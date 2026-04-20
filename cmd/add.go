@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
@@ -74,16 +73,16 @@ func newDescriber(cat *catalog.Catalog) func(string) string {
 }
 
 // workspaceUniqueValidator rejects workspace paths already in use. The input
-// string is trimmed and trailing-slash-normalised the same way the post-harness
-// pipeline normalises the accepted value, so "backend" and "backend/" both
-// collide if either variant is already installed.
+// string is trimmed, then normalised via filepath.Clean (so "./backend",
+// "backend", and "backend/" all collapse to the same key) before comparison
+// against the existing-set keys.
 func workspaceUniqueValidator(existing map[string]bool) func(string) error {
 	return func(s string) error {
 		v := strings.TrimSpace(s)
 		if v == "" {
 			return nil // required validator handles empty
 		}
-		v = strings.TrimRight(v, "/") + "/"
+		v = strings.TrimRight(filepath.Clean(v), "/") + "/"
 		if existing[v] {
 			return fmt.Errorf("workspace %q is already in use", v)
 		}
@@ -91,11 +90,12 @@ func workspaceUniqueValidator(existing map[string]bool) func(string) error {
 	}
 }
 
-// normaliseWorkspace applies the same trim + trailing-slash rule the legacy
-// runAdd used after collection.
+// normaliseWorkspace applies the same trim + Clean + trailing-slash rule the
+// validator uses, so the post-harness write path stores keys identical to what
+// the validator compared against.
 func normaliseWorkspace(s string) string {
 	v := strings.TrimSpace(s)
-	v = strings.TrimRight(v, "/") + "/"
+	v = strings.TrimRight(filepath.Clean(v), "/") + "/"
 	return v
 }
 
@@ -117,13 +117,23 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 	existingWorkspaces := make(map[string]bool)
 	for _, a := range cfg.Agents {
-		existingWorkspaces[a.Workspace] = true
+		key := strings.TrimRight(filepath.Clean(a.Workspace), "/") + "/"
+		existingWorkspaces[key] = true
 	}
 
 	bannerLine := "BONSAI"
 	if Version != "" && Version != "dev" {
 		bannerLine = fmt.Sprintf("BONSAI v%s", Version)
 	}
+
+	// Lock + WriteResult shared between the spinner closure and the conflict
+	// picker. The spinner closure also surfaces a couple of values the
+	// post-harness pipeline needs back via these closure-captured pointers.
+	lock, _ := config.LoadLockFile(cwd)
+	var wr generate.WriteResult
+	// addOutcome captures what the spinner closure decided so the post-harness
+	// success banner / write summary can render correctly.
+	var addOutcome addOutcome
 
 	steps := []harness.Step{
 		harness.NewSelect("Agent", "Agent type:", agentOptions),
@@ -145,11 +155,44 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			}
 			return buildNewAgentSteps(cat, cfg, agentType, existingWorkspaces)
 		}),
+		// Spinner — runs only when the splice ended in a Review confirmed=true.
+		// The predicate gates on the trailing prev[] slot being a confirmed
+		// bool, which handles all branches uniformly:
+		//   - all-installed empty splice → last is the agent type (string) → false
+		//   - all-installed NoteStep → last is nil (NoteStep result) → false
+		//   - tech-lead-required NoteStep → last is nil → false
+		//   - new-agent / add-items happy path → last is review confirm bool
+		harness.NewConditional(
+			harness.NewSpinnerWithPrior("Generating", "Generating files...",
+				func(prev []any) error {
+					return runAddSpinner(prev, cwd, configPath, cfg, cat, existingWorkspaces, lock, &wr, &addOutcome)
+				}),
+			func(prev []any) bool {
+				if len(prev) == 0 {
+					return false
+				}
+				b, ok := prev[len(prev)-1].(bool)
+				return ok && b
+			},
+		),
+		harness.NewLazyGroup("Resolve conflicts", func(prev []any) []harness.Step {
+			if !wr.HasConflicts() {
+				return nil
+			}
+			return buildConflictSteps(&wr)
+		}),
 	}
 
 	results, err := harness.Run(bannerLine, "Adding", steps)
 	if err != nil {
 		if errors.Is(err, harness.ErrAborted) {
+			return nil
+		}
+		var bpe *harness.BuilderPanicError
+		if errors.As(err, &bpe) {
+			tui.FatalPanel("Harness builder panic",
+				fmt.Sprintf("Step %q: %v", bpe.Step, bpe.Value),
+				"This is a bug — please report it.")
 			return nil
 		}
 		return err
@@ -161,29 +204,243 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		tui.FatalPanel("Unknown agent type", agentType+" is not in the catalog.", "Run: bonsai catalog")
 	}
 
+	// Post-harness short-circuits for branches the spinner predicate skipped.
 	if installed, exists := cfg.Agents[agentType]; exists {
 		// "All installed" short-circuit: if every category filtered empty, the
-		// splicer returned zero steps — there's nothing to finalise, just
-		// render the durable panel on normal stdout.
+		// splicer returned zero steps — render the durable panel on stdout.
 		if availableAddItems(cat, installed).Total() == 0 {
 			tui.EmptyPanel("All available abilities are already installed.\nBrowse more with: bonsai catalog")
 			return nil
 		}
-		return finaliseAddItems(cwd, configPath, cfg, cat, agentDef, installed, results)
 	}
 
-	// Post-harness tech-lead guard: the in-harness NoteStep provides cosmetic
-	// feedback inside AltScreen, but AltScreen tears down on exit and leaves
-	// no scrollback trace. ErrorDetail to stdout gives the user a durable
-	// record of why nothing was installed.
-	if agentType != "tech-lead" {
-		if _, hasTechLead := cfg.Agents["tech-lead"]; !hasTechLead {
-			tui.ErrorDetail("Tech Lead required", "No tech-lead agent is installed yet.", "Run: bonsai init")
-			return nil
+	// Tech-lead guard for the new-agent branch (must surface on stdout because
+	// AltScreen tears down on exit).
+	if _, exists := cfg.Agents[agentType]; !exists {
+		if agentType != "tech-lead" {
+			if _, hasTechLead := cfg.Agents["tech-lead"]; !hasTechLead {
+				tui.ErrorDetail("Tech Lead required", "No tech-lead agent is installed yet.", "Run: bonsai init")
+				return nil
+			}
 		}
 	}
 
-	return finaliseNewAgent(cwd, configPath, cfg, cat, agentDef, agentType, existingWorkspaces, results)
+	// If the spinner predicate skipped (user declined review or no review
+	// emitted), there's nothing more to do.
+	if !addOutcome.ran {
+		return nil
+	}
+
+	if addOutcome.spinnerErr != nil {
+		tui.Warning("Generation error: " + addOutcome.spinnerErr.Error())
+		return nil
+	}
+
+	// Add-items branch with no picks: show an info line and exit. The spinner
+	// closure short-circuited before any generation, so there is nothing to
+	// summarise.
+	if !addOutcome.newAgent && addOutcome.totalSelected == 0 {
+		tui.Info("No new abilities selected.")
+		return nil
+	}
+
+	// Conflict picker LazyGroup at slot 3 expands to [MultiSelect, Conditional]
+	// in place. The MultiSelect (the actual conflict picks) lands at index 3
+	// only when the splice succeeded — applyConflictPicks tolerates absence.
+	applyConflictPicks(results, 3, &wr, lock, cwd)
+
+	if err := lock.Save(cwd); err != nil {
+		tui.Warning("Could not save lock file: " + err.Error())
+	}
+
+	showWriteResults(&wr, addOutcome.workspace)
+
+	if addOutcome.newAgent {
+		tui.Success(fmt.Sprintf("Added %s at %s", addOutcome.agentDef.DisplayName, addOutcome.workspace))
+	} else {
+		tui.Success(fmt.Sprintf("Added %d abilities to %s", addOutcome.totalSelected, addOutcome.agentDef.DisplayName))
+	}
+	tui.Hint("Run: bonsai list to see your full setup.")
+	tui.Blank()
+	return nil
+}
+
+// addOutcome captures the side-effects produced by the runAddSpinner closure
+// so the post-harness pipeline can render the right success banner + tree.
+type addOutcome struct {
+	agentDef      *catalog.AgentDef
+	workspace     string
+	newAgent      bool  // true = new-agent branch, false = add-items branch
+	totalSelected int   // for add-items success message
+	spinnerErr    error // surfaced after harness exits
+	ran           bool  // did the spinner action actually fire (predicate true)?
+}
+
+// runAddSpinner is the unified action body for both runAdd branches. It reads
+// prev[] to determine which branch ran, applies all config mutations, calls
+// cfg.Save, and runs the generator pipeline. Side-effects flow back through
+// the *generate.WriteResult and *addOutcome pointers.
+func runAddSpinner(prev []any, cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Catalog,
+	existingWorkspaces map[string]bool, lock *config.LockFile, wr *generate.WriteResult,
+	outcome *addOutcome) error {
+	outcome.ran = true
+
+	agentType := asString(prev[0])
+	agentDef := cat.GetAgent(agentType)
+	if agentDef == nil {
+		outcome.spinnerErr = fmt.Errorf("unknown agent type %q", agentType)
+		return outcome.spinnerErr
+	}
+	outcome.agentDef = agentDef
+
+	if installed, exists := cfg.Agents[agentType]; exists {
+		// Add-items branch. prev layout (after splice replaces LazyGroup):
+		//   [0]=agentType, [1]=intro NoteStep (nil), [2..K]=pickers,
+		//   [K+1]=review confirm.
+		reviewIdx := len(prev) - 1
+		picks := make([][]string, 0, reviewIdx-2)
+		for i := 2; i < reviewIdx; i++ {
+			picks = append(picks, asStringSlice(prev[i]))
+		}
+
+		selectedSkills, selectedWorkflows, selectedProtocols, selectedSensors, selectedRoutines := distributeAddItemPicks(cat, installed, picks)
+		totalSelected := len(selectedSkills) + len(selectedWorkflows) + len(selectedProtocols) + len(selectedSensors) + len(selectedRoutines)
+		if totalSelected == 0 {
+			// Nothing to apply — leave outcome.totalSelected=0 and let the
+			// post-harness path render an Info message instead of a Success.
+			outcome.workspace = installed.Workspace
+			return nil
+		}
+
+		installed.Skills = append(installed.Skills, selectedSkills...)
+		installed.Workflows = append(installed.Workflows, selectedWorkflows...)
+		installed.Protocols = append(installed.Protocols, selectedProtocols...)
+		installed.Sensors = append(installed.Sensors, selectedSensors...)
+		installed.Routines = append(installed.Routines, selectedRoutines...)
+		generate.EnsureRoutineCheckSensor(installed)
+
+		if err := cfg.Save(configPath); err != nil {
+			outcome.spinnerErr = err
+			return err
+		}
+
+		_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, wr, false)
+		_ = generate.PathScopedRules(cwd, cfg, cat, lock, wr, false)
+		_ = generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false)
+		_ = generate.SettingsJSON(cwd, cfg, cat, lock, wr, false)
+
+		outcome.workspace = installed.Workspace
+		outcome.totalSelected = totalSelected
+		outcome.newAgent = false
+		return nil
+	}
+
+	// New-agent branch. prev layout (after splice replaces LazyGroup):
+	//   [0]=agentType, [1]=workspace, [2..6]=pickers, [7]=review confirm.
+	if len(prev) < 8 {
+		// Splicer returned a single NoteStep; nothing to do.
+		outcome.ran = false
+		return nil
+	}
+
+	workspace := newAgentWorkspace(cfg, agentType, prev[1:])
+	if existingWorkspaces[workspace] {
+		outcome.spinnerErr = fmt.Errorf("workspace %q is already in use by another agent", workspace)
+		return outcome.spinnerErr
+	}
+
+	installed := &config.InstalledAgent{
+		AgentType: agentType,
+		Workspace: workspace,
+		Skills:    asStringSlice(prev[2]),
+		Workflows: asStringSlice(prev[3]),
+		Protocols: asStringSlice(prev[4]),
+		Sensors:   asStringSlice(prev[5]),
+		Routines:  asStringSlice(prev[6]),
+	}
+	generate.EnsureRoutineCheckSensor(installed)
+	cfg.Agents[agentType] = installed
+	if err := cfg.Save(configPath); err != nil {
+		outcome.spinnerErr = err
+		return err
+	}
+
+	_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, wr, false)
+	_ = generate.PathScopedRules(cwd, cfg, cat, lock, wr, false)
+	_ = generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false)
+	_ = generate.SettingsJSON(cwd, cfg, cat, lock, wr, false)
+
+	outcome.workspace = workspace
+	outcome.newAgent = true
+	return nil
+}
+
+// distributeAddItemPicks splits the per-category picks slice into the five
+// category-typed slices, respecting the same skip-empty-categories rule that
+// buildAddItemsSteps uses when constructing the picker step list. Mirrors the
+// inline walk in the legacy finaliseAddItems.
+func distributeAddItemPicks(cat *catalog.Catalog, installed *config.InstalledAgent, picks [][]string) (skills, workflows, protocols, sensors, routines []string) {
+	installedSet := func(items []string) map[string]bool {
+		m := make(map[string]bool, len(items))
+		for _, item := range items {
+			m[item] = true
+		}
+		return m
+	}
+	agentType := installed.AgentType
+	hasNew := func(available []catalog.CatalogItem, existing []string) bool {
+		have := installedSet(existing)
+		for _, item := range available {
+			if !have[item.Name] {
+				return true
+			}
+		}
+		return false
+	}
+	hasNewSensor := func(available []catalog.SensorItem, existing []string) bool {
+		have := installedSet(existing)
+		for _, item := range available {
+			if !have[item.Name] && item.Name != "routine-check" {
+				return true
+			}
+		}
+		return false
+	}
+	hasNewRoutine := func(available []catalog.RoutineItem, existing []string) bool {
+		have := installedSet(existing)
+		for _, item := range available {
+			if !have[item.Name] {
+				return true
+			}
+		}
+		return false
+	}
+
+	idx := 0
+	take := func() []string {
+		if idx >= len(picks) {
+			return nil
+		}
+		p := picks[idx]
+		idx++
+		return p
+	}
+	if hasNew(cat.SkillsFor(agentType), installed.Skills) {
+		skills = take()
+	}
+	if hasNew(cat.WorkflowsFor(agentType), installed.Workflows) {
+		workflows = take()
+	}
+	if hasNew(cat.ProtocolsFor(agentType), installed.Protocols) {
+		protocols = take()
+	}
+	if hasNewSensor(cat.SensorsFor(agentType), installed.Sensors) {
+		sensors = take()
+	}
+	if hasNewRoutine(cat.RoutinesFor(agentType), installed.Routines) {
+		routines = take()
+	}
+	return
 }
 
 // buildNewAgentSteps returns the sub-sequence for configuring a brand-new
@@ -426,211 +683,4 @@ func buildAddItemsSteps(cat *catalog.Catalog, agentType string, installed *confi
 	}))
 
 	return steps
-}
-
-// finaliseNewAgent runs the post-harness pipeline for the new-agent branch:
-// extract picks, build InstalledAgent, save config, generate, conflicts, lock,
-// success banner. Matches the legacy post-prompt block from the old runAdd.
-func finaliseNewAgent(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Catalog, agentDef *catalog.AgentDef, agentType string, existingWorkspaces map[string]bool, results []any) error {
-	// results layout: [0]=agentType (Select), [1..]=spliced-branch results.
-	// New-agent branch: [1]=workspace, [2..6]=pickers, [7]=review confirm.
-	if len(results) < 8 {
-		// Splicer returned a single NoteStep (e.g., unknown agent type). Exit
-		// without writes.
-		return nil
-	}
-
-	workspace := newAgentWorkspace(cfg, agentType, results[1:])
-	selectedSkills := asStringSlice(results[2])
-	selectedWorkflows := asStringSlice(results[3])
-	selectedProtocols := asStringSlice(results[4])
-	selectedSensors := asStringSlice(results[5])
-	selectedRoutines := asStringSlice(results[6])
-
-	if !asBool(results[7]) {
-		return nil
-	}
-
-	// Defence-in-depth: the validator already blocked duplicates, but a
-	// malicious or stale existingWorkspaces map would surface here.
-	if existingWorkspaces[workspace] {
-		tui.FatalPanel("Workspace conflict", workspace+" is already in use by another agent.", "Choose a different directory.")
-	}
-
-	installed := &config.InstalledAgent{
-		AgentType: agentType,
-		Workspace: workspace,
-		Skills:    selectedSkills,
-		Workflows: selectedWorkflows,
-		Protocols: selectedProtocols,
-		Sensors:   selectedSensors,
-		Routines:  selectedRoutines,
-	}
-	generate.EnsureRoutineCheckSensor(installed)
-	cfg.Agents[agentType] = installed
-	if err := cfg.Save(configPath); err != nil {
-		return err
-	}
-
-	lock, _ := config.LoadLockFile(cwd)
-	var wr generate.WriteResult
-
-	_ = spinner.New().
-		Title("Generating workspace...").
-		Action(func() {
-			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
-			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
-		}).
-		Run()
-
-	if wr.HasConflicts() {
-		resolveConflicts(&wr, lock, cwd)
-	}
-
-	if err := lock.Save(cwd); err != nil {
-		tui.Warning("Could not save lock file: " + err.Error())
-	}
-
-	showWriteResults(&wr, workspace)
-
-	tui.Success(fmt.Sprintf("Added %s at %s", agentDef.DisplayName, workspace))
-	tui.Hint("Run: bonsai list to see your full setup.")
-	tui.Blank()
-	return nil
-}
-
-// finaliseAddItems runs the post-harness pipeline for the add-items branch.
-func finaliseAddItems(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Catalog, agentDef *catalog.AgentDef, installed *config.InstalledAgent, results []any) error {
-	// results layout: [0]=agentType, [1..]=spliced-branch results.
-	// Add-items branch: [1]=intro NoteStep (nil), [2..K]=pickers (only those
-	// categories with uninstalled items), [K+1]=review confirm. If the splice
-	// was just the "All installed" NoteStep, len(results)==2 and we return.
-	if len(results) <= 2 {
-		return nil
-	}
-
-	// Walk from index 2, collect picks (always []string) until we hit the
-	// review confirm (bool). The review confirm is always last.
-	reviewIdx := len(results) - 1
-	confirmed := asBool(results[reviewIdx])
-	if !confirmed {
-		return nil
-	}
-
-	var picks [][]string
-	for i := 2; i < reviewIdx; i++ {
-		picks = append(picks, asStringSlice(results[i]))
-	}
-
-	// Distribute picks to categories in the same order buildAddItemsSteps
-	// appended them: Skills, Workflows, Protocols, Sensors, Routines.
-	installedSet := func(items []string) map[string]bool {
-		m := make(map[string]bool, len(items))
-		for _, item := range items {
-			m[item] = true
-		}
-		return m
-	}
-	agentType := installed.AgentType
-	hasNew := func(available []catalog.CatalogItem, existing []string) bool {
-		have := installedSet(existing)
-		for _, item := range available {
-			if !have[item.Name] {
-				return true
-			}
-		}
-		return false
-	}
-	hasNewSensor := func(available []catalog.SensorItem, existing []string) bool {
-		have := installedSet(existing)
-		for _, item := range available {
-			if !have[item.Name] && item.Name != "routine-check" {
-				return true
-			}
-		}
-		return false
-	}
-	hasNewRoutine := func(available []catalog.RoutineItem, existing []string) bool {
-		have := installedSet(existing)
-		for _, item := range available {
-			if !have[item.Name] {
-				return true
-			}
-		}
-		return false
-	}
-
-	var selectedSkills, selectedWorkflows, selectedProtocols, selectedSensors, selectedRoutines []string
-	idx := 0
-	take := func() []string {
-		if idx >= len(picks) {
-			return nil
-		}
-		p := picks[idx]
-		idx++
-		return p
-	}
-	if hasNew(cat.SkillsFor(agentType), installed.Skills) {
-		selectedSkills = take()
-	}
-	if hasNew(cat.WorkflowsFor(agentType), installed.Workflows) {
-		selectedWorkflows = take()
-	}
-	if hasNew(cat.ProtocolsFor(agentType), installed.Protocols) {
-		selectedProtocols = take()
-	}
-	if hasNewSensor(cat.SensorsFor(agentType), installed.Sensors) {
-		selectedSensors = take()
-	}
-	if hasNewRoutine(cat.RoutinesFor(agentType), installed.Routines) {
-		selectedRoutines = take()
-	}
-
-	totalSelected := len(selectedSkills) + len(selectedWorkflows) + len(selectedProtocols) + len(selectedSensors) + len(selectedRoutines)
-	if totalSelected == 0 {
-		tui.Info("No new abilities selected.")
-		return nil
-	}
-
-	installed.Skills = append(installed.Skills, selectedSkills...)
-	installed.Workflows = append(installed.Workflows, selectedWorkflows...)
-	installed.Protocols = append(installed.Protocols, selectedProtocols...)
-	installed.Sensors = append(installed.Sensors, selectedSensors...)
-	installed.Routines = append(installed.Routines, selectedRoutines...)
-
-	generate.EnsureRoutineCheckSensor(installed)
-
-	if err := cfg.Save(configPath); err != nil {
-		return err
-	}
-
-	lock, _ := config.LoadLockFile(cwd)
-	var wr generate.WriteResult
-
-	_ = spinner.New().
-		Title("Generating files...").
-		Action(func() {
-			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
-			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
-		}).
-		Run()
-
-	if wr.HasConflicts() {
-		resolveConflicts(&wr, lock, cwd)
-	}
-
-	if err := lock.Save(cwd); err != nil {
-		tui.Warning("Could not save lock file: " + err.Error())
-	}
-
-	showWriteResults(&wr, installed.Workspace)
-
-	tui.Success(fmt.Sprintf("Added %d abilities to %s", totalSelected, agentDef.DisplayName))
-	tui.Hint("Run: bonsai list to see your full setup.")
-	tui.Blank()
-	return nil
 }

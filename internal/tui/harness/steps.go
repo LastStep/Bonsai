@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/LastStep/Bonsai/internal/tui"
 )
@@ -664,6 +666,218 @@ func (s *NoteStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (s *NoteStep) Reset() tea.Cmd {
 	s.form = s.buildForm()
 	return s.form.Init()
+}
+
+// ─── SpinnerStep ──────────────────────────────────────────────────────────
+
+// SpinnerStep displays a spinner while a blocking action runs on a worker
+// goroutine. When the action returns the step completes; Result() is the
+// returned error (nil on success). Ctrl-C is handled by the harness — the
+// worker keeps running until the underlying call returns, so this does NOT
+// fix the pre-existing "Ctrl-C during generate.* leaves partial files"
+// issue at the I/O level. What it does fix is the AltScreen exit path:
+// cancelling no longer leaves the terminal in spinner-frame state.
+//
+// Two construction shapes are exposed:
+//   - NewSpinner takes a func() error; the action runs without seeing prior
+//     step results.
+//   - NewSpinnerWithPrior takes a func(prev []any) error; the harness invokes
+//     SetPrior(prev) (priorAware hook) before Init so the action body can
+//     read upstream picks captured by previous steps. Required by
+//     cmd/update.go to thread per-agent custom-file selections into the
+//     re-render closure.
+type SpinnerStep struct {
+	title    string
+	label    string                 // text shown next to the spinner
+	action   func() error           // simple blocking work
+	actionP  func(prev []any) error // alternative: prior-aware work; one of action/actionP is nil
+	sp       spinner.Model
+	err      error
+	done     bool
+	started  bool
+	initPrev []any // captured by SetPrior before Init
+}
+
+// spinnerDoneMsg is dispatched by the SpinnerStep's Init cmd once the action
+// goroutine returns; the reducer flips done=true and stores the error.
+type spinnerDoneMsg struct{ err error }
+
+// newSpinnerCommon constructs a SpinnerStep with the shared spinner config.
+func newSpinnerCommon(title, label string) *SpinnerStep {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(tui.ColorAccent)
+	return &SpinnerStep{title: title, label: label, sp: s}
+}
+
+// NewSpinner constructs a SpinnerStep.
+//   - title: breadcrumb label.
+//   - label: text rendered to the right of the spinner glyph.
+//   - action: the blocking work; errors are stored in Result().
+func NewSpinner(title, label string, action func() error) *SpinnerStep {
+	s := newSpinnerCommon(title, label)
+	s.action = action
+	return s
+}
+
+// NewSpinnerWithPrior constructs a SpinnerStep whose action receives the
+// harness's prior-results snapshot at Init time. Use this when the action
+// body needs to read upstream picks captured by earlier steps.
+func NewSpinnerWithPrior(title, label string, action func(prev []any) error) *SpinnerStep {
+	s := newSpinnerCommon(title, label)
+	s.actionP = action
+	return s
+}
+
+// SetPrior implements the priorAware hook. Called by the harness immediately
+// before Init so the action closure can capture upstream results.
+//
+// Note on prev indexing post-splice: when a LazyGroup splices in N steps, the
+// SpinnerStep that follows sees prev with length == N (the LazyGroup's own
+// nil result is no longer in the list because the group was replaced). Plan
+// 15 iter 3 documents this in cmd/update.go where the per-agent picker
+// results land at prev[0..N-1].
+func (s *SpinnerStep) SetPrior(prev []any) { s.initPrev = prev }
+
+func (s *SpinnerStep) Title() string { return s.title }
+func (s *SpinnerStep) Done() bool    { return s.done }
+func (s *SpinnerStep) Result() any   { return s.err }
+
+func (s *SpinnerStep) Init() tea.Cmd {
+	s.started = true
+	runner := s.action
+	if s.actionP != nil {
+		prev := s.initPrev
+		runner = func() error { return s.actionP(prev) }
+	}
+	return tea.Batch(
+		s.sp.Tick,
+		func() tea.Msg { return spinnerDoneMsg{err: runner()} },
+	)
+}
+
+func (s *SpinnerStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg.(type) {
+	case spinnerDoneMsg:
+		s.err = msg.(spinnerDoneMsg).err
+		s.done = true
+		return s, nil
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		s.sp, cmd = s.sp.Update(msg)
+		return s, cmd
+	}
+	return s, nil
+}
+
+func (s *SpinnerStep) View() string {
+	return "  " + s.sp.View() + " " + tui.StyleMuted.Render(s.label)
+}
+
+// Reset is a no-op — once a SpinnerStep has run, popping back to it must NOT
+// re-trigger the action (which would re-write files). The harness's Esc-back
+// reset loop walks past completed spinners because AutoComplete() returns
+// true once done is set.
+func (s *SpinnerStep) Reset() tea.Cmd { return nil }
+
+// AutoComplete reports true once the action has finished, so Esc-back skips
+// over a completed spinner instead of trying to re-render its (gone) action.
+func (s *SpinnerStep) AutoComplete() bool { return s.done }
+
+// ─── ConditionalStep ──────────────────────────────────────────────────────
+
+// ConditionalStep wraps another Step with a predicate. When the predicate
+// returns false at the moment the harness advances onto this step, the
+// wrapped step never renders — Done()=true on Init, AutoComplete()=true so
+// Esc-back skips past, and Result()=nil. When the predicate returns true,
+// every Step method delegates to the inner step verbatim.
+//
+// The predicate evaluates against prior results captured at Init time. If
+// the user later Esc-backs and changes upstream picks, Reset() re-evaluates
+// the predicate so the conditional re-checks correctly.
+type ConditionalStep struct {
+	inner     Step
+	predicate func(prev []any) bool
+	skip      bool  // set at Init based on predicate
+	skipDone  bool  // flips true once the harness has seen Done()=true once
+	initPrev  []any // prior results captured for the most recent (re-)Init
+}
+
+// NewConditional constructs a ConditionalStep.
+func NewConditional(inner Step, predicate func(prev []any) bool) *ConditionalStep {
+	return &ConditionalStep{inner: inner, predicate: predicate}
+}
+
+// SetPrior implements the priorAware hook. Called by the harness before Init
+// so the predicate has the up-to-date prior-results snapshot.
+func (c *ConditionalStep) SetPrior(prev []any) { c.initPrev = prev }
+
+func (c *ConditionalStep) Title() string { return c.inner.Title() }
+
+func (c *ConditionalStep) Done() bool {
+	if c.skip {
+		return c.skipDone
+	}
+	return c.inner.Done()
+}
+
+func (c *ConditionalStep) Result() any {
+	if c.skip {
+		return nil
+	}
+	return c.inner.Result()
+}
+
+func (c *ConditionalStep) Init() tea.Cmd {
+	c.skip = !c.predicate(c.initPrev)
+	if c.skip {
+		c.skipDone = true
+		return nil
+	}
+	// Forward prior results into the inner step too if it's prior-aware (e.g.
+	// a SpinnerStep wrapped in a Conditional needs the same prev snapshot).
+	if pa, ok := c.inner.(interface{ SetPrior(prev []any) }); ok {
+		pa.SetPrior(c.initPrev)
+	}
+	return c.inner.Init()
+}
+
+func (c *ConditionalStep) View() string {
+	if c.skip {
+		return ""
+	}
+	return c.inner.View()
+}
+
+func (c *ConditionalStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if c.skip {
+		return c, nil
+	}
+	updated, cmd := c.inner.Update(msg)
+	if step, ok := updated.(Step); ok {
+		c.inner = step
+	}
+	return c, cmd
+}
+
+func (c *ConditionalStep) Reset() tea.Cmd {
+	c.skip = false
+	c.skipDone = false
+	if r, ok := c.inner.(resetter); ok {
+		return r.Reset()
+	}
+	return nil
+}
+
+func (c *ConditionalStep) AutoComplete() bool {
+	if c.skip {
+		return true
+	}
+	type autoChecker interface{ AutoComplete() bool }
+	if a, ok := c.inner.(autoChecker); ok {
+		return a.AutoComplete()
+	}
+	return false
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────

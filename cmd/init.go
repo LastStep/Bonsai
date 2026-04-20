@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
@@ -135,8 +134,17 @@ func runInit(cmd *cobra.Command, args []string) error {
 		tui.FatalPanel("Tech Lead agent not found", "The built-in catalog is missing the tech-lead agent.", "This is a bug — please report it.")
 	}
 
+	// Lock + WriteResult shared between the spinner closure and the conflict
+	// picker. cfg + installed are populated by the spinner closure (which runs
+	// inside the harness, gated by the review confirm).
+	lock, _ := config.LoadLockFile(cwd)
+	var wr generate.WriteResult
+	var cfg *config.ProjectConfig
+	var installed *config.InstalledAgent
+
 	// Build the step stack. The review step is lazy so it can read every
-	// prior selection without leaving AltScreen.
+	// prior selection without leaving AltScreen. The spinner + conflict picker
+	// also live in-harness so the entire flow stays in AltScreen.
 	steps := []harness.Step{
 		harness.NewText("Project name", "Project name:", "", true),
 		harness.NewText("Description", "Description (optional):", "", false),
@@ -152,6 +160,64 @@ func runInit(cmd *cobra.Command, args []string) error {
 			panel := buildReviewPanel(cat, agentDef, workspace, prev)
 			return harness.NewReview("Review", panel, "Generate project?", true)
 		}),
+		// Spinner — gated on the review confirm bool. Builds cfg + installed
+		// from prev[] and runs the generators. cfg.Save lives in here too so
+		// a Ctrl-C before this point leaves no .bonsai.yaml on disk.
+		harness.NewConditional(
+			harness.NewSpinnerWithPrior("Generating", "Generating project files...",
+				func(prev []any) error {
+					projectName := asString(prev[0])
+					description := asString(prev[1])
+					docsPath := normaliseDocsPath(asString(prev[2]))
+					selectedScaffolding := asStringSlice(prev[3])
+					selectedSkills := asStringSlice(prev[4])
+					selectedWorkflows := asStringSlice(prev[5])
+					selectedProtocols := asStringSlice(prev[6])
+					selectedSensors := asStringSlice(prev[7])
+					selectedRoutines := asStringSlice(prev[8])
+
+					installed = &config.InstalledAgent{
+						AgentType: techLeadType,
+						Workspace: docsPath,
+						Skills:    selectedSkills,
+						Workflows: selectedWorkflows,
+						Protocols: selectedProtocols,
+						Sensors:   selectedSensors,
+						Routines:  selectedRoutines,
+					}
+					generate.EnsureRoutineCheckSensor(installed)
+
+					cfg = &config.ProjectConfig{
+						ProjectName: strings.TrimSpace(projectName),
+						Description: strings.TrimSpace(description),
+						DocsPath:    docsPath,
+						Scaffolding: selectedScaffolding,
+						Agents:      map[string]*config.InstalledAgent{techLeadType: installed},
+					}
+					if err := cfg.Save(configPath); err != nil {
+						return err
+					}
+					_ = generate.Scaffolding(cwd, cfg, cat, lock, &wr, false)
+					_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
+					_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
+					_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
+					_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
+					return nil
+				}),
+			func(prev []any) bool {
+				if len(prev) == 0 {
+					return false
+				}
+				b, ok := prev[len(prev)-1].(bool)
+				return ok && b
+			},
+		),
+		harness.NewLazyGroup("Resolve conflicts", func(prev []any) []harness.Step {
+			if !wr.HasConflicts() {
+				return nil
+			}
+			return buildConflictSteps(&wr)
+		}),
 	}
 
 	bannerLine := "BONSAI"
@@ -165,80 +231,51 @@ func runInit(cmd *cobra.Command, args []string) error {
 			// Ctrl-C — exit cleanly with no .bonsai.yaml or partial files.
 			return nil
 		}
+		var bpe *harness.BuilderPanicError
+		if errors.As(err, &bpe) {
+			tui.FatalPanel("Harness builder panic",
+				fmt.Sprintf("Step %q: %v", bpe.Step, bpe.Value),
+				"This is a bug — please report it.")
+			return nil
+		}
 		return err
 	}
 
-	if !asBool(results[len(results)-1]) {
-		// User declined the review confirm.
+	// Review confirm lives at index 9 (the LazyStep wrapping the ReviewStep).
+	if len(results) <= 9 || !asBool(results[9]) {
 		return nil
 	}
 
-	// Pull typed results in declaration order.
-	projectName := asString(results[0])
-	description := asString(results[1])
-	docsPath := normaliseDocsPath(asString(results[2]))
-	selectedScaffolding := asStringSlice(results[3])
-	selectedSkills := asStringSlice(results[4])
-	selectedWorkflows := asStringSlice(results[5])
-	selectedProtocols := asStringSlice(results[6])
-	selectedSensors := asStringSlice(results[7])
-	selectedRoutines := asStringSlice(results[8])
-
-	workspace := docsPath
-
-	// Build config with tech-lead agent
-	installed := &config.InstalledAgent{
-		AgentType: techLeadType,
-		Workspace: workspace,
-		Skills:    selectedSkills,
-		Workflows: selectedWorkflows,
-		Protocols: selectedProtocols,
-		Sensors:   selectedSensors,
-		Routines:  selectedRoutines,
-	}
-	generate.EnsureRoutineCheckSensor(installed)
-
-	cfg := &config.ProjectConfig{
-		ProjectName: strings.TrimSpace(projectName),
-		Description: strings.TrimSpace(description),
-		DocsPath:    docsPath,
-		Scaffolding: selectedScaffolding,
-		Agents:      map[string]*config.InstalledAgent{techLeadType: installed},
+	// Spinner ran at index 10. Surface any error it returned.
+	if len(results) > 10 {
+		if errVal := results[10]; errVal != nil {
+			if e, ok := errVal.(error); ok && e != nil {
+				tui.Warning("Generation error: " + e.Error())
+				return nil
+			}
+		}
 	}
 
-	if err := cfg.Save(configPath); err != nil {
-		return err
-	}
-
-	lock, _ := config.LoadLockFile(cwd)
-	var wr generate.WriteResult
-
-	_ = spinner.New().
-		Title("Generating project files...").
-		Action(func() {
-			_ = generate.Scaffolding(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false)
-			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
-			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
-		}).
-		Run()
-
-	if wr.HasConflicts() {
-		resolveConflicts(&wr, lock, cwd)
-	}
+	// Conflict-picker LazyGroup at index 11, when spliced, produces the
+	// MultiSelect at index 11 (LazyGroup is replaced in place).
+	applyConflictPicks(results, 11, &wr, lock, cwd)
 
 	if err := lock.Save(cwd); err != nil {
 		tui.Warning("Could not save lock file: " + err.Error())
 	}
 
-	root := docsPath
+	root := ""
+	if cfg != nil {
+		root = cfg.DocsPath
+	}
 	if root == "" {
 		root = "."
 	}
 	showWriteResults(&wr, root)
 
-	tui.Success(fmt.Sprintf("Initialized %s with %s", cfg.ProjectName, agentDef.DisplayName))
+	if cfg != nil {
+		tui.Success(fmt.Sprintf("Initialized %s with %s", cfg.ProjectName, agentDef.DisplayName))
+	}
 	tui.Hint("Next: run bonsai add to add code agents (backend, frontend, etc.).")
 	tui.Blank()
 	return nil

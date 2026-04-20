@@ -1,18 +1,18 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 
 	"github.com/LastStep/Bonsai/internal/config"
 	"github.com/LastStep/Bonsai/internal/generate"
 	"github.com/LastStep/Bonsai/internal/tui"
+	"github.com/LastStep/Bonsai/internal/tui/harness"
 )
 
 func init() {
@@ -41,24 +41,22 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	tui.Heading("Update")
 
-	configChanged := false
-
-	// Sort agent names for deterministic output
+	// Sort agent names for deterministic output.
 	var agentNames []string
 	for name := range cfg.Agents {
 		agentNames = append(agentNames, name)
 	}
 	sort.Strings(agentNames)
 
-	// 1. Scan for custom files across all agents
+	// Pre-flight: scan all agents for discoveries. Warnings stay on stdout
+	// (pre-harness), exactly as the legacy flow.
+	discoveredByAgent := make(map[string][]generate.DiscoveredFile)
 	for _, agentName := range agentNames {
 		installed := cfg.Agents[agentName]
 		discovered, scanErr := generate.ScanCustomFiles(cwd, installed, lock)
 		if scanErr != nil || len(discovered) == 0 {
 			continue
 		}
-
-		// Separate valid from invalid
 		var valid, invalid []generate.DiscoveredFile
 		for _, d := range discovered {
 			if d.Error != "" {
@@ -67,88 +65,65 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 				valid = append(valid, d)
 			}
 		}
-
-		// Show invalid files with warnings
 		for _, d := range invalid {
 			tui.Warning(fmt.Sprintf("Skipping %s: %s", d.RelPath, d.Error))
 			tui.Hint("Add frontmatter to track this file. See docs/custom-files.md for format.")
 		}
-
-		if len(valid) == 0 {
-			continue
-		}
-
-		agentDef := cat.GetAgent(installed.AgentType)
-		agentLabel := agentName
-		if agentDef != nil {
-			agentLabel = agentDef.DisplayName
-		}
-
-		tui.Blank()
-		tui.Section(fmt.Sprintf("Custom files found — %s", agentLabel))
-
-		// Build multi-select options grouped by type
-		var options []huh.Option[string]
-		for _, d := range valid {
-			displayName := d.Meta.Description
-			if d.Meta.DisplayName != "" {
-				displayName = d.Meta.DisplayName + " " + tui.StyleMuted.Render(tui.GlyphDash+" "+d.Meta.Description)
-			}
-			label := fmt.Sprintf("[%s] %s", d.Type, displayName)
-			key := d.Type + ":" + d.Name
-			options = append(options, huh.NewOption(label, key).Selected(true))
-		}
-
-		selected, selectErr := tui.AskMultiSelect("Track these custom files?", options)
-		if selectErr != nil {
-			return selectErr
-		}
-
-		selectedSet := make(map[string]bool)
-		for _, s := range selected {
-			selectedSet[s] = true
-		}
-
-		// Add selected items to config
-		for _, d := range valid {
-			if !selectedSet[d.Type+":"+d.Name] {
-				continue
-			}
-
-			switch d.Type {
-			case "skill":
-				installed.Skills = append(installed.Skills, d.Name)
-			case "workflow":
-				installed.Workflows = append(installed.Workflows, d.Name)
-			case "protocol":
-				installed.Protocols = append(installed.Protocols, d.Name)
-			case "sensor":
-				installed.Sensors = append(installed.Sensors, d.Name)
-			case "routine":
-				installed.Routines = append(installed.Routines, d.Name)
-			}
-
-			if installed.CustomItems == nil {
-				installed.CustomItems = make(map[string]*config.CustomItemMeta)
-			}
-			installed.CustomItems[d.Name] = d.Meta
-
-			// Track in lock file
-			data, readErr := os.ReadFile(filepath.Join(cwd, d.RelPath))
-			if readErr == nil {
-				lock.Track(d.RelPath, data, "custom:"+d.Type+"s/"+d.Name)
-			}
-
-			configChanged = true
+		if len(valid) > 0 {
+			discoveredByAgent[agentName] = valid
 		}
 	}
 
-	// 2. Re-render abilities + CLAUDE.md + settings.json for all agents
+	// agentsWithDiscoveries preserves the deterministic per-agent ordering for
+	// the LazyGroup splice and for the spinner's prev[]-based selection lookup.
+	var agentsWithDiscoveries []string
+	for _, agentName := range agentNames {
+		if len(discoveredByAgent[agentName]) > 0 {
+			agentsWithDiscoveries = append(agentsWithDiscoveries, agentName)
+		}
+	}
+
+	configChanged := false
 	var wr generate.WriteResult
 
-	_ = spinner.New().
-		Title("Syncing workspace...").
-		Action(func() {
+	steps := []harness.Step{
+		// Per-agent custom-file pickers, spliced in for agents with discoveries.
+		harness.NewLazyGroup("Custom files", func(prev []any) []harness.Step {
+			out := make([]harness.Step, 0, len(agentsWithDiscoveries))
+			for _, agentName := range agentsWithDiscoveries {
+				valid := discoveredByAgent[agentName]
+				agentDef := cat.GetAgent(cfg.Agents[agentName].AgentType)
+				agentLabel := agentName
+				if agentDef != nil {
+					agentLabel = agentDef.DisplayName
+				}
+				options := buildCustomFileOptions(valid)
+				defaults := buildCustomFileDefaults(valid)
+				out = append(out, harness.NewMultiSelect(
+					"Custom files — "+agentLabel,
+					fmt.Sprintf("Custom files found — %s", agentLabel),
+					options, defaults))
+			}
+			return out
+		}),
+
+		// Spinner — re-renders abilities/CLAUDE.md/settings. Reads per-agent
+		// selections from prev (which has length == len(agentsWithDiscoveries)
+		// after the LazyGroup splice; the LazyGroup itself is replaced in place).
+		harness.NewSpinnerWithPrior("Syncing", "Syncing workspace...", func(prev []any) error {
+			cursor := 0
+			for _, agentName := range agentsWithDiscoveries {
+				valid := discoveredByAgent[agentName]
+				if cursor >= len(prev) {
+					break
+				}
+				selected := asStringSlice(prev[cursor])
+				cursor++
+				if applyCustomFileSelection(cfg.Agents[agentName], valid, selected, lock, cwd) {
+					configChanged = true
+				}
+			}
+
 			for _, agentName := range agentNames {
 				installed := cfg.Agents[agentName]
 				agentDef := cat.GetAgent(installed.AgentType)
@@ -161,14 +136,43 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 			_ = generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false)
 			_ = generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false)
 			_ = generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false)
-		}).
-		Run()
+			return nil
+		}),
 
-	if wr.HasConflicts() {
-		resolveConflicts(&wr, lock, cwd)
+		harness.NewLazyGroup("Resolve conflicts", func(prev []any) []harness.Step {
+			if !wr.HasConflicts() {
+				return nil
+			}
+			return buildConflictSteps(&wr)
+		}),
 	}
 
-	// 3. Save config + lock
+	bannerLine := "BONSAI"
+	if Version != "" && Version != "dev" {
+		bannerLine = fmt.Sprintf("BONSAI v%s", Version)
+	}
+
+	results, err := harness.Run(bannerLine, "Updating workspace", steps)
+	if err != nil {
+		if errors.Is(err, harness.ErrAborted) {
+			return nil
+		}
+		var bpe *harness.BuilderPanicError
+		if errors.As(err, &bpe) {
+			tui.FatalPanel("Harness builder panic",
+				fmt.Sprintf("Step %q: %v", bpe.Step, bpe.Value),
+				"This is a bug — please report it.")
+			return nil
+		}
+		return err
+	}
+
+	// Conflict picker, if it spliced in steps, lands at index
+	// len(agentsWithDiscoveries) + 1 (one slot per per-agent picker, plus the
+	// spinner). The MultiSelectStep produced by buildConflictSteps lives there.
+	conflictIdx := len(agentsWithDiscoveries) + 1
+	applyConflictPicks(results, conflictIdx, &wr, lock, cwd)
+
 	if configChanged {
 		if err := cfg.Save(configPath); err != nil {
 			tui.Warning("Could not save config: " + err.Error())
@@ -200,4 +204,82 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	tui.Hint("Review changes with: bonsai list")
 	tui.Blank()
 	return nil
+}
+
+// buildCustomFileOptions builds the multi-select options for a single agent's
+// discovered custom files. Mirrors the legacy inline construction at
+// cmd/update.go:91-100 but returns ItemOption (the harness MultiSelectStep
+// shape) rather than huh.Option directly.
+func buildCustomFileOptions(valid []generate.DiscoveredFile) []tui.ItemOption {
+	options := make([]tui.ItemOption, 0, len(valid))
+	for _, d := range valid {
+		desc := d.Meta.Description
+		name := fmt.Sprintf("[%s] %s", d.Type, d.Meta.DisplayName)
+		if d.Meta.DisplayName == "" {
+			name = fmt.Sprintf("[%s] %s", d.Type, d.Meta.Description)
+			desc = ""
+		}
+		options = append(options, tui.ItemOption{
+			Name:  name,
+			Value: d.Type + ":" + d.Name,
+			Desc:  desc,
+		})
+	}
+	return options
+}
+
+// buildCustomFileDefaults returns the keys that should be pre-selected (all of
+// them, mirroring the legacy `Selected(true)` on every option).
+func buildCustomFileDefaults(valid []generate.DiscoveredFile) []string {
+	defaults := make([]string, 0, len(valid))
+	for _, d := range valid {
+		defaults = append(defaults, d.Type+":"+d.Name)
+	}
+	return defaults
+}
+
+// applyCustomFileSelection mutates installed + lock for the given agent based on
+// the user-selected keys. Returns true if any selections were applied (so the
+// caller can flip configChanged). Lifted from the inline body at
+// cmd/update.go:107-143.
+func applyCustomFileSelection(installed *config.InstalledAgent, valid []generate.DiscoveredFile,
+	selected []string, lock *config.LockFile, cwd string) bool {
+	selectedSet := make(map[string]bool, len(selected))
+	for _, s := range selected {
+		selectedSet[s] = true
+	}
+
+	changed := false
+	for _, d := range valid {
+		if !selectedSet[d.Type+":"+d.Name] {
+			continue
+		}
+
+		switch d.Type {
+		case "skill":
+			installed.Skills = append(installed.Skills, d.Name)
+		case "workflow":
+			installed.Workflows = append(installed.Workflows, d.Name)
+		case "protocol":
+			installed.Protocols = append(installed.Protocols, d.Name)
+		case "sensor":
+			installed.Sensors = append(installed.Sensors, d.Name)
+		case "routine":
+			installed.Routines = append(installed.Routines, d.Name)
+		}
+
+		if installed.CustomItems == nil {
+			installed.CustomItems = make(map[string]*config.CustomItemMeta)
+		}
+		installed.CustomItems[d.Name] = d.Meta
+
+		// Track in lock file
+		data, readErr := os.ReadFile(filepath.Join(cwd, d.RelPath))
+		if readErr == nil {
+			lock.Track(d.RelPath, data, "custom:"+d.Type+"s/"+d.Name)
+		}
+
+		changed = true
+	}
+	return changed
 }
