@@ -13,9 +13,9 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** None in-session. Awaiting next pickup.
+**Current task:** Plan 15 iter 2 — dispatching now. Scope: migrate `cmd/add.go` (both runAdd + runAddItems) onto the harness; add `NoteStep` adapter + `tui.TitledPanelString` helper + harness `LazyGroup` splicer. Plan doc detailed steps committed at `1af8a36`.
 **In flight (other tracks):**
-- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch, parallel session driving iter 2/3. **Rebased onto current main 2026-04-20.** Branch is now `main + 3 commits` (Plan 15 iter 1 only: harness `8aab2fd`, Esc-back fix `86e57f0`, reports `2d7a947`). Plan 14 commits dropped (already on main via Plan 17 squash bundle). Old tip preserved as `ui-ux-testing-pre-rebase` (`2fa91d0`) — keep ~30d for safety. Build + tests verified post-rebase.
+- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch, **this session driving iter 2** (parallel-session convention broken by user pickup this session). Branch is `main + 4 commits` after rebase 2026-04-20: iter 1 harness foundation (`63b97b1`), Esc-back fix (`150d1d3`), iter 1 reports (`8525bc5`), iter 2 plan docs (`1af8a36`). Safety branches: `ui-ux-testing-pre-rebase` (pre-first-rebase, `2fa91d0`) + `ui-ux-testing-pre-iter2-rebase` (pre-second-rebase, `2d7a947`) — keep both ~30d.
 **Blocked on:** Nothing in this session.
 **Last completed:** Plan 16 merged to main via PR #23 (`28d181e`, 2026-04-20). Moved `main.go` → `cmd/bonsai/main.go` + introduced root `embed.go` package (keeps `//go:embed catalog/` and `docs/custom-files.md` resolving from repo root). `go install github.com/LastStep/Bonsai/cmd/bonsai@latest` now produces lowercase `bonsai` binary on PATH. Verified locally before merge.
 
