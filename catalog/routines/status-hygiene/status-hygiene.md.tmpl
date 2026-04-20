@@ -10,7 +10,7 @@ frequency: 5 days
 
 ## Purpose
 
-Keep `{{ .DocsPath }}Playbook/Status.md` clean — archive old Done items, validate Pending items, verify Plans Index consistency.
+Keep `{{ .DocsPath }}Playbook/Status.md` clean — archive old Done items, validate Pending items, verify plan files match Status rows.
 
 ## Procedure
 
@@ -23,9 +23,10 @@ Keep `{{ .DocsPath }}Playbook/Status.md` clean — archive old Done items, valid
    - Check if any Pending items have been completed but not moved to Done
    - Flag items that have been Pending for 30+ days without progress
 
-3. **Check Plans Index:**
-   - Verify every plan listed in the Plans Index has a matching file in `{{ .DocsPath }}Playbook/Plans/Active/` or `{{ .DocsPath }}Playbook/Plans/Archive/`
-   - Flag any orphaned plan files not listed in the index
+3. **Verify plan files match Status rows:**
+   - Scan `{{ .DocsPath }}Playbook/Plans/Active/` — each file should correspond to an In Progress or Recently Done row in Status.md (by plan number)
+   - Flag any orphaned plan files (no matching Status row)
+   - Flag any Status row that references a plan number with no matching file in `Plans/Active/` or `Plans/Archive/`
 
 4. **Cross-reference with Backlog:**
    - Check if any Recently Done items in Status.md resolve items in `{{ .DocsPath }}Playbook/Backlog.md`

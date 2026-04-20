@@ -20,6 +20,39 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-20 — Plan 18: `bonsai guide` multi-topic + legacy docs cleanup
+- **Plan:** Playbook/Plans/Active/18-bonsai-guide-multi-topic.md
+- **PR:** #25 (squash `e448140`)
+- **Iterations:** 1 execute-review cycle (no fix dispatch needed)
+- **Issues found:** none — all 4 agent-flagged decisions were reasonable interpretations
+- **Scope delivered:** 3 terminal cheatsheets (quickstart 93L, concepts 113L, cli 119L) + Huh picker + direct-arg allowlist; dropped 3 orphan docs (1,213 lines); CLAUDE.md doc-drift fix rolled in
+- **Verification:** CI green (test + lint + GitGuardian); post-merge `make build` + `go test ./...` + `./bonsai guide {quickstart,unknown,a b}` smoke all pass
+- **Result:** completed
+
+### 2026-04-20 — Routine Digest
+- **Outcome:** success
+- **Reports processed:** 2 — Memory Consolidation, Status Hygiene (both 2026-04-20)
+- **Quick fixes applied:** 3 — rewrote status-hygiene Step 3 (Plans Index → Plan files vs Status rows) in catalog template + installed copy; created `Playbook/StatusArchive.md` stub; acknowledged References-section-drift warning (watch next memory-consolidation run).
+- **Backlog items added:** 0
+- **Plan report written:** no
+- **Warnings acknowledged:** 1 — References section emptied between 2026-04-14 and 2026-04-20 memory-consolidation runs; re-populated today; watch next run to confirm it persists.
+
+### 2026-04-20 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** Minor fix to `Playbook/Backlog.md` Group B intro text — removed stale "triggerSection frontmatter" reference (bug was fixed in Plan 17 / PR #24). No Status.md archival needed (oldest Done item is 8 days old).
+- **Flags:** 3 items flagged — (1) no `StatusArchive.md` exists yet (will need creation when items age past 14 days, earliest 2026-04-26), (2) no Plans Index file exists at all (routine procedure references it), (3) 17 plan files sit in `Plans/Active/` but most are merged — known P2 backlog item (Group E plan archiving) still pending.
+- **Report:** `Reports/Pending/2026-04-20-status-hygiene.md`
+
+### 2026-04-20 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** Added 5 Research doc pointers to `agent/Core/memory.md` References section with corrected file paths (prior entry used stale RESEARCH.md/RESEARCH-concepts.md/RESEARCH-evals.md naming). Archived 2 stale auto-memory files (`project_go_rewrite.md` — redundant with root CLAUDE.md; `project_research_phase.md` — stale file names superseded by References section). Trimmed auto-memory MEMORY.md index to minimal pointer.
+- **Flags:** none
+- **Report:** `Reports/Pending/2026-04-20-memory-consolidation.md`
+
 ### 2026-04-16 — Routine Digest
 - **Outcome:** success
 - **Reports processed:** 8 (Backlog Hygiene, Status Hygiene, Vulnerability Scan, Dependency Audit, Memory Consolidation, Doc Freshness Check, Infra Drift Check, Roadmap Accuracy)

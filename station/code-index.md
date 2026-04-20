@@ -8,9 +8,9 @@ Quick-nav for the developer agent. Jump to what you need.
 
 | What | Where |
 |------|-------|
-| Embed catalog FS | `main.go:15` — `//go:embed all:catalog` |
-| Embed guide content | `main.go:18` — `//go:embed docs/custom-files.md` |
-| Main | `main.go:21` — `main()` → `cmd.Execute(sub, guideContent)` |
+| Embed catalog FS | `embed.go:8` — `//go:embed all:catalog` → `CatalogFS` |
+| Embed guide cheatsheets | `embed.go:11–20` — `GuideCustomFiles`, `GuideQuickstart`, `GuideConcepts`, `GuideCli` |
+| Main | `cmd/bonsai/main.go:15` — `main()` → `cmd.Execute(sub, map[string]string{...})` |
 
 ---
 

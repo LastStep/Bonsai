@@ -19,5 +19,10 @@ func main() {
 		os.Exit(1)
 	}
 	cmd.SetVersion(version)
-	cmd.Execute(sub, bonsai.GuideContent)
+	cmd.Execute(sub, map[string]string{
+		"quickstart":   bonsai.GuideQuickstart,
+		"concepts":     bonsai.GuideConcepts,
+		"cli":          bonsai.GuideCli,
+		"custom-files": bonsai.GuideCustomFiles,
+	})
 }

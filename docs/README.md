@@ -1,7 +1,9 @@
-# Documentation
+# docs/
 
-The source files in this directory are migrated to the documentation site.
+Markdown files in this folder are embedded into the `bonsai` binary and rendered
+by `bonsai guide`. Current topics: `quickstart`, `concepts`, `cli`, `custom-files`.
 
-**Visit the docs: [laststep.github.io/Bonsai](https://laststep.github.io/Bonsai/)**
+Full user documentation (tutorials, reference, catalog browser) lives on the
+Starlight site: <https://laststep.github.io/Bonsai/>. Source under [`website/`](../website/).
 
-For the Starlight source, see [`website/`](../website/).
+`docs/assets/` holds images referenced from `README.md`.
