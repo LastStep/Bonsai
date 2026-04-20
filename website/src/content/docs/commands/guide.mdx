@@ -1,6 +1,6 @@
 ---
 title: bonsai guide
-description: View the custom files guide in your terminal — learn how to create custom skills, workflows, protocols, sensors, and routines.
+description: View bundled terminal cheatsheets — quickstart, concepts, CLI reference, and the custom files guide.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -8,25 +8,28 @@ import { Aside } from '@astrojs/starlight/components';
 ## Synopsis
 
 ```
-bonsai guide
+bonsai guide [topic]
 ```
 
 ## Description
 
-`bonsai guide` renders the custom files guide directly in your terminal using [Glamour](https://github.com/charmbracelet/glamour) markdown rendering. The guide explains how to create custom skills, workflows, protocols, sensors, and routines that Bonsai can detect and track via [`bonsai update`](/Bonsai/commands/update/).
+`bonsai guide` renders a bundled cheatsheet directly in your terminal using [Glamour](https://github.com/charmbracelet/glamour) markdown rendering. The cheatsheets are embedded in the Bonsai binary alongside the catalog and are designed as quick terminal companions to the full Starlight documentation.
 
-The guide content is embedded in the Bonsai binary alongside the catalog. It covers:
+Run `bonsai guide` with no arguments to open an interactive picker. Pass a topic directly (`bonsai guide <topic>`) to skip the picker and render it immediately. Passing an unknown topic prints an error and exits non-zero. Passing more than one argument is rejected by Cobra with an "accepts at most 1 arg" error.
 
-- The BONSAI frontmatter format required for custom files
-- File naming conventions (kebab-case, correct extensions)
-- Directory placement for each ability type
-- Required and optional frontmatter fields per type
-- Examples of custom skills, sensors, and routines
+Each cheatsheet ends with a deep-link back to the full web guide on <https://laststep.github.io/Bonsai/> for longer-form reading.
 
-This is a read-only command with no interactive prompts and no side effects. If the guide content contains YAML frontmatter, it is automatically stripped before rendering.
+## Topics
+
+| Topic | What it covers |
+|:------|:---------------|
+| `quickstart` | Post-install 5-step walkthrough — what to do after `bonsai init` |
+| `concepts` | The mental model — station, instruction stack, agents, sensors, routines, scaffolding |
+| `cli` | One section per command (`init`, `add`, `remove`, `list`, `catalog`, `update`, `guide`) |
+| `custom-files` | BONSAI frontmatter format, file naming, directory placement, examples |
 
 <Aside type="tip">
-The guide output adapts to your terminal's color scheme. Glamour auto-detects whether you are using a light or dark terminal theme and renders accordingly.
+The guide output adapts to your terminal's color scheme. Glamour auto-detects light or dark and renders accordingly. YAML frontmatter in the bundled markdown is stripped before rendering.
 </Aside>
 
 ## Flags
@@ -35,25 +38,48 @@ This command has no flags.
 
 ## Examples
 
-**View the guide:**
+**Open the interactive picker:**
 
 ```bash
 bonsai guide
+# ? Pick a guide
+#   > Quickstart — 5-step post-install walkthrough
+#     Concepts — the mental model
+#     CLI — command-by-command reference
+#     Custom Files — add your own abilities
 ```
 
-Renders the full custom files guide with styled headings, code blocks, and tables in your terminal. The output is word-wrapped to 100 columns for readability.
+Use the arrow keys and press `Enter` to render the selected topic.
+
+**Render a topic directly:**
+
+```bash
+bonsai guide quickstart
+bonsai guide concepts
+bonsai guide cli
+bonsai guide custom-files
+```
+
+**Unknown topic:**
+
+```bash
+bonsai guide foobar
+# Error: unknown topic "foobar". Available: quickstart, concepts, cli, custom-files
+```
+
+Exits non-zero.
 
 **Pipe to a pager for long output:**
 
 ```bash
-bonsai guide | less -R
+bonsai guide custom-files | less -R
 ```
 
 The `-R` flag preserves ANSI color codes when piping through `less`.
 
 ## See Also
 
-- [`bonsai update`](/Bonsai/commands/update/) -- detect and track custom files after creating them
-- [Creating Custom Skills](/Bonsai/guides/creating-custom-skills/) -- detailed web guide for custom skills
-- [Creating Custom Sensors](/Bonsai/guides/creating-custom-sensors/) -- detailed web guide for custom sensors
-- [Creating Custom Routines](/Bonsai/guides/creating-custom-routines/) -- detailed web guide for custom routines
+- [`bonsai update`](/Bonsai/commands/update/) — detect and track custom files after creating them
+- [Your First Workspace](/Bonsai/guides/your-first-workspace/) — the full quickstart guide on the web
+- [How Bonsai Works](/Bonsai/concepts/how-bonsai-works/) — the full concepts guide on the web
+- [Creating Custom Skills](/Bonsai/guides/creating-custom-skills/) — detailed web guide for custom skills
