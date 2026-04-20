@@ -51,6 +51,16 @@ type lazyBuilder interface {
 	Built() bool
 }
 
+// splicer is implemented by LazyGroup. When the harness cursor advances onto a
+// splicer, the group is replaced in-place with the steps it returns, and the
+// cursor stays at the same index (now pointing at the first of the new steps).
+// Used for multi-step branches where the shape of the sub-sequence depends on
+// prior answers.
+type splicer interface {
+	Splice(prev []any) []Step
+	Spliced() bool
+}
+
 // resetter is an optional Step capability. The harness calls Reset() on a step
 // after the cursor pops back onto it via Esc/Shift+Tab so the underlying form
 // returns to StateNormal — otherwise the next keypress would re-trigger
@@ -91,10 +101,32 @@ func (h *Harness) Init() tea.Cmd {
 	if len(h.steps) == 0 {
 		return tea.Quit
 	}
+	h.expandSplicer()
+	if len(h.steps) == 0 {
+		return tea.Quit
+	}
 	if lb, ok := h.steps[0].(lazyBuilder); ok && !lb.Built() {
 		lb.Build(h.priorResults())
 	}
 	return h.steps[0].Init()
+}
+
+// expandSplicer replaces the step at h.cursor with its splice expansion if the
+// step is a not-yet-spliced splicer. After splice the cursor stays at the same
+// index, now pointing at the first of the new steps. Idempotent and guarded by
+// Spliced().
+func (h *Harness) expandSplicer() {
+	if h.cursor >= len(h.steps) {
+		return
+	}
+	sp, ok := h.steps[h.cursor].(splicer)
+	if !ok || sp.Spliced() {
+		return
+	}
+	inserted := sp.Splice(h.priorResults())
+	head := append([]Step{}, h.steps[:h.cursor]...)
+	tail := append([]Step(nil), h.steps[h.cursor+1:]...)
+	h.steps = append(append(head, inserted...), tail...)
 }
 
 // Update implements tea.Model.
@@ -171,6 +203,13 @@ func (h *Harness) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// should not block the flow.
 	for h.cursor < len(h.steps) && h.steps[h.cursor].Done() {
 		h.cursor++
+		if h.cursor >= len(h.steps) {
+			h.quitting = true
+			return h, tea.Batch(cmd, tea.Quit)
+		}
+		// Expand a LazyGroup in place before any further setup. The cursor
+		// stays at the same index, now pointing at the first spliced step.
+		h.expandSplicer()
 		if h.cursor >= len(h.steps) {
 			h.quitting = true
 			return h, tea.Batch(cmd, tea.Quit)

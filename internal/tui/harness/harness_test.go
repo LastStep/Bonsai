@@ -261,6 +261,100 @@ func TestEscPopReinitsActiveStep(t *testing.T) {
 	}
 }
 
+// TestLazyGroupSplicesOnEntry verifies that when the cursor advances onto a
+// LazyGroup, the group is replaced in-place with its expansion, the cursor
+// stays at the same index (now pointing at the first new step), and the
+// newly-active step's Init cmd is invoked.
+func TestLazyGroupSplicesOnEntry(t *testing.T) {
+	a := newFake("a")
+	a.result = "answer-a"
+
+	newA := newFake("spliced-1")
+	newB := newFake("spliced-2")
+
+	var built bool
+	group := NewLazyGroup("Branch", func(prev []any) []Step {
+		built = true
+		return []Step{newA, newB}
+	})
+
+	h := New("BANNER", "TEST", []Step{a, group, newFake("tail")})
+
+	// Flip step 0 done and drive advancement.
+	a.done = true
+	_, _ = h.Update(runeKey('x'))
+
+	if !built {
+		t.Fatalf("expected LazyGroup.build to fire on cursor entry")
+	}
+	if h.cursor != 1 {
+		t.Fatalf("expected cursor=1 after splice (first spliced step), got %d", h.cursor)
+	}
+	if len(h.steps) != 4 {
+		t.Fatalf("expected steps len=4 (3 orig − 1 group + 2 spliced), got %d", len(h.steps))
+	}
+	if h.steps[1] != Step(newA) {
+		t.Fatalf("expected h.steps[1] to be the first spliced step")
+	}
+	if h.steps[2] != Step(newB) {
+		t.Fatalf("expected h.steps[2] to be the second spliced step")
+	}
+}
+
+// TestLazyGroupRunsOnce verifies the group's Splice builder fires exactly once
+// even if the harness re-enters the index across subsequent ticks.
+func TestLazyGroupRunsOnce(t *testing.T) {
+	a := newFake("a")
+
+	var buildCount int
+	group := NewLazyGroup("Branch", func(prev []any) []Step {
+		buildCount++
+		return []Step{newFake("spliced")}
+	})
+
+	h := New("BANNER", "TEST", []Step{a, group})
+
+	a.done = true
+	_, _ = h.Update(runeKey('x'))
+
+	if buildCount != 1 {
+		t.Fatalf("expected build count=1 after first entry, got %d", buildCount)
+	}
+
+	// Drive another message while the spliced step is active — the group is
+	// already gone from the list, so its builder must not fire again.
+	_, _ = h.Update(runeKey('y'))
+	if buildCount != 1 {
+		t.Fatalf("expected build count=1 after subsequent ticks, got %d", buildCount)
+	}
+}
+
+// TestLazyGroupPassesPriorResults verifies the builder sees the prior step's
+// Result() in the closure argument so branch selection can depend on the
+// earlier answer.
+func TestLazyGroupPassesPriorResults(t *testing.T) {
+	a := newFake("a")
+	a.result = "agent-x"
+
+	var capturedPrev []any
+	group := NewLazyGroup("Branch", func(prev []any) []Step {
+		capturedPrev = prev
+		return []Step{newFake("spliced")}
+	})
+
+	h := New("BANNER", "TEST", []Step{a, group})
+
+	a.done = true
+	_, _ = h.Update(runeKey('x'))
+
+	if got, want := len(capturedPrev), 1; got != want {
+		t.Fatalf("expected %d prior results, got %d", want, got)
+	}
+	if capturedPrev[0] != "agent-x" {
+		t.Fatalf("expected prev[0]=%q, got %v", "agent-x", capturedPrev[0])
+	}
+}
+
 // cmdContainsSentinel walks a tea.Cmd (expanding tea.BatchMsg one level) and
 // returns true if any produced message is a resetSentinelMsg.
 func cmdContainsSentinel(cmd tea.Cmd) bool {

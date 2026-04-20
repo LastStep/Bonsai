@@ -109,6 +109,32 @@ func TestMultiSelectStepResetRestoresView(t *testing.T) {
 	}
 }
 
+// TestNoteStepViewNonEmpty verifies NoteStep renders visible content after
+// construction (the harness will use the View output as the first frame).
+func TestNoteStepViewNonEmpty(t *testing.T) {
+	s := NewNote("Workspace", "Tech Lead workspace: station/")
+	if strings.TrimSpace(s.View()) == "" {
+		t.Fatalf("NoteStep.View() empty after construction")
+	}
+}
+
+// TestNoteStepResetRestoresView — same guard as the other per-adapter Reset
+// tests: after the underlying form completes, huh's unexported f.quitting
+// blanks View(); Reset() must rebuild the form so content re-renders.
+func TestNoteStepResetRestoresView(t *testing.T) {
+	s := NewNote("Adding", "agent X is installed at foo/ — showing uninstalled abilities.")
+	s.form.State = huh.StateCompleted
+
+	s.Reset()
+
+	if strings.TrimSpace(s.View()) == "" {
+		t.Fatalf("NoteStep.View() after Reset() is empty")
+	}
+	if s.form.State == huh.StateCompleted {
+		t.Fatalf("NoteStep.Reset() left form in StateCompleted; expected a fresh form")
+	}
+}
+
 // TestMultiSelectStepResetPreservesPicks verifies that on re-entry after Esc,
 // the builder re-applies Selected(true) to options matching the user's prior
 // picks. huh's MultiSelect eagerly populates the value slice on Focus (see

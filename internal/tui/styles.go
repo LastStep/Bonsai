@@ -285,10 +285,11 @@ func EmptyPanel(msg string) {
 	fmt.Println("\n" + indent(PanelEmpty.Render(msg), 2))
 }
 
-// TitledPanel renders a bordered panel with the title embedded in the top border.
-// The panel is capped to the terminal width so borders don't break when content
-// is wider than the visible columns; over-long lines are truncated with an ellipsis.
-func TitledPanel(title, content string, color lipgloss.TerminalColor) {
+// TitledPanelString renders the same bordered panel as TitledPanel and returns
+// the result as a string (with a leading newline, matching the side-effecting
+// TitledPanel's fmt.Println output). Use inside AltScreen or when composing
+// with other styled content.
+func TitledPanelString(title, content string, color lipgloss.TerminalColor) string {
 	bdr := lipgloss.NewStyle().Foreground(color)
 	ttl := lipgloss.NewStyle().Foreground(color).Bold(true)
 
@@ -353,7 +354,14 @@ func TitledPanel(title, content string, color lipgloss.TerminalColor) {
 	buf.WriteString("  " + emptyLine + "\n")
 	buf.WriteString("  " + bottom)
 
-	fmt.Println("\n" + buf.String())
+	return "\n" + buf.String()
+}
+
+// TitledPanel renders a bordered panel with the title embedded in the top border.
+// The panel is capped to the terminal width so borders don't break when content
+// is wider than the visible columns; over-long lines are truncated with an ellipsis.
+func TitledPanel(title, content string, color lipgloss.TerminalColor) {
+	fmt.Println(TitledPanelString(title, content, color))
 }
 
 // ─── Data Display ─────────────────────────────────────────────────────────

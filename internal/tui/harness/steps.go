@@ -573,6 +573,100 @@ func (l *LazyStep) AutoComplete() bool {
 	return false
 }
 
+// ─── LazyGroup ────────────────────────────────────────────────────────────
+
+// LazyGroup is a placeholder step that, on first entry, expands into a slice
+// of steps spliced into the harness at its position. Used for multi-step
+// branches (e.g. "configure new agent" vs "add items to existing agent").
+// The builder runs once with prior results in scope.
+//
+// LazyGroup satisfies Step so it can live in the declaration-time step slice,
+// but its View/Update/Init are never driven — the harness splices it out
+// before the user sees a frame. The Done/Result methods likewise return zero
+// values because the group itself never produces a result; the steps it
+// expands into do.
+type LazyGroup struct {
+	title   string
+	build   func(prev []any) []Step
+	spliced bool
+}
+
+// NewLazyGroup constructs a LazyGroup.
+func NewLazyGroup(title string, build func(prev []any) []Step) *LazyGroup {
+	return &LazyGroup{title: title, build: build}
+}
+
+// Splice runs the builder with prior results and returns the sub-sequence to
+// splice in. The harness calls this exactly once, guarded by Spliced().
+func (g *LazyGroup) Splice(prev []any) []Step {
+	if g.spliced {
+		return nil
+	}
+	g.spliced = true
+	return g.build(prev)
+}
+
+// Spliced reports whether Splice has already run.
+func (g *LazyGroup) Spliced() bool { return g.spliced }
+
+// Title implements Step. Only surfaces in a breadcrumb if the harness somehow
+// fails to splice before View() runs — in normal operation the user never sees
+// this title.
+func (g *LazyGroup) Title() string                           { return g.title }
+func (g *LazyGroup) Done() bool                              { return false }
+func (g *LazyGroup) Result() any                             { return nil }
+func (g *LazyGroup) Init() tea.Cmd                           { return nil }
+func (g *LazyGroup) View() string                            { return "" }
+func (g *LazyGroup) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return g, nil }
+
+// ─── NoteStep ─────────────────────────────────────────────────────────────
+
+// NoteStep wraps huh.NewNote — a static information block the user advances
+// past by pressing Enter. Produces no result. Used for tech-lead workspace
+// info panels and "add items" intro lines.
+type NoteStep struct {
+	title string
+	body  string
+	form  *huh.Form
+}
+
+// NewNote constructs a NoteStep. title is the breadcrumb/huh title shown at
+// the top of the note; body is the description paragraph rendered beneath it.
+func NewNote(title, body string) *NoteStep {
+	step := &NoteStep{title: title, body: body}
+	step.form = step.buildForm()
+	return step
+}
+
+// buildForm constructs a fresh *huh.Form. See TextStep.buildForm for why we
+// rebuild instead of toggling form.State on Reset.
+func (s *NoteStep) buildForm() *huh.Form {
+	note := huh.NewNote().
+		Title(s.title).
+		Description(s.body).
+		Next(true)
+	return huh.NewForm(huh.NewGroup(note)).WithTheme(tui.BonsaiTheme())
+}
+
+func (s *NoteStep) Title() string { return s.title }
+func (s *NoteStep) Done() bool    { return s.form.State == huh.StateCompleted }
+func (s *NoteStep) Result() any   { return nil }
+func (s *NoteStep) Init() tea.Cmd { return s.form.Init() }
+func (s *NoteStep) View() string  { return s.form.View() }
+func (s *NoteStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	updated, cmd := s.form.Update(msg)
+	if f, ok := updated.(*huh.Form); ok {
+		s.form = f
+	}
+	return s, cmd
+}
+
+// Reset rebuilds the form so the note renders again on re-entry via Esc-back.
+func (s *NoteStep) Reset() tea.Cmd {
+	s.form = s.buildForm()
+	return s.form.Init()
+}
+
 // ─── Internal helpers ─────────────────────────────────────────────────────
 
 func valueOf(item tui.ItemOption) string {

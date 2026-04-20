@@ -245,8 +245,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 }
 
 // buildReviewPanel composes the static review block shown by the lazy
-// ReviewStep. It mirrors the original pre-harness layout: a TitledPanel-style
-// header line plus the categorised ItemTree for every selection.
+// ReviewStep. Uses the string-returning TitledPanelString so the harness can
+// render the full bordered panel inside AltScreen.
 func buildReviewPanel(cat *catalog.Catalog, agentDef *catalog.AgentDef, workspace string, prev []any) string {
 	// prev indices match the step declaration order in runInit.
 	selectedSkills := asStringSlice(prev[4])
@@ -254,19 +254,6 @@ func buildReviewPanel(cat *catalog.Catalog, agentDef *catalog.AgentDef, workspac
 	selectedProtocols := asStringSlice(prev[6])
 	selectedSensors := asStringSlice(prev[7])
 	selectedRoutines := asStringSlice(prev[8])
-
-	describer := func(name string) string {
-		if item := cat.GetItem(name); item != nil {
-			return item.Description
-		}
-		if sensor := cat.GetSensor(name); sensor != nil {
-			return sensor.Description
-		}
-		if routine := cat.GetRoutine(name); routine != nil {
-			return routine.Description
-		}
-		return ""
-	}
 
 	tree := tui.ItemTree(
 		tui.StyleLabel.Render(agentDef.DisplayName)+" "+tui.StyleMuted.Render(tui.GlyphArrow+" "+workspace),
@@ -277,12 +264,8 @@ func buildReviewPanel(cat *catalog.Catalog, agentDef *catalog.AgentDef, workspac
 			{Name: "Sensors", Items: selectedSensors},
 			{Name: "Routines", Items: selectedRoutines},
 		},
-		describer,
+		newDescriber(cat),
 	)
 
-	// In-screen panel: tinted heading + the tree, no full bordered TitledPanel
-	// (which writes directly to stdout via fmt.Println). Inside AltScreen we
-	// just want a string, so we render a lightweight equivalent.
-	heading := tui.StyleAccent.Bold(true).Render("Review")
-	return "  " + heading + "\n" + tree
+	return tui.TitledPanelString("Review", tree, tui.Water)
 }
