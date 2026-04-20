@@ -67,14 +67,8 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 ## P2 — Medium
 
-### Group A: Documentation Suite
+<!-- Group A: Documentation Suite — shipped 2026-04-20 via Plan 18 / PR #25. Decision: terminal cheatsheets (80–120 lines each) deep-linking to Starlight, instead of full-length mirrors of the website. Delivered: docs/quickstart.md, docs/concepts.md, docs/cli.md, multi-topic `bonsai guide` picker + direct-arg. Orphans (HANDBOOK.md, docs/triggers.md, docs/working-with-agents.md — 1,213 lines) deleted in same PR. -->
 
-> Resolves Roadmap Phase 1 "Usage instructions". The multi-topic command is the delivery mechanism; the three docs are the content. Ship incrementally — content first, CLI wiring last.
-
-- **[feature] Quickstart guide** — Write `docs/quickstart.md` as a post-install walkthrough: what `bonsai init` generated, what to read first, how to add your first code agent, running your first session with the Tech Lead, understanding the generated CLAUDE.md, and when to run routines. Distinct from the README quick start (which is 2 commands) — this is the "now what?" guide for after installation. *(added 2026-04-16, source: user)*
-- **[feature] Concepts guide** — Write `docs/concepts.md` explaining Bonsai's mental model for newcomers: station vs workspace, the 6-layer instruction stack, agents as team members, sensors as automated enforcement, routines as self-maintenance, the Playbook as project state, and how everything connects. Extract and reorganize content from HANDBOOK.md into a standalone conceptual overview aimed at someone evaluating whether to adopt Bonsai. *(added 2026-04-16, source: user)*
-- **[feature] CLI usage guide** — Write `docs/cli-usage.md` covering every command in depth: `init` walkthrough (what each prompt means, scaffolding choices, agent defaults), `add` (component selection, compatibility filtering, what gets generated), `remove` (clean vs file-preserving removal), `update` (conflict resolution flow, custom file detection), `list` and `catalog` (reading the output). Include practical scenarios: first-time setup, adding a second agent, upgrading after a Bonsai version bump, recovering from a bad update. Link from README guides table and `bonsai guide` multi-topic command. *(added 2026-04-16, source: user)*
-- **[feature] `bonsai guide` multi-topic command** — Expand `bonsai guide` from a single-doc renderer into a multi-topic CLI guide with an interactive Huh topic picker. Topics: **quickstart**, **concepts**, **catalog**, **custom-files** (existing). Implementation: each topic is a separate `docs/{topic}.md` file; `cmd/guide.go` adds a Huh select form when called without args; `bonsai guide <topic>` skips the picker. *(added 2026-04-16, source: plan-05 split)*
 
 ### Group B: Code Quality & Testing
 

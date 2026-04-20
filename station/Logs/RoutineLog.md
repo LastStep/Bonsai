@@ -20,6 +20,15 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-20 — Plan 18: `bonsai guide` multi-topic + legacy docs cleanup
+- **Plan:** Playbook/Plans/Active/18-bonsai-guide-multi-topic.md
+- **PR:** #25 (squash `e448140`)
+- **Iterations:** 1 execute-review cycle (no fix dispatch needed)
+- **Issues found:** none — all 4 agent-flagged decisions were reasonable interpretations
+- **Scope delivered:** 3 terminal cheatsheets (quickstart 93L, concepts 113L, cli 119L) + Huh picker + direct-arg allowlist; dropped 3 orphan docs (1,213 lines); CLAUDE.md doc-drift fix rolled in
+- **Verification:** CI green (test + lint + GitGuardian); post-merge `make build` + `go test ./...` + `./bonsai guide {quickstart,unknown,a b}` smoke all pass
+- **Result:** completed
+
 ### 2026-04-20 — Routine Digest
 - **Outcome:** success
 - **Reports processed:** 2 — Memory Consolidation, Status Hygiene (both 2026-04-20)

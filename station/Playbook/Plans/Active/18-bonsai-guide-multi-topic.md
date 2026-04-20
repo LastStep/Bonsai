@@ -1,7 +1,7 @@
 # Plan 18 — `bonsai guide` multi-topic + legacy docs cleanup
 
 **Tier:** 2
-**Status:** Active
+**Status:** Shipped — PR #25 merged 2026-04-20 (squash `e448140`)
 **Agent:** general-purpose (single worktree)
 
 ## Goal
