@@ -68,6 +68,7 @@
 | Performing a structured code review; Checking correctness, security, performance, and maintainability | [agent/Skills/review-checklist.md](agent/Skills/review-checklist.md) |
 | Classifying or triaging a new issue or bug report; Determining issue type, importance, and domain labels | [agent/Skills/issue-classification.md](agent/Skills/issue-classification.md) |
 | Creating a pull request with proper conventions; Setting up branch naming, PR title, and body template | [agent/Skills/pr-creation.md](agent/Skills/pr-creation.md) |
+| Working on BubbleTea / Charm-stack TUI code; Following harness/step/reducer patterns, component golden rules, and Huh embedding / emoji-width troubleshooting | [agent/Skills/bubbletea.md](agent/Skills/bubbletea.md) |
 
 ### Routines (periodic self-maintenance)
 

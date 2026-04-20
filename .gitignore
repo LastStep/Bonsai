@@ -15,6 +15,10 @@ vendor/
 .bonsai-lock.yaml
 *.bak
 
+# Secrets
+.env
+.env.*
+
 # Legacy
 .venv/
 

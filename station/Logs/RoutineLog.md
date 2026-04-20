@@ -20,6 +20,30 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-21 — Vulnerability Scan
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** no changes made (audit-only routine) — dashboard `last_ran` updated to 2026-04-21
+- **Flags:** 3 findings (1 new, 2 persistent, 2 resolved since last scan). NEW: GO-2026-4601 (net/url IPv6 parsing, reachable HIGH, `cmd/guide.go:92` via glamour). PERSISTENT (7d): `.env`/`.env.*` still absent from `.gitignore`; GO-2026-4602 (os.ReadDir in `internal/generate/scan.go:44`) still reachable. RESOLVED: GO-2025-3956 and GO-2025-3750 (cleared by go1.24.13). No SAST issues, no hardcoded secrets found. Cross-referenced with today's dependency-audit report — same stdlib CVEs, single fix: upgrade Go 1.24.13 → 1.25.8+. Missing tools: semgrep, gitleaks, trufflehog (Grep fallback used).
+- **Report:** `Reports/Pending/2026-04-21-vulnerability-scan.md`
+
+### 2026-04-21 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes made (audit-only routine) — dashboard `last_ran` updated to 2026-04-21
+- **Flags:** 5 items flagged — (1) [low] `station/INDEX.md` architecture diagram doesn't mention BubbleTea harness added by Plan 15; (2) [info] `bubbletea` custom skill in `agent/Skills/` not listed in CLAUDE.md Skills nav table; (3) [medium] root `Bonsai/CLAUDE.md` project-structure tree's `internal/tui/` block missing `harness/` subdir + `styles_test.go` (Plan 15 drift); (4) [low] Routines table in CLAUDE.md + routines.md dashboard has a broken blank row splitting it into fragments; (5) [info] 10+ stale `.bak` files across `agent/` subdirectories from 2026-04-15 marker migration
+- **Report:** `Reports/Pending/2026-04-21-doc-freshness-check.md`
+
+### 2026-04-21 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** no changes made (audit-only routine) — no Backlog entries removed, no promotions, dashboard `last_ran` updated
+- **Flags:** 4 items flagged for user — (1) Status.md Pending row for "Better trigger sections — Phase C" has stale Blocked By (UI/UX Phase 3 shipped via Plan 14 / PR #24 on 2026-04-17); (2) Roadmap.md Phase 1 checkboxes for "UI overhaul" and "Usage instructions" appear stale (plans shipped); (3) near-duplicate between Group C "CHANGELOG.md + richer release notes" (line 91) and Group D "Changelog generation skill" (line 101); (4) "No Plans Index file" finding from 2026-04-20 Status Hygiene not captured in Backlog
+- **Report:** `Reports/Pending/2026-04-21-backlog-hygiene.md`
+
 ### 2026-04-20 — Plan 18: `bonsai guide` multi-topic + legacy docs cleanup
 - **Plan:** Playbook/Plans/Active/18-bonsai-guide-multi-topic.md
 - **PR:** #25 (squash `e448140`)
@@ -182,3 +206,20 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Iterations:** 1 execute-review cycle
 - **Issues found:** Agent created PR on `feat/usage-instructions` branch but also left a stale `worktree-agent-ad11a6d4` branch ref — cleaned up during review
 - **Result:** completed — PR #7 (ready for review)
+
+### 2026-04-21 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~2 minutes
+- **Changes:** no changes made (audit-only routine)
+- **Flags:** 11 Go vulns (2 reachable stdlib in `os`/`net/url`, 3 unreachable via `golang.org/x/net` v0.38.0 + stdlib TOCTOU, 6 unreachable stdlib-module-level) — all cleared by Go 1.24.13 → 1.25.9 toolchain bump + `golang.org/x/net@latest`. npm audit on `website/` clean (0 vulns, 455 deps). Python/Rust/Ruby ecosystems N/A (no manifest).
+- **Report:** `Reports/Pending/2026-04-21-dependency-audit.md`
+
+### 2026-04-21 — Routine Digest
+- **Outcome:** success
+- **Reports processed:** 4 — backlog-hygiene, doc-freshness-check, dependency-audit, vulnerability-scan
+- **Quick fixes applied:** 4 — added `.env`/`.env.*` to root `.gitignore`, checked "UI overhaul" + "Usage instructions" boxes in Roadmap Phase 1, deleted 16 stale `.bak` files across `agent/` subdirs, added `bubbletea` row to Skills nav table in `station/CLAUDE.md`
+- **Backlog items added:** 9 — P1 Go toolchain upgrade (rewrote existing GO-2026-4602 watch item to full upgrade scope); P2: routines-dashboard table fix (Group B), CHANGELOG consolidation decision (Group C), root `Bonsai/CLAUDE.md` tree drift (Group E), Plans Index decision (Group E), `golang.org/x/net` bump (Ungrouped), re-plan "Better trigger sections — Phase C" (Ungrouped); P3: batch Go module refresh (Research), root-CLAUDE.md check sub-step for doc-freshness routine (Routine Enhancements), reduce npm audit cadence (Routine Enhancements)
+- **Plan report written:** no (P1 Go upgrade added to Backlog as agreed rather than plan-worthy digest report)
+- **Warnings acknowledged:** 2 — scan tool gaps (semgrep/gitleaks/trufflehog — already on Backlog since 2026-04-16); `.env`/.gitignore persistence (subsumed by A4 quick fix)
+- **Incidental flag:** GitHub PAT in `~/.claude/settings.json` leaked to conversation context — advised user to rotate (not from routines)
