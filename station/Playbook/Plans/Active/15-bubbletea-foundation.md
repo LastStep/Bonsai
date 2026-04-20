@@ -82,6 +82,7 @@ Plan 15 introduces a single long-lived BubbleTea harness that owns the screen fo
 | 2.1 | Post-ship reviewer fixes — stale review panel on Esc-back, tech-lead bootstrap, all-installed zero-keystroke, defensive harness guards | Shipped (ui-ux-testing @ d0e6256) |
 | 3 | Harness primitives (`SpinnerStep`, `ConditionalStep`, splice WindowSize re-broadcast, Splice/Build panic recovery) + carry-forward reviewer nits (nested-splicer docstring, LazyStep-in-LazyGroup test, workspace validator filepath.Clean) + migrate `cmd/remove.go` + `cmd/update.go` + retro-fit `cmd/init.go`/`cmd/add.go` to use SpinnerStep + conflict-picker LazyGroup so Ctrl-C during generate is the same clean-exit path as the interactive portion | Shipped (ui-ux-testing @ a406908) |
 | 3.1 | Reviewer fixes — `cmd/add.go` conflict-picker index regression (literal `3` discarded user picks; now computes from `len(results)-2` when `wr.HasConflicts()`). 4 non-fix nits routed to Backlog Group F. | Shipped (ui-ux-testing) |
+| 3.2 | Dogfooding fix — sort `ctx.OtherAgents` in `generate.go` so re-renders are byte-identical. Resolves the long-standing "every file updated" symptom on `bonsai update` (pre-existing Group F bug, surfaced again in iter 3 dogfooding). | Shipped (ui-ux-testing @ 4b35971) |
 
 ---
 
