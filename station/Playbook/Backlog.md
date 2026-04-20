@@ -52,7 +52,8 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 <!-- "Silent error swallowing in spinner callbacks" — fixed 2026-04-21 via Plan 19 / PR #27 (squash a44e447): errors.Join aggregation at all ~30 sites + Warning surfaces in init/add/remove/update -->
 <!-- "Upgrade Go toolchain 1.24.13 → 1.25.9" — shipped 2026-04-21 via Plan 20 / PR #28 (Go 1.25.8 + golangci-lint pin v2.11.4); govulncheck now 0 reachable findings in CI -->
-- **[debt] Triage Dependabot auto-PRs #32–#39** `[Group G]` — First weekly Dependabot run (triggered by Plan 20 PR #31 landing) opened 8 PRs: 3 gomod (x/term 0.36→0.42, charmbracelet/x/ansi 0.11.6→0.11.7, go-isatty 0.0.20→0.0.21) + 5 github-actions (golangci-lint-action 8→9, setup-go 5→6, setup-node 4→6, upload-pages-artifact 3→5, goreleaser-action 6→7). Review each for breaking changes, merge the trivial ones, hold or pin the majors (golangci-lint-action 9 may need config check; goreleaser-action 7 may need `.goreleaser.yaml` migration). *(added 2026-04-21, source: session — Plan 20 shipment)*
+<!-- "Triage Dependabot auto-PRs #32–#39" — completed 2026-04-21: 7 of 8 merged (#32 #33 #34 #35 #36 #38 #39); #37 (x/term 0.36→0.42) still in flight post-rebase. Release-notes review confirmed no breaking impact for our configs -->
+- **[debt] CodeQL Action v3 → v4** — GH deprecation notice: CodeQL Action v3 will be deprecated December 2026. Update `.github/workflows/codeql.yml` `github/codeql-action/{init,autobuild,analyze}` pins from `@v3` to `@v4` when v4 ships and Dependabot opens the bump PR. No urgency — lots of runway. *(added 2026-04-21, source: session — surfaced on PR #38 CI run)*
 <!-- "triggerSection() prepends before YAML frontmatter" — fixed 2026-04-17 via injectTriggerSection helper, Plan 17 / PR #24 -->
 <!-- "Upgrade Go toolchain from 1.24.3 to 1.24.13+" — fixed 2026-04-17, Plan 17 / PR #24 -->
 <!-- "Spinner error swallowing" — scope-deferred to Plan 15 harness work, 2026-04-17 -->
