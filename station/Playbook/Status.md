@@ -17,7 +17,7 @@ description: Live task tracker. Update this file at the start and end of every w
 <!-- Documentation site (Starlight) — Plan 10 complete, all phases shipped (PRs #13-19) -->
 <!-- UI/UX overhaul Phase 2 — merged PR #20, moved to Recently Done 2026-04-17 -->
 <!-- ActionUnchanged follow-ups — merged PR #22, moved to Recently Done 2026-04-17 -->
-| BubbleTea foundation + theme system (migrate init/add/remove/update onto shared harness) | 15 | general-purpose | On `ui-ux-testing` branch. Iter 1 + 2 + 2.1 + 3 + 3.1 + 3.2 (OtherAgents sort) shipped locally. User confirmed dogfooding clean. Pending: merge `main` into branch + merge `ui-ux-testing` → `main` |
+<!-- Plan 15 (BubbleTea foundation) — merged PR #26 squash 2ce63f6 2026-04-20, moved to Recently Done -->
 <!-- Plan 18 (`bonsai guide` multi-topic) — merged PR #25 2026-04-20, moved to Recently Done -->
 <!-- Plan 16 (`go install` binary name) — merged PR #23 2026-04-20, moved to Recently Done -->
 
@@ -40,6 +40,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| BubbleTea foundation + theme system — harness migration across init/add/remove/update (PR #26 squash `2ce63f6`) | 15 | general-purpose | 2026-04-20 |
 | `bonsai guide` multi-topic — 3 cheatsheets + delete 3 orphan docs (1,213L) + CLI refactor (PR #25) | 18 | general-purpose | 2026-04-20 |
 | Fix `go install` binary name — main.go → cmd/bonsai/ + root embed package (PR #23) | 16 | general-purpose | 2026-04-20 |
 | Release prep — Go toolchain 1.24.13 + triggerSection frontmatter fix + OSS polish (PR #24) | 17 | general-purpose | 2026-04-17 |
