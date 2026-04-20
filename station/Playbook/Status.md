@@ -14,6 +14,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
+<!-- Plan 19 (pre-launch bug sweep) — merged PR #27 squash a44e447 2026-04-21, moved to Recently Done -->
 <!-- Documentation site (Starlight) — Plan 10 complete, all phases shipped (PRs #13-19) -->
 <!-- UI/UX overhaul Phase 2 — merged PR #20, moved to Recently Done 2026-04-17 -->
 <!-- ActionUnchanged follow-ups — merged PR #22, moved to Recently Done 2026-04-17 -->
@@ -40,6 +41,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Pre-launch bug sweep — 8 OSS-blocker fixes: CRLF, cross-workspace tree, dedup, spinner errors.Join, harness polish (PR #27 squash `a44e447`) | 19 | general-purpose | 2026-04-21 |
 | BubbleTea foundation + theme system — harness migration across init/add/remove/update (PR #26 squash `2ce63f6`) | 15 | general-purpose | 2026-04-20 |
 | `bonsai guide` multi-topic — 3 cheatsheets + delete 3 orphan docs (1,213L) + CLI refactor (PR #25) | 18 | general-purpose | 2026-04-20 |
 | Fix `go install` binary name — main.go → cmd/bonsai/ + root embed package (PR #23) | 16 | general-purpose | 2026-04-20 |

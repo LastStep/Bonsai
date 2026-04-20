@@ -13,10 +13,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Plan 15 shipped + post-merge cleanup complete.
+**Current task:** Idle. Plan 19 shipped; OSS launch gating items reduced from 8 blockers to 0.
 **In flight (other tracks):** None.
 **Blocked on:** Nothing.
-**Last completed:** Post-Plan-15 cleanup in main worktree (2026-04-20). (1) Pulled PR #26 squash `2ce63f6` (BubbleTea harness — init/add/remove/update on shared harness, +5764 lines). (2) Cherry-picked `9ee5e5d` wrap-up (`b3db672` on main) — Status.md move-to-done, memory idle-state, new `Logs/2026-04-20-plan-15-merge-to-main.md`, 2 new learnings. (3) Removed `/home/rohan/ZenGarden/Bonsai-uiux` worktree. (4) Deleted local `ui-ux-testing` branch (content preserved via squash). (5) Updated Backlog spinner-swallowing entry (harness now supports `func() error`, ~30 callsites still use `_ =` for parity — see `cmd/remove.go:runRemoveItemAction` comment). (6) Pushed main (`5e9255f`). Safety branches `ui-ux-testing-pre-rebase` + `ui-ux-testing-pre-iter2-rebase` retained — delete ~2026-05-20.
+**Last completed:** Plan 19 — Pre-launch bug sweep (2026-04-21, PR #27 squash `a44e447`, +541 / -73 across 13 files). Bundled 4 Tier 1 fresh-install blockers (CRLF defence via .gitattributes + `normalizeShellLF`; `showWriteResults` cross-workspace bucket-by-top-segment; `applyCustomFileSelection` dedup via `appendUnique`; spinner `errors.Join` at ~30 sites + Warning surfaces) with 4 Tier 2 harness polish items (SpinnerStep goroutine `recover`; `NewConditional` nil-predicate guard; Esc-back predicate re-eval via harness SetPrior-before-Reset + `Conditional.Reset` re-evaluation; `bonsai add` drop duplicate NoteStep). Issue-to-implementation workflow end-to-end, worktree-isolated dispatch (general-purpose agent, ~15min wall), 6 new tests + 3 subtests all green. Plan doc: `Plans/Active/19-pre-launch-bug-sweep.md`. Session log: `Logs/2026-04-21-plan-19-bug-sweep.md`.
 
 ## Notes
 
