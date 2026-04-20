@@ -1218,6 +1218,13 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 			})
 		}
 	}
+	// Sort for deterministic template output. Map iteration order is randomised
+	// per process, so without this every re-render of templates that range over
+	// OtherAgents (agent identities, scope-guard, dispatch-guard) emits a
+	// different byte order and the lockfile flags every file as Updated.
+	sort.Slice(ctx.OtherAgents, func(i, j int) bool {
+		return ctx.OtherAgents[i].AgentType < ctx.OtherAgents[j].AgentType
+	})
 
 	// 1. Core files (layered: shared defaults from catalog/core/, agent overrides from agent core/)
 	coreDir := filepath.Join(agentDir, "Core")

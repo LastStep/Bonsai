@@ -102,3 +102,29 @@ func TestAnswerShowsSkippedForEmpty(t *testing.T) {
 		t.Errorf("Answer with empty value should render %q; got:\n%s", "(skipped)", out)
 	}
 }
+
+func TestTitledPanelStringIncludesTitle(t *testing.T) {
+	got := TitledPanelString("Review", "alpha\nbeta", Water)
+	if !strings.Contains(got, "Review") {
+		t.Errorf("TitledPanelString output missing title %q; got:\n%s", "Review", got)
+	}
+}
+
+func TestTitledPanelStringMultilineBody(t *testing.T) {
+	got := TitledPanelString("Review", "alpha\nbeta", Water)
+	for _, want := range []string{"alpha", "beta"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("TitledPanelString should preserve body line %q; got:\n%s", want, got)
+		}
+	}
+}
+
+func TestTitledPanelPrintsSameAsString(t *testing.T) {
+	want := TitledPanelString("Review", "alpha\nbeta", Water) + "\n"
+	got := captureStdout(t, func() {
+		TitledPanel("Review", "alpha\nbeta", Water)
+	})
+	if got != want {
+		t.Errorf("TitledPanel stdout output differs from TitledPanelString.\nwant:\n%q\ngot:\n%q", want, got)
+	}
+}

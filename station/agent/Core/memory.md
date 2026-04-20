@@ -13,11 +13,11 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** None in-session. Awaiting next pickup.
+**Current task:** Idle. Plan 15 iter 3 + 3.1 + 3.2 all shipped on `ui-ux-testing`; user confirmed dogfooding clean. Next session: merge `main` into branch (incorporates 6 commits including Plan 18) → push → PR squash-merge to main.
 **In flight (other tracks):**
-- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch, parallel session driving iter 2/3. **Rebased onto current main 2026-04-20.** Branch is now `main + 3 commits` (Plan 15 iter 1 only: harness `8aab2fd`, Esc-back fix `86e57f0`, reports `2d7a947`). Plan 14 commits dropped (already on main via Plan 17 squash bundle). Old tip preserved as `ui-ux-testing-pre-rebase` (`2fa91d0`) — keep ~30d for safety. Build + tests verified post-rebase. **Dedicated worktree at `/home/rohan/ZenGarden/Bonsai-uiux` (created 2026-04-20)** — Plan 15 iter 2/3 runs in a separate Claude session there; main-branch work runs here in `/home/rohan/ZenGarden/Bonsai`.
-**Blocked on:** Nothing in this session.
-**Last completed:** Plan 18 merged to main via PR #25 (`e448140`, 2026-04-20). `bonsai guide` now renders 4 terminal cheatsheets (quickstart/concepts/cli/custom-files) via Huh picker or direct arg; 3 orphan docs (HANDBOOK.md, docs/triggers.md, docs/working-with-agents.md — 1,213 lines) deleted; CLAUDE.md doc-drift fix rolled in. Post-merge hotfix `e336ccb` replaced an MDX-incompatible `<https://...>` autolink in `website/src/content/docs/commands/guide.mdx` — Deploy Docs workflow now green on main.
+- Plan 15 (BubbleTea foundation) — on `ui-ux-testing` branch. All iters shipped locally. Latest: `4b35971` iter-3.2 OtherAgents sort, `b4cb17f` iter-3.1 doc reconcile, `39d9da3` iter-3.1 add.go index fix, `a406908` iter-3 full migration. Safety branches: `ui-ux-testing-pre-rebase` (`2fa91d0`) + `ui-ux-testing-pre-iter2-rebase` (`2d7a947`) — keep ~30d. Main merged into branch 2026-04-20 (pulls in Plan 18). Pending: push → PR squash-merge to main.
+**Blocked on:** Nothing.
+**Last completed:** Plan 15 iter 3.2 — user dogfooded iter 3 on Bonsai-Test and reported "all files being updated" on `bonsai update` even after a fresh init+add. Root cause: `AgentWorkspace` at `internal/generate/generate.go:1213` iterated `cfg.Agents` (a map) to build `ctx.OtherAgents`, producing nondeterministic order. 8 templates `range .OtherAgents` (every agent identity + scope-guard + dispatch-guard sensors) → re-renders had different bytes → every file flagged ActionUpdated. Pre-existing Group F bug, surfaced again. Fixed via `sort.Slice` by AgentType after the build loop. User also asked "where's the spinner" — answered: generation completes in ~50–150ms which is sub-frame for the 80ms spinner tick; working as designed but visually invisible at this speed. Optional follow-up: artificial minimum display time (deferred — no Backlog entry, raise if user mentions again).
 
 ## Notes
 

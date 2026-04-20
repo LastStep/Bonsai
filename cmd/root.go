@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/config"
 	"github.com/LastStep/Bonsai/internal/generate"
 	"github.com/LastStep/Bonsai/internal/tui"
+	"github.com/LastStep/Bonsai/internal/tui/harness"
 )
 
 const configFile = ".bonsai.yaml"
@@ -84,35 +84,71 @@ func Execute(fsys fs.FS, guides map[string]string) {
 	}
 }
 
-// resolveConflicts shows a multi-select picker for user-modified files.
-// Users check the files they want to update (overwrite) and uncheck to skip.
-func resolveConflicts(wr *generate.WriteResult, lock *config.LockFile, projectRoot string) {
+// buildConflictSteps returns the harness steps for the conflict-resolution
+// picker. Returns nil when wr.HasConflicts() is false so callers can splice
+// the result into a LazyGroup without a wrapper conditional.
+//
+// Layout:
+//   - [0] MultiSelectStep — list of conflict paths, all pre-selected (the
+//     user unchecks files they want to KEEP their changes on).
+//   - [1] ConditionalStep wrapping a ConfirmStep — only asks about backups
+//     when the user picked at least one file to overwrite.
+//
+// The harness only captures the picks. Apply them with applyConflictPicks
+// in the post-harness block — wr.ForceSelected mutates lock state and the
+// optional .bak writes happen there too.
+func buildConflictSteps(wr *generate.WriteResult) []harness.Step {
 	conflicts := wr.Conflicts()
 	if len(conflicts) == 0 {
-		return
+		return nil
 	}
 
-	tui.Blank()
-	tui.Warning(fmt.Sprintf("%d file(s) modified since Bonsai generated them.", len(conflicts)))
-	tui.Info("Select which files to update. Unchecked files keep your changes.")
-	tui.Blank()
-
-	// Build multi-select options — all pre-selected for update
-	var options []huh.Option[string]
+	available := make([]tui.ItemOption, 0, len(conflicts))
+	defaults := make([]string, 0, len(conflicts))
 	for _, c := range conflicts {
-		options = append(options, huh.NewOption(c.RelPath, c.RelPath).Selected(true))
+		available = append(available, tui.ItemOption{
+			Name:  c.RelPath,
+			Value: c.RelPath,
+			Desc:  "modified since last generate",
+		})
+		defaults = append(defaults, c.RelPath)
 	}
 
-	selected, err := tui.AskMultiSelect("Update these files?", options)
-	if err != nil || len(selected) == 0 {
-		return // user cancelled or unchecked everything
+	return []harness.Step{
+		harness.NewMultiSelect("Conflicts",
+			fmt.Sprintf("%d file(s) modified since Bonsai generated them. Select which to update — unchecked files keep your changes.", len(conflicts)),
+			available, defaults),
+		harness.NewConditional(
+			harness.NewConfirm("Backup", "Create .bak backups before overwriting?", false),
+			func(prev []any) bool {
+				if len(prev) == 0 {
+					return false
+				}
+				picks := asStringSlice(prev[len(prev)-1])
+				return len(picks) > 0
+			},
+		),
 	}
+}
 
-	// Offer backup for the selected files
-	backup, err := tui.AskConfirm("Create .bak backups before overwriting?", false)
-	if err != nil {
-		return
+// applyConflictPicks consumes the harness results from buildConflictSteps
+// (the trailing two slots in the results slice) and runs the file mutations
+// the legacy resolveConflicts did inline. confIdx is the index of the
+// MultiSelectStep result in the results slice; backupIdx is confIdx+1.
+//
+// Tolerates the slot being absent (LazyGroup spliced nothing) by returning
+// false, so callers can pass a sentinel index without checking length first.
+func applyConflictPicks(results []any, confIdx int, wr *generate.WriteResult,
+	lock *config.LockFile, projectRoot string) bool {
+	if confIdx < 0 || confIdx >= len(results) {
+		return false
 	}
+	selected := asStringSlice(results[confIdx])
+	if len(selected) == 0 {
+		return false
+	}
+	backupIdx := confIdx + 1
+	backup := backupIdx < len(results) && asBool(results[backupIdx])
 	if backup {
 		for _, relPath := range selected {
 			abs := filepath.Join(projectRoot, relPath)
@@ -121,10 +157,9 @@ func resolveConflicts(wr *generate.WriteResult, lock *config.LockFile, projectRo
 				_ = os.WriteFile(abs+".bak", data, 0644)
 			}
 		}
-		tui.Info(fmt.Sprintf("Backed up %d file(s) with .bak extension.", len(selected)))
 	}
-
 	wr.ForceSelected(selected, projectRoot, lock)
+	return true
 }
 
 // showWriteResults displays categorized file trees for generation outcomes.
