@@ -13,11 +13,11 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. PR #46 squash-merged 2026-04-21; main `d14edbe`.
+**Current task:** Plan 22 — `bonsai init` cinematic redesign. Phase 1 shipped 2026-04-21 via PR #47 squash `7553d43`. Next: Phase 2 (initflow package + chrome + env-flag entrypoint, behind `BONSAI_REDESIGN=1`).
 **In flight (other tracks):** None.
 **Blocked on:** Nothing.
 **Loose ends (uncommitted):** None.
-**Last completed:** PR #46 `d14edbe` — Plan 21 session-start context dedup + Plan 08 Phase C sensors (C1 compact-recovery + C2 context-guard verify/plan patterns; C3 deferred permanently). session-context sensor dump reduced 34.3KB→30.9KB (~10%); drops end-of-session misfire reminder, protocol memory.md + session-start.md auto-injections, full FieldNotes when empty, full Reports/Pending cat → summary. session-start.md protocol rewritten short. UX preferences moved from station/self-awareness.md (-54 lines) to memory.md Feedback (+54). New sensor: `compact-recovery` (SessionStart, matcher=compact) fires only after /compact; session-context now matcher=`startup|resume|clear`. Prior: PR #44 session wrap-up (2026-04-21-plan-20-and-group-g.md log + Backlog stale-worktree audit), squash `fe89423`. Plan 20 core (6 PRs): #28 #29 #30 #31 #40 #41; wrap-up PR #42 `9cf577e`; gitleaks 0/156. Group G Dependabot: 8 PRs merged 2026-04-21 (#32-#39).
+**Last completed:** PR #47 `7553d43` — Plan 22 Phase 1: `tui.RenderFileTree` + `TreeNode`/`NodeKind`/`NodeStatus`/`FileTreeOpts` in `internal/tui/filetree.go` (326L) + 9 rule tests + demo in `filetree_test.go` (268L) + `ColorLeafDim`/`ColorRule`/`ColorRule2` tokens in `styles.go` (+10L). Net 604 adds, 0 dels. CI green (test/lint/govulncheck/gitleaks/CodeQL). No new deps (`charmbracelet/x/ansi` + `muesli/termenv` already in go.mod). Existing flat `tui.FileTree(files, rootLabel)` at styles.go:472 untouched — callers in cmd/root.go still bind. Review pass PASS from independent agent. Plan 22 review refined 7 items before dispatch (FileTree2 name → RenderFileTree, demo binary via TestRenderFileTree_Demo via t.Log instead of broken `go:build ignore`, add strings import to fallback.go example, thread agentDef.DisplayName + startedAt through stage ctors, explicit test-sweep on legacy deletion, BranchesStage Reset semantics documented). Prior: PR #46 `d14edbe` — Plan 21 session-start context dedup + Plan 08 Phase C sensors. PR #44 session wrap-up squash `fe89423`. Plan 20 (6 PRs): #28 #29 #30 #31 #40 #41. Group G Dependabot: 8 PRs merged 2026-04-21 (#32-#39).
 
 ## Notes
 
