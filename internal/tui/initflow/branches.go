@@ -398,15 +398,19 @@ func (s *BranchesStage) renderTabIntro() string {
 }
 
 // renderDetails renders the fixed-height details block below the list.
-// Height is constant across both states (header + 2 ABOUT rows + 1 FILE row
-// = 4 visible lines) so toggling `?` never shifts the counter below —
+// Height is constant across both states (header + 3 ABOUT rows + 1 FILE row
+// = 5 visible lines) so toggling `?` never shifts the counter below —
 // eliminates the viewport jitter that both inline-expand and variable-height
-// collapsed states would cause. ABOUT word-wraps to 2 lines with a trailing
-// "…" on overflow; FILE is tail-truncated with a leading "…".
+// collapsed states would cause. ABOUT word-wraps to 3 lines with a trailing
+// "…" on overflow (3 × 70 = 210 cells absorbs every current catalog
+// description). FILE is tail-truncated with a leading "…". ABOUT + FILE
+// values render in ColorAccent (white) for maximum legibility against the
+// dim surround.
 func (s *BranchesStage) renderDetails() string {
 	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	value := lipgloss.NewStyle().Foreground(tui.ColorAccent)
 
 	header := leaf.Render(strings.Repeat("─", 3)) + " " +
 		bark.Render("DETAILS") + " " +
@@ -414,36 +418,34 @@ func (s *BranchesStage) renderDetails() string {
 
 	const labelW = 10
 	const indent = "    "
-	const contentW = 60 // visible cells for ABOUT/FILE value column
+	const contentW = 70 // visible cells for ABOUT/FILE value column
+	const aboutRows = 3
 
 	if !s.expanded {
 		hint := indent + dim.Render("press ? to reveal ABOUT + FILE on the focused ability")
 		blank := indent
-		return header + "\n" + hint + "\n" + blank + "\n" + blank
+		return header + "\n" + hint + "\n" + blank + "\n" + blank + "\n" + blank
 	}
 
 	cat := s.currentCat()
 	if cat == nil || len(cat.items) == 0 {
 		empty := indent + dim.Render("(nothing to show)")
 		blank := indent
-		return header + "\n" + empty + "\n" + blank + "\n" + blank
+		return header + "\n" + empty + "\n" + blank + "\n" + blank + "\n" + blank
 	}
 	row := s.itemIdx[s.catIdx]
 	if row < 0 || row >= len(cat.items) {
 		empty := indent + dim.Render("(nothing to show)")
 		blank := indent
-		return header + "\n" + empty + "\n" + blank + "\n" + blank
+		return header + "\n" + empty + "\n" + blank + "\n" + blank + "\n" + blank
 	}
 	it := cat.items[row]
-
-	label := lipgloss.NewStyle().Foreground(tui.ColorSubtle)
 
 	about := it.description
 	if about == "" {
 		about = "—"
 	}
 	aboutLines := wrapToWidth(about, contentW)
-	const aboutRows = 2
 	if len(aboutLines) > aboutRows {
 		last := aboutLines[aboutRows-1]
 		rr := []rune(last)
@@ -467,10 +469,11 @@ func (s *BranchesStage) renderDetails() string {
 		file = "…" + string(fileRR[len(fileRR)-contentW+1:])
 	}
 
-	aboutRow1 := indent + bark.Render(padRight("ABOUT", labelW)) + label.Render(aboutLines[0])
-	aboutRow2 := indent + strings.Repeat(" ", labelW) + label.Render(aboutLines[1])
-	fileRow := indent + bark.Render(padRight("FILE", labelW)) + dim.Render(file)
-	return header + "\n" + aboutRow1 + "\n" + aboutRow2 + "\n" + fileRow
+	aboutRow1 := indent + bark.Render(padRight("ABOUT", labelW)) + value.Render(aboutLines[0])
+	aboutRow2 := indent + strings.Repeat(" ", labelW) + value.Render(aboutLines[1])
+	aboutRow3 := indent + strings.Repeat(" ", labelW) + value.Render(aboutLines[2])
+	fileRow := indent + bark.Render(padRight("FILE", labelW)) + value.Render(file)
+	return header + "\n" + aboutRow1 + "\n" + aboutRow2 + "\n" + aboutRow3 + "\n" + fileRow
 }
 
 // renderTabs renders the 5-column tab header: kanji + display name on row 1,
