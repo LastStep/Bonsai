@@ -2,6 +2,7 @@ package initflow
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -376,5 +377,69 @@ func TestBranches_SelectionPersistsAcrossTabs(t *testing.T) {
 	branchesPressKey(s, tea.KeyLeft)
 	if s.itemIdx[0] != 2 {
 		t.Fatalf("skills focus not restored: itemIdx[0] = %d, want 2", s.itemIdx[0])
+	}
+}
+
+// TestBranches_NarrowDoesNotClipTag verifies the DEFAULT / (required)
+// tag column stays visible at narrow (but ≥floor) widths. Regression
+// guard against the user-reported 2026-04-21 bug where <100-col terminals
+// clipped the tag off the right edge.
+func TestBranches_NarrowDoesNotClipTag(t *testing.T) {
+	s := newTestBranches()
+	s.width = 80
+	s.height = 30
+	// Focus on alpha-skill (required) so the rendered row carries the tag.
+	row := s.renderRow(0)
+	// rendered row may contain ANSI; strip by checking the visible
+	// substring. "(required)" must survive.
+	if !strings.Contains(row, "(required)") {
+		t.Errorf("80-col render dropped (required) tag; row: %q", row)
+	}
+	s.width = 70
+	row = s.renderRow(0)
+	if !strings.Contains(row, "(required)") {
+		t.Errorf("70-col render dropped (required) tag; row: %q", row)
+	}
+}
+
+// TestBranches_MinSizeFloor verifies tiny terminals show the floor.
+func TestBranches_MinSizeFloor(t *testing.T) {
+	s := newTestBranches()
+	s.width = 60
+	s.height = 16
+	if !strings.Contains(s.View(), "please enlarge") {
+		t.Error("min-size render missing floor panel")
+	}
+}
+
+// TestBranches_ListScrollsWhenLong verifies the Viewport wraps the list
+// when catalog entries exceed the available body height. Seeds a tab
+// with 20 items and checks that Follow(19) slides the viewport down.
+func TestBranches_ListScrollsWhenLong(t *testing.T) {
+	s := newTestBranches()
+	s.width = 120
+	s.height = 30 // listHeight → 30-10-22 = -2 → floor 3
+
+	// Replace the skills tab items with 20 synthetic entries so the
+	// viewport has something to scroll.
+	fake := make([]branchItem, 20)
+	for i := range fake {
+		fake[i] = branchItem{
+			name:        "sk-" + string(rune('a'+i%26)),
+			displayName: "Skill " + string(rune('A'+i%26)),
+			description: "fake",
+		}
+	}
+	s.categories[0].items = fake
+	s.itemIdx[0] = 19 // focus at the last row
+	// renderList should produce exactly listHeight() lines.
+	rendered := s.renderList()
+	lines := strings.Split(rendered, "\n")
+	if len(lines) != s.listHeight() {
+		t.Errorf("renderList lines = %d, want %d (listHeight)", len(lines), s.listHeight())
+	}
+	// The focused row's display name must appear in the rendered output.
+	if !strings.Contains(rendered, "Skill T") { // idx 19 % 26 = 19 → 'T'
+		t.Errorf("focused row Skill T not visible after Follow; output:\n%s", rendered)
 	}
 }

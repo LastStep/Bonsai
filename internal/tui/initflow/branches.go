@@ -64,6 +64,11 @@ type BranchesStage struct {
 	expanded   bool
 	itemIdx    map[int]int
 	selected   map[int]map[string]bool
+
+	// viewport wraps the item list so tabs with more entries than available
+	// body rows can scroll while keeping the focused row visible. Reused
+	// across renders — SetLines / SetHeight / Follow on each View() call.
+	viewport Viewport
 }
 
 // BranchesResult is the advance-payload returned from Result() when the user
@@ -395,7 +400,26 @@ func (s *BranchesStage) renderTabIntro() string {
 	}
 	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent)
-	return white.Render(cat.introLine1) + "\n" + dim.Render(cat.introLine2)
+
+	// Truncate intro lines to the available row width so narrow terminals
+	// don't wrap into the list below. Both intro lines are short enough at
+	// 80+ cols; the clamp only kicks in at <70 cols where the floor panel
+	// is already showing, but keeping the guard is cheap insurance.
+	w := s.availableWidth()
+	if w < 10 {
+		w = 10
+	}
+	clamp := func(t string) string {
+		if lipgloss.Width(t) <= w {
+			return t
+		}
+		rr := []rune(t)
+		if len(rr) > w-1 {
+			return string(rr[:w-1]) + "…"
+		}
+		return t
+	}
+	return white.Render(clamp(cat.introLine1)) + "\n" + dim.Render(clamp(cat.introLine2))
 }
 
 // renderDetails renders the fixed-height details block below the list.
@@ -419,8 +443,18 @@ func (s *BranchesStage) renderDetails() string {
 
 	const labelW = 10
 	const indent = "    "
-	const contentW = 70 // visible cells for ABOUT/FILE value column
 	const aboutRows = 3
+	// contentW clamps to min(s.width - 10, 70). Keeps ABOUT + FILE columns
+	// inside the terminal on narrow widths while preserving the 70-cell
+	// target (3 rows × 70 = 210 absorbs every current catalog description)
+	// on wide ones.
+	contentW := s.width - 10
+	if contentW > 70 {
+		contentW = 70
+	}
+	if contentW < 20 {
+		contentW = 20
+	}
 
 	if !s.expanded {
 		hint := indent + dim.Render("press ? to reveal ABOUT + FILE on the focused ability")
@@ -533,6 +567,11 @@ func (s *BranchesStage) renderTabs() string {
 // focused ability render in a fixed-height block below the list (see
 // renderDetails) rather than inline — the list never jitters when `?`
 // toggles expansion.
+//
+// When the tab has more items than the available body height allows, the
+// list is wrapped in a Viewport and scrolls focus-follows-cursor. Height
+// budget is computed from s.height less chrome and non-list body rows;
+// floor at 3 so at least a tiny window is visible even on short terminals.
 func (s *BranchesStage) renderList() string {
 	cat := s.currentCat()
 	if cat == nil {
@@ -547,13 +586,52 @@ func (s *BranchesStage) renderList() string {
 	for i := range cat.items {
 		rows = append(rows, s.renderRow(i))
 	}
-	return strings.Join(rows, "\n")
+
+	listH := s.listHeight()
+	if listH <= 0 || listH >= len(rows) {
+		return strings.Join(rows, "\n")
+	}
+
+	s.viewport.SetLines(rows)
+	s.viewport.SetHeight(listH)
+	s.viewport.Follow(s.itemIdx[s.catIdx])
+	return s.viewport.View()
+}
+
+// listHeight computes the visible-row budget for the item list. The
+// Branches stage body has a fixed footprint above + below the list:
+//
+//	intro (3) + blanks (2) + divider (1) + blank (1)
+//	  + tabs (2) + blank (1) + tabIntro (2) + blank (1)       = 13 rows above
+//	blank (1) + details (5) + blanks (2) + counter (1)         = 9 rows below
+//
+// Total non-list body rows = 22. Chrome (header 2 + blank + rail 2 + blank
+// + footer 2 + bottom pad 1 = 10) lives outside renderBody; renderFrame's
+// padRows math absorbs it. We subtract chrome + fixed body from s.height
+// to leave the list the remainder. Floor at 3 so something always shows.
+func (s *BranchesStage) listHeight() int {
+	if s.height <= 0 {
+		return 0 // unknown — render all rows, let harness clip
+	}
+	const chromeRows = 10    // header + rail + footer + separators
+	const fixedBodyRows = 22 // see comment above
+	h := s.height - chromeRows - fixedBodyRows
+	if h < 3 {
+		h = 3
+	}
+	return h
 }
 
 // renderRow renders a single ability row at index idx within the current
 // tab. Focused rows get a Leaf "│ " left border; selected rows use ◆ (Leaf),
 // unselected use ◇ (dim). Required items show a muted "(required)" tag;
 // default items show the "DEFAULT" tag right-aligned.
+//
+// Column widths come from ClampColumns(availableW) so rows never clip on
+// narrow terminals: tagW is pinned at 12 so DEFAULT / (required) stays
+// visible, nameW caps at 24, descW absorbs the remainder. When descW
+// floors to 0 (very tight terminal) the description column is dropped
+// entirely — name + tag only.
 func (s *BranchesStage) renderRow(idx int) string {
 	cat := s.currentCat()
 	if cat == nil || idx < 0 || idx >= len(cat.items) {
@@ -584,16 +662,7 @@ func (s *BranchesStage) renderRow(idx int) string {
 		border = lipgloss.NewStyle().Foreground(tui.ColorPrimary).Render("│ ")
 	}
 
-	// Column widths sized so the full row (border 2 + glyph 1 + sp 1 +
-	// name 24 + sp 1 + desc 44 + sp 1 + tag 10) = 84 cells — wider "breathing"
-	// layout per UX polish. nameColW=24 accommodates the widest display name
-	// in the current catalog ("Issue To Implementation", 22). Rune-aware
-	// truncation guards against future-catalog overflow so DEFAULT/(required)
-	// tags stay in their dedicated rightmost column even if a new item
-	// introduces a longer name.
-	const nameColW = 24
-	const descColW = 44
-	const tagColW = 10
+	nameColW, descColW, tagColW := ClampColumns(s.availableWidth())
 
 	// Name column — bold when focused, regular otherwise. Truncate rune-safe
 	// so each field stays inside its column (no row shove).
@@ -603,7 +672,7 @@ func (s *BranchesStage) renderRow(idx int) string {
 	}
 	if lipgloss.Width(name) > nameColW {
 		rr := []rune(name)
-		if len(rr) > nameColW-1 {
+		if len(rr) > nameColW-1 && nameColW > 1 {
 			name = string(rr[:nameColW-1]) + "…"
 		}
 	}
@@ -613,15 +682,19 @@ func (s *BranchesStage) renderRow(idx int) string {
 	}
 
 	// Description column — muted, truncated so the row doesn't wrap.
-	desc := it.description
-	if lipgloss.Width(desc) > descColW {
-		// Truncate by rune so multi-byte descriptions don't split mid-char.
-		rr := []rune(desc)
-		if len(rr) > descColW-1 {
-			desc = string(rr[:descColW-1]) + "…"
+	// descColW=0 is the "tight-terminal" signal: drop desc entirely.
+	var descCol string
+	if descColW > 0 {
+		desc := it.description
+		if lipgloss.Width(desc) > descColW {
+			// Truncate by rune so multi-byte descriptions don't split mid-char.
+			rr := []rune(desc)
+			if len(rr) > descColW-1 {
+				desc = string(rr[:descColW-1]) + "…"
+			}
 		}
+		descCol = " " + dim.Render(padRight(desc, descColW))
 	}
-	descCol := dim.Render(padRight(desc, descColW))
 
 	// Trailing tag: "(required)" or "DEFAULT", right-aligned inside the
 	// fixed tag slot so the word-end lands on the same column for every
@@ -634,7 +707,19 @@ func (s *BranchesStage) renderRow(idx int) string {
 	}
 	tagCol := lipgloss.PlaceHorizontal(tagColW, lipgloss.Right, tag)
 
-	return border + glyphStyle.Render(glyph) + " " + nameCol + " " + descCol + " " + tagCol
+	return border + glyphStyle.Render(glyph) + " " + nameCol + descCol + " " + tagCol
+}
+
+// availableWidth returns the per-row budget after subtracting side-padding
+// used by centerBlock. Floor at 0 so ClampColumns returns zeros on degenerate
+// terminals (rendered only from renderFrame's post-floor path, so in practice
+// always ≥ MinTerminalWidth - 4).
+func (s *BranchesStage) availableWidth() int {
+	w := s.width - 4
+	if w < 0 {
+		return 0
+	}
+	return w
 }
 
 // renderCounter renders the summary line at the bottom of the stage body.

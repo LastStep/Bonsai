@@ -133,6 +133,14 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 		height = 24
 	}
 
+	// Below the min-size floor, stage bodies would clip regardless of how
+	// we lay them out — render a single "please enlarge" panel and skip
+	// the rest of the frame composition. Gated on the live dims so the
+	// pre-WindowSizeMsg default (80x24) still renders normally.
+	if TerminalTooSmall(s.width, s.height) {
+		return RenderMinSizeFloor(s.width, s.height)
+	}
+
 	header := RenderHeader(s.version, s.projectDir, width, s.ensoSafe)
 	rail := RenderEnsoRail(s.idx, width, s.ensoSafe)
 	footer := RenderFooter(keys, width)

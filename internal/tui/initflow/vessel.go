@@ -219,8 +219,27 @@ func (s *VesselStage) renderBody() string {
 	// (prompt + value + cursor + padding), so a naive padRight can't
 	// equalise them. PlaceHorizontal pads-or-truncates to exactly inputCellW.
 	const labelColW = 20
-	const inputW = 60
-	const inputCellW = inputW + 4 // prompt(2) + cursor(1) + value safety (1)
+	// inputW = clamp(s.width - labelColW - 4, 30, 60). Shrinks on narrow
+	// terminals so the label + input pair fits inside the current row,
+	// but never below 30 cells (unreadable) or above 60 (original). The
+	// same clamp flows into the underline so the focus rule tracks the
+	// actual input width. (Scaffolding TODO: if catalog ever exceeds
+	// ~8 fields this stage could gain a Viewport — current layout renders
+	// three rows only, so no vertical scroll needed today.)
+	inputW := s.width - labelColW - 4
+	if inputW > 60 {
+		inputW = 60
+	}
+	if inputW < 30 {
+		inputW = 30
+	}
+	inputCellW := inputW + 4 // prompt(2) + cursor(1) + value safety (1)
+	// Sync live textinput widths so bubbles/textinput renders at the
+	// clamped width rather than its 60-cell default. Each call is cheap
+	// and idempotent.
+	for i := range s.inputs {
+		s.inputs[i].Width = inputW
+	}
 	row := func(label, subtitle string, input *textinput.Model, focused bool, errMsg string) string {
 		labelLine := bark.Render(padRight(label, labelColW))
 		subtitleLine := dim.Render(padRight(subtitle, labelColW))

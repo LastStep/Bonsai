@@ -143,6 +143,72 @@ func RenderFooter(hints []KeyHint, width int) string {
 	return rule + "\n" + padRight(row, width)
 }
 
+// RenderMinSizeFloor renders a centred "please enlarge terminal" panel
+// shown in place of any stage body when TerminalTooSmall reports true.
+// The frame never attempts the persistent chrome at tiny dims — header /
+// footer / rail would themselves clip below the floor. Instead the whole
+// AltScreen is filled with a single centred block carrying brand + hint
+// + current dims so the user knows they hit the floor.
+//
+// width/height are the live terminal dims (as seen by the stage). The
+// rendered output always occupies `height` rows so AltScreen doesn't leave
+// stale content below the panel.
+func RenderMinSizeFloor(width, height int) string {
+	if width <= 0 {
+		width = 40
+	}
+	if height <= 0 {
+		height = 10
+	}
+
+	primary := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
+	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+
+	title := primary.Render("BONSAI")
+	subtitle := muted.Render("please enlarge your terminal")
+	hint := dim.Render(
+		"minimum " + itoa(MinTerminalWidth) + " × " + itoa(MinTerminalHeight) +
+			"   ·   current " + itoa(width) + " × " + itoa(height),
+	)
+
+	lines := []string{title, "", subtitle, hint}
+
+	// Measure the widest line for centering.
+	maxW := 0
+	for _, l := range lines {
+		if w := lipgloss.Width(l); w > maxW {
+			maxW = w
+		}
+	}
+	leftPad := (width - maxW) / 2
+	if leftPad < 0 {
+		leftPad = 0
+	}
+	prefix := strings.Repeat(" ", leftPad)
+	rendered := make([]string, len(lines))
+	for i, l := range lines {
+		if l == "" {
+			rendered[i] = ""
+		} else {
+			rendered[i] = prefix + l
+		}
+	}
+
+	// Vertically centre inside height.
+	topPad := (height - len(lines)) / 2
+	if topPad < 0 {
+		topPad = 0
+	}
+	bottomPad := height - topPad - len(lines)
+	if bottomPad < 0 {
+		bottomPad = 0
+	}
+	top := strings.Repeat("\n", topPad)
+	bottom := strings.Repeat("\n", bottomPad)
+	return top + strings.Join(rendered, "\n") + bottom
+}
+
 // centerBlock left-pads every line in block so the widest line is
 // horizontally centred inside width. Used by stage bodies to sit visually
 // balanced inside the AltScreen rather than flush-left. Trailing whitespace
