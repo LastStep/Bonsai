@@ -1,8 +1,7 @@
 // Package initflow implements the cinematic 4-stage `bonsai init` flow.
 //
 // The package is intentionally self-contained — its primitives (chrome,
-// enso rail, stage base) are only used by the redesigned init path behind
-// the BONSAI_REDESIGN env flag while the legacy flow remains default.
+// enso rail, stage base) are consumed exclusively by cmd.runInit.
 //
 // fallback.go owns wide-character detection + the stage-label mapping so
 // stage primitives can render kanji/kana on safe terminals and ASCII-only

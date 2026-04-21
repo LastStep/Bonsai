@@ -16,7 +16,7 @@ import (
 // cinematic flow can own the full frame.
 //
 // Result() returns map[string]string{"name", "description", "station"} so
-// runInitRedesign indexes per-stage rather than per-field — keeps prev[]
+// cmd.runInit indexes per-stage rather than per-field — keeps prev[]
 // indexing stable across the 4-stage design.
 type VesselStage struct {
 	Stage
@@ -102,10 +102,10 @@ func (s *VesselStage) focusAt(idx int) tea.Cmd {
 }
 
 // validate returns true when every required field has a non-empty, valid
-// value. Used on ↵ to gate stage advancement. Rules mirror the existing
-// cmd.stationDirValidator (empty or "/" rejected for STATION) — Vessel
-// enforces inline so the user corrects without leaving the stage. Empty
-// STATION is treated as "use the default station/" rather than an error.
+// value. Used on ↵ to gate stage advancement. Rule: STATION rejects empty
+// or "/" — Vessel enforces inline so the user corrects without leaving the
+// stage. Empty STATION is treated as "use the default station/" rather than
+// an error.
 func (s *VesselStage) validate() bool {
 	if strings.TrimSpace(s.inputs[vesselIdxName].Value()) == "" {
 		return false
@@ -302,8 +302,7 @@ func (s *VesselStage) renderBody() string {
 // "name" / "description" / "station". Description is returned verbatim
 // (may be empty — it is optional). Station falls back to "station/" when
 // empty, and is normalised to a trailing slash so downstream callers get a
-// path-shaped value. The shape matches cmd.normaliseDocsPath so the caller
-// can treat the result as already-normalised.
+// path-shaped value already suitable for use as DocsPath.
 func (s *VesselStage) Result() any {
 	name := strings.TrimSpace(s.inputs[vesselIdxName].Value())
 	description := strings.TrimSpace(s.inputs[vesselIdxDescription].Value())

@@ -60,8 +60,7 @@ type generateDoneMsg struct {
 type generateTickMsg struct{}
 
 // GenerateStage is the full-screen progress stage that runs the write
-// pipeline. Not wired into runInitRedesign in Phase 5A — Phase 5B splices
-// it between Observe and Planted.
+// pipeline. Wired between Observe and Planted in cmd.runInit.
 type GenerateStage struct {
 	Stage
 
