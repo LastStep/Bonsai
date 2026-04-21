@@ -610,6 +610,70 @@ func TestEscBackReevaluatesConditional(t *testing.T) {
 	}
 }
 
+// fakeChromelessStep satisfies Step plus Chromeless so the harness short-
+// circuits its View() composition and yields the step's raw frame.
+type fakeChromelessStep struct {
+	fakeStep
+	chromeless bool
+}
+
+func (f *fakeChromelessStep) Chromeless() bool { return f.chromeless }
+
+// Override Update so the harness receives a value that still satisfies
+// Chromeless on the next tick (dropping to *fakeStep would shed the capability).
+func (f *fakeChromelessStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	f.received = append(f.received, msg)
+	if w, ok := msg.(tea.WindowSizeMsg); ok {
+		f.width = w.Width
+		f.height = w.Height
+	}
+	return f, nil
+}
+
+// TestChromelessStepBypassesHarnessChrome verifies that when a step opts into
+// the Chromeless capability, Harness.View returns the step's View() verbatim
+// without prepending the default header/footer. Regression guard for the
+// `internal/tui/initflow` cinematic stages that own the whole frame.
+func TestChromelessStepBypassesHarnessChrome(t *testing.T) {
+	const frame = "CINEMATIC-FRAME-BODY"
+	cs := &fakeChromelessStep{
+		fakeStep:   fakeStep{title: "cinematic"},
+		chromeless: true,
+	}
+	// Override View via the embedded fakeStep field by replacing title — easier:
+	// use a dedicated helper type below. Instead override inline with a wrapper.
+	csFrame := &chromelessFrameStep{fakeChromelessStep: *cs, frame: frame}
+	h := New("BANNER", "TEST", []Step{csFrame})
+	// Seed a window size so the chrome-full path would otherwise have enough
+	// room to render its header/footer — this isolates the Chromeless bypass.
+	_, _ = h.Update(tea.WindowSizeMsg{Width: 120, Height: 32})
+
+	got := h.View()
+	if got != frame {
+		t.Fatalf("expected Chromeless View() verbatim %q, got %q", frame, got)
+	}
+}
+
+// chromelessFrameStep is a fakeChromelessStep that returns a canned View() so
+// the test can assert the harness didn't add chrome around it.
+type chromelessFrameStep struct {
+	fakeChromelessStep
+	frame string
+}
+
+func (f *chromelessFrameStep) View() string { return f.frame }
+
+// Update must also return the outer type so the harness retains the custom
+// View() across ticks.
+func (f *chromelessFrameStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	f.received = append(f.received, msg)
+	if w, ok := msg.(tea.WindowSizeMsg); ok {
+		f.width = w.Width
+		f.height = w.Height
+	}
+	return f, nil
+}
+
 // cmdContainsSentinel walks a tea.Cmd (expanding tea.BatchMsg one level) and
 // returns true if any produced message is a resetSentinelMsg.
 func cmdContainsSentinel(cmd tea.Cmd) bool {
