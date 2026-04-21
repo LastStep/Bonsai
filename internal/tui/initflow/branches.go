@@ -358,7 +358,7 @@ func (s *BranchesStage) renderBody() string {
 
 	divider := leaf.Render(strings.Repeat("─", 3)) + " " +
 		bark.Render("CATEGORIES") + " " +
-		dim.Render(strings.Repeat("─", 55))
+		dim.Render(strings.Repeat("─", 40))
 
 	tabRow := s.renderTabs()
 	tabIntro := s.renderTabIntro()
@@ -397,11 +397,12 @@ func (s *BranchesStage) renderTabIntro() string {
 	return white.Render(cat.introLine1) + "\n" + dim.Render(cat.introLine2)
 }
 
-// renderDetails renders the fixed-height details block below the list. Height
-// is constant across both states (2 content rows + 1 label row) so toggling
-// `?` doesn't shift the counter below — eliminates the row jitter that the
-// prior inline-expand layout caused. When expanded, shows ABOUT + FILE for
-// the currently-focused ability; when collapsed, shows a dim hint.
+// renderDetails renders the fixed-height details block below the list.
+// Height is constant across both states (header + 2 ABOUT rows + 1 FILE row
+// = 4 visible lines) so toggling `?` never shifts the counter below —
+// eliminates the viewport jitter that both inline-expand and variable-height
+// collapsed states would cause. ABOUT word-wraps to 2 lines with a trailing
+// "…" on overflow; FILE is tail-truncated with a leading "…".
 func (s *BranchesStage) renderDetails() string {
 	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
@@ -409,39 +410,67 @@ func (s *BranchesStage) renderDetails() string {
 
 	header := leaf.Render(strings.Repeat("─", 3)) + " " +
 		bark.Render("DETAILS") + " " +
-		dim.Render(strings.Repeat("─", 55))
+		dim.Render(strings.Repeat("─", 40))
 
 	const labelW = 10
 	const indent = "    "
+	const contentW = 46 // visible cells for ABOUT/FILE value column
 
 	if !s.expanded {
 		hint := indent + dim.Render("press ? to reveal ABOUT + FILE on the focused ability")
-		filler := indent + dim.Render(" ")
-		return header + "\n" + hint + "\n" + filler
+		blank := indent
+		return header + "\n" + hint + "\n" + blank + "\n" + blank
 	}
 
 	cat := s.currentCat()
 	if cat == nil || len(cat.items) == 0 {
-		return header + "\n" + indent + dim.Render("(nothing to show)") + "\n"
+		empty := indent + dim.Render("(nothing to show)")
+		blank := indent
+		return header + "\n" + empty + "\n" + blank + "\n" + blank
 	}
 	row := s.itemIdx[s.catIdx]
 	if row < 0 || row >= len(cat.items) {
-		return header + "\n" + indent + dim.Render("(nothing to show)") + "\n"
+		empty := indent + dim.Render("(nothing to show)")
+		blank := indent
+		return header + "\n" + empty + "\n" + blank + "\n" + blank
 	}
 	it := cat.items[row]
 
 	label := lipgloss.NewStyle().Foreground(tui.ColorSubtle)
+
 	about := it.description
 	if about == "" {
 		about = "—"
 	}
+	aboutLines := wrapToWidth(about, contentW)
+	const aboutRows = 2
+	if len(aboutLines) > aboutRows {
+		last := aboutLines[aboutRows-1]
+		rr := []rune(last)
+		if len(rr) > contentW-1 {
+			last = string(rr[:contentW-1]) + "…"
+		} else {
+			last = last + "…"
+		}
+		aboutLines = append(aboutLines[:aboutRows-1], last)
+	}
+	for len(aboutLines) < aboutRows {
+		aboutLines = append(aboutLines, "")
+	}
+
 	file := it.filePath
 	if file == "" {
 		file = "—"
 	}
-	aboutRow := indent + bark.Render(padRight("ABOUT", labelW)) + label.Render(about)
+	fileRR := []rune(file)
+	if len(fileRR) > contentW {
+		file = "…" + string(fileRR[len(fileRR)-contentW+1:])
+	}
+
+	aboutRow1 := indent + bark.Render(padRight("ABOUT", labelW)) + label.Render(aboutLines[0])
+	aboutRow2 := indent + strings.Repeat(" ", labelW) + label.Render(aboutLines[1])
 	fileRow := indent + bark.Render(padRight("FILE", labelW)) + dim.Render(file)
-	return header + "\n" + aboutRow + "\n" + fileRow
+	return header + "\n" + aboutRow1 + "\n" + aboutRow2 + "\n" + fileRow
 }
 
 // renderTabs renders the 5-column tab header: kanji + display name on row 1,
@@ -455,7 +484,7 @@ func (s *BranchesStage) renderTabs() string {
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 
-	const colW = 16
+	const colW = 14
 
 	top := make([]string, 0, len(s.categories))
 	sub := make([]string, 0, len(s.categories))
@@ -466,12 +495,14 @@ func (s *BranchesStage) renderTabs() string {
 		} else {
 			label = c.displayName
 		}
+		var topStyled string
 		if i == s.catIdx {
 			label = label + " ◆"
-			top = append(top, leaf.Render(padRight(label, colW)))
+			topStyled = leaf.Render(label)
 		} else {
-			top = append(top, muted.Render(padRight(label, colW)))
+			topStyled = muted.Render(label)
 		}
+		top = append(top, lipgloss.PlaceHorizontal(colW, lipgloss.Center, topStyled))
 
 		// Subtitle: "N / Total" — selected count vs total items for this tab.
 		picks := s.selected[i]
@@ -482,11 +513,13 @@ func (s *BranchesStage) renderTabs() string {
 			}
 		}
 		line := fmt.Sprintf("%d / %d", sel, len(c.items))
+		var subStyled string
 		if i == s.catIdx {
-			sub = append(sub, bark.Render(padRight(line, colW)))
+			subStyled = bark.Render(line)
 		} else {
-			sub = append(sub, dim.Render(padRight(line, colW)))
+			subStyled = dim.Render(line)
 		}
+		sub = append(sub, lipgloss.PlaceHorizontal(colW, lipgloss.Center, subStyled))
 	}
 
 	return strings.Join(top, " ") + "\n" + strings.Join(sub, " ")
@@ -548,10 +581,11 @@ func (s *BranchesStage) renderRow(idx int) string {
 	}
 
 	// Column widths sized so the full row (border 2 + glyph 1 + sp 1 +
-	// name 18 + sp 1 + desc 38 + sp 1 + tag 10) = 72 cells — fits an 80-col
-	// terminal with the centerBlock margin.
-	const nameColW = 18
-	const descColW = 38
+	// name 16 + sp 1 + desc 28 + sp 1 + tag 10) = 60 cells — leaves extra
+	// side-margin from centerBlock in a standard 80-col terminal. Narrowing
+	// both name and description is a deliberate density cut per UX polish.
+	const nameColW = 16
+	const descColW = 28
 	const tagColW = 10
 
 	// Name column — bold when focused, regular otherwise.
@@ -640,4 +674,46 @@ func (s *BranchesStage) Result() any {
 func (s *BranchesStage) Reset() tea.Cmd {
 	s.done = false
 	return nil
+}
+
+// wrapToWidth word-wraps text into lines whose visible cell-width is ≤ width,
+// breaking on spaces. A single word wider than width is hard-wrapped by rune
+// so an oversized token still fits. Returns at least one line; an empty input
+// yields []string{""}.
+func wrapToWidth(text string, width int) []string {
+	if width <= 0 {
+		return []string{text}
+	}
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return []string{""}
+	}
+	var lines []string
+	cur := ""
+	for _, w := range words {
+		if cur == "" {
+			if lipgloss.Width(w) > width {
+				rr := []rune(w)
+				for len(rr) > width {
+					lines = append(lines, string(rr[:width]))
+					rr = rr[width:]
+				}
+				cur = string(rr)
+			} else {
+				cur = w
+			}
+			continue
+		}
+		candidate := cur + " " + w
+		if lipgloss.Width(candidate) <= width {
+			cur = candidate
+		} else {
+			lines = append(lines, cur)
+			cur = w
+		}
+	}
+	if cur != "" {
+		lines = append(lines, cur)
+	}
+	return lines
 }
