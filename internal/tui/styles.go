@@ -40,7 +40,7 @@ func DisableColor() {
 
 var (
 	Leaf  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#4A9E6F", Light: "#2D7A4B"}
-	Bark  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#D4A76A", Light: "#8B6914"}
+	Bark  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#D4AF37", Light: "#7A5E10"}
 	Stone lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#6B7280", Light: "#4B5563"}
 	Water lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#7EC8E3", Light: "#1A7FA0"}
 	Moss  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#73D677", Light: "#2D8A3E"}
@@ -48,6 +48,7 @@ var (
 	Amber lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#E3C16F", Light: "#B7791F"}
 	Sand  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#C4B7A6", Light: "#6B5E4F"}
 	Petal lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#D4A0C0", Light: "#9B4D8A"}
+	Moon  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#F5F5F5", Light: "#1A1A1A"}
 )
 
 // ─── Semantic Tokens ──────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ var (
 var (
 	ColorPrimary   = Leaf  // Brand accent — headings, primary action, banner title
 	ColorSecondary = Bark  // Field labels, category headers
-	ColorAccent    = Petal // Interactive chrome — cursor, selectors, next/prev
+	ColorAccent    = Moon  // Interactive chrome — cursor, selectors, bold emphasis
 	ColorSubtle    = Sand  // Body text, option labels
 	ColorMuted     = Stone // Hints, descriptions, at-rest borders
 	ColorSuccess   = Moss  // Success states

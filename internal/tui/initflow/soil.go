@@ -125,28 +125,31 @@ func (s *SoilStage) keyHints() []KeyHint {
 	}
 }
 
-// renderBody renders the stage intro + the list of scaffolding rows.
+// renderBody renders the stage intro + the list of scaffolding rows. The
+// body is centred inside the current terminal width via centerBlock so the
+// list sits visually balanced.
 func (s *SoilStage) renderBody() string {
-	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
+	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
 
-	primary, secondary := s.label.Render(s.ensoSafe)
-	title := leaf.Render(primary)
-	if secondary != "" {
-		title += muted.Render("  " + secondary)
+	var title string
+	if s.ensoSafe {
+		title = bark.Render(s.label.Kanji) + " " + white.Render(s.label.English)
+	} else {
+		title = white.Render(s.label.English)
 	}
-	title += muted.Render("  ·  SOIL")
 
 	intro := strings.Join([]string{
 		title,
-		bark.Render("Choose what the project carries."),
-		muted.Render("Shared files every agent can see. Required items are always on."),
+		white.Render("Tend the soil."),
+		dim.Render("Shared scaffolding every agent can see — required items always on."),
 	}, "\n")
 
-	divider := muted.Render(strings.Repeat("─", 3)) + " " +
+	divider := leaf.Render(strings.Repeat("─", 3)) + " " +
 		bark.Render("SCAFFOLDING") + " " +
-		muted.Render(strings.Repeat("─", 3)+" 足場 "+strings.Repeat("─", 20))
+		dim.Render(strings.Repeat("─", 55))
 
 	// Render each option row.
 	rows := make([]string, 0, len(s.options))
@@ -169,16 +172,15 @@ func (s *SoilStage) renderBody() string {
 	counter := fmt.Sprintf("%d of %d selected · %d required, always on", selCount, total, reqCount)
 
 	body := []string{
-		"  " + intro,
+		intro,
 		"",
-		"  " + divider,
+		"",
+		divider,
 		"",
 	}
-	for _, r := range rows {
-		body = append(body, "  "+r)
-	}
-	body = append(body, "", "  "+muted.Render(counter))
-	return strings.Join(body, "\n")
+	body = append(body, rows...)
+	body = append(body, "", dim.Render(counter))
+	return centerBlock(strings.Join(body, "\n"), s.width)
 }
 
 // renderRow renders a single scaffolding option at index idx. Focused rows
@@ -186,7 +188,6 @@ func (s *SoilStage) renderBody() string {
 // glyph in Leaf, unselected use ◇ in a dimmer muted color. The REQUIRED
 // badge (Bark) is right-aligned.
 func (s *SoilStage) renderRow(idx int) string {
-	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
 	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
@@ -230,7 +231,7 @@ func (s *SoilStage) renderRow(idx int) string {
 	if len(desc) > 50 {
 		desc = desc[:49] + "…"
 	}
-	descCol := muted.Render(desc)
+	descCol := dim.Render(desc)
 
 	// Required badge — right-aligned after the description, in Bark.
 	badge := ""

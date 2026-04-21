@@ -63,10 +63,10 @@ func NewVesselStage(ctx StageContext) *VesselStage {
 		ti := textinput.New()
 		ti.Prompt = "❯ "
 		ti.PromptStyle = lipgloss.NewStyle().Foreground(tui.ColorPrimary)
-		ti.TextStyle = lipgloss.NewStyle().Foreground(tui.ColorSecondary)
-		ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(tui.ColorMuted)
+		ti.TextStyle = lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
+		ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(tui.ColorRule2)
 		ti.CharLimit = 256
-		ti.Width = 48
+		ti.Width = 60
 		inputs[i] = ti
 	}
 
@@ -177,40 +177,69 @@ func (s *VesselStage) keyHints() []KeyHint {
 	}
 }
 
-// renderBody renders the stage intro + the three labelled inputs.
+// renderBody renders the stage intro + the three labelled inputs. The body
+// is centred inside the current terminal width via centerBlock so field rows
+// sit in a premium, balanced layout rather than flush-left with a 2-col gap.
 func (s *VesselStage) renderBody() string {
-	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
+	// Helper/informational text uses ColorRule2 (dimmer than ColorMuted) so
+	// hints/subtitles/captions sit back from the foreground copy — reduces
+	// visual noise per design.
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
-	errStyle := lipgloss.NewStyle().Foreground(tui.ColorLeafDim)
+	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
+	errStyle := lipgloss.NewStyle().Foreground(tui.ColorDanger)
 
-	primary, secondary := s.label.Render(s.ensoSafe)
-	title := leaf.Render(primary)
-	if secondary != "" {
-		title += muted.Render("  " + secondary)
+	// Title: "<gold-bold>器</gold-bold> <white-bold>VESSEL</white-bold>".
+	// Drops the prior kana tail and trailing "· VESSEL" duplicate per design.
+	var title string
+	if s.ensoSafe {
+		title = bark.Render(s.label.Kanji) + " " + white.Render(s.label.English)
+	} else {
+		title = white.Render(s.label.English)
 	}
-	title += muted.Render("  ·  VESSEL")
 
 	intro := strings.Join([]string{
 		title,
-		bark.Render("Shape the vessel."),
-		muted.Render("Every Bonsai begins with a small decision — what will this one carry?"),
+		white.Render("Shape the vessel."),
+		dim.Render("Three quick answers — a name, a purpose, a place to grow."),
 	}, "\n")
 
-	divider := muted.Render(strings.Repeat("─", 3)) + " " +
+	// Divider: green-tint left rule + Bark "FIELDS" + long dim right rule.
+	// Previous mid-segment "入力" dropped per design (kana removed throughout).
+	divider := leaf.Render(strings.Repeat("─", 3)) + " " +
 		bark.Render("FIELDS") + " " +
-		muted.Render(strings.Repeat("─", 3)+" 入力 "+strings.Repeat("─", 20))
+		dim.Render(strings.Repeat("─", 55))
 
-	// Per-field rows: LABEL (Bark bold) + input + optional help caption + error.
-	row := func(label, help string, input *textinput.Model, errMsg string) string {
-		labelCol := bark.Render(padRight(label, 14))
-		inputCol := input.View()
-		line := labelCol + inputCol
-		helpLine := muted.Render(padRight(" ", 14) + help)
-		out := line + "\n" + helpLine
+	// Per-field rows: LEFT column stacks LABEL + small subtitle; RIGHT column
+	// stacks input prompt + underline. The input line is pinned to a fixed
+	// cell width via lipgloss.PlaceHorizontal so line1 length stays constant
+	// regardless of typed value — bubbles/textinput.View() returns Width
+	// cells when empty (placeholder mode) but Width+3 cells when typed
+	// (prompt + value + cursor + padding), so a naive padRight can't
+	// equalise them. PlaceHorizontal pads-or-truncates to exactly inputCellW.
+	const labelColW = 20
+	const inputW = 60
+	const inputCellW = inputW + 4 // prompt(2) + cursor(1) + value safety (1)
+	row := func(label, subtitle string, input *textinput.Model, focused bool, errMsg string) string {
+		labelLine := bark.Render(padRight(label, labelColW))
+		subtitleLine := dim.Render(padRight(subtitle, labelColW))
+
+		inputLine := lipgloss.PlaceHorizontal(inputCellW, lipgloss.Left, input.View())
+		// Underline: solid ─ under the input field, tinted green on focus.
+		underlineStyle := dim
+		if focused {
+			underlineStyle = lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+		}
+		underline := underlineStyle.Render(strings.Repeat("─", inputCellW))
+
+		// Compose 2-col grid: LEFT labelCol, RIGHT input stack.
+		line1 := labelLine + inputLine
+		line2 := subtitleLine + underline
+
+		out := line1 + "\n" + line2
 		if errMsg != "" {
-			errLine := errStyle.Render(padRight(" ", 14) + errMsg)
-			out += "\n" + errLine
+			out += "\n" + padRight(" ", labelColW) + errStyle.Render(errMsg)
 		}
 		return out
 	}
@@ -227,24 +256,27 @@ func (s *VesselStage) renderBody() string {
 		}
 	}
 
-	nameRow := row("NAME", "required · used as .bonsai.yaml project_name",
-		&s.inputs[vesselIdxName], nameErr)
-	descRow := row("DESCRIPTION", "optional · one line · shown in agent prompts",
-		&s.inputs[vesselIdxDescription], "")
-	stationRow := row("STATION", "where agent files live · default "+defaultStationDir,
-		&s.inputs[vesselIdxStation], stationErrMsg)
+	nameRow := row("NAME", "required",
+		&s.inputs[vesselIdxName], s.focus == vesselIdxName, nameErr)
+	descRow := row("DESCRIPTION", "optional",
+		&s.inputs[vesselIdxDescription], s.focus == vesselIdxDescription, "")
+	stationRow := row("STATION", "default station/",
+		&s.inputs[vesselIdxStation], s.focus == vesselIdxStation, stationErrMsg)
 
-	return strings.Join([]string{
-		"  " + intro,
+	block := strings.Join([]string{
+		intro,
 		"",
-		"  " + divider,
 		"",
-		"  " + strings.ReplaceAll(nameRow, "\n", "\n  "),
+		divider,
 		"",
-		"  " + strings.ReplaceAll(descRow, "\n", "\n  "),
+		nameRow,
 		"",
-		"  " + strings.ReplaceAll(stationRow, "\n", "\n  "),
+		descRow,
+		"",
+		stationRow,
 	}, "\n")
+
+	return centerBlock(block, s.width)
 }
 
 // Result returns the three collected fields as a single map keyed by

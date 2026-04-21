@@ -16,15 +16,14 @@ const (
 )
 
 // RenderEnsoRail draws the 4-stage progress rail used above every stage's
-// body. Rendered as three rows:
+// body. Rendered as two rows:
 //
-//	row 1: ● ─── ● ─── ◉ ─── ○        (dots + connector segments)
+//	row 1: ● ─── ● ─── [枝] ─── ○        (dots + connector segments)
 //	row 2: VESSEL  SOIL  BRANCHES  OBSERVE   (stage labels)
-//	row 3:                えだ                 (kana, current stage only)
 //
 // When safe=false (WideCharSafe() reported false or BONSAI_ASCII_ONLY=1 is
 // set), the dots collapse to bracketed ASCII: [x] for done, [ ] for
-// pending, [N] for current. No kana row is emitted.
+// pending, [N] for current.
 //
 // stageIdx is the 0-based current stage. width is the terminal column count
 // the rail should occupy. Layout tries to centre the rail inside width; the
@@ -53,9 +52,11 @@ func RenderEnsoRail(stageIdx int, width int, safe bool) string {
 		anchorWidths[i] = w
 	}
 
-	// Total anchor-glyph columns, then distribute remaining width across the
-	// 3 connector gaps between them. Leave a little side padding for breathing
-	// room. Minimum connector length of 3.
+	// Cap the rail's visible width so the checkpoints sit tight and centred
+	// rather than stretching the full terminal. maxRail is the target total
+	// width (anchors + connectors). When the terminal is narrower than
+	// maxRail we fall back to filling the terminal minus sidePad.
+	const maxRail = 60
 	const minConn = 3
 	const sidePad = 2
 	sumAnchor := 0
@@ -63,15 +64,26 @@ func RenderEnsoRail(stageIdx int, width int, safe bool) string {
 		sumAnchor += w
 	}
 	connectors := numStages - 1
-	inner := width - sidePad*2
-	connLen := (inner - sumAnchor) / connectors
+	// Target rail width: smaller of maxRail and (width - 2*sidePad).
+	target := width - sidePad*2
+	if target > maxRail {
+		target = maxRail
+	}
+	connLen := (target - sumAnchor) / connectors
 	if connLen < minConn {
 		connLen = minConn
+	}
+	railWidth := sumAnchor + connLen*connectors
+
+	// Centre the whole rail inside `width` by left-padding.
+	leftPad := (width - railWidth) / 2
+	if leftPad < sidePad {
+		leftPad = sidePad
 	}
 
 	// Build row 1: dot ─── dot ─── dot ─── dot
 	var row1 strings.Builder
-	row1.WriteString(strings.Repeat(" ", sidePad))
+	row1.WriteString(strings.Repeat(" ", leftPad))
 	for i := 0; i < numStages; i++ {
 		row1.WriteString(anchors[i])
 		if i < numStages-1 {
@@ -79,10 +91,10 @@ func RenderEnsoRail(stageIdx int, width int, safe bool) string {
 		}
 	}
 
-	// Compute column positions of each anchor so row 2 / row 3 labels can
+	// Compute column positions of each anchor so row 2 labels can
 	// centre underneath them.
 	colPositions := make([]int, numStages)
-	col := sidePad
+	col := leftPad
 	for i := 0; i < numStages; i++ {
 		colPositions[i] = col + anchorWidths[i]/2
 		col += anchorWidths[i]
@@ -94,52 +106,39 @@ func RenderEnsoRail(stageIdx int, width int, safe bool) string {
 	// Row 2: stage English labels, centred on each anchor.
 	row2 := placeLabels(colPositions, stageLabelTexts(safe, stageIdx), width, stageIdx, false)
 
-	// Row 3: kana for the current stage only, when safe.
-	var row3 string
-	if safe {
-		labels := make([]string, numStages)
-		if stageIdx >= 0 && stageIdx < numStages {
-			labels[stageIdx] = StageLabels[stageIdx].Kana
-		}
-		row3 = placeLabels(colPositions, labels, width, stageIdx, true)
-	}
-
-	out := row1.String() + "\n" + row2
-	if row3 != "" {
-		out += "\n" + row3
-	}
-	return out
+	return row1.String() + "\n" + row2
 }
 
 // anchorGlyph returns the styled glyph (and the visible-width-count) for the
-// i-th stage anchor. The current stage gets a bracketed label ([N] or [Kanji]);
-// completed stages get ● (or [x]); pending stages get ○ (or [ ]).
+// i-th stage anchor. The current stage gets a bracketed kanji in Bark gold;
+// completed stages get a bright Primary ● (user-requested green-done badge);
+// pending stages get a muted ○.
 func anchorGlyph(i, current int, safe bool) (string, int) {
-	leafStyle := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
-	leafDim := lipgloss.NewStyle().Foreground(tui.ColorLeafDim)
+	goldStyle := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+	doneStyle := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	muted := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 
 	if safe {
 		switch {
 		case i < current:
-			return leafDim.Render(ensoDone), 1
+			return doneStyle.Render(ensoDone), 1
 		case i == current:
-			// Render kanji in a small boxed form: [K] — 3 visible cells.
-			// Keep it single-row to avoid fragile multi-row alignment.
+			// Render kanji in a small boxed form: [K] — 4 visible cells
+			// (bracket + 2-cell kanji + bracket). Kanji + brackets are Bark
+			// gold so the current stage reads as the active accent.
 			kanji := StageLabels[i].Kanji
-			content := leafStyle.Render(kanji)
-			return muted.Render("[") + content + muted.Render("]"), 4 // kanji=2 + brackets=2
+			return goldStyle.Render("[") + goldStyle.Render(kanji) + goldStyle.Render("]"), 4
 		default:
 			return muted.Render(ensoPending), 1
 		}
 	}
 
-	// ASCII fallback: [x] done, [N] current (one-indexed), [ ] pending.
+	// ASCII fallback: [x] done (bright green), [N] current (gold), [ ] pending.
 	switch {
 	case i < current:
-		return muted.Render("[") + leafDim.Render("x") + muted.Render("]"), 3
+		return muted.Render("[") + doneStyle.Render("x") + muted.Render("]"), 3
 	case i == current:
-		return muted.Render("[") + leafStyle.Render(itoa(i+1)) + muted.Render("]"), 3
+		return goldStyle.Render("[") + goldStyle.Render(itoa(i+1)) + goldStyle.Render("]"), 3
 	default:
 		return muted.Render("[ ]"), 3
 	}

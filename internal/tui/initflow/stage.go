@@ -145,7 +145,9 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 	bodyRows := count(body)
 
 	// Compose: header, blank, rail, blank, body, <pad>, footer.
-	padRows := height - headerRows - railRows - bodyRows - footerRows - 4 // 4 blank separators
+	// Separators contribute 5 blank lines (2 after header, 2 after rail, 1
+	// before footer) — subtract to land the footer at the terminal bottom.
+	padRows := height - headerRows - railRows - bodyRows - footerRows - 5
 	if padRows < 1 {
 		padRows = 1
 	}

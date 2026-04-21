@@ -98,9 +98,11 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	return row1 + "\n" + row2
 }
 
-// RenderFooter draws the bottom hairline row: brand on the left, the passed
-// key hints on the right, separated by a muted dot.
+// RenderFooter draws a two-row bottom unit: a subtle full-width rule
+// (ColorRule2) above the brand/hints row. The rule gives the footer a clean
+// visual separation from the stage body per design.
 //
+//	──────────────────────────────────────────────────────────────────
 //	一 BONSAI 一               ↵ continue · esc back · ctrl-c quit
 func RenderFooter(hints []KeyHint, width int) string {
 	if width <= 0 {
@@ -109,6 +111,9 @@ func RenderFooter(hints []KeyHint, width int) string {
 
 	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 	primary := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	ruleStyle := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+
+	rule := ruleStyle.Render(strings.Repeat("─", width))
 
 	left := muted.Render("一 ") + primary.Render("BONSAI") + muted.Render(" 一")
 	// Render each hint as "<KEY> desc" with the key in muted-emphasis.
@@ -128,7 +133,39 @@ func RenderFooter(hints []KeyHint, width int) string {
 		gap = 2
 	}
 	row := " " + left + strings.Repeat(" ", gap) + right + " "
-	return padRight(row, width)
+	return rule + "\n" + padRight(row, width)
+}
+
+// centerBlock left-pads every line in block so the widest line is
+// horizontally centred inside width. Used by stage bodies to sit visually
+// balanced inside the AltScreen rather than flush-left. Trailing whitespace
+// on each line is preserved because focused-input underlines rely on exact
+// column width.
+func centerBlock(block string, width int) string {
+	if width <= 0 {
+		return block
+	}
+	lines := strings.Split(block, "\n")
+	maxW := 0
+	for _, l := range lines {
+		if w := lipgloss.Width(l); w > maxW {
+			maxW = w
+		}
+	}
+	pad := (width - maxW) / 2
+	if pad < 2 {
+		pad = 2
+	}
+	prefix := strings.Repeat(" ", pad)
+	out := make([]string, len(lines))
+	for i, l := range lines {
+		if l == "" {
+			out[i] = ""
+			continue
+		}
+		out[i] = prefix + l
+	}
+	return strings.Join(out, "\n")
 }
 
 // padRight right-pads s with spaces so its visible width reaches w.
