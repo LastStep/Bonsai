@@ -2,8 +2,6 @@ package initflow
 
 import (
 	"strings"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 // Min dimensions below which every stage shows a "please enlarge terminal"
@@ -189,17 +187,4 @@ func (v *Viewport) clamp() {
 	if v.offset < 0 {
 		v.offset = 0
 	}
-}
-
-// padLineToWidth right-pads s with spaces so its visible width reaches w.
-// Used by stages that need each viewport line to occupy the same cell
-// count so a focused-row left border doesn't pull neighbours sideways.
-// Kept here (not chrome.go) because it's the row-level layout primitive
-// used inside the Viewport caller; chrome.go has the frame-level padRight.
-func padLineToWidth(s string, w int) string {
-	cur := lipgloss.Width(s)
-	if cur >= w {
-		return s
-	}
-	return s + strings.Repeat(" ", w-cur)
 }
