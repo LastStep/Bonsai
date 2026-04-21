@@ -358,7 +358,7 @@ func (s *BranchesStage) renderBody() string {
 
 	divider := leaf.Render(strings.Repeat("─", 3)) + " " +
 		bark.Render("CATEGORIES") + " " +
-		dim.Render(strings.Repeat("─", 40))
+		dim.Render(strings.Repeat("─", 60))
 
 	tabRow := s.renderTabs()
 	tabIntro := s.renderTabIntro()
@@ -410,11 +410,11 @@ func (s *BranchesStage) renderDetails() string {
 
 	header := leaf.Render(strings.Repeat("─", 3)) + " " +
 		bark.Render("DETAILS") + " " +
-		dim.Render(strings.Repeat("─", 40))
+		dim.Render(strings.Repeat("─", 60))
 
 	const labelW = 10
 	const indent = "    "
-	const contentW = 46 // visible cells for ABOUT/FILE value column
+	const contentW = 60 // visible cells for ABOUT/FILE value column
 
 	if !s.expanded {
 		hint := indent + dim.Render("press ? to reveal ABOUT + FILE on the focused ability")
@@ -484,7 +484,7 @@ func (s *BranchesStage) renderTabs() string {
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 
-	const colW = 14
+	const colW = 16
 
 	top := make([]string, 0, len(s.categories))
 	sub := make([]string, 0, len(s.categories))
@@ -581,17 +581,27 @@ func (s *BranchesStage) renderRow(idx int) string {
 	}
 
 	// Column widths sized so the full row (border 2 + glyph 1 + sp 1 +
-	// name 16 + sp 1 + desc 28 + sp 1 + tag 10) = 60 cells — leaves extra
-	// side-margin from centerBlock in a standard 80-col terminal. Narrowing
-	// both name and description is a deliberate density cut per UX polish.
-	const nameColW = 16
-	const descColW = 28
+	// name 24 + sp 1 + desc 44 + sp 1 + tag 10) = 84 cells — wider "breathing"
+	// layout per UX polish. nameColW=24 accommodates the widest display name
+	// in the current catalog ("Issue To Implementation", 22). Rune-aware
+	// truncation guards against future-catalog overflow so DEFAULT/(required)
+	// tags stay in their dedicated rightmost column even if a new item
+	// introduces a longer name.
+	const nameColW = 24
+	const descColW = 44
 	const tagColW = 10
 
-	// Name column — bold when focused, regular otherwise.
+	// Name column — bold when focused, regular otherwise. Truncate rune-safe
+	// so each field stays inside its column (no row shove).
 	name := it.displayName
 	if name == "" {
 		name = it.name
+	}
+	if lipgloss.Width(name) > nameColW {
+		rr := []rune(name)
+		if len(rr) > nameColW-1 {
+			name = string(rr[:nameColW-1]) + "…"
+		}
 	}
 	nameCol := label.Render(padRight(name, nameColW))
 	if focused {
