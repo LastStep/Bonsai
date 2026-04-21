@@ -102,6 +102,16 @@ type resetter interface {
 	Reset() tea.Cmd
 }
 
+// Chromeless is an optional Step capability. When a step returns true, the
+// harness skips rendering its default header/footer and yields the full frame
+// to Step.View(). The step is responsible for drawing its own chrome (banner,
+// breadcrumb, progress, footer keys). Used by the `internal/tui/initflow`
+// cinematic stages so they can own the entire AltScreen while still plugging
+// into the harness cursor / prev-results machinery.
+type Chromeless interface {
+	Chromeless() bool
+}
+
 // Harness is the root tea.Model that frames the active step.
 type Harness struct {
 	steps        []Step
@@ -373,6 +383,12 @@ func (h *Harness) View() string {
 	}
 	if h.cursor >= len(h.steps) {
 		return ""
+	}
+
+	// Chromeless short-circuit: a step that opts in owns the entire frame and
+	// draws its own header / footer. The harness yields Step.View() verbatim.
+	if c, ok := h.steps[h.cursor].(Chromeless); ok && c.Chromeless() {
+		return h.steps[h.cursor].View()
 	}
 
 	header := h.renderHeader()

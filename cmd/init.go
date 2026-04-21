@@ -118,6 +118,12 @@ func asBool(v any) bool {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
+	// BONSAI_REDESIGN=1 routes to the in-progress cinematic flow (Plan 22).
+	// Default behaviour is unchanged until the redesign ships Phase 5.
+	if os.Getenv("BONSAI_REDESIGN") == "1" {
+		return runInitRedesign(cmd, args)
+	}
+
 	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 
