@@ -48,7 +48,10 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	if !safe {
 		mark = "o"
 	}
-	leftRow1 := muted.Render("[") + primary.Render(mark) + muted.Render("]") +
+	// Pad inside brackets so the wide-char kanji (and its ASCII fallback)
+	// reads as visually centred rather than left-hugging the `[` — terminals
+	// left-anchor CJK glyphs inside their 2-cell slot, so "[盆]" looks off.
+	leftRow1 := muted.Render("[ ") + primary.Render(mark) + muted.Render(" ]") +
 		" " + primary.Render("BONSAI")
 
 	leftRow2Parts := []string{muted.Render("INITIALIZE")}

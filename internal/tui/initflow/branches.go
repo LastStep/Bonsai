@@ -380,6 +380,7 @@ func (s *BranchesStage) renderBody() string {
 		"",
 		details,
 		"",
+		"",
 		dim.Render(counter),
 	}
 	return centerBlock(strings.Join(body, "\n"), s.width)
