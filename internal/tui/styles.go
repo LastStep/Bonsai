@@ -68,6 +68,16 @@ var (
 	ColorInfo      = Water // Info panels, review box
 )
 
+// Enso / rule chrome tokens — used by the init-flow chrome. Dimmer shades of
+// Leaf/Stone for at-rest rail segments and thin dividers. Kept separate from
+// the primary semantic tokens above so other commands keep their current
+// palette untouched.
+var (
+	ColorLeafDim lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#3A7253", Light: "#3D6D53"}
+	ColorRule    lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#3B4049", Light: "#D4D0CA"}
+	ColorRule2   lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#4A4F58", Light: "#B9B5AF"}
+)
+
 // ─── Styles ───────────────────────────────────────────────────────────────
 
 var (
