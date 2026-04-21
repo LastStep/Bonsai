@@ -13,13 +13,11 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Session wrap-up PR #44 squash-merged 2026-04-21; main `fe89423`.
+**Current task:** Idle. PR #46 squash-merged 2026-04-21; main `d14edbe`.
 **In flight (other tracks):** None.
 **Blocked on:** Nothing.
 **Loose ends (uncommitted):** None.
-**Last completed:** PR #44 session wrap-up (2026-04-21-plan-20-and-group-g.md log + Backlog stale-worktree audit update), squash-merged `fe89423`. Prior: PR #43 `5248212` Group G closeout + CodeQL v3→v4 deprecation backlog item. Dependabot Group G (8 PRs squash-merged 2026-04-21): #39 ansi patch, #38 go-isatty patch, #37 x/term 0.36→0.42 (rebased 1×), #36 setup-node v6, #35 setup-go v6, #34 golangci-lint-action v9, #33 upload-pages-artifact v5, #32 goreleaser-action v7. Release-notes review confirmed no breaking impact (no `packageManager` field → setup-node auto-cache inactive; no dotfiles in dist → upload-pages-artifact v4 exclusion safe; goreleaser-action v7 inputs unchanged). Plan 20 core (6 PRs): #28 #29 #30 #31 #40 #41; wrap-up PR #42 `9cf577e`; gitleaks 0/156.
-
-Bundle: 4 Tier 1 fresh-install blockers (CRLF defence via .gitattributes + `normalizeShellLF`; `showWriteResults` cross-workspace bucket-by-top-segment; `applyCustomFileSelection` dedup via `appendUnique`; spinner `errors.Join` at ~30 sites + Warning surfaces) with 4 Tier 2 harness polish items (SpinnerStep goroutine `recover`; `NewConditional` nil-predicate guard; Esc-back predicate re-eval via harness SetPrior-before-Reset + `Conditional.Reset` re-evaluation; `bonsai add` drop duplicate NoteStep). Issue-to-implementation workflow end-to-end, worktree-isolated dispatch (general-purpose agent, ~15min wall), 6 new tests + 3 subtests all green. Plan doc: `Plans/Active/19-pre-launch-bug-sweep.md`. Session log: `Logs/2026-04-21-plan-19-bug-sweep.md`.
+**Last completed:** PR #46 `d14edbe` — Plan 21 session-start context dedup + Plan 08 Phase C sensors (C1 compact-recovery + C2 context-guard verify/plan patterns; C3 deferred permanently). session-context sensor dump reduced 34.3KB→30.9KB (~10%); drops end-of-session misfire reminder, protocol memory.md + session-start.md auto-injections, full FieldNotes when empty, full Reports/Pending cat → summary. session-start.md protocol rewritten short. UX preferences moved from station/self-awareness.md (-54 lines) to memory.md Feedback (+54). New sensor: `compact-recovery` (SessionStart, matcher=compact) fires only after /compact; session-context now matcher=`startup|resume|clear`. Prior: PR #44 session wrap-up (2026-04-21-plan-20-and-group-g.md log + Backlog stale-worktree audit), squash `fe89423`. Plan 20 core (6 PRs): #28 #29 #30 #31 #40 #41; wrap-up PR #42 `9cf577e`; gitleaks 0/156. Group G Dependabot: 8 PRs merged 2026-04-21 (#32-#39).
 
 ## Notes
 

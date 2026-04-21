@@ -35,12 +35,14 @@ description: Live task tracker. Update this file at the start and end of every w
 |------|------|-------|------------|
 <!-- Better trigger sections promoted to In Progress — 2026-04-16, planning session -->
 <!-- UI overhaul (P2) — promoted to In Progress as Plan 12, removed 2026-04-17 -->
-| Better trigger sections — Phase C (new sensors) | 08 | tech-lead | Phases A+B shipped; Phase C paused while UI/UX Phase 3 ships |
+<!-- Plan 08 Phase C shipped via Plan 21 / PR #46 (2026-04-21): compact-recovery sensor + context-guard verify/plan patterns. C3 deferred permanently per original plan note. -->
 
 ## Recently Done
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Session-start context dedup + Phase C sensors — session-context redundancy cuts, context-guard verify/plan patterns, new compact-recovery sensor, UX prefs moved to memory.md Feedback (PR #46 squash `d14edbe`) | 21 | general-purpose | 2026-04-21 |
+| Better trigger sections — Phase C (new sensors: compact-recovery + context-guard expansion) **shipped via Plan 21 / PR #46**; C3 deferred | 08 | general-purpose | 2026-04-21 |
 | Security scanning infra — Go 1.25.8 bump, golangci-lint v2 + pin, Dependabot, govulncheck CI, CodeQL workflow, gitleaks history audit clean (PRs #28 #29 #30 #31 #40 #41) | 20 | general-purpose | 2026-04-21 |
 | Pre-launch bug sweep — 8 OSS-blocker fixes: CRLF, cross-workspace tree, dedup, spinner errors.Join, harness polish (PR #27 squash `a44e447`) | 19 | general-purpose | 2026-04-21 |
 | BubbleTea foundation + theme system — harness migration across init/add/remove/update (PR #26 squash `2ce63f6`) | 15 | general-purpose | 2026-04-20 |
