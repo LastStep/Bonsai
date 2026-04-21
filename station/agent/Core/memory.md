@@ -13,11 +13,11 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Dependabot Group G triage complete; main `3b03301`.
+**Current task:** Backlog hygiene pass on branch `claude/get-started-PlBaC`. Main at `5248212` (PR #43 Group G closeout merged).
 **In flight (other tracks):** None.
 **Blocked on:** Nothing.
-**Loose ends (uncommitted):** Backlog.md + memory.md edits (Group G closeout + CodeQL v3→v4 deprecation note). Needs closeout PR.
-**Last completed:** Dependabot Group G (8 PRs squash-merged 2026-04-21): #39 ansi patch, #38 go-isatty patch, #37 x/term 0.36→0.42 (rebased 1×), #36 setup-node v6, #35 setup-go v6, #34 golangci-lint-action v9, #33 upload-pages-artifact v5, #32 goreleaser-action v7. Release-notes review confirmed no breaking impact (no `packageManager` field → setup-node auto-cache inactive; no dotfiles in dist → upload-pages-artifact v4 exclusion safe; goreleaser-action v7 inputs unchanged). Plan 20 core (6 PRs): #28 #29 #30 #31 #40 #41; wrap-up PR #42 `9cf577e`; gitleaks 0/156.
+**Loose ends (uncommitted):** Backlog hygiene edits in progress this session.
+**Last completed:** PR #43 (`5248212`, 2026-04-21) — Group G Dependabot closeout + CodeQL v3→v4 deprecation note. Dependabot Group G (8 PRs squash-merged 2026-04-21): #39 ansi patch, #38 go-isatty patch, #37 x/term 0.36→0.42 (rebased 1×), #36 setup-node v6, #35 setup-go v6, #34 golangci-lint-action v9, #33 upload-pages-artifact v5, #32 goreleaser-action v7. Plan 20 core (6 PRs): #28 #29 #30 #31 #40 #41; wrap-up PR #42 `9cf577e`; gitleaks 0/156.
 
 Bundle: 4 Tier 1 fresh-install blockers (CRLF defence via .gitattributes + `normalizeShellLF`; `showWriteResults` cross-workspace bucket-by-top-segment; `applyCustomFileSelection` dedup via `appendUnique`; spinner `errors.Join` at ~30 sites + Warning surfaces) with 4 Tier 2 harness polish items (SpinnerStep goroutine `recover`; `NewConditional` nil-predicate guard; Esc-back predicate re-eval via harness SetPrior-before-Reset + `Conditional.Reset` re-evaluation; `bonsai add` drop duplicate NoteStep). Issue-to-implementation workflow end-to-end, worktree-isolated dispatch (general-purpose agent, ~15min wall), 6 new tests + 3 subtests all green. Plan doc: `Plans/Active/19-pre-launch-bug-sweep.md`. Session log: `Logs/2026-04-21-plan-19-bug-sweep.md`.
 

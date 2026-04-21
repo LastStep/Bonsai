@@ -20,6 +20,28 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-21 — Backlog Hygiene (ad-hoc, user-requested)
+- **Outcome:** success
+- **Execution mode:** tech-lead direct edits on branch `claude/get-started-PlBaC`
+- **Changes:**
+  - **Consolidated CHANGELOG items** — removed Group C line 94 ("CHANGELOG.md + richer release notes") + Group C line 96 ("Consolidate or delineate CHANGELOG backlog items"); expanded Group D line 105 ("Changelog generation skill + release changelogs") to own the full scope (artifact + backfill + wiring + tooling + CLI). Meta-item eliminated.
+  - **Folded Plans Index into Plan archiving** — removed Group E line 114 ("Plans Index file"); expanded Group E line 112 ("Plan archiving — Active/Archive folder structure") to include `Plans/INDEX.md` generation + hand-maintenance as a sub-task.
+  - **Merged x/net bump into batch refresh** — removed ungrouped-P2 line 148 ("[security] Bump golang.org/x/net"); promoted P3 line 178 ("Batch refresh outdated Go modules") to P2 under ungrouped with x/net + CVE framing absorbed (GO-2026-4441, GO-2026-4440).
+  - **Struck 4 shipped Group F items** — "canonical color palette" (Plan 11/14, PR #14/#24), "B O N S A I banner redesign" (Plan 14, PR #24), "persist answered prompt values" (Plan 14, PR #24), "TUI screen lifecycle / clear on major transitions" (Plan 15, PR #26 AltScreen). Verified via code inspection: 22 palette-token refs in `internal/tui/styles.go`; AltScreen usage in `cmd/init.go:146` + `cmd/add.go:149`.
+  - **Closed "show counts alongside ability category headers"** — was marked partial; ItemTree `(N)` counts (Plan 12 / PR #20) meets the original ask. Future polish would be a fresh item.
+  - **Updated Group F intro blurb** — removed "start with the palette (prerequisite)" language since the palette is shipped.
+  - **Memory Work State refresh** — corrected main ref (3b03301 → 5248212), noted PR #43 closeout shipped, removed stale loose-end note.
+- **Fixed via dispatched code agent (no worktree, direct edit):**
+  - Root `Bonsai/CLAUDE.md` project-structure tree drift — `internal/tui/` block expanded to include `styles_test.go` and the `harness/` subtree (4 files). Backlog entry retired.
+- **Items still flagged for user decision:**
+  - Line 149 "Re-plan Better trigger sections — Phase C" — needs promote-or-kill call from user.
+- **Flags:**
+  - Routine-digest path correction: line 113 pointed at `Reports/Pending/2026-04-21-doc-freshness-check.md` but the report has since been archived to `Reports/Archive/`. Updated the breadcrumb.
+- **Notes:**
+  - Two "meta" items (CHANGELOG consolidation pointer, Plans Index decision pointer) were pure backlog debt — pointing at other items rather than describing work. Good pattern to watch for during regular backlog-hygiene: if an item's sole action is "decide between two other items," resolve it during hygiene instead of letting it persist across cycles.
+
+---
+
 ### 2026-04-21 — Plan 20: Security Scanning Infrastructure (session)
 - **Outcome:** success
 - **Execution mode:** tech-lead supervised, 5 general-purpose worktree dispatches + 1 local gitleaks one-shot

@@ -46,8 +46,14 @@ Bonsai/
 │   │   ├── scan.go          ← custom file discovery (user-created abilities)
 │   │   └── scan_test.go     ← tests for custom file scanning
 │   └── tui/
-│       ├── styles.go         ← LipGloss styles, panels, trees, display helpers
-│       └── prompts.go        ← Huh form wrappers (text, select, multi-select, confirm)
+│       ├── styles.go          ← LipGloss styles, panels, trees, display helpers
+│       ├── styles_test.go     ← tests for styling helpers
+│       ├── prompts.go         ← Huh form wrappers (text, select, multi-select, confirm)
+│       └── harness/           ← BubbleTea reducer/step/splicer machinery driving init/add/remove/update
+│           ├── harness.go
+│           ├── harness_test.go
+│           ├── steps.go
+│           └── steps_test.go
 ├── catalog/                  ← bundled catalog (embedded into binary)
 │   ├── core/                 ← shared core files (memory, self-awareness)
 │   ├── agents/               ← agent type definitions + identity templates
