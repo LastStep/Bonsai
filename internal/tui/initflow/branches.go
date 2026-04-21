@@ -22,27 +22,26 @@ const (
 
 // branchCat is a single tab in the BranchesStage — one of the five ability
 // categories. Kanji is the wide-char accent label (ASCII terminals render
-// just the display name).
+// just the display name). introLine1/introLine2 are the two-line description
+// shown above the list when this tab is active.
 type branchCat struct {
 	key         string       // "skills" etc.
 	displayName string       // "skills" lowercased label in header row
 	kanji       string       // 技 / 流 / 律 / 感 / 習
+	introLine1  string       // first line of the per-tab intro copy
+	introLine2  string       // second line
 	items       []branchItem // catalog-ordered item list
 }
 
-// branchItem is a single selectable row inside a category tab. Affects /
-// crossLinks fields are retained for future catalog expansion but are always
-// empty today (the current catalog types don't carry them — the inline expand
-// panel renders ABOUT + FILE only, per the locked decisions).
+// branchItem is a single selectable row inside a category tab. filePath is
+// the catalog ContentPath — shown in the details panel FILE row.
 type branchItem struct {
 	name        string
 	displayName string
 	description string
 	required    bool
 	isDefault   bool
-	affects     string // reserved for future catalog metadata (always "")
-	crossLinks  string // reserved for future catalog metadata (always "")
-	filePath    string // catalog ContentPath — shown in the inline-expand FILE row
+	filePath    string
 }
 
 // BranchesStage is the tabbed category picker covering the five ability
@@ -177,11 +176,36 @@ func NewBranchesStage(ctx StageContext, cat *catalog.Catalog, agentDef *catalog.
 	}
 
 	categories := []branchCat{
-		{key: branchCatSkills, displayName: "skills", kanji: "技", items: skills},
-		{key: branchCatWorkflows, displayName: "workflows", kanji: "流", items: workflows},
-		{key: branchCatProtocols, displayName: "protocols", kanji: "律", items: protocols},
-		{key: branchCatSensors, displayName: "sensors", kanji: "感", items: sensors},
-		{key: branchCatRoutines, displayName: "routines", kanji: "習", items: routines},
+		{
+			key: branchCatSkills, displayName: "skills", kanji: "技",
+			introLine1: "Rulebooks for specific domains.",
+			introLine2: "Standards the Tech Lead consults when doing focused work.",
+			items:      skills,
+		},
+		{
+			key: branchCatWorkflows, displayName: "workflows", kanji: "流",
+			introLine1: "Activity-level procedures.",
+			introLine2: "Playbooks for multi-phase tasks from intake to ship.",
+			items:      workflows,
+		},
+		{
+			key: branchCatProtocols, displayName: "protocols", kanji: "律",
+			introLine1: "Always-on guardrails.",
+			introLine2: "Rules every session follows, regardless of task.",
+			items:      protocols,
+		},
+		{
+			key: branchCatSensors, displayName: "sensors", kanji: "感",
+			introLine1: "Hook-triggered automations.",
+			introLine2: "Event scripts the harness runs without prompting.",
+			items:      sensors,
+		},
+		{
+			key: branchCatRoutines, displayName: "routines", kanji: "習",
+			introLine1: "Periodic self-maintenance.",
+			introLine2: "Recurring checks on a time-based schedule.",
+			items:      routines,
+		},
 	}
 
 	// Seed selected maps from required + default lists. Required items are
@@ -337,7 +361,9 @@ func (s *BranchesStage) renderBody() string {
 		dim.Render(strings.Repeat("─", 55))
 
 	tabRow := s.renderTabs()
+	tabIntro := s.renderTabIntro()
 	list := s.renderList()
+	details := s.renderDetails()
 	counter := s.renderCounter()
 
 	body := []string{
@@ -348,11 +374,74 @@ func (s *BranchesStage) renderBody() string {
 		"",
 		tabRow,
 		"",
+		tabIntro,
+		"",
 		list,
+		"",
+		details,
 		"",
 		dim.Render(counter),
 	}
 	return centerBlock(strings.Join(body, "\n"), s.width)
+}
+
+// renderTabIntro renders the current tab's two-line description block.
+// Dim styling keeps it supportive — the ability list is the focal element.
+func (s *BranchesStage) renderTabIntro() string {
+	cat := s.currentCat()
+	if cat == nil {
+		return ""
+	}
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+	white := lipgloss.NewStyle().Foreground(tui.ColorAccent)
+	return white.Render(cat.introLine1) + "\n" + dim.Render(cat.introLine2)
+}
+
+// renderDetails renders the fixed-height details block below the list. Height
+// is constant across both states (2 content rows + 1 label row) so toggling
+// `?` doesn't shift the counter below — eliminates the row jitter that the
+// prior inline-expand layout caused. When expanded, shows ABOUT + FILE for
+// the currently-focused ability; when collapsed, shows a dim hint.
+func (s *BranchesStage) renderDetails() string {
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+
+	header := leaf.Render(strings.Repeat("─", 3)) + " " +
+		bark.Render("DETAILS") + " " +
+		dim.Render(strings.Repeat("─", 55))
+
+	const labelW = 10
+	const indent = "    "
+
+	if !s.expanded {
+		hint := indent + dim.Render("press ? to reveal ABOUT + FILE on the focused ability")
+		filler := indent + dim.Render(" ")
+		return header + "\n" + hint + "\n" + filler
+	}
+
+	cat := s.currentCat()
+	if cat == nil || len(cat.items) == 0 {
+		return header + "\n" + indent + dim.Render("(nothing to show)") + "\n"
+	}
+	row := s.itemIdx[s.catIdx]
+	if row < 0 || row >= len(cat.items) {
+		return header + "\n" + indent + dim.Render("(nothing to show)") + "\n"
+	}
+	it := cat.items[row]
+
+	label := lipgloss.NewStyle().Foreground(tui.ColorSubtle)
+	about := it.description
+	if about == "" {
+		about = "—"
+	}
+	file := it.filePath
+	if file == "" {
+		file = "—"
+	}
+	aboutRow := indent + bark.Render(padRight("ABOUT", labelW)) + label.Render(about)
+	fileRow := indent + bark.Render(padRight("FILE", labelW)) + dim.Render(file)
+	return header + "\n" + aboutRow + "\n" + fileRow
 }
 
 // renderTabs renders the 5-column tab header: kanji + display name on row 1,
@@ -403,9 +492,10 @@ func (s *BranchesStage) renderTabs() string {
 	return strings.Join(top, " ") + "\n" + strings.Join(sub, " ")
 }
 
-// renderList renders the item rows for the current tab. When expanded is
-// true and the focused row is visible, the focused row gets an inline
-// expansion block (ABOUT / FILE). Non-focused rows always render compact.
+// renderList renders the item rows for the current tab. Details for the
+// focused ability render in a fixed-height block below the list (see
+// renderDetails) rather than inline — the list never jitters when `?`
+// toggles expansion.
 func (s *BranchesStage) renderList() string {
 	cat := s.currentCat()
 	if cat == nil {
@@ -419,11 +509,6 @@ func (s *BranchesStage) renderList() string {
 	rows := make([]string, 0, len(cat.items))
 	for i := range cat.items {
 		rows = append(rows, s.renderRow(i))
-		if s.expanded && i == s.itemIdx[s.catIdx] {
-			if block := s.renderExpand(cat.items[i]); block != "" {
-				rows = append(rows, block)
-			}
-		}
 	}
 	return strings.Join(rows, "\n")
 }
@@ -462,12 +547,18 @@ func (s *BranchesStage) renderRow(idx int) string {
 		border = lipgloss.NewStyle().Foreground(tui.ColorPrimary).Render("│ ")
 	}
 
+	// Column widths sized so the full row (border 2 + glyph 1 + sp 1 +
+	// name 18 + sp 1 + desc 38 + sp 1 + tag 10) = 72 cells — fits an 80-col
+	// terminal with the centerBlock margin.
+	const nameColW = 18
+	const descColW = 38
+	const tagColW = 10
+
 	// Name column — bold when focused, regular otherwise.
 	name := it.displayName
 	if name == "" {
 		name = it.name
 	}
-	const nameColW = 22
 	nameCol := label.Render(padRight(name, nameColW))
 	if focused {
 		nameCol = bark.Render(padRight(name, nameColW))
@@ -475,57 +566,27 @@ func (s *BranchesStage) renderRow(idx int) string {
 
 	// Description column — muted, truncated so the row doesn't wrap.
 	desc := it.description
-	const descColW = 44
-	if len(desc) > descColW {
-		desc = desc[:descColW-1] + "…"
+	if lipgloss.Width(desc) > descColW {
+		// Truncate by rune so multi-byte descriptions don't split mid-char.
+		rr := []rune(desc)
+		if len(rr) > descColW-1 {
+			desc = string(rr[:descColW-1]) + "…"
+		}
 	}
 	descCol := dim.Render(padRight(desc, descColW))
 
-	// Trailing tags: "(required)" or "DEFAULT" + an expand/collapse caret.
+	// Trailing tag: "(required)" or "DEFAULT", right-aligned inside the
+	// fixed tag slot so the word-end lands on the same column for every
+	// row regardless of tag text length.
 	tag := ""
 	if it.required {
 		tag = muted.Render("(required)")
 	} else if it.isDefault {
 		tag = muted.Render("DEFAULT")
 	}
+	tagCol := lipgloss.PlaceHorizontal(tagColW, lipgloss.Right, tag)
 
-	caret := "·"
-	if s.expanded && focused {
-		caret = "▾"
-	}
-	caretStr := dim.Render(caret)
-
-	return border + glyphStyle.Render(glyph) + " " + nameCol + " " + descCol + " " + padRight(tag, 10) + " " + caretStr
-}
-
-// renderExpand renders the inline-expand block beneath the focused row. The
-// current catalog shape only carries Description + ContentPath — so we render
-// ABOUT and FILE, and skip AFFECTS / CROSS (reserved for a future catalog
-// metadata expansion — see locked decisions in Plan 22 §Phase 4).
-func (s *BranchesStage) renderExpand(it branchItem) string {
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	label := lipgloss.NewStyle().Foreground(tui.ColorSubtle)
-
-	const labelW = 10
-	const indent = "    "
-
-	lines := make([]string, 0, 4)
-	if it.description != "" {
-		lines = append(lines, indent+bark.Render(padRight("ABOUT", labelW))+label.Render(it.description))
-	}
-	// AFFECTS / CROSS retained on the struct for future catalog metadata,
-	// but the current item types don't carry them — never rendered today.
-	if it.affects != "" {
-		lines = append(lines, indent+bark.Render(padRight("AFFECTS", labelW))+label.Render(it.affects))
-	}
-	if it.crossLinks != "" {
-		lines = append(lines, indent+bark.Render(padRight("CROSS", labelW))+label.Render(it.crossLinks))
-	}
-	if it.filePath != "" {
-		lines = append(lines, indent+bark.Render(padRight("FILE", labelW))+dim.Render(it.filePath))
-	}
-	return strings.Join(lines, "\n")
+	return border + glyphStyle.Render(glyph) + " " + nameCol + " " + descCol + " " + tagCol
 }
 
 // renderCounter renders the summary line at the bottom of the stage body.

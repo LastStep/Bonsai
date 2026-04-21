@@ -17,15 +17,20 @@ type KeyHint struct {
 	Desc string // e.g. "continue", "toggle", "details"
 }
 
-// RenderHeader renders the two-column top banner shown above every stage.
+// RenderHeader renders the two-column, two-row top banner shown above every
+// stage. Both columns are two rows — left stacks the service badge above the
+// process label so the brand and the action sit on distinct lines; right
+// stacks "PLANTING INTO" above the project path so the destination reads as
+// its own block.
 //
-//	Left:  [盆] BONSAI · INITIALIZE · v<version>
-//	Right: PLANTING INTO
-//	       ~/.../<project>/
+//	Left row 1:  [盆] BONSAI
+//	Left row 2:  INITIALIZE · v<version>
+//	Right row 1: PLANTING INTO
+//	Right row 2: ~/.../<project>/
 //
-// version "dev" / "" hides the version segment. projectDir is the absolute
-// path to the project root — the only path segment rendered in the right
-// block; earlier iterations also rendered a "station/" suffix, but the
+// version "dev" / "" hides the version segment on row 2. projectDir is the
+// absolute path to the project root — the only path segment rendered in the
+// right block; earlier iterations also rendered a "station/" suffix, but the
 // station subdir doesn't exist yet at any point before the Generate stage,
 // so showing it was misleading. safe gates the single wide-char glyph so
 // ASCII-only terminals get a safe substitute.
@@ -38,47 +43,46 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary)
 
-	// ── Left block ───────────────────────────────────────────────────
+	// ── Left block (2 rows) ─────────────────────────────────────────
 	mark := "盆"
 	if !safe {
 		mark = "o"
 	}
-	leftParts := []string{
-		muted.Render("[") + primary.Render(mark) + muted.Render("]"),
-		primary.Render("BONSAI"),
-		muted.Render("·"),
-		muted.Render("INITIALIZE"),
-	}
+	leftRow1 := muted.Render("[") + primary.Render(mark) + muted.Render("]") +
+		" " + primary.Render("BONSAI")
+
+	leftRow2Parts := []string{muted.Render("INITIALIZE")}
 	if version != "" && version != "dev" {
-		leftParts = append(leftParts,
+		leftRow2Parts = append(leftRow2Parts,
 			muted.Render("·"),
 			muted.Render("v"+version),
 		)
 	}
-	left := strings.Join(leftParts, " ")
+	leftRow2 := strings.Join(leftRow2Parts, " ")
 
-	// ── Right block ──────────────────────────────────────────────────
-	// "PLANTING INTO" headline above "~/path/<project>/".
+	// ── Right block (2 rows) ────────────────────────────────────────
 	projectDisplay := collapseHome(projectDir)
 	projectName := filepath.Base(projectDir)
 	parent := filepath.Dir(projectDisplay)
-	// Render parent muted, project name bark, trailing slash muted.
 	if parent == "." || parent == "" {
 		parent = ""
 	} else if !strings.HasSuffix(parent, "/") {
 		parent += "/"
 	}
-	pathRow := muted.Render(parent) + bark.Render(projectName) + muted.Render("/")
 	rightRow1 := muted.Render("PLANTING INTO")
+	rightRow2 := muted.Render(parent) + bark.Render(projectName) + muted.Render("/")
 
-	// ── Compose two-row layout with left-padded right block ─────────
-	// Row 1: left + spaces + rightRow1
-	// Row 2: spaces (matching left width) + pathRow
-	leftW := lipgloss.Width(left)
+	// ── Compose ─────────────────────────────────────────────────────
+	// Pick the wider of each block as the column anchor so both rows
+	// align consistently on the shared gap.
+	left1W := lipgloss.Width(leftRow1)
+	left2W := lipgloss.Width(leftRow2)
+	leftW := left1W
+	if left2W > leftW {
+		leftW = left2W
+	}
 	right1W := lipgloss.Width(rightRow1)
-	right2W := lipgloss.Width(pathRow)
-	// Pick the wider right side to use as the target anchor so both rows
-	// right-align consistently.
+	right2W := lipgloss.Width(rightRow2)
 	rightW := right1W
 	if right2W > rightW {
 		rightW = right2W
@@ -87,12 +91,12 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	if gap < 2 {
 		gap = 2
 	}
-	// Right-pad row 1 / row 2 so their right columns align.
-	row1 := left + strings.Repeat(" ", gap) + strings.Repeat(" ", rightW-right1W) + rightRow1
-	row2Left := strings.Repeat(" ", leftW+gap)
-	row2 := row2Left + strings.Repeat(" ", rightW-right2W) + pathRow
 
-	// Pad both rows to width so AltScreen doesn't see ragged edges.
+	row1 := leftRow1 + strings.Repeat(" ", leftW-left1W+gap) +
+		strings.Repeat(" ", rightW-right1W) + rightRow1
+	row2 := leftRow2 + strings.Repeat(" ", leftW-left2W+gap) +
+		strings.Repeat(" ", rightW-right2W) + rightRow2
+
 	row1 = padRight(row1, width)
 	row2 = padRight(row2, width)
 	return row1 + "\n" + row2
