@@ -378,10 +378,13 @@ Scope: create `internal/tui/initflow/` subpackage, implement the persistent chro
 
 ### Phase 3 — Vessel + Soil stages (real input)
 
-Scope: Vessel (3 textinputs on one page) and Soil (custom multi-select list). Branches/Observe remain chrome-only stubs. Continues behind `BONSAI_REDESIGN=1`.
+Scope: Vessel (3 textinputs on one page) and Soil (custom multi-select list). Branches/Observe remain chrome-only stubs. Continues behind `BONSAI_REDESIGN=1`. Also strips the misleading `station/` segment from the header (station subdir doesn't exist at render time — only the project root does).
 
 #### Files touched
 
+- `internal/tui/initflow/chrome.go` — drop `stationSubdir` parameter from `RenderHeader`; header renders project path only
+- `internal/tui/initflow/chrome_test.go` — **new** — covers the project-only header render + `~`-collapse behavior
+- `internal/tui/initflow/stage.go` — drop `stationDir` arg from `renderFrame`'s `RenderHeader` call (keep the `stationDir` field on `Stage` and `StageContext` — Vessel writes it; Phase 5 Planted body will render it)
 - `internal/tui/initflow/vessel.go` — **new**
 - `internal/tui/initflow/vessel_test.go` — **new**
 - `internal/tui/initflow/soil.go` — **new**
@@ -455,23 +458,41 @@ Scope: Vessel (3 textinputs on one page) and Soil (custom multi-select list). Br
 3. **Wire real results into `runInitRedesign`.**
 
    Stage slice in `runInitRedesign`:
-   - `NewVesselStage(version, projectDir)` — stage 0
-   - `NewSoilStage(scaffoldingOptions(cat))` — stage 1
-   - `newBranchesStageStub()` — stage 2 (empty scaffold, returns empty picks)
-   - `newObserveStageStub()` — stage 3 (returns `false` confirm)
+   - `NewVesselStage(ctx StageContext)` — stage 0
+   - `NewSoilStage(ctx StageContext, options []ScaffoldingOption)` — stage 1
+   - `newBranchesStageStub(ctx StageContext)` — stage 2 (empty scaffold, returns empty picks)
+   - `newObserveStageStub(ctx StageContext)` — stage 3 (returns `false` confirm)
    - Legacy generate/conflict tail is still skipped in Phase 3.
 
-4. **Tests.**
+4. **Strip `station/` from `RenderHeader`.**
 
-   - `vessel_test.go`: TextInput focus cycling; required-empty validation blocks submit; Description empty → Result contains `""`; Station default applied when empty.
-   - `soil_test.go`: Required items pre-selected and cannot be toggled off; arrow-key focus advances/wraps; Space toggles optional items; Result order matches input order; empty selection permitted only if all optional items are unselected and required items covered.
+   User-reported bug: header's right block reads `PLANTING INTO / ~/.../project/station/`, but `station/` doesn't exist yet at any point before Phase 5 generate. Showing it is misleading — it claims the path exists when it doesn't.
+
+   - Change `func RenderHeader(version, projectDir, stationSubdir string, width int, safe bool) string` → `func RenderHeader(version, projectDir string, width int, safe bool) string`.
+   - Inside: compute `projectDisplay := collapseHome(projectDir)`; render `parent` muted + `projectName` in Bark + trailing `/` muted. Drop the `station` segment and the `stationSubdir` normalization.
+   - `Stage.renderFrame` call site: `RenderHeader(s.version, s.projectDir, width, s.ensoSafe)`.
+   - Keep `Stage.stationDir`, `StageContext.StationDir`, and Vessel's station input — still needed: Phase 5 Planted body renders the generated file tree rooted at `station/`.
+
+5. **Tests.**
+
+   - `chrome_test.go`: header with `projectDir="/home/alice/voyager-api"` collapses to `~/voyager-api/`; `projectDir="/tmp/p"` with `HOME=/home/bob` keeps absolute; no `station` substring appears in rendered output.
+   - `vessel_test.go`: TextInput focus cycling; required-empty validation blocks submit; Description empty → Result contains `""`; Station default (`station/`) applied when input empty; `Result()` returns `map[string]string` with keys `name`/`description`/`station`.
+   - `soil_test.go`: Hand-rolled list (not `bubbles/list` — overkill for a 4–8 item list; hand-roll gives exact row layout from `zen-shell.jsx`). Required items pre-selected and cannot be toggled off; arrow-key focus advances/wraps; Space toggles optional items; Result order matches input order; empty selection permitted only if all optional items are unselected and required items covered.
+
+#### Design decisions resolved (pre-dispatch refinement, 2026-04-21)
+
+- **Vessel `Result()` shape = `map[string]string`** (keys `name`, `description`, `station`). Single stage replaces the three legacy steps, so `prev[]` becomes per-stage not per-field: `runInitRedesign` reads `vessel := prev[0].(map[string]string); name := vessel["name"]`. Matches the "one bag per stage" note at §Vessel·Result.
+- **Soil implementation = hand-rolled list, not `bubbles/list`.** Scaffolding catalog is ~4–8 items; `bubbles/list` ships fuzzy filter + pagination + its own row styling (hard to match `zen-shell.jsx` exact layout). Hand-roll is ~120 lines, single file, full control over focus highlight, required-badge placement, and `◆/◇` glyphs.
+- **Header station strip**: removed for clarity — confirmed not a breaking change since `RenderHeader` has one caller (`Stage.renderFrame`) inside the same package.
 
 #### Verification
 
+- [ ] `BONSAI_REDESIGN=1 ./bonsai init` — header right block shows `~/.../project/` only, no `station/` segment.
 - [ ] `BONSAI_REDESIGN=1 ./bonsai init` — Vessel page accepts 3 inputs, tab cycles focus, required validation works, station field receives `station/` default.
 - [ ] Soil page lists scaffolding items from catalog, required pinned, `␣` toggles optional, counter updates ("X of N selected").
 - [ ] Esc at Soil pops back to Vessel with prior values preserved (TextInputs still show entered strings).
 - [ ] `go test ./internal/tui/initflow/...` passes.
+- [ ] `make build && go test ./...` — full suite clean.
 
 ---
 

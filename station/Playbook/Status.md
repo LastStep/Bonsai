@@ -14,7 +14,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| `bonsai init` cinematic redesign — 5 phases / 5 PRs, behind `BONSAI_REDESIGN=1` until Phase 5 flips default | 22 | general-purpose | Phases 1–2 shipped (PRs #47, #48). Next: Phase 3 (Vessel + Soil stages — real input). |
+| `bonsai init` cinematic redesign — 5 phases / 5 PRs, behind `BONSAI_REDESIGN=1` until Phase 5 flips default | 22 | general-purpose | Phases 1–3 shipped (PRs #47, #48, #49). Next: Phase 4 (Branches tabbed picker + inline-expand). |
 <!-- Plan 19 (pre-launch bug sweep) — merged PR #27 squash a44e447 2026-04-21, moved to Recently Done -->
 <!-- Documentation site (Starlight) — Plan 10 complete, all phases shipped (PRs #13-19) -->
 <!-- UI/UX overhaul Phase 2 — merged PR #20, moved to Recently Done 2026-04-17 -->
@@ -42,6 +42,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Plan 22 Phase 3 — `VesselStage` (3 textinputs) + `SoilStage` (hand-rolled multi-select) + `RenderHeader` signature strip `stationSubdir` (bug fix: header no longer shows non-existent `station/` subdir) (PR #49 squash `971ee44`) | 22 | general-purpose | 2026-04-21 |
 | Plan 22 Phase 2 — `internal/tui/initflow/` package (chrome/enso/fallback/stage/stub) + `harness.Chromeless` + env-flag `runInitRedesign` (PR #48 squash `2e2a08c`) | 22 | general-purpose | 2026-04-21 |
 | Plan 22 Phase 1 — `RenderFileTree` widget + `ColorLeafDim`/`ColorRule`/`ColorRule2` palette tokens (PR #47 squash `7553d43`) | 22 | general-purpose | 2026-04-21 |
 | Session-start context dedup + Phase C sensors — session-context redundancy cuts, context-guard verify/plan patterns, new compact-recovery sensor, UX prefs moved to memory.md Feedback (PR #46 squash `d14edbe`) | 21 | general-purpose | 2026-04-21 |
