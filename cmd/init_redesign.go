@@ -75,7 +75,7 @@ func runInitRedesign(cmd *cobra.Command, args []string) error {
 	steps := []harness.Step{
 		initflow.NewVesselStage(ctx),
 		initflow.NewSoilStage(ctx, soilOptions),
-		initflow.NewStubStage(2, ctx.Version, ctx.ProjectDir, ctx.StationDir, ctx.AgentDisplay, ctx),
+		initflow.NewBranchesStage(ctx, cat, agentDef),
 		initflow.NewStubStage(3, ctx.Version, ctx.ProjectDir, ctx.StationDir, ctx.AgentDisplay, ctx),
 	}
 

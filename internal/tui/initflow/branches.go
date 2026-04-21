@@ -1,0 +1,582 @@
+package initflow
+
+import (
+	"fmt"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+
+	"github.com/LastStep/Bonsai/internal/catalog"
+	"github.com/LastStep/Bonsai/internal/tui"
+)
+
+// Branches category keys (also the map keys used for per-category state).
+const (
+	branchCatSkills    = "skills"
+	branchCatWorkflows = "workflows"
+	branchCatProtocols = "protocols"
+	branchCatSensors   = "sensors"
+	branchCatRoutines  = "routines"
+)
+
+// branchCat is a single tab in the BranchesStage — one of the five ability
+// categories. Kanji is the wide-char accent label (ASCII terminals render
+// just the display name).
+type branchCat struct {
+	key         string       // "skills" etc.
+	displayName string       // "skills" lowercased label in header row
+	kanji       string       // 技 / 流 / 律 / 感 / 習
+	items       []branchItem // catalog-ordered item list
+}
+
+// branchItem is a single selectable row inside a category tab. Affects /
+// crossLinks fields are retained for future catalog expansion but are always
+// empty today (the current catalog types don't carry them — the inline expand
+// panel renders ABOUT + FILE only, per the locked decisions).
+type branchItem struct {
+	name        string
+	displayName string
+	description string
+	required    bool
+	isDefault   bool
+	affects     string // reserved for future catalog metadata (always "")
+	crossLinks  string // reserved for future catalog metadata (always "")
+	filePath    string // catalog ContentPath — shown in the inline-expand FILE row
+}
+
+// BranchesStage is the tabbed category picker covering the five ability
+// types (Skills / Workflows / Protocols / Sensors / Routines). Per-category
+// multi-select with inline-expand details on the focused row.
+//
+// State:
+//   - categories: the five tabs with their items (built in the ctor from the
+//     full catalog + agentDef).
+//   - catIdx: currently-visible tab.
+//   - expanded: global toggle for the inline-expand panel on the focused row.
+//   - itemIdx: per-tab focus row index so switching tabs preserves each tab's
+//     focus position.
+//   - selected: per-tab set of machine-names that are picked.
+type BranchesStage struct {
+	Stage
+
+	categories []branchCat
+	catIdx     int
+	expanded   bool
+	itemIdx    map[int]int
+	selected   map[int]map[string]bool
+}
+
+// BranchesResult is the advance-payload returned from Result() when the user
+// hits Enter. Slices preserve the catalog iteration order (alphabetical per
+// catalog.loadItems). Required items are always present.
+type BranchesResult struct {
+	Skills    []string
+	Workflows []string
+	Protocols []string
+	Sensors   []string
+	Routines  []string
+}
+
+// NewBranchesStage constructs the real Branches stage at rail position 2.
+// The ctor walks the five categories of the catalog (filtered to the
+// tech-lead agent), seeds required items as pre-selected + immutable, and
+// marks each default-list entry as pre-selected with an isDefault flag so
+// the renderer can surface the DEFAULT tag.
+func NewBranchesStage(ctx StageContext, cat *catalog.Catalog, agentDef *catalog.AgentDef) *BranchesStage {
+	label := StageLabels[2]
+	base := NewStage(
+		2,
+		label,
+		label.English,
+		ctx.Version,
+		ctx.ProjectDir,
+		ctx.StationDir,
+		ctx.AgentDisplay,
+		ctx.StartedAt,
+	)
+
+	const agentType = "tech-lead"
+
+	// Build the five category tabs. Each mapper pulls from its own catalog
+	// accessor because the per-type shapes don't share a common interface
+	// (CatalogItem vs SensorItem vs RoutineItem) — but the fields we need
+	// are identical: Name, DisplayName, Description, Required, ContentPath.
+	stringSet := func(xs []string) map[string]bool {
+		out := make(map[string]bool, len(xs))
+		for _, s := range xs {
+			out[s] = true
+		}
+		return out
+	}
+
+	skillsDefaults := stringSet(agentDef.DefaultSkills)
+	workflowsDefaults := stringSet(agentDef.DefaultWorkflows)
+	protocolsDefaults := stringSet(agentDef.DefaultProtocols)
+	sensorsDefaults := stringSet(agentDef.DefaultSensors)
+	routinesDefaults := stringSet(agentDef.DefaultRoutines)
+
+	skills := make([]branchItem, 0)
+	for _, it := range cat.SkillsFor(agentType) {
+		skills = append(skills, branchItem{
+			name:        it.Name,
+			displayName: it.DisplayName,
+			description: it.Description,
+			required:    it.Required.CompatibleWith(agentType),
+			isDefault:   skillsDefaults[it.Name],
+			filePath:    it.ContentPath,
+		})
+	}
+
+	workflows := make([]branchItem, 0)
+	for _, it := range cat.WorkflowsFor(agentType) {
+		workflows = append(workflows, branchItem{
+			name:        it.Name,
+			displayName: it.DisplayName,
+			description: it.Description,
+			required:    it.Required.CompatibleWith(agentType),
+			isDefault:   workflowsDefaults[it.Name],
+			filePath:    it.ContentPath,
+		})
+	}
+
+	protocols := make([]branchItem, 0)
+	for _, it := range cat.ProtocolsFor(agentType) {
+		protocols = append(protocols, branchItem{
+			name:        it.Name,
+			displayName: it.DisplayName,
+			description: it.Description,
+			required:    it.Required.CompatibleWith(agentType),
+			isDefault:   protocolsDefaults[it.Name],
+			filePath:    it.ContentPath,
+		})
+	}
+
+	sensors := make([]branchItem, 0)
+	for _, it := range cat.SensorsFor(agentType) {
+		sensors = append(sensors, branchItem{
+			name:        it.Name,
+			displayName: it.DisplayName,
+			description: it.Description,
+			required:    it.Required.CompatibleWith(agentType),
+			isDefault:   sensorsDefaults[it.Name],
+			filePath:    it.ContentPath,
+		})
+	}
+
+	routines := make([]branchItem, 0)
+	for _, it := range cat.RoutinesFor(agentType) {
+		routines = append(routines, branchItem{
+			name:        it.Name,
+			displayName: it.DisplayName,
+			description: it.Description,
+			required:    it.Required.CompatibleWith(agentType),
+			isDefault:   routinesDefaults[it.Name],
+			filePath:    it.ContentPath,
+		})
+	}
+
+	categories := []branchCat{
+		{key: branchCatSkills, displayName: "skills", kanji: "技", items: skills},
+		{key: branchCatWorkflows, displayName: "workflows", kanji: "流", items: workflows},
+		{key: branchCatProtocols, displayName: "protocols", kanji: "律", items: protocols},
+		{key: branchCatSensors, displayName: "sensors", kanji: "感", items: sensors},
+		{key: branchCatRoutines, displayName: "routines", kanji: "習", items: routines},
+	}
+
+	// Seed selected maps from required + default lists. Required items are
+	// always-selected; default items start selected but can be toggled off.
+	selected := make(map[int]map[string]bool, len(categories))
+	itemIdx := make(map[int]int, len(categories))
+	for i, c := range categories {
+		picks := make(map[string]bool)
+		for _, it := range c.items {
+			if it.required || it.isDefault {
+				picks[it.name] = true
+			}
+		}
+		selected[i] = picks
+		itemIdx[i] = 0
+	}
+
+	return &BranchesStage{
+		Stage:      base,
+		categories: categories,
+		catIdx:     0,
+		expanded:   false,
+		itemIdx:    itemIdx,
+		selected:   selected,
+	}
+}
+
+// Init implements tea.Model — no cursor/cmd to fire on entry.
+func (s *BranchesStage) Init() tea.Cmd { return nil }
+
+// Update handles tab switching, item focus movement, item toggling, the
+// global inline-expand toggle, and Enter-to-advance.
+func (s *BranchesStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch m := msg.(type) {
+	case tea.WindowSizeMsg:
+		s.width = m.Width
+		s.height = m.Height
+	case tea.KeyMsg:
+		switch m.String() {
+		case "left", "h":
+			if len(s.categories) == 0 {
+				return s, nil
+			}
+			s.catIdx = (s.catIdx - 1 + len(s.categories)) % len(s.categories)
+		case "right", "l":
+			if len(s.categories) == 0 {
+				return s, nil
+			}
+			s.catIdx = (s.catIdx + 1) % len(s.categories)
+		case "up", "k":
+			cat := s.currentCat()
+			if cat == nil || len(cat.items) == 0 {
+				return s, nil
+			}
+			cur := s.itemIdx[s.catIdx]
+			cur--
+			if cur < 0 {
+				cur = 0 // clamp, no wrap (per plan spec)
+			}
+			s.itemIdx[s.catIdx] = cur
+		case "down", "j":
+			cat := s.currentCat()
+			if cat == nil || len(cat.items) == 0 {
+				return s, nil
+			}
+			cur := s.itemIdx[s.catIdx]
+			cur++
+			if cur >= len(cat.items) {
+				cur = len(cat.items) - 1 // clamp, no wrap
+			}
+			s.itemIdx[s.catIdx] = cur
+		case " ":
+			cat := s.currentCat()
+			if cat == nil || len(cat.items) == 0 {
+				return s, nil
+			}
+			row := s.itemIdx[s.catIdx]
+			if row < 0 || row >= len(cat.items) {
+				return s, nil
+			}
+			it := cat.items[row]
+			if it.required {
+				return s, nil // required items cannot be toggled
+			}
+			picks := s.selected[s.catIdx]
+			if picks[it.name] {
+				delete(picks, it.name)
+			} else {
+				picks[it.name] = true
+			}
+		case "?":
+			s.expanded = !s.expanded
+		case "enter":
+			s.done = true
+			return s, nil
+		}
+	}
+	return s, nil
+}
+
+// currentCat returns a pointer to the active branchCat or nil if the index is
+// out of bounds (defensive — should never happen in practice).
+func (s *BranchesStage) currentCat() *branchCat {
+	if s.catIdx < 0 || s.catIdx >= len(s.categories) {
+		return nil
+	}
+	return &s.categories[s.catIdx]
+}
+
+// View composes the Branches stage body inside the shared frame.
+func (s *BranchesStage) View() string {
+	return s.renderFrame(s.renderBody(), s.keyHints())
+}
+
+// keyHints builds the footer key row for this stage.
+func (s *BranchesStage) keyHints() []KeyHint {
+	return []KeyHint{
+		{Key: "←→", Desc: "tab"},
+		{Key: "↑↓", Desc: "move"},
+		{Key: "␣", Desc: "toggle"},
+		{Key: "?", Desc: "details"},
+		{Key: "↵", Desc: "next"},
+		{Key: "esc", Desc: "back"},
+		{Key: "ctrl-c", Desc: "quit"},
+	}
+}
+
+// renderBody renders the stage intro + the tab row + the item list +
+// the counter summary. Body is centred via centerBlock to match the Vessel
+// / Soil visual rhythm.
+func (s *BranchesStage) renderBody() string {
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
+
+	// Title row — mirrors Vessel / Soil pattern.
+	var title string
+	if s.ensoSafe {
+		title = bark.Render(s.label.Kanji) + " " + white.Render(s.label.English)
+	} else {
+		title = white.Render(s.label.English)
+	}
+
+	intro := strings.Join([]string{
+		title,
+		white.Render("Shape the branches of the Tech Lead."),
+		dim.Render("Five categories of abilities — required pinned, defaults pre-picked."),
+	}, "\n")
+
+	divider := leaf.Render(strings.Repeat("─", 3)) + " " +
+		bark.Render("CATEGORIES") + " " +
+		dim.Render(strings.Repeat("─", 55))
+
+	tabRow := s.renderTabs()
+	list := s.renderList()
+	counter := s.renderCounter()
+
+	body := []string{
+		intro,
+		"",
+		"",
+		divider,
+		"",
+		tabRow,
+		"",
+		list,
+		"",
+		dim.Render(counter),
+	}
+	return centerBlock(strings.Join(body, "\n"), s.width)
+}
+
+// renderTabs renders the 5-column tab header: kanji + display name on row 1,
+// "N / Total" subtitle on row 2. The current tab is highlighted with a Leaf
+// colour + ◆ accent glyph; others are muted. On ASCII-only terminals the
+// kanji is dropped in favour of the display name alone (mirrors the
+// vessel.go / soil.go ensoSafe fallback pattern).
+func (s *BranchesStage) renderTabs() string {
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
+	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
+	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+
+	const colW = 16
+
+	top := make([]string, 0, len(s.categories))
+	sub := make([]string, 0, len(s.categories))
+	for i, c := range s.categories {
+		var label string
+		if s.ensoSafe {
+			label = c.kanji + " " + c.displayName
+		} else {
+			label = c.displayName
+		}
+		if i == s.catIdx {
+			label = label + " ◆"
+			top = append(top, leaf.Render(padRight(label, colW)))
+		} else {
+			top = append(top, muted.Render(padRight(label, colW)))
+		}
+
+		// Subtitle: "N / Total" — selected count vs total items for this tab.
+		picks := s.selected[i]
+		sel := 0
+		for _, it := range c.items {
+			if picks[it.name] {
+				sel++
+			}
+		}
+		line := fmt.Sprintf("%d / %d", sel, len(c.items))
+		if i == s.catIdx {
+			sub = append(sub, bark.Render(padRight(line, colW)))
+		} else {
+			sub = append(sub, dim.Render(padRight(line, colW)))
+		}
+	}
+
+	return strings.Join(top, " ") + "\n" + strings.Join(sub, " ")
+}
+
+// renderList renders the item rows for the current tab. When expanded is
+// true and the focused row is visible, the focused row gets an inline
+// expansion block (ABOUT / FILE). Non-focused rows always render compact.
+func (s *BranchesStage) renderList() string {
+	cat := s.currentCat()
+	if cat == nil {
+		return ""
+	}
+	if len(cat.items) == 0 {
+		dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+		return dim.Render("  (no items in this category)")
+	}
+
+	rows := make([]string, 0, len(cat.items))
+	for i := range cat.items {
+		rows = append(rows, s.renderRow(i))
+		if s.expanded && i == s.itemIdx[s.catIdx] {
+			if block := s.renderExpand(cat.items[i]); block != "" {
+				rows = append(rows, block)
+			}
+		}
+	}
+	return strings.Join(rows, "\n")
+}
+
+// renderRow renders a single ability row at index idx within the current
+// tab. Focused rows get a Leaf "│ " left border; selected rows use ◆ (Leaf),
+// unselected use ◇ (dim). Required items show a muted "(required)" tag;
+// default items show the "DEFAULT" tag right-aligned.
+func (s *BranchesStage) renderRow(idx int) string {
+	cat := s.currentCat()
+	if cat == nil || idx < 0 || idx >= len(cat.items) {
+		return ""
+	}
+	it := cat.items[idx]
+	focused := idx == s.itemIdx[s.catIdx]
+	selected := s.selected[s.catIdx][it.name]
+
+	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
+	label := lipgloss.NewStyle().Foreground(tui.ColorSubtle)
+
+	// Glyph: ◆ when selected (Leaf), ◇ when not (dim).
+	glyph := "◇"
+	glyphStyle := dim
+	if selected {
+		glyph = "◆"
+		glyphStyle = leaf
+	}
+
+	// Left border — Leaf "│ " for focused row, two spaces otherwise
+	// (mirrors soil.go:210-215 AdaptiveColor-friendly pattern).
+	border := "  "
+	if focused {
+		border = lipgloss.NewStyle().Foreground(tui.ColorPrimary).Render("│ ")
+	}
+
+	// Name column — bold when focused, regular otherwise.
+	name := it.displayName
+	if name == "" {
+		name = it.name
+	}
+	const nameColW = 22
+	nameCol := label.Render(padRight(name, nameColW))
+	if focused {
+		nameCol = bark.Render(padRight(name, nameColW))
+	}
+
+	// Description column — muted, truncated so the row doesn't wrap.
+	desc := it.description
+	const descColW = 44
+	if len(desc) > descColW {
+		desc = desc[:descColW-1] + "…"
+	}
+	descCol := dim.Render(padRight(desc, descColW))
+
+	// Trailing tags: "(required)" or "DEFAULT" + an expand/collapse caret.
+	tag := ""
+	if it.required {
+		tag = muted.Render("(required)")
+	} else if it.isDefault {
+		tag = muted.Render("DEFAULT")
+	}
+
+	caret := "·"
+	if s.expanded && focused {
+		caret = "▾"
+	}
+	caretStr := dim.Render(caret)
+
+	return border + glyphStyle.Render(glyph) + " " + nameCol + " " + descCol + " " + padRight(tag, 10) + " " + caretStr
+}
+
+// renderExpand renders the inline-expand block beneath the focused row. The
+// current catalog shape only carries Description + ContentPath — so we render
+// ABOUT and FILE, and skip AFFECTS / CROSS (reserved for a future catalog
+// metadata expansion — see locked decisions in Plan 22 §Phase 4).
+func (s *BranchesStage) renderExpand(it branchItem) string {
+	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+	label := lipgloss.NewStyle().Foreground(tui.ColorSubtle)
+
+	const labelW = 10
+	const indent = "    "
+
+	lines := make([]string, 0, 4)
+	if it.description != "" {
+		lines = append(lines, indent+bark.Render(padRight("ABOUT", labelW))+label.Render(it.description))
+	}
+	// AFFECTS / CROSS retained on the struct for future catalog metadata,
+	// but the current item types don't carry them — never rendered today.
+	if it.affects != "" {
+		lines = append(lines, indent+bark.Render(padRight("AFFECTS", labelW))+label.Render(it.affects))
+	}
+	if it.crossLinks != "" {
+		lines = append(lines, indent+bark.Render(padRight("CROSS", labelW))+label.Render(it.crossLinks))
+	}
+	if it.filePath != "" {
+		lines = append(lines, indent+bark.Render(padRight("FILE", labelW))+dim.Render(it.filePath))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderCounter renders the summary line at the bottom of the stage body.
+// Format: "N abilities selected · across 5 categories".
+func (s *BranchesStage) renderCounter() string {
+	total := 0
+	for i := range s.categories {
+		total += len(s.selected[i])
+	}
+	return fmt.Sprintf("%d abilities selected · across %d categories", total, len(s.categories))
+}
+
+// Result returns a BranchesResult with per-category slices of selected
+// machine-names, preserving catalog order. Required items are always in the
+// result (they're pre-selected + immutable).
+func (s *BranchesStage) Result() any {
+	pick := func(idx int) []string {
+		picks := s.selected[idx]
+		cat := s.categories[idx]
+		out := make([]string, 0, len(picks))
+		for _, it := range cat.items {
+			if picks[it.name] {
+				out = append(out, it.name)
+			}
+		}
+		return out
+	}
+
+	res := BranchesResult{}
+	for i, c := range s.categories {
+		slice := pick(i)
+		switch c.key {
+		case branchCatSkills:
+			res.Skills = slice
+		case branchCatWorkflows:
+			res.Workflows = slice
+		case branchCatProtocols:
+			res.Protocols = slice
+		case branchCatSensors:
+			res.Sensors = slice
+		case branchCatRoutines:
+			res.Routines = slice
+		}
+	}
+	return res
+}
+
+// Reset clears the completion flag so re-entry behaves correctly. The
+// per-tab selections, focus cursor, expand toggle, and current tab index
+// are all preserved so Esc-and-return restores the user's state verbatim.
+func (s *BranchesStage) Reset() tea.Cmd {
+	s.done = false
+	return nil
+}
