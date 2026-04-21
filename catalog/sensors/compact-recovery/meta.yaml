@@ -1,0 +1,6 @@
+name: compact-recovery
+description: Re-injects minimal context after /compact (Quick Triggers + Work State only)
+agents: all
+required: all
+event: SessionStart
+matcher: "compact"

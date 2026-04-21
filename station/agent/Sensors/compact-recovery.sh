@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Compact Recovery — Tech Lead Agent
+# Re-injects minimal context after Claude Code /compact. Target: <2000 chars.
+
+ROOT="${1:-.}"
+WORKSPACE="${ROOT}/station/"
+
+echo "=== POST-COMPACT RECOVERY ==="
+echo ""
+
+# 1. Extract Quick Triggers table from workspace CLAUDE.md
+if [[ -f "${WORKSPACE}CLAUDE.md" ]]; then
+  echo "--- Quick Triggers (from CLAUDE.md) ---"
+  awk '/^### Quick Triggers/,/^### Protocols/' "${WORKSPACE}CLAUDE.md" | sed '/^### Protocols/d'
+  echo ""
+fi
+
+# 2. Extract Work State section from memory.md
+if [[ -f "${WORKSPACE}agent/Core/memory.md" ]]; then
+  echo "--- Work State (from memory.md) ---"
+  awk '/^## Work State/,/^## Notes/' "${WORKSPACE}agent/Core/memory.md" | sed '/^## Notes/d'
+  echo ""
+fi
+
+echo "Context compacted. Resume from Work State above. If uncertain, re-read memory.md and Status.md."

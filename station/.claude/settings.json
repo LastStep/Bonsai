@@ -16,19 +16,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/dispatch-guard.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/scope-guard-files.sh\" \"$r\"'"
           }
         ],
-        "matcher": "Agent"
+        "matcher": "Edit|Write"
       },
       {
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/scope-guard-files.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/dispatch-guard.sh\" \"$r\"'"
           }
         ],
-        "matcher": "Edit|Write"
+        "matcher": "Agent"
       }
     ],
     "SessionStart": [
@@ -36,13 +36,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/session-context.sh\" \"$r\"'"
-          },
-          {
-            "type": "command",
             "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/routine-check.sh\" \"$r\"'"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/compact-recovery.sh\" \"$r\"'"
+          }
+        ],
+        "matcher": "compact"
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/session-context.sh\" \"$r\"'"
+          }
+        ],
+        "matcher": "startup|resume|clear"
       }
     ],
     "Stop": [
