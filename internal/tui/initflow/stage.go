@@ -133,7 +133,7 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 		height = 24
 	}
 
-	header := RenderHeader(s.version, s.projectDir, s.stationDir, width, s.ensoSafe)
+	header := RenderHeader(s.version, s.projectDir, width, s.ensoSafe)
 	rail := RenderEnsoRail(s.idx, width, s.ensoSafe)
 	footer := RenderFooter(keys, width)
 

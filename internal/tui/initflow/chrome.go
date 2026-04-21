@@ -21,13 +21,15 @@ type KeyHint struct {
 //
 //	Left:  [盆] BONSAI · INITIALIZE · v<version>
 //	Right: PLANTING INTO
-//	       ~/.../<project>/<station>
+//	       ~/.../<project>/
 //
 // version "dev" / "" hides the version segment. projectDir is the absolute
-// path to the project root; stationSubdir is the subdir under it (e.g.
-// "station/"). safe gates the single wide-char glyph so ASCII-only terminals
-// get a safe substitute.
-func RenderHeader(version, projectDir, stationSubdir string, width int, safe bool) string {
+// path to the project root — the only path segment rendered in the right
+// block; earlier iterations also rendered a "station/" suffix, but the
+// station subdir doesn't exist yet at any point before the Generate stage,
+// so showing it was misleading. safe gates the single wide-char glyph so
+// ASCII-only terminals get a safe substitute.
+func RenderHeader(version, projectDir string, width int, safe bool) string {
 	if width <= 0 {
 		width = 80
 	}
@@ -35,7 +37,6 @@ func RenderHeader(version, projectDir, stationSubdir string, width int, safe boo
 	primary := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
 
 	// ── Left block ───────────────────────────────────────────────────
 	mark := "盆"
@@ -57,21 +58,17 @@ func RenderHeader(version, projectDir, stationSubdir string, width int, safe boo
 	left := strings.Join(leftParts, " ")
 
 	// ── Right block ──────────────────────────────────────────────────
-	// "PLANTING INTO" headline above "~/path/<project>/<station>"
+	// "PLANTING INTO" headline above "~/path/<project>/".
 	projectDisplay := collapseHome(projectDir)
 	projectName := filepath.Base(projectDir)
 	parent := filepath.Dir(projectDisplay)
-	// Render parent muted, project name bark, station leaf.
-	station := stationSubdir
-	if station != "" && !strings.HasSuffix(station, "/") {
-		station += "/"
-	}
+	// Render parent muted, project name bark, trailing slash muted.
 	if parent == "." || parent == "" {
 		parent = ""
 	} else if !strings.HasSuffix(parent, "/") {
 		parent += "/"
 	}
-	pathRow := muted.Render(parent) + bark.Render(projectName) + muted.Render("/") + leaf.Render(station)
+	pathRow := muted.Render(parent) + bark.Render(projectName) + muted.Render("/")
 	rightRow1 := muted.Render("PLANTING INTO")
 
 	// ── Compose two-row layout with left-padded right block ─────────

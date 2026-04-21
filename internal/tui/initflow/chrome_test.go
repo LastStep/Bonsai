@@ -1,0 +1,65 @@
+package initflow
+
+import (
+	"strings"
+	"testing"
+)
+
+// TestRenderHeader_CollapsesHome verifies that a project path rooted under
+// $HOME is rendered with the tilde-collapsed prefix (~/...) rather than the
+// full absolute path.
+func TestRenderHeader_CollapsesHome(t *testing.T) {
+	t.Setenv("HOME", "/home/alice")
+
+	out := RenderHeader("0.1.2", "/home/alice/voyager-api", 120, true)
+
+	if !strings.Contains(out, "~/voyager-api") {
+		t.Fatalf("expected tilde-collapsed project path in header, got:\n%s", out)
+	}
+	// The project name itself must appear.
+	if !strings.Contains(out, "voyager-api") {
+		t.Fatalf("expected project name to appear in header, got:\n%s", out)
+	}
+}
+
+// TestRenderHeader_AbsolutePathOutsideHome verifies that a project path that
+// is not under $HOME is rendered verbatim (no spurious ~ substitution).
+func TestRenderHeader_AbsolutePathOutsideHome(t *testing.T) {
+	t.Setenv("HOME", "/home/bob")
+
+	out := RenderHeader("0.1.2", "/tmp/p", 120, true)
+
+	if !strings.Contains(out, "/tmp/p") {
+		t.Fatalf("expected absolute project path in header, got:\n%s", out)
+	}
+	if strings.Contains(out, "~/") {
+		t.Fatalf("expected no tilde substitution for path outside HOME, got:\n%s", out)
+	}
+}
+
+// TestRenderHeader_NoStationSegment is the regression guard for the Phase-3
+// bug fix — the station subdir doesn't exist until Phase 5 generate runs, so
+// the header must not claim "station/" in its path row. Covers both safe and
+// ASCII-fallback rendering modes.
+func TestRenderHeader_NoStationSegment(t *testing.T) {
+	t.Setenv("HOME", "/home/alice")
+
+	for _, safe := range []bool{true, false} {
+		out := RenderHeader("0.1.2", "/home/alice/voyager-api", 120, safe)
+		if strings.Contains(out, "station") {
+			t.Fatalf("safe=%v: header must not contain \"station\" substring, got:\n%s", safe, out)
+		}
+	}
+}
+
+// TestRenderHeader_TrailingSlash verifies the project row renders a trailing
+// slash after the project name so the path reads as a directory.
+func TestRenderHeader_TrailingSlash(t *testing.T) {
+	t.Setenv("HOME", "/home/alice")
+
+	out := RenderHeader("0.1.2", "/home/alice/voyager-api", 120, true)
+
+	if !strings.Contains(out, "voyager-api/") {
+		t.Fatalf("expected trailing slash after project name, got:\n%s", out)
+	}
+}
