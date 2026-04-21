@@ -40,33 +40,63 @@ if [[ -n "$DOCS" ]]; then
     cat "${DOCS}Playbook/Status.md"
   fi
 
+  # FieldNotes: skip dump when file is effectively empty (only header/separators).
+  # Effectively empty = 1 or fewer non-blank, non-header-marker, non-frontmatter lines
+  # after removing the top YAML frontmatter block and markdown headings.
   if [[ -f "${DOCS}Logs/FieldNotes.md" ]]; then
-    echo ""
-    echo "=== Logs/FieldNotes.md ==="
-    cat "${DOCS}Logs/FieldNotes.md"
+    content_lines=$(awk '
+      BEGIN { in_fm = 0; fm_done = 0 }
+      NR == 1 && /^---[[:space:]]*$/ { in_fm = 1; next }
+      in_fm && /^---[[:space:]]*$/ { in_fm = 0; fm_done = 1; next }
+      in_fm { next }
+      /^[[:space:]]*$/ { next }
+      /^#/ { next }
+      /^---[[:space:]]*$/ { next }
+      /^>/ { next }
+      { count++ }
+      END { print count + 0 }
+    ' "${DOCS}Logs/FieldNotes.md")
+    if [[ "$content_lines" -gt 1 ]]; then
+      echo ""
+      echo "=== Logs/FieldNotes.md ==="
+      cat "${DOCS}Logs/FieldNotes.md"
+    fi
   fi
 
-  # Pending reports
+  # Pending reports: summarize (name + description) instead of full cat.
   if [[ -d "${DOCS}Reports/Pending/" ]] && [ -n "$(ls -A "${DOCS}Reports/Pending/" 2>/dev/null)" ]; then
     echo ""
     echo "=== Reports/Pending/ ==="
     for f in "${DOCS}Reports/Pending/"*; do
+      [[ -f "$f" ]] || continue
       echo ""
       echo "--- $(basename "$f") ---"
-      cat "$f"
+      # Try to extract description from YAML frontmatter first
+      desc=$(awk '
+        BEGIN { in_fm = 0 }
+        NR == 1 && /^---[[:space:]]*$/ { in_fm = 1; next }
+        in_fm && /^---[[:space:]]*$/ { exit }
+        in_fm && /^description:/ {
+          sub(/^description:[[:space:]]*/, "")
+          print
+          exit
+        }
+      ' "$f")
+      if [[ -n "$desc" ]]; then
+        echo "$desc"
+      else
+        # Fallback: first non-empty, non-separator line
+        awk '
+          /^---[[:space:]]*$/ { next }
+          /^[[:space:]]*$/ { next }
+          { print; exit }
+        ' "$f"
+      fi
     done
   fi
 fi
 
 # ── Protocols ───────────────────────────────────────────────────────────────
-
-
-if [[ -f "${WORKSPACE}agent/Protocols/memory.md" ]]; then
-  echo ""
-  echo "=== PROTOCOL: memory.md ==="
-  cat "${WORKSPACE}agent/Protocols/memory.md"
-fi
-
 
 if [[ -f "${WORKSPACE}agent/Protocols/scope-boundaries.md" ]]; then
   echo ""
@@ -74,18 +104,10 @@ if [[ -f "${WORKSPACE}agent/Protocols/scope-boundaries.md" ]]; then
   cat "${WORKSPACE}agent/Protocols/scope-boundaries.md"
 fi
 
-
 if [[ -f "${WORKSPACE}agent/Protocols/security.md" ]]; then
   echo ""
   echo "=== PROTOCOL: security.md ==="
   cat "${WORKSPACE}agent/Protocols/security.md"
-fi
-
-
-if [[ -f "${WORKSPACE}agent/Protocols/session-start.md" ]]; then
-  echo ""
-  echo "=== PROTOCOL: session-start.md ==="
-  cat "${WORKSPACE}agent/Protocols/session-start.md"
 fi
 
 
@@ -136,10 +158,3 @@ if [[ -n "$DOCS" ]] && [[ -d "${DOCS}Logs/" ]]; then
     fi
   fi
 fi
-
-# End-of-session reminder
-echo ""
-echo "REMINDER: Before ending this session:"
-echo "  - Update memory.md with current work state"
-echo "  - Update Status.md if any tasks changed status"
-echo "  - Write session log if significant work was done"

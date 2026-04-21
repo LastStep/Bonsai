@@ -1,6 +1,6 @@
 ---
 tags: [protocol, session]
-description: Ordered startup sequence — always steps + conditional loading by task type.
+description: Session startup — act on the context the session-context sensor already injected.
 ---
 
 # Protocol: Session Start
@@ -10,22 +10,19 @@ description: Ordered startup sequence — always steps + conditional loading by 
 
 ---
 
-## Always (every session)
+## Always
 
-1. Read [agent/Core/identity.md](../Core/identity.md) — confirm role and mindset
-2. Read [agent/Core/memory.md](../Core/memory.md) — surface pending flags, check work state
-3. Read [agent/Core/self-awareness.md](../Core/self-awareness.md) — refresh context monitoring rules
-4. Read [INDEX.md](../../INDEX.md) — get project snapshot
-5. Read [Playbook/Status.md](../../Playbook/Status.md) — see what's in progress and pending
-6. Scan [Playbook/Backlog.md](../../Playbook/Backlog.md) — check for P0 items not yet in Status.md (escalate immediately if found)
-7. Read [Logs/FieldNotes.md](../../Logs/FieldNotes.md) — check for user updates since last session
-8. Check [Reports/Pending/](../../Reports/Pending/) — process any unreviewed agent reports
-9. Read [agent/Protocols/security.md](security.md) — refresh security constraints (if installed)
-10. Read [agent/Protocols/scope-boundaries.md](scope-boundaries.md) — refresh what you own (if installed)
+The session-context sensor injects the following at SessionStart: identity.md, memory.md, self-awareness.md, INDEX.md, Status.md, FieldNotes.md (when non-empty), Reports/Pending summary, and always-on Protocols (security, scope-boundaries). Health warnings (stale memory, Backlog P0, pending reports, log freshness) are also surfaced.
+
+Your job:
+
+1. **Address any flags** in the injected `memory.md` Flags section.
+2. **Confirm work state** from `memory.md` — resume in-flight tasks or start fresh as appropriate.
+3. **Act on health warnings** the sensor raised (stale memory, P0 items, pending reports).
+4. **Process pending reports** by reading each file in `Reports/Pending/` (sensor gave summaries only).
 
 > [!note]
-> Paths like `INDEX.md`, `Playbook/`, `Logs/`, and `Reports/` refer to the project docs location configured during `bonsai init`. Check your workspace CLAUDE.md → External References for the exact paths.
-> Backlog.md is a scan, not a full read — look for P0 items only. Full backlog review is handled by the backlog-hygiene routine.
+> If the session-context sensor is NOT installed (headless agent), fall back to reading core files manually: identity, memory, self-awareness, INDEX, Status, then scan Backlog P0 and check Reports/Pending.
 
 ---
 
@@ -33,14 +30,14 @@ description: Ordered startup sequence — always steps + conditional loading by 
 
 ### If executing a plan
 
-- Read the assigned plan in full before writing any code
+- Read the assigned plan in full before any dispatch
 - Read [Playbook/Standards/SecurityStandards.md](../../Playbook/Standards/SecurityStandards.md)
-- Read relevant coding standards from [agent/Skills/](../Skills/)
+- Read relevant skills from [agent/Skills/](../Skills/)
 
 ### If starting new work
 
-- Check if a plan exists in [Playbook/Plans/Active/](../../Playbook/Plans/Active/) — if not, ask the user
-- Read scope boundaries before touching any files
+- Check for an existing plan in [Playbook/Plans/Active/](../../Playbook/Plans/Active/); ask the user if none
+- Re-read scope-boundaries if touching new files
 
 ### If reviewing or reporting
 

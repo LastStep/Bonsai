@@ -119,6 +119,53 @@ if triggered:
         )
     injection = (injection + '\\n' + checklist) if injection else checklist
 
+# ── Verification triggers — word-boundary only, not end-anchored ────────────
+
+verify_patterns = [
+    r'\\bverify\\s+(everything|it\\s+all)\\b',
+    r'\\bcheck\\s+(your|the)\\s+work\\b',
+    r'\\bcheck\\s+if\\s+you\\s+missed\\b',
+    r'\\breview\\s+(your|the)\\s+changes\\b',
+    r'\\breview\\s+before\\s+(commit|push|ship)\\b',
+    r'\\bdoes\\s+everything\\s+look\\s+(right|good)\\b',
+]
+
+verify_hit = any(re.search(p, normalized) for p in verify_patterns)
+
+if verify_hit:
+    checklist = (
+        '\\nVERIFICATION REQUESTED. Before proceeding:\\n'
+        '1. Re-read your own changes — check for bugs, edge cases, regressions\\n'
+        '2. Verify all tests pass (if applicable)\\n'
+        '3. Check for stale references in documentation\\n'
+        '4. Confirm no security issues introduced'
+    )
+    injection = (injection + '\\n' + checklist) if injection else checklist
+
+# ── Planning triggers — word-boundary only ──────────────────────────────────
+
+plan_patterns = [
+    r'\\b(lets|let\\s+us)\\s+plan\\b',
+    r'\\bplan\\s+(this|the|a)\\b',
+    r'\\bcreate\\s+a\\s+plan\\b',
+    r'\\bdesign\\s+(this|the|a)\\b',
+    r'\\barchitect\\s+(this|the|a)\\b',
+]
+
+plan_hit = any(re.search(p, normalized) for p in plan_patterns)
+
+if plan_hit:
+    reminder = (
+        '\\nPLANNING DETECTED. Before drafting a plan:\\n'
+        '1. Load planning workflow: {workspace}agent/Workflows/planning.md\\n'
+        '2. Load planning-template skill: {workspace}agent/Skills/planning-template.md\\n'
+        '3. Follow the Tier rules and Verification requirements'
+    ).replace('{workspace}', os.path.join(root, ''))
+    # Only inject planning reminder if no wrap-up trigger already fired
+    # (avoid triple-stacking injections)
+    if not triggered:
+        injection = (injection + '\\n' + reminder) if injection else reminder
+
 # ── Output ──────────────────────────────────────────────────────────────────
 
 if not injection:

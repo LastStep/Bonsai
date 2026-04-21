@@ -39,6 +39,7 @@ agents:
             - agent-review
             - dispatch-guard
             - subagent-stop-review
+            - compact-recovery
         routines:
             - backlog-hygiene
             - dependency-audit

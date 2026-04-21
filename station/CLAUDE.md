@@ -77,7 +77,6 @@
 | Backlog Hygiene | 7 days | [agent/Routines/backlog-hygiene.md](agent/Routines/backlog-hygiene.md) |
 | Dependency Audit | 7 days | [agent/Routines/dependency-audit.md](agent/Routines/dependency-audit.md) |
 | Doc Freshness Check | 7 days | [agent/Routines/doc-freshness-check.md](agent/Routines/doc-freshness-check.md) |
-
 | Memory Consolidation | 5 days | [agent/Routines/memory-consolidation.md](agent/Routines/memory-consolidation.md) |
 | Roadmap Accuracy | 14 days | [agent/Routines/roadmap-accuracy.md](agent/Routines/roadmap-accuracy.md) |
 | Status Hygiene | 5 days | [agent/Routines/status-hygiene.md](agent/Routines/status-hygiene.md) |
@@ -91,12 +90,13 @@
 |--------|-------|-------------|
 | [agent/Sensors/context-guard.sh](agent/Sensors/context-guard.sh) | UserPromptSubmit | Injects context-aware behavioral constraints and detects session wrap-up trigger words before each prompt |
 | [agent/Sensors/scope-guard-files.sh](agent/Sensors/scope-guard-files.sh) | PreToolUse (Edit|Write) | Blocks agent from editing files outside its workspace |
-| [agent/Sensors/session-context.sh](agent/Sensors/session-context.sh) | SessionStart | Injects core identity, memory, protocols, and project status at session start |
+| [agent/Sensors/session-context.sh](agent/Sensors/session-context.sh) | SessionStart (startup|resume|clear) | Injects core identity, memory, protocols, and project status at session start |
 | [agent/Sensors/status-bar.sh](agent/Sensors/status-bar.sh) | Stop | Persistent status line showing context usage, session health, and git state after every response |
 | [agent/Sensors/routine-check.sh](agent/Sensors/routine-check.sh) | SessionStart | Checks routine dashboard at session start and flags overdue maintenance routines |
 | [agent/Sensors/agent-review.sh](agent/Sensors/agent-review.sh) | PostToolUse (Agent) | Outputs a review checklist after a dispatched agent completes work |
 | [agent/Sensors/dispatch-guard.sh](agent/Sensors/dispatch-guard.sh) | PreToolUse (Agent) | Validates code agent dispatches — requires worktree isolation, plan reference, and plan existence before execution |
 | [agent/Sensors/subagent-stop-review.sh](agent/Sensors/subagent-stop-review.sh) | SubagentStop | Outputs a structured review checklist when a dispatched agent finishes work |
+| [agent/Sensors/compact-recovery.sh](agent/Sensors/compact-recovery.sh) | SessionStart (compact) | Re-injects minimal context after /compact (Quick Triggers + Work State only) |
 
 > Sensors run automatically — they are configured in `.claude/settings.json`.
 
