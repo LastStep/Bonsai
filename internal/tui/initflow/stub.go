@@ -4,11 +4,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// StubStage is a Phase-2 placeholder that renders the persistent chrome
+// StubStage is a minimal placeholder that renders the persistent chrome
 // (header + enso rail + footer) around a stub body, and advances on Enter.
-// Each of the four stages in runInitRedesign constructs one StubStage so
-// the flow can be verified end-to-end before Phase 3+ replaces them with
-// real inputs.
+// Retained for ad-hoc stage-slot experiments and tests — production stages
+// (Vessel, Soil, Branches, Observe, Generate, Planted) do not use it.
 //
 // StubStage composes Stage and delegates Chromeless/Title/Done/Result to
 // the embedded base. It overrides View to paint the placeholder body and

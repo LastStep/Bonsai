@@ -18,7 +18,7 @@ import (
 // for Done / Result / Update / Init that subclasses override.
 //
 // The fields are carried on Stage (not the subclass) so each stage ctor can
-// stamp them uniformly from runInitRedesign's context bundle.
+// stamp them uniformly from cmd.runInit's context bundle.
 type Stage struct {
 	// Rendering context.
 	title    string     // breadcrumb title — unused today but kept for Step contract
@@ -29,12 +29,12 @@ type Stage struct {
 	ensoSafe bool       // WideCharSafe() snapshot captured at ctor time
 
 	// Project context — identical across all four stages, stamped by
-	// runInitRedesign at entry so each stage renders the same header.
+	// cmd.runInit at entry so each stage renders the same header.
 	projectDir   string    // absolute path to project root
 	stationDir   string    // "station/" by default — can be updated post-Vessel
 	version      string    // cmd.Version; blank/"dev" hides the version chip
 	agentDisplay string    // agentDef.DisplayName — rendered by Observe's AGENT row
-	startedAt    time.Time // captured at runInitRedesign entry for Planted's ELAPSED
+	startedAt    time.Time // captured at cmd.runInit entry for Planted's ELAPSED
 
 	// State.
 	done bool // set by subclass when Enter advances
@@ -42,7 +42,7 @@ type Stage struct {
 
 // NewStage constructs the shared Stage bundle used by every subclass. idx is
 // the 0-based rail position; label is typically StageLabels[idx]. Remaining
-// fields are the project context captured by runInitRedesign.
+// fields are the project context captured by cmd.runInit.
 func NewStage(
 	idx int,
 	label StageLabel,
@@ -181,10 +181,9 @@ func DefaultKeys(canGoBack bool) []KeyHint {
 	}
 }
 
-// StageContext is a small record used by runInitRedesign to stamp each
-// stage with the shared project context at construction time. Keeps the
-// call-site symmetric and obvious when Phase 3 starts introducing real
-// constructors.
+// StageContext is a small record used by cmd.runInit to stamp each stage
+// with the shared project context at construction time. Keeps the call-site
+// symmetric and obvious across all stage constructors.
 type StageContext struct {
 	Version      string
 	ProjectDir   string

@@ -574,6 +574,20 @@ func (l *LazyStep) AutoComplete() bool {
 	return false
 }
 
+// Chromeless forwards to the inner step once built so lazy-built Chromeless
+// stages (e.g. initflow.GenerateStage / PlantedStage constructed with prev-
+// aware action closures) correctly opt out of the harness's default chrome.
+// Pre-build we return false — no frame is active yet.
+func (l *LazyStep) Chromeless() bool {
+	if l.inner == nil {
+		return false
+	}
+	if c, ok := l.inner.(Chromeless); ok {
+		return c.Chromeless()
+	}
+	return false
+}
+
 // ─── LazyGroup ────────────────────────────────────────────────────────────
 
 // LazyGroup is a placeholder step that, on first entry, expands into a slice
@@ -854,6 +868,13 @@ func (c *ConditionalStep) Init() tea.Cmd {
 	if pa, ok := c.inner.(interface{ SetPrior(prev []any) }); ok {
 		pa.SetPrior(c.initPrev)
 	}
+	// Build a lazy inner on entry so NewConditional(NewLazy(...)) works. The
+	// harness's top-level Build loop only sees the ConditionalStep, so a nested
+	// LazyStep would otherwise never fire its builder closure and its inner
+	// would stay nil.
+	if lb, ok := c.inner.(lazyBuilder); ok && !lb.Built() {
+		lb.Build(c.initPrev)
+	}
 	return c.inner.Init()
 }
 
@@ -900,6 +921,20 @@ func (c *ConditionalStep) AutoComplete() bool {
 	type autoChecker interface{ AutoComplete() bool }
 	if a, ok := c.inner.(autoChecker); ok {
 		return a.AutoComplete()
+	}
+	return false
+}
+
+// Chromeless forwards to the inner step so Chromeless stages wrapped in a
+// Conditional (e.g. initflow.GenerateStage / PlantedStage) correctly opt out
+// of the harness's default header/footer. Skipped conditionals report false —
+// the harness would render nothing anyway, so chrome vs. not is moot there.
+func (c *ConditionalStep) Chromeless() bool {
+	if c.skip {
+		return false
+	}
+	if ch, ok := c.inner.(Chromeless); ok {
+		return ch.Chromeless()
 	}
 	return false
 }
