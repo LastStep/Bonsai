@@ -15,11 +15,11 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
-// runInitRedesign is the Phase-2 stub entry point for Plan 22's cinematic
+// runInitRedesign is the Phase-3 entry point for Plan 22's cinematic
 // `bonsai init` flow. It renders the persistent chrome (header + enso rail
-// + footer) around four placeholder stages that advance on Enter and pop
-// on Esc. No files are written — the generate + planted pipeline lands in
-// Phases 3–5.
+// + footer) around four stages — Vessel and Soil are real input stages;
+// Branches and Observe remain stubs until Phases 4–5. No files are written
+// yet; the generate + planted pipeline lands in Phase 5.
 //
 // Routing: runInit at cmd/init.go:121 branches here when BONSAI_REDESIGN=1.
 // Without the env flag, the legacy flow runs unchanged.
@@ -56,7 +56,9 @@ func runInitRedesign(cmd *cobra.Command, args []string) error {
 	}
 
 	// Shared context stamped on every stage. Station defaults to "station/"
-	// until Phase 3's VesselStage captures a user-entered value.
+	// until VesselStage captures a user-entered value; Phase 5's Planted
+	// stage will read the post-Vessel value out of prev[0] when rendering
+	// the generated file tree.
 	ctx := initflow.StageContext{
 		Version:      Version,
 		ProjectDir:   cwd,
@@ -65,9 +67,14 @@ func runInitRedesign(cmd *cobra.Command, args []string) error {
 		StartedAt:    startedAt,
 	}
 
+	// Phase 3 wires real Vessel + Soil stages; Branches + Observe remain
+	// stubs until Phases 4–5 land. Legacy generate / conflict tail is still
+	// skipped — runInitRedesign does NOT write files yet.
+	soilOptions := scaffoldingToSoilOptions(cat)
+
 	steps := []harness.Step{
-		initflow.NewStubStage(0, ctx.Version, ctx.ProjectDir, ctx.StationDir, ctx.AgentDisplay, ctx),
-		initflow.NewStubStage(1, ctx.Version, ctx.ProjectDir, ctx.StationDir, ctx.AgentDisplay, ctx),
+		initflow.NewVesselStage(ctx),
+		initflow.NewSoilStage(ctx, soilOptions),
 		initflow.NewStubStage(2, ctx.Version, ctx.ProjectDir, ctx.StationDir, ctx.AgentDisplay, ctx),
 		initflow.NewStubStage(3, ctx.Version, ctx.ProjectDir, ctx.StationDir, ctx.AgentDisplay, ctx),
 	}
@@ -80,7 +87,7 @@ func runInitRedesign(cmd *cobra.Command, args []string) error {
 	_, err := harness.Run(bannerLine, "Initializing new project (redesign)", steps)
 	if err != nil {
 		if errors.Is(err, harness.ErrAborted) {
-			// Ctrl-C — no config / files written in Phase 2 either way.
+			// Ctrl-C — no config / files written in Phase 3 either way.
 			return nil
 		}
 		var bpe *harness.BuilderPanicError
@@ -93,8 +100,30 @@ func runInitRedesign(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Phase 2 does not write files, save config, or run a conflict picker —
-	// those wire up in Phases 3–5. Returning cleanly after the flow exits
-	// AltScreen is the expected behaviour for this phase.
+	// Phase 3 does not write files, save config, or run a conflict picker —
+	// the generate + planted pipeline wires up in Phases 4–5. Returning
+	// cleanly after the flow exits AltScreen is the expected behaviour.
 	return nil
+}
+
+// scaffoldingToSoilOptions maps catalog scaffolding entries into the
+// initflow.ScaffoldingOption shape consumed by SoilStage. Parallels the
+// legacy `scaffoldingOptions` helper (which returns tui.ItemOption for the
+// MultiSelectStep) but keeps the redesign path decoupled from the tui
+// package's option type.
+func scaffoldingToSoilOptions(cat *catalog.Catalog) []initflow.ScaffoldingOption {
+	out := make([]initflow.ScaffoldingOption, 0, len(cat.Scaffolding))
+	for _, item := range cat.Scaffolding {
+		desc := item.Description
+		if !item.Required && item.Affects != "" {
+			desc += " · if removed: " + item.Affects
+		}
+		out = append(out, initflow.ScaffoldingOption{
+			Name:        item.Name,
+			DisplayName: item.DisplayName,
+			Description: desc,
+			Required:    item.Required,
+		})
+	}
+	return out
 }
