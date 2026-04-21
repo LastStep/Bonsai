@@ -76,7 +76,7 @@ func runInitRedesign(cmd *cobra.Command, args []string) error {
 		initflow.NewVesselStage(ctx),
 		initflow.NewSoilStage(ctx, soilOptions),
 		initflow.NewBranchesStage(ctx, cat, agentDef),
-		initflow.NewStubStage(3, ctx.Version, ctx.ProjectDir, ctx.StationDir, ctx.AgentDisplay, ctx),
+		initflow.NewObserveStage(ctx, cat, agentDef),
 	}
 
 	bannerLine := "BONSAI"

@@ -177,3 +177,40 @@ func TestSoil_ResetPreservesSelections(t *testing.T) {
 		t.Fatalf("Reset moved focus: %d -> %d", prevFocus, s.focus)
 	}
 }
+
+// TestSoil_NarrowDoesNotClipBadge verifies the REQUIRED badge stays
+// visible on narrow (but ≥floor) widths. Regression guard.
+func TestSoil_NarrowDoesNotClipBadge(t *testing.T) {
+	s := newTestSoil()
+	s.width = 80
+	s.height = 30
+	row := s.renderRow(0) // claude-md is required in fixture
+	if !soilContains(row, "REQUIRED") {
+		t.Errorf("80-col render dropped REQUIRED badge; row: %q", row)
+	}
+	s.width = 70
+	row = s.renderRow(0)
+	if !soilContains(row, "REQUIRED") {
+		t.Errorf("70-col render dropped REQUIRED badge; row: %q", row)
+	}
+}
+
+// TestSoil_MinSizeFloor verifies tiny terminals route to the floor panel.
+func TestSoil_MinSizeFloor(t *testing.T) {
+	s := newTestSoil()
+	s.width = 60
+	s.height = 16
+	if !soilContains(s.View(), "please enlarge") {
+		t.Errorf("min-size render missing floor panel")
+	}
+}
+
+// soilContains is a tiny substring helper so the test file stays import-light.
+func soilContains(haystack, needle string) bool {
+	for i := 0; i+len(needle) <= len(haystack); i++ {
+		if haystack[i:i+len(needle)] == needle {
+			return true
+		}
+	}
+	return false
+}

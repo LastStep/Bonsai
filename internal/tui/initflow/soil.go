@@ -187,6 +187,12 @@ func (s *SoilStage) renderBody() string {
 // get a Leaf left-border + leaf-tint background; selected rows use the ◆
 // glyph in Leaf, unselected use ◇ in a dimmer muted color. The REQUIRED
 // badge (Bark) is right-aligned.
+//
+// Responsive widths (Plan 22 Phase 5A): namePad = min(20, s.width/4) and
+// the desc cap = max(30, s.width - namePad - 20). Shrinks on narrow
+// terminals so the row fits inside the current row. Scaffolding catalog
+// is small (≤8 items today) — no Viewport needed. If the catalog ever
+// grows past ~12 entries, wrap renderList via the Viewport in layout.go.
 func (s *SoilStage) renderRow(idx int) string {
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
@@ -214,22 +220,47 @@ func (s *SoilStage) renderRow(idx int) string {
 		border = lipgloss.NewStyle().Foreground(tui.ColorPrimary).Render("│ ")
 	}
 
+	// Responsive column widths.
+	namePad := 20
+	if quarter := s.width / 4; quarter < namePad {
+		namePad = quarter
+	}
+	if namePad < 10 {
+		namePad = 10
+	}
+	// badge slot reserve (≈11 cells for "  REQUIRED") + border/glyph/gap
+	// budget (≈6). Leaves the rest for description; floor at 30 to keep
+	// copy readable on the narrowest supported terminals.
+	descCap := s.width - namePad - 20
+	if descCap < 30 {
+		descCap = 30
+	}
+
 	// Name column — bold when focused, regular otherwise. Keep it padded so
 	// descriptions align across rows.
 	name := opt.DisplayName
 	if name == "" {
 		name = opt.Name
 	}
-	nameCol := label.Render(padRight(name, 20))
+	if lipgloss.Width(name) > namePad {
+		rr := []rune(name)
+		if len(rr) > namePad-1 && namePad > 1 {
+			name = string(rr[:namePad-1]) + "…"
+		}
+	}
+	nameCol := label.Render(padRight(name, namePad))
 	if idx == s.focus {
-		nameCol = bark.Render(padRight(name, 20))
+		nameCol = bark.Render(padRight(name, namePad))
 	}
 
-	// Description column — muted, truncated at ~50 cols to keep the row
-	// from wrapping in narrow terminals.
+	// Description column — muted, truncated to descCap so the row never
+	// pushes past the terminal edge on narrow widths.
 	desc := opt.Description
-	if len(desc) > 50 {
-		desc = desc[:49] + "…"
+	if lipgloss.Width(desc) > descCap {
+		rr := []rune(desc)
+		if len(rr) > descCap-1 && descCap > 1 {
+			desc = string(rr[:descCap-1]) + "…"
+		}
 	}
 	descCol := dim.Render(desc)
 

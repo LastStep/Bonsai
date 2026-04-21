@@ -183,3 +183,51 @@ func TestVessel_SubmitOnLastField(t *testing.T) {
 		t.Fatalf("done=false after valid submit; expected stage advance")
 	}
 }
+
+// TestVessel_ResponsiveInputWidth verifies the input width shrinks on
+// narrow terminals and caps at 60 on wide ones. Underline is pinned to
+// inputW+4 so a regression here would break focus-rule alignment.
+func TestVessel_ResponsiveInputWidth(t *testing.T) {
+	cases := []struct {
+		termW, wantW int
+	}{
+		{120, 60}, // ample — cap
+		{100, 60}, // still at cap (100-20-4 = 76 → capped to 60)
+		{80, 56},  // 80-20-4 = 56
+		{70, 46},  // 70-20-4 = 46
+		{50, 30},  // floor
+	}
+	for _, c := range cases {
+		v := newTestVessel()
+		v.width = c.termW
+		v.height = 30
+		// Render body to trigger the inputW math (mutates inputs[].Width).
+		_ = v.renderBody()
+		if v.inputs[vesselIdxName].Width != c.wantW {
+			t.Errorf("termW=%d: inputs[0].Width = %d, want %d",
+				c.termW, v.inputs[vesselIdxName].Width, c.wantW)
+		}
+	}
+}
+
+// TestVessel_MinSizeFloor verifies <floor terminals route to the
+// "please enlarge" panel rather than rendering a broken frame.
+func TestVessel_MinSizeFloor(t *testing.T) {
+	v := newTestVessel()
+	v.width = 60
+	v.height = 16
+	out := v.View()
+	if !contains(out, "please enlarge") {
+		t.Errorf("min-size render missing floor panel; got:\n%s", out)
+	}
+}
+
+// contains is a tiny helper so the test file stays import-light.
+func contains(haystack, needle string) bool {
+	for i := 0; i+len(needle) <= len(haystack); i++ {
+		if haystack[i:i+len(needle)] == needle {
+			return true
+		}
+	}
+	return false
+}
