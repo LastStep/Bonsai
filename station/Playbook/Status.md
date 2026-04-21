@@ -14,6 +14,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
+| `bonsai init` cinematic redesign — 5 phases / 5 PRs, behind `BONSAI_REDESIGN=1` until Phase 5 flips default | 22 | general-purpose | Phase 1: FileTree widget + palette tokens. Phases 2–5 follow after each merges. |
 <!-- Plan 19 (pre-launch bug sweep) — merged PR #27 squash a44e447 2026-04-21, moved to Recently Done -->
 <!-- Documentation site (Starlight) — Plan 10 complete, all phases shipped (PRs #13-19) -->
 <!-- UI/UX overhaul Phase 2 — merged PR #20, moved to Recently Done 2026-04-17 -->
