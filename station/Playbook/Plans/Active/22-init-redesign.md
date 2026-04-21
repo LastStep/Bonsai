@@ -21,7 +21,7 @@ Replace the `bonsai init` TUI end-to-end with a custom full-screen cinematic flo
 - Kanji + kana labels (器/土/枝/観 + 技/流/律/感/習) with runewidth-safe fallback.
 - Palette tightened for this flow: Leaf + Bark as only accents, everything else muted; other semantic tokens (Success/Warning/Info) remain available where a distinction helps users (e.g. conflict counts in Amber, NEW badges in Leaf, REQUIRED in Bark).
 
-Ship in **5 phases / 5 PRs**. Legacy flow stays the default via env flag `BONSAI_REDESIGN=1` until Phase 5 flips default and deletes the legacy path.
+Ship in **6 PRs** (5 phases; Phase 5 split into 5A + 5B after initial scoping). Legacy flow stays the default via env flag `BONSAI_REDESIGN=1` until Phase 5B flips default and deletes the legacy path.
 
 ---
 
@@ -62,7 +62,7 @@ User is dissatisfied with the current `bonsai init` TUI. Handoff bundle from cla
 
 ## Phases
 
-Each phase is an independent PR. Phases 1–4 land behind `BONSAI_REDESIGN=1` so the default binary runs the legacy flow throughout development; Phase 5 flips the default and deletes the legacy path.
+Each phase is an independent PR. Phases 1–4 + 5A land behind `BONSAI_REDESIGN=1` so the default binary runs the legacy flow throughout development; Phase 5B flips the default and deletes the legacy path.
 
 ### Phase 1 — FileTree widget + palette audit
 
@@ -593,165 +593,292 @@ Scope: replace the stub with the real Branches stage — tabbed category picker,
 
 ---
 
-### Phase 5 — Observe + Generate + Planted, flip default, delete legacy
+### Phase 5A — Responsive resize pass + Observe/Generate/Planted stages
 
-Scope: final stage + generate one-frame reveal + full-screen Planted + flip default + remove legacy code + docs.
+**Scope:** (1) add responsive width/height handling across every initflow stage so `bonsai init` no longer clips on narrow/short terminals; (2) build the three final stages (Observe, Generate, Planted). Still gated by `BONSAI_REDESIGN=1` — default flow unchanged.
+
+**Why split:** Phase 5 originally bundled stages + wiring + legacy delete into one PR. Adding the resize overhaul pushes the LoC count past the ~1000-line comfort threshold and mixes three independent concerns. 5A lands stages + resize (net additive, no default-flow change); 5B is a small, surgical PR that flips the default and deletes legacy code.
+
+**User-reported issue (2026-04-21):** On narrow terminals (<100 cols) the Branches stage clips: `nameColW=24` + `descColW=44` + tag column (10) + borders = 84-cell fixed row. Below ~90 cols the tag column is cut off; below ~70 cols the description column is partially eaten. DETAILS box (3 rows × 70 cells) clips identically. Vessel and Soil have the same disease at smaller scale. Height: lists render flat, no viewport — long tab contents (≥8 items) push counter + details off the bottom of 24-row terminals.
 
 #### Files touched
 
+- `internal/tui/initflow/layout.go` — **new** — shared responsive helpers (`clampColumn`, `viewport` hand-rolled scroll, min-size floor panel)
+- `internal/tui/initflow/layout_test.go` — **new**
+- `internal/tui/initflow/branches.go` — responsive widths + vertical scroll for list + details block clamp
+- `internal/tui/initflow/soil.go` — responsive widths (row padding derived from `s.width`, description truncate follows)
+- `internal/tui/initflow/vessel.go` — input width derived from `s.width` (currently fixed 60)
+- `internal/tui/initflow/chrome.go` — add `RenderMinSizeFloor(width, height)` helper that renders a centred "please enlarge your terminal" panel when `width < 70 || height < 20`
+- `internal/tui/initflow/stage.go` — route `renderFrame` through the floor when dims are too small
 - `internal/tui/initflow/observe.go` — **new**
+- `internal/tui/initflow/observe_test.go` — **new**
 - `internal/tui/initflow/generate.go` — **new**
+- `internal/tui/initflow/generate_test.go` — **new**
 - `internal/tui/initflow/planted.go` — **new**
-- `internal/tui/initflow/*_test.go` — **new** tests
-- `cmd/init_redesign.go` — final wiring + env-flag removal
-- `cmd/init.go` — swap default to redesigned flow; delete legacy `runInit` body (keep command shell)
-- `cmd/init_legacy.go` — **delete** (file renamed from old runInit content during Phase 2 — remove here)
-- `station/Playbook/Plans/Active/22-init-redesign.md` — mark Complete
-- `station/Playbook/Status.md` — move to Recently Done
-- `station/agent/Core/memory.md` — update Work State + add any durable-learnings from the rewrite
+- `internal/tui/initflow/planted_test.go` — **new**
+- `cmd/init_redesign.go` — swap `NewStubStage(3, …)` for `NewObserveStage(…)` only; Generate + Planted remain uninstalled in 5A (the conditional-splice + `BONSAI_REDESIGN` removal lives in 5B)
+- Existing `branches_test.go` / `soil_test.go` / `vessel_test.go` — add responsive assertions (narrow-width render does not truncate tag/required columns; long lists scroll)
 
 #### Steps
 
-1. **Create `ObserveStage`.**
+##### 1. Shared responsive helpers (`internal/tui/initflow/layout.go`)
 
-   Layout (`zen-shell.jsx` ZStepReview, post-user-correction — left = Vessel summary + Soil tree, right = Branches summary):
-   ```
-     観 みる · OBSERVE
-     One last look before planting.
+Centralise the resize primitives so every stage uses the same rules and tests stay proportional to the surface.
 
-     ─── VESSEL ─── 器 ──     ─── BRANCHES ─── 枝 · 18 abilities ──
-     NAME         voyager-api   技 SKILLS    api-design · auth-patterns · coding-standards · testing-strategy
-     DESCRIPTION  Internal ...  流 FLOWS     planning · code-review · pr-review · session-log
-     STATION      station/      律 RULES     memory · security · scope · startup · required
-     AGENT        Tech Lead     感 SENSE     scope-guard · dispatch-validator · context-inject
-                                習 HABIT     backlog-hygiene · doc-freshness · vuln-scan
-     ─── SOIL ─── 土 · scaffolding ──
-     station/
-     ├─ agents-index.md     REQUIRED   directory of every agent
-     ├─ session-log.md      NEW        rolling per-session log
-     └─ readme.md           NEW        starter README if one doesn't exist
-     ● NEW  ● REQUIRED        ability folders filled by 枝 Branches
+```go
+// Min dimensions below which every stage shows a "please enlarge terminal"
+// floor instead of attempting to lay out its body.
+const (
+    MinTerminalWidth  = 70
+    MinTerminalHeight = 20
+)
 
-     ┌─ Plant 23 files into voyager-api?   0 CONFLICTS  ──────────┐
-     │ Existing files will be offered for merge · nothing         │
-     │ overwritten without your say-so                            │
-     │                              [ CANCEL ]  [ ⏎  PLANT ]      │
-     └────────────────────────────────────────────────────────────┘
-   ```
+// TerminalTooSmall reports whether the given dims fall below the floor.
+func TerminalTooSmall(width, height int) bool { ... }
 
-   Note: the **Soil tree is preview-only** — it lists scaffolding files that will be written into the station dir, using only the user's actual scaffolding picks (from `prev[1]`) rendered via `RenderFileTree`. No ability subdirs — those are "filled by Branches step" per design.
+// ClampColumns returns the per-column cell budget for a given row width.
+// For Branches: (nameW, descW, tagW) scaled proportionally, floors applied,
+// cumulative width <= availableWidth.
+func ClampColumns(availableWidth int) (nameW, descW, tagW int) { ... }
 
-   The **Branches summary panel** reads `prev[2]` (BranchesResult) and renders names grouped by kanji.
+// Viewport is a minimal hand-rolled vertical scroll: holds a slice of lines
+// (pre-rendered) and an offset. Focus-follows-cursor: caller supplies the
+// focused-line index, viewport clamps offset so that line is visible.
+// Rationale: matches Soil precedent (hand-roll list vs. bubbles/list).
+type Viewport struct { lines []string; offset, height int }
+func (v *Viewport) SetLines(lines []string)
+func (v *Viewport) SetHeight(h int)
+func (v *Viewport) Follow(focusIdx int)  // adjusts offset
+func (v *Viewport) View() string         // returns v.height joined lines
+```
 
-   The **CANCEL / PLANT** CTA uses the keyboard:
-   - `y` / `Y` / `↵` with PLANT focused → confirm.
-   - `n` / `N` → cancel (returns to Branches).
-   - `tab` / `← →` → toggle focus between CANCEL and PLANT buttons.
+The viewport is tiny (~60 LoC) and sidesteps the `bubbles/viewport` dep — matches the existing "hand-roll small things" precedent from Soil.
 
-   Result: `bool` — `true` plant, `false` cancel.
+##### 2. Min-size floor panel (`chrome.go`)
 
-2. **Create `GenerateStage`.** Full-screen custom view. Runs the generate action in a goroutine + holds `max(actualDuration, 600ms)` with a drawing-in enso ring + centred kanji 生 + progress hairline from 種 SEED → 盆栽 BONSAI.
+```go
+// RenderMinSizeFloor renders a centred panel telling the user to enlarge the
+// terminal. No stage body is attempted below the floor so we never paint a
+// broken layout. Uses RenderHeader at a best-effort width (clamped to >=40)
+// for a recognisable brand even on tiny terminals.
+func RenderMinSizeFloor(width, height int) string { ... }
+```
 
-   State machine:
-   ```
-   stateRunning  →  action goroutine active, arc draws from 0° to 360°
-   stateMinHold  →  action done but elapsed < 600ms, continue drawing
-   stateDone     →  action done and 600ms elapsed; Done()=true → harness advances
-   stateError    →  action returned error; show InfoPanel, wait for key
-   ```
+`stage.go:renderFrame` checks `TerminalTooSmall(s.width, s.height)` at the top and returns the floor render early if true. Stage-specific bodies never run with degenerate dims.
 
-   Arc drawing on a terminal grid: use a 12-cell-tall × 24-cell-wide box containing a pseudo-circle of `●` / `○` / `◐` glyphs lit progressively by tick. Acceptably-approximate enso shape given terminal constraints. Use `spinner.Tick`-style `tea.Tick` at 24fps (42ms interval).
+##### 3. Branches responsive refactor
 
-   Implementation ties back to the legacy `generate.Scaffolding / AgentWorkspace / PathScopedRules / WorkflowSkills / SettingsJSON` pipeline — lifted verbatim from `runInit`. Preserve the `cfg.Save(configPath)` before the rest of the pipeline (legacy safety invariant).
+- Replace `const nameColW = 24`, `const descColW = 44`, `const colW = 16` with values derived from `ClampColumns(availableW)` where `availableW = s.width - 4` (side padding).
+- Tag column (`DEFAULT` / `(required)`) pinned at `tagW = 12` to prevent squeeze; description absorbs the remaining space after name (`nameW = min(24, availableW / 3)`) and tag. Floor at `descW = 20`; below that, drop description entirely (render name + tag only).
+- Wrap `renderList` with a `Viewport` so when catalog entries exceed `listH := s.height - chromeRows`, the focused row stays visible and up/down scrolls. Focus behavior unchanged.
+- DETAILS block `contentW` clamped to `min(s.width - 10, 70)`.
+- Per-tab 2-line intro clamp to `s.width - 4`.
 
-3. **Create `PlantedStage`.** Full-screen view post-generate (inserted after any conflict picker):
+##### 4. Vessel + Soil responsive refactor
 
-   Layout (design `zen-extras.jsx` ZenDone):
-   ```
-     [enso 盆]  BONSAI                     ELAPSED  00:04.8
-                PLANTED · voyager-api
+- Vessel: `inputW = clamp(s.width - labelColW - 4, 30, 60)`. `labelColW` stays 20; inputs shrink proportionally. Underline tracks `inputCellW = inputW + 4`.
+- Soil: `namePad = min(20, s.width / 4)`; description truncate cap = `max(30, s.width - namePad - 20)`.
+- Neither stage needs vertical scroll today (scaffolding is 4–8 items). Add a TODO note in each file referencing the Viewport helper if ever needed.
+
+##### 5. Observe stage (`observe.go`)
+
+Layout (from `zen-shell.jsx` ZStepReview — left = Vessel summary + Soil tree, right = Branches summary by kanji-group):
+
+```
+  観 OBSERVE
+  One last look before planting.
+
+  ─── VESSEL ─── 器 ──             ─── BRANCHES ─── 枝 · 18 abilities ──
+  NAME         voyager-api        技 SKILLS    api-design · auth-patterns · …
+  DESCRIPTION  Internal API …     流 FLOWS     planning · code-review · pr-review
+  STATION      station/           律 RULES     memory · security · scope
+  AGENT        Tech Lead          感 SENSE     scope-guard · dispatch-validator
+                                  習 HABIT     backlog-hygiene · doc-freshness
+
+  ─── SOIL ─── 土 · scaffolding ──
+  station/
+  ├─ agents-index.md     REQUIRED   directory of every agent
+  ├─ session-log.md      NEW        rolling per-session log
+  └─ readme.md           NEW        starter README if one doesn't exist
+
+  ┌─ Plant N files into <name>?   0 CONFLICTS  ─────────────────┐
+  │ Existing files will be offered for merge · nothing          │
+  │ overwritten without your say-so                             │
+  │                           [ CANCEL ]  [ ⏎  PLANT ]          │
+  └─────────────────────────────────────────────────────────────┘
+```
+
+- Soil tree: preview-only. Renders scaffolding picks (`prev[1]` — SoilStage Result) via `tui.RenderFileTree`. No ability subdirs (those land at generate time).
+- Branches summary: groups `prev[2]` (BranchesResult) into five kanji-labelled rows.
+- Vessel summary: reads `prev[0]` map.
+- **Responsive:** Two-column grid (left VESSEL+SOIL · right BRANCHES) when `s.width >= 100`; single-column stacked layout below that. Summary rows word-wrap via the existing `wrapToWidth` helper.
+- **CANCEL / PLANT CTA:** `y` / `Y` / `↵` with PLANT focused → confirm (Result = `true`). `n` / `N` → cancel (Result = `false`). `tab` / `← →` → toggle button focus.
+- Result: `bool`.
+- File count for CTA banner: read `wr` via a sentinel — no generation has run yet; use `len(prev[1]) + len(prev[2])` as an upper-bound approximation + a `…` suffix. Exact count is shown on Planted. (Scope-light: don't pre-simulate the generate pipeline.)
+
+##### 6. Generate stage (`generate.go`)
+
+Full-screen custom view; runs the generate action in a goroutine and holds for `max(actualDuration, 600ms)`.
+
+State machine (carried verbatim from the original Phase 5 plan):
+
+```
+stateRunning   →  action goroutine active, arc draws from 0° to 360°
+stateMinHold   →  action done but elapsed < 600ms, continue drawing
+stateDone      →  action done and 600ms elapsed; Done() = true → harness advances
+stateError     →  action returned error; show InfoPanel, wait for key
+```
+
+Arc: 12-row × 24-col box of `●` / `○` / `◐` glyphs, lit progressively by tick. Centred kanji 生. Progress label animates 種 SEED → 苗 SPROUT → 盆栽 BONSAI on a hairline below the arc. `tea.Tick` at 24fps (42ms interval).
+
+Pipeline inputs: the generate stage wraps the same generator calls that today live inside `runInit`'s spinner closure — `cfg.Save(configPath)` first (legacy safety invariant), then `generate.Scaffolding / AgentWorkspace / PathScopedRules / WorkflowSkills / SettingsJSON`. The stage is constructed with: `cat`, `agentDef`, `cwd`, `configPath`, `lock`, plus pointers to `wr` / `cfg` / `installed` populated from Vessel/Soil/Branches results during its Init.
+
+**Responsive:** arc scales 12x24 → 8x16 below `width < 90`; below floor → not reached (min-size panel catches it).
+
+##### 7. Planted stage (`planted.go`)
+
+Full-screen view post-generate:
+
+```
+[ 盆 ]  BONSAI                             ELAPSED  00:04.8
+        PLANTED · <project>
 
                    生 · PLANTED
-                   voyager-api is ready.
-           23 files written · 0 conflicts · lock synced
+                   <project> is ready.
+           N files written · K conflicts · lock synced
 
-     ───────────────────────────────────────────────────────
+  ────────────────────────────────────────────────────────────────────
 
-     WRITTEN · 書                 SUMMARY · 概要
-     ~/code/voyager-api/           AGENT      Tech Lead → station/
-     ├─ CLAUDE.md  REQUIRED...     ABILITIES  18 wired
-     ├─ .bonsai.lock  NEW          ···        4 skills · 4 flows · 4 rules · 3 sense · 3 habit
-     └─ station/ ...
-        ├─ agents-index.md  NEW    ────────────
-        ├─ protocols/            NEXT · 次へ
-        │  ├─ memory.md  NEW
-        │  ...                    一  $ claude            open the workspace
-        ...                           Say "hi, get started" — the Tech Lead self-orients.
+  WRITTEN · 書                  SUMMARY · 概要
+  ~/<path>/                     AGENT      Tech Lead → station/
+  ├─ CLAUDE.md   NEW            ABILITIES  N wired
+  ├─ .bonsai.yaml  NEW          ···        X skills · Y flows · Z rules · …
+  └─ station/
+     ├─ agents-index.md  NEW    ────────────
+     ├─ protocols/             NEXT · 次へ
+     │  ├─ memory.md  NEW
+     │  ...                     一  $ claude            open the workspace
+     ...                            Say "hi, get started" — the Tech Lead self-orients.
 
-                                  二  $ bonsai add        add a code agent
-                                      Backend, frontend, devops — each with its own workspace.
+                                二  $ bonsai add        add a code agent
+                                    Backend, frontend, devops — each with its own workspace.
 
-                                  三  $ bonsai dashboard  tend the garden
-                                      Inspect and adjust abilities after the fact.
+                                三  $ bonsai dashboard  tend the garden
+                                    Inspect and adjust abilities after the fact.
 
-     一 BONSAI 一 planted with care                      [⏎] exit
-   ```
+  一 BONSAI 一 planted with care                               [⏎] exit
+```
 
-   File tree sourced from `WriteResult.Files`:
-   - Group by directory (split `RelPath` on `/`).
-   - NodeStatus: `ActionCreated` → NodeNew; `ActionUpdated`/`ActionForced` → NodeNew (with overridden badge "UPDATED" in Bark); `ActionUnchanged` → NodeNormal.
-   - Agent workspace subtree marked `NodeCurrent` (gets leaf border+tint).
+File tree sourced from `WriteResult.Files`:
+- Group by directory (split `RelPath` on `/`).
+- NodeStatus mapping: `ActionCreated` → NodeNew; `ActionUpdated` / `ActionForced` → NodeNew with badge "UPDATED" (Bark); `ActionUnchanged` → NodeNormal; `ActionSkipped` / `ActionConflict` omitted from tree.
+- Agent workspace subtree (under `station/`) marked `NodeCurrent` (leaf border + tint).
+- **Scope-light on REQUIRED badge:** first ship uses `NEW` on all created files; skip REQUIRED for scaffolding-required items. Follow-up plan item (add to Backlog Group F after 5A ships).
 
-   "REQUIRED" badge for files whose generators mark them required — for accuracy, add a helper in `internal/generate/` that takes a `FileResult` and returns whether the file is a Required scaffolding item. Keep scope-light: if the mapping is not trivially available, fall back to `NEW` for all created files and skip REQUIRED badges for the first ship of Phase 5 — document as follow-up work.
+**Responsive:** two-column grid (WRITTEN left · SUMMARY right) when `s.width >= 100`; single-column stacked below. File tree wrapped in a `Viewport` when its line count exceeds available body height.
 
-   Press `↵` to exit. Press `q` to exit. No other keys.
+Keys: `↵` or `q` → exits.
 
-4. **Splice GenerateStage + (optional ConflictStage) + PlantedStage into `runInitRedesign`.**
+Done() returns `true` only after the user acknowledges — the flow ends here, so the harness exiting is the exit.
 
-   Re-use `harness.NewLazyGroup` for the conflict picker. Structure:
-   ```
+##### 8. Wire Observe only (keep stubs for Generate/Planted in 5A)
+
+`cmd/init_redesign.go` line 79 currently installs `NewStubStage(3, ...)` — replace with `NewObserveStage(ctx, cat, agentDef)`. Generate + Planted are NOT wired into `runInitRedesign` in 5A — they exist as packaged types with full tests but are not in the step chain. 5B does the full splice.
+
+Rationale: keeps 5A self-contained (can ship + merge independently), lets 5B be a small wiring/deletion PR that's trivial to review.
+
+#### Verification (5A)
+
+- [ ] `BONSAI_REDESIGN=1 ./bonsai init` with `tput cols; tput lines` at 120×40 → full flow through Observe; terminal returns clean on Ctrl-C.
+- [ ] Same at 80×24 → all stages render without clipping; Branches tag column always visible; descriptions truncate with `…` instead of running past the edge.
+- [ ] Same at 70×20 (floor) → last column may be tight but everything fits.
+- [ ] Same at 60×16 → every stage shows the "please enlarge terminal" floor panel; `ctrl-c` still exits cleanly.
+- [ ] Branches list with every routine enabled (≥15 items in Routines tab) scrolls vertically when focus moves past visible height; counter + DETAILS stay on screen.
+- [ ] Observe: `y` / `↵` with PLANT focused → Result = true; `n` → Result = false; tab toggles button focus.
+- [ ] Observe: Vessel facts reflect prior inputs; Soil tree shows scaffolding picks; Branches summary correctly kanji-grouped.
+- [ ] `go test ./internal/tui/initflow/...` passes (Observe/Generate/Planted unit tests + Viewport tests + layout clamp tests).
+- [ ] `make build && go test ./...` passes.
+- [ ] No behavioural change to default `bonsai init` (env flag not set) — legacy flow unchanged.
+
+---
+
+### Phase 5B — Wire Generate + Planted, flip default, delete legacy
+
+**Scope:** small surgical PR — splice Generate + Planted + conflict-picker into `runInitRedesign`, flip `BONSAI_REDESIGN=1` default, delete legacy `runInit` body and helpers, handoff artifacts.
+
+#### Files touched
+
+- `cmd/init_redesign.go` — full step splice (Generate + conflict picker + Planted); remove env-flag routing
+- `cmd/init.go` — rename `runInitRedesign` → `runInit`; delete legacy `runInit` body + `buildReviewPanel`; drop `BONSAI_REDESIGN` env-flag branch
+- `cmd/init_test.go` (if present) — update or delete tests referencing legacy helpers
+- `station/Playbook/Plans/Active/22-init-redesign.md` — mark Complete + archive
+- `station/Playbook/Status.md` — move Plan 22 to Recently Done
+- `station/agent/Core/memory.md` — update Work State; add durable learnings from the rewrite
+- `station/Reports/Pending/` — final rewrite report
+
+#### Steps
+
+1. **Splice Generate + conflict + Planted into `runInitRedesign`.**
+
+   ```go
    steps := []harness.Step{
-       newVessel,
-       newSoil(cat),
-       newBranches(cat, agentDef),
-       newObserve(cat, agentDef),        // Result() == true means plant
-       harness.NewConditional(newGenerate(...), plantedConfirmed),
+       initflow.NewVesselStage(ctx),
+       initflow.NewSoilStage(ctx, soilOptions),
+       initflow.NewBranchesStage(ctx, cat, agentDef),
+       initflow.NewObserveStage(ctx, cat, agentDef),          // prev[3] Result() = bool
+       harness.NewConditional(
+           initflow.NewGenerateStage(ctx, cat, agentDef, cwd, configPath, lock, &wr, &cfg, &installed),
+           plantedConfirmed,                                  // reads prev[3]
+       ),
        harness.NewLazyGroup("Resolve conflicts", func(prev []any) []harness.Step {
-           if !wr.HasConflicts() { return nil }
-           return buildConflictSteps(&wr)     // existing helper
+           if !wr.HasConflicts() {
+               return nil
+           }
+           return buildConflictSteps(&wr)
        }),
-       harness.NewConditional(newPlanted(&wr, cfg, installed), plantedConfirmed),
+       harness.NewConditional(
+           initflow.NewPlantedStage(ctx, &wr, cfg, installed),
+           plantedConfirmed,
+       ),
    }
    ```
 
-   `plantedConfirmed` reads `prev[3]` (Observe confirm bool) and returns true. Conflict resolution splices zero or more MultiSelect steps in; Planted follows unconditionally if confirm was true.
+   `plantedConfirmed := func(prev []any) bool { b, _ := prev[3].(bool); return b }`.
 
-5. **Flip default + delete legacy.**
+   Conflict-picker LazyGroup splices zero or more `MultiSelect` steps in; Planted follows unconditionally if Observe confirm was `true`.
 
-   - `cmd/init.go`: drop the `BONSAI_REDESIGN` env-flag branch; `runInit` is now `runInitRedesign` body. Rename `runInitRedesign` → `runInit`; delete the old `runInit` body and any helpers exclusive to it (`buildReviewPanel`, existing step declarations, `scaffoldingOptions` if unused elsewhere).
-   - Keep the following if they have other callers: `stationDirValidator`, `normaliseDocsPath`, `asString`/`asStringSlice`/`asBool`, `userSensorOptions`, `toItemOptions`, `toRoutineOptions`, `toSensorOptions`, `buildConflictSteps`, `applyConflictPicks`. Grep each before deletion.
-   - **Test sweep:** `grep -rn 'buildReviewPanel\|scaffoldingOptions' --include='*_test.go' .` — update or delete any tests referencing deleted helpers. Same for any callers of the legacy step constructors (`NewText`/`NewMultiSelect`/etc. scoped to init). After renaming, the legacy `runInit` body is gone — any test that imports `cmd` and exercises init behavior must be re-scored against the redesigned flow or deleted.
+2. **Flip default + delete legacy.**
+
+   - `cmd/init.go`: drop the `BONSAI_REDESIGN` env-flag branch; rename `runInitRedesign` → `runInit`; delete the old `runInit` body and helpers exclusive to it (`buildReviewPanel`, `scaffoldingOptions`).
+   - **Keep if still referenced elsewhere:** `stationDirValidator`, `normaliseDocsPath`, `asString` / `asStringSlice` / `asBool`, `userSensorOptions`, `toItemOptions`, `toRoutineOptions`, `toSensorOptions`, `buildConflictSteps`, `applyConflictPicks`. Grep each before deletion (`grep -rn "<name>" --include='*.go' .`).
+   - **Test sweep:** `grep -rn 'buildReviewPanel\|scaffoldingOptions' --include='*_test.go' .` — update or delete any tests referencing deleted helpers. Any test that imports `cmd` and exercises init behaviour must be re-scored against the redesigned flow or deleted.
    - Run `go test ./...` after deletion — catches anything still referencing the old path.
 
-6. **Handoff + docs.**
+3. **Final audit.**
 
-   - Update `station/Playbook/Status.md` Recently Done with Plan 22 entry (date, PR numbers).
+   - `grep -rn "BONSAI_REDESIGN" .` → should return nothing outside `station/` (plan file + memory).
+   - `grep -rn "runInitRedesign" .` → should return nothing (rename complete).
+   - Manual smoke at 120×40 and 80×24 — full flow works without env flag.
+
+4. **Handoff + docs.**
+
+   - Update `station/Playbook/Status.md`: move Plan 22 row from In Progress to Recently Done with today's date + final PR list.
    - Update `station/agent/Core/memory.md` Work State: plan complete, main sha.
-   - Flush any durable UX-preference learnings surfaced during the rewrite into `memory.md` Feedback under the 2026-04-17 section.
-   - Submit a final report to `station/Reports/Pending/` summarising the rewrite.
+   - Flush any durable UX-preference learnings into `memory.md` Feedback under the 2026-04-17 section.
+   - Submit a final report to `station/Reports/Pending/` summarising the rewrite (phases shipped, PR numbers, notable decisions).
 
-#### Verification (per-phase)
+#### Verification (5B)
 
-- [ ] Observe renders correct Vessel facts, Soil tree from user picks, Branches summary by category.
-- [ ] `y`/`↵` with PLANT focused → generate. `n` → returns to Branches with picks preserved.
-- [ ] Generate always holds at least 600ms. With a real catalog (~23 files), total elapsed ≈ 0.6–1.0s.
+- [ ] Default `bonsai init` (no env flag) runs the redesigned flow.
+- [ ] `BONSAI_REDESIGN` env var is no longer consulted anywhere in `cmd/` or `internal/`.
+- [ ] `grep -rn "runInitRedesign" --include='*.go' .` returns nothing.
+- [ ] Generate always holds ≥600ms; with a real catalog (~23 files) total elapsed ≈ 0.6–1.0s.
 - [ ] Generate surfaces errors in an InfoPanel and does not advance to Planted on failure.
 - [ ] Conflict picker still fires when existing files are detected (manual test: `touch station/CLAUDE.md` before re-running init).
 - [ ] Planted shows the file tree rooted at project dir, NEW badges on created files, summary + 3 next-command rows.
 - [ ] `↵` / `q` exits Planted cleanly; terminal returns to normal stdout without residue.
-- [ ] Default `bonsai init` (no env flag) runs the redesigned flow.
-- [ ] `BONSAI_REDESIGN` env var is no longer consulted.
-- [ ] Legacy code paths deleted (`grep -rn "runInitLegacy\|BONSAI_REDESIGN" .` returns nothing).
+- [ ] `make build && go test ./...` passes.
+- [ ] `golangci-lint` CI clean.
 
 ---
 
@@ -803,15 +930,18 @@ Specific checks each PR:
 | Terminal truecolor absent → color mix via `AdaptiveColor` degrades ugly | Test with `TERM=xterm-256color` locally; ensure at-rest rail is readable on 256-color. |
 | Bubble Tea tick interval too slow for 600ms animation | 24fps (42ms) is well inside BubbleTea's typical cadence; verified by existing `SpinnerStep`. |
 | Generate runs fast → min-hold feels artificial | Design agreed min-hold is the preferred compromise; if user pushback, flip to straight-to-planted with zero hold behind a subseq. env flag. |
-| Legacy flow drift during Phase 2–4 | Env-flag branch isolates new code; legacy gets no changes in phases 1–4. |
+| Legacy flow drift during Phase 2–4, 5A | Env-flag branch isolates new code; legacy gets no changes until Phase 5B. |
 | Big scope / plan creep | Each phase is an independent PR with its own Verification gate. If a phase reveals missing catalog data, spin out a dependency plan rather than growing the phase. |
-| FileTree diff in Planted doesn't match Observe Soil preview because `WriteResult` omits unchanged scaffolding | Confirm `WriteResult` includes `ActionCreated` for scaffolding files on fresh init; if not, augment `WriteResult.Files` during generate to always include attempted writes. Check in Phase 5 Step 3 before shipping. |
+| FileTree diff in Planted doesn't match Observe Soil preview because `WriteResult` omits unchanged scaffolding | Confirm `WriteResult` includes `ActionCreated` for scaffolding files on fresh init; if not, augment `WriteResult.Files` during generate to always include attempted writes. Check in Phase 5A Planted step before shipping. |
+| Responsive refactor breaks previously-nominal 120-col layout | Clamp thresholds calibrated around the current nominal width (120 col); `ClampColumns(120)` must produce the existing widths (name 24, desc 44, tag 12). Regression test asserts this. |
+| Viewport scroll breaks focus-follows behaviour | Unit test covers `Viewport.Follow(focusIdx)`: verifies offset clamps so the focused line is always within `[offset, offset+height)`. |
+| Min-size floor triggers on legitimate 80×24 terminals | Floor thresholds set to 70×20 — below minimum POSIX vt100 compatibility; 80×24 is comfortably above the floor. Verified in 5A Verification smoke at 80×24. |
 
 ---
 
 ## Verification (master gate)
 
-- [ ] All five phases merged and in main.
+- [ ] All phases merged and in main (Phases 1, 2, 3, 4, 5A, 5B — 6 PRs total).
 - [ ] `bonsai init` in a fresh tmpdir renders the full cinematic flow: Vessel → Soil → Branches → Observe → Generate (≥600ms) → Planted. No env flag required.
 - [ ] `bonsai init` with an existing `.bonsai.yaml` prints the "already exists" warning unchanged.
 - [ ] Conflict picker fires correctly on pre-existing scaffolding files.
@@ -820,7 +950,9 @@ Specific checks each PR:
 - [ ] `gitleaks` CI clean.
 - [ ] `BONSAI_ASCII_ONLY=1 bonsai init` uses ASCII fallback throughout.
 - [ ] Legacy code (`runInitLegacy`, `BONSAI_REDESIGN` env check) removed; grep returns nothing.
-- [ ] Manual visual smoke: 80-col, 120-col, 200-col widths render without border drift.
+- [ ] Manual visual smoke: 70-col (floor), 80-col, 120-col, 200-col widths render without border drift.
+- [ ] Sub-floor terminals (<70×20) show the "please enlarge" panel instead of a broken layout.
+- [ ] Branches + Observe + Planted lists scroll vertically when contents exceed available height; focused row stays visible.
 - [ ] Ctrl-C at any stage exits cleanly with no partial `.bonsai.yaml`.
 - [ ] Esc pops stage-level (Branches → Soil, etc.) with prior selections preserved.
 - [ ] `station/Playbook/Status.md` and `station/agent/Core/memory.md` updated.
