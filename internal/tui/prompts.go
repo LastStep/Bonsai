@@ -12,9 +12,7 @@ import (
 func BonsaiTheme() *huh.Theme {
 	t := huh.ThemeBase()
 
-	t.Focused.Base = t.Focused.Base.BorderForeground(
-		lipgloss.AdaptiveColor{Dark: "#3A5F4A", Light: "#5A7F6A"},
-	)
+	t.Focused.Base = t.Focused.Base.BorderForeground(ColorLeafDim)
 	t.Focused.Card = t.Focused.Base
 	t.Focused.Title = t.Focused.Title.Foreground(ColorSecondary).Bold(true)
 	t.Focused.Title = t.Focused.Title.MarginBottom(0)
@@ -31,10 +29,8 @@ func BonsaiTheme() *huh.Theme {
 	t.Focused.SelectedPrefix = lipgloss.NewStyle().Foreground(ColorSuccess).SetString("✓ ")
 	t.Focused.UnselectedPrefix = lipgloss.NewStyle().Foreground(ColorMuted).SetString("· ")
 	t.Focused.UnselectedOption = t.Focused.UnselectedOption.Foreground(ColorSubtle)
-	t.Focused.FocusedButton = t.Focused.FocusedButton.Foreground(lipgloss.Color("#FFFFFF")).Background(ColorPrimary)
-	t.Focused.BlurredButton = t.Focused.BlurredButton.Foreground(ColorSubtle).Background(
-		lipgloss.AdaptiveColor{Dark: "#2D2D3D", Light: "#E5E7EB"},
-	)
+	t.Focused.FocusedButton = t.Focused.FocusedButton.Foreground(ColorAccent).Background(ColorPrimary)
+	t.Focused.BlurredButton = t.Focused.BlurredButton.Foreground(ColorSubtle).Background(ColorSurface)
 	t.Focused.Next = t.Focused.FocusedButton
 
 	t.Focused.TextInput.Cursor = t.Focused.TextInput.Cursor.

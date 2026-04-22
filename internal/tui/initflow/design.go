@@ -140,3 +140,18 @@ func LabelStyle() lipgloss.Style {
 func DimStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(tui.ColorRule2)
 }
+
+// FocusedPrimaryStyle returns leaf-green + bold. The canonical "active"
+// emphasis used for focused headings, active stage anchors, primary action
+// glyphs — anywhere the eye should land on the leaf tone with weight.
+// Prefer this over reconstructing the pattern inline.
+func FocusedPrimaryStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
+}
+
+// FocusedAccentStyle returns accent-white + bold. The canonical emphasis for
+// counters, checkmarks on focused rows, progress numerals — pairs with
+// FocusedNameStyle's bright white-bold typographic beat.
+func FocusedAccentStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
+}

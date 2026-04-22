@@ -49,6 +49,7 @@ var (
 	Sand  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#C4B7A6", Light: "#6B5E4F"}
 	Petal lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#D4A0C0", Light: "#9B4D8A"}
 	Moon  lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#F5F5F5", Light: "#1A1A1A"}
+	Slate lipgloss.TerminalColor = lipgloss.AdaptiveColor{Dark: "#2D2D3D", Light: "#E5E7EB"}
 )
 
 // ─── Semantic Tokens ──────────────────────────────────────────────────────
@@ -67,6 +68,7 @@ var (
 	ColorDanger    = Ember // Errors
 	ColorWarning   = Amber // Warnings
 	ColorInfo      = Water // Info panels, review box
+	ColorSurface   = Slate // Neutral UI surface — idle button backgrounds, inactive chrome
 )
 
 // Enso / rule chrome tokens — used by the init-flow chrome. Dimmer shades of
