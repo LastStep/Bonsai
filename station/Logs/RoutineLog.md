@@ -20,6 +20,17 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-22 — Plan 26 — P2 knock-off bundle (PR #66)
+- **Outcome:** success
+- **Plan:** Plans/Archive/26-p2-knockoff-bundle.md (Tier 1 patch, single dispatch)
+- **Iterations:** 1 execute-review cycle (zero findings on code review)
+- **Changes:** PR #66 squash `a9df552` — 5 files, +149/−14. (1) `station/agent/Sensors/context-guard.sh` lines 156-157 swapped `os.path.join(root, "")` → `docs_path` so planning-reminder paths include `station/` prefix (matches wrap-up checklist at lines 122-124). (2) `station/agent/Core/routines.md` dropped 2 blank lines (orig 38 + 55) splitting Dashboard + Definitions markdown tables — generator itself was already correct, file was stale output of older generator. (3) `cmd/root.go:173` + `cmd/add.go:329` replaced `filtered := slice[:0]` aliasing with `make([]string, 0, len(slice)-len(dropped))` pre-allocation — two sites; capacity arithmetic safe (`dropped ⊆ toBackup ⊆ toOverwrite` in add, `dropped ⊆ selected` in root). (4) `cmd/add.go` renamed inner closures `installedSet` → `installedItems` at lines 532 + 619 + 6 internal call sites (541/550/559/628/639/650); file-scope `func installedSet` at 349 preserved + its caller at 119 untouched. (5) `internal/generate/generate_test.go` new `TestRoutineDashboardNoBlankRows` — builds catalog with 7 tech-lead-default routines at mixed 5/7/14-day frequencies, calls `RoutineDashboard`, asserts no blank row splits body rows inside `ROUTINE_DASHBOARD_START`/`END` markers OR inside Routine Definitions table body; tolerates generator's expected blanks immediately after START/before END.
+- **Flags:** Agent's initial edits accidentally landed in main worktree (Edit tool writes via absolute path); agent self-recovered via `git apply` to worktree + `git checkout --` revert on main, pre-merge main verified clean. Lockfile hash updated in main worktree only (`.bonsai-lock.yaml` gitignored) so `bonsai update` won't flag spurious conflict.
+- **Notes:** All 4 items diagnosed + planned pre-dispatch. Plan pre-dispatched to origin/main (`fb6ac8c`) so agent worktree saw current spec. Independent code-review agent returned PASS with zero findings (no major/minor/nit). 6/6 CI green (test/lint/Analyze-Go/govulncheck/CodeQL/GitGuardian). Post-merge cleanup: worktree held branch → manual `git worktree remove -f -f` + `git branch -D` + `git push origin --delete` (documented pattern hits again, ~7th time this month).
+- **Status updates:** Plan 26 archived. Backlog 4 items removed (context-guard path prefix, routines dashboard split, selected[:0] aliasing, installedSet shadowing).
+
+---
+
 ### 2026-04-22 — v0.2.0 release ship — pre-release docs audit + tag + Homebrew tap recovery
 - **Outcome:** success
 - **Plan:** none (scope-only execution per user choice Q-A; Plan 26 candidates filed to Backlog instead of formal plan doc)
