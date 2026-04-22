@@ -13,43 +13,47 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
-// ConflictsStage is the tabbed conflict-resolution picker at rail position 5
-// (衝 CONFLICT). Rendered only when the Grow action produced at least one
-// ActionConflict file — the harness gates construction on
+// ConflictsStage is the chromeless full-screen conflict-resolution surface
+// (Plan 27 PR2 §C1-C5). Rendered only when the Grow action produced at least
+// one ActionConflict file — the harness gates construction on
 // wr.HasConflicts(), so this stage never instantiates for clean writes.
 //
-// Layout: one tab per conflict file. Each tab shows:
-//   - Header  : the conflict file's relative path
-//   - Summary : a short "local has edits · source has changes" line (until the
-//     generator surfaces an inline diff field, this is a placeholder — see
-//     the TODO next to diffSummary below)
-//   - Radio   : three rows — Keep local · Overwrite with source · Backup
-//     then overwrite. Default Keep.
+// Layout: one row per conflict file in a vertical list. Each row carries:
 //
-// Keystrokes match the addflow house style:
-//   - ← → / h l     cycle tabs (wrap)
-//   - ↑ ↓ / j k     cycle radio (no-wrap)
-//   - ␣ / ↵         advance (to next tab, or complete if last)
-//   - shift+tab / esc   back to prior stage (Grow; harness handles the pop)
+//	[focus glyph] [action glyph · coloured by pick] [relative path] [action label]
+//
+// Below the list a batch-resolve row renders three cells (Keep all /
+// Overwrite all / Backup all) that apply the chosen action to every row via
+// uppercase K/O/B.
+//
+// The stage is chromeless — View() returns the full AltScreen frame without
+// the header/enso-rail/footer chrome used by the four on-rail stages. The
+// rail visible to the user (anchored on OBSERVE) stays unchanged while the
+// conflict picker runs — no rail churn between Observe and Conflict.
+//
+// Keystrokes (plan-27 PR2 §C2 + §C4):
+//
+//   - ↑ ↓ / j k         move focus row (no wrap)
+//   - 1 / 2 / 3         set focused row's action to Keep / Overwrite / Backup
+//   - ␣                 cycle focused row's action (Keep → Overwrite → Backup → Keep)
+//   - K / O / B         batch-resolve — apply action to every row
+//   - ↵                 advance (complete stage)
+//   - shift+tab / esc   back to Observe (harness pops cursor)
 //
 // Result: map[string]config.ConflictAction keyed by FileResult.RelPath — one
-// entry per conflict file. applyCinematicConflictPicks in cmd/add.go
-// reads the map and dispatches per-file mutations.
+// entry per conflict file. applyCinematicConflictPicks in cmd/add.go reads
+// the map and dispatches per-file mutations.
 type ConflictsStage struct {
 	initflow.Stage
 
 	files   []generate.FileResult
-	catIdx  int                              // focused tab
+	focus   int                              // focused row (0..len(files)-1)
 	action  map[string]config.ConflictAction // per-file pick
-	radio   map[string]int                   // per-file radio focus row
-	toneOrd []config.ConflictAction          // index → action for radio rows
+	toneOrd []config.ConflictAction          // cycle order for ␣ keypress
+
+	viewport initflow.Viewport // used when conflict count exceeds visible rows
 }
 
-// NewConflictsStage constructs the stage over the conflict entries present
-// in wr. When wr has zero conflicts the ctor still returns a usable stage —
-// it simply renders an empty body with a single "nothing to reconcile" line
-// and completes on Enter. Callers should gate on wr.HasConflicts() before
-// splicing.
 // conflictsLabel is the kanji/kana/English triple shown in the Conflicts
 // stage body title. Plan 27 shrunk the rail to four visible stages so the
 // Conflicts stage renders off-rail; its rail index is StageIdxOffRail and
@@ -57,10 +61,11 @@ type ConflictsStage struct {
 // Bonsai-metaphor identity is retained.
 var conflictsLabel = initflow.StageLabel{Kanji: "衝", Kana: "しょう", English: "CONFLICT"}
 
-// Rail suppression is implicit: passing StageIdxOffRail (-1) into the base
-// ctor trips the negative-index branch in internal/tui/initflow/stage.go
-// (railHidden := s.railHidden || s.idx < 0), so no SetRailIndex call is
-// needed here.
+// NewConflictsStage constructs the stage over the conflict entries present
+// in wr. When wr has zero conflicts the ctor still returns a usable stage —
+// it simply renders an empty body with a single "nothing to reconcile" line
+// and completes on Enter. Callers should gate on wr.HasConflicts() before
+// splicing.
 func NewConflictsStage(ctx initflow.StageContext, wr *generate.WriteResult) *ConflictsStage {
 	label := conflictsLabel
 	base := initflow.NewStage(
@@ -82,18 +87,15 @@ func NewConflictsStage(ctx initflow.StageContext, wr *generate.WriteResult) *Con
 	}
 
 	action := make(map[string]config.ConflictAction, len(conflicts))
-	radio := make(map[string]int, len(conflicts))
 	for _, f := range conflicts {
 		action[f.RelPath] = config.ConflictActionKeep
-		radio[f.RelPath] = 0
 	}
 
 	return &ConflictsStage{
 		Stage:  base,
 		files:  conflicts,
-		catIdx: 0,
+		focus:  0,
 		action: action,
-		radio:  radio,
 		toneOrd: []config.ConflictAction{
 			config.ConflictActionKeep,
 			config.ConflictActionOverwrite,
@@ -102,10 +104,17 @@ func NewConflictsStage(ctx initflow.StageContext, wr *generate.WriteResult) *Con
 	}
 }
 
+// Chromeless reports true so the harness yields View() verbatim without its
+// default header/footer. Embedded initflow.Stage.Chromeless() already
+// returns true, but ConflictsStage declares the method explicitly so the
+// contract is obvious at call-sites that type-scan for Chromeless.
+func (s *ConflictsStage) Chromeless() bool { return true }
+
 // Init implements tea.Model — no cmd on entry.
 func (s *ConflictsStage) Init() tea.Cmd { return nil }
 
-// Update handles tab cycle + radio cycle + advance + back.
+// Update handles focus movement + per-row action + batch-resolve + advance +
+// back.
 func (s *ConflictsStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -120,38 +129,36 @@ func (s *ConflictsStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return s, nil
 		}
 		switch m.String() {
-		case "left", "h":
-			s.catIdx = (s.catIdx - 1 + len(s.files)) % len(s.files)
-		case "right", "l":
-			s.catIdx = (s.catIdx + 1) % len(s.files)
 		case "up", "k":
-			key := s.currentKey()
-			if key == "" {
-				return s, nil
+			if s.focus > 0 {
+				s.focus--
 			}
-			cur := s.radio[key] - 1
-			if cur < 0 {
-				cur = 0
-			}
-			s.radio[key] = cur
-			s.action[key] = s.toneOrd[cur]
 		case "down", "j":
+			if s.focus+1 < len(s.files) {
+				s.focus++
+			}
+		case "1":
+			s.setFocusedAction(config.ConflictActionKeep)
+		case "2":
+			s.setFocusedAction(config.ConflictActionOverwrite)
+		case "3":
+			s.setFocusedAction(config.ConflictActionBackup)
+		case " ":
+			// Cycle focused row: Keep → Overwrite → Backup → Keep.
 			key := s.currentKey()
 			if key == "" {
 				return s, nil
 			}
-			cur := s.radio[key] + 1
-			if cur >= len(s.toneOrd) {
-				cur = len(s.toneOrd) - 1
-			}
-			s.radio[key] = cur
-			s.action[key] = s.toneOrd[cur]
-		case " ", "enter":
-			// Advance to the next tab; complete on the last.
-			if s.catIdx+1 < len(s.files) {
-				s.catIdx++
-				return s, nil
-			}
+			cur := s.action[key]
+			next := cycleAction(cur, s.toneOrd)
+			s.action[key] = next
+		case "K":
+			s.setAllActions(config.ConflictActionKeep)
+		case "O":
+			s.setAllActions(config.ConflictActionOverwrite)
+		case "B":
+			s.setAllActions(config.ConflictActionBackup)
+		case "enter":
 			s.MarkDone()
 			return s, nil
 		}
@@ -159,61 +166,107 @@ func (s *ConflictsStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-// currentKey returns the RelPath of the focused tab's file, or "" if no tabs.
+// cycleAction returns the next action in order, wrapping around.
+func cycleAction(cur config.ConflictAction, order []config.ConflictAction) config.ConflictAction {
+	for i, a := range order {
+		if a == cur {
+			return order[(i+1)%len(order)]
+		}
+	}
+	return order[0]
+}
+
+func (s *ConflictsStage) setFocusedAction(a config.ConflictAction) {
+	key := s.currentKey()
+	if key == "" {
+		return
+	}
+	s.action[key] = a
+}
+
+func (s *ConflictsStage) setAllActions(a config.ConflictAction) {
+	for _, f := range s.files {
+		s.action[f.RelPath] = a
+	}
+}
+
+// currentKey returns the RelPath of the focused row's file, or "" if no rows.
 func (s *ConflictsStage) currentKey() string {
-	if s.catIdx < 0 || s.catIdx >= len(s.files) {
+	if s.focus < 0 || s.focus >= len(s.files) {
 		return ""
 	}
-	return s.files[s.catIdx].RelPath
+	return s.files[s.focus].RelPath
 }
 
-// View composes the body inside the shared frame.
+// View returns the full AltScreen frame. Chromeless — no header/rail/footer.
+// Mirrors initflow.PlantedStage.View for layout parity: centre vertically,
+// compose title + divider + list + batch row + inline key hints.
 func (s *ConflictsStage) View() string {
-	return s.RenderFrame(s.renderBody(), s.keyHints())
-}
-
-func (s *ConflictsStage) keyHints() []initflow.KeyHint {
-	return []initflow.KeyHint{
-		{Key: "←→", Desc: "file"},
-		{Key: "↑↓", Desc: "action"},
-		{Key: "↵", Desc: "next"},
-		{Key: "esc", Desc: "back"},
-		{Key: "ctrl-c", Desc: "quit"},
+	w := s.Width()
+	h := s.Height()
+	if w <= 0 {
+		w = 80
 	}
+	if h <= 0 {
+		h = 24
+	}
+	if initflow.TerminalTooSmall(s.Width(), s.Height()) {
+		return initflow.RenderMinSizeFloor(s.Width(), s.Height())
+	}
+
+	body := s.renderBody()
+
+	// Vertically centre inside the AltScreen.
+	rows := strings.Count(body, "\n") + 1
+	topPad := (h - rows) / 2
+	if topPad < 1 {
+		topPad = 1
+	}
+	bottomPad := h - rows - topPad
+	if bottomPad < 0 {
+		bottomPad = 0
+	}
+	return strings.Repeat("\n", topPad) + body + strings.Repeat("\n", bottomPad)
 }
 
+// renderBody composes title row + divider + list + batch-resolve row +
+// inline key-hint footer. No surrounding chrome — the stage owns the frame.
 func (s *ConflictsStage) renderBody() string {
 	dim := initflow.DimStyle()
 	bark := initflow.LabelStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
+	danger := lipgloss.NewStyle().Foreground(tui.ColorDanger).Bold(true)
 
-	var title string
+	// Dedicated title row (replaces RenderHeader chrome). Title mixes the
+	// kanji + English so ASCII fallback still reads "CONFLICT".
+	var titleRow string
 	if s.EnsoSafe() {
-		title = bark.Render(s.Label().Kanji) + " " + white.Render(s.Label().English)
+		titleRow = danger.Render(s.Label().Kanji + " · CONFLICT")
 	} else {
-		title = white.Render(s.Label().English)
+		titleRow = danger.Render("CONFLICT")
 	}
 
+	panelW := initflow.PanelWidth(s.Width())
+	divider := initflow.RenderSectionHeader("RECONCILE", panelW)
+
 	intro := strings.Join([]string{
-		title,
+		titleRow,
 		white.Render("Reconcile edited files."),
 		dim.Render("Pick an action per file — nothing overwritten silently."),
 	}, "\n")
 
-	panelW := initflow.PanelWidth(s.Width())
-	divider := initflow.RenderSectionHeader("CONFLICTS", panelW)
-
 	if len(s.files) == 0 {
 		empty := dim.Render("  (nothing to reconcile)")
-		body := []string{intro, "", "", divider, "", empty}
+		hint := s.renderKeyHints()
+		body := []string{intro, "", "", divider, "", empty, "", "", hint}
 		return initflow.CenterBlock(strings.Join(body, "\n"), s.Width())
 	}
 
-	tabRow := s.renderTabs()
-	header := s.renderFileHeader()
-	summary := s.renderDiffSummary()
-	radio := s.renderRadio()
+	list := s.renderList()
+	batchCaption := "  " + dim.Render("batch resolve:")
+	batchRow := s.renderBatchRow()
 	counter := s.renderCounter()
+	hint := s.renderKeyHints()
 
 	body := []string{
 		intro,
@@ -221,182 +274,158 @@ func (s *ConflictsStage) renderBody() string {
 		"",
 		divider,
 		"",
-		tabRow,
+		list,
 		"",
-		header,
+		batchCaption,
+		batchRow,
 		"",
-		summary,
+		"  " + bark.Render(counter),
 		"",
-		radio,
-		"",
-		dim.Render(counter),
+		hint,
 	}
 	return initflow.CenterBlock(strings.Join(body, "\n"), s.Width())
 }
 
-// renderTabs draws a compact tab strip — one cell per conflict file, keyed
-// by file index. File paths are truncated to fit.
-func (s *ConflictsStage) renderTabs() string {
-	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
-	bracket := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
-	chevron := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-
-	cells := make([]string, 0, len(s.files))
-	// Use a compact label — index + short basename — so the tab strip does
-	// not wrap on terminals with many conflicts. Full path is shown in the
-	// header block below.
-	for i, f := range s.files {
-		label := fmt.Sprintf("%d · %s", i+1, basename(f.RelPath))
-		// Clamp label to a conservative width so many conflicts still fit.
-		if lipgloss.Width(label) > 20 {
-			rr := []rune(label)
-			if len(rr) > 19 {
-				label = string(rr[:19]) + "…"
-			}
-		}
-		var cell string
-		if i == s.catIdx {
-			cell = bracket.Render("[ ") + leaf.Render(label) + bracket.Render(" ]")
-		} else {
-			cell = "  " + muted.Render(label) + "  "
-		}
-		cells = append(cells, cell)
+// renderList renders one row per conflict file in a vertical list. When the
+// row count exceeds the available budget the list is rendered through a
+// Viewport that follows the focus.
+func (s *ConflictsStage) renderList() string {
+	rows := make([]string, len(s.files))
+	for i := range s.files {
+		rows[i] = s.renderRow(i)
 	}
 
-	row := strings.Join(cells, " ")
-	return chevron.Render("‹") + " " + row + " " + chevron.Render("›")
+	listH := s.listHeight()
+	if listH > 0 && listH < len(rows) {
+		s.viewport.SetLines(rows)
+		s.viewport.SetHeight(listH)
+		s.viewport.Follow(s.focus)
+		return s.viewport.View()
+	}
+	return strings.Join(rows, "\n")
 }
 
-// renderFileHeader shows the focused file's full relative path, truncated to
-// the panel width if needed.
-func (s *ConflictsStage) renderFileHeader() string {
-	bark := initflow.LabelStyle()
-	value := initflow.ValueStyle()
-
-	key := s.currentKey()
-	if key == "" {
-		return ""
+// listHeight returns the visible row budget for the conflict list. Fixed
+// body rows: title (3) + blanks (2) + divider (1) + blank (1) + blank (1) +
+// batch caption (1) + batch row (1) + blank (1) + counter (1) + blank (1) +
+// key hint (1) = ~14 rows. Leaves at least 3 rows for the list on 20-row
+// terminals.
+func (s *ConflictsStage) listHeight() int {
+	h := s.Height()
+	if h <= 0 {
+		return 0
 	}
+	const fixedRows = 15
+	v := h - fixedRows
+	if v < 3 {
+		v = 3
+	}
+	return v
+}
+
+// renderRow renders a single conflict entry. Layout:
+//
+//	[border 2] [focus glyph 1] [sp 1] [action glyph 1] [sp 1] [relative path] [sp 2] [action label]
+//
+// Colour family is driven by the CURRENT action for the row — Keep green,
+// Overwrite red, Backup amber — so the palette updates live as the user
+// cycles ␣ / 1 / 2 / 3 / K / O / B. The focused row uses FocusBorder + bold
+// emphasis; unfocused rows are dim.
+func (s *ConflictsStage) renderRow(idx int) string {
+	f := s.files[idx]
+	focused := idx == s.focus
+
+	act := s.action[f.RelPath]
+	tone := toneFor(act)
+	rowStyle := initflow.ConflictRowStyle(tone)
+	glyph := initflow.ConflictActionGlyph(tone)
+
+	border := initflow.UnfocusBorder()
+	if focused {
+		border = initflow.FocusBorder()
+	}
+
+	focusGlyph := " "
+	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
+	if focused {
+		focusGlyph = leaf.Render("▸")
+	}
+
+	// Path column — budget = panelW - (border 2 + focusGlyph 1 + sp 1 +
+	// actionGlyph 1 + sp 1 + actionLabel ~18 + sp 2) ≈ panelW - 26.
 	panelW := initflow.PanelWidth(s.Width())
-	// Reserve space for the "FILE " label prefix (4 + 2 gap).
-	labelW := 6
-	pathBudget := panelW - labelW - 2
+	labelText := actionLabel(act)
+	labelW := 18 // generous budget so "backup + overwrite" fits
+	pathBudget := panelW - 2 - 1 - 1 - 1 - 1 - labelW - 2
 	if pathBudget < 10 {
 		pathBudget = 10
 	}
-	path := key
+	path := f.RelPath
 	if lipgloss.Width(path) > pathBudget {
 		rr := []rune(path)
 		if len(rr) > pathBudget-1 {
-			// Head-truncate paths so the distinctive basename survives.
 			path = "…" + string(rr[len(rr)-pathBudget+1:])
 		}
 	}
-	return "  " + bark.Render(initflow.PadRight("FILE", labelW)) + value.Render(path)
+
+	pathStyle := initflow.UnfocusedNameStyle()
+	if focused {
+		pathStyle = initflow.FocusedNameStyle()
+	}
+
+	actionCell := rowStyle.Render(glyph) + " " + rowStyle.Render(labelText)
+	return border + focusGlyph + " " + pathStyle.Render(initflow.PadRight(path, pathBudget)) + "  " + actionCell
 }
 
-// renderDiffSummary emits a short status line describing the conflict. TODO:
-// surface a real inline diff once FileResult carries one. Until then we read
-// Source (the catalog path the file came from) and the RelPath to compose a
-// one-line provenance summary — no partial diff leaks, no placeholder data
-// masquerades as content.
-func (s *ConflictsStage) renderDiffSummary() string {
-	dim := initflow.DimStyle()
+// renderBatchRow draws the three labelled cells below the list. Uppercase
+// K/O/B trigger each cell; lowercase k/o/b are no-ops (Plan 27 §C4).
+func (s *ConflictsStage) renderBatchRow() string {
+	keepStyle := initflow.ConflictRowStyle(initflow.ConflictToneKeep)
+	overStyle := initflow.ConflictRowStyle(initflow.ConflictToneOverwrite)
+	backStyle := initflow.ConflictRowStyle(initflow.ConflictToneBackup)
 	bark := initflow.LabelStyle()
-	value := initflow.ValueStyle()
 
-	if s.catIdx < 0 || s.catIdx >= len(s.files) {
-		return ""
-	}
-	f := s.files[s.catIdx]
-
-	labelW := 6
-	source := f.Source
-	if source == "" {
-		source = "—"
+	cell := func(key string, style lipgloss.Style, label string) string {
+		return style.Render("[ ") + bark.Render(key) + style.Render(" "+label+" ]")
 	}
 
-	panelW := initflow.PanelWidth(s.Width())
-	srcBudget := panelW - labelW - 2
-	if srcBudget < 10 {
-		srcBudget = 10
-	}
-	if lipgloss.Width(source) > srcBudget {
-		rr := []rune(source)
-		if len(rr) > srcBudget-1 {
-			source = string(rr[:srcBudget-1]) + "…"
-		}
-	}
-
-	// TODO(plan-23-phase2): replace the placeholder status with a real inline
-	// diff summary once generate.FileResult exposes one. Today the write
-	// pipeline only records Action=ActionConflict, not a per-file diff — so
-	// we surface provenance (source) + a stable status instead of mocking
-	// content deltas.
-	statusLine := dim.Render("local has edits · source has changes")
-	srcLine := "  " + bark.Render(initflow.PadRight("SOURCE", labelW)) + value.Render(source)
-	return "  " + bark.Render(initflow.PadRight("WHAT", labelW)) + statusLine + "\n" + srcLine
+	row := cell("K", keepStyle, "Keep all") + "  " +
+		cell("O", overStyle, "Overwrite all") + "  " +
+		cell("B", backStyle, "Backup all")
+	return "  " + row
 }
 
-// renderRadio draws the three Keep / Overwrite / Backup rows for the focused
-// tab, using the colour-coded ConflictRowStyle tokens from initflow/design.
-func (s *ConflictsStage) renderRadio() string {
-	key := s.currentKey()
-	if key == "" {
-		return ""
-	}
-
-	rowFocus := s.radio[key]
-	rows := []struct {
-		tone  initflow.ConflictActionTone
-		label string
-		desc  string
-	}{
-		{initflow.ConflictToneKeep, "Keep local", "skip this file — your edits win"},
-		{initflow.ConflictToneOverwrite, "Overwrite with source", "discard edits and pull new content"},
-		{initflow.ConflictToneBackup, "Backup then overwrite", "save .bak and pull new content"},
-	}
-
-	out := make([]string, 0, len(rows))
-	for i, r := range rows {
-		style := initflow.ConflictRowStyle(r.tone)
-		glyph := initflow.ConflictActionGlyph(r.tone)
-
-		focused := i == rowFocus
-		border := initflow.UnfocusBorder()
-		if focused {
-			border = initflow.FocusBorder()
-		}
-
-		nameStyle := style
-		if focused {
-			nameStyle = nameStyle.Bold(true)
-		}
-
-		desc := initflow.UnfocusedDescStyle().Render(r.desc)
-		if focused {
-			desc = initflow.FocusedDescStyle().Render(r.desc)
-		}
-		line := border + style.Render(glyph) + " " + nameStyle.Render(r.label) + "  " + desc
-		out = append(out, line)
-	}
-	return strings.Join(out, "\n")
-}
-
-// renderCounter emits "file N of M — action: <label>" so the user always has
-// a sticky summary of where they are in the picker and what they picked.
+// renderCounter emits a sticky summary: "file N of M · focus: <action>".
 func (s *ConflictsStage) renderCounter() string {
 	if len(s.files) == 0 {
 		return ""
 	}
 	key := s.currentKey()
 	act := s.action[key]
-	return fmt.Sprintf("file %d of %d · action: %s", s.catIdx+1, len(s.files), actionLabel(act))
+	return fmt.Sprintf("file %d of %d · focus: %s", s.focus+1, len(s.files), actionLabel(act))
 }
 
-// actionLabel renders a ConflictAction as its user-facing label. Centralised
-// here so the counter + (future) confirm lines read from a single source.
+// renderKeyHints renders the inline key hint row (since the stage is
+// chromeless there is no RenderFooter). Keeps the hint set compact.
+func (s *ConflictsStage) renderKeyHints() string {
+	dim := initflow.DimStyle()
+	hint := "↑↓ focus  ·  1/2/3 action  ·  ␣ cycle  ·  K/O/B batch  ·  ↵ next  ·  esc back"
+	return dim.Render(hint)
+}
+
+// toneFor maps a ConflictAction to its visual tone.
+func toneFor(a config.ConflictAction) initflow.ConflictActionTone {
+	switch a {
+	case config.ConflictActionOverwrite:
+		return initflow.ConflictToneOverwrite
+	case config.ConflictActionBackup:
+		return initflow.ConflictToneBackup
+	default:
+		return initflow.ConflictToneKeep
+	}
+}
+
+// actionLabel renders a ConflictAction as its user-facing label.
 func actionLabel(a config.ConflictAction) string {
 	switch a {
 	case config.ConflictActionKeep:
@@ -410,27 +439,10 @@ func actionLabel(a config.ConflictAction) string {
 	}
 }
 
-// basename returns the last path segment of a forward-slash path. Kept local
-// so conflicts.go has no dependency on path/filepath on the hot render path.
-func basename(p string) string {
-	if p == "" {
-		return ""
-	}
-	idx := strings.LastIndex(p, "/")
-	if idx < 0 {
-		return p
-	}
-	return p[idx+1:]
-}
-
 // Result returns the per-file ConflictAction map. Keys are RelPath values;
 // every conflict entry is guaranteed to appear in the map (default Keep if
-// untouched). When the stage was aborted via esc the harness calls Reset and
-// discards the result — callers receiving a nil map on the read path should
-// fall through to a no-op.
+// untouched).
 func (s *ConflictsStage) Result() any {
-	// Return a copy so later mutations on the stage (shouldn't happen, but
-	// defensive) cannot mutate the harness-held snapshot.
 	if len(s.action) == 0 {
 		return map[string]config.ConflictAction{}
 	}
@@ -441,9 +453,8 @@ func (s *ConflictsStage) Result() any {
 	return out
 }
 
-// Reset clears the completion flag but preserves per-file picks, tab focus,
-// and radio focus so Esc-back → re-entry reads exactly where the user left
-// off. Mirrors the Graft stage's preserve-everything-but-done policy.
+// Reset clears the completion flag but preserves per-file picks and focus so
+// Esc-back → re-entry reads exactly where the user left off.
 func (s *ConflictsStage) Reset() tea.Cmd {
 	s.ClearDone()
 	return nil

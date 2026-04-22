@@ -110,6 +110,13 @@ func newYield(ctx initflow.StageContext, mode yieldMode, tail func(*YieldStage))
 	return y
 }
 
+// Chromeless reports true so the harness yields View() verbatim. Plan 27 PR2
+// §C9 — YieldStage renders its own chromeless full-screen frame (no enso
+// rail, no header, no footer), matching initflow.PlantedStage's exit-card
+// treatment. Embedded initflow.Stage.Chromeless() already reports true, but
+// the explicit method here keeps the contract obvious at the call-site.
+func (s *YieldStage) Chromeless() bool { return true }
+
 // Init implements tea.Model — no cmd on entry.
 func (s *YieldStage) Init() tea.Cmd { return nil }
 
@@ -212,6 +219,19 @@ func (s *YieldStage) renderSuccess() string {
 		heroSub = white.Render(fmt.Sprintf("Grafted %d new abilities onto %s.", s.totalSelected, agentDisplay))
 	}
 
+	// Hero stats line — mirrors initflow.PlantedStage's
+	// "N files written · N conflicts · lock synced" rhythm so the two flows
+	// land their success card with the same typographic beat.
+	totalAbilitiesStat := 0
+	if s.installed != nil {
+		totalAbilitiesStat = len(s.installed.Skills) + len(s.installed.Workflows) +
+			len(s.installed.Protocols) + len(s.installed.Sensors) + len(s.installed.Routines)
+	}
+	heroStats := dim.Render(fmt.Sprintf(
+		"%d abilities wired · %s · lock synced",
+		totalAbilitiesStat, agentDisplay,
+	))
+
 	summaryHeader := initflow.RenderSectionHeader("SUMMARY", initflow.PanelWidth(s.Width()))
 	const labelW = 14
 	const indent = "  "
@@ -258,6 +278,7 @@ func (s *YieldStage) renderSuccess() string {
 	body := []string{
 		heroTitle,
 		heroSub,
+		heroStats,
 		"",
 		"",
 		strings.Join(summaryRows, "\n"),

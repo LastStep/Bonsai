@@ -143,17 +143,48 @@ func (s *GroundStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, cmd
 }
 
-// View composes the body inside the shared frame.
+// Chromeless reports true so the harness yields View() verbatim without its
+// default header/footer wrap. Plan 27 PR2 §C6 — GroundStage renders a
+// centred off-rail form panel without the enso rail / header / footer
+// chrome used by the four on-rail stages. The rail visible to the user
+// stays anchored on SELECT while Ground collects the workspace.
+func (s *GroundStage) Chromeless() bool { return true }
+
+// View returns the full AltScreen frame for the Ground stage. Chromeless —
+// body centred vertically, inline key-hint row below the form. Mirrors the
+// layout rhythm of initflow.PlantedStage (centre body + inline hint) so the
+// off-rail Ground reads as part of the same cinematic.
 func (s *GroundStage) View() string {
-	return s.RenderFrame(s.renderBody(), s.keyHints())
+	w := s.Width()
+	h := s.Height()
+	if w <= 0 {
+		w = 80
+	}
+	if h <= 0 {
+		h = 24
+	}
+	if initflow.TerminalTooSmall(s.Width(), s.Height()) {
+		return initflow.RenderMinSizeFloor(s.Width(), s.Height())
+	}
+
+	body := s.renderBody() + "\n\n" + initflow.CenterBlock(s.renderInlineHints(), w)
+
+	rows := strings.Count(body, "\n") + 1
+	topPad := (h - rows) / 2
+	if topPad < 1 {
+		topPad = 1
+	}
+	bottomPad := h - rows - topPad
+	if bottomPad < 0 {
+		bottomPad = 0
+	}
+	return strings.Repeat("\n", topPad) + body + strings.Repeat("\n", bottomPad)
 }
 
-func (s *GroundStage) keyHints() []initflow.KeyHint {
-	return []initflow.KeyHint{
-		{Key: "↵", Desc: "next"},
-		{Key: "esc", Desc: "back"},
-		{Key: "ctrl-c", Desc: "quit"},
-	}
+// renderInlineHints renders the key-hint row inline (replaces RenderFooter).
+func (s *GroundStage) renderInlineHints() string {
+	dim := initflow.DimStyle()
+	return dim.Render("↵  next  ·  esc  back  ·  ctrl-c  quit")
 }
 
 func (s *GroundStage) renderBody() string {
