@@ -20,6 +20,23 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-22 — Plan 23 Phase 3: cinematic `bonsai add` cutover + 7 bundled cleanups (issue-to-implementation)
+- **Outcome:** success
+- **Plan:** `Playbook/Plans/Archive/23-uiux-phase2-add.md` (status: Complete)
+- **PR:** [#64](https://github.com/LastStep/Bonsai/pull/64) squash `788fa6c` (+ post-review fix `44e6874` for 2 minor consistency findings before merge)
+- **Iterations:** 1 execute + 1 fix-agent on same branch (2 cycles total, well below the 3-cycle escalation threshold)
+- **Execution mode:** tech-lead supervised, 2 general-purpose worktree dispatches (1 implementation + 1 minor-fix) + 2 parallel review-agent dispatches (code review + security review)
+- **Changes:** Cutover — `BONSAI_ADD_REDESIGN` env gate deleted; `runAddRedesign` body merged into `cmd/add.go` as new `runAdd`; `cmd/add_redesign.go` deleted; `cmd/init_redesign.go` → `cmd/init_flow.go` via `git mv` (96% rename); legacy `runAdd`/`runAddSpinner`/`buildNewAgentSteps`/`buildAddItemsSteps`/`addOutcome`/`normaliseWorkspace`/`workspaceUniqueValidator`/`newDescriber`/`userSensorOptions`/`NewYieldAddItemsDeferred`/`yieldModeAddItemsDeferred` all removed (zero grep hits across `cmd/` + `internal/`). Bundled cleanups: dead post-harness Generate-error warning deleted from BOTH init_flow.go AND add.go (symmetric path caught by code review on top of plan); 3 harness composition tests for `NewConditional(NewLazy(...))`; `growSucceeded` predicate uses `outcome.SpinnerErr` closure capture; new `addflow.NewYieldUnknownAgent` variant + test; `.bak` write-error silent-discard fixed in BOTH conflict-apply helpers (PR #62 carry-forward security regression closed in both flows); conflicts post-harness slot resolved by type-scan; `cmd/add_test.go` new with 9 table tests using real OS perms.
+- **Flags:**
+  - **6th occurrence of `gh pr merge --delete-branch` worktree gotcha** — remote branch not deleted, manual `git push origin --delete` + `git worktree remove -f -f` + `git branch -D`. Memory pattern is well-documented; cleanup now reflexive.
+  - **New gotcha (potential) — main worktree switched to detached HEAD mid-session** — Suspect fix-agent's `git checkout -B worktree-agent-ad57b8f4 origin/worktree-agent-ad57b8f4` leaked into main worktree despite `isolation: "worktree"`. Caught at PR merge step (`gh pr merge` errored with "could not determine current branch"). Easy recovery via `git checkout main`. Logging here so a pattern can build before adding to memory.md.
+  - **Bundling 7 same-file backlog items into Phase 3 was the right call** — Each item touches a file the cutover already opens. Net diff is +947/−990 across 9 files; if each item shipped as its own PR it'd be 7-8 round trips with the same review surface. Code-review agent gave PASS in one pass.
+- **Reviews:** Code review PASS + 4 minors (2 real fixed in same-branch follow-up commit `44e6874`: dead post-harness warning in add.go + test rename `DroppedListSorted`→`DroppedListContainsAll`; 2 cosmetic backlogged: `selected[:0]` aliasing pattern + `installedSet` shadowing). Security review PASS no findings — `.bak` regression closed in both helpers, no new file I/O, env-flag fully removed, path-safety verified (keys come from generator-internal `wr.Conflicts()`, not user-controllable).
+- **CI:** 6/6 green (test, lint, Analyze Go, govulncheck, CodeQL, GitGuardian) on both `7a1ae2d` (initial) and `44e6874` (post-fix).
+- **Notes:** First end-to-end run of issue-to-implementation workflow with Plan 23 as a multi-phase plan. Plan archive flow proven end-to-end (Active → Archive after final phase merge). Phase 3 self-review caught one architectural decision worth documenting: closure capture of `outcome.SpinnerErr` over a sentinel struct — simpler, no new types, predicate doc explicitly justifies safety from harness ordering guarantees.
+
+---
+
 ### 2026-04-21 — Plan 20: Security Scanning Infrastructure (session)
 - **Outcome:** success
 - **Execution mode:** tech-lead supervised, 5 general-purpose worktree dispatches + 1 local gitleaks one-shot
