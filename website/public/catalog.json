@@ -1,11 +1,11 @@
 {
-  "generated": "2026-04-16T21:04:30.212Z",
+  "generated": "2026-04-22T12:51:29.722Z",
   "counts": {
     "agents": 6,
     "skills": 17,
     "workflows": 10,
     "protocols": 4,
-    "sensors": 12,
+    "sensors": 13,
     "routines": 8
   },
   "agents": [
@@ -747,6 +747,14 @@
       "required": null
     },
     {
+      "name": "compact-recovery",
+      "description": "Re-injects minimal context after /compact (Quick Triggers + Work State only)",
+      "agents": "all",
+      "event": "SessionStart",
+      "matcher": "compact",
+      "required": "all"
+    },
+    {
       "name": "context-guard",
       "description": "Injects context-aware behavioral constraints and detects session wrap-up trigger words before each prompt",
       "agents": "all",
@@ -806,7 +814,7 @@
       "description": "Injects core identity, memory, protocols, and project status at session start",
       "agents": "all",
       "event": "SessionStart",
-      "matcher": null,
+      "matcher": "startup|resume|clear",
       "required": "all"
     },
     {
