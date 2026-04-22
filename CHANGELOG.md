@@ -7,16 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.3] — 2026-04-15
+## [0.2.0] - 2026-04-22
+
+### Added
+- Cinematic `bonsai init` flow — Vessel (project name + docs path) → Soil (scaffolding) → Branches (tabbed ability picker) → Observe (review) → Generate → Planted summary, with kanji/kana stage rail, semantic palette, responsive resize, and ASCII fallback for terminals without wide-char support.
+- Cinematic `bonsai add` flow — Select → [Ground] → Graft → Observe → Grow → [Conflicts] → Yield, with a per-file conflict picker (Skip / Overwrite / Backup) and four terminal Yield variants (success, all-installed, tech-lead-required, unknown-agent).
+- Persistent statusline at `station/agent/Sensors/statusline.sh` — context %, 5h and 7d budget %, model, branch (with dirty marker), elapsed, cost, plus optional caveman-mode badge; sage/sand/rose 256-color tiers with `NO_COLOR` and `BONSAI_STATUSLINE_HIDE` honoured.
+- `compact-recovery` sensor — re-injects Quick Triggers and work state after `/compact` so the agent doesn't lose its operating context.
+- `context-guard` patterns expanded — verify and plan triggers in addition to existing tier-based context-percentage injections.
+- Trigger metadata system — `triggers:` blocks on skills/workflows feed both generated CLAUDE.md tables and `.claude/skills/{name}/SKILL.md` slash commands.
+- Starlight documentation site under `website/` — concepts, command reference, catalog browser (auto-generated), LLM-friendly llms.txt layer, deploy workflow.
+- `bonsai guide` extended from a single topic to four — `quickstart`, `concepts`, `cli`, `custom-files`.
+- `RenderFileTree` widget and palette chrome tokens (`ColorLeafDim`, `ColorRule`, `ColorRule2`, `ColorAccent`) used across the cinematic flows.
+
+### Changed
+- BubbleTea step/reducer harness in `internal/tui/harness/` is now the foundation for `init`, `add`, `remove`, and `update` — replaces the per-command Huh form chains.
+- README rewritten audience-first — new tagline "A workspace for your coding agent", `Who Bonsai is for` section, mechanism-over-personality bullets with concrete file references, `station/` tree snippet, demo gif.
+- `bonsai init` and `bonsai add` cinematic flows are now the default — no env flag required.
+- Adaptive color palette across the TUI — automatic light/dark detection, `NO_COLOR` honoured, `FatalPanel` and version banner consistency, structured error display via `ErrorDetail`.
+- Phase 2 UI consistency pass — ordering, item counts, key hints, "Up to date" no-op detection across pickers.
+- CI workflow widened to run on `push: branches: [main]` in addition to `pull_request` — closes the "gofmt drift on main silently hides because CI is PR-only" pattern.
+- `docs.yml` deploy workflow gains `pull_request` trigger (with deploy job guarded to push events) so broken MDX fails at PR time instead of post-merge.
+- `bonsai` binary now builds from `cmd/bonsai/main.go` so `go install github.com/LastStep/Bonsai/cmd/bonsai@latest` produces the correct lowercase binary name.
+- Go toolchain bumped to 1.25.8.
+- golangci-lint migrated from v1 to v2.
+
+### Removed
+- `BONSAI_REDESIGN` env gate — cinematic `bonsai init` is the only path; legacy harness body deleted.
+- `BONSAI_ADD_REDESIGN` env gate — cinematic `bonsai add` is the only path; legacy `runAddSpinner`, `buildNewAgentSteps`, `buildAddItemsSteps`, and `addOutcome` deleted.
+- Three orphan legacy guide topics (1,213 lines) replaced by the four-topic `bonsai guide` set.
+
+### Fixed
+- Plan 19 OSS-blocker bug sweep — CRLF handling on Windows checkouts, cross-workspace tree rendering, ability dedup across agents, spinner-step `errors.Join` so concurrent failures surface, and assorted harness polish.
+- `bonsai init` Planted stage shows the correct station path and the Observe stage no longer reports a misleading file count.
+- `chmod` is now re-applied on `ActionUnchanged` so sensor scripts stay executable across re-runs.
+- `.bak` write failures no longer silently discard files in the conflict picker — failed-backup paths are dropped from the overwrite list and a single warning is emitted.
+- Doubled path prefix in `bonsai add` output panels.
+
+### Security
+- CodeQL workflow added for Go SAST.
+- `govulncheck` job added to CI.
+- Dependabot configured for `gomod` and `github-actions`.
+- Two low-severity CodeQL `useless-assignment-to-local` alerts silenced after audit.
+- Astro XSS advisory (CVE-2026-41067) resolved by lockfile bump to `astro@6.1.7`.
+
+## [0.1.3] — 2026-04-16
 ### Changed
 - Apply `gofmt -s` across all Go source files for canonical formatting.
 
-## [0.1.2] — 2026-04-15
+## [0.1.2] — 2026-04-16
 ### Fixed
 - Restore Go Reference badge now that case-collision module-proxy issue is resolved.
 - Retract v0.1.0 release notice (see v0.1.1 fix).
 
-## [0.1.1] — 2026-04-15
+## [0.1.1] — 2026-04-16
 ### Added
 - Obsidian-compatible markdown links across generated workspace files (`[[link]]` syntax in nav tables and cross-references).
 - `workspace-guide` skill — installed with every agent to onboard humans into the generated workspace.
@@ -27,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI badge and Go version badge corrections in README.
 - Reverted stray `INSTRUCT` reference to backtick in memory protocol.
 
-## [0.1.0] — 2026-04-15
+## [0.1.0] — 2026-04-16
 
 First public release. Go CLI for scaffolding Claude Code agent workspaces.
 
@@ -47,7 +91,8 @@ First public release. Go CLI for scaffolding Claude Code agent workspaces.
 - Release pipeline — GoReleaser v2, GitHub Actions tag trigger, Homebrew tap (`LastStep/homebrew-tap`).
 - Dogfooding — Bonsai generates its own `station/` workspace with tech-lead agent.
 
-[Unreleased]: https://github.com/LastStep/Bonsai/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/LastStep/Bonsai/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/LastStep/Bonsai/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/LastStep/Bonsai/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/LastStep/Bonsai/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/LastStep/Bonsai/compare/v0.1.0...v0.1.1
