@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/agent-review.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/agent-review.sh\" \"$r\"'"
           }
         ],
         "matcher": "Agent"
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/scope-guard-files.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/scope-guard-files.sh\" \"$r\"'"
           }
         ],
         "matcher": "Edit|Write"
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/dispatch-guard.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/dispatch-guard.sh\" \"$r\"'"
           }
         ],
         "matcher": "Agent"
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/routine-check.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/routine-check.sh\" \"$r\"'"
           }
         ]
       },
@@ -44,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/compact-recovery.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/compact-recovery.sh\" \"$r\"'"
           }
         ],
         "matcher": "compact"
@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/session-context.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/session-context.sh\" \"$r\"'"
           }
         ],
         "matcher": "startup|resume|clear"
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/status-bar.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/status-bar.sh\" \"$r\"'"
           }
         ]
       }
@@ -74,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/subagent-stop-review.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/subagent-stop-review.sh\" \"$r\"'"
           }
         ]
       }
@@ -84,10 +84,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] \u0026\u0026 [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/context-guard.sh\" \"$r\"'"
+            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/context-guard.sh\" \"$r\"'"
           }
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash /home/rohan/ZenGarden/Bonsai/station/agent/Sensors/statusline.sh",
+    "padding": 0,
+    "refreshInterval": 30
   }
 }
