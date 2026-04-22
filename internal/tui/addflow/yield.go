@@ -20,6 +20,7 @@ const (
 	yieldModeSuccess yieldMode = iota
 	yieldModeAllInstalled
 	yieldModeTechLeadRequired
+	yieldModeAddItemsDeferred
 )
 
 // YieldStage is the terminal completion card at rail position 5 (結 YIELD).
@@ -72,6 +73,15 @@ func NewYieldAllInstalled(ctx initflow.StageContext, agentDef *catalog.AgentDef)
 func NewYieldTechLeadRequired(ctx initflow.StageContext, agentType string) *YieldStage {
 	return newYield(ctx, yieldModeTechLeadRequired, func(y *YieldStage) {
 		y.pickedAgentType = agentType
+	})
+}
+
+// NewYieldAddItemsDeferred renders the Phase 1 "add-items not yet wired"
+// card. Plan 23 ships add-items in Phase 2; until then the user must
+// unset BONSAI_ADD_REDESIGN to reach the legacy flow for that path.
+func NewYieldAddItemsDeferred(ctx initflow.StageContext, agentDef *catalog.AgentDef) *YieldStage {
+	return newYield(ctx, yieldModeAddItemsDeferred, func(y *YieldStage) {
+		y.agentDef = agentDef
 	})
 }
 
@@ -132,6 +142,8 @@ func (s *YieldStage) renderBody() string {
 		return s.renderAllInstalled()
 	case yieldModeTechLeadRequired:
 		return s.renderTechLeadRequired()
+	case yieldModeAddItemsDeferred:
+		return s.renderAddItemsDeferred()
 	default:
 		return s.renderSuccess()
 	}
@@ -301,6 +313,49 @@ func (s *YieldStage) renderTechLeadRequired() string {
 		"     " + dim.Render("bootstrap the project scaffold + tech-lead agent"),
 		"  " + bark.Render("2") + "  " + white.Render(fmt.Sprintf("$ bonsai add %s", agentType)),
 		"     " + dim.Render("re-run this flow once the tech-lead is planted"),
+	}
+
+	body := []string{
+		heroTitle,
+		intro,
+		helper,
+		"",
+		"",
+		strings.Join(nextLines, "\n"),
+	}
+	return initflow.CenterBlock(strings.Join(body, "\n"), s.Width())
+}
+
+func (s *YieldStage) renderAddItemsDeferred() string {
+	dim := initflow.DimStyle()
+	bark := initflow.LabelStyle()
+	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
+	warn := lipgloss.NewStyle().Foreground(tui.ColorWarning).Bold(true)
+
+	var heroTitle string
+	if s.EnsoSafe() {
+		heroTitle = warn.Render(s.Label().Kanji + " · ADD-ITEMS COMING IN PHASE 2")
+	} else {
+		heroTitle = warn.Render("ADD-ITEMS COMING IN PHASE 2")
+	}
+	agentName := "this agent"
+	if s.agentDef != nil {
+		agentName = s.agentDef.DisplayName
+		if agentName == "" {
+			agentName = catalog.DisplayNameFrom(s.agentDef.Name)
+		}
+	}
+
+	intro := white.Render(fmt.Sprintf("%s already exists — adding more abilities to it is Phase 2 work.", agentName))
+	helper := dim.Render("Phase 1 of the cinematic flow only wires the new-agent path. Use the legacy flow until Phase 2 lands.")
+
+	nextHeader := initflow.RenderSectionHeader("NEXT", initflow.PanelWidth(s.Width()))
+	nextLines := []string{
+		nextHeader,
+		"  " + bark.Render("1") + "  " + white.Render("$ unset BONSAI_ADD_REDESIGN"),
+		"     " + dim.Render("drop the cinematic-flow gate for this shell"),
+		"  " + bark.Render("2") + "  " + white.Render("$ bonsai add"),
+		"     " + dim.Render("re-run via the legacy flow — add-items works there today"),
 	}
 
 	body := []string{

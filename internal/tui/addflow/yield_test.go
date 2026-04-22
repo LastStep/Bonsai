@@ -127,6 +127,30 @@ func TestYield_ResultNil(t *testing.T) {
 	}
 }
 
+// TestYield_AddItemsDeferredRendersLegacyCTA verifies the Phase 1
+// deferred-add-items variant surfaces the "unset BONSAI_ADD_REDESIGN" +
+// legacy-flow CTA so the user has a concrete next step instead of the
+// silent "already full" lie the earlier splicer produced.
+func TestYield_AddItemsDeferredRendersLegacyCTA(t *testing.T) {
+	agentDef := &catalog.AgentDef{Name: "backend", DisplayName: "Backend"}
+	ctx := initflow.StageContext{StartedAt: time.Now()}
+	s := NewYieldAddItemsDeferred(ctx, agentDef)
+	s.SetSize(120, 40)
+	out := s.View()
+	if !strings.Contains(out, "PHASE 2") {
+		t.Fatal("add-items-deferred view should surface Phase 2 hero")
+	}
+	if !strings.Contains(out, "unset BONSAI_ADD_REDESIGN") {
+		t.Fatal("add-items-deferred view should direct user to unset the env flag")
+	}
+	if !strings.Contains(out, "bonsai add") {
+		t.Fatal("add-items-deferred view should include bonsai add legacy CTA")
+	}
+	if !strings.Contains(out, "Backend") {
+		t.Fatal("add-items-deferred view should include agent display name")
+	}
+}
+
 // TestYield_SuccessAddItemsMessaging verifies the isNewAgent=false branch
 // renders the "Grafted N abilities" wording.
 func TestYield_SuccessAddItemsMessaging(t *testing.T) {

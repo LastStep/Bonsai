@@ -105,17 +105,16 @@ func runAddRedesign(cmd *cobra.Command, args []string) error {
 				return []harness.Step{addflow.NewYieldTechLeadRequired(ctx, agentType)}
 			}
 
-			// Add-items branch — Phase 1 stub. Plan 23 Phase 2 wires the
-			// filtered Graft + Observe path; for Phase 1 we short-circuit to
-			// an all-installed Yield so the user has a terminal card rather
-			// than a blank screen. Legacy runAdd (gated off by the absence
-			// of BONSAI_ADD_REDESIGN) still handles the real add-items path.
+			// Add-items branch — Phase 1 terminal splices only. Plan 23
+			// Phase 2 wires the real filtered Graft + Observe path; until
+			// then this splicer either terminates at the "already full"
+			// card or directs the user to the legacy flow via the
+			// AddItemsDeferred variant. Never falls through silently.
 			if installedAgent, exists := cfg.Agents[agentType]; exists {
 				if availableAddItems(cat, installedAgent).Total() == 0 {
 					return []harness.Step{addflow.NewYieldAllInstalled(ctx, agentDef)}
 				}
-				// Phase 1: defer to Phase 2 for the real add-items flow.
-				return []harness.Step{addflow.NewYieldAllInstalled(ctx, agentDef)}
+				return []harness.Step{addflow.NewYieldAddItemsDeferred(ctx, agentDef)}
 			}
 
 			// Tech-lead guard — non-tech-lead pick with no tech-lead installed.
