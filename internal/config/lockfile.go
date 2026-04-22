@@ -79,7 +79,7 @@ func (lf *LockFile) Untrack(relPath string) {
 
 // ConflictAction describes the resolution the user selected for a single
 // conflict-file entry during the cinematic ConflictsStage. Consumed by
-// applyCinematicConflictPicks in cmd/add_redesign.go, which translates the
+// applyCinematicConflictPicks in cmd/add.go, which translates the
 // per-file action into the WriteResult.ForceSelected + optional .bak write
 // that the legacy buildConflictSteps / applyConflictPicks primitives
 // perform as a bulk two-step form.

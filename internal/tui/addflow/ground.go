@@ -34,7 +34,7 @@ type GroundStage struct {
 }
 
 // GroundContext is the ctor bundle for GroundStage. Mirrors the shape used
-// by the other addflow ctors so cmd/add_redesign.go can stamp everything in
+// by the other addflow ctors so cmd/add.go can stamp everything in
 // one place.
 type GroundContext struct {
 	AgentType          string

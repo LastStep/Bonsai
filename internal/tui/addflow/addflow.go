@@ -88,7 +88,7 @@ func (r GraftResult) Total() int {
 }
 
 // Outcome is the cross-stage scratchpad populated by the Grow action and
-// consumed by Yield + the post-harness cleanup in cmd/add_redesign.go. Kept
+// consumed by Yield + the post-harness cleanup in cmd/add.go. Kept
 // in addflow (not cmd/) so test helpers can stamp synthetic outcomes without
 // back-importing cmd.
 //

@@ -33,7 +33,7 @@ import (
 //   - shift+tab / esc   back to prior stage (Grow; harness handles the pop)
 //
 // Result: map[string]config.ConflictAction keyed by FileResult.RelPath — one
-// entry per conflict file. applyCinematicConflictPicks in cmd/add_redesign.go
+// entry per conflict file. applyCinematicConflictPicks in cmd/add.go
 // reads the map and dispatches per-file mutations.
 type ConflictsStage struct {
 	initflow.Stage
