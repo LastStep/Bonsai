@@ -420,4 +420,3 @@ func buildPlantedTree(wr *generate.WriteResult, projectDir, stationDir string) [
 	}
 	return walk(root)
 }
-

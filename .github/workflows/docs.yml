@@ -8,6 +8,12 @@ on:
       - 'catalog/**'
       - 'docs/**'
       - 'README.md'
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'catalog/**'
+      - 'docs/**'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
@@ -41,11 +47,13 @@ jobs:
         working-directory: website
 
       - uses: actions/upload-pages-artifact@v5
+        if: github.event_name == 'push'
         with:
           path: website/dist
 
   deploy:
     needs: build
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
