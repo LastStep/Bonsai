@@ -607,3 +607,360 @@ func TestConditionalLazyBuilderFiresOncePerActivePass(t *testing.T) {
 		t.Fatalf("after Reset+Init: buildCalls = %d, want 2 (one re-fire)", buildCalls)
 	}
 }
+
+// ─── LazyGroup re-splice (Plan 27 §B1) ────────────────────────────────────
+
+// answerableFakeStep is a fakeStep that can be toggled between different
+// result values on demand, and whose Done flag the test flips explicitly.
+// Used to simulate an upstream Select step whose pick drives the LazyGroup
+// branch shape: first "foo", then "bar" after an esc-back re-pick.
+type answerableFakeStep struct {
+	fakeStep
+}
+
+func (f *answerableFakeStep) answer(v any) {
+	f.result = v
+	f.done = true
+}
+
+// TestLazyGroupResplicesOnEscBack is the B1 regression guard. Pre-fix, a
+// LazyGroup was replaced in h.steps by its children on first splice and the
+// original reference was lost — esc-back + re-picking the upstream answer
+// landed the user back on the previously-spliced children with stale data
+// baked in. The fix adds spliceRecord tracking in Harness so esc-back can
+// unsplice (remove children, reinstate the group, Reset it) and the next
+// forward advance invokes Splice with the new prior results.
+//
+// Scenario exercised end-to-end through the harness reducer:
+//
+//  1. Steps: [answerableFakeStep, LazyGroup(fn)]
+//     fn(prev) inspects prev[0] and returns child sets keyed on that value:
+//     "foo" → [fakeFoo]; "bar" → [fakeBar]; anything else → nil.
+//  2. User "picks foo" (step 0 sets Done + result="foo"); harness advances.
+//  3. fn should fire once with prev=["foo"] and splice fakeFoo into h.steps.
+//  4. User hits esc. Cursor pops to step 0. The LazyGroup should be reinstated
+//     at its original slot; h.steps should match the declaration-time shape.
+//  5. User "picks bar" (step 0 Done + result="bar"); harness advances.
+//  6. fn should fire a second time with prev=["bar"] and splice fakeBar —
+//     NOT fakeFoo. Without the B1 fix, the old children stay in place and
+//     fakeBar never appears.
+func TestLazyGroupResplicesOnEscBack(t *testing.T) {
+	picker := &answerableFakeStep{fakeStep: fakeStep{title: "pick"}}
+
+	var buildCalls int
+	var lastPrev []any
+	fakeFoo := newFake("spliced-foo")
+	fakeBar := newFake("spliced-bar")
+
+	group := NewLazyGroup("Branch", func(prev []any) []Step {
+		buildCalls++
+		lastPrev = append([]any(nil), prev...)
+		if len(prev) == 0 {
+			return nil
+		}
+		switch prev[0] {
+		case "foo":
+			return []Step{fakeFoo}
+		case "bar":
+			return []Step{fakeBar}
+		}
+		return nil
+	})
+
+	h := New("BANNER", "TEST", []Step{picker, group})
+	// Prime dimensions so rebroadcastWindowSize no-ops cleanly.
+	_, _ = h.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	// Step 1: pick "foo" and let the harness advance.
+	picker.answer("foo")
+	_, _ = h.Update(runeKey('x'))
+
+	if buildCalls != 1 {
+		t.Fatalf("first advance: build calls = %d, want 1", buildCalls)
+	}
+	if len(lastPrev) != 1 || lastPrev[0] != "foo" {
+		t.Fatalf("first splice prev = %v, want [foo]", lastPrev)
+	}
+	if h.cursor != 1 {
+		t.Fatalf("after first splice: cursor = %d, want 1", h.cursor)
+	}
+	if len(h.steps) != 2 || h.steps[1] != Step(fakeFoo) {
+		t.Fatalf("after first splice: h.steps = %v, want [picker, fakeFoo]", h.steps)
+	}
+
+	// Step 2: user hits esc to go back. The harness should pop the cursor to
+	// 0, unsplice the group (removing fakeFoo, reinstating the group), and
+	// Reset the picker so its form is live again.
+	_, _ = h.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	if h.cursor != 0 {
+		t.Fatalf("after esc: cursor = %d, want 0", h.cursor)
+	}
+	if len(h.steps) != 2 {
+		t.Fatalf("after esc: len(h.steps) = %d, want 2 (group reinstated)", len(h.steps))
+	}
+	if _, ok := h.steps[1].(*LazyGroup); !ok {
+		t.Fatalf("after esc: h.steps[1] = %T, want *LazyGroup (unspliced)", h.steps[1])
+	}
+	// Group must be reset so Spliced() reports false for the next advance.
+	if grp, ok := h.steps[1].(*LazyGroup); ok && grp.Spliced() {
+		t.Fatalf("after esc: LazyGroup.Spliced() = true, want false (not reset)")
+	}
+
+	// Step 3: re-pick "bar" on the same picker. The picker is still the same
+	// instance — its done flag needs to flip back to false so the harness
+	// doesn't treat it as already-advanced; the answer helper replaces the
+	// result value and flips done.
+	picker.done = false
+	picker.answer("bar")
+	_, _ = h.Update(runeKey('y'))
+
+	if buildCalls != 2 {
+		t.Fatalf("after re-advance: build calls = %d, want 2 (splice re-fired)", buildCalls)
+	}
+	if len(lastPrev) != 1 || lastPrev[0] != "bar" {
+		t.Fatalf("second splice prev = %v, want [bar]", lastPrev)
+	}
+	if h.cursor != 1 {
+		t.Fatalf("after re-advance: cursor = %d, want 1", h.cursor)
+	}
+	if len(h.steps) != 2 || h.steps[1] != Step(fakeBar) {
+		t.Fatalf("after re-advance: h.steps = %v, want [picker, fakeBar]", h.steps)
+	}
+}
+
+// TestLazyGroupResplicesMultiple exercises the multi-group unsplice path:
+// two LazyGroups declared back-to-back after a Picker, each returning a
+// distinct child shape. Advancing past both splices then esc-backing all the
+// way to the Picker must reinstate BOTH groups at their original slots and
+// Reset both so a subsequent forward pass re-splices each one with fresh
+// prior results.
+//
+// Scenario:
+//
+//  1. Declaration: [Picker, LG_A(fn_A), LG_B(fn_B)].
+//     fn_A returns 2 children ([fooA1, fooA2]); fn_B returns 1 child ([fooB]).
+//  2. Advance: picker→LG_A splices in 2 → cursor now on fooA1 → LG_B splices
+//     right after (as the harness advances through fooA1, fooA2 each time
+//     they answer); we drive the advance manually by flipping the fake steps
+//     Done and sending keys.
+//  3. Esc all the way back to Picker.
+//  4. Assert: h.steps matches declaration-time shape — [Picker, LG_A, LG_B] —
+//     both groups Reset (Spliced()==false).
+//  5. Re-advance with the same picker; assert fn_A and fn_B both re-fire and
+//     h.steps ends with the spliced children again.
+func TestLazyGroupResplicesMultiple(t *testing.T) {
+	picker := &answerableFakeStep{fakeStep: fakeStep{title: "pick"}}
+
+	var buildCallsA, buildCallsB int
+	fooA1 := newFake("foo-A-1")
+	fooA2 := newFake("foo-A-2")
+	fooB := newFake("foo-B")
+
+	groupA := NewLazyGroup("BranchA", func(prev []any) []Step {
+		buildCallsA++
+		return []Step{fooA1, fooA2}
+	})
+	groupB := NewLazyGroup("BranchB", func(prev []any) []Step {
+		buildCallsB++
+		return []Step{fooB}
+	})
+
+	h := New("BANNER", "TEST", []Step{picker, groupA, groupB})
+	_, _ = h.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	// Advance: picker answers, harness splices LG_A (2 children).
+	picker.answer("go")
+	_, _ = h.Update(runeKey('x'))
+	if buildCallsA != 1 {
+		t.Fatalf("after first advance: buildCallsA = %d, want 1", buildCallsA)
+	}
+	// Harness cursor now sits at fooA1 (index 1). h.steps shape:
+	// [picker, fooA1, fooA2, groupB].
+	if len(h.steps) != 4 {
+		t.Fatalf("after LG_A splice: len(h.steps) = %d, want 4", len(h.steps))
+	}
+	if h.cursor != 1 {
+		t.Fatalf("after LG_A splice: cursor = %d, want 1", h.cursor)
+	}
+
+	// Advance fooA1 → fooA2 → LG_B splices.
+	fooA1.done = true
+	_, _ = h.Update(runeKey('x'))
+	if h.cursor != 2 {
+		t.Fatalf("after fooA1 done: cursor = %d, want 2", h.cursor)
+	}
+	fooA2.done = true
+	_, _ = h.Update(runeKey('x'))
+	if buildCallsB != 1 {
+		t.Fatalf("after LG_B splice: buildCallsB = %d, want 1", buildCallsB)
+	}
+	// h.steps now: [picker, fooA1, fooA2, fooB]. cursor on fooB (idx 3).
+	if len(h.steps) != 4 {
+		t.Fatalf("after LG_B splice: len(h.steps) = %d, want 4", len(h.steps))
+	}
+	if h.cursor != 3 {
+		t.Fatalf("after LG_B splice: cursor = %d, want 3", h.cursor)
+	}
+
+	// Esc all the way back to Picker. Each esc moves cursor back one
+	// non-auto-complete step; fakeStep is not auto-complete so each esc
+	// moves by one.
+	for h.cursor > 0 {
+		_, _ = h.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	}
+
+	if h.cursor != 0 {
+		t.Fatalf("after esc-all: cursor = %d, want 0", h.cursor)
+	}
+	// Both groups should be reinstated at their original slots.
+	if len(h.steps) != 3 {
+		t.Fatalf("after esc-all: len(h.steps) = %d, want 3 (both groups reinstated)", len(h.steps))
+	}
+	if _, ok := h.steps[1].(*LazyGroup); !ok {
+		t.Fatalf("after esc-all: h.steps[1] = %T, want *LazyGroup", h.steps[1])
+	}
+	if _, ok := h.steps[2].(*LazyGroup); !ok {
+		t.Fatalf("after esc-all: h.steps[2] = %T, want *LazyGroup", h.steps[2])
+	}
+	if gA := h.steps[1].(*LazyGroup); gA.Spliced() {
+		t.Fatalf("after esc-all: LG_A.Spliced() = true, want false (should be reset)")
+	}
+	if gB := h.steps[2].(*LazyGroup); gB.Spliced() {
+		t.Fatalf("after esc-all: LG_B.Spliced() = true, want false (should be reset)")
+	}
+
+	// Re-advance: picker answers again; both groups must re-splice.
+	// Reset downstream fake steps so they aren't already-Done.
+	fooA1.done = false
+	fooA2.done = false
+	fooB.done = false
+	picker.done = false
+	picker.answer("go-again")
+	_, _ = h.Update(runeKey('x'))
+	if buildCallsA != 2 {
+		t.Fatalf("after re-advance: buildCallsA = %d, want 2 (re-splice)", buildCallsA)
+	}
+	if h.cursor != 1 {
+		t.Fatalf("after re-advance: cursor = %d, want 1", h.cursor)
+	}
+	// Walk fooA1, fooA2 forward to trigger LG_B re-splice.
+	fooA1.done = true
+	_, _ = h.Update(runeKey('x'))
+	fooA2.done = true
+	_, _ = h.Update(runeKey('x'))
+	if buildCallsB != 2 {
+		t.Fatalf("after re-advance through fooA2: buildCallsB = %d, want 2 (LG_B re-splice)", buildCallsB)
+	}
+	if len(h.steps) != 4 || h.steps[3] != Step(fooB) {
+		t.Fatalf("after re-advance: h.steps = %v, want [picker, fooA1, fooA2, fooB]", h.steps)
+	}
+}
+
+// TestLazyGroupRespliceEmptyChildren covers the empty-splice corner case:
+// a LazyGroup builder returning nil (zero children) must still be tracked
+// well enough that esc-back reinstates the group AND a subsequent re-advance
+// can invoke the builder again with a different prior-result to produce
+// non-empty children.
+//
+// Post-Fix 4 the Harness guards spliceRecord append on len(inserted) > 0,
+// so an empty splice is not recorded (there is nothing to reinstate — the
+// group is effectively skipped). This test codifies that contract: an
+// empty-splice group is consumed like an auto-complete, but a user re-entry
+// to the step BEFORE it that flips the builder's return path must still re-
+// splice against the new prior results, with no state leaking from the
+// previous zero-child pass.
+//
+// Scenario:
+//
+//  1. Steps: [Picker, LG(fn)] where fn returns nil on the first pass, then
+//     returns []Step{fakeAfter} on the second pass (prior[0] flips).
+//  2. Advance: picker answers, harness splices LG → zero children → harness
+//     continues past it (cursor advances off the end), flow quits.
+//  3. We inspect buildCalls pre-quit: must be 1, and no splice record was
+//     retained (h.splices is empty). The LG must report Spliced()=true since
+//     its splice method fired and Spliced flips unconditionally.
+//  4. This test does NOT exercise the full esc-back path because a
+//     zero-child splice completes the flow; what we verify is that the
+//     guard (Fix 4) prevents an over-eager record from being written. A
+//     non-recorded empty splice means a hypothetical second pass with a
+//     different prev[0] cannot accidentally reinstate stale zero-children —
+//     there was never a record to begin with.
+func TestLazyGroupRespliceEmptyChildren(t *testing.T) {
+	picker := &answerableFakeStep{fakeStep: fakeStep{title: "pick"}}
+
+	var buildCalls int
+	var lastPrev []any
+	fakeAfter := newFake("after")
+
+	group := NewLazyGroup("Branch", func(prev []any) []Step {
+		buildCalls++
+		lastPrev = append([]any(nil), prev...)
+		if len(prev) > 0 && prev[0] == "refill" {
+			return []Step{fakeAfter}
+		}
+		return nil // zero-child splice
+	})
+
+	h := New("BANNER", "TEST", []Step{picker, group})
+	_, _ = h.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	// Advance: picker answers; fn returns nil; harness walks past.
+	picker.answer("empty")
+	_, _ = h.Update(runeKey('x'))
+
+	if buildCalls != 1 {
+		t.Fatalf("after first advance: buildCalls = %d, want 1", buildCalls)
+	}
+	if len(lastPrev) != 1 || lastPrev[0] != "empty" {
+		t.Fatalf("first splice prev = %v, want [empty]", lastPrev)
+	}
+	// Fix 4 contract: zero-child splice must NOT be recorded — the record
+	// table stays empty so a later esc-back doesn't try to "unsplice"
+	// something that was never spliced.
+	if len(h.splices) != 0 {
+		t.Fatalf("after empty splice: len(h.splices) = %d, want 0 (guard in expandSplicer)", len(h.splices))
+	}
+	// LazyGroup.Spliced() flips on any Splice invocation regardless of
+	// child count, so the harness won't re-fire Splice on a second Init.
+	if !group.Spliced() {
+		t.Fatalf("LazyGroup.Spliced() = false after empty splice; want true (Splice fired)")
+	}
+
+	// Forward-advance behaviour: with zero children spliced, the group is
+	// effectively dropped from h.steps (len drops from 2 → 1). Cursor
+	// should now sit past the end → quitting.
+	if len(h.steps) != 1 {
+		t.Fatalf("after empty splice: len(h.steps) = %d, want 1 (group dropped)", len(h.steps))
+	}
+	if !h.quitting {
+		t.Fatalf("after empty splice reaching end: quitting = false, want true")
+	}
+
+	// Build a fresh harness to prove the builder can still return non-empty
+	// on a different prev. This mirrors the "esc-back + repick" flow without
+	// needing to resurrect a quit harness.
+	group2 := NewLazyGroup("Branch", func(prev []any) []Step {
+		buildCalls++
+		if len(prev) > 0 && prev[0] == "refill" {
+			return []Step{fakeAfter}
+		}
+		return nil
+	})
+	picker2 := &answerableFakeStep{fakeStep: fakeStep{title: "pick"}}
+	h2 := New("BANNER", "TEST", []Step{picker2, group2})
+	_, _ = h2.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	picker2.answer("refill")
+	_, _ = h2.Update(runeKey('x'))
+
+	if len(h2.steps) != 2 || h2.steps[1] != Step(fakeAfter) {
+		t.Fatalf("refill pass: h2.steps = %v, want [picker2, fakeAfter]", h2.steps)
+	}
+	if !group2.Spliced() {
+		t.Fatalf("refill pass: group2.Spliced() = false, want true")
+	}
+	// Non-empty splice MUST be recorded (unlike the empty-splice case above).
+	if len(h2.splices) != 1 {
+		t.Fatalf("refill pass: len(h2.splices) = %d, want 1 (non-empty splice recorded)", len(h2.splices))
+	}
+}

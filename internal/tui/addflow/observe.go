@@ -12,9 +12,9 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
-// ObserveStage is the pre-write "one last look" stage at rail position 3
-// (観 OBSERVE). Composes a read-only summary of the Select / Ground / Graft
-// results into a single review panel with a GRAFT / BACK CTA.
+// ObserveStage is the pre-write "one last look" stage at rail position 2
+// (観 OBSERVE). Composes a read-only summary of the Select / Ground /
+// Branches results into a single review panel with a GRAFT / BACK CTA.
 //
 // Result:
 //   - true  → user confirmed GRAFT — harness proceeds to Grow.
@@ -27,9 +27,9 @@ type ObserveStage struct {
 
 	cat *catalog.Catalog
 
-	agent     string      // machine name — prev[0]
-	workspace string      // resolved path — prev[1] (tech-lead auto-fills)
-	graft     GraftResult // prev[2]
+	agent     string         // machine name — prev[0]
+	workspace string         // resolved path — prev[1] (tech-lead auto-fills)
+	graft     BranchesResult // prev[2]
 
 	// agentDef + agentDisplay resolved from cat on each SetPrior.
 	agentDef     *catalog.AgentDef
@@ -74,7 +74,7 @@ func (s *ObserveStage) SetDefaultWorkspace(ws string) { s.workspace = ws }
 // (agent, workspace, graft, ...) while add-items writes (agent, graft, ...)
 // because Ground is skipped. Rather than hard-code positional indices (which
 // break the add-items branch), SetPrior scans prev[] for the first value of
-// each expected type. GraftResult is uniquely typed, so the match is
+// each expected type. BranchesResult is uniquely typed, so the match is
 // unambiguous; agent / workspace are both strings but agent is always
 // prev[0] (from SelectStage) so we grab it first and treat any later string
 // as the workspace.
@@ -91,7 +91,7 @@ func (s *ObserveStage) SetPrior(prev []any) {
 				secondString = x
 			}
 			stringIdx++
-		case GraftResult:
+		case BranchesResult:
 			s.graft = x
 			graftSet = true
 		}
@@ -105,7 +105,7 @@ func (s *ObserveStage) SetPrior(prev []any) {
 		s.workspace = secondString
 	}
 	if !graftSet {
-		s.graft = GraftResult{}
+		s.graft = BranchesResult{}
 	}
 	if s.agent != "" && s.cat != nil {
 		s.agentDef = s.cat.GetAgent(s.agent)
@@ -203,7 +203,7 @@ func (s *ObserveStage) renderAgentBlock() string {
 	bark := initflow.LabelStyle()
 	value := initflow.ValueStyle()
 
-	panelW := observePanelW(s.Width())
+	panelW := initflow.PanelWidth(s.Width())
 	header := initflow.RenderSectionHeader("AGENT", panelW)
 
 	name := s.agentDisplay
@@ -238,7 +238,7 @@ func (s *ObserveStage) renderAbilitiesBlock() string {
 	dim := initflow.DimStyle()
 	value := initflow.ValueStyle()
 
-	panelW := observePanelW(s.Width())
+	panelW := initflow.PanelWidth(s.Width())
 	header := initflow.RenderSectionHeader("ABILITIES", panelW)
 
 	const labelW = 14
@@ -305,16 +305,6 @@ func (s *ObserveStage) renderCTA() string {
 	line2 := dim.Render("Conflicts will prompt — nothing overwritten silently.")
 	line3 := backBtn + "   " + graftBtn
 	return strings.Join([]string{line1, line2, "", line3}, "\n")
-}
-
-// observePanelW caps Observe's panel width at 60 cells so the review card
-// reads as a compact summary rather than stretching to full terminal width.
-func observePanelW(termWidth int) int {
-	w := initflow.PanelWidth(termWidth)
-	if w > 60 {
-		return 60
-	}
-	return w
 }
 
 // Result returns a bool: true = proceed to Grow, false = cancel.

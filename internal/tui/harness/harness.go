@@ -112,6 +112,23 @@ type Chromeless interface {
 	Chromeless() bool
 }
 
+// spliceRecord captures a LazyGroup expansion so the harness's Esc-back
+// path can undo the splice when the cursor pops above the group's original
+// slot. Plan 27 §B1: the pre-fix harness replaced the LazyGroup with its
+// children in h.steps and lost the reference, leaving stale child branches
+// in place when an upstream answer changed. Tracking the original group +
+// slot + child count lets Update reconstruct the pre-splice h.steps shape
+// and reset the group so the next forward advance invokes Splice with fresh
+// prior results.
+//
+// Only LazyGroup currently produces records — single-step lazy builders
+// (LazyStep) do not reshape h.steps and are rebuilt in place via Reset.
+type spliceRecord struct {
+	lg       *LazyGroup // retained ref to the original splicer
+	insertAt int        // absolute index in h.steps where the group originally sat
+	length   int        // count of inserted children occupying that slot
+}
+
 // Harness is the root tea.Model that frames the active step.
 type Harness struct {
 	steps        []Step
@@ -123,6 +140,7 @@ type Harness struct {
 	quitting     bool
 	aborted      bool
 	builderPanic *BuilderPanicError
+	splices      []spliceRecord // ordered by insertAt ascending; see spliceRecord
 }
 
 // New constructs a Harness. The caller should usually invoke Run rather than
@@ -190,6 +208,18 @@ func (h *Harness) Init() tea.Cmd {
 // index, now pointing at the first of the new steps. Idempotent and guarded by
 // Spliced(). On panic in the builder closure, sets h.builderPanic and returns
 // without mutating h.steps so the next Update can return tea.Quit cleanly.
+//
+// LazyGroup expansions are recorded in h.splices so Esc-back can unsplice —
+// see spliceRecord for the rationale. Non-LazyGroup splicers (none today,
+// but the splicer interface is extensible) are not recorded; the cast is
+// guarded by type assertion so unknown splicer shapes fall back to the
+// unchanged "splice once, never unwind" behaviour.
+//
+// Zero-child splices (builder returned nil or an all-nil slice) are NOT
+// recorded: there is nothing to reinstate on esc-back — the group's slot
+// contains no children, so unwinding would be a no-op. Skipping the record
+// also keeps the h.splices table tidy and avoids ambiguous "unsplice the
+// zero-length run" semantics in unspliceAbove's slice math.
 func (h *Harness) expandSplicer() {
 	if h.cursor >= len(h.steps) {
 		return
@@ -199,6 +229,10 @@ func (h *Harness) expandSplicer() {
 		return
 	}
 	stepTitle := h.steps[h.cursor].Title()
+	// Capture the LazyGroup reference BEFORE Splice mutates state. Splice
+	// flips g.spliced=true so we retain the pointer here to later reset it.
+	lg, _ := sp.(*LazyGroup)
+	insertAt := h.cursor
 	var inserted []Step
 	func() {
 		defer h.recoverBuilder(stepTitle)
@@ -220,6 +254,65 @@ func (h *Harness) expandSplicer() {
 	head := append([]Step{}, h.steps[:h.cursor]...)
 	tail := append([]Step(nil), h.steps[h.cursor+1:]...)
 	h.steps = append(append(head, inserted...), tail...)
+	if lg != nil && len(inserted) > 0 {
+		h.splices = append(h.splices, spliceRecord{
+			lg:       lg,
+			insertAt: insertAt,
+			length:   len(inserted),
+		})
+	}
+}
+
+// unspliceAbove unwinds every spliceRecord whose insertAt slot sits at or
+// above the new cursor position, reinstating the original LazyGroup at its
+// slot and calling Reset so the next forward advance invokes Splice with
+// fresh prior results. Must be invoked AFTER h.cursor has been popped back
+// to its new value.
+//
+// Iterates the record list in reverse so the tail-first unwind keeps earlier
+// records' offsets stable — each unsplice replaces `length` children with a
+// single group, so records at larger insertAt don't shift records at smaller
+// insertAt. No offset adjustment required.
+//
+// Records kept are those whose insertAt is still strictly BELOW h.cursor —
+// they sit upstream of the new cursor and their spliced children remain
+// valid. Plan 27 §B1.
+func (h *Harness) unspliceAbove() {
+	if len(h.splices) == 0 {
+		return
+	}
+	kept := h.splices[:0:0]
+	// Walk in reverse so tail records unwind first (keeping offsets stable).
+	for i := len(h.splices) - 1; i >= 0; i-- {
+		rec := h.splices[i]
+		if rec.insertAt < h.cursor {
+			// This splice sits strictly above the new cursor — its children
+			// remain valid. Record is retained (prepended, since we iterate
+			// in reverse).
+			kept = append([]spliceRecord{rec}, kept...)
+			continue
+		}
+		// Splice sits at or below h.cursor — unwind it. Replace the child
+		// range with the original LazyGroup and reset so Splice re-fires on
+		// the next forward advance.
+		end := rec.insertAt + rec.length
+		if end > len(h.steps) {
+			end = len(h.steps)
+		}
+		if rec.insertAt > len(h.steps) {
+			// Defensive: record is stale somehow. Drop it silently; retaining
+			// would invite a panic on a bogus slice range.
+			continue
+		}
+		replacement := []Step{rec.lg}
+		newSteps := make([]Step, 0, len(h.steps)-rec.length+1)
+		newSteps = append(newSteps, h.steps[:rec.insertAt]...)
+		newSteps = append(newSteps, replacement...)
+		newSteps = append(newSteps, h.steps[end:]...)
+		h.steps = newSteps
+		rec.lg.Reset()
+	}
+	h.splices = kept
 }
 
 // rebroadcastWindowSize forwards a synthetic WindowSizeMsg with the harness's
@@ -280,6 +373,15 @@ func (h *Harness) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if h.cursor == origCursor {
 				return h, nil
 			}
+			// Unsplice any LazyGroup expansion whose insert-slot sits at or
+			// above the new cursor. The child steps are removed from h.steps
+			// and the original group is reinstated at its slot + reset so a
+			// subsequent forward advance invokes Splice again with fresh
+			// prior results. Plan 27 §B1 regression fix for stale Select
+			// state on esc-back + re-pick — without this step, picking a
+			// different agent on re-advance lands back on the previously-
+			// spliced Branches instance with the old agent's categories.
+			h.unspliceAbove()
 			// Reset every step from the new cursor through origCursor
 			// (inclusive) so that:
 			//   1. The active step's form leaves StateCompleted (otherwise
@@ -291,8 +393,17 @@ func (h *Harness) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			//      that captured prior results at build time) rebuilds on
 			//      re-entry so its panel reflects the user's NEW picks
 			//      rather than the stale pre-Esc snapshot.
+			//
+			// The upper bound (origCursor) is clamped to the current step
+			// count because unspliceAbove may have collapsed several spliced
+			// children back into a single LazyGroup, so origCursor can now
+			// point past len(h.steps).
+			upper := origCursor
+			if upper >= len(h.steps) {
+				upper = len(h.steps) - 1
+			}
 			var cmds []tea.Cmd
-			for i := h.cursor; i <= origCursor && i < len(h.steps); i++ {
+			for i := h.cursor; i <= upper && i < len(h.steps); i++ {
 				// Refresh prior-results snapshot BEFORE Reset so a
 				// ConditionalStep's predicate can re-evaluate against the
 				// user's newly-chosen upstream picks. Without this, the

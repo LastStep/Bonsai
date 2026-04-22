@@ -4,7 +4,17 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
-// NewGrowStage constructs the Grow stage (育 GROW) at rail position 4.
+// growLabel is the kanji/kana/English triple shown in the Grow stage's body
+// title. Plan 27 shrunk the rail to four visible stages, so Grow no longer
+// owns a rail tab — its rail index is StageIdxOffRail and the rail row is
+// suppressed. Retained here (rather than pulled from StageLabels) so the
+// body title + spinner still read "育 GROWING" unchanged.
+var growLabel = initflow.StageLabel{Kanji: "育", Kana: "そだつ", English: "GROW"}
+
+// NewGrowStage constructs the Grow stage (育 GROW). Renders off-rail —
+// the visible rail stays anchored on OBSERVE while Grow runs so there is
+// no rail churn between Observe and the spinner.
+//
 // Thin wrapper around initflow.NewGenerateStage — installs the add-flow
 // rail labels on the embedded Stage and overrides the body title kanji
 // from 生 (init's Generate) to 育 (Grow) so the visual language matches
@@ -16,9 +26,9 @@ import (
 func NewGrowStage(ctx initflow.StageContext, action initflow.GenerateAction) *initflow.GenerateStage {
 	g := initflow.NewGenerateStage(ctx, action)
 	g.SetRailLabels(StageLabels)
-	g.SetRailIndex(StageIdxGrow)
-	g.SetLabel(StageLabels[StageIdxGrow])
-	g.SetBodyTitle(StageLabels[StageIdxGrow].Kanji, "GROWING")
+	g.SetRailIndex(StageIdxOffRail)
+	g.SetLabel(growLabel)
+	g.SetBodyTitle(growLabel.Kanji, "GROWING")
 	g.SetRailHidden(true)
 	return g
 }

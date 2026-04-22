@@ -13,27 +13,27 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
-// Graft category keys — same five ability types as initflow.BranchesStage.
+// Branches category keys — same five ability types as initflow.BranchesStage.
 const (
-	graftCatSkills    = "skills"
-	graftCatWorkflows = "workflows"
-	graftCatProtocols = "protocols"
-	graftCatSensors   = "sensors"
-	graftCatRoutines  = "routines"
+	branchCatSkills    = "skills"
+	branchCatWorkflows = "workflows"
+	branchCatProtocols = "protocols"
+	branchCatSensors   = "sensors"
+	branchCatRoutines  = "routines"
 )
 
-// graftCat is a single tab in the GraftStage — mirrors branchCat from
-// initflow but kept package-local so Phase 1 doesn't couple to unexported
-// initflow types.
-type graftCat struct {
+// branchCat is a single tab in the BranchesStage — mirrors initflow's
+// branchCat but kept package-local so addflow does not couple to
+// unexported initflow types.
+type branchCat struct {
 	key         string
 	displayName string
 	introLine1  string
 	introLine2  string
-	items       []graftItem
+	items       []branchItem
 }
 
-type graftItem struct {
+type branchItem struct {
 	name        string
 	displayName string
 	description string
@@ -42,16 +42,16 @@ type graftItem struct {
 	filePath    string
 }
 
-// GraftStage is the tabbed ability picker at rail position 2 (接 GRAFT).
+// BranchesStage is the tabbed ability picker at rail position 1 (枝 BRANCHES).
 // Keystroke model matches initflow.BranchesStage: ← → tab, ↑ ↓ focus, ␣
 // toggle, ? details, ↵ advance. Required items are pre-selected and
 // immutable; defaults are pre-selected but toggleable.
 //
-// Result: GraftResult with per-category slices of selected machine names.
-type GraftStage struct {
+// Result: BranchesResult with per-category slices of selected machine names.
+type BranchesStage struct {
 	initflow.Stage
 
-	categories []graftCat
+	categories []branchCat
 	catIdx     int
 	expanded   bool
 	itemIdx    map[int]int
@@ -60,10 +60,10 @@ type GraftStage struct {
 	viewport initflow.Viewport
 }
 
-// GraftContext bundles everything a Graft ctor needs. Kept separate from
-// StageContext so the add-items branch can pass an Installed pointer
+// BranchesContext bundles everything a Branches ctor needs. Kept separate
+// from StageContext so the add-items branch can pass an Installed pointer
 // without polluting the shared context type.
-type GraftContext struct {
+type BranchesContext struct {
 	Cat       *catalog.Catalog
 	AgentType string
 	AgentDef  *catalog.AgentDef
@@ -71,26 +71,24 @@ type GraftContext struct {
 	Installed *config.InstalledAgent
 }
 
-// NewNewAgentGraft constructs a Graft stage for the new-agent branch — all
-// five tabs, defaults seeded from agentDef.
-func NewNewAgentGraft(ctx initflow.StageContext, gctx GraftContext) *GraftStage {
-	return newGraft(ctx, gctx, false)
+// NewNewAgentBranches constructs a Branches stage for the new-agent branch —
+// all five tabs, defaults seeded from agentDef.
+func NewNewAgentBranches(ctx initflow.StageContext, gctx BranchesContext) *BranchesStage {
+	return newBranches(ctx, gctx, false)
 }
 
-// NewAddItemsGraft constructs a Graft stage for the add-items branch —
-// filters each category to uninstalled items, drops empty tabs. Phase 1
-// stub returns a stage with no tabs (add-items branch falls back to legacy
-// runAdd until Phase 2).
-func NewAddItemsGraft(ctx initflow.StageContext, gctx GraftContext) *GraftStage {
-	return newGraft(ctx, gctx, true)
+// NewAddItemsBranches constructs a Branches stage for the add-items branch —
+// filters each category to uninstalled items, drops empty tabs.
+func NewAddItemsBranches(ctx initflow.StageContext, gctx BranchesContext) *BranchesStage {
+	return newBranches(ctx, gctx, true)
 }
 
-// newGraft is the shared constructor. filter=true excludes already-installed
+// newBranches is the shared constructor. filter=true excludes already-installed
 // items per category and drops empty tabs.
-func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftStage {
-	label := StageLabels[StageIdxGraft]
+func newBranches(ctx initflow.StageContext, gctx BranchesContext, filter bool) *BranchesStage {
+	label := StageLabels[StageIdxBranches]
 	base := initflow.NewStage(
-		StageIdxGraft,
+		StageIdxBranches,
 		label,
 		label.English,
 		ctx.Version,
@@ -132,12 +130,12 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 	sensorsDefaults := stringSet(agentDef.DefaultSensors)
 	routinesDefaults := stringSet(agentDef.DefaultRoutines)
 
-	skills := make([]graftItem, 0)
+	skills := make([]branchItem, 0)
 	for _, it := range cat.SkillsFor(agentType) {
 		if filter && installedSkills[it.Name] {
 			continue
 		}
-		skills = append(skills, graftItem{
+		skills = append(skills, branchItem{
 			name:        it.Name,
 			displayName: it.DisplayName,
 			description: it.Description,
@@ -146,12 +144,12 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 			filePath:    it.ContentPath,
 		})
 	}
-	workflows := make([]graftItem, 0)
+	workflows := make([]branchItem, 0)
 	for _, it := range cat.WorkflowsFor(agentType) {
 		if filter && installedWorkflows[it.Name] {
 			continue
 		}
-		workflows = append(workflows, graftItem{
+		workflows = append(workflows, branchItem{
 			name:        it.Name,
 			displayName: it.DisplayName,
 			description: it.Description,
@@ -160,12 +158,12 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 			filePath:    it.ContentPath,
 		})
 	}
-	protocols := make([]graftItem, 0)
+	protocols := make([]branchItem, 0)
 	for _, it := range cat.ProtocolsFor(agentType) {
 		if filter && installedProtocols[it.Name] {
 			continue
 		}
-		protocols = append(protocols, graftItem{
+		protocols = append(protocols, branchItem{
 			name:        it.Name,
 			displayName: it.DisplayName,
 			description: it.Description,
@@ -174,7 +172,7 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 			filePath:    it.ContentPath,
 		})
 	}
-	sensors := make([]graftItem, 0)
+	sensors := make([]branchItem, 0)
 	for _, it := range cat.SensorsFor(agentType) {
 		// routine-check is auto-managed — never user-picked.
 		if it.Name == "routine-check" {
@@ -183,7 +181,7 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 		if filter && installedSensors[it.Name] {
 			continue
 		}
-		sensors = append(sensors, graftItem{
+		sensors = append(sensors, branchItem{
 			name:        it.Name,
 			displayName: it.DisplayName,
 			description: it.Description,
@@ -192,12 +190,12 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 			filePath:    it.ContentPath,
 		})
 	}
-	routines := make([]graftItem, 0)
+	routines := make([]branchItem, 0)
 	for _, it := range cat.RoutinesFor(agentType) {
 		if filter && installedRoutines[it.Name] {
 			continue
 		}
-		routines = append(routines, graftItem{
+		routines = append(routines, branchItem{
 			name:        it.Name,
 			displayName: it.DisplayName,
 			description: it.Description,
@@ -207,33 +205,33 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 		})
 	}
 
-	all := []graftCat{
+	all := []branchCat{
 		{
-			key: graftCatSkills, displayName: "SKILLS",
+			key: branchCatSkills, displayName: "SKILLS",
 			introLine1: "Rulebooks for specific domains.",
 			introLine2: "Standards the agent consults when doing focused work.",
 			items:      skills,
 		},
 		{
-			key: graftCatWorkflows, displayName: "WORKFLOWS",
+			key: branchCatWorkflows, displayName: "WORKFLOWS",
 			introLine1: "Activity-level procedures.",
 			introLine2: "Playbooks for multi-phase tasks from intake to ship.",
 			items:      workflows,
 		},
 		{
-			key: graftCatProtocols, displayName: "PROTOCOLS",
+			key: branchCatProtocols, displayName: "PROTOCOLS",
 			introLine1: "Always-on guardrails.",
 			introLine2: "Rules every session follows, regardless of task.",
 			items:      protocols,
 		},
 		{
-			key: graftCatSensors, displayName: "SENSORS",
+			key: branchCatSensors, displayName: "SENSORS",
 			introLine1: "Hook-triggered automations.",
 			introLine2: "Event scripts the harness runs without prompting.",
 			items:      sensors,
 		},
 		{
-			key: graftCatRoutines, displayName: "ROUTINES",
+			key: branchCatRoutines, displayName: "ROUTINES",
 			introLine1: "Periodic self-maintenance.",
 			introLine2: "Recurring checks on a time-based schedule.",
 			items:      routines,
@@ -241,7 +239,7 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 	}
 
 	// Add-items branch: drop empty tabs entirely.
-	categories := make([]graftCat, 0, len(all))
+	categories := make([]branchCat, 0, len(all))
 	for _, c := range all {
 		if filter && len(c.items) == 0 {
 			continue
@@ -262,7 +260,7 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 		itemIdx[i] = 0
 	}
 
-	return &GraftStage{
+	return &BranchesStage{
 		Stage:      base,
 		categories: categories,
 		catIdx:     0,
@@ -272,10 +270,10 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 }
 
 // Init implements tea.Model — nothing to fire on entry.
-func (s *GraftStage) Init() tea.Cmd { return nil }
+func (s *BranchesStage) Init() tea.Cmd { return nil }
 
 // Update handles tab cycling, row focus, toggle, inline-expand, and Enter.
-func (s *GraftStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (s *BranchesStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m := msg.(type) {
 	case tea.WindowSizeMsg:
 		s.SetSize(m.Width, m.Height)
@@ -340,7 +338,7 @@ func (s *GraftStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-func (s *GraftStage) currentCat() *graftCat {
+func (s *BranchesStage) currentCat() *branchCat {
 	if s.catIdx < 0 || s.catIdx >= len(s.categories) {
 		return nil
 	}
@@ -348,11 +346,11 @@ func (s *GraftStage) currentCat() *graftCat {
 }
 
 // View composes the stage body inside the shared frame.
-func (s *GraftStage) View() string {
+func (s *BranchesStage) View() string {
 	return s.RenderFrame(s.renderBody(), s.keyHints())
 }
 
-func (s *GraftStage) keyHints() []initflow.KeyHint {
+func (s *BranchesStage) keyHints() []initflow.KeyHint {
 	return []initflow.KeyHint{
 		{Key: "←→", Desc: "tab"},
 		{Key: "↑↓", Desc: "move"},
@@ -364,7 +362,7 @@ func (s *GraftStage) keyHints() []initflow.KeyHint {
 	}
 }
 
-func (s *GraftStage) renderBody() string {
+func (s *BranchesStage) renderBody() string {
 	dim := initflow.DimStyle()
 	bark := initflow.LabelStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
@@ -428,7 +426,7 @@ func (s *GraftStage) renderBody() string {
 	return initflow.CenterBlock(strings.Join(body, "\n"), s.Width())
 }
 
-func (s *GraftStage) renderTabIntro() string {
+func (s *BranchesStage) renderTabIntro() string {
 	c := s.currentCat()
 	if c == nil {
 		return ""
@@ -452,7 +450,7 @@ func (s *GraftStage) renderTabIntro() string {
 	return white.Render(clamp(c.introLine1)) + "\n" + dim.Render(clamp(c.introLine2))
 }
 
-func (s *GraftStage) renderTabs() string {
+func (s *BranchesStage) renderTabs() string {
 	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	bracket := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
@@ -476,7 +474,7 @@ func (s *GraftStage) renderTabs() string {
 	return chevron.Render("‹") + " " + row + " " + chevron.Render("›")
 }
 
-func (s *GraftStage) renderList() string {
+func (s *BranchesStage) renderList() string {
 	c := s.currentCat()
 	if c == nil {
 		return ""
@@ -499,7 +497,7 @@ func (s *GraftStage) renderList() string {
 	return s.viewport.View()
 }
 
-func (s *GraftStage) renderRow(idx int) string {
+func (s *BranchesStage) renderRow(idx int) string {
 	c := s.currentCat()
 	if c == nil || idx < 0 || idx >= len(c.items) {
 		return ""
@@ -576,7 +574,7 @@ func (s *GraftStage) renderRow(idx int) string {
 	return border + glyphStyle.Render(glyph) + " " + nameCol + descCol
 }
 
-func (s *GraftStage) renderDetails() string {
+func (s *BranchesStage) renderDetails() string {
 	dim := initflow.DimStyle()
 	bark := initflow.LabelStyle()
 	value := lipgloss.NewStyle().Foreground(tui.ColorAccent)
@@ -648,7 +646,7 @@ func (s *GraftStage) renderDetails() string {
 	return header + "\n" + aboutRow1 + "\n" + aboutRow2 + "\n" + aboutRow3 + "\n" + fileRow
 }
 
-func (s *GraftStage) renderCounter() string {
+func (s *BranchesStage) renderCounter() string {
 	total := 0
 	for i := range s.categories {
 		total += len(s.selected[i])
@@ -658,7 +656,7 @@ func (s *GraftStage) renderCounter() string {
 
 // listHeight mirrors BranchesStage.listHeight — same chrome + non-list body
 // row accounting.
-func (s *GraftStage) listHeight() int {
+func (s *BranchesStage) listHeight() int {
 	if s.Height() <= 0 {
 		return 0
 	}
@@ -671,7 +669,7 @@ func (s *GraftStage) listHeight() int {
 	return h
 }
 
-func (s *GraftStage) availableWidth() int {
+func (s *BranchesStage) availableWidth() int {
 	w := s.Width() - 4
 	if w < 0 {
 		return 0
@@ -679,10 +677,10 @@ func (s *GraftStage) availableWidth() int {
 	return w
 }
 
-// Result returns a GraftResult with per-category slices of selected machine
+// Result returns a BranchesResult with per-category slices of selected machine
 // names, preserving catalog iteration order. Required items are always
 // present.
-func (s *GraftStage) Result() any {
+func (s *BranchesStage) Result() any {
 	pick := func(idx int) []string {
 		picks := s.selected[idx]
 		c := s.categories[idx]
@@ -694,19 +692,19 @@ func (s *GraftStage) Result() any {
 		}
 		return out
 	}
-	res := GraftResult{}
+	res := BranchesResult{}
 	for i, c := range s.categories {
 		slice := pick(i)
 		switch c.key {
-		case graftCatSkills:
+		case branchCatSkills:
 			res.Skills = slice
-		case graftCatWorkflows:
+		case branchCatWorkflows:
 			res.Workflows = slice
-		case graftCatProtocols:
+		case branchCatProtocols:
 			res.Protocols = slice
-		case graftCatSensors:
+		case branchCatSensors:
 			res.Sensors = slice
-		case graftCatRoutines:
+		case branchCatRoutines:
 			res.Routines = slice
 		}
 	}
@@ -715,7 +713,7 @@ func (s *GraftStage) Result() any {
 
 // Reset clears the completion flag. Per-tab selections, cursor positions,
 // and the inline-expand toggle are all preserved across Esc-back.
-func (s *GraftStage) Reset() tea.Cmd {
+func (s *BranchesStage) Reset() tea.Cmd {
 	s.ClearDone()
 	return nil
 }

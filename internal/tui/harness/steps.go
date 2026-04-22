@@ -624,6 +624,19 @@ func (g *LazyGroup) Splice(prev []any) []Step {
 // Spliced reports whether Splice has already run.
 func (g *LazyGroup) Spliced() bool { return g.spliced }
 
+// Reset clears the spliced flag so the next forward advance onto the group
+// invokes Splice again against fresh prior results. Used by the harness's
+// Esc-back path when the cursor pops over an already-expanded splice — the
+// inserted children are removed from h.steps and this group is reinstated at
+// its original slot (see harness.Update's splice-record unwind loop). Without
+// this hook, changing an upstream answer and re-advancing would leave the
+// stale child branch in place. Returns nil; LazyGroup does not own any
+// tea.Cmd-worthy state. Plan 27 §B1.
+func (g *LazyGroup) Reset() tea.Cmd {
+	g.spliced = false
+	return nil
+}
+
 // Title implements Step. Only surfaces in a breadcrumb if the harness somehow
 // fails to splice before View() runs — in normal operation the user never sees
 // this title.
