@@ -84,6 +84,18 @@ Your project now has a full agent workspace. Open it in Claude Code and say "hi,
 
 ---
 
+## See It In Action
+
+<div align="center">
+
+<img src="assets/demos/init.gif" alt="bonsai init — cinematic flow from Vessel through Planted, ~28s end-to-end" width="900">
+
+<sub>`bonsai init` end-to-end — name your project, tend the soil, shape the branches, observe, plant.</sub>
+
+</div>
+
+---
+
 ## What's Inside
 
 ### Six Agent Types
