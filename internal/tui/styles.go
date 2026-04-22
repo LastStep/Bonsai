@@ -208,7 +208,7 @@ func Hint(msg string) {
 // Example output:   ▸ Project name   my-project
 func Answer(label, value string) {
 	key := StyleLabel.Render(label)
-	val := value
+	var val string
 	if strings.TrimSpace(value) == "" {
 		val = StyleMuted.Render("(skipped)")
 	} else {
