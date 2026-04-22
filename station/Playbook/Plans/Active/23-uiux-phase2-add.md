@@ -164,33 +164,88 @@ Each phase is an independent PR. Phases 1 and 2 land behind `BONSAI_ADD_REDESIGN
 - [ ] Conflicts branch: make a scaffold, hand-edit a generated file, rerun `BONSAI_ADD_REDESIGN=1 ./bonsai add` with more selections — Conflicts stage appears, each tab shows the affected file, radio selection is respected in the final write result.
 - [ ] `make build && go test ./...` green.
 
-### Phase 3 — flip default + delete legacy
+### Phase 3 — flip default + delete legacy + bundled cleanup
 
-**Scope:** Promote the cinematic flow to default. Delete the legacy `runAdd` body (everything replaced by `runAddRedesign`), the env flag branch, and the `buildNewAgentSteps` / `buildAddItemsSteps` helpers that the cinematic flow doesn't use. Rename `cmd/add_redesign.go` → `cmd/add.go` (replacing the old file contents).
+**Scope:** Promote cinematic to default + delete legacy `runAdd`/Phase-1-deferred remnants/env gate + rename `cmd/init_redesign.go` → `cmd/init_flow.go`. **Plus** seven absorbed Backlog items (PR #52/#59/#62 review fallout) that all touch the same files we are already rewriting — bundling avoids reopening the same code twice.
+
+#### Bundled Backlog items (resolved by this PR)
+
+| # | Source | Item | Fix shape |
+|---|--------|------|-----------|
+| 1 | PR #52 review | Dead post-harness Generate-error warning in `cmd/init_redesign.go:190-198` | Delete the block in the renamed `cmd/init_flow.go`. `GenerateStage.stateError` already prints the in-frame panel; the post-harness `tui.Warning` fires into a cleared terminal. |
+| 2 | PR #52 review | No harness composition test for `NewConditional(NewLazy(...))` | Add `internal/tui/harness/steps_test.go` cases asserting (a) `Chromeless()==true` when inner Lazy stage is chromeless and Conditional is not skipped, (b) Lazy builder fires exactly once per active Conditional pass. |
+| 3 | PR #59 review | `growSucceeded` predicate walks `prev` tail for any `error` (`cmd/add_redesign.go:84-94`) | Predicate already shares scope with the `outcome addflow.Outcome` struct (`outcome.SpinnerErr` is the only error source on the happy path). Replace the prev-walk with `outcome.SpinnerErr == nil && outcome.Ran` and document the closure capture. No sentinel type needed. Caveat: predicate is evaluated once per harness tick, but `outcome` is only mutated by Grow's action closure which runs to completion before the conditional re-evaluates — safe. |
+| 4 | PR #59 review | Unknown-agent path renders `YieldTechLeadRequired` (`cmd/add_redesign.go:104-106`) | Add `addflow.NewYieldUnknownAgent(ctx, agentType)` variant in `internal/tui/addflow/yield.go` with copy `Unknown agent type — catalog may be stale, run \`bonsai update\``. Replace the call. Add a yield_test.go case. |
+| 5 | PR #62 security review | `.bak` write-error silent-discard in **both** conflict-apply helpers (`cmd/add_redesign.go:282-288` cinematic + `cmd/root.go:153-161` legacy, used by `remove`/`update`/legacy add) | On `os.ReadFile` failure OR `os.WriteFile` failure for `.bak`, drop that path from `toOverwrite` and surface a single `tui.Warning` listing the dropped paths. Apply the same fix in both helpers. |
+| 6 | PR #62 review | `confIdx := len(results) - 2` arithmetic in `cmd/add_redesign.go:232` | Type-scan `results` for `map[string]config.ConflictAction` instead of length math. Mirrors the existing type-scan pattern Observe uses for `GraftResult`. |
+| 7 | PR #62 review | No direct unit test for `applyCinematicConflictPicks` | Add `cmd/add_test.go` (new) covering: Keep=noop, Overwrite=ForceSelected only, Backup=.bak+ForceSelected, mixed-action map, empty map=false, backup-read-fail drops + warns, backup-write-fail drops + warns. |
 
 #### Files touched
 
-- `cmd/add.go` — **replace.** Move `runAddRedesign` body here as the new `runAdd`. Delete every helper that is only called by the legacy path (`buildNewAgentSteps`, `buildAddItemsSteps`, `distributeAddItemPicks` if unused by cinematic path, the `BONSAI_ADD_REDESIGN` env-flag branch).
-- `cmd/add_redesign.go` — **delete** (contents moved to `cmd/add.go`).
-- `cmd/init_redesign.go` — **rename** to `cmd/init_flow.go`. This is a housekeeping rename (file name no longer reflects reality post-Plan-22). Bundle here rather than a separate commit.
-- `cmd/add_test.go` (if any) — update references.
-- Any `cmd/add.go` helper that was used by both paths (e.g., `userSensorOptions`, `asString`, `asStringSlice`, `newDescriber`, `workspaceUniqueValidator`, `normaliseWorkspace`) stays — likely consumed by `remove`/`update`/the cinematic path.
+**Cutover (the original Phase 3 scope):**
+
+- `cmd/add.go` — **replace.** Body becomes `runAddRedesign` (renamed back to `runAdd`). Delete:
+  - `runAdd` legacy body (lines 100-279, includes the `BONSAI_ADD_REDESIGN` env-flag branch lines 104-108)
+  - `addOutcome` struct (lines 281-289) — only legacy uses it; cinematic uses `addflow.Outcome`
+  - `runAddSpinner` (lines 292-399)
+  - `buildAddItemsSteps` (lines 616-708)
+  - `buildNewAgentSteps` (lines 469-558)
+  - `normaliseWorkspace` (lines 94-101) — only legacy `buildNewAgentSteps` uses it; cinematic uses `addflow.NormaliseWorkspace`
+  - `workspaceUniqueValidator` (lines 76-92) — only legacy `buildNewAgentSteps` uses it; cinematic Ground stage has its own validator
+  - `newDescriber` (lines 58-74) — only legacy `buildNewAgentSteps` consumes its result
+  - `userSensorOptions` (in `cmd/init.go:22-31`) — only `buildNewAgentSteps` calls it; verify with `grep` after deletion
+- **Keep** in `cmd/add.go`: `availableAddItems` + `distributeAddItemPicks` (still consumed by `buildAddGrowAction` in the cinematic path).
+- **Keep** in `cmd/init.go`: `asString` / `asStringSlice` / `asBool` (still used by `cmd/root.go` `applyConflictPicks` + `cmd/remove.go` + `cmd/update.go`).
+- `cmd/add_redesign.go` — **delete** (contents moved to `cmd/add.go`). Apply cleanup fixes #3, #5, #6 in the moved body before saving.
+- `cmd/init_redesign.go` — **rename** `git mv` → `cmd/init_flow.go`. Apply cleanup fix #1 in the renamed file.
+
+**Bundled-cleanup files (new or edited):**
+
+- `internal/tui/addflow/yield.go` — add `NewYieldUnknownAgent` variant + `yieldModeUnknownAgent` enum value + `renderUnknownAgent()` body. Delete `NewYieldAddItemsDeferred` + `yieldModeAddItemsDeferred` + `renderAddItemsDeferred()` (all unreachable post-Phase 2).
+- `internal/tui/addflow/yield_test.go` — drop the `NewYieldAddItemsDeferred` test case (line 137); add `NewYieldUnknownAgent` test case.
+- `internal/tui/addflow/grow.go` — unchanged. (Predicate hardening uses closure capture, not a sentinel.)
+- `internal/tui/harness/steps_test.go` — add 2 composition tests (item #2).
+- `cmd/add_test.go` — **new.** `applyCinematicConflictPicks` table tests (item #7) including backup-failure paths.
+- `cmd/root.go` — modify `applyConflictPicks` per item #5 (drop-path-on-backup-fail + warn).
 
 #### Steps
 
-1. **Move `runAddRedesign` body into `cmd/add.go`** as the new `runAdd`.
-2. **Delete legacy helpers** (`buildNewAgentSteps`, `buildAddItemsSteps`, anything else that becomes dead code). Run `go build ./...` + `golangci-lint run` to catch anything missed.
-3. **Rename `cmd/init_redesign.go` → `cmd/init_flow.go`.** Pure `git mv`. Update imports / build tags if any.
-4. **Remove env-flag branch.**
-5. **Sanity smoke** — `./bonsai add` (no env var) runs the cinematic flow; no regression vs Phase 2 behavior.
+1. **Audit dead-helper grep** before any deletion — re-run `grep -rn "buildNewAgentSteps\|buildAddItemsSteps\|runAddSpinner\|addOutcome\|workspaceUniqueValidator\|normaliseWorkspace\|newDescriber\|userSensorOptions\|NewYieldAddItemsDeferred\|yieldModeAddItemsDeferred"` against `cmd/` + `internal/` to confirm what is safely removable. If any survives outside the legacy `runAdd` body, leave it.
+2. **Add `NewYieldUnknownAgent` variant** in `internal/tui/addflow/yield.go`. Update `yield_test.go`.
+3. **Move `runAddRedesign` body into `cmd/add.go`**, replacing legacy `runAdd`. Apply inline:
+   - Cleanup #3: `growSucceeded` predicate reads `outcome.SpinnerErr` via closure capture instead of walking `prev` for any error.
+   - Cleanup #4: unknown-agent branch calls `addflow.NewYieldUnknownAgent`.
+   - Cleanup #5: cinematic `applyCinematicConflictPicks` drops paths on backup-read OR backup-write failure + collected `tui.Warning`.
+   - Cleanup #6: post-harness conflict slot resolved by type-scan, not `len(results)-2`.
+4. **Delete `cmd/add_redesign.go`** (moved). Delete `NewYieldAddItemsDeferred` + `yieldModeAddItemsDeferred` + `renderAddItemsDeferred()` from `internal/tui/addflow/yield.go` + their test case.
+5. **Delete legacy helpers in `cmd/add.go`** per file-touched table. Verify with `go build ./...` + `golangci-lint run` (catch anything missed by the unused linter).
+6. **`git mv cmd/init_redesign.go cmd/init_flow.go`.** Apply cleanup #1 (delete dead post-harness Generate-error warning lines 190-198).
+7. **Modify `cmd/root.go` `applyConflictPicks`** for cleanup #5 (drop-path-on-fail + warn).
+8. **Add `cmd/add_test.go`** with `applyCinematicConflictPicks` table tests including backup-failure paths.
+9. **Add harness composition tests** in `internal/tui/harness/steps_test.go` (item #2).
+10. **Verify env-flag dead** — `grep -rn "BONSAI_ADD_REDESIGN"` returns zero hits.
+11. **Build + test + smoke.**
 
 #### Verification
 
 - [ ] `make build && go test ./...` green.
-- [ ] `grep -r "BONSAI_ADD_REDESIGN" .` returns zero hits.
-- [ ] `grep -r "buildNewAgentSteps\|buildAddItemsSteps" .` returns zero hits in non-archived files.
-- [ ] `./bonsai add` smoke: new-agent path, add-items path, all-installed path, tech-lead-required path, conflicts path — each still produces correct file output.
-- [ ] `cmd/init_redesign.go` no longer exists; `cmd/init_flow.go` does.
+- [ ] `gofmt -s -l .` returns empty.
+- [ ] `golangci-lint run` (project-CI version) clean — no `unused` warnings.
+- [ ] `grep -rn "BONSAI_ADD_REDESIGN" .` → zero hits.
+- [ ] `grep -rn "buildNewAgentSteps\|buildAddItemsSteps\|runAddSpinner\|addOutcome\|NewYieldAddItemsDeferred\|yieldModeAddItemsDeferred"` → zero hits in non-archived files.
+- [ ] `cmd/init_redesign.go` removed; `cmd/init_flow.go` present.
+- [ ] `./bonsai add` smoke (no env var) — all five paths still correct:
+  - new-agent (non-tech-lead) → Ground → Graft → Observe → Grow → Yield
+  - tech-lead → Ground auto-completed → Graft → Observe → Grow → Yield
+  - add-items → Graft (filtered) → Observe → Grow → Yield (or YieldAllInstalled)
+  - tech-lead-required guard → YieldTechLeadRequired
+  - unknown-agent path → **YieldUnknownAgent** (new copy)
+  - conflicts present → ConflictsStage tabs → backup writes succeed and `.bonsai-lock.yaml` reflects ForceSelected.
+- [ ] **Backup-fail dogfood:** make a scaffold, hand-edit a file to trigger conflict, set its parent dir read-only, rerun `bonsai add` with Backup pick — file is dropped from overwrite + warning surfaces; original file untouched.
+- [ ] `applyCinematicConflictPicks` test covers all 7 cases listed in item #7.
+- [ ] Harness composition test asserts both cases listed in item #2.
+- [ ] `addflow.GrowResult` sentinel test passes for both nil and non-nil error.
+- [ ] `NewYieldUnknownAgent` test asserts copy mentions `bonsai update`.
 
 ---
 
