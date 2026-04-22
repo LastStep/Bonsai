@@ -463,4 +463,3 @@ func (s *ObserveStage) Reset() tea.Cmd {
 	s.confirmed = false
 	return nil
 }
-
