@@ -59,3 +59,26 @@ description: Archive of Done items moved from Status.md once they age past 14 da
 | Lock file conflict handling. | — | tech-lead | 2026-04-13 |
 | Catalog expansion — all 3 phases, 6 agent types. | — | tech-lead | 2026-04-13 |
 | Go rewrite from Python. | — | tech-lead | 2026-04-12 |
+
+---
+
+## Resolved Backlog Items
+
+> Items removed from `Backlog.md` once shipped. Newest first.
+
+### 2026-04-22 — v0.2.0 cycle resolutions
+
+- **Pre-release docs audit across all user-facing content** `[Group C]` — Resolved via PR #65 squash `e9b7cba` / v0.2.0 cut. 4-surface audit (website, root community files, catalog, station/) found 3 P0 + 6 P1 + 4 P2; bundle delivered 13 fixes mechanically + agent-synthesized CHANGELOG. 2 deferred (filed as Plan 26 candidates): full website concept-page rewrite (heavier framing pivot), skills frontmatter convention.
+- **Consolidate or delineate CHANGELOG backlog items** `[Group C/D]` — Resolved via Plan 24 (Group C CHANGELOG.md shipped; Group D changelog-generation item kept as future work).
+- **Root `Bonsai/CLAUDE.md` project-structure tree drift** `[Group C/E]` — Resolved via Plan 24 Step C (PR #58 / `4ef8271`). `internal/tui/` block refreshed for Plan 15 `harness/` + Plan 22 `initflow/` + `filetree*` + `styles_test.go`.
+- **Run Astro build on PRs touching `website/`** `[Group C]` — Resolved via Plan 24 Step B (PR #58 / `4ef8271`). `docs.yml` `pull_request` trigger + deploy job gated on `push`.
+- **CHANGELOG.md and richer release notes** `[Group C]` — Resolved via Plan 24 Step A. Keep-a-changelog 1.1.0 format, curated v0.1.0–v0.1.3 backfill.
+- **Seed GitHub Issues for contributor on-ramp** `[Group C]` — Resolved via Plan 24 Step E. 5 issues filed: [#53](https://github.com/LastStep/Bonsai/issues/53) statusLine port, [#54](https://github.com/LastStep/Bonsai/issues/54) shell completion, [#55](https://github.com/LastStep/Bonsai/issues/55) `bonsai changelog`, [#56](https://github.com/LastStep/Bonsai/issues/56) catalog umbrella, [#57](https://github.com/LastStep/Bonsai/issues/57) `.bak` merge hint — all `good first issue` + `help wanted`.
+- **Harness composition test for `NewConditional(NewLazy(...))`** `[Group B]` — Resolved via Plan 23 Phase 3 / PR #64. 3 tests added in `internal/tui/harness/steps_test.go`: Chromeless forwarding + skipped path + builder-fires-once-per-pass.
+- **Remove dead post-harness Generate-error warning** `[Group B]` — Resolved via Plan 23 Phase 3 / PR #64. Deleted from BOTH `cmd/init_flow.go` AND `cmd/add.go` — symmetric path in cinematic add caught by code review.
+- **`growSucceeded` predicate walks `prev` tail for any error** `[Group B]` — Resolved via Plan 23 Phase 3 / PR #64. Predicate now reads `outcome.SpinnerErr` + `outcome.Ran` via closure capture; no `prev[]` walk, no sentinel needed.
+- **Unknown-agent path renders `YieldTechLeadRequired` — copy mismatch** `[Group B]` — Resolved via Plan 23 Phase 3 / PR #64. New `addflow.NewYieldUnknownAgent` variant with `bonsai update` CTA + test.
+- **`.bak` write-error silent-discard in both conflict-apply helpers** `[Group B]` — Resolved via Plan 23 Phase 3 / PR #64. BOTH `applyCinematicConflictPicks` + `applyConflictPicks`: failed-backup paths dropped from overwrite list + collected `tui.Warning`; security review confirmed regression closed; tests use real OS perms.
+- **`confIdx := len(results) - 2` arithmetic** `[Group B]` — Resolved via Plan 23 Phase 3 / PR #64. Replaced with type-scan for `map[string]config.ConflictAction`.
+- **No direct unit test for `applyCinematicConflictPicks`** `[Group B]` — Resolved via Plan 23 Phase 3 / PR #64. `cmd/add_test.go` new — 9 table tests including backup-read-fail and backup-write-fail with real OS conditions.
+- **Re-plan "Better trigger sections — Phase C"** `[Ungrouped P2]` — Resolved via Plan 21 / PR #46 squash `d14edbe` (2026-04-21). New `compact-recovery` sensor + `context-guard` verify/plan patterns shipped; C3 (Haiku prompt-hook intent classification) deferred to P3 Research per Plan 08 closeout.
