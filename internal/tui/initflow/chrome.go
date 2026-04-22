@@ -224,6 +224,17 @@ func RenderMinSizeFloor(width, height int) string {
 	return top + strings.Join(rendered, "\n") + bottom
 }
 
+// CenterBlock is the exported alias for centerBlock. Consumed by sibling
+// flow packages (e.g. addflow) that need the same centred-body layout as
+// initflow stages without reimplementing the helper. Behaviour is identical
+// to the unexported callers inside this package.
+func CenterBlock(block string, width int) string { return centerBlock(block, width) }
+
+// PadRight is the exported alias for padRight. Same rationale as CenterBlock
+// — sibling flow packages consume it to pin column widths identically to
+// initflow stage internals.
+func PadRight(s string, w int) string { return padRight(s, w) }
+
 // centerBlock left-pads every line in block so the widest line is
 // horizontally centred inside width. Used by stage bodies to sit visually
 // balanced inside the AltScreen rather than flush-left. Trailing whitespace

@@ -21,12 +21,13 @@ import (
 // stamp them uniformly from cmd.runInit's context bundle.
 type Stage struct {
 	// Rendering context.
-	title    string     // breadcrumb title — unused today but kept for Step contract
-	idx      int        // 0..3 — stage index in the rail
-	label    StageLabel // kanji/kana/English triple
-	width    int        // last seen terminal width
-	height   int        // last seen terminal height
-	ensoSafe bool       // WideCharSafe() snapshot captured at ctor time
+	title    string       // breadcrumb title — unused today but kept for Step contract
+	idx      int          // 0..3 — stage index in the rail
+	label    StageLabel   // kanji/kana/English triple
+	labels   []StageLabel // full rail label set (nil = fall back to init's StageLabels)
+	width    int          // last seen terminal width
+	height   int          // last seen terminal height
+	ensoSafe bool         // WideCharSafe() snapshot captured at ctor time
 
 	// Project context — identical across all four stages, stamped by
 	// cmd.runInit at entry so each stage renders the same header.
@@ -70,6 +71,60 @@ func NewStage(
 // The harness yields Stage.View() verbatim and Stage composes its own frame
 // via renderFrame().
 func (s *Stage) Chromeless() bool { return true }
+
+// SetRailLabels installs a non-default label slice for the enso rail. Used by
+// flows outside initflow (e.g. addflow's 6-stage set) that embed Stage but
+// need their own rail segment count + kanji. A nil/empty slice restores the
+// init-flow default (see RenderEnsoRail).
+func (s *Stage) SetRailLabels(labels []StageLabel) { s.labels = labels }
+
+// SetRailIndex overrides the 0-based rail position baked in at ctor time.
+// Used by sibling flow packages that reuse an initflow stage at a different
+// rail slot — e.g. addflow's Grow stage wraps GenerateStage (ctor idx=3) but
+// actually sits at rail position 4 (育 GROW) in the 6-segment add rail.
+func (s *Stage) SetRailIndex(idx int) { s.idx = idx }
+
+// SetLabel overrides the stage's rendered kanji/kana/English triple. Used
+// in tandem with SetRailIndex when a sibling package reuses an initflow
+// stage struct but needs the body title to read from its own StageLabels
+// slice.
+func (s *Stage) SetLabel(label StageLabel) { s.label = label }
+
+// SetSize stores the live terminal dims. Sibling packages that embed Stage
+// (e.g. addflow) call this from their own Update on WindowSizeMsg because the
+// fields are unexported.
+func (s *Stage) SetSize(w, h int) { s.width = w; s.height = h }
+
+// Width returns the last-seen terminal width. Zero until the first
+// WindowSizeMsg lands.
+func (s *Stage) Width() int { return s.width }
+
+// Height returns the last-seen terminal height.
+func (s *Stage) Height() int { return s.height }
+
+// EnsoSafe returns the WideCharSafe() snapshot captured at ctor time. Stage
+// bodies gate kanji glyphs on this so ASCII-only terminals get safe
+// substitutes.
+func (s *Stage) EnsoSafe() bool { return s.ensoSafe }
+
+// Label returns the kanji/kana/English triple for this stage.
+func (s *Stage) Label() StageLabel { return s.label }
+
+// MarkDone flips the completion flag. Subclasses call this when Enter
+// advances; the harness reads Done() to drive the cursor forward.
+func (s *Stage) MarkDone() { s.done = true }
+
+// ClearDone resets the completion flag. Used by Reset overrides that need to
+// preserve other stage state.
+func (s *Stage) ClearDone() { s.done = false }
+
+// RenderFrame is the exported entry into the shared frame composer. Sibling
+// packages that embed Stage call this from their View() so every flow's
+// persistent chrome (header + enso rail + footer) renders identically. The
+// unexported renderFrame remains for internal callers.
+func (s *Stage) RenderFrame(body string, keys []KeyHint) string {
+	return s.renderFrame(body, keys)
+}
 
 // Title implements harness.Step. Used only if the harness ever had to
 // surface a breadcrumb — which it does not in the cinematic flow.
@@ -146,7 +201,7 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 	}
 
 	header := RenderHeader(s.version, s.projectDir, width, s.ensoSafe)
-	rail := RenderEnsoRail(s.idx, width, s.ensoSafe)
+	rail := RenderEnsoRail(s.idx, s.labels, width, s.ensoSafe)
 	footer := RenderFooter(keys, width)
 
 	// Chrome budget: header(2) + blank + rail(2) + blank + blank + footer(2) = 9 rows.

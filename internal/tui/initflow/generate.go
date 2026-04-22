@@ -73,6 +73,20 @@ type GenerateStage struct {
 	err       error
 	startedAt time.Time // goroutine start for elapsed math
 	ticks     int       // frames drawn since start
+
+	// Optional body-title override. Sibling flow packages (addflow) swap
+	// "生 · PLANTING" for their own kanji/English pair. Zero value keeps
+	// the init-flow default.
+	bodyKanji   string
+	bodyEnglish string
+}
+
+// SetBodyTitle overrides the "生 · PLANTING" body header. Used by addflow's
+// GrowStage wrapper so the kanji reads 育 (Grow) instead of the init-flow
+// default. Empty kanji/english restore the default.
+func (s *GenerateStage) SetBodyTitle(kanji, english string) {
+	s.bodyKanji = kanji
+	s.bodyEnglish = english
 }
 
 // NewGenerateStage constructs the Generate stage. The action closure wraps
@@ -230,8 +244,22 @@ func (s *GenerateStage) renderBody() string {
 		if err != nil {
 			msg = err.Error()
 		}
+		errKanji := "生"
+		errEnglish := "GENERATE FAILED"
+		if s.bodyKanji != "" {
+			errKanji = s.bodyKanji
+		}
+		if s.bodyEnglish != "" {
+			// Addflow's Grow stage reads "育 · GROW FAILED" rather than
+			// GENERATE FAILED when the body title has been overridden.
+			errEnglish = s.bodyEnglish + " FAILED"
+		}
+		errTitle := errKanji + " · " + errEnglish
+		if !s.ensoSafe {
+			errTitle = errEnglish
+		}
 		block := strings.Join([]string{
-			danger.Render("生 · GENERATE FAILED"),
+			danger.Render(errTitle),
 			"",
 			dim.Render(msg),
 			"",
@@ -244,9 +272,17 @@ func (s *GenerateStage) renderBody() string {
 
 	label := progressLabel(ticks, s.ensoSafe)
 
-	title := "生 · PLANTING"
+	kanji := "生"
+	english := "PLANTING"
+	if s.bodyKanji != "" {
+		kanji = s.bodyKanji
+	}
+	if s.bodyEnglish != "" {
+		english = s.bodyEnglish
+	}
+	title := kanji + " · " + english
 	if !s.ensoSafe {
-		title = "PLANTING"
+		title = english
 	}
 
 	block := strings.Join([]string{

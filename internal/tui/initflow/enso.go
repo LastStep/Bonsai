@@ -15,7 +15,7 @@ const (
 	railChar    = "─"
 )
 
-// RenderEnsoRail draws the 4-stage progress rail used above every stage's
+// RenderEnsoRail draws the N-stage progress rail used above every stage's
 // body. Rendered as two rows:
 //
 //	row 1: ● ─── ● ─── [枝] ─── ○        (dots + connector segments)
@@ -25,11 +25,20 @@ const (
 // set), the dots collapse to bracketed ASCII: [x] for done, [ ] for
 // pending, [N] for current.
 //
+// labels is the stage-label slice to render against. When nil or empty,
+// the function falls back to the package-level StageLabels (the init flow's
+// 4-stage set). Other flows (e.g. addflow's 6-stage set) pass their own
+// slice so the rail adapts to the active flow's length without reimplementing
+// this primitive.
+//
 // stageIdx is the 0-based current stage. width is the terminal column count
 // the rail should occupy. Layout tries to centre the rail inside width; the
 // dot/bracket glyphs sit at fixed anchors with equal-length connector runs
 // between them. Labels are centred under each anchor.
-func RenderEnsoRail(stageIdx int, width int, safe bool) string {
+func RenderEnsoRail(stageIdx int, labels []StageLabel, width int, safe bool) string {
+	if len(labels) == 0 {
+		labels = StageLabels[:]
+	}
 	if width <= 0 {
 		width = 80
 	}
@@ -38,16 +47,16 @@ func RenderEnsoRail(stageIdx int, width int, safe bool) string {
 	if stageIdx < 0 {
 		stageIdx = 0
 	}
-	if stageIdx > len(StageLabels)-1 {
-		stageIdx = len(StageLabels) - 1
+	if stageIdx > len(labels)-1 {
+		stageIdx = len(labels) - 1
 	}
 
 	// Glyph + styled rendering for each anchor and connector.
-	numStages := len(StageLabels)
+	numStages := len(labels)
 	anchors := make([]string, numStages)
 	anchorWidths := make([]int, numStages)
-	for i := range StageLabels {
-		glyph, w := anchorGlyph(i, stageIdx, safe)
+	for i := range labels {
+		glyph, w := anchorGlyph(i, stageIdx, labels, safe)
 		anchors[i] = glyph
 		anchorWidths[i] = w
 	}
@@ -104,7 +113,7 @@ func RenderEnsoRail(stageIdx int, width int, safe bool) string {
 	}
 
 	// Row 2: stage English labels, centred on each anchor.
-	row2 := placeLabels(colPositions, stageLabelTexts(safe, stageIdx), width, stageIdx, false)
+	row2 := placeLabels(colPositions, stageLabelTexts(labels, safe, stageIdx), width, stageIdx, false)
 
 	return row1.String() + "\n" + row2
 }
@@ -113,7 +122,7 @@ func RenderEnsoRail(stageIdx int, width int, safe bool) string {
 // i-th stage anchor. The current stage gets a bracketed kanji in Bark gold;
 // completed stages get a bright Primary ● (user-requested green-done badge);
 // pending stages get a muted ○.
-func anchorGlyph(i, current int, safe bool) (string, int) {
+func anchorGlyph(i, current int, labels []StageLabel, safe bool) (string, int) {
 	goldStyle := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 	doneStyle := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	muted := lipgloss.NewStyle().Foreground(tui.ColorRule2)
@@ -126,7 +135,7 @@ func anchorGlyph(i, current int, safe bool) (string, int) {
 			// Render kanji in a small boxed form: [K] — 4 visible cells
 			// (bracket + 2-cell kanji + bracket). Kanji + brackets are Bark
 			// gold so the current stage reads as the active accent.
-			kanji := StageLabels[i].Kanji
+			kanji := labels[i].Kanji
 			return goldStyle.Render("[") + goldStyle.Render(kanji) + goldStyle.Render("]"), 4
 		default:
 			return muted.Render(ensoPending), 1
@@ -224,10 +233,10 @@ func placeLabels(colPositions []int, labels []string, width, current int, kana b
 // stageLabelTexts returns the English-label slice for the rail's row 2.
 // Safe vs ASCII has no effect on this row — the English labels always
 // render (the ASCII fallback is on the glyph row above).
-func stageLabelTexts(safe bool, current int) []string {
+func stageLabelTexts(labels []StageLabel, safe bool, current int) []string {
 	_ = safe // reserved for future styling toggles; labels are uniform today
-	out := make([]string, len(StageLabels))
-	for i, l := range StageLabels {
+	out := make([]string, len(labels))
+	for i, l := range labels {
 		out[i] = l.English
 	}
 	_ = current
