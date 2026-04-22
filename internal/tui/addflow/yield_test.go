@@ -127,27 +127,23 @@ func TestYield_ResultNil(t *testing.T) {
 	}
 }
 
-// TestYield_AddItemsDeferredRendersLegacyCTA verifies the Phase 1
-// deferred-add-items variant surfaces the "unset BONSAI_ADD_REDESIGN" +
-// legacy-flow CTA so the user has a concrete next step instead of the
-// silent "already full" lie the earlier splicer produced.
-func TestYield_AddItemsDeferredRendersLegacyCTA(t *testing.T) {
-	agentDef := &catalog.AgentDef{Name: "backend", DisplayName: "Backend"}
+// TestYield_UnknownAgentRendersUpdateCTA verifies the unknown-agent variant
+// surfaces a `bonsai update` next-step (catalog stale guidance) and includes
+// the picked agent type in the body so the user can correlate the failure
+// with their config entry.
+func TestYield_UnknownAgentRendersUpdateCTA(t *testing.T) {
 	ctx := initflow.StageContext{StartedAt: time.Now()}
-	s := NewYieldAddItemsDeferred(ctx, agentDef)
+	s := NewYieldUnknownAgent(ctx, "frontend")
 	s.SetSize(120, 40)
 	out := s.View()
-	if !strings.Contains(out, "PHASE 2") {
-		t.Fatal("add-items-deferred view should surface Phase 2 hero")
+	if !strings.Contains(out, "UNKNOWN AGENT") {
+		t.Fatal("unknown-agent view should include UNKNOWN AGENT hero")
 	}
-	if !strings.Contains(out, "unset BONSAI_ADD_REDESIGN") {
-		t.Fatal("add-items-deferred view should direct user to unset the env flag")
+	if !strings.Contains(out, "bonsai update") {
+		t.Fatal("unknown-agent view should direct user to run bonsai update")
 	}
-	if !strings.Contains(out, "bonsai add") {
-		t.Fatal("add-items-deferred view should include bonsai add legacy CTA")
-	}
-	if !strings.Contains(out, "Backend") {
-		t.Fatal("add-items-deferred view should include agent display name")
+	if !strings.Contains(out, "frontend") {
+		t.Fatal("unknown-agent view should include the picked agent type")
 	}
 }
 

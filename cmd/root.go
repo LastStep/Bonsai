@@ -139,6 +139,11 @@ func buildConflictSteps(wr *generate.WriteResult) []harness.Step {
 //
 // Tolerates the slot being absent (LazyGroup spliced nothing) by returning
 // false, so callers can pass a sentinel index without checking length first.
+//
+// Backup-failure handling: when the .bak read OR write step fails for a given
+// path, that path is dropped from the overwrite list and a single collected
+// tui.Warning is emitted naming all dropped paths. This avoids silently
+// overwriting the user's local edits without a recoverable backup.
 func applyConflictPicks(results []any, confIdx int, wr *generate.WriteResult,
 	lock *config.LockFile, projectRoot string) bool {
 	if confIdx < 0 || confIdx >= len(results) {
@@ -151,13 +156,35 @@ func applyConflictPicks(results []any, confIdx int, wr *generate.WriteResult,
 	backupIdx := confIdx + 1
 	backup := backupIdx < len(results) && asBool(results[backupIdx])
 	if backup {
+		dropped := make(map[string]bool)
 		for _, relPath := range selected {
 			abs := filepath.Join(projectRoot, relPath)
 			data, readErr := os.ReadFile(abs)
-			if readErr == nil {
-				_ = os.WriteFile(abs+".bak", data, 0644)
+			if readErr != nil {
+				dropped[relPath] = true
+				continue
+			}
+			if writeErr := os.WriteFile(abs+".bak", data, 0644); writeErr != nil {
+				dropped[relPath] = true
+				continue
 			}
 		}
+		if len(dropped) > 0 {
+			filtered := selected[:0]
+			droppedList := make([]string, 0, len(dropped))
+			for _, relPath := range selected {
+				if dropped[relPath] {
+					droppedList = append(droppedList, relPath)
+					continue
+				}
+				filtered = append(filtered, relPath)
+			}
+			selected = filtered
+			tui.Warning("Could not write backup for: " + strings.Join(droppedList, ", ") + " — original file left unchanged.")
+		}
+	}
+	if len(selected) == 0 {
+		return false
 	}
 	wr.ForceSelected(selected, projectRoot, lock)
 	return true

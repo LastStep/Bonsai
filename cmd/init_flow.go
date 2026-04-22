@@ -187,16 +187,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Surface any Generate error post-harness. The in-frame stateError view
-	// already showed the message; this is a safety belt in case the user
-	// exits without acknowledging and for any later telemetry hooks.
-	if len(results) > 4 {
-		if errVal, isErr := results[4].(error); isErr && errVal != nil {
-			tui.Warning("Generation error: " + errVal.Error())
-			return nil
-		}
-	}
-
 	// Apply conflict-picker selections. The LazyGroup splices the MultiSelect
 	// + Confirm pair at index 5 when conflicts exist; applyConflictPicks
 	// tolerates the slot being absent (spliced nothing) via its length check.

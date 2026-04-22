@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/LastStep/Bonsai/internal/catalog"
-	"github.com/LastStep/Bonsai/internal/tui"
 )
 
 func init() {
@@ -15,19 +12,6 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize Bonsai in the current project.",
 	RunE:  runInit,
-}
-
-// userSensorOptions filters out the auto-managed routine-check sensor so the
-// user only picks from sensors they actually choose. Shared with `bonsai add`.
-func userSensorOptions(cat *catalog.Catalog, agentType string) []tui.ItemOption {
-	available := cat.SensorsFor(agentType)
-	filtered := make([]catalog.SensorItem, 0, len(available))
-	for _, s := range available {
-		if s.Name != "routine-check" {
-			filtered = append(filtered, s)
-		}
-	}
-	return toSensorOptions(filtered, agentType)
 }
 
 // asString safely extracts a string result from a harness step. Returns ""
