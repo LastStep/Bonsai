@@ -14,7 +14,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-<!-- v0.2.0 shipped 2026-04-22 — pre-release docs audit PR #65 + GitHub Release + Homebrew tap; see Recently Done -->
+| Plan 28 — view commands cinematic (`list`, `catalog`, `guide`) + hide Cobra's auto-generated `completion` subcommand. 3 sequential PRs: (Phase 1) `catalogflow/` tabbed BubbleTea browser + `initflow.RenderHeader` signature extension (`action`, `rightLabel` params) + `completion` hide one-liner; (Phase 2) `listflow/` static cinematic w/ per-agent workspace file-tree; (Phase 3) `guideflow/` BubbleTea viewport + topic tab strip + glamour re-render on resize. Scope contract: read-only commands, no stage rail (chrome + palette + panels/tabs only). Non-TTY fallback preserved in all phases. Parallel to user's Plan 27 (add flow polish) track — coordinate via `RenderHeader` signature: Plan 28 ships first, Plan 27 rebases on top. | 28 | tech-lead (planning) + general-purpose (Phase 1 dispatch pending) | 2026-04-22 |
 
 ## Pending
 
