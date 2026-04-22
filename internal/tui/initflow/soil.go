@@ -49,6 +49,7 @@ func NewSoilStage(ctx StageContext, options []ScaffoldingOption) *SoilStage {
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.applyContextHeader(ctx)
 
 	selected := make([]bool, len(options))
 	for i, opt := range options {

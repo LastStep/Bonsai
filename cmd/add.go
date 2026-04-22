@@ -71,13 +71,17 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	// Shared context stamped onto every stage. AgentDisplay is resolved lazily
 	// inside the splicer once the user picks an agent — the initial value
 	// here is empty so the header right-block reads "PLANTING INTO" over the
-	// project path (same convention as initflow).
+	// project path (same convention as initflow). HeaderAction +
+	// HeaderRightLabel preserve the current add-flow presentation verbatim
+	// under the Plan 28 Phase 1 signature extension.
 	ctx := initflow.StageContext{
-		Version:      Version,
-		ProjectDir:   cwd,
-		StationDir:   "station/",
-		AgentDisplay: "",
-		StartedAt:    startedAt,
+		Version:          Version,
+		ProjectDir:       cwd,
+		StationDir:       "station/",
+		AgentDisplay:     "",
+		StartedAt:        startedAt,
+		HeaderAction:     "INIT",
+		HeaderRightLabel: "PLANTING INTO",
 	}
 
 	lock, _ := config.LoadLockFile(cwd)

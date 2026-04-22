@@ -57,6 +57,7 @@ func NewVesselStage(ctx StageContext) *VesselStage {
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.applyContextHeader(ctx)
 
 	inputs := [3]textinput.Model{}
 	for i := range inputs {

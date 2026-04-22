@@ -97,6 +97,7 @@ func NewBranchesStage(ctx StageContext, cat *catalog.Catalog, agentDef *catalog.
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.applyContextHeader(ctx)
 
 	const agentType = "tech-lead"
 

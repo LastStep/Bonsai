@@ -55,13 +55,17 @@ func runInit(cmd *cobra.Command, args []string) error {
 		agentDisplay = catalog.DisplayNameFrom(agentDef.Name)
 	}
 
-	// Shared context stamped on every stage.
+	// Shared context stamped on every stage. HeaderAction + HeaderRightLabel
+	// are passed explicitly so the per-command chrome reads correctly even
+	// as Plan 28's signature extension rolls out across sibling flows.
 	ctx := initflow.StageContext{
-		Version:      Version,
-		ProjectDir:   cwd,
-		StationDir:   "station/",
-		AgentDisplay: agentDisplay,
-		StartedAt:    startedAt,
+		Version:          Version,
+		ProjectDir:       cwd,
+		StationDir:       "station/",
+		AgentDisplay:     agentDisplay,
+		StartedAt:        startedAt,
+		HeaderAction:     "INIT",
+		HeaderRightLabel: "PLANTING INTO",
 	}
 
 	// Lock + WriteResult shared between the Generate action and the conflict

@@ -64,6 +64,7 @@ func NewGroundStage(ctx initflow.StageContext, gc GroundContext) *GroundStage {
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.ApplyContextHeader(ctx)
 	base.SetRailLabels(StageLabels)
 
 	ti := textinput.New()

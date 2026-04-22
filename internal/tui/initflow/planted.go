@@ -63,6 +63,7 @@ func NewPlantedStage(ctx StageContext, wr *generate.WriteResult, summary Planted
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.applyContextHeader(ctx)
 	return &PlantedStage{
 		Stage:         base,
 		wr:            wr,

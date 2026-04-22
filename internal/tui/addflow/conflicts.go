@@ -73,6 +73,7 @@ func NewConflictsStage(ctx initflow.StageContext, wr *generate.WriteResult) *Con
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.ApplyContextHeader(ctx)
 	base.SetRailLabels(StageLabels)
 
 	var conflicts []generate.FileResult

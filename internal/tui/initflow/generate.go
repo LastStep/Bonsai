@@ -107,6 +107,7 @@ func NewGenerateStage(ctx StageContext, action GenerateAction) *GenerateStage {
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.applyContextHeader(ctx)
 	return &GenerateStage{
 		Stage:  base,
 		action: action,

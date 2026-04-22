@@ -11,7 +11,7 @@ import (
 func TestRenderHeader_CollapsesHome(t *testing.T) {
 	t.Setenv("HOME", "/home/alice")
 
-	out := RenderHeader("0.1.2", "/home/alice/voyager-api", 120, true)
+	out := RenderHeader("0.1.2", "/home/alice/voyager-api", "INIT", "PLANTING INTO", 120, true)
 
 	if !strings.Contains(out, "~/voyager-api") {
 		t.Fatalf("expected tilde-collapsed project path in header, got:\n%s", out)
@@ -27,7 +27,7 @@ func TestRenderHeader_CollapsesHome(t *testing.T) {
 func TestRenderHeader_AbsolutePathOutsideHome(t *testing.T) {
 	t.Setenv("HOME", "/home/bob")
 
-	out := RenderHeader("0.1.2", "/tmp/p", 120, true)
+	out := RenderHeader("0.1.2", "/tmp/p", "INIT", "PLANTING INTO", 120, true)
 
 	if !strings.Contains(out, "/tmp/p") {
 		t.Fatalf("expected absolute project path in header, got:\n%s", out)
@@ -45,7 +45,7 @@ func TestRenderHeader_NoStationSegment(t *testing.T) {
 	t.Setenv("HOME", "/home/alice")
 
 	for _, safe := range []bool{true, false} {
-		out := RenderHeader("0.1.2", "/home/alice/voyager-api", 120, safe)
+		out := RenderHeader("0.1.2", "/home/alice/voyager-api", "INIT", "PLANTING INTO", 120, safe)
 		if strings.Contains(out, "station") {
 			t.Fatalf("safe=%v: header must not contain \"station\" substring, got:\n%s", safe, out)
 		}
@@ -57,9 +57,43 @@ func TestRenderHeader_NoStationSegment(t *testing.T) {
 func TestRenderHeader_TrailingSlash(t *testing.T) {
 	t.Setenv("HOME", "/home/alice")
 
-	out := RenderHeader("0.1.2", "/home/alice/voyager-api", 120, true)
+	out := RenderHeader("0.1.2", "/home/alice/voyager-api", "INIT", "PLANTING INTO", 120, true)
 
 	if !strings.Contains(out, "voyager-api/") {
 		t.Fatalf("expected trailing slash after project name, got:\n%s", out)
+	}
+}
+
+// TestRenderHeader_CustomAction covers the Plan 28 Phase 1 signature
+// extension — the `action` parameter is rendered on the left block row 2
+// instead of the hardcoded "INIT" literal.
+func TestRenderHeader_CustomAction(t *testing.T) {
+	t.Setenv("HOME", "/home/alice")
+
+	out := RenderHeader("0.1.2", "/home/alice/voyager-api", "CATALOG", "PLANTING INTO", 120, true)
+
+	if !strings.Contains(out, "CATALOG") {
+		t.Fatalf("expected custom action label in header, got:\n%s", out)
+	}
+	// INIT must not leak in when a different action is supplied.
+	if strings.Contains(out, "INIT") {
+		t.Fatalf("custom action did not replace default INIT, got:\n%s", out)
+	}
+}
+
+// TestRenderHeader_EmptyRightLabelHidesRow1 verifies that an empty rightLabel
+// hides the right-block row 1 entirely. The project path still renders on
+// row 2, but the destination preamble (e.g. "PLANTING INTO") is omitted.
+func TestRenderHeader_EmptyRightLabelHidesRow1(t *testing.T) {
+	t.Setenv("HOME", "/home/alice")
+
+	out := RenderHeader("0.1.2", "/home/alice/voyager-api", "CATALOG", "", 120, true)
+
+	if strings.Contains(out, "PLANTING INTO") {
+		t.Fatalf("expected right-block row 1 to be hidden, got:\n%s", out)
+	}
+	// Project path must still render.
+	if !strings.Contains(out, "voyager-api") {
+		t.Fatalf("expected project name to still render on row 2, got:\n%s", out)
 	}
 }

@@ -100,6 +100,7 @@ func newYield(ctx initflow.StageContext, mode yieldMode, tail func(*YieldStage))
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.ApplyContextHeader(ctx)
 	base.SetRailLabels(StageLabels)
 	y := &YieldStage{
 		Stage: base,
