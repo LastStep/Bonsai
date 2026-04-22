@@ -155,3 +155,13 @@ func FocusedPrimaryStyle() lipgloss.Style {
 func FocusedAccentStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
 }
+
+// ConflictRowStyle returns the per-row style used by addflow's ConflictsStage
+// to render a conflict-file entry. Phase-1 stub — the style is intentionally
+// a no-op passthrough so Phase-2 can land the full body (colour-coded Keep /
+// Overwrite / Backup action glyphs + diff summary) without bloating the Phase-1
+// diff. The exported symbol is defined here so addflow's Phase-1 code imports
+// are wired against the final API shape. See Plan 23 decision Q10.
+func ConflictRowStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(tui.ColorAccent)
+}

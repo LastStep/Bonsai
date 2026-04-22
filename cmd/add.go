@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -100,6 +101,12 @@ func normaliseWorkspace(s string) string {
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
+	// Plan 23 Phase 1 — cinematic add flow gated on BONSAI_ADD_REDESIGN=1.
+	// Phase 3 flips the default and deletes this branch + the legacy body.
+	if os.Getenv("BONSAI_ADD_REDESIGN") == "1" {
+		return runAddRedesign(cmd, args)
+	}
+
 	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
 	cfg, err := requireConfig(configPath)
