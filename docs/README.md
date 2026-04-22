@@ -1,9 +1,18 @@
 # docs/
 
-Markdown files in this folder are embedded into the `bonsai` binary and rendered
-by `bonsai guide`. Current topics: `quickstart`, `concepts`, `cli`, `custom-files`.
+Terminal-rendered cheatsheets for the `bonsai` CLI.
 
-Full user documentation (tutorials, reference, catalog browser) lives on the
-Starlight site: <https://laststep.github.io/Bonsai/>. Source under [`website/`](../website/).
+`quickstart.md`, `concepts.md`, `cli.md`, and `custom-files.md` are embedded
+into the binary at build time via `embed.go` and surfaced through
+`bonsai guide <topic>`. They are the stripped-down, terminal-friendly subset
+of the project documentation.
 
-`docs/assets/` holds images referenced from `README.md`.
+The full reference — tutorials, catalog browser, API surface, deeper guides —
+lives at the Starlight site: <https://laststep.github.io/Bonsai/> (sources in
+[`website/`](../website/)).
+
+This is not duplication. The terminal needs short, scannable text without
+images or wide tables; the website expands the same topics with full prose,
+diagrams, and cross-links. When a concept changes, update both.
+
+`docs/assets/` holds images referenced from the repo `README.md`.
