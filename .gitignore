@@ -22,7 +22,13 @@ vendor/
 # Legacy
 .venv/
 
+# Claude Code local state
+.claude/worktrees/
+station/.claude/scheduled_tasks.lock
+.obsidian/
+
 # Research / scratch
+station/Research/
 RESEARCH*.md
 *.png
 !docs/assets/*.png
