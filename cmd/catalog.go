@@ -36,9 +36,15 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 		return renderCatalogStatic(cat, agentFilter)
 	}
 
-	stage := catalogflow.NewBrowser(cat, agentFilter)
-	_, err := tea.NewProgram(stage, tea.WithAltScreen()).Run()
-	return err
+	// cwd feeds the header's right-row-2 so the browser shows where it
+	// was invoked from (catalog is global but the path anchor is still a
+	// useful breadcrumb for multi-terminal users).
+	cwd := mustCwd()
+	stage := catalogflow.NewBrowser(cat, agentFilter, cwd)
+	if _, err := tea.NewProgram(stage, tea.WithAltScreen()).Run(); err != nil {
+		return fmt.Errorf("catalog browser: %w", err)
+	}
+	return nil
 }
 
 // renderCatalogStatic renders the seven catalog sections as a flat,

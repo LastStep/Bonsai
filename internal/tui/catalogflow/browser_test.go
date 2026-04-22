@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
 )
@@ -85,7 +86,7 @@ func key(name string) tea.KeyMsg {
 // TestNewBrowser_AllSevenTabsPresent verifies every catalog section is
 // represented in the tab strip, in the canonical order.
 func TestNewBrowser_AllSevenTabsPresent(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "")
+	s := NewBrowser(fakeCatalog(), "", "")
 	if got, want := len(s.categories), 7; got != want {
 		t.Fatalf("len(categories) = %d, want %d", got, want)
 	}
@@ -100,7 +101,7 @@ func TestNewBrowser_AllSevenTabsPresent(t *testing.T) {
 // TestBrowser_TabCycleWrapsForward verifies left/right key cycling
 // wraps past the end back to index 0.
 func TestBrowser_TabCycleWrapsForward(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "")
+	s := NewBrowser(fakeCatalog(), "", "")
 	for range s.categories {
 		s.Update(key("right"))
 	}
@@ -112,7 +113,7 @@ func TestBrowser_TabCycleWrapsForward(t *testing.T) {
 // TestBrowser_TabCycleWrapsBackward verifies left key cycling from
 // index 0 wraps to the last tab.
 func TestBrowser_TabCycleWrapsBackward(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "")
+	s := NewBrowser(fakeCatalog(), "", "")
 	s.Update(key("left"))
 	if s.catIdx != len(s.categories)-1 {
 		t.Fatalf("catIdx after one backward = %d, want %d", s.catIdx, len(s.categories)-1)
@@ -121,7 +122,7 @@ func TestBrowser_TabCycleWrapsBackward(t *testing.T) {
 
 // TestBrowser_FocusClampAtTop verifies up key at idx 0 stays at 0.
 func TestBrowser_FocusClampAtTop(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "")
+	s := NewBrowser(fakeCatalog(), "", "")
 	s.Update(key("up"))
 	if s.itemIdx[s.catIdx] != 0 {
 		t.Fatalf("itemIdx after up at top = %d, want 0", s.itemIdx[s.catIdx])
@@ -131,7 +132,7 @@ func TestBrowser_FocusClampAtTop(t *testing.T) {
 // TestBrowser_FocusClampAtBottom verifies down key past the last row
 // clamps to len-1.
 func TestBrowser_FocusClampAtBottom(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "")
+	s := NewBrowser(fakeCatalog(), "", "")
 	// Move to skills tab (2 entries).
 	s.Update(key("right"))
 	cat := s.currentCat()
@@ -150,7 +151,7 @@ func TestBrowser_FocusClampAtBottom(t *testing.T) {
 // TestBrowser_QuestionTogglesExpand verifies the `?` key flips the
 // expanded state each press.
 func TestBrowser_QuestionTogglesExpand(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "")
+	s := NewBrowser(fakeCatalog(), "", "")
 	if s.expanded {
 		t.Fatalf("expanded starts true, want false")
 	}
@@ -168,7 +169,7 @@ func TestBrowser_QuestionTogglesExpand(t *testing.T) {
 // "tech-lead", skills with agents=[code] are excluded but the tab
 // strip still shows every category (greyed when empty).
 func TestBrowser_FilterGreysEmptyTabs(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "tech-lead")
+	s := NewBrowser(fakeCatalog(), "tech-lead", "")
 	if len(s.categories) != 7 {
 		t.Fatalf("len(categories) under filter = %d, want 7", len(s.categories))
 	}
@@ -192,7 +193,7 @@ func TestBrowser_FilterGreysEmptyTabs(t *testing.T) {
 // the quit flag and issue tea.Quit.
 func TestBrowser_EachQuitKey(t *testing.T) {
 	for _, k := range []string{"q", "esc", "ctrl+c", "enter"} {
-		s := NewBrowser(fakeCatalog(), "")
+		s := NewBrowser(fakeCatalog(), "", "")
 		_, cmd := s.Update(key(k))
 		if !s.quit {
 			t.Fatalf("key %q: quit flag = false, want true", k)
@@ -207,7 +208,7 @@ func TestBrowser_EachQuitKey(t *testing.T) {
 // min-size floor panel (not the tab strip) when terminal dims are
 // below the 70×20 threshold.
 func TestBrowser_ViewUnderMinSizeFloor(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "")
+	s := NewBrowser(fakeCatalog(), "", "")
 	s.Update(tea.WindowSizeMsg{Width: 40, Height: 10})
 
 	out := s.View()
@@ -219,7 +220,7 @@ func TestBrowser_ViewUnderMinSizeFloor(t *testing.T) {
 // TestBrowser_ViewContainsHeaderAndTabs verifies a normal-sized render
 // contains the BONSAI header brand and every tab label.
 func TestBrowser_ViewContainsHeaderAndTabs(t *testing.T) {
-	s := NewBrowser(fakeCatalog(), "")
+	s := NewBrowser(fakeCatalog(), "", "")
 	s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
 	out := s.View()
@@ -239,7 +240,7 @@ func TestBrowser_ViewContainsHeaderAndTabs(t *testing.T) {
 // TestBrowser_EmptyCategoriesNoOp ensures focus/tab keys on an empty
 // catalog silently no-op without panicking.
 func TestBrowser_EmptyCategoriesNoOp(t *testing.T) {
-	s := NewBrowser(&catalog.Catalog{}, "")
+	s := NewBrowser(&catalog.Catalog{}, "", "")
 	// Even an empty catalog still yields 7 tabs (all empty).
 	if len(s.categories) != 7 {
 		t.Fatalf("empty catalog len(categories) = %d, want 7", len(s.categories))
@@ -250,5 +251,65 @@ func TestBrowser_EmptyCategoriesNoOp(t *testing.T) {
 	s.Update(key("left"))
 	if s.itemIdx[s.catIdx] != 0 {
 		t.Fatalf("empty catalog focus drifted to %d, want 0", s.itemIdx[s.catIdx])
+	}
+}
+
+// TestRenderTabs_ShortLabelsAtNarrowWidth verifies the tab strip
+// switches to compact labels below the 96-col threshold so the full
+// 7-tab row fits inside the 70-col minimum-width floor. All seven
+// tabs must still be present (by their short form), the active tab
+// must still render bold, and the rendered strip must fit in 70 cols.
+func TestRenderTabs_ShortLabelsAtNarrowWidth(t *testing.T) {
+	s := NewBrowser(fakeCatalog(), "", "")
+	s.Update(tea.WindowSizeMsg{Width: 70, Height: 20})
+
+	strip := s.renderTabs()
+	// Visible width — lipgloss.Width strips ANSI escapes, giving the
+	// true on-screen cell count.
+	if w := lipgloss.Width(strip); w > 70 {
+		t.Fatalf("tab strip width at 70 cols = %d, want <= 70\nstrip: %q", w, strip)
+	}
+
+	// Every tab still present (by short label). All seven collapse to
+	// 5-char forms under narrow widths.
+	shortLabels := []string{"AGENT", "SKILL", "FLOWS", "PROTO", "SENSE", "RTNES", "SCAFF"}
+	for _, lab := range shortLabels {
+		if !strings.Contains(strip, lab) {
+			t.Fatalf("short label %q missing from strip at 70 cols:\n%s", lab, strip)
+		}
+	}
+
+	// Full labels that should have been compressed must NOT appear as
+	// whole words — checking boundary chars via a space suffix is
+	// sufficient because the strip only has labels + "(N)" suffixes.
+	for _, full := range []string{"AGENTS ", "SKILLS ", "WORKFLOWS ", "PROTOCOLS ", "SENSORS ", "ROUTINES ", "SCAFFOLDING "} {
+		if strings.Contains(strip, full) {
+			t.Fatalf("expected full label %q compressed at 70 cols, still present:\n%s", full, strip)
+		}
+	}
+
+	// Active tab is catIdx=0 (AGENT). In a color-capable terminal the
+	// active cell carries a bold SGR escape; under Go's test environment
+	// lipgloss auto-disables colour so we only assert the active label
+	// is present. The key visual invariant is that AGENT appears first
+	// (catIdx 0) — which is covered by the width + presence checks
+	// above.
+	if idx := strings.Index(strip, "AGENT"); idx != 0 {
+		t.Fatalf("active tab AGENT should render first in strip, got index %d:\n%s", idx, strip)
+	}
+}
+
+// TestRenderTabs_FullLabelsAtWideWidth verifies that at widths >= 96
+// cols the tab strip uses the full labels (regression guard against
+// the short-label mode leaking into normal terminals).
+func TestRenderTabs_FullLabelsAtWideWidth(t *testing.T) {
+	s := NewBrowser(fakeCatalog(), "", "")
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
+	strip := s.renderTabs()
+	for _, full := range []string{"AGENTS", "WORKFLOWS", "PROTOCOLS", "SCAFFOLDING"} {
+		if !strings.Contains(strip, full) {
+			t.Fatalf("expected full label %q at 120 cols:\n%s", full, strip)
+		}
 	}
 }

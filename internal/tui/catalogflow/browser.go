@@ -58,6 +58,38 @@ type BrowserStage struct {
 	quit bool
 }
 
+// shortLabelThreshold is the width (in columns) at or below which the
+// tab strip switches to short-label mode. The seven full tabs plus
+// "(N)" counts plus 2-space separators render at ~96 visible cells;
+// below that they wrap or clip against the 70-col minimum floor. Short
+// labels bring the strip inside a 70-col frame.
+const shortLabelThreshold = 96
+
+// shortLabel returns the compact form of a tab label for use under
+// narrow widths. Target: keep the full 7-tab strip inside the 70-col
+// minimum-width floor. All labels collapse to <=5 chars so the strip
+// + "(N)" counts + 1-space separators fit with margin.
+func shortLabel(full string) string {
+	switch full {
+	case "AGENTS":
+		return "AGENT"
+	case "SKILLS":
+		return "SKILL"
+	case "WORKFLOWS":
+		return "FLOWS"
+	case "PROTOCOLS":
+		return "PROTO"
+	case "SENSORS":
+		return "SENSE"
+	case "ROUTINES":
+		return "RTNES"
+	case "SCAFFOLDING":
+		return "SCAFF"
+	default:
+		return full
+	}
+}
+
 // NewBrowser constructs a BrowserStage from a loaded catalog, applying
 // the optional -a/--agent filter. An empty agentFilter shows every
 // entry in every tab. With a non-empty filter, per-section cat.*For
@@ -65,9 +97,14 @@ type BrowserStage struct {
 // entries render a greyed (0) suffix but are not removed from the
 // tab strip.
 //
+// projectDir is the absolute path to the invoking shell's cwd — passed
+// through so the header's right-row-2 renders a useful path fragment
+// instead of a bare "./". Resolve at the cmd/catalog.go callsite via
+// the existing mustCwd() helper.
+//
 // Called from cmd/catalog.go when stdout is a TTY. Non-TTY invocations
 // stay on the existing static-render path.
-func NewBrowser(cat *catalog.Catalog, agentFilter string) *BrowserStage {
+func NewBrowser(cat *catalog.Catalog, agentFilter string, projectDir string) *BrowserStage {
 	categories := buildCategories(cat, agentFilter)
 
 	itemIdx := make(map[int]int, len(categories))
@@ -79,8 +116,8 @@ func NewBrowser(cat *catalog.Catalog, agentFilter string) *BrowserStage {
 		0,
 		initflow.StageLabel{Kanji: "録", Kana: "ロク", English: "CATALOG"},
 		"CATALOG",
-		"", // version: catalog's header renders no version chip
-		"", // projectDir: catalog is global, no project context
+		"",         // version: catalog's header renders no version chip
+		projectDir, // projectDir: threaded through so header right-row-2 renders the cwd
 		"",
 		"",
 		// Zero time — catalog has no elapsed counter. Matches the
@@ -332,6 +369,14 @@ func (s *BrowserStage) Result() any { return nil }
 
 // View composes the full frame: header + tab strip + list + optional
 // inline-expand detail block + footer. No rail (SetRailHidden(true)).
+//
+// Routing: header/footer go through the embedded Stage.RenderFrame so
+// the stored headerAction / headerRightLabel / projectDir (set in
+// NewBrowser) drive the render. This keeps the catalog's chrome
+// consistent with every other initflow-embedded stage and removes a
+// duplicated copy of the padding/truncation math previously inlined
+// here. The body we hand to RenderFrame is just the tab strip + list +
+// optional details block.
 func (s *BrowserStage) View() string {
 	if s.quit {
 		return ""
@@ -341,18 +386,13 @@ func (s *BrowserStage) View() string {
 	if width <= 0 {
 		width = 80
 	}
-	height := s.Height()
-	if height <= 0 {
-		height = 24
-	}
 
-	// Min-size floor — same 70×20 threshold as init/add.
+	// Min-size floor short-circuit is redundant with RenderFrame's own
+	// guard, but keep it here so View returns the floor panel directly
+	// without constructing a body that would be discarded.
 	if initflow.TerminalTooSmall(s.Width(), s.Height()) {
 		return initflow.RenderMinSizeFloor(s.Width(), s.Height())
 	}
-
-	header := initflow.RenderHeader("", "", "CATALOG", "", width, s.EnsoSafe())
-	footer := initflow.RenderFooter(s.keyHints(), width)
 
 	tabRow := s.renderTabs()
 	list := s.renderList()
@@ -370,28 +410,7 @@ func (s *BrowserStage) View() string {
 	}
 	body := initflow.CenterBlock(strings.Join(bodyParts, "\n"), width)
 
-	// Pad body so footer sits at the bottom of the AltScreen — same
-	// technique initflow.Stage.renderFrame uses.
-	count := func(str string) int {
-		if str == "" {
-			return 0
-		}
-		return strings.Count(str, "\n") + 1
-	}
-	chromeRows := count(header) + 1 + 1 + count(footer)
-	bodyTarget := height - chromeRows
-	if bodyTarget < 1 {
-		bodyTarget = 1
-	}
-	bodyRows := count(body)
-	if bodyRows < bodyTarget {
-		body = body + strings.Repeat("\n", bodyTarget-bodyRows)
-	} else if bodyRows > bodyTarget {
-		lines := strings.Split(body, "\n")
-		body = strings.Join(lines[:bodyTarget], "\n")
-	}
-
-	return header + "\n\n" + body + "\n\n" + footer
+	return s.RenderFrame(body, s.keyHints())
 }
 
 // keyHints returns the footer key row for the browser. Single-stage
@@ -410,14 +429,24 @@ func (s *BrowserStage) keyHints() []initflow.KeyHint {
 // attached to every tab — greyed out when N==0 to signal that an
 // agent filter excluded all entries in that tab (but the tab still
 // renders so the user sees what's being filtered).
+//
+// Narrow-width adaptation: when terminal width is below
+// shortLabelThreshold (96 cols), swaps full labels for compact forms
+// (see shortLabel). The min-size floor is 70×20 — short labels keep
+// the full 7-tab strip inside 70 cols without wrapping or clipping.
 func (s *BrowserStage) renderTabs() string {
 	active := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 
+	useShort := s.Width() > 0 && s.Width() < shortLabelThreshold
+
 	cells := make([]string, 0, len(s.categories))
 	for i, c := range s.categories {
 		label := c.displayName
+		if useShort {
+			label = shortLabel(label)
+		}
 		countSuffix := fmt.Sprintf(" (%d)", len(c.entries))
 		var cell string
 		switch {
@@ -431,7 +460,11 @@ func (s *BrowserStage) renderTabs() string {
 		cells = append(cells, cell)
 	}
 
-	return strings.Join(cells, "  ")
+	sep := "  "
+	if useShort {
+		sep = " "
+	}
+	return strings.Join(cells, sep)
 }
 
 // renderList renders the entries of the current tab. Each row goes
