@@ -114,9 +114,9 @@ func newGraft(ctx initflow.StageContext, gctx GraftContext, filter bool) *GraftS
 	}
 
 	var (
-		installedSkills, installedWorkflows   map[string]bool
-		installedProtocols, installedSensors  map[string]bool
-		installedRoutines                     map[string]bool
+		installedSkills, installedWorkflows  map[string]bool
+		installedProtocols, installedSensors map[string]bool
+		installedRoutines                    map[string]bool
 	)
 	if filter && gctx.Installed != nil {
 		installedSkills = stringSet(gctx.Installed.Skills)

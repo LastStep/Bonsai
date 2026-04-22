@@ -27,9 +27,9 @@ type ObserveStage struct {
 
 	cat *catalog.Catalog
 
-	agent     string       // machine name — prev[0]
-	workspace string       // resolved path — prev[1] (tech-lead auto-fills)
-	graft     GraftResult  // prev[2]
+	agent     string      // machine name — prev[0]
+	workspace string      // resolved path — prev[1] (tech-lead auto-fills)
+	graft     GraftResult // prev[2]
 
 	// agentDef + agentDisplay resolved from cat on each SetPrior.
 	agentDef     *catalog.AgentDef
