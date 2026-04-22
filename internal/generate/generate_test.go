@@ -1228,3 +1228,140 @@ func TestInjectTriggerSection(t *testing.T) {
 		})
 	}
 }
+
+// TestRoutineDashboardNoBlankRows is a regression guard for the stale
+// routines.md dashboard bug: the generator must emit contiguous table body
+// rows — no blank lines splitting the Dashboard or the Routine Definitions
+// table. Builds an InstalledAgent with the 7 tech-lead default routines at
+// mixed frequencies, renders via RoutineDashboard, and scans the output.
+func TestRoutineDashboardNoBlankRows(t *testing.T) {
+	routineSpecs := []struct {
+		name      string
+		frequency string
+	}{
+		{"backlog-hygiene", "7 days"},
+		{"dependency-audit", "7 days"},
+		{"doc-freshness-check", "7 days"},
+		{"memory-consolidation", "5 days"},
+		{"roadmap-accuracy", "14 days"},
+		{"status-hygiene", "5 days"},
+		{"vulnerability-scan", "7 days"},
+	}
+
+	fsys := fstest.MapFS{
+		"core/memory.md.tmpl":          &fstest.MapFile{Data: []byte("memory")},
+		"core/self-awareness.md":       &fstest.MapFile{Data: []byte("self-awareness")},
+		"agents/test-agent/agent.yaml": &fstest.MapFile{Data: []byte("name: test-agent\ndescription: test\n")},
+	}
+	for _, r := range routineSpecs {
+		meta := "name: " + r.name + "\ndescription: " + r.name + "\nagents: [test-agent]\nfrequency: " + r.frequency + "\n"
+		fsys["routines/"+r.name+"/meta.yaml"] = &fstest.MapFile{Data: []byte(meta)}
+		fsys["routines/"+r.name+"/"+r.name+".md.tmpl"] = &fstest.MapFile{Data: []byte("# " + r.name + "\n")}
+	}
+
+	cat, err := catalog.New(fsys)
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	workspaceRoot := tmpDir
+	routineNames := make([]string, 0, len(routineSpecs))
+	for _, r := range routineSpecs {
+		routineNames = append(routineNames, r.name)
+	}
+	installed := &config.InstalledAgent{
+		AgentType: "test-agent",
+		Workspace: ".",
+		Routines:  routineNames,
+	}
+	lock := config.NewLockFile()
+	var wr WriteResult
+	if err := RoutineDashboard(tmpDir, workspaceRoot, installed, cat, lock, &wr, false); err != nil {
+		t.Fatalf("RoutineDashboard: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(workspaceRoot, "agent", "Core", "routines.md"))
+	if err != nil {
+		t.Fatalf("read routines.md: %v", err)
+	}
+	lines := strings.Split(string(data), "\n")
+
+	// Locate marker line indices.
+	dashStartIdx, dashEndIdx := -1, -1
+	for i, line := range lines {
+		if strings.Contains(line, "ROUTINE_DASHBOARD_START") {
+			dashStartIdx = i
+		} else if strings.Contains(line, "ROUTINE_DASHBOARD_END") {
+			dashEndIdx = i
+			break
+		}
+	}
+	if dashStartIdx == -1 || dashEndIdx == -1 {
+		t.Fatalf("dashboard markers not found (start=%d, end=%d)", dashStartIdx, dashEndIdx)
+	}
+
+	// Scan 1 — plan invariant: every non-empty non-comment line between the
+	// START and END markers must begin with `|` (i.e. it is a table row).
+	// Blank lines are permitted by markdown renderers adjacent to markers
+	// (the generator emits one right after START and one right before END);
+	// what matters is that no blank row sits between two body rows, which
+	// is equivalent to saying: blanks between markers are only valid if the
+	// run of `|`-prefixed rows is contiguous (no gaps inside the table).
+	seenBodyRow := false
+	lastWasBlank := false
+	for i := dashStartIdx + 1; i < dashEndIdx; i++ {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			if seenBodyRow {
+				lastWasBlank = true
+			}
+			continue
+		}
+		if !strings.HasPrefix(line, "|") {
+			t.Errorf("line %d between dashboard markers is not a comment and does not begin with `|`: %q", i+1, line)
+			continue
+		}
+		// It's a table row. If the previous non-blank was a body row and a
+		// blank sat between them, the table is split.
+		if seenBodyRow && lastWasBlank {
+			t.Errorf("blank row splits dashboard table at line %d (before body row: %q)", i, line)
+		}
+		seenBodyRow = true
+		lastWasBlank = false
+	}
+
+	// Scan 2: no blank lines between the Routine Definitions table header and
+	// its last body row.
+	defHeaderIdx := -1
+	for i, line := range lines {
+		if strings.HasPrefix(strings.TrimSpace(line), "| Routine | File |") {
+			defHeaderIdx = i
+			break
+		}
+	}
+	if defHeaderIdx == -1 {
+		t.Fatal("Routine Definitions header row not found")
+	}
+	// Find the last non-empty line with `|` prefix after the header — that is
+	// the final body row. Blank lines between header and that line are a bug.
+	lastBodyIdx := defHeaderIdx
+	for i := defHeaderIdx + 1; i < len(lines); i++ {
+		if strings.HasPrefix(strings.TrimSpace(lines[i]), "|") {
+			lastBodyIdx = i
+		}
+	}
+	for i := defHeaderIdx + 1; i < lastBodyIdx; i++ {
+		if strings.TrimSpace(lines[i]) == "" {
+			t.Errorf("blank row at line %d inside Routine Definitions table body (header=%d, last body=%d)", i+1, defHeaderIdx+1, lastBodyIdx+1)
+		}
+	}
+
+	// Sanity: every routine display name is present in the definitions table.
+	content := string(data)
+	for _, r := range routineSpecs {
+		if !strings.Contains(content, "`agent/Routines/"+r.name+".md`") {
+			t.Errorf("definition for routine %q not found in output", r.name)
+		}
+	}
+}
