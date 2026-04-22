@@ -124,16 +124,37 @@ func (s *YieldStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-// View composes the body inside the shared frame.
+// View renders Yield as a chromeless, vertically-centred exit card. Mirrors
+// initflow.PlantedStage.View — no header/rail/footer chrome, body centred in
+// the live AltScreen height, inline "↵ exit · q quit" hint. The terminal-too-
+// small floor still gates via initflow.RenderMinSizeFloor.
 func (s *YieldStage) View() string {
-	return s.RenderFrame(s.renderBody(), s.keyHints())
-}
-
-func (s *YieldStage) keyHints() []initflow.KeyHint {
-	return []initflow.KeyHint{
-		{Key: "↵", Desc: "exit"},
-		{Key: "q", Desc: "quit"},
+	w := s.Width()
+	h := s.Height()
+	if w <= 0 {
+		w = 80
 	}
+	if h <= 0 {
+		h = 24
+	}
+	if initflow.TerminalTooSmall(s.Width(), s.Height()) {
+		return initflow.RenderMinSizeFloor(s.Width(), s.Height())
+	}
+
+	dim := initflow.DimStyle()
+	hint := dim.Render("↵  exit  ·  q  quit")
+	body := s.renderBody() + "\n\n" + initflow.CenterBlock(hint, w)
+
+	rows := strings.Count(body, "\n") + 1
+	topPad := (h - rows) / 2
+	if topPad < 1 {
+		topPad = 1
+	}
+	bottomPad := h - rows - topPad
+	if bottomPad < 0 {
+		bottomPad = 0
+	}
+	return strings.Repeat("\n", topPad) + body + strings.Repeat("\n", bottomPad)
 }
 
 func (s *YieldStage) renderBody() string {

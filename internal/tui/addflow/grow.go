@@ -19,5 +19,6 @@ func NewGrowStage(ctx initflow.StageContext, action initflow.GenerateAction) *in
 	g.SetRailIndex(StageIdxGrow)
 	g.SetLabel(StageLabels[StageIdxGrow])
 	g.SetBodyTitle(StageLabels[StageIdxGrow].Kanji, "GROWING")
+	g.SetRailHidden(true)
 	return g
 }

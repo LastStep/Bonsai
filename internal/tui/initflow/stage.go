@@ -21,13 +21,14 @@ import (
 // stamp them uniformly from cmd.runInit's context bundle.
 type Stage struct {
 	// Rendering context.
-	title    string       // breadcrumb title — unused today but kept for Step contract
-	idx      int          // 0..3 — stage index in the rail
-	label    StageLabel   // kanji/kana/English triple
-	labels   []StageLabel // full rail label set (nil = fall back to init's StageLabels)
-	width    int          // last seen terminal width
-	height   int          // last seen terminal height
-	ensoSafe bool         // WideCharSafe() snapshot captured at ctor time
+	title      string       // breadcrumb title — unused today but kept for Step contract
+	idx        int          // 0..3 — stage index in the rail
+	label      StageLabel   // kanji/kana/English triple
+	labels     []StageLabel // full rail label set (nil = fall back to init's StageLabels)
+	width      int          // last seen terminal width
+	height     int          // last seen terminal height
+	ensoSafe   bool         // WideCharSafe() snapshot captured at ctor time
+	railHidden bool         // when true, renderFrame omits the enso rail row (+ trailing blank)
 
 	// Project context — identical across all four stages, stamped by
 	// cmd.runInit at entry so each stage renders the same header.
@@ -83,6 +84,11 @@ func (s *Stage) SetRailLabels(labels []StageLabel) { s.labels = labels }
 // rail slot — e.g. addflow's Grow stage wraps GenerateStage (ctor idx=3) but
 // actually sits at rail position 4 (育 GROW) in the 6-segment add rail.
 func (s *Stage) SetRailIndex(idx int) { s.idx = idx }
+
+// SetRailHidden toggles the enso progress rail in renderFrame. Used by
+// transition-art stages (spinners) and terminal completion cards that
+// render their own chromeless hero layout instead of the standard rail.
+func (s *Stage) SetRailHidden(h bool) { s.railHidden = h }
 
 // SetLabel overrides the stage's rendered kanji/kana/English triple. Used
 // in tandem with SetRailIndex when a sibling package reuses an initflow
@@ -201,13 +207,15 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 	}
 
 	header := RenderHeader(s.version, s.projectDir, width, s.ensoSafe)
-	rail := RenderEnsoRail(s.idx, s.labels, width, s.ensoSafe)
 	footer := RenderFooter(keys, width)
 
-	// Chrome budget: header(2) + blank + rail(2) + blank + blank + footer(2) = 9 rows.
-	// Rail is 2 rows (dots + labels); pad accordingly.
 	count := func(s string) int { return strings.Count(s, "\n") + 1 }
-	chromeRows := count(header) + 1 + count(rail) + 1 + 1 + count(footer)
+	chromeRows := count(header) + 1 + 1 + count(footer)
+	var rail string
+	if !s.railHidden {
+		rail = RenderEnsoRail(s.idx, s.labels, width, s.ensoSafe)
+		chromeRows += count(rail) + 1
+	}
 	bodyTarget := height - chromeRows
 	if bodyTarget < 1 {
 		bodyTarget = 1
@@ -221,6 +229,9 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 		body = strings.Join(lines[:bodyTarget], "\n")
 	}
 
+	if s.railHidden {
+		return header + "\n\n" + body + "\n\n" + footer
+	}
 	return header + "\n\n" + rail + "\n\n" + body + "\n\n" + footer
 }
 

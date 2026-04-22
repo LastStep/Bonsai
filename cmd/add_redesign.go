@@ -69,24 +69,23 @@ func runAddRedesign(cmd *cobra.Command, args []string) error {
 
 	// Predicates --------------------------------------------------------
 	observeConfirmed := func(prev []any) bool {
-		// prev layout after splice:
-		//   new-agent happy path:  [0]=agent, [1]=ws, [2]=graft, [3]=observe-bool
-		//   all-installed / tech-lead-req terminal splices: last slot is nil (Yield.Result)
-		//   add-items (Phase 2 TBD)
-		if len(prev) == 0 {
-			return false
+		// ObserveStage is the only stage returning bool. Walk prev for it so
+		// the predicate holds whether evaluated at Grow's Conditional (last
+		// slot = observe bool) or Yield's Conditional (last slot = Grow's nil
+		// result after Grow ran).
+		for _, v := range prev {
+			if b, ok := v.(bool); ok {
+				return b
+			}
 		}
-		b, ok := prev[len(prev)-1].(bool)
-		return ok && b
+		return false
 	}
 	growSucceeded := func(prev []any) bool {
 		if !observeConfirmed(prev) {
 			return false
 		}
-		// grow slot is cursor-1 vs the predicate-eval point. Walk prev from the
-		// tail looking for an error — Grow publishes nil on success.
-		for i := len(prev) - 1; i >= 0; i-- {
-			if e, isErr := prev[i].(error); isErr && e != nil {
+		for _, v := range prev {
+			if e, ok := v.(error); ok && e != nil {
 				return false
 			}
 		}

@@ -128,17 +128,18 @@ func anchorGlyph(i, current int, labels []StageLabel, safe bool) (string, int) {
 	muted := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 
 	if safe {
+		// Uniform 4-cell anchor slot across all states so per-stage label
+		// columns don't shift as the current index advances. Current = bracket
+		// + 2-cell kanji + bracket (4 cells). Done/pending = 1-cell dot padded
+		// with leading + trailing spaces (4 cells, glyph at col 1-2).
 		switch {
 		case i < current:
-			return doneStyle.Render(ensoDone), 1
+			return " " + doneStyle.Render(ensoDone) + "  ", 4
 		case i == current:
-			// Render kanji in a small boxed form: [K] — 4 visible cells
-			// (bracket + 2-cell kanji + bracket). Kanji + brackets are Bark
-			// gold so the current stage reads as the active accent.
 			kanji := labels[i].Kanji
 			return goldStyle.Render("[") + goldStyle.Render(kanji) + goldStyle.Render("]"), 4
 		default:
-			return muted.Render(ensoPending), 1
+			return " " + muted.Render(ensoPending) + "  ", 4
 		}
 	}
 
