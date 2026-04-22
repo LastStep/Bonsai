@@ -1,8 +1,9 @@
 # Plan 25 — README revamp
 
 **Tier:** 1
-**Status:** Active
+**Status:** Complete
 **Agent:** tech-lead
+**Shipped:** 2026-04-22 via PR #61 squash `d6785e7`
 
 ## Goal
 
