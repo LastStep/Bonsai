@@ -142,7 +142,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 				if agentCtx.AgentDisplay == "" {
 					agentCtx.AgentDisplay = catalog.DisplayNameFrom(agentDef.Name)
 				}
-				graft := addflow.NewAddItemsGraft(agentCtx, addflow.GraftContext{
+				graft := addflow.NewAddItemsBranches(agentCtx, addflow.BranchesContext{
 					Cat:       cat,
 					AgentType: agentType,
 					AgentDef:  agentDef,
@@ -173,7 +173,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 				DocsPath:           cfg.DocsPath,
 				ExistingWorkspaces: existingWorkspaces,
 			})
-			graft := addflow.NewNewAgentGraft(agentCtx, addflow.GraftContext{
+			graft := addflow.NewNewAgentBranches(agentCtx, addflow.BranchesContext{
 				Cat:       cat,
 				AgentType: agentType,
 				AgentDef:  agentDef,
@@ -391,10 +391,10 @@ func buildAddGrowAction(
 		outcome.AgentDef = agentDef
 
 		// Locate the GraftResult by type. Both branches emit exactly one.
-		var graft addflow.GraftResult
+		var graft addflow.BranchesResult
 		var graftFound bool
 		for _, v := range prev {
-			if g, ok := v.(addflow.GraftResult); ok {
+			if g, ok := v.(addflow.BranchesResult); ok {
 				graft = g
 				graftFound = true
 				break
@@ -456,9 +456,14 @@ func buildAddGrowAction(
 
 			var errs []error
 			errs = append(errs, generate.AgentWorkspace(cwd, agentDef, installedAgent, cfg, cat, lock, wr, false))
-			errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, wr, false))
-			errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false))
-			errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, wr, false))
+			// Plan 27 §B2: scope path-rules / workflow-skills / settings
+			// regeneration to the single agent being augmented. The all-
+			// agents variants (used by `bonsai update`) would regenerate
+			// files under every installed workspace and flag any user-edited
+			// rule / skill / settings file as a cross-agent conflict.
+			errs = append(errs, generate.PathScopedRulesForAgent(cwd, installedAgent, cfg, cat, lock, wr, false))
+			errs = append(errs, generate.WorkflowSkillsForAgent(cwd, installedAgent, cfg, cat, lock, wr, false))
+			errs = append(errs, generate.SettingsJSONForAgent(cwd, installedAgent, cfg, cat, lock, wr, false))
 			if joined := errors.Join(errs...); joined != nil {
 				outcome.SpinnerErr = joined
 				return joined
@@ -506,9 +511,11 @@ func buildAddGrowAction(
 
 		var errs []error
 		errs = append(errs, generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, wr, false))
-		errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, wr, false))
-		errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false))
-		errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, wr, false))
+		// Plan 27 §B2: see the add-items branch above for rationale — scope
+		// to the single newly-installed agent.
+		errs = append(errs, generate.PathScopedRulesForAgent(cwd, installed, cfg, cat, lock, wr, false))
+		errs = append(errs, generate.WorkflowSkillsForAgent(cwd, installed, cfg, cat, lock, wr, false))
+		errs = append(errs, generate.SettingsJSONForAgent(cwd, installed, cfg, cat, lock, wr, false))
 		if joined := errors.Join(errs...); joined != nil {
 			outcome.SpinnerErr = joined
 			return joined

@@ -44,7 +44,7 @@ func observePressRune(s *ObserveStage, r rune) {
 // upstream results into the stage.
 func TestObserve_SetPriorCapturesFields(t *testing.T) {
 	s := newTestObserve()
-	graft := GraftResult{
+	graft := BranchesResult{
 		Skills:    []string{"s1"},
 		Workflows: []string{"w1"},
 	}
@@ -70,7 +70,7 @@ func TestObserve_SetPriorCapturesFields(t *testing.T) {
 // unknown agent without panicking.
 func TestObserve_SetPriorMissingAgentTolerant(t *testing.T) {
 	s := newTestObserve()
-	s.SetPrior([]any{"unknown-agent", "x/", GraftResult{}})
+	s.SetPrior([]any{"unknown-agent", "x/", BranchesResult{}})
 	if s.agent != "unknown-agent" {
 		t.Fatalf("agent = %q, want unknown-agent", s.agent)
 	}
@@ -81,11 +81,11 @@ func TestObserve_SetPriorMissingAgentTolerant(t *testing.T) {
 
 // TestObserve_SetPriorAddItemsShape verifies SetPrior handles the add-items
 // branch's shorter prev[] slice (no Ground stage → no workspace string).
-// GraftResult is the second slot and must still be captured by type.
+// BranchesResult is the second slot and must still be captured by type.
 func TestObserve_SetPriorAddItemsShape(t *testing.T) {
 	s := newTestObserve()
 	s.SetDefaultWorkspace("backend/")
-	graft := GraftResult{
+	graft := BranchesResult{
 		Skills:   []string{"s1"},
 		Sensors:  []string{"sensor-a"},
 		Routines: []string{"routine-a"},
@@ -176,7 +176,7 @@ func TestObserve_EnterOnBackCancels(t *testing.T) {
 func TestObserve_ViewRendersWorkspace(t *testing.T) {
 	s := newTestObserve()
 	s.SetSize(120, 40)
-	s.SetPrior([]any{"backend", "services/api/", GraftResult{Skills: []string{"s1"}}})
+	s.SetPrior([]any{"backend", "services/api/", BranchesResult{Skills: []string{"s1"}}})
 	out := s.View()
 	if !strings.Contains(out, "services/api/") {
 		t.Fatal("view should contain workspace path")
@@ -187,7 +187,7 @@ func TestObserve_ViewRendersWorkspace(t *testing.T) {
 // confirmation state but preserves prior.
 func TestObserve_ResetClearsConfirmation(t *testing.T) {
 	s := newTestObserve()
-	s.SetPrior([]any{"backend", "ws/", GraftResult{}})
+	s.SetPrior([]any{"backend", "ws/", BranchesResult{}})
 	observePressRune(s, 'y')
 	s.Reset()
 	if s.Done() {

@@ -211,8 +211,14 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 
 	count := func(s string) int { return strings.Count(s, "\n") + 1 }
 	chromeRows := count(header) + 1 + 1 + count(footer)
+	// Rail is hidden when railHidden is set OR the stage uses a negative
+	// rail index sentinel (addflow.StageIdxOffRail = -1). Off-rail stages
+	// still participate in the harness step list but render without a
+	// visible rail tab — used by the Plan 27 rail-shrink for Ground, Grow,
+	// and Conflicts.
+	railHidden := s.railHidden || s.idx < 0
 	var rail string
-	if !s.railHidden {
+	if !railHidden {
 		rail = RenderEnsoRail(s.idx, s.labels, width, s.ensoSafe)
 		chromeRows += count(rail) + 1
 	}
@@ -229,7 +235,7 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 		body = strings.Join(lines[:bodyTarget], "\n")
 	}
 
-	if s.railHidden {
+	if railHidden {
 		return header + "\n\n" + body + "\n\n" + footer
 	}
 	return header + "\n\n" + rail + "\n\n" + body + "\n\n" + footer

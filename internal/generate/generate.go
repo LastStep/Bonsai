@@ -461,9 +461,40 @@ func sortedKeys(m map[string]bool) []string {
 	return keys
 }
 
-// SettingsJSON generates or updates .claude/settings.json with sensor hooks.
-// Settings are written per-workspace so users can launch Claude Code from there directly.
+// SettingsJSON generates or updates .claude/settings.json with sensor hooks
+// for EVERY installed agent. Used by `bonsai update` which regenerates all
+// agents in one pass. `bonsai add` should use SettingsJSONForAgent to scope
+// regeneration to a single agent — otherwise a concurrent `bonsai add` would
+// flag user edits in unrelated agent workspaces as conflicts. Plan 27 §B2.
+//
+// Settings are written per-workspace so users can launch Claude Code from
+// there directly.
 func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
+	for _, installed := range cfg.Agents {
+		if err := writeSettingsJSONForAgent(projectRoot, installed, cat, lock, result, force); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// SettingsJSONForAgent is the single-agent scoped variant of SettingsJSON.
+// Used by `bonsai add` so the regeneration pass only touches the agent being
+// added — prior `bonsai update` leaves SettingsJSON unchanged (still iterates
+// cfg.Agents). Plan 27 §B2 fix for the cross-agent conflict leak that tripped
+// dogfood finding #7b.
+func SettingsJSONForAgent(projectRoot string, agent *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
+	_ = cfg // retained for signature symmetry with the all-agents variant
+	if agent == nil {
+		return nil
+	}
+	return writeSettingsJSONForAgent(projectRoot, agent, cat, lock, result, force)
+}
+
+// writeSettingsJSONForAgent renders .claude/settings.json under the given
+// installed agent's workspace. Shared helper between SettingsJSON (all
+// agents) and SettingsJSONForAgent (single agent).
+func writeSettingsJSONForAgent(projectRoot string, installed *config.InstalledAgent, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	type hookEntry struct {
 		Type    string `json:"type"`
 		Command string `json:"command"`
@@ -474,70 +505,68 @@ func SettingsJSON(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Ca
 	}
 	type groupKey struct{ event, matcher string }
 
-	for _, installed := range cfg.Agents {
-		settingsPath := filepath.Join(projectRoot, installed.Workspace, ".claude", "settings.json")
+	settingsPath := filepath.Join(projectRoot, installed.Workspace, ".claude", "settings.json")
 
-		existing := make(map[string]interface{})
-		if data, err := os.ReadFile(settingsPath); err == nil {
-			_ = json.Unmarshal(data, &existing)
-		}
-
-		groups := make(map[groupKey][]string)
-
-		for _, sensorName := range installed.Sensors {
-			var event, matcher string
-			if sensor := cat.GetSensor(sensorName); sensor != nil {
-				event = sensor.Event
-				matcher = sensor.Matcher
-			} else if installed.CustomItems != nil {
-				if meta, ok := installed.CustomItems[sensorName]; ok && meta.Event != "" {
-					event = meta.Event
-					matcher = meta.Matcher
-				}
-			}
-			if event == "" {
-				continue
-			}
-			k := groupKey{event, matcher}
-			scriptPath := installed.Workspace + "agent/Sensors/" + sensorName + ".sh"
-			cmd := fmt.Sprintf(
-				`bash -c 'r="$PWD"; while [ "$r" != "/" ] && [ ! -f "$r/.bonsai.yaml" ]; do r=$(dirname "$r"); done; bash "$r/%s" "$r"'`,
-				scriptPath,
-			)
-			groups[k] = append(groups[k], cmd)
-		}
-
-		hooksConfig := make(map[string][]hookGroup)
-		for k, commands := range groups {
-			var hooks []hookEntry
-			for _, cmd := range commands {
-				hooks = append(hooks, hookEntry{Type: "command", Command: cmd})
-			}
-			g := hookGroup{Hooks: hooks}
-			if k.matcher != "" {
-				g.Matcher = k.matcher
-			}
-			hooksConfig[k.event] = append(hooksConfig[k.event], g)
-		}
-
-		if len(hooksConfig) > 0 {
-			existing["hooks"] = hooksConfig
-		} else {
-			delete(existing, "hooks")
-		}
-
-		if err := os.MkdirAll(filepath.Dir(settingsPath), 0755); err != nil {
-			return err
-		}
-		data, err := json.MarshalIndent(existing, "", "  ")
-		if err != nil {
-			return err
-		}
-		content := append(data, '\n')
-		relPath := filepath.Join(installed.Workspace, ".claude", "settings.json")
-		r := writeFile(projectRoot, relPath, content, "generated:settings-json", lock, force)
-		result.Add(r)
+	existing := make(map[string]interface{})
+	if data, err := os.ReadFile(settingsPath); err == nil {
+		_ = json.Unmarshal(data, &existing)
 	}
+
+	groups := make(map[groupKey][]string)
+
+	for _, sensorName := range installed.Sensors {
+		var event, matcher string
+		if sensor := cat.GetSensor(sensorName); sensor != nil {
+			event = sensor.Event
+			matcher = sensor.Matcher
+		} else if installed.CustomItems != nil {
+			if meta, ok := installed.CustomItems[sensorName]; ok && meta.Event != "" {
+				event = meta.Event
+				matcher = meta.Matcher
+			}
+		}
+		if event == "" {
+			continue
+		}
+		k := groupKey{event, matcher}
+		scriptPath := installed.Workspace + "agent/Sensors/" + sensorName + ".sh"
+		cmd := fmt.Sprintf(
+			`bash -c 'r="$PWD"; while [ "$r" != "/" ] && [ ! -f "$r/.bonsai.yaml" ]; do r=$(dirname "$r"); done; bash "$r/%s" "$r"'`,
+			scriptPath,
+		)
+		groups[k] = append(groups[k], cmd)
+	}
+
+	hooksConfig := make(map[string][]hookGroup)
+	for k, commands := range groups {
+		var hooks []hookEntry
+		for _, cmd := range commands {
+			hooks = append(hooks, hookEntry{Type: "command", Command: cmd})
+		}
+		g := hookGroup{Hooks: hooks}
+		if k.matcher != "" {
+			g.Matcher = k.matcher
+		}
+		hooksConfig[k.event] = append(hooksConfig[k.event], g)
+	}
+
+	if len(hooksConfig) > 0 {
+		existing["hooks"] = hooksConfig
+	} else {
+		delete(existing, "hooks")
+	}
+
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(existing, "", "  ")
+	if err != nil {
+		return err
+	}
+	content := append(data, '\n')
+	relPath := filepath.Join(installed.Workspace, ".claude", "settings.json")
+	r := writeFile(projectRoot, relPath, content, "generated:settings-json", lock, force)
+	result.Add(r)
 	return nil
 }
 
@@ -1060,95 +1089,145 @@ func RoutineDashboard(projectRoot string, workspaceRoot string, installed *confi
 	return nil
 }
 
-// PathScopedRules generates .claude/rules/skill-{name}.md files for skills
-// that have triggers.paths defined. These auto-load when Claude reads matching files.
+// PathScopedRules generates .claude/rules/skill-{name}.md files for EVERY
+// installed agent's skills that have triggers.paths defined. Used by
+// `bonsai update` which regenerates all agents. `bonsai add` should call
+// PathScopedRulesForAgent instead to scope regeneration to the agent being
+// added and avoid flagging unrelated agents' user-edited rule files as
+// conflicts. Plan 27 §B2.
+//
+// These auto-load when Claude reads matching files.
 func PathScopedRules(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	for _, installed := range cfg.Agents {
-		for _, skillName := range installed.Skills {
-			item := cat.GetSkill(skillName)
-			if item == nil || item.Triggers == nil || len(item.Triggers.Paths) == 0 {
-				continue
-			}
-
-			// Build content
-			var lines []string
-			lines = append(lines, "---")
-			lines = append(lines, "paths:")
-			for _, p := range item.Triggers.Paths {
-				lines = append(lines, fmt.Sprintf("  - \"%s\"", p))
-			}
-			lines = append(lines, "---", "")
-			lines = append(lines, fmt.Sprintf("When working with files matching these paths, load and follow the **%s** skill at `%sagent/Skills/%s.md`.",
-				item.DisplayName, installed.Workspace, skillName))
-
-			if len(item.Triggers.Scenarios) > 0 {
-				lines = append(lines, "", "Activate when:")
-				for _, s := range item.Triggers.Scenarios {
-					lines = append(lines, "- "+s)
-				}
-			}
-			lines = append(lines, "")
-
-			content := []byte(strings.Join(lines, "\n"))
-			relPath := filepath.Join(installed.Workspace, ".claude", "rules", "skill-"+skillName+".md")
-			r := writeFile(projectRoot, relPath, content, "generated:rule-skill-"+skillName, lock, force)
-			result.Add(r)
-		}
+		writePathScopedRulesForAgent(projectRoot, installed, cat, lock, result, force)
 	}
 	return nil
 }
 
+// PathScopedRulesForAgent is the single-agent scoped variant of
+// PathScopedRules. Used by `bonsai add` so the regeneration pass only touches
+// the agent being added. Plan 27 §B2 fix for the cross-agent conflict leak
+// that tripped dogfood finding #7b — iterating cfg.Agents here regenerates
+// rule files in unrelated workspaces, and `writeFile` → `lock.IsModified`
+// then flags any user-edited rule as a conflict.
+func PathScopedRulesForAgent(projectRoot string, agent *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
+	_ = cfg // retained for signature symmetry with the all-agents variant
+	if agent == nil {
+		return nil
+	}
+	writePathScopedRulesForAgent(projectRoot, agent, cat, lock, result, force)
+	return nil
+}
+
+// writePathScopedRulesForAgent renders .claude/rules/skill-*.md for the skills
+// belonging to a single installed agent. Shared helper between PathScopedRules
+// and PathScopedRulesForAgent.
+func writePathScopedRulesForAgent(projectRoot string, installed *config.InstalledAgent, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) {
+	for _, skillName := range installed.Skills {
+		item := cat.GetSkill(skillName)
+		if item == nil || item.Triggers == nil || len(item.Triggers.Paths) == 0 {
+			continue
+		}
+
+		// Build content
+		var lines []string
+		lines = append(lines, "---")
+		lines = append(lines, "paths:")
+		for _, p := range item.Triggers.Paths {
+			lines = append(lines, fmt.Sprintf("  - \"%s\"", p))
+		}
+		lines = append(lines, "---", "")
+		lines = append(lines, fmt.Sprintf("When working with files matching these paths, load and follow the **%s** skill at `%sagent/Skills/%s.md`.",
+			item.DisplayName, installed.Workspace, skillName))
+
+		if len(item.Triggers.Scenarios) > 0 {
+			lines = append(lines, "", "Activate when:")
+			for _, s := range item.Triggers.Scenarios {
+				lines = append(lines, "- "+s)
+			}
+		}
+		lines = append(lines, "")
+
+		content := []byte(strings.Join(lines, "\n"))
+		relPath := filepath.Join(installed.Workspace, ".claude", "rules", "skill-"+skillName+".md")
+		r := writeFile(projectRoot, relPath, content, "generated:rule-skill-"+skillName, lock, force)
+		result.Add(r)
+	}
+}
+
 // WorkflowSkills generates .claude/skills/{name}/SKILL.md files for curated
-// workflows, enabling /slash-command invocation and description-based auto-invocation.
+// workflows across EVERY installed agent, enabling /slash-command invocation
+// and description-based auto-invocation. Used by `bonsai update` which
+// regenerates all agents. `bonsai add` should call WorkflowSkillsForAgent
+// instead so its regeneration pass does not touch unrelated agent workspaces
+// and flag user-edited SKILL.md files as conflicts. Plan 27 §B2.
 func WorkflowSkills(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	for _, installed := range cfg.Agents {
-		for _, wfName := range installed.Workflows {
-			if !CuratedSlashWorkflows[wfName] {
-				continue
-			}
-			item := cat.GetWorkflow(wfName)
-			if item == nil {
-				continue
-			}
-
-			var lines []string
-			lines = append(lines, "---")
-			lines = append(lines, fmt.Sprintf("name: %s", wfName))
-
-			// Description from scenarios or fallback
-			desc := item.Description
-			if item.Triggers != nil && len(item.Triggers.Scenarios) > 0 {
-				desc = strings.Join(item.Triggers.Scenarios, ". ")
-			}
-			lines = append(lines, fmt.Sprintf("description: %s", desc))
-
-			// when_to_use from scenarios
-			if item.Triggers != nil && len(item.Triggers.Scenarios) > 0 {
-				lines = append(lines, fmt.Sprintf("when_to_use: %s", strings.Join(item.Triggers.Scenarios, "; ")))
-			}
-
-			lines = append(lines, "---", "")
-			lines = append(lines, fmt.Sprintf("Load and follow the **%s** workflow at `%sagent/Workflows/%s.md`.",
-				item.DisplayName, installed.Workspace, wfName))
-
-			// Examples section
-			if item.Triggers != nil && len(item.Triggers.Examples) > 0 {
-				lines = append(lines, "", "## Examples", "")
-				for _, ex := range item.Triggers.Examples {
-					lines = append(lines, fmt.Sprintf("> **User:** \"%s\"", ex.Prompt))
-					lines = append(lines, fmt.Sprintf("> **Action:** %s", ex.Action))
-					lines = append(lines, "")
-				}
-			}
-			lines = append(lines, "")
-
-			content := []byte(strings.Join(lines, "\n"))
-			relPath := filepath.Join(installed.Workspace, ".claude", "skills", wfName, "SKILL.md")
-			r := writeFile(projectRoot, relPath, content, "generated:skill-workflow-"+wfName, lock, force)
-			result.Add(r)
-		}
+		writeWorkflowSkillsForAgent(projectRoot, installed, cat, lock, result, force)
 	}
 	return nil
+}
+
+// WorkflowSkillsForAgent is the single-agent scoped variant of WorkflowSkills.
+// Used by `bonsai add`. Plan 27 §B2 fix for the cross-agent conflict leak.
+func WorkflowSkillsForAgent(projectRoot string, agent *config.InstalledAgent, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
+	_ = cfg // retained for signature symmetry with the all-agents variant
+	if agent == nil {
+		return nil
+	}
+	writeWorkflowSkillsForAgent(projectRoot, agent, cat, lock, result, force)
+	return nil
+}
+
+// writeWorkflowSkillsForAgent renders .claude/skills/<workflow>/SKILL.md for
+// the curated workflows belonging to a single installed agent. Shared helper
+// between WorkflowSkills and WorkflowSkillsForAgent.
+func writeWorkflowSkillsForAgent(projectRoot string, installed *config.InstalledAgent, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) {
+	for _, wfName := range installed.Workflows {
+		if !CuratedSlashWorkflows[wfName] {
+			continue
+		}
+		item := cat.GetWorkflow(wfName)
+		if item == nil {
+			continue
+		}
+
+		var lines []string
+		lines = append(lines, "---")
+		lines = append(lines, fmt.Sprintf("name: %s", wfName))
+
+		// Description from scenarios or fallback
+		desc := item.Description
+		if item.Triggers != nil && len(item.Triggers.Scenarios) > 0 {
+			desc = strings.Join(item.Triggers.Scenarios, ". ")
+		}
+		lines = append(lines, fmt.Sprintf("description: %s", desc))
+
+		// when_to_use from scenarios
+		if item.Triggers != nil && len(item.Triggers.Scenarios) > 0 {
+			lines = append(lines, fmt.Sprintf("when_to_use: %s", strings.Join(item.Triggers.Scenarios, "; ")))
+		}
+
+		lines = append(lines, "---", "")
+		lines = append(lines, fmt.Sprintf("Load and follow the **%s** workflow at `%sagent/Workflows/%s.md`.",
+			item.DisplayName, installed.Workspace, wfName))
+
+		// Examples section
+		if item.Triggers != nil && len(item.Triggers.Examples) > 0 {
+			lines = append(lines, "", "## Examples", "")
+			for _, ex := range item.Triggers.Examples {
+				lines = append(lines, fmt.Sprintf("> **User:** \"%s\"", ex.Prompt))
+				lines = append(lines, fmt.Sprintf("> **Action:** %s", ex.Action))
+				lines = append(lines, "")
+			}
+		}
+		lines = append(lines, "")
+
+		content := []byte(strings.Join(lines, "\n"))
+		relPath := filepath.Join(installed.Workspace, ".claude", "skills", wfName, "SKILL.md")
+		r := writeFile(projectRoot, relPath, content, "generated:skill-workflow-"+wfName, lock, force)
+		result.Add(r)
+	}
 }
 
 // triggerSection generates a markdown trigger header from catalog triggers metadata.

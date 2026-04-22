@@ -42,13 +42,20 @@ type GroundContext struct {
 	ExistingWorkspaces map[string]bool // keys already taken by installed agents
 }
 
+// groundLabel is the kanji/kana/English triple shown in the Ground stage's
+// body title. Plan 27 shrunk the rail to four visible stages, so Ground no
+// longer has a rail tab — its rail index is StageIdxOffRail and the rail row
+// is suppressed by the base Stage's renderFrame. The body title still reads
+// from this local label so the stage retains its bonsai-metaphor identity.
+var groundLabel = initflow.StageLabel{Kanji: "地", Kana: "じ", English: "GROUND"}
+
 // NewGroundStage constructs the Ground stage. When agentType is "tech-lead"
 // the stage is in auto-complete mode — AutoComplete() returns (workspace,
 // true) and the harness's NewLazy wrapper should skip it.
 func NewGroundStage(ctx initflow.StageContext, gc GroundContext) *GroundStage {
-	label := StageLabels[StageIdxGround]
+	label := groundLabel
 	base := initflow.NewStage(
-		StageIdxGround,
+		StageIdxOffRail,
 		label,
 		label.English,
 		ctx.Version,
@@ -57,6 +64,7 @@ func NewGroundStage(ctx initflow.StageContext, gc GroundContext) *GroundStage {
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.SetRailLabels(StageLabels)
 
 	ti := textinput.New()
 	ti.Prompt = "❯ "

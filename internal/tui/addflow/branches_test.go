@@ -46,27 +46,27 @@ func newTestGraftCatalog() (*catalog.Catalog, *catalog.AgentDef) {
 	return cat, agentDef
 }
 
-func newTestGraft() *GraftStage {
+func newTestGraft() *BranchesStage {
 	cat, agentDef := newTestGraftCatalog()
-	return NewNewAgentGraft(initflow.StageContext{
+	return NewNewAgentBranches(initflow.StageContext{
 		StartedAt: time.Now(),
-	}, GraftContext{
+	}, BranchesContext{
 		Cat:       cat,
 		AgentType: "backend",
 		AgentDef:  agentDef,
 	})
 }
 
-func graftPressKey(s *GraftStage, k tea.KeyType) {
+func graftPressKey(s *BranchesStage, k tea.KeyType) {
 	m, _ := s.Update(tea.KeyMsg{Type: k})
-	if gs, ok := m.(*GraftStage); ok {
+	if gs, ok := m.(*BranchesStage); ok {
 		*s = *gs
 	}
 }
 
-func graftPressRune(s *GraftStage, r rune) {
+func graftPressRune(s *BranchesStage, r rune) {
 	m, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
-	if gs, ok := m.(*GraftStage); ok {
+	if gs, ok := m.(*BranchesStage); ok {
 		*s = *gs
 	}
 }
@@ -76,7 +76,7 @@ func graftPressRune(s *GraftStage, r rune) {
 func TestGraft_FiltersRoutineCheck(t *testing.T) {
 	s := newTestGraft()
 	for _, c := range s.categories {
-		if c.key != graftCatSensors {
+		if c.key != branchCatSensors {
 			continue
 		}
 		for _, it := range c.items {
@@ -94,7 +94,7 @@ func TestGraft_RequiredPreSelected(t *testing.T) {
 	// proto-req is in category protocols.
 	var protoIdx int = -1
 	for i, c := range s.categories {
-		if c.key == graftCatProtocols {
+		if c.key == branchCatProtocols {
 			protoIdx = i
 			break
 		}
@@ -120,7 +120,7 @@ func TestGraft_DefaultPreSelectedButToggleable(t *testing.T) {
 	// beta-skill is default in category skills.
 	var skillIdx int = -1
 	for i, c := range s.categories {
-		if c.key == graftCatSkills {
+		if c.key == branchCatSkills {
 			skillIdx = i
 			break
 		}
@@ -185,13 +185,13 @@ func TestGraft_EnterAdvances(t *testing.T) {
 	}
 }
 
-// TestGraft_ResultShape verifies Result returns a GraftResult with the
+// TestGraft_ResultShape verifies Result returns a BranchesResult with the
 // expected pre-selected items (required + defaults).
 func TestGraft_ResultShape(t *testing.T) {
 	s := newTestGraft()
-	res, ok := s.Result().(GraftResult)
+	res, ok := s.Result().(BranchesResult)
 	if !ok {
-		t.Fatalf("Result type = %T, want GraftResult", s.Result())
+		t.Fatalf("Result type = %T, want BranchesResult", s.Result())
 	}
 	if !reflect.DeepEqual(res.Skills, []string{"beta-skill"}) {
 		t.Fatalf("Skills = %v, want [beta-skill]", res.Skills)
@@ -217,7 +217,7 @@ func TestGraft_AddItemsFiltersInstalled(t *testing.T) {
 		Sensors:   []string{"sensor-a"},
 		Routines:  []string{"routine-a"},
 	}
-	s := NewAddItemsGraft(initflow.StageContext{StartedAt: time.Now()}, GraftContext{
+	s := NewAddItemsBranches(initflow.StageContext{StartedAt: time.Now()}, BranchesContext{
 		Cat:       cat,
 		AgentType: "backend",
 		AgentDef:  agentDef,
@@ -242,7 +242,7 @@ func TestGraft_AddItemsPartialDropsEmpty(t *testing.T) {
 		Sensors:   []string{"sensor-a"},    // empty after filter
 		Routines:  []string{"routine-a"},   // empty after filter
 	}
-	s := NewAddItemsGraft(initflow.StageContext{StartedAt: time.Now()}, GraftContext{
+	s := NewAddItemsBranches(initflow.StageContext{StartedAt: time.Now()}, BranchesContext{
 		Cat:       cat,
 		AgentType: "backend",
 		AgentDef:  agentDef,
@@ -251,7 +251,7 @@ func TestGraft_AddItemsPartialDropsEmpty(t *testing.T) {
 	if len(s.categories) != 1 {
 		t.Fatalf("len(categories) = %d, want 1 (only skills should remain)", len(s.categories))
 	}
-	if s.categories[0].key != graftCatSkills {
+	if s.categories[0].key != branchCatSkills {
 		t.Fatalf("remaining tab = %q, want skills", s.categories[0].key)
 	}
 	if len(s.categories[0].items) != 1 || s.categories[0].items[0].name != "beta-skill" {
@@ -268,7 +268,7 @@ func TestGraft_TabCountUpdatesLive(t *testing.T) {
 	// Find skills tab.
 	var skillIdx = -1
 	for i, c := range s.categories {
-		if c.key == graftCatSkills {
+		if c.key == branchCatSkills {
 			skillIdx = i
 			break
 		}
@@ -326,7 +326,7 @@ func TestGraft_NewAgentUnaffectedByFilter(t *testing.T) {
 		Sensors:   []string{"sensor-a"},
 		Routines:  []string{"routine-a"},
 	}
-	s := NewNewAgentGraft(initflow.StageContext{StartedAt: time.Now()}, GraftContext{
+	s := NewNewAgentBranches(initflow.StageContext{StartedAt: time.Now()}, BranchesContext{
 		Cat:       cat,
 		AgentType: "backend",
 		AgentDef:  agentDef,
@@ -339,7 +339,7 @@ func TestGraft_NewAgentUnaffectedByFilter(t *testing.T) {
 	// Skills tab should carry both alpha + beta — filter leak would drop them.
 	var skillIdx = -1
 	for i, c := range s.categories {
-		if c.key == graftCatSkills {
+		if c.key == branchCatSkills {
 			skillIdx = i
 			break
 		}

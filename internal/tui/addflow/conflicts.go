@@ -50,10 +50,17 @@ type ConflictsStage struct {
 // it simply renders an empty body with a single "nothing to reconcile" line
 // and completes on Enter. Callers should gate on wr.HasConflicts() before
 // splicing.
+// conflictsLabel is the kanji/kana/English triple shown in the Conflicts
+// stage body title. Plan 27 shrunk the rail to four visible stages so the
+// Conflicts stage renders off-rail; its rail index is StageIdxOffRail and
+// the rail row is suppressed. The body still reads "衝 CONFLICT" so the
+// Bonsai-metaphor identity is retained.
+var conflictsLabel = initflow.StageLabel{Kanji: "衝", Kana: "しょう", English: "CONFLICT"}
+
 func NewConflictsStage(ctx initflow.StageContext, wr *generate.WriteResult) *ConflictsStage {
-	label := StageLabels[StageIdxConflicts]
+	label := conflictsLabel
 	base := initflow.NewStage(
-		StageIdxConflicts,
+		StageIdxOffRail,
 		label,
 		label.English,
 		ctx.Version,

@@ -607,3 +607,123 @@ func TestConditionalLazyBuilderFiresOncePerActivePass(t *testing.T) {
 		t.Fatalf("after Reset+Init: buildCalls = %d, want 2 (one re-fire)", buildCalls)
 	}
 }
+
+// ─── LazyGroup re-splice (Plan 27 §B1) ────────────────────────────────────
+
+// answerableFakeStep is a fakeStep that can be toggled between different
+// result values on demand, and whose Done flag the test flips explicitly.
+// Used to simulate an upstream Select step whose pick drives the LazyGroup
+// branch shape: first "foo", then "bar" after an esc-back re-pick.
+type answerableFakeStep struct {
+	fakeStep
+}
+
+func (f *answerableFakeStep) answer(v any) {
+	f.result = v
+	f.done = true
+}
+
+// TestLazyGroupResplicesOnEscBack is the B1 regression guard. Pre-fix, a
+// LazyGroup was replaced in h.steps by its children on first splice and the
+// original reference was lost — esc-back + re-picking the upstream answer
+// landed the user back on the previously-spliced children with stale data
+// baked in. The fix adds spliceRecord tracking in Harness so esc-back can
+// unsplice (remove children, reinstate the group, Reset it) and the next
+// forward advance invokes Splice with the new prior results.
+//
+// Scenario exercised end-to-end through the harness reducer:
+//
+//  1. Steps: [answerableFakeStep, LazyGroup(fn)]
+//     fn(prev) inspects prev[0] and returns child sets keyed on that value:
+//     "foo" → [fakeFoo]; "bar" → [fakeBar]; anything else → nil.
+//  2. User "picks foo" (step 0 sets Done + result="foo"); harness advances.
+//  3. fn should fire once with prev=["foo"] and splice fakeFoo into h.steps.
+//  4. User hits esc. Cursor pops to step 0. The LazyGroup should be reinstated
+//     at its original slot; h.steps should match the declaration-time shape.
+//  5. User "picks bar" (step 0 Done + result="bar"); harness advances.
+//  6. fn should fire a second time with prev=["bar"] and splice fakeBar —
+//     NOT fakeFoo. Without the B1 fix, the old children stay in place and
+//     fakeBar never appears.
+func TestLazyGroupResplicesOnEscBack(t *testing.T) {
+	picker := &answerableFakeStep{fakeStep: fakeStep{title: "pick"}}
+
+	var buildCalls int
+	var lastPrev []any
+	fakeFoo := newFake("spliced-foo")
+	fakeBar := newFake("spliced-bar")
+
+	group := NewLazyGroup("Branch", func(prev []any) []Step {
+		buildCalls++
+		lastPrev = append([]any(nil), prev...)
+		if len(prev) == 0 {
+			return nil
+		}
+		switch prev[0] {
+		case "foo":
+			return []Step{fakeFoo}
+		case "bar":
+			return []Step{fakeBar}
+		}
+		return nil
+	})
+
+	h := New("BANNER", "TEST", []Step{picker, group})
+	// Prime dimensions so rebroadcastWindowSize no-ops cleanly.
+	_, _ = h.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+	// Step 1: pick "foo" and let the harness advance.
+	picker.answer("foo")
+	_, _ = h.Update(runeKey('x'))
+
+	if buildCalls != 1 {
+		t.Fatalf("first advance: build calls = %d, want 1", buildCalls)
+	}
+	if len(lastPrev) != 1 || lastPrev[0] != "foo" {
+		t.Fatalf("first splice prev = %v, want [foo]", lastPrev)
+	}
+	if h.cursor != 1 {
+		t.Fatalf("after first splice: cursor = %d, want 1", h.cursor)
+	}
+	if len(h.steps) != 2 || h.steps[1] != Step(fakeFoo) {
+		t.Fatalf("after first splice: h.steps = %v, want [picker, fakeFoo]", h.steps)
+	}
+
+	// Step 2: user hits esc to go back. The harness should pop the cursor to
+	// 0, unsplice the group (removing fakeFoo, reinstating the group), and
+	// Reset the picker so its form is live again.
+	_, _ = h.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	if h.cursor != 0 {
+		t.Fatalf("after esc: cursor = %d, want 0", h.cursor)
+	}
+	if len(h.steps) != 2 {
+		t.Fatalf("after esc: len(h.steps) = %d, want 2 (group reinstated)", len(h.steps))
+	}
+	if _, ok := h.steps[1].(*LazyGroup); !ok {
+		t.Fatalf("after esc: h.steps[1] = %T, want *LazyGroup (unspliced)", h.steps[1])
+	}
+	// Group must be reset so Spliced() reports false for the next advance.
+	if grp, ok := h.steps[1].(*LazyGroup); ok && grp.Spliced() {
+		t.Fatalf("after esc: LazyGroup.Spliced() = true, want false (not reset)")
+	}
+
+	// Step 3: re-pick "bar" on the same picker. The picker is still the same
+	// instance — its done flag needs to flip back to false so the harness
+	// doesn't treat it as already-advanced; the answer helper replaces the
+	// result value and flips done.
+	picker.done = false
+	picker.answer("bar")
+	_, _ = h.Update(runeKey('y'))
+
+	if buildCalls != 2 {
+		t.Fatalf("after re-advance: build calls = %d, want 2 (splice re-fired)", buildCalls)
+	}
+	if len(lastPrev) != 1 || lastPrev[0] != "bar" {
+		t.Fatalf("second splice prev = %v, want [bar]", lastPrev)
+	}
+	if h.cursor != 1 {
+		t.Fatalf("after re-advance: cursor = %d, want 1", h.cursor)
+	}
+	if len(h.steps) != 2 || h.steps[1] != Step(fakeBar) {
+		t.Fatalf("after re-advance: h.steps = %v, want [picker, fakeBar]", h.steps)
+	}
+}
