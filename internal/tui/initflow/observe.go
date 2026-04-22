@@ -426,10 +426,12 @@ func (s *ObserveStage) renderCTA() string {
 	if name == "" {
 		name = "project"
 	}
-	approx := len(s.soil) + len(s.branches.Skills) + len(s.branches.Workflows) +
-		len(s.branches.Protocols) + len(s.branches.Sensors) + len(s.branches.Routines)
 
-	top := fmt.Sprintf("Plant ~%d files into ", approx)
+	// File count intentionally omitted: pre-generate we know pick counts but
+	// not the multi-file-per-pick expansion (scaffolding manifests + core +
+	// chrome), so any number here would mislead. PlantedStage renders the
+	// true write count post-generate.
+	top := "Plant a workspace into "
 	prompt := dim.Render("Existing files will be offered for merge · nothing overwritten without your say-so")
 
 	cancelLabel := "[ CANCEL ]"

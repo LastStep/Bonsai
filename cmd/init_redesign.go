@@ -137,10 +137,21 @@ func runInit(cmd *cobra.Command, args []string) error {
 			// Planted is wrapped in NewLazy so the ability counts rendered in
 			// the SUMMARY panel reflect the live `installed` struct populated
 			// by the Generate action, rather than agent-def defaults captured
-			// at step-declaration time.
-			harness.NewLazy("Planted", func(_ []any) harness.Step {
+			// at step-declaration time. The ctx.StationDir is also refreshed
+			// from the Vessel result so SUMMARY + tree render the user's
+			// chosen station path instead of the "station/" placeholder.
+			harness.NewLazy("Planted", func(prev []any) harness.Step {
+				plantedCtx := ctx
+				if vessel, ok := prev[0].(map[string]string); ok {
+					if s := strings.TrimSpace(vessel["station"]); s != "" {
+						if !strings.HasSuffix(s, "/") {
+							s += "/"
+						}
+						plantedCtx.StationDir = s
+					}
+				}
 				summary := plantedSummary(installed)
-				return initflow.NewPlantedStage(ctx, &wr, summary)
+				return initflow.NewPlantedStage(plantedCtx, &wr, summary)
 			}),
 			generateSucceeded,
 		),
