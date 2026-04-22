@@ -79,7 +79,7 @@ curl -sL https://github.com/LastStep/Bonsai/releases/latest/download/bonsai_Linu
 sudo mv bonsai /usr/local/bin/
 ```
 
-**From source** (Go 1.24+):
+**From source** (Go 1.25+):
 
 ```bash
 go install github.com/LastStep/Bonsai/cmd/bonsai@latest

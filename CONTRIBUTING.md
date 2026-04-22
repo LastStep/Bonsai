@@ -4,7 +4,7 @@ Thanks for your interest in contributing to Bonsai! This guide covers everything
 
 ## Development Setup
 
-**Requirements:** Go 1.24+
+**Requirements:** Go 1.25+
 
 ```bash
 git clone https://github.com/LastStep/Bonsai.git

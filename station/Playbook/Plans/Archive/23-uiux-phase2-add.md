@@ -1,7 +1,7 @@
 # Plan 23 — UI/UX Overhaul Phase 2: `bonsai add` Cinematic Port
 
 **Tier:** 2 (Feature)
-**Status:** Draft
+**Status:** Complete
 **Agent:** general-purpose (worktree isolation)
 **Source:** User request 2026-04-22 — Plan 22 complete; UI overhaul moves from `init` to the remaining user-facing commands. `bonsai add` is iteration 1 (closest shape match to init, highest post-init traffic).
 

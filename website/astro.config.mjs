@@ -9,7 +9,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Bonsai',
-      description: 'A structured language for working with AI agents',
+      description: 'A workspace for your coding agent',
       social: [
         {
           icon: 'github',
