@@ -77,6 +77,25 @@ func (lf *LockFile) Untrack(relPath string) {
 	delete(lf.Files, relPath)
 }
 
+// ConflictAction describes the resolution the user selected for a single
+// conflict-file entry during the cinematic ConflictsStage. Consumed by
+// applyCinematicConflictPicks in cmd/add_redesign.go, which translates the
+// per-file action into the WriteResult.ForceSelected + optional .bak write
+// that the legacy buildConflictSteps / applyConflictPicks primitives
+// perform as a bulk two-step form.
+type ConflictAction int
+
+const (
+	// ConflictActionKeep keeps the user's local edits — no write happens.
+	ConflictActionKeep ConflictAction = iota
+	// ConflictActionOverwrite overwrites the local file with the source
+	// content. No backup is created.
+	ConflictActionOverwrite
+	// ConflictActionBackup writes the current local file to `<path>.bak`
+	// and then overwrites with source content.
+	ConflictActionBackup
+)
+
 // IsModified checks whether the file on disk differs from the lock file hash.
 // Returns exists=false if the file is not on disk (safe to write).
 // Returns modified=true if the file exists but differs from the lock hash,

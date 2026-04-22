@@ -21,32 +21,38 @@ import (
 )
 
 // Stage indices in the add-flow rail. Kept as named constants so ctors and
-// splicers reference them by name rather than literal integers.
+// splicers reference them by name rather than literal integers. Plan 23
+// Phase 2 inserted Conflicts between Grow and Yield; the rail now carries
+// seven segments (six default + Conflicts visible only when writes collide).
 const (
-	StageIdxSelect  = 0
-	StageIdxGround  = 1
-	StageIdxGraft   = 2
-	StageIdxObserve = 3
-	StageIdxGrow    = 4
-	StageIdxYield   = 5
+	StageIdxSelect    = 0
+	StageIdxGround    = 1
+	StageIdxGraft     = 2
+	StageIdxObserve   = 3
+	StageIdxGrow      = 4
+	StageIdxConflicts = 5
+	StageIdxYield     = 6
 )
 
-// StageLabels holds the six canonical add-flow stage labels in order.
+// StageLabels holds the seven canonical add-flow stage labels in order.
 // Matches Plan 23 decision Q2 — bonsai-raising metaphor extended to the add
-// journey.
+// journey; Phase 2 added Conflicts (衝 しょう) between Grow and Yield so the
+// rail reflects the ConflictsStage when it renders.
 //
-//	選 えらぶ  Select   — pick the agent
-//	地 じ      Ground   — workspace (skipped for tech-lead)
-//	接 つぐ    Graft    — abilities (skills/workflows/protocols/sensors/routines)
-//	観 みる    Observe  — one last look before the write
-//	育 そだつ  Grow     — the write animation
-//	結 むすぶ  Yield    — completion card
+//	選 えらぶ    Select    — pick the agent
+//	地 じ        Ground    — workspace (skipped for tech-lead)
+//	接 つぐ      Graft     — abilities (skills/workflows/protocols/sensors/routines)
+//	観 みる      Observe   — one last look before the write
+//	育 そだつ    Grow      — the write animation
+//	衝 しょう    Conflicts — reconcile user-edited files (optional)
+//	結 むすぶ    Yield     — completion card
 var StageLabels = []initflow.StageLabel{
 	{Kanji: "選", Kana: "えらぶ", English: "SELECT"},
 	{Kanji: "地", Kana: "じ", English: "GROUND"},
 	{Kanji: "接", Kana: "つぐ", English: "GRAFT"},
 	{Kanji: "観", Kana: "みる", English: "OBSERVE"},
 	{Kanji: "育", Kana: "そだつ", English: "GROW"},
+	{Kanji: "衝", Kana: "しょう", English: "CONFLICT"},
 	{Kanji: "結", Kana: "むすぶ", English: "YIELD"},
 }
 
