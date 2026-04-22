@@ -240,7 +240,9 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if outcome.SpinnerErr != nil {
-		tui.Warning("Generation error: " + outcome.SpinnerErr.Error())
+		// GrowStage already surfaced the error in-frame via
+		// initflow.GenerateStage.stateError and waited for a keypress;
+		// the terminal has been cleared, so no post-harness Warning here.
 		return nil
 	}
 

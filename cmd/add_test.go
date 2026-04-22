@@ -315,7 +315,7 @@ func captureStdout(t *testing.T, fn func()) string {
 	return <-done
 }
 
-// TestApplyCinematicConflictPicks_DroppedListSorted verifies the dropped-
+// TestApplyCinematicConflictPicks_DroppedListContainsAll verifies the dropped-
 // path warning text is deterministic — implementation may add the paths in
 // map-iteration order, so the user-facing warning could shuffle between
 // runs. This test does NOT enforce a sort; it documents the current
@@ -326,7 +326,7 @@ func captureStdout(t *testing.T, fn func()) string {
 //
 // Kept as a smoke test — assert only that every dropped path appears
 // somewhere in the warning, not the order.
-func TestApplyCinematicConflictPicks_DroppedListSorted(t *testing.T) {
+func TestApplyCinematicConflictPicks_DroppedListContainsAll(t *testing.T) {
 	root := t.TempDir()
 	// Three missing files all flagged Backup → all drop.
 	wr := makeWriteResultWithConflicts("a.md", "b.md", "c.md")
