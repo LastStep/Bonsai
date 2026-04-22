@@ -13,22 +13,23 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
-// yieldMode distinguishes the three terminal card variants.
+// yieldMode distinguishes the four terminal card variants.
 type yieldMode int
 
 const (
 	yieldModeSuccess yieldMode = iota
 	yieldModeAllInstalled
 	yieldModeTechLeadRequired
-	yieldModeAddItemsDeferred
+	yieldModeUnknownAgent
 )
 
 // YieldStage is the terminal completion card at rail position 5 (結 YIELD).
-// Three variants selected at construction time:
+// Four variants selected at construction time:
 //
 //   - success          — renders the installed ability tree + 3 next-steps.
 //   - all-installed    — "already full" panel + `bonsai catalog` CTA.
 //   - tech-lead-req    — error panel + `bonsai init` CTA.
+//   - unknown-agent    — error panel + `bonsai update` CTA (catalog stale).
 //
 // The stage is terminal: ↵ / q / esc flip Done and the harness exits.
 type YieldStage struct {
@@ -76,12 +77,14 @@ func NewYieldTechLeadRequired(ctx initflow.StageContext, agentType string) *Yiel
 	})
 }
 
-// NewYieldAddItemsDeferred renders the Phase 1 "add-items not yet wired"
-// card. Plan 23 ships add-items in Phase 2; until then the user must
-// unset BONSAI_ADD_REDESIGN to reach the legacy flow for that path.
-func NewYieldAddItemsDeferred(ctx initflow.StageContext, agentDef *catalog.AgentDef) *YieldStage {
-	return newYield(ctx, yieldModeAddItemsDeferred, func(y *YieldStage) {
-		y.agentDef = agentDef
+// NewYieldUnknownAgent renders the "unknown agent type" card. Picked when
+// the user asks for an agent name the loaded catalog does not recognise —
+// usually a stale binary against a newer .bonsai.yaml. The CTA is
+// `bonsai update` so the user has a concrete next step instead of a
+// silent failure.
+func NewYieldUnknownAgent(ctx initflow.StageContext, agentType string) *YieldStage {
+	return newYield(ctx, yieldModeUnknownAgent, func(y *YieldStage) {
+		y.pickedAgentType = agentType
 	})
 }
 
@@ -163,8 +166,8 @@ func (s *YieldStage) renderBody() string {
 		return s.renderAllInstalled()
 	case yieldModeTechLeadRequired:
 		return s.renderTechLeadRequired()
-	case yieldModeAddItemsDeferred:
-		return s.renderAddItemsDeferred()
+	case yieldModeUnknownAgent:
+		return s.renderUnknownAgent()
 	default:
 		return s.renderSuccess()
 	}
@@ -347,36 +350,33 @@ func (s *YieldStage) renderTechLeadRequired() string {
 	return initflow.CenterBlock(strings.Join(body, "\n"), s.Width())
 }
 
-func (s *YieldStage) renderAddItemsDeferred() string {
+func (s *YieldStage) renderUnknownAgent() string {
 	dim := initflow.DimStyle()
 	bark := initflow.LabelStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
-	warn := lipgloss.NewStyle().Foreground(tui.ColorWarning).Bold(true)
+	danger := lipgloss.NewStyle().Foreground(tui.ColorDanger).Bold(true)
 
 	var heroTitle string
 	if s.EnsoSafe() {
-		heroTitle = warn.Render(s.Label().Kanji + " · ADD-ITEMS COMING IN PHASE 2")
+		heroTitle = danger.Render(s.Label().Kanji + " · UNKNOWN AGENT")
 	} else {
-		heroTitle = warn.Render("ADD-ITEMS COMING IN PHASE 2")
+		heroTitle = danger.Render("UNKNOWN AGENT")
 	}
-	agentName := "this agent"
-	if s.agentDef != nil {
-		agentName = s.agentDef.DisplayName
-		if agentName == "" {
-			agentName = catalog.DisplayNameFrom(s.agentDef.Name)
-		}
+	agentType := s.pickedAgentType
+	if agentType == "" {
+		agentType = "this agent"
 	}
 
-	intro := white.Render(fmt.Sprintf("%s already exists — adding more abilities to it is Phase 2 work.", agentName))
-	helper := dim.Render("Phase 1 of the cinematic flow only wires the new-agent path. Use the legacy flow until Phase 2 lands.")
+	intro := white.Render(fmt.Sprintf("%q is not in the catalog.", agentType))
+	helper := dim.Render("The bundled catalog may be stale relative to the project config — refresh it before retrying.")
 
 	nextHeader := initflow.RenderSectionHeader("NEXT", initflow.PanelWidth(s.Width()))
 	nextLines := []string{
 		nextHeader,
-		"  " + bark.Render("1") + "  " + white.Render("$ unset BONSAI_ADD_REDESIGN"),
-		"     " + dim.Render("drop the cinematic-flow gate for this shell"),
-		"  " + bark.Render("2") + "  " + white.Render("$ bonsai add"),
-		"     " + dim.Render("re-run via the legacy flow — add-items works there today"),
+		"  " + bark.Render("1") + "  " + white.Render("$ bonsai update"),
+		"     " + dim.Render("re-sync the embedded catalog against the latest binary"),
+		"  " + bark.Render("2") + "  " + white.Render("$ bonsai catalog"),
+		"     " + dim.Render("survey the agent types this binary actually ships"),
 	}
 
 	body := []string{

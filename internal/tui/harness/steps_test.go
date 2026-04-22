@@ -505,3 +505,105 @@ func (f *fakeInitStep) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return f, nil
 }
+
+// ─── Conditional + Lazy composition tests ────────────────────────────────
+
+// TestConditionalLazyChromelessForwardsWhenActive verifies the composition
+// pattern used in cmd/add.go and cmd/init_flow.go — NewConditional wrapping a
+// NewLazy whose builder produces a Chromeless inner step. When the predicate
+// is true, the ConditionalStep must report Chromeless()=true on the outer
+// step so the harness yields the full frame to the cinematic body. Pre-Init
+// the inner is not yet built so Chromeless()=false (no frame is active).
+//
+// Bundles backlog item #2 from PR #52 review (Plan 23 Phase 3).
+func TestConditionalLazyChromelessForwardsWhenActive(t *testing.T) {
+	// Inner Chromeless step the Lazy builder will produce on first entry.
+	chromelessInner := &fakeChromelessStep{
+		fakeStep:   fakeStep{title: "cinematic"},
+		chromeless: true,
+	}
+	lazy := NewLazy("Cinematic", func(prev []any) Step { return chromelessInner })
+	c := NewConditional(lazy, func(prev []any) bool { return true })
+
+	// Pre-Init: Lazy hasn't built, ConditionalStep should report false.
+	if c.Chromeless() {
+		t.Fatalf("Chromeless()=true before Init; expected false (Lazy not yet built)")
+	}
+
+	c.SetPrior(nil)
+	_ = c.Init()
+
+	// Post-Init with predicate=true: ConditionalStep delegated through Lazy
+	// to the chromeless inner. Outer must mirror inner.
+	if !c.Chromeless() {
+		t.Fatalf("Chromeless()=false after Init with predicate=true; expected true (Lazy inner is Chromeless)")
+	}
+}
+
+// TestConditionalLazyChromelessFalseWhenSkipped verifies the inverse: when
+// the Conditional predicate is false, the Lazy builder never runs and the
+// outer ConditionalStep reports Chromeless()=false (the harness would render
+// nothing anyway, so chrome vs. not is moot — but the contract is to report
+// false so default-chrome behaviour is preserved for the surrounding flow).
+func TestConditionalLazyChromelessFalseWhenSkipped(t *testing.T) {
+	builderRan := false
+	lazy := NewLazy("Cinematic", func(prev []any) Step {
+		builderRan = true
+		return &fakeChromelessStep{
+			fakeStep:   fakeStep{title: "cinematic"},
+			chromeless: true,
+		}
+	})
+	c := NewConditional(lazy, func(prev []any) bool { return false })
+
+	c.SetPrior(nil)
+	_ = c.Init()
+
+	if builderRan {
+		t.Fatalf("Lazy builder ran when predicate=false; expected skip")
+	}
+	if c.Chromeless() {
+		t.Fatalf("Chromeless()=true when predicate=false; expected false (skipped path)")
+	}
+}
+
+// TestConditionalLazyBuilderFiresOncePerActivePass verifies the Lazy
+// builder closure runs exactly once per active Conditional pass, not on
+// every harness tick. ConditionalStep.Init drives the lazyBuilder.Build
+// path through its `if lb, ok := c.inner.(lazyBuilder); ok && !lb.Built()`
+// guard — re-Init (via Reset) would re-fire only after the lazy.Reset
+// flips Built()=false. This test pins the once-per-pass contract.
+//
+// Bundles backlog item #2 from PR #52 review (Plan 23 Phase 3).
+func TestConditionalLazyBuilderFiresOncePerActivePass(t *testing.T) {
+	buildCalls := 0
+	lazy := NewLazy("Inner", func(prev []any) Step {
+		buildCalls++
+		return &fakeInitStep{fakeStep: fakeStep{title: "inner"}}
+	})
+	c := NewConditional(lazy, func(prev []any) bool { return true })
+
+	// First active pass.
+	c.SetPrior(nil)
+	_ = c.Init()
+	if buildCalls != 1 {
+		t.Fatalf("first Init: buildCalls = %d, want 1", buildCalls)
+	}
+
+	// A second Init without an intervening Reset must NOT re-fire the
+	// builder — the harness only re-Inits on Esc-back which routes through
+	// Reset first.
+	_ = c.Init()
+	if buildCalls != 1 {
+		t.Fatalf("second Init without Reset: buildCalls = %d, want 1 (no re-fire)", buildCalls)
+	}
+
+	// Esc-back path: Reset flips Lazy.Built()=false; subsequent Init must
+	// rebuild exactly once more.
+	_ = c.Reset()
+	c.SetPrior(nil)
+	_ = c.Init()
+	if buildCalls != 2 {
+		t.Fatalf("after Reset+Init: buildCalls = %d, want 2 (one re-fire)", buildCalls)
+	}
+}
