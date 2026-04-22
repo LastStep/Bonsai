@@ -156,12 +156,61 @@ func FocusedAccentStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
 }
 
-// ConflictRowStyle returns the per-row style used by addflow's ConflictsStage
-// to render a conflict-file entry. Phase-1 stub — the style is intentionally
-// a no-op passthrough so Phase-2 can land the full body (colour-coded Keep /
-// Overwrite / Backup action glyphs + diff summary) without bloating the Phase-1
-// diff. The exported symbol is defined here so addflow's Phase-1 code imports
-// are wired against the final API shape. See Plan 23 decision Q10.
-func ConflictRowStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(tui.ColorAccent)
+// ConflictActionTone identifies one of the three radio options rendered by
+// addflow.ConflictsStage. Tokenised here (rather than hard-coded numeric
+// indices in addflow) so every stage that surfaces Keep / Overwrite / Backup
+// semantics can reach for the same colour-coded glyph set.
+type ConflictActionTone int
+
+const (
+	// ConflictToneKeep — local edits win, no write. Renders in Leaf green
+	// (ColorPrimary / ColorSuccess family) because the user's work survives.
+	ConflictToneKeep ConflictActionTone = iota
+	// ConflictToneOverwrite — source wins, local edits discarded. Renders in
+	// Ember red (ColorDanger) to signal the destructive action.
+	ConflictToneOverwrite
+	// ConflictToneBackup — local saved to .bak, then source wins. Renders in
+	// Amber (ColorWarning) — reversible but still mutates disk.
+	ConflictToneBackup
+)
+
+// ConflictRowStyle returns the foreground-tinted style for a single radio
+// row inside addflow.ConflictsStage — one tone per ConflictActionTone.
+// Selected rows are bolded by the caller; this helper only supplies the
+// colour so the palette swap happens in one place per Plan 23 decision Q10.
+//
+//	Keep      → ColorSuccess (leaf / moss) — user work survives
+//	Overwrite → ColorDanger  (ember)       — destructive
+//	Backup    → ColorWarning (amber)       — reversible
+//
+// Unknown tones fall back to ColorAccent so stages can't accidentally render
+// a blank row if a new tone is added without updating the switch.
+func ConflictRowStyle(tone ConflictActionTone) lipgloss.Style {
+	switch tone {
+	case ConflictToneKeep:
+		return lipgloss.NewStyle().Foreground(tui.ColorSuccess)
+	case ConflictToneOverwrite:
+		return lipgloss.NewStyle().Foreground(tui.ColorDanger)
+	case ConflictToneBackup:
+		return lipgloss.NewStyle().Foreground(tui.ColorWarning)
+	default:
+		return lipgloss.NewStyle().Foreground(tui.ColorAccent)
+	}
+}
+
+// ConflictActionGlyph returns the per-tone glyph used to anchor each radio
+// row. Chosen for visual hierarchy — a leaf-like mark for Keep, a burning
+// mark for Overwrite, and a save-disk glyph for Backup. Matched to
+// ConflictRowStyle's tones so the glyph + colour reinforce each other.
+func ConflictActionGlyph(tone ConflictActionTone) string {
+	switch tone {
+	case ConflictToneKeep:
+		return "◆"
+	case ConflictToneOverwrite:
+		return "✸"
+	case ConflictToneBackup:
+		return "⎘"
+	default:
+		return "•"
+	}
 }
