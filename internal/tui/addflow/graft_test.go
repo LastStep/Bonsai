@@ -2,6 +2,7 @@ package addflow
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -255,6 +256,97 @@ func TestGraft_AddItemsPartialDropsEmpty(t *testing.T) {
 	}
 	if len(s.categories[0].items) != 1 || s.categories[0].items[0].name != "beta-skill" {
 		t.Fatalf("skills tab items = %v, want [beta-skill]", s.categories[0].items)
+	}
+}
+
+// TestGraft_TabCountUpdatesLive verifies the per-tab "(N)" counter rendered
+// in the tab strip reflects toggles as the user makes them — not a captured
+// ctor-time snapshot. Render the tab row before/after a toggle and compare
+// the focused tab's rendered count.
+func TestGraft_TabCountUpdatesLive(t *testing.T) {
+	s := newTestGraft()
+	// Find skills tab.
+	var skillIdx = -1
+	for i, c := range s.categories {
+		if c.key == graftCatSkills {
+			skillIdx = i
+			break
+		}
+	}
+	if skillIdx < 0 {
+		t.Fatal("skills tab missing")
+	}
+
+	// Initial: beta-skill is a default (pre-selected). Count = 1.
+	before := len(s.selected[skillIdx])
+	if before != 1 {
+		t.Fatalf("initial skills count = %d, want 1", before)
+	}
+
+	// Focus skills + toggle alpha-skill on (idx 0).
+	s.catIdx = skillIdx
+	s.itemIdx[skillIdx] = 0
+	graftPressRune(s, ' ')
+	after := len(s.selected[skillIdx])
+	if after != 2 {
+		t.Fatalf("after toggle skills count = %d, want 2", after)
+	}
+
+	// Rendered tab row should contain "SKILLS (2)" now, not "(1)".
+	row := s.renderTabs()
+	if !strings.Contains(row, "SKILLS (2)") {
+		t.Fatalf("tab row should contain SKILLS (2); got: %q", row)
+	}
+
+	// Toggle alpha back off — count returns to 1.
+	graftPressRune(s, ' ')
+	if len(s.selected[skillIdx]) != 1 {
+		t.Fatalf("after second toggle skills count = %d, want 1", len(s.selected[skillIdx]))
+	}
+	row = s.renderTabs()
+	if !strings.Contains(row, "SKILLS (1)") {
+		t.Fatalf("tab row should contain SKILLS (1); got: %q", row)
+	}
+}
+
+// TestGraft_NewAgentUnaffectedByFilter is a regression guard — the new-agent
+// ctor must NOT filter by Installed even when a non-nil Installed slice is
+// passed (Plan 23 Phase 2 added the filter path inside a shared helper; this
+// test proves the new-agent entry still seeds every catalog item regardless).
+func TestGraft_NewAgentUnaffectedByFilter(t *testing.T) {
+	cat, agentDef := newTestGraftCatalog()
+	// Installed carries every item in every category — if the new-agent path
+	// were mistakenly filtering, the tabs would all be empty.
+	installed := &config.InstalledAgent{
+		AgentType: "backend",
+		Workspace: "backend/",
+		Skills:    []string{"alpha-skill", "beta-skill"},
+		Workflows: []string{"wf-one"},
+		Protocols: []string{"proto-req"},
+		Sensors:   []string{"sensor-a"},
+		Routines:  []string{"routine-a"},
+	}
+	s := NewNewAgentGraft(initflow.StageContext{StartedAt: time.Now()}, GraftContext{
+		Cat:       cat,
+		AgentType: "backend",
+		AgentDef:  agentDef,
+		Installed: installed, // deliberately non-nil to prove the new-agent path ignores it
+	})
+	// All five tabs should survive.
+	if len(s.categories) != 5 {
+		t.Fatalf("new-agent ctor tabs = %d, want 5 (filter leaked into new-agent path)", len(s.categories))
+	}
+	// Skills tab should carry both alpha + beta — filter leak would drop them.
+	var skillIdx = -1
+	for i, c := range s.categories {
+		if c.key == graftCatSkills {
+			skillIdx = i
+			break
+		}
+	}
+	if skillIdx < 0 || len(s.categories[skillIdx].items) != 2 {
+		t.Fatalf("new-agent skills tab items = %v, want both alpha + beta",
+			s.categories[skillIdx].items)
 	}
 }
 

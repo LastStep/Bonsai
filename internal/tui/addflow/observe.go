@@ -60,23 +60,52 @@ func NewObserveStage(ctx initflow.StageContext, cat *catalog.Catalog) *ObserveSt
 	}
 }
 
+// SetDefaultWorkspace seeds a fallback workspace value rendered when the
+// prior-results snapshot does not carry one. Used on the add-items branch,
+// where Ground is skipped — the installed agent's existing workspace is
+// stamped into the stage before SetPrior runs so the Observe panel reads
+// the durable workspace rather than "—".
+func (s *ObserveStage) SetDefaultWorkspace(ws string) { s.workspace = ws }
+
 // SetPrior captures Select / Ground / Graft results. Called on entry and
 // after every Esc-back edit.
+//
+// The add-flow splices differ in shape across branches — new-agent writes
+// (agent, workspace, graft, ...) while add-items writes (agent, graft, ...)
+// because Ground is skipped. Rather than hard-code positional indices (which
+// break the add-items branch), SetPrior scans prev[] for the first value of
+// each expected type. GraftResult is uniquely typed, so the match is
+// unambiguous; agent / workspace are both strings but agent is always
+// prev[0] (from SelectStage) so we grab it first and treat any later string
+// as the workspace.
 func (s *ObserveStage) SetPrior(prev []any) {
-	if len(prev) >= 1 {
-		if a, ok := prev[0].(string); ok {
-			s.agent = a
+	var firstString, secondString string
+	var stringIdx int
+	var graftSet bool
+	for _, v := range prev {
+		switch x := v.(type) {
+		case string:
+			if stringIdx == 0 {
+				firstString = x
+			} else if stringIdx == 1 {
+				secondString = x
+			}
+			stringIdx++
+		case GraftResult:
+			s.graft = x
+			graftSet = true
 		}
 	}
-	if len(prev) >= 2 {
-		if w, ok := prev[1].(string); ok {
-			s.workspace = w
-		}
+	s.agent = firstString
+	// Workspace only comes from Ground (new-agent branch). On add-items the
+	// second string slot does not exist — preserve whatever the splicer
+	// pre-stamped via SetDefaultWorkspace (installedAgent.Workspace) rather
+	// than clobbering it with "".
+	if secondString != "" {
+		s.workspace = secondString
 	}
-	if len(prev) >= 3 {
-		if g, ok := prev[2].(GraftResult); ok {
-			s.graft = g
-		}
+	if !graftSet {
+		s.graft = GraftResult{}
 	}
 	if s.agent != "" && s.cat != nil {
 		s.agentDef = s.cat.GetAgent(s.agent)

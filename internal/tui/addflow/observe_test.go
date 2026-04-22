@@ -79,6 +79,33 @@ func TestObserve_SetPriorMissingAgentTolerant(t *testing.T) {
 	}
 }
 
+// TestObserve_SetPriorAddItemsShape verifies SetPrior handles the add-items
+// branch's shorter prev[] slice (no Ground stage → no workspace string).
+// GraftResult is the second slot and must still be captured by type.
+func TestObserve_SetPriorAddItemsShape(t *testing.T) {
+	s := newTestObserve()
+	s.SetDefaultWorkspace("backend/")
+	graft := GraftResult{
+		Skills:   []string{"s1"},
+		Sensors:  []string{"sensor-a"},
+		Routines: []string{"routine-a"},
+	}
+	// prev layout on add-items: [agent, graft, ...].
+	s.SetPrior([]any{"backend", graft})
+	if s.agent != "backend" {
+		t.Fatalf("agent = %q, want backend", s.agent)
+	}
+	if s.workspace != "backend/" {
+		t.Fatalf("workspace = %q, want backend/ (preserved from SetDefaultWorkspace)", s.workspace)
+	}
+	if len(s.graft.Skills) != 1 || s.graft.Skills[0] != "s1" {
+		t.Fatalf("graft.Skills = %v, want [s1]", s.graft.Skills)
+	}
+	if len(s.graft.Sensors) != 1 || len(s.graft.Routines) != 1 {
+		t.Fatalf("graft not fully captured: %+v", s.graft)
+	}
+}
+
 // TestObserve_DefaultFocusGraft verifies btnFocus starts on GRAFT (1).
 func TestObserve_DefaultFocusGraft(t *testing.T) {
 	s := newTestObserve()
