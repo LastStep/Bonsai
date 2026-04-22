@@ -41,6 +41,11 @@ type ObserveStage struct {
 	// Button focus. 0 = CANCEL, 1 = PLANT. Default PLANT (1) so a bare ↵
 	// ships the happy path. Tab / ← → toggles.
 	btnFocus int
+
+	// Tree viewport — wraps the PLANTING body lines so tight terminals
+	// don't bump the CTA off-screen. Mutated by renderBody() on every
+	// View() call and by j/k scroll keys in Update().
+	treeVP Viewport
 }
 
 // NewObserveStage constructs the Observe stage at rail position 3. cat +
@@ -104,6 +109,10 @@ func (s *ObserveStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s.btnFocus = (s.btnFocus + 1) % 2
 		case "shift+tab", "left", "h":
 			s.btnFocus = (s.btnFocus + 1) % 2
+		case "j", "down":
+			s.treeVP.ScrollBy(1)
+		case "k", "up":
+			s.treeVP.ScrollBy(-1)
 		case "y", "Y":
 			s.confirmed = true
 			s.done = true
@@ -126,25 +135,35 @@ func (s *ObserveStage) View() string {
 	return s.renderFrame(s.renderBody(), s.keyHints())
 }
 
-// keyHints builds the footer key row for this stage.
+// keyHints builds the footer key row for this stage. j/k appear only when
+// the PLANTING tree viewport has off-screen rows — avoids clutter on wide
+// terminals where the full tree already fits.
 func (s *ObserveStage) keyHints() []KeyHint {
-	return []KeyHint{
+	hints := []KeyHint{
 		{Key: "↵", Desc: "confirm"},
 		{Key: "tab", Desc: "toggle"},
 		{Key: "y/n", Desc: "plant / cancel"},
-		{Key: "esc", Desc: "back"},
-		{Key: "ctrl-c", Desc: "quit"},
 	}
+	if up, down := s.treeVP.HasMore(); up || down {
+		hints = append(hints, KeyHint{Key: "j/k", Desc: "scroll tree"})
+	}
+	hints = append(hints,
+		KeyHint{Key: "esc", Desc: "back"},
+		KeyHint{Key: "ctrl-c", Desc: "quit"},
+	)
+	return hints
 }
 
-// renderBody renders the stage intro + VESSEL/SOIL/BRANCHES summary +
-// the CANCEL / PLANT CTA. Layout is a responsive grid: two columns
-// (Vessel+Soil left, Branches right) on widths ≥100; stacked single
-// column below that.
+// renderBody renders the stage intro + PROJECT summary + a unified
+// file-hierarchy PLANTING tree + the CANCEL / PLANT CTA. Everything
+// lives in a single column aligned to PanelContentWidth so sections
+// line up vertically regardless of terminal width — eliminates the
+// pre-2026-04-22 grid jitter where wide terminals pushed Branches far
+// right while narrow ones stacked them awkwardly.
 func (s *ObserveStage) renderBody() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+	bark := LabelStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
+	dim := DimStyle()
 
 	var title string
 	if s.ensoSafe {
@@ -159,57 +178,131 @@ func (s *ObserveStage) renderBody() string {
 		dim.Render("Review your picks — ↵ plants, n cancels."),
 	}, "\n")
 
-	vesselBlock := s.renderVesselSummary()
-	soilBlock := s.renderSoilSummary()
-	branchesBlock := s.renderBranchesSummary()
+	project := s.renderProjectSummary()
+	cta := s.renderCTA()
+	plantingHeader, treeLines := s.renderPlantingParts()
 
-	var grid string
-	if s.width >= 100 {
-		left := vesselBlock + "\n\n" + soilBlock
-		grid = joinHoriz(left, branchesBlock, 4)
-	} else {
-		grid = vesselBlock + "\n\n" + branchesBlock + "\n\n" + soilBlock
+	// Priority layout — PROJECT summary + CTA are mandatory; intro and
+	// PLANTING tree degrade first when the terminal is too short to hold
+	// the full frame. Two-blank separators collapse to one before sections
+	// are dropped entirely. Keeping the CTA visible was the explicit
+	// 2026-04-22 complaint — "on smaller window im not able to see the
+	// plant options."
+	bodyAvail := 10000 // unknown dims → render everything
+	if s.height > 0 {
+		bodyAvail = s.height - 10 // matches stage.renderFrame chrome budget
+	}
+	if bodyAvail < 10 {
+		bodyAvail = 10
 	}
 
-	cta := s.renderCTA()
+	const (
+		introRows   = 3
+		projectRows = 5
+		treeHdrRows = 1
+		ctaRows     = 4
+	)
+	mustRows := projectRows + 1 /*blank before cta*/ + ctaRows
+	slack := bodyAvail - mustRows
+	if slack < 0 {
+		slack = 0
+	}
 
-	body := strings.Join([]string{
-		intro,
-		"",
-		"",
-		grid,
-		"",
-		"",
-		cta,
-	}, "\n")
+	// Tree allocation — header + 1 blank + at least one row.
+	treeAllocated := 0
+	treeRows := 0
+	if slack >= treeHdrRows+1+1 {
+		base := treeHdrRows + 1 + 1 // header + blank + 1 tree row
+		extra := slack - base
+		if extra > len(treeLines)-1 {
+			extra = len(treeLines) - 1
+		}
+		if extra < 0 {
+			extra = 0
+		}
+		treeRows = 1 + extra
+		treeAllocated = treeHdrRows + 1 + treeRows
+		slack -= treeAllocated
+	}
 
-	return centerBlock(body, s.width)
+	// Intro allocation — title block + 1 blank.
+	introAllocated := 0
+	if slack >= introRows+1 {
+		introAllocated = introRows + 1
+		slack -= introAllocated
+	}
+
+	// Extra breathing-room blanks spent on top spacers when slack remains.
+	breathing := slack
+	if breathing > 2 {
+		breathing = 2
+	}
+
+	lines := make([]string, 0, 32)
+	if introAllocated > 0 {
+		lines = append(lines, intro)
+		lines = append(lines, "")
+		if breathing > 0 {
+			lines = append(lines, "")
+			breathing--
+		}
+	}
+	lines = append(lines, project)
+	if treeRows > 0 {
+		lines = append(lines, "")
+		if breathing > 0 {
+			lines = append(lines, "")
+			breathing--
+		}
+		lines = append(lines, plantingHeader)
+		if treeRows >= len(treeLines) {
+			lines = append(lines, treeLines...)
+			s.treeVP.SetLines(treeLines)
+			s.treeVP.SetHeight(len(treeLines))
+		} else {
+			s.treeVP.SetLines(treeLines)
+			s.treeVP.SetHeight(treeRows)
+			vlines := strings.Split(s.treeVP.View(), "\n")
+			if _, down := s.treeVP.HasMore(); down && len(vlines) > 0 {
+				vlines[len(vlines)-1] = DimStyle().Render("  … j/k to scroll")
+			}
+			lines = append(lines, vlines...)
+		}
+	}
+	lines = append(lines, "")
+	if treeRows == 0 && breathing > 0 {
+		// Without the tree, give the CTA a little extra breathing room
+		// so it doesn't sit flush against PROJECT.
+		lines = append(lines, "")
+	}
+	lines = append(lines, cta)
+
+	return centerBlock(strings.Join(lines, "\n"), s.width)
 }
 
-// renderVesselSummary renders the NAME / DESCRIPTION / STATION / AGENT
+// renderProjectSummary renders the NAME / DESCRIPTION / STATION / AGENT
 // rows sourced from prev[0] (VesselStage Result) + the stage's agentDisplay.
-func (s *ObserveStage) renderVesselSummary() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
-	value := lipgloss.NewStyle().Foreground(tui.ColorAccent)
+// Labels are bark-gold bold at a fixed column width; values leaf-green to
+// emphasise the living-plant identity. The header uses the shared
+// RenderSectionHeader helper so all five stages' sections align.
+func (s *ObserveStage) renderProjectSummary() string {
+	bark := LabelStyle()
+	value := ValueStyle()
+	dim := DimStyle()
 
-	header := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("VESSEL") + " "
-	if s.ensoSafe {
-		header += bark.Render("器 ")
-	}
-	header += dim.Render(strings.Repeat("─", 20))
+	panelW := PanelWidth(s.width)
+	header := RenderSectionHeader("PROJECT", panelW)
 
 	name := s.vessel["name"]
 	if name == "" {
 		name = "—"
 	}
-	desc := s.vessel["description"]
-	if desc == "" {
+	descRaw := s.vessel["description"]
+	var desc string
+	if descRaw == "" {
 		desc = dim.Render("(none)")
 	} else {
-		desc = value.Render(desc)
+		desc = value.Render(descRaw)
 	}
 	station := s.vessel["station"]
 	if station == "" {
@@ -220,116 +313,101 @@ func (s *ObserveStage) renderVesselSummary() string {
 		agent = "—"
 	}
 
-	const labelW = 12
+	const labelW = 14
+	const indent = "  "
 	rows := []string{
 		header,
-		bark.Render(padRight("NAME", labelW)) + value.Render(name),
-		bark.Render(padRight("DESCRIPTION", labelW)) + desc,
-		bark.Render(padRight("STATION", labelW)) + value.Render(station),
-		bark.Render(padRight("AGENT", labelW)) + value.Render(agent),
+		indent + bark.Render(padRight("NAME", labelW)) + value.Render(name),
+		indent + bark.Render(padRight("DESCRIPTION", labelW)) + desc,
+		indent + bark.Render(padRight("STATION", labelW)) + value.Render(station),
+		indent + bark.Render(padRight("AGENT", labelW)) + value.Render(agent),
 	}
 	return strings.Join(rows, "\n")
 }
 
-// renderSoilSummary renders the scaffolding picks from prev[1] as a tiny
-// file-tree via tui.RenderFileTree. Preview-only — no on-disk check. Items
-// are rendered NodeNew so the user sees which entries will be written.
-func (s *ObserveStage) renderSoilSummary() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+// renderPlantingParts renders the PLANTING section in two pieces: the
+// section header (always rendered) and the tree body lines (viewport-
+// wrappable). Splitting them lets renderBody budget the tree within the
+// terminal height so the CTA below stays on screen even when the tree
+// itself needs scrolling.
+//
+// Format of the rendered tree body:
+//
+//	station/
+//	├── CLAUDE.md
+//	├── INDEX.md         (soil pick)
+//	├── Playbook/        (soil pick)
+//	└── agent/
+//	    ├── Core/
+//	    ├── Skills/      4 items
+//	    ├── Workflows/   6 items
+//	    ...
+//
+// Scaffolding picks (soil) render as station/-level children; ability
+// picks (branches) render as agent/ subdirectories with their selected-
+// count on the right. Expanding per-ability filenames would overflow the
+// screen on busy configs — the count keeps the preview scannable.
+func (s *ObserveStage) renderPlantingParts() (header string, lines []string) {
+	bark := LabelStyle()
+	leaf := ValueStyle()
+	dim := DimStyle()
 
-	header := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("SOIL") + " "
-	if s.ensoSafe {
-		header += bark.Render("土 ")
+	panelW := PanelWidth(s.width)
+	header = RenderSectionHeader("PLANTING", panelW)
+
+	// station/ always written (the root label for the whole tree). The
+	// vessel Result appends a trailing "/" to the value; strip it here
+	// before re-appending so the root never renders as "station//".
+	station := s.vessel["station"]
+	if station == "" {
+		station = defaultStationDir
 	}
-	header += dim.Render(strings.Repeat("─", 20))
+	stationRoot := strings.TrimSuffix(station, "/") + "/"
 
-	if len(s.soil) == 0 {
-		return header + "\n  " + dim.Render("(no scaffolding picks)")
+	// Agent subtree children — fixed order, counts sourced from branches.
+	type abilityGroup struct {
+		label string
+		n     int
 	}
-
-	// Render a flat list of picks inline — the full file tree blossoms
-	// after Generate; here we just want to confirm what the user ticked.
-	lines := []string{header}
-	for _, name := range s.soil {
-		lines = append(lines, "  "+leaf.Render("◆")+" "+name)
-	}
-	return strings.Join(lines, "\n")
-}
-
-// renderBranchesSummary groups prev[2] (BranchesResult) into five
-// kanji-labelled rows. Items are joined with "·" and wrapped via the
-// existing wrapToWidth helper to respect the terminal width.
-func (s *ObserveStage) renderBranchesSummary() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
-	value := lipgloss.NewStyle().Foreground(tui.ColorAccent)
-
-	total := len(s.branches.Skills) + len(s.branches.Workflows) +
-		len(s.branches.Protocols) + len(s.branches.Sensors) + len(s.branches.Routines)
-
-	header := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("BRANCHES") + " "
-	if s.ensoSafe {
-		header += bark.Render("枝 ")
-	}
-	header += dim.Render(fmt.Sprintf("· %d abilities ", total))
-	header += dim.Render(strings.Repeat("─", 10))
-
-	// Per-group width budget: right column is ~half the terminal when
-	// we're in the 2-col layout, full width when stacked. Floor at 24.
-	var valueW int
-	if s.width >= 100 {
-		valueW = (s.width - 4) / 2
-	} else {
-		valueW = s.width - 18 // left label 10 + padding budget
-	}
-	if valueW < 24 {
-		valueW = 24
+	abilityGroups := []abilityGroup{
+		{"Core/", -1}, // always present, no count
+		{"Skills/", len(s.branches.Skills)},
+		{"Workflows/", len(s.branches.Workflows)},
+		{"Protocols/", len(s.branches.Protocols)},
+		{"Sensors/", len(s.branches.Sensors)},
+		{"Routines/", len(s.branches.Routines)},
 	}
 
-	groups := []struct {
-		kanji, label string
-		items        []string
-	}{
-		{"技", "SKILLS", s.branches.Skills},
-		{"流", "FLOWS", s.branches.Workflows},
-		{"律", "RULES", s.branches.Protocols},
-		{"感", "SENSE", s.branches.Sensors},
-		{"習", "HABIT", s.branches.Routines},
-	}
+	lines = make([]string, 0, 2+len(s.soil)+len(abilityGroups))
+	// Root row.
+	lines = append(lines, "  "+leaf.Render(stationRoot))
 
-	lines := []string{header}
-	for _, g := range groups {
-		var leftLabel string
-		if s.ensoSafe {
-			leftLabel = bark.Render(g.kanji+" "+g.label) + " "
-		} else {
-			leftLabel = bark.Render(g.label) + " "
+	// Scaffolding children (soil picks) — each gets ├── connector. agent/
+	// is always the final child → └── connector regardless of soil length.
+	rootIndent := "  "
+	for _, label := range s.soil {
+		lines = append(lines, rootIndent+dim.Render("├── ")+leaf.Render(label))
+	}
+	lines = append(lines, rootIndent+dim.Render("└── ")+leaf.Render("agent/"))
+
+	// Ability subtree — indent under agent/.
+	subIndent := rootIndent + "    " // 4 spaces aligning under "agent/"
+	lastIdx := len(abilityGroups) - 1
+	for i, g := range abilityGroups {
+		connector := "├── "
+		if i == lastIdx {
+			connector = "└── "
 		}
-		// Compose value — joined picks or "(none)" dim placeholder.
-		var rendered string
-		if len(g.items) == 0 {
-			rendered = dim.Render("(none)")
-			lines = append(lines, "  "+leftLabel+rendered)
-			continue
+		row := subIndent + dim.Render(connector) + leaf.Render(g.label)
+		if g.n >= 0 {
+			// Right-align the count inside the panel width. Pad to the
+			// panelW so SKILLS/WORKFLOWS/etc counts line up vertically.
+			row = padRight(row, panelW-10) + bark.Render(fmt.Sprintf("%d items", g.n))
 		}
-		joined := strings.Join(g.items, " · ")
-		wrapped := wrapToWidth(joined, valueW)
-		for i, w := range wrapped {
-			if i == 0 {
-				lines = append(lines, "  "+leftLabel+value.Render(w))
-			} else {
-				// Indent continuation rows so they align under the value col.
-				indent := strings.Repeat(" ", 2+lipgloss.Width(leftLabel))
-				lines = append(lines, indent+value.Render(w))
-			}
-		}
+		lines = append(lines, row)
 	}
-	return strings.Join(lines, "\n")
+
+	return header, lines
 }
 
 // renderCTA renders the confirm banner — one row with file count +
@@ -369,7 +447,7 @@ func (s *ObserveStage) renderCTA() string {
 		plantBtn = leaf.Bold(true).Render(plantLabel)
 	}
 
-	line1 := muted.Render(top) + bark.Render(name) + muted.Render(fmt.Sprintf("?  %d conflicts", 0))
+	line1 := leaf.Render(top) + bark.Render(name) + muted.Render(fmt.Sprintf("  ·  %d conflicts", 0))
 	line2 := prompt
 	line3 := cancelBtn + "   " + plantBtn
 	return strings.Join([]string{line1, line2, "", line3}, "\n")
@@ -386,41 +464,3 @@ func (s *ObserveStage) Reset() tea.Cmd {
 	return nil
 }
 
-// joinHoriz joins two multi-line blocks side-by-side with gap spaces of
-// horizontal padding. Each line of `left` is padded to its own max width
-// before the gap + corresponding `right` line is appended. Missing right
-// lines render as blanks; missing left lines get a width-matching space
-// prefix so the right column still lines up.
-func joinHoriz(left, right string, gap int) string {
-	ls := strings.Split(left, "\n")
-	rs := strings.Split(right, "\n")
-
-	maxLW := 0
-	for _, l := range ls {
-		if w := lipgloss.Width(l); w > maxLW {
-			maxLW = w
-		}
-	}
-
-	n := len(ls)
-	if len(rs) > n {
-		n = len(rs)
-	}
-	gapStr := strings.Repeat(" ", gap)
-	out := make([]string, n)
-	for i := 0; i < n; i++ {
-		var l, r string
-		if i < len(ls) {
-			l = ls[i]
-		}
-		if i < len(rs) {
-			r = rs[i]
-		}
-		lPad := maxLW - lipgloss.Width(l)
-		if lPad < 0 {
-			lPad = 0
-		}
-		out[i] = l + strings.Repeat(" ", lPad) + gapStr + r
-	}
-	return strings.Join(out, "\n")
-}

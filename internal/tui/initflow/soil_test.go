@@ -178,20 +178,22 @@ func TestSoil_ResetPreservesSelections(t *testing.T) {
 	}
 }
 
-// TestSoil_NarrowDoesNotClipBadge verifies the REQUIRED badge stays
-// visible on narrow (but ≥floor) widths. Regression guard.
-func TestSoil_NarrowDoesNotClipBadge(t *testing.T) {
+// TestSoil_NarrowDoesNotClipRequiredGlyph verifies the required `*`
+// glyph stays visible on narrow (but ≥floor) widths. Regression guard
+// replacing the old "REQUIRED" badge check (dropped in 2026-04-22 UX pass
+// for consistency with Branches).
+func TestSoil_NarrowDoesNotClipRequiredGlyph(t *testing.T) {
 	s := newTestSoil()
 	s.width = 80
 	s.height = 30
 	row := s.renderRow(0) // claude-md is required in fixture
-	if !soilContains(row, "REQUIRED") {
-		t.Errorf("80-col render dropped REQUIRED badge; row: %q", row)
+	if !soilContains(row, "*") {
+		t.Errorf("80-col render dropped required * glyph; row: %q", row)
 	}
 	s.width = 70
 	row = s.renderRow(0)
-	if !soilContains(row, "REQUIRED") {
-		t.Errorf("70-col render dropped REQUIRED badge; row: %q", row)
+	if !soilContains(row, "*") {
+		t.Errorf("70-col render dropped required * glyph; row: %q", row)
 	}
 }
 

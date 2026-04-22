@@ -380,25 +380,22 @@ func TestBranches_SelectionPersistsAcrossTabs(t *testing.T) {
 	}
 }
 
-// TestBranches_NarrowDoesNotClipTag verifies the DEFAULT / (required)
-// tag column stays visible at narrow (but ≥floor) widths. Regression
-// guard against the user-reported 2026-04-21 bug where <100-col terminals
-// clipped the tag off the right edge.
-func TestBranches_NarrowDoesNotClipTag(t *testing.T) {
+// TestBranches_NarrowDoesNotClipRequiredGlyph verifies the required `*`
+// glyph stays visible on the row across narrow (but ≥floor) widths.
+// Replaces the pre-2026-04-22 tag-column assertion — "(required)" /
+// "DEFAULT" text was dropped in favour of an inline "*" after the name.
+func TestBranches_NarrowDoesNotClipRequiredGlyph(t *testing.T) {
 	s := newTestBranches()
 	s.width = 80
 	s.height = 30
-	// Focus on alpha-skill (required) so the rendered row carries the tag.
 	row := s.renderRow(0)
-	// rendered row may contain ANSI; strip by checking the visible
-	// substring. "(required)" must survive.
-	if !strings.Contains(row, "(required)") {
-		t.Errorf("80-col render dropped (required) tag; row: %q", row)
+	if !strings.Contains(row, "*") {
+		t.Errorf("80-col render dropped required * glyph; row: %q", row)
 	}
 	s.width = 70
 	row = s.renderRow(0)
-	if !strings.Contains(row, "(required)") {
-		t.Errorf("70-col render dropped (required) tag; row: %q", row)
+	if !strings.Contains(row, "*") {
+		t.Errorf("70-col render dropped required * glyph; row: %q", row)
 	}
 }
 

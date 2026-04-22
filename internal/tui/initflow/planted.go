@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -89,35 +88,77 @@ func (s *PlantedStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter", "q", "esc":
 			s.done = true
 			return s, nil
+		case "j", "down":
+			s.viewport.ScrollBy(1)
+			return s, nil
+		case "k", "up":
+			s.viewport.ScrollBy(-1)
+			return s, nil
+		case "pgdown", " ":
+			step := s.viewport.height
+			if step < 1 {
+				step = 1
+			}
+			s.viewport.ScrollBy(step)
+			return s, nil
+		case "pgup", "b":
+			step := s.viewport.height
+			if step < 1 {
+				step = 1
+			}
+			s.viewport.ScrollBy(-step)
+			return s, nil
 		}
 	}
 	return s, nil
 }
 
-// View composes the Planted stage body inside the shared frame.
+// View renders the Planted stage as a chromeless, full-screen celebration
+// frame. Unlike the other stages, Planted deliberately bypasses the shared
+// header + rail + footer chrome (2026-04-22 UX pass) — the flow has
+// finished and the visual framing should feel like an exit card rather
+// than another in-flow step. The body is centred vertically inside the
+// live terminal height so the hero lands mid-screen.
 func (s *PlantedStage) View() string {
-	return s.renderFrame(s.renderBody(), s.keyHints())
-}
-
-// keyHints builds the footer key row.
-func (s *PlantedStage) keyHints() []KeyHint {
-	return []KeyHint{
-		{Key: "↵", Desc: "exit"},
-		{Key: "q", Desc: "quit"},
+	width := s.width
+	if width <= 0 {
+		width = 80
 	}
+	height := s.height
+	if height <= 0 {
+		height = 24
+	}
+	if TerminalTooSmall(s.width, s.height) {
+		return RenderMinSizeFloor(s.width, s.height)
+	}
+
+	body := s.renderBody()
+
+	// Vertically center inside the AltScreen.
+	rows := strings.Count(body, "\n") + 1
+	topPad := (height - rows) / 2
+	if topPad < 1 {
+		topPad = 1
+	}
+	bottomPad := height - rows - topPad
+	if bottomPad < 0 {
+		bottomPad = 0
+	}
+	return strings.Repeat("\n", topPad) + body + strings.Repeat("\n", bottomPad)
 }
 
-// renderBody renders the full post-plant frame.
+// renderBody renders the full post-plant frame. No hero/stats dividers —
+// each major block carries its own section header (WRITTEN / SUMMARY /
+// NEXT) via the shared RenderSectionHeader helper so the whole stage
+// reads as a single centred card.
 func (s *PlantedStage) renderBody() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+	dim := DimStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 
-	created, updated, unchanged, skipped, conflicts := s.counts()
-	total := created + updated + unchanged + skipped + conflicts
+	created, updated, _, _, conflicts := s.counts()
 
-	// Hero block.
+	// Hero block — no ELAPSED chip (dropped 2026-04-22 UX pass).
 	var heroTitle string
 	if s.ensoSafe {
 		heroTitle = leaf.Render("生 · PLANTED")
@@ -130,42 +171,32 @@ func (s *PlantedStage) renderBody() string {
 		"%d files written · %d conflicts · lock synced",
 		created+updated, conflicts,
 	))
-	_ = total
 
-	divider := dim.Render(strings.Repeat("─", s.dividerWidth()))
-
-	// Left — WRITTEN.
 	writtenBlock := s.renderWrittenBlock()
-
-	// Right — SUMMARY.
 	summaryBlock := s.renderSummaryBlock()
-
-	// Responsive: 2-column ≥100 cols; stacked otherwise.
-	var grid string
-	if s.width >= 100 {
-		grid = joinHoriz(writtenBlock, summaryBlock, 4)
-	} else {
-		grid = writtenBlock + "\n\n" + summaryBlock
-	}
-
-	// Footer nextsteps + brand.
 	nextBlock := s.renderNextSteps()
 
-	elapsed := formatElapsed(time.Since(s.startedAt))
-	heroLine := heroTitle + "   " + bark.Render("ELAPSED "+elapsed)
+	hintText := "↵  exit  ·  q  quit"
+	if up, down := s.viewport.HasMore(); up || down {
+		hintText = "j/k  scroll  ·  ↵  exit  ·  q  quit"
+	}
+	hint := dim.Render(hintText)
 
 	body := strings.Join([]string{
-		heroLine,
+		heroTitle,
 		heroSub,
 		heroStats,
 		"",
-		divider,
 		"",
-		grid,
+		writtenBlock,
 		"",
-		divider,
+		"",
+		summaryBlock,
+		"",
 		"",
 		nextBlock,
+		"",
+		hint,
 	}, "\n")
 	return centerBlock(body, s.width)
 }
@@ -179,19 +210,6 @@ func (s *PlantedStage) counts() (created, updated, unchanged, skipped, conflicts
 	return
 }
 
-// dividerWidth returns the horizontal rule width — capped at 80 cells to
-// keep wide terminals visually framed.
-func (s *PlantedStage) dividerWidth() int {
-	w := s.width - 4
-	if w > 80 {
-		w = 80
-	}
-	if w < 20 {
-		w = 20
-	}
-	return w
-}
-
 // renderWrittenBlock renders the tree of written files. NodeStatus mapping:
 //
 //	ActionCreated              → NodeNew
@@ -199,43 +217,35 @@ func (s *PlantedStage) dividerWidth() int {
 //	ActionUnchanged            → NodeNormal
 //	ActionSkipped / ActionConflict → omitted
 func (s *PlantedStage) renderWrittenBlock() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	dim := DimStyle()
 
-	header := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("WRITTEN") + " "
-	if s.ensoSafe {
-		header += bark.Render("書 ")
-	}
-	header += dim.Render(strings.Repeat("─", 20))
+	panelW := PanelWidth(s.width)
+	header := RenderSectionHeader("WRITTEN", panelW)
 
 	if s.wr == nil || len(s.wr.Files) == 0 {
 		return header + "\n  " + dim.Render("(nothing written)")
 	}
 
 	tree := buildPlantedTree(s.wr, s.projectDir, s.stationDir)
-	// Cap rendered width so this column doesn't hog the right side in the
-	// 2-col layout.
-	maxW := s.width/2 - 4
-	if s.width < 100 {
-		maxW = s.width - 4
-	}
-	if maxW < 30 {
-		maxW = 30
-	}
+	// Tree spans the full panel width now that Planted is a single-column
+	// layout (no 2-col grid split). Clamp to PanelContentWidth so wide
+	// terminals don't spread the tree across the whole row.
 	rendered := tui.RenderFileTree(tree, tui.FileTreeOpts{
 		Dense:    true,
-		MaxWidth: maxW,
+		MaxWidth: panelW,
 	})
 
 	// Wrap in Viewport when the rendered tree exceeds a reasonable body
-	// budget. Budget heuristic: body height - chrome - summary/next blocks.
+	// budget. Always push content + height so HasMore() stays accurate when
+	// the terminal resizes across the overflow threshold.
 	lines := strings.Split(rendered, "\n")
 	budget := s.listHeight()
-	if budget > 0 && len(lines) > budget {
-		s.viewport.SetLines(lines)
-		s.viewport.SetHeight(budget)
+	if budget <= 0 {
+		budget = len(lines)
+	}
+	s.viewport.SetLines(lines)
+	s.viewport.SetHeight(budget)
+	if len(lines) > budget {
 		return header + "\n" + s.viewport.View()
 	}
 	return header + "\n" + rendered
@@ -255,30 +265,27 @@ func (s *PlantedStage) listHeight() int {
 	return h
 }
 
-// renderSummaryBlock renders the right-hand summary panel.
+// renderSummaryBlock renders the SUMMARY panel — agent + abilities counts.
+// Single-column inline layout so wide terminals don't spread values far
+// from their labels (2026-04-22 UX pass — matched Observe's PROJECT block).
 func (s *PlantedStage) renderSummaryBlock() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	dim := DimStyle()
+	bark := LabelStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent)
 
-	header := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("SUMMARY") + " "
-	if s.ensoSafe {
-		header += bark.Render("概要 ")
-	}
-	header += dim.Render(strings.Repeat("─", 15))
+	header := RenderSectionHeader("SUMMARY", PanelWidth(s.width))
 
 	total := s.skillCount + s.workflowCount + s.protocolCount + s.sensorCount + s.routineCount
 
-	const labelW = 11
+	const labelW = 14
+	const indent = "  "
 	rows := []string{
 		header,
-		bark.Render(padRight("AGENT", labelW)) + white.Render(s.agentDisplay) +
+		indent + bark.Render(padRight("AGENT", labelW)) + white.Render(s.agentDisplay) +
 			dim.Render(" → "+s.stationDir),
-		bark.Render(padRight("ABILITIES", labelW)) + white.Render(fmt.Sprintf("%d wired", total)),
-		bark.Render(padRight("···", labelW)) + dim.Render(fmt.Sprintf(
-			"%d skills · %d flows · %d rules · %d sense · %d habit",
+		indent + bark.Render(padRight("ABILITIES", labelW)) + white.Render(fmt.Sprintf("%d wired", total)),
+		indent + strings.Repeat(" ", labelW) + dim.Render(fmt.Sprintf(
+			"%d skills · %d workflows · %d protocols · %d sensors · %d routines",
 			s.skillCount, s.workflowCount, s.protocolCount, s.sensorCount, s.routineCount,
 		)),
 	}
@@ -287,22 +294,13 @@ func (s *PlantedStage) renderSummaryBlock() string {
 
 // renderNextSteps renders the three-step "next" callout.
 func (s *PlantedStage) renderNextSteps() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
+	dim := DimStyle()
+	bark := LabelStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent)
 
-	header := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("NEXT") + " "
-	if s.ensoSafe {
-		header += bark.Render("次へ ")
-	}
-	header += dim.Render(strings.Repeat("─", 20))
+	header := RenderSectionHeader("NEXT", PanelWidth(s.width))
 
-	numerals := []string{"一", "二", "三"}
-	if !s.ensoSafe {
-		numerals = []string{"1", "2", "3"}
-	}
+	numerals := []string{"1", "2", "3"}
 
 	steps := []struct {
 		num, cmd, caption string
@@ -423,10 +421,3 @@ func buildPlantedTree(wr *generate.WriteResult, projectDir, stationDir string) [
 	return walk(root)
 }
 
-// formatElapsed returns "MM:SS.d" formatting used by the ELAPSED chip.
-func formatElapsed(d time.Duration) string {
-	total := d.Seconds()
-	mins := int(total) / 60
-	secs := total - float64(mins*60)
-	return fmt.Sprintf("%02d:%04.1f", mins, secs)
-}

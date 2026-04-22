@@ -129,9 +129,8 @@ func (s *SoilStage) keyHints() []KeyHint {
 // body is centred inside the current terminal width via centerBlock so the
 // list sits visually balanced.
 func (s *SoilStage) renderBody() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	dim := DimStyle()
+	bark := LabelStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
 
 	var title string
@@ -147,9 +146,7 @@ func (s *SoilStage) renderBody() string {
 		dim.Render("Shared scaffolding every agent can see — required items always on."),
 	}, "\n")
 
-	divider := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("SCAFFOLDING") + " " +
-		dim.Render(strings.Repeat("─", 55))
+	divider := RenderSectionHeader("SCAFFOLDING", PanelWidth(s.width))
 
 	// Render each option row.
 	rows := make([]string, 0, len(s.options))
@@ -183,24 +180,26 @@ func (s *SoilStage) renderBody() string {
 	return centerBlock(strings.Join(body, "\n"), s.width)
 }
 
-// renderRow renders a single scaffolding option at index idx. Focused rows
-// get a Leaf left-border + leaf-tint background; selected rows use the ◆
-// glyph in Leaf, unselected use ◇ in a dimmer muted color. The REQUIRED
-// badge (Bark) is right-aligned.
+// renderRow renders a single scaffolding option at index idx. Layout
+// matches the Branches ability row for cross-stage consistency:
 //
-// Responsive widths (Plan 22 Phase 5A): namePad = min(20, s.width/4) and
-// the desc cap = max(30, s.width - namePad - 20). Shrinks on narrow
-// terminals so the row fits inside the current row. Scaffolding catalog
-// is small (≤8 items today) — no Viewport needed. If the catalog ever
-// grows past ~12 entries, wrap renderList via the Viewport in layout.go.
+//	[border 2] [glyph 1] [sp 1] [name + * W] [sp 1] [desc W]
+//
+// Focus state lifts the name to ColorAccent bold (FocusedNameStyle) and
+// the description from ColorRule2 to ColorAccent (FocusedDescStyle) so
+// the focused row reads as one bright block. Required scaffolding items
+// get an inline bark-gold "*" after the name instead of a trailing
+// "REQUIRED" badge (2026-04-22 UX pass — matches Branches).
+//
+// Scaffolding catalog is small (≤8 items today) so no Viewport wrap —
+// if the catalog ever grows past ~12 entries, revisit and reach for the
+// Viewport helper in layout.go.
 func (s *SoilStage) renderRow(idx int) string {
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	label := lipgloss.NewStyle().Foreground(tui.ColorSubtle)
-
+	dim := DimStyle()
 	opt := s.options[idx]
 	selected := s.selected[idx]
+	focused := idx == s.focus
 
 	// Glyph: ◆ when selected (Leaf), ◇ when not (dim).
 	glyph := "◇"
@@ -210,67 +209,75 @@ func (s *SoilStage) renderRow(idx int) string {
 		glyphStyle = leaf
 	}
 
-	// Left-border: Leaf "│ " for the focused row, two spaces otherwise.
-	// The focus tint background is approximated via the Leaf-dim foreground
-	// on the border glyph — LipGloss AdaptiveColor degrades predictably on
-	// 256-color terminals without forcing an ANSI background (keeps the row
-	// readable on both dark and light themes).
-	border := "  "
-	if idx == s.focus {
-		border = lipgloss.NewStyle().Foreground(tui.ColorPrimary).Render("│ ")
+	// Left-border — shared focus token so Soil and Branches match exactly.
+	border := UnfocusBorder()
+	if focused {
+		border = FocusBorder()
 	}
 
-	// Responsive column widths.
-	namePad := 20
-	if quarter := s.width / 4; quarter < namePad {
-		namePad = quarter
-	}
-	if namePad < 10 {
-		namePad = 10
-	}
-	// badge slot reserve (≈11 cells for "  REQUIRED") + border/glyph/gap
-	// budget (≈6). Leaves the rest for description; floor at 30 to keep
-	// copy readable on the narrowest supported terminals.
-	descCap := s.width - namePad - 20
-	if descCap < 30 {
-		descCap = 30
-	}
+	// Column widths — match Branches via ClampColumns so Soil rows line up
+	// under Branches rows on the same terminal. nameW/descW absorb the
+	// old tag column (no trailing REQUIRED badge any more).
+	nameColW, descColW, tagColW := ClampColumns(s.width - 4)
+	descColW += tagColW - 2
 
-	// Name column — bold when focused, regular otherwise. Keep it padded so
-	// descriptions align across rows.
+	// Name column — truncate against (nameW-2) when required so the " *"
+	// glyph always has room.
 	name := opt.DisplayName
 	if name == "" {
 		name = opt.Name
 	}
-	if lipgloss.Width(name) > namePad {
-		rr := []rune(name)
-		if len(rr) > namePad-1 && namePad > 1 {
-			name = string(rr[:namePad-1]) + "…"
-		}
-	}
-	nameCol := label.Render(padRight(name, namePad))
-	if idx == s.focus {
-		nameCol = bark.Render(padRight(name, namePad))
-	}
-
-	// Description column — muted, truncated to descCap so the row never
-	// pushes past the terminal edge on narrow widths.
-	desc := opt.Description
-	if lipgloss.Width(desc) > descCap {
-		rr := []rune(desc)
-		if len(rr) > descCap-1 && descCap > 1 {
-			desc = string(rr[:descCap-1]) + "…"
-		}
-	}
-	descCol := dim.Render(desc)
-
-	// Required badge — right-aligned after the description, in Bark.
-	badge := ""
+	nameBudget := nameColW
 	if opt.Required {
-		badge = "  " + bark.Render("REQUIRED")
+		nameBudget = nameColW - 2
+	}
+	if lipgloss.Width(name) > nameBudget {
+		rr := []rune(name)
+		if len(rr) > nameBudget-1 && nameBudget > 1 {
+			name = string(rr[:nameBudget-1]) + "…"
+		}
+	}
+	// Selected items render leaf-green (matches glyph + Branches precedent);
+	// focus lifts unselected rows to white bold. Combined:
+	//   selected+focused   → leaf bold
+	//   selected           → leaf
+	//   unselected+focused → white bold
+	//   else               → subtle
+	var nameStyle lipgloss.Style
+	switch {
+	case selected && focused:
+		nameStyle = leaf.Bold(true)
+	case selected:
+		nameStyle = leaf
+	case focused:
+		nameStyle = FocusedNameStyle()
+	default:
+		nameStyle = UnfocusedNameStyle()
+	}
+	nameText := nameStyle.Render(name)
+	if opt.Required {
+		nameText += " " + RequiredGlyph()
+	}
+	nameCol := padRight(nameText, nameColW)
+
+	// Description column — leaf-white when focused, dim otherwise.
+	var descCol string
+	if descColW > 0 {
+		desc := opt.Description
+		if lipgloss.Width(desc) > descColW {
+			rr := []rune(desc)
+			if len(rr) > descColW-1 {
+				desc = string(rr[:descColW-1]) + "…"
+			}
+		}
+		descStyle := UnfocusedDescStyle()
+		if focused {
+			descStyle = FocusedDescStyle()
+		}
+		descCol = " " + descStyle.Render(padRight(desc, descColW))
 	}
 
-	return border + glyphStyle.Render(glyph) + " " + nameCol + " " + descCol + badge
+	return border + glyphStyle.Render(glyph) + " " + nameCol + descCol
 }
 
 // Result returns the machine names of every selected option, preserving the

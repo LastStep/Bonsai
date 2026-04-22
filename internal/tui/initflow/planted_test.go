@@ -161,12 +161,16 @@ func TestPlanted_MinSizeFloor(t *testing.T) {
 	}
 }
 
-// TestPlanted_ElapsedRendered verifies ELAPSED row is present and formatted.
-func TestPlanted_ElapsedRendered(t *testing.T) {
+// TestPlanted_NoChrome verifies the Planted frame is chromeless — the 2026-04-22
+// UX pass dropped the shared header/rail/footer AND the ELAPSED chip so the
+// final card reads as an exit celebration rather than an in-flow stage.
+func TestPlanted_NoChrome(t *testing.T) {
 	s := newTestPlanted(&generate.WriteResult{})
 	body := s.View()
-	if !strings.Contains(body, "ELAPSED") {
-		t.Errorf("body missing ELAPSED label")
+	for _, forbidden := range []string{"ELAPSED", "PLANTING INTO", "BONSAI 一"} {
+		if strings.Contains(body, forbidden) {
+			t.Errorf("Planted view should not contain %q (chromeless exit frame)", forbidden)
+		}
 	}
 }
 

@@ -171,6 +171,24 @@ func (v *Viewport) View() string {
 // Follow() behaviour without poking the unexported field.
 func (v *Viewport) Offset() int { return v.offset }
 
+// ScrollBy shifts the viewport offset by delta (positive = down). Clamps
+// inside the valid range. Used by stages that expose explicit keyboard
+// scroll (Planted's WRITTEN tree, Observe's PLANTING tree).
+func (v *Viewport) ScrollBy(delta int) {
+	v.offset += delta
+	v.clamp()
+}
+
+// HasMore reports whether there are lines above or below the current
+// viewport window. Callers use this to decide whether to surface "more"
+// indicators or scroll key hints.
+func (v *Viewport) HasMore() (up, down bool) {
+	if len(v.lines) == 0 || v.height <= 0 {
+		return false, false
+	}
+	return v.offset > 0, v.offset+v.height < len(v.lines)
+}
+
 // clamp bounds offset to [0, max(0, len(lines)-height)].
 func (v *Viewport) clamp() {
 	if len(v.lines) == 0 || v.height <= 0 {

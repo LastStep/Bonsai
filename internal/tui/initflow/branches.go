@@ -21,13 +21,11 @@ const (
 )
 
 // branchCat is a single tab in the BranchesStage — one of the five ability
-// categories. Kanji is the wide-char accent label (ASCII terminals render
-// just the display name). introLine1/introLine2 are the two-line description
-// shown above the list when this tab is active.
+// categories. introLine1/introLine2 are the two-line description shown above
+// the list when this tab is active.
 type branchCat struct {
 	key         string       // "skills" etc.
-	displayName string       // "skills" lowercased label in header row
-	kanji       string       // 技 / 流 / 律 / 感 / 習
+	displayName string       // "SKILLS" uppercase label in tab header
 	introLine1  string       // first line of the per-tab intro copy
 	introLine2  string       // second line
 	items       []branchItem // catalog-ordered item list
@@ -182,31 +180,31 @@ func NewBranchesStage(ctx StageContext, cat *catalog.Catalog, agentDef *catalog.
 
 	categories := []branchCat{
 		{
-			key: branchCatSkills, displayName: "skills", kanji: "技",
+			key: branchCatSkills, displayName: "SKILLS",
 			introLine1: "Rulebooks for specific domains.",
 			introLine2: "Standards the Tech Lead consults when doing focused work.",
 			items:      skills,
 		},
 		{
-			key: branchCatWorkflows, displayName: "workflows", kanji: "流",
+			key: branchCatWorkflows, displayName: "WORKFLOWS",
 			introLine1: "Activity-level procedures.",
 			introLine2: "Playbooks for multi-phase tasks from intake to ship.",
 			items:      workflows,
 		},
 		{
-			key: branchCatProtocols, displayName: "protocols", kanji: "律",
+			key: branchCatProtocols, displayName: "PROTOCOLS",
 			introLine1: "Always-on guardrails.",
 			introLine2: "Rules every session follows, regardless of task.",
 			items:      protocols,
 		},
 		{
-			key: branchCatSensors, displayName: "sensors", kanji: "感",
+			key: branchCatSensors, displayName: "SENSORS",
 			introLine1: "Hook-triggered automations.",
 			introLine2: "Event scripts the harness runs without prompting.",
 			items:      sensors,
 		},
 		{
-			key: branchCatRoutines, displayName: "routines", kanji: "習",
+			key: branchCatRoutines, displayName: "ROUTINES",
 			introLine1: "Periodic self-maintenance.",
 			introLine2: "Recurring checks on a time-based schedule.",
 			items:      routines,
@@ -342,9 +340,8 @@ func (s *BranchesStage) keyHints() []KeyHint {
 // the counter summary. Body is centred via centerBlock to match the Vessel
 // / Soil visual rhythm.
 func (s *BranchesStage) renderBody() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	dim := DimStyle()
+	bark := LabelStyle()
 	white := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
 
 	// Title row — mirrors Vessel / Soil pattern.
@@ -361,15 +358,29 @@ func (s *BranchesStage) renderBody() string {
 		dim.Render("Five categories of abilities — required pinned, defaults pre-picked."),
 	}, "\n")
 
-	divider := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("CATEGORIES") + " " +
-		dim.Render(strings.Repeat("─", 60))
+	panelW := PanelWidth(s.width)
+	divider := RenderSectionHeader("CATEGORIES", panelW)
 
 	tabRow := s.renderTabs()
 	tabIntro := s.renderTabIntro()
 	list := s.renderList()
 	details := s.renderDetails()
 	counter := s.renderCounter()
+
+	// Pin the list to its full budget so `details` lands on the same row
+	// regardless of how many items the active tab has. Without this pad,
+	// SKILLS (5 items) and SENSORS (9 items) leave the details panel at
+	// different vertical positions — tab switching jitters the whole body.
+	listH := s.listHeight()
+	if listH > 0 {
+		rendered := strings.Count(list, "\n") + 1
+		if list == "" {
+			rendered = 0
+		}
+		if rendered < listH {
+			list = list + strings.Repeat("\n", listH-rendered)
+		}
+	}
 
 	body := []string{
 		intro,
@@ -383,8 +394,8 @@ func (s *BranchesStage) renderBody() string {
 		"",
 		list,
 		"",
+		"", // extra blank pushes DETAILS lower and buys breathing room
 		details,
-		"",
 		"",
 		dim.Render(counter),
 	}
@@ -432,14 +443,11 @@ func (s *BranchesStage) renderTabIntro() string {
 // values render in ColorAccent (white) for maximum legibility against the
 // dim surround.
 func (s *BranchesStage) renderDetails() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
-	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	dim := DimStyle()
+	bark := LabelStyle()
 	value := lipgloss.NewStyle().Foreground(tui.ColorAccent)
 
-	header := leaf.Render(strings.Repeat("─", 3)) + " " +
-		bark.Render("DETAILS") + " " +
-		dim.Render(strings.Repeat("─", 60))
+	header := RenderSectionHeader("DETAILS", PanelWidth(s.width))
 
 	const labelW = 10
 	const indent = "    "
@@ -511,56 +519,33 @@ func (s *BranchesStage) renderDetails() string {
 	return header + "\n" + aboutRow1 + "\n" + aboutRow2 + "\n" + aboutRow3 + "\n" + fileRow
 }
 
-// renderTabs renders the 5-column tab header: kanji + display name on row 1,
-// "N / Total" subtitle on row 2. The current tab is highlighted with a Leaf
-// colour + ◆ accent glyph; others are muted. On ASCII-only terminals the
-// kanji is dropped in favour of the display name alone (mirrors the
-// vessel.go / soil.go ensoSafe fallback pattern).
+// renderTabs renders the single-row tab header. Active tab is wrapped in
+// leaf-green `[  LABEL  ]` brackets; inactive tabs render muted. Leading `‹`
+// and trailing `›` chevrons bookend the row to signal the whole strip is
+// left/right navigable — 2026-04-22 UX pass dropped the "N / Total" subtitle
+// (selection count already lives in the footer counter) in favour of a
+// stronger navigation affordance.
 func (s *BranchesStage) renderTabs() string {
-	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
 	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+	bracket := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	chevron := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 
 	const colW = 16
 
-	top := make([]string, 0, len(s.categories))
-	sub := make([]string, 0, len(s.categories))
+	cells := make([]string, 0, len(s.categories))
 	for i, c := range s.categories {
-		var label string
-		if s.ensoSafe {
-			label = c.kanji + " " + c.displayName
-		} else {
-			label = c.displayName
-		}
-		var topStyled string
+		var cell string
 		if i == s.catIdx {
-			label = label + " ◆"
-			topStyled = leaf.Render(label)
+			cell = bracket.Render("[ ") + leaf.Render(c.displayName) + bracket.Render(" ]")
 		} else {
-			topStyled = muted.Render(label)
+			cell = "  " + muted.Render(c.displayName) + "  "
 		}
-		top = append(top, lipgloss.PlaceHorizontal(colW, lipgloss.Center, topStyled))
-
-		// Subtitle: "N / Total" — selected count vs total items for this tab.
-		picks := s.selected[i]
-		sel := 0
-		for _, it := range c.items {
-			if picks[it.name] {
-				sel++
-			}
-		}
-		line := fmt.Sprintf("%d / %d", sel, len(c.items))
-		var subStyled string
-		if i == s.catIdx {
-			subStyled = bark.Render(line)
-		} else {
-			subStyled = dim.Render(line)
-		}
-		sub = append(sub, lipgloss.PlaceHorizontal(colW, lipgloss.Center, subStyled))
+		cells = append(cells, lipgloss.PlaceHorizontal(colW, lipgloss.Center, cell))
 	}
 
-	return strings.Join(top, " ") + "\n" + strings.Join(sub, " ")
+	row := strings.Join(cells, " ")
+	return chevron.Render("‹") + " " + row + " " + chevron.Render("›")
 }
 
 // renderList renders the item rows for the current tab. Details for the
@@ -602,19 +587,22 @@ func (s *BranchesStage) renderList() string {
 // Branches stage body has a fixed footprint above + below the list:
 //
 //	intro (3) + blanks (2) + divider (1) + blank (1)
-//	  + tabs (2) + blank (1) + tabIntro (2) + blank (1)       = 13 rows above
-//	blank (1) + details (5) + blanks (2) + counter (1)         = 9 rows below
+//	  + tabs (1) + blank (1) + tabIntro (2) + blank (1)       = 12 rows above
+//	blanks (2) + details (5) + blank (1) + counter (1)         = 9 rows below
 //
-// Total non-list body rows = 22. Chrome (header 2 + blank + rail 2 + blank
-// + footer 2 + bottom pad 1 = 10) lives outside renderBody; renderFrame's
-// padRows math absorbs it. We subtract chrome + fixed body from s.height
-// to leave the list the remainder. Floor at 3 so something always shows.
+// (Two blanks sit between list and details so the DETAILS panel drops low
+// enough to feel like a distinct block, with breathing room between it
+// and the counter too.)
+//
+// Total non-list body rows = 21. Chrome (header 2 + blank + rail 2 + blank
+// + blank + footer 2 = 10) lives outside renderBody; renderFrame's body
+// padding absorbs the remainder. Floor at 3 so something always shows.
 func (s *BranchesStage) listHeight() int {
 	if s.height <= 0 {
 		return 0 // unknown — render all rows, let harness clip
 	}
 	const chromeRows = 10    // header + rail + footer + separators
-	const fixedBodyRows = 22 // see comment above
+	const fixedBodyRows = 21 // see comment above
 	h := s.height - chromeRows - fixedBodyRows
 	if h < 3 {
 		h = 3
@@ -624,14 +612,19 @@ func (s *BranchesStage) listHeight() int {
 
 // renderRow renders a single ability row at index idx within the current
 // tab. Focused rows get a Leaf "│ " left border; selected rows use ◆ (Leaf),
-// unselected use ◇ (dim). Required items show a muted "(required)" tag;
-// default items show the "DEFAULT" tag right-aligned.
+// unselected use ◇ (dim). Required items show an inline gold "*" glyph
+// after the ability name; the green dot (◆) already conveys "pre-selected"
+// so no separate DEFAULT tag.
 //
-// Column widths come from ClampColumns(availableW) so rows never clip on
-// narrow terminals: tagW is pinned at 12 so DEFAULT / (required) stays
-// visible, nameW caps at 24, descW absorbs the remainder. When descW
+// Column widths come from ClampColumns(availableW). The old tag column
+// (12 cells) is reclaimed by the description column since there is no
+// trailing tag; nameW caps at 24, descW absorbs the remainder. When descW
 // floors to 0 (very tight terminal) the description column is dropped
-// entirely — name + tag only.
+// entirely.
+//
+// Focus colouring: ability name switches to white-bold (ColorAccent),
+// description lifts from ColorRule2 (dim) to ColorMuted so the focused
+// row reads brighter than its unfocused neighbours.
 func (s *BranchesStage) renderRow(idx int) string {
 	cat := s.currentCat()
 	if cat == nil || idx < 0 || idx >= len(cat.items) {
@@ -641,11 +634,8 @@ func (s *BranchesStage) renderRow(idx int) string {
 	focused := idx == s.itemIdx[s.catIdx]
 	selected := s.selected[s.catIdx][it.name]
 
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
 	dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
-	label := lipgloss.NewStyle().Foreground(tui.ColorSubtle)
 
 	// Glyph: ◆ when selected (Leaf), ◇ when not (dim).
 	glyph := "◇"
@@ -663,51 +653,72 @@ func (s *BranchesStage) renderRow(idx int) string {
 	}
 
 	nameColW, descColW, tagColW := ClampColumns(s.availableWidth())
+	// Tag column now carries a single "*" (or blank) instead of
+	// "(required)" / "DEFAULT" — reclaim the spare space for desc.
+	descColW += tagColW - 2
+	tagColW = 2
 
-	// Name column — bold when focused, regular otherwise. Truncate rune-safe
-	// so each field stays inside its column (no row shove).
+	// Required asterisk lives after the ability name. Truncate the name
+	// against (nameColW - 2) when required so the " *" always fits.
 	name := it.displayName
 	if name == "" {
 		name = it.name
 	}
-	if lipgloss.Width(name) > nameColW {
+	nameBudget := nameColW
+	if it.required {
+		nameBudget = nameColW - 2
+	}
+	if lipgloss.Width(name) > nameBudget {
 		rr := []rune(name)
-		if len(rr) > nameColW-1 && nameColW > 1 {
-			name = string(rr[:nameColW-1]) + "…"
+		if len(rr) > nameBudget-1 && nameBudget > 1 {
+			name = string(rr[:nameBudget-1]) + "…"
 		}
 	}
-	nameCol := label.Render(padRight(name, nameColW))
-	if focused {
-		nameCol = bark.Render(padRight(name, nameColW))
+	// Name colour encodes two orthogonal states:
+	//   selected (any focus)    → leaf-green (bold when focused)
+	//   unselected + focused    → white bold  (FocusedNameStyle)
+	//   unselected + unfocused  → subtle      (UnfocusedNameStyle)
+	// Green for "picked" matches the glyph colour so selection reads as
+	// a single leaf-coloured block rather than a gold+white mix.
+	var nameStyle lipgloss.Style
+	switch {
+	case selected && focused:
+		nameStyle = leaf.Bold(true)
+	case selected:
+		nameStyle = leaf
+	case focused:
+		nameStyle = FocusedNameStyle()
+	default:
+		nameStyle = UnfocusedNameStyle()
 	}
+	nameText := nameStyle.Render(name)
+	if it.required {
+		nameText += " " + RequiredGlyph()
+	}
+	nameCol := padRight(nameText, nameColW)
 
-	// Description column — muted, truncated so the row doesn't wrap.
-	// descColW=0 is the "tight-terminal" signal: drop desc entirely.
+	// Description column — ColorMuted when focused (brighter), ColorRule2
+	// otherwise. descColW=0 is the "tight-terminal" signal: drop entirely.
 	var descCol string
 	if descColW > 0 {
 		desc := it.description
 		if lipgloss.Width(desc) > descColW {
-			// Truncate by rune so multi-byte descriptions don't split mid-char.
 			rr := []rune(desc)
 			if len(rr) > descColW-1 {
 				desc = string(rr[:descColW-1]) + "…"
 			}
 		}
-		descCol = " " + dim.Render(padRight(desc, descColW))
+		descStyle := dim
+		if focused {
+			descStyle = FocusedDescStyle()
+		}
+		descCol = " " + descStyle.Render(padRight(desc, descColW))
 	}
 
-	// Trailing tag: "(required)" or "DEFAULT", right-aligned inside the
-	// fixed tag slot so the word-end lands on the same column for every
-	// row regardless of tag text length.
-	tag := ""
-	if it.required {
-		tag = muted.Render("(required)")
-	} else if it.isDefault {
-		tag = muted.Render("DEFAULT")
-	}
-	tagCol := lipgloss.PlaceHorizontal(tagColW, lipgloss.Right, tag)
+	// Trailing tag slot stays empty — reserved for column alignment only.
+	_ = tagColW
 
-	return border + glyphStyle.Render(glyph) + " " + nameCol + descCol + " " + tagCol
+	return border + glyphStyle.Render(glyph) + " " + nameCol + descCol
 }
 
 // availableWidth returns the per-row budget after subtracting side-padding

@@ -210,8 +210,9 @@ func (s *GenerateStage) keyHints() []KeyHint {
 	}
 }
 
-// renderBody renders the arc, title, and progress caption. Size scales
-// down to 8x16 at widths <90 (plan spec).
+// renderBody renders the tree, title, and progress caption. Bonsai scales
+// down from the wide 10-row template to a compact 7-row template at widths
+// <90 so the stage still fits 80-col terminals.
 func (s *GenerateStage) renderBody() string {
 	s.mu.Lock()
 	state := s.state
@@ -239,16 +240,8 @@ func (s *GenerateStage) renderBody() string {
 		return centerBlock(block, s.width)
 	}
 
-	rows, cols := 12, 24
-	if s.width < 90 {
-		rows, cols = 8, 16
-	}
+	tree := renderBonsai(ticks, s.width >= 90, s.ensoSafe)
 
-	arc := renderArc(rows, cols, ticks, s.ensoSafe)
-
-	// Progress label cycles 種 SEED → 苗 SPROUT → 盆栽 BONSAI every
-	// ~60 ticks (≈2.5s) so longer catalogs still get the three-beat
-	// crescendo.
 	label := progressLabel(ticks, s.ensoSafe)
 
 	title := "生 · PLANTING"
@@ -259,118 +252,171 @@ func (s *GenerateStage) renderBody() string {
 	block := strings.Join([]string{
 		bark.Render(title),
 		"",
-		arc,
+		tree,
 		"",
 		white.Render(label),
 	}, "\n")
 	return centerBlock(block, s.width)
 }
 
-// renderArc draws an ASCII ring of dots that light up progressively with
-// tick count. The ring is rectangular (rows x cols) with the `生` kanji
-// centred inside. Progress is ticks mod (ring perimeter) so the arc
-// eventually circles back on very long operations.
-func renderArc(rows, cols, ticks int, safe bool) string {
-	if rows < 3 || cols < 3 {
-		return ""
+// bonsaiTemplate pairs a character grid with a per-row reveal-layer array.
+// Each rune position maps to a glyph class (leaf / trunk / pot / heart /
+// blank) and the row's layer determines when it lights up in the reveal
+// animation.
+type bonsaiTemplate struct {
+	grid   []string // fully-lit template, each rune is one cell
+	layers []int    // parallel to grid: reveal layer for the row
+}
+
+// wideBonsai is the 10-row × 21-col template shown at ≥90 col terminals.
+// Reveal order grows bottom-up: pot → trunk → canopy from inner to crown.
+var wideBonsai = bonsaiTemplate{
+	grid: []string{
+		"         LLL         ", // layer 7 — crown
+		"       LLLLLLL       ", // layer 6
+		"     LLLLLLLLLLL     ", // layer 5
+		"   LLLLLLLLLLLLLLL   ", // layer 4
+		"     LLLLLLLLLLL     ", // layer 3
+		"         lHl         ", // layer 2 — heart + trunk collar
+		"          T          ", // layer 1 — trunk
+		"          T          ", // layer 1
+		"     PPPPPPPPPPP     ", // layer 0 — pot rim
+		"      _________      ", // layer 0 — pot base
+	},
+	layers: []int{7, 6, 5, 4, 3, 2, 1, 1, 0, 0},
+}
+
+// narrowBonsai is the 7-row × 13-col template for <90-col terminals.
+var narrowBonsai = bonsaiTemplate{
+	grid: []string{
+		"     LLL     ", // layer 4
+		"   LLLLLLL   ", // layer 3
+		" LLLLLLLLLLL ", // layer 2
+		"     lHl     ", // layer 1 — heart
+		"      T      ", // layer 1
+		"   PPPPPPP   ", // layer 0 — pot
+		"    _____    ", // layer 0
+	},
+	layers: []int{4, 3, 2, 1, 1, 0, 0},
+}
+
+// renderBonsai draws a bonsai tree that reveals layer-by-layer with tick
+// count. ticksPerLayer controls the cadence — each layer lights up every
+// ~2 ticks so the full animation completes inside ~14 ticks (≈600ms at
+// 42ms/tick), matching minGenerateHold. Once all layers are revealed the
+// canopy drops its dim "outer leaf" cells and renders fully bright.
+func renderBonsai(ticks int, wide, safe bool) string {
+	tpl := wideBonsai
+	if !wide {
+		tpl = narrowBonsai
 	}
 
-	lit := "●"
-	dim := "○"
-	centre := "生"
+	leaf := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
+	leafDim := lipgloss.NewStyle().Foreground(tui.ColorPrimary)
+	trunk := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
+	pot := lipgloss.NewStyle().Foreground(tui.ColorSecondary)
+	base := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+	heart := lipgloss.NewStyle().Foreground(tui.ColorAccent).Bold(true)
+	hidden := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+
+	const ticksPerLayer = 2
+	revealedLayer := ticks / ticksPerLayer
+	maxLayer := 0
+	for _, l := range tpl.layers {
+		if l > maxLayer {
+			maxLayer = l
+		}
+	}
+	allLit := revealedLayer >= maxLayer
+
+	leafLit := "✦"
+	leafOff := "·"
+	trunkCh := "║"
+	potCh := "═"
+	baseCh := "─"
+	heartCh := "生"
+	heartW := 2
 	if !safe {
-		lit = "#"
-		dim = "."
-		centre = "O"
+		leafLit = "*"
+		leafOff = "."
+		trunkCh = "|"
+		potCh = "="
+		baseCh = "_"
+		heartCh = "O"
+		heartW = 1
 	}
-
-	// Build grid of dim cells.
-	grid := make([][]string, rows)
-	for r := 0; r < rows; r++ {
-		row := make([]string, cols)
-		for c := 0; c < cols; c++ {
-			row[c] = " "
-		}
-		grid[r] = row
-	}
-
-	// Compute perimeter indices. Walk: top (L→R), right (T→B), bottom
-	// (R→L), left (B→T).
-	perim := make([][2]int, 0, 2*(rows+cols)-4)
-	for c := 0; c < cols; c++ {
-		perim = append(perim, [2]int{0, c})
-	}
-	for r := 1; r < rows; r++ {
-		perim = append(perim, [2]int{r, cols - 1})
-	}
-	for c := cols - 2; c >= 0; c-- {
-		perim = append(perim, [2]int{rows - 1, c})
-	}
-	for r := rows - 2; r >= 1; r-- {
-		perim = append(perim, [2]int{r, 0})
-	}
-
-	// Fill all perimeter slots with the dim dot first.
-	for _, p := range perim {
-		grid[p[0]][p[1]] = dim
-	}
-
-	// Light up the prefix of length `ticks mod len(perim)` (or all if the
-	// animation has lapped once + state advanced).
-	n := len(perim)
-	lightCount := ticks
-	if lightCount > n {
-		lightCount = lightCount % n
-		if lightCount == 0 {
-			lightCount = n
-		}
-	}
-	for i := 0; i < lightCount; i++ {
-		grid[perim[i][0]][perim[i][1]] = lit
-	}
-
-	// Place the centre kanji. Kanji is 2-cell, so inserting at centre col-1
-	// means the glyph visually centres. On ASCII fallback the centre is a
-	// single cell, so we don't need to shift.
-	midR := rows / 2
-	midC := cols / 2
-	if safe {
-		grid[midR][midC-1] = centre
-		grid[midR][midC] = ""
-	} else {
-		grid[midR][midC] = centre
-	}
-
-	leafStyle := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
-	muted := lipgloss.NewStyle().Foreground(tui.ColorRule2)
-	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary).Bold(true)
 
 	var buf strings.Builder
-	for r := 0; r < rows; r++ {
-		for c := 0; c < cols; c++ {
-			cell := grid[r][c]
-			switch cell {
-			case lit:
-				buf.WriteString(leafStyle.Render(cell))
-			case dim:
-				buf.WriteString(muted.Render(cell))
-			case centre:
-				buf.WriteString(bark.Render(cell))
-			case "":
-				// Placeholder when a wide-char glyph consumed this cell.
+	for r, row := range tpl.grid {
+		layer := tpl.layers[r]
+		lit := layer <= revealedLayer
+		// Track column position explicitly so the wide heart glyph can
+		// consume two cells cleanly on safe (kanji) terminals.
+		for c := 0; c < len(row); c++ {
+			ch := row[c]
+			switch ch {
+			case ' ':
+				buf.WriteString(" ")
+			case 'L':
+				switch {
+				case !lit:
+					buf.WriteString(hidden.Render(leafOff))
+				case allLit:
+					buf.WriteString(leaf.Render(leafLit))
+				default:
+					buf.WriteString(leafDim.Render(leafLit))
+				}
+			case 'l':
+				if lit {
+					buf.WriteString(leafDim.Render(leafLit))
+				} else {
+					buf.WriteString(hidden.Render(leafOff))
+				}
+			case 'T':
+				if lit {
+					buf.WriteString(trunk.Render(trunkCh))
+				} else {
+					buf.WriteString(hidden.Render(leafOff))
+				}
+			case 'P':
+				if lit {
+					buf.WriteString(pot.Render(potCh))
+				} else {
+					buf.WriteString(hidden.Render(leafOff))
+				}
+			case '_':
+				if lit {
+					buf.WriteString(base.Render(baseCh))
+				} else {
+					buf.WriteString(" ")
+				}
+			case 'H':
+				if lit {
+					buf.WriteString(heart.Render(heartCh))
+					// Safe heart is 2-cell — swallow the next column so
+					// the row width stays correct. Narrow/ascii heart
+					// is 1-cell so no swallow needed.
+					if heartW == 2 && c+1 < len(row) {
+						c++
+					}
+				} else {
+					buf.WriteString(hidden.Render(leafOff))
+				}
 			default:
-				buf.WriteString(cell)
+				buf.WriteString(string(ch))
 			}
 		}
-		if r < rows-1 {
+		if r < len(tpl.grid)-1 {
 			buf.WriteString("\n")
 		}
 	}
 	return buf.String()
 }
 
-// progressLabel cycles 種 SEED → 苗 SPROUT → 盆栽 BONSAI on a ~60-tick
-// rhythm. ASCII fallback drops the kanji.
+// progressLabel cycles 種 SEED → 苗 SPROUT → 盆栽 BONSAI on a ~20-tick
+// rhythm so every planting (at ≥600ms / 14 ticks) shows at least the SEED
+// beat, and longer operations cycle through all three. ASCII fallback
+// drops the kanji.
 func progressLabel(ticks int, safe bool) string {
 	stages := [][2]string{
 		{"種", "SEED"},
@@ -396,9 +442,23 @@ func (s *GenerateStage) Result() any {
 	return nil
 }
 
-// Reset is a no-op: once Generate has finished it cannot re-run from the
-// same instance. The harness should build a new GenerateStage on retry.
+// Reset flips the completion flag so harness bookkeeping stays consistent
+// after an Esc-back, but leaves the internal state alone. Once generation
+// has run (stateDone or stateError) the action is not re-invoked — the
+// harness should skip past this stage via AutoComplete.
 func (s *GenerateStage) Reset() tea.Cmd {
 	s.done = false
 	return nil
+}
+
+// AutoComplete reports true once the generate action has finished — whether
+// it succeeded or errored. This lets the harness's Esc-back loop skip past
+// Generate so the user isn't stranded on a post-run frame after pressing
+// Esc on the subsequent Planted stage. The one-shot nature of file writes
+// means we never want re-entry into this stage's interactive state; the
+// only way "back" is to the prior confirmation stage (Observe).
+func (s *GenerateStage) AutoComplete() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.state == stateDone || s.state == stateError
 }

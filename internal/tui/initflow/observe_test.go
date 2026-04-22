@@ -146,7 +146,9 @@ func TestObserve_SetPriorSnapshot(t *testing.T) {
 }
 
 // TestObserve_BodyIncludesSummary verifies the rendered body contains the
-// expected summary markers when the three prior stages have been captured.
+// expected PROJECT + PLANTING markers when the three prior stages have
+// been captured. The 2026-04-22 redesign folded SOIL+BRANCHES into a
+// single PLANTING tree; ability counts replace full ability lists.
 func TestObserve_BodyIncludesSummary(t *testing.T) {
 	s := newTestObserve()
 	s.SetPrior([]any{
@@ -155,19 +157,27 @@ func TestObserve_BodyIncludesSummary(t *testing.T) {
 		BranchesResult{Skills: []string{"alpha"}},
 	})
 	v := s.View()
-	// Strip ANSI (styles) for robust substring check.
-	for _, want := range []string{"VESSEL", "SOIL", "BRANCHES", "voyager", "agents-index", "alpha"} {
+	// PROJECT section carries the vessel fields; PLANTING holds the tree
+	// with the soil pick + ability group names + 1-item count.
+	for _, want := range []string{
+		"PROJECT",
+		"PLANTING",
+		"voyager",
+		"agents-index",
+		"Skills/",
+		"1 items",
+	} {
 		if !strings.Contains(v, want) {
 			t.Errorf("View missing %q", want)
 		}
 	}
 }
 
-// TestObserve_ResponsiveStackedNarrow verifies the body uses a stacked
-// (single-column) layout below 100 cols. We check by confirming the
-// left block's content appears above the right block's content in the
-// rendered output at narrow widths.
-func TestObserve_ResponsiveStackedNarrow(t *testing.T) {
+// TestObserve_SingleColumnLayout verifies the stacked single-column layout
+// renders PROJECT before PLANTING regardless of terminal width (the old
+// responsive-grid split got folded into a unified tree in 2026-04-22 UX
+// pass).
+func TestObserve_SingleColumnLayout(t *testing.T) {
 	s := newTestObserve()
 	s.width = 80
 	s.height = 30
@@ -177,15 +187,16 @@ func TestObserve_ResponsiveStackedNarrow(t *testing.T) {
 		BranchesResult{Skills: []string{"alpha"}},
 	})
 	v := s.View()
-	// In stacked mode VESSEL must appear before BRANCHES (which appears
-	// before SOIL in our stacked order).
-	vIdx := strings.Index(v, "VESSEL")
-	bIdx := strings.Index(v, "BRANCHES")
-	if vIdx < 0 || bIdx < 0 {
-		t.Fatalf("missing VESSEL/BRANCHES markers in narrow render")
+	// Use "── PROJECT" / "── PLANTING" with leading dashes so we match the
+	// body section headers rather than the "PLANTING INTO" string that also
+	// appears in the chrome header above the body.
+	pIdx := strings.Index(v, "── PROJECT")
+	plIdx := strings.Index(v, "── PLANTING")
+	if pIdx < 0 || plIdx < 0 {
+		t.Fatalf("missing PROJECT/PLANTING body markers in render")
 	}
-	if vIdx >= bIdx {
-		t.Errorf("narrow-width layout: VESSEL (idx %d) should precede BRANCHES (idx %d)", vIdx, bIdx)
+	if pIdx >= plIdx {
+		t.Errorf("PROJECT (idx %d) should precede PLANTING (idx %d)", pIdx, plIdx)
 	}
 }
 

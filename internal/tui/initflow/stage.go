@@ -121,8 +121,12 @@ func (s *Stage) Reset() tea.Cmd {
 // AltScreen frame. body is the per-stage payload (rendered inside a padded
 // content area); keys are the footer hints.
 //
-// The frame height is filled out to s.height (minus 1 for a terminal cursor
-// row) so the AltScreen doesn't leave earlier frames visible at the bottom.
+// Chrome is fixed-height and positioned rigidly: header always occupies
+// rows 1-2, rail row 4, footer the last two rows. The body slot between
+// rail and footer is padded (or truncated) to a fixed row count so per-
+// stage content length never nudges the chrome. Eliminates the pre-
+// 2026-04-22 jitter where inline error rows / varying list lengths
+// shifted the footer up and down between renders.
 func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 	width := s.width
 	if width <= 0 {
@@ -145,23 +149,24 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 	rail := RenderEnsoRail(s.idx, width, s.ensoSafe)
 	footer := RenderFooter(keys, width)
 
-	// Count rendered rows so we can pad the middle to fill the AltScreen.
+	// Chrome budget: header(2) + blank + rail(2) + blank + blank + footer(2) = 9 rows.
+	// Rail is 2 rows (dots + labels); pad accordingly.
 	count := func(s string) int { return strings.Count(s, "\n") + 1 }
-	headerRows := count(header)
-	railRows := count(rail)
-	footerRows := count(footer)
-	bodyRows := count(body)
-
-	// Compose: header, blank, rail, blank, body, <pad>, footer.
-	// Separators contribute 5 blank lines (2 after header, 2 after rail, 1
-	// before footer) — subtract to land the footer at the terminal bottom.
-	padRows := height - headerRows - railRows - bodyRows - footerRows - 5
-	if padRows < 1 {
-		padRows = 1
+	chromeRows := count(header) + 1 + count(rail) + 1 + 1 + count(footer)
+	bodyTarget := height - chromeRows
+	if bodyTarget < 1 {
+		bodyTarget = 1
 	}
-	pad := strings.Repeat("\n", padRows)
 
-	return header + "\n\n" + rail + "\n\n" + body + "\n" + pad + footer
+	bodyRows := count(body)
+	if bodyRows < bodyTarget {
+		body = body + strings.Repeat("\n", bodyTarget-bodyRows)
+	} else if bodyRows > bodyTarget {
+		lines := strings.Split(body, "\n")
+		body = strings.Join(lines[:bodyTarget], "\n")
+	}
+
+	return header + "\n\n" + rail + "\n\n" + body + "\n\n" + footer
 }
 
 // DefaultKeys is the base footer key hint set used by the Phase-2 stubs.

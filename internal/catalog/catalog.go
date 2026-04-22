@@ -9,28 +9,71 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// displayAcronyms maps lowercase kebab tokens to their canonical display form.
+// Ensures api/cli/pr/iac etc. render correctly instead of naive "Api"/"Cli".
+var displayAcronyms = map[string]string{
+	"api":   "API",
+	"cli":   "CLI",
+	"pr":    "PR",
+	"iac":   "IaC",
+	"sql":   "SQL",
+	"ui":    "UI",
+	"ux":    "UX",
+	"ci":    "CI",
+	"cd":    "CD",
+	"id":    "ID",
+	"url":   "URL",
+	"http":  "HTTP",
+	"https": "HTTPS",
+	"tls":   "TLS",
+	"ssh":   "SSH",
+	"cors":  "CORS",
+	"aws":   "AWS",
+	"gcp":   "GCP",
+	"os":    "OS",
+	"io":    "IO",
+}
+
+// displayArticles stays lowercase in non-leading positions.
+// "issue-to-implementation" → "Issue to Implementation", not "Issue To Implementation".
+var displayArticles = map[string]bool{
+	"a": true, "an": true, "and": true, "as": true, "at": true,
+	"by": true, "for": true, "in": true, "of": true, "on": true,
+	"or": true, "the": true, "to": true, "with": true,
+}
+
 // DisplayNameFrom derives a human-readable display name from a kebab-case machine name.
-// "scope-guard-files" → "Scope Guard Files"
+// Acronym-aware ("api-design-standards" → "API Design Standards") and
+// article-aware ("issue-to-implementation" → "Issue to Implementation").
+// First token always capitalized regardless of article status.
 func DisplayNameFrom(name string) string {
-	var result strings.Builder
-	capitalize := true
-	for _, r := range name {
-		if r == '-' {
-			result.WriteRune(' ')
-			capitalize = true
+	tokens := strings.Split(name, "-")
+	out := make([]string, 0, len(tokens))
+	for i, t := range tokens {
+		if t == "" {
 			continue
 		}
-		if capitalize {
-			result.WriteRune(unicode.ToUpper(r))
-			capitalize = false
-		} else {
-			result.WriteRune(r)
+		low := strings.ToLower(t)
+		if s, ok := displayAcronyms[low]; ok {
+			out = append(out, s)
+			continue
 		}
-		if r == ' ' {
-			capitalize = true
+		if i > 0 && displayArticles[low] {
+			out = append(out, low)
+			continue
 		}
+		out = append(out, titleCaseToken(t))
 	}
-	return result.String()
+	return strings.Join(out, " ")
+}
+
+func titleCaseToken(s string) string {
+	if s == "" {
+		return s
+	}
+	runes := []rune(s)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 }
 
 // AgentCompat handles the YAML "agents" field which can be "all" or a list of strings.

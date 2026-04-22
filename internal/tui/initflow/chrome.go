@@ -23,8 +23,8 @@ type KeyHint struct {
 // stacks "PLANTING INTO" above the project path so the destination reads as
 // its own block.
 //
-//	Left row 1:  [盆] BONSAI
-//	Left row 2:  INITIALIZE · v<version>
+//	Left row 1:  盆  BONSAI
+//	Left row 2:  ◇ INIT · v<version>
 //	Right row 1: PLANTING INTO
 //	Right row 2: ~/.../<project>/
 //
@@ -34,6 +34,10 @@ type KeyHint struct {
 // station subdir doesn't exist yet at any point before the Generate stage,
 // so showing it was misleading. safe gates the single wide-char glyph so
 // ASCII-only terminals get a safe substitute.
+//
+// A sidePad (2 cells) is applied to both edges so the header's content
+// sits inside the same inset as the enso rail below — keeps the chrome's
+// left/right margins visually consistent across rows.
 func RenderHeader(version, projectDir string, width int, safe bool) string {
 	if width <= 0 {
 		width = 80
@@ -42,19 +46,22 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	primary := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 	bark := lipgloss.NewStyle().Foreground(tui.ColorSecondary)
+	dot := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 
 	// ── Left block (2 rows) ─────────────────────────────────────────
-	mark := "盆"
+	// Row 1 — highlighted dot + brand. The kanji 盆 dropped 2026-04-22
+	// UX pass: a single lit ◇ is the brand's sole decorative glyph, both
+	// here and on every stage's section dividers. "Highlight state" =
+	// bold leaf so the dot reads as actively lit against muted row 2.
+	glyph := "◇"
 	if !safe {
-		mark = "o"
+		glyph = "*"
 	}
-	// Pad inside brackets so the wide-char kanji (and its ASCII fallback)
-	// reads as visually centred rather than left-hugging the `[` — terminals
-	// left-anchor CJK glyphs inside their 2-cell slot, so "[盆]" looks off.
-	leftRow1 := muted.Render("[ ") + primary.Render(mark) + muted.Render(" ]") +
-		" " + primary.Render("BONSAI")
+	leftRow1 := dot.Render(glyph) + "  " + primary.Render("BONSAI")
 
-	leftRow2Parts := []string{muted.Render("INITIALIZE")}
+	// Row 2 — muted "INIT · v…" subtitle. No leading glyph — row 1 carries
+	// the only decorative mark so the two rows read as brand / state.
+	leftRow2Parts := []string{muted.Render("INIT")}
 	if version != "" && version != "dev" {
 		leftRow2Parts = append(leftRow2Parts,
 			muted.Render("·"),
@@ -76,8 +83,15 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	rightRow2 := muted.Render(parent) + bark.Render(projectName) + muted.Render("/")
 
 	// ── Compose ─────────────────────────────────────────────────────
-	// Pick the wider of each block as the column anchor so both rows
-	// align consistently on the shared gap.
+	// Apply a 2-cell outer margin on each edge so the header's effective
+	// content width matches the rail's sidePad inset. This is the
+	// primary fix for the 2026-04-22 "inconsistent edge padding" report.
+	const sidePad = 2
+	contentW := width - sidePad*2
+	if contentW < 20 {
+		contentW = 20
+	}
+
 	left1W := lipgloss.Width(leftRow1)
 	left2W := lipgloss.Width(leftRow2)
 	leftW := left1W
@@ -90,7 +104,7 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	if right2W > rightW {
 		rightW = right2W
 	}
-	gap := width - leftW - rightW - 2 // -2 for 1-col padding each side
+	gap := contentW - leftW - rightW
 	if gap < 2 {
 		gap = 2
 	}
@@ -100,8 +114,9 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	row2 := leftRow2 + strings.Repeat(" ", leftW-left2W+gap) +
 		strings.Repeat(" ", rightW-right2W) + rightRow2
 
-	row1 = padRight(row1, width)
-	row2 = padRight(row2, width)
+	margin := strings.Repeat(" ", sidePad)
+	row1 = padRight(margin+row1+margin, width)
+	row2 = padRight(margin+row2+margin, width)
 	return row1 + "\n" + row2
 }
 
