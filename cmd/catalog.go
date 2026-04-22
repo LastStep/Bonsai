@@ -2,10 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
+	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/tui"
+	"github.com/LastStep/Bonsai/internal/tui/catalogflow"
 )
 
 func init() {
@@ -19,10 +24,28 @@ var catalogCmd = &cobra.Command{
 	RunE:  runCatalog,
 }
 
+// runCatalog is the catalog command entry point. TTY invocations open
+// the cinematic BubbleTea browser (catalogflow.BrowserStage);
+// non-TTY invocations (pipes, CI, `> out.txt`) fall back to the
+// static-render path so piped output stays clean and ANSI-free.
 func runCatalog(cmd *cobra.Command, args []string) error {
 	cat := loadCatalog()
 	agentFilter, _ := cmd.Flags().GetString("agent")
 
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		return renderCatalogStatic(cat, agentFilter)
+	}
+
+	stage := catalogflow.NewBrowser(cat, agentFilter)
+	_, err := tea.NewProgram(stage, tea.WithAltScreen()).Run()
+	return err
+}
+
+// renderCatalogStatic renders the seven catalog sections as a flat,
+// one-shot block — the pre-Plan-28 output preserved verbatim for
+// non-TTY invocations (piped output, CI consumers). The TTY path
+// launches the BubbleTea browser instead.
+func renderCatalogStatic(cat *catalog.Catalog, agentFilter string) error {
 	// Agents
 	tui.SectionHeader(fmt.Sprintf("Agents (%d)", len(cat.Agents)))
 	var agentRows [][]string
