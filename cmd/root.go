@@ -170,7 +170,7 @@ func applyConflictPicks(results []any, confIdx int, wr *generate.WriteResult,
 			}
 		}
 		if len(dropped) > 0 {
-			filtered := selected[:0]
+			filtered := make([]string, 0, len(selected)-len(dropped))
 			droppedList := make([]string, 0, len(dropped))
 			for _, relPath := range selected {
 				if dropped[relPath] {

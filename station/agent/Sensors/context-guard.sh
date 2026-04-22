@@ -153,8 +153,8 @@ plan_patterns = [
 if not triggered and any(re.search(p, normalized) for p in plan_patterns):
     reminder = (
         '\nPLANNING DETECTED. Before drafting a plan:\n'
-        f'1. Load planning workflow: {os.path.join(root, "")}agent/Workflows/planning.md\n'
-        f'2. Load planning-template skill: {os.path.join(root, "")}agent/Skills/planning-template.md\n'
+        f'1. Load planning workflow: {docs_path}agent/Workflows/planning.md\n'
+        f'2. Load planning-template skill: {docs_path}agent/Skills/planning-template.md\n'
         '3. Follow the Tier rules and Verification requirements'
     )
     injection = (injection + '\n' + reminder) if injection else reminder

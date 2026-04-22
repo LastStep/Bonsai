@@ -326,7 +326,7 @@ func applyCinematicConflictPicks(picks map[string]config.ConflictAction,
 		}
 	}
 	if len(dropped) > 0 {
-		filtered := toOverwrite[:0]
+		filtered := make([]string, 0, len(toOverwrite)-len(dropped))
 		droppedList := make([]string, 0, len(dropped))
 		for _, rel := range toOverwrite {
 			if dropped[rel] {
@@ -529,7 +529,7 @@ func buildAddGrowAction(
 // order (skills → workflows → protocols → sensors → routines), so each take()
 // pulls from the slot that corresponds to the next non-empty category.
 func distributeAddItemPicks(cat *catalog.Catalog, installed *config.InstalledAgent, picks [][]string) (skills, workflows, protocols, sensors, routines []string) {
-	installedSet := func(items []string) map[string]bool {
+	installedItems := func(items []string) map[string]bool {
 		m := make(map[string]bool, len(items))
 		for _, item := range items {
 			m[item] = true
@@ -538,7 +538,7 @@ func distributeAddItemPicks(cat *catalog.Catalog, installed *config.InstalledAge
 	}
 	agentType := installed.AgentType
 	hasNew := func(available []catalog.CatalogItem, existing []string) bool {
-		have := installedSet(existing)
+		have := installedItems(existing)
 		for _, item := range available {
 			if !have[item.Name] {
 				return true
@@ -547,7 +547,7 @@ func distributeAddItemPicks(cat *catalog.Catalog, installed *config.InstalledAge
 		return false
 	}
 	hasNewSensor := func(available []catalog.SensorItem, existing []string) bool {
-		have := installedSet(existing)
+		have := installedItems(existing)
 		for _, item := range available {
 			if !have[item.Name] && item.Name != "routine-check" {
 				return true
@@ -556,7 +556,7 @@ func distributeAddItemPicks(cat *catalog.Catalog, installed *config.InstalledAge
 		return false
 	}
 	hasNewRoutine := func(available []catalog.RoutineItem, existing []string) bool {
-		have := installedSet(existing)
+		have := installedItems(existing)
 		for _, item := range available {
 			if !have[item.Name] {
 				return true
@@ -616,7 +616,7 @@ func (a availableAddSet) Total() int {
 func availableAddItems(cat *catalog.Catalog, installed *config.InstalledAgent) availableAddSet {
 	agentType := installed.AgentType
 
-	installedSet := func(items []string) map[string]bool {
+	installedItems := func(items []string) map[string]bool {
 		m := make(map[string]bool, len(items))
 		for _, item := range items {
 			m[item] = true
@@ -625,7 +625,7 @@ func availableAddItems(cat *catalog.Catalog, installed *config.InstalledAgent) a
 	}
 
 	filterItems := func(available []catalog.CatalogItem, existing []string) []catalog.CatalogItem {
-		have := installedSet(existing)
+		have := installedItems(existing)
 		var result []catalog.CatalogItem
 		for _, item := range available {
 			if !have[item.Name] {
@@ -636,7 +636,7 @@ func availableAddItems(cat *catalog.Catalog, installed *config.InstalledAgent) a
 	}
 
 	filterSensors := func(available []catalog.SensorItem, existing []string) []catalog.SensorItem {
-		have := installedSet(existing)
+		have := installedItems(existing)
 		var result []catalog.SensorItem
 		for _, item := range available {
 			if !have[item.Name] && item.Name != "routine-check" {
@@ -647,7 +647,7 @@ func availableAddItems(cat *catalog.Catalog, installed *config.InstalledAgent) a
 	}
 
 	filterRoutines := func(available []catalog.RoutineItem, existing []string) []catalog.RoutineItem {
-		have := installedSet(existing)
+		have := installedItems(existing)
 		var result []catalog.RoutineItem
 		for _, item := range available {
 			if !have[item.Name] {
