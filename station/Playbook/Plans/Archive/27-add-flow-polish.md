@@ -6,8 +6,9 @@ description: Plan 27 — bonsai add cinematic polish bundle. Rail canonicalisati
 # Plan 27 — Add Flow Polish
 
 **Tier:** 2
-**Status:** Draft
-**Agent:** general-purpose (single dispatch, worktree-isolated)
+**Status:** Complete
+**Agent:** general-purpose (2-PR split, worktree-isolated) + tech-lead
+**Shipped:** 2026-04-22 — PR1 squash `0885981` + fix `fab4cdc` (Phase A+B), PR2 squash `719255d` (Phase C+D)
 
 ## Goal
 
