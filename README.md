@@ -56,6 +56,12 @@ station/
     └── Routines/            ← scheduled self-maintenance tasks
 ```
 
+### Where the idea comes from
+
+Bonsai's workspace model is directly inspired by Andrej Karpathy's [**llm-wiki**](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) — the proposal that LLMs should *maintain* a markdown knowledge base incrementally, so context compounds across sessions instead of being re-retrieved from raw sources on every query.
+
+`station/` applies that to a single project: the agent's wiki about its own codebase, its own work, and its own decisions.
+
 ---
 
 ## Install
