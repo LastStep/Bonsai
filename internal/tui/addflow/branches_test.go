@@ -13,9 +13,9 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
-// newTestGraftCatalog builds a fixture catalog covering all five ability
+// newTestBranchesCatalog builds a fixture catalog covering all five ability
 // categories with a mix of required / default / plain items.
-func newTestGraftCatalog() (*catalog.Catalog, *catalog.AgentDef) {
+func newTestBranchesCatalog() (*catalog.Catalog, *catalog.AgentDef) {
 	none := catalog.AgentCompat{}
 	all := catalog.AgentCompat{All: true}
 
@@ -46,8 +46,8 @@ func newTestGraftCatalog() (*catalog.Catalog, *catalog.AgentDef) {
 	return cat, agentDef
 }
 
-func newTestGraft() *BranchesStage {
-	cat, agentDef := newTestGraftCatalog()
+func newTestBranches() *BranchesStage {
+	cat, agentDef := newTestBranchesCatalog()
 	return NewNewAgentBranches(initflow.StageContext{
 		StartedAt: time.Now(),
 	}, BranchesContext{
@@ -57,24 +57,24 @@ func newTestGraft() *BranchesStage {
 	})
 }
 
-func graftPressKey(s *BranchesStage, k tea.KeyType) {
+func branchesPressKey(s *BranchesStage, k tea.KeyType) {
 	m, _ := s.Update(tea.KeyMsg{Type: k})
 	if gs, ok := m.(*BranchesStage); ok {
 		*s = *gs
 	}
 }
 
-func graftPressRune(s *BranchesStage, r rune) {
+func branchesPressRune(s *BranchesStage, r rune) {
 	m, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
 	if gs, ok := m.(*BranchesStage); ok {
 		*s = *gs
 	}
 }
 
-// TestGraft_FiltersRoutineCheck verifies the routine-check sensor is dropped
+// TestBranches_FiltersRoutineCheck verifies the routine-check sensor is dropped
 // from the sensors tab regardless of filter mode.
-func TestGraft_FiltersRoutineCheck(t *testing.T) {
-	s := newTestGraft()
+func TestBranches_FiltersRoutineCheck(t *testing.T) {
+	s := newTestBranches()
 	for _, c := range s.categories {
 		if c.key != branchCatSensors {
 			continue
@@ -87,10 +87,10 @@ func TestGraft_FiltersRoutineCheck(t *testing.T) {
 	}
 }
 
-// TestGraft_RequiredPreSelected verifies required items are pre-selected and
+// TestBranches_RequiredPreSelected verifies required items are pre-selected and
 // cannot be toggled off.
-func TestGraft_RequiredPreSelected(t *testing.T) {
-	s := newTestGraft()
+func TestBranches_RequiredPreSelected(t *testing.T) {
+	s := newTestBranches()
 	// proto-req is in category protocols.
 	var protoIdx int = -1
 	for i, c := range s.categories {
@@ -107,16 +107,16 @@ func TestGraft_RequiredPreSelected(t *testing.T) {
 	}
 	// Navigate to protocols tab + try to toggle.
 	s.catIdx = protoIdx
-	graftPressRune(s, ' ')
+	branchesPressRune(s, ' ')
 	if !s.selected[protoIdx]["proto-req"] {
 		t.Fatal("␣ on required item should be no-op")
 	}
 }
 
-// TestGraft_DefaultPreSelectedButToggleable verifies defaults are
+// TestBranches_DefaultPreSelectedButToggleable verifies defaults are
 // pre-selected and can be toggled off.
-func TestGraft_DefaultPreSelectedButToggleable(t *testing.T) {
-	s := newTestGraft()
+func TestBranches_DefaultPreSelectedButToggleable(t *testing.T) {
+	s := newTestBranches()
 	// beta-skill is default in category skills.
 	var skillIdx int = -1
 	for i, c := range s.categories {
@@ -134,61 +134,61 @@ func TestGraft_DefaultPreSelectedButToggleable(t *testing.T) {
 	// Focus beta-skill (second row, idx=1) and toggle off.
 	s.catIdx = skillIdx
 	s.itemIdx[skillIdx] = 1
-	graftPressRune(s, ' ')
+	branchesPressRune(s, ' ')
 	if s.selected[skillIdx]["beta-skill"] {
 		t.Fatal("␣ on default should toggle off")
 	}
 }
 
-// TestGraft_TabCycles verifies ← → cycles tabs with wrap.
-func TestGraft_TabCycles(t *testing.T) {
-	s := newTestGraft()
+// TestBranches_TabCycles verifies ← → cycles tabs with wrap.
+func TestBranches_TabCycles(t *testing.T) {
+	s := newTestBranches()
 	start := s.catIdx
-	graftPressKey(s, tea.KeyRight)
+	branchesPressKey(s, tea.KeyRight)
 	if s.catIdx != start+1 {
 		t.Fatalf("right tab = %d, want %d", s.catIdx, start+1)
 	}
 	// Walk to end + wrap.
 	for range s.categories {
-		graftPressKey(s, tea.KeyRight)
+		branchesPressKey(s, tea.KeyRight)
 	}
 	if s.catIdx != start+1 {
 		t.Fatalf("after full cycle, catIdx = %d, want %d (wrap)", s.catIdx, start+1)
 	}
 }
 
-// TestGraft_ExpandToggle verifies ? flips the expanded flag.
-func TestGraft_ExpandToggle(t *testing.T) {
-	s := newTestGraft()
+// TestBranches_ExpandToggle verifies ? flips the expanded flag.
+func TestBranches_ExpandToggle(t *testing.T) {
+	s := newTestBranches()
 	if s.expanded {
 		t.Fatal("expanded should start false")
 	}
-	graftPressRune(s, '?')
+	branchesPressRune(s, '?')
 	if !s.expanded {
 		t.Fatal("? should set expanded=true")
 	}
-	graftPressRune(s, '?')
+	branchesPressRune(s, '?')
 	if s.expanded {
 		t.Fatal("?? should toggle back to false")
 	}
 }
 
-// TestGraft_EnterAdvances verifies Enter flips done.
-func TestGraft_EnterAdvances(t *testing.T) {
-	s := newTestGraft()
+// TestBranches_EnterAdvances verifies Enter flips done.
+func TestBranches_EnterAdvances(t *testing.T) {
+	s := newTestBranches()
 	if s.Done() {
 		t.Fatal("should not be done before Enter")
 	}
-	graftPressKey(s, tea.KeyEnter)
+	branchesPressKey(s, tea.KeyEnter)
 	if !s.Done() {
 		t.Fatal("should be done after Enter")
 	}
 }
 
-// TestGraft_ResultShape verifies Result returns a BranchesResult with the
+// TestBranches_ResultShape verifies Result returns a BranchesResult with the
 // expected pre-selected items (required + defaults).
-func TestGraft_ResultShape(t *testing.T) {
-	s := newTestGraft()
+func TestBranches_ResultShape(t *testing.T) {
+	s := newTestBranches()
 	res, ok := s.Result().(BranchesResult)
 	if !ok {
 		t.Fatalf("Result type = %T, want BranchesResult", s.Result())
@@ -204,10 +204,10 @@ func TestGraft_ResultShape(t *testing.T) {
 	}
 }
 
-// TestGraft_AddItemsFiltersInstalled verifies add-items mode filters out
+// TestBranches_AddItemsFiltersInstalled verifies add-items mode filters out
 // items already in the installed agent + drops empty tabs.
-func TestGraft_AddItemsFiltersInstalled(t *testing.T) {
-	cat, agentDef := newTestGraftCatalog()
+func TestBranches_AddItemsFiltersInstalled(t *testing.T) {
+	cat, agentDef := newTestBranchesCatalog()
 	installed := &config.InstalledAgent{
 		AgentType: "backend",
 		Workspace: "backend/",
@@ -229,10 +229,10 @@ func TestGraft_AddItemsFiltersInstalled(t *testing.T) {
 	}
 }
 
-// TestGraft_AddItemsPartialDropsEmpty verifies add-items mode drops only the
+// TestBranches_AddItemsPartialDropsEmpty verifies add-items mode drops only the
 // tabs that go empty after filtering.
-func TestGraft_AddItemsPartialDropsEmpty(t *testing.T) {
-	cat, agentDef := newTestGraftCatalog()
+func TestBranches_AddItemsPartialDropsEmpty(t *testing.T) {
+	cat, agentDef := newTestBranchesCatalog()
 	installed := &config.InstalledAgent{
 		AgentType: "backend",
 		Workspace: "backend/",
@@ -259,12 +259,12 @@ func TestGraft_AddItemsPartialDropsEmpty(t *testing.T) {
 	}
 }
 
-// TestGraft_TabCountUpdatesLive verifies the per-tab "(N)" counter rendered
+// TestBranches_TabCountUpdatesLive verifies the per-tab "(N)" counter rendered
 // in the tab strip reflects toggles as the user makes them — not a captured
 // ctor-time snapshot. Render the tab row before/after a toggle and compare
 // the focused tab's rendered count.
-func TestGraft_TabCountUpdatesLive(t *testing.T) {
-	s := newTestGraft()
+func TestBranches_TabCountUpdatesLive(t *testing.T) {
+	s := newTestBranches()
 	// Find skills tab.
 	var skillIdx = -1
 	for i, c := range s.categories {
@@ -286,7 +286,7 @@ func TestGraft_TabCountUpdatesLive(t *testing.T) {
 	// Focus skills + toggle alpha-skill on (idx 0).
 	s.catIdx = skillIdx
 	s.itemIdx[skillIdx] = 0
-	graftPressRune(s, ' ')
+	branchesPressRune(s, ' ')
 	after := len(s.selected[skillIdx])
 	if after != 2 {
 		t.Fatalf("after toggle skills count = %d, want 2", after)
@@ -299,7 +299,7 @@ func TestGraft_TabCountUpdatesLive(t *testing.T) {
 	}
 
 	// Toggle alpha back off — count returns to 1.
-	graftPressRune(s, ' ')
+	branchesPressRune(s, ' ')
 	if len(s.selected[skillIdx]) != 1 {
 		t.Fatalf("after second toggle skills count = %d, want 1", len(s.selected[skillIdx]))
 	}
@@ -309,12 +309,12 @@ func TestGraft_TabCountUpdatesLive(t *testing.T) {
 	}
 }
 
-// TestGraft_NewAgentUnaffectedByFilter is a regression guard — the new-agent
+// TestBranches_NewAgentUnaffectedByFilter is a regression guard — the new-agent
 // ctor must NOT filter by Installed even when a non-nil Installed slice is
 // passed (Plan 23 Phase 2 added the filter path inside a shared helper; this
 // test proves the new-agent entry still seeds every catalog item regardless).
-func TestGraft_NewAgentUnaffectedByFilter(t *testing.T) {
-	cat, agentDef := newTestGraftCatalog()
+func TestBranches_NewAgentUnaffectedByFilter(t *testing.T) {
+	cat, agentDef := newTestBranchesCatalog()
 	// Installed carries every item in every category — if the new-agent path
 	// were mistakenly filtering, the tabs would all be empty.
 	installed := &config.InstalledAgent{
@@ -350,14 +350,14 @@ func TestGraft_NewAgentUnaffectedByFilter(t *testing.T) {
 	}
 }
 
-// TestGraft_ResetPreservesState verifies Reset clears done but preserves
+// TestBranches_ResetPreservesState verifies Reset clears done but preserves
 // selections + cursor + expanded.
-func TestGraft_ResetPreservesState(t *testing.T) {
-	s := newTestGraft()
+func TestBranches_ResetPreservesState(t *testing.T) {
+	s := newTestBranches()
 	// Move around + toggle.
-	graftPressKey(s, tea.KeyRight)
-	graftPressRune(s, '?')
-	graftPressKey(s, tea.KeyEnter)
+	branchesPressKey(s, tea.KeyRight)
+	branchesPressRune(s, '?')
+	branchesPressKey(s, tea.KeyEnter)
 	catIdx := s.catIdx
 	expanded := s.expanded
 	s.Reset()

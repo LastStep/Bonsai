@@ -1472,3 +1472,199 @@ func TestPathScopedRulesForAgentScope(t *testing.T) {
 		t.Fatalf("expected legacy PathScopedRules to surface a conflict under tech-lead/; got none (wr conflicts=%d total)", len(wrAll.Conflicts()))
 	}
 }
+
+// TestWorkflowSkillsForAgentScope mirrors TestPathScopedRulesForAgentScope for
+// the workflow-SKILL.md code path. `bonsai add` must only touch the agent
+// being added; pre-fix the call-site invoked WorkflowSkills which iterated
+// cfg.Agents and regenerated every agent's workflow skills, tripping a
+// cross-agent conflict when the user had local edits on an unrelated agent's
+// SKILL.md.
+//
+//  1. WorkflowSkillsForAgent(frontend, ...) must NOT emit a conflict under
+//     tech-lead/ even when a tech-lead workflow SKILL.md exists with local
+//     edits tracked in the lockfile.
+//  2. The legacy WorkflowSkills(cfg, ...) with the same fixture DOES produce
+//     the cross-agent conflict — proving the fix is at the call-site level.
+func TestWorkflowSkillsForAgentScope(t *testing.T) {
+	// Both agents get `planning`, which is in CuratedSlashWorkflows so the
+	// SKILL.md file is actually generated. Without a curated workflow, both
+	// scoped and legacy paths are no-ops and the test proves nothing.
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"workflows/planning/meta.yaml":   "name: planning\ndescription: End-to-end planning\nagents: all\ntriggers:\n  scenarios:\n    - Starting end-to-end planning\n",
+		"workflows/planning/planning.md": "# Planning\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	techLead := &config.InstalledAgent{
+		AgentType: "tech-lead",
+		Workspace: "station/",
+		Workflows: []string{"planning"},
+	}
+	frontend := &config.InstalledAgent{
+		AgentType: "frontend",
+		Workspace: "frontend/",
+		Workflows: []string{"planning"},
+	}
+
+	seed := func(t *testing.T) (tmpDir string, cfg *config.ProjectConfig, lock *config.LockFile) {
+		t.Helper()
+		tmpDir = t.TempDir()
+		cfg = &config.ProjectConfig{
+			ProjectName: "TestProject",
+			Agents: map[string]*config.InstalledAgent{
+				"tech-lead": techLead,
+				"frontend":  frontend,
+			},
+		}
+		lock = config.NewLockFile()
+		var wr WriteResult
+		if err := WorkflowSkills(tmpDir, cfg, cat, lock, &wr, false); err != nil {
+			t.Fatalf("initial WorkflowSkills: %v", err)
+		}
+		// User edits the tech-lead SKILL.md on disk — content now diverges
+		// from the lockfile hash so subsequent passes report a conflict.
+		tlSkill := filepath.Join(tmpDir, "station", ".claude", "skills", "planning", "SKILL.md")
+		if err := os.WriteFile(tlSkill, []byte("# USER-EDITED\n"), 0644); err != nil {
+			t.Fatalf("seed tech-lead edit: %v", err)
+		}
+		return tmpDir, cfg, lock
+	}
+
+	// 1. Scoped call with frontend must NOT touch tech-lead files.
+	tmpDir, cfg, lock := seed(t)
+	var wrFE WriteResult
+	if err := WorkflowSkillsForAgent(tmpDir, frontend, cfg, cat, lock, &wrFE, false); err != nil {
+		t.Fatalf("WorkflowSkillsForAgent(frontend): %v", err)
+	}
+	for _, f := range wrFE.Conflicts() {
+		if strings.HasPrefix(f.RelPath, "station/") {
+			t.Fatalf("WorkflowSkillsForAgent(frontend) leaked a conflict under tech-lead workspace: %s", f.RelPath)
+		}
+	}
+	// Sanity: edited tech-lead SKILL.md retains the user's edit.
+	tlSkillPath := filepath.Join(tmpDir, "station", ".claude", "skills", "planning", "SKILL.md")
+	if data, err := os.ReadFile(tlSkillPath); err != nil {
+		t.Fatalf("read tech-lead SKILL.md: %v", err)
+	} else if !bytes.Contains(data, []byte("USER-EDITED")) {
+		t.Fatalf("tech-lead SKILL.md was modified by frontend-scoped regeneration (content = %q)", data)
+	}
+
+	// 2. Negative case: the legacy all-agents WorkflowSkills DOES trip the
+	// cross-agent conflict.
+	tmpDir2, cfg2, lock2 := seed(t)
+	var wrAll WriteResult
+	if err := WorkflowSkills(tmpDir2, cfg2, cat, lock2, &wrAll, false); err != nil {
+		t.Fatalf("WorkflowSkills (legacy): %v", err)
+	}
+	leaked := false
+	for _, f := range wrAll.Conflicts() {
+		if strings.HasPrefix(f.RelPath, "station/") && strings.Contains(f.RelPath, "SKILL.md") {
+			leaked = true
+			break
+		}
+	}
+	if !leaked {
+		t.Fatalf("expected legacy WorkflowSkills to surface a conflict under tech-lead/; got none (wr conflicts=%d total)", len(wrAll.Conflicts()))
+	}
+}
+
+// TestSettingsJSONForAgentScope mirrors the scope-regression shape for the
+// per-agent `.claude/settings.json` writer. `bonsai add` must only touch the
+// agent being added; pre-fix the call-site invoked SettingsJSON which
+// iterated cfg.Agents and regenerated every agent's settings.json, tripping
+// a cross-agent conflict when the user had local edits on an unrelated
+// agent's settings.json.
+//
+//  1. SettingsJSONForAgent(frontend, ...) must NOT emit a conflict under
+//     tech-lead/ even when a tech-lead settings.json exists with local edits
+//     tracked in the lockfile.
+//  2. The legacy SettingsJSON(cfg, ...) with the same fixture DOES produce
+//     the cross-agent conflict.
+func TestSettingsJSONForAgentScope(t *testing.T) {
+	// Both agents wire at least one sensor so settings.json has non-empty
+	// hook entries. The specific event doesn't matter — writeSettingsJSON
+	// emits one group per (event, matcher) pair.
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"sensors/scope-guard/meta.yaml":           "name: scope-guard\ndescription: SG\nagents: all\nevent: PreToolUse\nmatcher: \"Edit|Write\"\n",
+		"sensors/scope-guard/scope-guard.sh.tmpl": "#!/usr/bin/env bash\necho sg\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	techLead := &config.InstalledAgent{
+		AgentType: "tech-lead",
+		Workspace: "station/",
+		Sensors:   []string{"scope-guard"},
+	}
+	frontend := &config.InstalledAgent{
+		AgentType: "frontend",
+		Workspace: "frontend/",
+		Sensors:   []string{"scope-guard"},
+	}
+
+	seed := func(t *testing.T) (tmpDir string, cfg *config.ProjectConfig, lock *config.LockFile) {
+		t.Helper()
+		tmpDir = t.TempDir()
+		cfg = &config.ProjectConfig{
+			ProjectName: "TestProject",
+			Agents: map[string]*config.InstalledAgent{
+				"tech-lead": techLead,
+				"frontend":  frontend,
+			},
+		}
+		lock = config.NewLockFile()
+		var wr WriteResult
+		if err := SettingsJSON(tmpDir, cfg, cat, lock, &wr, false); err != nil {
+			t.Fatalf("initial SettingsJSON: %v", err)
+		}
+		// User edits the tech-lead settings.json on disk — content now
+		// diverges from the lockfile hash so subsequent passes report a
+		// conflict for that path. Invalid JSON is fine for this test: the
+		// content-hash check happens before any parse.
+		tlSettings := filepath.Join(tmpDir, "station", ".claude", "settings.json")
+		if err := os.WriteFile(tlSettings, []byte("{ \"userEdited\": true }"), 0644); err != nil {
+			t.Fatalf("seed tech-lead edit: %v", err)
+		}
+		return tmpDir, cfg, lock
+	}
+
+	// 1. Scoped call with frontend must NOT touch tech-lead's settings.json.
+	tmpDir, cfg, lock := seed(t)
+	var wrFE WriteResult
+	if err := SettingsJSONForAgent(tmpDir, frontend, cfg, cat, lock, &wrFE, false); err != nil {
+		t.Fatalf("SettingsJSONForAgent(frontend): %v", err)
+	}
+	for _, f := range wrFE.Conflicts() {
+		if strings.HasPrefix(f.RelPath, "station/") {
+			t.Fatalf("SettingsJSONForAgent(frontend) leaked a conflict under tech-lead workspace: %s", f.RelPath)
+		}
+	}
+	// Sanity: the tech-lead settings.json is unchanged.
+	tlSettingsPath := filepath.Join(tmpDir, "station", ".claude", "settings.json")
+	if data, err := os.ReadFile(tlSettingsPath); err != nil {
+		t.Fatalf("read tech-lead settings.json: %v", err)
+	} else if !bytes.Contains(data, []byte("userEdited")) {
+		t.Fatalf("tech-lead settings.json was modified by frontend-scoped regeneration (content = %q)", data)
+	}
+
+	// 2. Negative case: the legacy all-agents SettingsJSON DOES trip the
+	// cross-agent conflict.
+	tmpDir2, cfg2, lock2 := seed(t)
+	var wrAll WriteResult
+	if err := SettingsJSON(tmpDir2, cfg2, cat, lock2, &wrAll, false); err != nil {
+		t.Fatalf("SettingsJSON (legacy): %v", err)
+	}
+	leaked := false
+	for _, f := range wrAll.Conflicts() {
+		if strings.HasPrefix(f.RelPath, "station/") && strings.Contains(f.RelPath, "settings.json") {
+			leaked = true
+			break
+		}
+	}
+	if !leaked {
+		t.Fatalf("expected legacy SettingsJSON to surface a conflict under tech-lead/; got none (wr conflicts=%d total)", len(wrAll.Conflicts()))
+	}
+}

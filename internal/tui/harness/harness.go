@@ -214,6 +214,12 @@ func (h *Harness) Init() tea.Cmd {
 // but the splicer interface is extensible) are not recorded; the cast is
 // guarded by type assertion so unknown splicer shapes fall back to the
 // unchanged "splice once, never unwind" behaviour.
+//
+// Zero-child splices (builder returned nil or an all-nil slice) are NOT
+// recorded: there is nothing to reinstate on esc-back — the group's slot
+// contains no children, so unwinding would be a no-op. Skipping the record
+// also keeps the h.splices table tidy and avoids ambiguous "unsplice the
+// zero-length run" semantics in unspliceAbove's slice math.
 func (h *Harness) expandSplicer() {
 	if h.cursor >= len(h.steps) {
 		return
@@ -248,7 +254,7 @@ func (h *Harness) expandSplicer() {
 	head := append([]Step{}, h.steps[:h.cursor]...)
 	tail := append([]Step(nil), h.steps[h.cursor+1:]...)
 	h.steps = append(append(head, inserted...), tail...)
-	if lg != nil {
+	if lg != nil && len(inserted) > 0 {
 		h.splices = append(h.splices, spliceRecord{
 			lg:       lg,
 			insertAt: insertAt,

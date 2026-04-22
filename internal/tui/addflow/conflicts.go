@@ -57,6 +57,10 @@ type ConflictsStage struct {
 // Bonsai-metaphor identity is retained.
 var conflictsLabel = initflow.StageLabel{Kanji: "衝", Kana: "しょう", English: "CONFLICT"}
 
+// Rail suppression is implicit: passing StageIdxOffRail (-1) into the base
+// ctor trips the negative-index branch in internal/tui/initflow/stage.go
+// (railHidden := s.railHidden || s.idx < 0), so no SetRailIndex call is
+// needed here.
 func NewConflictsStage(ctx initflow.StageContext, wr *generate.WriteResult) *ConflictsStage {
 	label := conflictsLabel
 	base := initflow.NewStage(
