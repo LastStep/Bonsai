@@ -33,6 +33,7 @@ RESEARCH*.md
 *.png
 !docs/assets/*.png
 !website/src/assets/*.png
+!assets/demos/*.png
 
 # Website (Starlight docs)
 website/node_modules/
