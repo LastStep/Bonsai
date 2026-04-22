@@ -43,6 +43,7 @@ func NewSelectStage(ctx initflow.StageContext, options []AgentOption) *SelectSta
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.ApplyContextHeader(ctx)
 	base.SetRailLabels(StageLabels)
 	return &SelectStage{
 		Stage:   base,

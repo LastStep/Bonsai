@@ -97,6 +97,7 @@ func newBranches(ctx initflow.StageContext, gctx BranchesContext, filter bool) *
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.ApplyContextHeader(ctx)
 	base.SetRailLabels(StageLabels)
 
 	agentDef := gctx.AgentDef

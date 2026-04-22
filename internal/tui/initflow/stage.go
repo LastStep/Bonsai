@@ -38,13 +38,24 @@ type Stage struct {
 	agentDisplay string    // agentDef.DisplayName — rendered by Observe's AGENT row
 	startedAt    time.Time // captured at cmd.runInit entry for Planted's ELAPSED
 
+	// Header chrome labels — passed to RenderHeader on every frame. Defaults
+	// ("INIT" / "PLANTING INTO") preserve the init-flow presentation so
+	// callers that predate the Plan 28 Phase 1 signature extension don't
+	// need any changes. Sibling packages override via SetHeaderAction /
+	// SetHeaderRightLabel — or stamp the values via StageContext.
+	headerAction     string
+	headerRightLabel string
+
 	// State.
 	done bool // set by subclass when Enter advances
 }
 
 // NewStage constructs the shared Stage bundle used by every subclass. idx is
 // the 0-based rail position; label is typically StageLabels[idx]. Remaining
-// fields are the project context captured by cmd.runInit.
+// fields are the project context captured by cmd.runInit. Header chrome
+// labels default to "INIT" / "PLANTING INTO" — overridable via
+// SetHeaderAction / SetHeaderRightLabel or via StageContext.HeaderAction /
+// StageContext.HeaderRightLabel at the caller.
 func NewStage(
 	idx int,
 	label StageLabel,
@@ -56,15 +67,17 @@ func NewStage(
 	startedAt time.Time,
 ) Stage {
 	return Stage{
-		idx:          idx,
-		label:        label,
-		title:        title,
-		version:      version,
-		projectDir:   projectDir,
-		stationDir:   stationDir,
-		agentDisplay: agentDisplay,
-		startedAt:    startedAt,
-		ensoSafe:     WideCharSafe(),
+		idx:              idx,
+		label:            label,
+		title:            title,
+		version:          version,
+		projectDir:       projectDir,
+		stationDir:       stationDir,
+		agentDisplay:     agentDisplay,
+		startedAt:        startedAt,
+		ensoSafe:         WideCharSafe(),
+		headerAction:     "INIT",
+		headerRightLabel: "PLANTING INTO",
 	}
 }
 
@@ -89,6 +102,39 @@ func (s *Stage) SetRailIndex(idx int) { s.idx = idx }
 // transition-art stages (spinners) and terminal completion cards that
 // render their own chromeless hero layout instead of the standard rail.
 func (s *Stage) SetRailHidden(h bool) { s.railHidden = h }
+
+// SetHeaderAction overrides the uppercase command label rendered on header
+// row 2 ("INIT", "CATALOG", etc.). Defaults to "INIT" so existing init-flow
+// callers need no change. Empty string collapses row 2 to the version chip
+// (or removes it entirely when version is dev/empty).
+func (s *Stage) SetHeaderAction(a string) { s.headerAction = a }
+
+// SetHeaderRightLabel overrides the destination-context label on header
+// right-block row 1 ("PLANTING INTO", "IN", etc.). Defaults to
+// "PLANTING INTO". Empty string hides right-block row 1 entirely — the
+// project path still renders on row 2.
+func (s *Stage) SetHeaderRightLabel(l string) { s.headerRightLabel = l }
+
+// applyContextHeader installs header labels from ctx when set. An empty
+// field on ctx preserves the NewStage default so callers that don't care
+// about per-command chrome don't have to restamp it. Used by every stage
+// ctor that accepts a StageContext so the cmd-layer caller can configure
+// the header labels once (at StageContext construction) and have every
+// downstream stage render with the same chrome.
+func (s *Stage) applyContextHeader(ctx StageContext) {
+	if ctx.HeaderAction != "" {
+		s.headerAction = ctx.HeaderAction
+	}
+	if ctx.HeaderRightLabel != "" {
+		s.headerRightLabel = ctx.HeaderRightLabel
+	}
+}
+
+// ApplyContextHeader is the exported wrapper for applyContextHeader. Used
+// by sibling flow packages (addflow, etc.) so their per-stage ctors can
+// install the header labels from StageContext without reimplementing the
+// "empty-preserves-default" rule.
+func (s *Stage) ApplyContextHeader(ctx StageContext) { s.applyContextHeader(ctx) }
 
 // SetLabel overrides the stage's rendered kanji/kana/English triple. Used
 // in tandem with SetRailIndex when a sibling package reuses an initflow
@@ -206,7 +252,7 @@ func (s *Stage) renderFrame(body string, keys []KeyHint) string {
 		return RenderMinSizeFloor(s.width, s.height)
 	}
 
-	header := RenderHeader(s.version, s.projectDir, width, s.ensoSafe)
+	header := RenderHeader(s.version, s.projectDir, s.headerAction, s.headerRightLabel, width, s.ensoSafe)
 	footer := RenderFooter(keys, width)
 
 	count := func(s string) int { return strings.Count(s, "\n") + 1 }
@@ -261,12 +307,20 @@ func DefaultKeys(canGoBack bool) []KeyHint {
 // StageContext is a small record used by cmd.runInit to stamp each stage
 // with the shared project context at construction time. Keeps the call-site
 // symmetric and obvious across all stage constructors.
+//
+// HeaderAction / HeaderRightLabel override the header chrome labels
+// ("INIT" / "PLANTING INTO" by default). Sibling packages (addflow, etc.)
+// stamp their own values here so each command's header reads with its own
+// action label. Empty values on both fields preserve the NewStage defaults;
+// explicit empty-string HeaderRightLabel hides the right-block row 1.
 type StageContext struct {
-	Version      string
-	ProjectDir   string
-	StationDir   string
-	AgentDisplay string
-	StartedAt    time.Time
+	Version          string
+	ProjectDir       string
+	StationDir       string
+	AgentDisplay     string
+	StartedAt        time.Time
+	HeaderAction     string
+	HeaderRightLabel string
 }
 
 // homeDir returns $HOME via os.UserHomeDir. Kept wrapped so chrome.go can

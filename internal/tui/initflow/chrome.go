@@ -20,13 +20,18 @@ type KeyHint struct {
 // RenderHeader renders the two-column, two-row top banner shown above every
 // stage. Both columns are two rows — left stacks the service badge above the
 // process label so the brand and the action sit on distinct lines; right
-// stacks "PLANTING INTO" above the project path so the destination reads as
-// its own block.
+// stacks the destination label above the project path so the destination
+// reads as its own block.
 //
-//	Left row 1:  盆  BONSAI
-//	Left row 2:  ◇ INIT · v<version>
-//	Right row 1: PLANTING INTO
+//	Left row 1:  ◇  BONSAI
+//	Left row 2:  <action> · v<version>
+//	Right row 1: <rightLabel>
 //	Right row 2: ~/.../<project>/
+//
+// action is the uppercase command label shown on row 2 (e.g. "INIT",
+// "CATALOG"); rightLabel is the destination-context label (e.g.
+// "PLANTING INTO", "IN"). An empty rightLabel hides the right-block row 1
+// entirely — useful for commands that don't have a "destination".
 //
 // version "dev" / "" hides the version segment on row 2. projectDir is the
 // absolute path to the project root — the only path segment rendered in the
@@ -38,7 +43,7 @@ type KeyHint struct {
 // A sidePad (2 cells) is applied to both edges so the header's content
 // sits inside the same inset as the enso rail below — keeps the chrome's
 // left/right margins visually consistent across rows.
-func RenderHeader(version, projectDir string, width int, safe bool) string {
+func RenderHeader(version, projectDir, action, rightLabel string, width int, safe bool) string {
 	if width <= 0 {
 		width = 80
 	}
@@ -59,14 +64,19 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	}
 	leftRow1 := dot.Render(glyph) + "  " + primary.Render("BONSAI")
 
-	// Row 2 — muted "INIT · v…" subtitle. No leading glyph — row 1 carries
-	// the only decorative mark so the two rows read as brand / state.
-	leftRow2Parts := []string{muted.Render("INIT")}
+	// Row 2 — muted "<action> · v…" subtitle. No leading glyph — row 1
+	// carries the only decorative mark so the two rows read as brand /
+	// state. A blank action collapses the subtitle to just the version
+	// chip (or disappears entirely when version is dev/empty).
+	var leftRow2Parts []string
+	if action != "" {
+		leftRow2Parts = append(leftRow2Parts, muted.Render(action))
+	}
 	if version != "" && version != "dev" {
-		leftRow2Parts = append(leftRow2Parts,
-			muted.Render("·"),
-			muted.Render("v"+version),
-		)
+		if len(leftRow2Parts) > 0 {
+			leftRow2Parts = append(leftRow2Parts, muted.Render("·"))
+		}
+		leftRow2Parts = append(leftRow2Parts, muted.Render("v"+version))
 	}
 	leftRow2 := strings.Join(leftRow2Parts, " ")
 
@@ -79,7 +89,13 @@ func RenderHeader(version, projectDir string, width int, safe bool) string {
 	} else if !strings.HasSuffix(parent, "/") {
 		parent += "/"
 	}
-	rightRow1 := muted.Render("PLANTING INTO")
+	// Empty rightLabel hides row 1 of the right block entirely — the
+	// project path still renders on row 2 but the destination preamble
+	// is omitted for commands with no destination context.
+	var rightRow1 string
+	if rightLabel != "" {
+		rightRow1 = muted.Render(rightLabel)
+	}
 	rightRow2 := muted.Render(parent) + bark.Render(projectName) + muted.Render("/")
 
 	// ── Compose ─────────────────────────────────────────────────────

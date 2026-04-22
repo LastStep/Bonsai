@@ -52,6 +52,7 @@ func NewObserveStage(ctx initflow.StageContext, cat *catalog.Catalog) *ObserveSt
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.ApplyContextHeader(ctx)
 	base.SetRailLabels(StageLabels)
 	return &ObserveStage{
 		Stage:    base,

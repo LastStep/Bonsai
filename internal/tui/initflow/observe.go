@@ -65,6 +65,7 @@ func NewObserveStage(ctx StageContext, cat *catalog.Catalog, agentDef *catalog.A
 		ctx.AgentDisplay,
 		ctx.StartedAt,
 	)
+	base.applyContextHeader(ctx)
 	return &ObserveStage{
 		Stage:    base,
 		cat:      cat,
