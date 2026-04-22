@@ -196,14 +196,17 @@ func (s *SelectStage) listHeight() int {
 	return v
 }
 
-// renderRow renders a single agent entry. Matches BranchesStage row layout
-// for cross-flow consistency:
+// renderRow renders a single agent entry (Plan 27 PR2 §C8 layout). Row:
 //
-//	[border 2] [glyph 1] [sp 1] [name + tag] [sp 1] [desc]
+//		[border 2] [glyph 1] [sp 1] [name] [sp 2] [description fill...] [sp 2] [installed-badge right-aligned]
 //
-// Focused rows use FocusBorder + FocusedNameStyle + FocusedDescStyle; the
-// "(installed)" suffix renders in bark gold after the name so the badge sits
-// inside the name column.
+//	  - The word "Agent" (case-insensitive) is stripped from DisplayName at
+//	    render time so "Tech Lead Agent" → "Tech Lead". opt.DisplayName is not
+//	    mutated; machine-name opt.Name is untouched.
+//	  - The full description is rendered; truncation only fires if it would
+//	    overflow the row's visible width.
+//	  - The "(installed)" badge is pad-right aligned at the trailing edge of
+//	    the row — outside the name column, outside the description column.
 func (s *SelectStage) renderRow(idx int) string {
 	opt := s.options[idx]
 	focused := idx == s.focus
@@ -226,12 +229,10 @@ func (s *SelectStage) renderRow(idx int) string {
 		border = initflow.FocusBorder()
 	}
 
-	nameColW, descColW, tagColW := initflow.ClampColumns(s.Width() - 4)
-	// Recover the tag column for desc (no trailing badge) — same move as
-	// Branches post-2026-04-22 polish.
-	descColW += tagColW - 2
-
-	name := opt.DisplayName
+	// Display name — strip trailing " Agent" / "Agent" (case-insensitive)
+	// so "Tech Lead Agent" → "Tech Lead". Fall back to machine name when
+	// the stripped display name is empty.
+	name := stripAgentSuffix(opt.DisplayName)
 	if name == "" {
 		name = opt.Name
 	}
@@ -244,45 +245,78 @@ func (s *SelectStage) renderRow(idx int) string {
 		nameStyle = initflow.UnfocusedNameStyle()
 	}
 
-	// Reserve space for the "(installed)" suffix when present so the name is
-	// truncated before the badge rather than after.
-	suffix := ""
+	// Trailing badge — right-aligned at the row's visible edge.
+	badgeText := ""
 	if opt.Installed {
-		suffix = " " + bark.Render("(installed)")
+		badgeText = bark.Render("(installed)")
 	}
-	suffixW := lipgloss.Width(suffix)
+	badgeW := lipgloss.Width(badgeText)
 
-	nameBudget := nameColW - suffixW
-	if nameBudget < 6 {
-		nameBudget = 6
+	// Row budget — everything between the left border and the right edge.
+	rowTotal := s.Width() - 4
+	if rowTotal < 40 {
+		rowTotal = 40
 	}
-	if lipgloss.Width(name) > nameBudget {
+
+	// Name column — fixed budget so rows align vertically.
+	const nameColW = 22
+	if lipgloss.Width(name) > nameColW {
 		rr := []rune(name)
-		if len(rr) > nameBudget-1 && nameBudget > 1 {
-			name = string(rr[:nameBudget-1]) + "…"
+		if len(rr) > nameColW-1 && nameColW > 1 {
+			name = string(rr[:nameColW-1]) + "…"
 		}
 	}
-	nameText := nameStyle.Render(name) + suffix
-	nameCol := initflow.PadRight(nameText, nameColW)
+	namePadded := initflow.PadRight(nameStyle.Render(name), nameColW)
 
-	// Description column.
-	var descCol string
-	if descColW > 0 {
-		desc := opt.Description
-		if lipgloss.Width(desc) > descColW {
-			rr := []rune(desc)
-			if len(rr) > descColW-1 {
-				desc = string(rr[:descColW-1]) + "…"
-			}
-		}
-		descStyle := initflow.UnfocusedDescStyle()
-		if focused {
-			descStyle = initflow.FocusedDescStyle()
-		}
-		descCol = " " + descStyle.Render(initflow.PadRight(desc, descColW))
+	// Description budget = row total - border(2) - glyph(1) - sp(1) -
+	// name(nameColW) - sp(2) - badge(badgeW) - sp-before-badge(2 iff badge).
+	badgeGap := 0
+	if badgeW > 0 {
+		badgeGap = 2
+	}
+	descBudget := rowTotal - 2 - 1 - 1 - nameColW - 2 - badgeW - badgeGap
+	if descBudget < 10 {
+		descBudget = 10
 	}
 
-	return border + glyphStyle.Render(glyph) + " " + nameCol + descCol
+	desc := opt.Description
+	if lipgloss.Width(desc) > descBudget {
+		rr := []rune(desc)
+		if len(rr) > descBudget-1 {
+			desc = string(rr[:descBudget-1]) + "…"
+		}
+	}
+	descStyle := initflow.UnfocusedDescStyle()
+	if focused {
+		descStyle = initflow.FocusedDescStyle()
+	}
+	descPadded := initflow.PadRight(descStyle.Render(desc), descBudget)
+
+	row := border + glyphStyle.Render(glyph) + " " + namePadded + "  " + descPadded
+	if badgeW > 0 {
+		row += "  " + badgeText
+	}
+	return row
+}
+
+// stripAgentSuffix drops a trailing " Agent" / "Agent" token (case-
+// insensitive) from s. The replacement is display-only; the caller stores
+// the original DisplayName unchanged. Used by SelectStage.renderRow per
+// Plan 27 PR2 §C8.
+func stripAgentSuffix(s string) string {
+	trimmed := strings.TrimSpace(s)
+	if trimmed == "" {
+		return trimmed
+	}
+	lower := strings.ToLower(trimmed)
+	const suffix = "agent"
+	if strings.HasSuffix(lower, " "+suffix) {
+		return strings.TrimSpace(trimmed[:len(trimmed)-len(suffix)-1])
+	}
+	if lower == suffix {
+		return ""
+	}
+	return trimmed
 }
 
 // Result returns the selected agent machine name. Zero value ("") on empty

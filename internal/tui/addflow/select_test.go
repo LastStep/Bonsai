@@ -119,6 +119,51 @@ func TestSelect_ViewRendersInstalledBadge(t *testing.T) {
 	}
 }
 
+// TestSelect_StripsAgentSuffix verifies the display-only "Agent" suffix
+// strip (Plan 27 PR2 §C8). "Tech Lead Agent" should render as "Tech Lead";
+// the stored DisplayName is not mutated.
+func TestSelect_StripsAgentSuffix(t *testing.T) {
+	opts := []AgentOption{
+		{Name: "tech-lead", DisplayName: "Tech Lead Agent", Description: "orchestrator", Installed: false},
+	}
+	s := NewSelectStage(initflow.StageContext{StartedAt: time.Now()}, opts)
+	s.SetSize(120, 40)
+	out := s.View()
+	if !strings.Contains(out, "Tech Lead") {
+		t.Fatal("expected 'Tech Lead' in rendered view")
+	}
+	// The word "Agent" should NOT appear for the stripped display name.
+	// Allow for case-sensitive match on " Agent" with surrounding context
+	// — the description text doesn't contain "Agent".
+	if strings.Contains(out, "Tech Lead Agent") {
+		t.Fatal("expected 'Agent' suffix to be stripped, but full name found")
+	}
+	// Underlying DisplayName must not be mutated.
+	if opts[0].DisplayName != "Tech Lead Agent" {
+		t.Fatalf("opt.DisplayName mutated — got %q, want %q", opts[0].DisplayName, "Tech Lead Agent")
+	}
+}
+
+// TestStripAgentSuffix_Cases table-tests the display-only suffix strip.
+func TestStripAgentSuffix_Cases(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"Tech Lead Agent", "Tech Lead"},
+		{"Backend Agent", "Backend"},
+		{"tech lead agent", "tech lead"},
+		{"Designer", "Designer"}, // no suffix — unchanged
+		{"", ""},
+		{"agent", ""}, // standalone
+		{"  Tech Lead Agent  ", "Tech Lead"},
+		{"DevOps AGENT", "DevOps"},
+	}
+	for _, c := range cases {
+		got := stripAgentSuffix(c.in)
+		if got != c.want {
+			t.Errorf("stripAgentSuffix(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
 // TestSelect_JKBindings verifies j/k map to down/up.
 func TestSelect_JKBindings(t *testing.T) {
 	s := newTestSelect()

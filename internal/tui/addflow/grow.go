@@ -30,5 +30,9 @@ func NewGrowStage(ctx initflow.StageContext, action initflow.GenerateAction) *in
 	g.SetLabel(growLabel)
 	g.SetBodyTitle(growLabel.Kanji, "GROWING")
 	g.SetRailHidden(true)
+	// Plan 27 PR2 §C7 — Grow renders chromeless. No header, no enso rail, no
+	// footer. The bonsai spinner sits centred in the AltScreen with an
+	// inline key-hint row beneath it.
+	g.SetBodyOnly(true)
 	return g
 }

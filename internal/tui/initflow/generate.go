@@ -79,6 +79,14 @@ type GenerateStage struct {
 	// the init-flow default.
 	bodyKanji   string
 	bodyEnglish string
+
+	// bodyOnly (Plan 27 PR2 §C7) disables the stage's header/footer chrome
+	// entirely. When true, View() composes a centred-in-AltScreen body with
+	// an inline key-hint row instead of invoking renderFrame. Used by
+	// addflow's GrowStage so the spinner renders without rail, header, or
+	// footer — matching the chromeless off-rail treatment of Ground and
+	// Conflicts.
+	bodyOnly bool
 }
 
 // SetBodyTitle overrides the "生 · PLANTING" body header. Used by addflow's
@@ -88,6 +96,12 @@ func (s *GenerateStage) SetBodyTitle(kanji, english string) {
 	s.bodyKanji = kanji
 	s.bodyEnglish = english
 }
+
+// SetBodyOnly toggles Plan 27 PR2 §C7 chromeless mode. When true, View()
+// returns a centred-in-AltScreen body with inline key hints, skipping the
+// enso rail / header / footer chrome entirely. Used by addflow's GrowStage
+// so the spinner renders off-rail with no chrome at all.
+func (s *GenerateStage) SetBodyOnly(v bool) { s.bodyOnly = v }
 
 // NewGenerateStage constructs the Generate stage. The action closure wraps
 // the caller's generate pipeline and is invoked once on Init. Remaining
@@ -203,9 +217,56 @@ func (s *GenerateStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-// View composes the Generate stage body inside the shared frame.
+// View composes the Generate stage body inside the shared frame. When the
+// stage has been flipped into body-only mode (Plan 27 PR2 §C7) the chrome
+// is dropped entirely — the body is vertically centred in the AltScreen and
+// the key-hint row renders inline below it. Otherwise the standard
+// header+rail+footer frame wraps the body as for init's Planting stage.
 func (s *GenerateStage) View() string {
+	if s.bodyOnly {
+		width := s.width
+		if width <= 0 {
+			width = 80
+		}
+		height := s.height
+		if height <= 0 {
+			height = 24
+		}
+		if TerminalTooSmall(s.width, s.height) {
+			return RenderMinSizeFloor(s.width, s.height)
+		}
+
+		dim := lipgloss.NewStyle().Foreground(tui.ColorRule2)
+		hints := dim.Render(renderKeyHintsInline(s.keyHints()))
+		body := s.renderBody() + "\n\n" + CenterBlock(hints, width)
+
+		rows := strings.Count(body, "\n") + 1
+		topPad := (height - rows) / 2
+		if topPad < 1 {
+			topPad = 1
+		}
+		bottomPad := height - rows - topPad
+		if bottomPad < 0 {
+			bottomPad = 0
+		}
+		return strings.Repeat("\n", topPad) + body + strings.Repeat("\n", bottomPad)
+	}
 	return s.renderFrame(s.renderBody(), s.keyHints())
+}
+
+// renderKeyHintsInline returns a one-line "↵  label  ·  ctrl-c  quit"
+// formatted string from a KeyHint slice. Used by body-only GenerateStage and
+// any sibling flow package that needs the key-row format without the full
+// footer chrome. Mirrors the separator style in RenderFooter.
+func renderKeyHintsInline(keys []KeyHint) string {
+	if len(keys) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, k.Key+"  "+k.Desc)
+	}
+	return strings.Join(parts, "  ·  ")
 }
 
 // keyHints builds the footer key row. The key set is minimal while
