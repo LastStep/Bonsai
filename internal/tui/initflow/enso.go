@@ -1,6 +1,7 @@
 package initflow
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -148,7 +149,7 @@ func anchorGlyph(i, current int, labels []StageLabel, safe bool) (string, int) {
 	case i < current:
 		return muted.Render("[") + doneStyle.Render("x") + muted.Render("]"), 3
 	case i == current:
-		return goldStyle.Render("[") + goldStyle.Render(itoa(i+1)) + goldStyle.Render("]"), 3
+		return goldStyle.Render("[") + goldStyle.Render(strconv.Itoa(i+1)) + goldStyle.Render("]"), 3
 	default:
 		return muted.Render("[ ]"), 3
 	}
@@ -244,27 +245,3 @@ func stageLabelTexts(labels []StageLabel, safe bool, current int) []string {
 	return out
 }
 
-// itoa is a tiny stdlib-free int-to-string used only for the ASCII fallback
-// rail where the current stage is rendered as "[N]". Avoids pulling strconv
-// into this file just for one callsite.
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	neg := n < 0
-	if neg {
-		n = -n
-	}
-	var buf [12]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	if neg {
-		i--
-		buf[i] = '-'
-	}
-	return string(buf[i:])
-}

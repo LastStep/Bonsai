@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -216,7 +217,7 @@ func renderWorkspaceBlock(workspace, projectDir string) string {
 		// marker and post-process. We use the post-process route to keep
 		// styling consistent with the rest of the tree.
 		extra := total - maxTreeEntries
-		placeholder := "... (" + itoa(extra) + " more)"
+		placeholder := "... (" + strconv.Itoa(extra) + " more)"
 		entries = append(entries, placeholder)
 	}
 
@@ -361,27 +362,3 @@ func isWithin(target, root string) bool {
 	return !strings.HasPrefix(rel, "..")
 }
 
-// itoa is a tiny strconv.Itoa wrapper kept local so the file avoids a
-// strconv import for a single call site. Mirrors the pattern in
-// initflow/chrome.go.
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	neg := n < 0
-	if neg {
-		n = -n
-	}
-	var digits [20]byte
-	i := len(digits)
-	for n > 0 {
-		i--
-		digits[i] = byte('0' + n%10)
-		n /= 10
-	}
-	if neg {
-		i--
-		digits[i] = '-'
-	}
-	return string(digits[i:])
-}
