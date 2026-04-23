@@ -6,8 +6,8 @@ description: Plan 28 — cinematic UI for read-only view commands (list, catalog
 # Plan 28 — View Commands Cinematic
 
 **Tier:** 2 (Feature)
-**Status:** Draft
-**Agent:** general-purpose (worktree isolation, 3 sequential PRs)
+**Status:** Complete (2026-04-23)
+**Agent:** general-purpose (worktree isolation, 3 sequential PRs — Phase 2 + 3 shipped in parallel after Phase 1)
 **Source:** User request 2026-04-22 — parallel to Plan 27 (add flow polish). User dogfooding add/update/remove in a separate track; asked tech-lead to take list/catalog/guide redesign to keep visual family consistent with init/add.
 
 ---
