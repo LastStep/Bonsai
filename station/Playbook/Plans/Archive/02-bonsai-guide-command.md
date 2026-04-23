@@ -1,7 +1,7 @@
 # Plan 02 — `bonsai guide` Command
 
 **Tier:** 1 (Patch)
-**Status:** Active
+**Status:** Complete — shipped 2026-04-15
 **Agent:** tech-lead (single domain: cli)
 
 ## Goal

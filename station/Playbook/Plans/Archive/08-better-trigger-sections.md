@@ -1,7 +1,7 @@
 # Plan 08 — Better Trigger Sections
 
 **Tier:** 2 (Feature)
-**Status:** Ready (verified — see Verification Notes at bottom)
+**Status:** Complete — Phase A/B shipped 2026-04-16, Phase C shipped via Plan 21 / PR #46 2026-04-21
 **Source:** Roadmap P1 + RESEARCH-trigger-system.md (v2)
 **Phases:** A (core mechanics), B (documentation), C (new sensors)
 

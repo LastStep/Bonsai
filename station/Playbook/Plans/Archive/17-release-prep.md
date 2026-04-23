@@ -6,7 +6,7 @@ description: Release-prep PR bundling Go toolchain bump, triggerSection frontmat
 # Plan 17 — Release Prep (Go toolchain + triggerSection frontmatter + OSS polish)
 
 **Tier:** 2
-**Status:** Draft
+**Status:** Complete — shipped 2026-04-17 (PR #24)
 **Agent:** general-purpose (single dispatch — all phases sequential in one worktree / one PR)
 
 ## Goal

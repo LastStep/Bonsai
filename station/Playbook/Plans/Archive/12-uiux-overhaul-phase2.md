@@ -1,7 +1,7 @@
 # Plan 12 — UI/UX Overhaul Phase 2: Consistency
 
 **Tier:** 2 (Feature)
-**Status:** Draft
+**Status:** Complete — shipped 2026-04-17 (PR #20)
 **Source:** Roadmap Phase 1 "UI overhaul" + RESEARCH-uiux-overhaul.md (Phase 2 items 2.1–2.7) + Plan 11 follow-up
 
 ---
