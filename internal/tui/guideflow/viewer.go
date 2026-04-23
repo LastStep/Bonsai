@@ -67,10 +67,14 @@ func NewViewer(topics []Topic, initialKey, version, projectDir string) *ViewerSt
 		}
 	}
 
+	// Empty label + empty title — the rail is hidden (SetRailHidden
+	// below) and the chromeless viewer has no breadcrumb title slot,
+	// so both fields are unused. Header text comes exclusively from
+	// the SetHeaderAction("GUIDE") call a few lines down.
 	base := initflow.NewStage(
 		0,
-		initflow.StageLabel{English: "GUIDE"},
-		"GUIDE",
+		initflow.StageLabel{},
+		"",
 		version,
 		projectDir,
 		"",
@@ -325,17 +329,20 @@ func (s *ViewerStage) buildTabStrip(useShort bool) string {
 }
 
 // resizeViewport recomputes the viewport dims from the current
-// terminal size. Body area = height minus chrome (header 2 + 2
-// blanks + footer 2) minus tab strip (1 + 1 blank). Floor at 3 so
-// at least a small scroll window is visible on short terminals.
+// terminal size. Body area = height minus chrome (header + footer,
+// both from Stage.ChromeHeights) minus the inter-section blanks
+// rendered by Stage.renderFrame (2 rows) minus the tab strip (1
+// row + 1 blank). Floor at 3 so at least a small scroll window is
+// visible on short terminals.
 func (s *ViewerStage) resizeViewport() {
 	w := initflow.PanelWidth(s.width)
 	if w <= 0 {
 		w = 80
 	}
-	// Chrome: header (2 rows) + 2 blank + footer (2 rows, rule +
-	// brand row) = 6. Tab strip row (1) + 1 blank = 2. Total 8.
-	const chromeRows = 8
+	headerH, footerH := s.ChromeHeights(s.keyHints())
+	// +4 = 2 blank separators around the body (Stage.renderFrame) +
+	// tab strip (1 row) + blank below the tab strip (1 row).
+	chromeRows := headerH + footerH + 4
 	h := s.height - chromeRows
 	if h < 3 {
 		h = 3

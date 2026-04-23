@@ -31,10 +31,19 @@ type Topic struct {
 // "quickstart first" entry point.
 var canonicalOrder = []string{"quickstart", "concepts", "cli", "custom-files"}
 
+// deriveLabel produces the default uppercased, hyphen-stripped form
+// used as the fallback for both labelFor and shortFor when a key
+// isn't in the known switch cases. Centralising the derivation
+// keeps the full-label / short-label defaults consistent (shortFor
+// truncates deriveLabel's output, so the two derivations share the
+// same base).
+func deriveLabel(key string) string {
+	return strings.ToUpper(strings.ReplaceAll(key, "-", " "))
+}
+
 // labelFor returns the full-width label for a topic key. Unknown
-// keys fall through to an uppercased, hyphen-stripped form so
-// callers that extend the topic set don't need to edit this file
-// — only the canonicalOrder slice.
+// keys fall through to deriveLabel so callers that extend the topic
+// set don't need to edit this file — only the canonicalOrder slice.
 func labelFor(key string) string {
 	switch key {
 	case "quickstart":
@@ -46,7 +55,7 @@ func labelFor(key string) string {
 	case "custom-files":
 		return "CUSTOM"
 	default:
-		return strings.ToUpper(strings.ReplaceAll(key, "-", " "))
+		return deriveLabel(key)
 	}
 }
 
@@ -64,7 +73,7 @@ func shortFor(key string) string {
 	case "custom-files":
 		return "CUSTM"
 	default:
-		up := labelFor(key)
+		up := deriveLabel(key)
 		if len(up) > 5 {
 			return up[:5]
 		}
