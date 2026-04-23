@@ -1,6 +1,7 @@
 package initflow
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -115,7 +116,25 @@ func (s *VesselStage) validate() bool {
 	if station == "" {
 		return true
 	}
-	return station != "/"
+	if station == "/" {
+		return false
+	}
+	// After normalising to trailing slash, reject absolute + path-escape.
+	// Project-relative only — defence against accidental writes outside
+	// the project root when the user types "../..." or a rooted path.
+	norm := station
+	if !strings.HasSuffix(norm, "/") {
+		norm += "/"
+	}
+	if filepath.IsAbs(norm) {
+		return false
+	}
+	for _, seg := range strings.Split(strings.TrimRight(norm, "/"), "/") {
+		if seg == ".." {
+			return false
+		}
+	}
+	return true
 }
 
 // Update handles key input for focus cycling + Enter-to-advance.

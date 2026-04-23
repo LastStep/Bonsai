@@ -231,3 +231,26 @@ func contains(haystack, needle string) bool {
 	}
 	return false
 }
+
+// TestVessel_RejectsAbsoluteStation verifies an absolute STATION input is
+// rejected by validate(). Defence against accidental writes outside the
+// project root (Plan 29 §H).
+func TestVessel_RejectsAbsoluteStation(t *testing.T) {
+	v := newTestVessel()
+	v.inputs[vesselIdxName].SetValue("proj")
+	v.inputs[vesselIdxStation].SetValue("/etc/foo")
+	if v.validate() {
+		t.Fatal("absolute STATION input should fail validate()")
+	}
+}
+
+// TestVessel_RejectsParentEscapeStation verifies a STATION input with a
+// ".." segment is rejected by validate().
+func TestVessel_RejectsParentEscapeStation(t *testing.T) {
+	v := newTestVessel()
+	v.inputs[vesselIdxName].SetValue("proj")
+	v.inputs[vesselIdxStation].SetValue("../bar/")
+	if v.validate() {
+		t.Fatal("parent-escape STATION input should fail validate()")
+	}
+}

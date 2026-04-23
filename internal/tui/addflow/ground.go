@@ -25,12 +25,11 @@ type GroundStage struct {
 
 	input              textinput.Model
 	agentType          string
-	defaultWorkspace   string            // pre-filled value / tech-lead override
-	existingWorkspaces map[string]bool   // duplicate guard
-	techLead           bool              // true → AutoComplete skips the stage
-	validateErr        string            // inline error label under the input
-	showError          bool              // only draw errors after first submit attempt
-	_                  lipgloss.Position // reserved — keeps imports stable
+	defaultWorkspace   string          // pre-filled value / tech-lead override
+	existingWorkspaces map[string]bool // duplicate guard
+	techLead           bool            // true → AutoComplete skips the stage
+	validateErr        string          // inline error label under the input
+	showError          bool            // only draw errors after first submit attempt
 }
 
 // GroundContext is the ctor bundle for GroundStage. Mirrors the shape used
@@ -126,6 +125,11 @@ func (s *GroundStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return s, nil
 			}
 			norm := NormaliseWorkspace(v)
+			if reason := invalidWorkspaceReason(norm); reason != "" {
+				s.validateErr = reason
+				s.showError = true
+				return s, nil
+			}
 			if s.existingWorkspaces[norm] {
 				s.validateErr = fmt.Sprintf("workspace %q is already in use", norm)
 				s.showError = true
@@ -270,4 +274,30 @@ func NormaliseWorkspace(s string) string {
 	}
 	v = strings.TrimRight(filepath.Clean(v), "/") + "/"
 	return v
+}
+
+// invalidWorkspaceReason returns a user-facing error string when the
+// normalised workspace escapes the project root or is absolute. Returns
+// "" when the workspace is a safe project-relative path. Called by
+// GroundStage after NormaliseWorkspace cleans the input.
+//
+// Project-relative only. Defence against accidental writes outside the
+// project root when the user types "../..." or a rooted path. Not an
+// adversarial boundary — the user already has write access to their own
+// filesystem — but prevents silent surprises in test harnesses and
+// dogfooding sessions.
+func invalidWorkspaceReason(ws string) string {
+	// filepath.IsAbs catches "/etc/" on POSIX and "C:\..." on Windows.
+	if filepath.IsAbs(ws) {
+		return "workspace must be project-relative (no leading /)"
+	}
+	// After filepath.Clean, any remaining ".." component means the path
+	// escapes the project root. Split on "/" (NormaliseWorkspace always
+	// emits forward slashes) and check each segment.
+	for _, seg := range strings.Split(strings.TrimRight(ws, "/"), "/") {
+		if seg == ".." {
+			return "workspace must not escape project root (no ..)"
+		}
+	}
+	return ""
 }

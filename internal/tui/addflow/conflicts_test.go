@@ -1,6 +1,8 @@
 package addflow
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -331,6 +333,95 @@ func TestConflicts_ColorFollowsAction(t *testing.T) {
 		out := s.renderRow(0)
 		if out == "" {
 			t.Fatalf("renderRow returned empty for action %v", a)
+		}
+	}
+}
+
+// TestConflicts_ViewportFollowsFocus verifies that when the conflict list
+// exceeds the visible row budget, the viewport follows the focus row — the
+// focused path renders and rows scrolled off-top do not.
+func TestConflicts_ViewportFollowsFocus(t *testing.T) {
+	// Seed a WriteResult with 10 conflict files so listHeight() returns a
+	// smaller budget than the row count and the viewport kicks in.
+	wr := &generate.WriteResult{}
+	for i := 0; i < 10; i++ {
+		wr.Files = append(wr.Files, generate.FileResult{
+			RelPath: fmt.Sprintf("station/agent/Skills/file-%02d.md", i),
+			Action:  generate.ActionConflict,
+			Source:  fmt.Sprintf("skills/file-%02d/file-%02d.md", i, i),
+		})
+	}
+	s := NewConflictsStage(initflow.StageContext{StartedAt: time.Now()}, wr)
+	// 100x20 → listHeight = 20 - 14 = 6 rows → viewport must engage for 10.
+	s.SetSize(100, 20)
+	if s.listHeight() >= len(s.files) {
+		t.Fatalf("listHeight=%d not less than %d rows (viewport wouldn't engage)",
+			s.listHeight(), len(s.files))
+	}
+	s.focus = 8
+	out := s.renderList()
+	wantPath := s.files[8].RelPath
+	if !strings.Contains(out, shortName(wantPath)) {
+		t.Fatalf("renderList missing focused row %q; got:\n%s", wantPath, out)
+	}
+	offTopPath := s.files[0].RelPath
+	if strings.Contains(out, shortName(offTopPath)) {
+		t.Fatalf("renderList should not contain scrolled-off row %q; got:\n%s",
+			offTopPath, out)
+	}
+}
+
+// shortName strips the common "station/agent/Skills/" prefix so viewport
+// assertions tolerate the mid-path truncation that renderRow applies when
+// pathBudget is tight. The leading segment is what remains distinctive.
+func shortName(p string) string {
+	// Use the trailing "file-NN.md" fragment — the truncation keeps the
+	// tail when it elides, so the short name is stable either way.
+	if i := strings.LastIndex(p, "/"); i >= 0 {
+		return p[i+1:]
+	}
+	return p
+}
+
+// TestConflicts_ColorTonesDifferPerAction verifies the per-row palette tone
+// actually differs between two actions — not just layout text. Renders
+// row 0 with Keep, captures, then flips to Overwrite and captures again;
+// the two strings must differ (ANSI codes + labels both change).
+func TestConflicts_ColorTonesDifferPerAction(t *testing.T) {
+	s := newTestConflicts()
+	s.SetSize(100, 30)
+	key := s.files[0].RelPath
+
+	s.action[key] = config.ConflictActionKeep
+	keep := s.renderRow(0)
+	s.action[key] = config.ConflictActionOverwrite
+	overwrite := s.renderRow(0)
+
+	if keep == overwrite {
+		t.Fatalf("Keep vs Overwrite renders are identical — palette tone is not driven by action")
+	}
+}
+
+// TestConflicts_LowercaseKMovesFocus verifies lowercase "k" is the up-arrow
+// alias (not a batch-Keep trigger), and that pressing it does not mutate
+// any row's action.
+func TestConflicts_LowercaseKMovesFocus(t *testing.T) {
+	s := newTestConflicts()
+
+	// Move down to focus=1, then press lowercase "k" — should go back to 0.
+	conflictsPressKey(s, tea.KeyDown)
+	if s.focus != 1 {
+		t.Fatalf("pre-k focus = %d, want 1", s.focus)
+	}
+	conflictsPressRune(s, 'k')
+	if s.focus != 0 {
+		t.Fatalf("after 'k' focus = %d, want 0 (lowercase k = up)", s.focus)
+	}
+	// Every row must still be at the initial Keep default.
+	for _, f := range s.files {
+		if s.action[f.RelPath] != config.ConflictActionKeep {
+			t.Fatalf("'k' mutated action[%q] = %v; want Keep (no batch)",
+				f.RelPath, s.action[f.RelPath])
 		}
 	}
 }
