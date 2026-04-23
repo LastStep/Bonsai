@@ -23,11 +23,16 @@ const defaultRenderWidth = 80
 // content returns an empty string and no error — glamour handles
 // the empty case gracefully and callers (tab cache warmup) benefit
 // from not having to special-case it.
+//
+// This function constructs a fresh renderer on every call — it is
+// kept for the non-TTY one-shot code path (cmd/guide.go renderStatic
+// has its own equivalent) and for unit tests that don't care about
+// renderer reuse. Interactive viewer code should build a renderer
+// once via ViewerStage.rendererFor and call renderMarkdownWith.
 func renderMarkdown(content string, width int) (string, error) {
 	if width <= 0 {
 		width = defaultRenderWidth
 	}
-	body := stripFrontmatter(content)
 
 	renderer, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
@@ -36,6 +41,17 @@ func renderMarkdown(content string, width int) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("guideflow: create renderer: %w", err)
 	}
+	return renderMarkdownWith(content, renderer)
+}
+
+// renderMarkdownWith strips the optional YAML frontmatter block
+// from content and renders the remainder through the provided
+// glamour.TermRenderer. Splitting the renderer construction out of
+// the render call is how the interactive viewer amortises the
+// termenv OSC query + goldmark+chroma init across every tab-switch
+// at a given width — see ViewerStage.rendererFor for the cache.
+func renderMarkdownWith(content string, renderer *glamour.TermRenderer) (string, error) {
+	body := stripFrontmatter(content)
 	out, err := renderer.Render(body)
 	if err != nil {
 		return "", fmt.Errorf("guideflow: render markdown: %w", err)
