@@ -244,4 +244,3 @@ func stageLabelTexts(labels []StageLabel, safe bool, current int) []string {
 	_ = current
 	return out
 }
-

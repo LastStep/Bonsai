@@ -361,4 +361,3 @@ func isWithin(target, root string) bool {
 	}
 	return !strings.HasPrefix(rel, "..")
 }
-
