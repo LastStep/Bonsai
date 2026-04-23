@@ -69,6 +69,17 @@ User-stated scope constraint (2026-04-22): **"not expecting a lot of changes"** 
 - Extending Glamour styles beyond what `glamour.WithAutoStyle()` provides.
 - Any content changes to `docs/{quickstart,concepts,cli,custom-files}.md`.
 
+### Session 2026-04-23 decision deltas (supersede above where they conflict)
+
+| # | Topic | New direction |
+|---|-------|---------------|
+| D1 | Kanji labels (listflow + guideflow) | **Drop kanji entirely.** No subtitle kanji, no tab-strip kanji. English-only labels throughout Phase 2 + Phase 3. Supersedes decision #3 for `list` (`覧 RAN LIST` → `LIST` only) and `guide` (`導 DŌ GUIDE` → `GUIDE` only, tabs `QUICKSTART · CONCEPTS · CLI · CUSTOM`). `catalog` (Phase 1, shipped) is untouched; retroactive kanji strip across init/add/catalog is out of scope. |
+| D2 | `list` — workspace tree cap | Cap file-tree at **50 entries**. When over cap, render `... (N more)` muted hint row as last tree entry (N = total - 50). Skip rule unchanged: hidden files, `.git`, `node_modules`. |
+| D3 | `list` — workspace missing CTA | Replace `tui.Hint("Run: bonsai init")` with `tui.Hint("Workspace missing — run: bonsai update")`. Rationale: `init` is one-shot; a missing workspace dir means user deleted it and `update` is the regeneration path. |
+| D4 | `guide` — no-arg + no-TTY | Error out with `bonsai guide: specify a topic when piping output (quickstart, concepts, cli, custom-files)`. Exact wording. Exit code 1. (Plan's original pick; confirmed.) |
+| D5 | Plan-28 Phase 1 NIT bundle | **Not bundled** into Phase 2 or 3. Kept as separate Backlog item (Group B). Scope stays clean. |
+| D6 | Dispatch strategy | **Parallel.** Phase 1 already extended `initflow.RenderHeader`; Phase 2 + Phase 3 touch disjoint files (`listflow/` + `cmd/list.go` vs `guideflow/` + `cmd/guide.go`). Two simultaneous `Agent(isolation: worktree)` dispatches off origin/main. First-merged PR forces second to rebase (trivial — no file overlap). Quality bar unchanged: independent code-review each PR, fix-agent round if findings. |
+
 ---
 
 ## Dispatch Strategy
@@ -151,8 +162,8 @@ Rationale for bundling completion-hide into Phase 1: it's a one-liner touching `
 ### Files touched
 
 - `internal/tui/listflow/listflow.go` — **new.** Package doc + `RenderAll(cfg *config.ProjectConfig, cat *catalog.Catalog, version, projectDir string) string` pure-function entry point. Returns the full rendered string (header chrome + agent panels + counts footer). No BubbleTea, no Update loop — static string builder.
-- `internal/tui/listflow/agent_panel.go` — **new.** Per-agent panel renderer. Builds the `CardFields` pair list for the agent + renders `tui.FileTree(scanAgentWorkspace(absPath), root)` under the panel if the workspace dir exists on disk. Walks the workspace dir via `filepath.WalkDir` (skip hidden files, skip node_modules / .git style dirs — define small `skipDir` predicate).
-- `internal/tui/listflow/agent_panel_test.go` — **new.** Cover: panel renders with no workspace (no tree, `bonsai init` hint), with empty workspace (tree shows `(empty)`), with populated workspace (tree renders top N files, truncation if over 50 entries).
+- `internal/tui/listflow/agent_panel.go` — **new.** Per-agent panel renderer. Builds the `CardFields` pair list for the agent + renders `tui.FileTree(scanAgentWorkspace(absPath), root)` under the panel if the workspace dir exists on disk. Walks the workspace dir via `filepath.WalkDir` (skip hidden files, skip `node_modules` / `.git` style dirs — define small `skipDir` predicate). Cap at 50 entries; when over cap, append muted `... (N more)` row where N = total collected − 50 (per decision D2).
+- `internal/tui/listflow/agent_panel_test.go` — **new.** Cover: panel renders with no workspace (no tree, `Workspace missing — run: bonsai update` hint), with empty workspace (tree shows `(empty)`), with populated workspace under cap (all entries shown), with populated workspace over cap (first 50 entries + `... (N more)` row). Also cover symlink-loop defense + `..`-containing workspace refusal (see Security block).
 - `internal/tui/listflow/listflow_test.go` — **new.** Cover: empty config (no agents) renders empty-state panel + `bonsai add` CTA; one agent renders one panel; multi-agent renders all panels sorted alphabetically by agent name; counts footer matches reality.
 - `cmd/list.go` — **rewrite.** Replace `runList` body with: (1) `mustCwd()` + `requireConfig` (unchanged), (2) `loadCatalog()` (unchanged), (3) `fmt.Print(listflow.RenderAll(cfg, cat, Version, cwd))` — single write, no intermediate `tui.Blank()` / `tui.Info()` / `fmt.Println` scattering. Remove the per-agent `tui.TitledPanel` + `tui.CardFields` calls (lifted into `listflow/agent_panel.go`).
 - `cmd/list_test.go` — **new.** E2E: temp dir with synthetic `.bonsai.yaml` + one agent workspace, capture stdout, assert header renders, agent panel renders, counts footer matches.
@@ -169,8 +180,8 @@ Rationale for bundling completion-hide into Phase 1: it's a one-liner touching `
 
 5. **Per-agent panels.** For each agent (sorted by name), render:
    - `tui.TitledPanel(displayName, tui.CardFields(pairs), tui.Water)` — same as current.
-   - Below the panel (not inside it), `tui.FileTree(scanAgentWorkspace(agent.Workspace, projectDir), agent.Workspace)`. Panel and tree are visually stacked with a single blank line between.
-   - If the workspace dir does not exist on disk, render `tui.Hint("Run: bonsai init")` below the panel instead.
+   - Below the panel (not inside it), `tui.FileTree(scanAgentWorkspace(agent.Workspace, projectDir), agent.Workspace)`. Panel and tree are visually stacked with a single blank line between. Cap at **50 entries** (per decision D2); when `len(entries) > 50`, render 50 entries then append a muted `... (N more)` row where `N = total - 50`.
+   - If the workspace dir does not exist on disk, render `tui.Hint("Workspace missing — run: bonsai update")` below the panel instead (per decision D3).
 
 6. **Counts footer.** Same as current — muted single-line summary with agent/skill/workflow/protocol/sensor/routine counts separated by `tui.GlyphDot`.
 
@@ -222,7 +233,7 @@ Rationale for bundling completion-hide into Phase 1: it's a one-liner touching `
    - `tea.KeyMsg` → delegate scroll keys to `viewport.Update`; topic-cycle keys update `idx` and re-render.
    `View` — compose: header + tab strip + viewport + footer. Tab strip active tab bold primary, others muted.
 
-4. **Tab strip.** Same visual style as catalog's tab strip. 4 tabs horizontally. No count suffix. Kanji per topic: `quickstart → 発 HATSU QUICKSTART`, `concepts → 念 NEN CONCEPTS`, `cli → 令 REI CLI`, `custom-files → 己 KO CUSTOM`. ASCII fallback = English only.
+4. **Tab strip.** Same visual style as catalog's tab strip. 4 tabs horizontally. No count suffix. **English-only labels** (per decision D1 — no kanji anywhere in guideflow): `QUICKSTART · CONCEPTS · CLI · CUSTOM`. Active tab bold `ColorPrimary`, others `ColorMuted`. Narrow-width (terminal width below the tab-strip budget) switches to 5-char short labels: `START · CONCP · CLI · CUSTM`. Choose short-label trigger width by measuring rendered full-label strip against `initflow.ClampColumns(termW).Total`.
 
 5. **Rewire `cmd/guide.go`.** Delete `tui.AskSelect` call and `renderMarkdown` function (moved to `guideflow/render.go`). New `runGuide`: validate arg (unchanged), TTY check, launch viewer or static fallback.
 
@@ -236,7 +247,7 @@ Rationale for bundling completion-hide into Phase 1: it's a one-liner touching `
 - [ ] `bonsai guide` — opens AltScreen on quickstart; tab cycles to concepts/cli/custom-files and back; up/down arrows scroll long content; `q` exits.
 - [ ] `bonsai guide concepts` — opens directly on concepts.
 - [ ] `bonsai guide bogus-topic` — errors with current error message unchanged.
-- [ ] `bonsai guide > /tmp/out.md` — non-TTY fallback renders current behavior (Huh picker won't launch in non-TTY; decide: error out with "guide requires a TTY or explicit topic arg", or pipe first topic). **Decision:** if no arg + no TTY → error with "bonsai guide: specify a topic when piping output (quickstart, concepts, cli, custom-files)". If arg + no TTY → render that topic as current glamour output, same as today.
+- [ ] `bonsai guide > /tmp/out.md` — no arg + no TTY → exit code 1 with stderr message `bonsai guide: specify a topic when piping output (quickstart, concepts, cli, custom-files)` (per decision D4). Arg + no TTY → render that topic as current glamour output (preserve today's behavior).
 - [ ] Terminal <70×20 — `RenderMinSizeFloor` renders.
 - [ ] Resize terminal mid-view — glamour re-wraps on `WindowSizeMsg`.
 
