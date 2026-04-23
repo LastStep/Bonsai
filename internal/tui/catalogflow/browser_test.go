@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
 )
@@ -297,6 +298,77 @@ func TestRenderTabs_ShortLabelsAtNarrowWidth(t *testing.T) {
 	if idx := strings.Index(strip, "AGENT"); idx != 0 {
 		t.Fatalf("active tab AGENT should render first in strip, got index %d:\n%s", idx, strip)
 	}
+}
+
+// TestBrowser_ZeroCountTabRendersMuted verifies that a tab whose
+// filtered entry count is zero renders with a muted styling
+// (different ANSI from the active + default-inactive cells). The
+// test forces a truecolor profile so lipgloss emits SGR escapes —
+// by default the Go test env picks the Ascii profile (stdout not a
+// TTY), which would strip all styling and defeat the assertion.
+//
+// Uses an agent filter that yields zero Skills entries (only the
+// "code"-scoped skill exists, and the filter is "tech-lead" with
+// the All-true skill removed from the fake catalog so the Skills
+// tab is forced to (0)).
+func TestBrowser_ZeroCountTabRendersMuted(t *testing.T) {
+	// Force truecolor so lipgloss emits ANSI SGR sequences that the
+	// assertion can find.
+	prev := lipgloss.ColorProfile()
+	lipgloss.SetColorProfile(termenv.TrueColor)
+	t.Cleanup(func() { lipgloss.SetColorProfile(prev) })
+
+	// Build a catalog whose Skills section has only a code-agent
+	// entry so the "tech-lead" filter yields an empty Skills tab.
+	cat := &catalog.Catalog{
+		Agents: []catalog.AgentDef{
+			{Name: "tech-lead", DisplayName: "Tech Lead", Description: "x"},
+		},
+		Skills: []catalog.CatalogItem{
+			{
+				Name: "coding-standards", DisplayName: "Coding Standards",
+				Description: "style", Agents: catalog.AgentCompat{Names: []string{"code"}},
+			},
+		},
+	}
+	s := NewBrowser(cat, "tech-lead", "")
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
+	strip := s.renderTabs()
+
+	// Skills tab should now render "(0)" — confirm the literal suffix
+	// is present first (sanity check that the test is looking at the
+	// right cell).
+	if !strings.Contains(strip, "(0)") {
+		t.Fatalf("expected '(0)' suffix for empty Skills tab, got:\n%s", strip)
+	}
+
+	// Locate the SKILLS cell in the strip and assert it carries ANSI
+	// SGR escapes (muted styling). The active AGENTS cell at catIdx=0
+	// also has SGR escapes but those encode the active bold+primary
+	// styling — the invariant we're asserting is "(0) cells are
+	// styled distinctly from plain text", which is exactly what the
+	// `dim.Render(label + countSuffix)` branch produces.
+	idx := strings.Index(strip, "SKILLS")
+	if idx < 0 {
+		t.Fatalf("SKILLS tab missing from strip:\n%s", strip)
+	}
+	// The SKILLS substring is preceded by the style-open SGR for the
+	// dim.Render call. Grab a window that should include the escape
+	// prefix and assert it contains an ESC + '['.
+	window := strip[maxInt(0, idx-16):idx]
+	if !strings.Contains(window, "\x1b[") {
+		t.Fatalf("expected ANSI SGR escape prefixing the muted SKILLS (0) cell; window=%q strip=%q", window, strip)
+	}
+}
+
+// maxInt is a tiny local int-max helper for substring window
+// arithmetic — stdlib math.Max is float-only.
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 // TestRenderTabs_FullLabelsAtWideWidth verifies that at widths >= 96

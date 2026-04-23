@@ -231,7 +231,6 @@ func NewBranchesStage(ctx StageContext, cat *catalog.Catalog, agentDef *catalog.
 		Stage:      base,
 		categories: categories,
 		catIdx:     0,
-		expanded:   false,
 		itemIdx:    itemIdx,
 		selected:   selected,
 	}
