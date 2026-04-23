@@ -202,11 +202,7 @@ func (s *ConflictsStage) currentKey() string {
 // Mirrors initflow.PlantedStage.View for layout parity: centre vertically,
 // compose title + divider + list + batch row + inline key hints.
 func (s *ConflictsStage) View() string {
-	w := s.Width()
 	h := s.Height()
-	if w <= 0 {
-		w = 80
-	}
 	if h <= 0 {
 		h = 24
 	}
@@ -306,16 +302,16 @@ func (s *ConflictsStage) renderList() string {
 }
 
 // listHeight returns the visible row budget for the conflict list. Fixed
-// body rows: title (3) + blanks (2) + divider (1) + blank (1) + blank (1) +
-// batch caption (1) + batch row (1) + blank (1) + counter (1) + blank (1) +
-// key hint (1) = ~14 rows. Leaves at least 3 rows for the list on 20-row
-// terminals.
+// body rows match renderBody's body slice: intro (3) + blank (1) + blank (1) +
+// divider (1) + blank (1) + blank-after-list (1) + batch caption (1) +
+// batch row (1) + blank (1) + counter (1) + blank (1) + key hint (1) =
+// 14 rows. Leaves at least 3 rows for the list on 20-row terminals.
 func (s *ConflictsStage) listHeight() int {
 	h := s.Height()
 	if h <= 0 {
 		return 0
 	}
-	const fixedRows = 15
+	const fixedRows = 14
 	v := h - fixedRows
 	if v < 3 {
 		v = 3
