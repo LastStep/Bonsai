@@ -13,22 +13,10 @@ import (
 // a single long line.
 const defaultRenderWidth = 80
 
-// renderMarkdown strips an optional YAML frontmatter block from
-// content (fenced by leading/trailing `---` lines) and renders the
-// remainder through glamour's auto-style terminal renderer.
-//
-// width drives glamour's word-wrap. Values ≤ 0 clamp to
-// defaultRenderWidth so the viewer can call this before the first
-// WindowSizeMsg lands without producing a broken render. Empty
-// content returns an empty string and no error — glamour handles
-// the empty case gracefully and callers (tab cache warmup) benefit
-// from not having to special-case it.
-//
-// This function constructs a fresh renderer on every call — it is
-// kept for the non-TTY one-shot code path (cmd/guide.go renderStatic
-// has its own equivalent) and for unit tests that don't care about
-// renderer reuse. Interactive viewer code should build a renderer
-// once via ViewerStage.rendererFor and call renderMarkdownWith.
+// renderMarkdown strips an optional YAML frontmatter block and renders
+// the remainder through a fresh glamour auto-style renderer. Kept for
+// unit tests that exercise the render pipeline in isolation; the viewer
+// uses renderMarkdownWith with a cached renderer instead.
 func renderMarkdown(content string, width int) (string, error) {
 	if width <= 0 {
 		width = defaultRenderWidth

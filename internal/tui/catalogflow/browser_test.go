@@ -356,19 +356,10 @@ func TestBrowser_ZeroCountTabRendersMuted(t *testing.T) {
 	// The SKILLS substring is preceded by the style-open SGR for the
 	// dim.Render call. Grab a window that should include the escape
 	// prefix and assert it contains an ESC + '['.
-	window := strip[maxInt(0, idx-16):idx]
+	window := strip[max(0, idx-16):idx]
 	if !strings.Contains(window, "\x1b[") {
 		t.Fatalf("expected ANSI SGR escape prefixing the muted SKILLS (0) cell; window=%q strip=%q", window, strip)
 	}
-}
-
-// maxInt is a tiny local int-max helper for substring window
-// arithmetic — stdlib math.Max is float-only.
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // TestRenderTabs_FullLabelsAtWideWidth verifies that at widths >= 96

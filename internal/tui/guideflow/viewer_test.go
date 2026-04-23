@@ -370,6 +370,34 @@ func TestViewer_PreWarmPopulatesCache(t *testing.T) {
 	}
 }
 
+// TestViewer_WidthChangeDispatchesPreWarm verifies the pre-warm cmd is
+// re-dispatched only when the viewport width actually changes. Same-
+// width resizes (e.g. height-only) must not spawn a redundant warm
+// pass; distinct widths must. Terminal widths are chosen so
+// initflow.PanelWidth maps them to different viewport widths — 120
+// clamps to 84, 80 collapses to 76.
+func TestViewer_WidthChangeDispatchesPreWarm(t *testing.T) {
+	s := NewViewer(fakeTopics(), "", "", "")
+	// First resize — should return a pre-warm cmd (preWarmedWidth was 0).
+	_, cmd1 := s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	if cmd1 == nil {
+		t.Fatalf("expected pre-warm cmd on first WindowSizeMsg, got nil")
+	}
+	// Execute the cmd and feed the result back so the cache populates.
+	msg1 := cmd1()
+	s.Update(msg1)
+	// Second resize — same viewport width — no new pre-warm needed.
+	_, cmd2 := s.Update(tea.WindowSizeMsg{Width: 120, Height: 24})
+	if cmd2 != nil {
+		t.Fatalf("same-width resize should not redispatch pre-warm, got non-nil cmd")
+	}
+	// Third resize — distinct viewport width — should redispatch.
+	_, cmd3 := s.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+	if cmd3 == nil {
+		t.Fatalf("distinct-width resize should redispatch pre-warm, got nil")
+	}
+}
+
 // TestViewer_TabSwitchUsesCachedRenderer verifies a tab switch after
 // the renderer cache is populated does not construct a new renderer.
 // Seeds the renderer cache with the viewport width and asserts the
