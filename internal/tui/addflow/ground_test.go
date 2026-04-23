@@ -164,3 +164,46 @@ func TestGround_ResetPreservesValue(t *testing.T) {
 		t.Fatalf("Reset should preserve value — got %q", s.input.Value())
 	}
 }
+
+// TestGround_RejectsAbsolutePath verifies a rooted workspace input is
+// rejected with a user-facing error. Defence against accidental writes
+// outside the project root (Plan 29 §H).
+func TestGround_RejectsAbsolutePath(t *testing.T) {
+	s := newTestGround("backend", nil)
+	groundType(s, "/etc/foo")
+	groundPressKey(s, tea.KeyEnter)
+	if s.Done() {
+		t.Fatal("absolute path should not advance")
+	}
+	if !strings.Contains(s.validateErr, "project-relative") {
+		t.Fatalf("validateErr = %q, want 'project-relative'", s.validateErr)
+	}
+}
+
+// TestGround_RejectsParentEscape verifies "../..." is rejected as escaping
+// the project root.
+func TestGround_RejectsParentEscape(t *testing.T) {
+	s := newTestGround("backend", nil)
+	groundType(s, "../foo")
+	groundPressKey(s, tea.KeyEnter)
+	if s.Done() {
+		t.Fatal("../foo should not advance")
+	}
+	if !strings.Contains(s.validateErr, "escape") {
+		t.Fatalf("validateErr = %q, want 'escape'", s.validateErr)
+	}
+}
+
+// TestGround_RejectsHiddenParentEscape verifies a filepath.Clean-reduced
+// escape ("nested/../..") is rejected after normalisation.
+func TestGround_RejectsHiddenParentEscape(t *testing.T) {
+	s := newTestGround("backend", nil)
+	groundType(s, "nested/../..")
+	groundPressKey(s, tea.KeyEnter)
+	if s.Done() {
+		t.Fatal("nested/../.. should not advance")
+	}
+	if !strings.Contains(s.validateErr, "escape") {
+		t.Fatalf("validateErr = %q, want 'escape'", s.validateErr)
+	}
+}

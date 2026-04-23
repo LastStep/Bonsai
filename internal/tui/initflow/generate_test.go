@@ -162,3 +162,32 @@ func TestGenerate_TickAnimatesArc(t *testing.T) {
 		t.Errorf("arc did not change between tick=1 and tick=50")
 	}
 }
+
+// TestGenerateStage_BodyOnlyDropsChrome verifies that when the stage is
+// flipped into body-only mode (Plan 27 PR2 §C7 — Grow), the rendered View
+// omits both the enso-rail glyphs and the footer BONSAI brand. The full-
+// chrome View() path is covered by the inverse assertion in other tests.
+func TestGenerateStage_BodyOnlyDropsChrome(t *testing.T) {
+	s := NewGenerateStage(StageContext{
+		Version:      "test",
+		ProjectDir:   "/tmp/gen",
+		StationDir:   "station/",
+		AgentDisplay: "Tech Lead",
+		StartedAt:    time.Now(),
+	}, func() error { return nil })
+	s.SetBodyOnly(true)
+	s.SetSize(120, 30)
+
+	out := s.View()
+	// Enso rail glyphs: ● pending-dot, ○ done-dot, ─ connector. Any of them
+	// appearing would mean rail chrome leaked through.
+	for _, glyph := range []string{ensoDone, ensoPending} {
+		if strings.Contains(out, glyph) {
+			t.Errorf("body-only View should not contain rail glyph %q; got:\n%s", glyph, out)
+		}
+	}
+	// Footer brand — the "一 BONSAI 一" pattern from RenderFooter.
+	if strings.Contains(out, "BONSAI 一") {
+		t.Errorf("body-only View should not contain footer brand; got:\n%s", out)
+	}
+}
