@@ -2,30 +2,41 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/huh"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
-	"github.com/LastStep/Bonsai/internal/tui"
+	"github.com/LastStep/Bonsai/internal/tui/guideflow"
 )
 
 // guideTopic pairs a machine key (looked up in guideContents) with a
-// human-readable label shown in the interactive picker.
+// human-readable label. The label is informational only — the cinematic
+// viewer renders its own tab strip via guideflow.NewTopics.
 type guideTopic struct {
 	Key   string
 	Label string
 }
 
-// guideTopics is the ordered list of topics shown in the picker. Order here
-// drives picker order — keep it deterministic.
+// guideTopics is the canonical topic order used for validation error
+// messages and the fallback topic list. The cinematic viewer uses
+// guideflow.NewTopics' own canonicalOrder constant which mirrors
+// this slice; keep the two in sync when adding a topic.
 var guideTopics = []guideTopic{
 	{"quickstart", "Quickstart — 5-step post-install walkthrough"},
 	{"concepts", "Concepts — the mental model"},
 	{"cli", "CLI — command-by-command reference"},
 	{"custom-files", "Custom Files — add your own abilities"},
 }
+
+// noTTYNoArgErr is the exact error message surfaced when guide is
+// invoked with neither an arg nor a TTY (e.g. piped through less
+// without specifying a topic). Decision D4 in Plan 28's 2026-04-23
+// deltas locks the wording; test asserts verbatim.
+const noTTYNoArgErr = "bonsai guide: specify a topic when piping output (quickstart, concepts, cli, custom-files)"
 
 func init() {
 	rootCmd.AddCommand(guideCmd)
@@ -34,11 +45,20 @@ func init() {
 var guideCmd = &cobra.Command{
 	Use:   "guide [topic]",
 	Short: "View bundled guides in the terminal.",
-	Long:  "Render one of the bundled guides as styled terminal output. Run without a topic to pick interactively, or pass one of: quickstart, concepts, cli, custom-files.",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  runGuide,
+	Long: "Render one of the bundled guides as styled terminal output. Run without a " +
+		"topic to open the cinematic viewer on the first topic; pass one of: " +
+		"quickstart, concepts, cli, custom-files.",
+	Args: cobra.MaximumNArgs(1),
+	RunE: runGuide,
 }
 
+// runGuide is the guide command entry point. On a TTY it launches
+// the cinematic guideflow viewer (tabbed scroll viewport over the
+// four bundled docs). Off a TTY it either renders the specified
+// topic as static glamour output (preserves the pre-Plan-28
+// behavior for piped consumption) or errors out when no topic was
+// passed (decision D4 — piping needs an explicit pick so the
+// downstream tool sees a stable single doc).
 func runGuide(cmd *cobra.Command, args []string) error {
 	var key string
 	if len(args) == 1 {
@@ -46,35 +66,34 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		if _, ok := guideContents[key]; !ok {
 			return fmt.Errorf("unknown topic %q. Available: quickstart, concepts, cli, custom-files", key)
 		}
-	} else {
-		options := make([]huh.Option[string], 0, len(guideTopics))
-		for _, t := range guideTopics {
-			options = append(options, huh.NewOption(t.Label, t.Key))
+	}
+
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		if key == "" {
+			return fmt.Errorf("%s", noTTYNoArgErr)
 		}
-		selected, err := tui.AskSelect("Pick a guide", options)
-		if err != nil {
-			return err
-		}
-		key = selected
+		return renderStatic(guideContents[key])
 	}
 
-	content, ok := guideContents[key]
-	if !ok {
-		return fmt.Errorf("unknown topic %q. Available: quickstart, concepts, cli, custom-files", key)
+	topics := guideflow.NewTopics(guideContents)
+	if len(topics) == 0 {
+		return fmt.Errorf("no guide topics available")
 	}
 
-	out, err := renderMarkdown(content)
-	if err != nil {
-		return err
+	cwd, _ := os.Getwd()
+	stage := guideflow.NewViewer(topics, key, Version, cwd)
+	if _, err := tea.NewProgram(stage, tea.WithAltScreen()).Run(); err != nil {
+		return fmt.Errorf("guide viewer: %w", err)
 	}
-
-	fmt.Print(out)
 	return nil
 }
 
-// renderMarkdown strips YAML frontmatter (if present) and renders the remaining
-// markdown via glamour with the auto-selected terminal style.
-func renderMarkdown(content string) (string, error) {
+// renderStatic renders the given markdown content through glamour
+// with auto-style and a fixed word-wrap of 100 columns — the
+// pre-Plan-28 behavior preserved verbatim for piped invocations.
+// The cinematic TTY path binds glamour's width to the live
+// terminal instead (see guideflow/render.go).
+func renderStatic(content string) error {
 	if strings.HasPrefix(content, "---") {
 		if idx := strings.Index(content[3:], "---"); idx >= 0 {
 			content = strings.TrimSpace(content[idx+6:])
@@ -86,13 +105,14 @@ func renderMarkdown(content string) (string, error) {
 		glamour.WithWordWrap(100),
 	)
 	if err != nil {
-		return "", fmt.Errorf("failed to create renderer: %w", err)
+		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
 	out, err := renderer.Render(content)
 	if err != nil {
-		return "", fmt.Errorf("failed to render guide: %w", err)
+		return fmt.Errorf("failed to render guide: %w", err)
 	}
 
-	return out, nil
+	fmt.Print(out)
+	return nil
 }
