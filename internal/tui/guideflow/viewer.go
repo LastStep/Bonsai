@@ -34,14 +34,12 @@ type ViewerStage struct {
 	quit     bool
 }
 
-// narrowStripThreshold defines the cell budget above which the full
-// tab labels (QUICKSTART · CONCEPTS · CLI · CUSTOM) are rendered.
-// Below the threshold the short labels (START · CONCP · CLI · CUSTM)
-// kick in so the strip still fits inside the 70-col min-size floor.
-// The threshold is measured dynamically at render time — this
-// constant only supplies the hard minimum below which short labels
-// are always used even if they would technically fit.
-const narrowStripThreshold = 60
+// Tab-label fallback is measurement-driven: renderTabs compares the
+// rendered full-label strip width against the live panel budget
+// (initflow.PanelWidth) and switches to the short labels
+// (START · CONCP · CLI · CUSTM) whenever the full strip would
+// overflow. No hard threshold — the viewport-relative budget makes
+// the decision at every WindowSizeMsg.
 
 // NewViewer constructs a ViewerStage from the given topics + the
 // initial topic key (empty or unknown → idx 0). version and
@@ -153,14 +151,12 @@ func (s *ViewerStage) Title() string { return "GUIDE" }
 func (s *ViewerStage) Result() any { return nil }
 
 // View composes the full frame: header + tab strip + viewport +
-// footer. Falls back to the min-size floor when the terminal is
-// below the 70×20 threshold.
+// footer. Stage.RenderFrame short-circuits to the min-size floor
+// when the terminal falls below the 70×20 threshold, so the check
+// isn't duplicated here.
 func (s *ViewerStage) View() string {
 	if s.quit {
 		return ""
-	}
-	if initflow.TerminalTooSmall(s.width, s.height) {
-		return initflow.RenderMinSizeFloor(s.width, s.height)
 	}
 
 	width := s.width
@@ -185,31 +181,25 @@ func (s *ViewerStage) keyHints() []initflow.KeyHint {
 
 // renderTabs renders the single-row topic tab strip. Active tab is
 // bold ColorPrimary; inactive tabs are ColorMuted. Chooses the full
-// label set when the rendered strip fits inside
-// initflow.ClampColumns(width).Total; otherwise falls back to the
-// compact short labels so the 4-tab strip fits inside the 70-col
-// min-size floor.
+// label set when the rendered strip fits inside the live panel
+// budget (initflow.PanelWidth); otherwise falls back to the compact
+// short labels so the 4-tab strip still fits on narrow terminals.
 func (s *ViewerStage) renderTabs(width int) string {
-	full := s.buildTabStrip(width, false)
-	// Measure full-label strip against the available content budget.
-	// ClampColumns returns (nameW, descW, tagW); sum is the effective
-	// panel budget in cells. The +4 adds back the init-flow sidePad
-	// margin so the threshold compares like-for-like against the
-	// rendered strip (which itself has no margin baked in).
-	nameW, descW, tagW := initflow.ClampColumns(width - 4)
-	budget := nameW + descW + tagW
-	if budget < narrowStripThreshold {
-		budget = narrowStripThreshold
-	}
-	if lipgloss.Width(full) > budget {
-		return s.buildTabStrip(width, true)
+	full := s.buildTabStrip(false)
+	// Measure the rendered full-label strip against the live panel
+	// content budget. PanelWidth clamps to the design target on wide
+	// terminals and falls back to (width-4) on narrow ones, so the
+	// comparison fires only when full labels would actually overflow.
+	budget := initflow.PanelWidth(width)
+	if budget > 0 && lipgloss.Width(full) > budget {
+		return s.buildTabStrip(true)
 	}
 	return full
 }
 
 // buildTabStrip assembles the tab row from s.topics. When useShort
 // is true each cell uses the Topic.Short label.
-func (s *ViewerStage) buildTabStrip(_ int, useShort bool) string {
+func (s *ViewerStage) buildTabStrip(useShort bool) string {
 	active := lipgloss.NewStyle().Foreground(tui.ColorPrimary).Bold(true)
 	muted := lipgloss.NewStyle().Foreground(tui.ColorMuted)
 

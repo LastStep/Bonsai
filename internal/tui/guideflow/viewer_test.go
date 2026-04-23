@@ -1,6 +1,7 @@
 package guideflow
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -203,6 +204,71 @@ func TestViewer_ViewContainsBrandAndTabs(t *testing.T) {
 		if !strings.Contains(out, label) {
 			t.Fatalf("expected tab label %q in view; got:\n%s", label, out)
 		}
+	}
+}
+
+// longTopics returns a 4-element Topic slice where the first topic's
+// Markdown is long enough to exceed any reasonable viewport height,
+// so scroll-key tests can observe a non-zero YOffset after a line /
+// page down. Each paragraph is deliberately unique so glamour doesn't
+// collapse or dedupe.
+func longTopics() []Topic {
+	var body strings.Builder
+	body.WriteString("# Long Topic\n\n")
+	for i := 0; i < 200; i++ {
+		fmt.Fprintf(&body, "Paragraph %d — lorem ipsum dolor sit amet, consectetur adipiscing elit.\n\n", i)
+	}
+	return []Topic{
+		{Key: "quickstart", Label: "QUICKSTART", Short: "START", Markdown: body.String()},
+		{Key: "concepts", Label: "CONCEPTS", Short: "CONCP", Markdown: "# Concepts\n\nbody"},
+		{Key: "cli", Label: "CLI", Short: "CLI", Markdown: "# CLI\n\nref"},
+		{Key: "custom-files", Label: "CUSTOM", Short: "CUSTM", Markdown: "# Custom\n\ndetails"},
+	}
+}
+
+// TestViewer_ScrollKeyDelegation verifies the fall-through path in
+// Update forwards scroll keys (j/k, pgdn/pgup) to the embedded
+// bubbles/viewport model, which responds by moving YOffset. The
+// viewport's DefaultKeyMap binds Down→{down,j}, PageDown→{pgdown,
+// space,f}, Up→{up,k}, PageUp→{pgup,b} — this test uses the single-
+// char forms so the assertion doesn't depend on tea.KeyType→string
+// aliasing.
+func TestViewer_ScrollKeyDelegation(t *testing.T) {
+	s := NewViewer(longTopics(), "", "", "")
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	if s.viewport.YOffset != 0 {
+		t.Fatalf("precondition: YOffset = %d, want 0 before any scroll", s.viewport.YOffset)
+	}
+
+	// Line down (j) — YOffset should advance by ~1.
+	s.Update(key("j"))
+	afterLineDown := s.viewport.YOffset
+	if afterLineDown <= 0 {
+		t.Fatalf("YOffset after j = %d, want > 0 (viewport should advance)", afterLineDown)
+	}
+
+	// Page down (f is a DefaultKeyMap alias for PageDown; we use it
+	// here because pgdown typed into a tea.KeyMsg can round-trip
+	// through tea.KeyPgDown.String() == "pgdown", which the viewport
+	// keymap also matches — either path proves delegation).
+	s.Update(key("f"))
+	afterPageDown := s.viewport.YOffset
+	if afterPageDown <= afterLineDown {
+		t.Fatalf("YOffset after pgdown = %d, want > %d", afterPageDown, afterLineDown)
+	}
+
+	// Line up (k) — YOffset should move back toward the top.
+	s.Update(key("k"))
+	afterLineUp := s.viewport.YOffset
+	if afterLineUp >= afterPageDown {
+		t.Fatalf("YOffset after k = %d, want < %d", afterLineUp, afterPageDown)
+	}
+
+	// Page up (b is the DefaultKeyMap alias for PageUp).
+	s.Update(key("b"))
+	afterPageUp := s.viewport.YOffset
+	if afterPageUp >= afterLineUp {
+		t.Fatalf("YOffset after pgup = %d, want < %d", afterPageUp, afterLineUp)
 	}
 }
 

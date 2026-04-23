@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -51,7 +52,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		if key == "" {
-			return fmt.Errorf("%s", noTTYNoArgErr)
+			return errors.New(noTTYNoArgErr)
 		}
 		return renderStatic(guideContents[key])
 	}
