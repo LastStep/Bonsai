@@ -11,16 +11,22 @@ import (
 	"github.com/LastStep/Bonsai/internal/config"
 )
 
-// TestMain wires the embedded catalog into the cmd package's package-level
-// catalogFS variable so runList's loadCatalog() call can find a populated
-// catalog during tests. The production wiring happens in cmd/bonsai/main.go;
-// the test binary skips that entry point and needs an equivalent here.
-func TestMain(m *testing.M) {
+// setupListTestCatalog wires the embedded catalog into the cmd package's
+// package-level catalogFS variable so runList's loadCatalog() call can
+// find a populated catalog. The production wiring happens in
+// cmd/bonsai/main.go; the test binary skips that entry point, so each
+// test that needs the catalog opts in explicitly via this helper. Prior
+// value is restored via t.Cleanup so other tests in the package (which
+// previously ran with catalogFS nil) are unaffected.
+func setupListTestCatalog(t *testing.T) {
+	t.Helper()
 	sub, err := fs.Sub(bonsai.CatalogFS, "catalog")
-	if err == nil {
-		catalogFS = sub
+	if err != nil {
+		t.Fatalf("fs.Sub(CatalogFS): %v", err)
 	}
-	os.Exit(m.Run())
+	prev := catalogFS
+	catalogFS = sub
+	t.Cleanup(func() { catalogFS = prev })
 }
 
 // TestRunList_HappyPath sets up a minimal project with one agent + one
@@ -29,6 +35,8 @@ func TestMain(m *testing.M) {
 // and the live workspace file. Uses captureStdout (defined in
 // add_test.go) for output redirection.
 func TestRunList_HappyPath(t *testing.T) {
+	setupListTestCatalog(t)
+
 	// Isolate the test from the developer's home dir / Bonsai config —
 	// runList calls mustCwd + requireConfig which read the real filesystem.
 	tmp := t.TempDir()
@@ -72,12 +80,6 @@ func TestRunList_HappyPath(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 	defer func() { _ = os.Chdir(origCwd) }()
-
-	// Load the bundled catalog so GetAgent("tech-lead") resolves the
-	// display name. The test binary has catalogFS/guideContents set to
-	// nil by default; init-time bundled load happens in main.go — we
-	// bypass it here by loading via a nil-safe catalog inside listflow
-	// (display name falls back to DisplayNameFrom("tech-lead")).
 
 	stdout := captureStdout(t, func() {
 		if err := runList(nil, nil); err != nil {

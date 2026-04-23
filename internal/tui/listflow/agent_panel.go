@@ -1,6 +1,7 @@
 package listflow
 
 import (
+	"errors"
 	"io/fs"
 	"path/filepath"
 	"sort"
@@ -28,7 +29,7 @@ const maxTreeEntries = 50
 // lookups (nil is tolerated — falls back to DisplayNameFrom).
 // projectDir is the absolute project root — used as the anchor for the
 // workspace path-escape check.
-func RenderAgentPanel(agentName string, agent *config.InstalledAgent, cat *catalog.Catalog, projectDir string, termW int) string {
+func RenderAgentPanel(agentName string, agent *config.InstalledAgent, cat *catalog.Catalog, projectDir string) string {
 	if agent == nil {
 		return ""
 	}
@@ -164,12 +165,11 @@ func renderWorkspaceBlock(workspace, projectDir string) string {
 		return renderHintLine("Workspace missing — run: bonsai update")
 	}
 
-	// Resolve the absolute workspace path. Refuse any path that contains
-	// ".." (after Clean) or escapes projectDir.
+	// Resolve the absolute workspace path. The filepath.Rel-based ancestor
+	// check below is the canonical escape defense — legitimate workspace
+	// names that happen to contain ".." as a substring (e.g. "my..ws") are
+	// allowed through because Rel correctly reports them as non-escaping.
 	cleaned := filepath.Clean(workspace)
-	if strings.Contains(cleaned, "..") {
-		return renderWarningLine("workspace path escapes project root — tree skipped")
-	}
 	absWorkspace := cleaned
 	if !filepath.IsAbs(absWorkspace) {
 		absWorkspace = filepath.Join(projectDir, cleaned)
@@ -179,15 +179,24 @@ func renderWorkspaceBlock(workspace, projectDir string) string {
 		absProject, err := filepath.Abs(projectDir)
 		if err == nil {
 			rel, relErr := filepath.Rel(absProject, absWorkspace)
-			if relErr != nil || strings.HasPrefix(rel, "..") || rel == ".." {
+			if relErr != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 				return renderWarningLine("workspace path escapes project root — tree skipped")
 			}
 		}
 	}
 
 	// Stat the resolved path. A missing directory surfaces the D3 CTA.
-	info, err := statDir(absWorkspace)
-	if err != nil || info == nil || !info.IsDir() {
+	// Unreadable (permission-denied) paths also collapse to the same hint
+	// rather than silently vanishing — the user's next action is identical
+	// (investigate / bonsai update) in either case.
+	info, err := osStat(absWorkspace)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return renderHintLine("Workspace missing — run: bonsai update")
+		}
+		return renderHintLine("Workspace missing — run: bonsai update")
+	}
+	if info == nil || !info.IsDir() {
 		return renderHintLine("Workspace missing — run: bonsai update")
 	}
 
@@ -230,17 +239,6 @@ func renderWarningLine(msg string) string {
 	return "    " + warn.Render(tui.GlyphWarn+" "+msg)
 }
 
-// statDir wraps filepath-safe Stat so the caller can distinguish "does not
-// exist" from "exists but unreadable". Returns (nil, nil) when the path
-// does not exist so the caller can short-circuit to the D3 CTA.
-func statDir(path string) (fs.FileInfo, error) {
-	info, err := osStat(path)
-	if err != nil {
-		return nil, err
-	}
-	return info, nil
-}
-
 // scanWorkspace walks root collecting relative paths, skipping hidden
 // entries, .git, and node_modules. Symlinks are not followed — they
 // appear as leaves in the tree but their targets are never traversed,
@@ -281,18 +279,13 @@ func scanWorkspace(root string) ([]string, bool, int) {
 			return nil
 		}
 
-		// Symlink handling — do not follow. For symlink directories,
-		// returning SkipDir ensures we don't attempt to traverse into
-		// them. For symlink files, they render as-is.
+		// Symlink handling — do not follow. filepath.WalkDir does not
+		// follow symlinks by default; no SkipDir needed here. We still
+		// verify the symlink target resolves inside the workspace root
+		// as defense-in-depth — targets that escape are dropped.
 		if d.Type()&fs.ModeSymlink != 0 {
-			// Defensive check: even with SkipDir, verify the symlink
-			// target is inside the resolved workspace root before
-			// counting it. Targets outside are dropped entirely.
 			if target, err := evalSymlinks(path); err == nil {
 				if !isWithin(target, resolvedRoot) {
-					if d.IsDir() {
-						return fs.SkipDir
-					}
 					return nil
 				}
 			}
@@ -302,10 +295,6 @@ func scanWorkspace(root string) ([]string, bool, int) {
 				if len(files) < maxTreeEntries {
 					files = append(files, filepath.ToSlash(rel))
 				}
-			}
-			// Never descend into symlinked directories — sidesteps loops.
-			if d.IsDir() {
-				return fs.SkipDir
 			}
 			return nil
 		}

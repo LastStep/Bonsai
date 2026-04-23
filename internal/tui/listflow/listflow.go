@@ -88,7 +88,7 @@ func RenderAll(cfg *config.ProjectConfig, cat *catalog.Catalog, version, project
 
 	for i, name := range agentNames {
 		agent := cfg.Agents[name]
-		b.WriteString(RenderAgentPanel(name, agent, cat, projectDir, width))
+		b.WriteString(RenderAgentPanel(name, agent, cat, projectDir))
 		if i < len(agentNames)-1 {
 			b.WriteString("\n")
 		}
@@ -144,9 +144,7 @@ func renderCountsFooter(agents, skills, workflows, protocols, sensors, routines 
 	return "  " + muted.Render(strings.Join(parts, " "+tui.GlyphDot+" "))
 }
 
-// pluralize picks singular or plural based on count. Duplicated from
-// cmd/list.go's helper (also kept there for the e2e test). Lifting to a
-// shared package is overkill for a 4-line helper used in two places.
+// pluralize picks singular or plural based on count.
 func pluralize(n int, singular, plural string) string {
 	if n == 1 {
 		return fmt.Sprintf("%d %s", n, singular)

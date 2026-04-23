@@ -28,7 +28,7 @@ func TestRenderAgentPanel_MissingWorkspaceShowsHint(t *testing.T) {
 	projectDir := t.TempDir()
 	agent := newAgent("station") // no dir created
 
-	out := RenderAgentPanel("tech-lead", agent, nil, projectDir, 120)
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
 
 	if !strings.Contains(out, "Workspace missing — run: bonsai update") {
 		t.Fatalf("expected D3 hint in output, got:\n%s", out)
@@ -54,7 +54,7 @@ func TestRenderAgentPanel_EmptyWorkspaceShowsMarker(t *testing.T) {
 	}
 
 	agent := newAgent("station")
-	out := RenderAgentPanel("tech-lead", agent, nil, projectDir, 120)
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
 
 	if !strings.Contains(out, "(empty)") {
 		t.Fatalf("expected (empty) marker in tree, got:\n%s", out)
@@ -77,7 +77,7 @@ func TestRenderAgentPanel_UnderCapShowsAllFiles(t *testing.T) {
 	}
 
 	agent := newAgent("station")
-	out := RenderAgentPanel("tech-lead", agent, nil, projectDir, 120)
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
 
 	for i := 0; i < 10; i++ {
 		name := "file" + strconv.Itoa(i) + ".md"
@@ -108,7 +108,7 @@ func TestRenderAgentPanel_OverCapTruncatesWithSummary(t *testing.T) {
 	}
 
 	agent := newAgent("station")
-	out := RenderAgentPanel("tech-lead", agent, nil, projectDir, 120)
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
 
 	if !strings.Contains(out, "(10 more)") {
 		t.Fatalf("expected '... (10 more)' truncation row, got:\n%s", out)
@@ -129,7 +129,7 @@ func TestRenderAgentPanel_EscapePathRefused(t *testing.T) {
 	projectDir := t.TempDir()
 	agent := newAgent("../outside")
 
-	out := RenderAgentPanel("tech-lead", agent, nil, projectDir, 120)
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
 
 	if !strings.Contains(out, "escapes project root") {
 		t.Fatalf("expected escape-warning line, got:\n%s", out)
@@ -164,7 +164,7 @@ func TestRenderAgentPanel_SymlinkLoopTerminates(t *testing.T) {
 	done := make(chan string, 1)
 	go func() {
 		agent := newAgent("station")
-		done <- RenderAgentPanel("tech-lead", agent, nil, projectDir, 120)
+		done <- RenderAgentPanel("tech-lead", agent, nil, projectDir)
 	}()
 	select {
 	case out := <-done:
@@ -195,7 +195,7 @@ func TestRenderAgentPanel_PairsIncludeInstalledAbilities(t *testing.T) {
 		Routines:  []string{"backlog-hygiene"},
 	}
 
-	out := RenderAgentPanel("tech-lead", agent, nil, projectDir, 120)
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
 
 	for _, want := range []string{
 		"Workspace",
@@ -208,6 +208,89 @@ func TestRenderAgentPanel_PairsIncludeInstalledAbilities(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Fatalf("expected %q in panel output, got:\n%s", want, out)
 		}
+	}
+}
+
+// TestRenderAgentPanel_AbsolutePathEscape covers the escape-detection
+// ancestor check for absolute workspace paths outside projectDir (e.g.
+// /etc). The warning line must render and the tree walk must be skipped.
+func TestRenderAgentPanel_AbsolutePathEscape(t *testing.T) {
+	projectDir := t.TempDir()
+	agent := newAgent("/etc")
+
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
+
+	if !strings.Contains(out, "escapes project root") {
+		t.Fatalf("expected escape-warning line for absolute path, got:\n%s", out)
+	}
+	if strings.Contains(out, "├─") || strings.Contains(out, "└─") {
+		t.Fatalf("did not expect tree glyphs for absolute escape path, got:\n%s", out)
+	}
+}
+
+// TestRenderAgentPanel_SkipsNodeModulesAndGit covers isSkippable: the
+// walker must skip .git + node_modules subtrees and still include a
+// regular file in the rendered tree.
+func TestRenderAgentPanel_SkipsNodeModulesAndGit(t *testing.T) {
+	projectDir := t.TempDir()
+	ws := filepath.Join(projectDir, "station")
+	if err := os.MkdirAll(filepath.Join(ws, "node_modules"), 0o755); err != nil {
+		t.Fatalf("mkdir node_modules: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(ws, "node_modules", "foo.js"), []byte("x"), 0o644); err != nil {
+		t.Fatalf("write node_modules file: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(ws, ".git"), 0o755); err != nil {
+		t.Fatalf("mkdir .git: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(ws, ".git", "config"), []byte("x"), 0o644); err != nil {
+		t.Fatalf("write .git file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(ws, "real.md"), []byte("x"), 0o644); err != nil {
+		t.Fatalf("write real file: %v", err)
+	}
+
+	agent := newAgent("station")
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
+
+	if !strings.Contains(out, "real.md") {
+		t.Fatalf("expected real.md in output, got:\n%s", out)
+	}
+	if strings.Contains(out, "node_modules") {
+		t.Fatalf("did not expect node_modules in output, got:\n%s", out)
+	}
+	if strings.Contains(out, "foo.js") {
+		t.Fatalf("did not expect node_modules contents in output, got:\n%s", out)
+	}
+	// `.git` itself is hidden (leading-dot) and filtered; its contents
+	// must not leak either.
+	if strings.Contains(out, ".git") {
+		t.Fatalf("did not expect .git in output, got:\n%s", out)
+	}
+}
+
+// TestRenderAgentPanel_LegitimateDotDotInName regresses M1: a workspace
+// directory named "my..workspace" — the cleaned path contains ".." as a
+// substring but does not escape projectDir. The tree must render normally
+// rather than being refused as a path-escape.
+func TestRenderAgentPanel_LegitimateDotDotInName(t *testing.T) {
+	projectDir := t.TempDir()
+	ws := filepath.Join(projectDir, "my..workspace")
+	if err := os.MkdirAll(ws, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(ws, "real.md"), []byte("x"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	agent := newAgent("my..workspace")
+	out := RenderAgentPanel("tech-lead", agent, nil, projectDir)
+
+	if strings.Contains(out, "escapes project root") {
+		t.Fatalf("did not expect escape-warning for legitimate '..'-in-name, got:\n%s", out)
+	}
+	if !strings.Contains(out, "real.md") {
+		t.Fatalf("expected real.md in tree for legitimate '..'-in-name workspace, got:\n%s", out)
 	}
 }
 
