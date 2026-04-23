@@ -1,5 +1,5 @@
 ---
-Status: Draft — 2026-04-23
+Status: Complete — shipped 2026-04-23 (PR #74)
 Plan: 30
 Title: Guide viewer perf + list/catalog/guide polish bundle
 Agent: general-purpose

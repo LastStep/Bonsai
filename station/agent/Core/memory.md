@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Last session (2026-04-23): archive-reconcile sweep (commit `45df4cd`) + bookkeeping (`4c2372f`) on main. Plans/Active/ now empty; 20 shipped plans in Plans/Archive/ with Status frontmatters synced to Complete. **Prior shipped work:** see `Playbook/Status.md` Recently Done for rolling window, `Playbook/StatusArchive.md` for older, and `Playbook/Plans/Archive/` for per-plan specs + details.
+**Current task:** Idle. Last session (2026-04-23): Plan 30 shipped (PR #74 squash `7733ae2`) — guide viewer perf (cached glamour renderer + pre-warm via tea.Cmd) + bundled Plan-28 NIT cleanups across list/catalog/guide. Plans/Active/ now empty; 21 shipped plans in Plans/Archive/. **Prior shipped work:** see `Playbook/Status.md` Recently Done for rolling window, `Playbook/StatusArchive.md` for older, and `Playbook/Plans/Archive/` for per-plan specs + details.
 
 ## Notes
 
