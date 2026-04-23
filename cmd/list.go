@@ -2,14 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
-	"github.com/LastStep/Bonsai/internal/catalog"
-	"github.com/LastStep/Bonsai/internal/tui"
+	"github.com/LastStep/Bonsai/internal/tui/listflow"
 )
 
 func init() {
@@ -22,6 +21,11 @@ var listCmd = &cobra.Command{
 	RunE:  runList,
 }
 
+// runList renders the cinematic `bonsai list` surface — a single
+// fmt.Print of listflow.RenderAll's pure-function output. The TUI
+// pipeline is static (no BubbleTea) so piped invocations produce
+// clean non-ANSI output via the existing tui.DisableColor() pathway
+// in internal/tui/styles.go.
 func runList(cmd *cobra.Command, args []string) error {
 	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
@@ -29,122 +33,21 @@ func runList(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
-	tui.Heading(cfg.ProjectName)
-
-	if len(cfg.Scaffolding) > 0 {
-		scaffoldDisplay := make([]string, len(cfg.Scaffolding))
-		for i, s := range cfg.Scaffolding {
-			scaffoldDisplay[i] = catalog.DisplayNameFrom(s)
-		}
-		tui.Info("Scaffolding: " + strings.Join(scaffoldDisplay, ", "))
-	}
-
-	if len(cfg.Agents) == 0 {
-		tui.Blank()
-		tui.EmptyPanel("No agents installed.\nRun bonsai add to get started.")
-		return nil
-	}
-
 	cat := loadCatalog()
 
-	displayNames := func(names []string, lookup func(string) string) string {
-		display := make([]string, len(names))
-		for i, n := range names {
-			if dn := lookup(n); dn != "" {
-				display[i] = dn
-			} else {
-				display[i] = catalog.DisplayNameFrom(n)
-			}
-		}
-		return strings.Join(display, ", ")
-	}
-
-	agentNames := make([]string, 0, len(cfg.Agents))
-	for name := range cfg.Agents {
-		agentNames = append(agentNames, name)
-	}
-	sort.Strings(agentNames)
-
-	for _, name := range agentNames {
-		agent := cfg.Agents[name]
-		displayName := name
-		if agentDef := cat.GetAgent(name); agentDef != nil {
-			displayName = agentDef.DisplayName
-		}
-
-		pairs := [][2]string{{"Workspace", agent.Workspace}}
-		if len(agent.Skills) > 0 {
-			pairs = append(pairs, [2]string{"Skills", displayNames(agent.Skills, func(n string) string {
-				if s := cat.GetSkill(n); s != nil {
-					return s.DisplayName
-				}
-				return ""
-			})})
-		}
-		if len(agent.Workflows) > 0 {
-			pairs = append(pairs, [2]string{"Workflows", displayNames(agent.Workflows, func(n string) string {
-				if w := cat.GetWorkflow(n); w != nil {
-					return w.DisplayName
-				}
-				return ""
-			})})
-		}
-		if len(agent.Protocols) > 0 {
-			pairs = append(pairs, [2]string{"Protocols", displayNames(agent.Protocols, func(n string) string {
-				if p := cat.GetProtocol(n); p != nil {
-					return p.DisplayName
-				}
-				return ""
-			})})
-		}
-		if len(agent.Sensors) > 0 {
-			pairs = append(pairs, [2]string{"Sensors", displayNames(agent.Sensors, func(n string) string {
-				if s := cat.GetSensor(n); s != nil {
-					return s.DisplayName
-				}
-				return ""
-			})})
-		}
-		if len(agent.Routines) > 0 {
-			pairs = append(pairs, [2]string{"Routines", displayNames(agent.Routines, func(n string) string {
-				if r := cat.GetRoutine(n); r != nil {
-					return r.DisplayName
-				}
-				return ""
-			})})
-		}
-
-		content := tui.CardFields(pairs)
-		tui.TitledPanel(displayName, content, tui.Water)
-	}
-
-	totalSkills, totalWorkflows, totalProtocols, totalSensors, totalRoutines := 0, 0, 0, 0, 0
-	for _, a := range cfg.Agents {
-		totalSkills += len(a.Skills)
-		totalWorkflows += len(a.Workflows)
-		totalProtocols += len(a.Protocols)
-		totalSensors += len(a.Sensors)
-		totalRoutines += len(a.Routines)
-	}
-
-	parts := []string{
-		pluralize(len(cfg.Agents), "agent", "agents"),
-		pluralize(totalSkills, "skill", "skills"),
-		pluralize(totalWorkflows, "workflow", "workflows"),
-		pluralize(totalProtocols, "protocol", "protocols"),
-		pluralize(totalSensors, "sensor", "sensors"),
-		pluralize(totalRoutines, "routine", "routines"),
-	}
-	fmt.Println("\n  " + tui.StyleMuted.Render(strings.Join(parts, " "+tui.GlyphDot+" ")))
-
-	tui.Blank()
+	termW, termH := terminalSize()
+	fmt.Print(listflow.RenderAll(cfg, cat, Version, cwd, termW, termH))
 	return nil
 }
 
-func pluralize(n int, singular, plural string) string {
-	if n == 1 {
-		return fmt.Sprintf("%d %s", n, singular)
+// terminalSize queries the live terminal dims for the list renderer.
+// Falls back to 80×24 when stdout is not a TTY or the syscall errors —
+// `bonsai list` must produce readable piped output, so a non-TTY is a
+// valid case (the initflow min-size check won't trigger at 80×24).
+func terminalSize() (int, int) {
+	w, h, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || w <= 0 || h <= 0 {
+		return 80, 24
 	}
-	return fmt.Sprintf("%d %s", n, plural)
+	return w, h
 }
