@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Stage is the shared base type for every init-flow stage (Vessel, Soil,
@@ -176,6 +177,26 @@ func (s *Stage) ClearDone() { s.done = false }
 // unexported renderFrame remains for internal callers.
 func (s *Stage) RenderFrame(body string, keys []KeyHint) string {
 	return s.renderFrame(body, keys)
+}
+
+// ChromeHeights returns the rendered line-heights of the Stage's
+// persistent header and footer at the live terminal width. Sibling
+// packages that compose their own body area (guideflow's viewer,
+// etc.) use this to derive the body row budget from the actual
+// chrome output instead of hard-coding row counts that drift when
+// the chrome layout changes.
+//
+// headerH + footerH is the minimum chrome cost; callers that render
+// a rail or inter-section blank rows add those separately — this
+// method intentionally doesn't know about the caller's layout.
+func (s *Stage) ChromeHeights(keys []KeyHint) (headerH, footerH int) {
+	width := s.width
+	if width <= 0 {
+		width = 80
+	}
+	headerH = lipgloss.Height(RenderHeader(s.version, s.projectDir, s.headerAction, s.headerRightLabel, width, s.ensoSafe))
+	footerH = lipgloss.Height(RenderFooter(keys, width))
+	return
 }
 
 // Title implements harness.Step. Used only if the harness ever had to

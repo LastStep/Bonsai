@@ -294,6 +294,18 @@ func TestRenderAgentPanel_LegitimateDotDotInName(t *testing.T) {
 	}
 }
 
+// TestRenderWorkspaceBlock_EmptyString locks the defensive contract
+// that a config with workspace="" never panics and always surfaces
+// the same "Workspace missing — run: bonsai update" hint as the
+// missing-directory path. Exercises the early-return branch at the
+// top of renderWorkspaceBlock.
+func TestRenderWorkspaceBlock_EmptyString(t *testing.T) {
+	out := renderWorkspaceBlock("", "/some/project/dir")
+	if !strings.Contains(out, "Workspace missing") {
+		t.Fatalf("expected 'Workspace missing' hint for empty workspace, got:\n%s", out)
+	}
+}
+
 // fmtInt zero-pads n to at least width digits. Avoids pulling strconv in
 // again (already imported above, but we keep this local so if the import
 // slims later the test still compiles).

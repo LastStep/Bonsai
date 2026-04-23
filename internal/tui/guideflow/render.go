@@ -13,21 +13,14 @@ import (
 // a single long line.
 const defaultRenderWidth = 80
 
-// renderMarkdown strips an optional YAML frontmatter block from
-// content (fenced by leading/trailing `---` lines) and renders the
-// remainder through glamour's auto-style terminal renderer.
-//
-// width drives glamour's word-wrap. Values ≤ 0 clamp to
-// defaultRenderWidth so the viewer can call this before the first
-// WindowSizeMsg lands without producing a broken render. Empty
-// content returns an empty string and no error — glamour handles
-// the empty case gracefully and callers (tab cache warmup) benefit
-// from not having to special-case it.
+// renderMarkdown strips an optional YAML frontmatter block and renders
+// the remainder through a fresh glamour auto-style renderer. Kept for
+// unit tests that exercise the render pipeline in isolation; the viewer
+// uses renderMarkdownWith with a cached renderer instead.
 func renderMarkdown(content string, width int) (string, error) {
 	if width <= 0 {
 		width = defaultRenderWidth
 	}
-	body := stripFrontmatter(content)
 
 	renderer, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
@@ -36,6 +29,17 @@ func renderMarkdown(content string, width int) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("guideflow: create renderer: %w", err)
 	}
+	return renderMarkdownWith(content, renderer)
+}
+
+// renderMarkdownWith strips the optional YAML frontmatter block
+// from content and renders the remainder through the provided
+// glamour.TermRenderer. Splitting the renderer construction out of
+// the render call is how the interactive viewer amortises the
+// termenv OSC query + goldmark+chroma init across every tab-switch
+// at a given width — see ViewerStage.rendererFor for the cache.
+func renderMarkdownWith(content string, renderer *glamour.TermRenderer) (string, error) {
+	body := stripFrontmatter(content)
 	out, err := renderer.Render(body)
 	if err != nil {
 		return "", fmt.Errorf("guideflow: render markdown: %w", err)

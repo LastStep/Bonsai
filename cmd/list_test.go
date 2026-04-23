@@ -105,3 +105,53 @@ func TestRunList_HappyPath(t *testing.T) {
 		t.Fatalf("expected CLAUDE.md in workspace tree, got:\n%s", stdout)
 	}
 }
+
+// TestRunList_NoAgents covers the zero-agents branch — a project
+// config with an empty Agents map must still render the cinematic
+// LIST header + a 0-agent count + return nil (no panic on the
+// empty-map loop). Mirrors TestRunList_HappyPath's scaffold but
+// swaps in an empty Agents map.
+//
+// The non-TTY fallback case isn't a separate test: captureStdout
+// redirects os.Stdout to a pipe, so runList's `isTerminal(os.Stdout)`
+// check returns false and the happy-path + no-agents tests already
+// exercise the non-TTY render. Mentioned in the PR body.
+func TestRunList_NoAgents(t *testing.T) {
+	setupListTestCatalog(t)
+
+	tmp := t.TempDir()
+	projectDir := filepath.Join(tmp, "demo-project")
+	if err := os.MkdirAll(projectDir, 0o755); err != nil {
+		t.Fatalf("mkdir projectDir: %v", err)
+	}
+
+	cfg := &config.ProjectConfig{
+		ProjectName: "demo-project",
+		Agents:      map[string]*config.InstalledAgent{},
+	}
+	if err := cfg.Save(filepath.Join(projectDir, configFile)); err != nil {
+		t.Fatalf("save config: %v", err)
+	}
+
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(projectDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	defer func() { _ = os.Chdir(origCwd) }()
+
+	stdout := captureStdout(t, func() {
+		if err := runList(nil, nil); err != nil {
+			t.Fatalf("runList: %v", err)
+		}
+	})
+
+	if !strings.Contains(stdout, "LIST") {
+		t.Fatalf("expected 'LIST' in header, got:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "0 agent") {
+		t.Fatalf("expected '0 agent' count, got:\n%s", stdout)
+	}
+}

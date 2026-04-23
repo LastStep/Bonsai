@@ -13,16 +13,17 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
-// timeZero returns the zero-value time.Time used for stages that have
-// no session-start anchor (catalog is a single-shot browser — no
-// ELAPSED row to render, so any zero-value is safe).
-func timeZero() time.Time { return time.Time{} }
-
-// category is one of the seven catalog section tabs. The tab's header
-// cell renders as "LABEL (N)" where N counts the filtered entries;
-// filterHidZero is the agent-filter's greyed-out suffix signal (tabs
-// with zero filtered items render with a muted (0) suffix but stay in
-// the tab strip so the user sees what their filter excludes).
+// category is one of the seven catalog section tabs. Fields:
+//
+//   - key         — the stable machine identifier (e.g. "sensors").
+//   - displayName — the uppercase full label rendered in the tab
+//     strip (e.g. "SENSORS"); the narrow-width short form is derived
+//     via shortLabel at render time.
+//   - entries     — the filtered + ordered per-tab Entry list. An
+//     empty slice renders a muted "(0)" count suffix on the tab
+//     strip so the user sees which sections their agent filter
+//     excluded — that presentation rule lives in renderTabs, not on
+//     this struct.
 type category struct {
 	key         string
 	displayName string
@@ -123,7 +124,7 @@ func NewBrowser(cat *catalog.Catalog, agentFilter string, projectDir string) *Br
 		// Zero time — catalog has no elapsed counter. Matches the
 		// initflow precedent (StageContext.StartedAt zero-value is safe
 		// for stages that never render an ELAPSED row).
-		timeZero(),
+		time.Time{},
 	)
 	base.SetRailHidden(true)
 	base.SetHeaderAction("CATALOG")
@@ -136,14 +137,16 @@ func NewBrowser(cat *catalog.Catalog, agentFilter string, projectDir string) *Br
 		categories: categories,
 		catIdx:     0,
 		itemIdx:    itemIdx,
-		expanded:   false,
 	}
 }
 
 // buildCategories walks the seven catalog sections and packs each into
 // the per-tab category shape. Per-section Meta packing:
 //
-//   - Agents: Meta = nil.
+//   - Agents: Meta = {"Kind": "agent"} — surfaces parity with the
+//     other sections' metadata blocks (every entry in this tab IS an
+//     agent; the kind line reads as a deliberate tag rather than the
+//     pre-fix "(no extra metadata)" placeholder).
 //   - Skills / Workflows / Protocols: Meta = nil.
 //   - Sensors: Meta = {"Event": event, "Matcher": matcher} (matcher omitted if empty).
 //   - Routines: Meta = {"Frequency": freq}.
@@ -168,6 +171,7 @@ func buildCategories(cat *catalog.Catalog, agentFilter string) []category {
 				Name:        a.Name,
 				DisplayName: display,
 				Description: a.Description,
+				Meta:        map[string]string{"Kind": "agent"},
 			})
 		}
 		out = append(out, category{key: "agents", displayName: "AGENTS", entries: entries})

@@ -2,6 +2,7 @@ package initflow
 
 import (
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -199,8 +200,8 @@ func RenderMinSizeFloor(width, height int) string {
 	title := primary.Render("BONSAI")
 	subtitle := muted.Render("please enlarge your terminal")
 	hint := dim.Render(
-		"minimum " + itoa(MinTerminalWidth) + " × " + itoa(MinTerminalHeight) +
-			"   ·   current " + itoa(width) + " × " + itoa(height),
+		"minimum " + strconv.Itoa(MinTerminalWidth) + " × " + strconv.Itoa(MinTerminalHeight) +
+			"   ·   current " + strconv.Itoa(width) + " × " + strconv.Itoa(height),
 	)
 
 	lines := []string{title, "", subtitle, hint}

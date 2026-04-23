@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/LastStep/Bonsai/internal/tui"
@@ -29,9 +30,19 @@ type ViewerStage struct {
 	idx      int
 	viewport viewport.Model
 	rendered map[string]string // key: "idx:width" → glamour output
-	width    int
-	height   int
-	quit     bool
+	// renderers caches glamour.TermRenderer instances keyed by viewport
+	// width. Building a renderer is expensive (termenv OSC 11 background
+	// query + goldmark + chroma init — typically 100ms+), so we build
+	// once per distinct width and reuse for every tab switch / scroll
+	// at that width. Cache writes happen only on the tea.Update loop.
+	renderers map[int]*glamour.TermRenderer
+	// preWarmedWidth is the width for which preWarmCmd was already
+	// dispatched. Protects against re-dispatching on no-op
+	// WindowSizeMsg (same width, different height).
+	preWarmedWidth int
+	width          int
+	height         int
+	quit           bool
 }
 
 // Tab-label fallback is measurement-driven: renderTabs compares the
@@ -56,10 +67,14 @@ func NewViewer(topics []Topic, initialKey, version, projectDir string) *ViewerSt
 		}
 	}
 
+	// Empty label + empty title — the rail is hidden (SetRailHidden
+	// below) and the chromeless viewer has no breadcrumb title slot,
+	// so both fields are unused. Header text comes exclusively from
+	// the SetHeaderAction("GUIDE") call a few lines down.
 	base := initflow.NewStage(
 		0,
-		initflow.StageLabel{English: "GUIDE"},
-		"GUIDE",
+		initflow.StageLabel{},
+		"",
 		version,
 		projectDir,
 		"",
@@ -76,11 +91,81 @@ func NewViewer(topics []Topic, initialKey, version, projectDir string) *ViewerSt
 	vp := viewport.New(0, 0)
 
 	return &ViewerStage{
-		Stage:    base,
-		topics:   topics,
-		idx:      idx,
-		viewport: vp,
-		rendered: make(map[string]string),
+		Stage:     base,
+		topics:    topics,
+		idx:       idx,
+		viewport:  vp,
+		rendered:  make(map[string]string),
+		renderers: make(map[int]*glamour.TermRenderer),
+	}
+}
+
+// rendererFor returns the cached glamour.TermRenderer for the given
+// width, building + caching a fresh one if absent. Width ≤ 0 clamps
+// to defaultRenderWidth. Called on the tea.Update loop only — writes
+// to s.renderers are not goroutine-safe.
+func (s *ViewerStage) rendererFor(width int) (*glamour.TermRenderer, error) {
+	if width <= 0 {
+		width = defaultRenderWidth
+	}
+	if r, ok := s.renderers[width]; ok {
+		return r, nil
+	}
+	r, err := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(width),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("guideflow: create renderer: %w", err)
+	}
+	s.renderers[width] = r
+	return r, nil
+}
+
+// preWarmMsg is the result of a background pre-warm pass. results
+// maps topic idx → rendered markdown string at the given width.
+// Handled in Update where the values are committed to s.rendered on
+// the tea loop (no shared-state races).
+type preWarmMsg struct {
+	width   int
+	results map[int]string
+}
+
+// preWarmCmd returns a tea.Cmd that renders every topic at the given
+// width on a background goroutine and delivers the results as a
+// preWarmMsg. The goroutine constructs its own local renderer so it
+// never touches s.renderers — the cmd is race-free by construction.
+// Renderer construction on the goroutine is one extra build (~100ms)
+// but the tea loop is unblocked for the duration.
+func (s *ViewerStage) preWarmCmd(width int) tea.Cmd {
+	if width <= 0 {
+		width = defaultRenderWidth
+	}
+	// Snapshot topics into a local slice so the goroutine never reads
+	// through s.topics (which is never mutated today but would be a
+	// latent race if that ever changed).
+	topics := make([]Topic, len(s.topics))
+	copy(topics, s.topics)
+	return func() tea.Msg {
+		renderer, err := glamour.NewTermRenderer(
+			glamour.WithAutoStyle(),
+			glamour.WithWordWrap(width),
+		)
+		if err != nil {
+			// Silent drop — the synchronous path will retry on the
+			// tea loop when the user hits a tab. Returning a msg with
+			// empty results is a no-op in the Update handler.
+			return preWarmMsg{width: width, results: map[int]string{}}
+		}
+		results := make(map[int]string, len(topics))
+		for i, t := range topics {
+			body, err := renderMarkdownWith(t.Markdown, renderer)
+			if err != nil {
+				continue
+			}
+			results[i] = body
+		}
+		return preWarmMsg{width: width, results: results}
 	}
 }
 
@@ -105,6 +190,30 @@ func (s *ViewerStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		s.SetSize(m.Width, m.Height)
 		s.resizeViewport()
 		s.refreshViewportContent()
+		// Pre-warm the rest of the topics on first sight of each
+		// distinct viewport width, so subsequent tab-switches hit the
+		// cache and feel instant. Re-dispatch only when the viewport
+		// width actually changes (height-only resizes skip it).
+		vw := s.viewport.Width
+		if vw <= 0 {
+			vw = defaultRenderWidth
+		}
+		if vw != s.preWarmedWidth {
+			s.preWarmedWidth = vw
+			return s, s.preWarmCmd(vw)
+		}
+		return s, nil
+	case preWarmMsg:
+		for idx, body := range m.results {
+			key := fmt.Sprintf("%d:%d", idx, m.width)
+			// Preserve any value already written synchronously for the
+			// current tab (they're identical, but skipping the write
+			// keeps Update idempotent and avoids spurious map churn).
+			if _, ok := s.rendered[key]; ok {
+				continue
+			}
+			s.rendered[key] = body
+		}
 		return s, nil
 	case tea.KeyMsg:
 		switch m.String() {
@@ -220,17 +329,20 @@ func (s *ViewerStage) buildTabStrip(useShort bool) string {
 }
 
 // resizeViewport recomputes the viewport dims from the current
-// terminal size. Body area = height minus chrome (header 2 + 2
-// blanks + footer 2) minus tab strip (1 + 1 blank). Floor at 3 so
-// at least a small scroll window is visible on short terminals.
+// terminal size. Body area = height minus chrome (header + footer,
+// both from Stage.ChromeHeights) minus the inter-section blanks
+// rendered by Stage.renderFrame (2 rows) minus the tab strip (1
+// row + 1 blank). Floor at 3 so at least a small scroll window is
+// visible on short terminals.
 func (s *ViewerStage) resizeViewport() {
 	w := initflow.PanelWidth(s.width)
 	if w <= 0 {
 		w = 80
 	}
-	// Chrome: header (2 rows) + 2 blank + footer (2 rows, rule +
-	// brand row) = 6. Tab strip row (1) + 1 blank = 2. Total 8.
-	const chromeRows = 8
+	headerH, footerH := s.ChromeHeights(s.keyHints())
+	// +4 = 2 blank separators around the body (Stage.renderFrame) +
+	// tab strip (1 row) + blank below the tab strip (1 row).
+	chromeRows := headerH + footerH + 4
 	h := s.height - chromeRows
 	if h < 3 {
 		h = 3
@@ -257,7 +369,12 @@ func (s *ViewerStage) refreshViewportContent() {
 		s.viewport.SetContent(cached)
 		return
 	}
-	rendered, err := renderMarkdown(s.topics[s.idx].Markdown, w)
+	r, err := s.rendererFor(w)
+	if err != nil {
+		s.viewport.SetContent("Render error: " + err.Error())
+		return
+	}
+	rendered, err := renderMarkdownWith(s.topics[s.idx].Markdown, r)
 	if err != nil {
 		// Surface the render failure inside the viewport itself
 		// so the user sees something rather than a blank pane;

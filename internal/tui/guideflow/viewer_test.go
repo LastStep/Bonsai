@@ -310,6 +310,112 @@ func TestNewTopics_SkipsMissingKeys(t *testing.T) {
 	}
 }
 
+// TestViewer_RendererCachedPerWidth verifies repeated WindowSizeMsg
+// events at the same viewport width re-use a single
+// *glamour.TermRenderer instance (the cache key is the width, not
+// the msg sequence).
+func TestViewer_RendererCachedPerWidth(t *testing.T) {
+	s := NewViewer(fakeTopics(), "", "", "")
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	first := len(s.renderers)
+	if first != 1 {
+		t.Fatalf("len(renderers) after first resize = %d, want 1", first)
+	}
+	// Second resize at the same width — renderer count must stay at 1.
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 24})
+	if got := len(s.renderers); got != 1 {
+		t.Fatalf("len(renderers) after same-width resize = %d, want 1", got)
+	}
+}
+
+// TestViewer_RendererPerDistinctWidth verifies two WindowSizeMsgs at
+// different widths each build their own renderer — the cache is
+// width-keyed and per-width builds are independent.
+func TestViewer_RendererPerDistinctWidth(t *testing.T) {
+	s := NewViewer(fakeTopics(), "", "", "")
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	s.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+	if got := len(s.renderers); got != 2 {
+		t.Fatalf("len(renderers) after two distinct widths = %d, want 2", got)
+	}
+}
+
+// TestViewer_PreWarmPopulatesCache verifies the pre-warm tea.Cmd
+// returned on first WindowSizeMsg, when executed and its resulting
+// preWarmMsg fed back into Update, populates s.rendered with an
+// entry for every topic idx at that width.
+func TestViewer_PreWarmPopulatesCache(t *testing.T) {
+	s := NewViewer(fakeTopics(), "", "", "")
+	_, cmd := s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	if cmd == nil {
+		t.Fatalf("expected preWarmCmd on first WindowSizeMsg, got nil")
+	}
+	msg := cmd()
+	pw, ok := msg.(preWarmMsg)
+	if !ok {
+		t.Fatalf("cmd produced %T, want preWarmMsg", msg)
+	}
+	// Feed the msg back into Update so the results land in s.rendered.
+	s.Update(pw)
+	// Every topic idx should now have a "idx:width" entry.
+	vw := s.viewport.Width
+	if vw <= 0 {
+		vw = defaultRenderWidth
+	}
+	for i := range s.topics {
+		key := fmt.Sprintf("%d:%d", i, vw)
+		if _, ok := s.rendered[key]; !ok {
+			t.Fatalf("expected rendered cache entry for %q after pre-warm", key)
+		}
+	}
+}
+
+// TestViewer_WidthChangeDispatchesPreWarm verifies the pre-warm cmd is
+// re-dispatched only when the viewport width actually changes. Same-
+// width resizes (e.g. height-only) must not spawn a redundant warm
+// pass; distinct widths must. Terminal widths are chosen so
+// initflow.PanelWidth maps them to different viewport widths — 120
+// clamps to 84, 80 collapses to 76.
+func TestViewer_WidthChangeDispatchesPreWarm(t *testing.T) {
+	s := NewViewer(fakeTopics(), "", "", "")
+	// First resize — should return a pre-warm cmd (preWarmedWidth was 0).
+	_, cmd1 := s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	if cmd1 == nil {
+		t.Fatalf("expected pre-warm cmd on first WindowSizeMsg, got nil")
+	}
+	// Execute the cmd and feed the result back so the cache populates.
+	msg1 := cmd1()
+	s.Update(msg1)
+	// Second resize — same viewport width — no new pre-warm needed.
+	_, cmd2 := s.Update(tea.WindowSizeMsg{Width: 120, Height: 24})
+	if cmd2 != nil {
+		t.Fatalf("same-width resize should not redispatch pre-warm, got non-nil cmd")
+	}
+	// Third resize — distinct viewport width — should redispatch.
+	_, cmd3 := s.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+	if cmd3 == nil {
+		t.Fatalf("distinct-width resize should redispatch pre-warm, got nil")
+	}
+}
+
+// TestViewer_TabSwitchUsesCachedRenderer verifies a tab switch after
+// the renderer cache is populated does not construct a new renderer.
+// Seeds the renderer cache with the viewport width and asserts the
+// map size is unchanged after cycling tabs.
+func TestViewer_TabSwitchUsesCachedRenderer(t *testing.T) {
+	s := NewViewer(fakeTopics(), "", "", "")
+	// Seed the size + renderer cache via an initial resize.
+	s.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	before := len(s.renderers)
+	// Cycle through every tab — none of these should build a renderer.
+	for range s.topics {
+		s.Update(key("right"))
+	}
+	if got := len(s.renderers); got != before {
+		t.Fatalf("len(renderers) after tab cycle = %d, want %d (no new builds)", got, before)
+	}
+}
+
 // TestNewTopics_LabelAndShortPopulated verifies each Topic has both
 // Label and Short set to the expected values.
 func TestNewTopics_LabelAndShortPopulated(t *testing.T) {
