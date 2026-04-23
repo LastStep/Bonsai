@@ -1,7 +1,7 @@
 # Plan 11 — UI/UX Overhaul Phase 1: Foundation
 
 **Tier:** 2 (Feature)
-**Status:** Draft
+**Status:** Complete — shipped 2026-04-17
 **Source:** Roadmap Phase 1 "UI overhaul" + RESEARCH-uiux-overhaul.md (Phase 1 items 1.1–1.7)
 
 ---

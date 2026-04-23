@@ -1,7 +1,7 @@
 # Plan 01 — CLAUDE.md Marker Migration
 
 **Tier:** 1 (Patch)
-**Status:** Active
+**Status:** Complete — shipped 2026-04-15
 **Agent:** tech-lead (single domain: generator)
 
 ## Goal

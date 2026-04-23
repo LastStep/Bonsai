@@ -6,7 +6,7 @@ description: Plan 29 — init + add command bug bundle. Header label fix, confli
 # Plan 29 — Init + Add Bug Bundle
 
 **Tier:** 2
-**Status:** Active
+**Status:** Complete — shipped 2026-04-23 (PR #72 squash 9eb2bff)
 **Agent:** general-purpose (single worktree dispatch) + tech-lead
 **Target:** 1 PR, same-session merge
 

@@ -1,7 +1,7 @@
 # Plan 05 — Usage Instructions: AI Operational Intelligence
 
 **Tier:** 2 (Feature)
-**Status:** Active — PR #7 ready for review
+**Status:** Complete — shipped 2026-04-16 (PR #7)
 **Agent:** tech-lead (orchestration), general-purpose (implementation)
 
 ## Goal

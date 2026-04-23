@@ -1,7 +1,7 @@
 # Plan 09 — Code Index Refresh
 
 **Tier:** 1 (Patch)
-**Status:** Active
+**Status:** Complete — shipped 2026-04-16
 **Source:** Backlog P1 — "Code index line number drift + missing entries"
 
 ## Goal

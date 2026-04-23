@@ -1,7 +1,7 @@
 # Plan 03 — Cross-Link Generated Files with Obsidian-Compatible Markdown Links
 
 **Tier:** 2
-**Status:** Active
+**Status:** Complete — shipped 2026-04-16
 **Agent:** tech-lead
 
 ## Goal

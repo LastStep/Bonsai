@@ -1,7 +1,7 @@
 # Plan 13 — ActionUnchanged Follow-ups from Plan 12
 
 **Tier:** 1 (Bug fix + test coverage)
-**Status:** Ready
+**Status:** Complete — shipped 2026-04-17 (PR #22)
 **Source:** Plan 12 (PR #20) review follow-ups — Backlog Group B
 
 ---

@@ -1,7 +1,7 @@
 # Plan 14 — UI/UX Overhaul Phase 3: Visual Identity & Init Polish
 
 **Tier:** 2 (Feature)
-**Status:** Active
+**Status:** Complete — shipped 2026-04-17 (merged via PR #24 bundle)
 **Source:** Group F backlog (2026-04-17 dogfooding session) — scope-picked Phase 3 slice
 **Agent:** general-purpose
 

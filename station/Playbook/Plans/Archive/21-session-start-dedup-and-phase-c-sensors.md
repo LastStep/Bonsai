@@ -1,7 +1,7 @@
 # Plan 21 — Session-Start Context Dedup + Phase C Sensors
 
 **Tier:** 2 (Feature)
-**Status:** Active
+**Status:** Complete — shipped 2026-04-21 (PR #46 squash d14edbe)
 **Agent:** general-purpose (worktree isolation)
 **Source:** User request 2026-04-21 + Plan 08 Phase C (C1 + C2)
 

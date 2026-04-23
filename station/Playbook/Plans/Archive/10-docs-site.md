@@ -1,7 +1,7 @@
 # Plan 10 — Documentation Site (Starlight)
 
 **Tier:** 2 (Feature)
-**Status:** Draft
+**Status:** Complete — Phase B/C/D shipped 2026-04-17
 **Source:** Roadmap Phase 1 "Usage instructions" + Backlog Group A + user request
 **Phases:** A (scaffold & migrate), B (fill gaps), C (catalog generation & LLM layer), D (deploy & CI)
 
