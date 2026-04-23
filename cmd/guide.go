@@ -13,25 +13,6 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/guideflow"
 )
 
-// guideTopic pairs a machine key (looked up in guideContents) with a
-// human-readable label. The label is informational only — the cinematic
-// viewer renders its own tab strip via guideflow.NewTopics.
-type guideTopic struct {
-	Key   string
-	Label string
-}
-
-// guideTopics is the canonical topic order used for validation error
-// messages and the fallback topic list. The cinematic viewer uses
-// guideflow.NewTopics' own canonicalOrder constant which mirrors
-// this slice; keep the two in sync when adding a topic.
-var guideTopics = []guideTopic{
-	{"quickstart", "Quickstart — 5-step post-install walkthrough"},
-	{"concepts", "Concepts — the mental model"},
-	{"cli", "CLI — command-by-command reference"},
-	{"custom-files", "Custom Files — add your own abilities"},
-}
-
 // noTTYNoArgErr is the exact error message surfaced when guide is
 // invoked with neither an arg nor a TTY (e.g. piped through less
 // without specifying a topic). Decision D4 in Plan 28's 2026-04-23
