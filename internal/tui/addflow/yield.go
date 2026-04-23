@@ -23,7 +23,7 @@ const (
 	yieldModeUnknownAgent
 )
 
-// YieldStage is the terminal completion card at rail position 5 (結 YIELD).
+// YieldStage is the terminal completion card at rail position 3 (StageIdxYield, 結 YIELD).
 // Four variants selected at construction time:
 //
 //   - success          — renders the installed ability tree + 3 next-steps.
@@ -221,25 +221,21 @@ func (s *YieldStage) renderSuccess() string {
 
 	// Hero stats line — mirrors initflow.PlantedStage's
 	// "N files written · N conflicts · lock synced" rhythm so the two flows
-	// land their success card with the same typographic beat.
-	totalAbilitiesStat := 0
-	if s.installed != nil {
-		totalAbilitiesStat = len(s.installed.Skills) + len(s.installed.Workflows) +
-			len(s.installed.Protocols) + len(s.installed.Sensors) + len(s.installed.Routines)
-	}
-	heroStats := dim.Render(fmt.Sprintf(
-		"%d abilities wired · %s · lock synced",
-		totalAbilitiesStat, agentDisplay,
-	))
-
-	summaryHeader := initflow.RenderSectionHeader("SUMMARY", initflow.PanelWidth(s.Width()))
-	const labelW = 14
-	const indent = "  "
+	// land their success card with the same typographic beat. Shared across
+	// the hero stats line + the SUMMARY row.
 	totalAbilities := 0
 	if s.installed != nil {
 		totalAbilities = len(s.installed.Skills) + len(s.installed.Workflows) +
 			len(s.installed.Protocols) + len(s.installed.Sensors) + len(s.installed.Routines)
 	}
+	heroStats := dim.Render(fmt.Sprintf(
+		"%d abilities wired · %s · lock synced",
+		totalAbilities, agentDisplay,
+	))
+
+	summaryHeader := initflow.RenderSectionHeader("SUMMARY", initflow.PanelWidth(s.Width()))
+	const labelW = 14
+	const indent = "  "
 	summaryRows := []string{
 		summaryHeader,
 		indent + bark.Render(initflow.PadRight("AGENT", labelW)) + value.Render(agentDisplay) +
