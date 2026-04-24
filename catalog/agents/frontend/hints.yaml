@@ -1,0 +1,39 @@
+# Hints shown on yield stages for the frontend agent — Plan 31 Phase H.
+
+init:
+  next_cli:
+    - "bonsai add backend  → pair with an API agent"
+    - "bonsai add devops   → add CI + deploy"
+  next_workflow:
+    - "Scaffold your first component under {{ .DocsPath }}"
+    - "Seed design tokens + component-library docs"
+  ai_prompts:
+    - label: "Start working"
+      body: "Hi, get started — read {{ .DocsPath }}CLAUDE.md and summarize your frontend scope."
+
+add:
+  next_cli:
+    - "bonsai list  → verify the frontend agent's abilities"
+  next_workflow:
+    - "Review the frontend's CLAUDE.md — confirm UI conventions loaded"
+  ai_prompts:
+    - label: "Brief the frontend agent"
+      body: "You are the frontend agent. Read {{ .DocsPath }}CLAUDE.md. Summarize your component standards and accessibility conventions in 3 bullets."
+
+remove:
+  next_cli:
+    - "bonsai list  → confirm remaining agents"
+  next_workflow:
+    - "Migrate any in-flight UI work to another agent or freeze it"
+  ai_prompts:
+    - label: "Audit fallout"
+      body: "Read {{ .DocsPath }}Playbook/Backlog.md and flag any frontend-tagged tasks. Propose re-routings."
+
+update:
+  next_cli:
+    - "bonsai list  → review frontend state"
+  next_workflow:
+    - "Re-read frontend workflows — re-validate component design tokens"
+  ai_prompts:
+    - label: "Verify alignment"
+      body: "Read {{ .DocsPath }}CLAUDE.md and verify frontend abilities still match your UI framework."

@@ -1,0 +1,39 @@
+# Hints shown on yield stages for the devops agent — Plan 31 Phase H.
+
+init:
+  next_cli:
+    - "bonsai add backend  → pair with a service-writing agent"
+    - "bonsai catalog      → browse more abilities"
+  next_workflow:
+    - "Scaffold your CI pipeline under {{ .DocsPath }}"
+    - "Seed deploy runbooks + rollback procedures"
+  ai_prompts:
+    - label: "Start working"
+      body: "Hi, get started — read {{ .DocsPath }}CLAUDE.md and summarize your devops scope."
+
+add:
+  next_cli:
+    - "bonsai list  → verify the devops agent's abilities"
+  next_workflow:
+    - "Review the devops's CLAUDE.md — confirm deploy + IaC conventions loaded"
+  ai_prompts:
+    - label: "Brief the devops agent"
+      body: "You are the devops agent. Read {{ .DocsPath }}CLAUDE.md. Summarize your CI/CD and IaC conventions in 3 bullets."
+
+remove:
+  next_cli:
+    - "bonsai list  → confirm remaining agents"
+  next_workflow:
+    - "Freeze deploys until a replacement agent or manual owner is in place"
+  ai_prompts:
+    - label: "Audit fallout"
+      body: "Read {{ .DocsPath }}Playbook/Backlog.md and flag any devops-tagged tasks. Propose re-routings."
+
+update:
+  next_cli:
+    - "bonsai list  → review devops state"
+  next_workflow:
+    - "Re-validate CI + IaC templates against any updated conventions"
+  ai_prompts:
+    - label: "Verify alignment"
+      body: "Read {{ .DocsPath }}CLAUDE.md and verify devops abilities still match your infra stack."

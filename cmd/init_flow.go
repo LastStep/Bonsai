@@ -15,6 +15,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/generate"
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/harness"
+	"github.com/LastStep/Bonsai/internal/tui/hints"
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
@@ -146,16 +147,32 @@ func runInit(cmd *cobra.Command, args []string) error {
 			// chosen station path instead of the "station/" placeholder.
 			harness.NewLazy("Planted", func(prev []any) harness.Step {
 				plantedCtx := ctx
+				docsPath := "station/"
 				if vessel, ok := prev[0].(map[string]string); ok {
 					if s := strings.TrimSpace(vessel["station"]); s != "" {
 						if !strings.HasSuffix(s, "/") {
 							s += "/"
 						}
 						plantedCtx.StationDir = s
+						docsPath = s
 					}
 				}
 				summary := plantedSummary(installed)
-				return initflow.NewPlantedStage(plantedCtx, &wr, summary)
+				stage := initflow.NewPlantedStage(plantedCtx, &wr, summary)
+				// Plan 31 Phase H — render the 3-layer hints block for the
+				// tech-lead agent (init always installs tech-lead as its
+				// primary agent).
+				projectName := ""
+				if vessel, ok := prev[0].(map[string]string); ok {
+					projectName = vessel["name"]
+				}
+				block, _ := hints.Load(cat, techLeadType, "init", hints.TemplateContext{
+					DocsPath:    docsPath,
+					AgentName:   techLeadType,
+					ProjectName: projectName,
+				})
+				stage.SetHintBlock(hints.Render(block, initflow.PanelContentWidth))
+				return stage
 			}),
 			generateSucceeded,
 		),

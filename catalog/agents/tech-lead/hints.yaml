@@ -1,0 +1,51 @@
+# Hints shown on yield stages per agent type — Plan 31 Phase H.
+# Consumed by internal/tui/hints.Load → Render; each top-level key maps
+# to a bonsai command (init / add / remove / update). Template vars
+# ({{ .DocsPath }}, {{ .AgentName }}, {{ .ProjectName }}) are rendered
+# via text/template at Load time.
+
+init:
+  next_cli:
+    - "bonsai add <agent>  → install backend / frontend / devops / etc."
+    - "bonsai catalog      → browse every bundled ability"
+  next_workflow:
+    - "Edit {{ .DocsPath }}Playbook/Backlog.md — seed the first tasks"
+    - "Write your first plan in {{ .DocsPath }}Playbook/Plans/Active/01-<name>.md"
+  ai_prompts:
+    - label: "Start working"
+      body: "Hi, get started — read {{ .DocsPath }}CLAUDE.md and summarize this project."
+    - label: "Customize Bonsai"
+      body: "Read {{ .DocsPath }}agent/Skills/bonsai-model.md and .bonsai/catalog.json. Suggest agents/skills to add or remove based on this project's nature. Don't execute yet."
+
+add:
+  next_cli:
+    - "bonsai list      → verify every installed agent + ability"
+    - "bonsai catalog   → browse more abilities any time"
+  next_workflow:
+    - "Brief the new agent on its first task"
+    - "Review the new agent's CLAUDE.md — confirm workspace boundaries"
+  ai_prompts:
+    - label: "Brief the new agent"
+      body: "You are the <agent-type> agent. Read <workspace>/CLAUDE.md. Summarize your role and workspace boundaries in 3 bullets."
+    - label: "Audit coverage"
+      body: "Read {{ .DocsPath }}CLAUDE.md and every installed agent's CLAUDE.md. Flag any role overlaps or workspace-boundary ambiguities."
+
+remove:
+  next_cli:
+    - "bonsai list  → confirm what remains installed"
+  next_workflow:
+    - "Review any ability files left in the removed agent's workspace"
+    - "Clear Backlog.md entries that depended on the removed agent"
+  ai_prompts:
+    - label: "Audit fallout"
+      body: "Read {{ .DocsPath }}Playbook/Backlog.md and flag tasks that referenced the agent we just removed. Propose re-routings."
+
+update:
+  next_cli:
+    - "bonsai list  → review current state"
+  next_workflow:
+    - "Review updated files — resolve any conflicts flagged in the summary"
+    - "Dogfood the new abilities in your next session"
+  ai_prompts:
+    - label: "Verify alignment"
+      body: "Read {{ .DocsPath }}CLAUDE.md and verify every installed ability still aligns with this project's needs. Flag any dead weight."

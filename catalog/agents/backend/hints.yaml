@@ -1,0 +1,39 @@
+# Hints shown on yield stages for the backend agent — Plan 31 Phase H.
+
+init:
+  next_cli:
+    - "bonsai add frontend  → pair with a UI agent"
+    - "bonsai add devops    → wire CI/CD + deploy"
+  next_workflow:
+    - "Scaffold your first API module under {{ .DocsPath }}"
+    - "Seed test fixtures + API contract docs"
+  ai_prompts:
+    - label: "Start working"
+      body: "Hi, get started — read {{ .DocsPath }}CLAUDE.md and summarize your backend scope."
+
+add:
+  next_cli:
+    - "bonsai list  → verify the backend agent's abilities"
+  next_workflow:
+    - "Review the backend's CLAUDE.md — confirm API conventions loaded"
+  ai_prompts:
+    - label: "Brief the backend agent"
+      body: "You are the backend agent. Read {{ .DocsPath }}CLAUDE.md. Summarize your coding standards and API design conventions in 3 bullets."
+
+remove:
+  next_cli:
+    - "bonsai list  → confirm remaining agents"
+  next_workflow:
+    - "Migrate any in-flight API work to another agent or freeze it"
+  ai_prompts:
+    - label: "Audit fallout"
+      body: "Read {{ .DocsPath }}Playbook/Backlog.md and flag any backend-tagged tasks. Propose re-routings."
+
+update:
+  next_cli:
+    - "bonsai list  → review backend state"
+  next_workflow:
+    - "Re-read backend workflows — re-run any custom scripts if updated"
+  ai_prompts:
+    - label: "Verify alignment"
+      body: "Read {{ .DocsPath }}CLAUDE.md and verify backend abilities still match your API/service architecture."
