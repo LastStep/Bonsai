@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
-	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
@@ -16,6 +16,8 @@ import (
 	"github.com/LastStep/Bonsai/internal/generate"
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/harness"
+	"github.com/LastStep/Bonsai/internal/tui/initflow"
+	"github.com/LastStep/Bonsai/internal/tui/removeflow"
 )
 
 func init() {
@@ -35,12 +37,19 @@ var removeCmd = &cobra.Command{
 	RunE:  runRemove,
 }
 
-// ─── Agent removal (existing behavior) ──────────────────────────────────
+// ─── Agent removal (cinematic) ─────────────────────────────────────────
 
+// runRemove handles `bonsai remove <agent>`. Plan 31 Phase E replaces the
+// legacy raw-harness + tui.FatalPanel path with the cinematic removeflow
+// stages (Observe → Confirm → [Conflicts] → Yield) while keeping the
+// business logic (tech-lead guard, lock-untrack, SettingsJSON regeneration,
+// optional --delete-files cleanup) in cmd/.
 func runRemove(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return cmd.Help()
 	}
+
+	startedAt := time.Now()
 
 	agentName := args[0]
 	cwd := mustCwd()
@@ -55,7 +64,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		tui.FatalPanel("Agent not installed", agentName+" is not in the current project.", "Run: bonsai list")
 	}
 
-	// Prevent removing tech-lead while other agents depend on it
+	// Preserve existing tech-lead guard behaviour — silently print and bail.
 	if agentName == "tech-lead" && len(cfg.Agents) > 1 {
 		tui.ErrorDetail("Tech Lead in use", "Other agents depend on Tech Lead. Remove them first.", "Run: bonsai list")
 		return nil
@@ -63,36 +72,57 @@ func runRemove(cmd *cobra.Command, args []string) error {
 
 	cat := loadCatalog()
 
-	agentDisplayName := catalog.DisplayNameFrom(agentName)
-	if agentDef := cat.GetAgent(agentName); agentDef != nil {
-		agentDisplayName = agentDef.DisplayName
+	agentDisplay := agentDisplayName(cat, agentName)
+
+	// Shared context stamped onto every removeflow stage. HeaderAction /
+	// HeaderRightLabel render as "REMOVE" + "UPROOTING FROM" so the header
+	// right-block reads with the remove metaphor.
+	ctx := initflow.StageContext{
+		Version:          Version,
+		ProjectDir:       cwd,
+		StationDir:       "station/",
+		AgentDisplay:     agentDisplay,
+		StartedAt:        startedAt,
+		HeaderAction:     "REMOVE",
+		HeaderRightLabel: "UPROOTING FROM",
 	}
 
-	preview := tui.ItemTree(
-		tui.StyleLabel.Render(agentDisplayName)+" "+tui.StyleMuted.Render(tui.GlyphArrow+" "+agent.Workspace),
-		[]tui.Category{
-			{Name: "Skills", Items: agent.Skills},
-			{Name: "Workflows", Items: agent.Workflows},
-			{Name: "Protocols", Items: agent.Protocols},
-			{Name: "Sensors", Items: agent.Sensors},
-			{Name: "Routines", Items: agent.Routines},
-		},
-		nil,
-	)
-
-	// Declare lock + wr up-front so the spinner closure and the conflict-picker
-	// LazyGroup can both close over them.
 	lock, _ := config.LoadLockFile(cwd)
 	var wr generate.WriteResult
+	var outcome removeflow.Outcome
+	counts := removeflow.AbilityCounts{
+		Skills:    len(agent.Skills),
+		Workflows: len(agent.Workflows),
+		Protocols: len(agent.Protocols),
+		Sensors:   len(agent.Sensors),
+		Routines:  len(agent.Routines),
+	}
+
+	observe := removeflow.NewObserveAgent(ctx, agentName, agentDisplay, agent.Workspace,
+		agent.Skills, agent.Workflows, agent.Protocols, agent.Sensors, agent.Routines)
+	confirm := removeflow.NewConfirmStage(ctx,
+		fmt.Sprintf("Uproot %s?", agentDisplay),
+		"Removes the agent and every ability installed under its workspace.",
+		"Modified files trigger a conflict prompt — nothing overwritten silently.")
+
+	confirmed := func(prev []any) bool {
+		for _, v := range prev {
+			if b, ok := v.(bool); ok {
+				return b
+			}
+		}
+		return false
+	}
+	actionSucceeded := func(prev []any) bool {
+		return confirmed(prev) && outcome.Ran && outcome.Err == nil
+	}
 
 	steps := []harness.Step{
-		harness.NewReview("Confirm removal",
-			tui.TitledPanelString("Remove", preview, tui.Amber),
-			"Remove "+agentDisplayName+"?",
-			false),
-		// Spinner runs only if the user confirmed Yes.
+		observe,
+		confirm,
 		harness.NewConditional(
-			harness.NewSpinner("Removing", "Removing agent...", func() error {
+			harness.NewSpinner("Removing", "Uprooting "+agentDisplay+"...", func() error {
+				outcome.Ran = true
 				wsPrefix := agent.Workspace
 				for relPath := range lock.Files {
 					if strings.HasPrefix(relPath, wsPrefix) {
@@ -103,20 +133,29 @@ func runRemove(cmd *cobra.Command, args []string) error {
 				var errs []error
 				errs = append(errs, cfg.Save(configPath))
 				errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false))
-				return errors.Join(errs...)
+				// Plan 31 Phase C: refresh .bonsai/catalog.json snapshot.
+				errs = append(errs, generate.WriteCatalogSnapshot(cwd, Version, cat, &wr))
+				joined := errors.Join(errs...)
+				outcome.Err = joined
+				return joined
 			}),
-			func(prev []any) bool { return asBool(prev[0]) },
+			confirmed,
 		),
-		// Conflict picker — splice in only if Yes + conflicts exist.
 		harness.NewLazyGroup("Resolve conflicts", func(prev []any) []harness.Step {
-			if len(prev) == 0 || !asBool(prev[0]) {
+			if !actionSucceeded(prev) {
 				return nil
 			}
 			if !wr.HasConflicts() {
 				return nil
 			}
-			return buildConflictSteps(&wr)
+			return []harness.Step{removeflow.NewConflictsStage(ctx, &wr)}
 		}),
+		harness.NewConditional(
+			harness.NewLazy("Yield", func(_ []any) harness.Step {
+				return removeflow.NewYieldAgentSuccess(ctx, agentDisplay, agent.Workspace, counts)
+			}),
+			actionSucceeded,
+		),
 	}
 
 	bannerLine := "BONSAI"
@@ -139,26 +178,25 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if !asBool(results[0]) {
+	if !confirmed(results) {
 		return nil
 	}
 
-	// Spinner result at slot 1 — surface any aggregated generator error so
-	// the user sees permission / IO failures rather than a silent success.
-	if len(results) > 1 {
-		if errVal := results[1]; errVal != nil {
-			if e, ok := errVal.(error); ok && e != nil {
-				tui.Warning("Removal error: " + e.Error())
-				return nil
+	if outcome.Err != nil {
+		tui.Warning("Removal error: " + outcome.Err.Error())
+		return nil
+	}
+
+	// Cinematic conflict picker at a trailing slot — type-scan for the
+	// ConflictsStage result (map[string]config.ConflictAction).
+	if wr.HasConflicts() {
+		for _, r := range results {
+			if picks, ok := r.(map[string]config.ConflictAction); ok {
+				applyCinematicConflictPicks(picks, &wr, lock, cwd)
+				break
 			}
 		}
 	}
-
-	// Conflict-picker LazyGroup at slot 2 expands to [MultiSelect, Conditional]
-	// in place. The MultiSelect (the actual conflict picks) lands at index 2.
-	// applyConflictPicks tolerates the slot being absent (LazyGroup spliced
-	// nothing when there are no conflicts).
-	applyConflictPicks(results, 2, &wr, lock, cwd)
 
 	if err := lock.Save(cwd); err != nil {
 		tui.Warning("Could not save lock file: " + err.Error())
@@ -180,8 +218,6 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	tui.Success("Removed " + agentDisplayName)
-	tui.Blank()
 	return nil
 }
 
@@ -245,12 +281,20 @@ type agentMatch struct {
 	agent *config.InstalledAgent
 }
 
+// runRemoveItem handles `bonsai remove <type> <name>`. Plan 31 Phase E
+// replaces the legacy raw-harness path with the cinematic removeflow stages.
+// Business-logic helpers (filterRequired / itemIsRequired / resolveTargets /
+// runRemoveItemAction / agentItemList / removeFromItemList / itemInList /
+// itemDisplayName / agentDisplayName) stay in cmd/ so this file is the only
+// place that mutates cfg / lock / generated files.
 func runRemoveItem(name string, it itemType) error {
 	// Block auto-managed sensors
 	if it.singular == "sensor" && name == "routine-check" {
 		tui.ErrorDetail("Auto-managed sensor", "routine-check is added and removed automatically when routines change.", "")
 		return nil
 	}
+
+	startedAt := time.Now()
 
 	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
@@ -280,9 +324,8 @@ func runRemoveItem(name string, it itemType) error {
 		return nil
 	}
 
-	// Pre-filter required: if every match has the item as required for that
-	// agent type we abort up-front. The picker is only useful when there is
-	// at least one viable target left.
+	// Pre-filter required: abort up-front if every match has the item as
+	// required. Legacy behaviour — keep the same Warning output.
 	allowedAll := filterRequired(matches, cat, name, it)
 	if len(allowedAll) == 0 {
 		tui.ErrorDetail("Required item", fmt.Sprintf("%s is required by all agents that have it.", itemDisplayName(cat, name, it)), "")
@@ -290,56 +333,110 @@ func runRemoveItem(name string, it itemType) error {
 	}
 
 	displayName := itemDisplayName(cat, name, it)
+	typeDisplay := catalog.DisplayNameFrom(it.singular)
 
-	// needsPicker: only multiple eligible (non-required) matches need a picker.
+	// Build cinematic agent options from the allowed matches + aggregate row.
 	needsPicker := len(allowedAll) > 1
-	agentOptions := buildAgentOptions(allowedAll, cat)
+	options := buildRemoveOptions(allowedAll, cat)
 
-	// Lock + WriteResult shared across spinner closure and conflict picker.
+	ctx := initflow.StageContext{
+		Version:          Version,
+		ProjectDir:       cwd,
+		StationDir:       "station/",
+		AgentDisplay:     "",
+		StartedAt:        startedAt,
+		HeaderAction:     "REMOVE",
+		HeaderRightLabel: "UPROOTING FROM",
+	}
+
 	lock, _ := config.LoadLockFile(cwd)
 	var wr generate.WriteResult
+	var outcome removeflow.Outcome
 
-	// capturedTargets is populated by the LazyStep build closure (Step 1) and
-	// read by the SpinnerStep closure (Step 2). The closures hold a reference
-	// to the variable, so by the time the spinner runs the targets are set.
+	// capturedTargets is populated by the Observe lazy builder (after the
+	// Select stage fires) and read by the action spinner closure. The
+	// closures hold a reference to the variable, so by the time the spinner
+	// runs the targets are set.
 	var capturedTargets []agentMatch
+
+	confirmed := func(prev []any) bool {
+		for _, v := range prev {
+			if b, ok := v.(bool); ok {
+				return b
+			}
+		}
+		return false
+	}
+	actionSucceeded := func(prev []any) bool {
+		return confirmed(prev) && outcome.Ran && outcome.Err == nil
+	}
+
+	// Resolve targets up-front when the picker is skipped so Observe renders
+	// the correct FROM list even when SelectStage is gated off.
+	if !needsPicker {
+		capturedTargets = allowedAll
+	}
+
+	confirmStage := removeflow.NewConfirmStage(ctx,
+		fmt.Sprintf("Uproot %s?", displayName),
+		fmt.Sprintf("Removes the %s and any generated files under the target agent's workspace.", it.singular),
+		"Modified files trigger a conflict prompt — nothing overwritten silently.")
 
 	steps := []harness.Step{
 		// Step 0: optional agent picker. Predicate gates rendering — when only
-		// one viable target exists, the Conditional is auto-completed and the
-		// LazyStep below resolves a single-target slice.
+		// one viable target exists, the Conditional auto-completes and the
+		// Observe LazyStep reads capturedTargets (pre-seeded above).
 		harness.NewConditional(
-			harness.NewSelect("Agent", "Remove from which agent?", agentOptions),
+			removeflow.NewSelectStage(ctx, displayName, it.singular, options),
 			func(prev []any) bool { return needsPicker },
 		),
 
-		// Step 1: confirm summary panel. resolveTargets handles both the
-		// single-match (prev[0]==nil) and multi-match paths.
-		harness.NewLazy("Confirm removal", func(prev []any) harness.Step {
-			capturedTargets = resolveTargets(prev[0], allowedAll)
-			panel := tui.TitledPanelString("Remove Item",
-				buildItemSummary(displayName, it, cat, capturedTargets), tui.Amber)
-			return harness.NewReview("Confirm removal", panel, "Remove "+displayName+"?", false)
+		// Step 1: Observe preview — lazy so the picker result (if any) can be
+		// resolved into a concrete target slice before the panel renders.
+		harness.NewLazy("Observe", func(prev []any) harness.Step {
+			if needsPicker && len(prev) > 0 {
+				capturedTargets = resolveRemoveTargets(prev[0], allowedAll)
+			}
+			targets := buildTargetOptions(capturedTargets, cat)
+			return removeflow.NewObserveItem(ctx, displayName, typeDisplay, targets)
 		}),
 
-		// Step 2: spinner — gated by confirm bool at prev[1].
+		// Step 2: Confirm gate.
+		confirmStage,
+
+		// Step 3: action spinner — gated by confirm bool.
 		harness.NewConditional(
-			harness.NewSpinner("Removing", "Removing "+it.singular+"...", func() error {
-				return runRemoveItemAction(cwd, cfg, cat, lock, &wr, configPath, name, it, capturedTargets)
+			harness.NewSpinner("Removing", "Uprooting "+it.singular+"...", func() error {
+				outcome.Ran = true
+				err := runRemoveItemAction(cwd, cfg, cat, lock, &wr, configPath, name, it, capturedTargets)
+				// Plan 31 Phase C: refresh .bonsai/catalog.json snapshot.
+				snapErr := generate.WriteCatalogSnapshot(cwd, Version, cat, &wr)
+				joined := errors.Join(err, snapErr)
+				outcome.Err = joined
+				return joined
 			}),
-			func(prev []any) bool { return asBool(prev[1]) },
+			confirmed,
 		),
 
-		// Step 3: conflict picker — gated by confirm + conflicts existing.
+		// Step 4: conflict picker — gated by confirm + conflicts existing.
 		harness.NewLazyGroup("Resolve conflicts", func(prev []any) []harness.Step {
-			if len(prev) <= 1 || !asBool(prev[1]) {
+			if !actionSucceeded(prev) {
 				return nil
 			}
 			if !wr.HasConflicts() {
 				return nil
 			}
-			return buildConflictSteps(&wr)
+			return []harness.Step{removeflow.NewConflictsStage(ctx, &wr)}
 		}),
+
+		// Step 5: Yield.
+		harness.NewConditional(
+			harness.NewLazy("Yield", func(_ []any) harness.Step {
+				targets := buildTargetOptions(capturedTargets, cat)
+				return removeflow.NewYieldItemSuccess(ctx, displayName, typeDisplay, targets)
+			}),
+			actionSucceeded,
+		),
 	}
 
 	bannerLine := "BONSAI"
@@ -362,31 +459,29 @@ func runRemoveItem(name string, it itemType) error {
 		return err
 	}
 
-	if !asBool(results[1]) {
+	if !confirmed(results) {
 		return nil
 	}
 
-	// Spinner result at slot 2 — surface any aggregated generator error so
-	// the user sees permission / IO failures rather than a silent success.
-	if len(results) > 2 {
-		if errVal := results[2]; errVal != nil {
-			if e, ok := errVal.(error); ok && e != nil {
-				tui.Warning("Removal error: " + e.Error())
-				return nil
+	if outcome.Err != nil {
+		tui.Warning("Removal error: " + outcome.Err.Error())
+		return nil
+	}
+
+	// Cinematic conflict picker — type-scan for ConflictsStage result.
+	if wr.HasConflicts() {
+		for _, r := range results {
+			if picks, ok := r.(map[string]config.ConflictAction); ok {
+				applyCinematicConflictPicks(picks, &wr, lock, cwd)
+				break
 			}
 		}
 	}
-
-	// Conflict-picker LazyGroup at slot 3 expands to [MultiSelect, Conditional]
-	// in place. The MultiSelect (the actual conflict picks) lands at index 3.
-	applyConflictPicks(results, 3, &wr, lock, cwd)
 
 	if err := lock.Save(cwd); err != nil {
 		tui.Warning("Could not save lock file: " + err.Error())
 	}
 
-	tui.Success("Removed " + displayName)
-	tui.Blank()
 	return nil
 }
 
@@ -406,28 +501,48 @@ func filterRequired(matches []agentMatch, cat *catalog.Catalog, name string, it 
 	return allowed
 }
 
-// buildAgentOptions builds the agent-picker options from matches, plus an
-// "All agents" entry. Returns nil when matches is single-element since the
-// picker is then skipped.
-func buildAgentOptions(matches []agentMatch, cat *catalog.Catalog) []huh.Option[string] {
+// buildRemoveOptions maps allowed matches onto removeflow.AgentOption rows
+// plus an aggregate "All agents" entry. Returns nil when there's a single
+// match (picker is then skipped by caller).
+func buildRemoveOptions(matches []agentMatch, cat *catalog.Catalog) []removeflow.AgentOption {
 	if len(matches) <= 1 {
 		return nil
 	}
-	options := make([]huh.Option[string], 0, len(matches)+1)
+	out := make([]removeflow.AgentOption, 0, len(matches)+1)
 	for _, m := range matches {
-		label := agentDisplayName(cat, m.name)
-		options = append(options,
-			huh.NewOption(label+" "+tui.StyleMuted.Render(tui.GlyphArrow+" "+m.agent.Workspace), m.name))
+		out = append(out, removeflow.AgentOption{
+			Name:        m.name,
+			DisplayName: agentDisplayName(cat, m.name),
+			Workspace:   m.agent.Workspace,
+		})
 	}
-	options = append(options, huh.NewOption("All agents", "_all_"))
-	return options
+	out = append(out, removeflow.AgentOption{
+		Name:        "_all_",
+		DisplayName: "All agents",
+		All:         true,
+	})
+	return out
 }
 
-// resolveTargets converts the agent-picker result + matches into the target
-// slice. Handles: nil/empty (single match — auto-pick), "_all_", or a
-// specific name. Falls back to all matches if the picked value doesn't match
-// any known agent (defensive — should not happen in practice).
-func resolveTargets(picked any, matches []agentMatch) []agentMatch {
+// buildTargetOptions converts resolved target agentMatches into a
+// removeflow.AgentOption slice for the Observe / Yield panels. Never
+// includes an "All" row — the aggregate is expanded at selection time.
+func buildTargetOptions(targets []agentMatch, cat *catalog.Catalog) []removeflow.AgentOption {
+	out := make([]removeflow.AgentOption, 0, len(targets))
+	for _, t := range targets {
+		out = append(out, removeflow.AgentOption{
+			Name:        t.name,
+			DisplayName: agentDisplayName(cat, t.name),
+			Workspace:   t.agent.Workspace,
+		})
+	}
+	return out
+}
+
+// resolveRemoveTargets converts the SelectStage result into a concrete
+// match slice. "_all_" → all allowed matches; specific name → that match
+// only; unknown name (defensive) → all matches.
+func resolveRemoveTargets(picked any, matches []agentMatch) []agentMatch {
 	if picked == nil {
 		return matches
 	}
@@ -443,26 +558,10 @@ func resolveTargets(picked any, matches []agentMatch) []agentMatch {
 	return matches
 }
 
-// buildItemSummary returns the static summary content for the review panel,
-// matching the layout produced by the legacy inline tui.CardFields call.
-func buildItemSummary(displayName string, it itemType, cat *catalog.Catalog, targets []agentMatch) string {
-	fromLabels := make([]string, 0, len(targets))
-	for _, t := range targets {
-		fromLabels = append(fromLabels, agentDisplayName(cat, t.name)+" ("+t.agent.Workspace+")")
-	}
-	return tui.CardFields([][2]string{
-		{"Item", displayName},
-		{"Type", catalog.DisplayNameFrom(it.singular)},
-		{"From", strings.Join(fromLabels, ", ")},
-	})
-}
-
-// runRemoveItemAction is the body of the legacy spinner.Action closure,
-// extracted so it can be invoked from a SpinnerStep closure (which expects an
-// error-returning function rather than a bare func()). Generator calls are
-// aggregated via errors.Join so any IO or permission failure surfaces
-// post-harness; os.Remove swallows are kept because ENOENT after a lock
-// Untrack is legitimate (the file may already be gone).
+// runRemoveItemAction is the body of the action spinner — mutates config,
+// lockfile, and generated files for each target. Generator calls are
+// aggregated via errors.Join so any IO failure surfaces post-harness;
+// os.Remove ENOENT swallowing is legitimate (the file may already be gone).
 func runRemoveItemAction(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog,
 	lock *config.LockFile, wr *generate.WriteResult, configPath, name string,
 	it itemType, targets []agentMatch) error {
