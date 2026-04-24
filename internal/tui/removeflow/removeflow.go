@@ -27,9 +27,6 @@
 package removeflow
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
@@ -88,72 +85,13 @@ func (c AbilityCounts) Total() int {
 }
 
 // Outcome is the cross-stage scratchpad populated by the action closure and
-// consumed by Yield + the post-harness cleanup in cmd/remove.go. Kept here
-// (not in cmd/) so test helpers can stamp synthetic outcomes without back-
-// importing cmd.
+// consumed by the post-harness cleanup in cmd/remove.go. Kept here (not in
+// cmd/) so test helpers can stamp synthetic outcomes without back-importing
+// cmd.
 type Outcome struct {
 	// Ran is true once the action closure executed (even on error).
 	Ran bool
 	// Err is non-nil when the write pipeline failed; routed to a warning by
 	// the caller and short-circuits the Yield success render.
 	Err error
-	// AgentDisplay is the display name of the primary agent affected (agent
-	// being removed, or the single target of an item removal). Empty when the
-	// "all agents" option fired on item-remove.
-	AgentDisplay string
-	// ItemDisplay is the display name of the item being removed (item-remove
-	// branch only). Empty on agent-remove.
-	ItemDisplay string
-	// ItemType is the singular item type label ("skill", "workflow", …).
-	// Empty on agent-remove.
-	ItemType string
-	// RemovedCounts reports the per-category totals removed when the flow
-	// completes. On agent-remove this is the agent's installed ability count;
-	// on item-remove, the number of categories this item crossed (typically 1).
-	RemovedCounts AbilityCounts
-	// Targets is the number of agents affected — 1 for agent-remove,
-	// 1..N for item-remove depending on the picker outcome.
-	Targets int
-}
-
-// StaticPreview is a minimal non-TTY preview used by cmd/remove.go when
-// stdout is not a terminal. Describes the target + prompts the user to
-// re-run interactively. Plan 31 Phase E leaves a `--yes` flag for a future
-// followup — today non-interactive removal refuses ambiguous confirmation.
-type StaticPreview struct {
-	// Title appears on the first line — e.g. "Remove Backend?" or
-	// "Remove skill coding-standards?".
-	Title string
-	// Lines are rendered under the title as indented bullets.
-	Lines []string
-}
-
-// RenderStatic formats a StaticPreview as plain text. Returns the rendered
-// string (no ANSI) followed by a refusal message instructing the user to
-// re-run from a terminal or pass --yes (which is a future followup — see
-// Plan 31 Phase E). Callers should Println the result and return an error
-// from the cobra command.
-func RenderStatic(p StaticPreview) string {
-	var b strings.Builder
-	if p.Title != "" {
-		b.WriteString(p.Title)
-		b.WriteString("\n")
-	}
-	for _, line := range p.Lines {
-		b.WriteString("  • ")
-		b.WriteString(line)
-		b.WriteString("\n")
-	}
-	b.WriteString("\n")
-	b.WriteString("Non-interactive stdout detected. Re-run from a terminal, or\n")
-	b.WriteString("add `--yes` for non-interactive removal (not yet implemented).\n")
-	return b.String()
-}
-
-// StaticError returns a concise error string suitable for the cobra command
-// to surface when the user tried to remove something in a non-TTY context.
-// Kept separate from RenderStatic so callers can log the preview and then
-// exit with the dedicated error message.
-func StaticError() error {
-	return fmt.Errorf("add --yes flag for non-interactive removal (not yet implemented)")
 }

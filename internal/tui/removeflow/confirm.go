@@ -1,7 +1,6 @@
 package removeflow
 
 import (
-	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -196,9 +195,6 @@ func (s *ConfirmStage) renderCTA() string {
 func (s *ConfirmStage) renderKeyHints() string {
 	dim := initflow.DimStyle()
 	hint := "tab toggle  ·  y/n uproot/back  ·  ↵ commit  ·  esc back  ·  ctrl-c quit"
-	if !s.EnsoSafe() {
-		hint = fmt.Sprintf("%s", hint) // no unicode markers in ASCII fallback
-	}
 	return dim.Render(hint)
 }
 

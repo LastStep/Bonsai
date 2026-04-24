@@ -70,9 +70,9 @@ func TestConfirm_YConfirms(t *testing.T) {
 	}
 }
 
-// TestConfirm_EscAbortsRemoval verifies the default BACK focus + Enter gives a
+// TestConfirm_EnterOnBackCancels verifies the default BACK focus + Enter gives a
 // false Result (no mutation on cancel). Plan 31 §E test case.
-func TestConfirm_EscAbortsRemoval(t *testing.T) {
+func TestConfirm_EnterOnBackCancels(t *testing.T) {
 	s := NewConfirmStage(newTestCtx(), "Uproot X?", "", "")
 	// Default focus is BACK (0). Enter commits BACK → confirmed=false.
 	confirmPressKey(s, tea.KeyEnter)
@@ -224,19 +224,5 @@ func observePressKey(s *ObserveStage, k tea.KeyType) {
 	m, _ := s.Update(tea.KeyMsg{Type: k})
 	if os, ok := m.(*ObserveStage); ok {
 		*s = *os
-	}
-}
-
-// TestRenderStatic_ContainsRefusalMessage verifies the non-TTY static
-// renderer emits the user-facing "re-run / --yes" hint.
-func TestRenderStatic_ContainsRefusalMessage(t *testing.T) {
-	out := RenderStatic(StaticPreview{
-		Title: "Remove Backend?",
-		Lines: []string{"Agent: Backend", "Workspace: backend/"},
-	})
-	for _, want := range []string{"Remove Backend?", "Backend", "terminal", "--yes"} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("RenderStatic output missing %q; got:\n%s", want, out)
-		}
 	}
 }
