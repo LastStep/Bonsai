@@ -181,6 +181,28 @@ type AgentDef struct {
 	DefaultSensors   []string
 	DefaultRoutines  []string
 	CoreDir          string // path within FS to core/ directory
+
+	// Hints is the parsed catalog/agents/<type>/hints.yaml payload, keyed
+	// by command ("init", "add", "remove", "update"). Nil when the file is
+	// absent — hints are optional and the tui/hints renderer falls back to
+	// a zero Block silently. Plan 31 Phase H.
+	Hints map[string]HintSection
+}
+
+// HintPrompt is a single "ASK YOUR AGENT" copy-paste entry inside a
+// HintSection. Both fields are template-rendered at Load time so values
+// like `{{ .DocsPath }}` resolve to the project's workspace path.
+type HintPrompt struct {
+	Label string `yaml:"label"`
+	Body  string `yaml:"body"`
+}
+
+// HintSection is the per-command hints payload. Each field maps 1:1 to
+// a section in the tui/hints 3-layer renderer.
+type HintSection struct {
+	NextCLI      []string     `yaml:"next_cli,omitempty"`
+	NextWorkflow []string     `yaml:"next_workflow,omitempty"`
+	AIPrompts    []HintPrompt `yaml:"ai_prompts,omitempty"`
 }
 
 type agentYAML struct {
@@ -533,7 +555,25 @@ func loadAgents(fsys fs.FS) []AgentDef {
 			DefaultSensors:   raw.Defaults.Sensors,
 			DefaultRoutines:  raw.Defaults.Routines,
 			CoreDir:          "agents/" + name + "/core",
+			Hints:            loadAgentHints(fsys, name),
 		})
 	}
 	return agents
+}
+
+// loadAgentHints reads catalog/agents/<name>/hints.yaml and returns the
+// parsed command→section map. Missing file returns nil — hints are
+// optional (Plan 31 Phase H). Any parse error also returns nil so a
+// malformed hints.yaml doesn't block the catalog load.
+func loadAgentHints(fsys fs.FS, name string) map[string]HintSection {
+	path := "agents/" + name + "/hints.yaml"
+	data, err := fs.ReadFile(fsys, path)
+	if err != nil {
+		return nil
+	}
+	var out map[string]HintSection
+	if err := yaml.Unmarshal(data, &out); err != nil {
+		return nil
+	}
+	return out
 }
