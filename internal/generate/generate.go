@@ -626,6 +626,59 @@ func howToWorkLines(agentName string, docsPrefix string, hasRoutines bool, hasWo
 	return lines
 }
 
+// bonsaiReferenceLines builds the "Bonsai Reference" block rendered after
+// the Core navigation table in every agent's workspace CLAUDE.md. Points to:
+//
+//   - bonsai-model.md — the mental-model skill (tech-lead-only; for non-
+//     tech-lead agents, path resolves into tech-lead's workspace via
+//     cfg.DocsPath, which is tech-lead's workspace by convention).
+//   - .bonsai/catalog.json — filesystem-discoverable catalog snapshot
+//     (written by WriteCatalogSnapshot on every init/add/update).
+//   - .bonsai.yaml — project config (installed-state source of truth).
+//
+// All paths are computed relative to workspaceRoot using filepath.Rel so the
+// block renders correctly from any workspace depth (e.g. "station/" one
+// level deep, or "services/backend/" two levels deep). Plan 31 Phase D.
+func bonsaiReferenceLines(projectRoot, workspaceRoot string, cfg *config.ProjectConfig) []string {
+	// relFromWorkspace resolves a project-root-relative path into one that's
+	// relative to the workspace root (where CLAUDE.md lives). Falls back to
+	// the input if Rel fails — no broken link, just a less-friendly path.
+	relFromWorkspace := func(fromProjectRoot string) string {
+		abs := filepath.Join(projectRoot, fromProjectRoot)
+		rel, err := filepath.Rel(workspaceRoot, abs)
+		if err != nil {
+			return fromProjectRoot
+		}
+		return filepath.ToSlash(rel)
+	}
+
+	// bonsai-model.md lives in the tech-lead workspace (cfg.DocsPath).
+	// For tech-lead itself, DocsPath == installed.Workspace so the path
+	// resolves to "agent/Skills/bonsai-model.md" (same as quick-triggers
+	// refs). For non-tech-lead agents, it resolves to something like
+	// "../station/agent/Skills/bonsai-model.md".
+	//
+	// cmd/init_flow.go:233 enforces non-empty DocsPath (with trailing "/")
+	// before saving cfg, so no fallback needed here — if DocsPath ever is
+	// empty, the path degrades (e.g. "agent/Skills/bonsai-model.md" from the
+	// project root) but does not panic.
+	bonsaiModelRel := relFromWorkspace(filepath.Join(cfg.DocsPath, "agent", "Skills", "bonsai-model.md"))
+	catalogJSONRel := relFromWorkspace(filepath.Join(".bonsai", "catalog.json"))
+	bonsaiYAMLRel := relFromWorkspace(".bonsai.yaml")
+
+	return []string{
+		"---", "",
+		"## Bonsai Reference", "",
+		"> Read these when reasoning about Bonsai itself — what catalog items exist, how to customize, what `bonsai add`/`remove`/`update` do.", "",
+		"| Need | Read |",
+		"|------|------|",
+		fmt.Sprintf("| Bonsai mental model — catalog shape, customization, decisions | [%s](%s) |", bonsaiModelRel, bonsaiModelRel),
+		fmt.Sprintf("| Available abilities (all catalog items) | [%s](%s) |", catalogJSONRel, catalogJSONRel),
+		fmt.Sprintf("| Current installed state | [%s](%s) |", bonsaiYAMLRel, bonsaiYAMLRel),
+		"",
+	}
+}
+
 func quickTriggersLines(installed *config.InstalledAgent, cat *catalog.Catalog) []string {
 	var lines []string
 	lines = append(lines,
@@ -688,6 +741,16 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 		"| [agent/Core/memory.md](agent/Core/memory.md) | Working memory — flags, work state, notes |",
 		"| [agent/Core/self-awareness.md](agent/Core/self-awareness.md) | Context monitoring, hard thresholds |", "",
 	)
+
+	// Bonsai Reference block (Plan 31 Phase D) — pi-style pointer so the
+	// user's agent knows where to find the Bonsai mental model + catalog
+	// snapshot without being hand-fed docs. Every agent points to tech-lead's
+	// copy of bonsai-model.md (the skill is tech-lead-only; project-level
+	// knowledge, not per-agent). Paths are computed relative to the workspace
+	// root (where CLAUDE.md lives) so they resolve correctly from any
+	// workspace depth.
+	bonsaiRefLines := bonsaiReferenceLines(projectRoot, workspaceRoot, cfg)
+	lines = append(lines, bonsaiRefLines...)
 
 	// Quick Triggers reference
 	qt := quickTriggersLines(installed, cat)
@@ -1297,29 +1360,17 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 	agentDir := filepath.Join(workspaceRoot, "agent")
 	catFS := cat.FS()
 
-	ctx := &TemplateContext{
-		ProjectName:        cfg.ProjectName,
-		ProjectDescription: cfg.Description,
-		AgentName:          agentDef.Name,
-		AgentDisplayName:   agentDef.DisplayName,
-		AgentDescription:   agentDef.Description,
-	}
-
-	for name, a := range cfg.Agents {
-		if name != agentDef.Name {
-			ctx.OtherAgents = append(ctx.OtherAgents, OtherAgent{
-				AgentType: a.AgentType,
-				Workspace: a.Workspace,
-			})
-		}
-	}
-	// Sort for deterministic template output. Map iteration order is randomised
-	// per process, so without this every re-render of templates that range over
-	// OtherAgents (agent identities, scope-guard, dispatch-guard) emits a
-	// different byte order and the lockfile flags every file as Updated.
-	sort.Slice(ctx.OtherAgents, func(i, j int) bool {
-		return ctx.OtherAgents[i].AgentType < ctx.OtherAgents[j].AgentType
-	})
+	// Single context build shared with RefreshPeerAwareness via
+	// buildAgentTemplateContext. Previously AgentWorkspace maintained two
+	// inline ctx builds (a narrow one for Core templates and a full one for
+	// Skills/Sensors/Routines). That divergence was a correctness trap: if an
+	// identity.md.tmpl started referencing Workspace/DocsPath/Skills/etc. the
+	// initial render (core ctx) and peer refresh (full ctx via
+	// buildAgentTemplateContext) would produce different bytes and flip every
+	// refresh to ActionUpdated. Using the full ctx unconditionally is safe —
+	// Go text/template silently ignores unused fields, so templates that
+	// don't reference the new fields render byte-identical output.
+	ctx := buildAgentTemplateContext(agentDef, installed, cfg)
 
 	// 1. Core files (layered: shared defaults from catalog/core/, agent overrides from agent core/)
 	coreDir := filepath.Join(agentDir, "Core")
@@ -1384,29 +1435,15 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		result.Add(r)
 	}
 
-	// Full template context — used by skills, sensors, and routines that have .tmpl files
-	fullCtx := &TemplateContext{
-		ProjectName:        cfg.ProjectName,
-		ProjectDescription: cfg.Description,
-		AgentName:          agentDef.Name,
-		AgentDisplayName:   agentDef.DisplayName,
-		AgentDescription:   agentDef.Description,
-		Workspace:          installed.Workspace,
-		DocsPath:           cfg.DocsPath,
-		Protocols:          installed.Protocols,
-		Skills:             installed.Skills,
-		Workflows:          installed.Workflows,
-		Routines:           installed.Routines,
-		OtherAgents:        ctx.OtherAgents,
-	}
-
-	// 2. Skills (rendered through templates if .tmpl, otherwise copied as-is)
+	// 2. Skills (rendered through templates if .tmpl, otherwise copied as-is).
+	// Uses the same ctx as Core — buildAgentTemplateContext already includes
+	// Workspace/DocsPath/Protocols/Skills/Workflows/Routines.
 	for _, skillName := range installed.Skills {
 		item := cat.GetSkill(skillName)
 		if item == nil {
 			continue
 		}
-		content, err := renderContent(catFS, item.ContentPath, fullCtx)
+		content, err := renderContent(catFS, item.ContentPath, ctx)
 		if err != nil {
 			return fmt.Errorf("skill %s: %w", skillName, err)
 		}
@@ -1459,7 +1496,7 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if sensor == nil {
 			continue
 		}
-		content, err := renderContent(catFS, sensor.ContentPath, fullCtx)
+		content, err := renderContent(catFS, sensor.ContentPath, ctx)
 		if err != nil {
 			return fmt.Errorf("sensor %s: %w", sensorName, err)
 		}
@@ -1475,7 +1512,7 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if routine == nil {
 			continue
 		}
-		content, err := renderContent(catFS, routine.ContentPath, fullCtx)
+		content, err := renderContent(catFS, routine.ContentPath, ctx)
 		if err != nil {
 			return fmt.Errorf("routine %s: %w", routineName, err)
 		}
@@ -1493,4 +1530,153 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 
 	// 8. Workspace CLAUDE.md
 	return WorkspaceClaudeMD(projectRoot, workspaceRoot, agentDef, installed, cfg, cat, lock, result, force)
+}
+
+// buildAgentTemplateContext constructs the single TemplateContext used by
+// both AgentWorkspace (initial render) and RefreshPeerAwareness (peer
+// re-render). Single source of truth guarantees both paths produce
+// bit-identical bytes for identical inputs, so lockfile writes on refresh
+// stay at ActionUnchanged when no OtherAgents change has occurred.
+//
+// OtherAgents ordering is deterministic via sort on AgentType; without this
+// Go map iteration would randomise byte output across processes and the
+// lockfile would flag every re-render as Updated.
+func buildAgentTemplateContext(agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig) *TemplateContext {
+	ctx := &TemplateContext{
+		ProjectName:        cfg.ProjectName,
+		ProjectDescription: cfg.Description,
+		AgentName:          agentDef.Name,
+		AgentDisplayName:   agentDef.DisplayName,
+		AgentDescription:   agentDef.Description,
+		Workspace:          installed.Workspace,
+		DocsPath:           cfg.DocsPath,
+		Protocols:          installed.Protocols,
+		Skills:             installed.Skills,
+		Workflows:          installed.Workflows,
+		Routines:           installed.Routines,
+	}
+	for name, a := range cfg.Agents {
+		if name != agentDef.Name {
+			ctx.OtherAgents = append(ctx.OtherAgents, OtherAgent{
+				AgentType: a.AgentType,
+				Workspace: a.Workspace,
+			})
+		}
+	}
+	sort.Slice(ctx.OtherAgents, func(i, j int) bool {
+		return ctx.OtherAgents[i].AgentType < ctx.OtherAgents[j].AgentType
+	})
+	return ctx
+}
+
+// hasAbility reports whether name appears in the haystack. Small helper used
+// by RefreshPeerAwareness to gate per-sensor refreshes on the agent actually
+// having the sensor installed.
+func hasAbility(haystack []string, name string) bool {
+	for _, h := range haystack {
+		if h == name {
+			return true
+		}
+	}
+	return false
+}
+
+// RefreshPeerAwareness re-renders the three OtherAgents-dependent files
+// (identity.md, scope-guard-files.sh, dispatch-guard.sh) for every installed
+// agent EXCEPT the one specified. Called after `bonsai add` so already-
+// installed peers pick up the newly-added agent in their awareness blocks
+// (identity table rows, scope-guard per-peer block entries, dispatch-guard
+// workspace→agent map).
+//
+// Lock-aware via the shared writeFile path — user-edited copies trigger the
+// standard conflict resolver. Agents without scope-guard-files or
+// dispatch-guard installed skip those files silently; identity.md always
+// re-renders because every agent has one (shared catalog/core/ layered with
+// agents/<type>/core/identity.md.tmpl overrides per AgentWorkspace).
+//
+// Per peer, a fresh TemplateContext is built via buildAgentTemplateContext —
+// no context leaks across peers. See Plan 31 Phase A for motivation; without
+// this call sibling peers' OtherAgents lists go stale after `bonsai add` and
+// scope-guard silently fails open on the newly-added workspace.
+func RefreshPeerAwareness(projectRoot string, excludeAgent string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
+	if cfg == nil || cat == nil || result == nil {
+		return nil
+	}
+	catFS := cat.FS()
+
+	// Deterministic iteration order so test assertions and write-result diffs
+	// do not depend on Go map iteration ordering.
+	peerNames := make([]string, 0, len(cfg.Agents))
+	for name := range cfg.Agents {
+		if name == excludeAgent {
+			continue
+		}
+		peerNames = append(peerNames, name)
+	}
+	sort.Strings(peerNames)
+
+	for _, name := range peerNames {
+		peer := cfg.Agents[name]
+		if peer == nil {
+			continue
+		}
+		agentDef := cat.GetAgent(peer.AgentType)
+		if agentDef == nil {
+			continue
+		}
+
+		ctx := buildAgentTemplateContext(agentDef, peer, cfg)
+		workspaceRoot := filepath.Join(projectRoot, peer.Workspace)
+
+		// 1. identity.md — always re-render. Resolve override (agent-specific
+		//    vs shared core) identically to AgentWorkspace so we don't
+		//    accidentally write a stale shared copy when the agent ships its
+		//    own identity template.
+		identitySrc := ""
+		agentIdentity := agentDef.CoreDir + "/identity.md.tmpl"
+		sharedIdentity := catalog.SharedCoreDir + "/identity.md.tmpl"
+		if _, err := fs.Stat(catFS, agentIdentity); err == nil {
+			identitySrc = agentIdentity
+		} else if _, err := fs.Stat(catFS, sharedIdentity); err == nil {
+			identitySrc = sharedIdentity
+		}
+		if identitySrc != "" {
+			content, err := renderContent(catFS, identitySrc, ctx)
+			if err != nil {
+				return fmt.Errorf("refresh identity for %s: %w", name, err)
+			}
+			relPath, _ := filepath.Rel(projectRoot, filepath.Join(workspaceRoot, "agent", "Core", "identity.md"))
+			r := writeFile(projectRoot, relPath, content, "catalog:core/identity.md", lock, force)
+			result.Add(r)
+		}
+
+		// 2. scope-guard-files.sh — only if the peer has it installed.
+		if hasAbility(peer.Sensors, "scope-guard-files") {
+			if sensor := cat.GetSensor("scope-guard-files"); sensor != nil {
+				content, err := renderContent(catFS, sensor.ContentPath, ctx)
+				if err != nil {
+					return fmt.Errorf("refresh scope-guard-files for %s: %w", name, err)
+				}
+				destName := strings.TrimSuffix(filepath.Base(sensor.ContentPath), ".tmpl")
+				relPath, _ := filepath.Rel(projectRoot, filepath.Join(workspaceRoot, "agent", "Sensors", destName))
+				r := writeFileChmod(projectRoot, relPath, content, "catalog:sensors/scope-guard-files", lock, force, 0755)
+				result.Add(r)
+			}
+		}
+
+		// 3. dispatch-guard.sh — only if the peer has it installed.
+		if hasAbility(peer.Sensors, "dispatch-guard") {
+			if sensor := cat.GetSensor("dispatch-guard"); sensor != nil {
+				content, err := renderContent(catFS, sensor.ContentPath, ctx)
+				if err != nil {
+					return fmt.Errorf("refresh dispatch-guard for %s: %w", name, err)
+				}
+				destName := strings.TrimSuffix(filepath.Base(sensor.ContentPath), ".tmpl")
+				relPath, _ := filepath.Rel(projectRoot, filepath.Join(workspaceRoot, "agent", "Sensors", destName))
+				r := writeFileChmod(projectRoot, relPath, content, "catalog:sensors/dispatch-guard", lock, force, 0755)
+				result.Add(r)
+			}
+		}
+	}
+	return nil
 }
