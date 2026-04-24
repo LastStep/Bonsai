@@ -626,6 +626,58 @@ func howToWorkLines(agentName string, docsPrefix string, hasRoutines bool, hasWo
 	return lines
 }
 
+// bonsaiReferenceLines builds the "Bonsai Reference" block rendered after
+// the Core navigation table in every agent's workspace CLAUDE.md. Points to:
+//
+//   - bonsai-model.md — the mental-model skill (tech-lead-only; for non-
+//     tech-lead agents, path resolves into tech-lead's workspace via
+//     cfg.DocsPath, which is tech-lead's workspace by convention).
+//   - .bonsai/catalog.json — filesystem-discoverable catalog snapshot
+//     (written by WriteCatalogSnapshot on every init/add/update).
+//   - .bonsai.yaml — project config (installed-state source of truth).
+//
+// All paths are computed relative to workspaceRoot using filepath.Rel so the
+// block renders correctly from any workspace depth (e.g. "station/" one
+// level deep, or "services/backend/" two levels deep). Plan 31 Phase D.
+func bonsaiReferenceLines(projectRoot, workspaceRoot string, cfg *config.ProjectConfig) []string {
+	// relFromWorkspace resolves a project-root-relative path into one that's
+	// relative to the workspace root (where CLAUDE.md lives). Falls back to
+	// the input if Rel fails — no broken link, just a less-friendly path.
+	relFromWorkspace := func(fromProjectRoot string) string {
+		abs := filepath.Join(projectRoot, fromProjectRoot)
+		rel, err := filepath.Rel(workspaceRoot, abs)
+		if err != nil {
+			return fromProjectRoot
+		}
+		return filepath.ToSlash(rel)
+	}
+
+	// bonsai-model.md lives in the tech-lead workspace (cfg.DocsPath).
+	// For tech-lead itself, DocsPath == installed.Workspace so the path
+	// resolves to "agent/Skills/bonsai-model.md" (same as quick-triggers
+	// refs). For non-tech-lead agents, it resolves to something like
+	// "../station/agent/Skills/bonsai-model.md".
+	docsPath := cfg.DocsPath
+	if docsPath == "" {
+		docsPath = "station/"
+	}
+	bonsaiModelRel := relFromWorkspace(filepath.Join(docsPath, "agent", "Skills", "bonsai-model.md"))
+	catalogJSONRel := relFromWorkspace(filepath.Join(".bonsai", "catalog.json"))
+	bonsaiYAMLRel := relFromWorkspace(".bonsai.yaml")
+
+	return []string{
+		"---", "",
+		"## Bonsai Reference", "",
+		"> Read these when reasoning about Bonsai itself — what catalog items exist, how to customize, what `bonsai add`/`remove`/`update` do.", "",
+		"| Need | Read |",
+		"|------|------|",
+		fmt.Sprintf("| Bonsai mental model — catalog shape, customization, decisions | [%s](%s) |", bonsaiModelRel, bonsaiModelRel),
+		fmt.Sprintf("| Available abilities (all catalog items) | [%s](%s) |", catalogJSONRel, catalogJSONRel),
+		fmt.Sprintf("| Current installed state | [%s](%s) |", bonsaiYAMLRel, bonsaiYAMLRel),
+		"",
+	}
+}
+
 func quickTriggersLines(installed *config.InstalledAgent, cat *catalog.Catalog) []string {
 	var lines []string
 	lines = append(lines,
@@ -688,6 +740,16 @@ func WorkspaceClaudeMD(projectRoot string, workspaceRoot string, agentDef *catal
 		"| [agent/Core/memory.md](agent/Core/memory.md) | Working memory — flags, work state, notes |",
 		"| [agent/Core/self-awareness.md](agent/Core/self-awareness.md) | Context monitoring, hard thresholds |", "",
 	)
+
+	// Bonsai Reference block (Plan 31 Phase D) — pi-style pointer so the
+	// user's agent knows where to find the Bonsai mental model + catalog
+	// snapshot without being hand-fed docs. Every agent points to tech-lead's
+	// copy of bonsai-model.md (the skill is tech-lead-only; project-level
+	// knowledge, not per-agent). Paths are computed relative to the workspace
+	// root (where CLAUDE.md lives) so they resolve correctly from any
+	// workspace depth.
+	bonsaiRefLines := bonsaiReferenceLines(projectRoot, workspaceRoot, cfg)
+	lines = append(lines, bonsaiRefLines...)
 
 	// Quick Triggers reference
 	qt := quickTriggersLines(installed, cat)

@@ -43,13 +43,13 @@ Peers:
 `
 
 	fsys := fstest.MapFS{
-		"core/memory.md.tmpl":                  &fstest.MapFile{Data: []byte("memory")},
-		"core/self-awareness.md":               &fstest.MapFile{Data: []byte("sa")},
-		"core/identity.md.tmpl":                &fstest.MapFile{Data: []byte(identity)},
-		"agents/lead/agent.yaml":               &fstest.MapFile{Data: []byte("name: lead\ndescription: lead agent\n")},
-		"agents/peer-a/agent.yaml":             &fstest.MapFile{Data: []byte("name: peer-a\ndescription: peer a\n")},
-		"agents/peer-b/agent.yaml":             &fstest.MapFile{Data: []byte("name: peer-b\ndescription: peer b\n")},
-		"sensors/scope-guard-files/meta.yaml":  &fstest.MapFile{Data: []byte("name: scope-guard-files\ndescription: scope guard\nevent: PreToolUse\nmatcher: Edit\nagents: all\n")},
+		"core/memory.md.tmpl":                                 &fstest.MapFile{Data: []byte("memory")},
+		"core/self-awareness.md":                              &fstest.MapFile{Data: []byte("sa")},
+		"core/identity.md.tmpl":                               &fstest.MapFile{Data: []byte(identity)},
+		"agents/lead/agent.yaml":                              &fstest.MapFile{Data: []byte("name: lead\ndescription: lead agent\n")},
+		"agents/peer-a/agent.yaml":                            &fstest.MapFile{Data: []byte("name: peer-a\ndescription: peer a\n")},
+		"agents/peer-b/agent.yaml":                            &fstest.MapFile{Data: []byte("name: peer-b\ndescription: peer b\n")},
+		"sensors/scope-guard-files/meta.yaml":                 &fstest.MapFile{Data: []byte("name: scope-guard-files\ndescription: scope guard\nevent: PreToolUse\nmatcher: Edit\nagents: all\n")},
 		"sensors/scope-guard-files/scope-guard-files.sh.tmpl": &fstest.MapFile{Data: []byte(scopeGuard)},
 		"sensors/dispatch-guard/meta.yaml":                    &fstest.MapFile{Data: []byte("name: dispatch-guard\ndescription: dispatch guard\nevent: PreToolUse\nmatcher: Agent\nagents: all\n")},
 		"sensors/dispatch-guard/dispatch-guard.sh.tmpl":       &fstest.MapFile{Data: []byte(dispatchGuard)},

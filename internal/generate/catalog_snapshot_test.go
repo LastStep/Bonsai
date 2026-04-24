@@ -20,10 +20,10 @@ func buildSnapshotTestCatalog(t *testing.T) *catalog.Catalog {
 		"agents/tech-lead/agent.yaml": &fstest.MapFile{Data: []byte("name: tech-lead\ndisplay_name: Tech Lead\ndescription: orchestrator\n")},
 		"agents/backend/agent.yaml":   &fstest.MapFile{Data: []byte("name: backend\ndisplay_name: Backend\ndescription: backend dev\n")},
 		// Skills
-		"skills/planning-template/meta.yaml":   &fstest.MapFile{Data: []byte("name: planning-template\ndescription: writing plans\nagents:\n  - tech-lead\nrequired:\n  - tech-lead\n")},
-		"skills/planning-template/content.md":  &fstest.MapFile{Data: []byte("content")},
-		"skills/coding-standards/meta.yaml":    &fstest.MapFile{Data: []byte("name: coding-standards\ndescription: code style\nagents: all\n")},
-		"skills/coding-standards/content.md":   &fstest.MapFile{Data: []byte("content")},
+		"skills/planning-template/meta.yaml":  &fstest.MapFile{Data: []byte("name: planning-template\ndescription: writing plans\nagents:\n  - tech-lead\nrequired:\n  - tech-lead\n")},
+		"skills/planning-template/content.md": &fstest.MapFile{Data: []byte("content")},
+		"skills/coding-standards/meta.yaml":   &fstest.MapFile{Data: []byte("name: coding-standards\ndescription: code style\nagents: all\n")},
+		"skills/coding-standards/content.md":  &fstest.MapFile{Data: []byte("content")},
 		// Workflows
 		"workflows/code-review/meta.yaml":  &fstest.MapFile{Data: []byte("name: code-review\ndescription: reviewing code\nagents: all\n")},
 		"workflows/code-review/content.md": &fstest.MapFile{Data: []byte("c")},
@@ -31,10 +31,10 @@ func buildSnapshotTestCatalog(t *testing.T) *catalog.Catalog {
 		"protocols/security/meta.yaml":  &fstest.MapFile{Data: []byte("name: security\ndescription: security protocol\nagents: all\n")},
 		"protocols/security/content.md": &fstest.MapFile{Data: []byte("c")},
 		// Sensors
-		"sensors/scope-guard-files/meta.yaml":         &fstest.MapFile{Data: []byte("name: scope-guard-files\ndescription: scope guard\nevent: PreToolUse\nmatcher: Edit|Write\nagents: all\n")},
+		"sensors/scope-guard-files/meta.yaml":                 &fstest.MapFile{Data: []byte("name: scope-guard-files\ndescription: scope guard\nevent: PreToolUse\nmatcher: Edit|Write\nagents: all\n")},
 		"sensors/scope-guard-files/scope-guard-files.sh.tmpl": &fstest.MapFile{Data: []byte("#!/bin/bash\n")},
 		// Routines
-		"routines/backlog-hygiene/meta.yaml":            &fstest.MapFile{Data: []byte("name: backlog-hygiene\ndescription: groom backlog\nfrequency: 7 days\nagents:\n  - tech-lead\n")},
+		"routines/backlog-hygiene/meta.yaml":               &fstest.MapFile{Data: []byte("name: backlog-hygiene\ndescription: groom backlog\nfrequency: 7 days\nagents:\n  - tech-lead\n")},
 		"routines/backlog-hygiene/backlog-hygiene.md.tmpl": &fstest.MapFile{Data: []byte("c")},
 	}
 	cat, err := catalog.New(fsys)
