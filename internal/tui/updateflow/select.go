@@ -124,15 +124,15 @@ func (s *SelectStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "a":
 			// Toggle all in current tab — if any unchecked, select all;
 			// otherwise deselect all.
-			any := false
+			anyUnselected := false
 			for _, v := range s.selected[s.tab] {
 				if !v {
-					any = true
+					anyUnselected = true
 					break
 				}
 			}
 			for i := range s.selected[s.tab] {
-				s.selected[s.tab][i] = any
+				s.selected[s.tab][i] = anyUnselected
 			}
 		case "enter":
 			s.MarkDone()

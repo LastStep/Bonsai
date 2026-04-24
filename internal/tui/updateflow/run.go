@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
@@ -267,23 +268,8 @@ func sortedAgentNames(cfg *config.ProjectConfig) []string {
 	for name := range cfg.Agents {
 		names = append(names, name)
 	}
-	sortStrings(names)
+	sort.Strings(names)
 	return names
-}
-
-// sortStrings is a tiny wrapper over sort.Strings — kept local so the
-// Run helper file doesn't need to pull sort into its import list in
-// addition to the other domain imports (visual noise reduction).
-func sortStrings(s []string) {
-	// Simple insertion sort — small slices only; cfg.Agents is bounded
-	// by the catalog size.
-	for i := 1; i < len(s); i++ {
-		j := i
-		for j > 0 && s[j-1] > s[j] {
-			s[j-1], s[j] = s[j], s[j-1]
-			j--
-		}
-	}
 }
 
 // pickAgentForHints returns the agent type whose hints.yaml should

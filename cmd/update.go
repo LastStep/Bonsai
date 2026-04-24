@@ -73,8 +73,11 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	// flow ran without a terminal.
 	if !isTerminal() {
 		if result.SyncErr != nil {
+			// Return the error so cobra propagates a non-zero exit —
+			// CI / piped callers need to fail the command on unresolved
+			// conflicts or sync errors.
 			tui.Warning("Update error: " + result.SyncErr.Error())
-			return nil
+			return result.SyncErr
 		}
 		if result.WriteResult != nil {
 			created, updated, _, _, conflicts := result.WriteResult.Summary()
