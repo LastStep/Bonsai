@@ -265,3 +265,95 @@ func TestRefreshPeerAwareness_TracksInWriteResult(t *testing.T) {
 		}
 	}
 }
+
+// TestRefreshPeerAwareness_NoNewAgentProducesAllUnchanged — mirrors the
+// add-items branch in cmd/add.go where RefreshPeerAwareness is called with
+// excludeAgent set to an already-installed agent (not a newly-added one).
+// Since cfg.Agents is unchanged, every re-rendered file should match the
+// on-disk copy and produce ActionUnchanged. This locks the "cheap no-diff
+// write" contract documented in cmd/add.go:469-474.
+func TestRefreshPeerAwareness_NoNewAgentProducesAllUnchanged(t *testing.T) {
+	cat, cfg, lock, tmpDir := setupPeerFixture(t)
+
+	// Add peer-b through the full pipeline so we have 3 peers on disk all in
+	// mutual awareness sync. After this, a refresh should produce no diffs.
+	peerB := &config.InstalledAgent{
+		AgentType: "peer-b",
+		Workspace: "peer-b/",
+		Sensors:   []string{"scope-guard-files", "dispatch-guard"},
+	}
+	cfg.Agents["peer-b"] = peerB
+	var wr WriteResult
+	if err := AgentWorkspace(tmpDir, cat.GetAgent("peer-b"), peerB, cfg, cat, lock, &wr, false); err != nil {
+		t.Fatalf("peer-b workspace: %v", err)
+	}
+	// Prime lead + peer-a with the post-peer-b awareness so all 3 workspaces
+	// are in sync before the no-op refresh under test.
+	var primeWR WriteResult
+	if err := RefreshPeerAwareness(tmpDir, "peer-b", cfg, cat, lock, &primeWR, false); err != nil {
+		t.Fatalf("prime refresh: %v", err)
+	}
+
+	// Exercise: refresh excluding an already-installed agent (lead) — the
+	// add-items branch behaviour where no new agent was just added.
+	var refreshWR WriteResult
+	if err := RefreshPeerAwareness(tmpDir, "lead", cfg, cat, lock, &refreshWR, false); err != nil {
+		t.Fatalf("RefreshPeerAwareness: %v", err)
+	}
+
+	// Every re-rendered file should be ActionUnchanged (byte-identical) —
+	// no diffs, no conflicts, no updates.
+	for _, f := range refreshWR.Files {
+		if f.Action != ActionUnchanged {
+			t.Errorf("expected ActionUnchanged for %q, got %v", f.RelPath, f.Action)
+		}
+	}
+}
+
+// TestRefreshPeerAwareness_UserEditedPeerFileTriggersConflict — simulates
+// user drift by editing a peer's scope-guard-files.sh on disk WITHOUT
+// updating the lockfile hash. The refresh path should funnel the drift
+// through the same conflict resolver writeFile uses everywhere else and
+// emit an ActionConflict entry for that file.
+func TestRefreshPeerAwareness_UserEditedPeerFileTriggersConflict(t *testing.T) {
+	cat, cfg, lock, tmpDir := setupPeerFixture(t)
+
+	// Add peer-b so there's a reason for the refresh (OtherAgents change).
+	peerB := &config.InstalledAgent{
+		AgentType: "peer-b",
+		Workspace: "peer-b/",
+		Sensors:   []string{"scope-guard-files", "dispatch-guard"},
+	}
+	cfg.Agents["peer-b"] = peerB
+	var wr WriteResult
+	if err := AgentWorkspace(tmpDir, cat.GetAgent("peer-b"), peerB, cfg, cat, lock, &wr, false); err != nil {
+		t.Fatalf("peer-b workspace: %v", err)
+	}
+
+	// Simulate user drift on lead's scope-guard-files.sh — write arbitrary
+	// content to disk, do NOT re-track. IsModified will now return
+	// modified=true because the disk hash no longer matches the lock hash.
+	leadGuardPath := filepath.Join(tmpDir, "station", "agent", "Sensors", "scope-guard-files.sh")
+	if err := os.WriteFile(leadGuardPath, []byte("#!/usr/bin/env bash\n# user edit\n"), 0755); err != nil {
+		t.Fatalf("simulate user edit: %v", err)
+	}
+
+	// Exercise: refresh with the standard non-force path — user drift should
+	// be detected and surface as ActionConflict.
+	var refreshWR WriteResult
+	if err := RefreshPeerAwareness(tmpDir, "peer-b", cfg, cat, lock, &refreshWR, false); err != nil {
+		t.Fatalf("RefreshPeerAwareness: %v", err)
+	}
+
+	leadGuardRel := filepath.Join("station", "agent", "Sensors", "scope-guard-files.sh")
+	var found bool
+	for _, f := range refreshWR.Files {
+		if f.RelPath == leadGuardRel && f.Action == ActionConflict {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected ActionConflict for %q in WriteResult, got:\n%+v", leadGuardRel, refreshWR.Files)
+	}
+}

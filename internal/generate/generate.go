@@ -657,11 +657,12 @@ func bonsaiReferenceLines(projectRoot, workspaceRoot string, cfg *config.Project
 	// resolves to "agent/Skills/bonsai-model.md" (same as quick-triggers
 	// refs). For non-tech-lead agents, it resolves to something like
 	// "../station/agent/Skills/bonsai-model.md".
-	docsPath := cfg.DocsPath
-	if docsPath == "" {
-		docsPath = "station/"
-	}
-	bonsaiModelRel := relFromWorkspace(filepath.Join(docsPath, "agent", "Skills", "bonsai-model.md"))
+	//
+	// cmd/init_flow.go:233 enforces non-empty DocsPath (with trailing "/")
+	// before saving cfg, so no fallback needed here — if DocsPath ever is
+	// empty, the path degrades (e.g. "agent/Skills/bonsai-model.md" from the
+	// project root) but does not panic.
+	bonsaiModelRel := relFromWorkspace(filepath.Join(cfg.DocsPath, "agent", "Skills", "bonsai-model.md"))
 	catalogJSONRel := relFromWorkspace(filepath.Join(".bonsai", "catalog.json"))
 	bonsaiYAMLRel := relFromWorkspace(".bonsai.yaml")
 
@@ -1359,29 +1360,17 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 	agentDir := filepath.Join(workspaceRoot, "agent")
 	catFS := cat.FS()
 
-	ctx := &TemplateContext{
-		ProjectName:        cfg.ProjectName,
-		ProjectDescription: cfg.Description,
-		AgentName:          agentDef.Name,
-		AgentDisplayName:   agentDef.DisplayName,
-		AgentDescription:   agentDef.Description,
-	}
-
-	for name, a := range cfg.Agents {
-		if name != agentDef.Name {
-			ctx.OtherAgents = append(ctx.OtherAgents, OtherAgent{
-				AgentType: a.AgentType,
-				Workspace: a.Workspace,
-			})
-		}
-	}
-	// Sort for deterministic template output. Map iteration order is randomised
-	// per process, so without this every re-render of templates that range over
-	// OtherAgents (agent identities, scope-guard, dispatch-guard) emits a
-	// different byte order and the lockfile flags every file as Updated.
-	sort.Slice(ctx.OtherAgents, func(i, j int) bool {
-		return ctx.OtherAgents[i].AgentType < ctx.OtherAgents[j].AgentType
-	})
+	// Single context build shared with RefreshPeerAwareness via
+	// buildAgentTemplateContext. Previously AgentWorkspace maintained two
+	// inline ctx builds (a narrow one for Core templates and a full one for
+	// Skills/Sensors/Routines). That divergence was a correctness trap: if an
+	// identity.md.tmpl started referencing Workspace/DocsPath/Skills/etc. the
+	// initial render (core ctx) and peer refresh (full ctx via
+	// buildAgentTemplateContext) would produce different bytes and flip every
+	// refresh to ActionUpdated. Using the full ctx unconditionally is safe —
+	// Go text/template silently ignores unused fields, so templates that
+	// don't reference the new fields render byte-identical output.
+	ctx := buildAgentTemplateContext(agentDef, installed, cfg)
 
 	// 1. Core files (layered: shared defaults from catalog/core/, agent overrides from agent core/)
 	coreDir := filepath.Join(agentDir, "Core")
@@ -1446,29 +1435,15 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		result.Add(r)
 	}
 
-	// Full template context — used by skills, sensors, and routines that have .tmpl files
-	fullCtx := &TemplateContext{
-		ProjectName:        cfg.ProjectName,
-		ProjectDescription: cfg.Description,
-		AgentName:          agentDef.Name,
-		AgentDisplayName:   agentDef.DisplayName,
-		AgentDescription:   agentDef.Description,
-		Workspace:          installed.Workspace,
-		DocsPath:           cfg.DocsPath,
-		Protocols:          installed.Protocols,
-		Skills:             installed.Skills,
-		Workflows:          installed.Workflows,
-		Routines:           installed.Routines,
-		OtherAgents:        ctx.OtherAgents,
-	}
-
-	// 2. Skills (rendered through templates if .tmpl, otherwise copied as-is)
+	// 2. Skills (rendered through templates if .tmpl, otherwise copied as-is).
+	// Uses the same ctx as Core — buildAgentTemplateContext already includes
+	// Workspace/DocsPath/Protocols/Skills/Workflows/Routines.
 	for _, skillName := range installed.Skills {
 		item := cat.GetSkill(skillName)
 		if item == nil {
 			continue
 		}
-		content, err := renderContent(catFS, item.ContentPath, fullCtx)
+		content, err := renderContent(catFS, item.ContentPath, ctx)
 		if err != nil {
 			return fmt.Errorf("skill %s: %w", skillName, err)
 		}
@@ -1521,7 +1496,7 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if sensor == nil {
 			continue
 		}
-		content, err := renderContent(catFS, sensor.ContentPath, fullCtx)
+		content, err := renderContent(catFS, sensor.ContentPath, ctx)
 		if err != nil {
 			return fmt.Errorf("sensor %s: %w", sensorName, err)
 		}
@@ -1537,7 +1512,7 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 		if routine == nil {
 			continue
 		}
-		content, err := renderContent(catFS, routine.ContentPath, fullCtx)
+		content, err := renderContent(catFS, routine.ContentPath, ctx)
 		if err != nil {
 			return fmt.Errorf("routine %s: %w", routineName, err)
 		}
@@ -1557,15 +1532,15 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 	return WorkspaceClaudeMD(projectRoot, workspaceRoot, agentDef, installed, cfg, cat, lock, result, force)
 }
 
-// buildAgentTemplateContext constructs the TemplateContext used to render
-// OtherAgents-dependent files (identity.md, scope-guard-files.sh,
-// dispatch-guard.sh). Extracted from AgentWorkspace so RefreshPeerAwareness
-// can reuse the exact same build path — the only per-agent variation is the
-// installed ability lists, which the caller passes via agentDef + installed.
+// buildAgentTemplateContext constructs the single TemplateContext used by
+// both AgentWorkspace (initial render) and RefreshPeerAwareness (peer
+// re-render). Single source of truth guarantees both paths produce
+// bit-identical bytes for identical inputs, so lockfile writes on refresh
+// stay at ActionUnchanged when no OtherAgents change has occurred.
 //
-// Deterministic OtherAgents ordering is enforced identically to AgentWorkspace
-// so a render from this path produces bit-identical bytes to the full pipeline
-// for the same (agentDef, installed, cfg) tuple.
+// OtherAgents ordering is deterministic via sort on AgentType; without this
+// Go map iteration would randomise byte output across processes and the
+// lockfile would flag every re-render as Updated.
 func buildAgentTemplateContext(agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig) *TemplateContext {
 	ctx := &TemplateContext{
 		ProjectName:        cfg.ProjectName,
@@ -1624,7 +1599,7 @@ func hasAbility(haystack []string, name string) bool {
 // this call sibling peers' OtherAgents lists go stale after `bonsai add` and
 // scope-guard silently fails open on the newly-added workspace.
 func RefreshPeerAwareness(projectRoot string, excludeAgent string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
-	if cfg == nil || cat == nil {
+	if cfg == nil || cat == nil || result == nil {
 		return nil
 	}
 	catFS := cat.FS()

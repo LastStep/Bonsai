@@ -144,3 +144,28 @@ func TestBonsaiReference_OrderedBeforeQuickTriggers(t *testing.T) {
 		t.Errorf("order wrong: core=%d bonsai=%d qt=%d (want core < bonsai < qt)", coreIdx, bonsaiIdx, qtIdx)
 	}
 }
+
+// TestBonsaiReferenceLines_EmptyDocsPathDegrades locks the degrade-don't-
+// crash contract after the empty-DocsPath fallback was removed from
+// bonsaiReferenceLines. cmd/init_flow.go:233 normalises DocsPath to non-
+// empty + trailing "/" before saving cfg, so an empty DocsPath here means
+// an invariant was already broken upstream — the renderer must still
+// produce output (degenerate but non-crashing), not panic.
+func TestBonsaiReferenceLines_EmptyDocsPathDegrades(t *testing.T) {
+	cfg := &config.ProjectConfig{
+		ProjectName: "Test",
+		DocsPath:    "", // violates the init_flow invariant on purpose
+	}
+
+	// Call the unexported helper directly — same contract as via
+	// WorkspaceClaudeMD, without requiring a full template render setup.
+	lines := bonsaiReferenceLines("/proj", "/proj/station", cfg)
+
+	joined := strings.Join(lines, "\n")
+	if !strings.Contains(joined, "## Bonsai Reference") {
+		t.Errorf("expected Bonsai Reference heading even with empty DocsPath:\n%s", joined)
+	}
+	if !strings.Contains(joined, "bonsai-model.md") {
+		t.Errorf("expected bonsai-model.md row even with empty DocsPath:\n%s", joined)
+	}
+}
