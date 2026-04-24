@@ -16,6 +16,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/addflow"
 	"github.com/LastStep/Bonsai/internal/tui/harness"
+	"github.com/LastStep/Bonsai/internal/tui/hints"
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
 
@@ -209,7 +210,19 @@ func runAdd(cmd *cobra.Command, args []string) error {
 					total = len(installed.Skills) + len(installed.Workflows) +
 						len(installed.Protocols) + len(installed.Sensors) + len(installed.Routines)
 				}
-				return addflow.NewYieldSuccess(ctx, installed, cat, outcome.NewAgent, total)
+				stage := addflow.NewYieldSuccess(ctx, installed, cat, outcome.NewAgent, total)
+				// Plan 31 Phase H — render hints for the NEW agent being
+				// grafted so the user gets agent-specific onboarding copy
+				// (backend hints for a backend add, etc.).
+				if installed != nil {
+					block, _ := hints.Load(cat, installed.AgentType, "add", hints.TemplateContext{
+						DocsPath:    installed.Workspace,
+						AgentName:   installed.AgentType,
+						ProjectName: cfg.ProjectName,
+					})
+					stage.SetHintBlock(hints.Render(block, initflow.PanelContentWidth))
+				}
+				return stage
 			}),
 			growSucceeded,
 		),

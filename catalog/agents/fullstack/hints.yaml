@@ -1,0 +1,39 @@
+# Hints shown on yield stages for the fullstack agent — Plan 31 Phase H.
+
+init:
+  next_cli:
+    - "bonsai add devops  → add CI/CD + deploy automation"
+    - "bonsai catalog     → browse more abilities"
+  next_workflow:
+    - "Scaffold your first feature under {{ .DocsPath }} — API + UI in lockstep"
+    - "Seed a shared contract doc (API schema + component interface)"
+  ai_prompts:
+    - label: "Start working"
+      body: "Hi, get started — read {{ .DocsPath }}CLAUDE.md and summarize your fullstack scope."
+
+add:
+  next_cli:
+    - "bonsai list  → verify the fullstack agent's abilities"
+  next_workflow:
+    - "Review the fullstack's CLAUDE.md — confirm both-sides conventions loaded"
+  ai_prompts:
+    - label: "Brief the fullstack agent"
+      body: "You are the fullstack agent. Read {{ .DocsPath }}CLAUDE.md. Summarize how you own both API + UI in 3 bullets."
+
+remove:
+  next_cli:
+    - "bonsai list  → confirm remaining agents"
+  next_workflow:
+    - "Migrate in-flight fullstack work to paired backend+frontend agents"
+  ai_prompts:
+    - label: "Audit fallout"
+      body: "Read {{ .DocsPath }}Playbook/Backlog.md and flag any fullstack-tagged tasks. Propose re-routings."
+
+update:
+  next_cli:
+    - "bonsai list  → review fullstack state"
+  next_workflow:
+    - "Re-validate contract docs align with both refreshed API + UI conventions"
+  ai_prompts:
+    - label: "Verify alignment"
+      body: "Read {{ .DocsPath }}CLAUDE.md and verify fullstack abilities still match your stack."

@@ -48,7 +48,16 @@ type YieldStage struct {
 
 	// tech-lead-required-mode inputs.
 	pickedAgentType string
+
+	// Pre-rendered hints block (from tui/hints.Render). Empty string ⇒
+	// renderSuccess falls back to the built-in 3-step NEXT callout so
+	// pre-Plan-31-H callers still render correctly. Plan 31 Phase H.
+	hintBlock string
 }
+
+// SetHintBlock installs the pre-rendered hints.Render output. Replaces
+// the built-in NEXT callout on the success variant. Plan 31 Phase H.
+func (s *YieldStage) SetHintBlock(block string) { s.hintBlock = block }
 
 // NewYieldSuccess renders the happy-path completion card. installed is the
 // InstalledAgent populated by the Grow action; cat is the loaded catalog;
@@ -251,24 +260,34 @@ func (s *YieldStage) renderSuccess() string {
 			)))
 	}
 
-	nextHeader := initflow.RenderSectionHeader("NEXT", initflow.PanelWidth(s.Width()))
-	steps := []struct {
-		num, cmd, caption string
-	}{
-		{"1", "$ bonsai list", "see every agent + ability in one view"},
-		{"2", fmt.Sprintf("$ cd %s", workspace), "open the workspace in your shell"},
-		{"3", "$ claude", "say \"hi, get started\" to warm the session"},
-	}
-	if !s.isNewAgent {
-		steps[1] = struct{ num, cmd, caption string }{"2", "$ claude", "restart the session so the new abilities load"}
-		steps[2] = struct{ num, cmd, caption string }{"3", "$ bonsai catalog", "browse more abilities any time"}
-	}
-	nextLines := []string{nextHeader}
-	for _, st := range steps {
-		nextLines = append(nextLines,
-			"  "+bark.Render(st.num)+"  "+white.Render(st.cmd))
-		nextLines = append(nextLines,
-			"     "+dim.Render(st.caption))
+	// Plan 31 Phase H — the 3-layer hints block replaces the inline
+	// NEXT 3-step callout when SetHintBlock has installed a non-empty
+	// pre-rendered block. Legacy callers that haven't wired hints still
+	// render the compact 3-step fallback below.
+	var nextSection string
+	if s.hintBlock != "" {
+		nextSection = s.hintBlock
+	} else {
+		nextHeader := initflow.RenderSectionHeader("NEXT", initflow.PanelWidth(s.Width()))
+		steps := []struct {
+			num, cmd, caption string
+		}{
+			{"1", "$ bonsai list", "see every agent + ability in one view"},
+			{"2", fmt.Sprintf("$ cd %s", workspace), "open the workspace in your shell"},
+			{"3", "$ claude", "say \"hi, get started\" to warm the session"},
+		}
+		if !s.isNewAgent {
+			steps[1] = struct{ num, cmd, caption string }{"2", "$ claude", "restart the session so the new abilities load"}
+			steps[2] = struct{ num, cmd, caption string }{"3", "$ bonsai catalog", "browse more abilities any time"}
+		}
+		nextLines := []string{nextHeader}
+		for _, st := range steps {
+			nextLines = append(nextLines,
+				"  "+bark.Render(st.num)+"  "+white.Render(st.cmd))
+			nextLines = append(nextLines,
+				"     "+dim.Render(st.caption))
+		}
+		nextSection = strings.Join(nextLines, "\n")
 	}
 
 	body := []string{
@@ -280,7 +299,7 @@ func (s *YieldStage) renderSuccess() string {
 		strings.Join(summaryRows, "\n"),
 		"",
 		"",
-		strings.Join(nextLines, "\n"),
+		nextSection,
 	}
 	return initflow.CenterBlock(strings.Join(body, "\n"), s.Width())
 }

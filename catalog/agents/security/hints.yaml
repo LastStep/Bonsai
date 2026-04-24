@@ -1,0 +1,39 @@
+# Hints shown on yield stages for the security agent — Plan 31 Phase H.
+
+init:
+  next_cli:
+    - "bonsai add backend  → pair with a service agent to audit"
+    - "bonsai catalog      → browse more abilities"
+  next_workflow:
+    - "Scaffold your first threat model under {{ .DocsPath }}"
+    - "Seed security standards + incident-response runbooks"
+  ai_prompts:
+    - label: "Start working"
+      body: "Hi, get started — read {{ .DocsPath }}CLAUDE.md and summarize your security scope."
+
+add:
+  next_cli:
+    - "bonsai list  → verify the security agent's abilities"
+  next_workflow:
+    - "Review the security agent's CLAUDE.md — confirm audit conventions loaded"
+  ai_prompts:
+    - label: "Brief the security agent"
+      body: "You are the security agent. Read {{ .DocsPath }}CLAUDE.md. Summarize your threat-model and audit conventions in 3 bullets."
+
+remove:
+  next_cli:
+    - "bonsai list  → confirm remaining agents"
+  next_workflow:
+    - "Arrange a manual audit cadence before the security agent disappears"
+  ai_prompts:
+    - label: "Audit fallout"
+      body: "Read {{ .DocsPath }}Playbook/Backlog.md and flag any security-tagged tasks. Propose re-routings."
+
+update:
+  next_cli:
+    - "bonsai list  → review security state"
+  next_workflow:
+    - "Re-run your security audits with the refreshed standards"
+  ai_prompts:
+    - label: "Verify alignment"
+      body: "Read {{ .DocsPath }}CLAUDE.md and verify security abilities still match your threat model."

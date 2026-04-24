@@ -33,8 +33,20 @@ type PlantedStage struct {
 	sensorCount   int
 	routineCount  int
 
+	// Hint block — pre-rendered by the caller (typically via
+	// tui/hints.Render in cmd/init_flow.go). Empty string falls back to
+	// the hard-coded 3-step NEXT callout (renderNextSteps). Plan 31
+	// Phase H — keeps initflow free of the tui/hints import (hints
+	// itself imports initflow for styles).
+	hintBlock string
+
 	viewport Viewport
 }
+
+// SetHintBlock installs the pre-rendered hints.Render output. Replaces
+// the built-in NEXT 3-step callout on View(). Empty string ⇒ use the
+// default. Plan 31 Phase H.
+func (s *PlantedStage) SetHintBlock(block string) { s.hintBlock = block }
 
 // PlantedSummary carries the ability counts rendered in the summary
 // panel. Kept as a small record so the constructor stays legible — the
@@ -175,7 +187,10 @@ func (s *PlantedStage) renderBody() string {
 
 	writtenBlock := s.renderWrittenBlock()
 	summaryBlock := s.renderSummaryBlock()
-	nextBlock := s.renderNextSteps()
+	nextBlock := s.hintBlock
+	if nextBlock == "" {
+		nextBlock = s.renderNextSteps()
+	}
 
 	hintText := "↵  exit  ·  q  quit"
 	if up, down := s.viewport.HasMore(); up || down {

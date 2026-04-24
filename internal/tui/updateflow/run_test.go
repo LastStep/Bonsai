@@ -1,4 +1,4 @@
-package cmd
+package updateflow
 
 import (
 	"testing"
@@ -9,11 +9,13 @@ import (
 
 // TestAppendUnique covers the small helper used by applyCustomFileSelection
 // to guard against duplicate entries on repeated `bonsai update` runs.
+// Ported from cmd/update_test.go (pre-Plan 31 Phase F) when the helpers
+// moved into internal/tui/updateflow/run.go.
 func TestAppendUnique(t *testing.T) {
 	t.Run("appends when absent", func(t *testing.T) {
 		got := appendUnique([]string{"a", "b"}, "c")
 		want := []string{"a", "b", "c"}
-		if !equalSlice(got, want) {
+		if !equalStringSlice(got, want) {
 			t.Errorf("appendUnique = %v, want %v", got, want)
 		}
 	})
@@ -21,7 +23,7 @@ func TestAppendUnique(t *testing.T) {
 	t.Run("skips when present", func(t *testing.T) {
 		got := appendUnique([]string{"a", "b", "c"}, "b")
 		want := []string{"a", "b", "c"}
-		if !equalSlice(got, want) {
+		if !equalStringSlice(got, want) {
 			t.Errorf("appendUnique = %v, want %v", got, want)
 		}
 	})
@@ -29,7 +31,7 @@ func TestAppendUnique(t *testing.T) {
 	t.Run("appends to empty slice", func(t *testing.T) {
 		got := appendUnique(nil, "a")
 		want := []string{"a"}
-		if !equalSlice(got, want) {
+		if !equalStringSlice(got, want) {
 			t.Errorf("appendUnique = %v, want %v", got, want)
 		}
 	})
@@ -37,7 +39,8 @@ func TestAppendUnique(t *testing.T) {
 
 // TestApplyCustomFileSelectionDedupes verifies that re-running
 // applyCustomFileSelection with the same selections does not accumulate
-// duplicate entries in the installed agent's ability lists.
+// duplicate entries in the installed agent's ability lists. Ported from
+// cmd/update_test.go (pre-Plan 31 Phase F).
 func TestApplyCustomFileSelectionDedupes(t *testing.T) {
 	installed := &config.InstalledAgent{
 		AgentType: "test-agent",
@@ -68,7 +71,7 @@ func TestApplyCustomFileSelectionDedupes(t *testing.T) {
 	}
 }
 
-func equalSlice(a, b []string) bool {
+func equalStringSlice(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
