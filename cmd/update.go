@@ -137,6 +137,8 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 			errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false))
 			errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false))
 			errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false))
+			// Plan 31 Phase C: refresh .bonsai/catalog.json snapshot.
+			errs = append(errs, generate.WriteCatalogSnapshot(cwd, Version, cat, &wr))
 			return errors.Join(errs...)
 		}),
 

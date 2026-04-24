@@ -472,6 +472,8 @@ func buildAddGrowAction(
 			// because cfg.Agents set is unchanged here — but kept for symmetry
 			// and defence in depth; peers' render is a cheap no-diff write.
 			errs = append(errs, generate.RefreshPeerAwareness(cwd, installedAgent.AgentType, cfg, cat, lock, wr, false))
+			// Plan 31 Phase C: refresh .bonsai/catalog.json snapshot.
+			errs = append(errs, generate.WriteCatalogSnapshot(cwd, Version, cat, wr))
 			if joined := errors.Join(errs...); joined != nil {
 				outcome.SpinnerErr = joined
 				return joined
@@ -530,6 +532,8 @@ func buildAddGrowAction(
 		// Without this, tech-lead's scope-guard has no block for the newly
 		// added backend/ workspace and silently fails open — see plan §Phase A.
 		errs = append(errs, generate.RefreshPeerAwareness(cwd, installed.AgentType, cfg, cat, lock, wr, false))
+		// Plan 31 Phase C: refresh .bonsai/catalog.json snapshot.
+		errs = append(errs, generate.WriteCatalogSnapshot(cwd, Version, cat, wr))
 		if joined := errors.Join(errs...); joined != nil {
 			outcome.SpinnerErr = joined
 			return joined

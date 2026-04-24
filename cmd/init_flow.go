@@ -270,6 +270,9 @@ func buildGenerateAction(
 		errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, wr, false))
 		errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, wr, false))
 		errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, wr, false))
+		// Plan 31 Phase C: write .bonsai/catalog.json — filesystem-discoverable
+		// catalog listing for agent consumption (pi-style convention).
+		errs = append(errs, generate.WriteCatalogSnapshot(cwd, Version, cat, wr))
 		return errors.Join(errs...)
 	}
 }
