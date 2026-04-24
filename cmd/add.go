@@ -466,6 +466,12 @@ func buildAddGrowAction(
 			errs = append(errs, generate.PathScopedRulesForAgent(cwd, installedAgent, cfg, cat, lock, wr, false))
 			errs = append(errs, generate.WorkflowSkillsForAgent(cwd, installedAgent, cfg, cat, lock, wr, false))
 			errs = append(errs, generate.SettingsJSONForAgent(cwd, installedAgent, cfg, cat, lock, wr, false))
+			// Plan 31 Phase A: re-render peers' OtherAgents-dependent files so
+			// already-installed agents' scope-guard / dispatch-guard / identity
+			// reflect the newly-augmented agent. No-op on the add-items branch
+			// because cfg.Agents set is unchanged here — but kept for symmetry
+			// and defence in depth; peers' render is a cheap no-diff write.
+			errs = append(errs, generate.RefreshPeerAwareness(cwd, installedAgent.AgentType, cfg, cat, lock, wr, false))
 			if joined := errors.Join(errs...); joined != nil {
 				outcome.SpinnerErr = joined
 				return joined
@@ -518,6 +524,12 @@ func buildAddGrowAction(
 		errs = append(errs, generate.PathScopedRulesForAgent(cwd, installed, cfg, cat, lock, wr, false))
 		errs = append(errs, generate.WorkflowSkillsForAgent(cwd, installed, cfg, cat, lock, wr, false))
 		errs = append(errs, generate.SettingsJSONForAgent(cwd, installed, cfg, cat, lock, wr, false))
+		// Plan 31 Phase A: re-render peers' OtherAgents-dependent files
+		// (identity.md, scope-guard-files.sh, dispatch-guard.sh) so existing
+		// sibling agents pick up the new agent in their awareness lists.
+		// Without this, tech-lead's scope-guard has no block for the newly
+		// added backend/ workspace and silently fails open — see plan §Phase A.
+		errs = append(errs, generate.RefreshPeerAwareness(cwd, installed.AgentType, cfg, cat, lock, wr, false))
 		if joined := errors.Join(errs...); joined != nil {
 			outcome.SpinnerErr = joined
 			return joined

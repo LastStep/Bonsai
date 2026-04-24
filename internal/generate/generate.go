@@ -1494,3 +1494,152 @@ func AgentWorkspace(projectRoot string, agentDef *catalog.AgentDef, installed *c
 	// 8. Workspace CLAUDE.md
 	return WorkspaceClaudeMD(projectRoot, workspaceRoot, agentDef, installed, cfg, cat, lock, result, force)
 }
+
+// buildAgentTemplateContext constructs the TemplateContext used to render
+// OtherAgents-dependent files (identity.md, scope-guard-files.sh,
+// dispatch-guard.sh). Extracted from AgentWorkspace so RefreshPeerAwareness
+// can reuse the exact same build path — the only per-agent variation is the
+// installed ability lists, which the caller passes via agentDef + installed.
+//
+// Deterministic OtherAgents ordering is enforced identically to AgentWorkspace
+// so a render from this path produces bit-identical bytes to the full pipeline
+// for the same (agentDef, installed, cfg) tuple.
+func buildAgentTemplateContext(agentDef *catalog.AgentDef, installed *config.InstalledAgent, cfg *config.ProjectConfig) *TemplateContext {
+	ctx := &TemplateContext{
+		ProjectName:        cfg.ProjectName,
+		ProjectDescription: cfg.Description,
+		AgentName:          agentDef.Name,
+		AgentDisplayName:   agentDef.DisplayName,
+		AgentDescription:   agentDef.Description,
+		Workspace:          installed.Workspace,
+		DocsPath:           cfg.DocsPath,
+		Protocols:          installed.Protocols,
+		Skills:             installed.Skills,
+		Workflows:          installed.Workflows,
+		Routines:           installed.Routines,
+	}
+	for name, a := range cfg.Agents {
+		if name != agentDef.Name {
+			ctx.OtherAgents = append(ctx.OtherAgents, OtherAgent{
+				AgentType: a.AgentType,
+				Workspace: a.Workspace,
+			})
+		}
+	}
+	sort.Slice(ctx.OtherAgents, func(i, j int) bool {
+		return ctx.OtherAgents[i].AgentType < ctx.OtherAgents[j].AgentType
+	})
+	return ctx
+}
+
+// hasAbility reports whether name appears in the haystack. Small helper used
+// by RefreshPeerAwareness to gate per-sensor refreshes on the agent actually
+// having the sensor installed.
+func hasAbility(haystack []string, name string) bool {
+	for _, h := range haystack {
+		if h == name {
+			return true
+		}
+	}
+	return false
+}
+
+// RefreshPeerAwareness re-renders the three OtherAgents-dependent files
+// (identity.md, scope-guard-files.sh, dispatch-guard.sh) for every installed
+// agent EXCEPT the one specified. Called after `bonsai add` so already-
+// installed peers pick up the newly-added agent in their awareness blocks
+// (identity table rows, scope-guard per-peer block entries, dispatch-guard
+// workspace→agent map).
+//
+// Lock-aware via the shared writeFile path — user-edited copies trigger the
+// standard conflict resolver. Agents without scope-guard-files or
+// dispatch-guard installed skip those files silently; identity.md always
+// re-renders because every agent has one (shared catalog/core/ layered with
+// agents/<type>/core/identity.md.tmpl overrides per AgentWorkspace).
+//
+// Per peer, a fresh TemplateContext is built via buildAgentTemplateContext —
+// no context leaks across peers. See Plan 31 Phase A for motivation; without
+// this call sibling peers' OtherAgents lists go stale after `bonsai add` and
+// scope-guard silently fails open on the newly-added workspace.
+func RefreshPeerAwareness(projectRoot string, excludeAgent string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
+	if cfg == nil || cat == nil {
+		return nil
+	}
+	catFS := cat.FS()
+
+	// Deterministic iteration order so test assertions and write-result diffs
+	// do not depend on Go map iteration ordering.
+	peerNames := make([]string, 0, len(cfg.Agents))
+	for name := range cfg.Agents {
+		if name == excludeAgent {
+			continue
+		}
+		peerNames = append(peerNames, name)
+	}
+	sort.Strings(peerNames)
+
+	for _, name := range peerNames {
+		peer := cfg.Agents[name]
+		if peer == nil {
+			continue
+		}
+		agentDef := cat.GetAgent(peer.AgentType)
+		if agentDef == nil {
+			continue
+		}
+
+		ctx := buildAgentTemplateContext(agentDef, peer, cfg)
+		workspaceRoot := filepath.Join(projectRoot, peer.Workspace)
+
+		// 1. identity.md — always re-render. Resolve override (agent-specific
+		//    vs shared core) identically to AgentWorkspace so we don't
+		//    accidentally write a stale shared copy when the agent ships its
+		//    own identity template.
+		identitySrc := ""
+		agentIdentity := agentDef.CoreDir + "/identity.md.tmpl"
+		sharedIdentity := catalog.SharedCoreDir + "/identity.md.tmpl"
+		if _, err := fs.Stat(catFS, agentIdentity); err == nil {
+			identitySrc = agentIdentity
+		} else if _, err := fs.Stat(catFS, sharedIdentity); err == nil {
+			identitySrc = sharedIdentity
+		}
+		if identitySrc != "" {
+			content, err := renderContent(catFS, identitySrc, ctx)
+			if err != nil {
+				return fmt.Errorf("refresh identity for %s: %w", name, err)
+			}
+			relPath, _ := filepath.Rel(projectRoot, filepath.Join(workspaceRoot, "agent", "Core", "identity.md"))
+			r := writeFile(projectRoot, relPath, content, "catalog:core/identity.md", lock, force)
+			result.Add(r)
+		}
+
+		// 2. scope-guard-files.sh — only if the peer has it installed.
+		if hasAbility(peer.Sensors, "scope-guard-files") {
+			if sensor := cat.GetSensor("scope-guard-files"); sensor != nil {
+				content, err := renderContent(catFS, sensor.ContentPath, ctx)
+				if err != nil {
+					return fmt.Errorf("refresh scope-guard-files for %s: %w", name, err)
+				}
+				destName := strings.TrimSuffix(filepath.Base(sensor.ContentPath), ".tmpl")
+				relPath, _ := filepath.Rel(projectRoot, filepath.Join(workspaceRoot, "agent", "Sensors", destName))
+				r := writeFileChmod(projectRoot, relPath, content, "catalog:sensors/scope-guard-files", lock, force, 0755)
+				result.Add(r)
+			}
+		}
+
+		// 3. dispatch-guard.sh — only if the peer has it installed.
+		if hasAbility(peer.Sensors, "dispatch-guard") {
+			if sensor := cat.GetSensor("dispatch-guard"); sensor != nil {
+				content, err := renderContent(catFS, sensor.ContentPath, ctx)
+				if err != nil {
+					return fmt.Errorf("refresh dispatch-guard for %s: %w", name, err)
+				}
+				destName := strings.TrimSuffix(filepath.Base(sensor.ContentPath), ".tmpl")
+				relPath, _ := filepath.Rel(projectRoot, filepath.Join(workspaceRoot, "agent", "Sensors", destName))
+				r := writeFileChmod(projectRoot, relPath, content, "catalog:sensors/dispatch-guard", lock, force, 0755)
+				result.Add(r)
+			}
+		}
+	}
+	return nil
+}
