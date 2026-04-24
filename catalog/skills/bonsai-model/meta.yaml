@@ -1,0 +1,5 @@
+name: bonsai-model
+display_name: Bonsai Mental Model
+description: How Bonsai structures an agent workspace — catalog, abilities, scaffolding, and customization decisions. Load when reasoning about adding/removing abilities, creating custom items, or explaining Bonsai concepts to the user.
+agents:
+  - tech-lead

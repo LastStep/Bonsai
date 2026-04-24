@@ -14,6 +14,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
+| Plan 31 — v0.3 release readiness bundle. 2 PRs: PR1 correctness + agent-readable foundation (peer-awareness silent refresh, bonsai-model skill, .bonsai/catalog.json snapshot, CLAUDE.md pointer lines). PR2 UX polish + CI mode (remove cinematic, update cinematic, catalog --json + NO_COLOR, hints 3-layer). Tech-lead + general-purpose ×3 + code-review ×2 + security-review. Target ship: v0.3.0. | 31 | tech-lead + general-purpose | 2026-04-24 |
 <!-- Plan 30 complete 2026-04-23 — PR #74 squash `7733ae2`, see Recently Done -->
 <!-- Plan 29 complete 2026-04-23 — PR #72 squash `9eb2bff`, see Recently Done -->
 <!-- Plan 28 complete 2026-04-23 — Phase 2 PR #71 squash `9ce25a4` + Phase 3 PR #70 squash `ee55237`, see Recently Done -->
