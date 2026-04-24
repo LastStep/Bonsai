@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
+	"github.com/LastStep/Bonsai/internal/generate"
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/catalogflow"
 )
@@ -16,6 +17,7 @@ import (
 func init() {
 	rootCmd.AddCommand(catalogCmd)
 	catalogCmd.Flags().StringP("agent", "a", "", "Filter to items compatible with this agent type")
+	catalogCmd.Flags().Bool("json", false, "Output catalog as JSON (agent-consumable, non-interactive)")
 }
 
 var catalogCmd = &cobra.Command{
@@ -28,9 +30,19 @@ var catalogCmd = &cobra.Command{
 // the cinematic BubbleTea browser (catalogflow.BrowserStage);
 // non-TTY invocations (pipes, CI, `> out.txt`) fall back to the
 // static-render path so piped output stays clean and ANSI-free.
+//
+// Plan 31 Phase G: the --json flag short-circuits both paths and emits a
+// stable JSON catalog snapshot to stdout, reusing generate.SerializeCatalog
+// (single source of truth with WriteCatalogSnapshot, Plan 31 Phase C).
+// --json honours the -a <agent> filter the same way the TTY + static paths
+// do — abilities with agents: that don't match the filter are excluded.
 func runCatalog(cmd *cobra.Command, args []string) error {
 	cat := loadCatalog()
 	agentFilter, _ := cmd.Flags().GetString("agent")
+
+	if jsonOut, _ := cmd.Flags().GetBool("json"); jsonOut {
+		return renderCatalogJSON(cat, agentFilter)
+	}
 
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		return renderCatalogStatic(cat, agentFilter)
@@ -45,6 +57,45 @@ func runCatalog(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("catalog browser: %w", err)
 	}
 	return nil
+}
+
+// renderCatalogJSON serializes the catalog to stdout as JSON. Respects the
+// -a agent filter: when set, abilities not compatible with that agent are
+// excluded. Plan 31 Phase G — agent-consumable output for CI / scripts /
+// downstream tooling. Scaffolding is intentionally excluded from the JSON
+// shape (it's project-config data, not catalog data — the stable contract
+// lives in generate.CatalogSnapshot).
+//
+// Single source of truth with WriteCatalogSnapshot (Plan 31 Phase C).
+func renderCatalogJSON(cat *catalog.Catalog, agentFilter string) error {
+	filtered := filterCatalog(cat, agentFilter)
+	data, err := generate.SerializeCatalog(filtered, Version)
+	if err != nil {
+		return fmt.Errorf("serialize catalog: %w", err)
+	}
+	fmt.Println(string(data))
+	return nil
+}
+
+// filterCatalog returns a catalog view with abilities reduced to those
+// compatible with agentFilter. When agentFilter is "" the original catalog
+// is returned verbatim. The returned Catalog is a shallow-copied value —
+// lookup maps (skillsByName, etc.) are NOT rebuilt because the JSON
+// serializer only iterates the slices.
+func filterCatalog(cat *catalog.Catalog, agentFilter string) *catalog.Catalog {
+	if agentFilter == "" || cat == nil {
+		return cat
+	}
+	out := &catalog.Catalog{
+		Agents:      cat.Agents,
+		Skills:      cat.SkillsFor(agentFilter),
+		Workflows:   cat.WorkflowsFor(agentFilter),
+		Protocols:   cat.ProtocolsFor(agentFilter),
+		Sensors:     cat.SensorsFor(agentFilter),
+		Routines:    cat.RoutinesFor(agentFilter),
+		Scaffolding: cat.Scaffolding,
+	}
+	return out
 }
 
 // renderCatalogStatic renders the seven catalog sections as a flat,

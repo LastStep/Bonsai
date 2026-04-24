@@ -26,9 +26,30 @@ func termWidth() int {
 // ─── Color Profile ────────────────────────────────────────────────────────
 
 func init() {
-	if !isatty.IsTerminal(os.Stdout.Fd()) || termenv.EnvNoColor() {
+	if shouldDisableColor(os.Stdout.Fd()) {
 		DisableColor()
 	}
+}
+
+// shouldDisableColor reports whether the process should downgrade to the
+// Ascii color profile. Returns true when stdout is not a TTY (piped output),
+// when NO_COLOR is set per the https://no-color.org/ standard, or when
+// TERM=dumb (conventionally signalling a terminal that can't render ANSI).
+//
+// Factored out of init() so the same decision logic is testable under
+// t.Setenv() without racing on package load. Plan 31 Phase G — lock the
+// NO_COLOR / TERM=dumb contract with a dedicated regression test.
+func shouldDisableColor(fd uintptr) bool {
+	if !isatty.IsTerminal(fd) {
+		return true
+	}
+	if termenv.EnvNoColor() {
+		return true
+	}
+	if os.Getenv("TERM") == "dumb" {
+		return true
+	}
+	return false
 }
 
 // DisableColor forces all output to plain text (no ANSI escapes).
