@@ -9,28 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - 2026-04-24
 
+> **The "your AI agent can work with Bonsai itself" release.** Every new workspace now carries an agent-readable mental model of Bonsai, a filesystem-discoverable catalog snapshot, and copy-paste prompts to get your agent started. Plus a scope-guard correctness fix and cinematic polish on the last two commands that needed it.
+
 ### Added
-- `bonsai-model` skill — pi.dev-style mental model doc installed by default on tech-lead. Covers catalog shape, customization model, decision heuristics. Agent-readable on-demand; non-tech-lead agents reference it via relative path. Part of the "make Bonsai agent-consumable" track.
-- `.bonsai/catalog.json` on-disk snapshot — filesystem-discoverable catalog listing written at project root on every `init`/`add`/`update`. Agent can read it directly without invoking the CLI. Stable JSON schema via `generate.SerializeCatalog`.
-- `bonsai catalog --json` flag — machine-readable catalog output to stdout, respects `-a <agent>` filter. Shares the same `SerializeCatalog` source of truth as the on-disk snapshot.
-- "Bonsai Reference" block in generated workspace `CLAUDE.md` — pointer table to `bonsai-model.md`, `.bonsai/catalog.json`, and `.bonsai.yaml`. Path computed via `filepath.Rel` from workspace root (tech-lead self-reference, peers via `../station/...`).
-- Cinematic `bonsai remove` flow — new `internal/tui/removeflow/` package with 4-stage rail (択 SELECT → 観 OBSERVE → 確 CONFIRM → 結 YIELD) + chromeless CONFLICT splicing. Confirm stage defaults focus to BACK (destructive opt-in). Covers both agent-removal and per-category item-removal paths.
-- Cinematic `bonsai update` flow — new `internal/tui/updateflow/` package with 5-stage rail (探 DISCOVER → 択 SELECT → 同 SYNC → 衝 CONFLICT → 結 YIELD). Invalid custom-file warnings moved from pre-harness stdout into the DISCOVER stage panel. Non-TTY `RunStatic` fallback auto-accepts discoveries and returns non-zero exit on unresolved conflicts.
-- Hints 3-layer overhaul — new `internal/tui/hints/` renderer + `catalog/agents/*/hints.yaml` content files for all 6 agent types. Yield stages now show NEXT STEPS (mechanical CLI), TRY THIS (workflow prompts), and ASK YOUR AGENT (bordered copy-paste AI-prompt boxes) per init/add/remove/update. Template substitution via `{{ .DocsPath }}`, `{{ .AgentName }}`, `{{ .ProjectName }}`.
-- Explicit `NO_COLOR` + `TERM=dumb` honoring in `internal/tui/styles.go` — `shouldDisableColor(fd)` helper with test coverage locking the no-ANSI-escape contract.
+
+- **Your agent can now reason about Bonsai directly.** Every new workspace ships a `bonsai-model` skill at `agent/Skills/bonsai-model.md` — a concise mental model covering how the catalog is shaped, when to add vs customize, and how the commands fit together. Point your agent at it and it can propose changes without you hand-feeding docs.
+- **Machine-readable catalog.** `bonsai init`, `add`, and `update` now write `.bonsai/catalog.json` at your project root — a filesystem-discoverable listing of every agent type, skill, workflow, protocol, sensor, and routine the installed binary ships. Same data available on demand via `bonsai catalog --json` for CI or scripted consumption (respects `-a <agent>` filter).
+- **"Bonsai Reference" in every generated CLAUDE.md.** A pointer table near the top of each workspace CLAUDE.md tells your agent where to find the model doc, the catalog snapshot, and the installed-state file. Pi.dev-inspired progressive-disclosure pattern: zero tokens spent until the agent actually needs to know.
+- **Post-command hints you'll actually use.** `init`, `add`, `remove`, and `update` yield screens now show three labeled sections:
+  1. **Next steps** — the mechanical CLI commands to run next
+  2. **Try this** — workflow suggestions inside your new workspace
+  3. **Ask your agent** — bordered copy-paste prompt boxes you can hand straight to Claude / your editor / wherever
+  Hints are agent-type aware — a backend agent gets backend-shaped prompts, a devops agent gets devops-shaped ones.
+- **Cinematic `bonsai remove` and `bonsai update`** — the last two commands without a dedicated flow package got the same treatment as `init` / `add` / `list` / `catalog` / `guide`. Stage rails, chromeless prompts for destructive actions, per-file conflict resolver, responsive resize, ASCII fallback.
+- **`NO_COLOR` and `TERM=dumb` honored explicitly.** Scripts piping Bonsai output and color-averse terminals now get clean text with zero ANSI escapes. Covered by regression tests so it stays that way.
 
 ### Changed
-- `bonsai add` now refreshes peer awareness after install — every already-installed agent's `identity.md`, `scope-guard-files.sh`, and `dispatch-guard.sh` is re-rendered with the new agent in their `{{ range .OtherAgents }}` list. Lock-aware via existing `writeFile` pathway so user-edited copies still trigger the conflict resolver.
-- `AgentWorkspace` now builds its template context via the shared `buildAgentTemplateContext` helper (same path as `RefreshPeerAwareness`) — prevents divergence if `identity.md.tmpl` ever references `Workspace`/`DocsPath`/`Skills`/etc.
-- `cmd/update.go` shrunk from 313L to ~85L — all TUI logic delegated to `internal/tui/updateflow/`. Business-logic helpers (`buildCustomFileOptions`, `applyCustomFileSelection`, `appendUnique`) preserved.
-- `cmd/remove.go` rewired to delegate both `runRemove` (agent) and `runRemoveItem` (per-category) to `removeflow.Run(...)`. Cobra wiring, flag parsing, and business-logic helpers preserved.
+
+- **`bonsai add` keeps every agent's awareness up to date automatically.** After you add a new agent, Bonsai now refreshes the peer-awareness files on every already-installed agent — you no longer need to run `bonsai update` after each `add` to keep scope-guards honest. Lock-aware, so any hand-edits you've made to those files still trigger the conflict resolver.
+- **`bonsai update` non-TTY path returns a proper exit code.** When run in a script and conflicts can't be auto-resolved, `bonsai update` now exits non-zero so your CI actually notices. Previously it printed a warning and silently returned success.
+- **Cleaner internals in `cmd/update.go`** (313 lines → ~85). All TUI logic delegated to the new flow package; business logic preserved.
 
 ### Fixed
-- Cross-agent `OtherAgents` template staleness on `bonsai add` — tech-lead's `scope-guard-files.sh` previously did NOT get `# Block writes to <new-agent>/` entries when a new agent was added; same for `dispatch-guard.sh`'s workspace→agent map. Silent correctness bug: scope-guards failed open, dispatch validation silently skipped. Now re-renders peer awareness automatically.
-- `cmd/update.go` non-TTY path now returns non-zero exit code when `RunStatic` encounters unresolved conflicts or sync errors. Previously printed a warning and returned `nil` — invisible to CI.
+
+- **Silent cross-agent scope-guard bypass.** Before 0.3, running `bonsai add backend` in a project that already had a tech-lead did *not* update tech-lead's `scope-guard-files.sh` with a block-rule for the new `backend/` workspace. Net effect: dispatching tech-lead to edit a backend file quietly worked when scope-guard was supposed to exit 2 and block it. Same class of silent staleness on `dispatch-guard.sh`'s workspace→agent map. Now refreshed automatically on every `add`.
 
 ### Security
-- Peer awareness files now always reflect installed-agent state, closing a class of silent scope-guard bypasses where tech-lead could edit other agents' workspaces without the guard firing.
+
+- **Peer-awareness state is now always correct after `add`.** Closes the class of silent scope-guard bypasses described in Fixed. No more "tech-lead can edit any agent's files" once a project grows past one agent.
 
 ## [0.2.0] - 2026-04-22
 
