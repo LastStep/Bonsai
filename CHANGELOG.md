@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-24
+
+### Added
+- `bonsai-model` skill — pi.dev-style mental model doc installed by default on tech-lead. Covers catalog shape, customization model, decision heuristics. Agent-readable on-demand; non-tech-lead agents reference it via relative path. Part of the "make Bonsai agent-consumable" track.
+- `.bonsai/catalog.json` on-disk snapshot — filesystem-discoverable catalog listing written at project root on every `init`/`add`/`update`. Agent can read it directly without invoking the CLI. Stable JSON schema via `generate.SerializeCatalog`.
+- `bonsai catalog --json` flag — machine-readable catalog output to stdout, respects `-a <agent>` filter. Shares the same `SerializeCatalog` source of truth as the on-disk snapshot.
+- "Bonsai Reference" block in generated workspace `CLAUDE.md` — pointer table to `bonsai-model.md`, `.bonsai/catalog.json`, and `.bonsai.yaml`. Path computed via `filepath.Rel` from workspace root (tech-lead self-reference, peers via `../station/...`).
+- Cinematic `bonsai remove` flow — new `internal/tui/removeflow/` package with 4-stage rail (択 SELECT → 観 OBSERVE → 確 CONFIRM → 結 YIELD) + chromeless CONFLICT splicing. Confirm stage defaults focus to BACK (destructive opt-in). Covers both agent-removal and per-category item-removal paths.
+- Cinematic `bonsai update` flow — new `internal/tui/updateflow/` package with 5-stage rail (探 DISCOVER → 択 SELECT → 同 SYNC → 衝 CONFLICT → 結 YIELD). Invalid custom-file warnings moved from pre-harness stdout into the DISCOVER stage panel. Non-TTY `RunStatic` fallback auto-accepts discoveries and returns non-zero exit on unresolved conflicts.
+- Hints 3-layer overhaul — new `internal/tui/hints/` renderer + `catalog/agents/*/hints.yaml` content files for all 6 agent types. Yield stages now show NEXT STEPS (mechanical CLI), TRY THIS (workflow prompts), and ASK YOUR AGENT (bordered copy-paste AI-prompt boxes) per init/add/remove/update. Template substitution via `{{ .DocsPath }}`, `{{ .AgentName }}`, `{{ .ProjectName }}`.
+- Explicit `NO_COLOR` + `TERM=dumb` honoring in `internal/tui/styles.go` — `shouldDisableColor(fd)` helper with test coverage locking the no-ANSI-escape contract.
+
+### Changed
+- `bonsai add` now refreshes peer awareness after install — every already-installed agent's `identity.md`, `scope-guard-files.sh`, and `dispatch-guard.sh` is re-rendered with the new agent in their `{{ range .OtherAgents }}` list. Lock-aware via existing `writeFile` pathway so user-edited copies still trigger the conflict resolver.
+- `AgentWorkspace` now builds its template context via the shared `buildAgentTemplateContext` helper (same path as `RefreshPeerAwareness`) — prevents divergence if `identity.md.tmpl` ever references `Workspace`/`DocsPath`/`Skills`/etc.
+- `cmd/update.go` shrunk from 313L to ~85L — all TUI logic delegated to `internal/tui/updateflow/`. Business-logic helpers (`buildCustomFileOptions`, `applyCustomFileSelection`, `appendUnique`) preserved.
+- `cmd/remove.go` rewired to delegate both `runRemove` (agent) and `runRemoveItem` (per-category) to `removeflow.Run(...)`. Cobra wiring, flag parsing, and business-logic helpers preserved.
+
+### Fixed
+- Cross-agent `OtherAgents` template staleness on `bonsai add` — tech-lead's `scope-guard-files.sh` previously did NOT get `# Block writes to <new-agent>/` entries when a new agent was added; same for `dispatch-guard.sh`'s workspace→agent map. Silent correctness bug: scope-guards failed open, dispatch validation silently skipped. Now re-renders peer awareness automatically.
+- `cmd/update.go` non-TTY path now returns non-zero exit code when `RunStatic` encounters unresolved conflicts or sync errors. Previously printed a warning and returned `nil` — invisible to CI.
+
+### Security
+- Peer awareness files now always reflect installed-agent state, closing a class of silent scope-guard bypasses where tech-lead could edit other agents' workspaces without the guard firing.
+
 ## [0.2.0] - 2026-04-22
 
 ### Added
