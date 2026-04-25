@@ -60,6 +60,10 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 ## P2 — Medium
 
+### Group A: Bookkeeping
+
+- **[bookkeeping] Retroactively trim Backlog entries to NoteStandards** — current entries embed file:line references, multi-paragraph rationales, and inline code blocks that belong in the linked source artifacts. New rule at [Standards/NoteStandards.md](Standards/NoteStandards.md) caps each entry at 3 lines + link out. Sweep all P0–P3 bullets, replace verbose prose with `[tag] Title — one-liner. *(source: link)*` shape. Same for `StatusArchive.md` Recently Done table. *(added 2026-04-25, source: Plan 32 wrap-up — Status row hit ~3KB single-row before NoteStandards rule)*
+
 ### Group B: Code Quality & Testing
 
 > Logical ordering: split the big file first (makes testing easier), then add tests, then fix error handling. The remaining P1 bug (spinner error swallowing) can be fixed independently at any time. (triggerSection frontmatter bug fixed in Plan 17 / PR #24.)
