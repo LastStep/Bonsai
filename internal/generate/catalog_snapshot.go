@@ -206,7 +206,7 @@ func WriteCatalogSnapshot(projectRoot string, version string, cat *catalog.Catal
 		return fmt.Errorf("write catalog.json: %w", err)
 	}
 	if _, err := f.Write(data); err != nil {
-		f.Close()
+		_ = f.Close()
 		return fmt.Errorf("write catalog.json: %w", err)
 	}
 	if err := f.Close(); err != nil {

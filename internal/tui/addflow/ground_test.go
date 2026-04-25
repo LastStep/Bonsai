@@ -130,7 +130,6 @@ func TestGround_ResultNormalises(t *testing.T) {
 	}
 }
 
-
 // TestGround_ResetPreservesValue verifies Reset clears done but not the
 // entered value.
 func TestGround_ResetPreservesValue(t *testing.T) {
