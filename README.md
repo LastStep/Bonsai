@@ -85,6 +85,36 @@ sudo mv bonsai /usr/local/bin/
 go install github.com/LastStep/Bonsai/cmd/bonsai@latest
 ```
 
+### Shell completion
+
+Generate completion scripts with `bonsai completion [bash|zsh|fish|powershell]`.
+
+**Bash:**
+
+```bash
+# current session
+source <(bonsai completion bash)
+# persist (Linux)
+bonsai completion bash > /etc/bash_completion.d/bonsai
+# persist (macOS, Homebrew bash-completion)
+bonsai completion bash > $(brew --prefix)/etc/bash_completion.d/bonsai
+```
+
+**Zsh:**
+
+```bash
+# current session
+source <(bonsai completion zsh)
+# persist (with `autoload -U compinit && compinit` in ~/.zshrc)
+bonsai completion zsh > "${fpath[1]}/_bonsai"
+```
+
+**Fish:**
+
+```bash
+bonsai completion fish > ~/.config/fish/completions/bonsai.fish
+```
+
 ---
 
 ## Quick Start
