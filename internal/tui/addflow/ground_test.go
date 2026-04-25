@@ -130,22 +130,6 @@ func TestGround_ResultNormalises(t *testing.T) {
 	}
 }
 
-// TestNormaliseWorkspace covers the standalone helper.
-func TestNormaliseWorkspace(t *testing.T) {
-	cases := map[string]string{
-		"backend":    "backend/",
-		"backend/":   "backend/",
-		"./backend":  "backend/",
-		"  api  ":    "api/",
-		"":           "",
-		"nested/dir": "nested/dir/",
-	}
-	for in, want := range cases {
-		if got := NormaliseWorkspace(in); got != want {
-			t.Errorf("NormaliseWorkspace(%q) = %q, want %q", in, got, want)
-		}
-	}
-}
 
 // TestGround_ResetPreservesValue verifies Reset clears done but not the
 // entered value.
@@ -175,8 +159,8 @@ func TestGround_RejectsAbsolutePath(t *testing.T) {
 	if s.Done() {
 		t.Fatal("absolute path should not advance")
 	}
-	if !strings.Contains(s.validateErr, "project-relative") {
-		t.Fatalf("validateErr = %q, want 'project-relative'", s.validateErr)
+	if !strings.Contains(s.validateErr, "absolute paths not allowed") {
+		t.Fatalf("validateErr = %q, want 'absolute paths not allowed'", s.validateErr)
 	}
 }
 

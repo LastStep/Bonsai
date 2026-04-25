@@ -18,6 +18,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/tui/harness"
 	"github.com/LastStep/Bonsai/internal/tui/hints"
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
+	"github.com/LastStep/Bonsai/internal/wsvalidate"
 )
 
 func init() {
@@ -503,7 +504,7 @@ func buildAddGrowAction(
 		// lead overrides — its Ground stage auto-completed with DocsPath.
 		workspace, _ := prev[1].(string)
 		if workspace == "" {
-			workspace = addflow.NormaliseWorkspace(agentType + "/")
+			workspace = wsvalidate.Normalise(agentType + "/")
 		}
 		if agentType == "tech-lead" {
 			workspace = cfg.DocsPath

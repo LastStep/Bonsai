@@ -1,7 +1,6 @@
 package initflow
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -9,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/LastStep/Bonsai/internal/tui"
+	"github.com/LastStep/Bonsai/internal/wsvalidate"
 )
 
 // VesselStage collects the three project-identity fields (NAME, DESCRIPTION,
@@ -107,7 +107,8 @@ func (s *VesselStage) focusAt(idx int) tea.Cmd {
 // value. Used on ↵ to gate stage advancement. Rule: STATION rejects empty
 // or "/" — Vessel enforces inline so the user corrects without leaving the
 // stage. Empty STATION is treated as "use the default station/" rather than
-// an error.
+// an error. The shared wsvalidate.InvalidReason is the single source of
+// truth for IsAbs / backslash / parent-escape / pure-root rules.
 func (s *VesselStage) validate() bool {
 	if strings.TrimSpace(s.inputs[vesselIdxName].Value()) == "" {
 		return false
@@ -116,25 +117,8 @@ func (s *VesselStage) validate() bool {
 	if station == "" {
 		return true
 	}
-	if station == "/" {
-		return false
-	}
-	// After normalising to trailing slash, reject absolute + path-escape.
-	// Project-relative only — defence against accidental writes outside
-	// the project root when the user types "../..." or a rooted path.
-	norm := station
-	if !strings.HasSuffix(norm, "/") {
-		norm += "/"
-	}
-	if filepath.IsAbs(norm) {
-		return false
-	}
-	for _, seg := range strings.Split(strings.TrimRight(norm, "/"), "/") {
-		if seg == ".." {
-			return false
-		}
-	}
-	return true
+	norm := wsvalidate.Normalise(station)
+	return wsvalidate.InvalidReason(norm) == ""
 }
 
 // Update handles key input for focus cycling + Enter-to-advance.
