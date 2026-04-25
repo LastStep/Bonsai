@@ -26,8 +26,9 @@ func Normalise(v string) string {
 }
 
 // InvalidReason returns a user-facing error string when the normalised
-// workspace escapes the project root or is absolute. Returns "" when the
-// workspace is a safe project-relative path. Called after Normalise has
+// workspace escapes the project root, is absolute, contains a backslash,
+// or reduces to the project root itself. Returns "" when the workspace
+// is a safe project-relative subdirectory. Called after Normalise has
 // cleaned the input.
 //
 // Project-relative only. Defence against accidental writes outside the
@@ -40,6 +41,12 @@ func InvalidReason(ws string) string {
 	if filepath.IsAbs(ws) {
 		return "absolute paths not allowed (no leading / or drive letter)"
 	}
+	// Reject backslash explicitly — POSIX treats `\` as a legal literal in
+	// file names, so "foo\bar" sneaks past IsAbs but is almost certainly a
+	// user error (Windows-style separator) we don't want to silently accept.
+	if strings.ContainsRune(ws, '\\') {
+		return "backslash not allowed (use forward slash)"
+	}
 	// After filepath.Clean, any remaining ".." component means the path
 	// escapes the project root. Split on "/" (Normalise always emits
 	// forward slashes) and check each segment.
@@ -47,6 +54,12 @@ func InvalidReason(ws string) string {
 		if seg == ".." {
 			return "workspace must not escape project root (no ..)"
 		}
+	}
+	// Reject pure root — input that Cleans to "." (e.g. "", ".", "foo/..")
+	// would install at the project root, which is almost never intended.
+	// After Normalise the value is "./", so the trimmed form is ".".
+	if strings.TrimRight(ws, "/") == "." {
+		return "workspace cannot be project root"
 	}
 	return ""
 }
