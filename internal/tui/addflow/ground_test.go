@@ -191,3 +191,18 @@ func TestGround_RejectsHiddenParentEscape(t *testing.T) {
 		t.Fatalf("validateErr = %q, want 'escape'", s.validateErr)
 	}
 }
+
+// TestGround_AcceptsNestedRelative is the positive companion to the
+// rejects-* tests above. Verifies clean relative inputs (including ones
+// that Clean reduces to a safe nested path) advance the stage.
+func TestGround_AcceptsNestedRelative(t *testing.T) {
+	cases := []string{"./foo", "foo/../bar"}
+	for _, in := range cases {
+		s := newTestGround("backend", nil)
+		groundType(s, in)
+		groundPressKey(s, tea.KeyEnter)
+		if !s.Done() {
+			t.Errorf("input %q should advance — validateErr=%q", in, s.validateErr)
+		}
+	}
+}
