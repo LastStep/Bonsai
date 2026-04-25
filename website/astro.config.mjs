@@ -25,7 +25,7 @@ export default defineConfig({
       plugins: [
         starlightLlmsTxt({
           projectName: 'Bonsai',
-          description: `Bonsai is a CLI tool for scaffolding Claude Code agent workspaces. It generates structured instruction files — identity, memory, protocols, skills, workflows, sensors, and routines — so AI agents work like teammates, not tools.`,
+          description: `Bonsai is a CLI tool that generates Claude Code agent workspaces. It writes a workspace under station/ plus per-agent workspaces, wires Claude Code hooks (SessionStart, PreToolUse, Stop) to enforce scope and inject context, and tracks generated files with content hashes so user edits are never silently overwritten.`,
           details: `- Install: \`go install github.com/LastStep/Bonsai@latest\` or \`brew install LastStep/tap/bonsai\`
 - 6 agent types: tech-lead, backend, frontend, fullstack, devops, security
 - Abilities are modular: skills (reference), workflows (multi-step), protocols (rules), sensors (hooks), routines (periodic)`,

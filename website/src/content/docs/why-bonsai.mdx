@@ -1,19 +1,19 @@
 ---
 title: Why Bonsai
-description: The problem Bonsai solves and how it structures agent instructions as a layered system.
+description: What problem Bonsai solves and what it gives your coding agent that a single CLAUDE.md doesn't.
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## The Problem
+## The problem
 
-Claude Code is powerful out of the box. But the moment you need agents to **coordinate**, **stay consistent across sessions**, or **follow your team's standards** — you're writing walls of markdown by hand. Every project rediscovers the same patterns: identity files, memory protocols, security rules, scope boundaries, review checklists.
+Claude Code out of the box gets you a smart assistant. The moment you want it to (a) pick up where it left off last week, (b) stay inside scope across sessions, or (c) follow your team's standards without re-briefing every time — a single `CLAUDE.md` hits its ceiling. You end up writing walls of markdown by hand and rediscovering the same patterns in every project: identity files, memory protocols, security rules, scope boundaries, review checklists.
 
-And if you want multiple agents working in the same codebase? You're maintaining parallel instruction sets that drift apart.
+And once multiple agents are working in the same codebase, the parallel instruction sets drift apart — backend's plan template doesn't match frontend's, security's review checklist doesn't match the Tech Lead's, and there's no shared source of truth for what "done" looks like.
 
-## What Bonsai Does
+## What Bonsai gives you
 
-Bonsai gives your coding agent a **workspace** — not a pile of markdown files, but a layered system with clear semantics:
+Bonsai generates a workspace under `station/` plus per-agent workspaces, plus the Claude Code hook wiring that enforces them.
 
 ```
   Layer 6 │ Sensors       │ Automated enforcement via Claude Code hooks
@@ -24,20 +24,18 @@ Bonsai gives your coding agent a **workspace** — not a pile of markdown files,
   Layer 1 │ Core          │ Identity, memory, self-awareness
 ```
 
-You pick the components. Bonsai generates a complete, wired-up workspace — with cross-linked navigation, auto-enforced hooks, and a shared project scaffold that keeps every agent on the same page.
+The mechanisms underneath: a `SessionStart` hook injects identity, memory, active plans, and overdue routines before the agent's first reply; `PreToolUse` scope guards block edits outside an agent's workspace at the tool call; `.bonsai-lock.yaml` tracks every generated file with a content hash so user edits are never silently overwritten; protocols and standards live in version-controlled markdown so changes show up in `git log` instead of vanishing into a prompt.
 
-One binary. No runtime. Works with any project.
-
-## Who It's For
+## Who it's for
 
 <CardGrid>
   <Card title="Solo developers" icon="laptop">
-    Want your Claude Code agent to behave consistently, remember context between sessions, and follow project-specific standards.
+    Want their agent to remember context across sessions, follow project standards, and stay inside scope without re-briefing.
   </Card>
   <Card title="Teams" icon="group">
-    Coordinating multiple agents across a codebase — backend, frontend, devops — with a shared source of truth.
+    Coordinating multiple agents (backend, frontend, devops) across one codebase — with shared plans, status, and standards in version control.
   </Card>
   <Card title="Anyone tired of copy-pasting" icon="document">
-    Stop copying agent instructions between projects. Bonsai generates everything from a catalog of battle-tested components.
+    Stop copying agent instructions between projects. Bonsai generates a workspace from a catalog you pick from.
   </Card>
 </CardGrid>
