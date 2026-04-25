@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
 )
@@ -66,29 +67,19 @@ type RoutineEntry struct {
 	Frequency   string   `json:"frequency"`
 }
 
-// agentsToSlice converts an AgentCompat to a JSON-friendly slice. "all"
-// collapses to ["all"] so readers can branch on either exact-match or
-// presence of the "all" sentinel.
-func agentsToSlice(a catalog.AgentCompat) []string {
+// compatToSlice converts an AgentCompat into a JSON-friendly slice.
+// "all" collapses to ["all"]. When omitEmpty is true, an empty Names
+// list returns nil so JSON `omitempty` drops the field; when false,
+// it returns an empty slice (always-emit).
+func compatToSlice(a catalog.AgentCompat, omitEmpty bool) []string {
 	if a.All {
 		return []string{"all"}
 	}
 	if len(a.Names) == 0 {
+		if omitEmpty {
+			return nil
+		}
 		return []string{}
-	}
-	out := make([]string, len(a.Names))
-	copy(out, a.Names)
-	return out
-}
-
-// requiredToSlice converts an AgentCompat into a slice, returning nil when
-// no agent requires the ability (so the JSON `omitempty` tag drops it).
-func requiredToSlice(a catalog.AgentCompat) []string {
-	if a.All {
-		return []string{"all"}
-	}
-	if len(a.Names) == 0 {
-		return nil
 	}
 	out := make([]string, len(a.Names))
 	copy(out, a.Names)
@@ -125,8 +116,8 @@ func SerializeCatalog(cat *catalog.Catalog, version string) ([]byte, error) {
 			Name:        s.Name,
 			DisplayName: s.DisplayName,
 			Description: s.Description,
-			Agents:      agentsToSlice(s.Agents),
-			Required:    requiredToSlice(s.Required),
+			Agents:      compatToSlice(s.Agents, false),
+			Required:    compatToSlice(s.Required, true),
 		})
 	}
 	for _, w := range cat.Workflows {
@@ -134,8 +125,8 @@ func SerializeCatalog(cat *catalog.Catalog, version string) ([]byte, error) {
 			Name:        w.Name,
 			DisplayName: w.DisplayName,
 			Description: w.Description,
-			Agents:      agentsToSlice(w.Agents),
-			Required:    requiredToSlice(w.Required),
+			Agents:      compatToSlice(w.Agents, false),
+			Required:    compatToSlice(w.Required, true),
 		})
 	}
 	for _, p := range cat.Protocols {
@@ -143,8 +134,8 @@ func SerializeCatalog(cat *catalog.Catalog, version string) ([]byte, error) {
 			Name:        p.Name,
 			DisplayName: p.DisplayName,
 			Description: p.Description,
-			Agents:      agentsToSlice(p.Agents),
-			Required:    requiredToSlice(p.Required),
+			Agents:      compatToSlice(p.Agents, false),
+			Required:    compatToSlice(p.Required, true),
 		})
 	}
 	for _, s := range cat.Sensors {
@@ -152,8 +143,8 @@ func SerializeCatalog(cat *catalog.Catalog, version string) ([]byte, error) {
 			Name:        s.Name,
 			DisplayName: s.DisplayName,
 			Description: s.Description,
-			Agents:      agentsToSlice(s.Agents),
-			Required:    requiredToSlice(s.Required),
+			Agents:      compatToSlice(s.Agents, false),
+			Required:    compatToSlice(s.Required, true),
 			Event:       s.Event,
 			Matcher:     s.Matcher,
 		})
@@ -163,8 +154,8 @@ func SerializeCatalog(cat *catalog.Catalog, version string) ([]byte, error) {
 			Name:        r.Name,
 			DisplayName: r.DisplayName,
 			Description: r.Description,
-			Agents:      agentsToSlice(r.Agents),
-			Required:    requiredToSlice(r.Required),
+			Agents:      compatToSlice(r.Agents, false),
+			Required:    compatToSlice(r.Required, true),
 			Frequency:   r.Frequency,
 		})
 	}
@@ -206,7 +197,19 @@ func WriteCatalogSnapshot(projectRoot string, version string, cat *catalog.Catal
 		action = ActionUpdated
 	}
 
-	if err := os.WriteFile(absPath, data, 0644); err != nil {
+	// O_NOFOLLOW: refuse to follow a symlink at the target path. Defends
+	// against an attacker pre-planting a symlink at .bonsai/catalog.json
+	// pointing at e.g. ~/.ssh/authorized_keys; without the flag, OpenFile
+	// would follow the link and we'd overwrite the target.
+	f, err := os.OpenFile(absPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|syscall.O_NOFOLLOW, 0644)
+	if err != nil {
+		return fmt.Errorf("write catalog.json: %w", err)
+	}
+	if _, err := f.Write(data); err != nil {
+		_ = f.Close()
+		return fmt.Errorf("write catalog.json: %w", err)
+	}
+	if err := f.Close(); err != nil {
 		return fmt.Errorf("write catalog.json: %w", err)
 	}
 	result.Add(FileResult{RelPath: relPath, Action: action, Source: "generated:catalog-snapshot"})

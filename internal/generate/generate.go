@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1569,18 +1570,6 @@ func buildAgentTemplateContext(agentDef *catalog.AgentDef, installed *config.Ins
 	return ctx
 }
 
-// hasAbility reports whether name appears in the haystack. Small helper used
-// by RefreshPeerAwareness to gate per-sensor refreshes on the agent actually
-// having the sensor installed.
-func hasAbility(haystack []string, name string) bool {
-	for _, h := range haystack {
-		if h == name {
-			return true
-		}
-	}
-	return false
-}
-
 // RefreshPeerAwareness re-renders the three OtherAgents-dependent files
 // (identity.md, scope-guard-files.sh, dispatch-guard.sh) for every installed
 // agent EXCEPT the one specified. Called after `bonsai add` so already-
@@ -1651,7 +1640,7 @@ func RefreshPeerAwareness(projectRoot string, excludeAgent string, cfg *config.P
 		}
 
 		// 2. scope-guard-files.sh — only if the peer has it installed.
-		if hasAbility(peer.Sensors, "scope-guard-files") {
+		if slices.Contains(peer.Sensors, "scope-guard-files") {
 			if sensor := cat.GetSensor("scope-guard-files"); sensor != nil {
 				content, err := renderContent(catFS, sensor.ContentPath, ctx)
 				if err != nil {
@@ -1665,7 +1654,7 @@ func RefreshPeerAwareness(projectRoot string, excludeAgent string, cfg *config.P
 		}
 
 		// 3. dispatch-guard.sh — only if the peer has it installed.
-		if hasAbility(peer.Sensors, "dispatch-guard") {
+		if slices.Contains(peer.Sensors, "dispatch-guard") {
 			if sensor := cat.GetSensor("dispatch-guard"); sensor != nil {
 				content, err := renderContent(catFS, sensor.ContentPath, ctx)
 				if err != nil {

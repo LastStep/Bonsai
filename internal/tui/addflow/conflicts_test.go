@@ -361,20 +361,22 @@ func TestConflicts_ViewportFollowsFocus(t *testing.T) {
 	s.focus = 8
 	out := s.renderList()
 	wantPath := s.files[8].RelPath
-	if !strings.Contains(out, shortName(wantPath)) {
+	if !strings.Contains(out, conflictsShortName(wantPath)) {
 		t.Fatalf("renderList missing focused row %q; got:\n%s", wantPath, out)
 	}
 	offTopPath := s.files[0].RelPath
-	if strings.Contains(out, shortName(offTopPath)) {
+	if strings.Contains(out, conflictsShortName(offTopPath)) {
 		t.Fatalf("renderList should not contain scrolled-off row %q; got:\n%s",
 			offTopPath, out)
 	}
 }
 
-// shortName strips the common "station/agent/Skills/" prefix so viewport
-// assertions tolerate the mid-path truncation that renderRow applies when
-// pathBudget is tight. The leading segment is what remains distinctive.
-func shortName(p string) string {
+// conflictsShortName strips the common "station/agent/Skills/" prefix so
+// viewport assertions tolerate the mid-path truncation that renderRow
+// applies when pathBudget is tight. The leading segment is what remains
+// distinctive. (Renamed from shortName to avoid shadowing concerns and to
+// disambiguate from any other test helpers.)
+func conflictsShortName(p string) string {
 	// Use the trailing "file-NN.md" fragment — the truncation keeps the
 	// tail when it elides, so the short name is stable either way.
 	if i := strings.LastIndex(p, "/"); i >= 0 {
@@ -384,9 +386,11 @@ func shortName(p string) string {
 }
 
 // TestConflicts_ColorTonesDifferPerAction verifies the per-row palette tone
-// actually differs between two actions — not just layout text. Renders
-// row 0 with Keep, captures, then flips to Overwrite and captures again;
-// the two strings must differ (ANSI codes + labels both change).
+// actually differs between actions — not just layout text. Renders row 0
+// with Keep, then with Overwrite, then with Backup; each pair must differ.
+// Adding the Keep-vs-Backup pair (alongside Keep-vs-Overwrite) catches a
+// regression where Backup's tone is silently equalised to one of the other
+// actions even though its label still differs.
 func TestConflicts_ColorTonesDifferPerAction(t *testing.T) {
 	s := newTestConflicts()
 	s.SetSize(100, 30)
@@ -396,9 +400,14 @@ func TestConflicts_ColorTonesDifferPerAction(t *testing.T) {
 	keep := s.renderRow(0)
 	s.action[key] = config.ConflictActionOverwrite
 	overwrite := s.renderRow(0)
+	s.action[key] = config.ConflictActionBackup
+	backup := s.renderRow(0)
 
 	if keep == overwrite {
 		t.Fatalf("Keep vs Overwrite renders are identical — palette tone is not driven by action")
+	}
+	if keep == backup {
+		t.Fatalf("Keep vs Backup renders are identical — palette tone is not driven by action")
 	}
 }
 

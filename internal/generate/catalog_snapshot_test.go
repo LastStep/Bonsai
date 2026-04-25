@@ -200,3 +200,94 @@ func containsAgent(agents []AgentEntry, name string) bool {
 	}
 	return false
 }
+
+// buildMinimalCatalog returns a 1-agent / 0-everything-else catalog for
+// tests that only need the snapshot scaffolding to exist.
+func buildMinimalCatalog(t *testing.T) *catalog.Catalog {
+	t.Helper()
+	fsys := fstest.MapFS{
+		"agents/tech-lead/agent.yaml": &fstest.MapFile{Data: []byte("name: tech-lead\ndisplay_name: Tech Lead\ndescription: orchestrator\n")},
+	}
+	cat, err := catalog.New(fsys)
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+	return cat
+}
+
+// TestWriteCatalogSnapshot_TrailingNewline asserts that the on-disk
+// JSON ends with a single \n so the file is POSIX-friendly and diffs
+// cleanly across editors.
+func TestWriteCatalogSnapshot_TrailingNewline(t *testing.T) {
+	cat := buildMinimalCatalog(t)
+	tmpDir := t.TempDir()
+
+	var wr WriteResult
+	if err := WriteCatalogSnapshot(tmpDir, "v0.0.0", cat, &wr); err != nil {
+		t.Fatalf("WriteCatalogSnapshot: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(tmpDir, ".bonsai", "catalog.json"))
+	if err != nil {
+		t.Fatalf("read snapshot: %v", err)
+	}
+	if len(data) == 0 || data[len(data)-1] != '\n' {
+		t.Errorf("snapshot does not end with \\n; last byte = %q", data[len(data)-1:])
+	}
+}
+
+// TestWriteCatalogSnapshot_RefusesSymlink — pre-create a symlink at the
+// target path; the writer must error out (O_NOFOLLOW) and leave the link
+// intact so an attacker-planted symlink cannot be used to overwrite an
+// arbitrary file.
+func TestWriteCatalogSnapshot_RefusesSymlink(t *testing.T) {
+	cat := buildMinimalCatalog(t)
+	tmpDir := t.TempDir()
+
+	bonsaiDir := filepath.Join(tmpDir, ".bonsai")
+	if err := os.MkdirAll(bonsaiDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	target := filepath.Join(bonsaiDir, "catalog.json")
+	if err := os.Symlink("/dev/null", target); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	var wr WriteResult
+	err := WriteCatalogSnapshot(tmpDir, "v0.0.0", cat, &wr)
+	if err == nil {
+		t.Fatal("WriteCatalogSnapshot: want error for symlink target, got nil")
+	}
+
+	// Symlink must still be a symlink (Lstat, not Stat — Stat follows).
+	info, lerr := os.Lstat(target)
+	if lerr != nil {
+		t.Fatalf("lstat after refused write: %v", lerr)
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		t.Errorf("target is no longer a symlink (mode=%v)", info.Mode())
+	}
+}
+
+// TestSerializeCatalog_VersionPassThrough verifies the version string is
+// emitted verbatim — empty, dev label, and tagged release all round-trip.
+func TestSerializeCatalog_VersionPassThrough(t *testing.T) {
+	cat := buildMinimalCatalog(t)
+
+	cases := []string{"", "dev", "v0.3.0"}
+	for _, version := range cases {
+		t.Run("version="+version, func(t *testing.T) {
+			data, err := SerializeCatalog(cat, version)
+			if err != nil {
+				t.Fatalf("SerializeCatalog: %v", err)
+			}
+			var snap CatalogSnapshot
+			if err := json.Unmarshal(data, &snap); err != nil {
+				t.Fatalf("unmarshal: %v", err)
+			}
+			if snap.Version != version {
+				t.Errorf("snap.Version = %q, want %q", snap.Version, version)
+			}
+		})
+	}
+}

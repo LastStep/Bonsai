@@ -2,7 +2,6 @@ package addflow
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
+	"github.com/LastStep/Bonsai/internal/wsvalidate"
 )
 
 // GroundStage collects the workspace directory for a new non-tech-lead
@@ -124,8 +124,8 @@ func (s *GroundStage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s.showError = true
 				return s, nil
 			}
-			norm := NormaliseWorkspace(v)
-			if reason := invalidWorkspaceReason(norm); reason != "" {
+			norm := wsvalidate.Normalise(v)
+			if reason := wsvalidate.InvalidReason(norm); reason != "" {
 				s.validateErr = reason
 				s.showError = true
 				return s, nil
@@ -254,7 +254,7 @@ func (s *GroundStage) Result() any {
 	if s.techLead {
 		return s.defaultWorkspace
 	}
-	return NormaliseWorkspace(s.input.Value())
+	return wsvalidate.Normalise(s.input.Value())
 }
 
 // Reset clears completion so re-entry doesn't auto-advance. Preserves the
@@ -262,42 +262,4 @@ func (s *GroundStage) Result() any {
 func (s *GroundStage) Reset() tea.Cmd {
 	s.ClearDone()
 	return nil
-}
-
-// NormaliseWorkspace applies the shared trim + filepath.Clean + trailing-
-// slash rule used by cmd/add.go. Duplicated here (not referenced via cmd/)
-// so addflow has no back-import into cmd. Phase 3 can drop the cmd copy.
-func NormaliseWorkspace(s string) string {
-	v := strings.TrimSpace(s)
-	if v == "" {
-		return ""
-	}
-	v = strings.TrimRight(filepath.Clean(v), "/") + "/"
-	return v
-}
-
-// invalidWorkspaceReason returns a user-facing error string when the
-// normalised workspace escapes the project root or is absolute. Returns
-// "" when the workspace is a safe project-relative path. Called by
-// GroundStage after NormaliseWorkspace cleans the input.
-//
-// Project-relative only. Defence against accidental writes outside the
-// project root when the user types "../..." or a rooted path. Not an
-// adversarial boundary — the user already has write access to their own
-// filesystem — but prevents silent surprises in test harnesses and
-// dogfooding sessions.
-func invalidWorkspaceReason(ws string) string {
-	// filepath.IsAbs catches "/etc/" on POSIX and "C:\..." on Windows.
-	if filepath.IsAbs(ws) {
-		return "workspace must be project-relative (no leading /)"
-	}
-	// After filepath.Clean, any remaining ".." component means the path
-	// escapes the project root. Split on "/" (NormaliseWorkspace always
-	// emits forward slashes) and check each segment.
-	for _, seg := range strings.Split(strings.TrimRight(ws, "/"), "/") {
-		if seg == ".." {
-			return "workspace must not escape project root (no ..)"
-		}
-	}
-	return ""
 }

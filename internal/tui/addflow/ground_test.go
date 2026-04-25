@@ -130,23 +130,6 @@ func TestGround_ResultNormalises(t *testing.T) {
 	}
 }
 
-// TestNormaliseWorkspace covers the standalone helper.
-func TestNormaliseWorkspace(t *testing.T) {
-	cases := map[string]string{
-		"backend":    "backend/",
-		"backend/":   "backend/",
-		"./backend":  "backend/",
-		"  api  ":    "api/",
-		"":           "",
-		"nested/dir": "nested/dir/",
-	}
-	for in, want := range cases {
-		if got := NormaliseWorkspace(in); got != want {
-			t.Errorf("NormaliseWorkspace(%q) = %q, want %q", in, got, want)
-		}
-	}
-}
-
 // TestGround_ResetPreservesValue verifies Reset clears done but not the
 // entered value.
 func TestGround_ResetPreservesValue(t *testing.T) {
@@ -175,8 +158,8 @@ func TestGround_RejectsAbsolutePath(t *testing.T) {
 	if s.Done() {
 		t.Fatal("absolute path should not advance")
 	}
-	if !strings.Contains(s.validateErr, "project-relative") {
-		t.Fatalf("validateErr = %q, want 'project-relative'", s.validateErr)
+	if !strings.Contains(s.validateErr, "absolute paths not allowed") {
+		t.Fatalf("validateErr = %q, want 'absolute paths not allowed'", s.validateErr)
 	}
 }
 
@@ -205,5 +188,20 @@ func TestGround_RejectsHiddenParentEscape(t *testing.T) {
 	}
 	if !strings.Contains(s.validateErr, "escape") {
 		t.Fatalf("validateErr = %q, want 'escape'", s.validateErr)
+	}
+}
+
+// TestGround_AcceptsNestedRelative is the positive companion to the
+// rejects-* tests above. Verifies clean relative inputs (including ones
+// that Clean reduces to a safe nested path) advance the stage.
+func TestGround_AcceptsNestedRelative(t *testing.T) {
+	cases := []string{"./foo", "foo/../bar"}
+	for _, in := range cases {
+		s := newTestGround("backend", nil)
+		groundType(s, in)
+		groundPressKey(s, tea.KeyEnter)
+		if !s.Done() {
+			t.Errorf("input %q should advance — validateErr=%q", in, s.validateErr)
+		}
 	}
 }

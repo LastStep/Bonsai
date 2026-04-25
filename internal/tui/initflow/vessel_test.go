@@ -254,3 +254,18 @@ func TestVessel_RejectsParentEscapeStation(t *testing.T) {
 		t.Fatal("parent-escape STATION input should fail validate()")
 	}
 }
+
+// TestVessel_AcceptsCleanRelative is the positive companion to the
+// rejects-* tests above. Verifies that clean relative STATION inputs
+// (including ones that Clean reduces to a safe nested path) pass validate.
+func TestVessel_AcceptsCleanRelative(t *testing.T) {
+	cases := []string{"./foo", "foo/../bar"}
+	for _, in := range cases {
+		v := newTestVessel()
+		v.inputs[vesselIdxName].SetValue("proj")
+		v.inputs[vesselIdxStation].SetValue(in)
+		if !v.validate() {
+			t.Errorf("STATION = %q should pass validate()", in)
+		}
+	}
+}
