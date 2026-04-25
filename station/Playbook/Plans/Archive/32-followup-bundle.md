@@ -1,13 +1,13 @@
 ---
 tags: [plan, tier-1, followup, knock-off]
 description: Plan 31 + Plan 29 review followup bundle — cosmetic + test-gap + security-hardening items, single dispatch.
-status: Draft
+status: Complete — shipped 2026-04-25 (PR #80 squash `99e9948`)
 ---
 
 # Plan 32 — Plan 31 + 29 review followup bundle
 
 **Tier:** 1
-**Status:** Draft
+**Status:** Complete — shipped 2026-04-25 (PR #80 squash `99e9948`)
 **Agent:** general-purpose (single dispatch)
 
 ## Goal
