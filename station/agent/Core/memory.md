@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Last session (2026-04-23): Plan 30 shipped (PR #74 squash `7733ae2`) — guide viewer perf (cached glamour renderer + pre-warm via tea.Cmd) + bundled Plan-28 NIT cleanups across list/catalog/guide. Plans/Active/ now empty; 21 shipped plans in Plans/Archive/. **Prior shipped work:** see `Playbook/Status.md` Recently Done for rolling window, `Playbook/StatusArchive.md` for older, and `Playbook/Plans/Archive/` for per-plan specs + details.
+**Current task:** Idle. Last ship (2026-04-24): **v0.3.0 release** via Plan 31 — 3 PRs squashed `48e2678` (#75 PR1: peer-awareness refresh + bonsai-model skill + .bonsai/catalog.json snapshot), `1af9402` (#76 PR2α: removeflow cinematic + `catalog --json` + NO_COLOR), `467b540` (#77 PR2β: updateflow cinematic + 3-layer hints package). CHANGELOG v0.3.0 rewritten user-facing in `11e21f3`. Plans/Active/ empty; 22 shipped plans in Plans/Archive/. **Prior shipped work:** see `Playbook/Status.md` Recently Done for rolling window, `Playbook/StatusArchive.md` for older, and `Playbook/Plans/Archive/` for per-plan specs + details.
 
 ## Notes
 

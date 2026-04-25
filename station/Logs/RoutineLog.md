@@ -287,3 +287,21 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan report written:** no (P1 Go upgrade added to Backlog as agreed rather than plan-worthy digest report)
 - **Warnings acknowledged:** 2 — scan tool gaps (semgrep/gitleaks/trufflehog — already on Backlog since 2026-04-16); `.env`/.gitignore persistence (subsumed by A4 quick fix)
 - **Incidental flag:** GitHub PAT in `~/.claude/settings.json` leaked to conversation context — advised user to rotate (not from routines)
+
+### 2026-04-25 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** main agent (session-start)
+- **Auto-memory scanned:** `~/.claude/projects/-home-rohan-ZenGarden-Bonsai/memory/MEMORY.md` (stub only) + `-home-rohan-ZenGarden-Bonsai-station/memory/MEMORY.md` (stub only) — no facts to bridge.
+- **Agent memory validated:** Notes (14 gotchas) + Feedback (durable UX prefs 2026-04-17) + References (6 research docs at `station/Research/RESEARCH-*.md`, all exist) — all current, no stale entries marked.
+- **Work State refreshed:** updated from "Plan 30 shipped 2026-04-23" → "v0.3.0 shipped 2026-04-24 via Plan 31 (PRs #75/#76/#77)".
+- **Flags:** none active.
+- **Decisions applied:** 0 keep-as-stale, 0 update, 0 archive, 0 insert_new — auto-memory consolidation is a no-op when auto-memory is empty stubs (intended steady state per Bonsai memory model).
+
+### 2026-04-25 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** main agent (session-start)
+- **Archive sweep:** none — oldest Recently Done row is 2026-04-22 (3d), well under 14d threshold.
+- **Pending validated:** only standing comment "Plan 26 candidates filed in Backlog P2 Group C" — still relevant, no rows to flag.
+- **Plan/Status cross-ref:** Plans/Active/ empty (no orphans); Status Recently Done rows for plans 23–31 all map to files in Plans/Archive/ (31 plan files total).
+- **Backlog cross-ref:** "Re-archive Plan 29" already commented out in Backlog (line 58, resolved 2026-04-23 via archive-reconcile sweep). No new resolutions to remove.
+- **Net changes:** 0 archived, 0 flagged, 0 demoted.
