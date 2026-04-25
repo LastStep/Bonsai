@@ -1,11 +1,13 @@
 ---
-title: Plan 32 — Website Concept Page Rewrite
+title: Plan 33 — Website Concept Page Rewrite
 status: Active
 tier: 1
 created: 2026-04-25
 ---
 
-# Plan 32 — Website Concept Page Rewrite
+# Plan 33 — Website Concept Page Rewrite
+
+> Renumbered from Plan 32 → 33 mid-session to disambiguate from parallel session's `32-followup-bundle.md` (Go-code review knock-off bundle, file-disjoint scope). PR #79 was opened referencing the old path; PR body updated post-rename.
 
 **Tier:** 1
 **Status:** Active

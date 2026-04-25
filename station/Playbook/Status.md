@@ -15,6 +15,7 @@ description: Live task tracker. Update this file at the start and end of every w
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
 | Plan 32 — Plan 31+29 review followup bundle | 32 | general-purpose (dispatching) | Tier-1 knock-off, single PR. 13 of 17 review items in 6 phases (wsvalidate extraction, defence-in-depth, test strengthening, generate.go consolidations, snapshot test gaps, ProjectConfig.Validate + symlink-resistant write). Spec at `Plans/Active/32-followup-bundle.md`. |
+| Plan 33 — website concept-page rewrite | 33 | general-purpose (PR #79 draft) | Tier-1 copy-only PR. 3 mdx/mjs files: `concepts/how-bonsai-works.mdx` full rewrite + `why-bonsai.mdx` body rewrite + `astro.config.mjs` LLM description. Pivots remaining "structured language / structured instruction files" framing to README-aligned audience-first mechanism-led voice. Spec at `Plans/Active/33-website-concept-page-rewrite.md`. File-disjoint from Plan 32 (Go code). Renumbered from 32 → 33 mid-session due to plan-number collision with parallel session. |
 <!-- Plan 31 complete 2026-04-24 — PRs #75 `48e2678` + #76 `1af9402` + #77 `467b540`, see Recently Done -->
 <!-- Plan 30 complete 2026-04-23 — PR #74 squash `7733ae2`, see Recently Done -->
 <!-- Plan 29 complete 2026-04-23 — PR #72 squash `9eb2bff`, see Recently Done -->
