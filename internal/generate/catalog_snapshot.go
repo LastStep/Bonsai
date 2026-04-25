@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
 )
@@ -196,7 +197,19 @@ func WriteCatalogSnapshot(projectRoot string, version string, cat *catalog.Catal
 		action = ActionUpdated
 	}
 
-	if err := os.WriteFile(absPath, data, 0644); err != nil {
+	// O_NOFOLLOW: refuse to follow a symlink at the target path. Defends
+	// against an attacker pre-planting a symlink at .bonsai/catalog.json
+	// pointing at e.g. ~/.ssh/authorized_keys; without the flag, OpenFile
+	// would follow the link and we'd overwrite the target.
+	f, err := os.OpenFile(absPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|syscall.O_NOFOLLOW, 0644)
+	if err != nil {
+		return fmt.Errorf("write catalog.json: %w", err)
+	}
+	if _, err := f.Write(data); err != nil {
+		f.Close()
+		return fmt.Errorf("write catalog.json: %w", err)
+	}
+	if err := f.Close(); err != nil {
 		return fmt.Errorf("write catalog.json: %w", err)
 	}
 	result.Add(FileResult{RelPath: relPath, Action: action, Source: "generated:catalog-snapshot"})
