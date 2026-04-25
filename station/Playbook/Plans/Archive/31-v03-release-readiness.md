@@ -1,7 +1,7 @@
 ---
 tags: [plan, v0.3, release, tier-2]
 description: v0.3 release readiness bundle — correctness + agent-readable foundation + UX polish + CI mode.
-status: Draft
+status: Complete — shipped 2026-04-24 (PRs #75 `48e2678`, #76 `1af9402`, #77 `467b540`)
 ---
 
 # Plan 31 — v0.3 Release Readiness Bundle
