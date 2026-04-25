@@ -1,36 +1,33 @@
 ---
 title: How Bonsai Works
-description: The mental model — stations, agents, the instruction stack, and how everything connects.
+description: What bonsai init generates, how the pieces fit together, and how the Tech Lead orchestrates code agents.
 ---
 
 import { FileTree, Aside } from '@astrojs/starlight/components';
 
-Bonsai is a **generator**, not a runtime. It runs once to set up the instruction layer that Claude Code agents read when they work in your project. After that, the agents operate using the files it created.
+Bonsai is a CLI generator, not a runtime. It runs once to write a workspace under `station/` plus per-agent workspaces, then Claude Code agents read those files via hooks at session start and during tool use.
 
-| Generated layer | Purpose |
-|:----------------|:--------|
-| **Identity + Memory** | Who the agent is, what it remembers from last session |
-| **Protocols** | Hard rules — security, scope boundaries, startup sequence |
-| **Workflows** | Step-by-step procedures — planning, code review, reporting |
-| **Skills** | Domain knowledge — coding standards, API design, auth patterns |
-| **Sensors** | Shell scripts wired into Claude Code hooks — auto-enforce boundaries |
-| **Routines** | Periodic maintenance with a tracked dashboard (Tech Lead only) |
-| **Scaffolding** | Shared docs — status tracker, roadmap, plans, decision log, reports |
+## What `bonsai init` generates
+
+| Generated artifact | What it does |
+|:-------------------|:-------------|
+| `agent/Core/identity.md` + `agent/Core/memory.md` | Who the agent is and what it carries forward between sessions |
+| `agent/Protocols/` (`security.md`, `scope-boundaries.md`, `session-start.md`) | Hard rules read at the top of every session |
+| `agent/Workflows/` | Step-by-step procedures (planning, code review, PR review, audits) loaded on demand |
+| `agent/Skills/` | Domain knowledge (standards, checklists, templates) referenced during work |
+| `agent/Sensors/*.sh` | Shell scripts wired into Claude Code hooks (`SessionStart`, `PreToolUse`, `Stop`) |
+| `agent/Routines/` + `agent/Core/routines.md` | Periodic maintenance procedures with a tracked dashboard (Tech Lead only) |
+| `station/Playbook/`, `station/Logs/`, `station/Reports/` | Shared scaffolding — status, roadmap, plans, decisions, reports — referenced by every agent |
 
 <Aside>
-Claude Code agents are only as good as the instructions they have access to. Bonsai gives them a structured, layered instruction set so they behave consistently, stay in scope, and coordinate with each other.
+Every generated file is tracked in `.bonsai-lock.yaml` with a content hash. Re-running `bonsai init` or `bonsai add` detects user edits and prompts before overwriting them.
 </Aside>
 
-## The Station
+## The station
 
-Every Bonsai project has a **station** — a single directory (default `station/`) that serves as the command center. It contains:
+`station/` is the Tech Lead's workspace and the shared scaffolding every code agent's plans, status, and decisions reference. Code agents (backend, frontend, devops, security) get their own `<agent>/` workspaces, but they all link back to `station/Playbook/Status.md`, `station/Playbook/Plans/Active/`, and `station/Logs/KeyDecisionLog.md` so coordination lives in one place under version control.
 
-- **Project scaffolding** — status tracker, roadmap, plans, logs, reports
-- **Tech Lead agent** — the primary agent that orchestrates everything
-
-The station is where all coordination happens. Code agents (backend, frontend, etc.) get their own separate workspaces, but they all reference the station for plans, status, and standards.
-
-## The Instruction Stack
+## The instruction stack
 
 Each agent's instructions are layered, from foundational to automated:
 
@@ -43,18 +40,13 @@ Each agent's instructions are layered, from foundational to automated:
   Layer 1 │ Core          │ Identity + memory + self-awareness
 ```
 
-| Layer | Loaded when | Can override? |
-|:------|:-----------|:-------------|
-| **Core** | Every session, first thing | No — this is the foundation |
-| **Protocols** | Every session, via startup | No — non-negotiable rules |
-| **Workflows** | When performing a specific task | Agent follows the procedure |
-| **Skills** | Referenced as needed during work | Knowledge, not instructions |
-| **Routines** | Flagged at session start if overdue | Tech Lead runs on request |
-| **Sensors** | Automatically, on Claude Code events | Agent can't bypass them |
+<Aside>
+Layers exist because they load at different times. Core and Protocols load every session via the `session-context` sensor on `SessionStart` — identity, memory, and the non-negotiable rules are always in scope. Workflows and Skills are pulled in on demand when the agent starts a matching task. Sensors fire automatically on Claude Code tool-use events: `PreToolUse` to block writes outside an agent's workspace, `PostToolUse` to checklist a dispatched agent's output, `Stop` to refresh the status bar after every reply.
+</Aside>
 
-## How It Works
+## How it works
 
-`bonsai init` sets up the station with the Tech Lead. You talk to the Tech Lead; it plans, orchestrates, and reviews. Code agents execute.
+`bonsai init` sets up the station with the Tech Lead. You talk to the Tech Lead; it plans, dispatches, and reviews. Code agents execute.
 
 ```
   You (human)
@@ -73,9 +65,9 @@ The Tech Lead **never writes application code**. It creates plans, dispatches th
 You don't have to go through the Tech Lead for everything. Quick fixes and small tasks work fine directly with a code agent. The Tech Lead shines when work needs planning, coordination, or cross-agent review.
 </Aside>
 
-## What Gets Generated
+## What gets generated
 
-After `bonsai init` + `bonsai add` (backend agent):
+After `bonsai init` followed by `bonsai add backend`:
 
 <FileTree>
 
