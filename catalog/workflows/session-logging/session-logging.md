@@ -37,3 +37,4 @@ At the end of every session, or when switching to a different task.
 - Keep it concise — bullet points, not paragraphs
 - Include file paths for anything modified
 - Flag anything that the next session needs to know
+- Status/memory rows for this session follow `Playbook/Standards/NoteStandards.md` (3 lines max, link out). The full session log lives here — link to it from Status/memory rather than restating.
