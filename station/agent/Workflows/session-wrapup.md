@@ -43,6 +43,8 @@ description: End-of-session verification, review, cleanup, and summary — trigg
 
 ## Step 5 — Final Cleanup & Updates
 
+> **Brevity rule:** all writes into Status, Backlog, memory follow [Playbook/Standards/NoteStandards.md](../../Playbook/Standards/NoteStandards.md) — 3 lines max per entry, link out for detail. New row format: `outcome one-liner. [plan](path) · [PR #N](url)`. Phase walkthroughs go in the plan; commit walkthroughs in the PR; process narrative in `Logs/`.
+
 1. **Memory** — update `agent/Core/memory.md`:
    - Set current task to `(none)` or the carry-forward task
    - Move completed work to the Completed list

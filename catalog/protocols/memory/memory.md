@@ -17,6 +17,8 @@ At session start, read [agent/Core/memory.md](../Core/memory.md) and act on any 
 
 ## Writing Memory
 
+> **Brevity rule:** every memory write follows `Playbook/Standards/NoteStandards.md` — 3 lines max per entry, link out for detail. Work State = one-liner + plan/PR links. Notes = one line per durable gotcha. Phase walkthroughs go in the plan; commit walkthroughs in the PR; process narrative in `Logs/`.
+
 Update `agent/Core/memory.md` when:
 
 - You encounter something the next session needs to know
