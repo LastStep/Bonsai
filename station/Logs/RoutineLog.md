@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-28 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no Backlog items removed or promoted (audit-only) — dashboard `last_ran` updated to 2026-04-28
+- **Flags:** 3 items flagged for user — (1) P1 "Stale agent worktrees + branches" aging 7 days at P1 with no progress; (2) [Plan-29-security-hardening] Unicode lookalike item is "purely speculative" — candidate for P3 demotion or removal; (3) Phase 1 Roadmap "Better trigger sections" has no corresponding Backlog entry — confirm if intentionally deferred
+- **Report:** `Reports/Pending/2026-04-28-backlog-hygiene.md`
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)
