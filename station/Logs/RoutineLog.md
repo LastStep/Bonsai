@@ -20,6 +20,36 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-28 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** dashboard `last_ran` updated to 2026-04-28, `next_due` to 2026-05-12
+- **Flags:** 3 findings for user — (1) "Better trigger sections" Phase 1 item has no Backlog entry or plan — floating with no capture; (2) "Template variables expansion" Phase 2 item has no Backlog entry unlike the other two open Phase 2 items; (3) Phase 1 is effectively complete — consider formally transitioning roadmap to Phase 2 as Current Phase
+- **Report:** `Reports/Pending/2026-04-28-roadmap-accuracy.md`
+
+---
+
+### 2026-04-28 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard `last_ran` updated to 2026-04-28, `next_due` to 2026-05-05
+- **Flags:** 4 findings — (1) INDEX.md architecture diagram missing `update`/`guide` commands (cosmetic); (2) code-index.md missing 5 new TUI flow packages + wsvalidate (cosmetic); (3) issue-to-implementation.md references non-existent `dispatch.md` skill (medium — workflow prerequisites section broken); (4) memory.md References section points to gitignored `station/Research/` files not on disk
+- **Report:** `Reports/Pending/2026-04-28-doc-freshness-check.md`
+
+---
+
+### 2026-04-28 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no Backlog items removed or promoted (audit-only) — dashboard `last_ran` updated to 2026-04-28
+- **Flags:** 3 items flagged for user — (1) P1 "Stale agent worktrees + branches" aging 7 days at P1 with no progress; (2) [Plan-29-security-hardening] Unicode lookalike item is "purely speculative" — candidate for P3 demotion or removal; (3) Phase 1 Roadmap "Better trigger sections" has no corresponding Backlog entry — confirm if intentionally deferred
+- **Report:** `Reports/Pending/2026-04-28-backlog-hygiene.md`
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)
