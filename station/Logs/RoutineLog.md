@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-28 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard `last_ran` updated to 2026-04-28, `next_due` to 2026-05-05
+- **Flags:** 4 findings — (1) INDEX.md architecture diagram missing `update`/`guide` commands (cosmetic); (2) code-index.md missing 5 new TUI flow packages + wsvalidate (cosmetic); (3) issue-to-implementation.md references non-existent `dispatch.md` skill (medium — workflow prerequisites section broken); (4) memory.md References section points to gitignored `station/Research/` files not on disk
+- **Report:** `Reports/Pending/2026-04-28-doc-freshness-check.md`
+
+---
+
 ### 2026-04-28 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
