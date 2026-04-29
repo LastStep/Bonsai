@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-29 — Vulnerability Scan
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to source (audit-only routine) — dashboard `last_ran` updated to 2026-04-29
+- **Flags:** none — clean run. All 3 findings from 2026-04-21 scan are resolved: (1) `.env`/`.env.*` added to `.gitignore` by 2026-04-21 Routine Digest; (2) GO-2026-4602 cleared by Go 1.25.8 upgrade (Plan 20); (3) GO-2026-4601 cleared by same upgrade. No new SAST issues, no secrets found, govulncheck blocked (403) but last CI run 2026-04-22 was 6/6 green. Stale `golang.org/x/` deps already tracked in Backlog P2.
+- **Report:** `Reports/Pending/2026-04-29-vulnerability-scan.md`
+
+---
+
+### 2026-04-29 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes made to source or deps (audit-only routine) — dashboard `last_ran` updated to 2026-04-29
+- **Flags:** govulncheck blocked (HTTP 403 — vuln.go.dev unreachable in execution environment; CI govulncheck is reliable fallback). 3 stale golang.org/x/ packages flagged: `x/net` v0.38.0→v0.53.0 (15 minor versions, existing P2 Backlog item), `x/crypto` v0.36.0→v0.50.0 (14 minor versions), `x/text` v0.30.0→v0.36.0. No Node/Python/Rust/Ruby manifests present. No third-party vuln data available this run.
+- **Report:** `Reports/Pending/2026-04-29-dependency-audit.md`
+
+---
+
+### 2026-04-29 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `last_ran` updated to 2026-04-29
+- **Flags:** none — clean run. All Phase 1 checkboxes accurate, no stale items, no key decisions invalidate any roadmap items. Only open Phase 1 item ("Better trigger sections") is legitimately tracked in Backlog P2. Note for next run: Phase 2 work beginning to accumulate; consider whether roadmap should reflect Phase 1→2 transition.
+- **Report:** `Reports/Pending/2026-04-29-roadmap-accuracy.md`
+
+---
+
+### 2026-04-29 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes made to Backlog.md (audit-only routine) — dashboard `last_ran` updated to 2026-04-29
+- **Flags:** 1 item flagged — P2 `golang.org/x/net` bump and P3 `Batch refresh outdated Go modules` both reference "P1 Go toolchain upgrade" as a prerequisite, but that upgrade shipped 2026-04-21 via Plan 20 (go1.25.8 confirmed in go.mod). Both items are now unblocked. No P0s, no stale items (all <16 days old), no duplicates, no routine-generated items missed.
+- **Report:** `Reports/Pending/2026-04-29-backlog-hygiene.md`
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)
@@ -305,3 +345,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan/Status cross-ref:** Plans/Active/ empty (no orphans); Status Recently Done rows for plans 23–31 all map to files in Plans/Archive/ (31 plan files total).
 - **Backlog cross-ref:** "Re-archive Plan 29" already commented out in Backlog (line 58, resolved 2026-04-23 via archive-reconcile sweep). No new resolutions to remove.
 - **Net changes:** 0 archived, 0 flagged, 0 demoted.
+
+### 2026-04-29 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made to docs (audit-only routine) — dashboard `last_ran` updated to 2026-04-29
+- **Flags:** 2 items flagged — (1) `station/code-index.md` line numbers stale across all major source files (1–143 line drift after Plans 31/32); missing entries for `internal/wsvalidate/`, `catalog_snapshot.go`, `RefreshPeerAwareness`, and 6 new TUI flow packages. (2) Root `CLAUDE.md` project structure tree missing 7 new TUI subpackages and `wsvalidate/` — already tracked as P3 Backlog item. All nav links in station/CLAUDE.md resolve correctly.
+- **Report:** `Reports/Pending/2026-04-29-doc-freshness-check.md`
