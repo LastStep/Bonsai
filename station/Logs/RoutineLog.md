@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-04-30 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `last_ran` updated to 2026-04-30
+- **Flags:** 1 item for user — "Better trigger sections" (Phase 1, unchecked) has been stagnant since Plan 08 Phase C (2026-04-21) with no active plan or Pending row. Decision needed: promote to P1 with a plan, or explicitly move to Phase 2 scope. Roadmap is otherwise accurate and in good health (Phase 1 is 9/10 complete, Phase 2–4 all correctly unstarted).
+- **Report:** `Reports/Pending/2026-04-30-roadmap-accuracy.md`
+
+---
+
+### 2026-04-30 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes to memory.md content (stale markers already applied by prior session today); dashboard `last_ran` updated to 2026-04-30
+- **Flags:** 1 item for user — Research docs directory (`station/Research/`) does not exist on filesystem; 6 RESEARCH-*.md file pointers in References section are stale. Prior 2026-04-25 run reported "all exist" — discrepancy noted. User should confirm if files were deleted or never committed.
+- **Report:** `Reports/Pending/2026-04-30-memory-consolidation.md`
+
+---
+
+### 2026-04-30 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made (audit-only routine) — dashboard `last_ran` updated to 2026-04-30
+- **Flags:** 4 items flagged — (1) [medium] root `Bonsai/CLAUDE.md` tui structure tree missing 7 new subpackages (addflow, removeflow, updateflow, hints, catalogflow, listflow, guideflow) added in Plans 23–31; (2) [medium] `station/code-index.md` missing new package sections for the same 7 TUI flow packages plus wsvalidate and catalog_snapshot.go; (3) [low] `statusline.sh` in agent/Sensors/ undocumented in CLAUDE.md Sensors table — confirm intentional or oversight; (4) [low] `NoteStandards.md` (added this week) not in CLAUDE.md External References table
+- **Report:** `Reports/Pending/2026-04-30-doc-freshness-check.md`
+
+---
+
+### 2026-04-30 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** archived 9 "Recently Done" rows from Status.md to StatusArchive.md (all dated 2026-04-22 — Plans 23×3, 24, 25, 26, v0.2.0 release, security sweep, statusLine); updated footer cutoff note; dashboard `last_ran` updated to 2026-04-30
+- **Flags:** none
+- **Report:** `Reports/Pending/2026-04-30-status-hygiene.md`
+
+---
+
+### 2026-04-30 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes made to Backlog.md (audit-only routine) — dashboard `last_ran` updated to 2026-04-30
+- **Flags:** 3 findings for user — (1) missing "re-plan Better trigger sections" P2 item (logged as added 2026-04-21 in RoutineLog but absent from Backlog.md); (2) stale Group B intro forward-reference to "P1 bug (spinner error swallowing)" with no corresponding Backlog entry; (3) two items retain "after P1 Go toolchain upgrade" qualifier — blocker shipped 2026-04-21 (go1.25.8), golang.org/x/net bump may warrant P1 promotion
+- **Report:** `Reports/Pending/2026-04-30-backlog-hygiene.md`
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)

@@ -26,7 +26,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 - **Worktree creation cwd matters.** `git worktree add ../<name> <branch>` resolves `../` against the Bash tool's cwd (often `station/`, not repo root). Use absolute paths when creating worktrees.
 - **Worktree-held-branch post-merge cleanup.** `gh pr merge --squash --delete-branch` silently skips local+remote branch delete when its worktree is checked out. After every squash-merge from a non-main worktree, manually: `git worktree remove -f -f <path>` + `git branch -D <br>` + `git push origin --delete <br>`. Pattern hits 10×+/month.
 - **MDX autolink gotcha.** `<https://example.com>` is valid GFM but MDX parses `<` as JSX — Astro build fails "Unexpected character `/`". In `.mdx` files, always use `[label](url)`.
-- **Local `go build`/`go test` miss `golangci-lint unused`.** Local golangci-lint v2.x; repo config is v1 → `golangci-lint run` errors locally with "unsupported version". Trust CI for dead-code on deletion/refactor PRs, OR install v1 locally (`go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8`).
+- **Local `go build`/`go test` miss `golangci-lint unused`.** Repo config is v2 (`.golangci.yml` `version: "2"`); CI pins `golangci-lint-action@v9` at v2.11.4. Local v2.x should be compatible — but if local version differs from CI pin, trust CI for dead-code on deletion/refactor PRs. (stale — updated 2026-04-30: repo config migrated to v2 per Plan 20; v1 install advice obsolete)
 - **`statusLine.command` runs in different `$PWD` than hook commands.** Walk-up-to-`.bonsai.yaml` wrappers fail (walk terminates at `/`). Use absolute path at install time. StatusLine config isn't hot-reloaded — requires `/clear` or restart.
 - **Subdirectory launch determines which `.claude/settings.json` is live.** When launched from `station/`, effective project settings is `station/.claude/settings.json`; repo-root is ignored. Check `pwd` at session start.
 - **golangci-lint binary Go-version coupling.** `version: X.Y` on `golangci/golangci-lint-action` resolves to a specific prebuilt binary; binary's own Go build must be ≥ repo target Go. Bumping Go major requires bumping action pin to release whose notes say "built with Go ≥ target". Track: https://github.com/golangci/golangci-lint/releases.
@@ -74,7 +74,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
+- **Foundational research docs** — Anchor for methodology/concept decisions. (stale — 2026-04-30: `station/Research/` directory does not exist on filesystem; all 6 RESEARCH-*.md files absent. Flagged for user — confirm if directory was removed or never committed.)
     - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
     - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
     - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
