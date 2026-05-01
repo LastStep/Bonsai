@@ -322,6 +322,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 4 findings requiring user attention — (1) [medium] `code-index.md` missing new `internal/wsvalidate/` package + `catalog_snapshot.go` + `config.Validate()` — all shipped Plan 32 (2026-04-25); (2) [low] `INDEX.md` Go version says `1.24+`, go.mod is `go 1.25.0`; (3) [medium] 6 broken `../../Research/RESEARCH-*.md` links in `memory.md` References section — Research/ directory does not exist; (4) [medium] `issue-to-implementation.md` references `../Skills/dispatch.md` 3× but dispatch skill not installed for tech-lead agent
 - **Report:** `Reports/Pending/2026-05-01-doc-freshness-check.md`
 
+### 2026-05-01 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard updated (Last Ran 2026-05-01, Next Due 2026-05-15, Status done)
+- **Flags:** 2 findings — (1) Phase 1 "Better trigger sections" has no Backlog entry and no Status.md Pending row (also flagged by 2026-05-01 Backlog Hygiene — second consecutive routine flagging this); (2) Phase 2 "Template variables expansion" has no Backlog entry. Both are tracking gaps, not roadmap inaccuracies — the roadmap text itself is factually correct.
+- **Report:** `Reports/Pending/2026-05-01-roadmap-accuracy.md`
+
 ### 2026-05-01 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
