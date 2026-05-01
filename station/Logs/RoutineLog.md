@@ -313,3 +313,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** no changes made to Backlog.md (audit-only run) — dashboard `last_ran` updated to 2026-05-01
 - **Flags:** 5 findings requiring user attention — (1) Phase 1 "Better trigger sections" Roadmap milestone has no Backlog entry and no Status.md Pending row (fell through when Pending was cleared — second consecutive run flagging this); (2) Roadmap Phase 2 "Template variables expansion" has no Backlog entry; (3) 9 P2 items at/past 30-day stale threshold (OSS demo GIF, Plan archiving, FieldNotes consolidation, Routine report template, concept-decisions research, unbuilt catalog items, changelog skill, research scaffolding, post-update hint); (4) "Plan archiving" item description is factually stale (says Plans/Active/ only, but Archive/ exists with all 33 plans); (5) Status.md is fully empty post-v0.3.0 — capacity open for P1 promotion
 - **Report:** `Reports/Pending/2026-05-01-backlog-hygiene.md`
+
+### 2026-05-01 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to docs (audit-only routine) — dashboard `last_ran` updated to 2026-05-01
+- **Flags:** 4 findings requiring user attention — (1) [medium] `code-index.md` missing new `internal/wsvalidate/` package + `catalog_snapshot.go` + `config.Validate()` — all shipped Plan 32 (2026-04-25); (2) [low] `INDEX.md` Go version says `1.24+`, go.mod is `go 1.25.0`; (3) [medium] 6 broken `../../Research/RESEARCH-*.md` links in `memory.md` References section — Research/ directory does not exist; (4) [medium] `issue-to-implementation.md` references `../Skills/dispatch.md` 3× but dispatch skill not installed for tech-lead agent
+- **Report:** `Reports/Pending/2026-05-01-doc-freshness-check.md`
