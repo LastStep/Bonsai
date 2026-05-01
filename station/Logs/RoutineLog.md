@@ -305,3 +305,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan/Status cross-ref:** Plans/Active/ empty (no orphans); Status Recently Done rows for plans 23–31 all map to files in Plans/Archive/ (31 plan files total).
 - **Backlog cross-ref:** "Re-archive Plan 29" already commented out in Backlog (line 58, resolved 2026-04-23 via archive-reconcile sweep). No new resolutions to remove.
 - **Net changes:** 0 archived, 0 flagged, 0 demoted.
+
+### 2026-05-01 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made to Backlog.md (audit-only run) — dashboard `last_ran` updated to 2026-05-01
+- **Flags:** 5 findings requiring user attention — (1) Phase 1 "Better trigger sections" Roadmap milestone has no Backlog entry and no Status.md Pending row (fell through when Pending was cleared — second consecutive run flagging this); (2) Roadmap Phase 2 "Template variables expansion" has no Backlog entry; (3) 9 P2 items at/past 30-day stale threshold (OSS demo GIF, Plan archiving, FieldNotes consolidation, Routine report template, concept-decisions research, unbuilt catalog items, changelog skill, research scaffolding, post-update hint); (4) "Plan archiving" item description is factually stale (says Plans/Active/ only, but Archive/ exists with all 33 plans); (5) Status.md is fully empty post-v0.3.0 — capacity open for P1 promotion
+- **Report:** `Reports/Pending/2026-05-01-backlog-hygiene.md`
