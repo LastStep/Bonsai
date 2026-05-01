@@ -337,3 +337,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** `station/agent/Core/memory.md` — References section parent entry annotated `(stale — Research/ directory does not exist)` for 6 broken Research/ links; `station/agent/Core/routines.md` — dashboard updated (Last Ran 2026-05-01, Next Due 2026-05-06, Status done)
 - **Flags:** 1 finding — 6 broken `../../Research/RESEARCH-*.md` links in memory.md References section (Research/ directory does not exist; also flagged by Doc Freshness Check this same dispatch cycle — two routines converging on same issue)
 - **Report:** `Reports/Pending/2026-05-01-memory-consolidation.md`
+
+### 2026-05-01 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard updated (Last Ran 2026-05-01, Next Due 2026-05-06, Status done)
+- **Flags:** 2 info-level findings — (1) 8 Recently Done rows dated 2026-04-22 will cross 14-day archive threshold on next run (2026-05-06); (2) Status.md fully empty post-v0.3.0 — capacity open for P1 backlog promotion
+- **Report:** `Reports/Pending/2026-05-01-status-hygiene.md`
