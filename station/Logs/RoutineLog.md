@@ -321,3 +321,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** no changes made to docs (audit-only routine) — dashboard `last_ran` updated to 2026-05-01
 - **Flags:** 4 findings requiring user attention — (1) [medium] `code-index.md` missing new `internal/wsvalidate/` package + `catalog_snapshot.go` + `config.Validate()` — all shipped Plan 32 (2026-04-25); (2) [low] `INDEX.md` Go version says `1.24+`, go.mod is `go 1.25.0`; (3) [medium] 6 broken `../../Research/RESEARCH-*.md` links in `memory.md` References section — Research/ directory does not exist; (4) [medium] `issue-to-implementation.md` references `../Skills/dispatch.md` 3× but dispatch skill not installed for tech-lead agent
 - **Report:** `Reports/Pending/2026-05-01-doc-freshness-check.md`
+
+### 2026-05-01 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — References section parent entry annotated `(stale — Research/ directory does not exist)` for 6 broken Research/ links; `station/agent/Core/routines.md` — dashboard updated (Last Ran 2026-05-01, Next Due 2026-05-06, Status done)
+- **Flags:** 1 finding — 6 broken `../../Research/RESEARCH-*.md` links in memory.md References section (Research/ directory does not exist; also flagged by Doc Freshness Check this same dispatch cycle — two routines converging on same issue)
+- **Report:** `Reports/Pending/2026-05-01-memory-consolidation.md`
