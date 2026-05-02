@@ -32,12 +32,12 @@ description: Periodic self-maintenance routines — schedules, dashboard, execut
 
 | Routine | Frequency | Last Ran | Next Due | Status |
 |---------|-----------|----------|----------|--------|
-| Backlog Hygiene | 7 days | 2026-04-21 | 2026-04-28 | done |
+| Backlog Hygiene | 7 days | 2026-05-02 | 2026-05-09 | done |
 | Dependency Audit | 7 days | 2026-04-21 | 2026-04-28 | done |
-| Doc Freshness Check | 7 days | 2026-04-21 | 2026-04-28 | done |
-| Memory Consolidation | 5 days | 2026-04-25 | 2026-04-30 | done |
-| Roadmap Accuracy | 14 days | 2026-04-14 | 2026-04-28 | done |
-| Status Hygiene | 5 days | 2026-04-25 | 2026-04-30 | done |
+| Doc Freshness Check | 7 days | 2026-05-02 | 2026-05-09 | done |
+| Memory Consolidation | 5 days | 2026-05-02 | 2026-05-07 | done |
+| Roadmap Accuracy | 14 days | 2026-05-02 | 2026-05-16 | done |
+| Status Hygiene | 5 days | 2026-05-02 | 2026-05-07 | done |
 | Vulnerability Scan | 7 days | 2026-04-21 | 2026-04-28 | done |
 
 <!-- ROUTINE_DASHBOARD_END -->

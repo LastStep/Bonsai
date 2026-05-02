@@ -20,6 +20,36 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-02 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** dashboard `last_ran` updated to 2026-05-02 in `station/agent/Core/routines.md`
+- **Flags:** 1 low — "Better trigger sections" Phase 1 checkbox is stale (`[ ]` but Plan 08 is archived Complete). Recommend `[ ]` → `[x]` in `station/Playbook/Roadmap.md`. All other roadmap items are accurate. Phase 1 is one checkbox away from fully complete.
+- **Report:** `Reports/Pending/2026-05-02-roadmap-accuracy.md`
+
+---
+
+### 2026-05-02 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Marked 6 broken Research file references as stale (strikethrough + explanation) in `station/agent/Core/memory.md` References section. Dashboard `last_ran` updated to 2026-05-02.
+- **Flags:** 1 medium — 6 `station/Research/RESEARCH-*.md` links in memory.md References section are broken (directory and files absent from disk and git). Previously reported by doc-freshness 2026-05-02 (Finding 4). User decision needed: recover files or remove references.
+- **Report:** `Reports/Pending/2026-05-02-memory-consolidation.md`
+
+---
+
+### 2026-05-02 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes made to Backlog.md (audit-only routine) — dashboard `last_ran` updated to 2026-05-02
+- **Flags:** 2 items flagged for user review — (1) [medium] "Better trigger sections" is the last open Phase 1 Roadmap milestone but has no Backlog entry; 2026-04-21 routine-digest RoutineLog claims it was added ("P2: re-plan Better trigger sections — Phase C (Ungrouped)") but it is absent from Backlog.md — user should confirm whether to add entry, defer to Phase 2, or drop; (2) [low] Phase 1 nearly complete — P3 items aligned with Phase 2 milestones (self-update, micro-task fast path, template variables expansion) may warrant promotion to P2 when Phase 2 begins. No stale items (oldest entries are 19 days old, threshold is 30). No routine-generated findings uncaptured. No P0s. No items to remove (all resolved items already commented out).
+- **Report:** `Reports/Pending/2026-05-02-backlog-hygiene.md`
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)
@@ -305,3 +335,21 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan/Status cross-ref:** Plans/Active/ empty (no orphans); Status Recently Done rows for plans 23–31 all map to files in Plans/Archive/ (31 plan files total).
 - **Backlog cross-ref:** "Re-archive Plan 29" already commented out in Backlog (line 58, resolved 2026-04-23 via archive-reconcile sweep). No new resolutions to remove.
 - **Net changes:** 0 archived, 0 flagged, 0 demoted.
+
+### 2026-05-02 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** routines dashboard updated (Last Ran, Next Due, Status)
+- **Flags:** 4 findings requiring user review — (Medium) dispatch skill missing but referenced in issue-to-implementation.md; (Medium) 6 station/Research/RESEARCH-*.md files linked in memory.md do not exist anywhere on disk; (Low) internal/wsvalidate/ and NoteStandards.md missing from INDEX.md; (Low) code-index.md missing wsvalidate + Validate() from Plan 32
+- **Report:** `Reports/Pending/2026-05-02-doc-freshness-check.md`
+
+---
+
+### 2026-05-02 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes made to Status.md or Backlog.md (audit-only routine) — dashboard `last_ran` updated to 2026-05-02
+- **Flags:** none — Status.md is clean. 0 archived (no items older than 14 days), 0 Pending items to validate, Plans/Active/ empty (no orphaned files), all Status rows map to plans in Archive/, Backlog already up to date with resolved items commented out.
+- **Report:** `Reports/Pending/2026-05-02-status-hygiene.md`
