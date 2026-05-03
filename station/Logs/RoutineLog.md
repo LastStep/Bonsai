@@ -50,6 +50,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-03 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 minutes
+- **Changes:** routines.md dashboard row updated (Last Ran 2026-05-03, Next Due 2026-05-08); report created at Reports/Pending/2026-05-03-status-hygiene.md; no changes to Status.md or Backlog.md (audit-only — all current items within threshold)
+- **Flags:** none — all items within 14-day archival window; no pending stalls; no orphaned plan files; Backlog cross-reference current
+- **Report:** `Reports/Pending/2026-05-03-status-hygiene.md`
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)
