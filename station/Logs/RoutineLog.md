@@ -30,6 +30,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-03 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** dashboard `last_ran` updated to 2026-05-03; no doc edits made (audit-only — all findings flagged for user decision)
+- **Flags:** 3 findings: (1) 6 broken links to `station/Research/RESEARCH-*.md` files — directory does not exist; (2) 3 broken links to `agent/Skills/dispatch.md` in issue-to-implementation.md — dispatch skill in catalog but not installed for tech-lead; (3) `internal/wsvalidate` package (Plan 32) missing from INDEX.md architecture + code-index.md
+- **Report:** `Reports/Pending/2026-05-03-doc-freshness-check.md`
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)
