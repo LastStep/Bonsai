@@ -325,3 +325,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan/Status cross-ref:** Plans/Active/ empty (no orphans); Status Recently Done rows for plans 23–31 all map to files in Plans/Archive/ (31 plan files total).
 - **Backlog cross-ref:** "Re-archive Plan 29" already commented out in Backlog (line 58, resolved 2026-04-23 via archive-reconcile sweep). No new resolutions to remove.
 - **Net changes:** 0 archived, 0 flagged, 0 demoted.
+
+### 2026-05-03 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 minutes
+- **Changes:** 1 — marked Research docs References entry as stale in `station/agent/Core/memory.md` (directory not found anywhere in repo)
+- **Flags:** 2 — (1) Research docs directory missing (user review needed); (2) `workflow_dispatch` not yet added to `release.yml` (minor, forward-looking)
+- **Report:** `Reports/Pending/2026-05-03-memory-consolidation.md`
