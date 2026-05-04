@@ -102,6 +102,72 @@ description: End-of-session verification
 	}
 }
 
+func TestParseFrontmatter_BashShebang(t *testing.T) {
+	input := []byte(`#!/usr/bin/env bash
+# ---
+# description: shebang sensor test
+# event: SessionStart
+# matcher: PreToolUse
+# ---
+echo hi
+`)
+	meta, err := ParseFrontmatter(input)
+	if err != nil {
+		t.Fatalf("ParseFrontmatter: %v", err)
+	}
+	if meta.Description != "shebang sensor test" {
+		t.Errorf("description = %q", meta.Description)
+	}
+	if meta.Event != "SessionStart" {
+		t.Errorf("event = %q, want SessionStart", meta.Event)
+	}
+	if meta.Matcher != "PreToolUse" {
+		t.Errorf("matcher = %q, want PreToolUse", meta.Matcher)
+	}
+}
+
+func TestParseFrontmatter_BashNoShebang(t *testing.T) {
+	input := []byte(`# ---
+# description: bar
+# event: Stop
+# ---
+echo hi
+`)
+	meta, err := ParseFrontmatter(input)
+	if err != nil {
+		t.Fatalf("ParseFrontmatter: %v", err)
+	}
+	if meta.Description != "bar" {
+		t.Errorf("description = %q, want bar", meta.Description)
+	}
+	if meta.Event != "Stop" {
+		t.Errorf("event = %q, want Stop", meta.Event)
+	}
+}
+
+// TestParseFrontmatter_RegularMd is a regression check that the
+// markdown-delimited style still parses unchanged after the bash-comment
+// extension landed.
+func TestParseFrontmatter_RegularMd(t *testing.T) {
+	input := []byte(`---
+description: Regular markdown frontmatter
+display_name: Regular
+---
+
+# Body
+`)
+	meta, err := ParseFrontmatter(input)
+	if err != nil {
+		t.Fatalf("ParseFrontmatter: %v", err)
+	}
+	if meta.Description != "Regular markdown frontmatter" {
+		t.Errorf("description = %q", meta.Description)
+	}
+	if meta.DisplayName != "Regular" {
+		t.Errorf("display_name = %q", meta.DisplayName)
+	}
+}
+
 func TestParseFrontmatterMinimal(t *testing.T) {
 	input := []byte(`---
 description: Just a description
