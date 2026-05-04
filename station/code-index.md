@@ -19,13 +19,14 @@ Quick-nav for the developer agent. Jump to what you need.
 | Command | File | Entry Function |
 |---------|------|----------------|
 | `bonsai` (root) | `cmd/root.go:28` | `rootCmd` — shared helpers below |
-| `bonsai init` | `cmd/init.go:11` | `initCmd` → `runInit()` in `cmd/init_flow.go:26` — cinematic init flow |
-| `bonsai add` | `cmd/add.go:26` | `addCmd` → `runAdd()` in `cmd/add.go:54` — cinematic add flow |
-| `bonsai remove` | `cmd/remove.go:32` | `runRemove()` — removes agent or individual items |
-| `bonsai list` | `cmd/list.go:19` | `runList()` — table of installed agents + components |
-| `bonsai catalog` | `cmd/catalog.go:16` | `runCatalog()` — browse available agents, skills, workflows, etc. |
-| `bonsai update` | `cmd/update.go:22` | `runUpdate()` — detect custom files, re-render abilities, refresh CLAUDE.md |
-| `bonsai guide` | `cmd/guide.go:34` | `guideCmd` → `runGuide()` at `:42` — render embedded docs in terminal |
+| `bonsai init` | `cmd/init.go:11` | `initCmd` → `runInit()` in `cmd/init_flow.go:27` — cinematic init flow |
+| `bonsai add` | `cmd/add.go:28` | `addCmd` → `runAdd()` in `cmd/add.go:56` — cinematic add flow |
+| `bonsai remove` | `cmd/remove.go:34` | `runRemove()` — removes agent or individual items |
+| `bonsai list` | `cmd/list.go:18` | `runList()` — table of installed agents + components |
+| `bonsai catalog` | `cmd/catalog.go:23` | `runCatalog()` — browse available agents, skills, workflows, etc. |
+| `bonsai update` | `cmd/update.go:19` | `runUpdate()` — detect custom files, re-render abilities, refresh CLAUDE.md |
+| `bonsai guide` | `cmd/guide.go:27` | `guideCmd` → `runGuide()` at `:44` — render embedded docs in terminal |
+| `bonsai validate` | `cmd/validate.go:23` | `validateCmd` → `runValidate()` at `:43` — read-only audit (orphans, stale lock, untracked customs, frontmatter) |
 
 ### Shared Helpers (`cmd/root.go`)
 
@@ -207,6 +208,39 @@ Quick-nav for the developer agent. Jump to what you need.
 | `DiscoveredFile` | `:12` | Represents a custom file found in a workspace |
 | `ScanCustomFiles()` | `:22` | Find untracked custom files in an agent's workspace directories |
 
+### `catalog_snapshot.go` — Agent-consumable Catalog Listing (Plan 31)
+
+| Type / Function | Line | Purpose |
+|-----------------|------|---------|
+| `CatalogSnapshot` | `:21` | Stable JSON shape written to `.bonsai/catalog.json` (decoupled from internal catalog types) |
+| `AgentEntry` / `AbilityEntry` / `SensorEntry` / `RoutineEntry` | — | Per-section row shapes for the snapshot |
+| `WriteCatalogSnapshot()` | — | Render full catalog into `.bonsai/catalog.json` for downstream agent readers |
+
+---
+
+## Validate (`internal/validate/`) — Plan 35
+
+Read-only ability-state audit — detects orphaned registrations, stale lock entries, untracked custom files, and frontmatter problems. Strictly read-only; fixes happen via `bonsai update`.
+
+| Type / Function | File | Purpose |
+|-----------------|------|---------|
+| `Run()` | `validate.go` | Entry point — runs all detection categories per installed agent, returns a `Report` |
+| `Report` / `Issue` / `Severity` | `validate.go` | Result shape — issues classified by severity (error / warning) |
+| `Category` constants | `validate.go` | Six detection categories (orphans, stale lock entries, untracked customs, frontmatter, etc.) |
+
+Dependencies kept to `internal/config`, `internal/catalog`, and `internal/generate.ParseFrontmatter` — no TUI import so `bonsai validate --json` works in headless CI.
+
+---
+
+## Workspace-path Validation (`internal/wsvalidate/`) — Plan 32
+
+Single source of truth for workspace-path rules used by addflow + initflow + cmd. Stdlib-only (`path/filepath` + `strings`).
+
+| Function | File | Purpose |
+|----------|------|---------|
+| `Normalise()` | `wsvalidate.go` | Trim + `filepath.Clean` + trailing-slash canonicalisation |
+| `InvalidReason()` | `wsvalidate.go` | User-facing error string when path escapes root, is absolute, contains backslash, or reduces to root |
+
 ---
 
 ## TUI (`internal/tui/`)
@@ -284,6 +318,73 @@ Quick-nav for the developer agent. Jump to what you need.
 | `StageLabels` | `addflow.go:49` | Per-stage kanji rail labels (SELECT / GROUND / GRAFT / …) |
 | `BuildAgentOptions()` | `select.go:57` | Catalog → `AgentOption` list with installed markers |
 | `NormaliseWorkspace()` | `ground.go:226` | Trim + slash-normalise user-entered workspace path |
+
+### RemoveFlow (`removeflow/`) — `bonsai remove` cinematic stages (Plan 31)
+
+Mirrors addflow's chromeless-stage shape with a 4-segment rail (択 SELECT · 観 OBSERVE · 確 CONFIRM · 結 YIELD). Conflicts stage spliced off-rail when the post-generate write produces user-modified files. Two entry shapes: agent-removal (Select skipped) and item-removal (Select fires when multiple agents share an item).
+
+| Stage / File | Purpose |
+|--------------|---------|
+| `removeflow.go` | Public entry + stage labels + rail wiring |
+| `select.go` | Item-disambiguation picker (multiple agents own the item) |
+| `observe.go` | Pre-removal preview of installed ability tree |
+| `confirm.go` | Gate before write; explicit confirmation |
+| `conflicts.go` | Off-rail per-file conflict picker |
+| `yield.go` | Terminal summary card |
+
+### UpdateFlow (`updateflow/`) — `bonsai update` cinematic stages (Plan 31)
+
+5-stage rail (探 DISCOVER · 択 SELECT · 同 SYNC · 衝 CONFLICT · 結 YIELD). All chrome primitives imported from initflow — never reimplemented. Conflict stage off-rail; spliced lazily when Sync surfaces a conflict list.
+
+| Stage / File | Purpose |
+|--------------|---------|
+| `updateflow.go` | Public entry, stage indices, rail wiring |
+| `discover.go` | Scan for untracked customs + parse frontmatter |
+| `select.go` | Pick which custom files to absorb into the lockfile |
+| `run.go` | Drive sync stage (re-render abilities) |
+| `sync.go` | Apply chosen rendering pipeline; surface conflicts |
+| `conflicts.go` | Off-rail per-file conflict picker |
+| `yield.go` | Terminal summary card |
+
+### ListFlow (`listflow/`) — `bonsai list` cinematic render (Plan 31)
+
+Static, non-interactive output (no BubbleTea model). `RenderAll` is a pure function returning the full rendered output ready for one `fmt.Print`. Composes initflow chrome (header + min-size floor) + per-agent panels + muted counts footer (agents · skills · workflows · protocols · sensors · routines).
+
+| File | Purpose |
+|------|---------|
+| `listflow.go` | `RenderAll()` entry; chrome composition |
+| `agent_panel.go` | Per-agent panel + workspace tree/hint stack |
+| `fs_helpers.go` | Workspace tree gathering helpers |
+
+### CatalogFlow (`catalogflow/`) — `bonsai catalog` cinematic browser (Plan 28)
+
+Tabbed BubbleTea browser — single stage cycling 7 tabs over the 7 catalog sections (Agents · Skills · Workflows · Protocols · Sensors · Routines · Scaffolding). All chrome primitives imported from initflow. Public entry: `NewBrowser`. TTY-only; non-TTY falls back to the static-render path in `cmd/catalog.go`.
+
+| File | Purpose |
+|------|---------|
+| `catalogflow.go` | Public `NewBrowser` entry + tab orchestration |
+| `browser.go` | BubbleTea model + tab cycling logic |
+| `entry.go` | Per-row `Entry` shape used across all tabs |
+
+### GuideFlow (`guideflow/`) — `bonsai guide` cinematic viewer (Plan 28/30)
+
+Tabbed BubbleTea scroll viewport rendering bundled markdown via glamour inside shared initflow chrome. English-only labels (per Plan 28 Session 2026-04-23 decision D1). Topics supplied as a pre-ordered slice; viewer preserves order. Frontmatter stripped at render time so cache key stays pure.
+
+| File | Purpose |
+|------|---------|
+| `guideflow.go` | Public entry + `Topic` shape |
+| `viewer.go` | BubbleTea model — tab strip + scroll viewport |
+| `render.go` | Glamour rendering with cache + frontmatter stripping |
+
+### Hints (`hints/`) — yield-stage 3-layer renderer (Plan 31)
+
+Catalog-driven hints block consumed by every cinematic yield stage (init's Planted, add/remove/update Yield). Three sections per command: NEXT STEPS (CLI commands), TRY THIS (in-workspace workflows), ASK YOUR AGENT (copy-paste AI prompts). Sourced from `catalog/agents/<type>/hints.yaml`, template-rendered against TemplateContext. Missing entries fall back to a zero `Block` silently.
+
+| File | Purpose |
+|------|---------|
+| `hints.go` | `Block` shape + zero-value safe rendering |
+| `load.go` | Loader for `catalog/agents/<type>/hints.yaml` |
+| `render.go` | Three-section formatter with template execution |
 
 ---
 

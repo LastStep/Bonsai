@@ -25,13 +25,15 @@ Bonsai/
 │   └── release.yml          ← GitHub Actions — tag-triggered release pipeline
 ├── cmd/                     ← Cobra commands
 │   ├── root.go              ← root command, version, shared helpers
-│   ├── init.go              ← bonsai init
+│   ├── init.go              ← bonsai init (command wiring)
+│   ├── init_flow.go         ← bonsai init runtime — cinematic flow orchestration
 │   ├── add.go               ← bonsai add
 │   ├── remove.go            ← bonsai remove
 │   ├── list.go              ← bonsai list
 │   ├── catalog.go           ← bonsai catalog
 │   ├── update.go            ← bonsai update
-│   └── guide.go             ← bonsai guide
+│   ├── guide.go             ← bonsai guide
+│   └── validate.go          ← bonsai validate — read-only ability-state audit
 ├── internal/
 │   ├── catalog/
 │   │   └── catalog.go       ← loads YAML metadata from embedded catalog/
@@ -44,7 +46,17 @@ Bonsai/
 │   │   ├── frontmatter.go   ← BONSAI marker parsing for generated files
 │   │   ├── frontmatter_test.go ← tests for frontmatter parsing
 │   │   ├── scan.go          ← custom file discovery (user-created abilities)
-│   │   └── scan_test.go     ← tests for custom file scanning
+│   │   ├── scan_test.go     ← tests for custom file scanning
+│   │   ├── catalog_snapshot.go      ← writes .bonsai/catalog.json (agent-consumable catalog listing)
+│   │   ├── catalog_snapshot_test.go ← tests for catalog snapshot writer
+│   │   ├── bonsai_reference_test.go ← tests for Bonsai-reference nav table generation
+│   │   └── refresh_peer_awareness_test.go ← tests for peer-agent awareness refresh
+│   ├── validate/
+│   │   ├── validate.go      ← read-only audit — orphans, stale lock entries, untracked customs, frontmatter (Plan 35)
+│   │   └── validate_test.go ← tests for validate package
+│   ├── wsvalidate/
+│   │   ├── wsvalidate.go    ← shared workspace-path normalisation + validation rules (Plan 32)
+│   │   └── wsvalidate_test.go ← tests for workspace-path validator
 │   └── tui/
 │       ├── styles.go         ← LipGloss styles, palette tokens, panels, trees
 │       ├── styles_test.go    ← tests for palette + display helpers
@@ -52,7 +64,14 @@ Bonsai/
 │       ├── filetree.go       ← RenderFileTree widget for scaffold previews
 │       ├── filetree_test.go  ← tests for file tree renderer
 │       ├── harness/          ← BubbleTea step/reducer harness (Plan 15)
-│       └── initflow/         ← `bonsai init` cinematic flow — stages + chrome (Plan 22)
+│       ├── initflow/         ← `bonsai init` cinematic flow — stages + chrome (Plan 22)
+│       ├── addflow/          ← `bonsai add` cinematic flow — Select/Ground/Graft/Observe/Grow/Conflicts/Yield (Plan 23)
+│       ├── removeflow/       ← `bonsai remove` cinematic flow — Select/Observe/Confirm/Conflicts/Yield (Plan 31)
+│       ├── updateflow/       ← `bonsai update` cinematic flow — Discover/Select/Sync/Conflict/Yield (Plan 31)
+│       ├── listflow/         ← `bonsai list` cinematic render — static per-agent panels + counts footer (Plan 31)
+│       ├── catalogflow/      ← `bonsai catalog` cinematic tabbed browser (Plan 28)
+│       ├── guideflow/        ← `bonsai guide` cinematic tabbed glamour viewer (Plan 28/30)
+│       └── hints/            ← yield-stage 3-layer hints renderer (NEXT STEPS / TRY THIS / ASK YOUR AGENT) (Plan 31)
 ├── catalog/                  ← bundled catalog (embedded into binary)
 │   ├── core/                 ← shared core files (memory, self-awareness)
 │   ├── agents/               ← agent type definitions + identity templates

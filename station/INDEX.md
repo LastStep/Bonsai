@@ -59,13 +59,15 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 User runs bonsai CLI
     |
     v
-cmd/ (Cobra)          ← CLI commands: init, add, remove, list, catalog
+cmd/ (Cobra)          ← CLI commands: init, add, remove, list, catalog, update, guide, validate
     |
     v
 internal/catalog/     ← loads embedded YAML metadata + templates from catalog/
 internal/config/      ← reads/writes .bonsai.yaml + .bonsai-lock.yaml
-internal/generate/    ← renders templates, writes lock-aware files
-internal/tui/         ← Huh forms + LipGloss styled output
+internal/generate/    ← renders templates, writes lock-aware files, emits .bonsai/catalog.json
+internal/validate/    ← read-only audit — orphans, stale lock entries, untracked customs, frontmatter
+internal/wsvalidate/  ← shared workspace-path normalisation + validation rules
+internal/tui/         ← BubbleTea cinematic flows (init/add/remove/update/list/catalog/guide) + harness/hints + Huh forms + LipGloss styles
     |
     v
 catalog/ (embed.FS)   ← bundled agents, skills, workflows, protocols, sensors, routines, scaffolding

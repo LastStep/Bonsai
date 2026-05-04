@@ -2,7 +2,7 @@ module github.com/LastStep/Bonsai
 
 go 1.25.0
 
-toolchain go1.25.8
+toolchain go1.25.9
 
 // v0.1.0 has a case-insensitive file collision (station/index.md vs station/INDEX.md)
 // that prevents the Go module proxy from creating a valid zip.
@@ -53,7 +53,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yuin/goldmark v1.7.13 // indirect
 	github.com/yuin/goldmark-emoji v1.0.6 // indirect
-	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 )
