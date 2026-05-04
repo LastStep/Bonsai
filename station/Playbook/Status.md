@@ -16,6 +16,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
+| Plan 34 — custom-ability discovery bug bundle: orphaned-registration recovery, bash-shebang sensor frontmatter, non-TTY invalid-file warning, bonsai-model.md doc fix. [plan](Plans/Active/34-custom-ability-discovery-bug-bundle.md) | 34 | gp + tl | Tier 1, 4 fixes, single worktree |
 
 ## Pending
 

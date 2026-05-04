@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Last ship (2026-04-25): Plan 32 — followup bundle. wsvalidate extract, Validate() chokepoint, O_NOFOLLOW snapshot. 13/17 review items closed. [plan](../../Playbook/Plans/Archive/32-followup-bundle.md) · [PR #80](https://github.com/LastStep/Bonsai/pull/80) · [log](../../Logs/2026-04-25-plan-32-followup-bundle.md).
+**Current task:** Plan 34 — custom-ability discovery bug bundle (Tier 1, in dispatch). 4 fixes: orphaned-registration recovery, sensor shebang frontmatter, non-TTY invalid-file warning, bonsai-model.md doc. [plan](../../Playbook/Plans/Active/34-custom-ability-discovery-bug-bundle.md). Last ship: Plan 32 ([archive](../../Playbook/Plans/Archive/32-followup-bundle.md)).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
