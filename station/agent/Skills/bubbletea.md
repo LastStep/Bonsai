@@ -1,3 +1,8 @@
+---
+name: bubbletea
+description: BubbleTea / Charm-stack TUI patterns — harness/step/reducer model, component golden rules, embedding Huh forms, emoji-width gotchas.
+---
+
 # Bubbletea TUI Development
 
 Production-ready skill for building beautiful terminal user interfaces with Go, Bubbletea, and Lipgloss.

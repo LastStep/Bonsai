@@ -4,7 +4,7 @@ description: Reviewing a pull request for correctness, security, and standards. 
 when_to_use: Reviewing a pull request for correctness, security, and standards; Evaluating PR scope, changes, and test coverage
 ---
 
-Load and follow the **Pr Review** workflow at `station/agent/Workflows/pr-review.md`.
+Load and follow the **PR Review** workflow at `station/agent/Workflows/pr-review.md`.
 
 ## Examples
 

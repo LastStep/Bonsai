@@ -15,6 +15,7 @@ agents:
             - review-checklist
             - issue-classification
             - pr-creation
+            - bubbletea
         workflows:
             - code-review
             - planning
@@ -40,19 +41,24 @@ agents:
             - dispatch-guard
             - subagent-stop-review
             - compact-recovery
+            - statusline
         routines:
             - backlog-hygiene
             - dependency-audit
             - doc-freshness-check
-
             - memory-consolidation
             - roadmap-accuracy
             - status-hygiene
             - vulnerability-scan
         custom_items:
+            bubbletea:
+                description: BubbleTea / Charm-stack TUI patterns — harness/step/reducer model, component golden rules, embedding Huh forms, emoji-width gotchas.
             pr-creation:
                 description: How to create well-structured pull requests — branch naming, title conventions, body template, draft workflow.
             routine-digest:
                 description: Synthesize all pending routine reports into a consolidated digest — extract actionable items, present interactive Q&A for decisions, route results to plans or backlog.
             session-wrapup:
                 description: End-of-session verification, review, cleanup, and summary — triggered by session wrap-up phrases.
+            statusline:
+                description: Persistent status bar — context %, session health, git state, agent badge. Manually wired via .claude/settings.json statusLine stanza.
+                event: Stop

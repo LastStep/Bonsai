@@ -4,7 +4,7 @@ description: Taking an issue from intake through to shipped code. Running the fu
 when_to_use: Taking an issue from intake through to shipped code; Running the full autonomous implementation workflow
 ---
 
-Load and follow the **Issue To Implementation** workflow at `station/agent/Workflows/issue-to-implementation.md`.
+Load and follow the **Issue to Implementation** workflow at `station/agent/Workflows/issue-to-implementation.md`.
 
 ## Examples
 

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# ---
+# name: statusline
+# description: Persistent status bar — context %, session health, git state, agent badge. Manually wired via .claude/settings.json statusLine stanza.
+# event: Stop
+# ---
 # Bonsai personal statusLine renderer.
 # Reads Claude Code statusLine stdin JSON, prints one-line bar.
 # Env toggles: BONSAI_STATUSLINE_HIDE=cost,5h,7d · NO_COLOR=1

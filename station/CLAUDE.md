@@ -20,6 +20,18 @@
 | [agent/Core/memory.md](agent/Core/memory.md) | Working memory — flags, work state, notes |
 | [agent/Core/self-awareness.md](agent/Core/self-awareness.md) | Context monitoring, hard thresholds |
 
+---
+
+## Bonsai Reference
+
+> Read these when reasoning about Bonsai itself — what catalog items exist, how to customize, what `bonsai add`/`remove`/`update` do.
+
+| Need | Read |
+|------|------|
+| Bonsai mental model — catalog shape, customization, decisions | [agent/Skills/bonsai-model.md](agent/Skills/bonsai-model.md) |
+| Available abilities (all catalog items) | [../.bonsai/catalog.json](../.bonsai/catalog.json) |
+| Current installed state | [../.bonsai.yaml](../.bonsai.yaml) |
+
 ### Quick Triggers
 
 > Common phrases and commands that activate specific behaviors.
@@ -68,7 +80,7 @@
 | Performing a structured code review; Checking correctness, security, performance, and maintainability | [agent/Skills/review-checklist.md](agent/Skills/review-checklist.md) |
 | Classifying or triaging a new issue or bug report; Determining issue type, importance, and domain labels | [agent/Skills/issue-classification.md](agent/Skills/issue-classification.md) |
 | Creating a pull request with proper conventions; Setting up branch naming, PR title, and body template | [agent/Skills/pr-creation.md](agent/Skills/pr-creation.md) |
-| Working on BubbleTea / Charm-stack TUI code; Following harness/step/reducer patterns, component golden rules, and Huh embedding / emoji-width troubleshooting | [agent/Skills/bubbletea.md](agent/Skills/bubbletea.md) |
+| BubbleTea / Charm-stack TUI patterns — harness/step/reducer model, component golden rules, embedding Huh forms, emoji-width gotchas. | [agent/Skills/bubbletea.md](agent/Skills/bubbletea.md) |
 
 ### Routines (periodic self-maintenance)
 
@@ -97,6 +109,7 @@
 | [agent/Sensors/dispatch-guard.sh](agent/Sensors/dispatch-guard.sh) | PreToolUse (Agent) | Validates code agent dispatches — requires worktree isolation, plan reference, and plan existence before execution |
 | [agent/Sensors/subagent-stop-review.sh](agent/Sensors/subagent-stop-review.sh) | SubagentStop | Outputs a structured review checklist when a dispatched agent finishes work |
 | [agent/Sensors/compact-recovery.sh](agent/Sensors/compact-recovery.sh) | SessionStart (compact) | Re-injects minimal context after /compact (Quick Triggers + Work State only) |
+| [agent/Sensors/statusline.sh](agent/Sensors/statusline.sh) | Stop | Persistent status bar — context %, session health, git state, agent badge. Manually wired via .claude/settings.json statusLine stanza. |
 
 > Sensors run automatically — they are configured in `.claude/settings.json`.
 
