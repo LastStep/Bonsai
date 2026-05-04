@@ -184,10 +184,16 @@ func Run(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *conf
 // runs the sync pipeline, and surfaces conflicts as a returned error
 // (no interactive picker). The caller handles persistence identically to
 // the interactive path based on the returned Result.
+//
+// Invalid discoveries (frontmatter missing/malformed) are surfaced as
+// `warning: <relPath> — <Error>` lines on stderr — they don't fail the
+// run, but CI/non-TTY callers get the signal that's otherwise dropped
+// silently from RunStatic's filter loop.
 func RunStatic(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, version string) (Result, error) {
 	// Scan — same logic as DiscoverStage.scan but inlined so RunStatic
 	// has zero TUI dependency.
 	var discoveries []AgentDiscoveries
+	var invalid []generate.DiscoveredFile
 	agentNames := sortedAgentNames(cfg)
 	for _, agentName := range agentNames {
 		installed := cfg.Agents[agentName]
@@ -199,6 +205,8 @@ func RunStatic(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock
 		for _, d := range found {
 			if d.Error == "" {
 				valid = append(valid, d)
+			} else {
+				invalid = append(invalid, d)
 			}
 		}
 		if len(valid) > 0 {
@@ -208,6 +216,14 @@ func RunStatic(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock
 				Valid:     valid,
 			})
 		}
+	}
+
+	// Emit one warning per invalid file. Stderr (not stdout) — this
+	// path is the non-TTY fallback so the signal must survive being
+	// piped through a script's stdout capture. tui.Warning writes to
+	// stdout and would be wrong here.
+	for _, d := range invalid {
+		fmt.Fprintf(os.Stderr, "warning: %s — %s\n", d.RelPath, d.Error)
 	}
 
 	var wr generate.WriteResult

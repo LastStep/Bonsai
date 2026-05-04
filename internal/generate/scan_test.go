@@ -88,6 +88,51 @@ Just content.
 	}
 }
 
+// TestScanCustomFiles_OrphanedRegistration covers the case where the
+// agent has the name listed under installed.Skills (e.g. from a manual
+// edit to .bonsai.yaml) but the file is not yet lock-tracked. The scan
+// must re-discover it so the auto-promote path can register it
+// idempotently.
+func TestScanCustomFiles_OrphanedRegistration(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	skillsDir := filepath.Join(tmpDir, "ws", "agent", "Skills")
+	_ = os.MkdirAll(skillsDir, 0755)
+
+	_ = os.WriteFile(filepath.Join(skillsDir, "foo.md"), []byte(`---
+description: orphan recovery test
+---
+
+# Body
+`), 0644)
+
+	installed := &config.InstalledAgent{
+		AgentType: "tech-lead",
+		Workspace: "ws/",
+		Skills:    []string{"foo"}, // name in installed list (manual edit)
+	}
+
+	lock := config.NewLockFile() // file NOT in lock
+
+	discovered, err := ScanCustomFiles(tmpDir, installed, lock)
+	if err != nil {
+		t.Fatalf("ScanCustomFiles: %v", err)
+	}
+
+	if len(discovered) != 1 {
+		t.Fatalf("expected 1 discovered file, got %d", len(discovered))
+	}
+	if discovered[0].Name != "foo" {
+		t.Errorf("Name = %q, want foo", discovered[0].Name)
+	}
+	if !discovered[0].Orphaned {
+		t.Error("Orphaned should be true when name in installed list but not in lock")
+	}
+	if discovered[0].Error != "" {
+		t.Errorf("Error should be empty, got %q", discovered[0].Error)
+	}
+}
+
 func TestScanCustomSensorMissingEvent(t *testing.T) {
 	tmpDir := t.TempDir()
 

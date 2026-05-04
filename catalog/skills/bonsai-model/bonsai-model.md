@@ -76,7 +76,7 @@ Inspect the live catalog:
 
 Two files track project state:
 
-- **`.bonsai.yaml`** — user-owned config. Lists which agents exist + which abilities each has installed. Edit-safe.
+- **`.bonsai.yaml`** — config Bonsai writes for you. Lists which agents exist + which abilities each has installed. **Read-only for agents** — never hand-edit the `skills/workflows/protocols/sensors/routines` lists or `custom_items` map; let `bonsai update` register custom files.
 - **`.bonsai-lock.yaml`** — content-hash tracking. Detects user-modified generated files. Not edited by hand.
 
 Read `.bonsai.yaml` to know what the user already chose. Don't overwrite it.
@@ -124,6 +124,9 @@ type: skill
 ---
 ```
 Then runs `bonsai update`. Bonsai detects the file, prompts the user to confirm tracking, and adds it to `.bonsai.yaml` under that agent's Skills list. Lock-tracked from then on.
+
+> [!warning]
+> **Do not manually register custom abilities in `.bonsai.yaml`.** If you add a name to `skills:` (or any other list) without `bonsai update` discovering it, the file is never lock-tracked and `custom_items[name]` is never populated — CLAUDE.md will render the row with an empty description and the file will silently desync from the lockfile. Always: drop file with frontmatter, then `bonsai update`.
 
 Use for: project-specific standards, team-specific workflows, anything that wouldn't generalize.
 
@@ -198,7 +201,7 @@ When the user asks you to customize their Bonsai workspace, walk this decision t
 - Don't edit `.bonsai-lock.yaml` by hand — Bonsai owns it.
 - Don't edit generated files without understanding `bonsai update`'s conflict flow.
 - Don't run `bonsai remove` or `bonsai add` without confirming scope with the user.
-- Don't create shadow configuration outside `.bonsai.yaml` — if it's Bonsai state, it belongs in `.bonsai.yaml`.
+- Don't create shadow configuration outside `.bonsai.yaml` — but don't hand-edit `.bonsai.yaml` either. Bonsai state belongs in `.bonsai.yaml`, and **only `bonsai` commands write it**.
 - Don't add custom files without frontmatter — they won't be detected by `bonsai update`.
 - Don't reason about Bonsai from this doc alone when the live catalog is authoritative. This doc is a model; `bonsai catalog --json` is truth.
 

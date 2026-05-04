@@ -10,11 +10,12 @@ import (
 
 // DiscoveredFile represents a custom file found in a workspace that isn't tracked by Bonsai.
 type DiscoveredFile struct {
-	Name    string                 // kebab-case name derived from filename
-	Type    string                 // "skill", "workflow", "protocol", "sensor", "routine"
-	RelPath string                 // relative path from project root
-	Meta    *config.CustomItemMeta // parsed frontmatter (nil if parsing failed)
-	Error   string                 // validation error, if any
+	Name     string                 // kebab-case name derived from filename
+	Type     string                 // "skill", "workflow", "protocol", "sensor", "routine"
+	RelPath  string                 // relative path from project root
+	Meta     *config.CustomItemMeta // parsed frontmatter (nil if parsing failed)
+	Error    string                 // validation error, if any
+	Orphaned bool                   // true when the name is already in the installed list but the file isn't lock-tracked (manual registration recovery)
 }
 
 // ScanCustomFiles finds untracked custom files in an agent's workspace directories.
@@ -61,14 +62,15 @@ func ScanCustomFiles(projectRoot string, installed *config.InstalledAgent, lock 
 			}
 
 			name := strings.TrimSuffix(entry.Name(), info.ext)
-			if known[name] {
-				continue // already tracked in config
-			}
-
 			relPath, _ := filepath.Rel(projectRoot, filepath.Join(dirPath, entry.Name()))
 
-			// Skip if already in lock file (tracked but somehow not in config — be safe)
-			if _, tracked := lock.Files[relPath]; tracked {
+			_, tracked := lock.Files[relPath]
+			inInstalled := known[name]
+
+			// Skip only when fully tracked: name in installed list AND
+			// relPath in lock. Either-only state means user-orphaned
+			// registration (manual edit) or stale lock — surface for re-track.
+			if inInstalled && tracked {
 				continue
 			}
 
@@ -81,10 +83,11 @@ func ScanCustomFiles(projectRoot string, installed *config.InstalledAgent, lock 
 			meta, _ := ParseFrontmatter(data)
 
 			df := DiscoveredFile{
-				Name:    name,
-				Type:    itemType,
-				RelPath: relPath,
-				Meta:    meta,
+				Name:     name,
+				Type:     itemType,
+				RelPath:  relPath,
+				Meta:     meta,
+				Orphaned: inInstalled && !tracked,
 			}
 
 			// Validate
