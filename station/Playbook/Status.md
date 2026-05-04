@@ -27,6 +27,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| **v0.4.0 release shipped** — Plan 36 release prep: x/net v0.53.0 + Go 1.25.9 + workflow_dispatch retry + doc sweep + CHANGELOG. Tag `v0.4.0` pushed. [plan](Plans/Archive/36-v04-release-prep.md) · [PR #94](https://github.com/LastStep/Bonsai/pull/94) | 36 | gp + tl | 2026-05-04 |
 | Plan 35 — `bonsai validate` command: read-only ability-state audit, 6 issue categories, --json + --agent flags. v0.4.0 headline. [plan](Plans/Archive/35-bonsai-validate-command.md) · [PR #93](https://github.com/LastStep/Bonsai/pull/93) | 35 | gp + tl | 2026-05-04 |
 | Plan 34 — custom-ability discovery bug bundle: orphan-registration recovery in scan, bash-shebang sensor frontmatter parser, non-TTY invalid-file stderr warning, bonsai-model.md hand-edit ban. [plan](Plans/Archive/34-custom-ability-discovery-bug-bundle.md) · [PR #92](https://github.com/LastStep/Bonsai/pull/92) | 34 | gp + tl | 2026-05-04 |
 | Plan 32 — followup bundle: wsvalidate extract, Validate() chokepoint, O_NOFOLLOW snapshot. 13/17 review items closed. [plan](Plans/Archive/32-followup-bundle.md) · [PR #80](https://github.com/LastStep/Bonsai/pull/80) | 32 | gp×2 + tl | 2026-04-25 |

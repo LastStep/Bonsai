@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Last ship (2026-05-04): Plan 35 — `bonsai validate` command. v0.4.0 headline shipped. [plan](../../Playbook/Plans/Archive/35-bonsai-validate-command.md) · [PR #93](https://github.com/LastStep/Bonsai/pull/93). Plan 34 also shipped today (PR #92). Next up: Plan 36 release prep (workflow_dispatch + x/net bump + CHANGELOG + tag v0.4.0).
+**Current task:** Idle. **v0.4.0 shipped 2026-05-04.** Plan 36 release prep merged ([PR #94](https://github.com/LastStep/Bonsai/pull/94)) covering Go 1.25.9 + x/net v0.53.0 + workflow_dispatch retry hook + doc sweep + CHANGELOG. Tag `v0.4.0` pushed; GoReleaser run in flight. Today shipped: Plans 34, 35, 36. Next: TBD — possibly module-hygiene sweep (P3 backlog), root-CLAUDE.md routine procedure tweak (P2), semgrep install (P2), or new feature work.
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 

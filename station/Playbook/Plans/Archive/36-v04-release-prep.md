@@ -6,8 +6,10 @@ description: v0.4.0 release-prep bundle — workflow_dispatch retry hook, x/net 
 # Plan 36 — v0.4.0 Release Prep
 
 **Tier:** 2
-**Status:** Draft
+**Status:** Complete
 **Agent:** general-purpose (single worktree, 4 file-disjoint phases)
+**PR:** [#94](https://github.com/LastStep/Bonsai/pull/94) — squash `b9ade62` (2026-05-04)
+**Tag:** `v0.4.0` pushed 2026-05-04
 
 ## Goal
 
