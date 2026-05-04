@@ -81,6 +81,8 @@ Two files track project state:
 
 Read `.bonsai.yaml` to know what the user already chose. Don't overwrite it.
 
+> **Workspace looks off?** Run `bonsai validate` first — read-only audit that surfaces orphaned registrations, stale lock entries, untracked custom files, and frontmatter problems. Use `bonsai validate --json` for machine-readable output. Then run `bonsai update` to fix what it finds.
+
 ---
 
 ## Key commands
@@ -91,6 +93,7 @@ Read `.bonsai.yaml` to know what the user already chose. Don't overwrite it.
 | `bonsai add` | Adds a new agent OR adds abilities to an existing agent. Interactive. |
 | `bonsai remove <agent\|skill\|...>` | Removes an agent or a specific ability. Interactive. |
 | `bonsai update` | Detects user-dropped custom files, re-renders abilities against latest catalog, resolves conflicts. |
+| `bonsai validate` | Read-only audit — detect orphaned registrations, stale lock entries, untracked custom files, frontmatter problems. JSON via `--json`. |
 | `bonsai list` | Shows installed agents + their abilities. |
 | `bonsai catalog` | Browses what's available (add `--json` for stdout). |
 | `bonsai guide` | Reads bundled onboarding docs. |
@@ -213,6 +216,7 @@ When the user asks you to customize their Bonsai workspace, walk this decision t
 |-------------------|-----------|
 | What catalog items exist | `bonsai catalog --json` or `.bonsai/catalog.json` |
 | What's installed in this project | `.bonsai.yaml` or `bonsai list` |
+| Whether the workspace is in a consistent state | `bonsai validate` (or `bonsai validate --json`) |
 | What a specific skill does | `cat <workspace>/agent/Skills/<name>.md` |
 | What a sensor enforces | `cat <workspace>/agent/Sensors/<name>.sh` |
 | What routines are active and their last-run dates | `<workspace>/agent/Core/routines.md` |
