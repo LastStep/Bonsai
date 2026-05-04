@@ -20,6 +20,30 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-04 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** Dashboard `last_ran` updated to 2026-05-04, `next_due` to 2026-05-09. No changes to Status.md, StatusArchive.md, or Backlog.md (audit-only run — everything was clean).
+- **Flags:** none
+- **Report:** `Reports/Pending/2026-05-04-status-hygiene.md`
+
+### 2026-05-04 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Marked 6 stale References entries in `agent/Core/memory.md` with `(stale — file not in repo)` — `station/Research/RESEARCH-*.md` files were never committed to git (existed only on original dev machine). All other memory entries validated accurate. Dashboard `last_ran` updated to 2026-05-04.
+- **Flags:** 1 low-priority — Research doc paths in References section are stale; backlog item "Research scaffolding item" already tracks adding `Research/` as optional scaffolding. No user action required unless they want to commit those files.
+- **Report:** `Reports/Pending/2026-05-04-memory-consolidation.md`
+
+### 2026-05-04 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Added 1 missing backlog item to Ungrouped P2 — "Better trigger sections" which was noted in 2026-04-21 Routine Digest as pending capture but never added. Dashboard `last_ran` updated to 2026-05-04.
+- **Flags:** 1 item for user review — "Better trigger sections" is the last unchecked Phase 1 Roadmap item; now backlogged as P2. Memory Consolidation, Status Hygiene, and Roadmap Accuracy are all overdue (Next Due 2026-04-30, 2026-04-30, 2026-04-28 respectively).
+- **Report:** `Reports/Pending/2026-05-04-backlog-hygiene.md`
+
 ### 2026-05-04 — Dependency Audit
 - **Outcome:** success
 - **Changes:** Report written to `Reports/Pending/2026-05-04-dependency-audit.md`. No code/config edits.
@@ -45,6 +69,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** v0.4.0 tag pushed; 6 platform binaries (linux/darwin/windows × amd64/arm64) + checksums.txt published; Homebrew formula bumped to 0.4.0 (4 fresh sha256s).
 - **Flags:** GoReleaser failed first run on `undefined: syscall.O_NOFOLLOW` cross-compiling to Windows — Plan 32 (PR #80) introduced the symbol; Linux CI didn't catch it. Hotfix PR #95 split helper into `catalog_snapshot_unix.go` + `catalog_snapshot_windows.go`. v0.4.0 tag force-moved to hotfix HEAD (zero blast radius — no release artifacts existed yet). Re-run via Plan 36's just-shipped `workflow_dispatch` retry hook → success. **Dogfood note:** the retry hook was used in production within ~30 min of shipping it.
 - **Notes:** Memory note added — `syscall.O_NOFOLLOW` is POSIX-only; Windows cross-compile gate missing from CI. Backlog P2 filed: add `GOOS=windows GOARCH=amd64 go build ./...` to ci.yml.
+
+### 2026-05-04 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard `last_ran` updated to 2026-05-04, `next_due` to 2026-05-18. No changes to Roadmap.md (audit-only per procedure).
+- **Flags:** 2 low-severity findings for user review — (1) `bonsai validate` (Plan 35/v0.4.0) not listed as a Phase 1 roadmap item; recommend adding `[x]` entry; (2) Phase 1 is one item from complete — consider phase transition label when "Better trigger sections" ships.
+- **Report:** `Reports/Pending/2026-05-04-roadmap-accuracy.md`
 
 ### 2026-05-04 — Routine Digest
 - **Outcome:** success
