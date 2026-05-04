@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. **v0.4.0 shipped 2026-05-04.** Plan 36 ([PR #94](https://github.com/LastStep/Bonsai/pull/94)) + Windows-cross-compile hotfix ([PR #95](https://github.com/LastStep/Bonsai/pull/95)). Release: 6 platform binaries published, Homebrew formula v0.4.0. workflow_dispatch retry hook (shipped in Plan 36) was used immediately to recover from initial GoReleaser failure — dogfooded the new pipeline successfully. Today shipped: Plans 34, 35, 36 + hotfix. Next: TBD — possibly module-hygiene sweep (P3), root-CLAUDE.md routine procedure tweak (P2), semgrep install (P2), or new feature work.
+**Current task:** Idle. **v0.4.0 shipped 2026-05-04** (Plans 34/35/36 + hotfix #95). Release-ship narrative in [Logs/2026-05-04-routine-digest-and-v04-ship.md](../../Logs/2026-05-04-routine-digest-and-v04-ship.md). Next: TBD — module-hygiene sweep (P3), Windows cross-compile CI gate (P2 new), root-CLAUDE.md routine tweak (P2), semgrep install (P2), or new feature.
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
