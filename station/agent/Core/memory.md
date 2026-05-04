@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Plan 35 — `bonsai validate` command (Tier 1, in dispatch). v0.4.0 headline new feature. [plan](../../Playbook/Plans/Active/35-bonsai-validate-command.md). Last ship: Plan 34 ([archive](../../Playbook/Plans/Archive/34-custom-ability-discovery-bug-bundle.md) · [PR #92](https://github.com/LastStep/Bonsai/pull/92)).
+**Current task:** Idle. Last ship (2026-05-04): Plan 35 — `bonsai validate` command. v0.4.0 headline shipped. [plan](../../Playbook/Plans/Archive/35-bonsai-validate-command.md) · [PR #93](https://github.com/LastStep/Bonsai/pull/93). Plan 34 also shipped today (PR #92). Next up: Plan 36 release prep (workflow_dispatch + x/net bump + CHANGELOG + tag v0.4.0).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 

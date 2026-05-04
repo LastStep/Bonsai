@@ -6,7 +6,7 @@ description: New `bonsai validate` CLI command — proactive read-only check for
 # Plan 35 — `bonsai validate` Command
 
 **Tier:** 1
-**Status:** Active
+**Status:** Complete
 **Agent:** general-purpose (single worktree)
 
 ## Goal
