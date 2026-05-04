@@ -16,6 +16,7 @@ agents:
             - issue-classification
             - pr-creation
             - bubbletea
+            - bonsai-model
         workflows:
             - code-review
             - planning

@@ -20,6 +20,36 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-04 — Dependency Audit
+- **Outcome:** success
+- **Changes:** Report written to `Reports/Pending/2026-05-04-dependency-audit.md`. No code/config edits.
+- **Flags:** 0 reachable CVEs (down from 2). 8 unreachable persistent (`golang.org/x/net@v0.38.0` 2× pkg + 6 stdlib module-level fixed in go1.25.9). 23 modules behind (hygiene). npm clean (3rd run).
+- **Notes:** Resolved 3 prior findings via Go 1.24.13 → 1.25.8 upgrade. `golang.org/x/net` bump (planned in Plan 36) clears 2 of remaining 8.
+
+### 2026-05-04 — Vulnerability Scan
+- **Outcome:** success
+- **Changes:** Report written to `Reports/Pending/2026-05-04-vulnerability-scan.md`. No code/config edits.
+- **Flags:** Cleanest cycle on record — 0 reachable CVEs, 0 SAST, 0 secrets (`gitleaks detect` ran clean across 292 commits). `.env` gitignore resolved.
+- **Notes:** `gitleaks` now installed (closes half of P2 backlog item from 2026-04-16). `semgrep` still missing — SAST stays on Grep fallback. 8 unreachable Go findings cross-ref dependency-audit.
+
+### 2026-05-04 — Doc Freshness Check
+- **Outcome:** success
+- **Changes:** Report written to `Reports/Pending/2026-05-04-doc-freshness-check.md`. No doc edits (audit-only).
+- **Flags:** 5 drift items — high: root `Bonsai/CLAUDE.md` project-structure tree (cmd/internal/tui badly stale across Plans 22/23/27/28/30/31/32/35); medium: broken nav link `agent/Skills/bonsai-model.md`, `code-index.md` stale (validate missing, line numbers off, 6 TUI pkgs undocumented); low: INDEX.md CLI count 7→8, INDEX arch diagram drift.
+- **Notes:** 5 prior-cycle flags resolved (bubbletea nav row, routines table split, .bak files, Roadmap unchecked boxes, stale Status.md blocker). Root-CLAUDE.md drift recurring — promote Backlog P3 process item → P2 candidate.
+
+### 2026-05-04 — Routine Digest
+- **Outcome:** success
+- **Reports processed:** 3 (Dependency Audit, Vulnerability Scan, Doc Freshness Check)
+- **Quick fixes applied:** 1 — INDEX.md CLI count 7→8 (+ validate)
+- **User actions deferred:** 1 — `bonsai add` interactive run to install bonsai-model skill
+- **Backlog items added/updated:** 6 — Go 1.25.9 bump (new P2, scoped Plan 36); Plan 36 docs sweep ST-1+ST-2+PW-1 (new P2, scoped Plan 36); root-CLAUDE.md routine procedure tweak (promoted P3→P2); install semgrep (narrowed — gitleaks half closed); 23-module hygiene refresh (count updated 17→23); x/net bump (Plan 36 reaffirm).
+- **Plan report written:** no — all items either quick-fixed, scoped into Plan 36 (to be drafted), or backlogged.
+- **Warnings acknowledged:** 1 (x/net bump already in Plan 36 scope).
+- **Reports archived:** `Reports/Archive/2026-05-04-{dependency-audit,vulnerability-scan,doc-freshness-check}.md`.
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)

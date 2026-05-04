@@ -81,6 +81,7 @@
 | Classifying or triaging a new issue or bug report; Determining issue type, importance, and domain labels | [agent/Skills/issue-classification.md](agent/Skills/issue-classification.md) |
 | Creating a pull request with proper conventions; Setting up branch naming, PR title, and body template | [agent/Skills/pr-creation.md](agent/Skills/pr-creation.md) |
 | BubbleTea / Charm-stack TUI patterns — harness/step/reducer model, component golden rules, embedding Huh forms, emoji-width gotchas. | [agent/Skills/bubbletea.md](agent/Skills/bubbletea.md) |
+| How Bonsai structures an agent workspace — catalog, abilities, scaffolding, and customization decisions. Load when reasoning about adding/removing abilities, creating custom items, or explaining Bonsai concepts to the user. | [agent/Skills/bonsai-model.md](agent/Skills/bonsai-model.md) |
 
 ### Routines (periodic self-maintenance)
 
