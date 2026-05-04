@@ -136,6 +136,10 @@ Items that should be worked together are tagged with a group letter. See the gro
 - **[security] Bump `golang.org/x/net` v0.38.0 → v0.45.0+** — Clears GO-2026-4441 (infinite parsing loop in `golang.org/x/net`) and GO-2026-4440 (quadratic parsing complexity in `golang.org/x/net/html`). Both unreachable package-level CVEs today but easy hygiene. Run `go get golang.org/x/net@latest && go mod tidy`, verify `govulncheck ./...` clean. Should ship alongside or after the P1 Go toolchain upgrade. *(added 2026-04-21, source: routine-digest)*
 ## P3 — Ideas & Research
 
+### Validate command followups
+
+- **[debt] `bonsai validate` — flag ownerless stale lock entries** — `internal/validate/validate.go` `auditStaleLockEntries` filters lock entries by per-agent workspace prefix to avoid double-reporting. Lock entries whose path lies outside ALL installed agents' workspaces are silently skipped — would surface only if an agent was uninstalled and lock entries lingered. Add a final post-loop pass that flags such entries with `AgentName=""`. *(added 2026-05-04, source: PR #93 review nit)*
+
 ### Future Platform (Roadmap Phase 2+)
 
 - **[feature] Integration scaffolding variants** — Support alternative backends for all PM artifacts (backlog, status, roadmap, reports). During `bonsai init`, user picks a backend per artifact: markdown (default), GitHub Issues, Notion, Jira, etc. Affects: scaffolding manifest, agent instructions, protocols, any sensor/workflow that references PM files. *(added 2026-04-15, source: user)*
