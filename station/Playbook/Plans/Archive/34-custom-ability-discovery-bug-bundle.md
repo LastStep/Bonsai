@@ -6,7 +6,7 @@ description: Fix bonsai update silent-skip of pre-registered custom abilities + 
 # Plan 34 — Custom Ability Discovery Bug Bundle
 
 **Tier:** 1
-**Status:** Active
+**Status:** Complete
 **Agent:** code (general-purpose, single worktree)
 
 ## Goal
