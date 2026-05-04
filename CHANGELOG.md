@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-04
+
+> **The "audit your workspace" release.** New `bonsai validate` command surfaces drift between catalog and installed state. Plus a custom-ability discovery fix that recovers orphaned hand-rolled abilities, a website concept-page rewrite, and a chokepoint-hardening followup bundle.
+
+### Added
+- **`bonsai validate`** — read-only ability-state audit. Reports orphaned files, missing required items, lock/disk drift; `--json` for CI/agents; exits non-zero on any finding so CI can gate on workspace integrity. Headlines v0.4. (Plan 35, [#93](https://github.com/LastStep/Bonsai/pull/93))
+- **NoteStandards skill** in generated workspaces — 3-line cap on log/decision entries with link-out for trackers, wired into memory protocol and session-logging workflow.
+
+### Changed
+- **`bonsai update` recovers orphaned custom-ability registrations** — hand-authored abilities under `agent/{Skills,Workflows,Protocols}/` that were missing from `.bonsai.yaml` are now picked up and registered on update. (Plan 34, [#92](https://github.com/LastStep/Bonsai/pull/92))
+- **`wsvalidate` extracted** to a dedicated package; `Validate()` is now the single chokepoint for config validation; snapshot writes hardened with `O_NOFOLLOW`. (Plan 32, [#80](https://github.com/LastStep/Bonsai/pull/80))
+- **Website concept-page rewrite** — narrative-first explainers replace reference-style pages; clearer mental model for new users. (Plan 33, [#79](https://github.com/LastStep/Bonsai/pull/79))
+- **Sensor scripts now ship with shebang-aware frontmatter** so generator preserves `#!/usr/bin/env bash` across re-runs. ([#92](https://github.com/LastStep/Bonsai/pull/92))
+
+### Fixed
+- **Custom-ability discovery bug bundle** — orphaned registrations, sensor shebang frontmatter loss, and non-TTY warning channel resolved. (Plan 34, [#92](https://github.com/LastStep/Bonsai/pull/92))
+- **`bonsai update` non-TTY warnings** route to stderr instead of being suppressed. ([#92](https://github.com/LastStep/Bonsai/pull/92))
+
+### Security
+- `O_NOFOLLOW` on snapshot writes — defense-in-depth against symlink-substitution races during `.bonsai/catalog.json` materialization. (Plan 32, [#80](https://github.com/LastStep/Bonsai/pull/80))
+- **Go toolchain 1.25.9** — clears 6 unreachable stdlib CVEs (GO-2026-4864/4947/4946/4870/4869/4865).
+- **`golang.org/x/net` v0.53.0** — clears GO-2026-4441 + GO-2026-4440. Reachable-set vuln count: 0.
+
 ## [0.3.0] - 2026-04-24
 
 > **The "your AI agent can work with Bonsai itself" release.** Every new workspace now carries an agent-readable mental model of Bonsai, a filesystem-discoverable catalog snapshot, and copy-paste prompts to get your agent started. Plus a scope-guard correctness fix and cinematic polish on the last two commands that needed it.
@@ -122,7 +145,8 @@ First public release. Go CLI for scaffolding Claude Code agent workspaces.
 - Release pipeline — GoReleaser v2, GitHub Actions tag trigger, Homebrew tap (`LastStep/homebrew-tap`).
 - Dogfooding — Bonsai generates its own `station/` workspace with tech-lead agent.
 
-[Unreleased]: https://github.com/LastStep/Bonsai/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/LastStep/Bonsai/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/LastStep/Bonsai/compare/v0.3.0...v0.4.0
 [0.2.0]: https://github.com/LastStep/Bonsai/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/LastStep/Bonsai/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/LastStep/Bonsai/compare/v0.1.1...v0.1.2
