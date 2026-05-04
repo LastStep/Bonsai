@@ -38,6 +38,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 5 drift items — high: root `Bonsai/CLAUDE.md` project-structure tree (cmd/internal/tui badly stale across Plans 22/23/27/28/30/31/32/35); medium: broken nav link `agent/Skills/bonsai-model.md`, `code-index.md` stale (validate missing, line numbers off, 6 TUI pkgs undocumented); low: INDEX.md CLI count 7→8, INDEX arch diagram drift.
 - **Notes:** 5 prior-cycle flags resolved (bubbletea nav row, routines table split, .bak files, Roadmap unchecked boxes, stale Status.md blocker). Root-CLAUDE.md drift recurring — promote Backlog P3 process item → P2 candidate.
 
+### 2026-05-04 — v0.4.0 Release Ship
+- **Outcome:** success (after 1 retry)
+- **Plan:** Plans/Archive/36-v04-release-prep.md (Tier 2, single-agent bundled dispatch)
+- **PRs:** [#94](https://github.com/LastStep/Bonsai/pull/94) (release prep) + [#95](https://github.com/LastStep/Bonsai/pull/95) (Windows cross-compile hotfix)
+- **Changes:** v0.4.0 tag pushed; 6 platform binaries (linux/darwin/windows × amd64/arm64) + checksums.txt published; Homebrew formula bumped to 0.4.0 (4 fresh sha256s).
+- **Flags:** GoReleaser failed first run on `undefined: syscall.O_NOFOLLOW` cross-compiling to Windows — Plan 32 (PR #80) introduced the symbol; Linux CI didn't catch it. Hotfix PR #95 split helper into `catalog_snapshot_unix.go` + `catalog_snapshot_windows.go`. v0.4.0 tag force-moved to hotfix HEAD (zero blast radius — no release artifacts existed yet). Re-run via Plan 36's just-shipped `workflow_dispatch` retry hook → success. **Dogfood note:** the retry hook was used in production within ~30 min of shipping it.
+- **Notes:** Memory note added — `syscall.O_NOFOLLOW` is POSIX-only; Windows cross-compile gate missing from CI. Backlog P2 filed: add `GOOS=windows GOARCH=amd64 go build ./...` to ci.yml.
+
 ### 2026-05-04 — Routine Digest
 - **Outcome:** success
 - **Reports processed:** 3 (Dependency Audit, Vulnerability Scan, Doc Freshness Check)

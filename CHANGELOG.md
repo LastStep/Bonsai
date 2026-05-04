@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Custom-ability discovery bug bundle** — orphaned registrations, sensor shebang frontmatter loss, and non-TTY warning channel resolved. (Plan 34, [#92](https://github.com/LastStep/Bonsai/pull/92))
 - **`bonsai update` non-TTY warnings** route to stderr instead of being suppressed. ([#92](https://github.com/LastStep/Bonsai/pull/92))
+- **Windows cross-compile** for `internal/generate/catalog_snapshot.go` — split `O_NOFOLLOW` use into platform files (`_unix.go` keeps the symlink defense; `_windows.go` falls back to plain `OpenFile`). Was breaking `goreleaser` cross-compile since Plan 32 (#80). ([#95](https://github.com/LastStep/Bonsai/pull/95))
 
 ### Security
 - `O_NOFOLLOW` on snapshot writes — defense-in-depth against symlink-substitution races during `.bonsai/catalog.json` materialization. (Plan 32, [#80](https://github.com/LastStep/Bonsai/pull/80))
