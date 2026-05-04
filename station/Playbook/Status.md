@@ -16,6 +16,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
+| Plan 35 — `bonsai validate` command (v0.4 headline). Read-only ability-state audit, --json + --agent flags, exit-code-driven. [plan](Plans/Active/35-bonsai-validate-command.md) | 35 | gp + tl | Tier 1, single worktree |
 
 ## Pending
 
