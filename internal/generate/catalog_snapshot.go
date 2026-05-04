@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/LastStep/Bonsai/internal/catalog"
 )
@@ -200,8 +199,9 @@ func WriteCatalogSnapshot(projectRoot string, version string, cat *catalog.Catal
 	// O_NOFOLLOW: refuse to follow a symlink at the target path. Defends
 	// against an attacker pre-planting a symlink at .bonsai/catalog.json
 	// pointing at e.g. ~/.ssh/authorized_keys; without the flag, OpenFile
-	// would follow the link and we'd overwrite the target.
-	f, err := os.OpenFile(absPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|syscall.O_NOFOLLOW, 0644)
+	// would follow the link and we'd overwrite the target. Platform-specific
+	// implementation lives in catalog_snapshot_unix.go / _windows.go.
+	f, err := openSnapshotFile(absPath)
 	if err != nil {
 		return fmt.Errorf("write catalog.json: %w", err)
 	}
