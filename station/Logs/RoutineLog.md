@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-05 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — References section 6 Research doc pointers marked stale (files do not exist in repo, never committed to git; links converted to plain text). `station/agent/Core/routines.md` dashboard updated (Last Ran 2026-05-05, Next Due 2026-05-10).
+- **Flags:** 1 — Research files referenced in memory.md do not exist (`station/Research/` directory absent from repo). Marked stale in-place; flagged for user awareness in report.
+- **Report:** `Reports/Pending/2026-05-05-memory-consolidation.md`
+
+---
+
 ### 2026-05-05 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
