@@ -50,6 +50,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-05 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard updated (Last Ran 2026-05-05, Next Due 2026-05-10). No Status.md or Backlog.md edits — audit-only cycle.
+- **Flags:** 1 (info) — 12 Recently Done rows dated 2026-04-22 will cross the 14-day archive threshold on 2026-05-06; next run (2026-05-10) will archive them and trim table to 10 items.
+- **Report:** `Reports/Pending/2026-05-05-status-hygiene.md`
+
+---
+
 ### 2026-05-04 — Dependency Audit
 - **Outcome:** success
 - **Changes:** Report written to `Reports/Pending/2026-05-04-dependency-audit.md`. No code/config edits.
