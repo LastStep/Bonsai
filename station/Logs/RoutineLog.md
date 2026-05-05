@@ -30,6 +30,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-05 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran 2026-05-05, Next Due 2026-05-19). Report written. No Roadmap.md edits (audit-only routine).
+- **Flags:** 2 — (1) `bonsai validate` command (Plan 35, v0.4.0) not listed in Phase 1 roadmap; (2) "Better trigger sections" unchecked with no active plan for 3+ weeks — user should disposition.
+- **Report:** `Reports/Pending/2026-05-05-roadmap-accuracy.md`
+
+---
+
 ### 2026-05-05 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
