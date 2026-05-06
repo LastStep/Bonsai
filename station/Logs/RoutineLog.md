@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-06 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard `last_ran` updated to 2026-05-06, next due 2026-05-13. Report written. No Backlog entries added or removed.
+- **Flags:** 1 — "Better trigger sections" re-plan entry logged as added in 2026-04-21 Routine Digest but absent from current Backlog.md. Unclear if resolved or never added. Flagged for user review.
+- **Report:** `Reports/Pending/2026-05-06-backlog-hygiene.md`
+
+---
+
 ### 2026-05-04 — Dependency Audit
 - **Outcome:** success
 - **Changes:** Report written to `Reports/Pending/2026-05-04-dependency-audit.md`. No code/config edits.
