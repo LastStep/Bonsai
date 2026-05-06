@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-06 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard `last_ran` updated to 2026-05-06, next due 2026-05-11. Report written. No Status.md or StatusArchive.md changes needed.
+- **Flags:** none
+- **Report:** `Reports/Pending/2026-05-06-status-hygiene.md`
+
+---
+
 ### 2026-05-06 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
