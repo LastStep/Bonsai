@@ -36,7 +36,7 @@ description: Periodic self-maintenance routines — schedules, dashboard, execut
 | Dependency Audit | 7 days | 2026-05-04 | 2026-05-11 | done |
 | Doc Freshness Check | 7 days | 2026-05-04 | 2026-05-11 | done |
 | Memory Consolidation | 5 days | 2026-05-06 | 2026-05-11 | done |
-| Roadmap Accuracy | 14 days | 2026-04-14 | 2026-04-28 | done |
+| Roadmap Accuracy | 14 days | 2026-05-06 | 2026-05-20 | done |
 | Status Hygiene | 5 days | 2026-04-25 | 2026-04-30 | done |
 | Vulnerability Scan | 7 days | 2026-05-04 | 2026-05-11 | done |
 

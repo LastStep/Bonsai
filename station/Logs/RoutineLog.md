@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-06 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard `last_ran` updated to 2026-05-06, next due 2026-05-20. Report written.
+- **Flags:** 2 — (1) medium: "Better trigger sections" Phase 1 checkbox is stale — all phases shipped by 2026-04-21, Roadmap still shows `[ ]`; (2) low: `bonsai validate` (Plan 35 / v0.4.0) has no Roadmap entry. Both flagged for user review, no autonomous Roadmap edits made.
+- **Report:** `Reports/Pending/2026-05-06-roadmap-accuracy.md`
+
+---
+
 ### 2026-05-06 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
