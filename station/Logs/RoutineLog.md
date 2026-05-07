@@ -20,6 +20,30 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-07 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes made (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-05-07/2026-05-21.
+- **Flags:** 2 low-severity items flagged for user — (1) Phase 1 "Better trigger sections" remains unchecked despite Plans 08/17/21 + context-guard regex shipping the bulk; only deferred piece is Plan 08 C3 (P3 backlog); recommend `[x]` w/ annotation or scope reword. (2) Optional — Phase 1 has no row for `bonsai validate` (Plan 35, v0.4.0 headline). Phase 2/3/4 alignment healthy; KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-05-07-roadmap-accuracy.md`
+
+### 2026-05-07 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 12 Done items dated 2026-04-22 (and the 11th-place Plan 27 PR2 row dated 2026-04-22) from `Status.md` → `StatusArchive.md`; updated footer date marker `older than 2026-04-22` → `2026-04-23`; dashboard `Last Ran`/`Next Due` set to 2026-05-07/2026-05-12.
+- **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
+- **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
+
+### 2026-05-07 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes made (audit-only routine) — dashboard `last_ran` updated to 2026-05-07.
+- **Flags:** 5 items flagged for user — (1) **P0 escalation**: `[research] Trial sentrux` in Backlog P0 without Status.md placement; (2) Roadmap Phase 1 "Better trigger sections" has no Backlog tracking entry; (3) `code-index.md` staleness (medium drift, uncaptured from 2026-05-04 Doc Freshness); (4) broken nav link `agent/Skills/bonsai-model.md` (low drift, uncaptured); (5) INDEX.md arch diagram drift (low, uncaptured).
+- **Report:** `Reports/Pending/2026-05-07-backlog-hygiene.md`
+
 ### 2026-05-04 — Dependency Audit
 - **Outcome:** success
 - **Changes:** Report written to `Reports/Pending/2026-05-04-dependency-audit.md`. No code/config edits.
@@ -343,3 +367,20 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan/Status cross-ref:** Plans/Active/ empty (no orphans); Status Recently Done rows for plans 23–31 all map to files in Plans/Archive/ (31 plan files total).
 - **Backlog cross-ref:** "Re-archive Plan 29" already commented out in Backlog (line 58, resolved 2026-04-23 via archive-reconcile sweep). No new resolutions to remove.
 - **Net changes:** 0 archived, 0 flagged, 0 demoted.
+
+### 2026-05-07 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~3 minutes
+- **Changes:** dashboard row updated (Last Ran 2026-04-25 → 2026-05-07, Next Due → 2026-05-12); no edits to `agent/Core/memory.md` (zero auto-memory entries to merge, all 15 Notes + 6 References validated against codebase, Work State accurate post-v0.4.0).
+- **Flags:** none — auto-memory still in canonical-stub steady state; memory protocol holding cleanly across the v0.4.0 ship cycle.
+- **Report:** `Reports/Pending/2026-05-07-memory-consolidation.md`
+
+### 2026-05-07 — Routine Digest
+- **Outcome:** success
+- **Reports processed:** 4 — backlog-hygiene, memory-consolidation, roadmap-accuracy, status-hygiene
+- **Quick fixes applied:** 2 — Roadmap.md Phase 1 "Better trigger sections" → `[x]` w/ annotation; added `bonsai validate` row to Phase 1
+- **Backlog items added:** 0 (all flagged items resolved inline or routed to plan/Status)
+- **Plan report written:** yes — Plan 37 doc-refresh-bundle (`Plans/Active/37-doc-refresh-bundle.md`)
+- **Warnings acknowledged:** 0
+- **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)

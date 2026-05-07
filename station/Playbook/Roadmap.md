@@ -22,11 +22,12 @@ description: High-level project phases and goals. This is the long-term plan, no
 - [x] Lock file conflict handling — detect user-modified files, prevent silent overwrites
 - [x] Awareness Framework — status-bar + context-guard sensors
 - [x] Dogfooding — Bonsai manages itself via station/ workspace
-- [ ] Better trigger sections — clearer activation conditions for catalog items
+- [x] Better trigger sections — clearer activation conditions for catalog items _(shipped via Plans 08/17/21 + context-guard regex; intent-classification prompt-hook deferred to P3 Backlog as Plan 08 C3)_
 - [x] UI overhaul — polish TUI for public-facing quality
 - [x] Usage instructions — best practices, first-run guidance, catalog item explanations
 - [x] Release pipeline — GoReleaser + GitHub Actions + Homebrew Tap for cross-platform binary distribution
 - [x] Community health files — ISSUE_TEMPLATE, CONTRIBUTING.md, CODE_OF_CONDUCT.md
+- [x] `bonsai validate` — read-only ability-state audit (orphans, stale lock entries, untracked customs, frontmatter gaps), `--json` + `--agent` flags. v0.4.0 headline.
 
 ---
 

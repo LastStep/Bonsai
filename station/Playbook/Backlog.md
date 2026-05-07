@@ -46,7 +46,7 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 ## P0 — Critical
 
-(none)
+<!-- "[research] Trial sentrux on Bonsai repo" — promoted to Status.md Pending 2026-05-07 (routine-digest). Blocked on Rust toolchain install. -->
 
 ## P1 — High
 
