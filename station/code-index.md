@@ -9,7 +9,7 @@ Quick-nav for the developer agent. Jump to what you need.
 | What | Where |
 |------|-------|
 | Embed catalog FS | `embed.go:8` — `//go:embed all:catalog` → `CatalogFS` |
-| Embed guide cheatsheets | `embed.go:11–21` — `GuideCustomFiles`, `GuideQuickstart`, `GuideConcepts`, `GuideCli` |
+| Embed guide cheatsheets | `embed.go:12–21` — `GuideCustomFiles`, `GuideQuickstart`, `GuideConcepts`, `GuideCli` |
 | Main | `cmd/bonsai/main.go:15` — `main()` → `cmd.Execute(sub, map[string]string{...})` |
 
 ---
@@ -32,43 +32,43 @@ Quick-nav for the developer agent. Jump to what you need.
 
 | Helper | Line | Purpose |
 |--------|------|---------|
-| `loadCatalog()` | `:42` | Load embedded catalog or exit |
-| `requireConfig()` | `:50` | Load `.bonsai.yaml` or exit |
-| `mustCwd()` | `:61` | Resolve current working dir or exit |
-| `Execute()` | `:80` | Wire catalog + guides into root command and run |
-| `buildConflictSteps()` | `:101` | Harness steps for legacy conflict picker |
-| `applyConflictPicks()` | `:147` | Apply per-file conflict choices to lock + disk |
-| `showWriteResults()` | `:198` | Display categorized file trees (created / updated / skipped) |
+| `loadCatalog()` | `:45` | Load embedded catalog or exit |
+| `requireConfig()` | `:53` | Load `.bonsai.yaml` or exit |
+| `mustCwd()` | `:64` | Resolve current working dir or exit |
+| `Execute()` | `:83` | Wire catalog + guides into root command and run |
+| `buildConflictSteps()` | `:104` | Harness steps for legacy conflict picker |
+| `applyConflictPicks()` | `:150` | Apply per-file conflict choices to lock + disk |
+| `showWriteResults()` | `:201` | Display categorized file trees (created / updated / skipped) |
 
 ### Init Helpers (`cmd/init_flow.go`)
 
 | Helper | Line | Purpose |
 |--------|------|---------|
-| `runInit()` | `:26` | Cinematic init: Vessel → Soil → Branches → Observe → Generate → Planted |
-| `buildGenerateAction()` | `:206` | Closure invoked by GenerateStage to write scaffolding + agent |
-| `plantedSummary()` | `:277` | Ability counts rendered in the Planted stage summary |
-| `scaffoldingToSoilOptions()` | `:292` | Map catalog scaffolding entries into Soil picker options |
+| `runInit()` | `:27` | Cinematic init: Vessel → Soil → Branches → Observe → Generate → Planted |
+| `buildGenerateAction()` | `:227` | Closure invoked by GenerateStage to write scaffolding + agent |
+| `plantedSummary()` | `:301` | Ability counts rendered in the Planted stage summary |
+| `scaffoldingToSoilOptions()` | `:316` | Map catalog scaffolding entries into Soil picker options |
 
 ### Add Helpers (`cmd/add.go`)
 
 | Helper | Line | Purpose |
 |--------|------|---------|
-| `runAdd()` | `:54` | Cinematic add: Select → [Ground] → Graft → Observe → Grow → [Conflicts] → Yield |
-| `applyCinematicConflictPicks()` | `:293` | Apply per-file conflict choices from ConflictsStage |
-| `installedSet()` | `:349` | Build "already installed" lookup for agent picker |
-| `buildAddGrowAction()` | `:371` | Closure invoked by GrowStage to generate selected abilities |
-| `distributeAddItemPicks()` | `:531` | Split per-category picks into skills/workflows/protocols/sensors/routines |
-| `availableAddItems()` | `:616` | Uninstalled-per-category catalog filter (used by Select + Grow) |
+| `runAdd()` | `:56` | Cinematic add: Select → [Ground] → Graft → Observe → Grow → [Conflicts] → Yield |
+| `applyCinematicConflictPicks()` | `:309` | Apply per-file conflict choices from ConflictsStage |
+| `installedSet()` | `:365` | Build "already installed" lookup for agent picker |
+| `buildAddGrowAction()` | `:387` | Closure invoked by GrowStage to generate selected abilities |
+| `distributeAddItemPicks()` | `:570` | Split per-category picks into skills/workflows/protocols/sensors/routines |
+| `availableAddItems()` | `:655` | Uninstalled-per-category catalog filter (used by Select + Grow) |
 
 ### Remove Helpers (`cmd/remove.go`)
 
 | Helper | Line | Purpose |
 |--------|------|---------|
-| `runRemoveItem()` | `:248` | Remove a single skill/workflow/protocol/sensor/routine |
-| `runRemoveItemAction()` | `:466` | Execute removal + regenerate affected agents |
-| `agentItemList()` | `:519` | Get an agent's installed items by type |
-| `itemIsRequired()` | `:568` | Check if item is required for agent type |
-| `itemDisplayName()` | `:594` | Look up display name from catalog |
+| `runRemoveItem()` | `:290` | Remove a single skill/workflow/protocol/sensor/routine |
+| `runRemoveItemAction()` | `:565` | Execute removal + regenerate affected agents |
+| `agentItemList()` | `:618` | Get an agent's installed items by type |
+| `itemIsRequired()` | `:667` | Check if item is required for agent type |
+| `itemDisplayName()` | `:693` | Look up display name from catalog |
 
 ---
 
@@ -93,7 +93,7 @@ Quick-nav for the developer agent. Jump to what you need.
 | Function | Line | Purpose |
 |----------|------|---------|
 | `DisplayNameFrom()` | `:49` | Convert kebab-case name to title-case display name |
-| `New(fsys)` | `:220` | Load full catalog from embedded FS |
+| `New(fsys)` | `:242` | Load full catalog from embedded FS |
 
 ### Lookup Methods on `Catalog`
 
@@ -117,11 +117,11 @@ Quick-nav for the developer agent. Jump to what you need.
 
 | Function | Line | Purpose |
 |----------|------|---------|
-| `loadItems()` | `:324` | Load skills/workflows/protocols from `meta.yaml` + `.md` |
-| `loadSensors()` | `:375` | Load sensors from `meta.yaml` + `.sh.tmpl` |
-| `loadRoutines()` | `:426` | Load routines from `meta.yaml` + `.md.tmpl` |
-| `loadScaffolding()` | `:477` | Load scaffolding from `manifest.yaml` |
-| `loadAgents()` | `:494` | Load agent defs from `agent.yaml` + `core/` |
+| `loadItems()` | `:346` | Load skills/workflows/protocols from `meta.yaml` + `.md` |
+| `loadSensors()` | `:397` | Load sensors from `meta.yaml` + `.sh.tmpl` |
+| `loadRoutines()` | `:448` | Load routines from `meta.yaml` + `.md.tmpl` |
+| `loadScaffolding()` | `:499` | Load scaffolding from `manifest.yaml` |
+| `loadAgents()` | `:516` | Load agent defs from `agent.yaml` + `core/` |
 
 ---
 
@@ -131,11 +131,11 @@ Quick-nav for the developer agent. Jump to what you need.
 
 | Type / Function | Line | Purpose |
 |-----------------|------|---------|
-| `CustomItemMeta` | `:10` | Metadata for user-created custom items (parsed from frontmatter) |
-| `ProjectConfig` | — | Root config struct (`.bonsai.yaml`) — project name, docs_path, agents, scaffolding |
-| `InstalledAgent` | — | Agent installed in a project — type, workspace, selected items |
-| `Save(path)` | `:40` | Write config to YAML |
-| `Load(path)` | `:49` | Read config from YAML |
+| `CustomItemMeta` | `:21` | Metadata for user-created custom items (parsed from frontmatter) |
+| `ProjectConfig` | `:42` | Root config struct (`.bonsai.yaml`) — project name, docs_path, agents, scaffolding |
+| `InstalledAgent` | `:30` | Agent installed in a project — type, workspace, selected items |
+| `Save(path)` | `:118` | Write config to YAML |
+| `Load(path)` | `:127` | Read config from YAML |
 
 ### `lockfile.go`
 
@@ -158,48 +158,48 @@ Quick-nav for the developer agent. Jump to what you need.
 
 | Function | Line | Purpose |
 |----------|------|---------|
-| `Scaffolding()` | `:359` | Generate INDEX.md, Playbook/, Logs/, Reports/ |
-| `SettingsJSON()` | `:466` | Generate `.claude/settings.json` with sensor hooks |
-| `WorkspaceClaudeMD()` | `:642` | Generate workspace `CLAUDE.md` with nav tables |
-| `AgentWorkspace()` | `:1216` | Full agent workspace — core templates + items + CLAUDE.md |
-| `RoutineDashboard()` | `:917` | Generate `agent/Core/routines.md` dashboard |
-| `EnsureRoutineCheckSensor()` | `:879` | Auto-manage routine-check sensor |
-| `PathScopedRules()` | `:1065` | Generate `.claude/rules/skill-{name}.md` for path-scoped auto-loading |
-| `WorkflowSkills()` | `:1103` | Generate `.claude/skills/{name}/SKILL.md` for curated workflows |
+| `Scaffolding()` | `:360` | Generate INDEX.md, Playbook/, Logs/, Reports/ |
+| `SettingsJSON()` | `:473` | Generate `.claude/settings.json` with sensor hooks |
+| `WorkspaceClaudeMD()` | `:725` | Generate workspace `CLAUDE.md` with nav tables |
+| `AgentWorkspace()` | `:1359` | Full agent workspace — core templates + items + CLAUDE.md |
+| `RoutineDashboard()` | `:1010` | Generate `agent/Core/routines.md` dashboard |
+| `EnsureRoutineCheckSensor()` | `:972` | Auto-manage routine-check sensor |
+| `PathScopedRules()` | `:1164` | Generate `.claude/rules/skill-{name}.md` for path-scoped auto-loading |
+| `WorkflowSkills()` | `:1228` | Generate `.claude/skills/{name}/SKILL.md` for curated workflows |
 
 ### Write System
 
 | Type / Function | Line | Purpose |
 |-----------------|------|---------|
-| `FileAction` | `:140` | Enum — Create / Update / Unchanged / Skipped / Conflict |
-| `FileResult` | `:152` | Single file operation result |
-| `WriteResult` | `:161` | Tracks all file operations (created, updated, skipped, conflict) |
-| `writeFile()` | `:276` | Lock-aware file write (detects conflicts) |
-| `writeFileChmod()` | `:316` | Same as writeFile but sets file permissions (for scripts) |
-| `ForceConflicts()` | `:212` | Overwrite all conflicted files |
-| `ForceSelected()` | `:234` | Overwrite only user-selected conflict files |
+| `FileAction` | `:141` | Enum — Create / Update / Unchanged / Skipped / Conflict |
+| `FileResult` | `:153` | Single file operation result |
+| `WriteResult` | `:162` | Tracks all file operations (created, updated, skipped, conflict) |
+| `writeFile()` | `:277` | Lock-aware file write (detects conflicts) |
+| `writeFileChmod()` | `:317` | Same as writeFile but sets file permissions (for scripts) |
+| `ForceConflicts()` | `:213` | Overwrite all conflicted files |
+| `ForceSelected()` | `:235` | Overwrite only user-selected conflict files |
 
 ### Helpers
 
 | Function | Line | Purpose |
 |----------|------|---------|
-| `titleCase()` | `:47` | Custom template func — capitalize each word |
-| `renderTemplate()` | `:64` | Render a `.tmpl` file with Go template |
-| `renderContent()` | `:330` | Render or copy file content based on `.tmpl` extension |
-| `descFor()` | `:80` | Build name→description map for nav tables (supports custom items) |
-| `scenariosDesc()` | `:118` | Trigger-aware description for CLAUDE.md tables |
-| `CuratedSlashWorkflows` | `:131` | Package-level set of workflows that get slash-command files |
-| `hasScaffolding()` | `:345` | Check if scaffolding item is selected |
-| `howToWorkLines()` | `:545` | Generate "How to Work" heuristics section |
-| `quickTriggersLines()` | `:600` | Generate Quick Triggers reference table |
-| `triggerSection()` | `:1155` | Generate trigger header for ability files |
-| `parseFrequencyDays()` | `:905` | Parse frequency string (e.g. "5 days") to int |
+| `titleCase()` | `:48` | Custom template func — capitalize each word |
+| `renderTemplate()` | `:65` | Render a `.tmpl` file with Go template |
+| `renderContent()` | `:331` | Render or copy file content based on `.tmpl` extension |
+| `descFor()` | `:81` | Build name→description map for nav tables (supports custom items) |
+| `scenariosDesc()` | `:119` | Trigger-aware description for CLAUDE.md tables |
+| `CuratedSlashWorkflows` | `:132` | Package-level set of workflows that get slash-command files |
+| `hasScaffolding()` | `:346` | Check if scaffolding item is selected |
+| `howToWorkLines()` | `:575` | Generate "How to Work" heuristics section |
+| `quickTriggersLines()` | `:683` | Generate Quick Triggers reference table |
+| `triggerSection()` | `:1298` | Generate trigger header for ability files |
+| `parseFrequencyDays()` | `:998` | Parse frequency string (e.g. "5 days") to int |
 
 ### `frontmatter.go` — Custom File Parsing
 
 | Function | Line | Purpose |
 |----------|------|---------|
-| `ParseFrontmatter()` | `:13` | Extract YAML frontmatter from custom file content |
+| `ParseFrontmatter()` | `:22` | Extract YAML frontmatter from custom file content |
 
 ### `scan.go` — Custom File Discovery
 
@@ -212,7 +212,7 @@ Quick-nav for the developer agent. Jump to what you need.
 
 | Type / Function | Line | Purpose |
 |-----------------|------|---------|
-| `CatalogSnapshot` | `:21` | Stable JSON shape written to `.bonsai/catalog.json` (decoupled from internal catalog types) |
+| `CatalogSnapshot` | `:20` | Stable JSON shape written to `.bonsai/catalog.json` (decoupled from internal catalog types) |
 | `AgentEntry` / `AbilityEntry` / `SensorEntry` / `RoutineEntry` | — | Per-section row shapes for the snapshot |
 | `WriteCatalogSnapshot()` | — | Render full catalog into `.bonsai/catalog.json` for downstream agent readers |
 
@@ -249,17 +249,17 @@ Single source of truth for workspace-path rules used by addflow + initflow + cmd
 
 | Function | Line | Purpose |
 |----------|------|---------|
-| `Banner()` | `:152` | Bonsai ASCII banner |
-| `Success/Error/Warning/Hint/Info()` | `:187–221` | Styled single-line messages |
-| `Heading/Section/SectionHeader()` | `:226–236` | Section headers |
-| `SuccessPanel/ErrorPanel/WarningPanel/InfoPanel()` | `:245–289` | Boxed panels |
-| `EmptyPanel()` | `:297` | Dim panel for empty states |
-| `TitledPanel()` | `:376` | Generic titled box with custom color |
-| `Fields()` | `:383` | Key-value pair display |
-| `CardFields()` | `:398` | Card-style key-value (returns string) |
-| `ItemTree()` | `:429` | Categorized tree view (for catalog/list output) |
-| `FileTree()` | `:475` | File tree view (for write results) |
-| `CatalogTable()` | `:533` | Table display for catalog command |
+| `Banner()` | `:173` | Bonsai ASCII banner |
+| `Success/Error/Warning/Hint/Info()` | `:208–242` | Styled single-line messages |
+| `Heading/Section/SectionHeader()` | `:247–257` | Section headers |
+| `SuccessPanel/ErrorPanel/WarningPanel/InfoPanel()` | `:266–310` | Boxed panels |
+| `EmptyPanel()` | `:318` | Dim panel for empty states |
+| `TitledPanel()` | `:397` | Generic titled box with custom color |
+| `Fields()` | `:404` | Key-value pair display |
+| `CardFields()` | `:419` | Card-style key-value (returns string) |
+| `ItemTree()` | `:450` | Categorized tree view (for catalog/list output) |
+| `FileTree()` | `:496` | File tree view (for write results) |
+| `CatalogTable()` | `:554` | Table display for catalog command |
 
 ### Prompts (`prompts.go`)
 
@@ -277,8 +277,8 @@ Single source of truth for workspace-path rules used by addflow + initflow + cmd
 | Function / Type | Line | Purpose |
 |-----------------|------|---------|
 | `Step` interface | `harness.go:49` | Contract every flow stage implements (Title/Done/Result/Update/View) |
-| `Harness` | `harness.go:116` | BubbleTea reducer that drives a linear list of Steps |
-| `Run()` | `harness.go:523` | Build + run a Harness, return per-step results or `ErrAborted` |
+| `Harness` | `harness.go:133` | BubbleTea reducer that drives a linear list of Steps |
+| `Run()` | `harness.go:634` | Build + run a Harness, return per-step results or `ErrAborted` |
 | `TextStep` | `steps.go:21` | Huh-backed text-input step |
 | `SelectStep` | `steps.go:135` | Huh-backed single-select step |
 | `MultiSelectStep` | `steps.go:193` | Huh-backed multi-select step (supports required + defaults) |
@@ -290,19 +290,19 @@ Single source of truth for workspace-path rules used by addflow + initflow + cmd
 
 | Stage / File | Entry | Purpose |
 |--------------|-------|---------|
-| `VesselStage` | `vessel.go:48` | Project name + docs_path text inputs |
+| `VesselStage` | `vessel.go:49` | Project name + docs_path text inputs |
 | `SoilStage` | `soil.go:40` | Scaffolding multi-select (INDEX, Playbook, Logs, Reports) |
 | `BranchesStage` | `branches.go:88` | Tabbed ability picker (skills/workflows/protocols/sensors/routines) |
 | `ObserveStage` | `observe.go:56` | Pre-generation confirm — project + planting summary |
 | `GenerateStage` | `generate.go` | Spinner stage running `GenerateAction` closure |
-| `PlantedStage` | `planted.go:54` | Post-generation summary + written file tree |
-| Chrome | `chrome.go:41` / `:129` | `RenderHeader()` / `RenderFooter()` — kanji rail + key hints |
+| `PlantedStage` | `planted.go:66` | Post-generation summary + written file tree |
+| Chrome | `chrome.go:47` / `:146` | `RenderHeader()` / `RenderFooter()` — kanji rail + key hints |
 | Layout | `layout.go:21` / `:48` / `:106` | `TerminalTooSmall`, `ClampColumns`, `Viewport` scroll helper |
 | Design tokens | `design.go:29` | `PanelWidth`, focused/unfocused styles, conflict tone palette |
 | Fallback | `fallback.go:33` / `:87` | `WideCharSafe()` detection + `StageLabels` (kanji + ASCII pair) |
 | Enso glyph | `enso.go` | Circle SVG-ish glyph rendered in chrome |
-| `StageContext` | `stage.go:258` | Shared context threaded into every stage (version, dirs, timings) |
-| `Stage` base | `stage.go:22` | Embedded helper for rail, size, title, done state |
+| `StageContext` | `stage.go:337` | Shared context threaded into every stage (version, dirs, timings) |
+| `Stage` base | `stage.go:23` | Embedded helper for rail, size, title, done state |
 
 ### AddFlow (`addflow/`) — `bonsai add` cinematic stages
 
@@ -310,14 +310,13 @@ Single source of truth for workspace-path rules used by addflow + initflow + cmd
 |--------------|-------|---------|
 | `SelectStage` | `select.go:34` | Agent type picker (marks already-installed) |
 | `GroundStage` | `ground.go:48` | Workspace path input (auto-complete for tech-lead) |
-| `GraftStage` | `graft.go:76` / `:84` | Tabbed ability picker — `NewAgent` or `AddItems` variant |
+| `BranchesStage` | `branches.go:76` / `:82` | Tabbed ability picker — `NewNewAgentBranches` / `NewAddItemsBranches` variants |
 | `ObserveStage` | `observe.go:43` | Pre-generation confirm — agent + abilities summary |
 | `GenerateStage` | `grow.go:16` | Wraps `initflow.GenerateStage` with add-specific copy |
 | `ConflictsStage` | `conflicts.go:53` | Per-file conflict picker (Skip / Overwrite / Backup) |
 | `YieldStage` | `yield.go:57–85` | Terminal outcomes: Success, AllInstalled, TechLeadRequired, UnknownAgent |
 | `StageLabels` | `addflow.go:49` | Per-stage kanji rail labels (SELECT / GROUND / GRAFT / …) |
-| `BuildAgentOptions()` | `select.go:57` | Catalog → `AgentOption` list with installed markers |
-| `NormaliseWorkspace()` | `ground.go:226` | Trim + slash-normalise user-entered workspace path |
+| `BuildAgentOptions()` | `select.go:58` | Catalog → `AgentOption` list with installed markers |
 
 ### RemoveFlow (`removeflow/`) — `bonsai remove` cinematic stages (Plan 31)
 

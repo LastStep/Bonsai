@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. **Routine digest 2026-05-07** done (commit `39ee362`) — 4 routines run via loop.md, sentrux P0 promoted Status.md Pending (blocked: Rust toolchain), Roadmap Phase 1 closed. **Plan 37 deferred to next session** — `Plans/Active/37-doc-refresh-bundle.md` (code-index.md line-number refresh, ~25min mechanical, INDEX.md verify already done in this session — was clean). Next: Plan 37, sentrux trial (needs rustup), or Windows cross-compile CI gate (P2 new).
+**Current task:** Idle. **Plan 37 shipped 2026-05-07** — code-index.md line refs synced + 2 stale rows fixed + INDEX.md `Go 1.24+→1.25+` drift caught (root CLAUDE.md same drift filed Backlog P3). [Status row](../../Playbook/Status.md). Next: sentrux trial (needs rustup), Windows cross-compile CI gate (Backlog P2), or root CLAUDE.md Go-version one-liner.
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 

@@ -15,7 +15,7 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 
 | Layer | Technology |
 |-------|-----------|
-| Language | Go 1.24+ |
+| Language | Go 1.25+ |
 | CLI framework | Cobra |
 | TUI forms | Huh (Charm) |
 | TUI styling | LipGloss (Charm) |

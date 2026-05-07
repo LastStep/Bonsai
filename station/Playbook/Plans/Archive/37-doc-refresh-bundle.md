@@ -1,6 +1,6 @@
 ---
 tags: [plan, tier-1, docs]
-status: Active
+status: Done
 tier: 1
 agent: tl
 ---
@@ -56,3 +56,10 @@ Routine-digest 2026-05-07 — both items flagged 2026-05-04 Doc Freshness Check;
 - Inline execution by tech lead — no agent dispatch, no worktree.
 - Estimated effort: 20-30 min mechanical.
 - After completion: archive plan to `Plans/Archive/37-doc-refresh-bundle.md`, append Status row.
+
+## Completion (2026-05-07)
+
+- `code-index.md`: 50+ line refs refreshed across cmd/, internal/{catalog,config,generate,tui,harness,initflow,addflow}. Sample-verified 6 random rows resolve to real funcs.
+- 2 stale rows fixed: `GraftStage`/`graft.go` → `BranchesStage`/`branches.go` (Plan 23 rename); `NormaliseWorkspace()` row dropped (func moved to `wsvalidate.Normalise()`).
+- `INDEX.md` verify: 6 internal pkgs + 8 CLI cmds match `ls`. **Drift found:** `Go 1.24+` → `Go 1.25+` (Plan 36 bumped go.mod, INDEX missed). Fixed.
+- Same `Go 1.24+` drift in root `Bonsai/CLAUDE.md` filed in Backlog P3 (out-of-scope for Plan 37).

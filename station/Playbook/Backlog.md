@@ -144,6 +144,10 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 - **[debt] `bonsai validate` — flag ownerless stale lock entries** — `internal/validate/validate.go` `auditStaleLockEntries` filters lock entries by per-agent workspace prefix to avoid double-reporting. Lock entries whose path lies outside ALL installed agents' workspaces are silently skipped — would surface only if an agent was uninstalled and lock entries lingered. Add a final post-loop pass that flags such entries with `AgentName=""`. *(added 2026-05-04, source: PR #93 review nit)*
 
+### Doc drift
+
+- **[debt] Root `CLAUDE.md` Go version stale** — `Bonsai/CLAUDE.md` still says `Stack: Go 1.24+`. `go.mod` is `go 1.25.0` (toolchain `go1.25.9`) since Plan 36. INDEX.md fixed to `1.25+` in Plan 37; root CLAUDE.md left out-of-scope. One-liner edit. *(added 2026-05-07, source: Plan 37 verification)*
+
 ### Future Platform (Roadmap Phase 2+)
 
 - **[feature] Integration scaffolding variants** — Support alternative backends for all PM artifacts (backlog, status, roadmap, reports). During `bonsai init`, user picks a backend per artifact: markdown (default), GitHub Issues, Notion, Jira, etc. Affects: scaffolding manifest, agent instructions, protocols, any sensor/workflow that references PM files. *(added 2026-04-15, source: user)*
