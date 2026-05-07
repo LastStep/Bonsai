@@ -74,71 +74,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2026-04-22
 
+> **The "cinematic CLI" release.** `bonsai init` and `bonsai add` now run in dedicated multi-stage flows with a kanji stage rail, responsive layout, and per-file conflict resolution. Plus a Starlight documentation site, a four-topic `bonsai guide`, and a persistent statusline you can wire into your Claude Code session.
+
 ### Added
-- Cinematic `bonsai init` flow — Vessel (project name + docs path) → Soil (scaffolding) → Branches (tabbed ability picker) → Observe (review) → Generate → Planted summary, with kanji/kana stage rail, semantic palette, responsive resize, and ASCII fallback for terminals without wide-char support.
-- Cinematic `bonsai add` flow — Select → [Ground] → Graft → Observe → Grow → [Conflicts] → Yield, with a per-file conflict picker (Skip / Overwrite / Backup) and four terminal Yield variants (success, all-installed, tech-lead-required, unknown-agent).
-- Persistent statusline at `station/agent/Sensors/statusline.sh` — context %, 5h and 7d budget %, model, branch (with dirty marker), elapsed, cost, plus optional caveman-mode badge; sage/sand/rose 256-color tiers with `NO_COLOR` and `BONSAI_STATUSLINE_HIDE` honoured.
-- `compact-recovery` sensor — re-injects Quick Triggers and work state after `/compact` so the agent doesn't lose its operating context.
-- `context-guard` patterns expanded — verify and plan triggers in addition to existing tier-based context-percentage injections.
-- Trigger metadata system — `triggers:` blocks on skills/workflows feed both generated CLAUDE.md tables and `.claude/skills/{name}/SKILL.md` slash commands.
-- Starlight documentation site under `website/` — concepts, command reference, catalog browser (auto-generated), LLM-friendly llms.txt layer, deploy workflow.
-- `bonsai guide` extended from a single topic to four — `quickstart`, `concepts`, `cli`, `custom-files`.
-- `RenderFileTree` widget and palette chrome tokens (`ColorLeafDim`, `ColorRule`, `ColorRule2`, `ColorAccent`) used across the cinematic flows.
+
+- **Cinematic `bonsai init`** — Vessel → Soil → Branches → Observe → Generate → Planted, with a kanji/kana stage rail, semantic palette, responsive resize, and ASCII fallback for terminals without wide-char support.
+- **Cinematic `bonsai add`** — Select → Ground → Graft → Observe → Grow → Conflicts → Yield, with a per-file conflict picker (Skip / Overwrite / Backup) and four terminal Yield variants (success, all-installed, tech-lead-required, unknown-agent).
+- **Persistent statusline** at `station/agent/Sensors/statusline.sh` — context %, 5h and 7d budget %, model, branch (with dirty marker), elapsed, cost, optional caveman-mode badge. Sage/sand/rose 256-color tiers; honours `NO_COLOR` and `BONSAI_STATUSLINE_HIDE`.
+- **`bonsai guide` extended to four topics** — `quickstart`, `concepts`, `cli`, `custom-files` (was a single page).
+- **Starlight documentation site** under `website/` — concepts, command reference, auto-generated catalog browser, LLM-friendly `llms.txt` layer, deploy workflow.
+- **Trigger metadata system** — `triggers:` blocks on skills/workflows feed both generated CLAUDE.md tables and `.claude/skills/{name}/SKILL.md` slash commands.
+- **`compact-recovery` sensor** — re-injects Quick Triggers and work state after `/compact` so the agent doesn't lose its operating context.
+- **Expanded `context-guard` patterns** — verify and plan triggers join the existing tier-based context-percentage injections.
 
 ### Changed
-- BubbleTea step/reducer harness in `internal/tui/harness/` is now the foundation for `init`, `add`, `remove`, and `update` — replaces the per-command Huh form chains.
-- README rewritten audience-first — new tagline "A workspace for your coding agent", `Who Bonsai is for` section, mechanism-over-personality bullets with concrete file references, `station/` tree snippet, demo gif.
-- `bonsai init` and `bonsai add` cinematic flows are now the default — no env flag required.
-- Adaptive color palette across the TUI — automatic light/dark detection, `NO_COLOR` honoured, `FatalPanel` and version banner consistency, structured error display via `ErrorDetail`.
-- Phase 2 UI consistency pass — ordering, item counts, key hints, "Up to date" no-op detection across pickers.
-- CI workflow widened to run on `push: branches: [main]` in addition to `pull_request` — closes the "gofmt drift on main silently hides because CI is PR-only" pattern.
-- `docs.yml` deploy workflow gains `pull_request` trigger (with deploy job guarded to push events) so broken MDX fails at PR time instead of post-merge.
-- `bonsai` binary now builds from `cmd/bonsai/main.go` so `go install github.com/LastStep/Bonsai/cmd/bonsai@latest` produces the correct lowercase binary name.
-- Go toolchain bumped to 1.25.8.
-- golangci-lint migrated from v1 to v2.
+
+- **README rewritten audience-first** — new tagline "A workspace for your coding agent", a `Who Bonsai is for` section, mechanism-over-personality bullets, a `station/` tree snippet, and a demo gif.
+- **Adaptive color palette** across the TUI — automatic light/dark detection, `NO_COLOR` honoured, consistent `FatalPanel` and version banner treatment, structured error display.
+- **UI consistency pass** — ordering, item counts, key hints, and "Up to date" no-op detection are now consistent across all pickers.
+- **`bonsai` binary builds from `cmd/bonsai/main.go`** — `go install github.com/LastStep/Bonsai/cmd/bonsai@latest` now produces the correct lowercase binary name.
+- BubbleTea step/reducer harness in `internal/tui/harness/` is the foundation for `init`, `add`, `remove`, `update`.
+- Go toolchain bumped to 1.25.8; golangci-lint migrated v1 → v2.
 
 ### Removed
-- `BONSAI_REDESIGN` env gate — cinematic `bonsai init` is the only path; legacy harness body deleted.
-- `BONSAI_ADD_REDESIGN` env gate — cinematic `bonsai add` is the only path; legacy `runAddSpinner`, `buildNewAgentSteps`, `buildAddItemsSteps`, and `addOutcome` deleted.
+
+- `BONSAI_REDESIGN` and `BONSAI_ADD_REDESIGN` env gates — cinematic flows are the only path; legacy code paths deleted.
 - Three orphan legacy guide topics (1,213 lines) replaced by the four-topic `bonsai guide` set.
 
 ### Fixed
-- Plan 19 OSS-blocker bug sweep — CRLF handling on Windows checkouts, cross-workspace tree rendering, ability dedup across agents, spinner-step `errors.Join` so concurrent failures surface, and assorted harness polish.
-- `bonsai init` Planted stage shows the correct station path and the Observe stage no longer reports a misleading file count.
-- `chmod` is now re-applied on `ActionUnchanged` so sensor scripts stay executable across re-runs.
-- `.bak` write failures no longer silently discard files in the conflict picker — failed-backup paths are dropped from the overwrite list and a single warning is emitted.
-- Doubled path prefix in `bonsai add` output panels.
+
+- **`bonsai init` Planted stage** now shows the correct station path; Observe stage no longer reports a misleading file count.
+- **`chmod` is re-applied on `ActionUnchanged`** so sensor scripts stay executable across re-runs.
+- **`.bak` write failures no longer silently discard files** in the conflict picker — failed-backup paths are dropped from the overwrite list and a warning is emitted.
+- **Doubled path prefix** in `bonsai add` output panels.
+- Cross-platform robustness — CRLF handling on Windows checkouts, cross-workspace tree rendering, ability deduplication across agents, concurrent spinner-step failures now surface via `errors.Join`.
 
 ### Security
-- CodeQL workflow added for Go SAST.
-- `govulncheck` job added to CI.
-- Dependabot configured for `gomod` and `github-actions`.
-- Two low-severity CodeQL `useless-assignment-to-local` alerts silenced after audit.
-- Astro XSS advisory (CVE-2026-41067) resolved by lockfile bump to `astro@6.1.7`.
 
-## [0.1.3] — 2026-04-16
-### Changed
-- Apply `gofmt -s` across all Go source files for canonical formatting.
+- **CodeQL workflow** added for Go SAST.
+- **`govulncheck`** job added to CI.
+- **Dependabot** configured for `gomod` and `github-actions`.
+- **Astro XSS advisory (CVE-2026-41067)** resolved via `astro@6.1.7` lockfile bump.
+- CI now runs on `push: main` in addition to `pull_request` — closes the gap where formatting/lint drift on main was invisible until the next PR.
 
-## [0.1.2] — 2026-04-16
+## [0.1.3] - 2026-04-16
+
+> Internal-only patch. No user-visible changes.
+
+### Internal
+
+- `gofmt -s` sweep across all Go source files.
+
+## [0.1.2] - 2026-04-16
+
+> Quick fix to restore the Go Reference badge after the case-collision rename in v0.1.1.
+
 ### Fixed
-- Restore Go Reference badge now that case-collision module-proxy issue is resolved.
-- Retract v0.1.0 release notice (see v0.1.1 fix).
 
-## [0.1.1] — 2026-04-16
+- **Go Reference badge restored** — the case-collision rename in v0.1.1 settled a module-proxy issue that had blocked badge resolution.
+
+## [0.1.1] - 2026-04-16
+
+> Bug-fix release — make `bonsai` installable on case-insensitive filesystems (Windows/macOS) and ship the first onboarding skill.
+
 ### Added
-- Obsidian-compatible markdown links across generated workspace files (`[[link]]` syntax in nav tables and cross-references).
-- `workspace-guide` skill — installed with every agent to onboard humans into the generated workspace.
-- "How to Work" decision heuristics section in generated `CLAUDE.md`.
-- PR-triggered CI workflow — tests + `go vet` as required status checks.
+
+- **`workspace-guide` skill** — installed with every agent to onboard humans into the generated workspace.
+- **"How to Work" decision heuristics** in generated `CLAUDE.md` — when to load a workflow vs a skill, where to log decisions.
+- **Obsidian-compatible markdown links** across generated workspace files (`[[link]]` syntax in nav tables and cross-references).
+
 ### Fixed
-- Case-insensitive file collision on Windows/macOS — `station/index.md` renamed to `station/code-index.md` to avoid collision with `INDEX.md`.
-- CI badge and Go version badge corrections in README.
-- Reverted stray `INSTRUCT` reference to backtick in memory protocol.
 
-## [0.1.0] — 2026-04-16
+- **Case-insensitive file collision on Windows/macOS** — `station/index.md` renamed to `station/code-index.md` to avoid clashing with `INDEX.md` on case-insensitive filesystems. Unblocks `go install` on those platforms.
 
-First public release. Go CLI for scaffolding Claude Code agent workspaces.
+### Internal
+
+- PR-triggered CI workflow — tests and `go vet` as required status checks.
+
+## [0.1.0] - 2026-04-16
+
+> First public release. CLI for scaffolding Claude Code agent workspaces — pick agent types, install abilities (skills, workflows, protocols, sensors, routines), and generate a workspace where AI agents operate with isolation, memory, and per-agent scope guards.
 
 ### Added
 - Core commands — `bonsai init`, `add`, `remove`, `update`, `list`, `catalog`, `guide`.
@@ -159,6 +174,7 @@ First public release. Go CLI for scaffolding Claude Code agent workspaces.
 [Unreleased]: https://github.com/LastStep/Bonsai/compare/v0.4.1...HEAD
 [0.4.1]: https://github.com/LastStep/Bonsai/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/LastStep/Bonsai/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/LastStep/Bonsai/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/LastStep/Bonsai/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/LastStep/Bonsai/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/LastStep/Bonsai/compare/v0.1.1...v0.1.2
