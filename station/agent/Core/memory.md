@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. **Plan 37 shipped 2026-05-07** — code-index.md line refs synced + 2 stale rows fixed + INDEX.md `Go 1.24+→1.25+` drift caught (root CLAUDE.md same drift filed Backlog P3). [Status row](../../Playbook/Status.md). Next: sentrux trial (needs rustup), Windows cross-compile CI gate (Backlog P2), or root CLAUDE.md Go-version one-liner.
+**Current task:** Idle. **2026-05-07 knock-offs:** Windows cross-compile CI gate added to `ci.yml` (Backlog P2 cleared) + root CLAUDE.md Go drift `1.24+→1.25+` (Plan 37 followup). Plan 37 shipped same day. [Status](../../Playbook/Status.md). Next: sentrux trial (needs rustup) or doc-freshness routine root-CLAUDE tree-drift check (Backlog P2).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 

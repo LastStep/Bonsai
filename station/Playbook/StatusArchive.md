@@ -14,6 +14,11 @@ description: Archive of Done items moved from Status.md once they age past 14 da
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Plan 31 — v0.3 release readiness: peer-awareness refresh + bonsai-model skill + catalog.json snapshot, removeflow + updateflow cinematics, hints package. 3 PRs. [plan](Plans/Archive/31-v03-release-readiness.md) · [#75](https://github.com/LastStep/Bonsai/pull/75) · [#76](https://github.com/LastStep/Bonsai/pull/76) · [#77](https://github.com/LastStep/Bonsai/pull/77) | 31 | tl + gp×5 | 2026-04-24 |
+| Plan 30 — guide viewer perf + view-cmds polish: glamour renderer cache + pre-warm, 18 NIT cleanups. [plan](Plans/Archive/30-guide-perf-and-view-polish.md) · [PR #74](https://github.com/LastStep/Bonsai/pull/74) | 30 | gp×3 + tl | 2026-04-23 |
+| Archive-reconcile sweep: 20 shipped plans Active→Archive, 14 stale frontmatters synced. Commit `45df4cd`. | — | tl | 2026-04-23 |
+| Plan 29 — init+add bug bundle: 8 phases, 8 bugs + 4 test gaps, workspace path-escape validators. [plan](Plans/Archive/29-init-add-bug-bundle.md) · [PR #72](https://github.com/LastStep/Bonsai/pull/72) | 29 | gp + tl | 2026-04-23 |
+| Plan 28 — `bonsai list` + `bonsai guide` cinematics shipped in parallel. [plan](Plans/Archive/28-view-cmds-cinematic.md) · [#71](https://github.com/LastStep/Bonsai/pull/71) · [#70](https://github.com/LastStep/Bonsai/pull/70) | 28 | gp×4 + tl | 2026-04-23 |
 | Plan 27 PR2 — addflow Phase C polish + Phase D verification: chromeless conflicts, vertical list, per-file action color. [plan](Plans/Archive/27-add-flow-polish.md) · [PR #69](https://github.com/LastStep/Bonsai/pull/69) | 27 | gp + tl | 2026-04-22 |
 | Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion`. [plan](Plans/Archive/28-view-cmds-cinematic.md) · [PR #68](https://github.com/LastStep/Bonsai/pull/68) | 28 | gp×2 + tl | 2026-04-22 |
 | Plan 27 PR1 — addflow Phase A foundations + Phase B bug fixes: rail shrink, graft→branches rename, harness re-splice, *ForAgent variants. [plan](Plans/Archive/27-add-flow-polish.md) · [PR #67](https://github.com/LastStep/Bonsai/pull/67) | 27 | gp×2 + tl | 2026-04-22 |

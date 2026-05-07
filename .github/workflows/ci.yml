@@ -26,6 +26,9 @@ jobs:
       - name: Run vet
         run: go vet ./...
 
+      - name: Cross-compile (windows/amd64)
+        run: GOOS=windows GOARCH=amd64 go build ./...
+
   lint:
     runs-on: ubuntu-latest
     steps:

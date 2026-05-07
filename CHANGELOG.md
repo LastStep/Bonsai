@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-05-07
+
+> Quiet patch — tighten CI against cross-platform regressions and sync a stale doc pointer.
+
+### Changed
+- **Windows cross-compile gate added to CI** — new `GOOS=windows GOARCH=amd64 go build ./...` step in the `test` job catches POSIX-only `syscall.*` use before release time. Closes the class of bug that broke v0.4.0's first cross-compile and required hotfix [#95](https://github.com/LastStep/Bonsai/pull/95).
+
+### Fixed
+- **Root `CLAUDE.md` Go version sync** — stack reference updated from `Go 1.24+` to `Go 1.25+` to match `go.mod` (`go 1.25.0`, toolchain `go1.25.9`). Followup to Plan 37's INDEX.md drift fix.
+
 ## [0.4.0] - 2026-05-04
 
 > **The "audit your workspace" release.** New `bonsai validate` command surfaces drift between catalog and installed state. Plus a custom-ability discovery fix that recovers orphaned hand-rolled abilities, a website concept-page rewrite, and a chokepoint-hardening followup bundle.
@@ -146,7 +156,8 @@ First public release. Go CLI for scaffolding Claude Code agent workspaces.
 - Release pipeline — GoReleaser v2, GitHub Actions tag trigger, Homebrew tap (`LastStep/homebrew-tap`).
 - Dogfooding — Bonsai generates its own `station/` workspace with tech-lead agent.
 
-[Unreleased]: https://github.com/LastStep/Bonsai/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/LastStep/Bonsai/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/LastStep/Bonsai/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/LastStep/Bonsai/compare/v0.3.0...v0.4.0
 [0.2.0]: https://github.com/LastStep/Bonsai/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/LastStep/Bonsai/compare/v0.1.2...v0.1.3

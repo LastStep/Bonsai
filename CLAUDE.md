@@ -2,7 +2,7 @@
 
 **Codename:** Bonsai
 **What:** CLI tool for scaffolding Claude Code agent workspaces — single binary, `go install`
-**Stack:** Go 1.24+, Cobra, Huh (forms), LipGloss (styling), BubbleTea (TUI)
+**Stack:** Go 1.25+, Cobra, Huh (forms), LipGloss (styling), BubbleTea (TUI)
 
 > [!warning]
 > **FIRST:** Read `station/agent/Core/identity.md`, then `station/agent/Core/memory.md`.
