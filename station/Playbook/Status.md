@@ -16,6 +16,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
+| **Plan 38 — Bonsai-Eval bootstrap** — separate repo, Inspect AI substrate + telemetry pipeline + Bonsai-behavioral scenarios. First sprint = P0+P1+P2 (no paid runs). All 5 open Q's locked 2026-05-07. [plan](Plans/Active/38-bonsai-eval-bootstrap.md) | 38 | tl | Awaiting next-session dispatch. User manual prep: create empty `LastStep/Bonsai-Eval` repo + verify Python 3.12 / uv / codeburn / `$ANTHROPIC_API_KEY` / `gh auth`. |
 
 ## Pending
 
