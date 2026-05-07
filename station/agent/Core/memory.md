@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. **v0.4.0 shipped 2026-05-04** (Plans 34/35/36 + hotfix #95). Release-ship narrative in [Logs/2026-05-04-routine-digest-and-v04-ship.md](../../Logs/2026-05-04-routine-digest-and-v04-ship.md). Next: TBD — module-hygiene sweep (P3), Windows cross-compile CI gate (P2 new), root-CLAUDE.md routine tweak (P2), semgrep install (P2), or new feature.
+**Current task:** Idle. **Routine digest 2026-05-07** done (commit `39ee362`) — 4 routines run via loop.md, sentrux P0 promoted Status.md Pending (blocked: Rust toolchain), Roadmap Phase 1 closed. **Plan 37 deferred to next session** — `Plans/Active/37-doc-refresh-bundle.md` (code-index.md line-number refresh, ~25min mechanical, INDEX.md verify already done in this session — was clean). Next: Plan 37, sentrux trial (needs rustup), or Windows cross-compile CI gate (P2 new).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
