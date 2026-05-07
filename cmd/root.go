@@ -37,9 +37,11 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().Bool("no-color", false, "Disable colored output")
-	// Hide Cobra's auto-generated `completion` subcommand from `bonsai --help`.
-	// The command remains functional for users who invoke it directly.
-	rootCmd.CompletionOptions.HiddenDefaultCmd = true
+	// The explicit `completion` command lives in cmd/completion.go and
+	// supersedes Cobra's auto-generated one. DisableDefaultCmd suppresses
+	// the auto-generated default so AddCommand("completion") in
+	// completion.go is the only registered child with that name.
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 
 func loadCatalog() *catalog.Catalog {
