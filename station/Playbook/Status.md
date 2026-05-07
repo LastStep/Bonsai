@@ -28,6 +28,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| **PR triage sweep** — closed 9 stale routine bot PRs (#86–91, #96–98) superseded by local routine-digests (`dcc9143`, `39ee362`); merged 4 Dependabot bumps: codeql-action v3→v4 (#85), checkout v4→v6 (#81), deploy-pages v4→v5 (#82), go-isatty 0.0.21→0.0.22 (#84). Closes 2 P1 backlog rows (CodeQL v3→v4, Node 20→24). [Backlog](Backlog.md) bot pile-up follow-up filed. | — | tl | 2026-05-07 |
 | **First external contribution merged** — `bonsai completion [bash|zsh|fish|powershell]` from @mvanhorn. Closes #54. CI green, squash-merged. Stale-comment fixup follow-up. [PR #78](https://github.com/LastStep/Bonsai/pull/78) · commit `2eae9d4` | — | tl | 2026-05-07 |
 | **v0.4.1 release shipped** — quiet patch: Windows cross-compile CI gate + root CLAUDE.md Go drift fix. CHANGELOG entry, 6 platform binaries + Homebrew published. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.1) · commit `533d112` | — | tl | 2026-05-07 |
 | Windows cross-compile CI gate — `GOOS=windows GOARCH=amd64 go build` step added to `ci.yml` test job. Catches POSIX-only divergence (v0.4.0 `syscall.O_NOFOLLOW` class). [Backlog](Backlog.md) P2 row cleared. | — | tl | 2026-05-07 |
