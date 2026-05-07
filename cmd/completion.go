@@ -9,10 +9,11 @@ import (
 func init() {
 	// Replace Cobra's auto-generated `completion` command with an
 	// explicit one so the help text names the install snippets and
-	// the subcommand shows up in `bonsai --help`. The hide flag in
-	// root.go init() must stay in sync — without it, both this
-	// command and the auto-generated one would register, and Cobra
-	// rejects duplicate child names at startup.
+	// the subcommand shows up in `bonsai --help`. The
+	// `CompletionOptions.DisableDefaultCmd = true` line in root.go
+	// must stay in sync — without it, both this command and the
+	// auto-generated one would register, and Cobra rejects duplicate
+	// child names at startup.
 	rootCmd.AddCommand(completionCmd)
 }
 
