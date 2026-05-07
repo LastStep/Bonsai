@@ -28,6 +28,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| **v0.4.1 release shipped** — quiet patch: Windows cross-compile CI gate + root CLAUDE.md Go drift fix. CHANGELOG entry, 6 platform binaries + Homebrew published. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.1) · commit `533d112` | — | tl | 2026-05-07 |
 | Windows cross-compile CI gate — `GOOS=windows GOARCH=amd64 go build` step added to `ci.yml` test job. Catches POSIX-only divergence (v0.4.0 `syscall.O_NOFOLLOW` class). [Backlog](Backlog.md) P2 row cleared. | — | tl | 2026-05-07 |
 | Root CLAUDE.md Go drift fix — `Go 1.24+ → 1.25+` one-liner. Plan 37 followup. [Backlog](Backlog.md) row cleared. | — | tl | 2026-05-07 |
 | Plan 37 — doc refresh bundle: `code-index.md` 50+ line refs synced across cmd/ + internal/; 2 stale rows fixed (GraftStage→BranchesStage, NormaliseWorkspace dropped); INDEX.md `Go 1.24+ → 1.25+` drift. [plan](Plans/Archive/37-doc-refresh-bundle.md) | 37 | tl | 2026-05-07 |

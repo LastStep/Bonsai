@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. **2026-05-07 knock-offs:** Windows cross-compile CI gate added to `ci.yml` (Backlog P2 cleared) + root CLAUDE.md Go drift `1.24+→1.25+` (Plan 37 followup). Plan 37 shipped same day. [Status](../../Playbook/Status.md). Next: sentrux trial (needs rustup) or doc-freshness routine root-CLAUDE tree-drift check (Backlog P2).
+**Current task:** Idle. **v0.4.1 shipped 2026-05-07** — quiet patch: Windows cross-compile CI gate + root CLAUDE.md Go drift fix. CHANGELOG entry, 6 platform binaries + Homebrew published. CI + release workflows clean. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.1) · [Status](../../Playbook/Status.md). Next: sentrux trial (needs rustup), doc-freshness routine root-CLAUDE tree-drift (Backlog P2), or Node 20→24 actions bump (P1 new).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
