@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. **v0.4.1 shipped 2026-05-07** — quiet patch: Windows cross-compile CI gate + root CLAUDE.md Go drift fix. CHANGELOG entry, 6 platform binaries + Homebrew published. CI + release workflows clean. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.1) · [Status](../../Playbook/Status.md). Next: sentrux trial (needs rustup), doc-freshness routine root-CLAUDE tree-drift (Backlog P2), or Node 20→24 actions bump (P1 new).
+**Current task:** Idle. **2026-05-07 afternoon — PR triage + first external contribution.** PR #78 merged (`mvanhorn`, `bonsai completion`, closes #54). 4 Dependabot bumps merged (codeql-action v3→v4 #85, checkout v4→v6 #81, go-isatty #84, deploy-pages v4→v5 #82) → 2 P1 backlog rows resolved. 9 stale routine bot PRs closed (#86–91, #96–98) — superseded by local routine-digests. Open PRs: 0. [Log](../../Logs/2026-05-07-pr-triage-and-first-contribution.md) · [Status](../../Playbook/Status.md). Next: doc-freshness root-CLAUDE tree-drift (P2 ungrouped), post-update backup merge hint (P2-E), or Tier-2 plans (`internal/catalog/` tests, `cmd/` tests, `generate.go` split).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
