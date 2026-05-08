@@ -74,9 +74,9 @@ Decisions locked in this session:
 │  │   └── terminal_bench/ (89 tasks, P3)                        │  │
 │  │                                                              │  │
 │  │  Solvers (the 3 rungs)                                      │  │
-│  │   ├── solvers/raw_api.py        — Anthropic SDK + tool loop │  │
-│  │   ├── solvers/claude_code.py    — bare CC headless          │  │
-│  │   └── solvers/claude_code_bonsai.py — CC + Bonsai workspace │  │
+│  │   ├── rung 1: inspect_swe.mini_swe_agent()    [drop-in]     │  │
+│  │   ├── rung 2: inspect_swe.claude_code()        [drop-in]    │  │
+│  │   └── rung 3: solvers/bonsai.py — wraps rung 2 + bonsai init│  │
 │  │                                                              │  │
 │  │  Scorers                                                     │  │
 │  │   ├── scorers/deterministic.py  — file reads, hook events   │  │
@@ -153,38 +153,50 @@ P0.1. **Create `Bonsai-Eval` repo** on GitHub under `LastStep`. Include:
    - `README.md` — one-paragraph stub describing the two tracks; link back to Bonsai.
    - `LICENSE` — MIT.
    - `.gitignore` — Python + Docker + `data/raw/` (raw transcripts must NOT be committed; PII risk).
-   - `pyproject.toml` — Python 3.12+, deps: `inspect-ai`, `anthropic`, `claude-agent-sdk`, `pandas`, `pyarrow`, `duckdb`, `python-dotenv`. Use `uv` for env management.
+   - `pyproject.toml` — Python 3.12+, deps pinned exact (no `^` ranges):
+     - Eval substrate: `inspect-ai`, `inspect-swe==0.2.51` (drop-in solvers — see Solver Strategy below), `anthropic`, `claude-agent-sdk>=0.1.77`.
+     - Telemetry: `pandas`, `pyarrow`, `duckdb`, `python-dotenv`.
+     - Use `uv` for env management; commit `uv.lock`.
    - `Makefile` — `install`, `test`, `lint`, `format`, `eval`, `telemetry`.
    - `.github/workflows/ci.yml` — pytest + ruff + mypy on push/PR.
 
-P0.2. **Inspect AI smoke test.** Write `tests/test_substrate.py` that:
-   - Defines a trivial `Task` with one prompt ("write hello world in Python").
-   - Implements a no-op `Solver` that just calls `generate()`.
-   - Implements a deterministic `Scorer` that checks `print("hello world")` substring.
-   - Runs against Claude Haiku (cheapest model) with `inspect eval`.
-   - Asserts the task returned with score=1.0.
-   This validates the substrate before building anything against it. Cost: ~$0.01.
+P0.2. **Inspect AI substrate + drop-in solver smoke test.** Write `tests/test_substrate.py` covering 3 cases. All against Claude Haiku for cost (target: < $0.10 total).
+   - **Case A — bare substrate.** Trivial `Task` ("write hello world in Python"), no-op `Solver` calling `generate()`, deterministic `Scorer` checking `print("hello world")`. Asserts score=1.0. Validates Inspect AI install.
+   - **Case B — `inspect_swe.mini_swe_agent()` smoke.** Same task, solver = `rung1_raw_api(model="anthropic/claude-haiku-4-5")`. Asserts score=1.0. Validates rung-1 drop-in.
+   - **Case C — `inspect_swe.claude_code()` smoke + workspace-suppression check.** Same task, solver = `rung2_bare_cc(...)` invoked from `tmp_path` (pytest fixture, empty dir). Asserts: (1) score=1.0, (2) no `CLAUDE.md`/`.claude/` materialized in cwd, (3) `claude` process inherits no `~/.claude/projects/-...-/CLAUDE.md` ambient state (probe via `inspect eval --log-format=json` + grep transcript for system-prompt content). Validates rung-2 drop-in is genuinely "bare CC."
 
-P0.3. **Stub the 3 solvers** as importable modules (no logic yet, just signatures):
-   - `bonsai_eval/solvers/raw_api.py` — function `raw_api_solver(model: str, ...) -> Solver`.
-   - `bonsai_eval/solvers/claude_code.py` — function `claude_code_solver(workspace_path: Path | None, ...) -> Solver`.
-   - `bonsai_eval/solvers/claude_code_bonsai.py` — function `claude_code_bonsai_solver(bonsai_config_path: Path, ...) -> Solver` — wraps `claude_code_solver` after running `bonsai init`/`bonsai add` to materialize the workspace.
+   If Case C step (3) fails, document the gap and pivot to subprocess-driving `claude` with `--no-inherit-claude-md`-equivalent flag (escalate before P1).
+
+P0.3. **Wire the 3 rungs.** Solver Strategy revision (2026-05-08): rungs 1+2 reuse `inspect-swe` drop-ins (Meridian Labs, JJ Allaire / UK AISI / Apollo contributors — see Trust Audit notes in §Risks). Only rung 3 is custom.
+   - `bonsai_eval/solvers/__init__.py` — re-exports the 3 rung factories below for ergonomic import.
+   - `bonsai_eval/solvers/rungs.py`:
+     - `rung1_raw_api(model: str, **kwargs) -> Solver` — thin wrapper around `inspect_swe.mini_swe_agent(model=model, version="<pin>", system_prompt=<pinned-floor>)`. Tool loop = bash-only (matches mini-swe-agent literal "minimal" framing). Pre-reg assertion: pinned `version=` arg, pinned `system_prompt`.
+     - `rung2_bare_cc(model: str, **kwargs) -> Solver` — `inspect_swe.claude_code(model=model)` invoked from temp dir with **no `.claude/`, no `CLAUDE.md`, no `station/`** (run from `/tmp/<uuid>/`). Suppresses workspace-file inheritance — confirm in P0.2 smoke test.
+     - `rung3_bonsai(bonsai_config: Path, model: str, **kwargs) -> Solver` — custom. Runs `bonsai init` + `bonsai add` to materialize `station/` from `bonsai_config` fixture, then invokes `inspect_swe.claude_code(model=model, cwd=<materialized_dir>)`. This is the only solver we own end-to-end.
+   - **Pre-reg config object.** Add `bonsai_eval/preregistration.py` defining a frozen dataclass with model, temperature, max_tokens, allowed tools, judge model, judge prompt hash. Every `inspect eval` invocation must pass this through; assertion at solver entry points raises if any field is overridden.
 
 P0.4. **Push initial commit + tag `v0.0.1-bootstrap`.** Add a row to Bonsai's `station/INDEX.md` "External References" linking to the new repo.
 
 **Verification:**
-- [ ] `Bonsai-Eval` repo exists on GitHub, public, MIT-licensed (or per Q1 answer).
-- [ ] `make install && make test` passes locally.
-- [ ] `inspect eval tests/test_substrate.py --model anthropic/claude-haiku-4-5` returns score=1.0 in <30s.
-- [ ] CI green on first push.
+
+*Key-independent (executable without ANTHROPIC_API_KEY):*
+- [ ] `Bonsai-Eval` repo exists on GitHub, public, MIT-licensed.
+- [ ] `inspect_swe-frozen` fork created on `LastStep` org, v0.2.51 tag visible.
+- [ ] `make install` succeeds; `uv.lock` committed with `inspect-swe==0.2.51` exact pin.
+- [ ] `make test` passes for non-API tests (`pytest -m "not requires_api"`).
+- [ ] All 3 rung factories (`rung1_raw_api`, `rung2_bare_cc`, `rung3_bonsai`) importable from `bonsai_eval.solvers` and pass pre-reg-config assertion (no API call — assertion-only test).
+- [ ] CI green on first push (lint + mypy + non-API pytest only).
 - [ ] `station/INDEX.md` has reference row pointing to `Bonsai-Eval`.
+
+*Key-gated (PENDING until `ANTHROPIC_API_KEY` set + billing confirmed):*
+- [ ] **PENDING** All 3 P0.2 smoke-test cases pass — including Case C workspace-suppression check (no ambient `CLAUDE.md` leakage into bare CC). Total cost < $0.10. Tests marked `@pytest.mark.requires_api`.
 
 ### Phase P1 — Telemetry pipeline (no UI, JSONL → parquet)
 
 **Touches:** new files in `Bonsai-Eval/telemetry/`; reads from local `~/.claude/projects/` and Bonsai git history (read-only). No changes to Bonsai itself.
 
 P1.1. **Codeburn fetcher.** Create `bonsai_eval/telemetry/fetch_codeburn.py`:
-   - Wrapper around `codeburn export` CLI with required flags (`--per-project-daily`, `--since 2026-01-22`, `--include-turns`, `--include-activity-by-project` — confirm exact flag names against `codeburn --help` first).
+   - Wrapper around `codeburn export --format json -o <path>` (codeburn 0.8.7; flags from earlier plan draft were aspirational and don't exist on current CLI). Resulting JSON is `codeburn.export.v2` schema with top-level keys `projects` / `sessions` / `tools` / `periods` / `summary` — same data, schema-pinned for fail-fast on future major bumps.
    - Output: `data/raw/codeburn-<date>.json`.
    - Idempotent — re-running same day overwrites; new day appends.
 
@@ -335,29 +347,36 @@ Estimated cost: $200–500.
 
 ## Verification (whole sprint, P0–P2)
 
+*Key-independent (executable without `ANTHROPIC_API_KEY`):*
 - [ ] `Bonsai-Eval` repo public on GitHub, MIT-licensed.
-- [ ] CI green: pytest + ruff + mypy.
-- [ ] `make install && make test` passes on a clean clone.
+- [ ] CI green: pytest (non-API) + ruff + mypy.
+- [ ] `make install && make test` passes on a clean clone (non-API tests only).
 - [ ] `make telemetry` produces all parquet outputs without error.
-- [ ] `notebooks/proof_of_work.ipynb` runs top-to-bottom and produces 6 charts.
+- [ ] `notebooks/proof_of_work.ipynb` runs top-to-bottom on PLACEHOLDER data only (Risk #7 — no real-data run pre-merge); produces 6 chart PNGs from placeholder fixtures.
 - [ ] `PROOF-OF-WORK.md` skeleton committed with metric formulas locked verbatim from §"Pre-Registration".
-- [ ] 12 Bonsai-behavioral scenarios load via Inspect AI.
-- [ ] All 3 solvers execute at least one scenario.
-- [ ] Validation pass (108 runs × Haiku) completes < $20.
-- [ ] Bonsai-rung beats bare-CC-rung on ≥8 of 12 scenarios.
+- [ ] 12 Bonsai-behavioral scenarios load via Inspect AI (`inspect list` discovery — no API call).
 - [ ] No `content` field anywhere in `transcripts.parquet`.
 - [ ] `data/raw/` gitignored; `.env` gitignored.
-- [ ] Plan archived: this file moves Active/ → Archive/ on first-sprint completion.
+
+*Key-gated (PENDING until `ANTHROPIC_API_KEY` set + billing confirmed):*
+- [ ] **PENDING** All 3 solvers execute at least one scenario (P0.2 Case B + Case C smoke).
+- [ ] **PENDING** Validation pass (108 runs × Haiku) completes < $20.
+- [ ] **PENDING** Bonsai-rung beats bare-CC-rung on ≥8 of 12 scenarios.
+
+*Final:*
+- [ ] Plan archived: this file moves Active/ → Archive/ on first-sprint completion (after both groups of verifications pass).
 
 ## Risks
 
-1. **Claude Agent SDK headless flow may not exist or may not support workspace pinning.** If we can't headlessly drive Claude Code with a chosen workspace, the rung-2 and rung-3 solvers can't be built as designed. **Mitigation:** validate in P0 (smoke test the SDK before scenario work). If it fails, pivot to driving the `claude` binary via subprocess + scripted stdin (worse, but possible).
+1. ~~**Claude Agent SDK headless flow may not exist or may not support workspace pinning.**~~ **RESOLVED 2026-05-08.** `claude-agent-sdk` v0.1.77 (released 2026-05-08, Anthropic-official, MIT) supports `cwd` pinning + `system_prompt` override + headless `query()`. `inspect_swe.claude_code()` wraps it as Inspect Solver. Remaining residual risk = workspace-file suppression for "bare CC" rung-2 — covered by P0.2 Case C smoke test.
 2. **Codeburn schema change.** Proof-doc assumes `schema: codeburn.export.v2`. If codeburn ships v3 between now and execution, the fetcher breaks. **Mitigation:** pin schema check; fail fast with a clear error.
 3. **JSONL hook-event coverage is unclear.** Online research notes hooks fire async/non-blocking and may not all land in transcripts. **Mitigation:** in P1.2, write a probe script that searches for `hook_event_name` in existing JSONL — if absent, the C7-style claims (scope-guard fires) become inferred-from-absence (file unchanged) rather than directly observed.
 4. **LLM-judge variance on Bonsai-behavioral scenarios.** Style/length bias could swamp the signal on subjective scoring. **Mitigation:** position-swap pairwise where applicable; report Cohen's κ across N≥3 seeds; lean deterministic-first, judge-as-tiebreaker.
-5. **Rung-1 (raw API) is a moving target.** Building a "fair" minimal harness is itself a design choice. **Mitigation:** model on `mini-swe-agent` (~100 LOC, the field's accepted floor harness); document the choice; pin the implementation in a tagged release before P3 measurement begins.
+5. **Rung-1 (raw API) is a moving target.** Building a "fair" minimal harness is itself a design choice. **Mitigation:** reuse `inspect_swe.mini_swe_agent()` (the field's accepted floor harness, MIT, 972 commits, used by Meta/NVIDIA/IBM); pin `inspect-swe==0.2.51` + `mini-swe-agent` version exactly in `uv.lock`; freeze pin before P3 measurement begins.
 6. **Bonsai-rung loses on Bonsai-behavioral scenarios** (i.e. the validation pass shows Bonsai actively hurts). Possible if scenarios are mis-specified, or if Bonsai's overhead really doesn't pay off on short tasks. **Mitigation:** treat as P2 acceptance criterion — if it happens, the scenarios get redesigned before P3, and the finding itself is interesting (worth a memory entry).
 7. **Pre-registration leak.** If the analysis notebook is run before this plan merges, the pre-registration commitment is broken. **Mitigation:** P1.5 notebook MUST be authored without running on real data; placeholder numbers only until the plan is in `Plans/Archive/`.
+
+8. **`inspect-swe` is pre-1.0 + bus-factored 82% on `jjallaire`.** Load-bearing dep: rungs 1+2 both go through it. Replacement cost ~500-1000 LOC (ACP transport, sandbox bridge, retry, telemetry suppression, transcript parsing) — not the trivial wrapper it looks like. **Mitigation (manual prep step 2):** (a) exact-version pin `inspect-swe==0.2.51` in `pyproject.toml` + commit `uv.lock`; (b) fork `meridianlabs-ai/inspect_swe` → `LastStep/inspect_swe-frozen` as read-only safety net; (c) watch upstream releases for breaking changes; (d) no upgrades during a measurement window — pin freezes for the duration of any active claim measurement. Trust signals: org = 501(c)(3) Meridian Labs (JJ Allaire — Inspect AI lead, ex-RStudio/Posit founder); contributors include UK AISI + Apollo Research engineers; ~108k PyPI downloads/30d; CI w/ ruff+mypy+pytest; ~1 release / 1-2 weeks.
 
 ## Out of Scope (for first sprint)
 
@@ -372,16 +391,22 @@ Estimated cost: $200–500.
 
 ## Manual Prep (user, before P0 dispatch)
 
-1. Create empty `LastStep/Bonsai-Eval` repo on GitHub. Public, no README/license/.gitignore (P0.1 adds them).
-2. Confirm dogfood-machine tooling:
+1. **Create empty `LastStep/Bonsai-Eval` repo** on GitHub. Public, no README/license/.gitignore (P0.1 adds them). [DONE 2026-05-07]
+2. **Fork `meridianlabs-ai/inspect_swe` → `LastStep/inspect_swe-frozen`** as safety net (`gh repo fork meridianlabs-ai/inspect_swe --org LastStep --fork-name inspect_swe-frozen`). Read-only mirror, frozen at v0.2.51. Insurance against upstream abandonment (pre-1.0; bus factor 82% on jjallaire).
+3. **Install `uv`** (system Python 3.10 too old; uv auto-fetches 3.12):
    ```bash
-   python3 --version    # need ≥ 3.12
-   which uv             # if missing: curl -LsSf https://astral.sh/uv/install.sh | sh
-   which codeburn       # confirm; capture `codeburn --help`
-   echo $ANTHROPIC_API_KEY | head -c 10   # confirm set
-   gh auth status       # confirm logged in
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   uv python install 3.12
+   ```
+4. **Set `ANTHROPIC_API_KEY`** in shell env. Required for: rung-1 raw API calls, Inspect AI's judge model, Inspect AI's substrate calls. Max-plan OAuth (used by `claude` CLI) does NOT cover SDK-direct calls. Personal billing per Locked Decisions.
+5. **Confirm tooling:**
+   ```bash
+   uv --version                          # >= 0.4
+   which codeburn && codeburn --version  # already 0.8.7 confirmed
+   echo ${ANTHROPIC_API_KEY:0:10}         # confirm set, prefix only
+   gh auth status                         # confirmed LastStep
    ```
 
 ---
 
-*Plan authored 2026-05-07 by tech-lead. All 5 open questions resolved same day. P0 dispatch pending next session + manual prep above.*
+*Plan authored 2026-05-07 by tech-lead. All 5 open questions resolved same day. Revised 2026-05-08 (Solver Strategy): rungs 1+2 swapped from custom builds to `inspect_swe` drop-ins after research+trust audit (`Bonsai-Eval rung reuse audit` + `inspect_swe trust audit` agent reports, this session). Net P1 savings ~2 weeks; only rung-3 solver is custom now. P0 dispatch pending: user to fork inspect_swe + install uv + set ANTHROPIC_API_KEY (Manual Prep §1-5).*

@@ -48,6 +48,8 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 <!-- "[research] Trial sentrux on Bonsai repo" — promoted to Status.md Pending 2026-05-07 (routine-digest). Blocked on Rust toolchain install. -->
 
+- **[feature] `bonsai init` / `bonsai add` need non-interactive flags** `[Plan 38 P2 blocker]` — Rung-3 solver in Bonsai-Eval (`bonsai_eval/solvers/rungs.py:135`) needs to invoke `bonsai init --non-interactive` and `bonsai add --from-config <path>` to materialize a `station/` workspace from a fixture without TUI prompts. Neither flag exists today. Without these, Plan 38 P2 (12 scenarios × 3 rungs validation) cannot run rung 3. Fix: add `--non-interactive` + `--from-config` to `cmd/init.go` and `cmd/add.go`, OR provide stdin-scripted answer files as fallback. *(added 2026-05-08, source: Plan 38 P0+P1 dispatch review)*
+
 ## P1 — High
 
 - **[ops] HOMEBREW_TAP_TOKEN PAT expiry calendar reminder** — Fine-grained PATs default to 90-day expiry. The `HOMEBREW_TAP_TOKEN` secret on `LastStep/Bonsai` was rotated 2026-04-22 — set calendar reminder for ~2026-07-15 to rotate before next release. Same applies to any other PATs in repo secrets (audit + document expiry dates). Symptom of expired PAT: GoReleaser fails at brew step with `GET https://api.github.com/repos/LastStep/homebrew-tap: 401 Bad credentials` — release otherwise succeeds (binaries published, only formula update missed). *(added 2026-04-22, source: v0.2.0 release session)*
@@ -121,6 +123,10 @@ Items that should be worked together are tagged with a group letter. See the gro
 - **[improvement] Install semgrep for better SAST scanning** — `gitleaks` shipped (closed half of this item 2026-05-04 routine-digest); `semgrep` still pending. Vulnerability scan SAST currently falls back to Grep patterns — semgrep restores AST-aware OWASP-grade coverage. *(added 2026-04-16, narrowed 2026-05-04, source: routine-digest)*
 
 ## P3 — Ideas & Research
+
+### Bonsai-Eval followups
+
+- **[debt] Rung-3 `.bonsai.yaml` round-trip** `[Plan 38 P2 followup]` — `bonsai_eval/solvers/rungs.py` materializes the fixture as `.bonsai.yaml` then invokes `bonsai init`. If `init` regenerates the config file, it overwrites the staged fixture. Verify round-trip behavior + add an integration test. *(added 2026-05-08, source: Plan 38 P0+P1 dispatch review)*
 
 ### Validate command followups
 

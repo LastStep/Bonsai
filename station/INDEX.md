@@ -50,6 +50,7 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 | `Reports/Pending/` | Unprocessed agent completion reports | Check every session start |
 | `Reports/report-template.md` | Structured report format for agents | When submitting a completion report |
 | `code-index.md` | Code index — quick-nav to Go source functions | When navigating the codebase |
+| [`LastStep/Bonsai-Eval`](https://github.com/LastStep/Bonsai-Eval) (external repo) | Eval harness (Inspect AI + 3 rungs via `inspect_swe`) + telemetry pipeline (codeburn/transcripts/git → parquet) for measuring Bonsai effectiveness. Pre-registered C1+C3+C6 claims (cut-over `4dfd3f4` 2026-04-14). | Plan 38 work, proof-of-Bonsai measurement, benchmark sweeps |
 
 ---
 
