@@ -385,6 +385,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
 
+### 2026-05-11 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** no changes made (audit-only routine)
+- **Flags:** govulncheck blocked (403 Forbidden, no internet access — persistent environment constraint); npm audit clean (4th consecutive clean run); manual Go review shows 0 known CVEs in current dependency set; 23 modules behind (hygiene, unchanged from prior cycle); `gopkg.in/yaml.v3` v3.0.1 noted as aging direct dep (security-current, migration not urgent).
+- **Report:** `Reports/Pending/2026-05-11-dependency-audit.md`
+
 ### 2026-05-11 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
