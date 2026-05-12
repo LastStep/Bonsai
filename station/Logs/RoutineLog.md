@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-12 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** 2 stale annotations added to `agent/Core/memory.md` (golangci-lint note + References section); dashboard `Last Ran`/`Next Due` updated to 2026-05-12/2026-05-17.
+- **Flags:** 2 low-severity items — (1) `station/Research/` directory missing — 6 foundational RESEARCH doc references in memory.md References section are broken links (flagged for user decision); (2) golangci-lint note describing v1/v2 local-vs-repo mismatch is now stale (`.golangci.yml` migrated to v2, annotated as historical).
+- **Report:** `Reports/Pending/2026-05-12-memory-consolidation.md`
+
+---
+
 ### 2026-05-12 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
