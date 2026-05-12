@@ -20,6 +20,36 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-12 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** Archived 2 Done rows dated 2026-04-25 (Plan 32 followup bundle, Plan 33 website rewrite) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-04-28`; dashboard `Last Ran`/`Next Due` updated to 2026-05-12/2026-05-17.
+- **Flags:** none — Pending item (sentrux trial) still valid + not stalled; no orphan plan files; all plan refs in Status.md resolve to Plans/Archive/; Backlog already clean of resolved items.
+- **Report:** `Reports/Pending/2026-05-12-status-hygiene.md`
+
+---
+
+### 2026-05-12 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** 2 stale annotations added to `agent/Core/memory.md` (golangci-lint note + References section); dashboard `Last Ran`/`Next Due` updated to 2026-05-12/2026-05-17.
+- **Flags:** 2 low-severity items — (1) `station/Research/` directory missing — 6 foundational RESEARCH doc references in memory.md References section are broken links (flagged for user decision); (2) golangci-lint note describing v1/v2 local-vs-repo mismatch is now stale (`.golangci.yml` migrated to v2, annotated as historical).
+- **Report:** `Reports/Pending/2026-05-12-memory-consolidation.md`
+
+---
+
+### 2026-05-12 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-05-12/2026-05-19.
+- **Flags:** 4 drift items — medium: INDEX.md CLI command count still shows 8 (should be 9, `completion` added in PR #78); INDEX.md architecture diagram missing `completion` from cmd/ list; low: code-index.md CLI Commands table missing `bonsai completion` row; root CLAUDE.md `cmd/` tree block missing `completion.go`. All navigation links in station/CLAUDE.md are clean. Previous 5 flags (2026-05-04) fully resolved by Plan 37.
+- **Report:** `Reports/Pending/2026-05-12-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
