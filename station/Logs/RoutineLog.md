@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-12 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** Archived 2 Done rows dated 2026-04-25 (Plan 32 followup bundle, Plan 33 website rewrite) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-04-28`; dashboard `Last Ran`/`Next Due` updated to 2026-05-12/2026-05-17.
+- **Flags:** none — Pending item (sentrux trial) still valid + not stalled; no orphan plan files; all plan refs in Status.md resolve to Plans/Archive/; Backlog already clean of resolved items.
+- **Report:** `Reports/Pending/2026-05-12-status-hygiene.md`
+
+---
+
 ### 2026-05-12 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
