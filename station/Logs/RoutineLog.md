@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-12 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-05-12/2026-05-19.
+- **Flags:** 4 drift items — medium: INDEX.md CLI command count still shows 8 (should be 9, `completion` added in PR #78); INDEX.md architecture diagram missing `completion` from cmd/ list; low: code-index.md CLI Commands table missing `bonsai completion` row; root CLAUDE.md `cmd/` tree block missing `completion.go`. All navigation links in station/CLAUDE.md are clean. Previous 5 flags (2026-05-04) fully resolved by Plan 37.
+- **Report:** `Reports/Pending/2026-05-12-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
