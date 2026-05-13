@@ -9,18 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0] - 2026-05-13
 
-> **The "headless Bonsai" release.** `bonsai init` and `bonsai add` now run without TUI prompts under `--non-interactive --from-config`, unblocking the Bonsai-Eval rung-3 solver and any other automation that wants to materialise an agent workspace from a YAML fixture.
+> **The "headless Bonsai" release.** `bonsai init` and `bonsai add` now run without TUI prompts under `--non-interactive --from-config`, so automation can materialise an agent workspace from a YAML fixture and parse progress as a clean JSON Lines stream.
 
 ### Added
-- **`bonsai init --non-interactive --from-config <path>`** — skip the cinematic init flow; read all answers from a `.bonsai.yaml`-shaped YAML file. JSON Lines progress output on stdout (one `{"event":"file",...}` per generated file plus a terminal `{"event":"summary",...}` with stable count keys). Validation errors exit non-zero with a plain stderr message — no TUI fallback. (Plan 39)
-- **`bonsai add --non-interactive --from-config <path>`** — same shape for the add flow. Overlay must name exactly one agent (loop the command for multi-agent setups). Project-name / docs-path / scaffolding fields in the overlay must either be empty (defaulted) or match the existing `.bonsai.yaml` exactly. (Plan 39)
+- **`bonsai init --non-interactive --from-config <path>`** — skip the cinematic init flow; read every answer from a `.bonsai.yaml`-shaped YAML file. Emits one `{"event":"file",...}` line per generated file on stdout, then a terminal `{"event":"summary","created":N,...}` with all five count keys always present.
+- **`bonsai add --non-interactive --from-config <path>`** — same shape for the add flow. The overlay must name exactly one agent (loop the command for multi-agent setups). `project_name` / `docs_path` / `scaffolding` in the overlay must either be omitted or match the existing `.bonsai.yaml` exactly.
+
+  ```bash
+  cat > cfg.yaml <<'EOF'
+  agents:
+    tech-lead: {}
+  EOF
+  bonsai init --non-interactive --from-config cfg.yaml | jq -c .
+  ```
 
 ### Changed
-- Conflict resolution under `--non-interactive` is **forced to skip** — user-modified files are reported as `action:"conflict"` events and left untouched on disk. No `.bak`, no overwrite. (Plan 39 Security §3)
+- Conflict resolution under `--non-interactive` is **forced to skip** — user-modified files are reported as `action:"conflict"` events and left untouched on disk. No `.bak`, no overwrite. The interactive flows are unchanged.
 
 ### Notes
-- Exit codes: `0` success, `2` invalid input (bad YAML, missing required field, shell-metachar, multi-agent overlay, mismatched project fields, tech-lead-required), `3` runtime / filesystem error, `4` `.bonsai.yaml` already present (init) or missing (add).
-- `bonsai update` and `bonsai remove` are unchanged — their non-interactive variants are out of scope for v0.5.0.
+- Exit codes: `0` success · `2` invalid input (bad YAML, missing required field, shell-metacharacter, multi-agent overlay, mismatched project fields, tech-lead-required) · `3` runtime / filesystem error · `4` `.bonsai.yaml` already present (init) or missing (add).
+- Stderr is reserved for diagnostics; stdout is pure JSONL on success. Pipe stdout to `jq` and capture stderr separately.
+- `bonsai update` and `bonsai remove` keep their interactive-only surface — non-interactive variants are out of scope for this release.
 
 ## [0.4.1] - 2026-05-07
 
