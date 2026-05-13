@@ -281,6 +281,16 @@ func runInitNonInteractive(cwd, configPath string, nonInt bool, fromConfig strin
 		fmt.Fprintln(stderr, msg)
 		return nonint.ExitInvalidConfig, fmt.Errorf("%s", msg)
 	}
+	// Plan 39 Locked Decision §1 (exclusivity): `bonsai init` installs only
+	// the tech-lead agent — extra entries would be silently dropped by the
+	// runner's tech-lead-only AgentWorkspace call, leaving them registered
+	// in .bonsai.yaml and settings.json without a workspace materialised.
+	// Reject up front; callers can chain `bonsai add` for additional agents.
+	if got := len(cfg.Agents); got != 1 {
+		msg := fmt.Sprintf("from-config: bonsai init accepts only a single 'tech-lead' entry under agents:, got %d agents (use `bonsai add` for additional agents after init)", got)
+		fmt.Fprintln(stderr, msg)
+		return nonint.ExitInvalidConfig, fmt.Errorf("%s", msg)
+	}
 	code, runErr := nonint.RunInit(cwd, configPath, cfg, cat, Version, stdout)
 	if runErr != nil {
 		fmt.Fprintln(stderr, runErr)

@@ -93,6 +93,32 @@ func TestRunInitNonInteractive_MissingTechLead(t *testing.T) {
 	}
 }
 
+// TestRunInitNonInteractive_MultiAgentOverlay_Rejected: overlay with
+// tech-lead PLUS extras must exit 2 (Decision §1 exclusivity). Stderr
+// must hint at the single-entry rule and the .bonsai.yaml must not be
+// written.
+func TestRunInitNonInteractive_MultiAgentOverlay_Rejected(t *testing.T) {
+	setupListTestCatalog(t)
+	tmp := t.TempDir()
+	cfgPath := writeYAMLFixture(t, tmp, "cfg.yaml", "agents:\n  tech-lead: {}\n  backend: {}\n")
+	configPath := filepath.Join(tmp, ".bonsai.yaml")
+
+	var stdout, stderr bytes.Buffer
+	code, err := runInitNonInteractive(tmp, configPath, true, cfgPath, &stdout, &stderr)
+	if code != nonint.ExitInvalidConfig {
+		t.Errorf("exit code: want %d, got %d", nonint.ExitInvalidConfig, code)
+	}
+	if err == nil || !strings.Contains(err.Error(), "single") {
+		t.Errorf("error must mention exclusivity; got %v", err)
+	}
+	if !strings.Contains(stderr.String(), "single") {
+		t.Errorf("stderr must mention exclusivity; got %q", stderr.String())
+	}
+	if _, statErr := os.Stat(configPath); statErr == nil {
+		t.Errorf(".bonsai.yaml must not be written on rejection")
+	}
+}
+
 // TestRunInitNonInteractive_PreExistingConfig: a project with .bonsai.yaml
 // already present must exit 4. Mirrors the legacy interactive "Skipping
 // init" branch's intent but with a non-zero exit so the caller knows.

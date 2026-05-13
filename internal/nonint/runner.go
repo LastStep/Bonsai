@@ -59,6 +59,13 @@ func RunInit(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Cat
 		// but a direct RunInit caller could skip that step.
 		return ExitInvalidConfig, fmt.Errorf("from-config: bonsai init requires a 'tech-lead' entry under agents:")
 	}
+	// Defence-in-depth for the exclusivity rule: `bonsai init` materialises
+	// only tech-lead's workspace. Any extra agent entries would be partially
+	// installed (registered in .bonsai.yaml + path-scoped rules but with no
+	// workspace files) — reject so the failure mode is loud, not silent.
+	if got := len(cfg.Agents); got != 1 {
+		return ExitInvalidConfig, fmt.Errorf("from-config: bonsai init accepts only a single 'tech-lead' entry under agents:, got %d agents", got)
+	}
 
 	lock, _ := config.LoadLockFile(cwd)
 	var wr generate.WriteResult
@@ -159,7 +166,7 @@ func RunAdd(cwd, configPath string, overlay *config.ProjectConfig, cat *catalog.
 	lock, _ := config.LoadLockFile(cwd)
 	var wr generate.WriteResult
 
-	installed, isNewAgent, total, runErr := mergeAndGenerate(cwd, configPath, version, agentType, overlayAgent, agentDef, existing, cat, lock, &wr)
+	_, isNewAgent, total, runErr := mergeAndGenerate(cwd, configPath, version, agentType, overlayAgent, agentDef, existing, cat, lock, &wr)
 	if runErr != nil {
 		return ExitRuntime, runErr
 	}
@@ -173,7 +180,6 @@ func RunAdd(cwd, configPath string, overlay *config.ProjectConfig, cat *catalog.
 			return ExitRuntime, err
 		}
 		// No lock save: nothing was written.
-		_ = installed
 		return ExitOK, nil
 	}
 
@@ -183,7 +189,6 @@ func RunAdd(cwd, configPath string, overlay *config.ProjectConfig, cat *catalog.
 	if err := lock.Save(cwd); err != nil {
 		fmt.Fprintln(os.Stderr, "warning: could not save lock file:", err.Error())
 	}
-	_ = installed
 	return ExitOK, nil
 }
 

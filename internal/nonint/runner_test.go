@@ -135,6 +135,32 @@ func TestRunInit_MissingTechLead(t *testing.T) {
 	}
 }
 
+// TestRunInit_MultiAgentOverlay_Rejected asserts the §1 exclusivity rule:
+// `bonsai init` accepts only a single tech-lead entry. Multi-agent overlays
+// would partial-install the extras (path-scoped rules + settings hooks
+// written, but no workspace materialised) — reject up front so the failure
+// is loud. Callers chain `bonsai add` for additional agents post-init.
+func TestRunInit_MultiAgentOverlay_Rejected(t *testing.T) {
+	cat := loadTestCatalog(t)
+	tmp := t.TempDir()
+	body := "agents:\n  tech-lead: {}\n  backend: {}\n"
+	cfgPath := writeYAML(t, tmp, "cfg.yaml", body)
+	cfg, err := LoadConfig(cfgPath, tmp, cat)
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+	code, err := RunInit(tmp, filepath.Join(tmp, ".bonsai.yaml"), cfg, cat, "test", io.Discard)
+	if code != ExitInvalidConfig {
+		t.Errorf("exit code: want %d, got %d", ExitInvalidConfig, code)
+	}
+	if err == nil || !strings.Contains(err.Error(), "single") {
+		t.Errorf("error must mention exclusivity; got %v", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(tmp, ".bonsai.yaml")); statErr == nil {
+		t.Errorf(".bonsai.yaml must not be written on rejection")
+	}
+}
+
 // TestRunAdd_NewAgent_Smoke initialises a project then runs RunAdd with a
 // backend-agent overlay. The backend workspace must be materialised and
 // the overlay agent must appear in .bonsai.yaml.
