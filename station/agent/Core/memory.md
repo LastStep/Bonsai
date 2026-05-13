@@ -13,9 +13,9 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** **Plan 39 — `bonsai init/add` non-interactive flags** dispatched 2026-05-13 (Tier-2, single worktree `agent-plan39-nonint`, sequential A→B→C→D). Unblocks Plan 38 P2 rung-3 solver. Locked Q&A this session: init w/o tech-lead → exit 2; add overlay must name exactly 1 agent (exit 2 if >1); add overlay's `project_name`/`docs_path`/`scaffolding` must match existing `.bonsai.yaml` (exit 2 on mismatch). Plus: JSONL summary struct drops `omitempty` on count fields; tech-lead-required guard exits 2; all-installed short-circuit emits zero-summary exit 0. [plan](../../Playbook/Plans/Active/39-bonsai-noninteractive-flags.md).
+**Current task:** Idle. Plan 39 shipped as **v0.4.2** 2026-05-13 (`410a5f1` merged, tag pushed, release pipeline running). Pre-1.0 + additive flags = patch bump per user. Test agent passed 32/32; one polish (`SilenceUsage` on init/add) folded in. Plan moved to Archive. [Status Recently Done](../../Playbook/Status.md) row.
 
-**Background:** **Plan 38 — Bonsai-Eval bootstrap** still pending manual prep (fork `inspect_swe` → `LastStep/inspect_swe-frozen`, install `uv`, set `$ANTHROPIC_API_KEY`). Plan 39 unblocks its P2 rung-3.
+**Background:** **Plan 38 — Bonsai-Eval bootstrap** — `uv` installed, fork exists, bootstrap `08fca07` landed. v0.4.2 unblocks P2 rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
