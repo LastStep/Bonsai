@@ -4,14 +4,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Non-interactive flags for `bonsai init`. Both must be set together; the
+// runtime guard lives in runInit so the cobra layer doesn't have to know
+// about the cross-flag dependency. See Plan 39 §B.
+var (
+	initNonInteractive bool
+	initFromConfig     string
+)
+
 func init() {
 	rootCmd.AddCommand(initCmd)
+	initCmd.Flags().BoolVar(&initNonInteractive, "non-interactive", false,
+		"Skip TUI prompts; read all answers from --from-config (must be paired with --from-config)")
+	initCmd.Flags().StringVar(&initFromConfig, "from-config", "",
+		"Path to a YAML config file (.bonsai.yaml shape) used as input under --non-interactive")
 }
 
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize Bonsai in the current project.",
 	RunE:  runInit,
+	// SilenceUsage keeps the cobra `Usage:` block out of stderr when the
+	// non-interactive flag-pair guard returns an error (Plan 39 §B). True
+	// parse-time mistakes (unknown flag, bad syntax) still get usage —
+	// cobra prints those before RunE fires, untouched by this setting.
+	SilenceUsage: true,
 }
 
 // asString safely extracts a string result from a harness step. Returns ""

@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/config"
 	"github.com/LastStep/Bonsai/internal/generate"
+	"github.com/LastStep/Bonsai/internal/nonint"
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/addflow"
 	"github.com/LastStep/Bonsai/internal/tui/harness"
@@ -21,14 +23,29 @@ import (
 	"github.com/LastStep/Bonsai/internal/wsvalidate"
 )
 
+// Non-interactive flags for `bonsai add`. Both must be set together; the
+// runtime guard lives in runAdd. See Plan 39 §C.
+var (
+	addNonInteractive bool
+	addFromConfig     string
+)
+
 func init() {
 	rootCmd.AddCommand(addCmd)
+	addCmd.Flags().BoolVar(&addNonInteractive, "non-interactive", false,
+		"Skip TUI prompts; read all answers from --from-config (must be paired with --from-config)")
+	addCmd.Flags().StringVar(&addFromConfig, "from-config", "",
+		"Path to a YAML config file (.bonsai.yaml shape, single-agent overlay) used as input under --non-interactive")
 }
 
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add an agent to the project.",
 	RunE:  runAdd,
+	// SilenceUsage keeps cobra's `Usage:` block out of stderr when the
+	// non-interactive flag-pair guard returns an error (Plan 39 §C). True
+	// parse-time mistakes still get usage — cobra prints those before RunE.
+	SilenceUsage: true,
 }
 
 // runAdd is the entry point for `bonsai add`. It renders the cinematic
@@ -58,6 +75,24 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
+
+	// Non-interactive branch — Plan 39 §C. Delegated to runAddNonInteractive
+	// so the unit test can drive the same code path without trapping
+	// os.Exit. The branch fires BEFORE requireConfig because the latter's
+	// FatalPanel would write styled TUI to stderr — the non-interactive
+	// path needs the plain "not found" message routed through nonint.RunAdd
+	// (exit code 4).
+	if addNonInteractive || addFromConfig != "" {
+		code, err := runAddNonInteractive(cwd, configPath, addNonInteractive, addFromConfig, os.Stdout, os.Stderr)
+		if err != nil && code == 0 {
+			return err
+		}
+		if code != nonint.ExitOK {
+			os.Exit(code)
+		}
+		return nil
+	}
+
 	cfg, err := requireConfig(configPath)
 	if err != nil {
 		return err
@@ -703,4 +738,35 @@ func availableAddItems(cat *catalog.Catalog, installed *config.InstalledAgent) a
 		Sensors:   filterSensors(cat.SensorsFor(agentType), installed.Sensors),
 		Routines:  filterRoutines(cat.RoutinesFor(agentType), installed.Routines),
 	}
+}
+
+// runAddNonInteractive is the headless `bonsai add` driver. Mirrors
+// runInitNonInteractive's contract on (exitCode, error):
+//
+//   - (0,   non-nil err) — usage error; caller surfaces via cobra RunE.
+//   - (>0,  nil/err)     — operational error; caller calls os.Exit(code).
+//   - (0,   nil)         — success.
+//
+// The tech-lead-required, multi-agent-rejection, project_name / docs_path
+// / scaffolding-match, and unknown-agent rules all live inside nonint.RunAdd
+// (Plan 39 Locked Decisions §2-4) — this helper is a thin shim that
+// translates flag state into the runner call.
+func runAddNonInteractive(cwd, configPath string, nonInt bool, fromConfig string, stdout, stderr io.Writer) (int, error) {
+	if !nonInt || fromConfig == "" {
+		return 0, fmt.Errorf("--non-interactive and --from-config must be set together")
+	}
+	cat := loadCatalog()
+	// LoadOverlay (vs LoadConfig) skips the project-level defaulting walk
+	// so the §3 match contract — "leave empty or match exactly" — holds
+	// against the user's literal YAML rather than a cwd-basename fallback.
+	overlay, err := nonint.LoadOverlay(fromConfig, cwd, cat)
+	if err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return nonint.ExitInvalidConfig, err
+	}
+	code, runErr := nonint.RunAdd(cwd, configPath, overlay, cat, Version, stdout)
+	if runErr != nil {
+		_, _ = fmt.Fprintln(stderr, runErr)
+	}
+	return code, runErr
 }

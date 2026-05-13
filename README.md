@@ -129,6 +129,21 @@ Open the project in Claude Code and say "hi, get started" — the agent self-ori
 
 > **[Your First Workspace](https://laststep.github.io/Bonsai/guides/your-first-workspace/)** — walkthrough with screenshots and explanations.
 
+### Scripted use
+
+For automation (CI fixtures, eval harnesses, scripted scaffolding), `bonsai init` and `bonsai add` accept `--non-interactive --from-config <path>` to skip the TUI entirely. Inputs come from a YAML file shaped like `.bonsai.yaml`; progress is emitted as one JSON object per line on stdout.
+
+```bash
+cat > cfg.yaml <<EOF
+project_name: my-project
+agents:
+  tech-lead: {}
+EOF
+bonsai init --non-interactive --from-config cfg.yaml | jq -c .
+```
+
+Validation errors exit non-zero with a plain stderr message — exit 2 for invalid input, exit 3 for runtime errors, exit 4 when `.bonsai.yaml` already exists for `init` (or is missing for `add`). Conflicts under `--non-interactive` are always skipped — user-modified files are reported but never overwritten.
+
 ---
 
 ## See it in action
