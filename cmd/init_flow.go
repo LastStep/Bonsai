@@ -270,7 +270,7 @@ func runInitNonInteractive(cwd, configPath string, nonInt bool, fromConfig strin
 	cat := loadCatalog()
 	cfg, err := nonint.LoadConfig(fromConfig, cwd, cat)
 	if err != nil {
-		fmt.Fprintln(stderr, err)
+		_, _ = fmt.Fprintln(stderr, err)
 		return nonint.ExitInvalidConfig, err
 	}
 	// Plan 39 Locked Decision §1: init requires a tech-lead entry. The
@@ -278,7 +278,7 @@ func runInitNonInteractive(cwd, configPath string, nonInt bool, fromConfig strin
 	// init-specific — RunInit defends in depth with the same check.
 	if tl, ok := cfg.Agents[techLeadInitKey]; !ok || tl == nil {
 		msg := "from-config: bonsai init requires a 'tech-lead' entry under agents:"
-		fmt.Fprintln(stderr, msg)
+		_, _ = fmt.Fprintln(stderr, msg)
 		return nonint.ExitInvalidConfig, fmt.Errorf("%s", msg)
 	}
 	// Plan 39 Locked Decision §1 (exclusivity): `bonsai init` installs only
@@ -288,12 +288,12 @@ func runInitNonInteractive(cwd, configPath string, nonInt bool, fromConfig strin
 	// Reject up front; callers can chain `bonsai add` for additional agents.
 	if got := len(cfg.Agents); got != 1 {
 		msg := fmt.Sprintf("from-config: bonsai init accepts only a single 'tech-lead' entry under agents:, got %d agents (use `bonsai add` for additional agents after init)", got)
-		fmt.Fprintln(stderr, msg)
+		_, _ = fmt.Fprintln(stderr, msg)
 		return nonint.ExitInvalidConfig, fmt.Errorf("%s", msg)
 	}
 	code, runErr := nonint.RunInit(cwd, configPath, cfg, cat, Version, stdout)
 	if runErr != nil {
-		fmt.Fprintln(stderr, runErr)
+		_, _ = fmt.Fprintln(stderr, runErr)
 	}
 	return code, runErr
 }

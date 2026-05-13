@@ -757,12 +757,12 @@ func runAddNonInteractive(cwd, configPath string, nonInt bool, fromConfig string
 	// against the user's literal YAML rather than a cwd-basename fallback.
 	overlay, err := nonint.LoadOverlay(fromConfig, cwd, cat)
 	if err != nil {
-		fmt.Fprintln(stderr, err)
+		_, _ = fmt.Fprintln(stderr, err)
 		return nonint.ExitInvalidConfig, err
 	}
 	code, runErr := nonint.RunAdd(cwd, configPath, overlay, cat, Version, stdout)
 	if runErr != nil {
-		fmt.Fprintln(stderr, runErr)
+		_, _ = fmt.Fprintln(stderr, runErr)
 	}
 	return code, runErr
 }

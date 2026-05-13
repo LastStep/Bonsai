@@ -111,8 +111,8 @@ func RunInit(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Cat
 // Returns (exitCode, error):
 //   - ExitOK             — success
 //   - ExitInvalidConfig  — overlay shape rejected (>1 agent, non-matching
-//                          project_name / docs_path / scaffolding, unknown
-//                          agent type, tech-lead-required violation)
+//     project_name / docs_path / scaffolding, unknown
+//     agent type, tech-lead-required violation)
 //   - ExitRuntime        — generator error
 //   - ExitWrongCWDForInit — no `.bonsai.yaml` at cwd
 func RunAdd(cwd, configPath string, overlay *config.ProjectConfig, cat *catalog.Catalog, version string, w io.Writer) (int, error) {
