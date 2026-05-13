@@ -508,6 +508,19 @@ func writeSettingsJSONForAgent(projectRoot string, installed *config.InstalledAg
 
 	settingsPath := filepath.Join(projectRoot, installed.Workspace, ".claude", "settings.json")
 
+	// Resolve project root to an absolute path so generated hook commands
+	// don't depend on the runtime $PWD when the hook fires. The legacy
+	// template walked $PWD up to the nearest .bonsai.yaml, which fails in
+	// multi-project setups (e.g. a Bash tool invocation in repo A's
+	// session that cd's into sibling repo B silently re-targets B's
+	// sensors). Trade-off: settings.json now embeds the install-time
+	// absolute path, so moving the project requires re-running
+	// `bonsai update` to regenerate.
+	absRoot, absErr := filepath.Abs(projectRoot)
+	if absErr != nil {
+		return fmt.Errorf("resolve project root: %w", absErr)
+	}
+
 	existing := make(map[string]interface{})
 	if data, err := os.ReadFile(settingsPath); err == nil {
 		_ = json.Unmarshal(data, &existing)
@@ -530,11 +543,8 @@ func writeSettingsJSONForAgent(projectRoot string, installed *config.InstalledAg
 			continue
 		}
 		k := groupKey{event, matcher}
-		scriptPath := installed.Workspace + "agent/Sensors/" + sensorName + ".sh"
-		cmd := fmt.Sprintf(
-			`bash -c 'r="$PWD"; while [ "$r" != "/" ] && [ ! -f "$r/.bonsai.yaml" ]; do r=$(dirname "$r"); done; bash "$r/%s" "$r"'`,
-			scriptPath,
-		)
+		scriptPath := filepath.Join(absRoot, installed.Workspace, "agent/Sensors", sensorName+".sh")
+		cmd := fmt.Sprintf("bash %q %q", scriptPath, absRoot)
 		groups[k] = append(groups[k], cmd)
 	}
 
