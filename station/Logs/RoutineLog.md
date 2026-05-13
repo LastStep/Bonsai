@@ -82,6 +82,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-13 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Marked 6 References entries stale in `agent/Core/memory.md` — `station/Research/` directory not found on disk (gitignored + absent); dashboard `Last Ran`/`Next Due` updated to 2026-05-13/2026-05-18.
+- **Flags:** 2 items for user — (1) Research directory missing: all 6 RESEARCH doc pointers resolve to non-existent files; user should restore locally or remove entries. (2) Backlog P0 line 53 — "non-interactive flags" — stale; Plan 39/v0.4.2 shipped these flags, entry should be commented out.
+- **Report:** `Reports/Pending/2026-05-13-memory-consolidation.md`
+
+---
+
 ### 2026-05-13 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
