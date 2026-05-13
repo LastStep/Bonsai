@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-13
+
+> **The "headless Bonsai" release.** `bonsai init` and `bonsai add` now run without TUI prompts under `--non-interactive --from-config`, unblocking the Bonsai-Eval rung-3 solver and any other automation that wants to materialise an agent workspace from a YAML fixture.
+
+### Added
+- **`bonsai init --non-interactive --from-config <path>`** — skip the cinematic init flow; read all answers from a `.bonsai.yaml`-shaped YAML file. JSON Lines progress output on stdout (one `{"event":"file",...}` per generated file plus a terminal `{"event":"summary",...}` with stable count keys). Validation errors exit non-zero with a plain stderr message — no TUI fallback. (Plan 39)
+- **`bonsai add --non-interactive --from-config <path>`** — same shape for the add flow. Overlay must name exactly one agent (loop the command for multi-agent setups). Project-name / docs-path / scaffolding fields in the overlay must either be empty (defaulted) or match the existing `.bonsai.yaml` exactly. (Plan 39)
+
+### Changed
+- Conflict resolution under `--non-interactive` is **forced to skip** — user-modified files are reported as `action:"conflict"` events and left untouched on disk. No `.bak`, no overwrite. (Plan 39 Security §3)
+
+### Notes
+- Exit codes: `0` success, `2` invalid input (bad YAML, missing required field, shell-metachar, multi-agent overlay, mismatched project fields, tech-lead-required), `3` runtime / filesystem error, `4` `.bonsai.yaml` already present (init) or missing (add).
+- `bonsai update` and `bonsai remove` are unchanged — their non-interactive variants are out of scope for v0.5.0.
+
 ## [0.4.1] - 2026-05-07
 
 > Quiet patch — tighten CI against cross-platform regressions and sync a stale doc pointer.

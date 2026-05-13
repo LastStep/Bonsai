@@ -285,6 +285,57 @@ func TestApplyDefaults_TechLeadGetsDocsPath(t *testing.T) {
 	}
 }
 
+// TestLoadOverlay_LeavesProjectFieldsEmpty: LoadOverlay must NOT default
+// project_name / docs_path / scaffolding so the §3 "leave empty or match
+// exactly" contract holds against the user's literal YAML. Critical for
+// the bonsai add headless path — the runner compares overlay fields to
+// the existing .bonsai.yaml, and a defaulted basename would always
+// mismatch unless the user happens to invoke `bonsai add` from a dir
+// whose basename equals the original project_name.
+func TestLoadOverlay_LeavesProjectFieldsEmpty(t *testing.T) {
+	cat := loadTestCatalog(t)
+	tmp := t.TempDir()
+	cfgPath := writeYAML(t, tmp, "cfg.yaml", "agents:\n  backend: {}\n")
+	overlay, err := LoadOverlay(cfgPath, tmp, cat)
+	if err != nil {
+		t.Fatalf("LoadOverlay: %v", err)
+	}
+	if overlay.ProjectName != "" {
+		t.Errorf("ProjectName: want empty, got %q", overlay.ProjectName)
+	}
+	if overlay.DocsPath != "" {
+		t.Errorf("DocsPath: want empty, got %q", overlay.DocsPath)
+	}
+	if len(overlay.Scaffolding) != 0 {
+		t.Errorf("Scaffolding: want empty, got %v", overlay.Scaffolding)
+	}
+	// Per-agent defaults still apply.
+	agent := overlay.Agents["backend"]
+	if agent == nil {
+		t.Fatalf("backend agent missing after LoadOverlay")
+	}
+	if agent.Workspace == "" {
+		t.Errorf("Workspace must be defaulted; got empty")
+	}
+}
+
+// TestLoadOverlay_StillValidatesWorkspaces: ../etc/passwd as a workspace
+// must still be rejected by LoadOverlay's wsvalidate path even though
+// project_name is allowed to be empty.
+func TestLoadOverlay_StillValidatesWorkspaces(t *testing.T) {
+	cat := loadTestCatalog(t)
+	tmp := t.TempDir()
+	body := "agents:\n  backend:\n    workspace: ../etc/passwd\n"
+	cfgPath := writeYAML(t, tmp, "cfg.yaml", body)
+	_, err := LoadOverlay(cfgPath, tmp, cat)
+	if err == nil {
+		t.Fatalf("expected error for ../etc/passwd workspace")
+	}
+	if !strings.Contains(err.Error(), "escape") && !strings.Contains(err.Error(), "workspace") {
+		t.Errorf("error must mention workspace/escape; got %q", err.Error())
+	}
+}
+
 // TestLoadConfig_RoutineCheckSensorAutoAdded: an agent overlay with routines
 // but no routine-check sensor must have routine-check appended by
 // EnsureRoutineCheckSensor (mirrors interactive flow).

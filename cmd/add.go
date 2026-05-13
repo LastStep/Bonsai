@@ -752,7 +752,10 @@ func runAddNonInteractive(cwd, configPath string, nonInt bool, fromConfig string
 		return 0, fmt.Errorf("--non-interactive and --from-config must be set together")
 	}
 	cat := loadCatalog()
-	overlay, err := nonint.LoadConfig(fromConfig, cwd, cat)
+	// LoadOverlay (vs LoadConfig) skips the project-level defaulting walk
+	// so the §3 match contract — "leave empty or match exactly" — holds
+	// against the user's literal YAML rather than a cwd-basename fallback.
+	overlay, err := nonint.LoadOverlay(fromConfig, cwd, cat)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return nonint.ExitInvalidConfig, err
