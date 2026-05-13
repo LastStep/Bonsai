@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-05-13
+
+> **Hotfix.** Sensor hook commands in generated `.claude/settings.json` no longer use a `$PWD`-walk-up to locate their parent project — they bake the install-time absolute paths instead. Surfaced during the Bonsai-Eval bootstrap dogfood when a Bash invocation drifted between two sibling projects and a Stop hook executed against the wrong workspace.
+
+### Fixed
+- **Sensor hook commands now use absolute paths.** `internal/generate/generate.go` previously emitted `bash -c 'r="$PWD"; while [ ! -f "$r/.bonsai.yaml" ]; do r=$(dirname "$r"); done; bash "$r/<sensor>" "$r"'` for every sensor entry. In any multi-`.bonsai.yaml` setup, the walker landed in whichever project the runtime `$PWD` was under — which could be a *different* Bonsai project than the session was scoped to. Generator now writes `bash "<absolute-script>" "<absolute-project-root>"` instead. Survives bash-cwd drift across sibling projects. Trade-off: settings.json embeds the install-time absolute path, so moving a project requires re-running `bonsai update` to regenerate.
+
+### Notes
+- Run `bonsai update` in any existing Bonsai project to refresh `.claude/settings.json` with the new template. The hook content is the only meaningful change; sensor scripts themselves are unchanged.
+
 ## [0.4.2] - 2026-05-13
 
 > **The "headless Bonsai" release.** `bonsai init` and `bonsai add` now run without TUI prompts under `--non-interactive --from-config`, so automation can materialise an agent workspace from a YAML fixture and parse progress as a clean JSON Lines stream.

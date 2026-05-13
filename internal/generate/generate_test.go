@@ -1668,3 +1668,61 @@ func TestSettingsJSONForAgentScope(t *testing.T) {
 		t.Fatalf("expected legacy SettingsJSON to surface a conflict under tech-lead/; got none (wr conflicts=%d total)", len(wrAll.Conflicts()))
 	}
 }
+
+// TestSettingsJSON_HookCommandsAreAbsolutePaths asserts that generated
+// .claude/settings.json sensor hook commands embed the install-time
+// absolute path to the sensor script + project root, rather than the
+// legacy `$PWD`-walk-up template. The walker broke in multi-project
+// setups: a Bash tool invocation in repo A's session that cd's into
+// sibling repo B silently re-targets B's sensors (see Backlog P0 bug
+// surfaced during Plan 39's Bonsai-Eval bootstrap).
+func TestSettingsJSON_HookCommandsAreAbsolutePaths(t *testing.T) {
+	cat, err := buildTestCatalogWithItems(map[string]string{
+		"sensors/scope-guard/meta.yaml":           "name: scope-guard\ndescription: SG\nagents: all\nevent: PreToolUse\nmatcher: \"Edit|Write\"\n",
+		"sensors/scope-guard/scope-guard.sh.tmpl": "#!/usr/bin/env bash\necho sg\n",
+	})
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	cfg := &config.ProjectConfig{
+		ProjectName: "TestProject",
+		Agents: map[string]*config.InstalledAgent{
+			"tech-lead": {
+				AgentType: "tech-lead",
+				Workspace: "station/",
+				Sensors:   []string{"scope-guard"},
+			},
+		},
+	}
+	lock := config.NewLockFile()
+	var wr WriteResult
+	if err := SettingsJSON(tmpDir, cfg, cat, lock, &wr, false); err != nil {
+		t.Fatalf("SettingsJSON: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(tmpDir, "station", ".claude", "settings.json"))
+	if err != nil {
+		t.Fatalf("read settings.json: %v", err)
+	}
+	body := string(data)
+
+	// Legacy walker must not appear anywhere in the generated content.
+	if strings.Contains(body, "$PWD") || strings.Contains(body, "dirname") || strings.Contains(body, ".bonsai.yaml") {
+		t.Fatalf("legacy $PWD-walk template leaked into settings.json:\n%s", body)
+	}
+
+	absRoot, _ := filepath.Abs(tmpDir)
+	expectedScript := filepath.Join(absRoot, "station", "agent/Sensors", "scope-guard.sh")
+	if !strings.Contains(body, expectedScript) {
+		t.Fatalf("expected absolute script path %q in settings.json; got:\n%s", expectedScript, body)
+	}
+	// absRoot must appear at least twice in the body — once as the
+	// script's parent directory, and once as the second positional
+	// argument the hook passes to the sensor. (Quote escaping in the
+	// JSON makes a literal-string suffix match too brittle.)
+	if strings.Count(body, absRoot) < 2 {
+		t.Fatalf("expected absolute project root %q to appear at least twice (script path + hook arg); got:\n%s", absRoot, body)
+	}
+}
