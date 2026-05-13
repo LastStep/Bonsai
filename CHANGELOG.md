@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-05-13
+## [0.4.2] - 2026-05-13
 
 > **The "headless Bonsai" release.** `bonsai init` and `bonsai add` now run without TUI prompts under `--non-interactive --from-config`, so automation can materialise an agent workspace from a YAML fixture and parse progress as a clean JSON Lines stream.
 
@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exit codes: `0` success · `2` invalid input (bad YAML, missing required field, shell-metacharacter, multi-agent overlay, mismatched project fields, tech-lead-required) · `3` runtime / filesystem error · `4` `.bonsai.yaml` already present (init) or missing (add).
 - Stderr is reserved for diagnostics; stdout is pure JSONL on success. Pipe stdout to `jq` and capture stderr separately.
 - `bonsai update` and `bonsai remove` keep their interactive-only surface — non-interactive variants are out of scope for this release.
+- Versioned as a patch (`v0.4.2`) rather than a minor bump: Bonsai is pre-1.0, the flags are additive, and no existing behaviour or shape changes.
 
 ## [0.4.1] - 2026-05-07
 
