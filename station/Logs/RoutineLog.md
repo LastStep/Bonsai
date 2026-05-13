@@ -82,6 +82,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-13 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-05-13/2026-05-20.
+- **Flags:** 3 drift items — medium: `internal/nonint/` package (v0.4.2, Plan 39) not documented in `station/code-index.md`; low: `cmd/completion.go` not listed in `code-index.md` CLI Commands table or root `CLAUDE.md` project tree; low: `internal/nonint/` missing from `station/INDEX.md` Architecture Overview block. All navigation links in `station/CLAUDE.md` and agent/Core/Protocols/Workflows/Skills/Routines/Sensors resolved cleanly.
+- **Report:** `Reports/Pending/2026-05-13-doc-freshness-check.md`
+
+---
+
 ### 2026-04-22 — Plan 28 Phase 1 — cinematic `bonsai catalog` + RenderHeader extension + hide `completion` (PR #68, issue-to-implementation)
 - **Outcome:** success
 - **Plan:** Plans/Active/28-view-cmds-cinematic.md (Tier 2, 3-phase — Phase 1 of 3)
