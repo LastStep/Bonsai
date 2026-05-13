@@ -16,7 +16,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| **Plan 38 — Bonsai-Eval bootstrap** — separate repo, Inspect AI substrate + telemetry pipeline + Bonsai-behavioral scenarios. First sprint = P0+P1+P2 (no paid runs). [plan](Plans/Active/38-bonsai-eval-bootstrap.md) | 38 | tl | Revised 2026-05-08: rungs 1+2 swapped to `inspect_swe` drop-ins (~2 weeks saved; only rung-3 custom). P2 rung-3 unblocked by Plan 39 / v0.4.2. Remaining manual prep: set `$ANTHROPIC_API_KEY` (fork + `uv` already done). |
+| — | — | — | — |
 
 ## Pending
 
@@ -29,6 +29,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| **Plan 38 handoff to Bonsai-Eval tech-lead** — bootstrapped `LastStep/Bonsai-Eval` via `bonsai init --non-interactive` (commit `057f378`). Plan moved to that repo's `Plans/Active/`; this station archives the local copy. P2/P3 owned there going forward. [Bonsai-Eval station](https://github.com/LastStep/Bonsai-Eval/tree/main/station) | 38 | tl | 2026-05-13 |
 | **v0.4.2 release shipped** — `bonsai init`/`add` `--non-interactive --from-config <path>` (JSONL stdout, hard-skip conflicts, exit codes 0/2/3/4). Unblocks Plan 38 P2 rung-3. Plan 39 sequential A→B→C→D + 3 review-driven fix-ups. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.2) · [PR #102](https://github.com/LastStep/Bonsai/pull/102) · commit `410a5f1` | 39 | gp + tl | 2026-05-13 |
 | **PR triage sweep** — closed 9 stale routine bot PRs (#86–91, #96–98) superseded by local routine-digests (`dcc9143`, `39ee362`); merged 4 Dependabot bumps: codeql-action v3→v4 (#85), checkout v4→v6 (#81), deploy-pages v4→v5 (#82), go-isatty 0.0.21→0.0.22 (#84). Closes 2 P1 backlog rows (CodeQL v3→v4, Node 20→24). [Backlog](Backlog.md) bot pile-up follow-up filed. | — | tl | 2026-05-07 |
 | **First external contribution merged** — `bonsai completion [bash|zsh|fish|powershell]` from @mvanhorn. Closes #54. CI green, squash-merged. Stale-comment fixup follow-up. [PR #78](https://github.com/LastStep/Bonsai/pull/78) · commit `2eae9d4` | — | tl | 2026-05-07 |
