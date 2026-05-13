@@ -42,6 +42,10 @@ var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add an agent to the project.",
 	RunE:  runAdd,
+	// SilenceUsage keeps cobra's `Usage:` block out of stderr when the
+	// non-interactive flag-pair guard returns an error (Plan 39 §C). True
+	// parse-time mistakes still get usage — cobra prints those before RunE.
+	SilenceUsage: true,
 }
 
 // runAdd is the entry point for `bonsai add`. It renders the cinematic

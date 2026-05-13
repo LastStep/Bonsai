@@ -24,6 +24,11 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize Bonsai in the current project.",
 	RunE:  runInit,
+	// SilenceUsage keeps the cobra `Usage:` block out of stderr when the
+	// non-interactive flag-pair guard returns an error (Plan 39 §B). True
+	// parse-time mistakes (unknown flag, bad syntax) still get usage —
+	// cobra prints those before RunE fires, untouched by this setting.
+	SilenceUsage: true,
 }
 
 // asString safely extracts a string result from a harness step. Returns ""
