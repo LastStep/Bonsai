@@ -82,6 +82,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-13 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 2 Done items dated 2026-04-25 (Plans 32 and 33) from `Status.md` → `StatusArchive.md`; updated footer date marker from `≤ 2026-04-24` → `≤ 2026-04-29`; dashboard `Last Ran`/`Next Due` set to 2026-05-13/2026-05-18.
+- **Flags:** none — 1 Pending item (sentrux trial) still relevant and not 30+ days stale (6 days); no orphan plan files (Plans/Active/ empty); all Status plan refs resolve in Plans/Archive/; Backlog P0 "non-interactive flags" staleness already flagged by Memory Consolidation routine (2026-05-13) — no duplicate action taken.
+- **Report:** `Reports/Pending/2026-05-13-status-hygiene.md`
+
+---
+
 ### 2026-05-13 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)

@@ -14,6 +14,8 @@ description: Archive of Done items moved from Status.md once they age past 14 da
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| Plan 32 — followup bundle: wsvalidate extract, Validate() chokepoint, O_NOFOLLOW snapshot. 13/17 review items closed. [plan](Plans/Archive/32-followup-bundle.md) · [PR #80](https://github.com/LastStep/Bonsai/pull/80) | 32 | gp×2 + tl | 2026-04-25 |
+| Plan 33 — website concept-page rewrite: 3 files, README-aligned mechanism-led voice, 7 banned phrases scrubbed. [plan](Plans/Archive/33-website-concept-page-rewrite.md) · [PR #79](https://github.com/LastStep/Bonsai/pull/79) | 33 | gp + tl | 2026-04-25 |
 | Plan 31 — v0.3 release readiness: peer-awareness refresh + bonsai-model skill + catalog.json snapshot, removeflow + updateflow cinematics, hints package. 3 PRs. [plan](Plans/Archive/31-v03-release-readiness.md) · [#75](https://github.com/LastStep/Bonsai/pull/75) · [#76](https://github.com/LastStep/Bonsai/pull/76) · [#77](https://github.com/LastStep/Bonsai/pull/77) | 31 | tl + gp×5 | 2026-04-24 |
 | Plan 30 — guide viewer perf + view-cmds polish: glamour renderer cache + pre-warm, 18 NIT cleanups. [plan](Plans/Archive/30-guide-perf-and-view-polish.md) · [PR #74](https://github.com/LastStep/Bonsai/pull/74) | 30 | gp×3 + tl | 2026-04-23 |
 | Archive-reconcile sweep: 20 shipped plans Active→Archive, 14 stale frontmatters synced. Commit `45df4cd`. | — | tl | 2026-04-23 |
