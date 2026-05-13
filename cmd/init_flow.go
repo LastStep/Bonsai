@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,11 +14,18 @@ import (
 	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/config"
 	"github.com/LastStep/Bonsai/internal/generate"
+	"github.com/LastStep/Bonsai/internal/nonint"
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/harness"
 	"github.com/LastStep/Bonsai/internal/tui/hints"
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
 )
+
+// techLeadInitKey is the agent map key used by the non-interactive branch's
+// presence check. Mirrors the `techLeadType` constant inside the function
+// body — duplicated as a file-scope constant so the early branch can read
+// it without depending on later locals.
+const techLeadInitKey = "tech-lead"
 
 // runInit is the entry point for `bonsai init`. It renders the cinematic
 // four-stage init flow (Vessel → Soil → Branches → Observe) followed by the
@@ -31,6 +39,25 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
+
+	// Non-interactive branch — Plan 39 §B. Delegated to runInitNonInteractive
+	// so the unit test (cmd/init_nonint_test.go) can drive the same code
+	// path without spawning a subprocess to observe os.Exit.
+	if initNonInteractive || initFromConfig != "" {
+		code, err := runInitNonInteractive(cwd, configPath, initNonInteractive, initFromConfig, os.Stdout, os.Stderr)
+		if err != nil && code == 0 {
+			// Either-alone usage error — let cobra surface the message with
+			// its usage block. The contract: non-zero codes go through
+			// os.Exit (skipping the cobra "Error:" prefix + usage banner);
+			// a zero code with non-nil err is the soft-fail path where the
+			// caller still expects a tidy "Error: ..." line.
+			return err
+		}
+		if code != nonint.ExitOK {
+			os.Exit(code)
+		}
+		return nil
+	}
 
 	// Early-exit with the legacy warning copy so existing configs are
 	// respected identically to pre-redesign behaviour.
@@ -218,6 +245,47 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// runInitNonInteractive is the headless `bonsai init` driver. Returns
+// (exitCode, error):
+//
+//   - (0,   non-nil err) — usage error: only one flag was set. Caller
+//     surfaces err via cobra's RunE so the user sees the "Error:" prefix
+//     and the usage block.
+//   - (>0,  nil err)     — runner reported a non-zero exit code; caller
+//     calls os.Exit(code) and the stderr message was already written.
+//   - (>0,  non-nil err) — runner reported a non-zero exit code AND a
+//     diagnostic message that the test can inspect. Wire-equivalent to
+//     above; both fields populated so tests can assert on err.Error().
+//   - (0,   nil err)     — success.
+//
+// The split lets the cobra RunE path use cobra's usage-printer for genuine
+// usage mistakes while routing operational errors through os.Exit so the
+// JSONL stdout stream isn't polluted with cobra's Error: prefix.
+func runInitNonInteractive(cwd, configPath string, nonInt bool, fromConfig string, stdout, stderr io.Writer) (int, error) {
+	if !nonInt || fromConfig == "" {
+		return 0, fmt.Errorf("--non-interactive and --from-config must be set together")
+	}
+	cat := loadCatalog()
+	cfg, err := nonint.LoadConfig(fromConfig, cwd, cat)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return nonint.ExitInvalidConfig, err
+	}
+	// Plan 39 Locked Decision §1: init requires a tech-lead entry. The
+	// guard lives here (not inside RunInit) so the error message is
+	// init-specific — RunInit defends in depth with the same check.
+	if tl, ok := cfg.Agents[techLeadInitKey]; !ok || tl == nil {
+		msg := "from-config: bonsai init requires a 'tech-lead' entry under agents:"
+		fmt.Fprintln(stderr, msg)
+		return nonint.ExitInvalidConfig, fmt.Errorf("%s", msg)
+	}
+	code, runErr := nonint.RunInit(cwd, configPath, cfg, cat, Version, stdout)
+	if runErr != nil {
+		fmt.Fprintln(stderr, runErr)
+	}
+	return code, runErr
 }
 
 // buildGenerateAction constructs the closure that the GenerateStage invokes

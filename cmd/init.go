@@ -4,8 +4,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Non-interactive flags for `bonsai init`. Both must be set together; the
+// runtime guard lives in runInit so the cobra layer doesn't have to know
+// about the cross-flag dependency. See Plan 39 §B.
+var (
+	initNonInteractive bool
+	initFromConfig     string
+)
+
 func init() {
 	rootCmd.AddCommand(initCmd)
+	initCmd.Flags().BoolVar(&initNonInteractive, "non-interactive", false,
+		"Skip TUI prompts; read all answers from --from-config (must be paired with --from-config)")
+	initCmd.Flags().StringVar(&initFromConfig, "from-config", "",
+		"Path to a YAML config file (.bonsai.yaml shape) used as input under --non-interactive")
 }
 
 var initCmd = &cobra.Command{
