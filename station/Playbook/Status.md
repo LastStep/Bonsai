@@ -17,6 +17,7 @@ description: Live task tracker. Update this file at the start and end of every w
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
 | **Plan 38 — Bonsai-Eval bootstrap** — separate repo, Inspect AI substrate + telemetry pipeline + Bonsai-behavioral scenarios. First sprint = P0+P1+P2 (no paid runs). [plan](Plans/Active/38-bonsai-eval-bootstrap.md) | 38 | tl | Revised 2026-05-08: rungs 1+2 swapped to `inspect_swe` drop-ins (~2 weeks saved; only rung-3 custom). Manual prep open: fork `meridianlabs-ai/inspect_swe` → `LastStep/inspect_swe-frozen`, install `uv`, set `$ANTHROPIC_API_KEY`. |
+| **Plan 39 — `bonsai init/add` non-interactive flags** — `--non-interactive` + `--from-config <path>` for both commands. JSONL stdout, hard-skip conflicts, exit codes 0/2/3/4. Ships v0.5.0. Unblocks Plan 38 P2 rung-3. [plan](Plans/Active/39-bonsai-noninteractive-flags.md) | 39 | gp | Dispatched 2026-05-13. Worktree `agent-plan39-nonint`, sequential A→B→C→D. Locked Q&A: init-w/o-techlead = exit 2; add multi-agent overlay = exit 2; add non-`agents` field mismatch = exit 2. |
 
 ## Pending
 

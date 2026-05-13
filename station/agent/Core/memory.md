@@ -13,7 +13,9 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** **Plan 38 — Bonsai-Eval bootstrap** dispatch-pending. 2026-05-08 revision: rungs 1+2 swapped from custom builds to `inspect_swe` drop-ins (Meridian Labs / JJ Allaire / UK AISI+Apollo) after rung-reuse research + trust audit. Pin `inspect-swe==0.2.51` + fork to `LastStep/inspect_swe-frozen` as safety net (pre-1.0, bus factor 82%). Only rung-3 (Bonsai) is custom. ~2 weeks saved on P1. Risks #1 RESOLVED, #5 mitigated by pin, new #8 added. [plan](../../Playbook/Plans/Active/38-bonsai-eval-bootstrap.md) · [Status](../../Playbook/Status.md). Manual prep open: fork inspect_swe, install uv (system Python is 3.10), set `$ANTHROPIC_API_KEY` (Max OAuth doesn't cover SDK-direct calls). Repo + gh auth + codeburn already verified.
+**Current task:** **Plan 39 — `bonsai init/add` non-interactive flags** dispatched 2026-05-13 (Tier-2, single worktree `agent-plan39-nonint`, sequential A→B→C→D). Unblocks Plan 38 P2 rung-3 solver. Locked Q&A this session: init w/o tech-lead → exit 2; add overlay must name exactly 1 agent (exit 2 if >1); add overlay's `project_name`/`docs_path`/`scaffolding` must match existing `.bonsai.yaml` (exit 2 on mismatch). Plus: JSONL summary struct drops `omitempty` on count fields; tech-lead-required guard exits 2; all-installed short-circuit emits zero-summary exit 0. [plan](../../Playbook/Plans/Active/39-bonsai-noninteractive-flags.md).
+
+**Background:** **Plan 38 — Bonsai-Eval bootstrap** still pending manual prep (fork `inspect_swe` → `LastStep/inspect_swe-frozen`, install `uv`, set `$ANTHROPIC_API_KEY`). Plan 39 unblocks its P2 rung-3.
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
