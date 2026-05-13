@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/agent-review.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/agent-review.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ],
         "matcher": "Agent"
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/scope-guard-files.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/scope-guard-files.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ],
         "matcher": "Edit|Write"
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/dispatch-guard.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/dispatch-guard.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ],
         "matcher": "Agent"
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/routine-check.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/routine-check.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ]
       },
@@ -44,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/compact-recovery.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/compact-recovery.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ],
         "matcher": "compact"
@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/session-context.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/session-context.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ],
         "matcher": "startup|resume|clear"
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/status-bar.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/status-bar.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ]
       }
@@ -74,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/subagent-stop-review.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/subagent-stop-review.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ]
       }
@@ -84,7 +84,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'r=\"$PWD\"; while [ \"$r\" != \"/\" ] && [ ! -f \"$r/.bonsai.yaml\" ]; do r=$(dirname \"$r\"); done; bash \"$r/station/agent/Sensors/context-guard.sh\" \"$r\"'"
+            "command": "bash \"/home/rohan/ZenGarden/Bonsai/station/agent/Sensors/context-guard.sh\" \"/home/rohan/ZenGarden/Bonsai\""
           }
         ]
       }
