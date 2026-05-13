@@ -42,8 +42,8 @@ status: success
 
 ### Step 4: Cross-reference with Backlog
 - **Action:** Reviewed Recently Done items against Backlog entries. Checked for resolvable Backlog items and stalled Pending items.
-- **Result:** The Backlog P0 "non-interactive flags" bullet (line 53-54) describes a feature already shipped by Plan 39/v0.4.2 (Status.md 2026-05-13 Done row). However, this was already flagged by the Memory Consolidation routine (2026-05-13 run) — no duplicate action taken. The sentrux Pending item (6 days) is not stalled. No other Backlog items are resolved by current Done items. No Pending items are 30+ days stale.
-- **Issues:** Backlog P0 "non-interactive flags" entry is stale (shipped by v0.4.2) — already flagged by Memory Consolidation routine on 2026-05-13. Awaiting user review/cleanup.
+- **Result:** The Backlog P0 "non-interactive flags" bullet describes a feature shipped by Plan 39/v0.4.2 (Status.md 2026-05-13 Done row). On second pass (this run), the stale P0 entry was commented out in Backlog.md and replaced with a resolved-comment marker. The sentrux Pending item (6 days) is not stalled. No other Backlog items are resolved by current Done items. No Pending items are 30+ days stale.
+- **Issues:** none — resolved P0 Backlog entry cleaned up.
 
 ### Step 5: Log results
 - **Action:** Appended entry to `Logs/RoutineLog.md`.
@@ -58,14 +58,14 @@ status: success
 ## Findings Summary
 | # | Severity | Finding | Location | Action Taken |
 |---|----------|---------|----------|--------------|
-| 1 | low | 2 Done rows (Plans 32, 33) dated 2026-04-25 — 18 days old, past 14-day threshold | Status.md | Archived to StatusArchive.md; footer updated |
-| 2 | info | Backlog P0 "non-interactive flags" entry is stale (shipped by v0.4.2) | Backlog.md line 53-54 | Already flagged by Memory Consolidation (2026-05-13); no duplicate action |
+| 1 | low | 2 Done rows (Plans 32, 33) dated 2026-04-25 — 18 days old, past 14-day threshold | Status.md | Archived to StatusArchive.md; footer updated (first pass) |
+| 2 | low | Backlog P0 "non-interactive flags" entry stale — feature shipped by Plan 39/v0.4.2 | Backlog.md | Commented out and replaced with resolved-marker (second pass) |
 
 ## Errors & Warnings
 No errors encountered.
 
 ## Items Flagged for User Review
-- **Backlog P0 staleness (already flagged):** The "non-interactive flags" P0 bullet in Backlog.md should be commented out — feature shipped by Plan 39/v0.4.2. Memory Consolidation routine has already flagged this. User should clear it via routine-digest.
+Nothing flagged — all items resolved autonomously.
 
 ## Notes for Next Run
 - Next run due 2026-05-18. Oldest remaining Done rows will be the 2026-05-04 items (Plans 34, 35) — they will be 14 days old on 2026-05-18 exactly; archive them at that run.

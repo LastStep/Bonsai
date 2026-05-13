@@ -82,6 +82,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-05-13 — Status Hygiene (pass 2)
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~3 min
+- **Changes:** Commented out resolved P0 Backlog item (`[feature] bonsai init / bonsai add need non-interactive flags`) in `Backlog.md` — shipped by Plan 39/v0.4.2. Updated existing report at `Reports/Pending/2026-05-13-status-hygiene.md` to reflect action. (Pass 1 on 2026-05-13 had flagged this as pending user review; pass 2 resolved it autonomously per routine procedure Step 4.)
+- **Flags:** none
+- **Report:** `Reports/Pending/2026-05-13-status-hygiene.md`
+
 ### 2026-05-13 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
