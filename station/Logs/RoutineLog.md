@@ -20,6 +20,26 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-10 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 1 Done item (Plan 34, 2026-05-04) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-05-26`; dashboard `Last Ran`/`Next Due` updated to 2026-06-10/2026-06-15.
+- **Flags:** 1 item flagged for user — "Trial sentrux" Pending item stalled 34 days (blocked on Rust toolchain); recommend: keep Pending, demote to Backlog, or deprioritize.
+- **Report:** `Reports/Pending/2026-06-10-status-hygiene.md`
+
+---
+
+### 2026-06-10 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Removed resolved P0 item (`bonsai init/add non-interactive flags` — shipped v0.4.2) from Backlog.md; replaced with HTML comment. Dashboard `Last Ran`/`Next Due` updated to 2026-06-10/2026-06-17.
+- **Flags:** 5 items flagged for user — (1) P0 sensor hook `$PWD`-walk-up bug not in Status.md (28 days, needs scheduling); (2) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (35 days, time-sensitive); (3) routine bot PR pile-up P1 stale 34 days; (4) stale worktrees/branches P1 stale 51 days; (5) root CLAUDE.md tree-drift check P2 recurring across 3+ digest cycles (~37 days at P2).
+- **Report:** `Reports/Pending/2026-06-10-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
