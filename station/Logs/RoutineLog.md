@@ -414,3 +414,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan report written:** yes — Plan 37 doc-refresh-bundle (`Plans/Active/37-doc-refresh-bundle.md`)
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
+
+### 2026-06-10 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 minutes
+- **Changes:** `station/agent/Core/memory.md` — stale markers added to all 6 References entries (`RESEARCH-*.md` files missing); `station/agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-06-10, Next Due → 2026-06-15); `station/Logs/RoutineLog.md` — this entry
+- **Flags:** 6 `RESEARCH-*.md` reference files missing from `station/Research/` (directory absent, files untracked by git, confirmed present 2026-05-07). User decision needed: recover, prune, or leave stale-marked.
+- **Report:** `Reports/Pending/2026-06-10-memory-consolidation.md`
