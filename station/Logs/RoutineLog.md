@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-10 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-06-10/2026-06-17.
+- **Flags:** 4 items flagged for user — (1) `internal/nonint/` package (v0.4.2) missing from `code-index.md` and root `CLAUDE.md` tree (medium); (2) `bonsai completion` command missing from `code-index.md` CLI Commands table (low); (3) INDEX.md CLI count 8→9 drift (low); (4) `SettingsJSONForAgent()` undocumented in `code-index.md` (low). 0 broken nav links (first clean link-check).
+- **Report:** `Reports/Pending/2026-06-10-doc-freshness-check.md`
+
+---
+
 ### 2026-06-10 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
