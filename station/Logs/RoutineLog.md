@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-10 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes made (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-06-10/2026-06-24.
+- **Flags:** 2 low-severity items flagged for user — (1) Phase 2 has no entry for `--non-interactive / --from-config` (v0.4.2 automation support); decide whether to add as Extensibility milestone or treat as below roadmap granularity. (2) Phase 3 Managed Agents item missing context note that Bonsai-Eval evaluation harness was bootstrapped 2026-05-13 at `LastStep/Bonsai-Eval`. Phase 1 fully accurate; Phase 2/3/4 remaining `[ ]` items confirmed correct; KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-06-10-roadmap-accuracy.md`
+
+---
+
+### 2026-06-10 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-06-10/2026-06-17.
+- **Flags:** 4 items flagged for user — (1) `internal/nonint/` package (v0.4.2) missing from `code-index.md` and root `CLAUDE.md` tree (medium); (2) `bonsai completion` command missing from `code-index.md` CLI Commands table (low); (3) INDEX.md CLI count 8→9 drift (low); (4) `SettingsJSONForAgent()` undocumented in `code-index.md` (low). 0 broken nav links (first clean link-check).
+- **Report:** `Reports/Pending/2026-06-10-doc-freshness-check.md`
+
+---
+
+### 2026-06-10 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 1 Done item (Plan 34, 2026-05-04) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-05-26`; dashboard `Last Ran`/`Next Due` updated to 2026-06-10/2026-06-15.
+- **Flags:** 1 item flagged for user — "Trial sentrux" Pending item stalled 34 days (blocked on Rust toolchain); recommend: keep Pending, demote to Backlog, or deprioritize.
+- **Report:** `Reports/Pending/2026-06-10-status-hygiene.md`
+
+---
+
+### 2026-06-10 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Removed resolved P0 item (`bonsai init/add non-interactive flags` — shipped v0.4.2) from Backlog.md; replaced with HTML comment. Dashboard `Last Ran`/`Next Due` updated to 2026-06-10/2026-06-17.
+- **Flags:** 5 items flagged for user — (1) P0 sensor hook `$PWD`-walk-up bug not in Status.md (28 days, needs scheduling); (2) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (35 days, time-sensitive); (3) routine bot PR pile-up P1 stale 34 days; (4) stale worktrees/branches P1 stale 51 days; (5) root CLAUDE.md tree-drift check P2 recurring across 3+ digest cycles (~37 days at P2).
+- **Report:** `Reports/Pending/2026-06-10-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -384,3 +424,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan report written:** yes — Plan 37 doc-refresh-bundle (`Plans/Active/37-doc-refresh-bundle.md`)
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
+
+### 2026-06-10 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 minutes
+- **Changes:** `station/agent/Core/memory.md` — stale markers added to all 6 References entries (`RESEARCH-*.md` files missing); `station/agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-06-10, Next Due → 2026-06-15); `station/Logs/RoutineLog.md` — this entry
+- **Flags:** 6 `RESEARCH-*.md` reference files missing from `station/Research/` (directory absent, files untracked by git, confirmed present 2026-05-07). User decision needed: recover, prune, or leave stale-marked.
+- **Report:** `Reports/Pending/2026-06-10-memory-consolidation.md`
