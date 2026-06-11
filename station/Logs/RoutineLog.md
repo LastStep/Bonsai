@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-11 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-07 → 2026-06-11, Next Due → 2026-06-18); report written to `Reports/Pending/2026-06-11-backlog-hygiene.md`; no Backlog.md edits (audit-only)
+- **Flags:** 1 P0 escalation — `[bug] Sensor hook commands use $PWD-walk-up` (added 2026-05-13) not in Status.md after 29 days; HOMEBREW_TAP_TOKEN PAT rotation due 2026-07-15 (35 days); Dependency Audit/Doc Freshness/Vulnerability Scan all ~31 days overdue; 2 P3 items flagged as Phase 2 promotion candidates (Self-update mechanism, Micro-task fast path)
+- **Report:** `Reports/Pending/2026-06-11-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)

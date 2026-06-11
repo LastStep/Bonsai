@@ -50,7 +50,7 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 <!-- "[research] Trial sentrux on Bonsai repo" — promoted to Status.md Pending 2026-05-07 (routine-digest). Blocked on Rust toolchain install. -->
 
-- **[feature] `bonsai init` / `bonsai add` need non-interactive flags** `[Plan 38 P2 blocker]` — Rung-3 solver in Bonsai-Eval (`bonsai_eval/solvers/rungs.py:135`) needs to invoke `bonsai init --non-interactive` and `bonsai add --from-config <path>` to materialize a `station/` workspace from a fixture without TUI prompts. Neither flag exists today. Without these, Plan 38 P2 (12 scenarios × 3 rungs validation) cannot run rung 3. Fix: add `--non-interactive` + `--from-config` to `cmd/init.go` and `cmd/add.go`, OR provide stdin-scripted answer files as fallback. *(added 2026-05-08, source: Plan 38 P0+P1 dispatch review)*
+<!-- "[feature] `bonsai init` / `bonsai add` need non-interactive flags" — shipped in v0.4.2 (Plan 39, PR #102, 2026-05-13). `--non-interactive` + `--from-config` now available in both commands. Removed from backlog 2026-06-11 (backlog-hygiene). -->
 
 ## P1 — High
 
