@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-11 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-07 → 2026-06-11, Next Due → 2026-06-25); report written to `Reports/Pending/2026-06-11-roadmap-accuracy.md`; no Roadmap.md edits (audit-only routine)
+- **Flags:** 2 low-severity items flagged for user — (1) `bonsai init`/`add` `--non-interactive --from-config` (v0.4.2 headline, Plan 39, PR #102) has no roadmap entry; recommend adding as checked Phase 2 Extensibility item. (2) `bonsai completion` (PR #78, external contribution) has no roadmap entry; optional Phase 1 or 2 addition. Phase 2/3/4 alignment healthy; KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-06-11-roadmap-accuracy.md`
+
 ### 2026-06-11 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
