@@ -20,6 +20,38 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-11 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-07 → 2026-06-11, Next Due → 2026-06-25); report written to `Reports/Pending/2026-06-11-roadmap-accuracy.md`; no Roadmap.md edits (audit-only routine)
+- **Flags:** 2 low-severity items flagged for user — (1) `bonsai init`/`add` `--non-interactive --from-config` (v0.4.2 headline, Plan 39, PR #102) has no roadmap entry; recommend adding as checked Phase 2 Extensibility item. (2) `bonsai completion` (PR #78, external contribution) has no roadmap entry; optional Phase 1 or 2 addition. Phase 2/3/4 alignment healthy; KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-06-11-roadmap-accuracy.md`
+
+### 2026-06-11 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 3 Done items (Plans 34, 32, 33 — dated 2026-05-04 and 2026-04-25) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-05-27`; dashboard `Last Ran`/`Next Due` set to 2026-06-11/2026-06-16.
+- **Flags:** 1 item flagged for user — "Trial sentrux" Pending item stalled 34 days (>30-day threshold), blocked on Rust toolchain; recommend demotion to Backlog or unblocking via rustup install.
+- **Report:** `Reports/Pending/2026-06-11-status-hygiene.md`
+
+### 2026-06-11 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-06-11, Next Due → 2026-06-18); report written to `Reports/Pending/2026-06-11-doc-freshness-check.md`; no doc edits (audit-only routine, findings flagged for user decision)
+- **Flags:** 5 drift items — all warnings, no broken links. (1) Root `CLAUDE.md`: missing `cmd/completion.go` entry; (2) Root `CLAUDE.md`: missing `internal/nonint/` package; (3) `station/INDEX.md`: CLI count 8→9 (completion added v0.4.2); (4) `station/INDEX.md`: arch overview missing completion + nonint; (5) `station/code-index.md`: missing completion command entry + nonint section. All drift from v0.4.2/v0.4.3 commits (2026-05-07 to 2026-05-13). Proposed updates in report.
+- **Report:** `Reports/Pending/2026-06-11-doc-freshness-check.md`
+
+### 2026-06-11 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-07 → 2026-06-11, Next Due → 2026-06-18); report written to `Reports/Pending/2026-06-11-backlog-hygiene.md`; no Backlog.md edits (audit-only)
+- **Flags:** 1 P0 escalation — `[bug] Sensor hook commands use $PWD-walk-up` (added 2026-05-13) not in Status.md after 29 days; HOMEBREW_TAP_TOKEN PAT rotation due 2026-07-15 (35 days); Dependency Audit/Doc Freshness/Vulnerability Scan all ~31 days overdue; 2 P3 items flagged as Phase 2 promotion candidates (Self-update mechanism, Micro-task fast path)
+- **Report:** `Reports/Pending/2026-06-11-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -384,3 +416,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan report written:** yes — Plan 37 doc-refresh-bundle (`Plans/Active/37-doc-refresh-bundle.md`)
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
+
+### 2026-06-11 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 minutes
+- **Changes:** `station/agent/Core/memory.md` References section annotated (stale Research files); dashboard row updated (Last Ran 2026-05-07 → 2026-06-11, Next Due → 2026-06-16)
+- **Flags:** `station/Research/RESEARCH-*.md` — 6 foundational research files missing on current machine; were local-only/untracked on prior machine, never committed to git. References section annotated as stale; user should restore or re-create if needed.
+- **Report:** `Reports/Pending/2026-06-11-memory-consolidation.md`
