@@ -81,10 +81,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
-    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
-    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
-    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
-    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research
-    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research
-    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
+- **Foundational research docs** — Anchor for methodology/concept decisions. (stale — `station/Research/` dir was local-only/untracked on prior machine; files not present on current machine. Re-create from scratch or restore from backup when picking up Bonsai-Eval or related research work.)
+    - `RESEARCH-landscape-analysis.md` — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
+    - `RESEARCH-concept-decisions.md` — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
+    - `RESEARCH-eval-system.md` — Eval system concept: scenarios, evaluators, benchmarks (also referenced in Plan 38 archived copy)
+    - `RESEARCH-trigger-system.md` — Trigger section design research
+    - `RESEARCH-uiux-overhaul.md` — UI/UX overhaul research
+    - `RESEARCH-proof-of-bonsai-effectiveness.md` — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14)
