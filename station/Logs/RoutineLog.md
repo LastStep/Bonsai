@@ -384,3 +384,27 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan report written:** yes — Plan 37 doc-refresh-bundle (`Plans/Active/37-doc-refresh-bundle.md`)
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
+
+### 2026-05-11 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** no changes made (audit-only routine)
+- **Flags:** govulncheck blocked (403 Forbidden, no internet access — persistent environment constraint); npm audit clean (4th consecutive clean run); manual Go review shows 0 known CVEs in current dependency set; 23 modules behind (hygiene, unchanged from prior cycle); `gopkg.in/yaml.v3` v3.0.1 noted as aging direct dep (security-current, migration not urgent).
+- **Report:** `Reports/Pending/2026-05-11-dependency-audit.md`
+
+### 2026-05-11 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** no changes made (audit-only routine — findings flagged for user decision)
+- **Flags:** 3 findings — (1) INDEX.md CLI command count stale (8 → 9, completion subcommand added PR #54); (2) root CLAUDE.md cmd/ tree missing completion.go; (3) station/agent/Core/memory.md References section links to station/Research/ directory which does not exist (6 dead links). All navigation links in station/CLAUDE.md resolve correctly.
+- **Report:** `Reports/Pending/2026-05-11-doc-freshness-check.md`
+
+### 2026-05-11 — Vulnerability Scan
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** no changes made (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-05-11/2026-05-18.
+- **Flags:** none — 3rd consecutive clean cycle. 0 reachable CVEs, 0 SAST findings, 0 secrets. `.env`/`.env.*` confirmed in `.gitignore`. golang.org/x/net bumped v0.38.0 → v0.53.0 (tentatively resolves 2 prior unreachable pkg-level CVEs; CI govulncheck will confirm). semgrep/govulncheck still absent locally (persistent constraints, covered by CI/grep fallback).
+- **Report:** `Reports/Pending/2026-05-11-vulnerability-scan.md`
