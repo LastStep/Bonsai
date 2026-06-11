@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 1 item flagged for user — "Trial sentrux" Pending item stalled 34 days (>30-day threshold), blocked on Rust toolchain; recommend demotion to Backlog or unblocking via rustup install.
 - **Report:** `Reports/Pending/2026-06-11-status-hygiene.md`
 
+### 2026-06-11 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-06-11, Next Due → 2026-06-18); report written to `Reports/Pending/2026-06-11-doc-freshness-check.md`; no doc edits (audit-only routine, findings flagged for user decision)
+- **Flags:** 5 drift items — all warnings, no broken links. (1) Root `CLAUDE.md`: missing `cmd/completion.go` entry; (2) Root `CLAUDE.md`: missing `internal/nonint/` package; (3) `station/INDEX.md`: CLI count 8→9 (completion added v0.4.2); (4) `station/INDEX.md`: arch overview missing completion + nonint; (5) `station/code-index.md`: missing completion command entry + nonint section. All drift from v0.4.2/v0.4.3 commits (2026-05-07 to 2026-05-13). Proposed updates in report.
+- **Report:** `Reports/Pending/2026-06-11-doc-freshness-check.md`
+
 ### 2026-06-11 — Backlog Hygiene
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
