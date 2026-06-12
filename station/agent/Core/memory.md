@@ -13,9 +13,9 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. Plan 39 shipped as **v0.4.2** 2026-05-13 (`410a5f1` merged, tag pushed, release pipeline running). Pre-1.0 + additive flags = patch bump per user. Test agent passed 32/32; one polish (`SilenceUsage` on init/add) folded in. Plan moved to Archive. [Status Recently Done](../../Playbook/Status.md) row.
+**Current task:** Idle. **v0.4.3** hotfix shipped 2026-05-13 (`584b82b`, PRs #105+#106) — sensor hooks bake absolute paths instead of `$PWD`-walk-up; existing projects need `bonsai update`. [Status Recently Done](../../Playbook/Status.md) row.
 
-**Background:** **Plan 38 — Bonsai-Eval bootstrap** — `uv` installed, fork exists, bootstrap `08fca07` landed. v0.4.2 unblocks P2 rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
+**Background:** **Plan 38 — Bonsai-Eval bootstrap** — handoff complete (this station archives, Bonsai-Eval owns P2/P3). v0.4.2 unblocked rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
