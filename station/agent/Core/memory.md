@@ -13,9 +13,9 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. **v0.4.3** hotfix shipped 2026-05-13 (`584b82b`, PRs #105+#106) — sensor hooks bake absolute paths instead of `$PWD`-walk-up; existing projects need `bonsai update`. [Status Recently Done](../../Playbook/Status.md) row.
+**Current task:** **Plan 40 — Odysseus Platform Integration** (active, `Plans/Active/40-odysseus-platform-integration.md`, adopted 2026-06-12). Bonsai owns repo-side standard; Odysseus owns hub runtime. Three workstreams: A. `project.yaml` manifest schema, B. `station/Memory/` scaffolding, C. bonsai validate schema linting.
 
-**Background:** **Plan 38 — Bonsai-Eval bootstrap** — handoff complete (this station archives, Bonsai-Eval owns P2/P3). v0.4.2 unblocked rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
+**Background:** **v0.4.3** hotfix shipped 2026-05-13 (`584b82b`, PRs #105+#106) — sensor hooks bake absolute paths; existing projects need `bonsai update`. **Plan 38 — Bonsai-Eval bootstrap** — handoff complete (Bonsai-Eval station owns P2/P3).
 
 **Brevity rule:** this section follows [NoteStandards](../../Playbook/Standards/NoteStandards.md) — link out, don't re-state. Prior shipped work in [Status.md](../../Playbook/Status.md) Recently Done.
 
@@ -81,10 +81,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
-    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
-    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
-    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
-    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research
-    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research
-    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
+- **Foundational research docs** — Anchor for methodology/concept decisions. (stale — `station/Research/` directory does not exist on disk; files were never committed to git; validated 2026-06-12. User should confirm if these docs were deleted, moved, or only ever existed locally on original machine.)
+    - `Research/RESEARCH-landscape-analysis.md` — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
+    - `Research/RESEARCH-concept-decisions.md` — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
+    - `Research/RESEARCH-eval-system.md` — Eval system concept: scenarios, evaluators, benchmarks
+    - `Research/RESEARCH-trigger-system.md` — Trigger section design research
+    - `Research/RESEARCH-uiux-overhaul.md` — UI/UX overhaul research
+    - `Research/RESEARCH-proof-of-bonsai-effectiveness.md` — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
