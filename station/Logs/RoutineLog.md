@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-12 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 minutes
+- **Changes:** `station/Playbook/Status.md` — footer annotation updated (2026-06-12 review pass noted); `station/agent/Core/routines.md` — dashboard already up-to-date (no change needed).
+- **Flags:** 2 items flagged for user — (1) [medium] Plan 40 (`40-odysseus-platform-integration.md`) active in `Plans/Active/` with no Status.md In Progress row; (2) [medium] "Trial sentrux" Pending item stalled 36+ days (blocked on Rust toolchain install).
+- **Report:** `Reports/Pending/2026-06-12-status-hygiene.md`
+
+### 2026-06-12 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard row updated (Last Ran → 2026-06-12, Next Due → 2026-06-26, Status → done).
+- **Flags:** 3 items flagged for user — (1) [medium] Phase 3 Greenhouse companion app may be superseded by Odysseus (Plan 40 adopted 2026-06-12); needs user decision on Roadmap Phase 3; (2) [low] Plan 40 workstreams (project.yaml, station/Memory/, bonsai export, extended validate, graphify) not yet reflected in Roadmap Phase 2; (3) [low/cosmetic] `bonsai completion` shipped v0.4.1 absent from Phase 1 checklist.
+- **Report:** `Reports/Pending/2026-06-12-roadmap-accuracy.md`
+
+### 2026-06-12 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `station/agent/Core/memory.md` — Work State updated (Idle → Plan 40 active); References section 6 entries marked stale with explanation. `station/agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-06-12, Next Due → 2026-06-17).
+- **Flags:** (1) [medium] Work State was stale — "Idle" despite Plan 40 adopted 2026-06-12 (fixed inline); (2) [low] References section 6 `RESEARCH-*.md` paths stale — `station/Research/` directory missing from disk and git history (flagged for user — see report).
+- **Report:** `Reports/Pending/2026-06-12-memory-consolidation.md`
+
+### 2026-06-12 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** Dashboard row updated (Last Ran → 2026-06-12, Next Due → 2026-06-19). No doc edits (audit-only).
+- **Flags:** 4 items flagged for user — (1) [medium] INDEX.md CLI count says 8, actual 9 (`completion` missing); (2) [medium] `internal/nonint/` package missing from INDEX.md arch diagram, code-index.md, and root CLAUDE.md; (3) [low] root CLAUDE.md cmd/ tree still missing `completion.go` (recurring); (4) [low] Roadmap Phase 3 "Greenhouse" may be superseded by Odysseus (Plan 40 adopted).
+- **Report:** `Reports/Pending/2026-06-12-doc-freshness-check.md`
+
+### 2026-06-12 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md updated — 2 resolved P0 items converted to HTML audit comments; urgency annotation added to P1 PAT expiry item. Dashboard updated (Last Ran → 2026-06-12, Next Due → 2026-06-19).
+- **Flags:** 3 items flagged for user — (1) [HIGH] HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (~33 days); (2) [P1] Routine bot PR pile-up unresolved since 2026-05-07; (3) [P2 closure candidate] Plans Index file 52 days without progress.
+- **Report:** `Reports/Pending/2026-06-12-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
