@@ -8,7 +8,7 @@ tier: 2
 
 # Plan 40 — Odysseus Platform Integration
 
-**Tier:** 2 · **Status:** Phases 1–4 LOCKED (grilled; Phase 4 minimal-scope) — ready for dispatch · **Agent:** code agents (gp) via worktree
+**Tier:** 2 · **Status:** Phases 1–3 SHIPPED on main (v0.5.0, untagged — PRs #114/#116/#115). Phase 4 HELD (→ headless-CLI plan). Dogfood deferred + tag held (2026-06-13). · **Agent:** code agents (gp) via worktree
 
 ## Goal
 
