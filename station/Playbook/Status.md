@@ -16,7 +16,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| **Plan 40 — Odysseus integration (v0.5.0)** — dispatching Phases 1→2+3. P1 (schemas+generator+catalog) in worktree now; 2 (validate) + 3 (docs) fan out after P1 merges. **Phase 4 (update-delivery) HELD** — superseded by headless-CLI parity workstream ([Backlog P1](Backlog.md)). [plan](Plans/Active/40-odysseus-platform-integration.md) | 40 | gp×3 + tl | P1 dispatched 2026-06-13 |
+| **Plan 40 — Odysseus integration (v0.5.0)** — **P1 MERGED** (schemas+generator+catalog, [PR #114](https://github.com/LastStep/Bonsai/pull/114), `1e715c7`). P2 (validate pass) + P3 (docs+guide) **in flight** (parallel worktrees, off main). **Phase 4 HELD** — superseded by headless-CLI parity workstream ([Backlog P1](Backlog.md)). [plan](Plans/Active/40-odysseus-platform-integration.md) | 40 | gp×2 + tl | 2026-06-13 |
 
 ## Pending
 

@@ -384,3 +384,10 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan report written:** yes — Plan 37 doc-refresh-bundle (`Plans/Active/37-doc-refresh-bundle.md`)
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
+
+### 2026-06-13 — Plan 40 dispatch (Odysseus integration, v0.5.0)
+- **Plan:** Plans/Active/40-odysseus-platform-integration.md
+- **Dispatch decision:** user HELD Phase 4 (update-delivery) — superseded by headless-CLI parity workstream (Backlog P1). Shipping v0.5.0 = Phases 1–3.
+- **Phase 1 (schemas+generator+catalog):** gp/worktree → PR #114; 1 review cycle (independent reviewer PASS, 0 blocking, 2 P2 nits filed). Squash-merged `1e715c7`. Post-merge build + `go test ./...` + Windows cross-compile green.
+- **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main — in flight at log time.
+- **Result:** P1 complete; P2/P3 pending review+merge; dogfood scaffold (separate PR) + v0.5.0 tag still to come.
