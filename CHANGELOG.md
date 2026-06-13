@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] - Unreleased
+
+> **The "in-repo memory" release.** Two new opt-in scaffolding items give a workspace a durable, version-controlled memory layer: a frozen-schema memory graph (`MEMORY.md` + `Memory/` tree) and a repo-root project manifest. `bonsai validate` gains a project-level pass that lints both, and `bonsai guide` documents the two v1 schemas. Generated workspaces now route architectural decisions into the memory graph rather than an append-only log.
+
+### Added
+- **In-repo memory graph scaffolding (`memory` opt-in item)** — installs a `MEMORY.md` index plus a `Memory/{decisions,notes}/` tree at the project root, following a frozen v1 memory-note schema. Gives a workspace a structured, version-controlled memory layer that downstream hub ingest / repo indexers can read straight from the filesystem.
+- **Project manifest scaffolding (`project-manifest` opt-in item)** — writes a repo-root `.bonsai/project.yaml` describing the project against a frozen v1 schema. Root-relative, lock-tracked, and idempotent: re-runs preserve the original `created` timestamp.
+- **`bonsai validate` project-level pass** — lints the project manifest and the memory-note tree: `schema_version`, required fields, `status`/`type` enums, permalink charset, scope match, dangling `superseded_by`, and unresolved relations. Note-target resolution is adversarial-grade (`EvalSymlinks` plus a boundary check, with symlink-escape refused) over a bounded walk.
+- **`bonsai guide formats`** — a combined "Formats" reference page documenting both frozen v1 schemas (memory-note and project manifest) in one place.
+
+### Changed
+- **Architectural decisions now route to the memory graph.** Generated workspaces record durable architectural decisions in `Memory/decisions/` (the in-repo memory graph) instead of appending to `Logs/KeyDecisionLog.md`.
 
 ## [0.4.3] - 2026-05-13
 
@@ -206,7 +217,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release pipeline — GoReleaser v2, GitHub Actions tag trigger, Homebrew tap (`LastStep/homebrew-tap`).
 - Dogfooding — Bonsai generates its own `station/` workspace with tech-lead agent.
 
-[Unreleased]: https://github.com/LastStep/Bonsai/compare/v0.4.1...HEAD
+[0.5.0]: https://github.com/LastStep/Bonsai/compare/v0.4.3...HEAD
 [0.4.1]: https://github.com/LastStep/Bonsai/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/LastStep/Bonsai/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/LastStep/Bonsai/compare/v0.2.0...v0.3.0
