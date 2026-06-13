@@ -75,3 +75,58 @@ Same 3-line cap. Bullet form:
 ```
 
 When closed: replace with single HTML comment `<!-- [Tag] resolved YYYY-MM-DD via Plan NN / PR #N -->`.
+
+---
+
+# Memory-note schema (the project note standard)
+
+> This is **the** note format for the in-repo memory graph under `Memory/`
+> (decisions + notes). Each note is one markdown file with frozen-v1 frontmatter
+> plus an Observations / Relations body. The schema is the canonical bonsai
+> standard — downstream hub ingest / repo indexers parse these files directly,
+> so the keys are fixed; fill in the values, don't rename the keys.
+
+A memory note lives at `{memory_dir}/{decisions,notes}/<permalink>.md` and looks
+like this:
+
+```markdown
+---
+schema_version: 1
+title: <note title>
+type: decision | note | fact | log
+permalink: <stable-slug>
+tags: []
+scope: project/<slug>
+valid_from: 2026-06-13
+superseded_by: null
+---
+## Observations
+- [category] one fact per bullet #tag
+## Relations
+- relation_type [[Target Note]]
+```
+
+## Frontmatter fields
+
+| field | type | required | rule |
+|-------|------|----------|------|
+| `schema_version` | int | yes | must be `1` |
+| `title` | string | yes | non-empty |
+| `type` | enum | yes | one of `decision`, `note`, `fact`, `log` |
+| `permalink` | string | yes | `[a-z0-9-]` only; out-of-charset is an error, never indexed; unique within the tree |
+| `tags` | list[str] | no | default `[]` |
+| `scope` | string | yes | `project/<slug>` — `<slug>` must match the manifest `slug` |
+| `valid_from` | date | no | `YYYY-MM-DD` if present; scaffolded notes emit it, hand-authored notes may omit it |
+| `superseded_by` | string \| null | no | absent ≡ `null` ≡ not-superseded (no missing-key error); if non-null it must resolve to an existing permalink |
+
+## Body
+
+- **`## Observations`** — one fact per bullet. Lead with a `[category]` tag and
+  end with inline `#tags` where useful: `- [decision] chose X over Y because Z #arch`.
+- **`## Relations`** — typed links to other notes using wikilink targets:
+  `- relates_to [[other-permalink]]`. A relation (or `superseded_by`) that points
+  at a not-yet-existing note is a **warning**, not an error — forward references
+  are legal while the graph is being built out.
+
+The permalink is the note's stable identity — keep it fixed even if the title
+changes, since relations and `superseded_by` resolve by permalink.

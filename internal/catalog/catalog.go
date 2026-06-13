@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"fmt"
 	"io/fs"
 	"sort"
 	"strings"
@@ -74,6 +75,42 @@ func titleCaseToken(s string) string {
 	runes := []rune(s)
 	runes[0] = unicode.ToUpper(runes[0])
 	return string(runes)
+}
+
+// Slugify derives a stable machine slug from a human name. It is the rough
+// inverse of DisplayNameFrom — the frozen algorithm (Plan 40 §"Slug algorithm"):
+// strip non-ASCII, lowercase, collapse each run of [^a-z0-9] into a single "-",
+// then trim leading/trailing "-". Leading digits are allowed. An empty result
+// is an error — a non-empty name that slugifies to nothing (e.g. "!!!") is a
+// real conflict, not a silent empty slug. Used to seed the project manifest's
+// `slug` field from the project name.
+func Slugify(name string) (string, error) {
+	var b strings.Builder
+	prevDash := false
+	for _, r := range name {
+		if r > unicode.MaxASCII {
+			continue // strip non-ASCII
+		}
+		switch {
+		case r >= 'A' && r <= 'Z':
+			b.WriteRune(r + ('a' - 'A'))
+			prevDash = false
+		case (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'):
+			b.WriteRune(r)
+			prevDash = false
+		default:
+			// Any other ASCII char is a separator — collapse runs into one "-".
+			if !prevDash && b.Len() > 0 {
+				b.WriteByte('-')
+				prevDash = true
+			}
+		}
+	}
+	slug := strings.Trim(b.String(), "-")
+	if slug == "" {
+		return "", fmt.Errorf("name %q slugifies to empty", name)
+	}
+	return slug, nil
 }
 
 // AgentCompat handles the YAML "agents" field which can be "all" or a list of strings.
@@ -164,6 +201,13 @@ type ScaffoldingItem struct {
 	Required    bool     `yaml:"required"`
 	Affects     string   `yaml:"affects"`
 	Files       []string `yaml:"files"`
+
+	// RootRelative writes the item's files at the repo root, bypassing the
+	// cfg.DocsPath join applied to workspace-scoped scaffolding. Used by the
+	// project manifest (.bonsai/project.yaml), which must land at the repo
+	// root so downstream hub ingest / repo indexers can discover it regardless
+	// of the workspace docs path. Plan 40 Phase 1.
+	RootRelative bool `yaml:"root_relative"`
 }
 
 // SharedCoreDir is the path within the embedded FS to shared core files
