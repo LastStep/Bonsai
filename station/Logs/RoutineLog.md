@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-13 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 References entries stale (Research files not found); updated golangci-lint Note to remove stale v1/v2 mismatch claim. `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-06-13/2026-06-18.
+- **Flags:** (1) [medium] All 6 References section research doc paths (`station/Research/RESEARCH-*.md`) point to non-existent files — Research directory absent from repo; (2) [medium] All `station/.claude/settings.json` sensor hook paths reference old `/home/rohan/ZenGarden/Bonsai/` path — hooks broken in current environment; (3) [low] golangci-lint Note was partially stale (v1 ref removed)
+- **Report:** `Reports/Pending/2026-06-13-memory-consolidation.md`
+
 ### 2026-06-13 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
