@@ -8,7 +8,7 @@ tier: 2
 
 # Plan 40 — Odysseus Platform Integration
 
-**Tier:** 2 · **Status:** Phases 1–3 LOCKED (grilled 3 rounds, ready for dispatch); Phase 4 specced, needs own grill · **Agent:** code agents (gp) via worktree
+**Tier:** 2 · **Status:** Phases 1–4 LOCKED (grilled; Phase 4 minimal-scope) — ready for dispatch · **Agent:** code agents (gp) via worktree
 
 ## Goal
 
@@ -93,7 +93,7 @@ Forward refs to not-yet-existing notes are legal → **warning**, not error.
 
 ## Rung 1 — Implementation Phases
 
-> Order: **Phase 1** first (freezes schemas). Then **Phases 2 + 3 in parallel** (`internal/validate/` vs docs). **Phase 4 (delivery) is separate, lands after Phase 1, and gets its own grilling pass before dispatch.** All `catalog/scaffolding/` edits live in Phase 1's worktree.
+> Order: **Phase 1** first (freezes schemas). Then **Phases 2 + 3 in parallel** (`internal/validate/` vs docs). **Phase 4 (delivery, minimal opt-in) lands after Phase 1 — grilled, dispatchable.** All `catalog/scaffolding/` edits live in Phase 1's worktree.
 
 ### Phase 1 — Generator + catalog (A + B) — `gp`, one worktree
 **1a. `RootRelative` support + manifest item.**
@@ -122,12 +122,14 @@ Forward refs to not-yet-existing notes are legal → **warning**, not error.
 - `internal/generate/generate.go` `howToWorkLines` (~L597): update the "Decision logging → KeyDecisionLog" line so it doesn't contradict the new routing.
 - `bonsai guide`: one combined "Formats" page (note schema + manifest); gate asserts body contains `schema_version` + `permalink`.
 
-### Phase 4 — Delivery via `bonsai update` (own phase, own grill) — `gp`
-> Specced but **NOT dispatchable until it passes its own grilling pass.**
-- New scaffolding-item selection stage in `internal/tui/updateflow/` (today the Select stage is a custom-file promoter, agent-keyed — this is a new project-level picker).
-- Mutate + persist `cfg.Scaffolding`; add a `generate.Scaffolding()` call in the sync action (`updateflow/run.go`); reconcile the non-interactive exact-match guard (`internal/nonint/runner.go:222-228`, which currently rejects a scaffolding diff vs disk).
-- Conflict path: delivering into a project with a pre-existing untracked file at a target path → conflict prompt, **not silent clobber**.
-- Tests: first-time delivery (item **absent→present** + new lock entry, assert source string); pre-existing-collision negative path; non-interactive delivery.
+### Phase 4 — Delivery via `bonsai update` (minimal opt-in) — `gp`, depends on Phase 1
+> Grilled 2026-06-13 (5 critics) → re-scoped to minimal. **Dispatchable.** No TUI picker, no nonint surgery.
+- Add `generate.Scaffolding(cwd, cfg, cat, lock, &wr, false)` to update's sync action (`internal/tui/updateflow/run.go` `buildSyncAction`), reading `cfg.Scaffolding` (drop-in: same locals already in the sync closure). Mutate-then-render ordering.
+- **Opt-in is manual + explicit:** the user adds the item name to `.bonsai.yaml`'s `scaffolding:` list, then runs `bonsai update`. Set `ConfigChanged=true` when `cfg.Scaffolding` changes so `cmd/update.go` persists it (today nothing flips it for a scaffolding-only delta). Document the one-line opt-in in the Phase-3 guide.
+- **No `RunStatic` auto-delivery:** `RunStatic` renders only items already in the on-disk `.bonsai.yaml`; it must never auto-add newly-available catalog items (→ no silent write into user repos in cron/CI/piped). **Drop the `nonint/runner.go:222` guard reconciliation** — that guard is `add --from-config` only; `update` never reaches it.
+- Conflict/skip is inherited: root-relative **manifest** → conflict-on-untracked (`writeFile`); **memory tree** → write-once `os.Stat` skip. `Scaffolding(..., force=false)` always (no `--force` on update).
+- Config + lock writes prefer temp-file+rename; don't mark an item installed if its write errored (avoid orphan lock/config on partial run).
+- Tests: (1) unit on `generate.Scaffolding` (tempdir; item in `cfg.Scaffolding`, absent on disk → file written + lock entry source `scaffolding:.bonsai/project.yaml.tmpl`); (2) item in `.bonsai.yaml` → `update` delivers + `ConfigChanged` persists + re-read `.bonsai.yaml` shows it; (3) idempotent re-run → Unchanged, no dup lock entry; (4) collision fixture = **untracked manifest** w/ sentinel bytes → `RunStatic` returns `SyncErr`/`HasConflicts`, bytes byte-preserved.
 
 ## Dependencies
 Phase 1 freezes schemas → Phases 2/3/4 depend on it. No new Go module deps; no external services.
@@ -183,4 +185,9 @@ Reality verified clean: wsvalidate.InvalidReason, ScaffoldingItem tags additive,
 ### Round 3 (Phases 1–3 only; 3 critics: Architecture, Risk, Reality)
 **Reality: pass** (9 mechanisms verified feasible against source). **Risk + Architecture: concerns, no block** — both caught one real defect: live `created` re-render breaks idempotency (later-day re-run rewrites the timestamp + fails the Unchanged claim). → **Fix: reuse the existing manifest's `created` on re-run.** Wording tightened: validate project-pass runs regardless of `agentFilter` (non-error path), intentionally absent from `AgentsScanned`; rollback notes manifest regenerates-on-delete. R2 blocks confirmed closed.
 
-**Converged: 0 blocks across the round; single concern resolved + Reality-verified.** Phases 1–3 **LOCKED, ready for dispatch.** Phase 4 (delivery) carries its own grilling pass before dispatch.
+**Converged: 0 blocks across the round; single concern resolved + Reality-verified.** Phases 1–3 **LOCKED, ready for dispatch.**
+
+### Phase 4 grill (5 critics: Architecture, Risk, Simplicity, Verification, Reality)
+Risk + Verification **block**; Simplicity scope-**block**. All 5 converged: (1) the cited `nonint/runner.go:222` guard is `add --from-config` only — `update` has no nonint path (`RunStatic`), so **drop it**; (2) wiring delivery into `RunStatic` = silent un-opted-in write → **forbid auto-add**; (3) the cinematic picker is **gold-plating** for a ~2-repo migration. **Re-scoped to minimal** (user): one `generate.Scaffolding()` call in update's sync action + manual `.bonsai.yaml` opt-in + `ConfigChanged` flip + inherited conflict/skip + 4 small tests. Reality verified the minimal path (cfg.Save already wired, `generate.Scaffolding` drop-in callable, `SoilStage` exists if a picker is ever wanted). **Phase 4 LOCKED, dispatchable.**
+
+> **Note (2026-06-13):** user then raised a larger goal — make **init/update/add/remove all fully agent-drivable (non-interactive)** so agents drive Bonsai without the TUI. That supersedes Phase 4's narrow update-delivery slice and is captured as its own workstream (Backlog P1 → next-session `/plan`). Plan 40's scope is unchanged; the headless-CLI plan will own the broader non-interactive parity.
