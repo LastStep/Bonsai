@@ -685,7 +685,7 @@ func howToWorkLines(agentName string, docsPrefix string, hasRoutines bool, hasWo
 		fmt.Sprintf("- **Before starting work:** Check `%sPlaybook/Status.md` for assigned tasks and `%sPlaybook/Plans/Active/` for your current plan.", docsPrefix, docsPrefix),
 		"- **When to load a Workflow:** You are starting a multi-step activity (planning, reviewing, auditing). Load the matching workflow from the table above and follow it end-to-end.",
 		"- **When to load a Skill:** You need reference standards for a specific domain (coding style, API design, test strategy). Load it, use it, move on.",
-		fmt.Sprintf("- **Decision logging:** When you make or observe a significant architectural decision, append it to `%sLogs/KeyDecisionLog.md`.", docsPrefix),
+		fmt.Sprintf("- **Decision logging:** When you make or observe a significant architectural decision, write a durable decision note under `%sMemory/decisions/` following `%sPlaybook/Standards/NoteStandards.md` (the durable memory graph) — not the session log.", docsPrefix, docsPrefix),
 		fmt.Sprintf("- **Out-of-scope findings:** Don't fix bugs, debt, or improvements outside your current task. Add them to `%sPlaybook/Backlog.md`.", docsPrefix),
 		"- **Workspace evolution:** `bonsai add` (new abilities), `bonsai remove` (uninstall), `bonsai update` (sync custom files), `bonsai list` (see installed), `bonsai catalog` (browse available).",
 	)
