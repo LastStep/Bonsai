@@ -8,7 +8,7 @@ tier: 2
 
 # Plan 40 — Odysseus Platform Integration
 
-**Tier:** 2 · **Status:** Active — grilling (round 2 applied; round 3 pending on Phases 1–3) · **Agent:** code agents (gp) via worktree
+**Tier:** 2 · **Status:** Phases 1–3 LOCKED (grilled 3 rounds, ready for dispatch); Phase 4 specced, needs own grill · **Agent:** code agents (gp) via worktree
 
 ## Goal
 
@@ -27,7 +27,7 @@ Odysseus (`/home/rohan/Apps/odysseus`, private fork) → personal platform. Boun
 | Dispatch = **PR-flow worktree agents** | correctness-heavy |
 | Dogfood = **yes**, separate commit/PR | reverts independently |
 | Manifest location = **`.bonsai/project.yaml`** | host-agnostic; hub checks both paths |
-| Manifest writer = **plain `writeFile`, lock-tracked, write-once** | (R2) NOT O_NOFOLLOW — no existing scaffolding write uses it; `root_relative` items must bypass `Scaffolding()`'s pre-`os.Stat` skip so the write reaches `writeFile`+`lock.Track`. Pre-existing untracked manifest → conflict prompt (normal lock behavior). Broader symlink hardening of all scaffolding writes → Backlog. |
+| Manifest writer = **plain `writeFile`, lock-tracked, write-once** | (R2) NOT O_NOFOLLOW — no existing scaffolding write uses it; `root_relative` items must bypass `Scaffolding()`'s pre-`os.Stat` skip so the write reaches `writeFile`+`lock.Track`. Pre-existing untracked manifest → conflict prompt. On re-run, reuse the existing manifest's `created` (emit live date only when absent) so bytes stay stable → `Unchanged`. Broader symlink hardening → Backlog. |
 | RootRelative wiring = **`map[string]*ScaffoldingItem`** | (R2) `Scaffolding()`'s flat `map[string]bool` discards item identity; walk must read `item.RootRelative` to skip the `docs_path` join. Dir-creation loop uses the same per-item prefix. |
 | Delivery = **`bonsai update`, own phase (Phase 4)** | (R2) net-new feature: new scaffolding-picker stage + `cfg.Scaffolding` mutation + `Scaffolding()` call site + non-interactive guard reconciliation. `add` is agent-scoped → wrong home. **Phase 4 needs its own grilling pass before dispatch.** |
 | Config split = **separate**; `project.yaml` is hub-facing identity, `.bonsai.yaml` generator-facing | (R2) seeded once at init, **never reconciled** — documented known drift, not an enforced "authority". Optional divergence warning → Backlog. |
@@ -100,7 +100,7 @@ Forward refs to not-yet-existing notes are legal → **warning**, not error.
 - Add `RootRelative bool \`yaml:"root_relative"\`` to `ScaffoldingItem` (`internal/catalog/catalog.go`).
 - Rework `Scaffolding()` (`internal/generate/generate.go`): replace the flat `allowedFiles map[string]bool` with `map[string]*catalog.ScaffoldingItem`; in the walk choose the prefix from `item.RootRelative` (root-relative → skip the `cfg.DocsPath` join); apply the same per-item prefix in the empty-dir creation loop. For root-relative items, **bypass the pre-`os.Stat` write-once skip** so the write reaches `writeFile` (lock-tracked, write-once via lock, conflict-on-untracked).
 - Add `project-manifest` to `catalog/scaffolding/manifest.yaml`: `required: false`, `root_relative: true`, **host-agnostic `affects:`** (e.g. "downstream hub ingest / repo indexers"; never "Odysseus"), `files: [.bonsai/project.yaml.tmpl]`. Plain `writeFile`; no O_NOFOLLOW.
-- Template renders frozen manifest. `name`←`{{ .ProjectName }}`, `slug`←new slugify helper, `description`←`{{ .ProjectDescription }}`, `created`←new **injectable** date source (funcMap/context field, fixed in tests; emits `YYYY-MM-DD` only). Emit user scalars via `yaml.Marshal`. (`missingkey=error` is net-new on the shared `renderTemplate` — optional belt-and-suspenders; the real backstop is validate's non-empty `name`/`slug`.)
+- Template renders frozen manifest. `name`←`{{ .ProjectName }}`, `slug`←new slugify helper, `description`←`{{ .ProjectDescription }}`, `created`←injectable date source (funcMap/context field; `YYYY-MM-DD`). **On re-run, if the manifest exists, read+reuse its `created`** (live date only when absent) — bytes stay stable → `Unchanged`, preserves created=first-seen. Emit user scalars via `yaml.Marshal`. (`missingkey=error` is net-new on the shared `renderTemplate` — optional belt-and-suspenders; the real backstop is validate's non-empty `name`/`slug`.)
 
 **1b. `memory` scaffolding item.**
 - `manifest.yaml`: `required: false`, host-agnostic `affects:`, `files:` for: `MEMORY.md.tmpl`, `Memory/decisions/.gitkeep`, `Memory/notes/.gitkeep` (trailing-slash dir entries or explicit `.gitkeep` paths to satisfy `isAllowedScaffoldingFile`). **No `log/`.**
@@ -111,7 +111,7 @@ Forward refs to not-yet-existing notes are legal → **warning**, not error.
 - Tests (`internal/generate/generate_test.go`): manifest render (fixed date) + slug fixtures incl. edge cases `"Café Foo!"`→`caf-foo` (or chosen ASCII rule), `"!!!"`→error, `"123 Go"`→`123-go`; root-relative path asserts repo-root `.bonsai/project.yaml` **NOT** `station/.bonsai/`; lock entry present with source `scaffolding:.bonsai/project.yaml.tmpl`; memory tree; idempotent re-run; YAML-injection negative (`description: 'evil: "}\n!!x'` round-trips via `yaml.Unmarshal`).
 
 ### Phase 2 — Validate project-level pass (D) — `gp`, depends on Phase 1
-- Add a **project-level pass** to `validate.Run()` run **unconditionally** (agent `--filter` narrows only the per-agent loop); its `Issue`s carry empty `AgentName` (`omitempty`). Register new **additive** `Category` constants. New typed structs for note frontmatter + manifest (`yaml.Unmarshal`; do NOT extend `CustomItemMeta`).
+- Add a **project-level pass** to `validate.Run()` run **regardless of `agentFilter`** on the non-error path (an unknown-agent filter still errors early); its `Issue`s carry empty `AgentName` (`omitempty`) and are intentionally absent from `AgentsScanned`. Register new **additive** `Category` constants. New typed structs for note frontmatter + manifest (`yaml.Unmarshal`; do NOT extend `CustomItemMeta`).
 - Parse `.bonsai/project.yaml` for `memory_dir`+`slug`. Manifest absent but `Memory/` present → **warning** (scope unverifiable), skip scope-match, **still lint frontmatter**.
 - Recursive walk `{memory_dir}/**` (bounded file-count/size). Per note: missing required frontmatter → **error**; `scope` ≠ `project/<slug>` → **error**; bad `schema_version` (≠1) → **error**; out-of-charset `permalink` → **error**; dangling non-null `superseded_by` → **error**; unresolved `[[relation]]` → **warning**. Target resolution: `EvalSymlinks` + abs-prefix-under-`memory_dir`, reject escapes; index by sanitized permalink.
 - `MEMORY.md` > 200 lines → **warning**. Manifest schema: required fields, `status` enum, `schema_version == 1` → **error**; `memory_dir` traversal (`../…`, absolute) → **error**.
@@ -134,7 +134,7 @@ Phase 1 freezes schemas → Phases 2/3/4 depend on it. No new Go module deps; no
 
 ## Rollback
 - Each phase a revertable PR; pre-tag v0.5.0 is `git revert`-able. Dogfood scaffold in a separate PR (reverts independently).
-- Write-once: a broken scaffolded manifest needs manual delete to regenerate (skip-if-exists). Documented.
+- Manifest is lock-tracked → **regenerates on delete** (unlike os.Stat-skipped scaffolding): a broken manifest → delete + re-run regenerates it; a user edit → conflict, not clobber.
 - Delivery (Phase 4): reverting the binary does **not** un-mutate a user's persisted `.bonsai.yaml`/lock; `required: false` makes the data inert; a partial write leaves orphan lock entries that `bonsai validate` flags. Documented.
 - Deliberate asymmetry: manifest is lock-tracked; `catalog.json` is not (regenerated). Noted so a future reader doesn't "fix" it.
 
@@ -147,7 +147,7 @@ Phase 1 freezes schemas → Phases 2/3/4 depend on it. No new Go module deps; no
 - Parser safety: typed structs only, no eval, bounded walk.
 
 ## Verification
-- [ ] `bonsai init` (interactive + `--non-interactive`) scaffolds `.bonsai/project.yaml` at **repo root** (assert NOT `station/.bonsai/`) + `station/Memory/{decisions,notes}/`; both **lock-tracked**; idempotent re-run → Skipped/Unchanged, exit 0.
+- [ ] `bonsai init` (interactive + `--non-interactive`) scaffolds `.bonsai/project.yaml` at **repo root** (assert NOT `station/.bonsai/`) + `station/Memory/{decisions,notes}/`; both **lock-tracked**; idempotent re-run → Skipped/Unchanged (manifest stays Unchanged across days via `created`-preservation), exit 0.
 - [ ] Generated manifest: `./bonsai validate --json` zero issues; `schema_version: 1`, non-empty `name`/`slug`, `created` matches `^\d{4}-\d{2}-\d{2}$`, `status` ∈ enum. Generator test asserts deterministic bytes (fixed date) + slug fixtures (incl. edge cases) + YAML-injection round-trip.
 - [ ] `bonsai validate` fixture↔rule table: each rule's negative control asserts category+severity (incl. `schema_version`, `status` enum, `memory_dir` traversal, manifest-absent warning + frontmatter-still-linted); **valid-tree → zero issues**. `--json` well-formed.
 - [ ] `bonsai guide` Formats page renders; body contains `schema_version` + `permalink`.
@@ -180,4 +180,7 @@ Root causes → resolutions: false "reuse catalog_snapshot" → `root_relative` 
 - Plus: `project.yaml` "authority" → documented as known drift (not enforced); gate-tightening (fixture↔rule table, `created` regex, slug edge cases, `superseded_by` absent≡null, `links` per-key, EvalSymlinks, permalink-as-error, unit-tests-assert-report-not-exit-code) → folded in.
 Reality verified clean: wsvalidate.InvalidReason, ScaffoldingItem tags additive, funcMap date/missingkey net-new, isAllowedScaffoldingFile permits new entries, howToWorkLines line, lockfile Track, NoteStandards edit-not-create, Windows baseline green, no slugify, TemplateContext vars.
 
-### Round 3 — pending on Phases 1–3 (Phase 4 grilled separately before dispatch).
+### Round 3 (Phases 1–3 only; 3 critics: Architecture, Risk, Reality)
+**Reality: pass** (9 mechanisms verified feasible against source). **Risk + Architecture: concerns, no block** — both caught one real defect: live `created` re-render breaks idempotency (later-day re-run rewrites the timestamp + fails the Unchanged claim). → **Fix: reuse the existing manifest's `created` on re-run.** Wording tightened: validate project-pass runs regardless of `agentFilter` (non-error path), intentionally absent from `AgentsScanned`; rollback notes manifest regenerates-on-delete. R2 blocks confirmed closed.
+
+**Converged: 0 blocks across the round; single concern resolved + Reality-verified.** Phases 1–3 **LOCKED, ready for dispatch.** Phase 4 (delivery) carries its own grilling pass before dispatch.

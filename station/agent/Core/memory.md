@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Idle. **v0.4.3** hotfix shipped 2026-05-13 (`584b82b`, PRs #105+#106) — sensor hooks bake absolute paths instead of `$PWD`-walk-up; existing projects need `bonsai update`. [Status Recently Done](../../Playbook/Status.md) row.
+**Current task:** Plan 40 (Odysseus integration) rung-1 grilled 3 rounds (6 critics); Phases 1–3 **LOCKED, ready for dispatch** next session (B+C+D+A → v0.5.0). Phase 4 (delivery via `bonsai update`) specced, needs its own grill before dispatch. [plan](../../Playbook/Plans/Active/40-odysseus-platform-integration.md). Grilling pipeline now in workspace: [workflow](../Workflows/plan-grilling.md) + `/plan` `/grill` (full catalog integration backlogged P2).
 
 **Background:** **Plan 38 — Bonsai-Eval bootstrap** — handoff complete (this station archives, Bonsai-Eval owns P2/P3). v0.4.2 unblocked rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
 
