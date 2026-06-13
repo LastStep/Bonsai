@@ -18,7 +18,7 @@ import (
 // invoked with neither an arg nor a TTY (e.g. piped through less
 // without specifying a topic). Decision D4 in Plan 28's 2026-04-23
 // deltas locks the wording; test asserts verbatim.
-const noTTYNoArgErr = "bonsai guide: specify a topic when piping output (quickstart, concepts, cli, custom-files)"
+const noTTYNoArgErr = "bonsai guide: specify a topic when piping output (quickstart, concepts, cli, custom-files, formats)"
 
 func init() {
 	rootCmd.AddCommand(guideCmd)
@@ -29,7 +29,7 @@ var guideCmd = &cobra.Command{
 	Short: "View bundled guides in the terminal.",
 	Long: "Render one of the bundled guides as styled terminal output. Run without a " +
 		"topic to open the cinematic viewer on the first topic; pass one of: " +
-		"quickstart, concepts, cli, custom-files.",
+		"quickstart, concepts, cli, custom-files, formats.",
 	Args: cobra.MaximumNArgs(1),
 	RunE: runGuide,
 }
@@ -46,7 +46,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		key = args[0]
 		if _, ok := guideContents[key]; !ok {
-			return fmt.Errorf("unknown topic %q. Available: quickstart, concepts, cli, custom-files", key)
+			return fmt.Errorf("unknown topic %q. Available: quickstart, concepts, cli, custom-files, formats", key)
 		}
 	}
 

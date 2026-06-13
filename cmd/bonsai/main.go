@@ -24,5 +24,6 @@ func main() {
 		"concepts":     bonsai.GuideConcepts,
 		"cli":          bonsai.GuideCli,
 		"custom-files": bonsai.GuideCustomFiles,
+		"formats":      bonsai.GuideFormats,
 	})
 }

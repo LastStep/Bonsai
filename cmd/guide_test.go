@@ -3,6 +3,8 @@ package cmd
 import (
 	"strings"
 	"testing"
+
+	bonsai "github.com/LastStep/Bonsai"
 )
 
 // fakeGuides populates the package-level guideContents map with
@@ -14,6 +16,7 @@ func fakeGuides() map[string]string {
 		"concepts":     "# Concepts\n\nthe mental model.\n",
 		"cli":          "# CLI\n\ncommand reference.\n",
 		"custom-files": "# Custom Files\n\nadd your own.\n",
+		"formats":      "# Formats\n\nschema_version + permalink.\n",
 	}
 }
 
@@ -94,11 +97,34 @@ func TestRunGuide_NoArgNonTTYExactMessage(t *testing.T) {
 		if err == nil {
 			t.Fatalf("expected error for no-arg non-TTY invocation; got nil")
 		}
-		want := "bonsai guide: specify a topic when piping output (quickstart, concepts, cli, custom-files)"
+		want := "bonsai guide: specify a topic when piping output (quickstart, concepts, cli, custom-files, formats)"
 		if err.Error() != want {
 			t.Fatalf("error mismatch:\n got=%q\nwant=%q", err.Error(), want)
 		}
 	})
+}
+
+// TestGuide_FormatsPageDocumentsFrozenSchemas is the Plan 40 Phase 3
+// gate: the shipped "Formats" guide must document both frozen v1
+// formats. It renders the real embedded docs/formats.md (not the
+// fake placeholder) through the static path and asserts the rendered
+// body carries the load-bearing keys from each schema — the
+// memory-note `permalink` and the shared `schema_version`. If either
+// is dropped from the doc, this fails.
+func TestGuide_FormatsPageDocumentsFrozenSchemas(t *testing.T) {
+	if strings.TrimSpace(bonsai.GuideFormats) == "" {
+		t.Fatal("embedded Formats guide (docs/formats.md) is empty")
+	}
+	out := captureStdout(t, func() {
+		if err := renderStatic(bonsai.GuideFormats); err != nil {
+			t.Fatalf("renderStatic(Formats): %v", err)
+		}
+	})
+	for _, want := range []string{"schema_version", "permalink"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("rendered Formats guide body missing %q:\n%s", want, out)
+		}
+	}
 }
 
 // TestRunGuide_ArgNonTTYRendersStatic verifies passing a valid

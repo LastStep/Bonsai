@@ -29,7 +29,7 @@ type Topic struct {
 // surface. Matches the pre-Plan-28 static picker order so users
 // encountering the viewer for the first time still see the same
 // "quickstart first" entry point.
-var canonicalOrder = []string{"quickstart", "concepts", "cli", "custom-files"}
+var canonicalOrder = []string{"quickstart", "concepts", "cli", "custom-files", "formats"}
 
 // deriveLabel produces the default uppercased, hyphen-stripped form
 // used as the fallback for both labelFor and shortFor when a key
@@ -54,6 +54,8 @@ func labelFor(key string) string {
 		return "CLI"
 	case "custom-files":
 		return "CUSTOM"
+	case "formats":
+		return "FORMATS"
 	default:
 		return deriveLabel(key)
 	}
@@ -72,6 +74,8 @@ func shortFor(key string) string {
 		return "CLI"
 	case "custom-files":
 		return "CUSTM"
+	case "formats":
+		return "FORMT"
 	default:
 		up := deriveLabel(key)
 		if len(up) > 5 {

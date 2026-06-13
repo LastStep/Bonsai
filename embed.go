@@ -19,3 +19,6 @@ var GuideConcepts string
 
 //go:embed docs/cli.md
 var GuideCli string
+
+//go:embed docs/formats.md
+var GuideFormats string
