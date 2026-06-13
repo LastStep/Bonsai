@@ -9,6 +9,8 @@ import (
 	"testing/fstest"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/config"
 )
@@ -1724,5 +1726,307 @@ func TestSettingsJSON_HookCommandsAreAbsolutePaths(t *testing.T) {
 	// JSON makes a literal-string suffix match too brittle.)
 	if strings.Count(body, absRoot) < 2 {
 		t.Fatalf("expected absolute project root %q to appear at least twice (script path + hook arg); got:\n%s", absRoot, body)
+	}
+}
+
+// ─── Plan 40 Phase 1: project manifest + memory scaffolding ──────────
+
+// buildScaffoldingCatalog builds an in-memory catalog containing just the
+// scaffolding manifest + templates exercised by Plan 40 Phase 1: the
+// project-manifest (root-relative) and memory items, plus the NoteStandards
+// file shipped by playbook. Hermetic — no embedded FS dependency.
+func buildScaffoldingCatalog(t *testing.T) *catalog.Catalog {
+	t.Helper()
+	manifest := `
+- name: playbook
+  description: "Operational playbook"
+  required: true
+  files:
+    - Playbook/Standards/NoteStandards.md.tmpl
+
+- name: project-manifest
+  description: "Per-repo project manifest"
+  required: false
+  root_relative: true
+  files:
+    - .bonsai/project.yaml.tmpl
+
+- name: memory
+  description: "In-repo memory graph"
+  required: false
+  files:
+    - MEMORY.md.tmpl
+    - Memory/decisions/.gitkeep
+    - Memory/notes/.gitkeep
+`
+	projectTmpl := "schema_version: 1\n" +
+		"name: {{ yamlScalar .ProjectName }}\n" +
+		"slug: {{ yamlScalar .Slug }}\n" +
+		"status: idea\n" +
+		"tags: []\n" +
+		"description: {{ yamlScalar .ProjectDescription }}\n" +
+		"links: {}\n" +
+		"created: {{ .Created }}\n" +
+		"memory_dir: station/Memory\n"
+
+	fsys := fstest.MapFS{
+		"scaffolding/manifest.yaml":                            &fstest.MapFile{Data: []byte(manifest)},
+		"scaffolding/.bonsai/project.yaml.tmpl":                &fstest.MapFile{Data: []byte(projectTmpl)},
+		"scaffolding/MEMORY.md.tmpl":                           &fstest.MapFile{Data: []byte("# {{ .ProjectName }} — Memory Index\n\n## Decisions\n\n## Notes\n")},
+		"scaffolding/Memory/decisions/.gitkeep":                &fstest.MapFile{Data: []byte("")},
+		"scaffolding/Memory/notes/.gitkeep":                    &fstest.MapFile{Data: []byte("")},
+		"scaffolding/Playbook/Standards/NoteStandards.md.tmpl": &fstest.MapFile{Data: []byte("# {{ .ProjectName }} — Note Standards\n")},
+	}
+	cat, err := catalog.New(fsys)
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+	return cat
+}
+
+// withFixedScaffoldNow swaps the package-level date seam for the duration of
+// the test so manifest `created` rendering is deterministic.
+func withFixedScaffoldNow(t *testing.T, date string) {
+	t.Helper()
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		t.Fatalf("parse fixed date: %v", err)
+	}
+	prev := scaffoldNow
+	scaffoldNow = func() time.Time { return parsed }
+	t.Cleanup(func() { scaffoldNow = prev })
+}
+
+func TestManifestRenderDeterministicBytes(t *testing.T) {
+	withFixedScaffoldNow(t, "2026-06-13")
+	cat := buildScaffoldingCatalog(t)
+	tmpDir := t.TempDir()
+	cfg := &config.ProjectConfig{
+		ProjectName: "My Project",
+		Description: "A test project",
+		DocsPath:    "station/",
+		Scaffolding: []string{"project-manifest"},
+	}
+	lock := config.NewLockFile()
+	var wr WriteResult
+	if err := Scaffolding(tmpDir, cfg, cat, lock, &wr, false); err != nil {
+		t.Fatalf("Scaffolding: %v", err)
+	}
+
+	got, err := os.ReadFile(filepath.Join(tmpDir, ".bonsai", "project.yaml"))
+	if err != nil {
+		t.Fatalf("read manifest: %v", err)
+	}
+	want := "schema_version: 1\n" +
+		"name: My Project\n" +
+		"slug: my-project\n" +
+		"status: idea\n" +
+		"tags: []\n" +
+		"description: A test project\n" +
+		"links: {}\n" +
+		"created: 2026-06-13\n" +
+		"memory_dir: station/Memory\n"
+	if string(got) != want {
+		t.Errorf("manifest bytes mismatch:\n got: %q\nwant: %q", got, want)
+	}
+}
+
+func TestManifestRootRelativeNotUnderDocsPath(t *testing.T) {
+	withFixedScaffoldNow(t, "2026-06-13")
+	cat := buildScaffoldingCatalog(t)
+	tmpDir := t.TempDir()
+	cfg := &config.ProjectConfig{
+		ProjectName: "Proj",
+		DocsPath:    "station/",
+		Scaffolding: []string{"project-manifest"},
+	}
+	lock := config.NewLockFile()
+	var wr WriteResult
+	if err := Scaffolding(tmpDir, cfg, cat, lock, &wr, false); err != nil {
+		t.Fatalf("Scaffolding: %v", err)
+	}
+
+	// Manifest must land at the repo root, NOT under station/.
+	if _, err := os.Stat(filepath.Join(tmpDir, ".bonsai", "project.yaml")); err != nil {
+		t.Errorf("expected manifest at repo-root .bonsai/project.yaml: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(tmpDir, "station", ".bonsai", "project.yaml")); err == nil {
+		t.Error("manifest must NOT be written under station/.bonsai/")
+	}
+
+	// Lock entry present with the catalog-relative source.
+	var found *config.FileEntry
+	for rel, entry := range lock.Files {
+		if rel == ".bonsai/project.yaml" {
+			found = entry
+		}
+	}
+	if found == nil {
+		t.Fatal("lock entry for .bonsai/project.yaml missing")
+	}
+	if found.Source != "scaffolding:.bonsai/project.yaml.tmpl" {
+		t.Errorf("lock source = %q, want scaffolding:.bonsai/project.yaml.tmpl", found.Source)
+	}
+}
+
+func TestMemoryTreeCreated(t *testing.T) {
+	cat := buildScaffoldingCatalog(t)
+	tmpDir := t.TempDir()
+	cfg := &config.ProjectConfig{
+		ProjectName: "Proj",
+		DocsPath:    "station/",
+		Scaffolding: []string{"memory"},
+	}
+	lock := config.NewLockFile()
+	var wr WriteResult
+	if err := Scaffolding(tmpDir, cfg, cat, lock, &wr, false); err != nil {
+		t.Fatalf("Scaffolding: %v", err)
+	}
+
+	for _, p := range []string{
+		filepath.Join("station", "MEMORY.md"),
+		filepath.Join("station", "Memory", "decisions", ".gitkeep"),
+		filepath.Join("station", "Memory", "notes", ".gitkeep"),
+	} {
+		if _, err := os.Stat(filepath.Join(tmpDir, p)); err != nil {
+			t.Errorf("expected %s to exist: %v", p, err)
+		}
+	}
+	// MEMORY.md is workspace-scoped, so it must NOT be at the repo root.
+	if _, err := os.Stat(filepath.Join(tmpDir, "MEMORY.md")); err == nil {
+		t.Error("MEMORY.md should be under station/, not at repo root")
+	}
+}
+
+func TestManifestIdempotentCreatedReuse(t *testing.T) {
+	cat := buildScaffoldingCatalog(t)
+	tmpDir := t.TempDir()
+	cfg := &config.ProjectConfig{
+		ProjectName: "Proj",
+		DocsPath:    "station/",
+		Scaffolding: []string{"project-manifest"},
+	}
+	lock := config.NewLockFile()
+
+	// First run on day 1.
+	withFixedScaffoldNow(t, "2026-06-13")
+	var wr1 WriteResult
+	if err := Scaffolding(tmpDir, cfg, cat, lock, &wr1, false); err != nil {
+		t.Fatalf("first Scaffolding: %v", err)
+	}
+	first, _ := os.ReadFile(filepath.Join(tmpDir, ".bonsai", "project.yaml"))
+	if !strings.Contains(string(first), "created: 2026-06-13") {
+		t.Fatalf("first run should stamp created: 2026-06-13, got:\n%s", first)
+	}
+
+	// Second run on a LATER day — created must be reused (not re-stamped) so
+	// the bytes stay identical and the action is Unchanged.
+	withFixedScaffoldNow(t, "2026-07-01")
+	var wr2 WriteResult
+	if err := Scaffolding(tmpDir, cfg, cat, lock, &wr2, false); err != nil {
+		t.Fatalf("second Scaffolding: %v", err)
+	}
+	second, _ := os.ReadFile(filepath.Join(tmpDir, ".bonsai", "project.yaml"))
+	if !bytes.Equal(first, second) {
+		t.Errorf("manifest bytes changed on re-run (created not reused):\n first: %q\nsecond: %q", first, second)
+	}
+
+	var action FileAction = -1
+	for _, f := range wr2.Files {
+		if f.RelPath == ".bonsai/project.yaml" {
+			action = f.Action
+		}
+	}
+	if action != ActionUnchanged {
+		t.Errorf("manifest action on idempotent re-run = %d, want ActionUnchanged", action)
+	}
+}
+
+func TestManifestYAMLInjectionRoundTrips(t *testing.T) {
+	withFixedScaffoldNow(t, "2026-06-13")
+	cat := buildScaffoldingCatalog(t)
+	tmpDir := t.TempDir()
+	cfg := &config.ProjectConfig{
+		ProjectName: "Proj",
+		Description: "evil: \"}\n!!x", // attempts to break out of the description key
+		DocsPath:    "station/",
+		Scaffolding: []string{"project-manifest"},
+	}
+	lock := config.NewLockFile()
+	var wr WriteResult
+	if err := Scaffolding(tmpDir, cfg, cat, lock, &wr, false); err != nil {
+		t.Fatalf("Scaffolding: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(tmpDir, ".bonsai", "project.yaml"))
+	if err != nil {
+		t.Fatalf("read manifest: %v", err)
+	}
+
+	// The injection must not break the document — it round-trips cleanly and
+	// the description value survives intact under its own key.
+	var parsed struct {
+		SchemaVersion int    `yaml:"schema_version"`
+		Name          string `yaml:"name"`
+		Description   string `yaml:"description"`
+	}
+	if err := yaml.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("manifest is not valid YAML after injection: %v\n%s", err, data)
+	}
+	if parsed.SchemaVersion != 1 {
+		t.Errorf("schema_version = %d, want 1 (injection corrupted structure)", parsed.SchemaVersion)
+	}
+	if parsed.Description != "evil: \"}\n!!x" {
+		t.Errorf("description = %q, want the raw injected value (should be quoted, not structural)", parsed.Description)
+	}
+}
+
+func TestSlugifyFixtures(t *testing.T) {
+	cases := []struct {
+		in      string
+		want    string
+		wantErr bool
+	}{
+		{"My Project", "my-project", false},
+		{"Café Foo!", "caf-foo", false},
+		{"123 Go", "123-go", false},
+		{"!!!", "", true},
+		{"", "", true},
+		{"  Trim  Me  ", "trim-me", false},
+		{"already-kebab", "already-kebab", false},
+		{"UPPER_snake.Case", "upper-snake-case", false},
+		{"--leading-and-trailing--", "leading-and-trailing", false},
+	}
+	for _, tc := range cases {
+		got, err := catalog.Slugify(tc.in)
+		if tc.wantErr {
+			if err == nil {
+				t.Errorf("Slugify(%q) = %q, want error", tc.in, got)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("Slugify(%q) unexpected error: %v", tc.in, err)
+			continue
+		}
+		if got != tc.want {
+			t.Errorf("Slugify(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+func TestScaffoldingEmptySlugErrors(t *testing.T) {
+	withFixedScaffoldNow(t, "2026-06-13")
+	cat := buildScaffoldingCatalog(t)
+	tmpDir := t.TempDir()
+	cfg := &config.ProjectConfig{
+		ProjectName: "!!!", // slugifies to empty → generator error
+		DocsPath:    "station/",
+		Scaffolding: []string{"project-manifest"},
+	}
+	lock := config.NewLockFile()
+	var wr WriteResult
+	if err := Scaffolding(tmpDir, cfg, cat, lock, &wr, false); err == nil {
+		t.Error("expected Scaffolding to error when project name slugifies to empty")
 	}
 }

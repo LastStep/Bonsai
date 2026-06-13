@@ -15,6 +15,8 @@ import (
 	"time"
 	"unicode"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/config"
 )
@@ -33,7 +35,20 @@ type TemplateContext struct {
 	Skills             []string
 	Workflows          []string
 	Routines           []string
+
+	// Slug is the machine slug derived from ProjectName via catalog.Slugify.
+	// Used by the project manifest template (.bonsai/project.yaml). Plan 40.
+	Slug string
+	// Created is the YYYY-MM-DD date stamped into the project manifest. On a
+	// re-run it is the manifest's existing first-seen date (reused so bytes
+	// stay stable); on first write it is the live date from scaffoldNow. Plan 40.
+	Created string
 }
+
+// scaffoldNow is the date source for manifest `created` stamping. It is a
+// package-level seam so tests can inject a fixed date and assert deterministic
+// rendered bytes. Plan 40 Phase 1.
+var scaffoldNow = time.Now
 
 // OtherAgent describes a sibling agent for template rendering.
 type OtherAgent struct {
@@ -42,7 +57,22 @@ type OtherAgent struct {
 }
 
 var funcMap = template.FuncMap{
-	"title": titleCase,
+	"title":      titleCase,
+	"yamlScalar": yamlScalar,
+}
+
+// yamlScalar renders a Go string as a single safely-quoted YAML scalar. It
+// routes user-supplied values (project name, description) through yaml.Marshal
+// so a value like `evil: "}` + "\n" + `!!x` cannot break out of its key and
+// inject structure into the rendered manifest — never hand-rolled quoting or a
+// bare `{{ . }}` interpolation into YAML. The marshaller emits a trailing
+// newline, which is trimmed so the value drops cleanly onto a `key: ` line.
+func yamlScalar(s string) (string, error) {
+	out, err := yaml.Marshal(s)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimRight(string(out), "\n"), nil
 }
 
 func titleCase(s string) string {
@@ -355,8 +385,19 @@ func hasScaffolding(cfg *config.ProjectConfig, name string) bool {
 	return false
 }
 
+// manifestRel is the canonical catalog path (relative to scaffolding/) of the
+// project manifest template, and projectManifestRel its rendered repo-relative
+// target. The manifest is root-relative and gets special created-stamping. Plan 40.
+const (
+	manifestTmplRel    = ".bonsai/project.yaml.tmpl"
+	projectManifestRel = ".bonsai/project.yaml"
+)
+
 // Scaffolding generates project management infrastructure files for selected items.
-// Scaffolding files are write-once: if a file already exists, it is skipped (not conflicted).
+// Scaffolding files are write-once: if a file already exists, it is skipped (not
+// conflicted) — except root-relative items (the project manifest), which bypass
+// that pre-os.Stat skip so the write reaches writeFile (lock-tracked, write-once
+// via the lock, conflict-on-untracked). Plan 40 Phase 1.
 func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *config.LockFile, result *WriteResult, force bool) error {
 	catFS := cat.FS()
 	docsRoot := projectRoot
@@ -368,16 +409,29 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Cat
 		ProjectDescription: cfg.Description,
 	}
 
-	// Build set of allowed file prefixes from selected scaffolding items
-	allowedFiles := make(map[string]bool)
+	// Build map of allowed file entries → owning item so the walk can read
+	// per-item flags (RootRelative). A flat bool set would discard that identity.
+	allowedFiles := make(map[string]*catalog.ScaffoldingItem)
 	for _, name := range cfg.Scaffolding {
 		item := cat.GetScaffolding(name)
 		if item == nil {
 			continue
 		}
 		for _, f := range item.Files {
-			allowedFiles[f] = true
+			allowedFiles[f] = item
 		}
+	}
+
+	// The manifest carries derived state (slug, created). Compute it once up
+	// front — slug always; created reused from an existing manifest so re-runs
+	// stay byte-identical → Unchanged (preserves created=first-seen).
+	if manifestSelected(allowedFiles) {
+		slug, slugErr := catalog.Slugify(cfg.ProjectName)
+		if slugErr != nil {
+			return slugErr
+		}
+		ctx.Slug = slug
+		ctx.Created = manifestCreated(filepath.Join(projectRoot, projectManifestRel))
 	}
 
 	err := fs.WalkDir(catFS, "scaffolding", func(path string, d fs.DirEntry, err error) error {
@@ -389,7 +443,8 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Cat
 			return nil // skip the manifest itself
 		}
 
-		if !isAllowedScaffoldingFile(rel, allowedFiles) {
+		item := matchScaffoldingItem(rel, allowedFiles)
+		if item == nil {
 			return nil
 		}
 
@@ -402,15 +457,21 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Cat
 		if strings.HasSuffix(relToProject, ".tmpl") {
 			relToProject = strings.TrimSuffix(relToProject, ".tmpl")
 		}
-		if cfg.DocsPath != "" {
+		// Root-relative items (the manifest) land at the repo root; everything
+		// else is joined under the workspace docs path.
+		if !item.RootRelative && cfg.DocsPath != "" {
 			relToProject = filepath.Join(cfg.DocsPath, relToProject)
 		}
 
-		// Scaffolding is write-once: if file exists, skip (don't conflict)
-		absPath := filepath.Join(projectRoot, relToProject)
-		if _, statErr := os.Stat(absPath); statErr == nil {
-			result.Add(FileResult{RelPath: relToProject, Action: ActionSkipped, Source: "scaffolding:" + rel})
-			return nil
+		// Root-relative items skip the pre-os.Stat write-once short-circuit so
+		// the write reaches writeFile: lock-tracked, write-once via the lock
+		// (Unchanged on re-run), conflict on a pre-existing untracked file.
+		if !item.RootRelative {
+			absPath := filepath.Join(projectRoot, relToProject)
+			if _, statErr := os.Stat(absPath); statErr == nil {
+				result.Add(FileResult{RelPath: relToProject, Action: ActionSkipped, Source: "scaffolding:" + rel})
+				return nil
+			}
 		}
 
 		r := writeFile(projectRoot, relToProject, content, "scaffolding:"+rel, lock, force)
@@ -418,42 +479,72 @@ func Scaffolding(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Cat
 		return nil
 	})
 
-	// Create empty directories listed in selected items (e.g. Plans/Active/, Reports/Pending/)
+	// Create empty directories listed in selected items (e.g. Plans/Active/,
+	// Reports/Pending/, Memory/decisions/). Root-relative dir entries land at
+	// the repo root; the rest under docsRoot.
 	for _, f := range sortedKeys(allowedFiles) {
-		if strings.HasSuffix(f, "/") {
-			dirPath := filepath.Join(docsRoot, f)
-			_ = os.MkdirAll(dirPath, 0755)
+		if !strings.HasSuffix(f, "/") {
+			continue
 		}
+		base := docsRoot
+		if item := allowedFiles[f]; item != nil && item.RootRelative {
+			base = projectRoot
+		}
+		_ = os.MkdirAll(filepath.Join(base, f), 0755)
 	}
 
 	return err
 }
 
-// isAllowedScaffoldingFile checks if a file path matches any allowed file entry.
-// Handles both exact file matches and directory prefix matches (entries ending with /).
-func isAllowedScaffoldingFile(rel string, allowed map[string]bool) bool {
-	// Exact match (with or without .tmpl suffix)
-	if allowed[rel] {
-		return true
+// manifestSelected reports whether the project-manifest template is among the
+// selected scaffolding files.
+func manifestSelected(allowed map[string]*catalog.ScaffoldingItem) bool {
+	return matchScaffoldingItem(manifestTmplRel, allowed) != nil
+}
+
+// manifestCreated returns the YYYY-MM-DD date to stamp into the manifest's
+// `created` field. If a manifest already exists at absPath with a parseable
+// `created:` value, that first-seen date is reused so re-runs stay byte-stable;
+// otherwise the live date (from the scaffoldNow seam) is emitted.
+func manifestCreated(absPath string) string {
+	if data, err := os.ReadFile(absPath); err == nil {
+		var existing struct {
+			Created string `yaml:"created"`
+		}
+		if yaml.Unmarshal(data, &existing) == nil && existing.Created != "" {
+			return existing.Created
+		}
 	}
-	if allowed[rel+".tmpl"] {
-		return true
+	return scaffoldNow().Format("2006-01-02")
+}
+
+// matchScaffoldingItem returns the scaffolding item that owns the given file
+// path (relative to scaffolding/), or nil if no selected item matches. Handles
+// exact file matches (with or without the .tmpl suffix) and directory-prefix
+// matches (entries ending with /).
+func matchScaffoldingItem(rel string, allowed map[string]*catalog.ScaffoldingItem) *catalog.ScaffoldingItem {
+	// Exact match (with or without .tmpl suffix)
+	if item := allowed[rel]; item != nil {
+		return item
+	}
+	if item := allowed[rel+".tmpl"]; item != nil {
+		return item
 	}
 	if strings.HasSuffix(rel, ".tmpl") {
-		if allowed[strings.TrimSuffix(rel, ".tmpl")] {
-			return true
+		if item := allowed[strings.TrimSuffix(rel, ".tmpl")]; item != nil {
+			return item
 		}
 	}
 	// Directory prefix match — file is under an allowed directory
-	for f := range allowed {
+	for f, item := range allowed {
 		if strings.HasSuffix(f, "/") && strings.HasPrefix(rel, f) {
-			return true
+			return item
 		}
 	}
-	return false
+	return nil
 }
 
-func sortedKeys(m map[string]bool) []string {
+func sortedKeys(m map[string]*catalog.ScaffoldingItem) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)

@@ -33,3 +33,20 @@
   files:
     - Reports/report-template.md
     - Reports/Pending/
+
+- name: project-manifest
+  description: "Per-repo project manifest — the canonical bonsai repo-identity standard, written at the repo root for downstream tooling to discover"
+  required: false
+  root_relative: true
+  affects: "downstream hub ingest / repo indexers that discover repos by reading .bonsai/project.yaml at the repo root; absent, those tools fall back to heuristics"
+  files:
+    - .bonsai/project.yaml.tmpl
+
+- name: memory
+  description: "In-repo memory graph — a durable, version-controlled note tree (decisions + notes) that complements the agent's working memory"
+  required: false
+  affects: "downstream hub ingest / repo indexers that aggregate per-repo memory; the note-schema standard in Playbook/Standards/NoteStandards.md; absent, durable decisions stay scattered across logs"
+  files:
+    - MEMORY.md.tmpl
+    - Memory/decisions/.gitkeep
+    - Memory/notes/.gitkeep

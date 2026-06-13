@@ -1,0 +1,12 @@
+# Project manifest — the canonical bonsai repo-identity standard.
+# Discovered at the repo root by downstream hub ingest / repo indexers.
+# Schema is frozen at v1; edit the scalar values below, keep the keys.
+schema_version: 1
+name: {{ yamlScalar .ProjectName }}
+slug: {{ yamlScalar .Slug }}
+status: idea
+tags: []
+description: {{ yamlScalar .ProjectDescription }}
+links: {}
+created: {{ .Created }}
+memory_dir: station/Memory
