@@ -82,16 +82,16 @@ The `slug` is the project's machine identity: it anchors the memory-note `scope`
 
 ## Delivering the formats to an existing project
 
-Both formats ship as **opt-in** scaffolding (`project-manifest` and `memory`).
-To add them to a project that predates them, add the item name to the
-`scaffolding:` list in `.bonsai.yaml` and run `bonsai update`:
+Both formats ship as **opt-in scaffolding** (`project-manifest` and `memory`),
+selected during `bonsai init`. When you run `bonsai init` and tick them in the
+scaffolding picker, they're written: the manifest at the repo root
+(`.bonsai/project.yaml`) and the memory tree under `memory_dir`
+(`{memory_dir}/decisions/`, `{memory_dir}/notes/`, default `station/Memory`).
 
-```yaml
-# .bonsai.yaml
-scaffolding:
-  - project-manifest
-  - memory
-```
+To add them to a project that predates them, **re-run `bonsai init`** and select
+`project-manifest` / `memory` in the scaffolding picker. A re-run is safe and
+idempotent: the manifest is lock-tracked and the memory tree is write-once, so
+any files that already exist are left untouched.
 
 Run `bonsai validate` to lint both formats — it reports schema violations
 (missing required fields, bad `schema_version`, scope mismatch, out-of-charset
