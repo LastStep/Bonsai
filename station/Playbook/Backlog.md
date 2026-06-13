@@ -62,6 +62,9 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 ## P2 — Medium
 
+- **[security] Harden all scaffolding writes against symlink substitution** — `writeFile` (`internal/generate/generate.go`) uses plain `os.WriteFile` (follows symlinks); only `WriteCatalogSnapshot` has O_NOFOLLOW. Write-once skip mitigates overwrite but not a dangling-symlink leaf or a symlinked parent dir (`os.MkdirAll` TOCTOU — even catalog_snapshot shares the parent gap). Harden the shared write path behind the existing build-tag split. *(added 2026-06-13, source: Plan 40 grill R2)*
+- **[improvement] `bonsai validate` warn on `.bonsai/project.yaml` ↔ `.bonsai.yaml` identity drift** — `project.yaml` (hub-facing name/slug/description) and `.bonsai.yaml` (generator-facing ProjectName/Description) are seeded once at init and never reconciled. A divergence warning would catch agent-docs vs hub-identity describing different projects. *(added 2026-06-13, source: Plan 40 grill R2)*
+
 - **[feature] Integrate plan-grilling as a first-class Bonsai catalog ability** — Grilling pipeline (6-critic adversarial review + convergence loop) was added to *this* station only (`agent/Workflows/plan-grilling.md`, `agent/Skills/critic-agent-prompts.md`, `.claude/commands/{plan,grill}.md`), adapted from ZenGarden `ZEN/Docs/.claude`. Full integration = make it a shipped catalog workflow+skill so all generated workspaces get it, wire into `station/CLAUDE.md` nav, and port the verification harness ZEN's `/lane`/`/verify`/`/execute` depend on (`run-gates.sh`, lane classification, `.grill-lock.json`, autonomy frontmatter — none exist in Bonsai). *(added 2026-06-13, source: user)*
 
 ### Group A: Bookkeeping
