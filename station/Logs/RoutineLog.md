@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-13 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Backlog.md` — 2 resolved P0 items converted to HTML comments (sensor hook $PWD-walk-up bug, resolved v0.4.3; non-interactive flags feature, resolved v0.4.2); `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-06-13/2026-06-20.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15 — 32 days out, rotation imminent; (2) `[debt] Stale agent worktrees` P1 item 54 days old with no progress — flag for re-prioritization; (3) P1 `[feature] Full agent-drivable CLI parity` user-flagged "main thing" — top candidate for /issue-to-implementation.
+- **Report:** `Reports/Pending/2026-06-13-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
