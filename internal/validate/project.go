@@ -93,6 +93,13 @@ type projectManifest struct {
 	Links         map[string]string `yaml:"links"`
 	Created       string            `yaml:"created"`
 	MemoryDir     string            `yaml:"memory_dir"`
+
+	// memoryDirInvalid is set by loadManifest when an explicit memory_dir
+	// failed validation (traversal/absolute). It is unexported and untagged
+	// so yaml.Unmarshal never populates it. When true, auditProject skips the
+	// memory-tree walk entirely instead of defaulting to station/Memory — the
+	// manifest is broken and walking a sanitized/default tree would mislead.
+	memoryDirInvalid bool
 }
 
 // noteFrontmatter mirrors the frozen v1 memory-note frontmatter. Pointer
@@ -126,13 +133,20 @@ type noteRecord struct {
 func auditProject(projectRoot string, report *Report) {
 	manifest, manifestPresent := loadManifest(projectRoot, report)
 
-	// Resolve memory_dir. When the manifest is present we honour its
-	// (already-validated) memory_dir; otherwise fall back to the frozen
-	// default so an existing tree is still linted.
+	// Resolve memory_dir. When the manifest carries a non-empty, *validated*
+	// memory_dir we honour it; when the key is simply absent we fall back to
+	// the frozen default so an existing tree is still linted. But when the
+	// manifest carried an explicit memory_dir that FAILED validation
+	// (traversal/absolute), loadManifest has already recorded the error and
+	// blanked the field — we must NOT walk anything for this run (neither the
+	// out-of-tree target nor the default), so we bail before the stat/walk.
 	memDirRel := defaultMemoryDir
 	slug := ""
 	slugKnown := false
 	if manifestPresent && manifest != nil {
+		if manifest.memoryDirInvalid {
+			return
+		}
 		if manifest.MemoryDir != "" {
 			memDirRel = manifest.MemoryDir
 		}
@@ -238,10 +252,20 @@ func loadManifest(projectRoot string, report *Report) (*projectManifest, bool) {
 	// repo-relative and non-traversing. Accidental-grade per the plan: reuse
 	// wsvalidate.InvalidReason on the Normalise'd value, trimming the
 	// trailing slash Normalise appends so the reason text reads cleanly.
+	//
+	// On an invalid (traversing/absolute) value we blank m.MemoryDir AFTER
+	// recording the error so downstream code never joins it onto projectRoot
+	// and walks an out-of-tree directory. A blanked-because-invalid value is
+	// NOT the same as an absent key: auditProject must skip the walk entirely
+	// for this run rather than falling back to the default tree (the manifest
+	// is broken — the error already tells the user to fix it). See the
+	// memoryDirInvalid flag threaded through auditProject.
 	if m.MemoryDir != "" {
 		norm := strings.TrimRight(wsvalidate.Normalise(m.MemoryDir), "/")
 		if reason := wsvalidate.InvalidReason(norm); reason != "" {
 			addManifest(fmt.Sprintf("memory_dir %q invalid: %s", m.MemoryDir, reason))
+			m.MemoryDir = ""
+			m.memoryDirInvalid = true
 		}
 	}
 

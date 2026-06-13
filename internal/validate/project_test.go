@@ -423,6 +423,52 @@ func TestProject_PermalinkOutOfCharsetNotIndexed(t *testing.T) {
 	}
 }
 
+// TestProject_TraversingMemoryDirNotWalked is the out-of-tree-read regression
+// guard. A manifest whose memory_dir traverses out of the repo (../outsidemem)
+// must (1) raise the invalid_manifest error AND (2) never read/lint the
+// out-of-tree note tree — so an attacker-planted ../outsidemem/evil.md whose
+// frontmatter would otherwise surface (HACKED scope) is never opened. Before
+// the fix, auditProject joined the unsanitized memory_dir onto projectRoot,
+// stat'd the resolved out-of-tree dir, and frontmatter-linted evil.md.
+func TestProject_TraversingMemoryDirNotWalked(t *testing.T) {
+	f := newFixture(t)
+
+	// Plant an out-of-tree memory tree as a sibling of the project root with a
+	// note whose frontmatter is structurally valid (so any walk WOULD parse it
+	// and emit note-derived issues against the HACKED scope).
+	outside := filepath.Join(f.root, "..", "outsidemem")
+	if err := os.MkdirAll(outside, 0o755); err != nil {
+		t.Fatalf("mkdir outside: %v", err)
+	}
+	t.Cleanup(func() { os.RemoveAll(outside) })
+	evil := validNote("evil", "project/HACKED", "", "")
+	if err := os.WriteFile(filepath.Join(outside, "evil.md"), []byte(evil), 0o644); err != nil {
+		t.Fatalf("write evil note: %v", err)
+	}
+
+	// Manifest points memory_dir at the traversing path.
+	writeProjectFile(t, f.root, ".bonsai/project.yaml",
+		strings.Replace(validManifest, "memory_dir: station/Memory", "memory_dir: ../outsidemem", 1))
+
+	report := runProject(t, f)
+
+	// (1) The traversing memory_dir IS flagged.
+	if iss := findProjectIssue(report.Issues, CategoryInvalidManifest, ""); iss == nil {
+		t.Fatalf("expected invalid_manifest for traversing memory_dir, got: %+v", report.Issues)
+	} else if iss.Severity != SeverityError {
+		t.Errorf("invalid_manifest severity = %s, want error", iss.Severity)
+	}
+
+	// (2) The out-of-tree evil.md was NEVER read/linted — no issue may
+	// reference the HACKED scope or the evil note in any way.
+	for _, iss := range report.Issues {
+		if strings.Contains(iss.Detail, "HACKED") || strings.Contains(iss.Path, "outsidemem") ||
+			strings.Contains(iss.Path, "evil.md") || iss.Name == "evil" {
+			t.Fatalf("out-of-tree note must not be read; leaked issue: %+v", iss)
+		}
+	}
+}
+
 // ensure config import is used even if a future refactor drops the direct
 // reference — keeps the test file self-documenting about its dependency.
 var _ = config.NewLockFile
