@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** Plan 40 (Odysseus integration) rung-1 grilled 3 rounds (6 critics); Phases 1–3 **LOCKED, ready for dispatch** next session (B+C+D+A → v0.5.0). Phase 4 (delivery via `bonsai update`) specced, needs its own grill before dispatch. [plan](../../Playbook/Plans/Active/40-odysseus-platform-integration.md). Grilling pipeline now in workspace: [workflow](../Workflows/plan-grilling.md) + `/plan` `/grill` (full catalog integration backlogged P2).
+**Current task:** Plan 40 (Odysseus integration) **fully grilled + LOCKED** (Phases 1–4, B+C+D+A → v0.5.0), ready for dispatch. **Next main thing (user 2026-06-13):** full agent-drivable non-interactive CLI parity for init/update/add/remove — [Backlog P1](../../Playbook/Backlog.md), promote via `/plan` next session (it supersedes Plan 40 Phase 4 + Rung-2.5). [plan 40](../../Playbook/Plans/Active/40-odysseus-platform-integration.md). Grilling pipeline live: [workflow](../Workflows/plan-grilling.md) + `/plan` `/grill`.
 
 **Background:** **Plan 38 — Bonsai-Eval bootstrap** — handoff complete (this station archives, Bonsai-Eval owns P2/P3). v0.4.2 unblocked rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
 
