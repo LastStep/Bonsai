@@ -63,6 +63,35 @@ const (
 	// Routines). Top-level only — subdirs ignored to match
 	// generate.ScanCustomFiles.
 	CategoryWrongExtension Category = "wrong_extension_in_category"
+
+	// --- Project-level categories (Plan 40 Phase 2) ---
+	// These fire once per project (not per agent); their Issues carry an
+	// empty AgentName and are intentionally absent from AgentsScanned.
+
+	// CategoryInvalidManifest: .bonsai/project.yaml is unparseable, missing
+	// a required field, or carries an out-of-range value (bad
+	// schema_version, status not in the enum, traversing memory_dir, ...).
+	CategoryInvalidManifest Category = "invalid_manifest"
+	// CategoryMissingManifest: a memory tree exists on disk but no
+	// .bonsai/project.yaml was found, so scope cannot be verified. Warning —
+	// frontmatter is still linted, only the scope-match check is skipped.
+	CategoryMissingManifest Category = "missing_manifest"
+	// CategoryInvalidNote: a memory note has missing/bad frontmatter — a
+	// missing required field, schema_version != 1, out-of-charset permalink,
+	// a type outside the enum, a scope that doesn't match the manifest slug,
+	// or a dangling (non-null, unresolved) superseded_by.
+	CategoryInvalidNote Category = "invalid_note"
+	// CategoryUnresolvedRelation: a note's [[relation]] (or non-null
+	// superseded_by handled as a relation) points at a permalink that does
+	// not exist in the tree. Warning — forward references are legal while
+	// the graph is built out.
+	CategoryUnresolvedRelation Category = "unresolved_relation"
+	// CategorySymlinkEscape: a note file or a directory within the memory
+	// tree is a symlink whose resolved target escapes memory_dir. Rejected
+	// adversarially — never read, never indexed.
+	CategorySymlinkEscape Category = "symlink_escape"
+	// CategoryMemoryIndexTooLarge: MEMORY.md exceeds the 200-line budget.
+	CategoryMemoryIndexTooLarge Category = "memory_index_too_large"
 )
 
 // Issue is a single audit finding. JSON tag layout is the stable contract
@@ -185,6 +214,13 @@ func Run(projectRoot string, cfg *config.ProjectConfig, cat *catalog.Catalog, lo
 		report.AgentsScanned = append(report.AgentsScanned, agentName)
 		auditAgent(projectRoot, agentName, installed, lock, report)
 	}
+
+	// Project-level pass (Plan 40 Phase 2): lints the repo-root manifest and
+	// the in-repo memory note tree. Runs regardless of agentFilter — these
+	// findings are project-scoped, not agent-scoped, so an --agent filter
+	// must not suppress them. Their Issues carry an empty AgentName and the
+	// pass deliberately does NOT touch report.AgentsScanned.
+	auditProject(projectRoot, report)
 
 	return report, nil
 }
