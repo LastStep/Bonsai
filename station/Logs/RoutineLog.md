@@ -20,6 +20,54 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-13 — Status Hygiene (re-run)
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made — prior same-day dispatch already completed all procedure steps. Re-run verified all work in order.
+- **Flags:** (1) [medium] Sentrux trial Pending 37+ days — blocked on Rust toolchain, flag for user review; (2) [info] Plan 40 Phase 4 HELD — Active plan file retained
+- **Report:** `Reports/Pending/2026-06-13-status-hygiene.md`
+
+### 2026-06-13 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Status.md` — 5 old Done rows archived (Plans 32, 33, 34, 35, v0.4.0 / dates 2026-04-25 to 2026-05-04); archive cutoff note updated to "≤ 2026-05-29". `Playbook/StatusArchive.md` — 5 rows prepended. `agent/Core/routines.md` — Status Hygiene Last Ran/Next Due updated to 2026-06-13/2026-06-18.
+- **Flags:** (1) [medium] Sentrux trial Pending 37+ days — blocked on Rust toolchain, flag for user review; (2) [info] Plan 40 Active file retained — Phase 4 HELD, plan legitimately still active
+- **Report:** `Reports/Pending/2026-06-13-status-hygiene.md`
+
+### 2026-06-13 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes to Roadmap.md (audit-only per procedure) — `agent/Core/routines.md` dashboard Last Ran/Next Due updated to 2026-06-13/2026-06-27.
+- **Flags:** (1) [medium] "Current Phase" heading still says Phase 1 despite all items `[x]` — Phase 2 is now active; (2) [medium] Plan 40 Odysseus integration (hub scaffolding, project.yaml, frozen schemas) not represented in roadmap; (3) [medium] Full agent-drivable CLI parity (P1 Backlog, user's "main thing") has no roadmap entry; (4) [low] Phase 2 self-update mechanism doesn't reflect Plan 40 Phase 4 design work (HELD); (5) [low] KeyDecisionLog.md has no entries since 2026-04-13 — 2+ months stale.
+- **Report:** `Reports/Pending/2026-06-13-roadmap-accuracy.md`
+
+### 2026-06-13 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 References entries stale (Research files not found); updated golangci-lint Note to remove stale v1/v2 mismatch claim. `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-06-13/2026-06-18.
+- **Flags:** (1) [medium] All 6 References section research doc paths (`station/Research/RESEARCH-*.md`) point to non-existent files — Research directory absent from repo; (2) [medium] All `station/.claude/settings.json` sensor hook paths reference old `/home/rohan/ZenGarden/Bonsai/` path — hooks broken in current environment; (3) [low] golangci-lint Note was partially stale (v1 ref removed)
+- **Report:** `Reports/Pending/2026-06-13-memory-consolidation.md`
+
+### 2026-06-13 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** no doc edits made (audit-only routine) — `agent/Core/routines.md` dashboard Last Ran/Next Due updated to 2026-06-13/2026-06-20.
+- **Flags:** 6 drift items found: (1) [medium] `internal/nonint/` package missing from INDEX.md arch diagram + root CLAUDE.md tree (Plan 39 / v0.4.2 addition); (2) [medium] `code-index.md` generate.go line numbers ~101 off across 8 functions (Plan 40 additions shifted them); (3) [medium] `plan-grilling.md` workflow not in station/CLAUDE.md Workflows nav; (4) [low] `critic-agent-prompts.md` skill not in station/CLAUDE.md Skills nav; (5) [low] `/plan` and `/grill` slash commands not in Quick Triggers table; (6) [low] CLI command count 8→9 (completion command, PR #78). No previously-flagged items recurred — bonsai-model.md link confirmed fixed.
+- **Report:** `Reports/Pending/2026-06-13-doc-freshness-check.md`
+
+### 2026-06-13 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Backlog.md` — 2 resolved P0 items converted to HTML comments (sensor hook $PWD-walk-up bug, resolved v0.4.3; non-interactive flags feature, resolved v0.4.2); `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-06-13/2026-06-20.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15 — 32 days out, rotation imminent; (2) `[debt] Stale agent worktrees` P1 item 54 days old with no progress — flag for re-prioritization; (3) P1 `[feature] Full agent-drivable CLI parity` user-flagged "main thing" — top candidate for /issue-to-implementation.
+- **Report:** `Reports/Pending/2026-06-13-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
