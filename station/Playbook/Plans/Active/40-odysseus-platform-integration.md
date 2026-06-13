@@ -1,19 +1,20 @@
 ---
 tags: [plan, integration, odysseus]
-description: Bonsai-side build plan for the Odysseus personal-platform integration. Rung 1 (B+C+D+A) decisions locked 2026-06-13.
+description: Bonsai-side build plan for the Odysseus personal-platform integration. Rung 1 (B+C+D+A) decisions locked 2026-06-13; grilled (round 1) 2026-06-13.
 status: active
 source: odysseus-design-session-2026-06-12; decisions-grill 2026-06-13
+tier: 2
 ---
 
 # Plan 40 — Odysseus Platform Integration
 
 **Tier:** 2
-**Status:** Active (Rung 1 specced + locked)
+**Status:** Active — grilling in progress (round 1 applied)
 **Agent:** code agents (gp) via worktree, tech-lead orchestrates
 
 ## Goal
 
-Ship the bonsai-side repo standards the Odysseus hub consumes: in-repo memory graph (`station/Memory/`), per-repo project manifest (`.bonsai/project.yaml`), the canonical schemas documented as the bonsai standard, and `validate` lint for both. "Done" for Rung 1 = a bonsai project scaffolds a schema-conformant memory tree + manifest, `bonsai validate` lints them, `bonsai guide` documents the formats, and our own station dogfoods it — shipped as **v0.5.0**.
+Ship the bonsai-side repo standards the Odysseus hub consumes: in-repo memory graph (`station/Memory/`), per-repo project manifest (`.bonsai/project.yaml`), the canonical schemas documented as the bonsai standard, and `validate` lint for both. "Done" for Rung 1 = a bonsai project scaffolds a schema-conformant memory tree + manifest, existing projects receive them via `bonsai update`/`add`, `bonsai validate` lints them, `bonsai guide` documents the formats, and our own station dogfoods it — shipped as **v0.5.0**.
 
 ## Context
 
@@ -28,42 +29,42 @@ Bonsai is the schema authority for all repo-resident formats; Odysseus implement
 
 | # | Decision | Rationale |
 |---|----------|-----------|
-| Scope | **Rung 1 = B + C + D + A.** Slug requirement pulled A (manifest) into rung 1. | Note `scope: project/<slug>` needs an authoritative slug source; manifest is it. |
-| Release | **v0.5.0** minor bump at end of rung 1. | Additive: 2 new scaffolding items + validate extensions + guide pages. |
-| Dispatch | **PR-flow code agents via worktree.** | Schema/lint = correctness-heavy; not UX-iteration. |
-| Dogfood | **Yes — our station gets `station/Memory/` + `.bonsai/project.yaml`.** | Bonsai is project #1, mirrors Odysseus self-hosting. |
-| Manifest location | **`.bonsai/project.yaml`** (NOT `.odysseus/` as the source plan said). | Host-agnostic hard rule — bonsai never hardcodes a consumer's name. Bonsai owns `.bonsai/` (catalog.json precedent). Hub checks two paths: `.bonsai/` for bonsai repos, `.odysseus/` for plain ones. |
-| Manifest refresh | **Write-once + validate-only.** No field-merge machinery. | File barely changes; bonsai never re-edits after scaffold. You/hub make rare edits; validate lints. |
-| Config split | **`.bonsai.yaml` and `project.yaml` stay separate.** | Different owners/lifecycles/consumers; AI team is opt-in, manifest is universal. |
-| Manifest fields | Frozen v1 (below). **`next_action` REMOVED.** | Only volatile field + duplicated `Status.md`; hub reads status from manifest, next-action context from `Status.md` for bonsai repos. |
-| Memory routing | **Decisions → `Memory/decisions/` graph; FieldNotes stays legacy free-form; `agent/Core/memory.md` untouched.** | Decisions are high-value queryable facts the hub should index. FieldNotes = human scratch, schema buys nothing. Working memory = always-loaded runtime scratchpad, different purpose. |
-| Migration | **Scaffold now, migrate existing KeyDecisionLog entries later** (separate follow-up). | Don't block the release on hand-conversion. New decisions go to the graph; back-fill is its own task. |
-| Note schema | **Freeze §4 shape + add `schema_version`.** | Migration path when schema evolves; validate pins lint rules to declared version. |
-| Versioning | `schema_version` on **both** note frontmatter and manifest. | Bonsai-as-authority → every published format is versioned. |
-| MEMORY.md budget | **Warning at >200 lines** (not hard error). | Context-window guideline, not a correctness rule. |
-| Docs target | **`bonsai guide` pages + scaffolded templates.** No website. | Agent + hub-implementer audience; ships in binary; no Astro/MDX work. |
-| graphify (E) | **Deferred behind rungs 1–2 + trust-vet first** (inspect_swe playbook: pin, fork, bus-factor). | Third-party, Python dep, new git-hook install mechanism. |
-| Plan format (G) | **Deferred** — rung 4 (Odysseus phase 4 dependency). | Not needed for memory/manifest. |
-| `--minimal` profile | **Deferred.** | Odysseus creates manifests for plain repos itself; low urgency. |
-
-### Open defaults (flag to redirect, else taken)
-
-- **Both new scaffolding items (`memory`, `project-manifest`) ship `required: false` (opt-in via init picker).** Non-breaking for existing projects; we opt in for the dogfood. Promote to required in a later version if desired.
+| Scope | **Rung 1 = B + C + D + A.** | Note `scope: project/<slug>` needs an authoritative slug source; manifest is it. |
+| Release | **v0.5.0** minor bump at end of rung 1. | Additive scaffolding + validate extensions + guide pages. |
+| Dispatch | **PR-flow code agents via worktree.** | Schema/lint = correctness-heavy. |
+| Dogfood | **Yes** — our station gets `station/Memory/` + `.bonsai/project.yaml`, in a **separate commit/PR** from the generator code (so it reverts independently). | Bonsai is project #1. |
+| Manifest location | **`.bonsai/project.yaml`** (not `.odysseus/`). | Host-agnostic — bonsai never hardcodes a consumer's name. Hub checks both paths. |
+| **Manifest writer** | **Lock-aware `writeFile` + new `root_relative: true` flag on `ScaffoldingItem`** that skips the `docs_path` prefix. Borrow only the `.bonsai/` dir + `openSnapshotFile` O_NOFOLLOW build-tag idiom from `catalog_snapshot.go` — do NOT call `WriteCatalogSnapshot`. | (Round-1 grill) `Scaffolding()` unconditionally prefixes `docs_path`; `WriteCatalogSnapshot` is a separate, NOT-lock-tracked writer. The `writeFile` path gives lock-tracking + write-once + conflict-handling for free. |
+| **Delivery path** | **Teach `bonsai update` + `bonsai add` to deliver newly-selected scaffolding items** into existing projects (with the standard conflict handling). | (Round-1 grill) `Scaffolding()` is called only from `init`; `update` never delivers new items. Existing v0.4.x projects must get the memory/manifest items via `bonsai update`. |
+| Manifest refresh | **Write-once + validate-only.** No field-merge. | File barely changes; bonsai never re-edits after scaffold. |
+| Config split | **`.bonsai.yaml` and `.bonsai/project.yaml` stay separate.** `project.yaml` is the **project-identity authority** (name/slug/description); `.bonsai.yaml`'s copies are independent/cosmetic (no sync rule needed). | Different owners/lifecycles/consumers; AI team is opt-in, manifest is universal. |
+| Manifest fields | Frozen v1 (table below). **`next_action` removed.** | Only volatile field + duplicated `Status.md`. |
+| Memory routing | **Decisions → `Memory/decisions/`; FieldNotes stays legacy; `agent/Core/memory.md` untouched.** Phase 3 also updates `generate.go` `howToWorkLines` so the emitted "Decision logging → KeyDecisionLog" heuristic doesn't contradict the new routing. | (Round-1 grill) avoids a dual decision-system interim with contradictory agent guidance. |
+| Migration | **Scaffold now, migrate existing KeyDecisionLog entries later.** | Don't block release on hand-conversion. |
+| Note schema | **Freeze §4 shape + `schema_version`.** | Migration path; validate pins lint rules to the version. |
+| Versioning | `schema_version: 1` (int) on note + manifest. Deliberately distinct from `CatalogSnapshot.Version` (a build-version string). | Bonsai-as-authority → every published format versioned. Post-v0.5.0, field changes need a `schema_version` bump + hub coordination even on a bonsai minor. |
+| **Input validation** | `slug` constrained to `[a-z0-9-]`; `memory_dir` validated as repo-relative, non-traversing via `internal/wsvalidate`; note/manifest target resolution (`superseded_by`, `[[relations]]`) anchored under `memory_dir`, escapes rejected, resolved by sanitized `permalink` in an in-memory index (never by treating link text as a path); user scalars (`ProjectName`/`Description`) emitted via YAML-quoting with `missingkey=error`. | (Round-1 grill, Security) path-traversal + YAML-injection + downstream-hub-injection surfaces. |
+| Catalog content | `affects:` strings phrased **host-agnostically** ("downstream hub ingest / repo indexers", "memory-graph consumers") — never "Odysseus". | (Round-1 grill, Architecture) `affects:` ships in the binary; naming a consumer re-introduces the coupling `.bonsai/` avoided. |
+| MEMORY.md budget | **Warning at >200 lines.** | Context-window guideline, not correctness. |
+| Docs target | **`bonsai guide` (one combined "Formats" page) + scaffolded templates.** No website. | Agent + hub-implementer audience; ships in binary. |
+| graphify (E) | **Deferred** behind rungs 1–2 + trust-vet first. | Third-party, Python dep, new git-hook mechanism. |
+| Plan format (G), `--minimal` | **Deferred** (rung 4 / Odysseus owns plain-repo manifests). | Not needed for memory/manifest. |
+| Scaffolding required-ness | Both new items ship **`required: false`** (opt-in). | Non-breaking; we opt in for dogfood. |
 
 ## Frozen schemas (v1)
 
-### Memory note — `station/Memory/{decisions,notes}/<permalink>.md`
+### Memory note — `{memory_dir}/{decisions,notes}/<permalink>.md`
 
 ```markdown
 ---
 schema_version: 1
 title: <note title>
 type: decision | note | fact | log
-permalink: <stable-slug>          # permanent node id; survives title change
+permalink: <stable-slug>
 tags: []
-scope: project/<slug>             # <slug> from project.yaml (A)
-valid_from: 2026-06-13            # optional event time
-superseded_by: null               # set instead of deleting — never hard-delete facts
+scope: project/<slug>
+valid_from: 2026-06-13
+superseded_by: null
 ---
 ## Observations
 - [category] one fact per bullet #tag (optional context)
@@ -72,14 +73,25 @@ superseded_by: null               # set instead of deleting — never hard-delet
 - relation_type [[Target Note]]
 ```
 
-Notes = graph nodes; typed `[[wikilinks]]` = edges; observations individually indexable. Forward refs to not-yet-existing notes are legal.
+| field | type | required | rule |
+|-------|------|----------|------|
+| `schema_version` | int | ✅ | `== 1` |
+| `title` | string | ✅ | non-empty |
+| `type` | enum | ✅ | `decision\|note\|fact\|log` |
+| `permalink` | string | ✅ | `[a-z0-9-]`; unique within tree |
+| `tags` | list[string] | ⬜ | default `[]` |
+| `scope` | string | ✅ | `project/<slug>` matching manifest `slug` |
+| `valid_from` | date | ⬜ | `YYYY-MM-DD` if present |
+| `superseded_by` | string\|null | ⬜ | if non-null, must resolve to an existing `permalink` |
+
+Notes = graph nodes; typed `[[wikilinks]]` = edges; observations individually indexable. Forward refs to not-yet-existing notes are legal (→ warning, not error).
 
 ### Project manifest — `.bonsai/project.yaml` (repo root)
 
 ```yaml
 schema_version: 1
 name: <project name>
-slug: <stable-slug>               # authoritative slug source for note scope
+slug: <stable-slug>
 status: idea | active | paused | done | archived
 tags: []
 description: <one-line>
@@ -88,79 +100,136 @@ links:
   docs: <url>
   issues: <url>
 created: 2026-06-13
-memory_dir: station/Memory        # optional override; default station/Memory
+memory_dir: station/Memory
 ```
 
-(No `next_action` — removed. Hub reads `status` here; richer next-action lives in `Status.md` for bonsai repos.)
+| field | type | required | rule |
+|-------|------|----------|------|
+| `schema_version` | int | ✅ | `== 1` |
+| `name` | string | ✅ | non-empty |
+| `slug` | string | ✅ | `[a-z0-9-]` |
+| `status` | enum | ✅ | `idea\|active\|paused\|done\|archived` |
+| `tags` | list[string] | ⬜ | |
+| `description` | string | ⬜ | |
+| `links` | map | ⬜ | keys `repo\|docs\|issues`, each a URL; unvalidated content (no schema for the URL) |
+| `created` | date | ✅ | `YYYY-MM-DD` |
+| `memory_dir` | string | ⬜ | repo-relative, non-traversing; default `station/Memory` |
+
+**Slug algorithm (frozen):** lowercase; replace each run of `[^a-z0-9]` with a single `-`; trim leading/trailing `-`. (Mirrors the `[a-z0-9-]` naming standard in `CLAUDE.md`.) Net-new helper in `internal/catalog` (no existing slugify — `DisplayNameFrom` is the inverse).
 
 ## Rung 1 — Implementation Phases
 
-> Dispatch order: **Phase 1 first** (it freezes the schemas), then **Phases 2 + 3 in parallel** (file-disjoint: `internal/validate` vs catalog docs). Phase 1 bundles A+B because both touch `catalog/scaffolding/manifest.yaml` + `internal/generate` — one agent avoids the shared-file conflict.
+> Dispatch order: **Phase 1 first** (generator/catalog — freezes schemas + delivery). Then **Phases 2 + 3 in parallel** (file-disjoint: `internal/validate/` vs docs). All `catalog/scaffolding/` edits — including the `NoteStandards.md.tmpl` extension and `manifest.yaml` registration — live in **Phase 1's worktree** so they don't collide with Phase 3.
 
-### Phase 1 — Scaffolding (A + B) — `gp`, one worktree
+### Phase 1 — Generator + catalog (A + B + delivery) — `gp`, one worktree
 
-1. **`project-manifest` scaffolding item (A).**
-   - Add item to `catalog/scaffolding/manifest.yaml`: `name: project-manifest`, `required: false`, `affects:` (Odysseus hub ingest, validate, project identity), `files: [.bonsai/project.yaml.tmpl]`.
-   - Template renders the frozen manifest above. `name`←`{{ .ProjectName }}`, `slug`←slugified ProjectName, `description`←`{{ .ProjectDescription }}`, `created`←render date, others empty/placeholder.
-   - **Generator root-relative write:** scaffolding files normally land under `docs_path`; this one targets repo-root `.bonsai/`. Reuse the path mechanism `internal/generate/catalog_snapshot.go` uses to write `.bonsai/catalog.json`. Write-once (skip if exists) — same as existing scaffolding write-once rule.
-2. **`memory` scaffolding item (B).**
-   - Add item to `catalog/scaffolding/manifest.yaml`: `name: memory`, `required: false`, `affects:` (Odysseus Memory module index, validate, NoteStandards), `files:` for the tree below.
-   - Scaffold `{docs_path}/Memory/`: `MEMORY.md.tmpl` (capped index starter, ~200-line budget noted in a header comment), `decisions/.gitkeep`, `notes/.gitkeep`, `log/.gitkeep`.
-   - `MEMORY.md.tmpl` documents its own purpose + links the note schema inline so it's self-describing.
-3. Verify `bonsai init` (non-interactive + interactive) emits both items when selected; `.bonsai-lock.yaml` tracks them; re-run is conflict-clean.
+**1a. `root_relative` scaffolding support + project-manifest item (A).**
+- Add `RootRelative bool` to `ScaffoldingItem` (`internal/catalog/catalog.go`) + manifest field. In `Scaffolding()` (`internal/generate/generate.go` ~L405), when `RootRelative`, skip the `cfg.DocsPath` join so the file lands at repo root.
+- Route the write through the existing lock-aware `writeFile` (lock-tracked, write-once, conflict-handled). For the `.bonsai/` directory creation + file open, factor `openSnapshotFile` into a shared `openRootFile` (or reuse it) so the O_NOFOLLOW build-tag split (`*_unix.go`/`*_windows.go`) is preserved — do NOT add a raw `syscall.O_NOFOLLOW` inline.
+- Add the `project-manifest` item to `catalog/scaffolding/manifest.yaml`: `required: false`, `root_relative: true`, host-agnostic `affects:`, `files: [.bonsai/project.yaml.tmpl]`.
+- Template renders the frozen manifest. `name`←`{{ .ProjectName }}`, `slug`←new slugify helper, `description`←`{{ .ProjectDescription }}`, `created`←new date source (add a `now`/`RenderDate` to the template funcMap/context — none exists today). Emit `ProjectName`/`ProjectDescription` via a YAML-quoting func; set `Option("missingkey=error")` on the manifest render.
+- Validate `memory_dir` (if user-set) via `internal/wsvalidate`; reject non-repo-relative/traversing values.
 
-### Phase 2 — Validate extensions (D) — `gp`, depends on Phase 1 schemas
+**1b. `memory` scaffolding item (B).**
+- Add to `manifest.yaml`: `required: false`, host-agnostic `affects:`, `files:` for the tree. Scaffold `{docs_path}/Memory/`: `MEMORY.md.tmpl` + `decisions/.gitkeep` + `notes/.gitkeep`. **No `log/`** (no rung-1 producer; would be force-linted against the note schema).
+- Use trailing-slash dir entries or explicit `.gitkeep` paths to satisfy `isAllowedScaffoldingFile`.
+- `MEMORY.md.tmpl` starter (≤200 lines): `# {{ .ProjectName }} — Memory Index` heading, a one-paragraph purpose blurb, a `## Decisions` + `## Notes` index section (empty), and a link to the note-schema guide. Self-describing.
 
-In `internal/validate/validate.go` (+ tests):
-1. **Memory notes** (`{memory_dir}/**/*.md`): required frontmatter present (`schema_version,title,type,permalink,scope`); `scope` matches `project/<slug>` from manifest; `superseded_by` target resolves to an existing note; unresolved `[[relations]]` → **warning** (not error — forward refs are legal).
-2. **`MEMORY.md`** > 200 lines → **warning**.
-3. **`.bonsai/project.yaml`**: schema validation — required fields, `status` enum, `schema_version` recognized.
-4. Honor `--json` + `--agent` flag shapes already in validate. New issue categories registered with severities (error vs warning) consistent with existing ones.
+**1c. Delivery via update/add.**
+- Teach `bonsai update` (`cmd/update.go` + `internal/tui/updateflow/`) and `bonsai add` (`cmd/add.go` + `addflow/`) to scaffold newly-selected scaffolding items into existing projects, reusing `Scaffolding()` + the lock-aware conflict path. Existing projects opt in (select the item) and receive it on `update`/`add`.
 
-### Phase 3 — Docs / standards (C) — `gp`, parallel with Phase 2
+**1d. NoteStandards + tests.**
+- Extend the **existing** `catalog/scaffolding/Playbook/Standards/NoteStandards.md.tmpl` (it's already shipped by the `playbook` item — edit, don't create) with the memory-note schema as THE project note standard.
+- Tests in `internal/generate/generate_test.go` (or new `*_test.go`): manifest render + slug fixtures (name→expected slug) + root-relative path (asserts file at repo-root `.bonsai/project.yaml`, NOT `station/.bonsai/`) + lock tracking + memory-tree scaffold + idempotent re-run + update/add delivery.
 
-1. **`NoteStandards.md.tmpl`** (`catalog/scaffolding/...`): add the memory note schema as THE project note standard. Keep the existing tracker brevity rule; add a "Memory notes" section documenting frontmatter + Observations/Relations + supersession.
-2. **`agent/Protocols/memory.md` (catalog source):** document the three-surface routing — working memory (`agent/Core/memory.md`, always-loaded scratch) vs durable graph (`station/Memory/`, decisions+facts, hub-indexed) vs Logs (`KeyDecisionLog` legacy/read-only, `FieldNotes` free-form). State where each kind of write goes.
-3. **`bonsai guide` page(s):** add canonical-format guide content for the note schema + project manifest (rendered by guideflow). One combined "Formats" page or one per schema.
-4. Update root `CLAUDE.md` + `station/CLAUDE.md` nav only if new files need routing entries.
+### Phase 2 — Validate project-level pass (D) — `gp`, depends on Phase 1
+
+- Add a **new project-level audit pass** to `validate.Run()` (`internal/validate/validate.go`), run once (not inside the per-agent `auditAgent` loop, which is top-level-only and would skip `decisions/`/`notes/`). Register new **additive** `Category` constants (appending to the stable JSON contract is non-breaking).
+- Resolve `memory_dir` + `slug` by parsing `.bonsai/project.yaml` (`yaml.Unmarshal` into a new typed struct — do NOT extend `CustomItemMeta`). If manifest absent but `Memory/` exists → **warning** ("no project.yaml; scope unverifiable"), skip scope-match, still lint frontmatter.
+- Recursively walk `{memory_dir}/**/*.md` with a sane file-count/size bound (avoid CI OOM on a pathological tree). Per note: required frontmatter (`schema_version,title,type,permalink,scope`) → **error** if missing; `scope` ≠ `project/<slug>` → **error**; `superseded_by` non-null target unresolved → **error**; unresolved `[[relation]]` → **warning**. Target resolution anchored under `memory_dir`, `../` escapes rejected, lookups by sanitized `permalink` in an in-memory index.
+- `MEMORY.md` > 200 lines → **warning**.
+- `.bonsai/project.yaml` schema: required fields present, `status` enum, `schema_version == 1` → **error** on violation. (Reuses `--json`/`--agent` flag shapes already present.)
+- Tests: table-driven fixtures in `internal/validate/validate_test.go` — one per error/warning rule asserting category+severity, **plus a valid-tree fixture asserting zero issues** (no false positives). Assert exit code (any issue → existing convention).
+
+### Phase 3 — Docs (C) — `gp`, parallel with Phase 2
+
+- **`agent/Protocols/memory.md` (catalog source):** document the three-surface routing — working memory (`agent/Core/memory.md`, always-loaded scratch) vs durable graph (`station/Memory/`, decisions+facts, hub-indexed) vs Logs (`KeyDecisionLog` legacy/read-only, `FieldNotes` free-form). State where each write goes.
+- **`internal/generate/generate.go` `howToWorkLines` (~L597):** update the emitted "Decision logging → KeyDecisionLog" line so it doesn't contradict the new routing.
+- **`bonsai guide`:** one combined "Formats" page (rendered by guideflow) covering the note schema + project manifest; gate asserts the rendered body contains `schema_version` and `permalink`.
+- Update root `CLAUDE.md` / `station/CLAUDE.md` nav only if new files need routing entries.
 
 ## Dependencies
 
-- Phase 1 freezes the on-disk schemas → Phases 2 and 3 depend on it.
-- No new Go module deps. No external services.
-- graphify (E), export bridge (F), plan format (G) are later rungs — not blockers.
+- Phase 1 freezes on-disk schemas + delivery → Phases 2 and 3 depend on it. No new Go module deps. No external services.
+
+## Rollback
+
+- Each phase ships as a revertable PR; pre-tag, v0.5.0 is `git revert`-able.
+- The dogfood scaffold (our repo's `.bonsai/project.yaml` + `station/Memory/`) lands in a **separate commit/PR** from generator code, reverts independently.
+- Write-once caveat: a broken scaffolded manifest must be hand-deleted to regenerate (skip-if-exists blocks an in-place fix). Acceptable; documented.
+- Runtime rollback for the scaffolding items: `required: false` → a project simply doesn't select them.
 
 ## Security
 
 > [!warning]
-> Refer to [Playbook/Standards/SecurityStandards.md](../../Standards/SecurityStandards.md) for all requirements.
+> Refer to [Playbook/Standards/SecurityStandards.md](../../Standards/SecurityStandards.md).
 
-- No secrets in templates, schemas, or examples.
-- Manifest/notes are plain YAML/markdown — validate must not execute or eval any content.
-- Root-relative write (`.bonsai/`) must stay inside the repo; reuse the existing path-safety of `catalog_snapshot.go` (no traversal outside project root).
+- No secrets in templates/schemas/examples.
+- **Path safety:** root-relative write stays inside repo root (reuse the `openRootFile`/O_NOFOLLOW idiom — symlink-substitution defense, v0.4.0 class). `memory_dir`, `slug`, `permalink`, relation/`superseded_by` targets are all path-ish untrusted inputs — constrain charset, anchor resolution under `memory_dir`, reject `../` escapes (see Input-validation decision).
+- **Template injection:** user scalars rendered via YAML-quoting + `missingkey=error`, never bare `{{ . }}` into YAML.
+- **Parser safety:** validate parses YAML/frontmatter into typed structs only (no `map[string]interface{}` to anything executable); never evals content; bounded file walk.
+- Optional defense-in-depth (backlog, not rung 1): warn if a `links` value contains `://user:pass@`.
 
 ## Verification
 
-- [ ] `bonsai init` (interactive + `--non-interactive`) scaffolds `.bonsai/project.yaml` + `station/Memory/` when items selected; both tracked in lock file; re-run conflict-clean.
-- [ ] Generated `project.yaml` validates against the frozen v1 schema; `created`/`name`/`slug`/`description` populated from context.
-- [ ] `bonsai validate` flags: missing note frontmatter (error), scope mismatch (error), dangling `superseded_by` (error), unresolved relation (warning), MEMORY.md >200 lines (warning), malformed manifest (error). `--json` output well-formed.
-- [ ] `bonsai guide` renders the note-schema + manifest format pages.
-- [ ] Dogfood: run on this repo — `.bonsai/project.yaml` + `station/Memory/` created, `./bonsai validate` exits clean (0 errors).
-- [ ] `GOOS=windows GOARCH=amd64 go build ./...` passes (cross-compile gate — root-relative write must not use POSIX-only syscalls; recall v0.4.0 `O_NOFOLLOW` class).
+- [ ] `bonsai init` (interactive + `--non-interactive`) scaffolds `.bonsai/project.yaml` at **repo root** (assert NOT `station/.bonsai/project.yaml`) + `station/Memory/{decisions,notes}/` when items selected; both **lock-tracked** in `.bonsai-lock.yaml`.
+- [ ] `bonsai update` / `bonsai add` delivers a newly-selected memory/manifest item into an existing project; re-run reports `Skipped`/`Unchanged`, exits 0, no conflict prompt, lock hashes unchanged.
+- [ ] Generated `project.yaml`: `./bonsai validate --json` reports zero issues; assert `schema_version: 1`, non-empty `name`/`slug`/`created`, `status` ∈ enum. Generator test asserts rendered bytes + slug fixtures.
+- [ ] `bonsai validate` negative controls (table-driven fixtures): missing note frontmatter → error; scope mismatch → error; dangling `superseded_by` → error; unresolved relation → warning; MEMORY.md >200 → warning; malformed manifest → error. **Valid-tree fixture → zero issues.** `--json` well-formed.
+- [ ] `bonsai guide` Formats page renders; body contains `schema_version` + `permalink`.
+- [ ] Dogfood (separate PR): this repo gets `.bonsai/project.yaml` + `station/Memory/`; `./bonsai validate` exits clean.
+- [ ] `GOOS=windows GOARCH=amd64 go build ./...` passes (baseline green today; root-relative write uses the build-tag-split open, no inline POSIX syscall).
 - [ ] CI green; CHANGELOG entry; v0.5.0 tag.
 
-## Out of scope for bonsai (Odysseus owns — do not build)
+## Out of scope for bonsai (Odysseus owns)
 
-UI; cross-project indexes/search; global (user-level) memory tier; embeddings/graph index infrastructure; dispatch runtime; secrets; connections; scheduling.
+UI; cross-project indexes/search; global memory tier; embeddings/graph infra; dispatch runtime; secrets; connections; scheduling.
 
-## Later rungs (not this release)
+## Later rungs
 
-- **Rung 2:** F (`bonsai export` stable JSON contract — supersedes `_roles_from_bonsai_yaml` in odysseus `workshop/ingest.py:110`). Manifest already lands in rung 1, so F is mostly the export command.
-- **Rung 2.5:** Multi-agent `--from-config` for `bonsai init` (odysseus `workshop/lifecycle.py` currently splits init + sequential `add` as a workaround). File as backlog.
+- **Rung 2:** F (`bonsai export` JSON contract — supersedes `_roles_from_bonsai_yaml`, odysseus `workshop/ingest.py:110`).
+- **Rung 2.5:** Multi-agent `--from-config` for `bonsai init` (odysseus `workshop/lifecycle.py` splits init + sequential `add` today). Backlog.
 - **Rung 3:** E (graphify repo-side wiring) — vet first.
-- **Rung 4:** G (plan write-back format) — Odysseus phase 4.
+- **Rung 4:** G (plan write-back format).
 
 ## Cross-repo follow-ups (outside this workspace)
 
-- odysseus `PLATFORM.md` §11 last line points the plan at the `bonsai-design` workspace — stale; now `Bonsai/station/Playbook/Plans/Active/40-...`. Fix next odysseus session.
-- odysseus memory doctrine §4 says manifest at `.odysseus/project.yaml`; bonsai now writes `.bonsai/project.yaml`. Hub discovery must check both paths. Reconcile §4/§5 wording odysseus-side.
+- odysseus `PLATFORM.md` §11 last line points the plan at the `bonsai-design` workspace — stale; now `Bonsai/station/Playbook/Plans/Active/40-...`.
+- odysseus §4 says manifest at `.odysseus/project.yaml`; bonsai writes `.bonsai/project.yaml`. Hub discovery must check both paths.
+
+---
+
+## Grilling Pass — 2026-06-13
+
+### Round 1 (6 critics: security, architecture, simplicity, risk, verification, reality)
+
+| Critic | Verdict | Highest |
+|--------|---------|---------|
+| Security | concerns | high |
+| Architecture | **block** | block |
+| Simplicity | concerns | concern |
+| Risk | **block** | block |
+| Verification | concerns | near-block |
+| Reality | concerns | concern |
+
+**Root causes → resolutions:**
+1. "Reuse `catalog_snapshot.go`" was false (it's a separate, not-lock-tracked writer; `Scaffolding()` forces `docs_path` prefix). → **`root_relative` flag + lock-aware `writeFile`**, borrow only the O_NOFOLLOW idiom. (user fork)
+2. `bonsai update` never delivers new scaffolding items. → **teach update/add to deliver** (Phase 1c). (user fork)
+3. `validate.Run()` is agent-scoped + top-level-only. → **new project-level recursive pass** (Phase 2 re-scoped). (auto)
+4. Path-traversal / YAML-injection on `slug`/`memory_dir`/relations/scalars. → **input-validation decision** + Security section. (auto)
+5. `affects:` leaked "Odysseus" into shipped catalog. → **host-agnostic phrasing**. (auto)
+6. `log/` had no producer + contradicted "FieldNotes legacy". → **dropped from rung 1**. (auto)
+7. `generate.go` howToWorkLines contradicted new routing. → **Phase 3 updates it**. (auto)
+8. Verification rigor (slug algo, MEMORY.md content, negative-control + valid-tree fixtures, rollback, field tables, date func, one guide page, lock-tracking wording). → **all folded in**. (auto)
+
+**Round 2:** pending re-grill on this edited plan (convergence loop — resolutions are unreviewed design work).
