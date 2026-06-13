@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-13 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** no doc edits made (audit-only routine) — `agent/Core/routines.md` dashboard Last Ran/Next Due updated to 2026-06-13/2026-06-20.
+- **Flags:** 6 drift items found: (1) [medium] `internal/nonint/` package missing from INDEX.md arch diagram + root CLAUDE.md tree (Plan 39 / v0.4.2 addition); (2) [medium] `code-index.md` generate.go line numbers ~101 off across 8 functions (Plan 40 additions shifted them); (3) [medium] `plan-grilling.md` workflow not in station/CLAUDE.md Workflows nav; (4) [low] `critic-agent-prompts.md` skill not in station/CLAUDE.md Skills nav; (5) [low] `/plan` and `/grill` slash commands not in Quick Triggers table; (6) [low] CLI command count 8→9 (completion command, PR #78). No previously-flagged items recurred — bonsai-model.md link confirmed fixed.
+- **Report:** `Reports/Pending/2026-06-13-doc-freshness-check.md`
+
 ### 2026-06-13 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
