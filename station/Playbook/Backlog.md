@@ -62,6 +62,8 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 ## P2 — Medium
 
+- **[feature] Integrate plan-grilling as a first-class Bonsai catalog ability** — Grilling pipeline (6-critic adversarial review + convergence loop) was added to *this* station only (`agent/Workflows/plan-grilling.md`, `agent/Skills/critic-agent-prompts.md`, `.claude/commands/{plan,grill}.md`), adapted from ZenGarden `ZEN/Docs/.claude`. Full integration = make it a shipped catalog workflow+skill so all generated workspaces get it, wire into `station/CLAUDE.md` nav, and port the verification harness ZEN's `/lane`/`/verify`/`/execute` depend on (`run-gates.sh`, lane classification, `.grill-lock.json`, autonomy frontmatter — none exist in Bonsai). *(added 2026-06-13, source: user)*
+
 ### Group A: Bookkeeping
 
 - **[bookkeeping] Retroactively trim Backlog entries to NoteStandards** — current entries embed file:line references, multi-paragraph rationales, and inline code blocks that belong in the linked source artifacts. New rule at [Standards/NoteStandards.md](Standards/NoteStandards.md) caps each entry at 3 lines + link out. Sweep all P0–P3 bullets, replace verbose prose with `[tag] Title — one-liner. *(source: link)*` shape. Same for `StatusArchive.md` Recently Done table. *(added 2026-04-25, source: Plan 32 wrap-up — Status row hit ~3KB single-row before NoteStandards rule)*
