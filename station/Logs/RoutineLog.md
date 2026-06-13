@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-13 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes to Roadmap.md (audit-only per procedure) — `agent/Core/routines.md` dashboard Last Ran/Next Due updated to 2026-06-13/2026-06-27.
+- **Flags:** (1) [medium] "Current Phase" heading still says Phase 1 despite all items `[x]` — Phase 2 is now active; (2) [medium] Plan 40 Odysseus integration (hub scaffolding, project.yaml, frozen schemas) not represented in roadmap; (3) [medium] Full agent-drivable CLI parity (P1 Backlog, user's "main thing") has no roadmap entry; (4) [low] Phase 2 self-update mechanism doesn't reflect Plan 40 Phase 4 design work (HELD); (5) [low] KeyDecisionLog.md has no entries since 2026-04-13 — 2+ months stale.
+- **Report:** `Reports/Pending/2026-06-13-roadmap-accuracy.md`
+
 ### 2026-06-13 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
