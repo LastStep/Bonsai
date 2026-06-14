@@ -385,6 +385,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
 
+### 2026-06-14 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Commented out 2 resolved P0 items in Backlog.md (v0.4.3 $PWD-walk-up bug fix + v0.4.2 --non-interactive flags); dashboard updated.
+- **Flags:** 5 items flagged for user — (1) Stale Group B–F items (20+ entries, 50+ days); (2) P3 Big Bets 60+ days stale; (3) Group D frozen pending "concept-decisions research" gate; (4) Group C demo GIF requires user recording; (5) P1 "Full agent-drivable CLI" ready for `/plan` next session.
+- **Report:** `Reports/Pending/2026-06-14-backlog-hygiene.md`
+
 ### 2026-06-13 — Plan 40 dispatch (Odysseus integration, v0.5.0)
 - **Plan:** Plans/Active/40-odysseus-platform-integration.md
 - **Dispatch decision:** user HELD Phase 4 (update-delivery) — superseded by headless-CLI parity workstream (Backlog P1). Shipping v0.5.0 = Phases 1–3.
