@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-14 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` References section — all 6 RESEARCH-*.md pointers marked stale (files/directory absent from repo); `agent/Core/routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-06-14, Next Due → 2026-06-19).
+- **Flags:** 1 — [MEDIUM] `station/Research/` directory + 6 RESEARCH-*.md files missing from repo (present 2026-05-07, absent now); user must confirm delete/move before entries removed.
+- **Report:** `Reports/Pending/2026-06-14-memory-consolidation.md`
+
 ### 2026-06-14 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
