@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-14 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-06-14, Next Due → 2026-06-28, Status → done); routine log entry appended; report written.
+- **Flags:** 2 medium, 1 low — (1) [MEDIUM] "Current Phase" header still reads "Phase 1" despite all items checked; (2) [MEDIUM] Plan 40 Phases 1–3 (PRs #114/#115/#116, shipped 2026-06-13) introduced project manifest, memory scaffolding, 12-category validate, and guide Formats page — none reflected in Phase 2 roadmap; (3) [LOW] Phase 4 HELD / headless-CLI parity connection to "Self-update mechanism" Phase 2 item not explicit.
+- **Report:** `Reports/Pending/2026-06-14-roadmap-accuracy.md`
+
 ### 2026-06-14 — Memory Consolidation
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
