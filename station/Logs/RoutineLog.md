@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-14 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md P0 section — commented out 2 resolved items (`$PWD-walk-up` bug, `--non-interactive` flags) with resolution notes; dashboard `Last Ran`/`Next Due` updated to 2026-06-14/2026-06-21.
+- **Flags:** 6 items flagged for user — (1) HOMEBREW_TAP_TOKEN PAT (~2026-07-15 expiry approaching, ~1 month away); (2) Group B–F items (20+ Backlog entries) stale 50+ days — re-prioritization sweep recommended; (3) P3 Big Bets (60+ days): Greenhouse, Managed Agents, Archon still unstarted; (4) P1 "Full agent-drivable CLI" ready for planning — user noted this is "main thing", suggest `/plan` next session; (5) P3 Phase-2-aligned items (Self-update, Micro-task fast path) — promote when Phase 2 begins; (6) Group D frozen pending concept-decisions review gate.
+- **Report:** `Reports/Pending/2026-06-14-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -384,14 +392,6 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan report written:** yes — Plan 37 doc-refresh-bundle (`Plans/Active/37-doc-refresh-bundle.md`)
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
-
-### 2026-06-14 — Backlog Hygiene
-- **Outcome:** success
-- **Execution mode:** subagent (loop.md dispatch)
-- **Duration:** ~8 min
-- **Changes:** Commented out 2 resolved P0 items in Backlog.md (v0.4.3 $PWD-walk-up bug fix + v0.4.2 --non-interactive flags); dashboard updated.
-- **Flags:** 5 items flagged for user — (1) Stale Group B–F items (20+ entries, 50+ days); (2) P3 Big Bets 60+ days stale; (3) Group D frozen pending "concept-decisions research" gate; (4) Group C demo GIF requires user recording; (5) P1 "Full agent-drivable CLI" ready for `/plan` next session.
-- **Report:** `Reports/Pending/2026-06-14-backlog-hygiene.md`
 
 ### 2026-06-13 — Plan 40 dispatch (Odysseus integration, v0.5.0)
 - **Plan:** Plans/Active/40-odysseus-platform-integration.md
