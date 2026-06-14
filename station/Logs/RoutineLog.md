@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-14 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — archived 9 Done items (2026-05-07/2026-05-13, 32–38 days old) to `StatusArchive.md`; `StatusArchive.md` — 9 rows prepended above existing archive block; `agent/Core/routines.md` dashboard already current (updated by prior routine run today); report written.
+- **Flags:** 1 — sentrux Pending item stalled 38 days (flagged for user review, not auto-demoted)
+- **Report:** `Reports/Pending/2026-06-14-status-hygiene.md`
+
 ### 2026-06-14 — Roadmap Accuracy
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
