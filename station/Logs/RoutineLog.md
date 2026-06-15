@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-15 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `memory.md` — removed stale Work State note ("Plan 41 file still in Plans/Active/" — already archived); marked References section research docs as stale (station/Research/ directory does not exist). `routines.md` — dashboard updated (Last Ran → 2026-06-15, Next Due → 2026-06-20).
+- **Flags:** Research docs (6 RESEARCH-*.md entries in References) point to non-existent `station/Research/` — user review needed to locate or remove entries.
+- **Report:** `Reports/Pending/2026-06-15-memory-consolidation.md`
+
+---
+
 ### 2026-06-15 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
