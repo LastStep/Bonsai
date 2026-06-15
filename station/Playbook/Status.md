@@ -16,7 +16,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| — | — | — | — |
+| **Plan 41 — Headless CLI Contract + MCP-ready cores** — READY for dispatch (grilled to convergence R3, 6 critics×3 rounds). Tier-2, 5 phases. Phase 1 solo (merge before 2/3 branch), then 2/3/4 parallel-eligible, 5 last. Unblocks dogfood + headless hub + eval rung-3; MCP server = fast-follow Plan 42. [plan](Plans/Active/41-headless-cli-contract.md) | 41 | tl (planned) | Dispatch Phase 1 next session |
 
 ## Pending
 
