@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 
 	bonsai "github.com/LastStep/Bonsai"
 	"github.com/LastStep/Bonsai/internal/config"
+	"github.com/LastStep/Bonsai/internal/generate"
 )
 
 // setupListTestCatalog wires the embedded catalog into the cmd package's
@@ -153,5 +155,147 @@ func TestRunList_NoAgents(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "0 agent") {
 		t.Fatalf("expected '0 agent' count, got:\n%s", stdout)
+	}
+}
+
+// TestRunList_JSONSchema is the Plan 41 Phase 4 B2 gate: a two-agent project
+// rendered through `bonsai list --json` must Unmarshal cleanly into the pinned
+// ListSnapshot struct with EVERY field populated and field names/types exactly
+// matching the contract. Drives runList with the --json flag set on listCmd so
+// the real flag-read short-circuit is exercised end to end.
+func TestRunList_JSONSchema(t *testing.T) {
+	setupListTestCatalog(t)
+
+	tmp := t.TempDir()
+	projectDir := filepath.Join(tmp, "demo-project")
+	if err := os.MkdirAll(projectDir, 0o755); err != nil {
+		t.Fatalf("mkdir projectDir: %v", err)
+	}
+
+	cfg := &config.ProjectConfig{
+		ProjectName: "demo-project",
+		DocsPath:    "docs",
+		Agents: map[string]*config.InstalledAgent{
+			"tech-lead": {
+				AgentType: "tech-lead",
+				Workspace: "station",
+				Skills:    []string{"planning-template", "review-checklist"},
+				Workflows: []string{"code-review"},
+				Protocols: []string{"memory", "security"},
+				Sensors:   []string{"scope-guard-files"},
+				Routines:  []string{"backlog-hygiene"},
+			},
+			"backend": {
+				AgentType: "backend",
+				Workspace: "backend-ws",
+				Skills:    []string{"coding-standards"},
+				Workflows: []string{"pr-review"},
+				Protocols: []string{"scope-boundaries"},
+				Sensors:   []string{"context-guard"},
+				Routines:  []string{"dependency-audit"},
+			},
+		},
+	}
+	if err := cfg.Save(filepath.Join(projectDir, configFile)); err != nil {
+		t.Fatalf("save config: %v", err)
+	}
+
+	origCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(projectDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	defer func() { _ = os.Chdir(origCwd) }()
+
+	// Set the --json flag on the real listCmd so runList's flag-read
+	// short-circuit fires; reset it afterwards so other tests see the
+	// default value.
+	if err := listCmd.Flags().Set("json", "true"); err != nil {
+		t.Fatalf("set --json: %v", err)
+	}
+	defer func() { _ = listCmd.Flags().Set("json", "false") }()
+
+	out := captureStdout(t, func() {
+		if err := runList(listCmd, nil); err != nil {
+			t.Fatalf("runList --json: %v", err)
+		}
+	})
+
+	var snap generate.ListSnapshot
+	if err := json.Unmarshal([]byte(out), &snap); err != nil {
+		t.Fatalf("unmarshal ListSnapshot: %v\noutput:\n%s", err, out)
+	}
+
+	if snap.Version == "" {
+		t.Errorf("snap.Version empty — want the build version string")
+	}
+	if snap.DocsPath != "docs" {
+		t.Errorf("snap.DocsPath = %q, want %q", snap.DocsPath, "docs")
+	}
+	if len(snap.Agents) != 2 {
+		t.Fatalf("len(snap.Agents) = %d, want 2", len(snap.Agents))
+	}
+
+	// Agents are emitted alphabetically by type: backend then tech-lead.
+	if snap.Agents[0].Type != "backend" || snap.Agents[1].Type != "tech-lead" {
+		t.Fatalf("agent order = [%q %q], want [backend tech-lead]",
+			snap.Agents[0].Type, snap.Agents[1].Type)
+	}
+
+	// Every field of every ListAgent must be populated — proves no field
+	// dropped out of the contract.
+	for _, a := range snap.Agents {
+		if a.Type == "" {
+			t.Errorf("agent.Type empty")
+		}
+		if a.Workspace == "" {
+			t.Errorf("agent %q: Workspace empty", a.Type)
+		}
+		if len(a.Skills) == 0 {
+			t.Errorf("agent %q: Skills empty", a.Type)
+		}
+		if len(a.Workflows) == 0 {
+			t.Errorf("agent %q: Workflows empty", a.Type)
+		}
+		if len(a.Protocols) == 0 {
+			t.Errorf("agent %q: Protocols empty", a.Type)
+		}
+		if len(a.Sensors) == 0 {
+			t.Errorf("agent %q: Sensors empty", a.Type)
+		}
+		if len(a.Routines) == 0 {
+			t.Errorf("agent %q: Routines empty", a.Type)
+		}
+	}
+
+	// Spot-check the tech-lead record fully — every slice value preserved.
+	tl := snap.Agents[1]
+	if tl.Workspace != "station" {
+		t.Errorf("tech-lead Workspace = %q, want %q", tl.Workspace, "station")
+	}
+	if got, want := strings.Join(tl.Skills, ","), "planning-template,review-checklist"; got != want {
+		t.Errorf("tech-lead Skills = %q, want %q", got, want)
+	}
+	if got, want := strings.Join(tl.Protocols, ","), "memory,security"; got != want {
+		t.Errorf("tech-lead Protocols = %q, want %q", got, want)
+	}
+
+	// Output must be indent-2 JSON (parity with catalog --json / validate
+	// --json) — assert the canonical 2-space indent appears.
+	if !strings.Contains(out, "\n  \"version\":") {
+		t.Errorf("expected indent-2 JSON (2-space), got:\n%s", out)
+	}
+}
+
+// TestListCmd_FlagsRegistered confirms the --json flag is wired onto listCmd
+// so `--help` picks it up and the JSON short-circuit is reachable. Mirrors
+// TestInitCmd_FlagsRegistered.
+func TestListCmd_FlagsRegistered(t *testing.T) {
+	for _, name := range []string{"json"} {
+		if f := listCmd.Flags().Lookup(name); f == nil {
+			t.Errorf("flag --%s not registered on listCmd", name)
+		}
 	}
 }
