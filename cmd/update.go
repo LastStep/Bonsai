@@ -1,35 +1,53 @@
 package cmd
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
+	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/config"
+	"github.com/LastStep/Bonsai/internal/nonint"
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/updateflow"
 )
 
+// Headless flags for `bonsai update`. --non-interactive forces the headless
+// JSONL core even on a TTY; --skip-conflicts turns unresolved file conflicts
+// from a hard stop (exit 5) into a counted skip (exit 0). No --json — headless
+// mode always emits JSONL (Plan 41 flag-surface decision).
+var (
+	updateNonInteractive bool
+	updateSkipConflicts  bool
+)
+
 func init() {
 	rootCmd.AddCommand(updateCmd)
+	updateCmd.Flags().BoolVar(&updateNonInteractive, "non-interactive", false,
+		"Skip the cinematic flow; emit JSONL and exit codes (auto-enabled when stdin is not a TTY)")
+	updateCmd.Flags().BoolVar(&updateSkipConflicts, "skip-conflicts", false,
+		"Skip (and count) files that conflict with user edits instead of exiting 5")
 }
 
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Sync workspace — detect custom files, re-render abilities, refresh CLAUDE.md.",
 	RunE:  runUpdate,
+	// SilenceUsage keeps cobra's usage block off stderr when the headless
+	// adapter returns an operational error — stdout stays pure JSONL.
+	SilenceUsage: true,
 }
 
-// runUpdate is the cobra entry point. Thin wrapper over
-// updateflow.Run — the cinematic port (Plan 31 Phase F) moved all
-// interactive surface, discovery scanning, and the re-render pipeline
-// into internal/tui/updateflow so this command stays tiny.
+// runUpdate is the cobra entry point. It routes between two surfaces:
 //
-// Non-TTY callers (CI, piped stdin) are routed through updateflow.RunStatic
-// which auto-accepts every valid discovery and returns errors for any
-// conflicts rather than showing the interactive picker.
+//   - Headless (--non-interactive OR stdin is not a TTY): nonint.RunUpdate +
+//     EmitJSONL on stdout + warnings on stderr + os.Exit(code). stdout is pure
+//     JSONL protocol; the explicit flag forces this even on a TTY.
+//   - Cinematic (interactive TTY, no flag): updateflow.Run — unchanged.
 func runUpdate(cmd *cobra.Command, args []string) error {
 	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
@@ -44,12 +62,15 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		lock = config.NewLockFile()
 	}
 
-	var result updateflow.Result
-	if isTerminal() {
-		result, err = updateflow.Run(cwd, cfg, cat, lock, Version)
-	} else {
-		result, err = updateflow.RunStatic(cwd, cfg, cat, lock, Version)
+	// Headless gate: explicit flag OR no TTY on stdin.
+	if updateNonInteractive || !isTerminal() {
+		code := runUpdateNonInteractive(cwd, cfg, cat, lock, updateSkipConflicts, os.Stdout, os.Stderr)
+		os.Exit(code)
 	}
+
+	// Cinematic path — unchanged. The Yield stage renders its own exit card,
+	// so persistence happens here based on the returned flow-control Result.
+	result, err := updateflow.Run(cwd, cfg, cat, lock, Version)
 	if err != nil {
 		return err
 	}
@@ -57,8 +78,6 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		// User Ctrl-C'd before Sync — no persistence, no summary print.
 		return nil
 	}
-
-	// Persist config when the user accepted at least one discovery.
 	if result.ConfigChanged {
 		if err := cfg.Save(configPath); err != nil {
 			tui.Warning("Could not save config: " + err.Error())
@@ -67,37 +86,38 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	if err := lock.Save(cwd); err != nil {
 		tui.Warning("Could not save lock file: " + err.Error())
 	}
-
-	// Non-TTY success line — the TTY path renders its own exit card
-	// inside the cinematic Yield stage, so we only print here when the
-	// flow ran without a terminal.
-	if !isTerminal() {
-		if result.SyncErr != nil {
-			// Return the error so cobra propagates a non-zero exit —
-			// CI / piped callers need to fail the command on unresolved
-			// conflicts or sync errors.
-			tui.Warning("Update error: " + result.SyncErr.Error())
-			return result.SyncErr
-		}
-		if result.WriteResult != nil {
-			created, updated, _, _, conflicts := result.WriteResult.Summary()
-			if created == 0 && updated == 0 && conflicts == 0 && !result.ConfigChanged {
-				tui.Success("Workspace already in sync.")
-				return nil
-			}
-			showWriteResults(result.WriteResult)
-		}
-		if result.ConfigChanged {
-			tui.Success("Update complete — custom files tracked")
-		} else {
-			tui.Success("Update complete — workspace synced")
-		}
-	}
 	return nil
 }
 
+// runUpdateNonInteractive is the headless `bonsai update` adapter. It calls
+// the pure core, serialises the Result to JSONL on stdout, routes warnings to
+// stderr as plain text, and returns the exit code for the caller to os.Exit.
+// Split out (with injectable writers) so cmd/update_nonint_test.go can drive
+// it without trapping os.Exit and assert stream separation.
+//
+// On a runner error the diagnostic is written to stderr and stdout stays
+// empty — never partial JSONL.
+func runUpdateNonInteractive(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog,
+	lock *config.LockFile, skipConflicts bool, stdout, stderr io.Writer) int {
+	result, code, runErr := nonint.RunUpdate(cwd, cfg, cat, lock, Version, skipConflicts)
+	if runErr != nil {
+		_, _ = fmt.Fprintln(stderr, runErr)
+		return code
+	}
+	// Data → stdout (pure JSONL); warnings → stderr (plain text). This stream
+	// split is a tested invariant — see cmd/update_nonint_test.go.
+	if err := nonint.EmitJSONL(stdout, result); err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return nonint.ExitRuntime
+	}
+	for _, warn := range result.Warnings {
+		_, _ = fmt.Fprintln(stderr, "warning:", warn)
+	}
+	return code
+}
+
 // isTerminal reports whether stdin is a TTY. Used to pick between the
-// cinematic interactive flow and the RunStatic fallback.
+// cinematic interactive flow and the headless JSONL fallback.
 func isTerminal() bool {
 	return isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
 }
