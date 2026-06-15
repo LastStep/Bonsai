@@ -1,6 +1,6 @@
 ---
 tags: [plan, cli, headless, mcp, contract]
-status: draft
+status: ready
 tier: 2
 agent: backend
 supersedes: Plan 40 Phase 4 (update-delivery slice); folds in Rung-2.5 multi-agent --from-config
@@ -9,7 +9,7 @@ supersedes: Plan 40 Phase 4 (update-delivery slice); folds in Rung-2.5 multi-age
 # Plan 41 — Headless CLI Contract + MCP-Ready Cores
 
 **Tier:** 2
-**Status:** Draft
+**Status:** Ready (grilled to convergence 2026-06-16)
 **Agent:** backend (code agents via worktrees)
 
 ## Goal
@@ -75,7 +75,7 @@ MCP is a thin wrapper that **calls the same non-interactive core**, not a second
    func (r *Result) Counts() (created, updated, unchanged, skipped, conflicts int) // delegates to Write.Summary()
    ```
    The structured value both the CLI JSONL adapter and the future MCP adapter consume. **Note:** `Result` is intentionally thin (one extra field over `WriteResult`) until Plan 42 enriches it for MCP `structuredContent`. It is **headless-only** — the TTY path keeps using `updateflow.Result` (`ConfigChanged`/`Cancelled`/`SyncErr` flow-control fields the cinematic Yield stage reads); do NOT unify the two. (Architecture #4.)
-4. **Emit adapter** — new exported `EmitJSONL(w io.Writer, r *Result) error` in `events.go` (effectively the current `emitResults` exported + walking `r.Write`). It emits `file` + `summary` events to stdout only. **`warning` events are NEVER written to stdout** — warnings live in `Result.Warnings` and the CLI adapter prints them to **stderr** as plain text. **Delete the now-unused `EmitWarning` helper and its `TestEmitWarning_Shape` test** (it has zero production callers — Reality-verified) so no `warning`-event emitter survives that could later be pointed at stdout. (Security #1/#2/M1, Simplicity (d), Verification (1).)
+4. **Emit adapter** — new exported `EmitJSONL(w io.Writer, r *Result) error` in `events.go` (effectively the current `emitResults` exported + walking `r.Write`). It emits `file` + `summary` events to stdout only. **`warning` events are NEVER written to stdout** — warnings live in `Result.Warnings` and the CLI adapter prints them to **stderr** as plain text. **Delete the now-unused `EmitWarning` helper and its `TestEmitWarning_Shape` test** (it has zero production callers — Reality-verified) so no `warning`-event emitter survives that could later be pointed at stdout; also scrub the stale `EmitWarning` references in the `events.go`/`nonint.go` package doc-comments. (Security #1/#2/M1, Simplicity (d), Verification (1).)
 5. **Reshape runners** — change `RunInit`/`RunAdd` from `(…, w io.Writer) (int, error)` to `(…) (*Result, int, error)` (drop the `io.Writer` param). They build and return `*Result`; they no longer emit. **Preserve two existing seams or the contract breaks:** (a) the **all-installed zero-summary short-circuit** (`runner.go:178-184`, currently `EmitSummary(w,0,0,0,0,0)`) must still produce a zero-count `Result` that `EmitJSONL` renders identically; (b) lock-save **warnings** (`runner.go:99,190`) move from raw `os.Stderr` into `Result.Warnings`. (Architecture #1.)
 6. **CLI adapters** — `runInitNonInteractive` / `runAddNonInteractive` now: call runner → `nonint.EmitJSONL(os.Stdout, result)` → print `result.Warnings` to **stderr** → `os.Exit(code)`. Preserve exact existing exit-code branching.
 7. **Stream hygiene is a tested invariant, not a review note.** Replace any "assert in code review" with the helper-boundary test in Verification (stdout parses as pure JSONL; stderr carries warnings). Prerequisite for the Plan 42 stdio MCP server (stdout must be pure protocol).
@@ -174,7 +174,7 @@ MCP is a thin wrapper that **calls the same non-interactive core**, not a second
 - [ ] **Byte-identity (B1):** `internal/nonint/testdata/{init,add}_golden.jsonl` captured from `main` PRE-refactor (committed in the PR's first commit). A test asserts `EmitJSONL(result)` for the pinned input fixtures (fixed `version`) equals the golden bytes. **If the diff is non-empty, the refactor is wrong — do not merge** (rollback contingency for the back-compat-critical init/add stream).
 - [ ] **Stream separation (C5):** each `*_nonint_test.go` drives the **helper** (not `os.Exit`), captures `stdout`/`stderr` buffers, asserts every non-empty stdout line `json.Unmarshal`s to a known event shape (`file`/`summary`) and stderr contains no `{`-leading JSON. Covers the deleted Phase-1.6 review gate.
 - [ ] **No `warning` on stdout (targeted):** `EmitJSONL` over a `Result` with non-empty `Warnings` emits **zero** `warning`-event lines to its writer (regression guard for the dropped `warning` event + deleted `EmitWarning`).
-- [ ] **`update` positive path (RunStatic-collapse preservation):** clean valid discovery → `RunUpdate(skipConflicts=false)` exit 0, the discovered file applied/tracked, `Result.Warnings` empty; an invalid (bad-frontmatter) discovery → exit 0 with the file surfaced in `Result.Warnings` (not stdout). Proves the lift preserved the non-conflict behavior of the old `RunStatic`.
+- [ ] **`update` positive path (RunStatic-collapse preservation):** clean valid discovery → `RunUpdate(skipConflicts=false)` exit 0, the discovered file applied/tracked (`Write.Files` entry with `Action` `created`/`updated`), `Result.Warnings` empty; an invalid (bad-frontmatter) discovery → exit 0 with the file surfaced in `Result.Warnings` (not stdout). Proves the lift preserved the non-conflict behavior of the old `RunStatic`.
 - [ ] **`update` exit-5 negative control (C2):** in `cmd/update_nonint_test.go`, init a project, overwrite `station/agent/Core/identity.md` with user bytes WITHOUT a lock update (the `TestRunInit_ConflictEmittedNotForced` recipe, `runner_test.go:469`), then `RunUpdate(..., skipConflicts=false)` → assert exit `ExitConflict` (5) AND `Result.Write.Files` has an `Action==conflict` entry for that path; `skipConflicts=true` → exit 0, that file counted in `skipped`.
 - [ ] **`remove` negative controls (C3 + Security H1/H2):** init tech-lead + add backend; `RunRemoveAgent("tech-lead")` → exit 2, `err` contains `tech-lead`; remove backend first, then tech-lead → exit 0. `RunRemoveItem` for a skill owned by 2 agents with `fromAgent==""` → exit 2, message names the owners; with `--from <owner>` → exit 0. **Required item + `--from`:** `RunRemoveItem(<required>, fromAgent=<owner>)` → exit 2, zero FS mutation (`filterRequired` not bypassed by `--from`). `bonsai remove "" --yes` and `bonsai remove "*" --yes` → exit 2, zero FS mutation. **Symlink refusal:** with `--yes --delete-files`, replace each of `agentDir` / `CLAUDE.md` / `.claude` with a symlink in turn → exit 2, zero deletion, for all three.
 - [ ] **`list --json` schema (B2):** `json.Unmarshal(out, &ListSnapshot{})` succeeds for a two-agent fixture and every field is populated; field names/types match the struct in Phase 4.1.
@@ -183,6 +183,44 @@ MCP is a thin wrapper that **calls the same non-interactive core**, not a second
 - [ ] **MCP-readiness / TUI-free:** a Go test (via `go/packages`, run in `go test ./...`) asserts zero `huh`/`bubbletea`/`lipgloss`/`glamour`/`charm` imports across **both** `internal/nonint` **and** `internal/generate` (the latter now hosts `list_snapshot.go` — the import-scan must cover it so the list serializer can't pull in chrome undetected).
 - [ ] `go.mod` unchanged (no new module).
 
-## Grilling Pass
+## Grilling Pass — 2026-06-16
 
-<!-- populated below by /grill 41 -->
+6 critics (security, architecture, simplicity, risk, verification, reality), worktree-isolated off `origin/main`, looped to convergence. Round 3 = clean (zero findings above note). Plan locked `status: ready`.
+
+### Round 1 (draft 85c79bf)
+
+| Critic | Verdict | Top finding |
+|--------|---------|-------------|
+| Security | pass | info-only; stdout-purity should be a tested invariant |
+| Architecture | concerns | item-removal can't disambiguate multi-owner skills |
+| Simplicity | concerns | `Result`+`Warnings`+"MCP-ready" = Plan 42 scope leak |
+| Risk | concerns | golden fixture must be captured pre-refactor; prose→JSONL breaking |
+| Verification | **block** | B1 golden baseline absent; B2 `list --json` schema unpinned |
+| Reality | concerns | every factual premise verified clean; Phase-5 "website page" mislabel |
+
+**Resolutions (commit 7e6018c):** 3 user forks decided — keep minimal `Result` seam (Option C); error-unless-`--from` for multi-owner remove; drop `--json` from mutating cmds. Mechanical: pre-refactor golden-capture step (B1); explicit `ListSnapshot`/`ListAgent` struct (B2); single `RunUpdate` impl + `RunStatic`→shim; `list` serializer out of TUI pkg; warnings stderr-only, `warning` event dropped from stdout; prose→JSONL + error→exit-5 marked CHANGELOG **Changed**; delivery framing (binary=release pipeline); name the two Phase-1 seams (zero-summary short-circuit, dual-stream warnings); exit-code reachability table; pinned conflict/tech-lead/empty-target fixtures; Phase-5 doc-target fix (`bonsai guide` `docs/formats.md`).
+
+### Round 2 (revision 7e6018c)
+
+| Critic | Verdict | Disposition |
+|--------|---------|-------------|
+| Risk | **pass** | all 4 R1 risk items resolved, dispatch shape verified disjoint |
+| Architecture | **pass** | all 4 R1 items resolved, line anchors accurate; "single headless impl" wording fix |
+| Reality | **pass** | every revised claim verified clean against repo |
+| Simplicity | concerns | (mech) serializer → `internal/generate`; drop markdown doc-drift test |
+| Security | concerns | (mech) H1 `filterRequired` on `--from`; H2 symlink all 3 delete targets; M1 delete `EmitWarning` |
+| Verification | concerns | (mech) all B/C resolved; add warning-never-stdout + `RunUpdate` positive-path gates; fix validate exit prose; widen import scan |
+
+**Resolutions (commit ac969cb):** all mechanical, zero new forks — applied as listed above.
+
+### Round 3 (revision ac969cb) — CLEAN
+
+| Critic | Verdict |
+|--------|---------|
+| Security | **pass** — H1/H2/M1 resolved, no new defect |
+| Simplicity | **pass** — both concerns resolved, no gold-plating |
+| Verification | **pass** — both new gaps closed, both notes addressed |
+
+(Risk/Architecture/Reality not re-run — passed R2 on design + verified facts unchanged by R3's test/doc/safety tightenings.) Two note-level residuals folded in: scrub stale `EmitWarning` doc-comments; name `Action` value in the positive-path gate.
+
+**Convergence:** Round 3 yielded zero findings above note. Plan ready for dispatch — Phase 1 solo (merge before 2/3 branch), then Phases 2/3/4 parallel-eligible (file-disjoint, verified), Phase 5 last.
