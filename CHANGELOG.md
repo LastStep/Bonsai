@@ -14,9 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Project manifest scaffolding (`project-manifest` opt-in item)** — writes a repo-root `.bonsai/project.yaml` describing the project against a frozen v1 schema. Root-relative, lock-tracked, and idempotent: re-runs preserve the original `created` timestamp.
 - **`bonsai validate` project-level pass** — lints the project manifest and the memory-note tree: `schema_version`, required fields, `status`/`type` enums, permalink charset, scope match, dangling `superseded_by`, and unresolved relations. Note-target resolution is adversarial-grade (`EvalSymlinks` plus a boundary check, with symlink-escape refused) over a bounded walk.
 - **`bonsai guide formats`** — a combined "Formats" reference page documenting both frozen v1 schemas (memory-note and project manifest) in one place.
+- **`bonsai update` non-interactive flags** — `--non-interactive` (force the headless JSONL core on a TTY) and `--skip-conflicts` (skip + count conflicting files instead of exiting `5`). A non-TTY stdin auto-enables headless mode.
+- **`bonsai remove` non-interactive flags** — `--non-interactive` / `-y`,`--yes` (bypass the cinematic confirm prompt) and `--from <agent>` (scope an item removal to one owning agent, required to disambiguate a multi-owner item). `--yes` bypasses confirmation only, never validation: empty/`*` targets are rejected, and `--yes --delete-files` refuses a symlinked delete target.
+- **`bonsai list --json`** — emit the installed-agent state as a single indent-2 JSON document (a pinned `ListSnapshot`), matching `catalog --json` / `validate --json`. Agent-consumable, exit `0`.
+- **Headless exit-code `5` (`ExitConflict`)** — `bonsai update` returns exit `5` when unresolved file conflicts are present and `--skip-conflicts` was not passed (the conflicting files are listed in the JSONL stream). The mutating exit-code contract is now `0`/`2`/`3`/`4`/`5`, defined canonically in `internal/nonint/runner.go`.
+- **`docs/agent-interface.md`** — canonical headless CLI contract: per-command flags, the two output serializations (JSONL for mutating commands, single-doc JSON for read commands), and the per-command exit-code table. The single reference for AI integrators and CI scripts.
 
 ### Changed
 - **Architectural decisions now route to the memory graph.** Generated workspaces record durable architectural decisions in `Memory/decisions/` (the in-repo memory graph) instead of appending to `Logs/KeyDecisionLog.md`.
+- **Piped `bonsai update` now emits JSON Lines** (was human-readable prose). Running `bonsai update` with a non-TTY stdin — or with the new `--non-interactive` flag — streams `file`/`summary` events to stdout instead of the previous styled success text. The interactive TTY flow is unchanged.
+- **`bonsai update` conflicts now exit `5`** (was a generic non-zero error). Headlessly, unresolved file conflicts return `ExitConflict` (5) with the conflicting files listed in the stream; pass `--skip-conflicts` to skip + count them and exit `0` instead.
 
 ## [0.4.3] - 2026-05-13
 

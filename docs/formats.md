@@ -97,4 +97,20 @@ Run `bonsai validate` to lint both formats — it reports schema violations
 (missing required fields, bad `schema_version`, scope mismatch, out-of-charset
 permalinks) before downstream tooling ever sees them.
 
+## Headless output formats
+
+Beyond the two repo-resident schemas above, Bonsai's CLI has a stable
+**headless contract** for driving it without a TTY. The mutating commands
+(`init` / `add` / `update` / `remove`) stream **JSON Lines** to stdout — one
+`{"event":"file",…}` line per file outcome, then a terminal
+`{"event":"summary",…}` with all five count keys always present. The read
+commands (`list` / `catalog` / `validate` with `--json`) emit a single
+indent-2 JSON document. Diagnostics and warnings go to stderr only, so stdout
+stays pure protocol. Exit codes are per command (mutating: `0`/`2`/`3`/`4`,
+plus `5` for an `update` conflict; `validate --json`: `0` clean / `1` issues /
+`2` error).
+
+Full per-command flags, event shapes, and the exit-code table:
+see [`docs/agent-interface.md`](agent-interface.md).
+
 > Full reference: <https://laststep.github.io/Bonsai/>
