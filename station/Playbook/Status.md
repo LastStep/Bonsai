@@ -16,7 +16,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Notes |
 |------|------|-------|-------|
-| **Plan 41 — Headless CLI Contract + MCP-ready cores** — READY for dispatch (grilled to convergence R3, 6 critics×3 rounds). Tier-2, 5 phases. Phase 1 solo (merge before 2/3 branch), then 2/3/4 parallel-eligible, 5 last. Unblocks dogfood + headless hub + eval rung-3; MCP server = fast-follow Plan 42. [plan](Plans/Active/41-headless-cli-contract.md) | 41 | tl (planned) | Dispatch Phase 1 next session |
+| _(none)_ | | | |
 
 ## Pending
 
@@ -29,6 +29,7 @@ description: Live task tracker. Update this file at the start and end of every w
 
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| **Plan 41 — Headless CLI Contract + MCP-ready cores SHIPPED** — all 5 phases merged (PRs #120/#122/#123/#121/#125, main `ab202c3`). Every mutating cmd (init/add/update/remove) has a pure `*Result` headless core + JSONL/exit contract (`ExitConflict=5`); `list --json`; `docs/agent-interface.md` contract doc. Phase 1 solo (sig change) then 2/3/4 parallel, each reviewed + gates green (byte-identity oracle, symlink/multi-owner/required guards). Folded in pre-existing errcheck fix (main red since #116). MCP server = fast-follow Plan 42. Debt filed: unify remove cinematic/headless logic (Backlog P2). [plan](Plans/Active/41-headless-cli-contract.md) | 41 | tl + gp×5 | 2026-06-16 |
 | **Plan 40 Phases 1–3 merged (v0.5.0, untagged)** — frozen v1 schemas + root-relative scaffolding (manifest + memory) [PR #114], project-level `validate` pass w/ adversarial path/symlink hardening [PR #116], memory-routing docs + guide Formats page [PR #115]. 1 blocking sec-bug caught in review (out-of-tree read via traversing `memory_dir`) + fixed. **Phase 4 HELD**, **dogfood deferred** (blocked: no update-delivery until P4 + repo gitignores `.bonsai-lock.yaml`), **tag held** (user). [plan](Plans/Active/40-odysseus-platform-integration.md) | 40 | gp×5 + tl | 2026-06-13 |
 | **v0.4.3 hotfix shipped** — sensor hook commands now bake install-time absolute paths in `.claude/settings.json` (vs `$PWD`-walk-up which drifted across sibling Bonsai projects). Surfaced during Bonsai-Eval bootstrap. Existing projects need `bonsai update` to refresh. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.3) · [PR #105](https://github.com/LastStep/Bonsai/pull/105) · [PR #106](https://github.com/LastStep/Bonsai/pull/106) · commit `584b82b` | — | tl + gp | 2026-05-13 |
 | **Plan 38 handoff to Bonsai-Eval tech-lead** — bootstrapped `LastStep/Bonsai-Eval` via `bonsai init --non-interactive` (commit `057f378`). Plan moved to that repo's `Plans/Active/`; this station archives the local copy. P2/P3 owned there going forward. [Bonsai-Eval station](https://github.com/LastStep/Bonsai-Eval/tree/main/station) | 38 | tl | 2026-05-13 |
