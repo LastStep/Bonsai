@@ -72,6 +72,59 @@ func TestRunInitNonInteractive_MinimalSuccess(t *testing.T) {
 	}
 }
 
+// TestRunInitNonInteractive_StreamSeparation is the C5 stream-hygiene
+// invariant (Plan 41 Phase 1.7): driving the HELPER (not os.Exit), stdout
+// must be pure JSONL where every non-empty line is a known event shape
+// (file/summary), and stderr must carry no `{`-leading JSON line. This is the
+// hard prerequisite for the Plan 42 stdio MCP server — stdout is pure
+// protocol, all diagnostics go to stderr.
+func TestRunInitNonInteractive_StreamSeparation(t *testing.T) {
+	setupListTestCatalog(t)
+	tmp := t.TempDir()
+	cfgPath := writeYAMLFixture(t, tmp, "cfg.yaml", "agents:\n  tech-lead: {}\n")
+	configPath := filepath.Join(tmp, ".bonsai.yaml")
+
+	var stdout, stderr bytes.Buffer
+	code, err := runInitNonInteractive(tmp, configPath, true, cfgPath, &stdout, &stderr)
+	if err != nil || code != nonint.ExitOK {
+		t.Fatalf("runInitNonInteractive: code=%d err=%v stderr=%s", code, err, stderr.String())
+	}
+	assertStreamSeparation(t, stdout.String(), stderr.String())
+}
+
+// assertStreamSeparation enforces the C5 invariant on a captured stdout/stderr
+// pair: every non-empty stdout line unmarshals to a file/summary event, and
+// no stderr line starts with `{` (no JSON leaked onto the diagnostic stream).
+func assertStreamSeparation(t *testing.T, stdout, stderr string) {
+	t.Helper()
+	sawSummary := false
+	for _, line := range strings.Split(strings.TrimSpace(stdout), "\n") {
+		if line == "" {
+			continue
+		}
+		var rec map[string]any
+		if err := json.Unmarshal([]byte(line), &rec); err != nil {
+			t.Errorf("stdout line is not JSON: %q (%v)", line, err)
+			continue
+		}
+		ev, _ := rec["event"].(string)
+		if ev != "file" && ev != "summary" {
+			t.Errorf("stdout carries unknown event %q; only file/summary allowed: %q", ev, line)
+		}
+		if ev == "summary" {
+			sawSummary = true
+		}
+	}
+	if !sawSummary {
+		t.Errorf("stdout missing terminal summary event:\n%s", stdout)
+	}
+	for _, line := range strings.Split(strings.TrimSpace(stderr), "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "{") {
+			t.Errorf("stderr carries a JSON line — data leaked onto the diagnostic stream: %q", line)
+		}
+	}
+}
+
 // TestRunInitNonInteractive_MissingTechLead: overlay without tech-lead must
 // exit 2 (Decision §1) and stderr must mention tech-lead.
 func TestRunInitNonInteractive_MissingTechLead(t *testing.T) {

@@ -291,11 +291,21 @@ func runInitNonInteractive(cwd, configPath string, nonInt bool, fromConfig strin
 		_, _ = fmt.Fprintln(stderr, msg)
 		return nonint.ExitInvalidConfig, fmt.Errorf("%s", msg)
 	}
-	code, runErr := nonint.RunInit(cwd, configPath, cfg, cat, Version, stdout)
+	result, code, runErr := nonint.RunInit(cwd, configPath, cfg, cat, Version)
 	if runErr != nil {
 		_, _ = fmt.Fprintln(stderr, runErr)
+		return code, runErr
 	}
-	return code, runErr
+	// Data → stdout (pure JSONL); warnings → stderr (plain text). This stream
+	// split is a tested invariant — see cmd/init_nonint_test.go.
+	if err := nonint.EmitJSONL(stdout, result); err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return nonint.ExitRuntime, err
+	}
+	for _, warn := range result.Warnings {
+		_, _ = fmt.Fprintln(stderr, "warning:", warn)
+	}
+	return code, nil
 }
 
 // buildGenerateAction constructs the closure that the GenerateStage invokes

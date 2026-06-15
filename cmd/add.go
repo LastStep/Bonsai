@@ -764,9 +764,19 @@ func runAddNonInteractive(cwd, configPath string, nonInt bool, fromConfig string
 		_, _ = fmt.Fprintln(stderr, err)
 		return nonint.ExitInvalidConfig, err
 	}
-	code, runErr := nonint.RunAdd(cwd, configPath, overlay, cat, Version, stdout)
+	result, code, runErr := nonint.RunAdd(cwd, configPath, overlay, cat, Version)
 	if runErr != nil {
 		_, _ = fmt.Fprintln(stderr, runErr)
+		return code, runErr
 	}
-	return code, runErr
+	// Data → stdout (pure JSONL); warnings → stderr (plain text). This stream
+	// split is a tested invariant — see cmd/add_nonint_test.go.
+	if err := nonint.EmitJSONL(stdout, result); err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return nonint.ExitRuntime, err
+	}
+	for _, warn := range result.Warnings {
+		_, _ = fmt.Fprintln(stderr, "warning:", warn)
+	}
+	return code, nil
 }
