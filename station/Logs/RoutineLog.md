@@ -420,3 +420,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** dashboard row updated (Last Ran → 2026-06-15, Next Due → 2026-06-22); report written
 - **Flags:** 3 resolved items still in Backlog (2× P0, 1× P1); HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15; bot PR pile-up check needed
 - **Report:** `Reports/Pending/2026-06-15-backlog-hygiene.md`
+
+### 2026-06-15 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-06-15, Next Due → 2026-06-22); report written; RoutineLog appended
+- **Flags:** 9 drift findings across `station/code-index.md`, `station/INDEX.md`, and root `CLAUDE.md` — all flagged for user decision, none auto-applied. Key issues: `internal/nonint/` package (Plan 41) entirely missing from code index; stale line numbers in remove/add/init/generate entries; CLI commands count "8" should be "9"; `docs/agent-interface.md` not in Document Registry.
+- **Report:** `Reports/Pending/2026-06-15-doc-freshness-check.md`
