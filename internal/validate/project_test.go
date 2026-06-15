@@ -440,7 +440,7 @@ func TestProject_TraversingMemoryDirNotWalked(t *testing.T) {
 	if err := os.MkdirAll(outside, 0o755); err != nil {
 		t.Fatalf("mkdir outside: %v", err)
 	}
-	t.Cleanup(func() { os.RemoveAll(outside) })
+	t.Cleanup(func() { _ = os.RemoveAll(outside) })
 	evil := validNote("evil", "project/HACKED", "", "")
 	if err := os.WriteFile(filepath.Join(outside, "evil.md"), []byte(evil), 0o644); err != nil {
 		t.Fatalf("write evil note: %v", err)
