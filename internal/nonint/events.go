@@ -1,29 +1,34 @@
-// Package nonint drives `bonsai init` and `bonsai add` without TUI prompts.
-// Inputs are loaded from a YAML file (same shape as .bonsai.yaml), filesystem
-// outcomes are emitted as JSON Lines on the caller-supplied writer, and
-// validation errors surface through plain Go errors so the cobra entry point
-// can choose the exit code.
+// Package nonint drives the mutating Bonsai commands (`init`, `add`, and —
+// added by later Plan 41 phases — `update`, `remove`) without TUI prompts.
+// Inputs are typed options (often loaded from a YAML file with the same shape
+// as .bonsai.yaml); each core returns a structured *Result and validation
+// errors surface through plain Go errors so the cobra entry point can choose
+// the exit code. The CLI adapter serialises the Result to JSON Lines on
+// stdout (via EmitJSONL) and prints Result.Warnings to stderr.
 //
-// The package is intentionally free of TUI imports — every byte written here
-// is JSON, every diagnostic is an error string. That keeps the headless code
-// path safe to drive from a Python subprocess in Bonsai-Eval rung-3 (Plan 38)
-// without ANSI escape codes leaking into the test transcript.
+// The package is intentionally free of TUI imports — every byte EmitJSONL
+// writes is JSON, every diagnostic is an error string or a stderr warning.
+// That keeps the headless code path safe to drive from a Python subprocess
+// in Bonsai-Eval rung-3 (Plan 38) without ANSI escape codes leaking into the
+// test transcript, and makes the cores ready for a thin MCP wrapper (Plan 42).
 package nonint
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+
+	"github.com/LastStep/Bonsai/internal/generate"
 )
 
-// fileEvent is the JSONL shape for "file" and "warning" events. Per-file
-// payloads stay tight via `omitempty` because zero-valued strings are
-// uninformative noise in the JSONL stream.
+// fileEvent is the JSONL shape for the "file" event. Per-file payloads stay
+// tight via `omitempty` because zero-valued strings are uninformative noise
+// in the JSONL stream.
 type fileEvent struct {
-	Event   string `json:"event"`
-	Path    string `json:"path,omitempty"`
-	Action  string `json:"action,omitempty"` // created | updated | unchanged | skipped | conflict
-	Source  string `json:"source,omitempty"`
-	Message string `json:"message,omitempty"`
+	Event  string `json:"event"`
+	Path   string `json:"path,omitempty"`
+	Action string `json:"action,omitempty"` // created | updated | unchanged | skipped | conflict
+	Source string `json:"source,omitempty"`
 }
 
 // summaryEvent is the JSONL shape for the terminal summary line. Count fields
@@ -40,25 +45,61 @@ type summaryEvent struct {
 	Conflicts int    `json:"conflicts"`
 }
 
-// Event is the public shape used by callers (cmd/init.go, cmd/add.go) to feed
-// events into Emit. The constructors below collapse it to the right private
-// shape on serialisation so the all-zero-counts contract holds.
+// EmitJSONL serialises a *Result to JSON Lines on w: one `{"event":"file",...}`
+// line per file outcome (in write order), then a single terminal
+// `{"event":"summary",...}` line. It emits ONLY file + summary events —
+// r.Warnings are never written here. Warnings live in the Result and the CLI
+// adapter prints them to stderr, keeping w (stdout) pure protocol. The empty
+// Write case (all-installed short-circuit) renders as a lone zero-count
+// summary line, byte-identical to the old EmitSummary(w,0,0,0,0,0).
 //
-// Action and Path carry the per-file payload; Created/Updated/.../Conflicts
-// carry the summary counts; Message is the warning channel. Callers should
-// use the EmitFile / EmitSummary / EmitWarning helpers instead of populating
-// fields by hand.
-type Event struct {
-	Event     string
-	Path      string
-	Action    string
-	Source    string
-	Message   string
-	Created   int
-	Updated   int
-	Unchanged int
-	Skipped   int
-	Conflicts int
+// A nil r or nil r.Write is treated as a zero-count run so callers need no
+// guard. This is the single serialisation seam the CLI uses today and the
+// MCP adapter (Plan 42) will mirror.
+func EmitJSONL(w io.Writer, r *Result) error {
+	var wr *generate.WriteResult
+	if r != nil {
+		wr = r.Write
+	}
+	var created, updated, unchanged, skipped, conflicts int
+	if wr != nil {
+		for _, f := range wr.Files {
+			action := actionString(f.Action)
+			if action == "" {
+				continue
+			}
+			if err := EmitFile(w, f.RelPath, action, f.Source); err != nil {
+				return fmt.Errorf("nonint: emit file event: %w", err)
+			}
+		}
+		created, updated, unchanged, skipped, conflicts = wr.Summary()
+	}
+	if err := EmitSummary(w, created, updated, unchanged, skipped, conflicts); err != nil {
+		return fmt.Errorf("nonint: emit summary event: %w", err)
+	}
+	return nil
+}
+
+// actionString maps a generate.FileAction to its JSONL `action` value. Maps
+// 1:1 with the FileAction enum — see Plan 39 §A.4.
+func actionString(a generate.FileAction) string {
+	switch a {
+	case generate.ActionCreated:
+		return "created"
+	case generate.ActionUpdated, generate.ActionForced:
+		// ForcedAction shouldn't occur on the non-interactive path (we never
+		// call ForceSelected/ForceConflicts), but bucket it with updated for
+		// completeness in case a future change introduces it.
+		return "updated"
+	case generate.ActionUnchanged:
+		return "unchanged"
+	case generate.ActionSkipped:
+		return "skipped"
+	case generate.ActionConflict:
+		return "conflict"
+	default:
+		return ""
+	}
 }
 
 // EmitFile writes one `{"event":"file",...}` line. Returns the underlying
@@ -83,16 +124,6 @@ func EmitSummary(w io.Writer, created, updated, unchanged, skipped, conflicts in
 		Unchanged: unchanged,
 		Skipped:   skipped,
 		Conflicts: conflicts,
-	})
-}
-
-// EmitWarning writes a `{"event":"warning","message":"..."}` line. Used for
-// non-fatal anomalies — currently only the lock-save-failure path uses this
-// (and it routes to stderr, never stdout — see runner.go).
-func EmitWarning(w io.Writer, message string) error {
-	return emitJSON(w, fileEvent{
-		Event:   "warning",
-		Message: message,
 	})
 }
 

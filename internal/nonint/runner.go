@@ -3,7 +3,6 @@ package nonint
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,12 +15,35 @@ import (
 
 // Exit codes shared between the runner and the cobra wiring. Kept here
 // rather than in cmd/ so unit tests that only import internal/nonint can
-// assert against named constants.
+// assert against named constants. These constants are the canonical source
+// of truth for the headless mutating-command exit-code contract — the
+// docs/agent-interface.md table (Plan 41 Phase 5) points back here.
+//
+// Per-command reachability (Plan 41 Verification matrix):
+//
+//	init   : 0, 2, 3, 4
+//	add    : 0, 2, 3, 4
+//	update : 0, 2, 3, 4, 5   (5 = conflict without --skip-conflicts)
+//	remove : 0, 2, 3, 4
 const (
-	ExitOK              = 0
-	ExitInvalidConfig   = 2
-	ExitRuntime         = 3
-	ExitWrongCWDForInit = 4 // .bonsai.yaml already present (init) or missing (add)
+	// ExitOK — success. Emitted by every mutating command.
+	ExitOK = 0
+	// ExitInvalidConfig — caller-supplied config/args rejected before any
+	// mutation (bad overlay shape, missing tech-lead, unknown agent type,
+	// multi-owner item with no --from, last-tech-lead removal, empty/`*`
+	// target). Emitted by init/add/update/remove.
+	ExitInvalidConfig = 2
+	// ExitRuntime — a generator or filesystem error occurred mid-run.
+	// Emitted by init/add/update/remove.
+	ExitRuntime = 3
+	// ExitWrongCWDForInit — wrong working-directory state: .bonsai.yaml
+	// already present (init) or missing (add/update/remove). Emitted by
+	// init/add/update/remove.
+	ExitWrongCWDForInit = 4
+	// ExitConflict — unresolved file conflicts; re-run with --skip-conflicts
+	// or interactively. Emitted by update only (init/add force-skip
+	// conflicts under --non-interactive and never reach this code).
+	ExitConflict = 5
 )
 
 // RunInit performs a full `bonsai init` from cfg. cfg is assumed to be the
@@ -29,76 +51,79 @@ const (
 // cmd.buildGenerateAction's filesystem pipeline exactly so generated output
 // is bit-identical to the interactive flow for the same inputs.
 //
-// Emits one `{"event":"file",...}` line per file produced (creates, updates,
-// unchanged, skipped, conflicts), then a single terminal `{"event":"summary",
-// ...}` line. Conflicts under --non-interactive are forced to skip (Plan 39
-// Locked Decision Q5 + Decision §3) — the runner never calls ForceSelected
-// or ForceConflicts.
+// It is a pure headless core: typed options in, structured *Result out. It
+// performs NO output itself — the CLI adapter serialises the Result to JSONL
+// on stdout (via EmitJSONL) and prints Result.Warnings to stderr. The future
+// MCP adapter (Plan 42) serialises the same Result to structuredContent.
+// Conflicts under --non-interactive are forced to skip (Plan 39 Locked
+// Decision Q5 + Decision §3) — the runner never calls ForceSelected or
+// ForceConflicts.
 //
-// Returns (exitCode, error). exitCode is ExitOK on success, ExitRuntime on
-// any generator error, or ExitWrongCWDForInit when configPath already exists
-// (interactive path's "Skipping init" branch made the same choice).
+// Returns (*Result, exitCode, error). On success the Result carries every
+// file outcome (created/updated/unchanged/skipped/conflicts) plus any
+// non-fatal Warnings (lock-save failure). exitCode is ExitOK on success,
+// ExitRuntime on any generator error, ExitInvalidConfig on a rejected cfg
+// shape, or ExitWrongCWDForInit when configPath already exists (interactive
+// path's "Skipping init" branch made the same choice). On the error/reject
+// paths the Result is nil.
 //
 // version is the Bonsai version string written into .bonsai/catalog.json —
 // the cobra entry point passes cmd.Version. Kept as a parameter so the
 // runner does not import cmd/.
-func RunInit(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Catalog, version string, w io.Writer) (int, error) {
+func RunInit(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Catalog, version string) (*Result, int, error) {
 	// Pre-flight: matches the interactive path's "configFile already exists"
 	// early-exit. Plan 39 §A.2.
 	if _, err := os.Stat(configPath); err == nil {
-		return ExitWrongCWDForInit, fmt.Errorf("from-config: %s already exists at %s — refusing to overwrite", filepath.Base(configPath), filepath.Dir(configPath))
+		return nil, ExitWrongCWDForInit, fmt.Errorf("from-config: %s already exists at %s — refusing to overwrite", filepath.Base(configPath), filepath.Dir(configPath))
 	}
 
 	agentDef := cat.GetAgent(techLeadType)
 	if agentDef == nil {
-		return ExitRuntime, fmt.Errorf("from-config: tech-lead agent missing from catalog (binary bug — please report)")
+		return nil, ExitRuntime, fmt.Errorf("from-config: tech-lead agent missing from catalog (binary bug — please report)")
 	}
 	installed, ok := cfg.Agents[techLeadType]
 	if !ok || installed == nil {
 		// Defence-in-depth — LoadConfig's init-path caller validates this,
 		// but a direct RunInit caller could skip that step.
-		return ExitInvalidConfig, fmt.Errorf("from-config: bonsai init requires a 'tech-lead' entry under agents:")
+		return nil, ExitInvalidConfig, fmt.Errorf("from-config: bonsai init requires a 'tech-lead' entry under agents:")
 	}
 	// Defence-in-depth for the exclusivity rule: `bonsai init` materialises
 	// only tech-lead's workspace. Any extra agent entries would be partially
 	// installed (registered in .bonsai.yaml + path-scoped rules but with no
 	// workspace files) — reject so the failure mode is loud, not silent.
 	if got := len(cfg.Agents); got != 1 {
-		return ExitInvalidConfig, fmt.Errorf("from-config: bonsai init accepts only a single 'tech-lead' entry under agents:, got %d agents", got)
+		return nil, ExitInvalidConfig, fmt.Errorf("from-config: bonsai init accepts only a single 'tech-lead' entry under agents:, got %d agents", got)
 	}
 
 	lock, _ := config.LoadLockFile(cwd)
-	var wr generate.WriteResult
+	res := &Result{Write: &generate.WriteResult{}}
 
 	if err := cfg.Save(configPath); err != nil {
-		return ExitRuntime, fmt.Errorf("from-config: save %s: %w", configPath, err)
+		return nil, ExitRuntime, fmt.Errorf("from-config: save %s: %w", configPath, err)
 	}
 
 	// Pipeline mirrors cmd.buildGenerateAction. force=false everywhere so
 	// the writeFile lock-aware policy treats user-modified files as conflicts
 	// (rather than silently overwriting them).
 	var errs []error
-	errs = append(errs, generate.Scaffolding(cwd, cfg, cat, lock, &wr, false))
-	errs = append(errs, generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, &wr, false))
-	errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, &wr, false))
-	errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, &wr, false))
-	errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, &wr, false))
-	errs = append(errs, generate.WriteCatalogSnapshot(cwd, version, cat, &wr))
+	errs = append(errs, generate.Scaffolding(cwd, cfg, cat, lock, res.Write, false))
+	errs = append(errs, generate.AgentWorkspace(cwd, agentDef, installed, cfg, cat, lock, res.Write, false))
+	errs = append(errs, generate.PathScopedRules(cwd, cfg, cat, lock, res.Write, false))
+	errs = append(errs, generate.WorkflowSkills(cwd, cfg, cat, lock, res.Write, false))
+	errs = append(errs, generate.SettingsJSON(cwd, cfg, cat, lock, res.Write, false))
+	errs = append(errs, generate.WriteCatalogSnapshot(cwd, version, cat, res.Write))
 	if joined := errors.Join(errs...); joined != nil {
-		return ExitRuntime, fmt.Errorf("from-config: generate: %w", joined)
-	}
-
-	if err := emitResults(w, &wr); err != nil {
-		return ExitRuntime, err
+		return nil, ExitRuntime, fmt.Errorf("from-config: generate: %w", joined)
 	}
 
 	// Lock-save failure is not fatal — mirrors the interactive path's
-	// `tui.Warning` swallow. We route the warning to stderr (NOT stdout)
-	// so the JSONL stream stays parseable.
+	// `tui.Warning` swallow. The warning rides in Result.Warnings (NOT the
+	// JSONL stream) so the CLI adapter can route it to stderr and stdout
+	// stays pure protocol.
 	if err := lock.Save(cwd); err != nil {
-		fmt.Fprintln(os.Stderr, "warning: could not save lock file:", err.Error())
+		res.Warnings = append(res.Warnings, "could not save lock file: "+err.Error())
 	}
-	return ExitOK, nil
+	return res, ExitOK, nil
 }
 
 // RunAdd appends a single agent (overlay.Agents has exactly one entry) or
@@ -108,34 +133,41 @@ func RunInit(cwd, configPath string, cfg *config.ProjectConfig, cat *catalog.Cat
 // that overlay non-`agents` fields match (Plan 39 Locked Decision §3),
 // and dispatches to either the new-agent or add-items branch.
 //
-// Returns (exitCode, error):
-//   - ExitOK             — success
+// Like RunInit, it is a pure headless core that performs no output: it builds
+// and returns a *Result the CLI adapter renders to JSONL (stdout) + stderr
+// warnings. The future MCP adapter consumes the same Result.
+//
+// Returns (*Result, exitCode, error):
+//   - ExitOK             — success (Result carries file outcomes + warnings;
+//     the all-installed short-circuit returns a zero-count Result)
 //   - ExitInvalidConfig  — overlay shape rejected (>1 agent, non-matching
 //     project_name / docs_path / scaffolding, unknown
 //     agent type, tech-lead-required violation)
 //   - ExitRuntime        — generator error
 //   - ExitWrongCWDForInit — no `.bonsai.yaml` at cwd
-func RunAdd(cwd, configPath string, overlay *config.ProjectConfig, cat *catalog.Catalog, version string, w io.Writer) (int, error) {
+//
+// On the error/reject paths the Result is nil.
+func RunAdd(cwd, configPath string, overlay *config.ProjectConfig, cat *catalog.Catalog, version string) (*Result, int, error) {
 	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
-		return ExitWrongCWDForInit, fmt.Errorf("from-config: %s not found at %s — run `bonsai init` first", filepath.Base(configPath), filepath.Dir(configPath))
+		return nil, ExitWrongCWDForInit, fmt.Errorf("from-config: %s not found at %s — run `bonsai init` first", filepath.Base(configPath), filepath.Dir(configPath))
 	} else if err != nil {
-		return ExitRuntime, fmt.Errorf("from-config: stat %s: %w", configPath, err)
+		return nil, ExitRuntime, fmt.Errorf("from-config: stat %s: %w", configPath, err)
 	}
 
 	existing, err := config.Load(configPath)
 	if err != nil {
-		return ExitRuntime, fmt.Errorf("from-config: load existing %s: %w", configPath, err)
+		return nil, ExitRuntime, fmt.Errorf("from-config: load existing %s: %w", configPath, err)
 	}
 
 	// Locked Decision §2 — exactly one agent in the overlay. Multi-agent
 	// setups must invoke RunAdd in a loop (Bonsai-Eval rung-3 solver does).
 	if got := len(overlay.Agents); got != 1 {
-		return ExitInvalidConfig, fmt.Errorf("from-config: bonsai add expects exactly one agent in overlay, got %d", got)
+		return nil, ExitInvalidConfig, fmt.Errorf("from-config: bonsai add expects exactly one agent in overlay, got %d", got)
 	}
 
 	// Locked Decision §3 — non-`agents` fields must match (or be empty).
 	if err := assertOverlayMatchesExisting(overlay, existing); err != nil {
-		return ExitInvalidConfig, err
+		return nil, ExitInvalidConfig, err
 	}
 
 	// Pull the single agent out of the overlay. range-over-map is safe here
@@ -148,48 +180,42 @@ func RunAdd(cwd, configPath string, overlay *config.ProjectConfig, cat *catalog.
 	if overlayAgent == nil {
 		// LoadConfig coerces nil to non-nil via applyDefaults, but a direct
 		// caller could bypass that — defensive guard.
-		return ExitInvalidConfig, fmt.Errorf("from-config: overlay agent %q has no body", agentType)
+		return nil, ExitInvalidConfig, fmt.Errorf("from-config: overlay agent %q has no body", agentType)
 	}
 
 	agentDef := cat.GetAgent(agentType)
 	if agentDef == nil {
-		return ExitInvalidConfig, fmt.Errorf("from-config: unknown agent type %q (not in catalog)", agentType)
+		return nil, ExitInvalidConfig, fmt.Errorf("from-config: unknown agent type %q (not in catalog)", agentType)
 	}
 
 	// Locked Decision §4 — tech-lead-required guard, exit 2 (not 3).
 	if agentType != techLeadType {
 		if _, ok := existing.Agents[techLeadType]; !ok {
-			return ExitInvalidConfig, fmt.Errorf("from-config: agent %s requires a tech-lead agent in the existing project", agentType)
+			return nil, ExitInvalidConfig, fmt.Errorf("from-config: agent %s requires a tech-lead agent in the existing project", agentType)
 		}
 	}
 
 	lock, _ := config.LoadLockFile(cwd)
-	var wr generate.WriteResult
+	res := &Result{Write: &generate.WriteResult{}}
 
-	_, isNewAgent, total, runErr := mergeAndGenerate(cwd, configPath, version, agentType, overlayAgent, agentDef, existing, cat, lock, &wr)
+	_, isNewAgent, total, runErr := mergeAndGenerate(cwd, configPath, version, agentType, overlayAgent, agentDef, existing, cat, lock, res.Write)
 	if runErr != nil {
-		return ExitRuntime, runErr
+		return nil, ExitRuntime, runErr
 	}
 
 	// All-installed short-circuit (Decision §6): add-items overlay against
-	// an already-installed agent picked zero new abilities. Emit a single
-	// summary line with zero counts and bail out. Mirrors the interactive
-	// `YieldAllInstalled` semantics.
+	// an already-installed agent picked zero new abilities. The empty Write
+	// renders as a single zero-count summary line via EmitJSONL — identical
+	// to the old EmitSummary(w,0,0,0,0,0) call. Mirrors the interactive
+	// `YieldAllInstalled` semantics. No lock save: nothing was written.
 	if !isNewAgent && total == 0 {
-		if err := EmitSummary(w, 0, 0, 0, 0, 0); err != nil {
-			return ExitRuntime, err
-		}
-		// No lock save: nothing was written.
-		return ExitOK, nil
+		return res, ExitOK, nil
 	}
 
-	if err := emitResults(w, &wr); err != nil {
-		return ExitRuntime, err
-	}
 	if err := lock.Save(cwd); err != nil {
-		fmt.Fprintln(os.Stderr, "warning: could not save lock file:", err.Error())
+		res.Warnings = append(res.Warnings, "could not save lock file: "+err.Error())
 	}
-	return ExitOK, nil
+	return res, ExitOK, nil
 }
 
 // assertOverlayMatchesExisting enforces the §3 contract: the overlay's
@@ -351,44 +377,4 @@ func mergeNewAbilities(installed, overlay *config.InstalledAgent) int {
 	installed.Routines, n = add(installed.Routines, overlay.Routines)
 	added += n
 	return added
-}
-
-// emitResults walks wr.Files in write order, emits one "file" event per
-// entry, then emits the terminal "summary" event. Action strings map 1:1
-// with the FileAction enum — see Plan 39 §A.4.
-func emitResults(w io.Writer, wr *generate.WriteResult) error {
-	for _, f := range wr.Files {
-		action := actionString(f.Action)
-		if action == "" {
-			continue
-		}
-		if err := EmitFile(w, f.RelPath, action, f.Source); err != nil {
-			return fmt.Errorf("from-config: emit file event: %w", err)
-		}
-	}
-	created, updated, unchanged, skipped, conflicts := wr.Summary()
-	if err := EmitSummary(w, created, updated, unchanged, skipped, conflicts); err != nil {
-		return fmt.Errorf("from-config: emit summary event: %w", err)
-	}
-	return nil
-}
-
-func actionString(a generate.FileAction) string {
-	switch a {
-	case generate.ActionCreated:
-		return "created"
-	case generate.ActionUpdated, generate.ActionForced:
-		// ForcedAction shouldn't occur on the non-interactive path (we never
-		// call ForceSelected/ForceConflicts), but bucket it with updated for
-		// completeness in case a future change introduces it.
-		return "updated"
-	case generate.ActionUnchanged:
-		return "unchanged"
-	case generate.ActionSkipped:
-		return "skipped"
-	case generate.ActionConflict:
-		return "conflict"
-	default:
-		return ""
-	}
 }

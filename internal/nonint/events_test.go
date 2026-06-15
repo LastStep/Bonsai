@@ -115,22 +115,3 @@ func TestEmit_NoStyling(t *testing.T) {
 		t.Errorf("output contains ANSI escape; got %q", out)
 	}
 }
-
-// TestEmitWarning_Shape verifies the warning channel produces the documented
-// event=warning + message envelope.
-func TestEmitWarning_Shape(t *testing.T) {
-	var buf bytes.Buffer
-	if err := EmitWarning(&buf, "could not save lock file"); err != nil {
-		t.Fatalf("EmitWarning: %v", err)
-	}
-	var parsed map[string]any
-	if err := json.Unmarshal(bytes.TrimSpace(buf.Bytes()), &parsed); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if parsed["event"] != "warning" {
-		t.Errorf("event: want warning, got %v", parsed["event"])
-	}
-	if parsed["message"] != "could not save lock file" {
-		t.Errorf("message: got %v", parsed["message"])
-	}
-}

@@ -79,6 +79,23 @@ func TestRunAddNonInteractive_NewAgent(t *testing.T) {
 	}
 }
 
+// TestRunAddNonInteractive_StreamSeparation is the add-path C5 stream-hygiene
+// invariant: driving the HELPER, stdout is pure JSONL (file/summary events
+// only) and stderr carries no JSON line. Shares assertStreamSeparation with
+// the init test (same package).
+func TestRunAddNonInteractive_StreamSeparation(t *testing.T) {
+	tmp := initFreshProject(t)
+	configPath := filepath.Join(tmp, ".bonsai.yaml")
+	overlayPath := writeYAMLFixture(t, tmp, "overlay.yaml", "agents:\n  backend: {}\n")
+
+	var stdout, stderr bytes.Buffer
+	code, err := runAddNonInteractive(tmp, configPath, true, overlayPath, &stdout, &stderr)
+	if err != nil || code != nonint.ExitOK {
+		t.Fatalf("runAddNonInteractive: code=%d err=%v stderr=%s", code, err, stderr.String())
+	}
+	assertStreamSeparation(t, stdout.String(), stderr.String())
+}
+
 // TestRunAddNonInteractive_AddItems: init then add tech-lead overlay with an
 // extra skill. Skill must end up in the post-load tech-lead.Skills.
 func TestRunAddNonInteractive_AddItems(t *testing.T) {

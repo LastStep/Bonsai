@@ -3,7 +3,6 @@ package nonint
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -65,8 +64,7 @@ func TestRunInit_Smoke(t *testing.T) {
 	cfg := minimalInitCfg(t, tmp)
 	configPath := filepath.Join(tmp, ".bonsai.yaml")
 
-	var buf bytes.Buffer
-	code, err := RunInit(tmp, configPath, cfg, cat, "test", &buf)
+	result, code, err := RunInit(tmp, configPath, cfg, cat, "test")
 	if err != nil {
 		t.Fatalf("RunInit: %v", err)
 	}
@@ -78,6 +76,10 @@ func TestRunInit_Smoke(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(tmp, "station")); err != nil {
 		t.Fatalf("station/ tree not created: %v", err)
+	}
+	var buf bytes.Buffer
+	if err := EmitJSONL(&buf, result); err != nil {
+		t.Fatalf("EmitJSONL: %v", err)
 	}
 	records := parseJSONL(t, buf.String())
 	if len(records) == 0 {
@@ -103,7 +105,7 @@ func TestRunInit_ConfigExists_ExitCode4(t *testing.T) {
 		t.Fatalf("seed .bonsai.yaml: %v", err)
 	}
 
-	code, err := RunInit(tmp, configPath, cfg, cat, "test", io.Discard)
+	_, code, err := RunInit(tmp, configPath, cfg, cat, "test")
 	if code != ExitWrongCWDForInit {
 		t.Errorf("exit code: want %d, got %d", ExitWrongCWDForInit, code)
 	}
@@ -126,7 +128,7 @@ func TestRunInit_MissingTechLead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
-	code, err := RunInit(tmp, filepath.Join(tmp, ".bonsai.yaml"), cfg, cat, "test", io.Discard)
+	_, code, err := RunInit(tmp, filepath.Join(tmp, ".bonsai.yaml"), cfg, cat, "test")
 	if code != ExitInvalidConfig {
 		t.Errorf("exit code: want %d, got %d", ExitInvalidConfig, code)
 	}
@@ -149,7 +151,7 @@ func TestRunInit_MultiAgentOverlay_Rejected(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
-	code, err := RunInit(tmp, filepath.Join(tmp, ".bonsai.yaml"), cfg, cat, "test", io.Discard)
+	_, code, err := RunInit(tmp, filepath.Join(tmp, ".bonsai.yaml"), cfg, cat, "test")
 	if code != ExitInvalidConfig {
 		t.Errorf("exit code: want %d, got %d", ExitInvalidConfig, code)
 	}
@@ -171,7 +173,7 @@ func TestRunAdd_NewAgent_Smoke(t *testing.T) {
 	// init
 	initCfg := minimalInitCfg(t, tmp)
 	configPath := filepath.Join(tmp, ".bonsai.yaml")
-	if code, err := RunInit(tmp, configPath, initCfg, cat, "test", io.Discard); err != nil || code != ExitOK {
+	if _, code, err := RunInit(tmp, configPath, initCfg, cat, "test"); err != nil || code != ExitOK {
 		t.Fatalf("RunInit failed (code=%d err=%v)", code, err)
 	}
 
@@ -183,8 +185,7 @@ func TestRunAdd_NewAgent_Smoke(t *testing.T) {
 		t.Fatalf("LoadConfig overlay: %v", err)
 	}
 
-	var buf bytes.Buffer
-	code, err := RunAdd(tmp, configPath, overlay, cat, "test", &buf)
+	result, code, err := RunAdd(tmp, configPath, overlay, cat, "test")
 	if err != nil {
 		t.Fatalf("RunAdd: %v", err)
 	}
@@ -204,6 +205,10 @@ func TestRunAdd_NewAgent_Smoke(t *testing.T) {
 		t.Errorf(".bonsai.yaml does not contain backend agent")
 	}
 	// summary line in output
+	var buf bytes.Buffer
+	if err := EmitJSONL(&buf, result); err != nil {
+		t.Fatalf("EmitJSONL: %v", err)
+	}
 	records := parseJSONL(t, buf.String())
 	if findSummary(records) == nil {
 		t.Errorf("missing summary event")
@@ -219,7 +224,7 @@ func TestRunAdd_AddItems_Smoke(t *testing.T) {
 
 	initCfg := minimalInitCfg(t, tmp)
 	configPath := filepath.Join(tmp, ".bonsai.yaml")
-	if code, err := RunInit(tmp, configPath, initCfg, cat, "test", io.Discard); err != nil || code != ExitOK {
+	if _, code, err := RunInit(tmp, configPath, initCfg, cat, "test"); err != nil || code != ExitOK {
 		t.Fatalf("RunInit failed (code=%d err=%v)", code, err)
 	}
 
@@ -249,7 +254,7 @@ func TestRunAdd_AddItems_Smoke(t *testing.T) {
 		t.Fatalf("LoadConfig overlay: %v", err)
 	}
 
-	if code, err := RunAdd(tmp, configPath, overlay, cat, "test", io.Discard); err != nil || code != ExitOK {
+	if _, code, err := RunAdd(tmp, configPath, overlay, cat, "test"); err != nil || code != ExitOK {
 		t.Fatalf("RunAdd failed (code=%d err=%v)", code, err)
 	}
 
@@ -275,7 +280,7 @@ func TestRunAdd_AllInstalled_ShortCircuit(t *testing.T) {
 
 	initCfg := minimalInitCfg(t, tmp)
 	configPath := filepath.Join(tmp, ".bonsai.yaml")
-	if code, err := RunInit(tmp, configPath, initCfg, cat, "test", io.Discard); err != nil || code != ExitOK {
+	if _, code, err := RunInit(tmp, configPath, initCfg, cat, "test"); err != nil || code != ExitOK {
 		t.Fatalf("RunInit failed (code=%d err=%v)", code, err)
 	}
 
@@ -287,13 +292,16 @@ func TestRunAdd_AllInstalled_ShortCircuit(t *testing.T) {
 		t.Fatalf("LoadConfig overlay: %v", err)
 	}
 
-	var buf bytes.Buffer
-	code, err := RunAdd(tmp, configPath, overlay, cat, "test", &buf)
+	result, code, err := RunAdd(tmp, configPath, overlay, cat, "test")
 	if err != nil {
 		t.Fatalf("RunAdd: %v", err)
 	}
 	if code != ExitOK {
 		t.Errorf("exit code: want %d, got %d", ExitOK, code)
+	}
+	var buf bytes.Buffer
+	if err := EmitJSONL(&buf, result); err != nil {
+		t.Fatalf("EmitJSONL: %v", err)
 	}
 	records := parseJSONL(t, buf.String())
 	if len(records) != 1 {
@@ -318,7 +326,7 @@ func TestRunAdd_MultiAgentOverlay_Rejected(t *testing.T) {
 
 	initCfg := minimalInitCfg(t, tmp)
 	configPath := filepath.Join(tmp, ".bonsai.yaml")
-	if code, err := RunInit(tmp, configPath, initCfg, cat, "test", io.Discard); err != nil || code != ExitOK {
+	if _, code, err := RunInit(tmp, configPath, initCfg, cat, "test"); err != nil || code != ExitOK {
 		t.Fatalf("RunInit failed (code=%d err=%v)", code, err)
 	}
 
@@ -329,7 +337,7 @@ func TestRunAdd_MultiAgentOverlay_Rejected(t *testing.T) {
 		t.Fatalf("LoadConfig overlay: %v", err)
 	}
 
-	code, err := RunAdd(tmp, configPath, overlay, cat, "test", io.Discard)
+	_, code, err := RunAdd(tmp, configPath, overlay, cat, "test")
 	if code != ExitInvalidConfig {
 		t.Errorf("exit code: want %d, got %d", ExitInvalidConfig, code)
 	}
@@ -346,7 +354,7 @@ func TestRunAdd_OverlayMismatchedProjectName_Rejected(t *testing.T) {
 
 	initCfg := minimalInitCfg(t, tmp)
 	configPath := filepath.Join(tmp, ".bonsai.yaml")
-	if code, err := RunInit(tmp, configPath, initCfg, cat, "test", io.Discard); err != nil || code != ExitOK {
+	if _, code, err := RunInit(tmp, configPath, initCfg, cat, "test"); err != nil || code != ExitOK {
 		t.Fatalf("RunInit failed (code=%d err=%v)", code, err)
 	}
 
@@ -360,7 +368,7 @@ func TestRunAdd_OverlayMismatchedProjectName_Rejected(t *testing.T) {
 		t.Fatalf("LoadConfig overlay: %v", err)
 	}
 
-	code, err := RunAdd(tmp, configPath, overlay, cat, "test", io.Discard)
+	_, code, err := RunAdd(tmp, configPath, overlay, cat, "test")
 	if code != ExitInvalidConfig {
 		t.Errorf("exit code: want %d, got %d", ExitInvalidConfig, code)
 	}
@@ -397,7 +405,7 @@ func TestRunAdd_TechLeadRequired_Errors(t *testing.T) {
 		t.Fatalf("LoadConfig overlay: %v", err)
 	}
 
-	code, err := RunAdd(tmp, configPath, overlay, cat, "test", io.Discard)
+	_, code, err := RunAdd(tmp, configPath, overlay, cat, "test")
 	if code != ExitInvalidConfig {
 		t.Errorf("exit code: want %d, got %d", ExitInvalidConfig, code)
 	}
@@ -415,7 +423,7 @@ func TestRunAdd_UnknownAgent_Errors(t *testing.T) {
 
 	initCfg := minimalInitCfg(t, tmp)
 	configPath := filepath.Join(tmp, ".bonsai.yaml")
-	if code, err := RunInit(tmp, configPath, initCfg, cat, "test", io.Discard); err != nil || code != ExitOK {
+	if _, code, err := RunInit(tmp, configPath, initCfg, cat, "test"); err != nil || code != ExitOK {
 		t.Fatalf("RunInit failed (code=%d err=%v)", code, err)
 	}
 
@@ -427,7 +435,7 @@ func TestRunAdd_UnknownAgent_Errors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadConfig overlay: %v", err)
 	}
-	code, err := RunAdd(tmp, configPath, overlay, cat, "test", io.Discard)
+	_, code, err := RunAdd(tmp, configPath, overlay, cat, "test")
 	if code != ExitInvalidConfig {
 		t.Errorf("exit code: want %d, got %d", ExitInvalidConfig, code)
 	}
@@ -448,7 +456,7 @@ func TestRunAdd_MissingProjectConfig_ExitCode4(t *testing.T) {
 	}
 	configPath := filepath.Join(tmp, ".bonsai.yaml")
 
-	code, err := RunAdd(tmp, configPath, overlay, cat, "test", io.Discard)
+	_, code, err := RunAdd(tmp, configPath, overlay, cat, "test")
 	if code != ExitWrongCWDForInit {
 		t.Errorf("exit code: want %d, got %d", ExitWrongCWDForInit, code)
 	}
@@ -486,8 +494,7 @@ func TestRunInit_ConflictEmittedNotForced(t *testing.T) {
 	// untracked existing file and emit ActionConflict.
 
 	cfg := minimalInitCfg(t, tmp)
-	var buf bytes.Buffer
-	code, err := RunInit(tmp, filepath.Join(tmp, ".bonsai.yaml"), cfg, cat, "test", &buf)
+	result, code, err := RunInit(tmp, filepath.Join(tmp, ".bonsai.yaml"), cfg, cat, "test")
 	if err != nil {
 		t.Fatalf("RunInit: %v", err)
 	}
@@ -495,6 +502,10 @@ func TestRunInit_ConflictEmittedNotForced(t *testing.T) {
 		t.Fatalf("exit code: %d", code)
 	}
 
+	var buf bytes.Buffer
+	if err := EmitJSONL(&buf, result); err != nil {
+		t.Fatalf("EmitJSONL: %v", err)
+	}
 	records := parseJSONL(t, buf.String())
 	var foundConflict bool
 	for _, r := range records {
