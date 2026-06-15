@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -193,77 +192,4 @@ func applyConflictPicks(results []any, confIdx int, wr *generate.WriteResult,
 	}
 	wr.ForceSelected(selected, projectRoot, lock)
 	return true
-}
-
-// showWriteResults displays categorized file trees for generation outcomes.
-// Files are grouped by top-level path segment (e.g. "station", "src") and each
-// group is rendered as a separate tree rooted at that segment. This avoids
-// cross-workspace leakage when a single run writes to multiple roots (e.g.
-// `bonsai add` for a code agent that also touches the tech-lead's station/).
-func showWriteResults(wr *generate.WriteResult) {
-	// Bucket per top-level segment, preserving Created/Updated/Conflict split.
-	type bucket struct {
-		created, updated, conflicted []string
-	}
-	buckets := make(map[string]*bucket)
-	ensure := func(root string) *bucket {
-		b, ok := buckets[root]
-		if !ok {
-			b = &bucket{}
-			buckets[root] = b
-		}
-		return b
-	}
-
-	for _, f := range wr.Files {
-		root, rel := splitTopSegment(f.RelPath)
-		b := ensure(root)
-		switch f.Action {
-		case generate.ActionCreated:
-			b.created = append(b.created, rel)
-		case generate.ActionUpdated, generate.ActionForced:
-			b.updated = append(b.updated, rel)
-		case generate.ActionConflict:
-			b.conflicted = append(b.conflicted, rel)
-		}
-	}
-
-	// Stable, alphabetical ordering across groups.
-	roots := make([]string, 0, len(buckets))
-	for r := range buckets {
-		roots = append(roots, r)
-	}
-	sort.Strings(roots)
-
-	for _, root := range roots {
-		b := buckets[root]
-		label := root
-		if label == "" {
-			label = "."
-		}
-		if len(b.created) > 0 {
-			tree := tui.FileTree(b.created, label)
-			tui.TitledPanel("Created", tree, tui.Moss)
-		}
-		if len(b.updated) > 0 {
-			tree := tui.FileTree(b.updated, label)
-			tui.TitledPanel("Updated", tree, tui.Water)
-		}
-		if len(b.conflicted) > 0 {
-			tree := tui.FileTree(b.conflicted, label)
-			tui.TitledPanel("Skipped (user modified)", tree, tui.Amber)
-		}
-	}
-}
-
-// splitTopSegment splits a relative path into its first path component and
-// the remainder. "station/agent/foo.md" → ("station", "agent/foo.md"). A path
-// with no separator returns ("", path) so single-file outputs still render
-// under a root panel.
-func splitTopSegment(rel string) (string, string) {
-	idx := strings.Index(rel, "/")
-	if idx < 0 {
-		return "", rel
-	}
-	return rel[:idx], rel[idx+1:]
 }
