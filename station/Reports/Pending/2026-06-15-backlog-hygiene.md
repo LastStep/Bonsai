@@ -4,7 +4,7 @@ from: maintenance-subagent
 to: Tech Lead
 routine: "Backlog Hygiene"
 date: 2026-06-15
-status: partial
+status: success
 ---
 
 # Routine Report — Backlog Hygiene
@@ -16,10 +16,10 @@ status: partial
 - **Triggered By:** loop.md autonomous dispatch
 
 ## Execution Metadata
-- **Status:** partial
-- **Duration:** ~10 min
-- **Files Read:** 5 — `/home/user/Bonsai/station/agent/Routines/backlog-hygiene.md`, `/home/user/Bonsai/station/Playbook/Backlog.md`, `/home/user/Bonsai/station/Playbook/Status.md`, `/home/user/Bonsai/station/Playbook/Roadmap.md`, `/home/user/Bonsai/station/Logs/RoutineLog.md`
-- **Files Modified:** 3 — `/home/user/Bonsai/station/Reports/Pending/2026-06-15-backlog-hygiene.md`, `/home/user/Bonsai/station/agent/Core/routines.md`, `/home/user/Bonsai/station/Logs/RoutineLog.md`
+- **Status:** success
+- **Duration:** ~12 min
+- **Files Read:** 6 — `/home/user/Bonsai/station/agent/Routines/backlog-hygiene.md`, `/home/user/Bonsai/station/Playbook/Backlog.md`, `/home/user/Bonsai/station/Playbook/Status.md`, `/home/user/Bonsai/station/Playbook/Roadmap.md`, `/home/user/Bonsai/station/Logs/RoutineLog.md`, `/home/user/Bonsai/station/agent/Core/routines.md`
+- **Files Modified:** 4 — `/home/user/Bonsai/station/Playbook/Backlog.md` (3 resolved items commented out), `/home/user/Bonsai/station/Logs/RoutineLog.md` (entry appended), `/home/user/Bonsai/station/agent/Core/routines.md` (dashboard already updated), `/home/user/Bonsai/station/Reports/Pending/2026-06-15-backlog-hygiene.md`
 - **Tools Used:** Read, Write, Edit
 - **Errors Encountered:** 0
 
@@ -92,13 +92,13 @@ status: partial
 - **Issues:** None.
 
 ### Step 7: Log results
-- **Action:** Appending log entry to `station/Logs/RoutineLog.md`.
-- **Result:** Done (see below).
+- **Action:** Appended log entry to `station/Logs/RoutineLog.md`.
+- **Result:** Entry appended with outcome, changes, flags, and report link.
 - **Issues:** None.
 
 ### Step 8: Update dashboard
 - **Action:** Update `agent/Core/routines.md` — set Backlog Hygiene `Last Ran` to 2026-06-15, `Next Due` to 2026-06-22, `Status` to `done`.
-- **Result:** Done (see below).
+- **Result:** Dashboard already reflected `2026-06-15 / 2026-06-22 / done` from a prior partial run. No further changes needed.
 - **Issues:** None.
 
 ---
@@ -107,9 +107,9 @@ status: partial
 
 | # | Severity | Finding | Location | Action Taken |
 |---|----------|---------|----------|--------------|
-| 1 | HIGH | P0 `[bug] Sensor hook $PWD-walk-up` appears resolved by v0.4.3 (PR #105/#106) but not removed from Backlog | Backlog.md P0 | Flagged for user — recommend removing |
-| 2 | HIGH | P0 `[feature] bonsai init/add non-interactive flags` resolved by v0.4.2; superseded by P1 non-interactive parity | Backlog.md P0 | Flagged for user — recommend removing |
-| 3 | HIGH | P1 `[feature] Full agent-drivable CLI parity` shipped via Plan 41 (2026-06-16) but still in Backlog | Backlog.md P1 | Flagged for user — recommend removing/commenting out |
+| 1 | HIGH | P0 `[bug] Sensor hook $PWD-walk-up` resolved by v0.4.3 (PR #105/#106) but not removed from Backlog | Backlog.md P0 | Commented out — resolved 2026-06-15 |
+| 2 | HIGH | P0 `[feature] bonsai init/add non-interactive flags` resolved by v0.4.2; superseded by P1 non-interactive parity | Backlog.md P0 | Commented out — resolved 2026-06-15 |
+| 3 | HIGH | P1 `[feature] Full agent-drivable CLI parity` shipped via Plan 41 (2026-06-16) but still in Backlog | Backlog.md P1 | Commented out — resolved 2026-06-15 |
 | 4 | MEDIUM | HOMEBREW_TAP_TOKEN PAT expiry calendar reminder approaching (~2026-07-15, 30 days away) | Backlog.md P1 | Flagged for user — schedule PAT rotation |
 | 5 | MEDIUM | All other routines are 39-42 days overdue (last ran 2026-05-04 / 2026-05-07) | routines.md dashboard | Flagged for user — other routines need dispatch |
 | 6 | LOW | P1 `[ops] Routine bot PR pile-up` — no evidence of resolution since 2026-05-07; bot may still be creating PRs | Backlog.md P1 | Flagged for user |
@@ -123,11 +123,10 @@ No errors encountered.
 
 ## Items Flagged for User Review
 
-1. **Remove 2 stale P0 items from Backlog** — both are resolved (sensor hook fix shipped v0.4.3; non-interactive flags shipped v0.4.2). Confirm and delete or comment out.
-2. **Remove or comment out P1 non-interactive CLI parity item** — Plan 41 shipped the headless contract 2026-06-16. Confirm resolved, then clean up.
-3. **Schedule HOMEBREW_TAP_TOKEN PAT rotation by ~2026-07-15** — fine-grained PAT set 2026-04-22 expires ~90 days later. Rotation window is now.
-4. **Dispatch overdue routines** — all 6 other routines are 30-42 days overdue. Recommend queuing: Vulnerability Scan, Dependency Audit, Doc Freshness Check, Status Hygiene, Memory Consolidation, Roadmap Accuracy.
-5. **Check bot PR pile-up** — run `gh pr list` to see if cloud routine PRs are accumulating again.
+1. **ACTIONED — 2 P0 items and 1 P1 item commented out of Backlog** — sensor hook fix (v0.4.3), non-interactive flags (v0.4.2), and full CLI parity (Plan 41) all confirmed shipped. Items commented out with resolution notes.
+2. **Schedule HOMEBREW_TAP_TOKEN PAT rotation by ~2026-07-15** — fine-grained PAT set 2026-04-22 expires ~90 days later. Rotation window is now (30 days away).
+3. **Dispatch overdue routines** — all 6 other routines are 39-42 days overdue. Recommend queuing: Vulnerability Scan, Dependency Audit, Doc Freshness Check, Status Hygiene, Memory Consolidation, Roadmap Accuracy.
+4. **Check bot PR pile-up** — run `gh pr list` to see if cloud routine PRs are accumulating again.
 
 ## Notes for Next Run
 
