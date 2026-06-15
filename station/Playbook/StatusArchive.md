@@ -12,8 +12,24 @@ description: Archive of Done items moved from Status.md once they age past 14 da
 
 ## Archived
 
+<!-- 2026-06-15 status-hygiene: archived 14 items from Status.md dated ≤ 2026-06-01 -->
+
 | Task | Plan | Agent | Date |
 |------|------|-------|------|
+| **v0.4.3 hotfix shipped** — sensor hook commands now bake install-time absolute paths in `.claude/settings.json` (vs `$PWD`-walk-up). Existing projects need `bonsai update` to refresh. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.3) · [PR #105](https://github.com/LastStep/Bonsai/pull/105) · [PR #106](https://github.com/LastStep/Bonsai/pull/106) | — | tl + gp | 2026-05-13 |
+| **Plan 38 handoff to Bonsai-Eval tech-lead** — bootstrapped `LastStep/Bonsai-Eval` via `bonsai init --non-interactive`. Plan moved to that repo's `Plans/Active/`; P2/P3 owned there. [Bonsai-Eval station](https://github.com/LastStep/Bonsai-Eval/tree/main/station) | 38 | tl | 2026-05-13 |
+| **v0.4.2 release shipped** — `--non-interactive --from-config <path>` (JSONL stdout, exit codes 0/2/3/4). Plan 39. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.2) · [PR #102](https://github.com/LastStep/Bonsai/pull/102) | 39 | gp + tl | 2026-05-13 |
+| **PR triage sweep** — closed 9 stale routine bot PRs (#86–91, #96–98); merged 4 Dependabot bumps (codeql-action v3→v4, checkout v4→v6, deploy-pages v4→v5, go-isatty patch). | — | tl | 2026-05-07 |
+| **First external contribution merged** — `bonsai completion [bash|zsh|fish|powershell]` from @mvanhorn. Closes #54. [PR #78](https://github.com/LastStep/Bonsai/pull/78) | — | tl | 2026-05-07 |
+| **v0.4.1 release shipped** — Windows cross-compile CI gate + root CLAUDE.md Go drift fix. [release](https://github.com/LastStep/Bonsai/releases/tag/v0.4.1) | — | tl | 2026-05-07 |
+| Windows cross-compile CI gate — `GOOS=windows GOARCH=amd64 go build` step added to `ci.yml`. | — | tl | 2026-05-07 |
+| Root CLAUDE.md Go drift fix — `Go 1.24+ → 1.25+` one-liner. Plan 37 followup. | — | tl | 2026-05-07 |
+| Plan 37 — doc refresh bundle: `code-index.md` 50+ line refs synced; 2 stale rows fixed; INDEX.md Go version drift. [plan](Plans/Archive/37-doc-refresh-bundle.md) | 37 | tl | 2026-05-07 |
+| **v0.4.0 release shipped** — Plan 36: x/net bump + Go 1.25.9 + workflow_dispatch retry + CHANGELOG. [plan](Plans/Archive/36-v04-release-prep.md) · [PR #94](https://github.com/LastStep/Bonsai/pull/94) | 36 | gp×2 + tl | 2026-05-04 |
+| Plan 35 — `bonsai validate` command: read-only ability-state audit, 6 issue categories, --json + --agent flags. [plan](Plans/Archive/35-bonsai-validate-command.md) · [PR #93](https://github.com/LastStep/Bonsai/pull/93) | 35 | gp + tl | 2026-05-04 |
+| Plan 34 — custom-ability discovery bug bundle: orphan-registration recovery, bash-shebang sensor frontmatter parser. [plan](Plans/Archive/34-custom-ability-discovery-bug-bundle.md) · [PR #92](https://github.com/LastStep/Bonsai/pull/92) | 34 | gp + tl | 2026-05-04 |
+| Plan 32 — followup bundle: wsvalidate extract, Validate() chokepoint, O_NOFOLLOW snapshot. 13/17 review items closed. [plan](Plans/Archive/32-followup-bundle.md) · [PR #80](https://github.com/LastStep/Bonsai/pull/80) | 32 | gp×2 + tl | 2026-04-25 |
+| Plan 33 — website concept-page rewrite: 3 files, README-aligned mechanism-led voice, 7 banned phrases scrubbed. [plan](Plans/Archive/33-website-concept-page-rewrite.md) · [PR #79](https://github.com/LastStep/Bonsai/pull/79) | 33 | gp + tl | 2026-04-25 |
 | Plan 31 — v0.3 release readiness: peer-awareness refresh + bonsai-model skill + catalog.json snapshot, removeflow + updateflow cinematics, hints package. 3 PRs. [plan](Plans/Archive/31-v03-release-readiness.md) · [#75](https://github.com/LastStep/Bonsai/pull/75) · [#76](https://github.com/LastStep/Bonsai/pull/76) · [#77](https://github.com/LastStep/Bonsai/pull/77) | 31 | tl + gp×5 | 2026-04-24 |
 | Plan 30 — guide viewer perf + view-cmds polish: glamour renderer cache + pre-warm, 18 NIT cleanups. [plan](Plans/Archive/30-guide-perf-and-view-polish.md) · [PR #74](https://github.com/LastStep/Bonsai/pull/74) | 30 | gp×3 + tl | 2026-04-23 |
 | Archive-reconcile sweep: 20 shipped plans Active→Archive, 14 stale frontmatters synced. Commit `45df4cd`. | — | tl | 2026-04-23 |

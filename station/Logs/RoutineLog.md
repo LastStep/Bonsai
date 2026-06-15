@@ -20,6 +20,36 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-15 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `memory.md` — removed stale Work State note ("Plan 41 file still in Plans/Active/" — already archived); marked References section research docs as stale (station/Research/ directory does not exist). `routines.md` — dashboard updated (Last Ran → 2026-06-15, Next Due → 2026-06-20).
+- **Flags:** Research docs (6 RESEARCH-*.md entries in References) point to non-existent `station/Research/` — user review needed to locate or remove entries.
+- **Report:** `Reports/Pending/2026-06-15-memory-consolidation.md`
+
+---
+
+### 2026-06-15 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Moved `Plans/Active/41-headless-cli-contract.md` → `Plans/Archive/41-headless-cli-contract.md` (plan was SHIPPED per Status.md but file was still in Active); updated frontmatter `status: ready → complete`; updated plan link in `Status.md` Recently Done row; routines.md dashboard already current (2026-06-15/2026-06-20/done).
+- **Flags:** (1) "Trial sentrux" Pending item stalled 39+ days — blocked on Rust toolchain install; requires user decision to proceed, defer back to Backlog, or abandon. (2) Plan 41 date in Status.md shows "2026-06-16" (1 day in future) — minor anomaly, noted only.
+- **Report:** `Reports/Pending/2026-06-15-status-hygiene.md`
+
+---
+
+### 2026-06-15 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor hook $PWD-walk-up fixed v0.4.3, non-interactive flags shipped v0.4.2) and 1 resolved P1 item (full CLI parity shipped Plan 41 2026-06-16); routines.md dashboard updated (already set to 2026-06-15/2026-06-22/done); report written to `Reports/Pending/2026-06-15-backlog-hygiene.md`.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT rotation due ~2026-07-15 — action needed from user in next 2-4 weeks. (2) All 6 other routines are 39-42 days overdue — dispatch recommended. (3) Routine bot PR pile-up check pending — no evidence of resolution since 2026-05-07. (4) P3 `Self-update mechanism` + `Micro-task fast path` noted as Phase 2 Roadmap candidates for next roadmap review.
+- **Report:** `Reports/Pending/2026-06-15-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -392,3 +422,27 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-06-15 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** dashboard row updated (Last Ran → 2026-06-15, Next Due → 2026-06-22); report written
+- **Flags:** 3 resolved items still in Backlog (2× P0, 1× P1); HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15; bot PR pile-up check needed
+- **Report:** `Reports/Pending/2026-06-15-backlog-hygiene.md`
+
+### 2026-06-15 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-06-15, Next Due → 2026-06-22); report written; RoutineLog appended
+- **Flags:** 9 drift findings across `station/code-index.md`, `station/INDEX.md`, and root `CLAUDE.md` — all flagged for user decision, none auto-applied. Key issues: `internal/nonint/` package (Plan 41) entirely missing from code index; stale line numbers in remove/add/init/generate entries; CLI commands count "8" should be "9"; `docs/agent-interface.md` not in Document Registry.
+- **Report:** `Reports/Pending/2026-06-15-doc-freshness-check.md`
+
+### 2026-06-15 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `routines.md` dashboard updated (Last Ran → 2026-06-15, Next Due → 2026-06-29). No changes to Roadmap.md (audit-only per procedure — corrections flagged for user review).
+- **Flags:** 2 medium findings — (1) Phase 2 missing shipped item: Plan 40 project manifest + memory graph scaffolding (`.bonsai/project.yaml`, `station/Memory/`, validate project pass) not reflected in Roadmap. (2) Phase 2/3 missing shipped milestone: Plan 41 headless CLI contract + MCP-ready cores (all 4 mutating commands, JSONL/exit contract, `docs/agent-interface.md`) not reflected in Roadmap. 1 low finding — v0.5.0 untagged (user decision, informational). 1 info finding — Phase 3 prerequisite substantially advanced via Plan 41; Plan 42 (MCP server) is now a thin-wrapper task.
+- **Report:** `Reports/Pending/2026-06-15-roadmap-accuracy.md`
