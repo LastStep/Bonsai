@@ -438,3 +438,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-06-15, Next Due → 2026-06-22); report written; RoutineLog appended
 - **Flags:** 9 drift findings across `station/code-index.md`, `station/INDEX.md`, and root `CLAUDE.md` — all flagged for user decision, none auto-applied. Key issues: `internal/nonint/` package (Plan 41) entirely missing from code index; stale line numbers in remove/add/init/generate entries; CLI commands count "8" should be "9"; `docs/agent-interface.md` not in Document Registry.
 - **Report:** `Reports/Pending/2026-06-15-doc-freshness-check.md`
+
+### 2026-06-15 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `routines.md` dashboard updated (Last Ran → 2026-06-15, Next Due → 2026-06-29). No changes to Roadmap.md (audit-only per procedure — corrections flagged for user review).
+- **Flags:** 2 medium findings — (1) Phase 2 missing shipped item: Plan 40 project manifest + memory graph scaffolding (`.bonsai/project.yaml`, `station/Memory/`, validate project pass) not reflected in Roadmap. (2) Phase 2/3 missing shipped milestone: Plan 41 headless CLI contract + MCP-ready cores (all 4 mutating commands, JSONL/exit contract, `docs/agent-interface.md`) not reflected in Roadmap. 1 low finding — v0.5.0 untagged (user decision, informational). 1 info finding — Phase 3 prerequisite substantially advanced via Plan 41; Plan 42 (MCP server) is now a thin-wrapper task.
+- **Report:** `Reports/Pending/2026-06-15-roadmap-accuracy.md`
