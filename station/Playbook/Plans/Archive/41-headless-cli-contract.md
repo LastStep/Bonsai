@@ -1,6 +1,6 @@
 ---
 tags: [plan, cli, headless, mcp, contract]
-status: ready
+status: complete
 tier: 2
 agent: backend
 supersedes: Plan 40 Phase 4 (update-delivery slice); folds in Rung-2.5 multi-agent --from-config
