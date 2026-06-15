@@ -166,26 +166,41 @@ func TestResultCounts_DelegatesToSummary(t *testing.T) {
 	}
 }
 
-// TestMCPReadiness_NoTUIImports asserts the headless core stays TUI-free:
+// TestMCPReadiness_NoTUIImports asserts the headless cores stay TUI-free:
 // zero huh / bubbletea / lipgloss / glamour / charm imports anywhere in the
-// nonint package (production OR test files). The CLI adapter serialises the
-// Result; the package itself must never pull in chrome — a hard prerequisite
-// for the Plan 42 stdio MCP server (stdout must be pure protocol). Plan 41
-// Phase 5 widens this scan to internal/generate; Phase 1 guards nonint.
+// nonint package OR internal/generate (production AND test files). The CLI
+// adapter serialises the Result; these packages must never pull in chrome — a
+// hard prerequisite for the Plan 42 stdio MCP server (stdout must be pure
+// protocol).
+//
+// Plan 41 Phase 4 widens the scan to internal/generate because the
+// `list --json` serializer (list_snapshot.go / SerializeJSON) now lives there
+// beside SerializeCatalog — the scan proves the list serializer can't pull in
+// chrome undetected. Phase 1 originally guarded nonint only.
 func TestMCPReadiness_NoTUIImports(t *testing.T) {
 	banned := []string{"huh", "bubbletea", "lipgloss", "glamour", "charm"}
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, ".", nil, parser.ImportsOnly)
-	if err != nil {
-		t.Fatalf("ParseDir: %v", err)
-	}
-	for _, pkg := range pkgs {
-		for fname, file := range pkg.Files {
-			for _, imp := range file.Imports {
-				path := strings.Trim(imp.Path.Value, `"`)
-				for _, b := range banned {
-					if strings.Contains(path, b) {
-						t.Errorf("%s imports banned TUI dependency %q (contains %q) — nonint must stay TUI-free", fname, path, b)
+
+	// "." is the nonint package dir (test cwd). "../generate" is the sibling
+	// internal/generate package — both must stay TUI-free.
+	dirs := []string{".", "../generate"}
+
+	for _, dir := range dirs {
+		fset := token.NewFileSet()
+		pkgs, err := parser.ParseDir(fset, dir, nil, parser.ImportsOnly)
+		if err != nil {
+			t.Fatalf("ParseDir(%s): %v", dir, err)
+		}
+		if len(pkgs) == 0 {
+			t.Fatalf("ParseDir(%s): no packages found — scan would silently pass", dir)
+		}
+		for _, pkg := range pkgs {
+			for fname, file := range pkg.Files {
+				for _, imp := range file.Imports {
+					path := strings.Trim(imp.Path.Value, `"`)
+					for _, b := range banned {
+						if strings.Contains(path, b) {
+							t.Errorf("%s imports banned TUI dependency %q (contains %q) — %s must stay TUI-free", fname, path, b, dir)
+						}
 					}
 				}
 			}
