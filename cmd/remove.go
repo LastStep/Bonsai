@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,6 +15,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/catalog"
 	"github.com/LastStep/Bonsai/internal/config"
 	"github.com/LastStep/Bonsai/internal/generate"
+	"github.com/LastStep/Bonsai/internal/nonint"
 	"github.com/LastStep/Bonsai/internal/tui"
 	"github.com/LastStep/Bonsai/internal/tui/harness"
 	"github.com/LastStep/Bonsai/internal/tui/initflow"
@@ -24,11 +26,29 @@ func init() {
 	rootCmd.AddCommand(removeCmd)
 	removeCmd.Flags().BoolP("delete-files", "d", false, "Also delete the generated agent/ directory")
 
+	// Headless flags (Plan 41 Phase 3). Persistent so the item subcommands
+	// inherit them without re-declaring. --non-interactive / --yes bypass the
+	// cinematic confirm gate; --from scopes a multi-owner item removal to one
+	// agent. --yes bypasses CONFIRMATION only, never validation.
+	removeCmd.PersistentFlags().Bool("non-interactive", false, "Skip the cinematic confirm prompt; emit JSONL and exit (bypasses confirmation, not validation)")
+	removeCmd.PersistentFlags().BoolP("yes", "y", false, "Alias for --non-interactive: bypass the confirm prompt")
+	removeCmd.PersistentFlags().String("from", "", "Scope an item removal to a single owning agent (disambiguates multi-owner items)")
+
 	removeCmd.AddCommand(removeSkillCmd)
 	removeCmd.AddCommand(removeWorkflowCmd)
 	removeCmd.AddCommand(removeProtocolCmd)
 	removeCmd.AddCommand(removeSensorCmd)
 	removeCmd.AddCommand(removeRoutineCmd)
+}
+
+// headlessRequested reports whether the command should run through the
+// non-interactive headless core rather than the cinematic flow: the
+// --non-interactive or --yes flag is set, OR stdin is not a TTY (piped /
+// CI / Bonsai-Eval subprocess). Mirrors the update-command gate.
+func headlessRequested(cmd *cobra.Command) bool {
+	ni, _ := cmd.Flags().GetBool("non-interactive")
+	yes, _ := cmd.Flags().GetBool("yes")
+	return ni || yes || !isTerminal()
 }
 
 var removeCmd = &cobra.Command{
@@ -49,11 +69,29 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	}
 
-	startedAt := time.Now()
-
 	agentName := args[0]
 	cwd := mustCwd()
 	configPath := filepath.Join(cwd, configFile)
+
+	// Headless gate (Plan 41 Phase 3): --non-interactive/--yes or a non-TTY
+	// stdin routes through nonint.RunRemoveAgent → EmitJSONL → exit code. The
+	// gate fires BEFORE requireConfig because the latter's FatalPanel would
+	// write styled TUI to stderr — the headless path needs the plain message
+	// routed through the core's error (exit code 4 on a missing project).
+	if headlessRequested(cmd) {
+		deleteFiles, _ := cmd.Flags().GetBool("delete-files")
+		code, herr := runRemoveAgentNonInteractive(cwd, agentName, deleteFiles, os.Stdout, os.Stderr)
+		if herr != nil && code == 0 {
+			return herr
+		}
+		if code != nonint.ExitOK {
+			os.Exit(code)
+		}
+		return nil
+	}
+
+	startedAt := time.Now()
+
 	cfg, err := requireConfig(configPath)
 	if err != nil {
 		return err
@@ -221,6 +259,86 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// ─── Headless adapters (Plan 41 Phase 3) ────────────────────────────────
+
+// loadConfigHeadless loads the project config without the TUI FatalPanel that
+// requireConfig uses (FatalPanel writes styled output and never returns —
+// unusable on the headless path). Returns (cfg, exitCode, error): a missing
+// .bonsai.yaml maps to ExitWrongCWDForInit (4) so the contract matches
+// init/add; a load/validation error maps to ExitInvalidConfig (2) — the
+// wsvalidate workspace-escape guard runs inside config.Load.
+func loadConfigHeadless(configPath string) (*config.ProjectConfig, int, error) {
+	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
+		return nil, nonint.ExitWrongCWDForInit, fmt.Errorf("remove: %s not found — run `bonsai init` first", configFile)
+	} else if err != nil {
+		return nil, nonint.ExitRuntime, fmt.Errorf("remove: stat %s: %w", configFile, err)
+	}
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		return nil, nonint.ExitInvalidConfig, fmt.Errorf("remove: load %s: %w", configFile, err)
+	}
+	return cfg, nonint.ExitOK, nil
+}
+
+// runRemoveAgentNonInteractive is the headless `bonsai remove <agent>` driver.
+// It loads config + lock, calls nonint.RunRemoveAgent, serialises the Result
+// to JSONL on stdout, and routes warnings to stderr. Returns (exitCode, error)
+// matching the init/add adapters: a non-nil error with code 0 is a usage
+// error the caller surfaces via cobra; a non-zero code is an operational exit.
+func runRemoveAgentNonInteractive(cwd, agentName string, deleteFiles bool, stdout, stderr io.Writer) (int, error) {
+	configPath := filepath.Join(cwd, configFile)
+	cfg, code, err := loadConfigHeadless(configPath)
+	if err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return code, err
+	}
+	cat := loadCatalog()
+	lock, _ := config.LoadLockFile(cwd)
+
+	result, code, runErr := nonint.RunRemoveAgent(cwd, cfg, cat, lock, Version, agentName, deleteFiles)
+	if runErr != nil {
+		_, _ = fmt.Fprintln(stderr, runErr)
+		return code, runErr
+	}
+	// Data → stdout (pure JSONL); warnings → stderr (plain text).
+	if err := nonint.EmitJSONL(stdout, result); err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return nonint.ExitRuntime, err
+	}
+	for _, warn := range result.Warnings {
+		_, _ = fmt.Fprintln(stderr, "warning:", warn)
+	}
+	return code, nil
+}
+
+// runRemoveItemNonInteractive is the headless `bonsai remove <type> <name>`
+// driver. fromAgent is the resolved --from flag (may be empty). Mirrors the
+// agent adapter's stream/exit contract.
+func runRemoveItemNonInteractive(cwd, itemType, itemName, fromAgent string, stdout, stderr io.Writer) (int, error) {
+	configPath := filepath.Join(cwd, configFile)
+	cfg, code, err := loadConfigHeadless(configPath)
+	if err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return code, err
+	}
+	cat := loadCatalog()
+	lock, _ := config.LoadLockFile(cwd)
+
+	result, code, runErr := nonint.RunRemoveItem(cwd, cfg, cat, lock, Version, itemType, itemName, fromAgent)
+	if runErr != nil {
+		_, _ = fmt.Fprintln(stderr, runErr)
+		return code, runErr
+	}
+	if err := nonint.EmitJSONL(stdout, result); err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return nonint.ExitRuntime, err
+	}
+	for _, warn := range result.Warnings {
+		_, _ = fmt.Fprintln(stderr, "warning:", warn)
+	}
+	return code, nil
+}
+
 // ─── Item type descriptors ──────────────────────────────────────────────
 
 type itemType struct {
@@ -243,35 +361,55 @@ var removeSkillCmd = &cobra.Command{
 	Use:   "skill <name>",
 	Short: "Remove a skill from an agent.",
 	Args:  cobra.ExactArgs(1),
-	RunE:  func(cmd *cobra.Command, args []string) error { return runRemoveItem(args[0], typeSkill) },
+	RunE:  func(cmd *cobra.Command, args []string) error { return dispatchRemoveItem(cmd, args[0], typeSkill) },
 }
 
 var removeWorkflowCmd = &cobra.Command{
 	Use:   "workflow <name>",
 	Short: "Remove a workflow from an agent.",
 	Args:  cobra.ExactArgs(1),
-	RunE:  func(cmd *cobra.Command, args []string) error { return runRemoveItem(args[0], typeWorkflow) },
+	RunE:  func(cmd *cobra.Command, args []string) error { return dispatchRemoveItem(cmd, args[0], typeWorkflow) },
 }
 
 var removeProtocolCmd = &cobra.Command{
 	Use:   "protocol <name>",
 	Short: "Remove a protocol from an agent.",
 	Args:  cobra.ExactArgs(1),
-	RunE:  func(cmd *cobra.Command, args []string) error { return runRemoveItem(args[0], typeProtocol) },
+	RunE:  func(cmd *cobra.Command, args []string) error { return dispatchRemoveItem(cmd, args[0], typeProtocol) },
 }
 
 var removeSensorCmd = &cobra.Command{
 	Use:   "sensor <name>",
 	Short: "Remove a sensor from an agent.",
 	Args:  cobra.ExactArgs(1),
-	RunE:  func(cmd *cobra.Command, args []string) error { return runRemoveItem(args[0], typeSensor) },
+	RunE:  func(cmd *cobra.Command, args []string) error { return dispatchRemoveItem(cmd, args[0], typeSensor) },
 }
 
 var removeRoutineCmd = &cobra.Command{
 	Use:   "routine <name>",
 	Short: "Remove a routine from an agent.",
 	Args:  cobra.ExactArgs(1),
-	RunE:  func(cmd *cobra.Command, args []string) error { return runRemoveItem(args[0], typeRoutine) },
+	RunE:  func(cmd *cobra.Command, args []string) error { return dispatchRemoveItem(cmd, args[0], typeRoutine) },
+}
+
+// dispatchRemoveItem routes `bonsai remove <type> <name>` to either the
+// headless core (--non-interactive/--yes or non-TTY) or the cinematic flow.
+// The headless gate fires BEFORE the cinematic path's requireConfig so the
+// missing-project case yields a plain message + exit 4 rather than a TUI panel.
+func dispatchRemoveItem(cmd *cobra.Command, name string, it itemType) error {
+	if headlessRequested(cmd) {
+		cwd := mustCwd()
+		fromAgent, _ := cmd.Flags().GetString("from")
+		code, herr := runRemoveItemNonInteractive(cwd, it.singular, name, fromAgent, os.Stdout, os.Stderr)
+		if herr != nil && code == 0 {
+			return herr
+		}
+		if code != nonint.ExitOK {
+			os.Exit(code)
+		}
+		return nil
+	}
+	return runRemoveItem(name, it)
 }
 
 // ─── Shared item removal logic ──────────────────────────────────────────
