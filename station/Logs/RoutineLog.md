@@ -36,6 +36,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
 - **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
 
+### 2026-06-16 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard updated (Last Ran 2026-06-16, Next Due 2026-06-23); no doc edits (audit-only routine)
+- **Flags:** 5 drift items — (1) [high] root `CLAUDE.md` missing `internal/nonint/` package (Plan 41); (2) [medium] `station/code-index.md` missing `internal/nonint/` section + several Plan 41 helpers + line-number drift in remove.go; (3) [medium] `station/INDEX.md` arch diagram missing `internal/nonint/` and `docs/` directory; (4) [low] `station/CLAUDE.md` Workflows nav missing `plan-grilling.md`; (5) [low] `station/CLAUDE.md` Skills nav missing `critic-agent-prompts.md`
+- **Report:** `Reports/Pending/2026-06-16-doc-freshness-check.md`
+
 ### 2026-06-16 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
