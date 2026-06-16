@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-16 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** dashboard updated (Last Ran 2026-06-16, Next Due 2026-06-30); no edits to `station/Playbook/Roadmap.md` (audit-only routine per procedure)
+- **Flags:** (1) [medium] Plan 41 (Headless CLI Contract, shipped 2026-06-16) not captured in Roadmap — recommend `[x]` milestone entry. (2) [medium] Phase 3 "Managed Agents" wording may not match actual direction — Plan 42 (MCP server) is stated fast-follow; two mechanisms are different. (3) [low] KeyDecisionLog stale since 2026-04-13 — Plan 40/41 architectural decisions not captured.
+- **Report:** `Reports/Pending/2026-06-16-roadmap-accuracy.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
