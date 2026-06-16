@@ -20,6 +20,22 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-16 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plan 37, v0.4.0/Plan 36, Plan 35, Plan 34, Plan 32, Plan 33 — dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-06-02`; dashboard `Last Ran`/`Next Due` set to 2026-06-16/2026-06-21.
+- **Flags:** [medium] "Trial sentrux" Pending 40+ days (blocker unchanged — Rust toolchain not installed); flagged for user decision (demote to Backlog or unblock).
+- **Report:** `Reports/Pending/2026-06-16-status-hygiene.md`
+
+### 2026-06-16 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** dashboard updated (Last Ran 2026-06-16, Next Due 2026-06-30); no edits to `station/Playbook/Roadmap.md` (audit-only routine per procedure)
+- **Flags:** (1) [medium] Plan 41 (Headless CLI Contract, shipped 2026-06-16) not captured in Roadmap — recommend `[x]` milestone entry. (2) [medium] Phase 3 "Managed Agents" wording may not match actual direction — Plan 42 (MCP server) is stated fast-follow; two mechanisms are different. (3) [low] KeyDecisionLog stale since 2026-04-13 — Plan 40/41 architectural decisions not captured.
+- **Report:** `Reports/Pending/2026-06-16-roadmap-accuracy.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -35,6 +51,30 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** Archived 12 Done items dated 2026-04-22 (and the 11th-place Plan 27 PR2 row dated 2026-04-22) from `Status.md` → `StatusArchive.md`; updated footer date marker `older than 2026-04-22` → `2026-04-23`; dashboard `Last Ran`/`Next Due` set to 2026-05-07/2026-05-12.
 - **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
 - **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
+
+### 2026-06-16 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** dashboard updated (Last Ran 2026-06-16, Next Due 2026-06-21); no edits to `agent/Core/memory.md` (zero auto-memory entries to merge; all Notes/Feedback/Work State entries validated against codebase — all current)
+- **Flags:** [low] 6 RESEARCH doc pointers in References section (`station/Research/RESEARCH-*.md`) don't exist in git — likely local-only files absent in cloud environment. No change made; flagged for user awareness.
+- **Report:** `Reports/Pending/2026-06-16-memory-consolidation.md`
+
+### 2026-06-16 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard updated (Last Ran 2026-06-16, Next Due 2026-06-23); no doc edits (audit-only routine)
+- **Flags:** 5 drift items — (1) [high] root `CLAUDE.md` missing `internal/nonint/` package (Plan 41); (2) [medium] `station/code-index.md` missing `internal/nonint/` section + several Plan 41 helpers + line-number drift in remove.go; (3) [medium] `station/INDEX.md` arch diagram missing `internal/nonint/` and `docs/` directory; (4) [low] `station/CLAUDE.md` Workflows nav missing `plan-grilling.md`; (5) [low] `station/CLAUDE.md` Skills nav missing `critic-agent-prompts.md`
+- **Report:** `Reports/Pending/2026-06-16-doc-freshness-check.md`
+
+### 2026-06-16 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Backlog.md — removed 3 resolved items (converted to HTML comments): P0 $PWD-walk-up bug (v0.4.3), P0 non-interactive flags (v0.4.2), P1 full CLI parity (Plan 41). Dashboard updated (Last Ran 2026-06-16, Next Due 2026-06-23).
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (29 days); rotate before next release. (2) All other routines severely overdue — 40-day gap since 2026-05-07; schedule routine-digest. (3) P0 section is now clean — P1 is effective top priority.
+- **Report:** `Reports/Pending/2026-06-16-backlog-hygiene.md`
 
 ### 2026-05-07 — Backlog Hygiene
 - **Outcome:** success
