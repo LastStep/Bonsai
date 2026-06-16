@@ -36,6 +36,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
 - **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
 
+### 2026-06-16 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Backlog.md — removed 3 resolved items (converted to HTML comments): P0 $PWD-walk-up bug (v0.4.3), P0 non-interactive flags (v0.4.2), P1 full CLI parity (Plan 41). Dashboard updated (Last Ran 2026-06-16, Next Due 2026-06-23).
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (29 days); rotate before next release. (2) All other routines severely overdue — 40-day gap since 2026-05-07; schedule routine-digest. (3) P0 section is now clean — P1 is effective top priority.
+- **Report:** `Reports/Pending/2026-06-16-backlog-hygiene.md`
+
 ### 2026-05-07 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
