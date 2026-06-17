@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-17 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Marked 6 References entries in `station/agent/Core/memory.md` as stale (Research docs missing on this machine — files were on old machine path and never git-tracked). Dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-06-22.
+- **Flags:** [HIGH] 6 foundational Research docs (`RESEARCH-landscape-analysis.md`, `RESEARCH-concept-decisions.md`, `RESEARCH-eval-system.md`, `RESEARCH-trigger-system.md`, `RESEARCH-uiux-overhaul.md`, `RESEARCH-proof-of-bonsai-effectiveness.md`) not present at `/home/user/Bonsai/Research/` — were on old machine path, never committed to git. User needs to restore or remove references. All 20 Notes entries and Work State validated clean.
+- **Report:** `Reports/Pending/2026-06-17-memory-consolidation.md`
+
+---
+
 ### 2026-06-17 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
