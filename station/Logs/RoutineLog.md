@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-17 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-06-24. No doc edits (audit-only per procedure).
+- **Flags:** (1) [HIGH] `code-index.md` missing `internal/nonint/` package — 8 files, significant public surface (runner.go, result.go, events.go, config.go, remove.go, update.go) shipped in Plan 41. (2) [MEDIUM] `code-index.md` missing `internal/generate/list_snapshot.go` — `SerializeJSON`/`ListSnapshot`/`ListAgent` (Plan 41 Phase 4). (3) [MEDIUM] `station/CLAUDE.md` Workflows nav missing `plan-grilling.md` (added 2026-06-13). (4) [MEDIUM] `station/CLAUDE.md` Skills nav missing `critic-agent-prompts.md` (added 2026-06-13). (5) [LOW] `station/INDEX.md` has no mention of headless CLI / `internal/nonint` / `docs/agent-interface.md` (Plan 41 flagship feature).
+- **Report:** `Reports/Pending/2026-06-17-doc-freshness-check.md`
+
+---
+
 ### 2026-06-17 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
