@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-17 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 14 Done items dated 2026-05-13 and earlier from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-06-02`; dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-06-22.
+- **Flags:** (1) Pending item "Trial sentrux" has been Pending 41 days (since 2026-05-07) with no progress — still blocked on Rust toolchain install. Flagged for user review; not demoted automatically.
+- **Report:** `Reports/Pending/2026-06-17-status-hygiene.md`
+
+---
+
 ### 2026-06-17 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
