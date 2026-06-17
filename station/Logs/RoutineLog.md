@@ -20,6 +20,54 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-17 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-06-24. No doc edits (audit-only per procedure).
+- **Flags:** (1) [HIGH] `code-index.md` missing `internal/nonint/` package — 8 files, significant public surface (runner.go, result.go, events.go, config.go, remove.go, update.go) shipped in Plan 41. (2) [MEDIUM] `code-index.md` missing `internal/generate/list_snapshot.go` — `SerializeJSON`/`ListSnapshot`/`ListAgent` (Plan 41 Phase 4). (3) [MEDIUM] `station/CLAUDE.md` Workflows nav missing `plan-grilling.md` (added 2026-06-13). (4) [MEDIUM] `station/CLAUDE.md` Skills nav missing `critic-agent-prompts.md` (added 2026-06-13). (5) [LOW] `station/INDEX.md` has no mention of headless CLI / `internal/nonint` / `docs/agent-interface.md` (Plan 41 flagship feature).
+- **Report:** `Reports/Pending/2026-06-17-doc-freshness-check.md`
+
+---
+
+### 2026-06-17 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes to Roadmap.md (audit-only per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-07-01.
+- **Flags:** (1) [MEDIUM] Plan 40 Phases 1–3 (v0.5.0 features: frozen schemas, root-relative scaffolding, project validate pass) shipped 2026-06-13 with no Roadmap entry. (2) [MEDIUM] Plan 41 (headless CLI contract + MCP-ready cores) shipped 2026-06-16 with no Roadmap entry — largest milestone since `bonsai validate`. (3) [LOW] Phase 3 entry unblocked by Plan 41 (prerequisite met); MCP server Plan 42 (fast-follow, unstarted) is the natural first Phase 3 item but not on Roadmap.
+- **Report:** `Reports/Pending/2026-06-17-roadmap-accuracy.md`
+
+### 2026-06-17 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Marked 6 References entries in `station/agent/Core/memory.md` as stale (Research docs missing on this machine — files were on old machine path and never git-tracked). Dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-06-22.
+- **Flags:** [HIGH] 6 foundational Research docs (`RESEARCH-landscape-analysis.md`, `RESEARCH-concept-decisions.md`, `RESEARCH-eval-system.md`, `RESEARCH-trigger-system.md`, `RESEARCH-uiux-overhaul.md`, `RESEARCH-proof-of-bonsai-effectiveness.md`) not present at `/home/user/Bonsai/Research/` — were on old machine path, never committed to git. User needs to restore or remove references. All 20 Notes entries and Work State validated clean.
+- **Report:** `Reports/Pending/2026-06-17-memory-consolidation.md`
+
+---
+
+### 2026-06-17 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 14 Done items dated 2026-05-13 and earlier from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-06-02`; dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-06-22.
+- **Flags:** (1) Pending item "Trial sentrux" has been Pending 41 days (since 2026-05-07) with no progress — still blocked on Rust toolchain install. Flagged for user review; not demoted automatically.
+- **Report:** `Reports/Pending/2026-06-17-status-hygiene.md`
+
+---
+
+### 2026-06-17 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog.md (2 from P0: sensor hook bug + non-interactive flags, both shipped; 1 from P1: full agent-drivable CLI parity, shipped via Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-06-24.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT rotation due ~2026-07-15 — 28 days; user action required. (2) All 7 routines overdue 27–37 days — no routine ran since 2026-05-07; loop dispatch may need attention. (3) Routine bot PR pile-up ops item 41 days stale — check for accumulating `claude/bonsai-maintenance-*` PRs. (4) Stale worktrees/branches recurring — Plan 41 likely added more.
+- **Report:** `Reports/Pending/2026-06-17-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
