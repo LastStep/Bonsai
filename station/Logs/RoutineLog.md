@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-17 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes to Roadmap.md (audit-only per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-06-17/2026-07-01.
+- **Flags:** (1) [MEDIUM] Plan 40 Phases 1–3 (v0.5.0 features: frozen schemas, root-relative scaffolding, project validate pass) shipped 2026-06-13 with no Roadmap entry. (2) [MEDIUM] Plan 41 (headless CLI contract + MCP-ready cores) shipped 2026-06-16 with no Roadmap entry — largest milestone since `bonsai validate`. (3) [LOW] Phase 3 entry unblocked by Plan 41 (prerequisite met); MCP server Plan 42 (fast-follow, unstarted) is the natural first Phase 3 item but not on Roadmap.
+- **Report:** `Reports/Pending/2026-06-17-roadmap-accuracy.md`
+
 ### 2026-06-17 — Memory Consolidation
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
