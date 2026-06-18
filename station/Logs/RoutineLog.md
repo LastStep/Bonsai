@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-18 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — References section marked stale (6 Research doc links point to `station/Research/` which does not exist). Dashboard `Last Ran`/`Next Due` updated to 2026-06-18/2026-06-23.
+- **Flags:** 1 item for user attention — [MEDIUM] `station/Research/RESEARCH-*.md` (6 files) referenced in memory.md References section do not exist on disk; `station/Research/` directory absent. User should confirm whether files were deleted, moved, or exist in another repo.
+- **Report:** `Reports/Pending/2026-06-18-memory-consolidation.md`
+
 ### 2026-06-18 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
