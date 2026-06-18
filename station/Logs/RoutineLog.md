@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-18 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-06-18/2026-07-02.
+- **Flags:** 2 items for user attention — (1) [MEDIUM] Plan 41 (Headless CLI Contract + MCP-ready cores, shipped 2026-06-16) has no roadmap row; recommend adding `[x] Agent-drivable CLI parity — headless cores + JSONL/exit contract + agent-interface.md` to Phase 2. (2) [LOW] MCP server (Plan 42, referenced in Status.md as "fast-follow") has no roadmap row; add when Plan 42 is formally planned or shipped.
+- **Report:** `Reports/Pending/2026-06-18-roadmap-accuracy.md`
+
+### 2026-06-18 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — References section marked stale (6 Research doc links point to `station/Research/` which does not exist). Dashboard `Last Ran`/`Next Due` updated to 2026-06-18/2026-06-23.
+- **Flags:** 1 item for user attention — [MEDIUM] `station/Research/RESEARCH-*.md` (6 files) referenced in memory.md References section do not exist on disk; `station/Research/` directory absent. User should confirm whether files were deleted, moved, or exist in another repo.
+- **Report:** `Reports/Pending/2026-06-18-memory-consolidation.md`
+
+### 2026-06-18 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-06-18/2026-06-25.
+- **Flags:** 6 items for user attention — (1) [HIGH] `Bonsai/CLAUDE.md` project structure tree missing `internal/nonint/` package (Plan 41); (2) [MEDIUM] `Bonsai/CLAUDE.md` `internal/generate/` block missing `catalog_snapshot_unix.go`, `catalog_snapshot_windows.go`, `list_snapshot.go`; (3) [MEDIUM] `Bonsai/CLAUDE.md` `internal/validate/` block missing `project.go`; (4) [MEDIUM] `code-index.md` missing entire `internal/nonint/` section; (5) [LOW] `code-index.md` Validate section missing `project.go` functions; (6) [LOW] `station/INDEX.md` arch diagram missing `internal/nonint/`. All navigation links in `station/CLAUDE.md` and agent subdirs resolve cleanly — zero broken links.
+- **Report:** `Reports/Pending/2026-06-18-doc-freshness-check.md`
+
+### 2026-06-18 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Status.md` — archived 6 Done rows (Plans 32, 33, 34, 35, 36/v0.4.0, 37; dated 2026-04-25 to 2026-05-07) to `StatusArchive.md`; updated footer date marker to `≤ 2026-06-04`. Dashboard `Last Ran`/`Next Due` updated to 2026-06-18/2026-06-23.
+- **Flags:** 2 items for user attention — (1) Pending item `[research] Trial sentrux on Bonsai repo` is 42 days stale (> 30-day threshold), still blocked on Rust toolchain install; (2) Plans 40 and 41 files remain in `Plans/Active/` despite both being "Recently Done" — housekeeping move to Archive recommended.
+- **Report:** `Reports/Pending/2026-06-18-status-hygiene.md`
+
+### 2026-06-18 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Backlog.md` — removed 3 resolved items (2 P0s + 1 P1, replaced with dated HTML comments): `[bug] Sensor hook $PWD-walk-up` (resolved v0.4.3), `[feature] bonsai init/add non-interactive flags` (resolved v0.4.2), `[feature] Full agent-drivable CLI parity` (resolved Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-06-18/2026-06-25.
+- **Flags:** 1 item for user attention — `HOMEBREW_TAP_TOKEN` PAT expiry approaching (~2026-07-15, 27 days); requires manual rotation in GitHub secrets before next release.
+- **Report:** `Reports/Pending/2026-06-18-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
