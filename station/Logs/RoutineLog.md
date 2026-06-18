@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-18 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-06-18/2026-06-25.
+- **Flags:** 6 items for user attention — (1) [HIGH] `Bonsai/CLAUDE.md` project structure tree missing `internal/nonint/` package (Plan 41); (2) [MEDIUM] `Bonsai/CLAUDE.md` `internal/generate/` block missing `catalog_snapshot_unix.go`, `catalog_snapshot_windows.go`, `list_snapshot.go`; (3) [MEDIUM] `Bonsai/CLAUDE.md` `internal/validate/` block missing `project.go`; (4) [MEDIUM] `code-index.md` missing entire `internal/nonint/` section; (5) [LOW] `code-index.md` Validate section missing `project.go` functions; (6) [LOW] `station/INDEX.md` arch diagram missing `internal/nonint/`. All navigation links in `station/CLAUDE.md` and agent subdirs resolve cleanly — zero broken links.
+- **Report:** `Reports/Pending/2026-06-18-doc-freshness-check.md`
+
 ### 2026-06-18 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
