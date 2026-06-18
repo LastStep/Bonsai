@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-18 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Status.md` — archived 6 Done rows (Plans 32, 33, 34, 35, 36/v0.4.0, 37; dated 2026-04-25 to 2026-05-07) to `StatusArchive.md`; updated footer date marker to `≤ 2026-06-04`. Dashboard `Last Ran`/`Next Due` updated to 2026-06-18/2026-06-23.
+- **Flags:** 2 items for user attention — (1) Pending item `[research] Trial sentrux on Bonsai repo` is 42 days stale (> 30-day threshold), still blocked on Rust toolchain install; (2) Plans 40 and 41 files remain in `Plans/Active/` despite both being "Recently Done" — housekeeping move to Archive recommended.
+- **Report:** `Reports/Pending/2026-06-18-status-hygiene.md`
+
 ### 2026-06-18 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
