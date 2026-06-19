@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-19 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard updated (Last Ran → 2026-06-19, Next Due → 2026-06-26); report written to `Reports/Pending/2026-06-19-doc-freshness-check.md`. No doc edits (audit-only routine).
+- **Flags:** 8 drift items — (1+2) HIGH: `internal/nonint/` package + `list_snapshot.go` absent from root `CLAUDE.md` tree AND `code-index.md` (Plan 41 drift, prioritize before Plan 42); (3) MEDIUM: `catalog_snapshot_unix/windows.go` not in root `CLAUDE.md` tree; (4) MEDIUM: `station/INDEX.md` CLI commands count 8→9 (`bonsai completion` shipped PR #78); (5) MEDIUM: `plan-grilling.md` missing from Workflows nav in `station/CLAUDE.md`; (6) LOW: `critic-agent-prompts.md` missing from Skills nav; (7) LOW: `docs/agent-interface.md` + `docs/formats.md` not in INDEX.md registry; (8) INFO: `cmd/completion.go` not in root CLAUDE.md cmd/ tree. All nav links resolve — 0 broken links this cycle.
+- **Report:** `Reports/Pending/2026-06-19-doc-freshness-check.md`
+
 ### 2026-06-19 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
