@@ -36,6 +36,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
 - **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
 
+### 2026-06-19 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 2 resolved P0 items from Backlog.md (converted to HTML comments with resolution notes): `[bug] Sensor hook commands $PWD-walk-up` (fixed v0.4.3) and `[feature] bonsai init/add non-interactive flags` (fixed v0.4.2). Dashboard updated: Last Ran → 2026-06-19, Next Due → 2026-06-26.
+- **Flags:** 5 items for user attention — (1) HOMEBREW_TAP_TOKEN PAT rotation due 2026-07-15 (26 days, high urgency); (2) all routines overdue 43 days — no routine has run since 2026-05-07; (3) `[feature] Full agent-drivable CLI parity` (P1, "main thing") awaits plan confirmation; (4) `[debt] Stale worktrees + testing infra` P1 items 60-64 days stale — confirm still P1 or demote; (5) `[ops] Routine bot PR pile-up` structural fix unshipped.
+- **Report:** `Reports/Pending/2026-06-19-backlog-hygiene.md`
+
 ### 2026-05-07 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
