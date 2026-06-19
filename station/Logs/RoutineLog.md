@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-19 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done rows (Plans 37, 36, 35, 34, 32, 33 — all ≤ 2026-05-07) from `Status.md` → `StatusArchive.md`; removed resolved P1 Backlog item (agent-drivable CLI parity, shipped Plan 41); updated Status.md footer; dashboard Last Ran → 2026-06-19, Next Due → 2026-06-24.
+- **Flags:** (1) Pending item `[research] Trial sentrux` stalled 43 days — needs user decision (install rustup / demote to Backlog / drop); (2) Plan 41 file still in Plans/Active/ despite being fully shipped — housekeeping move to Archive recommended.
+- **Report:** `Reports/Pending/2026-06-19-status-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
