@@ -20,6 +20,38 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-19 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard updated (Last Ran → 2026-06-19, Next Due → 2026-07-03, Status → done); report written to `Reports/Pending/2026-06-19-roadmap-accuracy.md`. No Roadmap.md edits (audit-only routine).
+- **Flags:** 3 items for user review — (1) MEDIUM: Plan 41 (Headless CLI Contract) not reflected in Roadmap — recommend adding `[x]` Phase 2 item; (2) LOW: Plan 40 frozen schemas + project-level validate audit missing from Roadmap Phase 2; (3) LOW: Plan 42 (MCP server, confirmed next major work) has no Roadmap placeholder in Phase 3.
+- **Report:** `Reports/Pending/2026-06-19-roadmap-accuracy.md`
+
+### 2026-06-19 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Marked References block in `agent/Core/memory.md` as stale (`station/Research/` directory does not exist — 6 RESEARCH-*.md pointers broken); dashboard updated (Last Ran → 2026-06-19, Next Due → 2026-06-24).
+- **Flags:** (1) HIGH: `station/Research/` directory missing — all 6 foundational research doc pointers in memory.md References are broken; user should confirm if files exist elsewhere or clean up the entries. (2) LOW: Plan 41 still in `Plans/Active/` — archive housekeeping deferred to user.
+- **Report:** `Reports/Pending/2026-06-19-memory-consolidation.md`
+
+### 2026-06-19 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard updated (Last Ran → 2026-06-19, Next Due → 2026-06-26); report written to `Reports/Pending/2026-06-19-doc-freshness-check.md`. No doc edits (audit-only routine).
+- **Flags:** 8 drift items — (1+2) HIGH: `internal/nonint/` package + `list_snapshot.go` absent from root `CLAUDE.md` tree AND `code-index.md` (Plan 41 drift, prioritize before Plan 42); (3) MEDIUM: `catalog_snapshot_unix/windows.go` not in root `CLAUDE.md` tree; (4) MEDIUM: `station/INDEX.md` CLI commands count 8→9 (`bonsai completion` shipped PR #78); (5) MEDIUM: `plan-grilling.md` missing from Workflows nav in `station/CLAUDE.md`; (6) LOW: `critic-agent-prompts.md` missing from Skills nav; (7) LOW: `docs/agent-interface.md` + `docs/formats.md` not in INDEX.md registry; (8) INFO: `cmd/completion.go` not in root CLAUDE.md cmd/ tree. All nav links resolve — 0 broken links this cycle.
+- **Report:** `Reports/Pending/2026-06-19-doc-freshness-check.md`
+
+### 2026-06-19 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done rows (Plans 37, 36, 35, 34, 32, 33 — all ≤ 2026-05-07) from `Status.md` → `StatusArchive.md`; removed resolved P1 Backlog item (agent-drivable CLI parity, shipped Plan 41); updated Status.md footer; dashboard Last Ran → 2026-06-19, Next Due → 2026-06-24.
+- **Flags:** (1) Pending item `[research] Trial sentrux` stalled 43 days — needs user decision (install rustup / demote to Backlog / drop); (2) Plan 41 file still in Plans/Active/ despite being fully shipped — housekeeping move to Archive recommended.
+- **Report:** `Reports/Pending/2026-06-19-status-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -35,6 +67,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** Archived 12 Done items dated 2026-04-22 (and the 11th-place Plan 27 PR2 row dated 2026-04-22) from `Status.md` → `StatusArchive.md`; updated footer date marker `older than 2026-04-22` → `2026-04-23`; dashboard `Last Ran`/`Next Due` set to 2026-05-07/2026-05-12.
 - **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
 - **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
+
+### 2026-06-19 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 2 resolved P0 items from Backlog.md (converted to HTML comments with resolution notes): `[bug] Sensor hook commands $PWD-walk-up` (fixed v0.4.3) and `[feature] bonsai init/add non-interactive flags` (fixed v0.4.2). Dashboard updated: Last Ran → 2026-06-19, Next Due → 2026-06-26.
+- **Flags:** 5 items for user attention — (1) HOMEBREW_TAP_TOKEN PAT rotation due 2026-07-15 (26 days, high urgency); (2) all routines overdue 43 days — no routine has run since 2026-05-07; (3) `[feature] Full agent-drivable CLI parity` (P1, "main thing") awaits plan confirmation; (4) `[debt] Stale worktrees + testing infra` P1 items 60-64 days stale — confirm still P1 or demote; (5) `[ops] Routine bot PR pile-up` structural fix unshipped.
+- **Report:** `Reports/Pending/2026-06-19-backlog-hygiene.md`
 
 ### 2026-05-07 — Backlog Hygiene
 - **Outcome:** success
