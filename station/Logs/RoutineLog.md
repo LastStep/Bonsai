@@ -20,6 +20,50 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-20 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** No changes to `Roadmap.md` (audit-only per procedure); dashboard `Last Ran`/`Next Due` updated to 2026-06-20/2026-07-04.
+- **Flags:** (1) MEDIUM: Plan 42 (MCP server, explicitly next planned deliverable) has no Roadmap entry — recommend adding a row to Phase 2 or 3. (2) LOW: Plan 41 headless CLI contract may satisfy the KeyDecisionLog "local foundation stable" gate for Phase 3 Managed Agents — user should decide whether to re-prioritize.
+- **Report:** `Reports/Pending/2026-06-20-roadmap-accuracy.md`
+
+### 2026-06-20 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** Marked 6 stale References entries in `agent/Core/memory.md` (all `station/Research/RESEARCH-*.md` paths — directory missing); updated dashboard `Last Ran`/`Next Due` to 2026-06-20/2026-06-25.
+- **Flags:** MEDIUM: `station/Research/` directory does not exist; 6 Research doc references in memory.md are dead links — flagged for user review.
+- **Report:** `Reports/Pending/2026-06-20-memory-consolidation.md`
+
+### 2026-06-20 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-06-20/2026-06-27. No doc edits (audit-only).
+- **Flags:** (1) HIGH: `internal/nonint/` package missing from root `Bonsai/CLAUDE.md` project structure tree (Plan 41). (2) MEDIUM: `plan-grilling.md` and `critic-agent-prompts.md` not in `station/CLAUDE.md` nav tables (added 2026-06-13). (3) MEDIUM: INDEX.md CLI count 8→9 (completion cmd, PR #78), catalog items ~50→53. (4) LOW: `docs/` directory not in INDEX.md Document Registry; INDEX.md arch diagram missing `internal/nonint/`. (5) INFO: `code-index.md` missing `internal/nonint/` entries.
+- **Report:** `Reports/Pending/2026-06-20-doc-freshness-check.md`
+
+### 2026-06-20 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37/36/35/34/32/33, dated 2026-05-04 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer cutoff to `≤ 2026-06-05`; removed resolved P1 Backlog item "[feature] Full agent-drivable CLI parity" (superseded by Plan 41, shipped 2026-06-16); dashboard `Last Ran`/`Next Due` set to 2026-06-20/2026-06-25.
+- **Flags:** (1) Pending item "Trial sentrux on Bonsai repo" has been stalled 44 days (since 2026-05-07, blocked on Rust toolchain) — flagged for user review per 30-day rule. (2) Plan 41 resolved the P1 CLI parity backlog item — removed from Backlog.
+- **Report:** `Reports/Pending/2026-06-20-status-hygiene.md`
+
+---
+
+### 2026-06-20 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 2 resolved P0 items from `Backlog.md` (replaced with HTML comments): `[bug] Sensor hook $PWD-walk-up` (fixed in v0.4.3) and `[feature] non-interactive flags` (fixed in v0.4.2). Dashboard `Last Ran`/`Next Due` updated to 2026-06-20/2026-06-27.
+- **Flags:** (1) URGENT: `HOMEBREW_TAP_TOKEN` PAT renewal due ~2026-07-15 (25 days). (2) 3 P1 items stale 44–65 days with no progress — recommend re-prioritization: testing infra, stale worktrees, routine bot PR pile-up. (3) P0 section now empty — sentrux trial remains in Status.md Pending (blocked Rust toolchain).
+- **Report:** `Reports/Pending/2026-06-20-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
