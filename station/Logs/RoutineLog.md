@@ -20,6 +20,22 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-20 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** No changes to `Roadmap.md` (audit-only per procedure); dashboard `Last Ran`/`Next Due` updated to 2026-06-20/2026-07-04.
+- **Flags:** (1) MEDIUM: Plan 42 (MCP server, explicitly next planned deliverable) has no Roadmap entry — recommend adding a row to Phase 2 or 3. (2) LOW: Plan 41 headless CLI contract may satisfy the KeyDecisionLog "local foundation stable" gate for Phase 3 Managed Agents — user should decide whether to re-prioritize.
+- **Report:** `Reports/Pending/2026-06-20-roadmap-accuracy.md`
+
+### 2026-06-20 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** Marked 6 stale References entries in `agent/Core/memory.md` (all `station/Research/RESEARCH-*.md` paths — directory missing); updated dashboard `Last Ran`/`Next Due` to 2026-06-20/2026-06-25.
+- **Flags:** MEDIUM: `station/Research/` directory does not exist; 6 Research doc references in memory.md are dead links — flagged for user review.
+- **Report:** `Reports/Pending/2026-06-20-memory-consolidation.md`
+
 ### 2026-06-20 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
