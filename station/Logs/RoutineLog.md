@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-20 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-06-20/2026-06-27. No doc edits (audit-only).
+- **Flags:** (1) HIGH: `internal/nonint/` package missing from root `Bonsai/CLAUDE.md` project structure tree (Plan 41). (2) MEDIUM: `plan-grilling.md` and `critic-agent-prompts.md` not in `station/CLAUDE.md` nav tables (added 2026-06-13). (3) MEDIUM: INDEX.md CLI count 8→9 (completion cmd, PR #78), catalog items ~50→53. (4) LOW: `docs/` directory not in INDEX.md Document Registry; INDEX.md arch diagram missing `internal/nonint/`. (5) INFO: `code-index.md` missing `internal/nonint/` entries.
+- **Report:** `Reports/Pending/2026-06-20-doc-freshness-check.md`
+
 ### 2026-06-20 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
