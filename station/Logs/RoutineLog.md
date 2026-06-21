@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-21 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-06-21, Next Due → 2026-07-05); `station/Logs/RoutineLog.md` appended. No changes to `Roadmap.md` (audit-only routine).
+- **Flags:** 5 items flagged for user — (1) [Medium] Roadmap Phase 2 missing a row for Plan 41 (Headless CLI Contract, shipped 2026-06-16); (2) [Low] Roadmap Phase 2 missing row for Plan 40 (v0.5.0 Odysseus integration, shipped 2026-06-13); (3) [Low] Roadmap Phase 3 skips MCP intermediary layer (Plan 42, planned) between headless cores and Managed Agents; (4) [Low] KeyDecisionLog not updated since 2026-04-13 — Plan 40/41 architectural decisions unrecorded; (5) [Info] Plan 41 still in Plans/Active/ (pre-existing flag from Memory Consolidation).
+- **Report:** `Reports/Pending/2026-06-21-roadmap-accuracy.md`
+
+---
+
 ### 2026-06-21 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
