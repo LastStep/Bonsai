@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-21 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — References section Research doc entries annotated as stale (files absent/gitignored in this environment); `station/agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-06-21, Next Due → 2026-06-26).
+- **Flags:** 2 items flagged for user — (1) Research docs (`station/Research/RESEARCH-*.md`) absent locally (gitignored) — consider committing or accepting as local-only; (2) Plan 41 still in `Plans/Active/` despite shipping 2026-06-16 — needs archival.
+- **Report:** `Reports/Pending/2026-06-21-memory-consolidation.md`
+
+---
+
 ### 2026-06-21 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
