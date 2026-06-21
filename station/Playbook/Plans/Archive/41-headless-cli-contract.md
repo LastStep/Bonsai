@@ -1,15 +1,16 @@
 ---
 tags: [plan, cli, headless, mcp, contract]
-status: ready
+status: shipped
 tier: 2
 agent: backend
 supersedes: Plan 40 Phase 4 (update-delivery slice); folds in Rung-2.5 multi-agent --from-config
+shipped: 2026-06-16
 ---
 
 # Plan 41 — Headless CLI Contract + MCP-Ready Cores
 
 **Tier:** 2
-**Status:** Ready (grilled to convergence 2026-06-16)
+**Status:** SHIPPED 2026-06-16 — all 5 phases merged (PRs #120/#122/#123/#121/#125, main `ab202c3`)
 **Agent:** backend (code agents via worktrees)
 
 ## Goal
