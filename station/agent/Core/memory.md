@@ -83,10 +83,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
-    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
-    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
-    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
-    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research
-    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research
-    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
+- **Foundational research docs** — Anchor for methodology/concept decisions. (stale — `station/Research/` does not exist on this machine; files are gitignored and may exist on user's local dev environment. Paths below are canonical but unverifiable here. Confirmed absent 2026-06-21.)
+    - `station/Research/RESEARCH-landscape-analysis.md` — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
+    - `station/Research/RESEARCH-concept-decisions.md` — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
+    - `station/Research/RESEARCH-eval-system.md` — Eval system concept: scenarios, evaluators, benchmarks
+    - `station/Research/RESEARCH-trigger-system.md` — Trigger section design research
+    - `station/Research/RESEARCH-uiux-overhaul.md` — UI/UX overhaul research
+    - `station/Research/RESEARCH-proof-of-bonsai-effectiveness.md` — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
