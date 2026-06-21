@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-21 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/routines.md` dashboard row updated (Last Ran 2026-05-04 → 2026-06-21, Next Due → 2026-06-28); `station/Logs/RoutineLog.md` appended.
+- **Flags:** 4 items flagged for user — (1) INDEX.md CLI command count says "8" but completion command added in v0.4.1 makes it 9; (2) station/CLAUDE.md missing Workflows row for plan-grilling.md; (3) station/CLAUDE.md missing Skills row for critic-agent-prompts.md; (4) code-index.md missing internal/nonint/ package section (Plan 41 headless cores).
+- **Report:** `Reports/Pending/2026-06-21-doc-freshness-check.md`
+
+---
+
 ### 2026-06-21 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
