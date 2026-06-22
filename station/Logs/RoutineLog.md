@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-22 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Status.md` — 6 Done rows archived (Plans 37, 36, 35, 34, 32, 33; dated 2026-04-25 and 2026-05-04); footer updated to `≤ 2026-05-07`; `StatusArchive.md` — 6 rows prepended to Archived table; `station/agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-06-22, Next Due → 2026-06-27, Status → done); `RoutineLog.md` this entry appended.
+- **Flags:** 2 items requiring user attention — (1) "[research] Trial sentrux on Bonsai repo" has been Pending for 46 days (>30-day threshold), blocked on Rust toolchain — decide: install rustup, demote to Backlog, or drop; (2) Plan 41 (`41-headless-cli-contract.md`) remains in `Plans/Active/` despite being fully shipped — move to `Plans/Archive/` (flagged by 3 routines today).
+- **Report:** `Reports/Pending/2026-06-22-status-hygiene.md`
+
+---
+
+### 2026-06-22 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-06-22, Next Due → 2026-07-06, Status → done); `RoutineLog.md` this entry appended. No changes to Roadmap.md or KeyDecisionLog.md (audit-only per procedure).
+- **Flags:** 4 items requiring user attention — (1) Roadmap.md Phase 2 missing `[x]` row for Plan 41 Headless CLI Contract (shipped 2026-06-16, major deliverable); (2) Roadmap.md Phase 2 optional row for Plan 40 Odysseus scaffolding (user judgment call); (3) KeyDecisionLog.md missing Structural entry for Plan 41 headless CLI/exit-code contract; (4) KeyDecisionLog.md missing Catalog Design entry for Plan 40 frozen v1 schemas + hub-identity separation. Plans 40+41 also remain in Plans/Active/ (Status Hygiene owns cleanup).
+- **Report:** `Reports/Pending/2026-06-22-roadmap-accuracy.md`
+
+---
+
+### 2026-06-22 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — References section marked stale (6 RESEARCH-*.md links removed; `station/Research/` directory does not exist); `station/agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-06-22, Next Due → 2026-06-27); `RoutineLog.md` this entry appended.
+- **Flags:** 2 items requiring user attention — (1) References section had 6 stale research doc pointers to non-existent `station/Research/` directory — cleaned; (2) Plan 41 still in Plans/Active/ (Work State already notes archive at next wrap-up).
+- **Report:** `Reports/Pending/2026-06-22-memory-consolidation.md`
+
+---
+
+### 2026-06-22 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-06-22, Next Due → 2026-06-29); `RoutineLog.md` this entry appended.
+- **Flags:** 6 items requiring user attention — (1) `internal/nonint/` package missing from INDEX.md architecture overview; (2) `code-index.md` remove.go helpers section has all 5 line numbers stale (+138 lines off, Plan 41 drift); (3) `code-index.md` generate.go Core Generation Functions section has all 5 line numbers stale (+41 to +101 off, Plan 40 drift); (4) `code-index.md` missing entire section for `internal/nonint/` package; (5-6) minor: `bonsai remove` and `bonsai update` CLI entry points in code-index point to `init()` not the command function. See full report for proposed edits.
+- **Report:** `Reports/Pending/2026-06-22-doc-freshness-check.md`
+
+---
+
+### 2026-06-22 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — commented out 2 resolved P0 items (sensor hook $PWD-walk-up bug resolved v0.4.3; non-interactive flags resolved v0.4.2); `routines.md` dashboard updated (Last Ran 2026-06-22, Next Due 2026-06-29); `RoutineLog.md` this entry appended.
+- **Flags:** 3 items requiring user attention — (1) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (23 days away, needs rotation before next release); (2) Group B P1 debt items 60–67 days old with no movement (consider scheduling or demoting); (3) P3 items Self-update-mechanism + Micro-task-fast-path are Phase 2 Roadmap milestones — consider promoting to P2.
+- **Report:** `Reports/Pending/2026-06-22-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
