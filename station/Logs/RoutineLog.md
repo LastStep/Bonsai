@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-22 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-06-22, Next Due → 2026-07-06, Status → done); `RoutineLog.md` this entry appended. No changes to Roadmap.md or KeyDecisionLog.md (audit-only per procedure).
+- **Flags:** 4 items requiring user attention — (1) Roadmap.md Phase 2 missing `[x]` row for Plan 41 Headless CLI Contract (shipped 2026-06-16, major deliverable); (2) Roadmap.md Phase 2 optional row for Plan 40 Odysseus scaffolding (user judgment call); (3) KeyDecisionLog.md missing Structural entry for Plan 41 headless CLI/exit-code contract; (4) KeyDecisionLog.md missing Catalog Design entry for Plan 40 frozen v1 schemas + hub-identity separation. Plans 40+41 also remain in Plans/Active/ (Status Hygiene owns cleanup).
+- **Report:** `Reports/Pending/2026-06-22-roadmap-accuracy.md`
+
+---
+
 ### 2026-06-22 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
