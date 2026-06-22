@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-22 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-06-22, Next Due → 2026-06-29); `RoutineLog.md` this entry appended.
+- **Flags:** 6 items requiring user attention — (1) `internal/nonint/` package missing from INDEX.md architecture overview; (2) `code-index.md` remove.go helpers section has all 5 line numbers stale (+138 lines off, Plan 41 drift); (3) `code-index.md` generate.go Core Generation Functions section has all 5 line numbers stale (+41 to +101 off, Plan 40 drift); (4) `code-index.md` missing entire section for `internal/nonint/` package; (5-6) minor: `bonsai remove` and `bonsai update` CLI entry points in code-index point to `init()` not the command function. See full report for proposed edits.
+- **Report:** `Reports/Pending/2026-06-22-doc-freshness-check.md`
+
+---
+
 ### 2026-06-22 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
