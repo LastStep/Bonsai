@@ -420,3 +420,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** Removed 3 stale Backlog items (P0: $PWD-walk-up bug resolved v0.4.3; P0: non-interactive flags resolved v0.4.2; P1: full CLI parity resolved Plan 41); dashboard row updated (Last Ran 2026-05-07 → 2026-06-23, Next Due → 2026-06-30)
 - **Flags:** HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (22 days — action required); all routines 47 days overdue; stale worktrees/branches item may need refresh
 - **Report:** `Reports/Pending/2026-06-23-backlog-hygiene.md`
+
+### 2026-06-23 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-06-23, Next Due → 2026-06-30); no doc edits (audit-only routine — flagged items for user decision)
+- **Flags:** (1) INDEX.md CLI commands count stale (8→9, completion missing); (2) code-index.md missing `internal/nonint/` section (Plan 41 headless contract layer); (3) CLAUDE.md nav missing plan-grilling.md (Workflows) and critic-agent-prompts.md (Skills); (4) Plans 40+41 still in Active (also flagged by status-hygiene today)
+- **Report:** `Reports/Pending/2026-06-23-doc-freshness-check.md`
