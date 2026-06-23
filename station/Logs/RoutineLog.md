@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-23 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-07 → 2026-06-23, Next Due → 2026-06-28); no edits to `agent/Core/memory.md` (zero auto-memory entries to merge; all 16 Notes + Work State validated against codebase; 6 References entries marked stale — files never committed).
+- **Flags:** (1) `memory.md` References section has 6 stale pointers to non-existent `station/Research/RESEARCH-*.md` files — user decision needed (mark stale / remove / recreate); (2) `nonint/runner.go:48` line number in Notes is stale (actual line 77) — cosmetic, text is accurate.
+- **Report:** `Reports/Pending/2026-06-23-memory-consolidation.md`
+
+---
+
 ### 2026-06-23 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
