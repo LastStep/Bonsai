@@ -20,6 +20,26 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-23 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33 — all dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-06-08`; dashboard Last Ran/Next Due updated to 2026-06-23/2026-06-28.
+- **Flags:** (1) Pending item "Trial sentrux" has been stalled 47 days (since 2026-05-07) — exceeds 30-day threshold, flag for user review. (2) Plans 40 and 41 remain in `Plans/Active/` but both appear only in Recently Done — consider archiving both plan files. (3) No Backlog items to remove based on Recently Done cross-reference (all resolved items already cleaned by backlog-hygiene routine run today).
+- **Report:** `Reports/Pending/2026-06-23-status-hygiene.md`
+
+---
+
+### 2026-06-23 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog (2 P0s: $PWD-walk-up bug resolved v0.4.3, non-interactive flags resolved v0.4.2; 1 P1: full CLI parity resolved Plan 41). Replaced with HTML audit-trail comments. Dashboard Last Ran/Next Due updated to 2026-06-23/2026-06-30.
+- **Flags:** 3 items flagged for user — (1) **URGENT:** HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (22 days); (2) all routines 47 days overdue since 2026-05-07 — recommend full routine-digest session; (3) stale agent worktrees/branches P1 item may have outdated context after Plan 41 worktree activity.
+- **Report:** `Reports/Pending/2026-06-23-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -392,3 +412,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-06-23 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 stale Backlog items (P0: $PWD-walk-up bug resolved v0.4.3; P0: non-interactive flags resolved v0.4.2; P1: full CLI parity resolved Plan 41); dashboard row updated (Last Ran 2026-05-07 → 2026-06-23, Next Due → 2026-06-30)
+- **Flags:** HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (22 days — action required); all routines 47 days overdue; stale worktrees/branches item may need refresh
+- **Report:** `Reports/Pending/2026-06-23-backlog-hygiene.md`
