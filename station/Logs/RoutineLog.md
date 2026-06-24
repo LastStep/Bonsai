@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-24 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `Playbook/Status.md` — archived 14 Done rows (≤ 2026-06-09) to `StatusArchive.md`; updated footer date marker; 2 rows retained (Plans 40 + 41, within 14 days). `Playbook/StatusArchive.md` — prepended 14 archived rows above previous oldest entry. `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-06-24/2026-06-29.
+- **Flags:** (1) Low — `[research] Trial sentrux` has been Pending for ~48 days (blocked: Rust toolchain not installed); flagged for user to unblock or demote to Backlog.
+- **Report:** `Reports/Pending/2026-06-24-status-hygiene.md`
+
+---
+
 ### 2026-06-24 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
