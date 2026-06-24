@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-24 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — commented out 2 resolved P0 items (v0.4.3 sensor hook fix + v0.4.2 non-interactive flags); updated P1 "Full agent-drivable CLI parity" to reflect Plan 41 delivery; added URGENT tag to HOMEBREW_TAP_TOKEN PAT expiry item (21 days to rotate). `routines.md` — dashboard Last Ran/Next Due updated to 2026-06-24/2026-07-01.
+- **Flags:** (1) URGENT — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (21 days); rotate before next release. (2) All 7 routines significantly overdue — dashboard shows May 2026 due dates. (3) Plan 41 delivered headless CLI parity — confirm MCP server / Plan 42 path.
+- **Report:** `Reports/Pending/2026-06-24-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
