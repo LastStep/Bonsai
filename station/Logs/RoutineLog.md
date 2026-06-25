@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-25 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-06-25, Next Due → 2026-07-09). No edits to Roadmap.md (audit-only per procedure).
+- **Flags:** (1) MEDIUM: Headless CLI Contract (Plan 41, shipped 2026-06-16) has no roadmap entry — suggest adding `[x]` row to Phase 2. (2) MEDIUM: Odysseus integration Plan 40 Phases 1–3 (shipped 2026-06-13) has no roadmap entry — suggest adding `[x]` row to Phase 2. (3) LOW: Plans 40+41 still in Plans/Active/ — archive needed. (4) LOW: "Self-update mechanism" sits in Phase 2 roadmap but only P3 Backlog — clarify priority.
+- **Report:** `Reports/Pending/2026-06-25-roadmap-accuracy.md`
+
+---
+
 ### 2026-06-25 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
