@@ -20,6 +20,36 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-25 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 RESEARCH-*.md reference pointers as stale (station/Research/ directory does not exist); converted broken links to plain text. `agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-06-25, Next Due → 2026-06-30).
+- **Flags:** (1) MEDIUM: All 6 References entries in memory.md point to non-existent files — station/Research/ does not exist in repo. User should confirm location or remove. (2) LOW: Plans 40+41 still in Plans/Active/ — Plan 41 shipped 49 days ago, pending archive.
+- **Report:** `Reports/Pending/2026-06-25-memory-consolidation.md`
+
+---
+
+### 2026-06-25 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Routines.md dashboard — Last Ran/Next Due updated to 2026-06-25/2026-07-02. No doc edits (audit-only per procedure).
+- **Flags:** (1) HIGH: root `Bonsai/CLAUDE.md` project-structure tree missing `cmd/completion.go`, entire `internal/nonint/` package (11 files), `internal/generate/list_snapshot.go`, split catalog_snapshot unix/windows files, and 7 new cmd test files — Plans 40/41 + PR #54 drift. (2) MEDIUM: INDEX.md arch diagram missing nonint package; Key Metrics stale (~50 catalog items → ~59, 8 CLI commands → 9). (3) LOW: code-index.md missing nonint section; Plans/Active/ has 2 shipped plans pending archive (40, 41 — memory.md already flags). All nav links in station/CLAUDE.md resolve.
+- **Report:** `Reports/Pending/2026-06-25-doc-freshness-check.md`
+
+---
+
+### 2026-06-25 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (v0.4.3 sensor hook fix, v0.4.2 non-interactive flags); commented out 1 resolved P1 item (Plan 41 headless CLI contract); added urgency annotation to HOMEBREW_TAP_TOKEN PAT P1 item (20 days to expiry). Routines.md dashboard — Last Ran/Next Due updated to 2026-06-25/2026-07-02.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 — only 20 days remaining, rotate urgently. (2) All other routines overdue 35–49 days (last ran 2026-05-04/2026-05-07) — recommend routine-digest catch-up session. (3) Stale worktrees/branches P1 item 65+ days without resolution — user decision needed.
+- **Report:** `Reports/Pending/2026-06-25-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
