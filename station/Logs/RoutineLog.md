@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-26 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `memory.md` — marked 6 stale Research doc references (files never committed to repo, flagged for user review). `routines.md` — dashboard Last Ran → 2026-06-26, Next Due → 2026-07-01.
+- **Flags:** 1 — Research docs (`Research/RESEARCH-*.md`) referenced in memory.md References section do not exist in this repo at any path or in git history. Were likely local-only on original dev machine. User must confirm: lost, excluded, or stored elsewhere.
+- **Report:** `Reports/Pending/2026-06-26-memory-consolidation.md`
+
 ### 2026-06-26 — Backlog Hygiene
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
