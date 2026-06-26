@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 4 items for user — (1) URGENT: HOMEBREW_TAP_TOKEN PAT rotation due ~2026-07-15 (19 days); (2) "Routine bot PR pile-up" P1 still unresolved (50 days stale); (3) stale agent worktrees/branches sweep overdue (66+ days); (4) Phase 2 now active — consider promoting "Self-update mechanism" and "Micro-task fast path" from P3 to P2.
 - **Report:** `Reports/Pending/2026-06-26-backlog-hygiene.md`
 
+### 2026-06-26 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/INDEX.md` — added `internal/nonint/` to architecture overview; added `docs/agent-interface.md` row to Document Registry. `station/code-index.md` — added `list_snapshot.go` section + new `internal/nonint/` package section (Plan 41). `station/agent/Core/routines.md` — dashboard Last Ran → 2026-06-26, Next Due → 2026-07-03.
+- **Flags:** Plan 41 (`Plans/Active/41-headless-cli-contract.md`) still not archived — noted in memory.md but not actioned. Out of scope for this routine; flagged for next wrap-up session.
+- **Report:** `Reports/Pending/2026-06-26-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy

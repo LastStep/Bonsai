@@ -216,6 +216,32 @@ Quick-nav for the developer agent. Jump to what you need.
 | `AgentEntry` / `AbilityEntry` / `SensorEntry` / `RoutineEntry` | — | Per-section row shapes for the snapshot |
 | `WriteCatalogSnapshot()` | — | Render full catalog into `.bonsai/catalog.json` for downstream agent readers |
 
+### `list_snapshot.go` — `bonsai list --json` Snapshot (Plan 41 Phase 4)
+
+| Type / Function | Purpose |
+|-----------------|---------|
+| `ListSnapshot` | Stable JSON shape emitted by `bonsai list --json` — version, docs_path, agents + their abilities |
+| `ListAgent` / `ListAbility` | Per-agent and per-ability row shapes |
+| `SerializeInstalled()` | Renders installed config (`ProjectConfig`) into `ListSnapshot` — TUI-free, safe for `bonsai mcp` (Plan 42) |
+
+---
+
+## Headless CLI Contract (`internal/nonint/`) — Plan 41
+
+Pure headless cores for all mutating commands. No TUI imports — safe for CI scripts, MCP server, and agent-driven Bonsai. JSONL event stream to stdout; exit codes pinned as constants.
+
+| File | Purpose |
+|------|---------|
+| `nonint.go` | Package doc + `ExitConflict=5` constant; intent: headless-parity contract |
+| `result.go` | `*Result` types for init/add/update/remove — structured output shape |
+| `events.go` | JSONL event emission — `WriteEvent()`, event type constants |
+| `runner.go` | `RunInit()` / `RunAdd()` — headless entrypoints called by `--non-interactive` flag path |
+| `config.go` | Config overlay loading for `--from-config <path>` |
+| `update.go` / `remove.go` | Headless cores for `bonsai update` / `bonsai remove` |
+| `contract_test.go` | Byte-identity oracle tests — golden JSONL output locks the event contract |
+
+Exit codes: `0` = success, `2` = validation error, `3` = not initialized, `4` = already initialized, `5` = conflict.
+
 ---
 
 ## Validate (`internal/validate/`) — Plan 35

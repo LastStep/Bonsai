@@ -50,6 +50,7 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 | `Reports/Pending/` | Unprocessed agent completion reports | Check every session start |
 | `Reports/report-template.md` | Structured report format for agents | When submitting a completion report |
 | `code-index.md` | Code index — quick-nav to Go source functions | When navigating the codebase |
+| [`docs/agent-interface.md`](../docs/agent-interface.md) | Public headless CLI contract — JSONL event schema, `*Result` exit codes, `list --json` shape (Plan 41) | When planning MCP server (Plan 42) or CI/agent-driven Bonsai usage |
 | [`LastStep/Bonsai-Eval`](https://github.com/LastStep/Bonsai-Eval) (external repo) | Eval harness (Inspect AI + 3 rungs via `inspect_swe`) + telemetry pipeline (codeburn/transcripts/git → parquet) for measuring Bonsai effectiveness. Pre-registered C1+C3+C6 claims (cut-over `4dfd3f4` 2026-04-14). | Plan 38 work, proof-of-Bonsai measurement, benchmark sweeps |
 
 ---
@@ -66,6 +67,7 @@ cmd/ (Cobra)          ← CLI commands: init, add, remove, list, catalog, update
 internal/catalog/     ← loads embedded YAML metadata + templates from catalog/
 internal/config/      ← reads/writes .bonsai.yaml + .bonsai-lock.yaml
 internal/generate/    ← renders templates, writes lock-aware files, emits .bonsai/catalog.json
+internal/nonint/      ← headless CLI cores (init/add/update/remove *Result shapes + JSONL/exit contract) — Plan 41
 internal/validate/    ← read-only audit — orphans, stale lock entries, untracked customs, frontmatter
 internal/wsvalidate/  ← shared workspace-path normalisation + validation rules
 internal/tui/         ← BubbleTea cinematic flows (init/add/remove/update/list/catalog/guide) + harness/hints + Huh forms + LipGloss styles
