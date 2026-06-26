@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-26 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Status.md` — removed 6 oldest Done rows (Plans 32–37, v0.4.0/Plan 36, Plans 34/35); updated footer date marker to `≤ 2026-06-11`. `StatusArchive.md` — prepended 6 archived rows (newest first). `routines.md` — dashboard Last Ran → 2026-06-26, Next Due → 2026-07-01, Status → done.
+- **Flags:** 2 items — (1) MEDIUM: "Trial sentrux" Pending item stalled 50 days (Rust toolchain blocker unresolved); recommend demote to Backlog or resolve. (2) LOW: Plan 41 still in `Plans/Active/` after shipping 2026-06-16 — should archive.
+- **Report:** `Reports/Pending/2026-06-26-status-hygiene.md`
+
+### 2026-06-26 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard Last Ran → 2026-06-26, Next Due → 2026-07-10, Status → done. Report written to `Reports/Pending/2026-06-26-roadmap-accuracy.md`. No Roadmap.md edits (procedure: flag-only).
+- **Flags:** 3 items for user — (1) MEDIUM: Plan 41 (Headless CLI Contract, 2026-06-16) not captured in Roadmap Phase 2 — recommend adding `[x]` row for headless CLI contract + agent-interface doc; (2) LOW: Plans 40 + 41 still in `Plans/Active/` despite shipping — archive; (3) ADVISORY: Phase 2 Backlog items "Self-update mechanism" + "Micro-task fast path" still at P3 — consider P2 promotion now Phase 2 is active. Phase 1 fully accurate, Phase 3/4 aligned.
+- **Report:** `Reports/Pending/2026-06-26-roadmap-accuracy.md`
+
+### 2026-06-26 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `memory.md` — marked 6 stale Research doc references (files never committed to repo, flagged for user review). `routines.md` — dashboard Last Ran → 2026-06-26, Next Due → 2026-07-01.
+- **Flags:** 1 — Research docs (`Research/RESEARCH-*.md`) referenced in memory.md References section do not exist in this repo at any path or in git history. Were likely local-only on original dev machine. User must confirm: lost, excluded, or stored elsewhere.
+- **Report:** `Reports/Pending/2026-06-26-memory-consolidation.md`
+
+### 2026-06-26 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — commented out 3 resolved items (P0 `$PWD`-walk-up bug resolved v0.4.3; P0 non-interactive flags resolved v0.4.2/Plan 41; P1 headless CLI parity resolved Plan 41). `routines.md` dashboard updated (Last Ran → 2026-06-26, Next Due → 2026-07-03).
+- **Flags:** 4 items for user — (1) URGENT: HOMEBREW_TAP_TOKEN PAT rotation due ~2026-07-15 (19 days); (2) "Routine bot PR pile-up" P1 still unresolved (50 days stale); (3) stale agent worktrees/branches sweep overdue (66+ days); (4) Phase 2 now active — consider promoting "Self-update mechanism" and "Micro-task fast path" from P3 to P2.
+- **Report:** `Reports/Pending/2026-06-26-backlog-hygiene.md`
+
+### 2026-06-26 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/INDEX.md` — added `internal/nonint/` to architecture overview; added `docs/agent-interface.md` row to Document Registry. `station/code-index.md` — added `list_snapshot.go` section + new `internal/nonint/` package section (Plan 41). `station/agent/Core/routines.md` — dashboard Last Ran → 2026-06-26, Next Due → 2026-07-03.
+- **Flags:** Plan 41 (`Plans/Active/41-headless-cli-contract.md`) still not archived — noted in memory.md but not actioned. Out of scope for this routine; flagged for next wrap-up session.
+- **Report:** `Reports/Pending/2026-06-26-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
