@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-26 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard Last Ran → 2026-06-26, Next Due → 2026-07-10, Status → done. Report written to `Reports/Pending/2026-06-26-roadmap-accuracy.md`. No Roadmap.md edits (procedure: flag-only).
+- **Flags:** 3 items for user — (1) MEDIUM: Plan 41 (Headless CLI Contract, 2026-06-16) not captured in Roadmap Phase 2 — recommend adding `[x]` row for headless CLI contract + agent-interface doc; (2) LOW: Plans 40 + 41 still in `Plans/Active/` despite shipping — archive; (3) ADVISORY: Phase 2 Backlog items "Self-update mechanism" + "Micro-task fast path" still at P3 — consider P2 promotion now Phase 2 is active. Phase 1 fully accurate, Phase 3/4 aligned.
+- **Report:** `Reports/Pending/2026-06-26-roadmap-accuracy.md`
+
 ### 2026-06-26 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
