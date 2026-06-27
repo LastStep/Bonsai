@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-27 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-06-27, Next Due → 2026-07-11, Status → done). No Roadmap.md edits (audit-only routine — all findings flagged for user decision).
+- **Flags:** (1) MEDIUM — Plan 41 (Headless CLI Contract, shipped 2026-06-16) has no Roadmap.md entry; recommend adding `[x]` row to Phase 2. (2) MEDIUM — Plan 40 Phases 1–3 (Odysseus integration, shipped 2026-06-13) has no Roadmap.md entry; recommend adding `[x]` row to Phase 2. (3) LOW — Phase 2 "Template variables expansion" has no Backlog tracking entry; add P3 Backlog item to ensure it gets prioritized. KeyDecisionLog cross-check clean — no decisions invalidate roadmap items.
+- **Report:** `Reports/Pending/2026-06-27-roadmap-accuracy.md`
+
 ### 2026-06-27 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
