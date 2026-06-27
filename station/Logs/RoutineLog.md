@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-27 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-06-27, Next Due → 2026-07-04). No doc edits (audit-only routine — all findings flagged for user decision).
+- **Flags:** (1) HIGH — `internal/nonint/` package (Plans 39+41) entirely undocumented in root CLAUDE.md, INDEX.md, and code-index.md; (2) MEDIUM — `list_snapshot.go` undocumented in root CLAUDE.md and code-index.md; (3) MEDIUM — `catalog_snapshot_unix.go`/`_windows.go` undocumented in root CLAUDE.md and code-index.md; (4) LOW — `completion.go` missing from root CLAUDE.md cmd/ tree + code-index.md, INDEX.md CLI count should be 9 not 8. All station/CLAUDE.md navigation links verified clean. bonsai-model.md broken-link from prior cycle confirmed resolved.
+- **Report:** `Reports/Pending/2026-06-27-doc-freshness-check.md`
+
 ### 2026-06-27 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
