@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-27 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — 2 resolved P0 items commented out (`$PWD-walk-up` bug closed by v0.4.3, non-interactive flags closed by v0.4.2); P1 HOMEBREW_TAP_TOKEN item updated with [URGENT] label (~24 days to expiry). routines.md dashboard updated.
+- **Flags:** CRITICAL — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-21; rotate immediately to avoid Homebrew publish failure on next release. Plans 40+41 still in Active/ (not archived post-ship). Phase 2 roadmap item "Template variables expansion" has no Backlog tracking entry.
+- **Report:** `Reports/Pending/2026-06-27-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
