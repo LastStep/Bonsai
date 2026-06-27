@@ -54,7 +54,7 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 ## P1 — High
 
-- **[feature] Full agent-drivable (non-interactive) CLI parity: init / update / add / remove** — Odysseus hub + AI agents must drive Bonsai headless, no TUI. Today: `init`+`add` have `--non-interactive`/`--from-config` (v0.4.2); `update` has NO flags (isatty→`RunStatic` auto-accept, no overlay input); `remove` likely TUI-only. Need a unified non-interactive surface + JSONL/exit-code contract across all four (audit each first). Supersedes Plan 40 Phase 4's update-delivery slice; folds in Rung-2.5 multi-agent `--from-config`. Promote to a plan + grill next session (`/plan`). *(added 2026-06-13, source: user — "main thing")*
+<!-- "[feature] Full agent-drivable CLI parity" — resolved via Plan 41 (PRs #120/#122/#123/#121/#125, 2026-06-16). All four mutating cmds (init/add/update/remove) have headless cores + JSONL/exit-code contract. Removed from P1 2026-06-27 (status-hygiene). -->
 
 - **[ops] HOMEBREW_TAP_TOKEN PAT expiry calendar reminder** `[URGENT — expires ~2026-07-21]` — Fine-grained PATs default to 90-day expiry. The `HOMEBREW_TAP_TOKEN` secret on `LastStep/Bonsai` was rotated 2026-04-22 — **as of 2026-06-27 this is ~24 days from expiry; rotate now before next release**. Symptom of expired PAT: GoReleaser fails at brew step with `GET https://api.github.com/repos/LastStep/homebrew-tap: 401 Bad credentials`. *(added 2026-04-22, urgency flagged 2026-06-27 backlog-hygiene, source: v0.2.0 release session)*
 <!-- Resolved 2026-05-07 via Dependabot bundle merge — codeql-action v3→v4 (#85), checkout v4→v6 + deploy-pages v4→v5 + go-isatty patch (#81/#82/#84). Node 20 deprecation closed via checkout@v6 (Node 24). -->
