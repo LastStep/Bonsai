@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-28 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Status.md` — archived 6 old Done rows (Plans 37/36/35/34/32/33, dated 2026-04-25 to 2026-05-07) to `StatusArchive.md`; updated footer date marker (`≤ 2026-04-24` → `≤ 2026-06-14`). `Backlog.md` — resolved P1 headless CLI parity item (Plan 41 shipped all 4 cmds headless 2026-06-16). `StatusArchive.md` — 6 rows prepended + resolution entry added. `routines.md` dashboard updated (Last Ran → 2026-06-28, Next Due → 2026-07-03).
+- **Flags:** (1) `[research] Trial sentrux` Pending 52 days without progress — exceeds 30-day threshold; user should resolve or demote to Backlog. (2) Plan 41 plan file still in `Plans/Active/` despite all phases shipped — should be archived.
+- **Report:** `Reports/Pending/2026-06-28-status-hygiene.md`
+
+---
+
 ### 2026-06-28 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
