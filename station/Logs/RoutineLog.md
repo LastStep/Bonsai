@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-28 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 2 stale P0 bullets (both resolved: `$PWD-walk-up bug` via v0.4.3, `non-interactive flags` via v0.4.2) by converting to HTML audit comments; added `[TIME-SENSITIVE: due ~2026-07-15]` tag to HOMEBREW_TAP_TOKEN PAT expiry P1 item. `routines.md` dashboard updated (Last Ran → 2026-06-28, Next Due → 2026-07-05). `RoutineLog.md` this entry.
+- **Flags:** (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT expires ~2026-07-22 — rotate before 2026-07-15. (2) `[debt] Stale agent worktrees + branches` P1 item references a 2026-04-21 snapshot (69 days stale) — user should re-audit or close.
+- **Report:** `Reports/Pending/2026-06-28-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
