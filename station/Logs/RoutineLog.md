@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-28 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `routines.md` dashboard updated (Last Ran → 2026-06-28, Next Due → 2026-07-03). No edits to `agent/Core/memory.md` — zero auto-memory entries to merge; all Notes/Feedback validated against codebase.
+- **Flags:** (1) `## References` section in `memory.md` cites 6 `station/Research/RESEARCH-*.md` paths that do not exist on disk — stale references, user should verify/update. (2) Plan 41 archival overdue 12 days (still in `Plans/Active/`). (3) Plan 40 tag-held state has no resolution path recorded in Work State.
+- **Report:** `Reports/Pending/2026-06-28-memory-consolidation.md`
+
+---
+
 ### 2026-06-28 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
