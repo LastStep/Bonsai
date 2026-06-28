@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-28 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `routines.md` dashboard updated (Last Ran → 2026-06-28, Next Due → 2026-07-05). No doc edits made — findings flagged for user decision per procedure.
+- **Flags:** (1) `station/CLAUDE.md` Workflows table missing `plan-grilling.md`. (2) `station/CLAUDE.md` Skills table missing `critic-agent-prompts.md`. (3) Root `CLAUDE.md` project structure missing `ci.yml`/`codeql.yml`/`docs.yml`, `cmd/completion.go`, `internal/nonint/`. (4) `station/INDEX.md` CLI count stale (8 vs actual 9). (5) `station/INDEX.md` catalog count stale (~50 vs actual ~63).
+- **Report:** `Reports/Pending/2026-06-28-doc-freshness-check.md`
+
+---
+
 ### 2026-06-28 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
