@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-29 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** `station/CLAUDE.md` — 2 rows added (critic-agent-prompts to Skills table, plan-grilling to Workflows table); `routines.md` — Doc Freshness Check row updated (Last Ran 2026-05-04→2026-06-29, Next Due 2026-05-11→2026-07-06).
+- **Flags:** (1) [high] 6 broken links to `Research/RESEARCH-*.md` in `memory.md` — Research directory missing; (2) [high] 3 broken links to `agent/Skills/dispatch.md` in `issue-to-implementation.md` — skill not installed; (3) [medium] `code-index.md` line numbers drifted +40–100 for catalog.go + generate.go, plus 10 undocumented new files from Plans 39–41; (4) [medium] root `CLAUDE.md` tree missing completion.go, test files, list_snapshot.go, platform split files; (5) [low] INDEX.md CLI count 8→9 (completion subcommand).
+- **Report:** `Reports/Pending/2026-06-29-doc-freshness-check.md`
+
+---
+
 ### 2026-06-29 — Status Hygiene
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
