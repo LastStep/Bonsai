@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-29 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `routines.md` — Roadmap Accuracy row updated (Last Ran 2026-05-07→2026-06-29, Next Due 2026-05-21→2026-07-13). `RoutineLog.md` — this entry appended. No changes to `Roadmap.md` (audit-only routine).
+- **Flags:** (1) [medium] MCP server (Plan 42 "fast-follow") has no Roadmap entry — near-term planned workstream missing from Phase 2/3. (2) [low] Plans 40+41 still in Active/ — both shipped; recommend archiving (also flagged by Status Hygiene 2026-06-29). (3) [low] Phase 2 "Template variables expansion" has no Backlog tracking entry — unclear if planned, deprioritized, or superseded.
+- **Report:** `Reports/Pending/2026-06-29-roadmap-accuracy.md`
+
+---
+
 ### 2026-06-29 — Memory Consolidation
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
