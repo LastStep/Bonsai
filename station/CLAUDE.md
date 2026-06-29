@@ -71,6 +71,7 @@
 | End-of-session verification, review, cleanup, and summary — triggered by session wrap-up phrases. | [agent/Workflows/session-wrapup.md](agent/Workflows/session-wrapup.md) |
 | Taking an issue from intake through to shipped code; Running the full autonomous implementation workflow | [agent/Workflows/issue-to-implementation.md](agent/Workflows/issue-to-implementation.md) |
 | Synthesize all pending routine reports into a consolidated digest — extract actionable items, present interactive Q&A for decisions, route results to plans or backlog. | [agent/Workflows/routine-digest.md](agent/Workflows/routine-digest.md) |
+| Adversarial review of a drafted plan via 6 critic agents (5 prose + empirical Reality), looped to convergence before dispatch. | [agent/Workflows/plan-grilling.md](agent/Workflows/plan-grilling.md) |
 
 ### Skills (load when doing specific work)
 
@@ -82,6 +83,7 @@
 | Creating a pull request with proper conventions; Setting up branch naming, PR title, and body template | [agent/Skills/pr-creation.md](agent/Skills/pr-creation.md) |
 | BubbleTea / Charm-stack TUI patterns — harness/step/reducer model, component golden rules, embedding Huh forms, emoji-width gotchas. | [agent/Skills/bubbletea.md](agent/Skills/bubbletea.md) |
 | How Bonsai structures an agent workspace — catalog, abilities, scaffolding, and customization decisions. Load when reasoning about adding/removing abilities, creating custom items, or explaining Bonsai concepts to the user. | [agent/Skills/bonsai-model.md](agent/Skills/bonsai-model.md) |
+| Critic agent prompt templates for the 6 plan-grilling critics (5 prose + Reality). Consumed verbatim by plan-grilling.md. | [agent/Skills/critic-agent-prompts.md](agent/Skills/critic-agent-prompts.md) |
 
 ### Routines (periodic self-maintenance)
 

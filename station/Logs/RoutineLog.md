@@ -20,6 +20,52 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-29 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `routines.md` — Roadmap Accuracy row updated (Last Ran 2026-05-07→2026-06-29, Next Due 2026-05-21→2026-07-13). `RoutineLog.md` — this entry appended. No changes to `Roadmap.md` (audit-only routine).
+- **Flags:** (1) [medium] MCP server (Plan 42 "fast-follow") has no Roadmap entry — near-term planned workstream missing from Phase 2/3. (2) [low] Plans 40+41 still in Active/ — both shipped; recommend archiving (also flagged by Status Hygiene 2026-06-29). (3) [low] Phase 2 "Template variables expansion" has no Backlog tracking entry — unclear if planned, deprioritized, or superseded.
+- **Report:** `Reports/Pending/2026-06-29-roadmap-accuracy.md`
+
+---
+
+### 2026-06-29 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `memory.md` — 6 Research references marked stale (files never existed in git); `routines.md` — Memory Consolidation row updated (Last Ran 2026-05-07→2026-06-29, Next Due 2026-05-12→2026-07-04).
+- **Flags:** (1) [high] 6 broken links in `memory.md` References section to `station/Research/RESEARCH-*.md` — directory never committed to git; flagged for user to recreate from source or remove. (2) [low] Plan 41 file still in `Plans/Active/` (shipped 2026-06-16) — archive pending.
+- **Report:** `Reports/Pending/2026-06-29-memory-consolidation.md`
+
+---
+
+### 2026-06-29 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** `station/CLAUDE.md` — 2 rows added (critic-agent-prompts to Skills table, plan-grilling to Workflows table); `routines.md` — Doc Freshness Check row updated (Last Ran 2026-05-04→2026-06-29, Next Due 2026-05-11→2026-07-06).
+- **Flags:** (1) [high] 6 broken links to `Research/RESEARCH-*.md` in `memory.md` — Research directory missing; (2) [high] 3 broken links to `agent/Skills/dispatch.md` in `issue-to-implementation.md` — skill not installed; (3) [medium] `code-index.md` line numbers drifted +40–100 for catalog.go + generate.go, plus 10 undocumented new files from Plans 39–41; (4) [medium] root `CLAUDE.md` tree missing completion.go, test files, list_snapshot.go, platform split files; (5) [low] INDEX.md CLI count 8→9 (completion subcommand).
+- **Report:** `Reports/Pending/2026-06-29-doc-freshness-check.md`
+
+---
+
+### 2026-06-29 — Status Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Status.md` — archived 6 Done rows (Plans 37/36/35/34/32/33, dated 2026-04-25 to 2026-05-07) to `StatusArchive.md`; footer date marker updated `≤ 2026-04-24` → `≤ 2026-06-14`. `StatusArchive.md` — 6 rows prepended to archive table. `routines.md` — Status Hygiene row updated (Last Ran 2026-05-07→2026-06-29, Next Due 2026-05-12→2026-07-04).
+- **Flags:** (1) Sentrux Pending item stalled 53 days — blocked on Rust toolchain; flag for user: demote to Backlog or install rustup. (2) `Plans/Active/41-headless-cli-contract.md` orphaned — Plan 41 fully shipped 2026-06-16; move to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-06-29-status-hygiene.md`
+
+### 2026-06-29 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — 3 stale items converted to HTML comments (2 resolved P0s: sensor hook $PWD-walk-up fixed v0.4.3, non-interactive flags fixed v0.4.2; 1 resolved P1: full headless CLI parity shipped Plan 41); urgency tag added to HOMEBREW_TAP_TOKEN P1 entry (PAT due ~2026-07-15); `routines.md` — Backlog Hygiene row updated (Last Ran 2026-05-07→2026-06-29, Next Due 2026-05-14→2026-07-06).
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expiry urgent — due ~2026-07-15 (16 days), user must rotate on GitHub. (2) 5 routines overdue since May 2026 (Dependency Audit, Doc Freshness Check, Memory Consolidation, Status Hygiene, Vulnerability Scan) — recommend routine-digest session.
+- **Report:** `Reports/Pending/2026-06-29-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
