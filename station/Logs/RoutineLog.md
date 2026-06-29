@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-29 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `memory.md` — 6 Research references marked stale (files never existed in git); `routines.md` — Memory Consolidation row updated (Last Ran 2026-05-07→2026-06-29, Next Due 2026-05-12→2026-07-04).
+- **Flags:** (1) [high] 6 broken links in `memory.md` References section to `station/Research/RESEARCH-*.md` — directory never committed to git; flagged for user to recreate from source or remove. (2) [low] Plan 41 file still in `Plans/Active/` (shipped 2026-06-16) — archive pending.
+- **Report:** `Reports/Pending/2026-06-29-memory-consolidation.md`
+
+---
+
 ### 2026-06-29 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)

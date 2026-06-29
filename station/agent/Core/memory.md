@@ -83,10 +83,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
-    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
-    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
-    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
-    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research
-    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research
-    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
+- **Foundational research docs** — Anchor for methodology/concept decisions. (stale — `station/Research/` directory never committed to git; files referenced here do not exist on disk as of 2026-06-29. Content may have existed as external docs. Flagged for user: recreate from source or remove entries.)
+    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning (stale — file missing)
+    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy (stale — file missing)
+    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks (stale — file missing)
+    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research (stale — file missing)
+    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research (stale — file missing)
+    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first. (stale — file missing)
