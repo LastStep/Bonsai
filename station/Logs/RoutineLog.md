@@ -44,6 +44,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (~15 days) — rotate before next release; (2) `Template variables expansion` (Roadmap Phase 2) has no Backlog entry; (3) 3 stale P1 items (testing infra, worktree cleanup, bot PR pile-up) at 54–75 days with no movement — re-triage; (4) all other routines significantly overdue (last ran 2026-05-04/07).
 - **Report:** `Reports/Pending/2026-06-30-backlog-hygiene.md`
 
+### 2026-06-30 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-04 → 2026-06-30, Next Due → 2026-07-07, Status done). `RoutineLog.md` entry appended. No doc updates applied autonomously — all 4 findings flagged for user decision per routine procedure.
+- **Flags:** (1) CLAUDE.md missing nav entries for 2 custom files: `plan-grilling.md` (Workflow) and `critic-agent-prompts.md` (Skill) — both added 2026-06-13, neither wired via bonsai.yaml; recommend registering as custom_items + `bonsai update`; (2) INDEX.md CLI command count stale (says 8, should be 9 — `completion` added 2026-05-07); (3) INDEX.md architecture diagram missing `internal/nonint/` package (Plan 41, 2026-06-16).
+- **Report:** `Reports/Pending/2026-06-30-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
