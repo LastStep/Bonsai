@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-30 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` dashboard row updated (Last Ran 2026-05-07 → 2026-06-30, Next Due → 2026-07-14). No changes to `Roadmap.md` (audit-only routine — findings flagged for user).
+- **Flags:** (1) Phase 2 missing row for Plan 41 headless CLI contract (MCP-ready cores shipped 2026-06-16); (2) Phase 2/3 missing row for Plan 40 Odysseus scaffold (`.bonsai/project.yaml`, memory graph, validate lint — v0.5.0 untagged); (3) `Template variables expansion` (Phase 2 open item) has no Backlog tracking entry. All 3 flagged for user decision — no autonomous Roadmap.md edits.
+- **Report:** `Reports/Pending/2026-06-30-roadmap-accuracy.md`
+
+### 2026-06-30 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `agent/Core/memory.md` — References section: annotated all 6 RESEARCH-*.md entries as stale (directory `station/Research/` does not exist); converted unresolvable links to plain text. `agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-06-30, Next Due → 2026-07-05). No other memory edits — 20 Notes + Work State validated accurate; auto-memory is empty stub (no bridging needed).
+- **Flags:** (1) `station/Research/` directory missing — 6 foundational RESEARCH docs unresolvable; user should locate/restore or remove References entries; (2) Plan 41 + Plan 40 plan files still in Plans/Active/ — archival pending user wrap-up session.
+- **Report:** `Reports/Pending/2026-06-30-memory-consolidation.md`
+
+### 2026-06-30 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 15 Done items dated 2026-04-25 through 2026-06-13 from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-06-15`; dashboard `Last Ran`/`Next Due` set to 2026-06-30/2026-07-05.
+- **Flags:** (1) Pending item `[research] Trial sentrux` stale 54 days (blocked on Rust toolchain) — flag for user: keep/demote/drop; (2) Plan 41 plan file still in Plans/Active/ despite all phases shipped — needs archival to Plans/Archive/; (3) Backlog P1 `full non-interactive CLI parity` appears resolved by Plan 41 — flag for user to confirm removal.
+- **Report:** `Reports/Pending/2026-06-30-status-hygiene.md`
+
+### 2026-06-30 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 items (sensor-hook $PWD-walk-up bug resolved v0.4.3, non-interactive flags resolved v0.4.2); replaced with HTML comment audit trail. `routines.md` dashboard updated (Last Ran/Next Due/Status). `RoutineLog.md` entry appended.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (~15 days) — rotate before next release; (2) `Template variables expansion` (Roadmap Phase 2) has no Backlog entry; (3) 3 stale P1 items (testing infra, worktree cleanup, bot PR pile-up) at 54–75 days with no movement — re-triage; (4) all other routines significantly overdue (last ran 2026-05-04/07).
+- **Report:** `Reports/Pending/2026-06-30-backlog-hygiene.md`
+
+### 2026-06-30 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-04 → 2026-06-30, Next Due → 2026-07-07, Status done). `RoutineLog.md` entry appended. No doc updates applied autonomously — all 4 findings flagged for user decision per routine procedure.
+- **Flags:** (1) CLAUDE.md missing nav entries for 2 custom files: `plan-grilling.md` (Workflow) and `critic-agent-prompts.md` (Skill) — both added 2026-06-13, neither wired via bonsai.yaml; recommend registering as custom_items + `bonsai update`; (2) INDEX.md CLI command count stale (says 8, should be 9 — `completion` added 2026-05-07); (3) INDEX.md architecture diagram missing `internal/nonint/` package (Plan 41, 2026-06-16).
+- **Report:** `Reports/Pending/2026-06-30-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
