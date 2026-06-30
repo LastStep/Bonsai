@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-30 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` dashboard row updated (Last Ran 2026-05-07 → 2026-06-30, Next Due → 2026-07-14). No changes to `Roadmap.md` (audit-only routine — findings flagged for user).
+- **Flags:** (1) Phase 2 missing row for Plan 41 headless CLI contract (MCP-ready cores shipped 2026-06-16); (2) Phase 2/3 missing row for Plan 40 Odysseus scaffold (`.bonsai/project.yaml`, memory graph, validate lint — v0.5.0 untagged); (3) `Template variables expansion` (Phase 2 open item) has no Backlog tracking entry. All 3 flagged for user decision — no autonomous Roadmap.md edits.
+- **Report:** `Reports/Pending/2026-06-30-roadmap-accuracy.md`
+
 ### 2026-06-30 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
