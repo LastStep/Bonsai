@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-06-30 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 items (sensor-hook $PWD-walk-up bug resolved v0.4.3, non-interactive flags resolved v0.4.2); replaced with HTML comment audit trail. `routines.md` dashboard updated (Last Ran/Next Due/Status). `RoutineLog.md` entry appended.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (~15 days) — rotate before next release; (2) `Template variables expansion` (Roadmap Phase 2) has no Backlog entry; (3) 3 stale P1 items (testing infra, worktree cleanup, bot PR pile-up) at 54–75 days with no movement — re-triage; (4) all other routines significantly overdue (last ran 2026-05-04/07).
+- **Report:** `Reports/Pending/2026-06-30-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)

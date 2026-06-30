@@ -46,11 +46,9 @@ Items that should be worked together are tagged with a group letter. See the gro
 
 ## P0 — Critical
 
-- **[bug] Sensor hook commands use `$PWD`-walk-up — breaks in multi-`.bonsai.yaml` setups** `[Plan 39 follow-up]` — `internal/generate/generate.go:534` writes each `.claude/settings.json` hook command as `bash -c 'r="$PWD"; while [ ! -f "$r/.bonsai.yaml" ]; do r=$(dirname "$r"); done; bash "$r/<sensor>" "$r"'`. When a Bash tool invocation in repo A's Claude Code session cd's into repo B (also a Bonsai project), the walker lands in B and tries to run B's sensor — fails loudly if B doesn't have that sensor installed. Surfaced 2026-05-13 during Bonsai-Eval bootstrap: Bonsai station Stop hook (status-bar) walked into `Bonsai-Eval/` and tripped `No such file`. Fix: bake the absolute install-time project root into each hook command; mirror what statusLine already requires (memory L31). Both repos hotfixed locally; upstream `bonsai update` would clobber the fix. Ships v0.4.3. *(added 2026-05-13, source: live session bug)*
-
+<!-- "[bug] Sensor hook commands use $PWD-walk-up" — resolved 2026-05-13 via v0.4.3 hotfix (PRs #105/#106). Baked absolute install-time paths into hook commands. (removed from P0 by backlog-hygiene 2026-06-30) -->
 <!-- "[research] Trial sentrux on Bonsai repo" — promoted to Status.md Pending 2026-05-07 (routine-digest). Blocked on Rust toolchain install. -->
-
-- **[feature] `bonsai init` / `bonsai add` need non-interactive flags** `[Plan 38 P2 blocker]` — Rung-3 solver in Bonsai-Eval (`bonsai_eval/solvers/rungs.py:135`) needs to invoke `bonsai init --non-interactive` and `bonsai add --from-config <path>` to materialize a `station/` workspace from a fixture without TUI prompts. Neither flag exists today. Without these, Plan 38 P2 (12 scenarios × 3 rungs validation) cannot run rung 3. Fix: add `--non-interactive` + `--from-config` to `cmd/init.go` and `cmd/add.go`, OR provide stdin-scripted answer files as fallback. *(added 2026-05-08, source: Plan 38 P0+P1 dispatch review)*
+<!-- "[feature] bonsai init / bonsai add need non-interactive flags" — resolved 2026-05-13 via v0.4.2 (PR #102). --non-interactive + --from-config shipped. (removed from P0 by backlog-hygiene 2026-06-30) -->
 
 ## P1 — High
 
