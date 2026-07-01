@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-01 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/Playbook/Status.md` — removed 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33; dated 2026-04-25 to 2026-05-07) past the keep-10 threshold; updated footer cutoff note. `station/Playbook/StatusArchive.md` — prepended the 6 archived rows. `station/agent/Core/routines.md` — dashboard row updated to 2026-07-01/2026-07-06.
+- **Flags:** (1) `[research] Trial sentrux` has been Pending 55 days (blocked on Rust toolchain install) — stale threshold 30 days; flagged for user review (demote to Backlog or install rustup). (2) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 — also flagged by backlog-hygiene (time-sensitive).
+- **Report:** `Reports/Pending/2026-07-01-status-hygiene.md`
+
+---
+
 ### 2026-07-01 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
