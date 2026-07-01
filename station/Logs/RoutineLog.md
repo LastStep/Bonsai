@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-01 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated (2026-05-07 → 2026-07-01, Next Due 2026-07-15, status done). `station/Reports/Pending/2026-07-01-roadmap-accuracy.md` — report written.
+- **Flags:** (1) MEDIUM — Plans 40 and 41 (headless CLI contract + MCP-ready cores, shipped 2026-06-13/16) not reflected in roadmap; MCP server (Plan 42) described as fast-follow but not started; suggest adding Phase 3 intermediate milestones. (2) LOW — Phase 2 remaining items (self-update, template variables expansion, micro-task fast path) all P3 in Backlog with no active plans; delivery trajectory favors Phase 3 prerequisites over stated Phase 2 goals; roadmap phase ordering may need revisiting.
+- **Report:** `Reports/Pending/2026-07-01-roadmap-accuracy.md`
+
+---
+
+### 2026-07-01 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — (1) marked 6 Research file references as stale (station/Research/ directory missing from disk and not in git history); (2) corrected `nonint/runner.go:48` stale line number → `ExitWrongCWDForInit = 4` at ~line 42; (3) corrected `catalog_snapshot.go:204` reference → `catalog_snapshot_unix.go:15` after PR #95 platform split. `station/agent/Core/routines.md` — dashboard row updated (2026-05-07 → 2026-07-01, next due 2026-07-06). `station/Reports/Pending/2026-07-01-memory-consolidation.md` — report written.
+- **Flags:** (1) HIGH — 6 Research file references stale; station/Research/ directory missing from disk entirely (last confirmed present 2026-05-07). User decision needed: restore files or remove references. (2) LOW — Plan 41 file still in Plans/Active/ since ship 2026-06-16 (15 days); needs wrap-up archiving.
+- **Report:** `Reports/Pending/2026-07-01-memory-consolidation.md`
+
+---
+
+### 2026-07-01 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated to 2026-07-01/2026-07-08. `station/Reports/Pending/2026-07-01-doc-freshness-check.md` — report written.
+- **Flags:** (1) HIGH — `internal/nonint/` package (Plan 41, headless CLI contract) not documented in root `CLAUDE.md` or `station/INDEX.md` architecture diagram. (2) MEDIUM — `internal/validate/project.go` and `internal/generate/list_snapshot.go` missing from root `CLAUDE.md`. (3) LOW — INDEX.md CLI command count stale (8, should be 9 with `completion`); `cmd/completion.go` not in `CLAUDE.md` cmd/ listing; root `CLAUDE.md` station/Sensors comment lists 5 of 10 sensors. (4) INFO — `plan-grilling.md` and `critic-agent-prompts.md` not in station/CLAUDE.md nav tables (possibly intentional). All navigation links in station/CLAUDE.md resolve correctly — no broken links.
+- **Report:** `Reports/Pending/2026-07-01-doc-freshness-check.md`
+
+---
+
+### 2026-07-01 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/Playbook/Status.md` — removed 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33; dated 2026-04-25 to 2026-05-07) past the keep-10 threshold; updated footer cutoff note. `station/Playbook/StatusArchive.md` — prepended the 6 archived rows. `station/agent/Core/routines.md` — dashboard row updated to 2026-07-01/2026-07-06.
+- **Flags:** (1) `[research] Trial sentrux` has been Pending 55 days (blocked on Rust toolchain install) — stale threshold 30 days; flagged for user review (demote to Backlog or install rustup). (2) HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 — also flagged by backlog-hygiene (time-sensitive).
+- **Report:** `Reports/Pending/2026-07-01-status-hygiene.md`
+
+---
+
+### 2026-07-01 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/Playbook/Backlog.md` — removed 3 stale resolved items (2 P0, 1 P1), replaced with HTML comment tombstones: (1) P0 sensor hook $PWD-walk-up bug (fixed v0.4.3, 2026-05-13), (2) P0 non-interactive flags feature (fixed v0.4.2, 2026-05-13), (3) P1 full agent-drivable CLI parity (resolved by Plan 41, 2026-06-16). Dashboard row updated.
+- **Flags:** (1) URGENT — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (14 days); rotate before next release or Homebrew formula update fails with 401. (2) Phase 2 Roadmap item "Template variables expansion" has no Backlog tracking entry. (3) P1 stale items 55–76 days without progress (testing infra, worktrees, bot PR pile-up) — consider scheduling or demoting.
+- **Report:** `Reports/Pending/2026-07-01-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
