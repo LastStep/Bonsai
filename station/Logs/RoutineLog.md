@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-01 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated to 2026-07-01/2026-07-08. `station/Reports/Pending/2026-07-01-doc-freshness-check.md` — report written.
+- **Flags:** (1) HIGH — `internal/nonint/` package (Plan 41, headless CLI contract) not documented in root `CLAUDE.md` or `station/INDEX.md` architecture diagram. (2) MEDIUM — `internal/validate/project.go` and `internal/generate/list_snapshot.go` missing from root `CLAUDE.md`. (3) LOW — INDEX.md CLI command count stale (8, should be 9 with `completion`); `cmd/completion.go` not in `CLAUDE.md` cmd/ listing; root `CLAUDE.md` station/Sensors comment lists 5 of 10 sensors. (4) INFO — `plan-grilling.md` and `critic-agent-prompts.md` not in station/CLAUDE.md nav tables (possibly intentional). All navigation links in station/CLAUDE.md resolve correctly — no broken links.
+- **Report:** `Reports/Pending/2026-07-01-doc-freshness-check.md`
+
+---
+
 ### 2026-07-01 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
