@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-01 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — (1) marked 6 Research file references as stale (station/Research/ directory missing from disk and not in git history); (2) corrected `nonint/runner.go:48` stale line number → `ExitWrongCWDForInit = 4` at ~line 42; (3) corrected `catalog_snapshot.go:204` reference → `catalog_snapshot_unix.go:15` after PR #95 platform split. `station/agent/Core/routines.md` — dashboard row updated (2026-05-07 → 2026-07-01, next due 2026-07-06). `station/Reports/Pending/2026-07-01-memory-consolidation.md` — report written.
+- **Flags:** (1) HIGH — 6 Research file references stale; station/Research/ directory missing from disk entirely (last confirmed present 2026-05-07). User decision needed: restore files or remove references. (2) LOW — Plan 41 file still in Plans/Active/ since ship 2026-06-16 (15 days); needs wrap-up archiving.
+- **Report:** `Reports/Pending/2026-07-01-memory-consolidation.md`
+
+---
+
 ### 2026-07-01 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
