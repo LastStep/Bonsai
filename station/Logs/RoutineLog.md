@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-01 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/Playbook/Backlog.md` — removed 3 stale resolved items (2 P0, 1 P1), replaced with HTML comment tombstones: (1) P0 sensor hook $PWD-walk-up bug (fixed v0.4.3, 2026-05-13), (2) P0 non-interactive flags feature (fixed v0.4.2, 2026-05-13), (3) P1 full agent-drivable CLI parity (resolved by Plan 41, 2026-06-16). Dashboard row updated.
+- **Flags:** (1) URGENT — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (14 days); rotate before next release or Homebrew formula update fails with 401. (2) Phase 2 Roadmap item "Template variables expansion" has no Backlog tracking entry. (3) P1 stale items 55–76 days without progress (testing infra, worktrees, bot PR pile-up) — consider scheduling or demoting.
+- **Report:** `Reports/Pending/2026-07-01-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
