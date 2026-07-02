@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-02 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — 3 edits: (1) removed stale `.bonsai-lock.yaml` gitignore clause from Work State (already in .gitignore); (2) corrected `nonint/runner.go:48` → `:76-78` in Notes; (3) marked Research/ file references as stale (directory missing). Dashboard `Last Ran`/`Next Due` updated to 2026-07-02/2026-07-07.
+- **Flags:** Plan 41 still in Plans/Active/ (needs archiving); Plan 42 MCP server referenced in Work State but not present in Backlog.md; Research/ directory missing at project root (6 reference links broken).
+- **Report:** `Reports/Pending/2026-07-02-memory-consolidation.md`
+
 ### 2026-07-02 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
