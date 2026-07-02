@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-02 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33 — dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated Status.md footer; dashboard `Last Ran`/`Next Due` updated to 2026-07-02/2026-07-07.
+- **Flags:** (1) Sentrux trial Pending for 56 days (blocked by missing Rust toolchain — flag for user: install rustup, demote to Backlog, or drop). (2) Plan 41 still in Plans/Active/ despite being SHIPPED 2026-06-16 — needs `git mv` to Plans/Archive/ (also flagged by today's memory-consolidation).
+- **Report:** `Reports/Pending/2026-07-02-status-hygiene.md`
+
+### 2026-07-02 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-07-02/2026-07-16.
+- **Flags:** 5 findings — (1) **Medium**: Plan 41 (Headless CLI Contract + MCP-ready cores, SHIPPED 2026-06-16) absent from Roadmap Phase 2. (2) **Medium**: Plan 40 phases 1–3 (Platform Integration, SHIPPED 2026-06-13) absent from Roadmap Phase 2. (3) **Medium**: Plan 39 (`--non-interactive --from-config`, SHIPPED 2026-05-13) absent from Roadmap Phase 2. (4) **Low**: Plan 42 MCP server (actively planned fast-follow to Plan 41) has no roadmap entry. (5) **Low**: KeyDecisionLog has no entries since 2026-04-13 — Plan 41 headless contract + Plan 40 v1 schema freeze are unlogged architectural decisions.
+- **Report:** `Reports/Pending/2026-07-02-roadmap-accuracy.md`
+
+### 2026-07-02 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — 3 edits: (1) removed stale `.bonsai-lock.yaml` gitignore clause from Work State (already in .gitignore); (2) corrected `nonint/runner.go:48` → `:76-78` in Notes; (3) marked Research/ file references as stale (directory missing). Dashboard `Last Ran`/`Next Due` updated to 2026-07-02/2026-07-07.
+- **Flags:** Plan 41 still in Plans/Active/ (needs archiving); Plan 42 MCP server referenced in Work State but not present in Backlog.md; Research/ directory missing at project root (6 reference links broken).
+- **Report:** `Reports/Pending/2026-07-02-memory-consolidation.md`
+
+### 2026-07-02 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Removed 3 resolved items from `Backlog.md` (replaced with HTML audit-trail comments): P0 sensor hook bug (resolved v0.4.3), P0 non-interactive flags (resolved v0.4.2), P1 full CLI parity (resolved Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-07-02/2026-07-09.
+- **Flags:** URGENT — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (13 days). 3 stale P1 items (testing infra 77d, worktrees/branches 73d, routine bot PR pile-up 56d) flagged for re-prioritization. 2 P3 items align with Phase 2 milestones — consider promoting to P2.
+- **Report:** `Reports/Pending/2026-07-02-backlog-hygiene.md`
+
+### 2026-07-02 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-07-02/2026-07-09.
+- **Flags:** 6 drift items across 3 files. (1) Medium: `internal/nonint/` package (Plan 41 headless CLI) absent from INDEX.md architecture overview. (2) Low: INDEX.md CLI commands count shows 8; `bonsai completion` (v0.4.1) makes it 9. (3) Low: `plan-grilling.md` workflow file exists in agent/Workflows/ but not listed in CLAUDE.md navigation table. (4) Low: `critic-agent-prompts.md` skill file exists in agent/Skills/ but not listed in CLAUDE.md Skills table. (5–6) Low: code-index.md missing `bonsai completion` command row and entire `internal/nonint/` package section. No broken links found — all 37 CLAUDE.md nav links resolve.
+- **Report:** `Reports/Pending/2026-07-02-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
