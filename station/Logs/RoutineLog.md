@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** URGENT — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (13 days). 3 stale P1 items (testing infra 77d, worktrees/branches 73d, routine bot PR pile-up 56d) flagged for re-prioritization. 2 P3 items align with Phase 2 milestones — consider promoting to P2.
 - **Report:** `Reports/Pending/2026-07-02-backlog-hygiene.md`
 
+### 2026-07-02 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-07-02/2026-07-09.
+- **Flags:** 6 drift items across 3 files. (1) Medium: `internal/nonint/` package (Plan 41 headless CLI) absent from INDEX.md architecture overview. (2) Low: INDEX.md CLI commands count shows 8; `bonsai completion` (v0.4.1) makes it 9. (3) Low: `plan-grilling.md` workflow file exists in agent/Workflows/ but not listed in CLAUDE.md navigation table. (4) Low: `critic-agent-prompts.md` skill file exists in agent/Skills/ but not listed in CLAUDE.md Skills table. (5–6) Low: code-index.md missing `bonsai completion` command row and entire `internal/nonint/` package section. No broken links found — all 37 CLAUDE.md nav links resolve.
+- **Report:** `Reports/Pending/2026-07-02-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
