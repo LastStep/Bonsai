@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-03 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-03/2026-07-10; report written.
+- **Flags:** (1) [HIGH] `code-index.md` missing entire `internal/nonint/` section (Plan 41 deliverable). (2) [MEDIUM] Root `CLAUDE.md` + `station/INDEX.md` arch diagram both missing `internal/nonint/`. (3) [LOW] `station/INDEX.md` CLI command count stale (8 → should be 9, completion shipped PR #78). (4) [LOW] Plan 41 still in Plans/Active/ — should be archived. (5) [INFO] `plan-grilling.md` + `critic-agent-prompts.md` exist in agent dirs but unlisted in station/CLAUDE.md nav (frontmatter: integration pending). No broken navigation links found.
+- **Report:** `Reports/Pending/2026-07-03-doc-freshness-check.md`
+
 ### 2026-07-03 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
