@@ -20,6 +20,38 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-04 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** Archived 6 Done items (Plans 37/36/35/34/32/33, dates 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-06-20`; dashboard `Last Ran`/`Next Due` set to 2026-07-04/2026-07-09; full report written.
+- **Flags:** 2 items for user — (1) Sentrux research Pending item stalled 58 days (blocker: Rust toolchain not installed) — recommend resolve/demote/drop; (2) Plan 41 file still in `Plans/Active/` despite all 5 phases shipped 2026-06-16 — move to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-07-04-status-hygiene.md`
+
+### 2026-07-04 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard updated (Roadmap Accuracy Last Ran → 2026-07-04, Next Due → 2026-07-18, Status → done); full report written.
+- **Flags:** 6 findings — (1) [Medium] "Current Phase" header still shows Phase 1, which is fully complete — needs updating to Phase 2; (2) [Medium] Plan 41 (Headless CLI Contract, shipped 2026-06-16) absent from roadmap — add as checked Phase 2 item; (3) [Medium] Plan 40 Phases 1–3 (v0.5.0 untagged, shipped 2026-06-13) absent from roadmap; (4) [Low] MCP server (Plan 42) not in roadmap; (5) [Low] non-interactive CLI (v0.4.2) not in roadmap; (6) [Low] KeyDecisionLog has no entries since 2026-04-13 despite Plans 40/41 decisions.
+- **Report:** `Reports/Pending/2026-07-04-roadmap-accuracy.md`
+
+### 2026-07-04 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** dashboard updated (Memory Consolidation Last Ran → 2026-07-04, Next Due → 2026-07-09); no edits to `agent/Core/memory.md` (zero auto-memory entries to merge; 25 Notes + 6 References spot-validated against codebase; Work State accurate post-Plan-41 ship).
+- **Flags:** 3 items — (1) Research refs in memory.md unverifiable (gitignored, may exist locally — user to confirm); (2) Plan 41 archive reminder has been in Work State 18 days / 3+ sessions — escalation: archive at next wrap-up; (3) Notes section exceeds 30-line protocol limit — prune at next active session.
+- **Report:** `Reports/Pending/2026-07-04-memory-consolidation.md`
+
+### 2026-07-04 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** 3 resolved items commented out in `Backlog.md` with audit trail (2 stale P0s resolved by v0.4.3/v0.4.2, 1 stale P1 resolved by Plan 41); dashboard `Last Ran`/`Next Due` updated to 2026-07-04/2026-07-11; full report written (supersedes prior partial-run stub).
+- **Flags:** 4 items flagged for user — (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-22, rotate before 2026-07-15; (2) 58-day routine execution gap — all 7 routines overdue, verify loop.md cron; (3) two P3 items (`self-update mechanism`, `micro-task fast path`) are Phase 2 roadmap milestones — consider promoting to P2; (4) three P1 items 60+ days stale with no progress (routine bot pile-up, testing infra, worktree cleanup).
+- **Report:** `Reports/Pending/2026-07-04-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -392,3 +424,19 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-07-04 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made (audit-only routine) — dashboard Last Ran/Next Due updated to 2026-07-04/2026-07-11
+- **Flags:** 4 drift items — (1) HIGH: root `CLAUDE.md` project-structure tree missing `cmd/completion.go`, entire `internal/nonint/` package, `internal/generate/list_snapshot.go`, and OS-split catalog_snapshot files (3rd consecutive cycle); (2) MEDIUM: `code-index.md` generate.go — all ~19 line number references drifted by +40–100 lines each due to Plan 41 growth; also 3 new per-agent variants undocumented; (3) MEDIUM: `code-index.md` missing entire `internal/nonint/` section, `list_snapshot.go` entry, and `cmd/completion.go` CLI table row; (4) LOW: `INDEX.md` document registry missing `docs/agent-interface.md`
+- **Report:** `Reports/Pending/2026-07-04-doc-freshness-check.md`
+
+### 2026-07-04 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** station/Playbook/Backlog.md — 2 resolved P0 items converted to HTML comments (v0.4.3 sensor-hook fix, v0.4.2 non-interactive flags); dashboard updated by parent fallback
+- **Flags:** P1–P3 sections not fully audited for staleness — recommend full sweep next run (due 2026-07-11)
+- **Report:** `Reports/Pending/2026-07-04-backlog-hygiene.md`
