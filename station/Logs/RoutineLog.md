@@ -401,6 +401,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
 
+### 2026-07-04 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made (audit-only routine) — dashboard Last Ran/Next Due updated to 2026-07-04/2026-07-11
+- **Flags:** 4 drift items — (1) HIGH: root `CLAUDE.md` project-structure tree missing `cmd/completion.go`, entire `internal/nonint/` package, `internal/generate/list_snapshot.go`, and OS-split catalog_snapshot files (3rd consecutive cycle); (2) MEDIUM: `code-index.md` generate.go — all ~19 line number references drifted by +40–100 lines each due to Plan 41 growth; also 3 new per-agent variants undocumented; (3) MEDIUM: `code-index.md` missing entire `internal/nonint/` section, `list_snapshot.go` entry, and `cmd/completion.go` CLI table row; (4) LOW: `INDEX.md` document registry missing `docs/agent-interface.md`
+- **Report:** `Reports/Pending/2026-07-04-doc-freshness-check.md`
+
 ### 2026-07-04 — Backlog Hygiene
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
