@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-05 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` References group annotated as stale (6 RESEARCH-*.md files not found in repo); dashboard `Last Ran`/`Next Due` updated to 2026-07-05/2026-07-10.
+- **Flags:** 1 medium — References section points to non-existent `station/Research/RESEARCH-*.md` files (directory absent, files never committed). Flagged for user decision. Auto-memory remains empty stub (expected steady state).
+- **Report:** `Reports/Pending/2026-07-05-memory-consolidation.md`
+
+---
+
 ### 2026-07-05 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
