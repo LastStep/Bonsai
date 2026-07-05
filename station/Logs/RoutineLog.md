@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-05 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** no changes made to Roadmap.md (audit-only per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-07-05/2026-07-19; RoutineLog entry appended.
+- **Flags:** 2 medium, 1 low — (1) Plan 41 Headless CLI Contract (shipped 2026-06-16) has no roadmap entry; suggest adding as Phase 2 `[x]` item. (2) MCP server (Plan 42, fast-follow) has no roadmap entry; suggest adding to Phase 3. (3) Phase 3 "Managed Agents integration" description doesn't reflect MCP-server path now in motion — low urgency, revisit after Plan 42 ships.
+- **Report:** `Reports/Pending/2026-07-05-roadmap-accuracy.md`
+
+---
+
 ### 2026-07-05 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
