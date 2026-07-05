@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-05 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done items (Plans 37/36/35/34/32/33, dates 2026-05-07→2026-04-25) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-05-07 (10 most recent retained)`; dashboard `Last Ran`/`Next Due` set to 2026-07-05/2026-07-10.
+- **Flags:** 2 — (1) **MEDIUM**: Plan 41 (`41-headless-cli-contract.md`) still in `Plans/Active/` despite Status row marking it SHIPPED on 2026-06-16 — orphaned plan file, should be moved to `Plans/Archive/` (flag for user review). (2) **MEDIUM**: Sentrux Pending item has been stalled 59 days (promoted 2026-05-07, still blocked on Rust toolchain) — exceeds 30-day threshold, flagged for user review per procedure (not moved automatically).
+- **Report:** `Reports/Pending/2026-07-05-status-hygiene.md`
+
+---
+
+### 2026-07-05 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** no changes made to Roadmap.md (audit-only per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-07-05/2026-07-19; RoutineLog entry appended.
+- **Flags:** 2 medium, 1 low — (1) Plan 41 Headless CLI Contract (shipped 2026-06-16) has no roadmap entry; suggest adding as Phase 2 `[x]` item. (2) MCP server (Plan 42, fast-follow) has no roadmap entry; suggest adding to Phase 3. (3) Phase 3 "Managed Agents integration" description doesn't reflect MCP-server path now in motion — low urgency, revisit after Plan 42 ships.
+- **Report:** `Reports/Pending/2026-07-05-roadmap-accuracy.md`
+
+---
+
+### 2026-07-05 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` References group annotated as stale (6 RESEARCH-*.md files not found in repo); dashboard `Last Ran`/`Next Due` updated to 2026-07-05/2026-07-10.
+- **Flags:** 1 medium — References section points to non-existent `station/Research/RESEARCH-*.md` files (directory absent, files never committed). Flagged for user decision. Auto-memory remains empty stub (expected steady state).
+- **Report:** `Reports/Pending/2026-07-05-memory-consolidation.md`
+
+---
+
+### 2026-07-05 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-07-05/2026-07-12.
+- **Flags:** 7 documentation drift items found — 5 in station docs (INDEX.md ×2, code-index.md ×3), 2 in root CLAUDE.md. All relate to Plan 41 (new `internal/nonint/` package, removed `showWriteResults()`, `completion` command). No broken navigation links. No autonomous changes to docs — flagged for user decision.
+- **Report:** `Reports/Pending/2026-07-05-doc-freshness-check.md`
+
+---
+
+### 2026-07-05 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** 3 resolved Backlog items commented out (P0 sensor walk-up bug → v0.4.3; P0 non-interactive flags → v0.4.2; P1 full agent-drivable CLI parity → Plan 41); dashboard `Last Ran`/`Next Due` updated to 2026-07-05/2026-07-12.
+- **Flags:** 1 URGENT — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (10 days). 3 stale P1 items (testing infra 80d, worktree cleanup 76d, routine bot pile-up 59d). All other routines are 45–62 days overdue.
+- **Report:** `Reports/Pending/2026-07-05-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
