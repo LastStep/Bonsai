@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-05 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-07-05/2026-07-12.
+- **Flags:** 7 documentation drift items found — 5 in station docs (INDEX.md ×2, code-index.md ×3), 2 in root CLAUDE.md. All relate to Plan 41 (new `internal/nonint/` package, removed `showWriteResults()`, `completion` command). No broken navigation links. No autonomous changes to docs — flagged for user decision.
+- **Report:** `Reports/Pending/2026-07-05-doc-freshness-check.md`
+
+---
+
 ### 2026-07-05 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
