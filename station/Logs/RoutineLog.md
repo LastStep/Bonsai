@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-06 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran → 2026-07-06, Next Due → 2026-07-13). `station/Logs/RoutineLog.md` appended. No doc content edits (audit-only per procedure).
+- **Flags:** 8 drift items — HIGH: `plan-grilling.md` workflow unlisted in CLAUDE.md nav; MEDIUM: `critic-agent-prompts.md` skill unlisted in CLAUDE.md nav, `INDEX.md` CLI count stale (8→9, completion cmd), `code-index.md` missing `completion` command + Plan 41 headless cores; LOW: INDEX.md catalog count (~50→~53), `docs/agent-interface.md` not cross-referenced in station, root CLAUDE.md missing `completion.go` in project tree.
+- **Report:** `Reports/Pending/2026-07-06-doc-freshness-check.md`
+
 ### 2026-07-06 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
