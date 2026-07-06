@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-06 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` dashboard — Roadmap Accuracy Last Ran/Next Due updated to 2026-07-06/2026-07-20. No Roadmap.md edits (audit-only per procedure).
+- **Flags:** 6 findings — (1) **[HIGH]** Phase 1 still labeled "Current Phase" despite all items done and Phase 2 active; (2) **[HIGH]** Plan 41 Headless CLI Contract (2026-06-16) absent from roadmap — major Phase 2 milestone; (3) **[MEDIUM]** Plan 40 Odysseus Platform Integration Phases 1–3 (2026-06-13) absent from roadmap; (4) **[MEDIUM]** Non-interactive mode (v0.4.2) absent; (5) **[MEDIUM]** Plan 42 MCP server fast-follow not on roadmap — phase placement unclear; (6) **[LOW]** Phase 3 deferral prerequisite ("local foundation stable") now met by Plans 40+41.
+- **Report:** `Reports/Pending/2026-07-06-roadmap-accuracy.md`
+
+### 2026-07-06 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — References section: marked all 6 RESEARCH-*.md entries as stale (files/directory no longer exist on filesystem). `station/agent/Core/routines.md` dashboard — Memory Consolidation Last Ran/Next Due updated to 2026-07-06/2026-07-11.
+- **Flags:** **[MEDIUM]** All 6 Research doc references in memory.md References section point to missing files (`Research/` directory does not exist). User action needed: locate or re-create the Research docs, or delete the References entries. **[LOW]** Plans 40 and 41 still in Plans/Active/ (41-headless-cli-contract.md, 40-odysseus-platform-integration.md) — both shipped, archive pending (previously flagged by Status Hygiene 2026-07-06).
+- **Report:** `Reports/Pending/2026-07-06-memory-consolidation.md`
+
+### 2026-07-06 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran → 2026-07-06, Next Due → 2026-07-13). `station/Logs/RoutineLog.md` appended. No doc content edits (audit-only per procedure).
+- **Flags:** 8 drift items — HIGH: `plan-grilling.md` workflow unlisted in CLAUDE.md nav; MEDIUM: `critic-agent-prompts.md` skill unlisted in CLAUDE.md nav, `INDEX.md` CLI count stale (8→9, completion cmd), `code-index.md` missing `completion` command + Plan 41 headless cores; LOW: INDEX.md catalog count (~50→~53), `docs/agent-interface.md` not cross-referenced in station, root CLAUDE.md missing `completion.go` in project tree.
+- **Report:** `Reports/Pending/2026-07-06-doc-freshness-check.md`
+
+### 2026-07-06 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Status.md — removed 6 oldest Done rows (Plans 37, 36, 35, 34, 32, 33 dated 2026-04-25 to 2026-05-07) beyond the 10-item cap; updated footer date marker `≤ 2026-04-24` → `≤ 2026-06-22`. StatusArchive.md — prepended 6 archived rows to Archived table. routines.md dashboard — Status Hygiene Last Ran/Next Due updated to 2026-07-06/2026-07-11.
+- **Flags:** (1) **[MEDIUM]** sentrux Pending item stalled 60 days (blocked: Rust toolchain not installed) — recommend demotion to Backlog or schedule rustup install; (2) **[LOW]** Plans 40 and 41 Done in Status.md but plan files still in Plans/Active/ — recommend move to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-07-06-status-hygiene.md`
+
+### 2026-07-06 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (v0.4.3 sensor-hook fix, v0.4.2 non-interactive flags), commented out 1 resolved P1 item (Full CLI parity resolved by Plan 41). Dashboard Last Ran/Next Due updated to 2026-07-06/2026-07-13.
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT expiry reminder due 2026-07-15 (9 days), PAT expires ~2026-07-20 — user must rotate NOW; (2) **URGENT** — 6 overdue routines not run since 2026-05-07 (Vuln Scan, Dep Audit, Doc Freshness, Status Hygiene, Memory Consolidation, Roadmap Accuracy — 46–56 days overdue); (3) P2 website npm vuln tree (6 Dependabot alerts, astro upgrade breaks build); (4) 3 P1 items stale 60–81 days (routine bot PR pile-up, stale worktrees, trigger test infra).
+- **Report:** `Reports/Pending/2026-07-06-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
