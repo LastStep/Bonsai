@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-06 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — References section: marked all 6 RESEARCH-*.md entries as stale (files/directory no longer exist on filesystem). `station/agent/Core/routines.md` dashboard — Memory Consolidation Last Ran/Next Due updated to 2026-07-06/2026-07-11.
+- **Flags:** **[MEDIUM]** All 6 Research doc references in memory.md References section point to missing files (`Research/` directory does not exist). User action needed: locate or re-create the Research docs, or delete the References entries. **[LOW]** Plans 40 and 41 still in Plans/Active/ (41-headless-cli-contract.md, 40-odysseus-platform-integration.md) — both shipped, archive pending (previously flagged by Status Hygiene 2026-07-06).
+- **Report:** `Reports/Pending/2026-07-06-memory-consolidation.md`
+
 ### 2026-07-06 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
