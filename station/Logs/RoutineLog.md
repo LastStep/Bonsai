@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-07 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) `memory.md` References section — marked all 6 `station/Research/RESEARCH-*.md` pointers as stale (files absent from repo, never committed to git); (2) `memory.md` Work State — removed resolved Plan 41 archive reminder; (3) `Plans/Active/41-headless-cli-contract.md` archived to `Plans/Archive/`; (4) routines.md dashboard Last Ran → 2026-07-07, Next Due → 2026-07-12.
+- **Flags:** (1) Medium — Research/ directory and all 6 RESEARCH-*.md files absent from repo; stale markers added; Backlog Group D tracks resolution. (2) Info — HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15 (already in Backlog P1, flagged by today's Backlog Hygiene).
+- **Report:** `Reports/Pending/2026-07-07-memory-consolidation.md`
+
+---
+
 ### 2026-07-07 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
