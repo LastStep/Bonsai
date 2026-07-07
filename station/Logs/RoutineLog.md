@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-07 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** routines.md dashboard Last Ran → 2026-07-07, Next Due → 2026-07-21, Status → done; report filed
+- **Flags:** (1) High — Phase 1 "Current Phase" label stale (all 11 items done); (2) Medium — Plan 41 Headless CLI Contract not in roadmap; (3) Medium — Plan 40 Phases 1–3 (Odysseus) not in roadmap; (4) Low — Phase 2 unchecked items all sitting in Backlog P3; (5) Low — v0.5.0 untagged and unmentioned in roadmap
+- **Report:** `Reports/Pending/2026-07-07-roadmap-accuracy.md`
+
+---
+
+### 2026-07-07 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) `memory.md` References section — marked all 6 `station/Research/RESEARCH-*.md` pointers as stale (files absent from repo, never committed to git); (2) `memory.md` Work State — removed resolved Plan 41 archive reminder; (3) `Plans/Active/41-headless-cli-contract.md` archived to `Plans/Archive/`; (4) routines.md dashboard Last Ran → 2026-07-07, Next Due → 2026-07-12.
+- **Flags:** (1) Medium — Research/ directory and all 6 RESEARCH-*.md files absent from repo; stale markers added; Backlog Group D tracks resolution. (2) Info — HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15 (already in Backlog P1, flagged by today's Backlog Hygiene).
+- **Report:** `Reports/Pending/2026-07-07-memory-consolidation.md`
+
+---
+
+### 2026-07-07 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** routines.md dashboard Last Ran → 2026-07-07, Next Due → 2026-07-14, Status → done
+- **Flags:** (1) Medium — `bonsai completion` command (PR #78, 2026-05-07) missing from station/INDEX.md count (says 8, should be 9) and code-index.md CLI table; (2) Low — completion.go absent from root CLAUDE.md cmd/ structure listing; (3) Low — Plan 41 fully shipped but still in Plans/Active/ (should be archived); all navigation links healthy (51/51 resolved)
+- **Report:** `Reports/Pending/2026-07-07-doc-freshness-check.md`
+
+---
+
+### 2026-07-07 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — 3 resolved items commented out (P0 sensor hook bug resolved v0.4.3, P0 non-interactive flags resolved v0.4.2, P1 non-interactive CLI parity resolved Plan 41); routines.md dashboard Last Ran/Next Due updated to 2026-07-07/2026-07-14.
+- **Flags:** (1) CRITICAL — HOMEBREW_TAP_TOKEN PAT expires ~2026-07-15 (8 days), rotate NOW before next release; (2) all 7 routines massively overdue (44–63 days since 2026-05-07), recommend batch routine-digest; (3) 3 P3 items align with Phase 2 Extensibility milestone — consider P2 promotion.
+- **Report:** `Reports/Pending/2026-07-07-backlog-hygiene.md`
+
+---
+
+### 2026-07-07 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** (1) Status.md — archived 6 oldest Done items (Plans 32/33/34/35/36/37 from 2026-04-25 to 2026-05-07) to StatusArchive.md, leaving 10 most recent; (2) Status.md — fixed stale Plan 41 link from Plans/Active/ to Plans/Archive/ (plan was moved by Memory Consolidation earlier today); (3) Status.md — updated footer note to reflect new archive cutoff; (4) StatusArchive.md — prepended 6 newly archived rows; (5) routines.md dashboard Last Ran → 2026-07-07, Next Due → 2026-07-12, Status → done
+- **Flags:** (1) Medium — sentrux Pending item stalled 61 days (since 2026-05-07), blocked on Rust toolchain install, no progress; flagged for user review — demote to Backlog or resolve toolchain dependency; (2) Info — Plan 40 file still in Plans/Active/ with Phase 4 HELD; appropriate (work is not fully complete), no action needed
+- **Report:** `Reports/Pending/2026-07-07-status-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
