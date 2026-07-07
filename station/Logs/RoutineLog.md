@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-07 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** routines.md dashboard Last Ran → 2026-07-07, Next Due → 2026-07-14, Status → done
+- **Flags:** (1) Medium — `bonsai completion` command (PR #78, 2026-05-07) missing from station/INDEX.md count (says 8, should be 9) and code-index.md CLI table; (2) Low — completion.go absent from root CLAUDE.md cmd/ structure listing; (3) Low — Plan 41 fully shipped but still in Plans/Active/ (should be archived); all navigation links healthy (51/51 resolved)
+- **Report:** `Reports/Pending/2026-07-07-doc-freshness-check.md`
+
+---
+
 ### 2026-07-07 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
