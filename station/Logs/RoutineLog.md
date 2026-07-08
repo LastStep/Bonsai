@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-08 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33 dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated Status.md footer date marker `≤ 2026-04-24` → `≤ 2026-05-07`; dashboard Last Ran/Next Due updated to 2026-07-08/2026-07-13.
+- **Flags:** (1) MEDIUM: "Trial sentrux" Pending item stalled 62 days — blocked on Rust toolchain with no progress; flag for user review (demote to backlog or install toolchain). (2) LOW: Plan 41 file still in Plans/Active/ despite all phases shipped — needs archival. (3) INFO: Plan 40 Phase 4 HELD with no Status.md tracking — user should decide Active vs Archive.
+- **Report:** `Reports/Pending/2026-07-08-status-hygiene.md`
+
+---
+
+### 2026-07-08 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard Last Ran/Next Due updated to 2026-07-08/2026-07-22; routine report written.
+- **Flags:** 4 low-severity items flagged for user — (1) Plan 42 (MCP server) absent from Roadmap and Backlog despite being Plan 41's explicit fast-follow; (2) Plans 40/41 (Phase 3 enablers, shipped June 2026) invisible in roadmap; (3) Plans 40 and 41 still in Plans/Active/ despite shipping; (4) Phase 2 roadmap items parked at P3 Backlog with no active traction.
+- **Report:** `Reports/Pending/2026-07-08-roadmap-accuracy.md`
+
+---
+
+### 2026-07-08 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `station/agent/Core/memory.md` — marked 6 stale References entries with `(stale — file not found)` annotations (Research/ directory does not exist; files were never committed to git); dashboard Last Ran/Next Due updated to 2026-07-08/2026-07-13.
+- **Flags:** (1) MEDIUM: 6 foundational Research docs referenced in memory.md do not exist — never committed to git, were local-only in prior environment; user should locate + commit or remove entries. (2) LOW: Plan 42 (MCP server) mentioned in Work State but absent from Backlog. (3) LOW: Plan 41 archive still pending (already self-flagged in Work State).
+- **Report:** `Reports/Pending/2026-07-08-memory-consolidation.md`
+
+---
+
+### 2026-07-08 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard Last Ran/Next Due updated to 2026-07-08/2026-07-15.
+- **Flags:** 4 items flagged for user — (1) HIGH: `code-index.md` generate.go line numbers severely drifted + new public functions from Plans 40/41 undocumented; (2) MEDIUM: headless non-interactive functions from Plan 41 (8 functions across 5 cmd files) missing from code-index; (3) MEDIUM: stale `showWriteResults()` entry + missing `list_snapshot.go` section in code-index; (4) LOW: INDEX.md CLI count 8→9 (`bonsai completion`), `docs/agent-interface.md` not in Document Registry. All navigation links in station/CLAUDE.md resolve cleanly (51/51).
+- **Report:** `Reports/Pending/2026-07-08-doc-freshness-check.md`
+
+---
+
+### 2026-07-08 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Commented out 3 resolved Backlog items (P0 sensor-hook bug → v0.4.3; P0 non-interactive flags → v0.4.2; P1 CLI parity → Plan 41); dashboard Last Ran/Next Due updated to 2026-07-08/2026-07-15.
+- **Flags:** URGENT — HOMEBREW_TAP_TOKEN PAT rotation due ~2026-07-15 (7 days). All 7 routines overdue by 62 days (last run 2026-05-07). 3 stale P1 items (testing infra 83d, worktree cleanup 79d, PR pile-up 62d). Phase 2 roadmap has no P1/P2 Backlog traction.
+- **Report:** `Reports/Pending/2026-07-08-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
