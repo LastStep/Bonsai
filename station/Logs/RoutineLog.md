@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-08 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard Last Ran/Next Due updated to 2026-07-08/2026-07-15.
+- **Flags:** 4 items flagged for user — (1) HIGH: `code-index.md` generate.go line numbers severely drifted + new public functions from Plans 40/41 undocumented; (2) MEDIUM: headless non-interactive functions from Plan 41 (8 functions across 5 cmd files) missing from code-index; (3) MEDIUM: stale `showWriteResults()` entry + missing `list_snapshot.go` section in code-index; (4) LOW: INDEX.md CLI count 8→9 (`bonsai completion`), `docs/agent-interface.md` not in Document Registry. All navigation links in station/CLAUDE.md resolve cleanly (51/51).
+- **Report:** `Reports/Pending/2026-07-08-doc-freshness-check.md`
+
+---
+
 ### 2026-07-08 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
