@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-09 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — 6 oldest Done rows (Plans 37, 36/v0.4.0, 35, 34, 32, 33; dates 2026-04-25 to 2026-05-07) archived to `StatusArchive.md`; footer date marker updated to `≤ 2026-05-07`. `StatusArchive.md` — 6 rows prepended to Archived table. `agent/Core/routines.md` — dashboard Status Hygiene row updated (Last Ran → 2026-07-09, Next Due → 2026-07-14, Status → done).
+- **Flags:** (1) [Medium] Sentrux trial Pending 63 days with zero progress — consider demoting to Backlog or installing rustup. (2) [Low] Plans 40 and 41 still in Plans/Active/ despite being shipped — move to Plans/Archive/ at next wrap-up.
+- **Report:** `Reports/Pending/2026-07-09-status-hygiene.md`
+
+---
+
 ### 2026-07-09 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
