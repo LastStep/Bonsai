@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-09 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — 6 oldest Done rows (Plans 37, 36/v0.4.0, 35, 34, 32, 33; dates 2026-04-25 to 2026-05-07) archived to `StatusArchive.md`; footer date marker updated to `≤ 2026-05-07`. `StatusArchive.md` — 6 rows prepended to Archived table. `agent/Core/routines.md` — dashboard Status Hygiene row updated (Last Ran → 2026-07-09, Next Due → 2026-07-14, Status → done).
+- **Flags:** (1) [Medium] Sentrux trial Pending 63 days with zero progress — consider demoting to Backlog or installing rustup. (2) [Low] Plans 40 and 41 still in Plans/Active/ despite being shipped — move to Plans/Archive/ at next wrap-up.
+- **Report:** `Reports/Pending/2026-07-09-status-hygiene.md`
+
+---
+
+### 2026-07-09 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` dashboard updated (Last Ran → 2026-07-09, Next Due → 2026-07-23, Status → done). No changes to Roadmap.md (audit-only per procedure).
+- **Flags:** 8 items flagged for user — (1) [High] Phase 1 still labeled "Current Phase" despite all 11 items being [x] complete — should move to Phase 2; (2) [High] Headless CLI contract (Plan 41, shipped 2026-06-16) absent from roadmap — 5 PRs, major architectural feature; (3) [Medium] MCP server (Plan 42, fast-follow per Status.md) absent from roadmap; (4) [Medium] Shell completion command (`bonsai completion`, PR #78) absent from roadmap; (5) [Medium] Non-interactive mode (`--non-interactive --from-config`, v0.4.2) absent from roadmap; (6) [Medium] Phase 2 "Micro-task fast path" may be superseded by headless CLI contract; (7) [Low] KeyDecisionLog not updated since 2026-04-13 despite Plans 40+41 architectural decisions; (8) [Low] "Defer Managed Agents" rationale may be stale — local foundation now stable.
+- **Report:** `Reports/Pending/2026-07-09-roadmap-accuracy.md`
+
+---
+
+### 2026-07-09 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` — 2 stale markers applied: (1) `nonint/runner.go` line number drift noted (:48 → :77); (2) References section `station/Research/` block marked stale (directory missing). `agent/Core/routines.md` — dashboard updated (Last Ran → 2026-07-09, Next Due → 2026-07-14).
+- **Flags:** 2 items for user — (1) [Medium] `station/Research/` directory missing; all 6 RESEARCH-*.md references in memory.md are broken — confirm if intentionally deleted or moved; (2) [Low] Plans 40 and 41 still in Plans/Active/ despite being shipped — archive at next wrap-up.
+- **Report:** `Reports/Pending/2026-07-09-memory-consolidation.md`
+
+---
+
+### 2026-07-09 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits made (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-07-09/2026-07-16.
+- **Flags:** 4 drift items flagged for user — (1) [Medium] `station/INDEX.md` CLI command count stale: "8" should be "9" (completion command added PR #78, May 2026); (2) [Medium] `station/INDEX.md` Architecture overview missing `internal/nonint/` package (Plan 41 headless CLI contract, June 2026); (3) [Low] `station/code-index.md` CLI Commands table missing `completion` entry; (4) [Medium] `station/code-index.md` missing entire `internal/nonint/` section. Navigation links 100% clean — all 44 targets in station/CLAUDE.md resolve. Previously flagged broken link `agent/Skills/bonsai-model.md` confirmed resolved.
+- **Report:** `Reports/Pending/2026-07-09-doc-freshness-check.md`
+
+---
+
+### 2026-07-09 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — 3 items commented out (2 resolved P0s: sensor-hook bug via v0.4.3, non-interactive flags via v0.4.2; 1 resolved P1: headless CLI parity via Plan 41). `routines.md` dashboard updated (Last Ran → 2026-07-09, Next Due → 2026-07-16).
+- **Flags:** 4 items flagged for user — (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT expiry approaching ~2026-07-15 (6 days); rotate now to avoid next release brew failure. (2) All 6 other routines are 49-59 days overdue — routine cadence drift. (3) P1 stale items (bot PR pile-up 63d, testing infra 84d, stale worktrees 80d) — consider re-prioritization. (4) P3 `Self-update mechanism` + `Micro-task fast path` are Phase 2 milestones — consider promoting to P2.
+- **Report:** `Reports/Pending/2026-07-09-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
