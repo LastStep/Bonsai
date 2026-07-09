@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-09 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits made (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-07-09/2026-07-16.
+- **Flags:** 4 drift items flagged for user — (1) [Medium] `station/INDEX.md` CLI command count stale: "8" should be "9" (completion command added PR #78, May 2026); (2) [Medium] `station/INDEX.md` Architecture overview missing `internal/nonint/` package (Plan 41 headless CLI contract, June 2026); (3) [Low] `station/code-index.md` CLI Commands table missing `completion` entry; (4) [Medium] `station/code-index.md` missing entire `internal/nonint/` section. Navigation links 100% clean — all 44 targets in station/CLAUDE.md resolve. Previously flagged broken link `agent/Skills/bonsai-model.md` confirmed resolved.
+- **Report:** `Reports/Pending/2026-07-09-doc-freshness-check.md`
+
+---
+
 ### 2026-07-09 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
