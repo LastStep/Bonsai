@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-09 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` dashboard updated (Last Ran → 2026-07-09, Next Due → 2026-07-23, Status → done). No changes to Roadmap.md (audit-only per procedure).
+- **Flags:** 8 items flagged for user — (1) [High] Phase 1 still labeled "Current Phase" despite all 11 items being [x] complete — should move to Phase 2; (2) [High] Headless CLI contract (Plan 41, shipped 2026-06-16) absent from roadmap — 5 PRs, major architectural feature; (3) [Medium] MCP server (Plan 42, fast-follow per Status.md) absent from roadmap; (4) [Medium] Shell completion command (`bonsai completion`, PR #78) absent from roadmap; (5) [Medium] Non-interactive mode (`--non-interactive --from-config`, v0.4.2) absent from roadmap; (6) [Medium] Phase 2 "Micro-task fast path" may be superseded by headless CLI contract; (7) [Low] KeyDecisionLog not updated since 2026-04-13 despite Plans 40+41 architectural decisions; (8) [Low] "Defer Managed Agents" rationale may be stale — local foundation now stable.
+- **Report:** `Reports/Pending/2026-07-09-roadmap-accuracy.md`
+
+---
+
 ### 2026-07-09 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
