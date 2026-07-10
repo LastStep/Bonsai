@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-10 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard Last Ran/Next Due updated to 2026-07-10/2026-07-24; report written. No changes to Roadmap.md (audit-only routine).
+- **Flags:** 2 medium/low items for user review — (1) Phase 2 missing `[x]` entry for Plan 41 (Headless CLI Contract, shipped 2026-06-16 — largest shipped item not on roadmap); (2) Phase 2/3 missing `[ ]` entry for Plan 42 (MCP server, named as "fast-follow" in Status.md). 2 low-severity retroactive Phase 1 gaps also noted (`bonsai completion` PR #78, `--non-interactive --from-config` v0.4.2). Phase 1 otherwise fully accurate, KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-07-10-roadmap-accuracy.md`
+
+---
+
 ### 2026-07-10 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
