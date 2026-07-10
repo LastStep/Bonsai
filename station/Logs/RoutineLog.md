@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-10 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — 3 resolved items commented out (P0: $PWD-walk-up bug resolved v0.4.3; P0: non-interactive flags resolved v0.4.2; P1: Full CLI parity resolved Plan 41). Dashboard Last Ran/Next Due updated to 2026-07-10/2026-07-17.
+- **Flags:** 1 urgent — HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15 (5 days). Secondary flags: P0 section now empty; 3 P1/P2 stale item clusters (Groups B/C/E, 60-85 days); Phase 2 "Template variables expansion" has no Backlog entry; Self-update + Micro-task fast path could promote P3→P2.
+- **Report:** `Reports/Pending/2026-07-10-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
