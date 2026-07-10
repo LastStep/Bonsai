@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-10 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** dashboard Last Ran/Next Due updated to 2026-07-10/2026-07-17; report written.
+- **Flags:** 2 low-severity items for user review — (1) INDEX.md CLI count is 8, should be 9 (`bonsai completion` added PR #78, 2026-05-07); (2) code-index.md CLI Commands table missing `completion` entry (`cmd/completion.go:20`). 3 info items noted (plan-grilling/critic-agent-prompts unlisted in nav — known Backlog P2; docs/agent-interface.md not in INDEX.md registry — may be intentional). Zero broken nav links. No code drift (last 7 days were routine-only commits).
+- **Report:** `Reports/Pending/2026-07-10-doc-freshness-check.md`
+
+---
+
 ### 2026-07-10 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
