@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-11 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `agent/Core/memory.md` — marked 6 stale References entries (`Bonsai/Research/RESEARCH-*.md`) with `(stale — file not found)`; `agent/Core/routines.md` — Memory Consolidation row updated (Last Ran 2026-05-07 → 2026-07-11, Next Due → 2026-07-16, Status → done).
+- **Flags:** [MEDIUM] 6 References entries in `agent/Core/memory.md` point to non-existent files in `Bonsai/Research/`. Directory does not exist in workspace. Files may never have been committed or were removed. User must resolve: commit files, remove entries, or update pointers.
+- **Report:** `Reports/Pending/2026-07-11-memory-consolidation.md`
+
+---
+
 ### 2026-07-11 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
