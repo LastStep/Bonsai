@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-11 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** routines.md dashboard — Doc Freshness Check row updated (Last Ran 2026-05-04 → 2026-07-11, Next Due → 2026-07-18, Status → done).
+- **Flags:** 11 drift items found across 3 documents — (1) HIGH: code-index.md generate.go section — all 8 function line numbers off by ~+100 lines (Plan 41 insertion); (2) HIGH: code-index.md CLI entry + helper line numbers drifted across add.go, remove.go, list.go, catalog.go, update.go, init_flow.go; (3) MEDIUM: `showWriteResults()` no longer in root.go but still listed; (4) MEDIUM: `internal/nonint/` package entirely absent from code-index; (5) MEDIUM: `list_snapshot.go` + platform-split catalog_snapshot files not in code-index; (6) LOW: `plan-grilling.md` + `critic-agent-prompts.md` not in station/CLAUDE.md nav tables; (7) LOW: root CLAUDE.md structure tree missing nonint package, completion.go, 3 generate/ files, 5 sensors.
+- **Report:** `Reports/Pending/2026-07-11-doc-freshness-check.md`
+
+---
+
 ### 2026-07-11 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
