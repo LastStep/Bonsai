@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-11 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** dashboard row updated (Last Ran 2026-05-07 → 2026-07-11, Next Due → 2026-07-25, Status → done); this report written. No edits to Roadmap.md (audit-only routine).
+- **Flags:** 2 HIGH — (1) Plan 41 (Headless CLI Contract, shipped 2026-06-16) not on roadmap — missing Phase 2 completed milestone; (2) MCP Server (Plan 42) is active next-priority per Status.md but has no roadmap entry. 2 MEDIUM — (3) Phase 2 open items out of sync with actual priority order; (4) v0.5.0 tag still held, no version marker in roadmap.
+- **Report:** `Reports/Pending/2026-07-11-roadmap-accuracy.md`
+
+---
+
+### 2026-07-11 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `agent/Core/memory.md` — marked 6 stale References entries (`Bonsai/Research/RESEARCH-*.md`) with `(stale — file not found)`; `agent/Core/routines.md` — Memory Consolidation row updated (Last Ran 2026-05-07 → 2026-07-11, Next Due → 2026-07-16, Status → done).
+- **Flags:** [MEDIUM] 6 References entries in `agent/Core/memory.md` point to non-existent files in `Bonsai/Research/`. Directory does not exist in workspace. Files may never have been committed or were removed. User must resolve: commit files, remove entries, or update pointers.
+- **Report:** `Reports/Pending/2026-07-11-memory-consolidation.md`
+
+---
+
+### 2026-07-11 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** routines.md dashboard — Doc Freshness Check row updated (Last Ran 2026-05-04 → 2026-07-11, Next Due → 2026-07-18, Status → done).
+- **Flags:** 11 drift items found across 3 documents — (1) HIGH: code-index.md generate.go section — all 8 function line numbers off by ~+100 lines (Plan 41 insertion); (2) HIGH: code-index.md CLI entry + helper line numbers drifted across add.go, remove.go, list.go, catalog.go, update.go, init_flow.go; (3) MEDIUM: `showWriteResults()` no longer in root.go but still listed; (4) MEDIUM: `internal/nonint/` package entirely absent from code-index; (5) MEDIUM: `list_snapshot.go` + platform-split catalog_snapshot files not in code-index; (6) LOW: `plan-grilling.md` + `critic-agent-prompts.md` not in station/CLAUDE.md nav tables; (7) LOW: root CLAUDE.md structure tree missing nonint package, completion.go, 3 generate/ files, 5 sensors.
+- **Report:** `Reports/Pending/2026-07-11-doc-freshness-check.md`
+
+---
+
+### 2026-07-11 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 minutes
+- **Changes:** Status.md — archived 6 Done rows (Plans 37, 36, 35, 34, 32, 33) to StatusArchive.md; updated footer date marker (≤ 2026-04-24 → ≤ 2026-06-26). StatusArchive.md — 6 rows prepended. routines.md dashboard — Status Hygiene row updated (Last Ran 2026-05-07 → 2026-07-11, Next Due → 2026-07-16).
+- **Flags:** (1) Pending "Trial sentrux" stalled 65+ days — blocked on Rust toolchain, flag for user; (2) Plans 40 and 41 are Done but still in Plans/Active/ — should be moved to Archive.
+- **Report:** `Reports/Pending/2026-07-11-status-hygiene.md`
+
+---
+
+### 2026-07-11 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** Backlog.md — 3 resolved items replaced with HTML tombstone comments (P0 `$PWD-walk-up` bug resolved in v0.4.3; P0 `non-interactive flags` resolved in v0.4.2 + Plan 41; P1 `Full agent-drivable CLI parity` resolved in Plan 41). Dashboard row updated (Last Ran 2026-05-07 → 2026-07-11, Next Due → 2026-07-18).
+- **Flags:** 3 items flagged for user — (1) URGENT: `HOMEBREW_TAP_TOKEN` PAT due ~2026-07-15 (4 days), rotate now; (2) stale P1 `Routine bot PR pile-up` (65d), re-prioritize; (3) stale P1 `Stale agent worktrees + branches` (82d), re-prioritize. Also: Phase 2 Roadmap milestones `Self-update mechanism` + `Micro-task fast path` are P3 Backlog items — flagged as P2 promotion candidates now that Phase 1 is complete.
+- **Report:** `Reports/Pending/2026-07-11-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
