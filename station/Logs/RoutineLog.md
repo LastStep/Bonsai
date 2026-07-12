@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-12 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Backlog.md — converted 2 resolved P0 items and 1 resolved P1 item to HTML comments (resolved by v0.4.3 / v0.4.2 / Plan 41 respectively); routines.md dashboard Last Ran/Next Due updated to 2026-07-12/2026-07-19.
+- **Flags:** (1) URGENT — HOMEBREW_TAP_TOKEN PAT expiry reminder set for ~2026-07-15, only 3 days from today; rotate immediately to avoid GoReleaser brew failure on next release. (2) All 7 routines overdue 65+ days since last digest (2026-05-07) — schedule routine digest session soon.
+- **Report:** `Reports/Pending/2026-07-12-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
