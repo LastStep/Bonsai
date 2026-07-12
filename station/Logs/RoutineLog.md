@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-12 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `memory.md` References section — marked "Foundational research docs" group as `(stale — station/Research/ directory never committed to git; files do not exist in repo as of 2026-07-12)` for 6 entries; `routines.md` dashboard Last Ran/Next Due updated to 2026-07-12/2026-07-17.
+- **Flags:** (1) MEDIUM — 6 Research doc references in `memory.md` are stale (station/Research/ not in repo); user to decide: delete, recover, or leave stale-marked. (2) LOW — Plans 40 and 41 both remain in `Plans/Active/` despite being shipped 66+ days ago; archive at next wrap-up.
+- **Report:** `Reports/Pending/2026-07-12-memory-consolidation.md`
+
+---
+
 ### 2026-07-12 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
