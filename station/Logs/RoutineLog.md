@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-12 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes to Roadmap.md (audit-only routine) — routines.md dashboard Last Ran/Next Due updated to 2026-07-12/2026-07-26.
+- **Flags:** (1) MEDIUM — Phase 1 is 100% complete but Roadmap still labels it "Current Phase" — needs user restructuring (promote Phase 2 to current, move Phase 1 to completed). (2) LOW — Plan 41 headless CLI contract (shipped 2026-06-16) not tracked in any roadmap phase — user to add a `[x]` row to Phase 2 or Phase 3. (3) LOW — "Micro-task fast path" (Phase 2, open) may overlap with Plan 41 intent; user to clarify scope.
+- **Report:** `Reports/Pending/2026-07-12-roadmap-accuracy.md`
+
+---
+
 ### 2026-07-12 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
