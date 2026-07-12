@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-12 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to docs (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-07-12/2026-07-19.
+- **Flags:** 5 drift items found (all MEDIUM or LOW): (1) INDEX.md CLI command count stale (8 → 9, `completion` missing); (2) INDEX.md architecture overview missing `internal/nonint/`; (3) INDEX.md document registry missing `docs/agent-interface.md`; (4) code-index.md missing `bonsai completion` entry; (5) code-index.md missing `internal/nonint/` section. All trace to Plans 40/41 and PR #78 (May–Jun 2026). Two informational items: `plan-grilling.md` and `critic-agent-prompts.md` exist in agent/ dirs but not yet wired into CLAUDE.md nav table (intentional per their own frontmatter notes).
+- **Report:** `Reports/Pending/2026-07-12-doc-freshness-check.md`
+
+---
+
 ### 2026-07-12 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
