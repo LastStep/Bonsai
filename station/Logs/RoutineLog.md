@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-13 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 References entries stale (Research directory missing from current environment); dashboard `Last Ran`/`Next Due` updated to 2026-07-13/2026-07-18.
+- **Flags:** 2 items for user — (1) All 6 foundational research doc pointers broken (`station/Research/` missing); restore or prune References section. (2) Plan 41 `Plans/Active/41-headless-cli-contract.md` unarchived 27+ days after ship — archive to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-07-13-memory-consolidation.md`
+
 ### 2026-07-13 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
