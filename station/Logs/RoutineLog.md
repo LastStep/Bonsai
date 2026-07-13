@@ -44,6 +44,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 2 items for user — (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15 (2 days), must rotate before next release; (2) stale Group F item `[docs] Document AltScreen behavior change` — 87+ days old, 3+ major releases since, consider removing.
 - **Report:** `Reports/Pending/2026-07-13-backlog-hygiene.md`
 
+### 2026-07-13 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes to Roadmap.md (audit-only) — dashboard `Last Ran`/`Next Due` updated to 2026-07-13/2026-07-27.
+- **Flags:** 5 items for user — (1) Plan 41 (Headless CLI Contract, shipped 2026-06-16) has no roadmap entry — recommend adding as [x] item in Phase 2; (2) Plan 42 (MCP server, referenced as fast-follow in Status) has no roadmap entry; (3) Plan 40 (v0.5.0 schema work) has no roadmap entry; (4) Phase 2 priority trajectory has shifted toward Phase 3 enablement — Phase 2 open items may need reordering or annotation; (5) KeyDecisionLog "Defer Managed Agents" settled entry is partially superseded by Plan 41 groundwork — may need update.
+- **Report:** `Reports/Pending/2026-07-13-roadmap-accuracy.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
