@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-13 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-13/2026-07-20.
+- **Flags:** 5 items flagged for user — (1) `plan-grilling.md` workflow missing from CLAUDE.md nav; (2) `critic-agent-prompts.md` skill missing from CLAUDE.md nav; (3) INDEX.md CLI count stale (8→9, completion command); (4) code-index.md missing `bonsai completion` entry; (5) INDEX.md doc registry missing `docs/agent-interface.md` (Plan 41 headless contract). All are low-friction one-liner fixes batchable in a single doc-refresh commit.
+- **Report:** `Reports/Pending/2026-07-13-doc-freshness-check.md`
+
 ### 2026-07-13 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
