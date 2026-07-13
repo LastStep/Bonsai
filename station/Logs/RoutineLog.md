@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-13 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Status.md` — archived 6 Done rows (Plans 37/36/35/34/32/33, dated 2026-04-25–2026-05-07) to `StatusArchive.md`; footer date marker updated `≤ 2026-04-24` → `≤ 2026-06-29`. `routines.md` — dashboard Last Ran/Next Due updated to 2026-07-13/2026-07-18.
+- **Flags:** (1) Sentrux Pending item stalled 67+ days, blocked by Rust toolchain — flag for user: demote to Backlog? (2) Plans 40 and 41 fully shipped but files remain in Plans/Active/ — bookkeeping cleanup needed.
+- **Report:** `Reports/Pending/2026-07-13-status-hygiene.md`
+
+### 2026-07-13 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 References entries stale (Research directory missing from current environment); dashboard `Last Ran`/`Next Due` updated to 2026-07-13/2026-07-18.
+- **Flags:** 2 items for user — (1) All 6 foundational research doc pointers broken (`station/Research/` missing); restore or prune References section. (2) Plan 41 `Plans/Active/41-headless-cli-contract.md` unarchived 27+ days after ship — archive to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-07-13-memory-consolidation.md`
+
+### 2026-07-13 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-13/2026-07-20.
+- **Flags:** 5 items flagged for user — (1) `plan-grilling.md` workflow missing from CLAUDE.md nav; (2) `critic-agent-prompts.md` skill missing from CLAUDE.md nav; (3) INDEX.md CLI count stale (8→9, completion command); (4) code-index.md missing `bonsai completion` entry; (5) INDEX.md doc registry missing `docs/agent-interface.md` (Plan 41 headless contract). All are low-friction one-liner fixes batchable in a single doc-refresh commit.
+- **Report:** `Reports/Pending/2026-07-13-doc-freshness-check.md`
+
+### 2026-07-13 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 3 resolved items (P0 sensor hook bug fixed v0.4.3; P0 non-interactive flags fixed v0.4.2; P1 full agent-drivable CLI parity resolved Plan 41 2026-06-16). Dashboard Last Ran/Next Due updated to 2026-07-13/2026-07-20.
+- **Flags:** 2 items for user — (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15 (2 days), must rotate before next release; (2) stale Group F item `[docs] Document AltScreen behavior change` — 87+ days old, 3+ major releases since, consider removing.
+- **Report:** `Reports/Pending/2026-07-13-backlog-hygiene.md`
+
+### 2026-07-13 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes to Roadmap.md (audit-only) — dashboard `Last Ran`/`Next Due` updated to 2026-07-13/2026-07-27.
+- **Flags:** 5 items for user — (1) Plan 41 (Headless CLI Contract, shipped 2026-06-16) has no roadmap entry — recommend adding as [x] item in Phase 2; (2) Plan 42 (MCP server, referenced as fast-follow in Status) has no roadmap entry; (3) Plan 40 (v0.5.0 schema work) has no roadmap entry; (4) Phase 2 priority trajectory has shifted toward Phase 3 enablement — Phase 2 open items may need reordering or annotation; (5) KeyDecisionLog "Defer Managed Agents" settled entry is partially superseded by Plan 41 groundwork — may need update.
+- **Report:** `Reports/Pending/2026-07-13-roadmap-accuracy.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
