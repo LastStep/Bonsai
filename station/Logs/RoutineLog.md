@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-13 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 3 resolved items (P0 sensor hook bug fixed v0.4.3; P0 non-interactive flags fixed v0.4.2; P1 full agent-drivable CLI parity resolved Plan 41 2026-06-16). Dashboard Last Ran/Next Due updated to 2026-07-13/2026-07-20.
+- **Flags:** 2 items for user — (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT expiry ~2026-07-15 (2 days), must rotate before next release; (2) stale Group F item `[docs] Document AltScreen behavior change` — 87+ days old, 3+ major releases since, consider removing.
+- **Report:** `Reports/Pending/2026-07-13-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
