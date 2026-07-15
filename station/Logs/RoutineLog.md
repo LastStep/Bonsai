@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-15 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) Marked 6 Research file references in `agent/Core/memory.md` References section as `(stale — file not found)` — `station/Research/` directory does not exist in repo; (2) corrected `nonint/runner.go:48` path reference to `internal/nonint/runner.go` with proper constant name `ExitWrongCWDForInit=4`; (3) dashboard row updated `Last Ran` → 2026-07-15, `Next Due` → 2026-07-20.
+- **Flags:** MEDIUM — Research file references in memory.md are stale (files not found in repo). These were validated as "all exist" in the 2026-04-25 consolidation run; unclear if deleted or never committed. User should clarify if research docs still exist elsewhere or if references should be removed entirely.
+- **Report:** `Reports/Pending/2026-07-15-memory-consolidation.md`
+
 ### 2026-07-15 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
