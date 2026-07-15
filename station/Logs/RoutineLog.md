@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) URGENT: HOMEBREW_TAP_TOKEN PAT rotation due TODAY (2026-07-15 was target date, rotate before next release); (2) 69-day routine gap — all other routines severely overdue (last runs 2026-05-04/05-07), recommend full routine-digest session; (3) Phase 1 complete — Phase 2 P3 items (self-update, micro-task fast path, custom item creator) could be promoted; (4) Plans/Active/ has 2 completed plans (40 partial, 41 full) pending Status Hygiene archival.
 - **Report:** `Reports/Pending/2026-07-15-backlog-hygiene.md`
 
+### 2026-07-15 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard `Last Ran` → 2026-07-15, `Next Due` → 2026-07-22. No doc edits (audit-only per procedure).
+- **Flags:** 3 findings requiring user approval — (1) MEDIUM: `plan-grilling.md` workflow exists but absent from CLAUDE.md Workflows table (added ~2026-06-13 with plan-grilling pipeline, actively used in Plans 40+41); (2) LOW: `critic-agent-prompts.md` skill exists but absent from CLAUDE.md Skills table (companion to plan-grilling); (3) LOW: INDEX.md CLI command count stale (8 → 9, `completion` subcommand added PR #78 2026-05-07).
+- **Report:** `Reports/Pending/2026-07-15-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
