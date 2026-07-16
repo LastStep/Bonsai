@@ -36,6 +36,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 5 items requiring user attention — (1) URGENT: HOMEBREW_TAP_TOKEN PAT expires ~2026-07-21 (5 days), reminder was due 2026-07-15; (2) All 7 routines are 56-66 days overdue (no runs since 2026-05-07); (3) Website npm HIGH/MED security alerts (6 Dependabot open, 30+ days); (4) Roadmap Phase 2 `Template variables expansion` has no Backlog entry; (5) Plans 40+41 still in Plans/Active/ despite being shipped.
 - **Report:** `Reports/Pending/2026-07-16-backlog-hygiene.md`
 
+### 2026-07-16 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine) — `routines.md` dashboard row updated (Last Ran 2026-05-04 → 2026-07-16, Next Due → 2026-07-23).
+- **Flags:** 9 findings — HIGH (2): `code-index.md` line numbers stale throughout `cmd/` (shifted +17 to +138 lines due to Plans 39/40/41) and `internal/generate/generate.go` (shifted +41 to +101 lines); MEDIUM (3): `code-index.md` missing `bonsai completion` command, missing Plan 41 headless functions (`runRemoveItemNonInteractive`, `runUpdateNonInteractive`, `renderListJSON`), `station/CLAUDE.md` Workflows nav missing `plan-grilling.md`; LOW (4): INDEX.md CLI count lists 8 commands (missing `completion`), `station/CLAUDE.md` Skills nav missing `critic-agent-prompts.md`, `code-index.md` missing per-agent generate helpers added by Plan 40/41. All nav links in CLAUDE.md resolve — no broken links. Tech stack and folder structure in INDEX.md accurate.
+- **Report:** `Reports/Pending/2026-07-16-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
