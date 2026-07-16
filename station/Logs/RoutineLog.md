@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-16 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-07-16, Next Due → 2026-07-30). No edits to Roadmap.md (audit-only per procedure).
+- **Flags:** 4 items for user — (1) MEDIUM: Phase 1 still labeled "Current Phase" despite all 11 items complete — promote Phase 2 to current; (2) LOW: Plan 41 (Headless CLI Contract, shipped 2026-06-16) absent from Roadmap — add as `[x]` Phase 2 or bridge item; (3) LOW: Phase 2 "Template variables expansion" has no Backlog entry — file P3 entry; (4) LOW: KeyDecisionLog missing Plan 40 Phase-4 HOLD + Plan 41 headless-CLI contract decisions.
+- **Report:** `Reports/Pending/2026-07-16-roadmap-accuracy.md`
+
+### 2026-07-16 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 References entries stale (`station/Research/` directory does not exist; files confirmed absent via `find`; note 2026-04-25 run reported "all exist" — files may have been removed between May and July). `routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-07-16, Next Due → 2026-07-21).
+- **Flags:** 2 items for user — (1) Plan 41 archive overdue: `Plans/Active/41-headless-cli-contract.md` still present despite being flagged by Status Hygiene 2026-07-16 and Work State — move to `Plans/Archive/`. (2) Plan 42 MCP server (`bonsai mcp`) listed as "Backlog P2" in Work State but no corresponding Backlog entry exists — formally file it or clarify intent.
+- **Report:** `Reports/Pending/2026-07-16-memory-consolidation.md`
+
+### 2026-07-16 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Status.md` — archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33 dated 2026-04-25 to 2026-05-07) to `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-05-06`; retained top 10 most recent items. `StatusArchive.md` — 6 rows prepended. `routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-07-16, Next Due → 2026-07-21).
+- **Flags:** 2 items for user — (1) `Trial sentrux` Pending 70+ days (blocked: Rust toolchain not installed); decide to install rustup, demote to Backlog P0, or drop. (2) `Plans/Active/41-headless-cli-contract.md` fully shipped but not archived — move to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-07-16-status-hygiene.md`
+
+### 2026-07-16 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — commented out 3 resolved items (P0 sensor bug resolved v0.4.3, P0 non-interactive flags resolved v0.4.2, P1 full CLI parity resolved Plan 41); added placeholder note to empty P0 section. `routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-07-16, Next Due → 2026-07-23).
+- **Flags:** 5 items requiring user attention — (1) URGENT: HOMEBREW_TAP_TOKEN PAT expires ~2026-07-21 (5 days), reminder was due 2026-07-15; (2) All 7 routines are 56-66 days overdue (no runs since 2026-05-07); (3) Website npm HIGH/MED security alerts (6 Dependabot open, 30+ days); (4) Roadmap Phase 2 `Template variables expansion` has no Backlog entry; (5) Plans 40+41 still in Plans/Active/ despite being shipped.
+- **Report:** `Reports/Pending/2026-07-16-backlog-hygiene.md`
+
+### 2026-07-16 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine) — `routines.md` dashboard row updated (Last Ran 2026-05-04 → 2026-07-16, Next Due → 2026-07-23).
+- **Flags:** 9 findings — HIGH (2): `code-index.md` line numbers stale throughout `cmd/` (shifted +17 to +138 lines due to Plans 39/40/41) and `internal/generate/generate.go` (shifted +41 to +101 lines); MEDIUM (3): `code-index.md` missing `bonsai completion` command, missing Plan 41 headless functions (`runRemoveItemNonInteractive`, `runUpdateNonInteractive`, `renderListJSON`), `station/CLAUDE.md` Workflows nav missing `plan-grilling.md`; LOW (4): INDEX.md CLI count lists 8 commands (missing `completion`), `station/CLAUDE.md` Skills nav missing `critic-agent-prompts.md`, `code-index.md` missing per-agent generate helpers added by Plan 40/41. All nav links in CLAUDE.md resolve — no broken links. Tech stack and folder structure in INDEX.md accurate.
+- **Report:** `Reports/Pending/2026-07-16-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
