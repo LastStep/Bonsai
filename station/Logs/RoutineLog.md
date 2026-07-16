@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-16 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 References entries stale (`station/Research/` directory does not exist; files confirmed absent via `find`; note 2026-04-25 run reported "all exist" — files may have been removed between May and July). `routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-07-16, Next Due → 2026-07-21).
+- **Flags:** 2 items for user — (1) Plan 41 archive overdue: `Plans/Active/41-headless-cli-contract.md` still present despite being flagged by Status Hygiene 2026-07-16 and Work State — move to `Plans/Archive/`. (2) Plan 42 MCP server (`bonsai mcp`) listed as "Backlog P2" in Work State but no corresponding Backlog entry exists — formally file it or clarify intent.
+- **Report:** `Reports/Pending/2026-07-16-memory-consolidation.md`
+
 ### 2026-07-16 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
