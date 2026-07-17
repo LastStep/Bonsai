@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 2 items requiring user action — (1) **[URGENT] HOMEBREW_TAP_TOKEN PAT likely expired** (reminder was ~2026-07-15, now 2 days overdue — rotate before next release); (2) 3 uncaptured doc-freshness findings from 2026-05-07 not yet in Backlog (code-index staleness, bonsai-model nav link, INDEX.md arch drift).
 - **Report:** `Reports/Pending/2026-07-17-backlog-hygiene.md`
 
+### 2026-07-17 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-07-17, Next Due → 2026-07-24). No doc content edited — all updates flagged for user decision per procedure.
+- **Flags:** 7 findings requiring user action — (1) [BROKEN LINKS] 6 dead Research/ links in memory.md (station/Research/ does not exist); (2) [NAVIGATION GAP] plan-grilling.md workflow not in CLAUDE.md nav table; (3) [DOC DRIFT] INDEX.md CLI count stale (8 vs 9, missing `completion`); (4) [DOC DRIFT] code-index.md missing `completion` command row; (5) [DOC DRIFT] INDEX.md architecture section doesn't reflect Plan 41 headless CLI additions; (6) critic-agent-prompts.md skill not in CLAUDE.md nav table; (7) Plan 41 not archived from Plans/Active/.
+- **Report:** `Reports/Pending/2026-07-17-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
