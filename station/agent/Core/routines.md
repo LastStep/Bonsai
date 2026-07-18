@@ -37,7 +37,7 @@ description: Periodic self-maintenance routines — schedules, dashboard, execut
 | Doc Freshness Check | 7 days | 2026-07-18 | 2026-07-25 | done |
 | Memory Consolidation | 5 days | 2026-07-18 | 2026-07-23 | done |
 | Roadmap Accuracy | 14 days | 2026-07-18 | 2026-08-01 | done |
-| Status Hygiene | 5 days | 2026-05-07 | 2026-05-12 | done |
+| Status Hygiene | 5 days | 2026-07-18 | 2026-07-23 | done |
 | Vulnerability Scan | 7 days | 2026-05-04 | 2026-05-11 | done |
 
 <!-- ROUTINE_DASHBOARD_END -->

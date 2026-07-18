@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-18 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Status.md — archived 6 Done rows (Plans 32–37, v0.4.0) to StatusArchive.md; updated footer note. StatusArchive.md — 6 rows prepended. routines.md dashboard — Status Hygiene row updated (Last Ran → 2026-07-18, Next Due → 2026-07-23, Status → done).
+- **Flags:** (1) Sentrux trial Pending 72 days with no progress — flagged for user: demote to Backlog or unblock; (2) Plan 41 file still in Plans/Active/ despite being fully shipped — low-priority cleanup.
+- **Report:** `Reports/Pending/2026-07-18-status-hygiene.md`
+
 ### 2026-07-18 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
