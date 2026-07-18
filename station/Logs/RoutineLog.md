@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-18 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Status.md — archived 6 Done rows (Plans 32–37, v0.4.0) to StatusArchive.md; updated footer note. StatusArchive.md — 6 rows prepended. routines.md dashboard — Status Hygiene row updated (Last Ran → 2026-07-18, Next Due → 2026-07-23, Status → done).
+- **Flags:** (1) Sentrux trial Pending 72 days with no progress — flagged for user: demote to Backlog or unblock; (2) Plan 41 file still in Plans/Active/ despite being fully shipped — low-priority cleanup.
+- **Report:** `Reports/Pending/2026-07-18-status-hygiene.md`
+
+### 2026-07-18 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** memory.md — 6 stale Research/ file references marked `(stale — file not found)` with consolidation note. routines.md dashboard — Memory Consolidation row updated (Last Ran → 2026-07-18, Next Due → 2026-07-23).
+- **Flags:** Research/ directory and all 6 RESEARCH-*.md files not found anywhere in repo — flagged for user to confirm if deleted, moved, or never committed.
+- **Report:** `Reports/Pending/2026-07-18-memory-consolidation.md`
+
+### 2026-07-18 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** Dashboard row updated (Last Ran → 2026-07-18, Next Due → 2026-07-25). No doc edits — audit-only per procedure (changes flagged for user decision).
+- **Flags:** 5 findings — (1) INDEX.md CLI command count stale (8→9, missing `completion`); (2) code-index.md missing `bonsai completion` entry; (3) code-index.md line-number drift risk from Plan 41 changes to add/remove/update/list; (4) code-index.md missing headless-core documentation (Plan 41 *Result API); (5) two unlisted agent instruction files (plan-grilling.md, critic-agent-prompts.md) not in CLAUDE.md nav tables. No broken links found anywhere.
+- **Report:** `Reports/Pending/2026-07-18-doc-freshness-check.md`
+
+### 2026-07-18 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor hook bug fixed v0.4.3, non-interactive flags fixed v0.4.2) and 1 resolved P1 item (full CLI parity resolved by Plan 41). Dashboard row updated (Last Ran → 2026-07-18, Next Due → 2026-07-25).
+- **Flags:** URGENT — HOMEBREW_TAP_TOKEN PAT rotation overdue (reminder date 2026-07-15, hard expiry ~2026-07-21); 6 active npm security alerts on /website (P2); 3 stale P1 items (72-93 days no progress); bonsai validate blocked on gitignored lockfile (P2, consider P1); Phase 2 roadmap items partially untracked.
+- **Report:** `Reports/Pending/2026-07-18-backlog-hygiene.md`
+
+### 2026-07-18 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made (audit-only routine) — dashboard row updated (Last Ran → 2026-07-18, Next Due → 2026-08-01, Status → done).
+- **Flags:** 2 high-severity items flagged — (1) Phase 1 still labeled "Current Phase" despite all 11 items done; (2) Plans 39/40/41 and v0.5.0 entirely absent from Roadmap (significant untracked shipped work). 2 medium items — (3) Plan 41 Headless CLI / MCP-ready cores not reflected as a done Phase 3 prerequisite; (4) Plan 40 Phase 4 HELD with no resolution. 1 low item — (5) Settled decision "Defer Managed Agents" (2026-04-02) may be expired given current foundation maturity.
+- **Report:** `Reports/Pending/2026-07-18-roadmap-accuracy.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
