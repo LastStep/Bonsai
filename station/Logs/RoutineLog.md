@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-18 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** Dashboard row updated (Last Ran → 2026-07-18, Next Due → 2026-07-25). No doc edits — audit-only per procedure (changes flagged for user decision).
+- **Flags:** 5 findings — (1) INDEX.md CLI command count stale (8→9, missing `completion`); (2) code-index.md missing `bonsai completion` entry; (3) code-index.md line-number drift risk from Plan 41 changes to add/remove/update/list; (4) code-index.md missing headless-core documentation (Plan 41 *Result API); (5) two unlisted agent instruction files (plan-grilling.md, critic-agent-prompts.md) not in CLAUDE.md nav tables. No broken links found anywhere.
+- **Report:** `Reports/Pending/2026-07-18-doc-freshness-check.md`
+
 ### 2026-07-18 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
