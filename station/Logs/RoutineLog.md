@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-19 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `station/agent/Core/memory.md` — 6 References entries marked `(stale — file not found 2026-07-19)` (Research files missing from repo); `station/agent/Core/routines.md` dashboard row updated (Last Ran 2026-07-19, Next Due 2026-07-24). Report written.
+- **Flags:** (1) 6 Research file references stale — entire `station/Research/` directory absent; user must decide restore/update/remove; (2) Notes section at 22 entries, above 20-entry archive threshold flagged in 2026-05-07 report.
+- **Report:** `Reports/Pending/2026-07-19-memory-consolidation.md`
+
+---
+
 ### 2026-07-19 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
