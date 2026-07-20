@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-20 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` References section — marked all 6 `station/Research/RESEARCH-*.md` entries as `(stale — file not found)`. Dashboard `Last Ran`/`Next Due` updated to 2026-07-20/2026-07-25.
+- **Flags:** [MEDIUM] All 6 Research doc References are stale — `station/Research/` directory absent from working tree; files confirmed missing via `find` + git log; were likely local-only untracked files. [LOW] Plan 41 (`41-headless-cli-contract.md`) and Plan 40 (`40-odysseus-platform-integration.md`) remain in `Plans/Active/` despite both being shipped — Work State already flags Plan 41 for archival; flagged here for follow-up.
+- **Report:** `Reports/Pending/2026-07-20-memory-consolidation.md`
+
+---
+
 ### 2026-07-20 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
