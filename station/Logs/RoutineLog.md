@@ -20,6 +20,26 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-20 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-20/2026-07-27. No doc edits (audit-only routine).
+- **Flags:** [HIGH] `station/code-index.md` — all ~30 line number references stale after Plan 41 (headless CLI); also missing `list_snapshot.go` section + headless nonint functions entirely. [MEDIUM] `station/CLAUDE.md` Workflows nav missing `plan-grilling.md` (added 2026-06-13). [MEDIUM] `station/CLAUDE.md` Skills nav missing `critic-agent-prompts.md` (added 2026-06-13). [LOW] Root `Bonsai/CLAUDE.md` project structure tree missing 5 new source files (catalog_snapshot_unix/windows.go, catalog_snapshot_unix_test.go, list_snapshot.go, cmd/completion.go) — recurring.
+- **Report:** `Reports/Pending/2026-07-20-doc-freshness-check.md`
+
+---
+
+### 2026-07-20 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor hooks bug → v0.4.3; non-interactive flags → v0.4.2) and 1 resolved P1 item (full agent-drivable CLI parity → Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-07-20/2026-07-27.
+- **Flags:** [CRITICAL] HOMEBREW_TAP_TOKEN PAT expires 2026-07-21 (tomorrow) — rotate immediately or next release will 401 at brew step. [GAP] Roadmap Phase 2 "Template variables expansion" has no Backlog entry. [STALE] 5 P1/P2 items 90+ days with no progress (testing infra, stale worktrees, generate.go split, plan archiving, plans index). Status "partial" because PAT rotation requires user action.
+- **Report:** `Reports/Pending/2026-07-20-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
