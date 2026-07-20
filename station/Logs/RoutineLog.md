@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-20 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Status.md` — archived 6 oldest Done rows (Plans 37, 36, 35, 34, 32, 33; dates 2026-04-25–2026-05-07) to `StatusArchive.md`; updated footer date marker from `≤ 2026-04-24` to `≤ 2026-05-07`. Dashboard `Last Ran`/`Next Due` updated to 2026-07-20/2026-07-25.
+- **Flags:** [MEDIUM] Pending item "Trial sentrux on Bonsai repo" has been stalled 74 days (since 2026-05-07) — blocked on Rust toolchain install; flagged for user review (demotion to Backlog or unblock). [LOW] Plan 41 (`41-headless-cli-contract.md`) remains in `Plans/Active/` despite being fully shipped — flag for archival to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-07-20-status-hygiene.md`
+
+---
+
+### 2026-07-20 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-20/2026-08-03. No Roadmap.md edits (audit-only routine).
+- **Flags:** [MEDIUM] Phase 3 missing MCP server milestone — Plan 41 headless CLI contract shipped; Plan 42 (MCP server) is actively signaled as next in Status.md but not on roadmap. [MEDIUM] "Template variables expansion" (Phase 2) has no Backlog entry — floating roadmap item with zero tracking. [LOW] KeyDecisionLog.md stale — no updates since 2026-04-13 (14+ weeks, Plans 15–41 unlogged). [LOW] Phase 2 → Phase 3 transition not signaled in roadmap — remaining Phase 2 items parked in P3 Backlog while Phase 3 MCP work is next.
+- **Report:** `Reports/Pending/2026-07-20-roadmap-accuracy.md`
+
+---
+
+### 2026-07-20 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` References section — marked all 6 `station/Research/RESEARCH-*.md` entries as `(stale — file not found)`. Dashboard `Last Ran`/`Next Due` updated to 2026-07-20/2026-07-25.
+- **Flags:** [MEDIUM] All 6 Research doc References are stale — `station/Research/` directory absent from working tree; files confirmed missing via `find` + git log; were likely local-only untracked files. [LOW] Plan 41 (`41-headless-cli-contract.md`) and Plan 40 (`40-odysseus-platform-integration.md`) remain in `Plans/Active/` despite both being shipped — Work State already flags Plan 41 for archival; flagged here for follow-up.
+- **Report:** `Reports/Pending/2026-07-20-memory-consolidation.md`
+
+---
+
+### 2026-07-20 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-20/2026-07-27. No doc edits (audit-only routine).
+- **Flags:** [HIGH] `station/code-index.md` — all ~30 line number references stale after Plan 41 (headless CLI); also missing `list_snapshot.go` section + headless nonint functions entirely. [MEDIUM] `station/CLAUDE.md` Workflows nav missing `plan-grilling.md` (added 2026-06-13). [MEDIUM] `station/CLAUDE.md` Skills nav missing `critic-agent-prompts.md` (added 2026-06-13). [LOW] Root `Bonsai/CLAUDE.md` project structure tree missing 5 new source files (catalog_snapshot_unix/windows.go, catalog_snapshot_unix_test.go, list_snapshot.go, cmd/completion.go) — recurring.
+- **Report:** `Reports/Pending/2026-07-20-doc-freshness-check.md`
+
+---
+
+### 2026-07-20 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor hooks bug → v0.4.3; non-interactive flags → v0.4.2) and 1 resolved P1 item (full agent-drivable CLI parity → Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-07-20/2026-07-27.
+- **Flags:** [CRITICAL] HOMEBREW_TAP_TOKEN PAT expires 2026-07-21 (tomorrow) — rotate immediately or next release will 401 at brew step. [GAP] Roadmap Phase 2 "Template variables expansion" has no Backlog entry. [STALE] 5 P1/P2 items 90+ days with no progress (testing infra, stale worktrees, generate.go split, plan archiving, plans index). Status "partial" because PAT rotation requires user action.
+- **Report:** `Reports/Pending/2026-07-20-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
