@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-21 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine); `agent/Core/routines.md` dashboard updated (Last Ran → 2026-07-21, Next Due → 2026-08-04); routine log and report written.
+- **Flags:** 2 medium — (1) Plan 41 (Headless CLI Contract + MCP-ready cores, shipped 2026-06-16) has no roadmap row; (2) Plan 42 (MCP server, "fast-follow") absent from Phase 3. 2 low — Phase 2 items effectively deprioritized with no annotation; Phase 3 "Managed Agents" language may need updating to reflect MCP direction. All flagged for user review per procedure.
+- **Report:** `Reports/Pending/2026-07-21-roadmap-accuracy.md`
+
+---
+
+### 2026-07-21 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — stale markers added to all 6 Research doc links in References section (files not found in repo or git history). `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-07-21/2026-07-26.
+- **Flags:** 1 high — `station/Research/` directory and all 6 RESEARCH-*.md files absent from filesystem and git history (last validated present 2026-05-07; may have been local-only, never committed). 1 medium — Work State contains resolved note ("dogfood still needs `.bonsai-lock.yaml` gitignore policy" — `.bonsai-lock.yaml` IS in `.gitignore`; cleanup needed). 1 low — Plans 40+41 still in Active/ (existing Backlog Group E item).
+- **Report:** `Reports/Pending/2026-07-21-memory-consolidation.md`
+
+---
+
+### 2026-07-21 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** no doc content changes made (audit-only per routine procedure — all fixes flagged for user decision); dashboard `Last Ran`/`Next Due` updated to 2026-07-21/2026-07-28.
+- **Flags:** 2 high — `plan-grilling.md` and `critic-agent-prompts.md` exist in agent/ directories but absent from `station/CLAUDE.md` navigation tables. 3 medium — `internal/nonint/` package missing from INDEX.md architecture diagram; CLI command count stale (8 → 9, `bonsai completion`); `docs/agent-interface.md` not in Document Registry. 3 low — code-index.md missing `completion` command, `internal/nonint/` section, and `GuideFormats` embed entry.
+- **Report:** `Reports/Pending/2026-07-21-doc-freshness-check.md`
+
+---
+
+### 2026-07-21 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Status.md` — archived 6 oldest Done rows (Plans 37, 36, 35, 34, 32, 33; dates 2026-04-25 through 2026-05-07) to `StatusArchive.md`; updated footer cutoff marker from ≤ 2026-04-24 to ≤ 2026-07-07. Dashboard `Last Ran`/`Next Due` updated to 2026-07-21/2026-07-26.
+- **Flags:** 1 — sentrux Pending item stalled 75+ days (promoted 2026-05-07, blocker: Rust toolchain install, no progress); flagged for user review per procedure (not auto-demoted). 1 info — Plans 40 & 41 files remain in Plans/Active/ despite being Done; covered by existing Backlog Group E "Plan archiving" item.
+- **Report:** `Reports/Pending/2026-07-21-status-hygiene.md`
+
+---
+
+### 2026-07-21 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `Backlog.md` — removed 3 stale items (2 P0, 1 P1) that were resolved in shipped releases; converted to HTML comments with audit trail. Dashboard `Last Ran`/`Next Due` updated to 2026-07-21/2026-07-28.
+- **Flags:** 1 urgent — HOMEBREW_TAP_TOKEN PAT rotated 2026-04-22, 90-day expiry = today (2026-07-21); rotate before next release. 1 info — P1 stale-worktrees item age 90+ days; confirm sweep was done.
+- **Report:** `Reports/Pending/2026-07-21-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
