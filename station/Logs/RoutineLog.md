@@ -20,6 +20,52 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-22 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — 6 Done rows archived (Plans 32–37 plus v0.4.0 release, 2026-04-25 to 2026-05-07); cutoff note updated to ≤ 2026-07-08. `StatusArchive.md` — 6 rows prepended. `station/agent/Core/routines.md` — Status Hygiene Last Ran updated to 2026-07-22, Next Due to 2026-07-27.
+- **Flags:** (1) Sentrux trial Pending 76 days (promoted 2026-05-07, blocked on Rust toolchain) — flagged for user review; (2) Plans 40 and 41 still in Plans/Active/ despite both shipped — already flagged by Memory Consolidation routine today.
+- **Report:** `Reports/Pending/2026-07-22-status-hygiene.md`
+
+---
+
+### 2026-07-22 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-07-22/2026-08-05. Roadmap.md not modified (audit-only per procedure).
+- **Flags:** (1) Plan 41 (Headless CLI Contract + MCP-ready cores, shipped 2026-06-16) has no Roadmap row — meaningful Phase 2/3 progress untracked; (2) Phase 2 "Template variables expansion" has no Backlog tracking entry; (3) `DESIGN-companion-app.md` referenced in KeyDecisionLog Settled section does not exist in repo; (4) KeyDecisionLog has no new entries since 2026-04-13 despite Plans 28–41 shipping — Plan 41's layered MCP architecture decision worth logging.
+- **Report:** `Reports/Pending/2026-07-22-roadmap-accuracy.md`
+
+---
+
+### 2026-07-22 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — 6 References entries marked stale (Research/ directory never existed in git history); `station/agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-07-22/2026-07-27.
+- **Flags:** (1) 6 References entries in memory.md point to missing `Bonsai/Research/RESEARCH-*.md` files — directory absent from git history; all marked `(stale — file missing)`. User decision needed: create Research dir, relocate entries, or remove. (2) Plans 40 and 41 still in Plans/Active/ though shipped — pending user wrap-up.
+- **Report:** `Reports/Pending/2026-07-22-memory-consolidation.md`
+
+### 2026-07-22 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-07-22/2026-07-29. No docs modified (audit-only routine; all fixes flagged for user decision).
+- **Flags:** (1) INDEX.md CLI command count stale (8 → should be 9, completion command missing); (2) code-index.md missing `internal/nonint/` package section (Plan 41); (3) `plan-grilling.md` workflow and `critic-agent-prompts.md` skill not in CLAUDE.md nav tables; all navigation links clean (35/35 resolve).
+- **Report:** `Reports/Pending/2026-07-22-doc-freshness-check.md`
+
+### 2026-07-22 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — 3 items commented out (2 resolved P0s: sensor hook bug shipped v0.4.3, init/add non-interactive flags shipped v0.4.2; 1 resolved P1: full agent-drivable CLI parity resolved by Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-07-22/2026-07-29.
+- **Flags:** (1) URGENT: HOMEBREW_TAP_TOKEN PAT expiry reminder date (~2026-07-15) has passed — verify and rotate; (2) Roadmap Phase 2 "Template variables expansion" has no Backlog entry; (3) Plans 40 and 41 still in Plans/Active/ per memory.md note; (4) 76-day gap since last routine run — all other routines also overdue.
+- **Report:** `Reports/Pending/2026-07-22-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
