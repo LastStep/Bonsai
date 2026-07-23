@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-23 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `memory.md` — 6 References section Research file pointers marked stale (files not found in repo); 1 Notes bullet updated: `nonint/runner.go:48` corrected to `:42 ExitWrongCWDForInit`, "until Phase-4 delivery" clause marked stale (Plan 41 shipped). Dashboard updated (Last Ran → 2026-07-23, Next Due → 2026-07-28).
+- **Flags:** (1) Plan 41 archive overdue — 37 days since ship, still in Plans/Active/; (2) Plan 42 / MCP server missing from Backlog (also flagged by 2026-07-23 Backlog Hygiene); (3) Research docs (6 files) not found in repo — stale references need resolution or removal.
+- **Report:** `Reports/Pending/2026-07-23-memory-consolidation.md`
+
+---
+
 ### 2026-07-23 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
