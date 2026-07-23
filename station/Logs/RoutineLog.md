@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-23 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done items (Plans 32–37 + v0.4.0 release, dated 2026-04-25 through 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-07-09`; routines.md dashboard updated (Last Ran → 2026-07-23, Next Due → 2026-07-28, Status → done).
+- **Flags:** (1) Pending item "Trial sentrux" stalled 77 days, blocked on Rust toolchain — consider demotion to Backlog or unblock; (2) Plan 41 in Plans/Active/ archive overdue (SHIPPED 2026-06-16, 37 days ago); (3) Plan 40 fate decision pending (Phases 1–3 Done, Phase 4 HELD). No Backlog removals needed — backlog-hygiene 2026-07-23 already handled cross-references.
+- **Report:** `Reports/Pending/2026-07-23-status-hygiene.md`
+
+---
+
+### 2026-07-23 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made (audit-only routine) — routines.md dashboard updated (Last Ran → 2026-07-23, Next Due → 2026-08-06, Status → done).
+- **Flags:** 4 items flagged — (1) **High**: Phase 1 `Current Phase` heading stale (all 11 items checked, active work is Phase 2); (2) **High**: Plan 41 (Headless CLI Contract + MCP-ready cores, 2026-06-16) missing from roadmap entirely; (3) **Medium**: Plan 40 deliverables (project manifest, memory routing, adversarial validate hardening, 2026-06-13) unrepresented; (4) **Medium**: Plan 42 (MCP server fast-follow) absent from roadmap, Backlog, and plans. Operational note: HOMEBREW_TAP_TOKEN PAT reminder date (2026-07-15) 8 days past — rotate before next release. Previous run's 2 flags both resolved.
+- **Report:** `Reports/Pending/2026-07-23-roadmap-accuracy.md`
+
+---
+
+### 2026-07-23 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `memory.md` — 6 References section Research file pointers marked stale (files not found in repo); 1 Notes bullet updated: `nonint/runner.go:48` corrected to `:42 ExitWrongCWDForInit`, "until Phase-4 delivery" clause marked stale (Plan 41 shipped). Dashboard updated (Last Ran → 2026-07-23, Next Due → 2026-07-28).
+- **Flags:** (1) Plan 41 archive overdue — 37 days since ship, still in Plans/Active/; (2) Plan 42 / MCP server missing from Backlog (also flagged by 2026-07-23 Backlog Hygiene); (3) Research docs (6 files) not found in repo — stale references need resolution or removal.
+- **Report:** `Reports/Pending/2026-07-23-memory-consolidation.md`
+
+---
+
+### 2026-07-23 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine) — routines.md dashboard row updated (Last Ran → 2026-07-23, Next Due → 2026-07-30).
+- **Flags:** 5 drift items found — (1) **Medium**: root CLAUDE.md project structure tree missing `cmd/completion.go` + `internal/nonint/` (carry-forward from May 2026, compounding); (2) **Medium**: code-index.md missing `bonsai completion` entry + `internal/nonint/` package section; (3) **Low**: INDEX.md CLI commands count "8" should be "9"; (4) **Low**: station/CLAUDE.md Workflows table missing `plan-grilling.md` nav entry; (5) **Low**: station/CLAUDE.md Skills table missing `critic-agent-prompts.md` nav entry. No broken links found.
+- **Report:** `Reports/Pending/2026-07-23-doc-freshness-check.md`
+
+---
+
+### 2026-07-23 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Backlog.md — 3 resolved items commented out (P0 sensor-hook bug → v0.4.3, P0 non-interactive-flags feature → v0.4.2, P1 agent-drivable CLI parity → Plan 41); routines.md dashboard row updated (Last Ran → 2026-07-23, Next Due → 2026-07-30).
+- **Flags:** URGENT — HOMEBREW_TAP_TOKEN PAT reminder date (2026-07-15) passed 8 days ago; rotate before next release. Also: P1 routine-bot PR pile-up 77 days stale (decide fate); P3 Rung-3 round-trip item may belong in Bonsai-Eval repo; MCP server/Plan 42 missing from backlog; Group B testing debt 90+ days at same priority.
+- **Report:** `Reports/Pending/2026-07-23-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
