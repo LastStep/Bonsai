@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-23 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Backlog.md — 3 resolved items commented out (P0 sensor-hook bug → v0.4.3, P0 non-interactive-flags feature → v0.4.2, P1 agent-drivable CLI parity → Plan 41); routines.md dashboard row updated (Last Ran → 2026-07-23, Next Due → 2026-07-30).
+- **Flags:** URGENT — HOMEBREW_TAP_TOKEN PAT reminder date (2026-07-15) passed 8 days ago; rotate before next release. Also: P1 routine-bot PR pile-up 77 days stale (decide fate); P3 Rung-3 round-trip item may belong in Bonsai-Eval repo; MCP server/Plan 42 missing from backlog; Group B testing debt 90+ days at same priority.
+- **Report:** `Reports/Pending/2026-07-23-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
