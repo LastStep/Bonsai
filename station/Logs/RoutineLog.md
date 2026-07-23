@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-23 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made (audit-only routine) — routines.md dashboard updated (Last Ran → 2026-07-23, Next Due → 2026-08-06, Status → done).
+- **Flags:** 4 items flagged — (1) **High**: Phase 1 `Current Phase` heading stale (all 11 items checked, active work is Phase 2); (2) **High**: Plan 41 (Headless CLI Contract + MCP-ready cores, 2026-06-16) missing from roadmap entirely; (3) **Medium**: Plan 40 deliverables (project manifest, memory routing, adversarial validate hardening, 2026-06-13) unrepresented; (4) **Medium**: Plan 42 (MCP server fast-follow) absent from roadmap, Backlog, and plans. Operational note: HOMEBREW_TAP_TOKEN PAT reminder date (2026-07-15) 8 days past — rotate before next release. Previous run's 2 flags both resolved.
+- **Report:** `Reports/Pending/2026-07-23-roadmap-accuracy.md`
+
+---
+
 ### 2026-07-23 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
