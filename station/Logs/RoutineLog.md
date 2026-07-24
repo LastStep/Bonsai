@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-24 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — References section marked stale (all 6 research doc paths point to `station/Research/` which does not exist in repo). `station/agent/Core/routines.md` dashboard — Last Ran → 2026-07-24, Next Due → 2026-07-29.
+- **Flags:** (1) Research doc paths in References are stale — `station/Research/` directory absent from repo; user decision needed on whether to locate/restore or remove the block. (2) Plan 41 file still in Plans/Active/ (also flagged by Backlog Hygiene + Status Hygiene today).
+- **Report:** `Reports/Pending/2026-07-24-memory-consolidation.md`
+
+---
+
 ### 2026-07-24 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
