@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-24 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran → 2026-07-24, Next Due → 2026-07-31). Report written to `Reports/Pending/2026-07-24-doc-freshness-check.md`. No doc content edits (audit-only per procedure).
+- **Flags:** 5 items flagged for user — (1) INDEX.md CLI count stale (8→9, `completion` missing); (2) INDEX.md missing Plan 41 headless CLI features; (3) `plan-grilling.md` + `critic-agent-prompts.md` not in CLAUDE.md nav tables; (4) code-index.md significant line-number drift after Plan 41 (+30 to +138 lines across generate.go/add.go/remove.go); (5) `bubbletea/` subdirectory undocumented.
+- **Report:** `Reports/Pending/2026-07-24-doc-freshness-check.md`
+
 ### 2026-07-24 — Status Hygiene
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
