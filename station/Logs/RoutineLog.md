@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-24 — Status Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Status.md — archived 6 Done rows (rows 11–16: Plans 37/36/35/34/32/33, dates 2026-04-25 through 2026-05-07) to StatusArchive.md; footer date marker updated (≤ 2026-04-24 → ≤ 2026-05-07). routines.md dashboard — Last Ran updated to 2026-07-24, Next Due to 2026-07-29.
+- **Flags:** 2 items flagged for user — (1) Sentrux Pending item 78 days stalled (>30-day threshold), blocked on Rust toolchain install — decide: unblock, demote, or deprioritize; (2) Plans/Active/41-headless-cli-contract.md is orphaned (all phases merged 2026-06-16) — move to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-07-24-status-hygiene.md`
+
+---
+
 ### 2026-07-24 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
