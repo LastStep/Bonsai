@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-25 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-07-25/2026-08-08.
+- **Flags:** 4 items flagged for user — (1) [medium] Plan 41 headless CLI + MCP-ready cores (shipped 2026-06-16) has no roadmap entry; recommend adding `[x]` row to Phase 2; (2) [low] `--non-interactive --from-config` (v0.4.2) also untracked; (3) [low] MCP server (Plan 42, "fast-follow") absent from roadmap; (4) [info] Phase 2 "Template variables expansion" checkbox scope unclear vs Plan 40 Phase 1 deliverables. KeyDecisionLog cross-check clean — no decisions invalidate roadmap items.
+- **Report:** `Reports/Pending/2026-07-25-roadmap-accuracy.md`
+
+---
+
 ### 2026-07-25 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
