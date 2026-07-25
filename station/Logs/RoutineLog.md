@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-25 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 References entries as `(stale — file not found)` (Research/RESEARCH-*.md files absent from repo); `agent/Core/routines.md` — dashboard Last Ran → 2026-07-25, Next Due → 2026-07-30.
+- **Flags:** (1) Plan 41 archive action outstanding 39+ days (shipped 2026-06-16, still in Plans/Active/); (2) All 6 Research/ reference paths in memory.md are broken — files may have been deleted or moved since 2026-04-20 when they were last confirmed present (2026-04-25 memory-consolidation run confirmed `station/Research/RESEARCH-*.md` existed at that path, but those files are not present now).
+- **Report:** `Reports/Pending/2026-07-25-memory-consolidation.md`
+
+---
+
 ### 2026-07-25 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
