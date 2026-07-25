@@ -20,13 +20,13 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
-### 2026-07-25 — Backlog Hygiene
-- **Outcome:** success
+### 2026-07-25 — Doc Freshness Check
+- **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
-- **Duration:** ~8 min
-- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor hook bug → v0.4.3, non-interactive flags → v0.4.2) and 1 resolved P1 item (full CLI parity → Plan 41); routines.md dashboard Last Ran → 2026-07-25, Next Due → 2026-08-01.
-- **Flags:** (1) URGENT — HOMEBREW_TAP_TOKEN PAT rotation overdue (~2026-07-15 reminder date passed, today 2026-07-25); (2) Website npm vuln/astro build break (P2 security) 39 days unactioned; (3) All 7 routines overdue — 79-day gap since last run cycle; (4) Routine bot PR pile-up fix (P1) still unresolved 79 days after filing.
-- **Report:** `Reports/Pending/2026-07-25-backlog-hygiene.md`
+- **Duration:** ~10 min
+- **Changes:** routines.md dashboard Last Ran → 2026-07-25, Next Due → 2026-08-01. No doc edits (procedure requires user decision on proposed updates).
+- **Flags:** 4 drift items found — (1) `showWriteResults()` stale row in code-index.md (function removed in Plan 41, medium); (2) `internal/nonint/` package undocumented in code-index.md (Plan 41 headless CLI, low); (3) INDEX.md CLI commands count says 8, should be 9 (`completion` added v0.4.x, low); (4) `completion` missing from code-index.md CLI Commands table (low). All nav links in CLAUDE.md resolve correctly.
+- **Report:** `Reports/Pending/2026-07-25-doc-freshness-check.md`
 
 ---
 
@@ -34,8 +34,8 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
 - **Duration:** ~8 min
-- **Changes:** Removed 3 resolved items from Backlog.md (2 from P0, 1 from P1) — sensor hook bug shipped v0.4.3, non-interactive flags shipped v0.4.2, full CLI parity shipped Plan 41. Replaced with HTML comment tombstones.
-- **Flags:** URGENT — HOMEBREW_TAP_TOKEN PAT rotation reminder date (2026-07-15) has passed; website npm vuln P2 security item 39 days unaddressed; all routines overdue 79+ days.
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor hook bug → v0.4.3, non-interactive flags → v0.4.2) and 1 resolved P1 item (full CLI parity → Plan 41); routines.md dashboard Last Ran → 2026-07-25, Next Due → 2026-08-01.
+- **Flags:** (1) URGENT — HOMEBREW_TAP_TOKEN PAT rotation overdue (~2026-07-15 reminder date passed, today 2026-07-25); (2) Website npm vuln/astro build break (P2 security) 39 days unactioned; (3) All 7 routines overdue — 79-day gap since last run cycle; (4) Routine bot PR pile-up fix (P1) still unresolved 79 days after filing.
 - **Report:** `Reports/Pending/2026-07-25-backlog-hygiene.md`
 
 ---
