@@ -20,6 +20,26 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-25 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor hook bug → v0.4.3, non-interactive flags → v0.4.2) and 1 resolved P1 item (full CLI parity → Plan 41); routines.md dashboard Last Ran → 2026-07-25, Next Due → 2026-08-01.
+- **Flags:** (1) URGENT — HOMEBREW_TAP_TOKEN PAT rotation overdue (~2026-07-15 reminder date passed, today 2026-07-25); (2) Website npm vuln/astro build break (P2 security) 39 days unactioned; (3) All 7 routines overdue — 79-day gap since last run cycle; (4) Routine bot PR pile-up fix (P1) still unresolved 79 days after filing.
+- **Report:** `Reports/Pending/2026-07-25-backlog-hygiene.md`
+
+---
+
+### 2026-07-25 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog.md (2 from P0, 1 from P1) — sensor hook bug shipped v0.4.3, non-interactive flags shipped v0.4.2, full CLI parity shipped Plan 41. Replaced with HTML comment tombstones.
+- **Flags:** URGENT — HOMEBREW_TAP_TOKEN PAT rotation reminder date (2026-07-15) has passed; website npm vuln P2 security item 39 days unaddressed; all routines overdue 79+ days.
+- **Report:** `Reports/Pending/2026-07-25-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
