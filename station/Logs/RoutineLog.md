@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-25 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33 — all dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-07-11`; dashboard `Last Ran`/`Next Due` set to 2026-07-25/2026-07-30.
+- **Flags:** (1) Sentrux research item stalled 79 days in Pending (>30d flag threshold) — blocked on Rust toolchain, flag for user: demote to Backlog or unblock; (2) Plan 41 (`41-headless-cli-contract.md`) fully shipped 39 days ago, still in Plans/Active/ — needs archiving to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-07-25-status-hygiene.md`
+
+---
+
+### 2026-07-25 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-07-25/2026-08-08.
+- **Flags:** 4 items flagged for user — (1) [medium] Plan 41 headless CLI + MCP-ready cores (shipped 2026-06-16) has no roadmap entry; recommend adding `[x]` row to Phase 2; (2) [low] `--non-interactive --from-config` (v0.4.2) also untracked; (3) [low] MCP server (Plan 42, "fast-follow") absent from roadmap; (4) [info] Phase 2 "Template variables expansion" checkbox scope unclear vs Plan 40 Phase 1 deliverables. KeyDecisionLog cross-check clean — no decisions invalidate roadmap items.
+- **Report:** `Reports/Pending/2026-07-25-roadmap-accuracy.md`
+
+---
+
+### 2026-07-25 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 References entries as `(stale — file not found)` (Research/RESEARCH-*.md files absent from repo); `agent/Core/routines.md` — dashboard Last Ran → 2026-07-25, Next Due → 2026-07-30.
+- **Flags:** (1) Plan 41 archive action outstanding 39+ days (shipped 2026-06-16, still in Plans/Active/); (2) All 6 Research/ reference paths in memory.md are broken — files may have been deleted or moved since 2026-04-20 when they were last confirmed present (2026-04-25 memory-consolidation run confirmed `station/Research/RESEARCH-*.md` existed at that path, but those files are not present now).
+- **Report:** `Reports/Pending/2026-07-25-memory-consolidation.md`
+
+---
+
+### 2026-07-25 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** routines.md dashboard Last Ran → 2026-07-25, Next Due → 2026-08-01. No doc edits (procedure requires user decision on proposed updates).
+- **Flags:** 4 drift items found — (1) `showWriteResults()` stale row in code-index.md (function removed in Plan 41, medium); (2) `internal/nonint/` package undocumented in code-index.md (Plan 41 headless CLI, low); (3) INDEX.md CLI commands count says 8, should be 9 (`completion` added v0.4.x, low); (4) `completion` missing from code-index.md CLI Commands table (low). All nav links in CLAUDE.md resolve correctly.
+- **Report:** `Reports/Pending/2026-07-25-doc-freshness-check.md`
+
+---
+
+### 2026-07-25 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor hook bug → v0.4.3, non-interactive flags → v0.4.2) and 1 resolved P1 item (full CLI parity → Plan 41); routines.md dashboard Last Ran → 2026-07-25, Next Due → 2026-08-01.
+- **Flags:** (1) URGENT — HOMEBREW_TAP_TOKEN PAT rotation overdue (~2026-07-15 reminder date passed, today 2026-07-25); (2) Website npm vuln/astro build break (P2 security) 39 days unactioned; (3) All 7 routines overdue — 79-day gap since last run cycle; (4) Routine bot PR pile-up fix (P1) still unresolved 79 days after filing.
+- **Report:** `Reports/Pending/2026-07-25-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
