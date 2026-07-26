@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-26 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 32–37 + v0.4.0/v0.4.2 releases, 2026-04-25–2026-05-07) from `Status.md` → `StatusArchive.md`; updated Status.md footnote; updated routines.md dashboard (Last Ran → 2026-07-26, Next Due → 2026-07-31).
+- **Flags:** (1) **MEDIUM — Sentrux trial Pending 80 days**: blocked on Rust toolchain install; flag for user decision (proceed / defer back to Backlog / drop); (2) **INFO — Plans 40 and 41 still in Plans/Active/**: both fully shipped, awaiting archival — corroborated by Memory Consolidation and Doc Freshness Check routines; (3) **INFO — All 10 retained Done items are now older than 14 days**: no new work shipped since 2026-06-16.
+- **Report:** `Reports/Pending/2026-07-26-status-hygiene.md`
+
+### 2026-07-26 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran → 2026-07-26, Next Due → 2026-08-09). Report created at `Reports/Pending/2026-07-26-roadmap-accuracy.md`. No edits to Roadmap.md (audit-only per procedure).
+- **Flags:** (1) **HIGH — "Current Phase" label outdated**: Phase 1 fully complete, Phase 2 is the actual current phase; (2) **HIGH — Plan 41 (Headless CLI Contract) missing from roadmap**: shipped 2026-06-16, not reflected anywhere; (3) **MEDIUM — Plan 40 (Odysseus Platform Integration) deliverables missing from roadmap**: in-repo memory graph + project manifest not on roadmap; (4) **MEDIUM — Plan 42 (MCP server) imminent, no roadmap item**: described as fast-follow in Plan 41; (5) **LOW — Phase 3 deferral decision may now be met**: Plans 40+41 complete the local foundation; (6) **OPERATIONAL ALERT — HOMEBREW_TAP_TOKEN PAT likely expired** (~2026-07-15 due, corroborated by Backlog Hygiene).
+- **Report:** `Reports/Pending/2026-07-26-roadmap-accuracy.md`
+
+### 2026-07-26 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `station/agent/Core/memory.md` — marked 6 References entries stale (Research/ directory not found); added 2 [ESCALATE] Flags (Plan 41 archival 40d overdue, Research docs missing). Dashboard `Last Ran`/`Next Due` updated to 2026-07-26/2026-07-31.
+- **Flags:** (1) **HIGH — 6 References entries stale**: `station/Research/RESEARCH-*.md` not found; user must confirm if deleted or missing from env; (2) **MEDIUM — Plan 41 archive overdue**: shipped 2026-06-16, file still in Plans/Active/ after 40 days — archive at next wrap-up.
+- **Report:** `Reports/Pending/2026-07-26-memory-consolidation.md`
+
+### 2026-07-26 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved Backlog items (replaced with HTML comments): P0 sensor-hook $PWD-walk-up bug (resolved v0.4.3), P0 bonsai-init/add non-interactive flags (resolved v0.4.2), P1 full agent-drivable CLI parity (resolved Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-07-26/2026-08-02.
+- **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT likely expired** (~2026-07-21 based on 90-day rotation from 2026-04-22) — rotate before next release; (2) Sentrux trial in Status.md Pending blocked 80 days on Rust toolchain; (3) All 6 other routines overdue by 60-80 days — schedule routine-digest; (4) Roadmap Phase 2 "Template variables expansion" not tracked in Backlog.
+- **Report:** `Reports/Pending/2026-07-26-backlog-hygiene.md`
+
+### 2026-07-26 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-26/2026-08-02. No doc edits — audit-only per procedure.
+- **Flags:** (1) [medium] `code-index.md` missing `bonsai completion` command (`completion.go`, shipped PR #78 2026-05-07); (2) [medium] `code-index.md` missing 12+ headless/noninteractive functions from Plan 41 (Remove Helpers, Update Helpers, List sections); (3) [low] `INDEX.md` Document Registry missing `docs/agent-interface.md` (Plan 41 deliverable); (4) [low] `Plans/Active/41-headless-cli-contract.md` should be archived (Plan 41 fully shipped 2026-06-16); (5) [info] Roadmap doesn't reflect headless CLI milestone from Plan 41. All 50 navigation links in `station/CLAUDE.md` resolved cleanly.
+- **Report:** `Reports/Pending/2026-07-26-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
