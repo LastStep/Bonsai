@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-26 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved Backlog items (replaced with HTML comments): P0 sensor-hook $PWD-walk-up bug (resolved v0.4.3), P0 bonsai-init/add non-interactive flags (resolved v0.4.2), P1 full agent-drivable CLI parity (resolved Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-07-26/2026-08-02.
+- **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT likely expired** (~2026-07-21 based on 90-day rotation from 2026-04-22) — rotate before next release; (2) Sentrux trial in Status.md Pending blocked 80 days on Rust toolchain; (3) All 6 other routines overdue by 60-80 days — schedule routine-digest; (4) Roadmap Phase 2 "Template variables expansion" not tracked in Backlog.
+- **Report:** `Reports/Pending/2026-07-26-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
