@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT likely expired** (~2026-07-21 based on 90-day rotation from 2026-04-22) — rotate before next release; (2) Sentrux trial in Status.md Pending blocked 80 days on Rust toolchain; (3) All 6 other routines overdue by 60-80 days — schedule routine-digest; (4) Roadmap Phase 2 "Template variables expansion" not tracked in Backlog.
 - **Report:** `Reports/Pending/2026-07-26-backlog-hygiene.md`
 
+### 2026-07-26 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-26/2026-08-02. No doc edits — audit-only per procedure.
+- **Flags:** (1) [medium] `code-index.md` missing `bonsai completion` command (`completion.go`, shipped PR #78 2026-05-07); (2) [medium] `code-index.md` missing 12+ headless/noninteractive functions from Plan 41 (Remove Helpers, Update Helpers, List sections); (3) [low] `INDEX.md` Document Registry missing `docs/agent-interface.md` (Plan 41 deliverable); (4) [low] `Plans/Active/41-headless-cli-contract.md` should be archived (Plan 41 fully shipped 2026-06-16); (5) [info] Roadmap doesn't reflect headless CLI milestone from Plan 41. All 50 navigation links in `station/CLAUDE.md` resolved cleanly.
+- **Report:** `Reports/Pending/2026-07-26-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
