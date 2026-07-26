@@ -9,7 +9,8 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Active flags go here. Format: - [FLAG] description -->
 
-(none)
+- [ESCALATE] **Plan 41 not archived.** Work State notes "Plan 41 file still in Plans/Active/ — archive to Plans/Archive/ at next wrap-up." Plan shipped 2026-06-16; file still at `Plans/Active/41-headless-cli-contract.md` as of 2026-07-26 (~40 days). Archive at next session wrap-up. (raised: memory-consolidation 2026-07-26)
+- [ESCALATE] **Research/ docs missing.** All 6 References entries (`station/Research/RESEARCH-*.md`) marked stale — directory not found. User should confirm if docs were deleted, moved, or never existed in this environment. (raised: memory-consolidation 2026-07-26)
 
 ## Work State
 
@@ -83,10 +84,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
-    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
-    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
-    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
-    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research
-    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research
-    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
+- **Foundational research docs** — Anchor for methodology/concept decisions. (stale — `station/Research/` directory not found as of 2026-07-26 memory-consolidation; files may have been deleted or never migrated to this env)
+    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning (stale — file not found)
+    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy (stale — file not found)
+    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks (stale — file not found)
+    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research (stale — file not found)
+    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research (stale — file not found)
+    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first. (stale — file not found)
