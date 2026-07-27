@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-27 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — removed 2 resolved P0 items (sensor hook `$PWD`-walk-up bug → v0.4.3; non-interactive flags → v0.4.2); added `[OVERDUE — rotate now]` annotation to P1 HOMEBREW_TAP_TOKEN item; added `[REVIEW: likely resolved by Plan 41]` annotation to P1 CLI parity item. Dashboard `Last Ran`/`Next Due` updated to 2026-07-27/2026-08-03.
+- **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT likely expired ~2026-07-21** (rotated 2026-04-22, 90-day default). Next release brew step will fail. Rotate immediately. (2) P1 "Full agent-drivable CLI parity" appears resolved by Plan 41 (2026-06-16) — confirm and remove from Backlog. (3) 15+ Group B/C/D/E/F items are 80–102 days stale — suggest re-prioritization sweep. (4) Phase 2 milestones (Self-update, Micro-task) still P3 — Phase 1 complete; consider promoting.
+- **Report:** `Reports/Pending/2026-07-27-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
