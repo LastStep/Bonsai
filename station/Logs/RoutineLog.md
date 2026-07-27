@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-27 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `agent/Core/routines.md` dashboard — Last Ran 2026-05-07 → 2026-07-27, Next Due → 2026-08-10, Status → done. No changes to Roadmap.md (audit-only routine — findings flagged for user decision).
+- **Flags:** (1) **HIGH — Phase 1 labeled "Current Phase" but 100% complete; Phase 2 has started** — roadmap structural update needed. (2) **HIGH — Plan 41 (Headless CLI Contract, shipped 2026-06-16) missing from roadmap** — most significant shipped work in 2.5 months. (3) MEDIUM — Plan 40 Phases 1-3 (project manifest + memory scaffolding, shipped 2026-06-13) missing from roadmap. (4) MEDIUM — Plan 42 (MCP server, fast-follow) not in roadmap; Phase 3 is now actionable. (5) LOW — KeyDecisionLog stale since 2026-04-13 (3+ months, Plans 40/41 architectural decisions unlogged). (6) LOW — Plan 41 still in Plans/Active/ (third routine today to flag this).
+- **Report:** `Reports/Pending/2026-07-27-roadmap-accuracy.md`
+
+### 2026-07-27 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** `Playbook/Status.md` — removed 6 rows from Recently Done (Plans 37/36/35/34/32/33, dates 2026-04-25 to 2026-05-07) keeping most recent 10; updated footer. `Playbook/StatusArchive.md` — prepended 6 archived rows. `agent/Core/routines.md` dashboard — Last Ran 2026-05-07 → 2026-07-27, Next Due → 2026-08-01.
+- **Flags:** (1) **MEDIUM — "Trial sentrux" Pending item stalled 81 days** (blocked on Rust toolchain install since ~2026-05-07). Flag for user decision: run trial, create plan, or demote to Backlog P0. (2) LOW — Plan 41 fully shipped but still in Plans/Active/; recommend move to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-07-27-status-hygiene.md`
+
+### 2026-07-27 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` — annotated 6 stale Research doc references with `(stale — file missing)` (Research/ directory absent from project tree since last run 2026-05-07); `agent/Core/routines.md` dashboard — Last Ran 2026-05-07 → 2026-07-27, Next Due → 2026-08-01.
+- **Flags:** **MEDIUM — 6 foundational Research docs missing** (`Research/RESEARCH-*.md` all absent; confirm intentional deletion or restore from git history). LOW — Plan 41 still in Plans/Active/ (pending archive per Work State; not a blocking issue). Auto-memory remains canonical-stub steady state (no facts to bridge).
+- **Report:** `Reports/Pending/2026-07-27-memory-consolidation.md`
+
+### 2026-07-27 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — removed 2 resolved P0 items (sensor hook `$PWD`-walk-up bug → v0.4.3; non-interactive flags → v0.4.2); added `[OVERDUE — rotate now]` annotation to P1 HOMEBREW_TAP_TOKEN item; added `[REVIEW: likely resolved by Plan 41]` annotation to P1 CLI parity item. Dashboard `Last Ran`/`Next Due` updated to 2026-07-27/2026-08-03.
+- **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT likely expired ~2026-07-21** (rotated 2026-04-22, 90-day default). Next release brew step will fail. Rotate immediately. (2) P1 "Full agent-drivable CLI parity" appears resolved by Plan 41 (2026-06-16) — confirm and remove from Backlog. (3) 15+ Group B/C/D/E/F items are 80–102 days stale — suggest re-prioritization sweep. (4) Phase 2 milestones (Self-update, Micro-task) still P3 — Phase 1 complete; consider promoting.
+- **Report:** `Reports/Pending/2026-07-27-backlog-hygiene.md`
+
+### 2026-07-27 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-07-27/2026-08-03; no doc edits (audit-only routine — findings flagged for user decision)
+- **Flags:** 3 low-severity doc drift items — (1) INDEX.md CLI command count stale: says 8, should be 9 (`bonsai completion` shipped 2026-05-07). (2) `docs/agent-interface.md` (Plan 41 headless contract doc, 2026-06) missing from INDEX.md document registry. (3) `code-index.md` CLI Commands table missing `bonsai completion` row. All navigation links in station/CLAUDE.md verified healthy — no broken links.
+- **Report:** `Reports/Pending/2026-07-27-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
