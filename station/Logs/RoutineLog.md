@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-27 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `agent/Core/routines.md` dashboard — Last Ran 2026-05-07 → 2026-07-27, Next Due → 2026-08-10, Status → done. No changes to Roadmap.md (audit-only routine — findings flagged for user decision).
+- **Flags:** (1) **HIGH — Phase 1 labeled "Current Phase" but 100% complete; Phase 2 has started** — roadmap structural update needed. (2) **HIGH — Plan 41 (Headless CLI Contract, shipped 2026-06-16) missing from roadmap** — most significant shipped work in 2.5 months. (3) MEDIUM — Plan 40 Phases 1-3 (project manifest + memory scaffolding, shipped 2026-06-13) missing from roadmap. (4) MEDIUM — Plan 42 (MCP server, fast-follow) not in roadmap; Phase 3 is now actionable. (5) LOW — KeyDecisionLog stale since 2026-04-13 (3+ months, Plans 40/41 architectural decisions unlogged). (6) LOW — Plan 41 still in Plans/Active/ (third routine today to flag this).
+- **Report:** `Reports/Pending/2026-07-27-roadmap-accuracy.md`
+
 ### 2026-07-27 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
