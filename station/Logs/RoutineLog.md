@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT likely expired ~2026-07-21** (rotated 2026-04-22, 90-day default). Next release brew step will fail. Rotate immediately. (2) P1 "Full agent-drivable CLI parity" appears resolved by Plan 41 (2026-06-16) — confirm and remove from Backlog. (3) 15+ Group B/C/D/E/F items are 80–102 days stale — suggest re-prioritization sweep. (4) Phase 2 milestones (Self-update, Micro-task) still P3 — Phase 1 complete; consider promoting.
 - **Report:** `Reports/Pending/2026-07-27-backlog-hygiene.md`
 
+### 2026-07-27 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-07-27/2026-08-03; no doc edits (audit-only routine — findings flagged for user decision)
+- **Flags:** 3 low-severity doc drift items — (1) INDEX.md CLI command count stale: says 8, should be 9 (`bonsai completion` shipped 2026-05-07). (2) `docs/agent-interface.md` (Plan 41 headless contract doc, 2026-06) missing from INDEX.md document registry. (3) `code-index.md` CLI Commands table missing `bonsai completion` row. All navigation links in station/CLAUDE.md verified healthy — no broken links.
+- **Report:** `Reports/Pending/2026-07-27-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
