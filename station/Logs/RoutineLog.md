@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-27 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` — annotated 6 stale Research doc references with `(stale — file missing)` (Research/ directory absent from project tree since last run 2026-05-07); `agent/Core/routines.md` dashboard — Last Ran 2026-05-07 → 2026-07-27, Next Due → 2026-08-01.
+- **Flags:** **MEDIUM — 6 foundational Research docs missing** (`Research/RESEARCH-*.md` all absent; confirm intentional deletion or restore from git history). LOW — Plan 41 still in Plans/Active/ (pending archive per Work State; not a blocking issue). Auto-memory remains canonical-stub steady state (no facts to bridge).
+- **Report:** `Reports/Pending/2026-07-27-memory-consolidation.md`
+
 ### 2026-07-27 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
