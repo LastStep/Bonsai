@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-28 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `agent/Core/memory.md` — 2 edits: (1) corrected `nonint/runner.go:48` → `internal/nonint/runner.go:42` + updated stale "no CLI path" clause (Plan 41 shipped `bonsai update --non-interactive`); (2) marked all 6 `station/Research/RESEARCH-*.md` references as `(stale — file missing)` with user-action note. `routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-07-28, Next Due → 2026-08-02). `Logs/RoutineLog.md` appended.
+- **Flags:** (1) `station/Research/` directory missing — 6 dead reference links in memory.md References section; user must locate/restore or confirm deleted (also flagged by doc-freshness-check 2026-07-28).
+- **Report:** `Reports/Pending/2026-07-28-memory-consolidation.md`
+
+---
+
+### 2026-07-28 — Doc Freshness Check
+- **Outcome:** partial (audit complete, findings flagged — no self-remediation per procedure)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** `routines.md` dashboard updated (Last Ran 2026-05-04 → 2026-07-28, Next Due → 2026-08-04); `Logs/RoutineLog.md` appended.
+- **Flags:** (1) `agent/Skills/dispatch.md` missing — referenced 3× in issue-to-implementation workflow. (2) `station/Research/` directory missing — 6 dead links in memory.md References section. (3) `plan-grilling.md` and `critic-agent-prompts.md` not in CLAUDE.md navigation table.
+- **Report:** `Reports/Pending/2026-07-28-doc-freshness-check.md`
+
+---
+
+### 2026-07-28 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 minutes
+- **Changes:** `Status.md` — archived 6 Done rows (Plans 32–35, 37, v0.4.0) beyond the top-10 to `StatusArchive.md`; updated archival footer note; `routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-07-28, Next Due → 2026-08-02).
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT likely expired (~7 days past 90-day mark from 2026-04-22 rotation) — rotate before next release. (2) Sentrux trial item Pending 82 days (since 2026-05-07), stall threshold exceeded — user should decide: unblock, demote to Backlog, or close.
+- **Report:** `Reports/Pending/2026-07-28-status-hygiene.md`
+
+---
+
+### 2026-07-28 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `Backlog.md` — removed 2 stale P0 items (resolved v0.4.2/v0.4.3) + 1 stale P1 item (resolved Plan 41) via HTML-comment tombstones; `routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-07-28, Next Due → 2026-08-04).
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expired — reminder due 2026-07-15, today 2026-07-28; rotate before next release. (2) MCP server (Plan 42) referenced in memory.md as Backlog P2 but no backlog entry exists; user should add.
+- **Report:** `Reports/Pending/2026-07-28-backlog-hygiene.md`
+
+---
+
+### 2026-07-28 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** `routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-07-28, Next Due → 2026-08-11); `Logs/RoutineLog.md` appended; report written.
+- **Flags:** (1) [HIGH] Phase 1 fully complete but roadmap still labeled "Current Phase" — should transition to Phase 2. (2) [MEDIUM] Plan 41 (headless CLI contract, shipped 2026-06-16) not on roadmap — should be added as Phase 2 item [x]. (3) [MEDIUM] Plan 42 (MCP server, fast-follow) missing from roadmap entirely. (4) [LOW] Plan 40 Odysseus integration (Phase 3 foundation) not reflected in roadmap.
+- **Report:** `Reports/Pending/2026-07-28-roadmap-accuracy.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
