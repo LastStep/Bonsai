@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-28 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `agent/Core/memory.md` — 2 edits: (1) corrected `nonint/runner.go:48` → `internal/nonint/runner.go:42` + updated stale "no CLI path" clause (Plan 41 shipped `bonsai update --non-interactive`); (2) marked all 6 `station/Research/RESEARCH-*.md` references as `(stale — file missing)` with user-action note. `routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-07-28, Next Due → 2026-08-02). `Logs/RoutineLog.md` appended.
+- **Flags:** (1) `station/Research/` directory missing — 6 dead reference links in memory.md References section; user must locate/restore or confirm deleted (also flagged by doc-freshness-check 2026-07-28).
+- **Report:** `Reports/Pending/2026-07-28-memory-consolidation.md`
+
+---
+
 ### 2026-07-28 — Doc Freshness Check
 - **Outcome:** partial (audit complete, findings flagged — no self-remediation per procedure)
 - **Execution mode:** subagent (loop.md dispatch)
