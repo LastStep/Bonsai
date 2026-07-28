@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-28 — Doc Freshness Check
+- **Outcome:** partial (audit complete, findings flagged — no self-remediation per procedure)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** `routines.md` dashboard updated (Last Ran 2026-05-04 → 2026-07-28, Next Due → 2026-08-04); `Logs/RoutineLog.md` appended.
+- **Flags:** (1) `agent/Skills/dispatch.md` missing — referenced 3× in issue-to-implementation workflow. (2) `station/Research/` directory missing — 6 dead links in memory.md References section. (3) `plan-grilling.md` and `critic-agent-prompts.md` not in CLAUDE.md navigation table.
+- **Report:** `Reports/Pending/2026-07-28-doc-freshness-check.md`
+
+---
+
 ### 2026-07-28 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
