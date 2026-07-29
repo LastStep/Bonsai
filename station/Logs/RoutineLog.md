@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-29 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-29/2026-08-05.
+- **Flags:** Nav drift — 2 active files missing from station/CLAUDE.md navigation tables: `agent/Workflows/plan-grilling.md` and `agent/Skills/critic-agent-prompts.md`. Both are live, usable files awaiting Bonsai-catalog integration (per their frontmatter). Proposed nav additions flagged for user decision.
+- **Report:** `Reports/Pending/2026-07-29-doc-freshness-check.md`
+
+---
+
 ### 2026-07-29 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
