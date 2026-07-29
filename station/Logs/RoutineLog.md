@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-29 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 6 Done items (Plans 37, 36, 35, 34, 32, 33 — dated 2026-04-25 through 2026-05-07) from `Status.md` → `StatusArchive.md`; updated Status.md footer; dashboard `Last Ran`/`Next Due` updated to 2026-07-29/2026-08-03.
+- **Flags:** (1) Sentrux research Pending 83 days (30-day threshold exceeded) — demote to Backlog or unblock with Rust toolchain install. (2) Plan 41 file still in Plans/Active/ though fully shipped — candidate for Archive/.
+- **Report:** `Reports/Pending/2026-07-29-status-hygiene.md`
+
+---
+
+### 2026-07-29 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-07-29/2026-08-12.
+- **Flags:** 4 items flagged for user — (1) **Medium**: `## Current Phase` section still points to Phase 1 (fully complete); Phase 2 should be promoted to Current Phase. (2) **Medium**: Plan 41 (Headless CLI Contract + MCP-ready cores, shipped 2026-06-16) has no `[x]` row in Roadmap Phase 2. (3) **Low**: Plan 42 (MCP server, fast-follow to Plan 41) is not in the roadmap at all. (4) **Low**: Plans 40/41 introduced structural architectural decisions never logged to KeyDecisionLog.md.
+- **Report:** `Reports/Pending/2026-07-29-roadmap-accuracy.md`
+
+---
+
+### 2026-07-29 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Marked 6 stale entries in `agent/Core/memory.md` References section (`station/Research/` directory missing from disk and git); dashboard `Last Ran`/`Next Due` updated to 2026-07-29/2026-08-03.
+- **Flags:** Research directory entirely absent — all 6 RESEARCH-*.md files missing (were present 2026-04-25, now gone with no git history). User decision needed: restore paths or remove entries.
+- **Report:** `Reports/Pending/2026-07-29-memory-consolidation.md`
+
+---
+
+### 2026-07-29 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-07-29/2026-08-05.
+- **Flags:** Nav drift — 2 active files missing from station/CLAUDE.md navigation tables: `agent/Workflows/plan-grilling.md` and `agent/Skills/critic-agent-prompts.md`. Both are live, usable files awaiting Bonsai-catalog integration (per their frontmatter). Proposed nav additions flagged for user decision.
+- **Report:** `Reports/Pending/2026-07-29-doc-freshness-check.md`
+
+---
+
+### 2026-07-29 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog.md — P0 `$PWD-walk-up bug` (cleared by v0.4.3), P0 `--non-interactive flags feature` (cleared by v0.4.2), P1 `Full agent-drivable CLI parity` (cleared by Plan 41). Converted to HTML comments with resolution notes. Dashboard `Last Ran`/`Next Due` updated to 2026-07-29/2026-08-05.
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT rotation was due 2026-07-15, now 14 days past; PAT likely expired, next release will fail at Homebrew step. (2) All 6 remaining routines are 47–78 days overdue (last ran 2026-05-04/2026-05-07). (3) Website npm vulns (6 Dependabot alerts, HIGH severity) unresolved since 2026-06-16. (4) Routine bot PR pile-up architectural fix never chosen.
+- **Report:** `Reports/Pending/2026-07-29-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
