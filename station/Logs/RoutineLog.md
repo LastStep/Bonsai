@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-29 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Marked 6 stale entries in `agent/Core/memory.md` References section (`station/Research/` directory missing from disk and git); dashboard `Last Ran`/`Next Due` updated to 2026-07-29/2026-08-03.
+- **Flags:** Research directory entirely absent — all 6 RESEARCH-*.md files missing (were present 2026-04-25, now gone with no git history). User decision needed: restore paths or remove entries.
+- **Report:** `Reports/Pending/2026-07-29-memory-consolidation.md`
+
+---
+
 ### 2026-07-29 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
