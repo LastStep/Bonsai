@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-29 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-07-29/2026-08-12.
+- **Flags:** 4 items flagged for user — (1) **Medium**: `## Current Phase` section still points to Phase 1 (fully complete); Phase 2 should be promoted to Current Phase. (2) **Medium**: Plan 41 (Headless CLI Contract + MCP-ready cores, shipped 2026-06-16) has no `[x]` row in Roadmap Phase 2. (3) **Low**: Plan 42 (MCP server, fast-follow to Plan 41) is not in the roadmap at all. (4) **Low**: Plans 40/41 introduced structural architectural decisions never logged to KeyDecisionLog.md.
+- **Report:** `Reports/Pending/2026-07-29-roadmap-accuracy.md`
+
+---
+
 ### 2026-07-29 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
