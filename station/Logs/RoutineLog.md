@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 4 items flagged for user — (1) **HOMEBREW_TAP_TOKEN PAT likely expired** (~2026-07-21, 9 days ago — rotate immediately before next release); (2) Website npm HIGH severity vulns outstanding 44 days without fix (esbuild/vite); (3) P1 "[ops] Routine bot PR pile-up" root cause fix never implemented — 84 days at P1; (4) All routines significantly overdue (84-day gap since 2026-05-07).
 - **Report:** `Reports/Pending/2026-07-30-backlog-hygiene.md`
 
+### 2026-07-30 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Dashboard row updated (Last Ran → 2026-07-30, Next Due → 2026-08-06). No doc content edits (audit-only routine — all findings flagged for user decision).
+- **Flags:** 3 items flagged for user — (1) [medium] `internal/nonint/` package not documented in `station/INDEX.md` or project `CLAUDE.md` architecture section; (2) [low] INDEX.md CLI command count reads "8" but `completion` is a 9th registered command; (3) [low] `agent/Skills/bubbletea/` subdirectory (4 files) not referenced in CLAUDE.md Skills nav. All nav links in station/CLAUDE.md resolve — zero broken links.
+- **Report:** `Reports/Pending/2026-07-30-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
