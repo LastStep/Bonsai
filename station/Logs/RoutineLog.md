@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-31 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `station/Playbook/Status.md` — archived 6 oldest "Recently Done" rows (Plans 37/36/35/34/32/33, dated 2026-05-07 through 2026-04-25), footer date updated to 2026-07-17. `station/Playbook/StatusArchive.md` — 6 rows prepended to Archived table. `station/agent/Core/routines.md` — Status Hygiene dashboard row updated (Last Ran 2026-07-31, Next Due 2026-08-05, Status done).
+- **Flags:** (1) "Trial sentrux" Pending item stalled 84 days (30-day threshold exceeded) — blocked on Rust toolchain; flag for user demotion decision; (2) Plans 40 and 41 remain in Plans/Active/ despite being in Recently Done (Plan 41 fully shipped 45 days ago, Plan 40 Phase 4 HELD) — archive both to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-07-31-status-hygiene.md`
+
+### 2026-07-31 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard Roadmap Accuracy row updated (Last Ran 2026-07-31, Next Due 2026-08-14, Status done). `station/Logs/RoutineLog.md` — this entry appended.
+- **Flags:** 4 items flagged for user review — (1) [medium] Roadmap "Current Phase" header still reads "Phase 1 — Foundation & Polish" but Phase 1 is fully complete and Phase 2 has begun; (2) [medium] Plan 41 Headless CLI Contract (shipped 2026-06-16) not reflected in Roadmap — significant Phase 2 deliverable missing; (3) [low] Plan 42 (MCP server fast-follow) absent from Roadmap; (4) [low] Phase 2 "Self-update mechanism" vs Plan 40 Phase 4 (update-delivery, held) — scope overlap ambiguous. KeyDecisionLog cross-check clean (no new decisions since 2026-04-13). No Roadmap.md changes applied (audit-only, per procedure).
+- **Report:** `Reports/Pending/2026-07-31-roadmap-accuracy.md`
+
+### 2026-07-31 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — 6 References entries marked stale (Research files not found); `station/agent/Core/routines.md` — dashboard Memory Consolidation row updated (Last Ran 2026-07-31, Next Due 2026-08-05, Status done).
+- **Flags:** (1) `station/Research/` directory missing — 6 foundational research docs referenced in memory.md do not exist; user should restore or remove the block; (2) Plan 41 archive overdue — note in Work State has persisted 3+ sessions (first noted 2026-06-16, still unresolved 2026-07-31); (3) auto-memory system is empty (no `~/.claude/projects/*/memory/` files found), consistent with project policy.
+- **Report:** `Reports/Pending/2026-07-31-memory-consolidation.md`
+
+### 2026-07-31 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 items (v0.4.3 sensor hook bug, v0.4.2 non-interactive flags); removed 1 resolved P1 item (Plan 41 headless CLI parity); escalated P1 HOMEBREW_TAP_TOKEN PAT item to P0 (PAT expired ~2026-07-21, 10 days overdue). `routines.md` — dashboard Backlog Hygiene row updated (Last Ran 2026-07-31, Next Due 2026-08-07).
+- **Flags:** (1) **P0 URGENT** — HOMEBREW_TAP_TOKEN PAT expired, rotate immediately before any release; (2) Plan 42 (MCP server) missing from Backlog despite being called out in memory.md Work State; (3) Plans 40 + 41 still in Plans/Active/ — need archiving; (4) all 7 routines overdue by 74–85 days (last run 2026-05-07); (5) website npm vulns (esbuild HIGH, vite HIGH+MED) unaddressed since 2026-06-16.
+- **Report:** `Reports/Pending/2026-07-31-backlog-hygiene.md`
+
+### 2026-07-31 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard Doc Freshness Check row updated (Last Ran 2026-07-31, Next Due 2026-08-07, Status done). `station/Logs/RoutineLog.md` — this entry appended.
+- **Flags:** 6 doc-drift items found — (1) [medium-high] `code-index.md` missing entire `internal/nonint/` package section (Plan 41, 10+ files); (2) [medium] `INDEX.md` architecture diagram missing `internal/nonint/` package; (3) [medium] `code-index.md` missing `internal/generate/list_snapshot.go` entry; (4) [medium] `code-index.md` missing `internal/validate/project.go` entry (Plan 40); (5) [low] `station/CLAUDE.md` Skills nav missing `agent/Skills/critic-agent-prompts.md`; (6) [low] `station/CLAUDE.md` Workflows nav missing `agent/Workflows/plan-grilling.md`. All navigation links resolve correctly — no broken links. Drift items flagged for user decision, no doc changes executed.
+- **Report:** `Reports/Pending/2026-07-31-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
