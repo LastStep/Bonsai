@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) **P0 URGENT** — HOMEBREW_TAP_TOKEN PAT expired, rotate immediately before any release; (2) Plan 42 (MCP server) missing from Backlog despite being called out in memory.md Work State; (3) Plans 40 + 41 still in Plans/Active/ — need archiving; (4) all 7 routines overdue by 74–85 days (last run 2026-05-07); (5) website npm vulns (esbuild HIGH, vite HIGH+MED) unaddressed since 2026-06-16.
 - **Report:** `Reports/Pending/2026-07-31-backlog-hygiene.md`
 
+### 2026-07-31 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard Doc Freshness Check row updated (Last Ran 2026-07-31, Next Due 2026-08-07, Status done). `station/Logs/RoutineLog.md` — this entry appended.
+- **Flags:** 6 doc-drift items found — (1) [medium-high] `code-index.md` missing entire `internal/nonint/` package section (Plan 41, 10+ files); (2) [medium] `INDEX.md` architecture diagram missing `internal/nonint/` package; (3) [medium] `code-index.md` missing `internal/generate/list_snapshot.go` entry; (4) [medium] `code-index.md` missing `internal/validate/project.go` entry (Plan 40); (5) [low] `station/CLAUDE.md` Skills nav missing `agent/Skills/critic-agent-prompts.md`; (6) [low] `station/CLAUDE.md` Workflows nav missing `agent/Workflows/plan-grilling.md`. All navigation links resolve correctly — no broken links. Drift items flagged for user decision, no doc changes executed.
+- **Report:** `Reports/Pending/2026-07-31-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
