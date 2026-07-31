@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-07-31 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — 6 References entries marked stale (Research files not found); `station/agent/Core/routines.md` — dashboard Memory Consolidation row updated (Last Ran 2026-07-31, Next Due 2026-08-05, Status done).
+- **Flags:** (1) `station/Research/` directory missing — 6 foundational research docs referenced in memory.md do not exist; user should restore or remove the block; (2) Plan 41 archive overdue — note in Work State has persisted 3+ sessions (first noted 2026-06-16, still unresolved 2026-07-31); (3) auto-memory system is empty (no `~/.claude/projects/*/memory/` files found), consistent with project policy.
+- **Report:** `Reports/Pending/2026-07-31-memory-consolidation.md`
+
 ### 2026-07-31 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
