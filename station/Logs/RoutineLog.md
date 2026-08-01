@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-01 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-08-01/2026-08-15.
+- **Flags:** 5 items for user — (1) **High: Phase 1 still labeled "Current Phase"** despite being 100% complete; Phase 2 should be promoted to Current Phase. (2) **High: Headless CLI Contract (Plan 41, 2026-06-16) absent from roadmap** — major 5-phase milestone with `*Result` cores, JSONL/exit contract, `list --json`, `docs/agent-interface.md`; recommend `[x]` Phase 2 row. (3) **Medium: Non-interactive mode (Plan 39, v0.4.2) absent** — `--non-interactive --from-config` not on roadmap. (4) **Medium: MCP server (Plan 42) not on roadmap** — fast-follow to Plan 41, imminent. (5) Low: `bonsai completion` and Plan 40 Odysseus artifacts (.bonsai/project.yaml, v1 schemas) also unrepresented.
+- **Report:** `Reports/Pending/2026-08-01-roadmap-accuracy.md`
+
+### 2026-08-01 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** No doc content changed (audit-only per procedure). Dashboard `Last Ran`/`Next Due` updated to 2026-08-01/2026-08-08.
+- **Flags:** 6 findings for user — (1) **Medium: 3 broken links** in `agent/Workflows/issue-to-implementation.md` reference `agent/Skills/dispatch.md` which doesn't exist (dispatch skill not installed — install via `bonsai add` or update workflow); (2-3) Low: `station/INDEX.md` CLI command count stale (8 vs actual 9 — missing `bonsai completion`); `station/code-index.md` missing `bonsai completion` row; (4) Low: `station/code-index.md` missing `internal/nonint/` section (Plan 41 headless package); (5-6) Low: `CLAUDE.md` (root) missing `completion.go` and `internal/nonint/` from directory tree.
+- **Report:** `Reports/Pending/2026-08-01-doc-freshness-check.md`
+
+### 2026-08-01 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plan 37, v0.4.0/Plan 36, Plan 35, Plan 34, Plan 32, Plan 33) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-05-07`; moved `Plans/Active/41-headless-cli-contract.md` → `Plans/Archive/`; dashboard `Last Ran`/`Next Due` updated to 2026-08-01/2026-08-06.
+- **Flags:** 2 items for user — (1) **"Trial sentrux" Pending item stalled 86 days** (30-day threshold exceeded; blocker: Rust toolchain not installed — demote to Backlog or install rustup); (2) Plan 40 still in Active/ with Phase 4 HELD 49 days (Plan 41 superseded Phase 4's rationale — user should decide to archive or keep).
+- **Report:** `Reports/Pending/2026-08-01-status-hygiene.md`
+
+### 2026-08-01 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — 3 resolved items converted to HTML audit-trail comments: P0 bug (sensor hook $PWD-walk-up, fixed v0.4.3), P0 feature (non-interactive flags, fixed v0.4.2), P1 feature (agent-drivable CLI parity, resolved Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-08-01/2026-08-08.
+- **Flags:** 4 items flagged for user — (1) **URGENT: HOMEBREW_TAP_TOKEN PAT expired** (was due ~2026-07-15, now 17 days past; next release will fail Homebrew tap step); (2) all 6 other routines overdue 85-88 days — routine catch-up session needed; (3) 3 P1 items stale 85-107 days without plan assignment (bot PR pile-up, testing infra, stale worktrees); (4) Plans 40+41 still in Active/ — Status Hygiene item.
+- **Report:** `Reports/Pending/2026-08-01-backlog-hygiene.md`
+
+### 2026-08-01 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — 3 updates: (1) Work State: replaced stale "Plan 41 archive" to-do with confirmation note (already done by status-hygiene today); (2) Notes: updated stale line reference `nonint/runner.go:48` → `:76`; (3) References: marked all 6 Research/RESEARCH-*.md entries as stale (files gitignored and absent from disk). Dashboard `Last Ran`/`Next Due` updated to 2026-08-01/2026-08-06.
+- **Flags:** 2 items for user — (1) Research files (station/Research/RESEARCH-*.md) no longer exist on disk — if content is still needed, recreate or distill key findings; Backlog Group D references concept-decisions.md which is also missing; (2) 86-day gap since last run — loop dispatch schedule should enforce tighter cadence for this 5-day routine.
+- **Report:** `Reports/Pending/2026-08-01-memory-consolidation.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
