@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-01 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** No doc content changed (audit-only per procedure). Dashboard `Last Ran`/`Next Due` updated to 2026-08-01/2026-08-08.
+- **Flags:** 6 findings for user — (1) **Medium: 3 broken links** in `agent/Workflows/issue-to-implementation.md` reference `agent/Skills/dispatch.md` which doesn't exist (dispatch skill not installed — install via `bonsai add` or update workflow); (2-3) Low: `station/INDEX.md` CLI command count stale (8 vs actual 9 — missing `bonsai completion`); `station/code-index.md` missing `bonsai completion` row; (4) Low: `station/code-index.md` missing `internal/nonint/` section (Plan 41 headless package); (5-6) Low: `CLAUDE.md` (root) missing `completion.go` and `internal/nonint/` from directory tree.
+- **Report:** `Reports/Pending/2026-08-01-doc-freshness-check.md`
+
 ### 2026-08-01 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
