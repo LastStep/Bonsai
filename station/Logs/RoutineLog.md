@@ -36,6 +36,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 4 items flagged for user — (1) **URGENT: HOMEBREW_TAP_TOKEN PAT expired** (was due ~2026-07-15, now 17 days past; next release will fail Homebrew tap step); (2) all 6 other routines overdue 85-88 days — routine catch-up session needed; (3) 3 P1 items stale 85-107 days without plan assignment (bot PR pile-up, testing infra, stale worktrees); (4) Plans 40+41 still in Active/ — Status Hygiene item.
 - **Report:** `Reports/Pending/2026-08-01-backlog-hygiene.md`
 
+### 2026-08-01 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — 3 updates: (1) Work State: replaced stale "Plan 41 archive" to-do with confirmation note (already done by status-hygiene today); (2) Notes: updated stale line reference `nonint/runner.go:48` → `:76`; (3) References: marked all 6 Research/RESEARCH-*.md entries as stale (files gitignored and absent from disk). Dashboard `Last Ran`/`Next Due` updated to 2026-08-01/2026-08-06.
+- **Flags:** 2 items for user — (1) Research files (station/Research/RESEARCH-*.md) no longer exist on disk — if content is still needed, recreate or distill key findings; Backlog Group D references concept-decisions.md which is also missing; (2) 86-day gap since last run — loop dispatch schedule should enforce tighter cadence for this 5-day routine.
+- **Report:** `Reports/Pending/2026-08-01-memory-consolidation.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
