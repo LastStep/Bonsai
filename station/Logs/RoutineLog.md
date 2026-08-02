@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-02 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` — Roadmap Accuracy row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-16, Status → done. No changes to Roadmap.md (audit-only routine).
+- **Flags:** (1) [Low] Phase 1 "Current Phase" heading is stale — all 11 items checked, heading should be updated. (2) [Medium] Plan 41 headless CLI / Plan 42 MCP server not in roadmap — recommend adding MCP server as a Phase 3 milestone. (3) [Low] Phase 3 "Managed Agents integration" item could note partial progress from Plans 40+41.
+- **Report:** `Reports/Pending/2026-08-02-roadmap-accuracy.md`
+
+---
+
+### 2026-08-02 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — 6 Research document references in the References section marked `(stale — file not found)` (station/Research/ directory does not exist). `agent/Core/routines.md` — Memory Consolidation row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-07.
+- **Flags:** (1) All 6 foundational research doc references are broken — `station/Research/` directory missing; user should locate files or update paths. (2) Plan 41 archive flag persists 47 days unactioned — `Plans/Active/41-headless-cli-contract.md` should be moved to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-08-02-memory-consolidation.md`
+
+---
+
+### 2026-08-02 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Playbook/Status.md` — 6 Done items (Plans 37, 36, 35, 34, 32, 33; dated 2026-04-25–2026-05-07) archived to `Playbook/StatusArchive.md`; footer date updated to ≤ 2026-05-07. `agent/Core/routines.md` — Status Hygiene row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-07.
+- **Flags:** (1) Plan 41 plan file remains in `Plans/Active/` despite all phases shipped — move to `Plans/Archive/`. (2) Sentrux Pending item 87 days stale (blocked: Rust toolchain not installed) — recommend demotion to Backlog or explicit blocker acknowledgment. (3) HOMEBREW_TAP_TOKEN PAT overdue (carry-forward from backlog-hygiene 2026-08-02).
+- **Report:** `Reports/Pending/2026-08-02-status-hygiene.md`
+
+---
+
+### 2026-08-02 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Backlog.md` — 3 resolved items commented out: P0 bug ($PWD-walk-up sensor, resolved v0.4.3 2026-05-13), P0 feature (non-interactive flags, resolved v0.4.2 2026-05-13), P1 feature (Full CLI parity, resolved Plan 41 2026-06-16). Dashboard `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-09.
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT reminder overdue by 18 days (set for ~2026-07-15, today 2026-08-02); PAT rotated 2026-04-22, ~90-day expiry likely lapsed. Verify + rotate before next release. (2) P0 section now empty — all items resolved or promoted; sentrux item in Status Pending may warrant demotion from P0. (3) 11 items at P2/P3 100+ days stale — candidate for triage session.
+- **Report:** `Reports/Pending/2026-08-02-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -392,3 +432,31 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-08-02 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** `agent/Core/routines.md` — Dependency Audit row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-09, Status → done. Report written. No code/config edits.
+- **Flags:** (1) **[HIGH]** 6 HIGH npm vulnerabilities across `website/` — 2 in direct deps (astro@6.1.7: 7 advisories inc. XSS+SSRF; js-yaml@4.1.1: DoS×2); 4 in transitive deps (postcss, sharp, svgo, vite). Fix: `npm audit fix` for transitive; `npm audit fix --force` (or manual pin) for astro→7.1.6 + js-yaml→5.2.3. (2) **[ENV]** govulncheck blocked by proxy (vuln.go.dev HTTP 403) — Go CVE state unverified this cycle. Previous scan (2026-05-04) was clean; golang.org/x/net bumped to v0.53.0 since. (3) [LOW] esbuild Windows-only dev-server arbitrary file read (CVSS 2.5) — resolved by astro upgrade.
+- **Report:** `Reports/Pending/2026-08-02-dependency-audit.md`
+
+---
+
+### 2026-08-02 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 minutes
+- **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-08-02, Next Due → 2026-08-09, Status → done)
+- **Flags:** 7 findings (3 moderate, 2 low, 2 info) — CLAUDE.md missing plan-grilling + critic-agent-prompts nav entries; code-index.md missing Plan 41 headless CLI coverage and completion command; INDEX.md command count stale (8→9); docs/agent-interface.md not in Document Registry
+- **Report:** `Reports/Pending/2026-08-02-doc-freshness-check.md`
+
+---
+
+### 2026-08-02 — Vulnerability Scan
+- **Outcome:** partial (govulncheck blocked by proxy)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** `agent/Core/routines.md` — Vulnerability Scan row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-09, Status → done. Report written. No code/config edits.
+- **Flags:** (1) **[HIGH — OVERDUE 90+ days]** npm vulnerabilities in `website/` persistent since at least 2026-05-04 — astro@6.1.7 (7 HIGH advisories: XSS, SSRF, path traversal, esbuild), js-yaml@4.1.1 (2 DoS), postcss/svgo/vite (transitive path traversal). Fix: `npm audit fix` + upgrade astro→7.1.6, js-yaml→5.2.3. (2) **[OPERATIONAL — URGENT carry-forward]** HOMEBREW_TAP_TOKEN PAT rotation overdue ~18 days — rotate before next release. (3) **[INFO]** govulncheck unverifiable locally (proxy block); CI govulncheck job is the authoritative gate — verify it is green on main. (4) SAST: 0 findings. Secrets: 0 findings. Go CLI codebase security posture clean.
+- **Report:** `Reports/Pending/2026-08-02-vulnerability-scan.md`
