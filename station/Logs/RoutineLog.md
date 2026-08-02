@@ -450,3 +450,13 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-08-02, Next Due → 2026-08-09, Status → done)
 - **Flags:** 7 findings (3 moderate, 2 low, 2 info) — CLAUDE.md missing plan-grilling + critic-agent-prompts nav entries; code-index.md missing Plan 41 headless CLI coverage and completion command; INDEX.md command count stale (8→9); docs/agent-interface.md not in Document Registry
 - **Report:** `Reports/Pending/2026-08-02-doc-freshness-check.md`
+
+---
+
+### 2026-08-02 — Vulnerability Scan
+- **Outcome:** partial (govulncheck blocked by proxy)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** `agent/Core/routines.md` — Vulnerability Scan row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-09, Status → done. Report written. No code/config edits.
+- **Flags:** (1) **[HIGH — OVERDUE 90+ days]** npm vulnerabilities in `website/` persistent since at least 2026-05-04 — astro@6.1.7 (7 HIGH advisories: XSS, SSRF, path traversal, esbuild), js-yaml@4.1.1 (2 DoS), postcss/svgo/vite (transitive path traversal). Fix: `npm audit fix` + upgrade astro→7.1.6, js-yaml→5.2.3. (2) **[OPERATIONAL — URGENT carry-forward]** HOMEBREW_TAP_TOKEN PAT rotation overdue ~18 days — rotate before next release. (3) **[INFO]** govulncheck unverifiable locally (proxy block); CI govulncheck job is the authoritative gate — verify it is green on main. (4) SAST: 0 findings. Secrets: 0 findings. Go CLI codebase security posture clean.
+- **Report:** `Reports/Pending/2026-08-02-vulnerability-scan.md`
