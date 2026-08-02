@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-02 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — 6 Research document references in the References section marked `(stale — file not found)` (station/Research/ directory does not exist). `agent/Core/routines.md` — Memory Consolidation row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-07.
+- **Flags:** (1) All 6 foundational research doc references are broken — `station/Research/` directory missing; user should locate files or update paths. (2) Plan 41 archive flag persists 47 days unactioned — `Plans/Active/41-headless-cli-contract.md` should be moved to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-08-02-memory-consolidation.md`
+
+---
+
 ### 2026-08-02 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
