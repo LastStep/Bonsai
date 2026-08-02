@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-02 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Playbook/Status.md` — 6 Done items (Plans 37, 36, 35, 34, 32, 33; dated 2026-04-25–2026-05-07) archived to `Playbook/StatusArchive.md`; footer date updated to ≤ 2026-05-07. `agent/Core/routines.md` — Status Hygiene row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-07.
+- **Flags:** (1) Plan 41 plan file remains in `Plans/Active/` despite all phases shipped — move to `Plans/Archive/`. (2) Sentrux Pending item 87 days stale (blocked: Rust toolchain not installed) — recommend demotion to Backlog or explicit blocker acknowledgment. (3) HOMEBREW_TAP_TOKEN PAT overdue (carry-forward from backlog-hygiene 2026-08-02).
+- **Report:** `Reports/Pending/2026-08-02-status-hygiene.md`
+
+---
+
 ### 2026-08-02 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
