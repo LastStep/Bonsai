@@ -433,6 +433,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
 
+### 2026-08-02 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** `agent/Core/routines.md` — Dependency Audit row `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-09, Status → done. Report written. No code/config edits.
+- **Flags:** (1) **[HIGH]** 6 HIGH npm vulnerabilities across `website/` — 2 in direct deps (astro@6.1.7: 7 advisories inc. XSS+SSRF; js-yaml@4.1.1: DoS×2); 4 in transitive deps (postcss, sharp, svgo, vite). Fix: `npm audit fix` for transitive; `npm audit fix --force` (or manual pin) for astro→7.1.6 + js-yaml→5.2.3. (2) **[ENV]** govulncheck blocked by proxy (vuln.go.dev HTTP 403) — Go CVE state unverified this cycle. Previous scan (2026-05-04) was clean; golang.org/x/net bumped to v0.53.0 since. (3) [LOW] esbuild Windows-only dev-server arbitrary file read (CVSS 2.5) — resolved by astro upgrade.
+- **Report:** `Reports/Pending/2026-08-02-dependency-audit.md`
+
+---
+
 ### 2026-08-02 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)

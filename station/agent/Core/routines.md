@@ -33,7 +33,7 @@ description: Periodic self-maintenance routines — schedules, dashboard, execut
 | Routine | Frequency | Last Ran | Next Due | Status |
 |---------|-----------|----------|----------|--------|
 | Backlog Hygiene | 7 days | 2026-08-02 | 2026-08-09 | done |
-| Dependency Audit | 7 days | 2026-05-04 | 2026-05-11 | done |
+| Dependency Audit | 7 days | 2026-08-02 | 2026-08-09 | done |
 | Doc Freshness Check | 7 days | 2026-08-02 | 2026-08-09 | done |
 | Memory Consolidation | 5 days | 2026-08-02 | 2026-08-07 | done |
 | Roadmap Accuracy | 14 days | 2026-08-02 | 2026-08-16 | done |
