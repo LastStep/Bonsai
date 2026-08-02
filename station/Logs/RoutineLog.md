@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-02 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Backlog.md` — 3 resolved items commented out: P0 bug ($PWD-walk-up sensor, resolved v0.4.3 2026-05-13), P0 feature (non-interactive flags, resolved v0.4.2 2026-05-13), P1 feature (Full CLI parity, resolved Plan 41 2026-06-16). Dashboard `Last Ran`/`Next Due` updated to 2026-08-02/2026-08-09.
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT reminder overdue by 18 days (set for ~2026-07-15, today 2026-08-02); PAT rotated 2026-04-22, ~90-day expiry likely lapsed. Verify + rotate before next release. (2) P0 section now empty — all items resolved or promoted; sentrux item in Status Pending may warrant demotion from P0. (3) 11 items at P2/P3 100+ days stale — candidate for triage session.
+- **Report:** `Reports/Pending/2026-08-02-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
