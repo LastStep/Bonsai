@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-03 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — `agent/Core/routines.md` dashboard updated (Last Ran 2026-08-03, Next Due 2026-08-17).
+- **Flags:** (1) [medium] Plan 41 (Headless CLI Contract + MCP-Ready Cores, shipped 2026-06-16) has no roadmap entry — significant Phase 2/3 groundwork invisible on roadmap; recommend adding as checked Phase 2 item. (2) [low] Plan 42 (MCP server, described as "fast-follow" in Plan 41) unstarted and absent from roadmap — recommend adding as Phase 3 item. (3) [low] `bonsai completion` shipped 2026-05-07 with no Phase 1 roadmap row (minor). (4) [low] Phase 2/3 priority ordering may benefit from re-evaluation now that headless substrate is complete.
+- **Report:** `Reports/Pending/2026-08-03-roadmap-accuracy.md`
+
+### 2026-08-03 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `agent/Core/memory.md` — 2 edits: (1) marked 6 RESEARCH-*.md References as stale (files never committed to git); (2) corrected stale line number `nonint/runner.go:48` → `:42`. `agent/Core/routines.md` dashboard updated (Last Ran 2026-08-03, Next Due 2026-08-08).
+- **Flags:** (1) [medium] 6 RESEARCH-*.md reference files in memory.md References not found — `station/Research/` never committed to git; flagged for user decision (locate+commit vs remove vs keep-stale); (2) [low] Plans 40+41 still in Plans/Active/ — 48 days since Plan 41 shipped, archival overdue.
+- **Report:** `Reports/Pending/2026-08-03-memory-consolidation.md`
+
+### 2026-08-03 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` dashboard updated (Last Ran 2026-08-03, Next Due 2026-08-10). No doc edits executed — procedure flags for user decision only.
+- **Flags:** (1) `plan-grilling.md` workflow present but missing from station/CLAUDE.md Workflows nav table (medium); (2) `critic-agent-prompts.md` skill present but missing from station/CLAUDE.md Skills nav table (low); (3) CLI command count listed as 8 in INDEX.md and code-index.md — actual is 9 (`bonsai completion` added 2026-05-07, low); (4) `internal/nonint/` package (Plan 41 headless cores) entirely absent from code-index.md (low). No broken links found.
+- **Report:** `Reports/Pending/2026-08-03-doc-freshness-check.md`
+
+### 2026-08-03 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Playbook/Status.md` — 6 Done items (Plans 37, 36, 35, 34, 32, 33; dated 2026-04-25 through 2026-05-07) archived to `Playbook/StatusArchive.md`; footer date marker updated ≤ 2026-04-24 → ≤ 2026-05-07; top 10 recently-done items retained. `agent/Core/routines.md` dashboard updated (Last Ran 2026-08-03, Next Due 2026-08-08).
+- **Flags:** (1) "[research] Trial sentrux on Bonsai repo" Pending for 88 days, blocked on Rust toolchain — exceeds 30-day stall threshold; flagged for user review (recommend demotion to Backlog P1). (2) Plan 41 fully shipped but plan file remains in Plans/Active/ — low-urgency housekeeping, deferred until Status row ages out next run.
+- **Report:** `Reports/Pending/2026-08-03-status-hygiene.md`
+
+### 2026-08-03 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Backlog.md` — 3 resolved items commented out (P0: sensor hook bug resolved v0.4.3; P0: non-interactive flags resolved v0.4.2; P1: headless CLI parity resolved Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-08-03/2026-08-10.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expiry reminder (2026-07-15) is now 19 days past due — immediate rotation needed before next release; (2) all 7 routines overdue, no routine runs logged since 2026-05-07 (~87-day gap); (3) website npm vulns (P2) — esbuild/vite HIGH CVEs open in `/website`, astro upgrade PR #108 fails build; (4) stale worktrees (P1) — 105 days since last audit; (5) Unicode lookalikes item labeled "purely speculative" — candidate for P3 demotion; (6) 2 Group F docs items from 2026-04-20 now stale — candidate for removal.
+- **Report:** `Reports/Pending/2026-08-03-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
