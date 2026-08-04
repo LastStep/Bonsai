@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-04 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard row updated (Last Ran 2026-05-07 → 2026-08-04, Next Due → 2026-08-18, Status → done). Report created at `Reports/Pending/2026-08-04-roadmap-accuracy.md`.
+- **Flags:** 6 items flagged for user review — (1) **[Medium] "Current Phase" header stale**: Phase 1 is 100% complete but still labeled as Current Phase; Phase 2 should be promoted. (2) **[Medium] Headless CLI Contract (Plan 41) missing from roadmap**: headless `*Result` cores + JSONL/exit contract shipped 2026-06-16 with no Phase 2 entry. (3) **[Low] Non-interactive mode (Plan 39, v0.4.2) not in roadmap**. (4) **[Low] `bonsai completion` command not in roadmap**. (5) **[Low] Phase 2 "Template variables expansion" has no Backlog tracking entry**. (6) **[Low] KeyDecisionLog not updated since 2026-04-13** — decisions from Plans 39/40/41 not captured.
+- **Report:** `Reports/Pending/2026-08-04-roadmap-accuracy.md`
+
+### 2026-08-04 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/memory.md` — Work State stale note removed (`.bonsai-lock.yaml` gitignore policy resolved); References section — all 6 Research doc links marked `(stale — file not found in current environment; gitignored local-only)`. Dashboard row updated (Last Ran 2026-05-07 → 2026-08-04, Next Due → 2026-08-09, Status → done).
+- **Flags:** 2 for user review — (1) **Research files absent from current environment**: 6 gitignored local-only Research docs not present in `/home/user/Bonsai`; marked stale in memory; user should confirm if files exist on primary machine or remove entries. (2) **Plans 40 + 41 still in Plans/Active/ unarchived**: known housekeeping item, unresolved since 2026-06-16; plus HOMEBREW_TAP_TOKEN PAT likely expired (Backlog Hygiene flag, 2026-08-04).
+- **Report:** `Reports/Pending/2026-08-04-memory-consolidation.md`
+
+### 2026-08-04 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** Dashboard row updated (Last Ran 2026-05-04 → 2026-08-04, Next Due → 2026-08-11, Status → done). Report created at `Reports/Pending/2026-08-04-doc-freshness-check.md`.
+- **Flags:** 4 items for user review — (1) **code-index.md missing internal/nonint package**: Plan 41 (2026-06-16) added the entire `internal/nonint/` package (headless CLI cores) and it has zero coverage in code-index.md. (2) **CLAUDE.md nav gap: plan-grilling.md workflow unlisted**: active workflow used for Plans 40/41, absent from Workflows navigation table and Quick Triggers. (3) **CLAUDE.md nav gap: critic-agent-prompts.md skill unlisted**: plan-grilling companion skill, absent from Skills navigation table. (4) **completion command stale in INDEX.md + code-index.md**: `bonsai completion` (PR #78, 2026-05-07) not in code-index.md CLI table; INDEX.md says "8 CLI commands" should be 9. Proposed updates for all 4 items in the report.
+- **Report:** `Reports/Pending/2026-08-04-doc-freshness-check.md`
+
+### 2026-08-04 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done rows (Plans 37, 36/v0.4.0, 35, 34, 32, 33 — 2026-04-25 through 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer note in Status.md; dashboard row updated (Last Ran 2026-05-07 → 2026-08-04, Next Due → 2026-08-09).
+- **Flags:** 2 items for user review — (1) **Sentrux Pending item stalled 89 days**: "[research] Trial sentrux on Bonsai repo" has been in Pending since 2026-05-07, blocked by Rust toolchain; consider demoting back to Backlog P0 or scheduling toolchain install. (2) **Plans 40 and 41 in Active/ despite being Done**: both shipped plans are still in `Plans/Active/` not `Plans/Archive/` — known Backlog P2 item ([improvement] Plan archiving), but worth resolving.
+- **Report:** `Reports/Pending/2026-08-04-status-hygiene.md`
+
+### 2026-08-04 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog.md (replaced with HTML comments): P0 `[bug] Sensor hook $PWD-walk-up` (resolved v0.4.3 2026-05-13), P0 `[feature] non-interactive flags` (resolved v0.4.2 2026-05-13), P1 `[feature] Full agent-drivable CLI parity` (resolved Plan 41 2026-06-16). Dashboard row updated (Last Ran 2026-05-07 → 2026-08-04, Next Due → 2026-08-11).
+- **Flags:** 2 urgent — (1) **HOMEBREW_TAP_TOKEN PAT expiry**: reminder date 2026-07-15 has passed, PAT likely expired (~2026-07-21 based on 90-day default from 2026-04-22 rotation); verify + rotate before next release. (2) **Routine execution gap**: all 7 routines are 89–92 days overdue; dispatch system appears inactive since 2026-05-07. Also: Roadmap Phase 2 goal "Template variables expansion" has no Backlog tracking entry; Phase 1 fully complete with no formal annotation; P3 items "Self-update mechanism" + "Micro-task fast path" are Phase 2 roadmap goals eligible for P2 promotion.
+- **Report:** `Reports/Pending/2026-08-04-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
