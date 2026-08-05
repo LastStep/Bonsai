@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-05 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** (1) Work State updated — added Plan 40 to archival reminder (was only mentioning Plan 41); (2) Note updated — fixed `nonint/runner.go` line reference `:48` → `:77`, clarified Phase-4 refers to Plan 40; (3) References section — all 6 Research doc links marked `[STALE 2026-08-05]` (directory not found). Dashboard `Last Ran`/`Next Due` updated to 2026-08-05/2026-08-10.
+- **Flags:** (1) **HIGH — `station/Research/` directory missing** — all 6 References section entries are broken links; user should decide whether to restore or clear. (2) **HIGH — HOMEBREW_TAP_TOKEN PAT likely expired** (~2026-07-21, 14d past 90d expiry; already flagged by Backlog Hygiene). (3) Plans 40 and 41 both still in Plans/Active/ — recommend archiving both.
+- **Report:** `Reports/Pending/2026-08-05-memory-consolidation.md`
+
 ### 2026-08-05 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
