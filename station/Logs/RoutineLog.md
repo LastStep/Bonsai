@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-05 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-08-05/2026-08-12.
+- **Flags:** 5 MEDIUM findings + 3 LOW + 1 INFO requiring user decision. Key issues: (1) `bonsai completion` command (PR #78) missing from INDEX.md count, root CLAUDE.md cmd/ tree, and code-index.md; (2) `internal/nonint/` package missing from INDEX.md architecture diagram and root CLAUDE.md internal/ tree; (3) `plan-grilling.md` and `critic-agent-prompts.md` not listed in station/CLAUDE.md nav tables; (4) Plans 40+41 still in Plans/Active/.
+- **Report:** `Reports/Pending/2026-08-05-doc-freshness-check.md`
+
 ### 2026-08-05 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
