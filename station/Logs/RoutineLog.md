@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-06 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-08-06/2026-08-13.
+- **Flags:** 5 drift items found (Plans 40+41 since last run 2026-05-04): (1) [medium] `station/INDEX.md` CLI command count stale (8→9, `completion` command missing from list); (2) [medium] `internal/nonint/` package entirely absent from INDEX.md architecture overview; (3) [medium] `docs/agent-interface.md` (canonical headless contract, Plan 41 Phase 5) not referenced in INDEX.md Document Registry; (4) [low] `cmd/completion.go` and `internal/nonint/` missing from CLAUDE.md project structure; (5) [low] `code-index.md` missing `completion` CLI entry and has no `internal/nonint/` section. All navigation links verified clean — no broken links.
+- **Report:** `Reports/Pending/2026-08-06-doc-freshness-check.md`
+
 ### 2026-08-06 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
