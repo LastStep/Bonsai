@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-06 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — archived 6 Done items (Plans 37, 36, 35, 34, 32, 33; dates 2026-04-25 through 2026-05-07) to `StatusArchive.md`; footer note updated. Dashboard `Last Ran`/`Next Due` updated to 2026-08-06/2026-08-11.
+- **Flags:** 1 — "Trial sentrux" Pending item stalled 91 days (blocked: Rust toolchain not installed). Candidate for demotion back to Backlog. User decision required.
+- **Report:** `Reports/Pending/2026-08-06-status-hygiene.md`
+
+---
+
 ### 2026-08-06 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
