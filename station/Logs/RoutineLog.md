@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-06 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 items (v0.4.3 sensor-hook fix, v0.4.2 non-interactive flags; both shipped since last run) + 1 resolved P1 item (Plan 41 headless CLI parity); replaced with audit-trail HTML comments. Marked HOMEBREW_TAP_TOKEN PAT item `[PAST DUE — rotate now]`. Dashboard `Last Ran`/`Next Due` updated to 2026-08-06/2026-08-13.
+- **Flags:** 1 urgent — HOMEBREW_TAP_TOKEN PAT likely expired (~2026-07-21, reminder date 2026-07-15 already passed). Rotate PAT and update GitHub secret before next release.
+- **Report:** `Reports/Pending/2026-08-06-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
