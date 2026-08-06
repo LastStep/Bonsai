@@ -20,6 +20,52 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-06 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — archived 6 Done items (Plans 37, 36, 35, 34, 32, 33; dates 2026-04-25 through 2026-05-07) to `StatusArchive.md`; footer note updated. Dashboard `Last Ran`/`Next Due` updated to 2026-08-06/2026-08-11.
+- **Flags:** 1 — "Trial sentrux" Pending item stalled 91 days (blocked: Rust toolchain not installed). Candidate for demotion back to Backlog. User decision required.
+- **Report:** `Reports/Pending/2026-08-06-status-hygiene.md`
+
+---
+
+### 2026-08-06 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-08-06/2026-08-20 (no edits to `Roadmap.md` — audit-only per procedure).
+- **Flags:** 6 items flagged for user (3 medium, 3 low): (1) [medium] "Current Phase" header still shows Phase 1 despite all items done; (2) [medium] Plan 41 (Headless CLI Contract, 2026-06-16) not on roadmap; (3) [medium] Plan 40 (Odysseus Platform Integration v0.5.0, 2026-06-13) not on roadmap; (4) [low] Plan 42 (MCP Server, fast-follow) not on roadmap; (5) [low] Key Decision Log has no entries since 2026-04-13 — 3 months of architecture unlogged; (6) [low] v0.5.0 tag still held from June decision.
+- **Report:** `Reports/Pending/2026-08-06-roadmap-accuracy.md`
+
+---
+
+### 2026-08-06 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) Archived `Plans/Active/41-headless-cli-contract.md` → `Plans/Archive/`; (2) marked 6 Research file references stale in `memory.md` §References (directory missing); (3) corrected stale line reference `nonint/runner.go:48` → `:77` in memory.md §Notes; (4) updated Work State to remove completed archive-plan-41 action item.
+- **Flags:** Research directory (`station/Research/`) missing — 6 foundational research file references in memory are now stale. User should confirm file location or remove entries.
+- **Report:** `Reports/Pending/2026-08-06-memory-consolidation.md`
+
+---
+
+### 2026-08-06 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-08-06/2026-08-13.
+- **Flags:** 5 drift items found (Plans 40+41 since last run 2026-05-04): (1) [medium] `station/INDEX.md` CLI command count stale (8→9, `completion` command missing from list); (2) [medium] `internal/nonint/` package entirely absent from INDEX.md architecture overview; (3) [medium] `docs/agent-interface.md` (canonical headless contract, Plan 41 Phase 5) not referenced in INDEX.md Document Registry; (4) [low] `cmd/completion.go` and `internal/nonint/` missing from CLAUDE.md project structure; (5) [low] `code-index.md` missing `completion` CLI entry and has no `internal/nonint/` section. All navigation links verified clean — no broken links.
+- **Report:** `Reports/Pending/2026-08-06-doc-freshness-check.md`
+
+### 2026-08-06 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 items (v0.4.3 sensor-hook fix, v0.4.2 non-interactive flags; both shipped since last run) + 1 resolved P1 item (Plan 41 headless CLI parity); replaced with audit-trail HTML comments. Marked HOMEBREW_TAP_TOKEN PAT item `[PAST DUE — rotate now]`. Dashboard `Last Ran`/`Next Due` updated to 2026-08-06/2026-08-13.
+- **Flags:** 1 urgent — HOMEBREW_TAP_TOKEN PAT likely expired (~2026-07-21, reminder date 2026-07-15 already passed). Rotate PAT and update GitHub secret before next release.
+- **Report:** `Reports/Pending/2026-08-06-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
