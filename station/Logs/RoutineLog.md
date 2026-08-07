@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-07 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` — Last Ran/Next Due updated to 2026-08-07/2026-08-21. `station/Logs/RoutineLog.md` — this entry appended. No changes made to Roadmap.md (audit-only routine — all findings flagged for user review).
+- **Flags:** 4 items for user review — (1) **[Medium]** Roadmap "Current Phase" label stale: Phase 1 is 100% complete, Phase 2 should now be "Current Phase"; (2) **[Medium]** Plan 41 (Headless CLI Contract + MCP-ready cores, shipped 2026-06-16) has no Roadmap entry — significant untracked shipped work; (3) **[Low]** "Template variables expansion" (Phase 2 item) has no Backlog tracking entry (also flagged by 2026-08-07 backlog-hygiene); (4) **[Low]** Plan 42 (MCP server, referenced as "fast-follow" in Plan 41 Status notes) absent from Roadmap and Backlog.
+- **Report:** `Reports/Pending/2026-08-07-roadmap-accuracy.md`
+
+---
+
 ### 2026-08-07 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
