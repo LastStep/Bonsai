@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-07 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Status.md` — 6 Done rows (Plans 37, 36, 35, 34, 32, 33; dated 2026-04-25–2026-05-07) archived out, archive footer note updated. `StatusArchive.md` — 6 rows prepended. `routines.md` — Last Ran/Next Due updated to 2026-08-07/2026-08-12. `RoutineLog.md` — this entry appended.
+- **Flags:** 1 item for user review — Pending item "Trial sentrux on Bonsai repo" stalled 92 days, blocked on Rust toolchain (cargo/rustc not installed). Recommend: install rustup, demote to Backlog, or drop.
+- **Report:** `Reports/Pending/2026-08-07-status-hygiene.md`
+
+---
+
 ### 2026-08-07 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
