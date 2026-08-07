@@ -40,6 +40,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-07 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` — Last Ran/Next Due updated to 2026-08-07/2026-08-14. `station/Logs/RoutineLog.md` — this entry appended. No documentation files modified (procedure: flag only, don't execute updates).
+- **Flags:** 4 documentation drift items requiring user decision — (1) INDEX.md CLI commands count stale (says 8, should be 9 — `completion` command added PR #78); (2) `docs/` directory (7 files incl. agent-interface.md) not referenced in INDEX.md Document Registry or Architecture Overview; (3) `bonsai completion` missing from code-index.md CLI Commands table; (4) `internal/nonint/` package (Plan 41 headless CLI contract) not documented in code-index.md.
+- **Report:** `Reports/Pending/2026-08-07-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
