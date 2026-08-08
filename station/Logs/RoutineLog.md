@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-08 — Doc Freshness Check
+- **Outcome:** partial (findings flagged; no edits made — procedure is flag-only)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard updated (Last Ran → 2026-08-08, Next Due → 2026-08-15). Report filed.
+- **Flags:** 9 findings (2 HIGH, 3 MEDIUM, 4 LOW) — doc drift since 2026-05-04 across INDEX.md, station/CLAUDE.md, code-index.md. Key gaps: `internal/nonint/` missing from architecture, `plan-grilling.md` and `critic-agent-prompts.md` not in nav tables, `bonsai completion` undercounted.
+- **Report:** `Reports/Pending/2026-08-08-doc-freshness-check.md`
+
+---
+
 ### 2026-08-08 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
