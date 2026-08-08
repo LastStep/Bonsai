@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-08 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** Commented out 3 resolved P0/P1 backlog entries (sensor hook bug v0.4.3, non-interactive flags v0.4.2, headless CLI parity Plan 41). Dashboard updated 2026-08-08.
+- **Flags:** HOMEBREW_TAP_TOKEN PAT due for rotation ~2026-07-15 — likely expired, check before next release.
+- **Report:** `Reports/Pending/2026-08-08-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
