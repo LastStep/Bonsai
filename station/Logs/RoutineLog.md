@@ -56,6 +56,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) **HIGH** — HOMEBREW_TAP_TOKEN PAT reminder date (~2026-07-15) is 24 days overdue; PAT rotated 2026-04-22 may be expired — check before next release. (2) **MEDIUM** — Website npm vuln tree (6 Dependabot alerts, esbuild/vite HIGH) 53 days old and still open. (3) **INFO** — All 7 routines significantly overdue (91+ day gap); recommend routine-digest session.
 - **Report:** `Reports/Pending/2026-08-08-backlog-hygiene.md`
 
+### 2026-08-08 — Roadmap Accuracy
+- **Outcome:** partial (audit complete; 5 findings flagged for user; no Roadmap edits per procedure)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard Last Ran → 2026-08-08, Next Due → 2026-08-22. Report filed.
+- **Flags:** (1) **MEDIUM** — Roadmap "Current Phase" header stale: still reads Phase 1 despite Phase 1 being 100% complete. (2) **MEDIUM** — Plan 41 (headless CLI contract + MCP-ready cores, shipped 2026-06-16) has no Roadmap entry. (3) **MEDIUM** — Plan 40 Phases 1–3 (v1 schema freeze, root-relative scaffolding, hardened validate, shipped 2026-06-13) has no Roadmap entry. (4) **LOW** — "bonsai completion" shell completion (shipped 2026-05-07) not in Roadmap. (5) **LOW** — Phase 2 "Template variables expansion" has no Backlog entry to anchor scope. (6) **INFO** — KDL "defer Managed Agents" settled decision may warrant revisiting given Plan 41.
+- **Report:** `Reports/Pending/2026-08-08-roadmap-accuracy.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
