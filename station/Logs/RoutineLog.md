@@ -21,11 +21,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 ---
 
 ### 2026-08-08 — Backlog Hygiene
-- **Outcome:** partial
+- **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
-- **Duration:** ~4 min
-- **Changes:** Commented out 3 resolved P0/P1 backlog entries (sensor hook bug v0.4.3, non-interactive flags v0.4.2, headless CLI parity Plan 41). Dashboard updated 2026-08-08.
-- **Flags:** HOMEBREW_TAP_TOKEN PAT due for rotation ~2026-07-15 — likely expired, check before next release.
+- **Duration:** ~10 min (completed in two agent passes; prior partial pass is superseded by this entry)
+- **Changes:** Commented out 3 resolved P0/P1 Backlog entries with resolution notes (sensor hook `$PWD`-walk-up bug → v0.4.3 / PR #105+#106; `--non-interactive` flags → v0.4.2 / PR #102; full agent-drivable CLI parity → Plan 41 / PRs #120–#125). P0 section now empty of active items. Dashboard Last Ran → 2026-08-08, Next Due → 2026-08-15.
+- **Flags:** (1) **HIGH** — HOMEBREW_TAP_TOKEN PAT reminder date (~2026-07-15) is 24 days overdue; PAT rotated 2026-04-22 may be expired — check before next release. (2) **MEDIUM** — Website npm vuln tree (6 Dependabot alerts, esbuild/vite HIGH) 53 days old and still open. (3) **INFO** — All 7 routines significantly overdue (91+ day gap); recommend routine-digest session.
 - **Report:** `Reports/Pending/2026-08-08-backlog-hygiene.md`
 
 ### 2026-05-07 — Roadmap Accuracy
