@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-08 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done rows (Plans 32–37, v0.4.0 release) from Status.md → StatusArchive.md; updated archive footer note in Status.md; dashboard Last Ran → 2026-08-08, Next Due → 2026-08-13.
+- **Flags:** (1) HIGH — HOMEBREW_TAP_TOKEN PAT reminder date (~2026-07-15) 24 days overdue (reinforced from backlog-hygiene). (2) MEDIUM — "Trial sentrux" Pending stalled 93 days; recommend demote to Backlog or unblock. (3) LOW — Plan 41 plan file remains in Plans/Active/ despite plan being fully shipped; move to Archive.
+- **Report:** `Reports/Pending/2026-08-08-status-hygiene.md`
+
 ### 2026-08-08 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
