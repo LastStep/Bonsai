@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-08 — Memory Consolidation
+- **Outcome:** partial (memory updated; Research file loss flagged for user review)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) `station/agent/Core/memory.md` — 6 References entries marked stale (Research/ files absent from disk); runner.go line number corrected (48→46); Work State updated. (2) `station/Playbook/Plans/Active/41-headless-cli-contract.md` → moved to `Plans/Archive/`. (3) Dashboard Last Ran → 2026-08-08, Next Due → 2026-08-13.
+- **Flags:** (1) **HIGH** — 6 foundational Research/ docs unreachable (gitignored, not on disk — likely lost in env migration). User decision needed: restore or clean. (2) **MEDIUM** — Plan 41 archive overdue 53 days; resolved. (3) **INFO** — Notes section at 22 entries; consider pruning at next cycle.
+- **Report:** `Reports/Pending/2026-08-08-memory-consolidation.md`
+
+---
+
 ### 2026-08-08 — Doc Freshness Check
 - **Outcome:** partial (findings flagged; no edits made — procedure is flag-only)
 - **Execution mode:** subagent (loop.md dispatch)
