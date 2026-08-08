@@ -20,6 +20,50 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-08 — Memory Consolidation
+- **Outcome:** partial (memory updated; Research file loss flagged for user review)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) `station/agent/Core/memory.md` — 6 References entries marked stale (Research/ files absent from disk); runner.go line number corrected (48→46); Work State updated. (2) `station/Playbook/Plans/Active/41-headless-cli-contract.md` → moved to `Plans/Archive/`. (3) Dashboard Last Ran → 2026-08-08, Next Due → 2026-08-13.
+- **Flags:** (1) **HIGH** — 6 foundational Research/ docs unreachable (gitignored, not on disk — likely lost in env migration). User decision needed: restore or clean. (2) **MEDIUM** — Plan 41 archive overdue 53 days; resolved. (3) **INFO** — Notes section at 22 entries; consider pruning at next cycle.
+- **Report:** `Reports/Pending/2026-08-08-memory-consolidation.md`
+
+---
+
+### 2026-08-08 — Doc Freshness Check
+- **Outcome:** partial (findings flagged; no edits made — procedure is flag-only)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard updated (Last Ran → 2026-08-08, Next Due → 2026-08-15). Report filed.
+- **Flags:** 9 findings (2 HIGH, 3 MEDIUM, 4 LOW) — doc drift since 2026-05-04 across INDEX.md, station/CLAUDE.md, code-index.md. Key gaps: `internal/nonint/` missing from architecture, `plan-grilling.md` and `critic-agent-prompts.md` not in nav tables, `bonsai completion` undercounted.
+- **Report:** `Reports/Pending/2026-08-08-doc-freshness-check.md`
+
+---
+
+### 2026-08-08 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done rows (Plans 32–37, v0.4.0 release) from Status.md → StatusArchive.md; updated archive footer note in Status.md; dashboard Last Ran → 2026-08-08, Next Due → 2026-08-13.
+- **Flags:** (1) HIGH — HOMEBREW_TAP_TOKEN PAT reminder date (~2026-07-15) 24 days overdue (reinforced from backlog-hygiene). (2) MEDIUM — "Trial sentrux" Pending stalled 93 days; recommend demote to Backlog or unblock. (3) LOW — Plan 41 plan file remains in Plans/Active/ despite plan being fully shipped; move to Archive.
+- **Report:** `Reports/Pending/2026-08-08-status-hygiene.md`
+
+### 2026-08-08 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min (completed in two agent passes; prior partial pass is superseded by this entry)
+- **Changes:** Commented out 3 resolved P0/P1 Backlog entries with resolution notes (sensor hook `$PWD`-walk-up bug → v0.4.3 / PR #105+#106; `--non-interactive` flags → v0.4.2 / PR #102; full agent-drivable CLI parity → Plan 41 / PRs #120–#125). P0 section now empty of active items. Dashboard Last Ran → 2026-08-08, Next Due → 2026-08-15.
+- **Flags:** (1) **HIGH** — HOMEBREW_TAP_TOKEN PAT reminder date (~2026-07-15) is 24 days overdue; PAT rotated 2026-04-22 may be expired — check before next release. (2) **MEDIUM** — Website npm vuln tree (6 Dependabot alerts, esbuild/vite HIGH) 53 days old and still open. (3) **INFO** — All 7 routines significantly overdue (91+ day gap); recommend routine-digest session.
+- **Report:** `Reports/Pending/2026-08-08-backlog-hygiene.md`
+
+### 2026-08-08 — Roadmap Accuracy
+- **Outcome:** partial (audit complete; 5 findings flagged for user; no Roadmap edits per procedure)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard Last Ran → 2026-08-08, Next Due → 2026-08-22. Report filed.
+- **Flags:** (1) **MEDIUM** — Roadmap "Current Phase" header stale: still reads Phase 1 despite Phase 1 being 100% complete. (2) **MEDIUM** — Plan 41 (headless CLI contract + MCP-ready cores, shipped 2026-06-16) has no Roadmap entry. (3) **MEDIUM** — Plan 40 Phases 1–3 (v1 schema freeze, root-relative scaffolding, hardened validate, shipped 2026-06-13) has no Roadmap entry. (4) **LOW** — "bonsai completion" shell completion (shipped 2026-05-07) not in Roadmap. (5) **LOW** — Phase 2 "Template variables expansion" has no Backlog entry to anchor scope. (6) **INFO** — KDL "defer Managed Agents" settled decision may warrant revisiting given Plan 41.
+- **Report:** `Reports/Pending/2026-08-08-roadmap-accuracy.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
