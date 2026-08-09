@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-09 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made to Roadmap.md (audit-only per procedure) — dashboard row updated (Last Ran 2026-05-07 → 2026-08-09, Next Due → 2026-08-23, Status done).
+- **Flags:** 4 items for user — (1) [HIGH] Phase 2 missing shipped item: Plan 41 headless CLI contract (all 4 mutating cmds, JSONL/exit contract, `list --json`, `docs/agent-interface.md`, 2026-06-16) not in roadmap; (2) [MEDIUM] Phase 2 missing: Plan 40 Phases 1–3 platform schemas + manifest (2026-06-13) not in roadmap; (3) [MEDIUM] Phase 3 missing: Plan 42 `bonsai mcp` fast-follow not in roadmap; (4) [LOW] KeyDecisionLog missing structural decisions from Plans 40 and 41.
+- **Report:** `Reports/Pending/2026-08-09-roadmap-accuracy.md`
+
+---
+
 ### 2026-08-09 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
