@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-09 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Archived 6 Done rows (Plans 32–37, 2026-04-25 to 2026-05-07) from Status.md → StatusArchive.md; Status.md footer updated (pruned 2026-08-09); routines.md dashboard row updated (Last Ran → 2026-08-09, Next Due → 2026-08-14).
+- **Flags:** 3 items for user — (1) [MEDIUM] Plan 41 fully shipped 54 days ago but still in Plans/Active/ — move to Plans/Archive/ and update frontmatter; (2) [MEDIUM] "Trial sentrux" Pending item stalled 94 days, blocked on Rust toolchain — demote to Backlog or schedule install; (3) [LOW] Plan 40 Phase 4 HELD 57 days with no timeline — clarify or close as superseded.
+- **Report:** `Reports/Pending/2026-08-09-status-hygiene.md`
+
+---
+
+### 2026-08-09 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made to Roadmap.md (audit-only per procedure) — dashboard row updated (Last Ran 2026-05-07 → 2026-08-09, Next Due → 2026-08-23, Status done).
+- **Flags:** 4 items for user — (1) [HIGH] Phase 2 missing shipped item: Plan 41 headless CLI contract (all 4 mutating cmds, JSONL/exit contract, `list --json`, `docs/agent-interface.md`, 2026-06-16) not in roadmap; (2) [MEDIUM] Phase 2 missing: Plan 40 Phases 1–3 platform schemas + manifest (2026-06-13) not in roadmap; (3) [MEDIUM] Phase 3 missing: Plan 42 `bonsai mcp` fast-follow not in roadmap; (4) [LOW] KeyDecisionLog missing structural decisions from Plans 40 and 41.
+- **Report:** `Reports/Pending/2026-08-09-roadmap-accuracy.md`
+
+---
+
+### 2026-08-09 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc content auto-updated (audit-only per procedure) — dashboard row updated (Last Ran 2026-05-04 → 2026-08-09, Next Due → 2026-08-16, Status done).
+- **Flags:** 4 items for user — (1) [MEDIUM] code-index.md line numbers stale throughout cmd/ and internal/generate/ due to Plan 41 additions; (2) [MEDIUM] 7 new headless functions from Plan 41 missing from code-index.md; (3) [LOW] Plan 41 still in Plans/Active/ despite shipping 2026-06-16 — should archive; (4) [LOW] INDEX.md phase label "Dogfooding & Polish" predates Plan 41 headless CLI + MCP infra.
+- **Report:** `Reports/Pending/2026-08-09-doc-freshness-check.md`
+
+---
+
+### 2026-08-09 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — marked 6 stale Research document links with `(stale — file not found)` annotations (Research/ directory absent from project root). Dashboard row updated (Last Ran 2026-05-07 → 2026-08-09, Next Due → 2026-08-14, Status done).
+- **Flags:** 2 items for user — (1) [MEDIUM] Research/ directory missing; 6 links in References section are broken — locate or remove; (2) [LOW] Plan 41 still in Plans/Active/ 94 days post-ship — archive to Plans/Archive/ (also flagged by Doc Freshness Check today).
+- **Report:** `Reports/Pending/2026-08-09-memory-consolidation.md`
+
+---
+
+### 2026-08-09 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 3 resolved items (P0 sensor hook walk-up bug → v0.4.3; P0 non-interactive flags → v0.4.2; P1 full agent-drivable CLI parity → Plan 41). Dashboard row updated (Last Ran 2026-05-07 → 2026-08-09, Next Due → 2026-08-16).
+- **Flags:** 4 items for user — (1) [URGENT] HOMEBREW_TAP_TOKEN PAT expired ~2026-07-21, next release will fail brew step; (2) Phase 2 "Template variables expansion" has no Backlog entry; (3) stale worktrees item (count from 2026-04-21, 110+ days old); (4) Go module version data in P3 item 97+ days stale.
+- **Report:** `Reports/Pending/2026-08-09-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
