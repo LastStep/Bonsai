@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-09 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 3 resolved items (P0 sensor hook walk-up bug → v0.4.3; P0 non-interactive flags → v0.4.2; P1 full agent-drivable CLI parity → Plan 41). Dashboard row updated (Last Ran 2026-05-07 → 2026-08-09, Next Due → 2026-08-16).
+- **Flags:** 4 items for user — (1) [URGENT] HOMEBREW_TAP_TOKEN PAT expired ~2026-07-21, next release will fail brew step; (2) Phase 2 "Template variables expansion" has no Backlog entry; (3) stale worktrees item (count from 2026-04-21, 110+ days old); (4) Go module version data in P3 item 97+ days stale.
+- **Report:** `Reports/Pending/2026-08-09-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
