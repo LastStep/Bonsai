@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-09 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc content auto-updated (audit-only per procedure) — dashboard row updated (Last Ran 2026-05-04 → 2026-08-09, Next Due → 2026-08-16, Status done).
+- **Flags:** 4 items for user — (1) [MEDIUM] code-index.md line numbers stale throughout cmd/ and internal/generate/ due to Plan 41 additions; (2) [MEDIUM] 7 new headless functions from Plan 41 missing from code-index.md; (3) [LOW] Plan 41 still in Plans/Active/ despite shipping 2026-06-16 — should archive; (4) [LOW] INDEX.md phase label "Dogfooding & Polish" predates Plan 41 headless CLI + MCP infra.
+- **Report:** `Reports/Pending/2026-08-09-doc-freshness-check.md`
+
+---
+
 ### 2026-08-09 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
