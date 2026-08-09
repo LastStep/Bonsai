@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-09 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Archived 6 Done rows (Plans 32–37, 2026-04-25 to 2026-05-07) from Status.md → StatusArchive.md; Status.md footer updated (pruned 2026-08-09); routines.md dashboard row updated (Last Ran → 2026-08-09, Next Due → 2026-08-14).
+- **Flags:** 3 items for user — (1) [MEDIUM] Plan 41 fully shipped 54 days ago but still in Plans/Active/ — move to Plans/Archive/ and update frontmatter; (2) [MEDIUM] "Trial sentrux" Pending item stalled 94 days, blocked on Rust toolchain — demote to Backlog or schedule install; (3) [LOW] Plan 40 Phase 4 HELD 57 days with no timeline — clarify or close as superseded.
+- **Report:** `Reports/Pending/2026-08-09-status-hygiene.md`
+
+---
+
 ### 2026-08-09 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
