@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-10 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done items (Plans 37/36/35/34/32/33, dated 2026-04-25–2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-07-26` with "most recent 10 retained" note; dashboard `Last Ran` → 2026-08-10, `Next Due` → 2026-08-15.
+- **Flags:** (1) Pending item "Trial sentrux on Bonsai repo" stalled 95 days (exceeds 30-day threshold — Rust toolchain still not installed); flag for user decision — demote to Backlog or keep Pending; (2) HOMEBREW_TAP_TOKEN PAT reminder date 2026-07-15 has passed — rotation unconfirmed (P1 Backlog); (3) Plan 41 plan file still in `Plans/Active/` despite being fully shipped — candidate for archiving (already flagged by Roadmap Accuracy routine today).
+- **Report:** `Reports/Pending/2026-08-10-status-hygiene.md`
+
+---
+
+### 2026-08-10 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-08-10, Next Due → 2026-08-17); no doc edits (audit-only routine, findings flagged for user)
+- **Flags:** 4 drift items found — (1) Medium: INDEX.md CLI commands count stale (says "8", should be "9" — `completion` added PR #78 2026-05-07); (2) Medium: code-index.md CLI Commands table missing `completion` command; (3) Low: station/CLAUDE.md Workflows nav table missing `plan-grilling.md` (added 2026-06-13); (4) Low: station/CLAUDE.md Skills nav table missing `critic-agent-prompts.md` (added 2026-06-13). One info-level item flagged for user decision: `docs/agent-interface.md` not in INDEX.md Document Registry (Plan 41 Phase 5 deliverable).
+- **Report:** `Reports/Pending/2026-08-10-doc-freshness-check.md`
+
+---
+
+### 2026-08-10 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** 3 resolved Backlog items commented out — P0 sensor hook bug (resolved v0.4.3), P0 non-interactive flags (resolved v0.4.2), P1 full CLI parity (resolved Plan 41). Dashboard `Last Ran` → 2026-08-10, `Next Due` → 2026-08-17.
+- **Flags:** 6 items flagged for user — (1) URGENT: HOMEBREW_TAP_TOKEN PAT reminder date 2026-07-15 passed, rotation unconfirmed; (2) all 7 routines overdue 95–99 days — recommend batch routine-digest; (3) website npm vulns (P2) active, consider promoting; (4) Roadmap Phase 2 "Template variables expansion" has no Backlog entry; (5) Group F AltScreen release note item likely obsolete after 6+ releases; (6) P0 section now empty (good news).
+- **Report:** `Reports/Pending/2026-08-10-backlog-hygiene.md`
+
+---
+
+### 2026-08-10 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** 2 edits to `station/agent/Core/memory.md` — (1) marked 6 Research file references stale (files not found at `station/Research/`); (2) corrected stale `nonint/runner.go:48` line reference to `:77` + updated obsolete "until Phase-4 bonsai update delivery lands" note (Plan 41 shipped). Dashboard updated (Last Ran → 2026-08-10, Next Due → 2026-08-15).
+- **Flags:** User should confirm whether Research docs exist elsewhere and restore links, or remove the stale References block.
+- **Report:** `Reports/Pending/2026-08-10-memory-consolidation.md`
+
+---
+
+### 2026-08-10 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran` → 2026-08-10, `Next Due` → 2026-08-24.
+- **Flags:** 5 items flagged for user — (1) Medium: Phase 1 "Current Phase" label stale — Phase 1 fully complete, Phase 2 is active; (2) Medium: Plan 41 headless CLI + MCP-ready cores shipped but no MCP server (Plan 42) entry in roadmap; (3) Low: Plan 40 (Odysseus integration, v0.5.0 untagged) shipped new scaffolding but absent from roadmap; (4) Low: Plan 41 fully shipped but still in Plans/Active/ — candidate for archiving; (5) Low: Phase 2 "Template variables expansion" has no Backlog entry. KeyDecisionLog cross-check clean. Both previous-run flags (Better trigger sections, bonsai validate row) now resolved in roadmap.
+- **Report:** `Reports/Pending/2026-08-10-roadmap-accuracy.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
