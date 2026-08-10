@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-10 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** 3 resolved Backlog items commented out — P0 sensor hook bug (resolved v0.4.3), P0 non-interactive flags (resolved v0.4.2), P1 full CLI parity (resolved Plan 41). Dashboard `Last Ran` → 2026-08-10, `Next Due` → 2026-08-17.
+- **Flags:** 6 items flagged for user — (1) URGENT: HOMEBREW_TAP_TOKEN PAT reminder date 2026-07-15 passed, rotation unconfirmed; (2) all 7 routines overdue 95–99 days — recommend batch routine-digest; (3) website npm vulns (P2) active, consider promoting; (4) Roadmap Phase 2 "Template variables expansion" has no Backlog entry; (5) Group F AltScreen release note item likely obsolete after 6+ releases; (6) P0 section now empty (good news).
+- **Report:** `Reports/Pending/2026-08-10-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
