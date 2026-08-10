@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-10 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-08-10, Next Due → 2026-08-17); no doc edits (audit-only routine, findings flagged for user)
+- **Flags:** 4 drift items found — (1) Medium: INDEX.md CLI commands count stale (says "8", should be "9" — `completion` added PR #78 2026-05-07); (2) Medium: code-index.md CLI Commands table missing `completion` command; (3) Low: station/CLAUDE.md Workflows nav table missing `plan-grilling.md` (added 2026-06-13); (4) Low: station/CLAUDE.md Skills nav table missing `critic-agent-prompts.md` (added 2026-06-13). One info-level item flagged for user decision: `docs/agent-interface.md` not in INDEX.md Document Registry (Plan 41 Phase 5 deliverable).
+- **Report:** `Reports/Pending/2026-08-10-doc-freshness-check.md`
+
+---
+
 ### 2026-08-10 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
