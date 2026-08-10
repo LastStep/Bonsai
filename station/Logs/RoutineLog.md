@@ -40,6 +40,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-10 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** 2 edits to `station/agent/Core/memory.md` — (1) marked 6 Research file references stale (files not found at `station/Research/`); (2) corrected stale `nonint/runner.go:48` line reference to `:77` + updated obsolete "until Phase-4 bonsai update delivery lands" note (Plan 41 shipped). Dashboard updated (Last Ran → 2026-08-10, Next Due → 2026-08-15).
+- **Flags:** User should confirm whether Research docs exist elsewhere and restore links, or remove the stale References block.
+- **Report:** `Reports/Pending/2026-08-10-memory-consolidation.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
