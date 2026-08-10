@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-10 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done items (Plans 37/36/35/34/32/33, dated 2026-04-25–2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-07-26` with "most recent 10 retained" note; dashboard `Last Ran` → 2026-08-10, `Next Due` → 2026-08-15.
+- **Flags:** (1) Pending item "Trial sentrux on Bonsai repo" stalled 95 days (exceeds 30-day threshold — Rust toolchain still not installed); flag for user decision — demote to Backlog or keep Pending; (2) HOMEBREW_TAP_TOKEN PAT reminder date 2026-07-15 has passed — rotation unconfirmed (P1 Backlog); (3) Plan 41 plan file still in `Plans/Active/` despite being fully shipped — candidate for archiving (already flagged by Roadmap Accuracy routine today).
+- **Report:** `Reports/Pending/2026-08-10-status-hygiene.md`
+
+---
+
 ### 2026-08-10 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
