@@ -44,6 +44,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 5 items flagged for user — (1) **URGENT: HOMEBREW_TAP_TOKEN PAT likely expired** (~2026-07-21 expiry, now 21 days overdue; next release will fail Homebrew step); (2) Website npm vuln tree P2 still unresolved (56 days, 6 Dependabot alerts, build broken); (3) All 6 other routines overdue by 88-99 days — suggest catchup session; (4) Three P3 items align with current Phase 2 Roadmap (Custom item creator, Self-update mechanism, Micro-task fast path) — consider promotion; (5) P1 "Routine bot PR pile-up" process decision still pending (96 days).
 - **Report:** `Reports/Pending/2026-08-11-backlog-hygiene.md`
 
+### 2026-08-11 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-04 → 2026-08-11, Next Due → 2026-08-18, Status → done). No doc edits made (audit-only routine).
+- **Flags:** 6 drift items for user — (1) HIGH: `internal/nonint/` package (Plan 41 headless CLI layer, 14 files) absent from root CLAUDE.md internal/ tree; (2) HIGH: `internal/nonint/` has no section in `station/code-index.md`; (3) MEDIUM: `bonsai completion` command absent from root CLAUDE.md cmd/ tree; (4) MEDIUM: INDEX.md CLI count says 8, should be 9 (+ completion); (5) MEDIUM: `bonsai completion` absent from code-index.md CLI Commands table; (6) LOW: `docs/agent-interface.md` (Plan 41 contract doc) not in INDEX.md Document Registry.
+- **Report:** `Reports/Pending/2026-08-11-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
