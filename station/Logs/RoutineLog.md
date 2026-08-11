@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-11 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `station/agent/Core/memory.md` — References section annotated with `(stale — ...)` marker on 6 research doc pointers (station/Research/ directory missing). `station/agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-08-11, Next Due → 2026-08-16, Status → done).
+- **Flags:** 2 items for user — (1) **Research docs stale (medium)**: all 6 References pointers broken since station/Research/ does not exist; present 3+ sessions unresolved — user must confirm whether files were moved, renamed, or deleted; (2) **Plans 40+41 unarchived (low)**: both ship-complete plan files remain in Plans/Active/ 57+ days post-merge — archive to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-08-11-memory-consolidation.md`
+
 ### 2026-08-11 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
