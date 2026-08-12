@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-12 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `agent/Core/memory.md` — marked 6 Research doc references as stale (files don't exist); added 2 flags to Flags section (`[OVERDUE]` plan archival, `[STALE-REFS]` research docs missing); `agent/Core/routines.md` dashboard — Last Ran → 2026-08-12, Next Due → 2026-08-17, Status → done.
+- **Flags:** (1) **Research docs missing** — all 6 `station/Research/RESEARCH-*.md` references in memory.md are broken; files were local-untracked, now gone — user to confirm if lost/moved; (2) **Plan 41 + Plan 40 archival overdue** — both plan files still in `Plans/Active/` despite being shipped/held; pending tech-lead session wrap-up.
+- **Report:** `Reports/Pending/2026-08-12-memory-consolidation.md`
+
 ### 2026-08-12 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
