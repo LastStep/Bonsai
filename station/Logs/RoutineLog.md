@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-12 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** `agent/Core/routines.md` dashboard — Last Ran → 2026-08-12, Next Due → 2026-08-19, Status → done; report written.
+- **Flags:** (1) `plan-grilling.md` workflow installed in `agent/Workflows/` but missing from CLAUDE.md Workflows nav table and Quick Triggers — undiscoverable via nav; (2) `critic-agent-prompts.md` skill installed in `agent/Skills/` but missing from CLAUDE.md Skills nav table — undiscoverable via nav; (3) INDEX.md CLI command count says 8 but `bonsai completion` makes 9.
+- **Report:** `Reports/Pending/2026-08-12-doc-freshness-check.md`
+
 ### 2026-08-12 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
