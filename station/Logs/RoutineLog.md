@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-12 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 minutes
+- **Changes:** `Status.md` — archived 6 Done rows (Plan 37, v0.4.0/Plan 36, Plan 35, Plan 34, Plan 32, Plan 33) to `StatusArchive.md`; footer marker updated to `≤ 2026-05-07, beyond top 10`. `StatusArchive.md` — 6 rows prepended. `routines.md` dashboard — Last Ran → 2026-08-12, Next Due → 2026-08-17, Status → done.
+- **Flags:** (1) **Sentrux Pending item stale 97 days** — promoted 2026-05-07, Rust toolchain blocker unresolved; user should decide: install toolchain or demote back to Backlog P0. (2) Plans 40 and 41 still in `Plans/Active/` — archival pending tech-lead session (cross-flag with Memory Consolidation 2026-08-12 report).
+- **Report:** `Reports/Pending/2026-08-12-status-hygiene.md`
+
 ### 2026-08-12 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
