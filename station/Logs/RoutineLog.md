@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-12 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 minutes
+- **Changes:** `Status.md` — archived 6 Done rows (Plan 37, v0.4.0/Plan 36, Plan 35, Plan 34, Plan 32, Plan 33) to `StatusArchive.md`; footer marker updated to `≤ 2026-05-07, beyond top 10`. `StatusArchive.md` — 6 rows prepended. `routines.md` dashboard — Last Ran → 2026-08-12, Next Due → 2026-08-17, Status → done.
+- **Flags:** (1) **Sentrux Pending item stale 97 days** — promoted 2026-05-07, Rust toolchain blocker unresolved; user should decide: install toolchain or demote back to Backlog P0. (2) Plans 40 and 41 still in `Plans/Active/` — archival pending tech-lead session (cross-flag with Memory Consolidation 2026-08-12 report).
+- **Report:** `Reports/Pending/2026-08-12-status-hygiene.md`
+
+### 2026-08-12 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `agent/Core/routines.md` dashboard — Last Ran → 2026-08-12, Next Due → 2026-08-26, Status → done; report written.
+- **Flags:** (1) **Phase 1 still labeled "Current Phase"** — all 11 items checked, phase complete; header should move to Phase 2; (2) **Plan 41 (Headless CLI Contract) not on roadmap** — significant shipped extensibility + MCP-readiness milestone missing; suggest `[x]` entry under Phase 2; (3) **Plan 40 Phases 1–3 not on roadmap** — v0.5.0 frozen schemas + project-level validate not captured; (4) **Plan 42 (MCP server) not on roadmap** — planned fast-follow to Plan 41 not under Phase 3.
+- **Report:** `Reports/Pending/2026-08-12-roadmap-accuracy.md`
+
+### 2026-08-12 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `agent/Core/memory.md` — marked 6 Research doc references as stale (files don't exist); added 2 flags to Flags section (`[OVERDUE]` plan archival, `[STALE-REFS]` research docs missing); `agent/Core/routines.md` dashboard — Last Ran → 2026-08-12, Next Due → 2026-08-17, Status → done.
+- **Flags:** (1) **Research docs missing** — all 6 `station/Research/RESEARCH-*.md` references in memory.md are broken; files were local-untracked, now gone — user to confirm if lost/moved; (2) **Plan 41 + Plan 40 archival overdue** — both plan files still in `Plans/Active/` despite being shipped/held; pending tech-lead session wrap-up.
+- **Report:** `Reports/Pending/2026-08-12-memory-consolidation.md`
+
+### 2026-08-12 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** `agent/Core/routines.md` dashboard — Last Ran → 2026-08-12, Next Due → 2026-08-19, Status → done; report written.
+- **Flags:** (1) `plan-grilling.md` workflow installed in `agent/Workflows/` but missing from CLAUDE.md Workflows nav table and Quick Triggers — undiscoverable via nav; (2) `critic-agent-prompts.md` skill installed in `agent/Skills/` but missing from CLAUDE.md Skills nav table — undiscoverable via nav; (3) INDEX.md CLI command count says 8 but `bonsai completion` makes 9.
+- **Report:** `Reports/Pending/2026-08-12-doc-freshness-check.md`
+
+### 2026-08-12 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** `Backlog.md` — commented out 2 resolved P0 items (sensor hook bug → v0.4.3; non-interactive flags → v0.4.2) and 1 resolved P1 item (full CLI parity → Plan 41); `routines.md` dashboard — Last Ran → 2026-08-12, Next Due → 2026-08-19; report written.
+- **Flags:** (1) **URGENT: HOMEBREW_TAP_TOKEN PAT almost certainly expired** (~2026-07-21, 22 days ago) — rotate before next release; (2) Website npm vulns (HIGH severity) pending 57 days with no fix pass; (3) All routines 93+ days overdue — entire maintenance system dormant since 2026-05-07; (4) P1 routine bot PR pile-up strategy still unresolved (97 days); (5) 3 P3 items eligible for P2 promotion now that Phase 1 is complete.
+- **Report:** `Reports/Pending/2026-08-12-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
