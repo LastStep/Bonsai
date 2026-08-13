@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-13 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Playbook/Status.md` — 6 Done items archived (Plans 37/36/35/34/32/33; dates 2026-04-25 to 2026-05-07); footer date updated to `≤ 2026-05-07`. `Playbook/StatusArchive.md` — 6 rows prepended. `agent/Core/routines.md` — Status Hygiene row updated Last Ran→2026-08-13, Next Due→2026-08-18.
+- **Flags:** (1) MEDIUM: "Trial sentrux" Pending item has been blocked 98 days (since 2026-05-07) with no progress — blocked by Rust toolchain not installed; flag for user to either install Rust and execute, or demote back to Backlog. (2) LOW: Plan 41 (fully shipped 2026-06-16, all 5 phases merged) plan file remains in `Plans/Active/41-headless-cli-contract.md` — should be moved to `Plans/Archive/`. (3) LOW: Plan 40 (phases 1-3 done, Phase 4 HELD) in `Plans/Active/` — flagging for user decision on whether Phase 4 will resume.
+- **Report:** `Reports/Pending/2026-08-13-status-hygiene.md`
+
+### 2026-08-13 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-08-13/2026-08-27.
+- **Flags:** (1) MEDIUM: Plan 41 (Headless CLI Contract + MCP-ready cores + `docs/agent-interface.md`, shipped 2026-06-16) has no entry in Roadmap Phase 2 — largest omission. (2) LOW: Plan 40 / v0.5.0 (frozen v1 schemas, project-level validate) shipped but unrepresented in roadmap; tag still held. (3) LOW: Phase 2 "Template variables expansion" has no backlog tracking entry. (4) LOW: MCP server (Plan 42, near-term fast-follow to Plan 41) absent from roadmap.
+- **Report:** `Reports/Pending/2026-08-13-roadmap-accuracy.md`
+
+### 2026-08-13 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/memory.md` — References section: 6 stale Research doc links marked stale (files existed on prior machine `/home/rohan/ZenGarden/Bonsai/`, never committed to git). Dashboard `Last Ran`/`Next Due` updated to 2026-08-13/2026-08-18.
+- **Flags:** (1) MEDIUM: 6 Research doc references in memory.md References section are stale — `station/Research/RESEARCH-*.md` files don't exist in current environment; user should recreate, restore from backup, or commit them to the repo to prevent knowledge-continuity gap.
+- **Report:** `Reports/Pending/2026-08-13-memory-consolidation.md`
+
+### 2026-08-13 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-08-13/2026-08-20. No doc content modified — procedure flags findings for user decision.
+- **Flags:** (1) HIGH: `internal/nonint/` package (Plan 41 — headless cores, 9 source files) has no section in `station/code-index.md`. (2) MEDIUM: `station/INDEX.md` architecture diagram omits `internal/nonint/`. (3) MEDIUM: `docs/agent-interface.md` not registered in `station/INDEX.md` Document Registry. (4) LOW: `agent/Workflows/plan-grilling.md` not listed in CLAUDE.md Workflows table. (5) LOW: `agent/Skills/critic-agent-prompts.md` not listed in CLAUDE.md Skills table. All navigation links verified valid — no broken refs.
+- **Report:** `Reports/Pending/2026-08-13-doc-freshness-check.md`
+
+### 2026-08-13 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — 3 resolved items commented out: P0 sensor $PWD-walk-up bug (resolved v0.4.3), P0 non-interactive flags (resolved v0.4.2), P1 full CLI parity (resolved Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-08-13/2026-08-20.
+- **Flags:** (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT rotation deadline ~2026-07-15 has passed — PAT likely expired, next release will fail brew step. (2) Website npm vuln P2 item (astro/esbuild/vite/js-yaml) is 58 days stale — PR #108 breaks build, needs dedicated fix pass. (3) Roadmap Phase 2 "Template variables expansion" has no backlog tracking entry. (4) All 7 routines are 94–101 days overdue — full routine-digest session needed.
+- **Report:** `Reports/Pending/2026-08-13-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
