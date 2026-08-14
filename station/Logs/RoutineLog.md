@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-14 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** no changes made (audit-only routine) — dashboard `Last Ran` updated to 2026-08-14, `Next Due` to 2026-08-28.
+- **Flags:** 4 items for user — (1) [high] `## Current Phase` heading still points to Phase 1 despite all Phase 1 items being `[x]` — advance heading to Phase 2; (2) [medium] Plan 41 (headless CLI contract, shipped 2026-06-16) has no roadmap bullet in any phase — add a bullet capturing this milestone; (3) [medium] Plan 41 file still in `Plans/Active/` — archive to `Plans/Archive/` (4th flag this dispatch cycle); (4) [medium] HOMEBREW_TAP_TOKEN PAT ~30 days overdue for rotation (4th flag this dispatch cycle — escalating).
+- **Report:** `Reports/Pending/2026-08-14-roadmap-accuracy.md`
+
+### 2026-08-14 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** (1) `memory.md` References section — marked "Foundational research docs" group as stale (`station/Research/` is gitignored, absent in cloud/CI runs; all 6 file links unresolvable); (2) `memory.md` Notes — updated isolation:worktree bullet: replaced stale "no CLI path re-scaffolds" claim with accurate post-Plan-41 state; updated `nonint/runner.go:48` line reference to named constant `ExitWrongCWDForInit=4`; (3) `routines.md` dashboard — Memory Consolidation row updated (Last Ran 2026-05-07 → 2026-08-14, Next Due → 2026-08-19).
+- **Flags:** 2 items for user — (1) [medium] Research docs gitignored: decide whether to commit `station/Research/` or accept permanent local-only status; (2) [low] Plan 41 plan file still in `Plans/Active/` — archive to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-08-14-memory-consolidation.md`
+
+### 2026-08-14 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` set to 2026-08-14/2026-08-21.
+- **Flags:** 9 items — (1) [high] root `CLAUDE.md` project-structure missing entire `internal/nonint/` package (Plan 41 headless CLI contract); (2) [medium] root CLAUDE.md missing `cmd/completion.go`; (3) [medium] root CLAUDE.md missing 3 new `internal/generate/` files (`catalog_snapshot_unix.go`, `catalog_snapshot_windows.go`, `list_snapshot.go`); (4) [medium] `station/CLAUDE.md` Workflows table missing `plan-grilling.md` nav row (added 2026-06-13); (5) [medium] `station/code-index.md` has no section for `internal/nonint/`; (6) [low] `station/CLAUDE.md` Skills table missing `critic-agent-prompts.md` nav row; (7) [low] code-index missing `list_snapshot.go` entry; (8) [low] code-index missing `catalog_snapshot_unix/windows.go` note; (9) [low] INDEX.md CLI count 8 → 9 (`bonsai completion` added PR #78).
+- **Report:** `Reports/Pending/2026-08-14-doc-freshness-check.md`
+
+### 2026-08-14 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 32/33/34/35/36/37, dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated Status.md footer date marker; dashboard `Last Ran`/`Next Due` set to 2026-08-14/2026-08-19.
+- **Flags:** 3 items — (1) [medium] `[research] Trial sentrux` Pending 99 days, stalled — flag for user: demotion or unblock needed; (2) [low] Plan 41 fully shipped but file remains in `Plans/Active/` — archive when convenient; (3) [high] HOMEBREW_TAP_TOKEN PAT overdue for rotation (~30 days past 2026-07-15 due date) — rotate before next release.
+- **Report:** `Reports/Pending/2026-08-14-status-hygiene.md`
+
+### 2026-08-14 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from active Backlog bullets (replaced with audit-trail HTML comments): P0 `[bug] Sensor hook commands $PWD-walk-up` (resolved v0.4.3), P0 `[feature] bonsai init/add non-interactive flags` (resolved v0.4.2), P1 `[feature] Full agent-drivable CLI parity` (resolved Plan 41). Dashboard updated.
+- **Flags:** 1 high-severity — HOMEBREW_TAP_TOKEN PAT likely expired (was due ~2026-07-15, today 2026-08-14); rotate immediately before next release attempt.
+- **Report:** `Reports/Pending/2026-08-14-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
