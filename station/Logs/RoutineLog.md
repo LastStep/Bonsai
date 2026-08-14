@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-14 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no doc edits (audit-only routine) — dashboard `Last Ran`/`Next Due` set to 2026-08-14/2026-08-21.
+- **Flags:** 9 items — (1) [high] root `CLAUDE.md` project-structure missing entire `internal/nonint/` package (Plan 41 headless CLI contract); (2) [medium] root CLAUDE.md missing `cmd/completion.go`; (3) [medium] root CLAUDE.md missing 3 new `internal/generate/` files (`catalog_snapshot_unix.go`, `catalog_snapshot_windows.go`, `list_snapshot.go`); (4) [medium] `station/CLAUDE.md` Workflows table missing `plan-grilling.md` nav row (added 2026-06-13); (5) [medium] `station/code-index.md` has no section for `internal/nonint/`; (6) [low] `station/CLAUDE.md` Skills table missing `critic-agent-prompts.md` nav row; (7) [low] code-index missing `list_snapshot.go` entry; (8) [low] code-index missing `catalog_snapshot_unix/windows.go` note; (9) [low] INDEX.md CLI count 8 → 9 (`bonsai completion` added PR #78).
+- **Report:** `Reports/Pending/2026-08-14-doc-freshness-check.md`
+
 ### 2026-08-14 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
