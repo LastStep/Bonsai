@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-14 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** (1) `memory.md` References section — marked "Foundational research docs" group as stale (`station/Research/` is gitignored, absent in cloud/CI runs; all 6 file links unresolvable); (2) `memory.md` Notes — updated isolation:worktree bullet: replaced stale "no CLI path re-scaffolds" claim with accurate post-Plan-41 state; updated `nonint/runner.go:48` line reference to named constant `ExitWrongCWDForInit=4`; (3) `routines.md` dashboard — Memory Consolidation row updated (Last Ran 2026-05-07 → 2026-08-14, Next Due → 2026-08-19).
+- **Flags:** 2 items for user — (1) [medium] Research docs gitignored: decide whether to commit `station/Research/` or accept permanent local-only status; (2) [low] Plan 41 plan file still in `Plans/Active/` — archive to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-08-14-memory-consolidation.md`
+
 ### 2026-08-14 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
