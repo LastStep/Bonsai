@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-15 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — 2 P0 items commented out (resolved in v0.4.2/v0.4.3), 1 P1 item commented out (resolved by Plan 41), 1 P1 item updated with urgency flag (PAT expiry overdue). Dashboard `Last Ran`/`Next Due` updated to 2026-08-15/2026-08-22.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT rotation overdue by ~1 month (was due 2026-07-15) — rotate before next release; (2) Website npm vuln tree (esbuild HIGH, PR #108 broken build) open ~60 days at P2; (3) Plans 40+41 in Active/ despite being Done in Status.md; (4) All 6 other routines are 100 days overdue — heavy catch-up expected.
+- **Report:** `Reports/Pending/2026-08-15-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
