@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-15 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** no doc edits made (audit-only); dashboard `Last Ran`/`Next Due` updated to 2026-08-15/2026-08-22.
+- **Flags:** 3 drift items — (1) Medium: `bonsai completion` command (v0.4.1 PR #78) missing from root CLAUDE.md cmd/ tree, INDEX.md CLI count, and code-index.md; (2) Medium: `docs/` directory (agent-interface.md, formats.md, etc.) not represented in any project doc — INDEX.md Document Registry and CLAUDE.md structure tree both missing it; (3) Low: code-index.md embed.go entry missing `GuideFormats` var. All flagged for user decision; no autonomous doc edits made. Previously-flagged broken nav link `agent/Skills/bonsai-model.md` confirmed resolved.
+- **Report:** `Reports/Pending/2026-08-15-doc-freshness-check.md`
+
 ### 2026-08-15 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
