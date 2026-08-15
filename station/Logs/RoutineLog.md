@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-15 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine); dashboard `Last Ran`/`Next Due` updated to 2026-08-15/2026-08-29; report written.
+- **Flags:** 4 findings — (1) Medium: "Current Phase" header still labels Phase 1 (fully complete); Phase 2 should be the labeled current phase. (2) Medium: Plan 41 (Headless CLI Contract, shipped 2026-06-16) has no roadmap entry — a significant Phase 2 milestone missing from the plan. (3) Medium: Plan 40 Phases 1–3 (Odysseus schemas/validate/docs, 2026-06-13) has no roadmap entry — Phase 3 enabling work unrepresented. (4) Low: Phase 2's 3 remaining unchecked items are all P3 Backlog with no active plans — no near-term roadmap momentum. All flagged for user review; no Roadmap.md edits made.
+- **Report:** `Reports/Pending/2026-08-15-roadmap-accuracy.md`
+
+### 2026-08-15 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) `agent/Core/memory.md` Work State — removed 3 stale sentences (Plan 41 archive reminder, gitignore policy note, tag-held status) and replaced with single up-to-date line confirming Plans 40+41 archived 2026-08-15; (2) `agent/Core/memory.md` References — marked all 6 `station/Research/RESEARCH-*.md` paths as stale (directory absent from repo); (3) `agent/Core/routines.md` dashboard row — Last Ran 2026-05-07 → 2026-08-15, Next Due → 2026-08-20.
+- **Flags:** (1) Medium — 6 Research doc references in memory.md References section are stale (`station/Research/` directory does not exist; files may have been on a different machine or never committed). Marked in-place; user should decide whether to remove or relocate. (2) Low — `nonint/runner.go` line reference in Notes ("nonint/runner.go:48") is slightly off; behavior/exit-code (exit 4, refuses existing `.bonsai.yaml`) is accurate but the const is at line 42 and RunInit is at line 73. Not changed (close enough for navigation).
+- **Report:** `Reports/Pending/2026-08-15-memory-consolidation.md`
+
+### 2026-08-15 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** no doc edits made (audit-only); dashboard `Last Ran`/`Next Due` updated to 2026-08-15/2026-08-22.
+- **Flags:** 3 drift items — (1) Medium: `bonsai completion` command (v0.4.1 PR #78) missing from root CLAUDE.md cmd/ tree, INDEX.md CLI count, and code-index.md; (2) Medium: `docs/` directory (agent-interface.md, formats.md, etc.) not represented in any project doc — INDEX.md Document Registry and CLAUDE.md structure tree both missing it; (3) Low: code-index.md embed.go entry missing `GuideFormats` var. All flagged for user decision; no autonomous doc edits made. Previously-flagged broken nav link `agent/Skills/bonsai-model.md` confirmed resolved.
+- **Report:** `Reports/Pending/2026-08-15-doc-freshness-check.md`
+
+### 2026-08-15 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** (1) Archived 6 Done rows (Plans 32–37 + v0.4.0, dated 2026-04-25–2026-05-07) from `Status.md` → `StatusArchive.md`; (2) Updated Status.md plan links for Plans 40+41 from `Plans/Active/` → `Plans/Archive/`; (3) Updated footer note in Status.md; (4) Moved `Plans/Active/40-odysseus-platform-integration.md` → `Plans/Archive/`; (5) Moved `Plans/Active/41-headless-cli-contract.md` → `Plans/Archive/`; (6) Dashboard `Last Ran`/`Next Due` updated to 2026-08-15/2026-08-20.
+- **Flags:** (1) Sentrux trial Pending item is 100 days stale (added 2026-05-07, blocked on Rust toolchain install) — flag for user review: recommend demotion back to Backlog P3 (research) since blocker shows no sign of resolution; (2) Plans/Active/ is now empty — no orphaned plan files remain.
+- **Report:** `Reports/Pending/2026-08-15-status-hygiene.md`
+
+### 2026-08-15 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — 2 P0 items commented out (resolved in v0.4.2/v0.4.3), 1 P1 item commented out (resolved by Plan 41), 1 P1 item updated with urgency flag (PAT expiry overdue). Dashboard `Last Ran`/`Next Due` updated to 2026-08-15/2026-08-22.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT rotation overdue by ~1 month (was due 2026-07-15) — rotate before next release; (2) Website npm vuln tree (esbuild HIGH, PR #108 broken build) open ~60 days at P2; (3) Plans 40+41 in Active/ despite being Done in Status.md; (4) All 6 other routines are 100 days overdue — heavy catch-up expected.
+- **Report:** `Reports/Pending/2026-08-15-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
