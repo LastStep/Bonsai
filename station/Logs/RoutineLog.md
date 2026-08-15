@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-15 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) `agent/Core/memory.md` Work State — removed 3 stale sentences (Plan 41 archive reminder, gitignore policy note, tag-held status) and replaced with single up-to-date line confirming Plans 40+41 archived 2026-08-15; (2) `agent/Core/memory.md` References — marked all 6 `station/Research/RESEARCH-*.md` paths as stale (directory absent from repo); (3) `agent/Core/routines.md` dashboard row — Last Ran 2026-05-07 → 2026-08-15, Next Due → 2026-08-20.
+- **Flags:** (1) Medium — 6 Research doc references in memory.md References section are stale (`station/Research/` directory does not exist; files may have been on a different machine or never committed). Marked in-place; user should decide whether to remove or relocate. (2) Low — `nonint/runner.go` line reference in Notes ("nonint/runner.go:48") is slightly off; behavior/exit-code (exit 4, refuses existing `.bonsai.yaml`) is accurate but the const is at line 42 and RunInit is at line 73. Not changed (close enough for navigation).
+- **Report:** `Reports/Pending/2026-08-15-memory-consolidation.md`
+
 ### 2026-08-15 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
