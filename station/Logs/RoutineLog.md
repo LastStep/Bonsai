@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-15 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** (1) Archived 6 Done rows (Plans 32–37 + v0.4.0, dated 2026-04-25–2026-05-07) from `Status.md` → `StatusArchive.md`; (2) Updated Status.md plan links for Plans 40+41 from `Plans/Active/` → `Plans/Archive/`; (3) Updated footer note in Status.md; (4) Moved `Plans/Active/40-odysseus-platform-integration.md` → `Plans/Archive/`; (5) Moved `Plans/Active/41-headless-cli-contract.md` → `Plans/Archive/`; (6) Dashboard `Last Ran`/`Next Due` updated to 2026-08-15/2026-08-20.
+- **Flags:** (1) Sentrux trial Pending item is 100 days stale (added 2026-05-07, blocked on Rust toolchain install) — flag for user review: recommend demotion back to Backlog P3 (research) since blocker shows no sign of resolution; (2) Plans/Active/ is now empty — no orphaned plan files remain.
+- **Report:** `Reports/Pending/2026-08-15-status-hygiene.md`
+
 ### 2026-08-15 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
