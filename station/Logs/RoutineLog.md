@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-17 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-08-17, Next Due → 2026-08-24, Status → done). No doc updates made — findings flagged for user decision.
+- **Flags:** 6 findings (4 medium, 2 low) — CLAUDE.md missing `plan-grilling` workflow and `critic-agent-prompts` skill from nav tables; INDEX.md missing `docs/agent-interface.md` from Document Registry and `internal/nonint/` from architecture overview; INDEX.md CLI count stale (8→9, completion added); code-index.md missing completion command row. All are navigation gaps or metric drift — no broken links.
+- **Report:** `Reports/Pending/2026-08-17-doc-freshness-check.md`
+
+---
+
 ### 2026-08-17 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
