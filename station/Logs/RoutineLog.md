@@ -20,6 +20,50 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-18 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** `agent/Core/memory.md` — removed stale Plan 41 archive note; corrected `nonint/runner.go` line ref; marked Research/* references stale. `agent/Core/routines.md` — dashboard Last Ran → 2026-08-18, Next Due → 2026-08-23.
+- **Flags:** `Research/` directory missing from repo — 6 dead reference links in memory.md flagged for user verification.
+- **Report:** `Reports/Pending/2026-08-18-memory-consolidation.md`
+
+---
+
+### 2026-08-18 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Playbook/Status.md` — archived 6 oldest Done rows, updated Plan 41 plan link to Archive, updated footnote date. `Playbook/StatusArchive.md` — prepended 6 archived rows. `Plans/Active/41-headless-cli-contract.md` → moved to `Plans/Archive/`. `agent/Core/routines.md` — dashboard `Last Ran` → 2026-08-18, `Next Due` → 2026-08-23.
+- **Flags:** (1) Pending item "Trial sentrux" stale 103 days (blocked on Rust toolchain) — flagged for user review.
+- **Report:** `Reports/Pending/2026-08-18-status-hygiene.md`
+
+### 2026-08-18 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 3 resolved items (2 P0s shipped v0.4.2/v0.4.3, 1 P1 shipped Plan 41); replaced with resolution comments. `agent/Core/routines.md` — dashboard `Last Ran` → 2026-08-18, `Next Due` → 2026-08-25.
+- **Flags:** 4 items requiring user action — (1) **URGENT** HOMEBREW_TAP_TOKEN PAT expired ~2026-07-21 (34 days overdue for rotation); (2) website npm vulns (6 open HIGH/MED, 63 days old); (3) all 7 routines massively overdue (60–118 days since 2026-05-07); (4) routine bot PR pile-up fix stale (103 days).
+- **Report:** `Reports/Pending/2026-08-18-backlog-hygiene.md`
+
+### 2026-08-18 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes made (audit-only routine) — `agent/Core/routines.md` dashboard `Last Ran` → 2026-08-18, `Next Due` → 2026-08-25.
+- **Flags:** 7 findings requiring user review — (1) [high] INDEX.md CLI command count says 8 but `completion` subcommand shipped May 2026 makes it 9; (2) [medium] `agent/Workflows/plan-grilling.md` exists but missing from CLAUDE.md Workflows nav table; (3) [medium] `agent/Skills/critic-agent-prompts.md` exists but missing from CLAUDE.md Skills nav table; (4) [medium] Plan 41 headless CLI flags (--yes/--from/--non-interactive/--skip-conflicts/--json) not reflected in INDEX.md; (5) [low] Plan 40 still in Plans/Active/ though shipped 2026-06-13; (6) [low] code-index.md missing `completion` command row; (7) [info] INDEX.md catalog item count "~50" is now 53.
+- **Report:** `Reports/Pending/2026-08-18-doc-freshness-check.md`
+
+### 2026-08-18 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes made (audit-only routine) — `agent/Core/routines.md` dashboard `Last Ran` → 2026-08-18, `Next Due` → 2026-09-01.
+- **Flags:** 7 findings requiring user review — (1) [HIGH] Plan 41 headless CLI contract (shipped 2026-06-16) not in Roadmap; (2) [HIGH] Plan 42 MCP server (fast-follow) not in Roadmap; (3) [MEDIUM] Plan 40 Odysseus Phases 1-3 (shipped 2026-06-13) not in Roadmap; (4) [MEDIUM] v0.5.0 untagged since June 2026, tag decision pending; (5) [MEDIUM] KeyDecisionLog stale since 2026-04-13 — Plan 40/41 decisions unrecorded; (6) [LOW] --non-interactive mode (v0.4.2) not in Roadmap; (7) [LOW] shell completion not in Roadmap.
+- **Report:** `Reports/Pending/2026-08-18-roadmap-accuracy.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
