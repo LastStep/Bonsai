@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-19 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Updated `agent/Core/routines.md` dashboard (Last Ran → 2026-08-19, Next Due → 2026-09-02); created report `Reports/Pending/2026-08-19-roadmap-accuracy.md`
+- **Flags:** 4 items for user review — (1) Plan 41 Headless CLI Contract missing from Phase 2 as completed item; (2) MCP server (Plan 42) missing from Phase 3 as planned item; (3) Plan 40 Phase 4 hold not reflected in roadmap; (4) Bonsai-Eval companion project not in roadmap. Roadmap.md not modified — flagged for user action.
+- **Report:** `Reports/Pending/2026-08-19-roadmap-accuracy.md`
+
 ### 2026-08-19 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
