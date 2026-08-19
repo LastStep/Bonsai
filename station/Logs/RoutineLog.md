@@ -30,6 +30,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-19 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard row updated (Last Ran 2026-08-19, Next Due 2026-08-26). No doc edits — all findings flagged for user decision.
+- **Flags:** 2 findings for user review — (1) `dispatch` skill missing from station/agent/Skills/ but referenced 3× in issue-to-implementation.md; fix: `bonsai add` dispatch; (2) 6 broken Research/ links in memory.md References section (Research/ dir never created).
+- **Report:** `Reports/Pending/2026-08-19-doc-freshness-check.md`
+
+---
+
 ### 2026-08-19 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
