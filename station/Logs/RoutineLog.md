@@ -20,6 +20,52 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-19 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Updated `agent/Core/routines.md` dashboard (Last Ran → 2026-08-19, Next Due → 2026-09-02); created report `Reports/Pending/2026-08-19-roadmap-accuracy.md`
+- **Flags:** 4 items for user review — (1) Plan 41 Headless CLI Contract missing from Phase 2 as completed item; (2) MCP server (Plan 42) missing from Phase 3 as planned item; (3) Plan 40 Phase 4 hold not reflected in roadmap; (4) Bonsai-Eval companion project not in roadmap. Roadmap.md not modified — flagged for user action.
+- **Report:** `Reports/Pending/2026-08-19-roadmap-accuracy.md`
+
+### 2026-08-19 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Updated `agent/Core/memory.md` — cleared stale Plan 41 archive note in Work State (already archived); marked 6 Research file references stale (directory not found). Updated `agent/Core/routines.md` dashboard Last Ran/Next Due to 2026-08-19/2026-08-24.
+- **Flags:** 2 stale entries resolved autonomously; Research files missing — flagged for user review.
+- **Report:** `Reports/Pending/2026-08-19-memory-consolidation.md`
+
+### 2026-08-19 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done rows from Status.md → StatusArchive.md (Plans 37, 36/v0.4.0, 35, 34, 32, 33; dated 2026-04-25–2026-05-07); updated footer date marker to ≤ 2026-08-05; dashboard Last Ran/Next Due updated to 2026-08-19/2026-08-24.
+- **Flags:** 2 items for user review — (1) Pending sentrux trial stalled 104 days (blocked on Rust toolchain); (2) Plan 41 file still in Plans/Active/ despite all phases shipped 2026-06-16.
+- **Report:** `Reports/Pending/2026-08-19-status-hygiene.md`
+
+---
+
+### 2026-08-19 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard row updated (Last Ran 2026-08-19, Next Due 2026-08-26). No doc edits — all findings flagged for user decision.
+- **Flags:** 2 findings for user review — (1) `dispatch` skill missing from station/agent/Skills/ but referenced 3× in issue-to-implementation.md; fix: `bonsai add` dispatch; (2) 6 broken Research/ links in memory.md References section (Research/ dir never created).
+- **Report:** `Reports/Pending/2026-08-19-doc-freshness-check.md`
+
+---
+
+### 2026-08-19 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 2 resolved P0 items (sensor $PWD-walk-up bug shipped v0.4.3; non-interactive flags shipped v0.4.2) and 1 resolved P1 item (full agent-drivable CLI parity shipped Plan 41). Updated HOMEBREW_TAP_TOKEN P1 entry to flag it as overdue. Dashboard row updated (Last Ran 2026-08-19, Next Due 2026-08-26).
+- **Flags:** 1 high-urgency — HOMEBREW_TAP_TOKEN PAT expired ~2026-07-15, now ~35 days overdue; next release will fail Homebrew step. User must rotate immediately. 2 low — routine bot PR pile-up root fix not shipped; testing-infrastructure P1 stale 4+ months with no progress.
+- **Report:** `Reports/Pending/2026-08-19-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
