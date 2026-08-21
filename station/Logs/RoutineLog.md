@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-21 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 minutes
+- **Changes:** no doc changes made (audit-only routine) — `agent/Core/routines.md` dashboard updated (Last Ran → 2026-08-21, Next Due → 2026-08-28)
+- **Flags:** 7 findings — 2 medium (INDEX.md CLI count stale: 8→9, missing `internal/nonint/` in architecture), 5 low (station/CLAUDE.md missing nav rows for plan-grilling.md and critic-agent-prompts.md; code-index.md missing `completion` and `internal/nonint/` entries; root CLAUDE.md same drift). No broken nav links.
+- **Report:** `Reports/Pending/2026-08-21-doc-freshness-check.md`
+
 ### 2026-08-21 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
