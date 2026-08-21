@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-21 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 minutes
+- **Changes:** Removed 3 resolved Backlog items (replaced with HTML audit comments): P0 `[bug] Sensor hook $PWD-walk-up` (resolved v0.4.3), P0 `[feature] bonsai init/add non-interactive flags` (resolved v0.4.2), P1 `[feature] Full agent-drivable CLI parity` (resolved Plan 41). Dashboard updated (Last Ran → 2026-08-21, Next Due → 2026-08-28).
+- **Flags:** 1 urgent — HOMEBREW_TAP_TOKEN PAT likely expired (was due for rotation by 2026-07-15, now 37 days overdue); rotate immediately before next release. 3 stale P1 items (127/123/106 days): testing infra, worktree cleanup, routine bot PR pile-up — flagged for re-prioritization.
+- **Report:** `Reports/Pending/2026-08-21-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
