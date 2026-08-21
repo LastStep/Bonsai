@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-21 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 minutes
+- **Changes:** no changes made (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-08-21/2026-09-04.
+- **Flags:** 5 items flagged for user — (1) Plan 41 headless CLI (shipped 2026-06-16) not in Roadmap, medium; (2) Phase 1 still labeled "Current Phase" though complete, medium; (3) MCP server Plan 42 not in Roadmap, low; (4) Plan 40 phases 1-3 not in Roadmap, low; (5) Phase 3 timing re-evaluation due now that headless CLI is done, low.
+- **Report:** `Reports/Pending/2026-08-21-roadmap-accuracy.md`
+
 ### 2026-08-21 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
