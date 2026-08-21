@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-21 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 minutes
+- **Changes:** Archived 6 Done rows (Plans 33/32/34/35/36/37 dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker `≤ 2026-04-24` → `≤ 2026-08-07`; dashboard `Last Ran`/`Next Due` set to 2026-08-21/2026-08-26.
+- **Flags:** 3 — (1) Sentrux trial Pending 106 days, blocked on Rust toolchain, recommend demote or resolve; (2) Plan 41 plan file still in Plans/Active/ 66 days post-ship, move to Plans/Archive/; (3) HOMEBREW_TAP_TOKEN PAT ~37 days overdue for rotation — high urgency before next release.
+- **Report:** `Reports/Pending/2026-08-21-status-hygiene.md`
+
 ### 2026-08-21 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
