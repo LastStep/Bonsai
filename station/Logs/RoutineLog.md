@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) Pending "Trial sentrux" stalled 107 days — blocked on Rust toolchain; flagged for user decision on demotion. (2) Plan 41 fully shipped but file still in Plans/Active/ — should move to Plans/Archive/. (3) P1 Backlog "Full agent-drivable CLI parity" appears resolved by Plan 41 — user to confirm removal.
 - **Report:** `Reports/Pending/2026-08-22-status-hygiene.md`
 
+### 2026-08-22 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard updated (Last Ran → 2026-08-22, Next Due → 2026-08-29, Status → done). Report written to `Reports/Pending/2026-08-22-doc-freshness-check.md`.
+- **Flags:** 5 findings (2 medium, 3 low) — INDEX.md stale on CLI commands count (8→9) and missing internal/nonint/ + docs/ entries; code-index.md missing bonsai completion command and internal/nonint/ section. All navigation links verified intact. No updates executed per procedure — flagged for user decision.
+- **Report:** `Reports/Pending/2026-08-22-doc-freshness-check.md`
+
 ---
 
 ### 2026-08-22 — Backlog Hygiene
