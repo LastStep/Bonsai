@@ -20,6 +20,50 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-23 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 32, 33, 34, 35, 36/v0.4.0, 37) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-05-07`; dashboard `Last Ran`/`Next Due` set to 2026-08-23/2026-08-28.
+- **Flags:** (1) **[Medium]** Sentrux trial Pending 108 days — flag for user (demote or unblock); (2) **[Low]** Plan 41 still in `Plans/Active/` (fully shipped 2026-06-16, also flagged by 4 other routines today); (3) **[Low]** Backlog P1 "Full agent-drivable CLI parity" likely resolved by Plan 41 — user confirmation needed before removal.
+- **Report:** `Reports/Pending/2026-08-23-status-hygiene.md`
+
+### 2026-08-23 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `agent/Core/routines.md` dashboard Last Ran/Next Due updated to 2026-08-23/2026-09-06. `Logs/RoutineLog.md` entry appended. `Reports/Pending/2026-08-23-roadmap-accuracy.md` written.
+- **Flags:** (1) **[Medium]** Phase 1 is 100% complete but still labeled `## Current Phase` — recommend relabeling as completed and promoting Phase 2; (2) **[Medium]** Plan 41 (Headless CLI Contract, shipped 2026-06-16) and MCP server (Plan 42, fast-follow) have no roadmap items — suggest adding under Phase 2; (3) **[Low]** "Micro-task fast path" may belong in Phase 3 (same concept as deferred Plan 08 C3); (4) **[Low/Info]** v0.5.0 tag still not cut (70 days since Plan 40 merged); (5) **[Low/Info]** KeyDecisionLog has no entries since 2026-04-13 — Plan 40/41 decisions unlogged. KeyDecisionLog cross-check clean — no decisions invalidate any roadmap item.
+- **Report:** `Reports/Pending/2026-08-23-roadmap-accuracy.md`
+
+### 2026-08-23 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `routines.md` dashboard Last Ran/Next Due updated to 2026-08-23/2026-08-30. `Logs/RoutineLog.md` entry appended. `Reports/Pending/2026-08-23-doc-freshness-check.md` written.
+- **Flags:** (1) INDEX.md CLI command count stale — says 8, `bonsai completion` makes it 9 (PR #78, 2026-05-07); (2) `plan-grilling.md` workflow exists but not in CLAUDE.md nav table; (3) `critic-agent-prompts.md` skill exists but not in CLAUDE.md nav table; (4) Plans 40+41 still in Active/ (also flagged by Backlog Hygiene). All navigation links verified clean — no broken targets.
+- **Report:** `Reports/Pending/2026-08-23-doc-freshness-check.md`
+
+### 2026-08-23 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `agent/Core/memory.md` — corrected `nonint/runner.go` line reference (48→76) and updated stale Phase-4 clause; marked Research file references as stale. `agent/Core/routines.md` dashboard updated (Last Ran 2026-08-23, Next Due 2026-08-28).
+- **Flags:** (1) Research directory (`../../Research/`) missing from repo — 6 references marked stale, user review needed; (2) Plan 41 still in `Plans/Active/` since June 2026 — pending archival, flagged for user.
+- **Report:** `Reports/Pending/2026-08-23-memory-consolidation.md`
+
+---
+
+### 2026-08-23 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — 2 resolved P0 items commented out (sensor hook $PWD-walk-up fixed v0.4.3; non-interactive flags fixed v0.4.2). `routines.md` dashboard Last Ran/Next Due updated. `Logs/RoutineLog.md` entry appended. `Reports/Pending/2026-08-23-backlog-hygiene.md` written.
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT almost certainly expired (~90-day TTL from 2026-04-22, reminder was 2026-07-15, today 2026-08-23); (2) **URGENT** — 6 other routines last ran 2026-05-04/05-07 (90–108 days overdue); (3) Website npm vulns (esbuild/vite HIGH) still unresolved at 68 days; (4) Routine bot PR pile-up still open at 108 days; (5) Plan 41 still in Plans/Active/ (should archive); (6) Phase-2 P3 items could promote to P2.
+- **Report:** `Reports/Pending/2026-08-23-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
