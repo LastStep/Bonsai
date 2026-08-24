@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-24 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-08-24, Next Due → 2026-09-07); no changes to Roadmap.md (audit-only per routine rules).
+- **Flags:** (1) MEDIUM — Plan 40 (v0.5.0 Odysseus: schemas, scaffolding, validate hardening) shipped 2026-06-13, not in roadmap; (2) MEDIUM — Plan 41 (Headless CLI + MCP-ready cores + `docs/agent-interface.md`) shipped 2026-06-16, not in roadmap; (3) MEDIUM — Plan 42 (MCP server, active fast-follow from Plan 41) has no roadmap row; (4) LOW — Phase 3 "Managed Agents" framing may be stale vs. MCP-first trajectory; (5) LOW — Phase 2 "Template variables expansion" ambiguous (Plan 40 partially addressed); Phase 1 fully accurate.
+- **Report:** `Reports/Pending/2026-08-24-roadmap-accuracy.md`
+
+---
+
+### 2026-08-24 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** `agent/Core/memory.md` — all 6 References entries marked stale (`station/Research/` directory does not exist); `agent/Core/routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-08-24, Next Due → 2026-08-29).
+- **Flags:** (1) MEDIUM — `station/Research/` directory missing; all 6 foundational research doc pointers in memory.md References are broken (stale-marked); user review needed to confirm permanent removal or restore. (2) LOW — Plan 41 still in Plans/Active/ (already flagged in Work State). (3) INFO — `nonint/runner.go:48` line ref shifted to line 42 (behavior unchanged).
+- **Report:** `Reports/Pending/2026-08-24-memory-consolidation.md`
+
+---
+
+### 2026-08-24 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** routines.md dashboard updated (Last Ran 2026-05-04 → 2026-08-24, Next Due → 2026-08-31).
+- **Flags:** (1) MEDIUM — `completion` command missing from INDEX.md CLI commands list (merged PR #78, 2026-05-07 — 3+ months stale); (2) LOW — `critic-agent-prompts.md` in agent/Skills/ not in CLAUDE.md nav table; (3) LOW — `plan-grilling.md` in agent/Workflows/ not in CLAUDE.md nav table; (4) LOW — catalog count "~50" slightly understated (actual 53). No broken navigation links found.
+- **Report:** `Reports/Pending/2026-08-24-doc-freshness-check.md`
+
+---
+
+### 2026-08-24 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — commented out 3 resolved items (P0 sensor-hook bug resolved v0.4.3, P0 non-interactive-flags resolved v0.4.2, P1 full-CLI-parity resolved Plan 41); updated HOMEBREW_TAP_TOKEN P1 item with URGENT tag (reminder date 2026-07-15 overdue by 40 days). routines.md dashboard updated (Last Ran 2026-05-07 → 2026-08-24, Next Due → 2026-08-31).
+- **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT almost certainly expired** (~134 days old, 90-day default; rotate before next release or brew step will 401); (2) all 7 routines are 100+ days past due — recommend full routine sweep; (3) Plans 40 and 41 in Plans/Active/ despite being Recently Done in Status.md (Status Hygiene's job).
+- **Report:** `Reports/Pending/2026-08-24-backlog-hygiene.md`
+
+---
+
+### 2026-08-24 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — archived 6 oldest Done rows, updated footer cutoff date; `StatusArchive.md` — prepended 6 rows to Archived table; `Plans/Active/40` + `Plans/Active/41` moved to `Plans/Archive/`; `routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-08-24, Next Due → 2026-08-29).
+- **Flags:** (1) MEDIUM — `sentrux trial` Pending item stalled 109 days (30-day threshold); flag for demotion to Backlog; (2) LOW — Plans 40 and 41 were in Active/ despite being Done (corrected).
+- **Report:** `Reports/Pending/2026-08-24-status-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
