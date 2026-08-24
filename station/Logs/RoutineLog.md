@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-24 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** `agent/Core/memory.md` — all 6 References entries marked stale (`station/Research/` directory does not exist); `agent/Core/routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-08-24, Next Due → 2026-08-29).
+- **Flags:** (1) MEDIUM — `station/Research/` directory missing; all 6 foundational research doc pointers in memory.md References are broken (stale-marked); user review needed to confirm permanent removal or restore. (2) LOW — Plan 41 still in Plans/Active/ (already flagged in Work State). (3) INFO — `nonint/runner.go:48` line ref shifted to line 42 (behavior unchanged).
+- **Report:** `Reports/Pending/2026-08-24-memory-consolidation.md`
+
+---
+
 ### 2026-08-24 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
