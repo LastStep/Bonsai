@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-24 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran 2026-05-07 → 2026-08-24, Next Due → 2026-09-07); no changes to Roadmap.md (audit-only per routine rules).
+- **Flags:** (1) MEDIUM — Plan 40 (v0.5.0 Odysseus: schemas, scaffolding, validate hardening) shipped 2026-06-13, not in roadmap; (2) MEDIUM — Plan 41 (Headless CLI + MCP-ready cores + `docs/agent-interface.md`) shipped 2026-06-16, not in roadmap; (3) MEDIUM — Plan 42 (MCP server, active fast-follow from Plan 41) has no roadmap row; (4) LOW — Phase 3 "Managed Agents" framing may be stale vs. MCP-first trajectory; (5) LOW — Phase 2 "Template variables expansion" ambiguous (Plan 40 partially addressed); Phase 1 fully accurate.
+- **Report:** `Reports/Pending/2026-08-24-roadmap-accuracy.md`
+
+---
+
 ### 2026-08-24 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
