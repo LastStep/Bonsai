@@ -400,3 +400,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-08-25 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37, 36, 35, 34, 32, 33 — all 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-08-11`; removed resolved P1 Backlog item "Full agent-drivable CLI parity" (Plan 41 shipped it, replaced with audit-trail comment); dashboard `Last Ran`/`Next Due` set to 2026-08-25/2026-08-30.
+- **Flags:** 3 items for user — (1) Pending "Trial sentrux" stalled 110+ days (promoted 2026-05-07, blocked on Rust toolchain — flag for demotion or resolution); (2) Plan 41 plan file still in `Plans/Active/` despite being fully shipped (should move to `Plans/Archive/`); (3) HOMEBREW_TAP_TOKEN PAT expiry reminder was due ~2026-07-15 — likely expired, rotation needed before next release.
+- **Report:** `Reports/Pending/2026-08-25-status-hygiene.md`
