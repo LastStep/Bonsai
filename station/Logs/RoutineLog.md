@@ -36,6 +36,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
 - **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
 
+### 2026-08-25 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 2 resolved P0 items from `Backlog.md` (converted to audit-trail comments): `[bug] Sensor hook commands $PWD-walk-up` (fixed v0.4.3) and `[feature] non-interactive flags` (fixed v0.4.2). Dashboard `Last Ran`/`Next Due` updated to 2026-08-25/2026-09-01.
+- **Flags:** 3 items for user — (1) **CRITICAL**: HOMEBREW_TAP_TOKEN PAT expired ~2026-07-21 (35 days ago) — next release will fail at Homebrew step; (2) P1 "Full agent-drivable CLI parity" at P1 73 days, no plan created despite user marking "main thing"; (3) 3 uncaptured doc-drift findings from 2026-05-04 still untracked (code-index.md staleness, broken bonsai-model.md nav link, INDEX.md arch diagram drift).
+- **Report:** `Reports/Pending/2026-08-25-backlog-hygiene.md`
+
 ### 2026-05-07 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
