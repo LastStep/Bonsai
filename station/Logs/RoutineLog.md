@@ -417,6 +417,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 2 items for user — (1) **Medium**: all 6 `Research/RESEARCH-*.md` references in memory are broken (Research directory missing — confirm deleted/relocated or restore from git); (2) **Low**: Plan 41 archive instruction in Work State persisting 70+ days without action — `Plans/Active/41-headless-cli-contract.md` should move to `Plans/Archive/`.
 - **Report:** `Reports/Pending/2026-08-25-memory-consolidation.md`
 
+### 2026-08-25 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-08-25/2026-09-08. No Roadmap.md edits (audit-only per procedure).
+- **Flags:** 3 low-severity items for user — (1) Phase 1 is 100% complete but still labeled "Current Phase" — recommend promoting Phase 2; (2) Phase 2 "Self-update mechanism" scope may partially overlap with shipped `bonsai validate` — clarification useful; (3) MCP server (Plan 42, "fast-follow" per Status.md) is the most concrete near-term Phase 3 deliverable but not captured on the roadmap. Previous run's 2 flags (Better trigger sections, bonsai validate row) are both resolved. Phase 1–4 alignment otherwise healthy; KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-08-25-roadmap-accuracy.md`
+
 ### 2026-08-25 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
