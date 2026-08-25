@@ -36,6 +36,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
 - **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
 
+### 2026-08-25 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-08-25/2026-09-01. No doc edits applied (audit-only per procedure).
+- **Flags:** 7 drift items for user — (1) **High (persisting)**: root CLAUDE.md project-structure tree still stale (3rd cycle unresolved — missing `internal/nonint/`, `completion`, TUI subpackages); (2) **Medium**: INDEX.md CLI count wrong (8→9, `completion` added 2026-05-07); (3) **Medium**: INDEX.md arch overview missing `internal/nonint/` (Plan 41, 2026-06-16); (4) **Medium**: code-index.md missing `completion` command + entire `internal/nonint/` section; (5) **Low**: INDEX.md Document Registry missing `docs/agent-interface.md` entry; (6) **Low**: `plan-grilling.md` in Workflows/ unlisted from CLAUDE.md nav; (7) **Low**: `critic-agent-prompts.md` in Skills/ unlisted from CLAUDE.md nav. Previously broken `bonsai-model.md` nav link is now valid.
+- **Report:** `Reports/Pending/2026-08-25-doc-freshness-check.md`
+
 ### 2026-08-25 — Backlog Hygiene
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
