@@ -409,6 +409,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
 
+### 2026-08-25 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Marked 6 References entries as stale in `memory.md` (annotation added to section header — `station/Research/` directory does not exist); dashboard `Last Ran`/`Next Due` updated to 2026-08-25/2026-08-30.
+- **Flags:** 2 items for user — (1) **Medium**: all 6 `Research/RESEARCH-*.md` references in memory are broken (Research directory missing — confirm deleted/relocated or restore from git); (2) **Low**: Plan 41 archive instruction in Work State persisting 70+ days without action — `Plans/Active/41-headless-cli-contract.md` should move to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-08-25-memory-consolidation.md`
+
 ### 2026-08-25 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
