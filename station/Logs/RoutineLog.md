@@ -36,6 +36,22 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** none — Pending table empty, no orphan plan files (`Plans/Active/` empty), all Status plan refs (24-36) resolve in `Plans/Archive/`, Backlog cross-references already up-to-date from previous sweeps.
 - **Report:** `Reports/Pending/2026-05-07-status-hygiene.md`
 
+### 2026-08-25 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-08-25/2026-09-01. No doc edits applied (audit-only per procedure).
+- **Flags:** 7 drift items for user — (1) **High (persisting)**: root CLAUDE.md project-structure tree still stale (3rd cycle unresolved — missing `internal/nonint/`, `completion`, TUI subpackages); (2) **Medium**: INDEX.md CLI count wrong (8→9, `completion` added 2026-05-07); (3) **Medium**: INDEX.md arch overview missing `internal/nonint/` (Plan 41, 2026-06-16); (4) **Medium**: code-index.md missing `completion` command + entire `internal/nonint/` section; (5) **Low**: INDEX.md Document Registry missing `docs/agent-interface.md` entry; (6) **Low**: `plan-grilling.md` in Workflows/ unlisted from CLAUDE.md nav; (7) **Low**: `critic-agent-prompts.md` in Skills/ unlisted from CLAUDE.md nav. Previously broken `bonsai-model.md` nav link is now valid.
+- **Report:** `Reports/Pending/2026-08-25-doc-freshness-check.md`
+
+### 2026-08-25 — Backlog Hygiene
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 2 resolved P0 items from `Backlog.md` (converted to audit-trail comments): `[bug] Sensor hook commands $PWD-walk-up` (fixed v0.4.3) and `[feature] non-interactive flags` (fixed v0.4.2). Dashboard `Last Ran`/`Next Due` updated to 2026-08-25/2026-09-01.
+- **Flags:** 3 items for user — (1) **CRITICAL**: HOMEBREW_TAP_TOKEN PAT expired ~2026-07-21 (35 days ago) — next release will fail at Homebrew step; (2) P1 "Full agent-drivable CLI parity" at P1 73 days, no plan created despite user marking "main thing"; (3) 3 uncaptured doc-drift findings from 2026-05-04 still untracked (code-index.md staleness, broken bonsai-model.md nav link, INDEX.md arch diagram drift).
+- **Report:** `Reports/Pending/2026-08-25-backlog-hygiene.md`
+
 ### 2026-05-07 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -392,3 +408,27 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-08-25 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Marked 6 References entries as stale in `memory.md` (annotation added to section header — `station/Research/` directory does not exist); dashboard `Last Ran`/`Next Due` updated to 2026-08-25/2026-08-30.
+- **Flags:** 2 items for user — (1) **Medium**: all 6 `Research/RESEARCH-*.md` references in memory are broken (Research directory missing — confirm deleted/relocated or restore from git); (2) **Low**: Plan 41 archive instruction in Work State persisting 70+ days without action — `Plans/Active/41-headless-cli-contract.md` should move to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-08-25-memory-consolidation.md`
+
+### 2026-08-25 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-08-25/2026-09-08. No Roadmap.md edits (audit-only per procedure).
+- **Flags:** 3 low-severity items for user — (1) Phase 1 is 100% complete but still labeled "Current Phase" — recommend promoting Phase 2; (2) Phase 2 "Self-update mechanism" scope may partially overlap with shipped `bonsai validate` — clarification useful; (3) MCP server (Plan 42, "fast-follow" per Status.md) is the most concrete near-term Phase 3 deliverable but not captured on the roadmap. Previous run's 2 flags (Better trigger sections, bonsai validate row) are both resolved. Phase 1–4 alignment otherwise healthy; KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-08-25-roadmap-accuracy.md`
+
+### 2026-08-25 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37, 36, 35, 34, 32, 33 — all 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-08-11`; removed resolved P1 Backlog item "Full agent-drivable CLI parity" (Plan 41 shipped it, replaced with audit-trail comment); dashboard `Last Ran`/`Next Due` set to 2026-08-25/2026-08-30.
+- **Flags:** 3 items for user — (1) Pending "Trial sentrux" stalled 110+ days (promoted 2026-05-07, blocked on Rust toolchain — flag for demotion or resolution); (2) Plan 41 plan file still in `Plans/Active/` despite being fully shipped (should move to `Plans/Archive/`); (3) HOMEBREW_TAP_TOKEN PAT expiry reminder was due ~2026-07-15 — likely expired, rotation needed before next release.
+- **Report:** `Reports/Pending/2026-08-25-status-hygiene.md`

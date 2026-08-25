@@ -83,7 +83,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
+- **Foundational research docs** — Anchor for methodology/concept decisions. (stale — `station/Research/` directory removed; verified 2026-08-25 memory-consolidation. All 6 paths below are broken. Re-add if Research docs are restored or relocated.)
     - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
     - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
     - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
