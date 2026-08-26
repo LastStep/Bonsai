@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-26 — Vulnerability Scan
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Report written to `Reports/Pending/2026-08-26-vulnerability-scan.md`. Routines.md dashboard updated (Last Ran 2026-05-04 → 2026-08-26, Next Due → 2026-09-02, Status → done). No code/config edits.
+- **Flags:** (1) HIGH: 7 high-severity npm vulns in website/ (SSRF CVSS 7.5 + XSS CVSS 7.1 in astro v6.1.7, DoS in js-yaml) — persistent, cross-refs 2026-08-26 dependency audit; (2) MEDIUM: gitleaks absent from current environment (regression — was installed 2026-05-04); (3) MEDIUM: semgrep + govulncheck still not installed (persistent since 2026-04-14). SAST and secrets grep fallback: clean (0 Go source findings, 0 secrets). .env gitignore: confirmed present.
+- **Report:** `Reports/Pending/2026-08-26-vulnerability-scan.md`
+
+### 2026-08-26 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Report written to `Reports/Pending/2026-08-26-dependency-audit.md`. Routines.md dashboard updated (Last Ran 2026-05-04 → 2026-08-26, Next Due → 2026-09-02). No code/config edits.
+- **Flags:** (1) HIGH: 8 npm vulnerabilities in website/ — regression since 2026-05-04 (was clean). 7 high-severity including SSRF CVSS 7.5 + XSS CVSS 7.1 in astro v6.1.7 and DoS in js-yaml v4.1.1. Fix = upgrade astro to v7.2.8 (major version — prior audits flagged build breakage risk) + evaluate `npm audit fix` for transitive deps. (2) MEDIUM: govulncheck not installed — Go vuln scan fell back to heuristics; prior baseline (0 reachable) unchanged but cannot confirm. (3) LOW: 32 Go modules behind (up from 23), golang.org/x/net v0.53.0 (was v0.38.0 — 2 prior pkg-level unreachable findings likely cleared).
+- **Report:** `Reports/Pending/2026-08-26-dependency-audit.md`
+
+### 2026-08-26 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes to Roadmap.md (audit-only routine) — routines.md dashboard updated (Last Ran 2026-05-07 → 2026-08-26, Next Due → 2026-09-09, Status → done)
+- **Flags:** 2 low-severity items for user — (1) Phase 3 missing MCP server entry (Plan 42 identified in Status.md as "fast-follow Plan 41," no roadmap row exists); (2) Phase 2 remaining items (Self-update mechanism, Template variables expansion, Micro-task fast path) have been static 111 days with no active plans — confirm still correct priorities. Phase 1 fully clean. KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-08-26-roadmap-accuracy.md`
+
+### 2026-08-26 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 6 Recently Done rows (Plans 37, 36/v0.4.0, 35, 34, 32, 33 — all 2026-04-25 to 2026-05-07) from Status.md to StatusArchive.md; 10 most recent rows retained. Updated routines.md dashboard (Status Hygiene Last Ran → 2026-08-26, Next Due → 2026-08-31). Footer date in Status.md updated (≤ 2026-04-24 → ≤ 2026-08-12).
+- **Flags:** (1) Sentrux Pending item stalled ~111 days since 2026-05-07 (blocked on Rust toolchain) — flagged in Status.md, requires user decision: unblock (install rustup) or demote back to Backlog. (2) Plans 40 and 41 remain in Plans/Active/ despite being marked Done — consider moving to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-08-26-status-hygiene.md`
+
+### 2026-08-26 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog.md (2 P0 + 1 P1, all resolved in May–June 2026); replaced with HTML audit comments. Updated routines.md dashboard (Last Ran 2026-05-07 → 2026-08-26, Next Due → 2026-09-02).
+- **Flags:** 4 items requiring user attention — (1) CRITICAL: HOMEBREW_TAP_TOKEN PAT almost certainly expired (reminder was 2026-07-15, rotate immediately before next release); (2) Website npm vuln tree unresolved 71 days (6 Dependabot alerts, astro upgrade breaks build); (3) All 7 routines overdue by 111 days (last run 2026-05-07); (4) 2 stale P1 items (testing infra for triggers + stale worktrees, 130+ days, no progress — candidates for demotion).
+- **Report:** `Reports/Pending/2026-08-26-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -55,6 +97,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Changes:** Report written to `Reports/Pending/2026-05-04-vulnerability-scan.md`. No code/config edits.
 - **Flags:** Cleanest cycle on record — 0 reachable CVEs, 0 SAST, 0 secrets (`gitleaks detect` ran clean across 292 commits). `.env` gitignore resolved.
 - **Notes:** `gitleaks` now installed (closes half of P2 backlog item from 2026-04-16). `semgrep` still missing — SAST stays on Grep fallback. 8 unreachable Go findings cross-ref dependency-audit.
+
+### 2026-08-26 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc edits (audit-only routine) — routines.md dashboard updated (Last Ran → 2026-08-26, Next Due → 2026-09-02).
+- **Flags:** 3 items for user — (1) Medium: `internal/nonint/` package (Plan 41) missing from INDEX.md architecture overview; (2) Medium: `internal/nonint/` has no section in code-index.md — significant drift for Plan 42/MCP work; (3) Low: `docs/` directory not in INDEX.md Document Registry. `bonsai-model.md` broken-link from 2026-05-04 is now resolved.
+- **Report:** `Reports/Pending/2026-08-26-doc-freshness-check.md`
 
 ### 2026-05-04 — Doc Freshness Check
 - **Outcome:** success
@@ -392,3 +442,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-08-26 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 minutes
+- **Changes:** marked 6 Research doc references stale in `agent/Core/memory.md`; updated dashboard row (Last Ran 2026-05-07 → 2026-08-26, Next Due → 2026-08-31)
+- **Flags:** (1) Research/ directory missing — 6 references in memory.md are broken (stale-marked, user decision required); (2) Plan 41 archive overdue 2+ months; (3) Plan 40 disposition unclear
+- **Report:** `Reports/Pending/2026-08-26-memory-consolidation.md`
