@@ -20,6 +20,50 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-27 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-08-27/2026-09-10.
+- **Flags:** 3 items flagged for user — (1) Medium: Phase 1 still labeled "Current Phase" in Roadmap.md despite being 100% complete and Phase 2 work (Plans 40/41) shipped; (2) Low: Plan 41 (Headless CLI Contract + MCP-ready cores, 2026-06-16) not represented in any roadmap phase; (3) Low: Plan 40 Phases 1–3 (frozen v1 schemas + scaffolding + validate, v0.5.0 content, 2026-06-13) not captured in Phase 2. KeyDecisionLog cross-check clean — no decisions invalidate existing items.
+- **Report:** `Reports/Pending/2026-08-27-roadmap-accuracy.md`
+
+### 2026-08-27 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Marked 6 References entries stale (`station/Research/` directory not found); escalated Plan 41 archive note and Plan 42 tracking gap from Work State to Flags; dashboard `Last Ran`/`Next Due` updated to 2026-08-27/2026-09-01.
+- **Flags:** 3 items for user — (1) Research docs gone: `station/Research/` directory missing, all 6 RESEARCH-*.md reference paths broken; (2) Plan 41 archive overdue (3+ sessions, flagged repeatedly); (3) Plan 42 MCP server has no Backlog entry.
+- **Report:** `Reports/Pending/2026-08-27-memory-consolidation.md`
+
+### 2026-08-27 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 32/33/34/35/36/37, dated 2026-04-25–2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-05-07`; dashboard `Last Ran`/`Next Due` updated to 2026-08-27/2026-09-01.
+- **Flags:** 1 item flagged for user — Pending "Trial sentrux" stalled 112+ days (blocked on Rust toolchain); recommend decision: install rustup and attempt trial, or demote back to Backlog. 1 housekeeping note — Plan 41 plan file remains in `Plans/Active/` despite being shipped; move to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-08-27-status-hygiene.md`
+
+### 2026-08-27 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-08-27/2026-09-03; routine log entry appended.
+- **Flags:** 3 findings — (1) Plan 41 still in Plans/Active/ (third flag; move to Archive); (2) `plan-grilling.md` in agent/Workflows/ missing from CLAUDE.md nav table; (3) `critic-agent-prompts.md` in agent/Skills/ missing from CLAUDE.md nav table. No code drift (only 2 routine commits in last 7 days). All nav links resolve.
+- **Report:** `Reports/Pending/2026-08-27-doc-freshness-check.md`
+
+---
+
+### 2026-08-27 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Commented out 3 resolved Backlog entries (P0 sensor-hook bug → v0.4.3; P0 non-interactive flags → v0.4.2; P1 full CLI parity → Plan 41). Dashboard `Last Ran`/`Next Due` updated to 2026-08-27/2026-09-03.
+- **Flags:** 1 URGENT — HOMEBREW_TAP_TOKEN PAT expired (~2026-07-15, 43 days overdue); rotate before next release. 1 decision needed — bonsai validate lock-file policy (P2 bug stale 73d). 1 medium — Website npm vuln tree unresolved 73d.
+- **Report:** `Reports/Pending/2026-08-27-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
