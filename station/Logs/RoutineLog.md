@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 1 item flagged for user — Pending "Trial sentrux" stalled 112+ days (blocked on Rust toolchain); recommend decision: install rustup and attempt trial, or demote back to Backlog. 1 housekeeping note — Plan 41 plan file remains in `Plans/Active/` despite being shipped; move to `Plans/Archive/`.
 - **Report:** `Reports/Pending/2026-08-27-status-hygiene.md`
 
+### 2026-08-27 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-08-27/2026-09-03; routine log entry appended.
+- **Flags:** 3 findings — (1) Plan 41 still in Plans/Active/ (third flag; move to Archive); (2) `plan-grilling.md` in agent/Workflows/ missing from CLAUDE.md nav table; (3) `critic-agent-prompts.md` in agent/Skills/ missing from CLAUDE.md nav table. No code drift (only 2 routine commits in last 7 days). All nav links resolve.
+- **Report:** `Reports/Pending/2026-08-27-doc-freshness-check.md`
+
 ---
 
 ### 2026-08-27 — Backlog Hygiene
