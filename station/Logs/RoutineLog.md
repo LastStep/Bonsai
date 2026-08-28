@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-28 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard `Last Ran` → 2026-08-28, `Next Due` → 2026-09-04.
+- **Flags:** 6 items for user — (1) HIGH: `internal/nonint/` package entirely absent from code-index.md (Plan 41 major new package); (2) MEDIUM: `list_snapshot.go` absent from code-index.md; (3) MEDIUM: `plan-grilling.md` workflow not in CLAUDE.md nav; (4) MEDIUM: `critic-agent-prompts.md` skill not in CLAUDE.md nav; (5) MEDIUM: `docs/` folder (8 files) not in INDEX.md Document Registry; (6) LOW: root.go helper line numbers off-by-1 in code-index.
+- **Report:** `Reports/Pending/2026-08-28-doc-freshness-check.md`
+
 ### 2026-08-28 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
