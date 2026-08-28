@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-28 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Dashboard `Last Ran` → 2026-08-28, `Next Due` → 2026-09-11. No modifications to Roadmap.md (procedure prohibits direct edits).
+- **Flags:** 4 items for user — (1) HIGH: Phase 1 still labeled "Current Phase" despite all 11 items checked; (2) HIGH: Phase 2 started (Custom item detection [x]) but still under "Future Phases" heading; (3) MEDIUM: Plan 41 (Headless CLI Contract, June 2026) is a major delivery absent from roadmap; (4) LOW: MCP server Plan 42 and Plan 40 Odysseus work not mapped to roadmap phases.
+- **Report:** `Reports/Pending/2026-08-28-roadmap-accuracy.md`
+
 ### 2026-08-28 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
