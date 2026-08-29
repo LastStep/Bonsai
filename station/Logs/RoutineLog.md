@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-29 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** routines.md dashboard Last Ran/Next Due updated to 2026-08-29/2026-09-05. No doc edits (audit-only routine).
+- **Flags:** 7 findings — (1) **HIGH:** `internal/nonint/` package (Plan 41 headless core, 7 files) missing from code-index.md; (2) **MEDIUM:** `plan-grilling.md` workflow not in CLAUDE.md nav table; (3) **MEDIUM:** `critic-agent-prompts.md` skill not in CLAUDE.md nav table; (4) **MEDIUM:** `docs/agent-interface.md` not in INDEX.md Document Registry; (5) **LOW:** `cmd/completion.go` absent from code-index CLI Commands; (6) **LOW:** code-index line numbers stale (Plans 40/41 additions); (7) **LOW:** INDEX.md snapshot missing v0.5.0 feature additions. Resolved: `bonsai-model.md` broken nav link now resolves.
+- **Report:** `Reports/Pending/2026-08-29-doc-freshness-check.md`
+
+---
+
 ### 2026-08-29 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
