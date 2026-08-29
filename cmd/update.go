@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
@@ -86,7 +88,50 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	if err := lock.Save(cwd); err != nil {
 		tui.Warning("Could not save lock file: " + err.Error())
 	}
+	if hint := formatBackupHint(result.BackupPaths); hint != "" {
+		tui.Hint(hint)
+	}
 	return nil
+}
+
+// formatBackupHint builds the post-update guidance for successfully written
+// backup files. It is kept pure so the count, truncation, and ordering rules
+// can be tested without running the interactive flow.
+func formatBackupHint(paths []string) string {
+	if len(paths) == 0 {
+		return ""
+	}
+
+	paths = append([]string(nil), paths...)
+	sort.Strings(paths)
+	shown := paths
+	if len(shown) > 10 {
+		shown = shown[:10]
+	}
+
+	fileWord := "file"
+	verb := "was"
+	if len(paths) != 1 {
+		fileWord = "files"
+		verb = "were"
+	}
+	lines := make([]string, 0, len(shown)+1)
+	for _, path := range shown {
+		lines = append(lines, "  "+path)
+	}
+	if more := len(paths) - len(shown); more > 0 {
+		lines = append(lines, fmt.Sprintf("  ... and %d more", more))
+	}
+
+	hint := fmt.Sprintf("%d %s %s backed up as .bak:\n%s", len(paths), fileWord, verb, strings.Join(lines, "\n"))
+	if len(paths) == 1 {
+		backupPath := paths[0]
+		originalPath := strings.TrimSuffix(backupPath, ".bak")
+		hint += fmt.Sprintf("\n\nAsk your agent to reconcile the backup with the new upstream version:\n  \"Merge my customizations from %s into %s, then delete the .bak.\"", backupPath, originalPath)
+	} else {
+		hint += "\n\nAsk your agent to reconcile the backups with the new upstream versions, then delete the .bak files."
+	}
+	return hint
 }
 
 // runUpdateNonInteractive is the headless `bonsai update` adapter. It calls
