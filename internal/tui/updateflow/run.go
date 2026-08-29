@@ -166,9 +166,10 @@ func Run(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *conf
 	}
 
 	// Post-harness: apply conflict picks if the Conflict stage ran.
+	var backupPaths []string
 	for _, r := range results {
 		if picks, ok := r.(map[string]config.ConflictAction); ok {
-			applyCinematicConflictPicks(picks, &wr, lock, cwd)
+			backupPaths = applyCinematicConflictPicks(picks, &wr, lock, cwd)
 			break
 		}
 	}
@@ -176,6 +177,7 @@ func Run(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *conf
 	return Result{
 		ConfigChanged: configChanged,
 		WriteResult:   &wr,
+		BackupPaths:   backupPaths,
 		SyncErr:       syncErr,
 	}, nil
 }

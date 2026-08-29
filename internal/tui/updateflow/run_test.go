@@ -110,6 +110,13 @@ func TestApplyCinematicConflictPicksReportsSuccessfulBackups(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(root, "good.md.bak")); err != nil {
 		t.Fatalf("successful backup missing: %v", err)
 	}
+	failedBody, err := os.ReadFile(filepath.Join(root, "failed.md"))
+	if err != nil {
+		t.Fatalf("read failed backup source after applying picks: %v", err)
+	}
+	if string(failedBody) != "failed local" {
+		t.Fatalf("failed backup source was mutated: got %q, want %q", failedBody, "failed local")
+	}
 }
 
 func writeUpdateFlowTestFile(t *testing.T, root, rel, body string) {
