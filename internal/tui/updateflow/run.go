@@ -166,9 +166,10 @@ func Run(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *conf
 	}
 
 	// Post-harness: apply conflict picks if the Conflict stage ran.
+	var backupPaths []string
 	for _, r := range results {
 		if picks, ok := r.(map[string]config.ConflictAction); ok {
-			applyCinematicConflictPicks(picks, &wr, lock, cwd)
+			backupPaths = applyCinematicConflictPicks(picks, &wr, lock, cwd)
 			break
 		}
 	}
@@ -176,6 +177,7 @@ func Run(cwd string, cfg *config.ProjectConfig, cat *catalog.Catalog, lock *conf
 	return Result{
 		ConfigChanged: configChanged,
 		WriteResult:   &wr,
+		BackupPaths:   backupPaths,
 		SyncErr:       syncErr,
 	}, nil
 }
@@ -276,13 +278,13 @@ func appendUnique(slice []string, name string) []string {
 // applyCinematicConflictPicks mirrors cmd/add.go's identically-named
 // helper — writes per-file conflict resolutions (Keep / Overwrite /
 // Backup) against wr + lock. Backup failures drop the path from the
-// overwrite list with a silent skip (caller can surface the wr.Files
-// count as signal); we don't emit tui.Warning here because the stage
-// has already torn down the AltScreen.
+// overwrite list with a silent skip; we don't emit tui.Warning here because
+// the stage has already torn down the AltScreen. The returned paths are the
+// .bak files that were written successfully.
 func applyCinematicConflictPicks(picks map[string]config.ConflictAction,
-	wr *generate.WriteResult, lock *config.LockFile, projectRoot string) {
+	wr *generate.WriteResult, lock *config.LockFile, projectRoot string) []string {
 	if len(picks) == 0 {
-		return
+		return nil
 	}
 	toOverwrite := make([]string, 0, len(picks))
 	toBackup := make([]string, 0, len(picks))
@@ -296,8 +298,11 @@ func applyCinematicConflictPicks(picks map[string]config.ConflictAction,
 		}
 	}
 	if len(toOverwrite) == 0 {
-		return
+		return nil
 	}
+	sort.Strings(toOverwrite)
+	sort.Strings(toBackup)
+	backupPaths := make([]string, 0, len(toBackup))
 	dropped := make(map[string]bool)
 	for _, rel := range toBackup {
 		abs := filepath.Join(projectRoot, rel)
@@ -310,6 +315,7 @@ func applyCinematicConflictPicks(picks map[string]config.ConflictAction,
 			dropped[rel] = true
 			continue
 		}
+		backupPaths = append(backupPaths, rel+".bak")
 	}
 	if len(dropped) > 0 {
 		filtered := make([]string, 0, len(toOverwrite)-len(dropped))
@@ -322,7 +328,8 @@ func applyCinematicConflictPicks(picks map[string]config.ConflictAction,
 		toOverwrite = filtered
 	}
 	if len(toOverwrite) == 0 {
-		return
+		return backupPaths
 	}
 	wr.ForceSelected(toOverwrite, projectRoot, lock)
+	return backupPaths
 }

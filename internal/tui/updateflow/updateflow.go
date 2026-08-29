@@ -68,6 +68,10 @@ type Result struct {
 	// dispatch and the YIELD success panel's counts.
 	WriteResult *generate.WriteResult
 
+	// BackupPaths contains relative paths for .bak files written successfully
+	// while applying interactive conflict choices.
+	BackupPaths []string
+
 	// SyncErr, when non-nil, is the aggregated error surfaced by Sync.
 	// The YIELD stage renders an error panel instead of the normal
 	// success card.

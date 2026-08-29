@@ -1,6 +1,8 @@
 package updateflow
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/LastStep/Bonsai/internal/config"
@@ -81,4 +83,46 @@ func equalStringSlice(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func TestApplyCinematicConflictPicksReportsSuccessfulBackups(t *testing.T) {
+	root := t.TempDir()
+	writeUpdateFlowTestFile(t, root, "good.md", "good local")
+	writeUpdateFlowTestFile(t, root, "failed.md", "failed local")
+	if err := os.Mkdir(filepath.Join(root, "failed.md.bak"), 0755); err != nil {
+		t.Fatalf("mkdir failed backup target: %v", err)
+	}
+
+	wr := &generate.WriteResult{}
+	wr.Add(generate.FileResult{RelPath: "good.md", Action: generate.ActionConflict})
+	wr.Add(generate.FileResult{RelPath: "failed.md", Action: generate.ActionConflict})
+	lock := config.NewLockFile()
+	picks := map[string]config.ConflictAction{
+		"failed.md": config.ConflictActionBackup,
+		"good.md":   config.ConflictActionBackup,
+	}
+
+	got := applyCinematicConflictPicks(picks, wr, lock, root)
+	want := []string{"good.md.bak"}
+	if !equalStringSlice(got, want) {
+		t.Fatalf("backup paths = %v, want %v", got, want)
+	}
+	if _, err := os.Stat(filepath.Join(root, "good.md.bak")); err != nil {
+		t.Fatalf("successful backup missing: %v", err)
+	}
+	failedBody, err := os.ReadFile(filepath.Join(root, "failed.md"))
+	if err != nil {
+		t.Fatalf("read failed backup source after applying picks: %v", err)
+	}
+	if string(failedBody) != "failed local" {
+		t.Fatalf("failed backup source was mutated: got %q, want %q", failedBody, "failed local")
+	}
+}
+
+func writeUpdateFlowTestFile(t *testing.T, root, rel, body string) {
+	t.Helper()
+	path := filepath.Join(root, rel)
+	if err := os.WriteFile(path, []byte(body), 0644); err != nil {
+		t.Fatalf("write %s: %v", rel, err)
+	}
 }
