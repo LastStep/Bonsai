@@ -20,6 +20,50 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-29 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — 6 oldest Done rows (Plans 33/32/34/35/36/37, dates 2026-04-25 to 2026-05-07) moved to `StatusArchive.md`; archive cutoff note updated to ≤ 2026-08-14. `StatusArchive.md` — 6 rows prepended to Archived table. `routines.md` — Status Hygiene Last Ran/Next Due updated to 2026-08-29/2026-09-03.
+- **Flags:** (1) **MEDIUM:** Sentrux trial Pending item stalled 114 days (since 2026-05-07), blocked on Rust toolchain — flagged for user review (demote to Backlog or install rustup). (2) **LOW:** Plans 40 and 41 files still in Plans/Active/ despite being shipped — cosmetic cleanup opportunity.
+- **Report:** `Reports/Pending/2026-08-29-status-hygiene.md`
+
+### 2026-08-29 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/routines.md` — Last Ran/Next Due updated to 2026-08-29/2026-09-12. No edits to Roadmap.md (audit-only per procedure).
+- **Flags:** 3 findings for user review — (1) **HIGH:** Phase 1 "Current Phase" header is stale — all 11 Phase 1 items are `[x]`; roadmap should advance "Current Phase" to Phase 2. (2) **MEDIUM:** Plan 41 headless CLI + MCP-ready cores shipped 2026-06-16; Plan 42 (MCP server, fast-follow) has no roadmap representation; Phase 3 "Managed Agents integration" needs annotation. (3) **LOW:** Phase 2's 3 remaining items have no active plans — confirm intended next milestone.
+- **Report:** `Reports/Pending/2026-08-29-roadmap-accuracy.md`
+
+### 2026-08-29 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — (1) corrected stale path `nonint/runner.go:48` → `internal/nonint/runner.go:77`; (2) marked Research references as stale (directory missing from repo). `station/agent/Core/routines.md` — Last Ran/Next Due updated to 2026-08-29/2026-09-03.
+- **Flags:** 1 item for user review — `Research/` directory not found; 6 research doc references in memory.md are broken links. Needs user to confirm if docs exist elsewhere or should be removed.
+- **Report:** `Reports/Pending/2026-08-29-memory-consolidation.md`
+
+### 2026-08-29 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** routines.md dashboard Last Ran/Next Due updated to 2026-08-29/2026-09-05. No doc edits (audit-only routine).
+- **Flags:** 7 findings — (1) **HIGH:** `internal/nonint/` package (Plan 41 headless core, 7 files) missing from code-index.md; (2) **MEDIUM:** `plan-grilling.md` workflow not in CLAUDE.md nav table; (3) **MEDIUM:** `critic-agent-prompts.md` skill not in CLAUDE.md nav table; (4) **MEDIUM:** `docs/agent-interface.md` not in INDEX.md Document Registry; (5) **LOW:** `cmd/completion.go` absent from code-index CLI Commands; (6) **LOW:** code-index line numbers stale (Plans 40/41 additions); (7) **LOW:** INDEX.md snapshot missing v0.5.0 feature additions. Resolved: `bonsai-model.md` broken nav link now resolves.
+- **Report:** `Reports/Pending/2026-08-29-doc-freshness-check.md`
+
+---
+
+### 2026-08-29 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — 3 resolved items converted to HTML comments (P0 sensor hook bug resolved v0.4.3, P0 non-interactive flags resolved v0.4.2, P1 CLI parity resolved Plan 41); routines.md dashboard Last Ran/Next Due updated to 2026-08-29/2026-09-05.
+- **Flags:** 2 items flagged for user — (1) **HIGH: HOMEBREW_TAP_TOKEN PAT likely expired** — rotation due 2026-07-15, today 2026-08-29 (45 days overdue); next release will fail brew step if not rotated. (2) **MEDIUM: Website npm vuln tree** — 6 open Dependabot alerts since 2026-06-16, astro upgrade PR #108 breaks build.
+- **Report:** `Reports/Pending/2026-08-29-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
