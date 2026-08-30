@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-30 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `routines.md` dashboard updated (Doc Freshness Check Last Ran → 2026-08-30, Next Due → 2026-09-06); this log entry appended; report created.
+- **Flags:** 5 findings — (1) `critic-agent-prompts.md` skill not in CLAUDE.md nav table; (2) `plan-grilling.md` workflow not in CLAUDE.md nav table; (3) `internal/nonint` package absent from INDEX.md architecture + code-index.md; (4) `docs/agent-interface.md` not in INDEX.md Document Registry; (5) stale line numbers in code-index.md for cmd/ files after Plan 41.
+- **Report:** `Reports/Pending/2026-08-30-doc-freshness-check.md`
+
 ### 2026-08-30 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
