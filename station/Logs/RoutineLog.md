@@ -20,6 +20,40 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-30 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done rows (Plans 32–37, dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md` to enforce 10-item cap; updated Status.md footer note; dashboard `Last Ran`/`Next Due` updated to 2026-08-30/2026-09-04; this log entry appended.
+- **Flags:** 2 items for user — (1) Plan 41 file in Plans/Active/ 75 days post-ship (needs archive to Plans/Archive/); (2) sentrux trial Pending 115 days, blocked on Rust toolchain (flag for demotion or unblock).
+- **Report:** `Reports/Pending/2026-08-30-status-hygiene.md`
+
+### 2026-08-30 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-08-30/2026-09-13; this log entry appended; report created.
+- **Flags:** 4 items flagged for user — (1) **Medium**: "Current Phase" header still reads Phase 1 despite 100% completion; should advance to Phase 2. (2) **Medium**: Plan 41 (Headless CLI Contract + MCP-ready cores, shipped 2026-06-16) has no roadmap entry — major Phase 2 deliverable missing. (3) **Low**: Plan 42 (MCP server, upcoming fast-follow) has no roadmap entry. (4) **Low/Cosmetic**: `bonsai completion` external contribution (PR #78) not in roadmap. KeyDecisionLog cross-check clean — no decisions invalidate any roadmap items.
+- **Report:** `Reports/Pending/2026-08-30-roadmap-accuracy.md`
+
+### 2026-08-30 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `routines.md` dashboard updated (Doc Freshness Check Last Ran → 2026-08-30, Next Due → 2026-09-06); this log entry appended; report created.
+- **Flags:** 5 findings — (1) `critic-agent-prompts.md` skill not in CLAUDE.md nav table; (2) `plan-grilling.md` workflow not in CLAUDE.md nav table; (3) `internal/nonint` package absent from INDEX.md architecture + code-index.md; (4) `docs/agent-interface.md` not in INDEX.md Document Registry; (5) stale line numbers in code-index.md for cmd/ files after Plan 41.
+- **Report:** `Reports/Pending/2026-08-30-doc-freshness-check.md`
+
+### 2026-08-30 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — commented out 3 resolved items (P0 sensor hook bug → v0.4.3, P0 non-interactive flags → v0.4.2, P1 full CLI parity → Plan 41); `routines.md` dashboard updated (Last Ran → 2026-08-30, Next Due → 2026-09-06); this log entry appended.
+- **Flags:** 4 items requiring user attention — (1) URGENT: HOMEBREW_TAP_TOKEN PAT rotation ~46 days overdue (was due 2026-07-15); (2) all other routines 116 days overdue since 2026-05-07 last run; (3) website npm vuln tree (6 Dependabot alerts) aging since 2026-06-16; (4) routine bot PR pile-up strategy still undecided (P1 Backlog).
+- **Report:** `Reports/Pending/2026-08-30-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -392,3 +426,11 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-08-30 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 minutes
+- **Changes:** memory.md — escalated Plan 41 archive to Flags, removed resolved .bonsai-lock.yaml gitignore item from Work State, marked 6 stale Research/ references; routines.md — dashboard Last Ran 2026-05-07 → 2026-08-30, Next Due → 2026-09-04
+- **Flags:** (1) Plan 41 archive overdue — 75 days in Plans/Active/, user action needed; (2) Research/ directory missing — 6 References entries now stale-marked, user should confirm delete intent
+- **Report:** `Reports/Pending/2026-08-30-memory-consolidation.md`

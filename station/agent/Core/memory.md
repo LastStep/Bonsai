@@ -9,11 +9,11 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Active flags go here. Format: - [FLAG] description -->
 
-(none)
+- [ESCALATE] **Plan 41 archive overdue** — `Plans/Active/41-headless-cli-contract.md` has been in Active/ since ship date 2026-06-16 (75+ days, 3+ sessions without action). Per memory protocol, escalate: user must archive to `Plans/Archive/` at next session wrap-up. *(flagged by memory-consolidation routine 2026-08-30)*
 
 ## Work State
 
-**Current task:** _(between tasks)_ — **Plan 41 SHIPPED 2026-06-16** (all 5 phases merged, main `ab202c3`; see [Status.md](../../Playbook/Status.md) Recently Done). Headless `*Result` cores for init/add/update/remove + `list --json` + `docs/agent-interface.md` contract; `ExitConflict=5`. Dispatch ran Phase 1 solo (sig change) → 2/3/4 parallel → 5; each reviewed + gates green. **Open follow-ups (Backlog P2):** (1) MCP server = **Plan 42** (go-sdk, stdio `bonsai mcp`) — the contract was built for this; (2) unify remove cinematic/headless logic; (3) website npm vuln tree (astro-upgrade build break — vulnerability-scan routine). Plan 40 P1-3 still untagged/tag-held; dogfood still needs `.bonsai-lock.yaml` gitignore policy. **Plan 41 file still in Plans/Active/ — archive to Plans/Archive/ at next wrap-up.**
+**Current task:** _(between tasks)_ — **Plan 41 SHIPPED 2026-06-16** (all 5 phases merged, main `ab202c3`; see [Status.md](../../Playbook/Status.md) Recently Done). Headless `*Result` cores for init/add/update/remove + `list --json` + `docs/agent-interface.md` contract; `ExitConflict=5`. Dispatch ran Phase 1 solo (sig change) → 2/3/4 parallel → 5; each reviewed + gates green. **Open follow-ups (Backlog P2):** (1) MCP server = **Plan 42** (go-sdk, stdio `bonsai mcp`) — the contract was built for this; (2) unify remove cinematic/headless logic; (3) website npm vuln tree (astro-upgrade build break — vulnerability-scan routine). Plan 40 P1-3 still untagged/tag-held. **Plan 41 file still in Plans/Active/ — archive to Plans/Archive/ at next session (escalated flag added 2026-08-30).**
 
 **Background:** **Plan 38 — Bonsai-Eval bootstrap** — handoff complete (this station archives, Bonsai-Eval owns P2/P3). v0.4.2 unblocked rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
 
@@ -83,10 +83,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
-    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
-    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
-    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
-    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research
-    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research
-    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
+- **Foundational research docs** — Anchor for methodology/concept decisions. *(stale — `station/Research/` directory no longer exists in project as of 2026-08-30 audit; files may have been deleted or never committed; verify with `git log --all -- station/Research/` before referencing)*
+    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning *(stale — file missing)*
+    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy *(stale — file missing)*
+    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks *(stale — file missing)*
+    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research *(stale — file missing)*
+    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research *(stale — file missing)*
+    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). *(stale — file missing)*
