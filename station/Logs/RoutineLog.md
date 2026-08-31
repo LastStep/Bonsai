@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-08-31 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard Last Ran/Next Due updated to 2026-08-31/2026-09-14. No changes to Roadmap.md (audit-only per procedure).
+- **Flags:** 4 items for user review — (1) Phase 1 "Current Phase" label stale (all 11 items complete, project is in Phase 2); (2) Plan 41 headless CLI contract + MCP-ready cores absent from roadmap; (3) Plan 40 shipped deliverables (v1 schemas, adversarial hardening, memory-routing docs) not captured; (4) MCP server Plan 42 and `bonsai completion` command absent from roadmap. KeyDecisionLog cross-check clean.
+- **Report:** `Reports/Pending/2026-08-31-roadmap-accuracy.md`
+
+### 2026-08-31 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Marked 6 stale Research file references in `station/agent/Core/memory.md` References section with `(stale — ...)` annotation; updated routines dashboard Last Ran/Next Due to 2026-08-31/2026-09-05.
+- **Flags:** (1) 6 Research file references stale — station/Research/ does not exist, user must confirm disposition; (2) Plans 40 and 41 still in Plans/Active/ — third routine today to flag this, needs user action.
+- **Report:** `Reports/Pending/2026-08-31-memory-consolidation.md`
+
+### 2026-08-31 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Archived 6 Done items (Plans 32–37 and v0.4.0, dated 2026-04-25 through 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer threshold marker to ≤ 2026-08-17; dashboard Last Ran/Next Due set to 2026-08-31/2026-09-05.
+- **Flags:** 2 items flagged for user — (1) Pending sentrux trial stalled 116 days, consider demotion to Backlog; (2) Plans 40 and 41 remain in Plans/Active/ despite Done status — should be moved to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-08-31-status-hygiene.md`
+
+### 2026-08-31 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Removed 2 resolved P0 items (v0.4.3 sensor hook fix + v0.4.2 non-interactive flags); removed 1 resolved P1 item (Plan 41 headless CLI parity). Dashboard Last Ran/Next Due updated to 2026-08-31/2026-09-07.
+- **Flags:** 6 items flagged for user — (1) **URGENT: HOMEBREW_TAP_TOKEN expired ~41 days** — rotate immediately; (2) all 6 other routines 107–116 days overdue — schedule; (3) MCP server (Plan 42) not in Backlog despite memory calling it P2; (4) Plan 41 not archived from Plans/Active/; (5) 2 P3 Phase 2 items candidate for P2 promotion; (6) Group A bookkeeping stale 4+ months.
+- **Report:** `Reports/Pending/2026-08-31-backlog-hygiene.md`
+
+### 2026-08-31 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard Last Ran/Next Due updated to 2026-08-31/2026-09-07.
+- **Flags:** 3 findings — (1) Medium: `docs/agent-interface.md` missing from `station/INDEX.md` Document Registry; (2) Low: `plan-grilling.md` exists in Workflows/ but not linked in CLAUDE.md nav; (3) Low: `critic-agent-prompts.md` exists in Skills/ but not linked in CLAUDE.md nav. All three proposed fixes documented in report — no changes executed (user decision required).
+- **Report:** `Reports/Pending/2026-08-31-doc-freshness-check.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
