@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-01 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-09-01/2026-09-08
+- **Flags:** 4 findings (1 medium, 3 low) — `internal/nonint/` missing from INDEX.md and root CLAUDE.md architecture docs; CLI command count stale (8 → 9, completion subcommand); `plan-grilling.md` and `critic-agent-prompts.md` unlisted in station/CLAUDE.md nav tables. All zero broken links.
+- **Report:** `Reports/Pending/2026-09-01-doc-freshness-check.md`
+
+---
+
 ### 2026-09-01 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
