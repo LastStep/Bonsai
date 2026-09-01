@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-01 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-09-01/2026-09-15; report written.
+- **Flags:** 4 findings (1 medium, 3 low) — (1) [Medium] Headless CLI Contract (Plan 41) not on roadmap; (2) [Low] Non-interactive mode (Plan 39 / v0.4.2) not on roadmap; (3) [Low] MCP Server (Plan 42) absent from roadmap; (4) [Low] Phase 3 local-foundation precondition now met — roadmap framing stale.
+- **Report:** `Reports/Pending/2026-09-01-roadmap-accuracy.md`
+
+---
+
+### 2026-09-01 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — marked 6 stale References entries with `(stale — file not found)` (Research/ directory absent from repo). `station/agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-01/2026-09-06.
+- **Flags:** (1) [Medium] All 6 References point to `station/Research/RESEARCH-*.md` files that do not exist in the repo — restore, relocate, or remove; (2) [Low] Plan 41 (`41-headless-cli-contract.md`) still in Plans/Active/ after 117 days — archive at next wrap-up.
+- **Report:** `Reports/Pending/2026-09-01-memory-consolidation.md`
+
+---
+
+### 2026-09-01 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** dashboard `Last Ran`/`Next Due` updated to 2026-09-01/2026-09-08
+- **Flags:** 4 findings (1 medium, 3 low) — `internal/nonint/` missing from INDEX.md and root CLAUDE.md architecture docs; CLI command count stale (8 → 9, completion subcommand); `plan-grilling.md` and `critic-agent-prompts.md` unlisted in station/CLAUDE.md nav tables. All zero broken links.
+- **Report:** `Reports/Pending/2026-09-01-doc-freshness-check.md`
+
+---
+
+### 2026-09-01 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Backlog.md` — commented out 2 resolved P0 items (sensor hook $PWD-walk-up fixed v0.4.3; non-interactive flags fixed v0.4.2) and 1 resolved P1 item (full agent-drivable CLI parity resolved by Plan 41); updated HOMEBREW_TAP_TOKEN P1 entry with expiry urgency note. Dashboard `Last Ran`/`Next Due` updated to 2026-09-01/2026-09-08.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT is 47+ days past expiry (was due 2026-07-15) — rotate immediately before next release; (2) 117-day gap since previous backlog-hygiene run — recommend restoring routine cadence.
+- **Report:** `Reports/Pending/2026-09-01-backlog-hygiene.md`
+
+---
+
+### 2026-09-01 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Playbook/Status.md` — 16 Done rows archived (all older than 14 days, most recent was 2026-06-16); archive note updated to 2026-08-18 cutoff. `Playbook/StatusArchive.md` — 16 rows prepended to Archived table. `agent/Core/routines.md` — Status Hygiene `Last Ran` updated to 2026-09-01, `Next Due` to 2026-09-06.
+- **Flags:** (1) [Medium] Sentrux Pending item stalled 117 days (since 2026-05-07) — flagged for user review on whether to demote to Backlog or resolve; (2) [Low] Plans 40 + 41 remain in `Plans/Active/` despite being Done — should be moved to `Plans/Archive/`; (3) [Low] Sentrux item blocker (Rust toolchain) unchanged — still blocked, no progress.
+- **Report:** `Reports/Pending/2026-09-01-status-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
