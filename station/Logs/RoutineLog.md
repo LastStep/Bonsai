@@ -60,6 +60,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-01 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Playbook/Status.md` — 16 Done rows archived (all older than 14 days, most recent was 2026-06-16); archive note updated to 2026-08-18 cutoff. `Playbook/StatusArchive.md` — 16 rows prepended to Archived table. `agent/Core/routines.md` — Status Hygiene `Last Ran` updated to 2026-09-01, `Next Due` to 2026-09-06.
+- **Flags:** (1) [Medium] Sentrux Pending item stalled 117 days (since 2026-05-07) — flagged for user review on whether to demote to Backlog or resolve; (2) [Low] Plans 40 + 41 remain in `Plans/Active/` despite being Done — should be moved to `Plans/Archive/`; (3) [Low] Sentrux item blocker (Rust toolchain) unchanged — still blocked, no progress.
+- **Report:** `Reports/Pending/2026-09-01-status-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
