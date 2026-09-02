@@ -20,6 +20,32 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-02 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37/36/35/34/32/33, dates 2026-04-25 to 2026-05-07) from Status.md → StatusArchive.md; updated footer cutoff date to 2026-08-19; moved orphaned Plan 41 file from Plans/Active/ → Plans/Archive/; dashboard Last Ran/Next Due set to 2026-09-02/2026-09-07.
+- **Flags:** (1) Pending sentrux trial stalled 118 days — flagged for user review (Rust toolchain not installed); (2) Plan 40 Phase 4 HELD has no Pending/In-Progress Status row — flagged for user review.
+- **Report:** `Reports/Pending/2026-09-02-status-hygiene.md`
+
+---
+
+### 2026-09-02 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** dashboard row updated (Last Ran 2026-05-07 → 2026-09-02, Next Due → 2026-09-16); no edits to Roadmap.md (audit-only per procedure)
+- **Flags:** (1) [Medium] "Current Phase" heading still reads Phase 1 despite Phase 1 being 100% done — needs user update to Phase 2; (2) [Low] Phase 3 roadmap missing MCP server item (Plan 41 headless CLI shipped as MCP-ready cores, Plan 42 MCP server is next); (3) [Low] Phase 2 vs Phase 3 priority drift — project is doing Phase 3 prep before finishing Phase 2 items
+- **Report:** `Reports/Pending/2026-09-02-roadmap-accuracy.md`
+
+### 2026-09-02 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Commented out 3 resolved items from Backlog.md — 2 P0s (sensor $PWD-walk-up bug fixed v0.4.3; non-interactive flags fixed v0.4.2) + 1 P1 (full headless CLI parity delivered Plan 41). Dashboard Last Ran/Next Due updated to 2026-09-02/2026-09-09.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT rotation date (2026-07-15) has passed — verify before next release; (2) Routine execution gap ~117 days since 2026-05-07 — all other routines are significantly overdue; loop dispatch may have stopped.
+- **Report:** `Reports/Pending/2026-09-02-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -392,3 +418,19 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Phases 2 (validate pass) + 3 (docs+guide):** dispatched in parallel off main. P2 independent review caught a **blocking security bug** (out-of-tree read via traversing `memory_dir` — `auditProject` walked the resolved dir despite the manifest error); fixed in-branch (`memoryDirInvalid` blank-and-skip + regression test). P3 review caught `formats.md` documenting the held Phase-4 `bonsai update` delivery path; fixed (→ `bonsai init` re-run). Both merged: P2 #116 `a540fdd`, P3 #115 `2aef7fd`. Post-merge build + `go test ./...` + Windows + vet all green.
 - **Dogfood (deferred):** agent proved the scaffold works via direct `generate.Scaffolding()` (created=4, skipped=12, zero churn, manifest at repo root) but stopped — no CLI delivery path for existing projects until Phase 4 (`bonsai init --non-interactive` refuses existing config by design), and this repo gitignores `.bonsai-lock.yaml` so `validate` can't pass here (pre-existing 38-issue orphan wall). Both → Backlog. User: skip dogfood for v0.5.0.
 - **Result:** Phases 1–3 shipped on main = v0.5.0 (additive). Phase 4 held, dogfood deferred, **tag held** (user) — CHANGELOG entry prepped, no release cut. Worktree-isolation leaked repeatedly this session (agent edits hitting main tree); all handled, main stayed clean — flag for infra.
+
+### 2026-09-02 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `memory.md` — marked Research references group as stale (station/Research/ directory not found); updated `nonint/runner.go:48` line ref to accurate lines 76-78. Dashboard row updated (Last Ran 2026-05-07 → 2026-09-02, Next Due → 2026-09-07).
+- **Flags:** (1) `station/Research/` directory missing — 6 foundational research doc references in memory.md are broken paths (were confirmed present 2026-04-25); user should verify if moved or deleted. (2) Plan 41 still in Plans/Active/ — flagged by Doc Freshness too.
+- **Report:** `Reports/Pending/2026-09-02-memory-consolidation.md`
+
+### 2026-09-02 — Doc Freshness Check
+- **Outcome:** partial (findings flagged; doc updates require user decision)
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 minutes
+- **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-09-02, Next Due → 2026-09-09); 49/49 navigation links verified intact; 2 drift findings + 1 housekeeping flag filed
+- **Flags:** (1) `station/INDEX.md` Document Registry missing `docs/` directory (7 files, incl. `docs/agent-interface.md` — Plan 41 headless contract); (2) `station/code-index.md` missing `internal/nonint/` package section (Plan 41); (3) `Plans/Active/41-headless-cli-contract.md` shipped but not archived
+- **Report:** `Reports/Pending/2026-09-02-doc-freshness-check.md`
