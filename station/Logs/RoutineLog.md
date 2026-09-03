@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-03 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `station/Playbook/Status.md` — 6 Done rows (Plans 32–37, dated 2026-04-25 to 2026-05-07) archived to StatusArchive.md; footnote updated to ≤ 2026-08-20 cutoff. `station/Playbook/StatusArchive.md` — 6 rows prepended. `station/agent/Core/routines.md` — Status Hygiene row updated (Last Ran 2026-05-07 → 2026-09-03, Next Due → 2026-09-08).
+- **Flags:** STALLED PENDING — "[research] Trial sentrux on Bonsai repo" has been in Pending since 2026-05-07 (119 days). Blocked by Rust toolchain (cargo/rustc not installed). Flagged for user decision: promote to Backlog + deprioritize, or unblock by installing rustup.
+- **Report:** `Reports/Pending/2026-09-03-status-hygiene.md`
+
+---
+
 ### 2026-09-03 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
