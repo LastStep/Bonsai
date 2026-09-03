@@ -121,6 +121,7 @@ func TestGenerate_ArcScales(t *testing.T) {
 // on env.
 func TestGenerate_BodyContainsKanjiOrFallback(t *testing.T) {
 	s := newTestGenerate(func() error { return nil })
+	s.ticks = 20 // advance past all reveal layers so the heart char is lit
 	body := s.renderBody()
 	if s.ensoSafe {
 		if !strings.Contains(body, "生") {
