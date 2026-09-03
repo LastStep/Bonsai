@@ -30,7 +30,7 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 |--------|-------|
 | Agent types | 6 (tech-lead, fullstack, backend, frontend, devops, security) |
 | Catalog items | ~50 (skills, workflows, protocols, sensors, routines) |
-| CLI commands | 8 (init, add, remove, list, catalog, update, guide, validate) |
+| CLI commands | 9 (init, add, remove, list, catalog, update, guide, validate, completion) |
 
 ---
 
