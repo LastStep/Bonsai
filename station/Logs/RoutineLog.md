@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-03 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~12 min
+- **Changes:** `station/Playbook/Backlog.md` — 3 resolved items commented out (P0 bug: sensor hook $PWD-walk-up → v0.4.3; P0 feature: non-interactive flags → v0.4.2; P1 feature: full agent-drivable CLI parity → Plan 41). Dashboard row updated (Last Ran 2026-05-07 → 2026-09-03, Next Due → 2026-09-10).
+- **Flags:** (1) URGENT: HOMEBREW_TAP_TOKEN PAT almost certainly expired (rotate target 2026-07-15 has passed — 49 days ago); next release will fail Homebrew tap step. (2) HIGH: all 6 other routines are 100–115 days overdue — recommend routine-digest pass. (3) MEDIUM: "CLAUDE.md tree-drift check" P2 item has recurred 5+ consecutive cycles without action — consider promoting to P1 or formally deferring.
+- **Report:** `Reports/Pending/2026-09-03-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
