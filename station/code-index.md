@@ -27,6 +27,7 @@ Quick-nav for the developer agent. Jump to what you need.
 | `bonsai update` | `cmd/update.go:19` | `runUpdate()` — detect custom files, re-render abilities, refresh CLAUDE.md |
 | `bonsai guide` | `cmd/guide.go:27` | `guideCmd` → `runGuide()` at `:44` — render embedded docs in terminal |
 | `bonsai validate` | `cmd/validate.go:23` | `validateCmd` → `runValidate()` at `:43` — read-only audit (orphans, stale lock, untracked customs, frontmatter) |
+| `bonsai completion` | `cmd/completion.go` | `completionCmd` — shell completion script generation (bash, zsh, fish, powershell) |
 
 ### Shared Helpers (`cmd/root.go`)
 

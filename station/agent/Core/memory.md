@@ -9,11 +9,12 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Active flags go here. Format: - [FLAG] description -->
 
-(none)
+- **[ESCALATE] Plans 40 + 41 still in Plans/Active/ — 79+ days past ship.** Plan 41 shipped 2026-06-16 (main `ab202c3`); Work State has carried "archive at next wrap-up" since then without action. Plan 40 shipped Phases 1–3 (tag held). Both files need manual archive to `Plans/Archive/`. Flagged by memory-consolidation 2026-09-03 per 3+-session escalation rule.
+- **[STALE REFS] station/Research/ directory does not exist.** All 6 References-section pointers (`RESEARCH-landscape-analysis.md`, `RESEARCH-concept-decisions.md`, `RESEARCH-eval-system.md`, `RESEARCH-trigger-system.md`, `RESEARCH-uiux-overhaul.md`, `RESEARCH-proof-of-bonsai-effectiveness.md`) resolve to `station/Research/RESEARCH-*.md` which is missing. Marked stale in References section.
 
 ## Work State
 
-**Current task:** _(between tasks)_ — **Plan 41 SHIPPED 2026-06-16** (all 5 phases merged, main `ab202c3`; see [Status.md](../../Playbook/Status.md) Recently Done). Headless `*Result` cores for init/add/update/remove + `list --json` + `docs/agent-interface.md` contract; `ExitConflict=5`. Dispatch ran Phase 1 solo (sig change) → 2/3/4 parallel → 5; each reviewed + gates green. **Open follow-ups (Backlog P2):** (1) MCP server = **Plan 42** (go-sdk, stdio `bonsai mcp`) — the contract was built for this; (2) unify remove cinematic/headless logic; (3) website npm vuln tree (astro-upgrade build break — vulnerability-scan routine). Plan 40 P1-3 still untagged/tag-held; dogfood still needs `.bonsai-lock.yaml` gitignore policy. **Plan 41 file still in Plans/Active/ — archive to Plans/Archive/ at next wrap-up.**
+**Current task:** _(between tasks)_ — **Plan 41 SHIPPED 2026-06-16** (all 5 phases merged, main `ab202c3`; see [Status.md](../../Playbook/Status.md) Recently Done). Headless `*Result` cores for init/add/update/remove + `list --json` + `docs/agent-interface.md` contract; `ExitConflict=5`. Dispatch ran Phase 1 solo (sig change) → 2/3/4 parallel → 5; each reviewed + gates green. **Open follow-ups (Backlog P2):** (1) MCP server = **Plan 42** (go-sdk, stdio `bonsai mcp`) — the contract was built for this; (2) unify remove cinematic/headless logic; (3) website npm vuln tree (astro-upgrade build break — vulnerability-scan routine). Plan 40 P1-3 still untagged/tag-held; dogfood still needs `.bonsai-lock.yaml` gitignore policy. _(Plans 40+41 still in Plans/Active/ — escalated to Flags 2026-09-03 per 3+-session rule.)_
 
 **Background:** **Plan 38 — Bonsai-Eval bootstrap** — handoff complete (this station archives, Bonsai-Eval owns P2/P3). v0.4.2 unblocked rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
 
@@ -83,10 +84,10 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
-    - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
-    - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
-    - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
-    - [Research/RESEARCH-trigger-system.md](../../Research/RESEARCH-trigger-system.md) — Trigger section design research
-    - [Research/RESEARCH-uiux-overhaul.md](../../Research/RESEARCH-uiux-overhaul.md) — UI/UX overhaul research
-    - [Research/RESEARCH-proof-of-bonsai-effectiveness.md](../../Research/RESEARCH-proof-of-bonsai-effectiveness.md) — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
+- **Foundational research docs** — Anchor for methodology/concept decisions. _(stale — station/Research/ directory does not exist as of 2026-09-03 validation; all 6 paths below are broken links. User action required: locate or restore these docs.)_
+    - `Research/RESEARCH-landscape-analysis.md` — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
+    - `Research/RESEARCH-concept-decisions.md` — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
+    - `Research/RESEARCH-eval-system.md` — Eval system concept: scenarios, evaluators, benchmarks
+    - `Research/RESEARCH-trigger-system.md` — Trigger section design research
+    - `Research/RESEARCH-uiux-overhaul.md` — UI/UX overhaul research
+    - `Research/RESEARCH-proof-of-bonsai-effectiveness.md` — OSS launch proof-of-work pre-registration (cut-over `4dfd3f4` 2026-04-14). Pick up when ready — user answers §10 first.
