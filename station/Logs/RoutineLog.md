@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-05 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — stale Work State entry for `.bonsai-lock.yaml` gitignore marked resolved; `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-10
+- **Flags:** 1 item flagged for user — Plan 41 still in Plans/Active/ despite shipping 2026-06-16 (also flagged by doc-freshness-check same day); archive to Plans/Archive/
+- **Report:** `Reports/Pending/2026-09-05-memory-consolidation.md`
+
+---
+
 ### 2026-09-05 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
