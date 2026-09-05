@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-05 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Backlog.md` — removed 2 resolved P0 items (v0.4.3 sensor hook bug, v0.4.2 non-interactive flags) replaced with HTML resolution comments; `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-12.
+- **Flags:** 5 items flagged for user — (1) P1 "[feature] Full agent-drivable CLI parity" may be resolved by Plan 41; (2) P1 HOMEBREW_TAP_TOKEN PAT expiry date ~2026-07-15 has passed; (3) P2 website npm vuln tree 81 days stale (security); (4) P2 `bonsai validate` can't pass on own repo 84 days stale; (5) P1 testing infrastructure 142 days stale — candidate for demotion.
+- **Report:** `Reports/Pending/2026-09-05-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
