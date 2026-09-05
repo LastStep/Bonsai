@@ -38,6 +38,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 4 items flagged for user — (1) MEDIUM: CLI command count stale in INDEX.md + root CLAUDE.md (8 → 9, `bonsai completion` missing); (2) LOW: Plan 41 shipped but plan file still in Plans/Active/; (3) LOW: `critic-agent-prompts.md` in Skills/ not in CLAUDE.md nav table; (4) LOW: INDEX.md catalog count "~50" should be "~55" (actual: 53)
 - **Report:** `Reports/Pending/2026-09-05-doc-freshness-check.md`
 
+### 2026-09-05 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-19; no changes to Roadmap.md (audit-only routine)
+- **Flags:** 4 items flagged for user — (1) MEDIUM: "Current Phase" header stale — Phase 1 complete, Phase 2 is active; (2) MEDIUM: Plan 41 (Headless CLI Contract, shipped 2026-06-16) not in any roadmap phase; (3) LOW: Plan 42 (MCP server) not in roadmap; (4) LOW: Phase 3 deferral condition now met — timing check for user
+- **Report:** `Reports/Pending/2026-09-05-roadmap-accuracy.md`
+
+---
+
 ### 2026-09-05 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
