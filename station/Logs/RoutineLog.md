@@ -20,6 +20,54 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-05 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Playbook/Status.md` — archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33) to `StatusArchive.md`; updated footer date marker to `≤ 2026-08-22`; `StatusArchive.md` — 6 rows prepended; `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-10
+- **Flags:** 3 items flagged for user — (1) MEDIUM: sentrux Pending item stalled 121 days (demotion to Backlog recommended); (2) LOW: Plan 41 file still in Plans/Active/ (archive to Plans/Archive/); (3) LOW: P1 Backlog "Full agent-drivable CLI parity" likely resolved by Plan 41 (confirm and remove)
+- **Report:** `Reports/Pending/2026-09-05-status-hygiene.md`
+
+---
+
+### 2026-09-05 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — stale Work State entry for `.bonsai-lock.yaml` gitignore marked resolved; `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-10
+- **Flags:** 1 item flagged for user — Plan 41 still in Plans/Active/ despite shipping 2026-06-16 (also flagged by doc-freshness-check same day); archive to Plans/Archive/
+- **Report:** `Reports/Pending/2026-09-05-memory-consolidation.md`
+
+---
+
+### 2026-09-05 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-12
+- **Flags:** 4 items flagged for user — (1) MEDIUM: CLI command count stale in INDEX.md + root CLAUDE.md (8 → 9, `bonsai completion` missing); (2) LOW: Plan 41 shipped but plan file still in Plans/Active/; (3) LOW: `critic-agent-prompts.md` in Skills/ not in CLAUDE.md nav table; (4) LOW: INDEX.md catalog count "~50" should be "~55" (actual: 53)
+- **Report:** `Reports/Pending/2026-09-05-doc-freshness-check.md`
+
+### 2026-09-05 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-19; no changes to Roadmap.md (audit-only routine)
+- **Flags:** 4 items flagged for user — (1) MEDIUM: "Current Phase" header stale — Phase 1 complete, Phase 2 is active; (2) MEDIUM: Plan 41 (Headless CLI Contract, shipped 2026-06-16) not in any roadmap phase; (3) LOW: Plan 42 (MCP server) not in roadmap; (4) LOW: Phase 3 deferral condition now met — timing check for user
+- **Report:** `Reports/Pending/2026-09-05-roadmap-accuracy.md`
+
+---
+
+### 2026-09-05 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Backlog.md` — removed 2 resolved P0 items (v0.4.3 sensor hook bug, v0.4.2 non-interactive flags) replaced with HTML resolution comments; `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-12.
+- **Flags:** 5 items flagged for user — (1) P1 "[feature] Full agent-drivable CLI parity" may be resolved by Plan 41; (2) P1 HOMEBREW_TAP_TOKEN PAT expiry date ~2026-07-15 has passed; (3) P2 website npm vuln tree 81 days stale (security); (4) P2 `bonsai validate` can't pass on own repo 84 days stale; (5) P1 testing infrastructure 142 days stale — candidate for demotion.
+- **Report:** `Reports/Pending/2026-09-05-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
