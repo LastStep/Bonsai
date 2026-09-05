@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-05 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Playbook/Status.md` — archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33) to `StatusArchive.md`; updated footer date marker to `≤ 2026-08-22`; `StatusArchive.md` — 6 rows prepended; `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-10
+- **Flags:** 3 items flagged for user — (1) MEDIUM: sentrux Pending item stalled 121 days (demotion to Backlog recommended); (2) LOW: Plan 41 file still in Plans/Active/ (archive to Plans/Archive/); (3) LOW: P1 Backlog "Full agent-drivable CLI parity" likely resolved by Plan 41 (confirm and remove)
+- **Report:** `Reports/Pending/2026-09-05-status-hygiene.md`
+
+---
+
 ### 2026-09-05 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
