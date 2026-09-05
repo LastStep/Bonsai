@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-05 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-05/2026-09-12
+- **Flags:** 4 items flagged for user — (1) MEDIUM: CLI command count stale in INDEX.md + root CLAUDE.md (8 → 9, `bonsai completion` missing); (2) LOW: Plan 41 shipped but plan file still in Plans/Active/; (3) LOW: `critic-agent-prompts.md` in Skills/ not in CLAUDE.md nav table; (4) LOW: INDEX.md catalog count "~50" should be "~55" (actual: 53)
+- **Report:** `Reports/Pending/2026-09-05-doc-freshness-check.md`
+
 ### 2026-09-05 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
