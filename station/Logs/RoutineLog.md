@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT expected expiry ~2026-07-15 (90-day from 2026-04-22 rotation) — now 53 days past due, rotate immediately before next release; (2) P3 items Self-update mechanism + Micro-task fast path align with active Phase 2 roadmap — user should consider promoting to P2; (3) P1 "Full non-interactive CLI parity" 85+ days old without a plan — user should file a plan; (4) all other routines overdue by 122+ days — routine-digest session recommended.
 - **Report:** `Reports/Pending/2026-09-06-backlog-hygiene.md`
 
+### 2026-09-06 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `routines.md` dashboard row updated (Last Ran → 2026-09-06, Next Due → 2026-09-13). `RoutineLog.md` appended. No documentation content changed (audit-only per procedure).
+- **Flags:** (1) Medium — `station/INDEX.md` CLI commands metric stale: reads "8" but actual is 9 (`completion` command added PR #78 May 2026); (2) Low — `agent/Skills/critic-agent-prompts.md` and `agent/Workflows/plan-grilling.md` exist but are unlisted in `station/CLAUDE.md` navigation tables (known, "integration pending Backlog" per frontmatter).
+- **Report:** `Reports/Pending/2026-09-06-doc-freshness-check.md`
+
 ---
 
 ### 2026-05-07 — Roadmap Accuracy
