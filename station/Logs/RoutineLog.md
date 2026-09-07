@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-07 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `memory.md` — 3 edits: (1) marked `.bonsai-lock.yaml` gitignore item as stale (already done); (2) updated `nonint/runner.go:48` line ref to `:42`; (3) marked 6 Research doc references as stale (files not found on disk). Dashboard `Last Ran`/`Next Due` updated to 2026-09-07/2026-09-12. No auto-memory MEMORY.md files found.
+- **Flags:** 2 items flagged for user — (1) Research docs (`station/Research/RESEARCH-*.md`, 6 files) referenced in memory.md don't exist on disk — may need to be located, committed, or removed; (2) Plan 41 still in `Plans/Active/` — pending archive (already noted in Work State).
+- **Report:** `Reports/Pending/2026-09-07-memory-consolidation.md`
+
+---
+
 ### 2026-09-07 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
