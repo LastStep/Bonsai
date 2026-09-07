@@ -40,6 +40,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-07 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran → 2026-09-07, Next Due → 2026-09-21). No edits to `Roadmap.md` (audit-only per procedure).
+- **Flags:** 5 items flagged for user — (1) Phase 1 "Current Phase" label is stale (all items done, Phase 2 is active); (2) Plan 41 headless CLI contract shipped but absent from roadmap — suggest adding `[x]` item to Phase 2; (3) Plan 42 MCP server is next explicit priority but not on roadmap — suggest adding to Phase 3; (4) Plan 40 Odysseus hub schema (`.bonsai/project.yaml`) has no roadmap entry; (5) `bonsai completion` shipped (low urgency — Phase 1 already complete).
+- **Report:** `Reports/Pending/2026-09-07-roadmap-accuracy.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
