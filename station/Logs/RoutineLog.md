@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) Pending "Trial sentrux" stalled 124 days — needs user decision (close/demote/unblock); (2) `Plans/Active/41-headless-cli-contract.md` orphaned (plan SHIPPED, file not archived).
 - **Report:** `Reports/Pending/2026-09-08-status-hygiene.md`
 
+### 2026-09-08 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `routines.md` — dashboard `Last Ran`/`Next Due` updated to 2026-09-08/2026-09-15.
+- **Flags:** 5 documentation drift findings — (1) `internal/nonint/` package entirely absent from code-index.md (Plans 39+41 — medium severity); (2) `bonsai completion` missing from CLI Commands table in code-index.md (medium); (3) `list_snapshot.go` undocumented in generate section (low); (4) `project.go` undocumented in validate section (low); (5) INDEX.md CLI command count shows 8, should be 9 (low). All findings flagged for user; no doc edits executed per procedure.
+- **Report:** `Reports/Pending/2026-09-08-doc-freshness-check.md`
+
 ### 2026-09-08 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
