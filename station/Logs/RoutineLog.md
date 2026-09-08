@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-08 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 bullets (sensor hook $PWD-walk-up fixed v0.4.3; non-interactive flags fixed v0.4.2), replaced with resolved comments. `routines.md` — dashboard `Last Ran`/`Next Due` updated to 2026-09-08/2026-09-15.
+- **Flags:** 7 items flagged — (1) HOMEBREW_TAP_TOKEN PAT likely expired (~55 days past 2026-07-15 due date) — immediate action needed; (2) Plan 41 still in Plans/Active/ (should be archived); (3) Plan 40 Phase 4 HELD decision pending; (4) P1 "Full agent-drivable CLI parity" 87 days without a plan; (5) P2 website npm vuln tree 84 days unresolved; (6) P2 bonsai validate dogfood blocker 87 days old; (7) 124-day routine execution gap across all routines.
+- **Report:** `Reports/Pending/2026-09-08-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
