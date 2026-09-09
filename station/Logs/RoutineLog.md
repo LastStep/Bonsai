@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-09 — Roadmap Accuracy
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/routines.md` — Roadmap Accuracy Last Ran → 2026-09-09, Next Due → 2026-09-23. `Logs/RoutineLog.md` — this entry. `Reports/Pending/2026-09-09-roadmap-accuracy.md` — created.
+- **Flags:** (1) Plan 41 (Headless CLI Contract, shipped 2026-06-16) not on roadmap — HIGH; (2) MCP server (Plan 42) planned but not on roadmap — MEDIUM; (3) Micro-task fast path listed in Phase 2 but footnoted as deferred to P3 — needs clarification; (4) HOMEBREW_TAP_TOKEN PAT deadline 55 days overdue — verify rotation.
+- **Report:** `Reports/Pending/2026-09-09-roadmap-accuracy.md`
+
+---
+
 ### 2026-09-09 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
