@@ -29,8 +29,8 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 | Metric | Value |
 |--------|-------|
 | Agent types | 6 (tech-lead, fullstack, backend, frontend, devops, security) |
-| Catalog items | ~50 (skills, workflows, protocols, sensors, routines) |
-| CLI commands | 8 (init, add, remove, list, catalog, update, guide, validate) |
+| Catalog items | ~55 (skills, workflows, protocols, sensors, routines) |
+| CLI commands | 9 (init, add, remove, list, catalog, update, guide, validate, completion) |
 
 ---
 
@@ -50,6 +50,7 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 | `Reports/Pending/` | Unprocessed agent completion reports | Check every session start |
 | `Reports/report-template.md` | Structured report format for agents | When submitting a completion report |
 | `code-index.md` | Code index — quick-nav to Go source functions | When navigating the codebase |
+| [`docs/agent-interface.md`](../docs/agent-interface.md) | Headless CLI contract — Result types, exit codes (0/2/3/4/5), JSONL event format, and MCP-server interface spec. Shipped Plan 41 (`ab202c3`). | When extending the CLI surface or building MCP tooling on top of Bonsai |
 | [`LastStep/Bonsai-Eval`](https://github.com/LastStep/Bonsai-Eval) (external repo) | Eval harness (Inspect AI + 3 rungs via `inspect_swe`) + telemetry pipeline (codeburn/transcripts/git → parquet) for measuring Bonsai effectiveness. Pre-registered C1+C3+C6 claims (cut-over `4dfd3f4` 2026-04-14). | Plan 38 work, proof-of-Bonsai measurement, benchmark sweeps |
 
 ---
@@ -60,7 +61,7 @@ Bonsai is a CLI tool that scaffolds Claude Code agent workspaces — structured 
 User runs bonsai CLI
     |
     v
-cmd/ (Cobra)          ← CLI commands: init, add, remove, list, catalog, update, guide, validate
+cmd/ (Cobra)          ← CLI commands: init, add, remove, list, catalog, update, guide, validate, completion
     |
     v
 internal/catalog/     ← loads embedded YAML metadata + templates from catalog/
