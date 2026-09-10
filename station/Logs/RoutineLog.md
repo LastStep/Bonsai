@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-10 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-09-10/2026-09-17.
+- **Flags:** 4 drift items (all same root cause — `bonsai completion` shipped 2026-05-07 but never reflected in docs): (1) `station/INDEX.md:33` CLI command count "8" → "9" + list missing `completion`; (2) `station/INDEX.md:63` arch diagram command list missing `completion`; (3) `station/code-index.md` CLI Commands table missing `completion` row; (4) `CLAUDE.md` (project root) cmd/ tree missing `completion.go`. All navigation links (53/53) verified clean — no broken paths.
+- **Report:** `Reports/Pending/2026-09-10-doc-freshness-check.md`
+
+### 2026-09-10 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37, 36, 35, 34, 32, 33 — dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-08-27`; dashboard `Last Ran`/`Next Due` set to 2026-09-10/2026-09-15.
+- **Flags:** 2 items for user review — (1) Sentrux trial Pending 126 days (blocked on Rust toolchain, 30-day flag threshold far exceeded — recommend complete trial or demote to Backlog); (2) Plans 40 + 41 are done but files remain in Plans/Active/ — move to Plans/Archive/.
+- **Report:** `Reports/Pending/2026-09-10-status-hygiene.md`
+
+### 2026-09-10 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Commented out 3 resolved Backlog items — 2 P0s (sensor hook $PWD-walk-up resolved by v0.4.3; bonsai init/add non-interactive flags resolved by v0.4.2) and 1 P1 (Full agent-drivable CLI parity resolved by Plan 41). Dashboard updated (Last Ran 2026-09-10, Next Due 2026-09-17).
+- **Flags:** 3 items flagged for user — (1) **URGENT: HOMEBREW_TAP_TOKEN PAT reminder date 2026-07-15 passed ~2 months ago** — check PAT validity and rotate before next release to avoid GoReleaser brew-step 401; (2) 6 of 7 other routines critically overdue by 4+ months (Dependency Audit, Doc Freshness, Memory Consolidation, Roadmap Accuracy, Status Hygiene, Vulnerability Scan all Next Due ~2026-05-11–21) — recommend routine digest pass; (3) P3 items "Self-update mechanism" and "Micro-task fast path" are Phase 2 Roadmap milestones — consider P3→P2 promotion when Phase 2 work begins.
+- **Report:** `Reports/Pending/2026-09-10-backlog-hygiene.md`
+
+### 2026-09-10 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** `station/agent/Core/memory.md` — marked References section "Foundational research docs" as stale (Research/ directory not found on disk); `station/agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-10/2026-09-15.
+- **Flags:** 2 items for user review — (1) All 6 Research doc links in memory References section are broken (Research/ dir missing) — locate files or clean entries; (2) Plan 40 + 41 plan files remain in Plans/Active/ 85+ days after shipping — archive or confirm still needed.
+- **Report:** `Reports/Pending/2026-09-10-memory-consolidation.md`
+
+### 2026-09-10 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-09-10/2026-09-24.
+- **Flags:** 3 items for user review — (1) **Medium**: Plan 41 (Headless CLI Contract + MCP-ready cores, v0.5.0, shipped 2026-06-16) not reflected anywhere in Roadmap.md — suggest adding line item under Phase 2 or as Phase 3 prerequisite; (2) **Medium**: "Current Phase" heading still reads "Phase 1 — Foundation & Polish" despite Phase 1 being entirely complete — suggest updating to Phase 2; (3) **Low**: Phase 3 missing MCP server milestone (Plan 42 cited as fast-follow to Plan 41 in Status.md but absent from roadmap). KeyDecisionLog cross-check clean — no decisions invalidate existing roadmap items.
+- **Report:** `Reports/Pending/2026-09-10-roadmap-accuracy.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
