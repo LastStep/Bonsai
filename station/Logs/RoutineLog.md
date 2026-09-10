@@ -44,6 +44,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 3 items flagged for user — (1) **URGENT: HOMEBREW_TAP_TOKEN PAT reminder date 2026-07-15 passed ~2 months ago** — check PAT validity and rotate before next release to avoid GoReleaser brew-step 401; (2) 6 of 7 other routines critically overdue by 4+ months (Dependency Audit, Doc Freshness, Memory Consolidation, Roadmap Accuracy, Status Hygiene, Vulnerability Scan all Next Due ~2026-05-11–21) — recommend routine digest pass; (3) P3 items "Self-update mechanism" and "Micro-task fast path" are Phase 2 Roadmap milestones — consider P3→P2 promotion when Phase 2 work begins.
 - **Report:** `Reports/Pending/2026-09-10-backlog-hygiene.md`
 
+### 2026-09-10 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 min
+- **Changes:** `station/agent/Core/memory.md` — marked References section "Foundational research docs" as stale (Research/ directory not found on disk); `station/agent/Core/routines.md` — dashboard Last Ran/Next Due updated to 2026-09-10/2026-09-15.
+- **Flags:** 2 items for user review — (1) All 6 Research doc links in memory References section are broken (Research/ dir missing) — locate files or clean entries; (2) Plan 40 + 41 plan files remain in Plans/Active/ 85+ days after shipping — archive or confirm still needed.
+- **Report:** `Reports/Pending/2026-09-10-memory-consolidation.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
