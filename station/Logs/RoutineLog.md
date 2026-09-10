@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-10 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-09-10/2026-09-17.
+- **Flags:** 4 drift items (all same root cause — `bonsai completion` shipped 2026-05-07 but never reflected in docs): (1) `station/INDEX.md:33` CLI command count "8" → "9" + list missing `completion`; (2) `station/INDEX.md:63` arch diagram command list missing `completion`; (3) `station/code-index.md` CLI Commands table missing `completion` row; (4) `CLAUDE.md` (project root) cmd/ tree missing `completion.go`. All navigation links (53/53) verified clean — no broken paths.
+- **Report:** `Reports/Pending/2026-09-10-doc-freshness-check.md`
+
 ### 2026-09-10 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
