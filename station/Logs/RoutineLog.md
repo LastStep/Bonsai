@@ -20,6 +20,48 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-11 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~7 min
+- **Changes:** `routines.md` dashboard updated (Last Ran → 2026-09-11, Next Due → 2026-09-25, Status → done). No Roadmap.md edits (audit-only per procedure).
+- **Flags:** 5 items for user — (1) **High**: Plan 41 (Headless CLI Contract, shipped 2026-06-16) has no roadmap row — recommend adding `[x]` entry to Phase 2; (2) **Medium**: Plan 42 (MCP server) is live next priority but absent from Roadmap — recommend adding to Phase 3; (3) **Medium**: Phase 3 "Managed Agents" wording may no longer reflect MCP-first trajectory — review/reword; (4) **Low**: non-interactive mode (`--non-interactive`, Plan 39) not on roadmap; (5) **Low**: Phase 2 "Template variables expansion" has no Backlog tracking entry.
+- **Report:** `Reports/Pending/2026-09-11-roadmap-accuracy.md`
+
+### 2026-09-11 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `agent/Core/memory.md` — (1) Work State: updated stale "Plan 41 still in Plans/Active/" note to reflect archival completed 2026-09-11; (2) References: marked 6 Research doc pointers stale (`station/Research/` directory does not exist). `routines.md` dashboard updated (Last Ran → 2026-09-11, Next Due → 2026-09-16, Status → done).
+- **Flags:** 2 items for user — (1) **Low**: `station/Research/` directory missing — 6 Research doc references in memory.md are stale; confirm intentional deletion or restore paths; (2) Plan 40 Phase 4 still HELD with no resolution decision captured.
+- **Report:** `Reports/Pending/2026-09-11-memory-consolidation.md`
+
+### 2026-09-11 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — removed 6 oldest Done rows (Plans 32/33/34/35/36/37, dates 2026-04-25 to 2026-05-07); updated cutoff note to ≤ 2026-08-28. `StatusArchive.md` — prepended those 6 rows. `Plans/Active/41-headless-cli-contract.md` moved to `Plans/Archive/`. `routines.md` dashboard updated (Last Ran → 2026-09-11, Next Due → 2026-09-16).
+- **Flags:** 2 items for user — (1) Pending item "Trial sentrux on Bonsai repo" stalled 127+ days (added 2026-05-07, blocked on Rust toolchain install) — flag for decision: cancel, defer further, or install toolchain; (2) Plan 40 still in Plans/Active/ (Phase 4 HELD) — confirm whether Phase 4 resumes or is cancelled/archived.
+- **Report:** `Reports/Pending/2026-09-11-status-hygiene.md`
+
+### 2026-09-11 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `routines.md` dashboard updated (Last Ran → 2026-09-11, Next Due → 2026-09-18, Status → done).
+- **Flags:** 3 items for user — (1) **Medium**: `internal/nonint/` package (Plan 41) absent from `station/INDEX.md` arch block and `code-index.md`; (2) **Low**: CLI command count in INDEX.md says 8, should be 9 (`completion` added 2026-05-07); (3) **Low**: `docs/` directory (agent-interface.md, cli.md, etc.) not referenced in station docs. All navigation links in CLAUDE.md are intact — no broken links.
+- **Report:** `Reports/Pending/2026-09-11-doc-freshness-check.md`
+
+### 2026-09-11 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 3 resolved items (P0: sensor hook bug shipped v0.4.3; P0: non-interactive flags shipped v0.4.2; P1: full CLI parity shipped Plan 41). Added resolution comments. Dashboard `Last Ran`/`Next Due` updated to 2026-09-11/2026-09-18.
+- **Flags:** 6 items for user — (1) **CRITICAL**: HOMEBREW_TAP_TOKEN PAT expired ~2026-07-15 (~58 days ago), rotate immediately; (2) all 7 routines 127+ days overdue, recommend routine-digest session; (3) MCP server Plan 42 not in Backlog; (4) Plan 41 file still in Plans/Active/ needs archiving; (5) "Template variables expansion" Phase 2 milestone uncaptured; (6) 2026-05-07 doc drift findings (code-index, bonsai-model nav link, INDEX arch) never captured in Backlog — re-audit needed.
+- **Report:** `Reports/Pending/2026-09-11-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
