@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 2 items for user — (1) Pending item "Trial sentrux on Bonsai repo" stalled 127+ days (added 2026-05-07, blocked on Rust toolchain install) — flag for decision: cancel, defer further, or install toolchain; (2) Plan 40 still in Plans/Active/ (Phase 4 HELD) — confirm whether Phase 4 resumes or is cancelled/archived.
 - **Report:** `Reports/Pending/2026-09-11-status-hygiene.md`
 
+### 2026-09-11 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `routines.md` dashboard updated (Last Ran → 2026-09-11, Next Due → 2026-09-18, Status → done).
+- **Flags:** 3 items for user — (1) **Medium**: `internal/nonint/` package (Plan 41) absent from `station/INDEX.md` arch block and `code-index.md`; (2) **Low**: CLI command count in INDEX.md says 8, should be 9 (`completion` added 2026-05-07); (3) **Low**: `docs/` directory (agent-interface.md, cli.md, etc.) not referenced in station docs. All navigation links in CLAUDE.md are intact — no broken links.
+- **Report:** `Reports/Pending/2026-09-11-doc-freshness-check.md`
+
 ### 2026-09-11 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
