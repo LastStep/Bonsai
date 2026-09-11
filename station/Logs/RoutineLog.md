@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-11 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 3 resolved items (P0: sensor hook bug shipped v0.4.3; P0: non-interactive flags shipped v0.4.2; P1: full CLI parity shipped Plan 41). Added resolution comments. Dashboard `Last Ran`/`Next Due` updated to 2026-09-11/2026-09-18.
+- **Flags:** 6 items for user — (1) **CRITICAL**: HOMEBREW_TAP_TOKEN PAT expired ~2026-07-15 (~58 days ago), rotate immediately; (2) all 7 routines 127+ days overdue, recommend routine-digest session; (3) MCP server Plan 42 not in Backlog; (4) Plan 41 file still in Plans/Active/ needs archiving; (5) "Template variables expansion" Phase 2 milestone uncaptured; (6) 2026-05-07 doc drift findings (code-index, bonsai-model nav link, INDEX arch) never captured in Backlog — re-audit needed.
+- **Report:** `Reports/Pending/2026-09-11-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
