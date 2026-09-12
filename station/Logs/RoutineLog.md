@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-12 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** Removed 3 resolved items from Backlog.md (P0 sensor hook bug → v0.4.3; P0 non-interactive flags → v0.4.2; P1 CLI parity → Plan 41). Resolution comments added. Routines dashboard updated (Last Ran 2026-09-12, Next Due 2026-09-19).
+- **Flags:** 6 items for user — (1) URGENT: HOMEBREW_TAP_TOKEN PAT expired ~58 days ago (was due 2026-07-15); (2) website npm vuln tree (esbuild/vite HIGH alerts, 3+ months open); (3) bonsai validate can't pass on dogfood repo (lock gitignored, blocks Plan 40 dogfood); (4) Plan 41 still in Plans/Active/ (should archive); (5) Plan 42 MCP server has no Backlog entry; (6) all 7 routines overdue 4+ months — recommend batch dispatch.
+- **Report:** `Reports/Pending/2026-09-12-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
