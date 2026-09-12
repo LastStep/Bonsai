@@ -121,6 +121,10 @@ func TestGenerate_ArcScales(t *testing.T) {
 // on env.
 func TestGenerate_BodyContainsKanjiOrFallback(t *testing.T) {
 	s := newTestGenerate(func() error { return nil })
+	// Heart glyph ('H') in wideBonsai sits at layer 2; it is only revealed
+	// once ticks/ticksPerLayer >= 2, i.e. ticks >= 4. Drive to 10 so the
+	// heart is always lit before we assert its presence.
+	s.ticks = 10
 	body := s.renderBody()
 	if s.ensoSafe {
 		if !strings.Contains(body, "生") {
