@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-12 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Marked 6 stale References entries in `agent/Core/memory.md` (all `station/Research/RESEARCH-*.md` files missing — directory absent); dashboard updated (Last Ran 2026-09-12, Next Due 2026-09-17).
+- **Flags:** 2 items for user — (1) Research files missing: all 6 foundational RESEARCH doc paths in memory References section are broken (`station/Research/` directory does not exist) — verify intentional deletion or restore; (2) Plan 41 still in Plans/Active/ (shipped 2026-06-16) — also flagged by Status Hygiene + Backlog Hygiene 2026-09-12.
+- **Report:** `Reports/Pending/2026-09-12-memory-consolidation.md`
+
+---
+
 ### 2026-09-12 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
