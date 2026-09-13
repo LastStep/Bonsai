@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-13 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog.md via HTML resolution comments — (1) P0 `[bug] Sensor hook $PWD-walk-up` (resolved v0.4.3); (2) P0 `[feature] non-interactive flags` (resolved v0.4.2); (3) P1 `[feature] Full agent-drivable CLI parity` (resolved Plan 41). Dashboard updated (Last Ran 2026-05-07 → 2026-09-13, Next Due → 2026-09-20).
+- **Flags:** 4 items flagged for user — (1) **IMMEDIATE:** HOMEBREW_TAP_TOKEN PAT was due 2026-07-15, now ~60 days expired — rotate before any release; (2) P2 website npm HIGH/MED vulns (esbuild/vite) 89 days unresolved; (3) Roadmap Phase 2 "Template variables expansion" has no Backlog entry; (4) Phase 2 milestone items (Self-update, Micro-task fast path) sitting at P3 — consider promotion.
+- **Report:** `Reports/Pending/2026-09-13-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
