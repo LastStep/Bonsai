@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-14 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` — dashboard row updated (Last Ran 2026-05-07 → 2026-09-14, Next Due → 2026-09-28). Report written.
+- **Flags:** (1) MEDIUM — Plan 41 (Headless CLI Contract, shipped 2026-06-16) not tracked in Roadmap — suggests adding a `[x]` Phase 2 entry for the headless JSONL interface + MCP-ready cores; (2) LOW — `--non-interactive` flag (Plan 39/v0.4.2) also untracked, may be subsumed by Finding 1.
+- **Report:** `Reports/Pending/2026-09-14-roadmap-accuracy.md`
+
 ### 2026-09-14 — Memory Consolidation
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
