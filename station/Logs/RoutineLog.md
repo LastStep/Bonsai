@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-14 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 items (sensor hook bug fixed v0.4.3, non-interactive flags fixed v0.4.2); added resolution comments. `routines.md` dashboard updated. `RoutineLog.md` appended.
+- **Flags:** (1) HOMEBREW_TAP_TOKEN PAT expired ~55 days ago (reminder was 2026-07-15) — potential release blocker; (2) Roadmap Phase 1 "Better trigger sections" + missing `bonsai validate` row still unchecked from May 2026 routine; (3) Three unfiled doc-drift items (code-index.md, bonsai-model.md nav link, INDEX.md arch diagram); (4) All other routines overdue (~130 days since last run).
+- **Report:** `Reports/Pending/2026-09-14-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
