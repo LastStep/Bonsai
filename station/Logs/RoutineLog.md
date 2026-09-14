@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) Sentrux trial Pending 130+ days (blocked on Rust toolchain) — flagged for user review; (2) Plans 40 + 41 still in Plans/Active/ despite Done status — needs move to Plans/Archive/ (memory.md noted for Plan 41).
 - **Report:** `Reports/Pending/2026-09-14-status-hygiene.md`
 
+### 2026-09-14 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `agent/Core/routines.md` dashboard updated (Last Ran + Next Due). Report written.
+- **Flags:** (1) `station/INDEX.md` CLI count stale (says 8, should be 9 — `completion` added May 2026); (2) `docs/agent-interface.md` missing from INDEX.md Document Registry; (3) `code-index.md` missing `completion` command row; (4) `station/CLAUDE.md` Workflows table missing `plan-grilling.md` entry; (5) `station/CLAUDE.md` Skills table missing `critic-agent-prompts.md` (intent unclear); (6) Root `CLAUDE.md` cmd/ structure missing `completion.go`.
+- **Report:** `Reports/Pending/2026-09-14-doc-freshness-check.md`
+
 ### 2026-09-14 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
