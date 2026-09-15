@@ -13,7 +13,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 ## Work State
 
-**Current task:** _(between tasks)_ — **Plan 41 SHIPPED 2026-06-16** (all 5 phases merged, main `ab202c3`; see [Status.md](../../Playbook/Status.md) Recently Done). Headless `*Result` cores for init/add/update/remove + `list --json` + `docs/agent-interface.md` contract; `ExitConflict=5`. Dispatch ran Phase 1 solo (sig change) → 2/3/4 parallel → 5; each reviewed + gates green. **Open follow-ups (Backlog P2):** (1) MCP server = **Plan 42** (go-sdk, stdio `bonsai mcp`) — the contract was built for this; (2) unify remove cinematic/headless logic; (3) website npm vuln tree (astro-upgrade build break — vulnerability-scan routine). Plan 40 P1-3 still untagged/tag-held; dogfood still needs `.bonsai-lock.yaml` gitignore policy. **Plan 41 file still in Plans/Active/ — archive to Plans/Archive/ at next wrap-up.**
+**Current task:** _(between tasks)_ — **Plan 41 SHIPPED 2026-06-16** (all 5 phases merged, main `ab202c3`; see [Status.md](../../Playbook/Status.md) Recently Done). Headless `*Result` cores for init/add/update/remove + `list --json` + `docs/agent-interface.md` contract; `ExitConflict=5`. Dispatch ran Phase 1 solo (sig change) → 2/3/4 parallel → 5; each reviewed + gates green. **Open follow-ups (Backlog P2):** (1) MCP server = **Plan 42** (go-sdk, stdio `bonsai mcp`) — the contract was built for this; (2) unify remove cinematic/headless logic; (3) website npm vuln tree (astro-upgrade build break — vulnerability-scan routine). Plan 40 P1-3 still untagged/tag-held; dogfood still needs `.bonsai-lock.yaml` gitignore policy. **Plan 41 archived to Plans/Archive/ (memory-consolidation 2026-09-15).**
 
 **Background:** **Plan 38 — Bonsai-Eval bootstrap** — handoff complete (this station archives, Bonsai-Eval owns P2/P3). v0.4.2 unblocked rung-3. Only `$ANTHROPIC_API_KEY` outstanding (user sets just-in-time).
 
@@ -83,7 +83,7 @@ description: Tech Lead Agent working memory — flags, work state, notes.
 
 <!-- Pointers to external resources not documented elsewhere in the project. -->
 
-- **Foundational research docs** — Anchor for methodology/concept decisions.
+- **Foundational research docs** — Anchor for methodology/concept decisions. *(stale — `station/Research/` directory does not exist as of 2026-09-15; files were removed or never committed. Links below kept for reference but are broken. Flagged by doc-freshness-check and memory-consolidation 2026-09-15.)*
     - [Research/RESEARCH-landscape-analysis.md](../../Research/RESEARCH-landscape-analysis.md) — Bonsai vs GSD/ECC/others; identity/coordination layer positioning
     - [Research/RESEARCH-concept-decisions.md](../../Research/RESEARCH-concept-decisions.md) — Ambient vs command-driven, authority hierarchy, catalog ownership, talents taxonomy
     - [Research/RESEARCH-eval-system.md](../../Research/RESEARCH-eval-system.md) — Eval system concept: scenarios, evaluators, benchmarks
