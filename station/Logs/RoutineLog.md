@@ -46,6 +46,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** (1) **URGENT — HOMEBREW_TAP_TOKEN PAT overdue ~2 months** (due 2026-07-15, now 2026-09-15) — rotate before next release; (2) P1 "Full agent-drivable CLI parity" — no movement in 3 months, user previously flagged as "main thing"; (3) all 7 routines severely overdue (4+ months gap since May 2026) — Vulnerability Scan, Dependency Audit, Memory Consolidation most time-sensitive.
 - **Report:** `Reports/Pending/2026-09-15-backlog-hygiene.md`
 
+### 2026-09-15 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-29, Status → done). No Roadmap.md edits — audit-only per procedure.
+- **Flags:** (1) Phase 1 still labeled "Current Phase" — all items complete, current phase is Phase 2; (2) Plan 41 (Headless CLI Contract, shipped 2026-06-16) has no roadmap representation; (3) Plan 42 (MCP server, upcoming) absent from roadmap; (4) KeyDecisionLog gap since 2026-04-13 — ~5 months of architectural decisions unlogged.
+- **Report:** `Reports/Pending/2026-09-15-roadmap-accuracy.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
