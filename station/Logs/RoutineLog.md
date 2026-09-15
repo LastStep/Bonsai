@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-15 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** (1) Archived 6 Done rows (Plans 37/36/35/34/32/33, dates 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; (2) fixed stale Plan 41 link `Plans/Active/` → `Plans/Archive/`; (3) updated footer date marker; (4) routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-20, Status → done).
+- **Flags:** (1) "Trial sentrux" Pending 131 days — stalled on Rust toolchain, flag for user decision; (2) P1 Backlog "Full agent-drivable CLI parity" may be fully resolved by Plan 41 — flag for user confirmation before removing.
+- **Report:** `Reports/Pending/2026-09-15-status-hygiene.md`
+
+---
+
 ### 2026-09-15 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
