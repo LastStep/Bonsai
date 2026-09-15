@@ -20,6 +20,72 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-15 — Vulnerability Scan
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-22, Status → done). No code/config edits (audit-only routine).
+- **Flags:** (1) **CRITICAL** — astro v6.1.7 in `website/` has CVSS 9.8 RCE (GHSA-26w7-cxv4-gfx2); cross-ref dependency-audit 2026-09-15; fix: `cd website && npm install`; (2) **HIGH** — js-yaml v4.1.1 has 3 DoS CVEs, same fix; (3) **INFO** — gitleaks no longer installed (was present at 2026-05-04 scan); git history since May not scanned; (4) **INFO** — govulncheck blocked by proxy (403 on vuln.go.dev); Go CVE state unconfirmed. RESOLVED: x/net bumped v0.38.0 → v0.53.0 (8 unreachable CVEs cleared). 0 SAST findings, 0 hardcoded secrets.
+- **Report:** `Reports/Pending/2026-09-15-vulnerability-scan.md`
+
+---
+
+### 2026-09-15 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-22, Status → done). No code/config edits (audit-only routine).
+- **Flags:** (1) **CRITICAL** — astro v6.1.7 in `website/` has CVSS 9.8 RCE vulnerability (GHSA-26w7-cxv4-gfx2); fix: `cd website && npm install` (package.json already specifies `"latest"`, bumps to astro >=7.2.8); (2) **HIGH** — js-yaml v4.1.1 has 3 high-severity DoS CVEs, same fix resolves; (3) govulncheck blocked by agent proxy — Go CVE scan incomplete, run manually in CI.
+- **Report:** `Reports/Pending/2026-09-15-dependency-audit.md`
+
+---
+
+### 2026-09-15 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** (1) Archived 6 Done rows (Plans 37/36/35/34/32/33, dates 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; (2) fixed stale Plan 41 link `Plans/Active/` → `Plans/Archive/`; (3) updated footer date marker; (4) routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-20, Status → done).
+- **Flags:** (1) "Trial sentrux" Pending 131 days — stalled on Rust toolchain, flag for user decision; (2) P1 Backlog "Full agent-drivable CLI parity" may be fully resolved by Plan 41 — flag for user confirmation before removing.
+- **Report:** `Reports/Pending/2026-09-15-status-hygiene.md`
+
+---
+
+### 2026-09-15 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) Archived `Plans/Active/41-headless-cli-contract.md` → `Plans/Archive/` (shipped 2026-06-16, Work State archival note resolved); (2) marked 6 stale Research/ references in `memory.md` with `(stale — directory does not exist)` annotation; (3) updated Work State note re Plan 41; (4) routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-20, Status → done).
+- **Flags:** Research/ directory missing — 6 foundational research doc links in memory.md are broken; flagged for user decision (remove entries or restore files). Independently confirmed by Doc Freshness Check same day.
+- **Report:** `Reports/Pending/2026-09-15-memory-consolidation.md`
+
+---
+
+### 2026-09-15 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-22, Status → done). No doc content modified — findings flagged for user decision per procedure.
+- **Flags:** (1) `internal/nonint/` package (Plan 41 headless CLI infrastructure, 13+ files) missing from `station/code-index.md`; (2) `bonsai completion` command missing from code-index.md CLI table; (3) INDEX.md CLI count stale (says 8, now 9); (4) 6 broken links in `agent/Core/memory.md` to non-existent `station/Research/` directory; (5) 3 broken links in `agent/Workflows/issue-to-implementation.md` to `dispatch.md` skill not installed — `dispatch` skill in catalog but not added.
+- **Report:** `Reports/Pending/2026-09-15-doc-freshness-check.md`
+
+### 2026-09-15 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — removed 2 resolved P0 items (sensor hook bug resolved v0.4.3; non-interactive flags resolved v0.4.2); added OVERDUE flag to P1 HOMEBREW_TAP_TOKEN PAT item. routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-22).
+- **Flags:** (1) **URGENT — HOMEBREW_TAP_TOKEN PAT overdue ~2 months** (due 2026-07-15, now 2026-09-15) — rotate before next release; (2) P1 "Full agent-drivable CLI parity" — no movement in 3 months, user previously flagged as "main thing"; (3) all 7 routines severely overdue (4+ months gap since May 2026) — Vulnerability Scan, Dependency Audit, Memory Consolidation most time-sensitive.
+- **Report:** `Reports/Pending/2026-09-15-backlog-hygiene.md`
+
+### 2026-09-15 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-29, Status → done). No Roadmap.md edits — audit-only per procedure.
+- **Flags:** (1) Phase 1 still labeled "Current Phase" — all items complete, current phase is Phase 2; (2) Plan 41 (Headless CLI Contract, shipped 2026-06-16) has no roadmap representation; (3) Plan 42 (MCP server, upcoming) absent from roadmap; (4) KeyDecisionLog gap since 2026-04-13 — ~5 months of architectural decisions unlogged.
+- **Report:** `Reports/Pending/2026-09-15-roadmap-accuracy.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
