@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-15 — Vulnerability Scan
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-22, Status → done). No code/config edits (audit-only routine).
+- **Flags:** (1) **CRITICAL** — astro v6.1.7 in `website/` has CVSS 9.8 RCE (GHSA-26w7-cxv4-gfx2); cross-ref dependency-audit 2026-09-15; fix: `cd website && npm install`; (2) **HIGH** — js-yaml v4.1.1 has 3 DoS CVEs, same fix; (3) **INFO** — gitleaks no longer installed (was present at 2026-05-04 scan); git history since May not scanned; (4) **INFO** — govulncheck blocked by proxy (403 on vuln.go.dev); Go CVE state unconfirmed. RESOLVED: x/net bumped v0.38.0 → v0.53.0 (8 unreachable CVEs cleared). 0 SAST findings, 0 hardcoded secrets.
+- **Report:** `Reports/Pending/2026-09-15-vulnerability-scan.md`
+
+---
+
 ### 2026-09-15 — Dependency Audit
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
