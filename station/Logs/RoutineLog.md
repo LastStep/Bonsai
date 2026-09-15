@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-15 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — removed 2 resolved P0 items (sensor hook bug resolved v0.4.3; non-interactive flags resolved v0.4.2); added OVERDUE flag to P1 HOMEBREW_TAP_TOKEN PAT item. routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-22).
+- **Flags:** (1) **URGENT — HOMEBREW_TAP_TOKEN PAT overdue ~2 months** (due 2026-07-15, now 2026-09-15) — rotate before next release; (2) P1 "Full agent-drivable CLI parity" — no movement in 3 months, user previously flagged as "main thing"; (3) all 7 routines severely overdue (4+ months gap since May 2026) — Vulnerability Scan, Dependency Audit, Memory Consolidation most time-sensitive.
+- **Report:** `Reports/Pending/2026-09-15-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
