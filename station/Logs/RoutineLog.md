@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-15 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** (1) Archived `Plans/Active/41-headless-cli-contract.md` → `Plans/Archive/` (shipped 2026-06-16, Work State archival note resolved); (2) marked 6 stale Research/ references in `memory.md` with `(stale — directory does not exist)` annotation; (3) updated Work State note re Plan 41; (4) routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-20, Status → done).
+- **Flags:** Research/ directory missing — 6 foundational research doc links in memory.md are broken; flagged for user decision (remove entries or restore files). Independently confirmed by Doc Freshness Check same day.
+- **Report:** `Reports/Pending/2026-09-15-memory-consolidation.md`
+
+---
+
 ### 2026-09-15 — Doc Freshness Check
 - **Outcome:** partial
 - **Execution mode:** subagent (loop.md dispatch)
