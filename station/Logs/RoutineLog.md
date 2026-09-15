@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-15 — Doc Freshness Check
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `station/agent/Core/routines.md` dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-22, Status → done). No doc content modified — findings flagged for user decision per procedure.
+- **Flags:** (1) `internal/nonint/` package (Plan 41 headless CLI infrastructure, 13+ files) missing from `station/code-index.md`; (2) `bonsai completion` command missing from code-index.md CLI table; (3) INDEX.md CLI count stale (says 8, now 9); (4) 6 broken links in `agent/Core/memory.md` to non-existent `station/Research/` directory; (5) 3 broken links in `agent/Workflows/issue-to-implementation.md` to `dispatch.md` skill not installed — `dispatch` skill in catalog but not added.
+- **Report:** `Reports/Pending/2026-09-15-doc-freshness-check.md`
+
 ### 2026-09-15 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
