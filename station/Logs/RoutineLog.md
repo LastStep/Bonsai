@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-15 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** routines.md dashboard updated (Last Ran → 2026-09-15, Next Due → 2026-09-22, Status → done). No code/config edits (audit-only routine).
+- **Flags:** (1) **CRITICAL** — astro v6.1.7 in `website/` has CVSS 9.8 RCE vulnerability (GHSA-26w7-cxv4-gfx2); fix: `cd website && npm install` (package.json already specifies `"latest"`, bumps to astro >=7.2.8); (2) **HIGH** — js-yaml v4.1.1 has 3 high-severity DoS CVEs, same fix resolves; (3) govulncheck blocked by agent proxy — Go CVE scan incomplete, run manually in CI.
+- **Report:** `Reports/Pending/2026-09-15-dependency-audit.md`
+
+---
+
 ### 2026-09-15 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
