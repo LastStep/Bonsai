@@ -20,6 +20,56 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-16 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-09-16, Next Due → 2026-09-30, Status → done). No Roadmap.md edits (audit-only routine).
+- **Flags:** 4 items flagged for user — (1) [Medium] "Current Phase" heading still points to Phase 1 (complete) — Phase 2 is now active; (2) [Medium] Plan 41 headless CLI contract (shipped 2026-06-16) not in roadmap — add as [x] Phase 2 item; (3) [Low] MCP server Plan 42 absent from roadmap — add as [ ] Phase 3 item; (4) [Low] "Defer Managed Agents" KeyDecisionLog entry from 2026-04-13 may be stale given stable foundation + MCP direction.
+- **Report:** `Reports/Pending/2026-09-16-roadmap-accuracy.md`
+
+---
+
+### 2026-09-16 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-09-16, Next Due → 2026-09-21, Status → done). No memory edits (all entries validated as current; no auto-memory to bridge).
+- **Flags:** 1 item for user — Plan 41 (`Plans/Active/41-headless-cli-contract.md`) still not archived despite shipping 2026-06-16; 3+ months pending.
+- **Report:** `Reports/Pending/2026-09-16-memory-consolidation.md`
+
+---
+
+### 2026-09-16 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** `agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-09-16, Next Due → 2026-09-23, Status → done). No doc edits (audit-only routine).
+- **Flags:** 4 items for user — (1) INDEX.md CLI command count says 8, now 9 (`completion` added PR #78 2026-05-07); (2) INDEX.md arch diagram missing `completion` from cmd list; (3) station/CLAUDE.md nav tables missing `plan-grilling.md` + `critic-agent-prompts.md` (pending Backlog item for full integration); (4) Plan 41 still in Plans/Active/ — should be archived (memory.md already noted this).
+- **Report:** `Reports/Pending/2026-09-16-doc-freshness-check.md`
+
+---
+
+### 2026-09-16 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Playbook/Backlog.md` — commented out 2 resolved P0 items (v0.4.3 sensor hook fix, v0.4.2 non-interactive flags), 1 resolved P1 item (Plan 41 agent-drivable CLI parity); added OVERDUE urgency marker to HOMEBREW_TAP_TOKEN P1 item; P0 section marked empty. `agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-09-16, Next Due → 2026-09-23).
+- **Flags:** 5 items flagged for user — (1) **[URGENT]** HOMEBREW_TAP_TOKEN PAT ~2 months overdue for rotation (~2026-07-15 expiry); (2) duplicate "Changelog generation skill" in Group C + Group D — one should be removed; (3) Plan 42 MCP server referenced in memory.md but absent from Backlog; (4) P1 testing infra 150+ days stale — re-prioritize?; (5) P1 stale worktrees 150+ days stale — re-prioritize?
+- **Report:** `Reports/Pending/2026-09-16-backlog-hygiene.md`
+
+---
+
+### 2026-09-16 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `Playbook/Status.md` — 6 Done rows archived (Plans 32–37, v0.4.0 era); footer note updated to ≤ 2026-09-02 cutoff. `Playbook/StatusArchive.md` — 6 rows prepended. `agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-09-16, Next Due → 2026-09-21, Status → done).
+- **Flags:** 2 items for user — (1) [Medium] Sentrux trial Pending 132+ days, blocked on Rust toolchain — demote to Backlog or unblock; (2) [Low] Plan 40 + Plan 41 files still in Plans/Active/ despite shipped — archive them.
+- **Report:** `Reports/Pending/2026-09-16-status-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
