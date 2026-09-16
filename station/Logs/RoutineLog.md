@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-16 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `agent/Core/routines.md` — dashboard row updated (Last Ran → 2026-09-16, Next Due → 2026-09-30, Status → done). No Roadmap.md edits (audit-only routine).
+- **Flags:** 4 items flagged for user — (1) [Medium] "Current Phase" heading still points to Phase 1 (complete) — Phase 2 is now active; (2) [Medium] Plan 41 headless CLI contract (shipped 2026-06-16) not in roadmap — add as [x] Phase 2 item; (3) [Low] MCP server Plan 42 absent from roadmap — add as [ ] Phase 3 item; (4) [Low] "Defer Managed Agents" KeyDecisionLog entry from 2026-04-13 may be stale given stable foundation + MCP direction.
+- **Report:** `Reports/Pending/2026-09-16-roadmap-accuracy.md`
+
+---
+
 ### 2026-09-16 — Memory Consolidation
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
