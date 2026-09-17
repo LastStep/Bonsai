@@ -20,6 +20,38 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-17 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** no changes made to Roadmap.md (audit-only per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-09-17/2026-10-01; report written
+- **Flags:** 4 items flagged for user — (1) HIGH: Phase 1 fully complete but still labeled "Current Phase" — Phase 2 is active; (2) MEDIUM: Plan 41 (Headless CLI Contract, June 2026) not in roadmap; (3) MEDIUM: Plan 39 (--non-interactive mode, v0.4.2) not in roadmap; (4) MEDIUM: Plan 40 Phases 1-3 (v0.5.0, Odysseus) not in roadmap. Also LOW: Phase 3 deferral condition (local foundation stable) is now met. No KeyDecisionLog entries invalidate existing roadmap items.
+- **Report:** `Reports/Pending/2026-09-17-roadmap-accuracy.md`
+
+### 2026-09-17 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** `agent/Core/memory.md` References section annotated as stale (6 broken Research file links); `agent/Core/routines.md` dashboard updated (Last Ran → 2026-09-17, Next Due → 2026-09-22)
+- **Flags:** (1) **MEDIUM — 6 Research/RESEARCH-*.md references are broken links** — Research/ directory does not exist in repo; user should clarify if files were removed or relocated. (2) LOW — Plan 41 file still in Plans/Active/ awaiting archive at next Tech Lead wrap-up.
+- **Report:** `Reports/Pending/2026-09-17-memory-consolidation.md`
+
+### 2026-09-17 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Archived 6 Done items from `Status.md` → `StatusArchive.md` (Plans 37/36/35/34/32/33, dates 2026-04-25 to 2026-05-07); updated footer note. Dashboard `Last Ran`/`Next Due` updated to 2026-09-17/2026-09-22.
+- **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT overdue** — rotation was due 2026-07-15, now 2026-09-17; next release will fail brew step. (2) MEDIUM — Sentrux research item Pending 130+ days (since 2026-05-07) with no progress — flag for user: promote, demote to Backlog, or close. (3) LOW — Plans 40 and 41 are Done but still in Plans/Active/ (not yet moved to Plans/Archive/).
+- **Report:** `Reports/Pending/2026-09-17-status-hygiene.md`
+
+### 2026-09-17 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Commented out 3 resolved items from `Backlog.md` (2 P0s + 1 P1 resolved via v0.4.2/v0.4.3/Plan 41); dashboard `Last Ran`/`Next Due` updated to 2026-09-17/2026-09-24.
+- **Flags:** (1) **HIGH — HOMEBREW_TAP_TOKEN PAT likely expired** — rotation reminder was 2026-07-15, now 2026-09-17; next release will fail at brew step if not rotated. (2) All other routines overdue 4+ months (last ran May 2026) — recommend routine-digest sweep.
+- **Report:** `Reports/Pending/2026-09-17-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
@@ -384,6 +416,15 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Plan report written:** yes — Plan 37 doc-refresh-bundle (`Plans/Active/37-doc-refresh-bundle.md`)
 - **Warnings acknowledged:** 0
 - **Decisions:** sentrux P0 → promoted Status.md Pending (blocked on Rust toolchain); A4 broken-link false positive (file exists); A6 INDEX.md verified clean (Plan 36 sweep covered)
+
+### 2026-06-13 — Plan 40 dispatch (Odysseus integration, v0.5.0)
+### 2026-09-17 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~4 minutes
+- **Changes:** dashboard row updated (Last Ran 2026-05-04 → 2026-09-17, Next Due → 2026-09-24); report written
+- **Flags:** 3 findings — (1) MEDIUM: `internal/nonint/` package (Plan 41) missing from INDEX.md + code-index.md; (2) LOW: `docs/agent-interface.md` not in INDEX.md Document Registry; (3) LOW: 6 broken Research/ links in memory.md (pre-existing, Backlog line 109)
+- **Report:** `Reports/Pending/2026-09-17-doc-freshness-check.md`
 
 ### 2026-06-13 — Plan 40 dispatch (Odysseus integration, v0.5.0)
 - **Plan:** Plans/Active/40-odysseus-platform-integration.md
