@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-18 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `Status.md` — 6 oldest Recently Done rows (Plans 37, 36/v0.4.0, 35, 34, 32, 33; dates 2026-04-25 to 2026-05-07) archived to `StatusArchive.md`; footer note date updated from ≤ 2026-04-24 to ≤ 2026-09-04. `StatusArchive.md` — 6 rows prepended. `routines.md` dashboard row updated (Last Ran → 2026-09-18, Next Due → 2026-09-23).
+- **Flags:** (1) [medium] "[research] Trial sentrux on Bonsai repo" has been Pending 134 days (promoted 2026-05-07, blocked on Rust toolchain) — flag for user review: demotion to Backlog or decision to proceed. (2) [info] Plans 40 and 41 remain in Plans/Active/ despite Recently Done status — no orphan, but candidates for archiving when user next touches the workspace.
+- **Report:** `Reports/Pending/2026-09-18-status-hygiene.md`
+
+---
+
 ### 2026-09-18 — Roadmap Accuracy
 - **Outcome:** partial (audit-only — findings flagged, no Roadmap.md edits per procedure)
 - **Execution mode:** subagent (loop.md dispatch)
