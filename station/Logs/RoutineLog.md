@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-18 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `memory.md` — fixed `nonint/runner.go:48` → `runner.go:42` (line number drift); marked 6 Research file references in References section as stale (files absent from git and current filesystem, may be dev-machine-local only). `routines.md` dashboard row updated (Last Ran → 2026-09-18, Next Due → 2026-09-23).
+- **Flags:** (1) 6 Research file paths in References section stale — annotated, user should decide whether to commit or remove; (2) Plan 41 archive reminder in Work State persisting 3+ months (since 2026-06-16) — flagged for user action.
+- **Report:** `Reports/Pending/2026-09-18-memory-consolidation.md`
+
+---
+
 ### 2026-09-18 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
