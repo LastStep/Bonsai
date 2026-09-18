@@ -20,6 +20,16 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-18 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Backlog.md — 3 resolved items removed (P0 sensor-hook bug resolved by v0.4.3; P0 non-interactive flags resolved by v0.4.2+Plan 41; P1 full CLI parity resolved by Plan 41); routines.md dashboard `Last Ran`/`Next Due` updated to 2026-09-18/2026-09-25.
+- **Flags:** 4 items for user — (1) HOMEBREW_TAP_TOKEN PAT reminder date (~2026-07-15) has passed, rotation needed; (2) Sentrux trial blocked 4+ months in Status.md Pending (decision needed); (3) 3 P1 stale items 4–5 months dormant (testing infra, worktrees, bot PR pile-up); (4) 6 sibling routines overdue 136–148 days — recommend running routine-digest.
+- **Report:** `Reports/Pending/2026-09-18-backlog-hygiene.md`
+
+---
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
