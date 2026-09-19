@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-19 — Vulnerability Scan
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no code/config edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-26.
+- **Flags:** [CRITICAL — carry from dependency-audit] Dependabot 34 unreviewed CVEs (2 critical, 16 high, 12 moderate, 4 low) — govulncheck network-blocked, cannot triage locally. [MEDIUM] govulncheck has been network-blocked for 4.5+ months — vulnerability scan perpetually partial. [LOW] gitleaks no longer on PATH (was available at 2026-05-04 scan) — grep fallback used, all checks clean. SAST clean (0 exec.Command, 0 unsafe, 0 hardcoded secrets). `.env`/`.env.*` gitignore confirmed present.
+- **Report:** `Reports/Pending/2026-09-19-vulnerability-scan.md`
+
 ### 2026-09-19 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)

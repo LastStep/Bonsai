@@ -38,7 +38,7 @@ description: Periodic self-maintenance routines — schedules, dashboard, execut
 | Memory Consolidation | 5 days | 2026-09-19 | 2026-09-24 | done |
 | Roadmap Accuracy | 14 days | 2026-09-19 | 2026-10-03 | done |
 | Status Hygiene | 5 days | 2026-09-19 | 2026-09-24 | done |
-| Vulnerability Scan | 7 days | 2026-05-04 | 2026-05-11 | done |
+| Vulnerability Scan | 7 days | 2026-09-19 | 2026-09-26 | done |
 
 <!-- ROUTINE_DASHBOARD_END -->
 
