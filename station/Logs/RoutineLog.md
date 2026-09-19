@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-19 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog (P0 sensor-hook bug, P0 non-interactive flags feature, P1 full-CLI-parity feature) — all resolved by v0.4.3/v0.4.2/Plan 41 but never cleaned from Backlog. Dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-26.
+- **Flags:** 4 items flagged for user — (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT has likely expired (~60 days past 2026-07-21 expiry); (2) `Template variables expansion` Phase 2 roadmap goal has no backlog entry; (3) P3 `Self-update mechanism` + `Micro-task fast path` may warrant P2 promotion (Phase 1 now complete); (4) 4.5-month gap in all routine execution — all 7 routines severely overdue.
+- **Report:** `Reports/Pending/2026-09-19-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
