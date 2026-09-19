@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-19 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc changes made (audit-only routine per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-26.
+- **Flags:** 4 medium-severity items flagged for user — all stem from Plan 41 (headless CLI contract, 2026-06-16) landing after last doc-freshness-check run: (1) `internal/nonint/` missing from INDEX.md architecture + code-index.md; (2) `bonsai completion` command missing — CLI count should be 9 not 8; (3) `docs/agent-interface.md` not in INDEX.md Document Registry; (4) `code-index.md` has no Nonint section. All navigation links in CLAUDE.md intact — no broken links.
+- **Report:** `Reports/Pending/2026-09-19-doc-freshness-check.md`
+
 ### 2026-09-19 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
