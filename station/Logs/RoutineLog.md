@@ -20,6 +20,62 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-19 — Vulnerability Scan
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no code/config edits (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-26.
+- **Flags:** [CRITICAL — carry from dependency-audit] Dependabot 34 unreviewed CVEs (2 critical, 16 high, 12 moderate, 4 low) — govulncheck network-blocked, cannot triage locally. [MEDIUM] govulncheck has been network-blocked for 4.5+ months — vulnerability scan perpetually partial. [LOW] gitleaks no longer on PATH (was available at 2026-05-04 scan) — grep fallback used, all checks clean. SAST clean (0 exec.Command, 0 unsafe, 0 hardcoded secrets). `.env`/`.env.*` gitignore confirmed present.
+- **Report:** `Reports/Pending/2026-09-19-vulnerability-scan.md`
+
+### 2026-09-19 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-10-03.
+- **Flags:** 3 items flagged for user — (1) **[MEDIUM]** Phase 1 fully complete (all [x]) but roadmap still labels it "Current Phase" — restructure to show Phase 2 as current; (2) **[MEDIUM]** Plan 41 (Headless CLI Contract + MCP-ready cores, 2026-06-16) not reflected on roadmap — recommend adding an MCP server row to Phase 3 or annotating the existing "Managed Agents integration" item; (3) **[LOW]** Phase 2 unstarted items (Template variables expansion, Self-update mechanism, Micro-task fast path) lack active Backlog entries now that Phase 1 is complete.
+- **Report:** `Reports/Pending/2026-09-19-roadmap-accuracy.md`
+
+### 2026-09-19 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~10 min
+- **Changes:** no doc changes made (audit-only routine per procedure) — dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-26.
+- **Flags:** 4 medium-severity items flagged for user — all stem from Plan 41 (headless CLI contract, 2026-06-16) landing after last doc-freshness-check run: (1) `internal/nonint/` missing from INDEX.md architecture + code-index.md; (2) `bonsai completion` command missing — CLI count should be 9 not 8; (3) `docs/agent-interface.md` not in INDEX.md Document Registry; (4) `code-index.md` has no Nonint section. All navigation links in CLAUDE.md intact — no broken links.
+- **Report:** `Reports/Pending/2026-09-19-doc-freshness-check.md`
+
+### 2026-09-19 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** 3 changes to `agent/Core/memory.md`: (1) added `[CLEANUP]` flag for Plan 41 archival (3+ months pending); (2) corrected `nonint/runner.go` line reference `:48` → `:42` and removed resolved "until Phase-4 bonsai update delivery" clause; (3) marked Research references section as stale (directory not found). Dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-24.
+- **Flags:** 2 items for user — (1) Research files (`/home/user/Bonsai/Research/RESEARCH-*.md`) not found — 6 reference links in memory are broken; confirm deleted or find new path. (2) Plan 41 archival overdue — `41-headless-cli-contract.md` still in Plans/Active/ since 2026-06-16.
+- **Report:** `Reports/Pending/2026-09-19-memory-consolidation.md`
+
+### 2026-09-19 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** 6 Done items archived from `Status.md` to `StatusArchive.md` (Plans 37/36/35/34/32/33, dates 2026-04-25 to 2026-05-07). Status.md footer cutoff updated to ≤ 2026-09-05. Dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-24.
+- **Flags:** 2 items flagged for user — (1) **[MEDIUM]** Pending item "Trial sentrux on Bonsai repo" stalled ~135 days (blocked on Rust toolchain — demote to Backlog or schedule toolchain install); (2) **[LOW]** Plans 40 and 41 still in `Plans/Active/` despite work Done months ago — move to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-09-19-status-hygiene.md`
+
+### 2026-09-19 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-26.
+- **Flags:** [CRITICAL] govulncheck network-blocked by proxy — scan incomplete. Dependabot reports 34 unreviewed vulnerabilities (2 critical, 16 high, 12 moderate, 4 low) on the default branch. Manual run with network access required immediately. [MEDIUM] `blackfriday/v2 v2.1.0` unmaintained since 2019. [LOW] `golang.org/x/exp` snapshot from October 2023.
+- **Report:** `Reports/Pending/2026-09-19-dependency-audit.md`
+
+### 2026-09-19 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog (P0 sensor-hook bug, P0 non-interactive flags feature, P1 full-CLI-parity feature) — all resolved by v0.4.3/v0.4.2/Plan 41 but never cleaned from Backlog. Dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-26.
+- **Flags:** 4 items flagged for user — (1) **URGENT**: HOMEBREW_TAP_TOKEN PAT has likely expired (~60 days past 2026-07-21 expiry); (2) `Template variables expansion` Phase 2 roadmap goal has no backlog entry; (3) P3 `Self-update mechanism` + `Micro-task fast path` may warrant P2 promotion (Phase 1 now complete); (4) 4.5-month gap in all routine execution — all 7 routines severely overdue.
+- **Report:** `Reports/Pending/2026-09-19-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
