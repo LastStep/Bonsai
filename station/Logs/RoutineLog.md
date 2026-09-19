@@ -52,6 +52,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 2 items flagged for user — (1) **[MEDIUM]** Pending item "Trial sentrux on Bonsai repo" stalled ~135 days (blocked on Rust toolchain — demote to Backlog or schedule toolchain install); (2) **[LOW]** Plans 40 and 41 still in `Plans/Active/` despite work Done months ago — move to `Plans/Archive/`.
 - **Report:** `Reports/Pending/2026-09-19-status-hygiene.md`
 
+### 2026-09-19 — Dependency Audit
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-26.
+- **Flags:** [CRITICAL] govulncheck network-blocked by proxy — scan incomplete. Dependabot reports 34 unreviewed vulnerabilities (2 critical, 16 high, 12 moderate, 4 low) on the default branch. Manual run with network access required immediately. [MEDIUM] `blackfriday/v2 v2.1.0` unmaintained since 2019. [LOW] `golang.org/x/exp` snapshot from October 2023.
+- **Report:** `Reports/Pending/2026-09-19-dependency-audit.md`
+
 ### 2026-09-19 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
