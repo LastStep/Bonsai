@@ -28,6 +28,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 4 medium-severity items flagged for user — all stem from Plan 41 (headless CLI contract, 2026-06-16) landing after last doc-freshness-check run: (1) `internal/nonint/` missing from INDEX.md architecture + code-index.md; (2) `bonsai completion` command missing — CLI count should be 9 not 8; (3) `docs/agent-interface.md` not in INDEX.md Document Registry; (4) `code-index.md` has no Nonint section. All navigation links in CLAUDE.md intact — no broken links.
 - **Report:** `Reports/Pending/2026-09-19-doc-freshness-check.md`
 
+### 2026-09-19 — Memory Consolidation
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** 3 changes to `agent/Core/memory.md`: (1) added `[CLEANUP]` flag for Plan 41 archival (3+ months pending); (2) corrected `nonint/runner.go` line reference `:48` → `:42` and removed resolved "until Phase-4 bonsai update delivery" clause; (3) marked Research references section as stale (directory not found). Dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-24.
+- **Flags:** 2 items for user — (1) Research files (`/home/user/Bonsai/Research/RESEARCH-*.md`) not found — 6 reference links in memory are broken; confirm deleted or find new path. (2) Plan 41 archival overdue — `41-headless-cli-contract.md` still in Plans/Active/ since 2026-06-16.
+- **Report:** `Reports/Pending/2026-09-19-memory-consolidation.md`
+
 ### 2026-09-19 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
