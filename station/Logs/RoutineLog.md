@@ -44,6 +44,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 2 items for user — (1) Research files (`/home/user/Bonsai/Research/RESEARCH-*.md`) not found — 6 reference links in memory are broken; confirm deleted or find new path. (2) Plan 41 archival overdue — `41-headless-cli-contract.md` still in Plans/Active/ since 2026-06-16.
 - **Report:** `Reports/Pending/2026-09-19-memory-consolidation.md`
 
+### 2026-09-19 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** 6 Done items archived from `Status.md` to `StatusArchive.md` (Plans 37/36/35/34/32/33, dates 2026-04-25 to 2026-05-07). Status.md footer cutoff updated to ≤ 2026-09-05. Dashboard `Last Ran`/`Next Due` updated to 2026-09-19/2026-09-24.
+- **Flags:** 2 items flagged for user — (1) **[MEDIUM]** Pending item "Trial sentrux on Bonsai repo" stalled ~135 days (blocked on Rust toolchain — demote to Backlog or schedule toolchain install); (2) **[LOW]** Plans 40 and 41 still in `Plans/Active/` despite work Done months ago — move to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-09-19-status-hygiene.md`
+
 ### 2026-09-19 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
