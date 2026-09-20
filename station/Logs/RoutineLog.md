@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-20 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard `Last Ran` → 2026-09-20, `Next Due` → 2026-09-27. No doc edits (audit-only routine).
+- **Flags:** 9 drift items — (1) **Medium**: INDEX.md CLI count 8→9 (`bonsai completion` added 2026-05-07 via PR #78); (2) **Medium**: root CLAUDE.md `cmd/completion.go` missing from project-structure tree; (3) **Medium**: root CLAUDE.md `internal/nonint/` package entirely absent (Plan 39/v0.4.2); (4) **Low**: root CLAUDE.md `internal/generate/` missing 4 platform-split files; (5) **Low**: INDEX.md arch diagram missing `completion` and `nonint` layer; (6) **Low**: `code-index.md` missing `bonsai completion` + `internal/nonint/` section; (7) **Info**: `critic-agent-prompts.md` unlisted in Skills nav; (8) **Info**: `plan-grilling.md` unlisted in Workflows nav; (9) **Info**: Plans 40+41 in Active/ should be archived (already flagged by status-hygiene).
+- **Report:** `Reports/Pending/2026-09-20-doc-freshness-check.md`
+
 ### 2026-09-20 — Status Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
