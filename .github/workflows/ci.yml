@@ -57,7 +57,8 @@ jobs:
           go-version-file: go.mod
 
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        # govulncheck@latest is v1.8.0 which requires Go >= 1.26.0; pin to last Go-1.25-compatible release
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
 
       - name: Run govulncheck
         run: govulncheck ./...
