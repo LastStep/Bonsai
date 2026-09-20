@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-20 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 items (sensor $PWD-walk-up bug fixed in v0.4.3; non-interactive flags fixed in v0.4.2); replaced with HTML audit-trail comments. Dashboard `Last Ran` → 2026-09-20, `Next Due` → 2026-09-27.
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT calendar reminder was 2026-07-15, now 2 months overdue — PAT may be expired, rotate before next release. (2) `Plans/Active/41-headless-cli-contract.md` needs archiving (per memory.md note). (3) All 7 routines significantly overdue (last ran ~4.5 months ago).
+- **Report:** `Reports/Pending/2026-09-20-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
