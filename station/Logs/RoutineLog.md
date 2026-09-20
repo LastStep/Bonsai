@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-20 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran` → 2026-09-20, `Next Due` → 2026-10-04.
+- **Flags:** 4 items flagged for user — (1) **High**: Phase 1 "Current Phase" label is stale (all items `[x]`); Phase 2 should be promoted to "Current Phase". (2) **High**: Plan 41 Headless CLI Contract (shipped 2026-06-16) has no roadmap entry — suggest adding `[x]` item to Phase 2. (3) **Medium**: Plan 40 Odysseus/v0.5.0 Phases 1–3 (shipped 2026-06-13) has no roadmap entry — user to decide granularity. (4) **Low**: Plan 42 MCP server referenced as "fast-follow" in Status.md but absent from roadmap — add once scope confirmed.
+- **Report:** `Reports/Pending/2026-09-20-roadmap-accuracy.md`
+
+### 2026-09-20 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `agent/Core/memory.md` — 2 stale Notes updated (line number fix: `runner.go:48` → `:77`; phase-4 delivery stale marker); 6 References entries marked stale (`station/Research/` directory not found). Dashboard `Last Ran` → 2026-09-20, `Next Due` → 2026-09-25.
+- **Flags:** (1) **User action** — Plan 41 (`41-headless-cli-contract.md`) still in Plans/Active/, persists 2+ sessions; archive to Plans/Archive/. (2) **User review** — 6 References entries point to non-existent `station/Research/RESEARCH-*.md` files; marked stale but not removed — user should confirm if docs are gone and clean up or re-link.
+- **Report:** `Reports/Pending/2026-09-20-memory-consolidation.md`
+
+### 2026-09-20 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Dashboard `Last Ran` → 2026-09-20, `Next Due` → 2026-09-27. No doc edits (audit-only routine).
+- **Flags:** 9 drift items — (1) **Medium**: INDEX.md CLI count 8→9 (`bonsai completion` added 2026-05-07 via PR #78); (2) **Medium**: root CLAUDE.md `cmd/completion.go` missing from project-structure tree; (3) **Medium**: root CLAUDE.md `internal/nonint/` package entirely absent (Plan 39/v0.4.2); (4) **Low**: root CLAUDE.md `internal/generate/` missing 4 platform-split files; (5) **Low**: INDEX.md arch diagram missing `completion` and `nonint` layer; (6) **Low**: `code-index.md` missing `bonsai completion` + `internal/nonint/` section; (7) **Info**: `critic-agent-prompts.md` unlisted in Skills nav; (8) **Info**: `plan-grilling.md` unlisted in Workflows nav; (9) **Info**: Plans 40+41 in Active/ should be archived (already flagged by status-hygiene).
+- **Report:** `Reports/Pending/2026-09-20-doc-freshness-check.md`
+
+### 2026-09-20 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plan 37 @ 2026-05-07; v0.4.0/Plan 36 @ 2026-05-04; Plan 35 @ 2026-05-04; Plan 34 @ 2026-05-04; Plan 32/33 @ 2026-04-25) from `Status.md` → `StatusArchive.md`; updated footer. Removed resolved Backlog P1 "Full agent-drivable CLI parity" (resolved by Plan 41 ship). Dashboard `Last Ran` → 2026-09-20, `Next Due` → 2026-09-25.
+- **Flags:** (1) **User review** — sentrux trial Pending 136 days (>30-day stall), blocked on Rust toolchain — user should decide keep/demote/drop. (2) **User action** — `Plans/Active/41-headless-cli-contract.md` needs archiving (Plan 41 fully shipped).
+- **Report:** `Reports/Pending/2026-09-20-status-hygiene.md`
+
+### 2026-09-20 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** `Backlog.md` — removed 2 resolved P0 items (sensor $PWD-walk-up bug fixed in v0.4.3; non-interactive flags fixed in v0.4.2); replaced with HTML audit-trail comments. Dashboard `Last Ran` → 2026-09-20, `Next Due` → 2026-09-27.
+- **Flags:** (1) **URGENT** — HOMEBREW_TAP_TOKEN PAT calendar reminder was 2026-07-15, now 2 months overdue — PAT may be expired, rotate before next release. (2) `Plans/Active/41-headless-cli-contract.md` needs archiving (per memory.md note). (3) All 7 routines significantly overdue (last ran ~4.5 months ago).
+- **Report:** `Reports/Pending/2026-09-20-backlog-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
