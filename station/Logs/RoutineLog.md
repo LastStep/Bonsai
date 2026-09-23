@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-23 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-09-23/2026-09-30.
+- **Flags:** 2 medium — INDEX.md CLI command count stale (8→9 after `bonsai completion` added PR #78); INDEX.md architecture missing `internal/nonint/` (Plan 41). 2 low — code-index.md missing nonint coverage; 2 station Skills/Workflows files unlisted in CLAUDE.md nav.
+- **Report:** `Reports/Pending/2026-09-23-doc-freshness-check.md`
+
 ### 2026-09-23 — Backlog Hygiene
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
