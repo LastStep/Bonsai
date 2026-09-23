@@ -20,6 +20,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-23 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — marked References group as stale (Research/ dir not found at repo root); dashboard `Last Ran`/`Next Due` updated to 2026-09-23/2026-09-28.
+- **Flags:** 1 medium — 5 Research doc reference links are broken (Research/ directory absent from repo); user should locate or remove these.
+- **Report:** `Reports/Pending/2026-09-23-memory-consolidation.md`
+
 ### 2026-09-23 — Doc Freshness Check
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
