@@ -20,6 +20,46 @@ description: Append-only audit trail for routine executions. Each entry records 
 
 ---
 
+### 2026-09-23 — Roadmap Accuracy
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** no changes made to Roadmap.md (audit-only routine) — dashboard `Last Ran`/`Next Due` updated to 2026-09-23/2026-10-07.
+- **Flags:** 1 high — Plan 41 headless CLI + MCP-ready cores (shipped 2026-06-16) has no roadmap row; recommend adding [x] item to Phase 2/3. 1 medium — "Self-update mechanism" (Phase 2) ambiguous vs Plan 40 Phase 4 HELD; user should clarify. 1 medium — MCP server (Plan 42, imminent) not on roadmap; recommend adding [ ] row to Phase 3. 1 low — KeyDecisionLog not updated since 2026-04-13 (~5 months stale).
+- **Report:** `Reports/Pending/2026-09-23-roadmap-accuracy.md`
+
+### 2026-09-23 — Memory Consolidation
+- **Outcome:** partial
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~5 min
+- **Changes:** `station/agent/Core/memory.md` — marked References group as stale (Research/ dir not found at repo root); dashboard `Last Ran`/`Next Due` updated to 2026-09-23/2026-09-28.
+- **Flags:** 1 medium — 5 Research doc reference links are broken (Research/ directory absent from repo); user should locate or remove these.
+- **Report:** `Reports/Pending/2026-09-23-memory-consolidation.md`
+
+### 2026-09-23 — Doc Freshness Check
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Dashboard `Last Ran`/`Next Due` updated to 2026-09-23/2026-09-30.
+- **Flags:** 2 medium — INDEX.md CLI command count stale (8→9 after `bonsai completion` added PR #78); INDEX.md architecture missing `internal/nonint/` (Plan 41). 2 low — code-index.md missing nonint coverage; 2 station Skills/Workflows files unlisted in CLAUDE.md nav.
+- **Report:** `Reports/Pending/2026-09-23-doc-freshness-check.md`
+
+### 2026-09-23 — Backlog Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~8 min
+- **Changes:** Removed 3 resolved items from Backlog.md (2 P0s resolved by v0.4.3/v0.4.2, 1 P1 resolved by Plan 41); dashboard `Last Ran`/`Next Due` updated to 2026-09-23/2026-09-30.
+- **Flags:** 1 urgent — HOMEBREW_TAP_TOKEN PAT ~2 months past rotation reminder date (~2026-07-15), likely expired; rotate before next release. 3 P1 items stale 3-5 months (testing infra, worktrees, bot PR pile-up) — no change, still valid. All routines overdue 4+ months.
+- **Report:** `Reports/Pending/2026-09-23-backlog-hygiene.md`
+
+### 2026-09-23 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33 — all dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-05-07`; dashboard `Last Ran`/`Next Due` set to 2026-09-23/2026-09-28.
+- **Flags:** 1 high — Pending item "Trial sentrux on Bonsai repo" stalled 138+ days (since ~2026-05-07) without progress; blocked on Rust toolchain install — user should decide: install rustup and unblock, or demote to Backlog. 1 low — Plans 40 and 41 remain in `Plans/Active/` despite both being Done in Status.md; recommend moving to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-09-23-status-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
