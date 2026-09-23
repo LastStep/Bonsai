@@ -52,6 +52,14 @@ description: Append-only audit trail for routine executions. Each entry records 
 - **Flags:** 1 urgent — HOMEBREW_TAP_TOKEN PAT ~2 months past rotation reminder date (~2026-07-15), likely expired; rotate before next release. 3 P1 items stale 3-5 months (testing infra, worktrees, bot PR pile-up) — no change, still valid. All routines overdue 4+ months.
 - **Report:** `Reports/Pending/2026-09-23-backlog-hygiene.md`
 
+### 2026-09-23 — Status Hygiene
+- **Outcome:** success
+- **Execution mode:** subagent (loop.md dispatch)
+- **Duration:** ~6 min
+- **Changes:** Archived 6 Done items (Plans 37, 36/v0.4.0, 35, 34, 32, 33 — all dated 2026-04-25 to 2026-05-07) from `Status.md` → `StatusArchive.md`; updated footer date marker to `≤ 2026-05-07`; dashboard `Last Ran`/`Next Due` set to 2026-09-23/2026-09-28.
+- **Flags:** 1 high — Pending item "Trial sentrux on Bonsai repo" stalled 138+ days (since ~2026-05-07) without progress; blocked on Rust toolchain install — user should decide: install rustup and unblock, or demote to Backlog. 1 low — Plans 40 and 41 remain in `Plans/Active/` despite both being Done in Status.md; recommend moving to `Plans/Archive/`.
+- **Report:** `Reports/Pending/2026-09-23-status-hygiene.md`
+
 ### 2026-05-07 — Roadmap Accuracy
 - **Outcome:** success
 - **Execution mode:** subagent (loop.md dispatch)
