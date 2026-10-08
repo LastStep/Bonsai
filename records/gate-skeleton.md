@@ -38,6 +38,10 @@ with this report; stop line 61 h). Windows-only failures cost about 18 minutes (
 asked of you, and the records show no change to Mimas or the studio's repo. By the run reports' tallies no stop line is
 crossed; the last verifier judges that.
 
+**A sample eval.** A three-case `claude plugin eval` of the test pack ran in about half a minute for under 3 cents. The
+one case only the pack can answer passed with it (2 of 2) and failed without it (0 of 2). It shows how an eval runs, not
+that packs help.
+
 **The three paths.** The spec's hours after the gate (§14), and the same hours times the skeleton's measured ratio:
 parts 1-5's 5.6 h against the skeleton's 47 h estimate is 0.119; against its 30 h, 0.187 (section 2.2 has the rest).
 
@@ -82,7 +86,8 @@ Outside any part (not in the skeleton's tally): the setup 19 min (setup), the pl
 
 ### 2.2 The ratio applied to step 5's estimates
 
-The skeleton is not finished, so the ratio uses parts 1-5's 336 minutes (5.6 h). Against both ends of the skeleton's 30-47 h:
+The skeleton is not finished, so the ratio uses parts 1-5's 336 minutes (5.6 h). Against both ends of the
+skeleton's 30-47 h:
 
 - 336 / (30 x 60) = 336 / 1800 = 0.1867
 - 336 / (47 x 60) = 336 / 2820 = 0.1191
@@ -236,7 +241,32 @@ are lines of the old `cmd/bonsai/main.go` that part 1's stub kept unchanged (the
 
 ### 2.13 The three-case eval
 
-PENDING: eval
+A sample of how an eval runs, not proof that a pack helps (spec §15). The results are from gate 00:39; the command line
+and the totals are from the eval run's report as the orchestrator sent it to this builder.
+
+- The run: Sonnet, 00:36-00:38, on WSL through `claude-here`, on a `git archive` copy of the test pack at D (`1d4f46f`)
+  in `~/bonsai-checks/eval/test-pack/`; the test pack's repository untouched.
+- The suite: `evals/<case>/prompt.md` and `graders/*.md` inside the plugin folder (the default eval folder), plain files
+  that ship with the plugin. Graders deterministic only (regex, `tool_used`); no model grader.
+- The command: `claude-here plugin eval ./test-pack --no-publish --trust-plugin --model haiku --judge-model haiku --runs
+  2 --max-cost-usd 2 --json ...`, two runs per case with the plugin and two without it (a baseline arm).
+- The first attempt, the target by name, was refused in 0.8 s at no cost: four installs named `test-pack` sit in the
+  shared plugin cache. The second, the target by path, ran in 33 s, exit 0.
+
+| Case | Prompt | Grader | With the plugin | Without | Delta |
+|---|---|---|---|---|---|
+| `marker-commit` | ask the marker role which commit is loaded | regex "commit B" | 1.0 (2 of 2) | 0.0 (0 of 2) | +1.0 |
+| `hello-skill` | "Say hello from the test pack." | regex for the skill's line "hello from the test pack"; `tool_used: Skill`, reported for the plugin arm only and not scored | 1.0; the Skill tool used 2 of 2 | 1.0 | 0 |
+| `control` | "What is 17 plus 25?" | regex "42" | 1.0 | 1.0 | 0, as meant |
+
+- Totals: 3 of 3 cases passed, mean delta +0.333, $0.0275 (the agent runs; no judge cost), 32-33 s, 18 turns over 12
+  runs.
+- `hello-skill`'s prompt itself held the phrase the skill prescribes, so the baseline repeated it: a flaw in the case,
+  not in the tool. Only `marker-commit` separates the arms: it asks a fact that only the plugin carries.
+- Odd: the JSON reports `runsPerCase: 3` though two runs per arm ran; `--help` does not list the grader fields (the
+  agent found them from `init --bare` and the binary's strings).
+- Nothing was published; the user settings hash was unchanged; `~/.claude/plugins` held 143 entries before and after.
+  Part 4b counted 4,686 entries there (plugins 21:14); the records do not say how either count was taken.
 
 ### 2.14 Whether the studio's half of check 7 has run
 
@@ -357,6 +387,9 @@ Grouped by the part of step 5 that must settle them.
   `.last-complete-round` even with `CLAUDE_CODE_PLUGIN_CACHE_DIR` set. The user `settings.json` files never changed
   (plugins 21:14, 21:20; gate 00:35).
 - `claude --agent workflow:builder --bg` waits for the `workflow` pack.
+- `claude plugin eval` publishes its report to claude.ai unless given `--no-publish`; unattended it needs
+  `--trust-plugin`, and a path target when several installs share a name; its JSON's `runsPerCase` read 3 for two runs
+  per arm; `--help` does not list the grader fields (gate 00:39).
 
 **5.6 Machine pieces**
 - Nothing new from the skeleton.
@@ -382,7 +415,8 @@ Grouped by the part of step 5 that must settle them.
   second sitting).
 - Today's run report, `records/runs/R-2026-10-09-gate.md`: 00:25 the versions and settings hashes; 00:27 the base
   commit; 00:28 the Haiku run's hours and lines of Go; 00:35 the Sonnet run's measurements on both sides (its new files
-  are under `bonsai-checks/gate/` on each side, scratch, not committed).
+  are under `bonsai-checks/gate/` on each side, scratch, not committed); 00:39 the Sonnet eval run (its suite under
+  `~/bonsai-checks/eval/test-pack/evals/`).
 - `STATE.md` at `b18f444`: the findings and loose ends.
 - `design/bonsai-spec.md` §14 (the parts, the checks, the stop lines, the paths and totals) and §15 (the baseline and
   the list); `design/plan.md` (the parts table, the checks' readings, the stop lines, the hand checks).
