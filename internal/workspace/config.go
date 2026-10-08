@@ -76,7 +76,7 @@ func idName() (*regexp.Regexp, *regexp.Regexp) {
 	return idPattern, namePattern
 }
 
-const configNext = "fix that line of bonsai.yaml (spec §6 shows every field), or restore the file from git"
+const configNext = "fix that line of bonsai.yaml, or restore the file from git"
 
 // ReadConfig reads bonsai.yaml's bytes.
 func ReadConfig(raw []byte) (*Config, error) {

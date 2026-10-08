@@ -107,6 +107,9 @@ func TestReadPackRefuses(t *testing.T) {
 			if !strings.Contains(msg, c.want) || !strings.HasPrefix(msg, "bonsai/pack.yaml") || !strings.Contains(msg, "; next: ") {
 				t.Errorf("error %q, want it to name bonsai/pack.yaml, hold %q and name a next step", msg, c.want)
 			}
+			if strings.Contains(msg, `\u`) {
+				t.Errorf("an ASCII file gave a message with an escape (our own text is not ASCII): %q", msg)
+			}
 		})
 	}
 }
@@ -222,6 +225,9 @@ func TestReadConfigRefuses(t *testing.T) {
 				if msg[i] < 0x20 || msg[i] > 0x7e {
 					t.Fatalf("not ASCII: %q", msg)
 				}
+			}
+			if strings.Contains(msg, `\u`) {
+				t.Errorf("an ASCII file gave a message with an escape (our own text is not ASCII): %q", msg)
 			}
 		})
 	}

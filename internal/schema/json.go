@@ -73,10 +73,10 @@ func (o Object) Keys() []string {
 // (contract §2.5: Go's decoder keeps the last, so this check is the reader's own) and anything after the document.
 func Decode(raw []byte) (any, error) {
 	if bytes.HasPrefix(raw, []byte{0xEF, 0xBB, 0xBF}) {
-		return nil, errors.New("starts with a byte order mark: a JSON document is UTF-8 with no BOM (contract §2.5)")
+		return nil, errors.New("starts with a byte order mark: a JSON document is UTF-8 with no BOM")
 	}
 	if !utf8.Valid(raw) {
-		return nil, errors.New("is not valid UTF-8 (contract §2.5)")
+		return nil, errors.New("is not valid UTF-8")
 	}
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.UseNumber()
@@ -109,7 +109,7 @@ func decodeValue(dec *json.Decoder) (any, error) {
 			}
 			key, _ := kt.(string)
 			if o.Index(key) >= 0 {
-				return nil, fmt.Errorf("duplicate key %s (contract §2.5 refuses one)", strconv.QuoteToASCII(key))
+				return nil, fmt.Errorf("duplicate key %s", strconv.QuoteToASCII(key))
 			}
 			v, err := decodeValue(dec)
 			if err != nil {

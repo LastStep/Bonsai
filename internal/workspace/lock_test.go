@@ -161,6 +161,9 @@ func TestLockRefuses(t *testing.T) {
 			if msg := err.Error(); !strings.HasPrefix(msg, ".bonsai/lock.json: ") || !strings.Contains(msg, c.want) || !strings.Contains(msg, "; next: ") {
 				t.Errorf("error %q, want it to hold %q and name a next step", msg, c.want)
 			}
+			if msg := err.Error(); strings.Contains(msg, `\u`) && c.name != "a BOM" {
+				t.Errorf("an ASCII file gave a message with an escape (our own text is not ASCII): %q", msg)
+			}
 		})
 	}
 	// The writer refuses what the reader would.
