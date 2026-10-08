@@ -13,7 +13,6 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
-	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // fakeCLI answers as Claude Code would, from its fields, and records what it was asked.
@@ -52,24 +51,6 @@ func (f *fakeCLI) Install(dir, plugin string) (InstallResult, error) {
 		return r, nil
 	}
 	return InstallResult{Outcome: "ok"}, nil
-}
-
-func localDoc(t *testing.T, root string) schema.Object {
-	t.Helper()
-	v, err := schema.Decode([]byte(read(t, root, LocalSettingsFile)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	return v.(schema.Object)
-}
-
-func lockOf(t *testing.T, root string) *workspace.Lock {
-	t.Helper()
-	l, err := workspace.LoadLock(root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return l
 }
 
 // init and update write no .claude/settings.local.json: in a git worktree Claude Code reads the main checkout's too,
