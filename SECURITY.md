@@ -10,7 +10,8 @@ We will acknowledge your report within 48 hours and provide an initial assessmen
 
 ## Scope
 
-The following are in scope for security reports:
+Bonsai is being rebuilt (see `README.md`). The list below describes 0.4.3, the latest release; the rebuild has no
+release yet. The following are in scope for security reports:
 
 - **CLI binary** — command injection, path traversal, unsafe file operations
 - **Embedded catalog** — template injection, unsafe defaults in generated files
