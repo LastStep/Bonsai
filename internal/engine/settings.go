@@ -607,7 +607,6 @@ func bits(m int) int {
 
 // SettingsChange is one line the preview names: added, changed or removed, with its sentence (spec §6).
 type SettingsChange struct {
-	File     string // the settings file: "" for .claude/settings.json, else LocalSettingsFile
 	Change   string // add, change or remove
 	Kind     string // hook, deny, key, marketplace or plugin
 	Line     string // the line as written after the change (or, removed, as it was)

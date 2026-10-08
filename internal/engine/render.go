@@ -53,15 +53,9 @@ func (p *Plan) Preview(diff bool) string {
 		fmt.Fprintf(&b, "  %-12s %s/: its %d files removed (init --new-id: a copy keeps none of the original's log, asks and ladder results)\n",
 			"emptied", LocalDir, p.EmptyLocal)
 	}
-	for _, set := range []struct {
-		file  string
-		lines []SettingsChange
-	}{{SettingsFile, p.Settings}, {LocalSettingsFile, p.Local}} {
-		if len(set.lines) == 0 {
-			continue
-		}
-		fmt.Fprintf(&b, "%s: %d %s\n", set.file, len(set.lines), plural(len(set.lines), "line", "lines"))
-		for _, c := range set.lines {
+	if len(p.Settings) > 0 {
+		fmt.Fprintf(&b, "%s: %d %s\n", SettingsFile, len(p.Settings), plural(len(p.Settings), "line", "lines"))
+		for _, c := range p.Settings {
 			fmt.Fprintf(&b, "  %-7s %-11s %s\n", c.Change, c.Kind, ascii(c.Line))
 			if c.Was != "" {
 				fmt.Fprintf(&b, "          was: %s\n", ascii(c.Was))
@@ -157,9 +151,6 @@ func (p *Plan) Applied() string {
 		if f.Kind == "keys" && len(p.Settings) > 0 {
 			line += fmt.Sprintf(" (%d %s)", len(p.Settings), plural(len(p.Settings), "line", "lines"))
 		}
-		if f.Path == LocalSettingsFile && len(p.Local) > 0 {
-			line += fmt.Sprintf(" (%d %s)", len(p.Local), plural(len(p.Local), "line", "lines"))
-		}
 		if f.Saved != "" {
 			line += "; your copy: " + ascii(f.Saved)
 		}
@@ -218,16 +209,12 @@ func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 		files = append(files, objectOf("path", f.Path, "kind", kind, "pack", pack, "result", f.Result, "why", f.Why, "saved", saved))
 	}
 	settings := []any{}
-	for _, c := range append(append([]SettingsChange{}, p.Settings...), p.Local...) {
+	for _, c := range p.Settings {
 		var was any
 		if c.Was != "" {
 			was = c.Was
 		}
-		file := c.File
-		if file == "" {
-			file = SettingsFile
-		}
-		settings = append(settings, objectOf("file", file, "change", c.Change, "kind", c.Kind, "line", c.Line,
+		settings = append(settings, objectOf("file", SettingsFile, "change", c.Change, "kind", c.Kind, "line", c.Line,
 			"was", was, "why", c.Why, "runs_code", c.RunsCode))
 	}
 	conflicts := []any{}
@@ -259,7 +246,7 @@ func (p *Plan) PluginsText() string {
 		return ""
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "This machine's plugins (Claude Code, scope %s, this checkout only):\n", PluginScope)
+	fmt.Fprintf(&b, "This machine's plugins (Claude Code, scope %s: this checkout's %s):\n", PluginScope, SettingsFile)
 	for _, r := range p.Plugins {
 		fmt.Fprintf(&b, "  %-12s %s: %s\n", r.Result, ascii(r.Plugin), ascii(r.Message))
 		if r.Next != "" {

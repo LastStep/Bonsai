@@ -127,8 +127,8 @@ func TestUpdateCommand(t *testing.T) {
 		t.Fatalf("update --json: %d %v %s", code, err, out)
 	}
 	settings, _ := doc.(schema.Object).Get("settings")
-	if list := settings.([]any); len(list) != 3 || list[0].(schema.Object).String("file") != ".claude/settings.json" ||
-		list[0].(schema.Object).String("why") == "" || list[2].(schema.Object).String("file") != ".claude/settings.local.json" {
+	if list := settings.([]any); len(list) != 2 || list[0].(schema.Object).String("file") != ".claude/settings.json" ||
+		list[0].(schema.Object).String("why") == "" {
 		t.Errorf("settings lines in the JSON: %s", schema.Show(settings))
 	}
 	// A conflict: without --yes, the preview names the commands; exit 5 with --yes, and the commands to paste.
@@ -288,8 +288,8 @@ func TestPluginStep(t *testing.T) {
 	}
 	code, out, _ := c.run("", append(c.linkArgs(c.pack.A), "--yes")...)
 	if code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketA ||
-		!strings.Contains(out, "This machine's plugins (Claude Code, scope local, this checkout only):\n  waiting      demo-pack@"+marketA+": ") ||
-		!strings.Contains(out, "\n               next: open Claude Code in this checkout") {
+		!strings.Contains(out, "This machine's plugins (Claude Code, scope project: this checkout's .claude/settings.json):\n  waiting      demo-pack@"+marketA+": ") ||
+		!strings.Contains(out, "\n               next: open Claude Code in this checkout") || c.exists(".claude/settings.local.json") {
 		t.Errorf("init --yes: %d %v\n%s", code, f.asked, out)
 	}
 	// Nothing to change: installed now.
@@ -318,15 +318,15 @@ func TestPluginStep(t *testing.T) {
 		{ID: "demo-pack@" + marketA, Version: c.pack.A[:12], Scope: "local", Enabled: true, ProjectPath: c.root},
 	}
 	code, out, _ = c.run("", "check")
-	if code != 1 || !strings.Contains(out, "Claude Code loads the plugin demo-pack@"+marketA) {
+	if code != 1 || !strings.Contains(out, "Claude Code turns on the plugin demo-pack@"+marketA) {
 		t.Errorf("check with drift: %d\n%s", code, out)
 	}
 	f.list = f.list[:1]
 	if code, out, _ := c.run("", "check"); code != 0 || out != "bonsai check: no findings.\n" {
 		t.Errorf("check with no drift: %d %q", code, out)
 	}
-	// The offline half: settings.local.json turning on A's plugin. status shows it among its problems, with no
-	// question to Claude Code.
+	// The offline half: a settings.local.json (a local-scope install's, never Bonsai's) turning on A's plugin.
+	// status shows it among its problems, with no question to Claude Code.
 	if err := os.WriteFile(filepath.Join(c.root, ".claude", "settings.local.json"),
 		[]byte(`{"enabledPlugins": {"demo-pack@`+marketA+`": true}}`), 0o644); err != nil {
 		t.Fatal(err)
@@ -336,4 +336,9 @@ func TestPluginStep(t *testing.T) {
 	if code != 0 || !strings.Contains(out, "turns on demo-pack@"+marketA) || len(f.asked) != 0 {
 		t.Errorf("status: %d %v\n%s", code, f.asked, out)
 	}
+}
+
+func (c *cli) exists(rel string) bool {
+	_, err := os.Stat(filepath.Join(c.root, filepath.FromSlash(rel)))
+	return err == nil
 }

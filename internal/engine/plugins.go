@@ -2,25 +2,29 @@ package engine
 
 // This machine's plugins (spec §5, "This machine's install follows the lock" and "Drift is reported, never silent";
 // plan part 4b). A pack reaches a session as a Claude Code plugin from the workspace's own inline marketplace, which
-// settings.go writes into the shared .claude/settings.json: bonsai-<workspace name>-<8 hex>, each plugin pinned to
-// its locked commit by sha. What Claude Code does with it, as part 4b found it (Claude Code 2.1.294):
+// settings.go writes into the checkout's .claude/settings.json: bonsai-<workspace name>-<8 hex>, each plugin pinned to
+// its locked commit by sha, and turned on there. What Claude Code does with it, as part 4b found it (2.1.294):
 //
 //   - A marketplace that only a project's settings declare is registered by a Claude Code session in that folder,
-//     and only once the folder is trusted (an interactive session asks; -p and --bg never do). Neither `claude plugin
-//     install` nor `claude plugin marketplace update` registers it, so right after init or update moves a commit (a
-//     new marketplace name) the install fails "not found" until a session has started there.
-//   - Claude Code fetches a plugin by itself only when a file outside git, the user's settings or a flag turns it on,
-//     never the shared settings alone. So Bonsai turns each locked plugin on in this checkout's untracked
-//     .claude/settings.local.json too (the spec's other route): the first trusted session registers the marketplace
-//     and fetches the plugin at its commit.
-//   - `claude plugin install --scope project` rewrites the committed .claude/settings.json (it reorders its keys);
-//     `--scope local` writes only the untracked .claude/settings.local.json. Bonsai installs at local scope, never
-//     user: each checkout (a worktree included) gets its own record and its own enable.
+//     and only once the folder is trusted (an interactive session asks; -p and --bg never do: in an untrusted folder
+//     the entry is ignored, and --bg exits "Workspace not trusted"). Neither `claude plugin install` nor `claude
+//     plugin marketplace update` registers it, so right after init, or an update that moved a commit (a new
+//     marketplace name), the install fails "not found" until such a session has started in the checkout.
+//   - That session fetches no plugin that only the project's settings turn on; `claude plugin install` does.
+//   - Scope local is not per checkout: in a git worktree, Claude Code reads the main checkout's
+//     .claude/settings.local.json as well as the worktree's own, a line there turning a plugin on cannot be turned off
+//     from the worktree, and `claude plugin install --scope local` run in a worktree writes the main checkout's file.
+//     A pack's plugin turned on there would load in every worktree beside the worktree's own commit: the two fight.
+//   - Scope project is per checkout: the plugin line is the checkout's own committed .claude/settings.json, which
+//     Bonsai writes already. `claude plugin install --scope project` records the install for the checkout, and the
+//     first time rewrites that file in Claude Code's own key order (no value changes; claim reads Bonsai's lines in
+//     any order).
 //
-// So init and update write the local enable as one more settings line (previewed, written with --yes), then ask
-// Claude Code to install each plugin (InstallPlugins); check compares what Claude Code reports with the lock
-// (ComparePlugins). Both go through PluginCLI: ClaudeCLI runs the real `claude`, tests use a fake. A nil PluginCLI
-// does neither (Bonsai's tests, and a build that has no Claude Code to ask).
+// So after init and update write, Bonsai asks Claude Code to install each locked plugin at project scope, never user
+// (InstallPlugins); check compares what Claude Code reports with the lock (ComparePlugins), and reads, offline, the
+// .claude/settings.local.json files Claude Code reads for the checkout for a line turning on another commit's plugin
+// (checkLocalPlugins). Bonsai never writes a local settings file. The calls go through PluginCLI: ClaudeCLI runs the
+// real `claude`, tests use a fake; a nil PluginCLI asks nothing (Bonsai's tests).
 
 import (
 	"bytes"
@@ -38,13 +42,14 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// LocalSettingsFile is this checkout's own Claude Code settings file, never committed (Claude Code's
-// .claude/settings.local.json). Bonsai writes one kind of line in it: each locked pack's plugin turned on.
+// LocalSettingsFile is Claude Code's settings file outside git, .claude/settings.local.json. Bonsai never writes it;
+// check reads it for drift.
 const LocalSettingsFile = ".claude/settings.local.json"
 
-// PluginScope is the scope Bonsai installs plugins at: local, this checkout only. Never user, which writes the
-// person's own ~/.claude/settings.json (plan, "Claude Code's own files").
-const PluginScope = "local"
+// PluginScope is the scope Bonsai installs plugins at: project, this checkout's .claude/settings.json. Never user,
+// which writes the person's own ~/.claude/settings.json (plan, "Claude Code's own files"); never local, which every
+// worktree of the repository shares.
+const PluginScope = "project"
 
 // InstalledPlugin is one plugin as `claude plugin list --json` reports it.
 type InstalledPlugin struct {
@@ -111,7 +116,7 @@ func (c ClaudeCLI) List(dir string) ([]InstalledPlugin, error) {
 	return ParsePluginList(out)
 }
 
-// Install runs `claude plugin install <plugin> --scope local --json`. A refusal Claude Code reports on its result
+// Install runs `claude plugin install <plugin> --scope project --json`. A refusal Claude Code reports on its result
 // line (exit 1) is a result, not an error.
 func (c ClaudeCLI) Install(dir, plugin string) (InstallResult, error) {
 	out, msg, err := c.run(dir, installTimeout, "plugin", "install", plugin, "--scope", PluginScope, "--json")
@@ -179,86 +184,6 @@ func bonsaiPlugin(name string) *regexp.Regexp {
 	return regexp.MustCompile(`^([a-z0-9][a-z0-9-]*)@bonsai-` + regexp.QuoteMeta(name) + `-[0-9a-f]{8}$`)
 }
 
-// localLines works out Bonsai's lines in .claude/settings.local.json: each pack's plugin turned on from the
-// marketplace of the commits the plan locks. A line of Bonsai's from another of the workspace's marketplaces (an
-// earlier commit) goes; a person's own lines stay, and so does one that turns the plugin off (theirs to decide).
-func localLines(root, name string, packIDs []string, market string) (raw []byte, doc schema.Object, changes []SettingsChange, err error) {
-	raw, exists, err := readFile(root, LocalSettingsFile)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	next := "fix " + LocalSettingsFile + " (Claude Code reads it too), or delete it, then run the command again"
-	doc = schema.Object{}
-	if exists {
-		v, derr := schema.Decode(bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf")))
-		if derr != nil {
-			return nil, nil, nil, errorf(ExitInput, next, "%s is not JSON Bonsai reads: %v", LocalSettingsFile, derr)
-		}
-		o, ok := v.(schema.Object)
-		if !ok {
-			return nil, nil, nil, errorf(ExitInput, next, "%s is not a JSON object", LocalSettingsFile)
-		}
-		doc = o
-	} else {
-		raw = nil
-	}
-	ep, has := doc.Get("enabledPlugins")
-	enabled, isObj := ep.(schema.Object)
-	if has && !isObj {
-		return nil, nil, nil, errorf(ExitInput, next, "%s: enabledPlugins is %s, not an object", LocalSettingsFile, schema.Show(ep))
-	}
-	wanted := map[string]string{} // pack id -> its plugin at the locked commits
-	for _, id := range packIDs {
-		wanted[id] = PluginID(id, market)
-	}
-	ours := bonsaiPlugin(name)
-	addWhy := func(id string) string {
-		return "Turns the " + id + " plugin on in this checkout only, so Claude Code fetches it at the locked commit; " +
-			"it does not fetch a plugin that only the shared settings turn on. Never committed."
-	}
-	// A stale line of a pack still locked gives its place to the new one (a change); any other stale line goes.
-	var kept schema.Object
-	placed := map[string]bool{}
-	for _, m := range enabled {
-		sub := ours.FindStringSubmatch(m.Key)
-		if sub == nil || wanted[sub[1]] == m.Key {
-			kept = append(kept, m)
-			if sub != nil {
-				placed[sub[1]] = true
-			}
-			continue
-		}
-		was := (Line{Kind: "plugin", Name: m.Key, Value: m.Value}).Text()
-		if key, ok := wanted[sub[1]]; ok && !placed[sub[1]] && enabled.Index(key) < 0 {
-			placed[sub[1]] = true
-			kept = append(kept, schema.Member{Key: key, Value: true})
-			changes = append(changes, SettingsChange{File: LocalSettingsFile, Change: "change", Kind: "plugin",
-				Line: key + " enabled", Was: was, Why: addWhy(sub[1])})
-			continue
-		}
-		changes = append(changes, SettingsChange{File: LocalSettingsFile, Change: "remove", Kind: "plugin", Line: was,
-			Why: "Turned on the " + sub[1] + " plugin at commits this checkout no longer locks."})
-	}
-	for _, id := range packIDs {
-		if placed[id] {
-			continue
-		}
-		key := wanted[id]
-		kept = append(kept, schema.Member{Key: key, Value: true})
-		changes = append(changes, SettingsChange{File: LocalSettingsFile, Change: "add", Kind: "plugin", Line: key + " enabled",
-			Why: addWhy(id)})
-	}
-	if len(changes) == 0 {
-		return raw, nil, nil, nil
-	}
-	if len(kept) == 0 {
-		doc = without(cloneObject(doc), "enabledPlugins")
-	} else {
-		doc = set(cloneObject(doc), "enabledPlugins", kept)
-	}
-	return raw, doc, changes, nil
-}
-
 // PluginResult is what InstallPlugins did for one pack.
 type PluginResult struct {
 	Pack    string
@@ -269,7 +194,7 @@ type PluginResult struct {
 	Next    string
 }
 
-// InstallPlugins asks Claude Code to install each locked pack's plugin for the checkout at root, at local scope
+// InstallPlugins asks Claude Code to install each locked pack's plugin for the checkout at root, at project scope
 // (spec §5: `claude plugin install` is a no-op once installed, and the marketplace name is new whenever a locked
 // commit changed). It never fails the command: the project's files are written; what this machine still needs is
 // in each result's next step. A nil cli installs nothing.
@@ -283,21 +208,25 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 		id := PluginID(lp.ID, market)
 		cmd := "claude plugin install " + id + " --scope " + PluginScope
 		r := PluginResult{Pack: lp.ID, Plugin: id, Commit: lp.Commit}
+		before, _, _ := readFile(root, SettingsFile)
 		res, err := cli.Install(root, id)
 		switch {
 		case errors.Is(err, ErrNoClaude):
 			r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so the plugin was not installed on this machine"
-			r.Next = "where sessions run, install Claude Code: its first session in this checkout fetches the plugin (" +
-				LocalSettingsFile + " turns it on)"
+			r.Next = "where sessions run, install Claude Code, then run bonsai update again"
 		case err != nil:
 			r.Result, r.Message, r.Next = "failed", err.Error(), "run: "+cmd
 		case res.Outcome == "ok":
 			r.Result, r.Message = "installed", "at "+pluginVersion(lp.Commit)
+			if after, _, _ := readFile(root, SettingsFile); !bytes.Equal(before, after) {
+				r.Message += "; Claude Code wrote " + SettingsFile + " again in its own key order (Bonsai's lines are unchanged)"
+			}
 		case res.FailureCode == "not_found":
 			r.Result = "waiting"
-			r.Message = "Claude Code does not know the marketplace " + market + " yet: a session registers it, once this folder is trusted"
-			r.Next = "open Claude Code in this checkout and accept its trust question if it asks: the session fetches the plugin at " +
-				pluginVersion(lp.Commit) + " (" + LocalSettingsFile + " turns it on); bonsai check then shows it installed"
+			r.Message = "Claude Code has not registered this checkout's marketplace " + market + " yet: a Claude Code session " +
+				"here does that, once the folder is trusted"
+			r.Next = "open Claude Code in this checkout (accept its trust question if it asks), leave it, then run bonsai update " +
+				"again: it installs the plugin at " + pluginVersion(lp.Commit) + ", and sessions after that load it"
 		default:
 			r.Result, r.Message, r.Next = "failed", strings.TrimSpace(res.Message), "run: "+cmd
 		}
@@ -310,15 +239,15 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 // ComparePlugins adds check's plugin findings and warnings (spec §5, "Drift is reported, never silent"): it asks
 // Claude Code which plugins it has for this checkout and compares their commits with the lock's. A plugin of a
 // locked pack, turned on here from one of the workspace's marketplaces at another commit, is drift: sessions here
-// load it instead of the lock's (a finding). The lock's plugin not installed for this checkout is a warning: the
-// project is right, and the next trusted session fetches it. A nil cli compares nothing.
+// load it beside or instead of the lock's (a finding). The lock's plugin not installed for this checkout is a
+// warning: the project is right, and bonsai update installs it. A nil cli compares nothing.
 func ComparePlugins(r *CheckResult, cli PluginCLI) {
 	if cli == nil || r == nil || r.Config == nil || r.Lock == nil || len(r.Lock.Packs) == 0 {
 		return
 	}
 	list, err := cli.List(r.Root)
 	if err != nil {
-		w := Finding{Code: "plugin", File: LocalSettingsFile,
+		w := Finding{Code: "plugin", File: SettingsFile,
 			Message: "this machine's plugins were not compared with the lock: " + err.Error(),
 			Next:    "run claude plugin list --json in this checkout to see why, then check again"}
 		if errors.Is(err, ErrNoClaude) {
@@ -336,31 +265,33 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 		installed := false
 		for _, p := range list {
 			sub := ours.FindStringSubmatch(p.ID)
-			if sub == nil || sub[1] != lp.ID || !forCheckout(p, r.Root) {
+			if sub == nil || sub[1] != lp.ID {
 				continue
 			}
 			sameCommit := strings.HasPrefix(p.Version, version)
-			if p.ID == want && sameCommit {
+			if p.ID == want && sameCommit && forCheckout(p, r.Root) {
 				installed = true
 				continue
 			}
-			if !p.Enabled || r.named(p.ID) {
+			// Claude Code reports a plugin enabled when the settings it reads for this folder turn it on, whichever
+			// checkout the install was recorded for (a worktree reads its main checkout's local settings too).
+			if !p.Enabled || (p.ID == want && sameCommit) || r.named(p.ID) {
 				continue
 			}
 			at := p.Version
 			if at == "" {
 				at = "an unknown commit"
 			}
-			r.find("plugin", LocalSettingsFile, "Claude Code loads the plugin "+p.ID+" at "+at+" in this checkout, but the lock holds "+
-				lp.ID+" at "+version, "run bonsai update: it turns on the locked commit's plugin in "+LocalSettingsFile+
-				" and the other one off")
+			r.find("plugin", SettingsFile, "Claude Code turns on the plugin "+p.ID+" at "+at+" in this checkout beside the lock's "+
+				want+" ("+lp.ID+" at "+version+"), so sessions here may load another commit of "+lp.ID,
+				"find the setting that turns "+p.ID+" on (a .claude/settings.local.json here or in the main checkout, or your own "+
+					"settings) and take it out: in the main checkout, claude plugin uninstall "+p.ID+" --scope local")
 		}
 		if !installed {
-			r.Warnings = append(r.Warnings, Finding{Code: "plugin", File: LocalSettingsFile,
-				Message: "Claude Code reports the plugin " + want + " (" + lp.ID + " at " + version + ") not installed for this checkout on this machine",
-				Next: "run bonsai update: it installs it once Claude Code knows this project's marketplace, which a Claude Code session here " +
-					"registers (accept its trust question if it asks); sessions here fetch it on their own meanwhile, as " + LocalSettingsFile +
-					" turns it on"})
+			r.Warnings = append(r.Warnings, Finding{Code: "plugin", File: SettingsFile,
+				Message: "Claude Code reports the plugin " + want + " (" + lp.ID + " at " + version + ") not installed for this checkout",
+				Next: "run bonsai update: it installs it once Claude Code has registered this checkout's marketplace, which a " +
+					"Claude Code session here does (accept its trust question if it asks)"})
 		}
 	}
 }
@@ -394,43 +325,55 @@ func samePath(a, b string) bool {
 	return x == y
 }
 
-// checkLocalPlugins reads this checkout's .claude/settings.local.json, offline: a line of Bonsai's turning on a
-// locked pack's plugin from one of the workspace's marketplaces other than the lock's is drift, as sessions here load
-// that commit's plugin when Claude Code has it (a finding). A missing file or line is no finding: a fresh clone or
-// worktree has none until bonsai update, and CI never has one.
+// checkLocalPlugins reads, offline, the .claude/settings.local.json files Claude Code reads for this checkout: its
+// own and, in a worktree, the main checkout's. A line there turning on a locked pack's plugin from one of the
+// workspace's marketplaces at other commits than the lock's is drift: sessions here load that commit's plugin beside
+// the lock's when Claude Code has it, and nothing in the worktree can turn it off (a finding). Bonsai writes no local
+// settings file; such a line comes from a local-scope install. A missing file is no finding.
 func (r *CheckResult) checkLocalPlugins() {
 	if r.Config == nil || r.Lock == nil || len(r.Lock.Packs) == 0 {
 		return
 	}
-	raw, exists, err := readFile(r.Root, LocalSettingsFile)
-	if err != nil || !exists {
-		return
-	}
-	v, err := schema.Decode(bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf")))
-	o, ok := v.(schema.Object)
-	if err != nil || !ok {
-		r.Warnings = append(r.Warnings, Finding{Code: "plugin", File: LocalSettingsFile,
-			Message: LocalSettingsFile + " is not a JSON object Bonsai reads, so the plugins it turns on were not checked",
-			Next:    "fix it (Claude Code reads it too), or delete it and run bonsai update"})
-		return
-	}
-	ep, _ := o.Get("enabledPlugins")
-	enabled, _ := ep.(schema.Object)
 	market := lockMarket(r.Config, r.Lock)
 	locked := map[string]string{}
 	for _, lp := range r.Lock.Packs {
 		locked[lp.ID] = lp.Commit
 	}
 	ours := bonsaiPlugin(r.Config.Name)
-	for _, m := range enabled {
-		sub := ours.FindStringSubmatch(m.Key)
-		if sub == nil || m.Value != true || m.Key == PluginID(sub[1], market) {
+	dirs := []string{r.Root}
+	if r.Main != "" && !samePath(r.Main, r.Root) {
+		dirs = append(dirs, r.Main)
+	}
+	for _, dir := range dirs {
+		where := LocalSettingsFile
+		if dir != r.Root {
+			where = filepath.ToSlash(filepath.Join(dir, filepath.FromSlash(LocalSettingsFile))) + " (the main checkout's, which Claude Code reads in every worktree)"
+		}
+		raw, exists, err := readFile(dir, LocalSettingsFile)
+		if err != nil || !exists {
 			continue
 		}
-		if commit, ok := locked[sub[1]]; ok {
-			r.find("plugin", LocalSettingsFile, LocalSettingsFile+" turns on "+m.Key+", from other commits than the lock's "+
-				PluginID(sub[1], market)+" ("+sub[1]+" at "+pluginVersion(commit)+"), so sessions here may load another commit of "+sub[1],
-				"run bonsai update: it turns the locked commit's plugin on there in its place")
+		v, err := schema.Decode(bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf")))
+		o, ok := v.(schema.Object)
+		if err != nil || !ok {
+			r.Warnings = append(r.Warnings, Finding{Code: "plugin", File: LocalSettingsFile,
+				Message: where + " is not a JSON object Bonsai reads, so the plugins it turns on were not checked",
+				Next:    "fix it: Claude Code reads it too"})
+			continue
+		}
+		ep, _ := o.Get("enabledPlugins")
+		enabled, _ := ep.(schema.Object)
+		for _, m := range enabled {
+			sub := ours.FindStringSubmatch(m.Key)
+			if sub == nil || m.Value != true || m.Key == PluginID(sub[1], market) {
+				continue
+			}
+			if commit, ok := locked[sub[1]]; ok {
+				r.find("plugin", LocalSettingsFile, where+" turns on "+m.Key+", not the lock's "+PluginID(sub[1], market)+" ("+sub[1]+
+					" at "+pluginVersion(commit)+"), so sessions here may load another commit of "+sub[1],
+					"take the line out of that file (in the main checkout, claude plugin uninstall "+m.Key+" --scope local does it): "+
+						"Bonsai installs plugins at project scope, in each checkout's own "+SettingsFile)
+			}
 		}
 	}
 }

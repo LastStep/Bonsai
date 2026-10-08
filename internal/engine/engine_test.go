@@ -373,16 +373,9 @@ func TestCheck5UpdateAToB(t *testing.T) {
 	for _, f := range p.Files {
 		got = append(got, f.Result+" "+f.Path)
 	}
-	want := "created demo/extra.md, updated demo/guide.md, unchanged demo/start.md, unchanged CLAUDE.md, updated .claude/settings.json, " +
-		"updated .claude/settings.local.json, unchanged .bonsai/.gitignore"
+	want := "created demo/extra.md, updated demo/guide.md, unchanged demo/start.md, unchanged CLAUDE.md, updated .claude/settings.json, unchanged .bonsai/.gitignore"
 	if strings.Join(got, ", ") != want {
 		t.Errorf("files\n  %s\nwant\n  %s", strings.Join(got, ", "), want)
-	}
-	// This checkout's plugin turned on at B in place of A's (plugins.go).
-	if len(p.Local) != 1 || p.Local[0].Change != "change" || p.Local[0].File != LocalSettingsFile ||
-		!strings.HasPrefix(p.Local[0].Line, "demo-pack@bonsai-demo-") || !strings.HasPrefix(p.Local[0].Was, "demo-pack@bonsai-demo-") ||
-		p.Local[0].Line == p.Local[0].Was {
-		t.Errorf("local lines %+v", p.Local)
 	}
 	var lines []string
 	for _, c := range p.Settings {
@@ -585,22 +578,14 @@ func TestCheck12RevertTheLink(t *testing.T) {
 	beforeTree := testpack.Git(t, root, "rev-parse", "HEAD^{tree}")
 	before := snapshot(t, root)
 	e.link(t, root, e.pack.A, "ledger.json")
-	// The link commit holds what Bonsai wrote but this checkout's own .claude/settings.local.json, never committed.
-	testpack.Git(t, root, "add", "-A", "--", ".", ":(exclude)"+LocalSettingsFile)
+	testpack.Git(t, root, "add", "-A")
 	testpack.Git(t, root, "commit", "-q", "-m", "link")
 	testpack.Git(t, root, "revert", "--no-edit", "HEAD")
 	if tree := testpack.Git(t, root, "rev-parse", "HEAD^{tree}"); tree != beforeTree {
 		t.Errorf("the tree after the revert is %s, before the link %s", tree, beforeTree)
 	}
-	// The revert leaves only that file, machine state outside git (whether git shows it as untracked or ignored
-	// depends on the machine's own ignore rules). Bonsai's unlink (step 5.1) takes it away.
-	for _, l := range strings.Split(testpack.Git(t, root, "status", "--porcelain", "--untracked-files=all", "--ignored"), "\n") {
-		if l != "" && l != "?? "+LocalSettingsFile && l != "!! "+LocalSettingsFile {
-			t.Errorf("left after the revert: %s", l)
-		}
-	}
-	if err := os.Remove(filepath.Join(root, filepath.FromSlash(LocalSettingsFile))); err != nil {
-		t.Errorf("no %s after the link: %v", LocalSettingsFile, err)
+	if out := testpack.Git(t, root, "status", "--porcelain", "--untracked-files=all", "--ignored"); out != "" {
+		t.Errorf("left after the revert: %s", out)
 	}
 	after := snapshot(t, root)
 	for k, v := range before {

@@ -5,6 +5,7 @@ package engine
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -21,6 +22,7 @@ type fakeCLI struct {
 	listErr  error
 	install  map[string]InstallResult // by plugin id; missing: ok
 	instErr  error
+	rewrite  string // a file Install appends a line feed to, as Claude Code rewrites the settings file
 	asked    []string
 	askedDir []string
 }
@@ -36,6 +38,15 @@ func (f *fakeCLI) Install(dir, plugin string) (InstallResult, error) {
 	f.askedDir = append(f.askedDir, dir)
 	if f.instErr != nil {
 		return InstallResult{}, f.instErr
+	}
+	if f.rewrite != "" {
+		b, err := os.ReadFile(f.rewrite)
+		if err != nil {
+			return InstallResult{}, err
+		}
+		if err := os.WriteFile(f.rewrite, append(b, '\n'), 0o644); err != nil {
+			return InstallResult{}, err
+		}
 	}
 	if r, ok := f.install[plugin]; ok {
 		return r, nil
@@ -61,82 +72,73 @@ func lockOf(t *testing.T, root string) *workspace.Lock {
 	return l
 }
 
-// The link turns the pack's plugin on in this checkout's .claude/settings.local.json, named like the shared
-// settings' plugin line; an update to another commit changes it in place; a person's own lines stay, a stale line of
-// Bonsai's goes, and a line turning the current plugin off is the person's to keep.
-func TestLocalPluginLine(t *testing.T) {
+// init and update write no .claude/settings.local.json: in a git worktree Claude Code reads the main checkout's too,
+// so a plugin turned on there would load in every worktree (plugins.go). The plugin line is the checkout's own
+// committed .claude/settings.json's, at the locked commits.
+func TestNoLocalSettingsWritten(t *testing.T) {
 	e := setup(t)
 	root := testpack.Project(t, e.tmp, "local")
-	p := e.link(t, root, e.pack.A)
-	marketA := MarketplaceName("demo", []string{e.pack.A})
-	if len(p.Local) != 1 || p.Local[0].Change != "add" || p.Local[0].Line != "demo-pack@"+marketA+" enabled" || p.Local[0].Why == "" {
-		t.Fatalf("link's local lines %+v", p.Local)
-	}
-	if f := result(t, p, LocalSettingsFile); f.Result != Created || f.Kind != "" {
-		t.Errorf("the local file in the plan: %+v", f)
-	}
-	if got := schema.Show(localDoc(t, root)); got != `{"enabledPlugins":{"demo-pack@`+marketA+`":true}}` {
-		t.Errorf("settings.local.json after the link: %s", got)
+	e.link(t, root, e.pack.A)
+	testpack.SetRef(t, root, e.pack.A, e.pack.B)
+	e.apply(t, root, Request{})
+	if _, exists, _ := readFile(root, LocalSettingsFile); exists {
+		t.Errorf("%s written", LocalSettingsFile)
 	}
 	shared, _ := settingsDocOf(t, root).Get("enabledPlugins")
-	if schema.Show(shared) != `{"demo-pack@`+marketA+`":true}` {
+	if schema.Show(shared) != `{"demo-pack@`+MarketplaceName("demo", []string{e.pack.B})+`":true}` {
 		t.Errorf("the shared settings' plugin line %s", schema.Show(shared))
 	}
-	// Nothing to change: no byte.
-	before := snapshot(t, root)
-	if p := e.plan(t, root, Request{}); !p.Nothing() || len(p.Local) != 0 {
-		t.Errorf("an update with nothing to change: %+v", p.Local)
+	// A person's local file is left as it is, byte for byte.
+	writeFile(t, root, LocalSettingsFile, `{"enabledPlugins": {"mine@my-market": true}}`)
+	testpack.SetRef(t, root, e.pack.B, e.pack.C)
+	e.apply(t, root, Request{Adopt: []string{}})
+	if read(t, root, LocalSettingsFile) != `{"enabledPlugins": {"mine@my-market": true}}` {
+		t.Errorf("the person's local file changed: %s", read(t, root, LocalSettingsFile))
 	}
-	sameSnapshot(t, "an update with nothing to change", before, snapshot(t, root))
-
-	// A person's lines beside Bonsai's, and a stale one of Bonsai's from another commit.
-	writeFile(t, root, LocalSettingsFile, `{
-  "permissions": {"allow": ["Bash(make)"]},
-  "enabledPlugins": {
-    "mine@my-market": true,
-    "demo-pack@bonsai-demo-0123abcd": true,
-    "demo-pack@`+marketA+`": true
-  }
 }
-`)
-	p = e.plan(t, root, Request{})
-	if len(p.Local) != 1 || p.Local[0].Change != "remove" || p.Local[0].Line != "demo-pack@bonsai-demo-0123abcd enabled" {
-		t.Fatalf("a stale line: %+v", p.Local)
-	}
-	e.apply(t, root, Request{})
-	if got := schema.Show(localDoc(t, root)); got != `{"permissions":{"allow":["Bash(make)"]},"enabledPlugins":{"mine@my-market":true,"demo-pack@`+marketA+`":true}}` {
-		t.Errorf("after the stale line went: %s", got)
-	}
 
-	// To B: Bonsai's line changes in place; the person's stays.
-	testpack.SetRef(t, root, e.pack.A, e.pack.B)
-	p = e.apply(t, root, Request{})
-	marketB := MarketplaceName("demo", []string{e.pack.B})
-	if len(p.Local) != 1 || p.Local[0].Change != "change" || p.Local[0].Was != "demo-pack@"+marketA+" enabled" ||
-		p.Local[0].Line != "demo-pack@"+marketB+" enabled" {
-		t.Errorf("to B: %+v", p.Local)
-	}
-	if got := schema.Show(localDoc(t, root)); got != `{"permissions":{"allow":["Bash(make)"]},"enabledPlugins":{"mine@my-market":true,"demo-pack@`+marketB+`":true}}` {
-		t.Errorf("after the update to B: %s", got)
-	}
-	if pv := p.Preview(false); !strings.Contains(pv, ".claude/settings.local.json: 1 line\n  change  plugin      demo-pack@"+marketB+" enabled\n          was: demo-pack@"+marketA+" enabled\n") {
-		t.Errorf("the preview:\n%s", pv)
-	}
+// A main checkout at A and its worktree moved to B: a line turning A's plugin on in the main checkout's
+// .claude/settings.local.json (a local-scope install's) is drift in the worktree, which Claude Code makes read it;
+// in the main checkout it is the lock's own plugin, no finding.
+func TestLocalSettingsDriftInAWorktree(t *testing.T) {
+	e := setup(t)
+	main := testpack.Project(t, e.tmp, "main")
+	e.link(t, main, e.pack.A)
+	testpack.Git(t, main, "add", "-A")
+	testpack.Git(t, main, "commit", "-q", "-m", "link")
+	wt := filepath.Join(e.tmp, "main-worktree")
+	testpack.Git(t, main, "worktree", "add", "-q", "-b", "task", wt)
+	testpack.SetRef(t, wt, e.pack.A, e.pack.B)
+	e.apply(t, wt, Request{})
+	marketA := MarketplaceName("demo", []string{e.pack.A})
+	writeFile(t, main, LocalSettingsFile, `{"enabledPlugins": {"demo-pack@`+marketA+`": true, "mine@my-market": true}}`)
 
-	// The person turns the plugin off here: theirs to decide.
-	writeFile(t, root, LocalSettingsFile, `{"enabledPlugins": {"demo-pack@`+marketB+`": false}}`)
-	if p := e.plan(t, root, Request{}); len(p.Local) != 0 {
-		t.Errorf("a plugin turned off by the person: %+v", p.Local)
+	r, err := Check(wt, e.home)
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	// A local file Bonsai cannot read stops the command: exit 2, the file named, nothing written.
-	for _, bad := range []string{`{"enabledPlugins": [`, `[1]`, `{"enabledPlugins": ["x"]}`} {
-		writeFile(t, root, LocalSettingsFile, bad)
-		_, err := e.try(root, Request{})
-		var be *Error
-		if !errors.As(err, &be) || be.Exit != ExitInput || !strings.Contains(be.What, LocalSettingsFile) || be.Next == "" {
-			t.Errorf("%q: %v", bad, err)
-		}
+	if len(r.Findings) != 1 || r.Findings[0].Code != "plugin" || !strings.Contains(r.Findings[0].Message, "turns on demo-pack@"+marketA) ||
+		!strings.Contains(r.Findings[0].Message, "the main checkout's, which Claude Code reads in every worktree") ||
+		!strings.Contains(r.Findings[0].Next, "claude plugin uninstall demo-pack@"+marketA+" --scope local") {
+		t.Errorf("the worktree: %+v", r.Findings)
+	}
+	if r, err := Check(main, e.home); err != nil || len(r.Findings) != 0 {
+		t.Errorf("the main checkout: %v %+v", err, r.Findings)
+	}
+	// The worktree's own local file is read too.
+	writeFile(t, main, LocalSettingsFile, `{}`)
+	writeFile(t, wt, LocalSettingsFile, `{"enabledPlugins": {"demo-pack@`+marketA+`": true}}`)
+	if r, err := Check(wt, e.home); err != nil || len(r.Findings) != 1 || !strings.HasPrefix(r.Findings[0].Message, LocalSettingsFile+" turns on") {
+		t.Errorf("the worktree's own file: %v %+v", err, r.Findings)
+	}
+	// A plugin turned off, or the lock's own: no finding. A file Bonsai cannot read: a warning.
+	writeFile(t, wt, LocalSettingsFile, `{"enabledPlugins": {"demo-pack@`+marketA+`": false, "demo-pack@`+MarketplaceName("demo", []string{e.pack.B})+`": true}}`)
+	if r, err := Check(wt, e.home); err != nil || len(r.Findings) != 0 {
+		t.Errorf("turned off: %v %+v", err, r.Findings)
+	}
+	writeFile(t, wt, LocalSettingsFile, `{`)
+	if r, err := Check(wt, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "plugin" {
+		t.Errorf("unreadable: %v %+v %+v", err, r.Findings, r.Warnings)
 	}
 }
 
@@ -158,18 +160,25 @@ func TestInstallPlugins(t *testing.T) {
 		got[0].Message != "at "+e.pack.A[:12] || got[0].Next != "" {
 		t.Errorf("installed: %+v", got)
 	}
+	// Claude Code rewriting the settings file as it installs: said so.
+	f = &fakeCLI{rewrite: filepath.Join(root, filepath.FromSlash(SettingsFile))}
+	if got := InstallPlugins(root, p.Config, lock, f); len(got) != 1 || got[0].Result != "installed" ||
+		!strings.Contains(got[0].Message, "Claude Code wrote .claude/settings.json again in its own key order") {
+		t.Errorf("installed, the file rewritten: %+v", got)
+	}
 	if strings.Join(f.asked, ",") != "install "+want || f.askedDir[0] != root {
 		t.Errorf("asked %v in %v", f.asked, f.askedDir)
 	}
 	f = &fakeCLI{install: map[string]InstallResult{want: {Outcome: "failed", FailureCode: "not_found",
 		Message: `Plugin "demo-pack" not found in marketplace`}}}
 	if got := InstallPlugins(root, p.Config, lock, f); len(got) != 1 || got[0].Result != "waiting" ||
-		!strings.Contains(got[0].Message, "does not know the marketplace") || !strings.Contains(got[0].Next, "trust question") {
+		!strings.Contains(got[0].Message, "has not registered this checkout's marketplace") || !strings.Contains(got[0].Next, "trust question") ||
+		!strings.Contains(got[0].Next, "run bonsai update again") {
 		t.Errorf("an unregistered marketplace: %+v", got)
 	}
 	f = &fakeCLI{install: map[string]InstallResult{want: {Outcome: "failed", FailureCode: "network", Message: "fetch failed\u2026"}}}
 	if got := InstallPlugins(root, p.Config, lock, f); len(got) != 1 || got[0].Result != "failed" ||
-		got[0].Message != `fetch failed\u2026` || got[0].Next != "run: claude plugin install "+want+" --scope local" {
+		got[0].Message != `fetch failed\u2026` || got[0].Next != "run: claude plugin install "+want+" --scope project" {
 		t.Errorf("a failed install: %+v", got)
 	}
 	f = &fakeCLI{instErr: ErrNoClaude}
@@ -229,7 +238,8 @@ func TestPluginDrift(t *testing.T) {
 	// An older commit's plugin turned on here beside it: drift, a finding naming both commits.
 	r := check(&fakeCLI{list: []InstalledPlugin{atB, atA}})
 	if codes(r.Findings) != "plugin" || !strings.Contains(r.Findings[0].Message, marketA+" at "+e.pack.A[:12]) ||
-		!strings.Contains(r.Findings[0].Message, "demo-pack at "+e.pack.B[:12]) || !strings.HasPrefix(r.Findings[0].Next, "run bonsai update") {
+		!strings.Contains(r.Findings[0].Message, "demo-pack at "+e.pack.B[:12]) ||
+		!strings.Contains(r.Findings[0].Next, "claude plugin uninstall demo-pack@"+marketA+" --scope local") {
 		t.Errorf("an older commit turned on: %+v", r.Findings)
 	}
 	// Installed but turned off, or installed for another checkout: no drift. The lock's plugin missing: a warning.
@@ -238,7 +248,8 @@ func TestPluginDrift(t *testing.T) {
 	elsewhere := atB
 	elsewhere.ProjectPath = other
 	r = check(&fakeCLI{list: []InstalledPlugin{off, elsewhere}})
-	if codes(r.Findings) != "" || codes(r.Warnings) != "plugin" || !strings.Contains(r.Warnings[0].Message, "not installed for this checkout") {
+	if codes(r.Findings) != "" || codes(r.Warnings) != "plugin" || !strings.Contains(r.Warnings[0].Message, "not installed for this checkout") ||
+		!strings.HasPrefix(r.Warnings[0].Next, "run bonsai update") {
 		t.Errorf("not installed here: %+v %+v", r.Findings, r.Warnings)
 	}
 	// The plugin installed at the lock's name but another version: drift.
@@ -256,8 +267,8 @@ func TestPluginDrift(t *testing.T) {
 		t.Errorf("a failing list: %+v %+v", r.Findings, r.Warnings)
 	}
 
-	// settings.local.json turning on A's plugin in place of B's: a finding from Check itself, offline, named once
-	// even when Claude Code reports the same plugin.
+	// A settings.local.json turning on A's plugin (a local-scope install's): a finding from Check itself, offline,
+	// named once even when Claude Code reports the same plugin.
 	writeFile(t, root, LocalSettingsFile, `{"enabledPlugins": {"demo-pack@`+marketA+`": true, "mine@my-market": true}}`)
 	r = check(nil)
 	if codes(r.Findings) != "plugin" || !strings.Contains(r.Findings[0].Message, "turns on demo-pack@"+marketA) {
@@ -266,31 +277,10 @@ func TestPluginDrift(t *testing.T) {
 	if r := check(&fakeCLI{list: []InstalledPlugin{atA}}); codes(r.Findings) != "plugin" {
 		t.Errorf("a stale local line, and Claude Code reporting it: %+v", r.Findings)
 	}
-	// update puts it right.
-	e.apply(t, root, Request{})
+	// The line taken out: no drift.
+	writeFile(t, root, LocalSettingsFile, `{"enabledPlugins": {"mine@my-market": true}}`)
 	if r := check(&fakeCLI{list: []InstalledPlugin{atB}}); codes(r.Findings) != "" || codes(r.Warnings) != "" {
-		t.Errorf("after update: %+v %+v", r.Findings, r.Warnings)
-	}
-	// A local file check cannot read: a warning.
-	writeFile(t, root, LocalSettingsFile, `{`)
-	if r := check(nil); codes(r.Findings) != "" || codes(r.Warnings) != "plugin" {
-		t.Errorf("an unreadable local file: %+v %+v", r.Findings, r.Warnings)
-	}
-}
-
-// A committed .claude/settings.local.json is a finding, as a tracked .bonsai/local/ file is.
-func TestTrackedLocalSettings(t *testing.T) {
-	e := setup(t)
-	root := testpack.Project(t, e.tmp, "tracked")
-	e.link(t, root, e.pack.A)
-	testpack.Git(t, root, "add", "-f", "--", LocalSettingsFile)
-	r, err := Check(root, e.home)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(r.Findings) != 1 || r.Findings[0].Code != "local" || r.Findings[0].File != LocalSettingsFile ||
-		!strings.Contains(r.Findings[0].Next, "git rm --cached -- "+LocalSettingsFile) {
-		t.Errorf("findings %+v", r.Findings)
+		t.Errorf("the line taken out: %+v %+v", r.Findings, r.Warnings)
 	}
 }
 
