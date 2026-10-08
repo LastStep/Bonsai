@@ -1,14 +1,15 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 01:15, when part 6 closed and the walking skeleton reached
-Rohan's gate (`records/runs/R-2026-10-09-gate.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 01:31, when Rohan chose path (a) at the gate
+(`records/runs/R-2026-10-09-gate.md`, 01:27) and the plan for step 5 was started (`records/runs/R-2026-10-09-plan-5.md`).
 
 ## In short
 
 Bonsai is being rebuilt as one small Go program that gives every project the same formats, packs, guards, recorder and
 proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). **Part 0 and all six parts of the walking skeleton
-are done; the skeleton's last fresh verifier passed it. Rohan's gate is next: he picks path (a), (b) or (d).** The
-gate report is `records/gate-skeleton.md`; its section 1 is for him. Everything below is on `main`, pushed.
+are done; the skeleton's last fresh verifier passed it. At the gate (9 Oct) Rohan chose path (a), the full Bonsai
+1.0. The plan for step 5 is being written; nothing in step 5 is built before he approves it.** The gate report is
+`records/gate-skeleton.md`. Everything below is on `main` (now `1170c92` and the records after it), pushed.
 
 - **Part 0, the formats** (`3770d04`, now set 3 at `3a1f195`): `formats/` holds a JSON Schema for each of the
   contract's ten formats, an example of each, 116 trick files with their format-0 and format-1 outcomes in
@@ -37,7 +38,14 @@ Hours (AI, builder and verifier runs, from the run reports): part 0 45 minutes a
 its last round ended). Windows-only failures about 18 minutes against 8 h. Option rounds asked of Rohan inside the
 skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 
-## Rohan's decisions, 8 Oct
+## Rohan's decisions
+
+- **9 Oct, the gate: path (a), the full Bonsai 1.0** (spec §14, "Path (a) after the gate", 139-218 h, parts 5.1-5.7,
+  each with a re-ask line at 1.3 times its high estimate).
+- 9 Oct: a handoff for the studio's orchestrator, `records/handoff-studio-2026-10-09.md`; the studio still links at
+  step 7, after 5.5 (his 8 Oct "Bonsai first" stands).
+
+8 Oct:
 
 - Bonsai's design and records live in this repo (`design/`, `STATE.md`, `records/`); Bonsai owns its spec and the
   formats contract. Work lands on `main` directly; the old product stays at tag `v0.4.3`.
@@ -61,20 +69,22 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: Rohan's gate
+## The one thing to do next: the plan for step 5
 
-Rohan reads `records/gate-skeleton.md` (section 1) and picks the path for step 5 (spec §14): **(a)** the full Bonsai
-1.0 (139-218 h in the spec; 18.6-45.6 h at the skeleton's measured ratio, 0.1337-0.2094), **(b)** the smaller cut
-(about 121-188 h; 16.2-39.4 h), or **(d)** 1.0 with its own screens (about 169-268 h; 22.6-56.1 h). The ratio counts
-agent runs only; the report's "What limits the ratio" says why it may not hold for step 5.
+`design/plan-5.md`, on branch `plan5` in `~/Servers/Bonsai-plan5`: Rohan's part over all of step 5 (5.1-5.7: order,
+hours, re-ask lines, his steps, when the studio links), the builders' part with 5.1 (formats and engine to 1.0, 30-47
+h, re-ask at 61) in full and 5.2-5.7 outlined. Then a fresh Opus review, its fixes, and Rohan's approval. Then 5.1,
+in plain worktrees as the skeleton was; it settles the 5.1 findings in the gate report's section 5 (`--allow-exec` and
+the mixed update first).
 
-After his pick: a plan for step 5.1 (formats and engine to 1.0, spec §14's table), reviewed by a fresh Opus agent
-before it reaches him, built in a plain worktree as the skeleton was. Step 5.1 settles the 5.1 findings in the gate
-report's section 5 (`--allow-exec` and the mixed update first).
+A flaky Windows test was fixed on the way (`1170c92`): `TestRenameRetryOnWindows` held a file for a fixed 150 ms
+and failed once in CI on a loaded runner; it now holds the file until the first busy refusal
+(`records/runs/R-2026-10-09-ci-flake.md`). Other tests whose outcome rests on a fixed time budget (the guard's
+`TestEachFaultBlocks` first) are passed to the step 5 plan to place.
 
 ## Waiting on Rohan
 
-- The gate: (a), (b) or (d).
+- The step 5 plan's approval, once it has had its fresh review and fixes.
 - Later: step 8 at 5.4 (a pre-release `bonsai`); at 5.7 the `release` environment and a new tap token (the working
   environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website).
