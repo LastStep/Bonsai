@@ -89,7 +89,9 @@ minutes of yours. Nothing here waits on the studio.
 - **Nothing private and nothing studio-shaped in what this work makes.** Code, tests, `formats/`, the test pack, commit
   messages and run reports name no studio task id or studio path, no one's home folder (`/home/...`, `C:\Users\...`;
   write `~/...` and `%USERPROFILE%`), no machine or tailnet name, no email address. `design/` holds the specs as the
-  studio wrote them, citing its files; that is quoting, not new work.
+  studio wrote them, citing its files; that is quoting, not new work. One exception: part 0 names format 0's source,
+  the studio's `tools/lib/yaml.mjs` at commit `4a05eac` (contract §2.4 defines format 0 by that file), in its run report
+  and `formats/README.md`.
 - **Tests** make their own repos and homes in `t.TempDir()`: never the real `~/.bonsai`, `~/.claude` or a real project.
 - **Processes.** Every agent stops what it starts and checks with `ps -eo pid,etime,cmd`. The orchestrator sweeps after
   each subagent (Go builds and tests, `claude` test sessions started from `~/bonsai-checks`) and kills by pid only what
@@ -109,9 +111,10 @@ cut and its Desk stays on upkeep until it links (step 7). What links the two:
    outputs, its own guards, ladder and statusline retired. Its remaining readers test against the trick files then. A
    change to `formats/` is a commit that changes its manifest, never a silent edit.
 2. **Format 0's outcomes come from the studio's reader.** Format 0 means "exactly what the studio's `yaml.mjs` reads
-   today" (contract §2.3-§2.4). Part 0 fills each case's format-0 outcome by running that reader read-only from the
-   studio's checkout on this PC; the orchestrator gives the builder the path and the commit (the one the studio froze as
-   its format-0 reference). The studio's test of its frozen copy re-checks every format-0 outcome when it links.
+   today" (contract §2.3-§2.4). Part 0 fills each case's format-0 outcome by running that reader as the studio froze it
+   for format 0, at commit `4a05eac`, taken out with `git show` into a scratch folder (part 0 says how). Nothing is
+   written or run in the studio's checkout; the orchestrator gives its path. The studio's test of its frozen copy
+   re-checks every format-0 outcome when it links.
 3. **Check 7** (Bonsai's reader and the studio's reach the same outcome on every trick file) has two halves: Bonsai's
    reader reaches every format-1 outcome in `formats/expect.json` (part 2's test), and the studio's reader reaches the
    same file's outcomes (when it links, step 7; until then the half is open). The gate report says whether it has run.
@@ -208,24 +211,30 @@ invented; `README.md` lists both.
     example validates under a small checker in the test that implements the keywords the schemas use, skips only the
     annotations (`title`, `description`, `examples`) and fails on any other keyword (part 2 moves the checker into the
     new layout); each YAML or markdown example's format-1 value in `expect.json` equals its `<name>.json`;
-  - no file in the set holds an absolute path (`/home/`, `/mnt/`, `~/`, a drive letter), an email address or a tailnet
-    name.
+  - no file in the set matches a generic private pattern: an absolute path (`/home/`, `/mnt/`, `~/`, a drive letter),
+    an email address, a tailnet host (`.ts.net`). The test names no real machine or tailnet name, which would publish
+    it; the verifier's grep checks those, with the names in its brief.
 
-**The format-0 outcomes** (link 2 above): a small script in the builder's scratch folder, never committed, runs the
-studio's reader on each case (`parseYaml` for a YAML file, `parseFrontmatter` for markdown) and writes the value or the
-exact error message into `expect.json`. The run report records the studio commit it ran and how many cases it filled.
+**The format-0 outcomes** (link 2 above): the studio's frozen reader, taken read-only with
+`git -C <the studio's checkout> show 4a05eac:tools/lib/yaml.mjs > <scratch folder>/yaml0.mjs`. A small script beside it,
+never committed, reads each case as the studio's callers do (`readFileSync(path, 'utf8')`, so a BOM and CRLF reach the
+reader), runs `parseYaml` on a YAML file or `parseFrontmatter` on markdown, and writes the value (for markdown, its
+`data`) or the exact error message into `expect.json`. The run report records the commit and how many cases it filled.
 
 **Done when:**
 - `go test ./...` and `go vet ./...` pass in WSL: the new tests pass, and the old product's tests are no worse than before
   (part 0 changes no product code).
 - A fresh Opus verifier reads every case against contract §2.4 **rule by rule, not against any reader**: one agent wrote
   both the cases and the answers. Is each rule covered; is each format-1 outcome what the grammar says; is each format-0
-  outcome what the studio's reader gives (it re-runs the script itself). It also reads each schema against its contract
-  section and greps the set for private strings.
-- After the push: CI's `test` job green on the commit. Then once, natively on Windows: a Windows-git clone of `main` in
-  `%USERPROFILE%\bonsai-checks\src` where Windows Go passes `go test ./formats/` (only this package: the old product's
-  own tests fail on Windows). It proves the CRLF and BOM bytes survive a Windows checkout. From part 1 the `windows` CI
-  job runs it on every push.
+  outcome what the studio's reader gives (it runs the frozen reader with a runner it writes itself from the paragraph
+  above, not the builder's script). It also reads each schema against its sources and greps the set for private
+  strings.
+- Before the push, once, natively on Windows: a Windows-git clone of the builder's branch, made from a `git bundle` of
+  it copied to `%USERPROFILE%\bonsai-checks\`, in `%USERPROFILE%\bonsai-checks\src`, where Windows Go passes
+  `go test ./formats/` (only this package: the old product's own tests fail on Windows). It proves the CRLF and BOM bytes
+  survive a Windows checkout. From part 1 the `windows` CI job runs it on every push.
+- After the push: CI's `test` and `lint` jobs green on the commit. `govulncheck` stays red, as it has been since 23 Sep
+  (its install needs a newer Go than CI's), until part 1 pins it.
 - `STATE.md` names the commit, and the orchestrator tells Rohan in one line.
 
 ### Parts 1-6: the walking skeleton (30-47 h, stop line 61 h)
@@ -331,7 +340,7 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
 
 | Done when | Proved by |
 |---|---|
-| Part 0 | The formats tests (CI `test`); the verifier's rule-by-rule read and its own format-0 run; the Windows-git clone's `go test ./formats/`; the commit named in `STATE.md` |
+| Part 0 | The formats tests (CI `test` and `lint`); the verifier's rule-by-rule read and its own format-0 run; before the push, the Windows-git clone's `go test ./formats/`; the commit named in `STATE.md` |
 | Part 1 | CI on the pushed commit, both jobs; `release.yml` build-only; the clear-out's file list |
 | The test pack | `claude plugin validate --json`; its four commits |
 | Part 2 | Committed Go tests on every trick file's format-1 outcome and on the schemas; check 10 |
