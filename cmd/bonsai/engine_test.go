@@ -232,3 +232,25 @@ func TestEngineHelpAndFlags(t *testing.T) {
 		}
 	}
 }
+
+// With bonsai.yaml but no lock, update --yes is refused (exit 4) and names bonsai init: deleting the lock is no way
+// round the refusal of a hook-line change (pack commit D changes one).
+func TestUpdateWithoutALock(t *testing.T) {
+	c := newCLI(t)
+	if code, _, _ := c.run("", append(c.linkArgs(c.pack.C), "--yes")...); code != 0 {
+		t.Fatal("link failed")
+	}
+	if err := os.Remove(filepath.Join(c.root, ".bonsai", "lock.json")); err != nil {
+		t.Fatal(err)
+	}
+	testpack.SetRef(t, c.root, c.pack.C, c.pack.D)
+	before := c.snapshot()
+	code, out, errOut := c.run("", "update", "--yes")
+	if code != 4 || !strings.Contains(out+errOut, "bonsai.yaml is here but .bonsai/lock.json is not") ||
+		!strings.Contains(out+errOut, "run bonsai init") {
+		t.Errorf("update --yes with no lock: %d\n%s%s", code, out, errOut)
+	}
+	if after := c.snapshot(); after != before {
+		t.Errorf("update with no lock wrote:\n%s\n---\n%s", before, after)
+	}
+}

@@ -264,6 +264,15 @@ func Build(req Request) (*Plan, error) {
 			return nil, wsError(err, ExitState)
 		}
 	}
+	// bonsai.yaml with no lock: the lock records which hook lines a person consented to, so update cannot tell a
+	// changed hook line from one already agreed, and would take every line as a first link's. Only init links
+	// (spec §4, §6: it previews every settings line first); update refuses. (Part 5's verifier: deleting the lock
+	// let update --yes write a changed hook line.)
+	if lock == nil && req.Command == "update" {
+		return nil, errorf(ExitState, "restore the lock from git (git checkout -- "+workspace.LockFile+"); or, to link the project "+
+			"again from bonsai.yaml, run bonsai init, which previews every file and settings line first",
+			"bonsai.yaml is here but %s is not, so update cannot tell which hook lines were already consented to", workspace.LockFile)
+	}
 	p.FirstLink = lock == nil
 	if lock == nil {
 		lock = &workspace.Lock{Files: map[string]workspace.LockedFile{}, Format0: map[string]string{}}

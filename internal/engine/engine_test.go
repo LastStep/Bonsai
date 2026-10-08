@@ -510,6 +510,30 @@ func TestHookLineChangeIsRefused(t *testing.T) {
 	}
 }
 
+// bonsai.yaml with no lock: update refuses (exit 4, nothing written, bonsai init named), so deleting the lock is no
+// way round the hook-line refusal; init links again, previewing the hook lines as a first link.
+func TestUpdateWithoutALockIsRefused(t *testing.T) {
+	e := setup(t)
+	root := testpack.Project(t, e.tmp, "nolock")
+	e.link(t, root, e.pack.C)
+	if err := os.Remove(filepath.Join(root, filepath.FromSlash(workspace.LockFile))); err != nil {
+		t.Fatal(err)
+	}
+	testpack.SetRef(t, root, e.pack.C, e.pack.D)
+	before := snapshot(t, root)
+	_, err := e.try(root, Request{Command: "update"})
+	var ee *Error
+	if !errors.As(err, &ee) || ee.Exit != ExitState || !strings.Contains(ee.Next, "bonsai init") ||
+		!strings.Contains(ee.Next, "git checkout -- .bonsai/lock.json") {
+		t.Fatalf("update with no lock: %v", err)
+	}
+	sameSnapshot(t, "update with no lock", before, snapshot(t, root))
+	p := e.plan(t, root, Request{Command: "init", Init: &InitValues{}})
+	if !p.FirstLink || !strings.Contains(p.Preview(false), "echo demo hook D") {
+		t.Errorf("init with no lock is not a first link naming the hook line:\n%s", p.Preview(false))
+	}
+}
+
 // init --new-id: a copy gets a new id (only the id line of bonsai.yaml changes) and an empty .bonsai/local/.
 func TestNewID(t *testing.T) {
 	e := setup(t)
@@ -732,7 +756,8 @@ func TestRefusals(t *testing.T) {
 	handwritten := "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: demo\npacks:\n  - id: other-pack\n    source: \"" +
 		filepath.ToSlash(e.pack.Source) + "\"\n    ref: \"" + e.pack.A + "\"\n"
 	writeFile(t, root, "bonsai.yaml", handwritten)
-	if _, err := e.try(root, Request{}); err == nil || !strings.Contains(err.Error(), "says its id is demo-pack") {
+	// init links from a hand-written bonsai.yaml (update, with no lock yet, refuses: TestUpdateWithoutALockIsRefused).
+	if _, err := e.try(root, Request{Command: "init", Init: &InitValues{}}); err == nil || !strings.Contains(err.Error(), "says its id is demo-pack") {
 		t.Errorf("a pack under another id: %v", err)
 	}
 	if err := os.Remove(filepath.Join(root, "bonsai.yaml")); err != nil {

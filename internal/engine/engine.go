@@ -26,8 +26,10 @@
 //     (RunsCode); plan.go sets Plan.HookChange when an update (not a first link) would write one; apply.go refuses
 //     such a plan whatever the caller asks; cmd/bonsai/engine.go prints the refusal (exit 4) naming --allow-exec,
 //     and refuses --allow-exec itself (exit 2) until step 5.1;
-//   - the tests: engine_test.go, TestHookLineChangeIsRefused and TestCheck1InitIntoADriftedProject;
-//     cmd/bonsai/engine_test.go, TestUpdateCommand.
+//   - no way round it by deleting the lock: plan.go refuses an update when bonsai.yaml is there and the lock is not
+//     (exit 4, naming git checkout of the lock or bonsai init, which links again as a first link);
+//   - the tests: engine_test.go, TestHookLineChangeIsRefused, TestUpdateWithoutALockIsRefused and
+//     TestCheck1InitIntoADriftedProject; cmd/bonsai/engine_test.go, TestUpdateCommand and TestUpdateWithoutALock.
 package engine
 
 import (
