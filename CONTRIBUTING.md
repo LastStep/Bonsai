@@ -53,7 +53,7 @@ Bonsai's catalog lives in `catalog/`. Each category follows the same pattern:
 1. Create `catalog/routines/{name}/meta.yaml` — include `frequency` (e.g. `"5 days"`)
 2. Create `catalog/routines/{name}/{name}.md.tmpl` — procedure template
 
-See `CLAUDE.md` for the full naming conventions and template context variables.
+See `CLAUDE.md` at tag `v0.4.3` for the old product's naming conventions and template context variables.
 
 ## Pull Request Process
 
@@ -71,7 +71,7 @@ See `CLAUDE.md` for the full naming conventions and template context variables.
 
 ## Development with Claude Code
 
-Bonsai dogfoods itself — the repo has a full Bonsai workspace in `station/`. If you use Claude Code for development, the agent instructions in `station/agent/` provide context about the codebase and conventions.
+Bonsai is being rebuilt. Agents working on it start from `CLAUDE.md` and `STATE.md`; the design is in `design/`.
 
 ## Questions?
 

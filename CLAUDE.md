@@ -1,218 +1,109 @@
-# Bonsai — Developer Agent
+# Bonsai: guide for Claude Code
 
-**Codename:** Bonsai
-**What:** CLI tool for scaffolding Claude Code agent workspaces — single binary, `go install`
-**Stack:** Go 1.25+, Cobra, Huh (forms), LipGloss (styling), BubbleTea (TUI)
+Bonsai is being rebuilt from scratch. 0.4.3 (May 2026) is the old product's last release, kept at its tag and in git
+history; everything in this repo now serves the rebuild. Rohan is the director; Claude agents are the team.
 
-> [!warning]
-> **FIRST:** Read `station/agent/Core/identity.md`, then `station/agent/Core/memory.md`.
+## What Bonsai is, and is not
 
----
+- **Is:** the structure inside each project. Formats (what a task, a run report, a log line and a question to the person
+  look like); packs (roles, lanes and protocols, delivered as Claude Code plugins); guards that stop mistakes; a recorder
+  that keeps a clean log; a ladder that proves work is done. One Go program, nothing else to install, on Linux and
+  Windows.
+- **Is not:** anything that applies an action. It never moves a task, applies an approval or starts an agent. No daemon,
+  no network service, no terminal UI. Registries, dashboards, notifications and deploys belong to its users.
+- **Its first user** is Rohan's studio, Trinetra, which pins `formats/`. This repo names no studio file in its code.
 
-## Project Structure
+## Where the truth lives
 
-```
-Bonsai/
-├── CLAUDE.md               ← you are here
-├── .bonsai.yaml             ← project config (dogfooding — Bonsai manages itself)
-├── .bonsai-lock.yaml        ← file tracking (hashes + sources)
-├── cmd/bonsai/main.go       ← entry point
-├── embed.go                 ← root embed package (CatalogFS + guide vars)
-├── go.mod / go.sum          ← module config
-├── Makefile                 ← build, install, clean
-├── .goreleaser.yaml         ← GoReleaser v2 config (cross-platform builds, Homebrew)
-├── .github/workflows/
-│   └── release.yml          ← GitHub Actions — tag-triggered release pipeline
-├── cmd/                     ← Cobra commands
-│   ├── root.go              ← root command, version, shared helpers
-│   ├── init.go              ← bonsai init (command wiring)
-│   ├── init_flow.go         ← bonsai init runtime — cinematic flow orchestration
-│   ├── add.go               ← bonsai add
-│   ├── remove.go            ← bonsai remove
-│   ├── list.go              ← bonsai list
-│   ├── catalog.go           ← bonsai catalog
-│   ├── update.go            ← bonsai update
-│   ├── guide.go             ← bonsai guide
-│   └── validate.go          ← bonsai validate — read-only ability-state audit
-├── internal/
-│   ├── catalog/
-│   │   └── catalog.go       ← loads YAML metadata from embedded catalog/
-│   ├── config/
-│   │   ├── config.go        ← ProjectConfig, InstalledAgent + YAML I/O
-│   │   └── lockfile.go      ← LockFile, content hashing, conflict detection
-│   ├── generate/
-│   │   ├── generate.go      ← renders templates, writes files to target project
-│   │   ├── generate_test.go ← tests for core file generation
-│   │   ├── frontmatter.go   ← BONSAI marker parsing for generated files
-│   │   ├── frontmatter_test.go ← tests for frontmatter parsing
-│   │   ├── scan.go          ← custom file discovery (user-created abilities)
-│   │   ├── scan_test.go     ← tests for custom file scanning
-│   │   ├── catalog_snapshot.go      ← writes .bonsai/catalog.json (agent-consumable catalog listing)
-│   │   ├── catalog_snapshot_test.go ← tests for catalog snapshot writer
-│   │   ├── bonsai_reference_test.go ← tests for Bonsai-reference nav table generation
-│   │   └── refresh_peer_awareness_test.go ← tests for peer-agent awareness refresh
-│   ├── validate/
-│   │   ├── validate.go      ← read-only audit — orphans, stale lock entries, untracked customs, frontmatter (Plan 35)
-│   │   └── validate_test.go ← tests for validate package
-│   ├── wsvalidate/
-│   │   ├── wsvalidate.go    ← shared workspace-path normalisation + validation rules (Plan 32)
-│   │   └── wsvalidate_test.go ← tests for workspace-path validator
-│   └── tui/
-│       ├── styles.go         ← LipGloss styles, palette tokens, panels, trees
-│       ├── styles_test.go    ← tests for palette + display helpers
-│       ├── prompts.go        ← Huh form wrappers (text, select, multi-select, confirm)
-│       ├── filetree.go       ← RenderFileTree widget for scaffold previews
-│       ├── filetree_test.go  ← tests for file tree renderer
-│       ├── harness/          ← BubbleTea step/reducer harness (Plan 15)
-│       ├── initflow/         ← `bonsai init` cinematic flow — stages + chrome (Plan 22)
-│       ├── addflow/          ← `bonsai add` cinematic flow — Select/Ground/Graft/Observe/Grow/Conflicts/Yield (Plan 23)
-│       ├── removeflow/       ← `bonsai remove` cinematic flow — Select/Observe/Confirm/Conflicts/Yield (Plan 31)
-│       ├── updateflow/       ← `bonsai update` cinematic flow — Discover/Select/Sync/Conflict/Yield (Plan 31)
-│       ├── listflow/         ← `bonsai list` cinematic render — static per-agent panels + counts footer (Plan 31)
-│       ├── catalogflow/      ← `bonsai catalog` cinematic tabbed browser (Plan 28)
-│       ├── guideflow/        ← `bonsai guide` cinematic tabbed glamour viewer (Plan 28/30)
-│       └── hints/            ← yield-stage 3-layer hints renderer (NEXT STEPS / TRY THIS / ASK YOUR AGENT) (Plan 31)
-├── catalog/                  ← bundled catalog (embedded into binary)
-│   ├── core/                 ← shared core files (memory, self-awareness)
-│   ├── agents/               ← agent type definitions + identity templates
-│   ├── skills/               ← à la carte skills (meta.yaml + content.md)
-│   ├── workflows/            ← à la carte workflows
-│   ├── protocols/            ← à la carte protocols
-│   ├── sensors/              ← auto-enforced hooks (meta.yaml + script.sh.tmpl)
-│   ├── routines/             ← periodic maintenance routines (meta.yaml + content.md.tmpl)
-│   └── scaffolding/          ← project management infrastructure templates
-└── station/                  ← tech-lead workspace (generated by bonsai init)
-    ├── CLAUDE.md             ← workspace nav (generated, then customized)
-    ├── code-index.md         ← code index — quick-nav to Go source
-    ├── INDEX.md              ← project snapshot
-    ├── Playbook/             ← status, roadmap, backlog, plans, standards
-    ├── Logs/                 ← field notes, key decisions, routine log
-    ├── Reports/              ← report templates, pending reports
-    └── agent/                ← agent instructions
-        ├── Core/             ← identity, memory, self-awareness, routines dashboard
-        ├── Skills/           ← planning-template, review-checklist, bubbletea
-        ├── Workflows/        ← code-review, planning, pr-review, security-audit, etc.
-        ├── Protocols/        ← memory, scope-boundaries, security, session-start
-        ├── Sensors/          ← context-guard, scope-guard-files, session-context, status-bar, routine-check
-        └── Routines/         ← backlog-hygiene, dependency-audit, doc-freshness-check, etc.
-```
+| Question | File |
+|---|---|
+| Where does Bonsai stand, and what is next? | `STATE.md`. Read it first, every session |
+| What do we build, in what order, proved how? | `design/plan.md` |
+| What is Bonsai, exactly? | `design/bonsai-spec.md` (130 KB). Grep its `## N.` sections; never read it whole |
+| What do the formats say? | `design/contract.md` (100 KB). The same: by section |
+| What did Rohan decide on each format? | `design/format-review.md` (confirmed 7 Oct: the formats are final) |
+| What is it for; what does correct mean? | `design/one-pager.md` |
+| What happened before? | `records/runs/`. Read one only when `STATE.md` or the plan points to it |
+| The shared formats, schemas and trick files | `formats/` (from part 0) |
 
----
+The specs were written in the studio's repo: their "this repo" means the studio's, and the paths they cite are its.
 
-## Agent Instructions
+## How a session works
 
-All agent instructions live in `station/`. Start with `station/CLAUDE.md` for the full navigation table.
+- **Rohan opens a session in `~/Servers/Bonsai`** (the main checkout, on `main`). It is the **orchestrator**: it reads
+  `STATE.md` and the plan, keeps its own context lean, and dispatches builder and verifier subagents. Bonsai has no role
+  files, so every brief carries the job, the plan's part, the sections to read and the rules below that apply. It reads
+  the agents' reports, not their file dumps.
+- **Builders** work in a plain git worktree beside the clone (`git -C ~/Servers/Bonsai worktree add
+  ~/Servers/Bonsai-<part> -b <part> main`), never the Agent tool's isolation worktrees. They commit; they never push.
+- **A plan is reviewed by a fresh Opus agent** before it reaches Rohan.
+- **A fresh verifier** (Opus, fresh context) for big or risky work only (Rohan's rule): part 0, the reader, guards and
+  hooks, CI and release, security, and the end of each plan step; other parts close on green tests and CI plus the
+  orchestrator's read of the diff, which the run report says. Related light parts share one verifier. A verifier
+  reads the plan's part, the cited sections and the diff, re-runs the tests itself, and
+  passes or fails the work. It fixes nothing. Nothing is done because an agent says so.
+- **Models:** only the latest Opus, Sonnet and Fable. Opus for verifiers, plan reviews, security, guards, release and
+  decisions, and builders on risky code; Sonnet for sweeps, drafts and mechanical runs; Fable for visual design. Every
+  report says which model ran what.
+- **Run reports** in `records/runs/R-<date>-<topic>.md`, opened before the first edit and appended as the work goes: a
+  log, not a summary. Each lists every run with its model, start, end and minutes; those rows are the hours the stop
+  lines count.
+- **Proof** until Bonsai has its own ladder (spec step 5.4): `go test ./...` and `go vet ./...` in WSL and natively on
+  Windows, CI green on Linux and Windows, and a fresh verifier.
+- **`STATE.md`** is rewritten, never appended, whenever where Bonsai stands changes.
 
----
+## Rules for every change
 
-## Memory
+- **No `go install`, ever:** it puts a `bonsai` in front of the installed one on the PATH. Build with
+  `go build -o <scratch folder>/bonsai ./cmd/bonsai`.
+- Go: the module's `go 1.25` with its `toolchain` line (WSL's Go at `/usr/local/go/bin/go` downloads it). The standard
+  library plus `golang.org/x/sys`; no terminal-UI library and no general YAML library.
+- **Rules learnt from Windows** (the old code failed 29 tests only there), a review item in every change: every stored
+  or printed path uses forward slashes; no test needs a symlink or a file mode to pass on Windows, and a test that cannot
+  run on one OS says why; fingerprints read line endings as LF; output is byte-stable (no map-order iteration); Windows
+  renames retry on busy errors; a hook line never calls `bash` by name.
+- **Every template and pack file documents itself** (its purpose, when to use it, every field with an example), and a
+  field change updates its docs in the same commit.
+- **Every list has one home** (Bonsai's schemas or a pack's declarations); the reference page is regenerated with any
+  list change.
+- Every command runs unattended: `--json` everywhere but `hook`, no prompt without a terminal, ASCII human output, and
+  every refusal names the next step.
+- **`formats/` changes** only with its manifest, in a commit named in `STATE.md`: the studio pins it.
+- **Windows:** Windows Go cannot build from WSL's disk. Windows runs happen under `%USERPROFILE%\bonsai-checks\` with
+  `"/mnt/c/Program Files/Go/bin/go.exe"`. Every Windows-side repo, worktree and CRLF checkout is made with Windows git by
+  its full path, `"/mnt/c/Program Files/Git/cmd/git.exe"`. Never run Linux git in a Windows checkout.
+- Commits: small, `area: what`, plain words, ending with the session's co-author line.
 
-> [!warning]
-> **Do NOT use Claude Code's auto-memory system** (`~/.claude/projects/*/memory/`). All persistent memory goes in `station/agent/Core/memory.md` — version-controlled, auditable, inside the project.
+## GitHub (`LastStep/Bonsai`, public)
 
-When you would normally write to auto-memory (feedback, references, project context, flags), write to the appropriate section in `station/agent/Core/memory.md` instead.
+- Agents act on GitHub as `LastStep`, Rohan's admin account, so guards there stop accidents, not intent.
+- **Builders never push.** The orchestrator fast-forwards `main` and pushes it only after the work's proof passes, then checks
+  CI for that commit after every push:
+  `gh api repos/LastStep/Bonsai/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
+  (or `gh run list -R LastStep/Bonsai -L 10`; this machine's gh has no `--branch`). Red CI is fixed forward.
+- Work lands on `main` directly: no pull requests, no long-lived branches. Force pushes and deletion are blocked.
+- **Nobody tags or releases.** `release.yml` stays disabled; releases are Rohan's word at spec step 5.7. No agent changes
+  a setting, secret, ruleset or workflow switch, or merges or closes a pull request.
 
-When you discover bugs, improvement ideas, tech debt, or feature requests outside your current task scope, add them to `station/Playbook/Backlog.md` instead of fixing them inline or noting them only in memory.
+## Working with Rohan
 
----
+- He is the director and writes, reviews and verifies no code. Agents own the code end to end: never leave a code
+  problem for him to catch.
+- Ask in plain words, context first, one question at a time, with two to four options and a recommendation. Never ask
+  what a file answers.
+- Hand him manual work (hand checks, settings, installs) in one batch with exact commands: bash for WSL, one command per
+  line; PowerShell 5.1 for Windows, one command per line, no `&&`.
+- A small fix stays small; ask before chasing edge cases.
+- Write for him in plain words: what he can now do, with evidence (test counts, the CI run, the command to try). Never
+  claim something is good for him; he judges that.
 
-## Key Concepts
+## Safety
 
-- **Abilities** (skills, workflows, protocols) each have a `meta.yaml` with `name`, `description`, `agents` (list or `"all"`), optional `required` (same format) and a companion `.md` content file
-- **Sensors** are auto-enforced hooks — `meta.yaml` adds `event` (hook event) and optional `matcher` (tool filter), with a companion `.sh.tmpl` script template instead of `.md`
-- **Routines** are periodic self-maintenance tasks — `meta.yaml` adds `frequency` (e.g. `"5 days"`), with a companion `.md.tmpl` content template. Installed to `agent/Routines/` with a managed dashboard at `agent/Core/routines.md`
-- **`routine-check` sensor** is auto-installed when any routines are present, auto-removed when the last routine is removed — parses the dashboard at session start and flags overdue routines
-- **Shared core files** live in `catalog/core/` (memory, self-awareness) — used by all agents. An agent can override any shared file by placing a same-named file in its own `core/` directory. Generator checks agent first, falls back to shared.
-- **Agent definitions** have an `agent.yaml` with `name`, `display_name`, `description`, `defaults` and a `core/` directory with agent-specific files (at minimum `identity.md.tmpl`)
-- **`.tmpl` extension rule** — files ending in `.tmpl` contain Go template variables (`{{ }}`), are rendered at generation time, and have the `.tmpl` extension stripped from output. Files without `.tmpl` are copied as-is.
-- **Templates** use Go `text/template` with `{{ .ProjectName }}`, `{{ .ProjectDescription }}`, `{{ .Routines }}` context vars
-- **Scaffolding** is project infrastructure (INDEX, Playbook, Logs, Reports) — defined in `catalog/scaffolding/manifest.yaml` with `name`, `description`, `required`, `affects`, and `files`. Selected during `bonsai init`, some items are required
-- **`.bonsai.yaml`** is the project config generated in the user's target project — tracks installed agents, scaffolding selections, and docs_path
-- **`.claude/settings.json`** is auto-generated with hook entries for all installed sensors
-- **`.bonsai-lock.yaml`** tracks generated files with content hashes — enables conflict detection on re-run
-- **Generator** uses lock-aware writes: new files are created, unmodified files are updated silently, user-modified files trigger a conflict prompt (skip / overwrite / backup & overwrite). Scaffolding files are always write-once (skip if exists).
-- **Catalog is embedded** via `embed.FS` in `embed.go` (package `bonsai` at repo root) — ships inside the binary
-
----
-
-## Development
-
-```bash
-make build             # builds ./bonsai binary
-./bonsai --help        # verify CLI works
-go install ./cmd/bonsai    # install to $GOPATH/bin
-```
-
-### Testing changes to abilities
-
-Edit files in `catalog/`, then rebuild and test in a temp dir:
-```bash
-make build
-mkdir /tmp/test && cd /tmp/test
-/path/to/bonsai init
-/path/to/bonsai add
-/path/to/bonsai list
-```
-
-### Adding a new ability (skill, workflow, protocol)
-
-1. Create `catalog/{category}/{item-name}/meta.yaml`
-2. Create `catalog/{category}/{item-name}/{item-name}.md`
-3. Set `agents:` in meta.yaml to control compatibility
-
-### Adding a new sensor
-
-1. Create `catalog/sensors/{name}/meta.yaml` — must include `event` and optionally `matcher`
-2. Create `catalog/sensors/{name}/{name}.sh.tmpl` — script template
-3. Available events: `SessionStart`, `PreToolUse`, `PostToolUse`, `Stop`, etc.
-4. Template context includes: `.ProjectName`, `.AgentName`, `.AgentDisplayName`, `.Workspace`, `.DocsPath`, `.OtherAgents`, `.Protocols`, `.Skills`, `.Workflows`, `.Routines`
-5. Custom func: `{{ title .AgentType }}` capitalizes each word
-
-### Adding a new routine
-
-1. Create `catalog/routines/{name}/meta.yaml` — must include `frequency` (e.g. `"5 days"`)
-2. Create `catalog/routines/{name}/{name}.md.tmpl` — procedure template (rendered with full TemplateContext)
-3. Set `agents:` in meta.yaml to control compatibility
-4. Procedure steps should be concrete, idempotent, and reference specific file paths (use template vars for project-specific paths)
-5. The `routine-check` sensor is auto-managed — no manual wiring needed
-
-### Adding a new agent type
-
-1. Create `catalog/agents/{name}/agent.yaml`
-2. Create `catalog/agents/{name}/core/identity.md.tmpl` (+ memory.md.tmpl, self-awareness.md)
-3. Set `defaults:` in agent.yaml to pre-select items
-
----
-
-## Conventions
-
-- Keep CLI interactive — use Huh forms for all user input
-- All abilities use the same base `meta.yaml` shape: `name`, `description`, `agents`, `required` — sensors add `event` and `matcher`, routines add `frequency`
-- **`required`** uses the same format as `agents` (`all` or list of agent types) — required items are auto-installed during `bonsai add` and can't be unchecked
-- Generator functions in `internal/generate/`, catalog loading in `internal/catalog/`, commands in `cmd/`
-- Go structs for all data shapes (config, catalog models)
-- Don't break the existing CLI commands — they're the public API
-- TUI styling uses LipGloss — styles defined in `internal/tui/styles.go`
-
-### Naming Standard
-
-**`name`** (machine identifier):
-- Characters: `[a-z0-9-]` only — lowercase, digits, hyphens
-- Style: kebab-case (`scope-guard-files`, `coding-standards`)
-- Unique within its type — two types CAN share a name (e.g. `memory` protocol and `memory` skill)
-- No type prefixes (`design-guide`, not `skill-design-guide`)
-- No agent prefixes (`design-guide`, not `frontend-design-guide`) — the `agents:` field handles compatibility
-- Used in: config files (`.bonsai.yaml`), file paths, template context lists, internal lookups
-
-**`display_name`** (human-readable label):
-- Optional in all `meta.yaml` / `agent.yaml` files
-- If omitted, auto-derived from `name`: hyphens → spaces, title-cased (`scope-guard-files` → "Scope Guard Files")
-- Derivation function: `catalog.DisplayNameFrom()` in `internal/catalog/catalog.go`
-- Used in: TUI pickers, catalog tables, list output, generated CLAUDE.md headings
-- Never stored in config — purely cosmetic
-
-**Informal word patterns** (not enforced, but encouraged for consistency):
-- `*-guard-*` — sensors that block/prevent actions
-- `*-check`, `*-hygiene`, `*-accuracy` — routines that audit
-- `*-standards`, `*-conventions`, `*-guide` — skills that define rules
-- `*-logging`, `*-reporting`, `*-review` — workflows that produce output
+- **No secrets anywhere: the repo is public.** No home-folder path, machine or tailnet name, email address, token or server
+  address in any file or commit message; write `~/...` and `%USERPROFILE%`.
+- Never touch `~/ZenGarden/Bonsai` (an old clone with branches on no remote).
+- Tests use temp folders (`t.TempDir()`), never a real home (`~/.bonsai`, `~/.claude`) or a real project.
+- Bonsai's work changes nothing outside this repo, its test pack and the scratch folders (`~/bonsai-checks`,
+  `%USERPROFILE%\bonsai-checks`).
+- **Stop every process you start** (builds, tests, test sessions, watchers) and check with `ps -eo pid,etime,cmd` before
+  you finish. Never kill what you did not start: another agent's run looks the same.

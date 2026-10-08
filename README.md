@@ -1,5 +1,7 @@
 <!-- Logo placeholder — artwork coming. Keep this comment so we remember to slot it in. -->
 
+> **Bonsai is being rebuilt.** 0.4.3 is the old product's last release; the new design is in [`design/`](design/).
+
 <div align="center">
 
 # Bonsai
