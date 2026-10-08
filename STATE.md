@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 by the setup run (`records/runs/R-2026-10-08-setup.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 by the plan-review run (`records/runs/R-2026-10-08-plan-review.md`).
 
 ## In short
 
@@ -25,11 +25,15 @@ out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bon
   then. Nothing in the studio waits on part 0; Bonsai's own order is unchanged.
 - "The proper way, no shortcuts": the spec's order inside Bonsai; parallel work only where it is truly independent.
 - Bonsai joins the studio's dashboard as its own project at spec step 6, as planned.
+- Haiku joins the models, for small bookkeeping and audit jobs (listing, sorting, counting, checking a list against a
+  source); it reports facts and judges nothing (`CLAUDE.md`).
+- Rohan's hand checks come in two sittings, not one: checks b, c and d (about 25 minutes) after part 5, check a (about
+  20 minutes) after part 4. Parts 3 and 5 close once the first sitting passes, part 4 once the second does.
 
 ## GitHub, read 8 Oct
 
-- `main`: the setup commit `3fa4982` on top of `c6a6757`, pushed 8 Oct. The only branch; no open pull request;
-  the newest tag is `v0.4.3`. The old maintenance routine's cloud sessions are archived.
+- `main`: the plan's fixes (`8c6eb6f`) on top of the setup (`3fa4982`), pushed 8 Oct. The only branch; no open pull
+  request; the newest tag is `v0.4.3`. The old maintenance routine's cloud sessions are archived.
 - `release.yml` is disabled. No repository secret (the old `HOMEBREW_TAP_TOKEN` is deleted). The only environment is
   `github-pages`; the `release` environment and a new tap token wait for step 5.7.
 - Ruleset `main-protection`: blocks force pushes and deletion only (Rohan switched off the pull-request and
@@ -37,32 +41,37 @@ out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bon
 - Workflows on: CI (`test`, `lint`, `govulncheck`), CodeQL, Dependabot, and Deploy Docs: a push to `main` touching
   `README.md`, `docs/`, `catalog/` or `website/` redeploys the old website to GitHub Pages until part 1 removes it.
 
-## The one thing to do next: part 0, the formats
+## The one thing to do next: Rohan approves the plan, then part 0, the formats
 
-`design/plan.md` part 0: a JSON Schema for each of the contract's ten formats, the trick files with their expected
-outcomes in `formats/expect.json`, a raw-byte manifest, and a Go test. 6-10 AI hours; at 13 work stops and Rohan is
-asked. First steps:
-1. A fresh Opus review of `design/plan.md` (rewritten 8 Oct from the studio's reviewed drafts; part 0 and the
-   on-`main` flow are new here); fix what it finds. Then Rohan approves the plan and `design/one-pager.md` (he reads
-   the plan's top).
-2. Open `records/runs/R-<date>-formats.md`. Make the builder's worktree:
+`design/plan.md` was reviewed on 8 Oct by a fresh Opus agent (READY AFTER FIXES) and fixed on every finding; a Haiku
+audit found each fix in the text (`records/runs/R-2026-10-08-plan-review.md`). It waits for Rohan's approval, with
+`design/one-pager.md`.
+
+Then part 0: a JSON Schema for each of the contract's ten formats, the trick files with their expected outcomes in
+`formats/expect.json`, a raw-byte manifest, and a Go test. 6-10 AI hours; at 13 work stops and Rohan is asked.
+1. Open `records/runs/R-<date>-formats.md` (the orchestrator is its only writer). Make the builder's worktree:
    `git -C ~/Servers/Bonsai worktree add ~/Servers/Bonsai-formats -b formats main`.
-3. Brief one Opus builder: part 0 whole, contract §2.4 and each format's section (by grep), and the rules from
-   `CLAUDE.md`. The format-0 outcomes come from the studio's frozen format-0 reader, taken read-only:
-   `git -C ~/Servers/Trinetra-Game-Studio show 4a05eac:tools/lib/yaml.mjs > <scratch folder>/yaml0.mjs`
-   (it exports `parseYaml` and `parseFrontmatter`). Nothing is written in the studio's checkout.
-4. A fresh Opus verifier reads every case rule by rule. Then fast-forward `main`, push, check CI, run
-   `go test ./formats/` in a Windows-git clone, name the commit here, and tell Rohan.
+2. Brief one Opus builder: part 0 whole, the sources it lists (contract §2.4 and each format's section, spec §16's rows
+   and the sections they cite, by grep), and the rules from `CLAUDE.md`. The format-0 outcomes come from the studio's
+   frozen reader, taken read-only: `git -C ~/Servers/Trinetra-Game-Studio show 4a05eac:tools/lib/yaml.mjs >
+   <scratch folder>/yaml0.mjs`. Nothing is written in the studio's checkout. Tell the builder: the private-pattern test
+   flags `/home/`, so the `status --json` example needs a made-up absolute path the pattern does not match (contract
+   §12's own example uses `/home/<user>/...`).
+3. A fresh Opus verifier reads every case rule by rule and runs the frozen reader with a runner of its own.
+4. Before the push: `go test ./formats/` natively on Windows in a Windows-git clone made from a `git bundle` of the
+   branch under `%USERPROFILE%\bonsai-checks\`. Then fast-forward `main`, push, check CI (`test` and `lint` green;
+   `govulncheck` stays red until part 1), name the commit here, and tell Rohan.
 
-Then the walking skeleton, parts 1-6, in the plan's order (1, the test pack, 2, 3, 5, the rest of 4, 6).
+Then the walking skeleton, parts 1-6, in the plan's order (1, the test pack, 2, 3, 5, the rest of 4, 6). Part 1 gets
+its own fresh verifier before its push.
 
 ## Waiting on Rohan
 
-- Approve `design/plan.md` and `design/one-pager.md` (after the review above).
+- Approve `design/plan.md` and `design/one-pager.md`.
 - Confirm the old Homebrew tap token is revoked on github.com (Settings, Developer settings, its token list).
 - Before part 5's hook checks: spec §17 step 3, the old `bonsai` binaries (the lines are in the spec).
-- Later: the 45-minute hand checks (spec §17 step 6) when the scratch build is ready; step 8 at 5.4; at 5.7 the
-  `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
+- Later: the two hand-check sittings (after part 5, about 25 minutes; after part 4, about 20); step 8 at 5.4; at 5.7
+  the `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
 
 ## Loose ends
 
@@ -73,4 +82,6 @@ Then the walking skeleton, parts 1-6, in the plan's order (1, the test pack, 2, 
   `bonsai` by a fixed path, and what the guard trusts to find the main checkout cannot be rewritten without the guard
   noticing (fail closed). See `design/plan.md`, "What still links Bonsai and the studio", and spec §7.
 - `README.md` and `CONTRIBUTING.md` still describe the old product, apart from a pointer; part 1 rewrites them.
-- The spec's §19 D still says 60 h and 30-46 h; §14 and §20 say 61 h and 30-47 h. The plan uses 61 and 30-47.
+- The spec's §18 and §19 D give both question D's figures (60 h, 30-46 h) and the format review's (61 h, 30-47 h);
+  §14 and §20 say 61 and 30-47. The plan uses 61 and 30-47.
+- The spec's §17 step 6 still has the hand checks in one sitting; the plan follows Rohan's two (8 Oct).
