@@ -131,51 +131,83 @@ cut and its Desk stays on upkeep until it links (step 7). What links the two:
 Bonsai's first job (Rohan, 8 Oct: "those are kind of tests which other projects can use ... it makes sense for them to
 live in bonsai"). It lands on `main` before part 1, beside the old product's code, in a folder part 1's clear-out keeps.
 Sources: contract §2.4 (the YAML rules and the trick files), §2.2 and §2.5 (fields, versions, JSON), and each format's
-section: §4 task, §5.2 labels, §6 lanes, §7.1 run, §7.2 state, §8.1 log, §9.1 ask, §11 ladder, §12 status, §14 lock.
+section: §4 task, §5.2 labels, §6 lanes, §7.1 run, §7.2 state, §8.1 log, §9.1 ask, §11 ladder, §12 status, §14 lock;
+with the sections they lean on: §3 (the home and the workspace id), §5.1 (label names), §8.2 (the log's events and
+categories) and §13 (the active task). Spec §16 adds to four of these formats, confirmed by Rohan with the rest: row 18,
+the lock's `declares` (spec §6); row 23, the ladder's third rung kind, git integrity (`ver-git`, spec §9); row 24,
+`status --json`'s additions (spec §4-§7); row 27, the binary's path and SHA-256 in the log (spec §3, §8). A closed list
+never grows inside a major (contract §2.2), so each schema carries them from the start. Where the contract gives a field
+only "as today" (the ladder's `captures`, `skipped`, `leftovers` and `proof`; the log's `kind`, `text`, `source`,
+`model` and `reason`; the ask's `verdict`), the builder reads today's shape read-only at the studio's frozen commit
+(`git show 4a05eac:` of `tools/ladder/ladder.mjs`, `tools/lib/spool.mjs` and `tools/lib/asks.mjs`). A shape still
+unclear is typed open; a name the spec has not fixed (the log's binary path and SHA-256, format review 4.2) is not
+invented; `README.md` lists both.
 
 **What it builds, all under `formats/`:**
 - `README.md`: what the folder is and who reads it, how a case is laid out, every field of `expect.json` and
   `manifest.json` with an example, the reason codes, and how the set changes (a new case, a new manifest, a new commit
   named in `STATE.md`). The folder documents itself (contract §2.8).
 - `schemas/<name>.schema.json` for the ten formats: `task`, `labels`, `lanes`, `run`, `state`, `log`, `ask`, `ladder`,
-  `status`, `lock`. JSON Schema draft 2020-12. Properties in the contract's fixed order, every field required (`null` or
-  `[]` where it does not apply, contract §2.2), closed lists as `enum`, open lists as strings. Not here: the two
-  generated tables (`bonsai.tasks/1`, `bonsai.sessions/1`), `bonsai.yaml` (`bonsai.workspace/1`) and `pack.yaml`
-  (`bonsai.pack/1`), all step 5.1; memory, which has no format of its own. Nothing here reads or writes a log or an ask.
-- `examples/`: one valid document per format, made-up values.
+  `status`, `lock`. JSON Schema draft 2020-12. **A schema describes what a writer writes** (contract §2.2): properties
+  in the contract's fixed order, every field the version knows required (`null` or `[]` where it does not apply),
+  closed lists as `enum`, open lists as strings. A reader is more lenient (a missing field reads as `null`, an unknown
+  one is kept), so `additionalProperties` stays open. Each schema documents itself (`CLAUDE.md`, contract §2.8): a
+  top-level `description` (what the format is for, who writes and reads it) and a `description` and `examples` on every
+  property. **These schemas are the one home** that contract §2.2 and format review R2.8 call "Bonsai's code" for every
+  list in the ten formats: from part 2 on, Bonsai's Go code embeds them and keeps no second copy of a list. Not here:
+  the two generated tables (`bonsai.tasks/1`, `bonsai.sessions/1`), `bonsai.yaml` (`bonsai.workspace/1`), `pack.yaml`
+  (`bonsai.pack/1`) and the `error` object (`bonsai.error`, spec §3, §16 row 29), all step 5.1; memory
+  (`bonsai.memory/1`, spec §10, §16 row 19), a spec format, not one of the contract's ten. Nothing here reads or writes
+  a log or an ask.
+- `examples/`: one valid document per format, made-up values, each stored as the JSON a reader returns
+  (`<name>.json`), which its schema validates. For the five YAML and markdown formats (`task`, `labels`, `lanes`, `run`,
+  `state`) the source file sits beside it (`<name>.md` or `<name>.yaml`) and is also a yaml-1 case: `expect.json` gives
+  it both outcomes like any case, and its format-1 value is that JSON. So the test checks every schema without a
+  reader, and part 2's reader proves the YAML.
 - `trick/yaml-1/<rule>/` and `trick/yaml-0/<oddity>/`: the input files, markdown with frontmatter or plain YAML
   (definition) files, made-up content only. Format-1 cases start with a `format:` line, as a real file would. **One
   case per rule of contract §2.4:** LF and CRLF lines; a BOM (frontmatter, and a definition file); a tab in indentation;
   `---` and `...` anywhere but the frontmatter's own markers; every line consumed, a list at its key's own indent among
-  them; the key rule: quoted keys, complex keys, `<<`, a key twice in one mapping, the reserved words as keys (`y`, `n`,
+  them; the key rule: keys of `[a-z][a-z0-9_]*` and a dotted label key (`<namespace>.<name>`) accepted, `Title` and
+  `done-when` refused, quoted keys, complex keys, `<<`, a key twice in one mapping, the reserved words as keys (`y`, `n`,
   `yes`, `no`, `on`, `off`, `true`, `false`, `null`); nested mappings; block sequences (deeper than their key, exactly
   one space after `-`); one-line flow sequences, `[]` and `{}`; anchors, aliases, tags, flow mappings with content,
-  nested and multi-line flow sequences (all refused); block scalars `|`, `|-`, `>`, `>-`, a line starting with `#`
-  inside one, a deeper line in `>`; comments at a line's start and after a space, and a `#` with no space before it; a
+  nested and multi-line flow sequences (all refused); block scalars `|`, `|-`, `>`, `>-`, and the rest refused (`|+`,
+  `>+`, an indentation indicator such as `|2`), a line starting with `#` inside one, a deeper line in `>`; comments at a line's start and after a space, and a `#` with no space before it; a
   quote character inside a plain value; quoted scalars on one line, the five escapes, a bad escape, an unescaped `"`,
   something after the closing quote; **every row of the plain-scalar table** (null forms, `true` and `false`, the
   integer at 15 digits and at 16, a decimal, both date forms read as text, a text value, the "quote this value"
   refusal); **each listed refusal** (`0755`, `55227e5`, `0x1F`, `1e3`, `1_000`, `.inf`, `TRUE`, `No`, `5 arenas`,
   `.claude/**`, a value holding `: `), and each read as text once quoted. Plus: a duplicate key quoted and unquoted;
   **the format-0 oddities** (a plain value holding `: `, unquoted hashes, `TRUE`, the last of two duplicate keys,
-  document markers skipped); and **the dispatch cases**: `format:` first, no `format:` key, and `format:` not first
-  (refused).
-- `expect.json`: one language-neutral file giving every case's outcome under each format, that is, the file read by a
-  format-0 reader and by a format-1 reader: `accepted` with the value as JSON, or `refused` with a short reason code
-  (format 1; the codes are listed in `README.md`) or the reader's own message (format 0). Under format 1 a date stays
-  text and an integer has at most 15 digits.
+  document markers skipped); and **the dispatch cases**: `format:` first, `format:` first carrying contract §2.8's
+  pointer comment (accepted), no `format:` key, and `format:` not first (refused).
+- `expect.json`: one language-neutral file giving every case two outcomes:
+  - **Format 0:** the studio's frozen reader, which reads every file as format 0, `format:` line or not. `accepted` with
+    the value as JSON, or `refused` with the reader's own message.
+  - **Format 1:** a reader that dispatches as §2.4 says. With `format:` first it reads by the format-1 grammar:
+    `accepted` with the value as JSON (a date stays text, an integer has at most 15 digits), or `refused` with a short
+    reason code (the codes are listed in `README.md`). With no top-level `format:` key the outcome is `format-0`: §2.4
+    sends the file to format 0, which part 2 does not build. With `format:` anywhere but first, `refused`.
+  - **The value** is the YAML file's mapping, or for markdown the frontmatter's mapping (`parseFrontmatter`'s `data`);
+    the body is not compared.
+  - **A case §2.4's words do not settle** (for example `''` inside single quotes) takes the outcome §2.4's own test
+    gives: accepted only if a YAML 1.1 and a YAML 1.2 library both read it and read the same value, otherwise refused.
+    The builder lists every such case in its run report, and the verifier rules on each.
 - `manifest.json`: a set version and the SHA-256 of each file's raw bytes (never line-ending-normalised: the CRLF case is
-  the point), with forward-slash paths, for every file under `formats/` except itself and the Go files.
+  the point), with forward-slash paths sorted by path, for every file under `formats/` except itself and the Go files.
 - In the repo's `.gitattributes`: `formats/** -text`, on a line **after** the existing `*.yaml text eol=lf` (the last
   matching line wins), so no checkout, Windows' `core.autocrlf` included, changes a byte.
 - `formats/*_test.go`: standard library only, a test-only package that needs no reader and survives part 1. It checks
   that:
-  - the manifest matches every file's raw bytes, lists every file and nothing more;
+  - the manifest matches every file's raw bytes, lists every file and nothing more, sorted by path;
   - the CRLF case holds `\r\n` and the BOM cases start with `EF BB BF`, as checked out;
   - every rule of §2.4 has a case (a short hand list of the rules in the test), and every case has both outcomes in
     `expect.json`;
-  - every schema is valid JSON and declares draft 2020-12, and its example validates under a small checker in the test,
-    limited to the keywords the schemas use (part 2 moves the checker into the new layout);
+  - every schema is valid JSON, declares draft 2020-12, and has a `description` and `examples` on every property; its
+    example validates under a small checker in the test that implements the keywords the schemas use, skips only the
+    annotations (`title`, `description`, `examples`) and fails on any other keyword (part 2 moves the checker into the
+    new layout); each YAML or markdown example's format-1 value in `expect.json` equals its `<name>.json`;
   - no file in the set holds an absolute path (`/home/`, `/mnt/`, `~/`, a drive letter), an email address or a tailnet
     name.
 
