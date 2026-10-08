@@ -207,6 +207,7 @@ func TestStatusExit3(t *testing.T) {
 		{"a refused bonsai.yaml", "format: bonsai.workspace/1\nid: 0755\n", "bonsai.yaml line 2: the plain value \"0755\""},
 		{"a newer bonsai.yaml", "format: bonsai.workspace/2\n", "format too new"},
 		{"a format-0 bonsai.yaml", "id: x\n", "no format: line first"},
+		{"format: and a tab", "format:\tbonsai.workspace/1\nid: ws-7kq2m4xw5r3t6y2u7p4a5c3e2b\nname: x\n", "bonsai.yaml line 1: a tab between the key's colon and its value"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -218,7 +219,8 @@ func TestStatusExit3(t *testing.T) {
 			checkShape(t, doc, true)
 			p, _ := doc.Get("problems")
 			list := p.([]any)
-			if len(list) != 1 || !strings.Contains(list[0].(string), c.want) || !strings.Contains(list[0].(string), "; next: ") {
+			if len(list) != 1 || !strings.Contains(list[0].(string), c.want) || !strings.Contains(list[0].(string), "; next: ") ||
+				(c.name == "format: and a tab" && strings.Contains(list[0].(string), "no format: line first")) {
 				t.Errorf("problems %s, want one holding %q and a next step", schema.Show(p), c.want)
 			}
 			if text := Text(doc); !strings.HasPrefix(text, "bonsai status: cannot read this workspace.\n  ") {

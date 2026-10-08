@@ -210,6 +210,9 @@ func TestReadConfigRefuses(t *testing.T) {
 		{"a drive glob", cfgHead + "protected: [\"C:/x\"]\n", "is not project-relative"},
 		{"a glob a number", cfgHead + "protected: [1]\n", "protected item 1 is a number, not text"},
 		{"person_only text", cfgHead + "person_only: x\n", "person_only is text, not a list"},
+		{"a source like an option", cfgHead + "packs:\n  - id: a\n    source: \"--upload-pack=x\"\n    ref: r\n", "line 6: packs item 1's source \"--upload-pack=x\" starts with -"},
+		{"a ref like an option", cfgHead + "packs:\n  - id: a\n    source: s\n    ref: \"-x\"\n", "line 7: packs item 1's ref \"-x\" starts with -"},
+		{"format: and a tab", "format:\tbonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: x\n", "line 1: a tab between the key's colon and its value"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

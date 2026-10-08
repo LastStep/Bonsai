@@ -119,6 +119,9 @@ func ReadConfig(raw []byte) (*Config, error) {
 		}
 		seen[p.ID] = true
 		p.Source = f.text(pm, "source", where, first, true)
+		if e, _ := pm.Entry("source"); f.err == nil && strings.HasPrefix(p.Source, "-") {
+			f.fail(e.Line, "%s's source %s starts with -, which git would read as an option", where, showValue(p.Source))
+		}
 		p.Path = f.text(pm, "path", where, first, false)
 		if f.err == nil && p.Path != "" {
 			if err := CheckRelPath(p.Path); err != nil {
@@ -127,6 +130,9 @@ func ReadConfig(raw []byte) (*Config, error) {
 			}
 		}
 		p.Ref = f.text(pm, "ref", where, first, true)
+		if e, _ := pm.Entry("ref"); f.err == nil && strings.HasPrefix(p.Ref, "-") {
+			f.fail(e.Line, "%s's ref %s starts with -, which git would read as an option", where, showValue(p.Ref))
+		}
 		c.Packs = append(c.Packs, p)
 	}
 	c.Protected = f.texts(m, "protected", "the file")
