@@ -237,6 +237,7 @@ func Build(req Request) (*Plan, error) {
 		p.NewConfig = true
 	}
 	p.Config = cfg
+	origConfig := rawConfig
 	if req.NewID {
 		if co.Root != co.Main {
 			return nil, errorf(ExitState, "run bonsai init --new-id in the main checkout, "+filepath.ToSlash(co.Main),
@@ -349,7 +350,7 @@ func Build(req Request) (*Plan, error) {
 			write: rawConfig})
 	} else if p.OldID != "" {
 		p.Files = append(p.Files, &FileResult{Path: workspace.ConfigFile, Result: Updated,
-			Why: "a new id, " + cfg.ID + " (was " + p.OldID + ")", write: rawConfig, old: append([]byte{}, rawConfig...)})
+			Why: "a new id, " + cfg.ID + " (was " + p.OldID + ")", write: rawConfig, old: origConfig})
 	}
 
 	// Pack files: every path a pack gives now, or the lock holds.

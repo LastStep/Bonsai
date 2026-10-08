@@ -522,6 +522,10 @@ func TestNewID(t *testing.T) {
 	if p2.OldID != p.Config.ID || p2.Config.ID == p.Config.ID || p2.EmptyLocal != 2 {
 		t.Errorf("new id %s (was %s), emptied %d", p2.Config.ID, p2.OldID, p2.EmptyLocal)
 	}
+	if d := Diff("bonsai.yaml", result(t, p2, "bonsai.yaml").old, result(t, p2, "bonsai.yaml").write); !strings.Contains(d, "-id: "+p.Config.ID) ||
+		!strings.Contains(d, "+id: "+p2.Config.ID) {
+		t.Errorf("the diff of the new id:\n%s", d)
+	}
 	now := read(t, root, "bonsai.yaml")
 	if strings.Replace(old, p.Config.ID, p2.Config.ID, 1) != now {
 		t.Errorf("bonsai.yaml changed beyond its id:\n%s", now)
