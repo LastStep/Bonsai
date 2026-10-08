@@ -145,7 +145,9 @@ func TestLockRefuses(t *testing.T) {
 		{"another format", strings.Replace(good, "bonsai.lock/1", "bonsai.task/1", 1), `its format is "bonsai.task/1"`},
 		{"a kind not in the schema", strings.Replace(good, `"kind": "block"`, `"kind": "copy"`, 1), `"copy" is not one of`},
 		{"a short commit", strings.Replace(good, `"0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4"`, `"0a1b2c3"`, 1), "does not match"},
-		{"a missing field", strings.Replace(good, `"written_by": "1.0.0",`, ``, 1), `required field "written_by" is missing`},
+		{"a missing format", strings.Replace(good, `"format": "bonsai.lock/1",`, ``, 1), "its format is null"},
+		{"a field of the wrong kind", strings.Replace(good, `"version": "1.0.0",`, `"version": 1,`, 1), "is integer, want string"},
+		{"two paths in letter case", strings.Replace(good, `"CLAUDE.md": {`, `"claude.md": {"kind": "pack", "pack": "base", "sha256": "`+strings.Repeat("0", 64)+`"}, "CLAUDE.md": {`, 1), `differ only in letter case`},
 		{"an absolute path", strings.Replace(good, `"CLAUDE.md": {`, `"/etc/CLAUDE.md": {`, 1), "does not match"},
 		{"a path out", strings.Replace(good, `"CLAUDE.md": {`, `"a/../../CLAUDE.md": {`, 1), "files: the path"},
 		{"a format0 path out", strings.Replace(good, `"work/runs/`, `"../runs/`, 1), "format0: the path"},
@@ -215,5 +217,34 @@ func TestWriteLockAndLoadLock(t *testing.T) {
 	again, _ := back.Encode()
 	if !bytes.Equal(again, raw) {
 		t.Errorf("LoadLock does not read back what WriteLock wrote")
+	}
+}
+
+// Contract §2.2: a reader treats a missing field, or a null one, as null, an older writer of the same major; the
+// writer still writes every field.
+func TestLockReadsMissingFieldsAsNull(t *testing.T) {
+	in := `{"format": "bonsai.lock/1", "packs": [{"id": "p", "source": null, "version": "1"}],
+	  "files": {"a.md": {"kind": "pack"}}, "format0": null}`
+	l, err := ReadLock([]byte(in))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l.WrittenBy != "" || len(l.Packs) != 1 || l.Packs[0].Source != "" || l.Packs[0].Commit != "" ||
+		len(l.Packs[0].Declares) != 0 || l.Files["a.md"].SHA256 != "" || len(l.Format0) != 0 {
+		t.Errorf("read %+v", l)
+	}
+	if _, err := l.Encode(); err == nil {
+		t.Errorf("a lock with missing fields was written: the writer writes every field")
+	}
+	l2, err := ReadLock([]byte(`{"format": "bonsai.lock/1"}`))
+	if err != nil || len(l2.Packs) != 0 || len(l2.Files) != 0 || l2.Files == nil {
+		t.Errorf("a lock with only its format: %+v, %v", l2, err)
+	}
+}
+
+func TestLockRefusesTwoPathsInLetterCase(t *testing.T) {
+	l := &Lock{WrittenBy: "dev", Format0: map[string]string{"work/A.md": strings.Repeat("0", 64), "work/a.md": strings.Repeat("1", 64)}}
+	if _, err := l.Encode(); err == nil || !strings.Contains(err.Error(), "differ only in letter case") {
+		t.Errorf("Encode: %v", err)
 	}
 }

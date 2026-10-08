@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/LastStep/Bonsai/formats"
@@ -61,11 +62,11 @@ type LockedFile struct {
 }
 
 var (
-	lockSchemaOnce sync.Once
-	lockSchema     schema.Object
+	lockSchemaOnce             sync.Once
+	lockSchema, lockReadSchema schema.Object
 )
 
-// LockSchema is bonsai.lock/1's schema, from formats/schemas (embedded).
+// LockSchema is bonsai.lock/1's schema, from formats/schemas (embedded): what a writer writes.
 func LockSchema() schema.Object {
 	lockSchemaOnce.Do(func() {
 		raw, err := formats.Schema("lock")
@@ -75,8 +76,29 @@ func LockSchema() schema.Object {
 		if lockSchema, err = schema.Parse(raw); err != nil {
 			panic(err)
 		}
+		lockReadSchema = schema.Lenient(lockSchema)
 	})
 	return lockSchema
+}
+
+// knownLockFields are the fields this Bonsai reads, per level, in the schema's order: a null one reads as missing.
+var knownLockFields = map[string][]string{
+	"top":  {"written_by", "packs", "files", "format0"},
+	"pack": {"id", "source", "version", "commit", "sha256", "declares"},
+	"file": {"kind", "pack", "sha256"},
+}
+
+// dropNull removes the known fields that are null: contract §2.2's reader treats a missing field as null, so a null
+// one reads as a missing one.
+func dropNull(o schema.Object, level string) schema.Object {
+	out := schema.Object{}
+	for _, m := range o {
+		if m.Value == nil && contains(knownLockFields[level], m.Key) {
+			continue
+		}
+		out = append(out, m)
+	}
+	return out
 }
 
 const lockNext = "restore .bonsai/lock.json from git (git checkout -- .bonsai/lock.json); the lock is Bonsai's to write"
@@ -86,7 +108,8 @@ func lockError(format string, args ...any) error {
 }
 
 // ReadLock reads the lock's bytes: UTF-8 JSON with no duplicate key (contract §2.5), its format first checked, then
-// the whole document held to the lock schema, then its paths.
+// the whole document held to the lock schema as a reader reads it (contract §2.2: a missing field, or a null one,
+// reads as null, so as an empty value: no packs, no files, an empty commit), then its paths. An unknown field is kept.
 func ReadLock(raw []byte) (*Lock, error) {
 	v, err := schema.Decode(raw)
 	if err != nil {
@@ -103,7 +126,27 @@ func ReadLock(raw []byte) (*Lock, error) {
 		}
 		return nil, lockError("its format is %s, not %s", schema.Show(f), LockFormat)
 	}
-	if msgs := schema.Validate(LockSchema(), doc); len(msgs) > 0 {
+	doc = dropNull(doc, "top")
+	if packs, ok := doc.Get("packs"); ok {
+		if list, ok := packs.([]any); ok {
+			for j, pv := range list {
+				if po, ok := pv.(schema.Object); ok {
+					list[j] = dropNull(po, "pack")
+				}
+			}
+		}
+	}
+	if files, ok := doc.Get("files"); ok {
+		if fo, ok := files.(schema.Object); ok {
+			for j, fm := range fo {
+				if entry, ok := fm.Value.(schema.Object); ok {
+					fo[j].Value = dropNull(entry, "file")
+				}
+			}
+		}
+	}
+	LockSchema() // loads lockReadSchema too
+	if msgs := schema.Validate(lockReadSchema, doc); len(msgs) > 0 {
 		return nil, lockError("does not fit bonsai.lock/1: %s", asciiOnly(msgs[0]))
 	}
 	l := &Lock{Files: map[string]LockedFile{}, Format0: map[string]string{}}
@@ -178,14 +221,22 @@ func (l *Lock) check() error {
 		}
 		seen[p.ID] = true
 	}
-	for _, path := range sortedKeys(l.Files) {
-		if err := CheckRelPath(path); err != nil {
-			return lockError("files: %v", err)
-		}
-	}
-	for _, path := range sortedKeys(l.Format0) {
-		if err := CheckRelPath(path); err != nil {
-			return lockError("format0: %v", err)
+	for _, list := range []struct {
+		name  string
+		paths []string
+	}{{"files", sortedKeys(l.Files)}, {"format0", sortedKeys(l.Format0)}} {
+		folded := map[string]string{}
+		for _, path := range list.paths {
+			if err := CheckRelPath(path); err != nil {
+				return lockError("%s: %v", list.name, err)
+			}
+			// Windows and macOS hold one file for two paths that differ only in letter case.
+			key := strings.ToLower(path)
+			if other, ok := folded[key]; ok {
+				return lockError("%s: the paths %s and %s differ only in letter case, one file on Windows", list.name,
+					showValue(other), showValue(path))
+			}
+			folded[key] = path
 		}
 	}
 	return nil
