@@ -26,6 +26,14 @@ jobs:
       - name: Run vet
         run: go vet ./...
 
+      # The guard's test fault switch is compiled only with this tag (internal/guard/fault_on.go); a normal build
+      # has none, which cmd/bonsai's TestNormalBuildHasNoFaultCode checks in the runs above.
+      - name: Run tests with the fault tag
+        run: go test -tags bonsai_test_fault ./...
+
+      - name: Run vet with the fault tag
+        run: go vet -tags bonsai_test_fault ./...
+
       - name: Cross-compile (windows/amd64)
         run: GOOS=windows GOARCH=amd64 go build ./...
 
@@ -46,6 +54,12 @@ jobs:
 
       - name: Run vet
         run: go vet ./...
+
+      - name: Run tests with the fault tag
+        run: go test -tags bonsai_test_fault ./...
+
+      - name: Run vet with the fault tag
+        run: go vet -tags bonsai_test_fault ./...
 
   lint:
     runs-on: ubuntu-latest
