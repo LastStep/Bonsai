@@ -1,0 +1,52 @@
+# bonsai/pack.yaml: the Bonsai manifest of Bonsai's test pack (format bonsai.pack/1, Bonsai spec section 5).
+# Purpose: what Bonsai's engine reads from this pack and writes into a linked project, beside what Claude Code loads
+# from the plugin itself (agents/, skills/). A test fixture for Bonsai's walking skeleton, not for real use.
+# When to use: bonsai init and bonsai update read it at a pinned commit. Edit it only to make a new test-pack commit;
+# README.md says what each commit (A, B, C, D) changes and which check uses it.
+# Format-1 YAML (contract section 2.4): format first; quote every text value that does not start with a letter.
+# Fields of the file (each key below also has its own comment):
+#   format       always bonsai.pack/1, the first key.
+#   id           the pack's id: lower-case letters, digits and dashes; equals "name" in .claude-plugin/plugin.json,
+#                so Claude Code loads the pack's roles and skills as <id>:<name>. Example test-pack.
+#   version      the pack's version, quoted. A pack's release tag must equal it; this pack has no tags and keeps
+#                one version at every commit, so Bonsai tells its commits apart by commit only. Example "0.1.0".
+#   needs        what a machine needs for the pack; Bonsai lists each as a needs entry in status --json.
+#     claude_code  the oldest Claude Code the pack works with, quoted; an older one gets a check warning, never a
+#                  refusal. Example "2.1.0".
+#   block        the pack's part of the instruction block in the project's CLAUDE.md (file kind block): a file in
+#                bonsai/, or null for none. Example block.md.
+#   files        the files the engine writes into a project, each from bonsai/files/; [] for none.
+#     path         where it goes: project-relative, forward slashes, no leading slash. Example test-pack/guide.md.
+#     from         the file in bonsai/files/ it is written from, forward slashes. Example guide.md.
+#     kind         pack (Bonsai's; an edit in the project is a conflict) or once (written once, then the
+#                  project's). Example pack. Block and keys come from block, hooks and deny; kept is the engine's.
+#   hooks        hook lines the engine writes into the project's .claude/settings.json (file kind keys); [] for
+#                none. A change to one runs code, so update refuses it without --allow-exec.
+#     event        the Claude Code hook event. Example SessionStart.
+#     matcher      the event's matcher, or null for none. Example startup.
+#     command      the shell line Claude Code runs, quoted; it never calls bash by name. Example "echo hello".
+#     why          one plain sentence, quoted: what the line does, as update's preview prints it.
+#   deny         deny rules the engine writes into the project's .claude/settings.json (file kind keys); [] for none.
+#     rule         a Claude Code permission rule, quoted. Example "Edit(test-pack/never.txt)".
+#     why          one plain sentence, quoted: what the rule stops, as update's preview prints it.
+format: bonsai.pack/1                # the format and its version; always the first key
+id: test-pack                        # the pack's id; equals plugin.json's name, so roles load as test-pack:marker
+version: "0.1.0"                     # the pack's version; the same at every commit (no tags)
+needs:                               # what a machine needs for this pack
+  claude_code: "2.1.0"               # the oldest Claude Code it works with; older gets a check warning
+block: block.md                      # bonsai/block.md, written into the project's CLAUDE.md (kind block)
+files:                               # the files the engine writes into a project, from bonsai/files/
+  - path: test-pack/guide.md         # the pack file that commits B and C change
+    from: guide.md                   # its source, bonsai/files/guide.md
+    kind: pack                       # Bonsai's file: an edit in the project is a conflict
+  - path: test-pack/start.md         # the starter file, the same at every commit
+    from: start.md                   # its source, bonsai/files/start.md
+    kind: once                       # written by init only, then the project's
+hooks:                               # hook lines for the project's .claude/settings.json (kind keys)
+  - event: SessionStart              # runs when a session starts; it cannot block
+    matcher: startup                 # new sessions only, not resume, clear or compact
+    command: "echo test-pack hook A" # the shell line; commit D changes this line and nothing else
+    why: "Prints which test-pack hook line is in place when a session starts; it blocks nothing."  # preview text
+deny:                                # deny rules for the project's .claude/settings.json (kind keys)
+  - rule: "Edit(test-pack/never.txt)"  # an example rule; the file need not exist
+    why: "Agents cannot edit test-pack/never.txt (the test pack's example deny rule)."  # preview text
