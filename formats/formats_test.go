@@ -1,14 +1,13 @@
-// Package formats holds Bonsai's formats set: one JSON Schema per format, one example document per format, the
-// trick files with their expected outcomes, and a manifest of every file's bytes (README.md says what each is).
-//
-// This test needs no reader: it checks that the set is whole and consistent. Standard library only, so it runs on
-// any machine that has Go, and it survives the clear-out of the old product (plan part 1). It checks that:
+// The formats set's own test (README.md, "The Go test"). It needs no YAML reader: it checks that the set is whole
+// and consistent. Standard library plus Bonsai's schema checker (internal/schema, moved out of this file in plan part
+// 2 so Bonsai's code uses the same one), so it runs on any machine that has Go. It checks that:
 //   - manifest.json matches every file's raw bytes, lists every file and nothing more, sorted by path;
 //   - the CRLF case holds CRLF line endings and the BOM cases start with EF BB BF, as checked out;
 //   - every rule of contract §2.4 has a case (the hand list below), and every case has both outcomes in expect.json;
 //   - every schema is valid JSON, declares draft 2020-12, and documents itself (a description, and a description and
-//     examples on every property); each example validates under the small checker below, keeps the schema's field
+//     examples on every property); each example validates under the schema checker, keeps the schema's field
 //     order, and each YAML or markdown example's format-1 value in expect.json equals its <name>.json;
+//   - the embedded schemas (embed.go) are exactly the files in schemas/, byte for byte;
 //   - no file in the set holds a private string: an absolute home path, a drive letter, an email address, a tailnet
 //     host.
 package formats
@@ -17,23 +16,17 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"io/fs"
-	"math/big"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"testing"
-	"unicode/utf8"
-)
 
-// The ten formats of contract §2 that the set describes, each with a schema and an example.
-var formatNames = []string{"task", "labels", "lanes", "run", "state", "log", "ask", "ladder", "status", "lock"}
+	"github.com/LastStep/Bonsai/internal/schema"
+)
 
 // The five formats whose files are YAML or markdown: their example source is also a case in expect.json.
 var sourceExamples = map[string]string{
@@ -107,10 +100,10 @@ func setFiles(t *testing.T) []string {
 
 func TestManifestMatchesEveryFile(t *testing.T) {
 	m := mustObject(t, readJSON(t, "manifest.json"), "manifest.json")
-	if _, ok := m.get("set"); !ok {
+	if _, ok := m.Get("set"); !ok {
 		t.Errorf("manifest.json: no set version")
 	}
-	filesV, _ := m.get("files")
+	filesV, _ := m.Get("files")
 	files, ok := filesV.([]any)
 	if !ok {
 		t.Fatalf("manifest.json: files is not a list")
@@ -118,8 +111,8 @@ func TestManifestMatchesEveryFile(t *testing.T) {
 	var listed []string
 	for i, f := range files {
 		e := mustObject(t, f, fmt.Sprintf("manifest.json files[%d]", i))
-		p, _ := e.get("path")
-		h, _ := e.get("sha256")
+		p, _ := e.Get("path")
+		h, _ := e.Get("sha256")
 		path, _ := p.(string)
 		want, _ := h.(string)
 		listed = append(listed, path)
@@ -199,7 +192,7 @@ func TestLineEndingsAndBOMSurviveCheckout(t *testing.T) {
 
 func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 	root := mustObject(t, readJSON(t, "expect.json"), "expect.json")
-	casesV, _ := root.get("cases")
+	casesV, _ := root.Get("cases")
 	cases, ok := casesV.([]any)
 	if !ok {
 		t.Fatalf("expect.json: cases is not a list")
@@ -232,8 +225,8 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 		if str(o, "about") == "" {
 			t.Errorf("%s: no about", where)
 		}
-		f0v, ok0 := o.get("format0")
-		f1v, ok1 := o.get("format1")
+		f0v, ok0 := o.Get("format0")
+		f1v, ok1 := o.Get("format1")
 		if !ok0 || !ok1 {
 			t.Errorf("%s: a case needs both outcomes, format0 and format1", where)
 			continue
@@ -241,7 +234,7 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 		f0 := mustObject(t, f0v, where+" format0")
 		switch str(f0, "outcome") {
 		case "accepted":
-			if _, ok := f0.get("value"); !ok {
+			if _, ok := f0.Get("value"); !ok {
 				t.Errorf("%s: format0 accepted with no value", where)
 			}
 		case "refused":
@@ -254,7 +247,7 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 		f1 := mustObject(t, f1v, where+" format1")
 		switch str(f1, "outcome") {
 		case "accepted":
-			if _, ok := f1.get("value"); !ok {
+			if _, ok := f1.Get("value"); !ok {
 				t.Errorf("%s: format1 accepted with no value", where)
 			}
 		case "refused":
@@ -348,40 +341,38 @@ func reasonCodes(t *testing.T) map[string]bool {
 
 // ---------------------------------------------------------------- the schemas and examples
 
-const draft202012 = "https://json-schema.org/draft/2020-12/schema"
-
 func TestSchemasDocumentThemselvesAndValidateTheirExamples(t *testing.T) {
 	expect := mustObject(t, readJSON(t, "expect.json"), "expect.json")
-	casesV, _ := expect.get("cases")
-	byPath := map[string]object{}
+	casesV, _ := expect.Get("cases")
+	byPath := map[string]schema.Object{}
 	if cases, ok := casesV.([]any); ok {
 		for _, c := range cases {
-			if o, ok := c.(object); ok {
-				byPath[str(o, "path")] = o
+			if o, ok := c.(schema.Object); ok {
+				byPath[o.String("path")] = o
 			}
 		}
 	}
-	for _, name := range formatNames {
+	for _, name := range Names {
 		t.Run(name, func(t *testing.T) {
 			file := "schemas/" + name + ".schema.json"
-			schema := mustObject(t, readJSON(t, file), file)
-			if str(schema, "$schema") != draft202012 {
-				t.Errorf("%s: $schema is not %s", file, draft202012)
+			s := mustObject(t, readJSON(t, file), file)
+			if s.String("$schema") != schema.Draft202012 {
+				t.Errorf("%s: $schema is not %s", file, schema.Draft202012)
 			}
-			if str(schema, "description") == "" {
+			if s.String("description") == "" {
 				t.Errorf("%s: no top-level description", file)
 			}
-			for _, msg := range checkSchema(schema, "#", true) {
+			for _, msg := range schema.CheckSchema(s) {
 				t.Errorf("%s: %s", file, msg)
 			}
 			if t.Failed() {
 				return
 			}
 			example := readJSON(t, "examples/"+name+".json")
-			for _, msg := range validate(schema, example, "#") {
+			for _, msg := range schema.Validate(s, example) {
 				t.Errorf("examples/%s.json does not validate: %s", name, msg)
 			}
-			for _, msg := range checkOrder(schema, example, "#") {
+			for _, msg := range schema.CheckOrder(s, example) {
 				t.Errorf("examples/%s.json: %s", name, msg)
 			}
 			src, ok := sourceExamples[name]
@@ -392,379 +383,67 @@ func TestSchemasDocumentThemselvesAndValidateTheirExamples(t *testing.T) {
 			if !ok {
 				t.Fatalf("%s has no case in expect.json", src)
 			}
-			f1v, _ := c.get("format1")
-			f1, _ := f1v.(object)
-			if str(f1, "outcome") != "accepted" {
-				t.Fatalf("%s: format1 outcome is %q, want accepted", src, str(f1, "outcome"))
+			f1v, _ := c.Get("format1")
+			f1, _ := f1v.(schema.Object)
+			if f1.String("outcome") != "accepted" {
+				t.Fatalf("%s: format1 outcome is %q, want accepted", src, f1.String("outcome"))
 			}
-			v, _ := f1.get("value")
-			if !equal(v, example) {
+			v, _ := f1.Get("value")
+			if !schema.Equal(v, example) {
 				t.Errorf("%s: its format-1 value in expect.json differs from examples/%s.json", src, name)
 			}
 		})
 	}
 }
 
-// The keywords the checker implements. Annotations are skipped; any other keyword fails the schema.
-var (
-	annotations = map[string]bool{"title": true, "description": true, "examples": true}
-	keywords    = map[string]bool{
-		"type": true, "properties": true, "required": true, "additionalProperties": true, "propertyNames": true,
-		"items": true, "enum": true, "const": true, "pattern": true, "maxLength": true, "minimum": true,
-		"maximum": true, "maxItems": true,
-	}
-)
-
-// checkSchema checks a schema's own form: only known keywords, every property documented with a description and
-// examples that validate against it, required naming properties in their order (all of them at the top level).
-func checkSchema(s object, at string, top bool) []string {
-	var out []string
-	for _, m := range s {
-		switch {
-		case annotations[m.key], keywords[m.key]:
-		case top && m.key == "$schema":
-		default:
-			out = append(out, fmt.Sprintf("%s: keyword %q is not one the checker implements", at, m.key))
+// The embedded schemas (embed.go) are what Bonsai's code reads: they must be exactly the files in schemas/, and
+// Names must name each of them once.
+func TestEmbeddedSchemasAreTheFiles(t *testing.T) {
+	var embedded []string
+	err := fs.WalkDir(Schemas(), ".", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
 		}
-	}
-	if p, ok := s.get("pattern"); ok {
-		if ps, ok := p.(string); !ok {
-			out = append(out, at+": pattern is not a string")
-		} else if _, err := regexp.Compile(ps); err != nil {
-			out = append(out, fmt.Sprintf("%s: pattern %q: %v", at, ps, err))
-		}
-	}
-	var propNames []string
-	if pv, ok := s.get("properties"); ok {
-		props, ok := pv.(object)
-		if !ok {
-			return append(out, at+": properties is not an object")
-		}
-		for _, m := range props {
-			here := at + "/properties/" + m.key
-			propNames = append(propNames, m.key)
-			ps, ok := m.val.(object)
-			if !ok {
-				out = append(out, here+": not a schema object")
-				continue
-			}
-			if d, _ := ps.get("description"); d == nil || d == "" {
-				out = append(out, here+": no description")
-			}
-			ev, _ := ps.get("examples")
-			if ex, ok := ev.([]any); !ok || len(ex) == 0 {
-				out = append(out, here+": no examples")
-			} else {
-				for i, e := range ex {
-					for _, msg := range validate(ps, e, fmt.Sprintf("examples[%d]", i)) {
-						out = append(out, here+": its own example "+msg)
-					}
-				}
-			}
-			out = append(out, checkSchema(ps, here, false)...)
-		}
-	}
-	if rv, ok := s.get("required"); ok {
-		req, _ := rv.([]any)
-		var names []string
-		for _, r := range req {
-			name, _ := r.(string)
-			names = append(names, name)
-		}
-		if top && strings.Join(names, ",") != strings.Join(propNames, ",") {
-			out = append(out, at+": a writer writes every field: required must list every property, in order")
-		}
-		j := 0
-		for _, n := range names {
-			for j < len(propNames) && propNames[j] != n {
-				j++
-			}
-			if j == len(propNames) {
-				out = append(out, fmt.Sprintf("%s: required names %q out of the properties' order, or not a property", at, n))
-				break
-			}
-		}
-	} else if top {
-		out = append(out, at+": no required list")
-	}
-	for _, k := range []string{"items", "additionalProperties", "propertyNames"} {
-		if v, ok := s.get(k); ok {
-			if sub, ok := v.(object); ok {
-				out = append(out, checkSchema(sub, at+"/"+k, false)...)
-			} else if _, ok := v.(bool); !ok || k != "additionalProperties" {
-				out = append(out, fmt.Sprintf("%s/%s: not a schema object", at, k))
-			}
-		}
-	}
-	return out
-}
-
-// validate checks an instance against a schema, for the keywords listed above, with draft 2020-12's meaning: each
-// keyword applies only to instances of its own type.
-func validate(s object, v any, at string) []string {
-	var out []string
-	if tv, ok := s.get("type"); ok {
-		var types []string
-		switch x := tv.(type) {
-		case string:
-			types = []string{x}
-		case []any:
-			for _, e := range x {
-				name, _ := e.(string)
-				types = append(types, name)
-			}
-		}
-		match := false
-		for _, ty := range types {
-			if hasType(v, ty) {
-				match = true
-			}
-		}
-		if !match {
-			return append(out, fmt.Sprintf("%s: is %s, want %s", at, typeOf(v), strings.Join(types, " or ")))
-		}
-	}
-	if c, ok := s.get("const"); ok && !equal(c, v) {
-		out = append(out, fmt.Sprintf("%s: is %s, want %s", at, show(v), show(c)))
-	}
-	if ev, ok := s.get("enum"); ok {
-		in := false
-		list, _ := ev.([]any)
-		for _, e := range list {
-			if equal(e, v) {
-				in = true
-			}
-		}
-		if !in {
-			out = append(out, fmt.Sprintf("%s: %s is not one of %s", at, show(v), show(ev)))
-		}
-	}
-	switch x := v.(type) {
-	case string:
-		if p, ok := s.get("pattern"); ok {
-			ps, _ := p.(string)
-			if re, err := regexp.Compile(ps); err != nil || !re.MatchString(x) {
-				out = append(out, fmt.Sprintf("%s: %q does not match %s", at, x, ps))
-			}
-		}
-		if n, ok := num(s, "maxLength"); ok && big.NewRat(int64(utf8.RuneCountInString(x)), 1).Cmp(n) > 0 {
-			out = append(out, fmt.Sprintf("%s: longer than %s characters", at, n.RatString()))
-		}
-	case json.Number:
-		r, _ := new(big.Rat).SetString(string(x))
-		if n, ok := num(s, "minimum"); ok && r.Cmp(n) < 0 {
-			out = append(out, fmt.Sprintf("%s: %s is below %s", at, x, n.RatString()))
-		}
-		if n, ok := num(s, "maximum"); ok && r.Cmp(n) > 0 {
-			out = append(out, fmt.Sprintf("%s: %s is above %s", at, x, n.RatString()))
-		}
-	case []any:
-		if n, ok := num(s, "maxItems"); ok && big.NewRat(int64(len(x)), 1).Cmp(n) > 0 {
-			out = append(out, fmt.Sprintf("%s: more than %s items", at, n.RatString()))
-		}
-		if iv, ok := s.get("items"); ok {
-			is, _ := iv.(object)
-			for i, e := range x {
-				out = append(out, validate(is, e, fmt.Sprintf("%s/%d", at, i))...)
-			}
-		}
-	case object:
-		if rv, ok := s.get("required"); ok {
-			req, _ := rv.([]any)
-			for _, r := range req {
-				name, _ := r.(string)
-				if _, ok := x.get(name); !ok {
-					out = append(out, fmt.Sprintf("%s: required field %q is missing", at, name))
-				}
-			}
-		}
-		props, _ := s.get("properties")
-		po, _ := props.(object)
-		addl, hasAddl := s.get("additionalProperties")
-		names, hasNames := s.get("propertyNames")
-		for _, m := range x {
-			here := at + "/" + m.key
-			if hasNames {
-				ns, _ := names.(object)
-				out = append(out, validate(ns, m.key, here+" (its name)")...)
-			}
-			if ps, ok := po.get(m.key); ok {
-				pso, _ := ps.(object)
-				out = append(out, validate(pso, m.val, here)...)
-				continue
-			}
-			if hasAddl {
-				switch a := addl.(type) {
-				case bool:
-					if !a {
-						out = append(out, here+": not allowed")
-					}
-				case object:
-					out = append(out, validate(a, m.val, here)...)
-				}
-			}
-		}
-	}
-	return out
-}
-
-// checkOrder checks that an instance's fields follow its schema's properties order (contract §2.2: a writer writes
-// every field in a fixed order), at every depth the schema describes.
-func checkOrder(s object, v any, at string) []string {
-	var out []string
-	switch x := v.(type) {
-	case []any:
-		if iv, ok := s.get("items"); ok {
-			is, _ := iv.(object)
-			for i, e := range x {
-				out = append(out, checkOrder(is, e, fmt.Sprintf("%s/%d", at, i))...)
-			}
-		}
-	case object:
-		props, _ := s.get("properties")
-		po, _ := props.(object)
-		addl, _ := s.get("additionalProperties")
-		ao, _ := addl.(object)
-		last := -1
-		for _, m := range x {
-			idx := po.index(m.key)
-			if idx >= 0 {
-				if idx < last {
-					out = append(out, fmt.Sprintf("%s/%s: out of the schema's field order", at, m.key))
-				}
-				last = idx
-				ps, _ := po[idx].val.(object)
-				out = append(out, checkOrder(ps, m.val, at+"/"+m.key)...)
-			} else if ao != nil {
-				out = append(out, checkOrder(ao, m.val, at+"/"+m.key)...)
-			}
-		}
-	}
-	return out
-}
-
-func hasType(v any, ty string) bool {
-	switch ty {
-	case "null":
-		return v == nil
-	case "boolean":
-		_, ok := v.(bool)
-		return ok
-	case "string":
-		_, ok := v.(string)
-		return ok
-	case "number":
-		_, ok := v.(json.Number)
-		return ok
-	case "integer":
-		n, ok := v.(json.Number)
-		if !ok {
-			return false
-		}
-		r, ok := new(big.Rat).SetString(string(n))
-		return ok && r.IsInt()
-	case "array":
-		_, ok := v.([]any)
-		return ok
-	case "object":
-		_, ok := v.(object)
-		return ok
-	}
-	return false
-}
-
-func typeOf(v any) string {
-	for _, ty := range []string{"null", "boolean", "string", "integer", "number", "array", "object"} {
-		if hasType(v, ty) {
-			return ty
-		}
-	}
-	return "unknown"
-}
-
-func num(s object, key string) (*big.Rat, bool) {
-	v, ok := s.get(key)
-	if !ok {
-		return nil, false
-	}
-	n, ok := v.(json.Number)
-	if !ok {
-		return nil, false
-	}
-	return new(big.Rat).SetString(string(n))
-}
-
-// equal compares two JSON values: objects by their fields whatever the order, numbers by value.
-func equal(a, b any) bool {
-	switch x := a.(type) {
-	case nil:
-		return b == nil
-	case bool:
-		y, ok := b.(bool)
-		return ok && x == y
-	case string:
-		y, ok := b.(string)
-		return ok && x == y
-	case json.Number:
-		y, ok := b.(json.Number)
-		if !ok {
-			return false
-		}
-		rx, okx := new(big.Rat).SetString(string(x))
-		ry, oky := new(big.Rat).SetString(string(y))
-		return okx && oky && rx.Cmp(ry) == 0
-	case []any:
-		y, ok := b.([]any)
-		if !ok || len(x) != len(y) {
-			return false
-		}
-		for i := range x {
-			if !equal(x[i], y[i]) {
-				return false
-			}
-		}
-		return true
-	case object:
-		y, ok := b.(object)
-		if !ok || len(x) != len(y) {
-			return false
-		}
-		for _, m := range x {
-			w, ok := y.get(m.key)
-			if !ok || !equal(m.val, w) {
-				return false
-			}
-		}
-		return true
-	}
-	return false
-}
-
-func show(v any) string {
-	b, err := json.Marshal(plain(v))
+		embedded = append(embedded, p)
+		return nil
+	})
 	if err != nil {
-		return fmt.Sprint(v)
+		t.Fatalf("walking the embedded schemas: %v", err)
 	}
-	return string(b)
-}
-
-// plain turns an ordered object back into Go values json.Marshal prints (fields sorted).
-func plain(v any) any {
-	switch x := v.(type) {
-	case object:
-		m := map[string]any{}
-		for _, e := range x {
-			m[e.key] = plain(e.val)
+	var onDisk []string
+	for _, p := range setFiles(t) {
+		if strings.HasPrefix(p, "schemas/") {
+			onDisk = append(onDisk, p)
 		}
-		return m
-	case []any:
-		out := make([]any, len(x))
-		for i, e := range x {
-			out[i] = plain(e)
-		}
-		return out
 	}
-	return v
+	var named []string
+	for _, n := range Names {
+		named = append(named, "schemas/"+n+".schema.json")
+	}
+	sort.Strings(named)
+	if strings.Join(embedded, "\n") != strings.Join(onDisk, "\n") || strings.Join(named, "\n") != strings.Join(onDisk, "\n") {
+		t.Fatalf("embedded %v, on disk %v, named by Names %v: all three must be the same files", embedded, onDisk, named)
+	}
+	for _, n := range Names {
+		got, err := Schema(n)
+		if err != nil {
+			t.Errorf("Schema(%q): %v", n, err)
+			continue
+		}
+		want, err := os.ReadFile(filepath.FromSlash("schemas/" + n + ".schema.json"))
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+		if !bytes.Equal(got, want) {
+			t.Errorf("Schema(%q) differs from schemas/%s.schema.json", n, n)
+		}
+		if _, err := schema.Parse(got); err != nil {
+			t.Errorf("schema.Parse(Schema(%q)): %v", n, err)
+		}
+	}
+	if _, err := Schema("no-such-format"); err == nil {
+		t.Errorf("Schema of an unknown name returned no error")
+	}
 }
 
 // ---------------------------------------------------------------- nothing private
@@ -796,114 +475,32 @@ func TestNoPrivateStrings(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------- an ordered JSON reader
+// ---------------------------------------------------------------- reading JSON
 
-// object is a JSON object that keeps its fields' order; arrays are []any, numbers json.Number, null nil.
-type object []member
-
-type member struct {
-	key string
-	val any
+func str(o schema.Object, key string) string {
+	return o.String(key)
 }
 
-func (o object) get(key string) (any, bool) {
-	if i := o.index(key); i >= 0 {
-		return o[i].val, true
-	}
-	return nil, false
-}
-
-func (o object) index(key string) int {
-	for i, m := range o {
-		if m.key == key {
-			return i
-		}
-	}
-	return -1
-}
-
-func str(o object, key string) string {
-	v, _ := o.get(key)
-	s, _ := v.(string)
-	return s
-}
-
-func mustObject(t *testing.T, v any, where string) object {
+func mustObject(t *testing.T, v any, where string) schema.Object {
 	t.Helper()
-	o, ok := v.(object)
+	o, ok := v.(schema.Object)
 	if !ok {
 		t.Fatalf("%s: not a JSON object", where)
 	}
 	return o
 }
 
-// readJSON reads one JSON document, refusing a duplicate key (contract §2.5) and anything after the document.
+// readJSON reads one JSON document with the schema package's reader, which refuses a duplicate key (contract §2.5)
+// and anything after the document.
 func readJSON(t *testing.T, path string) any {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.FromSlash(path))
 	if err != nil {
 		t.Fatalf("%s: %v", path, err)
 	}
-	dec := json.NewDecoder(bytes.NewReader(raw))
-	dec.UseNumber()
-	v, err := decodeValue(dec)
+	v, err := schema.Decode(raw)
 	if err != nil {
 		t.Fatalf("%s: %v", path, err)
 	}
-	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
-		t.Fatalf("%s: something follows the JSON document", path)
-	}
 	return v
-}
-
-func decodeValue(dec *json.Decoder) (any, error) {
-	tok, err := dec.Token()
-	if err != nil {
-		return nil, err
-	}
-	switch x := tok.(type) {
-	case json.Delim:
-		switch x {
-		case '{':
-			var o object
-			for dec.More() {
-				kt, err := dec.Token()
-				if err != nil {
-					return nil, err
-				}
-				key, _ := kt.(string)
-				if o.index(key) >= 0 {
-					return nil, fmt.Errorf("duplicate key %q", key)
-				}
-				v, err := decodeValue(dec)
-				if err != nil {
-					return nil, err
-				}
-				o = append(o, member{key, v})
-			}
-			if _, err := dec.Token(); err != nil {
-				return nil, err
-			}
-			if o == nil {
-				o = object{}
-			}
-			return o, nil
-		case '[':
-			arr := []any{}
-			for dec.More() {
-				v, err := decodeValue(dec)
-				if err != nil {
-					return nil, err
-				}
-				arr = append(arr, v)
-			}
-			if _, err := dec.Token(); err != nil {
-				return nil, err
-			}
-			return arr, nil
-		}
-		return nil, fmt.Errorf("unexpected %v", x)
-	default:
-		return tok, nil
-	}
 }
