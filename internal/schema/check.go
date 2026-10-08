@@ -393,3 +393,41 @@ func Show(v any) string {
 	}
 	return b.String()
 }
+
+// Lenient returns a copy of a schema with every required list removed, at every depth: the schema a reader holds a
+// document to, since a reader treats a missing field as null, an older writer of the same major (contract §2.2),
+// while a writer writes every field the schema requires.
+func Lenient(s Object) Object {
+	out := Object{}
+	for _, m := range s {
+		if m.Key == "required" {
+			continue
+		}
+		out = append(out, Member{m.Key, lenientValue(m.Key, m.Value)})
+	}
+	return out
+}
+
+func lenientValue(key string, v any) any {
+	switch key {
+	case "properties":
+		props, ok := v.(Object)
+		if !ok {
+			return v
+		}
+		out := Object{}
+		for _, p := range props {
+			if ps, ok := p.Value.(Object); ok {
+				out = append(out, Member{p.Key, Lenient(ps)})
+			} else {
+				out = append(out, p)
+			}
+		}
+		return out
+	case "items", "additionalProperties", "propertyNames":
+		if sub, ok := v.(Object); ok {
+			return Lenient(sub)
+		}
+	}
+	return v
+}

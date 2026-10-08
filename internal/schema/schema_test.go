@@ -233,3 +233,24 @@ func TestShowIsCompactJSON(t *testing.T) {
 		t.Errorf("Show of a value Encode does not take = %s", got)
 	}
 }
+
+func TestLenientDropsRequiredAtEveryDepth(t *testing.T) {
+	s := mustDecode(t, `{"type": "object", "required": ["a", "l", "m"], "properties": {
+	  "a": {"type": "string"},
+	  "l": {"type": "array", "items": {"type": "object", "required": ["x"], "properties": {"x": {"type": "integer"}}}},
+	  "m": {"type": "object", "additionalProperties": {"type": "object", "required": ["y"]}}}}`).(Object)
+	missing := mustDecode(t, `{"l": [{}], "m": {"k": {}}}`)
+	if msgs := Validate(s, missing); len(msgs) != 3 {
+		t.Errorf("the writer's schema found %d missing fields, want 3: %v", len(msgs), msgs)
+	}
+	lenient := Lenient(s)
+	if msgs := Validate(lenient, missing); len(msgs) != 0 {
+		t.Errorf("the lenient schema refuses missing fields: %v", msgs)
+	}
+	if msgs := Validate(lenient, mustDecode(t, `{"a": 1, "l": [{"x": "y"}]}`)); len(msgs) != 2 {
+		t.Errorf("the lenient schema stopped checking types: %v", msgs)
+	}
+	if _, ok := s.Get("required"); !ok {
+		t.Errorf("Lenient changed its input")
+	}
+}
