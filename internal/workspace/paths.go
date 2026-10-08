@@ -10,18 +10,21 @@ import (
 	"unicode/utf8"
 )
 
-// windowsDevices are names Windows keeps for devices in every folder, with or without an extension.
-var windowsDevices = map[string]bool{"con": true, "prn": true, "aux": true, "nul": true,
-	"com1": true, "com2": true, "com3": true, "com4": true, "com5": true, "com6": true, "com7": true, "com8": true,
-	"com9": true, "lpt1": true, "lpt2": true, "lpt3": true, "lpt4": true, "lpt5": true, "lpt6": true, "lpt7": true,
-	"lpt8": true, "lpt9": true}
+// windowsDevices are names Windows keeps for devices in every folder, with or without an extension, in lower case:
+// the console's own CONIN$ and CONOUT$, and COM and LPT with a superscript 1, 2 or 3 among them.
+var windowsDevices = map[string]bool{"con": true, "prn": true, "aux": true, "nul": true, "conin$": true,
+	"conout$": true, "com1": true, "com2": true, "com3": true, "com4": true, "com5": true, "com6": true, "com7": true,
+	"com8": true, "com9": true, "lpt1": true, "lpt2": true, "lpt3": true, "lpt4": true, "lpt5": true, "lpt6": true,
+	"lpt7": true, "lpt8": true, "lpt9": true,
+	"com\u00b9": true, "com\u00b2": true, "com\u00b3": true, "lpt\u00b9": true, "lpt\u00b2": true, "lpt\u00b3": true}
 
 // CheckRelPath checks a path Bonsai writes or records inside a project (a pack's file, a lock entry): relative,
 // forward slashes, inside the project, and a path that Linux and Windows both hold as the same file. It refuses an
 // empty path; a leading /; a backslash; a drive or stream colon; an empty, . or .. segment (so no path leaves the
-// project); a .git segment (git's own folder, where a file would run as a hook); a control character; any of
-// < > " | ? * (Windows cannot hold them); a segment ending in a dot or a space (Windows drops them); and a Windows
-// device name (CON, NUL, COM1 and the rest, with or without an extension).
+// project); a .git segment or its NTFS short name GIT~1 (git's own folder, where a file would run as a hook; git
+// refuses both); a control character; any of < > " | ? * (Windows cannot hold them); a segment ending in a dot or a
+// space (Windows drops them); and a Windows device name (CON, NUL, CONIN$, COM1, COM with a superscript digit and
+// the rest), with or without an extension, spaces before the extension included (con .txt).
 func CheckRelPath(p string) error {
 	switch {
 	case p == "":
@@ -48,13 +51,14 @@ func CheckRelPath(p string) error {
 		if i := strings.IndexByte(base, '.'); i >= 0 {
 			base = base[:i]
 		}
+		base = strings.TrimRight(base, " ") // Windows drops the spaces before an extension too: "con .txt" is CON
 		switch {
 		case seg == "":
 			return pathError(p, "has an empty segment (// or a trailing /)")
 		case seg == "." || seg == "..":
 			return pathError(p, "has a . or .. segment: it must stay inside the project")
-		case lower == ".git":
-			return pathError(p, "is inside a .git folder")
+		case lower == ".git" || lower == "git~1":
+			return pathError(p, "is inside a .git folder (or GIT~1, its NTFS short name)")
 		case strings.HasSuffix(seg, ".") || strings.HasSuffix(seg, " "):
 			return pathError(p, "has a segment ending in a dot or a space, which Windows drops")
 		case windowsDevices[base]:

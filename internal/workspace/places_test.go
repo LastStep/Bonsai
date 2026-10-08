@@ -89,14 +89,16 @@ func TestHashLF(t *testing.T) {
 
 func TestCheckRelPath(t *testing.T) {
 	for _, p := range []string{"a", "a/b.md", ".claude/settings.json", "test-pack/guide.md", "caf\xc3\xa9/x", "a.b/c-d_e",
-		".github/workflows/ci.yml", "con-x/y", "x/aux_y.md"} {
+		".github/workflows/ci.yml", "con-x/y", "x/aux_y.md", "git~2", "x/git~1x", "conin", "com10", "com\xc2\xb9x",
+		"connect.txt", "x/.gitignore", "github"} {
 		if err := CheckRelPath(p); err != nil {
 			t.Errorf("%q refused: %v", p, err)
 		}
 	}
 	for _, p := range []string{"", "/a", `a\b`, "C:/x", "a:b", "a//b", "a/", "./a", "a/../b", "..", ".git/x",
 		"x/.GIT/y", "a<b", "a>b", "a?b", "a*", "a|b", `a"b`, "a.", "a ", "a /b", "con", "NUL.txt", "x/COM1.md",
-		"lpt9", "a\x01b", "a\x7f", "\xff"} {
+		"lpt9", "a\x01b", "a\x7f", "\xff", "GIT~1/hooks/x", "x/git~1", "CONIN$", "conout$.log", "COM\xc2\xb9",
+		"x/com\xc2\xb2.txt", "lpt\xc2\xb3", "con .txt", "x/nul  .md", "aux ", "PRN"} {
 		if err := CheckRelPath(p); err == nil {
 			t.Errorf("%q passed", p)
 		}
