@@ -125,9 +125,14 @@ func TestUpdateCommand(t *testing.T) {
 		list[0].(schema.Object).String("why") == "" {
 		t.Errorf("settings lines in the JSON: %s", schema.Show(settings))
 	}
-	// A conflict: exit 5 with --yes, and the commands to paste.
+	// A conflict: without --yes, the preview names the commands; exit 5 with --yes, and the commands to paste.
 	if err := os.WriteFile(filepath.Join(c.root, "demo", "guide.md"), []byte("mine\n"), 0o644); err != nil {
 		t.Fatal(err)
+	}
+	code, out, _ = c.run("", "update")
+	if code != 4 || !strings.HasSuffix(out, "Nothing written yet.\nnext: to keep your edits, run: bonsai update --yes --keep demo/guide.md\n"+
+		"  or, to take the pack's copies (yours are saved in the Bonsai home's cache, never in the repo), run: bonsai update --yes --adopt demo/guide.md\n") {
+		t.Errorf("a conflict without --yes: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "update", "--yes")
 	if code != 5 || !strings.Contains(out, "Stopped: 1 conflict (demo/guide.md): nothing was written.") ||

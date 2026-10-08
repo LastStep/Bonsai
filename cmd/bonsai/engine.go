@@ -238,12 +238,12 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 	}
 	if !f.yes {
 		if f.asJSON || !interactive() {
-			next := cmdline + " --yes"
+			next := "to write it, run: " + cmdline + " --yes"
 			if len(plan.Conflicts) > 0 {
 				next = plan.ConflictNext(cmdline)
 			}
-			e := &engine.Error{Exit: engine.ExitState, What: "no --yes, and no terminal to ask at: nothing was written", Next: "to write it, run: " + next}
-			return out("preview", e.Exit, e, preview+"Nothing written yet.\nnext: to write it, run: "+next+"\n")
+			e := &engine.Error{Exit: engine.ExitState, What: "no --yes, and no terminal to ask at: nothing was written", Next: next}
+			return out("preview", e.Exit, e, preview+"Nothing written yet.\nnext: "+next+"\n")
 		}
 		if write(stdout, preview+"Write these changes? [y/N] ") != exitOK {
 			return exitRuntime
