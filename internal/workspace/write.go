@@ -87,6 +87,10 @@ func RemoveFile(path string) error {
 	}
 }
 
+// IsBusy reports whether an error says another process holds the file open (an antivirus scan, an indexer, an
+// editor), for a caller that keeps its own retry, as the guard's log append does. It is never true on Linux or macOS.
+func IsBusy(err error) bool { return isBusy(err) }
+
 // rename and busy are variables so a test can stand in a busy Windows target on any system.
 var (
 	rename = os.Rename
