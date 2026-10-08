@@ -350,7 +350,7 @@ func Build(req Request) (*Plan, error) {
 			write: rawConfig})
 	} else if p.OldID != "" {
 		p.Files = append(p.Files, &FileResult{Path: workspace.ConfigFile, Result: Updated,
-			Why: "a new id, " + cfg.ID + " (was " + p.OldID + ")", write: rawConfig, old: origConfig})
+			Why: "a new id in place of " + p.OldID + " (each run draws its own)", write: rawConfig, old: origConfig})
 	}
 
 	// Pack files: every path a pack gives now, or the lock holds.
