@@ -178,8 +178,8 @@ func ClosingWords(cfg *workspace.Config, home string) string {
 	b.WriteString("  .bonsai/local/   the log, questions for you and their answers, ladder results. Never committed.\n")
 	b.WriteString("On this machine:\n")
 	fmt.Fprintf(&b, "  %s\n", ascii(filepath.ToSlash(home)))
-	b.WriteString("    Bonsai's home: a secret salt, this machine's settings for each project, label files the studio\n")
-	b.WriteString("    attached, your personal memory, the pack cache. None of it enters git.\n")
+	b.WriteString("    Bonsai's home: a secret salt, this machine's settings for each project, label files attached\n")
+	b.WriteString("    on this machine, your personal memory, the pack cache. None of it enters git.\n")
 	b.WriteString("A copy meant as a new project needs its own id: bonsai init --new-id\n")
 	return b.String()
 }
