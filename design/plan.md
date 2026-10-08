@@ -64,27 +64,34 @@ minutes of yours. Nothing here waits on the studio.
   worktrees). They commit on that branch and never push. Builds go `go build -o` into a scratch folder
   (`~/bonsai-checks/bin` for the skeleton); never `go install`. `~/ZenGarden/Bonsai` is never touched.
 - **Verifiers** are fresh Opus agents, for big or risky work only (Rohan, 6 Oct: fewer verifications): part 0 (the set
-  everyone tests against), part 2 (the reader, sharing its verifier with part 1's CI and release changes), part 5 (the
-  hook path), and the last verifier at the skeleton's end over all twelve checks. Parts 3, 4 and 6 land on green tests
-  on both sides and CI plus the orchestrator's read of the diff, which the run report says; the last verifier covers
-  them. A verifier reads this plan's part, the spec and contract sections it cites and the diff, re-runs the tests itself, and
-  passes or fails the part. It fixes nothing.
+  everyone tests against), part 1 (CI and release changes, before its push), part 2 (the reader), part 5 (the hook path,
+  with part 3's hook-line writes and its refusal of a hook-line change), and the last verifier at the skeleton's end
+  over all twelve checks. Parts 3, 4 and 6 land on green tests on both sides (check 10) and CI plus the orchestrator's
+  read of the diff, which the run report says; the last verifier covers them. A verifier reads this plan's part, the
+  spec and contract sections it cites and the diff, re-runs the tests itself, and passes or fails the part. It fixes
+  nothing.
 - **Landing a part.** After its proof passes: `git -C ~/Servers/Bonsai merge --ff-only <part>`, then
   `git -C ~/Servers/Bonsai push origin main`, then CI for that commit:
   `gh api repos/LastStep/Bonsai/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
   (or `gh run list -R LastStep/Bonsai -L 10`; this machine's gh, 2.4, has no `--branch`). Red CI is fixed forward with a
   new commit; force pushes are blocked. Before each push the orchestrator fetches and reads `main`'s new commits on the
   remote: one it did not make (an old cloud session, a Dependabot merge) stops the work until it is understood. Every
-  commit of this work is listed in its part's run report.
+  commit of this work is listed in its part's run report. The fast-forward needs `main` where the branch started: the
+  orchestrator commits nothing on `main` while a part is out, and if `main` moved anyway, the builder rebases its branch
+  on it and the tests run again before the merge.
 - **GitHub.** Agents act as `LastStep`, Rohan's admin account. Only the orchestrator pushes: Bonsai's `main` and the
   test pack's `main`. Never: a tag, a release (`gh release` anything), a workflow switched on, a setting, ruleset or
   secret changed, a pull request merged or closed, a branch deleted on GitHub. Releases are Rohan's word at step 5.7.
 - **Run reports**, one per part, `records/runs/R-<date>-<part>.md`, opened before the first edit and appended as the
   work goes: a log, not a summary. Each lists every builder and verifier run with its model, start, end and minutes, and
   the orchestrator keeps a running total for part 0 and for the skeleton. These rows are the hours source for the stop
-  lines: the studio's session records do not cover Bonsai.
-- **Models.** Opus for builders on the formats, the engine, the guard, Windows and plugin delivery, and for every
-  verifier and plan review; Sonnet for mechanical runs (cross-compiles, measurements into tables, CI checks). Each run
+  lines: the studio's session records do not cover Bonsai. Each run report has one writer, the orchestrator, in the main
+  checkout: builders and verifiers write none and put their log in their final report, which the orchestrator copies
+  in. It commits the report only after the part's fast-forward (an untracked report that the branch also held would stop
+  the merge), then pushes.
+- **Models.** Opus for builders on the formats, CI and release (part 1), the engine, the guard, Windows and plugin
+  delivery (the test pack among it), and for every verifier and plan review; Sonnet for mechanical runs (cross-compiles,
+  measurements into tables, CI checks); Haiku for small bookkeeping and audit jobs, as `CLAUDE.md` has it. Each run
   report names the model of every run.
 - **Nothing private and nothing studio-shaped in what this work makes.** Code, tests, `formats/`, the test pack, commit
   messages and run reports name no studio task id or studio path, no one's home folder (`/home/...`, `C:\Users\...`;
@@ -254,11 +261,11 @@ with their exact lines. This section says how they are built here.
 
 | Part | Built | Proved by | Hours |
 |---|---|---|---|
-| 1. The clear-out and the new layout | One commit on `main` removes the old product's code: `internal/`, `cmd/`, `catalog/`, `website/`, `docs/`, `embed.go`, `.github/workflows/docs.yml` (the website's; the old site stays on GitHub Pages until Rohan turns Pages off). It keeps `LICENSE`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md` (rewritten for the rebuild), `CHANGELOG.md` (a new "rebuild" section), `.gitattributes`, `.gitignore` (less its old-product lines: the website, `station/`, the old lock name), `.golangci.yml`, `assets/`, the rest of `.github/`, `.goreleaser.yaml`, and all 8 Oct added: `CLAUDE.md`, `STATE.md`, `design/`, `records/`, `formats/`. It rewrites `README.md` ("being rebuilt; 0.4.3 is the old product's last release"), `Makefile` (no `go install`; `build` is `go build -o`), `go.mod` (`go 1.25` with a `toolchain` line; the standard library, and `golang.org/x/sys` only once needed) and `go.sum`, and adds `cmd/bonsai` with a stub `main` (`bonsai --version`), so `go vet` and CodeQL's autobuild find a package. CI and `release.yml` as below. | CI green on the pushed commit (`test` and `windows`); `go vet`; `release.yml` can only build; the clear-out's file list holds only what it should | 2-4 |
+| 1. The clear-out and the new layout | One commit on `main` removes the old product's code: `internal/`, `cmd/`, `catalog/`, `website/`, `docs/`, `embed.go`, `.github/workflows/docs.yml` (the website's; the old site stays on GitHub Pages until Rohan turns Pages off). It keeps `LICENSE`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md` (rewritten for the rebuild), `CHANGELOG.md` (a new "rebuild" section), `.gitattributes`, `.gitignore` (less its old-product lines: the website, `station/`, the old lock name), `.golangci.yml`, `assets/`, the rest of `.github/`, `.goreleaser.yaml`, and all 8 Oct added: `CLAUDE.md`, `STATE.md`, `design/`, `records/`, `formats/`. It rewrites `README.md` ("being rebuilt; 0.4.3 is the old product's last release"), `Makefile` (no `go install`; `build` is `go build -o`), `go.mod` (`go 1.25` with a `toolchain` line; the standard library, and `golang.org/x/sys` only once needed) and `go.sum`, and adds `cmd/bonsai` with a stub `main` (`bonsai --version`), so `go vet` and CodeQL's autobuild find a package. CI and `release.yml` as below. | Before the push, a fresh Opus verifier: the clear-out's file list holds only what it should, `release.yml` can only build, CI as below, `go vet`. After it, CI green on the pushed commit (`test`, `windows`, `govulncheck`) | 2-4 |
 | 4a. The test pack | `LastStep/bonsai-test-pack`, public, made by the orchestrator with `gh` once Rohan approves this plan. Commits: **A** (a `marker` role saying "commit A", the files `init` writes into a project, one hook line); **B** (marker "commit B", one of those files changed, one new file); **C** (that file changed again); **D** (one hook line changed, nothing else). | `claude plugin validate --json` with no warning but the missing `version`; part 2's reader reads its `pack.yaml` | in part 4 |
 | 2. Reader and files | The format-1 reader in Go, no general YAML library (spec §3, contract §2.4), tested on the cases in this repo's own `formats/`; `bonsai.yaml`, `pack.yaml`, the lock (`.bonsai/lock.json`), a subset of `status --json` (below). No format 0 (step 5.1). The schema checker moves from part 0's test into the new layout. | Committed Go tests reach every trick file's format-1 outcome in `formats/expect.json`; the lock and `status --json` validate against part 0's schemas; the Windows rules (forward slashes, line-ending-blind hashes, byte-stable output) | 7-10 |
 | 3. Engine | The fetch in its plain form (git, at a commit, from the pack's URL); `init`, `update` (staged; kinds `pack`, `once`, `block`, `keys`; `kept`; exits 4 and 5; `--diff`, `--yes`, `--keep`, `--adopt`), `check` (lock and files, a tracked or staged `.bonsai/local/` file); `bonsai.yaml` with a comment on every line; `.bonsai/lock.json` and `.bonsai/.gitignore`; `init`'s closing plain words; the preview naming every settings line with its sentence. A hook-line change only refused: exit 4, nothing written, `--allow-exec` named as the next step (the flag itself is step 5.1). Scratch targets: a drifted project (one old absolute hook line, one hook of its own), a fresh empty repo, and a scratch clone of the studio's repo with `origin` removed (the orchestrator gives its source), each with `init --new-id`. | Checks 1-6 and 12 as scripted runs over those targets (check 5 up to its new-session clause, which needs part 4), A to B for check 5, A to B to C for check 6, D for the hook-line refusal; committed Go tests of the same behaviour on `t.TempDir()` repos; check 9 (hand check b) | 10-15 |
-| 5. Hook path | `bonsai hook guard` with one rule: an Edit of a path in `bonsai.yaml`'s protected list is refused (`project-guard` lists `protected.txt`). The fault switch `BONSAI_TEST_FAULT` (`missing`, `crash`, `slow`, `minimal-path`) behind a Go build tag, every fault only blocking. The binary's path and SHA-256 logged. | Check 11 on WSL (the builder, through `claude-here`) and on Windows under Git Bash (hand checks c and d); a Go test per fault; a normal build holds no fault code | 3-5 |
+| 5. Hook path | `bonsai hook guard` with one rule: an Edit of a path in `bonsai.yaml`'s protected list is refused (`project-guard` lists `protected.txt`). The fault switch `BONSAI_TEST_FAULT` (`missing`, `crash`, `slow`, `minimal-path`) behind a Go build tag, every fault only blocking. The binary's path and SHA-256 logged. | Check 11 on WSL (the builder, through `claude-here`) and on Windows under Git Bash (hand checks c and d); a Go test per fault; a normal build holds no fault code; its verifier also reads part 3's hook-line writes and the refusal of a hook-line change | 3-5 |
 | 4b. Packs as plugins | The fetch at a 40-character commit, no login, read-only, on both sides; the marketplace named by workspace and a hash of the locked commits; install and update on this machine; the drift report; `project-a` at A, `project-b` at B, `project-a-worktree` at B beside `project-a` at A; a fresh worktree's trust. | Check 8 with the session kinds recorded (interactive, `-p`, `--bg`, a fresh worktree) and `claude --agent <plugin>:<role> --bg` starting the test pack's role; check 5's last clause (a new session loads B's roles, `check` reports no drift); hand check a | 4-7 |
 | 6. Measure and report | The gate report: hours per part against estimate and the ratio for step 5; each check; Windows-only failures with hours; hook start-up p50 and p95 on both sides against the baseline (1.5 ms WSL, 65 ms Git Bash); fail-closed results; plugin install and update time; two commits kept; the Claude Code version on each side; binary size; lines of Go per part; a three-case `claude plugin eval` of the test pack; whether the studio's half of check 7 has run. | The report against spec §15's list, by the verifier | 4-6 |
 | **Total** | | | **30-47** |
@@ -278,7 +285,9 @@ on its dashboard. No committed fixture names Mimas, the studio or any one projec
   the name stays in case Rohan turns the required check on again).
 - A separate job, `windows`, on `windows-latest`, runs `go test ./...` and `go vet ./...` (public repos pay nothing for
   Windows minutes).
-- `lint`, `govulncheck` and CodeQL stay as they are; all are expected green.
+- `lint` and CodeQL stay as they are, expected green. `govulncheck` has been red since 23 Sep: its install
+  (`go install golang.org/x/vuln/cmd/govulncheck@latest`) now needs a newer Go than CI's. Part 1 pins it to a version
+  that builds with the Go CI uses, so it is green again from part 1.
 - `release.yml` keeps only `workflow_dispatch` (no tag trigger, no re-release input), `contents: read`, no
   `HOMEBREW_TAP_TOKEN`, and runs `goreleaser build --snapshot --clean`: it builds and publishes nothing, so
   `.goreleaser.yaml`'s `brews:` block (kept for 5.7's `bonsai@0.4`) is never reached. It stays disabled on GitHub until
@@ -298,9 +307,10 @@ on its dashboard. No committed fixture names Mimas, the studio or any one projec
   path.
 - The guard logs its own path and SHA-256; the gate report quotes them per side, so it shows which binary answered.
 
-**Check 10, natively on Windows**, at the end of parts 2, 3 and 5 and on the final commit: `go test ./...` and
-`go vet ./...` with Windows Go in `%USERPROFILE%\bonsai-checks\src`, a copy of the builder's tree (`cp -a` of the
-worktree without `.git`) or a Windows-git clone of the pushed `main`. CI does not replace that run: check 10 needs both.
+**Check 10, natively on Windows**, at the end of parts 2, 3, 4 and 5 and on the final commit, before the push:
+`go test ./...` and `go vet ./...` with Windows Go in `%USERPROFILE%\bonsai-checks\src`, a copy of the builder's tree
+(`cp -a` of the worktree without `.git`) or a Windows-git clone of the builder's branch (from a `git bundle`, as in
+part 0). CI does not replace that run: check 10 needs both.
 
 **The twelve checks** are spec §14's, with these readings: check 7 as "What still links" item 3 says (Bonsai's half is
 "every trick file's format-1 outcome"; the skeleton has no format 0); check 3's CRLF checkout is made with Windows git;
@@ -341,16 +351,16 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
 | Done when | Proved by |
 |---|---|
 | Part 0 | The formats tests (CI `test` and `lint`); the verifier's rule-by-rule read and its own format-0 run; before the push, the Windows-git clone's `go test ./formats/`; the commit named in `STATE.md` |
-| Part 1 | CI on the pushed commit, both jobs; `release.yml` build-only; the clear-out's file list |
+| Part 1 | Before the push, a fresh verifier on the clear-out's file list, `release.yml` build-only and the CI jobs; CI on the pushed commit, `test`, `windows` and `govulncheck` green |
 | The test pack | `claude plugin validate --json`; its four commits |
 | Part 2 | Committed Go tests on every trick file's format-1 outcome and on the schemas; check 10 |
 | Part 3 | Checks 1-6 (5 to its session clause) and 12; check 9; check 10 |
 | Part 5 | Check 11 on both sides; hand checks c and d; the fault tests; a normal build without fault code; check 10 |
-| Part 4 | Check 8, hand check a, the recorded session kinds; check 5's last clause |
+| Part 4 | Check 8, hand check a, the recorded session kinds; check 5's last clause; check 10 |
 | Part 6 | The gate report against spec §15 |
 | Stop lines | The run reports' rows and tallies, judged by the verifier |
 | Hand checks | Rohan's lines against the pass conditions above |
-| The interim proof | At the end of parts 2, 3 and 5 and on the final commit, `go test ./...` and `go vet ./...` in WSL and natively on Windows, output in the run report; the final commit's full SHA with its CI run, `test` and `windows` green; no Windows-only skip without a named reason |
+| The interim proof | At the end of parts 2, 3, 4 and 5 and on the final commit, `go test ./...` and `go vet ./...` in WSL and natively on Windows, output in the run report; the final commit's full SHA with its CI run, `test` and `windows` green; no Windows-only skip without a named reason |
 | The last verifier | A fresh Opus verifier re-runs `go test ./...` and `go vet ./...` on both sides itself, and agrees on every part, the twelve checks and the four stop lines |
 | Nothing private | The verifier's read of both repos' file lists and a grep of their files and commit messages for studio task ids, studio paths, home folders, machine or tailnet names and email addresses |
 
@@ -362,7 +372,7 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
 | Work on `main`, each push after its proof | A `rebuild` branch, a draft pull request, a gate merge | Rohan, 8 Oct; force pushes and deletion stay blocked; 0.4.3 stays at its tag |
 | The formats' master in Bonsai's `formats/`, part 0 first | The studio's master and a copy here | Rohan, 8 Oct |
 | One `expect.json` for the set | One per case folder | One file any language reads, hashed in the manifest |
-| Verifiers for part 0, parts 1-2, part 5 and the end | One per part, or one at the end | Rohan's 6 Oct rule: a fresh verifier only for big or risky work; the formats, the reader and the hook path are risky, and the end checks all twelve |
+| Verifiers for part 0, part 1, part 2, part 5 (with part 3's hook lines) and the end | One per part, or one at the end | Rohan's 6 Oct rule: a fresh verifier only for big or risky work; the formats, CI and release, the reader and the hooks are risky (`CLAUDE.md`), and the end checks all twelve |
 | `status --json` with every field | Only the fields present | Contract §2.2; the shape is tested from the start |
 | The hook-line change in its own test-pack commit (D) | All of check 5's changes between A and B | Spec §6 says `update` is all or nothing and a hook-line change needs `--allow-exec` as well as `--yes`; kept apart, the skeleton needs no rule for a mixed update; that rule comes with `--allow-exec` in step 5.1 |
 | Scripted runs over the scratch copies | Committed tests over them | They hold private content and absolute paths, and CI cannot reach them |
