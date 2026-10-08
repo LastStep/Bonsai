@@ -10,7 +10,8 @@ history; everything in this repo now serves the rebuild. Rohan is the director; 
   that keeps a clean log; a ladder that proves work is done. One Go program, nothing else to install, on Linux and
   Windows.
 - **Is not:** anything that applies an action. It never moves a task, applies an approval or starts an agent. No daemon,
-  no network service, no terminal UI. Registries, dashboards, notifications and deploys belong to its users.
+  no network service, no terminal UI, and no screens or web page of its own (Rohan, 9 Oct: a pure command-line tool;
+  every visual is the studio's). Registries, dashboards, notifications and deploys belong to its users.
 - **Its first user** is Rohan's studio, Trinetra, which adopts the formats when it links (step 7). This repo names no studio file in its code.
 
 ## Where the truth lives

@@ -46,6 +46,9 @@ kinds a pack's roles load, plugin install time, two projects at two commits, bin
 full 1.0, (b) the smaller cut, or (d) 1.0 with Bonsai's own screens (spec section 15). If he pauses, `main` keeps what
 was built so far and the old product stays at tag `v0.4.3`.
 
+> **9 Oct (Rohan):** the gate chose (a), the full 1.0, and Bonsai's own screens are dropped: Bonsai is a pure
+> command-line tool, and every visual of its data is the studio's.
+
 ## Done when
 
 - [ ] The formats are in `formats/`: a JSON Schema for each of the contract's ten formats and the trick files with

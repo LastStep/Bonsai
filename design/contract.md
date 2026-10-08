@@ -42,7 +42,7 @@ read. Bonsai's code never mentions the studio.
 | Log (§8) | What agents did, cleaned of secrets as it is written | Bonsai's recorder; the studio's events, through Bonsai | `bonsai logs`, the studio's forwarder | `.bonsai/local/` in the main checkout, never committed |
 | Ask (§9) | A question for a person, and its answer | `bonsai ask`, `bonsai answer`, the ladder | The studio, agents | `.bonsai/local/`, never committed |
 | Ladder result (§11) | A task's checks and whether they passed | Bonsai's ladder runner | The stop gate, verifiers, the studio | `.bonsai/local/`, never committed |
-| `status --json` (§12) | One workspace at a glance | `bonsai status` | The studio, Bonsai's screens, the assistant | Printed |
+| `status --json` (§12) | One workspace at a glance | `bonsai status` | The studio, the assistant (Bonsai's screens dropped, Rohan 9 Oct) | Printed |
 | Lock (§14) | Which pack versions and files a workspace holds | Bonsai | Bonsai, CI, verifiers; the studio through `status` | `.bonsai/lock.json`, committed |
 
 Not a Bonsai format: **status moves and Desk taps** (§10). The studio applies them through one write path, and checks
@@ -670,8 +670,8 @@ Rohan, decision 2: "Every Bonsai workspace keeps a local log of what its agents 
 on the machine and never committed ... Trinetra adds only the forwarder ... Trinetra adds its own events as labels
 (`trinetra.*`) in the same log." Confirmed 7 Oct (`q-record`): "Bonsai records; Studio forwards and shows".
 
-**Written by** Bonsai's recorder (the hooks) and Bonsai's own commands. **Read by** `bonsai logs`, Bonsai's screens
-(Q7), the studio's forwarder. **Lives** in the main checkout's `.bonsai/local/log/`, never committed (§3; moved from
+**Written by** Bonsai's recorder (the hooks) and Bonsai's own commands. **Read by** `bonsai logs`, the studio's
+forwarder (Bonsai's screens, Q7, dropped by Rohan on 9 Oct: every visual is the studio's). **Lives** in the main checkout's `.bonsai/local/log/`, never committed (§3; moved from
 the Bonsai home on Rohan's word, 7 Oct). Still "kept on the machine and never committed", as decision 2 says.
 
 ### 8.1 The record (`bonsai.log/1`)
@@ -985,8 +985,8 @@ Today's fields stay (`ladder.mjs`): `task`, `started`, `finished`, `git {sha, br
 
 ## 12. `bonsai status --json` (`bonsai.status/1`)
 
-**What it is for:** one workspace at a glance, for the studio's bridge, Bonsai's own screens (Q7) and the assistant
-(decision 3). **Written by** `bonsai status --json`; printed, never stored. The default is cheap and offline, for the
+**What it is for:** one workspace at a glance, for the studio's bridge and the assistant (decision 3); Bonsai's own
+screens (Q7) were dropped by Rohan on 9 Oct: every visual is the studio's. **Written by** `bonsai status --json`; printed, never stored. The default is cheap and offline, for the
 bridge to run often; `--full` adds `checks` (vision A.1).
 
 ```json

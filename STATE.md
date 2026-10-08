@@ -42,6 +42,10 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 
 - **9 Oct, the gate: path (a), the full Bonsai 1.0** (spec §14, "Path (a) after the gate", 139-218 h, parts 5.1-5.7,
   each with a re-ask line at 1.3 times its high estimate).
+- **9 Oct: Bonsai has no screens of its own.** "Completely remove the idea of bonsai's own screens ... this visual part
+  of the job will be handled by the studio, while bonsai is a pure cli tool for overall simplicity." No web page, no
+  `bonsai serve`; every visual of Bonsai's data is the studio's, from Bonsai's JSON outputs. Dated notes in the spec
+  (§1, §2, §4, §11, §14, §16), the contract's reader lists, the one-pager and `CLAUDE.md`.
 - 9 Oct: a handoff for the studio's orchestrator, `records/handoff-studio-2026-10-09.md`; the studio still links at
   step 7, after 5.5 (his 8 Oct "Bonsai first" stands).
 

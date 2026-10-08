@@ -62,6 +62,9 @@ growing 1.6 times), plus Bonsai's own screens, a guess of 30-50 h. Writing the g
 roughly 40-85 h more than moving the Node code would have, part of it new work; your 7 Oct split and plugins take some of
 that back.
 
+> **Changed 9 Oct (Rohan):** at the gate he chose path (a), and Bonsai's own screens are dropped (§11's note): 1.0 is
+> the 139-218 h, with no screens after it.
+
 **Go on Windows, measured today.** Windows already has Go 1.26. The old Bonsai builds there natively in 23 seconds, but 29
 of its tests fail only on Windows (backslash paths, symlinks, file modes); the new code is written against those from
 day one. Windows Go cannot build straight from WSL's disk. A hook in Go answers in about 1.5 ms in WSL (today's Node
@@ -106,6 +109,8 @@ studio's; one bridge per machine, keys only when a second real machine exists); 
 the old studio copies, Bonsai-Eval, the old 0.4.3 workspaces); what others ship (vision A.1: a marketplace, a rule
 compiler, machine installers, a sandbox, a telemetry pipeline, session dashboards, a terminal UI). Later, on Rohan's
 word: other agents and `AGENTS.md` (Q5), polish for strangers, layer overrides, OpenTelemetry as a second record.
+
+> **Changed 9 Oct (Rohan):** Bonsai's own screens join this list: every visual is the studio's (§11's note).
 
 ## 3. One program
 
@@ -182,6 +187,8 @@ settings file it printed for (question B, 7 Oct). Flags, not words: `bonsai --ve
 word, `bonsai check --schema <format>` (contract §2.2), `check --write` and `check --pack` (Rohan's format review; still
 fourteen words, one free under the cap).
 `bonsai serve` (§11) comes with the screens, on a cap Rohan raises.
+
+> **Changed 9 Oct (Rohan):** no `bonsai serve`: Bonsai has no screens (§11's note).
 
 **Refused in an agent session** (a tripwire, decision D): `settings set` and `labels attach` and `detach` refuse when
 `CLAUDE_CODE_CHILD_SESSION` is set. Claude Code sets that variable only in processes it starts; `CLAUDECODE` is also
@@ -833,6 +840,12 @@ The contract left the format, the budget and the personal layer's place here (co
 
 ## 11. Bonsai's own screens
 
+> **Changed 9 Oct (Rohan): Bonsai has no screens of its own.** "Completely remove the idea of bonsai's own screens
+> ... this visual part of the job will be handled by the studio, while bonsai is a pure cli tool for overall
+> simplicity." No web page, no `bonsai serve`, no static bundle, no mock. Bonsai's human output is the commands' ASCII
+> text; every visual of Bonsai's data is the studio's, drawn from Bonsai's JSON outputs. Update diffs, free text that
+> contract §2.6 keeps off the VPS, are read in the terminal (`bonsai update --diff`).
+
 Q7 (a): Bonsai owns one web page for one workspace, which works without the studio: packs and versions, the update
 preview and diff, conflicts, labels, logs, asks, security status. **Never built before the skeleton**; when, is the
 gate's choice ((d) builds it inside 1.0; (a) and (b) after). Designed first: a Fable mock and one option round. `bonsai
@@ -955,6 +968,8 @@ merge, waits included, so it overstates session time. A studio-day covers about 
 | 8 | Mimas links last, in one step, on Rohan's yes (Q14 a), in Mimas's repo | Mimas | its own task | — |
 | 9 | Bonsai's screens: inside 5 under path (d), else after 1.0; mock first | Bonsai | 30-50 (a guess) | after the mock |
 | 10 | The first public release, on Rohan's word | Bonsai | — | — |
+
+> **Changed 9 Oct (Rohan):** row 4's gate chose path (a); row 9 is dropped: Bonsai has no screens (§11's note).
 
 > **Changed 8 Oct (Rohan):** the schemas and trick files move out of row 2 into Bonsai, as its first job (`design/plan.md`
 > part 0, 6-10 h, the contract's figure for that part); the studio's readers task pins a copy. The skeleton (row 3)
@@ -1079,6 +1094,8 @@ Path (b), the smaller cut, defers the new-tests check, git integrity, `status --
 after the gate. Path (d) adds the screens: about 169-268 h after the gate. A later upgrade of the
 guard's shell side waits for the Jev trial and Rohan's decision on its research (§19 A); it is not costed here.
 
+> **Changed 9 Oct (Rohan):** the gate chose path (a). Path (d) is gone with the screens (§11's note).
+
 ## 15. What the gate measures
 
 **Measured on 7 Oct, for this spec** (the baseline; scratch folders only, nothing installed; Bonsai's `main` at `c6a6757`):
@@ -1131,7 +1148,7 @@ new: both are for his second look.
 | 10 | The ask record (`bonsai.ask/1`) | A question an agent asks you, and your answer. Changed 7 Oct (R2.3) | contract §9 |
 | 11 | Status moves and Desk taps | The studio's one write path, which moves are yours, and how a move proves it was a person's (the studio's, not a Bonsai file). Changed 7 Oct (R2.2) | contract §10 |
 | 12 | The ladder result (`bonsai.ladder/1`) | The proof that a task's checks passed, at a commit. Changed 7 Oct (R2.3, R2.6) | contract §11 |
-| 13 | `bonsai status --json` (`bonsai.status/1`) | One workspace at a glance, for the studio and Bonsai's screens. Changed 7 Oct (R2.4) | contract §12 |
+| 13 | `bonsai status --json` (`bonsai.status/1`) | One workspace at a glance, for the studio (Bonsai's screens dropped 9 Oct, §11). Changed 7 Oct (R2.4) | contract §12 |
 | 14 | The active task | The one rule for which task's permissions apply right now | contract §13 |
 | 15 | The lock (`bonsai.lock/1`) | Exactly which pack versions and files a project holds. Changed 7 Oct (R2.1) | contract §14 |
 

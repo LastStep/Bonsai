@@ -13,8 +13,10 @@ what the studio can use now, and what to read. Bonsai's own `STATE.md` stays the
   the guard blocks what it should, and also blocks when Bonsai is missing, crashes, is slow or is not on the PATH.
 - **A fresh Opus verifier passed it** (all parts, the twelve checks, the four stop lines; tests re-run on both sides).
   The gate report is `~/Servers/Bonsai/records/gate-skeleton.md`.
-- **Rohan's gate is next**: he picks the path for Bonsai's step 5, (a) the full 1.0, (b) the smaller cut, or (d) 1.0
-  with its own screens. That choice was not made when this file was written; check Bonsai's `STATE.md`.
+- **At the gate (9 Oct) Rohan chose path (a), the full Bonsai 1.0.** The plan for step 5 is being written; nothing in
+  step 5 is built before he approves it.
+- **Bonsai has no screens of its own (Rohan, 9 Oct).** Bonsai is a pure command-line tool; every visual of Bonsai's
+  data is the studio's (see "What it means for the studio", item 2).
 - **For the studio, nothing changes yet.** By Rohan's 8 Oct decision ("Bonsai first"), the studio links to Bonsai at
   Bonsai's step 7, which comes after the gate and step 5's parts 5.1 to 5.5. Until the link, the Desk stays on upkeep
   and the studio writes no interim code toward the formats. The skeleton's end removes the first thing the link waits
@@ -39,24 +41,29 @@ Nothing in the studio's repo or Mimas was changed by this work (the last verifie
 
 1. **The link waits on Bonsai's step 5, parts 5.1 to 5.5** (formats and engine to 1.0, the recorder, the guards, the
    ladder runner, the packs). The spec costs those at 120-187 h; at the skeleton's measured pace that would be roughly
-   16-39 agent hours, but the gate report's section 1 lists why that pace may not hold. Path (b) defers part of 5.4,
-   which shortens the wait a little; path (d) adds Bonsai's own screens inside step 5, which may lengthen it. Neither
-   changes the order.
-2. **The formats are final and live in Bonsai's `formats/`.** The studio's readers test against those trick files when
+   16-39 agent hours, but the gate report's section 1 lists why that pace may not hold.
+2. **Every visual of Bonsai's data is the studio's** (Rohan, 9 Oct: "this visual part of the job will be handled by the
+   studio, while bonsai is a pure cli tool for overall simplicity"). The spec's plan for Bonsai's own web page (spec
+   §11: one page per workspace, `bonsai serve`, a bundle the Desk would load) is dropped. The studio draws Bonsai's
+   data itself, from Bonsai's JSON outputs: `bonsai status --json` (contract §12) and the formats in `formats/`.
+   Update diffs are free text that contract §2.6 keeps off the VPS, so they are read in the terminal (`bonsai update
+   --diff`) unless the studio decides otherwise. This moves work the spec had costed on Bonsai's side (30-50 h, a
+   guess) to the studio's; when it is done is the studio's to plan.
+3. **The formats are final and live in Bonsai's `formats/`.** The studio's readers test against those trick files when
    it links (that is the studio's half of check 7, still open). Do not copy them into the studio before the link: a copy
    pinned to a Bonsai commit is what the link brings.
-3. **What moves at the link** is listed in spec §14, step 7's row, and contract §15.2 (the studio's adoption, costed):
+4. **What moves at the link** is listed in spec §14, step 7's row, and contract §15.2 (the studio's adoption, costed):
    the studio's own guards, ladder and statusline retire then, and its hooks and CI run on `bonsai`. The studio's
    readers plan, cut on 8 Oct, stays the map of every studio reader for that link.
-4. **Two studio problems are Bonsai's to fix, in step 5:** the redaction leaks the studio accepted are fixed by
+5. **Two studio problems are Bonsai's to fix, in step 5:** the redaction leaks the studio accepted are fixed by
    Bonsai's recorder (5.2), which replaces the Node redactor; the guard bug Rohan routed to Bonsai is designed out in
    Bonsai's guard (5.3), not patched in the studio.
-5. **Rohan's 8 Oct requirement on hook lines** (they must not be redirectable by files an agent may edit, as `git
+6. **Rohan's 8 Oct requirement on hook lines** (they must not be redirectable by files an agent may edit, as `git
    rev-parse --git-common-dir` can be in the studio) is settled in Bonsai's step 5.3 (`design/plan.md`, "What still
    links Bonsai and the studio", item 5).
-6. **Bonsai joins the Desk as its own project** at spec step 6, from step 5.4 on: the studio will be asked to register
+7. **Bonsai joins the Desk as its own project** at spec step 6, from step 5.4 on: the studio will be asked to register
    it then.
-7. **Studio work that needs no Bonsai code** is the studio's to schedule: spec §13 item 4 (the memory move) is one;
+8. **Studio work that needs no Bonsai code** is the studio's to schedule: spec §13 item 4 (the memory move) is one;
    check the studio's own records for its status.
 
 ## What the skeleton learnt that studio sessions can use now
@@ -89,8 +96,8 @@ Measured on Claude Code 2.1.294, on both sides, 8-9 Oct (sources in the gate rep
 ## What to read, in this order
 
 1. `~/Servers/Bonsai/STATE.md`: where Bonsai stands now, and what waits on Rohan.
-2. `~/Servers/Bonsai/records/gate-skeleton.md`: section 1 (plain words, the paths and their hours) and section 5 (the
-   findings step 5 inherits, by part).
+2. `~/Servers/Bonsai/records/gate-skeleton.md`: section 1 (plain words, the paths and their hours; Rohan chose (a))
+   and section 5 (the findings step 5 inherits, by part).
 3. `~/Servers/Bonsai/design/plan.md`: "What still links Bonsai and the studio".
 4. `~/Servers/Bonsai/design/one-pager.md`: what Bonsai is for and what "correct" means.
 5. `~/Servers/Bonsai/formats/README.md`: the formats and the trick files.
