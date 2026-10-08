@@ -431,3 +431,8 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
   guard's log.
 - §17 step 3 asks for the old binaries to go before step 5.4; this plan asks before part 5's hook checks. The launcher
   puts the scratch build first either way; a session started without it would find the old one.
+- The short label examples in contract §5.2 and §5.6, and format review 2.2's example, omit the fields that do not
+  apply (`values`, `items`, `pattern`, `max`, `grants`); §5.2 calls `pattern` and `max` optional and gives `grants` a
+  default of `false`. The formats require every field: Bonsai's packs write them all (Rohan, 8 Oct).
+- Spec §7 names the Claude Code need in `status --json` by `id`; contract §12 and format review 6.5 (confirmed) name a
+  tool need by `name`. The formats follow `name`; spec §7's `id` is a slip.
