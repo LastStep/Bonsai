@@ -25,6 +25,9 @@ package engine
 //     pack's copy is written (replaced) and the project's copy saved in the home's cache, never in the repo. Neither
 //     keeps Bonsai's own part of CLAUDE.md or .claude/settings.json: --adopt takes Bonsai's, --keep is refused.
 //   - .bonsai/.gitignore is Bonsai's (spec §6): written when missing or changed, never in the lock.
+//   - The lock names one pack per file. CLAUDE.md's block and .claude/settings.json hold lines from every pack and
+//     from Bonsai itself; their entries name the first pack in bonsai.yaml's order, as contract §14's example names
+//     base for the settings file.
 
 import (
 	"bytes"

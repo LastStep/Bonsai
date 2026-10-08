@@ -115,6 +115,11 @@ func TestUpdateCommand(t *testing.T) {
 	if code != 4 || !strings.Contains(out, "change  marketplace bonsai-demo-") || !strings.HasSuffix(out, "next: to write it, run: bonsai update --yes\n") {
 		t.Errorf("update without --yes: %d\n%s", code, out)
 	}
+	code, out, _ = c.run("", "update", "--diff")
+	if code != 4 || !strings.Contains(out, "--- a/demo/guide.md\n+++ b/demo/guide.md\n@@ -1,3 +1,3 @@\n # Guide\n \n-Edition 1.\n+Edition 2.\n") ||
+		!strings.Contains(out, "--- /dev/null\n+++ b/demo/extra.md\n") || !strings.Contains(out, "--- a/.claude/settings.json\n") {
+		t.Errorf("update --diff: %d\n%s", code, out)
+	}
 	code, out, _ = c.run("", "update", "--json")
 	doc, err := schema.Decode([]byte(out))
 	if code != 4 || err != nil {
