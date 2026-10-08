@@ -68,7 +68,7 @@
     },
     {
       "path": "schemas/ask.schema.json",
-      "sha256": "403f59eeb76124886ed480e1a9381f62f542dc67414a091dc44bb2e57c76200e"
+      "sha256": "e8d5c588c3b5a67c96bf05cca048951e652ab3bbed80a552f8cc4ebff6f7100b"
     },
     {
       "path": "schemas/labels.schema.json",
@@ -76,7 +76,7 @@
     },
     {
       "path": "schemas/ladder.schema.json",
-      "sha256": "038f911b13c8777cdaccd108995694b1595f56ea3ef8500cc6994c2e15bc48e6"
+      "sha256": "220411eae69bbf46695d426241d97fe60270803e51a1a129c8b052b5113a844d"
     },
     {
       "path": "schemas/lanes.schema.json",
@@ -100,7 +100,7 @@
     },
     {
       "path": "schemas/status.schema.json",
-      "sha256": "32f305029868c844850d60867c1999473dc632e25f4719a7d9076029ca35fd67"
+      "sha256": "4d483e740f39a93bf14c4b5b36ecd1012c43821db980a380ebf39e5c4cb933cb"
     },
     {
       "path": "schemas/task.schema.json",

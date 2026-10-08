@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.ladder/1",
-  "description": "The ladder result (contract §11): the proof that a task's checks passed, at a commit. One JSON document per task at the main checkout's .bonsai/local/ladder/<task id>.json (a --ci run writes ladder/ci.json), never committed. Written by Bonsai's ladder runner; read by the stop gate, verifiers, the statusline, the runner (Bless) and the studio. Today's fields stay (the studio's ladder.mjs); format, workspace and mode are added. Every field is always present, null or [] where it does not apply (contract §2.2, §11); a reader treats a missing field as null, keeps an unknown one (today's rungs also carry exit, output_tail, job and checked) and refuses a duplicate key. After writing, the runner appends a ladder log record with the file's sha256.",
+  "description": "The ladder result (contract §11): the proof that a task's checks passed, at a commit. One JSON document per task at the main checkout's .bonsai/local/ladder/<task id>.json (a --ci run writes ladder/ci.json), never committed. Written by Bonsai's ladder runner; read by the stop gate, verifiers, the statusline, the runner (Bless) and the studio. Today's fields stay; format, workspace and mode are added. Every field is always present, null or [] where it does not apply (contract §2.2, §11); a reader treats a missing field as null, keeps an unknown one (today's rungs also carry exit, output_tail, job and checked) and refuses a duplicate key. After writing, the runner appends a ladder log record with the file's sha256.",
   "type": "object",
   "required": [
     "format",

@@ -25,7 +25,7 @@
   ],
   "properties": {
     "format": {
-      "description": "The version, always the first field (contract §2.2). Today's AskRecord wrote v: 1.",
+      "description": "The version, always the first field (contract §2.2). Today's record wrote v: 1.",
       "examples": [
         "bonsai.ask/1"
       ],
@@ -77,7 +77,7 @@
       "pattern": "^ws-[a-z0-9]{26}$"
     },
     "source": {
-      "description": "Who filed it: agent or ladder (contract §9.1, as today's ASK_SOURCES). Only the ladder files Bless.",
+      "description": "Who filed it: agent or ladder (contract §9.1, as today). Only the ladder files Bless.",
       "examples": [
         "agent",
         "ladder"
@@ -184,7 +184,7 @@
       }
     },
     "verdict": {
-      "description": "As today (asks.mjs): on a Look, the agent's own verdict, pass or fail; null otherwise.",
+      "description": "As today: on a Look, the agent's own verdict, pass or fail; null otherwise.",
       "examples": [
         "pass",
         null

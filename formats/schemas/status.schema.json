@@ -292,7 +292,7 @@
             "pattern": "^[^/\\\\:][^\\\\:]*$"
           },
           "id": {
-            "description": "The id pattern a document's id must match (today's DOC_ID_RULES).",
+            "description": "The id pattern a document's id must match; an id resolves to exactly one file, never a path.",
             "examples": [
               "^T-\\d{4,6}$"
             ],
