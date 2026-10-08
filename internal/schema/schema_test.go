@@ -254,3 +254,17 @@ func TestLenientDropsRequiredAtEveryDepth(t *testing.T) {
 		t.Errorf("Lenient changed its input")
 	}
 }
+
+func TestEncodeLineIsOneCompactASCIILine(t *testing.T) {
+	v := Object{{"a", "\u00e9 \"q\"\n"}, {"b", []any{true, nil}}, {"c", Object{}}, {"d", Object{{"e", json.Number("2")}}}}
+	got, err := EncodeLine(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "{\"a\":\"\\u00e9 \\\"q\\\"\\n\",\"b\":[true,null],\"c\":{},\"d\":{\"e\":2}}\n"; string(got) != want {
+		t.Errorf("EncodeLine = %q, want %q", got, want)
+	}
+	if _, err := EncodeLine(3.5); err == nil {
+		t.Errorf("EncodeLine took a float64")
+	}
+}

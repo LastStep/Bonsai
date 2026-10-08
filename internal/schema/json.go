@@ -151,6 +151,17 @@ func Encode(v any) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// EncodeLine writes a value as one compact JSON line (no spaces, a final LF), with Encode's byte-stable rules
+// otherwise: a record of a JSON-lines file (contract §2.5), such as the log's.
+func EncodeLine(v any) ([]byte, error) {
+	var b bytes.Buffer
+	if err := (encoder{&b, false}).value(v, 0); err != nil {
+		return nil, err
+	}
+	b.WriteByte('\n')
+	return b.Bytes(), nil
+}
+
 // Encoder is a type that turns itself into one of the values Encode takes.
 type Encoder interface {
 	EncodeJSON() any
