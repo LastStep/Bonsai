@@ -15,6 +15,7 @@ formats/
   expect.json               the expected outcome of every case (below)
   manifest.json             the set version and the SHA-256 of every file's bytes (below)
   formats_test.go           the Go test that checks the set is whole (below; not in the manifest)
+  embed.go                  embeds the ten schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
                                 status, lock
   examples/<name>.json      one valid document per format, as a reader returns it
@@ -217,15 +218,17 @@ and the Go files. Raw bytes are never line-ending-normalised: the CRLF case is t
 
 ## The Go test
 
-`formats_test.go` (standard library only; a test-only package that needs no reader) checks that the manifest matches
-every file's bytes and lists every file and nothing more, sorted; that the CRLF case holds CRLF and the BOM cases start
-with `EF BB BF`, as checked out; that every rule in its list has a case and every case has both outcomes, each reason
-code in the table above and each code in the table used; that every schema is JSON with no duplicate key, declares
-draft 2020-12 and documents itself, and that each example validates under a small checker (it implements the keywords
+`formats_test.go` (the standard library and Bonsai's schema checker, `internal/schema`; it needs no reader) checks that
+the manifest matches every file's bytes and lists every file and nothing more, sorted; that the CRLF case holds CRLF and
+the BOM cases start with `EF BB BF`, as checked out; that every rule in its list has a case and every case has both
+outcomes, each reason code in the table above and each code in the table used; that every schema is JSON with no
+duplicate key, declares draft 2020-12 and documents itself, and that each example validates under the schema checker
+(`internal/schema`, moved out of this test in plan part 2 so Bonsai's code uses the same one: it implements the keywords
 the schemas use, skips only `title`, `description` and `examples`, and fails on any other keyword) and keeps the
-schema's field order; that each YAML or markdown example's format-1 value equals its `<name>.json`; and that no file
-in the set holds a private string: an absolute home-folder path, a WSL drive path, a path from a home folder's tilde,
-a Windows drive letter, an email address or a tailnet host name. Run it with `go test ./formats/`.
+schema's field order; that each YAML or markdown example's format-1 value equals its `<name>.json`; that the schemas
+`embed.go` embeds are exactly the files in `schemas/`; and that no file in the set holds a private string: an absolute
+home-folder path, a WSL drive path, a path from a home folder's tilde, a Windows drive letter, an email address or a
+tailnet host name. Run it with `go test ./formats/`.
 
 ## How the set changes
 

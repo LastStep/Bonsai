@@ -1,10 +1,10 @@
 {
   "about": "The formats set's manifest: the set version and the SHA-256 of every file's raw bytes in formats/, all but this file and the Go files, sorted by path. Every field is described in README.md.",
-  "set": 1,
+  "set": 2,
   "files": [
     {
       "path": "README.md",
-      "sha256": "eee423b11904315ccb117acf138ef9a7000c687eb3d0c1f1a00aab0717f6f5bb"
+      "sha256": "3d63a137b63e794b3da96345947fa4d9bdcb4027e391b29c5d64c90a217644e0"
     },
     {
       "path": "examples/ask.json",
