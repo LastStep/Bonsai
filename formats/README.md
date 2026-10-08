@@ -80,8 +80,8 @@ where it lives) and a `description` and `examples` on every property.
 - `status --json` exits 3 with only `format`, `bonsai` and `problems` filled, so every other field also takes `null`.
 - Patterns are added only where a source fixes a form: ids (task, run, workspace, machine folder, UUID), dates and
   times, label names, hashes (the lock's and status's 40-character commits; a 64-character SHA-256; today's
-  16-character input hash; a run report's commits have none, as contract §7.1 fixes no form), the Remote Control id, and project-relative paths (no leading slash, no
-  backslash, no drive colon).
+  16-character input hash; a run report's commits have none, as contract §7.1 fixes no form), the Remote Control
+  id, and project-relative paths (no leading slash, no backslash, no drive colon).
 - `folded-deeper` holds for `>-` as for `>`: the strip indicator changes only the end of the value.
 
 ## The examples
@@ -183,8 +183,8 @@ one line, the key before its value; and of two codes that fit one problem, the o
 
 ## How the outcomes were found
 
-- **Format 0** means exactly what the studio's `tools/lib/yaml.mjs` reads (contract §2.3, §2.4), as the studio froze it
-  for format 0 at commit `4a05eac`. Each case was run through that file, taken read-only with `git show`, the way the
+- **Format 0** means exactly what the studio's frozen YAML reader, `yaml.mjs` at commit `4a05eac`, reads (contract
+  §2.3, §2.4). Each case was run through that file, taken read-only with `git show`, the way the
   studio's callers read files: `readFileSync(path, 'utf8')` (so a BOM and CRLF reach the reader), then `parseYaml` for
   a YAML file or `parseFrontmatter(...).data` for markdown. `format0` holds its value or its exact error message.
 - **Format 1** outcomes follow contract §2.4's grammar rule by rule. Where §2.4's words do not settle a value
