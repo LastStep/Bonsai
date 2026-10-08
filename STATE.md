@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 when part 3 landed (`records/runs/R-2026-10-08-engine.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 when part 5 landed (`records/runs/R-2026-10-08-hook.md`).
 
 ## In short
 
@@ -24,7 +24,15 @@ Both were passed by a fresh Opus verifier.
   `kept`, exits 4 and 5, `--diff`, `--yes`, `--keep`, `--adopt`, the preview naming every settings line. A hook-line
   change is only refused (exit 4, `--allow-exec` named; the flag is step 5.1). Checks 1-6 and 12 pass as scripted runs
   over three scratch targets (check 5 up to part 4's clause). 703 tests on WSL and natively on Windows. It landed on
-  green tests and the orchestrator's read of the diff; part 5's verifier also reads its hook-line writes and refusal.
+  green tests and the orchestrator's read of the diff; part 5's verifier also read its hook-line writes and refusal.
+- **Part 5, the hook path** (`33a6122`): `internal/guard` and `bonsai hook guard`: one rule (an Edit, Write, MultiEdit
+  or NotebookEdit of a path on `bonsai.yaml`'s protected or person-only list is refused, exit 2, reason and next
+  step), failing closed (its own 5 s timer, half the hook's 10 s; a panic, bad input or an unrecordable allow blocks),
+  paths judged in every form (on Windows the final path Windows reaches: streams, junctions, device paths, short
+  names), one `bonsai.log/1` record per decision with the binary's path and hash. The fault switch only under
+  `-tags bonsai_test_fault`; CI runs that tag too. `update` refuses when the lock is missing. Check 11 passes on WSL
+  through `claude-here`. Hook start-up: WSL p50 2.4 ms (baseline 1.5), Git Bash 63 ms (baseline 65). Passed by a
+  fresh Opus verifier after one fix round. Parts 3 and 5 close once Rohan's first sitting passes.
 - **Part 4a, the test pack**: `LastStep/bonsai-test-pack`, public, commits A `5062053`, B `ab09e4b`, C `abfb5de`, D
   `1d4f46f` (`main`; full hashes in its run report). A shows a `marker` role saying "commit A"; B changes one pack file,
   adds one and says "commit B"; C changes that file again; D changes only the hook line. Its README says which check
@@ -67,33 +75,25 @@ Nothing else of the new Bonsai is built.
   Go 1.25), CodeQL, Dependabot (`gomod`, `github-actions`). The old website's Deploy Docs workflow is removed; the old
   site stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: part 5, the hook path
+## The one thing to do next: Rohan's first sitting, then part 4b
 
-Next, in the plan's order: part 5, then the rest of 4, and 6. Part 5: `bonsai hook guard` with one rule (an Edit of a
-path in `bonsai.yaml`'s protected list is refused; `project-guard` lists `protected.txt`), the fault switch
-`BONSAI_TEST_FAULT` (`missing`, `crash`, `slow`, `minimal-path`) behind a Go build tag, every fault only blocking, the
-binary's path and SHA-256 logged. Check 11 on WSL by the builder through the `claude-here` launcher (plan, "Test
-sessions and the launcher": the scratch build first on the PATH, `BONSAI_HOME` and one shared
-`CLAUDE_CODE_PLUGIN_CACHE_DIR` set); a Go test per fault; a normal build holds no fault code. 3-5 AI hours. A fresh
-Opus verifier, who also reads part 3's hook-line writes and refusal (start with `internal/engine/engine.go`'s doc
-comment). Then Rohan's **first sitting** (about 25 minutes): hand checks b, c and d. Parts 3 and 5 close once it
-passes. Open `records/runs/R-<date>-hook.md`, make the worktree, and brief from part 5's row, "Test sessions and the
-launcher" and the hand-check table.
+**Rohan's first sitting** (about 25 minutes): hand checks b, c and d (plan, hand-check table). The folders are ready
+under `%USERPROFILE%\bonsai-checks\`: `project-conflict` (b), `project-guard` (c), `bin\bonsai.exe`
+(`8c8463eb...08bc`), `bin\fault\bonsai.exe` (`6123c0e3...81fa`), `bin\claude-here.cmd`. The orchestrator sends the
+lines in one message (b's in `records/runs/R-2026-10-08-engine.md`, c's and d's in `records/runs/R-2026-10-08-hook.md`'s
+builder reports) and records his one line per check. Then parts 3 and 5 close.
 
-Hand check b is prepared by part 3: `%USERPROFILE%\bonsai-checks\project-conflict`, a Windows build of `ee50971` in
-`%USERPROFILE%\bonsai-checks\bin\`, and its PowerShell lines in `records/runs/R-2026-10-08-engine.md`'s builder
-report (the orchestrator copies them into the sitting's one message). Part 5's builder rebuilds `bonsai.exe` if the
-guard changes it.
-
-From part 3 for part 5: Bonsai's own hook line is `bonsai hook guard || exit 2` on PreToolUse (matcher
-`Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell`, timeout 10), written by name; spec §7's 8 Oct note asks for a fixed
-path, §3 and check 2 for a name: step 5.3 settles it. A stop line was not written (no `hook stop` yet).
+**Then part 4b, packs as plugins** (4-7 AI hours): the fetch at a 40-character commit, no login, read-only, on both
+sides; the marketplace named by workspace and a hash of the locked commits; install and update on this machine
+(`--scope project` or `local` only); the drift report; `project-a` at A, `project-b` at B, `project-a-worktree` at B;
+check 8 with the session kinds recorded, check 5's last clause. Lands on green tests on both sides and the
+orchestrator's read of the diff. Recheck the user settings hashes after it (WSL `7b515457...a025a7`, Windows
+`2b6295c1...4ff6c9`). Then Rohan's second sitting (hand check a), then part 6, the gate report.
 
 ## Waiting on Rohan
 
-- Before part 5's hook checks: spec §17 step 3, the old `bonsai` binaries. Read 8 Oct: `~/go/bin/Bonsai` and
-  `%USERPROFILE%\go\bin\bonsai.exe` remain (`~/go/bin/bonsai` and `~/.local/bin/bonsai` are gone). Asked 8 Oct.
-- Later: the two hand-check sittings (after part 5, about 25 minutes; after part 4, about 20); step 8 at 5.4; at 5.7
+- Now: the first sitting (hand checks b, c, d).
+- Later: the second sitting (hand check a, about 20 minutes, after part 4); step 8 at 5.4; at 5.7
   the `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website); close #252 if Dependabot has not.
 
@@ -102,6 +102,14 @@ path, §3 and check 2 for a name: step 5.3 settles it. A stop line was not writt
 - Go 1.25.9 (the module's `toolchain` line) has 19 standard-library vulnerabilities and 1 in an imported package that
   govulncheck lists but our code does not reach; a later 1.25.x patch fixes them. A one-line `toolchain` bump, as its
   own small commit.
+- Spec §17 step 3 is done: all four old `bonsai` binaries are gone (8 Oct).
+- For step 5.3, from part 5's verifier: a `.git` entry in the session's starting subfolder makes the guard read the
+  project as unlinked; `bonsai.yaml` (what is protected) is read from the working tree; `bonsai` is found by the PATH,
+  which a settings `env` could redirect; shell `rm` or `mv` of `bonsai.yaml` or the lock is not judged; a dangling
+  junction into a protected folder is allowed (the write fails); a junction swapped between check and write is not
+  caught; the admin share `\\localhost\C$` is a documented limit. For step 5.1: a plugin's move to a new commit is
+  not counted as running code (spec §5 lets plugins carry hooks); the log's `bonsai_path` and `bonsai_sha256` names
+  wait for step 5.2; CI's `lint` does not use the fault tag.
 - Spec step 5.3 (the guard): the hook lines must not be redirectable by files an agent may edit. They call the installed
   `bonsai` by a fixed path, and what the guard trusts to find the main checkout cannot be rewritten without the guard
   noticing (fail closed). See `design/plan.md`, "What still links Bonsai and the studio", and spec §7.
