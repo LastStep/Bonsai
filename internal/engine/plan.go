@@ -121,14 +121,20 @@ type Plan struct {
 	Packs      []PackMove
 	Files      []*FileResult
 	Settings   []SettingsChange // the settings lines the plan adds, changes or removes (when it writes the file)
+	Local      []SettingsChange // the lines it adds or removes in .claude/settings.local.json (plugins.go)
 	Conflicts  []*FileResult
 	HookChange bool // the plan changes a hook line, which this build refuses (spec §6: --allow-exec, step 5.1)
 	EmptyLocal int  // init --new-id: files in .bonsai/local/ to remove; -1 for none to remove
 	LockWrite  bool
 
+	Plugins []PluginResult // what InstallPlugins did after the plan was written (or had nothing to write)
+
 	lock      *workspace.Lock
 	lockBytes []byte
 }
+
+// NewLock is the lock the plan writes (or, with nothing to change, the lock as it is).
+func (p *Plan) NewLock() *workspace.Lock { return p.lock }
 
 // Nothing reports whether the plan changes nothing on disk.
 func (p *Plan) Nothing() bool {
@@ -617,6 +623,34 @@ func Build(req Request) (*Plan, error) {
 		p.Settings = changes
 	}
 	p.Files = append(p.Files, sf)
+
+	// The packs' plugins turned on in this checkout's .claude/settings.local.json (plugins.go says why).
+	var packIDs, commits []string
+	for _, pd := range newPacks {
+		packIDs = append(packIDs, pd.Ref.ID)
+		commits = append(commits, pd.Commit)
+	}
+	market := ""
+	if len(commits) > 0 {
+		market = MarketplaceName(cfg.Name, commits)
+	}
+	localRaw, localDoc, localChanges, err := localLines(co.Root, cfg.Name, packIDs, market)
+	if err != nil {
+		return nil, err
+	}
+	if len(localChanges) > 0 {
+		lb, err := schema.Encode(localDoc)
+		if err != nil {
+			return nil, errorf(ExitRuntime, "run the command again", "%s cannot be written: %v", LocalSettingsFile, err)
+		}
+		lfr := &FileResult{Path: LocalSettingsFile, Result: Updated, old: localRaw, write: lb,
+			Why: "this checkout only, never committed: the packs' plugins turned on at the locked commits"}
+		if localRaw == nil {
+			lfr.Result = Created
+		}
+		p.Files = append(p.Files, lfr)
+		p.Local = localChanges
+	}
 
 	// .bonsai/.gitignore.
 	gi, giExists, err := readFile(co.Root, GitignoreFile)

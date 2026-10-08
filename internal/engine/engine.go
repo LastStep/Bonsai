@@ -10,12 +10,17 @@
 //   - block.go: the instruction block in CLAUDE.md (kind block);
 //   - apply.go: the all-or-nothing write: every file staged, renames, the lock last;
 //   - check.go: bonsai check's findings on the lock and the files, and a tracked or staged .bonsai/local/ file;
+//   - plugins.go: this machine's plugins (plan part 4b): each pack's plugin turned on in the checkout's own
+//     .claude/settings.local.json, the install Claude Code is asked for after init and update (at local scope), and
+//     check's drift report against the lock;
 //   - config.go: bonsai.yaml as init writes it, a comment on every line, and init --new-id's new id;
 //   - render.go and diff.go: the preview and the result, in plain ASCII text and in JSON.
 //
-// The engine applies only what a person asked for: init and update write project files, the home's pack cache and
-// the copies --adopt saves in it, and nothing else (no ~/.claude file, no commit, no plugin install: installing is
-// plan part 4). A change to a hook line runs code, and this build only refuses it: --allow-exec is step 5.1.
+// The engine applies only what a person asked for: init and update write project files (the checkout's own
+// .claude/settings.local.json among them), the home's pack cache and the copies --adopt saves in it, and nothing else
+// (no ~/.claude file, no commit). After writing, cmd/bonsai asks Claude Code to install each pack's plugin at local
+// scope (InstallPlugins), which writes only Claude Code's plugin folder and that same local file. A change to a hook
+// line runs code, and this build only refuses it: --allow-exec is step 5.1.
 //
 // The hook lines, for a reviewer (plan part 5's verifier reads them):
 //   - what is written: settings.go, ownHooks (Bonsai's own line, `bonsai hook guard || exit 2` on PreToolUse, by

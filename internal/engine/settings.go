@@ -87,6 +87,37 @@ func (l Line) canon() string {
 	return l.Kind + "\t" + l.Name + "\t" + schema.Show(l.Value)
 }
 
+// match is the line's identity when claim looks for it in the file: its canon, with every JSON object's keys in
+// sorted order. Claude Code rewrites the settings file in an order of its own when it writes it (a project-scope
+// plugin install moves the marketplace's owner after its plugins), and that is no edit of Bonsai's lines.
+func (l Line) match() string {
+	switch l.Kind {
+	case "hook", "deny":
+		return l.canon()
+	}
+	return l.Kind + "\t" + l.Name + "\t" + schema.Show(sortedKeys(l.Value))
+}
+
+// sortedKeys gives a JSON value with every object's keys in sorted order.
+func sortedKeys(v any) any {
+	switch x := v.(type) {
+	case schema.Object:
+		out := make(schema.Object, len(x))
+		for i, m := range x {
+			out[i] = schema.Member{Key: m.Key, Value: sortedKeys(m.Value)}
+		}
+		sort.SliceStable(out, func(i, j int) bool { return out[i].Key < out[j].Key })
+		return out
+	case []any:
+		out := make([]any, len(x))
+		for i, e := range x {
+			out[i] = sortedKeys(e)
+		}
+		return out
+	}
+	return v
+}
+
 // Text is the line as the preview shows it.
 func (l Line) Text() string {
 	switch l.Kind {
@@ -482,7 +513,7 @@ func shellWords(s string) []string {
 func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 	refs := map[string]Line{}
 	for _, r := range ref {
-		refs[r.canon()] = r
+		refs[r.match()] = r
 	}
 	var claimed, spare []Line
 	seen := map[string]bool{}
@@ -493,7 +524,7 @@ func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 		}
 	}
 	for _, d := range disk {
-		if r, ok := refs[d.canon()]; ok {
+		if r, ok := refs[d.match()]; ok {
 			add(r)
 			continue
 		}
@@ -576,6 +607,7 @@ func bits(m int) int {
 
 // SettingsChange is one line the preview names: added, changed or removed, with its sentence (spec §6).
 type SettingsChange struct {
+	File     string // the settings file: "" for .claude/settings.json, else LocalSettingsFile
 	Change   string // add, change or remove
 	Kind     string // hook, deny, key, marketplace or plugin
 	Line     string // the line as written after the change (or, removed, as it was)

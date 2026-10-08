@@ -126,8 +126,8 @@ func TestUpdateCommand(t *testing.T) {
 		t.Fatalf("update --json: %d %v %s", code, err, out)
 	}
 	settings, _ := doc.(schema.Object).Get("settings")
-	if list := settings.([]any); len(list) != 2 || list[0].(schema.Object).String("file") != ".claude/settings.json" ||
-		list[0].(schema.Object).String("why") == "" {
+	if list := settings.([]any); len(list) != 3 || list[0].(schema.Object).String("file") != ".claude/settings.json" ||
+		list[0].(schema.Object).String("why") == "" || list[2].(schema.Object).String("file") != ".claude/settings.local.json" {
 		t.Errorf("settings lines in the JSON: %s", schema.Show(settings))
 	}
 	// A conflict: without --yes, the preview names the commands; exit 5 with --yes, and the commands to paste.
@@ -254,3 +254,4 @@ func TestUpdateWithoutALock(t *testing.T) {
 		t.Errorf("update with no lock wrote:\n%s\n---\n%s", before, after)
 	}
 }
+

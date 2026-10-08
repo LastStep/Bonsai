@@ -6,7 +6,13 @@ package engine
 //   - bonsai.yaml that Bonsai refuses; the lock missing or refused; bonsai.yaml and the lock naming other packs;
 //   - each file the lock lists: a pack file, the block in CLAUDE.md or Bonsai's lines in .claude/settings.json
 //     edited or missing (a once or kept file is the project's: no finding); a format-0 file changed;
-//   - .bonsai/.gitignore missing or changed; a file from .bonsai/local/ tracked or staged.
+//   - .bonsai/.gitignore missing or changed; a file from .bonsai/local/, or .claude/settings.local.json, tracked or
+//     staged;
+//   - plugin drift (plan part 4b, plugins.go): this checkout's .claude/settings.local.json turning on a locked pack's
+//     plugin from one of the workspace's marketplaces at other commits than the lock's, so sessions here load those
+//     (checkLocalPlugins; status shows it too); and, from bonsai check only, what Claude Code reports installed
+//     (ComparePlugins, which runs claude plugin list): Check alone never runs Claude Code, so status stays cheap and
+//     offline (contract §12; spec §5 puts that comparison in check and status --full).
 //
 // It reads, fetches nothing and writes nothing (CI runs it offline). Bonsai's lines in the settings file are told
 // apart with each pack's lines at its locked commit, read from this machine's pack cache; a pack not in the cache
@@ -27,7 +33,7 @@ import (
 
 // Finding is one finding or warning: its code, the file it is about, a sentence and the next step.
 type Finding struct {
-	Code    string // config, lock, packs, changed, missing, format0, gitignore, local
+	Code    string // config, lock, packs, changed, missing, format0, gitignore, local, cache, plugin
 	File    string
 	Message string
 	Next    string
@@ -154,6 +160,7 @@ func Check(dir, home string) (*CheckResult, error) {
 			r.checkSettings(home, cfg, lock, lf, mark)
 		}
 	}
+	r.checkLocalPlugins()
 	for _, path := range sortedPaths(lock.Format0) {
 		raw, exists, _ := readFile(co.Root, path)
 		if !exists || workspace.HashLF(raw) != lock.Format0[path] {
@@ -234,9 +241,10 @@ func (r *CheckResult) checkGitignore() {
 	}
 }
 
-// checkLocal finds files from .bonsai/local/ in git's index: tracked, or staged to be (contract §3).
+// checkLocal finds files from .bonsai/local/ in git's index: tracked, or staged to be (contract §3); and this
+// checkout's .claude/settings.local.json, which holds the plugins Bonsai turned on for this checkout only.
 func (r *CheckResult) checkLocal() {
-	cmd := exec.Command("git", "-C", r.Root, "ls-files", "-z", "--", LocalDir)
+	cmd := exec.Command("git", "-C", r.Root, "ls-files", "-z", "--", LocalDir, LocalSettingsFile)
 	cmd.Env = gitEnv()
 	out, err := cmd.Output()
 	if err != nil {
@@ -246,8 +254,14 @@ func (r *CheckResult) checkLocal() {
 	}
 	var files []string
 	for _, f := range bytes.Split(out, []byte{0}) {
-		if len(f) > 0 {
-			files = append(files, filepath.ToSlash(string(f)))
+		if len(f) == 0 {
+			continue
+		}
+		if p := filepath.ToSlash(string(f)); p == LocalSettingsFile {
+			r.find("local", LocalSettingsFile, "git tracks or has staged "+LocalSettingsFile+", which holds this checkout's own settings (Bonsai turns the packs' plugins on there) and is never committed",
+				"git rm --cached -- "+LocalSettingsFile+", commit, and add it to .gitignore")
+		} else {
+			files = append(files, p)
 		}
 	}
 	if len(files) > 0 {
