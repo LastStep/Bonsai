@@ -509,7 +509,7 @@ A copy meant as a new project needs its own id: bonsai init --new-id
 
 **Is this how established tools do it** (his question on 1.2). Git keeps a repo's own data in `.git/` inside the
 project, never committed, as `.bonsai/local/` now does; Claude Code keeps each project's data in the home under a name
-made from the folder's path (`~/.claude/projects/-home-rohan-Servers-Trinetra-Game-Studio/`), as Bonsai's machine
+made from the folder's path (`~/.claude/projects/-home-<user>-Servers-Trinetra-Game-Studio/`), as Bonsai's machine
 folder does. The drawbacks, a moved checkout stranding its machine folder and a copied repo copying the id, and what
 Bonsai does about each: contract §3 ("Moved checkouts", "Copies"); `check` and `status` warn of a stranded folder and
 name the step.
