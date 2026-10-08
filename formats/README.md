@@ -151,19 +151,32 @@ One file, UTF-8, LF, giving every case two outcomes. Example (one case, shortene
 ## Reason codes
 
 The format-1 refusals, by short code. A file can break more than one rule, so a reader reports one code by this order:
-dispatch first (`format-not-first`, whatever else the file holds); then the first problem reading top to bottom; on
-one line, the key before its value; and of two codes that fit one problem, the one listed first below.
+- **Dispatch first**, whatever else the file holds: `format-not-first`, then `format-too-new`. A top-level key is a key
+  at the top level's indentation, read up to its colon and a space, a tab or the line's end, as format 0's reader reads
+  it: `format:` and a tab is the file's format key.
+- **Then the first problem reading top to bottom.**
+- **On one line, in reading order, each problem found at the character where it starts**: the indentation
+  (`tab-indent`) and a document marker at the line's start; any problem of a key at its first character, so the key
+  comes before its value; an anchor, alias, tag, flow mapping, block scalar header, or plain scalar that fits no row at
+  its first character; a quoted scalar or flow sequence that does not close on its line at its opening quote or `[`; a
+  bad escape at its backslash; anything after a closing quote, after `{}` or after a flow sequence's last `]` where it
+  follows; a `[` or `{` that opens inside a flow sequence where it opens; a flow sequence's items one by one, left to
+  right, before what follows its last `]`; a character that `not-text` refuses where it stands; and a block scalar that
+  ends the file with no line ending at the file's end.
+- **Of two codes found at one character, the one listed first below.**
 
 | Code | Refused because |
 |---|---|
 | `format-not-first` | A top-level `format:` key is not the file's first key (comments and blank lines may come before it). |
+| `format-too-new` | The first key, `format:`, names a major this reader does not know (`bonsai.task/2`): contract §2.2's "format too new", and nothing else is read. |
+| `not-text` | A character a YAML 1.1 and a YAML 1.2 library do not read alike (§2.4's own test): a byte that is not valid UTF-8; a control character but tab, a CR that does not end a line among them; U+FFFE or U+FFFF; U+0085, U+2028 or U+2029, which a YAML 1.1 reader takes as a line break. And a file that ends inside a `\|` or `>` block scalar with no line ending, where a YAML 1.1 library reads no final line feed and a YAML 1.2 one does. |
 | `tab-indent` | A tab in a line's indentation. |
 | `doc-marker` | A `---` or `...` line anywhere but a frontmatter's own two markers: a YAML file has none, and a frontmatter block holds none. |
-| `line-not-read` | A line the grammar does not consume: a block sequence at its key's own indent, a sequence item where a mapping key belongs. |
+| `line-not-read` | A line the grammar does not consume: a block sequence at its key's own indent, a sequence item where a mapping key belongs, a value on the line below its key, a plain value over two lines, text after `{}` or after a flow sequence's last `]`. Also an empty flow sequence item, a trailing comma's among them (`[a, ]`): split at its commas it is an empty plain scalar, null, where both libraries read no item. And a line of only spaces inside a block scalar, deeper than the block: both libraries keep its spaces, format 0 drops them, and no one reading the file can see them. |
 | `key-complex` | A complex key (`? key` then `: value`). |
 | `key-quoted` | A quoted key, single or double. |
 | `key-merge` | The merge key `<<`. |
-| `key-form` | Any other key that is neither `[a-z][a-z0-9_]*` nor a label name `<namespace>.<name>` (contract §5.1): `Title`, `done-when`. |
+| `key-form` | Any other key that is neither `[a-z][a-z0-9_]*` nor a label name `<namespace>.<name>` (contract §5.1): `Title`, `done-when`. Also a key longer than 1024 characters: §2.4 fixes a key's form, not its length, and a YAML 1.1 and a YAML 1.2 library both refuse a longer key (§2.4's own test). |
 | `key-reserved` | A key that is `y`, `n`, `yes`, `no`, `on`, `off`, `true`, `false` or `null`. |
 | `key-twice` | A key its mapping already holds. |
 | `seq-dash-space` | A block sequence item whose `-` is not followed by exactly one space. |
@@ -180,7 +193,7 @@ one line, the key before its value; and of two codes that fit one problem, the o
 | `bad-escape` | In double quotes, a backslash before anything but `"`, `\`, `n`, `r` or `t`. |
 | `unescaped-quote` | In double quotes, an unescaped `"` inside: the first unescaped `"` after the opening one closes the scalar, and the rest of the line before any comment holds another `"`. |
 | `after-quote` | Anything but spaces and a comment after a quoted scalar's closing quote (with no further `"`, which is `unescaped-quote`). |
-| `quote-this-value` | A plain scalar that fits no row of §2.4's table (`0755`, `1.2.3`, `True`, `on`, a value ending in `:`, a 16-digit integer), or, inside a flow sequence, a plain item holding `]` or `}`. A flow sequence runs from its `[` to the last `]` on its line, and its items are split at commas outside quotes. |
+| `quote-this-value` | A plain scalar that fits no row of §2.4's table (`0755`, `1.2.3`, `True`, `on`, a value ending in `:`, a 16-digit integer, a value holding a tab or starting with one, as after `key:` and a tab), or, inside a flow sequence, a plain item holding `]`, `}` or `?`. A YAML 1.1 library cannot read a tab in a plain scalar, nor a `?` in a flow sequence's plain item, so §2.4's own test refuses both. A flow sequence runs from its `[` to the last `]` on its line, and its items are split at commas outside quotes. |
 
 ## How the outcomes were found
 

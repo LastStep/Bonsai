@@ -20,6 +20,9 @@ type tcase struct {
 
 const f1 = "format: bonsai.task/1\n"
 
+// key1024 is a key of 1024 characters, the longest both libraries read.
+var key1024 = "k" + strings.Repeat("x", 1023)
+
 var cases = []tcase{
 	// Dispatch.
 	{"empty file", "", false, "format-0", 0},
@@ -64,7 +67,12 @@ var cases = []tcase{
 	{"a tab-indented comment", f1 + "\t# c\n", false, "tab-indent", 2},
 	{"a tab in a plain value", f1 + "id: a\tb\n", false, "quote-this-value", 2},
 	{"a tab after a plain value", f1 + "id: a\t\n", false, "quote-this-value", 2},
-	{"a tab after the colon", f1 + "id:\tvalue\n", false, "line-not-read", 2},
+	{"a tab after the colon", f1 + "id:\tvalue\n", false, "quote-this-value", 2},
+	{"a tab after the colon, nothing after", f1 + "id:\t\n", false, "quote-this-value", 2},
+	{"a tab after an item key's colon", f1 + "l:\n  - k:\tv\n", false, "quote-this-value", 3},
+	{"format: and a tab is the format key", "format:\tbonsai.task/1\nid: x\n", false, "quote-this-value", 1},
+	{"format: and a tab, too new", "format:\tbonsai.task/2\n", false, "format-too-new", 1},
+	{"format: and a tab, not first", "id: x\nformat:\tbonsai.task/1\n", false, "format-not-first", 2},
 	{"a tab in double quotes", f1 + "id: \"a\tb\"\n", false, `{"format":"bonsai.task/1","id":"a\tb"}`, 0},
 	{"a tab in a comment", f1 + "id: a # c\td\n", false, `{"format":"bonsai.task/1","id":"a"}`, 0},
 	{"a tab inside block text", f1 + "t: |\n  a\tb\n", false, `{"format":"bonsai.task/1","t":"a\tb\n"}`, 0},
@@ -92,6 +100,46 @@ var cases = []tcase{
 	{"a quoted key beats its bad escape", f1 + "\"a\\q\": 1\n", false, "key-quoted", 2},
 	{"a key twice inside an item", f1 + "l:\n  - a: 1\n    a: 2\n", false, "key-twice", 4},
 	{"a key: in a comment", f1 + "a # b: c\n", false, "line-not-read", 2},
+
+	// Key length: §2.4 fixes no length; both libraries refuse a key over 1024 characters.
+	{"a key of 1024 characters", f1 + key1024 + ": 1\n", false, `{"format":"bonsai.task/1","` + key1024 + `":1}`, 0},
+	{"a key of 1025 characters", f1 + key1024 + "x: 1\n", false, "key-form", 2},
+	{"a nested key of 1025 characters", f1 + "a:\n  " + key1024 + "x: 1\n", false, "key-form", 3},
+	{"an item key of 1025 characters", f1 + "a:\n  - " + key1024 + "x: 1\n", false, "key-form", 3},
+	{"a label key of 1025 characters", f1 + "a:\n  ns." + key1024[:1022] + ": 1\n", false, "key-form", 3},
+	{"a label key of 1024 characters", f1 + "a:\n  ns." + key1024[:1021] + ": 1\n", false, `{"format":"bonsai.task/1","a":{"ns.` + key1024[:1021] + `":1}}`, 0},
+
+	// A ? inside a flow item: a YAML 1.1 library ends a plain scalar there.
+	{"a ? ending a flow item", f1 + "l: [what?]\n", false, "quote-this-value", 2},
+	{"a ? inside a flow item", f1 + "l: [x/?q, b]\n", false, "quote-this-value", 2},
+	{"a ? in block text", f1 + "a: what? x?y\n", false, `{"format":"bonsai.task/1","a":"what? x?y"}`, 0},
+	{"a quoted ? in a flow", f1 + "l: [\"what?\"]\n", false, `{"format":"bonsai.task/1","l":["what?"]}`, 0},
+
+	// Order on one line: each problem where it starts; not-text at its character; of two at one character, the
+	// code listed first.
+	{"the key before a bad character", f1 + "B: \x01\n", false, "key-form", 2},
+	{"a bad character inside a key", f1 + "a\x01: 1\n", false, "key-form", 2},
+	{"a bad character starting a key", f1 + "\x01a: 1\n", false, "not-text", 2},
+	{"a scalar that fits no row before a bad character", f1 + "k: 0\x01\n", false, "quote-this-value", 2},
+	{"a bad character in text", f1 + "k: a\x01b\n", false, "not-text", 2},
+	{"a bad character before a bad escape", f1 + "k: \"a\x01\\q\"\n", false, "not-text", 2},
+	{"a bad escape before a bad character", f1 + "k: \"\\qa\x01\"\n", false, "bad-escape", 2},
+	{"an unclosed quote at its opening", f1 + "k: \"a\\q\n", false, "quoted-multiline", 2},
+	{"an unclosed quote before a bad character", f1 + "k: \"a\x01\n", false, "quoted-multiline", 2},
+	{"flow items before what follows the ]", f1 + "l: [&x] y\n", false, "anchor", 2},
+	{"flow items left to right", f1 + "l: [a\x01, 0755]\n", false, "not-text", 2},
+	{"flow items left to right, the first first", f1 + "l: [0755, a\x01]\n", false, "quote-this-value", 2},
+	{"text after the ] before a bad character", f1 + "l: [a] y\x01\n", false, "line-not-read", 2},
+	{"an unclosed flow at its [", f1 + "l: [a, 0755\n", false, "flow-multiline", 2},
+	{"an unclosed flow before an anchor", f1 + "l: [&a, b\n", false, "flow-multiline", 2},
+	{"a bad header before a bad character", f1 + "t: |\x01\n", false, "block-indicator", 2},
+	{"a bad character in a header's comment", f1 + "t: | # c\x01\n  a\n", false, "not-text", 2},
+	{"a bad character in a comment before nested lines", f1 + "a: # c\x01\n  - 0755\n", false, "not-text", 2},
+	{"a # line before its bad character", f1 + "t: |\n  #\x01\n", false, "block-hash-line", 3},
+	{"a bad character in block text", f1 + "t: |\n  a\x01\n", false, "not-text", 3},
+	{"a dash and two spaces before a bad character", f1 + "l:\n  -  a\x01\n", false, "seq-dash-space", 3},
+	{"an anchor before a bad character", f1 + "k: &a\x01\n", false, "anchor", 2},
+	{"{} then text before a bad character", f1 + "m: {} x\x01\n", false, "line-not-read", 2},
 
 	// Block sequences.
 	{"a - alone", f1 + "l:\n  -\n", false, "seq-dash-space", 3},

@@ -671,6 +671,24 @@
       }
     },
     {
+      "path": "trick/yaml-1/block-space-line/case.yaml",
+      "rule": "block-space-line",
+      "settled_by": "rule",
+      "about": "A line of only spaces inside a block scalar, deeper than the block, is refused: both libraries keep its spaces and format 0 drops them, and no one reading the file can see them.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First line.\n\nLast line.\n",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "line-not-read"
+      }
+    },
+    {
       "path": "trick/yaml-1/bom-definition/case.yaml",
       "rule": "bom-definition",
       "settled_by": "rule",
@@ -716,6 +734,37 @@
           "title": "A BOM comes before the frontmatter",
           "status": "todo"
         }
+      }
+    },
+    {
+      "path": "trick/yaml-1/code-order-flow-items/case.yaml",
+      "rule": "code-order",
+      "settled_by": "rule",
+      "about": "On one line, a flow sequence's items are read before what follows its last ]: the anchor comes first, not the text after the ].",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 2: unterminated or multi-line flow sequence: [&first] extra"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "anchor"
+      }
+    },
+    {
+      "path": "trick/yaml-1/code-order-key-first/case.yaml",
+      "rule": "code-order",
+      "settled_by": "rule",
+      "about": "On one line, the key comes before its value: the key Note is refused for its form before the control character in its value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "Note": "\u0001"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-form"
       }
     },
     {
@@ -897,6 +946,23 @@
       }
     },
     {
+      "path": "trick/yaml-1/dispatch-tab/case.yaml",
+      "rule": "dispatch-tab",
+      "settled_by": "libraries",
+      "about": "format: and a tab is the file's first key, as format 0's reader reads it; a YAML 1.1 library cannot read the tab, a YAML 1.2 one can, so the value after it is refused: quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
       "path": "trick/yaml-1/doc-marker-dashes/case.yaml",
       "rule": "doc-marker",
       "settled_by": "rule",
@@ -1042,6 +1108,28 @@
       }
     },
     {
+      "path": "trick/yaml-1/flow-item-char-question/case.md",
+      "rule": "flow-item-char",
+      "settled_by": "libraries",
+      "about": "Inside a flow sequence a plain item may not hold ?: a YAML 1.1 library ends the plain scalar there and refuses the file, a YAML 1.2 one reads what?. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0926",
+          "labels": {
+            "example.tags": [
+              "what?"
+            ]
+          }
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
       "path": "trick/yaml-1/flow-item-char/case.md",
       "rule": "flow-item-char",
       "settled_by": "rule",
@@ -1159,6 +1247,27 @@
       }
     },
     {
+      "path": "trick/yaml-1/flow-trailing-comma/case.md",
+      "rule": "flow-trailing-comma",
+      "settled_by": "rule",
+      "about": "A trailing comma in a flow sequence is refused: split at its commas the last item is an empty plain scalar, null (format 0 reads it so), where both libraries read no item.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0929",
+          "depends_on": [
+            "T-0900",
+            null
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "line-not-read"
+      }
+    },
+    {
       "path": "trick/yaml-1/folded-deeper/case.yaml",
       "rule": "folded-deeper",
       "settled_by": "rule",
@@ -1174,6 +1283,41 @@
       "format1": {
         "outcome": "refused",
         "reason": "folded-deeper"
+      }
+    },
+    {
+      "path": "trick/yaml-1/format-too-new-md/case.md",
+      "rule": "format-too-new",
+      "settled_by": "rule",
+      "about": "A frontmatter whose format: names a newer major (bonsai.task/2) is refused as format too new (contract §2.2).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/2",
+          "id": "T-0927",
+          "title": "A newer major"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "format-too-new"
+      }
+    },
+    {
+      "path": "trick/yaml-1/format-too-new/case.yaml",
+      "rule": "format-too-new",
+      "settled_by": "rule",
+      "about": "A format: naming a major this reader does not know (bonsai.lanes/2) is refused as format too new, and nothing else is read (contract §2.2).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/2",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "format-too-new"
       }
     },
     {
@@ -1260,6 +1404,43 @@
             "my-pack.note_text": "Label names have one dot"
           }
         }
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-length-1024/case.yaml",
+      "rule": "key-length",
+      "settled_by": "libraries",
+      "about": "A key of 1024 characters, the longest a YAML 1.1 and a YAML 1.2 library both read, is accepted.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "kxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx": 1
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "kxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx": 1
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-length-1025/case.yaml",
+      "rule": "key-length",
+      "settled_by": "libraries",
+      "about": "A key of 1025 characters is refused for its form: §2.4 fixes no length, and both libraries refuse a key longer than 1024 characters.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "kxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx": 1
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-form"
       }
     },
     {
@@ -1645,6 +1826,68 @@
           },
           "after": true
         }
+      }
+    },
+    {
+      "path": "trick/yaml-1/not-text-block-end/case.yaml",
+      "rule": "not-text",
+      "settled_by": "libraries",
+      "about": "A | block scalar that ends the file with no line ending is refused: a YAML 1.1 library reads no final line feed, a YAML 1.2 one reads one.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "The file ends on this line\n"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "not-text"
+      }
+    },
+    {
+      "path": "trick/yaml-1/not-text-control/case.yaml",
+      "rule": "not-text",
+      "settled_by": "libraries",
+      "about": "A control character (a bell) in a value is refused: a YAML 1.1 library refuses it, a YAML 1.2 one reads it.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "note": "a bell \u0007 here"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "not-text"
+      }
+    },
+    {
+      "path": "trick/yaml-1/not-text-cr/case.yaml",
+      "rule": "not-text",
+      "settled_by": "libraries",
+      "about": "A CR that does not end a line is refused: a YAML 1.2 library reads it inside the value, a YAML 1.1 one refuses the file.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 2: cannot parse as \"key: value\": note: before\rafter"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "not-text"
+      }
+    },
+    {
+      "path": "trick/yaml-1/not-text-line-separator/case.md",
+      "rule": "not-text",
+      "settled_by": "libraries",
+      "about": "A U+2028 line separator in a value is refused: a YAML 1.1 library takes it as a line break, a YAML 1.2 one as a character.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 3: cannot parse as \"key: value\": title: Two lines\u2028or one"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "not-text"
       }
     },
     {

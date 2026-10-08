@@ -3,7 +3,7 @@ package reader
 // The formats set's test of this reader (plan part 2, check 7's Bonsai half): every case in formats/expect.json,
 // read as raw bytes from formats/ (so the CRLF and BOM cases count), reaches its format-1 outcome: the same
 // outcome, the same value (key order included) or the same reason code. And the reason codes this reader reports
-// are formats/README.md's table, in its order, plus the two of its own (OwnCodes).
+// are formats/README.md's table, in its order, and nothing else.
 
 import (
 	"os"
@@ -17,6 +17,10 @@ import (
 
 // setDir is the formats set, from this package's folder.
 var setDir = filepath.Join("..", "..", "formats")
+
+// setCases is how many cases the set this reader is held to has (set 3); a case dropped or added fails the test until
+// this follows.
+const setCases = 116
 
 // readCase reads one input file of the set the way its extension says.
 func readCase(raw []byte, path string) Result {
@@ -78,8 +82,8 @@ func TestEveryCaseReachesItsFormat1Outcome(t *testing.T) {
 		reached++
 	}
 	t.Logf("format-1 outcomes reached: %d of %d", reached, len(cases))
-	if reached != len(cases) || len(cases) != 102 {
-		t.Errorf("reached %d of %d cases; the set has 102", reached, len(cases))
+	if reached != len(cases) || len(cases) != setCases {
+		t.Errorf("reached %d of %d cases; set 3 has %d", reached, len(cases), setCases)
 	}
 }
 
@@ -104,8 +108,8 @@ func sameOrder(a, b any) bool {
 	return true
 }
 
-// The reason codes have one home, formats/README.md's table; Codes holds them in its order, with this reader's own
-// two at fixed places. A code added to the table, or reordered, fails here until Codes follows.
+// The reason codes have one home, formats/README.md's table; Codes holds exactly its codes, in its order. A code
+// added to the table, removed or reordered fails here until Codes follows, and the reader has no code of its own.
 func TestCodesAreTheSetsTableInOrder(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join(setDir, "README.md"))
 	if err != nil {
@@ -124,26 +128,13 @@ func TestCodesAreTheSetsTableInOrder(t *testing.T) {
 	for _, m := range regexp.MustCompile("(?m)^\\| `([a-z0-9-]+)` \\|").FindAllStringSubmatch(section, -1) {
 		table = append(table, m[1])
 	}
-	own := map[string]bool{}
-	for _, c := range OwnCodes {
-		own[c] = true
-		for _, x := range table {
-			if x == c {
-				t.Errorf("%s is in README.md's table now: drop it from OwnCodes", c)
-			}
-		}
+	if strings.Join(Codes, " ") != strings.Join(table, " ") {
+		t.Errorf("Codes is\n  %v\nREADME.md's table is\n  %v", Codes, table)
 	}
-	var ours []string
 	for _, c := range Codes {
-		if !own[c] {
-			ours = append(ours, c)
-		}
 		if next[c] == "" {
 			t.Errorf("code %s names no next step", c)
 		}
-	}
-	if strings.Join(ours, " ") != strings.Join(table, " ") {
-		t.Errorf("Codes (less OwnCodes) is\n  %v\nREADME.md's table is\n  %v", ours, table)
 	}
 	if len(next) != len(Codes) {
 		t.Errorf("next has %d entries, Codes %d", len(next), len(Codes))

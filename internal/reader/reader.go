@@ -13,9 +13,11 @@
 // (contract §2.2: "the reader says format too new ... and parses nothing else").
 //
 // Under format 1 the file is read top to bottom by the grammar in parse.go and scalar.go, and the first problem
-// met is the one reported: on one line, the key before its value, and of two codes that fit one problem, the one
-// Codes lists first. Every rule of §2.4 is enforced in this package's code, each at the place the grammar meets
-// it; the comments there name the rule.
+// met is the one reported. On one line, problems are found in reading order, each at the character where it
+// starts (formats/README.md, "Reason codes", states the order): the indentation, the key, then the value left to
+// right; a character not-text refuses is found where it stands; of two codes found at one character, the one Codes
+// lists first. Every rule of §2.4 is enforced in this package's code, each at the place the grammar meets it; the
+// comments there name the rule.
 //
 // Values: a mapping is a *Map, a sequence []any, text string, true and false bool, null nil, an integer int64 (at
 // most 15 digits), a decimal Decimal (its exact digits). A date or a time stays text. JSON gives the value as the
@@ -79,6 +81,7 @@ type Refusal struct {
 	Line    int
 	Message string
 	Next    string
+	pos     int // the byte in the line where the problem starts, to order problems on one line
 }
 
 // Error prints the refusal as one ASCII line that names the next step.
@@ -86,14 +89,8 @@ func (r *Refusal) Error() string {
 	return fmt.Sprintf("line %d: %s (%s); next: %s", r.Line, r.Message, r.Code, r.Next)
 }
 
-// The reason codes, in the order formats/README.md lists them: of two codes that fit one problem, the one listed
-// first is reported. Two codes are this reader's own, outside the set's table (a test holds the rest equal to it):
-//   - format-too-new, contract §2.2's rule for a newer major, checked with dispatch;
-//   - not-text, for a line that is not text YAML allows, where a YAML 1.1 and a YAML 1.2 library would read
-//     different lines or refuse (§2.4's own test): invalid UTF-8; a control character (any but tab) or a
-//     noncharacter; a CR that does not end a line; a character a YAML 1.1 reader takes as a line break (U+0085,
-//     U+2028, U+2029); a file that ends inside a | or > block scalar with no line ending.
-//     The set has no case for either code; plan part 2's report names them for its next version.
+// The reason codes, in the order formats/README.md's table lists them, their one home (a test holds Codes equal
+// to the table): of two codes found at one character, the one listed first is reported.
 const (
 	CodeFormatNotFirst = "format-not-first"
 	CodeFormatTooNew   = "format-too-new"
@@ -124,7 +121,7 @@ const (
 	CodeQuoteThisValue = "quote-this-value"
 )
 
-// Codes lists every code this reader reports, in order.
+// Codes lists every code this reader reports, in the table's order.
 var Codes = []string{
 	CodeFormatNotFirst, CodeFormatTooNew, CodeNotText, CodeTabIndent, CodeDocMarker, CodeLineNotRead,
 	CodeKeyComplex, CodeKeyQuoted, CodeKeyMerge, CodeKeyForm, CodeKeyReserved, CodeKeyTwice, CodeSeqDashSpace,
@@ -132,9 +129,6 @@ var Codes = []string{
 	CodeBlockHashLine, CodeFoldedDeeper, CodeQuotedMulti, CodeBadEscape, CodeUnescapedQuote, CodeAfterQuote,
 	CodeQuoteThisValue,
 }
-
-// OwnCodes are the codes in Codes that formats/README.md's table does not list (see above).
-var OwnCodes = []string{CodeFormatTooNew, CodeNotText}
 
 // next is what to do about each code: the next step every refusal names (CLAUDE.md, spec §3).
 var next = map[string]string{
@@ -169,6 +163,26 @@ var next = map[string]string{
 
 func refuse(code string, lineNo int, format string, args ...any) *Refusal {
 	return &Refusal{Code: code, Line: lineNo, Message: fmt.Sprintf(format, args...), Next: next[code]}
+}
+
+// refuseAt refuses line l for a problem that starts at byte pos of the line.
+func refuseAt(code string, l *line, pos int, format string, args ...any) *Refusal {
+	r := refuse(code, l.no, format, args...)
+	r.pos = pos
+	return r
+}
+
+// settle orders a line's own problem r (nil when the line read cleanly) against the first character on the line
+// that not-text refuses: the one that starts first is reported, and at one character not-text, which the table
+// lists before every code a line's content can break. A refusal of another line passes through.
+func settle(l *line, r *Refusal) *Refusal {
+	if l.bad < 0 || (r != nil && r.Line != l.no) {
+		return r
+	}
+	if r == nil || l.bad <= r.pos {
+		return refuseAt(CodeNotText, l, l.bad, "the line holds %s", l.badWhy)
+	}
+	return r
 }
 
 // show quotes a piece of the file for a message, in ASCII, cut to 60 bytes.
@@ -217,6 +231,8 @@ type line struct {
 	indent int    // leading spaces
 	body   string // the text after the leading spaces
 	blank  bool   // nothing but spaces
+	bad    int    // the byte where the first character not-text refuses starts, or -1
+	badWhy string // what that character is
 }
 
 // splitLines cuts text into lines at LF, removing the CR of each CRLF. Any other CR stays in its line, where the
@@ -237,36 +253,46 @@ func splitLines(s string, firstNo int) []line {
 		for n < len(t) && t[n] == ' ' {
 			n++
 		}
-		out = append(out, line{no: no, text: t, eol: eol, indent: n, body: t[n:], blank: n == len(t)})
+		bad, why := firstBad(t)
+		out = append(out, line{no: no, text: t, eol: eol, indent: n, body: t[n:], blank: n == len(t), bad: bad, badWhy: why})
 		no++
 	}
 	return out
 }
 
-// check finds the problems a line has before any grammar reads it, in Codes' order: not-text, tab-indent, then
-// doc-marker. Every line the reader reaches is checked first, whatever it turns out to be.
+// check finds the problems a line has at its start, before any grammar reads it, in Codes' order: tab-indent, then
+// doc-marker. Every line the reader reaches is checked first, whatever it turns out to be. A character not-text
+// refuses is found where it stands (settle), so a problem that starts before it on the line comes first.
 func check(l *line) *Refusal {
-	// Lines (§2.4): UTF-8 text, LF or CRLF.
-	if !utf8.ValidString(l.text) {
-		return refuse(CodeNotText, l.no, "the line is not valid UTF-8")
-	}
-	for _, r := range l.text {
-		if bad := badChar(r); bad != "" {
-			return refuse(CodeNotText, l.no, "the line holds %s (%U)", bad, r)
-		}
-	}
-	// Lines: no tab in indentation. A tab anywhere in a line's leading whitespace is refused, a blank line's too.
+	// Lines (§2.4): no tab in indentation. A tab anywhere in a line's leading whitespace is refused, a blank line's too.
 	for i := 0; i < len(l.text) && (l.text[i] == ' ' || l.text[i] == '\t'); i++ {
 		if l.text[i] == '\t' {
-			return refuse(CodeTabIndent, l.no, "a tab in the line's indentation")
+			return refuseAt(CodeTabIndent, l, i, "a tab in the line's indentation")
 		}
 	}
 	// Lines: one document. A --- or ... at the start of a line is a document marker: in a YAML file there is none,
 	// and a frontmatter's own two markers are not among its lines.
 	if isDocMarker(l.text) {
-		return refuse(CodeDocMarker, l.no, "a document marker %s", show(l.text))
+		return refuseAt(CodeDocMarker, l, 0, "a document marker %s", show(l.text))
 	}
 	return nil
+}
+
+// firstBad finds the first character of a line that format 1 cannot read the same in a YAML 1.1 and a YAML 1.2
+// library (§2.4's own test, code not-text): invalid UTF-8, or a character badChar names. It returns its byte and
+// what it is, or -1.
+func firstBad(t string) (int, string) {
+	for i := 0; i < len(t); {
+		r, size := utf8.DecodeRuneInString(t[i:])
+		if r == utf8.RuneError && size <= 1 {
+			return i, "a byte that is not valid UTF-8"
+		}
+		if why := badChar(r); why != "" {
+			return i, fmt.Sprintf("%s (%U)", why, r)
+		}
+		i += size
+	}
+	return -1, ""
 }
 
 func isDocMarker(t string) bool {
@@ -382,12 +408,12 @@ func formatLineValue(l *line) (string, bool) {
 	if !strings.HasPrefix(l.body, "format:") {
 		return "", false
 	}
-	rest := strings.TrimLeft(l.body[len("format:"):], " ")
+	rest := strings.TrimLeft(l.body[len("format:"):], " \t")
 	if rest == "" {
 		return "", false
 	}
 	if rest[0] == '"' || rest[0] == '\'' {
-		v, _, err := quoted(rest, l.no)
+		v, _, err := quoted(rest, l, 0)
 		return v, err == nil
 	}
 	return plainText(rest), true

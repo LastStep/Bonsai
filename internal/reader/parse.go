@@ -3,7 +3,9 @@ package reader
 // The format-1 grammar's structure (contract §2.4, "Structure" and "Keys"): mappings by indentation, block
 // sequences deeper than their key with exactly one space after each -, block scalars, and every line read. The
 // parser walks the lines top to bottom and never looks back, so the first problem it meets is the first in the
-// file; each line it reaches is checked (check, in reader.go) before anything else is asked of it.
+// file; each line it reaches is checked (check, in reader.go) before anything else is asked of it, and what a line
+// itself holds is settled (settle, in reader.go) against its first bad character before the parser reads the lines
+// under it.
 
 import (
 	"regexp"
@@ -25,6 +27,9 @@ func (p *parser) at() (*line, *Refusal) {
 		}
 		// Comments (§2.4): a # at the start of a line (after its indentation) starts a comment line.
 		if l.blank || strings.HasPrefix(l.body, "#") {
+			if r := settle(l, nil); r != nil {
+				return nil, r
+			}
 			continue
 		}
 		return l, nil
@@ -60,14 +65,17 @@ func (p *parser) document() (*Map, *Refusal) {
 	if l, err := p.at(); err != nil {
 		return nil, err
 	} else if l != nil {
-		return nil, notRead(l)
+		return nil, settle(l, notRead(l))
 	}
 	return m, nil
 }
 
 func notRead(l *line) *Refusal {
-	return refuse(CodeLineNotRead, l.no, "the line %s belongs to no key at its indentation", show(l.text))
+	return refuseAt(CodeLineNotRead, l, l.indent, "the line %s belongs to no key at its indentation", show(l.text))
 }
+
+// posOf gives the byte in line l where s, a part of the line that runs to its end, starts.
+func posOf(l *line, s string) int { return len(l.text) - len(s) }
 
 // mapping reads key lines at exactly indentation n into m, until a line less indented.
 func (p *parser) mapping(m *Map, n int) *Refusal {
@@ -81,7 +89,7 @@ func (p *parser) mapping(m *Map, n int) *Refusal {
 		}
 		if l.indent > n {
 			// Structure: nothing but a nested value is deeper than its mapping, and a nested value was read whole.
-			return notRead(l)
+			return settle(l, notRead(l))
 		}
 		if err := p.keyValue(m, l, l.body, n); err != nil {
 			return err
@@ -94,11 +102,11 @@ func (p *parser) mapping(m *Map, n int) *Refusal {
 func (p *parser) keyValue(m *Map, l *line, body string, n int) *Refusal {
 	key, rest, err := splitKey(body, l)
 	if err != nil {
-		return err
+		return settle(l, err)
 	}
 	// Keys (§2.4): never twice in one mapping.
 	if _, ok := m.Get(key); ok {
-		return refuse(CodeKeyTwice, l.no, "the key %s is already in this mapping", show(key))
+		return settle(l, refuseAt(CodeKeyTwice, l, posOf(l, body), "the key %s is already in this mapping", show(key)))
 	}
 	p.i++ // the line is consumed; the value may read the lines after it
 	v, err := p.value(rest, l, n)
@@ -120,48 +128,57 @@ var (
 // refuses of a key, in Codes' order: complex, quoted, merge, form, reserved. A line that is no key: line at all (a
 // sequence item where a key belongs, a value alone) is a line the grammar does not consume.
 func splitKey(body string, l *line) (key, rest string, err *Refusal) {
+	pos := posOf(l, body) // a key's problems are found at its first character: the key comes before its value
 	// Keys: never complex (? key, then : value).
 	if body == "?" || strings.HasPrefix(body, "? ") || strings.HasPrefix(body, "?\t") {
-		return "", "", refuse(CodeKeyComplex, l.no, "a complex key %s", show(body))
+		return "", "", refuseAt(CodeKeyComplex, l, pos, "a complex key %s", show(body))
 	}
 	// Keys: never quoted. A quoted scalar followed by its colon is a quoted key; one with no colon is a value alone.
 	if body[0] == '"' || body[0] == '\'' {
 		if end, ok := quotedEnd(body); ok {
 			after := strings.TrimLeft(body[end:], " ")
-			if after == ":" || strings.HasPrefix(after, ": ") {
-				return "", "", refuse(CodeKeyQuoted, l.no, "a quoted key %s", show(body[:end]))
+			if after == ":" || strings.HasPrefix(after, ": ") || strings.HasPrefix(after, ":\t") {
+				return "", "", refuseAt(CodeKeyQuoted, l, pos, "a quoted key %s", show(body[:end]))
 			}
 		}
-		return "", "", notRead(l)
+		return "", "", refuseAt(CodeLineNotRead, l, pos, "the line %s belongs to no key at its indentation", show(l.text))
 	}
 	if isSeqItem(body) {
-		return "", "", refuse(CodeLineNotRead, l.no, "a sequence item %s where a key belongs: a block sequence is indented deeper than its key", show(body))
+		return "", "", refuseAt(CodeLineNotRead, l, pos, "a sequence item %s where a key belongs: a block sequence is indented deeper than its key", show(body))
 	}
 	sep := keySeparator(body)
 	if sep < 0 {
-		return "", "", notRead(l)
+		return "", "", refuseAt(CodeLineNotRead, l, pos, "the line %s belongs to no key at its indentation", show(l.text))
 	}
 	key, rest = body[:sep], body[sep+1:]
 	switch {
 	case key == "<<": // Keys: never <<.
-		return "", "", refuse(CodeKeyMerge, l.no, "the merge key <<")
+		return "", "", refuseAt(CodeKeyMerge, l, pos, "the merge key <<")
 	case !keyPattern.MatchString(key) && !labelPattern.MatchString(key):
 		// Keys: [a-z][a-z0-9_]* for core and definition fields, <namespace>.<name> for label names.
-		return "", "", refuse(CodeKeyForm, l.no, "the key %s is neither [a-z][a-z0-9_]* nor a label name <namespace>.<name>", show(key))
+		return "", "", refuseAt(CodeKeyForm, l, pos, "the key %s is neither [a-z][a-z0-9_]* nor a label name <namespace>.<name>", show(key))
+	case len(key) > maxKey:
+		// §2.4 fixes a key's form, not its length; YAML 1.1 and 1.2 libraries refuse an implicit key longer than
+		// 1024 characters, so §2.4's own test refuses it, as a key of the wrong form (formats/README.md).
+		return "", "", refuseAt(CodeKeyForm, l, pos, "the key is %d characters long, more than %d", len(key), maxKey)
 	case reservedKeys[key]: // Keys: never y, n, yes, no, on, off, true, false, null.
-		return "", "", refuse(CodeKeyReserved, l.no, "the key %s is one a YAML 1.1 reader takes as a boolean or null", show(key))
+		return "", "", refuseAt(CodeKeyReserved, l, pos, "the key %s is one a YAML 1.1 reader takes as a boolean or null", show(key))
 	}
 	return key, rest, nil
 }
 
-// keySeparator returns the index of the colon that ends a plain key: the first : followed by a space or the end of
-// the text, before any comment. -1 when there is none.
+// maxKey is the longest key a YAML 1.1 and a YAML 1.2 library both read (PyYAML and npm yaml: 1024 characters).
+const maxKey = 1024
+
+// keySeparator returns the index of the colon that ends a plain key: the first : followed by a space, a tab or the
+// end of the text, before any comment. A tab counts, as it does to format 0's reader and a YAML 1.2 library, so
+// format: and a tab is the file's format key; the value after the tab is then refused (value).
 func keySeparator(body string) int {
 	for i := 0; i < len(body); i++ {
 		switch {
 		case body[i] == '#' && i > 0 && body[i-1] == ' ':
 			return -1
-		case body[i] == ':' && (i+1 == len(body) || body[i+1] == ' '):
+		case body[i] == ':' && (i+1 == len(body) || body[i+1] == ' ' || body[i+1] == '\t'):
 			return i
 		}
 	}
@@ -177,15 +194,39 @@ func isSeqItem(body string) bool {
 // nested under it on the following lines.
 func (p *parser) value(rest string, l *line, n int) (any, *Refusal) {
 	s := strings.TrimLeft(rest, " ")
+	if strings.HasPrefix(s, "\t") {
+		// A tab before the value: a YAML 1.1 library cannot read it, a YAML 1.2 one can (§2.4's own test). The
+		// value then starts with a tab, which fits no row of the plain-scalar table.
+		r := refuseAt(CodeQuoteThisValue, l, posOf(l, s), "a tab between the key's colon and its value")
+		r.Next = "separate the value from the colon with spaces, never a tab"
+		return nil, settle(l, r)
+	}
+	return p.valueOrNested(s, l, n)
+}
+
+// valueOrNested reads a value s that starts on line l (leading spaces gone), whose parent sits at indentation n:
+// nothing or a comment (the value is nested on the lines below, or null), a block scalar, or a value on the line.
+// What the line holds is settled before any line below it is read.
+func (p *parser) valueOrNested(s string, l *line, n int) (any, *Refusal) {
 	// Comments: a # after a space starts a comment, so a key with only a comment after it has no inline value.
 	if s == "" || s[0] == '#' {
+		if r := settle(l, nil); r != nil {
+			return nil, r
+		}
 		return p.nested(n)
 	}
-	switch s[0] {
-	case '|', '>':
-		return p.blockScalar(s, l, n)
+	if s[0] == '|' || s[0] == '>' {
+		h, r := blockHeader(s, l)
+		if r = settle(l, r); r != nil {
+			return nil, r
+		}
+		return p.blockScalar(h, l, n)
 	}
-	return inline(s, l)
+	v, r := inline(s, l)
+	if r = settle(l, r); r != nil {
+		return nil, r
+	}
+	return v, nil
 }
 
 // nested reads the value of a key (or item) with nothing after it on its own line: a mapping or a block sequence
@@ -219,14 +260,14 @@ func (p *parser) sequence(m int) ([]any, *Refusal) {
 			return out, nil
 		}
 		if l.indent > m {
-			return nil, notRead(l)
+			return nil, settle(l, notRead(l))
 		}
 		if !isSeqItem(l.body) {
 			return out, nil // the mapping around the sequence meets this line
 		}
 		// Structure: exactly one space after -.
 		if l.body == "-" || l.body[1] != ' ' || len(l.body) > 2 && (l.body[2] == ' ' || l.body[2] == '\t') {
-			return nil, refuse(CodeSeqDashSpace, l.no, "the item's - is not followed by exactly one space")
+			return nil, settle(l, refuseAt(CodeSeqDashSpace, l, l.indent, "the item's - is not followed by exactly one space"))
 		}
 		v, err := p.item(l.body[2:], l, m)
 		if err != nil {
@@ -239,30 +280,25 @@ func (p *parser) sequence(m int) ([]any, *Refusal) {
 // item reads one sequence item: content is the text after "- " on line l, the sequence at indentation m. A
 // "key: value" item opens a mapping whose keys sit at m+2; anything else is a value.
 func (p *parser) item(content string, l *line, m int) (any, *Refusal) {
-	if content == "" || content[0] == '#' {
+	if !itemIsKey(content) {
 		p.i++
-		return p.nested(m)
+		return p.valueOrNested(content, l, m)
 	}
-	if itemIsKey(content) {
-		mm := &Map{}
-		if err := p.keyValue(mm, l, content, m+2); err != nil {
-			return nil, err
-		}
-		if err := p.mapping(mm, m+2); err != nil {
-			return nil, err
-		}
-		return mm, nil
+	mm := &Map{}
+	if err := p.keyValue(mm, l, content, m+2); err != nil {
+		return nil, err
 	}
-	p.i++
-	switch content[0] {
-	case '|', '>':
-		return p.blockScalar(content, l, m)
+	if err := p.mapping(mm, m+2); err != nil {
+		return nil, err
 	}
-	return inline(content, l)
+	return mm, nil
 }
 
 // itemIsKey reports whether an item's content is a key: value (or a key form §2.4 refuses) rather than a value.
 func itemIsKey(c string) bool {
+	if c == "" {
+		return false
+	}
 	switch c[0] {
 	case '?':
 		return c == "?" || strings.HasPrefix(c, "? ") || strings.HasPrefix(c, "?\t")
@@ -272,25 +308,30 @@ func itemIsKey(c string) bool {
 			return false
 		}
 		after := strings.TrimLeft(c[end:], " ")
-		return after == ":" || strings.HasPrefix(after, ": ")
-	case '[', '{', '|', '>':
+		return after == ":" || strings.HasPrefix(after, ": ") || strings.HasPrefix(after, ":\t")
+	case '[', '{', '|', '>', '#':
 		return false
 	}
 	return keySeparator(c) >= 0
 }
 
-// blockScalar reads a block scalar: header is its indicator and anything after it on line hl, whose parent sits at
-// indentation n; its content is the following lines indented deeper than n.
-func (p *parser) blockScalar(header string, hl *line, n int) (string, *Refusal) {
-	// Structure: block scalars |, |- , > and >- only (a comment may follow the header).
-	h := header
+// blockHeader reads a block scalar's header, s from its indicator to the line's end. Structure (§2.4): block
+// scalars |, |-, > and >- only; a comment may follow the header. A wrong header is found at its first character.
+func blockHeader(s string, l *line) (string, *Refusal) {
+	h := s
 	if i := strings.Index(h, " #"); i >= 0 {
 		h = h[:i]
 	}
 	h = strings.TrimRight(h, " ")
 	if h != "|" && h != "|-" && h != ">" && h != ">-" {
-		return "", refuse(CodeBlockIndicator, hl.no, "the block scalar header %s", show(h))
+		return "", refuseAt(CodeBlockIndicator, l, posOf(l, s), "the block scalar header %s", show(h))
 	}
+	return h, nil
+}
+
+// blockScalar reads a block scalar: h is its header (blockHeader) on line hl, whose parent sits at indentation n;
+// its content is the following lines indented deeper than n.
+func (p *parser) blockScalar(h string, hl *line, n int) (string, *Refusal) {
 	folded, strip := h[0] == '>', strings.HasSuffix(h, "-")
 
 	type bline struct {
@@ -310,7 +351,9 @@ func (p *parser) blockScalar(header string, hl *line, n int) (string, *Refusal) 
 			if ind < 0 {
 				leading = append(leading, l)
 			} else if len(l.text) > ind {
-				return "", refuse(CodeLineNotRead, l.no, "a line of only spaces, deeper than the block scalar's indentation")
+				// Both libraries keep the spaces past the indentation, format 0 drops them, and a reader cannot see
+				// them (formats/README.md): refused.
+				return "", refuseAt(CodeLineNotRead, l, ind, "a line of only spaces, deeper than the block scalar's indentation")
 			}
 			lines = append(lines, bline{empty: true, eol: l.eol})
 			p.i++
@@ -324,7 +367,7 @@ func (p *parser) blockScalar(header string, hl *line, n int) (string, *Refusal) 
 			for _, e := range leading {
 				if len(e.text) > ind {
 					// YAML 1.2 refuses this; a YAML 1.1 library reads another indentation.
-					return "", refuse(CodeLineNotRead, e.no, "a line of only spaces before the block scalar's first line, deeper than it")
+					return "", refuseAt(CodeLineNotRead, e, ind, "a line of only spaces before the block scalar's first line, deeper than it")
 				}
 			}
 		} else if l.indent < ind {
@@ -332,11 +375,14 @@ func (p *parser) blockScalar(header string, hl *line, n int) (string, *Refusal) 
 		}
 		// Structure: no line inside a block scalar starts with #.
 		if strings.HasPrefix(l.body, "#") {
-			return "", refuse(CodeBlockHashLine, l.no, "a line inside a block scalar starts with #")
+			return "", settle(l, refuseAt(CodeBlockHashLine, l, l.indent, "a line inside a block scalar starts with #"))
 		}
 		// Structure: in > no line is indented deeper than the first.
 		if folded && l.indent > ind {
-			return "", refuse(CodeFoldedDeeper, l.no, "a line deeper than the first line of a > block scalar")
+			return "", settle(l, refuseAt(CodeFoldedDeeper, l, l.indent, "a line deeper than the first line of a > block scalar"))
+		}
+		if r := settle(l, nil); r != nil {
+			return "", r
 		}
 		lines = append(lines, bline{text: l.text[ind:], eol: l.eol})
 		p.i++
@@ -352,7 +398,8 @@ func (p *parser) blockScalar(header string, hl *line, n int) (string, *Refusal) 
 	if !strip && !lines[last].eol {
 		// Lines (§2.4): LF or CRLF. A | or > block whose last line ends the file with no line ending reads as "a"
 		// to a YAML 1.1 library and "a\n" to a YAML 1.2 one, so §2.4's own test refuses it.
-		r := refuse(CodeNotText, p.lines[p.i-1].no, "the file ends inside a | or > block scalar with no line ending")
+		last := &p.lines[p.i-1]
+		r := refuseAt(CodeNotText, last, len(last.text), "the file ends inside a | or > block scalar with no line ending")
 		r.Next = "end the file with a line ending, or use |- or >-"
 		return "", r
 	}

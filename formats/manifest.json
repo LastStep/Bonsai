@@ -1,10 +1,10 @@
 {
   "about": "The formats set's manifest: the set version and the SHA-256 of every file's raw bytes in formats/, all but this file and the Go files, sorted by path. Every field is described in README.md.",
-  "set": 2,
+  "set": 3,
   "files": [
     {
       "path": "README.md",
-      "sha256": "3d63a137b63e794b3da96345947fa4d9bdcb4027e391b29c5d64c90a217644e0"
+      "sha256": "ac4a1fba413b1b5a28805c8620ebadecae10171fa4ad8a65eb77f3921a891635"
     },
     {
       "path": "examples/ask.json",
@@ -68,7 +68,7 @@
     },
     {
       "path": "expect.json",
-      "sha256": "6bb88bd230befe503a251450ae3a86d3c17d7d6c991e32138f21011d072487de"
+      "sha256": "afa8c7c4208d606bef82734bb1896e1e65f2ef927e0b42b13c0007fe1b3d6680"
     },
     {
       "path": "schemas/ask.schema.json",
@@ -175,12 +175,24 @@
       "sha256": "f37d5f75937b97a9ea03afe58d4078aa8b51807a9fae747b101923ca4063b500"
     },
     {
+      "path": "trick/yaml-1/block-space-line/case.yaml",
+      "sha256": "5ecea7c054d3a6d3ca32edec2f641c615f5eab64907efa33acf1320c502a977a"
+    },
+    {
       "path": "trick/yaml-1/bom-definition/case.yaml",
       "sha256": "860e97eb3d19333e129678252f231d007019792c2e9ab1914c1252a603e029e8"
     },
     {
       "path": "trick/yaml-1/bom-frontmatter/case.md",
       "sha256": "305910f393dc1a6233039cc2cca985a7adc8a7472059c23ebec4dd45f764289c"
+    },
+    {
+      "path": "trick/yaml-1/code-order-flow-items/case.yaml",
+      "sha256": "c955f360e4ad607cbfeeb1abd8e49bb6c1af85371b49b5d38cbb15240023685e"
+    },
+    {
+      "path": "trick/yaml-1/code-order-key-first/case.yaml",
+      "sha256": "854841ce98bcac85d9ddd30259a274a2201c399b01e21f2992483f63c0e2d6ed"
     },
     {
       "path": "trick/yaml-1/comment-after-space/case.md",
@@ -215,6 +227,10 @@
       "sha256": "ab1e77463fb28e672c9575ec2f25190df2ce301000f53c1e1dea583b073f0a03"
     },
     {
+      "path": "trick/yaml-1/dispatch-tab/case.yaml",
+      "sha256": "6b9f9a1314c42c9b9011e5aa5f6d9f4cc6d51c2f4f7720848be060ee25d42083"
+    },
+    {
       "path": "trick/yaml-1/doc-marker-dashes/case.yaml",
       "sha256": "31d613737d39e5aa3fb8a1d55b1c7e730c76cb6b3f719c05ab5073b676921753"
     },
@@ -247,6 +263,10 @@
       "sha256": "fbfdac675eb73f476f8eb39e928a07e73fbc3ec25d6c89a8df7f80b1b367e908"
     },
     {
+      "path": "trick/yaml-1/flow-item-char-question/case.md",
+      "sha256": "7be5f5e17db78bc0c1ea0fb09a2f0c1b7e7f7967708e599b4aa3e2686c53295b"
+    },
+    {
       "path": "trick/yaml-1/flow-item-char/case.md",
       "sha256": "dcaaad327d1d1739ce3bdad637dfe1b772c8e4a3d615e3744ebd6328092f0b23"
     },
@@ -267,8 +287,20 @@
       "sha256": "4c4ab147056d32ed75acdcc8ded8d61ac1f4f10add7da9ecb93ffb5e0fbf4620"
     },
     {
+      "path": "trick/yaml-1/flow-trailing-comma/case.md",
+      "sha256": "0959ca1f331380dfff306ad00bb928032f157088b05555831686ecc9321bf17b"
+    },
+    {
       "path": "trick/yaml-1/folded-deeper/case.yaml",
       "sha256": "3dfd9f115d66535f547989e636fb776bc5423ec928248fad3a4378f2295195aa"
+    },
+    {
+      "path": "trick/yaml-1/format-too-new-md/case.md",
+      "sha256": "eae491314532d9c1891bc57011fe550dfab628663340f9b0621128bfc1e4153a"
+    },
+    {
+      "path": "trick/yaml-1/format-too-new/case.yaml",
+      "sha256": "75190a2053fef4a5e992160225276d70de2c5488bc9c47d9fb1b351a53a937f7"
     },
     {
       "path": "trick/yaml-1/hash-no-space/case.md",
@@ -285,6 +317,14 @@
     {
       "path": "trick/yaml-1/key-label/case.md",
       "sha256": "6b25f7031520f1f5e48e9656bc131f6ee4be3a88b90c9fa9ea2bfe3d8c864b83"
+    },
+    {
+      "path": "trick/yaml-1/key-length-1024/case.yaml",
+      "sha256": "c2eb96f24c6fbed3f1e8a87d4a454cd6e06d220c03e61606caea86b7eaee2e12"
+    },
+    {
+      "path": "trick/yaml-1/key-length-1025/case.yaml",
+      "sha256": "0faa75e712cf50525f07ee599090c9b6758186b530a03bf68b91d6f4defb5790"
     },
     {
       "path": "trick/yaml-1/key-merge/case.yaml",
@@ -357,6 +397,22 @@
     {
       "path": "trick/yaml-1/nested-mapping/case.yaml",
       "sha256": "8dca7b925ed43b5c16b8e4fb3a7d3fd95ac6e64befa5b036a03d5c18a0ee1b38"
+    },
+    {
+      "path": "trick/yaml-1/not-text-block-end/case.yaml",
+      "sha256": "6b8311cdf32cfb70913fbf8198c0716c69bfed81a15200e01eb5211782f414f9"
+    },
+    {
+      "path": "trick/yaml-1/not-text-control/case.yaml",
+      "sha256": "0078679157b8bd6d05899e2ede90fa0a4b10d503916ae46f2b99b18f987c7aec"
+    },
+    {
+      "path": "trick/yaml-1/not-text-cr/case.yaml",
+      "sha256": "9d03a8c846479d849f0c51360cde907ac877b633fdcf585b31c1adabad6b21a2"
+    },
+    {
+      "path": "trick/yaml-1/not-text-line-separator/case.md",
+      "sha256": "08e021bb17a0f22cab85ca32fb2d94cd96fcc6c2b075ff147894914baf0a103b"
     },
     {
       "path": "trick/yaml-1/plain-bool/case.yaml",

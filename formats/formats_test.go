@@ -42,13 +42,14 @@ var sourceExamples = map[string]string{
 var rules = []string{
 	// Lines.
 	"lines-lf", "lines-crlf", "bom-frontmatter", "bom-definition", "tab-indent", "doc-marker", "every-line-read",
+	"not-text",
 	// Keys.
 	"key-pattern", "key-label", "key-uppercase", "key-hyphen", "key-quoted", "key-complex", "key-merge", "key-twice",
-	"key-reserved", "dup-key-quoted",
+	"key-reserved", "dup-key-quoted", "key-length",
 	// Structure.
 	"nested-mapping", "block-sequence", "seq-dash-space", "flow-sequence", "flow-empty", "anchor", "alias", "tag",
-	"flow-mapping", "flow-nested", "flow-multiline", "block-scalar", "block-indicator", "block-hash-line",
-	"folded-deeper",
+	"flow-mapping", "flow-nested", "flow-multiline", "flow-trailing-comma", "block-scalar", "block-indicator",
+	"block-hash-line", "folded-deeper", "block-space-line",
 	// Comments.
 	"comment-line-start", "comment-after-space", "hash-no-space", "quote-in-plain",
 	// Quoted scalars.
@@ -62,7 +63,9 @@ var rules = []string{
 	"format0-oddity",
 	// Dispatch.
 	"dispatch-first", "dispatch-pointer", "dispatch-comment-first", "dispatch-none", "dispatch-nested",
-	"dispatch-not-first",
+	"dispatch-not-first", "dispatch-tab", "format-too-new",
+	// The order of codes on one line.
+	"code-order",
 }
 
 // Files whose bytes are the point of their case, checked as checked out.
