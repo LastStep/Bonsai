@@ -1,78 +1,54 @@
 # Contributing to Bonsai
 
-Thanks for your interest in contributing to Bonsai! This guide covers everything you need to get started.
+Bonsai is being rebuilt from scratch (see [`README.md`](README.md)). The rebuild is run by its director, Rohan, with
+Claude Code agents as the team, in the order [`design/plan.md`](design/plan.md) sets. Work lands on `main` directly,
+in small commits, each pushed only after its proof passes; there are no pull requests while the rebuild runs. To
+report a problem or suggest something, open an [issue](https://github.com/LastStep/Bonsai/issues); for a security
+problem, follow [`SECURITY.md`](SECURITY.md).
 
-## Development Setup
+## How work runs here
 
-**Requirements:** Go 1.25+
+Read these first, in this order:
 
-```bash
-git clone https://github.com/LastStep/Bonsai.git
-cd Bonsai
-make build        # builds ./bonsai binary
-./bonsai --help   # verify it works
-```
+1. [`CLAUDE.md`](CLAUDE.md): how a session works, the rules for every change, GitHub and safety. Every agent follows it.
+2. [`STATE.md`](STATE.md): where Bonsai stands and the one thing to do next. It is rewritten, never appended.
+3. [`design/plan.md`](design/plan.md): what is built, in what order, and how each part is proved.
 
-## Making Changes
+Each part of the plan is built in its own git worktree and branch, recorded in a run report under
+[`records/runs/`](records/runs/), and, for big or risky work, checked by a fresh verifier before it lands.
 
-1. **Fork** the repo and create a branch from `main`
-2. Make your changes
-3. Run `make build` to verify the binary compiles
-4. Test your changes manually (see below)
-5. Submit a pull request
+## Building and testing
 
-### Testing Changes
-
-The catalog is embedded in the binary, so you need to rebuild after editing catalog files:
+Go 1.25: the module's `go` and `toolchain` lines say which; an older `go` downloads that toolchain itself. The code
+uses the standard library only, plus `golang.org/x/sys` once the Windows code needs it.
 
 ```bash
-make build
-mkdir /tmp/test-project && cd /tmp/test-project
-/path/to/bonsai init
-/path/to/bonsai add
-/path/to/bonsai list
+go build -o ~/bonsai-checks/bin/bonsai ./cmd/bonsai
+~/bonsai-checks/bin/bonsai --version
+go test ./...
+go vet ./...
 ```
 
-## Adding Catalog Items
+`make build OUT=~/bonsai-checks/bin/bonsai` does the same build. Never `go install`: it puts a `bonsai` in front of
+the installed one on the PATH.
 
-Bonsai's catalog lives in `catalog/`. Each category follows the same pattern:
+The proof of a change, until Bonsai has its own ladder: `go test ./...` and `go vet ./...` on Linux and natively on
+Windows, and CI green on both (`.github/workflows/ci.yml`: `test`, `windows`, `lint`, `govulncheck`).
 
-### Skills, Workflows, Protocols
+## Rules every change follows
 
-1. Create `catalog/{category}/{item-name}/meta.yaml` with `name`, `description`, and `agents`
-2. Create `catalog/{category}/{item-name}/{item-name}.md` with the content
-3. Set `agents:` to a list of compatible agent types, or `"all"`
+The full list is in [`CLAUDE.md`](CLAUDE.md). In short:
 
-### Sensors
+- Every stored or printed path uses forward slashes; output is byte-stable; fingerprints read line endings as LF; no
+  test needs a symlink or a file mode to pass on Windows.
+- Every command runs unattended: `--json` everywhere but `hook`, no prompt without a terminal, ASCII human output, and
+  every refusal names the next step.
+- `formats/` changes only together with its manifest (`formats/README.md`).
+- Nothing private in any file or commit: no home-folder path, machine name, email address, token or server address.
+  The repository is public.
+- Commits are small, titled `area: what` in plain words.
 
-1. Create `catalog/sensors/{name}/meta.yaml` — include `event` and optionally `matcher`
-2. Create `catalog/sensors/{name}/{name}.sh.tmpl` — hook script template
+## The old product
 
-### Routines
-
-1. Create `catalog/routines/{name}/meta.yaml` — include `frequency` (e.g. `"5 days"`)
-2. Create `catalog/routines/{name}/{name}.md.tmpl` — procedure template
-
-See `CLAUDE.md` at tag `v0.4.3` for the old product's naming conventions and template context variables.
-
-## Pull Request Process
-
-- **One feature or fix per PR** — keep changes focused
-- **Open an issue first** for significant changes so we can discuss the approach
-- **Write a clear PR description** — what changed and why
-- **Test manually** — `make build` must pass, and test the affected commands
-
-## Code Style
-
-- Follow standard Go conventions (`gofmt`, `go vet`)
-- Keep the CLI interactive — use Huh forms for user input
-- Generator functions go in `internal/generate/`, catalog loading in `internal/catalog/`, commands in `cmd/`
-- All data shapes use Go structs
-
-## Development with Claude Code
-
-Bonsai is being rebuilt. Agents working on it start from `CLAUDE.md` and `STATE.md`; the design is in `design/`.
-
-## Questions?
-
-Open an [issue](https://github.com/LastStep/Bonsai/issues) or start a [discussion](https://github.com/LastStep/Bonsai/discussions) — we're happy to help.
+0.4.3's code, catalog and guides are at tag [`v0.4.3`](https://github.com/LastStep/Bonsai/tree/v0.4.3); its
+contributing guide is that tag's `CONTRIBUTING.md`.
