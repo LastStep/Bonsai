@@ -11,8 +11,7 @@ dist/
 *.out
 vendor/
 
-# Bonsai
-.bonsai-lock.yaml
+# Backups
 *.bak
 
 # Secrets
@@ -27,14 +26,6 @@ vendor/
 .obsidian/
 
 # Research / scratch
-station/Research/
 RESEARCH*.md
 *.png
-!docs/assets/*.png
-!website/src/assets/*.png
 !assets/demos/*.png
-
-# Website (Starlight docs)
-website/node_modules/
-website/dist/
-website/.astro/
