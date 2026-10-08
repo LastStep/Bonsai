@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 when part 1 landed (`records/runs/R-2026-10-08-clear-out.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 when the test pack was published (`records/runs/R-2026-10-08-test-pack.md`).
 
 ## In short
 
@@ -11,7 +11,12 @@ proof ladder (`design/one-pager.md`). The design is settled and the plan is appr
 - **Part 1, the clear-out** (`17f2938`): the old product's code is gone from `main` (358 files; 0.4.3 stays at its tag
   and in git history). The tree holds `cmd/bonsai` (a stub that answers `--version` only), `formats/`, `design/`,
   `records/` and the repo's own files. No dependencies; standard library only.
-Both were passed by a fresh Opus verifier. Nothing else of the new Bonsai is built.
+Both were passed by a fresh Opus verifier.
+- **Part 4a, the test pack**: `LastStep/bonsai-test-pack`, public, commits A `5062053`, B `ab09e4b`, C `abfb5de`, D
+  `1d4f46f` (`main`; full hashes in its run report). A shows a `marker` role saying "commit A"; B changes one pack file,
+  adds one and says "commit B"; C changes that file again; D changes only the hook line. Its README says which check
+  uses each commit.
+Nothing else of the new Bonsai is built.
 
 ## Rohan's decisions, 8 Oct
 
@@ -49,16 +54,20 @@ Both were passed by a fresh Opus verifier. Nothing else of the new Bonsai is bui
   Go 1.25), CodeQL, Dependabot (`gomod`, `github-actions`). The old website's Deploy Docs workflow is removed; the old
   site stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: the test pack (part 4a)
+## The one thing to do next: part 2, the reader and files
 
-Next, in the plan's order: the test pack, then parts 2, 3, 5, the rest of 4, and 6 (`design/plan.md`, "Parts 1-6").
-The test pack is `LastStep/bonsai-test-pack`, a new public repository the orchestrator creates with `gh` (the approved
-plan says so). An Opus builder makes its commits A to D in a clone at `~/bonsai-checks/bonsai-test-pack`
-(`bonsai/pack.yaml` is `bonsai.pack/1`, spec §5); the orchestrator pushes them. Read part 4a's row and "Test sessions
-and the launcher" in the plan before the brief.
+Next, in the plan's order: part 2, then 3, 5, the rest of 4, and 6 (`design/plan.md`, "Parts 1-6"). Part 2 is the
+format-1 reader in Go (no general YAML library; spec §3, contract §2.4), tested on every trick file in `formats/`;
+`bonsai.yaml`, `pack.yaml` (the test pack's at commit A), the lock, and the partial `status --json` (every field, a
+named list of those still `null`); the schema checker moves out of part 0's test. It is "the reader": an Opus builder
+and a fresh Opus verifier (with part 1's, as the plan's shared verifier), and check 10 natively on Windows before the
+push. Open `records/runs/R-<date>-reader.md`, make the worktree, and brief from part 2's row and "The partial
+`status --json`".
 
 For part 2's reader, from part 0: the frontmatter is its lines with their own line endings (`formats/README.md`); cut
-any other way, YAML libraries disagree on a final block scalar's newline.
+any other way, YAML libraries disagree on a final block scalar's newline. From the test pack: its hook line is declared
+in `pack.yaml` under `hooks`, a reading of the plan's "one hook line" that step 5.1 should confirm (spec §7 lists only
+Bonsai's own hook lines).
 
 ## Waiting on Rohan
 
