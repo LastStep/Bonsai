@@ -5,3 +5,8 @@
 # Keep lockfiles + generated-preview goldens predictable across checkouts.
 go.sum       text eol=lf
 *.yaml       text eol=lf
+
+# The formats set (formats/): every file keeps its committed bytes on every checkout, Windows' core.autocrlf
+# included. The CRLF and BOM trick files are the point. This line must stay after `*.yaml text eol=lf`: the last
+# matching line wins.
+formats/** -text
