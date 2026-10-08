@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 when Rohan's first sitting passed (`records/runs/R-2026-10-08-hook.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 when part 4b landed (`records/runs/R-2026-10-08-plugins.md`).
 
 ## In short
 
@@ -34,6 +34,11 @@ Both were passed by a fresh Opus verifier.
   through `claude-here`. Hook start-up: WSL p50 2.4 ms (baseline 1.5), Git Bash 63 ms (baseline 65). Passed by a
   fresh Opus verifier after one fix round.
 - **Rohan's first sitting passed** (hand checks b, c, d, 8 Oct): parts 3 and 5 are closed.
+- **Part 4b, packs as plugins** (`54b4fdd`): after `init` and `update`, Bonsai installs each locked pack's plugin with
+  `claude plugin install ... --scope project` (never user or local scope; local scope leaks across worktrees), pinned
+  to the locked commit with no login, on both sides; `check` reports drift. Check 8 on WSL: `project-a` "commit A",
+  `project-b` "commit B", `project-a-worktree` "commit B", `project-a` again "commit A"; check 5's last clause passes.
+  Landed on green tests on both sides and the orchestrator's read. Part 4 closes with Rohan's second sitting.
 - **Part 4a, the test pack**: `LastStep/bonsai-test-pack`, public, commits A `5062053`, B `ab09e4b`, C `abfb5de`, D
   `1d4f46f` (`main`; full hashes in its run report). A shows a `marker` role saying "commit A"; B changes one pack file,
   adds one and says "commit B"; C changes that file again; D changes only the hook line. Its README says which check
@@ -76,25 +81,30 @@ Nothing else of the new Bonsai is built.
   Go 1.25), CodeQL, Dependabot (`gomod`, `github-actions`). The old website's Deploy Docs workflow is removed; the old
   site stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: part 4b, packs as plugins
+## The one thing to do next: Rohan's second sitting, then part 6
 
-Part 4b (4-7 AI hours): the fetch at a 40-character commit, no login, read-only, on both sides; the marketplace named
-by workspace and a hash of the locked commits; install and update on this machine (`--scope project` or `local` only,
-never user); the drift report; `project-a` at A, `project-b` at B, `project-a-worktree` at B beside `project-a` at A; a
-fresh worktree's trust. Check 8 with the session kinds recorded (interactive, `-p`, `--bg`, a fresh worktree) and
-`claude --agent <plugin>:<role> --bg` starting the test pack's role; check 5's last clause (a new session loads B's
-roles, `check` reports no drift). Check 10 on Windows. It lands on green tests on both sides and the orchestrator's read
-of the diff. Recheck the user settings hashes after it (WSL `7b515457...a025a7`, Windows `2b6295c1...4ff6c9`). Then
-Rohan's second sitting (hand check a, about 20 minutes), then part 6, the gate report.
+**Rohan's second sitting** (hand check a, about 20 minutes): `/agents` shows the `marker` role saying commit A, B, B,
+A in `project-a`, `project-b`, `project-a-worktree`, `project-a` again, on WSL (`~/bonsai-checks/targets/`, installed)
+and in PowerShell (`%USERPROFILE%\bonsai-checks\`, installed after a first trusted session registers each
+marketplace, then `bonsai-here.cmd update`). The lines are in part 4b's builder report
+(`records/runs/R-2026-10-08-plugins.md`). After it, with the WSL folders trusted: the `--bg` session kind (`claude-here
+--bg --agent test-pack:marker ...`), which an untrusted folder refuses. Part 4 then closes.
 
-Carried into part 4b: the residual fail-open risk the first sitting did not test (under the `missing` fault, a Write
-whose payload exceeds the pipe buffer while the shell reads no stdin; Claude Code may turn the broken pipe into a
-non-blocking status) gets an agent's headless run on WSL; and the scratch `claude-here.ps1` fails at `Get-FileHash`
-(line 70) when it shows the found binary's hash, fixed before the second sitting.
+**Then part 6, measure and report** (4-6 AI hours): the gate report against spec §15's list (hours per part against
+estimate and the ratio for step 5; each check; Windows-only failures; hook start-up p50 and p95 on both sides; the
+fail-closed results; plugin install and update time; the Claude Code version on each side; binary size; lines of Go
+per part; a three-case `claude plugin eval` of the test pack; whether the studio's half of check 7 has run), and the
+skeleton's last fresh verifier over all twelve checks. Then Rohan's gate.
+
+Open for part 6 and the last verifier: the fail-open Write over 64 KiB under the `missing` fault is unproven (a model
+would not emit one; a 100 KB `UserPromptSubmit` payload with the same hook line was blocked). First-time setup needs a
+person's trusted session before `install` finds the workspace's marketplace (Bonsai reports `waiting`): a finding
+for the gate report.
 
 ## Waiting on Rohan
 
-- Later: the second sitting (hand check a, about 20 minutes, after part 4); step 8 at 5.4; at 5.7
+- Now: the second sitting (hand check a, about 20 minutes).
+- Later: step 8 at 5.4; at 5.7
   the `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website); close #252 if Dependabot has not.
 
@@ -104,6 +114,9 @@ non-blocking status) gets an agent's headless run on WSL; and the scratch `claud
   govulncheck lists but our code does not reach; a later 1.25.x patch fixes them. A one-line `toolchain` bump, as its
   own small commit.
 - Spec §17 step 3 is done: all four old `bonsai` binaries are gone (8 Oct).
+- A Claude Code session, even with `CLAUDE_CODE_PLUGIN_CACHE_DIR` set, lets Claude.ai's plugin sync rewrite
+  `~/.claude/plugins/synced/<account>/.marketplaces.json` (part 4b saw 392 to 391 bytes): an accepted write of a
+  session, with transcripts and trust entries. The user `settings.json` files stay unchanged (checked after part 4b).
 - For step 5.3, from part 5's verifier: a `.git` entry in the session's starting subfolder makes the guard read the
   project as unlinked; `bonsai.yaml` (what is protected) is read from the working tree; `bonsai` is found by the PATH,
   which a settings `env` could redirect; shell `rm` or `mv` of `bonsai.yaml` or the lock is not judged; a dangling
