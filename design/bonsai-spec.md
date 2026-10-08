@@ -607,6 +607,12 @@ Decision D stands: guards are a tripwire against accidents and the known cheats,
 The walls come from deny rules and, after its probe, the sandbox. Rohan named managed settings too (7 Oct), then dropped
 the machine-wide file the same day (question B), so every wall here is a project's own deny rule: a tripwire as well.
 
+> **Added 8 Oct (Rohan):** the hook lines must not be redirectable by files an agent may edit. They call the installed
+> `bonsai` by a fixed path (never found through git or the project), and whatever the guard trusts to find the main
+> checkout cannot be rewritten by an agent without the guard noticing (fail closed). Why: in the studio, hook commands find
+> the guard scripts through `git rev-parse --git-common-dir`, and git takes that answer from files an agent may edit (a
+> worktree's `.git` file, a `commondir` file inside a `.git` folder).
+
 **The hook lines the engine writes** (shell form, so a missing or crashing binary blocks; probed 5 Oct, P1):
 
 | Event | Line | Blocks |
@@ -897,6 +903,9 @@ studio file, so the interim proof runs until step 5.4 and Bonsai's own ladder af
 
 ## 13. What the studio repo adopts first
 
+> **Changed 8 Oct (Rohan): Bonsai first.** The studio's readers task is cut; the studio adopts the formats when it
+> links (step 7); its Desk stays on upkeep until then.
+
 1. **Rohan's review of every format** (§16), one at a time, recorded in a file. Everything below waits for it.
 2. **The readers task** (contract §15.1 step 2, 28-44 h), unchanged. Its trick files and JSON Schemas are the ones
    Bonsai's Go reader tests against; they move to Bonsai's repo with its records (contract §2.4). When it merges, the
@@ -916,6 +925,9 @@ studio file, so the interim proof runs until step 5.4 and Bonsai's own ladder af
 Not adopted early: Bonsai's hooks, the lock and the packs. They arrive when the studio links (§14 step 7).
 
 ## 14. The order of work, the hours and the stop lines
+
+> **Changed 8 Oct (Rohan): Bonsai first.** The studio's readers task is cut; the studio adopts the formats when it
+> links (step 7); its Desk stays on upkeep until then.
 
 **What the numbers rest on.** Line counts measured on 7 Oct of the Node being ported: the guards 2,368 (of which the
 shell guard 1,754, which question A (a) does not port), recorder, redaction and spool 957, asks 754, ladder, rung jobs

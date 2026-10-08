@@ -18,8 +18,11 @@ out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bon
 - Work lands on `main` directly: no marker tag, no `rebuild` branch, no pull-request process. The old product stays
   reachable at tag `v0.4.3` and in git history.
 - The JSON Schemas and the trick files are Bonsai's ("those are kind of tests which other projects can use"): the master
-  lives in `formats/`, and they are Bonsai's first job. The studio's reader tests against a copy pinned to a Bonsai
-  commit.
+  lives in `formats/`, and they are Bonsai's first job.
+- **Bonsai first** (Rohan, 8 Oct), to avoid interim code: the studio no longer adopts the formats early in its own Node
+  code. Its readers task (T-0074) is cut. The studio adopts the formats when it links (spec step 7): `bonsai init` there,
+  its bridge reading Bonsai's outputs, its own guards, ladder and statusline retired. Its Desk stays on upkeep until
+  then. Nothing in the studio waits on part 0; Bonsai's own order is unchanged.
 - "The proper way, no shortcuts": the spec's order inside Bonsai; parallel work only where it is truly independent.
 - Bonsai joins the studio's dashboard as its own project at spec step 6, as planned.
 
@@ -49,7 +52,7 @@ asked. First steps:
    `git -C ~/Servers/Trinetra-Game-Studio show 4a05eac:tools/lib/yaml.mjs > <scratch folder>/yaml0.mjs`
    (it exports `parseYaml` and `parseFrontmatter`). Nothing is written in the studio's checkout.
 4. A fresh Opus verifier reads every case rule by rule. Then fast-forward `main`, push, check CI, run
-   `go test ./formats/` in a Windows-git clone, write the commit's full SHA here for the studio to pin, and tell Rohan.
+   `go test ./formats/` in a Windows-git clone, name the commit here, and tell Rohan.
 
 Then the walking skeleton, parts 1-6, in the plan's order (1, the test pack, 2, 3, 5, the rest of 4, 6).
 
@@ -66,5 +69,8 @@ Then the walking skeleton, parts 1-6, in the plan's order (1, the test pack, 2, 
 - CI's `govulncheck` job fails at its install step: `go install golang.org/x/vuln/cmd/govulncheck@latest` now needs
   Go 1.26 and CI runs 1.25.9 with `GOTOOLCHAIN=local` (red since 23 Sep, before this setup). `test`, `lint`, `build` and
   CodeQL are green on the setup commit. Part 1 rewrites CI: pin govulncheck to a version that fits the Go it uses.
+- Spec step 5.3 (the guard): the hook lines must not be redirectable by files an agent may edit. They call the installed
+  `bonsai` by a fixed path, and what the guard trusts to find the main checkout cannot be rewritten without the guard
+  noticing (fail closed). See `design/plan.md`, "What still links Bonsai and the studio", and spec §7.
 - `README.md` and `CONTRIBUTING.md` still describe the old product, apart from a pointer; part 1 rewrites them.
 - The spec's §19 D still says 60 h and 30-46 h; §14 and §20 say 61 h and 30-47 h. The plan uses 61 and 30-47.

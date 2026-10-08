@@ -49,7 +49,7 @@ was built so far and the old product stays at tag `v0.4.3`.
 ## Done when
 
 - [ ] The formats are in `formats/`: a JSON Schema for each of the contract's ten formats and the trick files with
-      their expected outcomes, read rule by rule by a fresh verifier; STATE names the commit the studio pins (plan
+      their expected outcomes, read rule by rule by a fresh verifier; STATE names the commit (plan
       part 0).
 - [ ] The skeleton's twelve checks pass (spec section 14) and its gate report is in Rohan's hands.
 - [ ] Rohan picks a path at the gate, on the measured numbers.
@@ -66,7 +66,7 @@ assistant's runtime (parked until after 1.0). Agents other than Claude Code. The
 ## Open questions for Rohan
 
 None of its own. Where the trick files live was answered on 8 Oct: in this repo's `formats/`, the master; the studio
-pins a copy.
+adopts the formats when it links (step 7).
 
 ## Cost
 

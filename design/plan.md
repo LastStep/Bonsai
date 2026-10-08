@@ -17,8 +17,8 @@ rest.
 **What this does.** Two pieces of work, in this order.
 1. **The formats (part 0).** Written rules for every file Bonsai and the studio both read (one schema per format), and a
    set of small, deliberately tricky example files, each with its one right answer: accepted with this value, or
-   refused for this reason. They are tests any reader can run. The studio tests its own reader on a copy pinned to a
-   Bonsai commit.
+   refused for this reason. They are tests any reader can run. Bonsai's own reader uses them now; the studio's readers
+   test against them when it links (step 7).
 2. **The walking skeleton (parts 1-6).** The risky parts of the new Bonsai, built on throwaway copies of projects, to
    prove before you decide whether to go on: Bonsai can write and update a project's files without overwriting your
    edits; a pack can arrive as a Claude Code plugin at an exact version, with two projects (and a worktree beside its
@@ -103,21 +103,27 @@ minutes of yours. Nothing here waits on the studio.
 
 ### What still links Bonsai and the studio
 
-The work waits for nothing in the studio. What links the two:
-1. **The studio pins `formats/`.** Its readers task takes a copy at the commit `STATE.md` names when part 0 is done and
-   tests its own reader against it. A fix to `formats/` after that is a new commit, named in `STATE.md` and told to
-   Rohan, never a silent edit.
+The work waits for nothing in the studio. Rohan's 8 Oct decision, "Bonsai first": the studio's readers task (T-0074) is
+cut and its Desk stays on upkeep until it links (step 7). What links the two:
+1. **The studio adopts `formats/` when it links (step 7)**, not before: `bonsai init` there, its bridge reading Bonsai's
+   outputs, its own guards, ladder and statusline retired. Its remaining readers test against the trick files then. A
+   change to `formats/` is a commit that changes its manifest, never a silent edit.
 2. **Format 0's outcomes come from the studio's reader.** Format 0 means "exactly what the studio's `yaml.mjs` reads
    today" (contract §2.3-§2.4). Part 0 fills each case's format-0 outcome by running that reader read-only from the
    studio's checkout on this PC; the orchestrator gives the builder the path and the commit (the one the studio froze as
-   its format-0 reference). The studio's test of its frozen copy re-checks every format-0 outcome when it pins.
+   its format-0 reference). The studio's test of its frozen copy re-checks every format-0 outcome when it links.
 3. **Check 7** (Bonsai's reader and the studio's reach the same outcome on every trick file) has two halves: Bonsai's
    reader reaches every format-1 outcome in `formats/expect.json` (part 2's test), and the studio's reader reaches the
-   same file's outcomes (its readers task). The gate report says whether the studio's half has run.
+   same file's outcomes (when it links, step 7; until then the half is open). The gate report says whether it has run.
 4. **Later:** the studio's slice 3 and its registration of projects (contract §15.2) come after the skeleton; Bonsai
    joins the studio's dashboard as its own project at spec §14 step 6; the studio links to Bonsai at step 7, Mimas last
    at step 8.
-5. The studio's own work may ask Rohan questions in the same days (the spec's "two queues"). Stop line 3 counts only
+5. **Note for step 5.3 (the guard).** Rohan's 8 Oct requirement: the hook lines must not be redirectable by files an agent may edit. They call the installed
+   `bonsai` by a fixed path (never found through git or the project), and whatever the guard trusts to find the main
+   checkout cannot be rewritten by an agent without the guard noticing (fail closed). Why: in the studio, hook commands find
+   the guard scripts through `git rev-parse --git-common-dir`, and git takes that answer from files an agent may edit (a
+   worktree's `.git` file, a `commondir` file inside a `.git` folder).
+6. The studio's own work may ask Rohan questions in the same days (the spec's "two queues"). Stop line 3 counts only
    this plan's option rounds.
 
 ### Part 0: the formats (6-10 h, stop line 13 h)
@@ -188,7 +194,7 @@ exact error message into `expect.json`. The run report records the studio commit
   `%USERPROFILE%\bonsai-checks\src` where Windows Go passes `go test ./formats/` (only this package: the old product's
   own tests fail on Windows). It proves the CRLF and BOM bytes survive a Windows checkout. From part 1 the `windows` CI
   job runs it on every push.
-- `STATE.md` names the commit (its full SHA) for the studio to pin, and the orchestrator tells Rohan in one line.
+- `STATE.md` names the commit, and the orchestrator tells Rohan in one line.
 
 ### Parts 1-6: the walking skeleton (30-47 h, stop line 61 h)
 

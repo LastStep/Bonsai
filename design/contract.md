@@ -191,8 +191,7 @@ so nothing changes for Mimas.
 
 > **Changed 8 Oct (Rohan):** the trick files and the JSON Schemas start in Bonsai's repo, in `formats/`, as Bonsai's
 > first job ("those are kind of tests which other projects can use ... it makes sense for them to live in bonsai").
-> Bonsai holds the master; the studio's readers test against a copy pinned to a Bonsai commit (later, to the Bonsai
-> release they pin).
+> Bonsai holds the master; the studio's readers test against it when the studio links (step 7; see §15.1's note of 8 Oct).
 
 ### 2.5 JSON documents and records
 
@@ -1120,6 +1119,9 @@ Keys sorted; forward slashes only; no absolute path anywhere. The engine's rules
 ## 15. From today's files to the contract
 
 ### 15.1 In what order
+
+> **Changed 8 Oct (Rohan): Bonsai first.** The studio's readers task is cut; the studio adopts the formats when it
+> links (step 7); its Desk stays on upkeep until then.
 
 Path (c), "formats first", adopted by this repo (vision §6):
 1. **This spec approved.**

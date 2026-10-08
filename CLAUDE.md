@@ -11,7 +11,7 @@ history; everything in this repo now serves the rebuild. Rohan is the director; 
   Windows.
 - **Is not:** anything that applies an action. It never moves a task, applies an approval or starts an agent. No daemon,
   no network service, no terminal UI. Registries, dashboards, notifications and deploys belong to its users.
-- **Its first user** is Rohan's studio, Trinetra, which pins `formats/`. This repo names no studio file in its code.
+- **Its first user** is Rohan's studio, Trinetra, which adopts the formats when it links (step 7). This repo names no studio file in its code.
 
 ## Where the truth lives
 
@@ -68,7 +68,7 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   list change.
 - Every command runs unattended: `--json` everywhere but `hook`, no prompt without a terminal, ASCII human output, and
   every refusal names the next step.
-- **`formats/` changes** only with its manifest, in a commit named in `STATE.md`: the studio pins it.
+- **`formats/` changes** only with its manifest.
 - **Windows:** Windows Go cannot build from WSL's disk. Windows runs happen under `%USERPROFILE%\bonsai-checks\` with
   `"/mnt/c/Program Files/Go/bin/go.exe"`. Every Windows-side repo, worktree and CRLF checkout is made with Windows git by
   its full path, `"/mnt/c/Program Files/Git/cmd/git.exe"`. Never run Linux git in a Windows checkout.
