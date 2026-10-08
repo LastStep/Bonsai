@@ -14,7 +14,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/testpack"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -22,8 +24,6 @@ import (
 var notBuiltYet = map[string]string{
 	"formats":        "null", // which majors this Bonsai reads and writes: step 5.1
 	"documents":      "[]",   // the declared document kinds (contract §7.3): step 5.1
-	"packs":          "[]",   // from the lock, with each pack's state: part 3 (check: lock and files)
-	"files":          "null", // changed, missing and format-0 counts: part 3
 	"labels":         "[]",   // namespaces in force: step 5.1
 	"lanes":          "[]",   // from the packs' declares: step 5.1
 	"status_writes":  "null", // this machine's settings: step 5.1 (bonsai settings)
@@ -152,7 +152,11 @@ func TestStatusOfALinkedProject(t *testing.T) {
 			"home":        `{"path":` + schema.Show(filepath.ToSlash(home)) + `,"key":"` + key + `"}`,
 			"local":       `{"log":` + schema.Show(r+"/.bonsai/local/log") + `,"asks":` + schema.Show(r+"/.bonsai/local/asks") + `,"ladder":` + schema.Show(r+"/.bonsai/local/ladder") + `}`,
 			"person_only": `[".claude/**","bonsai.yaml"]`,
-			"problems":    `[]`,
+			"packs":       `[]`,
+			"files":       `{"changed":0,"missing":0,"format0_changed":0}`,
+			// bonsai.yaml names a pack, but no update has run: check's findings (contract §12).
+			"problems": `[".bonsai/lock.json: is missing; next: run bonsai update to write it",` +
+				`".bonsai/.gitignore is missing, so .bonsai/local/ could be committed; next: run bonsai update --yes to write it again"]`,
 		}
 		for k, w := range want {
 			v, _ := doc.Get(k)
@@ -274,9 +278,59 @@ func TestStatusIsByteStableAndASCII(t *testing.T) {
 		t.Errorf("the non-ASCII path is not escaped:\n%s\n%s", first, text)
 	}
 	for _, want := range []string{"Workspace example, id ws-7kq2m4xw5r3t6y2u7p4a5c3e2b", "  bonsai.yaml      this project's",
-		"Person-only paths: .claude/**, bonsai.yaml", "Problems: none.", "This project's machine folder: workspaces/r-"} {
+		"Person-only paths: .claude/**, bonsai.yaml", "Problems:\n  .bonsai/lock.json: is missing; next: run bonsai update",
+		"This project's machine folder: workspaces/r-", "Packs: none locked\n", "A copy meant as a new project needs its own id: bonsai init --new-id\n"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the text lacks %q:\n%s", want, text)
 		}
+	}
+}
+
+// A project linked by the engine: packs from the lock with their state, file counts, and check's findings as
+// problems (contract §12).
+func TestStatusOfAProjectTheEngineLinked(t *testing.T) {
+	tmp := t.TempDir()
+	if r, err := filepath.EvalSymlinks(tmp); err == nil {
+		tmp = r
+	}
+	home := testpack.Isolate(t, tmp)
+	pack := testpack.Build(t, tmp)
+	root := testpack.Project(t, tmp, "linked")
+	p, err := engine.Build(engine.Request{Command: "init", Dir: root, Home: home, Version: "test",
+		Init: &engine.InitValues{Name: "linked", Source: pack.Source, Ref: pack.A}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := engine.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	doc, code := Build(root, "dev")
+	if code != ExitOK {
+		t.Fatalf("exit %d", code)
+	}
+	checkShape(t, doc, false)
+	for k, want := range map[string]string{
+		"packs":    `[{"id":"demo-pack","version":"0.1.0","commit":"` + pack.A + `","state":"ok"}]`,
+		"files":    `{"changed":0,"missing":0,"format0_changed":0}`,
+		"problems": `[]`,
+	} {
+		if v, _ := doc.Get(k); schema.Show(v) != want {
+			t.Errorf("%s = %s, want %s", k, schema.Show(v), want)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(root, "demo", "guide.md"), []byte("edited\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	doc, _ = Build(root, "dev")
+	checkShape(t, doc, false)
+	if v, _ := doc.Get("packs"); !strings.Contains(schema.Show(v), `"state":"changed"`) {
+		t.Errorf("packs %s", schema.Show(v))
+	}
+	if v, _ := doc.Get("files"); schema.Show(v) != `{"changed":1,"missing":0,"format0_changed":0}` {
+		t.Errorf("files %s", schema.Show(v))
+	}
+	text := Text(doc)
+	if !strings.Contains(text, "Packs: demo-pack 0.1.0 at "+pack.A[:7]+" (changed)\n") || !strings.Contains(text, "demo/guide.md was edited") {
+		t.Errorf("text:\n%s", text)
 	}
 }

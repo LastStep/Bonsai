@@ -3,7 +3,8 @@
 // Plan part 2 builds the partial status: every field of bonsai.status/1, in the schema's order (the schema in
 // formats/schemas, embedded by package formats, is the one list of fields), filled where the walking skeleton has
 // built it and null (or [] for a list) where it has not. Built here: format, bonsai, mode, workspace, home, local,
-// person_only and problems. The rest wait for later parts, which fill them as they are built; this package's test
+// person_only, and from part 3's check (internal/engine) packs, files and problems: the same findings bonsai check
+// reports (contract §12). The rest wait for later parts, which fill them as they are built; this package's test
 // holds them in a named list.
 //
 // Exit codes (contract §12, spec §3): 0, or 3 when Bonsai cannot read the workspace at all; the document then
@@ -17,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/LastStep/Bonsai/formats"
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -85,6 +87,19 @@ func gather(dir string) (map[string]any, string) {
 			filepath.ToSlash(co.Main), err)
 	}
 	root := filepath.ToSlash(co.Main)
+	packs, files, problems := []any{}, schema.Object{{Key: "changed", Value: 0}, {Key: "missing", Value: 0},
+		{Key: "format0_changed", Value: 0}}, []any{}
+	if r, err := engine.Check(dir, home); err == nil {
+		for _, p := range r.Packs {
+			packs = append(packs, schema.Object{{Key: "id", Value: p.ID}, {Key: "version", Value: p.Version},
+				{Key: "commit", Value: p.Commit}, {Key: "state", Value: p.State}})
+		}
+		files = schema.Object{{Key: "changed", Value: r.Changed}, {Key: "missing", Value: r.Missing},
+			{Key: "format0_changed", Value: r.Format0Changed}}
+		for _, f := range r.Findings {
+			problems = append(problems, f.Sentence())
+		}
+	}
 	personOnly := make([]any, len(cfg.PersonOnly))
 	for i, g := range cfg.PersonOnly {
 		personOnly[i] = g
@@ -100,8 +115,10 @@ func gather(dir string) (map[string]any, string) {
 			{Key: "asks", Value: root + "/.bonsai/local/asks"},
 			{Key: "ladder", Value: root + "/.bonsai/local/ladder"},
 		},
+		"packs":       packs,
+		"files":       files,
 		"person_only": personOnly,
-		"problems":    []any{},
+		"problems":    problems,
 	}, ""
 }
 
@@ -172,6 +189,20 @@ func Text(doc schema.Object) string {
 		globs = []string{"none"}
 	}
 	fmt.Fprintf(&b, "Person-only paths: %s\n", strings.Join(globs, ", "))
+	pv, _ := doc.Get("packs")
+	var packs []string
+	for _, p := range pv.([]any) {
+		po := p.(schema.Object)
+		commit := po.String("commit")
+		if len(commit) > 7 {
+			commit = commit[:7]
+		}
+		packs = append(packs, ascii(po.String("id")+" "+po.String("version")+" at "+commit+" ("+po.String("state")+")"))
+	}
+	if len(packs) == 0 {
+		packs = []string{"none locked"}
+	}
+	fmt.Fprintf(&b, "Packs: %s\n", strings.Join(packs, ", "))
 	list := problems.([]any)
 	if len(list) == 0 {
 		b.WriteString("Problems: none.\n")
@@ -181,8 +212,9 @@ func Text(doc schema.Object) string {
 			b.WriteString("  " + ascii(p.(string)) + "\n")
 		}
 	}
-	b.WriteString("This build of Bonsai's rebuild shows the workspace, its folders and the home; packs, files, labels,\n")
-	b.WriteString("lanes, the active task and needs come with its later parts.\n")
+	b.WriteString("A copy meant as a new project needs its own id: bonsai init --new-id\n")
+	b.WriteString("This build of Bonsai's rebuild shows the workspace, its folders, the home, the packs and bonsai check's\n")
+	b.WriteString("findings; labels, lanes, the active task and needs come with its later parts.\n")
 	return b.String()
 }
 
