@@ -1,8 +1,10 @@
 # The walking skeleton's gate report
 
 - Date: 9 Oct 2026
-- For: Rohan's gate (spec §14, step 4). The skeleton's last fresh verifier reads it first, against the run reports.
-- Written by: part 6's builder (Opus), from the run reports and today's measurements. Nothing here was re-measured.
+- For: Rohan's gate (spec §14, step 4). The skeleton's last fresh verifier read it first, against the run reports.
+- Written by: part 6's builder (Opus), from the run reports and today's measurements; the builder re-measured nothing.
+  The skeleton's last fresh verifier (Opus, 00:49-01:03) read it and passed the skeleton and this report; its results
+  are carried in here, and `records/runs/R-2026-10-09-gate.md` holds its report (cited below as `verifier`).
 - Bonsai: `main` at `b18f444`; its Go code is `54b4fdd`'s, only Markdown changed since (gate 00:27).
 - Sources are cited as `<report> <log time>`: `hook 19:41` is `records/runs/R-2026-10-08-hook.md`, its log entry at
   19:41; `gate 00:35` is today's `records/runs/R-2026-10-09-gate.md`. The short names: setup, plan-review, formats
@@ -28,36 +30,44 @@ copies of projects, on WSL and on Windows, and measured. Three things had to hol
 - Hand check a was run by a Sonnet agent on your word, in scripted sessions (no one typing). `/agents` is gone from
   Claude Code 2.1.294, so nobody read the pack's answer inside an ordinary typed session. On Windows no person opened a
   session in the pack's folders, so the Windows trust question and a Windows background session were not seen.
-- A pack becomes installable only after a person has opened Claude Code in the project once and trusted the folder.
+- Before a pack can install, Claude Code must register the project's marketplace (where it finds the pack), and it
+  does that only in a session in a trusted folder. A person's first session there does it; on Windows an agent did it
+  in a scripted session, with no one there, by handing Claude Code the project's own entry.
 - An update that changes a hook line is refused; the switch that allows it comes in step 5.1.
-- Undoing a link with a plain `git revert` was tried before the plugin install was added, not since.
-- The studio's half of check 7 waits for step 7. The skeleton's last fresh verifier has not run yet.
+- Undoing a link with a plain `git revert` gives back exactly the project as it was (checked again today, with the
+  plugin step in place), but only where the plugin was never installed. Where it is installed, Claude Code keeps its
+  own record of the install outside git, which a revert would leave; that was not tried.
+- The studio's half of check 7 waits for step 7.
 
-**Hours.** Parts 1-5 took 5 h 36 min of agent runs, against 26-41 h estimated for them (30-47 h for the whole skeleton
-with this report; stop line 61 h). Windows-only failures cost about 18 minutes (stop line 8 h). No option round was
-asked of you, and the records show no change to Mimas or the studio's repo. By the run reports' tallies no stop line is
-crossed; the last verifier judges that.
+**The last check.** A fresh verifier re-ran the tests on both sides, part 3's checks on the final build, the revert and
+the guard on WSL, and read the stop lines, Mimas and the studio's repo. It passed the skeleton and this report; its
+results are in sections 2 to 4.
+
+**Hours.** The whole skeleton, parts 1-6 with the last verifier, took 6 h 17 min of agent runs, against 30-47 h
+estimated (stop line 61 h); parts 1-5 alone took 5 h 36 min against their 26-41 h. Windows-only failures cost about 18
+minutes (stop line 8 h). No option round was asked of you. The verifier found no change to Mimas (its last commit is
+from 5 Oct) or to the studio's repo (last commit 8 Oct, before part 1). No stop line is crossed, by its judgment.
 
 **A sample eval.** A three-case `claude plugin eval` of the test pack ran in about half a minute for under 3 cents. The
 one case only the pack can answer passed with it (2 of 2) and failed without it (0 of 2). It shows how an eval runs, not
 that packs help.
 
 **The three paths.** The spec's hours after the gate (§14), and the same hours times the skeleton's measured ratio:
-parts 1-5's 5.6 h against the skeleton's 47 h estimate is 0.119; against its 30 h, 0.187 (section 2.2 has the rest).
+its 6 h 17 min against its 47 h estimate is 0.1337; against its 30 h, 0.2094 (section 2.2 has the arithmetic).
 
-| Path | The spec's hours | Times 0.119 | Times 0.187 |
+| Path | The spec's hours | Times 0.1337 | Times 0.2094 |
 |---|---|---|---|
-| (a) the full Bonsai 1.0 | 139-218 h | 16.6-26.0 h | 25.9-40.7 h |
-| (b) the smaller cut | about 121-188 h | 14.4-22.4 h | 22.6-35.1 h |
-| (d) 1.0 with its own screens | about 169-268 h | 20.1-31.9 h | 31.5-50.0 h |
+| (a) the full Bonsai 1.0 | 139-218 h | 18.6-29.1 h | 29.1-45.6 h |
+| (b) the smaller cut | about 121-188 h | 16.2-25.1 h | 25.3-39.4 h |
+| (d) 1.0 with its own screens | about 169-268 h | 22.6-35.8 h | 35.4-56.1 h |
 
 **What limits the ratio.**
 - It counts only the agents' own runs: not the orchestrating session, not your sittings, not waiting. The spec's
   estimates are session hours, and its 1.6-times record was measured from plan to merge, waits included.
-- It comes from one day and five parts, and it swung by part from 0.06-0.09 (the engine) to 0.32-0.53 (the hook
+- It comes from six parts over two days, and it swung by part from 0.06-0.09 (the engine) to 0.32-0.53 (the hook
   path). The parts that dealt with Windows and Claude Code ran highest; step 5 has more of that work (the guards, the
   ladder on Windows, the packs).
-- Parts 3 and 4 closed without their own verifier, and the last verifier may still send work back.
+- It includes the last verifier, which sent back only wording in this report and one line of the spec, no code.
 - Path (d)'s screens are design work (30-50 h, the spec's guess); nothing in the skeleton sampled that kind of work.
 
 **The choice is yours:** (a), (b) or (d). Sections 2 to 4 hold every number and where it comes from.
@@ -67,7 +77,8 @@ parts 1-5's 5.6 h against the skeleton's 47 h estimate is 0.119; against its 30 
 ### 2.1 Hours per part against its estimate
 
 Minutes are the sums of each run report's "Runs" rows (builder, verifier, audit and hand-check runs), copied by a Haiku
-run and read by the orchestrator (gate 00:28). Ratio = minutes spent / estimated minutes, high estimate first.
+run and read by the orchestrator (gate 00:28); part 6's are the last verifier's tally (verifier). Ratio = minutes
+spent / estimated minutes, high estimate first.
 
 | Part | Estimate | Runs (minutes) | Spent | Ratio |
 |---|---|---|---|---|
@@ -78,47 +89,54 @@ run and read by the orchestrator (gate 00:28). Ratio = minutes spent / estimated
 | 4. Packs as plugins (4a + 4b) | 4-7 h | 4a: builder 12, Haiku audit 1 (test-pack); 4b: builder 62, hand check a by Sonnet 8 (plugins) | 83 min | 0.198-0.346 |
 | 5. The hook path | 3-5 h | builder 49, verifier 21, fix round 21, verifier 5 (hook) | 96 min | 0.320-0.533 |
 | **Parts 1-5** | **26-41 h** | | **336 min = 5 h 36 min** | **0.137-0.215** |
-| 6. Measure and report | 4-6 h | so far: Haiku 1, Sonnet 8, Sonnet eval 2 (gate 00:28, 00:35, 00:39); this report's builder and the last verifier still open | 11 min so far | open |
-| **The skeleton, parts 1-6** | **30-47 h** | | **347 min so far** | see 2.2 |
+| 6. Measure and report | 4-6 h | measurements, Sonnet 8; bookkeeping, Haiku 1; eval, Sonnet 2 (gate 00:35, 00:28, 00:39); this report's builder, Opus 11 (00:36-00:47); the last verifier, Opus 14 (00:49-01:03); this report's fixes 0 (00:48) and 4 (01:05-01:09) | 41 min | 0.114-0.171 |
+| **The skeleton, parts 1-6** | **30-47 h** | | **377 min = 6 h 17 min** | **0.1337-0.2094** |
 
-Outside any part (not in the skeleton's tally): the setup 19 min (setup), the plan's review and fixes 24 min
-(plan-review). Rohan's sittings and the orchestrator's own session are not counted (section 4).
+Part 6's runs sum to 36 minutes before the last fix round; the verifier gives 36-37 (the 00:48 fix as 0 or 1 minute),
+and this report uses 37. Outside any part (not in the skeleton's tally): the setup 19 min (setup), the plan's review
+and fixes 24 min (plan-review). Rohan's sittings and the orchestrator's own session are not counted (section 4).
 
 ### 2.2 The ratio applied to step 5's estimates
 
-The skeleton is not finished, so the ratio uses parts 1-5's 336 minutes (5.6 h). Against both ends of the
-skeleton's 30-47 h:
+The skeleton's whole actual, all six parts with the last verifier: 336 + 41 = 377 minutes (6 h 17 min), the last
+verifier's 373 (about 6 h 13 min) plus this report's last fix round, 4. Against both ends of the skeleton's 30-47 h:
 
-- 336 / (30 x 60) = 336 / 1800 = 0.1867
-- 336 / (47 x 60) = 336 / 2820 = 0.1191
+- 377 / (30 x 60) = 377 / 1800 = 0.2094
+- 377 / (47 x 60) = 377 / 2820 = 0.1337
 
-Like for like, against parts 1-5's own estimates (2-4 + 7-10 + 10-15 + 4-7 + 3-5 = 26-41 h):
-
-- 336 / 1560 = 0.2154; 336 / 2460 = 0.1366
+A second line, like for like: parts 1-5's 336 minutes against their own estimates (2-4 + 7-10 + 10-15 + 4-7 + 3-5 =
+26-41 h): 336 / 1560 = 0.2154; 336 / 2460 = 0.1366.
 
 Applied to the spec's hours after the gate (§14, "Path (a) after the gate" and "Totals"); each range's ends times each
 ratio, rounded to 0.1 h here:
 
-| Path | Spec | x 0.1191 | x 0.1867 | x 0.1366 | x 0.2154 |
+| Path | Spec | x 0.1337 | x 0.2094 | x 0.1366 (parts 1-5) | x 0.2154 (parts 1-5) |
 |---|---|---|---|---|---|
-| (a) | 139-218 h | 16.6-26.0 | 25.9-40.7 | 19.0-29.8 | 29.9-47.0 |
-| (b) | about 121-188 h | 14.4-22.4 | 22.6-35.1 | 16.5-25.7 | 26.1-40.5 |
-| (d) | about 169-268 h | 20.1-31.9 | 31.5-50.0 | 23.1-36.6 | 36.4-57.7 |
+| (a) | 139-218 h | 18.6-29.1 | 29.1-45.6 | 19.0-29.8 | 29.9-47.0 |
+| (b) | about 121-188 h | 16.2-25.1 | 25.3-39.4 | 16.5-25.7 | 26.1-40.5 |
+| (d) | about 169-268 h | 22.6-35.8 | 35.4-56.1 | 23.1-36.6 | 36.4-57.7 |
 
-For example (a): 139 x 0.1867 = 25.95 and 218 x 0.1191 = 25.97, so mapping low end to low end and high to high gives
-about 26 h for path (a) either way. The spec's own figures for comparison: path (a) 222-349 h on the 1.6-times record;
-Bonsai 1.0 with the skeleton 169-265 h (§14, "Totals"). The limits on the ratio are in section 1.
+The arithmetic for the six-part columns:
+- (a) 139 x 0.1337 = 18.584; 218 x 0.1337 = 29.147; 139 x 0.2094 = 29.107; 218 x 0.2094 = 45.649
+- (b) 121 x 0.1337 = 16.178; 188 x 0.1337 = 25.136; 121 x 0.2094 = 25.337; 188 x 0.2094 = 39.367
+- (d) 169 x 0.1337 = 22.595; 268 x 0.1337 = 35.832; 169 x 0.2094 = 35.389; 268 x 0.2094 = 56.119
+
+Mapping low end to low end and high to high (139 x 0.2094 and 218 x 0.1337) gives about 29.1 h for path (a)
+either way. The spec's own figures for comparison: path (a) 222-349 h on the 1.6-times record; Bonsai 1.0 with the
+skeleton 169-265 h (§14, "Totals"). The limits on the ratio are in section 1.
 
 ### 2.3 Each check, passed or not
 
-Section 3, one row per check. In short: checks 1, 2, 3, 4, 6, 9, 10 and 12 passed; 5, 8 and 11 passed with stated
-limits; 7 passed for Bonsai's half, and the studio's half has not run.
+Section 3, one row per check. In short: checks 1, 2, 3, 4, 6, 9 and 10 passed; 5, 8, 11 and 12 passed with stated
+limits; 7 passed for Bonsai's half, and the studio's half has not run. The last verifier re-ran checks 1-6 (5 to its
+session clause), 10, 11 on WSL and 12 itself, and passed them (verifier).
 
 ### 2.4 Windows-only failures and their hours
 
 About 18 minutes in all, every one in part 5's fix round: the verifier's findings 1-3 (a directory stream in a middle
 path segment, junctions, `\\?\GLOBALROOT` device paths), all Windows only (hook 19:18, 19:41, "Windows-only failures").
-Parts 1, 2, 3 and 4b: 0 minutes (clear-out, engine 17:40, plugins 21:14). Part 6 so far: none recorded.
+Parts 1, 2, 3 and 4b: 0 minutes (clear-out, engine 17:40, plugins 21:14). Part 6: none, the last verifier's runs
+included (verifier).
 
 ### 2.5 Hook start-up, p50 and p95
 
@@ -140,25 +158,26 @@ was rebuilt today (part 5's was not kept).
 | Today, `bonsai.exe --version` | | 9.9 / 12.1; 10.2 / 12.0 |
 
 Read against the baseline: on WSL the guard's typical call is about 1 ms over the minimal hook's 1.5 ms and under spec
-§3's 5 ms, but a session's first call (5.73 and 5.72 at p50) is over 5 ms. Today's WSL p95 is about 0.5 ms above part
-5's (3.48 and 3.46 against 2.90; section 5). On Windows the hook line is 66.0 and 66.3 at p50 against the baseline's 65
-and part 5's 63.4; Git Bash alone takes about 35 of it.
+§3's 5 ms, but a session's first call (5.73 and 5.72 at p50) is over 5 ms. Today's WSL p95 is about 0.6 ms above part
+5's (3.48 and 3.46 against 2.90, 0.56-0.58 ms; section 5). On Windows the hook line is 66.0 and 66.3 at p50 against
+the baseline's 65 and part 5's 63.4; Git Bash alone takes about 35 of it.
 
 ### 2.6 Fail-closed and minimal-PATH results
 
 | Case | WSL (agents, scripted sessions through `claude-here`) | Windows, Git Bash (Rohan's hand check c, sessions through `claude-here.cmd`) |
 |---|---|---|
-| Edit of `protected.txt` | refused, 44 bytes kept (hook 18:33; re-run on the final build, 19:41) | refused with the reason and a next step (hook 20:11) |
-| Edit of `free.txt` | done (18:33, 19:41) | done |
-| `missing` | refused (18:33); a 144,976-byte Write, past the 64 KiB pipe buffer, refused, `big.txt` never made (plugins 21:53) | refused; the launcher said "no bonsai on this session's PATH", the agent saw "bonsai: command not found" |
-| `crash` | refused (18:33) | refused: "test fault crash ... the hook line's `\|\| exit 2` blocks the call" |
-| `slow` | refused (18:33) | refused twice: "the guard ran past its own 5s limit, so it blocks the call" |
-| `minimal-path` | refused (18:33) | the Edit and a PowerShell call refused: "bonsai: command not found" |
+| Edit of `protected.txt` | refused, 44 bytes kept (hook 18:33; re-run on the final build, 19:41; the last verifier, with its reason, 44 bytes kept) | refused with the reason and a next step (hook 20:11) |
+| Edit of `free.txt` | done (18:33, 19:41; verifier) | done |
+| `missing` | refused (18:33); a 144,976-byte Write, past the 64 KiB pipe buffer, refused, `big.txt` never made (plugins 21:53); the verifier: refused, "/bin/sh: 1: bonsai: not found" | refused; the launcher said "no bonsai on this session's PATH", the agent saw "bonsai: command not found" |
+| `crash` | refused (18:33; verifier) | refused: "test fault crash ... the hook line's `\|\| exit 2` blocks the call" |
+| `slow` | refused (18:33); the verifier: refused, "ran past its own 5s limit" | refused twice: "the guard ran past its own 5s limit, so it blocks the call" |
+| `minimal-path` | refused (18:33); the verifier: refused, "bonsai: not found" | the Edit and a PowerShell call refused: "bonsai: command not found" |
 | The verifier's own runs | 122 hook-line inputs plus 16 and 8 fault runs, 0 wrong allows (19:18); the 122 again after the fix round, 0 wrong allows (19:47) | first round: 5 wrong allows of 29, fixed in the fix round (19:18, 19:41); then 49 inputs through the hook line, 0 wrong allows apart from the documented admin share, and 9 fault runs, all blocked (19:47) |
 
-A hook that times out does not block in Claude Code, so the guard's own 5 s timer (half the hook's 10 s) is what blocks
-`slow` (hook 18:33, 19:18). The large Write under `missing` was asked of Rohan on Windows and not run (hook 20:11); it
-ran on WSL only.
+The last verifier's WSL runs were a second runner on today's scratch builds: headless through `claude-here` in
+`project-guard`, with part 5's flags and Haiku, $0.48 (verifier). A hook that times out does not block in Claude
+Code, so the guard's own 5 s timer (half the hook's 10 s) is what blocks `slow` (hook 18:33, 19:18). The large Write
+under `missing` was asked of Rohan on Windows and not run (hook 20:11); it ran on WSL only.
 
 ### 2.7 In which session kinds the pack's roles and skills loaded
 
@@ -169,7 +188,7 @@ The test pack's role `marker` answers which commit it comes from; its skill is `
 | Scripted (`-p`) | loaded: `project-a` "commit A", `project-b` "commit B", `project-a-worktree` "commit B", `project-a` again "commit A", by part 4b's builder at project scope (plugins 21:14) and again by hand check a's Sonnet agent with `-p --agent test-pack:marker` (plugins 21:53) | loaded: A, B, B, A by hand check a's Sonnet agent with `-p --agent test-pack:marker`, after each project's marketplace was registered by a `-p` session given the project's own entry through `--settings` (plugins 21:53) |
 | Skills | today in `project-a`, `-p`: the session's start lists `test-pack:marker` and the skill and command `test-pack:hello`; the skill was called through the Skill tool; the marker answered "commit A" as a subagent and in an `--agent` session (gate 00:35) | the same, today (gate 00:35) |
 | Background (`--bg`) | untrusted folder: refused, "Workspace not trusted" (plugins 21:14); `project-a` once trusted: "backgrounded", `claude logs` showed "commit A", stopped with `claude stop` (plugins 21:53). The record does not quote the `--bg` command line | not run: no Windows folder was trusted, and an agent cannot answer the trust prompt (plugins 21:47) |
-| Interactive (typed) | Rohan opened sessions in `project-a`, `project-b` and `project-a-worktree`; `/agents` printed "The /agents wizard has been removed" (2.1.294); no trust question in the worktree. The marker's answer inside an interactive session was not read (plugins, second sitting) | not run with the pack. Rohan's Windows sessions were hand check c's, in `project-guard`, which has no pack; whether a trust question came there is not recorded |
+| Interactive (typed) | Rohan opened sessions in `project-a`, `project-b` and `project-a-worktree`; `/agents` printed "The /agents wizard has been removed" (2.1.294); no trust question in the worktree. The marker's answer inside an interactive session was not read (plugins, second sitting) | not run with the pack. Rohan's Windows sessions were hand check c's, in `project-guard`: it is linked to the test pack at A (its `bonsai.yaml` lists it, `.claude/settings.json` turns on `test-pack@bonsai-project-guard-f004a1d0`, `test-pack/` is present), but its plugin was never installed there (the install step came with part 4b, after the sitting), and the marker was not asked there (verifier). Whether a trust question came is not recorded |
 | A fresh worktree (`project-a-worktree` at B beside `project-a` at A) | loaded B in `-p` (plugins 21:14, 21:53); in Rohan's interactive session, no trust question | loaded B in `-p` (plugins 21:53) |
 
 Hand check a's pass condition named `/agents`; with it gone, the orchestrator read the marker by starting a session as
@@ -207,7 +226,7 @@ Windows 1.26.2 (gate 00:35).
 
 | Build (gate 00:35) | Bytes | MiB |
 |---|---|---|
-| Linux, plain (a fresh build of `b18f444`) | 5,503,226 | 5.24 |
+| Linux, plain (a fresh build of `b18f444`) | 5,503,226 | 5.25 |
 | Linux, stripped (`-trimpath -s -w`) | 3,813,560 | 3.64 |
 | Linux, with the fault tag | 5,508,744 | 5,518 bytes over plain |
 | Windows `bonsai.exe`, plain (the scratch build in use) | 5,786,112 | 5.52 |
@@ -218,6 +237,12 @@ The WSL scratch build carries no commit stamp (`vcs.revision`: it was built wher
 commit cannot be proved from the binary; a fresh build of `b18f444` is 40 bytes smaller, with a different hash. The
 Windows one is stamped `54b4fdd`, unmodified, and a fresh build from that tree is byte-identical (gate 00:35). `go tool
 nm` on the plain build finds no Bonsai symbol with "fault" in its name; the tagged build has `internal/guard.testFault`.
+
+The unstamped WSL scratch builds, plain and fault, match the last verifier's builds of `09cff74` function for function
+(`go tool nm -size`: 276 and 278 Bonsai functions, identical names and sizes), so the hashes they log belong to the
+final code in substance. Builds made in these WSL worktrees get no commit stamp at all; the verifier's Windows build of
+`09cff74`, from a Windows-git clone, is stamped `vcs.revision 09cff74` (verifier). The missing stamp stays a step 5
+finding (section 5, 5.2).
 
 ### 2.12 Lines of Go per part
 
@@ -278,47 +303,52 @@ plan, "The twelve checks" readings; `STATE.md`).
 
 | Side | Path the log names | SHA-256 the log names | Matches the binary (gate 00:35) |
 |---|---|---|---|
-| WSL, today | `~/bonsai-checks/bin/bonsai` | `8a9398e28974...3a6068` | yes; no commit stamp (2.11) |
+| WSL, today | `~/bonsai-checks/bin/bonsai` | `8a9398e28974...3a6068` | yes; no commit stamp, but the final code function for function (2.11) |
 | Windows, today | `%USERPROFILE%/bonsai-checks/bin/bonsai.exe` | `17ad3ce35c5b...f99013` | yes; stamped `54b4fdd` |
 | Windows, hand check d (8 Oct, the `33a6122` build) | `%USERPROFILE%/bonsai-checks/bin/bonsai.exe` | `8c8463eb5e4b...` | the scratch build of then (hook 20:11) |
 | Windows, hand check c's `crash` and `slow` sessions | `%USERPROFILE%/bonsai-checks/bin/fault/bonsai.exe` | `6123c0e3a83b...` | the fault build (hook 20:11) |
+| WSL, the last verifier's check 11 | `~/bonsai-checks/bin/bonsai` | `8a9398e28974...` | today's build (verifier) |
+| WSL, its fault sessions | `~/bonsai-checks/bin/fault/bonsai` | `4aadb0f888ea...` | the fault build; no commit stamp, the final code function for function (verifier) |
 
 The hashes are given as the run reports give them (shortened).
 
 ## 3. The twelve checks
 
-Spec §14's list with the plan's readings. "Passed" means the run reports record it passing; where only the builder ran
-it, the row says so. The last verifier re-runs the checks before the gate.
+Spec §14's list with the plan's readings. "Passed" means the run reports record it passing. The last verifier (Opus,
+00:49-01:03) re-ran checks 1-6 (5 to its session clause), 10, 11 on WSL and 12 itself, on builds of `09cff74`, and
+passed them (verifier); part 3's scripted checks it re-ran from a copy of the scripts in its own scratch folder, with
+its own plugin cache.
 
 | # | What it asks (short) | Result | Where it was proved | Limit, or where the evidence is thinner than the words |
 |---|---|---|---|---|
-| 1 | `init` into the drifted copy: exit 2 without the required values; with them `bonsai.yaml` first (a comment on every line), the lock last; the project's own hook kept, the old absolute line gone, Bonsai's lines in shell form, deny rules with `never_edit`, a 40-character commit in the plugin wiring, the plain-words block, `status` agreeing | Passed | engine 17:40 (the builder's scripted runs over the drifted copy, a fresh repo and the studio clone); engine 17:42 (the orchestrator's read of the diff and its re-run of the Go tests, 703 passed); hook 19:18 (part 5's verifier: `init` at C writes the hook line as specified and keeps the project's hooks) | The run report records "all pass", not each clause's output; no verifier has re-run the scratch-copy scripts. The hook line calls `bonsai` by name, while spec §7's note asks for a fixed path: step 5.3 |
-| 2 | Nothing written holds an absolute path, the lock included; the lock's source is the pack's remote URL | Passed | engine 17:40 | As row 1: the builder's result, not re-run by a verifier |
-| 3 | The lock is JSON with forward-slash keys and verifies after a CRLF checkout and under Git Bash | Passed | engine 17:40 (a Windows-git CRLF checkout under Git Bash) | As row 1 |
-| 4 | `init` again, and `update` to the same commit, change no byte | Passed | engine 17:40; gate 00:35 (five `update --yes` per side today: "nothing to change", the lock and `.claude/settings.json` hashes unchanged, `check` clean) | The `init` half rests on the builder's run alone. On Windows, `project-a`'s git shows ` M .claude/settings.json` before and after today's runs: Claude Code's rewrite at part 4b's first install, not Bonsai's write |
-| 5 | `update` to B with no terminal and no `--yes`: a preview naming every settings line with its sentence, nothing written, exit 4; with `--yes` one updated, one created; a hook-line change waits for `--allow-exec`; a new session loads B's roles by name; `check` no drift | Passed with a stated limit | engine 17:40 (A to B; C to D refused, exit 4, nothing written over four runs); hook 19:18 (verifier: D refused, exit 4, under 11 flag combinations); hook 20:11 (hand check b: the preview with its settings lines and sentences, on Windows); plugins 21:14 (the worktree's update A to B installed B, a new session answered "commit B", `check` no drift) | `--allow-exec` itself is step 5.1 (it exits 2 now). A mixed update (`--yes` while a hook line also changes) is avoided by commit D and still unsettled (plan, "Stale or in tension"). The new session was scripted (`-p`), not typed |
-| 6 | One pack file edited, then `update --yes`: exit 5, nothing written, the file named; `--keep` applies the rest; C conflicts again; `--adopt` puts the project's copy in the cache | Passed | engine 17:40 (`--keep`, then `--adopt` at C); hook 20:11 (hand check b on Windows: "Stopped: 1 conflict (test-pack/guide.md): nothing was written", the `--keep` command pasted and working) | The builder's result; Rohan's lines do not show the exit code |
+| 1 | `init` into the drifted copy: exit 2 without the required values; with them `bonsai.yaml` first (a comment on every line), the lock last; the project's own hook kept, the old absolute line gone, Bonsai's lines in shell form, deny rules with `never_edit`, a 40-character commit in the plugin wiring, the plain-words block, `status` agreeing | Passed | engine 17:40 (the builder's scripted runs over the drifted copy, a fresh repo and the studio clone); engine 17:42 (the orchestrator's read of the diff and its re-run of the Go tests, 703 passed); hook 19:18 (part 5's verifier: `init` at C writes the hook line as specified and keeps the project's hooks); verifier (re-run on a build of `09cff74`: pass, with the same command counts as part 3's logs) | The re-run differs from part 3's logs only in the plugin step's new lines (`waiting` in untrusted folders, with its next step, never changing the exit code; `check` adds a "not installed for this checkout" warning, exit 0), the commit ids, and one `bonsai.yaml` hash from a different workspace id. The hook line calls `bonsai` by name, while spec §7's note asks for a fixed path: step 5.3 |
+| 2 | Nothing written holds an absolute path, the lock included; the lock's source is the pack's remote URL | Passed | engine 17:40; verifier (re-run on `09cff74`: pass) | Row 1's notes on the re-run |
+| 3 | The lock is JSON with forward-slash keys and verifies after a CRLF checkout and under Git Bash | Passed | engine 17:40 (a Windows-git CRLF checkout under Git Bash); verifier (re-run on a Windows build of `09cff74`, stamped `vcs.revision 09cff74`, under Git Bash with a Windows-git CRLF checkout: pass) | None recorded |
+| 4 | `init` again, and `update` to the same commit, change no byte | Passed | engine 17:40; gate 00:35 (five `update --yes` per side today: "nothing to change", the lock and `.claude/settings.json` hashes unchanged, `check` clean); verifier (`init` and `update` again on all three targets: no byte and no mtime changed) | On Windows, `project-a`'s git shows ` M .claude/settings.json` before and after today's runs: Claude Code's rewrite at part 4b's first install, not Bonsai's write |
+| 5 | `update` to B with no terminal and no `--yes`: a preview naming every settings line with its sentence, nothing written, exit 4; with `--yes` one updated, one created; a hook-line change waits for `--allow-exec`; a new session loads B's roles by name; `check` no drift | Passed with a stated limit | engine 17:40 (A to B; C to D refused, exit 4, nothing written over four runs); hook 19:18 (verifier: D refused, exit 4, under 11 flag combinations); hook 20:11 (hand check b: the preview with its settings lines and sentences, on Windows); plugins 21:14 (the worktree's update A to B installed B, a new session answered "commit B", `check` no drift); verifier (re-run to its session clause on `09cff74`; C to D: exit 4 naming `--allow-exec` in each of four runs, no byte or mtime changed) | `--allow-exec` itself is step 5.1 (it exits 2 now). A mixed update (`--yes` while a hook line also changes) is avoided by commit D and still unsettled (plan, "Stale or in tension"). The new session was scripted (`-p`), not typed |
+| 6 | One pack file edited, then `update --yes`: exit 5, nothing written, the file named; `--keep` applies the rest; C conflicts again; `--adopt` puts the project's copy in the cache | Passed | engine 17:40 (`--keep`, then `--adopt` at C); hook 20:11 (hand check b on Windows: "Stopped: 1 conflict (test-pack/guide.md): nothing was written", the `--keep` command pasted and working); verifier (re-run on `09cff74`: pass) | Rohan's lines do not show the exit code; row 1's notes on the re-run |
 | 7 | Bonsai's format-1 reader and the studio's `yaml.mjs` format-1 mode reach the same outcome on every trick file (Bonsai's half: every trick file's format-1 outcome) | Bonsai's half passed; the studio's half not run | reader 16:41 (116 of 116, WSL and Windows); reader 16:47 (the verifier's re-check, both sides) | The studio's half waits for step 7 |
 | 8 | A fetch from the public test pack at a commit, no login, WSL and Windows, read-only; roles and skills load; two projects at two commits, and a worktree at B beside its checkout at A, each load their own, sessions alternating; the session kinds recorded; `claude --agent workflow:builder --bg` starts the plugin's role | Passed with stated limits | plugins 21:14 (WSL, project scope: A, B, B, A; pinning with no login on both sides); plugins 21:53 (hand check a: A, B, B, A on both sides; WSL `--bg` "commit A"); gate 00:35 (the skill listed and called on both sides) | Hand check a was run by a Sonnet agent on Rohan's word, not by Rohan. `/agents` is gone in 2.1.294: the interactive kind rests on Rohan's three WSL sessions starting, and the marker's answer inside an interactive session was not read. No interactive session with the pack on Windows; `--bg` on WSL only; the Windows marketplaces were registered through `--settings`, not by a person trusting the folder. `--agent test-pack:marker` stands in for `workflow:builder` (the `workflow` pack is step 5.5). The `--bg` record does not quote its command line. "Read-only" is not shown by a test in the records: the fetch is a plain git fetch of the public URL with prompts off (engine 17:40) |
 | 9 | (Rohan) One run in the PowerShell 5.1 console: ASCII output, the y/N question, a command pasted from an error message works | Passed | hook 20:11 (hand check b: plain ASCII, `Write these changes? [y/N]`, the pasted `--keep` command worked) | The record says "the PowerShell console"; its version is not written down |
-| 10 | `go test ./...` and `go vet` pass natively on Windows and on `windows-latest`; no Windows-only skip without a named reason | Passed at `54b4fdd` | plugins 21:14 (Windows `plugins-src` at `54b4fdd`: 777 runs plain, 783 with the fault tag; WSL 773 and 779); plugins 21:24 (CI on `a403acc`, the state commit on `54b4fdd`: `test`, `windows`, `lint`, `govulncheck`, CodeQL green); CI on `b18f444`, read by the orchestrator at 00:48 today with `gh api repos/LastStep/Bonsai/commits/b18f444/check-runs`: `test`, `windows`, `lint`, `govulncheck`, `Analyze Go` (CodeQL) all completed, success | The `54b4fdd` record gives runs, not the pass and skip split; the skips' reasons were named at part 5 (hook 18:33, 19:41: WSL 2 skipped, Windows-only tests; Windows 1, symlinks need a privilege there). `b18f444` has the same Go (gate 00:27). The last verifier re-runs the tests on both sides itself; CI on the pushed gate commit is read after the push |
-| 11 | In a real session on WSL and on Windows (Git Bash): an Edit of a protected path blocked, others allowed; missing, crash and over-time each block; a minimal-PATH session blocks with a clear reason | Passed with a stated limit | WSL: hook 18:33, 19:41; plugins 21:53. Windows: hook 20:11 (hand checks c and d). The verifier: hook 19:18, 19:47. Section 2.6 | On WSL the sessions were scripted and run by agents; the four fault sessions were the builder's first-round runs (18:33), and after part 5's fix round only the protected and free edits were re-run on WSL (19:41). The minimal-PATH reason shown is the shell's "bonsai: command not found" (Bonsai cannot speak when it is not found). The large Write under `missing` ran on WSL only |
-| 12 | A plain `git revert` of the link commit restores the project's old state with no Bonsai binary present | Passed | engine 17:40 (revert on the scratch copies) | Run at `ee50971`, before part 4b added the plugin install to `init` and `update`; not re-run since, and not by a verifier. How a revert meets Claude Code's rewrite of `.claude/settings.json` is not recorded |
+| 10 | `go test ./...` and `go vet` pass natively on Windows and on `windows-latest`; no Windows-only skip without a named reason | Passed at `54b4fdd` and at `09cff74` | plugins 21:14 (Windows `plugins-src` at `54b4fdd`: 777 runs plain, 783 with the fault tag; WSL 773 and 779); plugins 21:24 (CI on `a403acc`, the state commit on `54b4fdd`: `test`, `windows`, `lint`, `govulncheck`, CodeQL green); CI on `b18f444`, read by the orchestrator at 00:48 today with `gh api repos/LastStep/Bonsai/commits/b18f444/check-runs`: `test`, `windows`, `lint`, `govulncheck`, `Analyze Go` (CodeQL) all completed, success; verifier (at `09cff74`: WSL plain 773 runs, 771 pass, 0 fail, 2 skip; with the fault tag 779, 777, 0, 2; Windows, `verify-final-src`, a Windows-git clone of a bundle of `gate`: 777, 776, 0, 1; tagged 783, 782, 0, 1; `go vet` clean on all four; format 1, 116 of 116) | Each skip has its reason: WSL `TestDecideOnACaseInsensitiveSystem` and `TestDecideOnWindowsForms` (Windows-only tests); Windows `TestDecideFollowsLinks` (symbolic links need a privilege; Linux and CI run it). CI on the pushed gate commit is read after the push |
+| 11 | In a real session on WSL and on Windows (Git Bash): an Edit of a protected path blocked, others allowed; missing, crash and over-time each block; a minimal-PATH session blocks with a clear reason | Passed with a stated limit | WSL: hook 18:33, 19:41; plugins 21:53. Windows: hook 20:11 (hand checks c and d). Part 5's verifier: hook 19:18, 19:47. The last verifier, a second runner on WSL on today's builds: protected refused (44 bytes kept), free done, all four faults refused (verifier). Section 2.6 | On WSL both runners' sessions were scripted (no one typing). The minimal-PATH reason shown is the shell's "not found" (Bonsai cannot speak when it is not found). The large Write under `missing` ran on WSL only |
+| 12 | A plain `git revert` of the link commit restores the project's old state with no Bonsai binary present | Passed with a stated limit | engine 17:40 (revert on the scratch copies, at `ee50971`); verifier (re-run with the plugin step in place: with no `bonsai` on the PATH, `git revert` of each link commit gives exactly the tree from before the link, for the drifted copy, the fresh repo (the empty tree) and the studio copy; `git status --ignored` empty) | Claude Code records a project-scope install outside git, in the plugin root's `installed_plugins.json` with the `projectPath` (seen for `project-a`, `project-b`, `project-a-worktree`); a revert of an installed checkout would leave that record. Untested, since the scratch targets stay `waiting` (verifier, N6) |
 
 ## 4. The four stop lines
 
 | Line | Tally from the run reports | Crossed? |
 |---|---|---|
-| 1. Hours over 61 h for parts 1-6 | Parts 1-5: 336 min (2.1). Part 6 so far: 11 min of finished runs (Haiku 00:27-00:28, Sonnet 00:27-00:35, Sonnet 00:36-00:38). Open: this report's builder (Opus, from 00:36) and the last verifier. In all so far: 347 min, 5 h 47 min | No, by the tally |
-| 2. Windows-only failures over 8 h | About 18 min, part 5's fix round (2.4) | No |
-| 3. More than two option rounds asked of Rohan inside the skeleton | None. Each report's tally says none; the `/agents` change was recorded as not an option round (plugins 21:30); the Sonnet agent for hand check a was Rohan's own word (21:47). The two questions he was asked on 8 Oct came before part 1: the hand-check sittings (plan-review 13:07) and the label fields (formats 14:27) | No |
-| 4. Any change to Mimas or to the studio's repo | None recorded. Part 3 cloned the studio's repo into scratch (`--no-hardlinks`, origin removed, git hooks off) for scripted runs only (engine 17:40); the setup, before the skeleton, ran in a session started in the studio's checkout and wrote nothing of the studio's (setup). The user settings files kept their hashes from before part 3 to today (WSL `7b515457...a025a7`, Windows `2b6295c1...4ff6c9`; engine 16:49, gate 00:25 and 00:35). No run report records a read of Mimas's checkout or the studio's log: that is the last verifier's | No, as recorded |
+| 1. Hours over 61 h for parts 1-6 | Parts 1-5: 336 min (2.1). Part 6: 41 min, the last verifier's 37 (measurements 8, bookkeeping 1, eval 2, this report's builder 11, its 00:48 fix 0 or 1, the last verifier 14) plus this report's last fix round, 4 (01:05-01:09). In all: 377 min, 6 h 17 min | No (the last verifier: about 6 h 13 min before the last fix round) |
+| 2. Windows-only failures over 8 h | About 18 min, part 5's fix round (2.4); none in part 6, the verifier's runs included | No (the last verifier) |
+| 3. More than two option rounds asked of Rohan inside the skeleton | None. Each report's tally says none; the `/agents` change was recorded as not an option round (plugins 21:30); the Sonnet agent for hand check a was Rohan's own word (21:47). The two questions he was asked on 8 Oct came before part 1: the hand-check sittings (plan-review 13:07) and the label fields (formats 14:27). The last verifier counts 0 | No (the last verifier) |
+| 4. Any change to Mimas or to the studio's repo | None. Read by the last verifier: the studio's checkout's last commit is 8 Oct 12:01, before part 1, its tree clean and even with origin, nothing in `tools/` since; Mimas, read only with Windows git: last commit 5 Oct, none since 8 Oct (verifier). Part 3 cloned the studio's repo into scratch (`--no-hardlinks`, origin removed, git hooks off) for scripted runs only (engine 17:40); the setup, before the skeleton, ran in a session started in the studio's checkout and wrote nothing of the studio's (setup). The user settings files kept their hashes from before part 3 to today (WSL `7b515457...a025a7`, Windows `2b6295c1...4ff6c9`; engine 16:49, gate 00:25 and 00:35) | No (the last verifier) |
 
 What the hours do not count. The rule counts builder and verifier runs (the reports also count their Haiku audits and
 the Sonnet hand-check run, and so does this tally). It does not count the orchestrator's own session time, Rohan's two
 sittings, or waiting for CI. For context, 8 Oct's work spans 10:28 (the setup builder's start, its Runs row; its log
 has no times) to 21:58 (the last log entry, plugins): 11 h 30 min elapsed. The skeleton's part, from part 1's first log
-entry (clear-out 14:34) to 21:58: 7 h 24 min elapsed. Part 6 began today at 00:25 (gate).
+entry (clear-out 14:34) to 21:58: 7 h 24 min elapsed. Part 6 began today at 00:25 (gate); the last verifier
+ended at 01:03.
 
 A note on the rows: some start a minute or two before the log line that briefs the run (plan-review: builder 13:02,
 briefed 13:04; hook: builder 17:44, briefed 17:46; verifier 18:57, briefed 18:58; plugins: builder 20:12, briefed
@@ -337,8 +367,11 @@ Grouped by the part of step 5 that must settle them.
 - With the lock deleted, `init --yes` links again and writes a changed hook line, its preview saying a link is consent;
   `update` now refuses that case (hook 19:41, 19:47).
 - First-time trust: Claude Code registers a project's marketplace only in a session in a trusted folder, so the install
-  step reports `waiting`, with a next step, until a person has opened Claude Code there once (plugins 21:14). On
-  Windows the agents registered it through `--settings` instead (plugins 21:53).
+  step reports `waiting`, with a next step, until one has (plugins 21:14). A person's first session there does it; on
+  Windows the agents did it headless, passing the project's own entry through `--settings` (plugins 21:47, 21:53).
+- Unlink and revert: Claude Code records a project-scope install outside git, in the plugin root's
+  `installed_plugins.json` with the `projectPath`; a `git revert` of an installed checkout would leave that record
+  (untested; verifier, N6).
 - Claude Code rewrites `.claude/settings.json` in its own key order at the first project-scope install; Windows
   `project-a` showed ` M .claude/settings.json` in git before and after today's `update`s (plugins 21:14, 21:53;
   gate 00:35).
@@ -353,8 +386,9 @@ Grouped by the part of step 5 that must settle them.
 - The log's `bonsai_path` and `bonsai_sha256` names are Bonsai's own, outside the log schema; `input_hash` is null until
   the salt (hook 18:33; `STATE.md`).
 - The binary's hash is logged once per session file (hook 19:18, item 6).
-- A scratch build without a commit stamp: the WSL build in use has no `vcs.revision`, so a logged hash cannot be tied to
-  a commit from the binary alone; the Windows build is stamped `54b4fdd` (gate 00:35).
+- A scratch build without a commit stamp: builds made in these WSL worktrees get no `vcs.revision`, so a logged hash
+  cannot be tied to a commit from the binary alone. Today's WSL builds match the verifier's builds of `09cff74`
+  function for function; the Windows builds, from Windows-git clones, are stamped (gate 00:35; verifier, N8).
 
 **5.3 Guards**
 - How the hook line finds `bonsai`: by name on the PATH, which a settings `env` could redirect; spec §7's note asks for
@@ -364,7 +398,7 @@ Grouped by the part of step 5 that must settle them.
   from the working tree; shell `rm` or `mv` of `bonsai.yaml` or the lock is not judged (hook 19:18).
 - Windows: a dangling junction into a protected folder is allowed (the write through it fails); a junction swapped
   between check and write is not caught; the admin share `\\localhost\C$` is a documented limit (hook 19:18, 19:47).
-- WSL start-up: the guard's p95 today is about 0.5 ms above part 5's (3.48 and 3.46 against 2.90), measured under load;
+- WSL start-up: the guard's p95 today is about 0.6 ms above part 5's (3.48 and 3.46 against 2.90), measured under load;
   the minimal Go hook also read higher than in part 5 (1.60 and 1.45 against 1.34). A session's first call, which hashes
   the binary, is 5.73 and 5.72 ms at p50, over spec §3's 5 ms (gate 00:35; hook 18:33, 19:41).
 - The large-Write fail-closed test (a payload past the pipe buffer under `missing`) ran on WSL only (plugins 21:53;
@@ -386,7 +420,8 @@ Grouped by the part of step 5 that must settle them.
 - Claude Code's own writes outside the scratch folders: session transcripts, folder-trust entries, and Claude.ai's
   plugin sync rewriting `~/.claude/plugins/synced/<account>/.marketplaces.json` (392 to 391 bytes) and
   `.last-complete-round` even with `CLAUDE_CODE_PLUGIN_CACHE_DIR` set. The user `settings.json` files never changed
-  (plugins 21:14, 21:20; gate 00:35).
+  (plugins 21:14, 21:20; gate 00:35). The sync rewrote `.marketplaces.json` again during the last verifier's
+  `minimal-path` session (00:56); the plugin tree held 4,686 entries before and after (Windows 3,886) (verifier, N9).
 - `claude --agent workflow:builder --bg` waits for the `workflow` pack.
 - `claude plugin eval` publishes its report to claude.ai unless given `--no-publish`; unattended it needs
   `--trust-plugin`, and a path target when several installs share a name; its JSON's `runsPerCase` read 3 for two runs
@@ -418,6 +453,9 @@ Grouped by the part of step 5 that must settle them.
   commit; 00:28 the Haiku run's hours and lines of Go; 00:35 the Sonnet run's measurements on both sides (its new files
   are under `bonsai-checks/gate/` on each side, scratch, not committed); 00:39 the Sonnet eval run (its suite under
   `~/bonsai-checks/eval/test-pack/evals/`).
+- The last verifier's report (Opus, 00:49-01:03), in today's run report: the tests at `09cff74` on both sides, part
+  3's scripted checks re-run, checks 3 (Windows), 11 (WSL) and 12, the stop lines, and its findings by letter and
+  number (cited as `verifier`).
 - `STATE.md` at `b18f444`: the findings and loose ends.
 - `design/bonsai-spec.md` §14 (the parts, the checks, the stop lines, the paths and totals) and §15 (the baseline and
   the list); `design/plan.md` (the parts table, the checks' readings, the stop lines, the hand checks).
