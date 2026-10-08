@@ -25,13 +25,12 @@ out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bon
 
 ## GitHub, read 8 Oct
 
-- `main`: this setup commit on top of `c6a6757`, once the orchestrator pushes it. The only branch; no open pull request;
+- `main`: the setup commit `3fa4982` on top of `c6a6757`, pushed 8 Oct. The only branch; no open pull request;
   the newest tag is `v0.4.3`. The old maintenance routine's cloud sessions are archived.
 - `release.yml` is disabled. No repository secret (the old `HOMEBREW_TAP_TOKEN` is deleted). The only environment is
   `github-pages`; the `release` environment and a new tap token wait for step 5.7.
-- Ruleset `main-protection`, as read: requires a pull request and a `test` check, blocks force pushes and deletion, and
-  lets the admin role bypass it. Rohan is switching off the pull-request and required-check rules; until then a push to
-  `main` goes through the admin bypass.
+- Ruleset `main-protection`: blocks force pushes and deletion only (Rohan switched off the pull-request and
+  required-check rules on 8 Oct), so pushes to `main` are plain pushes.
 - Workflows on: CI (`test`, `lint`, `govulncheck`), CodeQL, Dependabot, and Deploy Docs: a push to `main` touching
   `README.md`, `docs/`, `catalog/` or `website/` redeploys the old website to GitHub Pages until part 1 removes it.
 
@@ -58,12 +57,14 @@ Then the walking skeleton, parts 1-6, in the plan's order (1, the test pack, 2, 
 
 - Approve `design/plan.md` and `design/one-pager.md` (after the review above).
 - Confirm the old Homebrew tap token is revoked on github.com (Settings, Developer settings, its token list).
-- The ruleset change above (in progress on 8 Oct).
 - Before part 5's hook checks: spec §17 step 3, the old `bonsai` binaries (the lines are in the spec).
 - Later: the 45-minute hand checks (spec §17 step 6) when the scratch build is ready; step 8 at 5.4; at 5.7 the
   `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
 
 ## Loose ends
 
+- CI's `govulncheck` job fails at its install step: `go install golang.org/x/vuln/cmd/govulncheck@latest` now needs
+  Go 1.26 and CI runs 1.25.9 with `GOTOOLCHAIN=local` (red since 23 Sep, before this setup). `test`, `lint`, `build` and
+  CodeQL are green on the setup commit. Part 1 rewrites CI: pin govulncheck to a version that fits the Go it uses.
 - `README.md` and `CONTRIBUTING.md` still describe the old product, apart from a pointer; part 1 rewrites them.
 - The spec's §19 D still says 60 h and 30-46 h; §14 and §20 say 61 h and 30-47 h. The plan uses 61 and 30-47.
