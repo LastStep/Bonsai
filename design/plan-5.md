@@ -430,8 +430,8 @@ touches `internal/reader` only.
   `pack.yaml` (YAML), and `memory.md`, `tasks.md` and `sessions.md` (markdown with frontmatter).
 - **Where an open list's known words live.** The ten formats' open lists name their known values in the schema's
   description. The `error` codes, and from 5.2 the log's events, are read by code at many places, so their known words
-  live in one Go table (their one home), which `check --schema` and the reference page print; the schema's description
-  names those commands and does not copy the words.
+  live in one Go table (their one home), which `check --schema` prints, and the reference page too once 5.1.10 lands;
+  the schema's description names those commands and does not copy the words.
 - **Two new cases** (gate report §5, 5.1; reader 16:47): a quoted `"format":` key followed by a tab, and a file with
   lone-CR line endings. Both outcomes: format 0 from the frozen reader, which the port (5.1.2) must also reach; format
   1 by contract §2.4's words, the first case decided as its space-separated form already is, the second with a code or
