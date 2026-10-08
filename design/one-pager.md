@@ -1,6 +1,6 @@
 # Bonsai, rebuilt as one small program that gives every project the same structure, guards and proof
 
-- Status: draft, waiting for Rohan's approval with the plan (`design/plan.md`)
+- Status: approved by Rohan on 8 Oct 2026, with the plan (`design/plan.md`)
 - Written: 8 Oct 2026, adapted from the studio's one-pager and moved here on Rohan's word
 - Design: `design/bonsai-spec.md` (the spec), `design/contract.md` (the formats), `design/format-review.md` (Rohan's
   confirmed review of every format)

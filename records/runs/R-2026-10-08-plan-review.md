@@ -3,7 +3,7 @@
 - Date: 2026-10-08
 - Who: one reviewer (Opus, fresh context), briefed by the orchestrator; the orchestrator fixes what it finds
 - Branch: `main` at `713ae04` (no code; the review reads, the fixes are edits to `design/`)
-- Outcome: the plan reviewed and fixed on every finding, on `main` at `8c6eb6f`; waits for Rohan's approval
+- Outcome: the plan reviewed, fixed on every finding and approved by Rohan (8 Oct)
 
 > Opened before the first edit and appended to as the work went.
 
@@ -49,6 +49,9 @@
   61 h and 30-47 h. Fast-forwarded `main` to `plan-fixes` (`8c6eb6f`). Rewrote `STATE.md`: the review done, Rohan's
   approval next, part 0's steps with the Windows check before the push, the two sittings, Haiku, the §19 D note.
   Proof for this run: a text change, read by a fresh reviewer and a Haiku audit and the orchestrator; no code, no tests.
+- 13:20 Pushed `9931d98`. CI on it: `test`, `lint`, CodeQL green; `govulncheck` red at its install step, as before.
+- 13:39 Rohan approved the plan and the one-pager ("option 1"), and said the Homebrew tap token has been removed from
+  GitHub. Both files marked approved; the token's line in the plan marked done; `STATE.md` rewritten for part 0.
 
 ## Runs
 

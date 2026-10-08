@@ -1,8 +1,8 @@
 # Bonsai's plan: the formats, then the walking skeleton
 
-- **Status:** draft. Rewritten on 8 Oct 2026 for work inside Bonsai's repo, from the studio's drafts (the skeleton's
+- **Status:** approved. Rewritten on 8 Oct 2026 for work inside Bonsai's repo, from the studio's drafts (the skeleton's
   plan and task, reviewed twice; the readers plan's step 1, reviewed once). Reviewed on 8 Oct by a fresh Opus agent and
-  fixed on its findings; waits for Rohan's approval.
+  fixed on its findings; approved by Rohan on 8 Oct, with the one-pager.
 - **Design:** `design/bonsai-spec.md` (the spec: §14 the parts, the twelve checks and the stop lines; §15 what the gate
   measures; §17 Rohan's steps), `design/contract.md` (the formats: §2.4 the YAML rules and the trick files),
   `design/one-pager.md`, `design/format-review.md`.
@@ -36,7 +36,7 @@ report.
 
 **What you must do.**
 - Approve this plan and the one-pager (`design/one-pager.md`). Nothing is built before.
-- Confirm that the old Homebrew tap token is revoked on github.com (spec §17 step 4; not confirmed on 8 Oct).
+- Confirm that the old Homebrew tap token is revoked on github.com (spec §17 step 4): done, Rohan, 8 Oct.
 - Before part 5's hook checks: your step 3, the old `bonsai` binaries (spec §17 step 3 has the lines).
 - Two sittings of hand checks (spec §17 step 6; your choice, 8 Oct), together about 45 minutes, saving about 3 AI
   hours. The first, about 25 minutes after part 5: the PowerShell console, the guard on Windows, and which `bonsai`

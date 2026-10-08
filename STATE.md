@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 by the plan-review run (`records/runs/R-2026-10-08-plan-review.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 when Rohan approved the plan (`records/runs/R-2026-10-08-plan-review.md`).
 
 ## In short
 
@@ -27,6 +27,7 @@ out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bon
 - Bonsai joins the studio's dashboard as its own project at spec step 6, as planned.
 - Haiku joins the models, for small bookkeeping and audit jobs (listing, sorting, counting, checking a list against a
   source); it reports facts and judges nothing (`CLAUDE.md`).
+- Rohan approved `design/plan.md` and `design/one-pager.md` (8 Oct), after a fresh Opus review and its fixes.
 - Rohan's hand checks come in two sittings, not one: checks b, c and d (about 25 minutes) after part 5, check a (about
   20 minutes) after part 4. Parts 3 and 5 close once the first sitting passes, part 4 once the second does.
 
@@ -34,20 +35,16 @@ out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bon
 
 - `main`: the plan's fixes (`8c6eb6f`) on top of the setup (`3fa4982`), pushed 8 Oct. The only branch; no open pull
   request; the newest tag is `v0.4.3`. The old maintenance routine's cloud sessions are archived.
-- `release.yml` is disabled. No repository secret (the old `HOMEBREW_TAP_TOKEN` is deleted). The only environment is
+- `release.yml` is disabled. No repository secret (the old `HOMEBREW_TAP_TOKEN` is deleted, and Rohan removed the token itself from GitHub, 8 Oct). The only environment is
   `github-pages`; the `release` environment and a new tap token wait for step 5.7.
 - Ruleset `main-protection`: blocks force pushes and deletion only (Rohan switched off the pull-request and
   required-check rules on 8 Oct), so pushes to `main` are plain pushes.
 - Workflows on: CI (`test`, `lint`, `govulncheck`), CodeQL, Dependabot, and Deploy Docs: a push to `main` touching
   `README.md`, `docs/`, `catalog/` or `website/` redeploys the old website to GitHub Pages until part 1 removes it.
 
-## The one thing to do next: Rohan approves the plan, then part 0, the formats
+## The one thing to do next: part 0, the formats
 
-`design/plan.md` was reviewed on 8 Oct by a fresh Opus agent (READY AFTER FIXES) and fixed on every finding; a Haiku
-audit found each fix in the text (`records/runs/R-2026-10-08-plan-review.md`). It waits for Rohan's approval, with
-`design/one-pager.md`.
-
-Then part 0: a JSON Schema for each of the contract's ten formats, the trick files with their expected outcomes in
+`design/plan.md`, approved 8 Oct, part 0: a JSON Schema for each of the contract's ten formats, the trick files with their expected outcomes in
 `formats/expect.json`, a raw-byte manifest, and a Go test. 6-10 AI hours; at 13 work stops and Rohan is asked.
 1. Open `records/runs/R-<date>-formats.md` (the orchestrator is its only writer). Make the builder's worktree:
    `git -C ~/Servers/Bonsai worktree add ~/Servers/Bonsai-formats -b formats main`.
@@ -67,8 +64,6 @@ its own fresh verifier before its push.
 
 ## Waiting on Rohan
 
-- Approve `design/plan.md` and `design/one-pager.md`.
-- Confirm the old Homebrew tap token is revoked on github.com (Settings, Developer settings, its token list).
 - Before part 5's hook checks: spec §17 step 3, the old `bonsai` binaries (the lines are in the spec).
 - Later: the two hand-check sittings (after part 5, about 25 minutes; after part 4, about 20); step 8 at 5.4; at 5.7
   the `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
