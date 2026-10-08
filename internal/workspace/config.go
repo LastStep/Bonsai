@@ -17,9 +17,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/LastStep/Bonsai/formats"
 	"github.com/LastStep/Bonsai/internal/reader"
-	"github.com/LastStep/Bonsai/internal/schema"
 )
 
 // ConfigFile is bonsai.yaml's name, at a checkout's root.
@@ -48,8 +46,15 @@ type PackRef struct {
 	Line   int    // the line of the entry in bonsai.yaml
 }
 
-// The id and name patterns are the ones bonsai.status/1 prints them under (formats/schemas/status.schema.json), so
-// bonsai.yaml never accepts a value status --json could not print.
+// The id and name patterns are the ones bonsai.status/1 prints them under (formats/schemas/status.schema.json, their
+// one home), so bonsai.yaml never accepts a value status --json could not print. They are kept here as text, and
+// TestIDAndNamePatternsAreTheSchemas holds them equal to the schema's: the guard reads bonsai.yaml on every hook call
+// (spec §3: start-up under 5 ms), and reading them out of the 24 KB schema took about 0.5 ms of each call.
+const (
+	idPatternText   = `^ws-[a-z0-9]{26}$`
+	namePatternText = `^[a-z][a-z0-9-]{0,39}$`
+)
+
 var (
 	idnameOnce             sync.Once
 	idPattern, namePattern *regexp.Regexp
@@ -57,22 +62,8 @@ var (
 
 func idName() (*regexp.Regexp, *regexp.Regexp) {
 	idnameOnce.Do(func() {
-		raw, err := formats.Schema("status")
-		if err != nil {
-			panic(err)
-		}
-		s, err := schema.Parse(raw)
-		if err != nil {
-			panic(err)
-		}
-		props := func(o schema.Object, key string) schema.Object {
-			v, _ := o.Get(key)
-			out, _ := v.(schema.Object)
-			return out
-		}
-		ws := props(props(props(s, "properties"), "workspace"), "properties")
-		idPattern = regexp.MustCompile(props(ws, "id").String("pattern"))
-		namePattern = regexp.MustCompile(props(ws, "name").String("pattern"))
+		idPattern = regexp.MustCompile(idPatternText)
+		namePattern = regexp.MustCompile(namePatternText)
 	})
 	return idPattern, namePattern
 }

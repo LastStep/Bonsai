@@ -13,6 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/LastStep/Bonsai/formats"
+	"github.com/LastStep/Bonsai/internal/schema"
 )
 
 // gitBlob is git's object id for a file's bytes (git hash-object).
@@ -263,10 +266,26 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
-// The id and name patterns come from the status schema, their one home.
+// The id and name patterns are the status schema's, their one home: config.go keeps them as text for speed, and
+// this test holds the text equal to the schema.
 func TestIDAndNamePatternsAreTheSchemas(t *testing.T) {
+	raw, err := formats.Schema("status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := schema.Parse(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	props := func(o schema.Object, key string) schema.Object {
+		v, _ := o.Get(key)
+		out, _ := v.(schema.Object)
+		return out
+	}
+	ws := props(props(props(s, "properties"), "workspace"), "properties")
+	want := [2]string{props(ws, "id").String("pattern"), props(ws, "name").String("pattern")}
 	id, name := idName()
-	if id.String() != `^ws-[a-z0-9]{26}$` || name.String() != `^[a-z][a-z0-9-]{0,39}$` {
-		t.Errorf("patterns %s %s", id, name)
+	if got := [2]string{id.String(), name.String()}; got != want || want[0] == "" || want[1] == "" {
+		t.Errorf("patterns %q, the schema's %q", got, want)
 	}
 }
