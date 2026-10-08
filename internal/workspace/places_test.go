@@ -218,6 +218,12 @@ func TestRenameRetry(t *testing.T) {
 
 // A target another process holds open: on Windows a rename over it fails busy until it is closed, and the write
 // waits for it. Linux and macOS replace an open file, so there the write succeeds at once.
+//
+// The file is held until the write's first rename is refused as busy, not for a fixed time, so the first rename
+// meets the held file however slow the machine is (a fixed 150 ms hold let a slow write reach its first rename
+// after the close). Linux and macOS never refuse, so there the file is closed when the write returns. Nothing here
+// can hang: a refusal closes the file at once, and the write returns in any case, renameRetry giving up after
+// renameWait.
 func TestRenameRetryOnWindows(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "held.json")
@@ -226,10 +232,14 @@ func TestRenameRetryOnWindows(t *testing.T) {
 	}
 	defer func(r func(string, string) error) { rename = r }(rename)
 	busyTries := 0
+	refused := make(chan struct{})
 	rename = func(from, to string) error {
 		err := os.Rename(from, to)
 		if err != nil && isBusy(err) {
 			busyTries++
+			if busyTries == 1 {
+				close(refused)
+			}
 		}
 		return err
 	}
@@ -237,19 +247,28 @@ func TestRenameRetryOnWindows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	written := make(chan struct{})
+	closed := make(chan struct{})
 	go func() {
-		time.Sleep(150 * time.Millisecond)
+		select {
+		case <-refused:
+		case <-written:
+		}
 		_ = held.Close()
+		close(closed)
 	}()
-	if err := WriteFileAtomic(path, []byte("new")); err != nil {
+	err = WriteFileAtomic(path, []byte("new"))
+	close(written)
+	<-closed
+	if err != nil {
 		t.Fatalf("the write did not wait out the held file: %v", err)
 	}
 	if b, _ := os.ReadFile(path); string(b) != "new" {
 		t.Errorf("read %q", b)
 	}
-	t.Logf("renames refused as busy while the file was held: %d", busyTries)
+	t.Logf("renames refused as busy: %d", busyTries)
 	if runtime.GOOS == "windows" && busyTries == 0 {
-		t.Errorf("Windows let a rename replace an open file: the busy path was not met")
+		t.Errorf("Windows let the first rename replace the open file: the busy path was not met")
 	}
 	if runtime.GOOS == "windows" && !isBusy(&os.LinkError{Err: syscall.Errno(32)}) {
 		t.Errorf("a sharing violation is not busy")
