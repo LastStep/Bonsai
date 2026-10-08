@@ -1,5 +1,0 @@
-name: subagent-stop-review
-description: Outputs a structured review checklist when a dispatched agent finishes work
-agents:
-  - tech-lead
-event: SubagentStop

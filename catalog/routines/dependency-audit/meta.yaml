@@ -1,4 +1,0 @@
-name: dependency-audit
-description: Scan dependencies for known vulnerabilities and unmaintained packages
-agents: [tech-lead]
-frequency: 7 days

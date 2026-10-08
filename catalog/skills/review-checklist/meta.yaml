@@ -1,7 +1,0 @@
-name: review-checklist
-description: Structured code review checklist — correctness, security, performance, maintainability
-agents: [security, tech-lead]
-triggers:
-  scenarios:
-    - Performing a structured code review
-    - Checking correctness, security, performance, and maintainability

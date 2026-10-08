@@ -1,6 +1,0 @@
-name: session-context
-description: Injects core identity, memory, protocols, and project status at session start
-agents: all
-required: all
-event: SessionStart
-matcher: "startup|resume|clear"

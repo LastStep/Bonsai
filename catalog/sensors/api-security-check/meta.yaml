@@ -1,5 +1,0 @@
-name: api-security-check
-description: Detects security anti-patterns in code changes — SQL injection, hardcoded secrets, eval, CORS wildcards
-agents: [backend, fullstack, security]
-event: PreToolUse
-matcher: "Edit|Write"

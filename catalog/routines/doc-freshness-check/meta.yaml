@@ -1,4 +1,0 @@
-name: doc-freshness-check
-description: Detect documentation drift — docs that are stale relative to recent code changes
-agents: [tech-lead]
-frequency: 7 days
