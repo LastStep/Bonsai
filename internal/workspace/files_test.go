@@ -95,6 +95,8 @@ func TestReadPackRefuses(t *testing.T) {
 		{"CLAUDE.md", packHead + "files:\n  - path: claude.md\n    from: a\n    kind: pack\n", "the engine writes only its own part of"},
 		{"the settings", packHead + "files:\n  - path: \".claude/settings.json\"\n    from: a\n    kind: once\n", "the engine writes only its own part of"},
 		{"the local settings", packHead + "files:\n  - path: \".claude/settings.local.json\"\n    from: a\n    kind: pack\n", "the engine writes only its own part of"},
+		{"a short name folder", packHead + "files:\n  - path: \"CLAUDE~1/settings.json\"\n    from: a\n    kind: pack\n", "shaped like a Windows short (8.3) name (CLAUDE~1)"},
+		{"a short name file", packHead + "files:\n  - path: \"docs/BONSAI~2.YAM\"\n    from: a\n    kind: once\n", "shaped like a Windows short (8.3) name"},
 		{"an absolute from", packHead + "files:\n  - path: a\n    from: \"/etc/x\"\n    kind: pack\n", "from: the path \"/etc/x\" starts with /"},
 		{"twice by case", packHead + "files:\n  - path: A.md\n    from: a\n    kind: pack\n  - path: a.md\n    from: a\n    kind: once\n", "listed twice"},
 		{"a hook with no why", packHead + "hooks:\n  - event: SessionStart\n    command: \"echo\"\n", "hooks item 1 has no why"},

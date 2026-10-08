@@ -25,6 +25,10 @@ const PackFormat = "bonsai.pack/1"
 // plugin's name in .claude-plugin/plugin.json, so roles load as <id>:<role> (spec §5).
 var packIDPattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
 
+// shortName matches a path segment shaped like an NTFS short (8.3) name: a tilde, then a digit (CLAUDE~1,
+// PROTEC~1.TXT).
+var shortName = regexp.MustCompile(`~[0-9]`)
+
 // PackFileKinds are the kinds a pack gives its files: pack (Bonsai's; an edit in the project is a conflict) and
 // once (written once, then the project's). The lock's other kinds come from elsewhere: block from block, keys from
 // hooks and deny, kept from the engine (the test pack's pack.yaml documents this). A test holds each to the lock
@@ -170,8 +174,16 @@ func entryOf(f *fields, it any, listLine int, list string, i int, holds string) 
 }
 
 // checkPackTarget refuses a pack file aimed at a path Bonsai keeps for itself (letter case aside): bonsai.yaml and
-// .bonsai/, and ReservedTargets.
+// .bonsai/, and ReservedTargets; and any path with a segment shaped like an NTFS short (8.3) name, <name>~<digit>,
+// which on Windows can be another name for one of those (CLAUDE~1/settings.json is .claude/settings.json).
+// CheckRelPath refuses GIT~1 the same way.
 func checkPackTarget(p string) error {
+	for _, seg := range strings.Split(p, "/") {
+		if shortName.MatchString(seg) {
+			return pathError(p, "has a segment shaped like a Windows short (8.3) name ("+asciiOnly(seg)+
+				"), which can stand for another file or folder; name it in full")
+		}
+	}
 	l := strings.ToLower(p)
 	if l == "bonsai.yaml" || l == ".bonsai" || strings.HasPrefix(l, ".bonsai/") {
 		return pathError(p, "is Bonsai's own file; a pack cannot write it")
