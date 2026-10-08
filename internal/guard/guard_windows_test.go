@@ -7,11 +7,27 @@ import (
 	"strings"
 	"syscall"
 	"testing"
-
-	"golang.org/x/sys/windows"
+	"unsafe"
 
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
+
+// kernel32's procedures these tests use, which the syscall package does not wrap.
+var (
+	kernel32                 = syscall.NewLazyDLL("kernel32.dll")
+	procQueryDosDevice       = kernel32.NewProc("QueryDosDeviceW")
+	procGetVolumeNameForRoot = kernel32.NewProc("GetVolumeNameForVolumeMountPointW")
+)
+
+// call runs a kernel32 procedure that returns 0 on failure, and gives its result.
+func call(t *testing.T, p *syscall.LazyProc, args ...uintptr) uintptr {
+	t.Helper()
+	r, _, err := p.Call(args...)
+	if r == 0 {
+		t.Fatalf("%s: %v", p.Name, err)
+	}
+	return r
+}
 
 // windowsProject is project with a protected folder docs holding guide.md, and its config.
 func windowsProject(t *testing.T) (string, *workspace.Config) {
@@ -83,27 +99,22 @@ func TestDecideFollowsJunctions(t *testing.T) {
 func TestDecideReadsDevicePaths(t *testing.T) {
 	dir, cfg := windowsProject(t)
 	vol := filepath.VolumeName(dir) // C:
-	vp, err := windows.UTF16PtrFromString(vol)
+	vp, err := syscall.UTF16PtrFromString(vol)
 	if err != nil {
 		t.Fatal(err)
 	}
 	buf := make([]uint16, 1024)
-	n, err := windows.QueryDosDevice(vp, &buf[0], uint32(len(buf)))
-	if err != nil || n == 0 {
-		t.Fatalf("QueryDosDevice(%s): %v", vol, err)
-	}
-	device := windows.UTF16ToString(buf[:n]) // \Device\HarddiskVolumeN
+	n := call(t, procQueryDosDevice, uintptr(unsafe.Pointer(vp)), uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf)))
+	device := syscall.UTF16ToString(buf[:n]) // \Device\HarddiskVolumeN
 	rest := dir[len(vol):]                   // \Users\...
 	refused(t, cfg, dir, `\\?\GLOBALROOT`+device+rest+`\protected.txt`)
 	refused(t, cfg, dir, `\\?\GLOBALROOT`+device+rest+`\docs\new.md`)
-	mp, err := windows.UTF16PtrFromString(vol + `\`)
+	mp, err := syscall.UTF16PtrFromString(vol + `\`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := windows.GetVolumeNameForVolumeMountPoint(mp, &buf[0], uint32(len(buf))); err != nil {
-		t.Fatalf("GetVolumeNameForVolumeMountPoint(%s): %v", vol, err)
-	}
-	guid := strings.TrimSuffix(windows.UTF16ToString(buf), `\`) // \\?\Volume{...}
+	call(t, procGetVolumeNameForRoot, uintptr(unsafe.Pointer(mp)), uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf)))
+	guid := strings.TrimSuffix(syscall.UTF16ToString(buf), `\`) // \\?\Volume{...}
 	refused(t, cfg, dir, guid+rest+`\protected.txt`)
 	refused(t, cfg, dir, guid+rest+`\docs\guide.md`)
 }
