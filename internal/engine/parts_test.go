@@ -122,14 +122,14 @@ func TestBlockInPlace(t *testing.T) {
 
 func TestOldBonsaiHook(t *testing.T) {
 	for cmd, want := range map[string]bool{
-		"/opt/bonsai-0.4/bin/bonsai hook guard":                          true,
-		`"/home/x/go/bin/bonsai" guard`:                                  true,
-		`C:\Users\x\go\bin\bonsai.exe hook guard`:                        true,
-		`bash "/home/x/proj/station/agent/Sensors/scope.sh" "/home/x/p"`: true,
-		"bonsai hook guard || exit 2":                                    false,
-		"/usr/bin/npm run lint":                                          false,
-		"bash ./agent/Sensors/scope.sh":                                  false,
-		`node "${CLAUDE_PROJECT_DIR}/tools/hooks/guard.mjs"`:             false,
+		"/opt/bonsai-0.4/bin/bonsai hook guard":                       true,
+		`"/srv/tools/go/bin/bonsai" guard`:                            true,
+		`C:\Users\x\go\bin\bonsai.exe hook guard`:                     true,
+		`bash "/srv/proj/station/agent/Sensors/scope.sh" "/srv/proj"`: true,
+		"bonsai hook guard || exit 2":                                 false,
+		"/usr/bin/npm run lint":                                       false,
+		"bash ./agent/Sensors/scope.sh":                               false,
+		`node "${CLAUDE_PROJECT_DIR}/tools/hooks/guard.mjs"`:          false,
 	} {
 		if got := isOldBonsaiHook(cmd); got != want {
 			t.Errorf("isOldBonsaiHook(%q) = %v", cmd, got)
