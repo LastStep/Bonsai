@@ -1,7 +1,8 @@
 // Command bonsai is Bonsai's one program. During the rebuild it answers what the walking skeleton has built so far
 // (design/plan.md, parts 2 to 5): `bonsai --version`, `bonsai --help`, `bonsai status [--json]` (part 2, the
-// partial status), the engine's `bonsai init`, `bonsai update` and `bonsai check` (part 3, engine.go), and `bonsai
-// hook guard` (part 5, hook.go). Every other word is refused, naming the next step.
+// partial status), the engine's `bonsai init`, `bonsai update` and `bonsai check` (part 3, engine.go; part 4b adds
+// their plugin step, which asks the `claude` on the PATH), and `bonsai hook guard` (part 5, hook.go). Every other word
+// is refused, naming the next step.
 //
 // Exit codes follow the spec's (design/bonsai-spec.md, section 3): 0 ok, 1 check findings, 2 bad input, 3 runtime
 // (status: the workspace cannot be read at all, contract §12), 4 wrong state or no --yes, 5 conflicts. Human output
@@ -14,6 +15,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/status"
 )
@@ -23,6 +25,7 @@ import (
 var version = "dev"
 
 func main() {
+	pluginCLI = engine.ClaudeCLI{}
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
 

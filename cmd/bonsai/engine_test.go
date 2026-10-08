@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
 )
@@ -255,3 +256,84 @@ func TestUpdateWithoutALock(t *testing.T) {
 	}
 }
 
+// fakePlugins stands in for Claude Code's plugin commands (internal/engine/plugins.go).
+type fakePlugins struct {
+	list    []engine.InstalledPlugin
+	install engine.InstallResult
+	asked   []string
+}
+
+func (f *fakePlugins) List(dir string) ([]engine.InstalledPlugin, error) {
+	f.asked = append(f.asked, "list")
+	return f.list, nil
+}
+
+func (f *fakePlugins) Install(dir, plugin string) (engine.InstallResult, error) {
+	f.asked = append(f.asked, "install "+plugin)
+	return f.install, nil
+}
+
+// init and update install each pack's plugin after writing (or with nothing to write), never before and never on a
+// refusal; the outcome never changes the exit code; check reports drift with exit 1; status shows the offline half.
+func TestPluginStep(t *testing.T) {
+	c := newCLI(t)
+	f := &fakePlugins{install: engine.InstallResult{Outcome: "failed", FailureCode: "not_found"}}
+	defer func(p engine.PluginCLI) { pluginCLI = p }(pluginCLI)
+	pluginCLI = f
+	marketA := engine.MarketplaceName("demo", []string{c.pack.A})
+	marketB := engine.MarketplaceName("demo", []string{c.pack.B})
+
+	if code, _, _ := c.run("", c.linkArgs(c.pack.A)...); code != 4 || len(f.asked) != 0 {
+		t.Fatalf("a preview asked Claude Code: %d %v", code, f.asked)
+	}
+	code, out, _ := c.run("", append(c.linkArgs(c.pack.A), "--yes")...)
+	if code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketA ||
+		!strings.Contains(out, "This machine's plugins (Claude Code, scope local, this checkout only):\n  waiting      demo-pack@"+marketA+": ") ||
+		!strings.Contains(out, "\n               next: open Claude Code in this checkout") {
+		t.Errorf("init --yes: %d %v\n%s", code, f.asked, out)
+	}
+	// Nothing to change: installed now.
+	f.asked, f.install = nil, engine.InstallResult{Outcome: "ok"}
+	code, out, _ = c.run("", "update", "--json")
+	doc, err := schema.Decode([]byte(out))
+	if code != 0 || err != nil {
+		t.Fatalf("update --json: %d %v %s", code, err, out)
+	}
+	plugins, _ := doc.(schema.Object).Get("plugins")
+	if schema.Show(plugins) != `[{"pack":"demo-pack","plugin":"demo-pack@`+marketA+`","commit":"`+c.pack.A+`","result":"installed","message":"at `+c.pack.A[:12]+`","next":null}]` {
+		t.Errorf("update --json's plugins: %s", schema.Show(plugins))
+	}
+	// A refused update asks nothing.
+	testpack.SetRef(t, c.root, c.pack.A, c.pack.B)
+	f.asked = nil
+	if code, _, _ := c.run("", "update"); code != 4 || len(f.asked) != 0 {
+		t.Errorf("update without --yes asked Claude Code: %d %v", code, f.asked)
+	}
+	if code, _, _ := c.run("", "update", "--yes"); code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketB {
+		t.Errorf("update --yes to B: %d %v", code, f.asked)
+	}
+	// check: A's plugin still on for this checkout is drift (exit 1); B's installed is not.
+	f.list = []engine.InstalledPlugin{
+		{ID: "demo-pack@" + marketB, Version: c.pack.B[:12], Scope: "local", Enabled: true, ProjectPath: c.root},
+		{ID: "demo-pack@" + marketA, Version: c.pack.A[:12], Scope: "local", Enabled: true, ProjectPath: c.root},
+	}
+	code, out, _ = c.run("", "check")
+	if code != 1 || !strings.Contains(out, "Claude Code loads the plugin demo-pack@"+marketA) {
+		t.Errorf("check with drift: %d\n%s", code, out)
+	}
+	f.list = f.list[:1]
+	if code, out, _ := c.run("", "check"); code != 0 || out != "bonsai check: no findings.\n" {
+		t.Errorf("check with no drift: %d %q", code, out)
+	}
+	// The offline half: settings.local.json turning on A's plugin. status shows it among its problems, with no
+	// question to Claude Code.
+	if err := os.WriteFile(filepath.Join(c.root, ".claude", "settings.local.json"),
+		[]byte(`{"enabledPlugins": {"demo-pack@`+marketA+`": true}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	f.asked = nil
+	code, out, _ = c.run("", "status", "--json")
+	if code != 0 || !strings.Contains(out, "turns on demo-pack@"+marketA) || len(f.asked) != 0 {
+		t.Errorf("status: %d %v\n%s", code, f.asked, out)
+	}
+}

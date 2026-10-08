@@ -27,10 +27,18 @@ var interactive = func() bool {
 // stdin is where a y/N answer is read from (a variable for tests).
 var stdin io.Reader = os.Stdin
 
+// pluginCLI is Claude Code's plugin commands: init and update install each locked pack's plugin on this machine,
+// and check compares what is installed with the lock (internal/engine/plugins.go). main sets the real one; nil,
+// as in tests, asks Claude Code nothing.
+var pluginCLI engine.PluginCLI
+
 const initUsage = `bonsai init: link this project to Bonsai (spec sections 4 and 6).
 It writes bonsai.yaml (a comment on every line), then the packs' files, the instruction block in CLAUDE.md,
-Bonsai's lines in .claude/settings.json (hook line, deny rules, plugin wiring), .bonsai/.gitignore, and the lock
-.bonsai/lock.json last. It previews every file and settings line first, and writes with --yes (or y at a terminal).
+Bonsai's lines in .claude/settings.json (hook line, deny rules, plugin wiring), each pack's plugin turned on in this
+checkout's .claude/settings.local.json (never committed), .bonsai/.gitignore, and the lock .bonsai/lock.json last.
+It previews every file and settings line first, and writes with --yes (or y at a terminal). Then it asks Claude Code
+to install each pack's plugin on this machine at the locked commit (claude plugin install --scope local), as update
+does.
 Run it in the project's checkout. In a project that already has bonsai.yaml it needs no values and works as
 bonsai update does; run again with nothing changed, it changes no byte.
 Flags:
@@ -55,8 +63,12 @@ Example: bonsai init --name demo --source https://github.com/LastStep/bonsai-tes
 const updateUsage = `bonsai update: bring this project's packs to the refs in bonsai.yaml (spec section 6).
 It fetches each pack, then decides per file from three fingerprints (what the lock says Bonsai wrote, what is on
 disk, what the pack now gives): unchanged, updated, created, adopted, changed (your edit, left alone) or conflict.
-The preview names every file and every line of .claude/settings.json it adds, changes or removes, with a sentence.
-All or nothing: every file is staged, then renamed, the lock last.
+The preview names every file and every line of .claude/settings.json and .claude/settings.local.json it adds,
+changes or removes, with a sentence. All or nothing: every file is staged, then renamed, the lock last.
+Then, written or with nothing to change, it brings this machine's plugins to the lock: for each pack it runs
+claude plugin install <pack>@<marketplace> --scope local (a no-op once installed). A marketplace Claude Code has not
+registered yet (a new commit, or a folder not yet trusted) waits for the next Claude Code session in this checkout,
+which fetches the plugin itself; the output says so, with the next step. This step never changes the exit code.
 Flags:
   --yes         write without asking
   --diff        show each file's changes as a diff in the preview
@@ -73,8 +85,10 @@ Example: bonsai update --yes
 
 const checkUsage = `bonsai check: findings on this checkout (spec section 6): the lock against the files (a pack file, the
 block in CLAUDE.md or Bonsai's lines in .claude/settings.json edited or missing), bonsai.yaml against the lock,
-.bonsai/.gitignore, and any file from .bonsai/local/ that git tracks or has staged. It writes nothing and fetches
-nothing. Warnings never change the exit code.
+.bonsai/.gitignore, any file from .bonsai/local/ (or .claude/settings.local.json) that git tracks or has staged, and
+this machine's plugins against the lock: it asks Claude Code (claude plugin list --json) and reports a pack's plugin
+that sessions here load at another commit (a finding), or the locked one not installed yet (a warning). It writes
+nothing and fetches nothing. Warnings never change the exit code.
 Flags:
   --json    print a JSON document instead of text
   --help    print this help
@@ -218,7 +232,8 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 		closing = engine.ClosingWords(plan.Config, home)
 	}
 	if plan.Nothing() {
-		return out("nothing", engine.ExitOK, nil, "bonsai "+word+": nothing to change"+packsAt(plan)+".\n"+closing)
+		plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI)
+		return out("nothing", engine.ExitOK, nil, "bonsai "+word+": nothing to change"+packsAt(plan)+".\n"+plan.PluginsText()+closing)
 	}
 	head := "bonsai " + word + ": the preview.\n"
 	preview := head + plan.Preview(f.diff)
@@ -264,11 +279,12 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 		}
 		return fail(e)
 	}
+	plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI)
 	text := ""
 	if f.yes {
 		text = preview
 	}
-	text += "bonsai " + word + ": written" + packsAt(plan) + ".\n" + plan.Applied() + closing
+	text += "bonsai " + word + ": written" + packsAt(plan) + ".\n" + plan.Applied() + plan.PluginsText() + closing
 	return out("applied", engine.ExitOK, nil, text)
 }
 
@@ -340,6 +356,7 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintf(stderr, "bonsai check: %s.\nnext: %s\n", strings.TrimSuffix(e.What, "."), e.Next)
 		return e.Exit
 	}
+	engine.ComparePlugins(r, pluginCLI)
 	exit := engine.ExitOK
 	if len(r.Findings) > 0 {
 		exit = engine.ExitFindings
