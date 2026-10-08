@@ -80,7 +80,7 @@
     },
     {
       "path": "schemas/ladder.schema.json",
-      "sha256": "220411eae69bbf46695d426241d97fe60270803e51a1a129c8b052b5113a844d"
+      "sha256": "0ed526f57b81eade528eb5642cb95e2673867cafe1352a66e7cdf9adea4dbc41"
     },
     {
       "path": "schemas/lanes.schema.json",

@@ -205,7 +205,7 @@
             ]
           },
           "required": {
-            "description": "Whether a red result here stops the rungs after it and makes the run red.",
+            "description": "Whether a red result here stops the run: when true, the rungs after it are skipped. It does not decide the colour: as today, any red rung makes the run red, required or not.",
             "examples": [
               true,
               false
