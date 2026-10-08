@@ -3,6 +3,10 @@
   "set": 1,
   "files": [
     {
+      "path": "README.md",
+      "sha256": "1c5995ff2ab5cf1e29ad376e0a770dfea4199695959c5ba06c35fe18ee10fae4"
+    },
+    {
       "path": "examples/ask.json",
       "sha256": "a7bb5d81189da75d046d2532513b3128342cddd0791b32915c18056c237b9c0d"
     },
