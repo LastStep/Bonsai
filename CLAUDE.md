@@ -42,9 +42,11 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   orchestrator's read of the diff, which the run report says. Related light parts share one verifier. A verifier
   reads the plan's part, the cited sections and the diff, re-runs the tests itself, and
   passes or fails the work. It fixes nothing. Nothing is done because an agent says so.
-- **Models:** only the latest Opus, Sonnet and Fable. Opus for verifiers, plan reviews, security, guards, release and
-  decisions, and builders on risky code; Sonnet for sweeps, drafts and mechanical runs; Fable for visual design. Every
-  report says which model ran what.
+- **Models:** only the latest Opus, Sonnet, Haiku and Fable. Opus for verifiers, plan reviews, security, guards, release
+  and decisions, and builders on risky code; Sonnet for sweeps, drafts and mechanical runs; Haiku for small bookkeeping
+  and audit jobs (listing files, sorting or counting things, checking a list against a source, filling a run report's
+  rows); Fable for visual design. Haiku reports facts; it judges nothing and its findings are read before they count.
+  Every report says which model ran what.
 - **Run reports** in `records/runs/R-<date>-<topic>.md`, opened before the first edit and appended as the work goes: a
   log, not a summary. Each lists every run with its model, start, end and minutes; those rows are the hours the stop
   lines count.
