@@ -1,0 +1,6 @@
+format: bonsai.lanes/1
+text: |
+  First line.
+  # Not a comment inside a block scalar.
+  Last line.
+after: here

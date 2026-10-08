@@ -1,0 +1,8 @@
+format: bonsai.lanes/1
+text: |
+  First line.
+    A deeper line keeps its extra spaces.
+
+  After an empty line.
+
+after: here

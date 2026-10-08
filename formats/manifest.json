@@ -63,6 +63,10 @@
       "sha256": "1c1e480ccd51f597c4af22af503dcda86063b816ffb4259ae21a97cc56b03fd6"
     },
     {
+      "path": "expect.json",
+      "sha256": "6bb88bd230befe503a251450ae3a86d3c17d7d6c991e32138f21011d072487de"
+    },
+    {
       "path": "schemas/ask.schema.json",
       "sha256": "403f59eeb76124886ed480e1a9381f62f542dc67414a091dc44bb2e57c76200e"
     },
@@ -101,6 +105,394 @@
     {
       "path": "schemas/task.schema.json",
       "sha256": "d7931ccb37dd44718760ffc43dd82d4501c52c4a9d42b5c5c136db0214077d39"
+    },
+    {
+      "path": "trick/yaml-0/colon-in-value/case.md",
+      "sha256": "1fa0dbc9c271d1165841bd665cecdc87af7d4a6f448d365e0e3b840badcce556"
+    },
+    {
+      "path": "trick/yaml-0/document-markers-skipped/case.yaml",
+      "sha256": "25bc50c98a7efa877ff6a75161fb174f5caa5e36874a5dd4d5ff53dcd7a7bb62"
+    },
+    {
+      "path": "trick/yaml-0/duplicate-last-wins/case.md",
+      "sha256": "4e7dadf0981da2d0cf13f5d2666e132afe9ac7299b8ba6b32dce00f2619fe5ad"
+    },
+    {
+      "path": "trick/yaml-0/true-upper/case.yaml",
+      "sha256": "cfd758de029cc2b31f25d28b66c930ce703959537dc5f3f4932032e71bf73b04"
+    },
+    {
+      "path": "trick/yaml-0/unquoted-hashes/case.md",
+      "sha256": "17ebb4374229bb4b96b41f8047e52db019feaaf1af63aa146aa6a8bb6a94d88b"
+    },
+    {
+      "path": "trick/yaml-1/alias/case.yaml",
+      "sha256": "c3e99ac4b49e6464d6646f4e0c161a5193bf89d4727372e42afda5aa8149c61c"
+    },
+    {
+      "path": "trick/yaml-1/anchor/case.yaml",
+      "sha256": "c30311e0281c395b5205280da3e09fa03d8cfb06ad93f934b9369a689f16f215"
+    },
+    {
+      "path": "trick/yaml-1/block-hash-line/case.yaml",
+      "sha256": "89996e573a77e147154cda91ed6ad186af1ded8d536935d73a0d36f79271e74c"
+    },
+    {
+      "path": "trick/yaml-1/block-indicator-indent/case.yaml",
+      "sha256": "61efa4690eecd43adfb11b1f56ef89167da01c97a37effcecd2d1c3105a5af4f"
+    },
+    {
+      "path": "trick/yaml-1/block-indicator-keep-folded/case.yaml",
+      "sha256": "62e813d79e994a0b5a6c2d63d2629aa982ea2d52207862652dea0ce5df963a8e"
+    },
+    {
+      "path": "trick/yaml-1/block-indicator-keep-literal/case.yaml",
+      "sha256": "e666bb6b84d1cb23d60f6ff87bd67b7cb71f52e7a57574261f9a6376999532c1"
+    },
+    {
+      "path": "trick/yaml-1/block-scalar-folded-strip/case.yaml",
+      "sha256": "dc4c95d10cb71c0a2d38a5c476dc95083dfbcab68ab099c6b5c07e7513fbe42f"
+    },
+    {
+      "path": "trick/yaml-1/block-scalar-folded/case.yaml",
+      "sha256": "b4e808a143015bf9405a1f4daaa1b62699a10e5583496e4276a367e46bcb1d6b"
+    },
+    {
+      "path": "trick/yaml-1/block-scalar-literal-strip/case.yaml",
+      "sha256": "8b0f5f7793447ec67ac5fde6214d56885cc7a87dee2be7fc543c4069e1bc1860"
+    },
+    {
+      "path": "trick/yaml-1/block-scalar-literal/case.yaml",
+      "sha256": "261dd37748ef896056c9d129a07e9618dd22c0a262d3e09641b33510b8b4051f"
+    },
+    {
+      "path": "trick/yaml-1/block-sequence/case.yaml",
+      "sha256": "f37d5f75937b97a9ea03afe58d4078aa8b51807a9fae747b101923ca4063b500"
+    },
+    {
+      "path": "trick/yaml-1/bom-definition/case.yaml",
+      "sha256": "860e97eb3d19333e129678252f231d007019792c2e9ab1914c1252a603e029e8"
+    },
+    {
+      "path": "trick/yaml-1/bom-frontmatter/case.md",
+      "sha256": "305910f393dc1a6233039cc2cca985a7adc8a7472059c23ebec4dd45f764289c"
+    },
+    {
+      "path": "trick/yaml-1/comment-after-space/case.md",
+      "sha256": "6ea3330aa11011cebcd758d31c7019caf465f95114fcb3ea9ab971d379377c13"
+    },
+    {
+      "path": "trick/yaml-1/comment-line-start/case.yaml",
+      "sha256": "8aed0360cb31d23194554478418d8145bcbe4637e77feed2dfe6d328296d00ec"
+    },
+    {
+      "path": "trick/yaml-1/dispatch-comment-first/case.yaml",
+      "sha256": "f650a9ef638906d7f98f0aa6a8a00273b77c0792c80123d5f699c6938f6e7570"
+    },
+    {
+      "path": "trick/yaml-1/dispatch-first/case.yaml",
+      "sha256": "7221c936a209d9ec4698288dd33c46820841b5c0767d05617a23ee6551eba237"
+    },
+    {
+      "path": "trick/yaml-1/dispatch-nested/case.md",
+      "sha256": "c0188f7a362523ae811f9af37effd9490076f6baae43f22a686448dcdd144ebe"
+    },
+    {
+      "path": "trick/yaml-1/dispatch-none/case.md",
+      "sha256": "72844ffb5c5db61c11d9204ddc3f3cf89df40df10c7cfda89d971e92b59780bd"
+    },
+    {
+      "path": "trick/yaml-1/dispatch-not-first/case.md",
+      "sha256": "850642bad839fb3e4121bfc8e370f862b3310a9052fa90d141ac8d2f83f4f2b4"
+    },
+    {
+      "path": "trick/yaml-1/dispatch-pointer/case.md",
+      "sha256": "ab1e77463fb28e672c9575ec2f25190df2ce301000f53c1e1dea583b073f0a03"
+    },
+    {
+      "path": "trick/yaml-1/doc-marker-dashes/case.yaml",
+      "sha256": "31d613737d39e5aa3fb8a1d55b1c7e730c76cb6b3f719c05ab5073b676921753"
+    },
+    {
+      "path": "trick/yaml-1/doc-marker-dots/case.yaml",
+      "sha256": "a8bc85ad32aaf51bef79702b8873606e8e4ce5d998a8a489888632629a6527e9"
+    },
+    {
+      "path": "trick/yaml-1/doc-marker-frontmatter/case.md",
+      "sha256": "1898f0795d5d6be19835e0662adb2ab06b8baa184d49afccc8f7841cfafd953f"
+    },
+    {
+      "path": "trick/yaml-1/doc-marker-leading/case.yaml",
+      "sha256": "fe1f5eef9fbdf0411cbb15a190ac7a5fd975d17a6ad8833b3a67bb4d822ce471"
+    },
+    {
+      "path": "trick/yaml-1/dup-key-quoted/case.md",
+      "sha256": "831bc7fd87a3b2d7e0ea5291036b9375d2e21f7f0a8948c0aec0f7dbc739d64f"
+    },
+    {
+      "path": "trick/yaml-1/every-line-read-own-indent/case.md",
+      "sha256": "16bf14dff452dcdb4a7ad3818c418c2e565eb95fa15ef64150658693cc7c6836"
+    },
+    {
+      "path": "trick/yaml-1/every-line-read-stray-item/case.yaml",
+      "sha256": "a103f5786cceeaead67e1a77a547f822b3512c805e0398a90e16b8ea388fc751"
+    },
+    {
+      "path": "trick/yaml-1/flow-empty/case.md",
+      "sha256": "fbfdac675eb73f476f8eb39e928a07e73fbc3ec25d6c89a8df7f80b1b367e908"
+    },
+    {
+      "path": "trick/yaml-1/flow-item-char/case.md",
+      "sha256": "dcaaad327d1d1739ce3bdad637dfe1b772c8e4a3d615e3744ebd6328092f0b23"
+    },
+    {
+      "path": "trick/yaml-1/flow-mapping/case.md",
+      "sha256": "410396b0efdbf18bbb017637c128b6d3a2968b55adf18de5655cca2748b985fb"
+    },
+    {
+      "path": "trick/yaml-1/flow-multiline/case.md",
+      "sha256": "5a35456c68b9d02b7570e684bf42efe95146787e32a78fb6cc2b829e1da56f56"
+    },
+    {
+      "path": "trick/yaml-1/flow-nested/case.md",
+      "sha256": "32bbfa8c6bbbc7268420b7aaf85fcfddf8bc3538976d7a8db76c5eec27b4cdfb"
+    },
+    {
+      "path": "trick/yaml-1/flow-sequence/case.md",
+      "sha256": "4c4ab147056d32ed75acdcc8ded8d61ac1f4f10add7da9ecb93ffb5e0fbf4620"
+    },
+    {
+      "path": "trick/yaml-1/folded-deeper/case.yaml",
+      "sha256": "3dfd9f115d66535f547989e636fb776bc5423ec928248fad3a4378f2295195aa"
+    },
+    {
+      "path": "trick/yaml-1/hash-no-space/case.md",
+      "sha256": "7a51c291b579e10ad55cfb8ada13ee44c2104adcf9c4787d84622be4c1a98064"
+    },
+    {
+      "path": "trick/yaml-1/key-complex/case.yaml",
+      "sha256": "512585ebafe332b2529fa5d5ece42a0630509607778685829fc9006db0f0a988"
+    },
+    {
+      "path": "trick/yaml-1/key-hyphen/case.md",
+      "sha256": "cf8d57117c96e0f1510c72060db62511da6f8652d3287a65cc4fb79792e1d759"
+    },
+    {
+      "path": "trick/yaml-1/key-label/case.md",
+      "sha256": "6b25f7031520f1f5e48e9656bc131f6ee4be3a88b90c9fa9ea2bfe3d8c864b83"
+    },
+    {
+      "path": "trick/yaml-1/key-merge/case.yaml",
+      "sha256": "f9fde11007b87421cb14c982565cb7900b75d13a2abb9ee2d94dbf5f67ce2769"
+    },
+    {
+      "path": "trick/yaml-1/key-pattern/case.yaml",
+      "sha256": "d375170ca40b541da5116f30bdde66f4a26e49340c784c4ef7ece147086bbc2c"
+    },
+    {
+      "path": "trick/yaml-1/key-quoted-double/case.md",
+      "sha256": "f383e7a4d72bf89bdee50b7680bbde0517d68acdbd89662008a3af26d4480002"
+    },
+    {
+      "path": "trick/yaml-1/key-quoted-single/case.md",
+      "sha256": "a7b43538a83e90f6db47c2d123d7bcc6c84f45f98a30152b23ff5669a965646b"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-false/case.yaml",
+      "sha256": "217ba3c72c6926bd6e7d7f7784b40387faabcd7b079b6e80de67b5d2355c0f47"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-n/case.yaml",
+      "sha256": "23ab47445e4a54d5fb5168b4b0180240937f2fdcb2fbde6053f02acc4fcc9552"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-no/case.yaml",
+      "sha256": "d79633bc0921798454b6a9bd958f05ac2ced0f6f43e5d08a23be81ab0ea78614"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-null/case.yaml",
+      "sha256": "348ac819472c4df9b6323ce355f67eecd21544627530b83c1f94a7972d92b26d"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-off/case.yaml",
+      "sha256": "fa50178b5cc5aaafbffd949a172dfcd0ee877d871fd4b2971ed105b1177def0f"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-on/case.yaml",
+      "sha256": "69aadf1cc90a6b555d3628ae585cb74009431cfa80a7bbae0c4219bac3737d6f"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-true/case.yaml",
+      "sha256": "97c739827b404887da8f1412bdfd45baa9b70e5708c86b8c501f1fa9b59de2a0"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-y/case.yaml",
+      "sha256": "129c1c952271006607d1de52580d038b589b5a82fceffc5b158a10b1d4b54d6d"
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-yes/case.yaml",
+      "sha256": "df8fda2430ad93f6a1e60780a59fae9f768aaa40330c0341c72c1c5ca7981920"
+    },
+    {
+      "path": "trick/yaml-1/key-twice/case.md",
+      "sha256": "98f9d4f68916f13c56b7a8501563447bd0072f218adc241a38e05017e8415013"
+    },
+    {
+      "path": "trick/yaml-1/key-uppercase/case.md",
+      "sha256": "497f87d9e5505b1db4fd9fac96100c5b82cc64da5b3d4788e2f092382f6fa2df"
+    },
+    {
+      "path": "trick/yaml-1/lines-crlf/case.md",
+      "sha256": "afc842779447a0bb52dc1012bde3fb6888b6c75c5e7476aaaaa4b76fc90dedd5"
+    },
+    {
+      "path": "trick/yaml-1/lines-lf/case.md",
+      "sha256": "447e849ef81d020d67f6bf5092469ea274ffb228ce108b4a227bbe44495ec759"
+    },
+    {
+      "path": "trick/yaml-1/nested-mapping/case.yaml",
+      "sha256": "8dca7b925ed43b5c16b8e4fb3a7d3fd95ac6e64befa5b036a03d5c18a0ee1b38"
+    },
+    {
+      "path": "trick/yaml-1/plain-bool/case.yaml",
+      "sha256": "a3350769e852a3b81b7d8c9b3356d5583a5f3ae5a2ba7a695c2f6b90926feb08"
+    },
+    {
+      "path": "trick/yaml-1/plain-date/case.md",
+      "sha256": "a5c23ee232804ca5db0fdcfa0e7c408ed2a1ecb0f7b2b959fccc4ae72160dac6"
+    },
+    {
+      "path": "trick/yaml-1/plain-datetime/case.md",
+      "sha256": "97f50934854a5099dc5f0cbdcd7d16ca9fb8c7ba4e0db82da76033b2b6ad6fc3"
+    },
+    {
+      "path": "trick/yaml-1/plain-decimal/case.yaml",
+      "sha256": "8cdee700186567b1daf399bad5d90fc7a2f25b6d0713eae904adc78b87c8c9e6"
+    },
+    {
+      "path": "trick/yaml-1/plain-ends-colon/case.md",
+      "sha256": "744c4b8ea516dba4906a66d22e1b78bc1512a9cbebdb5daf4c351f98d34670bd"
+    },
+    {
+      "path": "trick/yaml-1/plain-int-15/case.yaml",
+      "sha256": "7b50fc68d0ed776a04cc995f4cbe3ffd526e8def9087f1178e4d0d662591de70"
+    },
+    {
+      "path": "trick/yaml-1/plain-int-16/case.yaml",
+      "sha256": "aabd12afd00e3c2897c55f47dd03923ed4579beff7e4c99f24b7d73780b09774"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-0755/case.yaml",
+      "sha256": "11153626f347975fcf4c2c5dce6c760586e53ee17668604560f562409958171b"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-0x1f/case.yaml",
+      "sha256": "e16058eb2618a23d9e00b6e4408ad373cd90e491c0ac7e8ab300aaec56b3f8b6"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-1-000/case.yaml",
+      "sha256": "06a03455616d1521e25b0a9857f04790918b964f90a202c42aef658edfe69940"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-1e3/case.yaml",
+      "sha256": "455258cd82c4d077b5f7d32f248298df6a37ffe531e3d238cf33f67b580616ef"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-5-arenas/case.yaml",
+      "sha256": "596379c99fa1160b5d01e59e0b2ae40fa997d7cda203b7caf86526d2d8ae0ade"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-55227e5/case.yaml",
+      "sha256": "920997d0cd14adc36a34c96ab8ab17ef378488f18cc8482d52f878f5cd1b2a65"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-colon/case.yaml",
+      "sha256": "e4537d6bcbd7a92e5720b26f8e942d5b1d179442bfd9b35f72ad88e45f7a5f5f"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-dot-claude/case.yaml",
+      "sha256": "4080612f7c191b602b5700ff5971f237cad1bd59b26d74f6e36ffadcfc7b3f94"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-inf/case.yaml",
+      "sha256": "b85b49a3e985a801c7cb86339e9d7805896f26c821649f1c41bab491ce573239"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-no-capital/case.yaml",
+      "sha256": "639c435b30cd1f709093689afac6fe2f2620bb147c5d1a36bb90f9f881c3064a"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-quoted/case.yaml",
+      "sha256": "69c76bc5cf756a8a426618edd0e32fe0f527cbaa31199d3d78b960da3dd7cf9b"
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-true-upper/case.yaml",
+      "sha256": "fd9183e04d627d6bce1154f9b85afda50a15b5e19db4c216110133072d069e91"
+    },
+    {
+      "path": "trick/yaml-1/plain-null/case.md",
+      "sha256": "b66a5e06f0ddec1be500cf8f696b87602abecf0f316f8392afc20211ce1b53f7"
+    },
+    {
+      "path": "trick/yaml-1/plain-other/case.yaml",
+      "sha256": "561f9f04541207f6a4aab154f0888807c223e5de7729973e3265f42ccfa0f730"
+    },
+    {
+      "path": "trick/yaml-1/plain-text/case.yaml",
+      "sha256": "5544da83cc8e9b9da25baa73b3eb9d7bc75f754c4f600cd930d90a9f3d516ab9"
+    },
+    {
+      "path": "trick/yaml-1/plain-word-on/case.yaml",
+      "sha256": "31559ee906902ca8734edaad88c242b136e7d91ed20753233a568c5ffeef6fb2"
+    },
+    {
+      "path": "trick/yaml-1/plain-word-true-title/case.yaml",
+      "sha256": "1d1a2262cb5098bfa041a698f7c13df7b0c9e57030bac6703cbf5cb955bb6e93"
+    },
+    {
+      "path": "trick/yaml-1/quote-in-plain/case.md",
+      "sha256": "2d5243c894e505df6622462720963b027bbe48f352bb184ae76739b5162baa1c"
+    },
+    {
+      "path": "trick/yaml-1/quoted-after-close/case.md",
+      "sha256": "2ba1c58868f375be5ca715e13c0a7fb11983af29b4192eab07b5d1a7c555651a"
+    },
+    {
+      "path": "trick/yaml-1/quoted-bad-escape/case.md",
+      "sha256": "e7aac75c7c94ebaed46b8137450b57749d7c8f90d922ba2222368b2c6078040b"
+    },
+    {
+      "path": "trick/yaml-1/quoted-escapes/case.yaml",
+      "sha256": "117df42d0e9408812bbefb463780c17cd6786d5223b5b50c3b6b1349fc1e249a"
+    },
+    {
+      "path": "trick/yaml-1/quoted-multiline/case.md",
+      "sha256": "2746d24605cabdb6434d98e660b7d1b79907e603157c6cd18dce0774844df5f1"
+    },
+    {
+      "path": "trick/yaml-1/quoted-one-line/case.md",
+      "sha256": "0ace33699b6aca56b16f13bc3206377312e4d38973b13238e124ad4f265db9df"
+    },
+    {
+      "path": "trick/yaml-1/quoted-single-escape/case.md",
+      "sha256": "37a346a496d7df8559f96163d8cbdfd8669383b4ff3e09ab47fce43e969c68bf"
+    },
+    {
+      "path": "trick/yaml-1/quoted-unescaped-quote/case.md",
+      "sha256": "185d3bc9d59d1cd8abcaae0ef23060e6a5f7385dd87ceac4440a1325a9266cad"
+    },
+    {
+      "path": "trick/yaml-1/seq-dash-space/case.md",
+      "sha256": "aa0b95eb857c6a23bacc0b675fb6cac9b64631d7a23ce68b18414cb2209e1cc6"
+    },
+    {
+      "path": "trick/yaml-1/tab-indent/case.yaml",
+      "sha256": "80c71e97b2522d7763b6fe0dffddc443e568546f42845b5714524adf4d6c3af5"
+    },
+    {
+      "path": "trick/yaml-1/tag/case.yaml",
+      "sha256": "572e3fb42a89e0152f60bfc84b1a2faaab1e1f308e7f3b0ca3220221085f7033"
     }
   ]
 }

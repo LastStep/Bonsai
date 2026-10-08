@@ -1,0 +1,2351 @@
+{
+  "about": "The expected outcomes of the formats set: for every trick file under trick/ and every YAML or markdown example under examples/, what a format-0 reader (the studio's frozen format-0 reader, which README.md names) and a format-1 reader (contract §2.4) must reach. Every field is described in README.md.",
+  "cases": [
+    {
+      "path": "examples/labels.yaml",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.labels/1: its format-1 value is examples/labels.json, which schemas/labels.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "version": 1,
+          "labels": [
+            {
+              "name": "example.size",
+              "kind": "choice",
+              "values": [
+                "small",
+                "large"
+              ],
+              "items": null,
+              "pattern": null,
+              "max": null,
+              "kinds": [
+                "task"
+              ],
+              "set_by": "agent",
+              "grants": false,
+              "description": "How big the change is, as the planner judged it."
+            },
+            {
+              "name": "example.ref",
+              "kind": "text",
+              "values": [],
+              "items": null,
+              "pattern": "^[0-9a-f]{7,40}$",
+              "max": 60,
+              "kinds": [
+                "task",
+                "run"
+              ],
+              "set_by": "outside",
+              "grants": false,
+              "description": "The commit an outside program recorded. Agents never write it."
+            },
+            {
+              "name": "example.cost",
+              "kind": "number",
+              "values": [],
+              "items": null,
+              "pattern": null,
+              "max": null,
+              "kinds": [
+                "task",
+                "run"
+              ],
+              "set_by": "outside",
+              "grants": false,
+              "description": "Dollars this work cost. Agents never write it."
+            },
+            {
+              "name": "example.paths",
+              "kind": "list",
+              "values": [],
+              "items": "text",
+              "pattern": null,
+              "max": null,
+              "kinds": [
+                "task"
+              ],
+              "set_by": "agent",
+              "grants": false,
+              "description": "Paths this task reads often, as globs. It grants nothing."
+            }
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "version": 1,
+          "labels": [
+            {
+              "name": "example.size",
+              "kind": "choice",
+              "values": [
+                "small",
+                "large"
+              ],
+              "items": null,
+              "pattern": null,
+              "max": null,
+              "kinds": [
+                "task"
+              ],
+              "set_by": "agent",
+              "grants": false,
+              "description": "How big the change is, as the planner judged it."
+            },
+            {
+              "name": "example.ref",
+              "kind": "text",
+              "values": [],
+              "items": null,
+              "pattern": "^[0-9a-f]{7,40}$",
+              "max": 60,
+              "kinds": [
+                "task",
+                "run"
+              ],
+              "set_by": "outside",
+              "grants": false,
+              "description": "The commit an outside program recorded. Agents never write it."
+            },
+            {
+              "name": "example.cost",
+              "kind": "number",
+              "values": [],
+              "items": null,
+              "pattern": null,
+              "max": null,
+              "kinds": [
+                "task",
+                "run"
+              ],
+              "set_by": "outside",
+              "grants": false,
+              "description": "Dollars this work cost. Agents never write it."
+            },
+            {
+              "name": "example.paths",
+              "kind": "list",
+              "values": [],
+              "items": "text",
+              "pattern": null,
+              "max": null,
+              "kinds": [
+                "task"
+              ],
+              "set_by": "agent",
+              "grants": false,
+              "description": "Paths this task reads often, as globs. It grants nothing."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "path": "examples/lanes.yaml",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.lanes/1: its format-1 value is examples/lanes.json, which schemas/lanes.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [
+            {
+              "name": "light",
+              "approve_first": false,
+              "close": "agent",
+              "description": "Small fixes, tests and docs. Build it, climb the ladder, merge."
+            },
+            {
+              "name": "full",
+              "approve_first": true,
+              "close": "person",
+              "description": "A feature or a format change. A person approves the plan first and closes the task."
+            },
+            {
+              "name": "director",
+              "approve_first": false,
+              "close": "person",
+              "description": "A decision, not code. Write the options and stop; a person chooses."
+            }
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [
+            {
+              "name": "light",
+              "approve_first": false,
+              "close": "agent",
+              "description": "Small fixes, tests and docs. Build it, climb the ladder, merge."
+            },
+            {
+              "name": "full",
+              "approve_first": true,
+              "close": "person",
+              "description": "A feature or a format change. A person approves the plan first and closes the task."
+            },
+            {
+              "name": "director",
+              "approve_first": false,
+              "close": "person",
+              "description": "A decision, not code. Write the options and stop; a person chooses."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "path": "examples/run.md",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.run/1: its format-1 value is examples/run.json, which schemas/run.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.run/1",
+          "id": "R-2026-10-08-T-0901",
+          "task": "T-0901",
+          "role": "builder",
+          "model": "sonnet",
+          "started": "2026-10-08 14:08",
+          "finished": "2026-10-08 15:25",
+          "outcome": "needs-verifier",
+          "commits": [
+            "1a2b3c4",
+            "5d6e7f8"
+          ],
+          "labels": {}
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.run/1",
+          "id": "R-2026-10-08-T-0901",
+          "task": "T-0901",
+          "role": "builder",
+          "model": "sonnet",
+          "started": "2026-10-08 14:08",
+          "finished": "2026-10-08 15:25",
+          "outcome": "needs-verifier",
+          "commits": [
+            "1a2b3c4",
+            "5d6e7f8"
+          ],
+          "labels": {}
+        }
+      }
+    },
+    {
+      "path": "examples/state.md",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.state/1: its format-1 value is examples/state.json, which schemas/state.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.state/1",
+          "updated": "2026-10-08",
+          "updated_by": "orchestrator (opus)",
+          "labels": {
+            "workflow.milestone": "v1"
+          }
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.state/1",
+          "updated": "2026-10-08",
+          "updated_by": "orchestrator (opus)",
+          "labels": {
+            "workflow.milestone": "v1"
+          }
+        }
+      }
+    },
+    {
+      "path": "examples/task.md",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.task/1: its format-1 value is examples/task.json, which schemas/task.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0901",
+          "title": "Add a dark mode switch to the settings page",
+          "status": "running",
+          "lane": "light",
+          "done_when": [
+            "The settings page shows a dark mode switch",
+            "The choice survives a restart",
+            "Rungs 0-2 green in one ladder run"
+          ],
+          "depends_on": [
+            "T-0900"
+          ],
+          "blocked_by": null,
+          "created": "2026-10-08",
+          "started": "2026-10-08",
+          "finished": null,
+          "labels": {
+            "bonsai.branch": "t0901-dark-mode",
+            "bonsai.ladder": [
+              0,
+              1,
+              2
+            ],
+            "bonsai.allows": [
+              "assets/themes/**"
+            ],
+            "bonsai.wants": [],
+            "workflow.owner": "builder",
+            "workflow.model": "sonnet",
+            "workflow.estimate_h": 2.5
+          }
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0901",
+          "title": "Add a dark mode switch to the settings page",
+          "status": "running",
+          "lane": "light",
+          "done_when": [
+            "The settings page shows a dark mode switch",
+            "The choice survives a restart",
+            "Rungs 0-2 green in one ladder run"
+          ],
+          "depends_on": [
+            "T-0900"
+          ],
+          "blocked_by": null,
+          "created": "2026-10-08",
+          "started": "2026-10-08",
+          "finished": null,
+          "labels": {
+            "bonsai.branch": "t0901-dark-mode",
+            "bonsai.ladder": [
+              0,
+              1,
+              2
+            ],
+            "bonsai.allows": [
+              "assets/themes/**"
+            ],
+            "bonsai.wants": [],
+            "workflow.owner": "builder",
+            "workflow.model": "sonnet",
+            "workflow.estimate_h": 2.5
+          }
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-0/colon-in-value/case.md",
+      "rule": "format0-oddity",
+      "settled_by": "rule",
+      "about": "Format 0 reads a plain value holding ': ' as text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "id": "T-0930",
+          "title": "Rule: no tabs in YAML",
+          "status": "todo"
+        }
+      },
+      "format1": {
+        "outcome": "format-0"
+      }
+    },
+    {
+      "path": "trick/yaml-0/document-markers-skipped/case.yaml",
+      "rule": "format0-oddity",
+      "settled_by": "rule",
+      "about": "Format 0 skips --- and ... lines inside a YAML file and reads on as one mapping.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "name": "example",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "format-0"
+      }
+    },
+    {
+      "path": "trick/yaml-0/duplicate-last-wins/case.md",
+      "rule": "format0-oddity",
+      "settled_by": "rule",
+      "about": "Format 0 keeps the last of two duplicate keys.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "id": "T-0932",
+          "status": "done",
+          "title": "A key twice"
+        }
+      },
+      "format1": {
+        "outcome": "format-0"
+      }
+    },
+    {
+      "path": "trick/yaml-0/true-upper/case.yaml",
+      "rule": "format0-oddity",
+      "settled_by": "rule",
+      "about": "Format 0 reads TRUE as text (a YAML 1.1 reader takes it as a boolean).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "name": "example",
+          "enabled": "TRUE"
+        }
+      },
+      "format1": {
+        "outcome": "format-0"
+      }
+    },
+    {
+      "path": "trick/yaml-0/unquoted-hashes/case.md",
+      "rule": "format0-oddity",
+      "settled_by": "rule",
+      "about": "Format 0 reads bare commit hashes: as text, except one of digits only, which it reads as a number and loses its leading zero.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "id": "R-2026-10-01-T-0931",
+          "task": "T-0931",
+          "commits": [
+            "a1b2c3d",
+            "55227e5",
+            123456
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "format-0"
+      }
+    },
+    {
+      "path": "trick/yaml-1/alias/case.yaml",
+      "rule": "alias",
+      "settled_by": "rule",
+      "about": "An alias is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 2: anchors, aliases and tags are not supported: *close"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "alias"
+      }
+    },
+    {
+      "path": "trick/yaml-1/anchor/case.yaml",
+      "rule": "anchor",
+      "settled_by": "rule",
+      "about": "An anchor is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 2: anchors, aliases and tags are not supported: &close agent"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "anchor"
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-hash-line/case.yaml",
+      "rule": "block-hash-line",
+      "settled_by": "rule",
+      "about": "A line inside a block scalar that starts with # is refused (format 0 reads it as an empty line).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First line.\n\nLast line.\n",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "block-hash-line"
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-indicator-indent/case.yaml",
+      "rule": "block-indicator",
+      "settled_by": "rule",
+      "about": "An indentation indicator (|2) is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 3: unexpected indentation"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "block-indicator"
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-indicator-keep-folded/case.yaml",
+      "rule": "block-indicator",
+      "settled_by": "rule",
+      "about": "The keep indicator >+ is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "Kept.\n",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "block-indicator"
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-indicator-keep-literal/case.yaml",
+      "rule": "block-indicator",
+      "settled_by": "rule",
+      "about": "The keep indicator |+ is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "Kept.\n",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "block-indicator"
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-scalar-folded-strip/case.yaml",
+      "rule": "block-scalar",
+      "settled_by": "libraries",
+      "about": "A folded block scalar with strip (>-): no final line feed.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First part continues here.",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First part continues here.",
+          "after": "here"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-scalar-folded/case.yaml",
+      "rule": "block-scalar",
+      "settled_by": "libraries",
+      "about": "A folded block scalar (>): lines join with a space, an empty line is a line feed, one final line feed.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First part continues here.\nA new paragraph.\n",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First part continues here.\nA new paragraph.\n",
+          "after": "here"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-scalar-literal-strip/case.yaml",
+      "rule": "block-scalar",
+      "settled_by": "libraries",
+      "about": "A literal block scalar with strip (|-): no final line feed.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First line.\nSecond line.",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First line.\nSecond line.",
+          "after": "here"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-scalar-literal/case.yaml",
+      "rule": "block-scalar",
+      "settled_by": "libraries",
+      "about": "A literal block scalar (|): lines kept as written, a deeper line keeps its extra indentation, one final line feed (trailing empty lines dropped).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First line.\n  A deeper line keeps its extra spaces.\n\nAfter an empty line.\n",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First line.\n  A deeper line keeps its extra spaces.\n\nAfter an empty line.\n",
+          "after": "here"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-sequence/case.yaml",
+      "rule": "block-sequence",
+      "settled_by": "rule",
+      "about": "Block sequences indented deeper than their key, one space after each dash, of mappings and of scalars.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [
+            {
+              "name": "light",
+              "approve_first": false,
+              "close": "agent",
+              "description": "A sequence of mappings, deeper than its key."
+            }
+          ],
+          "names": [
+            "light",
+            "full"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [
+            {
+              "name": "light",
+              "approve_first": false,
+              "close": "agent",
+              "description": "A sequence of mappings, deeper than its key."
+            }
+          ],
+          "names": [
+            "light",
+            "full"
+          ]
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/bom-definition/case.yaml",
+      "rule": "bom-definition",
+      "settled_by": "rule",
+      "about": "One leading BOM in a YAML definition file is ignored (today parseYaml throws on it).",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 1: cannot parse as \"key: value\": \ufeffformat: bonsai.lanes/1"
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [
+            {
+              "name": "light",
+              "approve_first": false,
+              "close": "agent",
+              "description": "A BOM comes before this definition file."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/bom-frontmatter/case.md",
+      "rule": "bom-frontmatter",
+      "settled_by": "rule",
+      "about": "One leading BOM before a markdown file's frontmatter is ignored.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0913",
+          "title": "A BOM comes before the frontmatter",
+          "status": "todo"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0913",
+          "title": "A BOM comes before the frontmatter",
+          "status": "todo"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/comment-after-space/case.md",
+      "rule": "comment-after-space",
+      "settled_by": "rule",
+      "about": "A # after a space starts a comment; a key with only a comment after it reads as null.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0920",
+          "title": "Words before a comment",
+          "blocked_by": null,
+          "status": "todo"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0920",
+          "title": "Words before a comment",
+          "blocked_by": null,
+          "status": "todo"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/comment-line-start/case.yaml",
+      "rule": "comment-line-start",
+      "settled_by": "rule",
+      "about": "A comment line, at the margin or indented, is skipped.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [
+            {
+              "name": "light",
+              "approve_first": false,
+              "close": "agent",
+              "description": "Comment lines are skipped."
+            }
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [
+            {
+              "name": "light",
+              "approve_first": false,
+              "close": "agent",
+              "description": "Comment lines are skipped."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/dispatch-comment-first/case.yaml",
+      "rule": "dispatch-comment-first",
+      "settled_by": "rule",
+      "about": "Comment lines before format: are fine: format: is still the first key.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/dispatch-first/case.yaml",
+      "rule": "dispatch-first",
+      "settled_by": "rule",
+      "about": "format: is the first key: the file is read by the format-1 rules.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/dispatch-nested/case.md",
+      "rule": "dispatch-nested",
+      "settled_by": "rule",
+      "about": "A format: key that is not top-level does not count: the file is format 0.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "id": "T-0925",
+          "meta": {
+            "format": "bonsai.task/1"
+          },
+          "title": "A nested format key"
+        }
+      },
+      "format1": {
+        "outcome": "format-0"
+      }
+    },
+    {
+      "path": "trick/yaml-1/dispatch-none/case.md",
+      "rule": "dispatch-none",
+      "settled_by": "rule",
+      "about": "No top-level format: key: the file is format 0.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "id": "T-0925",
+          "title": "No format key",
+          "status": "todo"
+        }
+      },
+      "format1": {
+        "outcome": "format-0"
+      }
+    },
+    {
+      "path": "trick/yaml-1/dispatch-not-first/case.md",
+      "rule": "dispatch-not-first",
+      "settled_by": "rule",
+      "about": "A top-level format: anywhere but first is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "id": "T-0925",
+          "format": "bonsai.task/1",
+          "title": "format is not first"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "format-not-first"
+      }
+    },
+    {
+      "path": "trick/yaml-1/dispatch-pointer/case.md",
+      "rule": "dispatch-pointer",
+      "settled_by": "rule",
+      "about": "format: first, carrying contract §2.8's pointer comment: the comment is not part of the value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0924",
+          "title": "Made from a template",
+          "status": "todo"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0924",
+          "title": "Made from a template",
+          "status": "todo"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/doc-marker-dashes/case.yaml",
+      "rule": "doc-marker",
+      "settled_by": "rule",
+      "about": "A --- line inside a YAML file is refused: a YAML file is one document.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "doc-marker"
+      }
+    },
+    {
+      "path": "trick/yaml-1/doc-marker-dots/case.yaml",
+      "rule": "doc-marker",
+      "settled_by": "rule",
+      "about": "A ... line in a YAML file is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "doc-marker"
+      }
+    },
+    {
+      "path": "trick/yaml-1/doc-marker-frontmatter/case.md",
+      "rule": "doc-marker",
+      "settled_by": "rule",
+      "about": "A ... line inside a frontmatter block is refused (format 0 skips it).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0914",
+          "title": "A document end marker inside the frontmatter"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "doc-marker"
+      }
+    },
+    {
+      "path": "trick/yaml-1/doc-marker-leading/case.yaml",
+      "rule": "doc-marker",
+      "settled_by": "rule",
+      "about": "A --- line at the top of a YAML file is refused too: only a frontmatter's own two markers are allowed.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "doc-marker"
+      }
+    },
+    {
+      "path": "trick/yaml-1/dup-key-quoted/case.md",
+      "rule": "dup-key-quoted",
+      "settled_by": "rule",
+      "about": "A key twice, once plain and once quoted: refused for the quoted key, the first problem on its line (format 0 unquotes it and keeps the last).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0918",
+          "title": "The quoted key"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-quoted"
+      }
+    },
+    {
+      "path": "trick/yaml-1/every-line-read-own-indent/case.md",
+      "rule": "every-line-read",
+      "settled_by": "rule",
+      "about": "A block sequence at its key's own indent is a line the grammar does not consume: refused (format 0 reads done_when as null and silently drops every key after it).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0915",
+          "done_when": null
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "line-not-read"
+      }
+    },
+    {
+      "path": "trick/yaml-1/every-line-read-stray-item/case.yaml",
+      "rule": "every-line-read",
+      "settled_by": "rule",
+      "about": "A sequence item where a mapping key belongs is a line the grammar does not consume: refused (format 0 stops there and drops the rest).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "line-not-read"
+      }
+    },
+    {
+      "path": "trick/yaml-1/flow-empty/case.md",
+      "rule": "flow-empty",
+      "settled_by": "rule",
+      "about": "[] and {} are an empty list and an empty map.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0919",
+          "depends_on": [],
+          "labels": {}
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0919",
+          "depends_on": [],
+          "labels": {}
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/flow-item-char/case.md",
+      "rule": "flow-item-char",
+      "settled_by": "rule",
+      "about": "Inside a flow sequence a plain item may not hold , [ ] { or }: here b}c. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0923",
+          "labels": {
+            "example.tags": [
+              "a",
+              "b}c"
+            ]
+          }
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/flow-mapping/case.md",
+      "rule": "flow-mapping",
+      "settled_by": "rule",
+      "about": "A flow mapping with content is refused ({} alone is allowed).",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 3: flow mappings are not supported: {example.size: small}"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "flow-mapping"
+      }
+    },
+    {
+      "path": "trick/yaml-1/flow-multiline/case.md",
+      "rule": "flow-multiline",
+      "settled_by": "rule",
+      "about": "A flow sequence that does not close on its own line is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 3: unterminated or multi-line flow sequence: [T-0900,"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "flow-multiline"
+      }
+    },
+    {
+      "path": "trick/yaml-1/flow-nested/case.md",
+      "rule": "flow-nested",
+      "settled_by": "rule",
+      "about": "A flow sequence nested in another is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 4: nested flow collections are not supported: [0, [1, 2]]"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "flow-nested"
+      }
+    },
+    {
+      "path": "trick/yaml-1/flow-sequence/case.md",
+      "rule": "flow-sequence",
+      "settled_by": "rule",
+      "about": "One-line flow sequences of scalars, quoted items among them.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0919",
+          "depends_on": [
+            "T-0900",
+            "T-0901"
+          ],
+          "labels": {
+            "bonsai.ladder": [
+              0,
+              1,
+              2
+            ],
+            "example.tags": [
+              "plain",
+              "quoted, with a comma",
+              "single"
+            ]
+          }
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0919",
+          "depends_on": [
+            "T-0900",
+            "T-0901"
+          ],
+          "labels": {
+            "bonsai.ladder": [
+              0,
+              1,
+              2
+            ],
+            "example.tags": [
+              "plain",
+              "quoted, with a comma",
+              "single"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/folded-deeper/case.yaml",
+      "rule": "folded-deeper",
+      "settled_by": "rule",
+      "about": "In a folded block scalar (>), a line deeper than the first is refused (YAML would keep its line feeds; format 0 folds it with spaces).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "First line.   A deeper line. Last line.\n",
+          "after": "here"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "folded-deeper"
+      }
+    },
+    {
+      "path": "trick/yaml-1/hash-no-space/case.md",
+      "rule": "hash-no-space",
+      "settled_by": "rule",
+      "about": "A # with no space before it is part of the value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0920",
+          "title": "Issue#42 is fixed",
+          "lang": "C#"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0920",
+          "title": "Issue#42 is fixed",
+          "lang": "C#"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-complex/case.yaml",
+      "rule": "key-complex",
+      "settled_by": "rule",
+      "about": "A complex key (? key, then : value) is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 2: cannot parse as \"key: value\": ? lanes"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-complex"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-hyphen/case.md",
+      "rule": "key-hyphen",
+      "settled_by": "rule",
+      "about": "A key with a hyphen (done-when) is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0917",
+          "done-when": [
+            "A hyphen in a key"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-form"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-label/case.md",
+      "rule": "key-label",
+      "settled_by": "rule",
+      "about": "Label names <namespace>.<name> are accepted as keys (contract §5.1; a namespace may hold a hyphen).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0916",
+          "labels": {
+            "bonsai.branch": "t0916-label-keys",
+            "my-pack.note_text": "Label names have one dot"
+          }
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0916",
+          "labels": {
+            "bonsai.branch": "t0916-label-keys",
+            "my-pack.note_text": "Label names have one dot"
+          }
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-merge/case.yaml",
+      "rule": "key-merge",
+      "settled_by": "rule",
+      "about": "The merge key << is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 3: cannot parse as \"key: value\": <<:"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-merge"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-pattern/case.yaml",
+      "rule": "key-pattern",
+      "settled_by": "rule",
+      "about": "Keys of [a-z][a-z0-9_]* are accepted, a one-letter key among them.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [],
+          "step2_note": "Keys of lower case letters, digits and underscores",
+          "a": 1
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [],
+          "step2_note": "Keys of lower case letters, digits and underscores",
+          "a": 1
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-quoted-double/case.md",
+      "rule": "key-quoted",
+      "settled_by": "rule",
+      "about": "A double-quoted key is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0917",
+          "title": "A double-quoted key"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-quoted"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-quoted-single/case.md",
+      "rule": "key-quoted",
+      "settled_by": "rule",
+      "about": "A single-quoted key is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0917",
+          "title": "A single-quoted key"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-quoted"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-false/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key false is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "false": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-n/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key n is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "n": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-no/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key no is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "no": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-null/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key null is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "null": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-off/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key off is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "off": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-on/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key on is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "on": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-true/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key true is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "true": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-y/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key y is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "y": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-reserved-yes/case.yaml",
+      "rule": "key-reserved",
+      "settled_by": "rule",
+      "about": "The key yes is refused: a YAML 1.1 reader takes it as a boolean or null, not text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "yes": [
+            "task"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-reserved"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-twice/case.md",
+      "rule": "key-twice",
+      "settled_by": "rule",
+      "about": "A key twice in one mapping is refused (format 0 keeps the last).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0918",
+          "title": "The second title",
+          "status": "todo"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-twice"
+      }
+    },
+    {
+      "path": "trick/yaml-1/key-uppercase/case.md",
+      "rule": "key-uppercase",
+      "settled_by": "rule",
+      "about": "A key with an upper case letter (Title) is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0917",
+          "Title": "An upper case key"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-form"
+      }
+    },
+    {
+      "path": "trick/yaml-1/lines-crlf/case.md",
+      "rule": "lines-crlf",
+      "settled_by": "libraries",
+      "about": "CRLF line endings, frontmatter and body alike: read as with LF, and no CR reaches a value (the block scalar's lines join with LF, as YAML has it).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0912",
+          "title": "Every line ends in CRLF",
+          "status": "todo",
+          "done_when": [
+            "The reader reads every line"
+          ],
+          "summary": "First line.\nSecond line.\n"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0912",
+          "title": "Every line ends in CRLF",
+          "status": "todo",
+          "done_when": [
+            "The reader reads every line"
+          ],
+          "summary": "First line.\nSecond line.\n"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/lines-lf/case.md",
+      "rule": "lines-lf",
+      "settled_by": "rule",
+      "about": "LF line endings: every line is read.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0911",
+          "title": "Every line ends in LF",
+          "status": "todo",
+          "done_when": [
+            "The reader reads every line"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0911",
+          "title": "Every line ends in LF",
+          "status": "todo",
+          "done_when": [
+            "The reader reads every line"
+          ]
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/nested-mapping/case.yaml",
+      "rule": "nested-mapping",
+      "settled_by": "rule",
+      "about": "Mappings nest by indentation.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "outer": {
+            "inner": {
+              "leaf": "A value two levels down"
+            },
+            "sibling": 2
+          },
+          "after": true
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "outer": {
+            "inner": {
+              "leaf": "A value two levels down"
+            },
+            "sibling": 2
+          },
+          "after": true
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-bool/case.yaml",
+      "rule": "plain-bool",
+      "settled_by": "rule",
+      "about": "true and false, lower case, are booleans.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "approve_first": true,
+          "grants": false
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "approve_first": true,
+          "grants": false
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-date/case.md",
+      "rule": "plain-date",
+      "settled_by": "rule",
+      "about": "A YYYY-MM-DD date reads as text, never a date object (a YAML 1.1 library reads a date: §2.4 settles it).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0922",
+          "created": "2026-10-08"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0922",
+          "created": "2026-10-08"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-datetime/case.md",
+      "rule": "plain-datetime",
+      "settled_by": "rule",
+      "about": "A YYYY-MM-DD HH:MM time reads as text.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.run/1",
+          "id": "R-2026-10-08-T-0922",
+          "started": "2026-10-08 14:08"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.run/1",
+          "id": "R-2026-10-08-T-0922",
+          "started": "2026-10-08 14:08"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-decimal/case.yaml",
+      "rule": "plain-decimal",
+      "settled_by": "rule",
+      "about": "Decimals.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "cost": 3.25,
+          "change": -0.5
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "cost": 3.25,
+          "change": -0.5
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-ends-colon/case.md",
+      "rule": "plain-ends-colon",
+      "settled_by": "rule",
+      "about": "A plain value that ends in ':' is refused: quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0923",
+          "title": "Ends with a colon:"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-int-15/case.yaml",
+      "rule": "plain-int-15",
+      "settled_by": "rule",
+      "about": "Integers of at most 15 digits, a negative one and 0 among them.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "count": 123456789012345,
+          "negative": -42,
+          "zero": 0
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "count": 123456789012345,
+          "negative": -42,
+          "zero": 0
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-int-16/case.yaml",
+      "rule": "plain-int-16",
+      "settled_by": "rule",
+      "about": "An integer of 16 digits is refused: quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "count": 1234567890123456
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-0755/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: 0755. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "mode": 755
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-0x1f/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: 0x1F. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "mask": "0x1F"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-1-000/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: 1_000. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "count": "1_000"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-1e3/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: 1e3. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "limit": "1e3"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-5-arenas/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: 5 arenas. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "title": "5 arenas"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-55227e5/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: 55227e5. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "commit": "55227e5"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-colon/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: a value holding ': '. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "rule": "Rule: no tabs"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-dot-claude/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: .claude/**. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "path": ".claude/**"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-inf/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: .inf. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "ceiling": ".inf"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-no-capital/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: No. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "answer": "No"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-quoted/case.yaml",
+      "rule": "plain-listed-quoted",
+      "settled_by": "rule",
+      "about": "Each listed refusal reads as text once quoted.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "mode": "0755",
+          "commit": "55227e5",
+          "mask": "0x1F",
+          "limit": "1e3",
+          "count": "1_000",
+          "ceiling": ".inf",
+          "flag": "TRUE",
+          "answer": "No",
+          "title": "5 arenas",
+          "path": ".claude/**",
+          "rule": "Rule: no tabs"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "mode": "0755",
+          "commit": "55227e5",
+          "mask": "0x1F",
+          "limit": "1e3",
+          "count": "1_000",
+          "ceiling": ".inf",
+          "flag": "TRUE",
+          "answer": "No",
+          "title": "5 arenas",
+          "path": ".claude/**",
+          "rule": "Rule: no tabs"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-listed-true-upper/case.yaml",
+      "rule": "plain-listed-refusal",
+      "settled_by": "rule",
+      "about": "A listed refusal of contract §2.4, bare: TRUE. Quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "flag": "TRUE"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-null/case.md",
+      "rule": "plain-null",
+      "settled_by": "rule",
+      "about": "The null forms: empty, null and ~.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0922",
+          "blocked_by": null,
+          "started": null,
+          "finished": null
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0922",
+          "blocked_by": null,
+          "started": null,
+          "finished": null
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-other/case.yaml",
+      "rule": "plain-other",
+      "settled_by": "rule",
+      "about": "Anything else is refused, here a version number 1.2.3: quote this value.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "version": "1.2.3"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-text/case.yaml",
+      "rule": "plain-text",
+      "settled_by": "rule",
+      "about": "Plain text: starts with an ASCII letter or _, holds no ': ' and no ' #', does not end in ':'.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "role": "builder",
+          "title": "A plain text value, with a comma",
+          "branch": "t0922-plain_text/x.y",
+          "marker": "_starts_with_an_underscore"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "role": "builder",
+          "title": "A plain text value, with a comma",
+          "branch": "t0922-plain_text/x.y",
+          "marker": "_starts_with_an_underscore"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-word-on/case.yaml",
+      "rule": "plain-word",
+      "settled_by": "rule",
+      "about": "The word on, bare, is refused: a YAML 1.1 reader takes it as true.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "flag": "on"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/plain-word-true-title/case.yaml",
+      "rule": "plain-word",
+      "settled_by": "rule",
+      "about": "true in any case but lower (True) is refused: quote this value (format 0 reads True as a boolean).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.labels/1",
+          "namespace": "example",
+          "flag": true
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
+      }
+    },
+    {
+      "path": "trick/yaml-1/quote-in-plain/case.md",
+      "rule": "quote-in-plain",
+      "settled_by": "rule",
+      "about": "A quote character inside a plain value opens nothing: the comment after it is still a comment (format 0 takes the quote as opening one and keeps the comment).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0920",
+          "title": "Don't stop # a comment",
+          "note": "a \"quoted\" word"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0920",
+          "title": "Don't stop",
+          "note": "a \"quoted\" word"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/quoted-after-close/case.md",
+      "rule": "quoted-after-close",
+      "settled_by": "rule",
+      "about": "Something other than a comment after the closing quote is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0921",
+          "title": "\"Done\" later"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "after-quote"
+      }
+    },
+    {
+      "path": "trick/yaml-1/quoted-bad-escape/case.md",
+      "rule": "quoted-bad-escape",
+      "settled_by": "rule",
+      "about": "Any other escape (\\u here) is refused (format 0 keeps the backslash as written).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0921",
+          "title": "Caf\\u00e9"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "bad-escape"
+      }
+    },
+    {
+      "path": "trick/yaml-1/quoted-escapes/case.yaml",
+      "rule": "quoted-escapes",
+      "settled_by": "rule",
+      "about": "The five escapes in double quotes: \\\", \\\\, \\n, \\r and \\t.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "quote \" backslash \\ newline \n return \r tab \t end"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "text": "quote \" backslash \\ newline \n return \r tab \t end"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/quoted-multiline/case.md",
+      "rule": "quoted-multiline",
+      "settled_by": "rule",
+      "about": "A quoted scalar that does not close on its own line is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 4: unexpected indentation"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quoted-multiline"
+      }
+    },
+    {
+      "path": "trick/yaml-1/quoted-one-line/case.md",
+      "rule": "quoted-one-line",
+      "settled_by": "rule",
+      "about": "Quoted scalars on one line are text; a comment may follow the closing quote.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0921",
+          "title": "Single quoted: a colon inside",
+          "note": "Double quoted # not a comment",
+          "then": "Followed by a comment"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0921",
+          "title": "Single quoted: a colon inside",
+          "note": "Double quoted # not a comment",
+          "then": "Followed by a comment"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/quoted-single-escape/case.md",
+      "rule": "quoted-single-escape",
+      "settled_by": "libraries",
+      "about": "Two single quotes inside single quotes: §2.4's words do not settle it, so the two-library test does (both read one quote).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0921",
+          "title": "It's quoted"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0921",
+          "title": "It's quoted"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/quoted-unescaped-quote/case.md",
+      "rule": "quoted-unescaped-quote",
+      "settled_by": "rule",
+      "about": "An unescaped \" inside double quotes is refused.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0921",
+          "title": "Say \"hi\" now"
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "unescaped-quote"
+      }
+    },
+    {
+      "path": "trick/yaml-1/seq-dash-space/case.md",
+      "rule": "seq-dash-space",
+      "settled_by": "rule",
+      "about": "A sequence item with two spaces after its dash is refused: exactly one.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.task/1",
+          "id": "T-0919",
+          "done_when": [
+            "Two spaces after the dash"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "seq-dash-space"
+      }
+    },
+    {
+      "path": "trick/yaml-1/tab-indent/case.yaml",
+      "rule": "tab-indent",
+      "settled_by": "rule",
+      "about": "A tab in a line's indentation is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 3: tab used for indentation"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "tab-indent"
+      }
+    },
+    {
+      "path": "trick/yaml-1/tag/case.yaml",
+      "rule": "tag",
+      "settled_by": "rule",
+      "about": "A tag is refused.",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 2: anchors, aliases and tags are not supported: !!str 1"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "tag"
+      }
+    }
+  ]
+}

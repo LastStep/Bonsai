@@ -1,0 +1,9 @@
+format: bonsai.lanes/1
+lanes:
+  - name: light
+    approve_first: false
+    close: agent
+    description: "A sequence of mappings, deeper than its key."
+names:
+  - light
+  - full

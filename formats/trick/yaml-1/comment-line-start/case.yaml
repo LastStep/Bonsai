@@ -1,0 +1,8 @@
+format: bonsai.lanes/1
+# A comment at the start of a line.
+lanes:
+  # An indented comment line.
+  - name: light
+    approve_first: false
+    close: agent
+    description: "Comment lines are skipped."

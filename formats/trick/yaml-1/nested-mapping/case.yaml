@@ -1,0 +1,6 @@
+format: bonsai.lanes/1
+outer:
+  inner:
+    leaf: A value two levels down
+  sibling: 2
+after: true

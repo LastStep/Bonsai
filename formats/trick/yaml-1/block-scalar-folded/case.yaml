@@ -1,0 +1,7 @@
+format: bonsai.lanes/1
+text: >
+  First part
+  continues here.
+
+  A new paragraph.
+after: here

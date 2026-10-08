@@ -1,0 +1,5 @@
+format: bonsai.lanes/1
+role: builder
+title: A plain text value, with a comma
+branch: t0922-plain_text/x.y
+marker: _starts_with_an_underscore

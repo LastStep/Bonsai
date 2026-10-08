@@ -1,0 +1,13 @@
+format: bonsai.labels/1
+namespace: example
+mode: "0755"
+commit: '55227e5'
+mask: "0x1F"
+limit: "1e3"
+count: "1_000"
+ceiling: ".inf"
+flag: "TRUE"
+answer: "No"
+title: "5 arenas"
+path: ".claude/**"
+rule: "Rule: no tabs"
