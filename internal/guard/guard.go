@@ -32,6 +32,7 @@ const (
 	RuleOtherTool    = "tool-not-judged"  // allow: a tool other than the file tools and the shells
 	RuleBadInput     = "bad-input"        // deny: the payload cannot be read
 	RuleBadGlob      = "bad-glob"         // deny: a glob on bonsai.yaml's lists is not a glob the guard reads
+	RuleBadPath      = "bad-path"         // deny: Windows opens the path but cannot name where it leads
 	RuleLogFailed    = "log-failed"       // deny: the guard would allow the call but cannot record it
 	RuleOverTime     = "over-time"        // deny: the guard ran past its own time limit
 	RuleInternal     = "internal-error"   // deny: the guard failed inside (a panic)

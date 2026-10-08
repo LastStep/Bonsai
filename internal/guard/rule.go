@@ -6,6 +6,7 @@ package guard
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -37,7 +38,12 @@ func Decide(in *Input, root string, cfg *workspace.Config) Decision {
 			}
 		}
 	}
-	rels := projectPaths(root, in.Cwd, in.Path)
+	rels, err := projectPaths(root, in.Cwd, in.Path)
+	if err != nil {
+		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: Windows opens the path but cannot name where it leads (%s), "+
+			"so the guard cannot tell whether it is protected", in.Tool, quote(filepath.ToSlash(in.Path), 120), oneLine(err.Error())),
+			"write to the file by its plain path inside the project (a drive letter and folders), or tell the person")
+	}
 	if len(rels) == 0 {
 		return allow(RuleOutside, "")
 	}

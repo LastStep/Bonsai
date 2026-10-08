@@ -8,16 +8,23 @@ package guard
 //     with ~ also as one in the user's home folder;
 //   - with symbolic links resolved as far as the path exists (a link to a protected file is the protected file),
 //     and a link whose target does not exist yet followed, since a write through it creates that target;
-//   - on Windows, also as Windows itself reduces a name: the \\?\ prefix dropped, Git Bash's /c/... read as C:\...,
-//     a stream after a colon cut off (protected.txt::$DATA is protected.txt), and the dots and spaces Windows drops
-//     from the end of a name dropped (protected.txt. is protected.txt); resolving an existing path there also gives
-//     its long name and its letter case on disk;
+//   - on Windows, also as Windows itself reduces a name: the \\?\ prefix of a drive or share dropped, Git Bash's
+//     /c/... read as C:\..., a stream after a colon cut off in every name (protected.txt::$DATA is protected.txt,
+//     secrets::$INDEX_ALLOCATION\key.txt is secrets\key.txt), and the dots and spaces Windows drops from the end of
+//     a name dropped (protected.txt. is protected.txt);
+//   - on Windows, also as Windows itself names it (finalPath, final_windows.go): the longest part of the path that
+//     exists, opened and named by GetFinalPathNameByHandle, which resolves junctions, symbolic links, mount points,
+//     short (8.3) names, streams and device or volume forms (\\?\GLOBALROOT\Device\..., \\?\Volume{...}\...) to the
+//     drive-letter path and letter case on disk, then the rest of the path;
 // each against the project's folder as given and as resolved. Letter case is folded where the project's folder is
 // case-insensitive: always on Windows and macOS, and on Linux when bonsai.yaml answers to BONSAI.YAML too (a folder
 // on /mnt/c in WSL).
 //
 // Not covered, the limits of a tripwire until step 5.3: a hard link made to a protected file, a short (8.3) name of
 // a file that does not exist yet, and another route to the same disk (a network share of it).
+//
+// On Windows, Go since 1.23 no longer reports a junction as a symbolic link, nor follows one in EvalSymlinks, so
+// resolve alone misses junctions (which need no privilege to make); finalPath is what follows them.
 
 import (
 	"io/fs"
@@ -32,11 +39,17 @@ import (
 
 // projectPaths gives every project-relative form of an edit's path p (forward slashes, each once, in a fixed
 // order: as written first), or none when p lies outside the project in every form. root is the project's absolute
-// folder; cwd the payload's.
-func projectPaths(root, cwd, p string) []string {
+// folder; cwd the payload's. Its error says Windows opened a part of a path but could not name it: the guard cannot
+// tell where that path leads.
+func projectPaths(root, cwd, p string) ([]string, error) {
 	roots := []string{filepath.Clean(root)}
 	if real, err := filepath.EvalSymlinks(root); err == nil {
 		roots = appendNew(roots, real)
+	}
+	if f, ok, err := finalPath(root); err != nil {
+		return nil, err
+	} else if ok {
+		roots = appendNew(roots, f)
 	}
 	written := []string{p}
 	if t := tildeForm(p); t != "" {
@@ -52,6 +65,11 @@ func projectPaths(root, cwd, p string) []string {
 		a := absolute(cwd, root, w)
 		targets = appendNew(targets, a)
 		targets = appendNew(targets, resolve(a))
+		if f, ok, err := finalPath(a); err != nil {
+			return nil, err
+		} else if ok {
+			targets = appendNew(targets, f)
+		}
 	}
 	var out []string
 	for _, t := range targets {
@@ -67,7 +85,7 @@ func projectPaths(root, cwd, p string) []string {
 			out = appendNew(out, rel)
 		}
 	}
-	return out
+	return out, nil
 }
 
 // tildeForm reads a path that starts with ~ as one in the user's home folder, as Claude Code's file tools may; ""
@@ -143,10 +161,13 @@ func windowsForms(p string) []string {
 	q := strings.ReplaceAll(p, "/", `\`)
 	for _, pre := range []string{`\\?\`, `\\.\`, `\??\`} {
 		if strings.HasPrefix(q, pre) {
+			// Only a drive or a share: a device or volume form (\\?\GLOBALROOT\..., \\?\Volume{...}\...) is left
+			// to finalPath, which asks Windows where it leads.
 			rest := q[len(pre):]
-			if len(rest) >= 4 && strings.EqualFold(rest[:4], `UNC\`) {
+			switch {
+			case len(rest) >= 4 && strings.EqualFold(rest[:4], `UNC\`):
 				q = `\\` + rest[4:]
-			} else {
+			case len(rest) >= 2 && isLetter(rest[0]) && rest[1] == ':':
 				q = rest
 			}
 			break
@@ -167,8 +188,9 @@ func windowsForms(p string) []string {
 	return forms
 }
 
-// win32Names reduces each name in a Windows path as Windows does when it opens it: the dots and spaces at the end of
-// a name dropped, and in the last name a stream after a colon cut off. The volume (C: or \\server\share) is kept.
+// win32Names reduces each name in a Windows path as Windows does when it opens it: a stream after a colon cut off
+// in every name (secrets::$INDEX_ALLOCATION is the folder secrets, protected.txt::$DATA the file), then the dots and
+// spaces at the end of a name dropped. The volume (C: or \\server\share) is kept.
 func win32Names(p string) string {
 	vol := ""
 	switch {
@@ -182,10 +204,8 @@ func win32Names(p string) string {
 	}
 	segs := strings.Split(p[len(vol):], `\`)
 	for i, s := range segs {
-		if i == len(segs)-1 {
-			if j := strings.IndexByte(s, ':'); j >= 0 {
-				s = s[:j]
-			}
+		if j := strings.IndexByte(s, ':'); j >= 0 {
+			s = s[:j]
 		}
 		if s != "." && s != ".." {
 			s = strings.TrimRight(s, ". ")
