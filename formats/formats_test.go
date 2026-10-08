@@ -148,6 +148,16 @@ func TestManifestMatchesEveryFile(t *testing.T) {
 	}
 }
 
+// sortedKeys lists a set's keys in order, so failure messages come out byte-stable (no map-order iteration).
+func sortedKeys(m map[string]bool) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func minus(a, b []string) []string {
 	in := map[string]bool{}
 	for _, x := range b {
@@ -263,7 +273,7 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 			t.Errorf("rule %s has no case in expect.json", r)
 		}
 	}
-	for code := range codes {
+	for _, code := range sortedKeys(codes) {
 		if !usedCode[code] {
 			t.Errorf("README.md lists reason code %s, which no case uses", code)
 		}
@@ -290,19 +300,19 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 	for _, p := range paths {
 		have[p] = true
 	}
-	for p := range want {
+	for _, p := range sortedKeys(want) {
 		if !have[p] {
 			t.Errorf("%s has no case in expect.json", p)
 		}
 	}
-	for p := range have {
+	for _, p := range sortedKeys(have) {
 		if !want[p] {
 			t.Errorf("expect.json has a case for %s, which is neither a trick file nor an example source", p)
 		}
 	}
 	// Each trick file sits alone in its case folder, as trick/yaml-1/<case>/case.yaml or case.md.
 	caseFile := regexp.MustCompile(`^trick/yaml-[01]/[a-z0-9-]+/case\.(yaml|md)$`)
-	for p := range want {
+	for _, p := range sortedKeys(want) {
 		if strings.HasPrefix(p, "trick/") && !caseFile.MatchString(p) {
 			t.Errorf("%s is not laid out as trick/yaml-<0|1>/<case>/case.<yaml|md>", p)
 		}
