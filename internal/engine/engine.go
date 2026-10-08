@@ -16,6 +16,18 @@
 // The engine applies only what a person asked for: init and update write project files, the home's pack cache and
 // the copies --adopt saves in it, and nothing else (no ~/.claude file, no commit, no plugin install: installing is
 // plan part 4). A change to a hook line runs code, and this build only refuses it: --allow-exec is step 5.1.
+//
+// The hook lines, for a reviewer (plan part 5's verifier reads them):
+//   - what is written: settings.go, ownHooks (Bonsai's own line, `bonsai hook guard || exit 2` on PreToolUse, by
+//     name, in shell form) and buildLines (each pack's hooks entries, as its pack.yaml gives them); applyLines puts
+//     them in the file, one group per event and matcher, beside the project's own hooks;
+//   - an old Bonsai line taken out at a first link: settings.go, isOldBonsaiHook and claim;
+//   - the refusal: lineChanges marks a hook line added or changed against the lines the lock last consented to
+//     (RunsCode); plan.go sets Plan.HookChange when an update (not a first link) would write one; apply.go refuses
+//     such a plan whatever the caller asks; cmd/bonsai/engine.go prints the refusal (exit 4) naming --allow-exec,
+//     and refuses --allow-exec itself (exit 2) until step 5.1;
+//   - the tests: engine_test.go, TestHookLineChangeIsRefused and TestCheck1InitIntoADriftedProject;
+//     cmd/bonsai/engine_test.go, TestUpdateCommand.
 package engine
 
 import (
