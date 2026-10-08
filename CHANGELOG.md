@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Rebuild - Unreleased
+
+> **Bonsai is being rebuilt from scratch.** 0.4.3 is the old product's last release; its code stays at tag `v0.4.3`
+> and in git history. The 0.5.0 changes below were never released, and the rebuild does not carry them. The design is
+> in `design/`, and `STATE.md` says where the rebuild stands.
+
+### Added
+- **The formats set** (`formats/`): a JSON Schema and an example for each of the contract's ten formats, trick files
+  for readers with their expected outcomes in `expect.json`, a manifest of every file's bytes, and a Go test.
+- **A stub `bonsai`** (`cmd/bonsai`): it answers `bonsai --version` and refuses anything else with exit 2 and the next
+  step. The commands come with the rebuild's next parts.
+- **A `windows` CI job**: `go test ./...` and `go vet ./...` on `windows-latest`, beside the Linux `test` job.
+
+### Changed
+- **`release.yml` builds only**: a manual run of `goreleaser build --snapshot --clean`, with a read-only token and no
+  secret. No tag starts it, it cannot re-release a tag, and it publishes nothing. It stays switched off until the
+  first new release.
+- **govulncheck is pinned to v1.7.0** in CI, the newest release that builds with the Go 1.25 CI runs.
+- **`go.mod`** needs only the standard library: every old dependency is gone.
+
+### Removed
+- **The old product's code**: the commands (`cmd/`), `internal/`, the embedded `catalog/` and guides (`embed.go`,
+  `docs/`), the documentation site (`website/`) and its deploy workflow (`.github/workflows/docs.yml`). The site already
+  published stays on GitHub Pages until Pages is turned off.
+- **`make install`**: `go install` would put a `bonsai` in front of the installed one on the PATH. `make build`
+  writes to `OUT` (default `./bonsai`).
+
 ## [0.5.0] - Unreleased
 
 > **The "in-repo memory" release.** Two new opt-in scaffolding items give a workspace a durable, version-controlled memory layer: a frozen-schema memory graph (`MEMORY.md` + `Memory/` tree) and a repo-root project manifest. `bonsai validate` gains a project-level pass that lints both, and `bonsai guide` documents the two v1 schemas. Generated workspaces now route architectural decisions into the memory graph rather than an append-only log.
