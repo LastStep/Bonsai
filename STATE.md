@@ -1,14 +1,15 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 01:31, when Rohan chose path (a) at the gate
-(`records/runs/R-2026-10-09-gate.md`, 01:27) and the plan for step 5 was started (`records/runs/R-2026-10-09-plan-5.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 02:18, when the plan for step 5 went to Rohan for approval
+(`records/runs/R-2026-10-09-plan-5.md`).
 
 ## In short
 
 Bonsai is being rebuilt as one small Go program that gives every project the same formats, packs, guards, recorder and
 proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). **Part 0 and all six parts of the walking skeleton
 are done; the skeleton's last fresh verifier passed it. At the gate (9 Oct) Rohan chose path (a), the full Bonsai
-1.0. The plan for step 5 is being written; nothing in step 5 is built before he approves it.** The gate report is
+1.0. The plan for step 5, `design/plan-5.md`, is written, reviewed fresh and fixed, and waits for his approval;
+nothing in step 5 is built before.** The gate report is
 `records/gate-skeleton.md`. Everything below is on `main` (now `1170c92` and the records after it), pushed.
 
 - **Part 0, the formats** (`3770d04`, now set 3 at `3a1f195`): `formats/` holds a JSON Schema for each of the
@@ -46,6 +47,13 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   of the job will be handled by the studio, while bonsai is a pure cli tool for overall simplicity." No web page, no
   `bonsai serve`; every visual of Bonsai's data is the studio's, from Bonsai's JSON outputs. Dated notes in the spec
   (§1, §2, §4, §11, §14, §16), the contract's reader lists, the one-pager and `CLAUDE.md`.
+- **9 Oct: Bonsai's scope stands as split on 7 Oct.** Bonsai is everything inside one project (its rules, its guard,
+  the record of what happened, the proof that work is done) and works with no studio; the studio is everything across
+  projects and anything that acts on agents (dispatch, approvals, status moves, notifications, every visual). The
+  recorder and the ladder runner stay in Bonsai; Bonsai has no scheduler.
+- **9 Oct: later parts' plans reach him under (B):** a part's section comes to him only when it changes what is his
+  (hours or re-ask line, the order, his steps, a new public repo or content, an option round, a format change: a new
+  major or a removal). He first said (A), then chose (B) once the scope question was settled.
 - 9 Oct: a handoff for the studio's orchestrator, `records/handoff-studio-2026-10-09.md`; the studio still links at
   step 7, after 5.5 (his 8 Oct "Bonsai first" stands).
 
@@ -73,22 +81,21 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: the plan for step 5
+## The one thing to do next: Rohan's approval of the step 5 plan
 
-`design/plan-5.md`, on branch `plan5` in `~/Servers/Bonsai-plan5`: Rohan's part over all of step 5 (5.1-5.7: order,
-hours, re-ask lines, his steps, when the studio links), the builders' part with 5.1 (formats and engine to 1.0, 30-47
-h, re-ask at 61) in full and 5.2-5.7 outlined. Then a fresh Opus review, its fixes, and Rohan's approval. Then 5.1,
-in plain worktrees as the skeleton was; it settles the 5.1 findings in the gate report's section 5 (`--allow-exec` and
-the mixed update first).
+`design/plan-5.md` (on `main`): Rohan's part over all of step 5, then 5.1 in full (eleven pieces, 5.1.0 to 5.1.10
+with 5.1.4 split in two) and 5.2-5.7 outlined. Reviewed by a fresh Opus agent (ready after fixes), fixed on every
+finding, the fixes audited. On his approval: 5.1 starts with 5.1.0 (the timing-shaped guard test) beside 5.1.1 (the
+consent rules: `--allow-exec`, every first link to the test pack needing it, a no-hook fixture pack), in plain
+worktrees, as the plan's "How the work runs in step 5" says.
 
 A flaky Windows test was fixed on the way (`1170c92`): `TestRenameRetryOnWindows` held a file for a fixed 150 ms
 and failed once in CI on a loaded runner; it now holds the file until the first busy refusal
-(`records/runs/R-2026-10-09-ci-flake.md`). Other tests whose outcome rests on a fixed time budget (the guard's
-`TestEachFaultBlocks` first) are passed to the step 5 plan to place.
+(`records/runs/R-2026-10-09-ci-flake.md`).
 
 ## Waiting on Rohan
 
-- The step 5 plan's approval, once it has had its fresh review and fixes.
+- The step 5 plan's approval (`design/plan-5.md`, his part down to "Size").
 - Later: step 8 at 5.4 (a pre-release `bonsai`); at 5.7 the `release` environment and a new tap token (the working
   environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website).
