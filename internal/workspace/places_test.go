@@ -61,7 +61,7 @@ func TestMachineKey(t *testing.T) {
 	if k1 != "r-"+hex.EncodeToString(sum[:])[:16] {
 		t.Errorf("the key is not the first 16 hex of the real path's SHA-256")
 	}
-	if a, b := machineKey(`C:\Users\Someone\Proj`, "windows"), machineKey("c:/users/someone/proj", "windows"); a != b {
+	if a, b := machineKey(`D:\Work\Proj`, "windows"), machineKey("d:/work/proj", "windows"); a != b {
 		t.Errorf("on Windows, letter case and separators change the key: %s %s", a, b)
 	}
 	if a, b := machineKey("/srv/Proj", "linux"), machineKey("/srv/proj", "linux"); a == b {
