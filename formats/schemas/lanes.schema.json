@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.lanes/1",
+  "description": "Lane definitions (contract §6): the lanes a pack defines and the two rules Bonsai's base understands for each. A YAML pack file, written by a pack (Bonsai's base defines none); read by Bonsai (bonsai check, the guard), the studio (through status --json) and agents (each description). A task's lane field names one of these. A writer writes every field below, in this order (contract §2.2); a reader treats a missing field as null and keeps an unknown one. The file follows the format-1 YAML rules (contract §2.4), and as a pack file it documents itself in # comments (contract §2.8).",
+  "type": "object",
+  "required": [
+    "format",
+    "lanes"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, always the first key (contract §2.2).",
+      "examples": [
+        "bonsai.lanes/1"
+      ],
+      "const": "bonsai.lanes/1"
+    },
+    "lanes": {
+      "description": "The lanes this pack defines, one entry each.",
+      "examples": [
+        [
+          {
+            "name": "light",
+            "approve_first": false,
+            "close": "agent",
+            "description": "Small fixes and docs. Build it, climb the ladder, merge."
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "approve_first",
+          "close",
+          "description"
+        ],
+        "properties": {
+          "name": {
+            "description": "The lane's name, as a task's lane field writes it.",
+            "examples": [
+              "light",
+              "full"
+            ],
+            "type": "string"
+          },
+          "approve_first": {
+            "description": "A rule base understands (contract §6, a closed list of two): when true, a move to running, verify or done needs the task to have read approved since it last read todo or plan.",
+            "examples": [
+              false,
+              true
+            ],
+            "type": "boolean"
+          },
+          "close": {
+            "description": "The other rule base understands (contract §6): who may move the task to done, person or agent.",
+            "examples": [
+              "agent",
+              "person"
+            ],
+            "enum": [
+              "person",
+              "agent"
+            ]
+          },
+          "description": {
+            "description": "What agents read about the lane: everything the two rules do not say (contract §6).",
+            "examples": [
+              "A decision, not code. Write the options and stop; a person chooses."
+            ],
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

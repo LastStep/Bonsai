@@ -1,0 +1,8 @@
+{
+  "format": "bonsai.state/1",
+  "updated": "2026-10-08",
+  "updated_by": "orchestrator (opus)",
+  "labels": {
+    "workflow.milestone": "v1"
+  }
+}

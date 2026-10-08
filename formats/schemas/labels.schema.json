@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.labels/1",
+  "description": "Label definitions (contract §5.2): what each label in one namespace means, what kind of value it takes and who may write it. A YAML definition file, written by a pack (or attached on the machine, contract §5.3); read by Bonsai (bonsai check checks every label value against its definition; the guard reads granting labels), agents (they see each description) and the studio. A definition may be added, never redefined (contract §5.1). A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null (grants: as false) and keeps an unknown one. The file follows the format-1 YAML rules (contract §2.4), and as a pack file it documents itself in # comments (contract §2.8).",
+  "type": "object",
+  "required": [
+    "format",
+    "namespace",
+    "version",
+    "labels"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, always the first key (contract §2.2).",
+      "examples": [
+        "bonsai.labels/1"
+      ],
+      "const": "bonsai.labels/1"
+    },
+    "namespace": {
+      "description": "The namespace every label here belongs to: bonsai for Bonsai and the packs it publishes, a pack's own id for any other pack (contract §5.1).",
+      "examples": [
+        "bonsai",
+        "workflow"
+      ],
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "version": {
+      "description": "The definer's own version of this set; it only grows, as definitions are only added (contract §5.2).",
+      "examples": [
+        1
+      ],
+      "type": "integer",
+      "minimum": 1
+    },
+    "labels": {
+      "description": "The definitions, one per label.",
+      "examples": [
+        [
+          {
+            "name": "workflow.owner",
+            "kind": "choice",
+            "values": [
+              "builder",
+              "verifier"
+            ],
+            "items": null,
+            "pattern": null,
+            "max": null,
+            "kinds": [
+              "task"
+            ],
+            "set_by": "agent",
+            "grants": false,
+            "description": "The role that works on this task."
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "values",
+          "items",
+          "pattern",
+          "max",
+          "kinds",
+          "set_by",
+          "grants",
+          "description"
+        ],
+        "properties": {
+          "name": {
+            "description": "The label's full name, <namespace>.<name> with one dot, in this file's namespace (contract §5.1).",
+            "examples": [
+              "workflow.owner",
+              "bonsai.allows"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+          },
+          "kind": {
+            "description": "The kind of value (contract §5.2), a closed list: choice (one of values), text (one line; optional pattern and max), number (an integer or a decimal), list (a list of items).",
+            "examples": [
+              "choice",
+              "list"
+            ],
+            "enum": [
+              "choice",
+              "text",
+              "number",
+              "list"
+            ]
+          },
+          "values": {
+            "description": "For kind choice: the allowed values. [] for every other kind.",
+            "examples": [
+              [
+                "builder",
+                "verifier"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "items": {
+            "description": "For kind list: the kind of each item, text or number (contract §5.2, §5.6). null for every other kind.",
+            "examples": [
+              "text",
+              null
+            ],
+            "enum": [
+              "text",
+              "number",
+              null
+            ]
+          },
+          "pattern": {
+            "description": "For kind text: an optional regular expression the value must match (contract §5.6's bonsai.branch has one). null when there is none, and for every other kind.",
+            "examples": [
+              "^[A-Za-z0-9._/-]{1,100}$",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "max": {
+            "description": "For kind text: an optional most characters, up to 300 (contract §5.2). null when there is none, and for every other kind.",
+            "examples": [
+              60,
+              null
+            ],
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 300
+          },
+          "kinds": {
+            "description": "Which document kinds may carry the label (contract §7.3): task, run, state, or a kind a pack declares. Named kinds, not on: a YAML 1.1 reader takes that key as true.",
+            "examples": [
+              [
+                "task"
+              ],
+              [
+                "task",
+                "run"
+              ]
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "set_by": {
+            "description": "Who writes the value, a closed list (contract §5.2, §5.4): agent (agents write it in the file) or outside (agents never write it; a program outside agent sessions does).",
+            "examples": [
+              "agent",
+              "outside"
+            ],
+            "enum": [
+              "agent",
+              "outside"
+            ]
+          },
+          "grants": {
+            "description": "true when the value grants a right (contract §5.5; today only bonsai.allows); false otherwise. A reader takes a missing grants as false.",
+            "examples": [
+              false,
+              true
+            ],
+            "type": "boolean"
+          },
+          "description": {
+            "description": "One line, at most 200 characters: what agents see about the label (contract §5.2).",
+            "examples": [
+              "The role that works on this task."
+            ],
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^[^\\r\\n]*$"
+          }
+        }
+      }
+    }
+  }
+}

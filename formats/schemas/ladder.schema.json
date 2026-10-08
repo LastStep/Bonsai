@@ -1,0 +1,504 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.ladder/1",
+  "description": "The ladder result (contract §11): the proof that a task's checks passed, at a commit. One JSON document per task at the main checkout's .bonsai/local/ladder/<task id>.json (a --ci run writes ladder/ci.json), never committed. Written by Bonsai's ladder runner; read by the stop gate, verifiers, the statusline, the runner (Bless) and the studio. Today's fields stay (the studio's ladder.mjs); format, workspace and mode are added. Every field is always present, null or [] where it does not apply (contract §2.2, §11); a reader treats a missing field as null, keeps an unknown one (today's rungs also carry exit, output_tail, job and checked) and refuses a duplicate key. After writing, the runner appends a ladder log record with the file's sha256.",
+  "type": "object",
+  "required": [
+    "format",
+    "task",
+    "workspace",
+    "mode",
+    "started",
+    "finished",
+    "git",
+    "requested",
+    "green",
+    "rungs",
+    "skipped",
+    "leftovers",
+    "proof"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2, §11).",
+      "examples": [
+        "bonsai.ladder/1"
+      ],
+      "const": "bonsai.ladder/1"
+    },
+    "task": {
+      "description": "The task id the result proves, or null for a run with no task (a --ci run).",
+      "examples": [
+        "T-0901",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "workspace": {
+      "description": "The workspace id from bonsai.yaml (contract §3). Today's field: project.",
+      "examples": [
+        "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+      ],
+      "type": "string",
+      "pattern": "^ws-[a-z0-9]{26}$"
+    },
+    "mode": {
+      "description": "local or ci (contract §11). A result whose mode is not local is never a task's proof; a format-0 result with no mode reads as local.",
+      "examples": [
+        "local",
+        "ci"
+      ],
+      "enum": [
+        "local",
+        "ci"
+      ]
+    },
+    "started": {
+      "description": "When the run started: ISO-8601 UTC with milliseconds, as today.",
+      "examples": [
+        "2026-10-08T15:01:12.345Z"
+      ],
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "finished": {
+      "description": "When the run finished: ISO-8601 UTC with milliseconds. Results are cleaned by it (generated.ladder.keep_days).",
+      "examples": [
+        "2026-10-08T15:03:40.012Z"
+      ],
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "git": {
+      "description": "What the result proves: the commit, the branch and whether the working tree was dirty, in the checkout the ladder ran in.",
+      "examples": [
+        {
+          "sha": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+          "branch": "t0901-dark-mode",
+          "dirty": false
+        }
+      ],
+      "type": "object",
+      "required": [
+        "sha",
+        "branch",
+        "dirty"
+      ],
+      "properties": {
+        "sha": {
+          "description": "The commit at HEAD (git rev-parse HEAD).",
+          "examples": [
+            "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80"
+          ],
+          "type": "string"
+        },
+        "branch": {
+          "description": "The branch at HEAD (git rev-parse --abbrev-ref HEAD).",
+          "examples": [
+            "t0901-dark-mode",
+            "main"
+          ],
+          "type": "string"
+        },
+        "dirty": {
+          "description": "true when the working tree had changes (git status --porcelain printed anything).",
+          "examples": [
+            false,
+            true
+          ],
+          "type": "boolean"
+        }
+      }
+    },
+    "requested": {
+      "description": "The rungs the run had to climb: the workspace's floor plus the task's bonsai.ladder label (contract §5.6, §11); the stop gate requires each green.",
+      "examples": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "green": {
+      "description": "true when every rung the run took up is green (as today, a rung not built yet that the task does not name reads pending and does not make it red).",
+      "examples": [
+        true,
+        false
+      ],
+      "type": "boolean"
+    },
+    "rungs": {
+      "description": "One entry per rung of the workspace's ladder that the run took up, in rung order.",
+      "examples": [
+        [
+          {
+            "rung": 0,
+            "name": "guard",
+            "kind": "guard",
+            "required": true,
+            "command": null,
+            "means": "The diff stays inside the task's grants.",
+            "status": "green",
+            "reason": null,
+            "duration_ms": 41,
+            "tests": null,
+            "captures": null,
+            "ratchet": null
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rung",
+          "name",
+          "kind",
+          "required",
+          "command",
+          "means",
+          "status",
+          "reason",
+          "duration_ms",
+          "tests",
+          "captures",
+          "ratchet"
+        ],
+        "properties": {
+          "rung": {
+            "description": "The rung's number in the workspace's ladder.",
+            "examples": [
+              0,
+              3
+            ],
+            "type": "integer",
+            "minimum": 0
+          },
+          "name": {
+            "description": "The rung's name from bonsai.yaml ('' when it has none, as today).",
+            "examples": [
+              "unit tests"
+            ],
+            "type": "string"
+          },
+          "kind": {
+            "description": "The rung's kind, a closed list: guard (rung 0, the diff against the task's grants, contract §13), command (a shell command), ver-git (git integrity: records the task's base commit and flags changed test files, assume-unchanged and skip-worktree entries, edits to .git/info/exclude, new stash entries and a rewritten base; spec §9, §16 row 23).",
+            "examples": [
+              "command",
+              "ver-git"
+            ],
+            "enum": [
+              "guard",
+              "command",
+              "ver-git"
+            ]
+          },
+          "required": {
+            "description": "Whether a red result here stops the rungs after it and makes the run red.",
+            "examples": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "command": {
+            "description": "The shell command a command rung ran; null for other kinds.",
+            "examples": [
+              "go test ./...",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "means": {
+            "description": "The rung's one-line meaning from bonsai.yaml, or null.",
+            "examples": [
+              "Every unit test passes.",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "description": "How the rung ended. Today's values: green, red, pending (not built yet), skipped (an earlier required rung failed), error (the rung could not run). Typed open: the contract does not list them (formats/README.md).",
+            "examples": [
+              "green",
+              "skipped"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "description": "Why the rung is not green, as text; null when green.",
+            "examples": [
+              "an earlier required rung failed",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration_ms": {
+            "description": "How long the rung ran, in milliseconds; null for a rung that did not run.",
+            "examples": [
+              5210,
+              null
+            ],
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "tests": {
+            "description": "As today: what the rung's test output showed, or null when it printed no tests. Today's shape: {seen, skipped: [{name, mark, reason}], todo: [{name, reason}]}, plus failed: [{name, file, error}] (the first 50) and failed_count when tests failed. Typed open (formats/README.md).",
+            "examples": [
+              {
+                "seen": 123,
+                "skipped": [],
+                "todo": []
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "captures": {
+            "description": "As today: the numbers or text the rung's capture patterns found in its output, by name (null for a pattern that could not run); null when the rung captures nothing.",
+            "examples": [
+              {
+                "tests": 123
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+              "type": [
+                "number",
+                "string",
+                "null"
+              ]
+            }
+          },
+          "ratchet": {
+            "description": "For a rung with a ratchet (a count that may not fall): its name, the floor (was), this run's count (now), whether now is at least was (ok), and new_tests; null when the rung has none.",
+            "examples": [
+              {
+                "name": "tests",
+                "was": 120,
+                "now": 123,
+                "ok": true,
+                "new_tests": {
+                  "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+                  "count": 3,
+                  "failed_on_base": 3
+                }
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "name",
+              "was",
+              "now",
+              "ok",
+              "new_tests"
+            ],
+            "properties": {
+              "name": {
+                "description": "The ratchet's name.",
+                "examples": [
+                  "tests"
+                ],
+                "type": "string"
+              },
+              "was": {
+                "description": "The floor the count may not fall below.",
+                "examples": [
+                  120
+                ],
+                "type": "number"
+              },
+              "now": {
+                "description": "This run's count.",
+                "examples": [
+                  123
+                ],
+                "type": "number"
+              },
+              "ok": {
+                "description": "true when now is at least was.",
+                "examples": [
+                  true
+                ],
+                "type": "boolean"
+              },
+              "new_tests": {
+                "description": "When the count rose: the new tests run on the base commit (contract §11, spec §9): the base commit, how many new tests, and how many of them failed there. null when no count rose.",
+                "examples": [
+                  {
+                    "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+                    "count": 3,
+                    "failed_on_base": 3
+                  },
+                  null
+                ],
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "required": [
+                  "base",
+                  "count",
+                  "failed_on_base"
+                ],
+                "properties": {
+                  "base": {
+                    "description": "The base commit the new tests ran on.",
+                    "examples": [
+                      "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e"
+                    ],
+                    "type": "string"
+                  },
+                  "count": {
+                    "description": "How many new tests the rung's output named.",
+                    "examples": [
+                      3
+                    ],
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "failed_on_base": {
+                    "description": "How many of them the base run reported by name as failed while the old tests ran and passed.",
+                    "examples": [
+                      3
+                    ],
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "skipped": {
+      "description": "As today (under --ci): every test a rung skipped, with its rung, name, mark, reason and whether the skip was accepted; [] when none (always [] in a local run).",
+      "examples": [
+        [
+          {
+            "rung": 2,
+            "name": "imports a real checkout",
+            "mark": "real-checkouts-only",
+            "reason": "real-checkouts-only: needs a real project",
+            "accepted": true
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rung",
+          "name",
+          "mark",
+          "reason",
+          "accepted"
+        ],
+        "properties": {
+          "rung": {
+            "description": "The rung whose test was skipped.",
+            "examples": [
+              2
+            ],
+            "type": "integer"
+          },
+          "name": {
+            "description": "The test's full name.",
+            "examples": [
+              "imports a real checkout"
+            ],
+            "type": "string"
+          },
+          "mark": {
+            "description": "The skip's mark (a <word>-only: prefix of its reason), or null.",
+            "examples": [
+              "real-checkouts-only",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "description": "The skip's reason as the test printed it.",
+            "examples": [
+              "real-checkouts-only: needs a real project"
+            ],
+            "type": "string"
+          },
+          "accepted": {
+            "description": "Whether the skip was accepted (pinned with that mark).",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "leftovers": {
+      "description": "As today: what the end-of-run check found still running from this checkout, or why it could not tell. Today: an object ({checkout: [...], shared_deploy: [...], ms} or {unknown, ms}), a text (\"not checked (<platform>)\"), or absent (here null) when not checked (a --ci run). Typed open (formats/README.md).",
+      "examples": [
+        {
+          "checkout": [],
+          "shared_deploy": [],
+          "ms": 212
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "string",
+        "null"
+      ]
+    },
+    "proof": {
+      "description": "As today (under --ci): a sentence saying a CI result is never a task's proof; null in a local run.",
+      "examples": [
+        "none: a CI result is never a task's proof",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

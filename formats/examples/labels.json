@@ -1,0 +1,68 @@
+{
+  "format": "bonsai.labels/1",
+  "namespace": "example",
+  "version": 1,
+  "labels": [
+    {
+      "name": "example.size",
+      "kind": "choice",
+      "values": [
+        "small",
+        "large"
+      ],
+      "items": null,
+      "pattern": null,
+      "max": null,
+      "kinds": [
+        "task"
+      ],
+      "set_by": "agent",
+      "grants": false,
+      "description": "How big the change is, as the planner judged it."
+    },
+    {
+      "name": "example.ref",
+      "kind": "text",
+      "values": [],
+      "items": null,
+      "pattern": "^[0-9a-f]{7,40}$",
+      "max": 60,
+      "kinds": [
+        "task",
+        "run"
+      ],
+      "set_by": "outside",
+      "grants": false,
+      "description": "The commit an outside program recorded. Agents never write it."
+    },
+    {
+      "name": "example.cost",
+      "kind": "number",
+      "values": [],
+      "items": null,
+      "pattern": null,
+      "max": null,
+      "kinds": [
+        "task",
+        "run"
+      ],
+      "set_by": "outside",
+      "grants": false,
+      "description": "Dollars this work cost. Agents never write it."
+    },
+    {
+      "name": "example.paths",
+      "kind": "list",
+      "values": [],
+      "items": "text",
+      "pattern": null,
+      "max": null,
+      "kinds": [
+        "task"
+      ],
+      "set_by": "agent",
+      "grants": false,
+      "description": "Paths this task reads often, as globs. It grants nothing."
+    }
+  ]
+}

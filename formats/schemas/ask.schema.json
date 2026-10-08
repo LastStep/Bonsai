@@ -1,0 +1,308 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.ask/1",
+  "description": "The ask record (contract §9.1): an agent (or the ladder) asks a person something typed, and a person answers. One JSON line, at most 8,192 bytes, appended to the main checkout's .bonsai/local/asks/<YYYY-MM-DD>.ndjson (one file per UTC day), never committed. Written by bonsai ask, bonsai answer and Bonsai's ladder runner (Bless); read by bonsai asks, agents (bonsai ask --status) and the studio's bridge. A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2, §2.5); a reader treats a missing field as null, keeps an unknown one, and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "at",
+    "op",
+    "key",
+    "workspace",
+    "source",
+    "session",
+    "type",
+    "task",
+    "doc",
+    "title",
+    "why",
+    "then_text",
+    "options",
+    "verdict",
+    "data",
+    "answer"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2). Today's AskRecord wrote v: 1.",
+      "examples": [
+        "bonsai.ask/1"
+      ],
+      "const": "bonsai.ask/1"
+    },
+    "id": {
+      "description": "A UUID for the record; a replay with the same id is a duplicate.",
+      "examples": [
+        "9c8b7a6f-5e4d-4c3b-8a29-1f0e9d8c7b6a"
+      ],
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "at": {
+      "description": "When it was written: ISO-8601 UTC (with milliseconds, as today).",
+      "examples": [
+        "2026-10-08T14:20:00.000Z"
+      ],
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z$"
+    },
+    "op": {
+      "description": "What the record does, a closed list (contract §2.2, §9.1): file (asks), resolve (withdraws), answer (a person's answer).",
+      "examples": [
+        "file",
+        "answer"
+      ],
+      "enum": [
+        "file",
+        "resolve",
+        "answer"
+      ]
+    },
+    "key": {
+      "description": "<source>:<part>: the agent's --key, or h- and 12 hex characters hashed from type, target and title; Bless's is ladder:bless-<task>. The key names no project: the bridge adds its own when forwarding (contract §9.1).",
+      "examples": [
+        "agent:h-3e9f0a1b2c4d",
+        "ladder:bless-T-0901"
+      ],
+      "type": "string",
+      "pattern": "^(agent|ladder):.+$"
+    },
+    "workspace": {
+      "description": "The workspace id from bonsai.yaml (contract §3). Today's field: project.",
+      "examples": [
+        "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+      ],
+      "type": "string",
+      "pattern": "^ws-[a-z0-9]{26}$"
+    },
+    "source": {
+      "description": "Who filed it: agent or ladder (contract §9.1, as today's ASK_SOURCES). Only the ladder files Bless.",
+      "examples": [
+        "agent",
+        "ladder"
+      ],
+      "enum": [
+        "agent",
+        "ladder"
+      ]
+    },
+    "session": {
+      "description": "The asking session's id, or null.",
+      "examples": [
+        "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "type": {
+      "description": "The ask's type: Answer, Decide, Look or Play from agents, Bless from the ladder, or a type a pack defines (an open list). null where it does not apply (today: on a resolve).",
+      "examples": [
+        "Decide",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "task": {
+      "description": "The task id the ask is about (never a path), or null.",
+      "examples": [
+        "T-0901",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "doc": {
+      "description": "The document id the ask is about (never a path), or null.",
+      "examples": [
+        "P-T-0901",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "description": "As today: the question, one line, redacted, at most 300 characters; null where it does not apply (today: on a resolve).",
+      "examples": [
+        "Which colour should the dark theme use for links?",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 300
+    },
+    "why": {
+      "description": "As today: why it is asked, redacted, at most 600 characters; null where it does not apply (today: on a resolve).",
+      "examples": [
+        "The design file gives two blues and the contrast check passes for both.",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 600
+    },
+    "then_text": {
+      "description": "As today: what happens after the answer, redacted, at most 300 characters; null when not given.",
+      "examples": [
+        "The builder applies the chosen colour and reruns the contrast check.",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 300
+    },
+    "options": {
+      "description": "As today: a Decide's choices, at most four, each one line of at most 200 characters, each different; [] for every other type and where it does not apply (today: on a resolve).",
+      "examples": [
+        [
+          "The lighter blue",
+          "The darker blue"
+        ],
+        []
+      ],
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "string",
+        "maxLength": 200
+      }
+    },
+    "verdict": {
+      "description": "As today (asks.mjs): on a Look, the agent's own verdict, pass or fail; null otherwise.",
+      "examples": [
+        "pass",
+        null
+      ],
+      "enum": [
+        "pass",
+        "fail",
+        null
+      ]
+    },
+    "data": {
+      "description": "A pack type's payload, or null. Bless's (today's bless field): {task, head, result_sha, rises: [{name, was, now, new_tests}]} (contract §9.1, §11). Typed open: the payload is the type's own.",
+      "examples": [
+        {
+          "task": "T-0901",
+          "head": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+          "result_sha": "sha256:0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+          "rises": [
+            {
+              "name": "tests",
+              "was": 120,
+              "now": 123,
+              "new_tests": {
+                "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+                "count": 3,
+                "failed_on_base": 3
+              }
+            }
+          ]
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "answer": {
+      "description": "For op answer: who answered, how, and what; null on every other op (contract §9.1).",
+      "examples": [
+        {
+          "by": "terminal",
+          "via": null,
+          "choice": "The darker blue",
+          "verdict": null,
+          "words": "Darker reads better on the old monitors."
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "by",
+        "via",
+        "choice",
+        "verdict",
+        "words"
+      ],
+      "properties": {
+        "by": {
+          "description": "terminal, or the caller's own reference, as text of at most 60 characters. Bonsai stores what it is given; its code names no caller.",
+          "examples": [
+            "terminal",
+            "act:4711"
+          ],
+          "type": "string",
+          "maxLength": 60
+        },
+        "via": {
+          "description": "Free text naming who carried the answer, at most 30 characters, or null.",
+          "examples": [
+            "desk",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 30
+        },
+        "choice": {
+          "description": "The option chosen, for a Decide; null otherwise.",
+          "examples": [
+            "The darker blue",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "verdict": {
+          "description": "The person's verdict, pass or fail, for a Look; null otherwise.",
+          "examples": [
+            "fail",
+            null
+          ],
+          "enum": [
+            "pass",
+            "fail",
+            null
+          ]
+        },
+        "words": {
+          "description": "The person's own words, redacted (at most 2,000 characters, as today), or null.",
+          "examples": [
+            "Darker reads better on the old monitors.",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000
+        }
+      }
+    }
+  }
+}

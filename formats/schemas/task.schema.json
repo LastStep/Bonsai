@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.task/1",
+  "description": "The task (contract §4): one unit of work, what it is, where it stands, when it is done. One markdown file per task, named <id>-<slug>.md, in the folder the workspace declares for tasks; this schema describes its YAML frontmatter as a reader returns it (JSON). Written by agents (who create tasks and set the fields agents may set) and by the studio's write path (status moves, lane changes, grants); read by Bonsai (checks, the guard, the stop gate, the ladder runner), the studio, the statusline and agents. A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null and keeps an unknown one. The frontmatter follows the format-1 YAML rules (contract §2.4).",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "title",
+    "status",
+    "lane",
+    "done_when",
+    "depends_on",
+    "blocked_by",
+    "created",
+    "started",
+    "finished",
+    "labels"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, always the first key. A reader that meets a newer major (bonsai.task/2) says \"format too new\" and reads nothing else (contract §2.2). In a file made from a template the line carries a one-line pointer back as a trailing comment (contract §2.8), which is a comment and not part of the value.",
+      "examples": [
+        "bonsai.task/1"
+      ],
+      "const": "bonsai.task/1"
+    },
+    "id": {
+      "description": "The task id: T- and 4 to 6 digits, unique in the workspace; written plain, never quoted (contract §4.1).",
+      "examples": [
+        "T-0901",
+        "T-123456"
+      ],
+      "type": "string",
+      "pattern": "^T-[0-9]{4,6}$"
+    },
+    "title": {
+      "description": "What gets built, as text on one line.",
+      "examples": [
+        "Add a dark mode switch to the settings page"
+      ],
+      "type": "string",
+      "pattern": "^[^\\r\\n]*$"
+    },
+    "status": {
+      "description": "Where the task stands. A closed list (contract §4.1): it never grows inside bonsai.task/1. Its line carries no comment in format 1. Who may make each move: contract §10.2.",
+      "examples": [
+        "todo",
+        "running"
+      ],
+      "enum": [
+        "todo",
+        "plan",
+        "approved",
+        "running",
+        "verify",
+        "done",
+        "blocked",
+        "cut"
+      ]
+    },
+    "lane": {
+      "description": "The lane slot (contract §6): a lane some pack in the workspace defines, or null where no pack defines lanes.",
+      "examples": [
+        "light",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "done_when": {
+      "description": "Checkable statements a verifier can test without having built the work; [] when none are written yet.",
+      "examples": [
+        [
+          "The settings page shows a dark mode switch",
+          "The choice survives a restart"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "depends_on": {
+      "description": "Ids of tasks that must be done first; [] when none.",
+      "examples": [
+        [
+          "T-0900"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^T-[0-9]{4,6}$"
+      }
+    },
+    "blocked_by": {
+      "description": "One sentence saying what blocks the task, while status is blocked; null otherwise.",
+      "examples": [
+        "Waits for the design of the colour tokens.",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created": {
+      "description": "The day the task was created, YYYY-MM-DD, as text (a date stays text to every contract reader, contract §2.4); null when unknown.",
+      "examples": [
+        "2026-10-08",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "started": {
+      "description": "The day work started (stamped when the task first reads running, contract §7.3), YYYY-MM-DD as text; null before.",
+      "examples": [
+        "2026-10-08",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "finished": {
+      "description": "The day the task reached done or cut (contract §7.3), YYYY-MM-DD as text; null before.",
+      "examples": [
+        "2026-10-09",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "labels": {
+      "description": "Everything else, as a map of label name to value (contract §5): each name is <namespace>.<name> with one dot; each value is of its definition's kind (choice or text: a string; number: a number; list: a list of strings or numbers), or null when empty. {} when the task carries none. A value of the wrong kind is a bonsai check finding, not a reading error.",
+      "examples": [
+        {
+          "bonsai.branch": "t0901-dark-mode",
+          "bonsai.ladder": [
+            0,
+            1,
+            2
+          ],
+          "workflow.owner": "builder"
+        },
+        {}
+      ],
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      }
+    }
+  }
+}

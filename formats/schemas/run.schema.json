@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.run/1",
+  "description": "The run report (contract §7.1): the log of one agent session on one task, opened at the start and appended to as it goes. A markdown file whose body is the workflow pack's template; this schema describes its YAML frontmatter as a reader returns it (JSON). Written by the agent that runs the session, on the builder's branch beside the code it describes; read by verifiers, the stop gate, Bonsai's tables and the studio. A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null and keeps an unknown one. The frontmatter follows the format-1 YAML rules (contract §2.4).",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "task",
+    "role",
+    "model",
+    "started",
+    "finished",
+    "outcome",
+    "commits",
+    "labels"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, always the first key (contract §2.2). In a file made from a template it carries a one-line pointer back as a trailing comment (contract §2.8).",
+      "examples": [
+        "bonsai.run/1"
+      ],
+      "const": "bonsai.run/1"
+    },
+    "id": {
+      "description": "R-<YYYY-MM-DD>-<task id>, with a suffix when a task has two run reports on one day (contract §7.1). The suffix's form is not fixed, so only the start is checked.",
+      "examples": [
+        "R-2026-10-08-T-0901"
+      ],
+      "type": "string",
+      "pattern": "^R-[0-9]{4}-[0-9]{2}-[0-9]{2}-T-[0-9]{4,6}"
+    },
+    "task": {
+      "description": "The task id this session worked on: the link between the two (the task carries no pointer back).",
+      "examples": [
+        "T-0901"
+      ],
+      "type": "string",
+      "pattern": "^T-[0-9]{4,6}$"
+    },
+    "role": {
+      "description": "The role the agent ran as: a pack's role name.",
+      "examples": [
+        "builder",
+        "verifier"
+      ],
+      "type": "string"
+    },
+    "model": {
+      "description": "The model the agent ran on, as the agent names it.",
+      "examples": [
+        "opus",
+        "sonnet"
+      ],
+      "type": "string"
+    },
+    "started": {
+      "description": "When the session started, YYYY-MM-DD HH:MM as text (contract §2.4), or null.",
+      "examples": [
+        "2026-10-08 14:08",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$"
+    },
+    "finished": {
+      "description": "When the session finished, YYYY-MM-DD HH:MM as text, or null while it runs.",
+      "examples": [
+        "2026-10-08 15:25",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$"
+    },
+    "outcome": {
+      "description": "How the session ended, a closed list (contract §7.1). A format-0 report keeps its words: needs-rohan reads as needs-person, needs-review as needs-verifier, anything else as other.",
+      "examples": [
+        "running",
+        "needs-verifier"
+      ],
+      "enum": [
+        "running",
+        "verify",
+        "needs-verifier",
+        "needs-person",
+        "merged",
+        "blocked",
+        "abandoned"
+      ]
+    },
+    "commits": {
+      "description": "The commit hashes this session made, each quoted in the YAML (a bare hash can read as a number); [] when none.",
+      "examples": [
+        [
+          "1a2b3c4",
+          "5d6e7f8"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{7,40}$"
+      }
+    },
+    "labels": {
+      "description": "A map of label name to value (contract §5), for example a cost a program outside agent sessions writes; {} when none. Names are <namespace>.<name> with one dot.",
+      "examples": [
+        {
+          "example.cost": 1.25
+        },
+        {}
+      ],
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      }
+    }
+  }
+}

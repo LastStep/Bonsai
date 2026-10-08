@@ -1,0 +1,46 @@
+{
+  "format": "bonsai.lock/1",
+  "written_by": "1.0.0",
+  "packs": [
+    {
+      "id": "base",
+      "source": "https://example.com/packs/base.git",
+      "version": "1.0.0",
+      "commit": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4",
+      "sha256": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "declares": {}
+    },
+    {
+      "id": "workflow",
+      "source": "https://example.com/packs/workflow.git",
+      "version": "1.2.0",
+      "commit": "1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5",
+      "sha256": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      "declares": {
+        "lanes": [
+          {
+            "name": "light",
+            "approve_first": false,
+            "close": "agent",
+            "description": "Small fixes, tests and docs. Build it, climb the ladder, merge."
+          }
+        ]
+      }
+    }
+  ],
+  "files": {
+    ".claude/settings.json": {
+      "kind": "keys",
+      "pack": "base",
+      "sha256": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+    },
+    "CLAUDE.md": {
+      "kind": "block",
+      "pack": "base",
+      "sha256": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9"
+    }
+  },
+  "format0": {
+    "work/runs/R-2026-09-30-T-0903.md": "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c"
+  }
+}

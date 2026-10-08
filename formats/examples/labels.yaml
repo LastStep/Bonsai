@@ -1,0 +1,63 @@
+# Label definitions (bonsai.labels/1, contract §5.2): what each label in one namespace means.
+# A made-up set: the example for bonsai.labels/1. labels.json holds what a reader returns for it.
+#
+# When to use: a pack ships one file like this per namespace; Bonsai's base pack ships the bonsai.* set.
+# Fields of the file:
+#   format     always bonsai.labels/1, the first key.
+#   namespace  the namespace every label here belongs to, e.g. example.
+#   version    this set's own version; it only grows (definitions are added, never redefined), e.g. 1.
+#   labels     one entry per label, each with every field below (null or [] where it does not apply):
+#     name         <namespace>.<name>, e.g. example.size.
+#     kind         choice, text, number or list.
+#     values       for choice: the allowed values, e.g. [small, large]; [] otherwise.
+#     items        for list: text or number; null otherwise.
+#     pattern      for text: a regular expression the value must match, or null.
+#     max          for text: at most this many characters (up to 300), or null.
+#     kinds        the document kinds that may carry it, e.g. [task, run].
+#     set_by       agent (agents write it) or outside (only a program outside agent sessions does).
+#     grants       true when the value grants a right (only bonsai.allows today); false otherwise.
+#     description  one line, at most 200 characters: what agents see.
+format: bonsai.labels/1
+namespace: example
+version: 1
+labels:
+  - name: example.size
+    kind: choice
+    values: [small, large]
+    items:
+    pattern:
+    max:
+    kinds: [task]
+    set_by: agent
+    grants: false
+    description: "How big the change is, as the planner judged it."
+  - name: example.ref
+    kind: text
+    values: []
+    items:
+    pattern: "^[0-9a-f]{7,40}$"
+    max: 60
+    kinds: [task, run]
+    set_by: outside
+    grants: false
+    description: "The commit an outside program recorded. Agents never write it."
+  - name: example.cost
+    kind: number
+    values: []
+    items:
+    pattern:
+    max:
+    kinds: [task, run]
+    set_by: outside
+    grants: false
+    description: "Dollars this work cost. Agents never write it."
+  - name: example.paths
+    kind: list
+    values: []
+    items: text
+    pattern:
+    max:
+    kinds: [task]
+    set_by: agent
+    grants: false
+    description: "Paths this task reads often, as globs. It grants nothing."

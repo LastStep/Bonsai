@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.log/1",
+  "description": "The log record (contract §8.1): one JSON line, at most 2,048 bytes, per thing an agent did or Bonsai recorded (a tool call, a guard decision, a ladder result, an ask, an outside event, a cleaned file). Records are appended whole to the main checkout's .bonsai/local/log/ (s-<session>.ndjson per session, w-<YYYY-MM-DD>.ndjson outside one), never committed, redacted as written. Written by Bonsai's recorder (the hooks) and its own commands; read by bonsai logs, Bonsai's screens and the studio's forwarder. A writer writes every field below, in this order, null where it does not apply (contract §2.2, §2.5); a reader treats a missing field as null, keeps an unknown one, and refuses a duplicate key. Spec §16 row 27 adds the bonsai binary's own path and SHA-256 to session_start records; their two field names are not fixed yet, so they are not in this schema (formats/README.md).",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "at",
+    "workspace",
+    "session",
+    "agent",
+    "agent_event",
+    "event",
+    "subagent_id",
+    "subagent_type",
+    "tool_use_id",
+    "input_hash",
+    "checkout",
+    "branch",
+    "task",
+    "role",
+    "tool",
+    "category",
+    "target",
+    "ok",
+    "kind",
+    "text",
+    "source",
+    "model",
+    "reason",
+    "decision",
+    "rule",
+    "labels",
+    "remote"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2). Today's spool wrote v: 1.",
+      "examples": [
+        "bonsai.log/1"
+      ],
+      "const": "bonsai.log/1"
+    },
+    "id": {
+      "description": "A UUID for the record; a replayed line with the same id is a duplicate.",
+      "examples": [
+        "0b6f3c2e-5d1a-4e8b-9c7f-2a4d6e8f0a1b"
+      ],
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "at": {
+      "description": "When it happened: ISO-8601 UTC with milliseconds.",
+      "examples": [
+        "2026-10-08T14:08:00.000Z"
+      ],
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "workspace": {
+      "description": "The workspace id from bonsai.yaml (contract §3): ws- and 26 lowercase base32 characters. The bridge maps it to the studio's project id. Today's spool field: project.",
+      "examples": [
+        "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+      ],
+      "type": "string",
+      "pattern": "^ws-[a-z0-9]{26}$"
+    },
+    "session": {
+      "description": "The agent's session id, or null outside a session (an outside event, a command run by hand).",
+      "examples": [
+        "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agent": {
+      "description": "The agent program: claude-code today (contract §2.7); null for a record no agent made.",
+      "examples": [
+        "claude-code",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agent_event": {
+      "description": "The agent's own event name (contract §8.3), such as Claude Code's PostToolUse; null for Bonsai's own records. Today's spool field: event.",
+      "examples": [
+        "PostToolUse",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "event": {
+      "description": "Bonsai's event name (contract §8.2). An open list: session_start, prompt, tool_start, tool_end, tool_fail, permission, notice, subagent_start, subagent_stop, stop, session_end, guard, ladder, ask, event, clean; a reader shows an unknown name as other.",
+      "examples": [
+        "tool_end",
+        "guard"
+      ],
+      "type": "string"
+    },
+    "subagent_id": {
+      "description": "Claude Code only: the subagent that acted, or null. Today's spool field: agent_id.",
+      "examples": [
+        "a1b2c3d4",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "subagent_type": {
+      "description": "Claude Code only: the subagent's type, or null. Today's spool field: agent_type.",
+      "examples": [
+        "workflow:builder",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tool_use_id": {
+      "description": "Claude Code only: the tool call's id, pairing its start and end records; null when no tool call.",
+      "examples": [
+        "toolu_01ABCDEFGHJKMNPQRSTUVWXY",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "input_hash": {
+      "description": "Pairs a call's start and end records without keeping its input: as today, the first 16 hex characters of an HMAC-SHA-256 keyed by the machine's salt. null when no tool call.",
+      "examples": [
+        "3f9a1c0e7b2d4a68",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{16}$"
+    },
+    "checkout": {
+      "description": "The working tree's folder name, never its path (contract §2.6). Today's spool field: worktree.",
+      "examples": [
+        "example-project",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[^/\\\\]+$"
+    },
+    "branch": {
+      "description": "The working tree's branch, or null.",
+      "examples": [
+        "t0901-dark-mode",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "task": {
+      "description": "The task the session's environment names (BONSAI_TASK), raw, as given; null when unset. The recorder decides nothing from it. Today's spool field: task_env.",
+      "examples": [
+        "T-0901",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "role": {
+      "description": "The role the session's environment names (BONSAI_ROLE), raw; null when unset. Today's spool field: role_env.",
+      "examples": [
+        "builder",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tool": {
+      "description": "The tool called, or null.",
+      "examples": [
+        "Edit",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "category": {
+      "description": "The tool's category (contract §8.2). An open list: Read, Search, Edit, Write, Shell, Ladder, MCP, Agent, Web, Other, plus a pack's own as <namespace>.<Name>; null when no tool.",
+      "examples": [
+        "Edit",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "target": {
+      "description": "What the tool acted on, redacted, at most 200 characters; for session_start and subagent_start the active task the recorder found (contract §13), or null; for clean the project-relative path deleted; for ask the ask's key.",
+      "examples": [
+        "src/settings/theme.go",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    },
+    "ok": {
+      "description": "Whether the call succeeded (true), failed (false), or null when that does not apply.",
+      "examples": [
+        true,
+        null
+      ],
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "kind": {
+      "description": "As today: a notice's kind (Claude Code's notification type), or null.",
+      "examples": [
+        "idle_prompt",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "text": {
+      "description": "As today: short text, redacted, at most 300 characters (a notice's message, a prompt's start), or null.",
+      "examples": [
+        "Claude is waiting for your input",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 300
+    },
+    "source": {
+      "description": "As today: where a session started from (Claude Code's SessionStart source), or null.",
+      "examples": [
+        "startup",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "model": {
+      "description": "As today: the session's model, as the agent names it, or null.",
+      "examples": [
+        "claude-opus-5-5",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reason": {
+      "description": "As today: why a session ended (Claude Code's SessionEnd reason); for clean, the rule that cleaned the file (contract §8.2); or null.",
+      "examples": [
+        "prompt_input_exit",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "decision": {
+      "description": "For a guard record: allow or deny; null otherwise.",
+      "examples": [
+        "deny",
+        null
+      ],
+      "enum": [
+        "allow",
+        "deny",
+        null
+      ]
+    },
+    "rule": {
+      "description": "For a guard record: the name of the rule that decided; null otherwise.",
+      "examples": [
+        "person-only",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "labels": {
+      "description": "For an event record only: the outside event's labels (contract §8.4), checked against the definitions attached on the machine; {} otherwise.",
+      "examples": [
+        {
+          "example.event": "deploy",
+          "example.ref": "9f8e7d6"
+        },
+        {}
+      ],
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      }
+    },
+    "remote": {
+      "description": "Claude Code only: the session's Remote Control id, never redacted, as today; null when none. Today's spool field: rc_session.",
+      "examples": [
+        "session_0123456789abcdefABCD",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^session_[A-Za-z0-9]{10,60}$"
+    }
+  }
+}

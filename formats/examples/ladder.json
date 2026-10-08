@@ -1,0 +1,86 @@
+{
+  "format": "bonsai.ladder/1",
+  "task": "T-0901",
+  "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+  "mode": "local",
+  "started": "2026-10-08T15:01:12.345Z",
+  "finished": "2026-10-08T15:03:40.012Z",
+  "git": {
+    "sha": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+    "branch": "t0901-dark-mode",
+    "dirty": false
+  },
+  "requested": [
+    0,
+    1,
+    2
+  ],
+  "green": true,
+  "rungs": [
+    {
+      "rung": 0,
+      "name": "guard",
+      "kind": "guard",
+      "required": true,
+      "command": null,
+      "means": "The diff stays inside the task's grants.",
+      "status": "green",
+      "reason": null,
+      "duration_ms": 41,
+      "tests": null,
+      "captures": null,
+      "ratchet": null
+    },
+    {
+      "rung": 1,
+      "name": "vet",
+      "kind": "command",
+      "required": true,
+      "command": "go vet ./...",
+      "means": "The code passes go vet.",
+      "status": "green",
+      "reason": null,
+      "duration_ms": 3120,
+      "tests": null,
+      "captures": null,
+      "ratchet": null
+    },
+    {
+      "rung": 2,
+      "name": "unit tests",
+      "kind": "command",
+      "required": true,
+      "command": "go test ./...",
+      "means": "Every unit test passes, and there are no fewer than before.",
+      "status": "green",
+      "reason": null,
+      "duration_ms": 52480,
+      "tests": {
+        "seen": 123,
+        "skipped": [],
+        "todo": []
+      },
+      "captures": {
+        "tests": 123
+      },
+      "ratchet": {
+        "name": "tests",
+        "was": 120,
+        "now": 123,
+        "ok": true,
+        "new_tests": {
+          "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+          "count": 3,
+          "failed_on_base": 3
+        }
+      }
+    }
+  ],
+  "skipped": [],
+  "leftovers": {
+    "checkout": [],
+    "shared_deploy": [],
+    "ms": 212
+  },
+  "proof": null
+}

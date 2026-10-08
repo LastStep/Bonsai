@@ -1,0 +1,23 @@
+{
+  "format": "bonsai.lanes/1",
+  "lanes": [
+    {
+      "name": "light",
+      "approve_first": false,
+      "close": "agent",
+      "description": "Small fixes, tests and docs. Build it, climb the ladder, merge."
+    },
+    {
+      "name": "full",
+      "approve_first": true,
+      "close": "person",
+      "description": "A feature or a format change. A person approves the plan first and closes the task."
+    },
+    {
+      "name": "director",
+      "approve_first": false,
+      "close": "person",
+      "description": "A decision, not code. Write the options and stop; a person chooses."
+    }
+  ]
+}

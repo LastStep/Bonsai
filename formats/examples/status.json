@@ -1,0 +1,108 @@
+{
+  "format": "bonsai.status/1",
+  "bonsai": "1.0.0",
+  "mode": "offline",
+  "workspace": {
+    "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+    "name": "example",
+    "root": "/srv/projects/example"
+  },
+  "home": {
+    "path": "/srv/bonsai-home",
+    "key": "r-0123456789abcdef"
+  },
+  "local": {
+    "log": "/srv/projects/example/.bonsai/local/log",
+    "asks": "/srv/projects/example/.bonsai/local/asks",
+    "ladder": "/srv/projects/example/.bonsai/local/ladder"
+  },
+  "formats": {
+    "bonsai.task": {
+      "read": [
+        0,
+        1
+      ],
+      "write": 1
+    },
+    "bonsai.log": {
+      "read": [
+        1
+      ],
+      "write": 1
+    }
+  },
+  "documents": [
+    {
+      "kind": "task",
+      "from": "bonsai",
+      "path": "work/tasks",
+      "id": "^T-\\d{4,6}$",
+      "format": "bonsai.task"
+    }
+  ],
+  "packs": [
+    {
+      "id": "base",
+      "version": "1.0.0",
+      "commit": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4",
+      "state": "ok"
+    },
+    {
+      "id": "workflow",
+      "version": "1.2.0",
+      "commit": "1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5",
+      "state": "ok"
+    }
+  ],
+  "files": {
+    "changed": 0,
+    "missing": 0,
+    "format0_changed": 0
+  },
+  "labels": [
+    {
+      "namespace": "bonsai",
+      "from": "bonsai",
+      "version": 1
+    },
+    {
+      "namespace": "workflow",
+      "from": "workflow",
+      "version": 1
+    }
+  ],
+  "lanes": [
+    {
+      "name": "light",
+      "approve_first": false,
+      "close": "agent",
+      "from": "workflow"
+    }
+  ],
+  "status_writes": "agents",
+  "status_command": null,
+  "person_only": [
+    ".claude/**",
+    "bonsai.yaml"
+  ],
+  "active_task": {
+    "id": "T-0901",
+    "how": "running",
+    "why": null
+  },
+  "needs": [
+    {
+      "kind": "pack",
+      "id": "workflow",
+      "source": "https://example.com/packs/workflow.git",
+      "version": "1.2.0"
+    },
+    {
+      "kind": "tool",
+      "name": "claude-code",
+      "version": ">=2.1.0"
+    }
+  ],
+  "problems": [],
+  "checks": null
+}

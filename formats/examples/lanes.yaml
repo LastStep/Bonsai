@@ -1,0 +1,27 @@
+# Lane definitions (bonsai.lanes/1, contract §6): the lanes a pack defines and the two rules Bonsai's base
+# understands for each. A made-up set: the example for bonsai.lanes/1. lanes.json holds what a reader returns.
+#
+# When to use: a pack that defines lanes ships one file like this; Bonsai's base defines none. A task's lane
+# field names one of these lanes.
+# Fields of the file:
+#   format  always bonsai.lanes/1, the first key.
+#   lanes   one entry per lane, each with every field below:
+#     name           the lane's name, as a task's lane field writes it, e.g. light.
+#     approve_first  true: a move to running, verify or done needs the task to have read approved since it
+#                    last read todo or plan. false: no such gate.
+#     close          person: done is a person's move. agent: an agent may make it.
+#     description    what agents read about the lane: everything the two rules do not say.
+format: bonsai.lanes/1
+lanes:
+  - name: light
+    approve_first: false
+    close: agent
+    description: "Small fixes, tests and docs. Build it, climb the ladder, merge."
+  - name: full
+    approve_first: true   # a person approves the plan before any code
+    close: person
+    description: "A feature or a format change. A person approves the plan first and closes the task."
+  - name: director
+    approve_first: false
+    close: person
+    description: "A decision, not code. Write the options and stop; a person chooses."

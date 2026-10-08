@@ -1,0 +1,790 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.status/1",
+  "description": "bonsai status --json (contract §12): one workspace at a glance, for the studio's bridge, Bonsai's own screens and an assistant. Printed, never stored. Written by bonsai status --json (cheap and offline; --full adds checks); read by the studio's bridge, Bonsai's screens and agents. Spec §16 row 24's additions arrive as values, not new fields: a pack not installed on this machine is a needs entry of kind plugin, the Claude Code floor a needs entry of kind tool (never a problem, warn only), plugin drift and a bonsai on the PATH that is not the installed one are problems; --line prints the statusline's workspace half instead of this document. A writer writes every field below, in this order (contract §2.2); when Bonsai cannot read the workspace at all it exits 3 and fills format, bonsai and problems, with every other field null. Absolute paths appear only here, printed locally, and the bridge never forwards them (contract §2.6). A reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "bonsai",
+    "mode",
+    "workspace",
+    "home",
+    "local",
+    "formats",
+    "documents",
+    "packs",
+    "files",
+    "labels",
+    "lanes",
+    "status_writes",
+    "status_command",
+    "person_only",
+    "active_task",
+    "needs",
+    "problems",
+    "checks"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.status/1"
+      ],
+      "const": "bonsai.status/1"
+    },
+    "bonsai": {
+      "description": "The version of the Bonsai that wrote this (contract §2.2).",
+      "examples": [
+        "1.0.0"
+      ],
+      "type": "string"
+    },
+    "mode": {
+      "description": "How the status was gathered: offline for the default (cheap, no network). The contract shows only offline; the value for --full is not fixed, so the field is typed open (formats/README.md). null on exit 3.",
+      "examples": [
+        "offline",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "workspace": {
+      "description": "The workspace: its id and name from bonsai.yaml, and the main checkout's absolute path (printed locally; the bridge keeps it in its registration and never forwards it). null on exit 3.",
+      "examples": [
+        {
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "root": "/srv/projects/example"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "name",
+        "root"
+      ],
+      "properties": {
+        "id": {
+          "description": "The workspace id: ws- and 26 lowercase base32 characters (contract §3).",
+          "examples": [
+            "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+          ],
+          "type": "string",
+          "pattern": "^ws-[a-z0-9]{26}$"
+        },
+        "name": {
+          "description": "The workspace's name, a slug (contract §3).",
+          "examples": [
+            "example"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        },
+        "root": {
+          "description": "The main checkout's absolute path, forward slashes.",
+          "examples": [
+            "/srv/projects/example"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "home": {
+      "description": "The Bonsai home (BONSAI_HOME, else the user's .bonsai folder) and this workspace's machine folder in it (contract §3). null on exit 3.",
+      "examples": [
+        {
+          "path": "/srv/bonsai-home",
+          "key": "r-0123456789abcdef"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "path",
+        "key"
+      ],
+      "properties": {
+        "path": {
+          "description": "The home's absolute path, forward slashes.",
+          "examples": [
+            "/srv/bonsai-home"
+          ],
+          "type": "string"
+        },
+        "key": {
+          "description": "The machine folder's name under workspaces/: r- and the first 16 hex characters of the SHA-256 of the main checkout's real path.",
+          "examples": [
+            "r-0123456789abcdef"
+          ],
+          "type": "string",
+          "pattern": "^r-[0-9a-f]{16}$"
+        }
+      }
+    },
+    "local": {
+      "description": "The main checkout's record folders, absolute (under workspace.root), so the forwarder never builds paths; printed locally, never forwarded. null on exit 3.",
+      "examples": [
+        {
+          "log": "/srv/projects/example/.bonsai/local/log",
+          "asks": "/srv/projects/example/.bonsai/local/asks",
+          "ladder": "/srv/projects/example/.bonsai/local/ladder"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "log",
+        "asks",
+        "ladder"
+      ],
+      "properties": {
+        "log": {
+          "description": "The log folder (contract §8).",
+          "examples": [
+            "/srv/projects/example/.bonsai/local/log"
+          ],
+          "type": "string"
+        },
+        "asks": {
+          "description": "The asks folder (contract §9).",
+          "examples": [
+            "/srv/projects/example/.bonsai/local/asks"
+          ],
+          "type": "string"
+        },
+        "ladder": {
+          "description": "The ladder results folder (contract §11).",
+          "examples": [
+            "/srv/projects/example/.bonsai/local/ladder"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "formats": {
+      "description": "Which majors this Bonsai reads and writes, per format name (contract §2.2); the bridge reads a workspace only at majors it knows. null on exit 3.",
+      "examples": [
+        {
+          "bonsai.task": {
+            "read": [
+              0,
+              1
+            ],
+            "write": 1
+          }
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "propertyNames": {
+        "pattern": "^bonsai\\.[a-z][a-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "read",
+          "write"
+        ],
+        "properties": {
+          "read": {
+            "description": "The majors read (0 is format 0, today's files).",
+            "examples": [
+              [
+                0,
+                1
+              ]
+            ],
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "write": {
+            "description": "The major written.",
+            "examples": [
+              1
+            ],
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "documents": {
+      "description": "Every document kind the workspace declares, Bonsai's and its packs' (contract §7.3). Each entry holds the §7.3 fields that apply: kind, from, path or file, id, format, statuses, person, agent, stamp, task_field. Only kind and from are required: §7.3 leaves which of the others are always written open (formats/README.md). null on exit 3.",
+      "examples": [
+        [
+          {
+            "kind": "task",
+            "from": "bonsai",
+            "path": "work/tasks",
+            "id": "^T-\\d{4,6}$",
+            "format": "bonsai.task"
+          }
+        ],
+        null
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "from"
+        ],
+        "properties": {
+          "kind": {
+            "description": "The kind's name.",
+            "examples": [
+              "task",
+              "plan"
+            ],
+            "type": "string"
+          },
+          "from": {
+            "description": "Who declared it: bonsai or a pack id.",
+            "examples": [
+              "bonsai",
+              "workflow"
+            ],
+            "type": "string"
+          },
+          "path": {
+            "description": "The folder holding one file per document (top level only), project-relative with forward slashes; absent or null for a kind that is one file.",
+            "examples": [
+              "work/tasks",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "file": {
+            "description": "The single file, project-relative; absent or null for a kind that is a folder.",
+            "examples": [
+              ".bonsai/STATE.md",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "id": {
+            "description": "The id pattern a document's id must match (today's DOC_ID_RULES).",
+            "examples": [
+              "^T-\\d{4,6}$"
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "format": {
+            "description": "Its bonsai.* format, for Bonsai's kinds; absent or null for a pack's.",
+            "examples": [
+              "bonsai.task",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "statuses": {
+            "description": "Its statuses, if any; the first is where a new document starts.",
+            "examples": [
+              [
+                "draft",
+                "approved",
+                "done"
+              ]
+            ],
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "person": {
+            "description": "The status moves a person makes, as [from, to] pairs (contract §10.2).",
+            "examples": [
+              [
+                [
+                  "draft",
+                  "approved"
+                ]
+              ]
+            ],
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "agent": {
+            "description": "The status moves agents make, as [from, to] pairs.",
+            "examples": [
+              [
+                [
+                  "approved",
+                  "done"
+                ]
+              ]
+            ],
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "stamp": {
+            "description": "Fields set to the day's date when a document reaches a status ({status: field}).",
+            "examples": [
+              {
+                "approved": "approved"
+              }
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "task_field": {
+            "description": "The field naming the task a document belongs to (a plan's task:).",
+            "examples": [
+              "task",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "packs": {
+      "description": "The packs, from the lock (contract §14), and whether this checkout's files match. null on exit 3.",
+      "examples": [
+        [
+          {
+            "id": "base",
+            "version": "1.0.0",
+            "commit": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4",
+            "state": "ok"
+          }
+        ],
+        null
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "commit",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "description": "The pack's id.",
+            "examples": [
+              "base"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "description": "The pack's version, from its tag.",
+            "examples": [
+              "1.0.0"
+            ],
+            "type": "string"
+          },
+          "commit": {
+            "description": "The locked 40-character commit.",
+            "examples": [
+              "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4"
+            ],
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "state": {
+            "description": "ok, changed (a file the pack wrote was edited) or missing (contract §12).",
+            "examples": [
+              "ok",
+              "changed"
+            ],
+            "enum": [
+              "ok",
+              "changed",
+              "missing"
+            ]
+          }
+        }
+      }
+    },
+    "files": {
+      "description": "Counts of edited and missing files the lock lists, and of changed format-0 files (contract §2.3). null on exit 3.",
+      "examples": [
+        {
+          "changed": 0,
+          "missing": 0,
+          "format0_changed": 0
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "changed",
+        "missing",
+        "format0_changed"
+      ],
+      "properties": {
+        "changed": {
+          "description": "Files the lock lists whose bytes were edited.",
+          "examples": [
+            0,
+            2
+          ],
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing": {
+          "description": "Files the lock lists that are gone.",
+          "examples": [
+            0
+          ],
+          "type": "integer",
+          "minimum": 0
+        },
+        "format0_changed": {
+          "description": "Format-0 files whose bytes no longer match the lock's format0 hash.",
+          "examples": [
+            0
+          ],
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "labels": {
+      "description": "The label namespaces in force, where each came from and its version (contract §5). null on exit 3.",
+      "examples": [
+        [
+          {
+            "namespace": "bonsai",
+            "from": "bonsai",
+            "version": 1
+          },
+          {
+            "namespace": "example",
+            "from": "machine",
+            "version": 1
+          }
+        ],
+        null
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "namespace",
+          "from",
+          "version"
+        ],
+        "properties": {
+          "namespace": {
+            "description": "The namespace.",
+            "examples": [
+              "workflow"
+            ],
+            "type": "string"
+          },
+          "from": {
+            "description": "Where its definitions came from: bonsai, a pack id, or machine (attached on this machine, contract §5.3).",
+            "examples": [
+              "bonsai",
+              "machine"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "description": "The definitions' version (bonsai.labels/1's version).",
+            "examples": [
+              1
+            ],
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "lanes": {
+      "description": "The lanes defined in the workspace, with their rules (contract §6); [] when no pack defines lanes. null on exit 3.",
+      "examples": [
+        [
+          {
+            "name": "light",
+            "approve_first": false,
+            "close": "agent",
+            "from": "workflow"
+          }
+        ],
+        null
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "approve_first",
+          "close",
+          "from"
+        ],
+        "properties": {
+          "name": {
+            "description": "The lane's name.",
+            "examples": [
+              "light"
+            ],
+            "type": "string"
+          },
+          "approve_first": {
+            "description": "The lane's approve_first rule.",
+            "examples": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "close": {
+            "description": "The lane's close rule: person or agent.",
+            "examples": [
+              "agent"
+            ],
+            "enum": [
+              "person",
+              "agent"
+            ]
+          },
+          "from": {
+            "description": "The pack that defines it.",
+            "examples": [
+              "workflow"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "status_writes": {
+      "description": "agents (agents move statuses themselves) or command (a managed workspace: moves go through status_command), from this machine's settings (contract §3, §10.1). null on exit 3.",
+      "examples": [
+        "agents",
+        "command"
+      ],
+      "enum": [
+        "agents",
+        "command",
+        null
+      ]
+    },
+    "status_command": {
+      "description": "The command a managed workspace's guard names for a status move; null when status_writes is agents.",
+      "examples": [
+        "studio move",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "person_only": {
+      "description": "The globs only a person may grant (contract §5.5), from bonsai.yaml; [] when none. null on exit 3.",
+      "examples": [
+        [
+          ".claude/**",
+          "bonsai.yaml"
+        ],
+        []
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "active_task": {
+      "description": "The active task for this checkout and environment (contract §13): its id, how it was found (named or running, null when none), and why there is none. null on exit 3.",
+      "examples": [
+        {
+          "id": "T-0901",
+          "how": "running",
+          "why": null
+        },
+        {
+          "id": null,
+          "how": null,
+          "why": "no active task: two tasks read running (T-0901, T-0902)"
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "how",
+        "why"
+      ],
+      "properties": {
+        "id": {
+          "description": "The active task's id, or null when there is none.",
+          "examples": [
+            "T-0901",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "how": {
+          "description": "named (given by --task or BONSAI_TASK), running (the single task reading running), or null when there is none.",
+          "examples": [
+            "running",
+            null
+          ],
+          "enum": [
+            "named",
+            "running",
+            null
+          ]
+        },
+        "why": {
+          "description": "Why there is none, one sentence, said first in every refusal it causes; null when there is one.",
+          "examples": [
+            "no active task: two tasks read running (T-0901, T-0902)",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "needs": {
+      "description": "What the workspace needs from a machine. kind is an open list (pack, tool, mcp, shell; plugin for a pack not installed on this machine, spec §5). The other fields depend on the kind (a pack: id, source, version; a tool: name, version, the Claude Code floor among them); only kind is required, the rest is typed open (formats/README.md). null on exit 3.",
+      "examples": [
+        [
+          {
+            "kind": "tool",
+            "name": "claude-code",
+            "version": ">=2.1.0"
+          },
+          {
+            "kind": "pack",
+            "id": "workflow",
+            "source": "https://example.com/packs/workflow.git",
+            "version": "1.2.0"
+          }
+        ],
+        null
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "description": "What is needed: pack, tool, mcp, shell, plugin, or a kind added later (an open list).",
+            "examples": [
+              "tool",
+              "plugin"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "problems": {
+      "description": "One sentence each: the same findings bonsai check reports (a changed workspace id, plugin drift, a bonsai on the PATH that is not the installed one among them); [] when none. Never null: on exit 3 it says why the workspace could not be read. A stale generated table and an old Claude Code are warnings, never problems.",
+      "examples": [
+        [],
+        [
+          "bonsai.yaml's id changed from ws-7kq2m4xw5r3t6y2u7p4a5c3e2b to ws-3c5e7g2k4m6p2r4t6v3x5z7b2d"
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "checks": {
+      "description": "With --full only: newer pack versions, the agent's version, MCP servers reachable; null without --full. Its inner shape is not fixed yet, so it is typed open (formats/README.md).",
+      "examples": [
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  }
+}

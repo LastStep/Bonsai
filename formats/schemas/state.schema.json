@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.state/1",
+  "description": "STATE (contract §7.2): the one page that says where a project stands, rewritten (never appended) whenever that changes. Lives at .bonsai/STATE.md in every project; the body is free, and this schema describes its YAML frontmatter as a reader returns it (JSON). Written by agents (an orchestrator rewrites it); read by every new session first, people and the studio. A writer writes every field below, in this order (contract §2.2); a reader treats a missing field as null and keeps an unknown one. The frontmatter follows the format-1 YAML rules (contract §2.4).",
+  "type": "object",
+  "required": [
+    "format",
+    "updated",
+    "updated_by",
+    "labels"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, always the first key (contract §2.2). In a file made from a template it carries a one-line pointer back as a trailing comment (contract §2.8).",
+      "examples": [
+        "bonsai.state/1"
+      ],
+      "const": "bonsai.state/1"
+    },
+    "updated": {
+      "description": "The day the page was last rewritten, YYYY-MM-DD as text (contract §2.4).",
+      "examples": [
+        "2026-10-08"
+      ],
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "updated_by": {
+      "description": "Who rewrote it, as text.",
+      "examples": [
+        "orchestrator (opus)"
+      ],
+      "type": "string"
+    },
+    "labels": {
+      "description": "A map of label name to value (contract §5), for example workflow.milestone; {} when none. Names are <namespace>.<name> with one dot.",
+      "examples": [
+        {
+          "workflow.milestone": "v1"
+        },
+        {}
+      ],
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      }
+    }
+  }
+}
