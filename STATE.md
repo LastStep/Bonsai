@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 when part 5 landed (`records/runs/R-2026-10-08-hook.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 when Rohan's first sitting passed (`records/runs/R-2026-10-08-hook.md`).
 
 ## In short
 
@@ -32,7 +32,8 @@ Both were passed by a fresh Opus verifier.
   names), one `bonsai.log/1` record per decision with the binary's path and hash. The fault switch only under
   `-tags bonsai_test_fault`; CI runs that tag too. `update` refuses when the lock is missing. Check 11 passes on WSL
   through `claude-here`. Hook start-up: WSL p50 2.4 ms (baseline 1.5), Git Bash 63 ms (baseline 65). Passed by a
-  fresh Opus verifier after one fix round. Parts 3 and 5 close once Rohan's first sitting passes.
+  fresh Opus verifier after one fix round.
+- **Rohan's first sitting passed** (hand checks b, c, d, 8 Oct): parts 3 and 5 are closed.
 - **Part 4a, the test pack**: `LastStep/bonsai-test-pack`, public, commits A `5062053`, B `ab09e4b`, C `abfb5de`, D
   `1d4f46f` (`main`; full hashes in its run report). A shows a `marker` role saying "commit A"; B changes one pack file,
   adds one and says "commit B"; C changes that file again; D changes only the hook line. Its README says which check
@@ -75,24 +76,24 @@ Nothing else of the new Bonsai is built.
   Go 1.25), CodeQL, Dependabot (`gomod`, `github-actions`). The old website's Deploy Docs workflow is removed; the old
   site stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: Rohan's first sitting, then part 4b
+## The one thing to do next: part 4b, packs as plugins
 
-**Rohan's first sitting** (about 25 minutes): hand checks b, c and d (plan, hand-check table). The folders are ready
-under `%USERPROFILE%\bonsai-checks\`: `project-conflict` (b), `project-guard` (c), `bin\bonsai.exe`
-(`8c8463eb...08bc`), `bin\fault\bonsai.exe` (`6123c0e3...81fa`), `bin\claude-here.cmd`. The orchestrator sends the
-lines in one message (b's in `records/runs/R-2026-10-08-engine.md`, c's and d's in `records/runs/R-2026-10-08-hook.md`'s
-builder reports) and records his one line per check. Then parts 3 and 5 close.
+Part 4b (4-7 AI hours): the fetch at a 40-character commit, no login, read-only, on both sides; the marketplace named
+by workspace and a hash of the locked commits; install and update on this machine (`--scope project` or `local` only,
+never user); the drift report; `project-a` at A, `project-b` at B, `project-a-worktree` at B beside `project-a` at A; a
+fresh worktree's trust. Check 8 with the session kinds recorded (interactive, `-p`, `--bg`, a fresh worktree) and
+`claude --agent <plugin>:<role> --bg` starting the test pack's role; check 5's last clause (a new session loads B's
+roles, `check` reports no drift). Check 10 on Windows. It lands on green tests on both sides and the orchestrator's read
+of the diff. Recheck the user settings hashes after it (WSL `7b515457...a025a7`, Windows `2b6295c1...4ff6c9`). Then
+Rohan's second sitting (hand check a, about 20 minutes), then part 6, the gate report.
 
-**Then part 4b, packs as plugins** (4-7 AI hours): the fetch at a 40-character commit, no login, read-only, on both
-sides; the marketplace named by workspace and a hash of the locked commits; install and update on this machine
-(`--scope project` or `local` only); the drift report; `project-a` at A, `project-b` at B, `project-a-worktree` at B;
-check 8 with the session kinds recorded, check 5's last clause. Lands on green tests on both sides and the
-orchestrator's read of the diff. Recheck the user settings hashes after it (WSL `7b515457...a025a7`, Windows
-`2b6295c1...4ff6c9`). Then Rohan's second sitting (hand check a), then part 6, the gate report.
+Carried into part 4b: the residual fail-open risk the first sitting did not test (under the `missing` fault, a Write
+whose payload exceeds the pipe buffer while the shell reads no stdin; Claude Code may turn the broken pipe into a
+non-blocking status) gets an agent's headless run on WSL; and the scratch `claude-here.ps1` fails at `Get-FileHash`
+(line 70) when it shows the found binary's hash, fixed before the second sitting.
 
 ## Waiting on Rohan
 
-- Now: the first sitting (hand checks b, c, d).
 - Later: the second sitting (hand check a, about 20 minutes, after part 4); step 8 at 5.4; at 5.7
   the `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website); close #252 if Dependabot has not.
