@@ -1,15 +1,15 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 when Rohan approved the plan (`records/runs/R-2026-10-08-plan-review.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 when part 0 landed (`records/runs/R-2026-10-08-formats.md`).
 
 ## In short
 
 Bonsai is being rebuilt as one small Go program that gives every project the same formats, packs, guards, recorder and
-proof ladder (`design/one-pager.md`). The design is settled: the spec, the formats contract, and Rohan's own review of
-every format (confirmed 7 Oct: the formats are final), all in `design/`. **Nothing of the new Bonsai is built yet.**
-`main` still holds the old product's code (0.4.3 and the unreleased 0.5.0 commits), which the skeleton's part 1 clears
-out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bonsai.yaml`, `.bonsai/`) was removed on
-8 Oct, so agents start clean from `CLAUDE.md`, this file and `design/plan.md`.
+proof ladder (`design/one-pager.md`). The design is settled and the plan is approved (8 Oct). **Part 0, the formats,
+is done**: `formats/` holds a JSON Schema for each of the contract's ten formats, an example of each, 97 trick files
+with both outcomes in `expect.json`, a raw-byte manifest (124 files, set 1) and a Go test, on `main` at `3770d04`,
+passed by a fresh Opus verifier. Nothing else of the new Bonsai is built: `main` still holds the old product's code
+(0.4.3 and the unreleased 0.5.0 commits), which part 1 clears out.
 
 ## Rohan's decisions, 8 Oct
 
@@ -28,13 +28,15 @@ out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bon
 - Haiku joins the models, for small bookkeeping and audit jobs (listing, sorting, counting, checking a list against a
   source); it reports facts and judges nothing (`CLAUDE.md`).
 - Rohan approved `design/plan.md` and `design/one-pager.md` (8 Oct), after a fresh Opus review and its fixes.
+- Label-definition fields stay required in the formats (Rohan, 8 Oct): Bonsai's packs write every field; the
+  contract's short examples are out of date (the plan's "Stale or in tension" list).
 - Rohan's hand checks come in two sittings, not one: checks b, c and d (about 25 minutes) after part 5, check a (about
   20 minutes) after part 4. Parts 3 and 5 close once the first sitting passes, part 4 once the second does.
 
 ## GitHub, read 8 Oct
 
-- `main`: the plan's fixes (`8c6eb6f`) on top of the setup (`3fa4982`), pushed 8 Oct. The only branch; no open pull
-  request; the newest tag is `v0.4.3`. The old maintenance routine's cloud sessions are archived.
+- `main`: part 0 (`3770d04`) on top of the approved plan, pushed 8 Oct. The only branch; no open pull request; the
+  newest tag is `v0.4.3`. The old maintenance routine's cloud sessions are archived.
 - `release.yml` is disabled. No repository secret (the old `HOMEBREW_TAP_TOKEN` is deleted, and Rohan removed the token itself from GitHub, 8 Oct). The only environment is
   `github-pages`; the `release` environment and a new tap token wait for step 5.7.
 - Ruleset `main-protection`: blocks force pushes and deletion only (Rohan switched off the pull-request and
@@ -42,25 +44,18 @@ out. The old agent workspace (`station/`, the old `CLAUDE.md`, `.claude/`, `.bon
 - Workflows on: CI (`test`, `lint`, `govulncheck`), CodeQL, Dependabot, and Deploy Docs: a push to `main` touching
   `README.md`, `docs/`, `catalog/` or `website/` redeploys the old website to GitHub Pages until part 1 removes it.
 
-## The one thing to do next: part 0, the formats
+## The one thing to do next: part 1, the clear-out and the new layout
 
-`design/plan.md`, approved 8 Oct, part 0: a JSON Schema for each of the contract's ten formats, the trick files with their expected outcomes in
-`formats/expect.json`, a raw-byte manifest, and a Go test. 6-10 AI hours; at 13 work stops and Rohan is asked.
-1. Open `records/runs/R-<date>-formats.md` (the orchestrator is its only writer). Make the builder's worktree:
-   `git -C ~/Servers/Bonsai worktree add ~/Servers/Bonsai-formats -b formats main`.
-2. Brief one Opus builder: part 0 whole, the sources it lists (contract §2.4 and each format's section, spec §16's rows
-   and the sections they cite, by grep), and the rules from `CLAUDE.md`. The format-0 outcomes come from the studio's
-   frozen reader, taken read-only: `git -C ~/Servers/Trinetra-Game-Studio show 4a05eac:tools/lib/yaml.mjs >
-   <scratch folder>/yaml0.mjs`. Nothing is written in the studio's checkout. Tell the builder: the private-pattern test
-   flags `/home/`, so the `status --json` example needs a made-up absolute path the pattern does not match (contract
-   §12's own example uses `/home/<user>/...`).
-3. A fresh Opus verifier reads every case rule by rule and runs the frozen reader with a runner of its own.
-4. Before the push: `go test ./formats/` natively on Windows in a Windows-git clone made from a `git bundle` of the
-   branch under `%USERPROFILE%\bonsai-checks\`. Then fast-forward `main`, push, check CI (`test` and `lint` green;
-   `govulncheck` stays red until part 1), name the commit here, and tell Rohan.
+Part 0 is done (`records/runs/R-2026-10-08-formats.md`). Next, in the plan's order: part 1, then the test pack (4a),
+then parts 2, 3, 5, the rest of 4, and 6 (`design/plan.md`, "Parts 1-6"). Part 1 removes the old product's code from
+`main` in one commit, sets up the new layout, rewrites CI (a `windows` job; govulncheck pinned to a version that builds
+with CI's Go) and keeps `release.yml` disabled. Its builder is Opus; a fresh Opus verifier checks it **before** its
+push (CI and release). Open `records/runs/R-<date>-clear-out.md` (the orchestrator is its only writer), make the
+worktree `~/Servers/Bonsai-<part>`, and brief the builder with part 1's row, "CI and release after part 1", and the
+rules from `CLAUDE.md`.
 
-Then the walking skeleton, parts 1-6, in the plan's order (1, the test pack, 2, 3, 5, the rest of 4, 6). Part 1 gets
-its own fresh verifier before its push.
+For part 2's reader, from part 0: the frontmatter is its lines with their own line endings (`formats/README.md`); cut
+any other way, YAML libraries disagree on a final block scalar's newline.
 
 ## Waiting on Rohan
 
@@ -80,3 +75,6 @@ its own fresh verifier before its push.
 - The spec's §18 and §19 D give both question D's figures (60 h, 30-46 h) and the format review's (61 h, 30-47 h);
   §14 and §20 say 61 and 30-47. The plan uses 61 and 30-47.
 - The spec's §17 step 6 still has the hand checks in one sitting; the plan follows Rohan's two (8 Oct).
+- Scratch left from part 0: `~/bonsai-checks/formats0/`, `verify0/`, `yaml-libs/` (PyYAML is the system's; npm
+  `yaml@2.8.3` there), and under `%USERPROFILE%\bonsai-checks\` the clones `src` and `verify-src` and two bundles. Safe
+  to delete; a later Windows run makes its own folder.

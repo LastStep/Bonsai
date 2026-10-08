@@ -435,4 +435,5 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
   apply (`values`, `items`, `pattern`, `max`, `grants`); §5.2 calls `pattern` and `max` optional and gives `grants` a
   default of `false`. The formats require every field: Bonsai's packs write them all (Rohan, 8 Oct).
 - Spec §7 names the Claude Code need in `status --json` by `id`; contract §12 and format review 6.5 (confirmed) name a
-  tool need by `name`. The formats follow `name`; spec §7's `id` is a slip.
+  tool need by `name`. The formats follow `name`; spec §7's `id` is a slip. Contract §12's own short need examples omit
+  the fields that do not apply; the formats require all five, `null` where they do not apply (the writer rule, §2.2).
