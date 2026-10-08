@@ -71,7 +71,9 @@ where it lives) and a `description` and `examples` on every property.
   lists a major cannot grow); the status `packs[].state`, `status_writes` and `active_task.how`; the lock's file
   `kind`.
 - A field that does not apply is `[]` when it holds a list (`values`, `options`, `skipped`) and `null` otherwise; a
-  label definition writes `grants: false` rather than leaving it out.
+  label definition writes `grants: false` rather than leaving it out. The contract's own short examples (§5.2, §5.6)
+  leave out a label's fields that do not apply: a reader reads them as `null` (`grants` as `false`), while a schema
+  here describes a writer, who writes them all.
 - `status --json` exits 3 with only `format`, `bonsai` and `problems` filled, so every other field also takes `null`.
 - Patterns are added only where a source fixes a form: ids (task, run, workspace, machine folder, UUID), dates and
   times, label names, hashes (a commit in lowercase hex, 40 characters where the lock resolves one; a 64-character
