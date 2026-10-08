@@ -356,7 +356,7 @@ func dispatch(lines []line) (first, format int, ok bool) {
 // dispatchKey reads a line as a key: line for dispatch: a quoted key (its text between the quotes) or a plain key
 // (the text before the first colon followed by a space or the line's end, before any comment).
 func dispatchKey(body string) (string, bool) {
-	if body == "" || body[0] == '-' && (len(body) == 1 || body[1] == ' ' || body[1] == '\t') || body[0] == '?' {
+	if body == "" || isSeqItem(body) || body[0] == '?' {
 		return "", false
 	}
 	if body[0] == '"' || body[0] == '\'' {

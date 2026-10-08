@@ -87,15 +87,15 @@ func ReadConfig(raw []byte) (*Config, error) {
 	f := &fields{file: ConfigFile, next: configNext}
 	c := &Config{Doc: m}
 	idp, namep := idName()
-	c.ID = f.text(m, "id", "bonsai.yaml", 0, true)
+	c.ID = f.text(m, "id", "the file", 0, true)
 	if e, _ := m.Entry("id"); f.err == nil && !idp.MatchString(c.ID) {
 		f.fail(e.Line, "the id %s is not ws- and 26 lower-case letters or digits", showValue(c.ID))
 	}
-	c.Name = f.text(m, "name", "bonsai.yaml", 0, true)
+	c.Name = f.text(m, "name", "the file", 0, true)
 	if e, _ := m.Entry("name"); f.err == nil && !namep.MatchString(c.Name) {
 		f.fail(e.Line, "the name %s is not a slug: a lower-case letter, then up to 39 lower-case letters, digits and dashes", showValue(c.Name))
 	}
-	items, line := f.list(m, "packs", "bonsai.yaml")
+	items, line := f.list(m, "packs", "the file")
 	c.Packs = []PackRef{}
 	seen := map[string]bool{}
 	for i, it := range items {
@@ -129,8 +129,8 @@ func ReadConfig(raw []byte) (*Config, error) {
 		p.Ref = f.text(pm, "ref", where, first, true)
 		c.Packs = append(c.Packs, p)
 	}
-	c.Protected = f.texts(m, "protected", "bonsai.yaml")
-	c.PersonOnly = f.texts(m, "person_only", "bonsai.yaml")
+	c.Protected = f.texts(m, "protected", "the file")
+	c.PersonOnly = f.texts(m, "person_only", "the file")
 	for _, key := range []string{"protected", "person_only"} {
 		e, _ := m.Entry(key)
 		list := c.Protected

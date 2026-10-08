@@ -77,22 +77,22 @@ func ReadPack(raw []byte) (*Pack, error) {
 	}
 	f := &fields{file: PackFile, next: packNext}
 	p := &Pack{Doc: m}
-	p.ID = f.text(m, "id", "pack.yaml", 0, true)
+	p.ID = f.text(m, "id", "the file", 0, true)
 	if e, _ := m.Entry("id"); f.err == nil && !packIDPattern.MatchString(p.ID) {
 		f.fail(e.Line, "the id %s is not a pack id: a lower-case letter, then lower-case letters, digits and dashes", showValue(p.ID))
 	}
-	p.Version = f.text(m, "version", "pack.yaml", 0, true)
-	if needs := f.mapping(m, "needs", "pack.yaml"); needs != nil {
+	p.Version = f.text(m, "version", "the file", 0, true)
+	if needs := f.mapping(m, "needs", "the file"); needs != nil {
 		p.ClaudeCode = f.text(needs, "claude_code", "needs", 0, false)
 	}
-	p.Block = f.text(m, "block", "pack.yaml", 0, false)
+	p.Block = f.text(m, "block", "the file", 0, false)
 	if e, _ := m.Entry("block"); f.err == nil && p.Block != "" {
 		if err := CheckRelPath(p.Block); err != nil {
 			f.fail(e.Line, "block: %v", err)
 		}
 	}
 
-	items, line := f.list(m, "files", "pack.yaml")
+	items, line := f.list(m, "files", "the file")
 	p.Files = []FileEntry{}
 	seen := map[string]bool{}
 	for i, it := range items {
@@ -124,7 +124,7 @@ func ReadPack(raw []byte) (*Pack, error) {
 		p.Files = append(p.Files, fe)
 	}
 
-	items, line = f.list(m, "hooks", "pack.yaml")
+	items, line = f.list(m, "hooks", "the file")
 	p.Hooks = []HookEntry{}
 	for i, it := range items {
 		hm, first := entryOf(f, it, line, "hooks", i, "event, matcher, command and why")
@@ -140,7 +140,7 @@ func ReadPack(raw []byte) (*Pack, error) {
 		p.Hooks = append(p.Hooks, h)
 	}
 
-	items, line = f.list(m, "deny", "pack.yaml")
+	items, line = f.list(m, "deny", "the file")
 	p.Deny = []DenyEntry{}
 	for i, it := range items {
 		dm, first := entryOf(f, it, line, "deny", i, "rule and why")
