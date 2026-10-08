@@ -94,12 +94,15 @@
     {
       "kind": "pack",
       "id": "workflow",
+      "name": null,
       "source": "https://example.com/packs/workflow.git",
       "version": "1.2.0"
     },
     {
       "kind": "tool",
+      "id": null,
       "name": "claude-code",
+      "source": null,
       "version": ">=2.1.0"
     }
   ],

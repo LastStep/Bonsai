@@ -47,10 +47,8 @@ where it lives) and a `description` and `examples` on every property.
     contract lists none), a rung's `tests` (an object or `null`; today's inner fields are described, none required),
     `leftovers` (an object, a text or `null`, as today's three shapes).
   - `status`: `mode` (the contract shows only `offline`), each `documents` entry (only `kind` and `from` required:
-    contract §7.3 says `format` is absent for a pack's kind and a kind has `path` or `file`), each `needs` entry (only
-    `kind` required: a pack need carries `id`, `source`, `version` and a tool need `name`, `version`; spec §7 names
-    the Claude Code need by `id` where the contract's and the format review's examples use `name`), and `checks` (an
-    object or `null`).
+    contract §7.3 says `format` is absent for a pack's kind and a kind has `path` or `file`), and `checks` (an object
+    or `null`).
   - `lock`: each pack's `declares` (an object: the four kinds it holds are fixed, their key names and inner layout are
     not; format review 6.3).
   - `ask`: `data` (an object or `null`: a pack type's own payload).
@@ -75,6 +73,10 @@ where it lives) and a `description` and `examples` on every property.
   required, because Bonsai's packs write every field; the contract's short examples (§5.2, §5.6, and the format
   review's 2.2), which leave out fields that do not apply, are out of date. A reader still reads a missing field as
   `null` (`grants` as `false`).
+- A `status --json` need carries `kind`, `id`, `name`, `source` and `version`, each `null` where it does not apply
+  (a pack by `id`, `source` and `version`; a tool by `name` and `version`): contract §12's two examples, written in
+  full by the writer rule (contract §2.2). The Claude Code floor is named by `name`, as contract §12 and the format
+  review (6.5, confirmed) have it; spec §7's "id" is the spec's slip.
 - `status --json` exits 3 with only `format`, `bonsai` and `problems` filled, so every other field also takes `null`.
 - Patterns are added only where a source fixes a form: ids (task, run, workspace, machine folder, UUID), dates and
   times, label names, hashes (a commit in lowercase hex, 40 characters where the lock resolves one; a 64-character

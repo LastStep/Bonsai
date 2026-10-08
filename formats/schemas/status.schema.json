@@ -725,17 +725,20 @@
       }
     },
     "needs": {
-      "description": "What the workspace needs from a machine. kind is an open list (pack, tool, mcp, shell; plugin for a pack not installed on this machine, spec §5). The other fields depend on the kind (a pack: id, source, version; a tool: name, version, the Claude Code floor among them); only kind is required, the rest is typed open (formats/README.md). null on exit 3.",
+      "description": "What the workspace needs from a machine, one entry per need (contract §12): kind, then id, name, source and version, each null where it does not apply. A pack (kind pack, or plugin for a pack not installed on this machine, spec §5) is named by id, with its source and version; a tool (the Claude Code floor among them, spec §7) by name, with the version it needs. A writer writes all five fields (contract §2.2). null on exit 3.",
       "examples": [
         [
           {
             "kind": "tool",
+            "id": null,
             "name": "claude-code",
+            "source": null,
             "version": ">=2.1.0"
           },
           {
             "kind": "pack",
             "id": "workflow",
+            "name": null,
             "source": "https://example.com/packs/workflow.git",
             "version": "1.2.0"
           }
@@ -749,16 +752,65 @@
       "items": {
         "type": "object",
         "required": [
-          "kind"
+          "kind",
+          "id",
+          "name",
+          "source",
+          "version"
         ],
         "properties": {
           "kind": {
-            "description": "What is needed: pack, tool, mcp, shell, plugin, or a kind added later (an open list).",
+            "description": "What is needed, an open list (contract §12): pack, tool, mcp, shell; plugin for a pack not installed on this machine (spec §5).",
             "examples": [
               "tool",
               "plugin"
             ],
             "type": "string"
+          },
+          "id": {
+            "description": "For a pack or a plugin: the pack's id. null for other kinds.",
+            "examples": [
+              "workflow",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "For a tool: its name, such as claude-code for the Claude Code floor. null where it does not apply (a pack, a plugin).",
+            "examples": [
+              "claude-code",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "description": "For a pack or a plugin: where it is fetched from (a git URL). null for other kinds.",
+            "examples": [
+              "https://example.com/packs/workflow.git",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "description": "The version needed: a pack's version, or a tool's version range such as the Claude Code floor; null when none applies.",
+            "examples": [
+              "1.2.0",
+              ">=2.1.0",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       }

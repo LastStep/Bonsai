@@ -4,7 +4,7 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "6f5372b02d175ad5e14f6806599c3f84a774c8520597b05db0b858943d10a4ac"
+      "sha256": "69a2eac0f3d7f053847867a6e6bbefb0a4f06f9ba45480e05b38d6f0e10ed0c2"
     },
     {
       "path": "examples/ask.json",
@@ -56,7 +56,7 @@
     },
     {
       "path": "examples/status.json",
-      "sha256": "3b2d050b7afd33a32421a20fa2951dde9545ce507e577579e07fedae0bdd98ca"
+      "sha256": "112e2ec241dd0e19ec2601d5146d1a1d42586e31c88ac750ca0fbb987d28c0d3"
     },
     {
       "path": "examples/task.json",
@@ -104,7 +104,7 @@
     },
     {
       "path": "schemas/status.schema.json",
-      "sha256": "4d483e740f39a93bf14c4b5b36ecd1012c43821db980a380ebf39e5c4cb933cb"
+      "sha256": "94f9ad3c81c06c53b6820d5883d3da7495858b897cabc043e0d761a343cfdf91"
     },
     {
       "path": "schemas/task.schema.json",
