@@ -30,8 +30,8 @@ type Pack struct {
 	A, B, C, D string
 }
 
-// Isolate points git at an empty configuration and stops it looking above tmp, and sets BONSAI_HOME to
-// tmp/home. Every test that runs git or Bonsai calls it first.
+// Isolate points git at an empty configuration and no ignore file of the person's, stops it looking above tmp, and
+// sets BONSAI_HOME to tmp/home. Every test that runs git or Bonsai calls it first.
 func Isolate(t *testing.T, tmp string) (home string) {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {
@@ -43,6 +43,8 @@ func Isolate(t *testing.T, tmp string) (home string) {
 	}
 	t.Setenv("GIT_CONFIG_GLOBAL", empty)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+	// git also reads the person's own ignore file, $XDG_CONFIG_HOME/git/ignore (or ~/.config/git/ignore): none here.
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmp, "xdg"))
 	t.Setenv("GIT_CEILING_DIRECTORIES", tmp)
 	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "")
 	home = filepath.Join(tmp, "home")
