@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 when part 2 landed (`records/runs/R-2026-10-08-reader.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 when part 3 landed (`records/runs/R-2026-10-08-engine.md`).
 
 ## In short
 
@@ -19,6 +19,12 @@ Both were passed by a fresh Opus verifier.
   writes), `internal/status`, and `bonsai status [--json]` (every field of `bonsai.status/1`; those not built yet in a
   named, tested list). 667 tests on WSL and natively on Windows. Passed by a fresh Opus verifier after one fix round
   (51,000 break-it inputs: no accepted value differs from both YAML libraries; no crash).
+- **Part 3, the engine** (`ee50971`): `internal/engine` and `bonsai init`, `update`, `check`: the plain fetch (git at a
+  commit, source and ref after `--`), staged writes with the lock last, the kinds `pack`, `once`, `block`, `keys`,
+  `kept`, exits 4 and 5, `--diff`, `--yes`, `--keep`, `--adopt`, the preview naming every settings line. A hook-line
+  change is only refused (exit 4, `--allow-exec` named; the flag is step 5.1). Checks 1-6 and 12 pass as scripted runs
+  over three scratch targets (check 5 up to part 4's clause). 703 tests on WSL and natively on Windows. It landed on
+  green tests and the orchestrator's read of the diff; part 5's verifier also reads its hook-line writes and refusal.
 - **Part 4a, the test pack**: `LastStep/bonsai-test-pack`, public, commits A `5062053`, B `ab09e4b`, C `abfb5de`, D
   `1d4f46f` (`main`; full hashes in its run report). A shows a `marker` role saying "commit A"; B changes one pack file,
   adds one and says "commit B"; C changes that file again; D changes only the hook line. Its README says which check
@@ -61,27 +67,32 @@ Nothing else of the new Bonsai is built.
   Go 1.25), CodeQL, Dependabot (`gomod`, `github-actions`). The old website's Deploy Docs workflow is removed; the old
   site stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: part 3, the engine
+## The one thing to do next: part 5, the hook path
 
-Next, in the plan's order: part 3, then 5, the rest of 4, and 6 (`design/plan.md`, "Parts 1-6"). Part 3 is the engine:
-the plain fetch (git, at a commit, from the pack's URL), `init`, `update` (kinds `pack`, `once`, `block`, `keys`;
-`kept`; exits 4 and 5; `--diff`, `--yes`, `--keep`, `--adopt`), `check`, and the refusal of a hook-line change (exit 4,
-`--allow-exec` named). Scripted runs over three scratch targets, checks 1-6 and 12, check 10 on Windows. 10-15 AI hours.
-It lands on green tests on both sides and CI plus the orchestrator's read of the diff; part 5's verifier also reads its
-hook-line writes and its refusal. Hand check b waits for the first sitting, after part 5. **Before part 3** the
-orchestrator records the SHA-256 of `~/.claude/settings.json` and `%USERPROFILE%\.claude\settings.json` (the plan,
-"Claude Code's own files"). Open `records/runs/R-<date>-engine.md`, make the worktree, and brief from part 3's row,
-"Test sessions and the launcher" and "The scratch clone of the studio's repo".
+Next, in the plan's order: part 5, then the rest of 4, and 6. Part 5: `bonsai hook guard` with one rule (an Edit of a
+path in `bonsai.yaml`'s protected list is refused; `project-guard` lists `protected.txt`), the fault switch
+`BONSAI_TEST_FAULT` (`missing`, `crash`, `slow`, `minimal-path`) behind a Go build tag, every fault only blocking, the
+binary's path and SHA-256 logged. Check 11 on WSL by the builder through the `claude-here` launcher (plan, "Test
+sessions and the launcher": the scratch build first on the PATH, `BONSAI_HOME` and one shared
+`CLAUDE_CODE_PLUGIN_CACHE_DIR` set); a Go test per fault; a normal build holds no fault code. 3-5 AI hours. A fresh
+Opus verifier, who also reads part 3's hook-line writes and refusal (start with `internal/engine/engine.go`'s doc
+comment). Then Rohan's **first sitting** (about 25 minutes): hand checks b, c and d. Parts 3 and 5 close once it
+passes. Open `records/runs/R-<date>-hook.md`, make the worktree, and brief from part 5's row, "Test sessions and the
+launcher" and the hand-check table.
 
-From part 2 for part 3: pass a pack's `source` and `ref` to git after `--` (`bonsai.yaml` already refuses ones starting
-with `-`); finding the checkout through git is fine for `status` and the engine, never for the guard (step 5.3). From
-the test pack: test the hook-line refusal from C to D (A or B straight to D is a mixed update); check 5's "one updated"
-counts pack files, since the plugin wiring changes on every move; its hook line is declared in `pack.yaml` under
-`hooks`, a reading that step 5.1 should confirm.
+Hand check b is prepared by part 3: `%USERPROFILE%\bonsai-checks\project-conflict`, a Windows build of `ee50971` in
+`%USERPROFILE%\bonsai-checks\bin\`, and its PowerShell lines in `records/runs/R-2026-10-08-engine.md`'s builder
+report (the orchestrator copies them into the sitting's one message). Part 5's builder rebuilds `bonsai.exe` if the
+guard changes it.
+
+From part 3 for part 5: Bonsai's own hook line is `bonsai hook guard || exit 2` on PreToolUse (matcher
+`Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell`, timeout 10), written by name; spec §7's 8 Oct note asks for a fixed
+path, §3 and check 2 for a name: step 5.3 settles it. A stop line was not written (no `hook stop` yet).
 
 ## Waiting on Rohan
 
-- Before part 5's hook checks: spec §17 step 3, the old `bonsai` binaries (the lines are in the spec).
+- Before part 5's hook checks: spec §17 step 3, the old `bonsai` binaries. Read 8 Oct: `~/go/bin/Bonsai` and
+  `%USERPROFILE%\go\bin\bonsai.exe` remain (`~/go/bin/bonsai` and `~/.local/bin/bonsai` are gone). Asked 8 Oct.
 - Later: the two hand-check sittings (after part 5, about 25 minutes; after part 4, about 20); step 8 at 5.4; at 5.7
   the `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website); close #252 if Dependabot has not.
