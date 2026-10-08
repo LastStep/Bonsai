@@ -51,7 +51,8 @@ was built so far and the old product stays at tag `v0.4.3`.
 - [ ] The formats are in `formats/`: a JSON Schema for each of the contract's ten formats and the trick files with
       their expected outcomes, read rule by rule by a fresh verifier; STATE names the commit (plan
       part 0).
-- [ ] The skeleton's twelve checks pass (spec section 14) and its gate report is in Rohan's hands.
+- [ ] The skeleton's twelve checks pass (spec section 14; check 7's studio half stays open until the studio links,
+      step 7) and its gate report is in Rohan's hands.
 - [ ] Rohan picks a path at the gate, on the measured numbers.
 - [ ] Path (a), if chosen: Bonsai 1.0 as spec section 14's parts 5.1-5.7, then the studio links to it (step 7) and
       Mimas last (step 8).
@@ -71,6 +72,7 @@ adopts the formats when it links (step 7).
 ## Cost
 
 The formats 6-10 AI hours (stop line 13 h). The skeleton 30-47 AI hours, stop line 61 h, plus about 45 minutes of
-Rohan's hand checks. After the gate, path (a) is 139-218 h; Bonsai 1.0 with the skeleton 169-265 h (270-424 on the
-studio's record of estimates growing 1.6 times). Proof until spec step 5.4: Go tests and `go vet` in WSL and natively on
+Rohan's hand checks in two sittings (about 25 minutes after part 5, about 20 after part 4; Rohan, 8 Oct). After the
+gate, path (a) is 139-218 h; Bonsai 1.0 with the formats and the skeleton 175-275 h (280-440 on the studio's record of
+estimates growing 1.6 times). Proof until spec step 5.4: Go tests and `go vet` in WSL and natively on
 Windows, Bonsai's CI on Linux and Windows, and a fresh verifier; from 5.4, Bonsai's own ladder.
