@@ -28,15 +28,18 @@ rest.
 
 **What you will see.** Commits on Bonsai's `main`, each pushed after its proof passed (a fresh verifier where the work is big or risky), with green checks on
 GitHub (Linux, and Windows from part 1). Part 1 clears the old product's code out of `main`; 0.4.3 stays downloadable
-and at its tag. A new public repository, `LastStep/bonsai-test-pack`, for part 4. No release and no tag. Then one
-sitting from you, about 45 minutes, on your hand checks. Then the gate report.
+and at its tag. A new public repository, `LastStep/bonsai-test-pack`, for part 4. No release and no tag. Your hand
+checks come in two sittings: about 25 minutes after part 5 and about 20 minutes after part 4. Then the gate report.
 
 **What you must do.**
 - Approve this plan and the one-pager (`design/one-pager.md`). Nothing is built before.
 - Confirm that the old Homebrew tap token is revoked on github.com (spec §17 step 4; not confirmed on 8 Oct).
 - Before part 5's hook checks: your step 3, the old `bonsai` binaries (spec §17 step 3 has the lines).
-- One sitting of about 45 minutes when the scratch build is ready (spec §17 step 6). It saves about 3 AI hours. Each
-  check has a plain pass condition below; tell the orchestrator what you saw, one line per check.
+- Two sittings of hand checks (spec §17 step 6; your choice, 8 Oct), together about 45 minutes, saving about 3 AI
+  hours. The first, about 25 minutes after part 5: the PowerShell console, the guard on Windows, and which `bonsai`
+  Git Bash finds (checks b, c, d). The second, about 20 minutes after part 4: the pack loads (check a). Parts 3 and 5
+  are done only once the first sitting passes, and part 4 once the second does. Each check has a plain pass condition
+  below; tell the orchestrator what you saw, one line per check.
 - Later, not in this plan: step 8 (the pre-release at 5.4) and, at 5.7, the `release` environment and a new tap token.
 
 **Choices that are yours.** None in this plan beyond approving it.
@@ -50,7 +53,7 @@ numbers and three choices: continue, the smaller cut, or pause.
 
 **Size.** Part 0: 6-10 AI hours; at 13 work stops and you are asked. The skeleton: 30-47 AI hours across six parts; at
 61 work stops and you are asked. On the studio's record (estimates grow 1.6 times) expect 10-16 and 48-75. Plus about 45
-minutes of yours. Nothing here waits on the studio.
+minutes of yours, in the two sittings. Nothing here waits on the studio.
 
 ## For the orchestrator, builders and verifiers
 
@@ -61,7 +64,8 @@ minutes of yours. Nothing here waits on the studio.
   carries the rules of `CLAUDE.md` and of this plan that the job needs), reads their reports, merges and pushes.
 - **Builders** work in a plain git worktree beside the clone, one per part:
   `git -C ~/Servers/Bonsai worktree add ~/Servers/Bonsai-<part> -b <part> main` (never the Agent tool's isolation
-  worktrees). They commit on that branch and never push. Builds go `go build -o` into a scratch folder
+  worktrees); part 5's is made from part 3's branch, which waits unmerged for the first sitting (below). They commit on
+  that branch and never push. Builds go `go build -o` into a scratch folder
   (`~/bonsai-checks/bin` for the skeleton); never `go install`. `~/ZenGarden/Bonsai` is never touched.
 - **Verifiers** are fresh Opus agents, for big or risky work only (Rohan, 6 Oct: fewer verifications): part 0 (the set
   everyone tests against), part 1 (CI and release changes, before its push), part 2 (the reader), part 5 (the hook path,
@@ -70,7 +74,9 @@ minutes of yours. Nothing here waits on the studio.
   read of the diff, which the run report says; the last verifier covers them. A verifier reads this plan's part, the
   spec and contract sections it cites and the diff, re-runs the tests itself, and passes or fails the part. It fixes
   nothing.
-- **Landing a part.** After its proof passes: `git -C ~/Servers/Bonsai merge --ff-only <part>`, then
+- **Landing a part.** After all its proof passes, hand checks included (Rohan, 8 Oct): parts 3 and 5 land together
+  once the first sitting passes; the rest of part 4 starts from `main` once they have (or from part 5's branch while the
+  sitting waits) and lands after the second sitting. Then: `git -C ~/Servers/Bonsai merge --ff-only <part>`, then
   `git -C ~/Servers/Bonsai push origin main`, then CI for that commit:
   `gh api repos/LastStep/Bonsai/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
   (or `gh run list -R LastStep/Bonsai -L 10`; this machine's gh, 2.4, has no `--branch`). Red CI is fixed forward with a
@@ -332,16 +338,18 @@ choice, or, past a line, his recorded choice to go on.**
 At a crossed line work stops. Rohan gets the numbers and three choices (continue, the smaller cut, pause); his choice is
 written in the run report before any more work.
 
-**Rohan's hand checks** (spec §17 step 6). The builder leaves the folders; the orchestrator copies the spec's exact lines
-into one message to him. He sends one line per check, and the run report keeps his words and the result. A check that
-fails is a failed check, not a done one.
+**Rohan's hand checks** (spec §17 step 6), in two sittings (Rohan, 8 Oct): the **first**, about 25 minutes after part
+5, holds checks b, c and d; the **second**, about 20 minutes after part 4, holds check a. Parts 3 and 5 close after the
+first sitting passes, not before; part 4 closes after the second. For each sitting the builder leaves the folders and
+the orchestrator copies the spec's exact lines into one message to him. He sends one line per check, and the run report
+keeps his words and the result. A check that fails is a failed check, not a done one.
 
-| Hand check | For | Passes when |
-|---|---|---|
-| a. The pack loads | Check 8 (part 4) | On WSL and in PowerShell, `/agents` shows the `marker` role saying "commit A" in `project-a`, "commit B" in `project-b`, "commit B" in `project-a-worktree` (he notes whether a trust question came), and "commit A" again in `project-a` |
-| b. The PowerShell console | Check 9 (part 3) | `bonsai update` prints plain text with no broken characters and ends in y/N; `bonsai update --yes` stops on the conflict and prints a command; the pasted command works |
-| c. The guard on Windows | Check 11, Windows half (part 5) | The `protected.txt` edit is refused with a reason, the `free.txt` edit is done, and each of the four fault sessions refuses the `free.txt` edit with a clear reason |
-| d. Which `bonsai` Git Bash finds | Check 11 (part 5) | His `which -a bonsai` output is in the run report, and the guard's log for check c's sessions names the scratch build's path and hash, not the old `go\bin\bonsai.exe` |
+| Hand check | For | Sitting | Passes when |
+|---|---|---|---|
+| a. The pack loads | Check 8 (part 4) | Second | On WSL and in PowerShell, `/agents` shows the `marker` role saying "commit A" in `project-a`, "commit B" in `project-b`, "commit B" in `project-a-worktree` (he notes whether a trust question came), and "commit A" again in `project-a` |
+| b. The PowerShell console | Check 9 (part 3) | First | `bonsai update` prints plain text with no broken characters and ends in y/N; `bonsai update --yes` stops on the conflict and prints a command; the pasted command works |
+| c. The guard on Windows | Check 11, Windows half (part 5) | First | The `protected.txt` edit is refused with a reason, the `free.txt` edit is done, and each of the four fault sessions refuses the `free.txt` edit with a clear reason |
+| d. Which `bonsai` Git Bash finds | Check 11 (part 5) | First | His `which -a bonsai` output is in the run report, and the guard's log for check c's sessions names the scratch build's path and hash, not the old `go\bin\bonsai.exe` |
 
 ### How it is proved
 
@@ -354,9 +362,9 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
 | Part 1 | Before the push, a fresh verifier on the clear-out's file list, `release.yml` build-only and the CI jobs; CI on the pushed commit, `test`, `windows` and `govulncheck` green |
 | The test pack | `claude plugin validate --json`; its four commits |
 | Part 2 | Committed Go tests on every trick file's format-1 outcome and on the schemas; check 10 |
-| Part 3 | Checks 1-6 (5 to its session clause) and 12; check 9; check 10 |
-| Part 5 | Check 11 on both sides; hand checks c and d; the fault tests; a normal build without fault code; check 10 |
-| Part 4 | Check 8, hand check a, the recorded session kinds; check 5's last clause; check 10 |
+| Part 3 | Checks 1-6 (5 to its session clause) and 12; check 9 (hand check b, first sitting); check 10; part 5's verifier on its hook lines |
+| Part 5 | Check 11 on both sides; hand checks c and d (first sitting); the fault tests; a normal build without fault code; check 10 |
+| Part 4 | Check 8, hand check a (second sitting), the recorded session kinds; check 5's last clause; check 10 |
 | Part 6 | The gate report against spec §15 |
 | Stop lines | The run reports' rows and tallies, judged by the verifier |
 | Hand checks | Rohan's lines against the pass conditions above |
@@ -370,6 +378,7 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
 |---|---|---|
 | Records and design in Bonsai's repo | Records in the studio's repo under its task numbers | Rohan, 8 Oct |
 | Work on `main`, each push after its proof | A `rebuild` branch, a draft pull request, a gate merge | Rohan, 8 Oct; force pushes and deletion stay blocked; 0.4.3 stays at its tag |
+| Hand checks in two sittings: b, c and d after part 5, a after part 4 | One 45-minute sitting after part 4 | Rohan, 8 Oct; parts 3 and 5 close on their hand checks without waiting for part 4 |
 | The formats' master in Bonsai's `formats/`, part 0 first | The studio's master and a copy here | Rohan, 8 Oct |
 | One `expect.json` for the set | One per case folder | One file any language reads, hashed in the manifest |
 | Verifiers for part 0, part 1, part 2, part 5 (with part 3's hook lines) and the end | One per part, or one at the end | Rohan's 6 Oct rule: a fresh verifier only for big or risky work; the formats, CI and release, the reader and the hooks are risky (`CLAUDE.md`), and the end checks all twelve |
@@ -401,6 +410,7 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
   sides.
 - Check 5 with a mixed update (`--yes` while a hook line also changes) is unsettled between §6's "all or nothing" and
   check 5's wording; the skeleton avoids it (commit D), and step 5.1 must settle it with `--allow-exec`.
+- §17 step 6 has the hand checks in one 45-minute sitting; Rohan chose two on 8 Oct (above).
 - §17 step 6 lists hand check d under part 5, and check 11 does not name it; it is tied to check 11 here through the
   guard's log.
 - §17 step 3 asks for the old binaries to go before step 5.4; this plan asks before part 5's hook checks. The launcher
