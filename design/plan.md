@@ -268,7 +268,7 @@ with their exact lines. This section says how they are built here.
 | Part | Built | Proved by | Hours |
 |---|---|---|---|
 | 1. The clear-out and the new layout | One commit on `main` removes the old product's code: `internal/`, `cmd/`, `catalog/`, `website/`, `docs/`, `embed.go`, `.github/workflows/docs.yml` (the website's; the old site stays on GitHub Pages until Rohan turns Pages off). It keeps `LICENSE`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md` (rewritten for the rebuild), `CHANGELOG.md` (a new "rebuild" section), `.gitattributes`, `.gitignore` (less its old-product lines: the website, `station/`, the old lock name), `.golangci.yml`, `assets/`, the rest of `.github/`, `.goreleaser.yaml`, and all 8 Oct added: `CLAUDE.md`, `STATE.md`, `design/`, `records/`, `formats/`. It rewrites `README.md` ("being rebuilt; 0.4.3 is the old product's last release"), `Makefile` (no `go install`; `build` is `go build -o`), `go.mod` (`go 1.25` with a `toolchain` line; the standard library, and `golang.org/x/sys` only once needed) and `go.sum`, and adds `cmd/bonsai` with a stub `main` (`bonsai --version`), so `go vet` and CodeQL's autobuild find a package. CI and `release.yml` as below. | Before the push, a fresh Opus verifier: the clear-out's file list holds only what it should, `release.yml` can only build, CI as below, `go vet`. After it, CI green on the pushed commit (`test`, `windows`, `govulncheck`) | 2-4 |
-| 4a. The test pack | `LastStep/bonsai-test-pack`, public, made by the orchestrator with `gh` once Rohan approves this plan. Commits: **A** (a `marker` role saying "commit A", the files `init` writes into a project, one hook line); **B** (marker "commit B", one of those files changed, one new file); **C** (that file changed again); **D** (one hook line changed, nothing else). | `claude plugin validate --json` with no warning but the missing `version`; part 2's reader reads its `pack.yaml` | in part 4 |
+| 4a. The test pack | `LastStep/bonsai-test-pack`, public: the orchestrator creates it with `gh` once Rohan approves this plan; an Opus builder makes its commits in a clone at `~/bonsai-checks/bonsai-test-pack`, and the orchestrator pushes them. Its `bonsai/pack.yaml` is `bonsai.pack/1` (spec §5). Commits: **A** (a `marker` role saying "commit A", the files `init` writes into a project, one hook line); **B** (marker "commit B", one of those files changed, one new file); **C** (that file changed again); **D** (one hook line changed, nothing else). | `claude plugin validate --json` with no warning but the missing `version`; part 2's reader reads its `pack.yaml` | in part 4 |
 | 2. Reader and files | The format-1 reader in Go, no general YAML library (spec §3, contract §2.4), tested on the cases in this repo's own `formats/`; `bonsai.yaml`, `pack.yaml`, the lock (`.bonsai/lock.json`), a subset of `status --json` (below). No format 0 (step 5.1). The schema checker moves from part 0's test into the new layout. | Committed Go tests reach every trick file's format-1 outcome in `formats/expect.json`; the lock and `status --json` validate against part 0's schemas; the Windows rules (forward slashes, line-ending-blind hashes, byte-stable output) | 7-10 |
 | 3. Engine | The fetch in its plain form (git, at a commit, from the pack's URL); `init`, `update` (staged; kinds `pack`, `once`, `block`, `keys`; `kept`; exits 4 and 5; `--diff`, `--yes`, `--keep`, `--adopt`), `check` (lock and files, a tracked or staged `.bonsai/local/` file); `bonsai.yaml` with a comment on every line; `.bonsai/lock.json` and `.bonsai/.gitignore`; `init`'s closing plain words; the preview naming every settings line with its sentence. A hook-line change only refused: exit 4, nothing written, `--allow-exec` named as the next step (the flag itself is step 5.1). Scratch targets: a drifted project (one old absolute hook line, one hook of its own), a fresh empty repo, and a scratch clone of the studio's repo with `origin` removed (the orchestrator gives its source), each with `init --new-id`. | Checks 1-6 and 12 as scripted runs over those targets (check 5 up to its new-session clause, which needs part 4), A to B for check 5, A to B to C for check 6, D for the hook-line refusal; committed Go tests of the same behaviour on `t.TempDir()` repos; check 9 (hand check b) | 10-15 |
 | 5. Hook path | `bonsai hook guard` with one rule: an Edit of a path in `bonsai.yaml`'s protected list is refused (`project-guard` lists `protected.txt`). The fault switch `BONSAI_TEST_FAULT` (`missing`, `crash`, `slow`, `minimal-path`) behind a Go build tag, every fault only blocking. The binary's path and SHA-256 logged. | Check 11 on WSL (the builder, through `claude-here`) and on Windows under Git Bash (hand checks c and d); a Go test per fault; a normal build holds no fault code; its verifier also reads part 3's hook-line writes and the refusal of a hook-line change | 3-5 |
@@ -301,17 +301,26 @@ on its dashboard. No committed fixture names Mimas, the studio or any one projec
 
 **Test sessions and the launcher.**
 - Scratch folders `~/bonsai-checks` and `%USERPROFILE%\bonsai-checks`. Scripted runs live in `~/bonsai-checks/scripts/`,
-  never committed; their commands and output go in the run report.
+  never committed; their commands and output go in the run report. Every script sets `BONSAI_HOME` to
+  `bonsai-checks/home` on its side (contract §3), so `init`, `update` and the hook never write the real `~/.bonsai` or
+  `%USERPROFILE%\.bonsai`.
 - Each side has a `claude-here` launcher (`claude-here.cmd` on Windows) that, before it starts Claude Code:
   - puts `bonsai-checks/bin`, the scratch build, **first on the PATH**: until Rohan's step 3 the old 0.4.3 `bonsai` in
     `~/go/bin`, `~/.local/bin` and `%USERPROFILE%\go\bin` comes first, and every hook and timing would hit it;
   - sets one shared `CLAUDE_CODE_PLUGIN_CACHE_DIR` (spec §14; it moves the whole plugins root, so Rohan's own plugins
-    show as missing in those sessions only).
+    show as missing in those sessions only);
+  - sets `BONSAI_HOME` to `bonsai-checks/home`, as the scripts do.
 - The launcher and the test build read `BONSAI_TEST_FAULT`; only the scratch test build has code for it (a Go build tag).
 - No session opens in a scratch folder except through `claude-here`.
 - Windows-side scratch repos, `project-a-worktree` and check 3's CRLF checkout are made with Windows git by its full
   path.
 - The guard logs its own path and SHA-256; the gate report quotes them per side, so it shows which binary answered.
+- **Claude Code's own files.** Every `claude plugin install` and `claude plugin marketplace add` the skeleton runs,
+  Bonsai's own `update` included, passes `--scope project` or `--scope local`: the default, `user`, writes
+  `~/.claude/settings.json`. The orchestrator records the SHA-256 of `~/.claude/settings.json` and
+  `%USERPROFILE%\.claude\settings.json` before part 3 and after part 4; a change stops the work until it is understood.
+  Accepted writes outside the scratch folders: Claude Code's session transcripts and its folder-trust entries for the
+  scratch projects.
 
 **Check 10, natively on Windows**, at the end of parts 2, 3, 4 and 5 and on the final commit, before the push:
 `go test ./...` and `go vet ./...` with Windows Go in `%USERPROFILE%\bonsai-checks\src`, a copy of the builder's tree
@@ -341,8 +350,10 @@ written in the run report before any more work.
 **Rohan's hand checks** (spec §17 step 6), in two sittings (Rohan, 8 Oct): the **first**, about 25 minutes after part
 5, holds checks b, c and d; the **second**, about 20 minutes after part 4, holds check a. Parts 3 and 5 close after the
 first sitting passes, not before; part 4 closes after the second. For each sitting the builder leaves the folders and
-the orchestrator copies the spec's exact lines into one message to him. He sends one line per check, and the run report
-keeps his words and the result. A check that fails is a failed check, not a done one.
+the orchestrator copies the spec's exact lines into one message to him, adding
+`$env:BONSAI_HOME = "$env:USERPROFILE\bonsai-checks\home"` before check b's `bonsai update` (the launcher sets it for
+the others). He sends one line per check, and the run report keeps his words and the result. A check that fails is a
+failed check, not a done one.
 
 | Hand check | For | Sitting | Passes when |
 |---|---|---|---|
