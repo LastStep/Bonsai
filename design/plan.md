@@ -1,8 +1,8 @@
 # Bonsai's plan: the formats, then the walking skeleton
 
 - **Status:** draft. Rewritten on 8 Oct 2026 for work inside Bonsai's repo, from the studio's drafts (the skeleton's
-  plan and task, reviewed twice; the readers plan's step 1, reviewed once). Waits for a fresh review and Rohan's
-  approval.
+  plan and task, reviewed twice; the readers plan's step 1, reviewed once). Reviewed on 8 Oct by a fresh Opus agent and
+  fixed on its findings; waits for Rohan's approval.
 - **Design:** `design/bonsai-spec.md` (the spec: §14 the parts, the twelve checks and the stop lines; §15 what the gate
   measures; §17 Rohan's steps), `design/contract.md` (the formats: §2.4 the YAML rules and the trick files),
   `design/one-pager.md`, `design/format-review.md`.
@@ -26,10 +26,13 @@ rest.
    is slow or cannot be found. It ends with a report of measured numbers, and you pick the path: the full Bonsai 1.0,
    the smaller cut, or 1.0 with its own screens.
 
-**What you will see.** Commits on Bonsai's `main`, each pushed after its proof passed (a fresh verifier where the work is big or risky), with green checks on
-GitHub (Linux, and Windows from part 1). Part 1 clears the old product's code out of `main`; 0.4.3 stays downloadable
-and at its tag. A new public repository, `LastStep/bonsai-test-pack`, for part 4. No release and no tag. Your hand
-checks come in two sittings: about 25 minutes after part 5 and about 20 minutes after part 4. Then the gate report.
+**What you will see.** Commits on Bonsai's `main`, each pushed after its proof passed (a fresh verifier where the work
+is big or risky), with green checks on GitHub (Linux, and Windows from part 1). One check, `govulncheck`, has been red
+since 23 Sep for a reason outside this work (its install now needs a newer Go than the checks use): part 0's commit
+will still show it red, and part 1 makes it green. Part 1 clears the old product's code out of `main`; 0.4.3 stays
+downloadable and at its tag. A new public repository, `LastStep/bonsai-test-pack`, for part 4. No release and no tag.
+Your hand checks come in two sittings: about 25 minutes after part 5 and about 20 minutes after part 4. Then the gate
+report.
 
 **What you must do.**
 - Approve this plan and the one-pager (`design/one-pager.md`). Nothing is built before.
@@ -52,8 +55,9 @@ work so far and the old product stays at its tag. If any of the four stop lines 
 numbers and three choices: continue, the smaller cut, or pause.
 
 **Size.** Part 0: 6-10 AI hours; at 13 work stops and you are asked. The skeleton: 30-47 AI hours across six parts; at
-61 work stops and you are asked. On the studio's record (estimates grow 1.6 times) expect 10-16 and 48-75. Plus about 45
-minutes of yours, in the two sittings. Nothing here waits on the studio.
+61 work stops and you are asked. On the studio's record (estimates grow 1.6 times) expect 10-16 and 48-75: both stop
+lines fall inside those ranges, so you may well be asked to choose at one of them. Plus about 45 minutes of yours, in
+the two sittings. Nothing here waits on the studio.
 
 ## For the orchestrator, builders and verifiers
 
@@ -189,8 +193,8 @@ invented; `README.md` lists both.
   `yes`, `no`, `on`, `off`, `true`, `false`, `null`); nested mappings; block sequences (deeper than their key, exactly
   one space after `-`); one-line flow sequences, `[]` and `{}`; anchors, aliases, tags, flow mappings with content,
   nested and multi-line flow sequences (all refused); block scalars `|`, `|-`, `>`, `>-`, and the rest refused (`|+`,
-  `>+`, an indentation indicator such as `|2`), a line starting with `#` inside one, a deeper line in `>`; comments at a line's start and after a space, and a `#` with no space before it; a
-  quote character inside a plain value; quoted scalars on one line, the five escapes, a bad escape, an unescaped `"`,
+  `>+`, an indentation indicator such as `|2`), a line starting with `#` inside one, a deeper line in `>`; comments at
+  a line's start and after a space, and a `#` with no space before it; a quote character inside a plain value; quoted scalars on one line, the five escapes, a bad escape, an unescaped `"`,
   something after the closing quote; **every row of the plain-scalar table** (null forms, `true` and `false`, the
   integer at 15 digits and at 16, a decimal, both date forms read as text, a text value, the "quote this value"
   refusal); **each listed refusal** (`0755`, `55227e5`, `0x1F`, `1e3`, `1_000`, `.inf`, `TRUE`, `No`, `5 arenas`,
@@ -414,7 +418,8 @@ Bonsai has no ladder of its own until step 5.4, so the proof is the interim one 
 ### Stale or in tension in the spec
 
 - §12 steps 2-6 and §17 steps 1, 4 and 5 are overtaken by Rohan's 8 Oct decisions; the spec carries a note at each.
-- §19 D still says 60 h and 30-46 h; §14 and §20 say 61 h and 30-47 h. This plan uses 61 and 30-47.
+- §18 and §19 D give question D's own figures (60 h, 30-46 h) and then the format review's (61 h, 30-47 h), which
+  §14 and §20 use. This plan uses 61 and 30-47.
 - The 1.3-times re-ask rule is per step. This plan adds part 0's line (13 h) and no per-part lines inside the skeleton.
 - §14 puts "a fetch at a 40-character commit" in part 4, but part 3's checks 1-2 need a fetch (the plugin wiring's
   commit, the lock's remote URL): part 3 builds the plain fetch, part 4 proves it read-only and without a login on both
