@@ -79,8 +79,8 @@ where it lives) and a `description` and `examples` on every property.
   review (6.5, confirmed) have it; spec §7's "id" is the spec's slip.
 - `status --json` exits 3 with only `format`, `bonsai` and `problems` filled, so every other field also takes `null`.
 - Patterns are added only where a source fixes a form: ids (task, run, workspace, machine folder, UUID), dates and
-  times, label names, hashes (a commit in lowercase hex, 40 characters where the lock resolves one; a 64-character
-  SHA-256; today's 16-character input hash), the Remote Control id, and project-relative paths (no leading slash, no
+  times, label names, hashes (the lock's and status's 40-character commits; a 64-character SHA-256; today's
+  16-character input hash; a run report's commits have none, as contract §7.1 fixes no form), the Remote Control id, and project-relative paths (no leading slash, no
   backslash, no drive colon).
 - `folded-deeper` holds for `>-` as for `>`: the strip indicator changes only the end of the value.
 

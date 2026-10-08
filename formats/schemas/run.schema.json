@@ -96,7 +96,7 @@
       ]
     },
     "commits": {
-      "description": "The commit hashes this session made, each quoted in the YAML (a bare hash can read as a number); [] when none.",
+      "description": "The commit hashes this session made, each quoted in the YAML (a bare hash can read as a number); [] when none. Contract §7.1 fixes no length, so none is checked.",
       "examples": [
         [
           "1a2b3c4",
@@ -106,8 +106,7 @@
       ],
       "type": "array",
       "items": {
-        "type": "string",
-        "pattern": "^[0-9a-f]{7,40}$"
+        "type": "string"
       }
     },
     "labels": {

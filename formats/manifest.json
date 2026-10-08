@@ -4,7 +4,7 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "69a2eac0f3d7f053847867a6e6bbefb0a4f06f9ba45480e05b38d6f0e10ed0c2"
+      "sha256": "8081547e6ab562f1e49ef6b5ab6f0e9eaf4d37ca9127dd64f7f1f207c4dc86ef"
     },
     {
       "path": "examples/ask.json",
@@ -96,7 +96,7 @@
     },
     {
       "path": "schemas/run.schema.json",
-      "sha256": "e260eb162ed5ca7f0be80978414a67058c96c11aab99925fd2b4a103c9aa0d64"
+      "sha256": "c45ff151ee013971bd8c893b1c4e279cf64a100cc54e45d882abeab818ff6071"
     },
     {
       "path": "schemas/state.schema.json",
