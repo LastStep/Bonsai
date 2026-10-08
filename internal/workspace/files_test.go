@@ -89,6 +89,9 @@ func TestReadPackRefuses(t *testing.T) {
 		{"a .git path", packHead + "files:\n  - path: \".git/hooks/pre-commit\"\n    from: a\n    kind: pack\n", "is inside a .git folder"},
 		{"bonsai.yaml", packHead + "files:\n  - path: Bonsai.yaml\n    from: a\n    kind: pack\n", "is Bonsai's own file"},
 		{".bonsai", packHead + "files:\n  - path: \".bonsai/lock.json\"\n    from: a\n    kind: pack\n", "is Bonsai's own file"},
+		{"CLAUDE.md", packHead + "files:\n  - path: claude.md\n    from: a\n    kind: pack\n", "the engine writes only its own part of"},
+		{"the settings", packHead + "files:\n  - path: \".claude/settings.json\"\n    from: a\n    kind: once\n", "the engine writes only its own part of"},
+		{"the local settings", packHead + "files:\n  - path: \".claude/settings.local.json\"\n    from: a\n    kind: pack\n", "the engine writes only its own part of"},
 		{"an absolute from", packHead + "files:\n  - path: a\n    from: \"/etc/x\"\n    kind: pack\n", "from: the path \"/etc/x\" starts with /"},
 		{"twice by case", packHead + "files:\n  - path: A.md\n    from: a\n    kind: pack\n  - path: a.md\n    from: a\n    kind: once\n", "listed twice"},
 		{"a hook with no why", packHead + "hooks:\n  - event: SessionStart\n    command: \"echo\"\n", "hooks item 1 has no why"},
@@ -158,8 +161,8 @@ func TestReadConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got := fmt.Sprintf("%s %s %+v %q %q", c.ID, c.Name, c.Packs, c.Protected, c.PersonOnly)
-		want := `ws-7kq2m4xw5r3t6y2u7p4a5c3e2b example [{ID:base Source:https://example.com/packs/base.git Path:packs/base Ref:base-v1.0.0 Line:7} {ID:workflow Source:https://example.com/packs/workflow.git Path: Ref:v1.0.0 Line:11}] [".claude/**" "bonsai.yaml" ".bonsai/lock.json" ".github/**"] [".claude/**" "bonsai.yaml"]`
+		got := fmt.Sprintf("%s %s %+v %q %q %q", c.ID, c.Name, c.Packs, c.Protected, c.PersonOnly, c.NeverEdit)
+		want := `ws-7kq2m4xw5r3t6y2u7p4a5c3e2b example [{ID:base Source:https://example.com/packs/base.git Path:packs/base Ref:base-v1.0.0 Line:7} {ID:workflow Source:https://example.com/packs/workflow.git Path: Ref:v1.0.0 Line:11}] [".claude/**" "bonsai.yaml" ".bonsai/lock.json" ".github/**"] [".claude/**" "bonsai.yaml"] ["work/ledger.json"]`
 		if got != want {
 			t.Errorf("read\n  %s\nwant\n  %s", got, want)
 		}
@@ -177,8 +180,9 @@ func TestReadConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Packs == nil || c.Protected == nil || c.PersonOnly == nil || len(c.Packs)+len(c.Protected)+len(c.PersonOnly) != 0 {
-		t.Errorf("missing lists read as %#v %#v %#v, want empty", c.Packs, c.Protected, c.PersonOnly)
+	if c.Packs == nil || c.Protected == nil || c.PersonOnly == nil || c.NeverEdit == nil ||
+		len(c.Packs)+len(c.Protected)+len(c.PersonOnly)+len(c.NeverEdit) != 0 {
+		t.Errorf("missing lists read as %#v %#v %#v %#v, want empty", c.Packs, c.Protected, c.PersonOnly, c.NeverEdit)
 	}
 }
 
@@ -213,6 +217,10 @@ func TestReadConfigRefuses(t *testing.T) {
 		{"a source like an option", cfgHead + "packs:\n  - id: a\n    source: \"--upload-pack=x\"\n    ref: r\n", "line 6: packs item 1's source \"--upload-pack=x\" starts with -"},
 		{"a ref like an option", cfgHead + "packs:\n  - id: a\n    source: s\n    ref: \"-x\"\n", "line 7: packs item 1's ref \"-x\" starts with -"},
 		{"format: and a tab", "format:\tbonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: x\n", "line 1: a tab between the key's colon and its value"},
+		{"an absolute never_edit", cfgHead + "never_edit: [\"/etc/passwd\"]\n", "line 4: the never_edit glob \"/etc/passwd\" is not project-relative"},
+		{"a never_edit with a parenthesis", cfgHead + "never_edit: [\"a)b\"]\n", "line 4: the never_edit path \"a)b\" holds a parenthesis"},
+		{"a never_edit in the home", cfgHead + "never_edit: [\"~/x\"]\n", "starts with ~"},
+		{"never_edit text", cfgHead + "never_edit: x\n", "never_edit is text, not a list"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

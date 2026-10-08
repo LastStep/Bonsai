@@ -129,6 +129,60 @@ func TestWriteFileAtomic(t *testing.T) {
 	}
 }
 
+// StageFile and CommitStaged are WriteFileAtomic in two halves: the staged file sits beside its target, hidden,
+// until the rename; a failed stage leaves nothing.
+func TestStageFile(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "new")
+	path := filepath.Join(dir, "f.md")
+	tmp, err := StageFile(path, []byte("staged"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filepath.Dir(tmp) != dir || !strings.HasPrefix(filepath.Base(tmp), ".f.md.tmp-") {
+		t.Errorf("staged as %s", tmp)
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("the target exists before the rename")
+	}
+	if err := CommitStaged(tmp, path); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(path); string(b) != "staged" {
+		t.Errorf("read %q", b)
+	}
+	if _, err := os.Stat(tmp); !os.IsNotExist(err) {
+		t.Errorf("the staged file is still there")
+	}
+}
+
+// RemoveFile waits out a busy file, as renameRetry does, and a file already gone is no error.
+func TestRemoveFile(t *testing.T) {
+	defer func(r func(string) error, b func(error) bool) { remove, busy = r, b }(remove, busy)
+	path := filepath.Join(t.TempDir(), "f")
+	if err := RemoveFile(path); err != nil {
+		t.Errorf("a missing file: %v", err)
+	}
+	errBusy := errors.New("busy")
+	busy = func(err error) bool { return err == errBusy }
+	calls := 0
+	remove = func(p string) error {
+		calls++
+		if calls < 3 {
+			return errBusy
+		}
+		return os.Remove(p)
+	}
+	if err := os.WriteFile(path, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := RemoveFile(path); err != nil || calls != 3 {
+		t.Errorf("busy twice: %v after %d calls", err, calls)
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("the file is still there")
+	}
+}
+
 // renameRetry waits out a busy target, gives up on any other error at once, and stops after renameWait. The busy
 // error is stood in, so this runs on every system; TestRenameRetryOnWindows meets a real one.
 func TestRenameRetry(t *testing.T) {

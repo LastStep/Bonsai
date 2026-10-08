@@ -4,9 +4,9 @@ package workspace
 // person edits.
 //
 // Read here (what the walking skeleton's parts 2 to 5 use): format, id, name, packs (id, source, path, ref),
-// protected and person_only. Every other key spec §6 shows (documents, never_edit, ladder_floor, ladder, ratchets,
-// ci_marked_tests, generated) and any unknown key is kept in Config.Doc as read and not checked: their meaning and
-// checks are step 5.1's, with bonsai.workspace/1's schema.
+// protected, person_only and never_edit (part 3 writes each never_edit path as a deny rule). Every other key spec §6
+// shows (documents, ladder_floor, ladder, ratchets, ci_marked_tests, generated) and any unknown key is kept in
+// Config.Doc as read and not checked: their meaning and checks are step 5.1's, with bonsai.workspace/1's schema.
 
 import (
 	"errors"
@@ -35,6 +35,7 @@ type Config struct {
 	Packs      []PackRef   // the packs, in the order they apply
 	Protected  []string    // globs an agent changes only while its running task lists them (spec §6); [] for none
 	PersonOnly []string    // of those, the globs only a person grants (contract §5.5); [] for none
+	NeverEdit  []string    // paths no agent ever changes, written as Edit deny rules (spec §6, §7); [] for none
 	Doc        *reader.Map // the whole file as read, every key kept
 }
 
@@ -137,15 +138,24 @@ func ReadConfig(raw []byte) (*Config, error) {
 	}
 	c.Protected = f.texts(m, "protected", "the file")
 	c.PersonOnly = f.texts(m, "person_only", "the file")
-	for _, key := range []string{"protected", "person_only"} {
+	c.NeverEdit = f.texts(m, "never_edit", "the file")
+	for _, key := range []string{"protected", "person_only", "never_edit"} {
 		e, _ := m.Entry(key)
 		list := c.Protected
-		if key == "person_only" {
+		switch key {
+		case "person_only":
 			list = c.PersonOnly
+		case "never_edit":
+			list = c.NeverEdit
 		}
 		for _, g := range list {
 			if f.err == nil && !relativeGlob(g) {
 				f.fail(e.Line, "the %s glob %s is not project-relative with forward slashes", key, showValue(g))
+			}
+			// A never_edit path becomes the deny rule Edit(<path>) in .claude/settings.json: a parenthesis would end
+			// the rule early, and a leading ~ would make it a path in the home folder, not the project.
+			if f.err == nil && key == "never_edit" && (strings.ContainsAny(g, "()") || strings.HasPrefix(g, "~")) {
+				f.fail(e.Line, "the never_edit path %s holds a parenthesis or starts with ~; it becomes the deny rule Edit(<path>)", showValue(g))
 			}
 		}
 	}

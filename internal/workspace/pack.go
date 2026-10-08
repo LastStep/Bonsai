@@ -169,15 +169,25 @@ func entryOf(f *fields, it any, listLine int, list string, i int, holds string) 
 	return m, m.Entries()[0].Line
 }
 
-// checkPackTarget refuses a pack file aimed at a path Bonsai keeps for itself: bonsai.yaml and .bonsai/ (letter
-// case aside). The engine's other reserved paths (.claude/settings.json among them) are part 3's to name.
+// checkPackTarget refuses a pack file aimed at a path Bonsai keeps for itself (letter case aside): bonsai.yaml and
+// .bonsai/, and ReservedTargets.
 func checkPackTarget(p string) error {
 	l := strings.ToLower(p)
 	if l == "bonsai.yaml" || l == ".bonsai" || strings.HasPrefix(l, ".bonsai/") {
 		return pathError(p, "is Bonsai's own file; a pack cannot write it")
 	}
+	for _, reserved := range ReservedTargets {
+		if l == strings.ToLower(reserved) {
+			return pathError(p, "is a file the engine writes only its own part of; a pack cannot write it whole")
+		}
+	}
 	return nil
 }
+
+// ReservedTargets are the project files a pack's files entry may not name, beside bonsai.yaml and .bonsai/: the
+// engine keeps the instruction block in CLAUDE.md (kind block) and its own entries in .claude/settings.json (kind
+// keys), and .claude/settings.local.json is a person's own file.
+var ReservedTargets = []string{"CLAUDE.md", ".claude/settings.json", ".claude/settings.local.json"}
 
 func contains(list []string, s string) bool {
 	for _, x := range list {
