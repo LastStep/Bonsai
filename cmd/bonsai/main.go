@@ -1,9 +1,11 @@
 // Command bonsai is Bonsai's one program. During the rebuild it answers what the walking skeleton has built so far
-// (design/plan.md, parts 2 to 5): `bonsai --version`, `bonsai --help`, and `bonsai status [--json]` (part 2, the
-// partial status). Every other word is refused, naming the next step.
+// (design/plan.md, parts 2 to 5): `bonsai --version`, `bonsai --help`, `bonsai status [--json]` (part 2, the
+// partial status), and the engine's `bonsai init`, `bonsai update` and `bonsai check` (part 3, engine.go). Every
+// other word is refused, naming the next step.
 //
-// Exit codes follow the spec's (design/bonsai-spec.md, section 3): 0 ok, 2 bad input, 3 runtime (status: the
-// workspace cannot be read at all, contract §12). Human output is ASCII; --json prints the document for programs.
+// Exit codes follow the spec's (design/bonsai-spec.md, section 3): 0 ok, 1 check findings, 2 bad input, 3 runtime
+// (status: the workspace cannot be read at all, contract §12), 4 wrong state or no --yes, 5 conflicts. Human output
+// is ASCII; --json prints a document for programs.
 package main
 
 import (
@@ -34,8 +36,13 @@ const usage = `bonsai: the structure inside each project (formats, packs, guards
 This build is Bonsai's rebuild in progress; it answers:
   bonsai --version          print this build's version
   bonsai --help             print this help
-  bonsai status [--json]    one workspace at a glance (bonsai status --help says more)
-Exit codes: 0 ok, 2 bad input, 3 runtime.
+  bonsai init [flags]       link this project to Bonsai: bonsai.yaml, the packs' files, the lock (init --help)
+  bonsai update [flags]     bring the packs to the refs in bonsai.yaml (update --help)
+  bonsai check [--json]     findings on the lock and the files (check --help)
+  bonsai status [--json]    one workspace at a glance (status --help)
+Every word takes --json and --help. A word that writes previews first and writes with --yes; without a terminal
+it never asks: it prints the preview and exits 4.
+Exit codes: 0 ok, 1 check findings, 2 bad input, 3 runtime, 4 wrong state or no --yes, 5 conflicts.
 Example: bonsai status --json
 `
 
@@ -61,6 +68,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return write(stdout, usage)
 	case len(args) > 0 && args[0] == "status":
 		return runStatus(args[1:], stdout, stderr)
+	case len(args) > 0 && args[0] == "init":
+		return runInit(args[1:], stdout, stderr)
+	case len(args) > 0 && args[0] == "update":
+		return runUpdate(args[1:], stdout, stderr)
+	case len(args) > 0 && args[0] == "check":
+		return runCheck(args[1:], stdout, stderr)
 	}
 	what := "no command given"
 	switch {
@@ -69,7 +82,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	case len(args) > 0:
 		what = fmt.Sprintf("%+q is not a command yet", args[0]) // %+q keeps the line ASCII
 	}
-	return refuse(stderr, what+": this build of the rebuild answers --version, --help and status",
+	return refuse(stderr, what+": this build of the rebuild answers --version, --help, init, update, check and status",
 		"run `bonsai --help`, or use the old product at tag v0.4.3")
 }
 
