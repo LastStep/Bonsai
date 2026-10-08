@@ -9,12 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/LastStep/Bonsai/formats"
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -429,17 +431,20 @@ func TestBadGlobBlocks(t *testing.T) {
 
 func TestWindowsForms(t *testing.T) {
 	cases := map[string][]string{
-		`\\?\C:\p\protected.txt`:    {`C:\p\protected.txt`},
-		`\\.\C:\p\protected.txt`:    {`C:\p\protected.txt`},
-		`\\?\UNC\srv\share\a.txt`:   {`\\srv\share\a.txt`},
-		`/c/p/protected.txt`:        {`C:\p\protected.txt`},
-		`/cygdrive/d/p/x.txt`:       {`D:\p\x.txt`},
-		`C:\p\protected.txt.`:       {`C:\p\protected.txt`},
-		`C:\p\protected.txt . .`:    {`C:\p\protected.txt`},
-		`C:\p\protected.txt::$DATA`: {`C:\p\protected.txt`},
-		`C:\p\protected.txt:x`:      {`C:\p\protected.txt`},
-		`C:\p.\sub \protected.txt`:  {`C:\p\sub\protected.txt`},
-		`C:/p/protected.txt`:        {`C:\p\protected.txt`},
+		`\\?\C:\p\protected.txt`:                      {`C:\p\protected.txt`},
+		`\\.\C:\p\protected.txt`:                      {`C:\p\protected.txt`},
+		`\\?\UNC\srv\share\a.txt`:                     {`\\srv\share\a.txt`},
+		`/c/p/protected.txt`:                          {`C:\p\protected.txt`},
+		`/cygdrive/d/p/x.txt`:                         {`D:\p\x.txt`},
+		`C:\p\protected.txt.`:                         {`C:\p\protected.txt`},
+		`C:\p\protected.txt . .`:                      {`C:\p\protected.txt`},
+		`C:\p\protected.txt::$DATA`:                   {`C:\p\protected.txt`},
+		`C:\p\protected.txt:x`:                        {`C:\p\protected.txt`},
+		`C:\p.\sub \protected.txt`:                    {`C:\p\sub\protected.txt`},
+		`C:/p/protected.txt`:                          {`C:\p\protected.txt`},
+		`C:\p\secrets::$INDEX_ALLOCATION\key.txt`:     {`C:\p\secrets\key.txt`},
+		`C:\p\secrets:$I30:$INDEX_ALLOCATION\key.txt`: {`C:\p\secrets\key.txt`},
+		`secrets::$INDEX_ALLOCATION\new.txt`:          {`secrets\new.txt`},
 	}
 	for in, wants := range cases {
 		got := windowsForms(in)
@@ -455,6 +460,14 @@ func TestWindowsForms(t *testing.T) {
 	}
 	if got := win32Names(`..\x.`); got != `..\x` {
 		t.Errorf("win32Names keeps .. as is: %q", got)
+	}
+	// A device or volume form is not cut down to a relative path: finalPath asks Windows where it leads.
+	for _, p := range []string{`\\?\GLOBALROOT\Device\HarddiskVolume3\p\protected.txt`, `\\?\Volume{0b6f3c2e}\p\protected.txt`} {
+		for _, f := range windowsForms(p) {
+			if !strings.HasPrefix(f, `\\`) {
+				t.Errorf("windowsForms(%q) gives %q, which reads as a relative path", p, f)
+			}
+		}
 	}
 }
 
@@ -692,6 +705,17 @@ func TestParallelCallsAppendWholeRecords(t *testing.T) {
 	}
 	if hashed != 1 {
 		t.Errorf("%d records carry the hash, want 1 (the file's first)", hashed)
+	}
+}
+
+// The guard's own limit is half the timeout part 3's hook line gives it.
+func TestBudgetIsHalfTheHookTimeout(t *testing.T) {
+	secs, err := strconv.Atoi(engine.GuardTimeout)
+	if err != nil {
+		t.Fatalf("engine.GuardTimeout %q: %v", engine.GuardTimeout, err)
+	}
+	if 2*Budget != time.Duration(secs)*time.Second {
+		t.Fatalf("Budget %v is not half of the hook line's timeout, %d s", Budget, secs)
 	}
 }
 
