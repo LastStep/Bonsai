@@ -4,7 +4,8 @@ package guard
 // bonsai.yaml's lists.
 //
 // The guard judges a path in all its forms and refuses when any one of them is on a list (fail closed):
-//   - as written, made absolute against the payload's cwd (else the project's folder) and cleaned;
+//   - as written, made absolute against the payload's cwd (else the project's folder) and cleaned; a path starting
+//     with ~ also as one in the user's home folder;
 //   - with symbolic links resolved as far as the path exists (a link to a protected file is the protected file),
 //     and a link whose target does not exist yet followed, since a write through it creates that target;
 //   - on Windows, also as Windows itself reduces a name: the \\?\ prefix dropped, Git Bash's /c/... read as C:\...,
@@ -38,8 +39,13 @@ func projectPaths(root, cwd, p string) []string {
 		roots = appendNew(roots, real)
 	}
 	written := []string{p}
+	if t := tildeForm(p); t != "" {
+		written = append(written, t)
+	}
 	if runtime.GOOS == "windows" {
-		written = append(written, windowsForms(p)...)
+		for _, w := range append([]string(nil), written...) {
+			written = append(written, windowsForms(w)...)
+		}
 	}
 	var targets []string
 	for _, w := range written {
@@ -62,6 +68,19 @@ func projectPaths(root, cwd, p string) []string {
 		}
 	}
 	return out
+}
+
+// tildeForm reads a path that starts with ~ as one in the user's home folder, as Claude Code's file tools may; ""
+// for any other path, or when there is no home folder.
+func tildeForm(p string) string {
+	if p != "~" && !strings.HasPrefix(p, "~/") && !(runtime.GOOS == "windows" && strings.HasPrefix(p, `~\`)) {
+		return ""
+	}
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return ""
+	}
+	return filepath.Join(home, p[1:])
 }
 
 // absolute makes a written path absolute and clean: against cwd when it is absolute, else against the project.

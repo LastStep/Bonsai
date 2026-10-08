@@ -271,6 +271,24 @@ func TestDecide(t *testing.T) {
 	}
 }
 
+// A path starting with ~ is judged in the user's home folder too.
+func TestDecideReadsTilde(t *testing.T) {
+	dir := project(t, testYAML)
+	cfg, err := workspace.LoadConfig(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", filepath.Dir(dir))
+	t.Setenv("USERPROFILE", filepath.Dir(dir))
+	d := Decide(&Input{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/protected.txt"}, dir, cfg)
+	if d.Allow || d.Rule != RuleProtected {
+		t.Fatalf("%+v", d)
+	}
+	if d := Decide(&Input{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/free.txt"}, dir, cfg); !d.Allow {
+		t.Fatalf("%+v", d)
+	}
+}
+
 func TestDecideOnACaseInsensitiveSystem(t *testing.T) {
 	if runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
 		t.Skip("letter case is folded where the file system ignores it: Windows and macOS; matchGlob's own test covers the fold")

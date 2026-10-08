@@ -158,7 +158,9 @@ func (r *run) record(d Decision) error {
 	return writeRecord(root, cfg, in, d, r.o.Getenv, r.o.Now())
 }
 
-// overTime is the answer when the budget runs out first: a refusal, recorded if that can be done in recordWait.
+// overTime is the answer when the budget runs out first: a refusal, recorded if that can be done in recordWait. If
+// the work was itself writing a record just then, the log holds both, and the later over-time one is the answer
+// that counted.
 func (r *run) overTime() Decision {
 	d := deny(RuleOverTime, fmt.Sprintf("the guard ran past its own %s limit, so it blocks the call rather than let "+
 		"the hook's timeout pass it through", r.o.Budget),
