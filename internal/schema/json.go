@@ -144,7 +144,7 @@ func decodeValue(dec *json.Decoder) (any, error) {
 // EncodeJSON method; anything else is an error, never a guess.
 func Encode(v any) ([]byte, error) {
 	var b bytes.Buffer
-	if err := encode(&b, v, 0); err != nil {
+	if err := (encoder{&b, true}).value(v, 0); err != nil {
 		return nil, err
 	}
 	b.WriteByte('\n')
@@ -156,7 +156,26 @@ type Encoder interface {
 	EncodeJSON() any
 }
 
-func encode(b *bytes.Buffer, v any, depth int) error {
+// encoder writes JSON: pretty (two-space indent, a space after each colon) for documents, or compact (one line, no
+// spaces) for messages.
+type encoder struct {
+	b      *bytes.Buffer
+	pretty bool
+}
+
+// newline starts a line at depth, in pretty mode only.
+func (e encoder) newline(depth int) {
+	if !e.pretty {
+		return
+	}
+	e.b.WriteByte('\n')
+	for i := 0; i < depth; i++ {
+		e.b.WriteString("  ")
+	}
+}
+
+func (e encoder) value(v any, depth int) error {
+	b := e.b
 	switch x := v.(type) {
 	case nil:
 		b.WriteString("null")
@@ -178,55 +197,56 @@ func encode(b *bytes.Buffer, v any, depth int) error {
 			b.WriteString("{}")
 			return nil
 		}
-		b.WriteString("{\n")
+		b.WriteByte('{')
 		for i, m := range x {
-			indent(b, depth+1)
+			e.newline(depth + 1)
 			writeString(b, m.Key)
-			b.WriteString(": ")
-			if err := encode(b, m.Value, depth+1); err != nil {
+			b.WriteByte(':')
+			if e.pretty {
+				b.WriteByte(' ')
+			}
+			if err := e.value(m.Value, depth+1); err != nil {
 				return err
 			}
 			if i < len(x)-1 {
 				b.WriteByte(',')
 			}
-			b.WriteByte('\n')
 		}
-		indent(b, depth)
+		e.newline(depth)
 		b.WriteByte('}')
 	case []any:
 		if len(x) == 0 {
 			b.WriteString("[]")
 			return nil
 		}
-		b.WriteString("[\n")
-		for i, e := range x {
-			indent(b, depth+1)
-			if err := encode(b, e, depth+1); err != nil {
+		b.WriteByte('[')
+		for i, el := range x {
+			e.newline(depth + 1)
+			if err := e.value(el, depth+1); err != nil {
 				return err
 			}
 			if i < len(x)-1 {
 				b.WriteByte(',')
 			}
-			b.WriteByte('\n')
 		}
-		indent(b, depth)
+		e.newline(depth)
 		b.WriteByte(']')
 	case []string:
 		arr := make([]any, len(x))
 		for i, s := range x {
 			arr[i] = s
 		}
-		return encode(b, arr, depth)
+		return e.value(arr, depth)
 	case map[string]any:
-		return encode(b, sortedObject(x), depth)
+		return e.value(sortedObject(x), depth)
 	case map[string]string:
 		m := make(map[string]any, len(x))
 		for k, s := range x {
 			m[k] = s
 		}
-		return encode(b, sortedObject(m), depth)
+		return e.value(sortedObject(m), depth)
 	case Encoder:
-		return encode(b, x.EncodeJSON(), depth)
+		return e.value(x.EncodeJSON(), depth)
 	default:
 		return fmt.Errorf("cannot encode a %T as JSON", v)
 	}
@@ -245,12 +265,6 @@ func sortedObject(m map[string]any) Object {
 		o[i] = Member{k, m[k]}
 	}
 	return o
-}
-
-func indent(b *bytes.Buffer, depth int) {
-	for i := 0; i < depth; i++ {
-		b.WriteString("  ")
-	}
 }
 
 // writeString writes a JSON string in ASCII: printable ASCII as itself (no HTML escaping), the usual short escapes,

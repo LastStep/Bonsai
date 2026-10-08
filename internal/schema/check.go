@@ -6,6 +6,7 @@ package schema
 // checks, so the formats test and Bonsai's own code (the lock, status --json) use one checker.
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -384,16 +385,11 @@ func Equal(a, b any) bool {
 	return false
 }
 
-// Show prints a value as one line of JSON, in ASCII, for messages.
+// Show prints a value as one line of compact JSON, in ASCII, for messages.
 func Show(v any) string {
-	b, err := Encode(v)
-	if err != nil {
+	var b bytes.Buffer
+	if err := (encoder{&b, false}).value(v, 0); err != nil {
 		return fmt.Sprint(v)
 	}
-	// One line: Encode indents, so fold its lines back together.
-	var out strings.Builder
-	for _, line := range strings.Split(strings.TrimSuffix(string(b), "\n"), "\n") {
-		out.WriteString(strings.TrimLeft(line, " "))
-	}
-	return out.String()
+	return b.String()
 }

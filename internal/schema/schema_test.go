@@ -223,3 +223,13 @@ func TestEqual(t *testing.T) {
 		}
 	}
 }
+
+func TestShowIsCompactJSON(t *testing.T) {
+	v := Object{{"a", json.Number("1")}, {"b", []any{true, nil, "x y"}}, {"c", Object{}}, {"d", []any{}}}
+	if got := Show(v); got != `{"a":1,"b":[true,null,"x y"],"c":{},"d":[]}` {
+		t.Errorf("Show = %s", got)
+	}
+	if got := Show(3.5); got != "3.5" {
+		t.Errorf("Show of a value Encode does not take = %s", got)
+	}
+}
