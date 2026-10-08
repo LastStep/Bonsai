@@ -27,4 +27,5 @@ release yet. The following are in scope for security reports:
 
 ## Supported Versions
 
-Only the latest release is supported with security updates.
+0.4.3 is the old product's last release: it gets no further releases, security fixes included. The rebuild has no
+release yet; reports about it are still welcome.
