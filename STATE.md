@@ -1,143 +1,112 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 8 Oct 2026 when part 4b landed (`records/runs/R-2026-10-08-plugins.md`).
+Rewritten, never appended. Last rewritten 8 Oct 2026 at the end of the day, when part 4 closed
+(`records/runs/R-2026-10-08-plugins.md`).
 
 ## In short
 
 Bonsai is being rebuilt as one small Go program that gives every project the same formats, packs, guards, recorder and
-proof ladder (`design/one-pager.md`). The design is settled and the plan is approved (8 Oct). Done so far:
-- **Part 0, the formats** (`3770d04`): `formats/` holds a JSON Schema for each of the contract's ten formats, an example
-  of each, the trick files with both outcomes in `expect.json`, a raw-byte manifest and a Go test. Now at **set 3**
-  (`3a1f195`): 116 cases, 138 files; part 2 added 14 cases and the codes `format-too-new` and `not-text`.
-- **Part 1, the clear-out** (`17f2938`): the old product's code is gone from `main` (358 files; 0.4.3 stays at its tag
-  and in git history). The tree holds `cmd/bonsai` (a stub that answers `--version` only), `formats/`, `design/`,
-  `records/` and the repo's own files. No dependencies; standard library only.
-Both were passed by a fresh Opus verifier.
-- **Part 2, the reader and files** (`3a1f195`): `internal/reader` (the format-1 reader, no YAML library; it reaches all
-  116 format-1 outcomes), `internal/schema` (JSON, the byte-stable writer, the schema checker; `formats/embed.go` embeds
-  the schemas), `internal/workspace` (`bonsai.yaml`, `pack.yaml`, the lock, the home, the checkout, path checks, atomic
-  writes), `internal/status`, and `bonsai status [--json]` (every field of `bonsai.status/1`; those not built yet in a
-  named, tested list). 667 tests on WSL and natively on Windows. Passed by a fresh Opus verifier after one fix round
-  (51,000 break-it inputs: no accepted value differs from both YAML libraries; no crash).
-- **Part 3, the engine** (`ee50971`): `internal/engine` and `bonsai init`, `update`, `check`: the plain fetch (git at a
-  commit, source and ref after `--`), staged writes with the lock last, the kinds `pack`, `once`, `block`, `keys`,
-  `kept`, exits 4 and 5, `--diff`, `--yes`, `--keep`, `--adopt`, the preview naming every settings line. A hook-line
-  change is only refused (exit 4, `--allow-exec` named; the flag is step 5.1). Checks 1-6 and 12 pass as scripted runs
-  over three scratch targets (check 5 up to part 4's clause). 703 tests on WSL and natively on Windows. It landed on
-  green tests and the orchestrator's read of the diff; part 5's verifier also read its hook-line writes and refusal.
-- **Part 5, the hook path** (`33a6122`): `internal/guard` and `bonsai hook guard`: one rule (an Edit, Write, MultiEdit
-  or NotebookEdit of a path on `bonsai.yaml`'s protected or person-only list is refused, exit 2, reason and next
-  step), failing closed (its own 5 s timer, half the hook's 10 s; a panic, bad input or an unrecordable allow blocks),
-  paths judged in every form (on Windows the final path Windows reaches: streams, junctions, device paths, short
-  names), one `bonsai.log/1` record per decision with the binary's path and hash. The fault switch only under
-  `-tags bonsai_test_fault`; CI runs that tag too. `update` refuses when the lock is missing. Check 11 passes on WSL
-  through `claude-here`. Hook start-up: WSL p50 2.4 ms (baseline 1.5), Git Bash 63 ms (baseline 65). Passed by a
-  fresh Opus verifier after one fix round.
-- **Rohan's first sitting passed** (hand checks b, c, d, 8 Oct): parts 3 and 5 are closed.
-- **Part 4b, packs as plugins** (`54b4fdd`): after `init` and `update`, Bonsai installs each locked pack's plugin with
-  `claude plugin install ... --scope project` (never user or local scope; local scope leaks across worktrees), pinned
-  to the locked commit with no login, on both sides; `check` reports drift. Check 8 on WSL: `project-a` "commit A",
-  `project-b` "commit B", `project-a-worktree` "commit B", `project-a` again "commit A"; check 5's last clause passes.
-  Landed on green tests on both sides and the orchestrator's read. Part 4 closes with Rohan's second sitting.
+proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). **Part 0 and parts 1 to 5 of the walking skeleton
+are done and closed; part 6, the gate report, is next.** Everything below is on `main`, pushed, CI green.
+
+- **Part 0, the formats** (`3770d04`, now set 3 at `3a1f195`): `formats/` holds a JSON Schema for each of the
+  contract's ten formats, an example of each, 116 trick files with their format-0 and format-1 outcomes in
+  `expect.json`, a raw-byte manifest (138 files) and a Go test.
+- **Part 1, the clear-out** (`17f2938`): the old product's code gone (358 files; 0.4.3 stays at its tag); CI has
+  `test` (Linux), `windows`, `lint`, `govulncheck` (pinned to `v1.7.0`) and CodeQL; `release.yml` can only build.
 - **Part 4a, the test pack**: `LastStep/bonsai-test-pack`, public, commits A `5062053`, B `ab09e4b`, C `abfb5de`, D
-  `1d4f46f` (`main`; full hashes in its run report). A shows a `marker` role saying "commit A"; B changes one pack file,
-  adds one and says "commit B"; C changes that file again; D changes only the hook line. Its README says which check
-  uses each commit.
-Nothing else of the new Bonsai is built.
+  `1d4f46f`.
+- **Part 2, the reader** (`3a1f195`): the format-1 reader without a YAML library, reaching all 116 format-1 outcomes;
+  `bonsai.yaml`, `pack.yaml`, the lock; `bonsai status [--json]`.
+- **Part 3, the engine** (`ee50971`): `bonsai init`, `update`, `check`; staged writes, the lock last; a hook-line
+  change refused (exit 4); checks 1-6 and 12 pass on scratch targets.
+- **Part 5, the hook path** (`33a6122`): `bonsai hook guard`, one rule, failing closed under every fault (missing,
+  crash, slow, minimal PATH, and a 145 KB Write under `missing`); on Windows the final path Windows reaches is judged.
+- **Part 4b, packs as plugins** (`54b4fdd`): each locked pack installed with `claude plugin install --scope project`
+  at its commit; `project-a`, `project-b` and a worktree beside `project-a` each load their own commit, on WSL and
+  Windows; `check` reports drift.
+- **Rohan's sittings**: the first (hand checks b, c, d) passed by Rohan; the second (hand check a) run by a Sonnet
+  agent on his word, A, B, B, A on both sides.
+- Tests at `54b4fdd`: WSL 773 runs plain and 779 with the fault tag; natively on Windows 777 and 783; `go.mod` has no
+  dependencies.
+
+Hours (AI, from the run reports): part 0 45 minutes against 6-10 h; parts 1-5 5 h 36 min against the skeleton's
+30-47 h (stop line 61 h); Windows-only failures about 18 minutes against an 8 h stop line; option rounds asked of
+Rohan inside the skeleton: none.
 
 ## Rohan's decisions, 8 Oct
 
-- Bonsai's design and records live in this repo now (`design/`, `STATE.md`, `records/`); the studio keeps a pointer.
-  Bonsai owns its spec and the formats contract.
-- Work lands on `main` directly: no marker tag, no `rebuild` branch, no pull-request process. The old product stays
-  reachable at tag `v0.4.3` and in git history.
-- The JSON Schemas and the trick files are Bonsai's ("those are kind of tests which other projects can use"): the master
-  lives in `formats/`.
-- **Bonsai first**, to avoid interim code: the studio no longer adopts the formats early in its own Node code; it adopts
-  them when it links (spec step 7): `bonsai init` there, its bridge reading Bonsai's outputs, its own guards, ladder and
-  statusline retired. Nothing in the studio waits on Bonsai's parts; Bonsai's own order is unchanged.
-- "The proper way, no shortcuts": the spec's order inside Bonsai; parallel work only where it is truly independent.
-- Bonsai joins the studio's dashboard as its own project at spec step 6, as planned.
-- Haiku joins the models, for small bookkeeping and audit jobs (listing, sorting, counting, checking a list against a
-  source); it reports facts and judges nothing (`CLAUDE.md`).
-- Rohan approved `design/plan.md` and `design/one-pager.md`, after a fresh Opus review and its fixes.
-- Label-definition fields stay required in the formats: Bonsai's packs write every field; the contract's short examples
-  are out of date (the plan's "Stale or in tension" list).
-- Rohan's hand checks come in two sittings, not one: checks b, c and d (about 25 minutes) after part 5, check a (about
-  20 minutes) after part 4. Parts 3 and 5 close once the first sitting passes, part 4 once the second does.
+- Bonsai's design and records live in this repo (`design/`, `STATE.md`, `records/`); Bonsai owns its spec and the
+  formats contract. Work lands on `main` directly; the old product stays at tag `v0.4.3`.
+- The JSON Schemas and the trick files are Bonsai's: the master lives in `formats/`.
+- **Bonsai first**: the studio adopts the formats when it links (spec step 7), not before.
+- "The proper way, no shortcuts": the spec's order inside Bonsai; parallel work only where truly independent.
+- Bonsai joins the studio's dashboard as its own project at spec step 6.
+- Haiku for small bookkeeping and audit jobs; it reports facts and judges nothing (`CLAUDE.md`).
+- The plan and one-pager approved after a fresh Opus review and its fixes.
+- Label-definition fields stay required in the formats; the contract's short examples are out of date.
+- Hand checks in two sittings; and (his later word) a Sonnet agent runs hand checks where an agent can.
+- His roadmap is the artifact "Trinetra Roadmap" (https://claude.ai/artifact/XXKTi6geneu1pdQ4h4miw2); Bonsai's cards
+  are updated after each part (version 27 at the end of 8 Oct).
 
 ## GitHub, read 8 Oct
 
-- `main`: part 1 (`17f2938`) on top of part 0, pushed 8 Oct. The only branch besides Dependabot's; the newest tag is
-  `v0.4.3`.
-- Open pull request #252: Dependabot's bump of an npm package in `/website`, which part 1 removed. Moot; Dependabot
-  usually closes such a pull request itself. No agent merges or closes it.
-- `release.yml` is disabled on GitHub and, from part 1, can only build (`workflow_dispatch`, `contents: read`, no
-  secret, `goreleaser build --snapshot --clean`). No repository secret (the old `HOMEBREW_TAP_TOKEN` is deleted, and
-  Rohan removed the token itself from GitHub). The only environment is `github-pages`; the `release` environment and a
-  new tap token wait for step 5.7.
-- Ruleset `main-protection`: blocks force pushes and deletion only, so pushes to `main` are plain pushes.
-- Workflows: CI (`test` on Linux, `windows`, `lint`, `govulncheck` pinned to `v1.7.0`, the newest that builds with CI's
-  Go 1.25), CodeQL, Dependabot (`gomod`, `github-actions`). The old website's Deploy Docs workflow is removed; the old
-  site stays on GitHub Pages until Rohan turns Pages off.
+- `main` is the only branch; the newest tag is `v0.4.3`; no open pull request (Dependabot closed #252 itself, and
+  alert #45 is fixed).
+- `release.yml` is disabled and can only build; no repository secret; the old tap token is removed. The `release`
+  environment and a new tap token wait for step 5.7.
+- Ruleset `main-protection`: blocks force pushes and deletion only.
+- `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
+- The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: Rohan's second sitting, then part 6
+## The one thing to do next: part 6, measure and report
 
-**Rohan's second sitting** (hand check a, about 20 minutes): `/agents` shows the `marker` role saying commit A, B, B,
-A in `project-a`, `project-b`, `project-a-worktree`, `project-a` again, on WSL (`~/bonsai-checks/targets/`, installed)
-and in PowerShell (`%USERPROFILE%\bonsai-checks\`, installed after a first trusted session registers each
-marketplace, then `bonsai-here.cmd update`). The lines are in part 4b's builder report
-(`records/runs/R-2026-10-08-plugins.md`). After it, with the WSL folders trusted: the `--bg` session kind (`claude-here
---bg --agent test-pack:marker ...`), which an untrusted folder refuses. Part 4 then closes.
+Part 6 (4-6 AI hours): the gate report against spec §15's list: hours per part against estimate and the ratio for step
+5; each of the twelve checks; Windows-only failures with hours; hook start-up p50 and p95 on both sides (part 5: WSL
+2.4 ms against 1.5, Git Bash 63 ms against 65); the fail-closed results; plugin install and update time (part 4b:
+about 11-13 s first, under 1 s again); two commits kept; the Claude Code version on each side (2.1.294); binary size;
+lines of Go per part; a three-case `claude plugin eval` of the test pack; whether the studio's half of check 7 has run
+(it has not: step 7). Then the skeleton's last fresh Opus verifier over all twelve checks, then Rohan's gate.
 
-**Then part 6, measure and report** (4-6 AI hours): the gate report against spec §15's list (hours per part against
-estimate and the ratio for step 5; each check; Windows-only failures; hook start-up p50 and p95 on both sides; the
-fail-closed results; plugin install and update time; the Claude Code version on each side; binary size; lines of Go
-per part; a three-case `claude plugin eval` of the test pack; whether the studio's half of check 7 has run), and the
-skeleton's last fresh verifier over all twelve checks. Then Rohan's gate.
-
-Open for part 6 and the last verifier: the fail-open Write over 64 KiB under the `missing` fault is unproven (a model
-would not emit one; a 100 KB `UserPromptSubmit` payload with the same hook line was blocked). First-time setup needs a
-person's trusted session before `install` finds the workspace's marketplace (Bonsai reports `waiting`): a finding
-for the gate report.
+Findings the gate report must carry:
+- First-time setup: Claude Code registers a project's marketplace only in a session in a trusted folder, so `install`
+  reports `waiting` until a person has opened Claude Code there once.
+- `/agents` is gone in Claude Code 2.1.294; hand check a read the marker through `--agent test-pack:marker` instead,
+  run by a Sonnet agent; the marker's answer inside an interactive session was not read.
+- Local plugin scope leaks across worktrees; Bonsai uses project scope only.
+- Claude Code's own writes outside the scratch folders: session transcripts, folder-trust entries, and Claude.ai's
+  plugin sync rewriting `~/.claude/plugins/synced/<account>/.marketplaces.json`. The user `settings.json` files never
+  changed (WSL `7b515457...a025a7`, Windows `2b6295c1...4ff6c9`).
 
 ## Waiting on Rohan
 
-- Now: the second sitting (hand check a, about 20 minutes).
-- Later: step 8 at 5.4; at 5.7
-  the `release` environment and a new tap token (the working environment command is in spec §17 step 4's note).
-- Whenever he likes: turn GitHub Pages off (the old website); close #252 if Dependabot has not.
+- Nothing now. Next: the gate, after part 6's report.
+- Later: step 8 at 5.4 (a pre-release `bonsai`); at 5.7 the `release` environment and a new tap token (the working
+  environment command is in spec §17 step 4's note).
+- Whenever he likes: turn GitHub Pages off (the old website).
 
 ## Loose ends
 
-- Go 1.25.9 (the module's `toolchain` line) has 19 standard-library vulnerabilities and 1 in an imported package that
-  govulncheck lists but our code does not reach; a later 1.25.x patch fixes them. A one-line `toolchain` bump, as its
-  own small commit.
-- Spec §17 step 3 is done: all four old `bonsai` binaries are gone (8 Oct).
-- A Claude Code session, even with `CLAUDE_CODE_PLUGIN_CACHE_DIR` set, lets Claude.ai's plugin sync rewrite
-  `~/.claude/plugins/synced/<account>/.marketplaces.json` (part 4b saw 392 to 391 bytes): an accepted write of a
-  session, with transcripts and trust entries. The user `settings.json` files stay unchanged (checked after part 4b).
+- Go 1.25.9 (the `toolchain` line) has standard-library vulnerabilities that govulncheck lists but our code does not
+  reach; a later 1.25.x patch fixes them. A one-line `toolchain` bump, as its own small commit.
 - For step 5.3, from part 5's verifier: a `.git` entry in the session's starting subfolder makes the guard read the
   project as unlinked; `bonsai.yaml` (what is protected) is read from the working tree; `bonsai` is found by the PATH,
   which a settings `env` could redirect; shell `rm` or `mv` of `bonsai.yaml` or the lock is not judged; a dangling
   junction into a protected folder is allowed (the write fails); a junction swapped between check and write is not
-  caught; the admin share `\\localhost\C$` is a documented limit. For step 5.1: a plugin's move to a new commit is
-  not counted as running code (spec §5 lets plugins carry hooks); the log's `bonsai_path` and `bonsai_sha256` names
-  wait for step 5.2; CI's `lint` does not use the fault tag.
-- Spec step 5.3 (the guard): the hook lines must not be redirectable by files an agent may edit. They call the installed
-  `bonsai` by a fixed path, and what the guard trusts to find the main checkout cannot be rewritten without the guard
-  noticing (fail closed). See `design/plan.md`, "What still links Bonsai and the studio", and spec §7.
-- From part 2's verifier, minor, not fixed: a quoted `"format":` key followed by a tab still dispatches as format 0 (a
-  plain key with a tab goes to format 1); a file with lone-CR line endings is refused as `quote-this-value`, whose next
-  step does not help (before the order rule it said `not-text`). Both want a case in a later set. The status text lacks
-  spec §6's `bonsai init --new-id` line until `init` exists (part 3).
-- `status --json`'s `formats` field stays null: its schema needs a `write` major of at least 1, so a format Bonsai only
-  reads (`pack.yaml`) cannot be listed; step 5.1 says what `formats` lists. No `error` object until step 5.1.
-- Small wording items from part 1's verifier, not fixed: `README.md` describes the designed product in the present
-  tense (framed by "being rebuilt"); `CONTRIBUTING.md`'s note that an older `go` downloads the toolchain holds from
-  Go 1.21; `.gitattributes` keeps old-product patterns (harmless).
-- The spec's §18 and §19 D give both question D's figures (60 h, 30-46 h) and the format review's (61 h, 30-47 h);
-  §14 and §20 say 61 and 30-47. The plan uses 61 and 30-47.
-- The spec's §17 step 6 still has the hand checks in one sitting; the plan follows Rohan's two.
-- Scratch left from parts 0 and 1 under `~/bonsai-checks/` and `%USERPROFILE%\bonsai-checks\` (clones, bundles,
-  builds, the YAML libraries). Safe to delete; each later Windows run makes its own folder.
+  caught; the admin share `\\localhost\C$` is a documented limit. And Rohan's 8 Oct requirement: the hook lines must
+  not be redirectable by files an agent may edit (`design/plan.md`, "What still links Bonsai and the studio", item 5;
+  spec §7). Spec §7's note asks for a fixed path, §3 and check 2 for a name: step 5.3 settles it.
+- For step 5.1: a plugin's move to a new commit is not counted as running code (spec §5 lets plugins carry hooks); with
+  the lock deleted, `init --yes` links again and writes a changed hook line (its preview says a link is consent);
+  `status --json`'s `formats` stays null (a read-only format cannot be listed); no `error` object; `--allow-exec`.
+- For step 5.2: the log's `bonsai_path` and `bonsai_sha256` field names; `input_hash` null until the salt.
+- For a later formats set: a quoted `"format":` key followed by a tab still dispatches as format 0; a file with lone-CR
+  line endings gets `quote-this-value`, whose next step does not help.
+- CI's `lint` does not use the fault tag (`go vet` and tests do).
+- Small wording: `README.md` describes the designed product in the present tense; `CONTRIBUTING.md`'s toolchain note
+  holds from Go 1.21; `.gitattributes` keeps old-product patterns (harmless); `CHANGELOG.md`'s rebuild section still
+  describes part 1's stub.
+- The spec's §18 and §19 D give both 60 h / 30-46 h and 61 h / 30-47 h; the plan uses 61 and 30-47. The spec's §17
+  step 6 still has one sitting and `/agents`.
+- Scratch under `~/bonsai-checks/` and `%USERPROFILE%\bonsai-checks\`: clones, bundles, builds, the YAML libraries,
+  the scratch targets and the launchers. Keep the targets and launchers for part 6; the rest is safe to delete.
