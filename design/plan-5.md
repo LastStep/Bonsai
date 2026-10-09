@@ -3664,7 +3664,7 @@ hand on:
 | Not seen: a pack's role answering in an interactive session (gate §5, §2.7) | 5.5.5 | On WSL, a real interactive session driven through `tmux` by the Sonnet agent: `claude --agent workflow:builder` in a scratch project, a question only the role's preloaded skill answers, the pane captured |
 | Not seen: the Windows trust prompt (gate §5, §2.7) | Rohan's sitting | His overdue Windows login, done in a scratch project linked to both packs: he answers the trust question; what it said goes in the run report |
 | Not seen: a Windows `--bg` session; `claude --agent workflow:builder --bg`, check 8's original line (gate §5) | 5.5.5 | In that trusted Windows project, and on WSL: backgrounded, `claude logs` shows the role's answer, `claude stop` |
-| Claude Code's own writes outside the scratch folders (gate §5) | 5.5.5, 5.5.6, 5.5.7 | Recorded again around each session (user settings hashes, the plugin tree's counts, the sync files); 5.5.7 adds one accepted write, base's install for Bonsai's real repo in `~/.claude/plugins/`, named in `CLAUDE.md`'s Safety line |
+| Claude Code's own writes outside the scratch folders (gate §5) | 5.5.5, 5.5.6, 5.5.7 | Recorded again around each session (user settings hashes, the plugin tree's counts, the sync files); the accepted writes stay `design/plan.md`'s (Claude Code's session transcripts and its folder-trust entries for the scratch projects) and the plugin sync's own files; before 5.5.4 `CLAUDE.md`'s Safety line names `LastStep/bonsai-workflow` among the places Bonsai's work writes (order, item 2); 5.5.7 adds one accepted write, base's install for Bonsai's real repo in `~/.claude/plugins/`, named in the same line |
 | `claude plugin eval`'s needs: `--no-publish`, `--trust-plugin`, a path target, `runsPerCase` miscounted (gate §5, §2.13) | 5.5.1 | The template's README gives the working command and its flags; evals run on this PC only, never in CI |
 | Where `bonsai.yaml`'s and STATE's templates live (outline; this plan's "Stale or in tension": "5.5 settles the templates' one home") | 5.5.0 | In the engine, which writes both; base's `workspace` and `state` skills are generated from them (note 5.5.0, 3) |
 | `bonsai.*` definitions "come with `base` in 5.5" (5.1.5) | 5.5.2, 5.5.7 | Base's `labels.yaml` holds contract §5.6's four, held equal by a test; in force in Bonsai's repo from the link |
@@ -4224,7 +4224,11 @@ fixes nothing.
      finding (a label of the wrong kind is fixed in a records commit first).
    - `STATE.md` moved to `.bonsai/STATE.md` (`git mv`), given its frontmatter (`format: bonsai.state/1` with its
      pointer, `updated`, `updated_by: orchestrator`, `labels: {}`); `.bonsai/STATE.md` is free under the floor (5.3.2
-     rule 2). From then this plan's "`STATE.md`" means `.bonsai/STATE.md`.
+     rule 2). From then this plan's "`STATE.md`" means `.bonsai/STATE.md`. **From then `check` reads its body:** a
+     path STATE names that does not exist is a finding (5.1.6's missing-path finding), so `bonsai check --json` runs
+     after the move and each such finding is fixed in the same commit (the path corrected, or the line reworded so it
+     names no path that is gone, such as a removed worktree); every later rewrite of STATE runs `check` before its
+     records commit.
    - `CLAUDE.md`: the four label lines go (the block holds the definitions); "Where the truth lives" names
      `.bonsai/STATE.md`; the Safety line names base's install in Claude Code's plugin folder; the rules gain: a command
      word, flag or error word changes the operating skill in the same commit; `go generate` also writes base's three
@@ -4311,10 +4315,13 @@ both sides where a check names them, and passes or fails 5.5:
     on it.
 13. **Stop lines and records:** 5.5's hours under 39, this section's planning and review included; step 5's
     Windows-only tally; option rounds (none planned); nothing written or run in the studio's checkout (its files read
-    with `git show` only) or in Mimas; nothing written outside the repo and the scratch folders but `~/.bonsai/` and
-    base's install in Claude Code's plugin folder; the user settings hashes around every Claude Code run; every landing
-    matched to its green `ladder` record and each task's `bonsai.allows` to this section's "Owns"; every change to
-    `bonsai.yaml` stricter, a pin move by the pin rule, or named here; the Haiku audit of `.bonsai/sessions.md` against the run reports.
+    with `git show` only) or in Mimas; nothing written outside the repo and the scratch folders but
+    `LastStep/bonsai-workflow` (named in `CLAUDE.md`'s Safety line before 5.5.4), `~/.bonsai/`, base's install in Claude
+    Code's plugin folder, and Claude Code's accepted writes (`design/plan.md`: its session transcripts and its
+    folder-trust entries for the scratch projects; the plugin sync's own files); the user settings hashes around every
+    Claude Code run; every landing matched to its green `ladder` record and each task's `bonsai.allows` to this
+    section's "Owns"; every change to `bonsai.yaml` stricter, a pin move by the pin rule, or named here; the Haiku audit
+    of `.bonsai/sessions.md` against the run reports.
 
 #### Risk in the code, 5.5
 
