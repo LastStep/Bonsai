@@ -4366,8 +4366,9 @@ both sides where a check names them, and passes or fails 5.5:
 - **A wall that fails its own try** would show a secret. 5.5.6 never opens a real secret or edits a real person's file:
   decoys for the forms, names that cannot exist for folders, and nothing at all for an exact file that exists.
 - **Walls that cry wolf.** In Bonsai's repo and every project with `base`, Rohan's own sessions cannot read his key and
-  login files or edit his own Claude files; his part says so, with the commands he uses instead. Programs still read
-  their own files; the rules are narrow.
+  login files or edit his own Claude files, his shell's start files or git's and SSH's settings; his part says so, with
+  the commands he uses instead. Programs still read their own files; the rules are narrow, and a session that needs one
+  of those files changed hands the person the line.
 - **`validate` on GitHub.** If it needs a login, it runs on this PC instead (note 5.5.1, 5), never with a stored login.
 - **Claude Code moves:** how `skills:` preloads in a plugin role and an `--agent` session, how `--agent` resolves a
   plugin role, `validate`'s warnings and JSON, the trust question, the plugin sync. CI pins one version; every session
