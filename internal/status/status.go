@@ -4,8 +4,9 @@
 // formats/schemas, embedded by package formats, is the one list of fields), filled where the walking skeleton has
 // built it and null (or [] for a list) where it has not. Built here: format, bonsai, mode, workspace, home, local,
 // person_only, and from part 3's check (internal/engine) packs, files and problems: the same findings bonsai check
-// reports (contract §12). The rest wait for later parts, which fill them as they are built; this package's test
-// holds them in a named list.
+// reports (contract §12); from step 5.1.4a, formats (internal/format's registry: every format with the majors this
+// Bonsai reads and writes). The rest wait for later parts, which fill them as they are built; this package's test
+// holds them in a named list. The document is held to the schema before it is printed (Encode).
 //
 // Exit codes (contract §12, spec §3): 0, or 3 when Bonsai cannot read the workspace at all; the document then
 // fills format, bonsai and problems, and every other field is null.
@@ -19,6 +20,7 @@ import (
 
 	"github.com/LastStep/Bonsai/formats"
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -105,7 +107,8 @@ func gather(dir string) (map[string]any, string) {
 		personOnly[i] = g
 	}
 	return map[string]any{
-		"mode": Mode,
+		"mode":    Mode,
+		"formats": format.StatusFormats(),
 		"workspace": schema.Object{
 			{Key: "id", Value: cfg.ID}, {Key: "name", Value: cfg.Name}, {Key: "root", Value: root},
 		},
@@ -231,4 +234,10 @@ func ascii(s string) string {
 		b.WriteString(q[1 : len(q)-1])
 	}
 	return b.String()
+}
+
+// Encode writes the document as bonsai.status/1's writer does: held to the schema, every field in its order, then
+// encoded byte-stable (internal/format).
+func Encode(doc schema.Object) ([]byte, error) {
+	return format.MustLookup("status").Encode(doc)
 }

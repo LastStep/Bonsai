@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
-	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/status"
 )
 
@@ -42,6 +41,7 @@ This build is Bonsai's rebuild in progress; it answers:
   bonsai init [flags]       link this project to Bonsai: bonsai.yaml, the packs' files, the lock (init --help)
   bonsai update [flags]     bring the packs to the refs in bonsai.yaml (update --help)
   bonsai check [--json]     findings on the lock and the files (check --help)
+  bonsai check --schema F   print format F with every field and allowed value (--json: its JSON Schema)
   bonsai status [--json]    one workspace at a glance (status --help)
   bonsai hook guard         the PreToolUse guard Claude Code's hook line calls (hook --help)
 Every word takes --help, and every word but hook takes --json. A word that writes previews first and writes
@@ -114,7 +114,7 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 	}
 	doc, code := status.Build(dir, version)
 	if asJSON {
-		out, err := schema.Encode(doc)
+		out, err := status.Encode(doc)
 		if err != nil {
 			_, _ = fmt.Fprintf(stderr, "bonsai status: %v\n", err)
 			return exitRuntime

@@ -22,7 +22,6 @@ import (
 
 // notBuiltYet: the fields the walking skeleton has not built at part 2, each with what it prints until it is.
 var notBuiltYet = map[string]string{
-	"formats":        "null", // which majors this Bonsai reads and writes: step 5.1
 	"documents":      "[]",   // the declared document kinds (contract §7.3): step 5.1
 	"labels":         "[]",   // namespaces in force: step 5.1
 	"lanes":          "[]",   // from the packs' declares: step 5.1
