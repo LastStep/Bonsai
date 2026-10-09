@@ -128,7 +128,8 @@ type Plan struct {
 	Conflicts  []*FileResult
 	RunsCode   []CodeItem       // what the plan writes that runs code: it needs --allow-exec as well as --yes (consent.go)
 	OwnHooks   []SettingsChange // at a first link, Bonsai's own hook lines the plan adds, which --yes writes (rule 6)
-	LeftHooks  []string         // a link again with the lock missing: hook lines left in place as the project's own
+	LeftHooks  []string         // a link again with the lock missing, or an unverified pack: hook lines left as the project's own
+	Unverified []string         // locked packs whose lock does not match their commit and folder: no baseline for consent
 	AllowExec  bool             // the request's --allow-exec
 	EmptyLocal int              // init --new-id: files in .bonsai/local/ to remove; -1 for none to remove
 	LockWrite  bool
@@ -317,20 +318,29 @@ func Build(req Request) (*Plan, error) {
 			newPacks = append(newPacks, pd)
 		}
 	}
+	// Each locked pack at its locked commit: the baseline consent is judged against (consent.go). The lock records
+	// no folder, so the pack is read at bonsai.yaml's folder, and it is the baseline only when its content there
+	// hashes to the lock's own sha256 for the pack (contentHash: every file of the pack's folder at the commit). A
+	// folder changed in bonsai.yaml, a lock edited by hand, or a commit that cannot be read gives none: the pack is
+	// unverified, and its code counts as at a first link (step 5.1.1's verifier, B1 and S1).
 	oldPacks := map[string]*PackData{}
 	for _, pd := range newPacks {
 		lp, ok := lockedPack[pd.Ref.ID]
 		mv := PackMove{ID: pd.Ref.ID, Source: pd.Ref.Source, Version: pd.Manifest.Version, To: pd.Commit}
 		if ok {
 			mv.From = lp.Commit
+			var od *PackData
 			if lp.Commit == pd.Commit && lp.Source == pd.Ref.Source {
-				oldPacks[pd.Ref.ID] = pd
+				od = pd
 			} else if commit, err := c.fetch(lp.Source, lp.Commit); err == nil {
 				old := pd.Ref
 				old.Source = lp.Source
-				if od, err := c.packAt(old, commit); err == nil {
-					oldPacks[pd.Ref.ID] = od
-				}
+				od, _ = c.packAt(old, commit)
+			}
+			if od != nil && od.SHA256 == lp.SHA256 {
+				oldPacks[pd.Ref.ID] = od
+			} else {
+				p.Unverified = append(p.Unverified, pd.Ref.ID)
 			}
 		}
 		p.Packs = append(p.Packs, mv)
@@ -349,6 +359,11 @@ func Build(req Request) (*Plan, error) {
 			folded[l] = pd.Ref.ID
 			targets[fe.Path] = target{pack: pd.Ref.ID, entry: fe, data: pd.Files[fe.Path]}
 		}
+	}
+	// The files a hook runs (consent.go, rule 4): each runs item is a file a linked pack writes, and a pack's hook
+	// command naming a file a linked pack writes lists it in its runs; else the plan is refused (S3).
+	if err := checkRuns(newPacks, targets); err != nil {
+		return nil, err
 	}
 
 	newLock := &workspace.Lock{WrittenBy: req.Version, Files: map[string]workspace.LockedFile{}, Format0: lock.Format0,
@@ -580,10 +595,17 @@ func Build(req Request) (*Plan, error) {
 	}
 	disk := diskLines(sd.root)
 	claimed, same := claim(disk, lref, p.FirstLink, lockHash)
-	// A link again with the lock missing (rule 7): a hook line on disk that Bonsai neither claims nor writes may be a
-	// pack's earlier line, but without the lock Bonsai cannot tell it from the project's own, so it stays in place;
-	// the preview names each, so a person is not surprised.
-	if p.FirstLink && hasConfig {
+	// The hook lines a person consented to: the lines Bonsai would have written from the lock's packs at their
+	// locked commits, only when they hash to the lock's own record of the settings file, so they are what Bonsai
+	// last wrote. Else none: a hook line that only comes back then counts as new code too (S1).
+	var consented []Line
+	if lockHash != "" && linesHash(lref) == lockHash {
+		consented = lref
+	}
+	// A link again with the lock missing (rule 7), or a pack whose lock Bonsai cannot verify: a hook line on disk
+	// that Bonsai neither claims nor writes may be a pack's earlier line, but Bonsai cannot tell it from the
+	// project's own, so it stays in place; the preview names each, so a person is not surprised.
+	if (p.FirstLink && hasConfig) || len(p.Unverified) > 0 {
 		mine := map[string]bool{}
 		for _, l := range append(append([]Line{}, claimed...), lnew...) {
 			mine[l.canon()] = true
@@ -598,7 +620,7 @@ func Build(req Request) (*Plan, error) {
 	if sd.exists {
 		sf.old = sd.raw
 	}
-	changes := lineChanges(claimed, lnew, disk, lref)
+	changes := lineChanges(claimed, lnew, disk, consented)
 	keysEntry := workspace.LockedFile{Kind: "keys", Pack: firstPack, SHA256: sf.newH, Extra: slf.Extra}
 	write := false
 	switch {
@@ -663,7 +685,7 @@ func Build(req Request) (*Plan, error) {
 	p.Files = append(p.Files, gf)
 
 	// --keep and --adopt.
-	if err := p.resolve(req, newLock, claimed, lnew, lref, disk, bd, body, settingsBytes, targets); err != nil {
+	if err := p.resolve(req, newLock, claimed, lnew, consented, disk, bd, body, settingsBytes, targets); err != nil {
 		return nil, err
 	}
 	for _, f := range p.Files {
@@ -707,7 +729,7 @@ type target struct {
 }
 
 // resolve applies --keep and --adopt to the plan's conflicts and edited files.
-func (p *Plan) resolve(req Request, newLock *workspace.Lock, claimed, lnew, lref, disk []Line,
+func (p *Plan) resolve(req Request, newLock *workspace.Lock, claimed, lnew, consented, disk []Line,
 	bd *blockDoc, body string, settingsBytes func() ([]byte, error), targets map[string]target) error {
 	byPath := map[string]*FileResult{}
 	for _, f := range p.Files {
@@ -766,7 +788,7 @@ func (p *Plan) resolve(req Request, newLock *workspace.Lock, claimed, lnew, lref
 						return errorf(ExitRuntime, "run the command again", "%s cannot be written: %v", SettingsFile, err)
 					}
 					f.write = b
-					p.Settings = lineChanges(claimed, lnew, disk, lref)
+					p.Settings = lineChanges(claimed, lnew, disk, consented)
 					newLock.Files[path] = workspace.LockedFile{Kind: "keys", Pack: f.Pack, SHA256: f.newH, Extra: newLock.Files[path].Extra}
 				default:
 					if t, ok := targets[path]; ok {

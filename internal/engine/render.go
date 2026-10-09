@@ -95,8 +95,16 @@ func (p *Plan) RunsCodeText() string {
 			fmt.Fprintf(&b, "  %-7s %-11s %s\n", c.Change, c.Kind, ascii(c.Line))
 		}
 	}
+	for _, id := range p.Unverified {
+		fmt.Fprintf(&b, "Unverified: the lock's record of the pack %s does not match its locked commit read at bonsai.yaml's "+
+			"folder (a folder changed in bonsai.yaml, or a lock edited by hand), so its hook lines and plugin count as at a first link.\n", ascii(id))
+	}
 	if len(p.LeftHooks) > 0 {
-		b.WriteString("Left in place as the project's own (the lock is missing, so Bonsai cannot tell them from its own; " +
+		why := "the lock is missing"
+		if !p.FirstLink {
+			why = "the lock does not record them as its own"
+		}
+		b.WriteString("Left in place as the project's own (" + why + ", so Bonsai cannot tell them from its own; " +
 			"take out by hand any you do not want):\n")
 		for _, l := range p.LeftHooks {
 			fmt.Fprintf(&b, "  %-7s %-11s %s\n", "keep", "hook", ascii(l))
@@ -246,6 +254,10 @@ func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	for _, f := range p.Conflicts {
 		conflicts = append(conflicts, f.Path)
 	}
+	unverified := []any{}
+	for _, id := range p.Unverified {
+		unverified = append(unverified, id)
+	}
 	leftHooks := []any{}
 	for _, l := range p.LeftHooks {
 		leftHooks = append(leftHooks, l)
@@ -273,7 +285,7 @@ func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	}
 	return objectOf("command", p.Command, "result", result, "exit", exit, "workspace", ws, "packs", packs,
 		"files", files, "lock", map[bool]string{true: "written", false: "unchanged"}[p.LockWrite],
-		"settings", settings, "runs_code", runsCode, "allow_exec", p.AllowExec, "left_hooks", leftHooks, "conflicts", conflicts, "plugins", plugins, "error", errorJSON(refusal))
+		"settings", settings, "runs_code", runsCode, "allow_exec", p.AllowExec, "left_hooks", leftHooks, "unverified", unverified, "conflicts", conflicts, "plugins", plugins, "error", errorJSON(refusal))
 }
 
 // PluginsText is what InstallPlugins did, for a person: one line per pack's plugin, and its next step when this

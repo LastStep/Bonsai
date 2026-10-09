@@ -379,7 +379,7 @@ func TestConsentWithConflicts(t *testing.T) {
 		{edited, []string{"update", "--yes", "--allow-exec", "--adopt", "demo/guide.md"}, "", 0, true, []string{"replaced     demo/guide.md"}},
 		{edited, []string{"update", "--json", "--yes", "--adopt", "demo/guide.md"}, "", 4, false, []string{`"result": "refused"`, `"item": "SessionStart (startup): echo demo hook E"`}},
 		{hookRun, []string{"update", "--yes"}, "", 4, false, []string{"change  file    run/hello.sh  (run-pack)",
-			"A file the pack run-pack's hook line runs (a conflict: --adopt would write the pack's copy).",
+			"A file the pack run-pack's hook line runs; a conflict: --adopt would write the pack's copy.",
 			"bonsai update --allow-exec --yes --keep run/hello.sh"}},
 		{hookRun, []string{"update", "--yes", "--keep", "run/hello.sh"}, "", 0, true, []string{"Runs code: nothing that needs --allow-exec"}},
 		{hookRun, []string{"update", "--yes", "--adopt", "run/hello.sh"}, "", 4, false, []string{"bonsai update --adopt run/hello.sh --allow-exec --yes"}},

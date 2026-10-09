@@ -56,7 +56,7 @@ const (
 // would fail every time it runs, and the stop line (|| exit 2) would then block every session's end. Step 5.1-5.3
 // add the other three as they build them.
 var ownHooks = []Line{{
-	Kind: "hook", Origin: "bonsai", Event: GuardEvent, Matcher: GuardMatcher, Command: GuardCommand, Timeout: GuardTimeout,
+	Kind: "hook", Origin: "bonsai", Own: true, Event: GuardEvent, Matcher: GuardMatcher, Command: GuardCommand, Timeout: GuardTimeout,
 	Why: "Checks every file edit and shell command against the task's rights; blocks if bonsai is missing.",
 }}
 
@@ -64,6 +64,7 @@ var ownHooks = []Line{{
 type Line struct {
 	Kind    string // hook, deny, key, marketplace or plugin
 	Origin  string // where it comes from: bonsai (this build's own), bonsai.yaml (never_edit), old (an old Bonsai hook line), or a pack id
+	Own     bool   // a hook line of Bonsai's own (ownHooks, or a `bonsai hook` line claim finds): set only here, never from a pack
 	Slot    string // two lines with one slot are one line changed, not one removed and one added
 	Event   string // hook: the Claude Code hook event
 	Matcher string // hook: the group's matcher, "" for none
@@ -282,6 +283,9 @@ func slotted(ls []Line) []Line {
 			ls[i].Slot = "deny:" + l.Rule
 		case "hook":
 			k := "hook:" + l.Origin + ":" + l.Event + ":" + l.Matcher
+			if l.Own {
+				k = "hook:@own:" + l.Event + ":" + l.Matcher // no pack id holds an @
+			}
 			ls[i].Slot = k + ":" + strconv.Itoa(n[k])
 			n[k]++
 		}
@@ -541,7 +545,7 @@ func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 			d.Why = "Enables a plugin from an old marketplace of Bonsai's."
 			add(d)
 		case d.Kind == "hook" && isBonsaiHook(d.Command):
-			d.Origin, d.Slot = "bonsai", "hook:bonsai:"+d.Event+":"+d.Matcher+":0"
+			d.Origin, d.Own, d.Slot = "bonsai", true, "hook:@own:"+d.Event+":"+d.Matcher+":0"
 			d.Why = "A Bonsai hook line this build does not write."
 			add(d)
 		case d.Kind == "hook" && firstLink && isOldBonsaiHook(d.Command):
@@ -614,6 +618,7 @@ type SettingsChange struct {
 	Why      string
 	RunsCode bool   // a hook line added or changed, and not one the lock last consented to: it runs code (spec §6)
 	Origin   string // where the line comes from (Line.Origin): bonsai for Bonsai's own, or a pack id
+	Own      bool   // Bonsai's own hook line (Line.Own), which no pack can set
 }
 
 // lineChanges lists the changes from Bonsai's lines in the file (claimed) to the new lines: a new line the file
@@ -646,7 +651,7 @@ func lineChanges(claimed, lnew []Line, disk []Line, consented []Line) []Settings
 			continue
 		}
 		sc := SettingsChange{Change: "add", Kind: l.Kind, Line: l.Text(), Why: l.Why,
-			RunsCode: l.Kind == "hook" && !ok[c], Origin: l.Origin}
+			RunsCode: l.Kind == "hook" && !ok[c], Origin: l.Origin, Own: l.Own}
 		for i, r := range removed {
 			if r.Slot == l.Slot {
 				sc.Change, sc.Was = "change", r.Text()
@@ -657,7 +662,7 @@ func lineChanges(claimed, lnew []Line, disk []Line, consented []Line) []Settings
 		out = append(out, sc)
 	}
 	for _, r := range removed {
-		out = append(out, SettingsChange{Change: "remove", Kind: r.Kind, Line: r.Text(), Why: r.Why, Origin: r.Origin})
+		out = append(out, SettingsChange{Change: "remove", Kind: r.Kind, Line: r.Text(), Why: r.Why, Origin: r.Origin, Own: r.Own})
 	}
 	return out
 }

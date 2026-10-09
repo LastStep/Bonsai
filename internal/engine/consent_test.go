@@ -235,6 +235,22 @@ func TestSettingsConflictNamesTheCode(t *testing.T) {
 	}
 }
 
+// What a hook command names: a pack file by its path or its file name, as a word of its own, letter case aside, a
+// backslash read as a slash.
+func TestNamesPath(t *testing.T) {
+	for _, cmd := range []string{"sh fxu/run.sh", "cd fxu && sh run.sh", `sh FXU\RUN.SH`, `sh "$CLAUDE_PROJECT_DIR"/fxu/run.sh`,
+		"sh ./fxu/run.sh; echo done", "'fxu/run.sh'"} {
+		if !namesPath(cmd, "fxu/run.sh") {
+			t.Errorf("%q is not seen to name fxu/run.sh", cmd)
+		}
+	}
+	for _, cmd := range []string{"sh fxu/run.sh.bak", "echo fxu/run.shx", "sh other-run.sh", "sh fxu/run.sh/x", "echo hi"} {
+		if namesPath(cmd, "fxu/run.sh") {
+			t.Errorf("%q is seen to name fxu/run.sh", cmd)
+		}
+	}
+}
+
 // A plugin's code parts, read from its files: each kind the plugin reference lists, letter case aside, a symbolic
 // link, a submodule, the manifest's keys, and a manifest Bonsai cannot read.
 func TestPluginCode(t *testing.T) {

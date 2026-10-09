@@ -9,8 +9,17 @@ package engine
 //     A removed hook line runs nothing: it is an ordinary settings line in the preview. A line the lock last
 //     consented to that only comes back (a person deleted it) is no new code.
 //   - file: a pack file that a pack's hook line runs (its hooks entry's runs, rule 4), new or changed: written by the
-//     plan, or a conflict that --adopt would write. Rule 5: the hook line may stay the same.
+//     plan, or a conflict that --adopt would write. Rule 5: the hook line may stay the same. The file may be another
+//     linked pack's: it counts as the code of the hook that runs it. runs is checked, not trusted (checkRuns): every
+//     item is a file a linked pack writes, and a hook command that names a file a linked pack writes, by its path or
+//     its file name, must list it, else the plan is refused (exit 2).
 //   - plugin: a plugin's own code parts (rule 3): what Claude Code runs on its own, without an agent's call.
+//
+// The baseline (rules 1 and 3): what the lock says was consented, only once verified. A locked pack is read at its
+// locked commit and bonsai.yaml's folder, and is the baseline only when that content hashes to the lock's sha256 for
+// the pack; the consented hook lines are the ones Bonsai would have written from those packs, only when they hash to
+// the lock's record of the settings file (plan.go). A pack with no verified baseline (a folder changed in bonsai.yaml,
+// a lock edited by hand) is listed as unverified, and its hook lines and plugin count as at a first link.
 //
 // The first link (rule 6): Bonsai's own hook lines are the link's purpose, and the preview names each with its
 // sentence, so they are written on --yes (or y at a terminal), and are no item. A pack's hook lines, the files they
@@ -217,16 +226,21 @@ func (p *Plan) consent(settings []SettingsChange, newPacks []*PackData, oldPacks
 		if !c.RunsCode {
 			continue
 		}
-		if p.FirstLink && c.Origin == "bonsai" && c.Change == "add" {
+		// Bonsai's own lines are marked Own by settings.go (ownHooks, and claim for a `bonsai hook` line on disk),
+		// which no pack can set: a pack's line carries its pack id as Origin, and no pack may take the id bonsai.
+		if p.FirstLink && c.Own && c.Change == "add" {
 			p.OwnHooks = append(p.OwnHooks, c)
 			continue
 		}
 		pack := c.Origin
+		if c.Own {
+			pack = "bonsai"
+		}
 		why := "A hook line of the pack " + pack + ", which Claude Code runs on its events."
 		switch {
-		case pack == "bonsai" && c.Change == "change":
+		case c.Own && c.Change == "change":
 			why = "Bonsai's own hook line, changed: Claude Code runs it on its events."
-		case pack == "bonsai":
+		case c.Own:
 			why = "Bonsai's own hook line, new since the lock: Claude Code runs it on its events."
 		case c.Change == "add" && p.FirstLink:
 			why = "A hook line of the pack " + pack + ", which Claude Code runs on its events; a pack's hook line needs --allow-exec at a first link too."
@@ -248,7 +262,10 @@ func (p *Plan) consent(settings []SettingsChange, newPacks []*PackData, oldPacks
 		if !ok || f.Kind == "block" || f.Kind == "keys" {
 			continue
 		}
-		why := "A file the pack " + pack + "'s hook line runs."
+		why := "A file the pack " + pack + "'s hook line runs"
+		if f.Pack != "" && f.Pack != pack {
+			why += " (the pack " + f.Pack + " writes it)"
+		}
 		change := ""
 		switch {
 		case f.write != nil && f.old == nil:
@@ -256,10 +273,11 @@ func (p *Plan) consent(settings []SettingsChange, newPacks []*PackData, oldPacks
 		case f.write != nil:
 			change = "change"
 		case f.Result == Conflict && f.newH != "":
-			change, why = "change", "A file the pack "+pack+"'s hook line runs (a conflict: --adopt would write the pack's copy)."
+			change, why = "change", why+"; a conflict: --adopt would write the pack's copy"
 		default:
 			continue
 		}
+		why += "."
 		p.RunsCode = append(p.RunsCode, CodeItem{Kind: CodeFile, Change: change, Pack: pack, Item: f.Path, Why: why})
 	}
 
@@ -271,6 +289,72 @@ func (p *Plan) consent(settings []SettingsChange, newPacks []*PackData, oldPacks
 		}
 		p.RunsCode = append(p.RunsCode, pluginItems(pd, old)...)
 	}
+}
+
+// checkRuns holds every pack's hook entries to the files the linked packs write (targets, by path in the project):
+// each runs item is one of them, and a hook command that names one, by its path or by its file name (letter case
+// aside, a backslash read as a slash), lists it in its runs. Scanning a command cannot find every file it runs (one
+// run through another), so runs stays the record; this catches a pack that forgets to declare what it plainly names.
+func checkRuns(packs []*PackData, targets map[string]target) error {
+	paths := make([]string, 0, len(targets))
+	for path := range targets {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	next := func(id string) string {
+		return "the pack's maker fixes the pack " + id + "'s bonsai/pack.yaml and releases it again; until then, keep " +
+			"bonsai.yaml at a ref of the pack without that hook line"
+	}
+	for _, pd := range packs {
+		id := pd.Ref.ID
+		for i, h := range pd.Manifest.Hooks {
+			listed := map[string]bool{}
+			for _, r := range h.Runs {
+				if _, ok := targets[r]; !ok {
+					return errorf(ExitInput, next(id), "the pack %s: hooks item %d's runs names %s, which no linked pack writes "+
+						"(runs lists pack files by their path in the project)", id, i+1, r)
+				}
+				listed[r] = true
+			}
+			for _, path := range paths {
+				if !listed[path] && namesPath(h.Command, path) {
+					return errorf(ExitInput, next(id), "the pack %s: hooks item %d's command (%s) names %s, a file the pack %s "+
+						"writes, but its runs does not list it, so a change to that file would run unseen", id, i+1, h.Command, path,
+						targets[path].pack)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// namesPath reports whether a shell command names a project path, in full or by its file name, as a word of its own:
+// letter case aside (Windows), a backslash read as a slash.
+func namesPath(command, path string) bool {
+	cmd := strings.ToLower(strings.ReplaceAll(command, `\`, "/"))
+	path = strings.ToLower(path)
+	words := []string{path}
+	if i := strings.LastIndexByte(path, '/'); i >= 0 {
+		words = append(words, path[i+1:])
+	}
+	inPath := func(c byte) bool {
+		return c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '.' || c == '-'
+	}
+	for _, w := range words {
+		for from := 0; ; {
+			i := strings.Index(cmd[from:], w)
+			if i < 0 {
+				break
+			}
+			i += from
+			end := i + len(w)
+			if (i == 0 || !inPath(cmd[i-1])) && (end == len(cmd) || (!inPath(cmd[end]) && cmd[end] != '/')) {
+				return true
+			}
+			from = i + 1
+		}
+	}
+	return false
 }
 
 // NeedsExec reports whether the plan writes anything that runs code, which needs --allow-exec as well as --yes.
