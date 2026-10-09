@@ -123,7 +123,14 @@ func wordsText(l List) string {
 	}
 	var ws []string
 	for _, w := range *l.Words {
-		ws = append(ws, w.Word+" ("+w.Means+")")
+		who := ""
+		switch w.Who {
+		case "agent":
+			who = "; next step usually an agent's"
+		case "person":
+			who = "; next step usually a person's"
+		}
+		ws = append(ws, w.Word+" ("+w.Means+who+")")
 	}
 	return "known words (" + l.Table + ", their one home; a reader shows any other as other): " + strings.Join(ws, "; ")
 }

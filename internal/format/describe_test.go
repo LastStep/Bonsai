@@ -43,7 +43,7 @@ func TestDescribe(t *testing.T) {
 	}
 	saved := ErrorWords
 	defer func() { ErrorWords = saved }()
-	ErrorWords = []Word{{"needs-yes", "the command writes, and was not given --yes"}}
+	ErrorWords = []Word{{Word: "needs-yes", Means: "the command writes, and was not given --yes"}}
 	for _, name := range []string{"error", "status", "check", "changes"} {
 		if text := flat(MustLookup(name).Describe()); !strings.Contains(text, "needs-yes (the command writes, and was not given --yes)") {
 			t.Errorf("%s: the error words' table is not printed", name)

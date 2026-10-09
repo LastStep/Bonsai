@@ -84,6 +84,7 @@ type List struct {
 type Word struct {
 	Word  string // the word itself
 	Means string // one line: what it means
+	Who   string // for a word that comes with a next step (the error object's): who usually takes it, agent or person; else ""
 }
 
 // The next steps a refusal names, by who fixes the document.
