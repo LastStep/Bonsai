@@ -5117,38 +5117,72 @@ studio's `tools/statusline/README.md` and `statusline.mjs` at `7017d63`).
    as `check`'s reader reads them (`internal/engine/checkmachine.go`), so neither has a second home.
 2. **`install.sh [--target <file>] [--remove]`**, run by the person as themselves, never under `sudo` (it refuses as
    root, since `~` would then be root's home and `install.json` land there): checks that the `bonsai` beside it runs
-   (`--version`); installs it, with `sudo install -o root -g root -m 0755` when the target's folder is not the person's
-   to write (the real place, `/usr/local/bin/bonsai`, the password once), else with `install -m 0755` (a scratch
-   target), refusing first a target folder that group or others can write; checks the installed file's SHA-256 against
-   the source's and, at the real place, that the file and its folder are root's and writable by no one else; writes
-   `${BONSAI_HOME:-$HOME/.bonsai}/install.json` (`path`, `version` from the installed copy's `--version`, `sha256`)
-   through a temporary file and a rename; prints the fingerprint, `which -a bonsai` (naming any `bonsai` that comes
-   first, spec §17 step 3) and the installed `--version`. `--remove` takes out the installed file (`sudo rm` at the real
-   place) and `install.json`. Exit 0, or not, with one plain sentence and its next step.
+   (`--version`) and takes its SHA-256; refuses first a target folder that group or others can write; installs it under
+   a temporary name in the target's folder (`.bonsai.new.<pid>`), with `sudo install -o root -g root -m 0755` when the
+   folder is not the person's to write (the real place, `/usr/local/bin/bonsai`, the password once), else with `install
+   -m 0755` (a scratch target); checks the temporary copy's SHA-256 against the source's (a source changed meanwhile is
+   caught here, in a folder only root writes, and the copy removed); then renames it over the target (`sudo mv -f`, one
+   rename), so a hook starting meanwhile finds the old copy or the new one, never no file, and a running `bonsai` keeps
+   its old file; then checks, at the real place, that the file and its folder are root's and writable by no one else;
+   writes `${BONSAI_HOME:-$HOME/.bonsai}/install.json` (`path`, `version` from the installed copy's `--version`,
+   `sha256`) through a temporary file and a rename; prints the fingerprint, `which -a bonsai` (naming any `bonsai` that
+   comes first, spec §17 step 3) and the installed `--version`. `--remove` takes out the installed file (`sudo rm` at
+   the real place), a leftover temporary copy and `install.json`. Exit 0, or not, with one plain sentence and its next
+   step.
 3. **`install.ps1 [-Target <file>] [-Remove]`**, run by the person in a normal PowerShell as `powershell -NoProfile
    -ExecutionPolicy Bypass -File .\install.ps1` (Windows runs no downloaded script otherwise): checks that the
-   `bonsai.exe` beside it runs; at the real place, `C:\Program Files\Bonsai\bonsai.exe`, the administrator steps run in
-   one elevated child (`Start-Process -Verb RunAs -Wait`, one UAC prompt), or in place when the session is already
-   elevated: the folder made, the file copied, and `C:\Program Files\Bonsai` added once to the machine's PATH, read raw
-   (`DoNotExpandEnvironmentNames`) and written back as `ExpandString`, never through
-   `[Environment]::SetEnvironmentVariable`, which writes the expanded value as plain text; then the change announced to
-   running programs. It checks the installed hash and that the folder grants no write to Users, Authenticated Users or
-   Everyone; writes `install.json` in `$env:BONSAI_HOME`, else `%USERPROFILE%\.bonsai`, as the person, its path with
-   forward slashes (`C:/Program Files/Bonsai/bonsai.exe`); prints the fingerprint, `Get-Command bonsai -All` in order
-   and `--version`. A scratch target needs no elevation and changes no PATH: the PATH merge is a function the tests run
-   on strings (`%SystemRoot%` entries kept, no entry twice, the separators right), so no test writes the registry.
-   `-Remove` undoes each step, the PATH entry taken out the same careful way.
+   `bonsai.exe` beside it runs and takes its SHA-256; at the real place, `C:\Program Files\Bonsai\bonsai.exe`, the
+   administrator steps run in one elevated child (`Start-Process -Verb RunAs -Wait`, one UAC prompt), or in place when
+   the session is already elevated (the same steps, from the same text).
+   - **The child's code is inline, never a file.** It is `powershell.exe` by its full path (from
+     `[Environment]::SystemDirectory`, never found by name) with `-NoProfile -NonInteractive -EncodedCommand <base64>`,
+     the text built by the parent from fixed text plus three values: the source file's path, the target's path and the
+     expected SHA-256, each checked first (the paths absolute, the hash 64 hex) and embedded as a single-quoted literal
+     (a `'` doubled). No script in a user-writable folder runs elevated, and the child reads no file there but the one
+     it copies. It sets its own working folder (the target's folder, once made) and relies on no `$env:` value the
+     parent changed (an elevated child does not inherit them).
+   - **What the child does, in order:** the folder made; the file copied in under a temporary name (`bonsai.exe.new`);
+     that copy's SHA-256 compared with the expected one, and on a mismatch the copy removed and the child exits
+     non-zero (a source swapped after the parent hashed it is caught here, inside a folder only administrators write);
+     leftover `bonsai.exe.old-*` files from an earlier install removed (one still running is skipped); the old
+     `bonsai.exe`, which a hook may be running, renamed aside to `bonsai.exe.old-<n>` (Windows lets a running program
+     be renamed, not overwritten), with busy retries; the new copy renamed into place, so a hook starting between the
+     two renames finds no file and refuses (it fails closed), never runs another; `C:\Program Files\Bonsai` added once
+     to the machine's PATH, read raw (`DoNotExpandEnvironmentNames`) and written back as `ExpandString`, never through
+     `[Environment]::SetEnvironmentVariable`, which writes the expanded value as plain text; the change announced to
+     running programs; the folder's ACL checked (no write to Users, Authenticated Users or Everyone). Its exit code is
+     the parent's answer: non-zero is a refusal naming the step that failed.
+   - **A declined UAC prompt** (`Start-Process` throws) is a refusal with its next step: "the Windows prompt was
+     declined, so nothing was installed; next: run the last line again and choose Yes".
+   - **Then the parent, as the person,** checks the installed hash again; writes `install.json` in `$env:BONSAI_HOME`,
+     else `%USERPROFILE%\.bonsai`, its path with forward slashes (`C:/Program Files/Bonsai/bonsai.exe`); prints the
+     fingerprint, `Get-Command bonsai -All` in order and `--version`. A scratch target needs no elevation and changes no
+     PATH, and runs the same copy, hash and rename steps in place: the PATH merge is a function the tests run on
+     strings (`%SystemRoot%` entries kept, no entry twice, the separators right), so no test writes the registry.
+     `-Remove` undoes each step, the PATH entry taken out the same careful way.
 4. **Proof without this computer's real places.** Go tests run each script on scratch targets and a scratch
    `BONSAI_HOME` (the `.sh` on Linux, the `.ps1` on Windows, each skipped elsewhere with its reason): install; the
-   record read back by `check`'s reader; a second install (the same fingerprint, the record unchanged); remove; each
-   refusal (a `bonsai` beside it that does not run; a target folder others can write, on Linux; `install.sh` as root,
-   through a stub `id`). **The real places run on GitHub's throwaway machines:** an `install` job on `ubuntu-latest`
-   (its runner has passwordless `sudo`) and on `windows-latest` (its runner is an administrator; whether elevated in
-   place or through `RunAs`, the first CI run records) builds Bonsai, runs each installer at its real place, checks the
-   owner, mode or ACL, the PATH (the entry once, `%...%` entries kept), `install.json`, `which -a` or `Get-Command`, and
-   `--version` from a fresh shell, then removes it and checks it is gone. Not run before Rohan's 1.0 install: the UAC
-   prompt's path from an unelevated session; V1 reads it line by line, and 5.7 plans its first run with the way out
-   (`-Remove`, or the folder deleted and the PATH entry taken out by hand).
+   record read back by `check`'s reader; a second install (the same fingerprint, the record unchanged); a second
+   install while a `bonsai` from the first is still running (a `hook guard` waiting on its input, inside its budget):
+   it succeeds, the running process is untouched, and on Windows the old file sits aside until the next install
+   removes it; remove; each refusal (a `bonsai` beside it that does not run; a target folder others can write, on
+   Linux; `install.sh` as root, through a stub `id`; a source changed between the hash and the copy, through a stub
+   `install` first on the PATH that copies another file on Linux, and on Windows the child's text built with a wrong
+   expected hash: neither script has a path for tests but `-ForceChild`, below). The `install.sh` tests put a stub
+   `sudo` first on the PATH that fails the test if it is ever called, so no test reaches the real one. The child's text
+   is built by a function the Windows tests call directly: each value embedded and quoted, a path holding a `'` and a
+   space, a bad hash refused before any text is built. **The real places run on GitHub's throwaway machines:** an
+   `install` job on `ubuntu-latest` (its runner has passwordless `sudo`) and on `windows-latest` (its runner is an
+   administrator, elevated with UAC off) builds Bonsai, runs each installer at its real place, checks the owner, mode or
+   ACL, the PATH (the entry once, `%...%` entries kept), `install.json`, `which -a` or `Get-Command`, and `--version`
+   from a fresh shell, installs again while a `bonsai` from the first install runs, then removes it and checks it is
+   gone. **A test-only switch forces the child on CI:** an elevated runner would otherwise run the steps in place and
+   never start the child, so `-ForceChild` (documented in the header as for tests; refused unless the session is already
+   elevated, so it can never raise a prompt; it only chooses the child over in place, and skips no step or check) makes
+   the Windows job take the `RunAs` path, proving the child's code, arguments, working folder and exit code, and once
+   more with a wrong expected hash (the child exits non-zero and leaves no file). Only the prompt itself waits for
+   Rohan's 1.0 install (a declined one is tested through a stub of the start call); V1 reads the child line by line, and
+   5.7 plans that first run with the way out (`-Remove`, or the folder deleted and the PATH entry taken out by hand).
 5. **No agent runs either installer at a real place** (Rohan's 15:35 choice; spec §3: "No agent installs or replaces
    it"). Agents run as the same user, so a file in a download folder can be changed between Rohan's fingerprint check
    and his install by a shell command: the guard's `bonsai-stand-in` rule stops the file tools writing a `bonsai`
@@ -5163,13 +5197,21 @@ studio's `tools/statusline/README.md` and `statusline.mjs` at `7017d63`).
 **V1, the installers and the machine's tripwires.** A fresh Opus agent, once 5.6.6 has landed with its `install` job
 green and 5.6.1 and 5.6.2 have landed: reads both installers against spec §3, 5.3's (a) and this section; re-runs them
 on scratch targets on both sides itself; reads the `install` job's logs on the pushed commit (the real places on
-throwaway machines); reads the elevated child and the PATH merge line by line; breaks them: a target folder others can
-write refused, a `bonsai` beside the script that does not run refused, a PATH value holding `%SystemRoot%` entries kept
-as they were, a second install unchanged, a remove complete. And the machine's tripwires: `settings set`, `labels
-attach` and `detach` refused with `CLAUDE_CODE_CHILD_SESSION` set, through a variable, `xargs`, a script and a
-subprocess, with nothing written; a stamped build free only while its home is inside its scratch root; `status_command`
-refused with a `;`, a `$`, a backtick, a newline, or past 100 characters; an attach of `bonsai`, of a locked pack's
-namespace, or a redefinition refused. It passes or fails; it fixes nothing; a must-fix is fixed forward.
+throwaway machines, the forced child's run among them); reads the elevated child and the PATH merge line by line: the
+child's code inline (`-EncodedCommand`), no file it reads user-writable but the source it copies, its working folder
+its own, no `$env:` of the parent's relied on, its copy hashed inside the target folder and removed on a mismatch, a
+declined prompt a refusal; breaks them: a target folder others can write refused, a `bonsai` beside the script that
+does not run refused, a PATH value holding `%SystemRoot%` entries kept as they were, a second install unchanged, a
+second install while a `bonsai` from the first runs (both sides), a remove complete. And the machine's tripwires:
+`settings set`, `labels attach` and `detach` refused with `CLAUDE_CODE_CHILD_SESSION` set, through a variable, `xargs`,
+a script and a subprocess, with nothing written; a stamped build free only while its home is inside its scratch root;
+`status_command` refused with a `;`, a `$`, a backtick, a newline, or past 100 characters, by `settings set` and by the
+reader the guard shares (note 5.6.1, 1: a file written straight into a scratch home, and the guard's refusal of a call
+that needs the mode, naming the file); an attach of `bonsai`, of a locked pack's namespace, or a redefinition refused.
+Then the three known routes past those refusals, each on scratch homes only, recorded "gets through, as stated" where
+it does: a script, `cp` or an interpreter writing the machine folder's `settings.json`; a script that unsets
+`CLAUDE_CODE_CHILD_SESSION` and then runs `bonsai settings set`; a stamped build whose scratch root covers a scratch
+folder standing in for the real home. It passes or fails; it fixes nothing; a must-fix is fixed forward.
 
 #### Proof for each piece
 
@@ -5180,8 +5222,9 @@ read in the diff (forward slashes in every stored and printed path, `install.jso
 byte-stable files; LF scripts; no test needing a symbolic link or a file mode, the `.sh` mode checks on Linux only, with
 the reason; Windows renames with busy retries); no Windows-only skip without a named reason; no test touching a real
 home (`BONSAI_HOME` a temporary folder in every test, scratch homes in every script). Pieces that run Claude Code
-(5.6.3's import try, 5.6.4's session) record its version and the user settings hashes before and after. Scripted runs
-live in `~/bonsai-checks/scripts/`, never committed. V1 and the end verifier re-run what they judge themselves.
+(5.6.3's import try and cross-side rules, 5.6.4's session) record its version and the user settings hashes before and
+after. Scripted runs live in `~/bonsai-checks/scripts/`, never committed. V1 and the end verifier re-run what they judge
+themselves.
 
 #### 5.6 done
 
@@ -5198,7 +5241,11 @@ both sides where a check names them, and passes or fails 5.6:
    guard refuses an agent's edit of a task's status line, naming the command.
 4. **The tripwire:** `settings set`, `labels attach` and `detach` with `CLAUDE_CODE_CHILD_SESSION` set exit 4 with `who:
    person` and write nothing (the home hashed before and after), through a variable, `xargs`, a script and a subprocess;
-   `settings show` answers; a stamped build is free only with its home inside its scratch root.
+   `settings show` answers; a stamped build is free only with its home inside its scratch root; a `status_command`
+   outside its rule, written straight into a scratch home's file, refused by the reader and by the guard. The three
+   known routes, on scratch homes only, each recorded "gets through, as stated" where it does: a script, `cp` or an
+   interpreter writing the settings file; a script unsetting `CLAUDE_CODE_CHILD_SESSION` before `bonsai settings set`;
+   a stamped build whose scratch root covers a scratch folder standing in for the real home.
 5. **The stranded folder:** a fixture checkout moved: `check` warns `stranded` with the old path and its exact lines,
    never the exit code; the lines, run as a person, bring the settings and labels over and clear it; `status`'s text
    names it.
@@ -5208,11 +5255,16 @@ both sides where a check names them, and passes or fails 5.6:
    and a locked pack's namespace each refused, detach, detach again (`nothing`); after an attach, `status --json` lists
    it `from: machine`, a scratch session's opening context shows it, and in `command` mode an agent's edit setting its
    `outside` label is refused.
-8. **The personal layer:** `init` writes the empty index once and never over one; each of the five warnings from a
-   fixture, none changing the exit code; the decoy secret's value in no output; on Windows the copy refreshed by
-   `update` and `personal-copy` while it differs, and an unreachable source answered with a note within 2 s; the
-   import's measurement in the run report; Rohan's two lines sent, his words in the run report.
-9. **`--line`:** each part on fixtures; nothing printed and exit 0 outside a linked checkout; a broken `bonsai.yaml`
+8. **The personal layer:** `init --yes` writes the empty index once and never over one; a preview and `check` write
+   nothing in the home; each of the five warnings from a fixture, none changing the exit code, the caps from their one
+   table; the decoy secret's value in no output; on Windows the copy refreshed by `update --yes` (only `INDEX.md` and
+   `notes/*.md`, within the limits), `personal-copy` from the record after the copy changes, `check` never reaching
+   the source, and an unreachable source answered with a note within 2 s; the import's measurement in the run report
+   (the `@~/` form, a missing file, any external-import prompt); the cross-side deny rules written by `update` and
+   their tries in the run report, one form re-tried by the verifier on each side by 5.5.6's method; under (B), also an
+   agent's file-tool write of a personal note allowed and of any other file in the home refused.
+9. **`--line`:** each part on fixtures, `N running` among them; it returns with its input held open; nothing printed
+   and exit 0 outside a linked checkout; a broken `bonsai.yaml`
    gives its short line and exit 0; a title holding an escape code printed without it; `--json` valid against
    `bonsai.line/1`; the verifier's own p50 and p95 on both sides within the budgets on the fixture project; the real
    session's capture in the run report.
@@ -5220,11 +5272,14 @@ both sides where a check names them, and passes or fails 5.6:
     build stamped `1.0.0`: `status --full` records `v1.0.1`, `state: newer`, and both sides' lines exactly as the table
     gives them; plain `status`, `check` (`bonsai-newer`) and `--line` say it offline; a second `--full` within the day
     reads nothing (the source made unreachable changes no answer); an unreachable source with no record gives `unknown`
-    with why, exit 0; a `dev` build gives `not-a-release`; the plain build reads the real repository once within 10 s
-    (today: no release at or above 1.0.0).
-11. **The installers:** on scratch targets on both sides, install, the record read by `check`, again unchanged, remove,
-    each refusal; the test holding both scripts to the installed places and the record's keys passes, and fails on a
-    temporary copy naming another place; the `install` job green on both sides on the final commit; V1's report read.
+    with why, exit 0; a `dev` build gives `not-a-release`; a record whose `newest` holds a command gives no lines and
+    `unknown`; every line's URL starts with `https://github.com/LastStep/Bonsai/releases/download/v`; the plain build,
+    on a scratch `BONSAI_HOME`, reads the real repository once within 10 s (today: no release at or above 1.0.0).
+11. **The installers:** on scratch targets on both sides, install, the record read by `check`, again unchanged, again
+    while a `bonsai` from the first runs, remove, each refusal; the test holding both scripts to the installed places
+    and the record's keys passes, and fails on a temporary copy naming another place; the `install` job green on both
+    sides on the final commit, its log showing the forced `RunAs` child and the wrong-hash child leaving no file; V1's
+    report read.
 12. **Unattended:** every new refusal's `--json` carries `error` with a known word and `next` with `who`; every
     `next.do` that is a command runs as written.
 13. **Check 10, the ladder and CI:** `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on
@@ -5234,35 +5289,50 @@ both sides where a check names them, and passes or fails 5.6:
     tally; option rounds (none planned); nothing written or run in the studio's checkout (its files read with `git show`
     only) or in Mimas; nothing written outside the repo and the scratch folders but `~/.bonsai/` by the orchestrator's
     own real commands and Claude Code's accepted writes; no `install.json`, `personal/`, home `settings.json`, machine
-    `settings.json` or `labels/` in the real home written by a 5.6 run; the user settings hashes around every Claude
-    Code run; every landing matched to its green `ladder` record and each task's `bonsai.allows` to this section's
-    "Owns"; `bonsai.yaml` changed only by the floors; the Haiku audit of `.bonsai/sessions.md` against the run reports.
-    **Nothing private:** a grep of the diff, the commit messages and the task files.
+    `settings.json`, `labels/`, `cache/release.json` or `cache/personal-copy.json` in the real home written by a 5.6
+    run; the user settings hashes around every Claude Code run; every landing matched to its green `ladder` record and
+    each task's `bonsai.allows` to this section's "Owns"; `bonsai.yaml` changed only by the floors; the Haiku audit of
+    `.bonsai/sessions.md` against the run reports. **Nothing private:** a grep of the diff, the commit messages and the
+    task files.
 
 #### Risk in the code, 5.6
 
 - **Root and administrator steps.** The installers are the only code in step 5 that runs as root or administrator. Each
-  keeps its elevated part to the copy, the PATH and the checks after; the real places run only on throwaway CI machines
-  before Rohan's 1.0 install, and the UAC path from an unelevated session runs first there, so 5.7 plans its way out.
+  keeps its elevated part to the copy, the PATH and the checks after; the Windows child's code is inline, never a file
+  an agent could rewrite, and it hashes its copy inside the folder only administrators write. The real places run only
+  on throwaway CI machines before Rohan's 1.0 install, the `RunAs` child forced there by `-ForceChild`; only the UAC
+  prompt from an unelevated session runs first at his install, so 5.7 plans its way out.
+- **An install over a running `bonsai`.** Hooks run Bonsai all day: Linux renames a whole new file over the old one;
+  Windows renames the running one aside first. A hook starting in the instant between Windows' two renames refuses
+  (fails closed); none runs a half-written file.
 - **The machine's PATH on Windows.** A careless edit can expand or cut it. Read raw, written as `ExpandString`, the
   merge tested on strings, the real edit tried on CI's machine and undone by `-Remove`.
 - **A download changed before the install.** Agents run as the same user and could change a file in the download folder
   between Rohan's fingerprint check and his install: spec §3's tripwire, not a wall. The lines run one after another in
-  one fresh folder; the installer prints the installed copy's fingerprint, `install.json` records it, and `check`
-  compares the PATH's `bonsai` with it.
+  one fresh folder; each installer hashes the source first and its root- or administrator-owned copy before it is put
+  in place, which catches a change after that hash; the installer prints the installed copy's fingerprint,
+  `install.json` records it, and `check` compares the PATH's `bonsai` with it. What the fingerprint line cannot catch:
+  a release changed at its source, both files at once (5.7's provenance, "Hand-offs to 5.7").
+- **The release record feeds lines a person runs.** Only a version of three whole numbers ever reaches a line, checked
+  at every read, inside fixed GitHub URLs; a forged record gives no lines.
 - **A tripwire, not a wall,** for the machine's settings and labels: an agent's shell can still write the home (the
   sandbox is not on, contract §10.6). The commands refuse themselves, the guard refuses them and the walls refuse the
-  file tools; the studio's bridge flags a lost `command` setting.
-- **`status_command` is printed by the guard and run by agents:** its narrow characters stop a person's typo, or a
-  forged file, from becoming a command line with `;` or `$(...)` in it.
-- **What loads into every session:** the personal index. Person-written; budgets and the secret scan as warnings; the
-  import line is the person's.
+  file tools; a script writing the file, a script unsetting the variable, or a stamped build rooted over the real home
+  still gets through (V1 records each). The studio's bridge flags a lost `command` setting, and should also compare
+  `status_command` with what its registration set (a note for its plan).
+- **`status_command` is printed by the guard and run by agents:** its narrow characters, checked when set and whenever
+  read (the guard's reader included), stop a person's typo, or a forged file, from becoming a command line with `;` or
+  `$(...)` in it.
+- **What loads into every session:** the personal index. Person-written under (A); budgets and the secret scan as
+  warnings; the import line is the person's, at 5.7.
 - **`--line` runs on every refresh.** A slow line slows every session's status line; budgets measured on both sides, a
   cache only if needed; a project on a Windows drive read from WSL is measured, not promised.
 - **Text into a terminal:** task titles in `--line`, stripped of control characters.
 - **The network:** one read a day at most, 10 s, in `status --full` only; GitHub unreachable never fails a command. A
   tag pushed before its release's files are up makes the download line fail plainly ("try again in a few minutes").
-- **WSL from Windows:** reading `\\wsl.localhost` may start WSL; 2 s, then a note.
+- **WSL from Windows:** reading `\\wsl.localhost` may start WSL; 2 s, then a note, and only in `init --yes` and `update
+  --yes`, never in `check` or rung 0. Each side's Bonsai home is walled from the other's sessions by the engine's
+  cross-side deny rules, where a form holds.
 - **Shared files:** what runs side by side shares none; 5.6.5 waits for 5.6.3 and 5.6.4. The reference page and
   `format.CheckWords` are written in lane A and 5.6.5 only, one after the other.
 - **Processes:** `tmux` sessions (5.6.3, 5.6.4): each agent stops what it started and checks with `ps`; the orchestrator
@@ -5271,7 +5341,10 @@ both sides where a check names them, and passes or fails 5.6:
 #### Stale or in tension in the spec, for 5.6
 
 - **§4's table: `status` "Writes: nothing":** `status --full` writes one file, the home's `cache/release.json`, a
-  refillable copy of its network read (note 5.6.5, 2); nothing in the project.
+  refillable copy of its network read (note 5.6.5, 2), and `--line` may write `cache/line/<machine key>.json` if its
+  budget ever needs a cache (note 5.6.4, 4); nothing in the project, and a write that fails (a read-only home) never
+  fails `status`. Spec §4's row gets a dated note, written by the orchestrator on `main` (this plan does not edit the
+  spec).
 - **§6: "deleting `cache/` by hand is always safe; it refills", against §10: "Its `cache/` also keeps `--adopt`
   copies":** true of the pack clones only; `cache_keep_days` cleans `cache/git/` and never `cache/adopted/`, which holds
   a person's saved edits (note 5.6.1, 6).
@@ -5280,15 +5353,19 @@ both sides where a check names them, and passes or fails 5.6:
 - **Contract §3: "`bonsai check` and `status` report the stranded folder":** a `check` warning (spec §6) and a line in
   `status`'s text; `status --json` carries no warning (5.1.6), and the lost setting shows in its `status_writes`.
 - **§10: the Windows copy "refreshed when a Windows-side project links", and "a copy older than WSL's":** refreshed by
-  `init` and `update` on Windows once a person names WSL's folder in a new home setting, `personal_from`, beside §4's
-  `cache_keep_days`; "older" read as "not the same as WSL's" (note 5.6.3, 4).
-- **§10's personal layer, "budget 40 lines":** 40 lines, with the project index's 12 KB and the notes' 4 KB caps; its
-  checks are warnings, not findings, as the layer is the machine's (note 5.6.3, 3).
+  `init --yes` and `update --yes` on Windows once a person names WSL's folder in a new home setting, `personal_from`,
+  beside §4's `cache_keep_days`; "older" read as "not the same as WSL's" (note 5.6.3, 4); and `check` reports it from
+  the last refresh's record, never reaching WSL (up to 2 s on every `check` and rung 0 otherwise), so a change on WSL's
+  side shows at the next `update`, not at the next `check`.
+- **§10's personal layer, "budget 40 lines":** 40 lines and 4 KB the index (40 lines at the project index's rate), 4 KB
+  a note, in one Go table with the project's caps (note 5.6.3, 3); its checks are warnings, not findings, as the layer
+  is the machine's.
 - **§10: "Agents write notes through the workflow pack's memory skill"** (5.5 moved it to base's): true of the project's
-  notes. The personal layer is the person's: 5.3's guard and deny rule refuse agents in the home (note 5.6.3, 2); the
-  memory schema's description says so (5.6.0).
-- **§13 item 4, the memory move "to `~/.bonsai/personal/`":** done by a person, or in a session outside any linked
-  project, the studio's plan's choice (step 7).
+  notes. For the personal layer it is settled by Rohan's choice in this section: under (A) the person's, 5.3's guard
+  and deny rule refusing agents in the home (note 5.6.3, 2); under (B) as the spec has it, in base's skill, with a
+  guard change. The memory schema's description says which (5.6.0).
+- **§13 item 4, the memory move "to `~/.bonsai/personal/`":** follows Rohan's choice: under (A) done by a person, or in
+  a session outside any linked project, the studio's plan's choice (step 7); under (B) an agent may do it.
 - **Contract §15.2: registration "runs Bonsai's attach and settings commands":** both refuse in an agent's session, so
   the studio's registration is run by a person or by the studio's own program outside one; a note for the studio's plan.
 - **§3: "Each install writes `<home>/install.json`":** the installing person's home, never root's (the installer refuses
@@ -5300,13 +5377,40 @@ both sides where a check names them, and passes or fails 5.6:
   marker; the git counts, Unity's editor and the studio's services stay the studio's line's.
 - **§17 step 8 gives the pre-release install as typed lines:** from 1.0 the installers replace them (5.7); 5.6 asks no
   install.
-- **Hand-offs to 5.7:** each archive holds `install.sh` and `install.ps1` at its top, beside the binary
-  (`.goreleaser.yaml`'s `archives.files`); a test holds 5.6.5's archive and checksum names equal to `.goreleaser.yaml`'s
-  templates; Rohan's 1.0 installs on both sides go through the installers and those lines, the UAC path's first run
-  among them, with its way out; Homebrew's place against 5.3's (a) stays 5.7's.
-- **Hand-offs to the studio's plan (step 7) and Mimas's (step 8):** registration outside agent sessions; its status line
-  calling `bonsai status --line --json`; the memory move by a person; at Mimas's link, `personal_from` on Windows and
-  the same import line in the Windows `~/.claude/CLAUDE.md`, Rohan's.
+- **Hand-offs to 5.7:**
+  - Each archive holds `install.sh` and `install.ps1` at its top, beside the binary (`.goreleaser.yaml`'s
+    `archives.files`); 5.6.5's test holds the lines' names to `.goreleaser.yaml`, so 5.7 keeps it passing.
+  - Rohan's 1.0 installs on both sides go through the installers and those lines, the UAC prompt's first real run among
+    them, with its way out; his list's "At 5.7" says so.
+  - **His memory import line**, in the 1.0 install batch, once the first `init --yes` or `update --yes` by the installed
+    1.0 has made the index on his machine (about a minute, in WSL):
+
+    ```bash
+    printf '\n@~/.bonsai/personal/INDEX.md\n' >> ~/.claude/CLAUDE.md
+    tail -n 2 ~/.claude/CLAUDE.md
+    ```
+
+    The second line must end with `@~/.bonsai/personal/INDEX.md`; he sends the orchestrator what it printed (the first
+    line adds an empty line before the import, so it never joins his file's last line). Then an agent checks that it
+    loads, writing nothing of his: the scratch launcher (`claude-here`) sets the PATH, the plugin cache and
+    `BONSAI_HOME` but not Claude Code's configuration folder (`design/plan.md`, "Test sessions and the launcher"), so a
+    session it starts reads his real `~/.claude/CLAUDE.md`, and the import's `~` is his real home whatever
+    `BONSAI_HOME` says. In a scratch project, an interactive `tmux` session through `claude-here`: `/memory` lists
+    `~/.bonsai/personal/INDEX.md` among the loaded files (or, if that version's `/memory` does not list imports, the
+    session is asked for the loaded index's `title:`, `Personal memory`, nothing private); any external-import prompt
+    recorded with its words (if one appears, his own sessions will show it too, and the orchestrator tells him); the
+    index's notes never copied into a report; Claude Code's version and the user settings hashes before and after
+    recorded.
+  - The install lines' stronger check: once build provenance exists (spec §12 step 8), the lines gain `gh attestation
+    verify <archive> -R LastStep/Bonsai` (5.7 checks it runs on both sides, and with what login), or the release
+    publishes the binaries' own SHA-256, so the installed file is checked as 5.4's line checked it.
+  - Homebrew's place against 5.3's (a) stays 5.7's.
+- **Hand-offs to the studio's plan (step 7) and Mimas's (step 8):** registration outside agent sessions; its bridge
+  comparing `status_command`, not only `status_writes`, with what its registration set (an agent could point it at a
+  project script while the mode still reads `command`); its status line calling `bonsai status --line --json`; the
+  memory move as Rohan chose (note 5.6.3, 2); at Mimas's link, `personal_from` on Windows, the same import line in the
+  Windows `~/.claude/CLAUDE.md` (Rohan's), and the engine's cross-side deny rules over each side's Bonsai home (note
+  5.6.3, 6), re-tried on that machine.
 
 ### Steps 5.2-5.7, outlined
 
