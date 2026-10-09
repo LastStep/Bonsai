@@ -50,6 +50,11 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   the record of what happened, the proof that work is done) and works with no studio; the studio is everything across
   projects and anything that acts on agents (dispatch, approvals, status moves, notifications, every visual). The
   recorder and the ladder runner stay in Bonsai; Bonsai has no scheduler.
+- **9 Oct, 5.3's two questions:** the hook lines name the installed `bonsai` (Windows' place, then WSL's
+  `/usr/local/bin/bonsai`), never the PATH, with check 2's one named exception ((a)); and an agent may pass
+  `--allow-exec`, run `unlink` or change Bonsai's guard lines only under his tap's grant in a project the studio
+  manages, only a person elsewhere ((ii)), so from 5.4 such an update of Bonsai's own repo is his command. Spec §3 and
+  §18's dated notes; `design/plan-5.md`, "Step 5.3".
 - **9 Oct: a pack plugin that runs code is asked for on each machine** (5.1's first option round): `update` installs a
   locked pack plugin with code parts only with `--allow-exec` on that machine; and Bonsai installs or removes no
   plugin but the project's own packs' ("it shouldnt install or remove other plugins"). Spec §5's dated note.
@@ -96,7 +101,8 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   is installed on a machine only with `--allow-exec` there, and Bonsai installs or removes no plugin but the project's
   own packs'.
 
-**5.2's section is planned** (`design/plan-5.md`, "Step 5.2", on `main` at `da427de`): written beside 5.1.3, reviewed
+**5.3's section is planned** too (on `main` at `b79d00f`; `records/runs/R-2026-10-09-plan-5.3.md`), with Rohan's two
+answers. **5.2's section is planned** (`design/plan-5.md`, "Step 5.2", on `main` at `da427de`): written beside 5.1.3, reviewed
 fresh, fixed and audited (`records/runs/R-2026-10-09-plan-5.2.md`); nothing of Rohan's changes but one look at two log
 field names. 5.2 starts when 5.1 ends.
 
