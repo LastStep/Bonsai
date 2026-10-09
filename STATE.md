@@ -1,7 +1,13 @@
+- **5.1.4b** (`c2864c0`): every command's `--json` in set 4's shapes, 28 error words in one table each with who takes
+  the next step, one flag-and-exit table per command word.
+
+Next, **5.1.5** (what the engine reads and writes, to 1.0), then the rest in the plan's order. **5.4's section** is being
+planned beside it.
+
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 14:23, when 5.1.0 to 5.1.4a had landed and 5.1.4b was next
-(`records/runs/R-2026-10-09-5.1.4a-types.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 15:18, when 5.1.0 to 5.1.4b had landed and 5.1.5 was next
+(`records/runs/R-2026-10-09-5.1.4b-outputs.md`).
 
 ## In short
 
@@ -119,7 +125,7 @@ Next, **5.1.4b** (every command's `--json` to set 4's shapes, the `error` object
 then Rohan's look at the error words and the two output shapes), then the rest in the plan's order. **5.3's
 section** is being planned beside it.
 
-5.1's hours so far: 435 minutes (7 h 15 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
+5.1's hours so far: 488 minutes (8 h 8 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
