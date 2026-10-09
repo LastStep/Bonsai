@@ -98,8 +98,8 @@ func (p *Plan) RunsCodeText() string {
 		}
 	}
 	for _, id := range p.Unverified {
-		fmt.Fprintf(&b, "Unverified: the lock's record of the pack %s does not match its locked commit read at bonsai.yaml's "+
-			"folder (a folder changed in bonsai.yaml, or a lock edited by hand), so its hook lines and plugin count as at a first link.\n", ascii(id))
+		fmt.Fprintf(&b, "Unverified: the pack %s's folder in bonsai.yaml is not the lock's, or the lock's record of it does not match "+
+			"its locked commit (a lock edited by hand), so its hook lines and plugin count as at a first link.\n", ascii(id))
 	}
 	if len(p.LeftHooks) > 0 {
 		why := "the lock is missing"

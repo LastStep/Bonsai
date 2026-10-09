@@ -35,8 +35,9 @@
 //     caller asks; cmd/bonsai/engine.go prints the refusal (exit 4) naming --allow-exec, at a terminal too;
 //   - no way round it by deleting the lock: plan.go refuses an update when bonsai.yaml is there and the lock is not
 //     (exit 4, naming git checkout of the lock or bonsai init); init then links again judged against the disk;
-//   - the baseline: plan.go reads each locked pack at its locked commit and takes it as the baseline only when its
-//     content hashes to the lock's sha256, and the consented hook lines only when they hash to the lock's settings
+//   - the baseline: plan.go reads each locked pack at its locked commit and takes it as the baseline only when
+//     bonsai.yaml names the folder the lock records and its content hashes to the lock's sha256 (path_test.go), and
+//     the consented hook lines only when they hash to the lock's settings
 //     record; else the pack is unverified and its code counts as at a first link. Bonsai's own lines carry Line.Own,
 //     which no pack sets, and no pack may take the id bonsai; pack files may not land where Claude Code loads code
 //     (workspace.checkPackTarget); runs is checked against the hook commands (checkRuns); a plugin that carries code

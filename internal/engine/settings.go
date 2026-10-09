@@ -195,15 +195,27 @@ type packLines struct {
 }
 
 // MarketplaceName is the inline marketplace's name (spec §5): bonsai-<workspace name>-<8 hex>, the hex the first
-// 8 characters of the SHA-256 of the locked commits, each followed by a line feed, in bonsai.yaml's order. Two
-// checkouts at the same commits share it; a checkout whose update moved a pack gets its own.
-func MarketplaceName(name string, commits []string) string {
+// 8 characters of the SHA-256 of the packs' pins (Pin), each followed by a line feed, in bonsai.yaml's order. Two
+// checkouts at the same commits and folders share it; a checkout whose update moved a pack to another commit or
+// folder gets its own, so a plugin installed from the old folder is never taken for the new one's (step 5.1.1's
+// verifier: "already installed" compared the commit, not the folder).
+func MarketplaceName(name string, pins []string) string {
 	var b strings.Builder
-	for _, c := range commits {
+	for _, c := range pins {
 		b.WriteString(c + "\n")
 	}
 	sum := sha256.Sum256([]byte(b.String()))
 	return "bonsai-" + name + "-" + hex.EncodeToString(sum[:])[:8]
+}
+
+// Pin is what a pack adds to its marketplace's name: its locked commit, and, for a pack in a folder of its
+// repository, a space and the folder. A pack at its repository's root pins its commit alone, so its marketplace keeps
+// the name spec §5 gives it (the locked commits).
+func Pin(commit, folder string) string {
+	if folder == "" {
+		return commit
+	}
+	return commit + " " + folder
 }
 
 // buildLines gives every line Bonsai writes for a workspace and its packs, in the order it writes them: the two
@@ -233,13 +245,13 @@ func buildLines(cfg *workspace.Config, packs []packLines) []Line {
 		}
 	}
 	if len(packs) > 0 {
-		var commits []string
+		var pins []string
 		var plugins []any
 		for _, p := range packs {
-			commits = append(commits, p.commit)
+			pins = append(pins, Pin(p.commit, p.folder))
 			plugins = append(plugins, objectOf("name", p.id, "source", pluginSource(p.source, p.folder, p.commit)))
 		}
-		market := MarketplaceName(cfg.Name, commits)
+		market := MarketplaceName(cfg.Name, pins)
 		ls = append(ls, Line{Kind: "marketplace", Origin: "bonsai", Name: market,
 			Value: objectOf("source", objectOf("source", "settings", "name", market, "owner", objectOf("name", "Bonsai"),
 				"plugins", plugins)),

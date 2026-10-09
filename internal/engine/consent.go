@@ -16,7 +16,8 @@ package engine
 //   - plugin: a plugin's own code parts (rule 3): what Claude Code runs on its own, without an agent's call.
 //
 // The baseline (rules 1 and 3): what the lock says was consented, only once verified. A locked pack is read at its
-// locked commit and bonsai.yaml's folder, and is the baseline only when that content hashes to the lock's sha256 for
+// locked commit and the folder the lock records (formats set 4's path; bonsai.yaml's for a lock written before), and
+// is the baseline only when bonsai.yaml names that same folder and the content there hashes to the lock's sha256 for
 // the pack; the consented hook lines are the ones Bonsai would have written from those packs, only when they hash to
 // the lock's record of the settings file (plan.go). A pack with no verified baseline (a folder changed in bonsai.yaml,
 // a lock edited by hand) is listed as unverified, and its hook lines and plugin count as at a first link.

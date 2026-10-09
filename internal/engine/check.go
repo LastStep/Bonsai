@@ -106,6 +106,9 @@ func Check(dir, home string) (*CheckResult, error) {
 			r.find("packs", workspace.ConfigFile, "person", "bonsai.yaml takes "+ref.ID+" from "+ref.Source+", the lock from "+lp.Source, "run bonsai update")
 		case commitPattern.MatchString(ref.Ref) && ref.Ref != lp.Commit:
 			r.find("packs", workspace.ConfigFile, "person", "bonsai.yaml's ref for "+ref.ID+" is "+short(ref.Ref)+", the lock holds "+short(lp.Commit), "run bonsai update")
+		case lp.PathSet && lp.Path != ref.Path:
+			r.find("packs", workspace.ConfigFile, "person", "bonsai.yaml takes "+ref.ID+" from the folder "+folderName(ref.Path)+
+				" of its repository, the lock from "+folderName(lp.Path), "bonsai update (it previews the pack's new folder, judged as at a first link)")
 		}
 	}
 	for _, lp := range lock.Packs {
@@ -180,6 +183,14 @@ func Check(dir, home string) (*CheckResult, error) {
 	return r, nil
 }
 
+// folderName names a pack's folder in its repository for a person: the folder, or "(the repository's root)".
+func folderName(folder string) string {
+	if folder == "" {
+		return "(the repository's root)"
+	}
+	return folder
+}
+
 func (r *CheckResult) find(code, file, who, msg, next string) {
 	r.Findings = append(r.Findings, Finding{Code: code, File: file, Message: msg, Next: next, Who: who})
 }
@@ -206,7 +217,8 @@ func (r *CheckResult) checkSettings(home string, cfg *workspace.Config, lock *wo
 	}
 	var pls []packLines
 	for _, lp := range lock.Packs {
-		pl := packLines{id: lp.ID, source: lp.Source, folder: folders[lp.ID], commit: lp.Commit}
+		folder := lockedFolder(lp, folders[lp.ID])
+		pl := packLines{id: lp.ID, source: lp.Source, folder: folder, commit: lp.Commit}
 		if !c.has(lp.Source, lp.Commit) {
 			r.Warnings = append(r.Warnings, Finding{Code: "cache", File: SettingsFile,
 				Message: "Bonsai's lines in " + SettingsFile + " were not checked: the pack " + lp.ID + " at " + short(lp.Commit) + " is not in this machine's pack cache",
@@ -214,7 +226,7 @@ func (r *CheckResult) checkSettings(home string, cfg *workspace.Config, lock *wo
 				Who:     "agent"})
 			return
 		}
-		pd, err := c.packAt(workspace.PackRef{ID: lp.ID, Source: lp.Source, Path: folders[lp.ID]}, lp.Commit)
+		pd, err := c.packAt(workspace.PackRef{ID: lp.ID, Source: lp.Source, Path: folder}, lp.Commit)
 		if err != nil {
 			e := err.(*Error)
 			r.Warnings = append(r.Warnings, Finding{Code: "cache", File: SettingsFile, Message: e.What, Next: e.Next, Who: "person"})

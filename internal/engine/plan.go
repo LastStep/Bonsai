@@ -395,11 +395,13 @@ func Build(req Request) (_ *Plan, err error) {
 			newPacks = append(newPacks, pd)
 		}
 	}
-	// Each locked pack at its locked commit: the baseline consent is judged against (consent.go). The lock records
-	// no folder, so the pack is read at bonsai.yaml's folder, and it is the baseline only when its content there
-	// hashes to the lock's own sha256 for the pack (contentHash: every file of the pack's folder at the commit). A
-	// folder changed in bonsai.yaml, a lock edited by hand, or a commit that cannot be read gives none: the pack is
-	// unverified, and its code counts as at a first link (step 5.1.1's verifier, B1 and S1).
+	// Each locked pack at its locked commit: the baseline consent is judged against (consent.go). It is read at the
+	// folder the lock records (formats set 4's path), and it is the baseline only when its content there hashes to the
+	// lock's own sha256 for the pack (contentHash: every file of the pack's folder at the commit). A folder in
+	// bonsai.yaml other than the lock's gives none, whatever the content (a content hash misses file modes and
+	// submodules: step 5.1.1's verifier, B1's rest); so do a lock edited by hand and a commit that cannot be read: the
+	// pack is unverified, and its code counts as at a first link (B1 and S1). A lock written before set 4 records no
+	// folder: its pack is read at bonsai.yaml's folder and judged by the content hash alone.
 	oldPacks := map[string]*PackData{}
 	for _, pd := range newPacks {
 		lp, ok := lockedPack[pd.Ref.ID]
@@ -407,12 +409,17 @@ func Build(req Request) (_ *Plan, err error) {
 		if ok {
 			mv.From = lp.Commit
 			var od *PackData
-			if lp.Commit == pd.Commit && lp.Source == pd.Ref.Source {
+			switch {
+			case lp.PathSet && lp.Path != pd.Ref.Path:
+				// The folder moved: no baseline.
+			case lp.Commit == pd.Commit && lp.Source == pd.Ref.Source:
 				od = pd
-			} else if commit, err := c.fetch(lp.Source, lp.Commit); err == nil {
-				old := pd.Ref
-				old.Source = lp.Source
-				od, _ = c.packAt(old, commit)
+			default:
+				if commit, err := c.fetch(lp.Source, lp.Commit); err == nil {
+					old := pd.Ref
+					old.Source = lp.Source
+					od, _ = c.packAt(old, commit)
+				}
 			}
 			if od != nil && od.SHA256 == lp.SHA256 {
 				oldPacks[pd.Ref.ID] = od
@@ -659,7 +666,7 @@ func Build(req Request) (_ *Plan, err error) {
 		if !ok {
 			continue
 		}
-		pl := packLines{id: lp.ID, source: lp.Source, folder: pd.Ref.Path, commit: lp.Commit}
+		pl := packLines{id: lp.ID, source: lp.Source, folder: lockedFolder(lp, pd.Ref.Path), commit: lp.Commit}
 		if od := oldPacks[lp.ID]; od != nil {
 			pl.known, pl.hooks, pl.deny = true, od.Manifest.Hooks, od.Manifest.Deny
 		}
@@ -802,6 +809,15 @@ func Build(req Request) (_ *Plan, err error) {
 		}
 	}
 	return p, nil
+}
+
+// lockedFolder is the pack's folder as the lock records it, or, for a lock written before formats set 4 (no path),
+// bonsai.yaml's: the folder its lines were last written with.
+func lockedFolder(lp workspace.LockedPack, configured string) string {
+	if lp.PathSet {
+		return lp.Path
+	}
+	return configured
 }
 
 // target is a file a pack gives now.

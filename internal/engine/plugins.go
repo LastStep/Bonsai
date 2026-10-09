@@ -168,13 +168,18 @@ func ParseInstallResult(out []byte) (InstallResult, bool) {
 // PluginID is a pack's plugin as Claude Code names it: <pack id>@<marketplace>.
 func PluginID(pack, market string) string { return pack + "@" + market }
 
-// lockMarket is the marketplace name a lock's packs give, in the lock's order (bonsai.yaml's).
+// lockMarket is the marketplace name a lock's packs give, in the lock's order (bonsai.yaml's): each pack's commit
+// and the folder the lock records (bonsai.yaml's for a lock written before formats set 4).
 func lockMarket(cfg *workspace.Config, lock *workspace.Lock) string {
-	var commits []string
-	for _, lp := range lock.Packs {
-		commits = append(commits, lp.Commit)
+	folders := map[string]string{}
+	for _, r := range cfg.Packs {
+		folders[r.ID] = r.Path
 	}
-	return MarketplaceName(cfg.Name, commits)
+	var pins []string
+	for _, lp := range lock.Packs {
+		pins = append(pins, Pin(lp.Commit, lockedFolder(lp, folders[lp.ID])))
+	}
+	return MarketplaceName(cfg.Name, pins)
 }
 
 // pluginVersion is the version Claude Code computes for a plugin with no version in plugin.json: the commit's first
@@ -213,7 +218,8 @@ type PluginConsent struct {
 
 // InstallPlugins asks Claude Code to install each locked pack's plugin for the checkout at root, at project scope
 // (spec §5: `claude plugin install` is a no-op once installed, and the marketplace name is new whenever a locked
-// commit changed). A plugin that carries code parts is installed only with consent.AllowExec; without it, one Claude
+// commit or a pack's folder changed, so "already installed" below, which matches the plugin's id and commit, compares
+// the folder too). A plugin that carries code parts is installed only with consent.AllowExec; without it, one Claude
 // Code already reports installed at the locked commit for the checkout is left as it is, and any other waits for the
 // person's --allow-exec. It never fails the command: the project's files are written; what this machine still needs
 // is in each result's next step. A nil cli installs nothing.
