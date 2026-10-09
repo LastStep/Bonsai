@@ -1,7 +1,7 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 12:25, when 5.1.0, 5.1.1 and 5.1.2 had landed and 5.1.3 was
-next (`records/runs/R-2026-10-09-5.1.1-consent.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 13:42, when 5.1.0 to 5.1.3 had landed and 5.1.4a was next
+(`records/runs/R-2026-10-09-5.1.3-formats-set4.md`).
 
 ## In short
 
@@ -100,13 +100,15 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 fresh, fixed and audited (`records/runs/R-2026-10-09-plan-5.2.md`); nothing of Rohan's changes but one look at two log
 field names. 5.2 starts when 5.1 ends.
 
-Now, **5.1.3** (formats set 4, built; its fresh Opus verifier running): the new schemas (`workspace`, `pack` with `runs`, `tasks`,
-`sessions`, `memory`, `error`, `check`, `changes`), `status` gaining `error`, the lock's packs gaining their folder
-(`path`, an addition: 5.1.1's verifier's rest of B1, which 5.1.5's engine then uses), the two new trick cases with the
-reader's fix, contract §13's fixtures, the schema-compare test and its CI checkout, and lint's online schema check
-switched off (it failed CI twice on the network). Then 5.1.4a and the rest in the plan's order.
+- **5.1.3** (`254572f`; set 4 is `22dd08a`): formats set 4, eight new schemas (`workspace`, `pack`, `tasks`,
+  `sessions`, `memory`, `error`, `check`, `changes`), `status`'s `error` and the lock's `path` added, 125 trick cases,
+  contract §13's active-task fixtures, the schema-compare test (base set 3's `4936b37`), CI's history for it and
+  lint's online check off. Its fresh verifier passed it.
 
-5.1's hours so far: 328 minutes (5 h 28 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
+Next, **5.1.4a** (every format in Go, the guard's read kept lean), then 5.1.4b and the rest in the plan's order. **5.3's
+section** is being planned beside it.
+
+5.1's hours so far: 397 minutes (6 h 37 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
