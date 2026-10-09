@@ -73,9 +73,11 @@ such pair.
   you want is made before they land (added 9 Oct with 5.2's section).
 - **In 5.3:** the second Windows check (spec §17 step 7, about 10 minutes): a real Windows session in a scratch folder,
   asking Claude for one edit and two deletes and reporting what happened. A Sonnet agent runs every check an agent can
-  first, so your sitting is only what needs a person typing (your 8 Oct word). And one question, an option round: how
-  the hook lines find `bonsai`, where your 8 Oct rule (a fixed path no agent can redirect) meets the rule that no
-  committed file holds a full path (5.3's section, "The question for Rohan", in plain words with a recommendation).
+  first, so your sitting is only what needs a person typing (your 8 Oct word). And two questions, each an option round,
+  written in plain words with a recommendation in 5.3's section: how the hook lines find `bonsai`, where your 8 Oct rule
+  (a fixed path no agent can redirect) meets the rule that no committed file holds a full path; and who may consent to
+  code (`--allow-exec`) and take Bonsai's guard out of a project (`unlink`), an agent inside a task you approved or only
+  a person.
 - **At 5.4:** install the pre-release `bonsai` in WSL (spec §17 step 8, about 5 minutes, your password). The
   orchestrator gives you its fingerprint first. Your step 3 (the old binaries) is already done (8 Oct). You install
   again only if a later part changes the guard, the stop gate or the ladder.
@@ -99,8 +101,8 @@ such pair.
 - **The studio links** (spec step 7) after 5.5: its own plan, in its own repo. Mimas links last (step 8). This plan
   changes nothing in either repo, and waits on neither.
 
-**Choices that are yours.** One is open: how the hook lines find `bonsai` (5.3's section, "The question for Rohan"). One
-was decided on 9 Oct:
+**Choices that are yours.** Two are open, both in 5.3's section: how the hook lines find `bonsai`, and who may consent
+to code and take the guard out. One was decided on 9 Oct:
 - **How the later parts' plans reach you: (B).** You were offered (A) every part's section, (B) only when it changes
   what is yours, and (C) none; you first said (A), then chose (B) once the scope question above was settled. So: 5.1
   is planned in full here. Before each later part starts, a planner writes its section into this file, a fresh Opus
@@ -1391,17 +1393,22 @@ A fresh Opus verifier, at the end of 5.2, runs each check itself on the final co
 
 ### Step 5.3: the guards (18-29 h, re-ask at 38)
 
-**Rohan's (B).** This section comes to Rohan, because it holds a question only he can answer: how the hook lines find
-`bonsai`, where his 8 Oct rule (a fixed place no agent can redirect) meets two older ones (hooks call `bonsai` by name;
-no committed file holds a full path). One design meets all three, a machine-wide Claude Code settings file, and he
-dropped that file on 7 Oct; so the choice is asked as an option round, 5.3's first (stop line 3 allows two), written in
-plain words just below with a recommendation. Under (a), (c) or (d) nothing else of his changes: the hours (18-29) and
-the re-ask line (38) are the spec's; the order of the parts stands; his steps are the ones already on his lists (Claude
-Code's Windows login back first, `STATE.md`, "Waiting on Rohan"; then the second Windows check, about 10 minutes, after
-a Sonnet agent's run on both sides); no repo is new and nothing goes public; no format changes (the guard's new rule
-names are values of the log's free `rule` string, and `check`'s new findings are additions). Under (b) his steps gain an
-administrator's step on each side, and 5.3 about 1-2 hours (5.3.6 note 2). Only the piece that writes the lines' form
-(5.3.6) waits for his answer; the rest of 5.3 does not.
+**Rohan's (B).** This section comes to Rohan, because it holds two questions only he can answer, each an option round
+(5.3's two; stop line 3 allows two, so 5.3 has no room for a third). The first: how the hook lines find `bonsai`, where
+his 8 Oct rule (a fixed place no agent can redirect) meets two older ones (hooks call `bonsai` by name; no committed
+file holds a full path); one design meets all three, a machine-wide Claude Code settings file, which he dropped on 7
+Oct. The second: who may consent to code (`--allow-exec`) and take Bonsai's guard out of a project (`unlink`): an agent
+inside a task he approved, as spec §18 has it, or only a person. Both are written in plain words just below, each with a
+recommendation, and go to him with this section, so the answers are in before 5.3 starts. What else changes depends on
+them: under the first question's (b), his steps gain an administrator's step on each side during 5.3, and 5.3 becomes
+19-30 hours (re-ask 39); under the second question's (i), or (ii) wherever the studio does not manage a project, his
+steps gain a typed command whenever an update of one of his linked repos runs code or takes the guard out. Otherwise
+nothing of his changes: the hours (18-29) and the re-ask line (38) are the spec's; the order of the parts stands; his
+other steps are the ones already on his lists (Claude Code's Windows login back first, `STATE.md`, "Waiting on Rohan";
+then the second Windows check, about 10 minutes, after a Sonnet agent's run on both sides); no repo is new and nothing
+goes public; no format changes (the guard's new rule names are values of the log's free `rule` string, and `check`'s new
+findings are additions). Only 5.3.6, which builds both answers, waits for them; if the second is late, 5.3.2 builds rule
+7 as (i), the strictest, and 5.3.6 relaxes it to his answer.
 
 #### The question for Rohan: how the hook lines find `bonsai`
 
@@ -1444,12 +1451,17 @@ might close these routes too (a machine-wide file's values beat a project's), wh
   for all users, since in a per-user install the WSL place, as Git Bash reads it, is a folder you can write (`check`
   tests this); and test builds name their own scratch place, in scratch projects only. About 1-2 hours, inside 5.3's.
 - **(b) A machine-wide settings file holding the full path; the project's line stays by name.** It meets all three
-  rules. The file sits outside every repo on each machine and only an administrator writes it, so it is your step on
-  each side, at each install. Claude Code runs every line that matches, so each guarded call starts a second `bonsai`
-  beside the project's (side by side, so no slower, but one more process each time), and the machine-wide line runs in
-  every session on that machine, linked or not (Bonsai answers at once where no project is linked). It reverses your no
-  of 7 Oct. Its values might also pin the settings routes above (unmeasured). About 1-2 hours more than 5.3's figure for
-  this piece.
+  rules, and it is the only option whose guard no other settings file can switch off: Claude Code lets no user,
+  project or local settings file turn a machine-wide line off, and only such a line stands against a mod's approval
+  (spec §7). The file sits outside every repo on each machine and only an administrator writes it. Claude Code runs
+  every line that matches, so each guarded call starts a second `bonsai` beside the project's (side by side, so no
+  slower, but one more process each time). Its biggest cost: the machine-wide line runs in every Claude Code session on
+  that machine, so a missing or broken `bonsai` (a bad pre-release, say) refuses every edit and command in all your
+  work, linked or not, until you edit the file as administrator. It reverses your no of 7 Oct. Its values might also pin
+  the settings routes above (unmeasured). It moves your installs forward: during 5.3, before 5.3.6 measures, you put a
+  build at the two places and write the file on each side as administrator (about 10 minutes a side), and from then on
+  it runs in all your sessions. About 1 hour more: 5.3 becomes 19-30 hours, and by the plan's rule (1.3 times the high
+  figure) its re-ask line 39.
 - **(c) By name, and Bonsai refuses to guard from anywhere but its installed place.** The lines stay as they are. A real
   Bonsai found elsewhere (a `go install` copy, an old build) refuses every call and says where it runs from. It keeps
   the two older rules. Against yours it stops a stray copy of Bonsai, but not a program that is not Bonsai and answers
@@ -1465,11 +1477,44 @@ with `#!`. If it does, a two-line file named `bonsai`, which a shell command can
 answers for Bonsai under (c) and (d), and that is the plainest reason for (a).
 
 **Recommendation: (a).** It is what you asked for on 8 Oct, and it shuts the PATH to every program, not only to copies
-of Bonsai. Against (b): (b) keeps every rule's letter and may close more routes, but it brings back the machine-wide
-file you dropped as overengineering, adds an administrator's step on each machine, and runs Bonsai beside every tool
-call of every session on the machine. The two older rules exist to keep user names and machine-specific paths out of a
-repo, and the two installed places are neither. Whichever you choose, a project linked earlier takes the new lines with
-one `bonsai update --allow-exec --yes`.
+of Bonsai. Against (b): (b) keeps every rule's letter, and only its guard cannot be switched off from a project, but it
+brings back the machine-wide file you dropped as overengineering, adds an administrator's step on each machine, and a
+broken `bonsai` would stop all your Claude Code work, linked or not. The two older rules exist to keep user names and
+machine-specific paths out of a repo, and the two installed places are neither. Whichever you choose, a project linked
+before 5.3 takes 5.3's lines (the stop gate's new line, and `Monitor` on the guard's, under every option; under (a),
+every line's new form too) with one `bonsai update --allow-exec --yes`. Who may type that command is the second
+question.
+
+#### The second question for Rohan: who may consent to code, and take the guard out
+
+**What these commands do.** `bonsai update --allow-exec --yes` writes code into a project: a pack's hook lines, the
+files they run, a pack plugin that carries code (5.1.1), and Bonsai's own changed lines. The flag is the consent; on 9
+Oct you decided that such a plugin is installed on a machine only with it there. `bonsai unlink --yes` takes Bonsai out
+of a project, its guard's and stop gate's lines with it.
+
+**Who may run them today.** The spec lets an agent run `init`, `update` and `unlink` inside "a task he approved that
+names those files" (spec §18), and asks that every command be "completely and easily useable by any ai agent" (spec §3).
+In a project the studio manages (from the studio's link, step 7), "a task he approved" can be proved: only your tap
+grants the files those commands write. Everywhere else, Bonsai's own repo among them until the studio manages it, an
+agent's own task can name those files, so in practice any agent may: it can consent to code by itself, and with two
+edits and one command take the guard out.
+
+- **(i) Only a person types them.** An agent never passes `--allow-exec`, never runs `unlink`, and never runs an update
+  that removes or changes Bonsai's own guard or stop line, in any linked project. Cost: a recurring step of yours, a
+  command typed in a terminal not started from Claude Code, whenever an update of one of your linked repos runs code or
+  takes the guard out: Bonsai's own from 5.4, the studio's from step 7, Mimas from step 8, at each Bonsai upgrade that
+  changes a line and each pack change that adds code. Agents' scratch work is untouched: their test builds are confined
+  to scratch folders.
+- **(ii) Your grant in a managed project; only a person elsewhere (recommended).** An agent may, inside a task whose
+  grant of `bonsai.yaml` and the lock came from your tap (a project the studio manages); everywhere else, as (i). Cost:
+  (i)'s step wherever the studio does not manage the project (Bonsai's own repo until it does); in a managed project
+  your approval tap is the consent.
+- **(iii) As the spec reads today.** An agent may, inside its own task. Cost: nothing more for you; but the consent to
+  code and the guard's lines become tripwires only, which an agent in an unmanaged project can pass by itself.
+
+**Recommendation: (ii).** It keeps the spec's promise wherever your approval can be proved, and asks you only where it
+cannot; (i) asks you even where your tap has already said yes; (iii) lets an agent consent to code for you, which your 9
+Oct answer was about. Under (i) or (ii), Bonsai holds the rule in the command itself, not only in the guard, so a script or a variable cannot get round it.
 
 The spec's row (§14): "The adapter (2-3); the path guard with contract §5.5, §10.1 and §13, and its refusals for
 `.bonsai/local/` and the tables (7-10); the delete check (3-5); the stop gate (2-3); generated deny rules and
