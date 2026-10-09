@@ -3449,13 +3449,13 @@ commands (its ladder script becomes `bonsai ladder`, its task variable becomes B
 task's grant label); the studio's services (Discord, email, the bridge, the Desk) leave the protocols, since
 notifications and screens are the studio's; the "golden rule 8" the protocols cite is written out in full; an example
 task id in a template becomes a made-up one; the ledger lines stay, worded "where a project keeps a ledger". Your name
-stays in the `workflow` texts, as in Bonsai's own public files; `base`, Bonsai's pack for any project, names no one
-and says "a person". The game wording (players, playtests, "Rohan plays it") stays: it is your workflow. So do your
-weekly rituals and the daily brief's hour, in the producer's role and the reporting protocol: once public they describe
-your week, so say when you read the repo if any should go (the list you get marks them). `base`'s STATE template
-leaves them out: they are your studio's way, not every project's. Left out: the two Unity protocols (they name
-Mimas's folders; they go into a game pack later) and `game.yaml`'s template. The walls in `workflow` name three files in the studio's secret folder (`~/.trinetra/token`,
-`deploy_ed25519` and `salt`): names only, which Bonsai's public spec already holds.
+stays in the `workflow` texts, as in Bonsai's own public files; `base`, Bonsai's pack for any project, names no one and
+says "a person". The game wording (players, playtests, "Rohan plays it") stays: it is your workflow. So do your weekly
+rituals and the daily brief's hour, in the producer's role and the reporting protocol: once public they describe your
+week, so say when you read the repo if any should go (the list you get marks them). `base`'s STATE template leaves them
+out: they are your studio's way, not every project's. Left out: the two Unity protocols (they name Mimas's folders; they
+go into a game pack later) and `game.yaml`'s template. The walls in `workflow` name three files in the studio's secret
+folder (`~/.trinetra/token`, `deploy_ed25519` and `salt`): names only, which Bonsai's public spec already holds.
 
 **How you see it before it is public.** A fresh Opus agent reads every file, and every commit from the first, for
 anything private first. Then the orchestrator creates the repo **private**, pushes it, and sends you its link with a
@@ -3522,8 +3522,9 @@ GitHub release) come with your word for 1.0 at 5.7; agents never tag.
   Claude file (`~/.claude.json`, which can hold tokens), and cannot change your own Claude settings
   (`~/.claude/settings.json`), `~/.claude.json`, your own `~/.claude/CLAUDE.md`, your shell's start files (`~/.bashrc`
   and the like), git's settings (`~/.gitconfig`) or your SSH folder: change those yourself (`/config`, `/permissions`,
-  `/memory`, or by hand). Programs such as `gh`, `git` and `ssh` still read their own files. Claude Code installs the `base` plugin for Bonsai's repo in its own plugin
-  folder (instructions only). Bonsai's `STATE.md` moves to `.bonsai/STATE.md`, where every project keeps it.
+  `/memory`, or by hand). Programs such as `gh`, `git` and `ssh` still read their own files. Claude Code installs the
+  `base` plugin for Bonsai's repo in its own plugin folder (instructions only). Bonsai's `STATE.md` moves to
+  `.bonsai/STATE.md`, where every project keeps it.
 - **The studio and Mimas:** nothing changes until each links (steps 7 and 8, their own plans). Then their roles come
   from the `workflow` pack, and their own copies go.
 - `workflow` is not linked into Bonsai's own repo: Bonsai's team works by `CLAUDE.md`'s briefs, and your roles are for
@@ -3641,13 +3642,13 @@ owns:
    5.5.0 lands only after P0 has passed STATE's template.
 2. **5.5.2 and 5.5.4 after both have landed, side by side.** Before either starts, with no other task `running`, the
    orchestrator changes `CLAUDE.md`'s Safety line under `T-5590` (granting `CLAUDE.md`): Bonsai's work now also writes
-   the workflow pack's repository, `LastStep/bonsai-workflow` (its local copy in the scratch folder, then GitHub from
-   P on), and lands it as a records commit before 5.5.4's builder starts. `base` needs 5.5.0's three generated skills beside its
-   own and 5.5.1's CI job for its proof; `workflow` is made from the template (5.5.1) and its session-start file needs
-   `<protocols>/` (5.5.0) in the Bonsai commit its CI pins. They live in different repositories, and neither's proof
-   reads the other: `workflow`'s CI builds Bonsai at a commit that holds no `base`, and its scratch links prove it alone
-   (the link with both packs is 5.5.5's and the end verifier's). 5.5.2 lands only after P0 has passed its two
-   templates.
+   the workflow pack's repository, `LastStep/bonsai-workflow` (its local copy in the scratch folder, then GitHub from P
+   on), and lands it as a records commit before 5.5.4's builder starts. `base` needs 5.5.0's three generated skills
+   beside its own and 5.5.1's CI job for its proof; `workflow` is made from the template (5.5.1) and its session-start
+   file needs `<protocols>/` (5.5.0) in the Bonsai commit its CI pins. They live in different repositories, and
+   neither's proof reads the other: `workflow`'s CI builds Bonsai at a commit that holds no `base`, and its scratch
+   links prove it alone (the link with both packs is 5.5.5's and the end verifier's). 5.5.2 lands only after P0 has
+   passed its two templates.
 3. **5.5.3 after 5.5.2 has landed**, beside the rest of 5.5.4: it adds a skill to `base` and edits base's `block.md` and
    README, which 5.5.2 makes.
 4. **P, the privacy check, once 5.5.4's builder has committed;** then the orchestrator creates the repository private
@@ -3809,17 +3810,18 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    every row names a file there). A list with a home elsewhere (the walls, lanes, labels, document kinds, the roles'
    preloads) is never copied into a README: it says where the list lives.
 3. **`ci/check.sh`, the one home of a pack's checks**, so Bonsai's job runs exactly what each pack's CI runs (spec §5:
-   "so the template never drifts from the engine"). Written for `sh` and always run as `sh ci/check.sh ...` (it runs
-   on Ubuntu and in Git Bash on Windows; it is CI, not a hook line), so no step and no test needs its executable mode,
+   "so the template never drifts from the engine"). Written for `sh` and always run as `sh ci/check.sh ...` (it runs on
+   Ubuntu and in Git Bash on Windows; it is CI, not a hook line), so no step and no test needs its executable mode,
    which a Windows checkout does not keep. Its header documents every subcommand and argument: the `bonsai` to use, the
-   pack folder, the source and commit to link, and for `release` the tag name. Steps: `bonsai check --pack <folder> --json` with no finding; a scratch project in a temporary folder
-   (`git init`; `bonsai init --name ci --source <source> --path <folder> --ref <commit> --yes --json` with `claude` off
-   the PATH, so the plugin step reports `skipped`); `bonsai check --json` there with no finding; then, when asked,
-   `claude plugin validate --json <folder>`, failing on every warning and error but the missing `version`, matched on
-   the field names the version in use prints (read and recorded by the builder). **The release check is its own
-   subcommand**, `sh ci/check.sh release <tag> <folder>`: it takes the tag name as an argument, reads no git tag, and
-   fails unless the name is `v` and `pack.yaml`'s `version`. So it is tried anywhere with a made-up name, and no agent
-   makes a tag, a GitHub repository or a release to test it.
+   pack folder, the source and commit to link, and for `release` the tag name. Steps: `bonsai check --pack <folder>
+   --json` with no finding; a scratch project in a temporary folder (`git init`; `bonsai init --name ci --source
+   <source> --path <folder> --ref <commit> --yes --json` with `claude` off the PATH, so the plugin step reports
+   `skipped`); `bonsai check --json` there with no finding; then, when asked, `claude plugin validate --json <folder>`,
+   failing on every warning and error but the missing `version`, matched on the field names the version in use prints
+   (read and recorded by the builder). **The release check is its own subcommand**, `sh ci/check.sh release <tag>
+   <folder>`: it takes the tag name as an argument, reads no git tag, and fails unless the name is `v` and `pack.yaml`'s
+   `version`. So it is tried anywhere with a made-up name, and no agent makes a tag, a GitHub repository or a release to
+   test it.
 4. **`pack.yml`**, on every push and pull request, and on `v*` tags: a `check` job on `ubuntu-latest` and
    `windows-latest` (Bonsai cloned at a pinned 40-character commit, `BONSAI_COMMIT`, built with `CGO_ENABLED=0 go build`
    and Go from that commit's `go.mod`; then the script); a `validate` job on Ubuntu (Node and the pinned Claude Code,
@@ -3950,8 +3952,8 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
      --json` (a preview; nothing written; exit 4), each settings line read, then `--yes`; a pack named by `--source`,
      `--path` and `--ref`, or in `bonsai.yaml` before `init`. An update: a pack's `ref` changed in `bonsai.yaml` by the
      pin rule (next item), then `bonsai update --json`, its preview read line by line, then `--yes`. Exit 5 (a
-     conflict): keep (`--keep P`) when the project's edit should win, adopt (`--adopt P`) when the pack's should, and ask
-     when unsure. Exit 4 with "Runs code": consent to code (`--allow-exec`) is never the agent's own choice; where a
+     conflict): keep (`--keep P`) when the project's edit should win, adopt (`--adopt P`) when the pack's should, and
+     ask when unsure. Exit 4 with "Runs code": consent to code (`--allow-exec`) is never the agent's own choice; where a
      studio manages the project the command accepts it under the person's grant (the task's grant of `bonsai.yaml` and
      the lock came from the person); elsewhere the agent stops and hands the person the exact line (5.3's (ii)).
      `waiting` (trust): a person opens a session in the folder and trusts it, then `bonsai update`. Then `bonsai check
@@ -3960,18 +3962,18 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    - **Edit `bonsai.yaml`:** it is person-only; an agent edits it only under a running task whose `bonsai.allows` grants
      it, and only for a stricter change (a rung or a floor entry added, a floor raised to a green, clean climb's count,
      a protected path added) or a pin move: a pack's `ref` changed (same `source` and `path`) when the update's preview
-     removes no wall or other deny rule, no label definition and no protected path (a changed one counts as removed)
-     and lists nothing under "Runs code". **Anything else loosens a check and waits for a person's word:** a floor
-     lowered; a rung's command, `required`, tests, ratchet or capture changed or removed; a protected or person-only path
-     taken out; a test marked to skip in CI; a pin move that fails the preview's test; a pack's `source` or `path`
-     changed; a pack taken out of `packs`; a pack added to a project already linked. Why: an agent loosening the checks
-     it is held to would be judging its own work. `bonsai check --json` after every edit. (This section's "The pin
-     rule" is the rule's text; 5.4's switch the rest.)
-   - **Status moves:** `bonsai status --json` gives `status_writes`. Under `agents`, an agent edits a task's status
-     line itself, by the moves contract §10.2 gives agents. Under `command` (a project a studio manages), the guard
-     refuses an agent's edit of a status line, a lane line, a task file outside the main checkout, and a person-only path
-     put into `bonsai.allows`; the agent runs the command `status --json` names in `status_command` instead, as the
-     refusal says (contract §10.1).
+     removes no wall or other deny rule, no label definition and no protected path (a changed one counts as removed) and
+     lists nothing under "Runs code". **Anything else loosens a check and waits for a person's word:** a floor lowered;
+     a rung's command, `required`, tests, ratchet or capture changed or removed; a protected or person-only path taken
+     out; a test marked to skip in CI; a pin move that fails the preview's test; a pack's `source` or `path` changed; a
+     pack taken out of `packs`; a pack added to a project already linked. Why: an agent loosening the checks it is held
+     to would be judging its own work. `bonsai check --json` after every edit. (This section's "The pin rule" is the
+     rule's text; 5.4's switch the rest.)
+   - **Status moves:** `bonsai status --json` gives `status_writes`. Under `agents`, an agent edits a task's status line
+     itself, by the moves contract §10.2 gives agents. Under `command` (a project a studio manages), the guard refuses
+     an agent's edit of a status line, a lane line, a task file outside the main checkout, and a person-only path put
+     into `bonsai.allows`; the agent runs the command `status --json` names in `status_command` instead, as the refusal
+     says (contract §10.1).
    - **Prove a task:** `bonsai ladder --task <id> --json`: read the climb's `next`, run each failing test alone with its
      `run` line, fix the code (never the test, the ladder or `bonsai.yaml` to get green), climb again; a green local
      result at HEAD is the proof the stop gate reads; a `--ci` result proves nothing. The proof that must be trusted is
@@ -3988,8 +3990,8 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
      lines (each lets new code run on the person's machine or takes the guard out; where a studio manages the project,
      the person's grant through it; elsewhere the person types it), every loosening of `bonsai.yaml` (above),
      person-only files under `command` mode, Bless where a studio manages the project (elsewhere an agent raises a floor
-     itself, by the rule above), and installing the `bonsai` program (root or admin; the agent sends the person the lines
-     and the fingerprint check, never installs).
+     itself, by the rule above), and installing the `bonsai` program (root or admin; the agent sends the person the
+     lines and the fingerprint check, never installs).
    - **Records:** `bonsai logs --json`; `.bonsai/STATE.md` (add one from `base:state` if missing); the tables are
      rebuilt, never edited; how long things are kept: `base:generated-files`; templates: `base:task`, `base:run`,
      `base:memory`, `base:workspace`, `base:state`, `base:ci`.
@@ -4031,19 +4033,19 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    `applies_to` names more (the producer reads `verification-ladder`, `reward-hacking-guards` and `reporting`; the
    playtest analyst `reporting`), the role's body names those skills to read when needed, so today's behaviour holds
    without loading more into every start.
-3. **The rewrite rules**, the same for `base`'s three templates (which also name no person). What the grep found in the 20 files that move (the 17
-   above and the three for `base`): studio folder paths on 20 lines in 8 files and `<studio>`, `<trinetra>` on 7 more;
-   the studio's task variable once; its project file (`game.yaml`) on 4 lines; the ledger on 10 lines; Discord and email
-   on 4; "golden rule 8" on 3; the bridge once; the studio's name on 4 lines; Mimas on 12 lines, mostly the `<mimas>`
-   placeholder; Unity on 2; one example task id; `cost_usd` and `allows_assets` twice each; Rohan's name on 54 lines; no
-   home folder, machine or tailnet name, email address, token or address. The section's review found more, each
-   checked at `7017d63`: the paths `docs/design/index.html#anchor` (the one-pager template's `design_anchor`),
-   `roadmap/<M2>.md` (STATE's template), `artifacts/...png` (the run report's) and the decision protocol's "Mimas:
-   `docs/decisions.md`"; the frontmatter values `projects: [mimas, trinetra]` (the brief's), `scope: <studio | mimas>`
-   (the decision record's) and `project: <mimas | trinetra | studio>` (the options write-up's); the lines `node
-   <trinetra>/tools/ladder/ladder.mjs --project mimas` (the ladder protocol), `systemctl --user list-units` for the
-   bridge's unit (session-start's section 7) and the producer's "Runs on a schedule"; and Rohan's weekly rituals and
-   the 08:00 brief (the producer's role, the reporting protocol, STATE's template). So:
+3. **The rewrite rules**, the same for `base`'s three templates (which also name no person). What the grep found in the
+   20 files that move (the 17 above and the three for `base`): studio folder paths on 20 lines in 8 files and
+   `<studio>`, `<trinetra>` on 7 more; the studio's task variable once; its project file (`game.yaml`) on 4 lines; the
+   ledger on 10 lines; Discord and email on 4; "golden rule 8" on 3; the bridge once; the studio's name on 4 lines;
+   Mimas on 12 lines, mostly the `<mimas>` placeholder; Unity on 2; one example task id; `cost_usd` and `allows_assets`
+   twice each; Rohan's name on 54 lines; no home folder, machine or tailnet name, email address, token or address. The
+   section's review found more, each checked at `7017d63`: the paths `docs/design/index.html#anchor` (the one-pager
+   template's `design_anchor`), `roadmap/<M2>.md` (STATE's template), `artifacts/...png` (the run report's) and the
+   decision protocol's "Mimas: `docs/decisions.md`"; the frontmatter values `projects: [mimas, trinetra]` (the brief's),
+   `scope: <studio | mimas>` (the decision record's) and `project: <mimas | trinetra | studio>` (the options
+   write-up's); the lines `node <trinetra>/tools/ladder/ladder.mjs --project mimas` (the ladder protocol), `systemctl
+   --user list-units` for the bridge's unit (session-start's section 7) and the producer's "Runs on a schedule"; and
+   Rohan's weekly rituals and the 08:00 brief (the producer's role, the reporting protocol, STATE's template). So:
    - A studio path becomes the document kind it means ("the plan, in the folder `bonsai status --json` names for
      `plan`"); `studio/STATE.md` becomes `.bonsai/STATE.md`; ladder results `.bonsai/local/ladder/<task>.json`
      (contract §11), `ci.json` stamped `mode: ci` for a CI run. A project's own places become what they hold, with no
@@ -4202,8 +4204,8 @@ both sides"; this plan's 5.3.5 note 3 on how a rule's path anchors).
 2. **Decoys first:** in a scratch project linked to both packs, a twin of every rule form (`~/` and a folder, `~/` and
    an exact file, `//mnt/c/Users/*/`, `//**/`, a path with a space, and on Windows the WSL home's network-path forms of
    note 5.5.2, 2, over decoys in WSL's scratch folder reached by that path) over decoy files in the scratch folder,
-   loaded with `--settings` for the try only: each tried with the Read tool and `cat`, `head` and `tail` (Read rules) or Edit,
-   Write and a shell redirect (Edit rules); each refused, the rule named.
+   loaded with `--settings` for the try only: each tried with the Read tool and `cat`, `head` and `tail` (Read rules) or
+   Edit, Write and a shell redirect (Edit rules); each refused, the rule named.
 3. **The real rules, with no secret shown:** a rule over a folder is tried on a name that cannot exist there
    (`~/.ssh/bonsai-wall-probe`): a refusal before any read proves it, where an allowed call would only say the file is
    missing. An exact-file rule is tried as written where the file does not exist on that side; where it exists it is
@@ -4268,8 +4270,8 @@ fixes nothing.
    Rohan's word.
 5. **The fetch from GitHub:** once `workflow` is public, a Sonnet agent links a scratch project on each side to `base`
    and `workflow` by their GitHub sources at their commits, with no login in that run's git (no credential helper), and
-   `check` finds nothing. The `bonsai` it uses: the stamped build of the final commit on WSL, and a stamped Windows build
-   of the same commit on Windows, each on its scratch home; never the installed 5.4 pre-release, which refuses
+   `check` finds nothing. The `bonsai` it uses: the stamped build of the final commit on WSL, and a stamped Windows
+   build of the same commit on Windows, each on its scratch home; never the installed 5.4 pre-release, which refuses
    `workflow`'s `pack.yaml` ("What exists").
 
 #### Proof for each piece
@@ -4296,10 +4298,10 @@ both sides where a check names them, and passes or fails 5.5:
    changed template in a temporary copy fails the test; the set's manifest matches; the schema compare passes;
    `docs/reference/generated-files.md` is gone and nothing names it; `init`'s comment on `generated:` names the skill.
 2. **The template:** `sh ci/check.sh` green on it on both sides; the release subcommand, run locally with made-up tag
-   names, fails on one unlike the version and passes on the matching one (no tag, repository or release made); a copy with a `version` in `plugin.json`, an uncommented key, or a deny rule with
-   no `why` fails; `pack.yml`'s actions pinned by commit, `contents: read` but in the release job, no secret; Bonsai's
-   `packs` job and `windows` step green on the final commit; validate's login need recorded, and the fallback in place
-   if it needs one.
+   names, fails on one unlike the version and passes on the matching one (no tag, repository or release made); a copy
+   with a `version` in `plugin.json`, an uncommented key, or a deny rule with no `why` fails; `pack.yml`'s actions
+   pinned by commit, `contents: read` but in the release job, no secret; Bonsai's `packs` job and `windows` step green
+   on the final commit; validate's login need recorded, and the fallback in place if it needs one.
 3. **`base`:** `check --pack` and validate (only the missing `version`); `packs/packs_test.go` passes, and fails on a
    temporary copy given a hook, a script in a skill, a changed `bonsai.allows` definition or the engine's
    `.bonsai/local/` rule; a scratch link with `--yes` alone lists nothing under "Runs code", writes every wall with its
