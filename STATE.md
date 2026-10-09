@@ -1,9 +1,3 @@
-- **5.1.4b** (`c2864c0`): every command's `--json` in set 4's shapes, 28 error words in one table each with who takes
-  the next step, one flag-and-exit table per command word.
-
-Next, **5.1.5** (what the engine reads and writes, to 1.0), then the rest in the plan's order. **5.4's section** is being
-planned beside it.
-
 # Bonsai: where it stands
 
 Rewritten, never appended. Last rewritten 9 Oct 2026 at 15:18, when 5.1.0 to 5.1.4b had landed and 5.1.5 was next
@@ -94,36 +88,39 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: step 5.1.3, formats set 4
+## The one thing to do next: step 5.1.5, what the engine reads and writes
 
-`design/plan-5.md`, "Step 5.1". Landed on 9 Oct, each with CI green:
+`design/plan-5.md`, "Step 5.1". Landed on 9 Oct, each with CI green (run reports `records/runs/R-2026-10-09-5.1.*`):
 - **5.1.0** (`6a3a419`): `TestEachFaultBlocks` no longer races a 200 ms budget (test file only).
-- **5.1.2** (`c4816eb`): the format-0 reader, a hand port of `yaml.mjs` at `4a05eac`; its fresh verifier passed it
-  (about 2.6 million inputs and today's studio and Mimas files, 0 differences but Node's own stack limit past about
-  1,700 levels of nesting, which the port reads: "no new refusals").
 - **5.1.1** (`6c6fc33`): consent to code. `--allow-exec` real for `init` and `update`; every first link to the test pack
   needs it; test-pack commits E and F. Its fresh verifier failed the first round (a folder change, a pack named
   `bonsai`, pack files under `.claude/`) and passed the fix round. Rohan's answer (11:50): a pack plugin that runs code
   is installed on a machine only with `--allow-exec` there, and Bonsai installs or removes no plugin but the project's
   own packs'.
-
-**5.3's section is planned** too (on `main` at `b79d00f`; `records/runs/R-2026-10-09-plan-5.3.md`), with Rohan's two
-answers. **5.2's section is planned** (`design/plan-5.md`, "Step 5.2", on `main` at `da427de`): written beside 5.1.3, reviewed
-fresh, fixed and audited (`records/runs/R-2026-10-09-plan-5.2.md`); nothing of Rohan's changes but one look at two log
-field names. 5.2 starts when 5.1 ends.
-
+- **5.1.2** (`c4816eb`): the format-0 reader, a hand port of `yaml.mjs` at `4a05eac`; its fresh verifier passed it
+  (about 2.6 million inputs and today's studio and Mimas files, 0 differences but Node's own stack limit past about
+  1,700 levels of nesting, which the port reads: "no new refusals").
 - **5.1.3** (`254572f`; set 4 is `22dd08a`): formats set 4, eight new schemas (`workspace`, `pack`, `tasks`,
   `sessions`, `memory`, `error`, `check`, `changes`), `status`'s `error` and the lock's `path` added, 125 trick cases,
   contract §13's active-task fixtures, the schema-compare test (base set 3's `4936b37`), CI's history for it and
   lint's online check off. Its fresh verifier passed it.
+- **5.1.4a** (`37125a4`): a Go type for each of the eighteen formats (`internal/format`, one registry), the engine and
+  `check` reading `bonsai.yaml` and `pack.yaml` in full while the guard's read stays lean (its code unchanged), `check
+  --schema`.
+- **5.1.4b** (`c2864c0`): every command's `--json` in set 4's shapes, 28 error words in one table each with who takes
+  the next step, one flag-and-exit table per command word. Rohan's look at the error words and the two output shapes
+  sent.
 
-- **5.1.4a** (`37125a4`): a Go type for each of the eighteen formats (`internal/format`, one registry), the engine
-  and `check` reading `bonsai.yaml` and `pack.yaml` in full while the guard's read stays lean (its code unchanged),
-  `check --schema`.
+Next, **5.1.5** (the lock's `declares`, `format0` and `path`, the moved tag, document kinds, labels in force, the active
+task, this machine's settings, the instruction block, `bonsai.yaml` written with every field), then 5.1.6 to 5.1.10 in
+the plan's order.
 
-Next, **5.1.4b** (every command's `--json` to set 4's shapes, the `error` object with its words, help from one table;
-then Rohan's look at the error words and the two output shapes), then the rest in the plan's order. **5.3's
-section** is being planned beside it.
+Later parts' sections, planned beside 5.1 on Rohan's 12:27 word ("if you can orchestrate work in parallel do that
+whenever possible"), each reviewed fresh, fixed and audited:
+- **5.2** (on `main` at `da427de`; `records/runs/R-2026-10-09-plan-5.2.md`): nothing of Rohan's changes but one look at
+  two log field names. 5.2 starts when 5.1 ends.
+- **5.3** (on `main` at `b79d00f`; `records/runs/R-2026-10-09-plan-5.3.md`), with Rohan's two answers.
+- **5.4** being planned now (`records/runs/R-2026-10-09-plan-5.4.md`); it comes to Rohan (his pre-release install).
 
 5.1's hours so far: 488 minutes (8 h 8 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
