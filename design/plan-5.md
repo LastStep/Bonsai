@@ -73,9 +73,9 @@ such pair.
   you want is made before they land (added 9 Oct with 5.2's section).
 - **In 5.3:** the second Windows check (spec §17 step 7, about 10 minutes): a real Windows session in a scratch folder,
   asking Claude for one edit and two deletes and reporting what happened. A Sonnet agent runs every check an agent can
-  first, so your sitting is only what needs a person typing (your 8 Oct word). Possibly one question: how the hook
-  lines find `bonsai`, where your 8 Oct rule (a fixed path no agent can redirect) meets the rule that no committed file
-  holds a full path.
+  first, so your sitting is only what needs a person typing (your 8 Oct word). And one question, an option round: how
+  the hook lines find `bonsai`, where your 8 Oct rule (a fixed path no agent can redirect) meets the rule that no
+  committed file holds a full path (5.3's section, "The question for Rohan", in plain words with a recommendation).
 - **At 5.4:** install the pre-release `bonsai` in WSL (spec §17 step 8, about 5 minutes, your password). The
   orchestrator gives you its fingerprint first. Your step 3 (the old binaries) is already done (8 Oct). You install
   again only if a later part changes the guard, the stop gate or the ladder.
@@ -99,7 +99,8 @@ such pair.
 - **The studio links** (spec step 7) after 5.5: its own plan, in its own repo. Mimas links last (step 8). This plan
   changes nothing in either repo, and waits on neither.
 
-**Choices that are yours.** None left in this plan beyond approving it. One was decided on 9 Oct:
+**Choices that are yours.** One is open: how the hook lines find `bonsai` (5.3's section, "The question for Rohan"). One
+was decided on 9 Oct:
 - **How the later parts' plans reach you: (B).** You were offered (A) every part's section, (B) only when it changes
   what is yours, and (C) none; you first said (A), then chose (B) once the scope question above was settled. So: 5.1
   is planned in full here. Before each later part starts, a planner writes its section into this file, a fresh Opus
@@ -1392,58 +1393,83 @@ A fresh Opus verifier, at the end of 5.2, runs each check itself on the final co
 
 **Rohan's (B).** This section comes to Rohan, because it holds a question only he can answer: how the hook lines find
 `bonsai`, where his 8 Oct rule (a fixed place no agent can redirect) meets two older ones (hooks call `bonsai` by name;
-no committed file holds a full path). No design meets all three (5.3.6's note weighs eight), so it is asked as an
-option round, 5.3's first (stop line 3 allows two), written in plain words just below with a recommendation. Nothing
-else of his changes: the hours (18-29) and the re-ask line (38) are the spec's; the order of the parts stands; his steps
-are the ones already on his lists (Claude Code's Windows login back first, `STATE.md`, "Waiting on Rohan"; then the
-second Windows check, about 10 minutes, after a Sonnet agent's run on both sides); no repo is new and nothing goes
-public; no format changes (the guard's new rule names are values of the log's free `rule` string, and `check`'s
-new finding is an addition). Only the piece that writes the lines' form (5.3.6) waits for his answer; the rest of 5.3
-does not.
+no committed file holds a full path). One design meets all three, a machine-wide Claude Code settings file, and he
+dropped that file on 7 Oct; so the choice is asked as an option round, 5.3's first (stop line 3 allows two), written in
+plain words just below with a recommendation. Under (a), (c) or (d) nothing else of his changes: the hours (18-29) and
+the re-ask line (38) are the spec's; the order of the parts stands; his steps are the ones already on his lists (Claude
+Code's Windows login back first, `STATE.md`, "Waiting on Rohan"; then the second Windows check, about 10 minutes, after
+a Sonnet agent's run on both sides); no repo is new and nothing goes public; no format changes (the guard's new rule
+names are values of the log's free `rule` string, and `check`'s new findings are additions). Under (b) his steps gain an
+administrator's step on each side, and 5.3 about 1-2 hours (5.3.6 note 2). Only the piece that writes the lines' form
+(5.3.6) waits for his answer; the rest of 5.3 does not.
 
 #### The question for Rohan: how the hook lines find `bonsai`
 
-Every time an agent edits a file or runs a command in a linked project, Claude Code runs a short line that Bonsai wrote
-into the project's `.claude/settings.json`; today `bonsai hook guard || exit 2`. The shell finds `bonsai` by its name,
-by looking through the PATH, a list of folders, in order. The `|| exit 2` makes a missing or crashing `bonsai` block the
-call.
+**What the line is today.** Every time an agent edits a file or runs a command in a linked project, Claude Code runs a
+short line that Bonsai wrote into the project's `.claude/settings.json`: today `bonsai hook guard || exit 2`, and from
+this part a second one when a session ends. The shell finds `bonsai` by its name, looking through the PATH, a list of
+folders, in order. The `|| exit 2` turns a missing or crashing `bonsai` into a refusal.
 
-On 8 Oct you asked that these lines call the installed `bonsai` at a fixed place, so that nothing an agent can edit
-redirects them. Two rules written the day before say the opposite: the lines call `bonsai` by name (spec §3), because no
-committed file may hold a full path (the skeleton's check 2: a full path differs from machine to machine and can name a
-user). A fixed place is a full path, and a name is found through a PATH that can be redirected, so all three cannot
-hold. Choosing between your rules is yours.
+**Three rules, and why they clash.** On 8 Oct you asked that the lines call the installed `bonsai` at a fixed place, so
+that nothing an agent can edit redirects them. Two rules written the day before say the lines call `bonsai` by name
+(spec §3), because no file committed to a project may hold a full path (the skeleton's check 2: a full path differs from
+machine to machine and can name a user). A name can be redirected: a `bonsai` put into a folder that comes earlier in
+the PATH (in your WSL terminals `~/go/bin`, `~/node_modules/.bin` and `~/.local/bin` all come before `/usr/local/bin`,
+and one `go install` puts a `bonsai` there), or a PATH set in a Claude Code settings file. And a fixed place in the
+project's own line is a full path in a committed file.
 
-How a name gets redirected: a `bonsai` put into a folder that comes earlier in the PATH than the installed one (in your
-WSL terminals `~/go/bin`, `~/node_modules/.bin` and `~/.local/bin` all come before `/usr/local/bin`, and one
-`go install` puts a `bonsai` there); or a PATH set inside a Claude Code settings file. One more route stays open
-whatever you choose: on Windows, a settings file can name a start-up script that runs before any hook line. An agent
-cannot change those settings files with its own tools (the guard refuses it for the project's files, and from 5.5 the
-walls for yours), but a shell command can, and Claude Code applies the change at once. That route is caught after the
-fact: from this part, `bonsai check` reports any such setting in a project.
+**One design meets all three, and you dropped it on 7 Oct:** a machine-wide Claude Code settings file, outside every
+project, holding the line with the full path, while the project's own line stays by name. You dropped that file on 7 Oct
+("why do we need this. i dont think we do, seems to be overenginnering"), so it is option (b) below, not the plan's
+answer.
 
-- **(a) The installed place, written into the lines (recommended).** Each line names WSL's installed file
-  (`/usr/local/bin/bonsai`, which only root can replace) and, failing that, Windows'
-  (`C:\Program Files\Bonsai\bonsai.exe`, which only an administrator can); if neither is there, the call is blocked.
-  Nothing on the PATH is read. It meets your 8 Oct rule. It breaks the letter of the two older rules but keeps their
-  purpose: the two places are the same on every machine and hold no user's name, and check 2 gains that one named
-  exception. Cost: about 1-2 hours, inside 5.3's; on a machine where Bonsai is not installed in its place, every edit in
-  a linked project is blocked (as a missing `bonsai` already is), so someone contributing to Bonsai's own repo installs
-  it there first; and the test copies agents build name their own scratch place, in scratch projects only.
-- **(b) By name, and Bonsai refuses to guard from anywhere but its installed place.** The lines stay as they are. A
-  real Bonsai found elsewhere (a `go install` copy, an old build) blocks every edit and says where it runs from. It
-  keeps the two older rules. Against yours it stops the likely accident, a stray copy of Bonsai, but not a program that
-  is not Bonsai and answers to the name (another tool called `bonsai`, or a stand-in an agent writes), which could allow
-  every call. Cost: the same 1-2 hours and the same install requirement.
-- **(c) By name, as the spec has it now.** Each session's start record names the `bonsai` that started it and its
-  fingerprint, and `bonsai check` and `status` say when it is not the installed one: all after the fact. It keeps the
-  two older rules and does not meet yours: any `bonsai` earlier on the PATH answers. Cost: nothing more now.
+**What stays open whatever you choose.** A Claude Code settings file can name a wrapper program that Claude Code runs in
+place of every hook line (on both sides); on Windows it can also name a start-up script that Git Bash runs before the
+line, or which `bash.exe` runs it. Each of these needs a write to a settings file. An agent's own tools are refused
+there (by the guard for the project's files, and from 5.5 by the walls for yours), but a shell command gets through, and
+Claude Code applies the change at once. From this part, `bonsai check` reports any such setting in a project. Only (b)
+might close these routes too (a machine-wide file's values beat a project's), which is not yet measured.
 
-**Recommendation: (a).** It is what you asked for on 8 Oct, and it shuts the door on every program, not only on copies
-of Bonsai. The two older rules exist to keep user names and machine-specific paths out of the repo, and the two
-installed places are neither. None of the three changes the hours, the formats or your steps; whichever you choose, a
-project linked earlier takes the new lines with one `bonsai update --allow-exec --yes` (today only scratch projects are
-linked).
+- **(a) The installed place, written into the project's lines (recommended).** Each line names Windows' installed file
+  (`C:\Program Files\Bonsai\bonsai.exe`, which only an administrator can place) and, failing that, WSL's
+  (`/usr/local/bin/bonsai`, which only root can place); if neither is there, the call is refused with a line saying a
+  person installs Bonsai. Nothing on the PATH is read. It meets your 8 Oct rule. It breaks the letter of the two older
+  rules but keeps their purpose: the two places are the same on every machine and name no user, and check 2 gains that
+  one named exception. Its cost: Bonsai works in a linked project only where it is installed at exactly those places.
+  Anywhere else, every edit and every shell command in a linked project is refused, and a session cannot end until
+  Claude Code gives up after eight refusals in a row (a missing `bonsai` does the same today, but today a copy anywhere
+  on the PATH also counts). So: no real linked project works on a machine before your install there (WSL at 5.4, Windows
+  at 1.0; today only scratch projects are linked, and they use test builds); a Homebrew install (`brew install bonsai`,
+  spec §12) lands in a folder the line never looks in, so 5.7 must settle Homebrew; Git for Windows must be installed
+  for all users, since in a per-user install the WSL place, as Git Bash reads it, is a folder you can write (`check`
+  tests this); and test builds name their own scratch place, in scratch projects only. About 1-2 hours, inside 5.3's.
+- **(b) A machine-wide settings file holding the full path; the project's line stays by name.** It meets all three
+  rules. The file sits outside every repo on each machine and only an administrator writes it, so it is your step on
+  each side, at each install. Claude Code runs every line that matches, so each guarded call starts a second `bonsai`
+  beside the project's (side by side, so no slower, but one more process each time), and the machine-wide line runs in
+  every session on that machine, linked or not (Bonsai answers at once where no project is linked). It reverses your no
+  of 7 Oct. Its values might also pin the settings routes above (unmeasured). About 1-2 hours more than 5.3's figure for
+  this piece.
+- **(c) By name, and Bonsai refuses to guard from anywhere but its installed place.** The lines stay as they are. A real
+  Bonsai found elsewhere (a `go install` copy, an old build) refuses every call and says where it runs from. It keeps
+  the two older rules. Against yours it stops a stray copy of Bonsai, but not a program that is not Bonsai and answers
+  to the name (another tool called `bonsai`, or a stand-in an agent writes with a shell command; the guard refuses an
+  agent's file tools writing one, under every option). The same install requirement as (a). About 1-2 hours.
+- **(d) By name, as the spec has it now.** Each session's start record names the `bonsai` that started it and its
+  fingerprint, and once the installer writes its record of the installed copy (5.6), `bonsai check` and `status` say
+  when the `bonsai` found is not that one: all after the fact. It keeps the two older rules and does not meet yours.
+  Nothing more now.
+
+Not yet measured, and tried first in 5.3: whether, on Windows, Git Bash runs as a program an ordinary file that starts
+with `#!`. If it does, a two-line file named `bonsai`, which a shell command can write into a folder on the PATH,
+answers for Bonsai under (c) and (d), and that is the plainest reason for (a).
+
+**Recommendation: (a).** It is what you asked for on 8 Oct, and it shuts the PATH to every program, not only to copies
+of Bonsai. Against (b): (b) keeps every rule's letter and may close more routes, but it brings back the machine-wide
+file you dropped as overengineering, adds an administrator's step on each machine, and runs Bonsai beside every tool
+call of every session on the machine. The two older rules exist to keep user names and machine-specific paths out of a
+repo, and the two installed places are neither. Whichever you choose, a project linked earlier takes the new lines with
+one `bonsai update --allow-exec --yes`.
 
 The spec's row (§14): "The adapter (2-3); the path guard with contract §5.5, §10.1 and §13, and its refusals for
 `.bonsai/local/` and the tables (7-10); the delete check (3-5); the stop gate (2-3); generated deny rules and
