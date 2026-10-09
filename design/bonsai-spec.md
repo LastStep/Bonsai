@@ -144,6 +144,11 @@ word: other agents and `AGENTS.md` (Q5), polish for strangers, layer overrides, 
   path kept in its registration (vision A.9). With no machine-wide settings file (question B, dropped 7 Oct), no hook
   line calls it by full path, so a `bonsai` earlier on the PATH can stand in for it: the tripwire above is what catches
   that.
+
+  > **Changed 9 Oct (Rohan, step 5.3's first option round): (a), the installed place written into the hook lines.**
+  > Each of Bonsai's hook lines names Windows' installed file, then WSL's (`/usr/local/bin/bonsai`), and refuses with a
+  > person's next step if neither is there; the PATH is never read. Check 2 gains one named exception: those two
+  > places, the same on every machine and naming no user. `design/plan-5.md`, "Step 5.3", the question for Rohan.
 - **Output.** Human output is ASCII (PowerShell 5.1 garbles UTF-8); `--json` for programs. Exit codes (vision A.1): 0 ok,
   1 check findings, 2 bad input, 3 runtime, 4 wrong state or no `--yes`, 5 conflicts. `bonsai hook` exits 0 (allow) or
   2 (block); in a project with no `bonsai.yaml` it exits 0 at once and records nothing (§7).
@@ -1414,6 +1419,12 @@ Rohan's answers, 7 Oct, after the recheck:
   agent's `init`, `update` and `unlink` still need a task he approved that names those files, since they write
   person-only paths (§6). He declined "agents do it, he pastes one line per release" and "agents do everything, the
   program in the home folder". His wish that any AI agent can drive the program easily is met by §3's unattended rule.
+
+  > **Changed 9 Oct (Rohan, step 5.3's second option round): (ii).** An agent may pass `--allow-exec`, run `unlink`, or
+  > run an update that removes or changes Bonsai's own guard or stop line only inside a task whose grant of
+  > `bonsai.yaml` and the lock came from his tap, in a project the studio manages; everywhere else only a person types
+  > them. The commands themselves refuse them under an agent's session, not only the guard. `design/plan-5.md`,
+  > "Step 5.3", the second question for Rohan.
 - **Agents other than Claude Code: Claude Code first** in 1.0 (Q5 a); others later, on his word.
 - **Question A, the guard: (a), his 4 Oct answer** (the file guard, deny rules, the delete check; shell writes to his
   paths caught after the fact by the first rung and the Desk). A later upgrade comes with Jev, after its trial (§19 A).
