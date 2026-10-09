@@ -232,3 +232,5 @@ func TestCheckOldLockUsesTheCache(t *testing.T) {
 		t.Fatalf("an old lock, no cache: %v %+v %+v", err, r.Findings, r.Warnings)
 	}
 }
+
+func formatLabels(raw string) (*format.Labels, error) { return format.ReadLabels([]byte(raw)) }

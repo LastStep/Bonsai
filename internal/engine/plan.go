@@ -645,7 +645,10 @@ func Build(req Request) (_ *Plan, err error) {
 	if err != nil {
 		return nil, err
 	}
-	body := blockBody(cfg.Name, newPacks)
+	body := blockBody(cfg, newPacks)
+	if err := checkBlock(body); err != nil {
+		return nil, err
+	}
 	bf := &FileResult{Path: BlockFile, Kind: "block", Pack: firstPack, old: bd.raw, newH: regionHash(body)}
 	if !bd.exists {
 		bf.old = nil
