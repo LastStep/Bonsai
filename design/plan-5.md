@@ -2927,7 +2927,9 @@ forms) and what it ended.
     (`go test -count=1 -run '^TestX$/^sub$' ./pkg`, or `node --test --test-name-pattern=...` with its file); each path
     rung 0 refuses comes with its rule and the grant or revert it needs; a ratchet below its floor with both counts.
     `who` is `agent` there too, but for a person-only path in `command` mode (a person's grant). `status --json`'s
-    `ladder` (5.4.0 note 9) tells an agent where its proof stands without a climb.
+    `ladder` (5.4.0 note 9) tells an agent where its proof stands without a climb. The `ladder` word and its error words
+    reach `bonsai --help --json` (5.1.10) from its flag-table entry; 5.5's "operating Bonsai" skill in `base` teaches
+    this loop (climb, read the `--json`, fix, climb again), named here so 5.5 carries it.
 
 **5.4.3, rung 0.** Spec §9: "the diff against the named task's grants"; "Rung 0 also refuses a task branch that changes
 a generated table, and any file from `.bonsai/local/` that is tracked or staged"; spec §4: "CI and rung 0 run
