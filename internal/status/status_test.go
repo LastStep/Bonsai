@@ -23,14 +23,15 @@ import (
 
 // notBuiltYet: the fields the walking skeleton has not built at part 2, each with what it prints until it is.
 var notBuiltYet = map[string]string{
-	"documents":      "[]",   // the declared document kinds (contract §7.3): step 5.1
-	"labels":         "[]",   // namespaces in force: step 5.1
-	"lanes":          "[]",   // from the packs' declares: step 5.1
-	"status_writes":  "null", // this machine's settings: step 5.1 (bonsai settings)
-	"status_command": "null", // the same
-	"active_task":    "null", // contract §13: step 5.1
-	"needs":          "[]",   // packs and the Claude Code floor: part 3 and step 5.1
-	"checks":         "null", // --full: step 5.1
+	"needs":  "[]",   // packs and the Claude Code floor: part 3 and step 5.1.6
+	"checks": "null", // --full: step 5.1.6
+}
+
+// doesNotApply: built fields that print null or [] where they do not apply (contract §12), and a value where they do.
+var doesNotApply = map[string]string{
+	"labels":         "[]",   // no pack declares labels, and none is attached on this machine
+	"lanes":          "[]",   // no pack defines lanes
+	"status_command": "null", // status_writes is agents
 }
 
 const cfg = `format: bonsai.workspace/1   # comments are fine
@@ -135,6 +136,9 @@ func checkShape(t *testing.T, doc schema.Object, failed bool) {
 				t.Errorf("exit 3: %s is %s, want null", m.Key, shown)
 			}
 		case failed:
+		case doesNotApply[m.Key] != "" && m.Value == nil && shown != doesNotApply[m.Key]:
+			t.Errorf("%s is %s where it does not apply, want %s", m.Key, shown, doesNotApply[m.Key])
+		case doesNotApply[m.Key] != "":
 		case listed && shown != want:
 			t.Errorf("%s is listed as not built yet (%s) but holds %s: take it off notBuiltYet", m.Key, want, shown)
 		case !listed && m.Value == nil:
@@ -355,5 +359,82 @@ func TestStatusOfAProjectTheEngineLinked(t *testing.T) {
 	text := Text(doc)
 	if !strings.Contains(text, "Packs: demo-pack 0.1.0 at "+pack.A[:7]+" (changed)\n") || !strings.Contains(text, "demo/guide.md was edited") {
 		t.Errorf("text:\n%s", text)
+	}
+}
+
+// Step 5.1.5's fields, from a project linked to a pack that declares lanes, labels and document kinds, with this
+// machine's settings and a running task: documents, labels, lanes, status_writes, status_command and active_task.
+func TestStatusFromTheLockAndTheMachine(t *testing.T) {
+	tmp := t.TempDir()
+	if r, err := filepath.EvalSymlinks(tmp); err == nil {
+		tmp = r
+	}
+	home := testpack.Isolate(t, tmp)
+	t.Setenv("BONSAI_TASK", "")
+	t.Setenv("CLAUDE_PROJECT_DIR", "")
+	src, shas := testpack.DeclaringPack(t, tmp)
+	root := testpack.Project(t, tmp, "linked")
+	p, err := engine.Build(engine.Request{Command: "init", Dir: root, Home: home, Version: "test",
+		Init: &engine.InitValues{Name: "demo", Source: src, Ref: shas[0]}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := engine.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	task := "---\nformat: bonsai.task/1\nid: T-0901\ntitle: x\nstatus: running\nlane: light\ndone_when: []\ndepends_on: []\n" +
+		"blocked_by: null\ncreated: null\nstarted: null\nfinished: null\nlabels: {}\n---\n"
+	write := func(path, content string) {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(filepath.Join(root, "work", "tasks", "T-0901-x.md"), task)
+	machine, err := workspace.MachineDir(home, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(filepath.Join(machine, "settings.json"), `{"status_writes": "command", "status_command": "studio move"}`)
+	doc, code := Build(root, "dev")
+	if code != ExitOK {
+		t.Fatalf("exit %d: %s", code, schema.Show(doc))
+	}
+	checkShape(t, doc, false)
+	want := map[string]string{
+		"labels":         `[{"namespace":"bonsai","from":"base","version":1}]`,
+		"lanes":          `[{"name":"light","approve_first":false,"close":"agent","from":"base"},{"name":"full","approve_first":true,"close":"person","from":"base"}]`,
+		"status_writes":  `"command"`,
+		"status_command": `"studio move"`,
+		"active_task":    `{"id":"T-0901","how":"running","why":null}`,
+	}
+	for k, w := range want {
+		if v, _ := doc.Get(k); schema.Show(v) != w {
+			t.Errorf("%s = %s, want %s", k, schema.Show(v), w)
+		}
+	}
+	docs, _ := doc.Get("documents")
+	var kinds []string
+	for _, d := range docs.([]any) {
+		kinds = append(kinds, d.(schema.Object).String("kind")+"@"+d.(schema.Object).String("from"))
+	}
+	if strings.Join(kinds, " ") != "task@bonsai run@bonsai state@bonsai answers@bonsai memory@bonsai tasks@bonsai sessions@bonsai plan@base bugs@base" {
+		t.Errorf("documents %v", kinds)
+	}
+	// BONSAI_TASK names a task for this project's session; another project's session does not count.
+	t.Setenv("BONSAI_TASK", "T-0999")
+	doc, _ = Build(root, "dev")
+	if v, _ := doc.Get("active_task"); !strings.Contains(schema.Show(v), "no task file has the named id (T-0999)") {
+		t.Errorf("named: %s", schema.Show(v))
+	}
+	t.Setenv("CLAUDE_PROJECT_DIR", testpack.Project(t, tmp, "elsewhere"))
+	doc, _ = Build(root, "dev")
+	if v, _ := doc.Get("active_task"); schema.Show(v) != want["active_task"] {
+		t.Errorf("another project's session: %s", schema.Show(v))
+	}
+	if txt := Text(doc); !strings.Contains(txt, "Active task: T-0901 (running)") || !strings.Contains(txt, "Status writes: command") {
+		t.Errorf("text:\n%s", txt)
 	}
 }

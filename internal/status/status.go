@@ -5,8 +5,11 @@
 // built it and null (or [] for a list) where it has not. Built here: format, bonsai, mode, workspace, home, local,
 // person_only, and from part 3's check (internal/engine) packs, files and problems: the same findings bonsai check
 // reports (contract §12); from step 5.1.4a, formats (internal/format's registry: every format with the majors this
-// Bonsai reads and writes). The rest wait for later parts, which fill them as they are built; this package's test
-// holds them in a named list. The document is held to the schema before it is printed (Encode).
+// Bonsai reads and writes); from step 5.1.5, internal/workspace's reads: documents (the declared document kinds),
+// labels and lanes (from the lock's declares and the machine folder), status_writes and status_command (this
+// machine's settings), and active_task (the active-task function, contract §13, for this checkout and environment).
+// The rest (needs, checks) wait for step 5.1.6; this package's test holds them in a named list. The document is held
+// to the schema before it is printed (Encode).
 //
 // Exit codes (contract §12, spec §3): 0, or 3 when Bonsai cannot read the workspace at all; the document then
 // fills format, bonsai, problems and error (step 5.1.4b: the error object, with its word from format.ErrorWords), and
@@ -15,7 +18,9 @@ package status
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -85,7 +90,7 @@ func gather(dir string) (map[string]any, *engine.Error) {
 	if err != nil {
 		return nil, engine.FindError(err)
 	}
-	cfg, err := workspace.LoadConfig(co.Root)
+	cfg, err := workspace.LoadConfigFull(co.Root)
 	if err != nil {
 		return nil, engine.ConfigError(err)
 	}
@@ -101,7 +106,9 @@ func gather(dir string) (map[string]any, *engine.Error) {
 	root := filepath.ToSlash(co.Main)
 	packs, files, problems := []any{}, schema.Object{{Key: "changed", Value: 0}, {Key: "missing", Value: 0},
 		{Key: "format0_changed", Value: 0}}, []any{}
+	var lock *workspace.Lock
 	if r, err := engine.Check(dir, home); err == nil {
+		lock = r.Lock
 		for _, p := range r.Packs {
 			packs = append(packs, schema.Object{{Key: "id", Value: p.ID}, {Key: "version", Value: p.Version},
 				{Key: "commit", Value: p.Commit}, {Key: "state", Value: p.State}})
@@ -116,9 +123,17 @@ func gather(dir string) (map[string]any, *engine.Error) {
 	for i, g := range cfg.PersonOnly {
 		personOnly[i] = g
 	}
+	known := knownFields(co, cfg, lock, home)
+	problems = append(problems, known.problems...)
 	return map[string]any{
-		"mode":    Mode,
-		"formats": format.StatusFormats(),
+		"documents":      known.documents,
+		"labels":         known.labels,
+		"lanes":          known.lanes,
+		"status_writes":  known.statusWrites,
+		"status_command": known.statusCommand,
+		"active_task":    known.active,
+		"mode":           Mode,
+		"formats":        format.StatusFormats(),
 		"workspace": schema.Object{
 			{Key: "id", Value: cfg.ID}, {Key: "name", Value: cfg.Name}, {Key: "root", Value: root},
 		},
@@ -133,6 +148,88 @@ func gather(dir string) (map[string]any, *engine.Error) {
 		"person_only": personOnly,
 		"problems":    problems,
 	}, nil
+}
+
+// known is what step 5.1.5's reads give status: each field's value, and the problems they found.
+type known struct {
+	documents, labels, lanes    []any
+	statusWrites, statusCommand any
+	active                      schema.Object
+	problems                    []any
+}
+
+// knownFields reads the document kinds, labels and lanes in force, this machine's settings and the active task. A
+// read that fails is a problem (its sentence names the next step), and its field shows what can still be read.
+func knownFields(co *workspace.Checkout, cfg *workspace.Config, lock *workspace.Lock, home string) known {
+	k := known{documents: []any{}, labels: []any{}, lanes: []any{}, statusWrites: workspace.StatusWritesAgents}
+	problem := func(err error) { k.problems = append(k.problems, ascii(err.Error())) }
+	kinds, err := workspace.DocKinds(cfg.Full, lock)
+	if err != nil {
+		problem(err)
+		kinds, _ = workspace.DocKinds(cfg.Full, nil)
+	}
+	for _, d := range kinds {
+		k.documents = append(k.documents, d.Object())
+	}
+	sets, problems := workspace.LabelsInForce(lock, home, co.Main)
+	for _, err := range problems {
+		problem(err)
+	}
+	for _, l := range sets {
+		k.labels = append(k.labels, schema.Object{{Key: "namespace", Value: l.Namespace}, {Key: "from", Value: l.From},
+			{Key: "version", Value: l.Version}})
+	}
+	if lanes, err := workspace.Lanes(lock); err != nil {
+		problem(err)
+	} else {
+		for _, l := range lanes {
+			k.lanes = append(k.lanes, schema.Object{{Key: "name", Value: l.Name}, {Key: "approve_first", Value: l.ApproveFirst},
+				{Key: "close", Value: l.Close}, {Key: "from", Value: l.From}})
+		}
+	}
+	settings, err := workspace.LoadMachineSettings(home, co.Main)
+	if err != nil {
+		problem(err)
+	}
+	k.statusWrites = settings.StatusWrites
+	if settings.StatusCommand != "" {
+		k.statusCommand = settings.StatusCommand
+	}
+	k.active = activeTask(co, cfg).Object()
+	return k
+}
+
+// activeTask is the active task for this checkout and the process's environment (contract §13): tasks read from
+// the main checkout's task folder (its bonsai.yaml's documents.task; the checkout's own when main's cannot be read),
+// BONSAI_TASK counting only when this project is the session's own (the project holding CLAUDE_PROJECT_DIR, when
+// Claude Code set it). A task folder that cannot be read gives none, saying why.
+func activeTask(co *workspace.Checkout, cfg *workspace.Config) workspace.ActiveTask {
+	dir := cfg.Full.Documents.Task
+	if co.Main != co.Root {
+		if main, err := workspace.LoadConfigFull(co.Main); err == nil {
+			dir = main.Full.Documents.Task
+		}
+	}
+	counts := true
+	if session := os.Getenv(sessionEnv); session != "" {
+		s, err := workspace.Find(session)
+		counts = err == nil && samePlace(s.Main, co.Main)
+	}
+	a, err := workspace.Active(workspace.ActiveInput{Main: co.Main, TaskDir: dir, Env: os.Getenv(workspace.TaskEnv), EnvCounts: counts})
+	if err != nil {
+		return workspace.ActiveTask{Why: "unreadable", Detail: ascii(err.Error())}
+	}
+	return a
+}
+
+// sessionEnv names the variable Claude Code sets to the session's project folder.
+const sessionEnv = "CLAUDE_PROJECT_DIR"
+
+func samePlace(a, b string) bool {
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(filepath.Clean(a), filepath.Clean(b))
+	}
+	return filepath.Clean(a) == filepath.Clean(b)
 }
 
 // document writes every field of the schema, in its order: a built field's value, else [] for a field whose type
@@ -225,9 +322,25 @@ func Text(doc schema.Object) string {
 			b.WriteString("  " + ascii(p.(string)) + "\n")
 		}
 	}
+	if at, ok := doc.Get("active_task"); ok {
+		if a, ok := at.(schema.Object); ok {
+			if id := a.String("id"); id != "" {
+				fmt.Fprintf(&b, "Active task: %s (%s)\n", ascii(id), ascii(a.String("how")))
+			} else {
+				fmt.Fprintf(&b, "Active task: none (%s)\n", ascii(strings.TrimPrefix(a.String("why"), "no active task: ")))
+			}
+		}
+	}
+	if sw, _ := doc.Get("status_writes"); sw != nil {
+		line := "agents move task statuses themselves"
+		if sw == workspace.StatusWritesCommand {
+			sc, _ := doc.Get("status_command")
+			line = "moves go through " + schema.Show(sc) + " (a managed workspace)"
+		}
+		fmt.Fprintf(&b, "Status writes: %s (%s)\n", ascii(fmt.Sprint(sw)), ascii(line))
+	}
 	b.WriteString("A copy meant as a new project needs its own id: bonsai init --new-id\n")
-	b.WriteString("This build of Bonsai's rebuild shows the workspace, its folders, the home, the packs and bonsai check's\n")
-	b.WriteString("findings; labels, lanes, the active task and needs come with its later parts.\n")
+	b.WriteString("Every field, documents, labels and lanes among them: bonsai status --json\n")
 	return b.String()
 }
 
