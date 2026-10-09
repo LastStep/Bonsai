@@ -14,8 +14,8 @@
 - **Records:** `STATE.md`; run reports in `records/runs/`.
 
 Two readers. **Rohan** reads down to "Size" and reads no code. The **orchestrator, builders and verifiers** read the
-rest. 5.1, 5.2, 5.3 and 5.4 are planned in full here; 5.5 to 5.7 are outlined, and each gets its own detailed section
-in this file before it starts.
+rest. 5.1 to 5.5 are planned in full here; 5.6 and 5.7 are outlined, and each gets its own detailed section in this
+file before it starts.
 
 ## For Rohan (plain words)
 
@@ -4258,6 +4258,7 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
   later part changes the guard, the stop gate or the ladder.
 
 **5.5 Packs (19-30 h, re-ask at 39).**
+- **Planned in full** in "Step 5.5" above; this outline is kept as it was written.
 - **Builds:** `base` and `workflow` from the studio's roles, protocols and templates; the always-on and skill split,
   the roles' `skills:` preloads; `claude plugin validate --json` in each pack's CI, failing on every warning but the
   missing `version`; the walls in base's deny rules and the studio's in `workflow`, each tried once on both sides
@@ -4360,7 +4361,8 @@ source.
 | 5.2 | Its section's "Proof for each piece"; fresh verifiers for 5.2.1 and 5.2.4; the end verifier on "5.2 done" |
 | 5.3 | Its section's "Proof for each piece"; fresh verifiers at 5.3.1, at 5.3.2 with 5.3.3, and at 5.3.6; the end verifier on "5.3 done", after Rohan's sitting |
 | 5.4 | Its section's "Proof for each piece"; fresh verifiers V1 (5.4.1 to 5.4.3) and V2 (the code, before the pre-release); the end verifier on "5.4 done", after Rohan's install and link |
-| 5.5 to 5.7 | Each part's section; its verifiers as outlined; its end verifier |
+| 5.5 | Its section's "Proof for each piece"; fresh verifiers P (privacy, before `workflow`'s first push) and V1 (the walls and the packs' CI); the end verifier on "5.5 done", after Bonsai takes `base` |
+| 5.6 and 5.7 | Each part's section; its verifiers as outlined; its end verifier |
 | The interim proof (to 5.3) | Before each push, `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on Windows, counts in the run report; CI green on the pushed commit; no Windows-only skip without a named reason |
 | The ladder proof (from 5.4) | `bonsai ladder` green on Bonsai's own `bonsai.yaml`, run by the pre-release Rohan installed; CI and check 10 beside it until a rung covers them; fresh verifiers for the big steps |
 | Stop lines | The run reports' rows and tallies, judged by each part's end verifier |
