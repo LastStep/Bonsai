@@ -3630,7 +3630,7 @@ owns:
    only once every commit since P has been read.
 5. **5.5.5 and 5.5.6 after 5.5.3 has landed and `workflow`'s CI is green**, run by one Sonnet agent, WSL first, one
    after the other (two agents running Claude Code at once would confuse whose session changed a user settings file).
-   Their Windows halves wait for Rohan's login in a scratch folder. Their scratch projects link both packs from local
+   Their Windows halves wait for Rohan's Windows sitting. Their scratch projects link both packs from local
    clones, so they need neither repository public.
 6. **V1, the walls and the packs' CI**, after 5.5.6.
 7. **5.5.7 after V1**: the link of Bonsai's repo; its last step, the fetch of `workflow` from GitHub with no login on
@@ -3662,7 +3662,7 @@ hand on:
 | `/agents` is gone in 2.1.294; a role is read by starting a session as it, `--agent <plugin>:<role>` (gate §5, 5.5) | 5.5.4, 5.5.5 | `workflow`'s README and roles say how a role is started (`claude --agent workflow:builder`) and dispatched (the Agent tool's `workflow:builder`); 5.5.5 reads each route. Spec §17 step 6's text is outside step 5's parts (`STATE.md`); the orchestrator's dated note |
 | The plugin carries no version; the version shows only as the commit folder; `validate` warns only of the missing `version` (gate §5) | 5.5.1, 5.5.2, 5.5.4 | Each pack's README says the version is the commit and `pack.yaml`'s `version` names tags only; the template's validate step fails on every warning but that one, matched on the version in use |
 | Not seen: a pack's role answering in an interactive session (gate §5, §2.7) | 5.5.5 | On WSL, a real interactive session driven through `tmux` by the Sonnet agent: `claude --agent workflow:builder` in a scratch project, a question only the role's preloaded skill answers, the pane captured |
-| Not seen: the Windows trust prompt (gate §5, §2.7) | Rohan's sitting | His overdue Windows login, done in a scratch project linked to both packs: he answers the trust question; what it said goes in the run report |
+| Not seen: the Windows trust prompt (gate §5, §2.7) | Rohan's sitting | Through `claude-here.cmd` in a scratch project linked to both packs (his login first only if it has lapsed since 5.3): he answers the trust question; what it said goes in the run report, beside what his 5.3 sitting recorded |
 | Not seen: a Windows `--bg` session; `claude --agent workflow:builder --bg`, check 8's original line (gate §5) | 5.5.5 | In that trusted Windows project, and on WSL: backgrounded, `claude logs` shows the role's answer, `claude stop` |
 | Claude Code's own writes outside the scratch folders (gate §5) | 5.5.5, 5.5.6, 5.5.7 | Recorded again around each session (user settings hashes, the plugin tree's counts, the sync files); the accepted writes stay `design/plan.md`'s (Claude Code's session transcripts and its folder-trust entries for the scratch projects) and the plugin sync's own files; before 5.5.4 `CLAUDE.md`'s Safety line names `LastStep/bonsai-workflow` among the places Bonsai's work writes (order, item 2); 5.5.7 adds one accepted write, base's install for Bonsai's real repo in `~/.claude/plugins/`, named in the same line |
 | `claude plugin eval`'s needs: `--no-publish`, `--trust-plugin`, a path target, `runsPerCase` miscounted (gate §5, §2.13) | 5.5.1 | The template's README gives the working command and its flags; evals run on this PC only, never in CI |
@@ -4349,8 +4349,9 @@ both sides where a check names them, and passes or fails 5.5:
   folder if it keeps options beside records (tried here and written in the README).
 - **Base in Rohan's real Claude Code.** 5.5.7 installs a plugin in Claude Code's real plugin folder for Bonsai's repo:
   instructions only, accepted and named.
-- **Windows sessions wait for Rohan's login.** If it is not back, the Windows halves of 5.5.5 and 5.5.6, and the end
-  verifier's, wait; the orchestrator asks once, with the lines.
+- **Windows sessions wait for Rohan's sitting.** Until he has trusted `project-w` (and renewed the login first, if it
+  has lapsed since 5.3), the Windows halves of 5.5.5 and 5.5.6, and the end verifier's, wait; the orchestrator asks
+  once, with the lines.
 - **Time.** `workflow` is the largest piece, and Rohan's read may add a round; each round's minutes count, and the run
   reports keep 5.5's running total against 39.
 - **Processes.** `tmux` panes, background sessions and scripted sessions: each agent stops what it started (`claude
@@ -4379,8 +4380,10 @@ both sides where a check names them, and passes or fails 5.5:
   rest (note 5.5.4, 2).
 - **§5, the pack's CI step 3: evals by "a repository secret ... or run by hand on the machine":** on the machine only.
 - **§5 and §6's example: `ref: base-v1.0.0` and `ref: v1.0.0`:** before 1.0 the packs are named by commit; the first
-  tags are Rohan's word with 1.0 (5.7's section). A hand-off to 5.7: the template's pinned `bonsai` moves from a clone
-  to the release archive and its SHA-256 then, and `base`'s `version` becomes `1.0.0`.
+  tags are Rohan's word with 1.0 (5.7's section). Hand-offs to 5.7: the template's pinned `bonsai` moves from a clone
+  to the release archive and its SHA-256 then, and `base`'s `version` becomes `1.0.0`; Rohan's tag lines must be
+  typable without a clone of the workflow repo (for example through `gh`), and 5.7 checks that a tag made that way
+  starts the repo's `release` job.
 - **§14 step 6: Bonsai "then links its packs (5.5)":** `base` only; `workflow` is Rohan's studio's way of working, and
   Bonsai's team works by `CLAUDE.md`.
 - **5.4.4 note 4: the stricter-only rule "which 5.5's `workflow` pack carries for other projects":** base's operating
@@ -4668,7 +4671,8 @@ source.
   every settings line "as `update` does", the skeleton's `init` takes `--yes`, and §6's rule for code applies to a
   first link's pack hook lines. This plan gives `init` both flags (5.1.1, rule 6).
 - **§4 and §6: `init` writes `bonsai.yaml` and STATE from `base`'s templates**, but `base` arrives in 5.5. Until then
-  `bonsai.yaml` comes from a built-in template and `init` writes no STATE; 5.5 settles the templates' one home.
+  `bonsai.yaml` comes from a built-in template and `init` writes no STATE. Settled in 5.5's section (note 5.5.0, 3):
+  both templates live in the engine, and base's `workspace` and `state` skills are generated from them.
 - **§14's 5.1 row says "all of §6's findings and warnings"**, while its 5.6 row names "the stranded-folder report" and
   "the personal memory layer and its check". The stranded folder goes to 5.6; the secret scan of memory notes to 5.2
   (the redactor's patterns are its one home); the rest of §6 is 5.1's.
