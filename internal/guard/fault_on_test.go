@@ -5,6 +5,7 @@ package guard
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -106,11 +107,12 @@ func TestEachFaultBlocks(t *testing.T) {
 // slowRun runs the slow fault once with the given budget. The answer (exit 2, over-time) is checked on every run,
 // since the slow work never answers. The record is checked when the run counts: when the timer's record began after
 // the work had reached the fault. The work reads BONSAI_TEST_FAULT at the fault, and a record reads the clock as it
-// begins (the slow work records nothing, so the clock is the timer's alone). A run that does not count gives why;
-// its record names no session, or there is none.
+// begins (the slow work records nothing, so the clock is the timer's alone). A run that does not count gives why.
 //
-// The timer's record is still awaited for recordWait at most, as the guard does (hook.go): that wait is guard code,
-// and TestOverTimeBlocks rests on it too.
+// The answer waits recordWait at most for its record (hook.go), and a loaded machine can take longer to hash the
+// binary and write it: the record then lands after the answer, as the guard allows ("recorded if that can be done in
+// recordWait"). The record is awaited here, not raced; that the answer waits for it is TestOverTimeBlocks's record
+// half, whose wait is guard code (step 5.3).
 func slowRun(t *testing.T, budget time.Duration) (early string) {
 	t.Helper()
 	dir := project(t, testYAML)
@@ -123,7 +125,7 @@ func slowRun(t *testing.T, budget time.Duration) (early string) {
 		return base(k)
 	}
 	const (
-		none        = iota // no record began: the timer fired before the work had read bonsai.yaml
+		none        = iota // no record began by the answer: the timer fired before the work had read bonsai.yaml
 		afterFault         // the record began with the work at the fault
 		beforeFault        // the record began before the work reached the fault
 	)
@@ -150,17 +152,44 @@ func slowRun(t *testing.T, budget time.Duration) (early string) {
 	case beforeFault:
 		return "its record began before the work reached the fault"
 	}
+	file, late := awaitRecord(t, dir)
+	if late {
+		t.Logf("budget %v: the record landed after the answer (the answer waits %v at most)", budget, recordWait)
+	}
 	// The timer's record takes the payload first and reads the clock next: a work that reached the fault between the
 	// two leaves a record with no session, in a day's file.
-	if day, _ := filepath.Glob(filepath.Join(dir, filepath.FromSlash(LogDir), "w-*.ndjson")); len(day) != 0 {
+	if file != "s-s-f.ndjson" {
 		return "its record took no payload"
 	}
-	recs := records(t, dir, "s-s-f.ndjson")
+	recs := records(t, dir, file)
 	if len(recs) != 1 {
 		t.Fatalf("budget %v: %d records, want one (%s)", budget, len(recs), RuleOverTime)
 	}
 	checkFaultRecord(t, recs[0], RuleOverTime)
 	return ""
+}
+
+// awaitRecord waits for the one record a slow run writes: a log file holding a whole line, as the guard writes a
+// record in one write. It gives the file's name, and whether it was still being written when the wait began. The
+// guard's real Budget bounds the wait only to fail a record that never lands; a record that lands ends it.
+func awaitRecord(t *testing.T, dir string) (file string, late bool) {
+	t.Helper()
+	logDir := filepath.Join(dir, filepath.FromSlash(LogDir))
+	for deadline := time.Now().Add(Budget); ; late = true {
+		names, err := filepath.Glob(filepath.Join(logDir, "*.ndjson"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range names {
+			if b, err := os.ReadFile(name); err == nil && bytes.HasSuffix(b, []byte("\n")) {
+				return filepath.Base(name), late
+			}
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("no whole record in %s %v after the answer: %v", LogDir, Budget, names)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
 }
 
 // checkFaultRecord checks a fault case's one record: its rule, a refusal, no target, and the binary's hash (it is
