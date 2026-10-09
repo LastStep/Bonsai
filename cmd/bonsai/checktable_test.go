@@ -95,13 +95,23 @@ func fakeClaude(t *testing.T, out string, err error) {
 
 // fakeList stands in for claude plugin list.
 type fakeList struct {
-	list []engine.InstalledPlugin
-	err  error
+	list    []engine.InstalledPlugin
+	err     error
+	markets []string // Marketplaces' answer; nil: Claude Code could not say
 }
 
 func (f fakeList) List(string) ([]engine.InstalledPlugin, error) { return f.list, f.err }
 func (f fakeList) Install(string, string) (engine.InstallResult, error) {
 	return engine.InstallResult{}, errors.New("not asked in check")
+}
+func (f fakeList) Uninstall(string, string) (engine.InstallResult, error) {
+	return engine.InstallResult{}, errors.New("not asked in check")
+}
+func (f fakeList) Marketplaces(string) ([]string, error) {
+	if f.markets == nil {
+		return nil, errors.New("could not say")
+	}
+	return f.markets, nil
 }
 
 func setPlugins(t *testing.T, p engine.PluginCLI) {
@@ -296,6 +306,7 @@ var checkCases = map[string]func(c *cli){
 		c.t.Chdir(shallow)
 	},
 	"plugin-missing":   func(c *cli) { c.link(); setPlugins(c.t, fakeList{}) },
+	"plugin-trust":     func(c *cli) { c.link(); setPlugins(c.t, fakeList{markets: []string{"another-marketplace"}}) },
 	"plugin-unchecked": func(c *cli) { c.link(); setPlugins(c.t, fakeList{err: engine.ErrNoClaude}) },
 	"cache": func(c *cli) {
 		c.link()

@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -288,6 +289,7 @@ func TestUpdateWithoutALock(t *testing.T) {
 type fakePlugins struct {
 	list    []engine.InstalledPlugin
 	install engine.InstallResult
+	markets []string
 	asked   []string
 }
 
@@ -299,6 +301,20 @@ func (f *fakePlugins) List(dir string) ([]engine.InstalledPlugin, error) {
 func (f *fakePlugins) Install(dir, plugin string) (engine.InstallResult, error) {
 	f.asked = append(f.asked, "install "+plugin)
 	return f.install, nil
+}
+
+func (f *fakePlugins) Uninstall(dir, plugin string) (engine.InstallResult, error) {
+	f.asked = append(f.asked, "uninstall "+plugin)
+	return engine.InstallResult{Outcome: "ok"}, nil
+}
+
+// Marketplaces answers with markets; nil: Claude Code could not say.
+func (f *fakePlugins) Marketplaces(dir string) ([]string, error) {
+	f.asked = append(f.asked, "marketplaces")
+	if f.markets == nil {
+		return nil, errors.New("not asked here")
+	}
+	return f.markets, nil
 }
 
 // init and update install each pack's plugin after writing (or with nothing to write), never before and never on a
@@ -317,7 +333,8 @@ func TestPluginStep(t *testing.T) {
 	code, out, _ := c.run("", append(c.linkArgs(c.pack.A), "--yes")...)
 	if code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketA ||
 		!strings.Contains(out, "This machine's plugins (Claude Code, scope project: this checkout's .claude/settings.json):\n  waiting      demo-pack@"+marketA+": ") ||
-		!strings.Contains(out, "\n               next: open Claude Code in this checkout") || c.exists(".claude/settings.local.json") {
+		!strings.Contains(out, "\n               next: a person opens Claude Code in this checkout and accepts its trust question") ||
+		!strings.Contains(out, "; then run: bonsai update\n") || c.exists(".claude/settings.local.json") {
 		t.Errorf("init --yes: %d %v\n%s", code, f.asked, out)
 	}
 	// Nothing to change: installed now.

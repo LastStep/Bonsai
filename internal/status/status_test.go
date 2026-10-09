@@ -490,13 +490,25 @@ func TestStatusNeeds(t *testing.T) {
 
 // fakeCLI answers claude plugin list.
 type fakeCLI struct {
-	list []engine.InstalledPlugin
-	err  error
+	list    []engine.InstalledPlugin
+	err     error
+	markets []string
 }
 
 func (f fakeCLI) List(string) ([]engine.InstalledPlugin, error) { return f.list, f.err }
 func (f fakeCLI) Install(string, string) (engine.InstallResult, error) {
 	return engine.InstallResult{}, errors.New("status never installs")
+}
+func (f fakeCLI) Uninstall(string, string) (engine.InstallResult, error) {
+	return engine.InstallResult{}, errors.New("status never uninstalls")
+}
+
+// Marketplaces answers with markets; nil: Claude Code could not say.
+func (f fakeCLI) Marketplaces(string) ([]string, error) {
+	if f.markets == nil {
+		return nil, errors.New("could not say")
+	}
+	return f.markets, nil
 }
 
 // --full adds checks: the pack's newer release tags (git ls-remote of the pack's own repository, no network), its
@@ -530,7 +542,7 @@ func TestStatusFull(t *testing.T) {
 	checkShape(t, doc, false)
 	market := engine.MarketplaceName("full", []string{pack.A})
 	want := `{"packs":[{"id":"demo-pack","version":"0.1.0","ref":"v0.1.0","newer":["v0.2.0","v0.10.0"],"why":null}],` +
-		`"plugins":[{"id":"demo-pack","plugin":"demo-pack@` + market + `","installed":false,"why":null}],` +
+		`"plugins":[{"id":"demo-pack","plugin":"demo-pack@` + market + `","installed":false,"why":"not installed for this checkout; to install it, run: bonsai update"}],` +
 		`"claude_code":{"version":"2.1.300","floor":"2.1.294","from":"bonsai","state":"ok","why":null},"mcp":[]}`
 	if v, _ := doc.Get("checks"); schema.Show(v) != want {
 		t.Errorf("checks %s\nwant   %s", schema.Show(v), want)
@@ -540,6 +552,18 @@ func TestStatusFull(t *testing.T) {
 	}
 	if v, _ := doc.Get("needs"); !strings.Contains(schema.Show(v), `{"kind":"plugin","id":"demo-pack","name":null,`) {
 		t.Errorf("a plugin not installed here is not a needs entry of kind plugin: %s", schema.Show(v))
+	}
+	// Not installed, and Claude Code has not registered the marketplace (first-time trust): the person's step, then
+	// the command (step 5.1.7); still a needs entry of kind plugin.
+	doc, _ = BuildWith(root, "dev", Options{Full: true, Plugins: fakeCLI{markets: []string{}}, Claude: func() (string, error) { return "2.1.300", nil }})
+	checkShape(t, doc, false)
+	if v, _ := doc.Get("checks"); !strings.Contains(schema.Show(v), `"installed":false,"why":"Claude Code has not registered this checkout's marketplace `+
+		market+` yet (first-time trust): a person opens Claude Code in this checkout and accepts its trust question`) ||
+		!strings.Contains(schema.Show(v), `then run: bonsai update"`) {
+		t.Errorf("trust: checks %s", schema.Show(v))
+	}
+	if v, _ := doc.Get("needs"); !strings.Contains(schema.Show(v), `{"kind":"plugin","id":"demo-pack","name":null,`) {
+		t.Errorf("trust: needs %s", schema.Show(v))
 	}
 	// Installed at the lock's commit: kind pack. Claude Code older than the floor: old, never a problem.
 	installed := fakeCLI{list: []engine.InstalledPlugin{{ID: "demo-pack@" + market, Version: pack.A[:12], Scope: "project", Enabled: true, ProjectPath: root}}}

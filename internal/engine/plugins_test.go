@@ -24,6 +24,31 @@ type fakeCLI struct {
 	rewrite  string // a file Install appends a line feed to, as Claude Code rewrites the settings file
 	asked    []string
 	askedDir []string
+	// uninstall answers Uninstall, by plugin id (missing: ok); unErr fails it.
+	uninstall map[string]InstallResult
+	unErr     error
+	// markets answers Marketplaces; nil fails it (Claude Code could not say).
+	markets []string
+}
+
+func (f *fakeCLI) Uninstall(dir, plugin string) (InstallResult, error) {
+	f.asked = append(f.asked, "uninstall "+plugin)
+	f.askedDir = append(f.askedDir, dir)
+	if f.unErr != nil {
+		return InstallResult{}, f.unErr
+	}
+	if r, ok := f.uninstall[plugin]; ok {
+		return r, nil
+	}
+	return InstallResult{Outcome: "ok"}, nil
+}
+
+func (f *fakeCLI) Marketplaces(dir string) ([]string, error) {
+	f.asked = append(f.asked, "marketplaces")
+	if f.markets == nil {
+		return nil, errors.New("claude plugin marketplace list --json failed")
+	}
+	return f.markets, nil
 }
 
 func (f *fakeCLI) List(dir string) ([]InstalledPlugin, error) {
@@ -154,8 +179,13 @@ func TestInstallPlugins(t *testing.T) {
 		Message: `Plugin "demo-pack" not found in marketplace`}}}
 	if got := InstallPlugins(root, p.Config, lock, f, PluginConsent{}); len(got) != 1 || got[0].Result != "waiting" ||
 		!strings.Contains(got[0].Message, "has not registered this checkout's marketplace") || !strings.Contains(got[0].Next, "trust question") ||
-		!strings.Contains(got[0].Next, "run bonsai update again") {
+		!strings.HasSuffix(got[0].Next, "; then run: bonsai update") || got[0].Who != "person" {
 		t.Errorf("an unregistered marketplace: %+v", got)
+	}
+	// A plugin that carries code: the person's step, then the command with --allow-exec.
+	got = InstallPlugins(root, p.Config, lock, f, PluginConsent{AllowExec: true, Code: map[string][]CodePart{testpack.ID: {{Path: "hooks/hooks.json"}}}})
+	if len(got) != 1 || got[0].Result != "waiting" || !strings.HasSuffix(got[0].Next, "; then run: bonsai update --allow-exec") {
+		t.Errorf("an unregistered marketplace, a plugin with code: %+v", got)
 	}
 	f = &fakeCLI{install: map[string]InstallResult{want: {Outcome: "failed", FailureCode: "network", Message: "fetch failed\u2026"}}}
 	if got := InstallPlugins(root, p.Config, lock, f, PluginConsent{}); len(got) != 1 || got[0].Result != "failed" ||

@@ -21,9 +21,24 @@ package engine
 //     any order).
 //
 // So after init and update write, Bonsai asks Claude Code to install each locked plugin at project scope, never user
-// (InstallPlugins), and only a project's own packs' plugins: PluginCLI can list and install, and nothing else, so
-// Bonsai never installs, removes or changes a plugin that is not one of the project's own packs (Rohan, 9 Oct: "it
-// shouldn't install or remove other plugins"). A plugin that carries code parts (consent.go: hooks, MCP and LSP
+// (InstallPlugins), and only a project's own packs' plugins: PluginCLI can list plugins and marketplaces, install and
+// uninstall, and nothing else, and Bonsai never installs, removes or changes a plugin that is not one of the project's
+// own packs (Rohan, 9 Oct: "it shouldn't install or remove other plugins").
+//
+// Taking a pack out (step 5.1.7: unlink, or update with a pack gone from bonsai.yaml) removes Claude Code's record of
+// the pack's install for this checkout (UninstallPlugins): `claude plugin uninstall <id> --scope project` in the
+// checkout, for each project-scope install Claude Code lists for this checkout of that pack from one of the
+// workspace's marketplaces (the lock's, and any older one an update left). As measured on Claude Code 2.1.295, the
+// uninstall works before and after Bonsai's entries leave .claude/settings.json, the file deleted too; run before, it
+// writes the file itself (an empty enabledPlugins), so Bonsai runs it after its own write, and Claude Code then
+// leaves the file alone. A plugin not installed answers failureCode not_installed, which is no failure: nothing to
+// remove. A worktree's record is its own (its own checkout's path): unlink in each checkout.
+//
+// First-time trust stays a person's (step 5.1.7): Bonsai never answers Claude Code's trust question and never
+// registers a marketplace behind it. Until a Claude Code session in the trusted folder has registered the workspace's
+// marketplace, `claude plugin install` answers not_found and `claude plugin marketplace list` lacks it: the install
+// step reports waiting, check warns plugin-trust and status --full says so, each naming the person's step (open
+// Claude Code in the checkout and accept its trust question) and then the command. A plugin that carries code parts (consent.go: hooks, MCP and LSP
 // servers, monitors, mods) runs code on this machine once installed, so it is installed only with --allow-exec, on
 // each machine (Rohan, 9 Oct, S2: "Ask on each machine"): without it the result is waiting, naming the plugin and its
 // code parts, with the same command and --allow-exec as the person's next step; a plugin Claude Code already reports
@@ -42,6 +57,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -77,10 +93,13 @@ type InstallResult struct {
 // ErrNoClaude is PluginCLI's error when Claude Code is not on the PATH.
 var ErrNoClaude = errors.New("claude is not on the PATH")
 
-// PluginCLI is the part of Claude Code's command line Bonsai uses. Each call runs in dir, a checkout's top folder.
+// PluginCLI is the part of Claude Code's command line Bonsai uses. Each call runs in dir, a checkout's top folder;
+// Install and Uninstall pass --scope project (PluginScope), never another scope.
 type PluginCLI interface {
 	List(dir string) ([]InstalledPlugin, error)
 	Install(dir, plugin string) (InstallResult, error)
+	Uninstall(dir, plugin string) (InstallResult, error)
+	Marketplaces(dir string) ([]string, error) // the names of the marketplaces Claude Code has registered
 }
 
 // ClaudeCLI runs the `claude` on the PATH, with the process's environment (CLAUDE_CODE_PLUGIN_CACHE_DIR passes
@@ -137,6 +156,50 @@ func (c ClaudeCLI) Install(dir, plugin string) (InstallResult, error) {
 		return InstallResult{}, errors.New("claude plugin install failed: " + msg)
 	}
 	return InstallResult{}, errors.New("claude plugin install printed no result line")
+}
+
+// Uninstall runs `claude plugin uninstall <plugin> --scope project --json`: Claude Code's record of the plugin's
+// install for this checkout goes. Its result line has install's shape (failureCode not_installed: nothing to remove).
+func (c ClaudeCLI) Uninstall(dir, plugin string) (InstallResult, error) {
+	out, msg, err := c.run(dir, listTimeout, "plugin", "uninstall", plugin, "--scope", PluginScope, "--json")
+	if errors.Is(err, ErrNoClaude) {
+		return InstallResult{}, err
+	}
+	if r, ok := ParseInstallResult(out); ok {
+		return r, nil
+	}
+	if err != nil {
+		return InstallResult{}, errors.New("claude plugin uninstall failed: " + msg)
+	}
+	return InstallResult{}, errors.New("claude plugin uninstall printed no result line")
+}
+
+// Marketplaces runs `claude plugin marketplace list --json`: the marketplaces Claude Code has registered on this
+// machine, by name.
+func (c ClaudeCLI) Marketplaces(dir string) ([]string, error) {
+	out, msg, err := c.run(dir, listTimeout, "plugin", "marketplace", "list", "--json")
+	if err != nil {
+		if errors.Is(err, ErrNoClaude) {
+			return nil, err
+		}
+		return nil, errors.New("claude plugin marketplace list --json failed: " + msg)
+	}
+	return ParseMarketplaces(out)
+}
+
+// ParseMarketplaces reads `claude plugin marketplace list --json`: a JSON list of objects with a name.
+func ParseMarketplaces(out []byte) ([]string, error) {
+	var list []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(bytes.TrimSpace(out), &list); err != nil {
+		return nil, errors.New("claude plugin marketplace list --json printed no list Bonsai reads: " + err.Error())
+	}
+	names := make([]string, 0, len(list))
+	for _, m := range list {
+		names = append(names, m.Name)
+	}
+	return names, nil
 }
 
 // ParsePluginList reads `claude plugin list --json`: a JSON list of installed plugins.
@@ -199,12 +262,12 @@ func bonsaiPlugin(name string) *regexp.Regexp {
 	return regexp.MustCompile(`^([a-z0-9][a-z0-9-]*)@bonsai-` + regexp.QuoteMeta(name) + `-[0-9a-f]{8}$`)
 }
 
-// PluginResult is what InstallPlugins did for one pack.
+// PluginResult is what InstallPlugins or UninstallPlugins did for one pack's plugin.
 type PluginResult struct {
 	Pack    string
 	Plugin  string // <pack>@<marketplace>
 	Commit  string
-	Result  string // installed, waiting, failed or skipped
+	Result  string // installed, waiting, failed or skipped; uninstalled (UninstallPlugins)
 	Message string
 	Next    string
 	Who     string // who takes Next: agent or person
@@ -283,10 +346,9 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 		case res.FailureCode == "not_found":
 			r.Result = "waiting"
 			r.Message = "Claude Code has not registered this checkout's marketplace " + market + " yet: a Claude Code session " +
-				"here does that, once the folder is trusted"
-			r.Next = "open Claude Code in this checkout (accept its trust question if it asks), leave it, then run bonsai update " +
-				"again: it installs the plugin at " + pluginVersion(lp.Commit) + ", and sessions after that load it"
-			r.Who = "person"
+				"in this checkout registers it once a person has trusted the folder (Bonsai never answers that question), " +
+				"then update installs the plugin at " + pluginVersion(lp.Commit)
+			r.Next, r.Who = TrustNext(len(consent.Code[lp.ID]) > 0), "person"
 		default:
 			r.Result, r.Message, r.Next, r.Who = "failed", strings.TrimSpace(res.Message), "run: "+cmd, "agent"
 		}
@@ -294,6 +356,126 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 		out = append(out, r)
 	}
 	return out
+}
+
+// TrustNext is the person's step while Claude Code has not registered a checkout's marketplace (first-time trust,
+// spec section 5): open Claude Code in the checkout and accept its trust question, then the command that installs
+// the plugin, with --allow-exec when it carries code (a person's consent on each machine).
+func TrustNext(code bool) string {
+	cmd := "bonsai update"
+	if code {
+		cmd += " --allow-exec"
+	}
+	return "a person opens Claude Code in this checkout and accepts its trust question (Bonsai never answers it), then " +
+		"quits it; then run: " + cmd
+}
+
+// UninstallPlugins removes Claude Code's record of each pack's plugin install for the checkout at root (step 5.1.7:
+// the packs unlink takes out, or update takes out of bonsai.yaml), at project scope: every project-scope install
+// `claude plugin list` reports for this checkout of the pack from one of the workspace's marketplaces
+// (bonsai-<name>-<8 hex>; any workspace name when name is ""), the lock's (market) and any older one an update left.
+// Run it after the project's files are written, so Claude Code leaves .claude/settings.json alone. One result per
+// install removed, or one per pack with none: uninstalled (also when Claude Code had no record: nothing to remove),
+// failed or skipped, each failure naming the exact command; it never fails the command. A nil cli asks nothing.
+func UninstallPlugins(root, name, market string, packs []workspace.LockedPack, cli PluginCLI) []PluginResult {
+	if cli == nil || len(packs) == 0 {
+		return nil
+	}
+	pattern := regexp.QuoteMeta(name)
+	if name == "" {
+		pattern = `[a-z][a-z0-9-]*`
+	}
+	ours := regexp.MustCompile(`^([a-z0-9][a-z0-9-]*)@bonsai-` + pattern + `-[0-9a-f]{8}$`)
+	plugin := func(pack string) string {
+		if market == "" {
+			return pack + "@bonsai-" + name
+		}
+		return PluginID(pack, market)
+	}
+	command := func(id string) string { return "claude plugin uninstall " + id + " --scope " + PluginScope }
+	list, err := cli.List(root)
+	var out []PluginResult
+	for _, lp := range packs {
+		r := PluginResult{Pack: lp.ID, Plugin: plugin(lp.ID), Commit: lp.Commit}
+		switch {
+		case errors.Is(err, ErrNoClaude):
+			r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so its record of the plugin was not removed (a machine without Claude Code has none)"
+			r.Next, r.Who = "if Claude Code is installed here off the PATH, run in this checkout: "+command(r.Plugin), "person"
+			out = append(out, asciiResult(r))
+			continue
+		case err != nil:
+			r.Result, r.Message = "failed", "Claude Code's plugins could not be listed: "+err.Error()
+			r.Next, r.Who = "run in this checkout: "+command(r.Plugin), "agent"
+			out = append(out, asciiResult(r))
+			continue
+		}
+		var ids []string
+		for _, p := range list {
+			sub := ours.FindStringSubmatch(p.ID)
+			if sub == nil || sub[1] != lp.ID || p.Scope != PluginScope || p.ProjectPath == "" || !samePath(p.ProjectPath, root) {
+				continue
+			}
+			ids = append(ids, p.ID)
+		}
+		sort.Strings(ids)
+		if len(ids) == 0 {
+			r.Result, r.Message = "uninstalled", "not installed for this checkout: nothing to remove"
+			out = append(out, asciiResult(r))
+			continue
+		}
+		for i, id := range ids {
+			if i > 0 && ids[i-1] == id {
+				continue
+			}
+			r := PluginResult{Pack: lp.ID, Plugin: id, Commit: lp.Commit}
+			res, err := cli.Uninstall(root, id)
+			switch {
+			case errors.Is(err, ErrNoClaude):
+				r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so its record of the plugin was not removed"
+				r.Next, r.Who = "if Claude Code is installed here off the PATH, run in this checkout: "+command(id), "person"
+			case err != nil:
+				r.Result, r.Message, r.Next, r.Who = "failed", err.Error(), "run in this checkout: "+command(id), "agent"
+			case res.Outcome == "ok":
+				r.Result, r.Message = "uninstalled", "Claude Code's record of the install for this checkout removed"
+			case res.FailureCode == "not_installed":
+				r.Result, r.Message = "uninstalled", "not installed for this checkout: nothing to remove"
+			default:
+				r.Result, r.Message, r.Next, r.Who = "failed", strings.TrimSpace(res.Message), "run in this checkout: "+command(id), "agent"
+			}
+			out = append(out, asciiResult(r))
+		}
+	}
+	return out
+}
+
+// asciiResult keeps a result's text ASCII.
+func asciiResult(r PluginResult) PluginResult {
+	r.Message, r.Next = ascii(r.Message), ascii(r.Next)
+	return r
+}
+
+// registered asks Claude Code once whether it has registered a marketplace: true or false, and false with ok false
+// when it could not be asked.
+func registered(root, market string, cli PluginCLI) (yes, ok bool) {
+	names, err := cli.Marketplaces(root)
+	if err != nil {
+		return false, false
+	}
+	for _, n := range names {
+		if n == market {
+			return true, true
+		}
+	}
+	return false, true
+}
+
+// MarketplaceRegistered is registered for status --full: whether Claude Code has registered the lock's marketplace
+// (first-time trust, spec section 5), and whether it could be asked.
+func MarketplaceRegistered(r *CheckResult, cli PluginCLI) (yes, ok bool) {
+	if cli == nil || r == nil || r.Config == nil || r.Lock == nil || len(r.Lock.Packs) == 0 {
+		return false, false
+	}
+	return registered(r.Root, lockMarket(r.Config, r.Lock), cli)
 }
 
 // ComparePlugins adds check's plugin findings and warnings (spec §5, "Drift is reported, never silent"): it asks
@@ -318,6 +500,7 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 	}
 	market := lockMarket(r.Config, r.Lock)
 	ours := bonsaiPlugin(r.Config.Name)
+	askedMarket, known, askedOK := false, false, false
 	for _, lp := range r.Lock.Packs {
 		want := PluginID(lp.ID, market)
 		version := pluginVersion(lp.Commit)
@@ -347,9 +530,20 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 					"their own settings) and takes it out; for a local one, in the main checkout, run: claude plugin uninstall "+p.ID+" --scope local")
 		}
 		if !installed {
+			if !askedMarket {
+				askedMarket = true
+				known, askedOK = registered(r.Root, market, cli)
+			}
+			if askedOK && !known {
+				r.add("plugin-trust", SettingsFile, "", "Claude Code has not registered this checkout's marketplace "+market+" yet, so the plugin "+
+					want+" ("+lp.ID+" at "+version+") cannot be installed: a Claude Code session in this checkout registers it once a "+
+					"person has trusted the folder", "a person opens Claude Code in this checkout and accepts its trust question (Bonsai "+
+					"never answers it), then quits it; a plugin that carries code also needs --allow-exec, a person's consent, which "+
+					"update names; then run: bonsai update")
+				continue
+			}
 			r.add("plugin-missing", SettingsFile, "", "Claude Code reports the plugin "+want+" ("+lp.ID+" at "+version+") not installed for this checkout",
-				"Claude Code first registers this checkout's marketplace in a session here, once a person accepts its trust question, "+
-					"and a plugin that carries code needs --allow-exec, a person's consent, which update names; to install it, run: bonsai update --yes")
+				"a plugin that carries code needs --allow-exec, a person's consent, which update names; to install it, run: bonsai update --yes")
 		}
 	}
 }

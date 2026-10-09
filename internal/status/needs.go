@@ -38,7 +38,9 @@ func needsOf(lock *workspace.Lock, installed map[string]bool) []any {
 //	packs        each locked pack: id, version (locked), ref (bonsai.yaml's), newer (its source's release tags past the
 //	             locked version, oldest first; [] for none), why (null, or why the tags could not be read)
 //	plugins      each locked pack's plugin as Claude Code reports it for this checkout: id, plugin, installed (true,
-//	             false, or null when Claude Code could not be asked), why
+//	             false, or null when Claude Code could not be asked), why (null when installed; when not, the next
+//	             step: first-time trust's, a person's, while Claude Code has not registered the workspace's marketplace,
+//	             step 5.1.7, else the command that installs it)
 //	claude_code  version (read, or null), floor, from (bonsai or a pack's id), state (ok, old or unknown), why
 //	mcp          the MCP servers the packs' needs name, each with whether it is reachable as far as Bonsai can tell
 //	             without starting a session, unknown where it cannot: none in formats set 4 (bonsai.pack/1's needs holds
@@ -63,6 +65,20 @@ func fullChecks(r *engine.CheckResult, cfg *workspace.Config, lock *workspace.Lo
 	if lock != nil && len(lock.Packs) > 0 {
 		market = engine.LockMarket(cfg, lock)
 	}
+	// Why a plugin is not installed: Claude Code asked once whether it has registered the marketplace.
+	notInstalled := func() func() string {
+		var why string
+		return func() string {
+			if why == "" {
+				why = "not installed for this checkout; to install it, run: bonsai update"
+				if known, ok := engine.MarketplaceRegistered(r, o.Plugins); ok && !known {
+					why = "Claude Code has not registered this checkout's marketplace " + market + " yet (first-time trust): " +
+						engine.TrustNext(false)
+				}
+			}
+			return why
+		}
+	}()
 	if lock != nil {
 		for _, lp := range lock.Packs {
 			newer, why := []string{}, any(nil)
@@ -80,6 +96,9 @@ func fullChecks(r *engine.CheckResult, cfg *workspace.Config, lock *workspace.Lo
 			var have, pwhy any
 			if installed != nil {
 				have = installed[lp.ID]
+				if !installed[lp.ID] {
+					pwhy = ascii(notInstalled())
+				}
 			} else {
 				pwhy = "Claude Code could not be asked: " + ascii(perr.Error())
 			}
