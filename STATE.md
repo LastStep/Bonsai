@@ -149,8 +149,6 @@ Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
-- Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the model): due before 5.3
-  (and 5.1.7's Windows `-p` run would use it). In PowerShell: `claude`, then `/login`, then `/exit`.
 - In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and
   `update`'s JSON (5.1.3/5.1.4b). In 5.2, a look (no vote): the log's two new field names, `bonsai_path` and
   `bonsai_sha256`.
@@ -162,7 +160,7 @@ Option rounds in 5.1: one.
 
 - Rohan's roadmap artifact is at version 31 (its plan card still "waiting on you"): updated at 5.1's end, as the plan
   says (item 9), or sooner if he asks. Since then: the plan approved; 5.1.0 to 5.1.6 landed; 5.2 to 5.5 planned and
-  approved; his answers of 9 Oct.
+  approved; his answers of 9 Oct; his Windows login renewed (9 Oct, 19:07; the settings file unchanged).
 
 - The WSL user settings file's baseline is `9e049dea...80d8d6` since Rohan's `/plugin` at 12:06 on 9 Oct (his word;
   before it `7b515457...a025a7`). Windows' is unchanged, `2b6295c1...4ff6c9`.
