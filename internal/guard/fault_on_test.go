@@ -45,10 +45,12 @@ func TestEachFaultBlocks(t *testing.T) {
 	var died atomic.Int32
 	defer func(d func()) { die = d }(die)
 	die = func() { died.Add(1); panic(crashStandIn) }
-	// Set for the rest of this test binary, not restored: every slow run leaves its work goroutine in the sleep, and
-	// restoring would race with them. slowFor never ends while the tests run, so no late record lands in a removed
-	// folder.
-	slowFor = time.Hour
+	// Set once for the rest of this test binary, never restored or set again: a slow run leaves its work goroutine in
+	// the sleep or on its way there, and a write would race with its read. slowFor never ends while the tests run, so
+	// no late record lands in a removed folder.
+	if slowFor != time.Hour {
+		slowFor = time.Hour
+	}
 
 	cases := []struct {
 		fault    string
@@ -186,7 +188,10 @@ func awaitRecord(t *testing.T, dir string) (file string, late bool) {
 			}
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("no whole record in %s %v after the answer: %v", LogDir, Budget, names)
+			for i := range names {
+				names[i] = filepath.Base(names[i])
+			}
+			t.Fatalf("no whole record in %s %v after the answer (files: %v)", LogDir, Budget, names)
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
