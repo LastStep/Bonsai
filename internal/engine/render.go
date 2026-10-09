@@ -26,6 +26,8 @@ func (p *Plan) Preview(diff bool) string {
 		for _, m := range p.Packs {
 			move := "at " + short(m.To)
 			switch {
+			case m.To == "":
+				move = short(m.From) + " -> taken out"
 			case m.From == "":
 				move = "new, at " + short(m.To)
 			case m.From != m.To:
@@ -34,6 +36,7 @@ func (p *Plan) Preview(diff bool) string {
 			fmt.Fprintf(&b, "  %s %s  %s  (%s)\n", m.ID, ascii(m.Version), move, ascii(m.Source))
 		}
 	}
+	b.WriteString(p.TakenOutText())
 	b.WriteString("Files:\n")
 	for _, f := range p.Files {
 		kind := ""
@@ -89,6 +92,50 @@ func (p *Plan) Preview(diff bool) string {
 		}
 	}
 	return b.String()
+}
+
+// TakenOutText names, for each pack the plan takes out (Plan.Removed), everything it wrote and what becomes of it
+// (step 5.1.7): its files (each listed under Files: removed when nobody edited it, else released and named here), its
+// part of the block, its settings lines (listed under .claude/settings.json), its lock entry and declares, and its
+// plugin's install record, removed after the write. "" when the plan takes none out.
+func (p *Plan) TakenOutText() string {
+	if len(p.Removed) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	for _, lp := range p.Removed {
+		var removed, left []string
+		for _, f := range p.Files {
+			if f.Pack != lp.ID {
+				continue
+			}
+			switch f.Result {
+			case Removed:
+				removed = append(removed, f.Path)
+			case Released:
+				left = append(left, f.Path)
+			}
+		}
+		verb := "Taken out of bonsai.yaml"
+		if p.Command == "unlink" {
+			verb = "Taken out by unlink"
+		}
+		fmt.Fprintf(&b, "%s: %s. Its files nobody edited go (%s); its part of Bonsai's block in %s goes; its hook lines, deny rules "+
+			"and plugin wiring leave %s; its lock entry and declares go; once written, Claude Code's record of its plugin's install "+
+			"for this checkout is removed (claude plugin uninstall, scope %s).\n", verb, ascii(lp.ID), listOrNone(removed), BlockFile,
+			SettingsFile, PluginScope)
+		if len(left) > 0 {
+			fmt.Fprintf(&b, "  Left in place, the project's now (edited here, or written once): %s\n", ascii(strings.Join(left, ", ")))
+		}
+	}
+	return b.String()
+}
+
+func listOrNone(paths []string) string {
+	if len(paths) == 0 {
+		return "none"
+	}
+	return ascii(strings.Join(paths, ", "))
 }
 
 // RunsCodeText is the preview's "Runs code" part (consent.go): each item, and whether --allow-exec is needed; at a
@@ -268,8 +315,7 @@ func (p *Plan) Changes(result string, refusal *Error) *format.Changes {
 	c := &format.Changes{Command: p.Command, Result: result, Workspace: p.WorkspaceRef(), AllowExec: p.AllowExec,
 		LeftHooks: p.LeftHooks, Unverified: p.Unverified}
 	for _, m := range p.Packs {
-		to := m.To
-		c.Packs = append(c.Packs, format.ChangesPack{ID: m.ID, Source: m.Source, Version: m.Version, From: orNull(m.From), To: &to})
+		c.Packs = append(c.Packs, format.ChangesPack{ID: m.ID, Source: m.Source, Version: m.Version, From: orNull(m.From), To: orNull(m.To)})
 	}
 	for _, f := range p.Files {
 		c.Files = append(c.Files, format.ChangesFile{Path: f.Path, Kind: orNull(f.Kind), Pack: orNull(f.Pack), Result: f.Result,

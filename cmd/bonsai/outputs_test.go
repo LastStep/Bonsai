@@ -263,7 +263,7 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		who  string // "" for the word's usual one
 	}{
 		{"no word", nil, nil, 2, "unknown-command", ""},
-		{"a word Bonsai does not have", nil, []string{"unlink"}, 2, "unknown-command", ""},
+		{"a word Bonsai does not have", nil, []string{"ladder"}, 2, "unknown-command", ""},
 		{"--version with more", nil, []string{"--version", "now"}, 2, "bad-flag", ""},
 
 		{"init with no values", nil, []string{"init"}, 2, "missing-value", ""},
@@ -298,8 +298,6 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		{"update, no lock", then(linked, func(c *cli) { _ = os.Remove(filepath.Join(c.root, ".bonsai", "lock.json")) }), []string{"update"}, 4, "no-lock", ""},
 		{"update, a lock Bonsai does not read", then(linked, write(".bonsai/lock.json", "{")), []string{"update"}, 4, "bad-lock", ""},
 		{"update, a bonsai.yaml Bonsai does not read", write("bonsai.yaml", "format: bonsai.workspace/1\nid: 0755\n"), []string{"update"}, 2, "bad-config", ""},
-		{"update, a pack taken out", then(linked, write("bonsai.yaml", "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: demo\n")),
-			[]string{"update"}, 4, "not-built", "person"},
 		{"update, a settings file that is not an object", then(linked, write(".claude/settings.json", "[]")), []string{"update"}, 2, "bad-file", ""},
 		{"update, a broken block", then(linked, write("CLAUDE.md", "<!-- bonsai:block start -->\n<!-- bonsai:block start -->\n")), []string{"update"}, 2, "bad-file", ""},
 		{"update, conflicts", then(linked, write("demo/guide.md", "mine\n"), func(c *cli) { testpack.SetRef(c.t, c.root, p.A, p.B) }),

@@ -424,3 +424,47 @@ func TestPluginStepWithCode(t *testing.T) {
 		t.Errorf("update once installed: %d, asked %v\n%s", code, f.asked, out)
 	}
 }
+
+// A pack taken out of bonsai.yaml (step 5.1.7): update previews it (exit 4 with no --yes), and with --yes takes it
+// out, then removes Claude Code's record of its plugin's install for this checkout (after its own write) and installs
+// the remaining pack's plugin; check is clean before and after but for the step it names.
+func TestUpdateTakesAPackOut(t *testing.T) {
+	c := newCLI(t)
+	side, sc := testpack.SidePack(t, c.tmp)
+	c.write("bonsai.yaml", "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: demo\npacks:\n"+
+		"  - id: demo-pack\n    source: \""+filepath.ToSlash(c.pack.Source)+"\"\n    ref: \""+c.pack.A+"\"\n"+
+		"  - id: side-pack\n    source: \""+filepath.ToSlash(side)+"\"\n    ref: \""+sc[0]+"\"\n")
+	if code, out, errOut := c.run("", "init", "--yes", "--allow-exec"); code != 0 {
+		t.Fatalf("link: %d\n%s%s", code, out, errOut)
+	}
+	oldMarket := engine.MarketplaceName("demo", []string{c.pack.A, sc[0]})
+	newMarket := engine.MarketplaceName("demo", []string{c.pack.A})
+	f := &fakePlugins{install: engine.InstallResult{Outcome: "ok"}, list: []engine.InstalledPlugin{
+		{ID: "side-pack@" + oldMarket, Version: sc[0][:12], Scope: "project", ProjectPath: c.root},
+		{ID: "demo-pack@" + oldMarket, Version: c.pack.A[:12], Scope: "project", ProjectPath: c.root},
+	}}
+	defer func(p engine.PluginCLI) { pluginCLI = p }(pluginCLI)
+	pluginCLI = f
+	cfg := c.read("bonsai.yaml")
+	c.write("bonsai.yaml", cfg[:strings.Index(cfg, "  - id: side-pack")])
+
+	code, out, _ := c.run("", "update")
+	if code != 4 || !strings.Contains(out, "side-pack 0.2.0  "+sc[0][:7]+" -> taken out") || !strings.Contains(out, "next: to write it, run: bonsai update --yes") ||
+		len(f.asked) != 0 || !c.exists("side/a.md") {
+		t.Errorf("update with no --yes: %d %v\n%s", code, f.asked, out)
+	}
+	code, out, _ = c.run("", "update", "--yes", "--json")
+	doc := fits(t, out, "changes")
+	if code != 0 || doc.String("result") != "applied" || c.exists("side/a.md") ||
+		strings.Join(f.asked, ",") != "list,uninstall side-pack@"+oldMarket+",install demo-pack@"+newMarket {
+		t.Errorf("update --yes: %d %v\n%s", code, f.asked, out)
+	}
+	plugins, _ := doc.Get("plugins")
+	if !strings.Contains(schema.Show(plugins), `{"pack":"side-pack","plugin":"side-pack@`+oldMarket+`","commit":"`+sc[0]+`","result":"uninstalled",`) {
+		t.Errorf("plugins %s", schema.Show(plugins))
+	}
+	f.list = []engine.InstalledPlugin{{ID: "demo-pack@" + newMarket, Version: c.pack.A[:12], Scope: "project", ProjectPath: c.root}}
+	if code, out, _ := c.run("", "check"); code != 1 || !onlySource(out) {
+		t.Errorf("check after: %d\n%s", code, out)
+	}
+}

@@ -185,8 +185,9 @@ func (r *CheckResult) checkLockedFiles() {
 	}
 	for _, lp := range lock.Packs {
 		if !listed[lp.ID] {
-			r.add("packs", workspace.LockFile, "", "the lock holds the pack "+lp.ID+", which bonsai.yaml does not list",
-				"put the pack back in bonsai.yaml for now: taking a pack out of a project comes with step 5.1.7")
+			r.add("packs", workspace.LockFile, "", "the lock holds the pack "+lp.ID+", which bonsai.yaml does not list: update takes it "+
+				"out of the project (its files nobody edited, its part of the block, its settings lines, its lock entry and its plugin's "+
+				"install here; edited files stay)", run("bonsai update --yes"))
 		}
 	}
 

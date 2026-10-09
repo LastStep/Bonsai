@@ -130,7 +130,7 @@ func runEngine(c *call) int {
 	// settled conflicts.
 	again := "bonsai " + word + " --allow-exec"
 	if plan.Nothing() {
-		plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))
+		plan.Plugins = pluginStep(plan, again)
 		return out("nothing", engine.ExitOK, nil, "bonsai "+word+": nothing to change"+packsAt(plan)+".\n"+plan.LeftAlone()+
 			recorded(plan)+plan.PluginsText()+closing)
 	}
@@ -195,13 +195,22 @@ func runEngine(c *call) int {
 		}
 		return c.fail(e)
 	}
-	plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))
+	plan.Plugins = pluginStep(plan, again)
 	text := ""
 	if f.yes {
 		text = preview
 	}
 	text += "bonsai " + word + ": written" + packsAt(plan) + ".\n" + plan.Applied() + plan.LeftAlone() + recorded(plan) + plan.PluginsText() + closing
 	return out("applied", engine.ExitOK, nil, text)
+}
+
+// pluginStep brings this machine's plugins to the plan once it is written (or has nothing to write;
+// internal/engine/plugins.go): it removes Claude Code's record of each pack the plan took out of bonsai.yaml, after
+// Bonsai's own lines left .claude/settings.json, then asks Claude Code to install each locked pack's plugin. Its
+// results never change the exit code.
+func pluginStep(plan *engine.Plan, again string) []engine.PluginResult {
+	out := engine.UninstallPlugins(plan.Root, plan.Config.Name, plan.OldMarket, plan.Removed, pluginCLI)
+	return append(out, engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))...)
 }
 
 // recorded writes this machine's record of the checkout (engine.RecordCheckout) once init or update ended without a
@@ -225,6 +234,10 @@ func conflictWhat(p *engine.Plan) string {
 func packsAt(p *engine.Plan) string {
 	var parts []string
 	for _, m := range p.Packs {
+		if m.To == "" {
+			parts = append(parts, m.ID+" taken out")
+			continue
+		}
 		parts = append(parts, m.ID+" at "+m.To[:7])
 	}
 	if len(parts) == 0 {

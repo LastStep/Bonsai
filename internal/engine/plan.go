@@ -22,6 +22,13 @@ package engine
 //     is kept; when the pack changes it again, it is a conflict again (spec §6), unless the file now equals it.
 //   - A file the pack no longer has: kind pack is removed when unedited, a conflict when edited, and dropped from the
 //     lock when already gone; kinds once and kept are released, left to the project.
+//   - A pack taken out of bonsai.yaml (step 5.1.7; the lock holds it, bonsai.yaml no longer lists it) is taken out of
+//     the project: its pack files nobody edited are removed, an edited one is released (left, now the project's, and
+//     named), its once and kept files released; its part of the block goes with the block's rebuild; its hook lines,
+//     deny rules and plugin wiring leave .claude/settings.json (its lines read from the lock's declares, offline, so
+//     Bonsai knows them as its own); its lock entry and declares go. A removed hook line runs nothing, so --yes is
+//     enough unless the same run adds or changes code. After the write, cmd/bonsai removes its plugin's install record
+//     for this checkout (UninstallPlugins, Plan.Removed).
 //   - --keep P (a conflict or an edited pack file): the file stays as the person has it, kind kept. --adopt P: the
 //     pack's copy is written (replaced) and the project's copy saved in the home's cache, never in the repo. Neither
 //     keeps Bonsai's own part of CLAUDE.md or .claude/settings.json: --adopt takes Bonsai's, --keep is refused.
@@ -136,7 +143,13 @@ type Plan struct {
 	Format0    int              // at a first link: the format-0 files the lock lists (contract §2.3)
 	LockWrite  bool
 
-	Plugins []PluginResult // what InstallPlugins did after the plan was written (or had nothing to write)
+	Plugins []PluginResult // what UninstallPlugins and InstallPlugins did after the plan was written (or had nothing to write)
+
+	// Removed are the locked packs the plan takes out, in the lock's order: update's packs gone from bonsai.yaml,
+	// or every pack unlink takes out. OldMarket is the marketplace the lock's packs had (lockMarket of the lock as
+	// read): the one their plugins were installed from.
+	Removed   []workspace.LockedPack
+	OldMarket string
 
 	pluginCode map[string][]CodePart // each pack's plugin code parts at its new commit, for the install step
 
@@ -378,12 +391,18 @@ func Build(req Request) (_ *Plan, err error) {
 		inConfig[r.ID] = true
 	}
 	lockedPack := map[string]workspace.LockedPack{}
+	takenOut := map[string]bool{}
 	for _, lp := range lock.Packs {
 		if !inConfig[lp.ID] {
-			return nil, errorf("not-built", ExitState, "put the pack back in bonsai.yaml for now; taking a pack out of a project comes with step 5.1",
-				"the lock holds the pack %s, which bonsai.yaml no longer lists", lp.ID).whose("person")
+			// Taken out of bonsai.yaml (step 5.1.7): update takes it out of the project.
+			p.Removed = append(p.Removed, lp)
+			takenOut[lp.ID] = true
+			continue
 		}
 		lockedPack[lp.ID] = lp
+	}
+	if len(lock.Packs) > 0 {
+		p.OldMarket = lockMarket(cfg, lock)
 	}
 
 	// Each pack at its ref, and at its locked commit.
@@ -441,6 +460,10 @@ func Build(req Request) (_ *Plan, err error) {
 			}
 		}
 		p.Packs = append(p.Packs, mv)
+	}
+	// Each pack taken out, after the packs bonsai.yaml names: from its locked commit to none.
+	for _, lp := range p.Removed {
+		p.Packs = append(p.Packs, PackMove{ID: lp.ID, Source: lp.Source, Version: lp.Version, From: lp.Commit})
 	}
 
 	p.pluginCode = map[string][]CodePart{}
@@ -620,13 +643,20 @@ func Build(req Request) (_ *Plan, err error) {
 			}
 		default: // the lock holds it; no pack gives it now
 			f.Kind, f.Pack = lf.Kind, lf.Pack
+			out := takenOut[lf.Pack]
 			switch {
+			case lf.Kind != "pack" && out:
+				f.Result, f.Why = Released, "its pack is taken out: the project's file, it stays"
 			case lf.Kind != "pack":
 				f.Result, f.Why = Released, "the pack no longer has it: the project keeps it"
 			case !exists:
 				f.Result, f.Why = Dropped, "the pack no longer has it, and it is gone"
+			case diskH == lf.SHA256 && out:
+				f.Result, f.Why, f.remove = Removed, "its pack is taken out, and nobody edited it", true
 			case diskH == lf.SHA256:
 				f.Result, f.Why, f.remove = Removed, "the pack no longer has it", true
+			case out:
+				f.Result, f.Why = Released, "its pack is taken out; you edited it, so it stays, and is the project's now"
 			default:
 				f.Result, f.Why = Conflict, "the pack no longer has it, and you edited it"
 				e := lf
@@ -679,6 +709,9 @@ func Build(req Request) (_ *Plan, err error) {
 			newLock.Files[BlockFile] = blockEntry
 		case diskH == lf.SHA256:
 			bf.Result, bf.Why, bf.write = Updated, "the block changed", bd.withBlock(body)
+			if len(p.Removed) > 0 {
+				bf.Why = "the block changed: the part of each pack taken out goes"
+			}
 			newLock.Files[BlockFile] = blockEntry
 		case bf.newH == lf.SHA256:
 			bf.Result, bf.Why = Changed, "you edited Bonsai's block; it is left alone"
@@ -698,17 +731,31 @@ func Build(req Request) (_ *Plan, err error) {
 	if err != nil {
 		return nil, err
 	}
+	// The lines Bonsai writes now (newPL), and the lines it last wrote (refPL), from the lock's packs in the lock's order
+	// (the order the old marketplace's name was taken in), each pack taken out among them: its lines from the lock's
+	// declares (offline), or, for a lock written before formats set 4, from the pack at its locked commit.
 	var newPL, refPL []packLines
+	byID := map[string]*PackData{}
 	for _, pd := range newPacks {
+		byID[pd.Ref.ID] = pd
 		newPL = append(newPL, packLines{id: pd.Ref.ID, source: pd.Ref.Source, folder: pd.Ref.Path, commit: pd.Commit,
 			known: true, hooks: pd.Manifest.Hooks, deny: pd.Manifest.Deny})
-		lp, ok := lockedPack[pd.Ref.ID]
-		if !ok {
+	}
+	for _, lp := range lock.Packs {
+		if pd, ok := byID[lp.ID]; ok {
+			pl := packLines{id: lp.ID, source: lp.Source, folder: lockedFolder(lp, pd.Ref.Path), commit: lp.Commit}
+			if od := oldPacks[lp.ID]; od != nil {
+				pl.known, pl.hooks, pl.deny = true, od.Manifest.Hooks, od.Manifest.Deny
+			}
+			refPL = append(refPL, pl)
 			continue
 		}
-		pl := packLines{id: lp.ID, source: lp.Source, folder: lockedFolder(lp, pd.Ref.Path), commit: lp.Commit}
-		if od := oldPacks[lp.ID]; od != nil {
-			pl.known, pl.hooks, pl.deny = true, od.Manifest.Hooks, od.Manifest.Deny
+		if !takenOut[lp.ID] {
+			continue
+		}
+		pl, err := takenOutLines(c, lp)
+		if err != nil {
+			return nil, err
 		}
 		refPL = append(refPL, pl)
 	}
@@ -890,6 +937,32 @@ func contains(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// takenOutLines are the settings lines a locked pack last gave, for a pack taken out: from the lock's declares (every
+// lock written since formats set 4), or from the pack fetched at its locked commit (an older lock), so its hook lines
+// and deny rules are known as Bonsai's and leave the file.
+func takenOutLines(c cache, lp workspace.LockedPack) (packLines, error) {
+	pl := packLines{id: lp.ID, source: lp.Source, folder: lockedFolder(lp, ""), commit: lp.Commit}
+	if lp.PathSet {
+		d, err := lp.Declared()
+		if err != nil {
+			return pl, errorf("bad-lock", ExitState, "restore the committed lock, run: git checkout -- "+workspace.LockFile,
+				"the lock's declares for the pack %s cannot be read: %v", lp.ID, err).whose("person")
+		}
+		pl.known, pl.hooks, pl.deny = true, declaredHooks(d), declaredDeny(d)
+		return pl, nil
+	}
+	commit, err := c.fetch(lp.Source, lp.Commit)
+	if err != nil {
+		return pl, err
+	}
+	pd, err := c.packAt(workspace.PackRef{ID: lp.ID, Source: lp.Source}, commit)
+	if err != nil {
+		return pl, err
+	}
+	pl.known, pl.hooks, pl.deny = true, pd.Manifest.Hooks, pd.Manifest.Deny
+	return pl, nil
 }
 
 // lockedFolder is the pack's folder as the lock records it, or, for a lock written before formats set 4 (no path),

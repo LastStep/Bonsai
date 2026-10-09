@@ -237,6 +237,28 @@ func QuietPack(t *testing.T, tmp string) (string, []string) {
 	})
 }
 
+// SidePack (side-pack) is a second pack beside the test pack, for taking a pack out of a project (step 5.1.7): two pack
+// files (side/a.md, side/b.md), a file written once (side/once.md), a block.md, one hook line ("echo side hook", code
+// at a first link) and one deny rule (Read(side/secret.txt)); its plugin has a role and no code part.
+func SidePack(t *testing.T, tmp string) (string, []string) {
+	t.Helper()
+	yaml := "format: bonsai.pack/1\nid: side-pack\nversion: \"0.2.0\"\nblock: block.md\nfiles:\n" +
+		"  - path: side/a.md\n    from: a.md\n    kind: pack\n" +
+		"  - path: side/b.md\n    from: b.md\n    kind: pack\n" +
+		"  - path: side/once.md\n    from: once.md\n    kind: once\n" +
+		"hooks:\n  - event: SessionStart\n    matcher: startup\n    command: \"echo side hook\"\n    why: \"Says the side pack is here; it blocks nothing.\"\n" +
+		"deny:\n  - rule: \"Read(side/secret.txt)\"\n    why: \"Agents cannot read side/secret.txt (the side pack's rule).\"\n"
+	return Fixture(t, tmp, "side-pack", map[string]string{
+		".claude-plugin/plugin.json": strings.Replace(fixturePlugin, "%s", "side-pack", 1),
+		"agents/helper.md":           "---\nname: helper\ndescription: helps on the side\n---\nHelp.\n",
+		"bonsai/pack.yaml":           yaml,
+		"bonsai/block.md":            "The side pack is linked.\n",
+		"bonsai/files/a.md":          "# Side A\n",
+		"bonsai/files/b.md":          "# Side B\n",
+		"bonsai/files/once.md":       "# Side, once\n",
+	})
+}
+
 // RunPack (run-pack): its hook line runs one of its files, run/hello.sh (declared in runs); commit 2 changes only
 // that file (bonsai/files/hello.sh), commit 3 only a file no hook runs (run/notes.md).
 func RunPack(t *testing.T, tmp string) (string, []string) {

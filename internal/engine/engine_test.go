@@ -799,10 +799,6 @@ func TestRefusals(t *testing.T) {
 		t.Fatal(err)
 	}
 	e.link(t, root, e.pack.A)
-	writeFile(t, root, "bonsai.yaml", "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: demo\n")
-	if _, err := e.try(root, Request{}); err == nil || err.(*Error).Exit != ExitState || !strings.Contains(err.Error(), "step 5.1") {
-		t.Errorf("a pack taken out: %v", err)
-	}
 	if _, err := e.try(root, Request{Keep: []string{"demo/start.md"}}); err == nil {
 		t.Errorf("--keep of a file with no conflict was taken")
 	}
