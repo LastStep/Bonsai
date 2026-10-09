@@ -12,8 +12,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      # Full history: the formats' schema-compare test (formats/compare_test.go) reads each schema at the set's base
+      # commit with git show, and fails under CI when that commit is missing, as it is in a shallow clone.
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -41,8 +45,11 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
+      # Full history, for the schema-compare test (as in test).
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -72,10 +79,14 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # verify: false switches off the action's config check (golangci-lint config verify), which downloads a JSON
+      # schema from golangci-lint's website on every run and failed CI twice on the network (8 and 9 Oct); the lint
+      # itself still reads .golangci.yml and fails on a config it cannot read.
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.11.4
+          verify: false
 
   govulncheck:
     runs-on: ubuntu-latest
