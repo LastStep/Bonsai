@@ -89,10 +89,10 @@ such pair.
   planned before 1.0). From the switch: your word before an agent loosens a check in Bonsai's `bonsai.yaml`; your own
   Claude sessions there refused on its protected files; the floor numbers in a line at each part's end (nothing to
   answer); the way back only if the guard breaks.
-- **In 5.5:** approve its section. It makes your roles, lanes, protocols and templates public in a new repo,
-  `LastStep/bonsai-workflow`, and puts three of your templates (task, run report, STATE), reworded and naming no one,
-  into Bonsai's own public `base` pack; your approval is your word for those three, which go public when their pieces
-  land, each after a fresh agent's check for anything private.
+- **In 5.5:** approve its section (you did, on 9 Oct). It makes your roles, lanes, protocols and templates public in a
+  new repo, `LastStep/bonsai-workflow`, and puts three of your templates (task, run report, STATE), reworded and naming
+  no one, into Bonsai's own public `base` pack; your approval is your word for those three, which go public when their
+  pieces land, each after a fresh agent's check for anything private.
   - The new repo: a fresh agent checks every file and every commit for anything private first. It is created private,
     and you read it on GitHub (your phone works) with a file-by-file list of what changed from your studio's copies,
     asking for any change. When you are happy, and the orchestrator has said every change since the check was read,
@@ -101,9 +101,9 @@ such pair.
     (your name and email address) that Bonsai's public history already shows: nothing new is shown.
   - Once, about 3 minutes on Windows: start Claude Code through the scratch launcher in a scratch folder the
     orchestrator names, say yes to the trust question, and tell the orchestrator what it said.
-  - One rule to approve with the section: an agent may move a project to a newer commit of a pack when Bonsai's preview
-    shows the move takes away no wall, label meaning or protected file and adds no code that runs; anything else, and
-    taking a pack out, still waits for you.
+  - Your choice when you approved it: moving a project to another version of a pack stays your step, and so do adding a
+    pack to a linked project and taking one out. An agent prepares the change and hands you the exact line; it makes
+    the change only on your word.
   - No repository secret, no install and no password in 5.5. If the studio links the `workflow` pack before 1.0, it
     first needs a newer pre-release `bonsai` installed in WSL (5.4's four lines again, about 5 minutes, your password),
     since 5.4's cannot read that pack.
@@ -3392,17 +3392,16 @@ reworded, public in Bonsai's own `base` pack. Beyond that approval it changes th
   packs, to say yes to its question about trusting the folder. His Windows login is due before 5.3 (already on his
   list); at 5.5 it is repeated only if it has lapsed.
 - The first release tags of both packs are his word, with 1.0 at 5.7.
-- **One rule of his from 5.4 changes.** There, any change to `bonsai.yaml` that is not stricter waits for his word,
-  and the spec says that taking a pack's new release is a person's step. Under his 9 Oct direction (agents update
-  projects), an agent may now move a project to a newer commit of a pack when Bonsai's preview shows that the move
-  takes away no wall, no label's meaning and no protected file, and adds no code that runs. Any other move, and taking
-  a pack out of a project, still waits for him ("The pin rule", below). His approval of this section is his word for
-  this change.
 - From 5.5's end his own Claude sessions in Bonsai's repo cannot read his key, token and login files, nor change his
   own Claude settings, his `~/.claude/CLAUDE.md`, his shell's start files or git's and SSH's settings: he changes those
   himself. Bonsai's STATE moves to `.bonsai/STATE.md`.
 - If the studio links the `workflow` pack before 1.0, it first needs a newer pre-release `bonsai` installed in WSL
   (5.4's cannot read the pack): his install, at the studio's link (step 7), not in 5.5.
+
+**Approved on 9 Oct, with a rule of his kept as 5.4 and the spec have it.** An earlier draft let agents move a project
+to a newer version of a pack themselves; Rohan declined it. Moving a project to another version of a pack stays his
+step, and so do adding a pack to a linked project and taking one out: an agent prepares the change and hands him the
+exact line, and makes it only on his word ("Moving a pack's version: a person's step", below).
 
 No repository secret (the "possibly" in his list is settled: none), no install and no password in 5.5 itself (it
 changes no guard, stop gate or ladder code), no option round. The hours (19-30) and the re-ask line (39) are the
@@ -3531,9 +3530,11 @@ GitHub release) come with your word for 1.0 at 5.7; agents never tag.
   your studio's projects. It can be, later, on your word.
 
 **Hours, order and your other steps.** 19-30 hours, re-ask at 39, as the spec has them; 5.5 after 5.4 and before 5.6.
-Your steps in 5.5: approve this section, the pin rule's change with it; read the private repo and make it public (one
-line, plus the optional one); about 3 minutes on Windows, starting Claude Code once through the scratch launcher and
-saying yes to its trust question (with the login first only if it has lapsed). None needs a password.
+Your steps in 5.5: approve this section (you did, on 9 Oct); read the private repo and make it public (one line, plus
+the optional one); about 3 minutes on Windows, starting Claude Code once through the scratch launcher and saying yes to
+its trust question (with the login first only if it has lapsed). None needs a password. Later, in any project linked to
+a pack (Bonsai's own repo included), moving it to another version of a pack, adding a pack or taking one out is yours:
+an agent hands you the exact line, and makes the change on your word.
 
 #### What exists, and what 5.1 to 5.4 will have added
 
