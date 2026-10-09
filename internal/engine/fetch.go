@@ -33,6 +33,7 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -346,6 +347,20 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 	}
 	if pd.Declares, err = readDeclares(manifest, read); err != nil {
 		return nil, errorf("bad-pack", ExitInput, nextPack, "the pack %s (%s): %v", ref.ID, where, err)
+	}
+	// A plugin pinned by commit carries no version (spec §5): Claude Code takes the commit as its version only when
+	// plugin.json has none, so a pack whose plugin.json has one is refused here and a locked pack never has one
+	// (check's plugin-version finding then reads the lock alone).
+	if raw, err := read(manifestPath); err == nil {
+		v, _ := schema.Decode(raw)
+		if o, ok := v.(schema.Object); ok {
+			if ver, has := o.Get("version"); has && ver != nil {
+				return nil, errorf("bad-pack", ExitInput, "the pack's maker takes version out of its "+manifestPath+" and releases the pack "+
+					"again; until then keep bonsai.yaml's ref at a release without it", "the pack %s (%s): its plugin's %s carries the "+
+					"version %s, so Claude Code would take the plugin by that version, not by its locked commit (spec section 5)",
+					ref.ID, where, manifestPath, schema.Show(ver)).whose("person")
+			}
+		}
 	}
 	pd.SHA256 = contentHash(entries, blobs)
 	pd.Tree = map[string]string{}
