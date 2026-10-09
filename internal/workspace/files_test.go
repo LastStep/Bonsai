@@ -101,6 +101,14 @@ func TestReadPackRefuses(t *testing.T) {
 		{"twice by case", packHead + "files:\n  - path: A.md\n    from: a\n    kind: pack\n  - path: a.md\n    from: a\n    kind: once\n", "listed twice"},
 		{"a hook with no why", packHead + "hooks:\n  - event: SessionStart\n    command: \"echo\"\n", "hooks item 1 has no why"},
 		{"a hook with no command", packHead + "hooks:\n  - event: SessionStart\n    why: \"x\"\n", "hooks item 1 has no command"},
+		{"runs not a list", packHead + "hooks:\n  - event: SessionStart\n    command: \"echo\"\n    runs: run.sh\n    why: x\n", "hooks item 1's runs is text, not a list"},
+		{"runs a number", packHead + "hooks:\n  - event: SessionStart\n    command: \"echo\"\n    runs: [2]\n    why: x\n", "hooks item 1's runs item 1 is a number"},
+		{"runs no file of the pack", packHead + "files:\n  - path: a/run.sh\n    from: run.sh\n    kind: pack\n" +
+			"hooks:\n  - event: SessionStart\n    command: \"sh a/other.sh\"\n    runs: [\"a/other.sh\"]\n    why: x\n",
+			"line 11: hooks item 1's runs names \"a/other.sh\", which no files entry writes"},
+		{"runs a file by another case", packHead + "files:\n  - path: a/run.sh\n    from: run.sh\n    kind: pack\n" +
+			"hooks:\n  - event: SessionStart\n    command: \"sh a/run.sh\"\n    runs: [\"A/run.sh\"]\n    why: x\n",
+			"which no files entry writes"},
 		{"a deny with no why", packHead + "deny:\n  - rule: \"Edit(x)\"\n", "deny item 1 has no why"},
 		{"a deny rule a list", packHead + "deny:\n  - rule: [a]\n    why: x\n", "deny item 1's rule is a list"},
 		{"an empty mapping item", packHead + "deny:\n  - \n", "deny item 1 is null"},
@@ -119,6 +127,42 @@ func TestReadPackRefuses(t *testing.T) {
 				t.Errorf("an ASCII file gave a message with an escape (our own text is not ASCII): %q", msg)
 			}
 		})
+	}
+}
+
+// A hook entry's runs (step 5.1.1): the pack's files its command runs, by their path in the project; missing reads
+// as [], and [] is none.
+func TestReadPackRuns(t *testing.T) {
+	in := packHead + `files:
+  - path: a/run.sh
+    from: run.sh
+    kind: pack
+  - path: a/lib.sh
+    from: lib.sh
+    kind: once
+hooks:
+  - event: SessionStart
+    command: "sh a/run.sh"
+    runs: ["a/run.sh", "a/lib.sh"]
+    why: "x"
+  - event: Stop
+    command: "echo stop"
+    runs: []
+    why: "y"
+  - event: SessionEnd
+    command: "echo end"
+    why: "z"
+`
+	p, err := ReadPack([]byte(in))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, h := range p.Hooks {
+		got = append(got, fmt.Sprintf("%s %q %v", h.Event, h.Runs, h.Runs == nil))
+	}
+	if want := `SessionStart ["a/run.sh" "a/lib.sh"] false; Stop [] false; SessionEnd [] false`; strings.Join(got, "; ") != want {
+		t.Errorf("runs\n  %s\nwant\n  %s", strings.Join(got, "; "), want)
 	}
 }
 

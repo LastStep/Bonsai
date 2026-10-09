@@ -3,10 +3,26 @@ package workspace
 // A pack's bonsai/pack.yaml (bonsai.pack/1, spec §5): what the engine reads from a pack and writes into a project.
 //
 // Read here: format, id, version, needs.claude_code, block, files (path, from, kind), hooks (event, matcher,
-// command, why) and deny (rule, why): every field the test pack's pack.yaml holds at its commit A, which is what the
-// walking skeleton's engine (part 3) and hook path (part 5) use. Any other key, and any other key under needs, is
-// kept in Pack.Doc as read and not checked; bonsai.pack/1's schema, its documentation check (bonsai check --pack)
-// and the rule that a hook line never calls bash by name are step 5.1's.
+// command, runs, why) and deny (rule, why): every field the test pack's pack.yaml holds (its commits A to F), which is
+// what the walking skeleton's engine (part 3), hook path (part 5) and consent to code (step 5.1.1) use. Any other
+// key, and any other key under needs, is kept in Pack.Doc as read and not checked; bonsai.pack/1's schema, its
+// documentation check (bonsai check --pack) and the rule that a hook line never calls bash by name come later in
+// step 5.1.
+//
+// A hook entry's runs (step 5.1.1, plan-5 rule 4) lists the pack's own files its command runs, each by the path its
+// files entry gives it in the project (test-pack/run.sh), so a change to one of them is "runs code" even when the
+// hook line stays the same (spec §6: "a change to a hook line or to a file a hook runs"). [] for none; a hook entry
+// with no runs reads as [] (the reader rule for a missing field). Each item must be one of the files entries' paths:
+// a hook may name only files the pack writes, and Bonsai consents to no file it cannot see. Example:
+//
+//	hooks:
+//	  - event: SessionStart
+//	    matcher: startup
+//	    command: "sh test-pack/run.sh"
+//	    runs: ["test-pack/run.sh"]
+//	    why: "Prints the pack's greeting when a session starts; it blocks nothing."
+//
+// bonsai check --pack (step 5.1.9) refuses a hook command naming a pack file that runs does not list.
 
 import (
 	"regexp"
@@ -57,10 +73,11 @@ type FileEntry struct {
 
 // HookEntry is one hook line.
 type HookEntry struct {
-	Event   string // the Claude Code hook event
-	Matcher string // the event's matcher, "" for none
-	Command string // the shell line Claude Code runs
-	Why     string // one plain sentence: what the line does, as update's preview prints it
+	Event   string   // the Claude Code hook event
+	Matcher string   // the event's matcher, "" for none
+	Command string   // the shell line Claude Code runs
+	Runs    []string // the pack's files the command runs, by their path in the project; [] for none
+	Why     string   // one plain sentence: what the line does, as update's preview prints it
 	Line    int
 }
 
@@ -131,7 +148,7 @@ func ReadPack(raw []byte) (*Pack, error) {
 	items, line = f.list(m, "hooks", "the file")
 	p.Hooks = []HookEntry{}
 	for i, it := range items {
-		hm, first := entryOf(f, it, line, "hooks", i, "event, matcher, command and why")
+		hm, first := entryOf(f, it, line, "hooks", i, "event, matcher, command, runs and why")
 		if hm == nil {
 			break
 		}
@@ -140,7 +157,21 @@ func ReadPack(raw []byte) (*Pack, error) {
 		h.Event = f.text(hm, "event", where, first, true)
 		h.Matcher = f.text(hm, "matcher", where, first, false)
 		h.Command = f.text(hm, "command", where, first, true)
+		h.Runs = f.texts(hm, "runs", where)
 		h.Why = f.text(hm, "why", where, first, true)
+		if f.err == nil {
+			runsLine := first
+			if e, ok := hm.Entry("runs"); ok {
+				runsLine = e.Line
+			}
+			for _, r := range h.Runs {
+				if !isFilePath(p.Files, r) {
+					f.fail(runsLine, "%s's runs names %s, which no files entry writes: a hook's runs lists only the pack's own files, "+
+						"by their path in the project", where, showValue(r))
+					break
+				}
+			}
+		}
 		p.Hooks = append(p.Hooks, h)
 	}
 
@@ -161,6 +192,16 @@ func ReadPack(raw []byte) (*Pack, error) {
 		return nil, f.err
 	}
 	return p, nil
+}
+
+// isFilePath reports whether path is one of the pack's files entries' paths.
+func isFilePath(files []FileEntry, path string) bool {
+	for _, fe := range files {
+		if fe.Path == path {
+			return true
+		}
+	}
+	return false
 }
 
 // entryOf takes a list item that must be a mapping, and its first line.
