@@ -99,8 +99,9 @@ func TestLockOutputFitsTheSchema(t *testing.T) {
 }
 
 // Formats set 4 gives each locked pack its folder, path (null for the repository's root). A lock written before has
-// none: it reads (as the root) and writes back byte for byte, with no path, as the engine's own locks do until step
-// 5.1.5 fills it; a path, null or a folder, is read and written back; and a written path is held to the schema.
+// none: it reads as unknown (PathSet false, step 5.1.3's verifier, F7), not as the root, and the writer refuses to write
+// a pack whose folder it does not know; a path, null or a folder, is read and written back; and a written path is held
+// to the schema.
 func TestLockPackPath(t *testing.T) {
 	commit, sum := strings.Repeat("0", 40), strings.Repeat("1", 64)
 	pack := func(path string) string {
@@ -142,6 +143,12 @@ func TestLockPackPath(t *testing.T) {
 			t.Errorf("%s: path %q set %v, want %q %v", c.name, l.Packs[0].Path, l.Packs[0].PathSet, c.want, c.set)
 		}
 		out, err := l.Encode()
+		if !c.set {
+			if err == nil || !strings.Contains(err.Error(), "does not record the folder of the pack") {
+				t.Errorf("%s: a pack whose folder is unknown was written (%v):\n%s", c.name, err, out)
+			}
+			continue
+		}
 		if err != nil {
 			t.Fatalf("%s: %v", c.name, err)
 		}
@@ -149,12 +156,8 @@ func TestLockPackPath(t *testing.T) {
 			t.Errorf("%s: written back as\n%s\nwant\n%s", c.name, out, raw)
 		}
 		back, _ := schema.Decode(out)
-		msgs := schema.Validate(LockSchema(), back)
-		if c.set && len(msgs) != 0 {
+		if msgs := schema.Validate(LockSchema(), back); len(msgs) != 0 {
 			t.Errorf("%s: the written lock does not fit the schema: %v", c.name, msgs)
-		}
-		if !c.set && (len(msgs) != 1 || !strings.Contains(msgs[0], `"path" is missing`)) {
-			t.Errorf("%s: against the writer's schema, want only path missing, got %v", c.name, msgs)
 		}
 	}
 	// A path that is not a project-relative folder does not fit the schema, read or written.
@@ -173,7 +176,7 @@ func TestLockPackPath(t *testing.T) {
 func TestLockKeepsUnknownFields(t *testing.T) {
 	in := `{"format": "bonsai.lock/1", "written_by": "9.0.0", "later": {"x": 1},
 	"packs": [{"id": "p", "source": "s", "version": "1", "commit": "` + strings.Repeat("0", 40) + `",
-	  "sha256": "` + strings.Repeat("1", 64) + `", "new_pack_field": [1, 2], "declares": {"lanes": []}}],
+	  "sha256": "` + strings.Repeat("1", 64) + `", "new_pack_field": [1, 2], "declares": {"lanes": []}, "path": null}],
 	"files": {"a.md": {"kind": "pack", "new_file_field": true, "pack": "p", "sha256": "` + strings.Repeat("2", 64) + `"}},
 	"format0": {}, "last": null}`
 	l, err := ReadLock([]byte(in))
@@ -191,7 +194,7 @@ func TestLockKeepsUnknownFields(t *testing.T) {
 	}
 	packs, _ := o.Get("packs")
 	p := packs.([]any)[0].(schema.Object)
-	if got := strings.Join(p.Keys(), " "); got != "id source version commit sha256 declares new_pack_field" {
+	if got := strings.Join(p.Keys(), " "); got != "id source version commit sha256 declares path new_pack_field" {
 		t.Errorf("pack keys %s", got)
 	}
 	files, _ := o.Get("files")

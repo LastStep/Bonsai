@@ -451,12 +451,11 @@ func Build(req Request) (_ *Plan, err error) {
 	newLock := &workspace.Lock{WrittenBy: req.Version, Files: map[string]workspace.LockedFile{}, Format0: lock.Format0,
 		Extra: lock.Extra}
 	for _, pd := range newPacks {
+		// The pack's folder, as bonsai.yaml names it (formats set 4's path; step 5.1.5): every lock written records it.
 		lp := workspace.LockedPack{ID: pd.Ref.ID, Source: pd.Ref.Source, Version: pd.Manifest.Version, Commit: pd.Commit,
-			SHA256: pd.SHA256, Declares: schema.Object{}}
+			SHA256: pd.SHA256, Declares: schema.Object{}, Path: pd.Ref.Path, PathSet: true}
 		if old, ok := lockedPack[pd.Ref.ID]; ok {
-			// A pack's path (formats set 4) is kept as the lock had it, as it was while it was a field this Bonsai did
-			// not know: step 5.1.5 writes it from bonsai.yaml and judges against it.
-			lp.Extra, lp.Path, lp.PathSet = old.Extra, old.Path, old.PathSet
+			lp.Extra = old.Extra
 		}
 		newLock.Packs = append(newLock.Packs, lp)
 	}
