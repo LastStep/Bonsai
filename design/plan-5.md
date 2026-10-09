@@ -789,6 +789,359 @@ on:
 | The other three of Bonsai's own lines come "as they are built" (`internal/engine/settings.go`) | 5.2.4 | `hook start` and `hook record` lines added; a project linked before takes them at `update --allow-exec --yes`. The stop gate's line stays 5.3's |
 | `hook start`, `stop` and `record` refuse as not built (`cmd/bonsai/hook.go`) | 5.2.4 | `start` and `record` built; `stop` stays 5.3's |
 
+#### Notes per piece
+
+**5.2.0, formats set 5 and the log's lists.** One commit to `formats/` with its manifest at the set after 5.1's last,
+as `formats/README.md`'s "How the set changes" asks; additions only, so the schema-compare test passes. Its builder
+first reads set 4 and 5.1.4b's error words as they landed.
+- **The binary's two fields** (spec §16 row 27; format review 4.2 left the names open): `bonsai_path` and
+  `bonsai_sha256`, at the end of `bonsai.log/1` after `remote`: the names the guard has written since part 5, so the
+  records already written stay valid. Chosen over new names, which would leave those records with two unknown fields.
+  `bonsai_path` is the binary's own absolute path with forward slashes, or null; it is filled on `session_start`
+  (5.2.4) and on guard records. It stays on the machine as the log does; the bridge forwards by allowlist (contract
+  §2.6), so whether it ever leaves is the studio's choice. `bonsai_sha256` is 64 lower-case hex, on the record that
+  made its log file, else null.
+- **The log's lists in one Go table**, beside the log's Go type: the events (contract §8.2: the eleven agent events,
+  `guard`, `ladder`, `ask`, `event`, `clean`) and the categories (`Read`, `Search`, `Edit`, `Write`, `Shell`,
+  `Ladder`, `MCP`, `Agent`, `Web`, `Other`; a pack's own as `<namespace>.<Name>`), each word with one line on what it
+  means. The schema's `event` and `category` descriptions then name `bonsai check --schema bonsai.log` and the
+  reference page and copy no word (5.1.3's rule; a description change is an addition). `text`'s description says
+  what Bonsai writes there: a notice's message or an ask's question, never a prompt's words (5.2.4, note 5).
+- **`bonsai.asks/1`**, the `--json` of `ask`, `ask --resolve`, `ask --status`, `answer` and `asks`: `format`;
+  `workspace` (null when the command refused before reading one); `asks`, a list of `{key, state, filed, closed}`,
+  where `state` is `open`, `answered` or `resolved` (a closed list), `filed` the key's latest `file` record, and
+  `closed` the `answer` or `resolve` record that closed it, or null, both `bonsai.ask/1` records as stored; `written`,
+  the record this run appended, or null; `error`.
+- **`bonsai.logs/1`**, the `--json` of `logs` and `log append`: `format`; `workspace`; `files`, a list or null, each
+  `{file, session, day, first, last, records, unreadable, ended, task, role}` (a day file has `session` null and `day`
+  its date; `ended`, `task` and `role` are a session's, else null); `records`, one file's records as written, or
+  null; `written`, the record `log append` appended, or null; `error`.
+- **A sessions row tells a subagent run from a session** (contract §7.5: the two are "shown apart, never added"). If
+  set 4's row cannot, `subagent` is added at the end of a row: the subagent run's own id, its first 8 characters, or
+  null for a session's row (`-` in the table). It also keeps two subagent runs of one session apart in the row's key
+  (5.2.3).
+- **The error words 5.2 needs**, added here so no later piece edits the words' table: `ask-not-open` (no such key, or
+  it is answered or resolved; the message says which), `answer-own-session` (the session that asked answers it),
+  `label-not-defined` (`log append` names a label no definition in force has, or gives a value of the wrong kind),
+  `session-not-found` (`logs --session` matches no session, or several). Everything else reuses 5.1.4b's words (bad
+  input, not linked, could not write), mapped by the builder from the table as it landed. A word a later piece finds
+  missing is added there, and a piece beside it rebases and regenerates the reference page.
+- An example for each new schema, and the log's gains its two fields; `docs/reference/lists.md` regenerated.
+
+**5.2.1, the redactor.** Spec §8: "Redaction in Go, as written (decision 2), over command lines, prompts, notices and
+question text"; "Proof is differential: on the shared corpus (today's redaction tests plus those three bugs' cases),
+the Go redactor hides everything the Node one hides, and the three bugs' cases too."
+1. **Not a line-for-line port.** The studio's redactor is regular expressions leaning on lookbehind and lookahead,
+   which Go's `regexp` (RE2) does not have, and Bonsai takes no other regular-expression library (spec §3: the
+   standard library and `golang.org/x/sys`). Its leaks share one cause: one rule's value swallows the next rule's name
+   before that rule runs, which the studio patched shape by shape. Bonsai's redactor is a scanner that **finds every
+   name first, then each name's value**, and a value ends where the next name starts, so no name is ever eaten by the
+   value before it. The names are the studio's: a secret-named key before `:` or `=` (its keyword list: `password`,
+   `passwd`, `passphrase`, `pwd`, `secret`, `token`, `api_key` and its spellings, `access_key`, `auth_key`,
+   `private_key`, `credentials`, inside a run of name characters such as `DB_TOKEN` or `x-api-key`); a flag ending in
+   such a word (`--password`, `--client-secret`), starting a word, its value on its own line; an Authorization header
+   of any scheme; a Bearer value; `extraheader=`. Then the rules that take a whole value, as today: private-key blocks,
+   webhook URLs, credentials inside a URL, the known token shapes (Anthropic, OpenAI, GitHub, Slack, npm, AWS, Google,
+   JWT), and the long random run (32 or more token characters with a piece of 16 or more holding upper case, lower
+   case and digits; never pure hex, never a CamelCase name with two digits or fewer, never a `toolu_` id). Chosen over
+   a port, whose bugs would port too, and over translating the expressions, which RE2 cannot express.
+2. **The three leak classes**, by their shapes (spec §8 names them by the studio's ids; Bonsai's code and tests never
+   do):
+   - **After an Authorization header's scheme word**, a quoted token is a value like any other (`Authorization:
+     Bearer "..."`, the same after `token` and `Basic`), and a `token` followed by `:` or `=` is a name, not the
+     scheme, so its value goes too; also after `=`, a tab, `authorization=`, `Proxy-Authorization:` and
+     `x-authorization:`.
+   - **A second name not at the very start of a value**: behind punctuation (`{`, `(`, `[`, `<`, `*`, `|`, `>`, a
+     backtick, curly quotes, guillemets, an inverted question mark), one character in, behind another
+     `extraHeader=`, or with any whitespace before its `:` or `=` (a vertical tab, a form feed, a no-break space).
+     Its value goes.
+   - **The shapes the studio's last change opened**: a value-taking name, a second name, then a third behind
+     punctuation; a value-taking name that takes `extraheader=` as its value; an open quote before a name at a line's
+     end, which swapped which value leaked; and the two shapes where a second pass changed the output.
+   With every name found first, the three are one rule: every name's value is redacted, wherever the name stands.
+3. **Whitespace and case as JavaScript reads them.** Between a name and its `:` or `=`, any character JavaScript's
+   `\s` matches (U+FEFF and U+2028 among them); a keyword matches in any case under simple case folding, so the long s
+   (U+017F) and the Kelvin sign count as `s` and `k`, as under JavaScript's `i` flag. Chosen so no Unicode form slips
+   between the two readers. Caps count characters (code points), as JSON Schema's `maxLength` does.
+4. **What it keeps**, as today: git SHAs and other pure hex, UUIDs, GUIDs, `toolu_` ids, CamelCase test names, prose
+   saying "token" or "password" with no value after it, words ending in `-secret` or `-token`, a flag at a line's end
+   with a name below it, text already redacted. The marker stays `[redacted]`, which the studio's bridge and Desk
+   know.
+5. **A fixed point, also cut.** Redacting its own output changes nothing, and neither does redacting that output cut
+   at any length: the recorder cuts a field to its cap after redacting, and the studio's bridge redacts again
+   (contract §2.6). A cut tail that is the start of the marker, or of a scheme word, is kept, as today.
+6. **Linear time.** No input makes it slow: tests on 26 KB of secret words glued by `_` and on 1 MB of mixed text,
+   each under a limit far above what it takes and far below what a quadratic rule would; `FuzzRedact` (no panic, a
+   fixed point, a planted secret never kept).
+7. **The second job: what a tool call is reduced to** (today's `targetOf`, `commandHead` and `questionText`), here
+   because it is the first line of defence. A shell command is kept only as its head: the program, plus one
+   subcommand word for `git`, `npm`, `dotnet`, `unity`, `claude`, `gh`, `go` and `bonsai`; a PowerShell cmdlet as
+   written; so `TOKEN=... cmd`, `git -c http.extraHeader=...` and `node -e "..."` never reach the record. A file or
+   search path inside the checkout is kept relative to it, one under the person's home folder as `~/...`, and any
+   other as null (contract §2.6: a record carries no absolute path; the guard already writes null there). A web fetch
+   keeps its host, an MCP call `server.tool`, the Agent tool its subagent type, a skill its name, AskUserQuestion its
+   questions joined (the ask itself, at most 300). Every one passes the redactor and its cap. A Windows path is read
+   with backslashes and, on a drive-letter root, case-blind, as today. Categories stay the log's (5.2.0's table;
+   5.2.4 maps them).
+8. **One home for the patterns.** `internal/redact` gives `Text` (redact a string), `Find` (the spans it would redact,
+   each with its rule's kind, for the memory scan) and the reductions. No other package holds a secret pattern.
+9. **How the studio's corpus is used, without copying it in.** The differential is a scripted run, never committed,
+   as 5.1.2's today's-files run was. The studio's files are taken at `25b6450` (the commit on its `main` that holds
+   the redactor and its tests as they still are, the three leak rows, and the run report with their generated shapes)
+   with `git show` into a scratch folder, or from a scratch clone with its origin removed ("What changes", item 10).
+   The scripts live in `~/bonsai-checks/scripts/`; Node runs the frozen redactor, and a scratch Go driver inside the
+   worktree's module runs Bonsai's (never committed, as 5.1.2's verifier's driver was). The corpus:
+   - (a) the studio's test tables: secret rows, keep rows, the rows of each earlier fix, the grid of value-taking
+     names before second names, cut tails, bash and PowerShell heads, targets, question text;
+   - (b) the bridge test's spool lines with planted secrets;
+   - (c) the three classes: the leak rows' examples and the generated shapes (two framings, about 4,200 strings),
+     made again by the script, and Bonsai's own grid over names, punctuation, whitespace, quotes and case folds;
+   - (d) real text: every text file of the scratch clone's `studio/`, `docs/` and `studio-app/test/fixtures/` (the
+     set the studio's own corpus test reads), as it is, and with each secret row planted on its own line, at a line's
+     end, and after a line ending in a name still waiting for its value;
+   - (e) about a million generated strings mixing names, separators, quotes, whitespace and values, and the fuzz
+     finds.
+
+   **It passes when**, over every string: every labelled or planted secret is absent from Bonsai's output (the
+   studio's misses on the three classes counted apart); for every word the studio's redactor took out, Bonsai's output
+   keeps no more copies of it than the studio's does; every keep row comes back unchanged; Bonsai's output is a fixed
+   point at every cut; no string takes over 100 ms. Reported, not a pass condition: strings where Bonsai takes out a
+   word the studio's keeps, by the rule that fired, each class read by the builder and then the verifier (a secret
+   shape the studio missed passes; ordinary words taken out fail); and how often the studio's redactor changes
+   Bonsai's output (the bridge's second pass). The run report gives counts and classes, never a string from the
+   studio's files ((a), (b) and (d) hold studio paths and names); strings Bonsai's own script made may be quoted.
+
+   **Bonsai's committed tests are its own:** rows written fresh by class, with made-up secrets (`hunter2`, AWS's
+   documented example key, random strings made by the test). A row may be taken from the studio's tables only when it
+   holds nothing but made-up values and generic words, and its label is rewritten as the class it shows. No studio
+   path, project name, task or bug id, or person's name enters the repo; the verifier greps for them. Chosen over a
+   scrubbed copy of the whole corpus, which would carry the studio's paths and ids into a public repo, and over the
+   differential alone, which CI could not re-run.
+10. **Windows:** the redactor is string logic, so the differential runs in WSL only; its Go tests run natively on
+    Windows with check 10.
+
+**5.2.2, appends, reads and the salt.**
+1. **One append path** (`internal/record`) for every Bonsai writer of `.bonsai/local/`: the recorder, `hook start`,
+   `log append`, asks and `clean` records; the guard keeps its own writer until 5.3 changes guard code. A line is
+   opened with `O_APPEND` (with `O_CREATE|O_EXCL` first, so the writer knows when it made the file) and written in one
+   `Write` of the whole line with its LF, never longer than its format's cap (2,048 bytes for the log, 8,192 for
+   asks); a busy error on Windows is retried for up to 1 s with a doubling wait, as the guard's `openRetry` does. On
+   Linux an `O_APPEND` write of a line this size lands whole; on Windows Go opens an `O_APPEND` file for appending
+   only, so each write lands whole at the end too. The builder shows both by test, not by reading. Chosen over a lock
+   file, which is slower on every hook and leaves a stale lock after a crash.
+2. **The proof under concurrency:** the test binary started again as 8 child processes, each appending 250 records to
+   one file; then every line parses, every id is unique and there are 2,000; on WSL and natively on Windows, in
+   `t.TempDir()`. On Windows a second test holds the file open with no write sharing until the first refusal, then
+   lets go, as `1170c92`'s test holds a rename's target: the append succeeds after its retry. No test needs a symbolic
+   link or a file mode.
+3. **The main checkout's `local/`** (contract §3: worktrees use main's). Found by reading `.git` with no git process,
+   so the hooks stay fast: a folder means this checkout is main; a file names its `gitdir`, whose `commondir` file
+   names the common folder; when `gitdir` lies under `<common>/worktrees/`, main is the common folder's parent. That
+   main is used only when its `bonsai.yaml` holds the same workspace id; else the checkout's own folder is used. An
+   agent can rewrite a worktree's `.git` file, so at worst a record lands in another checkout of the same project,
+   never in a folder outside one: a tripwire, as the log is (spec §7). This finder is the recorder's, the asks' and
+   the cleaner's; the guard keeps its own folder until 5.3 decides what the hook path may trust, and may then take
+   this one over.
+4. **Every writer restores a missing `.bonsai/.gitignore`** (spec §6), from the text's one home, moved out of
+   `internal/engine/plan.go`.
+5. **The salt** (contract §3: "the input-hash key; never leaves the machine"): `<home>/salt`, 64 lower-case hex
+   characters from 32 random bytes, made at first need by writing a whole temporary file beside it and hard-linking
+   it into place, so two first writers cannot both win and no reader sees half a file; the loser reads the winner's,
+   as the studio's sink does today. Mode 0600 on Linux (no test needs it on Windows). If it cannot be made or read,
+   `input_hash` is null and the record is still written. Base's walls deny reading it (spec §7; 5.5).
+6. **The reader:** a file's records in order, each through 5.1.4a's log type; a line that does not parse (a torn
+   last line after a crash, or a line written by hand) is skipped and counted, never fatal; a file's last record
+   without reading the file whole; a folder's session files and day files by their names, nothing else.
+7. **`bonsai --version` names its commit:** `bonsai <version> (commit <12 hex>)`, `+modified` when the tree was dirty,
+   or `(no commit stamp)`, from the build's own `vcs.revision`. The builder finds why the builds made in the WSL
+   worktrees carry no stamp (gate report §2.11) and writes in the run report the build line every scripted run then
+   uses: `go build -buildvcs=true`, which refuses rather than build without a stamp, or a build from a clean clone at
+   the commit ("What changes", item 7).
+
+**5.2.3, the sessions table and `bonsai logs`.** Spec §6 and contract §7.5 fix the table's columns; these are the rules
+they leave open.
+1. **Spans.** In a session's file, a `session_start` opens a span unless its `source` is `compact` (a compaction is
+   the same session going on); a `session_end` closes it. A start while a span is open (a lost end line) closes the
+   open one at its last record. A `subagent_start` opens a subagent run, closed by the `subagent_stop` with its
+   `subagent_id`; one with no stop ends with its session's span. A span with no end whose file's last line is more
+   than 24 hours old ends at its last record (a killed or crashed session); otherwise it is **open**: no row yet, and
+   its file is never cleaned. One function says "open", for the table and for the cleaner (5.2.6). Chosen over
+   waiting for an end line forever, which would keep a crashed session's file and lose its hours.
+2. **A row:** the session id's first 8 characters; the task its start record found (`target`), else `none`; the role
+   (`role` for a session, `subagent_type` for a subagent run); the model (`-` for a subagent run unless its records
+   name one); start and end in UTC as `YYYY-MM-DD HH:MM`; minutes as end minus start as shown, so a person can check a
+   row by eye; and `subagent` (5.2.0). A row's key is its id, `subagent` and start. A key already in the table is
+   never added again or rewritten, and a row whose log file is gone stays (rows are only added, spec §6). Rows are
+   sorted by start, then key.
+3. **Hours** below the rows: for each task and role, session hours and subagent hours in two columns, never added
+   together, to one decimal; then each task's total of each. A row whose task is `none` counts under `none`.
+4. **Written only by `check --write`**, in the main checkout only (5.1.8). The stale warning (spec §6): an ended span
+   in the log with no row; a warning everywhere, never a finding.
+5. **`bonsai logs [--session S] [--day D] [--json]`.** With no filter, one line per file, newest first: a session's
+   id, first and last time, ended or open, its task and role, records and unreadable lines; a day file's date and
+   records. `--session` takes a full id or a prefix of at least 8 characters (the table's), and exits 4
+   (`session-not-found`) when it matches none or several, naming them; `--day` reads that UTC day's file (outside
+   events, `clean` records). `--day` is a flag, not a word. `logs` reads main's `local/` through 5.2.2's finder,
+   writes nothing, and prints records as stored: they were redacted when written.
+
+**5.2.4, the recorder.**
+1. **Bonsai's own lines** (spec §7's table, with the departures below), added to `ownHooks`, each with its preview
+   sentence:
+
+   | Event | Line | How |
+   |---|---|---|
+   | SessionStart (every source) | `bonsai hook start` | synchronous, timeout 10; prints the opening context and writes the `session_start` record |
+   | UserPromptSubmit, PreToolUse (every tool), PermissionRequest, PostToolUse, PostToolUseFailure, Notification, SubagentStart, SubagentStop, Stop | `bonsai hook record` | `async`, timeout 10 |
+   | SessionEnd | `bonsai hook record` | synchronous, timeout 5, then cleaning (5.2.6) |
+
+   All eleven events are recorded. SessionStart's record is written by `hook start` itself, so one process makes the
+   session's file first, with the binary's path and hash, before any tool call; chosen over a second line on
+   SessionStart, which would race `hook start` to make the file and write two records for one event. SessionEnd's line
+   is synchronous because an async hook is killed as the session exits, so its line would be lost: the studio measured
+   that for its own recorder, which registers SessionEnd the same way. SessionStart carries no matcher: after `/clear`
+   the agent has lost its opening context as after `/compact`, so `clear` counts with the spec's `startup`, `resume`
+   and `compact`. No line ends in `|| exit 2`: none of them blocks.
+2. **Consent.** A first link writes these lines on `--yes` (5.1.1 rule 6). A project linked before 5.2 gets them at
+   its next `update` only with `--allow-exec` and `--yes` (rule 1: a hook line added). `check` warns, never finds,
+   when this build's own lines differ from the project's ("run `bonsai update --allow-exec --yes`"). Every engine test
+   and scripted check that holds today's lines is updated, and the run report lists each.
+3. **Which project.** `CLAUDE_PROJECT_DIR`, else the payload's `cwd`; never a later `cd`. The project is found as the
+   guard finds it; in a folder with no `bonsai.yaml` both hooks exit 0 at once and write nothing (spec §3, §7). The
+   records go to the main checkout's `local/` (5.2.2).
+4. **What each event fills**, beside the fields every record has (`format`, `id`, `at`, `workspace`, `session`,
+   `agent` as `claude-code`, `agent_event`, the subagent's id and type when the payload names them, `checkout` as the
+   folder's name, `branch`, `task` and `role` from `BONSAI_TASK` and `BONSAI_ROLE`, `labels` as `{}`, and `remote`
+   when `CLAUDE_CODE_BRIDGE_SESSION_ID` matches its pattern, never redacted):
+
+   | Claude Code event | `event` | Also filled |
+   |---|---|---|
+   | SessionStart (`hook start`) | `session_start` | `source`, `model`, `target` (the active task found, contract §13), `bonsai_path`, and `bonsai_sha256` when it made the file |
+   | UserPromptSubmit | `prompt` | `kind`: `user` or `task-notification`; no words |
+   | PreToolUse, PermissionRequest | `tool_start`, `permission` | `tool`, `category`, `target`, `tool_use_id`, `input_hash`; for AskUserQuestion, `text` as its questions |
+   | PostToolUse, PostToolUseFailure | `tool_end`, `tool_fail` | the same, and `ok` true or false; a failure's `kind` `interrupt` or `error` |
+   | Notification | `notice` | `kind` as its type, `text` as its message |
+   | SubagentStart, SubagentStop | `subagent_start`, `subagent_stop` | on the start, `target` as the active task found |
+   | Stop | `stop` | nothing more |
+   | SessionEnd | `session_end` | `reason` |
+
+   Categories: Read; Grep and Glob as Search; Edit, MultiEdit and NotebookEdit as Edit; Write; Bash and PowerShell as
+   Shell, or Ladder when the head is `bonsai ladder`; Agent and Task as Agent; WebFetch and WebSearch as Web; `mcp__`
+   tools as MCP; anything else Other. The studio's `Unity CLI` becomes a pack's category later (contract §8.2).
+5. **No prompt's words** are kept: a `prompt` record has its `kind` only, as today's sink writes it. Chosen because the
+   bridge forwards `text` (contract §2.6) and nothing today shows a prompt's words; keeping them would be a privacy
+   change nobody asked for. What lost: the "prompt's start" the schema's description allowed (5.2.0 rewrites it).
+6. **Every free-text string passes the redactor, then its cap** (`target` 200, `text` 300), then the record's 2,048
+   bytes, by halving the longest text, as the guard does: `target`, `text`, `task`, `role`, `subagent_type`, `model`,
+   `source`, `reason`, `kind`, `branch` and `checkout`. Ids (`session`, `subagent_id`, `tool_use_id`) are held to
+   their patterns instead, and `remote` to its own; `bonsai_path` is the binary's own path and is not redacted.
+7. **The input hash** (contract §8.1): HMAC-SHA-256 keyed by the salt's text, over the tool input with its object
+   keys sorted at every depth and the strict decoder's numbers as their source text; the first 16 hex characters.
+   Bonsai's own canonical form, not byte-equal to the studio's: the two never share a salt, so no hash is compared
+   across them, and matching JavaScript's way of printing numbers would be work for nothing. The tool input is the
+   same bytes in a call's three events (the studio measured it), so a call's records pair.
+8. **`hook record` never interferes:** nothing on stdout, ever (an async hook's stdout can reach the conversation);
+   exit 0 whatever happens; a payload it cannot read writes nothing. Its payload reader is the recorder's own for now:
+   spec §14 gives "the hook adapter" to 5.3, which then makes one reader for the guard and the recorder.
+9. **`hook start`'s opening context** (spec §8), in plain ASCII on stdout, which Claude Code adds to the session: the
+   workspace's name and id; the active task with its status, lane, branch and grants (`bonsai.allows`), or "none"
+   with the function's reason; that task's last ladder result (green or not, its commit, when), or "none yet" (5.4
+   writes them); the label definitions attached on this machine (contract §5.3). At most 60 lines; past that, one line
+   naming `bonsai status --json`. It prints what it can and exits 0: an unreadable `bonsai.yaml` gives one line saying
+   so, and that the guard blocks edits until a person fixes it. The same on every source, so `/compact` and `/clear`
+   bring it back.
+10. **Time:** `hook start` and `hook record`, p50 and p95, on WSL and Windows with part 5's harness, in the run report.
+    `hook start` hashes the binary once per session file (about 3 ms); `hook record` reads a PostToolUse payload whole,
+    tool output included, so large payloads are timed too.
+11. **The memory secret scan** (spec §6; handed on by 5.1.6): a `check` finding for a memory note (the notes and index
+    in the folder `documents.memory` names, in the working tree) holding anything `redact.Find` finds. It names the
+    note, the line and the kind of secret, never the value; its next step: take it out of the note, and a person
+    decides whether to rotate it.
+12. **Real sessions, scripted** (part 4b's method: `claude-here` in a scratch project linked by this build; the user
+    settings hashes before and after; the Claude Code version recorded): on WSL, `-p` sessions that read, edit,
+    search, run a shell command holding a made-up secret, start a subagent and end, and one resumed. The log is read
+    back against the table above; the made-up secret is in no record; `hook start`'s context reached the session (the
+    session is asked to quote its active task). On Windows: the Go tests natively, and payloads piped into the Windows
+    build; a real Windows session only if Claude Code's login there is back (`STATE.md`, "Waiting on Rohan"), else it
+    is part of 5.3's Windows check, whose row already holds "the recorder under concurrency" (spec §14).
+13. **A scripted differential of records:** the studio's recorded payloads (`studio-app/test/fixtures/hooks/recorded/`
+    at `25b6450`, 62 files) through today's sink and through Bonsai's recorder, compared field by field after the
+    mappings above (names, categories, a target outside the checkout); counts and field names only in the run report.
+
+**5.2.5, asks and `log append`.** Contract §9 as written; these are the command lines and the rules it leaves open.
+1. **The commands.**
+   - `bonsai ask --type T --title T --why W [--then T] [--task ID or --doc ID] [--option O]... [--verdict V] [--key K]
+     [--json]` files an ask and prints its key. `T` is `Answer`, `Decide`, `Look` or `Play`; `V` is `pass` or `fail`.
+   - `bonsai ask --resolve <key> [--json]` withdraws an open ask.
+   - `bonsai ask --status <key> [--json]` gives its state and, when answered, the answer.
+   - `bonsai answer <key> [--choice C] [--verdict V] [--words W] [--by B] [--via V] [--json]`: `by` is `terminal`
+     unless given (at most 60 characters), `via` null unless given (at most 30).
+   - `bonsai asks [--all] [--json]`: the open asks, newest first; `--all` every key.
+   - `bonsai log append --label name=value... [--target T] [--text T] [--json]`.
+
+   The flags follow today's studio command, so the workflow pack's protocols change little (5.5). `--resolve`,
+   `--status` and `--all` are flags, not words.
+2. **What is checked when filing**, each refused with exit 2 and the rule named: the four agent types only (Bless is
+   the runner's, 5.4; a type a pack defines is refused until a pack can declare one, "Stale or in tension" below);
+   the title and every option one line; at most four options, each different, and only on a Decide; `--verdict` only
+   on a Look; Look and Play need `--task`; `--task` and `--doc` not both, each an id matching a declared kind's id
+   pattern (5.1.5), never a path; a hidden character refused, not stripped (Unicode's control, format, private-use,
+   surrogate and unassigned characters, but a line feed in `why` and in words, and the line and paragraph
+   separators), as today; then every free-text field redacted; then the limits (title 300, why 600, then 300, an option
+   200, words 2,000), refused when over, never cut. No NFC normalising: it needs a
+   library outside the standard one, and the bridge may normalise.
+3. **Keys** (contract §9.1): `agent:<--key>` (`[A-Za-z0-9][A-Za-z0-9._-]{0,59}`), else `agent:h-` and 12 hex of the
+   SHA-256 over the type, the doc or task id (or `answers`) and the stored, redacted title, joined by NUL, so a key
+   can be checked from its record alone.
+4. **A key's state is its latest record:** `file` opens it, `resolve` resolves it, `answer` answers it. Filing an open
+   key again appends a new `file` (the newest wording stands); filing a closed key opens it again, as today. `answer`
+   on a key that is not open exits 4 (`ask-not-open`), saying whether it is unknown, answered or resolved: the first
+   answer stands. The same `answer` again (same key and `by`) writes nothing and exits 0 (contract §9.1). An answer
+   from the session that asked is refused with exit 4 (`answer-own-session`), comparing `CLAUDE_CODE_SESSION_ID` with
+   the ask's `session` (contract §9.3). A Decide's `--choice` must be one of its options; a Look's `--verdict` is
+   `pass` or `fail`. An answer grants nothing: it writes one record and nothing else.
+5. **Where:** the main checkout's `.bonsai/local/asks/<UTC day>.ndjson`, through 5.2.2's finder and append path, at
+   most 8,192 bytes a record, the day of the record's own `at`, so an answer goes into its own day's file.
+6. **`log append`** (contract §8.4): one `event` record in today's `w-` file, `session` and `agent` null; each label
+   checked against the labels in force (the packs' and this machine's, 5.1.5), its value read by its definition's
+   kind; a name no definition has, or a wrong value, exits 2 (`label-not-defined`). `--target` and `--text` are
+   redacted and capped. Chosen over the machine's definitions alone (spec §8's words): one set of definitions for
+   every label check, and the studio's are attached on the machine anyway.
+7. **Exit codes:** 0 done, or nothing to do; 2 bad input; 3 could not write; 4 wrong state (not open, the asking
+   session, an unknown key for `--status`, or no `bonsai.yaml`, naming `bonsai init`). No ask command waits for input.
+
+**5.2.6, cleaning per kind and the page.**
+1. **Kinds** (spec §6's table): `log` files, `asks` day files and `ladder` results, by file; the sessions table's rows,
+   by row. Run reports are never deleted by Bonsai (5.1.6 lists those past their rule as a warning); `tasks` is a
+   rebuild. The defaults when `generated` or a kind is absent: log 30 days, asks kept, ladder 7 days, sessions kept.
+   `null` keeps.
+2. **The rule:** a file or row goes when it is older than `keep_days`, or beyond the newest `keep_newest` of its kind,
+   either one cleaning; the protections always win, and a protected one still counts among the newest. Age: a log or
+   asks file's last record's `at` (its modification time if the last line does not read); a ladder result's
+   `finished`; a row's end.
+3. **The protections:** a log file holding an open span (5.2.3's one function), or an ended span or subagent run with
+   no row yet in `.bonsai/sessions.md` (rows before files); an asks day file holding the `file` record of an open ask
+   (5.2.5's state); a ladder result whose task is not `done` or `cut`, read from main's task files, a task not found
+   or not read counting as not done; a row whose task is still open (`none` is never protected).
+4. **When:** at a session's end, after its `session_end` line, the recorder cleans `log`, `asks` and `ladder` within a
+   budget of 1 s and leaves the rest to the next end; `check --write` cleans the rows, as the table's only writer;
+   5.4's runner calls the `ladder` kind after each run. Chosen over a detached process, which would outlive the
+   session.
+5. **Only Bonsai's own files:** the names it writes (`s-*.ndjson`, `w-<date>.ndjson`, `<date>.ndjson`, `<task>.json`),
+   regular files only (a link is never followed), inside the kind's folder under main's `local/`. Anything else is
+   left alone and never named.
+6. **The `clean` record** (contract §8.2): one per file or row, written after the delete succeeded, in today's day
+   file with `session` null; `target` the project-relative path (a row: `.bonsai/sessions.md#` and its key); `reason`
+   the rule (`generated.log.keep_days=30`, `generated.asks.keep_newest=50`). A delete that finds the file gone writes
+   nothing: another session's cleaner took it. On Windows a file another process holds open is skipped after one try
+   and cleaned at a later end.
+7. **The generated-files page** (spec §6 makes it base's `generated-files` skill, and `base` comes with 5.5):
+   `docs/reference/generated-files.md` in Bonsai's repo until then, generated by `go generate` from the one Go table
+   of generated kinds (each kind, where it lives, who writes it, its default, what is never cleaned, when it is
+   cleaned), with the rules above in plain words; a test rebuilds it and fails on any difference, and a
+   `.gitattributes` line keeps it LF. 5.5 moves the words into the skill and keeps its table generated from the same
+   Go table. Until then the comment on `generated:` in the `bonsai.yaml` `init` writes names the page's address in
+   Bonsai's repo instead of the skill.
+
 ### Steps 5.2-5.7, outlined
 
 Each gets its detailed section, in 5.1's shape, before it starts ("What changes", item 1). The spec rows are §14's.
