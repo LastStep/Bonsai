@@ -10,7 +10,8 @@
 //   - block.go: the instruction block in CLAUDE.md (kind block): the workspace line, the protocol and memory imports,
 //     the packs' labels and block.md texts, at most 40 lines;
 //   - apply.go: the all-or-nothing write: every file staged, renames, the lock last;
-//   - check.go: bonsai check's findings on the lock and the files, and a tracked or staged .bonsai/local/ file;
+//   - check.go, checkdocs.go, checkhistory.go, checksettings.go, checkmachine.go, claude.go: bonsai check's findings
+//     and warnings, each a word of format.CheckWords (step 5.1.6);
 //   - plugins.go: this machine's plugins (plan part 4b): the install Claude Code is asked for after init and update
 //     (at project scope, the checkout's own .claude/settings.json), and check's drift report against the lock;
 //   - consent.go: consent to code (step 5.1.1): what init and update write that runs code, which needs --allow-exec
@@ -22,8 +23,9 @@
 //     and init --new-id's new id;
 //   - render.go and diff.go: the preview and the result, in plain ASCII text and in JSON.
 //
-// The engine applies only what a person asked for: init and update write project files, the home's pack cache and
-// the copies --adopt saves in it, and nothing else (no ~/.claude file, no local settings file, no commit). After
+// The engine applies only what a person asked for: init and update write project files, the home's pack cache, the
+// copies --adopt saves in it and, in the main checkout, this machine's record of the checkout (the machine folder's
+// workspace.json: checkmachine.go's RecordCheckout), and nothing else (no ~/.claude file, no local settings file, no commit). After
 // writing, cmd/bonsai asks Claude Code to install each pack's plugin at project scope (InstallPlugins), which writes
 // Claude Code's plugin folder and, the first time, the checkout's .claude/settings.json in Claude Code's own key
 // order.
@@ -138,6 +140,9 @@ func ascii(s string) string {
 	}
 	return b.String()
 }
+
+// ASCII is ascii for the command line's text.
+func ASCII(s string) string { return ascii(s) }
 
 // short gives a commit's first 7 characters, as people read them; "" stays "".
 func short(commit string) string {

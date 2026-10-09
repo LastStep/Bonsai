@@ -210,6 +210,30 @@ func (p *Plan) Applied() string {
 	return b.String()
 }
 
+// LeftAlone is what a plan leaves as it is that bonsai check reports as a finding: each file edited here that the
+// pack did not change (spec §6's table: "left alone; check reports it changed"), with how to settle it, so update's
+// "nothing to change" and check's findings agree (step 5.1.1's verifier: a forged lock left update saying "nothing to
+// change" beside check's findings). "" when there is none.
+func (p *Plan) LeftAlone() string {
+	var b strings.Builder
+	for _, f := range p.Files {
+		if f.Result != Changed {
+			continue
+		}
+		path := ShellArg(f.Path)
+		next := "to take Bonsai's copy back (yours is saved in the Bonsai home), run: bonsai " + p.Command + " --yes --adopt " + path
+		if f.Kind == "pack" {
+			next = "to keep the edit, run: bonsai " + p.Command + " --yes --keep " + path + "; to take the pack's copy back, run: bonsai " +
+				p.Command + " --yes --adopt " + path
+		}
+		fmt.Fprintf(&b, "  %s [%s]: %s\n    next: %s\n", ascii(f.Path), f.Kind, ascii(f.Why), ascii(next))
+	}
+	if b.Len() == 0 {
+		return ""
+	}
+	return "Left as they are, edited here (bonsai check reports each as changed until it is settled):\n" + b.String()
+}
+
 // ClosingWords are what init ends with and status shows (spec §6, "Said in plain words").
 func ClosingWords(cfg *workspace.Config, home string) string {
 	var b strings.Builder
@@ -355,6 +379,9 @@ func (r *CheckResult) Text() string {
 	}
 	for _, w := range r.Warnings {
 		fmt.Fprintf(&b, "warning: %s\n    next: %s\n", ascii(w.Message), ascii(w.Next))
+	}
+	for _, n := range r.Notes {
+		fmt.Fprintf(&b, "note: %s\n", ascii(n))
 	}
 	return b.String()
 }

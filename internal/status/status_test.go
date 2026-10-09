@@ -173,8 +173,8 @@ func TestStatusOfALinkedProject(t *testing.T) {
 			"packs":       `[]`,
 			"files":       `{"changed":0,"missing":0,"format0_changed":0}`,
 			// bonsai.yaml names a pack, but no update has run: check's findings (contract §12).
-			"problems": `[".bonsai/lock.json: is missing; next: run bonsai update to write it",` +
-				`".bonsai/.gitignore is missing, so .bonsai/local/ could be committed; next: run bonsai update --yes to write it again"]`,
+			"problems": `[".bonsai/lock.json: is missing; next: link the project again from bonsai.yaml (it previews every file and settings line first): run: bonsai init --yes",` +
+				`".bonsai/.gitignore is missing, so .bonsai/local/ could be committed; next: run: bonsai update --yes"]`,
 		}
 		for k, w := range want {
 			v, _ := doc.Get(k)
@@ -304,7 +304,7 @@ func TestStatusIsByteStableAndASCII(t *testing.T) {
 		t.Errorf("the non-ASCII path is not escaped:\n%s\n%s", first, text)
 	}
 	for _, want := range []string{"Workspace example, id ws-7kq2m4xw5r3t6y2u7p4a5c3e2b", "  bonsai.yaml      this project's",
-		"Person-only paths: .claude/**, bonsai.yaml", "Problems:\n  .bonsai/lock.json: is missing; next: run bonsai update",
+		"Person-only paths: .claude/**, bonsai.yaml", "Problems:\n  .bonsai/lock.json: is missing; next: link the project again from bonsai.yaml",
 		"This project's machine folder: workspaces/r-", "Packs: none locked\n", "A copy meant as a new project needs its own id: bonsai init --new-id\n"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the text lacks %q:\n%s", want, text)

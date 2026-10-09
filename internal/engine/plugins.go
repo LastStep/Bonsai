@@ -304,15 +304,13 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 	}
 	list, err := cli.List(r.Root)
 	if err != nil {
-		w := Finding{Code: "plugin", File: SettingsFile,
-			Message: "this machine's plugins were not compared with the lock: " + err.Error(),
-			Next:    "run claude plugin list --json in this checkout to see why, then check again", Who: "agent"}
 		if errors.Is(err, ErrNoClaude) {
-			w.Message = "Claude Code is not on the PATH, so this machine's plugins were not compared with the lock"
-			w.Next = "where sessions run, install Claude Code and check again; where none run (CI), nothing is needed"
-			w.Who = "person"
+			r.add("plugin-unchecked", SettingsFile, "", "Claude Code is not on the PATH, so this machine's plugins were not compared with the lock",
+				"where sessions run, a person installs Claude Code, then run: bonsai check; where none run (CI), nothing is needed")
+			return
 		}
-		r.Warnings = append(r.Warnings, w)
+		r.add("plugin-unchecked", SettingsFile, "agent", "this machine's plugins were not compared with the lock: "+err.Error(),
+			"to see why, run: claude plugin list --json; then run: bonsai check")
 		return
 	}
 	market := lockMarket(r.Config, r.Lock)
@@ -340,17 +338,15 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 			if at == "" {
 				at = "an unknown commit"
 			}
-			r.find("plugin", SettingsFile, "person", "Claude Code turns on the plugin "+p.ID+" at "+at+" in this checkout beside the lock's "+
+			r.add("plugin", SettingsFile, "", "Claude Code turns on the plugin "+p.ID+" at "+at+" in this checkout beside the lock's "+
 				want+" ("+lp.ID+" at "+version+"), so sessions here may load another commit of "+lp.ID,
-				"find the setting that turns "+p.ID+" on (a .claude/settings.local.json here or in the main checkout, or your own "+
-					"settings) and take it out: in the main checkout, claude plugin uninstall "+p.ID+" --scope local")
+				"a person finds the setting that turns "+p.ID+" on (a .claude/settings.local.json here or in the main checkout, or "+
+					"their own settings) and takes it out; for a local one, in the main checkout, run: claude plugin uninstall "+p.ID+" --scope local")
 		}
 		if !installed {
-			r.Warnings = append(r.Warnings, Finding{Code: "plugin", File: SettingsFile,
-				Message: "Claude Code reports the plugin " + want + " (" + lp.ID + " at " + version + ") not installed for this checkout",
-				Next: "run bonsai update (with --allow-exec when the plugin carries code: its update says so): it installs it " +
-					"once Claude Code has registered this checkout's marketplace, which a Claude Code session here does (accept " +
-					"its trust question if it asks)", Who: "person"})
+			r.add("plugin-missing", SettingsFile, "", "Claude Code reports the plugin "+want+" ("+lp.ID+" at "+version+") not installed for this checkout",
+				"to install it, run: bonsai update --yes (when the plugin carries code, update names --allow-exec, a person's consent; "+
+					"Claude Code first registers this checkout's marketplace in a session here, once a person accepts its trust question)")
 		}
 	}
 }
@@ -415,9 +411,8 @@ func (r *CheckResult) checkLocalPlugins() {
 		v, err := schema.Decode(bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf")))
 		o, ok := v.(schema.Object)
 		if err != nil || !ok {
-			r.Warnings = append(r.Warnings, Finding{Code: "plugin", File: LocalSettingsFile,
-				Message: where + " is not a JSON object Bonsai reads, so the plugins it turns on were not checked",
-				Next:    "fix it: Claude Code reads it too", Who: "person"})
+			r.add("plugin-unchecked", LocalSettingsFile, "", where+" is not a JSON object Bonsai reads, so the plugins it turns on were not checked",
+				"a person fixes the file (Claude Code reads it too), then run: bonsai check")
 			continue
 		}
 		ep, _ := o.Get("enabledPlugins")
@@ -428,10 +423,10 @@ func (r *CheckResult) checkLocalPlugins() {
 				continue
 			}
 			if commit, ok := locked[sub[1]]; ok {
-				r.find("plugin", LocalSettingsFile, "person", where+" turns on "+m.Key+", not the lock's "+PluginID(sub[1], market)+" ("+sub[1]+
+				r.add("plugin", LocalSettingsFile, "", where+" turns on "+m.Key+", not the lock's "+PluginID(sub[1], market)+" ("+sub[1]+
 					" at "+pluginVersion(commit)+"), so sessions here may load another commit of "+sub[1],
-					"take the line out of that file (in the main checkout, claude plugin uninstall "+m.Key+" --scope local does it): "+
-						"Bonsai installs plugins at project scope, in each checkout's own "+SettingsFile)
+					"take the line out of that file (Bonsai installs plugins at project scope, in each checkout's own "+SettingsFile+
+						"): in the main checkout, run: claude plugin uninstall "+m.Key+" --scope local")
 			}
 		}
 	}

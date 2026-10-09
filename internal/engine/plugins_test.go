@@ -118,7 +118,7 @@ func TestLocalSettingsDriftInAWorktree(t *testing.T) {
 		t.Errorf("turned off: %v %+v", err, r.Findings)
 	}
 	writeFile(t, wt, LocalSettingsFile, `{`)
-	if r, err := Check(wt, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "plugin" {
+	if r, err := Check(wt, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "plugin-unchecked" {
 		t.Errorf("unreadable: %v %+v %+v", err, r.Findings, r.Warnings)
 	}
 }
@@ -229,22 +229,22 @@ func TestPluginDrift(t *testing.T) {
 	elsewhere := atB
 	elsewhere.ProjectPath = other
 	r = check(&fakeCLI{list: []InstalledPlugin{off, elsewhere}})
-	if codes(r.Findings) != "" || codes(r.Warnings) != "plugin" || !strings.Contains(r.Warnings[0].Message, "not installed for this checkout") ||
-		!strings.HasPrefix(r.Warnings[0].Next, "run bonsai update") {
+	if codes(r.Findings) != "" || codes(r.Warnings) != "plugin-missing" || !strings.Contains(r.Warnings[0].Message, "not installed for this checkout") ||
+		!strings.HasPrefix(r.Warnings[0].Next, "to install it, run: bonsai update --yes") {
 		t.Errorf("not installed here: %+v %+v", r.Findings, r.Warnings)
 	}
 	// The plugin installed at the lock's name but another version: drift.
 	wrong := atB
 	wrong.Version = "0123456789ab"
-	if r := check(&fakeCLI{list: []InstalledPlugin{wrong}}); codes(r.Findings) != "plugin" || codes(r.Warnings) != "plugin" {
+	if r := check(&fakeCLI{list: []InstalledPlugin{wrong}}); codes(r.Findings) != "plugin" || codes(r.Warnings) != "plugin-missing" {
 		t.Errorf("another version under the lock's name: %+v %+v", r.Findings, r.Warnings)
 	}
 	// Claude Code missing, or failing: a warning, never a finding.
-	if r := check(&fakeCLI{listErr: ErrNoClaude}); codes(r.Findings) != "" || codes(r.Warnings) != "plugin" ||
+	if r := check(&fakeCLI{listErr: ErrNoClaude}); codes(r.Findings) != "" || codes(r.Warnings) != "plugin-unchecked" ||
 		!strings.Contains(r.Warnings[0].Message, "not on the PATH") {
 		t.Errorf("no Claude Code: %+v %+v", r.Findings, r.Warnings)
 	}
-	if r := check(&fakeCLI{listErr: errors.New("boom")}); codes(r.Findings) != "" || codes(r.Warnings) != "plugin" {
+	if r := check(&fakeCLI{listErr: errors.New("boom")}); codes(r.Findings) != "" || codes(r.Warnings) != "plugin-unchecked" {
 		t.Errorf("a failing list: %+v %+v", r.Findings, r.Warnings)
 	}
 
