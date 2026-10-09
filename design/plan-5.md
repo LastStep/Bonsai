@@ -2298,12 +2298,12 @@ they raise the test-count floors. Every refusal of `bonsai ladder` names its nex
 written. Three steps stay his, each for a reason given in plain words below: the pre-release install (a root-owned file,
 at the place the hook lines name, which no agent may replace); under his answer (ii), `--allow-exec`, `unlink` and an
 update that changes Bonsai's own guard or stop line in Bonsai's repo, rarely; and the way back, only if the guard
-breaks. Nothing else of his changes: the hours (28-44) and the re-ask line (57) are the spec's; the order of the parts
-stands; no repo is new and nothing from the studio goes public; no option round is asked. Every format change is an
-addition: one new command output (`bonsai.climb/1`), the active task's last result at the end of `status --json`, two
-counts at the end of a ladder result's `new_tests`, new words in open lists, and descriptions. The shapes of a rung's
-`ratchet` and `capture` are fixed without giving them a schema type, so `bonsai.workspace/1` needs no new major (note
-5.4.0).
+breaks. His word is also needed before an agent loosens a check in `bonsai.yaml`. Nothing else of his changes: the hours
+(28-44) and the re-ask line (57) are the spec's; the order of the parts stands; no repo is new and nothing from the
+studio goes public; no option round is asked. Every format change is an addition: one new command output
+(`bonsai.climb/1`), the active task's last result at the end of `status --json`, two counts at the end of a ladder
+result's `new_tests`, new words in open lists, and descriptions. The shapes of a rung's `ratchet` and `capture` are
+fixed without giving them a schema type, so `bonsai.workspace/1` needs no new major (note 5.4.0).
 
 #### For Rohan, in plain words
 
@@ -2316,46 +2316,55 @@ new test fails on the code from before the change), and reports git tricks that 
 all of it on its own repo.
 
 **Your sitting, once (about 5 minutes; your password).** When the code is done and checked, the orchestrator builds the
-pre-release and sends you its fingerprint, a 64-character number. Open a second WSL terminal, so the orchestrator's
-session stays open, and type:
+pre-release, records its fingerprint (a 64-character number) in a committed run report, and sends you these lines with
+the number already in the second. Open a second WSL terminal, so the orchestrator's session stays open, and type them
+one at a time:
 
 ```bash
-sha256sum ~/bonsai-checks/prerelease/bonsai
 sudo install -o root -g root -m 0755 ~/bonsai-checks/prerelease/bonsai /usr/local/bin/bonsai
+echo "<the number>  /usr/local/bin/bonsai" | sha256sum -c
 which -a bonsai
-bonsai --version
+/usr/local/bin/bonsai --version
 ```
 
-- The first line must print the orchestrator's number. If not, stop and tell it.
+- The second line must print `OK`. If it prints anything else, stop and tell the orchestrator: the file you installed is
+  not the one it built. The check reads the installed copy itself, which only root can change, not the file in the
+  scratch folder, which an agent could change between the build and your install.
 - `which -a bonsai` must list `/usr/local/bin/bonsai` and nothing else. If not, stop and tell it.
-- `bonsai --version` names the commit it was built from. Send the orchestrator that line.
+- The last line names the commit it was built from. Send the orchestrator that line.
 
 Why this is yours: the copy at `/usr/local/bin/bonsai` is the one Bonsai's guard lines run in every session, so only
 root may place it (your password); an agent that could replace it could replace the guard that holds it. Everything
 after the install is the agents': the orchestrator links Bonsai's own repo with the copy you installed (`bonsai init`,
 which writes the guard and its other lines and needs no `--allow-exec`, since Bonsai's repo uses no pack yet), commits
-it, and checks the guard is live. If Claude Code has not taken up the new lines in its running session, it asks you to
-restart it (`/exit`, then `claude` in `~/Servers/Bonsai`). Windows needs nothing until 1.0.
+it, and checks the guard is live. Claude Code most likely takes up the new lines in the running session (an agent
+measures it first); if not, the orchestrator asks you to restart it without losing its conversation: `/exit`, then
+`claude --continue` in `~/Servers/Bonsai`. Windows needs nothing until 1.0.
 
 **What changes after the switch.**
 - Every piece of work is a task file in `records/tasks/`, numbered after its piece (`T-5501` is piece 5.5.1), saying
   what it may change and what proves it. The orchestrator writes and moves them.
 - A piece is proved by `bonsai ladder`, run by the copy you installed: Bonsai's guard check on everything the piece
   changed, `go vet`, the formats check, every test twice (plain, and with the test fault switch), and a git check. The
-  orchestrator lands a piece only when its result is green at the exact commit it lands. GitHub's checks and the native
-  Windows test run stay as they are (the ladder runs in WSL; Windows gets its installed copy at 1.0).
+  orchestrator lands a piece only when its result is green at the exact commit it lands, and its run report keeps each
+  landing's proof so a verifier can check it later. GitHub's checks and the native Windows test run stay as they are
+  (the ladder runs in WSL; Windows gets its installed copy at 1.0).
 - Bonsai's guard covers every Claude Code session in `~/Servers/Bonsai`, yours included. It refuses changes to
-  `bonsai.yaml`, its lock, Claude Code's settings files, the GitHub workflows, `CLAUDE.md`, `go.mod`, the lint and
-  release settings and the four approved design documents (the spec, the contract, the one-pager and the format review),
-  unless the running task allows that file. It refuses a recursive delete that does not name what it deletes. It logs
-  each session in `.bonsai/local/` (never committed). If you ask Claude yourself to change one of those files, it is
-  refused too: change it by hand, or ask the orchestrator, which opens a task for it.
+  `bonsai.yaml`, its lock, Claude Code's settings files, the GitHub workflows, `CLAUDE.md`, `.gitignore`, `go.mod`, the
+  lint and release settings and the four approved design documents (the spec, the contract, the one-pager and the format
+  review), unless the running task allows that file. It refuses a recursive delete that does not name what it deletes.
+  It logs each session in `.bonsai/local/` (never committed). If you ask Claude yourself to change one of those files,
+  it is refused too: change it by hand, or ask the orchestrator, which opens a task for it.
+- Bonsai keeps its machine data in `~/.bonsai/` from the switch (a secret salt, this machine's record of the repo, the
+  ladder's lock); none of it enters git.
 - Claude Code's own automatic memory is switched off in Bonsai's repo (Bonsai's memory replaces it, spec §10). The one
-  note it holds there (agents run the hand checks) moves into the repo as Bonsai's first memory note.
+  note it holds there (agents run the hand checks; you are asked only for what needs a person) is already a rule in this
+  plan, and becomes a line in `CLAUDE.md`.
 - Test counts may only rise. At each part's end the orchestrator raises the floors to the counts the part reached and
-  tells you the numbers; nothing to answer. Raising a floor only makes the checks stricter. Lowering one, or loosening
-  any other check in `bonsai.yaml` (a rung taken out, a protected file freed), waits for your word: an agent loosening
-  the checks it is held to would be judging its own work.
+  tells you the numbers; nothing to answer. Raising a floor only makes the checks stricter. Any other change to the
+  checks in `bonsai.yaml` (a floor lowered, say because a refactor merges tests; a rung taken out or its command
+  changed; a protected file freed) waits for your word: an agent loosening the checks it is held to would be judging its
+  own work.
 - Anyone who opens Claude Code in a clone of Bonsai without Bonsai installed has every edit and command refused, on
   purpose. `CONTRIBUTING.md` says so and how to work round it.
 
@@ -2373,31 +2382,29 @@ Every other update of Bonsai's repo is the agents' (linking Bonsai's `base` pack
 **The way back, if the pre-release blocks work.** If Bonsai's guard breaks, every edit and command in a Claude Code
 session in `~/Servers/Bonsai` is refused: it fails closed, on purpose. This is yours because, while it lasts, no agent
 there can run a command at all. In a plain WSL terminal (not Claude):
-- **One session with Bonsai off, nothing written.** Quit Claude Code, then start it like this instead of plain `claude`:
+- **Bonsai off, nothing written.** Quit Claude Code, then start it like this instead of plain `claude`, for as many
+  sessions and days as the fix takes:
   ```bash
   cd ~/Servers/Bonsai
-  claude --settings '{"disableAllHooks": true}'
+  claude --continue --settings '{"disableAllHooks": true}'
   ```
-  That session runs with no guard, no stop gate and no log. The orchestrator in it fixes the problem and sends you a new
-  build to install; then go back to plain `claude`. An agent tries this line first, in a scratch project, before your
+  `--continue` keeps the orchestrator's conversation. That session runs with no guard, no stop gate and no log, and also
+  without your own status line, since the switch turns every hook off. The orchestrator in it fixes the problem, lands
+  the fix on the checks used before the switch (the installed copy may be the broken part), and sends you a new build to
+  install; then start sessions as usual again. An agent tries this line first, in a scratch project, before your
   sitting.
-- **Several days with Bonsai off**, for every session in that folder. Only if
-  `ls ~/Servers/Bonsai/.claude/settings.local.json` says there is no such file (else ask the orchestrator for the line):
+- **Back to the build before** (from the second pre-release on; the orchestrator keeps the one you had and sends you its
+  number from the run report that recorded it):
   ```bash
-  cd ~/Servers/Bonsai
-  printf '{\n  "disableAllHooks": true\n}\n' > .claude/settings.local.json
-  ```
-  Git ignores that file, and `bonsai check` reports it until you remove it with
-  `rm ~/Servers/Bonsai/.claude/settings.local.json`.
-- **Back to the build before** (from the second pre-release on; the orchestrator keeps the one you had and gives you its
-  number again):
-  ```bash
-  sha256sum ~/bonsai-checks/prerelease/previous/bonsai
   sudo install -o root -g root -m 0755 ~/bonsai-checks/prerelease/previous/bonsai /usr/local/bin/bonsai
+  echo "<its number>  /usr/local/bin/bonsai" | sha256sum -c
   ```
 
 **Hours, order and your other steps.** 28-44 hours, re-ask at 57, as the spec has them; 5.4 after 5.3 and before 5.5.
-Your install was already on your list; new is only the rare update line above. The way back is only for a breakdown.
+Your install was already on your list. New for you: the rare update line above; your word when a check in `bonsai.yaml`
+must be loosened (a floor lowered, a rung changed); your own Claude Code sessions in `~/Servers/Bonsai` refused on the
+protected files; perhaps one restart at the switch; Claude Code's automatic memory off in this repo; and the floor
+numbers in the orchestrator's line at each part's end. The way back is only for a breakdown.
 
 #### The pieces and their order
 
