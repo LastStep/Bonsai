@@ -3,61 +3,176 @@
 package guard
 
 import (
+	"bytes"
+	"fmt"
+	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/LastStep/Bonsai/internal/schema"
 )
+
+// untimed is the budget of a run that ends on the guard's own decision: one no run comes near, so the outcome never
+// rests on the guard's timer. Nothing in such a run can hang (its payload is a strings.Reader, and a busy log file is
+// retried for openWait at most), so it needs no timer as a backstop.
+const untimed = time.Hour
+
+// crashStandIn is the panic the test's die ends the work with, in place of the crash fault's hard death.
+const crashStandIn = "the test's stand-in for the crash fault's hard death"
 
 // Each fault, in process: every one blocks the free.txt edit the normal guard allows. The real process ends (a
 // crash's hard death, the slow fault's sleep past the real budget, the hook line's shell with no bonsai on its PATH)
 // are cmd/bonsai's TestFaultsThroughTheHookLine, on the built binaries.
+//
+// No case races a short budget. Every case ran on a fixed 200 ms budget, and on a loaded machine the work could
+// reach its fault after that, so the case got an over-time record instead of its own. Now every fault but slow ends
+// the work by itself (it decides, or the crash's stand-in ends it), so those cases run untimed and end on the
+// guard's own decision. The slow fault's block is the guard's timer, so that case alone has a budget, and it counts
+// only a run whose timer fired after the work reached the fault (slowRun, below).
 func TestEachFaultBlocks(t *testing.T) {
 	if !FaultBuild {
 		t.Fatal("fault_on.go says this is not a fault build")
 	}
-	// Set for the rest of this test binary, not restored: the crash and slow runs leave their work goroutines
-	// waiting in die and in the sleep, and restoring would race with them. slowFor never ends while the tests run, so
-	// no late record lands in a removed folder.
-	died := make(chan struct{}, 4)
-	die = func() { died <- struct{}{}; select {} }
+	// A crash cannot end the test binary, so the test stands in its own die. The old stand-in held the work in die
+	// until the budget ran out, which put the crash case's outcome on the timer. This one ends the work with a panic,
+	// which the guard's own recover turns into a block (internal-error, as TestBlocksWhatItCannotReadOrDecide's "a
+	// panic inside" shows), with no timer. What the case proves of the crash fault itself is what it does before it
+	// dies: its record, its message, its call to die, and no decision of its own after that. No work is left in die,
+	// so die is restored.
+	var died atomic.Int32
+	defer func(d func()) { die = d }(die)
+	die = func() { died.Add(1); panic(crashStandIn) }
+	// Set for the rest of this test binary, not restored: every slow run leaves its work goroutine in the sleep, and
+	// restoring would race with them. slowFor never ends while the tests run, so no late record lands in a removed
+	// folder.
 	slowFor = time.Hour
 
 	cases := []struct {
-		fault, inStderr string
-		rules           []string
+		fault    string
+		inStderr []string
+		rule     string
 	}{
-		{"crash", "test fault crash (BONSAI_TEST_FAULT=crash): the guard dies now", []string{"fault-crash", RuleOverTime}},
-		{"slow", "the guard ran past its own 200ms limit", []string{RuleOverTime}},
-		{"missing", "test fault missing (BONSAI_TEST_FAULT=missing): this session should find no bonsai on its PATH", []string{"fault-missing"}},
-		{"minimal-path", "test fault minimal-path (BONSAI_TEST_FAULT=minimal-path)", []string{"fault-minimal-path"}},
-		{"sideways", `BONSAI_TEST_FAULT="sideways" is not a test fault this build knows`, []string{"fault-unknown"}},
+		{"crash", []string{"test fault crash (BONSAI_TEST_FAULT=crash): the guard dies now",
+			"the guard failed inside (" + crashStandIn + ")"}, "fault-crash"},
+		{"missing", []string{"test fault missing (BONSAI_TEST_FAULT=missing): this session should find no bonsai on its PATH"}, "fault-missing"},
+		{"minimal-path", []string{"test fault minimal-path (BONSAI_TEST_FAULT=minimal-path)"}, "fault-minimal-path"},
+		{"sideways", []string{`BONSAI_TEST_FAULT="sideways" is not a test fault this build knows`}, "fault-unknown"},
 	}
 	for _, c := range cases {
 		t.Run(c.fault, func(t *testing.T) {
 			dir := project(t, testYAML)
-			code, stderr := guardRun(t, env(dir, FaultEnv, c.fault), strings.NewReader(editOf("s-f", dir, "free.txt")), 200*time.Millisecond)
-			if code != 2 || !strings.Contains(stderr, c.inStderr) || !strings.Contains(stderr, "\nnext: ") {
-				t.Fatalf("exit %d, stderr %q; want 2 with %q", code, stderr, c.inStderr)
+			code, stderr := guardRun(t, env(dir, FaultEnv, c.fault), strings.NewReader(editOf("s-f", dir, "free.txt")), untimed)
+			if code != 2 || !strings.Contains(stderr, "\nnext: ") || strings.Contains(stderr, "ran past its own") {
+				t.Fatalf("exit %d, stderr %q; want 2, a next step and no over-time", code, stderr)
+			}
+			for _, s := range c.inStderr {
+				if !strings.Contains(stderr, s) {
+					t.Errorf("stderr %q does not say %q", stderr, s)
+				}
 			}
 			asciiOnly(t, stderr)
 			recs := records(t, dir, "s-s-f.ndjson")
-			if len(recs) != len(c.rules) {
-				t.Fatalf("%d records, want %v", len(recs), c.rules)
+			if len(recs) != 1 {
+				t.Fatalf("%d records, want one (%s)", len(recs), c.rule)
 			}
-			for i, r := range recs {
-				if r.String("rule") != c.rules[i] || r.String("decision") != "deny" || r.String("target") != "" {
-					t.Errorf("record %d: rule %s decision %s target %q", i, r.String("rule"), r.String("decision"), r.String("target"))
-				}
-			}
-			if recs[0].String("bonsai_sha256") == "" {
-				t.Errorf("the session's first record names no hash")
-			}
+			checkFaultRecord(t, recs[0], c.rule)
 		})
 	}
-	select {
-	case <-died:
-	default:
-		t.Errorf("the crash fault never called die")
+	if n := died.Load(); n != 1 {
+		t.Errorf("the crash fault called die %d times, want once", n)
+	}
+
+	// The slow fault sleeps (an hour here) and the guard's timer answers it, so this case cannot do without a
+	// budget. It starts at 200 ms; a run whose timer fired before the work reached the fault (a loaded machine) is
+	// run again, on a new project, with twice the budget. Past the guard's real Budget it stops: a guard whose work
+	// cannot reach the fault in that time fails a real run too.
+	t.Run("slow", func(t *testing.T) {
+		for budget := 200 * time.Millisecond; ; budget *= 2 {
+			early := slowRun(t, budget)
+			if early == "" {
+				return
+			}
+			if budget > Budget {
+				t.Fatalf("budget %v, past the guard's real %v: the timer still fired before the work reached the fault (%s)",
+					budget, Budget, early)
+			}
+			t.Logf("budget %v: the timer fired before the work reached the fault (%s); again with %v", budget, early, 2*budget)
+		}
+	})
+}
+
+// slowRun runs the slow fault once with the given budget. The answer (exit 2, over-time) is checked on every run,
+// since the slow work never answers. The record is checked when the run counts: when the timer's record began after
+// the work had reached the fault. The work reads BONSAI_TEST_FAULT at the fault, and a record reads the clock as it
+// begins (the slow work records nothing, so the clock is the timer's alone). A run that does not count gives why;
+// its record names no session, or there is none.
+//
+// The timer's record is still awaited for recordWait at most, as the guard does (hook.go): that wait is guard code,
+// and TestOverTimeBlocks rests on it too.
+func slowRun(t *testing.T, budget time.Duration) (early string) {
+	t.Helper()
+	dir := project(t, testYAML)
+	base := env(dir, FaultEnv, "slow")
+	var atFault atomic.Bool
+	getenv := func(k string) string {
+		if k == FaultEnv {
+			atFault.Store(true)
+		}
+		return base(k)
+	}
+	const (
+		none        = iota // no record began: the timer fired before the work had read bonsai.yaml
+		afterFault         // the record began with the work at the fault
+		beforeFault        // the record began before the work reached the fault
+	)
+	var began atomic.Int32
+	now := func() time.Time {
+		at := int32(beforeFault)
+		if atFault.Load() {
+			at = afterFault
+		}
+		began.CompareAndSwap(none, at)
+		return time.Now()
+	}
+	var stderr bytes.Buffer
+	code := Main(Options{Stdin: strings.NewReader(editOf("s-f", dir, "free.txt")), Stderr: &stderr, Getenv: getenv,
+		Budget: budget, Now: now})
+	if code != 2 || !strings.Contains(stderr.String(), fmt.Sprintf("the guard ran past its own %s limit", budget)) ||
+		!strings.Contains(stderr.String(), "\nnext: ") {
+		t.Fatalf("budget %v: exit %d, stderr %q; want 2, over-time and a next step", budget, code, stderr.String())
+	}
+	asciiOnly(t, stderr.String())
+	switch began.Load() {
+	case none:
+		return "no record began"
+	case beforeFault:
+		return "its record began before the work reached the fault"
+	}
+	// The timer's record takes the payload first and reads the clock next: a work that reached the fault between the
+	// two leaves a record with no session, in a day's file.
+	if day, _ := filepath.Glob(filepath.Join(dir, filepath.FromSlash(LogDir), "w-*.ndjson")); len(day) != 0 {
+		return "its record took no payload"
+	}
+	recs := records(t, dir, "s-s-f.ndjson")
+	if len(recs) != 1 {
+		t.Fatalf("budget %v: %d records, want one (%s)", budget, len(recs), RuleOverTime)
+	}
+	checkFaultRecord(t, recs[0], RuleOverTime)
+	return ""
+}
+
+// checkFaultRecord checks a fault case's one record: its rule, a refusal, no target, and the binary's hash (it is
+// the session's first).
+func checkFaultRecord(t *testing.T, r schema.Object, rule string) {
+	t.Helper()
+	if r.String("rule") != rule || r.String("decision") != "deny" || r.String("target") != "" {
+		t.Errorf("record: rule %s decision %s target %q; want %s, deny, none", r.String("rule"), r.String("decision"),
+			r.String("target"), rule)
+	}
+	if r.String("bonsai_sha256") == "" {
+		t.Errorf("the session's first record names no hash")
 	}
 }
 
