@@ -9,7 +9,7 @@
 //     force: documents.go;
 //   - the active task, one function every reader uses (contract §13): active.go;
 //   - this machine's part of a workspace, its settings and the labels attached on it, with the packs' labels in force
-//     (contract §3, §5): machine.go;
+//     (contract §3, §5): machine.go; and its record of the main checkout's path and ids, workspace.json: record.go;
 //   - project-relative paths and atomic writes, with Windows' busy renames retried: paths.go, write.go.
 //
 // The YAML files are read by internal/reader under format 1 only (neither ever had format 0); the lock is held to its

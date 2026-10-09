@@ -6,7 +6,7 @@ package workspace
 //
 //	settings.json             this machine's settings for the workspace: status_writes, status_command
 //	labels/<namespace>.yaml   label definitions attached on this machine (bonsai.labels/1)
-//	workspace.json            the main checkout's path and the ids it has held (contract §3; written from step 5.3)
+//	workspace.json            the main checkout's path and the ids it has held (contract §3; record.go, step 5.1.6)
 //
 // Read here: the settings (LoadMachineSettings) and the attached labels (LabelsInForce, with the packs' from the
 // lock's declares). Both are written only by Bonsai's commands run outside an agent session (contract §3, §10.6):
