@@ -44,7 +44,7 @@ func (r *CheckResult) checkMachine() {
 		r.add("id-changed", workspace.ConfigFile, "", "bonsai.yaml's id changed from "+rec.Current()+" to "+ascii(id)+
 			" (this machine's record of the checkout; the studio stops forwarding the project until it is registered again)",
 			"if the change was not meant, a person puts bonsai.yaml's id back to "+rec.Current()+"; if it was (a copy made its "+
-				"own project), run: bonsai update --yes (it records the new id on this machine)")
+				"own project), record the new id on this machine, run: bonsai update --yes")
 	}
 	if id != "" {
 		key, _ := workspace.MachineKey(r.Main)
@@ -97,16 +97,16 @@ func readInstall(home string) (*install, error) {
 
 // checkInstalled compares the bonsai on the PATH with the installed one (spec §3).
 func (r *CheckResult) checkInstalled() {
-	shown := ascii(filepath.ToSlash(filepath.Join(r.Home, InstallFile)))
 	in, err := readInstall(r.Home)
 	switch {
 	case err != nil:
-		r.add("bonsai-path", "", "", shown+" (the installed bonsai's record) is not one Bonsai reads: "+ascii(oneLine(err.Error())),
-			"a person installs Bonsai's release again, which writes the record (spec section 3: the program is a person's install)")
+		r.add("bonsai-path", "", "", "the Bonsai home's "+InstallFile+" (the installed bonsai's record) is not one Bonsai reads: "+
+			ascii(oneLine(err.Error())), "a person installs Bonsai's release again, which writes the record (spec section 3: the "+
+			"program is a person's install), then run: bonsai check")
 		return
 	case in == nil:
-		r.Notes = append(r.Notes, "no "+shown+" (Bonsai's installer writes it from step 5.6), so the bonsai on the PATH was not "+
-			"compared with an installed one")
+		r.Notes = append(r.Notes, "no "+InstallFile+" in the Bonsai home yet (Bonsai's installer writes it from step 5.6): the bonsai "+
+			"on the PATH was not compared with an installed one")
 		return
 	}
 	found, err := exec.LookPath("bonsai")

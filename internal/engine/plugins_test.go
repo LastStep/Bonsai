@@ -230,7 +230,7 @@ func TestPluginDrift(t *testing.T) {
 	elsewhere.ProjectPath = other
 	r = check(&fakeCLI{list: []InstalledPlugin{off, elsewhere}})
 	if codes(r.Findings) != "" || codes(r.Warnings) != "plugin-missing" || !strings.Contains(r.Warnings[0].Message, "not installed for this checkout") ||
-		!strings.HasPrefix(r.Warnings[0].Next, "to install it, run: bonsai update --yes") {
+		!strings.HasSuffix(r.Warnings[0].Next, "to install it, run: bonsai update --yes") {
 		t.Errorf("not installed here: %+v %+v", r.Findings, r.Warnings)
 	}
 	// The plugin installed at the lock's name but another version: drift.

@@ -166,12 +166,12 @@ func (r *CheckResult) checkDocument(short, kind, p string, raw []byte, defs map[
 		if _, listed := r.Lock.Format0[p]; !listed {
 			r.add("format0-new", p, "", p+" has no format: line and is not on the lock's format0 list: a "+kind+" file new since the link "+
 				"is written in format 1 (contract section 2.3)", "give it a format: line first, format: bonsai."+short+"/1, with the fields "+
-				"bonsai check --schema bonsai."+short+" lists (run: bonsai check --schema bonsai."+short+")")
+				"this lists, run: bonsai check --schema bonsai."+short)
 		}
 	}
 	labels, fields, err := docRead(short, raw)
 	if err != nil {
-		next := "fix it, then run: bonsai check (the fields and their allowed values: bonsai check --schema bonsai." + short + ")"
+		next := "fix it (the fields and their allowed values: bonsai check --schema bonsai." + short + "), then run: bonsai check"
 		if short == "tasks" || short == "sessions" {
 			next = "the table is generated, never edited by hand: restore it, run: git checkout -- " + ShellArg(p)
 		}

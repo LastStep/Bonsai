@@ -128,7 +128,7 @@ func (r *CheckResult) missingLockNext() string {
 	if cmd.Run() == nil {
 		return run("git checkout -- " + workspace.LockFile)
 	}
-	return "link the project again from bonsai.yaml (it previews every file and settings line first): run: bonsai init --yes"
+	return "link the project again from bonsai.yaml (a pack's code also needs --allow-exec, a person's consent, which init names), run: bonsai init --yes"
 }
 
 // checkProject runs the checks that need no lock: the documents, the settings files, this machine's record and the

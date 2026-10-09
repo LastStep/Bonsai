@@ -173,7 +173,7 @@ func TestStatusOfALinkedProject(t *testing.T) {
 			"packs":       `[]`,
 			"files":       `{"changed":0,"missing":0,"format0_changed":0}`,
 			// bonsai.yaml names a pack, but no update has run: check's findings (contract §12).
-			"problems": `[".bonsai/lock.json: is missing; next: link the project again from bonsai.yaml (it previews every file and settings line first): run: bonsai init --yes",` +
+			"problems": `[".bonsai/lock.json: is missing; next: link the project again from bonsai.yaml (a pack's code also needs --allow-exec, a person's consent, which init names), run: bonsai init --yes",` +
 				`".bonsai/.gitignore is missing, so .bonsai/local/ could be committed; next: run: bonsai update --yes"]`,
 		}
 		for k, w := range want {

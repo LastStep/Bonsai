@@ -345,8 +345,8 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 		}
 		if !installed {
 			r.add("plugin-missing", SettingsFile, "", "Claude Code reports the plugin "+want+" ("+lp.ID+" at "+version+") not installed for this checkout",
-				"to install it, run: bonsai update --yes (when the plugin carries code, update names --allow-exec, a person's consent; "+
-					"Claude Code first registers this checkout's marketplace in a session here, once a person accepts its trust question)")
+				"Claude Code first registers this checkout's marketplace in a session here, once a person accepts its trust question, "+
+					"and a plugin that carries code needs --allow-exec, a person's consent, which update names; to install it, run: bonsai update --yes")
 		}
 	}
 }
