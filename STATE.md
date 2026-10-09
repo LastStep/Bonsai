@@ -96,7 +96,11 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   is installed on a machine only with `--allow-exec` there, and Bonsai installs or removes no plugin but the project's
   own packs'.
 
-Next, **5.1.3** (formats set 4, a fresh Opus verifier): the new schemas (`workspace`, `pack` with `runs`, `tasks`,
+**5.2's section is planned** (`design/plan-5.md`, "Step 5.2", on `main` at `da427de`): written beside 5.1.3, reviewed
+fresh, fixed and audited (`records/runs/R-2026-10-09-plan-5.2.md`); nothing of Rohan's changes but one look at two log
+field names. 5.2 starts when 5.1 ends.
+
+Now, **5.1.3** (formats set 4, built; its fresh Opus verifier running): the new schemas (`workspace`, `pack` with `runs`, `tasks`,
 `sessions`, `memory`, `error`, `check`, `changes`), `status` gaining `error`, the lock's packs gaining their folder
 (`path`, an addition: 5.1.1's verifier's rest of B1, which 5.1.5's engine then uses), the two new trick cases with the
 reader's fix, contract §13's fixtures, the schema-compare test and its CI checkout, and lint's online schema check
@@ -109,7 +113,8 @@ switched off (it failed CI twice on the network). Then 5.1.4a and the rest in th
 - Whenever convenient: Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the
   model). In PowerShell: `claude`, then `/login`, then quit.
 - In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and
-  `update`'s JSON (5.1.3/5.1.4b).
+  `update`'s JSON (5.1.3/5.1.4b). In 5.2, a look (no vote): the log's two new field names, `bonsai_path` and
+  `bonsai_sha256`.
 - Later: step 8 at 5.4 (a pre-release `bonsai`); at 5.7 the `release` environment and a new tap token (the working
   environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website).
