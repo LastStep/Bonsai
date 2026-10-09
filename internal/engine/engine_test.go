@@ -286,8 +286,9 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 		!strings.Contains(text, `"sha":"`+e.pack.A+`"`) || strings.Contains(text, `"version"`) {
 		t.Errorf("plugin wiring:\n%s", text)
 	}
-	// The order of the project's keys is kept; Bonsai's come after.
-	if got := strings.Join(s.Keys(), " "); got != "permissions hooks model autoMemoryEnabled disableAllHooks extraKnownMarketplaces enabledPlugins" {
+	// The order of the project's keys is kept; Bonsai's go where Claude Code writes them (step 5.1.7: after the last key
+	// Claude Code writes before each), so its first install leaves the order as it is.
+	if got := strings.Join(s.Keys(), " "); got != "permissions hooks model disableAllHooks enabledPlugins extraKnownMarketplaces autoMemoryEnabled" {
 		t.Errorf("keys %s", got)
 	}
 	// CLAUDE.md: the project's text, then the block.

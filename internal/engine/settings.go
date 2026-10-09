@@ -21,6 +21,23 @@ package engine
 // bonsai.yaml since the last update, its old Edit rule is found by trying the file's other Edit rules against the
 // lock's fingerprint, each set of them in turn: only the set whose fingerprint matches exactly is Bonsai's, so a rule
 // a person wrote is never taken for one of Bonsai's.
+//
+// The file's key order (step 5.1.7). Claude Code writes this file too (a project-scope plugin install, an uninstall),
+// with JSON.stringify: two-space indent, a final newline, and the keys it knows in its own order, the ones it does not
+// know after them in their order. As measured on Claude Code 2.1.294 and 2.1.295 (records/runs, 5.1.7), that order
+// is stable: a second install writes the same bytes. So Bonsai changes only its own entries and keeps every other
+// key, value and character where the file has it:
+//   - an entry of Bonsai's that stays keeps its place, and its bytes when its value is unchanged (a marketplace in
+//     Claude Code's key order is left as it is);
+//   - a marketplace or plugin entry whose name changed (a new commit) takes the old entry's place;
+//   - a key Bonsai adds goes where Claude Code would put it (claudeKeyOrder): after the last key of the file that
+//     Claude Code writes before it; a deny list goes into permissions the same way (claudePermissionsOrder); a
+//     marketplace is written in Claude Code's order (claudeMarketplaceOrder);
+//   - strings are written as JSON.stringify writes them (schema.EncodeUTF8), so a project's non-ASCII text is kept.
+// A new file is therefore written in the order Claude Code writes, and Claude Code's first install leaves it as it is.
+// In a file that held settings of the project's own, Claude Code's first install may still move the project's keys
+// into its own order once (keys Claude Code knows that claudeKeyOrder does not list, a file not in Claude Code's
+// order); from then on the order stays, and Bonsai's writes keep it.
 
 import (
 	"bytes"
@@ -374,6 +391,116 @@ func readSettings(root string) (*settingsDoc, error) {
 // ownedKeys are the top-level keys that are Bonsai's whatever their value.
 var ownedKeys = map[string]bool{"autoMemoryEnabled": true, "disableAllHooks": true}
 
+// claudeKeyOrder is the order Claude Code writes the top-level keys of a settings file in, for the keys measured on
+// Claude Code 2.1.294 and 2.1.295 (step 5.1.7: a project-scope install rewrote a file holding each of them, given in
+// another order): Bonsai's six keys and the keys around them. A key not listed is never an anchor (placeKey).
+var claudeKeyOrder = []string{"$schema", "respectGitignore", "cleanupPeriodDays", "env", "includeCoAuthoredBy",
+	"includeGitInstructions", "permissions", "model", "enableAllProjectMcpServers", "enabledMcpjsonServers",
+	"disabledMcpjsonServers", "hooks", "disableAllHooks", "enabledPlugins", "extraKnownMarketplaces", "outputStyle",
+	"spinnerTipsEnabled", "alwaysThinkingEnabled", "autoMemoryEnabled"}
+
+// claudePermissionsOrder is the order Claude Code writes permissions' keys in (measured as claudeKeyOrder).
+var claudePermissionsOrder = []string{"allow", "deny", "ask", "defaultMode", "additionalDirectories"}
+
+// claudeMarketplaceOrder is the order Claude Code writes an inline marketplace's source object in (measured as
+// claudeKeyOrder): its plugins before its owner. Bonsai's Line.Value keeps its own order, which the lock's fingerprint
+// was taken over; the file gets this one (claudeOrdered).
+var claudeMarketplaceOrder = []string{"source", "name", "plugins", "owner"}
+
+// placeKey gives key its value in o: in place when o holds it, else inserted where Claude Code writes it (order):
+// after the last key of o that order puts before key, or first when there is none. A key order does not list is
+// appended.
+func placeKey(o schema.Object, key string, v any, order []string) schema.Object {
+	if i := o.Index(key); i >= 0 {
+		o[i].Value = v
+		return o
+	}
+	rank := map[string]int{}
+	for i, k := range order {
+		rank[k] = i
+	}
+	r, known := rank[key]
+	if !known {
+		return append(o, schema.Member{Key: key, Value: v})
+	}
+	at := 0
+	for i, m := range o {
+		if mr, ok := rank[m.Key]; ok && mr < r {
+			at = i + 1
+		}
+	}
+	out := make(schema.Object, 0, len(o)+1)
+	out = append(out, o[:at]...)
+	out = append(out, schema.Member{Key: key, Value: v})
+	return append(out, o[at:]...)
+}
+
+// claudeOrdered gives a line's value as the file holds it: a marketplace's source object in Claude Code's order
+// (claudeMarketplaceOrder), every other value as it is. It never changes the line's own value.
+func claudeOrdered(l Line) any {
+	o, ok := l.Value.(schema.Object)
+	if l.Kind != "marketplace" || !ok {
+		return l.Value
+	}
+	src, ok := o.Get("source")
+	so, isObj := src.(schema.Object)
+	if !ok || !isObj {
+		return l.Value
+	}
+	var inner schema.Object
+	for _, k := range claudeMarketplaceOrder {
+		if v, ok := so.Get(k); ok {
+			inner = append(inner, schema.Member{Key: k, Value: v})
+		}
+	}
+	for _, m := range so {
+		if inner.Index(m.Key) < 0 {
+			inner = append(inner, m)
+		}
+	}
+	out := cloneObject(o)
+	out[out.Index("source")].Value = inner
+	return out
+}
+
+// bonsaiMarketplaceOrder is the order buildLines writes an inline marketplace's source object in, which the lock's
+// fingerprint of Bonsai's lines is taken over.
+var bonsaiMarketplaceOrder = []string{"source", "name", "owner", "plugins"}
+
+// bonsaiOrdered gives a marketplace's value read from the file with its source object in Bonsai's own order
+// (bonsaiMarketplaceOrder), other keys after them as the file has them; any other value as it is.
+func bonsaiOrdered(v any) any {
+	o, ok := v.(schema.Object)
+	if !ok {
+		return v
+	}
+	i := o.Index("source")
+	if i < 0 {
+		return v
+	}
+	so, ok := o[i].Value.(schema.Object)
+	if !ok {
+		return v
+	}
+	var inner schema.Object
+	for _, k := range bonsaiMarketplaceOrder {
+		if x, ok := so.Get(k); ok {
+			inner = append(inner, schema.Member{Key: k, Value: x})
+		}
+	}
+	for _, m := range so {
+		if inner.Index(m.Key) < 0 {
+			inner = append(inner, m)
+		}
+	}
+	out := cloneObject(o)
+	out[i].Value = inner
+	return out
+}
+
+// sameValue reports whether two JSON values are equal but for the order of their objects' keys.
+func sameValue(a, b any) bool { return schema.Show(sortedKeys(a)) == schema.Show(sortedKeys(b)) }
+
 // diskLines lists every line the file holds that Bonsai could own: the two keys, each deny rule, each command hook,
 // each marketplace and each enabled plugin.
 func diskLines(root schema.Object) []Line {
@@ -549,7 +676,9 @@ func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 			d.Origin, d.Slot, d.Why = "bonsai", "key:"+d.Name, "Bonsai's own setting."
 			add(d)
 		case d.Kind == "marketplace" && strings.HasPrefix(d.Name, "bonsai-"):
-			d.Origin, d.Slot = "bonsai", "marketplace"
+			// Its value as Bonsai writes it (bonsaiOrdered): Claude Code moves the owner after the plugins, which is no
+			// edit, and the fingerprint is taken over Bonsai's order.
+			d.Origin, d.Slot, d.Value = "bonsai", "marketplace", bonsaiOrdered(d.Value)
 			d.Why = "An old plugin marketplace of Bonsai's for this workspace: the one above replaces it."
 			add(d)
 		case d.Kind == "plugin" && strings.Contains(d.Name, "@bonsai-"):
@@ -702,7 +831,7 @@ func applyLines(root schema.Object, claimed, lnew []Line) schema.Object {
 		}
 	}
 
-	// Keys: set in place, or appended; a claimed key no new line holds goes.
+	// Keys: set in place, or placed where Claude Code writes them; a claimed key no new line holds goes.
 	for _, l := range claimed {
 		if l.Kind == "key" {
 			if _, keep := newKeyed["key"][l.Name]; !keep {
@@ -712,7 +841,7 @@ func applyLines(root schema.Object, claimed, lnew []Line) schema.Object {
 	}
 	for _, l := range lnew {
 		if l.Kind == "key" {
-			doc = set(doc, l.Name, l.Value)
+			doc = placeKey(doc, l.Name, l.Value, claudeKeyOrder)
 		}
 	}
 
@@ -742,7 +871,7 @@ func applyLines(root schema.Object, claimed, lnew []Line) schema.Object {
 		}
 	}
 	if len(kept) > 0 {
-		perms = set(perms, "deny", kept)
+		perms = placeKey(perms, "deny", kept, claudePermissionsOrder)
 	} else if removedAny {
 		perms = without(perms, "deny")
 	}
@@ -828,25 +957,56 @@ func applyLines(root schema.Object, claimed, lnew []Line) schema.Object {
 	}
 	doc = putObject(doc, "hooks", hooks, hooksTouched)
 
-	// Marketplaces and plugins: in place, or appended; a claimed one no new line holds goes.
+	// Marketplaces and plugins: a claimed entry no new line holds goes, and a new line of the same slot (the
+	// marketplace, or a pack's plugin, under a new name) takes its place; an entry that stays keeps its place, and its
+	// bytes when its value is the same but for key order; any other new line is appended.
 	for _, kind := range []string{"marketplace", "plugin"} {
 		key := map[string]string{"marketplace": "extraKnownMarketplaces", "plugin": "enabledPlugins"}[kind]
 		obj, _ := getObject(doc, key)
-		touched := false
-		for _, l := range claimed {
-			if l.Kind == kind {
-				if _, keep := newKeyed[kind][l.Name]; !keep {
-					obj = without(obj, l.Name)
-					touched = true
-				}
-			}
-		}
+		var fresh []Line
 		for _, l := range lnew {
 			if l.Kind == kind {
-				obj = set(obj, l.Name, l.Value)
+				fresh = append(fresh, l)
 			}
 		}
-		doc = putObject(doc, key, obj, touched)
+		placed := map[string]bool{}
+		goneSlot := map[string]string{} // a claimed entry's name that goes -> its slot
+		for _, l := range claimed {
+			if _, keep := newKeyed[kind][l.Name]; l.Kind == kind && !keep {
+				goneSlot[l.Name] = l.Slot
+			}
+		}
+		touched := false
+		var out schema.Object
+		for _, m := range obj {
+			if slot, gone := goneSlot[m.Key]; gone {
+				touched = true
+				for _, l := range fresh {
+					if l.Slot == slot && !placed[l.Name] && obj.Index(l.Name) < 0 {
+						out = append(out, schema.Member{Key: l.Name, Value: claudeOrdered(l)})
+						placed[l.Name] = true
+						break
+					}
+				}
+				continue
+			}
+			for _, l := range fresh {
+				if l.Name == m.Key {
+					placed[l.Name] = true
+					if !sameValue(m.Value, l.Value) {
+						m.Value = claudeOrdered(l)
+					}
+				}
+			}
+			out = append(out, m)
+		}
+		for _, l := range fresh {
+			if !placed[l.Name] {
+				out = set(out, l.Name, claudeOrdered(l))
+				placed[l.Name] = true
+			}
+		}
+		doc = putObject(doc, key, out, touched)
 	}
 	return doc
 }
@@ -905,14 +1065,15 @@ func without(o schema.Object, key string) schema.Object {
 	return o
 }
 
-// putObject stores an inner object: an empty one is left out when the removal emptied it or it was not there.
+// putObject stores an inner object, in place or where Claude Code writes it (placeKey): an empty one is left out
+// when the removal emptied it or it was not there.
 func putObject(doc schema.Object, key string, inner schema.Object, removed bool) schema.Object {
 	_, had := doc.Get(key)
 	if len(inner) == 0 && (removed || !had) {
 		return without(doc, key)
 	}
 	if len(inner) == 0 {
-		return set(doc, key, schema.Object{})
+		return placeKey(doc, key, schema.Object{}, claudeKeyOrder)
 	}
-	return set(doc, key, inner)
+	return placeKey(doc, key, inner, claudeKeyOrder)
 }

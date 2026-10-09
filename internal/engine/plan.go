@@ -787,7 +787,7 @@ func Build(req Request) (_ *Plan, err error) {
 		write = false
 	}
 	settingsBytes := func() ([]byte, error) {
-		return schema.Encode(applyLines(sd.root, claimed, lnew))
+		return schema.EncodeUTF8(applyLines(sd.root, claimed, lnew))
 	}
 	if write {
 		if sf.write, err = settingsBytes(); err != nil {

@@ -7,7 +7,8 @@
 //   - Decode, which reads one JSON document, refuses a duplicate key (contract §2.5) and anything after the document,
 //     and keeps numbers exact (json.Number);
 //   - Encode, which writes a value byte-stable: two-space indent, LF, a final newline, ASCII only (anything else is
-//     escaped as \uXXXX, so PowerShell 5.1 shows it unbroken), no map-order iteration;
+//     escaped as \uXXXX, so PowerShell 5.1 shows it unbroken), no map-order iteration; EncodeUTF8, the same with
+//     strings as JavaScript's JSON.stringify writes them, for a project file Claude Code writes too;
 //   - the checker (check.go): CheckSchema, Validate, CheckOrder, Equal.
 //
 // Standard library only. It knows no format by name: callers pass a schema (formats.Schema gives the embedded
@@ -144,7 +145,21 @@ func decodeValue(dec *json.Decoder) (any, error) {
 // EncodeJSON method; anything else is an error, never a guess.
 func Encode(v any) ([]byte, error) {
 	var b bytes.Buffer
-	if err := (encoder{&b, true}).value(v, 0); err != nil {
+	if err := (encoder{b: &b, pretty: true}).value(v, 0); err != nil {
+		return nil, err
+	}
+	b.WriteByte('\n')
+	return b.Bytes(), nil
+}
+
+// EncodeUTF8 is Encode with strings written as JavaScript's JSON.stringify(v, null, 2) writes them: every character
+// from U+0020 up as itself (UTF-8; U+007F and above unescaped), \b, \f, \n, \r and \t short, any other control
+// character as \u00xx. Bonsai writes the project's .claude/settings.json with it, a file Claude Code also writes
+// (with JSON.stringify, two-space indent and a final newline), so a project's own non-ASCII text keeps the bytes
+// Claude Code gave it (step 5.1.7: Bonsai changes only its own lines in the file).
+func EncodeUTF8(v any) ([]byte, error) {
+	var b bytes.Buffer
+	if err := (encoder{b: &b, pretty: true, utf8: true}).value(v, 0); err != nil {
 		return nil, err
 	}
 	b.WriteByte('\n')
@@ -155,7 +170,7 @@ func Encode(v any) ([]byte, error) {
 // otherwise: a record of a JSON-lines file (contract §2.5), such as the log's.
 func EncodeLine(v any) ([]byte, error) {
 	var b bytes.Buffer
-	if err := (encoder{&b, false}).value(v, 0); err != nil {
+	if err := (encoder{b: &b}).value(v, 0); err != nil {
 		return nil, err
 	}
 	b.WriteByte('\n')
@@ -172,6 +187,7 @@ type Encoder interface {
 type encoder struct {
 	b      *bytes.Buffer
 	pretty bool
+	utf8   bool // strings as JSON.stringify writes them (EncodeUTF8), not ASCII only
 }
 
 // newline starts a line at depth, in pretty mode only.
@@ -193,7 +209,11 @@ func (e encoder) value(v any, depth int) error {
 	case bool:
 		b.WriteString(strconv.FormatBool(x))
 	case string:
-		writeString(b, x)
+		if e.utf8 {
+			writeStringUTF8(b, x)
+		} else {
+			writeString(b, x)
+		}
 	case int:
 		b.WriteString(strconv.Itoa(x))
 	case int64:
@@ -211,7 +231,11 @@ func (e encoder) value(v any, depth int) error {
 		b.WriteByte('{')
 		for i, m := range x {
 			e.newline(depth + 1)
-			writeString(b, m.Key)
+			if e.utf8 {
+				writeStringUTF8(b, m.Key)
+			} else {
+				writeString(b, m.Key)
+			}
 			b.WriteByte(':')
 			if e.pretty {
 				b.WriteByte(' ')
@@ -310,6 +334,39 @@ func writeString(b *bytes.Buffer, s string) {
 				b.WriteByte(hex[(u>>4)&0xf])
 				b.WriteByte(hex[u&0xf])
 			}
+		}
+	}
+	b.WriteByte('"')
+}
+
+// writeStringUTF8 writes a JSON string as JSON.stringify does: the short escapes for ", \\, \b, \f, \n, \r and \t,
+// \u00xx (lower-case hex) for any other control character, and every other character as itself, in UTF-8. Invalid
+// UTF-8 becomes U+FFFD.
+func writeStringUTF8(b *bytes.Buffer, s string) {
+	const hex = "0123456789abcdef"
+	b.WriteByte('"')
+	for _, r := range s {
+		switch {
+		case r == '"':
+			b.WriteString(`\"`)
+		case r == '\\':
+			b.WriteString(`\\`)
+		case r == '\b':
+			b.WriteString(`\b`)
+		case r == '\f':
+			b.WriteString(`\f`)
+		case r == '\n':
+			b.WriteString(`\n`)
+		case r == '\r':
+			b.WriteString(`\r`)
+		case r == '\t':
+			b.WriteString(`\t`)
+		case r < 0x20:
+			b.WriteString(`\u00`)
+			b.WriteByte(hex[r>>4])
+			b.WriteByte(hex[r&0xf])
+		default:
+			b.WriteRune(r)
 		}
 	}
 	b.WriteByte('"')

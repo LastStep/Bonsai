@@ -388,7 +388,7 @@ func Equal(a, b any) bool {
 // Show prints a value as one line of compact JSON, in ASCII, for messages.
 func Show(v any) string {
 	var b bytes.Buffer
-	if err := (encoder{&b, false}).value(v, 0); err != nil {
+	if err := (encoder{b: &b}).value(v, 0); err != nil {
 		return fmt.Sprint(v)
 	}
 	return b.String()
