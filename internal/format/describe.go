@@ -130,7 +130,14 @@ func wordsText(l List) string {
 		case "person":
 			who = "; next step usually a person's"
 		}
-		ws = append(ws, w.Word+" ("+w.Means+who+")")
+		kind := ""
+		switch w.Kind {
+		case "finding":
+			kind = "a finding (exit 1): "
+		case "warning":
+			kind = "a warning (never the exit code): "
+		}
+		ws = append(ws, w.Word+" ("+kind+w.Means+who+")")
 	}
 	return "known words (" + l.Table + ", their one home; a reader shows any other as other): " + strings.Join(ws, "; ")
 }
