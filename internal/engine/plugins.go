@@ -168,6 +168,9 @@ func ParseInstallResult(out []byte) (InstallResult, bool) {
 // PluginID is a pack's plugin as Claude Code names it: <pack id>@<marketplace>.
 func PluginID(pack, market string) string { return pack + "@" + market }
 
+// LockMarket is lockMarket, for status --full.
+func LockMarket(cfg *workspace.Config, lock *workspace.Lock) string { return lockMarket(cfg, lock) }
+
 // lockMarket is the marketplace name a lock's packs give, in the lock's order (bonsai.yaml's): each pack's commit
 // and the folder the lock records (bonsai.yaml's for a lock written before formats set 4).
 func lockMarket(cfg *workspace.Config, lock *workspace.Lock) string {
@@ -349,6 +352,36 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 					"and a plugin that carries code needs --allow-exec, a person's consent, which update names; to install it, run: bonsai update --yes")
 		}
 	}
+}
+
+// PluginsInstalled asks Claude Code which of the lock's plugins it has installed for this checkout at their locked
+// commits (status --full: a pack not installed on this machine is a needs entry of kind plugin, spec §5): by pack id.
+// A nil cli, or a list that fails, gives the error and no answer.
+func PluginsInstalled(r *CheckResult, cli PluginCLI) (map[string]bool, error) {
+	if r == nil || r.Config == nil || r.Lock == nil {
+		return map[string]bool{}, nil
+	}
+	if cli == nil {
+		return nil, ErrNoClaude
+	}
+	list, err := cli.List(r.Root)
+	if err != nil {
+		return nil, err
+	}
+	market := lockMarket(r.Config, r.Lock)
+	out := map[string]bool{}
+	for _, lp := range r.Lock.Packs {
+		want := PluginID(lp.ID, market)
+		for _, p := range list {
+			if p.ID == want && strings.HasPrefix(p.Version, pluginVersion(lp.Commit)) && forCheckout(p, r.Root) {
+				out[lp.ID] = true
+			}
+		}
+		if !out[lp.ID] {
+			out[lp.ID] = false
+		}
+	}
+	return out, nil
 }
 
 // forCheckout reports whether an installed plugin applies to the checkout at root: a user-scope install applies
