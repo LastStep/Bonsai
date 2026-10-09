@@ -4463,6 +4463,716 @@ both sides where a check names them, and passes or fails 5.5:
 - **§5's table: `asset-safety` and `unity-live-editor` "in a later game pack":** not built in 5.5 and not in its hours.
 - **§17 step 6 still names `/agents`:** outside step 5's parts (`STATE.md`); the orchestrator's dated note.
 
+### Step 5.6: the machine pieces (13-20 h, re-ask at 26)
+
+**Rohan's (B), and what else of his changes.** This section comes to Rohan, because it changes his steps. The one step
+already on his list for 5.6, a line in his own `~/.claude/CLAUDE.md` that loads his personal memory, gets its exact text
+and a check. And three standing rules make steps his, each for a reason given in plain words below: notes about him in
+his personal memory are his to save (an agent drafts them; inside a linked project no agent can write there, the same
+wall that already guards his `~/.claude/CLAUDE.md`); this machine's Bonsai settings for a project and the label files
+the studio attaches are set only by him or by the studio's registration, never by an agent, which hands him the line;
+and when a newer Bonsai release exists, the agent hands him the install lines (his 9 Oct decision, now with their
+shape). Nothing else of his changes: the hours (13-20) and the re-ask line (26) are the spec's, one addition since the
+spec (telling him of a newer release) fitting inside them; the order of the parts stands; no repo is new and nothing of
+his goes public; no option round is asked; 5.6 asks no install, no password and no Windows sitting (the installers' root
+and administrator halves are proved on GitHub's throwaway machines; his real installs on both sides come with 1.0, at
+5.7). Every format change is an addition: three new command outputs (`bonsai.settings/1`, `bonsai.attach/1`,
+`bonsai.line/1`), one field at the end of `status --json` (`bonsai_release`), new words in open lists, and descriptions.
+
+#### For Rohan, in plain words
+
+**What 5.6 gives you.**
+- **Settings per machine.** `bonsai settings` shows and sets the few things that belong to this computer rather than to
+  a project: for each project, whether agents move task statuses themselves or through the studio's command (the studio
+  sets this when it registers a project); and for the computer, how long Bonsai keeps its copies of packs (by default,
+  for ever).
+- **Label files the studio attaches.** `bonsai labels attach` and `detach`: the studio's own labels (a task's cost, say)
+  live on the machine, never in a project, and every agent session is told what they mean.
+- **Your personal memory.** One place for facts about you that every Claude session on this computer reads, in every
+  project: `~/.bonsai/personal/`, an index and one short note per fact. Bonsai makes the empty index, checks its size
+  and form, warns if a password-like string sits in it, and on Windows keeps a copy of WSL's.
+- **A moved project keeps its settings.** If a project's folder moves, its settings on this machine stay under the old
+  path. `bonsai check` now says so and gives the lines that bring them over.
+- **Bonsai's part of the status line.** `bonsai status --line` prints one short line: the task being worked on, whether
+  its proof is green, how many tasks wait for checking, how many questions wait for you, and a newer Bonsai release when
+  there is one. For example: `T-0042 Hover panel ladder:green verify:2 asks:1`.
+- **Installers for both sides,** and Bonsai telling you when a newer release exists (below).
+
+**Agents run Bonsai in your projects; this machine's settings stay yours.** You chose on 9 Oct that agents manage Bonsai
+inside projects (they link, update, fix, check, read status and edit) while the program on each computer stays your
+install. A project's settings on this machine and the studio's label files sit on the same side of that line as the
+program: they belong to the computer, not to the project, and they decide what holds the agents. One switches on the
+studio's rule that agents may not move task statuses themselves; the studio's labels mark values agents may never write.
+An agent that could change them could switch off the checks on itself. So `bonsai settings set`, `bonsai labels attach`
+and `detach` refuse to run in an agent's session, and Bonsai's guard refuses them too, as the spec has it. Agents may
+read them (`bonsai settings show`, `bonsai status`). Who sets them: the studio's registration of a project (run by you,
+or by the studio's own program, never inside an agent's session), or you; when an agent finds one needed, it hands you
+the exact line. None is left to agents, not even the harmless one (how long pack copies are kept): one rule is simpler
+to trust, it is already built into the guard, and no agent's work needs it.
+
+**Your personal memory, and your one line.** Facts about you that hold in every project (how you like work done, say)
+belong in `~/.bonsai/personal/`. Claude Code loads its index in every session through one line in your own
+`~/.claude/CLAUDE.md`. No agent edits that file (from 5.5 the walls refuse it), so the line is yours, once, in WSL; the
+orchestrator sends it when the piece that builds this lands (about a minute):
+
+```bash
+printf '\n@~/.bonsai/personal/INDEX.md\n' >> ~/.claude/CLAUDE.md
+tail -n 2 ~/.claude/CLAUDE.md
+```
+
+The second line must end with `@~/.bonsai/personal/INDEX.md`; send the orchestrator what it printed. The first line adds
+an empty line before it, so it never joins your file's last line. Until the index exists on this computer (a Bonsai with
+this part makes it, which on your machine means 1.0), Claude Code skips the line; an agent measures that before the line
+is sent, and if it does not, the line waits for the index.
+
+**Who writes those notes: you.** The wall that guards your `~/.claude/CLAUDE.md` also guards this folder: inside a
+project linked to Bonsai no agent can write there. Whatever sits in that index is read by every session in every
+project, so one agent's words there would reach all your work. So an agent drafts a note about you and hands it to you;
+you save it, by hand, or by asking Claude in a session opened outside any linked project (your home folder, say), where
+the walls do not apply. The studio's move of today's notes about you into this folder (spec step 7) follows the same
+rule. On Windows, Bonsai keeps a copy of WSL's notes once you name WSL's folder with one setting; that line comes with
+Mimas's link (step 8), not now.
+
+**The status line is not a screen of Bonsai's.** `bonsai status --line` prints one line of plain text and stops, like
+`git status --short`: it draws nothing, keeps no window and runs no server. Claude Code shows whatever line a
+status-line program gives it; the studio's status line can add Bonsai's part to its own when the studio links (step 7),
+with its own colours, from the same facts in JSON. Bonsai writes no status-line setting of yours. It runs each time
+Claude Code refreshes the status line, so it must be fast: it runs no git, no Claude Code and no network, and must
+answer within 25 ms on WSL and 60 ms on Windows on a project with 300 tasks (the studio's line today takes about 55 ms,
+80 through Git Bash); its speed is measured on both sides. Nothing to do: until the studio's line shows it, `bonsai
+status --line` in a terminal does.
+
+**Installing Bonsai, and newer releases.** No self-update (your 9 Oct choice): the program stays your install, once per
+release on each side. 5.6 builds:
+- **Two installers,** shipped inside each release from 1.0: `install.sh` for WSL puts Bonsai at `/usr/local/bin/bonsai`
+  (your password, once); `install.ps1` for Windows puts it at `C:\Program Files\Bonsai\bonsai.exe` and on the computer's
+  PATH (one Windows "allow this app to make changes" prompt). Those are the two places your 5.3 answer (a) wrote into
+  every project's hook lines, so a new install changes nothing in any project. Each checks the copy it put there,
+  records what it installed (its place, version and fingerprint) in `install.json` in your Bonsai home, says whether
+  another `bonsai` comes first on your PATH, and can take Bonsai out again.
+- **How Bonsai knows a newer release exists,** with no service of its own and nothing updating itself. `bonsai status
+  --full`, which already looks online for newer pack versions, also reads the list of Bonsai's release tags from GitHub
+  with git (no login; at most once a day; it gives up after 10 seconds) and keeps the answer in Bonsai's home. `bonsai
+  check` and `bonsai status` then say "a newer release exists" without going online, from that answer. When it cannot be
+  known (offline, never read), they say so, and nothing fails.
+- **What the agent hands you:** the exact lines for each side, which Bonsai writes itself, so they are the same every
+  time. In WSL, six lines: a fresh folder, the release and its list of fingerprints downloaded from GitHub, the
+  fingerprint checked (it must print `OK`), the archive unpacked, the installer run. In PowerShell the same, the check
+  printing `True`. For a release 1.0.1 they would read:
+
+```bash
+cd "$(mktemp -d)"
+curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/bonsai_1.0.1_linux_amd64.tar.gz
+curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/checksums.txt
+sha256sum -c --ignore-missing checksums.txt
+tar -xzf bonsai_1.0.1_linux_amd64.tar.gz
+sh install.sh
+```
+
+```powershell
+cd (New-Item -ItemType Directory -Force "$env:TEMP\bonsai-1.0.1")
+curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/bonsai_1.0.1_windows_amd64.zip
+curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/checksums.txt
+(Get-FileHash bonsai_1.0.1_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.0.1_windows_amd64.zip).Line -split ' ')[0]
+Expand-Archive bonsai_1.0.1_windows_amd64.zip -DestinationPath . -Force
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+- **None of it is asked of you in 5.6.** Agents try the installers only against scratch folders, and their root and
+  administrator parts run on GitHub's throwaway machines on every commit. Your real installs on both sides come with 1.0
+  (5.7), through these installers. Your WSL copy stays the 5.4 pre-release until then: 5.6 changes no part of the guard,
+  the stop gate or the ladder.
+
+**Hours, order and your steps.** 13-20 hours, re-ask at 26, as the spec has them; 5.6 after 5.5 and before 5.7. The one
+addition since the spec was written, telling you of a newer release (your 9 Oct choice), takes 1-2 of the status line's
+5-8 hours, which needs less than the studio's whole line did: it shows only Bonsai's part, from Go. Your steps in 5.6:
+approve this section; the two lines above in WSL. Standing from 5.6: notes about you are yours to save; this machine's
+settings and the studio's label files are yours or the studio's registration's; a newer release is yours to install,
+from the lines an agent hands you.
+
+#### What exists, and what 5.1 to 5.5 will have added
+
+**On `main` at `3d8a7f3`** (5.1.0 to 5.1.6 landed, 5.1.7 under way; read each package's doc comment):
+- `internal/workspace/machine.go`: `MachineDir` (`<home>/workspaces/r-<16 hex>`, the main checkout's real path hashed,
+  case-folded on Windows); `LoadMachineSettings` reads the machine folder's `settings.json` (`status_writes`, `agents`
+  or `command`; `status_command`, required with `command`; a missing file is `agents`; an unknown key left as read);
+  `LabelsInForce` gives the packs' definitions from the lock's `declares`, then each `labels/<namespace>.yaml`, leaving
+  out with a problem a file that does not read as `bonsai.labels/1`, whose name is not its namespace, or whose namespace
+  is a pack's or `bonsai`. Its comment: "bonsai settings set and the attach command come with step 5.6". Nothing writes
+  either file.
+- `internal/workspace/record.go` (5.1.6): the machine folder's `workspace.json`, the main checkout's real path and the
+  ids it has held with `since`, written by `init` and `update` in the main checkout; `MachineRecords(home)` reads every
+  folder's record.
+- `internal/engine/checkmachine.go` (5.1.6): `id-changed`; `same-id`, a warning, which leaves "a record whose checkout
+  moved or changed its id ... alone: the stranded folder is step 5.6's"; `bonsai-path`, which reads
+  `<home>/install.json` (`path`, `version`, `sha256`) and, with none, writes a note ("Bonsai's installer writes it from
+  step 5.6"). `internal/engine/check.go`'s `checkLater` holds `stranded` (step 5.6).
+- `cmd/bonsai`: the word registry (`word.go`); the words `init`, `update`, `status`, `check`, `hook` (`unlink` comes
+  with 5.1.7); `status`'s `--line` in its table with `Later: "step 5.6"`, refused as not built; no `settings` or
+  `labels` word. `main.go`'s `version` is `dev` unless the build sets it (`.goreleaser.yaml`: `-X
+  main.version={{.Version}}`, no leading `v`). `engine.go` asks no y/N question while `CLAUDE_CODE_CHILD_SESSION` is
+  set.
+- `internal/engine/newer.go`: `RemoteTags` (`git ls-remote --tags --refs`, prompts off, a 30 s timeout) and `NewerTags`,
+  used by `status --full` for each pack; `ParseVersion` in `claude.go`.
+- The home's cache: pack clones in `cache/git/<16 hex>.git` (`fetch.go`); `--adopt` copies in `cache/adopted/<workspace
+  id>/<12 hex>/` (`apply.go`). Nothing reads `cache_keep_days`; no code knows `personal/`; `init`'s closing words and
+  `status` already name "your personal memory" among the home's contents.
+- `internal/status`: `check`'s warnings are never `problems` (spec §6); `status` writes nothing.
+- `.goreleaser.yaml`: archives `bonsai_<version>_<os>_<arch>` (`tar.gz`; `zip` on Windows) holding `LICENSE*` and
+  `README*`, and `checksums.txt`. No `install/` folder and no installer.
+- `formats/` set 4. The memory schema's description says notes are "written by agents through the workflow pack's memory
+  skill", the personal layer not set apart.
+
+**What 5.1 to 5.5 will have added** (from this plan's notes; none of it is built yet. 5.6's start re-reads each against
+what landed, and 5.6.0's run report records any difference that changes a note below):
+- 5.1.7: `unlink`, which leaves the home's machine folder. 5.1.10: `docs/reference/lists.md` and `bonsai --help --json`,
+  both from the code's tables.
+- 5.2: formats set 5 (5.2.0); `redact.Find` (5.2.1) and the secret scan of project memory notes (5.2.4 note 11); the
+  salt and `bonsai --version`'s form `bonsai <version> (commit <12 hex>)` (5.2.2 note 7); `hook start`'s opening context
+  listing the labels attached on this machine (5.2.4 note 9); asks in `.bonsai/local/asks/` (5.2.5).
+- 5.3: Bonsai's hook lines naming `C:\Program Files\Bonsai\bonsai.exe`, then `/usr/local/bin/bonsai`, from two Go
+  constants, "their one home, which 5.6's installers and `check` read too" (5.3.6 note 2); stamped test builds confined
+  to their scratch root; the guard refusing an agent's file-tool write anywhere in Bonsai's home (5.3.2 rule 5) and, in
+  a shell call, `bonsai settings set` and `bonsai labels attach` or `detach` (rule 7: "5.6's commands refuse themselves
+  too"); the engine's deny rule `Edit(~/.bonsai/**)` (5.3.5); `init`, `update` and `unlink` refusing a person's commands
+  in an agent session, with an error word for it (5.3.6 note 8); `command` mode's tripwires, among them an agent's edit
+  of a label whose definition reads `set_by: outside` (5.3.2 rule 6).
+- 5.4: `bonsai ladder`, its results in `.bonsai/local/ladder/<task>.json`, the active task's last result at the end of
+  `status --json`; formats set 6; the switch: Bonsai's own `bonsai.yaml`, tasks `T-5xyy` in `records/tasks/`, the
+  landing rule (a green climb by `/usr/local/bin/bonsai` at the exact commit), one task with grants `running` at a time,
+  `.github/**` protected; `/usr/local/bin/bonsai` the 5.4 pre-release.
+- 5.5: `base` with its walls (`Edit(~/.claude/CLAUDE.md)` among them: "5.6's import line in it is the person's"), its
+  `memory` skill (a note's template; "4 KB a note, 120 lines and 12 KB the index"), the "operating Bonsai" skill with
+  its test (every command word the registry has is named; a new word fails until the skill teaches it), `CLAUDE.md`'s
+  rule that a command word, flag or error word changes the skill in the same commit (5.5.7); 5.5.0's formats set;
+  Bonsai's repo linked to `base` at a commit, which moves only on Rohan's word.
+
+#### The pieces and their order
+
+The spec's row (§14): "`settings` (with `--machine` and `cache_keep_days`), `labels`, the personal memory layer and its
+check, the stranded-folder report (6-9); `status --line`, the workspace half of today's statusline (5-8); the installers
+for `/usr/local/bin` and `C:\Program Files\Bonsai` with `install.json` (2-3)".
+
+**Hours.** The split inside each row is the planner's judgment, for sizing briefs, as in 5.1 and 5.5. The first row's
+6-9: 5.6.0 0.5-1 (the formats set and the two words' places), 5.6.1 2.5-3, 5.6.2 1-2, 5.6.3 2-3. The second row's 5-8:
+5.6.4 4-6 and 5.6.5 1-2. 5.6.5, a newer release known and handed over, is Rohan's 9 Oct addition (spec §3's note), not
+in the spec's row; it fits inside the row's hours because Bonsai's half of the status line is narrower than today's
+line, on which the row was sized (the task, its proof and two counts, read by Go; today's line, in Node, also reads
+git's counts, Unity's editor and the studio's services, with caches round them), and because 5.6.5 reuses `status
+--full`'s `git ls-remote` read. The third row's 2-3 is 5.6.6's. In all: low 0.5+2.5+1+2+4+1+2 = 13; high 1+3+2+3+6+2+3 =
+20 (pieces 5.6.0 to 5.6.6); re-ask 26 (20 x 1.3). This section's planning and review runs count in 5.6's hours, carried
+in 5.6.0's run report ("What changes", item 3). Tasks (5.4's rule): piece 5.6.y is `T-560y`; `T-5690` onward, in order,
+for V1, the floors and the end verification.
+
+| # | What is built | What proves it | Hours | Reads |
+|---|---|---|---|---|
+| 5.6.0 | **The formats set and the two words' places**: one set at the set after the last landed: `bonsai.settings/1`, `bonsai.attach/1`, `bonsai.line/1`, `bonsai_release` at the end of `status`, the memory schema's words on the personal layer; their Go types and writers; `settings` and `labels` registered with their sub-words not built yet, their flag tables, exit codes and help; the error words both need; the operating skill's lines for both; `status` writing `bonsai_release: null` until 5.6.5 | The formats test (manifest, docs, examples); the schema compare (additions only); each new example validated by its writer; the operating skill's test; `--help --json` listing both words; check 10 and the ladder; CI | 0.5-1 | Contract §2.2, §2.8, §3, §5.3, §7.4, §12; spec §4, §10; `formats/README.md` ("How the set changes"); this plan's 5.1.3, 5.1.4b and 5.5.3 notes |
+| 5.6.1 | **`settings`, the stranded folder and the cache**: `settings show` and `set`, `--machine`, the keys in one Go table; the refusal in an agent session; the `stranded` warning with a person's exact lines; `update` cleaning old pack clones by `cache_keep_days` | Go tests on `t.TempDir()` homes and projects: every key and bad value, all or nothing, byte-stable files, a stranded folder found and brought over, clones cleaned but the lock's and never an `--adopt` copy; the refusal with the variable set; the stamped build's confinement; check 10 and the ladder; CI | 2.5-3 | Spec §3 (unattended), §4 (`settings`; "Refused in an agent session"), §6 ("Generated files": the cache; "Warnings"), §10 (the home); contract §3 ("Moved checkouts"), §10.1, §10.6; this plan's 5.1.5 and 5.1.6 notes, 5.3.2 rules 5 and 7, 5.3.6 note 8 |
+| 5.6.2 | **`labels attach` and `detach`**: the file checked, its namespace never a pack's or `bonsai`, a re-attach additive only; the refusal in an agent session | Go tests: attach, re-attach (unchanged, updated, a redefinition refused), detach; each namespace refusal; the variable set; what the attach then reaches (`status --json`'s `labels`, `check`'s values); check 10 and the ladder; CI | 1-2 | Contract §5.1-§5.3, §10.6; spec §4; this plan's 5.1.5 note ("Labels in force"), 5.2.4 note 9, 5.3.2 rule 6 |
+| 5.6.3 | **The personal memory layer and its check**: the empty index made by `init` and `update`; five warnings (form, budgets, index and notes, secrets, the Windows copy); the Windows copy refreshed from WSL's; base's `memory` skill and the operating skill on who writes it; the import line measured | Go tests on scratch homes for each warning, never the exit code, no secret printed; the copy refreshed and compared on Windows, the unreachable source within 2 s; the import tried in a scratch project's session; check 10 and the ladder; CI | 2-3 | Spec §6 (findings, warnings), §10 (memory, the personal layer, loading); contract §2.6, §7.4; this plan's 5.2.4 note 11, 5.3.2 rule 5, 5.3.5, 5.5.2 notes 2-3; Claude Code's memory reference (the version read goes in the run report) |
+| 5.6.4 | **`status --line`**: one ASCII line of Bonsai's part (the active task, its proof, `verify` and `asks` counts), `--json` as `bonsai.line/1`, never failing, no git, Claude Code or network | Go tests on fixture projects (each part; not linked; a broken `bonsai.yaml`; a title with escape codes); its p50 and p95 on both sides within budget; a real interactive status line on WSL, scratch only; check 10 and the ladder; CI | 4-6 | Spec §3 (output), §4 (`status --line`); contract §11, §12, §13; the studio's `tools/statusline/README.md` and `statusline.mjs` at `7017d63`, read only; gate report §2.5 (the harness); Claude Code's status-line reference |
+| 5.6.5 | **A newer release, known and handed over**: `status --full` reads Bonsai's release tags (at most daily, 10 s), the answer kept in the home's cache; `bonsai_release` in `status --json`, a `check` warning and the line's marker, offline from it; both sides' install lines written by Bonsai | Go tests against a local bare repository with tags (a stamped source), the record's times faked; no network read within a day; unknown and not-a-release; the lines' exact text; one read of the real repository by the plain build; check 10 and the ladder; CI | 1-2 | Spec §3 (where it lives; the 9 Oct note); contract §12; `internal/engine/newer.go`; `.goreleaser.yaml`; this plan's 5.5.3 note 2 ("the person's gates") |
+| 5.6.6 | **The installers and `install.json`**: `install/install.sh` and `install/install.ps1`, each held to the two installed places and the record's keys; scratch targets in tests; a CI job running both at their real places on throwaway machines | Go tests running each script on scratch targets and a scratch home (install, the record read by `check`, again, remove, each refusal); the CI job green on both sides; V1 | 2-3 | Spec §3, §10, §17 step 8; this plan's 5.3.6 note 2 (option (a)), 5.4's "For Rohan" (his install's lines), 5.1.6's `bonsai-path` note; `internal/engine/checkmachine.go` |
+| **5.6** | | | **13-20** (re-ask 26) | |
+
+**The order, side by side where truly independent.** Rohan, 9 Oct: "if you can orchestrate work in parallel do that
+whenever possible"; his 8 Oct bar stands: no shared file, and neither's proof resting on the other's. 5.6 starts once
+5.5's end verifier has passed 5.5. A piece that runs beside another rebases on `main` and re-runs its proof if the other
+lands first. 5.4's rule shapes one step: a task whose `bonsai.allows` is not empty runs with no other task `running`.
+The files each piece owns:
+
+| Piece | Owns |
+|---|---|
+| 5.6.0 | `formats/` (three new schemas, `status`'s and `memory`'s, their examples, README, manifest); the three outputs' Go types and writers and the new error words in `internal/format/`; `internal/status/` for `bonsai_release: null` only; `cmd/bonsai/settings.go` and `cmd/bonsai/labels.go` (the words' tables, sub-words not built); the operating skill's lines for both words; `docs/reference/lists.md` (regenerated) |
+| 5.6.1 | `cmd/bonsai/settings.go` (the run functions); `internal/workspace/machine.go` (the writes and the keys table) and a new `internal/workspace/homesettings.go`; `internal/engine/checkmachine.go` (`stranded`) and `check.go`'s `checkLater`; `internal/format/check.go` (its word); a new `internal/engine/cacheclean.go` and the fetch's last-use mark; `internal/status/status.go`'s text (the stranded line); `docs/reference/lists.md` |
+| 5.6.2 | `cmd/bonsai/labels.go` (the run functions); a new `internal/workspace/attach.go` |
+| 5.6.3 | New `internal/workspace/personal.go` and `internal/engine/checkpersonal.go`; `init`'s and `update`'s call to them in `internal/engine/`; `internal/format/check.go` (its five words); `packs/base/skills/memory/SKILL.md` and the operating skill's memory line; `docs/reference/lists.md` |
+| 5.6.4 | `cmd/bonsai/status.go` (`--line` built) and `cmd/bonsai/statusflags_test.go`; a new `internal/status/line.go`, calling the package's functions and changing no line of `status.go` |
+| 5.6.5 | A new `internal/engine/release.go`; `internal/status/` (`bonsai_release` filled, its text line, `line.go`'s marker); `checkmachine.go` (`bonsai-newer`); `internal/format/check.go`; the operating skill's install line; `docs/reference/lists.md` |
+| 5.6.6 | `install/` (both scripts and their Go test); one `.gitattributes` line; its last commit: the `install` job in `.github/workflows/ci.yml` |
+
+1. **5.6.0 first, alone.** Every later piece writes a `--json` held to its schemas, registers its word's run function in
+   a place 5.6.0 made, or reads a field it added; with the words and their error words in place, what runs below side by
+   side shares no file.
+2. **Then four at once.**
+   - **Lane A: 5.6.1, then 5.6.3.** Both add `check` words, regenerate the reference page and change the engine; 5.6.3
+     reads 5.6.1's home settings (`personal_from`) and calls from `init` and `update` beside 5.6.1's cache clean.
+   - **5.6.2 and 5.6.4, each on its own.** 5.6.2 touches only its word's file and a new file; 5.6.4 only `--line`'s
+     files, a new file in `internal/status/` beside the one 5.6.1 edits. Neither adds a `check` word, a list or an
+     engine change, they share no file with each other or with lane A, and neither's proof reads another piece's.
+   - **5.6.6.** New files, one `.gitattributes` line and CI; its scripts read 5.3's constants and 5.1.6's reader without
+     changing them, and its proof (scratch targets, then GitHub's machines) rests on no other piece. Its last commit,
+     the CI job in `.github/workflows/ci.yml` (protected), is made while `T-5606` is the only task reading `running`,
+     the others at `verify` or not started.
+3. **5.6.5 once 5.6.3 and 5.6.4 have landed:** it adds a word to lane A's table and its marker to 5.6.4's line.
+4. **V1** once 5.6.6 has landed with its CI job green, and 5.6.1 and 5.6.2 have landed; it may run beside 5.6.3 to 5.6.5
+   (it writes no repository file).
+5. **Rohan's line** once 5.6.3 has landed and its run report holds the import's measurement.
+6. **The floors** (5.4's "once a part", under a `T-569x` task), the Haiku audit of `.bonsai/sessions.md` against the run
+   reports, then **the 5.6 end verifier**.
+
+**Who builds and verifies.** Opus builders for 5.6.0 (a formats set), 5.6.1 (the machine settings the guard trusts and
+their tripwire), 5.6.3 (what loads into every session; the Windows copy), 5.6.5 (lines Rohan types; the network) and
+5.6.6 (root and administrator steps, CI); Sonnet builders for 5.6.2 and 5.6.4 (rules written in full here, measured
+work, the orchestrator's read and V1 behind them); a Sonnet agent for the scripted runs that need Claude Code (5.6.3's
+import try, 5.6.4's status line in a real session). Every piece lands on the landing rule (a green climb of its task by
+`/usr/local/bin/bonsai` at the exact commit), check 10's Windows half, CI and the orchestrator's read of the diff, which
+the run report says. **V1**, a fresh Opus verifier, on the installers (root, administrator, CI) and the machine's
+tripwires (5.6.1's and 5.6.2's refusals); **the 5.6 end verifier**, fresh Opus, on "5.6 done". 5.6.3 needs no verifier
+of its own: it adds warnings and an empty file and changes no guard, stop gate or ladder code; the end verifier breaks
+its warnings and the Windows copy.
+
+#### Where each inherited finding is settled
+
+The gate report's section 5, its 5.6 list; then the outline's "Settles", and what 5.1 to 5.5 and Rohan's 9 Oct decisions
+hand on:
+
+| Finding | Settled in | How |
+|---|---|---|
+| "Nothing new from the skeleton" (gate §5, 5.6) | This section | Nothing to settle |
+| The stranded-folder warning, from 5.1's split (outline; 5.1.6: "the stranded machine folder goes to 5.6"; `checkLater`'s `stranded`; this plan's "Choices made") | 5.6.1 | A `check` warning with the old path, what stayed there and a person's exact lines (note 5.6.1, 5); `status`'s text too |
+| The writes behind `status_writes` (outline; 5.1.5: "`bonsai settings set` writes them in 5.6"; "Stale or in tension": "5.1 reads the machine settings; 5.6 writes them") | 5.6.1 | `settings set`, all or nothing, refused in an agent session (notes 5.6.1, 3-4) |
+| The writes behind attached labels (outline; 5.1.5: "read from the machine folder's `labels/` (attaching is 5.6)") | 5.6.2 | `labels attach` and `detach` (note 5.6.2) |
+| `settings set` and `labels` "refuse in an agent session ... and the guard refuses them too" (outline, "Risks"; 5.3.2 rule 7: "5.6's commands refuse themselves too") | 5.6.1, 5.6.2, V1 | The commands refuse themselves with the variable set, the guard is the second layer; stated for Rohan with how it fits "agents manage Bonsai" (his part) |
+| `status --line` "is 5.6's" (5.1.6 note; the flag's `Later: "step 5.6"`); what it shows "is set in 5.6's section, and it may read 5.2's asks and 5.4's ladder results" (outline) | 5.6.4 | Its parts and order, `bonsai.line/1`, its speed budget (note 5.6.4) |
+| `--line` "runs on every statusline refresh, so its speed is measured" (outline, "Risks") | 5.6.4 | Budgets on both sides, measured with part 5's harness; a cache only if over (note 5.6.4, 4) |
+| The personal memory layer and its check (spec §14's 5.6 row; "Stale or in tension": §6's split) | 5.6.3 | The empty index, five warnings, who writes it (note 5.6.3) |
+| The Windows personal copy "older than WSL's" (spec §10), "in no 5.1 piece" (5.1.6's run report) | 5.6.3 | `personal_from`, the copy refreshed by `init` and `update` on Windows, the `personal-copy` warning (note 5.6.3, 4) |
+| The secret scan of memory notes, in 5.2 on the redactor's patterns ("Choices made") | 5.6.3 | The personal layer scanned with the same `redact.Find`, a warning there (note 5.6.3, 3) |
+| `install.json`'s keys `path`, `version`, `sha256` (5.1.6's run report); the `bonsai-path` finding "when `install.json` exists ... until 5.6's installer writes it" (5.1.6 note) | 5.6.6 | Both installers write exactly those keys, held by a test against the reader (note 5.6.6, 1) |
+| "The two places are Go constants, their one home, which 5.6's installers and `check` read too" (5.3.6 note 2) | 5.6.6 | A test holds both scripts to the constants (note 5.6.6, 1) |
+| Design 7, "the guard checks its own path and SHA-256 against `install.json` (5.6)": folded into 2 (5.3.6 note 1) | Unchanged | The hook lines never read `install.json`; it is the tripwire `check` and `status` read (note 5.6.6, 6) |
+| `check`'s comparison "waits for `install.json` (5.1.6; spec §3)"; "the pre-release has no `install.json` until 5.6's installer" (5.4) | 5.6.6, 5.7 | Written at the next real install, which is 1.0's (5.7); in Bonsai's own repo `check` keeps its note until then |
+| The import line in `~/.claude/CLAUDE.md` "is a person's step (no test touches a real home)" (outline); "5.6's import line in it is the person's, 'No agent edits that file'" (5.5.2 note 2) | 5.6.3, Rohan | Measured in a scratch project first; the exact lines in his part, sent once 5.6.3 lands; his words in the run report |
+| "One real install proof only if 5.6's section asks for it" (outline) | This section | None asked: the root and administrator halves run on GitHub's throwaway machines (note 5.6.6, 4); his real installs are 1.0's |
+| "The installers write root-owned and admin paths, so agents test them only against scratch targets" (outline) | 5.6.6, V1 | Scratch targets in tests; the real places only on CI's throwaway machines; no agent runs an installer at a real place on this computer |
+| A fresh verifier for the installers (outline) | V1 | After 5.6.6 has landed with its CI job green, beside the machine's tripwires |
+| No self-update; "from 5.6 `status` and `check` say when a newer release exists and an agent hands him the lines" (Rohan, 9 Oct, 15:46; spec §3's note) | 5.6.5 | Read by `status --full` only, offline after; the lines written by Bonsai for both sides (note 5.6.5) |
+| Agents manage Bonsai inside projects; the program stays his install (Rohan, 9 Oct, 15:35) | 5.6.1, 5.6.2, 5.6.5, 5.6.6 | Machine settings and attached labels are the machine's, set by a person or the studio's registration; agents read them and hand over the line; agents hand over install lines and never install |
+| The operating skill names every word; a new word changes it in the same commit (5.5.3 note 4; 5.5.7's `CLAUDE.md` rule) | 5.6.0, 5.6.3, 5.6.5 | Its lines for `settings` and `labels`, for the personal layer and for the install lines |
+| No screens (Rohan, 9 Oct) | 5.6.4 | `--line` prints text and stops; the studio draws Bonsai's part from `bonsai.line/1` (his part, "not a screen") |
+| Rohan's (a): the hook lines name the installed places, never the PATH (5.3) | 5.6.6 | The installers place the binary exactly there; no project changes at an install |
+| Rohan's (ii): `--allow-exec`, `unlink` and changes to Bonsai's own lines are a person's where the studio does not manage (5.3) | 5.6.5 | Unchanged: an installer touches no project; a release that changes Bonsai's lines shows as `check`'s finding, its step the person's line (note 5.6.5, 6) |
+| A pack's version, a pack added or taken out stay his step; agents hand over the line (Rohan, 9 Oct, 18:32, approving 5.5) | This section | The same shape for machine settings, attached labels and installs: the agent prepares and hands over the exact line |
+| The studio's registration "runs `bonsai labels attach` and `bonsai settings`, both 5.6's"; "full registration waits for 5.6" (this plan's "Stale or in tension"; contract §15.2) | 5.6.1, 5.6.2 | Built; both refuse in an agent session, so the registration is run by a person or the studio's own program (a note for the studio's plan, step 7) |
+| A later install only when a part changes the guard, the stop gate or the ladder (spec §17 step 8; 5.4) | This section | 5.6 changes none of them (the guard's rule 7 is 5.3's; `--line`, `settings` and `labels` are no hook), so 5.6 asks no install |
+| The floors at a part's end (5.4, "Tasks and names") | After 5.6.5 | One climb of `main`, the floors raised to its counts under a `T-569x` task, the numbers in Rohan's last line |
+
+#### Notes per piece
+
+**5.6.0, the formats set and the two words' places.**
+1. **The set:** one commit to `formats/` with its manifest, at the set after the last landed (set 5 is 5.2.0's, set 6
+   5.4.0's, then 5.5.0's; so set 8 if those land as planned), as `formats/README.md`'s "How the set changes" asks;
+   additions only, so the schema-compare test passes. Like every later part's, it follows 5.2.0's set 5.
+   - **`bonsai.settings/1`**, the `--json` of `settings show` and `set`: `format`; `scope` (`workspace` or `machine`,
+     closed); `file`, the settings file's place (forward slashes; printed locally, never committed); `settings`, one
+     entry per key of the scope, each `key`, `value` (null when unset) and `from` (`file` or `default`, closed);
+     `changed`, the keys `set` changed (`[]` for `show` and for a set that changed nothing); `error`.
+   - **`bonsai.attach/1`**, the `--json` of `labels attach` and `detach`: `format`; `command` (`attach` or `detach`);
+     `namespace`; `version` (the definitions' own, or null); `file` (the machine folder's file, forward slashes);
+     `result` (`attached`, `updated`, `unchanged`, `detached`, `nothing`; closed); `labels`, the names attached after
+     the command (`[]` after a detach); `error`.
+   - **`bonsai.line/1`**, the `--json` of `status --line`: `format`; `workspace` (`id` and `name`, or null when the
+     folder is not linked); `task` (`id`, `title`, `status`, or null); `ladder` (`green`, `red`, `old`, `none`, or null
+     with no task; closed); `verify` and `asks` (counts); `release` (a newer release's version, or null); `line` (the
+     text, `""` when not linked); `error`.
+   - **`status` gains `bonsai_release`** at the end of its properties: `version` (the version compared, or null),
+     `newest` (the newest release read, or null), `state` (`current`, `newer`, `unknown`, `not-a-release`; closed),
+     `read` (when last read successfully, RFC 3339 UTC, or null), `why` (one line when `unknown`, else null), `lines`
+     (`wsl` and `windows`, each a list of command lines, when `newer`; else null).
+   - **The memory schema's description** says the personal layer's index is at most 40 lines (spec §10) and that a
+     person writes the layer (note 5.6.3, 2); the project's notes keep their writer, base's `memory` skill (5.5's "Stale
+     or in tension").
+   - Not given a schema: the machine folder's and the home's `settings.json`, `install.json`, the home's release record
+     (note 5.6.5, 2) and the line's cache if one is needed: each is Bonsai's own file on one machine, read by Bonsai
+     alone, as `workspace.json` is (5.1.6), and documented in the Go file that writes it.
+2. **The words:** `settings` and `labels` in the registry at their rows of spec §4's table, each with its sub-words
+   (`settings show`, `settings set`; `labels attach`, `labels detach`) marked `Later` with their piece, their full flag
+   tables, exit codes and examples, so `--help` and `bonsai --help --json` show the final shape at once; the error words
+   both need, in `format.ErrorWords` with their `who` (`namespace-taken` and `label-redefined`, both a person's; the
+   rest are words that exist: `bad-value` for an unknown key or a bad value, `not-linked`, `read-failed`,
+   `write-failed`, and 5.3.6 note 8's word for a person's command in an agent session); and 5.3.6 note 8's check of the
+   variable made callable from any word's run function if it is not, so 5.6.1 and 5.6.2 each call it and neither writes
+   its own. The operating skill gains, in the same commit, its lines for both (read with `settings show`; `settings set`
+   and `labels` are a person's: hand over the exact line), as `CLAUDE.md` asks from 5.5.7, and its test passes. The
+   reference page is regenerated.
+3. **`status` writes `bonsai_release: null`** until 5.6.5 fills it, its test naming the field and that step as 5.1's
+   `notBuiltYet` did; `--line` stays refused as not built until 5.6.4.
+
+**5.6.1, `settings`, the stranded folder and the cache.**
+1. **The keys, in one Go table** (their one home; the reference page, `settings show` and `--help` read it). For the
+   workspace, in its machine folder's `settings.json`: `status_writes` (`agents` or `command`; default `agents`) and
+   `status_command` (with `command` only: one line of at most 100 characters of letters, digits, spaces and `-_./:`,
+   because the guard prints it in every `command`-mode refusal and agents run it as told; default none). For the
+   machine, with `--machine`, in the home's `settings.json`: `cache_keep_days` (a whole number of days from 1 to 3650,
+   or `none`; default `none`, spec §6) and `personal_from` (on Windows only: WSL's personal folder as Windows reaches
+   it, such as `//wsl.localhost/<distro>/home/<user>/.bonsai/personal`, or `none`; read by 5.6.3).
+2. **`settings show [--machine] [--json]`**: every key of the scope with its value in force and where it came from (the
+   file, or the default), and the file's place. Agents may run it; it never refuses but for bad input. Without
+   `--machine` it needs a linked checkout (`not-linked` otherwise) and reads the main checkout's machine folder from a
+   worktree too.
+3. **`settings set k=v [k=v ...] [--machine] [--json]`**: every value checked first, then all or nothing; an unknown key
+   or a value outside its rule exits 2 (`bad-value`), naming the key's allowed values or listing the keys;
+   `status_writes=command` needs a `status_command`, given or already set; `status_writes=agents` drops
+   `status_command`; `personal_from` is refused off Windows. The file is written byte-stable (two-space indent, LF,
+   ASCII, the table's order, a key this Bonsai does not know kept as read), staged and renamed with Windows' busy
+   retries; a value already in force writes nothing (exit 0, `changed: []`). It asks nothing and takes no `--yes`: each
+   `k=v` is the change, typed. Exit codes: 0, 2, 3 (could not write), 4 (not linked; an agent session).
+4. **In an agent session it refuses itself** (spec §4: "a tripwire, decision D"; 5.3.2 rule 7 is the guard's second
+   layer): with `CLAUDE_CODE_CHILD_SESSION` set, `settings set` exits 4 with 5.3.6 note 8's word (`who: person`) and
+   writes nothing; its `next.do` is the same command line, for a person to type in a terminal of their own. The variable
+   is read as Claude Code sets it in every process its tools start (5.3.6 note 8), so a script or subprocess inherits
+   the refusal. A stamped scratch build skips it only while its home is inside its stamped scratch root (5.3.6 note 2's
+   confinement, carried to the home), so scripted runs on scratch homes work; a plain build never skips; a test holds
+   both. Go tests set and clear the variable with `t.Setenv`; no scripted run unsets it in a shell line (the installed
+   guard refuses such a line, rule 7).
+5. **The stranded folder** (contract §3, "Moved checkouts"; spec §6's warning): `check` warns `stranded`, never the exit
+   code, for each other machine folder whose record (`workspace.json`) holds this `bonsai.yaml`'s id as its last, whose
+   recorded path no longer holds a `bonsai.yaml` with that id (the folder moved or gone, or the id changed there), and
+   which holds a `settings.json` or attached labels. The sentence names the old path and what stayed there
+   (`status_writes`, its command, each attached namespace) against what this checkout has now; `next.do` (`who: person`)
+   gives, in order, the exact commands that bring them over and then clear the old folder: `bonsai settings set
+   status_writes=command "status_command=<its command>"`, `bonsai labels attach <old folder>/labels/<namespace>.yaml`
+   for each, and the old folder's removal (`rm -r <path>` on Linux, `Remove-Item -Recurse <path>` on Windows); or the
+   studio's registration again (contract §15.2). A folder holding only its record loses nothing and gives nothing.
+   `status`'s text names it too (contract §3: "`bonsai check` and `status` report the stranded folder"); `status --json`
+   carries no warning (5.1.6: `check`'s warnings are never `problems`), and the lost setting shows in its
+   `status_writes`, which the studio's bridge already flags (contract §10.6). `stranded` moves from `checkLater` into
+   `format.CheckWords` with its case in `TestCheckTable`; the `next.do` test accepts `labels attach` as a word the
+   registry lists (5.6.0), and by 5.6's end it is built.
+6. **The cache, cleaned in `update`** (spec §6: "the cache in `update`"): with `cache_keep_days` set, `update` removes,
+   after its own run and never changing its exit code or result, each pack clone in `cache/git/` whose last use is older
+   than that many days, never one this project's lock or `bonsai.yaml` names. A clone's last use is a mark the fetch
+   touches whenever it fetches or reads it, so a clone another project is using now is never older than a day. The
+   `--adopt` copies in `cache/adopted/` are a person's saved edits and are never cleaned ("Stale or in tension", below).
+   What it removed is one line in `update`'s text: no `clean` record, since a clone is a refillable copy outside every
+   project and a `clean` record's `target` is project-relative (contract §8.2).
+7. **Proof** beyond the table: on `t.TempDir()` homes, two projects sharing clones, one clone past its days and in
+   neither lock (removed), one past its days and in a lock (kept), an `--adopt` copy years old (kept); a moved fixture
+   checkout (its machine folder written, the folder renamed, `init` there): `stranded` with both lines, which, run with
+   the variable cleared, bring the settings and labels over and clear the warning.
+
+**5.6.2, `labels attach` and `detach`** (contract §5.1-§5.3).
+1. **`labels attach <file> [--json]`**, in a linked checkout (`not-linked` otherwise): the file read as
+   `bonsai.labels/1` by 5.1.4a's reader (a refusal names the field: `bad-value`); a namespace that is `bonsai` or a
+   locked pack's refused (exit 4, `namespace-taken`, `who: person`; contract §5.1: "Bonsai refuses the attach"); copied,
+   line endings made LF, to `<machine folder>/labels/<namespace>.yaml`, staged and renamed.
+2. **Attached again** (contract §5.3: "the bridge re-attaches on start when its definitions' `version` is newer"): the
+   same content is `unchanged`; a newer `version` that keeps every attached definition as it is and only adds is
+   `updated`; anything else, a definition changed or removed, or different content at the same or an older version, is
+   refused (exit 4, `label-redefined`): "a definition may be added, never redefined" (contract §5.1). Its `next.do`
+   names `labels detach <namespace>` and then `attach`: a person's deliberate step.
+3. **`labels detach <namespace> [--json]`**: the file removed (`detached`), or `nothing` when there is none. It also
+   runs in a checkout whose `bonsai.yaml` is gone, so a project taken out can be unregistered.
+4. **In an agent session both refuse themselves**, exactly as `settings set` does (note 5.6.1, 4).
+5. **What an attach reaches, already built, tried once by the end verifier:** `status --json`'s `labels` lists the
+   namespace `from: machine` (5.1.5); `check` holds values to it (5.1.6); `hook start`'s opening context shows it (5.2.4
+   note 9); in `command` mode the guard refuses an agent's edit setting a label whose definition reads `set_by: outside`
+   (5.3.2 rule 6).
+
+**5.6.3, the personal memory layer** (spec §10; contract §7.4).
+1. **Its place:** `<home>/personal/INDEX.md` and `<home>/personal/notes/`, in `bonsai.memory/1`, never in a project,
+   never forwarded (contract §2.6). `init` and `update` write an empty index when there is none (`format:
+   bonsai.memory/1` with its pointer comment, `id: null`, `title: Personal memory`, `kind: index`, `updated` today,
+   `source: null`, `labels: {}`, and one body line saying what goes there and who writes it), never over an existing
+   one; `unlink` leaves it (the machine's, not the project's).
+2. **Who writes it: a person.** 5.3.2 rule 5 and 5.3.5's `Edit(~/.bonsai/**)` refuse an agent's writes anywhere in the
+   home, in every linked project, and that stays: the index loads into every session in every project on the machine, so
+   a note one agent wrote would carry its words into all of them, as a write to `~/.claude/CLAUDE.md` would (which base
+   walls, 5.5.2 note 2). An agent drafts a note about the person with base's `memory` skill and hands it over; the
+   person saves it by hand, or in a session opened outside any linked project. Base's `memory` skill and the operating
+   skill say so (this piece edits their lines; `check --pack` and the operating test pass). Chosen over carving
+   `personal/` out of the guard's home rule and the engine's deny rule, which would change the guard (a new install for
+   Rohan, spec §17 step 8) to let one agent's words into every session. What lost: a note about the person is not saved
+   without them.
+3. **Its check,** warnings only, never the exit code (the layer is the machine's, not the project's, so a project's CI
+   and rung 0 must not fail on it), each `who: person`, read from the home whatever project `check` runs in:
+   `personal-format` (the index or a note not `bonsai.memory/1`, or the index's `kind` not `index`); `personal-budget`
+   (the index over 40 lines, spec §10, or over 12 KB; a note over 4 KB); `personal-index` (an index line naming a note
+   that does not exist, or a note no index line names); `personal-secret` (anything 5.2's `redact.Find` finds, naming
+   the file, the line and the kind of secret, never the value: 5.2.4 note 11's rule for the layer that loads
+   everywhere); `personal-copy` (item 4). With no `personal/` folder, nothing.
+4. **The Windows copy** (spec §10: "WSL's is the canonical one; the Windows home holds a copy, refreshed when a
+   Windows-side project links ..., and `check` there reports a copy older than WSL's"): on Windows, once a person has
+   named WSL's folder in the home setting `personal_from` (5.6.1; at Mimas's link, step 8), `init` and `update` refresh
+   the copy when it differs from the source (the source's files written whole into the home's `personal/`, a note the
+   source no longer has removed, staged and renamed with busy retries; one line in their text), and `check` warns
+   `personal-copy` while it differs. "Older" is read as "not the same": the source is the canonical one, so any
+   difference is the copy's. Reaching the source through `\\wsl.localhost` can start WSL, so each read has 2 s; past
+   them, a note (not compared, not refreshed), never a wait.
+5. **The import line, measured before it is sent** (spec §10: `@~/.bonsai/personal/INDEX.md`, "imported once per machine
+   from the user memory file"): the builder reads Claude Code's memory reference on the version in use (an import with
+   `~`, how deep imports go, what a missing file does) and the Sonnet agent tries it in a scratch project only, through
+   `claude-here` in an interactive `tmux` session (5.5.5's method): the project's own `CLAUDE.md` importing a file
+   beside it, and a missing one, read with `/memory`; the real `~/.claude` is never touched. The run report records the
+   version and what was seen; the orchestrator then sends Rohan his two lines (his part), or, if a missing file is not
+   skipped quietly, sends them once the index exists on his machine (1.0).
+6. **Proof** beyond the table: each warning from a fixture home on both sides; a secret-shaped decoy (made up) found,
+   its value in no output; `init` twice writes the index once; a Windows test whose `personal_from` is a scratch folder
+   (refreshed, then the warning after the source changes) and one that never answers (a note within 2 s).
+
+**5.6.4, `status --line`** (spec §4: "the statusline's workspace half"; its reference, read only with `git show`, the
+studio's `tools/statusline/README.md` and `statusline.mjs` at `7017d63`).
+1. **What it prints:** one line of ASCII, at most 100 characters, its parts in this order, each left out when it says
+   nothing: the active task (contract §13's function, 5.1.5, with `BONSAI_TASK` from the environment Claude Code gives
+   the status-line command) as its id and title, the title cut to 30 characters with `...`, or `no task`;
+   `ladder:green`, `ladder:red`, `ladder:old` (its commit is not HEAD) or `ladder:none`, for that task's last local
+   result (5.4); `verify:N`, the tasks reading `verify` (N above 0); `asks:N`, the open asks waiting for a person
+   (5.2.5; N above 0); `bonsai:vX.Y.Z` when a newer release is recorded (5.6.5 adds it). It is the studio's own task
+   part (`T-0042 Hover panel ladder:green verify:2`, read today from `studio/tasks/*.md` and the ladder's results), with
+   the asks Bonsai now holds.
+2. **It never breaks a status line:** it runs in the folder it is started in (where Claude Code starts a status-line
+   command is measured, and the help says what a person's script does if it is not the project); it never reads stdin,
+   so a script that calls it never waits. Outside a linked checkout it prints nothing; a `bonsai.yaml` it cannot read
+   prints `bonsai.yaml unreadable`; either way exit 0. Only bad flags exit 2 (`--line` with `--full` or `--active`).
+   Text from task files is stripped of control characters and anything not ASCII, so a task title cannot send escape
+   codes to a terminal (the studio's line has the same rule).
+3. **`--line --json`** prints `bonsai.line/1` (5.6.0), the parts as fields with the line, so the studio's status line
+   draws Bonsai's part in its own colours. Bonsai writes no `statusLine` setting anywhere; `--help` shows the line a
+   person adds to their own Claude settings to use it alone.
+4. **Speed, measured** (it runs at every status-line refresh): no git process, no Claude Code, no network; HEAD, for
+   `ladder:old`, read from git's files (a worktree's `.git` file followed). Budget, with part 5's harness (gate report
+   §2.5), on a fixture project of 300 task files, two years of ask day files (five open) and a ladder result: p95 at
+   most 25 ms on WSL's own disk and at most 60 ms natively on Windows (the studio's Node line: 54-63 ms, about 80 ms
+   through Git Bash). Measured, not budgeted: from WSL on a project on a Windows drive (`/mnt/...`), and through Git
+   Bash as Claude Code runs it on Windows. Over budget, a cache in the home, `cache/line/<machine key>.json`, keyed by
+   the files' sizes and times (refillable; never a write in the project); still over, the orchestrator has the numbers
+   before the piece lands.
+5. **Seen once in a real session,** by the Sonnet agent: on WSL, a scratch project's `.claude/settings.local.json`
+   naming the stamped build's `status --line` as its status line, an interactive session in `tmux` through
+   `claude-here`, the pane captured with the line in it, the Claude Code version and the user settings hashes before and
+   after recorded. On Windows the timing through Git Bash stands in (an interactive Windows session needs a person).
+6. **Hours:** 4-6 of the row's 5-8; 5.6.5 takes the rest ("Hours", above).
+
+**5.6.5, a newer release, known and handed over** (Rohan, 9 Oct, 15:46; spec §3's note).
+1. **What is read:** the tags of Bonsai's public repository, `https://github.com/LastStep/Bonsai.git`, with the
+   machine's git (`RemoteTags`, `internal/engine/newer.go`): no login, no API token, no service of Bonsai's. Only plain
+   `vX.Y.Z` tags at or above 1.0.0 count: the old product's `v0.x` tags and `base-v*` pack tags do not. The source is a
+   Go constant; a stamped scratch build may name a local bare repository instead (5.3.6 note 2's stamps; a plain build's
+   stamp empty, held by a test), so no test reaches GitHub.
+2. **When, and how often:** only `bonsai status --full` goes online, as it already does for packs. It reads at most once
+   a day after a read that worked and once an hour after one that failed, each read given 10 s, beside the packs' reads.
+   The answer goes into the home's `cache/release.json` (the newest release, when it was read, the source, and the last
+   failure with its time and reason): a refillable copy (deleting it costs one read), Bonsai's own file, documented
+   where it is written. Plain `status`, `check` and `--line` read only that file, never the network.
+3. **What is compared:** the installed copy's version from `install.json` (5.6.6), else the running binary's. A build
+   that is not a release (`dev`, or a pre-release such as 5.4's) is `not-a-release`, which still names the newest
+   release when one exists.
+4. **What is said,** from the record: `status --json`'s `bonsai_release` (`current`; `newer`, with the newest version
+   and the lines; `unknown`, never read or the last read failed, with when and why; or `not-a-release`); one line in
+   `status`'s text; a `check` warning, `bonsai-newer` (`who: person`), its `next.do` "a person installs Bonsai vX.Y.Z on
+   each side: the lines are in `bonsai status --full --json`, `bonsai_release.lines`"; when the record is missing or
+   older than 7 days, a `check` note naming `bonsai status --full`, never a warning; `--line`'s `bonsai:vX.Y.Z`. No exit
+   code changes and nothing refuses to run for any of it.
+5. **The lines,** written by Bonsai from one Go table, so every agent hands over the same, for both sides at once: bash
+   for WSL and PowerShell 5.1 for Windows, one command per line, no `&&` (Rohan's part shows them for 1.0.1). The
+   archive and checksum names follow `.goreleaser.yaml` today (`bonsai_<version>_<os>_<arch>`, `checksums.txt`), the
+   architecture this machine's; the installers sit at the archive's top beside the binary, which 5.7 makes so (below).
+   The operating skill's "installing the `bonsai` program" line points at these lines (this piece edits it): the agent
+   hands them over, with the release's notes link, and never runs them.
+6. **After an install,** nothing in a project changes (5.3's (a)). If a new release changes Bonsai's own hook lines, its
+   `check` gives the finding for lines out of date (5.2.4), whose step is a person's line under 5.3's (ii) where the
+   studio does not manage the project.
+
+**5.6.6, the installers and `install.json`** (spec §3; 5.3's (a)).
+1. **Two scripts in `install/`:** `install.sh` (POSIX `sh`, for Linux and WSL) and `install.ps1` (Windows PowerShell
+   5.1), each documented in its header (what it does, when to run it, every option with an example, the way out), ASCII
+   only, LF through one `.gitattributes` line. Each installs the `bonsai` beside it (the archive's top, 5.7). A Go test
+   in `install/` holds each to the two installed places as 5.3's constants spell them and to `install.json`'s three keys
+   as `check`'s reader reads them (`internal/engine/checkmachine.go`), so neither has a second home.
+2. **`install.sh [--target <file>] [--remove]`**, run by the person as themselves, never under `sudo` (it refuses as
+   root, since `~` would then be root's home and `install.json` land there): checks that the `bonsai` beside it runs
+   (`--version`); installs it, with `sudo install -o root -g root -m 0755` when the target's folder is not the person's
+   to write (the real place, `/usr/local/bin/bonsai`, the password once), else with `install -m 0755` (a scratch
+   target); checks the installed file's SHA-256 against the source's and, at the real place, that the file and its
+   folder are root's and writable by no one else; writes `${BONSAI_HOME:-$HOME/.bonsai}/install.json` (`path`, `version`
+   from the installed copy's `--version`, `sha256`) through a temporary file and a rename; prints the fingerprint,
+   `which -a bonsai` (naming any `bonsai` that comes first, spec §17 step 3) and the installed `--version`. `--remove`
+   takes out the installed file (`sudo rm` at the real place) and `install.json`. Exit 0, or not, with one plain
+   sentence and its next step.
+3. **`install.ps1 [-Target <file>] [-Remove]`**, run by the person in a normal PowerShell as `powershell -NoProfile
+   -ExecutionPolicy Bypass -File .\install.ps1` (Windows runs no downloaded script otherwise): checks that the
+   `bonsai.exe` beside it runs; at the real place, `C:\Program Files\Bonsai\bonsai.exe`, the administrator steps run in
+   one elevated child (`Start-Process -Verb RunAs -Wait`, one UAC prompt), or in place when the session is already
+   elevated: the folder made, the file copied, and `C:\Program Files\Bonsai` added once to the machine's PATH, read raw
+   (`DoNotExpandEnvironmentNames`) and written back as `ExpandString`, never through
+   `[Environment]::SetEnvironmentVariable`, which writes the expanded value as plain text; then the change announced to
+   running programs. It checks the installed hash and that the folder grants no write to Users, Authenticated Users or
+   Everyone; writes `install.json` in `$env:BONSAI_HOME`, else `%USERPROFILE%\.bonsai`, as the person, its path with
+   forward slashes (`C:/Program Files/Bonsai/bonsai.exe`); prints the fingerprint, `Get-Command bonsai -All` in order
+   and `--version`. A scratch target needs no elevation and changes no PATH: the PATH merge is a function the tests run
+   on strings (`%SystemRoot%` entries kept, no entry twice, the separators right), so no test writes the registry.
+   `-Remove` undoes each step, the PATH entry taken out the same careful way.
+4. **Proof without this computer's real places.** Go tests run each script on scratch targets and a scratch
+   `BONSAI_HOME` (the `.sh` on Linux, the `.ps1` on Windows, each skipped elsewhere with its reason): install; the
+   record read back by `check`'s reader; a second install (the same fingerprint, the record unchanged); remove; each
+   refusal (a `bonsai` beside it that does not run; `install.sh` as root, through a stub `id`). **The real places run on
+   GitHub's throwaway machines:** an `install` job on `ubuntu-latest` (its runner has passwordless `sudo`) and on
+   `windows-latest` (its runner is an administrator; whether elevated in place or through `RunAs`, the first CI run
+   records) builds Bonsai, runs each installer at its real place, checks the owner, mode or ACL, the PATH (the entry
+   once, `%...%` entries kept), `install.json`, `which -a` or `Get-Command`, and `--version` from a fresh shell, then
+   removes it and checks it is gone. Not run before Rohan's 1.0 install: the UAC prompt's path from an unelevated
+   session; V1 reads it line by line, and 5.7 plans its first run with the way out (`-Remove`, or the folder deleted and
+   the PATH entry taken out by hand).
+5. **No agent runs either installer at a real place** (Rohan's 15:35 choice; spec §3: "No agent installs or replaces
+   it"). Agents run as the same user, so a file in a download folder can be changed between Rohan's fingerprint check
+   and his install by a shell command: the guard's `bonsai-stand-in` rule stops the file tools writing a `bonsai`
+   outside a project, not a shell. That is spec §3's "tripwire, not a wall", and the risk below.
+6. **`install.json`** (spec §3, §10) is in the installing person's home, never root's, so each user who runs Bonsai on
+   the machine has their own after their own install. It is the tripwire `check` and `status` read (5.1.6's
+   `bonsai-path`), in a folder the person can write: a forged one only silences that tripwire, since the hook lines
+   never read it (5.3's (a), design 7 folded), and the guard refuses an agent's file-tool write to it (the home).
+7. **The CI job is the piece's last commit,** made while `T-5606` is the only task `running` (`.github/**` is protected
+   in Bonsai's repo, 5.4).
+
+**V1, the installers and the machine's tripwires.** A fresh Opus agent, once 5.6.6 has landed with its `install` job
+green and 5.6.1 and 5.6.2 have landed: reads both installers against spec §3, 5.3's (a) and this section; re-runs them
+on scratch targets on both sides itself; reads the `install` job's logs on the pushed commit (the real places on
+throwaway machines); reads the elevated child and the PATH merge line by line; breaks them: a target folder others can
+write refused, a `bonsai` beside the script that does not run refused, a PATH value holding `%SystemRoot%` entries kept
+as they were, a second install unchanged, a remove complete. And the machine's tripwires: `settings set`, `labels
+attach` and `detach` refused with `CLAUDE_CODE_CHILD_SESSION` set, through a variable, `xargs`, a script and a
+subprocess, with nothing written; a stamped build free only while its home is inside its scratch root; `status_command`
+refused with a `;`, a `$`, a backtick, a newline, or past 100 characters; an attach of `bonsai`, of a locked pack's
+namespace, or a redefinition refused. It passes or fails; it fixes nothing; a must-fix is fixed forward.
+
+#### Proof for each piece
+
+Every piece: its Go tests and `go vet`, plain and with the fault tag, in WSL (by the landing rule's green climb of its
+task, run by `/usr/local/bin/bonsai`) and natively on Windows (check 10's Windows half) before the push, the counts in
+the run report; CI green on the pushed commit, the `install` job among them from 5.6.6; the Windows rules of `CLAUDE.md`
+read in the diff (forward slashes in every stored and printed path, `install.json`'s and the settings' among them;
+byte-stable files; LF scripts; no test needing a symbolic link or a file mode, the `.sh` mode checks on Linux only, with
+the reason; Windows renames with busy retries); no Windows-only skip without a named reason; no test touching a real
+home (`BONSAI_HOME` a temporary folder in every test, scratch homes in every script). Pieces that run Claude Code
+(5.6.3's import try, 5.6.4's session) record its version and the user settings hashes before and after. Scripted runs
+live in `~/bonsai-checks/scripts/`, never committed. V1 and the end verifier re-run what they judge themselves.
+
+#### 5.6 done
+
+A fresh Opus verifier, at the end of 5.6, after 5.6.5 and the floors, runs each check itself on the final commit, on
+both sides where a check names them, and passes or fails 5.6:
+1. **The set:** the manifest matches every byte; the three new schemas and `status`'s `bonsai_release` documented, each
+   with an example its writer reproduces; the schema compare passes; `check --schema` prints each new format.
+2. **The words:** `bonsai --help` lists the fourteen words of spec §4; `bonsai --help --json` gives `settings` and
+   `labels` with every flag, exit code and error word; the operating skill's test passes and fails on a temporary copy
+   that drops either word.
+3. **`settings`:** on a scratch project and with `--machine`, `show` and `set` for every key; each bad value and unknown
+   key exits 2 naming what is allowed; a set is all or nothing, byte-stable on two runs and on both sides, and keeps an
+   unknown key; `status_writes=command` then makes `status --json` read `command`, and in a scratch session on WSL the
+   guard refuses an agent's edit of a task's status line, naming the command.
+4. **The tripwire:** `settings set`, `labels attach` and `detach` with `CLAUDE_CODE_CHILD_SESSION` set exit 4 with `who:
+   person` and write nothing (the home hashed before and after), through a variable, `xargs`, a script and a subprocess;
+   `settings show` answers; a stamped build is free only with its home inside its scratch root.
+5. **The stranded folder:** a fixture checkout moved: `check` warns `stranded` with the old path and its exact lines,
+   never the exit code; the lines, run as a person, bring the settings and labels over and clear it; `status`'s text
+   names it.
+6. **The cache:** `update` with `cache_keep_days` removes an unused clone past its days, keeps the lock's and every
+   `--adopt` copy, and says so in one line.
+7. **`labels`:** attach, the same again (`unchanged`), a newer additive version (`updated`), a redefinition, `bonsai`
+   and a locked pack's namespace each refused, detach, detach again (`nothing`); after an attach, `status --json` lists
+   it `from: machine`, a scratch session's opening context shows it, and in `command` mode an agent's edit setting its
+   `outside` label is refused.
+8. **The personal layer:** `init` writes the empty index once and never over one; each of the five warnings from a
+   fixture, none changing the exit code; the decoy secret's value in no output; on Windows the copy refreshed by
+   `update` and `personal-copy` while it differs, and an unreachable source answered with a note within 2 s; the
+   import's measurement in the run report; Rohan's two lines sent, his words in the run report.
+9. **`--line`:** each part on fixtures; nothing printed and exit 0 outside a linked checkout; a broken `bonsai.yaml`
+   gives its short line and exit 0; a title holding an escape code printed without it; `--json` valid against
+   `bonsai.line/1`; the verifier's own p50 and p95 on both sides within the budgets on the fixture project; the real
+   session's capture in the run report.
+10. **The newer release:** against a stamped local source with tags `v0.4.3`, `v1.0.0`, `v1.0.1` and `base-v2.0.0`, a
+    build stamped `1.0.0`: `status --full` records `v1.0.1`, `state: newer`, and both sides' lines exactly as the table
+    gives them; plain `status`, `check` (`bonsai-newer`) and `--line` say it offline; a second `--full` within the day
+    reads nothing (the source made unreachable changes no answer); an unreachable source with no record gives `unknown`
+    with why, exit 0; a `dev` build gives `not-a-release`; the plain build reads the real repository once within 10 s
+    (today: no release at or above 1.0.0).
+11. **The installers:** on scratch targets on both sides, install, the record read by `check`, again unchanged, remove,
+    each refusal; the test holding both scripts to the installed places and the record's keys passes, and fails on a
+    temporary copy naming another place; the `install` job green on both sides on the final commit; V1's report read.
+12. **Unattended:** every new refusal's `--json` carries `error` with a known word and `next` with `who`; every
+    `next.do` that is a command runs as written.
+13. **Check 10, the ladder and CI:** `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on
+    Windows, run by the verifier; `/usr/local/bin/bonsai ladder --task <its task>` green on the final commit; CI green
+    on it.
+14. **Stop lines and records:** 5.6's hours under 26, this section's planning and review included; step 5's Windows-only
+    tally; option rounds (none planned); nothing written or run in the studio's checkout (its files read with `git show`
+    only) or in Mimas; nothing written outside the repo and the scratch folders but `~/.bonsai/` by the orchestrator's
+    own real commands and Claude Code's accepted writes; no `install.json`, `personal/`, home `settings.json`, machine
+    `settings.json` or `labels/` in the real home written by a 5.6 run; the user settings hashes around every Claude
+    Code run; every landing matched to its green `ladder` record and each task's `bonsai.allows` to this section's
+    "Owns"; `bonsai.yaml` changed only by the floors; the Haiku audit of `.bonsai/sessions.md` against the run reports.
+    **Nothing private:** a grep of the diff, the commit messages and the task files.
+
+#### Risk in the code, 5.6
+
+- **Root and administrator steps.** The installers are the only code in step 5 that runs as root or administrator. Each
+  keeps its elevated part to the copy, the PATH and the checks after; the real places run only on throwaway CI machines
+  before Rohan's 1.0 install, and the UAC path from an unelevated session runs first there, so 5.7 plans its way out.
+- **The machine's PATH on Windows.** A careless edit can expand or cut it. Read raw, written as `ExpandString`, the
+  merge tested on strings, the real edit tried on CI's machine and undone by `-Remove`.
+- **A download changed before the install.** Agents run as the same user and could change a file in the download folder
+  between Rohan's fingerprint check and his install: spec §3's tripwire, not a wall. The lines run one after another in
+  one fresh folder; the installer prints the installed copy's fingerprint, `install.json` records it, and `check`
+  compares the PATH's `bonsai` with it.
+- **A tripwire, not a wall,** for the machine's settings and labels: an agent's shell can still write the home (the
+  sandbox is not on, contract §10.6). The commands refuse themselves, the guard refuses them and the walls refuse the
+  file tools; the studio's bridge flags a lost `command` setting.
+- **`status_command` is printed by the guard and run by agents:** its narrow characters stop a person's typo, or a
+  forged file, from becoming a command line with `;` or `$(...)` in it.
+- **What loads into every session:** the personal index. Person-written; budgets and the secret scan as warnings; the
+  import line is the person's.
+- **`--line` runs on every refresh.** A slow line slows every session's status line; budgets measured on both sides, a
+  cache only if needed; a project on a Windows drive read from WSL is measured, not promised.
+- **Text into a terminal:** task titles in `--line`, stripped of control characters.
+- **The network:** one read a day at most, 10 s, in `status --full` only; GitHub unreachable never fails a command. A
+  tag pushed before its release's files are up makes the download line fail plainly ("try again in a few minutes").
+- **WSL from Windows:** reading `\\wsl.localhost` may start WSL; 2 s, then a note.
+- **Shared files:** what runs side by side shares none; 5.6.5 waits for 5.6.3 and 5.6.4. The reference page and
+  `format.CheckWords` are written in lane A and 5.6.5 only, one after the other.
+- **Processes:** `tmux` sessions (5.6.3, 5.6.4): each agent stops what it started and checks with `ps`; the orchestrator
+  sweeps after each agent.
+
+#### Stale or in tension in the spec, for 5.6
+
+- **§4's table: `status` "Writes: nothing":** `status --full` writes one file, the home's `cache/release.json`, a
+  refillable copy of its network read (note 5.6.5, 2); nothing in the project.
+- **§6: "deleting `cache/` by hand is always safe; it refills", against §10: "Its `cache/` also keeps `--adopt`
+  copies":** true of the pack clones only; `cache_keep_days` cleans `cache/git/` and never `cache/adopted/`, which holds
+  a person's saved edits (note 5.6.1, 6).
+- **§6: every file cleaned is "one `clean` record in the log":** the cache's clones are not logged (refillable, outside
+  every project, and a `clean` record's target is project-relative, contract §8.2); `update` names them in its text.
+- **Contract §3: "`bonsai check` and `status` report the stranded folder":** a `check` warning (spec §6) and a line in
+  `status`'s text; `status --json` carries no warning (5.1.6), and the lost setting shows in its `status_writes`.
+- **§10: the Windows copy "refreshed when a Windows-side project links", and "a copy older than WSL's":** refreshed by
+  `init` and `update` on Windows once a person names WSL's folder in a new home setting, `personal_from`, beside §4's
+  `cache_keep_days`; "older" read as "not the same as WSL's" (note 5.6.3, 4).
+- **§10's personal layer, "budget 40 lines":** 40 lines, with the project index's 12 KB and the notes' 4 KB caps; its
+  checks are warnings, not findings, as the layer is the machine's (note 5.6.3, 3).
+- **§10: "Agents write notes through the workflow pack's memory skill"** (5.5 moved it to base's): true of the project's
+  notes. The personal layer is the person's: 5.3's guard and deny rule refuse agents in the home (note 5.6.3, 2); the
+  memory schema's description says so (5.6.0).
+- **§13 item 4, the memory move "to `~/.bonsai/personal/`":** done by a person, or in a session outside any linked
+  project, the studio's plan's choice (step 7).
+- **Contract §15.2: registration "runs Bonsai's attach and settings commands":** both refuse in an agent's session, so
+  the studio's registration is run by a person or by the studio's own program outside one; a note for the studio's plan.
+- **§3: "Each install writes `<home>/install.json`":** the installing person's home, never root's (the installer refuses
+  `sudo`), so per user (note 5.6.6, 6).
+- **§3 and §14 have no word on a newer release:** Rohan's 9 Oct note in §3 adds it; built in 5.6.5 inside the row's
+  hours (this section's "Hours").
+- **§4: every command but `hook` takes `--json`; `--line` is a line:** `--line --json` prints `bonsai.line/1`.
+- **§14's 5.6 row, "the workspace half of today's statusline":** today's task part with Bonsai's asks and release
+  marker; the git counts, Unity's editor and the studio's services stay the studio's line's.
+- **§17 step 8 gives the pre-release install as typed lines:** from 1.0 the installers replace them (5.7); 5.6 asks no
+  install.
+- **Hand-offs to 5.7:** each archive holds `install.sh` and `install.ps1` at its top, beside the binary
+  (`.goreleaser.yaml`'s `archives.files`); a test holds 5.6.5's archive and checksum names equal to `.goreleaser.yaml`'s
+  templates; Rohan's 1.0 installs on both sides go through the installers and those lines, the UAC path's first run
+  among them, with its way out; Homebrew's place against 5.3's (a) stays 5.7's.
+- **Hand-offs to the studio's plan (step 7) and Mimas's (step 8):** registration outside agent sessions; its status line
+  calling `bonsai status --line --json`; the memory move by a person; at Mimas's link, `personal_from` on Windows and
+  the same import line in the Windows `~/.claude/CLAUDE.md`, Rohan's.
+
 ### Steps 5.2-5.7, outlined
 
 Each gets its detailed section, in 5.1's shape, before it starts ("What changes", item 1). The spec rows are §14's.
