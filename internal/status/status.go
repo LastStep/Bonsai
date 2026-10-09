@@ -1,15 +1,28 @@
 // Package status builds bonsai status's document, bonsai.status/1 (contract §12): one workspace at a glance.
 //
-// Plan part 2 builds the partial status: every field of bonsai.status/1, in the schema's order (the schema in
-// formats/schemas, embedded by package formats, is the one list of fields), filled where the walking skeleton has
-// built it and null (or [] for a list) where it has not. Built here: format, bonsai, mode, workspace, home, local,
-// person_only, and from part 3's check (internal/engine) packs, files and problems: the same findings bonsai check
-// reports (contract §12); from step 5.1.4a, formats (internal/format's registry: every format with the majors this
-// Bonsai reads and writes); from step 5.1.5, internal/workspace's reads: documents (the declared document kinds),
-// labels and lanes (from the lock's declares and the machine folder), status_writes and status_command (this
-// machine's settings), and active_task (the active-task function, contract §13, for this checkout and environment).
-// The rest (needs, checks) wait for step 5.1.6; this package's test holds them in a named list. The document is held
-// to the schema before it is printed (Encode).
+// Every field of bonsai.status/1, in the schema's order (the schema in formats/schemas, embedded by package formats,
+// is the one list of fields), each filled where it applies and null or [] only where contract §12 says it does not
+// (this package's test holds that list, doesNotApply). What fills each:
+//
+//   - format, bonsai, mode (offline; full with --full), workspace, home, local, person_only: bonsai.yaml, the home and
+//     git (plan part 2);
+//   - packs, files, problems: bonsai check's own findings (internal/engine's Check, offline from the lock), problems
+//     one sentence each with its next step (contract §12: "the same findings bonsai check reports"); check's warnings
+//     are never problems (spec §6);
+//   - formats: internal/format's registry (step 5.1.4a);
+//   - documents, labels, lanes, status_writes, status_command, active_task: internal/workspace's reads (step 5.1.5);
+//   - needs (step 5.1.6): the Claude Code floor (kind tool, name claude-code, the higher of Bonsai's and the packs'
+//     needs.claude_code: never a problem, spec §7), then each locked pack (kind pack, with its source and version), or,
+//     with --full, kind plugin for a pack whose plugin Claude Code reports not installed for this checkout (spec §5);
+//   - checks (--full only, step 5.1.6): newer releases of each pack (git ls-remote, engine.NewerTags), each pack's
+//     plugin as Claude Code reports it (claude plugin list), Claude Code's version against the floor (claude --version),
+//     and the MCP servers the packs' needs name (none can be named in formats set 4: bonsai.pack/1's needs holds only
+//     claude_code, so the list is empty until a later set adds one);
+//   - error: null unless status refused (step 5.1.4b).
+//
+// The default is cheap and offline (contract §12: for the bridge to run often): it runs git and reads files, and
+// never Claude Code or the network; --full asks both. status --active prints active_task alone (Active; contract §13's
+// read-only command). The document is held to the schema before it is printed (Encode).
 //
 // Exit codes (contract §12, spec §3): 0, or 3 when Bonsai cannot read the workspace at all; the document then
 // fills format, bonsai, problems and error (step 5.1.4b: the error object, with its word from format.ErrorWords), and
@@ -34,8 +47,21 @@ import (
 // Format is the document's format.
 const Format = "bonsai.status/1"
 
-// Mode is how this status is gathered: offline, cheap, no network (contract §12).
-const Mode = "offline"
+// The modes, how a status was gathered (contract §12): offline, cheap, no network and no Claude Code, by default;
+// full with --full, which asks both (the schema keeps the field open for it).
+const (
+	Mode     = "offline"
+	ModeFull = "full"
+)
+
+// Options are what status is asked beyond the default, and how --full asks the network and Claude Code (tests give
+// fakes; nil asks nothing, and its check reads unknown).
+type Options struct {
+	Full    bool                                  // --full: the checks
+	Plugins engine.PluginCLI                      // claude plugin list
+	Claude  func() (string, error)                // claude --version's first line
+	Tags    func(source string) ([]string, error) // a source's tags (engine.RemoteTags when nil)
+}
 
 var (
 	schemaOnce   sync.Once
@@ -62,10 +88,13 @@ const (
 	ExitRuntime = 3 // Bonsai cannot read the workspace at all (contract §12)
 )
 
-// Build gathers the status of the workspace holding dir; version is this Bonsai's own. It returns the document and
-// its exit code. On exit 3 the document is Refused's, its problem the error's sentence with its next step.
-func Build(dir, version string) (schema.Object, int) {
-	built, problem := gather(dir)
+// Build gathers the default status of the workspace holding dir; version is this Bonsai's own. It returns the
+// document and its exit code. On exit 3 the document is Refused's, its problem the error's sentence with its next step.
+func Build(dir, version string) (schema.Object, int) { return BuildWith(dir, version, Options{}) }
+
+// BuildWith is Build with its options: --full's checks.
+func BuildWith(dir, version string, o Options) (schema.Object, int) {
+	built, problem := gather(dir, o)
 	if problem != nil {
 		return Refused(version, problem, []any{problem.Error()}), ExitRuntime
 	}
@@ -84,8 +113,8 @@ func Refused(version string, e *engine.Error, problems []any) schema.Object {
 	return document(map[string]any{"format": Format, "bonsai": version, "problems": problems, "error": errDoc}, true)
 }
 
-// gather reads what part 2 builds. A problem is an error with its word, its sentence and its next step.
-func gather(dir string) (map[string]any, *engine.Error) {
+// gather reads every field. A problem is an error with its word, its sentence and its next step.
+func gather(dir string, o Options) (map[string]any, *engine.Error) {
 	co, err := workspace.Find(dir)
 	if err != nil {
 		return nil, engine.FindError(err)
@@ -107,7 +136,9 @@ func gather(dir string) (map[string]any, *engine.Error) {
 	packs, files, problems := []any{}, schema.Object{{Key: "changed", Value: 0}, {Key: "missing", Value: 0},
 		{Key: "format0_changed", Value: 0}}, []any{}
 	var lock *workspace.Lock
+	var checked *engine.CheckResult
 	if r, err := engine.Check(dir, home); err == nil {
+		checked = r
 		lock = r.Lock
 		for _, p := range r.Packs {
 			packs = append(packs, schema.Object{{Key: "id", Value: p.ID}, {Key: "version", Value: p.Version},
@@ -125,14 +156,24 @@ func gather(dir string) (map[string]any, *engine.Error) {
 	}
 	known := knownFields(co, cfg, lock, home)
 	problems = append(problems, known.problems...)
+	mode, checks := Mode, any(nil)
+	var installed map[string]bool
+	if o.Full {
+		mode = ModeFull
+		var c schema.Object
+		c, installed = fullChecks(checked, cfg, lock, o)
+		checks = c
+	}
 	return map[string]any{
+		"needs":          needsOf(lock, installed),
+		"checks":         checks,
 		"documents":      known.documents,
 		"labels":         known.labels,
 		"lanes":          known.lanes,
 		"status_writes":  known.statusWrites,
 		"status_command": known.statusCommand,
 		"active_task":    known.active,
-		"mode":           Mode,
+		"mode":           mode,
 		"formats":        format.StatusFormats(),
 		"workspace": schema.Object{
 			{Key: "id", Value: cfg.ID}, {Key: "name", Value: cfg.Name}, {Key: "root", Value: root},
@@ -339,8 +380,74 @@ func Text(doc schema.Object) string {
 		}
 		fmt.Fprintf(&b, "Status writes: %s (%s)\n", ascii(fmt.Sprint(sw)), ascii(line))
 	}
+	if nv, _ := doc.Get("needs"); nv != nil {
+		var needs []string
+		for _, n := range nv.([]any) {
+			no := n.(schema.Object)
+			switch no.String("kind") {
+			case "tool":
+				needs = append(needs, no.String("name")+" "+no.String("version"))
+			case "plugin":
+				needs = append(needs, "the plugin of "+no.String("id")+" "+no.String("version")+" (not installed here: bonsai update installs it)")
+			default:
+				needs = append(needs, no.String("kind")+" "+no.String("id")+" "+no.String("version"))
+			}
+		}
+		fmt.Fprintf(&b, "Needs from this machine: %s\n", ascii(strings.Join(needs, "; ")))
+	}
+	if cv, _ := doc.Get("checks"); cv != nil {
+		b.WriteString(checksText(cv.(schema.Object)))
+	}
 	b.WriteString("A copy meant as a new project needs its own id: bonsai init --new-id\n")
 	b.WriteString("Every field, documents, labels and lanes among them: bonsai status --json\n")
+	return b.String()
+}
+
+// checksText is --full's checks for a person.
+func checksText(c schema.Object) string {
+	var b strings.Builder
+	b.WriteString("Checks (--full):\n")
+	pv, _ := c.Get("packs")
+	for _, p := range pv.([]any) {
+		po := p.(schema.Object)
+		line := "none newer"
+		if why := po.String("why"); why != "" {
+			line = "newer releases unknown: " + why
+		} else if nv, _ := po.Get("newer"); len(nv.([]any)) > 0 {
+			var tags []string
+			for _, t := range nv.([]any) {
+				tags = append(tags, t.(string))
+			}
+			line = "newer: " + strings.Join(tags, ", ")
+		}
+		fmt.Fprintf(&b, "  pack %s %s: %s\n", ascii(po.String("id")), ascii(po.String("version")), ascii(line))
+	}
+	plv, _ := c.Get("plugins")
+	for _, p := range plv.([]any) {
+		po := p.(schema.Object)
+		state := "unknown: " + po.String("why")
+		switch v, _ := po.Get("installed"); v {
+		case true:
+			state = "installed for this checkout"
+		case false:
+			state = "not installed for this checkout (bonsai update installs it)"
+		}
+		fmt.Fprintf(&b, "  plugin %s: %s\n", ascii(po.String("plugin")), ascii(state))
+	}
+	cc, _ := c.Get("claude_code")
+	co := cc.(schema.Object)
+	line := co.String("state")
+	if v := co.String("version"); v != "" {
+		line = v + ", " + line
+	}
+	if why := co.String("why"); why != "" {
+		line += ": " + why
+	}
+	fmt.Fprintf(&b, "  Claude Code: %s (the floor %s, from %s)\n", ascii(line), ascii(co.String("floor")), ascii(co.String("from")))
+	mv, _ := c.Get("mcp")
+	if len(mv.([]any)) == 0 {
+		b.WriteString("  MCP servers: none named by the packs' needs\n")
+	}
 	return b.String()
 }
 

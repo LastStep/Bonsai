@@ -1,13 +1,14 @@
 package status
 
-// The partial status --json's test (plan part 2, "The partial status --json"): the document holds every field of
-// bonsai.status/1 in the schema's order and validates against part 0's schema; every built field has a value; the
-// fields not built yet are held in notBuiltYet with the exact null or [] they print. A listed field that gets a
-// value fails here, and so does an unlisted one that is null: step 5.1 empties the list, and each part that builds
-// a field takes it off.
+// status --json's test: the document holds every field of bonsai.status/1 in the schema's order and validates against
+// its schema; every field has a value where it applies, and null or [] only where contract §12 says it does not apply
+// (doesNotApply, below: a field null or [] that is not listed fails, and so does a listed one holding something else
+// than its listed value when it is empty). The walking skeleton's notBuiltYet list is gone: step 5.1.6 built its last
+// two fields, needs and checks.
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,17 +22,17 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// notBuiltYet: the fields the walking skeleton has not built at part 2, each with what it prints until it is.
-var notBuiltYet = map[string]string{
-	"needs":  "[]",   // packs and the Claude Code floor: part 3 and step 5.1.6
-	"checks": "null", // --full: step 5.1.6
-}
-
-// doesNotApply: built fields that print null or [] where they do not apply (contract §12), and a value where they do.
+// doesNotApply: the fields that print null or [] where they do not apply (contract §12), with what they print then,
+// and when. Every other field always holds a value on exit 0.
 var doesNotApply = map[string]string{
+	"packs":          "[]",   // no pack is locked yet (no update has run)
 	"labels":         "[]",   // no pack declares labels, and none is attached on this machine
 	"lanes":          "[]",   // no pack defines lanes
 	"status_command": "null", // status_writes is agents
+	"person_only":    "[]",   // bonsai.yaml names none
+	"problems":       "[]",   // check finds nothing
+	"checks":         "null", // without --full
+	"error":          "null", // nothing refused
 }
 
 const cfg = `format: bonsai.workspace/1   # comments are fine
@@ -116,7 +117,7 @@ func checkShape(t *testing.T, doc schema.Object, failed bool) {
 	}
 	for _, m := range back.(schema.Object) {
 		shown := schema.Show(m.Value)
-		switch want, listed := notBuiltYet[m.Key]; {
+		switch want, listed := doesNotApply[m.Key]; {
 		case m.Key == "error" && failed:
 			// The error object (step 5.1.4b): a known word, a sentence, and a next step with who takes it.
 			eo, ok := m.Value.(schema.Object)
@@ -136,18 +137,15 @@ func checkShape(t *testing.T, doc schema.Object, failed bool) {
 				t.Errorf("exit 3: %s is %s, want null", m.Key, shown)
 			}
 		case failed:
-		case doesNotApply[m.Key] != "" && m.Value == nil && shown != doesNotApply[m.Key]:
-			t.Errorf("%s is %s where it does not apply, want %s", m.Key, shown, doesNotApply[m.Key])
-		case doesNotApply[m.Key] != "":
-		case listed && shown != want:
-			t.Errorf("%s is listed as not built yet (%s) but holds %s: take it off notBuiltYet", m.Key, want, shown)
-		case !listed && m.Value == nil:
-			t.Errorf("%s is null but not listed as not built yet: build it or list it", m.Key)
+		case listed && (m.Value == nil || shown == "[]") && shown != want:
+			t.Errorf("%s is %s where it does not apply, want %s", m.Key, shown, want)
+		case !listed && (m.Value == nil || shown == "[]" || shown == "{}"):
+			t.Errorf("%s is %s, but contract section 12 has it always apply: fill it, or list it in doesNotApply", m.Key, shown)
 		}
 	}
-	for k := range notBuiltYet {
+	for k := range doesNotApply {
 		if _, ok := props.(schema.Object).Get(k); !ok {
-			t.Errorf("notBuiltYet names %s, which bonsai.status/1 does not have", k)
+			t.Errorf("doesNotApply names %s, which bonsai.status/1 does not have", k)
 		}
 	}
 }
@@ -436,5 +434,171 @@ func TestStatusFromTheLockAndTheMachine(t *testing.T) {
 	}
 	if txt := Text(doc); !strings.Contains(txt, "Active task: T-0901 (running)") || !strings.Contains(txt, "Status writes: command") {
 		t.Errorf("text:\n%s", txt)
+	}
+}
+
+// needs: the Claude Code floor first (kind tool, never a problem), each locked pack after it; a pack's
+// needs.claude_code above Bonsai's own raises the floor (spec §7), read from the lock's declares.
+func TestStatusNeeds(t *testing.T) {
+	tmp := t.TempDir()
+	if r, err := filepath.EvalSymlinks(tmp); err == nil {
+		tmp = r
+	}
+	home := testpack.Isolate(t, tmp)
+	src, shas := testpack.Fixture(t, tmp, "needy", map[string]string{
+		".claude-plugin/plugin.json": `{"name": "needy", "description": "A fixture pack."}` + "\n",
+		"bonsai/pack.yaml": "format: bonsai.pack/1\nid: needy\nversion: \"0.3.0\"\nneeds:\n  claude_code: \"2.1.400\"\n" +
+			"files: []\nhooks: []\ndeny: []\n",
+	})
+	root := testpack.Project(t, tmp, "needy-project")
+	p, err := engine.Build(engine.Request{Command: "init", Dir: root, Home: home, Version: "test",
+		Init: &engine.InitValues{Name: "needy", Source: src, Ref: shas[0]}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := engine.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	doc, code := Build(root, "dev")
+	if code != ExitOK {
+		t.Fatalf("exit %d: %s", code, schema.Show(doc))
+	}
+	checkShape(t, doc, false)
+	want := `[{"kind":"tool","id":null,"name":"claude-code","source":null,"version":">=2.1.400"},` +
+		`{"kind":"pack","id":"needy","name":null,"source":` + schema.Show(src) + `,"version":"0.3.0"}]`
+	if v, _ := doc.Get("needs"); schema.Show(v) != want {
+		t.Errorf("needs %s\nwant  %s", schema.Show(v), want)
+	}
+	if v, _ := doc.Get("problems"); schema.Show(v) != "[]" {
+		t.Errorf("a floor is never a problem: %s", schema.Show(v))
+	}
+}
+
+// fakeCLI answers claude plugin list.
+type fakeCLI struct {
+	list []engine.InstalledPlugin
+	err  error
+}
+
+func (f fakeCLI) List(string) ([]engine.InstalledPlugin, error) { return f.list, f.err }
+func (f fakeCLI) Install(string, string) (engine.InstallResult, error) {
+	return engine.InstallResult{}, errors.New("status never installs")
+}
+
+// --full adds checks: the pack's newer release tags (git ls-remote of the pack's own repository, no network), its
+// plugin as Claude Code reports it, Claude Code's version against the floor, and the MCP servers the packs' needs
+// name (none in formats set 4); a pack whose plugin is not installed here is a needs entry of kind plugin. Asking
+// nothing, or failing to ask, gives unknown, never a problem.
+func TestStatusFull(t *testing.T) {
+	tmp := t.TempDir()
+	if r, err := filepath.EvalSymlinks(tmp); err == nil {
+		tmp = r
+	}
+	home := testpack.Isolate(t, tmp)
+	pack := testpack.Build(t, tmp)
+	testpack.Tag(t, pack.Source, "v0.1.0", pack.A)
+	testpack.Tag(t, pack.Source, "v0.2.0", pack.B)
+	testpack.Tag(t, pack.Source, "v0.10.0", pack.C)
+	testpack.Tag(t, pack.Source, "other-v9.0.0", pack.D)
+	root := testpack.Project(t, tmp, "full")
+	p, err := engine.Build(engine.Request{Command: "init", Dir: root, Home: home, Version: "test", AllowExec: true,
+		Init: &engine.InitValues{Name: "full", Source: pack.Source, Ref: "v0.1.0"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := engine.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	doc, code := BuildWith(root, "dev", Options{Full: true, Plugins: fakeCLI{}, Claude: func() (string, error) { return "2.1.300 (Claude Code)", nil }})
+	if code != ExitOK {
+		t.Fatalf("exit %d: %s", code, schema.Show(doc))
+	}
+	checkShape(t, doc, false)
+	market := engine.MarketplaceName("full", []string{pack.A})
+	want := `{"packs":[{"id":"demo-pack","version":"0.1.0","ref":"v0.1.0","newer":["v0.2.0","v0.10.0"],"why":null}],` +
+		`"plugins":[{"id":"demo-pack","plugin":"demo-pack@` + market + `","installed":false,"why":null}],` +
+		`"claude_code":{"version":"2.1.300","floor":"2.1.294","from":"bonsai","state":"ok","why":null},"mcp":[]}`
+	if v, _ := doc.Get("checks"); schema.Show(v) != want {
+		t.Errorf("checks %s\nwant   %s", schema.Show(v), want)
+	}
+	if v, _ := doc.Get("mode"); v != ModeFull {
+		t.Errorf("mode %v", v)
+	}
+	if v, _ := doc.Get("needs"); !strings.Contains(schema.Show(v), `{"kind":"plugin","id":"demo-pack","name":null,`) {
+		t.Errorf("a plugin not installed here is not a needs entry of kind plugin: %s", schema.Show(v))
+	}
+	// Installed at the lock's commit: kind pack. Claude Code older than the floor: old, never a problem.
+	installed := fakeCLI{list: []engine.InstalledPlugin{{ID: "demo-pack@" + market, Version: pack.A[:12], Scope: "project", Enabled: true, ProjectPath: root}}}
+	doc, _ = BuildWith(root, "dev", Options{Full: true, Plugins: installed, Claude: func() (string, error) { return "2.1.100", nil }})
+	checkShape(t, doc, false)
+	if v, _ := doc.Get("needs"); strings.Contains(schema.Show(v), `"kind":"plugin"`) {
+		t.Errorf("installed, still kind plugin: %s", schema.Show(v))
+	}
+	if v, _ := doc.Get("checks"); !strings.Contains(schema.Show(v), `"state":"old"`) || !strings.Contains(schema.Show(v), `"installed":true`) {
+		t.Errorf("checks %s", schema.Show(v))
+	}
+	if v, _ := doc.Get("problems"); schema.Show(v) != "[]" {
+		t.Errorf("an old Claude Code is a problem: %s", schema.Show(v))
+	}
+	// Nothing to ask, and a source whose tags cannot be read: unknown, with why.
+	doc, _ = BuildWith(root, "dev", Options{Full: true, Tags: func(string) ([]string, error) { return nil, errors.New("git ls-remote failed: no network") }})
+	checkShape(t, doc, false)
+	v, _ := doc.Get("checks")
+	for _, w := range []string{`"newer":[],"why":"git ls-remote failed: no network"`, `"installed":null,"why":"Claude Code could not be asked: claude is not on the PATH"`,
+		`"version":null,"floor":"2.1.294","from":"bonsai","state":"unknown","why":"Claude Code is not on the PATH"`} {
+		if !strings.Contains(schema.Show(v), w) {
+			t.Errorf("checks %s lacks %s", schema.Show(v), w)
+		}
+	}
+	if v, _ := doc.Get("needs"); strings.Contains(schema.Show(v), `"kind":"plugin"`) {
+		t.Errorf("not asked, yet kind plugin: %s", schema.Show(v))
+	}
+	// Without --full: no checks, offline, and Claude Code never asked.
+	asked := false
+	doc, _ = BuildWith(root, "dev", Options{Claude: func() (string, error) { asked = true; return "", nil }})
+	if v, _ := doc.Get("checks"); v != nil || asked {
+		t.Errorf("checks without --full: %s (Claude Code asked: %v)", schema.Show(v), asked)
+	}
+	if v, _ := doc.Get("mode"); v != Mode {
+		t.Errorf("mode %v", v)
+	}
+}
+
+// status --active: the active task alone, the same answer as status --json's active_task; Bonsai not reading the
+// workspace is an error with its word.
+func TestStatusActive(t *testing.T) {
+	root, _ := project(t, strings.Replace(cfg, "person_only:", "documents:\n  task: work/tasks\n  run: work/runs\n  answers: work/answers.md\n"+
+		"  memory: work/memory\n  protocols: work/protocols\nperson_only:", 1))
+	t.Setenv("BONSAI_TASK", "")
+	t.Setenv("CLAUDE_PROJECT_DIR", "")
+	write := func(rel, content string) {
+		p := filepath.Join(root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("work/tasks/T-0901-x.md", "---\nformat: bonsai.task/1\nid: T-0901\ntitle: x\nstatus: running\n---\n")
+	a, e := Active(filepath.Join(root, "sub"))
+	if e != nil || schema.Show(a.Object()) != `{"id":"T-0901","how":"running","why":null}` {
+		t.Fatalf("active %s %v", schema.Show(a.Object()), e)
+	}
+	doc, _ := Build(root, "dev")
+	if at, _ := doc.Get("active_task"); !schema.Equal(at, a.Object()) {
+		t.Errorf("status --json's active_task %s, --active %s", schema.Show(at), schema.Show(a.Object()))
+	}
+	if msgs := schema.Validate(ActiveSchema(), a.Object()); len(msgs) > 0 {
+		t.Errorf("does not fit active_task's schema: %v", msgs)
+	}
+	write("work/tasks/T-0902-y.md", "---\nformat: bonsai.task/1\nid: T-0902\ntitle: another\nstatus: running\n---\n")
+	if a, _ := Active(root); a.ID != "" || !strings.Contains(schema.Show(a.Object()), "two or more tasks read running") {
+		t.Errorf("two running: %s", schema.Show(a.Object()))
+	}
+	outside := t.TempDir()
+	t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(outside))
+	if _, e := Active(outside); e == nil || e.Code != "not-a-checkout" {
+		t.Errorf("outside git: %v", e)
 	}
 }
