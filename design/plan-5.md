@@ -3582,7 +3582,7 @@ verification. P0's reads run under the task of the piece they read.
 | # | What is built | What proves it | Hours | Reads |
 |---|---|---|---|---|
 | 5.5.0 | **The engine's part for packs** (Go): a pack file's path may start with `<protocols>/` (the pack reader accepts it; today's refuses `<`), written into the project's `documents.protocols` folder and imported by the block; `init` writes `.bonsai/STATE.md` when there is none; the templates of the two files the engine writes (`bonsai.yaml`, STATE) keep their one home in the engine, and base's `workspace` and `state` skills are generated from them; the generated-files page moves into base's `generated-files` skill; formats set N (descriptions) | Go tests (a project whose protocols folder is not the default; a moved folder; each refusal); `init`'s STATE in a `t.TempDir()` project, never overwritten; `go generate` changes nothing and a changed template in a temporary copy fails the test; the formats test; P0's privacy read of STATE's template before it lands; check 10 and the ladder; CI | 2-3 | Spec §4 (`init`), §5 ("What loads always", "Every template and pack file documents itself"), §6 (`bonsai.yaml`, "Generated files", the block, "How `update` decides"); contract §2.2, §2.8, §7.2, §14; `formats/README.md` ("How the set changes"); this plan's 5.1.5, 5.1.9 and 5.2.6a notes; 5.1.5's run report, item 5 |
-| 5.5.1 | **The pack template** `packs/template/` (one role, one skill, one documented template, `pack.yaml`, `labels.yaml`, README, `.gitattributes`), its checks in one script (`ci/check.sh`), its `pack.yml` (validate, `check --pack`, a scratch link, release on a `v*` tag), and Bonsai's CI running the script on every pack folder | `check --pack` and `claude plugin validate --json` on the template (only the missing `version`); the script green on both sides locally; a copy of the template in a temporary repository whose version is wrong fails the release rule; Bonsai's `packs` job and `windows` job green on CI; validate's need of a login measured; check 10 and the ladder | 3-5 | Spec §5 (the folder layout, "The pack template", pinning, "Adopting a release", mods), §12 step 8 (supply chain); gate report §2.13 (the eval's flags); the test pack's files; this plan's 5.1.1 rules 3-4 and 5.1.9 note |
+| 5.5.1 | **The pack template** `packs/template/` (one role, one skill, one documented template, `pack.yaml`, `labels.yaml`, README, `.gitattributes`), its checks in one script (`ci/check.sh`), its `pack.yml` (validate, `check --pack`, a scratch link, release on a `v*` tag), and Bonsai's CI running the script on every pack folder | `check --pack` and `claude plugin validate --json` on the template (only the missing `version`); the script green on both sides locally; the release subcommand run locally with made-up tag names (one unlike the version fails, the matching one passes; no tag, repository or release made); Bonsai's `packs` job and `windows` job green on CI; validate's need of a login measured; check 10 and the ladder | 3-5 | Spec §5 (the folder layout, "The pack template", pinning, "Adopting a release", mods), §12 step 8 (supply chain); gate report §2.13 (the eval's flags); the test pack's files; this plan's 5.1.1 rules 3-4 and 5.1.9 note |
 | 5.5.2 | **`base`** in `packs/base/`: the plugin manifest; `pack.yaml` with the walls, each with its `why`, and base's protected paths; `labels.yaml`, contract §5.6's four; `block.md`; README; the template skills `task`, `run`, `memory` and `ci`; a Go test holding base free of code and its labels equal to the contract's | `check --pack` and validate; Bonsai's `packs` job; the Go test; a scratch project linked to base with `--yes` alone (nothing under "Runs code"), its block and deny rules read back; P0's privacy read of the task and run-report templates (after a Haiku grep) before it lands; the orchestrator's read; check 10 and the ladder | 3-4 | Spec §5 ("The two packs", template docs), §6 (the preview's sentences), §7 (the walls, deny rules), §10 (memory); contract §4, §5.6, §7.1, §7.2, §7.4; this plan's 5.3.5 note 2; the studio's three templates at `7017d63` (below), read only |
 | 5.5.3 | **The "operating Bonsai" skill** in `base` (`skills/operating-bonsai/`), and a Go test that keeps it in step with the command words, flags and error words | The test (a skill line naming an unknown word or flag fails; a word the registry has and the skill never names fails); its size; its real sessions in 5.5.5 | 2-3 | Spec §3 (unattended, `error`), §4, §6, §9; contract §10.1-§10.2 (status moves in both modes); this section's "The pin rule"; this plan's 5.1.6 and 5.1.10 notes, 5.2.5 note 1, 5.3.6 note 8, 5.4.2 note 12, 5.4.3 note 2 and 5.4.4 note 4; Rohan's 9 Oct direction (`STATE.md`) |
 | 5.5.4 | **`workflow`**, its own repository, made from the template: five roles with their `skills:` preloads; `session-start` as the always-on file, five protocol skills; `lanes.yaml`; `labels.yaml`; eight document kinds with documented templates; the walls for the studio's secret files; block, README, LICENSE, its CI pinned to a Bonsai commit | `check --pack` and validate locally; a scratch project linked to it alone with `--yes` alone, and with `base`, its block under 40 lines; the privacy verifier P on every commit from the root before its first push; every later commit grepped and read before Rohan is told it can go public; its CI green on both sides after the push; Rohan's read | 6-9 | Spec §5 ("Where roles live", "What loads always", "The two packs"), §6 (the tables' closing step), §7 (the studio's secret files); contract §4.3, §5.4, §6, §7.1-§7.3, §9, §10.2, §11, §13; the studio's roles, protocols and templates at `7017d63` (below), read only |
@@ -3773,21 +3773,27 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    files and `<protocols>/`; the CI and the release; evals run on the machine, with the gate's working command
    (`claude plugin eval <path> --no-publish --trust-plugin ...`, a path target, `runsPerCase` read with care).
 3. **`ci/check.sh`, the one home of a pack's checks**, so Bonsai's job runs exactly what each pack's CI runs (spec §5:
-   "so the template never drifts from the engine"). Written for `sh` (it runs on Ubuntu and in Git Bash on Windows; it
-   is CI, not a hook line), its header documenting every argument: the `bonsai` to use, the pack folder, the source and
-   commit to link. Steps: `bonsai check --pack <folder> --json` with no finding; a scratch project in a temporary folder
+   "so the template never drifts from the engine"). Written for `sh` and always run as `sh ci/check.sh ...` (it runs
+   on Ubuntu and in Git Bash on Windows; it is CI, not a hook line), so no step and no test needs its executable mode,
+   which a Windows checkout does not keep. Its header documents every subcommand and argument: the `bonsai` to use, the
+   pack folder, the source and commit to link, and for `release` the tag name. Steps: `bonsai check --pack <folder> --json` with no finding; a scratch project in a temporary folder
    (`git init`; `bonsai init --name ci --source <source> --path <folder> --ref <commit> --yes --json` with `claude` off
    the PATH, so the plugin step reports `skipped`); `bonsai check --json` there with no finding; then, when asked,
    `claude plugin validate --json <folder>`, failing on every warning and error but the missing `version`, matched on
-   the field names the version in use prints (read and recorded by the builder).
+   the field names the version in use prints (read and recorded by the builder). **The release check is its own
+   subcommand**, `sh ci/check.sh release <tag> <folder>`: it takes the tag name as an argument, reads no git tag, and
+   fails unless the name is `v` and `pack.yaml`'s `version`. So it is tried anywhere with a made-up name, and no agent
+   makes a tag, a GitHub repository or a release to test it.
 4. **`pack.yml`**, on every push and pull request, and on `v*` tags: a `check` job on `ubuntu-latest` and
    `windows-latest` (Bonsai cloned at a pinned 40-character commit, `BONSAI_COMMIT`, built with `CGO_ENABLED=0 go build`
    and Go from that commit's `go.mod`; then the script); a `validate` job on Ubuntu (Node and the pinned Claude Code,
-   `CLAUDE_CODE_VERSION`; then the script's validate step); a `release` job: on a `v*` tag, after both, it checks that
-   the tag is `v` and `pack.yaml`'s `version` and creates the GitHub release with its notes (`gh release create`,
-   `contents: write` in that job only); on every other push it runs the same version check and stops before creating
-   anything, so the release path runs on every commit. Every action pinned by its full commit with a version comment;
-   `permissions: contents: read` at the top; no secret anywhere, so a fork's pull request runs the same checks. Before
+   `CLAUDE_CODE_VERSION`; then the script's validate step); a `release` job: on a `v*` tag, after both, it runs `sh
+   ci/check.sh release "$GITHUB_REF_NAME" .` and creates the GitHub release with its notes (`gh release create`,
+   `contents: write` in that job only); on every other push it runs the same subcommand with the name the version needs
+   (`v` and `pack.yaml`'s `version`) and stops before creating anything, so the release path runs on every commit.
+   Every action pinned by its full commit with a version comment; `permissions: contents: read` at the top; no secret
+   anywhere, so a fork's pull request runs the same checks; a `#` comment on every key, with a short header (spec §5:
+   every pack file documents itself, in YAML a comment for every key). Before
    Bonsai's first release the pinned `bonsai` is built from a commit; from 1.0 the spec's archive with its SHA-256 (§5,
    §12 step 8) replaces the clone, a 5.7 change to the template.
 5. **Validate's login, measured first:** locally with an empty Claude configuration folder (a scratch
@@ -3797,14 +3803,15 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    this section is his word for that fallback: a long-lived Claude login stored on GitHub, for a check that reads
    files, is not worth its exposure.
 6. **Bonsai's CI** (the last commit, while 5.5.1 is the only task `running`): a `packs` job on Ubuntu builds `bonsai`
-   from the commit, installs the pinned Claude Code and runs `packs/template/ci/check.sh` on each `packs/*/` folder
+   from the commit, installs the pinned Claude Code and runs `sh packs/template/ci/check.sh` on each `packs/*/` folder
    holding `bonsai/pack.yaml`, the commit itself as the ref and the checkout as the source, so `base` is checked from
    the commit it lands in; the `windows` job gains one step running the script's `check --pack` and scratch link on each
    pack folder (no validate there). `CLAUDE.md`'s rule that a template's field change updates its docs needs nothing
    new: the job fails otherwise.
-7. **Proof** beyond the table: a copy of the template in a temporary repository with a wrong `version` fails the release
-   check, and one with a right `version` passes it; a copy with a `version` in `plugin.json`, an uncommented key and a
-   deny rule without `why` each fails `check --pack` through the script.
+7. **Proof** beyond the table: `sh ci/check.sh release` run locally on the template with a made-up tag name unlike its
+   `version` fails, and with the matching name passes (no tag, GitHub repository or release is made by any agent, here
+   or later in 5.5); a copy of the template in a temporary folder with a `version` in `plugin.json`, an uncommented key
+   or a deny rule without `why` each fails `check --pack` through the script.
 
 **5.5.2, `base`.**
 1. **Files.** `.claude-plugin/plugin.json` (`name: base`, a description, the author and repository; no `version`);
@@ -4172,7 +4179,8 @@ spec §7, 5.3.5 note 2 and this section; re-runs on both sides, itself, one rule
 real secret); reads 5.5.6's table; reads `ci/check.sh`, `pack.yml` (pins, permissions, no secret, the release rule, a
 fork's pull request) and Bonsai's `packs` job, and re-runs the script on the template and on `workflow` on both sides;
 breaks it: a copy with a hook line added must need `--allow-exec` at a scratch link, a copy with a `version` in
-`plugin.json` must fail, a tag unlike the version must fail the release check. It also breaks 5.5.0's `<protocols>/`
+`plugin.json` must fail, the release subcommand given a made-up tag name unlike the version must fail (run locally;
+no tag is made). It also breaks 5.5.0's `<protocols>/`
 resolution, the one place 5.5 changes where pack files land (5.1.1's verifier failed that once): a scratch project
 whose `documents.protocols` is `.claude`, `.git`, `.bonsai`, `..` or a short name (`CLAUDE~1`, `GIT~1`), at a first
 link and as a folder change from a good one at `update`, each refused with nothing written; a `<protocols>/` path
@@ -4243,8 +4251,8 @@ both sides where a check names them, and passes or fails 5.5:
    and `update` leaves a missing one missing; `go generate` changes nothing under `packs/` and `docs/reference/`, and a
    changed template in a temporary copy fails the test; the set's manifest matches; the schema compare passes;
    `docs/reference/generated-files.md` is gone and nothing names it; `init`'s comment on `generated:` names the skill.
-2. **The template:** `ci/check.sh` green on it on both sides; a copy with a wrong version fails the release check and
-   one with the right version passes; a copy with a `version` in `plugin.json`, an uncommented key, or a deny rule with
+2. **The template:** `sh ci/check.sh` green on it on both sides; the release subcommand, run locally with made-up tag
+   names, fails on one unlike the version and passes on the matching one (no tag, repository or release made); a copy with a `version` in `plugin.json`, an uncommented key, or a deny rule with
    no `why` fails; `pack.yml`'s actions pinned by commit, `contents: read` but in the release job, no secret; Bonsai's
    `packs` job and `windows` step green on the final commit; validate's login need recorded, and the fallback in place
    if it needs one.
