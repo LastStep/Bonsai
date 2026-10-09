@@ -3,8 +3,8 @@ package engine
 // What a pack declares (spec §5, §6; contract §5.2, §6, §7.3), read from the pack at a commit and copied into the
 // lock's declares (format.Declares gives its layout), so bonsai check, status and the guard read them with no pack
 // fetched: its lanes (bonsai/lanes.yaml), document kinds (pack.yaml's documents), label definitions
-// (bonsai/labels.yaml), protected paths (pack.yaml's protected), and the hook lines and deny rules check needs to tell
-// Bonsai's lines in .claude/settings.json from the project's own.
+// (bonsai/labels.yaml), protected paths (pack.yaml's protected), the hook lines and deny rules check needs to tell
+// Bonsai's lines in .claude/settings.json from the project's own, and its needs (the Claude Code floor, step 5.1.6).
 //
 // Read here with the rules a schema cannot say, each refused as bad-pack with the pack maker's step:
 //   - labels: the namespace is the pack's own id, or bonsai (contract §5.1: bonsai.* is Bonsai's and its own packs';
@@ -37,6 +37,10 @@ const (
 func readDeclares(manifest *workspace.Pack, read func(string) ([]byte, error)) (*format.Declares, error) {
 	d := &format.Declares{Documents: manifest.Full.Documents, Protected: manifest.Full.Protected,
 		Hooks: manifest.Full.Hooks, Deny: manifest.Full.Deny}
+	if format.NeedsAny(&manifest.Full.Needs) {
+		needs := manifest.Full.Needs
+		d.Needs = &needs
+	}
 	id := manifest.ID
 	if raw, err := read(LanesFile); err == nil {
 		lanes, err := format.ReadLanes(raw)
@@ -141,5 +145,5 @@ func declaredDeny(d *format.Declares) []workspace.DenyEntry {
 	return out
 }
 
-// lockNext is the next step for a lock Bonsai does not read: restore it from git.
-const lockNext = "git checkout -- " + workspace.LockFile + " (the lock is Bonsai's to write; then run bonsai check again)"
+// lockNext is the next step for a lock Bonsai does not read: restore it from git (the lock is Bonsai's to write).
+const lockNext = "run: git checkout -- " + workspace.LockFile

@@ -17,11 +17,14 @@ package format
 //	protected  its pack.yaml protected globs: ["docs/plan.md"]
 //	hooks      its pack.yaml hook lines, each as bonsai.pack/1 writes it (event, matcher, command, runs, why)
 //	deny       its pack.yaml deny rules (rule, why)
+//	needs      its pack.yaml needs, as bonsai.pack/1 writes it, when it names any: {"claude_code": "2.1.300"}
 //
 // The first four are the spec's four kinds. hooks and deny are what bonsai check needs besides them to tell Bonsai's
-// lines in .claude/settings.json from the project's own with no pack at hand (spec §5: "the engine copies what checks
-// need into the lock"; format review 6.3: "a new kind of declaration is an addition"). A key this Bonsai does not
-// know (a newer Bonsai's kind) is kept, after the known ones.
+// lines in .claude/settings.json from the project's own with no pack at hand, and needs what it needs to know the
+// Claude Code floor (a pack's needs.claude_code raises Bonsai's own, spec §7) and status --json its needs (spec §5:
+// "the engine copies what checks need into the lock"; format review 6.3: "a new kind of declaration is an
+// addition"). A lock written before step 5.1.6 has no needs: such a pack reads as needing nothing until the next
+// update writes it. A key this Bonsai does not know (a newer Bonsai's kind) is kept, after the known ones.
 
 import (
 	"fmt"
@@ -30,7 +33,7 @@ import (
 )
 
 // DeclaresKeys are the keys of a pack's declares, in the order Bonsai writes them: their one home.
-var DeclaresKeys = []string{"lanes", "documents", "labels", "protected", "hooks", "deny"}
+var DeclaresKeys = []string{"lanes", "documents", "labels", "protected", "hooks", "deny", "needs"}
 
 // Declares is what one pack declared at its locked commit.
 type Declares struct {
@@ -40,8 +43,12 @@ type Declares struct {
 	Protected []string       // pack.yaml's protected
 	Hooks     []PackHook     // pack.yaml's hooks
 	Deny      []PackDeny     // pack.yaml's deny
+	Needs     *PackNeeds     // pack.yaml's needs when it names any (Declares.NeedsAny); nil for none
 	Extra     schema.Object  // keys this Bonsai does not know, kept as read
 }
+
+// NeedsAny reports whether a pack's needs names anything: a Claude Code floor, or a key this Bonsai does not know.
+func NeedsAny(n *PackNeeds) bool { return n != nil && (n.ClaudeCode != nil || len(n.Extra) > 0) }
 
 // Object gives the declares as the lock writes them: each kind the pack declares under its key, in DeclaresKeys'
 // order, every field of each entry in its format's order; {} when the pack declares nothing.
@@ -58,7 +65,11 @@ func (d *Declares) Object() (schema.Object, error) {
 		v, _ := doc.Get("lanes")
 		out = append(out, schema.Member{Key: "lanes", Value: v})
 	}
-	pack, err := MustLookup("pack").Document(&Pack{Documents: d.Documents, Protected: d.Protected, Hooks: d.Hooks, Deny: d.Deny})
+	var needs PackNeeds
+	if NeedsAny(d.Needs) {
+		needs = *d.Needs
+	}
+	pack, err := MustLookup("pack").Document(&Pack{Documents: d.Documents, Protected: d.Protected, Hooks: d.Hooks, Deny: d.Deny, Needs: needs})
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +94,10 @@ func (d *Declares) Object() (schema.Object, error) {
 		if v, _ := pack.Get(key); len(v.([]any)) > 0 {
 			out = append(out, schema.Member{Key: key, Value: v})
 		}
+	}
+	if NeedsAny(d.Needs) {
+		v, _ := pack.Get("needs")
+		out = append(out, schema.Member{Key: "needs", Value: v})
 	}
 	for _, m := range d.Extra {
 		if out.Index(m.Key) >= 0 {
@@ -127,7 +142,7 @@ func ReadDeclares(o schema.Object) (*Declares, error) {
 				return nil, declaresError("labels", err)
 			}
 			d.Labels = l
-		case "documents", "protected", "hooks", "deny":
+		case "documents", "protected", "hooks", "deny", "needs":
 			packDoc = append(packDoc, m)
 		default:
 			d.Extra = append(d.Extra, m)
@@ -144,6 +159,10 @@ func ReadDeclares(o schema.Object) (*Declares, error) {
 			return nil, declaresError("", err)
 		}
 		d.Documents, d.Protected, d.Hooks, d.Deny = p.Documents, p.Protected, p.Hooks, p.Deny
+		if NeedsAny(&p.Needs) {
+			needs := p.Needs
+			d.Needs = &needs
+		}
 	}
 	return d, nil
 }

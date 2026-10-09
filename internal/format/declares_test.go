@@ -13,19 +13,20 @@ func TestDeclaresReadAndWrite(t *testing.T) {
 	if o, err := (&Declares{}).Object(); err != nil || len(o) != 0 {
 		t.Errorf("nothing declared: %s %v", schema.Show(o), err)
 	}
-	matcher := "startup"
+	matcher, floor := "startup", "2.1.300"
 	d := &Declares{
 		Deny:      []PackDeny{{Rule: "Read(x)", Why: "No."}},
 		Hooks:     []PackHook{{Event: "SessionStart", Matcher: &matcher, Command: "echo hi", Runs: []string{}, Why: "Says hi."}},
 		Protected: []string{"docs/**"},
 		Lanes:     []Lane{{Name: "light", Close: "agent", Description: "Small."}},
+		Needs:     &PackNeeds{ClaudeCode: &floor},
 		Extra:     schema.Object{{Key: "later", Value: true}},
 	}
 	o, err := d.Object()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(o.Keys(), " "); got != "lanes protected hooks deny later" {
+	if got := strings.Join(o.Keys(), " "); got != "lanes protected hooks deny needs later" {
 		t.Errorf("keys %q", got)
 	}
 	back, err := ReadDeclares(o)
@@ -33,8 +34,12 @@ func TestDeclaresReadAndWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	again, _ := back.Object()
-	if !schema.Equal(again, o) {
+	if !schema.Equal(again, o) || back.Needs == nil || *back.Needs.ClaudeCode != floor {
 		t.Errorf("read back as %s", schema.Show(again))
+	}
+	// A pack whose needs names nothing declares none.
+	if o, _ := (&Declares{Needs: &PackNeeds{}}).Object(); len(o) != 0 {
+		t.Errorf("empty needs: %s", schema.Show(o))
 	}
 	for key, bad := range map[string]any{"lanes": "x", "labels": schema.Object{{Key: "version", Value: "one"}},
 		"hooks": []any{schema.Object{{Key: "event", Value: true}}}} {
