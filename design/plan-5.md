@@ -3772,6 +3772,16 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    monitors, a mod, a file a hook runs) and that each machine then asks for `--allow-exec` (Rohan, 9 Oct); always-on
    files and `<protocols>/`; the CI and the release; evals run on the machine, with the gate's working command
    (`claude plugin eval <path> --no-publish --trust-plugin ...`, a path target, `runsPerCase` read with care).
+   **How each kind of file documents itself** (spec §5), the same in `base` and `workflow`: a YAML file (`pack.yaml`,
+   `labels.yaml`, `lanes.yaml`, `pack.yml`) a `#` comment on every key, with a short header; a template skill its
+   fields table; a role file, and a skill that is no template (a protocol, the operating skill), an HTML comment just
+   after its frontmatter, as the studio's `.claude/agents` copies carry one: a line or two (its purpose, when it is
+   used, where its fields are documented), since the body is read into the session; `ci/check.sh` its header. The
+   README documents the frontmatter fields of roles (`name`, `description`, `model`, `skills`) and of skills (`name`,
+   `description`) once, each with its meaning, values and an example, and gives each role and skill file a row: each
+   file's own docs, held equal to the folders by `ci/check.sh` (every file in `agents/` and `skills/` has its row, and
+   every row names a file there). A list with a home elsewhere (the walls, lanes, labels, document kinds, the roles'
+   preloads) is never copied into a README: it says where the list lives.
 3. **`ci/check.sh`, the one home of a pack's checks**, so Bonsai's job runs exactly what each pack's CI runs (spec §5:
    "so the template never drifts from the engine"). Written for `sh` and always run as `sh ci/check.sh ...` (it runs
    on Ubuntu and in Git Bash on Windows; it is CI, not a hook line), so no step and no test needs its executable mode,
@@ -3821,8 +3831,10 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    lock"); `bonsai/labels.yaml`, contract §5.6's four with namespace `bonsai`, each key commented; no `lanes.yaml` and
    no `agents/` ("No roles, no lanes"); `bonsai/block.md`, at most four lines, naming base's skills (the operating skill
    from 5.5.3, the templates, the generated-files page), its docs in an HTML comment the engine leaves out; `README.md`
-   (what base is, `plugin.json`'s fields, every skill, every wall and why, how a project takes it, that it carries no
-   code). Its files are LF through the root's `.gitattributes` line (5.5.0).
+   (what base is, `plugin.json`'s fields, a row per skill, where the walls live and what they are for, pointing at
+   `bonsai/pack.yaml`'s `deny`, where each rule's `why` sits, never a copy of the list; how a project takes it; that it
+   carries no code). Every file documents itself as note 5.5.1, 2 says. Its files are LF through the root's
+   `.gitattributes` line (5.5.0).
 2. **The walls** (spec §7), each a deny rule with its `why` (the preview's sentence), in `pack.yaml`, their one home.
    **What is walled, one rule for all:** Read, the files and folders that commonly hold keys, tokens or logins; Edit,
    the person's own Claude Code files and the files whose change starts code. An exact file where one is enough, a
@@ -4075,15 +4087,17 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    skill, the document templates by name. With `base`'s block, the label lines and the imports, the whole block stays
    under 40 lines (measured on a project linked to both).
 8. **The README**: what the pack is and where it came from (Rohan's studio's roles, protocols and templates, 9 Oct
-   2026, rewritten for Bonsai's formats); how a project takes it (its `bonsai.yaml` lines); the always-on file and the
-   skills, with the preload table; every role, lane, label and kind in a line, pointing at its file; `plugin.json`'s
-   fields; the version is the commit; its checks and release; that it carries no code. `LICENSE`: MIT, the same holder
-   as Bonsai's.
+   2026, rewritten for Bonsai's formats); how a project takes it (its `bonsai.yaml` lines); the always-on file; a row
+   per role and skill file (note 5.5.1, 2); where each list lives, pointing at its file and never copying it: each
+   role's preloads on its own `skills:` line, the lanes in `bonsai/lanes.yaml`, the labels in `bonsai/labels.yaml`, the
+   document kinds in `pack.yaml`'s `documents`, the walls in its `deny`; `plugin.json`'s fields; the version is the
+   commit; its checks and release; that it carries no code. Every file documents itself as note 5.5.1, 2 says.
+   `LICENSE`: MIT, the same holder as Bonsai's.
 9. **CI pinned** to a Bonsai commit that holds 5.5.0 and 5.5.1, and to the Claude Code version 5.5.1 measured.
 10. **For Rohan:** the builder's report ends with a list, file by file, of what changed from the studio's version and
     why, in plain words, with the kept lines that describe his week (the rituals, the brief's hour) marked for his
     read: the orchestrator sends it with the repository's link.
-11. **Proof** beyond the table: `ci/check.sh` on both sides locally (on Windows, a Windows-git clone under
+11. **Proof** beyond the table: `sh ci/check.sh` on both sides locally (on Windows, a Windows-git clone under
     `%USERPROFILE%\bonsai-checks\` and Bonsai built with Windows Go), validate locally; a scratch project linked to
     `workflow` alone with `--yes` alone writes `work/protocols/session-start.md` and the block's import of it; one
     whose `documents.protocols` is `docs/agents` gets it there.
@@ -4235,7 +4249,7 @@ landing rule's green climb of its task, run by `/usr/local/bin/bonsai`) and nati
 half) before the push, the counts in the run report; CI green on the pushed commit, the `packs` job among them from
 5.5.1; the Windows rules of `CLAUDE.md` read in the diff (forward slashes, LF pack files, byte-stable generated skills,
 no `bash` by name in a hook line, no test needing a symbolic link or a file mode); no Windows-only skip without a
-named reason. `workflow`: `ci/check.sh` and validate on both sides locally before P, its CI on both sides after the
+named reason. `workflow`: `sh ci/check.sh` and validate on both sides locally before P, its CI on both sides after the
 push. Pieces that run Claude Code (5.5.1's validate, 5.5.4's `skills:` try, 5.5.5, 5.5.6, 5.5.7) record its version and
 the user settings hashes before and after. Scripted runs live in `~/bonsai-checks/scripts/`, never committed. P, V1
 and the end verifier re-run what they judge themselves.
@@ -4268,7 +4282,8 @@ both sides where a check names them, and passes or fails 5.5:
    and validate run by the verifier; five roles with `skills:` in the measured form; `session-start` the one always-on
    file, at `<protocols>/`; five protocol skills; `lanes.yaml` equal to contract §6's; the six labels and eight kinds
    as this section gives them; every template skill's fields table matching its frontmatter; every deny rule with its
-   `why`; README and LICENSE; no Unity protocol and no `game.yaml` template; a scratch link to it alone and with `base`,
+   `why`; every file documenting itself as note 5.5.1, 2 says, and the README pointing at each list, never copying it;
+   README and LICENSE; no Unity protocol and no `game.yaml` template; a scratch link to it alone and with `base`,
    each with `--yes` alone and a block under 40 lines.
 6. **Real sessions:** R1 to R6 on WSL and R1, R3, R5 and S1 on Windows in the run report, each with its transcript; the
    verifier repeats R1 and R3 on WSL itself; Rohan's words on the Windows trust question recorded.
