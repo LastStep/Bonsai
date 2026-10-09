@@ -270,6 +270,101 @@ func MCPPack(t *testing.T, tmp string) (string, []string) {
 		map[string]string{".mcp.json": "", "agents/helper.md": "Help 3.\n"})
 }
 
+// BasePackYAML is DeclaringPack's bonsai/pack.yaml: an always-on protocol file in work/protocols/, a block, a deny
+// rule, the document kind plan and a protected glob, and no hook line.
+const BasePackYAML = `format: bonsai.pack/1
+id: base
+version: "1.0.0"
+block: block.md
+files:
+  - path: work/protocols/session-start.md
+    from: session-start.md
+    kind: pack
+hooks: []
+deny:
+  - rule: "Read(secrets/**)"
+    why: "Agents cannot read secrets/ (the fixture's wall)."
+documents:
+  - kind: plan
+    path: work/plans
+    file: null
+    id: "^P-T-[0-9]{4,6}$"
+    statuses: ["draft", "approved", "done"]
+    person:
+      - ["draft", "approved"]
+    agent:
+      - ["approved", "done"]
+    stamp:
+      approved: approved
+    task_field: task
+  - kind: bugs
+    path: null
+    file: work/bugs.md
+    id: null
+    statuses: []
+    person: []
+    agent: []
+    stamp: {}
+    task_field: null
+protected: ["work/plans/**"]
+`
+
+// BaseLabelsYAML is DeclaringPack's bonsai/labels.yaml: two of Bonsai's own labels (contract §5.6), which the base
+// pack declares from step 5.5; until then a fixture declares them (plan-5, 5.1.5).
+const BaseLabelsYAML = `format: bonsai.labels/1
+namespace: bonsai
+version: 1
+labels:
+  - name: bonsai.allows
+    kind: list
+    values: []
+    items: text
+    pattern: null
+    max: null
+    kinds: ["task"]
+    set_by: agent
+    grants: true
+    description: "Protected paths this task may change, as globs."
+  - name: bonsai.branch
+    kind: text
+    values: []
+    items: null
+    pattern: "^[A-Za-z0-9._/-]{1,100}$"
+    max: null
+    kinds: ["task"]
+    set_by: agent
+    grants: false
+    description: "The branch the task is built on; empty means the base branch."
+`
+
+// BaseLanesYAML is DeclaringPack's bonsai/lanes.yaml.
+const BaseLanesYAML = `format: bonsai.lanes/1
+lanes:
+  - name: light
+    approve_first: false
+    close: agent
+    description: "Fixes, tweaks, tests, docs."
+  - name: full
+    approve_first: true
+    close: person
+    description: "A feature: a person approves the plan first and closes the task."
+`
+
+// DeclaringPack (id base) declares one of each kind the lock's declares holds but hook lines: lanes, two document
+// kinds (plan, a folder; bugs, a file), Bonsai's own label namespace (two definitions), a protected glob and a deny
+// rule, with an always-on protocol file and a block. It carries no code.
+func DeclaringPack(t *testing.T, tmp string) (string, []string) {
+	t.Helper()
+	return Fixture(t, tmp, "base", map[string]string{
+		".claude-plugin/plugin.json":    strings.Replace(fixturePlugin, "%s", "base", 1),
+		"bonsai/pack.yaml":              BasePackYAML,
+		"bonsai/labels.yaml":            BaseLabelsYAML,
+		"bonsai/lanes.yaml":             BaseLanesYAML,
+		"bonsai/block.md":               "<!-- the fixture's block docs -->\nThe base fixture is linked.\n",
+		"bonsai/files/session-start.md": "# Session start\n\nRead STATE first.\n",
+	})
+}
+
 // Project makes an empty git checkout at tmp/<name> and returns it.
 func Project(t *testing.T, tmp, name string) string {
 	t.Helper()

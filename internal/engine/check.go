@@ -13,10 +13,12 @@ package engine
 //     installed (ComparePlugins, which runs claude plugin list): Check alone never runs Claude Code, so status stays
 //     cheap and offline (contract §12; spec §5 puts that comparison in check and status --full).
 //
-// It reads, fetches nothing and writes nothing (CI runs it offline). Bonsai's lines in the settings file are told
-// apart with each pack's lines at its locked commit, read from this machine's pack cache; a pack not in the cache
-// leaves that file unchecked, with a warning (step 5.1 copies what checks need into the lock's declares).
-// Spec §6's other findings and warnings come with step 5.1.
+// It reads, fetches nothing and writes nothing (CI runs it offline, spec §5: "CI needs no pack"). Bonsai's lines in
+// the settings file are told apart with each pack's hook lines and deny rules from the lock's declares (step 5.1.5),
+// so the lock alone gives every finding, with an empty pack cache and no network. A lock written before that (its
+// packs record no path) has no hook lines in its declares: its packs are read from this machine's pack cache, and a
+// pack not in the cache leaves that file unchecked, with a warning, until bonsai update writes the lock again.
+// Spec §6's other findings and warnings come with step 5.1.6.
 
 import (
 	"bytes"
@@ -219,6 +221,17 @@ func (r *CheckResult) checkSettings(home string, cfg *workspace.Config, lock *wo
 	for _, lp := range lock.Packs {
 		folder := lockedFolder(lp, folders[lp.ID])
 		pl := packLines{id: lp.ID, source: lp.Source, folder: folder, commit: lp.Commit}
+		if lp.PathSet {
+			// The lock's declares holds the pack's hook lines and deny rules (ReadLock read them): no pack is read.
+			d, err := lp.Declared()
+			if err != nil {
+				r.Warnings = append(r.Warnings, Finding{Code: "cache", File: SettingsFile, Message: err.Error(), Next: lockNext, Who: "person"})
+				return
+			}
+			pl.known, pl.hooks, pl.deny = true, declaredHooks(d), declaredDeny(d)
+			pls = append(pls, pl)
+			continue
+		}
 		if !c.has(lp.Source, lp.Commit) {
 			r.Warnings = append(r.Warnings, Finding{Code: "cache", File: SettingsFile,
 				Message: "Bonsai's lines in " + SettingsFile + " were not checked: the pack " + lp.ID + " at " + short(lp.Commit) + " is not in this machine's pack cache",

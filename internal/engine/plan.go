@@ -449,6 +449,17 @@ func Build(req Request) (_ *Plan, err error) {
 			targets[fe.Path] = target{pack: pd.Ref.ID, entry: fe, data: pd.Files[fe.Path]}
 		}
 	}
+	// Two packs may not declare one document kind (contract §7.3: a kind's name is unique in the workspace).
+	kinds := map[string]string{}
+	for _, pd := range newPacks {
+		for _, k := range pd.Declares.Documents {
+			if other, ok := kinds[k.Kind]; ok {
+				return nil, errorf("packs-overlap", ExitInput, "take one of the two packs out of bonsai.yaml; the packs' makers give the kinds names of their own",
+					"two packs declare the document kind %s (%s and %s)", k.Kind, other, pd.Ref.ID)
+			}
+			kinds[k.Kind] = pd.Ref.ID
+		}
+	}
 	// The files a hook runs (consent.go, rule 4): each runs item is a file a linked pack writes, and a pack's hook
 	// command naming a file a linked pack writes lists it in its runs; else the plan is refused (S3).
 	if err := checkRuns(newPacks, targets); err != nil {
@@ -459,8 +470,12 @@ func Build(req Request) (_ *Plan, err error) {
 		Extra: lock.Extra}
 	for _, pd := range newPacks {
 		// The pack's folder, as bonsai.yaml names it (formats set 4's path; step 5.1.5): every lock written records it.
+		declares, err := pd.Declares.Object()
+		if err != nil {
+			return nil, errorf("unexpected", ExitRuntime, "report this to Bonsai's maintainers", "the pack %s's declares cannot be written: %v", pd.Ref.ID, err)
+		}
 		lp := workspace.LockedPack{ID: pd.Ref.ID, Source: pd.Ref.Source, Version: pd.Manifest.Version, Commit: pd.Commit,
-			SHA256: pd.SHA256, Declares: schema.Object{}, Path: pd.Ref.Path, PathSet: true}
+			SHA256: pd.SHA256, Declares: declares, Path: pd.Ref.Path, PathSet: true}
 		if old, ok := lockedPack[pd.Ref.ID]; ok {
 			lp.Extra = old.Extra
 		}

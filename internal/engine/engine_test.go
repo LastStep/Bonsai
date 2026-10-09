@@ -692,12 +692,13 @@ func TestCheckFindings(t *testing.T) {
 	if r, _ := Check(root, e.home); len(r.Findings) != 0 {
 		t.Errorf("after --adopt: %+v", r.Findings)
 	}
-	// Without the pack in this machine's cache, the settings file is a warning, not a finding.
+	// Without the pack in this machine's cache, nothing changes: the lock's declares holds what check needs
+	// (offline_test.go has the full proof).
 	if err := os.RemoveAll(filepath.Join(e.home, "cache", "git")); err != nil {
 		t.Fatal(err)
 	}
 	r, _ = Check(root, e.home)
-	if len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "cache" {
+	if len(r.Findings) != 0 || len(r.Warnings) != 0 {
 		t.Errorf("with no cache: %+v %+v", r.Findings, r.Warnings)
 	}
 	if _, err := os.Stat(filepath.Join(e.home, "cache", "git")); !os.IsNotExist(err) {

@@ -32,6 +32,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -47,6 +48,7 @@ type PackData struct {
 	SHA256   string            // the content hash (contentHash)
 	Tree     map[string]string // every entry of the pack's folder (the plugin's root): its path there, to its git mode and object id
 	Code     []CodePart        // the plugin's own code parts (consent.go), sorted by path; none for a plugin that carries none
+	Declares *format.Declares  // what the pack declares (declares.go): copied into the lock's declares
 }
 
 // cache is the home's pack cache.
@@ -273,6 +275,9 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 				ref.ID, where, manifest.Block, missingOr(err))
 		}
 		pd.Block = blockText(b)
+	}
+	if pd.Declares, err = readDeclares(ref, manifest, read); err != nil {
+		return nil, errorf("bad-pack", ExitInput, nextPack, "the pack %s (%s): %v", ref.ID, where, err)
 	}
 	pd.SHA256 = contentHash(entries, blobs)
 	pd.Tree = map[string]string{}

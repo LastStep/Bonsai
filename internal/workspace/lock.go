@@ -6,8 +6,9 @@ package workspace
 // Read and written here in full: format, written_by, packs (id, source, version, commit, sha256, declares, path), files
 // (kind, pack, sha256 per path) and format0 (sha256 per path). The schema in formats/schemas/lock.schema.json holds
 // every field's form and the closed list of file kinds; this file adds what a schema cannot say: no path leaves the
-// project or names a file Windows cannot hold (CheckRelPath), and no pack is locked twice. declares stays an open
-// object: its inner layout is step 5.1's (formats/README.md).
+// project or names a file Windows cannot hold (CheckRelPath), no pack is locked twice, and each pack's declares reads
+// as the layout Bonsai writes it in (format.Declares, internal/format/declares.go: its lanes, document kinds, labels,
+// protected paths, hook lines and deny rules, each held to its format), since the schema keeps it an open object.
 //
 // Written byte-stable: fields in the schema's order, files and format0 sorted by path, two-space indent, LF, ASCII
 // (schema.Encode). An unknown field (a newer Bonsai of the same major wrote it) is kept, value for value, after the
@@ -31,6 +32,7 @@ import (
 	"sync"
 
 	"github.com/LastStep/Bonsai/formats"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 )
 
@@ -239,6 +241,9 @@ func (l *Lock) check() error {
 				return lockError("the pack %s's path: %v", showValue(p.ID), err)
 			}
 		}
+		if _, err := p.Declared(); err != nil {
+			return lockError("the pack %s's %v", showValue(p.ID), err)
+		}
 	}
 	for _, list := range []struct {
 		name  string
@@ -259,6 +264,11 @@ func (l *Lock) check() error {
 		}
 	}
 	return nil
+}
+
+// Declared reads the pack's declares (format.Declares): what it declared at the locked commit.
+func (p LockedPack) Declared() (*format.Declares, error) {
+	return format.ReadDeclares(p.Declares)
 }
 
 // JSON gives the lock as the document bonsai.lock/1 writes: fields in the schema's order, files and format0 sorted
