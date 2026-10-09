@@ -220,7 +220,7 @@ func TestReadsAMissingFieldAsNull(t *testing.T) {
 	if ladder.Task != nil || ladder.Proof != nil || ladder.Green || ladder.Rungs != nil {
 		t.Errorf("missing fields read as %+v", ladder)
 	}
-	task, err := ReadTask([]byte("---\nformat: bonsai.task/1\nid: T-0001\ntitle: x\nstatus: todo\ndone_when:\n---\n"))
+	task, err := ReadTask([]byte("---\nformat: bonsai.task/1\nid: T-0911\ntitle: x\nstatus: todo\ndone_when:\n---\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +278,7 @@ func TestRefusals(t *testing.T) {
 		has    string
 	}{
 		{"a closed list's value", func() error {
-			_, err := ReadTask([]byte("---\nformat: bonsai.task/1\nid: T-0001\ntitle: x\nstatus: finished\n---\n"))
+			_, err := ReadTask([]byte("---\nformat: bonsai.task/1\nid: T-0911\ntitle: x\nstatus: finished\n---\n"))
 			return err
 		}, "status", 5, false, `"finished" is not one of`},
 		{"a wrong type, in a list", func() error {
@@ -303,7 +303,7 @@ func TestRefusals(t *testing.T) {
 			return err
 		}, "", 0, true, "format too new: \"bonsai.ask/2\""},
 		{"another format", func() error {
-			_, err := ReadRun([]byte("---\nformat: bonsai.task/1\nid: T-0001\n---\n"))
+			_, err := ReadRun([]byte("---\nformat: bonsai.task/1\nid: T-0911\n---\n"))
 			return err
 		}, "format", 2, false, "not bonsai.run/1"},
 		{"format 0 where format 1 is all there is", func() error {
@@ -444,12 +444,12 @@ func TestTableCells(t *testing.T) {
 	title := "a | b"
 	lone := "x\xed\xa0\x80y" // a lone surrogate as format 0 keeps it (WTF-8)
 	tb := &Tasks{Active: TasksActive{Why: strPtr("many-running")}, Tasks: []TaskRow{
-		{ID: "T-0002", Title: title, Status: "todo"}, {ID: "T-0001", Title: lone, Status: "done"}}}
+		{ID: "T-0912", Title: title, Status: "todo"}, {ID: "T-0911", Title: lone, Status: "done"}}}
 	out, err := tb.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Contains(out, []byte("| T-0002 | a \\| b | todo | | | |\n")) || !bytes.Contains(out, []byte("x\uFFFDy")) ||
+	if !bytes.Contains(out, []byte("| T-0912 | a \\| b | todo | | | |\n")) || !bytes.Contains(out, []byte("x\uFFFDy")) ||
 		!bytes.Contains(out, []byte("none (many-running)")) {
 		t.Errorf("written:\n%s", out)
 	}
