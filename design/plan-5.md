@@ -3701,7 +3701,7 @@ hand on:
 | Template defaults "`ladder_floor` and `ladder` empty, for 5.4 and 5.5" (5.1.5's run report, item 4) | 5.5.0 | Kept empty (note 5.5.0, 5); base's `workspace` skill shows a ladder as an example |
 | "`claude plugin validate` is the pack's CI, 5.5's" (5.1.9) | 5.5.1 | In `ci/check.sh`, run by each pack's CI and by Bonsai's; its login need measured first (note 5.5.1, 5) |
 | The generated-files page moves into base's skill, "its table generated from the same Go table"; the `generated:` comment names the page until then (5.2.6a) | 5.5.0, 5.5.7 | Generated as base's `generated-files` skill; the old page removed; `init`'s comment names the skill (5.5.0); Bonsai's own `bonsai.yaml` comment changed at the link (5.5.7) |
-| "Base's walls deny reading [the salt]" (5.2.2 note 5) | 5.5.2 | `Read(~/.bonsai/salt)` and its Windows twin (note 5.5.2, 2) |
+| "Base's walls deny reading [the salt]" (5.2.2 note 5) | 5.5.2 | `Read(~/.bonsai/salt)` and its twins (note 5.5.2, 2) |
 | The ask flags "follow today's studio command, so the workflow pack's protocols change little" (5.2.5) | 5.5.4 | The protocols name `bonsai ask` where today's name the studio's way of asking |
 | "Whoever commits on the main checkout runs `check --write` first; the workflow pack's closing protocol says so" (spec §6) | 5.5.4 | `session-start`'s closing section says so |
 | Bonsai's own deny rules are the engine's, not base's; "`base` keeps `Read(~/.bonsai/salt)`" (5.3.5 note 2) | 5.5.2 | Base's walls leave out `.bonsai/local/`, the tables and `~/.bonsai/**`; a test fails if base repeats one of the engine's lines |
@@ -3830,12 +3830,12 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    `CLAUDE_CODE_VERSION`; then the script's validate step); a `release` job: on a `v*` tag, after both, it runs `sh
    ci/check.sh release "$GITHUB_REF_NAME" .` and creates the GitHub release with its notes (`gh release create`,
    `contents: write` in that job only); on every other push it runs the same subcommand with the name the version needs
-   (`v` and `pack.yaml`'s `version`) and stops before creating anything, so the release path runs on every commit.
-   Every action pinned by its full commit with a version comment; `permissions: contents: read` at the top; no secret
+   (`v` and `pack.yaml`'s `version`) and stops before creating anything, so the release path runs on every commit. Every
+   action pinned by its full commit with a version comment; `permissions: contents: read` at the top; no secret
    anywhere, so a fork's pull request runs the same checks; a `#` comment on every key, with a short header (spec §5:
-   every pack file documents itself, in YAML a comment for every key). Before
-   Bonsai's first release the pinned `bonsai` is built from a commit; from 1.0 the spec's archive with its SHA-256 (§5,
-   §12 step 8) replaces the clone, a 5.7 change to the template.
+   every pack file documents itself, in YAML a comment for every key). Before Bonsai's first release the pinned `bonsai`
+   is built from a commit; from 1.0 the spec's archive with its SHA-256 (§5, §12 step 8) replaces the clone, a 5.7
+   change to the template.
 5. **Validate's login, measured first:** locally with an empty Claude configuration folder (a scratch
    `CLAUDE_CONFIG_DIR`, never the real one), then on the first CI run. If it needs a login, no secret is added: the
    `validate` job leaves `pack.yml`, the script's validate step runs on this PC (by the piece's builder before a pack's
@@ -3918,16 +3918,17 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    §7.1's (no `ladder_result`, no `cost_usd`; `needs-person`); the memory note's from `bonsai.memory/1` (spec §10: the
    fact, why, how to apply; the index line; 4 KB a note, 120 lines and 12 KB the index; never a secret). STATE's
    template is 5.5.0's. The studio's wording is rewritten by 5.5.4 note 3's rules (no studio path, no `<mimas>`, no
-   studio task id).
+   studio task id), and `base` names no person ("a person", never Rohan) and carries no studio ritual. P0 reads these
+   two, and STATE's, before their pieces land (P0's paragraph).
 4. **The `ci` skill** (spec §5's table: "a CI workflow template (kind `once`)"): a GitHub Actions workflow a project
    copies to `.github/workflows/bonsai.yml`, every key commented, running `bonsai check --json` with no pack fetched
    (spec §5: "CI needs no pack"), its `bonsai` built from a pinned Bonsai commit before 1.0 and taken from the release
    archive checked by its SHA-256 after (§12 step 8). **A skill, not a file `init` writes**: a workflow file runs on
-   GitHub with the repository's token, so writing it at every link would put code that runs into every project without
-   a word from anyone, outside what `--allow-exec` asks about (it counts what runs on the machine); a pinned version in
-   a `once` file is never updated by the pack; and Bonsai's own repo, which links `base`, has its own CI under
-   `.github/**`, a protected path. What lost: a project
-   gets its CI when an agent or a person adds it (the operating skill says how), not at the link.
+   GitHub with the repository's token, so writing it at every link would put code that runs into every project without a
+   word from anyone, outside what `--allow-exec` asks about (it counts what runs on the machine); a pinned version in a
+   `once` file is never updated by the pack; and Bonsai's own repo, which links `base`, has its own CI under
+   `.github/**`, a protected path. What lost: a project gets its CI when an agent or a person adds it (the operating
+   skill says how), not at the link.
 5. **Free of code, held by a test** (`packs/packs_test.go`, Go, reading the folder): `hooks: []`, `files: []`; no
    `hooks/`, `.mcp.json`, `.lsp.json`, monitors or mod file; each skill folder holds `SKILL.md` and nothing else (no
    script a skill could run); `labels.yaml` equal to contract §5.6's four, field by field; none of the engine's own
