@@ -101,11 +101,15 @@ func TestUninstallPlugins(t *testing.T) {
 // file mode is needed there) that writes each command line it is given to a log and answers as Claude Code would: list
 // with one project-scope install for root, marketplace list with none, install and uninstall with ok. It returns the
 // log's path. No test reaches the real claude: the PATH holds only the stand-in's folder.
-func fakeClaudeLogging(t *testing.T, root, plugin string) string {
+func fakeClaudeLogging(t *testing.T, root string, plugins ...string) string {
 	t.Helper()
 	dir := t.TempDir()
 	log := filepath.Join(dir, "claude.log")
-	list := `[{"id":"` + plugin + `","version":"aaaaaaaaaaaa","scope":"project","enabled":true,"projectPath":"` + filepath.ToSlash(root) + `"}]`
+	var items []string
+	for _, plugin := range plugins {
+		items = append(items, `{"id":"`+plugin+`","version":"aaaaaaaaaaaa","scope":"project","enabled":true,"projectPath":"`+filepath.ToSlash(root)+`"}`)
+	}
+	list := "[" + strings.Join(items, ",") + "]"
 	if runtime.GOOS == "windows" {
 		body := "@echo off\r\necho %*>>\"" + log + "\"\r\nif \"%2\"==\"list\" goto list\r\nif \"%2\"==\"marketplace\" goto market\r\n" +
 			"echo {\"outcome\":\"ok\"}\r\nexit /b 0\r\n:list\r\necho " + list + "\r\nexit /b 0\r\n:market\r\necho []\r\nexit /b 0\r\n"
@@ -133,7 +137,7 @@ func TestPluginScopeOnly(t *testing.T) {
 	lp := workspace.LockedPack{ID: "demo-pack", Commit: strings.Repeat("a", 40)}
 	lock := &workspace.Lock{Packs: []workspace.LockedPack{lp}}
 	market := lockMarket(cfg, lock)
-	log := fakeClaudeLogging(t, root, "demo-pack@"+market)
+	log := fakeClaudeLogging(t, root, "demo-pack@"+market, "demo-pack@bonsai-demo-0123abcd")
 
 	cli := ClaudeCLI{}
 	if _, err := cli.Install(root, "demo-pack@"+market); err != nil {
@@ -149,7 +153,10 @@ func TestPluginScopeOnly(t *testing.T) {
 		t.Fatal(names, err)
 	}
 	InstallPlugins(root, cfg, lock, cli, PluginConsent{AllowExec: true})
-	if got := UninstallPlugins(root, "demo", market, lock.Packs, cli); len(got) != 1 || got[0].Result != "uninstalled" {
+	if got := PruneStalePlugins(root, cfg, lock, cli); len(got) != 1 || got[0].Plugin != "demo-pack@bonsai-demo-0123abcd" || got[0].Result != "uninstalled" {
+		t.Errorf("the stale record through the stand-in: %+v", got)
+	}
+	if got := UninstallPlugins(root, "demo", market, lock.Packs, cli); len(got) != 2 || got[0].Result != "uninstalled" || got[1].Result != "uninstalled" {
 		t.Errorf("uninstall through the stand-in: %+v", got)
 	}
 	r := &CheckResult{Root: root, Config: cfg, Lock: lock}
@@ -191,7 +198,59 @@ func TestPluginScopeOnly(t *testing.T) {
 			t.Errorf("Bonsai ran claude %s", l)
 		}
 	}
-	if writes != 4 {
-		t.Errorf("%d installs and uninstalls logged, want 4:\n%s", writes, raw)
+	if writes != 6 {
+		t.Errorf("%d installs and uninstalls logged, want 6:\n%s", writes, raw)
+	}
+}
+
+// After update writes, the stale records go (PruneStalePlugins): this checkout's project-scope install of a locked
+// pack's plugin under an older marketplace name of this workspace. Kept: the lock's own marketplace's record, another
+// workspace's (another name), another checkout's, a local or user scope install, another pack's.
+func TestPruneStalePlugins(t *testing.T) {
+	root := t.TempDir()
+	cfg := &workspace.Config{Name: "demo"}
+	lp := workspace.LockedPack{ID: "demo-pack", Commit: strings.Repeat("b", 40)}
+	lock := &workspace.Lock{Packs: []workspace.LockedPack{lp}}
+	market := lockMarket(cfg, lock)
+	list := []InstalledPlugin{
+		{ID: "demo-pack@" + market, Version: "bbbbbbbbbbbb", Scope: "project", ProjectPath: root},
+		{ID: "demo-pack@bonsai-demo-0123abcd", Version: "aaaaaaaaaaaa", Scope: "project", ProjectPath: root},
+		{ID: "demo-pack@bonsai-demo-4567cdef", Version: "cccccccccccc", Scope: "project", ProjectPath: filepath.ToSlash(root)},
+		{ID: "demo-pack@bonsai-demo-two-0123abcd", Scope: "project", ProjectPath: root},
+		{ID: "demo-pack@bonsai-other-0123abcd", Scope: "project", ProjectPath: root},
+		{ID: "demo-pack@bonsai-demo-0123abcd", Scope: "project", ProjectPath: t.TempDir()},
+		{ID: "demo-pack@bonsai-demo-0123abcd", Scope: "local", ProjectPath: root},
+		{ID: "demo-pack@bonsai-demo-0123abcd", Scope: "user"},
+		{ID: "side-pack@bonsai-demo-0123abcd", Scope: "project", ProjectPath: root},
+		{ID: "demo-pack@someone-else", Scope: "project", ProjectPath: root},
+	}
+	f := &fakeCLI{list: list}
+	got := PruneStalePlugins(root, cfg, lock, f)
+	if strings.Join(f.asked, ",") != "list,uninstall demo-pack@bonsai-demo-0123abcd,uninstall demo-pack@bonsai-demo-4567cdef" {
+		t.Errorf("asked %v", f.asked)
+	}
+	if len(got) != 2 || got[0].Result != "uninstalled" || got[0].Commit != lp.Commit || got[0].Next != "" ||
+		got[0].Message != "a stale record (at aaaaaaaaaaaa, from an older marketplace name of this workspace) removed for this checkout; the lock's plugin is demo-pack@"+market {
+		t.Errorf("results %+v", got)
+	}
+	// Only the current record: nothing asked but the list, nothing reported.
+	f = &fakeCLI{list: list[:1]}
+	if got := PruneStalePlugins(root, cfg, lock, f); got != nil || strings.Join(f.asked, ",") != "list" {
+		t.Errorf("the current record only: %v %+v", f.asked, got)
+	}
+	// A failure: failed, its exact run: line, an agent's step.
+	f = &fakeCLI{list: list[:2], uninstall: map[string]InstallResult{"demo-pack@bonsai-demo-0123abcd": {Outcome: "failed", FailureCode: "boom", Message: "it broke"}}}
+	if got := PruneStalePlugins(root, cfg, lock, f); len(got) != 1 || got[0].Result != "failed" || got[0].Who != "agent" ||
+		got[0].Next != "run: claude plugin uninstall demo-pack@bonsai-demo-0123abcd --scope project" {
+		t.Errorf("a failure: %+v", got)
+	}
+	// Claude Code cannot be asked, no cli, no lock: nothing.
+	for _, cli := range []PluginCLI{&fakeCLI{listErr: ErrNoClaude}, &fakeCLI{listErr: errors.New("boom")}, nil} {
+		if got := PruneStalePlugins(root, cfg, lock, cli); got != nil {
+			t.Errorf("%v: %+v", cli, got)
+		}
+	}
+	if got := PruneStalePlugins(root, cfg, &workspace.Lock{}, &fakeCLI{list: list}); got != nil {
+		t.Errorf("no packs: %+v", got)
 	}
 }

@@ -15,7 +15,8 @@ var initWord = &Word{
 Bonsai's lines in .claude/settings.json (hook line, deny rules, plugin wiring), .bonsai/.gitignore, and the lock
 .bonsai/lock.json last. It previews every file and settings line first, and writes with --yes (or y at a terminal).
 Then it asks Claude Code to install each pack's plugin on this machine at the locked commit, as update does (a
-plugin that carries code parts only with --allow-exec).
+plugin that carries code parts only with --allow-exec), and, as update does, removes this checkout's stale records
+of them under an older marketplace name of this workspace.
 Run it in the project's checkout. In a project that already has bonsai.yaml it needs no values and works as
 bonsai update does; run again with nothing changed, it changes no byte.
 `,

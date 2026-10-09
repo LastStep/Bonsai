@@ -331,7 +331,7 @@ func TestPluginStep(t *testing.T) {
 		t.Fatalf("a preview asked Claude Code: %d %v", code, f.asked)
 	}
 	code, out, _ := c.run("", append(c.linkArgs(c.pack.A), "--yes")...)
-	if code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketA ||
+	if code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketA+",list" ||
 		!strings.Contains(out, "This machine's plugins (Claude Code, scope project: this checkout's .claude/settings.json):\n  waiting      demo-pack@"+marketA+": ") ||
 		!strings.Contains(out, "\n               next: a person opens Claude Code in this checkout and accepts its trust question") ||
 		!strings.Contains(out, "; then run: bonsai update\n") || c.exists(".claude/settings.local.json") {
@@ -354,8 +354,24 @@ func TestPluginStep(t *testing.T) {
 	if code, _, _ := c.run("", "update"); code != 4 || len(f.asked) != 0 {
 		t.Errorf("update without --yes asked Claude Code: %d %v", code, f.asked)
 	}
-	if code, _, _ := c.run("", "update", "--yes"); code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketB {
-		t.Errorf("update --yes to B: %d %v", code, f.asked)
+	// Written to B: B's plugin installed, then A's record for this checkout, under the older marketplace name, removed
+	// (it is no longer turned on); another workspace's record, another checkout's and a local one are left.
+	f.list = []engine.InstalledPlugin{
+		{ID: "demo-pack@" + marketA, Version: c.pack.A[:12], Scope: "project", ProjectPath: c.root},
+		{ID: "demo-pack@bonsai-other-0123abcd", Version: c.pack.A[:12], Scope: "project", ProjectPath: c.root},
+		{ID: "demo-pack@" + marketA, Version: c.pack.A[:12], Scope: "project", ProjectPath: c.root + "-elsewhere"},
+		{ID: "demo-pack@" + marketA, Version: c.pack.A[:12], Scope: "local", ProjectPath: c.root},
+	}
+	code, out, _ = c.run("", "update", "--yes", "--json")
+	plugins, _ = fits(t, out, "changes").Get("plugins")
+	if code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketB+",list,uninstall demo-pack@"+marketA ||
+		!strings.Contains(schema.Show(plugins), `{"pack":"demo-pack","plugin":"demo-pack@`+marketA+`","commit":"`+c.pack.B+`","result":"uninstalled","message":"a stale record (at `+c.pack.A[:12]+`, from an older marketplace name of this workspace) removed for this checkout; the lock's plugin is demo-pack@`+marketB+`","next":null}`) {
+		t.Errorf("update --yes to B: %d %v\n%s", code, f.asked, schema.Show(plugins))
+	}
+	// Nothing to change: no stale record looked for.
+	f.asked = nil
+	if code, _, _ := c.run("", "update"); code != 0 || strings.Contains(strings.Join(f.asked, ","), "uninstall") {
+		t.Errorf("update with nothing to change: %d %v", code, f.asked)
 	}
 	// check: A's plugin still on for this checkout is drift (exit 1); B's installed is not.
 	f.list = []engine.InstalledPlugin{
@@ -399,7 +415,7 @@ func TestPluginStepWithCode(t *testing.T) {
 	pluginCLI = f
 	market := engine.MarketplaceName("demo", []string{c.pack.F})
 	want := "demo-pack@" + market
-	if code, _, _ := c.run("", append(c.linkArgs(c.pack.F), "--yes")...); code != 0 || strings.Join(f.asked, ",") != "install "+want {
+	if code, _, _ := c.run("", append(c.linkArgs(c.pack.F), "--yes")...); code != 0 || strings.Join(f.asked, ",") != "install "+want+",list" {
 		t.Fatalf("the link with --allow-exec: %d, asked %v", code, f.asked)
 	}
 	f.asked = nil
@@ -456,7 +472,7 @@ func TestUpdateTakesAPackOut(t *testing.T) {
 	code, out, _ = c.run("", "update", "--yes", "--json")
 	doc := fits(t, out, "changes")
 	if code != 0 || doc.String("result") != "applied" || c.exists("side/a.md") ||
-		strings.Join(f.asked, ",") != "list,uninstall side-pack@"+oldMarket+",install demo-pack@"+newMarket {
+		strings.Join(f.asked, ",") != "list,uninstall side-pack@"+oldMarket+",install demo-pack@"+newMarket+",list,uninstall demo-pack@"+oldMarket {
 		t.Errorf("update --yes: %d %v\n%s", code, f.asked, out)
 	}
 	plugins, _ := doc.Get("plugins")

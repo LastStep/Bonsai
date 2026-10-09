@@ -32,7 +32,9 @@ package engine
 // uninstall works before and after Bonsai's entries leave .claude/settings.json, the file deleted too; run before, it
 // writes the file itself (an empty enabledPlugins), so Bonsai runs it after its own write, and Claude Code then
 // leaves the file alone. A plugin not installed answers failureCode not_installed, which is no failure: nothing to
-// remove. A worktree's record is its own (its own checkout's path): unlink in each checkout.
+// remove. A worktree's record is its own (its own checkout's path): unlink in each checkout. And when init or update
+// wrote, the locked packs' records for this checkout under an older marketplace name of this workspace (left when the
+// name moved) are removed too (PruneStalePlugins), so Claude Code's record follows the lock.
 //
 // First-time trust stays a person's (step 5.1.7): Bonsai never answers Claude Code's trust question and never
 // registers a marketplace behind it. Until a Claude Code session in the trusted folder has registered the workspace's
@@ -280,6 +282,10 @@ type PluginConsent struct {
 	Code      map[string][]CodePart
 	AllowExec bool
 	Again     string
+	// MarketMoved names the packs whose own commit and folder this run left as they were while the workspace's
+	// marketplace name moved (another pack changed, or was taken out): a plugin of theirs that carries code waits for
+	// --allow-exec all the same, a new install under a new name, and the waiting message says why (Plan.PluginConsent).
+	MarketMoved map[string]bool
 }
 
 // InstallPlugins asks Claude Code to install each locked pack's plugin for the checkout at root, at project scope
@@ -324,6 +330,11 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 				r.Result = "waiting"
 				r.Message = "the plugin carries code Claude Code runs on its own (" + codeParts(parts) + "), so Bonsai installs it " +
 					"on this machine only with --allow-exec"
+				if consent.MarketMoved[lp.ID] {
+					r.Message += "; its marketplace name changed (now " + market + ") because another pack changed; its own code did " +
+						"not (" + lp.ID + " is still at " + pluginVersion(lp.Commit) + "), but each install under a new name is asked " +
+						"for again"
+				}
 				r.Next, r.Who = "if you consent to that code running on this machine, run: "+again, "person"
 			}
 			r.Message, r.Next = ascii(r.Message), ascii(r.Next)
@@ -381,18 +392,12 @@ func UninstallPlugins(root, name, market string, packs []workspace.LockedPack, c
 	if cli == nil || len(packs) == 0 {
 		return nil
 	}
-	pattern := regexp.QuoteMeta(name)
-	if name == "" {
-		pattern = `[a-z][a-z0-9-]*`
-	}
-	ours := regexp.MustCompile(`^([a-z0-9][a-z0-9-]*)@bonsai-` + pattern + `-[0-9a-f]{8}$`)
 	plugin := func(pack string) string {
 		if market == "" {
 			return pack + "@bonsai-" + name
 		}
 		return PluginID(pack, market)
 	}
-	command := func(id string) string { return "claude plugin uninstall " + id + " --scope " + PluginScope }
 	list, err := cli.List(root)
 	var out []PluginResult
 	for _, lp := range packs {
@@ -400,52 +405,109 @@ func UninstallPlugins(root, name, market string, packs []workspace.LockedPack, c
 		switch {
 		case errors.Is(err, ErrNoClaude):
 			r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so its record of the plugin was not removed (a machine without Claude Code has none)"
-			r.Next, r.Who = "if Claude Code is installed here off the PATH, run: "+command(r.Plugin), "person"
+			r.Next, r.Who = "if Claude Code is installed here off the PATH, run: "+uninstallCommand(r.Plugin), "person"
 			out = append(out, asciiResult(r))
 			continue
 		case err != nil:
 			r.Result, r.Message = "failed", "Claude Code's plugins could not be listed: "+err.Error()
-			r.Next, r.Who = "run: "+command(r.Plugin), "agent"
+			r.Next, r.Who = "run: "+uninstallCommand(r.Plugin), "agent"
 			out = append(out, asciiResult(r))
 			continue
 		}
-		var ids []string
-		for _, p := range list {
-			sub := ours.FindStringSubmatch(p.ID)
-			if sub == nil || sub[1] != lp.ID || p.Scope != PluginScope || p.ProjectPath == "" || !samePath(p.ProjectPath, root) {
-				continue
-			}
-			ids = append(ids, p.ID)
-		}
-		sort.Strings(ids)
-		if len(ids) == 0 {
+		records := workspaceRecords(list, root, name, lp.ID)
+		if len(records) == 0 {
 			r.Result, r.Message = "uninstalled", "not installed for this checkout: nothing to remove"
 			out = append(out, asciiResult(r))
 			continue
 		}
-		for i, id := range ids {
-			if i > 0 && ids[i-1] == id {
-				continue
-			}
-			r := PluginResult{Pack: lp.ID, Plugin: id, Commit: lp.Commit}
-			res, err := cli.Uninstall(root, id)
-			switch {
-			case errors.Is(err, ErrNoClaude):
-				r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so its record of the plugin was not removed"
-				r.Next, r.Who = "if Claude Code is installed here off the PATH, run: "+command(id), "person"
-			case err != nil:
-				r.Result, r.Message, r.Next, r.Who = "failed", err.Error(), "run: "+command(id), "agent"
-			case res.Outcome == "ok":
-				r.Result, r.Message = "uninstalled", "Claude Code's record of the install for this checkout removed"
-			case res.FailureCode == "not_installed":
-				r.Result, r.Message = "uninstalled", "not installed for this checkout: nothing to remove"
-			default:
-				r.Result, r.Message, r.Next, r.Who = "failed", strings.TrimSpace(res.Message), "run: "+command(id), "agent"
-			}
-			out = append(out, asciiResult(r))
+		for _, p := range records {
+			out = append(out, uninstallRecord(root, lp, p.ID, cli))
 		}
 	}
 	return out
+}
+
+// PruneStalePlugins removes Claude Code's stale records for the checkout at root (step 5.1.7): after init's or
+// update's install step, and only when the command wrote, each project-scope install of a locked pack's plugin from
+// an older marketplace of this workspace, left there when the marketplace's name moved (spec section 5: it hashes
+// every pack's commit and folder, so it moves when this pack's commit moves or another pack changes or is taken out).
+// Such a record is no longer turned on in the checkout's settings, so sessions do not load it; it is removed so the
+// record follows the lock. It never touches the lock's own marketplace's record, another checkout's, another scope's,
+// another pack's or another workspace's (another name). One result per record: uninstalled, or failed with its exact
+// run: line; nothing when there is none, or when Claude Code cannot be asked (the install step's results say so). It
+// never fails the command. A nil cli asks nothing.
+func PruneStalePlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cli PluginCLI) []PluginResult {
+	if cli == nil || cfg == nil || cfg.Name == "" || lock == nil || len(lock.Packs) == 0 {
+		return nil
+	}
+	market := lockMarket(cfg, lock)
+	list, err := cli.List(root)
+	if err != nil {
+		return nil
+	}
+	var out []PluginResult
+	for _, lp := range lock.Packs {
+		current := PluginID(lp.ID, market)
+		for _, p := range workspaceRecords(list, root, cfg.Name, lp.ID) {
+			if p.ID == current {
+				continue
+			}
+			r := uninstallRecord(root, lp, p.ID, cli)
+			if r.Result == "uninstalled" {
+				r.Message = ascii("a stale record (at " + p.Version + ", from an older marketplace name of this workspace) removed for this " +
+					"checkout; the lock's plugin is " + current)
+			}
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// workspaceRecords lists Claude Code's project-scope install records for the checkout at root of a pack's plugin from
+// one of the workspace's marketplaces, bonsai-<name>-<8 hex> (any workspace name when name is ""), in the order of
+// their ids, each once.
+func workspaceRecords(list []InstalledPlugin, root, name, pack string) []InstalledPlugin {
+	pattern := regexp.QuoteMeta(name)
+	if name == "" {
+		pattern = `[a-z][a-z0-9-]*`
+	}
+	ours := regexp.MustCompile(`^([a-z0-9][a-z0-9-]*)@bonsai-` + pattern + `-[0-9a-f]{8}$`)
+	var out []InstalledPlugin
+	seen := map[string]bool{}
+	for _, p := range list {
+		sub := ours.FindStringSubmatch(p.ID)
+		if sub == nil || sub[1] != pack || p.Scope != PluginScope || p.ProjectPath == "" || !samePath(p.ProjectPath, root) || seen[p.ID] {
+			continue
+		}
+		seen[p.ID] = true
+		out = append(out, p)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+func uninstallCommand(id string) string {
+	return "claude plugin uninstall " + id + " --scope " + PluginScope
+}
+
+// uninstallRecord asks Claude Code to uninstall one plugin at project scope in the checkout, and gives the result.
+func uninstallRecord(root string, lp workspace.LockedPack, id string, cli PluginCLI) PluginResult {
+	r := PluginResult{Pack: lp.ID, Plugin: id, Commit: lp.Commit}
+	res, err := cli.Uninstall(root, id)
+	switch {
+	case errors.Is(err, ErrNoClaude):
+		r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so its record of the plugin was not removed"
+		r.Next, r.Who = "if Claude Code is installed here off the PATH, run: "+uninstallCommand(id), "person"
+	case err != nil:
+		r.Result, r.Message, r.Next, r.Who = "failed", err.Error(), "run: "+uninstallCommand(id), "agent"
+	case res.Outcome == "ok":
+		r.Result, r.Message = "uninstalled", "Claude Code's record of the install for this checkout removed"
+	case res.FailureCode == "not_installed":
+		r.Result, r.Message = "uninstalled", "not installed for this checkout: nothing to remove"
+	default:
+		r.Result, r.Message, r.Next, r.Who = "failed", strings.TrimSpace(res.Message), "run: "+uninstallCommand(id), "agent"
+	}
+	return asciiResult(r)
 }
 
 // asciiResult keeps a result's text ASCII.

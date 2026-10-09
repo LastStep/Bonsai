@@ -188,3 +188,38 @@ func TestTakeOutChangesFit(t *testing.T) {
 		t.Errorf("packs %s", schema.Show(packs))
 	}
 }
+
+// A remaining pack whose plugin carries code (the test pack at F), when another pack is taken out: its own commit is
+// the same, but the marketplace's name moves, so its install waits for --allow-exec all the same (the consent rule is
+// unchanged), and the waiting line says why. A pack whose own commit moves is not said to be unchanged.
+func TestMarketMovedSaysWhy(t *testing.T) {
+	e := setup(t)
+	side, sc := testpack.SidePack(t, e.tmp)
+	root := testpack.Project(t, e.tmp, "moved")
+	writeFile(t, root, "bonsai.yaml", strings.Replace(twoPacks(e, side, sc[0]), e.pack.A, e.pack.F, 1))
+	e.apply(t, root, Request{Command: "init", Init: &InitValues{}, AllowExec: true})
+	cfg := read(t, root, "bonsai.yaml")
+	writeFile(t, root, "bonsai.yaml", cfg[:strings.Index(cfg, "  - id: side-pack")])
+	p := e.apply(t, root, Request{})
+	consent := p.PluginConsent("bonsai update --allow-exec")
+	if !consent.MarketMoved[testpack.ID] || consent.AllowExec {
+		t.Fatalf("consent %+v", consent)
+	}
+	got := InstallPlugins(root, p.Config, p.NewLock(), &fakeCLI{}, consent)
+	newMarket := MarketplaceName("demo", []string{e.pack.F})
+	if len(got) != 1 || got[0].Result != "waiting" || got[0].Who != "person" ||
+		!strings.Contains(got[0].Message, "the plugin carries code Claude Code runs on its own (hooks/hooks.json)") ||
+		!strings.Contains(got[0].Message, "; its marketplace name changed (now "+newMarket+") because another pack changed; its own code did not ("+
+			testpack.ID+" is still at "+e.pack.F[:12]+"), but each install under a new name is asked for again") ||
+		got[0].Next != "if you consent to that code running on this machine, run: bonsai update --allow-exec" {
+		t.Errorf("waiting: %+v", got)
+	}
+	// The pack's own commit moving (E to F, nothing taken out): no such sentence.
+	root = testpack.Project(t, e.tmp, "own-move")
+	e.link(t, root, e.pack.E)
+	testpack.SetRef(t, root, e.pack.E, e.pack.F)
+	p = e.apply(t, root, Request{AllowExec: true})
+	if c := p.PluginConsent("x"); c.MarketMoved[testpack.ID] {
+		t.Errorf("its own commit moved, yet marked unchanged: %+v", c.MarketMoved)
+	}
+}

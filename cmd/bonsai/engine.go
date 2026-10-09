@@ -130,7 +130,7 @@ func runEngine(c *call) int {
 	// settled conflicts.
 	again := "bonsai " + word + " --allow-exec"
 	if plan.Nothing() {
-		plan.Plugins = pluginStep(plan, again)
+		plan.Plugins = pluginStep(plan, again, false)
 		return out("nothing", engine.ExitOK, nil, "bonsai "+word+": nothing to change"+packsAt(plan)+".\n"+plan.LeftAlone()+
 			recorded(plan)+plan.PluginsText()+closing)
 	}
@@ -195,7 +195,7 @@ func runEngine(c *call) int {
 		}
 		return c.fail(e)
 	}
-	plan.Plugins = pluginStep(plan, again)
+	plan.Plugins = pluginStep(plan, again, true)
 	text := ""
 	if f.yes {
 		text = preview
@@ -206,11 +206,16 @@ func runEngine(c *call) int {
 
 // pluginStep brings this machine's plugins to the plan once it is written (or has nothing to write;
 // internal/engine/plugins.go): it removes Claude Code's record of each pack the plan took out of bonsai.yaml, after
-// Bonsai's own lines left .claude/settings.json, then asks Claude Code to install each locked pack's plugin. Its
-// results never change the exit code.
-func pluginStep(plan *engine.Plan, again string) []engine.PluginResult {
+// Bonsai's own lines left .claude/settings.json, then asks Claude Code to install each locked pack's plugin, and,
+// when the command wrote, removes this checkout's stale records of the locked packs under an older marketplace name
+// of this workspace. Its results never change the exit code; a preview or a refusal never reaches it.
+func pluginStep(plan *engine.Plan, again string, written bool) []engine.PluginResult {
 	out := engine.UninstallPlugins(plan.Root, plan.Config.Name, plan.OldMarket, plan.Removed, pluginCLI)
-	return append(out, engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))...)
+	out = append(out, engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))...)
+	if written {
+		out = append(out, engine.PruneStalePlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI)...)
+	}
+	return out
 }
 
 // recorded writes this machine's record of the checkout (engine.RecordCheckout) once init or update ended without a

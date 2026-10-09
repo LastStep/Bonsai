@@ -20,8 +20,11 @@ Then, written or with nothing to change, it brings this machine's plugins to the
 claude plugin install <pack>@<marketplace> --scope project in this checkout (a no-op once installed; the first time,
 Claude Code may write .claude/settings.json again in its own key order). A pack's plugin that carries code parts
 (hooks, MCP and LSP servers, monitors, mods) is installed on this machine only with --allow-exec, on each machine:
-without it the plugin is "waiting" and the next step is bonsai update --allow-exec; one already installed at the
-locked commit is left as it is. Bonsai installs and removes only the project's own packs' plugins. Claude Code
+without it the plugin is "waiting" and the next step is bonsai update --allow-exec (asked again under a new
+marketplace name, even when only another pack changed; the line says so); one already installed at the
+locked commit is left as it is. When update wrote, it also removes this checkout's stale records of the packs'
+plugins under an older marketplace name of this workspace (the name moves with every pack's commit), which Claude
+Code no longer turns on here. Bonsai installs and removes only the project's own packs' plugins. Claude Code
 knows a new marketplace (a new commit, or a new checkout) only after a Claude Code session in the checkout, in a
 trusted folder, has registered it: until then the plugin is "waiting", and the next step is a person's (open Claude
 Code in the checkout and accept its trust question; Bonsai never answers it), then bonsai update. This step never

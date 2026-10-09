@@ -14,7 +14,8 @@
 //     and warnings, each a word of format.CheckWords (step 5.1.6), and Claude Code's floor (claude.go); newer.go: a
 //     pack's newer release tags, for status --full;
 //   - plugins.go: this machine's plugins (plan part 4b): the install Claude Code is asked for after init and update
-//     (at project scope, the checkout's own .claude/settings.json), the uninstall of a pack taken out (step 5.1.7),
+//     (at project scope, the checkout's own .claude/settings.json), the uninstall of a pack taken out and of the
+//     stale records an older marketplace name left (step 5.1.7),
 //     first-time trust's waiting, and check's drift report against the lock;
 //   - unlink.go: bonsai unlink's plan (step 5.1.7): what Bonsai wrote, from the lock, taken out, edited files left;
 //     plan.go also takes a pack gone from bonsai.yaml out of the project at update;

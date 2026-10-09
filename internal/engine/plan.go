@@ -155,7 +155,8 @@ type Plan struct {
 	LockRemove bool
 	Left       []string
 
-	pluginCode map[string][]CodePart // each pack's plugin code parts at its new commit, for the install step
+	pluginCode  map[string][]CodePart // each pack's plugin code parts at its new commit, for the install step
+	marketMoved map[string]bool       // the packs whose own pin stayed while the marketplace name moved (PluginConsent)
 
 	lock      *workspace.Lock
 	lockBytes []byte
@@ -164,7 +165,7 @@ type Plan struct {
 // PluginConsent is what the install step needs after the plan (InstallPlugins): each pack's plugin code parts at the
 // commit the plan locks, the request's --allow-exec, and again, the command that repeats the run with --allow-exec.
 func (p *Plan) PluginConsent(again string) PluginConsent {
-	return PluginConsent{Code: p.pluginCode, AllowExec: p.AllowExec, Again: again}
+	return PluginConsent{Code: p.pluginCode, AllowExec: p.AllowExec, Again: again, MarketMoved: p.marketMoved}
 }
 
 // NewLock is the lock the plan writes (or, with nothing to change, the lock as it is).
@@ -473,6 +474,22 @@ func Build(req Request) (_ *Plan, err error) {
 	p.pluginCode = map[string][]CodePart{}
 	for _, pd := range newPacks {
 		p.pluginCode[pd.Ref.ID] = pd.Code
+	}
+	// The packs whose own commit and folder stay while the marketplace's name moves (another pack changed or was taken
+	// out): a plugin of theirs that carries code waits for --allow-exec all the same, and the install step says why.
+	if p.OldMarket != "" {
+		var pins []string
+		for _, pd := range newPacks {
+			pins = append(pins, Pin(pd.Commit, pd.Ref.Path))
+		}
+		if MarketplaceName(cfg.Name, pins) != p.OldMarket {
+			p.marketMoved = map[string]bool{}
+			for _, pd := range newPacks {
+				if lp, ok := lockedPack[pd.Ref.ID]; ok && lp.Commit == pd.Commit && lockedFolder(lp, pd.Ref.Path) == pd.Ref.Path {
+					p.marketMoved[pd.Ref.ID] = true
+				}
+			}
+		}
 	}
 
 	// Two packs may not write one path (spec §6, "Layers").
