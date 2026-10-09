@@ -14,8 +14,8 @@
 - **Records:** `STATE.md`; run reports in `records/runs/`.
 
 Two readers. **Rohan** reads down to "Size" and reads no code. The **orchestrator, builders and verifiers** read the
-rest. 5.1, 5.2 and 5.3 are planned in full here; 5.4 to 5.7 are outlined, and each gets its own detailed section in
-this file before it starts.
+rest. 5.1, 5.2, 5.3 and 5.4 are planned in full here; 5.5 to 5.7 are outlined, and each gets its own detailed section
+in this file before it starts.
 
 ## For Rohan (plain words)
 
@@ -3246,6 +3246,7 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
   sides. Possibly the hook line's form as an option round.
 
 **5.4 Ladder runner (28-44 h, re-ask at 57).**
+- **Planned in full** in "Step 5.4" above; this outline is kept as it was written.
 - **Builds:** rungs, process groups and job objects, one ladder at a time, leftovers, `mode`, the fingerprint, results
   in the main checkout's `.bonsai/local/ladder/`, rung 0's refusal of branch changes to the tables and of tracked
   `local/` files (13-19); floors, ratchets, Bless filing (4-6); new tests must fail, by name, with `base_setup`
@@ -3366,7 +3367,8 @@ source.
 | 5.1 | The end verifier on "5.1 done" |
 | 5.2 | Its section's "Proof for each piece"; fresh verifiers for 5.2.1 and 5.2.4; the end verifier on "5.2 done" |
 | 5.3 | Its section's "Proof for each piece"; fresh verifiers at 5.3.1, at 5.3.2 with 5.3.3, and at 5.3.6; the end verifier on "5.3 done", after Rohan's sitting |
-| 5.4 to 5.7 | Each part's section; its verifiers as outlined; its end verifier |
+| 5.4 | Its section's "Proof for each piece"; fresh verifiers V1 (5.4.1 to 5.4.3) and V2 (the code, before the pre-release); the end verifier on "5.4 done", after Rohan's install and link |
+| 5.5 to 5.7 | Each part's section; its verifiers as outlined; its end verifier |
 | The interim proof (to 5.3) | Before each push, `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on Windows, counts in the run report; CI green on the pushed commit; no Windows-only skip without a named reason |
 | The ladder proof (from 5.4) | `bonsai ladder` green on Bonsai's own `bonsai.yaml`, run by the pre-release Rohan installed; CI and check 10 beside it until a rung covers them; fresh verifiers for the big steps |
 | Stop lines | The run reports' rows and tallies, judged by each part's end verifier |
