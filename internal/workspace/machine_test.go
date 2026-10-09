@@ -37,11 +37,11 @@ func TestMachineSettings(t *testing.T) {
 		content, writes, command, refused string
 	}{
 		{`{}`, "agents", "", ""},
-		{`{"status_writes": "agents", "status_command": "studio move"}`, "agents", "", ""},
-		{`{"status_writes": "command", "status_command": "studio move", "later": 1}`, "command", "studio move", ""},
+		{`{"status_writes": "agents", "status_command": "tracker move"}`, "agents", "", ""},
+		{`{"status_writes": "command", "status_command": "tracker move", "later": 1}`, "command", "tracker move", ""},
 		{"\xef\xbb\xbf" + `{"status_writes": null}`, "agents", "", ""},
 		{`{"status_writes": "command"}`, "", "", "names no command"},
-		{`{"status_writes": "studio"}`, "", "", "not agents or command"},
+		{`{"status_writes": "tracker"}`, "", "", "not agents or command"},
 		{`{"status_writes": "agents", "status_writes": "command"}`, "", "", "not a JSON object"},
 		{`[]`, "", "", "not a JSON object"},
 	} {
@@ -69,7 +69,7 @@ func TestLabelsInForce(t *testing.T) {
 			"\n    kind: number\n    values: []\n    items: null\n    pattern: null\n    max: null\n    kinds: [\"task\"]\n" +
 			"    set_by: outside\n    grants: false\n    description: \"A test label.\"\n"
 	}
-	machineFile(t, home, main, "labels/studio.yaml", def("studio", "cost"))
+	machineFile(t, home, main, "labels/tracker.yaml", def("tracker", "cost"))
 	machineFile(t, home, main, "labels/aaa.yaml", def("aaa", "x"))
 	machineFile(t, home, main, "labels/wrong.yaml", def("other", "x"))
 	machineFile(t, home, main, "labels/base.yaml", def("base", "x"))
@@ -86,7 +86,7 @@ func TestLabelsInForce(t *testing.T) {
 	for _, s := range sets {
 		got = append(got, s.Namespace+"/"+s.From+"/"+s.Labels[0].Name)
 	}
-	if strings.Join(got, " ") != "base/base/base.owner aaa/machine/aaa.x studio/machine/studio.cost" {
+	if strings.Join(got, " ") != "base/base/base.owner aaa/machine/aaa.x tracker/machine/tracker.cost" {
 		t.Errorf("labels in force %v", got)
 	}
 	var whys []string

@@ -397,7 +397,7 @@ func TestStatusFromTheLockAndTheMachine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	write(filepath.Join(machine, "settings.json"), `{"status_writes": "command", "status_command": "studio move"}`)
+	write(filepath.Join(machine, "settings.json"), `{"status_writes": "command", "status_command": "tracker move"}`)
 	doc, code := Build(root, "dev")
 	if code != ExitOK {
 		t.Fatalf("exit %d: %s", code, schema.Show(doc))
@@ -407,7 +407,7 @@ func TestStatusFromTheLockAndTheMachine(t *testing.T) {
 		"labels":         `[{"namespace":"bonsai","from":"base","version":1}]`,
 		"lanes":          `[{"name":"light","approve_first":false,"close":"agent","from":"base"},{"name":"full","approve_first":true,"close":"person","from":"base"}]`,
 		"status_writes":  `"command"`,
-		"status_command": `"studio move"`,
+		"status_command": `"tracker move"`,
 		"active_task":    `{"id":"T-0901","how":"running","why":null}`,
 	}
 	for k, w := range want {

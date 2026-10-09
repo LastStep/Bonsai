@@ -32,7 +32,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/schema"
 )
 
-// TaskEnv names the variable that names the session's task (contract §13; today's TRINETRA_TASK).
+// TaskEnv names the variable that names the session's task (contract §13).
 const TaskEnv = "BONSAI_TASK"
 
 // How the active task was found (status --json's active_task.how, its closed list).
