@@ -4476,18 +4476,21 @@ both sides where a check names them, and passes or fails 5.5:
 
 ### Step 5.6: the machine pieces (13-20 h, re-ask at 26)
 
-**Rohan's (B), and what else of his changes.** This section comes to Rohan, because it changes his steps. The one step
-already on his list for 5.6, a line in his own `~/.claude/CLAUDE.md` that loads his personal memory, gets its exact text
-and a check. And three standing rules make steps his, each for a reason given in plain words below: notes about him in
-his personal memory are his to save (an agent drafts them; inside a linked project no agent can write there, the same
-wall that already guards his `~/.claude/CLAUDE.md`); this machine's Bonsai settings for a project and the label files
-the studio attaches are set only by him or by the studio's registration, never by an agent, which hands him the line;
-and when a newer Bonsai release exists, the agent hands him the install lines (his 9 Oct decision, now with their
-shape). Nothing else of his changes: the hours (13-20) and the re-ask line (26) are the spec's, one addition since the
-spec (telling him of a newer release) fitting inside them; the order of the parts stands; no repo is new and nothing of
-his goes public; no option round is asked; 5.6 asks no install, no password and no Windows sitting (the installers' root
-and administrator halves are proved on GitHub's throwaway machines; his real installs on both sides come with 1.0, at
-5.7). Every format change is an addition: three new command outputs (`bonsai.settings/1`, `bonsai.attach/1`,
+**Rohan's (B), and what else of his changes.** This section comes to Rohan, because it changes his steps and holds one
+choice of his, made inside his approval (no option round). The one step on his list for 5.6, a line in his own
+`~/.claude/CLAUDE.md` that loads his personal memory, moves to 5.7, into the 1.0 install batch: the index it loads
+exists on his machine only once 1.0 runs there, and an agent then checks that it loads. His choice: who saves the notes
+about him that every project reads, **(A)** he does, from a draft an agent hands him (recommended), or **(B)** agents
+do, through base's memory skill (his part, "Who saves notes about you"). Two standing rules make steps his, each for a
+reason given in plain words below: this machine's Bonsai settings for a project and the label files the studio attaches
+are set only by him or by the studio's registration, never by an agent, which hands him the line; and when a newer
+Bonsai release exists, the agent hands him the install lines (his 9 Oct decision, now with their shape). Under (A) a
+third: notes about him are his to save. Nothing else of his changes under (A): the hours (13-20) and the re-ask line
+(26) are the spec's, one addition since the spec (telling him of a newer release) fitting inside them; the order of the
+parts stands; no repo is new and nothing of his goes public; 5.6 asks no install, no password and no Windows sitting
+(the installers' root and administrator halves are proved on GitHub's throwaway machines; his real installs on both
+sides come with 1.0, at 5.7). Under (B) the hours become 14-22 (re-ask 29) and 5.6 asks one WSL install (note 5.6.3, 2,
+"Under (B)"). Every format change is an addition: three new command outputs (`bonsai.settings/1`, `bonsai.attach/1`,
 `bonsai.line/1`), one field at the end of `status --json` (`bonsai_release`), new words in open lists, and descriptions.
 
 #### For Rohan, in plain words
@@ -4502,8 +4505,8 @@ and administrator halves are proved on GitHub's throwaway machines; his real ins
 - **Your personal memory.** One place for facts about you that every Claude session on this computer reads, in every
   project: `~/.bonsai/personal/`, an index and one short note per fact. Bonsai makes the empty index, checks its size
   and form, warns if a password-like string sits in it, and on Windows keeps a copy of WSL's.
-- **A moved project keeps its settings.** If a project's folder moves, its settings on this machine stay under the old
-  path. `bonsai check` now says so and gives the lines that bring them over.
+- **A moved project's settings are not lost.** If a project's folder moves, its settings on this machine stay under the
+  old path. `bonsai check` now says so and gives the lines that bring them over.
 - **Bonsai's part of the status line.** `bonsai status --line` prints one short line: the task being worked on, whether
   its proof is green, how many tasks wait for checking, how many questions wait for you, and a newer Bonsai release when
   there is one. For example: `T-0042 Hover panel ladder:green verify:2 asks:1`.
@@ -4515,34 +4518,39 @@ install. A project's settings on this machine and the studio's label files sit o
 program: they belong to the computer, not to the project, and they decide what holds the agents. One switches on the
 studio's rule that agents may not move task statuses themselves; the studio's labels mark values agents may never write.
 An agent that could change them could switch off the checks on itself. So `bonsai settings set`, `bonsai labels attach`
-and `detach` refuse to run in an agent's session, and Bonsai's guard refuses them too, as the spec has it. Agents may
-read them (`bonsai settings show`, `bonsai status`). Who sets them: the studio's registration of a project (run by you,
-or by the studio's own program, never inside an agent's session), or you; when an agent finds one needed, it hands you
-the exact line. None is left to agents, not even the harmless one (how long pack copies are kept): one rule is simpler
-to trust, it is already built into the guard, and no agent's work needs it.
+and `detach` refuse to run in an agent's session, and Bonsai's guard refuses them too, as the spec has it. These stop
+an agent's mistake, not a determined agent: a script an agent writes could still change these files, as it could the
+rest of Bonsai's folder on this computer, and the studio flags a lost `command` setting. Agents may read them (`bonsai
+settings show`, `bonsai status`). Who sets them: the studio's registration of a project (run by you, or by the studio's
+own program, never inside an agent's session), or you; when an agent finds one needed, it hands you the exact line.
+Type it in a terminal of your own, not inside Claude (its `!` lines count as an agent's session). None is left to
+agents, not even the harmless one (how long pack copies are kept): one rule is simpler to trust, it is already built
+into the guard, and no agent's work needs it.
 
-**Your personal memory, and your one line.** Facts about you that hold in every project (how you like work done, say)
-belong in `~/.bonsai/personal/`. Claude Code loads its index in every session through one line in your own
-`~/.claude/CLAUDE.md`. No agent edits that file (from 5.5 the walls refuse it), so the line is yours, once, in WSL; the
-orchestrator sends it when the piece that builds this lands (about a minute):
+**Your personal memory, and your one line at 5.7.** Facts about you that hold in every project (how you like work done,
+say) belong in `~/.bonsai/personal/`. Claude Code loads its index in every session through one line in your own
+`~/.claude/CLAUDE.md`. No agent edits that file (from 5.5 the walls refuse it), so the line is yours, once, in WSL. It
+comes at 5.7 with your 1.0 installs, not in 5.6: the index exists on your computer only once a Bonsai with this part
+runs there, which means 1.0. In 5.6 an agent tries the line's form in a scratch folder only; at 5.7, after your line, an
+agent checks that your sessions load your memory, changing nothing of yours.
 
-```bash
-printf '\n@~/.bonsai/personal/INDEX.md\n' >> ~/.claude/CLAUDE.md
-tail -n 2 ~/.claude/CLAUDE.md
-```
+**Who saves notes about you: your choice.** Whatever sits in that index is read by every Claude session on this
+computer, in every project, so one agent's words there would reach all your work. Two ways:
+- **(A) You save them, from a draft an agent hands you (recommended).** An agent that learns something about how you
+  like work done drafts the note and hands it to you; you save it by hand, or by asking Claude in a session opened
+  outside any linked project (your home folder, say), where Bonsai's walls do not apply. Facts about how you want work
+  done in one project go into that project's own memory, which agents do write. It costs nothing more: Bonsai's guard
+  already keeps agents' file tools out of Bonsai's folder on this computer, as the walls keep them out of your
+  `~/.claude/CLAUDE.md` (a stop for mistakes, as above, not for a determined agent). No guard change and no install in
+  5.6. What you give up: a note about you is not saved until you save it.
+- **(B) Agents may write them,** through base's memory skill, as the spec first had it. It costs a change to Bonsai's
+  guard (letting agents write that one folder), and so a new pre-release install in WSL during 5.6 (5.4's four lines,
+  about 5 minutes, your password), and 1-2 more AI hours (5.6 then 14-22 hours, re-ask at 29). And one agent's words,
+  right or wrong, reach every session in every project until you notice them.
 
-The second line must end with `@~/.bonsai/personal/INDEX.md`; send the orchestrator what it printed. The first line adds
-an empty line before it, so it never joins your file's last line. Until the index exists on this computer (a Bonsai with
-this part makes it, which on your machine means 1.0), Claude Code skips the line; an agent measures that before the line
-is sent, and if it does not, the line waits for the index.
-
-**Who writes those notes: you.** The wall that guards your `~/.claude/CLAUDE.md` also guards this folder: inside a
-project linked to Bonsai no agent can write there. Whatever sits in that index is read by every session in every
-project, so one agent's words there would reach all your work. So an agent drafts a note about you and hands it to you;
-you save it, by hand, or by asking Claude in a session opened outside any linked project (your home folder, say), where
-the walls do not apply. The studio's move of today's notes about you into this folder (spec step 7) follows the same
-rule. On Windows, Bonsai keeps a copy of WSL's notes once you name WSL's folder with one setting; that line comes with
-Mimas's link (step 8), not now.
+Either way, the studio's move of today's notes about you into this folder (spec step 7) follows your choice; and on
+Windows, Bonsai keeps a copy of WSL's notes once you name WSL's folder with one setting, a line that comes with Mimas's
+link (step 8), not now.
 
 **The status line is not a screen of Bonsai's.** `bonsai status --line` prints one line of plain text and stops, like
 `git status --short`: it draws nothing, keeps no window and runs no server. Claude Code shows whatever line a
@@ -4567,9 +4575,12 @@ release on each side. 5.6 builds:
   check` and `bonsai status` then say "a newer release exists" without going online, from that answer. When it cannot be
   known (offline, never read), they say so, and nothing fails.
 - **What the agent hands you:** the exact lines for each side, which Bonsai writes itself, so they are the same every
-  time. In WSL, six lines: a fresh folder, the release and its list of fingerprints downloaded from GitHub, the
-  fingerprint checked (it must print `OK`), the archive unpacked, the installer run. In PowerShell the same, the check
-  printing `True`. For a release 1.0.1 they would read:
+  time. In WSL, six lines: a fresh folder, the release's archive and its list of fingerprints (`checksums.txt`)
+  downloaded from GitHub, the fingerprint checked, the archive unpacked, the installer run. In PowerShell the same six.
+  Run them one at a time. The fourth line must print `OK` (in PowerShell, `True`); if it prints anything else, stop and
+  send the orchestrator what it printed. The lines always download from
+  `https://github.com/LastStep/Bonsai/releases/download/`; if a line names anywhere else, don't run it. For a release
+  1.0.1 they would read:
 
 ```bash
 cd "$(mktemp -d)"
@@ -4581,7 +4592,7 @@ sh install.sh
 ```
 
 ```powershell
-cd (New-Item -ItemType Directory -Force "$env:TEMP\bonsai-1.0.1")
+cd (New-Item -ItemType Directory (Join-Path $env:TEMP ("bonsai-" + [guid]::NewGuid())))
 curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/bonsai_1.0.1_windows_amd64.zip
 curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/checksums.txt
 (Get-FileHash bonsai_1.0.1_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.0.1_windows_amd64.zip).Line -split ' ')[0]
@@ -4589,17 +4600,24 @@ Expand-Archive bonsai_1.0.1_windows_amd64.zip -DestinationPath . -Force
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
+- **What the fourth line proves, and what it does not.** It proves the archive arrived whole and matches the release's
+  own `checksums.txt`, fetched over HTTPS from the same release. It does not prove the release itself is genuine: both
+  files come from one place, so whoever could change one could change both. 5.7 plans the stronger check (GitHub's
+  signed record of how the release was built, or the program's own fingerprint published with the release).
 - **None of it is asked of you in 5.6.** Agents try the installers only against scratch folders, and their root and
   administrator parts run on GitHub's throwaway machines on every commit. Your real installs on both sides come with 1.0
-  (5.7), through these installers. Your WSL copy stays the 5.4 pre-release until then: 5.6 changes no part of the guard,
-  the stop gate or the ladder.
+  (5.7), through these installers; the Windows "allow this app to make changes" prompt itself is first seen then. Under
+  (A) your WSL copy stays the 5.4 pre-release until then: nothing in 5.6 needs a newer one. (One stricter check of this
+  computer's settings, which the guard also reads, reaches your copy with 1.0; Bonsai's own repo has no such settings,
+  so nothing waits on it.)
 
 **Hours, order and your steps.** 13-20 hours, re-ask at 26, as the spec has them; 5.6 after 5.5 and before 5.7. The one
 addition since the spec was written, telling you of a newer release (your 9 Oct choice), takes 1-2 of the status line's
-5-8 hours, which needs less than the studio's whole line did: it shows only Bonsai's part, from Go. Your steps in 5.6:
-approve this section; the two lines above in WSL. Standing from 5.6: notes about you are yours to save; this machine's
-settings and the studio's label files are yours or the studio's registration's; a newer release is yours to install,
-from the lines an agent hands you.
+5-8 hours, which needs less than the studio's whole line did: it shows only Bonsai's part, from Go. Under (B), 14-22
+hours, re-ask at 29 (above). Your steps in 5.6: approve this section, with its one choice; under (B), also the WSL
+install. Standing from 5.6: this machine's settings and the studio's label files are yours or the studio's
+registration's; a newer release is yours to install, from the lines an agent hands you; under (A), notes about you are
+yours to save. At 5.7: your memory line, with the 1.0 installs.
 
 #### What exists, and what 5.1 to 5.5 will have added
 
