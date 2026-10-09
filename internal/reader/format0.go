@@ -4,7 +4,10 @@ package reader
 // parseFrontmatter), the contract's own definition of format 0. "Format 0 reads exactly as [yaml.mjs] reads today,
 // forever, with no new refusals": every leniency of that reader is kept (a plain value holding ": ", unquoted hashes,
 // the last of two duplicate keys, document markers skipped, a list at its key's indent ending the mapping, a # line
-// inside a block scalar read as an empty line), and it refuses only where yaml.mjs throws.
+// inside a block scalar read as an empty line), and it refuses only where yaml.mjs throws. Node's own stack overflow
+// (a RangeError, at roughly 1,700 to 2,100 levels of nesting) is not one of yaml.mjs's throws, so the port reads such a
+// file: refusing it would be a new refusal.
+//
 // The functions below follow yaml.mjs's one for one, under its names (parser0's methods, or with a 0 added); the
 // comments say where JavaScript itself decides something a Go reader would otherwise do differently.
 //
@@ -195,7 +198,7 @@ func isLineEnd0(r rune) bool {
 	return r == '\n' || r == '\r' || r == 0x2028 || r == 0x2029
 }
 
-// trimEnd0 is s.replace(/\s+$/, ”).
+// trimEnd0 is s.replace(/\s+$/, "").
 func trimEnd0(s string) string {
 	for len(s) > 0 {
 		r, size := utf8.DecodeLastRuneInString(s)

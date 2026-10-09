@@ -11,9 +11,10 @@
 //
 // The format-0 mode (format0.go) is a hand port of the studio's yaml.mjs at commit 4a05eac, the contract's own
 // definition of format 0: "Format 0 reads exactly as [yaml.mjs] reads today, forever, with no new refusals" (contract
-// §2.4). Its outcome is a Result0: Accepted with the value yaml.mjs returns (a *Map, or []any when
-// the top level is a list; numbers are float64, as JavaScript's are) or Refused where yaml.mjs throws, with a message
-// and a next step but no reason code. Bonsai's own checks read only Bonsai's kinds (task, run, state; contract §2.3,
+// §2.4). Its outcome is a Result0: Accepted with the value yaml.mjs returns (a *Map, or []any when the top level is a
+// list; numbers are float64, as JavaScript's are) or Refused where yaml.mjs throws, with a message and a next step but
+// no reason code. Node running out of stack on a file nested about two thousand levels deep is not a throw of
+// yaml.mjs's: the port reads that file. Bonsai's own checks read only Bonsai's kinds (task, run, state; contract §2.3,
 // §7.3) under format 0; a file Bonsai reads only as format 1, such as bonsai.yaml, is refused when it is format 0.
 //
 // Dispatch comes first (contract §2.4): the first top-level key decides. format: first means format 1; no top-level
