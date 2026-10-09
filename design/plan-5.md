@@ -1388,6 +1388,202 @@ A fresh Opus verifier, at the end of 5.2, runs each check itself on the final co
 - **§6: rows "are only added",** yet `sessions` is a generated kind with `keep_days`: rows go only by a person's rule in
   `bonsai.yaml` (default kept), in `check --write`.
 
+### Step 5.3: the guards (18-29 h, re-ask at 38)
+
+**Rohan's (B).** This section comes to Rohan, because it holds a question only he can answer: how the hook lines find
+`bonsai`, where his 8 Oct rule (a fixed place no agent can redirect) meets two older ones (hooks call `bonsai` by name;
+no committed file holds a full path). No design meets all three (5.3.6's note weighs eight), so it is asked as an
+option round, 5.3's first (stop line 3 allows two), written in plain words just below with a recommendation. Nothing
+else of his changes: the hours (18-29) and the re-ask line (38) are the spec's; the order of the parts stands; his steps
+are the ones already on his lists (Claude Code's Windows login back first, `STATE.md`, "Waiting on Rohan"; then the
+second Windows check, about 10 minutes, after a Sonnet agent's run on both sides); no repo is new and nothing goes
+public; no format changes (the guard's new rule names are values of the log's free `rule` string, and `check`'s
+new finding is an addition). Only the piece that writes the lines' form (5.3.6) waits for his answer; the rest of 5.3
+does not.
+
+#### The question for Rohan: how the hook lines find `bonsai`
+
+Every time an agent edits a file or runs a command in a linked project, Claude Code runs a short line that Bonsai wrote
+into the project's `.claude/settings.json`; today `bonsai hook guard || exit 2`. The shell finds `bonsai` by its name,
+by looking through the PATH, a list of folders, in order. The `|| exit 2` makes a missing or crashing `bonsai` block the
+call.
+
+On 8 Oct you asked that these lines call the installed `bonsai` at a fixed place, so that nothing an agent can edit
+redirects them. Two rules written the day before say the opposite: the lines call `bonsai` by name (spec §3), because no
+committed file may hold a full path (the skeleton's check 2: a full path differs from machine to machine and can name a
+user). A fixed place is a full path, and a name is found through a PATH that can be redirected, so all three cannot
+hold. Choosing between your rules is yours.
+
+How a name gets redirected: a `bonsai` put into a folder that comes earlier in the PATH than the installed one (in your
+WSL terminals `~/go/bin`, `~/node_modules/.bin` and `~/.local/bin` all come before `/usr/local/bin`, and one
+`go install` puts a `bonsai` there); or a PATH set inside a Claude Code settings file. One more route stays open
+whatever you choose: on Windows, a settings file can name a start-up script that runs before any hook line. An agent
+cannot change those settings files with its own tools (the guard refuses it for the project's files, and from 5.5 the
+walls for yours), but a shell command can, and Claude Code applies the change at once. That route is caught after the
+fact: from this part, `bonsai check` reports any such setting in a project.
+
+- **(a) The installed place, written into the lines (recommended).** Each line names WSL's installed file
+  (`/usr/local/bin/bonsai`, which only root can replace) and, failing that, Windows'
+  (`C:\Program Files\Bonsai\bonsai.exe`, which only an administrator can); if neither is there, the call is blocked.
+  Nothing on the PATH is read. It meets your 8 Oct rule. It breaks the letter of the two older rules but keeps their
+  purpose: the two places are the same on every machine and hold no user's name, and check 2 gains that one named
+  exception. Cost: about 1-2 hours, inside 5.3's; on a machine where Bonsai is not installed in its place, every edit in
+  a linked project is blocked (as a missing `bonsai` already is), so someone contributing to Bonsai's own repo installs
+  it there first; and the test copies agents build name their own scratch place, in scratch projects only.
+- **(b) By name, and Bonsai refuses to guard from anywhere but its installed place.** The lines stay as they are. A
+  real Bonsai found elsewhere (a `go install` copy, an old build) blocks every edit and says where it runs from. It
+  keeps the two older rules. Against yours it stops the likely accident, a stray copy of Bonsai, but not a program that
+  is not Bonsai and answers to the name (another tool called `bonsai`, or a stand-in an agent writes), which could allow
+  every call. Cost: the same 1-2 hours and the same install requirement.
+- **(c) By name, as the spec has it now.** Each session's start record names the `bonsai` that started it and its
+  fingerprint, and `bonsai check` and `status` say when it is not the installed one: all after the fact. It keeps the
+  two older rules and does not meet yours: any `bonsai` earlier on the PATH answers. Cost: nothing more now.
+
+**Recommendation: (a).** It is what you asked for on 8 Oct, and it shuts the door on every program, not only on copies
+of Bonsai. The two older rules exist to keep user names and machine-specific paths out of the repo, and the two
+installed places are neither. None of the three changes the hours, the formats or your steps; whichever you choose, a
+project linked earlier takes the new lines with one `bonsai update --allow-exec --yes` (today only scratch projects are
+linked).
+
+The spec's row (§14): "The adapter (2-3); the path guard with contract §5.5, §10.1 and §13, and its refusals for
+`.bonsai/local/` and the tables (7-10); the delete check (3-5); the stop gate (2-3); generated deny rules and
+`disableAllHooks: false` (1-2); the binary check (1-2); the second Windows check: guard, delete check, recorder under
+concurrency, backslash paths (2-4; **Rohan's:** its real Windows session, §17 step 7, saving about 1 h)". It also
+settles the gate report's 5.3 findings and what 5.1 and 5.2 hand on.
+
+**What exists** on `main` at `d341a5a` (read each package's doc comment):
+- `internal/guard`: `bonsai hook guard` with the skeleton's one rule: an Edit, Write, MultiEdit or NotebookEdit of a
+  path on `bonsai.yaml`'s `protected` or `person_only` list is refused, and nothing grants. It finds the session's
+  project from `CLAUDE_PROJECT_DIR`, walking up to the first folder holding `bonsai.yaml` but stopping at one holding
+  `.git` (`findProject`, `hook.go`). A path is judged in every form (`paths.go`: links, `~`, and on Windows `\\?\`,
+  `/c/`, streams, trailing dots and spaces, short names, case, and the final path by handle through `syscall`,
+  `final_windows.go`). Bash and PowerShell are allowed (`shell-not-judged`). Its own 5 s timer (half the line's 10 s
+  timeout); a panic or the timer blocks; the over-time answer waits `recordWait` (500 ms) for its record. One `guard`
+  record per decision in the session project's own `.bonsai/local/log/` (a worktree's own folder), `input_hash` null,
+  `bonsai_path` absolute, `bonsai_sha256` on the record that made the file (`record.go`). The fault switch behind the
+  `bonsai_test_fault` tag (`fault_on.go`). Its rules are a `const` block in `guard.go`, their one home.
+- `internal/guard/input.go`: the PreToolUse payload reader (the strict decoder, a BOM, a NUL, a 64 MiB cap; the file
+  tools' path only).
+- `cmd/bonsai/hook.go`: `guard` built; `start`, `stop` and `record` refuse as not built.
+- `internal/engine/settings.go`: `ownHooks` holds the guard's line, `bonsai hook guard || exit 2` on
+  `Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell`, timeout 10; a deny rule for each `never_edit` path and each
+  pack's; `autoMemoryEnabled: false` and `disableAllHooks: false` (part 3). `isBonsaiHook` claims a line starting
+  `bonsai hook`; `isOldBonsaiHook` takes any line calling Bonsai by a full path for a 0.4.3 line, which `init` removes.
+  Consent (5.1.1): a hook line added or changed needs `--allow-exec`, but for Bonsai's own lines at a first link.
+- `internal/workspace`: `Home` (`BONSAI_HOME`, else `~/.bonsai`), `MachineKey` (the machine folder's name from the
+  main checkout's real path), `Find` through git (its note: not for the guard), `IsBusy`.
+- `formats/` (set 4): contract §13's sixteen fixture cases in `formats/active-task/`, with `answers.json`'s `guard` and
+  `stop_gate` sections, which 5.3 tests (the README, "The active-task fixtures").
+- Tests: `internal/guard` (`guard_test.go`, `guard_windows_test.go`, `fault_on_test.go` as 5.1.0 left it) and
+  `cmd/bonsai/hook_test.go` (the line through the shell, the four faults).
+
+**What 5.1 and 5.2 will have added** (from this plan's notes; none is built yet. 5.3's start re-reads each against what
+landed, and 5.3.0's run report records any difference that changes a note below):
+- 5.1.4a: a Go type for each format (the ladder result's among them, which the stop gate reads); the guard's lean read
+  of `bonsai.yaml` (the format line, the protected lists, `never_edit`), held by a test.
+- 5.1.5: the active-task function (contract §13), one for every reader, proved on its fixture section; the lock's
+  `declares` (each pack's protected paths, document kinds, lanes and labels); declared document kinds with their
+  folders and id patterns; labels in force; this machine's settings for the workspace, read (`status_writes`,
+  `status_command`).
+- 5.1.6: `check`'s findings and warnings in one table, among them `disableAllHooks: true` in a project or local
+  settings file, an absolute path in a committed format, and the `bonsai` on the PATH against `install.json`.
+- 5.1.7: `unlink` and taking a pack out remove Bonsai's own lines (from 5.3, the stop line and the deny rules too).
+- 5.1.8: `check --write`, the tables' only writer. 5.1.10: `docs/reference/lists.md`, generated, with its test.
+- 5.2.1: `internal/redact`, with the reduction of a shell command to its head.
+- 5.2.2: `internal/record`: one append path for every writer of `.bonsai/local/`, the reader, the salt, one builder of
+  every record's common fields, and the finder of the main checkout's `local/` (reading `.git` with no git process; main
+  used only when its `bonsai.yaml` holds the same id). Its note: the guard keeps its own writer and folder "until 5.3
+  decides what the hook path may trust, and may then take this one over".
+- 5.2.4: `bonsai hook start` (it makes a session's file first, with the binary's path and hash) and `bonsai hook
+  record`, with their own payload reader; the input hash (HMAC-SHA-256 keyed by the salt); their lines in `ownHooks`.
+  It leaves to 5.3 the one adapter, the guard's `input_hash`, the guard's records in a worktree and the stop line.
+- 5.2.6b: the cleaner, which reads main's `local/` only (guard records in a worktree's own folder wait for 5.3).
+
+**The pieces.** Hours: the spec gives seven figures. Six pieces carry one each; the path guard's 7-10 is split in two by
+the planner's judgment, for sizing briefs (5.3.1 3-4, 5.3.2 4-6). In all: low 2+3+4+3+2+1+1+2 = 18; high
+3+4+6+5+3+2+2+4 = 29 (pieces 5.3.0 to 5.3.7). This section's planning and review runs count in 5.3's hours, carried in
+5.3.0's run report ("What changes", item 3).
+
+| # | What is built | What proves it | Hours | Reads |
+|---|---|---|---|---|
+| 5.3.0 | **The hook adapter and its frame**: one reader of Claude Code's hook payloads for every `bonsai hook` word (the events, tools and tool inputs Bonsai reads; backslash paths kept as given; unknown fields ignored), replacing the guard's `input.go` and 5.2.4's own reader; one frame for the hooks that block (the guard, and the stop gate from 5.3.4): its own timer, a panic or an unread payload blocking, the over-time record awaited for a wait given as an option; the four timed tests | Go tests on payloads written fresh for every event and tool from the hooks reference on the version in use; one reader (no other package decodes a payload); the four timed tests 20 times in a row on both sides under load; the guard's timings before and after; check 10; CI | 2-3 | Spec §3, §7 ("One hook adapter"); contract §8.3; Claude Code's hooks reference (the version read goes in the run report); this plan's 5.1.0 note and 5.2.4 notes 1, 4 and 8; `records/runs/R-2026-10-09-5.1.0-fault-test.md` (11:25) |
+| 5.3.1 | **Where the guard reads from**: a path judged by the project holding it (contract §13); the main checkout found from `.git` with no git process and **verified** against git's own link back and this machine's record, else no grants; the lists from main's `bonsai.yaml` and the lock's `declares`; records through 5.2.2's append path into main's `local/`, with `input_hash` and `bonsai_path` from `~/`; the Windows junction limits; the guard's timings | Go tests: the project cases (a `.git` in a subfolder, a nested repo, a path in another project); the main cases (a worktree, a rewritten `.git` file, a forged `commondir`, a decoy main with and without a record, a submodule); a worktree session's records in main's `local/`, cleaned by 5.2.6b's cleaner; Windows junction tests (`mklink /J`, no privilege); timings on both sides; V1's break-it | 3-4 | Spec §3, §6 (`.bonsai/local/`), §7 (the 8 Oct note); contract §2.6, §3, §8.1, §13; gate report §2.5, §5 (5.3); `design/plan.md` "What still links Bonsai and the studio", item 5; this plan's 5.2.2 notes 3 and 8, 5.2.4 notes 3, 6 and 7; `records/runs/R-2026-10-08-hook.md` (19:18, 19:47) |
+| 5.3.2 | **What the guard judges**: one function, "may this agent change this path", that the file tools, the delete check and rung 0 (5.4) call: grants from the active task (contract §13: read from main, honoured only while it reads `running`); `person_only` (contract §5.5); the floor of paths guarded whatever the lists say; Bonsai's own files (`.bonsai/local/`, the tables) refused in every mode; `command` mode's tripwires (contract §10.1); Bonsai's own commands in a shell call | One Go test per rule, walked from the guard's rules table so a rule with no test fails; the guard's section of set 4's fixtures; `agents` and `command` mode each; V2's break-it | 4-6 | Spec §4 (Bonsai's own commands), §6 (`bonsai.yaml`'s lists, the tables), §7 ("What the guard judges"); contract §5.2, §5.5, §5.6, §7.3, §10.1, §10.6, §13; `formats/README.md` ("The active-task fixtures") |
+| 5.3.3 | **The delete check**: in a Bash or PowerShell call, a recursive or bulk delete that does not name what it deletes is refused (`git clean -x` or `-X` and `git stash --all` among them), and a delete or move of a guarded path is judged by 5.3.2's function; a word splitter, not a shell reader | A table of command lines (bash, PowerShell, `cmd /c`, nested `bash -c`), each with its answer; the splitter fuzzed; V2's break-it on both sides through the hook line | 3-5 | Spec §7 ("Shell commands"), §19 A; contract §3 (`local/`); gate report §5 (5.3) |
+| 5.3.4 | **The stop gate**: `bonsai hook stop` on contract §13: it engages only for a task the environment names for the session's own project; blocks a task missing, named twice or broken; needs a green `local` result in main's `.bonsai/local/ladder/` proving the session's checkout's HEAD, with the floor and the task's rungs. Its line in `ownHooks`, under consent | Go tests on the stop gate's section of set 4's fixtures and on fixture results (green, red, another commit, `mode: ci`, a floor rung missing); the line's consent tests; `unlink` removing it; a scripted session on WSL blocked until a fixture result proves HEAD | 2-3 | Spec §7 (the stop gate), §9 (results); contract §5.6 (the floor), §11, §13; read-only, today's stop gate (`stop-gate.mjs`, as contract §13 cites it) at the studio's commit the brief names; Claude Code's hooks reference (Stop) |
+| 5.3.5 | **Bonsai's own deny rules, and `disableAllHooks: false`**: the engine writes, as its own lines beside its hook lines, deny rules over the files only Bonsai writes (`.bonsai/local/`, the two tables), each with its sentence; `disableAllHooks: false`, written since part 3, held | Go tests (written, previewed, the file's key order kept, removed by `unlink`); each rule tried once in a real `-p` session on both sides: a file-tool write and a shell redirect refused by Claude Code, while `bonsai check --write` still writes | 1-2 | Spec §6 ("Generated files", the tables), §7 ("Deny rules the engine writes", "What a project hook cannot do"); contract §3, §10.6; this plan's 5.1.1 rule 8 |
+| 5.3.6 | **The hook lines' form and the binary check**, on Rohan's answer (above): the form of every line of Bonsai's; how a test build names its place; `check`'s finding for a settings `env` that can redirect or silence a hook | Go tests; a scripted run on both sides with a decoy `bonsai` first on the PATH; a project linked by the build before taking the new lines only with `--allow-exec --yes`; part 3's checks 1 and 2 re-run as scripts; V3's break-it | 1-2 | Spec §3 (where it lives, the tripwire, "Hooks call `bonsai` by name"), §7 (the 8 Oct note), §14 check 2; contract §2.6; gate report §5 (5.3); Claude Code's hooks and settings references (the shell, `env`, reloads) |
+| 5.3.7 | **The second Windows check**: a Sonnet agent's scripted run on both sides with the final build (the guard, the delete check, the stop gate, the recorder under parallel subagents, backslash and `/c/` paths, junctions, the large Write under `missing`), then Rohan's session (spec §17 step 7), then the timings | The agent's report, each case against its answer; Rohan's words; the timings table | 2-4 | Spec §14 (5.3's row), §17 step 7; gate report §2.5, §2.6; "Rohan's sitting" below |
+| **5.3** | | | **18-29** (re-ask 38) | |
+
+**The order, side by side where truly independent.** Rohan, 9 Oct: "if you can orchestrate work in parallel do that
+whenever possible"; his 8 Oct bar stands: no shared file, and neither's proof resting on the other's. 5.3 starts once
+5.2's end verifier has passed 5.2 (no two parts run at once). A piece that runs beside another rebases on `main` and
+re-runs its proof if the other lands first ("What changes", item 2). The files each piece owns:
+
+| Piece | Owns |
+|---|---|
+| 5.3.0 | A new package for the adapter and the frame (`internal/hookin/`, a working name); `internal/guard/input.go` (moved there) and `hook.go`'s timer and answer; 5.2.4's payload reader in `internal/recorder/`; the comment in `internal/guard/fault_on.go`; the four timed tests (in `internal/guard/guard_test.go`, `cmd/bonsai/hook_test.go` and `internal/workspace/places_test.go`) |
+| 5.3.1 | `internal/guard/` (`hook.go`, `record.go`, `paths.go`, `final_windows.go` and their tests); the finder's verification in `internal/record/`; the machine record in `internal/workspace/`, and its write at `init` and `update` in `internal/engine/` if 5.1 has not written it; 5.1.4a's test of the guard's lean read; one line of `init`'s closing words |
+| 5.3.2 | `internal/guard/rule.go` and new files beside it, one per judgment; the guard's rules table and the floor's table; `docs/reference/lists.md` |
+| 5.3.3 | New files only, `internal/guard/shell*.go` and their tests, until its last commit, made after 5.3.2 has landed: it wires them into `rule.go`, adds its rule names and the delete words to the tables and regenerates `docs/reference/lists.md` |
+| 5.3.4 | A new package, `internal/stopgate/`; the `stop` word in `cmd/bonsai/hook.go`; `ownHooks` in `internal/engine/settings.go` and the engine tests that hold Bonsai's lines; and a last commit, made after 5.3.2 has landed, adding its rule names to the guard's rules table and regenerating `docs/reference/lists.md` |
+| 5.3.5 | `internal/engine/settings.go` (Bonsai's own deny lines) and the engine tests that hold Bonsai's lines |
+| 5.3.6 | `internal/engine/settings.go` (the lines' form, `isBonsaiHook`, `isOldBonsaiHook`); 5.1.6's table of findings (one finding, and the absolute-path finding's exception), with its list of settings keys on `docs/reference/lists.md`; the build stamp in `cmd/bonsai`; the build line of the scripts in `~/bonsai-checks/scripts/` |
+| 5.3.7 | Nothing in the repo but what a found failure needs (a fix is its own commit, landed as its piece's) |
+
+1. **5.3.0, 5.3.3 and 5.3.5 start together, side by side,** once the orchestrator has checked their files against what
+   landed (above all: where 5.2.4 put its payload reader, and whether 5.1's engine writes the machine record). 5.3.0
+   first, since every later hook piece reads payloads through it; 5.3.3 is text in, an answer out, in new files, its
+   call to 5.3.2's function a stub in its own tests; 5.3.5 writes settings lines and tries them in real sessions, which
+   read no payload. None's proof rests on another's.
+2. **5.3.1 after 5.3.0 lands.** It changes `hook.go` and the record path that 5.3.0 reframes.
+3. **5.3.2 after 5.3.1 lands.** It judges what 5.3.1 reads.
+4. **5.3.4 after 5.3.1 and 5.3.5 have landed, beside 5.3.2 and the rest of 5.3.3.** It uses 5.3.0's frame and 5.3.1's
+   verified finder, and adds its line to `ownHooks`, which 5.3.5 changes. Until its last commit it shares no file with
+   5.3.2 or 5.3.3 (its own package), and its proof (its fixtures and fixture results) rests on no grant.
+5. **5.3.3 and 5.3.4 land after 5.3.2,** one after the other, each rebased, each with a last commit that puts its names
+   into the guard's rules table (5.3.2's) and regenerates the reference page; 5.3.3's also wires the check into
+   `rule.go`, and then its whole table runs. One verifier sees 5.3.2 and 5.3.3 together (below).
+6. **5.3.6 after 5.3.3 and 5.3.4 have landed and Rohan has answered.** It changes the form of every line in `ownHooks`
+   and adds a list to the reference page. If his answer is late, 5.3.6 waits; nothing else does.
+7. **5.3.7 last**, on the final build, so the Windows check proves the lines as they ship.
+
+**Who builds and verifies.** Opus builders for every code piece, 5.3.0 to 5.3.6 (guards, hooks, Windows). A Sonnet agent
+runs 5.3.7's scripted run (a hand check, Rohan's 8 Oct word); the orchestrator reads its report. Fresh Opus verifiers,
+each with a break-it on both sides: **V1 at 5.3.1**, covering 5.3.0's adapter as landed (a payload's shapes, a
+redirected main checkout, cross-project paths, junctions); **V2 once 5.3.3 is rebased on 5.3.2's branch**, covering
+both (everything the guard judges, file tools and shell), after which 5.3.2 lands, then 5.3.3; **V3 at 5.3.6**,
+covering 5.3.4 and 5.3.5 too (every line Bonsai writes: the stop gate, the deny rules, the lines' form). 5.3.0, 5.3.4
+and 5.3.5 land before their verifier on green tests on both sides, CI and the orchestrator's read of the diff, which
+the run report says; a must-fix found later is fixed forward. **The 5.3 end verifier** runs "5.3 done" on the final
+commit, after Rohan's sitting.
+
+#### Where each inherited finding is settled
+
+The gate report's section 5, its 5.3 list, item by item; then the outline's "Settles" and what 5.1 and 5.2 hand on:
+
+| Finding | Settled in | How |
+|---|---|---|
+| How the hook line finds `bonsai`: by name on the PATH, which a settings `env` could redirect; spec §7's 8 Oct note against §3 and check 2 (gate §5) | Rohan; 5.3.6 | The option round above; 5.3.6 builds his answer, and `check` finds a redirecting settings `env` whatever he chooses |
+| A `.git` entry in the session's starting subfolder reads the project as unlinked (gate §5) | 5.3.1 | A path is judged by the project holding it: the nearest `bonsai.yaml` at or above it, past any `.git` (contract §13). The starting folder only names the session's own project. A session started in a subfolder loads none of the project's settings, so no guard runs there at all (Claude Code's settings reference, measured on the version in use): `init`'s closing words say so |
+| `bonsai.yaml` read from the working tree; what the guard trusts to find the main checkout must not be rewritable unnoticed (gate §5; spec §7's 8 Oct note) | 5.3.1, 5.3.2, 5.3.3 | The main checkout verified (5.3.1 note 2); a worktree's lists come from main's `bonsai.yaml`, so a branch's copy changes nothing; the floor guards `bonsai.yaml`, the lock, the settings files and `.git` whatever the lists say; the delete check refuses deleting or moving them; a shell rewrite in main's own tree stays a tripwire case (rung 0 and `check`, question A) |
+| Shell `rm` or `mv` of `bonsai.yaml` or the lock is not judged (gate §5) | 5.3.3 | A delete or move of a guarded path is judged as an edit of it |
+| Windows: a dangling junction into a protected folder allowed; a junction swapped between check and write; the admin share (gate §5) | 5.3.1 | A dangling junction refused (`bad-path`: the write through it would fail anyway); this machine's admin share read as its drive; the swap race and other shares documented as the limits of a hook that runs before the call (note 6) |
+| WSL: a session's first call over 5 ms (5.73 at p50, the self-hash); the guard's p95 about 0.6 ms above part 5's, under load (gate §5) | 5.3.1, 5.3.7 | The self-hash left the guard's first call with 5.2.4 (`hook start` makes the file); tasks are read only for a guarded path; timings beside a minimal Go hook in the same harness, with the load average, so load reads out; the bar: a typical call's p95 under 5 ms on WSL |
+| The large-Write fail-closed test ran on WSL only (gate §5) | 5.3.7 | A Write past the 64 KiB pipe buffer under `missing`, in a scripted Windows session |
+| `golang.org/x/sys`: about 3 ms more on every Windows start; spec §3 plans it for 5.4's job objects (gate §5) | Decided here | Not linked. One binary links every package, so "off the hook's path" means out of the binary: Windows calls go through `syscall`'s lazily loaded DLL procedures, as the guard's final path does. 5.4 may link it only with the hook line's Windows p95 within 1 ms of the build before, both in its run report. The end check: `go list -deps ./cmd/bonsai` names no `golang.org/x/sys` |
+| The four timed tests: `TestOverTimeBlocks` with `recordWait`; `TestFaultsThroughTheHookLine/slow`; "busy forever"; the guard tests on the default 5 s budget (the coordinator, 9 Oct; this plan's 5.1.0 note) | 5.3.0 | 5.3.0 note 3 |
+| 5.1.0's leftovers: `fault_on.go`'s comment "a test's waits here for the timer" describes no test; the answer waiting for its record cannot be proved without racing 500 ms (`R-2026-10-09-5.1.0-fault-test.md`, 11:25) | 5.3.0 | The comment rewritten; the wait an option of the frame (note 3) |
+| The guard's and the stop gate's sections of set 4's fixtures (outline; 5.1.3) | 5.3.2, 5.3.4 | Every case, built as `formats/README.md` says, on both sides |
+| The guard's `input_hash` null, its `bonsai_path` absolute, its own writer, and a worktree's guard records in the worktree's own folder, uncleaned (5.2.0, 5.2.2, 5.2.4, 5.2.6b) | 5.3.1 | The salt's HMAC (5.2.4's function); `bonsai_path` from `~/`; 5.2.2's append path and record builder; records in the verified main's `local/`, which the cleaner reads |
+| The one hook adapter (spec §14 gives it to 5.3; 5.2.4 reads its ten events with its own reader) | 5.3.0 | One package; the recorder and `hook start` move onto it |
+| `hook stop` and the stop gate's line (5.2.4) | 5.3.4 | Built; the line added under consent |
+| "The guard's refusal of a hand edit is 5.3's" (5.1.8's note) | 5.3.2 | The tables refused to file tools in every mode, granted or not |
+| A later change of Bonsai's own line, "5.3's hook-line form", needs `--allow-exec` (5.1.1 rule 6) | 5.3.4, 5.3.6 | Tested: a project linked by the build before takes the stop line and the new form only with `--allow-exec --yes` |
+| The guard's lean read holds the format line, the protected lists and `never_edit` (5.1.4a) | 5.3.1 | Widened to the fields the guard now judges by (note 3); 5.1.4a's test updated |
+| The recorder's real Windows session, if Claude Code's Windows login was not back during 5.2 (5.2.4 note 12) | 5.3.7 | The agent runs 5.2.4 note 12's sessions on Windows too, read back as 5.2's done check 7 reads them |
+
 ### Steps 5.2-5.7, outlined
 
 Each gets its detailed section, in 5.1's shape, before it starts ("What changes", item 1). The spec rows are §14's.
