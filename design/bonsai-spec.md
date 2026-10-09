@@ -167,7 +167,7 @@ out after that (vision 2.6).
 
 | Command | What it does | Writes |
 |---|---|---|
-| `bonsai init [--new-id] [--json]` | Links a project: writes `bonsai.yaml` (a comment on every line), `.bonsai/` (the lock, its `.gitignore`, the tables, and `STATE.md` from base's template when there is none, kind `once`), Bonsai's settings entries, the instruction block and the always-on protocol files (§5, §6); previews each settings line first, as `update` does; ends by saying where everything lives (§6). `--new-id` gives a copy its own id and empties its `.bonsai/local/` | Project files |
+| `bonsai init [--name N --source URL --ref R] [--path P] [--never-edit P] [--new-id] [--diff] [--yes] [--allow-exec] [--keep P] [--adopt P] [--json]` | Links a project: writes `bonsai.yaml` (a comment on every line), `.bonsai/` (the lock, its `.gitignore`, the tables, and `STATE.md` from base's template when there is none, kind `once`), Bonsai's settings entries, the instruction block and the always-on protocol files (§5, §6); previews each settings line first, as `update` does; ends by saying where everything lives (§6). `--new-id` gives a copy its own id and empties its `.bonsai/local/` | Project files |
 | `bonsai update [--diff] [--yes] [--allow-exec] [--keep P] [--adopt P] [--json]` | Brings packs to the refs in `bonsai.yaml`; previews by default, naming every file and every settings line with what it does (§6); all or nothing; exit 5 on a conflict; brings this machine's plugin install to the locked commit (§5) | Project files |
 | `bonsai unlink [--yes] [--json]` | Removes what Bonsai wrote, leaving edited files, `.bonsai/STATE.md` and `.bonsai/local/` in place | Project files |
 | `bonsai status [--json] [--full] [--active] [--line]` | One workspace at a glance (contract §12), the home, `.bonsai/` and the id among it. `--active`: only `active_task` (contract §13's read-only command). `--line`: the statusline's workspace half | Nothing |
@@ -181,6 +181,10 @@ out after that (vision 2.6).
 | `bonsai log append --label … [--json]` | One outside event (contract §8.4) | The log |
 | `bonsai settings show [--machine] [--json]` / `set k=v [--machine] [--json]` | This machine's settings for the workspace: `status_writes`, `status_command` (contract §3, §10.1); with `--machine`, the home's own: `cache_keep_days` (§6). How long project files are kept is `bonsai.yaml`'s, not a machine setting | The home |
 | `bonsai labels attach <file> [--json]` / `detach <namespace> [--json]` | Machine-attached label definitions (contract §5.3) | The home |
+
+> **Changed 9 Oct (step 5.1.1):** `init` takes the flags `update` takes, and both take `--allow-exec`: a pack's hook
+> lines, the pack files they run and a plugin's own code parts are written or installed only with it as well as `--yes`
+> (§6, "Code is consented to separately"; §5's note on each machine's install).
 
 Ten commands gained `--json` on 7 Oct (§3); no word was added. `bonsai walls --print` went with the machine-wide
 settings file it printed for (question B, 7 Oct). Flags, not words: `bonsai --version`, `--help` on every
@@ -298,6 +302,14 @@ run report, STATE, a plan, a memory note and the rest (each a skill: `skills/<ki
   reference). So `bonsai update` runs `claude plugin install` under the lock's marketplace name, which is new whenever a
   locked commit changed. The docs' other route, an enable in the untracked `.claude/settings.local.json` that Claude Code
   then fetches itself, is the fallback if the skeleton finds the first unreliable.
+
+  > **Changed 9 Oct (Rohan): a pack plugin that runs code is asked for on each machine.** A locked pack's plugin that
+  > carries code parts (hooks, servers, monitors and the rest Claude Code runs on its own) is installed by `init` or
+  > `update` only with `--allow-exec` on that machine; without it, the plugin step reports it waiting and names the
+  > flag. Once installed at the locked commit, nothing is asked again. A plugin with no code part installs as before.
+  > And Bonsai installs or removes no plugin but the project's own packs': "bonsai should inform about any conflict
+  > thats for sure, but it shouldnt install or remove other plugins". Step 5.1.1
+  > (`records/runs/R-2026-10-09-5.1.1-consent.md`).
 - **Drift is reported, never silent:** `check` and `status --full` compare the version that `claude plugin list --json`
   reports (the commit's first 12 characters; for a `git-subdir` source, plus a hash of the folder) with the lock, and
   report a difference. A pack not installed on this

@@ -1,7 +1,7 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 10:10, when Rohan approved the plan for step 5 and 5.1 started
-(`records/runs/R-2026-10-09-plan-5.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 12:25, when 5.1.0, 5.1.1 and 5.1.2 had landed and 5.1.3 was
+next (`records/runs/R-2026-10-09-5.1.1-consent.md`).
 
 ## In short
 
@@ -50,6 +50,9 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   the record of what happened, the proof that work is done) and works with no studio; the studio is everything across
   projects and anything that acts on agents (dispatch, approvals, status moves, notifications, every visual). The
   recorder and the ladder runner stay in Bonsai; Bonsai has no scheduler.
+- **9 Oct: a pack plugin that runs code is asked for on each machine** (5.1's first option round): `update` installs a
+  locked pack plugin with code parts only with `--allow-exec` on that machine; and Bonsai installs or removes no
+  plugin but the project's own packs' ("it shouldnt install or remove other plugins"). Spec §5's dated note.
 - **9 Oct: later parts' plans reach him under (B):** a part's section comes to him only when it changes what is his
   (hours or re-ask line, the order, his steps, a new public repo or content, an option round, a format change: a new
   major or a removal). He first said (A), then chose (B) once the scope question was settled.
@@ -80,31 +83,44 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: step 5.1, pieces 5.1.0, 5.1.1 and 5.1.2
+## The one thing to do next: step 5.1.3, formats set 4
 
-`design/plan-5.md`, "Step 5.1". Three pieces run side by side, as the plan's order allows (items 1-3): **5.1.0** (the
-timing-shaped guard test, test files only), **5.1.1** (consent to code: `--allow-exec`, every first link to the test
-pack needing it, test-pack commits E and F, a fresh Opus verifier) and **5.1.2** (the format-0 reader, `internal/reader`
-only, a fresh Opus verifier). Each in its own plain worktree (`~/Servers/Bonsai-<piece>`) with its own run report
-(`records/runs/R-2026-10-09-<piece>-<topic>.md`). Pieces land one at a time; a piece that lands second rebases on `main`
-and re-runs its proof. Then 5.1.3 (formats set 4) once 5.1.1 and 5.1.2 have landed, and the rest in the plan's order.
+`design/plan-5.md`, "Step 5.1". Landed on 9 Oct, each with CI green:
+- **5.1.0** (`6a3a419`): `TestEachFaultBlocks` no longer races a 200 ms budget (test file only).
+- **5.1.2** (`c4816eb`): the format-0 reader, a hand port of `yaml.mjs` at `4a05eac`; its fresh verifier passed it
+  (about 2.6 million inputs and today's studio and Mimas files, 0 differences but Node's own stack limit past about
+  1,700 levels of nesting, which the port reads: "no new refusals").
+- **5.1.1** (`6c6fc33`): consent to code. `--allow-exec` real for `init` and `update`; every first link to the test pack
+  needs it; test-pack commits E and F. Its fresh verifier failed the first round (a folder change, a pack named
+  `bonsai`, pack files under `.claude/`) and passed the fix round. Rohan's answer (11:50): a pack plugin that runs code
+  is installed on a machine only with `--allow-exec` there, and Bonsai installs or removes no plugin but the project's
+  own packs'.
 
-5.1's hours so far: the plan's 42 minutes (`R-2026-10-09-plan-5.md`). Step 5's Windows-only tally: 0. Option rounds in
-5.1: none.
+Next, **5.1.3** (formats set 4, a fresh Opus verifier): the new schemas (`workspace`, `pack` with `runs`, `tasks`,
+`sessions`, `memory`, `error`, `check`, `changes`), `status` gaining `error`, the lock's packs gaining their folder
+(`path`, an addition: 5.1.1's verifier's rest of B1, which 5.1.5's engine then uses), the two new trick cases with the
+reader's fix, contract §13's fixtures, the schema-compare test and its CI checkout, and lint's online schema check
+switched off (it failed CI twice on the network). Then 5.1.4a and the rest in the plan's order.
 
-A flaky Windows test was fixed on the way (`1170c92`): `TestRenameRetryOnWindows` held a file for a fixed 150 ms
-and failed once in CI on a loaded runner; it now holds the file until the first busy refusal
-(`records/runs/R-2026-10-09-ci-flake.md`).
+5.1's hours so far: 328 minutes (5 h 28 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
-- Nothing now. In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s
-  and `update`'s JSON (5.1.3/5.1.4b).
+- Whenever convenient: Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the
+  model). In PowerShell: `claude`, then `/login`, then quit.
+- In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and
+  `update`'s JSON (5.1.3/5.1.4b).
 - Later: step 8 at 5.4 (a pre-release `bonsai`); at 5.7 the `release` environment and a new tap token (the working
   environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website).
 
 ## Loose ends
+
+- The WSL user settings file's baseline is `9e049dea...80d8d6` since Rohan's `/plugin` at 12:06 on 9 Oct (his word;
+  before it `7b515457...a025a7`). Windows' is unchanged, `2b6295c1...4ff6c9`.
+- From 5.1.1: S3's rest (a hook running a pack file by a glob or a built name escapes the `runs` scan) is the limit
+  of the plan's rule 4, kept; `update --yes` says "nothing to change" on a forged lock while `check` finds it (5.1.6);
+  the test pack's header still names A-D (fixed in G, 5.1.9).
 
 - Every finding and loose end the skeleton leaves is in `records/gate-skeleton.md` section 5, grouped by the step 5
   part that must settle it (5.1 to 5.7, and the spec's own text). This file no longer repeats them.
