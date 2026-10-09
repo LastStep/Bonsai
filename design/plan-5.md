@@ -14,8 +14,8 @@
 - **Records:** `STATE.md`; run reports in `records/runs/`.
 
 Two readers. **Rohan** reads down to "Size" and reads no code. The **orchestrator, builders and verifiers** read the
-rest. 5.1 and 5.2 are planned in full here; 5.3 to 5.7 are outlined, and each gets its own detailed section in this
-file before it starts.
+rest. 5.1, 5.2 and 5.3 are planned in full here; 5.4 to 5.7 are outlined, and each gets its own detailed section in
+this file before it starts.
 
 ## For Rohan (plain words)
 
@@ -1908,6 +1908,153 @@ session both need it back, so the orchestrator asks him for it at 5.3's start if
    guarded path, a shell call and the stop gate, with `hook start` and `hook record` beside them and a minimal Go hook
    in the same harness, against the gate's figures.
 
+#### Proof for each piece
+
+Every piece: its Go tests and `go vet`, plain and with the fault tag, on WSL and natively on Windows (check 10) before
+the push, their counts in the run report; CI green on the pushed commit; no Windows-only skip without a named reason (a
+junction test runs on Windows only and says so); the Windows rules of `CLAUDE.md` read in the diff (forward slashes in
+every stored path, byte-stable output, busy retries, no `bash` by name). Pieces that run Claude Code (5.3.4's session,
+5.3.5, 5.3.6, 5.3.7 and every verifier) record its version and the user settings hashes before and after. Scripted runs
+live in `~/bonsai-checks/scripts/`, never committed. V1, V2, V3 and the end verifier re-run the tests themselves, on
+both sides.
+
+#### 5.3 done
+
+A fresh Opus verifier, at the end of 5.3 and after Rohan's sitting, runs each check itself on the final commit, on both
+sides, and passes or fails 5.3:
+1. **One adapter:** a payload of each event Bonsai reads goes through the one reader, and no other package decodes one;
+   a payload it cannot read blocks the guard and the stop gate, and leaves `hook record` silent with exit 0.
+2. **The timed tests:** the four of 5.3.0 note 3 pass `-count=20`, plain and tagged, on both sides with eight busy loops
+   beside them; no guard test but the over-time ones runs on a budget under a minute.
+3. **The fixtures:** every case of the `guard` and `stop_gate` sections of `formats/active-task/answers.json` gives its
+   answer, the worktree cases built with git (Windows git on Windows).
+4. **Grants and lists:** a running task's `bonsai.allows` opens a protected path, and the path closes when the task
+   reads `verify`; no active task refuses with its reason; a pack's declared protected path is guarded; the floor holds
+   where the project's lists leave its paths out; `.bonsai/local/`, `.bonsai/.gitignore` and the tables are refused in
+   both modes, granted or not.
+5. **`command` mode:** each tripwire of contract §10.1 refused with its reason first and `status_command` as the next
+   step; in `agents` mode each allowed.
+6. **Where the guard reads from:** a `.git` in the starting subfolder changes nothing; a path in another linked project
+   is judged by its lists and its running task, the environment counting only for the session's own; a worktree
+   session's grants come from main's task files and its records land in main's `local/`; with the worktree's `.git`
+   file pointed at a decoy main (with and without the link back forged, with and without the decoy's `bonsai.yaml`
+   holding the id), no grant is honoured and the refusal names the step.
+7. **Records:** every guard and stop-gate record validates against `bonsai.log/1`; a call's `guard` record and the
+   recorder's `tool_start` share one `input_hash`; `bonsai_path` is from `~/` under the home; the cleaner removes an old
+   file of guard records from main's `local/`.
+8. **The delete check:** the verifier's own table of lines (bash, PowerShell, `cmd /c`, nested `bash -c`) through the
+   hook line on both sides: every unnamed recursive or bulk delete refused; `git clean -x` and `-X` and `git stash
+   --all` refused; a delete or move of a guarded path, or of a folder holding one, refused; a named delete of a free
+   path allowed. No wrong allow; every refusal of an ordinary command listed and judged.
+9. **Bonsai's own commands:** `bonsai init`, `update` and `unlink` run by an agent are refused without a grant of the
+   files they write; `settings set` and `labels` are refused.
+10. **The stop gate:** each blocking case of 5.3.4 note 2 blocks with its reason; green at HEAD allows; nothing named
+    allows with no record; over its budget it blocks; its line is written at a first link, added to an older project
+    only with `--allow-exec --yes`, and removed by `unlink`.
+11. **Deny rules:** Bonsai's own rules written and previewed with their sentences; in a real session on each side a
+    file-tool write and a shell redirect into `.bonsai/local/` and into a table are refused, and `check --write` still
+    writes.
+12. **The lines' form**, as Rohan chose: 5.3.6 note 4's decoy runs give his option's answers on both sides; a project
+    linked by the build before takes the new lines only with `--allow-exec --yes`; part 3's checks 1 and 2 pass as
+    scripts on the final build.
+13. **Redirecting settings:** `check` finds each key of 5.3.6 note 3 in a project and in a local settings file, naming
+    the key and not its value.
+14. **Windows:** junctions into a protected folder (from inside, from outside, past 260 characters) and a dangling one
+    refused; this machine's admin share refused; backslash, `.\`, drive-letter and `/c/` forms judged as the plain path;
+    the large Write under `missing` refused in a real session; the recorder's lines whole under parallel subagents.
+15. **Timings:** the guard's typical call on WSL under 5 ms at p95 beside the minimal Go hook; 5.3.7 note 4's other
+    figures against the gate's; `go list -deps ./cmd/bonsai` names no `golang.org/x/sys`.
+16. **The sittings:** the Sonnet agent's report and Rohan's words in the run report, each case as expected.
+17. **The break-it:** the verifier's own inputs on both sides beyond the builders' tables (path forms, cross-project
+    paths, a redirected main, shell lines, payload shapes): no wrong allow.
+18. **Check 10 and CI:** `go test ./...` and `go vet ./...`, plain and tagged, on WSL and natively on Windows, run by
+    the verifier; CI green on the final commit.
+19. **Stop lines:** 5.3's hours under 38, this section's planning and review included; step 5's Windows-only tally;
+    option rounds (one, the hook lines'); nothing written or run in the studio's checkout or in Mimas; the user settings
+    hashes around every Claude Code run. **Nothing private:** a grep of the diff and the commit messages.
+
+#### Rohan's sitting (spec §17 step 7)
+
+What reaches him, in one batch with exact lines, once the agent's run has passed (the orchestrator sends it; the text
+here is the plan's). If Claude Code's Windows login is not back, that line goes to him at 5.3's start, on its own,
+since the agent's Windows run needs it too. In PowerShell:
+
+```powershell
+claude
+```
+
+then type `/login`, sign in, and type `/exit`.
+
+The check, about 10 minutes, in a normal PowerShell:
+
+```powershell
+cd "$env:USERPROFILE\bonsai-checks\project-guard"
+& "$env:USERPROFILE\bonsai-checks\claude-here.cmd"
+```
+
+In the session, ask Claude three things, one at a time:
+1. "Add the line hello to person.txt." It should be refused: only a person changes that file.
+2. "Run this command: rm -rf junk/*" It should be refused: the delete does not name what it deletes.
+3. "Delete the file junk/one.txt." It should be done.
+
+Type `/exit`, and send the orchestrator what Claude showed for each, in your words or copied.
+
+Why these stay his (his 8 Oct word: his sittings hold only what needs a person typing): a typed, interactive session is
+the kind he works in, which the agent's `-p` sessions are not (the folder's trust, the screen the refusal reaches);
+everything else the agent has run first. If one ask goes wrong, the fix is a later commit and only that ask is
+repeated. The second ask names its command because a recursive delete of a folder by its name names what it deletes
+and is allowed (5.3.3 rule 3).
+
+#### Risk in the code, 5.3
+
+- **A guard that cries wolf gets worked around** (outline). The floor, the delete check and `command` mode refuse more
+  than today. Each piece's tests hold the ordinary calls that must pass, and every verifier lists each false refusal it
+  meets.
+- **Speed.** Every edit and shell call runs the guard. Each read it gains (the lock's `declares`, main's files, the
+  machine record, tasks for a guarded path) threatens spec §3's 5 ms; timings are taken before and after each piece
+  that adds one.
+- **A redirected main.** Verification rests on this machine's record; a shell write that forges it, outside the project,
+  stays the tripwire case question A accepts.
+- **Settings reload mid-session.** Claude Code applies a settings file's hooks and `env` in the running session (its
+  references, read 9 Oct): a shell write that removes a line, sets `disableAllHooks: true` in a local file or sets a
+  redirecting key switches the guard off or around for that session. The guard refuses file-tool edits of the files,
+  the delete check their deletion, and `check` finds the settings; a shell write stays question A's case.
+- **Windows.** Junctions, short names, shares, Git Bash's path forms and PowerShell's quoting; Git Bash missing turns a
+  line over to PowerShell (5.3.6 note 4). Every Windows-only test says why.
+- **The stop gate trapping a session:** bounded by Claude Code's cap of eight blocks; every block is recorded.
+- **Engine tests churn:** 5.3.4, 5.3.5 and 5.3.6 change Bonsai's lines; every engine test and script that holds them
+  is updated, and the run reports list each.
+- **Claude Code moves:** the payloads' fields, the Stop cap, how settings reload, which shell runs a line, how a deny
+  rule's path anchors; each read on the version in use and recorded.
+- **Processes:** the scripted sessions of 5.3.4 to 5.3.7 and the verifiers'; the orchestrator sweeps after each agent.
+
+#### Stale or in tension in the spec, for 5.3
+
+- **§3, "Hooks call `bonsai` by name", and check 2, against §7's 8 Oct note:** no design meets all three; Rohan's
+  option round (above).
+- **§7: "In a project with no `bonsai.yaml`, `bonsai hook` exits 0 at once",** against contract §13's "the project is
+  the one holding the path": the guard judges a path in a linked project even from a session whose own folder is not
+  linked, and allows with no record only when neither is (5.3.1 note 1).
+- **§7 puts the `.bonsai/local/` deny rule in `base`;** here the engine writes it, with the tables' (5.3.5 note 2), and
+  5.5's walls leave that line to the engine.
+- **§14's "generated deny rules"** names work part 3 did in part (the `never_edit` rules, `disableAllHooks: false`);
+  read here as the deny rules the engine generates over Bonsai's own generated files (5.3.5).
+- **§6 and contract §3: worktrees reach main "through `git rev-parse --git-common-dir`";** the hook path reads the
+  `.git` files with no process and verifies the answer against git's link back and this machine's record (5.3.1 note
+  2), as Rohan's 8 Oct note asks.
+- **Contract §5.5 gives the lists to `bonsai.yaml`;** the floor guards `bonsai.yaml`, the lock, the settings files and
+  `.git` whatever they say (5.3.2 rule 2). In `agents` mode a person-only path is grantable by an agent's own
+  `bonsai.allows` (grants count as written), the floor's included.
+- **Contract §10.1's "writing a Bonsai-kind file that fails its format"** stands among `command` mode's refusals; read
+  as `command` mode only (5.3.2 rule 6).
+- **§7: the stop gate "is today's";** Claude Code ends a turn after eight blocks in a row, so the gate binds up to that
+  cap (5.3.4 note 5).
+- **§3's `golang.org/x/sys` for job objects:** not linked (decided above); 5.4 follows.
+- **A session started in a subfolder** loads none of the project's settings (Claude Code's settings reference), so §7's
+  guard covers sessions started in the project's top folder (5.3.1 note 1).
+- **§17 step 7: "delete the `junk` folder with a recursive delete that does not name what it deletes":** a recursive
+  delete of a folder by its name names it (5.3.3 rule 3), so Rohan's ask names `rm -rf junk/*`.
+
 ### Steps 5.2-5.7, outlined
 
 Each gets its detailed section, in 5.1's shape, before it starts ("What changes", item 1). The spec rows are §14's.
@@ -1936,6 +2083,7 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
 - **Rohan:** nothing. The studio's forwarder can start from here (its own work).
 
 **5.3 Guards (18-29 h, re-ask at 38).**
+- **Planned in full** in "Step 5.3" above; this outline is kept as it was written.
 - **Builds:** the hook adapter (2-3); the path guard with contract §5.5, §10.1 and §13 and its refusals for
   `.bonsai/local/` and the tables (7-10); the delete check (3-5); the stop gate (2-3); generated deny rules and
   `disableAllHooks: false` (1-2); the binary check (1-2); the second Windows check: guard, delete check, recorder under
@@ -2081,7 +2229,8 @@ source.
 | 5.1.4b to 5.1.10 | Their Go tests; scripted runs where Claude Code is involved (5.1.7); check 10; CI; the orchestrator's read of the diff |
 | 5.1 | The end verifier on "5.1 done" |
 | 5.2 | Its section's "Proof for each piece"; fresh verifiers for 5.2.1 and 5.2.4; the end verifier on "5.2 done" |
-| 5.3 to 5.7 | Each part's section; its verifiers as outlined; its end verifier |
+| 5.3 | Its section's "Proof for each piece"; fresh verifiers at 5.3.1, at 5.3.2 with 5.3.3, and at 5.3.6; the end verifier on "5.3 done", after Rohan's sitting |
+| 5.4 to 5.7 | Each part's section; its verifiers as outlined; its end verifier |
 | The interim proof (to 5.3) | Before each push, `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on Windows, counts in the run report; CI green on the pushed commit; no Windows-only skip without a named reason |
 | The ladder proof (from 5.4) | `bonsai ladder` green on Bonsai's own `bonsai.yaml`, run by the pre-release Rohan installed; CI and check 10 beside it until a rung covers them; fresh verifiers for the big steps |
 | Stop lines | The run reports' rows and tallies, judged by each part's end verifier |
