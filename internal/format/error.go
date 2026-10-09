@@ -43,7 +43,7 @@ var ErrorWords = []Word{
 	{Word: "not-linked", Who: "person", Means: "the checkout has no bonsai.yaml, so it is not linked to Bonsai"},
 	{Word: "old-workspace", Who: "person", Means: "the checkout is a Bonsai 0.4.3 workspace, which this Bonsai neither reads nor changes"},
 	{Word: "not-main-checkout", Who: "agent", Means: "the step runs only in the project's main checkout, and this is a worktree"},
-	{Word: "no-lock", Who: "person", Means: "bonsai.yaml is in the checkout but .bonsai/lock.json is not, so update cannot tell what was consented to"},
+	{Word: "no-lock", Who: "person", Means: "bonsai.yaml is in the checkout but .bonsai/lock.json is not, so update cannot tell what was consented to, nor unlink what Bonsai wrote"},
 	// A file Bonsai reads (exit 2, or 4 for the lock).
 	{Word: "bad-config", Who: "person", Means: "bonsai.yaml is not one Bonsai reads (a line the reader refuses, a field of the wrong kind, another format)"},
 	{Word: "bad-lock", Who: "person", Means: ".bonsai/lock.json is not one Bonsai reads"},
@@ -64,7 +64,7 @@ var ErrorWords = []Word{
 	{Word: "needs-allow-exec", Who: "person", Means: "the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written"},
 	{Word: "conflicts", Who: "person", Means: "files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt"},
 	// Part-way, and the unexpected (exit 3).
-	{Word: "partly-written", Who: "agent", Means: "the command stopped part-way through writing, the lock not yet written: the same command again finishes the rest"},
+	{Word: "partly-written", Who: "agent", Means: "the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest"},
 	{Word: "unexpected", Who: "agent", Means: "something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats"},
 }
 

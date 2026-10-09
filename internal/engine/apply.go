@@ -5,14 +5,17 @@ package engine
 //
 // Order: the project's copies --adopt replaces are saved in the home's cache first, so a person's edit is safe
 // before anything in the project moves; then every new file is staged beside its target; then the renames, bonsai.yaml
-// first (spec §14, check 1: "it writes bonsai.yaml first"); then the files a pack no longer has are removed;
-// init --new-id empties .bonsai/local/; the lock last. A run that stops between two renames leaves the lock as it
-// was, so the next update finds the renamed files equal to the pack's copies (adopted) and finishes the rest.
+// first (spec §14, check 1: "it writes bonsai.yaml first"); then the files a pack no longer has are removed, in the
+// plan's order (unlink's bonsai.yaml after every other file), and the folders that leaves empty; init --new-id empties
+// .bonsai/local/; the lock last, written (init, update) or removed (unlink). A run that stops between two renames
+// leaves the lock as it was, so the next update finds the renamed files equal to the pack's copies (adopted) and
+// finishes the rest; the next unlink finds the removed files gone and finishes the rest from the lock.
 
 import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -89,11 +92,13 @@ func Apply(p *Plan) error {
 			return errorf("partly-written", ExitRuntime, partly, "%s cannot be written: %v", filepath.ToSlash(s.path), err)
 		}
 	}
+	var emptied []string
 	for _, f := range p.Files {
 		if f.remove {
 			if err := workspace.RemoveFile(filepath.Join(p.Root, filepath.FromSlash(f.Path))); err != nil {
 				return errorf("partly-written", ExitRuntime, partly, "%s cannot be removed: %v", f.Path, err)
 			}
+			emptied = append(emptied, f.Path)
 		}
 	}
 	if p.EmptyLocal > 0 {
@@ -115,5 +120,28 @@ func Apply(p *Plan) error {
 			return errorf("partly-written", ExitRuntime, partly, "%s cannot be written: %v", workspace.LockFile, err)
 		}
 	}
+	if p.LockRemove {
+		if err := workspace.RemoveFile(filepath.Join(p.Root, filepath.FromSlash(workspace.LockFile))); err != nil {
+			return errorf("partly-written", ExitRuntime, "run the same command again: it finishes the rest (the lock is removed last)",
+				"%s cannot be removed: %v", workspace.LockFile, err)
+		}
+		emptied = append(emptied, workspace.LockFile)
+	}
+	pruneEmpty(p.Root, emptied)
 	return nil
+}
+
+// pruneEmpty removes each folder the removals left empty, from a removed file's folder up to the checkout's top
+// (which it never removes). A folder that still holds anything stays; a folder that cannot be removed is left, since
+// the project's files are already as the plan says (git does not show an empty folder).
+func pruneEmpty(root string, removed []string) {
+	for _, rel := range removed {
+		dir := filepath.Dir(filepath.Join(root, filepath.FromSlash(rel)))
+		for dir != root && strings.HasPrefix(dir, root+string(filepath.Separator)) {
+			if os.Remove(dir) != nil {
+				break
+			}
+			dir = filepath.Dir(dir)
+		}
+	}
 }

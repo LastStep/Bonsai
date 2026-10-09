@@ -4,16 +4,16 @@ package main
 // example, so an agent needs nothing else"; plan-5 5.1.4b): each word is a Word, its flags and exit codes in one
 // table from which its --help is written and its command line is read, so help and behaviour cannot drift.
 //
-// One word, one file: init.go, update.go, check.go, status.go and hook.go each hold their word's Word and register it
-// (register, in the file's init). To add a word, add its file with its Word and its run function: nothing else
-// learns of it, since bonsai --help and the dispatch read the registry. To add a flag, add a Flag to the word's
+// One word, one file: init.go, update.go, unlink.go, check.go, status.go and hook.go each hold their word's Word and
+// register it (register, in the file's init). To add a word, add its file with its Word and its run function: nothing
+// else learns of it, since bonsai --help and the dispatch read the registry. To add a flag, add a Flag to the word's
 // table and read it in the word's run function (call.has, call.value, call.all); its help line comes from the table.
 // A flag the spec names that is not built yet stays in the table with Later set: its help says so, and the word
 // refuses it as not-built until the later step clears Later and reads it. An exit code the word returns is in its
 // Exits: the tests fail on a code that is not, and on a refusal whose word is not in format.ErrorWords.
 //
 // Every refusal goes through call.refuse: with --json, the word's own document with its error object filled (the
-// changes output for init and update, check's for check, status's for status), written by internal/format's
+// changes output for init, update and unlink, check's for check, status's for status), written by internal/format's
 // writers; else the sentence and its next step on stderr. A refusal before any word (none given, or one this Bonsai
 // does not have) prints, with --json, the error object alone (bonsai.error). hook takes no --json: it speaks Claude
 // Code's hook format.

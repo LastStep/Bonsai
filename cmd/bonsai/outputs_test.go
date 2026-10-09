@@ -312,6 +312,16 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		}, []string{"update"}, 4, "tag-moved", ""},
 		{"update, a flag it does not take", nil, []string{"update", "--name", "x"}, 2, "bad-flag", ""},
 
+		{"unlink, no lock", then(linked, func(c *cli) { _ = os.Remove(filepath.Join(c.root, ".bonsai", "lock.json")) }), []string{"unlink"}, 4, "no-lock", ""},
+		{"unlink, a lock Bonsai does not read", then(linked, write(".bonsai/lock.json", "{")), []string{"unlink"}, 4, "bad-lock", ""},
+		{"unlink, a bonsai.yaml Bonsai does not read", write("bonsai.yaml", "format: bonsai.workspace/1\nid: 0755\n"), []string{"unlink"}, 2, "bad-config", ""},
+		{"unlink, a broken block", then(linked, write("CLAUDE.md", "<!-- bonsai:block start -->\n<!-- bonsai:block start -->\n")), []string{"unlink"}, 2, "bad-file", ""},
+		{"unlink with no --yes", linked, []string{"unlink"}, 4, "needs-yes", ""},
+		{"unlink in a 0.4.3 workspace", write(".bonsai.yaml", "agents: {}\n"), []string{"unlink"}, 4, "old-workspace", ""},
+		{"unlink outside a checkout", outside, []string{"unlink"}, 4, "not-a-checkout", ""},
+		{"unlink, a word left over", nil, []string{"unlink", "now"}, 2, "bad-flag", ""},
+		{"unlink, a flag it does not take", nil, []string{"unlink", "--allow-exec"}, 2, "bad-flag", ""},
+
 		{"check, not linked", nil, []string{"check"}, 4, "not-linked", ""},
 		{"check outside a checkout", outside, []string{"check"}, 4, "not-a-checkout", ""},
 		{"check with no git", noGit, []string{"check"}, 3, "git-missing", ""},

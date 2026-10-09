@@ -1,7 +1,7 @@
 // Command bonsai is Bonsai's one program. During the rebuild it answers what has been built so far: `bonsai
 // --version`, `bonsai --help`, and the words in the registry (word.go), each in a file of its own: init and update
-// (init.go, update.go, engine.go), check (check.go), status (status.go) and hook (hook.go). Any other word is refused,
-// naming the next step.
+// (init.go, update.go, engine.go), unlink (unlink.go), check (check.go), status (status.go) and hook (hook.go). Any
+// other word is refused, naming the next step.
 //
 // Exit codes follow the spec's (design/bonsai-spec.md, section 3): 0 ok, 1 check findings, 2 bad input, 3 runtime,
 // 4 wrong state or no --yes, 5 conflicts; each word's table lists the ones it returns. Human output is ASCII; --json

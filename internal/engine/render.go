@@ -49,9 +49,12 @@ func (p *Plan) Preview(diff bool) string {
 		}
 		fmt.Fprintf(&b, "  %-12s %s%s%s\n", f.Result, ascii(f.Path), kind, ascii(why))
 	}
-	if p.LockWrite {
+	switch {
+	case p.LockRemove:
+		fmt.Fprintf(&b, "  %-12s %s: removed last\n", Removed, workspace.LockFile)
+	case p.LockWrite:
 		fmt.Fprintf(&b, "  %-12s %s: written last\n", map[bool]string{true: Created, false: Updated}[p.FirstLink], workspace.LockFile)
-	} else {
+	default:
 		fmt.Fprintf(&b, "  %-12s %s\n", Unchanged, workspace.LockFile)
 	}
 	if p.Format0 > 0 {
@@ -73,7 +76,11 @@ func (p *Plan) Preview(diff bool) string {
 			fmt.Fprintf(&b, "          %s\n", ascii(c.Why))
 		}
 	}
-	b.WriteString(p.RunsCodeText())
+	if p.Command == "unlink" {
+		b.WriteString(p.LeftText())
+	} else {
+		b.WriteString(p.RunsCodeText())
+	}
 	if diff {
 		for _, f := range p.Files {
 			if f.Writes() {
@@ -99,7 +106,7 @@ func (p *Plan) Preview(diff bool) string {
 // part of the block, its settings lines (listed under .claude/settings.json), its lock entry and declares, and its
 // plugin's install record, removed after the write. "" when the plan takes none out.
 func (p *Plan) TakenOutText() string {
-	if len(p.Removed) == 0 {
+	if len(p.Removed) == 0 || p.Command == "unlink" {
 		return ""
 	}
 	var b strings.Builder
@@ -116,13 +123,9 @@ func (p *Plan) TakenOutText() string {
 				left = append(left, f.Path)
 			}
 		}
-		verb := "Taken out of bonsai.yaml"
-		if p.Command == "unlink" {
-			verb = "Taken out by unlink"
-		}
 		fmt.Fprintf(&b, "%s: %s. Its files nobody edited go (%s); its part of Bonsai's block in %s goes; its hook lines, deny rules "+
 			"and plugin wiring leave %s; its lock entry and declares go; once written, Claude Code's record of its plugin's install "+
-			"for this checkout is removed (claude plugin uninstall, scope %s).\n", verb, ascii(lp.ID), listOrNone(removed), BlockFile,
+			"for this checkout is removed (claude plugin uninstall, scope %s).\n", "Taken out of bonsai.yaml", ascii(lp.ID), listOrNone(removed), BlockFile,
 			SettingsFile, PluginScope)
 		if len(left) > 0 {
 			fmt.Fprintf(&b, "  Left in place, the project's now (edited here, or written once): %s\n", ascii(strings.Join(left, ", ")))
@@ -243,6 +246,9 @@ func (p *Plan) Applied() string {
 	if p.LockWrite {
 		fmt.Fprintf(&b, "  %-12s %s\n", "written", workspace.LockFile)
 	}
+	if p.LockRemove {
+		fmt.Fprintf(&b, "  %-12s %s\n", Removed, workspace.LockFile)
+	}
 	if p.Format0 > 0 {
 		fmt.Fprintf(&b, "  %-12s %d %s with no format: line (format 0), each fixed in the lock by its hash: an agent gives one\n"+
 			"               format: bonsai.<kind>/1 before changing it (bonsai check finds a format-0 file new or changed)\n",
@@ -251,7 +257,7 @@ func (p *Plan) Applied() string {
 	if p.EmptyLocal > 0 {
 		fmt.Fprintf(&b, "  %-12s %s/ (%d files)\n", "emptied", LocalDir, p.EmptyLocal)
 	}
-	if n == 0 && !p.LockWrite && p.EmptyLocal <= 0 {
+	if n == 0 && !p.LockWrite && !p.LockRemove && p.EmptyLocal <= 0 {
 		return ""
 	}
 	return b.String()
@@ -322,6 +328,9 @@ func (p *Plan) Changes(result string, refusal *Error) *format.Changes {
 			Why: orNull(f.Why), Saved: orNull(f.Saved)})
 	}
 	lock := map[bool]string{true: "written", false: "unchanged"}[p.LockWrite]
+	if p.LockRemove {
+		lock = LockRemoved
+	}
 	c.Lock = &lock
 	for _, s := range p.Settings {
 		c.Settings = append(c.Settings, format.ChangesSetting{File: SettingsFile, Change: s.Change, Kind: s.Kind, Line: s.Line,

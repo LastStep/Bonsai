@@ -150,6 +150,10 @@ type Plan struct {
 	// read): the one their plugins were installed from.
 	Removed   []workspace.LockedPack
 	OldMarket string
+	// LockRemove: unlink removes the lock, last (LockWrite is then false). Left names what unlink leaves that is not
+	// among Files (.bonsai/STATE.md, .bonsai/local/, this machine's folder for the checkout).
+	LockRemove bool
+	Left       []string
 
 	pluginCode map[string][]CodePart // each pack's plugin code parts at its new commit, for the install step
 
@@ -168,7 +172,7 @@ func (p *Plan) NewLock() *workspace.Lock { return p.lock }
 
 // Nothing reports whether the plan changes nothing on disk.
 func (p *Plan) Nothing() bool {
-	if p.LockWrite || p.EmptyLocal > 0 {
+	if p.LockWrite || p.LockRemove || p.EmptyLocal > 0 {
 		return false
 	}
 	for _, f := range p.Files {

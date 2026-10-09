@@ -14,7 +14,10 @@
 //     and warnings, each a word of format.CheckWords (step 5.1.6), and Claude Code's floor (claude.go); newer.go: a
 //     pack's newer release tags, for status --full;
 //   - plugins.go: this machine's plugins (plan part 4b): the install Claude Code is asked for after init and update
-//     (at project scope, the checkout's own .claude/settings.json), and check's drift report against the lock;
+//     (at project scope, the checkout's own .claude/settings.json), the uninstall of a pack taken out (step 5.1.7),
+//     first-time trust's waiting, and check's drift report against the lock;
+//   - unlink.go: bonsai unlink's plan (step 5.1.7): what Bonsai wrote, from the lock, taken out, edited files left;
+//     plan.go also takes a pack gone from bonsai.yaml out of the project at update;
 //   - consent.go: consent to code (step 5.1.1): what init and update write that runs code, which needs --allow-exec
 //     as well as --yes, at a first link too;
 //   - declares.go: what a pack declares (lanes, document kinds, labels, protected paths, hook lines, deny rules,
@@ -28,9 +31,10 @@
 // The engine applies only what a person asked for: init and update write project files, the home's pack cache, the
 // copies --adopt saves in it and, in the main checkout, this machine's record of the checkout (the machine folder's
 // workspace.json: checkmachine.go's RecordCheckout), and nothing else (no ~/.claude file, no local settings file, no
-// commit). After writing, cmd/bonsai asks Claude Code to install each pack's plugin at project scope (InstallPlugins), which writes
-// Claude Code's plugin folder and, the first time, the checkout's .claude/settings.json in Claude Code's own key
-// order.
+// commit); unlink removes project files. After writing, cmd/bonsai asks Claude Code to uninstall each pack taken out
+// and to install each locked pack's plugin, at project scope (UninstallPlugins, InstallPlugins), which writes Claude
+// Code's plugin folder and, at an install, the checkout's .claude/settings.json; Bonsai writes that file in Claude
+// Code's own key order (settings.go), so Claude Code's write leaves it as it is.
 //
 // Consent to code, for a reviewer (plan-5, piece 5.1.1, rules 1-8; the verifier reads it):
 //   - what is written: settings.go, ownHooks (Bonsai's own line, `bonsai hook guard || exit 2` on PreToolUse, by

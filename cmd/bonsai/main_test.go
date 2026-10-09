@@ -35,7 +35,7 @@ func TestRun(t *testing.T) {
 	}{
 		{"version", []string{"--version"}, 0, "bonsai dev\n", "", ""},
 		{"no command", nil, 2, "", "bonsai: no command given:", "\nnext: run `bonsai --help`"},
-		{"unknown command", []string{"unlink"}, 2, "", `bonsai: "unlink" is not a command yet:`, "\nnext: run `bonsai --help`"},
+		{"unknown command", []string{"ladder"}, 2, "", `bonsai: "ladder" is not a command yet:`, "\nnext: run `bonsai --help`"},
 		{"version with more", []string{"--version", "now"}, 2, "", "bonsai: --version takes no other argument:", "\nnext: run `bonsai --help`"},
 		{"help with more", []string{"--help", "status"}, 2, "", "bonsai: --help takes no other argument:", "\nnext: run `bonsai --help`"},
 		{"non-ASCII argument", []string{"b\xc3\xb6nsai"}, 2, "", `bonsai: "b\` + `u00f6nsai" is not a command yet:`, "\nnext: run `bonsai --help`"},
