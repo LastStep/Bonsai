@@ -1,7 +1,7 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 16:59, when 5.1.0 to 5.1.5 had landed and 5.1.6 was next
-(`records/runs/R-2026-10-09-5.1.5-engine.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 17:32, when Rohan closed the day's session after 5.1.5 landed; the next session starts
+with 5.1.6 and 5.5's review (`records/runs/R-2026-10-09-5.1.5-engine.md`, `R-2026-10-09-plan-5.5.md`).
 
 ## In short
 
@@ -127,26 +127,35 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   this machine's settings read, the instruction block, `bonsai.yaml` written with every field and a comment on each,
   `check` offline from the lock alone.
 
-Next, **5.1.6** (`check` and `status` to 1.0: every finding and warning, each finding's `next.do` the exact command),
-then 5.1.7 to 5.1.10 in the plan's order. For 5.2.0's start check: the lock schema's and README's wording on `declares`
-(it also holds `hooks` and `deny`) and on an old lock's `path` (read as unknown), and a lock `ref` to close a moved-tag
-gap, as additions in set 5.
+**The next session starts here** (Rohan, 17:00: "stop after the current agents are done. we will continue in a fresh
+session"). Nothing is running; every worktree but one is removed; `main` is pushed and green (`07320fe`).
+1. **5.1.6** (`check` and `status` to 1.0), then 5.1.7 to 5.1.10 in the plan's order. Its brief carries, besides the
+   plan's notes: every finding's `next.do` the exact runnable command (the plan's 5.1.6 "Agents first" bullet, Rohan's
+   15:35 direction); the block's `INDEX.md` import exempt from the missing-path finding, or its step named; this
+   machine's `workspace.json` record written for the two-checkouts warning (5.3.1 adds its trust rule); `CheckWords`
+   filled; `status --full` and `--active`; the Claude Code floor 2.1.294.
+2. **5.5's section**, written and **not yet reviewed**, on branch `plan5.5` in the worktree `~/Servers/Bonsai-plan5.5`
+   (two commits on `07320fe`; the section is "Step 5.5"). Send a fresh Opus reviewer, fix, audit, update Rohan's own
+   list in his part (the "In 5.5" bullet: read the private `workflow` repo, the public line, an optional ruleset line,
+   the Windows login in a scratch folder; the Windows login now needed before 5.5's Windows sessions; the packs' first
+   tags at 5.7 his word), land it, then bring it to Rohan (a new public repo with his content).
+3. Both can run side by side (the plan file against Go code), as today, on Rohan's 12:27 word.
 
-Later parts' sections, planned beside 5.1 on Rohan's 12:27 word ("if you can orchestrate work in parallel do that
-whenever possible"), each reviewed fresh, fixed and audited:
-- **5.2** (on `main` at `da427de`; `records/runs/R-2026-10-09-plan-5.2.md`): nothing of Rohan's changes but one look at
-  two log field names. 5.2 starts when 5.1 ends.
-- **5.3** (on `main` at `b79d00f`; `records/runs/R-2026-10-09-plan-5.3.md`), with Rohan's two answers.
-- **5.5** being planned now (`records/runs/R-2026-10-09-plan-5.5.md`); it comes to Rohan (a new public repo, his content).
-- **5.4** (on `main` at `dc7ec93`; `records/runs/R-2026-10-09-plan-5.4.md`): approved by Rohan (16:56): his
-  pre-release install, the switch to Bonsai guarding and proving its own repo, the way back.
+How this session ran, for the next orchestrator: pieces and later parts' plans side by side; every brief carries its
+rules in full (two briefs went out today with a placeholder instead of the rules, caught and fixed by message at once);
+each builder rebases on `main` before it lands; a part's section goes through a fresh review, fixes and a Haiku audit
+before it lands; times in the run reports come from `date`, not from memory.
+
+For 5.2.0's start check (formats set 5): the lock schema's and README's wording on `declares` (it also holds `hooks`
+and `deny`) and on an old lock's `path` (read as unknown); a lock `ref` to close a moved-tag gap (an addition with an
+engine change); `bonsai --help --json`'s shape lands with 5.1.10 as its own addition.
 
 5.1's hours so far: 547 minutes (9 h 7 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
-- Whenever convenient: Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the
-  model). In PowerShell: `claude`, then `/login`, then quit.
+- Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the model): needed before
+  5.5's Windows sessions and 5.3's Windows check. In PowerShell: `claude`, then `/login`, then quit.
 - In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and
   `update`'s JSON (5.1.3/5.1.4b). In 5.2, a look (no vote): the log's two new field names, `bonsai_path` and
   `bonsai_sha256`.
@@ -155,6 +164,10 @@ whenever possible"), each reviewed fresh, fixed and audited:
 - Whenever he likes: turn GitHub Pages off (the old website).
 
 ## Loose ends
+
+- Rohan's roadmap artifact is at version 31 (its plan card still "waiting on you"): updated at 5.1's end, as the plan
+  says (item 9), or sooner if he asks. Since then: the plan approved; 5.1.0 to 5.1.5 landed; 5.2 to 5.4 planned; his
+  answers of 9 Oct.
 
 - The WSL user settings file's baseline is `9e049dea...80d8d6` since Rohan's `/plugin` at 12:06 on 9 Oct (his word;
   before it `7b515457...a025a7`). Windows' is unchanged, `2b6295c1...4ff6c9`.
