@@ -78,9 +78,14 @@ such pair.
   the lines); and who may consent to code (`--allow-exec`) and take Bonsai's guard out of a project (`unlink`) (your
   answer: (ii), your grant in a project the studio manages, only a person elsewhere). From 5.4, so, a command of yours
   when an update of Bonsai's own repo runs code or changes its guard lines, until the studio manages it.
-- **At 5.4:** install the pre-release `bonsai` in WSL (spec §17 step 8, about 5 minutes, your password). The
-  orchestrator gives you its fingerprint first. Your step 3 (the old binaries) is already done (8 Oct). You install
-  again only if a later part changes the guard, the stop gate or the ladder.
+- **At 5.4:** install the pre-release `bonsai` in WSL (spec §17 step 8, about 5 minutes, your password): four lines,
+  `sudo install`, `sha256sum -c` on the installed file against the number the orchestrator commits first, `which -a`
+  and `--version` (5.4's section, "For Rohan"). Your step 3 (the old binaries) is already done (8 Oct). You install
+  again only if a later part changes the guard, the stop gate or the ladder, and then, under your 5.3 answer (ii), one
+  more line if it changes Bonsai's own hook lines: `bonsai update --allow-exec --yes` in `~/Servers/Bonsai` (none is
+  planned before 1.0). From the switch: your word before an agent loosens a check in Bonsai's `bonsai.yaml`; your own
+  Claude sessions there refused on its protected files; the floor numbers in a line at each part's end (nothing to
+  answer); the way back only if the guard breaks.
 - **In 5.5:** approve the new public repo for your `workflow` pack and what goes into it (your roles, lanes, protocols
   and templates, after a check for anything private); possibly a repository secret, if a pack's checks on GitHub need
   a Claude login or a model key.
@@ -531,6 +536,10 @@ words and the two output shapes as a look (his part, "What you must do"); a word
 - **Warnings** (never the exit code): Claude Code older than the floor (Bonsai's, 2.1.294, or a pack's
   `needs.claude_code`, the higher; `claude --version` read defensively, an unreadable answer is itself a warning);
   two checkouts on this machine holding one id; a stale tasks table (5.1.8); run reports past `generated.run`'s rule.
+- **Agents first** (Rohan, 9 Oct, 15:35: Bonsai is managed by agents inside projects): every finding's and warning's
+  `next.do` is the exact command that fixes it, runnable as written, wherever one exists (`bonsai update --yes`, `bonsai
+  check --write`, a `git rm --cached` line), and prose only where a person must judge; a test walks the findings table
+  and fails on a `next.do` that names a command Bonsai does not have or a flag its word does not take.
 - **Moved out of 5.1**, with reasons ("Stale or in tension"): a secret-shaped string in a committed memory note goes
   to 5.2, where the redactor's patterns have their one home; the stranded machine folder goes to 5.6, whose row names
   it.
@@ -599,7 +608,11 @@ statuses, run outcomes, label value kinds, lane rules, ask ops and types, log ev
 `error` words, the active task's reason codes, file kinds, generated kinds), its values when Bonsai owns them, closed
 or open, where it is defined, and the command that prints it in a project. Its test rebuilds the page in memory and
 fails on any difference. A `.gitattributes` line keeps the page LF on every checkout. `CLAUDE.md` already tells
-builders to regenerate it with any list change.
+builders to regenerate it with any list change. **And `bonsai --help --json`** (Rohan, 9 Oct, 15:35: Bonsai is managed
+by agents inside projects): one machine-readable document of every command word, its flags, exit codes and example,
+and every error word with its meaning and usual `who`, read from the same tables (5.1.4b's word registry,
+`format.ErrorWords`), so an agent learns the tool without reading a page; its shape documented in `formats/` as an
+addition with its manifest in the same piece, and held by a test that it lists every word and flag the registry has.
 
 #### Proof for each piece
 
@@ -3427,6 +3440,11 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
   missing `version`; the walls in base's deny rules and the studio's in `workflow`, each tried once on both sides
   (13-21); the documentation in every template and pack file, and each deny rule's `why` (3-4); the pack template
   `packs/template/` with its CI and release, and Bonsai's CI job that runs it (3-5).
+- **Agents first** (Rohan, 9 Oct, 15:35): an **"operating Bonsai" skill in `base`**, so any agent in a linked project
+  can link, update, fix, check, read status and edit `bonsai.yaml` unaided: the commands with `--json`, what to do on
+  each error word and finding (from `bonsai --help --json`), the person's gates and why (consent to code under his
+  (ii), person-only files, the program install), and the ladder's climb-read-fix loop (5.4). Documented as every pack
+  file is, and tried in a real session.
 - **Needs:** 5.1 (`check --pack`, the `pack` schema, `declares`), 5.3 (deny rules and the guard, for the walls), 5.4
   (Bonsai links `base` in its own repo, spec step 6).
 - **Settles (gate report §5, 5.5):** `/agents` is gone, so a role is read by starting a session as it (`--agent
