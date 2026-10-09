@@ -45,6 +45,8 @@ type PackData struct {
 	Files    map[string][]byte // each files entry's bytes, by its project path
 	Block    string            // the block text after block.md's leading HTML comment, LF line ends; "" for none
 	SHA256   string            // the content hash (contentHash)
+	Tree     map[string]string // every entry of the pack's folder (the plugin's root): its path there, to its git mode and object id
+	Code     []CodePart        // the plugin's own code parts (consent.go), sorted by path; none for a plugin that carries none
 }
 
 // cache is the home's pack cache.
@@ -273,6 +275,11 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 		pd.Block = blockText(b)
 	}
 	pd.SHA256 = contentHash(entries, blobs)
+	pd.Tree = map[string]string{}
+	for p, e := range entries {
+		pd.Tree[p] = e.mode + " " + e.sha
+	}
+	pd.Code = pluginCode(entries, blobs)
 	return pd, nil
 }
 

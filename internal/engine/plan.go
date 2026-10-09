@@ -16,7 +16,8 @@ package engine
 // Beside the table (choices of this build, where spec §6 is silent):
 //   - At a first link (no lock entry), a pack file the project already holds is adopted when it equals the pack's
 //     copy and a conflict otherwise; a once file it already holds is found, left as it is and locked as found; the
-//     block and Bonsai's settings lines are written (the link is the person's consent to them).
+//     block and Bonsai's settings lines are written on --yes (the link is the person's consent to them), but what
+//     runs code needs --allow-exec as well (consent.go: a pack's hook lines, the files they run, a plugin's code).
 //   - kept: the lock holds the pack's copy the person chose not to take. While the pack's copy stays that, the file
 //     is kept; when the pack changes it again, it is a conflict again (spec §6), unless the file now equals it.
 //   - A file the pack no longer has: kind pack is removed when unedited, a conflict when edited, and dropped from the
@@ -82,6 +83,9 @@ type Request struct {
 	NewID   bool        // init --new-id
 	Keep    []string    // --keep paths
 	Adopt   []string    // --adopt paths
+	// AllowExec is --allow-exec: the person consents to what the plan's "Runs code" lists (consent.go). Without it
+	// Apply refuses a plan that lists anything there.
+	AllowExec bool
 }
 
 // PackMove is one pack in a plan: its commit before (none at a first link) and after.
@@ -122,8 +126,10 @@ type Plan struct {
 	Files      []*FileResult
 	Settings   []SettingsChange // the settings lines the plan adds, changes or removes (when it writes the file)
 	Conflicts  []*FileResult
-	HookChange bool // the plan changes a hook line, which this build refuses (spec §6: --allow-exec, step 5.1)
-	EmptyLocal int  // init --new-id: files in .bonsai/local/ to remove; -1 for none to remove
+	RunsCode   []CodeItem       // what the plan writes that runs code: it needs --allow-exec as well as --yes (consent.go)
+	OwnHooks   []SettingsChange // at a first link, Bonsai's own hook lines the plan adds, which --yes writes (rule 6)
+	AllowExec  bool             // the request's --allow-exec
+	EmptyLocal int              // init --new-id: files in .bonsai/local/ to remove; -1 for none to remove
 	LockWrite  bool
 
 	Plugins []PluginResult // what InstallPlugins did after the plan was written (or had nothing to write)
@@ -184,7 +190,7 @@ func Build(req Request) (*Plan, error) {
 	if err != nil {
 		return nil, wsError(err, ExitState)
 	}
-	p := &Plan{Command: req.Command, Root: co.Root, Main: co.Main, Home: req.Home, EmptyLocal: -1}
+	p := &Plan{Command: req.Command, Root: co.Root, Main: co.Main, Home: req.Home, EmptyLocal: -1, AllowExec: req.AllowExec}
 	for _, old := range []string{".bonsai.yaml", ".bonsai-lock.yaml"} {
 		if _, err := os.Stat(filepath.Join(co.Root, old)); err == nil {
 			return nil, errorf(ExitState, "leave this project on Bonsai 0.4.3 for now: moving a 0.4.3 workspace to the new Bonsai comes later",
@@ -270,9 +276,10 @@ func Build(req Request) (*Plan, error) {
 		}
 	}
 	// bonsai.yaml with no lock: the lock records which hook lines a person consented to, so update cannot tell a
-	// changed hook line from one already agreed, and would take every line as a first link's. Only init links
-	// (spec §4, §6: it previews every settings line first); update refuses. (Part 5's verifier: deleting the lock
-	// let update --yes write a changed hook line.)
+	// changed hook line from one already agreed. Only init links again (spec §4, §6: it previews every settings line
+	// first), judging every hook line, file a hook runs and plugin code part against what is on disk, as at a first
+	// link (consent.go, rule 7); update refuses. (Part 5's verifier: deleting the lock let update --yes write a
+	// changed hook line.)
 	if lock == nil && req.Command == "update" {
 		return nil, errorf(ExitState, "restore the lock from git (git checkout -- "+workspace.LockFile+"); or, to link the project "+
 			"again from bonsai.yaml, run bonsai init, which previews every file and settings line first",
@@ -649,13 +656,13 @@ func Build(req Request) (*Plan, error) {
 			p.Conflicts = append(p.Conflicts, f)
 		}
 	}
-	if !p.FirstLink && sf.write != nil {
-		for _, ch := range p.Settings {
-			if ch.RunsCode {
-				p.HookChange = true
-			}
-		}
+	// What runs code (consent.go): the settings lines the plan writes, or, while the settings file is a conflict,
+	// the lines --adopt would write, so one refusal names both steps.
+	consentLines := p.Settings
+	if sf.write == nil && sf.Result == Conflict {
+		consentLines = changes
 	}
+	p.consent(consentLines, newPacks, oldPacks)
 
 	// The lock, written last, and only when it changes (written_by aside).
 	p.lock = newLock

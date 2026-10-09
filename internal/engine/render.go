@@ -63,25 +63,7 @@ func (p *Plan) Preview(diff bool) string {
 			fmt.Fprintf(&b, "          %s\n", ascii(c.Why))
 		}
 	}
-	var runs []SettingsChange
-	for _, c := range p.Settings {
-		if c.RunsCode {
-			runs = append(runs, c)
-		}
-	}
-	switch {
-	case len(runs) == 0:
-		b.WriteString("Runs code: no hook line is added or changed.\n")
-	case p.FirstLink:
-		fmt.Fprintf(&b, "Runs code: %d hook %s, run on Claude Code's events once the project is linked; linking it is your consent to them:\n",
-			len(runs), plural(len(runs), "line", "lines"))
-	default:
-		fmt.Fprintf(&b, "Runs code: %d hook %s added or changed, which needs --allow-exec as well as --yes (spec section 6):\n",
-			len(runs), plural(len(runs), "line", "lines"))
-	}
-	for _, c := range runs {
-		fmt.Fprintf(&b, "  %-7s %-11s %s\n", c.Change, c.Kind, ascii(c.Line))
-	}
+	b.WriteString(p.RunsCodeText())
 	if diff {
 		for _, f := range p.Files {
 			if f.Writes() {
@@ -98,6 +80,39 @@ func (p *Plan) Preview(diff bool) string {
 		for _, f := range p.Conflicts {
 			fmt.Fprintf(&b, "  %s: %s\n", ascii(f.Path), ascii(f.Why))
 		}
+	}
+	return b.String()
+}
+
+// RunsCodeText is the preview's "Runs code" part (consent.go): each item, and whether --allow-exec is needed; at a
+// first link, Bonsai's own hook lines, which --yes writes.
+func (p *Plan) RunsCodeText() string {
+	var b strings.Builder
+	if len(p.OwnHooks) > 0 {
+		fmt.Fprintf(&b, "Bonsai's own hook %s, written with --yes (linking the project is your consent to %s):\n",
+			plural(len(p.OwnHooks), "line", "lines"), plural(len(p.OwnHooks), "it", "them"))
+		for _, c := range p.OwnHooks {
+			fmt.Fprintf(&b, "  %-7s %-11s %s\n", c.Change, c.Kind, ascii(c.Line))
+		}
+	}
+	n := len(p.RunsCode)
+	switch {
+	case n == 0:
+		b.WriteString("Runs code: nothing that needs --allow-exec (no pack hook line, file a hook runs or plugin code part is " +
+			"added or changed, and no change to a hook line).\n")
+		return b.String()
+	case p.AllowExec:
+		fmt.Fprintf(&b, "Runs code: %d %s, consented to with --allow-exec (spec section 6):\n", n, plural(n, "item", "items"))
+	default:
+		fmt.Fprintf(&b, "Runs code: %d %s, which %s --allow-exec as well as --yes (spec section 6):\n", n,
+			plural(n, "item", "items"), plural(n, "needs", "need"))
+	}
+	for _, c := range p.RunsCode {
+		fmt.Fprintf(&b, "  %-7s %-7s %s  (%s)\n", c.Change, c.Kind, ascii(c.Item), ascii(c.Pack))
+		if c.Was != "" {
+			fmt.Fprintf(&b, "          was: %s\n", ascii(c.Was))
+		}
+		fmt.Fprintf(&b, "          %s\n", ascii(c.Why))
 	}
 	return b.String()
 }
@@ -185,6 +200,8 @@ func ClosingWords(cfg *workspace.Config, home string) string {
 }
 
 // JSON is the plan as a document for programs: result is preview, applied, nothing, conflict, refused or declined.
+// runs_code lists what the plan writes that runs code, one entry per item (kind, change, pack, item, was, why), and
+// allow_exec says whether --allow-exec was given: without it, a plan with any item is refused.
 func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	packs := []any{}
 	for _, m := range p.Packs {
@@ -221,6 +238,14 @@ func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	for _, f := range p.Conflicts {
 		conflicts = append(conflicts, f.Path)
 	}
+	runsCode := []any{}
+	for _, c := range p.RunsCode {
+		var was any
+		if c.Was != "" {
+			was = c.Was
+		}
+		runsCode = append(runsCode, objectOf("kind", c.Kind, "change", c.Change, "pack", c.Pack, "item", c.Item, "was", was, "why", c.Why))
+	}
 	var ws any
 	if p.Config != nil {
 		ws = objectOf("name", p.Config.Name, "id", p.Config.ID, "root", filepath.ToSlash(p.Root))
@@ -236,7 +261,7 @@ func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	}
 	return objectOf("command", p.Command, "result", result, "exit", exit, "workspace", ws, "packs", packs,
 		"files", files, "lock", map[bool]string{true: "written", false: "unchanged"}[p.LockWrite],
-		"settings", settings, "hook_change", p.HookChange, "conflicts", conflicts, "plugins", plugins, "error", errorJSON(refusal))
+		"settings", settings, "runs_code", runsCode, "allow_exec", p.AllowExec, "conflicts", conflicts, "plugins", plugins, "error", errorJSON(refusal))
 }
 
 // PluginsText is what InstallPlugins did, for a person: one line per pack's plugin, and its next step when this

@@ -12,6 +12,8 @@
 //   - check.go: bonsai check's findings on the lock and the files, and a tracked or staged .bonsai/local/ file;
 //   - plugins.go: this machine's plugins (plan part 4b): the install Claude Code is asked for after init and update
 //     (at project scope, the checkout's own .claude/settings.json), and check's drift report against the lock;
+//   - consent.go: consent to code (step 5.1.1): what init and update write that runs code, which needs --allow-exec
+//     as well as --yes, at a first link too;
 //   - config.go: bonsai.yaml as init writes it, a comment on every line, and init --new-id's new id;
 //   - render.go and diff.go: the preview and the result, in plain ASCII text and in JSON.
 //
@@ -19,21 +21,23 @@
 // the copies --adopt saves in it, and nothing else (no ~/.claude file, no local settings file, no commit). After
 // writing, cmd/bonsai asks Claude Code to install each pack's plugin at project scope (InstallPlugins), which writes
 // Claude Code's plugin folder and, the first time, the checkout's .claude/settings.json in Claude Code's own key
-// order. A change to a hook line runs code, and this build only refuses it: --allow-exec is step 5.1.
+// order.
 //
-// The hook lines, for a reviewer (plan part 5's verifier reads them):
+// Consent to code, for a reviewer (plan-5, piece 5.1.1, rules 1-8; the verifier reads it):
 //   - what is written: settings.go, ownHooks (Bonsai's own line, `bonsai hook guard || exit 2` on PreToolUse, by
 //     name, in shell form) and buildLines (each pack's hooks entries, as its pack.yaml gives them); applyLines puts
 //     them in the file, one group per event and matcher, beside the project's own hooks;
 //   - an old Bonsai line taken out at a first link: settings.go, isOldBonsaiHook and claim;
-//   - the refusal: lineChanges marks a hook line added or changed against the lines the lock last consented to
-//     (RunsCode); plan.go sets Plan.HookChange when an update (not a first link) would write one; apply.go refuses
-//     such a plan whatever the caller asks; cmd/bonsai/engine.go prints the refusal (exit 4) naming --allow-exec,
-//     and refuses --allow-exec itself (exit 2) until step 5.1;
+//   - what runs code: lineChanges marks a hook line added or changed against the lines the lock last consented to
+//     (SettingsChange.RunsCode); consent.go turns those, the pack files a hook runs (pack.yaml's runs) and a plugin's
+//     own code parts into Plan.RunsCode, leaving out only Bonsai's own hook lines added at a first link (OwnHooks);
+//   - the refusal: apply.go refuses a plan with anything in RunsCode unless the request has AllowExec, whatever the
+//     caller asks; cmd/bonsai/engine.go prints the refusal (exit 4) naming --allow-exec, at a terminal too;
 //   - no way round it by deleting the lock: plan.go refuses an update when bonsai.yaml is there and the lock is not
-//     (exit 4, naming git checkout of the lock or bonsai init, which links again as a first link);
-//   - the tests: engine_test.go, TestHookLineChangeIsRefused, TestUpdateWithoutALockIsRefused and
-//     TestCheck1InitIntoADriftedProject; cmd/bonsai/engine_test.go, TestUpdateCommand and TestUpdateWithoutALock.
+//     (exit 4, naming git checkout of the lock or bonsai init); init then links again judged against the disk;
+//   - the tests: consent_test.go (the table of every consent case), engine_test.go (TestHookLineChangeIsRefused,
+//     TestUpdateWithoutALockIsRefused, TestCheck1InitIntoADriftedProject); cmd/bonsai/engine_test.go
+//     (TestConsentCommand, TestUpdateCommand, TestUpdateWithoutALock).
 package engine
 
 import (

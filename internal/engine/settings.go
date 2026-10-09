@@ -612,7 +612,8 @@ type SettingsChange struct {
 	Line     string // the line as written after the change (or, removed, as it was)
 	Was      string // change: the line before
 	Why      string
-	RunsCode bool // a hook line added or changed: it runs code (spec §6)
+	RunsCode bool   // a hook line added or changed, and not one the lock last consented to: it runs code (spec §6)
+	Origin   string // where the line comes from (Line.Origin): bonsai for Bonsai's own, or a pack id
 }
 
 // lineChanges lists the changes from Bonsai's lines in the file (claimed) to the new lines: a new line the file
@@ -645,7 +646,7 @@ func lineChanges(claimed, lnew []Line, disk []Line, consented []Line) []Settings
 			continue
 		}
 		sc := SettingsChange{Change: "add", Kind: l.Kind, Line: l.Text(), Why: l.Why,
-			RunsCode: l.Kind == "hook" && !ok[c]}
+			RunsCode: l.Kind == "hook" && !ok[c], Origin: l.Origin}
 		for i, r := range removed {
 			if r.Slot == l.Slot {
 				sc.Change, sc.Was = "change", r.Text()
@@ -656,7 +657,7 @@ func lineChanges(claimed, lnew []Line, disk []Line, consented []Line) []Settings
 		out = append(out, sc)
 	}
 	for _, r := range removed {
-		out = append(out, SettingsChange{Change: "remove", Kind: r.Kind, Line: r.Text(), Why: r.Why})
+		out = append(out, SettingsChange{Change: "remove", Kind: r.Kind, Line: r.Text(), Why: r.Why, Origin: r.Origin})
 	}
 	return out
 }

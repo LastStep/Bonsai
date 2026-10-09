@@ -296,7 +296,8 @@ func TestStatusOfAProjectTheEngineLinked(t *testing.T) {
 	home := testpack.Isolate(t, tmp)
 	pack := testpack.Build(t, tmp)
 	root := testpack.Project(t, tmp, "linked")
-	p, err := engine.Build(engine.Request{Command: "init", Dir: root, Home: home, Version: "test",
+	// --allow-exec: the test pack's hook line is a pack's code, which a first link writes only with it (step 5.1.1).
+	p, err := engine.Build(engine.Request{Command: "init", Dir: root, Home: home, Version: "test", AllowExec: true,
 		Init: &engine.InitValues{Name: "linked", Source: pack.Source, Ref: pack.A}})
 	if err != nil {
 		t.Fatal(err)

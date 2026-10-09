@@ -62,8 +62,9 @@ func (e *env) try(root string, req Request) (*Plan, error) {
 func (e *env) apply(t *testing.T, root string, req Request) *Plan {
 	t.Helper()
 	p := e.plan(t, root, req)
-	if len(p.Conflicts) > 0 || p.HookChange {
-		t.Fatalf("the plan has %d conflicts, hook change %v:\n%s", len(p.Conflicts), p.HookChange, p.Preview(false))
+	if len(p.Conflicts) > 0 || (p.NeedsExec() && !req.AllowExec) {
+		t.Fatalf("the plan has %d conflicts, %d items that run code (allow exec %v):\n%s", len(p.Conflicts), len(p.RunsCode),
+			req.AllowExec, p.Preview(false))
 	}
 	if err := Apply(p); err != nil {
 		t.Fatalf("apply: %v", err)
@@ -71,9 +72,11 @@ func (e *env) apply(t *testing.T, root string, req Request) *Plan {
 	return p
 }
 
+// link links a project to the test pack at ref, with --allow-exec: the pack's hook line (every commit has one) is
+// a pack's code, which a first link writes only with it (plan-5, piece 5.1.1, rule 6).
 func (e *env) link(t *testing.T, root, ref string, neverEdit ...string) *Plan {
 	t.Helper()
-	return e.apply(t, root, Request{Command: "init", Init: e.values(ref, neverEdit...)})
+	return e.apply(t, root, Request{Command: "init", Init: e.values(ref, neverEdit...), AllowExec: true})
 }
 
 // snapshot is every file of a checkout but .git, with its bytes' hash and its modification time.
@@ -384,10 +387,10 @@ func TestCheck5UpdateAToB(t *testing.T) {
 			t.Errorf("settings line %+v", c)
 		}
 	}
-	if strings.Join(lines, ", ") != "change marketplace, change plugin" || p.HookChange {
-		t.Errorf("settings lines %v, hook change %v", lines, p.HookChange)
+	if strings.Join(lines, ", ") != "change marketplace, change plugin" || p.NeedsExec() {
+		t.Errorf("settings lines %v, runs code %+v", lines, p.RunsCode)
 	}
-	if pv := p.Preview(false); !strings.Contains(pv, "was: bonsai-demo-") || !strings.Contains(pv, "Runs code: no hook line is added or changed.") {
+	if pv := p.Preview(false); !strings.Contains(pv, "was: bonsai-demo-") || !strings.Contains(pv, "Runs code: nothing that needs --allow-exec") {
 		t.Errorf("preview:\n%s", pv)
 	}
 	if err := Apply(p); err != nil {
@@ -471,8 +474,8 @@ func TestCheck6ConflictKeepAdopt(t *testing.T) {
 	}
 }
 
-// A hook-line change (C to D: only the hook line differs) is refused: the plan says so, Apply refuses it, and
-// nothing is written.
+// A hook-line change (C to D: only the hook line differs) needs --allow-exec: the plan lists it under Runs code,
+// Apply refuses it without the flag, and nothing is written; with it, it is written.
 func TestHookLineChangeIsRefused(t *testing.T) {
 	e := setup(t)
 	root := testpack.Project(t, e.tmp, "hook")
@@ -480,8 +483,9 @@ func TestHookLineChangeIsRefused(t *testing.T) {
 	testpack.SetRef(t, root, e.pack.C, e.pack.D)
 	before := snapshot(t, root)
 	p := e.plan(t, root, Request{})
-	if !p.HookChange {
-		t.Fatalf("no hook change:\n%s", p.Preview(false))
+	if len(p.RunsCode) != 1 || p.RunsCode[0].Kind != CodeHook || p.RunsCode[0].Change != "change" || p.RunsCode[0].Pack != testpack.ID ||
+		p.RunsCode[0].Item != "SessionStart (startup): echo demo hook D" || p.RunsCode[0].Was != "SessionStart (startup): echo demo hook A" {
+		t.Fatalf("runs code %+v:\n%s", p.RunsCode, p.Preview(false))
 	}
 	var runs []string
 	for _, c := range p.Settings {
@@ -499,11 +503,14 @@ func TestHookLineChangeIsRefused(t *testing.T) {
 		t.Fatal("a hook-line change was applied")
 	}
 	sameSnapshot(t, "a refused hook-line change", before, snapshot(t, root))
+	p = e.apply(t, root, Request{AllowExec: true})
+	if !strings.Contains(read(t, root, SettingsFile), "echo demo hook D") || strings.Contains(read(t, root, SettingsFile), "echo demo hook A") {
+		t.Errorf("with --allow-exec, the hook line is not D's:\n%s", read(t, root, SettingsFile))
+	}
 	// A deleted settings file comes back with the same hook line, which runs no new code.
 	if err := os.Remove(filepath.Join(root, filepath.FromSlash(SettingsFile))); err != nil {
 		t.Fatal(err)
 	}
-	testpack.SetRef(t, root, e.pack.D, e.pack.C)
 	p = e.apply(t, root, Request{})
 	if f := result(t, p, SettingsFile); f.Result != Restored {
 		t.Errorf("settings %+v", f)
@@ -529,8 +536,8 @@ func TestUpdateWithoutALockIsRefused(t *testing.T) {
 	}
 	sameSnapshot(t, "update with no lock", before, snapshot(t, root))
 	p := e.plan(t, root, Request{Command: "init", Init: &InitValues{}})
-	if !p.FirstLink || !strings.Contains(p.Preview(false), "echo demo hook D") {
-		t.Errorf("init with no lock is not a first link naming the hook line:\n%s", p.Preview(false))
+	if !p.FirstLink || !strings.Contains(p.Preview(false), "echo demo hook D") || !p.NeedsExec() {
+		t.Errorf("init with no lock is not a first link naming the hook line under Runs code:\n%s", p.Preview(false))
 	}
 }
 

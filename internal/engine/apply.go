@@ -23,10 +23,16 @@ func AdoptedDir(home, id, fingerprint string) string {
 	return filepath.Join(home, "cache", "adopted", id, fingerprint[:12])
 }
 
-// Apply writes a plan. It refuses a plan with conflicts or a hook-line change: the caller checks both first.
+// Apply writes a plan. It refuses a plan with conflicts, or one that runs code without the request's --allow-exec
+// (consent.go): the caller checks both first. Refused, it writes nothing.
 func Apply(p *Plan) error {
-	if len(p.Conflicts) > 0 || p.HookChange {
-		return errorf(ExitState, "run the command without --yes to see why", "this plan cannot be applied")
+	if len(p.Conflicts) > 0 {
+		return errorf(ExitConflict, "run the command without --yes to see the conflicts and the commands that settle them",
+			"this plan has conflicts and cannot be applied: nothing was written")
+	}
+	if p.NeedsExec() && !p.AllowExec {
+		return errorf(ExitState, "run the command without --yes to see what runs code; to write it, add --allow-exec as well as --yes",
+			"this plan writes code that runs on this machine, and --allow-exec was not given: nothing was written")
 	}
 	// The project's copies first.
 	for _, f := range p.Files {

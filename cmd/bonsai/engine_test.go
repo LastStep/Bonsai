@@ -49,8 +49,10 @@ func (c *cli) run(answer string, args ...string) (int, string, string) {
 	return code, stdout.String(), stderr.String()
 }
 
+// linkArgs links the project to the test pack at ref, with --allow-exec: every commit of the test pack has a hook
+// line, a pack's code, which a first link writes only with it (plan-5, piece 5.1.1, rule 6).
 func (c *cli) linkArgs(ref string) []string {
-	return []string{"init", "--name", "demo", "--source", c.pack.Source, "--ref", ref, "--never-edit", "ledger.json"}
+	return []string{"init", "--name", "demo", "--source", c.pack.Source, "--ref", ref, "--never-edit", "ledger.json", "--allow-exec"}
 }
 
 func (c *cli) files() []string {
@@ -77,11 +79,20 @@ func TestInitCommand(t *testing.T) {
 	// No terminal, no --yes: the preview, exit 4, nothing written, the command with --yes named.
 	code, out, _ = c.run("", c.linkArgs(c.pack.A)...)
 	if code != 4 || !strings.Contains(out, "bonsai init: the preview.") || !strings.Contains(out, "add     hook        PreToolUse") ||
-		!strings.Contains(out, "next: to write it, run: bonsai init --name demo --source ") || !strings.HasSuffix(out, "--never-edit ledger.json --yes\n") {
+		!strings.Contains(out, "next: to write it, run: bonsai init --name demo --source ") ||
+		!strings.HasSuffix(out, "--never-edit ledger.json --allow-exec --yes\n") {
 		t.Errorf("init without --yes: %d\n%s", code, out)
 	}
 	if len(c.files()) != 0 {
 		t.Fatalf("init without --yes wrote %v", c.files())
+	}
+	// Without --allow-exec, the pack's hook line refuses the link, at a terminal too: no y/N for code.
+	noExec := c.linkArgs(c.pack.A)[:len(c.linkArgs(c.pack.A))-1]
+	code, out, _ = c.run("y\n", noExec...)
+	if code != 4 || strings.Contains(out, "[y/N]") || !strings.Contains(out, "Runs code: 1 item, which needs --allow-exec as well as --yes") ||
+		!strings.Contains(out, "add     hook    SessionStart (startup): echo demo hook A  (demo-pack)") ||
+		!strings.HasSuffix(out, "--never-edit ledger.json --allow-exec --yes\n") || len(c.files()) != 0 {
+		t.Errorf("init without --allow-exec at a terminal: %d\n%s", code, out)
 	}
 	// At a terminal: y/N; n writes nothing.
 	code, out, _ = c.run("n\n", c.linkArgs(c.pack.A)...)
@@ -166,16 +177,17 @@ func TestUpdateCommand(t *testing.T) {
 	testpack.SetRef(t, c.root, c.pack.C, c.pack.D)
 	before := c.snapshot()
 	code, out, _ = c.run("", "update", "--yes")
-	if code != 4 || !strings.Contains(out, "Refused: this update changes a hook line") ||
-		!strings.Contains(out, "next: a hook-line change needs --allow-exec as well as --yes: bonsai update --yes --allow-exec") {
+	if code != 4 || !strings.Contains(out, "Refused: this update writes code that runs on this machine (1 item under Runs code), which needs --allow-exec as well as --yes: nothing was written.") ||
+		!strings.Contains(out, "next: read each item under Runs code; to write them with the rest, run: bonsai update --allow-exec --yes\n") {
 		t.Errorf("a hook-line change: %d\n%s", code, out)
 	}
 	if after := c.snapshot(); after != before {
 		t.Errorf("a refused hook-line change wrote something")
 	}
-	code, _, errOut := c.run("", "update", "--yes", "--allow-exec")
-	if code != 2 || !strings.Contains(errOut, "--allow-exec is not built yet: it comes with step 5.1") || !strings.Contains(errOut, "\nnext: ") {
-		t.Errorf("--allow-exec: %d %q", code, errOut)
+	code, out, _ = c.run("", "update", "--yes", "--allow-exec")
+	if code != 0 || !strings.Contains(out, "Runs code: 1 item, consented to with --allow-exec") || !strings.Contains(out, "bonsai update: written") ||
+		!strings.Contains(c.snapshot(), "echo demo hook D") {
+		t.Errorf("--allow-exec: %d\n%s", code, out)
 	}
 }
 

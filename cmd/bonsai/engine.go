@@ -5,6 +5,11 @@ package main
 // The consent rule (spec §3): a command that writes prints its preview first. It writes with --yes; at a terminal
 // without --yes it asks y/N; without a terminal, in an agent session (CLAUDE_CODE_CHILD_SESSION set) or with --json
 // it never waits: it prints the preview and exits 4, naming the command with --yes.
+//
+// Code is consented to separately (spec §6; internal/engine/consent.go): a plan whose preview lists anything under
+// "Runs code" needs --allow-exec as well as --yes. Without --allow-exec it prints the preview and exits 4, naming
+// --allow-exec, at a terminal too: code is never a y/N question. With --allow-exec and no --yes it asks y/N at a
+// terminal, and elsewhere exits 4 naming --yes. --allow-exec with nothing under "Runs code" changes nothing.
 
 import (
 	"bufio"
@@ -47,15 +52,21 @@ Flags:
   --never-edit P    a path no agent may ever edit, written as a deny rule; give it once per path
   --new-id          give this project a new workspace id and empty .bonsai/local/: for a copy meant as a new project
   --yes             write without asking
+  --allow-exec      consent to what the preview lists under "Runs code" (needed as well as --yes; see below)
   --diff            show each file's changes as a diff in the preview
   --keep P          settle a conflict on P by keeping your edit (the file becomes kind kept)
   --adopt P         settle a conflict on P by taking the pack's copy; yours is saved in the Bonsai home's cache
   --json            print a JSON document instead of text; never asks
   --help            print this help
-Without bonsai.yaml, --name, --source and --ref are required. Not built yet: --allow-exec (step 5.1).
+Without bonsai.yaml, --name, --source and --ref are required.
+Runs code: Bonsai's own hook lines are the link's purpose, so --yes writes them. A pack's hook lines, the pack
+files they run and a plugin's own code parts (hooks, MCP and LSP servers, monitors, mods) are the pack's code: the
+preview lists each under "Runs code", and nothing is written without --allow-exec as well as --yes, at a terminal
+too. With bonsai.yaml but no lock (a link again), each is judged against what is on disk.
 Exit codes: 0 linked (or nothing to change), 2 bad input (a value missing or wrong), 3 runtime (a fetch failed),
-  4 wrong state or no --yes (the preview was printed; nothing written), 5 conflicts (nothing written).
-Example: bonsai init --name demo --source https://github.com/LastStep/bonsai-test-pack --ref 506205354b7589f82f849820987aad17dba3309d --yes
+  4 wrong state, no --yes, or code without --allow-exec (the preview was printed; nothing written),
+  5 conflicts (nothing written).
+Example: bonsai init --name demo --source https://github.com/LastStep/bonsai-test-pack --ref 506205354b7589f82f849820987aad17dba3309d --yes --allow-exec
 `
 
 const updateUsage = `bonsai update: bring this project's packs to the refs in bonsai.yaml (spec section 6).
@@ -70,15 +81,19 @@ commit, or a new checkout) only after a Claude Code session in the checkout, in 
 until then the plugin is "waiting", and the output names the next step. This step never changes the exit code.
 Flags:
   --yes         write without asking
+  --allow-exec  consent to what the preview lists under "Runs code" (needed as well as --yes; see below)
   --diff        show each file's changes as a diff in the preview
   --keep P      settle a conflict on P by keeping your edit (the file becomes kind kept; a later pack change to it
                 is a conflict again)
   --adopt P     settle a conflict on P by taking the pack's copy; yours is saved in the Bonsai home's cache
   --json        print a JSON document instead of text; never asks
   --help        print this help
-Not built yet: --allow-exec (step 5.1). A change to a hook line runs code, so this build refuses it (exit 4).
-Exit codes: 0 updated (or nothing to change), 2 bad input, 3 runtime (a fetch failed), 4 wrong state, no --yes or
-  a hook-line change (the preview was printed; nothing written), 5 conflicts (nothing written).
+Runs code: a hook line added or changed (Bonsai's own or a pack's), a pack file a pack's hook line runs (new or
+changed), and a plugin's own code parts (hooks, MCP and LSP servers, monitors, mods) changed since the locked
+commit. The preview lists each under "Runs code"; all or nothing, so without --allow-exec as well as --yes nothing
+is written, at a terminal too. A removed hook line runs nothing.
+Exit codes: 0 updated (or nothing to change), 2 bad input, 3 runtime (a fetch failed), 4 wrong state, no --yes, or
+  code without --allow-exec (the preview was printed; nothing written), 5 conflicts (nothing written).
 Example: bonsai update --yes
 `
 
@@ -99,6 +114,7 @@ Example: bonsai check --json
 
 type engineFlags struct {
 	yes, diff, asJSON, newID bool
+	allowExec                bool
 	keep, adopt              []string
 	values                   engine.InitValues
 	valuesGiven              bool
@@ -146,11 +162,15 @@ func parseEngineFlags(word string, args []string, stdout, stderr io.Writer) (*en
 			f.typed = append(f.typed, "--new-id")
 		case name == "--keep":
 			f.keep = append(f.keep, value)
+			f.typed = append(f.typed, name, value)
 		case name == "--adopt":
 			f.adopt = append(f.adopt, value)
+			f.typed = append(f.typed, name, value)
 		case name == "--allow-exec":
-			return nil, refuse(stderr, word+" --allow-exec is not built yet: it comes with step 5.1, and until then this build refuses every hook-line change",
-				"run `bonsai "+word+"` without --allow-exec; a hook-line change waits for step 5.1"), true
+			if !f.allowExec {
+				f.typed = append(f.typed, "--allow-exec")
+			}
+			f.allowExec = true
 		case word == "init" && takesValue[name]:
 			f.valuesGiven = true
 			f.typed = append(f.typed, name, value)
@@ -206,7 +226,8 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return fail(&engine.Error{Exit: engine.ExitRuntime, What: err.Error(), Next: "set BONSAI_HOME to the folder Bonsai should use"})
 	}
-	req := engine.Request{Command: word, Dir: dir, Home: home, Version: version, NewID: f.newID, Keep: f.keep, Adopt: f.adopt}
+	req := engine.Request{Command: word, Dir: dir, Home: home, Version: version, NewID: f.newID, Keep: f.keep, Adopt: f.adopt,
+		AllowExec: f.allowExec}
 	if word == "init" {
 		req.Init = &f.values
 	}
@@ -237,10 +258,19 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 	}
 	head := "bonsai " + word + ": the preview.\n"
 	preview := head + plan.Preview(f.diff)
-	if plan.HookChange {
+	// Code is consented to separately (spec §6): without --allow-exec, a plan that runs code is refused whole, at a
+	// terminal too. The next step repeats the command with --allow-exec, and settles any conflict in the same run.
+	if plan.NeedsExec() && !f.allowExec {
+		base := cmdline + " --allow-exec"
+		next := "read each item under Runs code; to write them with the rest, run: " + base + " --yes"
+		if len(plan.Conflicts) > 0 {
+			next = "read each item under Runs code, and settle the conflicts: " + plan.ConflictNext(base)
+		}
+		n := len(plan.RunsCode)
 		e := &engine.Error{Exit: engine.ExitState,
-			What: "this update changes a hook line, and this build of Bonsai refuses every hook-line change: nothing was written",
-			Next: "a hook-line change needs --allow-exec as well as --yes: " + cmdline + " --yes --allow-exec (--allow-exec comes with step 5.1; until then the change cannot be applied, and the project stays as it is)"}
+			What: fmt.Sprintf("this %s writes code that runs on this machine (%d %s under Runs code), which needs --allow-exec as well as --yes: nothing was written",
+				word, n, map[bool]string{true: "item", false: "items"}[n == 1]),
+			Next: next}
 		return out("refused", e.Exit, e, preview+"Refused: "+e.What+".\nnext: "+e.Next+"\n")
 	}
 	conflict := func(printed bool) int {
