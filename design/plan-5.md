@@ -3417,10 +3417,10 @@ projects can take with a few lines in its `bonsai.yaml`:
   the templates for a task, a run report, STATE, a memory note and `bonsai.yaml`, the page on how long records are kept,
   a starter CI file, and **the walls**: rules that stop Claude reading your key, token and password files (SSH keys,
   your GitHub and cloud logins, Claude's own login and global files, Bonsai's secret salt), or changing your own Claude
-  settings and memory and the files that start programs (your shell's start files, git's and SSH's settings). It
-  also holds an **"operating Bonsai" skill**: the instructions an agent needs to link a project, update it,
-  fix what `bonsai check` finds, read where things stand, edit `bonsai.yaml`, prove its work with the ladder and ask
-  you a question, without asking you how. It carries no code that runs.
+  settings and memory and the files that start programs (your shell's start files, git's and SSH's settings). It also
+  holds an **"operating Bonsai" skill**: the instructions an agent needs to link a project, update it, fix what `bonsai
+  check` finds, read where things stand, edit `bonsai.yaml`, prove its work with the ladder and ask you a question,
+  without asking you how. It carries no code that runs.
 - **`workflow`**, your pack, in its own new public repo: your five roles (builder, verifier, researcher, producer,
   playtest analyst), your three lanes, your protocols (the session-start checklist that every session reads, and the
   rest read when needed), your document templates (plan, one-pager, decision record, options write-up, playtest, brief,
@@ -3543,12 +3543,12 @@ saying yes to its trust question (with the login first only if it has lapsed). N
   commented), `bonsai/block.md`, `bonsai/files/`, `README.md`, `.gitattributes`.
 - `formats/schemas/pack.schema.json` (set 4): `files`, `hooks`, `deny`, `documents`, `protected`; a `files` entry's
   `path` is project-relative and may not be Bonsai's own, `CLAUDE.md`, or a place Claude Code or git loads on its own.
+  `labels.schema.json` and `lanes.schema.json` for `bonsai/labels.yaml` and `bonsai/lanes.yaml`.
 - **The reader refuses `<` today.** `internal/workspace/pack.go` checks every `files` entry's `path` with
   `CheckRelPath` (`internal/workspace/paths.go`), which refuses `<`, `>` and the other characters Windows cannot hold,
   though the schema's pattern allows them. So today's `bonsai`, and the pre-release Rohan installs at 5.4 (built before
   5.5), refuse a `pack.yaml` with a `<protocols>/` path: `workflow`'s. The lock's paths are resolved ones, which
   `CheckRelPath` keeps checking.
-  `labels.schema.json` and `lanes.schema.json` for `bonsai/labels.yaml` and `bonsai/lanes.yaml`.
 - `internal/engine/declares.go` (5.1.5): what a pack declares, copied into the lock (lanes, document kinds, labels,
   protected paths, hooks, deny rules); a pack's labels in its own namespace or `bonsai`.
 - `internal/engine/block.go` (5.1.5): the instruction block imports, as `@<path>`, each pack file whose path lies under
@@ -3634,6 +3634,7 @@ owns:
 | 5.5.4 | The `workflow` repository (every file), worked in `~/bonsai-checks/bonsai-workflow`; nothing in Bonsai's repo |
 | 5.5.5, 5.5.6 | No repository file: scripts in `~/bonsai-checks/scripts/`; a finding goes back to the piece that owns the file, as a fix round |
 | 5.5.7 | `bonsai.yaml`, `.bonsai/lock.json`, `.claude/settings.json` (by `update`), `CLAUDE.md`, `STATE.md` moved to `.bonsai/STATE.md`, the two tables (by `check --write`) |
+| `T-5590` (the orchestrator, before 5.5.2 and 5.5.4 start) | `CLAUDE.md`'s Safety line only |
 
 1. **5.5.0 and 5.5.1 start together.** 5.5.0 is engine code and generated skills; 5.5.1 is a new folder and a script.
    They share no file: the template holds no always-on file, so 5.5.1's checks do not rest on `<protocols>/`; the
@@ -3657,8 +3658,8 @@ owns:
    only once every commit since P has been read.
 5. **5.5.5 and 5.5.6 after 5.5.3 has landed and `workflow`'s CI is green**, run by one Sonnet agent, WSL first, one
    after the other (two agents running Claude Code at once would confuse whose session changed a user settings file).
-   Their Windows halves wait for Rohan's Windows sitting. Their scratch projects link both packs from local
-   clones, so they need neither repository public.
+   Their Windows halves wait for Rohan's Windows sitting. Their scratch projects link both packs from local clones, so
+   they need neither repository public.
 6. **V1, the walls and the packs' CI**, after 5.5.6.
 7. **5.5.7 after V1**: the link of Bonsai's repo; its last step, the fetch of `workflow` from GitHub with no login on
    both sides, waits for Rohan's line making it public. Then the floors (5.4's "once a part") and the end verifier.
@@ -3669,15 +3670,16 @@ judgment); a Sonnet agent for 5.5.5 and 5.5.6 (hand checks an agent can run, Roh
 Bonsai's repo in 5.5.7, with a Sonnet agent for its fetch on both sides. A Haiku agent greps for the privacy list,
 reporting facts only: before each P0 (base's studio-derived templates, at 5.5.0 and 5.5.2), every new file of `base`
 before 5.5.2 lands, `workflow`'s history before P, and each commit made after P. Fresh Opus verifiers, each re-running
-what it judges itself: **P0**, P's rules on base's three studio-derived templates, before 5.5.0 and 5.5.2 land;
-**P**, the privacy check, on `workflow`'s whole history before its first push (Rohan's content goes public; "Risk" in
-his part); **V1** after 5.5.6, on the walls (security: what an agent may read on this
-machine) and on the packs' CI and release (the template's `pack.yml`, `ci/check.sh`, Bonsai's `packs` job, the workflow
-repo's CI); **the 5.5 end verifier** on "5.5 done", after 5.5.7. 5.5.0 to 5.5.3 land on the landing rule (a green
-climb by the installed `bonsai` at the exact commit), check 10's Windows half, CI and the orchestrator's read of the
-diff, which the run report says. 5.5.0 needs no verifier of its own: it touches no guard, stop gate or ladder code (if
-it must, it gets one), and V1 break-tests its `<protocols>/` resolution, the one place it changes where pack files
-land. It lands before V1 on its proof and the orchestrator's read; a must-fix V1 finds is fixed forward.
+what it judges itself: **P0**, P's rules on base's three studio-derived templates, before 5.5.0 and 5.5.2 land; **P**,
+the privacy check, on `workflow`'s whole history before its first push (Rohan's content goes public; "Risk" in his
+part); **V1** after 5.5.6, on the walls (security: what an agent may read on this machine), on 5.5.0's `<protocols>/`
+resolution (where pack files land) and on the packs' CI and release (the template's `pack.yml`, `ci/check.sh`, Bonsai's
+`packs` job, the workflow repo's CI); **the 5.5 end verifier** on "5.5 done", after 5.5.7. 5.5.0 to 5.5.3 land on the
+landing rule (a green climb by the installed `bonsai` at the exact commit), check 10's Windows half, CI and the
+orchestrator's read of the diff, which the run report says. 5.5.0 needs no verifier of its own: it touches no guard,
+stop gate or ladder code (if it must, it gets one), and V1 break-tests its `<protocols>/` resolution, the one place it
+changes where pack files land. It lands before V1 on its proof and the orchestrator's read; a must-fix V1 finds is fixed
+forward.
 
 #### Where each inherited finding is settled
 
