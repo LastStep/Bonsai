@@ -727,9 +727,9 @@ counts in 5.2.4. In all: low 1+10+2+2+3+5+2 = 25; high 2+15+3+3+4+7+3 = 37.
 | **5.2** | | | **25-37** (re-ask 48) | |
 
 **The order, side by side where truly independent.** Rohan, 9 Oct: "if you can orchestrate work in parallel do that
-whenever possible"; his 8 Oct bar stands: no shared file, and neither's proof resting on the other's. A piece that
-runs beside another rebases on `main` and re-runs its proof if the other lands first ("What changes", item 2). The
-files each piece owns:
+whenever possible"; his 8 Oct bar stands: no shared file, and neither's proof resting on the other's. 5.2 starts once
+5.1's end verifier has passed 5.1 (no two parts run at once). A piece that runs beside another rebases on `main` and
+re-runs its proof if the other lands first ("What changes", item 2). The files each piece owns:
 
 | Piece | Owns |
 |---|---|
@@ -739,7 +739,7 @@ files each piece owns:
 | 5.2.3 | `internal/sessions/` (new); 5.1.8's `check --write` code; 5.1.6's table of findings and warnings (one warning); the `logs` word in `cmd/bonsai` (its dispatch, its entry in the flag table, `logs.go`) |
 | 5.2.4 | `internal/recorder/` (new); `cmd/bonsai/hook.go` and the hook's entry in the flag table; `internal/engine/settings.go` and the engine tests that hold today's lines; 5.1.6's table (one finding, one warning) |
 | 5.2.5 | `internal/asks/` (new); the `ask`, `answer`, `asks` and `log` words in `cmd/bonsai` (dispatch, flag-table entries, `ask.go`, `log.go`) |
-| 5.2.6 | `internal/clean/` (new); its calls in `internal/recorder/` and in the sessions part of `check --write`; the generated kinds' Go table; `docs/reference/generated-files.md`, its generator and test; one `.gitattributes` line |
+| 5.2.6 | `internal/clean/` (new); its calls in `internal/recorder/` and in the sessions part of `check --write`; the generated kinds' Go table (and `docs/reference/lists.md` if that table's list changes); `docs/reference/generated-files.md`, its generator and test; one `.gitattributes` line; the comment on `generated:` in `init`'s built-in `bonsai.yaml` |
 
 1. **5.2.0, 5.2.1 and 5.2.2 start together, side by side.** 5.2.0 sets every shared list and schema first, so no later
    piece edits a shared list file; 5.2.1 is the longest and riskiest piece, so it starts at once; 5.2.2 is the base
@@ -778,7 +778,7 @@ on:
 |---|---|---|
 | The log's `bonsai_path` and `bonsai_sha256` are Bonsai's own names, outside the log schema (gate §5) | 5.2.0 | The guard's two names added at the end of `bonsai.log/1`: an addition, set 5 with its manifest; the README's "A name not invented" becomes a choice made |
 | `input_hash` is null until the salt (gate §5) | 5.2.2, 5.2.4 | The home's `salt` made at first need, and never leaving the machine (5.2.2); the recorder fills `input_hash` on its four tool events (5.2.4). The guard's records keep null until 5.3 changes guard code |
-| The binary's hash is logged once per session file (gate §5) | 5.2.4 | `hook start` makes the session's file and writes the path and hash on its `session_start`; the guard then finds the file made and hashes nothing, so the self-hash leaves a session's first tool call (5.3 measures the guard's first call again) |
+| The binary's hash is logged once per session file (gate §5) | 5.2.4 | `hook start` makes the session's file and writes the path and hash on its `session_start`; in a main checkout's session the guard then finds the file made and hashes nothing, so the self-hash leaves the session's first tool call (in a worktree's session the guard still hashes once in its own folder until 5.3 moves its records; 5.3 measures the guard's first call again) |
 | Builds without a commit stamp (gate §5; "What changes", item 7) | 5.2.2 | `bonsai --version` names the build's commit or says it has none; the builder finds why worktree builds lack it and writes the build line every scripted run then uses; the end verifier ties a logged hash to its commit |
 | The secret scan of memory notes, handed on by 5.1.6 | 5.2.4 | A `check` finding on the redactor's patterns (`redact.Find`), naming the note and line, never the value |
 | The log's events, an open list read by code at many places (outline; 5.1.3's note) | 5.2.0 | Their known words, and the categories', in one Go table, printed by `check --schema bonsai.log` and the reference page; the schema's descriptions name the command and copy no word |
@@ -896,9 +896,9 @@ the Go redactor hides everything the Node one hides, and the three bugs' cases t
    - (b) the bridge test's spool lines with planted secrets;
    - (c) the three classes: the leak rows' examples and the generated shapes (two framings, about 4,200 strings),
      made again by the script, and Bonsai's own grid over names, punctuation, whitespace, quotes and case folds;
-   - (d) real text: every text file of the scratch clone's `studio/`, `docs/` and `studio-app/test/fixtures/` (the
-     set the studio's own corpus test reads), as it is, and with each secret row planted on its own line, at a line's
-     end, and after a line ending in a name still waiting for its value;
+   - (d) real text: every text file of `studio/`, `docs/` and `studio-app/test/fixtures/` in the scratch clone at
+     `25b6450` (the set the studio's own corpus test reads), as it is, and with each secret row planted on its own
+     line, at a line's end, and after a line ending in a name still waiting for its value;
    - (e) about a million generated strings mixing names, separators, quotes, whitespace and values, and the fuzz
      finds.
 
@@ -1178,11 +1178,11 @@ A fresh Opus verifier, at the end of 5.2, runs each check itself on the final co
    reader skips and counts a torn line; the salt race.
 7. **Real sessions** (WSL; Windows too if Claude Code's login there is back), in a fresh scratch project linked by the
    final build and holding one running task, through `claude-here`: sessions that read, edit, search, run a command
-   holding a made-up secret, start a subagent and end, and one resumed. Every record validates against `bonsai.log/1`; the guard's and the
-   recorder's records share the session's file, every line whole; each tool call's records share one `input_hash`;
-   `session_start` names the binary's path and a SHA-256 equal to the file's, and `bonsai --version` and `go version
-   -m` give its commit; the made-up secret is in no record; the session quoted `hook start`'s active task; nothing
-   from `hook record` reached the conversation.
+   holding a made-up secret, start a subagent and end, and one resumed. Every record validates against
+   `bonsai.log/1`; the guard's and the recorder's records share the session's file, every line whole; each tool
+   call's records share one `input_hash`; `session_start` names the binary's path and a SHA-256 equal to the file's,
+   and `bonsai --version` and `go version -m` give its commit; the made-up secret is in no record; the session quoted
+   `hook start`'s active task; nothing from `hook record` reached the conversation.
 8. **Never blocks:** `hook record` and `hook start` exit 0, and `hook record` prints nothing, on an empty, broken,
    huge or unknown payload, with no `CLAUDE_PROJECT_DIR`, in a folder with no `bonsai.yaml`, with an unreadable
    `bonsai.yaml`, and with a log folder that cannot be written; SessionEnd's line lands in ten `-p` sessions out of
