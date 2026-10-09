@@ -128,6 +128,7 @@ type Plan struct {
 	Conflicts  []*FileResult
 	RunsCode   []CodeItem       // what the plan writes that runs code: it needs --allow-exec as well as --yes (consent.go)
 	OwnHooks   []SettingsChange // at a first link, Bonsai's own hook lines the plan adds, which --yes writes (rule 6)
+	LeftHooks  []string         // a link again with the lock missing: hook lines left in place as the project's own
 	AllowExec  bool             // the request's --allow-exec
 	EmptyLocal int              // init --new-id: files in .bonsai/local/ to remove; -1 for none to remove
 	LockWrite  bool
@@ -579,6 +580,20 @@ func Build(req Request) (*Plan, error) {
 	}
 	disk := diskLines(sd.root)
 	claimed, same := claim(disk, lref, p.FirstLink, lockHash)
+	// A link again with the lock missing (rule 7): a hook line on disk that Bonsai neither claims nor writes may be a
+	// pack's earlier line, but without the lock Bonsai cannot tell it from the project's own, so it stays in place;
+	// the preview names each, so a person is not surprised.
+	if p.FirstLink && hasConfig {
+		mine := map[string]bool{}
+		for _, l := range append(append([]Line{}, claimed...), lnew...) {
+			mine[l.canon()] = true
+		}
+		for _, d := range disk {
+			if d.Kind == "hook" && !mine[d.canon()] {
+				p.LeftHooks = append(p.LeftHooks, d.Text())
+			}
+		}
+	}
 	sf := &FileResult{Path: SettingsFile, Kind: "keys", Pack: firstPack, newH: linesHash(lnew)}
 	if sd.exists {
 		sf.old = sd.raw

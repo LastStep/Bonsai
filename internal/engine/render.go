@@ -95,6 +95,13 @@ func (p *Plan) RunsCodeText() string {
 			fmt.Fprintf(&b, "  %-7s %-11s %s\n", c.Change, c.Kind, ascii(c.Line))
 		}
 	}
+	if len(p.LeftHooks) > 0 {
+		b.WriteString("Left in place as the project's own (the lock is missing, so Bonsai cannot tell them from its own; " +
+			"take out by hand any you do not want):\n")
+		for _, l := range p.LeftHooks {
+			fmt.Fprintf(&b, "  %-7s %-11s %s\n", "keep", "hook", ascii(l))
+		}
+	}
 	n := len(p.RunsCode)
 	switch {
 	case n == 0:
@@ -201,7 +208,8 @@ func ClosingWords(cfg *workspace.Config, home string) string {
 
 // JSON is the plan as a document for programs: result is preview, applied, nothing, conflict, refused or declined.
 // runs_code lists what the plan writes that runs code, one entry per item (kind, change, pack, item, was, why), and
-// allow_exec says whether --allow-exec was given: without it, a plan with any item is refused.
+// allow_exec says whether --allow-exec was given: without it, a plan with any item is refused. left_hooks lists, at
+// a link again with the lock missing, the hook lines left in place as the project's own.
 func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	packs := []any{}
 	for _, m := range p.Packs {
@@ -238,6 +246,10 @@ func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	for _, f := range p.Conflicts {
 		conflicts = append(conflicts, f.Path)
 	}
+	leftHooks := []any{}
+	for _, l := range p.LeftHooks {
+		leftHooks = append(leftHooks, l)
+	}
 	runsCode := []any{}
 	for _, c := range p.RunsCode {
 		var was any
@@ -261,7 +273,7 @@ func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	}
 	return objectOf("command", p.Command, "result", result, "exit", exit, "workspace", ws, "packs", packs,
 		"files", files, "lock", map[bool]string{true: "written", false: "unchanged"}[p.LockWrite],
-		"settings", settings, "runs_code", runsCode, "allow_exec", p.AllowExec, "conflicts", conflicts, "plugins", plugins, "error", errorJSON(refusal))
+		"settings", settings, "runs_code", runsCode, "allow_exec", p.AllowExec, "left_hooks", leftHooks, "conflicts", conflicts, "plugins", plugins, "error", errorJSON(refusal))
 }
 
 // PluginsText is what InstallPlugins did, for a person: one line per pack's plugin, and its next step when this

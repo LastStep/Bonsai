@@ -133,6 +133,34 @@ func TestConsentCases(t *testing.T) {
 	}
 }
 
+// A link again with the lock missing names the hook lines it leaves as the project's own: here the pack's earlier
+// line, which Bonsai cannot tell from a person's without the lock.
+func TestRelinkNamesTheHookLinesItLeaves(t *testing.T) {
+	e := setup(t)
+	root := testpack.Project(t, e.tmp, "relink")
+	e.link(t, root, e.pack.C)
+	if err := os.Remove(filepath.Join(root, filepath.FromSlash(workspace.LockFile))); err != nil {
+		t.Fatal(err)
+	}
+	p := e.plan(t, root, Request{Command: "init", Init: &InitValues{}})
+	if len(p.LeftHooks) != 0 {
+		t.Errorf("nothing changed, yet left: %v", p.LeftHooks)
+	}
+	testpack.SetRef(t, root, e.pack.C, e.pack.D)
+	p = e.plan(t, root, Request{Command: "init", Init: &InitValues{}})
+	if strings.Join(p.LeftHooks, "; ") != "SessionStart (startup): echo demo hook A" ||
+		!strings.Contains(p.Preview(false), "Left in place as the project's own (the lock is missing") ||
+		!strings.Contains(p.Preview(false), "  keep    hook        SessionStart (startup): echo demo hook A\n") {
+		t.Errorf("left %v:\n%s", p.LeftHooks, p.Preview(false))
+	}
+	// A first link (no bonsai.yaml) names none: a project's own hooks are its own there.
+	fresh := testpack.Project(t, e.tmp, "fresh")
+	writeFile(t, fresh, SettingsFile, drifted)
+	if p := e.plan(t, fresh, Request{Command: "init", Init: e.values(e.pack.A)}); len(p.LeftHooks) != 0 {
+		t.Errorf("a first link left %v", p.LeftHooks)
+	}
+}
+
 // A first link writes Bonsai's own hook line on --yes alone, naming it apart from Runs code; a pack's needs
 // --allow-exec. A changed own line is code even at a first link (rule 7).
 func TestOwnHookLines(t *testing.T) {
