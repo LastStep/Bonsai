@@ -3612,7 +3612,7 @@ verification. P0's reads run under the task of the piece they read.
 | 5.5.0 | **The engine's part for packs** (Go): a pack file's path may start with `<protocols>/` (the pack reader accepts it; today's refuses `<`), written into the project's `documents.protocols` folder and imported by the block; `init` writes `.bonsai/STATE.md` when there is none; the templates of the two files the engine writes (`bonsai.yaml`, STATE) keep their one home in the engine, and base's `workspace` and `state` skills are generated from them; the generated-files page moves into base's `generated-files` skill; formats set N (descriptions) | Go tests (a project whose protocols folder is not the default; a moved folder; each refusal); `init`'s STATE in a `t.TempDir()` project, never overwritten; `go generate` changes nothing and a changed template in a temporary copy fails the test; the formats test; P0's privacy read of STATE's template before it lands; check 10 and the ladder; CI | 2-3 | Spec §4 (`init`), §5 ("What loads always", "Every template and pack file documents itself"), §6 (`bonsai.yaml`, "Generated files", the block, "How `update` decides"); contract §2.2, §2.8, §7.2, §14; `formats/README.md` ("How the set changes"); this plan's 5.1.5, 5.1.9 and 5.2.6a notes; 5.1.5's run report, item 5 |
 | 5.5.1 | **The pack template** `packs/template/` (one role, one skill, one documented template, `pack.yaml`, `labels.yaml`, README, `.gitattributes`), its checks in one script (`ci/check.sh`), its `pack.yml` (validate, `check --pack`, a scratch link, release on a `v*` tag), and Bonsai's CI running the script on every pack folder | `check --pack` and `claude plugin validate --json` on the template (only the missing `version`); the script green on both sides locally; the release subcommand run locally with made-up tag names (one unlike the version fails, the matching one passes; no tag, repository or release made); Bonsai's `packs` job and `windows` job green on CI; validate's need of a login measured; check 10 and the ladder | 3-5 | Spec §5 (the folder layout, "The pack template", pinning, "Adopting a release", mods), §12 step 8 (supply chain); gate report §2.13 (the eval's flags); the test pack's files; this plan's 5.1.1 rules 3-4 and 5.1.9 note |
 | 5.5.2 | **`base`** in `packs/base/`: the plugin manifest; `pack.yaml` with the walls, each with its `why`, and base's protected paths; `labels.yaml`, contract §5.6's four; `block.md`; README; the template skills `task`, `run`, `memory` and `ci`; a Go test holding base free of code and its labels equal to the contract's | `check --pack` and validate; Bonsai's `packs` job; the Go test; a scratch project linked to base with `--yes` alone (nothing under "Runs code"), its block and deny rules read back; P0's privacy read of the task and run-report templates (after a Haiku grep) before it lands; the orchestrator's read; check 10 and the ladder | 3-4 | Spec §5 ("The two packs", template docs), §6 (the preview's sentences), §7 (the walls, deny rules), §10 (memory); contract §4, §5.6, §7.1, §7.2, §7.4; this plan's 5.3.5 note 2; the studio's three templates at `7017d63` (below), read only |
-| 5.5.3 | **The "operating Bonsai" skill** in `base` (`skills/operating-bonsai/`), and a Go test that keeps it in step with the command words, flags and error words | The test (a skill line naming an unknown word or flag fails; a word the registry has and the skill never names fails); its size; its real sessions in 5.5.5 | 2-3 | Spec §3 (unattended, `error`), §4, §6, §9; contract §10.1-§10.2 (status moves in both modes); this section's "The pin rule"; this plan's 5.1.6 and 5.1.10 notes, 5.2.5 note 1, 5.3.6 note 8, 5.4.2 note 12, 5.4.3 note 2 and 5.4.4 note 4; Rohan's 9 Oct direction (`STATE.md`) |
+| 5.5.3 | **The "operating Bonsai" skill** in `base` (`skills/operating-bonsai/`), and a Go test that keeps it in step with the command words, flags and error words | The test (a skill line naming an unknown word or flag fails; a word the registry has and the skill never names fails); its size; its real sessions in 5.5.5 | 2-3 | Spec §3 (unattended, `error`), §4, §6, §9; contract §10.1-§10.2 (status moves in both modes); this section's "Moving a pack's version"; this plan's 5.1.6 and 5.1.10 notes, 5.2.5 note 1, 5.3.6 note 8, 5.4.2 note 12, 5.4.3 note 2 and 5.4.4 note 4; Rohan's 9 Oct direction (`STATE.md`) |
 | 5.5.4 | **`workflow`**, its own repository, made from the template: five roles with their `skills:` preloads; `session-start` as the always-on file, five protocol skills; `lanes.yaml`; `labels.yaml`; eight document kinds with documented templates; the walls for the studio's secret files; block, README, LICENSE, its CI pinned to a Bonsai commit | `check --pack` and validate locally; a scratch project linked to it alone with `--yes` alone, and with `base`, its block under 40 lines; the privacy verifier P on every commit from the root before its first push; every later commit grepped and read before Rohan is told it can go public; its CI green on both sides after the push; Rohan's read | 6-9 | Spec §5 ("Where roles live", "What loads always", "The two packs"), §6 (the tables' closing step), §7 (the studio's secret files); contract §4.3, §5.4, §6, §7.1-§7.3, §9, §10.2, §11, §13; the studio's roles, protocols and templates at `7017d63` (below), read only |
 | 5.5.5 | **The packs in real sessions**, by a Sonnet agent: a role's preloaded skills, a role as a subagent, the always-on file, the operating skill's four scenarios, `--agent workflow:builder --bg`, an interactive session through a terminal multiplexer; on Windows after Rohan's trust | Each session's transcript (stream JSON) and answers in the run report, with Claude Code's version and the user settings hashes before and after | 1-2 | Gate report §2.7, §5 (5.5); this plan's 5.1.7 note (trust); `design/plan.md` ("Test sessions and the launcher") |
 | 5.5.6 | **The walls, tried once on both sides**, by a Sonnet agent: the secret files listed again on each side (names only), each rule's form tried on decoys, each real rule tried where no secret can be shown | The run report's table, one row per rule and side; the user settings hashes; V1 | 1-2 | Spec §7 ("The walls", "Deny rules the engine writes"); this plan's 5.3.5 notes 3-4 |
@@ -3711,7 +3711,7 @@ hand on:
 | `STATE.md` at the root: "5.5 moves it, with its frontmatter" (5.4, the switch) | 5.5.7 | To `.bonsai/STATE.md` with `bonsai.state/1` frontmatter; `CLAUDE.md` names the new place |
 | "Linking Bonsai's `base` pack in 5.5 adds no code that runs" (5.4, Rohan's part) | 5.5.2, 5.5.7 | Kept true: a test holds base free of code; the link's preview lists nothing under "Runs code" before `--yes` |
 | The ladder's loop, "climb, read the `--json`, fix, climb again", named so 5.5 carries it (5.4.2 note 12) | 5.5.3 | A section of the operating skill; scenario S2 in 5.5.5 |
-| The stricter-only rule, "which 5.5's `workflow` pack carries for other projects" (5.4.4 note 4) | 5.5.3, 5.5.4, 5.5.7 | For linked projects it is taught by the operating skill in `base`, which reaches every one; `workflow`'s ladder skill points to it (this section, "Stale or in tension"). It gains one case, the pin rule (below), stated once in this section, amending 5.4's "any other change" |
+| The stricter-only rule, "which 5.5's `workflow` pack carries for other projects" (5.4.4 note 4) | 5.5.3, 5.5.4, 5.5.7 | For linked projects it is taught by the operating skill in `base`, which reaches every one; `workflow`'s ladder skill points to it (this section, "Stale or in tension"). It stands as 5.4 has it: moving a pack's version, adding a pack and taking one out wait for a person's word, an agent handing over the line ("Moving a pack's version", below, stated once) |
 | "No operating skill until 5.5" (5.4 done, check 14) | 5.5.5 | Scenario S2 repeats check 14 with the skill and without naming `--help --json` |
 | The floors at a part's end (5.4, "Tasks and names") | After 5.5.7 | As 5.4 has it: one climb of `main`, the floors raised to its counts under a `T-559x` task, the numbers in Rohan's last line |
 | Agents manage Bonsai inside projects, "top notch" (Rohan, 9 Oct, 15:35) | 5.5.3, 5.5.5 | The operating skill, kept in step with `--help --json` by a test, tried in four real scenarios on WSL and in S1 on Windows |
@@ -3719,27 +3719,43 @@ hand on:
 | A pack plugin that runs code is asked for on each machine; Bonsai installs no plugin but the project's own packs' (Rohan, 9 Oct) | 5.5.1 | The template's README says what makes a pack run code (hooks, servers, monitors, a mod) and that each machine then asks; base and workflow carry none |
 | No screens of Bonsai's own (Rohan, 9 Oct) | This section | Nothing in 5.5 draws a page; Rohan reads his pack on GitHub |
 | No self-update; the program is his install per release (Rohan, 9 Oct, 15:46) | 5.5.3 | The skill hands a person the install lines and never installs `bonsai` |
+| A pack's version stays a person's step; agents hand over the line (Rohan, 9 Oct, 18:32, approving this section) | 5.5.3, 5.5.5, 5.5.7 | Stated once below ("Moving a pack's version"); the operating skill teaches it; S3 and S4 try it; `CLAUDE.md` carries it from 5.5.7 |
 
-#### The pin rule: moving a pack's ref, stated once
+#### Moving a pack's version: a person's step, stated once
 
-5.4's stricter-only rule lets an agent make only stricter changes to `bonsai.yaml` (a floor raised to a green count; a
-rung, a floor entry or a protected path added) or one a section Rohan approved names, and says **"any other change ...
-loosens and waits for his word"**; spec §5 says "Adopting a release stays a person's step". Rohan's 9 Oct direction
-(15:35) gives updating to agents. So, for Bonsai's own repo and every project linked to `base`, **the pin rule**:
+Rohan's choice of 9 Oct (18:32), when he approved this section: "keep moving a pack's version as your step only; agents
+hand you the line". So 5.4's stricter-only rule stands as it is (an agent makes only stricter changes to `bonsai.yaml`,
+or one a section Rohan approved names; **"any other change ... loosens and waits for his word"**), and so does spec §5's
+"Adopting a release stays a person's step". For Bonsai's own repo and every project linked to `base`:
 
-- Under a running task whose `bonsai.allows` grants `bonsai.yaml` and `.bonsai/lock.json`, in the main checkout on its
-  base branch, an agent may change a pack's `ref` (another commit or tag of the same `source` and `path`) when
-  `bonsai update --json`'s preview, read line by line before `--yes`, **removes no wall or other deny rule, no label
-  definition and no protected path** (a changed one counts as removed) **and lists nothing under "Runs code"**.
-- **Anything else waits for a person's word:** a move whose preview fails that test, a change of a pack's `source` or
-  `path`, and **taking a pack out of `packs`**, which counts as loosening (its walls, labels and protected paths go
-  with it). Where a studio manages the project, the person's word comes as the person's grant through it (5.3's (ii)).
-- Adding a pack to a project already linked is not a pin move and stays as 5.4 has it: a person's word, or a section
-  Rohan approved that names it (5.5.7's `base`).
+- **A person's step:** a pack's `ref` changed (another commit or tag), its `source` or `path` changed, a pack added to a
+  project already linked, and a pack taken out of `packs`. An agent never makes one of these on its own judgment,
+  whatever the preview would show.
+- **What the agent does instead: it prepares the change and hands it over, in one message:** what is waiting (`bonsai
+  status --full --json` lists each pack's newer tags; before a pack's first tag, the commit the person or the pack's
+  README names), the exact edit to `bonsai.yaml` (the line, old and new; for a pack added or taken out, its entry), and
+  why. It changes nothing first: `bonsai update --json` previews only what `bonsai.yaml` already says, so a move's
+  preview is read after the edit (next item).
+- **On the person's word for that edit, and only then:** their yes to the line handed over (in the session, or as their
+  answer to a `Decide` ask; where a studio manages the project, their grant through it, 5.3's (ii)), or a plan they
+  approved that names it (in Bonsai's repo a section Rohan approved, as 5.4 has it: 5.5.7's `base`). Under a running
+  task whose `bonsai.allows` grants `bonsai.yaml` and `.bonsai/lock.json`, in the main checkout on its base branch, the
+  agent makes the edit, runs `bonsai update --json` and reads the preview line by line. A move (a `ref`, `source` or
+  `path`) whose preview removes a wall or other deny rule, a label definition or a protected path (a changed one counts
+  as removed) is put back and handed to the person again with what the preview listed, before any `--yes`; anything
+  under "Runs code" needs consent to code, the person's under 5.3's (ii). Otherwise `--yes`, `bonsai check --json` with
+  no finding, and one commit of everything the command wrote.
+- **What agents still do unaided** (Rohan's 15:35 direction: agents link, update, fix, check, read status and edit):
+  `bonsai update` to apply what is already decided (a repair, a re-apply on this machine, the project's own stricter
+  change), stopping and handing over any preview that moves, adds or takes out a pack the person's word does not cover;
+  `bonsai check` and its fixes; `bonsai status`; the stricter edits of `bonsai.yaml` that 5.4 has. A first link (`bonsai
+  init`) stays the agent's too, at the packs and refs the person named (their request, the task or a plan they
+  approved); a ref is a choice of version, so where none is named the agent hands the person the `--ref` it proposes
+  (the newest tag, or before a pack's first tag the head commit of its default branch) and links on their yes.
 
-It amends 5.4's "any other change" for this one case and nothing else; Rohan's approval of this section is his word for
-it (the (B) paragraph). It is stated here once; the operating skill teaches it to every linked project (note 5.5.3, 2),
-`CLAUDE.md` carries it for Bonsai's own work from 5.5.7, and 5.5.7 note 4 and `workflow`'s ladder skill point to it.
+Stated here once: the operating skill teaches it to every linked project (note 5.5.3, 2), `CLAUDE.md` carries it for
+Bonsai's own work from 5.5.7, and 5.5.7 note 4 and `workflow`'s ladder skill point to it. No line of the spec or of 5.4
+changes for it.
 
 #### Notes per piece
 
@@ -3954,25 +3970,29 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    - **Link and update, only in the main checkout on its base branch:** `init` and `update` write
      `.claude/settings.json`, which rung 0 refuses on any other branch (5.4.3 note 2). A first link with `bonsai init
      --json` (a preview; nothing written; exit 4), each settings line read, then `--yes`; a pack named by `--source`,
-     `--path` and `--ref`, or in `bonsai.yaml` before `init`. An update: a pack's `ref` changed in `bonsai.yaml` by the
-     pin rule (next item), then `bonsai update --json`, its preview read line by line, then `--yes`. Exit 5 (a
-     conflict): keep (`--keep P`) when the project's edit should win, adopt (`--adopt P`) when the pack's should, and
-     ask when unsure. Exit 4 with "Runs code": consent to code (`--allow-exec`) is never the agent's own choice; where a
-     studio manages the project the command accepts it under the person's grant (the task's grant of `bonsai.yaml` and
-     the lock came from the person); elsewhere the agent stops and hands the person the exact line (5.3's (ii)).
-     `waiting` (trust): a person opens a session in the folder and trusts it, then `bonsai update`. Then `bonsai check
-     --json` with no finding, and everything the command wrote (`bonsai.yaml`, the lock, `.claude/settings.json`, the
-     block, the pack's files, the tables) in one commit.
+     `--path` and `--ref`, or in `bonsai.yaml` before `init`, at the packs and refs the person named (where no ref is
+     named, the agent hands the person the one it proposes and links on their yes). An update applies what is already
+     decided (a repair, a re-apply on this machine, the project's own stricter change): `bonsai update --json`, its
+     preview read line by line, then `--yes`; a pack's version moved, a pack added or a pack taken out is the person's
+     step (next item). Exit 5 (a conflict): keep (`--keep P`) when the project's edit should win, adopt (`--adopt P`)
+     when the pack's should, and ask when unsure. Exit 4 with "Runs code": consent to code (`--allow-exec`) is never the
+     agent's own choice; where a studio manages the project the command accepts it under the person's grant (the task's
+     grant of `bonsai.yaml` and the lock came from the person); elsewhere the agent stops and hands the person the exact
+     line (5.3's (ii)). `waiting` (trust): a person opens a session in the folder and trusts it, then `bonsai update`.
+     Then `bonsai check --json` with no finding, and everything the command wrote (`bonsai.yaml`, the lock,
+     `.claude/settings.json`, the block, the pack's files, the tables) in one commit.
    - **Edit `bonsai.yaml`:** it is person-only; an agent edits it only under a running task whose `bonsai.allows` grants
-     it, and only for a stricter change (a rung or a floor entry added, a floor raised to a green, clean climb's count,
-     a protected path added) or a pin move: a pack's `ref` changed (same `source` and `path`) when the update's preview
-     removes no wall or other deny rule, no label definition and no protected path (a changed one counts as removed) and
-     lists nothing under "Runs code". **Anything else loosens a check and waits for a person's word:** a floor lowered;
-     a rung's command, `required`, tests, ratchet or capture changed or removed; a protected or person-only path taken
-     out; a test marked to skip in CI; a pin move that fails the preview's test; a pack's `source` or `path` changed; a
-     pack taken out of `packs`; a pack added to a project already linked. Why: an agent loosening the checks it is held
-     to would be judging its own work. `bonsai check --json` after every edit. (This section's "The pin rule" is the
-     rule's text; 5.4's switch the rest.)
+     it, and on its own only for a stricter change (a rung or a floor entry added, a floor raised to a green, clean
+     climb's count, a protected path added). **Anything else loosens a check and waits for a person's word:** a floor
+     lowered; a rung's command, `required`, tests, ratchet or capture changed or removed; a protected or person-only
+     path taken out; a test marked to skip in CI. **A pack's version is the person's step too, whatever the preview
+     would show:** a pack's `ref`, `source` or `path` changed, a pack added to a project already linked, a pack taken
+     out of `packs`. For these the agent reads what is waiting (`bonsai status --full --json`, each pack's newer tags),
+     hands the person the exact edit (the line, old and new) and why in one message, and changes nothing; on their yes
+     it makes the edit, reads `bonsai update --json`'s preview line by line, hands back a move that removes a wall, deny
+     rule, label definition or protected path, and otherwise runs `--yes`. Why: an agent loosening the checks it is
+     held to, or choosing the packs that hold it, would be judging its own work. `bonsai check --json` after every
+     edit. (This section's "Moving a pack's version" is the rule's text; 5.4's switch the rest.)
    - **Status moves:** `bonsai status --json` gives `status_writes`. Under `agents`, an agent edits a task's status line
      itself, by the moves contract §10.2 gives agents. Under `command` (a project a studio manages), the guard refuses
      an agent's edit of a status line, a lane line, a task file outside the main checkout, and a person-only path put
@@ -3992,10 +4012,10 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
      runs them by hand.
    - **The person's gates, and why:** consent to code (`--allow-exec`), `bonsai unlink`, a change to Bonsai's own hook
      lines (each lets new code run on the person's machine or takes the guard out; where a studio manages the project,
-     the person's grant through it; elsewhere the person types it), every loosening of `bonsai.yaml` (above),
-     person-only files under `command` mode, Bless where a studio manages the project (elsewhere an agent raises a floor
-     itself, by the rule above), and installing the `bonsai` program (root or admin; the agent sends the person the
-     lines and the fingerprint check, never installs).
+     the person's grant through it; elsewhere the person types it), every loosening of `bonsai.yaml`, every pack's
+     version moved and every pack added or taken out (above), person-only files under `command` mode, Bless where a
+     studio manages the project (elsewhere an agent raises a floor itself, by the rule above), and installing the
+     `bonsai` program (root or admin; the agent sends the person the lines and the fingerprint check, never installs).
    - **Records:** `bonsai logs --json`; `.bonsai/STATE.md` (add one from `base:state` if missing); the tables are
      rebuilt, never edited; how long things are kept: `base:generated-files`; templates: `base:task`, `base:run`,
      `base:memory`, `base:workspace`, `base:state`, `base:ci`.
