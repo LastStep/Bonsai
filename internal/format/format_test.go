@@ -229,6 +229,17 @@ func TestReadsAMissingFieldAsNull(t *testing.T) {
 	}
 }
 
+func TestReadsAnIntegerWrittenWithAFraction(t *testing.T) {
+	w, err := ReadWorkspace([]byte("format: bonsai.workspace/1\nid: ws-7kq2m4xw5r3t6y2u7p4a5c3e2b\nname: x\n" +
+		"ladder:\n  - rung: 2.0\n    kind: guard\n    required: true\n"))
+	if err != nil || w.Ladder[0].Rung != 2 {
+		t.Errorf("rung 2.0: %v %+v", err, w)
+	}
+	if _, err := ReadWorkspace([]byte("format: bonsai.workspace/1\nladder:\n  - rung: 2.5\n")); err == nil {
+		t.Error("rung 2.5 reads")
+	}
+}
+
 func TestKeepsAnUnknownField(t *testing.T) {
 	line := `{"format":"bonsai.log/1","id":"7d0c1f2e-3a4b-4c5d-8e6f-7a8b9c0d1e2f","at":"2026-10-08T14:08:00.000Z",` +
 		`"workspace":"ws-7kq2m4xw5r3t6y2u7p4a5c3e2b","newer":{"b":1.50,"a":[true]},"event":"guard","labels":{}}`

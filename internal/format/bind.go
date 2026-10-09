@@ -21,6 +21,7 @@ package format
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strconv"
 	"strings"
@@ -175,11 +176,12 @@ func decode(s schema.Object, v any, dst reflect.Value) error {
 		if !ok {
 			return mismatch(v, t)
 		}
-		i, err := strconv.ParseInt(string(n), 10, 64)
-		if err != nil {
-			return fmt.Errorf("%s is not an integer Go holds: %v", n, err)
+		// The schema's integer is a number with no fraction (1.0 is one), so it is read through its exact value.
+		r, ok := new(big.Rat).SetString(string(n))
+		if !ok || !r.IsInt() || !r.Num().IsInt64() {
+			return fmt.Errorf("%s is not an integer Go holds", n)
 		}
-		dst.SetInt(i)
+		dst.SetInt(r.Num().Int64())
 	case reflect.Slice:
 		list, ok := v.([]any)
 		if !ok {
