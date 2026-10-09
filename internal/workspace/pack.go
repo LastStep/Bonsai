@@ -9,11 +9,12 @@ package workspace
 // documentation check (bonsai check --pack) and the rule that a hook line never calls bash by name come later in
 // step 5.1.
 //
-// A hook entry's runs (step 5.1.1, plan-5 rule 4) lists the pack's own files its command runs, each by the path its
-// files entry gives it in the project (test-pack/run.sh), so a change to one of them is "runs code" even when the
-// hook line stays the same (spec §6: "a change to a hook line or to a file a hook runs"). [] for none; a hook entry
-// with no runs reads as [] (the reader rule for a missing field). Each item must be one of the files entries' paths:
-// a hook may name only files the pack writes, and Bonsai consents to no file it cannot see. Example:
+// A hook entry's runs (step 5.1.1, plan-5 rule 4) lists the pack files its command runs, each by the path a files
+// entry gives it in the project (test-pack/run.sh): this pack's own, or another linked pack's. A change to one of them
+// is "runs code" even when the hook line stays the same (spec §6: "a change to a hook line or to a file a hook
+// runs"). [] for none; a hook entry with no runs reads as [] (the reader rule for a missing field). This reader holds
+// each item to a project path's form; the engine, which sees every linked pack, refuses an item no linked pack writes
+// and a hook command naming a pack file its runs does not list (internal/engine/consent.go). Example:
 //
 //	hooks:
 //	  - event: SessionStart
@@ -22,7 +23,9 @@ package workspace
 //	    runs: ["test-pack/run.sh"]
 //	    why: "Prints the pack's greeting when a session starts; it blocks nothing."
 //
-// bonsai check --pack (step 5.1.9) refuses a hook command naming a pack file that runs does not list.
+// bonsai check --pack (step 5.1.9) holds a pack folder to the same rule on its own.
+//
+// The id bonsai is Bonsai's own (its hook lines, its marketplace's owner), so no pack may take it.
 
 import (
 	"regexp"
@@ -101,6 +104,8 @@ func ReadPack(raw []byte) (*Pack, error) {
 	p.ID = f.text(m, "id", "the file", 0, true)
 	if e, _ := m.Entry("id"); f.err == nil && !packIDPattern.MatchString(p.ID) {
 		f.fail(e.Line, "the id %s is not a pack id: a lower-case letter, then lower-case letters, digits and dashes", showValue(p.ID))
+	} else if f.err == nil && p.ID == ReservedPackID {
+		f.fail(e.Line, "the id %s is Bonsai's own (its own hook lines go by it), so no pack may take it", showValue(p.ID))
 	}
 	p.Version = f.text(m, "version", "the file", 0, true)
 	if needs := f.mapping(m, "needs", "the file"); needs != nil {
@@ -165,9 +170,8 @@ func ReadPack(raw []byte) (*Pack, error) {
 				runsLine = e.Line
 			}
 			for _, r := range h.Runs {
-				if !isFilePath(p.Files, r) {
-					f.fail(runsLine, "%s's runs names %s, which no files entry writes: a hook's runs lists only the pack's own files, "+
-						"by their path in the project", where, showValue(r))
+				if err := CheckRelPath(r); err != nil {
+					f.fail(runsLine, "%s's runs: %v; it lists pack files by their path in the project", where, err)
 					break
 				}
 			}
@@ -194,16 +198,6 @@ func ReadPack(raw []byte) (*Pack, error) {
 	return p, nil
 }
 
-// isFilePath reports whether path is one of the pack's files entries' paths.
-func isFilePath(files []FileEntry, path string) bool {
-	for _, fe := range files {
-		if fe.Path == path {
-			return true
-		}
-	}
-	return false
-}
-
 // entryOf takes a list item that must be a mapping, and its first line.
 func entryOf(f *fields, it any, listLine int, list string, i int, holds string) (*reader.Map, int) {
 	m, ok := it.(*reader.Map)
@@ -214,19 +208,31 @@ func entryOf(f *fields, it any, listLine int, list string, i int, holds string) 
 	return m, m.Entries()[0].Line
 }
 
-// checkPackTarget refuses a pack file aimed at a path Bonsai keeps for itself (letter case aside): bonsai.yaml and
-// .bonsai/, and ReservedTargets; and any path with a segment shaped like an NTFS short (8.3) name, <name>~<digit>,
-// which on Windows can be another name for one of those (CLAUDE~1/settings.json is .claude/settings.json).
-// CheckRelPath refuses GIT~1 the same way.
+// checkPackTarget refuses a pack file aimed at a path Bonsai keeps for itself, or at one Claude Code or git loads or
+// runs on its own (letter case aside, as Windows sees it):
+//   - bonsai.yaml, .bonsai/ and 0.4.3's .bonsai.yaml and .bonsai-lock.yaml: Bonsai's own files;
+//   - ReservedTargets (CLAUDE.md, whose block the engine writes as kind block);
+//   - a .claude or .claude-plugin folder anywhere (Claude Code loads settings and their hooks, skills, agents, commands
+//     and a skills-directory plugin, with its own hooks, from a project's .claude/), and a .mcp.json or .lsp.json
+//     anywhere (MCP and LSP servers Claude Code starts): a pack file there would be code Claude Code runs, written as
+//     an ordinary file (step 5.1.1's verifier, B3). Spec §5 and §6 name what a pack's files are (always-on protocol
+//     files in the workspace's protocols folder, templates, a CI workflow, kind once): none of them lands there,
+//     since a pack's roles, skills and hooks ride in its plugin and the engine writes .claude/settings.json itself
+//     (kind keys); so these targets are refused rather than counted as code;
+//   - .gitmodules anywhere (git reads it for submodules; .git itself CheckRelPath refuses);
+//   - any path with a segment shaped like an NTFS short (8.3) name, <name>~<digit>, which on Windows can be another
+//     name for one of those (CLAUDE~1/settings.json is .claude/settings.json). CheckRelPath refuses GIT~1 the same
+//     way, and a segment ending in a dot or a space (.claude./x is .claude/x on Windows).
 func checkPackTarget(p string) error {
-	for _, seg := range strings.Split(p, "/") {
+	segs := strings.Split(p, "/")
+	for _, seg := range segs {
 		if shortName.MatchString(seg) {
 			return pathError(p, "has a segment shaped like a Windows short (8.3) name ("+asciiOnly(seg)+
 				"), which can stand for another file or folder; name it in full")
 		}
 	}
 	l := strings.ToLower(p)
-	if l == "bonsai.yaml" || l == ".bonsai" || strings.HasPrefix(l, ".bonsai/") {
+	if l == "bonsai.yaml" || l == ".bonsai" || strings.HasPrefix(l, ".bonsai/") || l == ".bonsai.yaml" || l == ".bonsai-lock.yaml" {
 		return pathError(p, "is Bonsai's own file; a pack cannot write it")
 	}
 	for _, reserved := range ReservedTargets {
@@ -234,13 +240,30 @@ func checkPackTarget(p string) error {
 			return pathError(p, "is a file the engine writes only its own part of; a pack cannot write it whole")
 		}
 	}
+	for i, seg := range segs {
+		s := strings.ToLower(seg)
+		switch {
+		case (s == ".claude" || s == ".claude-plugin") && i < len(segs)-1:
+			return pathError(p, "is inside a "+s+" folder, which Claude Code loads on its own (settings and their hooks, "+
+				"skills, agents, commands, plugins); a pack's roles, skills and hooks ride in its plugin, never in a project file")
+		case s == ".claude" || s == ".claude-plugin":
+			return pathError(p, "names Claude Code's own "+s+" folder; a pack cannot write it")
+		case i == len(segs)-1 && (s == ".mcp.json" || s == ".lsp.json"):
+			return pathError(p, "names a "+s+" file, whose servers Claude Code starts on its own; a pack's servers ride in its plugin")
+		case i == len(segs)-1 && s == ".gitmodules":
+			return pathError(p, "names a .gitmodules file, which git reads on its own")
+		}
+	}
 	return nil
 }
 
-// ReservedTargets are the project files a pack's files entry may not name, beside bonsai.yaml and .bonsai/: the
-// engine keeps the instruction block in CLAUDE.md (kind block) and its own entries in .claude/settings.json (kind
-// keys), and .claude/settings.local.json is a person's own file.
-var ReservedTargets = []string{"CLAUDE.md", ".claude/settings.json", ".claude/settings.local.json"}
+// ReservedTargets are the project files a pack's files entry may not name by their path, beside bonsai.yaml, .bonsai/
+// and the targets checkPackTarget refuses by their kind: the engine keeps the instruction block in CLAUDE.md (kind
+// block). (.claude/settings.json and .claude/settings.local.json are inside .claude/, which checkPackTarget refuses.)
+var ReservedTargets = []string{"CLAUDE.md"}
+
+// ReservedPackID is the one id no pack may take: Bonsai's own.
+const ReservedPackID = "bonsai"
 
 func contains(list []string, s string) bool {
 	for _, x := range list {
