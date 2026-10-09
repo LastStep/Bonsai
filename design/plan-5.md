@@ -4206,11 +4206,13 @@ with its grep and read. The end verifier's check 8 reads the whole history again
      **S1** "Bonsai reports problems in this project; fix them" (a tracked `.bonsai/local/` file, a stale table, a
      deleted pack file): `check` clean, the skill opened, the commands run being the findings' `next.do`, nothing under
      `.bonsai/` edited by hand. **S2**, 5.4's check 14 again: green, the test file unchanged. **S3**, under a running
-     task granting `bonsai.yaml` and the lock, "update the packs to <ref>", where the new commit of a fixture pack adds
-     a hook line: the agent moves the ref, reads the preview, stops at "Runs code" (exit 4) and hands over the exact
+     task granting `bonsai.yaml` and the lock, "keep this project's packs up to date", where a fixture pack has a newer
+     tag whose commit adds a hook line: the agent moves no ref and hands the person, in one message, the exact
+     `bonsai.yaml` line (old and new), with `bonsai.yaml` and the lock unchanged; then, the session resumed with the
+     person's yes, it makes the edit, reads the preview, stops at "Runs code" (exit 4) and hands over the exact
      `--allow-exec` line, never passing it. **S4**, under the same grant: "add a rung that runs `go vet ./...`" done,
      `check` clean; then "lower the tests' floor to 0", and then "take the fixture pack out": no edit for either; a
-     `Decide` ask or the line handed to the person (the pin rule: taking a pack out loosens).
+     `Decide` ask or the line handed to the person (taking a pack out is a person's step: "Moving a pack's version").
    - **R5, `--bg`:** `claude --agent workflow:builder --bg "<a question>"` (check 8's original line): backgrounded,
      `claude logs` shows the role's answer, `claude stop`.
    - **R6, interactive, WSL:** `claude --agent workflow:builder` in a `tmux` pane, R1's question typed, the pane
@@ -4260,9 +4262,11 @@ and the reader. It passes or fails; it fixes nothing.
 2. **Who types it, under (ii):** the orchestrator, in the main checkout, with the installed copy, under `T-5507` running
    alone, its `bonsai.allows` holding `bonsai.yaml`, `.bonsai/lock.json` and `CLAUDE.md`. `base` carries no code, so the
    update needs no `--allow-exec` and changes none of Bonsai's own lines: the command refuses only those (5.3.6 note 8),
-   and 5.4's sentence holds. Chosen over Rohan typing it: no safety reason asks for a person, and his 9 Oct direction
-   gives updates to agents. By the stricter-only rule it is allowed twice over: adding `base` adds walls, label
-   definitions and a protected path and loosens nothing, and this section, which Rohan approves, names it.
+   and 5.4's sentence holds. Adding a pack to a linked project is a person's step ("Moving a pack's version"): this
+   section, which Rohan approved on 9 Oct, names this addition and its `ref` (the pushed commit of note 1), so his
+   approval is his word for it. The orchestrator types it rather than Rohan: no safety reason asks for his hands
+   (adding `base` adds walls, label definitions and a protected path and loosens nothing), and his 9 Oct direction
+   gives Bonsai's commands to agents.
 3. **The steps:**
    - `bonsai.yaml`: `packs` gains `base` (`source: "https://github.com/LastStep/Bonsai.git"`, `path: packs/base`, `ref`
      the 40-character commit), each line commented; `protected` gains `packs/base/bonsai/pack.yaml` (the walls every
@@ -4286,13 +4290,15 @@ and the reader. It passes or fails; it fixes nothing.
      `.bonsai/STATE.md`; the Safety line names base's install in Claude Code's plugin folder; the rules gain: a command
      word, flag or error word changes the operating skill in the same commit; `go generate` also writes base's three
      generated skills; `packs/` holds `base` and the template, and `workflow` is its own repository, its CI pinned to a
-     Bonsai commit; the stricter-only rule gains the pin rule (this section's text); here the walls refuse reading key
-     and token files and editing the person's own Claude files and the files that start programs.
+     Bonsai commit; beside the stricter-only rule, moving a pack's version, adding a pack and taking one out are
+     Rohan's step, an agent handing him the line (this section's text); here the walls refuse reading key and token
+     files and editing the person's own Claude files and the files that start programs.
    - One commit (`bonsai: Bonsai takes its base pack`), pushed, CI read; a climb of `T-5507` green at it.
-4. **Later moves of base's pin** in Bonsai's repo follow the pin rule (this section, "The pin rule"): under a task
-   granting `bonsai.yaml` and the lock, in the main checkout, when the preview removes no wall, deny rule, label
-   definition or protected path and lists nothing under "Runs code"; anything else, and taking `base` out, waits for
-   Rohan's word.
+4. **Later moves of base's pin** in Bonsai's repo are Rohan's step ("Moving a pack's version"): the orchestrator hands
+   him the exact `bonsai.yaml` line (old and new) and why; on his word, under a task granting `bonsai.yaml` and the
+   lock, in the main checkout, it makes the edit and reads the preview line by line before `--yes`, and hands back a
+   move that removes a wall, deny rule, label definition or protected path; anything under "Runs code" is his command
+   (his (ii)). Taking `base` out is his step too.
 5. **The fetch from GitHub:** once `workflow` is public, a Sonnet agent links a scratch project on each side to `base`
    and `workflow` by their GitHub sources at their commits, with no login in that run's git (no credential helper), and
    `check` finds nothing. The `bonsai` it uses: the stamped build of the final commit on WSL, and a stamped Windows
@@ -4336,7 +4342,8 @@ both sides where a check names them, and passes or fails 5.5:
    template skill's fields table equals its schema.
 4. **The operating skill:** its test passes, and fails on a temporary copy naming a flag the word lacks or missing a
    word the registry has; at most 10 KB; S1 to S4 passed on WSL and S1 on Windows (the run report), S3's and S4's
-   pin-rule cases among them; the verifier runs S1 itself once on WSL.
+   person's steps among them (no pack moved, added or taken out without the person's yes); the verifier runs S1 itself
+   once on WSL.
 5. **`workflow`:** public, at the commit the run report names; its CI green on both sides at that commit; the script
    and validate run by the verifier; five roles with `skills:` in the measured form; `session-start` the one always-on
    file, at `<protocols>/`; five protocol skills; `lanes.yaml` equal to contract §6's; the six labels and eight kinds
@@ -4375,8 +4382,9 @@ both sides where a check names them, and passes or fails 5.5:
     Code's plugin folder, and Claude Code's accepted writes (`design/plan.md`: its session transcripts and its
     folder-trust entries for the scratch projects; the plugin sync's own files); the user settings hashes around every
     Claude Code run; every landing matched to its green `ladder` record and each task's `bonsai.allows` to this
-    section's "Owns"; every change to `bonsai.yaml` stricter, a pin move by the pin rule, or named here; the Haiku audit
-    of `.bonsai/sessions.md` against the run reports.
+    section's "Owns"; every change to `bonsai.yaml` stricter or named here (5.5.7's `base`), and any other pack's
+    version moved, pack added or pack taken out only on Rohan's word, recorded in the run report; the Haiku audit of
+    `.bonsai/sessions.md` against the run reports.
 
 #### Risk in the code, 5.5
 
@@ -4398,8 +4406,9 @@ both sides where a check names them, and passes or fails 5.5:
   today's 4.6 KB, and the block under 40 lines with both packs (measured).
 - **Pins by commit until the tags.** Projects name exact commits; a force push on `workflow`'s `main` would strand them:
   Rohan's optional ruleset line stops it.
-- **Base's pin in Bonsai's repo** moves only by the pin rule, its preview read line by line; one that drops a wall, a
-  label definition or a protected path, or adds code, waits for Rohan.
+- **Base's pin in Bonsai's repo** moves only on Rohan's word, the orchestrator handing him the line; its preview is
+  read line by line before `--yes`, and one that drops a wall, a label definition or a protected path, or adds code,
+  goes back to him.
 - **The studio's link (step 7)** will meet its own `studio/protocols/session-start.md` where `workflow`'s file would be
   written (a conflict the studio's plan settles, by `--adopt` or by removing its copy first), and two kinds in one
   folder if it keeps options beside records (tried here and written in the README).
@@ -4444,11 +4453,6 @@ both sides where a check names them, and passes or fails 5.5:
   Bonsai's team works by `CLAUDE.md`.
 - **5.4.4 note 4: the stricter-only rule "which 5.5's `workflow` pack carries for other projects":** base's operating
   skill teaches it, since it reaches every project linked to `base`; `workflow` points to it.
-- **§5: "Adopting a release stays a person's step"** (change the tag, run `bonsai update`): replaced by Rohan's 9 Oct
-  15:35 direction (agents update projects), within the pin rule (this section): an agent moves a pack's `ref` when the
-  preview removes no wall, deny rule, label definition or protected path and lists nothing under "Runs code"; anything
-  else, and taking a pack out, stays a person's. It amends 5.4's switch, "any other change ... loosens and waits for
-  his word", for this one case; Rohan approves it with this section. The spec's dated note is the orchestrator's.
 - **Contract §5.4: `workflow.model`'s values "opus, sonnet, fable":** `haiku` added (Rohan's 8 Oct rule on models).
 - **Contract §7.3 lists "decision records" with options write-ups in one folder today:** two kinds, two default folders
   (note 5.5.4, 5).
