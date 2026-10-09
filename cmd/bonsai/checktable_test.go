@@ -205,11 +205,8 @@ var checkCases = map[string]func(c *cli){
 		c.addPack("more-labels", src, shas[0])
 	},
 	"approve-first": func(c *cli) { c.approveCase() },
-	"absolute-path": func(c *cli) {
-		c.link()
-		c.write("work/runs/R-2026-10-01-T-0901.md", "---\nformat: bonsai.run/1\nid: R-2026-10-01-T-0901\ntask: T-0901\nrole: builder\n"+
-			"model: a model\nstarted: null\nfinished: null\noutcome: merged\ncommits: []\nlabels: {}\nnotes: \"wrote /home/example/notes.txt\"\n---\n")
-	},
+	// The test pack's source is a local folder, an absolute path: the finding (checkMore tries the other forms).
+	"absolute-path": func(c *cli) { c.link() },
 	"block-size": func(c *cli) {
 		c.link()
 		claude := c.read("CLAUDE.md")
@@ -331,6 +328,47 @@ var checkCases = map[string]func(c *cli){
 	"local-unchecked": func(c *cli) { c.link(); c.write(".git/index", "not an index") },
 }
 
+// checkMore: more of a word's cases, run after the walk's own on the same project.
+var checkMore = map[string]func(t *testing.T, c *cli){
+	// A pack's source (spec §14 check 2: the pack's remote URL): a local absolute path, a Windows one or a file: URL
+	// is a finding; a remote URL is not. And a field of a document holding one.
+	"absolute-path": func(t *testing.T, c *cli) {
+		yaml := c.read("bonsai.yaml")
+		source := regexp.MustCompile(`(?m)^(    source: ).*$`)
+		if !source.MatchString(yaml) {
+			t.Fatalf("bonsai.yaml has no source line:\n%s", yaml)
+		}
+		for _, sc := range []struct {
+			source string
+			found  bool
+		}{
+			{filepath.ToSlash(c.pack.Source), true},
+			{"C:/packs/demo-pack.git", true},
+			{`C:\packs\demo-pack.git`, true},
+			{"file:///srv/packs/demo-pack.git", true},
+			{"https://example.invalid/packs/demo-pack.git", false},
+			{"ssh://git@example.invalid/packs/demo-pack.git", false},
+			{"git@example.invalid:packs/demo-pack.git", false},
+		} {
+			c.write("bonsai.yaml", source.ReplaceAllString(yaml, "${1}'"+sc.source+"'"))
+			_, out, _ := c.run("", "check", "--json")
+			got := strings.Contains(codesIn(fits(t, out, "check"), "findings"), "absolute-path")
+			if got != sc.found {
+				t.Errorf("the source %s: absolute-path %v, want %v\n%s", sc.source, got, sc.found, out)
+			}
+			if got && !strings.Contains(out, "a person names the pack's remote URL") {
+				t.Errorf("the source %s: its next step does not name the remote URL:\n%s", sc.source, out)
+			}
+		}
+		c.write("work/runs/R-2026-10-01-T-0901.md", "---\nformat: bonsai.run/1\nid: R-2026-10-01-T-0901\ntask: T-0901\nrole: builder\n"+
+			"model: a model\nstarted: null\nfinished: null\noutcome: merged\ncommits: []\nlabels: {}\nnotes: \"wrote /home/example/notes.txt\"\n---\n")
+		if _, out, _ := c.run("", "check", "--json"); !strings.Contains(out, `"file": "work/runs/R-2026-10-01-T-0901.md"`) ||
+			!strings.Contains(out, "holds the absolute path /home/example/notes.txt") {
+			t.Errorf("a run report's field:\n%s", out)
+		}
+	},
+}
+
 func TestCheckTable(t *testing.T) {
 	for code := range checkCases {
 		if _, ok := format.CheckWord(code); !ok {
@@ -376,6 +414,9 @@ func TestCheckTable(t *testing.T) {
 			}
 			if textCode, text, _ := c.run("", "check"); textCode != code || !strings.Contains(text, "next: ") {
 				t.Errorf("check's text exits %d, its --json %d:\n%s", textCode, code, text)
+			}
+			if more := checkMore[w.Word]; more != nil {
+				more(t, c)
 			}
 		})
 	}
