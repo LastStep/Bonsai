@@ -135,6 +135,7 @@ func Apply(p *Plan) error {
 // (which it never removes). A folder that still holds anything stays; a folder that cannot be removed is left, since
 // the project's files are already as the plan says (git does not show an empty folder).
 func pruneEmpty(root string, removed []string) {
+	root = filepath.Clean(root)
 	for _, rel := range removed {
 		dir := filepath.Dir(filepath.Join(root, filepath.FromSlash(rel)))
 		for dir != root && strings.HasPrefix(dir, root+string(filepath.Separator)) {

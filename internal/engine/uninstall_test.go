@@ -74,7 +74,7 @@ func TestUninstallPlugins(t *testing.T) {
 	f = &fakeCLI{list: list, uninstall: map[string]InstallResult{"demo-pack@" + market: {Outcome: "failed", FailureCode: "boom", Message: "it broke"}}}
 	got = UninstallPlugins(root, "demo", market, two, f)
 	if len(got) != 3 || got[1].Result != "failed" || got[1].Message != "it broke" || got[1].Who != "agent" ||
-		got[1].Next != "run in this checkout: claude plugin uninstall demo-pack@"+market+" --scope project" ||
+		got[1].Next != "run: claude plugin uninstall demo-pack@"+market+" --scope project" ||
 		got[2].Pack != "other-pack" || got[2].Result != "uninstalled" {
 		t.Errorf("a failure: %+v", got)
 	}

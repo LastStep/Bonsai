@@ -400,12 +400,12 @@ func UninstallPlugins(root, name, market string, packs []workspace.LockedPack, c
 		switch {
 		case errors.Is(err, ErrNoClaude):
 			r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so its record of the plugin was not removed (a machine without Claude Code has none)"
-			r.Next, r.Who = "if Claude Code is installed here off the PATH, run in this checkout: "+command(r.Plugin), "person"
+			r.Next, r.Who = "if Claude Code is installed here off the PATH, run: "+command(r.Plugin), "person"
 			out = append(out, asciiResult(r))
 			continue
 		case err != nil:
 			r.Result, r.Message = "failed", "Claude Code's plugins could not be listed: "+err.Error()
-			r.Next, r.Who = "run in this checkout: "+command(r.Plugin), "agent"
+			r.Next, r.Who = "run: "+command(r.Plugin), "agent"
 			out = append(out, asciiResult(r))
 			continue
 		}
@@ -432,15 +432,15 @@ func UninstallPlugins(root, name, market string, packs []workspace.LockedPack, c
 			switch {
 			case errors.Is(err, ErrNoClaude):
 				r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so its record of the plugin was not removed"
-				r.Next, r.Who = "if Claude Code is installed here off the PATH, run in this checkout: "+command(id), "person"
+				r.Next, r.Who = "if Claude Code is installed here off the PATH, run: "+command(id), "person"
 			case err != nil:
-				r.Result, r.Message, r.Next, r.Who = "failed", err.Error(), "run in this checkout: "+command(id), "agent"
+				r.Result, r.Message, r.Next, r.Who = "failed", err.Error(), "run: "+command(id), "agent"
 			case res.Outcome == "ok":
 				r.Result, r.Message = "uninstalled", "Claude Code's record of the install for this checkout removed"
 			case res.FailureCode == "not_installed":
 				r.Result, r.Message = "uninstalled", "not installed for this checkout: nothing to remove"
 			default:
-				r.Result, r.Message, r.Next, r.Who = "failed", strings.TrimSpace(res.Message), "run in this checkout: "+command(id), "agent"
+				r.Result, r.Message, r.Next, r.Who = "failed", strings.TrimSpace(res.Message), "run: "+command(id), "agent"
 			}
 			out = append(out, asciiResult(r))
 		}
