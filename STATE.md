@@ -131,12 +131,14 @@ whenever possible"), each reviewed fresh, fixed and audited:
 - **5.2** (on `main` at `da427de`; `records/runs/R-2026-10-09-plan-5.2.md`): nothing of Rohan's changes but one look at
   two log field names. 5.2 starts when 5.1 ends.
 - **5.3** (on `main` at `b79d00f`; `records/runs/R-2026-10-09-plan-5.3.md`), with Rohan's two answers.
-- **5.4** being planned now (`records/runs/R-2026-10-09-plan-5.4.md`); it comes to Rohan (his pre-release install).
+- **5.4** (on `main` at `dc7ec93`; `records/runs/R-2026-10-09-plan-5.4.md`): with Rohan for his word, since it holds
+  his pre-release install and the switch to Bonsai guarding and proving its own repo.
 
 5.1's hours so far: 488 minutes (8 h 8 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
+- Now: his word on 5.4's section (his install, the switch, the way back).
 - Whenever convenient: Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the
   model). In PowerShell: `claude`, then `/login`, then quit.
 - In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and
