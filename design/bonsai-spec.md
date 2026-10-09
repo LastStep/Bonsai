@@ -132,15 +132,12 @@ word: other agents and `AGENTS.md` (Q5), polish for strangers, layer overrides, 
   installs or replaces it: Bonsai's own `CLAUDE.md` and `Makefile` forbid `go install` (builders use `go build -o` into a
   scratch folder).
 
-  > **Changed 9 Oct (Rohan): the program updates itself from official releases.** After 1.0 each machine checks for a
-  > new release about once a day and installs it through a small root (WSL) or administrator (Windows) updater that
-  > accepts only LastStep's GitHub releases whose fingerprint matches the published one, keeps the previous version and
-  > rolls back if the new one fails a self-check. Rohan publishes releases (5.7) and installs the updater once per
-  > machine; no agent can place an arbitrary program, so the guard's fixed place (his 5.3 answer (a)) stays safe. The
-  > guard itself is not served online: it runs before every tool call, within about 5 ms, offline, failing closed
-  > (Rohan asked, 9 Oct; a network service is outside Bonsai's scope). Sized in 5.6's and 5.7's sections.
-  > Before 1.0 the pre-release at 5.4 stays his install. Same day: Bonsai is managed by agents inside projects; the
-  > program on each machine stays outside their reach ("inside projects", his answer).
+  > **9 Oct (Rohan):** the program stays his install, once per release on each side, as above; from 5.6 `status` and
+  > `check` say when a newer release exists and an agent hands him the exact lines. A self-updating program (a
+  > root/admin updater installing official releases) was chosen and then dropped the same day: "actually scratch out
+  > the self update thing. i dont want that". The guard itself is not served online: it runs before every tool call,
+  > within about 5 ms, offline, failing closed, and a network service is outside Bonsai's scope. Same day: Bonsai is
+  > managed by agents inside projects; the program on each machine stays outside their reach ("inside projects").
 - **Old binaries shadow it today.** Four 0.4.3-era binaries are on the PATH: `~/go/bin/bonsai`, `~/go/bin/Bonsai` and
   `~/.local/bin/bonsai` in WSL, `%USERPROFILE%\go\bin\bonsai.exe` on Windows, and `~/go/bin` comes first. Removing them
   is Rohan's step, before step 5.4 (§17 step 3).
