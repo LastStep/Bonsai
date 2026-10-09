@@ -1584,6 +1584,330 @@ The gate report's section 5, its 5.3 list, item by item; then the outline's "Set
 | The guard's lean read holds the format line, the protected lists and `never_edit` (5.1.4a) | 5.3.1 | Widened to the fields the guard now judges by (note 3); 5.1.4a's test updated |
 | The recorder's real Windows session, if Claude Code's Windows login was not back during 5.2 (5.2.4 note 12) | 5.3.7 | The agent runs 5.2.4 note 12's sessions on Windows too, read back as 5.2's done check 7 reads them |
 
+#### Notes per piece
+
+**5.3.0, the hook adapter and its frame.** Spec §7: "One hook adapter reads Claude Code's payload (tool names, backslash
+paths on Windows, unknown fields). A payload it cannot read blocks."
+1. **One reader** (`internal/hookin`, a working name). Each payload is decoded once by the strict decoder, with the
+   guard's rules for a BOM, a NUL in a string read, bad UTF-8, duplicate keys and the 64 MiB cap, into one type: the
+   common fields (`session_id`, `transcript_path`, `cwd`, `permission_mode`, `hook_event_name`, and `agent_id` and
+   `agent_type` inside a subagent) and each event's own (a tool event's `tool_name`, `tool_use_id` and `tool_input`;
+   Stop's `stop_hook_active`; SessionStart's `source` and `model`; SessionEnd's `reason`; Notification's message and
+   type; the subagent events' fields). The tool inputs Bonsai reads: the file tools' path (`file_path`, NotebookEdit's
+   `notebook_path`); what Edit, MultiEdit and Write would write (`old_string`, `new_string`, `replace_all`, `edits`,
+   `content`), which `command` mode needs (5.3.2 rule 6); and Bash's and PowerShell's `command`. Unknown fields are
+   ignored; an unknown tool is passed on by name. A path is kept as written, backslashes and all: its forms are the
+   guard's (`paths.go`). The fields come from the hooks reference on the version in use, named in the run report.
+2. **What an unread payload does is the caller's:** the guard and the stop gate block; `hook record` writes nothing and
+   exits 0; `hook start` prints what it can (5.2.4, notes 8 and 9). With one reader, a field Claude Code adds or renames
+   is read in one place; a test fails if another package decodes a payload.
+3. **The four timed tests**, with the guard's budget kept at 5 s, half the line's 10 s timeout (Claude Code lets a timed
+   out hook's call through; `TestBudgetIsHalfTheHookTimeout` holds the two together):
+   - `TestOverTimeBlocks`: `recordWait` becomes the frame's option (500 ms by default). The record half passes a wait
+     far past any load and finds the record there when `Main` returns; a second case holds the record's writer (a test
+     hook) and finds the answer back within the option's wait. The bound on the answer's time becomes a ceiling only a
+     hang crosses (the budget, the wait and 5 s).
+   - `TestFaultsThroughTheHookLine/slow`: kept. Its 9 s is its point (the timer must answer before Claude Code's 10 s
+     timeout) and its margin is about 3.5 s over the 5.5 s it needs; the 9 becomes the line's timeout constant less
+     1 s, so the two cannot drift.
+   - "busy forever" (`internal/workspace/places_test.go`): proves the retry gives up by counting its tries against an
+     injected clock, not by a 2 s wall-clock bound.
+   - The guard tests on the default budget: every test not about time passes a budget of a minute, so a loaded runner
+     can never turn its answer into `over-time`; only the over-time tests use short budgets.
+
+   Proof: each passes `-count=20`, plain and tagged, on both sides with eight busy loops beside it.
+4. **The frame** (today's `Main`, made shareable): its own timer first, the work in a goroutine, a panic as
+   `internal-error`, the answer with its exit code (0, or 2 with the reason and the next step on stderr), the over-time
+   record awaited for the option's wait. The stop gate uses it with its own budget (5.3.4 note 4). The comment in
+   `fault_on.go` is rewritten to what its tests now do.
+5. **No slower:** `hook guard`'s p50 and p95 on WSL before and after, with part 5's harness, in the run report.
+
+**5.3.1, where the guard reads from.**
+1. **The project holding the path** (contract §13: "the project is the one holding the path, for the guard"). For a file
+   tool's path, in each of its forms, the guard finds the nearest folder at or above it holding `bonsai.yaml`, walking
+   past any `.git` entry, up to the volume's root: a nested repo with no `bonsai.yaml` lies inside its outer project,
+   whose lists name it, and a path in another linked project is judged by that project's lists and running task. The
+   session's own project (from `CLAUDE_PROJECT_DIR`, found the same way) only says where the environment's task counts
+   (contract §13: "only for the session's own project") and where a shell call's record goes. A path in no linked
+   project is allowed (`outside-project`); when neither the path's project nor the session's is linked, the guard allows
+   and records nothing (spec §7). Chosen over stopping at `.git`, which reads a nested repo, or a `.git` an agent made,
+   as unlinked. The nearest `bonsai.yaml` wins alone, never with its parent's: Claude Code puts its own worktrees inside
+   the main checkout (`.claude/worktrees/`), where the parent's `.claude/**` would refuse every edit.
+   - **A session started in a subfolder** loads none of the project's settings (Claude Code's settings reference reads
+     `.claude/settings.json` from the starting folder only), so no Bonsai line runs there. The builder confirms it on
+     the version in use; `init`'s closing words gain one line ("start Claude Code in this folder: a session started in a
+     subfolder loads none of these settings, so nothing guards it"), and the guard's `--help` says the same.
+2. **The main checkout, verified.** Tasks are read from main (contract §13) and records go to main's `local/` (contract
+   §3). The guard takes over 5.2.2's finder (`.git` read with no git process: a folder means this checkout is main; a
+   file names its `gitdir`, whose `commondir` names the common folder, and main is that folder's parent when `gitdir`
+   lies under `<common>/worktrees/`) and adds what Rohan's 8 Oct note asks: whatever the guard trusts to find main
+   "cannot be rewritten by an agent without the guard noticing (fail closed)". Main is **verified** when all three hold:
+   - git's own link back: `<common>/worktrees/<name>/gitdir` names this worktree's `.git` file;
+   - main's `bonsai.yaml` holds the workspace id this checkout's holds;
+   - **this machine's record** names it: `<home>/workspaces/r-<key of main>/workspace.json` (contract §3: "the main
+     checkout's path, and the workspace ids it has held") holds main's path and that id. The record lies outside every
+     project and is written only by `init` and `update` run in a main checkout (this piece writes it there if 5.1 has
+     not),
+     commands the guard lets an agent run only under a grant of the files they write (5.3.2 rule 7).
+
+   A checkout that is its own main (`.git` a folder, or no `commondir`) needs the third alone. Verified, the guard reads
+   main's `bonsai.yaml`, lock and task files and writes main's `local/`. Not verified (a rewritten `.git` file, a decoy
+   main, a forged `commondir`, a worktree made to look like its own main, or a clone that never ran `bonsai update` on
+   this machine), it judges by this checkout's own `bonsai.yaml`, lock and the floor, honours **no grant** (rule
+   `main-not-verified`), and writes its record in this checkout's own `local/`; the refusal names the step ("a person
+   runs `bonsai update` in the main checkout"). The recorder, asks and the cleaner (5.2.2's other users) take the same
+   verified answer, so the rule has one home. Chosen over git's answer (git reads files an agent edits: Rohan's reason)
+   and over the link back alone (an agent can forge both ends, inside folders it can write). What lost: a clone that
+   never ran `bonsai update` on this machine gets no grants until a person does, which its plugin step already asks
+   (`waiting`, 5.1.7). A rewrite that also forges this machine's record is a shell write outside the project, the
+   tripwire case question A accepts; a `BONSAI_HOME` moved by a settings file is 5.3.6's `check` finding.
+3. **What it reads:** from the (verified main's) `bonsai.yaml`, 5.1.4a's lean read widened to the fields the guard now
+   judges by: `format`, `id`, `protected`, `person_only`, `never_edit` and `documents` (the task folder, and in
+   `command` mode the declared kinds' folders); from the lock, `declares`, lean (each pack's protected paths and
+   document kinds); this machine's `status_writes` only when a judgment needs the mode. 5.1.4a's test that holds the
+   guard's read is updated to these fields. A worktree's own copies of `bonsai.yaml` and the lock change nothing while
+   main is verified: rung 0 judges a branch's change to them (5.4).
+4. **Records:** through 5.2.2's append path and its builder of the common fields (the guard's own writer and
+   `openRetry` go), into the `local/` of the project whose rules decided: a file tool's path's project, or a shell
+   call's session project. `input_hash` is the salt's HMAC over the tool input (5.2.4's function, so a call's `guard`
+   and `tool_start` records share it); `bonsai_path` from `~/` under the home (5.2.0's rule); `bonsai_sha256` on the
+   record that made the file (rare now: `hook start` makes a session's file first); `target` the project-relative path
+   judged, the shell operand that decided, or null; `text` a refusal's reason. A worktree session's guard records now
+   land in main's `local/` (contract §3), so `logs`, the sessions table and the cleaner (5.2.6b) see them; a test shows
+   the cleaner removing an old one.
+5. **The walk's cost:** the walk up from a path stops only at a `bonsai.yaml` or the volume's root, one `Lstat` per
+   folder; the session project's walk is done once per call.
+6. **Windows junctions** (gate report §5): a path whose longest existing part is a junction or link that does not
+   resolve is refused (`bad-path`; Windows would fail the write through it, so nothing is lost); a path through this
+   machine's admin share (`\\localhost\C$\`, `\\127.0.0.1\C$\`, `\\?\UNC\localhost\C$\`, and the machine's own name
+   from `os.Hostname`) is read as its drive (`C:\...`) and judged in that form too. Documented, not fixed: a junction
+   swapped between the guard's check and Claude Code's write (a race no hook that runs before the call can close; it
+   needs a second process the agent runs), a share of a folder under another name, and a hard link made to a protected
+   file (part 5's limit). Tests make junctions with `mklink /J`, which needs no privilege, as part 5's do.
+7. **Timings** (gate report §2.5, §5): the guard's p50 and p95 on WSL, and the hook line through Git Bash natively on
+   Windows, for a typical call, a call on a guarded path (tasks read) and a session's first call, beside a minimal Go
+   hook in the same harness and the load average, before and after, in the run report. Tasks are read only when a
+   guarded path is touched (or, in `command` mode, a declared document): a typical call reads `bonsai.yaml`, the lock's
+   `declares` and the walk up. The bar: a typical call's p95 under 5 ms on WSL (spec §3); a guarded-path call is
+   reported. If the lock's read alone breaks the bar, the measure comes to the orchestrator before the piece goes on.
+
+**5.3.2, what the guard judges.** Every refusal says why first and names the next step (spec §3, §7).
+1. **One function** answers "may this agent change this path now": from the path's project, its lists, the packs'
+   `declares`, the floor and the active task, a decision. The file tools call it for their path; the delete check
+   (5.3.3) for each operand; rung 0 (5.4) with the named task's grants at any status (contract §13: rung 0 judges
+   finished work), so the guard and rung 0 judge alike.
+2. **The floor**: paths the guard guards whatever the project's lists say, because its own rules and lines live in
+   them. `bonsai.yaml`, `.bonsai/lock.json`, `.claude/settings.json`, `.claude/settings.local.json` and `.git` (the
+   folder or file at a checkout's top, and all under it) count as person-only; `.bonsai/local/`, `.bonsai/.gitignore`
+   and the two tables are Bonsai's alone (rule 5). Chosen over the lists alone: a project may leave them short, and a
+   guard whose own files an agent may unguard through the same guard guards nothing. What lost: a project cannot let
+   its agents edit those files without a grant. The floor is a Go table, its one home, on the reference page.
+3. **Grants** (contract §13, §5.6): a protected path (the lists, the packs' declared paths, the floor's person-only
+   paths) is allowed when the active task, found by 5.1.5's function for the path's project, with `BONSAI_TASK`
+   counting only when that project is the session's own, reads `running` and its `bonsai.allows` holds a glob matching
+   the path. Else it is refused (`protected`, or `person-only`), the reason naming the task or why there is none ("no
+   active task: two tasks read running"). The guard takes no `--task`. Set 4's `guard` section is the measure.
+4. **Person-only** (contract §5.5): in `command` mode (this machine's `status_writes: command`) a person-only path
+   counts in `bonsai.allows` only as a person granted it. The guard cannot tell who wrote a grant, so what stops a
+   forged one is rule 6's refusal of an agent's edit that puts a person-only path into `bonsai.allows`, and the Desk's
+   check (contract §10.6). In `agents` mode grants count as written (`status --json` says so), so a person-only path is
+   grantable like any protected one: the contract's own gap in an unmanaged workspace.
+5. **Bonsai's own files, in every mode, never granted**: an agent's file-tool write into `.bonsai/local/` (this
+   checkout's or main's), of `.bonsai/.gitignore` or of a generated table (`.bonsai/tasks.md`, `.bonsai/sessions.md`) is
+   refused (`bonsai-files`), naming `bonsai check --write` for the tables (spec §6, §7). Bonsai writes them as a
+   program, not through the file tools.
+6. **`command` mode's tripwires** (contract §10.1), only when the path's project reads `command`: an agent's edit of a
+   task file outside the main checkout; of a declared document's status line (a new document may be created at its
+   first status only); of the lane line; one that puts a person-only path into `bonsai.allows`; one that sets a label
+   whose definition reads `set_by: outside` (contract §5.2); and a write of a Bonsai-kind file (task, run,
+   state) that fails its format. Each names `status_command` as the next step. The guard judges the file as it would be
+   after the call: Write's `content`; Edit's and MultiEdit's replacements applied to the file on disk as Claude Code
+   applies them (an `old_string` not found changes nothing, and Claude Code fails that call itself); read under format 0
+   or 1. Only files in declared document folders are read this way, so other calls pay nothing.
+7. **Bonsai's own commands in a shell call** (spec §4, §7; contract §10.6): `bonsai init`, `update` and `unlink` are
+   judged as one edit of `bonsai.yaml`, `.bonsai/lock.json` and `.claude/settings.json` (each writes them), in the
+   project of the folder they run in; `bonsai settings set` and `bonsai labels attach` or `detach` are refused in an
+   agent session (5.6's commands refuse themselves too); every other word is allowed. 5.3.2 builds this judgment;
+   5.3.3's last commit calls it for each `bonsai` its splitter finds, whatever folder `bonsai` is called from.
+8. **The rules table:** each rule's name and one line on it, in the place of today's `const` block, its one home;
+   `docs/reference/lists.md` lists it (5.1.10's generator gains it if it has not). Names are kebab-case, as today's
+   (`protected`, `person-only`, `granted`, `bonsai-files`, `main-not-verified`, one per `command`-mode tripwire, the
+   delete check's, the stop gate's); the builder fixes them.
+9. **Crying wolf, by test:** an ordinary edit in a running task's worktree, a granted path, a free path in a project
+   with a long protected list and a new file in a free folder all pass; the run report lists every refusal the
+   builder's own sessions met that should not have happened.
+
+**5.3.3, the delete check.** Spec §7: "a small delete check that refuses a recursive or bulk delete that does not name
+what it deletes (a `git clean` with `-x` or `-X` among them, since either deletes `.bonsai/local/`, and `git stash
+--all`, which moves it away), and one that would delete a protected path". Rohan's 4 Oct answer, kept on 7 Oct
+(question A): no shell reader.
+1. **A word splitter, not a reader.** A command line is split into simple commands at `;`, `&&`, `||`, `|`, `&` and
+   line ends, and into words by the shell's quoting (bash: single and double quotes and the backslash; PowerShell:
+   single and double quotes and the backtick). The text inside `$( )`, backticks, `( )` and `{ }`, and the string given
+   to `bash -c`, `sh -c`, `eval`, `powershell -Command`, `pwsh -c` or `cmd /c`, is split again, to a depth of three.
+   Words that run another program are skipped to reach it: `sudo`, `env` and its `NAME=value` words, `command`, `exec`,
+   `nice`, `nohup`, `time`, and `xargs` (which also makes a delete bulk). Nothing is expanded or run. A line it cannot
+   split (a quote left open, a depth past three) is refused only when it holds a delete word; else it is not judged.
+2. **Delete words:** `rm`, `rmdir`, `unlink`, `shred`, `git rm`, `git clean`, `git stash` with `--all` or `-a`, `find`
+   with `-delete` or with `-exec`, `-execdir` or `-ok` running `rm`, and `mv` (a move takes a path away); PowerShell's
+   `Remove-Item` and `Move-Item` with their aliases (`rm`, `ri`, `del`, `erase`, `rd`, `rmdir`; `mv`, `mi`, `move`);
+   `cmd`'s `del`, `erase`, `rd`, `rmdir` and `move`. A Go table, its one home, on the reference page.
+3. **Not naming what it deletes**, refused (`delete-unnamed`): a recursive delete (`-r`, `-R`, `--recursive`, `-rf` and
+   its spellings, `-Recurse`, `/s`) or a bulk one (`find`, `xargs`, `git clean`, a pipeline into `Remove-Item`,
+   `-Include`, `-Exclude` or `-Filter`) with an operand that is not a plain name: one holding a glob character, a
+   variable or a substitution (`$`, a backtick, `%NAME%`), or one that is `.`, `..`, `/`, `~`, a drive's root, empty or
+   ends in `/.`; a delete of several files by a glob, recursive or not (`rm *.log` is bulk); `git clean` with no path;
+   and, always, `git clean` with `-x` or `-X`, `git stash --all` and `--no-preserve-root`. `-LiteralPath` names its
+   operand as written. A recursive delete of a folder by its name (`rm -rf build`) names what it deletes and is judged
+   by rule 4 alone: refusing it would cry wolf on routine work.
+4. **A guarded path:** every operand of a delete word, and both sides of a move, made absolute against the payload's
+   `cwd`, is judged by 5.3.2's function as an edit of that path (`delete-protected`). A `cd` to a plain name earlier in
+   the same line moves the folder; a `cd` to anything else leaves later relative operands unnamed (rule 3). A recursive
+   delete or a move of a folder is judged as an edit of every guarded path under it: a list glob whose fixed start (up
+   to its first wildcard) lies under the folder or above it; a glob with no fixed start (`**/x`) by reading the folder's
+   tree up to 2,000 entries within the budget, refusing past that ("cannot tell what it holds"). The floor's folders
+   (`.git`, `.bonsai`, `.bonsai/local`) and the project's top folder count as guarded.
+5. **What it leaves** (question A): a shell write to a guarded path (a redirect, `cp` over it, an interpreter) is not
+   judged; rung 0 and the Desk catch it after the fact. A delete inside a script run by name is not seen either.
+6. **The answer** names the operand and the rule ("`rm -rf junk/*` does not name what it deletes (a glob): name the
+   files, or delete the folder by its name"); the record keeps the command's head only (5.2.1's reduction) and the
+   operand that decided as `target`.
+7. **Proof:** a table of lines written fresh, each with its answer, run as Go tests on both sides; the splitter fuzzed
+   (no panic; an unsplittable line holding a delete word never allowed); V2's own lines through the hook line on both
+   sides, Rohan's two asks among them.
+
+**5.3.4, the stop gate.** Spec §7: "it engages for a named task, needs a green `local` ladder result at HEAD with the
+floor plus the task's rungs, and blocks on a missing or broken task file"; contract §13 says from where.
+1. **When it engages:** only when `BONSAI_TASK` names a task and the session's own project is linked (a hook takes no
+   `--task`); else it allows with no record. The task is read from the verified main (5.3.1 note 2); when main is not
+   verified, it blocks, since it cannot trust what it would read.
+2. **It blocks** (exit 2; the reason first and the next step, which Claude Code gives the agent as the reason to go on)
+   when: the named task is missing, named twice, or does not parse under its format; there is no result at main's
+   `.bonsai/local/ladder/<task id>.json`, or it does not read as `bonsai.ladder/1`; its `mode` is not `local`; `green`
+   is false; `git.sha` is not the session's checkout's HEAD, or `git.dirty` is true; `requested` lacks a rung of the
+   workspace's `ladder_floor` or of the task's `bonsai.ladder` (contract §5.6), or one of them is not green. HEAD is
+   read from the session's checkout's git files (a branch's ref file, `packed-refs`, a detached HEAD) with no git
+   process; a HEAD it cannot read blocks. When every check holds, it allows. Its next step names `bonsai ladder --task
+   <id>`.
+3. **The run report:** contract §13 has the gate read "the run report from the session's own checkout, where the
+   builder writes it". Today's gate is the measure of what it checks there: the builder reads it read-only at the
+   studio's commit, builds the same check and writes it in the run report. A check today's gate makes that the contract
+   does not name comes to the orchestrator before it is built.
+4. **Its own timer** (5.3.0's frame): a Stop hook that times out does not block either, so the gate blocks itself at
+   half its line's timeout.
+5. **Claude Code's own limit:** after eight blocks in a row Claude Code ends the turn (its Stop cap,
+   `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`, hooks reference). The gate does not read `stop_hook_active`; it blocks each time
+   and each block is recorded. So "a builder cannot stop before its proof is green" holds up to that cap, and the log
+   shows every block. A settings file that changes the cap is a `check` finding (5.3.6 note 3).
+6. **Its line:** `bonsai hook stop || exit 2` on Stop, timeout 10, no matcher (spec §7's table), in `ownHooks` with its
+   sentence, in 5.3.6's form once that lands. A first link writes it on `--yes`; a project linked before takes it only
+   with `--allow-exec --yes` (5.1.1 rule 1); `unlink` and taking a pack out remove it (5.1.7).
+7. **Its record:** when it engages, a `guard` record (`agent_event` `Stop`), allow or deny, its rule from the rules
+   table, through 5.3.1's record path. When it does not engage, it writes none (the recorder's `stop` record stands).
+8. **Subagents:** the line is on Stop only, so a builder run as another session's subagent (SubagentStop) is not
+   gated, and a session whose environment names a task is gated at its own end. How Bonsai's own builders are named is
+   5.4's (its outline: "the stop gate binding the orchestrator's own builders").
+9. **Proof:** the stop gate's section of set 4's fixtures (each case built as the README says; each `task: ok` case
+   given a fixture result proving its HEAD), and one test per blocking case of note 2; a scripted `-p` session on WSL
+   with `BONSAI_TASK` set is blocked, then stops once a fixture result proving HEAD is written. 5.4's runner writes real
+   results.
+
+**5.3.5, Bonsai's own deny rules and `disableAllHooks: false`.**
+1. **What is left of the row.** Part 3 already writes a deny rule for each `never_edit` path and each pack's, and
+   `disableAllHooks: false`. 5.3.5 adds Bonsai's own rules over the files only Bonsai writes, as its own lines (marked
+   `Own`, in the engine's table beside `ownHooks`), each with its sentence in the preview: `Edit(//**/.bonsai/local/**)`
+   (the `//**/` form, so a worktree session, whose `local/` is main's, outside its folder, meets it; spec §7) and an
+   `Edit` rule for each generated table. A deny rule runs no code, so `--yes` writes it (5.1.1 rule 1); `unlink` removes
+   it.
+2. **Why the engine's and not `base`'s** (spec §7 lists the `local/` rule among base's): from 5.4 the stop gate trusts
+   the ladder results in `local/`, and Bonsai links its own repo at 5.4, before `base` exists (5.5); a project may also
+   link without `base`. When 5.5 writes base's walls, that line stays the engine's, its one home; 5.5 reads this note.
+   The walls round secret files and the home's files stay base's, as spec §7 has them.
+3. **The form that anchors to the project.** Claude Code reads a rule's path relative to the folder, from the settings
+   file's folder (`/`), or absolute (`//`). The builder tries the forms in a real session and uses the one that holds
+   for a session started in the project's top folder; part 3's `never_edit` rules take the same form if theirs does not
+   hold.
+4. **Proof in real sessions** (`-p` through `claude-here`, on both sides; the version and the user settings hashes
+   recorded): a file-tool write and a shell redirect into `.bonsai/local/` and into each table are refused by Claude
+   Code; `bonsai check --write` run through the shell tool still writes the tables (a program, not a tool write; if the
+   version refuses it, the tables' rules are dropped and the guard alone covers them, written in the run report).
+   `disableAllHooks: false` is written and kept, and `check` finds `true` in a project or local file (5.1.6); that it
+   beats a `true` in the user's own settings is Claude Code's documented order and is not tried, since no test touches
+   a real user's settings file.
+
+**5.3.6, the hook lines' form and the binary check.**
+1. **The designs weighed**, against Rohan's 8 Oct rule, spec §3 ("by name"), check 2 (no full path committed) and
+   Windows:
+
+   | Design | Rohan's rule | §3 | Check 2 | Verdict |
+   |---|---|---|---|---|
+   | 1. By name on the PATH (today) | No: any `bonsai` earlier on the PATH, or a PATH set in a settings file, answers | Yes | Yes | Option (c) |
+   | 2. By name; Bonsai blocks unless it runs from its installed place | Partly: a real Bonsai found elsewhere blocks; a program that is not Bonsai but answers to the name does not | Yes | Yes | Option (b) |
+   | 3. The installed places in the line: WSL's, else Windows' (Git Bash reads `/c/Program Files/...`) | Yes, but for a start-up script a Windows settings file names, which no line can stop | No | In letter only: two system places, the same on every machine, no user name | Option (a), recommended |
+   | 4. The line sets its own PATH to the installed folders, then calls by name | As 3 | In form only | As 3 | Dropped: 3's cost with nothing gained |
+   | 5. A line holding the fixed place in a machine-level settings file outside the repo (Claude Code's managed file, or the user's own), the project's line by name | Yes on a machine holding the file | Yes in the repo | Yes in the repo | Dropped: Rohan dropped the machine-wide file on 7 Oct (question B, "overengineering"); the user's file is his own, which no agent edits; every guarded call would run the guard twice (about 66 ms each on Windows) |
+   | 6. A small launcher found by name that runs the installed place | No: the launcher is found by name | Yes | Yes | Dropped: moves the problem one step |
+   | 7. The guard checks its own path and SHA-256 against the machine's `install.json` (5.6) | As 2, and only once the installer writes it; the home moves with `BONSAI_HOME` | Yes | Yes | Folded into 2, the installed place a constant; the hash of a root-owned file adds nothing |
+   | 8. Claude Code's exec form (`args`, no shell) with the full path | Yes, and no start-up script runs | No | No | Dropped: with no shell there is no `\|\| exit 2`, so a missing or crashing binary would no longer block (spec §7's probe P1); failing closed comes first |
+
+2. **Built on Rohan's answer.**
+   - **(a):** every Bonsai line becomes `b=/usr/local/bin/bonsai; [ -x "$b" ] || b="/c/Program Files/Bonsai/bonsai.exe";
+     "$b" hook <word> || exit 2` (the recorder's lines without `|| exit 2`, as 5.2.4 has them). `[` is built into `sh`
+     and Git Bash, so the line starts no extra process. The two places are Go constants, their one home, which 5.6's
+     installers and `check` read too. `isBonsaiHook` claims exactly this form, and `isOldBonsaiHook` no longer takes a
+     line naming either place for a 0.4.3 line. `check`'s absolute-path finding (5.1.6) excepts the two places inside
+     Bonsai's own lines, and nothing else. A test build (`go build -ldflags "-X <package>.hookPlace=<its own path>"`)
+     writes `b='<its path>'; "$b" hook ...` instead; only scratch projects are linked by one, and `check` there also
+     excepts that build's own place. The faults follow: `missing` is a stamped place holding nothing; `minimal-path`
+     shows that a bare PATH changes nothing. The scripts' build line gains the stamp, given in the run report.
+   - **(b):** the lines stay by name. `bonsai hook <word>` first compares its own path (`os.Executable`, links
+     resolved, case-folded on Windows) with the installed places (the same constants); when it differs, the guard and
+     the stop gate block, naming where they run from and the installed place, and `start` and `record` exit 0 having
+     written nothing. A test build is stamped to skip the comparison, as in (a).
+   - **(c):** the lines do not change.
+
+   Whichever: a project linked by the build before takes the new lines only with `--allow-exec --yes`, tested; part
+   3's checks 1 and 2 are re-run as scripts on the final build.
+3. **`check`'s finding for settings that redirect a hook** (every option): a `.claude/settings.json` or
+   `.claude/settings.local.json` whose `env` sets `PATH`, `BASH_ENV`, `ENV`, `CLAUDE_CODE_SHELL_PREFIX`,
+   `CLAUDE_PROJECT_DIR`, `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` or any `BONSAI_` name is a finding, naming the file and the
+   key, never the value. Why: Claude Code gives a settings file's `env` to every hook and applies a change to it, and to
+   the hooks, in the running session (its settings and env-vars references, read 9 Oct; the builder confirms on the
+   version in use). Those keys redirect `bonsai`, run a script before any line, move the project the guard reads,
+   change the stop gate's cap, or move the home and the task. The list is a Go table, its one home, on the reference
+   page. The user's own settings file is not read: it is the person's.
+4. **Measured and recorded**, on both sides, in scripted sessions: a decoy `bonsai` (a script that exits 0) first on
+   the PATH, and a decoy that is a real Bonsai build: under (a) the guard still refuses a protected edit in both; under
+   (b) the real-Bonsai decoy blocks and the script decoy gets through (the residual, recorded); under (c) both get
+   through (recorded). Tried once and recorded: whether a settings `env` change and a hook change take effect
+   mid-session, and whether `env` can change `CLAUDE_PROJECT_DIR` as a hook sees it. Without Git Bash, Claude Code runs
+   a line in PowerShell, where Windows PowerShell 5.1 cannot read `||`: what that does to a call is read from the
+   reference and written in the hook's `--help` (not tried: Git Bash stays installed on this PC).
+
+**5.3.7, the second Windows check.** Spec §14's row: "guard, delete check, recorder under concurrency, backslash paths".
+Claude Code's login on Windows has expired (`STATE.md`, "Waiting on Rohan"): the agent's Windows run and Rohan's
+session both need it back, so the orchestrator asks him for it at 5.3's start if it is not back by then.
+1. **The agent's run first** (Sonnet; part 4b's method: `claude-here` in scratch projects linked by the final build,
+   the Claude Code version and the user settings hashes recorded). On WSL and on Windows, `-p` sessions that: edit a
+   free file (done), a protected one (refused), a person-only one (refused), a protected path a running task grants
+   (done) and the same once the task reads `verify` (refused); write into `.bonsai/local/` and a table (refused); run
+   `rm -rf junk/*` (refused), `rm junk/one.txt` (done), `rm bonsai.yaml`, `mv .bonsai/lock.json x`, `git clean -fdx`
+   and `git stash --all` (each refused), and on Windows `Remove-Item -Recurse junk\*` and `cmd /c rd /s /q .bonsai`
+   (refused); name a path with backslashes, `.\`, a drive letter and Git Bash's `/c/` form (each judged as the plain
+   path); edit through a junction into a protected folder and through a dangling one (refused); stop with
+   `BONSAI_TASK` set and no result (blocked), then with a fixture result proving HEAD (stops); start four subagents that
+   edit and run commands at once (every log line whole, every record valid); and on Windows, under `missing`, ask for a
+   Write of about 2,000 lines (refused, the file never made: the case the first sitting left open). If 5.2 could not
+   run the recorder's real Windows session, the agent runs 5.2.4 note 12's sessions on Windows here too. The report
+   gives each answer against the expected one, with the records' rules.
+2. **The folder for Rohan:** `%USERPROFILE%\bonsai-checks\project-guard` linked again by the final build, holding
+   `person.txt` on `person_only`, a free file, `junk\` with `one.txt` and `two.txt`, and no running task; the launcher's
+   `Get-FileHash` fault from the first sitting fixed (`records/runs/R-2026-10-08-hook.md`, Rohan's first sitting).
+3. **Rohan's session**, below.
+4. **Timings** (gate report §2.5's table, both sides): the hook line's p50 and p95 for the guard's typical call, a
+   guarded path, a shell call and the stop gate, with `hook start` and `hook record` beside them and a minimal Go hook
+   in the same harness, against the gate's figures.
+
 ### Steps 5.2-5.7, outlined
 
 Each gets its detailed section, in 5.1's shape, before it starts ("What changes", item 1). The spec rows are §14's.
