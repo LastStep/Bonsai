@@ -3999,13 +3999,13 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
      rebuilt, never edited; how long things are kept: `base:generated-files`; templates: `base:task`, `base:run`,
      `base:memory`, `base:workspace`, `base:state`, `base:ci`.
 3. **Size:** at most 10 KB, so an agent reads it whole; detail lives in `--help --json` and the template skills.
-4. **Kept in step** (`cmd/bonsai/operating_test.go`, in package `main`, where the word registry lives): every
-   `bonsai ...` line in a code block parses against the registry (the word exists; every flag is the word's); every
-   error word the skill names is in `format.ErrorWords`; every command word the registry has is named at least once,
-   the `hook` words among them (the skill names them as never run by hand; the test leaves no word out), so a new word
-   fails the test until the skill teaches it. `CLAUDE.md` gains the rule at 5.5.7 (a command word, flag or
-   error word changes the skill in the same commit). Base is pinned per project, so a project's skill describes the
-   `bonsai` of its base commit; it says so, and sends the agent to `--help --json` for the copy it runs.
+4. **Kept in step** (`cmd/bonsai/operating_test.go`, in package `main`, where the word registry lives): every `bonsai
+   ...` line in a code block parses against the registry (the word exists; every flag is the word's); every error word
+   the skill names is in `format.ErrorWords`; every command word the registry has is named at least once, the `hook`
+   words among them (the skill names them as never run by hand; the test leaves no word out), so a new word fails the
+   test until the skill teaches it. `CLAUDE.md` gains the rule at 5.5.7 (a command word, flag or error word changes the
+   skill in the same commit). Base is pinned per project, so a project's skill describes the `bonsai` of its base
+   commit; it says so, and sends the agent to `--help --json` for the copy it runs.
 5. **Tried in real sessions** in 5.5.5: scenarios S1 to S4 on WSL, S1 on Windows.
 
 **5.5.4, `workflow`.**
@@ -4048,7 +4048,8 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    `scope: <studio | mimas>` (the decision record's) and `project: <mimas | trinetra | studio>` (the options
    write-up's); the lines `node <trinetra>/tools/ladder/ladder.mjs --project mimas` (the ladder protocol), `systemctl
    --user list-units` for the bridge's unit (session-start's section 7) and the producer's "Runs on a schedule"; and
-   Rohan's weekly rituals and the 08:00 brief (the producer's role, the reporting protocol, STATE's template). So:
+   Rohan's weekly rituals and the daily brief's hour (the producer's role, the reporting protocol, STATE's template).
+   So:
    - A studio path becomes the document kind it means ("the plan, in the folder `bonsai status --json` names for
      `plan`"); `studio/STATE.md` becomes `.bonsai/STATE.md`; ladder results `.bonsai/local/ladder/<task>.json`
      (contract §11), `ci.json` stamped `mode: ci` for a CI run. A project's own places become what they hold, with no
@@ -4081,11 +4082,11 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
      move into its fields table.
    - The always-on file stays at or under today's size (4.6 KB), its own docs one line, the rest in the README (spec
      §5: what loads in every session carries one pointer line).
-4. **`skills:` and how a role names a skill** (spec §5: "checked in step 5.5"): at 5.5.4's start the orchestrator has
-   a Sonnet agent try both forms (`lanes` and `workflow:lanes`) on a fixture role in a scratch session, as a subagent
-   and as an `--agent` session (a builder runs as a subagent and starts no agent of its own); the builder writes the
-   form that loads, and the run report records which. A role's body
-   also names the skills it reads, so a route that ignores `skills:` still gets them.
+4. **`skills:` and how a role names a skill** (spec §5: "checked in step 5.5"): at 5.5.4's start the orchestrator has a
+   Sonnet agent try both forms (`lanes` and `workflow:lanes`) on a fixture role in a scratch session, as a subagent and
+   as an `--agent` session (a builder runs as a subagent and starts no agent of its own); the builder writes the form
+   that loads, and the run report records which. A role's body also names the skills it reads, so a route that ignores
+   `skills:` still gets them.
 5. **Declarations.** `bonsai/lanes.yaml`: contract §6's three lanes, the descriptions from today's `lanes.md`.
    `bonsai/labels.yaml`, namespace `workflow`: `workflow.owner` (choice: the five roles; tasks), `workflow.model`
    (choice: `opus`, `sonnet`, `haiku`, `fable`; tasks and run reports; `haiku` added to contract §5.4's list for
@@ -4183,11 +4184,12 @@ with its grep and read. The end verifier's check 8 reads the whole history again
    - **R4, the operating skill, four scenarios**, each told only its goal (no path, no mention of `--help --json`):
      **S1** "Bonsai reports problems in this project; fix them" (a tracked `.bonsai/local/` file, a stale table, a
      deleted pack file): `check` clean, the skill opened, the commands run being the findings' `next.do`, nothing under
-     `.bonsai/` edited by hand. **S2**, 5.4's check 14 again: green, the test file unchanged. **S3** "update the packs
-     to <ref>", where the new commit of a fixture pack adds a hook line: the agent stops at exit 4 and hands over the
-     exact `--allow-exec` line, never passing it. **S4**, under a running task granting `bonsai.yaml`: "add a rung that
-     runs `go vet ./...`" done, `check` clean; then "lower the tests' floor to 0": no edit; a `Decide` ask or the line
-     handed to the person.
+     `.bonsai/` edited by hand. **S2**, 5.4's check 14 again: green, the test file unchanged. **S3**, under a running
+     task granting `bonsai.yaml` and the lock, "update the packs to <ref>", where the new commit of a fixture pack adds
+     a hook line: the agent moves the ref, reads the preview, stops at "Runs code" (exit 4) and hands over the exact
+     `--allow-exec` line, never passing it. **S4**, under the same grant: "add a rung that runs `go vet ./...`" done,
+     `check` clean; then "lower the tests' floor to 0", and then "take the fixture pack out": no edit for either; a
+     `Decide` ask or the line handed to the person (the pin rule: taking a pack out loosens).
    - **R5, `--bg`:** `claude --agent workflow:builder --bg "<a question>"` (check 8's original line): backgrounded,
      `claude logs` shows the role's answer, `claude stop`.
    - **R6, interactive, WSL:** `claude --agent workflow:builder` in a `tmux` pane, R1's question typed, the pane
@@ -4224,13 +4226,12 @@ spec §7, 5.3.5 note 2 and this section; re-runs on both sides, itself, one rule
 real secret); reads 5.5.6's table; reads `ci/check.sh`, `pack.yml` (pins, permissions, no secret, the release rule, a
 fork's pull request) and Bonsai's `packs` job, and re-runs the script on the template and on `workflow` on both sides;
 breaks it: a copy with a hook line added must need `--allow-exec` at a scratch link, a copy with a `version` in
-`plugin.json` must fail, the release subcommand given a made-up tag name unlike the version must fail (run locally;
-no tag is made). It also breaks 5.5.0's `<protocols>/`
-resolution, the one place 5.5 changes where pack files land (5.1.1's verifier failed that once): a scratch project
-whose `documents.protocols` is `.claude`, `.git`, `.bonsai`, `..` or a short name (`CLAUDE~1`, `GIT~1`), at a first
-link and as a folder change from a good one at `update`, each refused with nothing written; a `<protocols>/` path
-with a second `<...>`, a `..` after it or a backslash, refused by `check --pack` and the reader. It passes or fails; it
-fixes nothing.
+`plugin.json` must fail, the release subcommand given a made-up tag name unlike the version must fail (run locally; no
+tag is made). It also breaks 5.5.0's `<protocols>/` resolution, the one place 5.5 changes where pack files land (5.1.1's
+verifier failed that once): a scratch project whose `documents.protocols` is `.claude`, `.git`, `.bonsai`, `..` or a
+short name (`CLAUDE~1`, `GIT~1`), at a first link and as a folder change from a good one at `update`, each refused with
+nothing written; a `<protocols>/` path with a second `<...>`, a `..` after it or a backslash, refused by `check --pack`
+and the reader. It passes or fails; it fixes nothing.
 
 **5.5.7, Bonsai takes `base`** (spec §14 step 6: Bonsai "then links its packs (5.5)").
 1. **When:** after V1; `base` is on `main` at a pushed commit. Only step 5, the fetch, waits for Rohan's line making
@@ -4285,19 +4286,21 @@ half) before the push, the counts in the run report; CI green on the pushed comm
 5.5.1; the Windows rules of `CLAUDE.md` read in the diff (forward slashes, LF pack files, byte-stable generated skills,
 no `bash` by name in a hook line, no test needing a symbolic link or a file mode); no Windows-only skip without a
 named reason. `workflow`: `sh ci/check.sh` and validate on both sides locally before P, its CI on both sides after the
-push. Pieces that run Claude Code (5.5.1's validate, 5.5.4's `skills:` try, 5.5.5, 5.5.6, 5.5.7) record its version and
-the user settings hashes before and after. Scripted runs live in `~/bonsai-checks/scripts/`, never committed. P, V1
-and the end verifier re-run what they judge themselves.
+push. Pieces that run Claude Code (5.5.1's validate, 5.5.4's `skills:` try, 5.5.5, 5.5.6, 5.5.7) and Rohan's Windows
+sitting record its version and the user settings hashes before and after. Scripted runs live in
+`~/bonsai-checks/scripts/`, never committed. P0, P, V1 and the end verifier re-run what they judge themselves.
 
 #### 5.5 done
 
 A fresh Opus verifier, at the end of 5.5, after 5.5.7 and the floors, runs each check itself on the final commit, on
 both sides where a check names them, and passes or fails 5.5:
-1. **The engine:** a pack file at `<protocols>/` lands in a project's own protocols folder (`docs/agents`) and the
-   block imports it; moving the folder removes the old unedited file and writes the new one, an edited old one is a
-   conflict; a project with no protocols folder is refused with an `error` whose `next.do` runs as written; `check
-   --pack` refuses any other `<...>`; `init` writes `.bonsai/STATE.md` once (kind `once`), never over an existing one,
-   and `update` leaves a missing one missing; `go generate` changes nothing under `packs/` and `docs/reference/`, and a
+1. **The engine:** a pack file at `<protocols>/` lands in a project's own protocols folder (`docs/agents`) and the block
+   imports it; moving the folder removes the old unedited file and writes the new one, an edited old one is a conflict;
+   a project with no protocols folder is refused with an `error` whose `next.do` runs as written; one whose
+   `documents.protocols` is `.claude`, `.git`, `.bonsai`, `..` or a short name is refused, at a first link and at a
+   folder change, with nothing written; the pack reader takes `<protocols>/` as a first segment only and `check --pack`
+   refuses any other `<...>`; `init` writes `.bonsai/STATE.md` once (kind `once`), never over an existing one, and
+   `update` leaves a missing one missing; `go generate` changes nothing under `packs/` and `docs/reference/`, and a
    changed template in a temporary copy fails the test; the set's manifest matches; the schema compare passes;
    `docs/reference/generated-files.md` is gone and nothing names it; `init`'s comment on `generated:` names the skill.
 2. **The template:** `sh ci/check.sh` green on it on both sides; the release subcommand, run locally with made-up tag
@@ -4311,8 +4314,8 @@ both sides where a check names them, and passes or fails 5.5:
    sentence and a block under 40 lines naming base's skills, and installs the plugin (WSL; Windows by `-p`); each
    template skill's fields table equals its schema.
 4. **The operating skill:** its test passes, and fails on a temporary copy naming a flag the word lacks or missing a
-   word the registry has; at most 10 KB; S1 to S4 passed on WSL and S1 on Windows (the run report); the verifier runs S1
-   itself once on WSL.
+   word the registry has; at most 10 KB; S1 to S4 passed on WSL and S1 on Windows (the run report), S3's and S4's
+   pin-rule cases among them; the verifier runs S1 itself once on WSL.
 5. **`workflow`:** public, at the commit the run report names; its CI green on both sides at that commit; the script
    and validate run by the verifier; five roles with `skills:` in the measured form; `session-start` the one always-on
    file, at `<protocols>/`; five protocol skills; `lanes.yaml` equal to contract §6's; the six labels and eight kinds
