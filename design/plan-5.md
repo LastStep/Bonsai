@@ -28,7 +28,7 @@ starts.
 | 5.3 Guards | The full guard: an agent may change a protected file only while its running task allows it; files only you may grant stay yours; a recursive delete that does not name what it deletes is refused; a builder cannot stop before its proof is green. You run one real Windows session (about 10 minutes). | 18-29 | 38 |
 | 5.4 Ladder runner | `bonsai ladder` proves a task's work, on WSL and Windows. From here Bonsai proves and guards its own repo with it, on a pre-release you install in WSL (about 5 minutes, your password). | 28-44 | 57 |
 | 5.5 Packs | Bonsai's `base` pack and your `workflow` pack (your roles, lanes, protocols and templates) as public Claude Code plugins, each with its own checks on GitHub; a template for new packs; the walls round your key and token files. | 19-30 | 39 |
-| 5.6 Machine pieces | Settings per machine, label files the studio attaches, your personal memory layer, the workspace half of the statusline, and installers for both sides. | 13-20 | 26 |
+| 5.6 Machine pieces | Bonsai's settings for each project on this computer, and the label files the studio attaches (set by you or the studio, never by an agent); your personal memory, which every Claude session on this computer reads; Bonsai's part of the status line; installers for both sides; and Bonsai telling you when a newer release exists, with the exact lines to install it. | 13-20 | 26 |
 | 5.7 Release | The release path made safe and switched back on with you; on your word, Bonsai 1.0. | 6-11 | 14 |
 | **Step 5** | | **139-218** | each part its own |
 
@@ -110,12 +110,21 @@ such pair.
   - From 5.5's end, Claude in `~/Servers/Bonsai` (your own sessions included) cannot read your key, token and login
     files, nor change your own Claude settings, `~/.claude/CLAUDE.md`, your shell's start files or git's and SSH's
     settings: you change those yourself. Bonsai's STATE moves to `.bonsai/STATE.md`.
-- **In 5.6:** one line in your own `~/.claude/CLAUDE.md` that loads your personal memory in every project (spec §10).
-  No agent edits that file.
+- **In 5.6:** approve its section (it changes your steps), with one choice in it: who saves notes about you that every
+  project reads (recommended: you, from a draft an agent hands you). No install, no password and no Windows sitting in
+  5.6. From 5.6 three kinds of step are yours, each handed to you by an agent as exact lines it never runs itself:
+  saving a note about you into your personal memory (by hand, or by asking Claude in a session opened outside any
+  linked project, such as your home folder); this computer's Bonsai settings for a project and the studio's label files
+  (yours, or the studio's registration's; typed in a terminal of your own, not inside Claude); and installing a newer
+  Bonsai release when `bonsai status` or `bonsai check` says one exists (six lines a side, run one at a time; if the
+  fingerprint line does not print `OK`, or `True` in PowerShell, stop and send the orchestrator what it printed).
 - **At 5.7:** the GitHub release steps that are yours (the `release` environment and a new Homebrew tap token, spec §17
-  step 4's note; switching the release workflow back on), then your word for 1.0; and, with the same word, the first
-  release tags of the two packs: `base-v1.0.0` on Bonsai's repo and `v1.0.0` on the workflow repo, whose checks then
-  publish its GitHub release. Until then projects name each pack by its exact commit.
+  step 4's note; switching the release workflow back on), then your word for 1.0; installing 1.0 on both sides with the
+  new installers (in WSL about 5 minutes and your password; on Windows about 5 minutes and one "allow this app to make
+  changes" prompt), and with it one line in WSL that makes your own `~/.claude/CLAUDE.md` load your personal memory in
+  every project (spec §10; no agent edits that file; an agent then checks that it loads); and, with the same word, the
+  first release tags of the two packs: `base-v1.0.0` on Bonsai's repo and `v1.0.0` on the workflow repo, whose checks
+  then publish its GitHub release. Until then projects name each pack by its exact commit.
 - **Outside step 5:** the sandbox probe (spec §7) waits for its own small plan after step 5 and ends in a root step of
   yours (installing `socat`). Turn GitHub Pages off (the old website) whenever you like.
 - Hand checks: a Sonnet agent runs them wherever an agent can (your 8 Oct word). Yours are only what needs a person: a
@@ -129,8 +138,10 @@ such pair.
 - **The studio links** (spec step 7) after 5.5: its own plan, in its own repo. Mimas links last (step 8). This plan
   changes nothing in either repo, and waits on neither.
 
-**Choices that are yours.** None open. Three were decided on 9 Oct: the two in 5.3's section, how the hook lines find
-`bonsai` (your answer: (a)) and who may consent to code and take the guard out (your answer: (ii)), and this one:
+**Choices that are yours.** One open, inside your approval of 5.6's section: who saves notes about you that every
+project reads (5.6's "Who saves notes about you"). Three were decided on 9 Oct: the two in 5.3's section, how the hook
+lines find `bonsai` (your answer: (a)) and who may consent to code and take the guard out (your answer: (ii)), and this
+one:
 - **How the later parts' plans reach you: (B).** You were offered (A) every part's section, (B) only when it changes
   what is yours, and (C) none; you first said (A), then chose (B) once the scope question above was settled. So: 5.1
   is planned in full here. Before each later part starts, a planner writes its section into this file, a fresh Opus
@@ -168,8 +179,8 @@ orchestrating session, your sittings or waiting; it comes from six parts over tw
 0.06-0.09 (the engine) to 0.32-0.53 (the hook path), and the parts that dealt with Windows and Claude Code ran highest,
 which is more of step 5; and the stop lines use the spec's hours, not the ratio. Your own time: about 2 minutes for the
 Windows login before 5.3, about 10 at 5.3 and 5 at 5.4, your read of the workflow repo and about 3 minutes on Windows at
-5.5, the 5.7 GitHub steps, and the plan approvals your choice above sets. Nothing here waits on the
-studio.
+5.5, the 5.7 GitHub steps and about 10 minutes for the 1.0 installs on both sides at 5.7, and the plan approvals your
+choice above sets. Nothing here waits on the studio.
 
 ## For the orchestrator, builders and verifiers
 
@@ -5308,7 +5319,10 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
   switch, secret and setting stays Rohan's; the Homebrew tap is written only by the release workflow, with the token
   inside the `release` environment. A fresh verifier (CI and release).
 - **Rohan:** the `release` environment and a new tap token (spec §17 step 4's note has the working command);
-  `gh workflow enable release.yml`; the optional tag ruleset; his word for 1.0.
+  `gh workflow enable release.yml`; the optional tag ruleset; his word for 1.0; then 1.0 installed on both sides with
+  5.6's installers (in WSL about 5 minutes and his password; on Windows about 5 minutes and one UAC prompt, its first
+  real run, with its way out), and with them his memory import line in WSL's `~/.claude/CLAUDE.md`, an agent then
+  checking that it loads (5.6's "Hand-offs to 5.7").
 
 ### Stop lines and hours
 
