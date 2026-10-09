@@ -1,7 +1,7 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 15:18, when 5.1.0 to 5.1.4b had landed and 5.1.5 was next
-(`records/runs/R-2026-10-09-5.1.4b-outputs.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 16:59, when 5.1.0 to 5.1.5 had landed and 5.1.6 was next
+(`records/runs/R-2026-10-09-5.1.5-engine.md`).
 
 ## In short
 
@@ -122,23 +122,29 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   the next step, one flag-and-exit table per command word. Rohan's look at the error words and the two output shapes
   sent.
 
-Next, **5.1.5** (the lock's `declares`, `format0` and `path`, the moved tag, document kinds, labels in force, the active
-task, this machine's settings, the instruction block, `bonsai.yaml` written with every field), then 5.1.6 to 5.1.10 in
-the plan's order.
+- **5.1.5** (`a9148e4`): the lock's `declares`, `format0` and `path` (a folder change now counts as new code), the
+  moved tag refused (`tag-moved`), document kinds, labels in force, the active-task function (all 16 fixture cases),
+  this machine's settings read, the instruction block, `bonsai.yaml` written with every field and a comment on each,
+  `check` offline from the lock alone.
+
+Next, **5.1.6** (`check` and `status` to 1.0: every finding and warning, each finding's `next.do` the exact command),
+then 5.1.7 to 5.1.10 in the plan's order. For 5.2.0's start check: the lock schema's and README's wording on `declares`
+(it also holds `hooks` and `deny`) and on an old lock's `path` (read as unknown), and a lock `ref` to close a moved-tag
+gap, as additions in set 5.
 
 Later parts' sections, planned beside 5.1 on Rohan's 12:27 word ("if you can orchestrate work in parallel do that
 whenever possible"), each reviewed fresh, fixed and audited:
 - **5.2** (on `main` at `da427de`; `records/runs/R-2026-10-09-plan-5.2.md`): nothing of Rohan's changes but one look at
   two log field names. 5.2 starts when 5.1 ends.
 - **5.3** (on `main` at `b79d00f`; `records/runs/R-2026-10-09-plan-5.3.md`), with Rohan's two answers.
-- **5.4** (on `main` at `dc7ec93`; `records/runs/R-2026-10-09-plan-5.4.md`): with Rohan for his word, since it holds
-  his pre-release install and the switch to Bonsai guarding and proving its own repo.
+- **5.5** being planned now (`records/runs/R-2026-10-09-plan-5.5.md`); it comes to Rohan (a new public repo, his content).
+- **5.4** (on `main` at `dc7ec93`; `records/runs/R-2026-10-09-plan-5.4.md`): approved by Rohan (16:56): his
+  pre-release install, the switch to Bonsai guarding and proving its own repo, the way back.
 
-5.1's hours so far: 488 minutes (8 h 8 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
+5.1's hours so far: 547 minutes (9 h 7 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
-- Now: his word on 5.4's section (his install, the switch, the way back).
 - Whenever convenient: Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the
   model). In PowerShell: `claude`, then `/login`, then quit.
 - In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and

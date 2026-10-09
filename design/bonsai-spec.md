@@ -315,6 +315,10 @@ run report, STATE, a plan, a memory note and the rest (each a skill: `skills/<ki
   locked commit changed. The docs' other route, an enable in the untracked `.claude/settings.local.json` that Claude Code
   then fetches itself, is the fallback if the skeleton finds the first unreliable.
 
+  > **Changed 9 Oct (step 5.1.5):** the marketplace name also holds a pack's folder when the pack is not at its
+  > repository's top (root packs keep their names), so a pack moved to another folder at the same commit is a new
+  > install, judged for code like a first link (5.1.1's verifier found a folder change could reuse the old consent).
+
   > **Changed 9 Oct (Rohan): a pack plugin that runs code is asked for on each machine.** A locked pack's plugin that
   > carries code parts (hooks, servers, monitors and the rest Claude Code runs on its own) is installed by `init` or
   > `update` only with `--allow-exec` on that machine; without it, the plugin step reports it waiting and names the
