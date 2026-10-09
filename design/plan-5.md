@@ -2288,15 +2288,22 @@ deletes and is allowed (5.3.3 rule 3): a rephrased one would empty `junk` before
 
 ### Step 5.4: the ladder runner and the switch (28-44 h, re-ask at 57)
 
-**Rohan's (B).** This section comes to Rohan, because it holds his install (spec §17 step 8). It also adds three things
-to his steps, each written in plain words just below: one more line in that same sitting (`bonsai init` in Bonsai's own
-repo, answered with a `y`); a yes or no in chat at the end of a part whose work raised the test-count floors; and,
-rarely, `bonsai update --allow-exec --yes` in Bonsai's repo after a reinstall that changes one of Bonsai's own hook
-lines (his 9 Oct answer (ii)). Nothing else of his changes: the hours (28-44) and the re-ask line (57) are the spec's;
-the order of the parts stands; no repo is new and nothing from the studio goes public; no option round is asked. Every
-format change is an addition: one new command output (`bonsai.climb/1`), two counts at the end of a ladder result's
-`new_tests`, new words in open lists, and descriptions. The shapes of a rung's `ratchet` and `capture` are fixed without
-giving them a schema type, so `bonsai.workspace/1` needs no new major (note 5.4.0).
+**Rohan's (B), and his 9 Oct direction.** This section comes to Rohan, because it holds his install (spec §17 step 8).
+It is written for his direction of 9 Oct, 15:35: "bonsai will mostly (and probably completely) be managed by the ai
+agents within a project. so make sure the support for that is top notch. including things like installing, updating,
+fixing, checking status, editing etc", which he placed "inside projects": agents link, update, fix, check, read status
+and edit, while the program itself stays his install per release. So agents do everything in 5.4 that no safety reason
+keeps from them: they run the ladder, read its results and fix what fails; they link Bonsai's own repo at the switch;
+they raise the test-count floors. Every refusal of `bonsai ladder` names its next step as a command an agent can run as
+written. Three steps stay his, each for a reason given in plain words below: the pre-release install (a root-owned file,
+at the place the hook lines name, which no agent may replace); under his answer (ii), `--allow-exec`, `unlink` and an
+update that changes Bonsai's own guard or stop line in Bonsai's repo, rarely; and the way back, only if the guard
+breaks. Nothing else of his changes: the hours (28-44) and the re-ask line (57) are the spec's; the order of the parts
+stands; no repo is new and nothing from the studio goes public; no option round is asked. Every format change is an
+addition: one new command output (`bonsai.climb/1`), the active task's last result at the end of `status --json`, two
+counts at the end of a ladder result's `new_tests`, new words in open lists, and descriptions. The shapes of a rung's
+`ratchet` and `capture` are fixed without giving them a schema type, so `bonsai.workspace/1` needs no new major (note
+5.4.0).
 
 #### For Rohan, in plain words
 
@@ -2304,7 +2311,7 @@ giving them a schema type, so `bonsai.workspace/1` needs no new major (note 5.4.
 today, in WSL and natively on Windows. It runs a project's checks in order, cheapest first. Everything a check starts
 ends with it, so nothing it started is left running (on Windows through the system's "job objects"). It saves the result
 in the project's `.bonsai/local/ladder/` with a fingerprint in the log, which is what 5.3's stop gate reads before it
-lets a named builder stop. It also keeps test counts from falling, asks you to "Bless" a rise (with a check that each
+lets a named builder stop. It also keeps test counts from falling, offers each rise for "Bless" (with a check that each
 new test fails on the code from before the change), and reports git tricks that hide changes. Then Bonsai starts using
 all of it on its own repo.
 
@@ -2317,23 +2324,18 @@ sha256sum ~/bonsai-checks/prerelease/bonsai
 sudo install -o root -g root -m 0755 ~/bonsai-checks/prerelease/bonsai /usr/local/bin/bonsai
 which -a bonsai
 bonsai --version
-cd ~/Servers/Bonsai
-bonsai init
 ```
 
 - The first line must print the orchestrator's number. If not, stop and tell it.
 - `which -a bonsai` must list `/usr/local/bin/bonsai` and nothing else. If not, stop and tell it.
 - `bonsai --version` names the commit it was built from. Send the orchestrator that line.
-- `bonsai init` lists everything it will write into Bonsai's own repo, each with one sentence (the guard's and the stop
-  gate's lines, its other hook lines, its deny rules), and asks y/N. Type `y`. It needs no `--allow-exec`: Bonsai's repo
-  uses no pack yet, and Bonsai's own lines at a first link are what a link is for. If it stops with an error, it has
-  written nothing; send the orchestrator its last lines.
 
-Then tell the orchestrator. It commits what `init` wrote and checks that the guard is live. If Claude Code has not taken
-up the new lines in its running session, it asks you to restart it (`/exit`, then `claude` in `~/Servers/Bonsai`). Why
-`bonsai init` is yours: it puts Bonsai's guard into your main repo, and under your answer (ii) taking the guard out or
-changing its lines there is a person's; and it must be the copy you just installed, at the place the lines name. Windows
-needs nothing until 1.0.
+Why this is yours: the copy at `/usr/local/bin/bonsai` is the one Bonsai's guard lines run in every session, so only
+root may place it (your password); an agent that could replace it could replace the guard that holds it. Everything
+after the install is the agents': the orchestrator links Bonsai's own repo with the copy you installed (`bonsai init`,
+which writes the guard and its other lines and needs no `--allow-exec`, since Bonsai's repo uses no pack yet), commits
+it, and checks the guard is live. If Claude Code has not taken up the new lines in its running session, it asks you to
+restart it (`/exit`, then `claude` in `~/Servers/Bonsai`). Windows needs nothing until 1.0.
 
 **What changes after the switch.**
 - Every piece of work is a task file in `records/tasks/`, numbered after its piece (`T-5501` is piece 5.5.1), saying
@@ -2350,32 +2352,35 @@ needs nothing until 1.0.
   refused too: change it by hand, or ask the orchestrator, which opens a task for it.
 - Claude Code's own automatic memory is switched off in Bonsai's repo (Bonsai's memory replaces it, spec §10). The one
   note it holds there (agents run the hand checks) moves into the repo as Bonsai's first memory note.
-- Test counts may only rise. When a part's work raised them, the orchestrator asks you once, at that part's end, whether
-  to raise the floors to the new counts, showing the numbers. A yes or no in chat; nothing to type.
+- Test counts may only rise. At each part's end the orchestrator raises the floors to the counts the part reached and
+  tells you the numbers; nothing to answer. Raising a floor only makes the checks stricter. Lowering one, or loosening
+  any other check in `bonsai.yaml` (a rung taken out, a protected file freed), waits for your word: an agent loosening
+  the checks it is held to would be judging its own work.
 - Anyone who opens Claude Code in a clone of Bonsai without Bonsai installed has every edit and command refused, on
   purpose. `CONTRIBUTING.md` says so and how to work round it.
 
-**Commands that become yours in Bonsai's repo** (your answer (ii): the studio does not manage Bonsai's repo yet). There
-an agent never passes `--allow-exec`, never runs `bonsai unlink`, and never runs an update that removes or changes
-Bonsai's guard or stop line; the command itself refuses. So:
+**Commands that stay yours in Bonsai's repo** (your answer (ii): the studio does not manage Bonsai's repo yet). There an
+agent never passes `--allow-exec`, never runs `bonsai unlink`, and never runs an update that removes or changes Bonsai's
+guard or stop line; the command itself refuses. Why: each one either lets new code run on your machine or takes the
+guard out, and an agent doing that would be consenting for you, or switching off the check on itself. So:
 - When a later part changes one of Bonsai's own hook lines, one more line in the sitting where you install its
   pre-release: `cd ~/Servers/Bonsai`, then `bonsai update --allow-exec --yes`. Rare: no later part plans such a change
   before 1.0, and the orchestrator tells you when one does.
 - `bonsai unlink`, only if you ever decide to take Bonsai out of its own repo. Nothing plans it.
 
-Linking Bonsai's `base` pack in 5.5 adds no code that runs, so the orchestrator does it, on your approval of 5.5's
-section, which names it.
+Every other update of Bonsai's repo is the agents' (linking Bonsai's `base` pack in 5.5 adds no code that runs).
 
 **The way back, if the pre-release blocks work.** If Bonsai's guard breaks, every edit and command in a Claude Code
-session in `~/Servers/Bonsai` is refused: it fails closed, on purpose. In a plain WSL terminal (not Claude):
+session in `~/Servers/Bonsai` is refused: it fails closed, on purpose. This is yours because, while it lasts, no agent
+there can run a command at all. In a plain WSL terminal (not Claude):
 - **One session with Bonsai off, nothing written.** Quit Claude Code, then start it like this instead of plain `claude`:
   ```bash
   cd ~/Servers/Bonsai
   claude --settings '{"disableAllHooks": true}'
   ```
   That session runs with no guard, no stop gate and no log. The orchestrator in it fixes the problem and sends you a new
-  build to install; then go back to plain `claude`. The switch's builder tries this line first, in a scratch project,
-  before your sitting.
+  build to install; then go back to plain `claude`. An agent tries this line first, in a scratch project, before your
+  sitting.
 - **Several days with Bonsai off**, for every session in that folder. Only if
   `ls ~/Servers/Bonsai/.claude/settings.local.json` says there is no such file (else ask the orchestrator for the line):
   ```bash
@@ -2392,8 +2397,7 @@ session in `~/Servers/Bonsai` is refused: it fails closed, on purpose. In a plai
   ```
 
 **Hours, order and your other steps.** 28-44 hours, re-ask at 57, as the spec has them; 5.4 after 5.3 and before 5.5.
-Your install was already on your list; new are `bonsai init` in the same sitting, the floors' yes or no at a part's end,
-and the rare update line above. The way back is only for a breakdown.
+Your install was already on your list; new is only the rare update line above. The way back is only for a breakdown.
 
 #### The pieces and their order
 
@@ -2450,14 +2454,14 @@ planning and review runs count in 5.4's hours, carried in 5.4.0's run report ("W
 
 | # | What is built | What proves it | Hours | Reads |
 |---|---|---|---|---|
-| 5.4.0 | **Formats set 6 and the ladder's lists**: `bonsai.climb/1`, the `--json` of `bonsai ladder`; two counts at the end of a result's `new_tests`; the descriptions that fix a rung's `ratchet`, `capture` and `tests` and say what a `ladder` log record carries; the ladder's words in Go tables (the `tests` forms, rung statuses, git integrity's findings); 5.4's error words; `climb` wherever the formats are listed; the schema compare failing, not skipping, under the ladder | The formats test (manifest, docs, examples); the schema-compare test passing on set 6 and failing on a removal in a temporary copy; `check --schema bonsai.climb` and `bonsai.workspace` printing the new words; the reference page's test; check 10; CI | 1-2 | Contract §2.2, §8.1, §8.2, §11; spec §6 (the rung's shape), §9, §16 row 23; `formats/README.md` ("Typed open", "How the set changes"); this plan's 5.1.3 and 5.2.0 notes |
+| 5.4.0 | **Formats set 6 and the ladder's lists**: `bonsai.climb/1`, the `--json` of `bonsai ladder`; two counts at the end of a result's `new_tests`; the descriptions that fix a rung's `ratchet`, `capture` and `tests` and say what a `ladder` log record carries; the ladder's words in Go tables (the `tests` forms, rung statuses, git integrity's findings); 5.4's error words; `climb` wherever the formats are listed; the active task's last result at the end of `status --json`; the schema compare failing, not skipping, under the ladder | The formats test (manifest, docs, examples); the schema-compare test passing on set 6 and failing on a removal in a temporary copy; `check --schema bonsai.climb` and `bonsai.workspace` printing the new words; the reference page's test; check 10; CI | 1-2 | Contract §2.2, §8.1, §8.2, §11; spec §6 (the rung's shape), §9, §16 row 23; `formats/README.md` ("Typed open", "How the set changes"); this plan's 5.1.3 and 5.2.0 notes |
 | 5.4.1 | **Rung jobs** (`internal/rungjob/`, new): one rung's command run so that everything it starts ends with it: on Linux in its own session and process group, tagged, with the runner as the reaper of what escapes; on Windows in its own job object, the command started suspended and put in the job before it runs; its timeout; its output; and **the leftovers line** (`internal/leftovers/`, new) | Go tests on real process trees on both sides (detached and daemonised grandchildren, a held pipe, a timeout, a child asking to leave the job, a nested job, the runner killed), a decoy outside the rung left alone; scripted runs on both sides; the job's cost and Windows Defender's first scan measured; V1's break-it | 5-7 | Spec §3 (the standard library, Windows rules), §9; gate report §5 (5.4), §2.5; this plan's 5.3 decision on `golang.org/x/sys`; read-only, `tools/lib/rungjob.mjs` and `tools/lib/proclist.mjs` at `b5f7cbf` |
-| 5.4.2 | **The runner, `bonsai ladder`**: the test outputs read (`internal/testout/`, new: `go test -json`, TAP, JUnit); the rungs in order with `required`, the requested set, skips and marks, the ratchet's count; the result in the verified main checkout's `.bonsai/local/ladder/`, `mode`, `--ci`; the fingerprint record; one ladder at a time per home; the `ladder` cleaning call; `--json`; `check`'s rows for the ladder's shape | Go tests on fixture projects (each requested set, a required red, every skip rule, each test form, a result from a worktree landing in main, the lock held and released, a dead holder); every result and `--json` against its schema; 5.3's stop gate accepting a green local result at HEAD and refusing a `ci` one; scripted runs on both sides; V1 | 4-6 | Spec §3, §4 (`ladder`), §6 (the ladder, generated files), §9, §10 (the home's `locks/`); contract §3, §5.6, §8.1, §8.2, §11, §13; this plan's 5.2.2, 5.2.6b and 5.3.4 notes; read-only, `tools/ladder/ladder.mjs` at `b5f7cbf` |
+| 5.4.2 | **The runner, `bonsai ladder`**: the test outputs read (`internal/testout/`, new: `go test -json`, TAP, JUnit); the rungs in order with `required`, the requested set, skips and marks, the ratchet's count; the result in the verified main checkout's `.bonsai/local/ladder/`, `mode`, `--ci`; the fingerprint record; one ladder at a time per home; the `ladder` cleaning call; `--json`; every refusal's next step a command an agent runs as written, and each failing test's own command; `status --json`'s `ladder`; `check`'s rows for the ladder's shape | Go tests on fixture projects (each requested set, a required red, every skip rule, each test form, a result from a worktree landing in main, the lock held and released, a dead holder); every result and `--json` against its schema; 5.3's stop gate accepting a green local result at HEAD and refusing a `ci` one; scripted runs on both sides; V1 | 4-6 | Spec §3, §4 (`ladder`), §6 (the ladder, generated files), §9, §10 (the home's `locks/`); contract §3, §5.6, §8.1, §8.2, §11, §13; this plan's 5.2.2, 5.2.6b and 5.3.4 notes; read-only, `tools/ladder/ladder.mjs` at `b5f7cbf` |
 | 5.4.3 | **Rung 0** (`internal/rung0/`, new): what the branch and the working tree changed, each path judged by 5.3.2's function with the named task's grants at any status; a branch that changes a generated table; a tracked or staged `local/` file; `check`'s findings about the commit; `bonsai.*` labels read by contract §5.6's meaning with no definition in force | The `rung0` section of set 4's fixtures, every case, on both sides; fixture repositories for each refusal; a table of paths on which the guard and rung 0 agree; V1 | 3-4 | Spec §6 (the tables, `local/`), §7, §9; contract §5.5, §5.6, §13; this plan's 5.1.8 and 5.3.1-5.3.2 notes; read-only, `ladder.mjs`'s `runGuard` at `b5f7cbf` |
 | 5.4.4 | **Floors, ratchets and Bless** (`internal/ratchet/`, new): a count below its floor is red; a count that cannot be read is red; a green, clean local run on the base branch at its HEAD with a count above its floor files one Bless ask; the ask resolved when the offer is gone | Go tests walking a table of every case (each condition false in turn); the ask and its `ask` log record against their schemas; `--ci` never blesses; check 10; CI; V2 | 4-6 | Spec §9 ("Ratchets and Bless"); contract §9.1, §9.2, §10.3, §11; this plan's 5.2.5 notes 2-6; read-only, `studio-app/bridge/bless.ts` at `b5f7cbf` |
 | 5.4.5 | **New tests must fail on the base** (`internal/newtests/`, new): the new tests named from the rung's output; a temporary worktree at the base; `base_setup`; the base run as it is, then with the branch's changed test files; "failed", "proves nothing new" and "check not run" told apart | Fixture repositories for each form (`go test -json`, node's TAP, JUnit): a new test failing at the base, one passing there, one that cannot load there, a broken `base_setup`; the worktree removed after; the counts in the result and on the Bless ask; check 10; CI; V2 | 7-12 | Spec §9 ("New tests must fail on the base"); contract §9.1 (`data`), §11; format review 5.2 (spec §16 row 23) |
 | 5.4.6 | **Git integrity** (`internal/vergit/`, new): the `ver-git` rung kind: the task's base commit recorded; changed test files, assume-unchanged and skip-worktree entries, edits to `.git/info/exclude`, new stash entries and a rewritten base found and listed; the runner's `dirty` counting what git hides | Fixture repositories, one per finding, on both sides (Windows git there); a clean repository finds nothing; the rung informs and never turns red for a finding; check 10; CI; V2 | 3-5 | Spec §9 ("Git integrity"), §16 row 23; contract §11 |
-| 5.4.7 | **The switch**: Bonsai's own `bonsai.yaml`, its task and memory folders, `CLAUDE.md`'s and `CONTRIBUTING.md`'s rules, `.gitignore`; the way back tried; the pre-release; Rohan's install and `bonsai init`; the link committed; the first climbs | A scratch clone of the switch linked and climbed by the final build; the way back in a scratch session; Rohan's lines and words; the end verifier's checks on the real repo | 1-2 | Spec §3, §6, §7, §14 ("How Bonsai's work is proven"), §17 step 8, §19 C; contract §4, §5.5, §5.6, §7.1, §7.4; this plan's "What changes", items 5 and 7, and 5.3's two answers |
+| 5.4.7 | **The switch**: Bonsai's own `bonsai.yaml`, its task and memory folders, `CLAUDE.md`'s and `CONTRIBUTING.md`'s rules, `.gitignore`; the way back tried; the pre-release; Rohan's install; the link by the orchestrator, committed; the first climbs | A scratch clone of the switch linked and climbed by the final build; the way back in a scratch session; Rohan's lines and words; the end verifier's checks on the real repo | 1-2 | Spec §3, §6, §7, §14 ("How Bonsai's work is proven"), §17 step 8, §19 C; contract §4, §5.5, §5.6, §7.1, §7.4; this plan's "What changes", items 5 and 7, and 5.3's two answers |
 | **5.4** | | | **28-44** (re-ask 57) | |
 
 **The order, side by side where truly independent.** Rohan, 9 Oct: "if you can orchestrate work in parallel do that
@@ -2469,14 +2473,14 @@ package of its own wires itself in with one last commit there, as 5.3.3 wired in
 
 | Piece | Owns |
 |---|---|
-| 5.4.0 | `formats/` (`climb.schema.json` and its example; the descriptions in `workspace.schema.json`, `ladder.schema.json` and `log.schema.json`; `new_tests`' two counts; README; manifest; `compare_test.go`'s ladder marker); the error words' Go table; the Go tables of the `tests` forms, rung statuses and git integrity's findings, beside the ladder's type in `internal/format/`; wherever 5.1.4a registers a schema and an open list's table, the test that lists every schema, and `status --json`'s `formats`; `docs/reference/lists.md` |
+| 5.4.0 | `formats/` (`climb.schema.json` and its example; the descriptions in `workspace.schema.json`, `ladder.schema.json` and `log.schema.json`; `new_tests`' two counts; README; manifest; `compare_test.go`'s ladder marker); the error words' Go table; the Go tables of the `tests` forms, rung statuses and git integrity's findings, beside the ladder's type in `internal/format/`; `status.schema.json`'s new `ladder`; wherever 5.1.4a registers a schema and an open list's table, the test that lists every schema, and `status --json`'s `formats`; `docs/reference/lists.md` |
 | 5.4.1 | `internal/rungjob/` and `internal/leftovers/` (new) and their tests |
-| 5.4.2 | `internal/testout/` and `internal/ladder/` (new); `cmd/bonsai/ladder.go`, the `ladder` word's dispatch and its entry in the flag table; 5.1.6's findings table (rows for the ladder's shape); the stamped build's confinement where 5.3.6 put it (one more word confined) |
+| 5.4.2 | `internal/testout/` and `internal/ladder/` (new); `cmd/bonsai/ladder.go`, the `ladder` word's dispatch and its entry in the flag table; 5.1.6's findings table (rows for the ladder's shape); `status --json`'s `ladder` in `internal/status/`; the stamped build's confinement where 5.3.6 put it (one more word confined) |
 | 5.4.3 | `internal/rung0/` (new); the reading of `bonsai.*` labels where 5.1.5 put labels in force, if 5.3 left a gap (note 5.4.3); its last commit: `internal/ladder/kinds.go` |
 | 5.4.4 | `internal/ratchet/` (new); its last commit: `internal/ladder/kinds.go` |
 | 5.4.5 | `internal/newtests/` (new); its last commit: the rise step in `internal/ratchet/` |
 | 5.4.6 | `internal/vergit/` (new); its last commit: `internal/ladder/kinds.go` and the runner's `dirty` |
-| 5.4.7 | `bonsai.yaml`, `records/tasks/`, `records/memory/`, `CLAUDE.md`, `CONTRIBUTING.md`, `.gitignore`; then, from Rohan's `init`, `.bonsai/`, `.claude/settings.json` and the block in `CLAUDE.md` |
+| 5.4.7 | `bonsai.yaml`, `records/tasks/`, `records/memory/`, `CLAUDE.md`, `CONTRIBUTING.md`, `.gitignore`; then, from the link's `init`, `.bonsai/`, `.claude/settings.json` and the block in `CLAUDE.md` |
 
 1. **5.4.0 and 5.4.1 start together**, once the orchestrator has read where 5.1.4a, 5.1.4b and 5.2.0 put the tables
    5.4.0 extends. 5.4.0 sets every shared list and schema first, so no later piece edits a shared list file; 5.4.1 is
@@ -2510,13 +2514,14 @@ worktrees and base runs), 5.4.6 (it holds a cheat class) and 5.4.7 (Rohan's main
 for 5.4.0, whose shapes this section fixes, with the orchestrator's read. Fresh Opus verifiers, each re-running the
 tests on both sides: **V1 after 5.4.3's wiring**, covering 5.4.1, 5.4.2 and 5.4.3 (Windows process trees, the runner,
 rung 0's judgments), with a break-it on both sides (note 5.4.1's cases and its own); **V2 on the code before the
-pre-release**, covering 5.4.4, 5.4.5 and 5.4.6 and running "5.4 done" checks 1 to 13 on the last code commit, so Rohan
-installs code a verifier passed; **the 5.4 end verifier** after Rohan's sitting, running "5.4 done" checks 14 to 21 on
+pre-release**, covering 5.4.4, 5.4.5 and 5.4.6 and running "5.4 done" checks 1 to 15 on the last code commit, so Rohan
+installs code a verifier passed; **the 5.4 end verifier** after Rohan's sitting, running "5.4 done" checks 16 to 23 on
 the final commit and the installed binary, with V2's report for the rest (the build's rule keeps the Go code V2 passed).
 5.4.1 to 5.4.3 land before V1, and 5.4.4 to 5.4.6 before V2, on green tests on both sides, CI and the orchestrator's
 read of the diff; a must-fix V1 or V2 finds is fixed forward before the pre-release is built. 5.4.0 lands on green tests
 on both sides, CI and the orchestrator's read of the diff, which the run report says. A Sonnet agent runs 5.4.7's
-scripted Claude Code sessions (its notes 1 and 2), Rohan's 8 Oct word; the builder and the orchestrator read its report.
+scripted Claude Code sessions (its notes 1 and 2) and the agent's session of "5.4 done" check 14, Rohan's 8 Oct word;
+the builder and the orchestrator read its report.
 
 #### Where each inherited finding is settled
 
@@ -2547,9 +2552,10 @@ on:
 | Base's `bonsai.*` label definitions arrive with 5.5, while Bonsai links at 5.4 (this plan, "Stale or in tension") | 5.4.3, 5.4.7 | The readers act on contract §5.6's meaning with no definition in force; `CLAUDE.md` says what the four mean until base's block does (note 5.4.3) |
 | "From 5.4, Bonsai's own `.bonsai/sessions.md` also holds these runs; a Haiku audit compares it with the run reports" ("How hours are counted") | 5.4.7 | The table fills from the switch; the first audit, at 5.4's end, covers the sessions after it |
 | A broken pre-release could block edits; "5.4's section writes your way back" (Rohan's "Risk") | 5.4.7 | Rohan's part above; the first form tried in a scratch session before his sitting |
-| "From 5.4, a command of yours when an update of Bonsai's own repo runs code or changes its guard lines" (Rohan's list) | 5.4.7 | Rohan's part above: `bonsai init` at the switch, then rarely `update --allow-exec --yes` |
+| "From 5.4, a command of yours when an update of Bonsai's own repo runs code or changes its guard lines" (Rohan's list) | 5.4.7 | Rohan's part above: only the rare `update --allow-exec --yes` after a reinstall that changes Bonsai's own lines; the link itself is the orchestrator's |
+| Rohan, 9 Oct, 15:35: agents manage Bonsai inside projects, "top notch", "installing, updating, fixing, checking status, editing"; the program stays his install per release | 5.4.0, 5.4.2, 5.4.4, 5.4.7 | `bonsai ladder` unattended, every refusal's `next.do` a command an agent runs as written, with `who` (5.4.2 note 12); a red climb names each failing test with the command that runs it alone; the active task's last result in `status --json`; agents link Bonsai's repo, raise its floors and edit `bonsai.yaml` by the stricter-only rule; a person's step only for the install, his (ii) and the way back, each with its reason (the (B) paragraph); proved by an agent alone climbing, reading and fixing ("5.4 done" check 14) |
 | `check`'s finding for a `bonsai` on the PATH that is not the installed one waits for `install.json` (5.1.6; spec §3) | Unchanged | The pre-release has no `install.json` until 5.6's installer; Rohan's `which -a` is the check meanwhile |
-| Part 0's run report quotes a studio task id; "the orchestrator may take the id out" (`STATE.md`) | 5.4.7 | Before Rohan's `init` or never: after it, the report is a format-0 file on the lock's list, and any change to it is a `check` finding |
+| Part 0's run report quotes a studio task id; "the orchestrator may take the id out" (`STATE.md`) | 5.4.7 | Before the link or never: after it, the report is a format-0 file on the lock's list, and any change to it is a `check` finding |
 | Claude Code's auto memory holds one note for Bonsai's repo, and `init` writes `autoMemoryEnabled: false` (spec §10) | 5.4.7 | The note moves into `records/memory/` as a `bonsai.memory/1` note, with its index |
 | `CLAUDE.md` and `CONTRIBUTING.md` name `golang.org/x/sys` and describe the interim proof | 5.4.7 | Both rewritten for the ladder proof and the standard library only |
 
@@ -2624,8 +2630,13 @@ Every rung's `capture` and `base_setup` are null (Go needs no setup at the base:
   fixtures need a task's grant. `never_edit` is empty: Bonsai has no file that no agent may ever change (the closed run
   reports are held by the lock's `format0` hashes and rung 0), and a deny rule would stop the orchestrator's records
   commits too. In `agents` mode (Bonsai's, until the studio manages it) a person-only path is grantable as written
-  (5.3.2 rule 4), so the rule is the orchestrator's: a task's `bonsai.allows` holds a person-only path only on Rohan's
-  word (his approval of the section naming it, or his yes in chat), marked in the run report (contract §18 C).
+  (5.3.2 rule 4), so the rule is the orchestrator's, written in `CLAUDE.md`, and it is **stricter-only**: a task may
+  hold a person-only path in `bonsai.allows` when its change only makes the guard or the ladder stricter (a floor raised
+  to a green count, a rung or a protected path added) or when a section Rohan approved names it; a change that loosens
+  them (a floor lowered; a rung, a floor entry, a protected or a person-only path taken out; a release file changed
+  beyond its section) waits for his word, marked in the run report (contract §18 C). Why: an agent loosening the checks
+  it is held to would be judging its own work. Each part's end verifier reads every change to `bonsai.yaml` in the part
+  against this rule.
 - **`documents`.** Tasks in `records/tasks/`, run reports in `records/runs/` (where they are), memory in
   `records/memory/`; answers and protocols name places that hold nothing yet. `STATE.md` stays at the root: contract
   §7.2 fixes STATE at `.bonsai/STATE.md`, but `init` writes it only from base's template (5.5), and the root file is not
@@ -2637,8 +2648,8 @@ Every rung's `capture` and `base_setup` are null (Go needs no setup at the base:
   `T-5x99` in order; a piece with a letter takes the next free number, named in its title. Ids that read as their piece,
   never as a studio task's. `lane: null` (no pack declares lanes); `done_when` from the section's proof; labels
   `bonsai.branch` (the piece's branch), `bonsai.ladder` (`[]`: the floor holds every rung), `bonsai.allows` (the
-  protected paths the section's "Owns" list names) and `bonsai.wants` (the person-only ones, copied into `allows` only
-  on Rohan's word).
+  protected paths the section's "Owns" list names) and `bonsai.wants` (the person-only ones, copied into `allows` by the
+  stricter-only rule).
 - **The orchestrator alone writes and moves task files**, in the main checkout: `todo` when a part's section is
   approved, `running` when the piece's builder starts, `verify` when its result is green, `done` once it has landed with
   CI green (or `cut`). The moves stay uncommitted in main's working tree until its records commit after the landing,
@@ -2670,16 +2681,18 @@ Every rung's `capture` and `base_setup` are null (Go needs no setup at the base:
 - **The floors, once a part.** Bless needs a green run in the main checkout, on the base branch, at its HEAD, with a
   clean tree (5.4.4), and the orchestrator's open run report and task moves keep the main checkout's tree dirty while
   pieces run. So at a part's end, after its last records commit, the orchestrator climbs `main` once under the part's
-  last task: that run checks `main` as the part leaves it and offers Bless when the part's work raised a count. It
-  brings Rohan the numbers; on his yes the floors rise (5.4.4 note 4). Chosen over a climb of `main` after every
-  landing, which would need a records commit before each and run every test again for a floor that rises once a part
-  anyway; what lost: Bless's new-tests numbers cover the part's last task, while every piece's own green climbs carry
-  its own for the verifiers.
+  last task: that run checks `main` as the part leaves it and files a Bless ask when the part's work raised a count. The
+  orchestrator then raises the floors to that run's counts itself, under a task (`T-5x9N`) granting `bonsai.yaml`, by
+  the stricter-only rule; records the ask's numbers (new tests that failed at the base, proved nothing new, or could not
+  run) in its run report; and gives Rohan the numbers in the part's last line, with nothing to answer. The next climb on
+  `main` resolves the ask (5.4.4 note 3). Chosen over a climb of `main` after every landing, which would need a records
+  commit before each and run every test again for a floor that rises once a part anyway; what lost: Bless's new-tests
+  numbers cover the part's last task, while every piece's own green climbs carry its own for the verifiers.
 - **Run reports** stay the orchestrator's, one per task, in the main checkout. From the switch each carries
   `bonsai.run/1` frontmatter (contract §7.1: `id` `R-<date>-<task id>`, `task`, `role: orchestrator`, `model`,
   `started`, `finished`, `outcome`, `commits`, `labels`), and its file is `R-<date>-<task id>-<topic>.md` (in place of
   "What changes", item 3's `R-<date>-<piece>-<topic>.md`), so 5.3.4's check for a report naming the task finds it. Every
-  report from before is closed and committed before Rohan's `init`, which lists them on the lock's `format0` list with
+  report from before is closed and committed before the link, whose `init` lists them on the lock's `format0` list with
   their hashes: they are frozen from then, and the orchestrator's last edit of part 0's report (the studio task id)
   happens before it or not at all. If `check` holds the old reports to more than their hash, `documents.run` names a new
   folder instead and the switch's run report says why.
@@ -2705,10 +2718,12 @@ which `bonsai check` reports). The proof of a change is `bonsai ladder --task <i
 `bonsai`, plus CI on both sides; the standard library only (Windows calls through `syscall`); never `go install`.
 
 **`CLAUDE.md`**, changed at the switch (its own task grants it; Rohan's approval of this section is his word for it):
-the "Proof" line becomes the landing rule above; "How a session works" gains the tasks, the names and the rule for
-running tasks side by side; the run reports' frontmatter; the four labels' lines; the (ii) commands that are Rohan's;
-the way back; the removal of a worktree only with `git worktree remove` (a `rm -rf` of a checkout's folder is a guarded
-delete); `bonsai update` of Bonsai's own link only in the main checkout (rung 0 refuses a branch that changes
+the "Proof" line becomes the landing rule above; agents first: a builder runs the ladder, reads its `--json`, fixes what
+is red and climbs again, and asks a person only where a refusal's `who` says so; the stricter-only rule for
+`bonsai.yaml` and person-only paths; "How a session works" gains the tasks, the names and the rule for running tasks
+side by side; the run reports' frontmatter; the four labels' lines; the (ii) commands that are Rohan's; the way back;
+the removal of a worktree only with `git worktree remove` (a `rm -rf` of a checkout's folder is a guarded delete);
+`bonsai update` of Bonsai's own link only in the main checkout (rung 0 refuses a branch that changes
 `.claude/settings.json`); and the Go line without `golang.org/x/sys`. The block `init` writes sits apart, between its
 markers.
 
@@ -2720,32 +2735,35 @@ permission choices stay out of git, and a main checkout holding one still climbs
 loses nothing. The orchestrator gives the builder the note's words: no agent reads Claude Code's memory folder. The note
 names no path and no person's detail beyond that preference.
 
-**How Bonsai links itself, under Rohan's (a) and (ii).** Rohan types `bonsai init` in `~/Servers/Bonsai` with the
-pre-release he has just installed. Under (a) the lines it writes name `C:\Program Files\Bonsai\bonsai.exe`, then
+**How Bonsai links itself, under Rohan's (a) and (ii).** After Rohan's install, the orchestrator links Bonsai's repo
+with the installed copy, in the main checkout: first `/usr/local/bin/bonsai init --json` (the preview: every settings
+line with its sentence; nothing written; exit 4 without `--yes`), each line read against this section, then
+`/usr/local/bin/bonsai init --yes --json`. Under (a) the lines it writes name `C:\Program Files\Bonsai\bonsai.exe`, then
 `/usr/local/bin/bonsai`, and the PATH is never read; a stamped test build cannot write them here, since it refuses to
-link outside its scratch root (5.3.6 note 2), so only an installed build links the real repo. It needs no
-`--allow-exec`: `packs: []` brings no pack code, and Bonsai's own lines at a first link are written on a `y` alone
-(5.1.1 rule 6). An agent could type a plain `init` (5.3.6 note 8 refuses `--allow-exec`, `unlink` and an update that
-changes Bonsai's lines, not a first link); Rohan types it because it is the moment his main repo starts being guarded,
-under (ii) taking the guard out or changing its lines there is his, and he is already at the terminal. From then on, in
-Bonsai's repo: an update that adds no code and leaves Bonsai's lines as they are (base's link in 5.5) is the
-orchestrator's, in the main checkout, under a task granting `bonsai.yaml` and the lock; `--allow-exec`, `unlink` and an
-update changing Bonsai's own lines are Rohan's, typed in his own terminal, until the studio manages Bonsai's repo.
+link outside its scratch root (5.3.6 note 2), so only the installed build links the real repo. It needs no
+`--allow-exec`: `packs: []` brings no pack code, and Bonsai's own lines at a first link are written on `--yes` alone
+(5.1.1 rule 6). (ii) leaves it to an agent: a first link puts the guard in, and the command refuses only `--allow-exec`,
+`unlink` and an update that removes or changes Bonsai's own lines (5.3.6 note 8). Chosen over Rohan typing it: no safety
+reason needs a person to put a guard in, and his 9 Oct direction gives linking to agents. From then on, in Bonsai's
+repo: an update that adds no code and leaves Bonsai's lines as they are (base's link in 5.5) is the orchestrator's, in
+the main checkout, under a task granting `bonsai.yaml` and the lock; `--allow-exec`, `unlink` and an update changing
+Bonsai's own lines are Rohan's, typed in his own terminal, until the studio manages Bonsai's repo.
 
 **The order of the switch.**
-1. 5.4.7's builder prepares its files in its worktree, tries the way back in a scratch session, links a scratch clone of
-   its branch with the final code's stamped build (a scratch home, inside the scratch root), climbs it, and reads the
-   counts and times (the floors and timeouts come from these). It lands on the interim proof, the last landing that
-   does: check 10 and CI.
+1. 5.4.7's builder prepares its files in its worktree (an agent tries the way back in a scratch session, note 5.4.7),
+   links a scratch clone of its branch with the final code's stamped build (a scratch home, inside the scratch root),
+   climbs it, and reads the counts and times (the floors and timeouts come from these). It lands on the interim proof,
+   the last landing that does: check 10 and CI.
 2. Before the build: `main`'s working tree holds nothing uncommitted but 5.4.7's open run report, which is format 1;
    every other run report is closed and committed; part 0's report has been edited or left; Claude Code's version and
    the user settings hashes are recorded.
 3. The orchestrator builds the pre-release ("Rohan's sitting", below) and sends Rohan his batch.
-4. Rohan installs it and types `bonsai init`; he sends `bonsai --version`'s line.
-5. The orchestrator reads what `init` wrote (`git status`, `git diff`: the lock, `.claude/settings.json` with every line
-   in (a)'s form, the block in `CLAUDE.md`, `.bonsai/.gitignore`, the two tables), runs `bonsai check` (no finding),
-   commits it on `main` (`bonsai: Bonsai links itself`), pushes and reads CI. If its session has not taken up the hooks
-   (a subagent's file-tool edit of `bonsai.yaml` is not refused), it asks Rohan to restart it.
+4. Rohan installs it and sends `bonsai --version`'s line.
+5. The orchestrator links the repo (above) and reads what `init` wrote (`git status`, `git diff`: the lock,
+   `.claude/settings.json` with every line in (a)'s form, the block in `CLAUDE.md`, `.bonsai/.gitignore`, the two
+   tables), runs `bonsai check --json` (no finding), commits it on `main` (`bonsai: Bonsai links itself`), pushes and
+   reads CI. If its session has not taken up the hooks (a subagent's file-tool edit of `bonsai.yaml` is not refused), it
+   asks Rohan to restart it.
 6. The first climb: after a records commit, with the main checkout clean, `/usr/local/bin/bonsai ladder --task T-5407`
    in it is green, and its result, its `ladder` record and `hook start`'s next context agree. `T-5407` moves to `done`
    in a records commit with the tables.
@@ -2762,8 +2780,9 @@ so the schema-compare test passes.
    ladder) the same way"): `format`; `workspace` (null when it refused before reading one); `task` (or null); `mode`;
    `result`, the project-relative path written, or null; `sha256` of its bytes, or null; `ladder`, the result as written
    (`bonsai.ladder/1`), or null; `bless`, the ask record this run wrote (`bonsai.ask/1`, a `file` or a `resolve`), or
-   null; `cleaned`, the project-relative paths cleaned after the run; `error`. A new schema with an example. Named for
-   the act, since `bonsai.ladder/1` is the result's name.
+   null; `cleaned`, the project-relative paths cleaned after the run; `next`, `{do, who}` as the `error` object's, the
+   step after a red run (5.4.2 note 12), or null when green; `error`. A new schema with an example. Named for the act,
+   since `bonsai.ladder/1` is the result's name.
 2. **A rung's `ratchet`, `capture` and `tests`**, fixed by their descriptions in `workspace.schema.json` (a description
    change is an addition) and held by 5.4.2's reader, as today's ladder has them:
    - `ratchet`: the ratchet's name (`[a-z_][a-z0-9_]{0,39}`, today's), naming a floor in `ratchets` (none reads as 0),
@@ -2783,7 +2802,8 @@ so the schema-compare test passes.
    "Typed open" entry is rewritten to say so.
 3. **The result's additions:** `passed_on_base` and `not_run` at the end of `new_tests` (counts beside `count` and
    `failed_on_base`; 5.4.5); the `captures` description gains "for a `ver-git` rung, what it found, by name" (5.4.6); a
-   rung `status`'s description names the words' table. No field is removed or retyped.
+   rung `status`'s description names the words' table; the `tests` description (typed open) names a failed test's `run`,
+   the command that runs it alone (5.4.2 note 12). No field is removed or retyped.
 4. **The log's `ladder` record**, by description (contract §11: "the result's project-relative path, `sha256:<hex>` of
    its bytes, its `green`, and `task`"): `target` the path, `text` `sha256:<hex>`, `ok` its `green`, `task` its task,
    `kind` its `mode`, `category` `Ladder`, and `bonsai_path` and `bonsai_sha256` the runner's own (so the record names
@@ -2801,6 +2821,10 @@ so the schema-compare test passes.
    marker 5.4.1 puts in every rung's environment), so rung 2 can never pass by skipping.
 8. `climb` wherever the formats are listed (the registry, the test listing every schema, `status --json`'s `formats`:
    `read` `[1]`, `write` 1); `docs/reference/lists.md` regenerated.
+9. **`status --json` gains `ladder`** at the end of its properties (an addition): the active task's last result,
+   `{task, path, green, mode, sha, finished, stale}`, `stale` true when `sha` is not this checkout's HEAD; null when
+   there is no active task or no result. So an agent reads where its proof stands without running anything (Rohan's 9
+   Oct "checking status"); 5.4.2 fills it.
 
 **5.4.1, rung jobs.** Spec §9: "each in its own process group on Linux and its own job object on Windows, so a rung
 cannot leave a process for a later one ...; the leftovers line at the end". One function runs one command with a folder,
@@ -2888,6 +2912,22 @@ forms) and what it ended.
     test build never makes a proof in a real project.
 11. **`check`'s rows for the ladder's shape**, in 5.1.6's table: two rungs with one number; a floor or a ratchet naming
     nothing; a capture pattern that does not compile; a ratchet with no count; a command calling `bash` by name.
+12. **Agents first** (Rohan, 9 Oct: agents manage Bonsai inside projects, and the support is to be "top notch"). The
+    ladder runs unattended end to end: no prompt, `--json` always whole, the exit code its colour. Every refusal and
+    error carries the `error` object; its `next.do` is a command an agent can run as written, with every value Bonsai
+    knows filled in (the task id, the rung, the path, the holder's pid), or, where the fix is an edit, the file and the
+    change named and then the command that confirms it; `next.who` is `agent` but where a safety reason makes the step a
+    person's, which the words' table says. The refusals: no task named (`bonsai status --active --json`, then
+    `bonsai ladder --task <its id> --json`, the id filled in when one task runs); the lock held (the same command again
+    once the holder's pid has ended, with its budget's end); a rung not defined (`bonsai check --json`, which names the
+    rung and the line); a stamped build outside its scratch root (`/usr/local/bin/bonsai ladder --task <id> --json`);
+    the main checkout not verified (as 5.3.1 sets its step and `who`). **A red climb says how to fix it:** `climb`'s
+    `next` names the first red rung's fix and then the climb again; each failing test of a `go-test-json` or `tap` rung
+    carries in `tests.failed[].run` the command that runs it alone, quoted for the shell the rung runs in
+    (`go test -count=1 -run '^TestX$/^sub$' ./pkg`, or `node --test --test-name-pattern=...` with its file); each path
+    rung 0 refuses comes with its rule and the grant or revert it needs; a ratchet below its floor with both counts.
+    `who` is `agent` there too, but for a person-only path in `command` mode (a person's grant). `status --json`'s
+    `ladder` (5.4.0 note 9) tells an agent where its proof stands without a climb.
 
 **5.4.3, rung 0.** Spec §9: "the diff against the named task's grants"; "Rung 0 also refuses a task branch that changes
 a generated table, and any file from `.bonsai/local/` that is tracked or staged"; spec §4: "CI and rung 0 run
@@ -2937,11 +2977,12 @@ above its floor files one Bless ask. The floor rises only when the studio applie
 3. **Resolved when the offer goes**, as today's bridge does: a run on the base branch, whatever its task, works the
    offer out again for every open `ladder:bless-*` ask from that task's result and the floors as they now are, and
    resolves each whose offer is gone, with its reason (HEAD moved, the run red or dirty, no rise left).
-4. **Who raises a floor.** Bonsai never writes `ratchets`: the studio applies a person's `bless` tap (contract §10.3).
-   In a workspace the studio does not manage, a person edits `bonsai.yaml`. In Bonsai's own repo the orchestrator climbs
-   `main` at a part's end (the switch, "Tasks and names") and brings Rohan the Bless ask it files; on his yes in chat it
-   raises the floors under a task whose `bonsai.allows` holds `bonsai.yaml` (his word is the grant, marked in the run
-   report, contract §18 C); HEAD has moved by then, so the next climb on `main` resolves the ask (note 3).
+4. **Who raises a floor.** Bonsai's code never writes `ratchets`. Where the studio manages a project, it applies a
+   person's `bless` tap (contract §10.3). Elsewhere an agent may raise a floor to a green, clean run's count, under a
+   task that grants `bonsai.yaml`, since a raised floor only makes the ladder stricter; lowering one waits for a person
+   (the switch's stricter-only rule, which 5.5's `workflow` pack carries for other projects). In Bonsai's own repo the
+   orchestrator does it at a part's end (the switch, "Tasks and names"); HEAD has moved by then, so the next climb on
+   `main` resolves the ask (note 3).
 5. **Never:** under `--ci`, on a red or dirty run, on a branch, or from a result another run wrote.
 
 **5.4.5, new tests must fail on the base.** Spec §9: "A new test counts as failed on the base only when the base run
@@ -3040,9 +3081,9 @@ end verifier re-run the tests themselves, on both sides. From the switch, 5.4.7'
 
 #### 5.4 done
 
-V2 runs checks 1 to 13 on the last code commit, on both sides, before the pre-release is built. A fresh Opus verifier,
-at the end of 5.4 and after Rohan's sitting, runs checks 14 to 21 itself on the final commit and the installed binary,
-reads V2's report for 1 to 13 (the build's rule keeps the Go code the same), and passes or fails 5.4:
+V2 runs checks 1 to 15 on the last code commit, on both sides, before the pre-release is built. A fresh Opus verifier,
+at the end of 5.4 and after Rohan's sitting, runs checks 16 to 23 itself on the final commit and the installed binary,
+reads V2's report for 1 to 15 (the build's rule keeps the Go code the same), and passes or fails 5.4:
 1. **Set 6:** the manifest matches every byte; `bonsai.climb/1` documents itself with an example; `new_tests` ends with
    its two counts; the schema-compare test passes, fails on a removal in a temporary copy, and fails rather than skips
    with `BONSAI_LADDER` set and no base; `check --schema` prints the `tests` forms, rung statuses and git integrity's
@@ -3081,38 +3122,50 @@ reads V2's report for 1 to 13 (the build's rule keeps the Go code the same), and
     `info/exclude` alone.
 12. **No `golang.org/x/sys`:** `go list -deps ./cmd/bonsai` names none; the hook line's p50 and p95 on both sides
     against 5.3's.
-13. **The break-it:** the verifier's own process trees on both sides and its own repositories for rung 0, ratchets and
+13. **Unattended:** each refusal of `bonsai ladder` (no task, the lock held past its wait, an undefined rung, a stamped
+    build outside its root, an unverified main) exits with its code and an `error` whose `next.do` the verifier runs as
+    written, and whose `who` is `agent` but where the words' table names a safety reason; with no terminal nothing waits
+    for input; a red climb's `--json` gives `next`, and each failing test's `run` runs that test alone on both sides;
+    `status --json`'s `ladder` shows the active task's last result, and `stale` after a new commit.
+14. **An agent alone:** a scripted `-p` session through `claude-here`, run by a Sonnet agent, in a scratch project
+    linked by the build, holding a running task whose test fails and a ratchet at the fixture's count, told only "make
+    the ladder green for <task>": it climbs, reads the result, fixes the test and climbs green, with no person and no
+    prompt (deleting the test stays red: the count falls below its floor). The run report keeps the session's commands.
+    On WSL, and on Windows if Claude Code's login there is back.
+15. **The break-it:** the verifier's own process trees on both sides and its own repositories for rung 0, ratchets and
     git integrity, beyond the builders' tables: no rung leaves a process for the next, and no change outside the named
     task's grants climbs green.
-14. **The pre-release:** the installed file's SHA-256 equals the number Rohan was sent and the verifier's own
+16. **The pre-release:** the installed file's SHA-256 equals the number Rohan was sent and the verifier's own
     `-trimpath` build of the commit from its own clone; `go version -m` shows that commit, unmodified; `which -a bonsai`
     lists `/usr/local/bin/bonsai` alone; `bonsai --version` names the commit.
-15. **The link:** Bonsai's committed `bonsai.yaml` holds the rungs, lists and floors this section sets and validates;
+17. **The link:** Bonsai's committed `bonsai.yaml` holds the rungs, lists and floors this section sets and validates;
     the lock, `.claude/settings.json` (every Bonsai line in Rohan's (a) form, naming the two places and no other path),
     the block and the tables are committed; `bonsai check` in the main checkout and in a fresh worktree: no finding;
     `.gitignore` holds `.claude/settings.local.json`; `CONTRIBUTING.md` says a clone without `bonsai` is refused and how
-    to work round it; `CLAUDE.md` holds the landing rule, the task and name rules, the (ii) commands and the way back.
-16. **Guarded:** in a scripted session through `claude-here` in a fresh worktree of Bonsai, with only `T-5490` running
+    to work round it; `CLAUDE.md` holds the landing rule, agents first, the stricter-only rule, the task and name rules,
+    the (ii) commands and the way back; the link made by the orchestrator with the installed build.
+18. **Guarded:** in a scripted session through `claude-here` in a fresh worktree of Bonsai, with only `T-5490` running
     (it grants nothing): a file-tool edit of `bonsai.yaml`, `go.mod` and `.github/workflows/ci.yml` refused, each naming
     why; a free file edited; `rm -rf junk/*` refused; a scratch project linked on a scratch home and deleted by name,
     allowed; the records in the main checkout's `.bonsai/local/log/`. In a scratch clone of Bonsai linked by the
     installed build on a scratch home, a running task granting `go.mod`: that edit allowed.
-17. **Proven and gated:** `T-5407`'s green result in the main checkout, its record and `hook start`'s context agreeing;
+19. **Proven and gated:** `T-5407`'s green result in the main checkout, its record and `hook start`'s context agreeing;
     in a fresh worktree on a branch of its own, `T-5490` climbed by `/usr/local/bin/bonsai` green at its HEAD; a `-p`
     session there with `BONSAI_TASK=T-5490` is blocked at its stop while no result proves its HEAD, and stops once one
     does; a session with nothing named stops freely (the orchestrator's case); a subagent's end is not gated.
-18. **Rohan's commands held:** in a scratch clone of Bonsai linked by the installed build on a scratch home (never the
+20. **Rohan's commands held:** in a scratch clone of Bonsai linked by the installed build on a scratch home (never the
     real checkout), an agent-shaped run (`CLAUDE_CODE_CHILD_SESSION` set) of `update --allow-exec --yes`, `unlink` and
     an update changing Bonsai's guard line is refused by the command; the same with the variable unset is written.
-19. **The way back:** the lines in Rohan's part are exactly those 5.4.7 tried, and the verifier tries the first once
+21. **The way back:** the lines in Rohan's part are exactly those 5.4.7 tried, and the verifier tries the first once
     more in a scratch project with every call refused.
-20. **Check 10, the ladder and CI:** `go test ./...` and `go vet ./...`, plain and tagged, on WSL and natively on
+22. **Check 10, the ladder and CI:** `go test ./...` and `go vet ./...`, plain and tagged, on WSL and natively on
     Windows, run by the verifier; `/usr/local/bin/bonsai ladder` green on the final commit; CI green on it.
-21. **Stop lines and records:** 5.4's hours under 57, this section's planning and review included; step 5's Windows-only
+23. **Stop lines and records:** 5.4's hours under 57, this section's planning and review included; step 5's Windows-only
     tally; option rounds (none); nothing written or run in the studio's checkout or in Mimas (the scripts and the run
     reports' commands read); the user settings hashes around every Claude Code run; the Haiku audit of
-    `.bonsai/sessions.md` against the run reports after the switch. **Nothing private:** a grep of the diff, the commit
-    messages, the task files and the memory note.
+    `.bonsai/sessions.md` against the run reports after the switch; every change to `bonsai.yaml` since the switch
+    stricter or naming Rohan's word. **Nothing private:** a grep of the diff, the commit messages, the task files and
+    the memory note.
 
 #### Risk in the code, 5.4
 
@@ -3129,12 +3182,13 @@ reads V2's report for 1 to 13 (the build's rule keeps the Go code the same), and
   orchestrator's, and the end verifier lists every refusal its sessions met that should not have happened.
 - **A non-task file in `records/tasks/`** makes the active task none for every reader: no grants anywhere (fail closed).
   The folder holds task files only.
-- **Frozen run reports.** From Rohan's `init`, every old report is on the lock's `format0` list: any later edit is a
-  `check` finding and turns rung 0 red. Reports open at the link are format 1 from their first line.
+- **Frozen run reports.** From the link, every old report is on the lock's `format0` list: any later edit is a `check`
+  finding and turns rung 0 red. Reports open at the link are format 1 from their first line.
 - **The stop gate and Bonsai's builders.** Subagents are never gated (the gate runs on Stop only), so the orchestrator's
   landing rule is their gate, as the interim proof's was; a named session is gated up to Claude Code's cap of eight.
-- **Floors raised by an agent.** Only on Rohan's word, under a task, marked in the run report; Bonsai's code never
-  writes `ratchets`.
+- **Agents loosening their own checks.** Agents now link Bonsai's repo, raise its floors and edit `bonsai.yaml`. A
+  change that loosens the guard or the ladder waits for Rohan's word (the stricter-only rule), and each part's end
+  verifier reads every `bonsai.yaml` change against it. Bonsai's code never writes `ratchets`.
 - **Scratch clones of Bonsai.** A clone carries Bonsai's committed lines, which run the installed pre-release, not the
   build under test, until a stamped build relinks it in the scratch root (a changed line: `--allow-exec`, which a
   stamped build may pass). A Windows clone made for check 10 carries them too: no Claude Code session ever opens there.
@@ -3156,8 +3210,13 @@ reads V2's report for 1 to 13 (the build's rule keeps the Go code the same), and
 - **§9: "each in its own process group on Linux":** a group alone lets a `setsid` child escape; Bonsai adds a session, a
   tag and the runner as reaper, as today's ladder goes beyond the group (5.4.1 note 1), without today's keeper.
 - **§9 and contract §11: Bless "on a clean base branch at HEAD"** with "the floor rises only when the studio applies
-  Rohan's tap": no studio manages Bonsai's repo yet, so the orchestrator raises Bonsai's floors on Rohan's chat word
-  (5.4.4 note 4).
+  Rohan's tap": that holds where the studio manages a project. Elsewhere, Bonsai's own repo among them, an agent raises
+  a floor to a green count itself (Rohan, 9 Oct: agents manage Bonsai inside projects), since a raised floor only makes
+  the ladder stricter; lowering one stays a person's (5.4.4 note 4).
+- **Spec §18: an agent's `init`, `update` and `unlink` "need a task he approved that names those files":** his 9 Oct
+  direction gives linking, updating, fixing and editing to agents, and his answer (ii) keeps `--allow-exec`, `unlink`
+  and changes to Bonsai's own lines a person's where the studio does not manage the project; Bonsai's own link is the
+  orchestrator's (the switch).
 - **Contract §11: "When a count ratchet rises, the runner runs the new tests on the base commit":** Bonsai runs them
   only on green, clean runs (5.4.5 note 1), so a climb while work goes on has `new_tests` null though a count is above
   its floor. The schema's description says so (an addition).
@@ -3188,8 +3247,8 @@ reads V2's report for 1 to 13 (the build's rule keeps the Go code the same), and
 - **Spec §14, "How Bonsai's work is proven":** "Bonsai's guard then covers its own checkout too": the guard and the
   delete check cover every session there; the stop gate covers only named sessions, so the orchestrator's builders are
   held by its landing rule (the switch, "Tasks and names").
-- **Spec §17 step 8** now ends with `bonsai init` in Bonsai's repo; and under (a) the hook lines never read the PATH, so
-  `which -a` guards what an agent runs by name (the ladder is called by its full path anyway).
+- **Spec §17 step 8:** the install stays Rohan's; the link after it is the orchestrator's. Under (a) the hook lines
+  never read the PATH, so `which -a` guards what an agent runs by name (the ladder is called by its full path anyway).
 
 ### Steps 5.2-5.7, outlined
 
