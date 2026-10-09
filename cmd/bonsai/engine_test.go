@@ -215,9 +215,9 @@ func TestCheckCommand(t *testing.T) {
 		t.Errorf("check: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "check", "--json")
-	doc, err := schema.Decode([]byte(out))
-	if code != 1 || err != nil || doc.(schema.Object).String("result") != "findings" {
-		t.Errorf("check --json: %d %v %s", code, err, out)
+	findings, _ := fits(t, out, "check").Get("findings")
+	if code != 1 || len(findings.([]any)) != 1 {
+		t.Errorf("check --json: %d %s", code, out)
 	}
 	for _, args := range [][]string{{"check", "--write"}, {"check", "now"}} {
 		if code, _, errOut := c.run("", args...); code != 2 || !strings.Contains(errOut, "\nnext: ") {

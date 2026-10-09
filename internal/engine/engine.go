@@ -48,8 +48,11 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/LastStep/Bonsai/internal/format"
 )
 
 // Exit codes (spec §3): 0 ok, 1 check findings, 2 bad input, 3 runtime, 4 wrong state or no --yes, 5 conflicts.
@@ -62,20 +65,57 @@ const (
 	ExitConflict = 5
 )
 
-// Error is a refusal or a failure: its exit code, what is wrong, and the next step (spec §3: every refusal and
-// error names the next thing to do). Its text is ASCII.
+// Error is a refusal or a failure: its word, its exit code, what is wrong, and the next step (spec §3: every refusal
+// and error names the next thing to do), with who takes it. Its text is ASCII. Object gives it as the error object
+// of a command's --json (bonsai.error).
 type Error struct {
+	Code string // the error object's word, one of format.ErrorWords (their one home)
 	Exit int
 	What string
 	Next string
+	Who  string // agent or person; "" for the word's usual one (format.ErrorWords)
+	// Workspace is the workspace the command had read when it stopped (Build fills it once bonsai.yaml is read), for
+	// the changes output of a refusal before a plan; nil before that.
+	Workspace *format.WorkspaceRef
 }
 
 func (e *Error) Error() string {
 	return ascii(strings.TrimSuffix(e.What, ".")) + "; next: " + ascii(e.Next)
 }
 
-func errorf(exit int, next, format string, args ...any) *Error {
-	return &Error{Exit: exit, What: fmt.Sprintf(format, args...), Next: next}
+// errorf makes an Error with its word (format.ErrorWords), exit code and next step.
+func errorf(code string, exit int, next, format string, args ...any) *Error {
+	return &Error{Code: code, Exit: exit, What: fmt.Sprintf(format, args...), Next: next}
+}
+
+// Object is the error as the error object of a command's --json (bonsai.error, spec §3, §16 row 29): its word, the
+// sentence and the next step, in ASCII, with who takes it: the refusal's own, else the word's usual one. A next step
+// of several lines (the two ways to settle conflicts) is one line here. An Error with no word is unexpected (a bug,
+// which cmd/bonsai's tests rule out).
+func (e *Error) Object() *format.ErrorObject {
+	code, who := e.Code, e.Who
+	if code == "" {
+		code = "unexpected"
+	}
+	if who == "" {
+		w, _ := format.ErrorWord(code)
+		who = w.Who
+	}
+	if who != "person" {
+		who = "agent"
+	}
+	next := strings.ReplaceAll(strings.TrimSpace(e.Next), "\n  ", " ")
+	next = strings.ReplaceAll(next, "\n", " ")
+	return &format.ErrorObject{Code: code, Message: ascii(strings.TrimSuffix(e.What, ".")), Next: format.Next{Do: ascii(next), Who: who}}
+}
+
+// Unexpected gives any error as an Error: an *Error as it is, anything else as unexpected (exit 3).
+func Unexpected(err error) *Error {
+	var e *Error
+	if errors.As(err, &e) {
+		return e
+	}
+	return &Error{Code: "unexpected", Exit: ExitRuntime, What: err.Error(), Next: "run the command again; if it fails again, report it to Bonsai's maintainers"}
 }
 
 // ascii keeps printable ASCII and writes any other character as a Go escape (é), so text prints unbroken in

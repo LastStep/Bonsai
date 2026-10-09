@@ -164,23 +164,81 @@ func (p *Plan) Nothing() bool {
 	return true
 }
 
-func wsError(err error, exit int) error {
-	var we *workspace.Error
-	if errors.As(err, &we) {
-		what := we.File + ": " + strings.TrimSuffix(we.Msg, ".")
-		if we.Line > 0 {
-			what = we.File + " line " + strconv.Itoa(we.Line) + ": " + we.Msg
-		}
-		if we.Code != "" {
-			what += " (" + we.Code + ")"
-		}
-		return &Error{Exit: exit, What: what, Next: we.Next}
-	}
+// fileError gives a refusal of one of Bonsai's files (internal/workspace's Error) as an Error with its word: a file
+// that is not there is missing (exit 4), one that cannot be read is read-failed (exit 3), and one Bonsai refuses is
+// refused, at exit. An error that is already an *Error is kept.
+func fileError(err error, missing, refused string, exit int) error {
 	var e *Error
 	if errors.As(err, &e) {
 		return e
 	}
-	return &Error{Exit: ExitRuntime, What: err.Error(), Next: "run the command again"}
+	var we *workspace.Error
+	if !errors.As(err, &we) {
+		return Unexpected(err)
+	}
+	var pe *fs.PathError
+	switch {
+	case missing != "" && errors.Is(err, fs.ErrNotExist):
+		return wsError(we, missing, ExitState)
+	case errors.As(err, &pe):
+		return wsError(we, "read-failed", ExitRuntime)
+	}
+	return wsError(we, refused, exit)
+}
+
+// findError gives workspace.Find's error with its word: git missing, a folder in no checkout (exit 4), or one that
+// cannot be read.
+func findError(err error) error {
+	var we *workspace.Error
+	if !errors.As(err, &we) {
+		return Unexpected(err)
+	}
+	switch {
+	case we.File == "git":
+		return wsError(we, "git-missing", ExitRuntime)
+	case we.Msg == "is not inside a git checkout" || strings.HasPrefix(we.Msg, "git rev-parse failed"):
+		return wsError(we, "not-a-checkout", ExitState)
+	case strings.HasPrefix(we.Msg, "git rev-parse gave"):
+		return wsError(we, "unexpected", ExitRuntime)
+	}
+	return wsError(we, "read-failed", ExitRuntime)
+}
+
+// FindError is findError for status, which finds the checkout itself.
+func FindError(err error) *Error { return findError(err).(*Error) }
+
+// ConfigError gives a refusal of bonsai.yaml with its word, for status, which reads it itself: not-linked when it
+// is not there, read-failed, else bad-config.
+func ConfigError(err error) *Error {
+	return fileError(err, "not-linked", "bad-config", ExitInput).(*Error)
+}
+
+// HomeError gives workspace.Home's error with its word.
+func HomeError(err error) *Error {
+	var we *workspace.Error
+	if errors.As(err, &we) {
+		return wsError(we, "bad-home", ExitRuntime)
+	}
+	e := Unexpected(err)
+	e.Code = "bad-home"
+	return e
+}
+
+func wsError(we *workspace.Error, code string, exit int) *Error {
+	what := we.File + ": " + strings.TrimSuffix(we.Msg, ".")
+	if we.Line > 0 {
+		what = we.File + " line " + strconv.Itoa(we.Line) + ": " + we.Msg
+	}
+	if we.Code != "" {
+		what += " (" + we.Code + ")"
+	}
+	return &Error{Code: code, Exit: exit, What: what, Next: we.Next}
+}
+
+// whose names who takes the error's next step when it is not the word's usual one.
+func (e *Error) whose(who string) *Error {
+	e.Who = who
+	return e
 }
 
 func readFile(root, rel string) ([]byte, bool, error) {
@@ -189,21 +247,32 @@ func readFile(root, rel string) ([]byte, bool, error) {
 		return nil, false, nil
 	}
 	if err != nil {
-		return nil, false, errorf(ExitRuntime, "check the file's permissions, then run the command again", "%s cannot be read: %v", rel, err)
+		return nil, false, errorf("read-failed", ExitRuntime, "check the file's permissions, then run the command again", "%s cannot be read: %v", rel, err)
 	}
 	return b, true, nil
 }
 
 // Build works out the plan for a request. It fetches each pack (the network), and writes nothing in the project.
-func Build(req Request) (*Plan, error) {
+// Its error is an *Error; once bonsai.yaml was read, the error names the workspace (Error.Workspace).
+func Build(req Request) (_ *Plan, err error) {
 	co, err := workspace.Find(req.Dir)
 	if err != nil {
-		return nil, wsError(err, ExitState)
+		return nil, findError(err)
 	}
 	p := &Plan{Command: req.Command, Root: co.Root, Main: co.Main, Home: req.Home, EmptyLocal: -1, AllowExec: req.AllowExec}
+	defer func() {
+		if err == nil {
+			return
+		}
+		e := Unexpected(err)
+		if p.Config != nil && e.Workspace == nil {
+			e.Workspace = p.WorkspaceRef()
+		}
+		err = e
+	}()
 	for _, old := range []string{".bonsai.yaml", ".bonsai-lock.yaml"} {
 		if _, err := os.Stat(filepath.Join(co.Root, old)); err == nil {
-			return nil, errorf(ExitState, "leave this project on Bonsai 0.4.3 for now: moving a 0.4.3 workspace to the new Bonsai comes later",
+			return nil, errorf("old-workspace", ExitState, "leave this project on Bonsai 0.4.3 for now: moving a 0.4.3 workspace to the new Bonsai comes later",
 				"this is a Bonsai 0.4.3 workspace (%s), which this Bonsai does not read or change", old)
 		}
 	}
@@ -219,18 +288,18 @@ func Build(req Request) (*Plan, error) {
 	switch {
 	case hasConfig:
 		if cfg, err = workspace.ReadConfigFull(rawConfig); err != nil {
-			return nil, wsError(err, ExitInput)
+			return nil, fileError(err, "", "bad-config", ExitInput)
 		}
 		if req.Init != nil && !sameValues(cfg, req.Init) {
-			return nil, errorf(ExitInput, "edit bonsai.yaml for the change, then run bonsai update; or run bonsai init without --name, --source, --ref, --path and --never-edit",
+			return nil, errorf("values-differ", ExitInput, "edit bonsai.yaml for the change, then run bonsai update; or run bonsai init without --name, --source, --ref, --path and --never-edit",
 				"bonsai.yaml is already here and says otherwise than init's values")
 		}
 	case req.Command == "update":
-		return nil, errorf(ExitState, "link the project first: bonsai init --name <name> --source <pack repository> --ref <tag or commit>",
+		return nil, errorf("not-linked", ExitState, "link the project first: bonsai init --name <name> --source <pack repository> --ref <tag or commit>",
 			"this checkout has no bonsai.yaml, so it is not linked to Bonsai")
 	default:
 		if missing := missingValues(req.Init); len(missing) > 0 {
-			return nil, errorf(ExitInput, "run bonsai init --name <name> --source <pack repository> --ref <tag or commit> (bonsai init --help shows every flag)",
+			return nil, errorf("missing-value", ExitInput, "run bonsai init --name <name> --source <pack repository> --ref <tag or commit> (bonsai init --help shows every flag)",
 				"init needs %s to write bonsai.yaml", andList(missing))
 		}
 		if err := checkValues(req.Init); err != nil {
@@ -247,11 +316,11 @@ func Build(req Request) (*Plan, error) {
 		}
 		id, err := NewID()
 		if err != nil {
-			return nil, errorf(ExitRuntime, "run the command again", "no random id: %v", err)
+			return nil, errorf("unexpected", ExitRuntime, "run the command again", "no random id: %v", err)
 		}
 		rawConfig = ConfigYAML(id, *req.Init, pd.Manifest.ID)
 		if cfg, err = workspace.ReadConfigFull(rawConfig); err != nil {
-			return nil, wsError(err, ExitInput)
+			return nil, fileError(err, "", "bad-value", ExitInput)
 		}
 		pd.Ref = cfg.Packs[0]
 		newPacks = []*PackData{pd}
@@ -261,16 +330,16 @@ func Build(req Request) (*Plan, error) {
 	origConfig := rawConfig
 	if req.NewID {
 		if co.Root != co.Main {
-			return nil, errorf(ExitState, "run bonsai init --new-id in the main checkout, "+filepath.ToSlash(co.Main),
-				"init --new-id gives a copied project its own id; a worktree shares its main checkout's id")
+			return nil, errorf("not-main-checkout", ExitState, "run bonsai init --new-id in the main checkout, "+filepath.ToSlash(co.Main),
+				"init --new-id gives a copied project its own id; a worktree shares its main checkout's id").whose("person")
 		}
 		if hasConfig {
 			id, err := NewID()
 			if err != nil {
-				return nil, errorf(ExitRuntime, "run the command again", "no random id: %v", err)
+				return nil, errorf("unexpected", ExitRuntime, "run the command again", "no random id: %v", err)
 			}
 			if rawConfig, err = replaceID(rawConfig, cfg, id); err != nil {
-				return nil, errorf(ExitInput, "put the id on a line of its own (id: ws-...), then run the command again", "%v", err)
+				return nil, errorf("bad-config", ExitInput, "put the id on a line of its own (id: ws-...), then run the command again", "%v", err)
 			}
 			p.OldID = cfg.ID
 			cfg.ID = id
@@ -282,7 +351,7 @@ func Build(req Request) (*Plan, error) {
 	var lock *workspace.Lock
 	if _, has, _ := readFile(co.Root, workspace.LockFile); has {
 		if lock, err = workspace.LoadLock(co.Root); err != nil {
-			return nil, wsError(err, ExitState)
+			return nil, fileError(err, "", "bad-lock", ExitState)
 		}
 	}
 	// bonsai.yaml with no lock: the lock records which hook lines a person consented to, so update cannot tell a
@@ -291,7 +360,7 @@ func Build(req Request) (*Plan, error) {
 	// link (consent.go, rule 7); update refuses. (Part 5's verifier: deleting the lock let update --yes write a
 	// changed hook line.)
 	if lock == nil && req.Command == "update" {
-		return nil, errorf(ExitState, "restore the lock from git (git checkout -- "+workspace.LockFile+"); or, to link the project "+
+		return nil, errorf("no-lock", ExitState, "restore the lock from git (git checkout -- "+workspace.LockFile+"); or, to link the project "+
 			"again from bonsai.yaml, run bonsai init, which previews every file and settings line first",
 			"bonsai.yaml is here but %s is not, so update cannot tell which hook lines were already consented to", workspace.LockFile)
 	}
@@ -306,8 +375,8 @@ func Build(req Request) (*Plan, error) {
 	lockedPack := map[string]workspace.LockedPack{}
 	for _, lp := range lock.Packs {
 		if !inConfig[lp.ID] {
-			return nil, errorf(ExitState, "put the pack back in bonsai.yaml for now; taking a pack out of a project comes with step 5.1",
-				"the lock holds the pack %s, which bonsai.yaml no longer lists", lp.ID)
+			return nil, errorf("not-built", ExitState, "put the pack back in bonsai.yaml for now; taking a pack out of a project comes with step 5.1",
+				"the lock holds the pack %s, which bonsai.yaml no longer lists", lp.ID).whose("person")
 		}
 		lockedPack[lp.ID] = lp
 	}
@@ -366,7 +435,7 @@ func Build(req Request) (*Plan, error) {
 		for _, fe := range pd.Manifest.Files {
 			l := strings.ToLower(fe.Path)
 			if other, ok := folded[l]; ok {
-				return nil, errorf(ExitInput, "take the path out of one of the two packs; overriding a file by path waits for 1.x",
+				return nil, errorf("packs-overlap", ExitInput, "take the path out of one of the two packs; overriding a file by path waits for 1.x",
 					"two packs write %s (%s and %s)", fe.Path, other, pd.Ref.ID)
 			}
 			folded[l] = pd.Ref.ID
@@ -676,7 +745,7 @@ func Build(req Request) (*Plan, error) {
 	}
 	if write {
 		if sf.write, err = settingsBytes(); err != nil {
-			return nil, errorf(ExitRuntime, "run the command again", "%s cannot be written: %v", SettingsFile, err)
+			return nil, errorf("unexpected", ExitRuntime, "run the command again", "%s cannot be written: %v", SettingsFile, err)
 		}
 		p.Settings = changes
 	}
@@ -719,7 +788,7 @@ func Build(req Request) (*Plan, error) {
 	// The lock, written last, and only when it changes (written_by aside).
 	p.lock = newLock
 	if p.lockBytes, err = newLock.Encode(); err != nil {
-		return nil, errorf(ExitRuntime, "report this to Bonsai's maintainers", "the new lock cannot be written: %v", err)
+		return nil, errorf("unexpected", ExitRuntime, "report this to Bonsai's maintainers", "the new lock cannot be written: %v", err)
 	}
 	oldRaw, hadLock, err := readFile(co.Root, workspace.LockFile)
 	if err != nil {
@@ -771,16 +840,16 @@ func (p *Plan) resolve(req Request, newLock *workspace.Lock, claimed, lnew, cons
 			path = filepath.ToSlash(path)
 			f, ok := byPath[path]
 			if !ok || (f.Result != Conflict && f.Result != Changed) {
-				return errorf(ExitInput, "name a file this update reports as a conflict or as edited: "+conflicts(),
+				return errorf("bad-value", ExitInput, "name a file this update reports as a conflict or as edited: "+conflicts(),
 					"%s %s: that file is no conflict and no edited file of this update", list.flag, path)
 			}
 			if seen[path] {
-				return errorf(ExitInput, "name each file once, with --keep or with --adopt", "%s is named twice", path)
+				return errorf("bad-value", ExitInput, "name each file once, with --keep or with --adopt", "%s is named twice", path)
 			}
 			seen[path] = true
 			switch {
 			case list.flag == "--keep" && (f.Kind == "block" || f.Kind == "keys"):
-				return errorf(ExitInput, "use --adopt "+path+" to take Bonsai's part (your copy is saved in the Bonsai home), or put Bonsai's part back by hand",
+				return errorf("bad-value", ExitInput, "use --adopt "+path+" to take Bonsai's part (your copy is saved in the Bonsai home), or put Bonsai's part back by hand",
 					"--keep %s: Bonsai's own part of that file cannot be kept edited", path)
 			case list.flag == "--keep":
 				lf := newLock.Files[path]
@@ -800,7 +869,7 @@ func (p *Plan) resolve(req Request, newLock *workspace.Lock, claimed, lnew, cons
 				case "keys":
 					b, err := settingsBytes()
 					if err != nil {
-						return errorf(ExitRuntime, "run the command again", "%s cannot be written: %v", SettingsFile, err)
+						return errorf("unexpected", ExitRuntime, "run the command again", "%s cannot be written: %v", SettingsFile, err)
 					}
 					f.write = b
 					p.Settings = lineChanges(claimed, lnew, disk, consented)
@@ -868,18 +937,18 @@ func checkValues(v *InitValues) error {
 	for _, s := range append([]string{v.Name, v.Source, v.Path, v.Ref}, v.NeverEdit...) {
 		for _, r := range s {
 			if r < 0x20 || r == 0x7f {
-				return errorf(ExitInput, next, "init's values may not hold a control character")
+				return errorf("bad-value", ExitInput, next, "init's values may not hold a control character")
 			}
 		}
 	}
 	if strings.HasPrefix(v.Source, "-") || strings.HasPrefix(v.Ref, "-") {
-		return errorf(ExitInput, next, "--source and --ref may not start with -, which git would read as an option")
+		return errorf("bad-value", ExitInput, next, "--source and --ref may not start with -, which git would read as an option")
 	}
 	// The rest (the name's form, the path, each never_edit path) bonsai.yaml's own reader checks, on the bonsai.yaml
 	// init would write, before it is written.
 	probe := ConfigYAML("ws-aaaaaaaaaaaaaaaaaaaaaaaaaa", *v, "probe")
 	if _, err := workspace.ReadConfigFull(probe); err != nil {
-		return wsError(err, ExitInput).(*Error).withNext(next)
+		return fileError(err, "", "bad-value", ExitInput).(*Error).withNext(next)
 	}
 	return nil
 }

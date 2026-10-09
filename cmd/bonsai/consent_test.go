@@ -274,21 +274,21 @@ func TestConsentCommand(t *testing.T) {
 				}
 				json := strings.HasPrefix(out, "{")
 				if json {
-					doc, err := schema.Decode([]byte(out))
-					if err != nil {
-						t.Fatalf("not JSON: %v\n%s", err, out)
-					}
-					o := doc.(schema.Object)
+					o := fits(t, out, "changes")
 					if got := jsonItems(t, o); got != cc.items {
 						t.Errorf("runs_code\n  %s\nwant\n  %s", got, cc.items)
 					}
-					if n, _ := o.Get("exit"); schema.Show(n) != strconv.Itoa(exit) {
-						t.Errorf("JSON exit %s", schema.Show(n))
+					e, _ := o.Get("error")
+					eo, refused := e.(schema.Object)
+					if refused != (exit != 0) {
+						t.Errorf("JSON error %s with exit %d", schema.Show(e), exit)
 					}
 					if next != "" {
-						e, _ := o.Get("error")
-						if eo, ok := e.(schema.Object); !ok || !strings.HasSuffix(eo.String("next"), next) {
-							t.Errorf("JSON next, want it to end %q: %s", next, schema.Show(e))
+						word := map[string]string{" --yes": "needs-yes", " --allow-exec --yes": "needs-allow-exec"}[next]
+						n, _ := eo.Get("next")
+						if !refused || !strings.HasSuffix(n.(schema.Object).String("do"), next) || whoOf(eo) != "person" ||
+							(eo.String("code") != word && !(word == "needs-allow-exec" && eo.String("code") == "needs-yes")) {
+							t.Errorf("JSON error, want %s, its next step ending %q, a person's: %s", word, next, schema.Show(e))
 						}
 					}
 					return

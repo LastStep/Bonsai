@@ -324,35 +324,35 @@ func readSettings(root string) (*settingsDoc, error) {
 	}
 	next := "fix .claude/settings.json (Claude Code reads it too), then run the command again"
 	if err != nil {
-		return nil, errorf(ExitRuntime, "check the file's permissions, then run the command again",
+		return nil, errorf("read-failed", ExitRuntime, "check the file's permissions, then run the command again",
 			"%s cannot be read: %v", SettingsFile, err)
 	}
 	v, err := schema.Decode(bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf")))
 	if err != nil {
-		return nil, errorf(ExitInput, next, "%s is not JSON Bonsai reads: %v", SettingsFile, err)
+		return nil, errorf("bad-file", ExitInput, next, "%s is not JSON Bonsai reads: %v", SettingsFile, err)
 	}
 	o, ok := v.(schema.Object)
 	if !ok {
-		return nil, errorf(ExitInput, next, "%s is not a JSON object", SettingsFile)
+		return nil, errorf("bad-file", ExitInput, next, "%s is not a JSON object", SettingsFile)
 	}
 	for _, k := range []string{"permissions", "hooks", "extraKnownMarketplaces", "enabledPlugins"} {
 		if x, ok := o.Get(k); ok {
 			if _, isObj := x.(schema.Object); !isObj {
-				return nil, errorf(ExitInput, next, "%s: %s is %s, not an object", SettingsFile, k, schema.Show(x))
+				return nil, errorf("bad-file", ExitInput, next, "%s: %s is %s, not an object", SettingsFile, k, schema.Show(x))
 			}
 		}
 	}
 	if perms, ok := o.Get("permissions"); ok {
 		if d, ok := perms.(schema.Object).Get("deny"); ok {
 			if _, isList := d.([]any); !isList {
-				return nil, errorf(ExitInput, next, "%s: permissions.deny is not a list", SettingsFile)
+				return nil, errorf("bad-file", ExitInput, next, "%s: permissions.deny is not a list", SettingsFile)
 			}
 		}
 	}
 	if hooks, ok := o.Get("hooks"); ok {
 		for _, m := range hooks.(schema.Object) {
 			if _, isList := m.Value.([]any); !isList {
-				return nil, errorf(ExitInput, next, "%s: hooks.%s is not a list", SettingsFile, m.Key)
+				return nil, errorf("bad-file", ExitInput, next, "%s: hooks.%s is not a list", SettingsFile, m.Key)
 			}
 		}
 	}

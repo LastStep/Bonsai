@@ -90,7 +90,7 @@ func git(gitDir string, stdin io.Reader, args ...string) ([]byte, error) {
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
 		if errors.Is(err, exec.ErrNotFound) {
-			return nil, errorf(ExitRuntime, "install git, or put it on the PATH, then run the command again",
+			return nil, errorf("git-missing", ExitRuntime, "install git, or put it on the PATH, then run the command again",
 				"git is not on the PATH: Bonsai fetches packs with the machine's own git")
 		}
 		return stdout.Bytes(), &gitError{args: args, stderr: firstLine(stderr.String()), err: err}
@@ -134,17 +134,17 @@ func (c cache) fetch(source, ref string) (string, error) {
 	dir := c.dir(source)
 	if _, err := os.Stat(filepath.Join(dir, "HEAD")); err != nil {
 		if err := os.MkdirAll(filepath.Dir(dir), 0o755); err != nil {
-			return "", errorf(ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run again",
+			return "", errorf("bad-home", ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run again",
 				"the pack cache %s cannot be made: %v", filepath.ToSlash(filepath.Dir(dir)), err)
 		}
 		cmd := exec.Command("git", "init", "-q", "--bare", "--", dir)
 		cmd.Env = gitEnv()
 		if out, err := cmd.CombinedOutput(); err != nil {
 			if errors.Is(err, exec.ErrNotFound) {
-				return "", errorf(ExitRuntime, "install git, or put it on the PATH, then run the command again",
+				return "", errorf("git-missing", ExitRuntime, "install git, or put it on the PATH, then run the command again",
 					"git is not on the PATH: Bonsai fetches packs with the machine's own git")
 			}
-			return "", errorf(ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run again",
+			return "", errorf("bad-home", ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run again",
 				"the pack cache %s cannot be made: %s", filepath.ToSlash(dir), firstLine(string(out)))
 		}
 	}
@@ -158,9 +158,9 @@ func (c cache) fetch(source, ref string) (string, error) {
 					"+refs/heads/*:refs/bonsai/heads/*", "+refs/tags/*:refs/bonsai/tags/*")
 				if !c.has(source, ref) {
 					if err2 != nil {
-						return "", errorf(ExitRuntime, next, "fetching %s from %s failed: %v", ref, source, err2)
+						return "", errorf("fetch-failed", ExitRuntime, next, "fetching %s from %s failed: %v", ref, source, err2)
 					}
-					return "", errorf(ExitInput, next, "the commit %s is not in %s", ref, source)
+					return "", errorf("ref-not-found", ExitInput, next, "the commit %s is not in %s", ref, source)
 				}
 			}
 		}
@@ -169,14 +169,14 @@ func (c cache) fetch(source, ref string) (string, error) {
 	if _, err := git(dir, nil, "fetch", "-q", "--no-tags", "--", source, ref); err != nil {
 		var ge *gitError
 		if errors.As(err, &ge) && strings.Contains(ge.stderr, "couldn't find remote ref") {
-			return "", errorf(ExitInput, next, "the ref %s is not in %s", ref, source)
+			return "", errorf("ref-not-found", ExitInput, next, "the ref %s is not in %s", ref, source)
 		}
-		return "", errorf(ExitRuntime, next, "fetching %s from %s failed: %v", ref, source, err)
+		return "", errorf("fetch-failed", ExitRuntime, next, "fetching %s from %s failed: %v", ref, source, err)
 	}
 	out, err := git(dir, nil, "rev-parse", "--verify", "-q", "FETCH_HEAD^{commit}")
 	commit := strings.TrimSpace(string(out))
 	if err != nil || !commitPattern.MatchString(commit) {
-		return "", errorf(ExitInput, next, "the ref %s of %s is not a commit", ref, source)
+		return "", errorf("ref-not-found", ExitInput, next, "the ref %s of %s is not a commit", ref, source)
 	}
 	return commit, c.keep(dir, commit)
 }
@@ -184,7 +184,7 @@ func (c cache) fetch(source, ref string) (string, error) {
 // keep holds a fetched commit with a ref, so git never prunes it.
 func (c cache) keep(dir, commit string) error {
 	if _, err := git(dir, nil, "update-ref", "refs/bonsai/commits/"+commit, commit); err != nil {
-		return errorf(ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run again",
+		return errorf("bad-home", ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run again",
 			"the pack cache cannot keep %s: %v", commit, err)
 	}
 	return nil
@@ -201,7 +201,7 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 	nextPack := "check the pack's source, path and ref in bonsai.yaml; a pack's maker fixes the pack itself"
 	out, err := git(dir, nil, "ls-tree", "-r", "-z", "--full-tree", commit)
 	if err != nil {
-		return nil, errorf(ExitRuntime, "run the command again; if it fails again, delete the pack cache ("+
+		return nil, errorf("read-failed", ExitRuntime, "run the command again; if it fails again, delete the pack cache ("+
 			filepath.ToSlash(dir)+") and run it again", "reading %s failed: %v", where, err)
 	}
 	prefix := ""
@@ -229,7 +229,7 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 	}
 	blobs, err := catBlobs(dir, shas)
 	if err != nil {
-		return nil, errorf(ExitRuntime, "run the command again", "reading %s failed: %v", where, err)
+		return nil, errorf("read-failed", ExitRuntime, "run the command again", "reading %s failed: %v", where, err)
 	}
 	read := func(p string) ([]byte, error) {
 		e, ok := entries[p]
@@ -247,21 +247,21 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 		if ref.Path != "" {
 			where += ", folder " + ref.Path
 		}
-		return nil, errorf(ExitInput, nextPack, "%s has no %s, so it is not a Bonsai pack", where, workspace.PackFile)
+		return nil, errorf("bad-pack", ExitInput, nextPack, "%s has no %s, so it is not a Bonsai pack", where, workspace.PackFile)
 	}
 	manifest, err := workspace.ReadPack(raw)
 	if err != nil {
-		return nil, errorf(ExitInput, nextPack, "the pack %s (%s): %v", ref.ID, where, err)
+		return nil, errorf("bad-pack", ExitInput, nextPack, "the pack %s (%s): %v", ref.ID, where, err)
 	}
 	if ref.ID != "" && manifest.ID != ref.ID {
-		return nil, errorf(ExitInput, "make bonsai.yaml's id for this pack "+manifest.ID+", or point it at the pack it means",
+		return nil, errorf("bad-pack", ExitInput, "make bonsai.yaml's id for this pack "+manifest.ID+", or point it at the pack it means",
 			"bonsai.yaml names the pack %s, but %s says its id is %s", ref.ID, where, manifest.ID)
 	}
 	pd := &PackData{Ref: ref, Commit: commit, Manifest: manifest, Files: map[string][]byte{}}
 	for i, fe := range manifest.Files {
 		b, err := read("bonsai/files/" + fe.From)
 		if err != nil {
-			return nil, errorf(ExitInput, nextPack, "the pack %s (%s): files item %d comes from bonsai/files/%s, which is %s",
+			return nil, errorf("bad-pack", ExitInput, nextPack, "the pack %s (%s): files item %d comes from bonsai/files/%s, which is %s",
 				ref.ID, where, i+1, fe.From, missingOr(err))
 		}
 		pd.Files[fe.Path] = b
@@ -269,7 +269,7 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 	if manifest.Block != "" {
 		b, err := read("bonsai/" + manifest.Block)
 		if err != nil {
-			return nil, errorf(ExitInput, nextPack, "the pack %s (%s): its block is bonsai/%s, which is %s",
+			return nil, errorf("bad-pack", ExitInput, nextPack, "the pack %s (%s): its block is bonsai/%s, which is %s",
 				ref.ID, where, manifest.Block, missingOr(err))
 		}
 		pd.Block = blockText(b)

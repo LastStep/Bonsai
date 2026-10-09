@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -30,7 +31,6 @@ var notBuiltYet = map[string]string{
 	"active_task":    "null", // contract §13: step 5.1
 	"needs":          "[]",   // packs and the Claude Code floor: part 3 and step 5.1
 	"checks":         "null", // --full: step 5.1
-	"error":          "null", // the error object (formats set 4), filled on exit 3: step 5.1.4b
 }
 
 const cfg = `format: bonsai.workspace/1   # comments are fine
@@ -116,6 +116,20 @@ func checkShape(t *testing.T, doc schema.Object, failed bool) {
 	for _, m := range back.(schema.Object) {
 		shown := schema.Show(m.Value)
 		switch want, listed := notBuiltYet[m.Key]; {
+		case m.Key == "error" && failed:
+			// The error object (step 5.1.4b): a known word, a sentence, and a next step with who takes it.
+			eo, ok := m.Value.(schema.Object)
+			if !ok {
+				t.Errorf("exit 3: error is %s, want the error object", shown)
+				break
+			}
+			if _, known := format.ErrorWord(eo.String("code")); !known || eo.String("message") == "" {
+				t.Errorf("exit 3: error %s has a word not in format.ErrorWords, or no message", shown)
+			}
+		case m.Key == "error":
+			if m.Value != nil {
+				t.Errorf("exit 0: error is %s, want null (nothing refused)", shown)
+			}
 		case failed && m.Key != "format" && m.Key != "bonsai" && m.Key != "problems":
 			if m.Value != nil {
 				t.Errorf("exit 3: %s is %s, want null", m.Key, shown)
@@ -205,13 +219,13 @@ func TestStatusInAWorktree(t *testing.T) {
 // Exit 3: format, bonsai and problems filled, every other field null, one problem naming its next step.
 func TestStatusExit3(t *testing.T) {
 	cases := []struct {
-		name, yaml, want string
+		name, yaml, want, code string
 	}{
-		{"no bonsai.yaml", "", "bonsai.yaml: is not in this checkout"},
-		{"a refused bonsai.yaml", "format: bonsai.workspace/1\nid: 0755\n", "bonsai.yaml line 2: the plain value \"0755\""},
-		{"a newer bonsai.yaml", "format: bonsai.workspace/2\n", "format too new"},
-		{"a format-0 bonsai.yaml", "id: x\n", "no format: line first"},
-		{"format: and a tab", "format:\tbonsai.workspace/1\nid: ws-7kq2m4xw5r3t6y2u7p4a5c3e2b\nname: x\n", "bonsai.yaml line 1: a tab between the key's colon and its value"},
+		{"no bonsai.yaml", "", "bonsai.yaml: is not in this checkout", "not-linked"},
+		{"a refused bonsai.yaml", "format: bonsai.workspace/1\nid: 0755\n", "bonsai.yaml line 2: the plain value \"0755\"", "bad-config"},
+		{"a newer bonsai.yaml", "format: bonsai.workspace/2\n", "format too new", "bad-config"},
+		{"a format-0 bonsai.yaml", "id: x\n", "no format: line first", "bad-config"},
+		{"format: and a tab", "format:\tbonsai.workspace/1\nid: ws-7kq2m4xw5r3t6y2u7p4a5c3e2b\nname: x\n", "bonsai.yaml line 1: a tab between the key's colon and its value", "bad-config"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -230,6 +244,9 @@ func TestStatusExit3(t *testing.T) {
 			if text := Text(doc); !strings.HasPrefix(text, "bonsai status: cannot read this workspace.\n  ") {
 				t.Errorf("text %q", text)
 			}
+			if e, _ := doc.Get("error"); e.(schema.Object).String("code") != c.code {
+				t.Errorf("error %s, want the word %s", schema.Show(e), c.code)
+			}
 		})
 	}
 	t.Run("outside git", func(t *testing.T) {
@@ -243,6 +260,11 @@ func TestStatusExit3(t *testing.T) {
 		checkShape(t, doc, true)
 		if p, _ := doc.Get("problems"); !strings.Contains(schema.Show(p), "is not inside a git checkout") {
 			t.Errorf("problems %s", schema.Show(p))
+		}
+		e, _ := doc.Get("error")
+		next, _ := e.(schema.Object).Get("next")
+		if e.(schema.Object).String("code") != "not-a-checkout" || next.(schema.Object).String("who") != "agent" {
+			t.Errorf("error %s", schema.Show(e))
 		}
 	})
 }

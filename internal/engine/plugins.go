@@ -199,6 +199,7 @@ type PluginResult struct {
 	Result  string // installed, waiting, failed or skipped
 	Message string
 	Next    string
+	Who     string // who takes Next: agent or person
 }
 
 // PluginConsent is what the install step needs to keep a plugin that carries code off this machine until a person
@@ -251,7 +252,7 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 				r.Result = "waiting"
 				r.Message = "the plugin carries code Claude Code runs on its own (" + codeParts(parts) + "), so Bonsai installs it " +
 					"on this machine only with --allow-exec"
-				r.Next = "if you consent to that code running on this machine, run: " + again
+				r.Next, r.Who = "if you consent to that code running on this machine, run: "+again, "person"
 			}
 			r.Message, r.Next = ascii(r.Message), ascii(r.Next)
 			out = append(out, r)
@@ -262,9 +263,9 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 		switch {
 		case errors.Is(err, ErrNoClaude):
 			r.Result, r.Message = "skipped", "Claude Code is not on the PATH, so the plugin was not installed on this machine"
-			r.Next = "where sessions run, install Claude Code, then run bonsai update again"
+			r.Next, r.Who = "where sessions run, install Claude Code, then run bonsai update again", "person"
 		case err != nil:
-			r.Result, r.Message, r.Next = "failed", err.Error(), "run: "+cmd
+			r.Result, r.Message, r.Next, r.Who = "failed", err.Error(), "run: "+cmd, "agent"
 		case res.Outcome == "ok":
 			r.Result, r.Message = "installed", "at "+pluginVersion(lp.Commit)
 			if after, _, _ := readFile(root, SettingsFile); !bytes.Equal(before, after) {
@@ -276,8 +277,9 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 				"here does that, once the folder is trusted"
 			r.Next = "open Claude Code in this checkout (accept its trust question if it asks), leave it, then run bonsai update " +
 				"again: it installs the plugin at " + pluginVersion(lp.Commit) + ", and sessions after that load it"
+			r.Who = "person"
 		default:
-			r.Result, r.Message, r.Next = "failed", strings.TrimSpace(res.Message), "run: "+cmd
+			r.Result, r.Message, r.Next, r.Who = "failed", strings.TrimSpace(res.Message), "run: "+cmd, "agent"
 		}
 		r.Message, r.Next = ascii(r.Message), ascii(r.Next)
 		out = append(out, r)
@@ -298,10 +300,11 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 	if err != nil {
 		w := Finding{Code: "plugin", File: SettingsFile,
 			Message: "this machine's plugins were not compared with the lock: " + err.Error(),
-			Next:    "run claude plugin list --json in this checkout to see why, then check again"}
+			Next:    "run claude plugin list --json in this checkout to see why, then check again", Who: "agent"}
 		if errors.Is(err, ErrNoClaude) {
 			w.Message = "Claude Code is not on the PATH, so this machine's plugins were not compared with the lock"
 			w.Next = "where sessions run, install Claude Code and check again; where none run (CI), nothing is needed"
+			w.Who = "person"
 		}
 		r.Warnings = append(r.Warnings, w)
 		return
@@ -331,7 +334,7 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 			if at == "" {
 				at = "an unknown commit"
 			}
-			r.find("plugin", SettingsFile, "Claude Code turns on the plugin "+p.ID+" at "+at+" in this checkout beside the lock's "+
+			r.find("plugin", SettingsFile, "person", "Claude Code turns on the plugin "+p.ID+" at "+at+" in this checkout beside the lock's "+
 				want+" ("+lp.ID+" at "+version+"), so sessions here may load another commit of "+lp.ID,
 				"find the setting that turns "+p.ID+" on (a .claude/settings.local.json here or in the main checkout, or your own "+
 					"settings) and take it out: in the main checkout, claude plugin uninstall "+p.ID+" --scope local")
@@ -341,7 +344,7 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 				Message: "Claude Code reports the plugin " + want + " (" + lp.ID + " at " + version + ") not installed for this checkout",
 				Next: "run bonsai update (with --allow-exec when the plugin carries code: its update says so): it installs it " +
 					"once Claude Code has registered this checkout's marketplace, which a Claude Code session here does (accept " +
-					"its trust question if it asks)"})
+					"its trust question if it asks)", Who: "person"})
 		}
 	}
 }
@@ -408,7 +411,7 @@ func (r *CheckResult) checkLocalPlugins() {
 		if err != nil || !ok {
 			r.Warnings = append(r.Warnings, Finding{Code: "plugin", File: LocalSettingsFile,
 				Message: where + " is not a JSON object Bonsai reads, so the plugins it turns on were not checked",
-				Next:    "fix it: Claude Code reads it too"})
+				Next:    "fix it: Claude Code reads it too", Who: "person"})
 			continue
 		}
 		ep, _ := o.Get("enabledPlugins")
@@ -419,7 +422,7 @@ func (r *CheckResult) checkLocalPlugins() {
 				continue
 			}
 			if commit, ok := locked[sub[1]]; ok {
-				r.find("plugin", LocalSettingsFile, where+" turns on "+m.Key+", not the lock's "+PluginID(sub[1], market)+" ("+sub[1]+
+				r.find("plugin", LocalSettingsFile, "person", where+" turns on "+m.Key+", not the lock's "+PluginID(sub[1], market)+" ("+sub[1]+
 					" at "+pluginVersion(commit)+"), so sessions here may load another commit of "+sub[1],
 					"take the line out of that file (in the main checkout, claude plugin uninstall "+m.Key+" --scope local does it): "+
 						"Bonsai installs plugins at project scope, in each checkout's own "+SettingsFile)

@@ -311,14 +311,14 @@ func checkRuns(packs []*PackData, targets map[string]target) error {
 			listed := map[string]bool{}
 			for _, r := range h.Runs {
 				if _, ok := targets[r]; !ok {
-					return errorf(ExitInput, next(id), "the pack %s: hooks item %d's runs names %s, which no linked pack writes "+
+					return errorf("bad-pack", ExitInput, next(id), "the pack %s: hooks item %d's runs names %s, which no linked pack writes "+
 						"(runs lists pack files by their path in the project)", id, i+1, r)
 				}
 				listed[r] = true
 			}
 			for _, path := range paths {
 				if !listed[path] && namesPath(h.Command, path) {
-					return errorf(ExitInput, next(id), "the pack %s: hooks item %d's command (%s) names %s, a file the pack %s "+
+					return errorf("bad-pack", ExitInput, next(id), "the pack %s: hooks item %d's command (%s) names %s, a file the pack %s "+
 						"writes, but its runs does not list it, so a change to that file would run unseen", id, i+1, h.Command, path,
 						targets[path].pack)
 				}

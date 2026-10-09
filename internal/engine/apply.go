@@ -24,14 +24,17 @@ func AdoptedDir(home, id, fingerprint string) string {
 }
 
 // Apply writes a plan. It refuses a plan with conflicts, or one that runs code without the request's --allow-exec
-// (consent.go): the caller checks both first. Refused, it writes nothing.
+// (consent.go): the caller checks both first. Refused, or stopped before the renames (a copy that cannot be saved in
+// the home, a file that cannot be staged), it writes nothing in the project. Stopped once the renames have begun, its
+// error's word is partly-written (the changes output's result failed): some files are written and the lock is not,
+// so the same command again finishes the rest.
 func Apply(p *Plan) error {
 	if len(p.Conflicts) > 0 {
-		return errorf(ExitConflict, "run the command without --yes to see the conflicts and the commands that settle them",
+		return errorf("conflicts", ExitConflict, "run the command without --yes to see the conflicts and the commands that settle them",
 			"this plan has conflicts and cannot be applied: nothing was written")
 	}
 	if p.NeedsExec() && !p.AllowExec {
-		return errorf(ExitState, "run the command without --yes to see what runs code; to write it, add --allow-exec as well as --yes",
+		return errorf("needs-allow-exec", ExitState, "run the command without --yes to see what runs code; to write it, add --allow-exec as well as --yes",
 			"this plan writes code that runs on this machine, and --allow-exec was not given: nothing was written")
 	}
 	// The project's copies first.
@@ -42,7 +45,7 @@ func Apply(p *Plan) error {
 		dir := AdoptedDir(p.Home, p.Config.ID, workspace.HashLF(f.old))
 		dest := filepath.Join(dir, filepath.FromSlash(f.Path))
 		if err := workspace.WriteFileAtomic(dest, f.old); err != nil {
-			return errorf(ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run the command again; nothing in the project was written",
+			return errorf("bad-home", ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run the command again; nothing in the project was written",
 				"your copy of %s cannot be saved in the Bonsai home: %v", f.Path, err)
 		}
 		f.Saved = filepath.ToSlash(dest)
@@ -70,7 +73,7 @@ func Apply(p *Plan) error {
 		tmp, err := workspace.StageFile(target, f.write)
 		if err != nil {
 			cleanup()
-			return errorf(ExitRuntime, "check the project's folders can be written, then run the command again; nothing was written",
+			return errorf("write-failed", ExitRuntime, "check the project's folders can be written, then run the command again; nothing was written",
 				"%s cannot be staged: %v", f.Path, err)
 		}
 		stage = append(stage, staged{tmp, target})
@@ -83,13 +86,13 @@ func Apply(p *Plan) error {
 			for _, rest := range stage[i:] {
 				_ = os.Remove(rest.tmp)
 			}
-			return errorf(ExitRuntime, partly, "%s cannot be written: %v", filepath.ToSlash(s.path), err)
+			return errorf("partly-written", ExitRuntime, partly, "%s cannot be written: %v", filepath.ToSlash(s.path), err)
 		}
 	}
 	for _, f := range p.Files {
 		if f.remove {
 			if err := workspace.RemoveFile(filepath.Join(p.Root, filepath.FromSlash(f.Path))); err != nil {
-				return errorf(ExitRuntime, partly, "%s cannot be removed: %v", f.Path, err)
+				return errorf("partly-written", ExitRuntime, partly, "%s cannot be removed: %v", f.Path, err)
 			}
 		}
 	}
@@ -97,11 +100,11 @@ func Apply(p *Plan) error {
 		local := filepath.Join(p.Main, filepath.FromSlash(LocalDir))
 		entries, err := os.ReadDir(local)
 		if err != nil {
-			return errorf(ExitRuntime, partly, "%s cannot be read: %v", LocalDir, err)
+			return errorf("partly-written", ExitRuntime, partly, "%s cannot be read: %v", LocalDir, err)
 		}
 		for _, e := range entries {
 			if err := os.RemoveAll(filepath.Join(local, e.Name())); err != nil {
-				return errorf(ExitRuntime, partly, "%s cannot be emptied: %v", LocalDir, err)
+				return errorf("partly-written", ExitRuntime, partly, "%s cannot be emptied: %v", LocalDir, err)
 			}
 		}
 	}
@@ -109,7 +112,7 @@ func Apply(p *Plan) error {
 	// The lock, last.
 	if p.LockWrite {
 		if err := workspace.WriteFileAtomic(filepath.Join(p.Root, filepath.FromSlash(workspace.LockFile)), p.lockBytes); err != nil {
-			return errorf(ExitRuntime, partly, "%s cannot be written: %v", workspace.LockFile, err)
+			return errorf("partly-written", ExitRuntime, partly, "%s cannot be written: %v", workspace.LockFile, err)
 		}
 	}
 	return nil

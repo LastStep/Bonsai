@@ -1,18 +1,20 @@
 package engine
 
-// What init, update and check print: plain ASCII text for a person (spec §3), and JSON for programs (--json).
+// What init, update and check print: plain ASCII text for a person (spec §3), and for programs (--json) the
+// documents of formats set 4: init and update the changes output (bonsai.changes/1), check its own (bonsai.check/1),
+// each with the error object (bonsai.error) when the command refused or failed (step 5.1.4b). They are written by
+// internal/format's writers, which hold each document to its schema before a byte is printed.
 //
 // The preview names every file with its result and every settings line the plan adds, changes or removes, each
 // with its sentence (spec §6, "The preview names every settings line"); the JSON carries the same, one entry per
-// settings line (file, change, line, why). The JSON documents are not yet one of the contract's formats: step 5.1
-// gives the commands' outputs and the error object (spec §16) their formats.
+// settings line (file, change, kind, line, was, why, runs_code).
 
 import (
 	"fmt"
 	"path/filepath"
 	"strings"
 
-	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -214,80 +216,86 @@ func ClosingWords(cfg *workspace.Config, home string) string {
 	return b.String()
 }
 
-// JSON is the plan as a document for programs: result is preview, applied, nothing, conflict, refused or declined.
-// runs_code lists what the plan writes that runs code, one entry per item (kind, change, pack, item, was, why), and
-// allow_exec says whether --allow-exec was given: without it, a plan with any item is refused. Left for 5.1.4b's
-// formats (verifier N1): settings[].runs_code is true for Bonsai's own hook line at a first link, which --yes writes
-// and runs_code leaves out, and those own lines have no field of their own yet (the preview names them). left_hooks lists, at
-// a link again with the lock missing, the hook lines left in place as the project's own.
-func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
-	packs := []any{}
+// WorkspaceRef is the plan's workspace as the changes output names it: bonsai.yaml's id and name (init --new-id:
+// the new id) and the checkout's absolute path, forward slashes; nil before bonsai.yaml was read.
+func (p *Plan) WorkspaceRef() *format.WorkspaceRef {
+	if p.Config == nil {
+		return nil
+	}
+	return &format.WorkspaceRef{ID: p.Config.ID, Name: p.Config.Name, Root: filepath.ToSlash(p.Root)}
+}
+
+// Changes is the plan as init's and update's --json prints it (bonsai.changes/1, written by format.Changes.Encode):
+// result is preview, applied, nothing, conflict, refused or failed, and refusal what stopped it (nil for none). A
+// preview, a conflict, a refusal or a failure gives the whole plan, though nothing (or, failed, not all) was written.
+// A settings line's runs_code is true only for a line among runs_code's items: Bonsai's own hook lines at a first
+// link are own_hooks, which --yes writes.
+func (p *Plan) Changes(result string, refusal *Error) *format.Changes {
+	c := &format.Changes{Command: p.Command, Result: result, Workspace: p.WorkspaceRef(), AllowExec: p.AllowExec,
+		LeftHooks: p.LeftHooks, Unverified: p.Unverified}
 	for _, m := range p.Packs {
-		var from any
-		if m.From != "" {
-			from = m.From
-		}
-		packs = append(packs, objectOf("id", m.ID, "source", m.Source, "version", m.Version, "from", from, "to", m.To))
+		to := m.To
+		c.Packs = append(c.Packs, format.ChangesPack{ID: m.ID, Source: m.Source, Version: m.Version, From: orNull(m.From), To: &to})
 	}
-	files := []any{}
 	for _, f := range p.Files {
-		var kind, pack, saved any
-		if f.Kind != "" {
-			kind = f.Kind
-		}
-		if f.Pack != "" {
-			pack = f.Pack
-		}
-		if f.Saved != "" {
-			saved = f.Saved
-		}
-		files = append(files, objectOf("path", f.Path, "kind", kind, "pack", pack, "result", f.Result, "why", f.Why, "saved", saved))
+		c.Files = append(c.Files, format.ChangesFile{Path: f.Path, Kind: orNull(f.Kind), Pack: orNull(f.Pack), Result: f.Result,
+			Why: orNull(f.Why), Saved: orNull(f.Saved)})
 	}
-	settings := []any{}
-	for _, c := range p.Settings {
-		var was any
-		if c.Was != "" {
-			was = c.Was
-		}
-		settings = append(settings, objectOf("file", SettingsFile, "change", c.Change, "kind", c.Kind, "line", c.Line,
-			"was", was, "why", c.Why, "runs_code", c.RunsCode))
+	lock := map[bool]string{true: "written", false: "unchanged"}[p.LockWrite]
+	c.Lock = &lock
+	for _, s := range p.Settings {
+		c.Settings = append(c.Settings, format.ChangesSetting{File: SettingsFile, Change: s.Change, Kind: s.Kind, Line: s.Line,
+			Was: orNull(s.Was), Why: s.Why, RunsCode: s.RunsCode && !p.ownHook(s)})
 	}
-	conflicts := []any{}
+	for _, it := range p.RunsCode {
+		c.RunsCode = append(c.RunsCode, format.ChangesCode{Kind: it.Kind, Change: it.Change, Pack: it.Pack, Item: it.Item,
+			Was: orNull(it.Was), Why: it.Why})
+	}
+	for _, o := range p.OwnHooks {
+		c.OwnHooks = append(c.OwnHooks, o.Line)
+	}
 	for _, f := range p.Conflicts {
-		conflicts = append(conflicts, f.Path)
+		c.Conflicts = append(c.Conflicts, f.Path)
 	}
-	unverified := []any{}
-	for _, id := range p.Unverified {
-		unverified = append(unverified, id)
-	}
-	leftHooks := []any{}
-	for _, l := range p.LeftHooks {
-		leftHooks = append(leftHooks, l)
-	}
-	runsCode := []any{}
-	for _, c := range p.RunsCode {
-		var was any
-		if c.Was != "" {
-			was = c.Was
-		}
-		runsCode = append(runsCode, objectOf("kind", c.Kind, "change", c.Change, "pack", c.Pack, "item", c.Item, "was", was, "why", c.Why))
-	}
-	var ws any
-	if p.Config != nil {
-		ws = objectOf("name", p.Config.Name, "id", p.Config.ID, "root", filepath.ToSlash(p.Root))
-	}
-	plugins := []any{}
 	for _, r := range p.Plugins {
-		var next any
+		var next *format.Next
 		if r.Next != "" {
-			next = r.Next
+			next = &format.Next{Do: r.Next, Who: whoOr(r.Who)}
 		}
-		plugins = append(plugins, objectOf("pack", r.Pack, "plugin", r.Plugin, "commit", r.Commit, "result", r.Result,
-			"message", r.Message, "next", next))
+		c.Plugins = append(c.Plugins, format.ChangesPlugin{Pack: r.Pack, Plugin: r.Plugin, Commit: r.Commit, Result: r.Result,
+			Message: r.Message, Next: next})
 	}
-	return objectOf("command", p.Command, "result", result, "exit", exit, "workspace", ws, "packs", packs,
-		"files", files, "lock", map[bool]string{true: "written", false: "unchanged"}[p.LockWrite],
-		"settings", settings, "runs_code", runsCode, "allow_exec", p.AllowExec, "left_hooks", leftHooks, "unverified", unverified, "conflicts", conflicts, "plugins", plugins, "error", errorJSON(refusal))
+	if refusal != nil {
+		c.Error = refusal.Object()
+	}
+	return c
+}
+
+// ownHook reports whether a settings change is one of Bonsai's own hook lines added at a first link (OwnHooks),
+// which --yes writes.
+func (p *Plan) ownHook(s SettingsChange) bool {
+	return p.FirstLink && s.Own && s.Change == "add"
+}
+
+// RefusedChanges is the changes output of init or update stopped before a plan: result refused, every field after
+// it null or [] but the workspace (once bonsai.yaml was read), allow_exec and the error (bonsai.changes/1).
+func RefusedChanges(command string, allowExec bool, e *Error) *format.Changes {
+	return &format.Changes{Command: command, Result: "refused", Workspace: e.Workspace, AllowExec: allowExec, Error: e.Object()}
+}
+
+func orNull(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+// whoOr gives who, or agent when none was named.
+func whoOr(who string) string {
+	if who == "person" {
+		return who
+	}
+	return "agent"
 }
 
 // PluginsText is what InstallPlugins did, for a person: one line per pack's plugin, and its next step when this
@@ -307,35 +315,22 @@ func (p *Plan) PluginsText() string {
 	return b.String()
 }
 
-// errorJSON is a refusal for programs: what is wrong and the next step (spec §3); null for none.
-func errorJSON(e *Error) any {
-	if e == nil {
-		return nil
-	}
-	return objectOf("exit", e.Exit, "message", e.What, "next", e.Next)
-}
-
-// ErrorJSON is a refusal that came before any plan, for programs.
-func ErrorJSON(command string, e *Error) schema.Object {
-	return objectOf("command", command, "result", "refused", "exit", e.Exit, "error", errorJSON(e))
-}
-
-// CheckJSON is check's result for programs.
-func (r *CheckResult) JSON(exit int) schema.Object {
-	list := func(fs []Finding) []any {
-		out := []any{}
+// Doc is check's result as check --json prints it (bonsai.check/1, written by format.Check.Encode): every finding
+// and warning with its next step and who takes it; error null.
+func (r *CheckResult) Doc() *format.Check {
+	list := func(fs []Finding) []format.Finding {
+		out := []format.Finding{}
 		for _, f := range fs {
-			out = append(out, objectOf("code", f.Code, "file", f.File, "message", f.Message, "next", f.Next))
+			out = append(out, format.Finding{Code: f.Code, File: orNull(f.File), Message: ascii(strings.TrimSuffix(f.Message, ".")),
+				Next: format.Next{Do: ascii(f.Next), Who: whoOr(f.Who)}})
 		}
 		return out
 	}
-	result := "ok"
-	if len(r.Findings) > 0 {
-		result = "findings"
-	}
-	return objectOf("command", "check", "result", result, "exit", exit, "findings", list(r.Findings),
-		"warnings", list(r.Warnings), "error", nil)
+	return &format.Check{Findings: list(r.Findings), Warnings: list(r.Warnings)}
 }
+
+// CheckRefused is check --json when check could not run: no findings, no warnings, and the error.
+func CheckRefused(e *Error) *format.Check { return &format.Check{Error: e.Object()} }
 
 // Text is check's result for a person.
 func (r *CheckResult) Text() string {

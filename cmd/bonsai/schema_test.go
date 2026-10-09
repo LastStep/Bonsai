@@ -54,7 +54,6 @@ func TestCheckSchema(t *testing.T) {
 		{[]string{"check", "--schema", "bonsai.nope"}, `"bonsai.nope" is not one of Bonsai's formats`},
 		{[]string{"check", "--schema", "task/2"}, `"task/2" is not one of Bonsai's formats`},
 		{[]string{"check", "--schema"}, "check --schema needs a format's name"},
-		{[]string{"check", "--schema", "--json"}, "check --schema needs a format's name"},
 		{[]string{"check", "--schema", "task", "--schema", "run"}, "check takes --schema once"},
 	} {
 		var stdout, stderr bytes.Buffer
@@ -68,12 +67,24 @@ func TestCheckSchema(t *testing.T) {
 		if c.says != "check takes --schema once" && !strings.Contains(stderr.String(), strings.Join(format.Names(), ", ")) {
 			t.Errorf("%v: the refusal does not list every name: %s", c.args, stderr.String())
 		}
+		// With --json, the refusal is check's document, its error object naming the same (step 5.1.4b).
+		stdout.Reset()
+		stderr.Reset()
+		if code := run(append(c.args, "--json"), &stdout, &stderr); code != 2 || stderr.Len() > 0 {
+			t.Errorf("%v --json: exit %d, stderr %q", c.args, code, stderr.String())
+		}
+		e := errorIn(fits(t, stdout.String(), "check"), "check")
+		n, _ := e.Get("next")
+		if !strings.Contains(e.String("message"), c.says) ||
+			(c.says != "check takes --schema once" && !strings.Contains(n.(schema.Object).String("do"), strings.Join(format.Names(), ", "))) {
+			t.Errorf("%v --json: %s", c.args, stdout.String())
+		}
 	}
 	var stdout, stderr bytes.Buffer
 	run([]string{"check", "--help"}, &stdout, &stderr)
 	help := stdout.String()
-	for _, want := range []string{"--schema <format>", "Example: bonsai check --schema bonsai.task", "a format Bonsai\ndoes not know"} {
-		if !strings.Contains(help, want) {
+	for _, want := range []string{"--schema <format>", "Example: bonsai check --schema bonsai.task", "a format Bonsai does not know"} {
+		if !strings.Contains(strings.Join(strings.Fields(help), " "), strings.Join(strings.Fields(want), " ")) {
 			t.Errorf("check --help does not say %q", want)
 		}
 	}

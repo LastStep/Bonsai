@@ -68,7 +68,7 @@ func readBlock(root string) (*blockDoc, error) {
 		return &blockDoc{}, nil
 	}
 	if err != nil {
-		return nil, errorf(ExitRuntime, "check the file's permissions, then run the command again", "%s cannot be read: %v", BlockFile, err)
+		return nil, errorf("read-failed", ExitRuntime, "check the file's permissions, then run the command again", "%s cannot be read: %v", BlockFile, err)
 	}
 	d := &blockDoc{raw: raw, exists: true}
 	starts, ends := 0, 0
@@ -95,7 +95,7 @@ func readBlock(root string) (*blockDoc, error) {
 	case starts == 0 && ends == 0:
 		return d, nil
 	case starts != 1 || ends != 1 || d.end <= d.start:
-		return nil, errorf(ExitInput, next, "%s has a broken Bonsai block (%d start and %d end markers)", BlockFile, starts, ends)
+		return nil, errorf("bad-file", ExitInput, next, "%s has a broken Bonsai block (%d start and %d end markers)", BlockFile, starts, ends)
 	}
 	d.found = true
 	return d, nil

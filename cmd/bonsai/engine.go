@@ -1,6 +1,9 @@
 package main
 
-// bonsai init, update and check (plan part 3; spec §4, §6): their flags, the consent rule and what they print.
+// bonsai init and update (plan part 3; spec §4, §6): the run they share, the consent rule and what they print. Their
+// tables of flags and exit codes are initWord (init.go) and updateWord (update.go); with --json both print the changes
+// output, bonsai.changes/1 (engine.Plan.Changes), its error object filled on a refusal. unlink (step 5.1.7) prints the
+// same output: its word, in a file of its own, reuses changesRefused and the plan's Changes.
 //
 // The consent rule (spec §3): a command that writes prints its preview first. It writes with --yes; at a terminal
 // without --yes it asks y/N; without a terminal, in an agent session (CLAUDE_CODE_CHILD_SESSION set) or with --json
@@ -19,8 +22,6 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
-	"github.com/LastStep/Bonsai/internal/format"
-	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -38,229 +39,64 @@ var stdin io.Reader = os.Stdin
 // as in tests, asks Claude Code nothing.
 var pluginCLI engine.PluginCLI
 
-const initUsage = `bonsai init: link this project to Bonsai (spec sections 4 and 6).
-It writes bonsai.yaml (a comment on every line), then the packs' files, the instruction block in CLAUDE.md,
-Bonsai's lines in .claude/settings.json (hook line, deny rules, plugin wiring), .bonsai/.gitignore, and the lock
-.bonsai/lock.json last. It previews every file and settings line first, and writes with --yes (or y at a terminal).
-Then it asks Claude Code to install each pack's plugin on this machine at the locked commit, as update does (a
-plugin that carries code parts only with --allow-exec).
-Run it in the project's checkout. In a project that already has bonsai.yaml it needs no values and works as
-bonsai update does; run again with nothing changed, it changes no byte.
-Flags:
-  --name N          the workspace's name: a lower-case letter, then lower-case letters, digits and dashes
-  --source URL      the pack's git repository (fetched with this machine's git, into the Bonsai home's cache)
-  --ref R           the pack's release tag, or a 40-character commit
-  --path P          the pack's folder inside its repository (default: the repository's top)
-  --never-edit P    a path no agent may ever edit, written as a deny rule; give it once per path
-  --new-id          give this project a new workspace id and empty .bonsai/local/: for a copy meant as a new project
-  --yes             write without asking
-  --allow-exec      consent to what the preview lists under "Runs code" (needed as well as --yes; see below)
-  --diff            show each file's changes as a diff in the preview
-  --keep P          settle a conflict on P by keeping your edit (the file becomes kind kept)
-  --adopt P         settle a conflict on P by taking the pack's copy; yours is saved in the Bonsai home's cache
-  --json            print a JSON document instead of text; never asks
-  --help            print this help
-Without bonsai.yaml, --name, --source and --ref are required.
-Runs code: Bonsai's own hook lines are the link's purpose, so --yes writes them. A pack's hook lines, the pack
-files they run and a plugin's own code parts (hooks, MCP and LSP servers, monitors, mods) are the pack's code: the
-preview lists each under "Runs code", and nothing is written without --allow-exec as well as --yes, at a terminal
-too. With bonsai.yaml but no lock (a link again), each is judged against what is on disk.
-Exit codes: 0 linked (or nothing to change), 2 bad input (a value missing or wrong), 3 runtime (a fetch failed),
-  4 wrong state, no --yes, or code without --allow-exec (the preview was printed; nothing written),
-  5 conflicts (nothing written).
-Example: bonsai init --name demo --source https://github.com/LastStep/bonsai-test-pack --ref 506205354b7589f82f849820987aad17dba3309d --yes --allow-exec
-`
-
-const updateUsage = `bonsai update: bring this project's packs to the refs in bonsai.yaml (spec section 6).
-It fetches each pack, then decides per file from three fingerprints (what the lock says Bonsai wrote, what is on
-disk, what the pack now gives): unchanged, updated, created, adopted, changed (your edit, left alone) or conflict.
-The preview names every file and every line of .claude/settings.json it adds, changes or removes, with a sentence.
-All or nothing: every file is staged, then renamed, the lock last.
-Then, written or with nothing to change, it brings this machine's plugins to the lock: for each pack it runs
-claude plugin install <pack>@<marketplace> --scope project in this checkout (a no-op once installed; the first time,
-Claude Code may write .claude/settings.json again in its own key order). A pack's plugin that carries code parts
-(hooks, MCP and LSP servers, monitors, mods) is installed on this machine only with --allow-exec, on each machine:
-without it the plugin is "waiting" and the next step is bonsai update --allow-exec; one already installed at the
-locked commit is left as it is. Bonsai installs only the project's own packs' plugins, and removes none. Claude Code knows a new marketplace (a new
-commit, or a new checkout) only after a Claude Code session in the checkout, in a trusted folder, has registered it:
-until then the plugin is "waiting", and the output names the next step. This step never changes the exit code.
-Flags:
-  --yes         write without asking
-  --allow-exec  consent to what the preview lists under "Runs code" (needed as well as --yes; see below)
-  --diff        show each file's changes as a diff in the preview
-  --keep P      settle a conflict on P by keeping your edit (the file becomes kind kept; a later pack change to it
-                is a conflict again)
-  --adopt P     settle a conflict on P by taking the pack's copy; yours is saved in the Bonsai home's cache
-  --json        print a JSON document instead of text; never asks
-  --help        print this help
-Runs code: a hook line added or changed (Bonsai's own or a pack's), a pack file a pack's hook line runs (new or
-changed), and a plugin's own code parts (hooks, MCP and LSP servers, monitors, mods) changed since the locked
-commit. The preview lists each under "Runs code"; all or nothing, so without --allow-exec as well as --yes nothing
-is written, at a terminal too. A removed hook line runs nothing.
-Exit codes: 0 updated (or nothing to change), 2 bad input, 3 runtime (a fetch failed), 4 wrong state, no --yes, or
-  code without --allow-exec (the preview was printed; nothing written), 5 conflicts (nothing written).
-Example: bonsai update --yes
-`
-
-const checkUsage = `bonsai check: findings on this checkout (spec section 6): the lock against the files (a pack file, the
-block in CLAUDE.md or Bonsai's lines in .claude/settings.json edited or missing), bonsai.yaml against the lock,
-.bonsai/.gitignore, any file from .bonsai/local/ that git tracks or has staged, and this machine's plugins against
-the lock: a .claude/settings.local.json (this checkout's, or in a worktree the main checkout's, which Claude Code reads
-too) turning on another commit's plugin of a pack, and what Claude Code reports (claude plugin list --json): a pack's
-plugin turned on here at another commit (a finding), or the locked one not installed yet (a warning). It writes
-nothing and fetches nothing. Warnings never change the exit code.
-Flags:
-  --json             print a JSON document instead of text
-  --schema <format>  print a format instead: every field in the order a writer writes it, its type and allowed
-                     values, and an open list's known words from Bonsai's table; with --json, the format's JSON
-                     Schema itself. It reads no project, so it runs anywhere. <format> is a name (bonsai.task), a
-                     short name (task) or a name and major (bonsai.task/1), one of:
-%s
-  --help             print this help
-Not built yet: --write, --pack (step 5.1).
-Exit codes: 0 no findings (or the format printed), 1 findings, 2 bad input (an unknown flag, or a format Bonsai
-does not know: the refusal lists every name), 4 not a linked checkout.
-Example: bonsai check --json
-Example: bonsai check --schema bonsai.task
-`
-
-// checkHelp is check --help: checkUsage with every format's name, from internal/format's registry (their one home),
-// wrapped under the --schema flag.
-func checkHelp() string {
-	var lines []string
-	line := ""
-	for i, name := range format.Names() {
-		word := name
-		if i < len(format.Names())-1 {
-			word += ","
-		}
-		if line != "" && len(line)+1+len(word) > 95 {
-			lines = append(lines, line)
-			line = ""
-		}
-		if line == "" {
-			line = strings.Repeat(" ", 21) + word
-		} else {
-			line += " " + word
-		}
-	}
-	lines = append(lines, line)
-	return fmt.Sprintf(checkUsage, strings.Join(lines, "\n"))
-}
-
+// engineFlags are init's or update's flags, read from the word's table.
 type engineFlags struct {
-	yes, diff, asJSON, newID bool
-	allowExec                bool
-	keep, adopt              []string
-	values                   engine.InitValues
-	valuesGiven              bool
-	typed                    []string // the value flags as typed, for the command a next step repeats
+	yes, diff, newID, allowExec bool
+	keep, adopt                 []string
+	values                      engine.InitValues
+	typed                       []string // the flags as typed that a next step repeats (not --yes, --diff or --json)
 }
 
-// parseEngineFlags reads init's or update's flags. --flag value and --flag=value both work.
-func parseEngineFlags(word string, args []string, stdout, stderr io.Writer) (*engineFlags, int, bool) {
-	f := &engineFlags{}
-	takesValue := map[string]bool{"--keep": true, "--adopt": true}
-	if word == "init" {
-		for _, k := range []string{"--name", "--source", "--ref", "--path", "--never-edit"} {
-			takesValue[k] = true
-		}
-	}
-	for i := 0; i < len(args); i++ {
-		a := args[i]
-		name, value, hasValue := a, "", false
-		if j := strings.IndexByte(a, '='); j > 0 && strings.HasPrefix(a, "--") {
-			name, value, hasValue = a[:j], a[j+1:], true
-		}
-		if takesValue[name] && !hasValue {
-			if i+1 >= len(args) {
-				return nil, refuse(stderr, word+" "+name+" needs a value", "run `bonsai "+word+" --help` to see its flags"), true
+func readEngineFlags(c *call) *engineFlags {
+	f := &engineFlags{yes: c.has("--yes"), diff: c.has("--diff"), newID: c.has("--new-id"), allowExec: c.has("--allow-exec"),
+		keep: c.all("--keep"), adopt: c.all("--adopt")}
+	f.values = engine.InitValues{Name: c.value("--name"), Source: c.value("--source"), Ref: c.value("--ref"), Path: c.value("--path"),
+		NeverEdit: c.all("--never-edit")}
+	exec := false
+	for _, g := range c.given {
+		switch g.name {
+		case "--yes", "--diff", "--json":
+		case "--new-id":
+			f.typed = append(f.typed, g.name)
+		case "--allow-exec":
+			if !exec {
+				f.typed = append(f.typed, g.name)
 			}
-			i++
-			value, hasValue = args[i], true
-		}
-		switch {
-		case name == "--help" || name == "-h":
-			if word == "init" {
-				return nil, write(stdout, initUsage), true
-			}
-			return nil, write(stdout, updateUsage), true
-		case hasValue && !takesValue[name]:
-			return nil, refuse(stderr, fmt.Sprintf("%s takes no value for %+q", word, name), "run `bonsai "+word+" --help` to see its flags"), true
-		case name == "--yes":
-			f.yes = true
-		case name == "--diff":
-			f.diff = true
-		case name == "--json":
-			f.asJSON = true
-		case name == "--new-id" && word == "init":
-			f.newID = true
-			f.typed = append(f.typed, "--new-id")
-		case name == "--keep":
-			f.keep = append(f.keep, value)
-			f.typed = append(f.typed, name, value)
-		case name == "--adopt":
-			f.adopt = append(f.adopt, value)
-			f.typed = append(f.typed, name, value)
-		case name == "--allow-exec":
-			if !f.allowExec {
-				f.typed = append(f.typed, "--allow-exec")
-			}
-			f.allowExec = true
-		case word == "init" && takesValue[name]:
-			f.valuesGiven = true
-			f.typed = append(f.typed, name, value)
-			switch name {
-			case "--name":
-				f.values.Name = value
-			case "--source":
-				f.values.Source = value
-			case "--ref":
-				f.values.Ref = value
-			case "--path":
-				f.values.Path = value
-			case "--never-edit":
-				f.values.NeverEdit = append(f.values.NeverEdit, value)
-			}
+			exec = true
 		default:
-			return nil, refuse(stderr, fmt.Sprintf("%s takes no %+q", word, a), "run `bonsai "+word+" --help` to see its flags"), true
+			f.typed = append(f.typed, g.name, g.value)
 		}
 	}
-	return f, 0, false
+	return f
 }
 
-func runInit(args []string, stdout, stderr io.Writer) int {
-	return runEngine("init", args, stdout, stderr)
+// changesRefused is init's and update's --json for a refusal before a plan (bonsai.changes/1).
+func changesRefused(c *call, e *engine.Error) encoder {
+	return engine.RefusedChanges(c.word.Name, c.has("--allow-exec"), e)
 }
 
-func runUpdate(args []string, stdout, stderr io.Writer) int {
-	return runEngine("update", args, stdout, stderr)
-}
+// applyPlan writes a plan (a variable, so a test can stop it part-way).
+var applyPlan = engine.Apply
 
 // runEngine runs init or update: build the plan, print it, ask or refuse, write.
-func runEngine(word string, args []string, stdout, stderr io.Writer) int {
-	f, code, done := parseEngineFlags(word, args, stdout, stderr)
-	if done {
-		return code
+func runEngine(c *call) int {
+	word := c.word.Name
+	if len(c.rest) > 0 {
+		return c.refuse(c.flagError("%s takes no %+q", word, c.rest[0]))
 	}
+	f := readEngineFlags(c)
 	cmdline := "bonsai " + word
 	for _, t := range f.typed {
 		cmdline += " " + engine.ShellArg(t)
 	}
-	fail := func(e *engine.Error) int {
-		if f.asJSON {
-			return printJSON(stdout, engine.ErrorJSON(word, e), e.Exit)
-		}
-		_, _ = fmt.Fprintf(stderr, "bonsai %s: %s.\nnext: %s\n", word, strings.TrimSuffix(e.What, "."), e.Next)
-		return e.Exit
-	}
 	dir, err := os.Getwd()
 	if err != nil {
-		return fail(&engine.Error{Exit: engine.ExitRuntime, What: "the current folder cannot be read", Next: "run it from a folder inside the project"})
+		return c.fail(&engine.Error{Code: "read-failed", Exit: engine.ExitRuntime, What: "the current folder cannot be read",
+			Next: "run it from a folder inside the project"})
 	}
 	home, err := workspace.Home()
 	if err != nil {
-		return fail(&engine.Error{Exit: engine.ExitRuntime, What: err.Error(), Next: "set BONSAI_HOME to the folder Bonsai should use"})
+		return c.fail(engine.HomeError(err))
 	}
 	req := engine.Request{Command: word, Dir: dir, Home: home, Version: version, NewID: f.newID, Keep: f.keep, Adopt: f.adopt,
 		AllowExec: f.allowExec}
@@ -269,17 +105,18 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 	}
 	plan, err := engine.Build(req)
 	if err != nil {
-		e, ok := err.(*engine.Error)
-		if !ok {
-			e = &engine.Error{Exit: engine.ExitRuntime, What: err.Error(), Next: "run the command again"}
-		}
-		return fail(e)
+		return c.fail(engine.Unexpected(err))
 	}
+	// out prints the plan's outcome: with --json the changes output (its error object filled from refusal), else
+	// text on stdout.
 	out := func(result string, exit int, refusal *engine.Error, text string) int {
-		if f.asJSON {
-			return printJSON(stdout, plan.JSON(result, exit, refusal), exit)
+		if refusal != nil {
+			noted(c.word, refusal)
 		}
-		if write(stdout, text) != exitOK {
+		if c.json {
+			return c.printDoc(plan.Changes(result, refusal), exit)
+		}
+		if write(c.stdout, text) != exitOK {
 			return exitRuntime
 		}
 		return exit
@@ -307,14 +144,15 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 			next = "read each item under Runs code, and settle the conflicts: " + plan.ConflictNext(base)
 		}
 		n := len(plan.RunsCode)
-		e := &engine.Error{Exit: engine.ExitState,
+		e := &engine.Error{Code: "needs-allow-exec", Exit: engine.ExitState,
 			What: fmt.Sprintf("this %s writes code that runs on this machine (%d %s under Runs code), which needs --allow-exec as well as --yes: nothing was written",
 				word, n, map[bool]string{true: "item", false: "items"}[n == 1]),
 			Next: next}
 		return out("refused", e.Exit, e, preview+"Refused: "+e.What+".\nnext: "+e.Next+"\n")
 	}
 	conflict := func(printed bool) int {
-		e := &engine.Error{Exit: engine.ExitConflict, What: conflictWhat(plan) + ": nothing was written", Next: plan.ConflictNext(cmdline)}
+		e := &engine.Error{Code: "conflicts", Exit: engine.ExitConflict, What: conflictWhat(plan) + ": nothing was written",
+			Next: plan.ConflictNext(cmdline)}
 		text := "Stopped: " + e.What + ".\nnext: " + e.Next + "\n"
 		if !printed {
 			text = preview + text
@@ -322,19 +160,20 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 		return out("conflict", e.Exit, e, text)
 	}
 	if !f.yes {
-		if f.asJSON || !interactive() {
+		if c.json || !interactive() {
 			next := "to write it, run: " + cmdline + " --yes"
 			if len(plan.Conflicts) > 0 {
 				next = plan.ConflictNext(cmdline)
 			}
-			e := &engine.Error{Exit: engine.ExitState, What: "no --yes, and no terminal to ask at: nothing was written", Next: next}
+			e := &engine.Error{Code: "needs-yes", Exit: engine.ExitState, What: "no --yes, and no terminal to ask at: nothing was written", Next: next}
 			return out("preview", e.Exit, e, preview+"Nothing written yet.\nnext: "+next+"\n")
 		}
-		if write(stdout, preview+"Write these changes? [y/N] ") != exitOK {
+		// At a terminal (never with --json): the person answers.
+		if write(c.stdout, preview+"Write these changes? [y/N] ") != exitOK {
 			return exitRuntime
 		}
 		if !yesAnswer() {
-			return out("declined", engine.ExitState, nil, "Nothing written.\n")
+			return out("declined", engine.ExitState, nil, "Nothing written.\nnext: run the command again when you want it written\n")
 		}
 		if len(plan.Conflicts) > 0 {
 			return conflict(true)
@@ -342,12 +181,18 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 	} else if len(plan.Conflicts) > 0 {
 		return conflict(false)
 	}
-	if err := engine.Apply(plan); err != nil {
-		e, ok := err.(*engine.Error)
-		if !ok {
-			e = &engine.Error{Exit: engine.ExitRuntime, What: err.Error(), Next: "run the command again"}
+	// Apply refuses before any rename (refused, nothing written), or stops part-way through the renames (failed: some
+	// files written, the lock not; the same command again finishes the rest).
+	if err := applyPlan(plan); err != nil {
+		e := engine.Unexpected(err)
+		result := "refused"
+		if e.Code == "partly-written" {
+			result = "failed"
 		}
-		return fail(e)
+		if c.json {
+			return out(result, e.Exit, e, "")
+		}
+		return c.fail(e)
 	}
 	plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))
 	text := ""
@@ -382,100 +227,4 @@ func yesAnswer() bool {
 	line, _ := bufio.NewReader(stdin).ReadString('\n')
 	a := strings.ToLower(strings.TrimSpace(line))
 	return a == "y" || a == "yes"
-}
-
-func printJSON(stdout io.Writer, doc schema.Object, exit int) int {
-	b, err := schema.Encode(doc)
-	if err != nil {
-		return exitRuntime
-	}
-	if write(stdout, string(b)) != exitOK {
-		return exitRuntime
-	}
-	return exit
-}
-
-func runCheck(args []string, stdout, stderr io.Writer) int {
-	asJSON := false
-	schemaName, wantSchema := "", false
-	for i := 0; i < len(args); i++ {
-		a := args[i]
-		switch {
-		case a == "--json":
-			asJSON = true
-		case a == "--help" || a == "-h":
-			return write(stdout, checkHelp())
-		case a == "--schema" || strings.HasPrefix(a, "--schema="):
-			name, given := strings.CutPrefix(a, "--schema=")
-			if !given {
-				if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
-					return refuse(stderr, "check --schema needs a format's name", schemaNext())
-				}
-				i++
-				name = args[i]
-			}
-			if wantSchema {
-				return refuse(stderr, "check takes --schema once", "run `bonsai check --schema <format>` for each format")
-			}
-			schemaName, wantSchema = name, true
-		case a == "--write" || a == "--pack":
-			return refuse(stderr, "check "+a+" is not built yet (it comes with step 5.1)", "run `bonsai check` without "+a)
-		default:
-			return refuse(stderr, fmt.Sprintf("check takes no %+q", a), "run `bonsai check --help` to see its flags")
-		}
-	}
-	if wantSchema {
-		return runSchema(schemaName, asJSON, stdout, stderr)
-	}
-	dir, err := os.Getwd()
-	if err != nil {
-		return refuse(stderr, "check cannot read the current folder", "run it from a folder inside the project")
-	}
-	home, err := workspace.Home()
-	if err != nil {
-		return refuse(stderr, err.Error(), "set BONSAI_HOME to the folder Bonsai should use")
-	}
-	r, err := engine.Check(dir, home)
-	if err != nil {
-		e := err.(*engine.Error)
-		if asJSON {
-			return printJSON(stdout, engine.ErrorJSON("check", e), e.Exit)
-		}
-		_, _ = fmt.Fprintf(stderr, "bonsai check: %s.\nnext: %s\n", strings.TrimSuffix(e.What, "."), e.Next)
-		return e.Exit
-	}
-	engine.ComparePlugins(r, pluginCLI)
-	exit := engine.ExitOK
-	if len(r.Findings) > 0 {
-		exit = engine.ExitFindings
-	}
-	if asJSON {
-		return printJSON(stdout, r.JSON(exit), exit)
-	}
-	if write(stdout, r.Text()) != exitOK {
-		return exitRuntime
-	}
-	return exit
-}
-
-// runSchema is check --schema: a format for a person, or with --json its schema (contract §2.2).
-func runSchema(name string, asJSON bool, stdout, stderr io.Writer) int {
-	f, ok := format.Lookup(name)
-	if !ok {
-		return refuse(stderr, fmt.Sprintf("%+q is not one of Bonsai's formats", name), schemaNext())
-	}
-	if asJSON {
-		out, err := schema.Encode(f.Schema())
-		if err != nil {
-			_, _ = fmt.Fprintf(stderr, "bonsai check: %v\n", err)
-			return exitRuntime
-		}
-		return write(stdout, string(out))
-	}
-	return write(stdout, f.Describe())
-}
-
-// schemaNext is the next step of a check --schema refusal: every format's name.
-func schemaNext() string {
-	return "run `bonsai check --schema <format>` with one of: " + strings.Join(format.Names(), ", ")
 }

@@ -30,12 +30,13 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// Finding is one finding or warning: its code, the file it is about, a sentence and the next step.
+// Finding is one finding or warning: its code, the file it is about, a sentence, the next step and who takes it.
 type Finding struct {
 	Code    string // config, lock, packs, changed, missing, format0, gitignore, local, cache, plugin
 	File    string
 	Message string
 	Next    string
+	Who     string // agent or person (bonsai.check/1's next.who)
 }
 
 // Sentence gives the finding as status --json's problems hold it: one sentence naming its next step.
@@ -65,24 +66,24 @@ type CheckResult struct {
 func Check(dir, home string) (*CheckResult, error) {
 	co, err := workspace.Find(dir)
 	if err != nil {
-		return nil, wsError(err, ExitState)
+		return nil, findError(err)
 	}
 	r := &CheckResult{Root: co.Root, Main: co.Main}
 	cfg, err := workspace.LoadConfigFull(co.Root)
 	if err != nil {
 		var we *workspace.Error
 		if errors.As(err, &we) && errors.Is(err, os.ErrNotExist) {
-			return nil, wsError(err, ExitState)
+			return nil, fileError(err, "not-linked", "bad-config", ExitInput)
 		}
-		e := wsError(err, ExitInput).(*Error)
-		r.Findings = append(r.Findings, Finding{Code: "config", File: workspace.ConfigFile, Message: e.What, Next: e.Next})
+		e := fileError(err, "", "bad-config", ExitInput).(*Error)
+		r.Findings = append(r.Findings, Finding{Code: "config", File: workspace.ConfigFile, Message: e.What, Next: e.Next, Who: "person"})
 		return r, nil
 	}
 	r.Config = cfg
 	lock, err := workspace.LoadLock(co.Root)
 	if err != nil {
-		e := wsError(err, ExitState).(*Error)
-		r.Findings = append(r.Findings, Finding{Code: "lock", File: workspace.LockFile, Message: e.What, Next: e.Next})
+		e := fileError(err, "", "bad-lock", ExitState).(*Error)
+		r.Findings = append(r.Findings, Finding{Code: "lock", File: workspace.LockFile, Message: e.What, Next: e.Next, Who: "person"})
 		r.checkGitignore()
 		r.checkLocal()
 		return r, nil
@@ -100,16 +101,16 @@ func Check(dir, home string) (*CheckResult, error) {
 		lp, ok := locked[ref.ID]
 		switch {
 		case !ok:
-			r.find("packs", workspace.ConfigFile, "bonsai.yaml lists the pack "+ref.ID+", which the lock does not hold", "run bonsai update")
+			r.find("packs", workspace.ConfigFile, "person", "bonsai.yaml lists the pack "+ref.ID+", which the lock does not hold", "run bonsai update")
 		case lp.Source != ref.Source:
-			r.find("packs", workspace.ConfigFile, "bonsai.yaml takes "+ref.ID+" from "+ref.Source+", the lock from "+lp.Source, "run bonsai update")
+			r.find("packs", workspace.ConfigFile, "person", "bonsai.yaml takes "+ref.ID+" from "+ref.Source+", the lock from "+lp.Source, "run bonsai update")
 		case commitPattern.MatchString(ref.Ref) && ref.Ref != lp.Commit:
-			r.find("packs", workspace.ConfigFile, "bonsai.yaml's ref for "+ref.ID+" is "+short(ref.Ref)+", the lock holds "+short(lp.Commit), "run bonsai update")
+			r.find("packs", workspace.ConfigFile, "person", "bonsai.yaml's ref for "+ref.ID+" is "+short(ref.Ref)+", the lock holds "+short(lp.Commit), "run bonsai update")
 		}
 	}
 	for _, lp := range lock.Packs {
 		if !listed[lp.ID] {
-			r.find("packs", workspace.LockFile, "the lock holds the pack "+lp.ID+", which bonsai.yaml does not list", "put it back in bonsai.yaml (taking a pack out comes with step 5.1)")
+			r.find("packs", workspace.LockFile, "person", "the lock holds the pack "+lp.ID+", which bonsai.yaml does not list", "put it back in bonsai.yaml (taking a pack out comes with step 5.1)")
 		}
 	}
 
@@ -127,15 +128,15 @@ func Check(dir, home string) (*CheckResult, error) {
 			raw, exists, err := readFile(co.Root, path)
 			switch {
 			case err != nil:
-				r.find("missing", path, err.Error(), "check the file's permissions")
+				r.find("missing", path, "agent", err.Error(), "check the file's permissions")
 			case !exists:
 				r.Missing++
 				mark(lf.Pack, "missing")
-				r.find("missing", path, path+" is missing (a file of the pack "+lf.Pack+")", "run bonsai update --yes to write it again")
+				r.find("missing", path, "person", path+" is missing (a file of the pack "+lf.Pack+")", "run bonsai update --yes to write it again")
 			case workspace.HashLF(raw) != lf.SHA256:
 				r.Changed++
 				mark(lf.Pack, "changed")
-				r.find("changed", path, path+" was edited (a file of the pack "+lf.Pack+", which an edit makes a conflict at the pack's next change)",
+				r.find("changed", path, "person", path+" was edited (a file of the pack "+lf.Pack+", which an edit makes a conflict at the pack's next change)",
 					"keep the edit: bonsai update --yes --keep "+path+"; or take the pack's copy back: bonsai update --yes --adopt "+path)
 			}
 		case "block":
@@ -145,15 +146,15 @@ func Check(dir, home string) (*CheckResult, error) {
 				r.Changed++
 				mark(lf.Pack, "changed")
 				e := err.(*Error)
-				r.find("changed", path, e.What, e.Next)
+				r.find("changed", path, "person", e.What, e.Next)
 			case !bd.found:
 				r.Missing++
 				mark(lf.Pack, "missing")
-				r.find("missing", path, "Bonsai's block in "+path+" is missing", "run bonsai update --yes to write it again")
+				r.find("missing", path, "person", "Bonsai's block in "+path+" is missing", "run bonsai update --yes to write it again")
 			case regionHash(bd.region()) != lf.SHA256:
 				r.Changed++
 				mark(lf.Pack, "changed")
-				r.find("changed", path, "Bonsai's block in "+path+" was edited", "take Bonsai's block back: bonsai update --yes --adopt "+path+" (your copy is saved in the Bonsai home)")
+				r.find("changed", path, "person", "Bonsai's block in "+path+" was edited", "take Bonsai's block back: bonsai update --yes --adopt "+path+" (your copy is saved in the Bonsai home)")
 			}
 		case "keys":
 			r.checkSettings(home, cfg, lock, lf, mark)
@@ -164,7 +165,7 @@ func Check(dir, home string) (*CheckResult, error) {
 		raw, exists, _ := readFile(co.Root, path)
 		if !exists || workspace.HashLF(raw) != lock.Format0[path] {
 			r.Format0Changed++
-			r.find("format0", path, path+" is a format-0 file the lock fixes, and it changed", "restore it from git (git checkout -- "+path+")")
+			r.find("format0", path, "agent", path+" is a format-0 file the lock fixes, and it changed", "restore it from git (git checkout -- "+path+")")
 		}
 	}
 	for _, lp := range lock.Packs {
@@ -179,8 +180,8 @@ func Check(dir, home string) (*CheckResult, error) {
 	return r, nil
 }
 
-func (r *CheckResult) find(code, file, msg, next string) {
-	r.Findings = append(r.Findings, Finding{Code: code, File: file, Message: msg, Next: next})
+func (r *CheckResult) find(code, file, who, msg, next string) {
+	r.Findings = append(r.Findings, Finding{Code: code, File: file, Message: msg, Next: next, Who: who})
 }
 
 func (r *CheckResult) checkSettings(home string, cfg *workspace.Config, lock *workspace.Lock, lf workspace.LockedFile, mark func(string, string)) {
@@ -189,13 +190,13 @@ func (r *CheckResult) checkSettings(home string, cfg *workspace.Config, lock *wo
 		e := err.(*Error)
 		r.Changed++
 		mark(lf.Pack, "changed")
-		r.find("changed", SettingsFile, e.What, e.Next)
+		r.find("changed", SettingsFile, "person", e.What, e.Next)
 		return
 	}
 	if !sd.exists {
 		r.Missing++
 		mark(lf.Pack, "missing")
-		r.find("missing", SettingsFile, SettingsFile+" is missing, with Bonsai's lines in it", "run bonsai update --yes to write Bonsai's lines again")
+		r.find("missing", SettingsFile, "person", SettingsFile+" is missing, with Bonsai's lines in it", "run bonsai update --yes to write Bonsai's lines again")
 		return
 	}
 	c := cache{home: home}
@@ -209,13 +210,14 @@ func (r *CheckResult) checkSettings(home string, cfg *workspace.Config, lock *wo
 		if !c.has(lp.Source, lp.Commit) {
 			r.Warnings = append(r.Warnings, Finding{Code: "cache", File: SettingsFile,
 				Message: "Bonsai's lines in " + SettingsFile + " were not checked: the pack " + lp.ID + " at " + short(lp.Commit) + " is not in this machine's pack cache",
-				Next:    "run bonsai update once on this machine (it fetches the pack and writes nothing when nothing changed), then check again"})
+				Next:    "run bonsai update once on this machine (it fetches the pack and writes nothing when nothing changed), then check again",
+				Who:     "agent"})
 			return
 		}
 		pd, err := c.packAt(workspace.PackRef{ID: lp.ID, Source: lp.Source, Path: folders[lp.ID]}, lp.Commit)
 		if err != nil {
 			e := err.(*Error)
-			r.Warnings = append(r.Warnings, Finding{Code: "cache", File: SettingsFile, Message: e.What, Next: e.Next})
+			r.Warnings = append(r.Warnings, Finding{Code: "cache", File: SettingsFile, Message: e.What, Next: e.Next, Who: "person"})
 			return
 		}
 		pl.known, pl.hooks, pl.deny = true, pd.Manifest.Hooks, pd.Manifest.Deny
@@ -225,7 +227,7 @@ func (r *CheckResult) checkSettings(home string, cfg *workspace.Config, lock *wo
 	if !same {
 		r.Changed++
 		mark(lf.Pack, "changed")
-		r.find("changed", SettingsFile, "Bonsai's lines in "+SettingsFile+" were edited, or bonsai.yaml changed since the last update",
+		r.find("changed", SettingsFile, "person", "Bonsai's lines in "+SettingsFile+" were edited, or bonsai.yaml changed since the last update",
 			"run bonsai update to see the lines; to take Bonsai's lines back: bonsai update --yes --adopt "+SettingsFile+" (your copy is saved in the Bonsai home)")
 	}
 }
@@ -234,9 +236,9 @@ func (r *CheckResult) checkGitignore() {
 	raw, exists, _ := readFile(r.Root, GitignoreFile)
 	switch {
 	case !exists:
-		r.find("gitignore", GitignoreFile, GitignoreFile+" is missing, so .bonsai/local/ could be committed", "run bonsai update --yes to write it again")
+		r.find("gitignore", GitignoreFile, "person", GitignoreFile+" is missing, so .bonsai/local/ could be committed", "run bonsai update --yes to write it again")
 	case workspace.HashLF(raw) != workspace.HashLF([]byte(GitignoreText)):
-		r.find("gitignore", GitignoreFile, GitignoreFile+" was changed", "run bonsai update --yes to write Bonsai's copy again")
+		r.find("gitignore", GitignoreFile, "person", GitignoreFile+" was changed", "run bonsai update --yes to write Bonsai's copy again")
 	}
 }
 
@@ -247,7 +249,7 @@ func (r *CheckResult) checkLocal() {
 	out, err := cmd.Output()
 	if err != nil {
 		r.Warnings = append(r.Warnings, Finding{Code: "local", File: LocalDir, Message: "git ls-files failed, so tracked .bonsai/local/ files were not looked for",
-			Next: "check that git works in this checkout (git status), then check again"})
+			Next: "check that git works in this checkout (git status), then check again", Who: "agent"})
 		return
 	}
 	var files []string
@@ -257,7 +259,7 @@ func (r *CheckResult) checkLocal() {
 		}
 	}
 	if len(files) > 0 {
-		r.find("local", LocalDir, "git tracks or has staged "+strings.Join(files, ", ")+" from .bonsai/local/, which is never committed",
+		r.find("local", LocalDir, "agent", "git tracks or has staged "+strings.Join(files, ", ")+" from .bonsai/local/, which is never committed",
 			"git rm -r --cached -- .bonsai/local, then commit")
 	}
 }

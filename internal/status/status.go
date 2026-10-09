@@ -9,7 +9,8 @@
 // holds them in a named list. The document is held to the schema before it is printed (Encode).
 //
 // Exit codes (contract §12, spec §3): 0, or 3 when Bonsai cannot read the workspace at all; the document then
-// fills format, bonsai and problems, and every other field is null.
+// fills format, bonsai, problems and error (step 5.1.4b: the error object, with its word from format.ErrorWords), and
+// every other field is null.
 package status
 
 import (
@@ -57,36 +58,45 @@ const (
 )
 
 // Build gathers the status of the workspace holding dir; version is this Bonsai's own. It returns the document and
-// its exit code.
+// its exit code. On exit 3 the document is Refused's, its problem the error's sentence with its next step.
 func Build(dir, version string) (schema.Object, int) {
 	built, problem := gather(dir)
-	if problem != "" {
-		return document(map[string]any{
-			"format": Format, "bonsai": version, "problems": []any{problem},
-		}, true), ExitRuntime
+	if problem != nil {
+		return Refused(version, problem, []any{problem.Error()}), ExitRuntime
 	}
 	built["format"], built["bonsai"] = Format, version
 	return document(built, false), ExitOK
 }
 
-// gather reads what part 2 builds. A problem is one sentence that names its next step.
-func gather(dir string) (map[string]any, string) {
+// Refused is the document of a status that refused or failed (bonsai.status/1): format, bonsai, problems and the
+// error object (spec §3, §16 row 29), every other field null. problems holds the error's sentence when Bonsai cannot
+// read the workspace (exit 3), and nothing when the command line was refused (exit 2).
+func Refused(version string, e *engine.Error, problems []any) schema.Object {
+	errDoc, err := format.MustLookup("error").Document(e.Object())
+	if err != nil {
+		panic(err) // the error object's Go type is held to its schema by internal/format's tests
+	}
+	return document(map[string]any{"format": Format, "bonsai": version, "problems": problems, "error": errDoc}, true)
+}
+
+// gather reads what part 2 builds. A problem is an error with its word, its sentence and its next step.
+func gather(dir string) (map[string]any, *engine.Error) {
 	co, err := workspace.Find(dir)
 	if err != nil {
-		return nil, err.Error()
+		return nil, engine.FindError(err)
 	}
 	cfg, err := workspace.LoadConfig(co.Root)
 	if err != nil {
-		return nil, err.Error()
+		return nil, engine.ConfigError(err)
 	}
 	home, err := workspace.Home()
 	if err != nil {
-		return nil, err.Error()
+		return nil, engine.HomeError(err)
 	}
 	key, err := workspace.MachineKey(co.Main)
 	if err != nil {
-		return nil, fmt.Sprintf("the main checkout %s cannot be resolved: %v; next: check that it exists",
-			filepath.ToSlash(co.Main), err)
+		return nil, &engine.Error{Code: "read-failed", Exit: ExitRuntime,
+			What: fmt.Sprintf("the main checkout %s cannot be resolved: %v", filepath.ToSlash(co.Main), err), Next: "check that it exists"}
 	}
 	root := filepath.ToSlash(co.Main)
 	packs, files, problems := []any{}, schema.Object{{Key: "changed", Value: 0}, {Key: "missing", Value: 0},
@@ -122,7 +132,7 @@ func gather(dir string) (map[string]any, string) {
 		"files":       files,
 		"person_only": personOnly,
 		"problems":    problems,
-	}, ""
+	}, nil
 }
 
 // document writes every field of the schema, in its order: a built field's value, else [] for a field whose type

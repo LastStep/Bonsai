@@ -1,0 +1,110 @@
+package main
+
+// bonsai check (spec §4, §6): findings on this checkout, or with --schema a format. Its table of flags and exit codes
+// is checkWord; with --json it prints bonsai.check/1 (format.Check), its error object filled when check could not run.
+
+import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/workspace"
+)
+
+func init() { register(checkWord) }
+
+var checkWord = &Word{
+	Name:    "check",
+	Order:   5,
+	Title:   "findings on this checkout (spec section 6).",
+	Summary: "findings on the lock and the files; --schema F prints a format",
+	Args:    "[flags]",
+	About: `It checks the lock against the files (a pack file, the block in CLAUDE.md or Bonsai's lines in
+.claude/settings.json edited or missing), bonsai.yaml against the lock, .bonsai/.gitignore, any file from
+.bonsai/local/ that git tracks or has staged, and this machine's plugins against the lock: a
+.claude/settings.local.json (this checkout's, or in a worktree the main checkout's, which Claude Code reads too)
+turning on another commit's plugin of a pack, and what Claude Code reports (claude plugin list --json): a pack's
+plugin turned on here at another commit (a finding), or the locked one not installed yet (a warning). It writes
+nothing and fetches nothing. Warnings never change the exit code.
+`,
+	Flags: []Flag{
+		{Name: "--json", Help: "print the bonsai.check/1 document (for programs) instead of text; with --schema, the format's\nJSON Schema"},
+		{Name: "--schema", Value: "<format>", Need: "a format's name", NeedNext: schemaNext,
+			Help: "print a format instead: every field in the order a writer writes it, its type and allowed\n" +
+				"values, and an open list's known words from Bonsai's table. It reads no project, so it runs\n" +
+				"anywhere. <format> is a name (bonsai.task), a short name (task) or a name and major\n" +
+				"(bonsai.task/1), one of:",
+			More: func() string { return strings.Join(format.Names(), ", ") }},
+		{Name: "--write", Help: "rebuild the two tables in .bonsai/, in the main checkout only", Later: "step 5.1.8"},
+		{Name: "--pack", Value: "P", Help: "check a pack folder", Later: "step 5.1.9"},
+	},
+	Exits: []Exit{
+		{Code: 0, Means: "no findings (or the format printed)"},
+		{Code: 1, Means: "findings"},
+		{Code: 2, Means: "bad input (a flag check does not take, one not built yet, or a format Bonsai does not know: the\nrefusal lists every name)"},
+		{Code: 3, Means: "runtime (git is not on the PATH, the Bonsai home cannot be found, a file cannot be read)"},
+		{Code: 4, Means: "not a linked checkout (not in a git checkout, or no bonsai.yaml)"},
+	},
+	Examples: []string{"bonsai check --json", "bonsai check --schema bonsai.task"},
+	Refused:  func(c *call, e *engine.Error) encoder { return engine.CheckRefused(e) },
+	Run:      runCheck,
+}
+
+func runCheck(c *call) int {
+	if len(c.rest) > 0 {
+		return c.refuse(c.flagError("check takes no %+q", c.rest[0]))
+	}
+	if c.has("--schema") {
+		return runSchema(c, c.value("--schema"))
+	}
+	dir, err := os.Getwd()
+	if err != nil {
+		return c.fail(&engine.Error{Code: "read-failed", Exit: exitRuntime, What: "check cannot read the current folder",
+			Next: "run it from a folder inside the project"})
+	}
+	home, err := workspace.Home()
+	if err != nil {
+		return c.fail(engine.HomeError(err))
+	}
+	r, err := engine.Check(dir, home)
+	if err != nil {
+		return c.fail(engine.Unexpected(err))
+	}
+	engine.ComparePlugins(r, pluginCLI)
+	exit := engine.ExitOK
+	if len(r.Findings) > 0 {
+		exit = engine.ExitFindings
+	}
+	if c.json {
+		return c.printDoc(r.Doc(), exit)
+	}
+	if write(c.stdout, r.Text()) != exitOK {
+		return exitRuntime
+	}
+	return exit
+}
+
+// runSchema is check --schema: a format for a person, or with --json its schema (contract §2.2).
+func runSchema(c *call, name string) int {
+	f, ok := format.Lookup(name)
+	if !ok {
+		return c.refuse(&engine.Error{Code: "unknown-format", Exit: exitInput, What: fmt.Sprintf("%+q is not one of Bonsai's formats", name),
+			Next: schemaNext()})
+	}
+	if c.json {
+		out, err := schema.Encode(f.Schema())
+		if err != nil {
+			return c.fail(engine.Unexpected(err))
+		}
+		return c.print(string(out))
+	}
+	return c.print(f.Describe())
+}
+
+// schemaNext is the next step of a check --schema refusal: every format's name.
+func schemaNext() string {
+	return "run `bonsai check --schema <format>` with one of: " + strings.Join(format.Names(), ", ")
+}
