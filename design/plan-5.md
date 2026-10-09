@@ -3358,14 +3358,30 @@ reads V2's report for 1 to 15 (the build's rule keeps the Go code the same), and
 ### Step 5.5: the packs (19-30 h, re-ask at 39)
 
 **Rohan's (B), and what else of his changes.** This section comes to Rohan: it makes his roles, lanes, protocols and
-templates public in a new repo, `LastStep/bonsai-workflow`. Beyond the approval his list already holds, it changes three
-small things of his: he reads the `workflow` pack on GitHub while the repo is still private and makes it public with
-one line (an optional second line protects its `main`); his overdue Windows Claude Code login, already on his list,
-becomes needed before 5.5's Windows sessions, and is done in a scratch folder so that it also shows Claude Code's
-Windows trust question once (about 3 minutes); and the first release tags of both packs are his word, planned with
-1.0 at 5.7. No repository secret (the "possibly" in his list is settled: none), no install (5.5 changes no guard,
-stop gate or ladder code), no option round. The hours (19-30) and the re-ask line (39) are the spec's; the order of the
-parts stands. Every format change is an addition: a pack file's path may start with `<protocols>/`, and descriptions.
+templates public in a new repo, `LastStep/bonsai-workflow`, and three of his templates (task, run report, STATE),
+reworded, public in Bonsai's own `base` pack. Beyond that approval it changes these things of his:
+- He reads the `workflow` repo on GitHub while it is still private and makes it public with one line; an optional
+  second line, after it, protects its `main`.
+- About 3 minutes on Windows: Claude Code started once through the scratch launcher, in a scratch folder linked to both
+  packs, to say yes to its question about trusting the folder. His Windows login is due before 5.3 (already on his
+  list); at 5.5 it is repeated only if it has lapsed.
+- The first release tags of both packs are his word, with 1.0 at 5.7.
+- **One rule of his from 5.4 changes.** There, any change to `bonsai.yaml` that is not stricter waits for his word,
+  and the spec says that taking a pack's new release is a person's step. Under his 9 Oct direction (agents update
+  projects), an agent may now move a project to a newer commit of a pack when Bonsai's preview shows that the move
+  takes away no wall, no label's meaning and no protected file, and adds no code that runs. Any other move, and taking
+  a pack out of a project, still waits for him ("The pin rule", below). His approval of this section is his word for
+  this change.
+- From 5.5's end his own Claude sessions in Bonsai's repo cannot read his key, token and login files, nor change his
+  own Claude settings, his `~/.claude/CLAUDE.md`, his shell's start files or git's and SSH's settings: he changes those
+  himself. Bonsai's STATE moves to `.bonsai/STATE.md`.
+- If the studio links the `workflow` pack before 1.0, it first needs a newer pre-release `bonsai` installed in WSL
+  (5.4's cannot read the pack): his install, at the studio's link (step 7), not in 5.5.
+
+No repository secret (the "possibly" in his list is settled: none), no install and no password in 5.5 itself (it
+changes no guard, stop gate or ladder code), no option round. The hours (19-30) and the re-ask line (39) are the
+spec's; the order of the parts stands. Every format change is an addition: a pack can put its always-read file in the
+folder a project keeps its protocols in (a pack file's path may start with `<protocols>/`), and descriptions.
 
 #### For Rohan, in plain words
 
@@ -3374,8 +3390,9 @@ projects can take with a few lines in its `bonsai.yaml`:
 - **`base`**, Bonsai's own pack, in Bonsai's repo (`packs/base/`). It holds the meaning of Bonsai's four task labels,
   the templates for a task, a run report, STATE, a memory note and `bonsai.yaml`, the page on how long records are kept,
   a starter CI file, and **the walls**: rules that stop Claude reading your key, token and password files (SSH keys,
-  your GitHub and cloud logins, Claude's own login file, Bonsai's secret salt) or changing your own Claude settings and
-  memory. It also holds an **"operating Bonsai" skill**: the instructions an agent needs to link a project, update it,
+  your GitHub and cloud logins, Claude's own login and global files, Bonsai's secret salt), or changing your own Claude
+  settings and memory and the files that start programs (your shell's start files, git's and SSH's settings). It
+  also holds an **"operating Bonsai" skill**: the instructions an agent needs to link a project, update it,
   fix what `bonsai check` finds, read where things stand, edit `bonsai.yaml`, prove its work with the ladder and ask
   you a question, without asking you how. It carries no code that runs.
 - **`workflow`**, your pack, in its own new public repo: your five roles (builder, verifier, researcher, producer,
@@ -3394,7 +3411,7 @@ studio's files at commit `7017d63`, read only (nothing is written in the studio'
 | Roles (`studio/roles/`) | 5 | `agents/`, one file each, loaded as `workflow:builder` and so on | Studio paths and tools become Bonsai's (below); each role names the protocol skills it loads at start |
 | Protocols (`studio/protocols/`) | 6 of 8 | `session-start` as the one always-on file; `lanes`, `verification-ladder`, `reward-hacking-guards`, `reporting`, `adr` as skills | The same; the two Unity protocols stay out (a later game pack) |
 | Templates (`studio/templates/`) | 6 of 10 | plan, one-pager, decision record, options, playtest, brief, as documented templates | Each gains a table of its fields; the `project:` field goes (a project is its repo) |
-| Templates for Bonsai's own files | 3 of 10 | task, run report, STATE go to `base` instead (Bonsai's formats) | Rewritten to the formats you confirmed on 7 Oct |
+| Templates for Bonsai's own files | 3 of 10 | task, run report, STATE go to `base` instead (Bonsai's formats), in Bonsai's own public repo | Rewritten to the formats you confirmed on 7 Oct, naming no person ("a person"); public when their pieces land, each after a fresh agent's check for anything private, before your read of the new repo |
 | `studio/templates/game.yaml` | 1 | nothing | Replaced by `base`'s `bonsai.yaml` template |
 | The role copies in `.claude/agents/` | 5 | nothing | Copies of the roles; the studio removes them when it links (spec step 7) |
 | New | 12 files | the plugin's manifest, the pack's manifest, the lanes file, the labels file, its block, its README, its license, its line-ending rule, its two check files (from the template), and short templates for a spec and the bugs file | Written from your lanes protocol, the formats contract and the shape of today's files |
@@ -3406,22 +3423,33 @@ commands (its ladder script becomes `bonsai ladder`, its task variable becomes B
 task's grant label); the studio's services (Discord, email, the bridge, the Desk) leave the protocols, since
 notifications and screens are the studio's; the "golden rule 8" the protocols cite is written out in full; an example
 task id in a template becomes a made-up one; the ledger lines stay, worded "where a project keeps a ledger". Your name
-stays in the texts, as in Bonsai's own public files; the game wording (players, playtests, "Rohan plays it") stays: it
-is your workflow. Left out: the two Unity protocols (they name Mimas's folders; they go into a game pack later) and
-`game.yaml`'s template. The walls in `workflow` name three files in the studio's secret folder (`~/.trinetra/token`,
+stays in the `workflow` texts, as in Bonsai's own public files; `base`, Bonsai's pack for any project, names no one
+and says "a person". The game wording (players, playtests, "Rohan plays it") stays: it is your workflow. So do your
+weekly rituals and the daily brief's hour, in the producer's role and the reporting protocol: once public they describe
+your week, so say when you read the repo if any should go (the list you get marks them). `base`'s STATE template
+leaves them out: they are your studio's way, not every project's. Left out: the two Unity protocols (they name
+Mimas's folders; they go into a game pack later) and `game.yaml`'s template. The walls in `workflow` name three files in the studio's secret folder (`~/.trinetra/token`,
 `deploy_ed25519` and `salt`): names only, which Bonsai's public spec already holds.
 
-**How you see it before it is public.** A fresh Opus agent reads every file for anything private first. Then the
-orchestrator creates the repo **private**, pushes it, and sends you its link with a short list, file by file, of what
-changed from your studio's version and why. You read it on GitHub (your phone works). Ask for any change; it is made and
-pushed. When you are happy, one line makes it public:
+**How you see it before it is public.** A fresh Opus agent reads every file, and every commit from the first, for
+anything private first. Then the orchestrator creates the repo **private**, pushes it, and sends you its link with a
+short list, file by file, of what changed from your studio's version and why. You read it on GitHub (your phone works).
+Ask for any change; it is made, read again for anything private, and pushed. The repo's commits carry the same author
+line as Bonsai's own public commits (your name and email address, already public in Bonsai's history): nothing new is
+shown. When you are happy, and the orchestrator has told you that every change since the check has been read, one line
+in WSL makes it public:
 
 ```bash
-gh repo edit LastStep/bonsai-workflow --visibility public --accept-visibility-change-consequences
+gh repo edit LastStep/bonsai-workflow --visibility public
 ```
 
-Optional, recommended: one line that stops anyone (an agent included) rewriting or deleting the repo's `main`, which
-matters because projects pin the pack by its exact commit:
+(The orchestrator checks this machine's `gh` version before it sends the line. Newer versions of `gh` ask for one more
+flag, `--accept-visibility-change-consequences`; on one of those, the line it sends carries it.)
+
+Then, optional and recommended, one more line that stops anyone, an agent or you, rewriting or deleting the repo's
+`main`, which matters because projects pin the pack by its exact commit. It comes after the public line: GitHub offers
+this protection on a private repo only on a paid plan. Unlike Bonsai's own `main-protection`, which lets an admin
+through (so an agent acting as your account too), it lets no one through; you can remove it in the repo's settings:
 
 ```bash
 echo '{"name":"main-protection","target":"branch","enforcement":"active","conditions":{"ref_name":{"include":["~DEFAULT_BRANCH"],"exclude":[]}},"rules":[{"type":"deletion"},{"type":"non_fast_forward"}]}' | gh api -X POST repos/LastStep/bonsai-workflow/rulesets --input -
@@ -3434,18 +3462,28 @@ Why these are yours: making a repo public and adding a ruleset are GitHub settin
 pack change lands, and the GitHub checks do the rest (a pack's own `bonsai check`, and a test project linked to it).
 Evals (tests of a pack that call a model) also run on this PC, never on GitHub, so no key leaves it.
 
-**Your Windows login, in a scratch folder (about 3 minutes).** Claude Code's login on Windows has expired (your list).
-5.5 needs Windows sessions (the walls must be tried on both sides). When the orchestrator asks, in a normal PowerShell,
-in the folder it names under `%USERPROFILE%\bonsai-checks\`:
+**Your Windows sitting (about 3 minutes).** 5.5 needs Windows sessions (the walls must be tried on both sides), and a
+project's plugins install on Windows only once a person has trusted its folder. When the orchestrator asks, in a normal
+PowerShell, one line at a time. If Claude Code's Windows login has lapsed again (the orchestrator says so; it is due
+before 5.3), first, in your home folder:
 
 ```powershell
-cd $env:USERPROFILE\bonsai-checks\packs\project-w
 claude
 ```
 
-Answer Claude Code's question about trusting the folder with yes; if it asks you to log in, `/login`; then `/exit`.
-Tell the orchestrator whether the trust question came and what it said. That one question is the last Windows behaviour
-the skeleton never saw; an agent cannot answer it for you. Everything else on Windows is the agents'.
+then type `/login`, sign in, and type `/exit`. Then:
+
+```powershell
+cd "$env:USERPROFILE\bonsai-checks\packs\project-w"
+& "$env:USERPROFILE\bonsai-checks\bin\claude-here.cmd"
+```
+
+Claude Code asks whether to trust this folder: say yes. Then type `/exit`, and tell the orchestrator whether the
+question came and what it said. The launcher starts Claude Code on the scratch folders' own Bonsai home and plugin
+folder, so nothing of yours is touched; the orchestrator records your Windows Claude settings file's fingerprint before
+and after. Why yours: trusting a folder is Claude Code's question for a person, and Bonsai never answers it. Your 5.3
+sitting may already have shown the question on Windows; this time the folder is linked to both packs, whose plugins wait
+for that yes. Everything else on Windows is the agents'.
 
 **The first release tags are yours, later.** Until then projects name each pack by its exact commit, which works the
 same. `base-v1.0.0` (on Bonsai's repo; it starts no release) and `v1.0.0` (on the workflow repo; its checks then make a
@@ -3454,10 +3492,11 @@ GitHub release) come with your word for 1.0 at 5.7; agents never tag.
 **What changes for your projects.**
 - **Bonsai's own repo** takes `base` at the end of 5.5 (spec step 6). An agent links it; it needs no consent to code
   (`--allow-exec`), since `base` carries no code that runs, so under your answer (ii) it is not one of your commands.
-  After it, in `~/Servers/Bonsai`, Claude (yours included) cannot open your key, token or login files, and cannot
-  change your own Claude settings (`~/.claude/settings.json`), your global Claude file (`~/.claude.json`) or your own
-  `~/.claude/CLAUDE.md`: change those yourself (`/config`, `/permissions`, `/memory`, or by hand). Programs such as `gh`
-  and `ssh` still read their own files. Claude Code installs the `base` plugin for Bonsai's repo in its own plugin
+  After it, in `~/Servers/Bonsai`, Claude (yours included) cannot open your key, token or login files or your global
+  Claude file (`~/.claude.json`, which can hold tokens), and cannot change your own Claude settings
+  (`~/.claude/settings.json`), `~/.claude.json`, your own `~/.claude/CLAUDE.md`, your shell's start files (`~/.bashrc`
+  and the like), git's settings (`~/.gitconfig`) or your SSH folder: change those yourself (`/config`, `/permissions`,
+  `/memory`, or by hand). Programs such as `gh`, `git` and `ssh` still read their own files. Claude Code installs the `base` plugin for Bonsai's repo in its own plugin
   folder (instructions only). Bonsai's `STATE.md` moves to `.bonsai/STATE.md`, where every project keeps it.
 - **The studio and Mimas:** nothing changes until each links (steps 7 and 8, their own plans). Then their roles come
   from the `workflow` pack, and their own copies go.
@@ -3465,8 +3504,9 @@ GitHub release) come with your word for 1.0 at 5.7; agents never tag.
   your studio's projects. It can be, later, on your word.
 
 **Hours, order and your other steps.** 19-30 hours, re-ask at 39, as the spec has them; 5.5 after 5.4 and before 5.6.
-Your steps in 5.5: approve this section; read the private repo and make it public (one line, plus the optional one);
-the Windows login in a scratch folder. None needs a password.
+Your steps in 5.5: approve this section, the pin rule's change with it; read the private repo and make it public (one
+line, plus the optional one); about 3 minutes on Windows, starting Claude Code once through the scratch launcher and
+saying yes to its trust question (with the login first only if it has lapsed). None needs a password.
 
 #### What exists, and what 5.1 to 5.4 will have added
 
