@@ -39,9 +39,8 @@ func TestRun(t *testing.T) {
 		{"version with more", []string{"--version", "now"}, 2, "", "bonsai: --version takes no other argument:", "\nnext: run `bonsai --help`"},
 		{"help with more", []string{"--help", "status"}, 2, "", "bonsai: --help takes no other argument:", "\nnext: run `bonsai --help`"},
 		{"non-ASCII argument", []string{"b\xc3\xb6nsai"}, 2, "", `bonsai: "b\` + `u00f6nsai" is not a command yet:`, "\nnext: run `bonsai --help`"},
-		{"status --full", []string{"status", "--full"}, 2, "", "bonsai: status --full is not built yet", "\nnext: run `bonsai status` without --full"},
 		{"status --line", []string{"status", "--line", "--help"}, 2, "", "bonsai: status --line is not built yet", "\nnext: run `bonsai status --help` without --line"},
-		{"status --active", []string{"status", "--active"}, 2, "", "bonsai: status --active is not built yet", "\nnext: "},
+		{"status --active --full", []string{"status", "--active", "--full"}, 2, "", "bonsai: status --active prints only the active task", "\nnext: run `bonsai status --active`"},
 		{"status with a word", []string{"status", "now"}, 2, "", `bonsai: status takes no "now"`, "\nnext: run `bonsai status --help`"},
 	}
 	for _, c := range cases {
