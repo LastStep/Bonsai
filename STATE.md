@@ -1,7 +1,8 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 17:32, when Rohan closed the day's session after 5.1.5 landed; the next session starts
-with 5.1.6 and 5.5's review (`records/runs/R-2026-10-09-5.1.5-engine.md`, `R-2026-10-09-plan-5.5.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 19:06, when 5.1.6 had landed, Rohan had approved 5.5's section
+(without the pin rule), and 5.1.7's builder and 5.6's planner were running (`records/runs/R-2026-10-09-5.1.6-check-status.md`,
+`R-2026-10-09-plan-5.5.md`, `R-2026-10-09-5.1.7-unlink.md`, `R-2026-10-09-plan-5.6.md`).
 
 ## In short
 
@@ -9,7 +10,7 @@ Bonsai is being rebuilt as one small Go program that gives every project the sam
 proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). **Part 0 and all six parts of the walking skeleton
 are done; the skeleton's last fresh verifier passed it. At the gate (9 Oct) Rohan chose path (a), the full Bonsai
 1.0. He approved the plan for step 5, `design/plan-5.md`, on 9 Oct; step 5.1 (formats and engine to 1.0, 30-47 h,
-re-ask at 61) is under way.** The gate report is `records/gate-skeleton.md`. Everything below is on `main`, pushed.
+re-ask at 61) is under way, pieces 5.1.0 to 5.1.6 landed. The sections of 5.2 to 5.5 are written and approved.** The gate report is `records/gate-skeleton.md`. Everything below is on `main`, pushed.
 
 - **Part 0, the formats** (`3770d04`, now set 3 at `3a1f195`): `formats/` holds a JSON Schema for each of the
   contract's ten formats, an example of each, 116 trick files with their format-0 and format-1 outcomes in
@@ -40,6 +41,12 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 
 ## Rohan's decisions
 
+- **9 Oct, 18:32: 5.5's section approved, without the pin rule.** Asked whether he approves it with the new public
+  `workflow` repo and a rule letting agents move a project to a newer pack version when nothing loosens, he chose
+  "Approve, no pin rule": moving a pack's version, adding a pack to a linked project and taking one out stay a
+  person's step; an agent prepares the change and hands him the exact line, and makes it only on his word (5.5's
+  "Moving a pack's version: a person's step"). Spec §5's "Adopting a release stays a person's step" and 5.4's rule
+  stand.
 - **9 Oct, the gate: path (a), the full Bonsai 1.0** (spec §14, "Path (a) after the gate", 139-218 h, parts 5.1-5.7,
   each with a re-ask line at 1.3 times its high estimate).
 - **9 Oct: Bonsai has no screens of its own.** "Completely remove the idea of bonsai's own screens ... this visual part
@@ -99,63 +106,51 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: step 5.1.5, what the engine reads and writes
+## The one thing to do next: step 5.1.7, then 5.1.8 to 5.1.10
 
 `design/plan-5.md`, "Step 5.1". Landed on 9 Oct, each with CI green (run reports `records/runs/R-2026-10-09-5.1.*`):
 - **5.1.0** (`6a3a419`): `TestEachFaultBlocks` no longer races a 200 ms budget (test file only).
-- **5.1.1** (`6c6fc33`): consent to code. `--allow-exec` real for `init` and `update`; every first link to the test pack
-  needs it; test-pack commits E and F. Its fresh verifier failed the first round (a folder change, a pack named
-  `bonsai`, pack files under `.claude/`) and passed the fix round. Rohan's answer (11:50): a pack plugin that runs code
-  is installed on a machine only with `--allow-exec` there, and Bonsai installs or removes no plugin but the project's
-  own packs'.
-- **5.1.2** (`c4816eb`): the format-0 reader, a hand port of `yaml.mjs` at `4a05eac`; its fresh verifier passed it
-  (about 2.6 million inputs and today's studio and Mimas files, 0 differences but Node's own stack limit past about
-  1,700 levels of nesting, which the port reads: "no new refusals").
-- **5.1.3** (`254572f`; set 4 is `22dd08a`): formats set 4, eight new schemas (`workspace`, `pack`, `tasks`,
-  `sessions`, `memory`, `error`, `check`, `changes`), `status`'s `error` and the lock's `path` added, 125 trick cases,
-  contract §13's active-task fixtures, the schema-compare test (base set 3's `4936b37`), CI's history for it and
-  lint's online check off. Its fresh verifier passed it.
-- **5.1.4a** (`37125a4`): a Go type for each of the eighteen formats (`internal/format`, one registry), the engine and
-  `check` reading `bonsai.yaml` and `pack.yaml` in full while the guard's read stays lean (its code unchanged), `check
-  --schema`.
-- **5.1.4b** (`c2864c0`): every command's `--json` in set 4's shapes, 28 error words in one table each with who takes
-  the next step, one flag-and-exit table per command word. Rohan's look at the error words and the two output shapes
-  sent.
+- **5.1.1** (`6c6fc33`): consent to code: `--allow-exec` real for `init` and `update`; test-pack commits E and F; its
+  fresh verifier passed the fix round.
+- **5.1.2** (`c4816eb`): the format-0 reader, a hand port of `yaml.mjs` at `4a05eac`; its fresh verifier passed it.
+- **5.1.3** (`254572f`; set 4 is `22dd08a`): formats set 4 (eight new schemas, 125 trick cases, the schema-compare
+  test); its fresh verifier passed it.
+- **5.1.4a** (`37125a4`): a Go type for each of the eighteen formats; `check --schema`.
+- **5.1.4b** (`c2864c0`): every command's `--json` in set 4's shapes; the error words; one flag-and-exit table.
+- **5.1.5** (`a9148e4`): the lock's `declares`, `format0` and `path`; the moved tag refused; the active-task function;
+  the block; `bonsai.yaml` with every field; `check` offline from the lock.
+- **5.1.6** (`107f843`): `check` and `status` to 1.0. `format.CheckWords` holds 33 words (24 findings, 9 warnings),
+  one test walking every word, every `next.do` an exact `run: <command>` checked against the flag table; a pack's local
+  `source` in `bonsai.yaml` is an `absolute-path` finding; `status --json` with every field, `--full` (newer tags,
+  plugins, Claude Code's version) and `--active`; the Claude Code floor 2.1.294; this machine's `workspace.json`;
+  the forged-lock loose end fixed. Tests: WSL 1976 run (2 skipped), Windows 1980 (1 skipped).
 
-- **5.1.5** (`a9148e4`): the lock's `declares`, `format0` and `path` (a folder change now counts as new code), the
-  moved tag refused (`tag-moved`), document kinds, labels in force, the active-task function (all 16 fixture cases),
-  this machine's settings read, the instruction block, `bonsai.yaml` written with every field and a comment on each,
-  `check` offline from the lock alone.
+**Running now** (side by side, on Rohan's 12:27 word):
+1. **5.1.7** (`unlink`, taking a pack out, Claude Code's own records): an Opus builder in `~/Servers/Bonsai-5.1.7`
+   (branch `5.1.7`). It runs real Claude Code in scratch targets on both sides; the Windows `-p` session may fail on the
+   lapsed login (his step, below). Then 5.1.8, 5.1.9, 5.1.10 in the plan's order, and the 5.1 end verifier.
+2. **5.6's section**: an Opus planner in `~/Servers/Bonsai-plan5.6` (branch `plan5.6`, `design/plan-5.md` only). Then a
+   fresh Opus reviewer, the fixes, a Haiku audit, and Rohan if it changes what is his (his (B)). 5.7's section after.
 
-**The next session starts here** (Rohan, 17:00: "stop after the current agents are done. we will continue in a fresh
-session"). Nothing is running; every worktree but one is removed; `main` is pushed and green (`07320fe`).
-1. **5.1.6** (`check` and `status` to 1.0), then 5.1.7 to 5.1.10 in the plan's order. Its brief carries, besides the
-   plan's notes: every finding's `next.do` the exact runnable command (the plan's 5.1.6 "Agents first" bullet, Rohan's
-   15:35 direction); the block's `INDEX.md` import exempt from the missing-path finding, or its step named; this
-   machine's `workspace.json` record written for the two-checkouts warning (5.3.1 adds its trust rule); `CheckWords`
-   filled; `status --full` and `--active`; the Claude Code floor 2.1.294.
-2. **5.5's section**, written and **not yet reviewed**, on branch `plan5.5` in the worktree `~/Servers/Bonsai-plan5.5`
-   (two commits on `07320fe`; the section is "Step 5.5"). Send a fresh Opus reviewer, fix, audit, update Rohan's own
-   list in his part (the "In 5.5" bullet: read the private `workflow` repo, the public line, an optional ruleset line,
-   the Windows login in a scratch folder; the Windows login now needed before 5.5's Windows sessions; the packs' first
-   tags at 5.7 his word), land it, then bring it to Rohan (a new public repo with his content).
-3. Both can run side by side (the plan file against Go code), as today, on Rohan's 12:27 word.
+Placed by 5.1.6 for later: 5.2.0's set 5 (`needs.mcp`; the lock's `declares` holding `needs`, `hooks` and `deny`; a
+place for `check`'s notes; `status`'s `mode: full` and `checks`' layout; a lock `ref` for the moved-tag gap; the lock
+README's wording on an old lock's `path`; `bonsai --help --json`'s shape with 5.1.10); 5.6 (`install.json`'s keys
+`path`, `version`, `sha256`; `stranded`; the spec §10 Windows personal-memory warning, in no 5.1 piece); 5.1.10 (the
+new lists: `CheckWords` with kinds, `checkLater`, `status`'s needs kinds, `checks.claude_code.state`).
 
-How this session ran, for the next orchestrator: pieces and later parts' plans side by side; every brief carries its
-rules in full (two briefs went out today with a placeholder instead of the rules, caught and fixed by message at once);
-each builder rebases on `main` before it lands; a part's section goes through a fresh review, fixes and a Haiku audit
-before it lands; times in the run reports come from `date`, not from memory.
+How this session runs, for the next orchestrator: pieces and later parts' plans side by side; every brief carries its
+rules in full; each builder rebases on `main` before it lands; a part's section goes through a fresh review, fixes and
+a Haiku audit before it lands, then to Rohan under his (B); times in the run reports come from `date`; no test or
+script reaches the real `claude` except a builder's scripted run in a scratch target through `claude-here`, with the
+settings hashes before and after.
 
-For 5.2.0's start check (formats set 5): the lock schema's and README's wording on `declares` (it also holds `hooks`
-and `deny`) and on an old lock's `path` (read as unknown); a lock `ref` to close a moved-tag gap (an addition with an
-engine change); `bonsai --help --json`'s shape lands with 5.1.10 as its own addition.
-
-5.1's hours so far: 547 minutes (9 h 7 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
+5.1's hours so far: 617 minutes (10 h 17 min) of 61 h. 5.5's planning: 84 minutes. Step 5's Windows-only tally: 0.
+Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
-- Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the model): needed before
-  5.5's Windows sessions and 5.3's Windows check. In PowerShell: `claude`, then `/login`, then quit.
+- Claude Code's login on Windows has expired (5.1.1's Windows sessions could not reach the model): due before 5.3
+  (and 5.1.7's Windows `-p` run would use it). In PowerShell: `claude`, then `/login`, then `/exit`.
 - In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and
   `update`'s JSON (5.1.3/5.1.4b). In 5.2, a look (no vote): the log's two new field names, `bonsai_path` and
   `bonsai_sha256`.
@@ -166,8 +161,8 @@ engine change); `bonsai --help --json`'s shape lands with 5.1.10 as its own addi
 ## Loose ends
 
 - Rohan's roadmap artifact is at version 31 (its plan card still "waiting on you"): updated at 5.1's end, as the plan
-  says (item 9), or sooner if he asks. Since then: the plan approved; 5.1.0 to 5.1.5 landed; 5.2 to 5.4 planned; his
-  answers of 9 Oct.
+  says (item 9), or sooner if he asks. Since then: the plan approved; 5.1.0 to 5.1.6 landed; 5.2 to 5.5 planned and
+  approved; his answers of 9 Oct.
 
 - The WSL user settings file's baseline is `9e049dea...80d8d6` since Rohan's `/plugin` at 12:06 on 9 Oct (his word;
   before it `7b515457...a025a7`). Windows' is unchanged, `2b6295c1...4ff6c9`.
