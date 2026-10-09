@@ -98,7 +98,8 @@ const (
 	nextLock       = "restore .bonsai/lock.json from git (git checkout -- .bonsai/lock.json); the lock is Bonsai's to write"
 )
 
-// errorFields are the fields that hold the error object's code, in each format that carries one.
+// errorCode is the error object's code in the formats that carry it as their error field: the open list of
+// ErrorWords.
 var errorCode = []List{{Field: "error.code", Table: "format.ErrorWords", Words: &ErrorWords}}
 
 // All is every format, in formats.Names' order (the ten of contract §2, then the eight of set 4). Its test holds it

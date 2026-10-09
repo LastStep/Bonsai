@@ -142,6 +142,10 @@ func TestEveryExampleReads(t *testing.T) {
 			if !schema.Equal(doc, want) {
 				t.Errorf("the Go type gives\n%s\nnot examples/%s.json", schema.Show(doc), f.Name)
 			}
+			// Byte for byte, in the schema's order: the type gives the document as the set stores it.
+			if out, err := schema.Encode(doc); err != nil || !bytes.Equal(out, example(t, f.Name+".json")) {
+				t.Errorf("the Go type's document is not examples/%s.json byte for byte (%v):\n%s", f.Name, err, out)
+			}
 			if err := f.Check(doc); err != nil {
 				t.Errorf("as a writer writes it: %v", err)
 			}

@@ -23,6 +23,8 @@ type ReadError struct {
 	TooNew bool   // the document's format is a newer major: nothing else was read (contract §2.2)
 	Msg    string // what is wrong
 	Next   string // what to do
+
+	format0 bool // the file has no format: line (ReadYAML): task, run and state then read it under format 0
 }
 
 func (e *ReadError) Error() string {
@@ -112,21 +114,22 @@ func (f *Format) ReadYAML(raw []byte) (doc schema.Object, m *reader.Map, err err
 		if f.Shape != YAMLFile {
 			where, start = "its frontmatter", "start the frontmatter with format: "+f.Versioned()
 		}
-		return nil, nil, &ReadError{Format: f.Versioned(), Line: 1, Msg: fmt.Sprintf("%s has no format: line first, so it reads "+
-			"as format 0, which %s never had", where, f.ID()), Next: start, Field: errFormat0}
+		e := &ReadError{Format: f.Versioned(), Line: 1, Msg: fmt.Sprintf("%s has no format: line first, so it reads "+
+			"as format 0, which %s never had", where, f.ID()), Next: start, format0: true}
+		if f.Read0 {
+			e.Msg = where + " has no format: line, so it is format 0: read it with ReadFormat0"
+			e.Next = "read the file with Format.ReadFormat0, or give it a format: line"
+		}
+		return nil, nil, e
 	}
 	doc, err = f.HoldMap(r.Value)
 	return doc, r.Value, err
 }
 
-// errFormat0 marks the refusal ReadYAML gives a format-0 file, which a reader of task, run and state turns into a
-// format-0 read.
-const errFormat0 = "\x00format0"
-
-// isFormat0 reports whether err is ReadYAML's refusal of a format-0 file.
+// isFormat0 reports whether err is ReadYAML's answer for a file with no format: line.
 func isFormat0(err error) bool {
 	e, ok := err.(*ReadError)
-	return ok && e.Field == errFormat0
+	return ok && e.format0
 }
 
 // HoldMap holds a mapping read under format 1 (by internal/reader) to the format: its format: line, then every
@@ -309,9 +312,6 @@ func (f *Format) readYAMLInto(raw []byte, dst any) (*reader.Map, error) {
 			return nil, err
 		}
 		return m0, f.bindFitting(reader.JSON(m0).(schema.Object), dst)
-	}
-	if isFormat0(err) {
-		err.(*ReadError).Field = ""
 	}
 	if err != nil {
 		return nil, err

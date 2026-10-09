@@ -76,9 +76,6 @@ func ReadPack(raw []byte) (*Pack, error) {
 	f := MustLookup("pack")
 	_, m, err := f.ReadYAML(raw)
 	if err != nil {
-		if isFormat0(err) {
-			err.(*ReadError).Field = ""
-		}
 		return nil, err
 	}
 	return PackFromMap(m)

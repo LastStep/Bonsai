@@ -276,9 +276,6 @@ func ReadSessions(raw []byte) (*Sessions, error) {
 func (f *Format) tableParts(raw []byte) (front schema.Object, body []string, first int, err error) {
 	front, _, err = f.ReadYAML(raw)
 	if err != nil {
-		if isFormat0(err) {
-			err.(*ReadError).Field = ""
-		}
 		return nil, nil, 0, err
 	}
 	lines := strings.Split(string(lf(raw)), "\n")
