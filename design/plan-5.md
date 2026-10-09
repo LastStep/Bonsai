@@ -3807,23 +3807,49 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    from 5.5.3, the templates, the generated-files page), its docs in an HTML comment the engine leaves out; `README.md`
    (what base is, `plugin.json`'s fields, every skill, every wall and why, how a project takes it, that it carries no
    code). Its files are LF through the root's `.gitattributes` line (5.5.0).
-2. **The walls** (spec §7), each a deny rule with its `why` (the preview's sentence), in `pack.yaml`, their one home:
+2. **The walls** (spec §7), each a deny rule with its `why` (the preview's sentence), in `pack.yaml`, their one home.
+   **What is walled, one rule for all:** Read, the files and folders that commonly hold keys, tokens or logins; Edit,
+   the person's own Claude Code files and the files whose change starts code. An exact file where one is enough, a
+   folder only where the tool keeps several. `base` is public and serves projects beyond this PC, so the rule, not
+   this PC's listing, decides. **Each wall has its twins:** `~/` is the session's own home (on Windows the Windows
+   home); from WSL the Windows home is `//mnt/c/Users/*/`; from Windows the WSL home is its network path (below).
    - Read, secrets: `~/.ssh/**`, `~/.aws/**`, `~/.config/gh/hosts.yml`, `~/.claude/.credentials.json`,
      `~/.docker/config.json`, `~/.git-credentials`, `~/.bonsai/salt` (the spec's); `~/.netrc`, `~/.npmrc`, `~/.pypirc`,
-     `~/.kube/config` (added: exact files that commonly hold tokens; `base` is public and serves projects beyond this
-     PC); `~/AppData/Roaming/GitHub CLI/hosts.yml` (added: gh's login on Windows, where `~` is the Windows home).
-   - Read, the Windows home from WSL: `//mnt/c/Users/*/.ssh/**`, `.git-credentials`, `.claude/.credentials.json`,
-     `.docker/config.json` (the spec's); `//mnt/c/Users/*/.aws/**`, `AppData/Roaming/GitHub CLI/hosts.yml` and
-     `.bonsai/salt` (added: spec §7 says "the Windows side is short" and asks 5.5 to list it again).
-   - Edit: `//**/.claude/settings.local.json`, `~/.claude/settings.json`, `~/go/bin/**`, `~/.local/bin/bonsai*` (the
-     spec's); `//mnt/c/Users/*/.claude/settings.json` (added: the Windows user's settings from a WSL session);
-     `~/.claude.json` (added: Claude Code's global file, which holds user-scope MCP servers, code Claude Code starts on
-     its own); `~/.claude/CLAUDE.md` (added: the user memory file every project loads; 5.6's import line in it is the
-     person's, "No agent edits that file").
+     `~/.kube/config`, `~/.config/git/credentials` (git's other credential file), `~/.gnupg/**`, `~/.config/gcloud/**`,
+     `~/.azure/**` (added, by the rule); `~/.claude.json` (added: Claude Code's global file, whose user and local MCP
+     servers' `env` values often hold tokens); on Windows, where the same tools keep them elsewhere,
+     `~/AppData/Roaming/GitHub CLI/hosts.yml`, `~/AppData/Roaming/gcloud/**` and `~/AppData/Roaming/gnupg/**` (added).
+   - Read, the Windows home from WSL: `//mnt/c/Users/*/` with `.ssh/**`, `.git-credentials`,
+     `.claude/.credentials.json`, `.docker/config.json` (the spec's); and with every other Read wall above that has a
+     place in a Windows home: `.aws/**`, `.azure/**`, `.claude.json`, `.netrc`, `.npmrc`, `.pypirc`, `.kube/config`,
+     `.bonsai/salt`, `AppData/Roaming/GitHub CLI/hosts.yml`, `AppData/Roaming/gcloud/**`, `AppData/Roaming/gnupg/**`
+     (added: spec §7 says "the Windows side is short" and asks 5.5 to list it again).
+   - Read, the WSL home from Windows: a native Windows session reaches WSL's files through
+     `\\wsl.localhost\<distro>\home\<user>\` and `\\wsl$\<distro>\home\<user>\`, the twin of the `//mnt/c/Users/*/`
+     rules. Each `~/` Read wall's twin there, in the form 5.5.6 finds holds; the forms to try first:
+     `//wsl.localhost/*/home/*/.ssh/**` and `//wsl$/*/home/*/.ssh/**` (and the same with a third leading slash). If
+     no form holds on Windows, base's README says so plainly: a native Windows session can read WSL's key files by that
+     path, and the walls do not stop it.
+   - Edit, the person's own Claude Code: `//**/.claude/settings.local.json`, `~/.claude/settings.json` (the spec's);
+     `~/.claude.json` (added: its MCP servers are code Claude Code starts on its own); `~/.claude/CLAUDE.md` (added: the
+     user memory file every project loads; 5.6's import line in it is the person's, "No agent edits that file"); from
+     WSL, `//mnt/c/Users/*/` with `.claude/settings.json`, `.claude.json` and `.claude/CLAUDE.md` (added: the Windows
+     user's own files).
+   - Edit, files that start code: `~/go/bin/**`, `~/.local/bin/bonsai*` (the spec's: a copy that would shadow the
+     installed `bonsai`); `~/.ssh/**` (added: `config` can run a command at every connection and `authorized_keys` lets
+     someone in; a Read wall stops a read, not the write of a new file); `~/.gitconfig` and `~/.config/git/config`
+     (added: aliases, a hooks path and helpers run commands in every repository); `~/.bashrc`, `~/.bash_profile`,
+     `~/.profile`, `~/.zshrc`, `~/.zprofile` (added: run at every shell start); on Windows `~/Documents/PowerShell/**`
+     and `~/Documents/WindowsPowerShell/**` (added: PowerShell's profiles and modules, run at its start); from WSL,
+     `//mnt/c/Users/*/` with `.ssh/**`, `.gitconfig`, `Documents/PowerShell/**` and `Documents/WindowsPowerShell/**`.
+     A place left out is written in the README with its reason (a Documents folder moved elsewhere, say, by a sync
+     tool, which a rule on `~/Documents/` does not reach).
    - **Left to the engine** (5.3.5 note 2): `Edit(//**/.bonsai/local/**)`, the tables' rules and `Edit(~/.bonsai/**)`;
      `packs/packs_test.go` fails if base repeats one. Narrow on purpose, as spec §7 says (exact files where a folder is
      not needed; no `Bash(...)` rule). The final forms follow 5.5.6's tries: a form that does not hold on one side is
-     replaced by one that does, or documented in the README as one side's, with the reason.
+     replaced by one that does, or documented in the README as one side's, with the reason. Every folder rule is a
+     recursive glob, which spec §7 notes the sandbox makes into one bind per file (issue #74081): the few folders here
+     are for the sandbox probe to measure.
 3. **The template skills** `task`, `run`, `memory`: each `skills/<kind>/SKILL.md` with a `name` and a `description`
    saying when to use it; the purpose; the fields table (`| Field | Meaning | Allowed values | Example |`), equal to the
    schema for its format; then the template, its `format:` line carrying the pointer comment (spec §5). Bodies: the
@@ -4026,8 +4052,9 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    `bugs` templates are new and short, from the shape of today's specs' frontmatter and of the bugs register's header,
    none of their content.
 6. **The walls for the studio's secret files** (spec §7: "base never names the studio"): `Read(~/.trinetra/token)`,
-   `Read(~/.trinetra/deploy_ed25519)`, `Read(~/.trinetra/salt)`, and the same three under the Windows home from WSL
-   (`//mnt/c/Users/*/.trinetra/...`); 5.5.6's listing may add one there (names only). Each with its `why`.
+   `Read(~/.trinetra/deploy_ed25519)`, `Read(~/.trinetra/salt)`, and their twins by base's rule (note 5.5.2, 2): the
+   same three under the Windows home from WSL (`//mnt/c/Users/*/.trinetra/...`) and under the WSL home from Windows, in
+   the form 5.5.6 finds holds; 5.5.6's listing may add one there (names only). Each with its `why`.
 7. **`block.md`**, at most four lines: the roles and how to start one (`claude --agent workflow:builder`), the lanes
    skill, the document templates by name. With `base`'s block, the label lines and the imports, the whole block stays
    under 40 lines (measured on a project linked to both).
@@ -4113,10 +4140,13 @@ with its grep and read. The end verifier's check 8 reads the whole history again
 both sides"; this plan's 5.3.5 note 3 on how a rule's path anchors).
 1. **The listing:** on each side, which of the walls' files exist, and a few other common credential files, tested by
    name only (`test -e`; PowerShell's `Test-Path`), never opened, sized or copied; reported as `~/...` or
-   `%USERPROFILE%\...`. A file present and not walled goes back to 5.5.2 (or 5.5.4 for the studio's) as a fix round.
+   `%USERPROFILE%\...`. From Windows also the WSL home through `\\wsl.localhost\<distro>\home\<user>\` and `\\wsl$\...`,
+   by name only, reported as `~/...` on WSL. A file present and not walled goes back to 5.5.2 (or 5.5.4 for the
+   studio's) as a fix round.
 2. **Decoys first:** in a scratch project linked to both packs, a twin of every rule form (`~/` and a folder, `~/` and
-   an exact file, `//mnt/c/Users/*/`, `//**/`, a path with a space) over decoy files in the scratch folder, loaded with
-   `--settings` for the try only: each tried with the Read tool and `cat`, `head` and `tail` (Read rules) or Edit,
+   an exact file, `//mnt/c/Users/*/`, `//**/`, a path with a space, and on Windows the WSL home's network-path forms of
+   note 5.5.2, 2, over decoys in WSL's scratch folder reached by that path) over decoy files in the scratch folder,
+   loaded with `--settings` for the try only: each tried with the Read tool and `cat`, `head` and `tail` (Read rules) or Edit,
    Write and a shell redirect (Edit rules); each refused, the rule named.
 3. **The real rules, with no secret shown:** a rule over a folder is tried on a name that cannot exist there
    (`~/.ssh/bonsai-wall-probe`): a refusal before any read proves it, where an allowed call would only say the file is
@@ -4290,8 +4320,11 @@ both sides where a check names them, and passes or fails 5.5:
 - **Contract §7.1: the run report's "body is the workflow pack's template":** §5's table puts the run report's template
   in `base`; base's `run` skill holds the frontmatter and today's body, and `workflow`'s `reporting` skill says how to
   fill it.
-- **§7's walls list:** the `.bonsai/local/` rule is the engine's (5.3.5); eleven rules are added, each with its reason
-  (note 5.5.2, 2); the Windows side is listed again, as §7 asks.
+- **§7's walls list:** the `.bonsai/local/` rule is the engine's (5.3.5); rules are added, each with its reason (note
+  5.5.2, 2), by one stated rule: more files that commonly hold keys or tokens (`~/.claude.json` among them, read as
+  well as edit), Edit walls on files that start code (`~/.ssh`, git's settings, the shell's start files), the Windows
+  side listed again as §7 asks, and the WSL home as a native Windows session reaches it (`\\wsl.localhost\...`), the
+  twin §7 does not name; a form that holds on no side is a gap written in base's README.
 - **§7: "each rule tried once in a scratch session":** a rule over a secret file that exists is tried by its form on a
   decoy, never by opening the secret (note 5.5.6, 3).
 - **§5: "How a role names a plugin skill ... is checked in step 5.5":** measured on a fixture role (note 5.5.4, 4).
