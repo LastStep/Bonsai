@@ -136,8 +136,16 @@ type Plan struct {
 
 	Plugins []PluginResult // what InstallPlugins did after the plan was written (or had nothing to write)
 
+	pluginCode map[string][]CodePart // each pack's plugin code parts at its new commit, for the install step
+
 	lock      *workspace.Lock
 	lockBytes []byte
+}
+
+// PluginConsent is what the install step needs after the plan (InstallPlugins): each pack's plugin code parts at the
+// commit the plan locks, the request's --allow-exec, and again, the command that repeats the run with --allow-exec.
+func (p *Plan) PluginConsent(again string) PluginConsent {
+	return PluginConsent{Code: p.pluginCode, AllowExec: p.AllowExec, Again: again}
 }
 
 // NewLock is the lock the plan writes (or, with nothing to change, the lock as it is).
@@ -344,6 +352,11 @@ func Build(req Request) (*Plan, error) {
 			}
 		}
 		p.Packs = append(p.Packs, mv)
+	}
+
+	p.pluginCode = map[string][]CodePart{}
+	for _, pd := range newPacks {
+		p.pluginCode[pd.Ref.ID] = pd.Code
 	}
 
 	// Two packs may not write one path (spec §6, "Layers").

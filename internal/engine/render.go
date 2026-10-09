@@ -216,7 +216,9 @@ func ClosingWords(cfg *workspace.Config, home string) string {
 
 // JSON is the plan as a document for programs: result is preview, applied, nothing, conflict, refused or declined.
 // runs_code lists what the plan writes that runs code, one entry per item (kind, change, pack, item, was, why), and
-// allow_exec says whether --allow-exec was given: without it, a plan with any item is refused. left_hooks lists, at
+// allow_exec says whether --allow-exec was given: without it, a plan with any item is refused. Left for 5.1.4b's
+// formats (verifier N1): settings[].runs_code is true for Bonsai's own hook line at a first link, which --yes writes
+// and runs_code leaves out, and those own lines have no field of their own yet (the preview names them). left_hooks lists, at
 // a link again with the lock missing, the hook lines left in place as the project's own.
 func (p *Plan) JSON(result string, exit int, refusal *Error) schema.Object {
 	packs := []any{}

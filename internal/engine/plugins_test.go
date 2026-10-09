@@ -132,18 +132,18 @@ func TestInstallPlugins(t *testing.T) {
 	lock := p.NewLock()
 	want := PluginID(testpack.ID, MarketplaceName("demo", []string{e.pack.A}))
 
-	if got := InstallPlugins(root, p.Config, lock, nil); got != nil {
+	if got := InstallPlugins(root, p.Config, lock, nil, PluginConsent{}); got != nil {
 		t.Errorf("a nil CLI: %+v", got)
 	}
 	f := &fakeCLI{}
-	got := InstallPlugins(root, p.Config, lock, f)
+	got := InstallPlugins(root, p.Config, lock, f, PluginConsent{})
 	if len(got) != 1 || got[0].Result != "installed" || got[0].Plugin != want || got[0].Commit != e.pack.A ||
 		got[0].Message != "at "+e.pack.A[:12] || got[0].Next != "" {
 		t.Errorf("installed: %+v", got)
 	}
 	// Claude Code rewriting the settings file as it installs: said so.
 	f = &fakeCLI{rewrite: filepath.Join(root, filepath.FromSlash(SettingsFile))}
-	if got := InstallPlugins(root, p.Config, lock, f); len(got) != 1 || got[0].Result != "installed" ||
+	if got := InstallPlugins(root, p.Config, lock, f, PluginConsent{}); len(got) != 1 || got[0].Result != "installed" ||
 		!strings.Contains(got[0].Message, "Claude Code wrote .claude/settings.json again in its own key order") {
 		t.Errorf("installed, the file rewritten: %+v", got)
 	}
@@ -152,22 +152,22 @@ func TestInstallPlugins(t *testing.T) {
 	}
 	f = &fakeCLI{install: map[string]InstallResult{want: {Outcome: "failed", FailureCode: "not_found",
 		Message: `Plugin "demo-pack" not found in marketplace`}}}
-	if got := InstallPlugins(root, p.Config, lock, f); len(got) != 1 || got[0].Result != "waiting" ||
+	if got := InstallPlugins(root, p.Config, lock, f, PluginConsent{}); len(got) != 1 || got[0].Result != "waiting" ||
 		!strings.Contains(got[0].Message, "has not registered this checkout's marketplace") || !strings.Contains(got[0].Next, "trust question") ||
 		!strings.Contains(got[0].Next, "run bonsai update again") {
 		t.Errorf("an unregistered marketplace: %+v", got)
 	}
 	f = &fakeCLI{install: map[string]InstallResult{want: {Outcome: "failed", FailureCode: "network", Message: "fetch failed\u2026"}}}
-	if got := InstallPlugins(root, p.Config, lock, f); len(got) != 1 || got[0].Result != "failed" ||
+	if got := InstallPlugins(root, p.Config, lock, f, PluginConsent{}); len(got) != 1 || got[0].Result != "failed" ||
 		got[0].Message != `fetch failed\u2026` || got[0].Next != "run: claude plugin install "+want+" --scope project" {
 		t.Errorf("a failed install: %+v", got)
 	}
 	f = &fakeCLI{instErr: ErrNoClaude}
-	if got := InstallPlugins(root, p.Config, lock, f); len(got) != 1 || got[0].Result != "skipped" || got[0].Next == "" {
+	if got := InstallPlugins(root, p.Config, lock, f, PluginConsent{}); len(got) != 1 || got[0].Result != "skipped" || got[0].Next == "" {
 		t.Errorf("no Claude Code: %+v", got)
 	}
 	f = &fakeCLI{instErr: errors.New("claude plugin install printed no result line")}
-	if got := InstallPlugins(root, p.Config, lock, f); len(got) != 1 || got[0].Result != "failed" ||
+	if got := InstallPlugins(root, p.Config, lock, f, PluginConsent{}); len(got) != 1 || got[0].Result != "failed" ||
 		!strings.HasPrefix(got[0].Next, "run: claude plugin install ") {
 		t.Errorf("an error: %+v", got)
 	}
@@ -370,6 +370,96 @@ func TestForCheckout(t *testing.T) {
 	for _, c := range cases {
 		if got := forCheckout(c.p, root); got != c.want {
 			t.Errorf("%+v: %v", c.p, got)
+		}
+	}
+}
+
+// A pack's plugin that carries code parts is installed on this machine only with --allow-exec (Rohan, 9 Oct: "Ask on
+// each machine"): without it, waiting, naming the plugin and its code parts, the next step the same command with
+// --allow-exec, and no install asked of Claude Code; with it, installed; already installed at the locked commit for
+// this checkout, left as it is with no question; a plugin with no code part installs with no flag.
+func TestInstallPluginsWithCode(t *testing.T) {
+	e := setup(t)
+	root := testpack.Project(t, e.tmp, "code")
+	p := e.link(t, root, e.pack.F)
+	lock := p.NewLock()
+	want := PluginID(testpack.ID, MarketplaceName("demo", []string{e.pack.F}))
+	consent := p.PluginConsent("bonsai update --allow-exec")
+	if consent.AllowExec != true || len(consent.Code[testpack.ID]) == 0 {
+		t.Fatalf("the plan's consent: %+v", consent)
+	}
+	consent.AllowExec = false
+
+	f := &fakeCLI{}
+	got := InstallPlugins(root, p.Config, lock, f, consent)
+	if len(got) != 1 || got[0].Result != "waiting" || got[0].Plugin != want ||
+		!strings.Contains(got[0].Message, "carries code Claude Code runs on its own (hooks/hooks.json)") ||
+		got[0].Next != "if you consent to that code running on this machine, run: bonsai update --allow-exec" {
+		t.Errorf("without --allow-exec: %+v", got)
+	}
+	if strings.Join(f.asked, ",") != "list" {
+		t.Errorf("without --allow-exec, Claude Code was asked %v", f.asked)
+	}
+
+	consent.AllowExec = true
+	f = &fakeCLI{}
+	if got := InstallPlugins(root, p.Config, lock, f, consent); len(got) != 1 || got[0].Result != "installed" ||
+		strings.Join(f.asked, ",") != "install "+want {
+		t.Errorf("with --allow-exec: %+v, asked %v", got, f.asked)
+	}
+
+	consent.AllowExec = false
+	f = &fakeCLI{list: []InstalledPlugin{{ID: want, Version: e.pack.F[:12], Scope: "project", Enabled: true, ProjectPath: root}}}
+	if got := InstallPlugins(root, p.Config, lock, f, consent); len(got) != 1 || got[0].Result != "installed" ||
+		!strings.Contains(got[0].Message, "already installed") || got[0].Next != "" || strings.Join(f.asked, ",") != "list" {
+		t.Errorf("already installed: %+v, asked %v", got, f.asked)
+	}
+	// Installed for another checkout, or at another commit: not this one's, so it waits.
+	for _, other := range []InstalledPlugin{
+		{ID: want, Version: e.pack.F[:12], Scope: "project", Enabled: true, ProjectPath: filepath.Join(e.tmp, "elsewhere")},
+		{ID: want, Version: e.pack.E[:12], Scope: "project", Enabled: true, ProjectPath: root},
+	} {
+		f = &fakeCLI{list: []InstalledPlugin{other}}
+		if got := InstallPlugins(root, p.Config, lock, f, consent); len(got) != 1 || got[0].Result != "waiting" {
+			t.Errorf("installed %+v: %+v", other, got)
+		}
+	}
+
+	// No code part (the test pack at A): installed with no flag, as before.
+	rootA := testpack.Project(t, e.tmp, "nocode")
+	pa := e.link(t, rootA, e.pack.A)
+	ca := pa.PluginConsent("bonsai update --allow-exec")
+	ca.AllowExec = false
+	f = &fakeCLI{}
+	wantA := PluginID(testpack.ID, MarketplaceName("demo", []string{e.pack.A}))
+	if got := InstallPlugins(rootA, pa.Config, pa.NewLock(), f, ca); len(got) != 1 || got[0].Result != "installed" ||
+		strings.Join(f.asked, ",") != "install "+wantA {
+		t.Errorf("no code part: %+v, asked %v", got, f.asked)
+	}
+}
+
+// Bonsai installs only the project's own packs' plugins and removes none: whatever else Claude Code reports
+// installed (a person's own plugins, another workspace's), the step asks for nothing but the lock's plugins, and
+// PluginCLI has no call that removes or changes a plugin.
+func TestInstallOnlyOurPlugins(t *testing.T) {
+	e := setup(t)
+	root := testpack.Project(t, e.tmp, "ours")
+	p := e.link(t, root, e.pack.F)
+	want := PluginID(testpack.ID, MarketplaceName("demo", []string{e.pack.F}))
+	others := []InstalledPlugin{
+		{ID: "helper@a-persons-marketplace", Version: "1.0.0", Scope: "user", Enabled: true},
+		{ID: "demo-pack@bonsai-other-12345678", Version: e.pack.A[:12], Scope: "project", Enabled: true, ProjectPath: root},
+		{ID: "tool@bonsai-demo-00000000", Version: "x", Scope: "local", Enabled: false, ProjectPath: root},
+	}
+	for _, allow := range []bool{false, true} {
+		c := p.PluginConsent("bonsai update --allow-exec")
+		c.AllowExec = allow
+		f := &fakeCLI{list: others}
+		InstallPlugins(root, p.Config, p.NewLock(), f, c)
+		for _, a := range f.asked {
+			if a != "list" && a != "install "+want {
+				t.Errorf("allow %v: asked %q", allow, a)
+			}
 		}
 	}
 }

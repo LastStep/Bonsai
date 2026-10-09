@@ -354,3 +354,40 @@ func (c *cli) exists(rel string) bool {
 	_, err := os.Stat(filepath.Join(c.root, filepath.FromSlash(rel)))
 	return err == nil
 }
+
+// A pack's plugin that carries code (the test pack from F: a hook of the plugin itself) installs on this machine only
+// with --allow-exec, on each machine: a git-pulled lock's update with nothing to change leaves it waiting, exit 0
+// (the plugin step never changes the exit code), naming the plugin, its code part and the command; with
+// --allow-exec it installs; once installed, update asks nothing more.
+func TestPluginStepWithCode(t *testing.T) {
+	c := newCLI(t)
+	f := &fakePlugins{install: engine.InstallResult{Outcome: "ok"}}
+	defer func(p engine.PluginCLI) { pluginCLI = p }(pluginCLI)
+	pluginCLI = f
+	market := engine.MarketplaceName("demo", []string{c.pack.F})
+	want := "demo-pack@" + market
+	if code, _, _ := c.run("", append(c.linkArgs(c.pack.F), "--yes")...); code != 0 || strings.Join(f.asked, ",") != "install "+want {
+		t.Fatalf("the link with --allow-exec: %d, asked %v", code, f.asked)
+	}
+	f.asked = nil
+	code, out, _ := c.run("", "update")
+	if code != 0 || !strings.Contains(out, "  waiting      "+want+": the plugin carries code Claude Code runs on its own (hooks/hooks.json)") ||
+		!strings.Contains(out, "next: if you consent to that code running on this machine, run: bonsai update --allow-exec\n") ||
+		strings.Join(f.asked, ",") != "list" {
+		t.Errorf("update without --allow-exec: %d, asked %v\n%s", code, f.asked, out)
+	}
+	code, out, _ = c.run("", "update", "--json")
+	if doc, err := schema.Decode([]byte(out)); code != 0 || err != nil || !strings.Contains(out, `"result": "waiting"`) {
+		t.Errorf("update --json: %d %v %s", code, err, schema.Show(doc))
+	}
+	f.asked = nil
+	if code, out, _ := c.run("", "update", "--allow-exec"); code != 0 || !strings.Contains(out, "installed    "+want) ||
+		strings.Join(f.asked, ",") != "install "+want {
+		t.Errorf("update --allow-exec: %d, asked %v\n%s", code, f.asked, out)
+	}
+	f.asked, f.list = nil, []engine.InstalledPlugin{{ID: want, Version: c.pack.F[:12], Scope: "project", Enabled: true, ProjectPath: c.root}}
+	if code, out, _ := c.run("", "update"); code != 0 || !strings.Contains(out, "already installed for this checkout") ||
+		strings.Join(f.asked, ",") != "list" {
+		t.Errorf("update once installed: %d, asked %v\n%s", code, f.asked, out)
+	}
+}

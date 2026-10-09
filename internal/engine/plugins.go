@@ -21,7 +21,14 @@ package engine
 //     any order).
 //
 // So after init and update write, Bonsai asks Claude Code to install each locked plugin at project scope, never user
-// (InstallPlugins); check compares what Claude Code reports with the lock (ComparePlugins), and reads, offline, the
+// (InstallPlugins), and only a project's own packs' plugins: PluginCLI can list and install, and nothing else, so
+// Bonsai never installs, removes or changes a plugin that is not one of the project's own packs (Rohan, 9 Oct: "it
+// shouldn't install or remove other plugins"). A plugin that carries code parts (consent.go: hooks, MCP and LSP
+// servers, monitors, mods) runs code on this machine once installed, so it is installed only with --allow-exec, on
+// each machine (Rohan, 9 Oct, S2: "Ask on each machine"): without it the result is waiting, naming the plugin and its
+// code parts, with the same command and --allow-exec as the person's next step; a plugin Claude Code already reports
+// installed at the locked commit for the checkout is not asked about again. Like every result of this step, waiting
+// never changes the command's exit code. A plugin with no code part (roles, skills, commands) installs with no flag; check compares what Claude Code reports with the lock (ComparePlugins), and reads, offline, the
 // .claude/settings.local.json files Claude Code reads for the checkout for a line turning on another commit's plugin
 // (checkLocalPlugins). Bonsai never writes a local settings file. The calls go through PluginCLI: ClaudeCLI runs the
 // real `claude`, tests use a fake; a nil PluginCLI asks nothing (Bonsai's tests).
@@ -194,20 +201,62 @@ type PluginResult struct {
 	Next    string
 }
 
+// PluginConsent is what the install step needs to keep a plugin that carries code off this machine until a person
+// consents (Rohan, 9 Oct: "Ask on each machine"): each locked pack's plugin code parts at its locked commit (by pack
+// id; Plan.PluginConsent fills them), whether --allow-exec was given, and the command that repeats the run with it.
+type PluginConsent struct {
+	Code      map[string][]CodePart
+	AllowExec bool
+	Again     string
+}
+
 // InstallPlugins asks Claude Code to install each locked pack's plugin for the checkout at root, at project scope
 // (spec §5: `claude plugin install` is a no-op once installed, and the marketplace name is new whenever a locked
-// commit changed). It never fails the command: the project's files are written; what this machine still needs is
-// in each result's next step. A nil cli installs nothing.
-func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cli PluginCLI) []PluginResult {
+// commit changed). A plugin that carries code parts is installed only with consent.AllowExec; without it, one Claude
+// Code already reports installed at the locked commit for the checkout is left as it is, and any other waits for the
+// person's --allow-exec. It never fails the command: the project's files are written; what this machine still needs
+// is in each result's next step. A nil cli installs nothing.
+func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cli PluginCLI, consent PluginConsent) []PluginResult {
 	if cli == nil || cfg == nil || lock == nil || len(lock.Packs) == 0 {
 		return nil
 	}
 	market := lockMarket(cfg, lock)
+	var listed []InstalledPlugin
+	listedOnce := false
+	installedHere := func(id, commit string) bool {
+		if !listedOnce {
+			listedOnce = true
+			listed, _ = cli.List(root)
+		}
+		for _, p := range listed {
+			if p.ID == id && strings.HasPrefix(p.Version, pluginVersion(commit)) && forCheckout(p, root) {
+				return true
+			}
+		}
+		return false
+	}
 	var out []PluginResult
 	for _, lp := range lock.Packs {
 		id := PluginID(lp.ID, market)
 		cmd := "claude plugin install " + id + " --scope " + PluginScope
 		r := PluginResult{Pack: lp.ID, Plugin: id, Commit: lp.Commit}
+		if parts := consent.Code[lp.ID]; len(parts) > 0 && !consent.AllowExec {
+			if installedHere(id, lp.Commit) {
+				r.Result, r.Message = "installed", "at "+pluginVersion(lp.Commit)+" (already installed for this checkout)"
+			} else {
+				again := consent.Again
+				if again == "" {
+					again = "bonsai update --allow-exec"
+				}
+				r.Result = "waiting"
+				r.Message = "the plugin carries code Claude Code runs on its own (" + codeParts(parts) + "), so Bonsai installs it " +
+					"on this machine only with --allow-exec"
+				r.Next = "if you consent to that code running on this machine, run: " + again
+			}
+			r.Message, r.Next = ascii(r.Message), ascii(r.Next)
+			out = append(out, r)
+			continue
+		}
 		before, _, _ := readFile(root, SettingsFile)
 		res, err := cli.Install(root, id)
 		switch {

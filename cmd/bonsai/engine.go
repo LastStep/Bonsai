@@ -41,7 +41,8 @@ const initUsage = `bonsai init: link this project to Bonsai (spec sections 4 and
 It writes bonsai.yaml (a comment on every line), then the packs' files, the instruction block in CLAUDE.md,
 Bonsai's lines in .claude/settings.json (hook line, deny rules, plugin wiring), .bonsai/.gitignore, and the lock
 .bonsai/lock.json last. It previews every file and settings line first, and writes with --yes (or y at a terminal).
-Then it asks Claude Code to install each pack's plugin on this machine at the locked commit, as update does.
+Then it asks Claude Code to install each pack's plugin on this machine at the locked commit, as update does (a
+plugin that carries code parts only with --allow-exec).
 Run it in the project's checkout. In a project that already has bonsai.yaml it needs no values and works as
 bonsai update does; run again with nothing changed, it changes no byte.
 Flags:
@@ -76,7 +77,10 @@ The preview names every file and every line of .claude/settings.json it adds, ch
 All or nothing: every file is staged, then renamed, the lock last.
 Then, written or with nothing to change, it brings this machine's plugins to the lock: for each pack it runs
 claude plugin install <pack>@<marketplace> --scope project in this checkout (a no-op once installed; the first time,
-Claude Code may write .claude/settings.json again in its own key order). Claude Code knows a new marketplace (a new
+Claude Code may write .claude/settings.json again in its own key order). A pack's plugin that carries code parts
+(hooks, MCP and LSP servers, monitors, mods) is installed on this machine only with --allow-exec, on each machine:
+without it the plugin is "waiting" and the next step is bonsai update --allow-exec; one already installed at the
+locked commit is left as it is. Bonsai installs only the project's own packs' plugins, and removes none. Claude Code knows a new marketplace (a new
 commit, or a new checkout) only after a Claude Code session in the checkout, in a trusted folder, has registered it:
 until then the plugin is "waiting", and the output names the next step. This step never changes the exit code.
 Flags:
@@ -252,8 +256,12 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 	if word == "init" {
 		closing = engine.ClosingWords(plan.Config, home)
 	}
+	// The command that installs a plugin carrying code on this machine, a person's step: once the files are written
+	// (or have nothing to change) the same word with --allow-exec does it, without the values or the flags that
+	// settled conflicts.
+	again := "bonsai " + word + " --allow-exec"
 	if plan.Nothing() {
-		plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI)
+		plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))
 		return out("nothing", engine.ExitOK, nil, "bonsai "+word+": nothing to change"+packsAt(plan)+".\n"+plan.PluginsText()+closing)
 	}
 	head := "bonsai " + word + ": the preview.\n"
@@ -309,7 +317,7 @@ func runEngine(word string, args []string, stdout, stderr io.Writer) int {
 		}
 		return fail(e)
 	}
-	plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI)
+	plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))
 	text := ""
 	if f.yes {
 		text = preview
