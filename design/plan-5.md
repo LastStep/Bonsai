@@ -73,11 +73,11 @@ such pair.
   you want is made before they land (added 9 Oct with 5.2's section).
 - **In 5.3:** the second Windows check (spec §17 step 7, about 10 minutes): a real Windows session in a scratch folder,
   asking Claude for one edit and two deletes and reporting what happened. A Sonnet agent runs every check an agent can
-  first, so your sitting is only what needs a person typing (your 8 Oct word). And two questions, each an option round,
-  written in plain words with a recommendation in 5.3's section: how the hook lines find `bonsai`, where your 8 Oct rule
-  (a fixed path no agent can redirect) meets the rule that no committed file holds a full path; and who may consent to
-  code (`--allow-exec`) and take Bonsai's guard out of a project (`unlink`), an agent inside a task you approved or only
-  a person.
+  first, so your sitting is only what needs a person typing (your 8 Oct word). Two questions, each an option round in
+  5.3's section, answered on 9 Oct: how the hook lines find `bonsai` (your answer: (a), the installed place written into
+  the lines); and who may consent to code (`--allow-exec`) and take Bonsai's guard out of a project (`unlink`) (your
+  answer: (ii), your grant in a project the studio manages, only a person elsewhere). From 5.4, so, a command of yours
+  when an update of Bonsai's own repo runs code or changes its guard lines, until the studio manages it.
 - **At 5.4:** install the pre-release `bonsai` in WSL (spec §17 step 8, about 5 minutes, your password). The
   orchestrator gives you its fingerprint first. Your step 3 (the old binaries) is already done (8 Oct). You install
   again only if a later part changes the guard, the stop gate or the ladder.
@@ -101,8 +101,8 @@ such pair.
 - **The studio links** (spec step 7) after 5.5: its own plan, in its own repo. Mimas links last (step 8). This plan
   changes nothing in either repo, and waits on neither.
 
-**Choices that are yours.** Two are open, both in 5.3's section: how the hook lines find `bonsai`, and who may consent
-to code and take the guard out. One was decided on 9 Oct:
+**Choices that are yours.** None open. Three were decided on 9 Oct: the two in 5.3's section, how the hook lines find
+`bonsai` (your answer: (a)) and who may consent to code and take the guard out (your answer: (ii)), and this one:
 - **How the later parts' plans reach you: (B).** You were offered (A) every part's section, (B) only when it changes
   what is yours, and (C) none; you first said (A), then chose (B) once the scope question above was settled. So: 5.1
   is planned in full here. Before each later part starts, a planner writes its section into this file, a fresh Opus
@@ -1412,6 +1412,8 @@ findings are additions). Only 5.3.6, which builds both answers, waits for them; 
 
 #### The question for Rohan: how the hook lines find `bonsai`
 
+**Rohan's answer, 9 Oct: (a), the installed place written into the lines.**
+
 **What the line is today.** Every time an agent edits a file or runs a command in a linked project, Claude Code runs a
 short line that Bonsai wrote into the project's `.claude/settings.json`: today `bonsai hook guard || exit 2`, and from
 this part a second one when a session ends. The shell finds `bonsai` by its name, looking through the PATH, a list of
@@ -1487,6 +1489,8 @@ question.
 
 #### The second question for Rohan: who may consent to code, and take the guard out
 
+**Rohan's answer, 9 Oct: (ii), his grant in a project the studio manages; only a person elsewhere.**
+
 **What these commands do.** `bonsai update --allow-exec --yes` writes code into a project: a pack's hook lines, the
 files they run, a pack plugin that carries code (5.1.1), and Bonsai's own changed lines. The flag is the consent; on 9
 Oct you decided that such a plugin is installed on a machine only with it there. `bonsai unlink --yes` takes Bonsai out
@@ -1514,7 +1518,8 @@ edits and one command take the guard out.
 
 **Recommendation: (ii).** It keeps the spec's promise wherever your approval can be proved, and asks you only where it
 cannot; (i) asks you even where your tap has already said yes; (iii) lets an agent consent to code for you, which your 9
-Oct answer was about. Under (i) or (ii), Bonsai holds the rule in the command itself, not only in the guard, so a script or a variable cannot get round it.
+Oct answer was about. Under (i) or (ii), Bonsai holds the rule in the command itself, not only in the guard, so a
+script or a variable cannot get round it.
 
 The spec's row (§14): "The adapter (2-3); the path guard with contract §5.5, §10.1 and §13, and its refusals for
 `.bonsai/local/` and the tables (7-10); the delete check (3-5); the stop gate (2-3); generated deny rules and
