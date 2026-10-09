@@ -4984,12 +4984,12 @@ studio's `tools/statusline/README.md` and `statusline.mjs` at `7017d63`).
    root, since `~` would then be root's home and `install.json` land there): checks that the `bonsai` beside it runs
    (`--version`); installs it, with `sudo install -o root -g root -m 0755` when the target's folder is not the person's
    to write (the real place, `/usr/local/bin/bonsai`, the password once), else with `install -m 0755` (a scratch
-   target); checks the installed file's SHA-256 against the source's and, at the real place, that the file and its
-   folder are root's and writable by no one else; writes `${BONSAI_HOME:-$HOME/.bonsai}/install.json` (`path`, `version`
-   from the installed copy's `--version`, `sha256`) through a temporary file and a rename; prints the fingerprint,
-   `which -a bonsai` (naming any `bonsai` that comes first, spec §17 step 3) and the installed `--version`. `--remove`
-   takes out the installed file (`sudo rm` at the real place) and `install.json`. Exit 0, or not, with one plain
-   sentence and its next step.
+   target), refusing first a target folder that group or others can write; checks the installed file's SHA-256 against
+   the source's and, at the real place, that the file and its folder are root's and writable by no one else; writes
+   `${BONSAI_HOME:-$HOME/.bonsai}/install.json` (`path`, `version` from the installed copy's `--version`, `sha256`)
+   through a temporary file and a rename; prints the fingerprint, `which -a bonsai` (naming any `bonsai` that comes
+   first, spec §17 step 3) and the installed `--version`. `--remove` takes out the installed file (`sudo rm` at the real
+   place) and `install.json`. Exit 0, or not, with one plain sentence and its next step.
 3. **`install.ps1 [-Target <file>] [-Remove]`**, run by the person in a normal PowerShell as `powershell -NoProfile
    -ExecutionPolicy Bypass -File .\install.ps1` (Windows runs no downloaded script otherwise): checks that the
    `bonsai.exe` beside it runs; at the real place, `C:\Program Files\Bonsai\bonsai.exe`, the administrator steps run in
@@ -5006,14 +5006,14 @@ studio's `tools/statusline/README.md` and `statusline.mjs` at `7017d63`).
 4. **Proof without this computer's real places.** Go tests run each script on scratch targets and a scratch
    `BONSAI_HOME` (the `.sh` on Linux, the `.ps1` on Windows, each skipped elsewhere with its reason): install; the
    record read back by `check`'s reader; a second install (the same fingerprint, the record unchanged); remove; each
-   refusal (a `bonsai` beside it that does not run; `install.sh` as root, through a stub `id`). **The real places run on
-   GitHub's throwaway machines:** an `install` job on `ubuntu-latest` (its runner has passwordless `sudo`) and on
-   `windows-latest` (its runner is an administrator; whether elevated in place or through `RunAs`, the first CI run
-   records) builds Bonsai, runs each installer at its real place, checks the owner, mode or ACL, the PATH (the entry
-   once, `%...%` entries kept), `install.json`, `which -a` or `Get-Command`, and `--version` from a fresh shell, then
-   removes it and checks it is gone. Not run before Rohan's 1.0 install: the UAC prompt's path from an unelevated
-   session; V1 reads it line by line, and 5.7 plans its first run with the way out (`-Remove`, or the folder deleted and
-   the PATH entry taken out by hand).
+   refusal (a `bonsai` beside it that does not run; a target folder others can write, on Linux; `install.sh` as root,
+   through a stub `id`). **The real places run on GitHub's throwaway machines:** an `install` job on `ubuntu-latest`
+   (its runner has passwordless `sudo`) and on `windows-latest` (its runner is an administrator; whether elevated in
+   place or through `RunAs`, the first CI run records) builds Bonsai, runs each installer at its real place, checks the
+   owner, mode or ACL, the PATH (the entry once, `%...%` entries kept), `install.json`, `which -a` or `Get-Command`, and
+   `--version` from a fresh shell, then removes it and checks it is gone. Not run before Rohan's 1.0 install: the UAC
+   prompt's path from an unelevated session; V1 reads it line by line, and 5.7 plans its first run with the way out
+   (`-Remove`, or the folder deleted and the PATH entry taken out by hand).
 5. **No agent runs either installer at a real place** (Rohan's 15:35 choice; spec §3: "No agent installs or replaces
    it"). Agents run as the same user, so a file in a download folder can be changed between Rohan's fingerprint check
    and his install by a shell command: the guard's `bonsai-stand-in` rule stops the file tools writing a `bonsai`
