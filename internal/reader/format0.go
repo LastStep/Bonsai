@@ -9,9 +9,9 @@ package reader
 // comments say where JavaScript itself decides something a Go reader would otherwise do differently.
 //
 // What JavaScript decides, and how this port matches it:
-//   - The text. The studio reads a file with readFileSync(path, 'utf8'): bytes that are not UTF-8 become U+FFFD, one
-//     for each maximal invalid run as the WHATWG decoder has it (decode0), and a BOM is kept (parseYaml then cannot
-//     read a first line that starts with one; parseFrontmatter drops one).
+//   - The text. The studio reads a file with readFileSync(path, 'utf8'): bytes that are not UTF-8 become U+FFFD as
+//     the WHATWG decoder makes them (decode0), and a BOM is kept (parseYaml then cannot read a first line that starts
+//     with one; parseFrontmatter drops one).
 //   - Whitespace. JavaScript's \s, trim() and trimEnd() mean the same set (isSpace0), which is wider than ASCII:
 //     U+00A0, U+FEFF, U+2028 and others. A regular expression's . matches anything but LF, CR, U+2028 and U+2029.
 //   - Numbers. A JavaScript number is a float64: an integer string is read as parseInt does (the nearest float64,
@@ -120,8 +120,9 @@ func frontmatter0(s string) (string, bool) {
 	return "", false
 }
 
-// decode0 turns bytes into text as Node's readFileSync(path, 'utf8') does: valid UTF-8 as it is, and each maximal
-// run of bytes that cannot start or continue a character (the WHATWG UTF-8 decoder) as one U+FFFD.
+// decode0 turns bytes into text as Node's readFileSync(path, 'utf8') does, by the WHATWG UTF-8 decoder: valid UTF-8 as
+// it is; one U+FFFD for each byte that cannot start a character, and one for each character cut short (its bytes so
+// far), the byte that cut it then read again.
 func decode0(raw []byte) string {
 	if utf8.Valid(raw) {
 		return string(raw)
