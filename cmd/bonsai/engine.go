@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -109,12 +110,43 @@ too) turning on another commit's plugin of a pack, and what Claude Code reports 
 plugin turned on here at another commit (a finding), or the locked one not installed yet (a warning). It writes
 nothing and fetches nothing. Warnings never change the exit code.
 Flags:
-  --json    print a JSON document instead of text
-  --help    print this help
-Not built yet: --write, --schema, --pack (step 5.1).
-Exit codes: 0 no findings, 1 findings, 2 bad input, 4 not a linked checkout.
+  --json             print a JSON document instead of text
+  --schema <format>  print a format instead: every field in the order a writer writes it, its type and allowed
+                     values, and an open list's known words from Bonsai's table; with --json, the format's JSON
+                     Schema itself. It reads no project, so it runs anywhere. <format> is a name (bonsai.task), a
+                     short name (task) or a name and major (bonsai.task/1), one of:
+%s
+  --help             print this help
+Not built yet: --write, --pack (step 5.1).
+Exit codes: 0 no findings (or the format printed), 1 findings, 2 bad input (an unknown flag, or a format Bonsai
+does not know: the refusal lists every name), 4 not a linked checkout.
 Example: bonsai check --json
+Example: bonsai check --schema bonsai.task
 `
+
+// checkHelp is check --help: checkUsage with every format's name, from internal/format's registry (their one home),
+// wrapped under the --schema flag.
+func checkHelp() string {
+	var lines []string
+	line := ""
+	for i, name := range format.Names() {
+		word := name
+		if i < len(format.Names())-1 {
+			word += ","
+		}
+		if line != "" && len(line)+1+len(word) > 95 {
+			lines = append(lines, line)
+			line = ""
+		}
+		if line == "" {
+			line = strings.Repeat(" ", 21) + word
+		} else {
+			line += " " + word
+		}
+	}
+	lines = append(lines, line)
+	return fmt.Sprintf(checkUsage, strings.Join(lines, "\n"))
+}
 
 type engineFlags struct {
 	yes, diff, asJSON, newID bool
@@ -365,17 +397,35 @@ func printJSON(stdout io.Writer, doc schema.Object, exit int) int {
 
 func runCheck(args []string, stdout, stderr io.Writer) int {
 	asJSON := false
-	for _, a := range args {
-		switch a {
-		case "--json":
+	schemaName, wantSchema := "", false
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--json":
 			asJSON = true
-		case "--help", "-h":
-			return write(stdout, checkUsage)
-		case "--write", "--pack", "--schema":
+		case a == "--help" || a == "-h":
+			return write(stdout, checkHelp())
+		case a == "--schema" || strings.HasPrefix(a, "--schema="):
+			name, given := strings.CutPrefix(a, "--schema=")
+			if !given {
+				if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+					return refuse(stderr, "check --schema needs a format's name", schemaNext())
+				}
+				i++
+				name = args[i]
+			}
+			if wantSchema {
+				return refuse(stderr, "check takes --schema once", "run `bonsai check --schema <format>` for each format")
+			}
+			schemaName, wantSchema = name, true
+		case a == "--write" || a == "--pack":
 			return refuse(stderr, "check "+a+" is not built yet (it comes with step 5.1)", "run `bonsai check` without "+a)
 		default:
 			return refuse(stderr, fmt.Sprintf("check takes no %+q", a), "run `bonsai check --help` to see its flags")
 		}
+	}
+	if wantSchema {
+		return runSchema(schemaName, asJSON, stdout, stderr)
 	}
 	dir, err := os.Getwd()
 	if err != nil {
@@ -406,4 +456,26 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 		return exitRuntime
 	}
 	return exit
+}
+
+// runSchema is check --schema: a format for a person, or with --json its schema (contract §2.2).
+func runSchema(name string, asJSON bool, stdout, stderr io.Writer) int {
+	f, ok := format.Lookup(name)
+	if !ok {
+		return refuse(stderr, fmt.Sprintf("%+q is not one of Bonsai's formats", name), schemaNext())
+	}
+	if asJSON {
+		out, err := schema.Encode(f.Schema())
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "bonsai check: %v\n", err)
+			return exitRuntime
+		}
+		return write(stdout, string(out))
+	}
+	return write(stdout, f.Describe())
+}
+
+// schemaNext is the next step of a check --schema refusal: every format's name.
+func schemaNext() string {
+	return "run `bonsai check --schema <format>` with one of: " + strings.Join(format.Names(), ", ")
 }

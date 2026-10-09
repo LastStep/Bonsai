@@ -69,12 +69,12 @@ func (f *Format) fields(b *strings.Builder, s schema.Object, path string) {
 	}
 }
 
-// keyWord names an open mapping's keys in a path: <name> by default, <path> for paths.
+// keyWord names an open mapping's keys in a path: <path> for a mapping keyed by project paths, else <name>.
 func keyWord(s schema.Object) string {
 	if pn := sub(s, "propertyNames"); pn != nil && strings.Contains(pn.String("pattern"), `\\:`) {
 		return "path"
 	}
-	return "key"
+	return "name"
 }
 
 func (f *Format) field(b *strings.Builder, name string, s schema.Object) {
@@ -176,12 +176,13 @@ func typeText(s schema.Object) string {
 	}
 	var words []string
 	for _, t := range ts {
-		words = append(words, typeWords[t])
+		w := typeWords[t]
+		if p := s.String("pattern"); p != "" && t == "string" {
+			w = "text matching " + p
+		}
+		words = append(words, w)
 	}
 	parts = append(parts, orList(words))
-	if p := s.String("pattern"); p != "" {
-		parts = append(parts, "text matching "+p)
-	}
 	for _, k := range []struct{ key, text string }{{"maxLength", "at most %s characters"}, {"minimum", "from %s"},
 		{"maximum", "up to %s"}, {"maxItems", "at most %s items"}} {
 		if v, ok := s.Get(k.key); ok {
