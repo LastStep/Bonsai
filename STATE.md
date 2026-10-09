@@ -1,8 +1,8 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 19:06, when 5.1.6 had landed, Rohan had approved 5.5's section
-(without the pin rule), and 5.1.7's builder and 5.6's planner were running (`records/runs/R-2026-10-09-5.1.6-check-status.md`,
-`R-2026-10-09-plan-5.5.md`, `R-2026-10-09-5.1.7-unlink.md`, `R-2026-10-09-plan-5.6.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 20:33, when Rohan closed the day's session ("stop after the
+current agent is done. i will resume the session later") after 5.1.7 landed; the next session starts with his answer on
+5.6's section, then 5.1.8 (`records/runs/R-2026-10-09-5.1.7-unlink.md`, `R-2026-10-09-plan-5.6.md`).
 
 ## In short
 
@@ -10,7 +10,8 @@ Bonsai is being rebuilt as one small Go program that gives every project the sam
 proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). **Part 0 and all six parts of the walking skeleton
 are done; the skeleton's last fresh verifier passed it. At the gate (9 Oct) Rohan chose path (a), the full Bonsai
 1.0. He approved the plan for step 5, `design/plan-5.md`, on 9 Oct; step 5.1 (formats and engine to 1.0, 30-47 h,
-re-ask at 61) is under way, pieces 5.1.0 to 5.1.6 landed. The sections of 5.2 to 5.5 are written and approved.** The gate report is `records/gate-skeleton.md`. Everything below is on `main`, pushed.
+re-ask at 61) is under way, pieces 5.1.0 to 5.1.7 landed. The sections of 5.2 to 5.5 are written and approved;
+5.6's is written, reviewed and fixed, waiting for his answer.** The gate report is `records/gate-skeleton.md`. Everything below is on `main`, pushed.
 
 - **Part 0, the formats** (`3770d04`, now set 3 at `3a1f195`): `formats/` holds a JSON Schema for each of the
   contract's ten formats, an example of each, 116 trick files with their format-0 and format-1 outcomes in
@@ -106,7 +107,7 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: step 5.1.7, then 5.1.8 to 5.1.10
+## The one thing to do next: Rohan's answer on 5.6, and step 5.1.8
 
 `design/plan-5.md`, "Step 5.1". Landed on 9 Oct, each with CI green (run reports `records/runs/R-2026-10-09-5.1.*`):
 - **5.1.0** (`6a3a419`): `TestEachFaultBlocks` no longer races a 200 ms budget (test file only).
@@ -124,19 +125,40 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   `source` in `bonsai.yaml` is an `absolute-path` finding; `status --json` with every field, `--full` (newer tags,
   plugins, Claude Code's version) and `--active`; the Claude Code floor 2.1.294; this machine's `workspace.json`;
   the forged-lock loose end fixed. Tests: WSL 1976 run (2 skipped), Windows 1980 (1 skipped).
+- **5.1.7** (`f070474`): `bonsai unlink`; `update` taking a pack out; the project-scope uninstall after Bonsai's
+  write (measured on both sides); `update` removing this checkout's stale records under an older marketplace name;
+  trust's `waiting` in every output and a `plugin-trust` warning; Claude Code's key order kept (`git diff` holds only
+  Bonsai's lines on both sides); check 12's `git revert` run on both sides (the record stays disabled, no plugin
+  loads); `TestPluginScopeOnly`. Tests: WSL 2012 run (2 skipped), Windows 2016 (1 skipped).
 
-**Running now** (side by side, on Rohan's 12:27 word):
-1. **5.1.7** (`unlink`, taking a pack out, Claude Code's own records): an Opus builder in `~/Servers/Bonsai-5.1.7`
-   (branch `5.1.7`). It runs real Claude Code in scratch targets on both sides; the Windows `-p` session may fail on the
-   lapsed login (his step, below). Then 5.1.8, 5.1.9, 5.1.10 in the plan's order, and the 5.1 end verifier.
-2. **5.6's section**: an Opus planner in `~/Servers/Bonsai-plan5.6` (branch `plan5.6`, `design/plan-5.md` only). Then a
-   fresh Opus reviewer, the fixes, a Haiku audit, and Rohan if it changes what is his (his (B)). 5.7's section after.
+**The next session starts here** (nothing is running; `main` is pushed):
+1. **Rohan's answer on 5.6's section** (the machine pieces, 13-20 h, re-ask 26). It is on branch `plan5.6` in the
+   worktree `~/Servers/Bonsai-plan5.6` (seven commits on `bfd3138`), reviewed by a fresh Opus agent, fixed and audited,
+   **not approved and not on `main`**. The question was put to him at 20:15 and he stopped the session before answering:
+   approve it, with one choice inside: **(A) he saves notes about him into his personal memory from an agent's draft
+   (recommended**: no guard change, no install; one agent's words never reach every session unread) or **(B) agents
+   write them** (a guard change, a pre-release install in WSL during 5.6, 5.6 becomes 14-22 h, re-ask 29; the section's
+   5.6.3 note 2, "Under (B)", lists every change); or not yet. On his answer: apply (B)'s list if chosen, write spec
+   §4's dated note (its text is in the 5.6 run report's 20:15 entry), rebase, land, push. The question's plain-words
+   summary: what 5.6 builds (machine settings and labels, his personal memory layer, `status --line`, the installers,
+   Bonsai saying when a newer release exists); what becomes his (machine settings and labels typed in his own
+   terminal, not inside Claude; installing a newer release from six lines a side, one at a time, stopping if the
+   fingerprint line does not print `OK`/`True`, only from `github.com/LastStep/Bonsai/releases/download/`); no install,
+   password or Windows sitting in 5.6; his memory line and the 1.0 installs together at 5.7.
+2. **5.1.8** (the tasks table and `check --write`; a Sonnet builder with the orchestrator's read, the plan says), then
+   5.1.9, 5.1.10, and the 5.1 end verifier. It can run beside item 1 (Go code against the plan file).
+3. **5.7's section** after 5.6's lands (planner, fresh reviewer, fixes, audit, then Rohan under (B)).
 
-Placed by 5.1.6 for later: 5.2.0's set 5 (`needs.mcp`; the lock's `declares` holding `needs`, `hooks` and `deny`; a
-place for `check`'s notes; `status`'s `mode: full` and `checks`' layout; a lock `ref` for the moved-tag gap; the lock
-README's wording on an old lock's `path`; `bonsai --help --json`'s shape with 5.1.10); 5.6 (`install.json`'s keys
-`path`, `version`, `sha256`; `stranded`; the spec §10 Windows personal-memory warning, in no 5.1 piece); 5.1.10 (the
-new lists: `CheckWords` with kinds, `checkLater`, `status`'s needs kinds, `checks.claude_code.state`).
+Placed by 5.1.6 and 5.1.7 for later: 5.2.0's set 5 (`uninstalled` in `changes.plugins[].result`; unlink's "left in
+place" in JSON; `needs.mcp`; the lock's `declares` holding `needs`, `hooks` and `deny`; a place for `check`'s
+notes; `status`'s `mode: full` and `checks`' layout; a lock `ref` for the moved-tag gap; the lock README's wording on
+an old lock's `path`; `bonsai --help --json`'s shape with 5.1.10); 5.1.8 (the tables in `TestUnlink`); 5.3 (the guard
+judging `unlink` as a person's under (ii)); 5.5 (the operating skill covers `unlink` and taking a pack out); the 5.1 end verifier and
+5.2.0's start check (a plugin at the same commit and folder asked for `--allow-exec` again when the marketplace name
+moves: kept strict); 5.6 (the machine folder `unlink` leaves, with `stranded`; `install.json`'s keys `path`,
+`version`, `sha256`; the spec §10 Windows personal-memory warning, in no 5.1 piece); 5.1.10 (the
+new lists: `CheckWords` with kinds, `checkLater`, `status`'s needs kinds, `checks.claude_code.state`, Claude Code's
+measured key orders, the plugin results, `plugin-trust`).
 
 How this session runs, for the next orchestrator: pieces and later parts' plans side by side; every brief carries its
 rules in full; each builder rebases on `main` before it lands; a part's section goes through a fresh review, fixes and
@@ -144,11 +166,12 @@ a Haiku audit before it lands, then to Rohan under his (B); times in the run rep
 script reaches the real `claude` except a builder's scripted run in a scratch target through `claude-here`, with the
 settings hashes before and after.
 
-5.1's hours so far: 617 minutes (10 h 17 min) of 61 h. 5.5's planning: 84 minutes. Step 5's Windows-only tally: 0.
-Option rounds in 5.1: one.
+5.1's hours so far: 702 minutes (11 h 42 min) of 61 h. 5.5's planning: 84 minutes. 5.6's planning so far: 66
+minutes. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
+- **His answer on 5.6's section**, with its one choice ((A) or (B)): "The next session starts here", item 1.
 - In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and
   `update`'s JSON (5.1.3/5.1.4b). In 5.2, a look (no vote): the log's two new field names, `bonsai_path` and
   `bonsai_sha256`.
