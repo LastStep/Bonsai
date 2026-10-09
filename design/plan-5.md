@@ -818,19 +818,29 @@ on:
 **5.2.0, formats set 5 and the log's lists.** One commit to `formats/` with its manifest at the set after 5.1's last
 (set 5 here, 5.1.3's being set 4), as `formats/README.md`'s "How the set changes" asks; additions only, so the
 schema-compare test passes. Its builder first reads set 4 and 5.1.4b's error words as they landed.
-- **The binary's two fields** (spec §16 row 27; format review 4.2 left the names open): `bonsai_path` and
-  `bonsai_sha256`, at the end of `bonsai.log/1` after `remote`: the names the guard has written since part 5, so the
-  records already written stay valid. Chosen over new names, which would leave those records with two unknown fields.
-  `bonsai_path` is the binary's own absolute path with forward slashes, or null; it is filled on `session_start`
-  (5.2.4) and on guard records. It stays on the machine as the log does; the bridge forwards by allowlist (contract
-  §2.6), so whether it ever leaves is the studio's choice. `bonsai_sha256` is 64 lower-case hex, on the record that
-  made its log file, else null.
+- **The binary's two fields** (spec §16 row 27; format review 4.2 left the names open and asked Rohan whether he
+  wants to see them first: they go to him as a look, the (B) paragraph above): `bonsai_path` and `bonsai_sha256`, at
+  the end of `bonsai.log/1` after `remote`: the names the guard has written since part 5, so the records already
+  written stay valid. Chosen over new names, which would leave those records with two unknown fields. `bonsai_path` is
+  the binary's own path with forward slashes: from `~/` when it lies under the person's home folder, so no user name
+  is in it (contract §2.6), else as it is (`/usr/local/bin/bonsai`, `C:/Program Files/Bonsai/bonsai.exe`); or null.
+  `hook start` writes it on every `session_start` (5.2.4); the guard writes it on its records in its own absolute form
+  until 5.3 changes guard code. `bonsai_sha256` is 64 lower-case hex: on every `session_start` (5.2.4 hashes the binary
+  at every start) and on the guard record that made its log file; else null.
 - **The log's lists in one Go table**, beside the log's Go type: the events (contract §8.2: the eleven agent events,
   `guard`, `ladder`, `ask`, `event`, `clean`) and the categories (`Read`, `Search`, `Edit`, `Write`, `Shell`,
   `Ladder`, `MCP`, `Agent`, `Web`, `Other`; a pack's own as `<namespace>.<Name>`), each word with one line on what it
   means. The schema's `event` and `category` descriptions then name `bonsai check --schema bonsai.log` and the
-  reference page and copy no word (5.1.3's rule; a description change is an addition). `text`'s description says
-  what Bonsai writes there: a notice's message or an ask's question, never a prompt's words (5.2.4, note 5).
+  reference page and copy no word (5.1.3's rule).
+- **Every description that changes with what Bonsai now writes** (a description change is an addition): `event` and
+  `category` (above); `text`: a notice's message or an ask's question, never a prompt's words (5.2.4, note 5); `kind`:
+  a prompt's `user` or `task-notification`, a failure's `interrupt` or `error`, a notice's type, an `ask` record's op
+  (5.2.5); `task` and `role`: raw from the environment, and redacted like every free-text field; `labels`: checked
+  against the labels in force, not the machine's alone (5.2.5); `target`: a path outside the checkout is null, an
+  `ask` record's is its key, a `clean` record's the path it deleted; `bonsai_path` and `bonsai_sha256` as above.
+- **`asks` and `logs` wherever the formats are listed:** where 5.1.4a registers the schemas for `--schema`, the test
+  that lists every schema, and `status --json`'s `formats` (`read` `[1]`, `write` 1 for each), all in this piece, so
+  5.2.3 and 5.2.5 add none.
 - **`bonsai.asks/1`**, the `--json` of `ask`, `ask --resolve`, `ask --status`, `answer` and `asks`: `format`;
   `workspace` (null when the command refused before reading one); `asks`, a list of `{key, state, filed, closed}`,
   where `state` is `open`, `answered` or `resolved` (a closed list), `filed` the key's latest `file` record, and
@@ -859,16 +869,27 @@ the Go redactor hides everything the Node one hides, and the three bugs' cases t
    which Go's `regexp` (RE2) does not have, and Bonsai takes no other regular-expression library (spec §3: the
    standard library and `golang.org/x/sys`). Its leaks share one cause: one rule's value swallows the next rule's name
    before that rule runs, which the studio patched shape by shape. Bonsai's redactor is a scanner that **finds every
-   name first, then each name's value**, and a value ends where the next name starts, so no name is ever eaten by the
-   value before it. The names are the studio's: a secret-named key before `:` or `=` (its keyword list: `password`,
-   `passwd`, `passphrase`, `pwd`, `secret`, `token`, `api_key` and its spellings, `access_key`, `auth_key`,
-   `private_key`, `credentials`, inside a run of name characters such as `DB_TOKEN` or `x-api-key`); a flag ending in
-   such a word (`--password`, `--client-secret`), starting a word, its value on the flag's line; an Authorization header
-   of any scheme; a Bearer value; `extraheader=`. Then the rules that take a whole value, as today: private-key blocks,
-   webhook URLs, credentials inside a URL, the known token shapes (Anthropic, OpenAI, GitHub, Slack, npm, AWS, Google,
-   JWT), and the long random run (32 or more token characters with a piece of 16 or more holding upper case, lower
-   case and digits; never pure hex, never a CamelCase name with two digits or fewer, never a `toolu_` id). Chosen over
-   a port, whose bugs would port too, and over translating the expressions, which RE2 cannot express.
+   name first, then each name's value**. The names are the studio's: a secret-named key before `:` or `=` (its keyword
+   list at `25b6450`, inside a run of name characters such as `DB_TOKEN` or `x-api-key`); a flag ending in such a word
+   (`--password`, `--client-secret`), starting a word, its value on the flag's line; an Authorization header of any
+   scheme; a Bearer value; `extraheader=`.
+   - **A value keeps today's shapes:** a quoted value ends at its closing quote on its line and takes what is glued
+     after the quote, and a quote never closed runs to the line's end; a value may sit on the next line, with the
+     studio's exceptions (not when that line starts with a name on its own line; not a lone word on the string's last
+     line); a key's bare value stops at `,` `;` `&` `}` `)`.
+   - **A name that stands where another name's value starts, or inside that value, is part of that value:** its own
+     value is redacted first, then the outer value takes the inner name too, one marker over both, as the studio's
+     second sweep writes it. `a bearer password: "hunter2"` becomes `a bearer [redacted]: [redacted]`; `a bearer
+     db_password=hunter2 ok` becomes `a bearer [redacted] ok`; `password: mysecret:123` keeps nothing of its value. No
+     name's value is left because another rule reached it first, and what one pass writes a second pass leaves
+     (note 5).
+   - **Then every rule that takes a whole value in the studio's redactor at `25b6450`**: among them private-key
+     blocks, webhook URLs, credentials inside a URL, the known token shapes (Anthropic, OpenAI, GitHub, Slack,
+     Stripe-style live and test keys, npm, AWS, Google, JWT), and the long random run with its exceptions as they
+     stand there (pure hex, `toolu_` ids, CamelCase names). The list here is examples; the studio's file is the
+     measure.
+
+   Chosen over a port, whose bugs would port too, and over translating the expressions, which RE2 cannot express.
 2. **The three leak classes**, by their shapes (spec §8 names them by the studio's ids; Bonsai's code and tests never
    do):
    - **After an Authorization header's scheme word**, a quoted token is a value like any other (`Authorization:
@@ -882,11 +903,13 @@ the Go redactor hides everything the Node one hides, and the three bugs' cases t
    - **The shapes the studio's last change opened**: a value-taking name, a second name, then a third behind
      punctuation; a value-taking name that takes `extraheader=` as its value; an open quote before a name at a line's
      end, which swapped which value leaked; and the two shapes where a second pass changed the output.
-   With every name found first, the three are one rule: every name's value is redacted, wherever the name stands.
-3. **Whitespace and case as JavaScript reads them.** Between a name and its `:` or `=`, any character JavaScript's
-   `\s` matches (U+FEFF and U+2028 among them); a keyword matches in any case under simple case folding, so the long s
-   (U+017F) and the Kelvin sign count as `s` and `k`, as under JavaScript's `i` flag. Chosen so no Unicode form slips
-   between the two readers. Caps count characters (code points), as JSON Schema's `maxLength` does.
+   With every name found first, and every name inside another's value taken into it, the three are one rule: every
+   name's value is redacted, wherever the name stands.
+3. **Whitespace and case.** Between a name and its `:` or `=`, any character JavaScript's `\s` matches (U+FEFF and
+   U+2028 among them). A keyword matches in any case under Unicode's simple case folding, so the long s (U+017F) and
+   the Kelvin sign count as `s` and `k`. JavaScript's `i` flag without `u` folds neither, so Bonsai hides more there,
+   and the differential reports it as an over-redaction class. Chosen so no Unicode form slips past. Caps count
+   characters (code points), as JSON Schema's `maxLength` does.
 4. **What it keeps**, as today: git SHAs and other pure hex, UUIDs, GUIDs, `toolu_` ids, CamelCase test names, prose
    saying "token" or "password" with no value after it, words ending in `-secret` or `-token`, a flag at a line's end
    with a name below it, text already redacted. The marker stays `[redacted]`, which the studio's bridge and Desk
@@ -901,8 +924,8 @@ the Go redactor hides everything the Node one hides, and the three bugs' cases t
    because it is the first line of defence. A shell command is kept only as its head: the program, plus one
    subcommand word for `git`, `npm`, `dotnet`, `unity`, `claude`, `gh`, `go` and `bonsai`; a PowerShell cmdlet as
    written; so `TOKEN=... cmd`, `git -c http.extraHeader=...` and `node -e "..."` never reach the record. A file or
-   search path inside the checkout is kept relative to it, one under the person's home folder as `~/...`, and any
-   other as null (contract §2.6: a record carries no absolute path; the guard already writes null there). A web fetch
+   search path inside the checkout is kept relative to it, and any other is null, as contract §2.6 asks (records carry
+   workspace-relative paths) and as the guard already writes. A web fetch
    keeps its host, an MCP call `server.tool`, the Agent tool its subagent type, a skill its name, AskUserQuestion its
    questions joined (the ask itself, at most 300). Every one passes the redactor and its cap. A Windows path is read
    with backslashes and, on a drive-letter root, case-blind, as today. Categories stay the log's (5.2.0's table;
@@ -919,16 +942,18 @@ the Go redactor hides everything the Node one hides, and the three bugs' cases t
      names before second names, cut tails, bash and PowerShell heads, targets, question text;
    - (b) the bridge test's spool lines with planted secrets;
    - (c) the three classes: the leak rows' examples and the generated shapes (two framings, about 4,200 strings),
-     made again by the script, and Bonsai's own grid over names, punctuation, whitespace, quotes and case folds;
+     made again by the script, and Bonsai's own grid over names, punctuation, whitespace, quotes and case folds, a
+     distinct made-up secret in every value slot;
    - (d) real text: every text file of `studio/`, `docs/` and `studio-app/test/fixtures/` in the scratch clone at
      `25b6450` (the set the studio's own corpus test reads), as it is, and with each secret row planted on its own
      line, at a line's end, and after a line ending in a name still waiting for its value;
-   - (e) about a million generated strings mixing names, separators, quotes, whitespace and values, and the fuzz
-     finds.
+   - (e) about a million generated strings mixing names, separators, quotes, whitespace and values, a distinct
+     made-up secret in every value slot, and the fuzz finds.
 
-   **It passes when**, over every string: every labelled or planted secret is absent from Bonsai's output (the
-   studio's misses on the three classes counted apart); for every word the studio's redactor took out, Bonsai's output
-   keeps no more copies of it than the studio's does; every keep row comes back unchanged; Bonsai's output is a fixed
+   **It passes when**, over every string: no labelled or planted secret leaks from Bonsai's output, a secret counting
+   as leaked when any word of it, or any run of 6 or more of its characters, survives (a word is a maximal run of
+   letters and digits; the studio's misses on the three classes are counted apart); for every word the studio's
+   redactor took out, Bonsai's output keeps no more copies of it than the studio's does; every keep row comes back unchanged; Bonsai's output is a fixed
    point at every cut; no string takes over 100 ms, or over 1 ms a KB for a document past 100 KB. Judged, not
    counted: the strings where Bonsai takes out a word the studio's keeps, grouped by the rule that fired, each group
    read by the builder and then the verifier (a secret shape the studio missed is right; ordinary words taken out are
@@ -936,11 +961,11 @@ the Go redactor hides everything the Node one hides, and the three bugs' cases t
    pass). The run report gives counts and classes, never a string from the
    studio's files ((a), (b) and (d) hold studio paths and names); strings Bonsai's own script made may be quoted.
 
-   **Bonsai's committed tests are its own:** rows written fresh by class, with made-up secrets (`hunter2`, AWS's
-   documented example key, random strings made by the test). A row may be taken from the studio's tables only when it
-   holds nothing but made-up values and generic words, and its label is rewritten as the class it shows. No studio
-   path, project name, task or bug id, or person's name enters the repo; the verifier greps for them. Chosen over a
-   scrubbed copy of the whole corpus, which would carry the studio's paths and ids into a public repo, and over the
+   **Bonsai's committed tests are its own:** every row written fresh by class, with made-up secrets (`hunter2`, AWS's
+   documented example key, random strings made by the test); none is copied from the studio's tables, which the
+   differential covers instead. No studio path, project name, task or bug id, or person's name enters the repo; the
+   verifier greps for them. Chosen over a scrubbed copy of the corpus, or of the rows that look clean, since Bonsai's
+   public repo holds no studio file (spec §12) and this section sends no studio content public; and over the
    differential alone, which CI could not re-run.
 10. **Windows:** the redactor is string logic, so the differential runs in WSL only; its Go tests run natively on
     Windows with check 10.
