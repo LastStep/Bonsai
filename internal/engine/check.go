@@ -68,7 +68,7 @@ func Check(dir, home string) (*CheckResult, error) {
 		return nil, wsError(err, ExitState)
 	}
 	r := &CheckResult{Root: co.Root, Main: co.Main}
-	cfg, err := workspace.LoadConfig(co.Root)
+	cfg, err := workspace.LoadConfigFull(co.Root)
 	if err != nil {
 		var we *workspace.Error
 		if errors.As(err, &we) && errors.Is(err, os.ErrNotExist) {

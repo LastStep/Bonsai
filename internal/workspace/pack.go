@@ -4,10 +4,10 @@ package workspace
 //
 // Read here: format, id, version, needs.claude_code, block, files (path, from, kind), hooks (event, matcher,
 // command, runs, why) and deny (rule, why): every field the test pack's pack.yaml holds (its commits A to F), which is
-// what the walking skeleton's engine (part 3), hook path (part 5) and consent to code (step 5.1.1) use. Any other
-// key, and any other key under needs, is kept in Pack.Doc as read and not checked; bonsai.pack/1's schema, its
-// documentation check (bonsai check --pack) and the rule that a hook line never calls bash by name come later in
-// step 5.1.
+// what the walking skeleton's engine (part 3), hook path (part 5) and consent to code (step 5.1.1) use, with the
+// checks below. Then the file is read in full (step 5.1.4a, internal/format): every field held to bonsai.pack/1's
+// schema, documents and protected among them, in Pack.Full, and a hook command that calls bash by name refused (spec
+// §3). Every key is kept in Pack.Doc as read. The documentation check (bonsai check --pack) is step 5.1.9's.
 //
 // A hook entry's runs (step 5.1.1, plan-5 rule 4) lists the pack files its command runs, each by the path a files
 // entry gives it in the project (test-pack/run.sh): this pack's own, or another linked pack's. A change to one of them
@@ -31,6 +31,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/reader"
 )
 
@@ -56,14 +57,15 @@ var PackFileKinds = []string{"pack", "once"}
 
 // Pack is what Bonsai reads from a pack's bonsai/pack.yaml.
 type Pack struct {
-	ID         string      // the pack's id
-	Version    string      // the pack's version; a release tag must equal it
-	ClaudeCode string      // needs.claude_code: the oldest Claude Code the pack works with, "" for none
-	Block      string      // the pack's part of the instruction block, a file in bonsai/, "" for none
-	Files      []FileEntry // the files the engine writes into a project, from bonsai/files/
-	Hooks      []HookEntry // hook lines for the project's .claude/settings.json
-	Deny       []DenyEntry // deny rules for the project's .claude/settings.json
-	Doc        *reader.Map // the whole file as read, every key kept
+	ID         string       // the pack's id
+	Version    string       // the pack's version; a release tag must equal it
+	ClaudeCode string       // needs.claude_code: the oldest Claude Code the pack works with, "" for none
+	Block      string       // the pack's part of the instruction block, a file in bonsai/, "" for none
+	Files      []FileEntry  // the files the engine writes into a project, from bonsai/files/
+	Hooks      []HookEntry  // hook lines for the project's .claude/settings.json
+	Deny       []DenyEntry  // deny rules for the project's .claude/settings.json
+	Doc        *reader.Map  // the whole file as read, every key kept
+	Full       *format.Pack // every field, held to bonsai.pack/1's schema
 }
 
 // FileEntry is one of a pack's files.
@@ -195,6 +197,11 @@ func ReadPack(raw []byte) (*Pack, error) {
 	if f.err != nil {
 		return nil, f.err
 	}
+	full, err := format.PackFromMap(m)
+	if err != nil {
+		return nil, fileError(PackFile, err)
+	}
+	p.Full = full
 	return p, nil
 }
 

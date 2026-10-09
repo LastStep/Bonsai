@@ -3,10 +3,12 @@ package workspace
 // bonsai.yaml (bonsai.workspace/1, spec §6): the project's settings, at the checkout's root, the one Bonsai file a
 // person edits.
 //
-// Read here (what the walking skeleton's parts 2 to 5 use): format, id, name, packs (id, source, path, ref),
-// protected, person_only and never_edit (part 3 writes each never_edit path as a deny rule). Every other key spec §6
-// shows (documents, ladder_floor, ladder, ratchets, ci_marked_tests, generated) and any unknown key is kept in
-// Config.Doc as read and not checked: their meaning and checks are step 5.1's, with bonsai.workspace/1's schema.
+// Read here, by ReadConfig and LoadConfig (what the walking skeleton's parts 2 to 5 use, and all the guard reads, on
+// every hook call): format, id, name, packs (id, source, path, ref), protected, person_only and never_edit (part 3
+// writes each never_edit path as a deny rule). Every other key spec §6 shows (documents, ladder_floor, ladder,
+// ratchets, ci_marked_tests, generated) and any unknown key is kept in Config.Doc as read and not checked here.
+// The engine and bonsai check read the file in full (full.go, ReadConfigFull: every field held to
+// bonsai.workspace/1's schema, in Config.Full); the guard keeps this lean read (plan-5 5.1.4a).
 
 import (
 	"errors"
@@ -17,6 +19,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/reader"
 )
 
@@ -35,6 +38,10 @@ type Config struct {
 	PersonOnly []string    // of those, the globs only a person grants (contract §5.5); [] for none
 	NeverEdit  []string    // paths no agent ever changes, written as Edit deny rules (spec §6, §7); [] for none
 	Doc        *reader.Map // the whole file as read, every key kept
+
+	// Full is every field, from the full read (ReadConfigFull, LoadConfigFull); nil from ReadConfig and LoadConfig,
+	// the lean read the guard uses.
+	Full *format.Workspace
 }
 
 // PackRef is one entry of bonsai.yaml's packs.

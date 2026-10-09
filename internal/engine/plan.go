@@ -218,7 +218,7 @@ func Build(req Request) (*Plan, error) {
 	var newPacks []*PackData
 	switch {
 	case hasConfig:
-		if cfg, err = workspace.ReadConfig(rawConfig); err != nil {
+		if cfg, err = workspace.ReadConfigFull(rawConfig); err != nil {
 			return nil, wsError(err, ExitInput)
 		}
 		if req.Init != nil && !sameValues(cfg, req.Init) {
@@ -250,7 +250,7 @@ func Build(req Request) (*Plan, error) {
 			return nil, errorf(ExitRuntime, "run the command again", "no random id: %v", err)
 		}
 		rawConfig = ConfigYAML(id, *req.Init, pd.Manifest.ID)
-		if cfg, err = workspace.ReadConfig(rawConfig); err != nil {
+		if cfg, err = workspace.ReadConfigFull(rawConfig); err != nil {
 			return nil, wsError(err, ExitInput)
 		}
 		pd.Ref = cfg.Packs[0]
@@ -878,7 +878,7 @@ func checkValues(v *InitValues) error {
 	// The rest (the name's form, the path, each never_edit path) bonsai.yaml's own reader checks, on the bonsai.yaml
 	// init would write, before it is written.
 	probe := ConfigYAML("ws-aaaaaaaaaaaaaaaaaaaaaaaaaa", *v, "probe")
-	if _, err := workspace.ReadConfig(probe); err != nil {
+	if _, err := workspace.ReadConfigFull(probe); err != nil {
 		return wsError(err, ExitInput).(*Error).withNext(next)
 	}
 	return nil

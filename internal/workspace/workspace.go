@@ -7,11 +7,11 @@
 //   - the checkout and its main checkout, found through git (contract §3): checkout.go;
 //   - project-relative paths and atomic writes, with Windows' busy renames retried: paths.go, write.go.
 //
-// The YAML files are read by internal/reader under format 1 only (format 0 is step 5.1); the lock is held to its
-// schema in formats/schemas, embedded by package formats, so its lists (file kinds) have one home. Each schema of
-// bonsai.yaml and pack.yaml is step 5.1's in full: this package reads what the walking skeleton's parts 2 to 5 use
-// and keeps every other key as read (contract §2.2: a reader keeps an unknown field), and each file's Go type says
-// where it stops.
+// The YAML files are read by internal/reader under format 1 only (neither ever had format 0); the lock is held to its
+// schema in formats/schemas, embedded by package formats, so its lists (file kinds) have one home. bonsai.yaml and
+// pack.yaml are read in full by internal/format (step 5.1.4a): pack.yaml always, bonsai.yaml by ReadConfigFull for
+// the engine and check (full.go), while the guard keeps ReadConfig's lean read of the fields it judges by. Every key
+// is kept as read (contract §2.2: a reader keeps an unknown field).
 package workspace
 
 import (

@@ -50,7 +50,12 @@ func TestReadPackTestPackA(t *testing.T) {
 		Deny: []DenyEntry{{Rule: "Edit(test-pack/never.txt)",
 			Why: "Agents cannot edit test-pack/never.txt (the test pack's example deny rule).", Line: 51}},
 	}
-	p.Doc = nil
+	// The full read (internal/format): every field, held to bonsai.pack/1's schema.
+	if p.Full == nil || p.Full.ID != "test-pack" || len(p.Full.Hooks) != 1 || *p.Full.Hooks[0].Matcher != "startup" ||
+		p.Full.Documents != nil || p.Full.Needs.ClaudeCode == nil || *p.Full.Needs.ClaudeCode != "2.1.0" {
+		t.Errorf("the full read gives %+v", p.Full)
+	}
+	p.Doc, p.Full = nil, nil
 	if got, w := fmt.Sprintf("%+v", *p), fmt.Sprintf("%+v", *want); got != w {
 		t.Errorf("read\n  %s\nwant\n  %s", got, w)
 	}
@@ -60,7 +65,7 @@ func TestReadPackTestPackA(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p2.Doc = nil
+	p2.Doc, p2.Full = nil, nil
 	if fmt.Sprintf("%+v", *p2) != fmt.Sprintf("%+v", *want) {
 		t.Errorf("the CRLF form reads differently: %+v", *p2)
 	}
@@ -121,6 +126,15 @@ func TestReadPackRefuses(t *testing.T) {
 		{"a deny with no why", packHead + "deny:\n  - rule: \"Edit(x)\"\n", "deny item 1 has no why"},
 		{"a deny rule a list", packHead + "deny:\n  - rule: [a]\n    why: x\n", "deny item 1's rule is a list"},
 		{"an empty mapping item", packHead + "deny:\n  - \n", "deny item 1 is null"},
+		// The full read (step 5.1.4a): every field held to bonsai.pack/1's schema, and no hook calling bash by name.
+		{"bash by name", packHead + "hooks:\n  - event: SessionStart\n    command: \"bash run/x.sh\"\n    why: x\n",
+			"line 6: field hooks[0].command calls bash by name"},
+		{"bash by path", packHead + "hooks:\n  - event: SessionStart\n    command: \"/usr/bin/env bash -c x\"\n    why: x\n",
+			"calls bash by name"},
+		{"a document kind's name", packHead + "documents:\n  - kind: Plan\n    path: work/plans\n", "line 5: field documents[0].kind"},
+		{"an absolute protected path", packHead + "protected: [\"/etc/x\"]\n", "line 4: field protected[0]: \"/etc/x\" does not match"},
+		{"a matcher list", packHead + "hooks:\n  - event: SessionStart\n    command: \"echo\"\n    why: x\n    later: 1\n  - event: Stop\n    command: \"echo\"\n    runs: []\n    why: [x]\n",
+			"hooks item 2's why is a list"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -342,5 +356,46 @@ func TestIDAndNamePatternsAreTheSchemas(t *testing.T) {
 	id, name := idName()
 	if got := [2]string{id.String(), name.String()}; got != want || want[0] == "" || want[1] == "" {
 		t.Errorf("patterns %q, the schema's %q", got, want)
+	}
+}
+
+// TestReadConfigFull: the engine's and check's read (full.go) reads every field of bonsai.workspace/1, the set's
+// example among them, and refuses a field the schema does not allow, by its line and with its next step, where the
+// guard's lean read (ReadConfig) reads the same bytes.
+func TestReadConfigFull(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "formats", "examples", "workspace.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := ReadConfigFull(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Full == nil || c.Full.ID != c.ID || len(c.Full.Ladder) != 3 || *c.Full.Generated.Log.KeepDays != 30 ||
+		c.Full.Documents.Task != "work/tasks" || len(c.Full.Documents.Extra) != 1 {
+		t.Errorf("the full read gives %+v", c.Full)
+	}
+	if lean, err := ReadConfig(raw); err != nil || lean.Full != nil {
+		t.Errorf("the lean read: %v, Full %v", err, lean.Full)
+	}
+	broken := "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: x\npacks: []\n" +
+		"generated:\n  log:\n    keep_days: -1\n"
+	if _, err := ReadConfig([]byte(broken)); err != nil {
+		t.Fatalf("the lean read refuses a field it does not read: %v", err)
+	}
+	_, err = ReadConfigFull([]byte(broken))
+	if err == nil || !strings.Contains(err.Error(), "bonsai.yaml line 7: field generated.log.keep_days: -1 is below 0") ||
+		!strings.Contains(err.Error(), "; next: fix that line of bonsai.yaml") {
+		t.Errorf("the full read: %v", err)
+	}
+	dir := t.TempDir()
+	if _, err := LoadConfigFull(dir); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("a missing bonsai.yaml: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ConfigFile), raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if c, err := LoadConfigFull(dir); err != nil || c.Full == nil {
+		t.Errorf("LoadConfigFull: %v", err)
 	}
 }
