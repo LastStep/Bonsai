@@ -3942,28 +3942,47 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    `applies_to` names more (the producer reads `verification-ladder`, `reward-hacking-guards` and `reporting`; the
    playtest analyst `reporting`), the role's body names those skills to read when needed, so today's behaviour holds
    without loading more into every start.
-3. **The rewrite rules**, the same for `base`'s three templates. What the grep found in the 20 files that move (the 17
+3. **The rewrite rules**, the same for `base`'s three templates (which also name no person). What the grep found in the 20 files that move (the 17
    above and the three for `base`): studio folder paths on 20 lines in 8 files and `<studio>`, `<trinetra>` on 7 more;
    the studio's task variable once; its project file (`game.yaml`) on 4 lines; the ledger on 10 lines; Discord and email
    on 4; "golden rule 8" on 3; the bridge once; the studio's name on 4 lines; Mimas on 12 lines, mostly the `<mimas>`
    placeholder; Unity on 2; one example task id; `cost_usd` and `allows_assets` twice each; Rohan's name on 54 lines; no
-   home folder, machine or tailnet name, email address, token or address. So:
+   home folder, machine or tailnet name, email address, token or address. The section's review found more, each
+   checked at `7017d63`: the paths `docs/design/index.html#anchor` (the one-pager template's `design_anchor`),
+   `roadmap/<M2>.md` (STATE's template), `artifacts/...png` (the run report's) and the decision protocol's "Mimas:
+   `docs/decisions.md`"; the frontmatter values `projects: [mimas, trinetra]` (the brief's), `scope: <studio | mimas>`
+   (the decision record's) and `project: <mimas | trinetra | studio>` (the options write-up's); the lines `node
+   <trinetra>/tools/ladder/ladder.mjs --project mimas` (the ladder protocol), `systemctl --user list-units` for the
+   bridge's unit (session-start's section 7) and the producer's "Runs on a schedule"; and Rohan's weekly rituals and
+   the 08:00 brief (the producer's role, the reporting protocol, STATE's template). So:
    - A studio path becomes the document kind it means ("the plan, in the folder `bonsai status --json` names for
      `plan`"); `studio/STATE.md` becomes `.bonsai/STATE.md`; ladder results `.bonsai/local/ladder/<task>.json`
-     (contract §11), `ci.json` stamped `mode: ci` for a CI run.
+     (contract §11), `ci.json` stamped `mode: ci` for a CI run. A project's own places become what they hold, with no
+     example path: "the design section the one-pager cites", "the milestone's roadmap, where the project keeps one",
+     "screenshots, where the project keeps them", "the project's own decision log".
    - The studio's tools become Bonsai's: its ladder script `bonsai ladder --task <id> --json`; its task variable
      `BONSAI_TASK` or `bonsai status --active --json` (contract §13); `allows_assets` the task's `bonsai.allows`;
      `game.yaml`'s rungs, protected list and ratchets `bonsai.yaml`'s; `cost_usd` a body line (its field is the
      studio's `trinetra.cost` label, contract §7.1); asking Rohan, `bonsai ask` (contract §9).
-   - The studio's services leave: Discord, email, the bridge's unit, the Desk, the registry (notifications and screens
-     are the studio's; the producer writes the brief and the studio delivers it).
+   - The studio's services leave: Discord, email, the bridge's unit (with its `systemctl` line), the Desk, the registry
+     (notifications and screens are the studio's; the producer writes the brief and the studio delivers it). The
+     producer's "Runs on a schedule" says who starts it: a studio's scheduler or a person (Bonsai has none).
    - "Golden rule 8" is written out where it is cited: a fresh verifier only for big or risky work (guards, the
      ladder's proof logic, tokens and security, deploys, a public contract, the full and director lanes); related light
      tasks share one; the rest close on a green ladder and the orchestrator's read of the diff.
    - The ledger stays, worded "where the project keeps a ledger of `done_when` entries": the studio and Mimas keep
      theirs, and a project without one loses nothing.
-   - `project:` fields and `<mimas>` placeholders go (a project is its repository); field values that name Rohan in a
-     list a reader parses become `person` (as contract §7.1's `needs-person`); prose keeps his name; game wording stays.
+   - `project:` and `projects:` fields and `<mimas>` placeholders go (a project is its repository); a field whose
+     values name the studio's projects (the decision record's `scope:`) keeps its meaning with values that name none;
+     field values that name Rohan in a list a reader parses become `person` (as contract §7.1's `needs-person`). In
+     `workflow`, prose keeps his name and game wording stays; `base`'s templates name no person ("a person") and carry
+     no studio ritual. His weekly rituals and the brief's hour stay in `workflow`, marked in the builder's list for his
+     read (note 10).
+   - **Status moves, in session-start's section 7** ("Before you stop, set the task's status"): for both modes, as the
+     operating skill says (note 5.5.3, 2): where `bonsai status --json` reads `status_writes: command`, the move goes
+     through its `status_command` (the guard refuses a status-line edit there); otherwise the agent edits the status
+     line, by the moves contract §10.2 gives agents. Its `allows_assets` paragraph becomes the task's `bonsai.allows`,
+     which grants only while the task reads `running`.
    - An example id becomes a made-up one; a frontmatter line gains its pointer comment (spec §5); a template's fields
      move into its fields table.
    - The always-on file stays at or under today's size (4.6 KB), its own docs one line, the rest in the README (spec
@@ -4010,7 +4029,8 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    as Bonsai's.
 9. **CI pinned** to a Bonsai commit that holds 5.5.0 and 5.5.1, and to the Claude Code version 5.5.1 measured.
 10. **For Rohan:** the builder's report ends with a list, file by file, of what changed from the studio's version and
-    why, in plain words: the orchestrator sends it with the repository's link.
+    why, in plain words, with the kept lines that describe his week (the rituals, the brief's hour) marked for his
+    read: the orchestrator sends it with the repository's link.
 11. **Proof** beyond the table: `ci/check.sh` on both sides locally (on Windows, a Windows-git clone under
     `%USERPROFILE%\bonsai-checks\` and Bonsai built with Windows Go), validate locally; a scratch project linked to
     `workflow` alone with `--yes` alone writes `work/protocols/session-start.md` and the block's import of it; one
@@ -4030,13 +4050,19 @@ LastStep/bonsai-workflow --private`), pushes `main`, reads CI, and sends Rohan t
 1. **The scratch projects:** under `~/bonsai-checks/packs/` and `%USERPROFILE%\bonsai-checks\packs\`, linked by the
    stamped test build (confined to its scratch root, 5.3.6) on a scratch `BONSAI_HOME` to `base` (a local clone of
    Bonsai at the landed commit, `--path packs/base`) and `workflow` (its local repository at the pushed commit);
-   sessions through `claude-here` (Windows: `bonsai-here` and PowerShell). On WSL the agent opens each project once in
-   `tmux` and answers the trust question (a test method in a scratch folder, as the skeleton's `--settings` route was;
-   Bonsai itself never answers it, 5.1.7); on Windows Rohan's sitting does. Then `bonsai update --yes` installs both
-   plugins.
+   Claude Code sessions only through `claude-here` (`claude-here.cmd` on Windows), `bonsai` runs through `bonsai-here`
+   or the scripts' scratch `BONSAI_HOME`. On WSL the agent opens each project once in `tmux`, through `claude-here`, and
+   answers the trust question by typing into the pane. **This is new:** the gate report found that an agent cannot
+   answer the trust prompt (§2.7, in a `-p` session); a keystroke sent into a `tmux` pane is a test method, like the
+   skeleton's `--settings` route, confined to the scratch projects under `~/bonsai-checks/packs/` and never used in a
+   real project. Trust stays a person's step (5.1.7): Bonsai never answers it, and the operating skill never teaches
+   this. On Windows Rohan's sitting answers it, through `claude-here.cmd`, with the Windows user settings hash recorded
+   before and after. Then `bonsai update --yes` installs both plugins.
 2. **The sessions**, each kept as stream JSON and its answer:
    - **R1, a role's preload:** `claude -p --agent workflow:builder` asked, "without opening any file or skill", for a
-     line only the `lanes` skill holds: the right line, and no Read or Skill call.
+     line only the `lanes` skill holds. Its pass follows 5.5.4 note 4's measurement: where an `--agent` session honours
+     `skills:`, the right line and no Read or Skill call; where it was measured not to, the right line with the skill
+     opened by the name the role's body gives, and the run report says which.
    - **R2, a role as a subagent:** a plain `-p` session asked to have `workflow:verifier` say what it reads first: an
      Agent call of that type, and the role's answer.
    - **R3, the always-on file:** a plain `-p` session asked, without reading a file, for the three facts
