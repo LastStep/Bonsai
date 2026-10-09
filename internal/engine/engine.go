@@ -11,22 +11,24 @@
 //     the packs' labels and block.md texts, at most 40 lines;
 //   - apply.go: the all-or-nothing write: every file staged, renames, the lock last;
 //   - check.go, checkdocs.go, checkhistory.go, checksettings.go, checkmachine.go, claude.go: bonsai check's findings
-//     and warnings, each a word of format.CheckWords (step 5.1.6);
+//     and warnings, each a word of format.CheckWords (step 5.1.6), and Claude Code's floor (claude.go); newer.go: a
+//     pack's newer release tags, for status --full;
 //   - plugins.go: this machine's plugins (plan part 4b): the install Claude Code is asked for after init and update
 //     (at project scope, the checkout's own .claude/settings.json), and check's drift report against the lock;
 //   - consent.go: consent to code (step 5.1.1): what init and update write that runs code, which needs --allow-exec
 //     as well as --yes, at a first link too;
-//   - declares.go: what a pack declares (lanes, document kinds, labels, protected paths, hook lines, deny rules), read
-//     at its commit and copied into the lock's declares, so check, status and the guard read them with no pack at
-//     hand (step 5.1.5); fetch.go also refuses a moved tag, and plan.go lists the lock's format0 at a first link;
+//   - declares.go: what a pack declares (lanes, document kinds, labels, protected paths, hook lines, deny rules,
+//     needs), read at its commit and copied into the lock's declares, so check, status and the guard read them with no
+//     pack at hand (step 5.1.5); fetch.go also refuses a moved tag and a plugin.json with a version, and plan.go lists
+//     the lock's format0 at a first link;
 //   - config.go: bonsai.yaml as init writes it, from the built-in template (every field, a comment on every line),
 //     and init --new-id's new id;
 //   - render.go and diff.go: the preview and the result, in plain ASCII text and in JSON.
 //
 // The engine applies only what a person asked for: init and update write project files, the home's pack cache, the
 // copies --adopt saves in it and, in the main checkout, this machine's record of the checkout (the machine folder's
-// workspace.json: checkmachine.go's RecordCheckout), and nothing else (no ~/.claude file, no local settings file, no commit). After
-// writing, cmd/bonsai asks Claude Code to install each pack's plugin at project scope (InstallPlugins), which writes
+// workspace.json: checkmachine.go's RecordCheckout), and nothing else (no ~/.claude file, no local settings file, no
+// commit). After writing, cmd/bonsai asks Claude Code to install each pack's plugin at project scope (InstallPlugins), which writes
 // Claude Code's plugin folder and, the first time, the checkout's .claude/settings.json in Claude Code's own key
 // order.
 //
