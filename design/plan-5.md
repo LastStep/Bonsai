@@ -783,14 +783,14 @@ re-runs its proof if the other lands first ("What changes", item 2). The files e
    runs at) and 5.2.5 (an open ask) define, it calls into their files, and it reads 5.2.6a's table for the defaults.
 
 **Who builds and verifies.** Opus builders for 5.2.1 (redaction), 5.2.2 (appends under concurrency on Windows, the
-salt), 5.2.4 (hooks every session runs, and the engine's own lines under consent), 5.2.5 (its refusals, and every
-string redacted) and 5.2.6b (it deletes files); Sonnet for 5.2.0, 5.2.3 and 5.2.6a, whose shapes and rules this
-section fixes, with the orchestrator's read. Fresh Opus verifiers: **5.2.1** (redaction is security: what may leave the machine),
-with its own differential and break-it; **5.2.4** (guards and hooks: every session in a linked project runs these
-lines, and they change what `update` writes). 5.2.0, 5.2.2, 5.2.3, 5.2.5, 5.2.6a and 5.2.6b land on green tests on
-both sides, CI and the orchestrator's read of the diff, which the run report says; **the 5.2 end verifier** covers them, and
-re-runs 5.2.1's differential and 5.2.4's sessions on the final build. This section's planning and review runs count in
-5.2's hours, carried in 5.2.0's run report ("What changes", item 3).
+salt), 5.2.4 (hooks every session runs, and the engine's own lines under consent), 5.2.5 (its refusals, and every string
+redacted) and 5.2.6b (it deletes files); Sonnet for 5.2.0, 5.2.3 and 5.2.6a, whose shapes and rules this section fixes,
+with the orchestrator's read. Fresh Opus verifiers: **5.2.1** (redaction is security: what may leave the machine), with
+its own differential and break-it; **5.2.4** (guards and hooks: every session in a linked project runs these lines, and
+they change what `update` writes). 5.2.0, 5.2.2, 5.2.3, 5.2.5, 5.2.6a and 5.2.6b land on green tests on both sides, CI
+and the orchestrator's read of the diff, which the run report says; **the 5.2 end verifier** covers them, and re-runs
+5.2.1's differential and 5.2.4's sessions on the final build. This section's planning and review runs count in 5.2's
+hours, carried in 5.2.0's run report ("What changes", item 3).
 
 #### Where each inherited finding is settled
 
@@ -950,16 +950,16 @@ the Go redactor hides everything the Node one hides, and the three bugs' cases t
    - (e) about a million generated strings mixing names, separators, quotes, whitespace and values, a distinct
      made-up secret in every value slot, and the fuzz finds.
 
-   **It passes when**, over every string: no labelled or planted secret leaks from Bonsai's output, a secret counting
-   as leaked when any word of it, or any run of 6 or more of its characters, survives (a word is a maximal run of
-   letters and digits; the studio's misses on the three classes are counted apart); for every word the studio's
-   redactor took out, Bonsai's output keeps no more copies of it than the studio's does; every keep row comes back unchanged; Bonsai's output is a fixed
-   point at every cut; no string takes over 100 ms, or over 1 ms a KB for a document past 100 KB. Judged, not
-   counted: the strings where Bonsai takes out a word the studio's keeps, grouped by the rule that fired, each group
-   read by the builder and then the verifier (a secret shape the studio missed is right; ordinary words taken out are
-   a failure to fix). Reported only: how often the studio's redactor changes Bonsai's output (the bridge's second
-   pass). The run report gives counts and classes, never a string from the
-   studio's files ((a), (b) and (d) hold studio paths and names); strings Bonsai's own script made may be quoted.
+   **It passes when**, over every string: no labelled or planted secret leaks from Bonsai's output, a secret counting as
+   leaked when any word of it, or any run of 6 or more of its characters, survives (a word is a maximal run of letters
+   and digits; the studio's misses on the three classes are counted apart); for every word the studio's redactor took
+   out, Bonsai's output keeps no more copies of it than the studio's does; every keep row comes back unchanged; Bonsai's
+   output is a fixed point at every cut; no string takes over 100 ms, or over 1 ms a KB for a document past 100 KB.
+   Judged, not counted: the strings where Bonsai takes out a word the studio's keeps, grouped by the rule that fired,
+   each group read by the builder and then the verifier (a secret shape the studio missed is right; ordinary words taken
+   out are a failure to fix). Reported only: how often the studio's redactor changes Bonsai's output (the bridge's
+   second pass). The run report gives counts and classes, never a string from the studio's files ((a), (b) and (d) hold
+   studio paths and names); strings Bonsai's own script made may be quoted.
 
    **Bonsai's committed tests are its own:** every row written fresh by class, with made-up secrets (`hunter2`, AWS's
    documented example key, random strings made by the test); none is copied from the studio's tables, which the
@@ -1177,9 +1177,10 @@ they leave open.
    key again appends a new `file` (the newest wording stands); filing a closed key opens it again, as today. The same
    `answer` again (same key and `by`) writes nothing and exits 0 (contract §9.1), checked first, so a retry is never
    read as `ask-not-open`. Any other `answer` on a key that is not open exits 4 (`ask-not-open`), saying whether it is
-   unknown, answered or resolved: the first answer stands. An answer from the session that asked is refused with exit 4 (`answer-own-session`), comparing `CLAUDE_CODE_SESSION_ID` with
-   the ask's `session` (contract §9.3). A Decide's `--choice` must be one of its options; a Look's `--verdict` is
-   `pass` or `fail`. An answer grants nothing: it writes one record and nothing else.
+   unknown, answered or resolved: the first answer stands. An answer from the session that asked is refused with exit 4
+   (`answer-own-session`), comparing `CLAUDE_CODE_SESSION_ID` with the ask's `session` (contract §9.3). A Decide's
+   `--choice` must be one of its options; a Look's `--verdict` is `pass` or `fail`. An answer grants nothing: it writes
+   its record and its log record (note 6), nothing else.
 5. **Where:** the main checkout's `.bonsai/local/asks/<UTC day>.ndjson`, through 5.2.2's finder and append path, at
    most 8,192 bytes a record, the day of the record's own `at`, so an answer goes into its own day's file.
 6. **Each ask record has its log record** (contract §8.2: `ask`, "an ask filed, resolved or answered: `target` is its
@@ -1253,31 +1254,40 @@ A fresh Opus verifier, at the end of 5.2, runs each check itself on the final co
    descriptions copy none; `go generate` changes nothing under `docs/reference/`; a changed default in a temporary
    copy fails the generated-files page's test.
 3. **Redaction, the differential:** the verifier's own runner (the studio's redactor at `25b6450` by `git show` into
-   scratch) and its own Go driver, over 5.2.1's corpus (note 9): every labelled or planted secret absent; never more
-   copies of a word the studio's redactor took out; keep rows unchanged; a fixed point at every cut; the three classes
-   with no leak; each over-redaction class read and judged.
+   scratch) and its own Go driver, over 5.2.1's corpus (note 9): no labelled or planted secret leaks by note 9's count
+   (no word of it, and no run of 6 or more of its characters, survives); never more copies of a word the studio's
+   redactor took out; keep rows unchanged; a fixed point at every cut; the three classes with no leak; each
+   over-redaction class (the case folds among them) read and judged.
 4. **Redaction, break-it:** the verifier's own shapes (case folds, every kind of whitespace, quotes left open,
    punctuation, names in a row, very long input); `FuzzRedact` for 5 minutes with no failure; the time on 26 KB of
    glued names and on 1 MB of mixed text.
 5. **No studio content:** a grep of 5.2's diff, `internal/redact`'s tests above all, for studio paths, project names,
-   task and bug ids and private strings; every row taken from the studio's tables holds only made-up values and
-   generic words.
+   task and bug ids and private strings; no test row is copied from the studio's tables (the verifier compares
+   them).
 6. **Appends:** the eight-process append test passes on WSL and natively on Windows; the Windows busy-file test; the
-   reader skips and counts a torn line; the salt race.
+   reader skips and counts a torn line; the salt race; the finder agrees with `workspace.Find` on a main checkout, a
+   worktree, a submodule and a separate git folder; every writer of `local/` (`hook start`, `hook record`, `log
+   append`, `ask`, `answer`, the cleaner) restores a missing `.bonsai/.gitignore`.
 7. **Real sessions** (WSL; Windows too if Claude Code's login there is back), in a fresh scratch project linked by the
    final build and holding one running task, through `claude-here`: sessions that read, edit, search, run a command
-   holding a made-up secret, start a subagent and end, and one resumed. Every record validates against
-   `bonsai.log/1`; the guard's and the recorder's records share the session's file, every line whole; each tool
-   call's records share one `input_hash`; `session_start` names the binary's path and a SHA-256 equal to the file's,
-   and `bonsai --version` and `go version -m` give its commit; the made-up secret is in no record; the session quoted
-   `hook start`'s active task; nothing from `hook record` reached the conversation.
+   holding a made-up secret, run `bonsai ask`, start a subagent and end; one resumed; and one in a worktree of the
+   project. Every record validates against `bonsai.log/1`; the guard's and the recorder's records share a main
+   checkout's session file, every line whole; the four tool events of one call (`tool_start`, `permission`,
+   `tool_end`, `tool_fail`) share one `input_hash` (the guard's records hold null until 5.3); every `session_start`,
+   the resumed one's too, names the binary's path (from `~/` under the home) and a SHA-256 equal to the file's, and
+   `bonsai --version` and `go version -m` give its commit; the made-up secret is in no record; the session quoted
+   `hook start`'s active task; nothing from `hook record` reached the conversation; the `ask` record carries the
+   session's own id. The worktree's recorder lines are in main's `local/`, its guard records in its own folder, and
+   `logs` and `check --write` in the main checkout show it. The three Claude Code facts of 5.2.4's note 12 are in the
+   run report.
 8. **Never blocks:** `hook record` and `hook start` exit 0, and `hook record` prints nothing, on an empty, broken,
    huge or unknown payload, with no `CLAUDE_PROJECT_DIR`, in a folder with no `bonsai.yaml`, with an unreadable
    `bonsai.yaml`, and with a log folder that cannot be written; SessionEnd's line lands in ten `-p` sessions out of
    ten; the hooks' p50 and p95 on both sides, against 5.2.4's.
 9. **Bonsai's own lines and consent:** a first link writes them on `--yes`; a project linked by a 5.1 build (5.1's
    last commit, built from a clean clone) gets them only with `--allow-exec` and `--yes` (exit 4 without, nothing
-   written), and `check` warns until then; 5.1's consent break-it cases still pass on this build.
+   written), and `check` warns until then; `unlink` and taking a pack out remove them; 5.1's consent break-it cases
+   still pass on this build.
 10. **The sessions table:** from check 7's logs, `check --write` adds one row per session and per subagent run, each
     with its task; a second run changes no byte; the same log on Windows gives the same bytes; the stale warning
     before, none after; the hours keep subagent time apart from session time.
@@ -1286,7 +1296,8 @@ A fresh Opus verifier, at the end of 5.2, runs each check itself on the final co
 12. **Asks:** filing, `--status`, `--resolve`, and an answer from a terminal; the asking session's answer refused
     (exit 4, nothing written); the same answer twice writes one record; `--type Bless` refused; a hidden character
     refused; a made-up secret in a title, an option and the words absent from the file; every `--json` validates
-    against `bonsai.asks/1`; nothing outside `.bonsai/local/asks/` changes.
+    against `bonsai.asks/1`; nothing changes but `.bonsai/local/asks/` and one `ask` log record for each ask record
+    written.
 13. **`log append`:** a defined label accepted, an undefined one exits 2; the record in today's day file, its text
     redacted.
 14. **Cleaning:** the verifier's own fixture project, with old, new and protected files and rows of every kind, and a
@@ -1336,15 +1347,25 @@ A fresh Opus verifier, at the end of 5.2, runs each check itself on the final co
   by `hook start`, and SessionEnd's line is synchronous, since an async hook is killed at exit (5.2.4, note 1).
 - **§7's "SessionStart (startup, resume, compact)":** `clear` counts too (5.2.4, note 1).
 - **§6, cleaning "at the end of each session (the recorder's `session_end`, async, never blocking)":** the end's line is
-  synchronous, so cleaning there has a budget of 1 s (5.2.6, note 4).
+  synchronous, so cleaning there has a budget of 1 s (5.2.6b, note 4).
 - **§6's generated-files page is base's skill;** until 5.5 it is `docs/reference/generated-files.md`, and the comment in
-  `bonsai.yaml` names that page, where §6's example names the skill (5.2.6, note 7).
+  `bonsai.yaml` names that page, where §6's example names the skill (5.2.6a).
+- **The outline's "the hash logged once per session file (kept, now by `hook start`)":** `hook start` hashes the
+  binary at every start, so a binary swapped between a session and its resume is seen (5.2.4; spec §3's tripwire).
+- **`bonsai_path`:** the guard writes the binary's absolute path, a user folder's name in it, while contract §2.6 keeps
+  absolute paths out of records the bridge may forward. 5.2's records write it from `~/` under the home and as it is
+  elsewhere (an installed path holds no user's name); the guard's keep their form until 5.3 (5.2.0).
 - **§8: `log append` checks labels "against the machine's definitions";** 5.2.5 checks them against every label in
   force, the machine's among them.
 - **Contract §8.1 gives `task` and `role` "raw";** Bonsai passes every free-text string through the redactor (raw
   meaning not interpreted); a value with no secret shape comes back unchanged.
 - **A target outside the checkout:** today's sink keeps the absolute path; contract §2.6 says records carry
-  workspace-relative paths. Here: `~/...` under the home, else null (5.2.1, note 7).
+  workspace-relative paths. Here null, as the guard writes (5.2.1, note 7); what lost: the Desk no longer sees where
+  an outside read went, which today's sink shows.
+- **Three departures from the spec's words:** `logs --day` and `asks --all` are flags beyond spec §4's table; 5.2.2's
+  finder reads the `.git` files itself where spec §6 names `git rev-parse --git-common-dir` (the hooks stay fast, and a
+  test holds the two equal); the memory scan reads the notes in the working tree where spec §6 says "a committed
+  memory note" (what is about to be committed is caught before it is).
 - **`log.schema.json`'s `text` names "a prompt's start";** Bonsai keeps no prompt's words (5.2.4, note 5), and 5.2.0
   rewrites the description.
 - **§14 gives the hook adapter to 5.3,** while the recorder reads ten events' payloads in 5.2 with its own reader; 5.3
