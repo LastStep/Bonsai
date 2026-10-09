@@ -16,19 +16,26 @@ import (
 
 func init() { register(checkWord) }
 
+// claudeVersion gives claude --version's first line (engine.ClaudeVersion of the claude on the PATH): main sets it;
+// nil, as in tests, asks nothing.
+var claudeVersion func() (string, error)
+
 var checkWord = &Word{
 	Name:    "check",
 	Order:   5,
 	Title:   "findings on this checkout (spec section 6).",
 	Summary: "findings on the lock and the files; --schema F prints a format",
 	Args:    "[flags]",
-	About: `It checks the lock against the files (a pack file, the block in CLAUDE.md or Bonsai's lines in
-.claude/settings.json edited or missing), bonsai.yaml against the lock, .bonsai/.gitignore, any file from
-.bonsai/local/ that git tracks or has staged, and this machine's plugins against the lock: a
-.claude/settings.local.json (this checkout's, or in a worktree the main checkout's, which Claude Code reads too)
-turning on another commit's plugin of a pack, and what Claude Code reports (claude plugin list --json): a pack's
-plugin turned on here at another commit (a finding), or the locked one not installed yet (a warning). It writes
-nothing and fetches nothing. Warnings never change the exit code.
+	About: `It checks the project against spec section 6: the lock against the files and bonsai.yaml; the files of
+Bonsai's kinds (format 0 new or changed, each read under its format, labels against their definitions, no
+absolute path); approve_first from git history; the block, memory index and note budgets; the paths CLAUDE.md,
+STATE and memory notes name; Claude Code's settings in the project (each permission rule, disableAllHooks, no
+version on a pack's plugin); this machine's record of the checkout and the bonsai on the PATH; .bonsai/.gitignore
+and .bonsai/local/ in git; and what Claude Code reports: the packs' plugins (claude plugin list --json) and its
+version against the floor (claude --version; Bonsai's ` + engine.ClaudeCodeFloor + `, or a pack's needs.claude_code). Each
+finding and warning has a code (bonsai check --schema bonsai.check lists them all) and a next step: the exact
+command, written "run: <command>", wherever one fixes it. It writes nothing and fetches nothing. Findings exit 1;
+warnings never change the exit code.
 `,
 	Flags: []Flag{
 		{Name: "--json", Help: "print the bonsai.check/1 document (for programs) instead of text; with --schema, the format's\nJSON Schema"},
@@ -74,6 +81,7 @@ func runCheck(c *call) int {
 		return c.fail(engine.Unexpected(err))
 	}
 	engine.ComparePlugins(r, pluginCLI)
+	engine.CompareClaudeCode(r, claudeVersion)
 	exit := engine.ExitOK
 	if len(r.Findings) > 0 {
 		exit = engine.ExitFindings

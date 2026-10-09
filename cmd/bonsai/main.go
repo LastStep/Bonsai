@@ -23,6 +23,13 @@ var version = "dev"
 
 func main() {
 	pluginCLI = engine.ClaudeCLI{}
+	claudeVersion = func() (string, error) {
+		bin, err := engine.LookClaude()
+		if err != nil {
+			return "", err
+		}
+		return engine.ClaudeVersion(bin)
+	}
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
 

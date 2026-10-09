@@ -166,7 +166,7 @@ func TestUpdateCommand(t *testing.T) {
 	if code != 0 || !strings.Contains(out, "kept         demo/guide.md") {
 		t.Errorf("--keep: %d\n%s", code, out)
 	}
-	if code, out, _ := c.run("", "check"); code != 0 || out != "bonsai check: no findings.\n" {
+	if code, out, _ := c.run("", "check"); code != 0 || !strings.HasPrefix(out, "bonsai check: no findings.\n") || strings.Contains(out, "warning:") {
 		t.Errorf("check: %d %q", code, out)
 	}
 	// C to D changes only the hook line: refused, exit 4, --allow-exec named, nothing written.
@@ -211,7 +211,7 @@ func TestCheckCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, out, _ := c.run("", "check")
-	if code != 1 || !strings.Contains(out, "demo/guide.md was edited") || !strings.Contains(out, "next: keep the edit: bonsai update --yes --keep demo/guide.md") {
+	if code != 1 || !strings.Contains(out, "demo/guide.md was edited") || !strings.Contains(out, "next: to keep the edit, run: bonsai update --yes --keep demo/guide.md") {
 		t.Errorf("check: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "check", "--json")
@@ -334,7 +334,7 @@ func TestPluginStep(t *testing.T) {
 		t.Errorf("check with drift: %d\n%s", code, out)
 	}
 	f.list = f.list[:1]
-	if code, out, _ := c.run("", "check"); code != 0 || out != "bonsai check: no findings.\n" {
+	if code, out, _ := c.run("", "check"); code != 0 || !strings.HasPrefix(out, "bonsai check: no findings.\n") || strings.Contains(out, "warning:") {
 		t.Errorf("check with no drift: %d %q", code, out)
 	}
 	// The offline half: a settings.local.json (a local-scope install's, never Bonsai's) turning on A's plugin.

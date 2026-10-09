@@ -131,7 +131,8 @@ func runEngine(c *call) int {
 	again := "bonsai " + word + " --allow-exec"
 	if plan.Nothing() {
 		plan.Plugins = engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))
-		return out("nothing", engine.ExitOK, nil, "bonsai "+word+": nothing to change"+packsAt(plan)+".\n"+plan.PluginsText()+closing)
+		return out("nothing", engine.ExitOK, nil, "bonsai "+word+": nothing to change"+packsAt(plan)+".\n"+plan.LeftAlone()+
+			recorded(plan)+plan.PluginsText()+closing)
 	}
 	head := "bonsai " + word + ": the preview.\n"
 	preview := head + plan.Preview(f.diff)
@@ -199,8 +200,17 @@ func runEngine(c *call) int {
 	if f.yes {
 		text = preview
 	}
-	text += "bonsai " + word + ": written" + packsAt(plan) + ".\n" + plan.Applied() + plan.PluginsText() + closing
+	text += "bonsai " + word + ": written" + packsAt(plan) + ".\n" + plan.Applied() + plan.LeftAlone() + recorded(plan) + plan.PluginsText() + closing
 	return out("applied", engine.ExitOK, nil, text)
+}
+
+// recorded writes this machine's record of the checkout (engine.RecordCheckout) once init or update ended without a
+// refusal, and gives a line for the text when it could not: the project's files are written either way.
+func recorded(plan *engine.Plan) string {
+	if err := engine.RecordCheckout(plan); err != nil {
+		return "note: this machine's record of the checkout was not written: " + engine.ASCII(err.Error()) + "\n"
+	}
+	return ""
 }
 
 func conflictWhat(p *engine.Plan) string {
