@@ -7,14 +7,19 @@
 //     they would write;
 //   - settings.go: Bonsai's lines in the project's .claude/settings.json (kind keys): hook lines, deny rules, the
 //     plugin wiring, autoMemoryEnabled and disableAllHooks, each with the sentence the preview prints;
-//   - block.go: the instruction block in CLAUDE.md (kind block);
+//   - block.go: the instruction block in CLAUDE.md (kind block): the workspace line, the protocol and memory imports,
+//     the packs' labels and block.md texts, at most 40 lines;
 //   - apply.go: the all-or-nothing write: every file staged, renames, the lock last;
 //   - check.go: bonsai check's findings on the lock and the files, and a tracked or staged .bonsai/local/ file;
 //   - plugins.go: this machine's plugins (plan part 4b): the install Claude Code is asked for after init and update
 //     (at project scope, the checkout's own .claude/settings.json), and check's drift report against the lock;
 //   - consent.go: consent to code (step 5.1.1): what init and update write that runs code, which needs --allow-exec
 //     as well as --yes, at a first link too;
-//   - config.go: bonsai.yaml as init writes it, a comment on every line, and init --new-id's new id;
+//   - declares.go: what a pack declares (lanes, document kinds, labels, protected paths, hook lines, deny rules), read
+//     at its commit and copied into the lock's declares, so check, status and the guard read them with no pack at
+//     hand (step 5.1.5); fetch.go also refuses a moved tag, and plan.go lists the lock's format0 at a first link;
+//   - config.go: bonsai.yaml as init writes it, from the built-in template (every field, a comment on every line),
+//     and init --new-id's new id;
 //   - render.go and diff.go: the preview and the result, in plain ASCII text and in JSON.
 //
 // The engine applies only what a person asked for: init and update write project files, the home's pack cache and

@@ -344,7 +344,7 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 		}
 		pd.Block = blockText(b)
 	}
-	if pd.Declares, err = readDeclares(ref, manifest, read); err != nil {
+	if pd.Declares, err = readDeclares(manifest, read); err != nil {
 		return nil, errorf("bad-pack", ExitInput, nextPack, "the pack %s (%s): %v", ref.ID, where, err)
 	}
 	pd.SHA256 = contentHash(entries, blobs)

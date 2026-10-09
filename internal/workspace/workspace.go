@@ -5,6 +5,11 @@
 //   - the lock, .bonsai/lock.json (bonsai.lock/1, contract §14), read and written: lock.go;
 //   - the Bonsai home and a workspace's machine folder (contract §3): home.go;
 //   - the checkout and its main checkout, found through git (contract §3): checkout.go;
+//   - the document kinds a workspace declares, Bonsai's and the packs' (contract §7.3), their files, and the lanes in
+//     force: documents.go;
+//   - the active task, one function every reader uses (contract §13): active.go;
+//   - this machine's part of a workspace, its settings and the labels attached on it, with the packs' labels in force
+//     (contract §3, §5): machine.go;
 //   - project-relative paths and atomic writes, with Windows' busy renames retried: paths.go, write.go.
 //
 // The YAML files are read by internal/reader under format 1 only (neither ever had format 0); the lock is held to its

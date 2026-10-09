@@ -34,7 +34,7 @@ const (
 )
 
 // readDeclares reads what a pack declares, read giving a file of the pack's folder (os.ErrNotExist when it has none).
-func readDeclares(ref workspace.PackRef, manifest *workspace.Pack, read func(string) ([]byte, error)) (*format.Declares, error) {
+func readDeclares(manifest *workspace.Pack, read func(string) ([]byte, error)) (*format.Declares, error) {
 	d := &format.Declares{Documents: manifest.Full.Documents, Protected: manifest.Full.Protected,
 		Hooks: manifest.Full.Hooks, Deny: manifest.Full.Deny}
 	id := manifest.ID
