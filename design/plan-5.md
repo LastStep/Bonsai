@@ -68,6 +68,9 @@ such pair.
   part, which becomes two fields (what to do, and whether an agent or a person does it) instead of the one sentence you
   saw in format review 4.5; with it, the shapes of `check`'s and `update`'s JSON, which the studio will read. Until
   1.0 any word can still change.
+- **In 5.2, a look (no vote needed):** the names of the log's two new fields, the `bonsai` binary's path and its
+  fingerprint (`bonsai_path`, `bonsai_sha256`), which format review 4.2 left for you to see before building; any change
+  you want is made before they land (added 9 Oct with 5.2's section).
 - **In 5.3:** the second Windows check (spec §17 step 7, about 10 minutes): a real Windows session in a scratch folder,
   asking Claude for one edit and two deletes and reporting what happened. A Sonnet agent runs every check an agent can
   first, so your sitting is only what needs a person typing (your 8 Oct word). Possibly one question: how the hook
