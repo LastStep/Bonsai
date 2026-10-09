@@ -166,7 +166,7 @@ func TestUpdateCommand(t *testing.T) {
 	if code != 0 || !strings.Contains(out, "kept         demo/guide.md") {
 		t.Errorf("--keep: %d\n%s", code, out)
 	}
-	if code, out, _ := c.run("", "check"); code != 0 || !strings.HasPrefix(out, "bonsai check: no findings.\n") || strings.Contains(out, "warning:") {
+	if code, out, _ := c.run("", "check"); code != 1 || !onlySource(out) {
 		t.Errorf("check: %d %q", code, out)
 	}
 	// C to D changes only the hook line: refused, exit 4, --allow-exec named, nothing written.
@@ -189,6 +189,23 @@ func TestUpdateCommand(t *testing.T) {
 		!strings.Contains(c.snapshot(), "echo demo hook D") {
 		t.Errorf("--allow-exec: %d\n%s", code, out)
 	}
+}
+
+// onlySource reports whether check's text holds one finding, and no warning: the one every test project has, its
+// bonsai.yaml naming the test pack by a local folder, an absolute path (absolute-path; spec §14 check 2).
+func onlySource(out string) bool {
+	return strings.HasPrefix(out, "bonsai check: 1 finding.\n  bonsai.yaml's field packs[0].source holds the absolute path ") &&
+		strings.Contains(out, "next: a person names the pack's remote URL") && !strings.Contains(out, "warning:")
+}
+
+// codesIn lists the codes of check --json's findings or warnings, space-separated.
+func codesIn(doc schema.Object, list string) string {
+	v, _ := doc.Get(list)
+	var out []string
+	for _, f := range v.([]any) {
+		out = append(out, f.(schema.Object).String("code"))
+	}
+	return strings.Join(out, " ")
 }
 
 func (c *cli) snapshot() string {
@@ -215,8 +232,7 @@ func TestCheckCommand(t *testing.T) {
 		t.Errorf("check: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "check", "--json")
-	findings, _ := fits(t, out, "check").Get("findings")
-	if code != 1 || len(findings.([]any)) != 1 {
+	if code != 1 || codesIn(fits(t, out, "check"), "findings") != "changed absolute-path" {
 		t.Errorf("check --json: %d %s", code, out)
 	}
 	for _, args := range [][]string{{"check", "--write"}, {"check", "now"}} {
@@ -334,7 +350,7 @@ func TestPluginStep(t *testing.T) {
 		t.Errorf("check with drift: %d\n%s", code, out)
 	}
 	f.list = f.list[:1]
-	if code, out, _ := c.run("", "check"); code != 0 || !strings.HasPrefix(out, "bonsai check: no findings.\n") || strings.Contains(out, "warning:") {
+	if code, out, _ := c.run("", "check"); code != 1 || !onlySource(out) {
 		t.Errorf("check with no drift: %d %q", code, out)
 	}
 	// The offline half: a settings.local.json (a local-scope install's, never Bonsai's) turning on A's plugin.

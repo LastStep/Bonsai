@@ -40,6 +40,32 @@ func (e *env) values(ref string, neverEdit ...string) *InitValues {
 	return &InitValues{Name: "demo", Source: e.pack.Source, Ref: ref, NeverEdit: neverEdit}
 }
 
+// checkLocal is Check of a test project whose bonsai.yaml names its pack by a local folder (the test pack's bare
+// repository): an absolute path, which check finds (absolute-path; spec §14 check 2: a pack's source is its remote
+// URL). It expects that one finding, failing the test when it is not there exactly once, and takes it out of the
+// findings, so a test reads the rest as before.
+func checkLocal(t *testing.T, dir, home string) (*CheckResult, error) {
+	t.Helper()
+	r, err := Check(dir, home)
+	if err != nil {
+		return r, err
+	}
+	var kept []Finding
+	n := 0
+	for _, f := range r.Findings {
+		if f.Code == "absolute-path" && f.File == workspace.ConfigFile && strings.Contains(f.Message, ".source holds the absolute path") {
+			n++
+			continue
+		}
+		kept = append(kept, f)
+	}
+	if n != 1 {
+		t.Errorf("want the local source's one absolute-path finding, found %d: %+v", n, r.Findings)
+	}
+	r.Findings = kept
+	return r, nil
+}
+
 // plan builds a plan, failing the test on an error.
 func (e *env) plan(t *testing.T, root string, req Request) *Plan {
 	t.Helper()
@@ -328,7 +354,7 @@ func TestCheck3CRLF(t *testing.T) {
 	for _, rel := range []string{"bonsai.yaml", workspace.LockFile, SettingsFile, "CLAUDE.md", GitignoreFile, "demo/guide.md", "demo/start.md"} {
 		writeFile(t, root, rel, strings.ReplaceAll(read(t, root, rel), "\n", "\r\n"))
 	}
-	r, err := Check(root, e.home)
+	r, err := checkLocal(t, root, e.home)
 	if err != nil || len(r.Findings) != 0 || len(r.Warnings) != 0 {
 		t.Fatalf("check after CRLF: %v %+v %+v", err, r.Findings, r.Warnings)
 	}
@@ -402,7 +428,7 @@ func TestCheck5UpdateAToB(t *testing.T) {
 	if s := schema.Show(settingsDocOf(t, root)); !strings.Contains(s, e.pack.B) || strings.Contains(s, e.pack.A) {
 		t.Errorf("the wiring is not at B: %s", s)
 	}
-	r, err := Check(root, e.home)
+	r, err := checkLocal(t, root, e.home)
 	if err != nil || len(r.Findings) != 0 {
 		t.Errorf("check: %v %+v", err, r.Findings)
 	}
@@ -442,7 +468,7 @@ func TestCheck6ConflictKeepAdopt(t *testing.T) {
 	if lock.Files["demo/guide.md"].Kind != "kept" || lock.Packs[0].Commit != e.pack.B {
 		t.Errorf("lock %+v %s", lock.Files["demo/guide.md"], lock.Packs[0].Commit)
 	}
-	if r, _ := Check(root, e.home); len(r.Findings) != 0 {
+	if r, _ := checkLocal(t, root, e.home); len(r.Findings) != 0 {
 		t.Errorf("a kept file is a finding: %+v", r.Findings)
 	}
 	// Still at B, the kept file stays kept.
@@ -615,7 +641,7 @@ func TestMissingFiles(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	r, _ := Check(root, e.home)
+	r, _ := checkLocal(t, root, e.home)
 	var codes []string
 	for _, f := range r.Findings {
 		codes = append(codes, f.Code+" "+f.File)
@@ -664,7 +690,7 @@ func TestCheckFindings(t *testing.T) {
 	writeFile(t, root, SettingsFile, strings.Replace(read(t, root, SettingsFile), `"Edit(ledger.json)",`, "", 1))
 	writeFile(t, root, ".bonsai/local/log/x.ndjson", "{}\n")
 	testpack.Git(t, root, "add", "-f", ".bonsai/local/log/x.ndjson")
-	r, err := Check(root, e.home)
+	r, err := checkLocal(t, root, e.home)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -689,7 +715,7 @@ func TestCheckFindings(t *testing.T) {
 		t.Errorf("--adopt did not take Bonsai's lines back")
 	}
 	testpack.Git(t, root, "rm", "-q", "--cached", ".bonsai/local/log/x.ndjson")
-	if r, _ := Check(root, e.home); len(r.Findings) != 0 {
+	if r, _ := checkLocal(t, root, e.home); len(r.Findings) != 0 {
 		t.Errorf("after --adopt: %+v", r.Findings)
 	}
 	// Without the pack in this machine's cache, nothing changes: the lock's declares holds what check needs
@@ -697,7 +723,7 @@ func TestCheckFindings(t *testing.T) {
 	if err := os.RemoveAll(filepath.Join(e.home, "cache", "git")); err != nil {
 		t.Fatal(err)
 	}
-	r, _ = Check(root, e.home)
+	r, _ = checkLocal(t, root, e.home)
 	if len(r.Findings) != 0 || len(r.Warnings) != 0 {
 		t.Errorf("with no cache: %+v %+v", r.Findings, r.Warnings)
 	}

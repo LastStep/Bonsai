@@ -159,7 +159,7 @@ func TestCheckOfflineFromTheLock(t *testing.T) {
 	checkAll := func() map[string]run {
 		out := map[string]run{}
 		for _, r := range []string{root, demo} {
-			res, err := Check(r, e.home)
+			res, err := checkLocal(t, r, e.home)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -222,13 +222,13 @@ func TestCheckOldLockUsesTheCache(t *testing.T) {
 	writeFile(t, root, workspace.LockFile, strings.Replace(read(t, root, workspace.LockFile),
 		read(t, root, workspace.LockFile)[strings.Index(read(t, root, workspace.LockFile), `"declares": {`):strings.Index(read(t, root, workspace.LockFile), `"files"`)],
 		"\"declares\": {}\n    }\n  ],\n  ", 1))
-	if r, err := Check(root, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 0 {
+	if r, err := checkLocal(t, root, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 0 {
 		t.Fatalf("an old lock, the pack in the cache: %v %+v %+v", err, r.Findings, r.Warnings)
 	}
 	if err := os.RemoveAll(filepath.Join(e.home, "cache")); err != nil {
 		t.Fatal(err)
 	}
-	if r, err := Check(root, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "cache" {
+	if r, err := checkLocal(t, root, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "cache" {
 		t.Fatalf("an old lock, no cache: %v %+v %+v", err, r.Findings, r.Warnings)
 	}
 }

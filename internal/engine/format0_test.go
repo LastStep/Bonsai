@@ -54,16 +54,16 @@ func TestFormat0ListedAtAFirstLink(t *testing.T) {
 	// check finds the new format-0 file (format0-new), and the two files that do not read under their formats: a
 	// format-1 task the reader refuses, and a memory note with no format: line (memory never had format 0).
 	want := "document work/tasks/T-0903-refused.md, format0-new work/tasks/T-0904-later.md, document work/memory/M-note.md"
-	if r, err := Check(root, e.home); err != nil || findingsOf(r) != want {
+	if r, err := checkLocal(t, root, e.home); err != nil || findingsOf(r) != want {
 		t.Fatalf("check: %v\n%s\nwant %s", err, findingsOf(r), want)
 	}
 	writeFile(t, root, "work/tasks/T-0901-old.md", old+"more\r\n")
-	if r, _ := Check(root, e.home); findingsOf(r) != "format0 work/tasks/T-0901-old.md, "+want {
+	if r, _ := checkLocal(t, root, e.home); findingsOf(r) != "format0 work/tasks/T-0901-old.md, "+want {
 		t.Errorf("a changed format-0 file: %s", findingsOf(r))
 	}
 	// Given a format: line, a listed file is held to format 1, no longer to its format-0 hash.
 	writeFile(t, root, "work/tasks/T-0901-old.md", "---\nformat: bonsai.task/1\nid: T-0901\ntitle: An old task\nstatus: done\n---\n")
-	if r, _ := Check(root, e.home); findingsOf(r) != want {
+	if r, _ := checkLocal(t, root, e.home); findingsOf(r) != want {
 		t.Errorf("a format-0 file given a format: line: %s", findingsOf(r))
 	}
 }

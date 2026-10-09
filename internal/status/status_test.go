@@ -46,6 +46,18 @@ protected: [".claude/**", "bonsai.yaml", "protected.txt"]
 person_only: [".claude/**", "bonsai.yaml"]
 `
 
+// onlySourceProblem reports whether problems hold one sentence: the one every project linked to a local test pack
+// has, its bonsai.yaml naming the pack by a local folder, an absolute path (check's absolute-path; spec §14 check 2).
+func onlySourceProblem(v any) bool {
+	l, ok := v.([]any)
+	if !ok || len(l) != 1 {
+		return false
+	}
+	s, _ := l[0].(string)
+	return strings.HasPrefix(s, "bonsai.yaml's field packs[0].source holds the absolute path ") &&
+		strings.Contains(s, "; next: a person names the pack's remote URL")
+}
+
 func gitRun(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-C", dir, "-c", "user.name=bonsai-test", "-c", "user.email=bonsai-test",
@@ -335,13 +347,15 @@ func TestStatusOfAProjectTheEngineLinked(t *testing.T) {
 	}
 	checkShape(t, doc, false)
 	for k, want := range map[string]string{
-		"packs":    `[{"id":"demo-pack","version":"0.1.0","commit":"` + pack.A + `","state":"ok"}]`,
-		"files":    `{"changed":0,"missing":0,"format0_changed":0}`,
-		"problems": `[]`,
+		"packs": `[{"id":"demo-pack","version":"0.1.0","commit":"` + pack.A + `","state":"ok"}]`,
+		"files": `{"changed":0,"missing":0,"format0_changed":0}`,
 	} {
 		if v, _ := doc.Get(k); schema.Show(v) != want {
 			t.Errorf("%s = %s, want %s", k, schema.Show(v), want)
 		}
+	}
+	if v, _ := doc.Get("problems"); !onlySourceProblem(v) {
+		t.Errorf("problems = %s, want the local source's one", schema.Show(v))
 	}
 	if err := os.WriteFile(filepath.Join(root, "demo", "guide.md"), []byte("edited\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -469,7 +483,7 @@ func TestStatusNeeds(t *testing.T) {
 	if v, _ := doc.Get("needs"); schema.Show(v) != want {
 		t.Errorf("needs %s\nwant  %s", schema.Show(v), want)
 	}
-	if v, _ := doc.Get("problems"); schema.Show(v) != "[]" {
+	if v, _ := doc.Get("problems"); !onlySourceProblem(v) {
 		t.Errorf("a floor is never a problem: %s", schema.Show(v))
 	}
 }
@@ -537,7 +551,7 @@ func TestStatusFull(t *testing.T) {
 	if v, _ := doc.Get("checks"); !strings.Contains(schema.Show(v), `"state":"old"`) || !strings.Contains(schema.Show(v), `"installed":true`) {
 		t.Errorf("checks %s", schema.Show(v))
 	}
-	if v, _ := doc.Get("problems"); schema.Show(v) != "[]" {
+	if v, _ := doc.Get("problems"); !onlySourceProblem(v) {
 		t.Errorf("an old Claude Code is a problem: %s", schema.Show(v))
 	}
 	// Nothing to ask, and a source whose tags cannot be read: unknown, with why.

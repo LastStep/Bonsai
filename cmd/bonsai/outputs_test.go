@@ -625,7 +625,8 @@ func TestChangesFirstLink(t *testing.T) {
 		t.Errorf("the link: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "check", "--json")
-	if doc := fits(t, out, "check"); code != 0 || schema.Show(doc) != `{"format":"bonsai.check/1","findings":[],"warnings":[],"error":null}` {
+	// One finding: bonsai.yaml names the test pack by a local folder, an absolute path (absolute-path).
+	if doc := fits(t, out, "check"); code != 1 || codesIn(doc, "findings") != "absolute-path" || codesIn(doc, "warnings") != "" {
 		t.Errorf("check --json: %d\n%s", code, out)
 	}
 }

@@ -94,7 +94,7 @@ func TestLocalSettingsDriftInAWorktree(t *testing.T) {
 	marketA := MarketplaceName("demo", []string{e.pack.A})
 	writeFile(t, main, LocalSettingsFile, `{"enabledPlugins": {"demo-pack@`+marketA+`": true, "mine@my-market": true}}`)
 
-	r, err := Check(wt, e.home)
+	r, err := checkLocal(t, wt, e.home)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,22 +103,22 @@ func TestLocalSettingsDriftInAWorktree(t *testing.T) {
 		!strings.Contains(r.Findings[0].Next, "claude plugin uninstall demo-pack@"+marketA+" --scope local") {
 		t.Errorf("the worktree: %+v", r.Findings)
 	}
-	if r, err := Check(main, e.home); err != nil || len(r.Findings) != 0 {
+	if r, err := checkLocal(t, main, e.home); err != nil || len(r.Findings) != 0 {
 		t.Errorf("the main checkout: %v %+v", err, r.Findings)
 	}
 	// The worktree's own local file is read too.
 	writeFile(t, main, LocalSettingsFile, `{}`)
 	writeFile(t, wt, LocalSettingsFile, `{"enabledPlugins": {"demo-pack@`+marketA+`": true}}`)
-	if r, err := Check(wt, e.home); err != nil || len(r.Findings) != 1 || !strings.HasPrefix(r.Findings[0].Message, LocalSettingsFile+" turns on") {
+	if r, err := checkLocal(t, wt, e.home); err != nil || len(r.Findings) != 1 || !strings.HasPrefix(r.Findings[0].Message, LocalSettingsFile+" turns on") {
 		t.Errorf("the worktree's own file: %v %+v", err, r.Findings)
 	}
 	// A plugin turned off, or the lock's own: no finding. A file Bonsai cannot read: a warning.
 	writeFile(t, wt, LocalSettingsFile, `{"enabledPlugins": {"demo-pack@`+marketA+`": false, "demo-pack@`+MarketplaceName("demo", []string{e.pack.B})+`": true}}`)
-	if r, err := Check(wt, e.home); err != nil || len(r.Findings) != 0 {
+	if r, err := checkLocal(t, wt, e.home); err != nil || len(r.Findings) != 0 {
 		t.Errorf("turned off: %v %+v", err, r.Findings)
 	}
 	writeFile(t, wt, LocalSettingsFile, `{`)
-	if r, err := Check(wt, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "plugin-unchecked" {
+	if r, err := checkLocal(t, wt, e.home); err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "plugin-unchecked" {
 		t.Errorf("unreadable: %v %+v %+v", err, r.Findings, r.Warnings)
 	}
 }
@@ -189,7 +189,7 @@ func TestPluginDrift(t *testing.T) {
 
 	check := func(cli PluginCLI) *CheckResult {
 		t.Helper()
-		r, err := Check(root, e.home)
+		r, err := checkLocal(t, root, e.home)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -285,7 +285,7 @@ func TestSettingsRewrittenByClaudeCode(t *testing.T) {
 		t.Fatal("the rewrite changed nothing")
 	}
 	writeFile(t, root, SettingsFile, string(b))
-	r, err := Check(root, e.home)
+	r, err := checkLocal(t, root, e.home)
 	if err != nil || len(r.Findings) != 0 {
 		t.Errorf("check after Claude Code's rewrite: %v %+v", err, r.Findings)
 	}

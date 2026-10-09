@@ -47,7 +47,7 @@ var CheckWords = []Word{
 	{Word: "label", Kind: "finding", Who: "agent", Means: "a label's value is not of the kind its definition says, or it is on a kind of document its definition does not name (contract section 5.2)"},
 	{Word: "label-twice", Kind: "finding", Who: "person", Means: "two sources (packs, or a file attached on this machine) define one label name (contract section 5.1)"},
 	{Word: "approve-first", Kind: "finding", Who: "person", Means: "a task in a lane with approve_first reached running, verify or done without reading approved since it last read todo or plan, as git history shows (contract section 6)"},
-	{Word: "absolute-path", Kind: "finding", Who: "agent", Means: "a committed Bonsai file (bonsai.yaml, the lock, a document of one of Bonsai's kinds) holds an absolute path in a field (contract section 2.6)"},
+	{Word: "absolute-path", Kind: "finding", Who: "agent", Means: "a committed Bonsai file (bonsai.yaml, a document of one of Bonsai's kinds) holds an absolute path in a field, a pack's source among them unless it is a remote URL (contract section 2.6; spec section 14, check 2)"},
 	{Word: "block-size", Kind: "finding", Who: "person", Means: "Bonsai's block in CLAUDE.md is over its fixed 40 lines (spec section 6)"},
 	{Word: "memory-index-size", Kind: "finding", Who: "agent", Means: "the memory index is over its fixed 120 lines or 12 KB (spec section 10)"},
 	{Word: "memory-note-size", Kind: "finding", Who: "agent", Means: "a memory note is over 4 KB (spec section 10)"},

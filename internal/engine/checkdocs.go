@@ -14,11 +14,12 @@ package engine
 //   - label-twice: two sources of the labels in force define one name (contract §5.1);
 //   - absolute-path: an absolute path in a field of bonsai.yaml or of a format-1 document (contract §2.6: "no
 //     absolute paths in committed formats"): a value that is one (/x, C:\x, \\host, a file: URL), or a word of a value
-//     under a well-known root (/home/, /Users/, /tmp/, C:\ ...). Left out: a pack's source in bonsai.yaml, which is
-//     where git fetches the pack (a URL as git reads it, or a folder git reads for a pack in the making), not a place
-//     in the project, and which the bridge never forwards; the lock, Bonsai's copy of bonsai.yaml and the packs, so a
-//     path there is found at its source; a format-0 file, frozen as it is (contract §2.3); and markdown bodies, which
-//     are prose, not fields;
+//     under a well-known root (/home/, /Users/, /tmp/, C:\ ...). A pack's source in bonsai.yaml is held to it too
+//     (spec §14 check 2: "the lock's source is the pack's remote URL"): a remote URL (https://, http://, ssh://,
+//     git://, or git's user@host:path) is left alone; a local absolute path or a file: URL holding one is a finding,
+//     whose step is a person's (only a person knows the pack's remote URL). Left out: the lock, Bonsai's copy of
+//     bonsai.yaml and the packs, so a path there is found at its source; a format-0 file, frozen as it is (contract
+//     §2.3); and markdown bodies, which are prose, not fields;
 //   - block-size, memory-index-size, memory-note-size: the fixed budgets (spec §6, §10);
 //   - missing-path: a project path that CLAUDE.md, STATE or a memory note names and that does not exist (doc
 //     freshness): an @import, a markdown link, or a path in backticks whose first part is in the project. Bonsai's own
@@ -377,12 +378,17 @@ func (r *CheckResult) checkAbsolute(file string, doc schema.Object) {
 				walk(field+"["+strconv.Itoa(i)+"]", e)
 			}
 		case string:
-			if file == workspace.ConfigFile && packSource.MatchString(field) {
-				return // where git fetches the pack, not a place in the project
+			source := file == workspace.ConfigFile && packSource.MatchString(field)
+			if source && remoteURL.MatchString(x) {
+				return // a remote URL, which every clone fetches
 			}
 			if abs, ok := absoluteIn(x); ok {
 				next := "write it project-relative, or as ~/... for a place under a home folder"
-				if file == workspace.ConfigFile {
+				switch {
+				case source:
+					next = "a person names the pack's remote URL (https://, ssh:// or git@host:...) as its source in bonsai.yaml, " +
+						"then run: bonsai update --yes"
+				case file == workspace.ConfigFile:
 					next = "a person edits bonsai.yaml: " + next + "; then run: bonsai update --yes"
 				}
 				r.add("absolute-path", file, map[bool]string{true: "person", false: "agent"}[file == workspace.ConfigFile],
@@ -396,6 +402,7 @@ func (r *CheckResult) checkAbsolute(file string, doc schema.Object) {
 
 var (
 	packSource  = regexp.MustCompile(`^packs\[[0-9]+\]\.source$`)
+	remoteURL   = regexp.MustCompile(`^((https?|ssh|git|git\+ssh)://[^/]|[A-Za-z0-9._-]+@[A-Za-z0-9.-]+:)`)
 	absRoots    = regexp.MustCompile(`^(/(home|Users|root|mnt|tmp|var|srv|opt|usr|etc|private|Volumes)/|[A-Za-z]:[\\/]|\\\\[^\\]|file:/)`)
 	absWholeVal = regexp.MustCompile(`^/[A-Za-z0-9._-]`)
 )

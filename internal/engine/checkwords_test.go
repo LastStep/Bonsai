@@ -221,15 +221,15 @@ func TestIndexImportLeftOut(t *testing.T) {
 	if !strings.Contains(read(t, root, BlockFile), "@work/memory/INDEX.md") {
 		t.Fatalf("the block does not import the index:\n%s", read(t, root, BlockFile))
 	}
-	if r, err := Check(root, e.home); err != nil || findingsOf(r) != "" {
+	if r, err := checkLocal(t, root, e.home); err != nil || findingsOf(r) != "" {
 		t.Fatalf("a fresh link: %v %s", err, findingsOf(r))
 	}
 	writeFile(t, root, BlockFile, read(t, root, BlockFile)+"\nOur notes: @work/memory/INDEX.md\n")
-	if r, _ := Check(root, e.home); findingsOf(r) != "missing-path CLAUDE.md" {
+	if r, _ := checkLocal(t, root, e.home); findingsOf(r) != "missing-path CLAUDE.md" {
 		t.Errorf("the project's own import: %s", findingsOf(r))
 	}
 	writeFile(t, root, "work/memory/INDEX.md", "---\nformat: bonsai.memory/1\nid: null\ntitle: Index\nkind: index\nupdated: 2026-10-09\nsource: null\nlabels: {}\n---\n")
-	if r, _ := Check(root, e.home); findingsOf(r) != "" {
+	if r, _ := checkLocal(t, root, e.home); findingsOf(r) != "" {
 		t.Errorf("the index written: %s", findingsOf(r))
 	}
 }
