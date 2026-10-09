@@ -40,6 +40,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/reader"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -132,6 +133,7 @@ type Plan struct {
 	Unverified []string         // locked packs whose lock does not match their commit and folder: no baseline for consent
 	AllowExec  bool             // the request's --allow-exec
 	EmptyLocal int              // init --new-id: files in .bonsai/local/ to remove; -1 for none to remove
+	Format0    int              // at a first link: the format-0 files the lock lists (contract §2.3)
 	LockWrite  bool
 
 	Plugins []PluginResult // what InstallPlugins did after the plan was written (or had nothing to write)
@@ -475,7 +477,16 @@ func Build(req Request) (_ *Plan, err error) {
 		return nil, err
 	}
 
-	newLock := &workspace.Lock{WrittenBy: req.Version, Files: map[string]workspace.LockedFile{}, Format0: lock.Format0,
+	// The lock's format0 list (contract §2.3, §14): listed at a first link, then kept as it is (update never adds to
+	// it: a format-0 file new since the link is a check finding, "give it a format: line first").
+	format0 := lock.Format0
+	if p.FirstLink {
+		if format0, err = listFormat0(co.Root, cfg); err != nil {
+			return nil, err
+		}
+		p.Format0 = len(format0)
+	}
+	newLock := &workspace.Lock{WrittenBy: req.Version, Files: map[string]workspace.LockedFile{}, Format0: format0,
 		Extra: lock.Extra}
 	for _, pd := range newPacks {
 		// The pack's folder, as bonsai.yaml names it (formats set 4's path; step 5.1.5): every lock written records it.
@@ -833,6 +844,47 @@ func Build(req Request) (_ *Plan, err error) {
 		}
 	}
 	return p, nil
+}
+
+// listFormat0 is the lock's format0 list at a first link (contract §2.3, §14): every file of Bonsai's own kinds that
+// had a format 0 (workspace.Format0Kinds: task and run, at the folders bonsai.yaml's documents names, and STATE at
+// .bonsai/STATE.md) whose frontmatter has no format: line, with the SHA-256 of its bytes with line endings made LF.
+// A file whose frontmatter has a format: line (format 1, or one format 1 refuses) is not format 0, and is not listed.
+func listFormat0(root string, cfg *workspace.Config) (map[string]string, error) {
+	out := map[string]string{}
+	kinds, err := workspace.DocKinds(cfg.Full, nil)
+	if err != nil {
+		return nil, Unexpected(err)
+	}
+	for _, k := range kinds {
+		if !contains(workspace.Format0Kinds, k.Kind) {
+			continue
+		}
+		files, err := workspace.DocFiles(root, k)
+		if err != nil {
+			return nil, errorf("read-failed", ExitRuntime, "check that the folder can be read, then run the command again",
+				"the %s documents (%s) cannot be read: %v", k.Kind, k.Path+k.File, err)
+		}
+		for _, f := range files {
+			raw, _, err := readFile(root, f)
+			if err != nil {
+				return nil, err
+			}
+			if reader.ReadMarkdown(raw).Outcome == reader.Format0 {
+				out[f] = workspace.HashLF(raw)
+			}
+		}
+	}
+	return out, nil
+}
+
+func contains(list []string, s string) bool {
+	for _, x := range list {
+		if x == s {
+			return true
+		}
+	}
+	return false
 }
 
 // lockedFolder is the pack's folder as the lock records it, or, for a lock written before formats set 4 (no path),

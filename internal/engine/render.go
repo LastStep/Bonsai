@@ -51,6 +51,11 @@ func (p *Plan) Preview(diff bool) string {
 	} else {
 		fmt.Fprintf(&b, "  %-12s %s\n", Unchanged, workspace.LockFile)
 	}
+	if p.Format0 > 0 {
+		fmt.Fprintf(&b, "  %-12s %d %s with no format: line (format 0), each fixed in the lock by its hash: an agent gives one\n"+
+			"               format: bonsai.<kind>/1 before changing it (bonsai check finds a format-0 file new or changed)\n",
+			"listed", p.Format0, plural(p.Format0, "task, run report or STATE file", "task, run report and STATE files"))
+	}
 	if p.EmptyLocal > 0 {
 		fmt.Fprintf(&b, "  %-12s %s/: its %d files removed (init --new-id: a copy keeps none of the original's log, asks and ladder results)\n",
 			"emptied", LocalDir, p.EmptyLocal)
@@ -190,6 +195,11 @@ func (p *Plan) Applied() string {
 	}
 	if p.LockWrite {
 		fmt.Fprintf(&b, "  %-12s %s\n", "written", workspace.LockFile)
+	}
+	if p.Format0 > 0 {
+		fmt.Fprintf(&b, "  %-12s %d %s with no format: line (format 0), each fixed in the lock by its hash: an agent gives one\n"+
+			"               format: bonsai.<kind>/1 before changing it (bonsai check finds a format-0 file new or changed)\n",
+			"listed", p.Format0, plural(p.Format0, "task, run report or STATE file", "task, run report and STATE files"))
 	}
 	if p.EmptyLocal > 0 {
 		fmt.Fprintf(&b, "  %-12s %s/ (%d files)\n", "emptied", LocalDir, p.EmptyLocal)
