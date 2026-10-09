@@ -655,6 +655,140 @@ A fresh Opus verifier, at the end of 5.1, runs each check itself on the final co
     repo changed by step 5's work (as "Stop lines" says); the user settings hashes. **Nothing private:** a grep of the
     diff and the commit messages.
 
+### Step 5.2: the recorder, logs and asks (25-37 h, re-ask at 48)
+
+**Rohan's (B).** Nothing in this section is his, so it reaches him as one line with a link once the review's fixes
+are in. The hours (25-37) and the re-ask line (48) are the spec's. The order of the parts and his steps do not change:
+5.2 needs no sitting of his (the recorder's real Windows session is part of 5.3's, spec §17 step 7). No repo is new
+and no studio content goes public: Bonsai's redaction tests are written fresh, and the studio's are only read, in a
+scratch run. No option round is asked. Every format change is an addition: two fields at the end of the log record,
+two new command outputs, one field at the end of a sessions row if set 4 lacks it, new error words, and the log's
+known events kept in a Go table.
+
+The spec's row (§14), with its three bug ids put in words: "Redaction in Go with [the three older leaks §8 names]
+fixed and the differential check (10-15); the recorder, files in `.bonsai/local/`, `logs`, `log append`, and cleaning
+per kind with its protections, the `clean` event and the generated-files page (9-13); asks to contract §9, no outbox
+(4-6); the sessions table from the log, a row per session and per subagent run with its task (2-3). The studio's
+forwarder can start here". It also settles the gate report's 5.2 findings and two items 5.1 hands on (the memory
+secret scan; the sessions table's rows).
+
+**What exists** on `main` at `3427a07` (read each package's doc comment):
+- `internal/guard` writes one `guard` record per decision (`record.go`): every field of contract §8.1 in order,
+  `input_hash` null (no salt yet), then two fields outside the schema, `bonsai_path` on every record and
+  `bonsai_sha256` on the record that made its file. Records go to the session's own project folder's
+  `.bonsai/local/log/` (`s-<session>.ndjson`, or `w-<UTC date>.ndjson` without a session), opened with `O_APPEND`,
+  one write per line, retried for 1 s while Windows reports the file busy, cut to 2,048 bytes by halving the longest
+  text. Its note: a worktree writes its own folder, not the main checkout's, because finding main in a way no agent
+  can redirect is 5.3's. Its categories are Edit, Write, Shell and Other.
+- `internal/workspace`: the home (`BONSAI_HOME`, else `~/.bonsai`), the machine key, `HashLF`, atomic writes and
+  `RemoveFile` with Windows' busy retries (2 s), `IsBusy`, and `Find` (the main checkout through a git process; its
+  note: not for the guard).
+- `internal/engine`: `ownHooks` holds the guard's line only (its note: the other three come as they are built);
+  consent (5.1.1): a hook line added or changed needs `--allow-exec`, except Bonsai's own lines at a first link;
+  `.bonsai/.gitignore`'s text; `init --new-id` empties `.bonsai/local/`; `check` finds a tracked or staged `local/`
+  file and a missing or changed `.gitignore`.
+- `cmd/bonsai/hook.go`: `hook start`, `stop` and `record` refuse as not built.
+- `formats/` (set 3): `log.schema.json` (`bonsai.log/1`, 29 fields; the README's "A name not invented" leaves the
+  binary's two fields out) and `ask.schema.json` (`bonsai.ask/1`, 18 fields, `answer` an object).
+- `internal/status`: `local`'s three folders, absolute.
+
+**What 5.1 will have added** (from this plan's 5.1 notes; 5.2's start re-reads each against what landed, and 5.2.0's
+run report records any difference that changes a note below):
+- 5.1.3, set 4: the `workspace` schema with `generated` (its kinds, `keep_days`, `keep_newest`); `sessions` (the rows
+  a reader returns); `error`; `check`; the schema-compare test (only additions pass).
+- 5.1.4a: a Go type for every format, with writers for the log and ask records, validated against their schemas;
+  `bonsai.yaml` read in full, `generated` among it; `check --schema`, printing an open list's known words from its Go
+  table.
+- 5.1.4b: the `error` object in every command's `--json`, its words in one Go table; every word's `--help` from one
+  table of flags and exit codes.
+- 5.1.5: the active-task function (contract §13); labels in force (the packs' `declares` and this machine's
+  `labels/`); document kinds with their id patterns.
+- 5.1.6: `check`'s findings and warnings in one table, a test per row; the memory caps.
+- 5.1.8: `check --write` rebuilding the tasks table; `init` writing `.bonsai/sessions.md` with its frontmatter and no
+  rows.
+- 5.1.10: `docs/reference/lists.md`, generated, with its test.
+
+**The pieces.** Hours: the spec gives four figures. 5.2.1 carries the redaction row whole (10-15). The other three
+rows, 15-22 together, are spread over six pieces by the planner's judgment, for sizing briefs, not a spec figure: the
+recorder row (9-13) is 5.2.0, 5.2.2, 5.2.4 and 5.2.6 (low 1+2+3+2 = 8, high 2+3+4+3 = 12) plus about an hour for
+`log append` in 5.2.5; the asks row (4-6) is the rest of 5.2.5; the sessions row (2-3) is 5.2.3, which also takes
+`logs`, a thin reader over 5.2.2's. The memory secret scan, handed on by 5.1 with no hours of its own, is small and
+counts in 5.2.4. In all: low 1+10+2+2+3+5+2 = 25; high 2+15+3+3+4+7+3 = 37.
+
+| # | What is built | What proves it | Hours | Reads |
+|---|---|---|---|---|
+| 5.2.0 | **Formats set 5 and the log's lists**: `bonsai_path` and `bonsai_sha256` at the end of `bonsai.log/1`; two command outputs, `bonsai.asks/1` and `bonsai.logs/1`; a sessions row's `subagent` field if set 4's rows cannot tell a subagent run from a session; the log's events and categories in one Go table; 5.2's new error words; the reference page regenerated | The formats test (manifest, docs, examples); the schema-compare test passing on set 5 and failing on a removal in a temporary copy; `check --schema bonsai.log` printing the table's words; the reference page's test; check 10; CI | 1-2 | Contract §2.2, §7.5, §8.1, §8.2, §9.1; spec §3 (`error`), §8, §16 rows 27, 29 and 30; format review 4.1-4.3 and 4.5; `formats/README.md`; this plan's 5.1.3 and 5.1.4b notes |
+| 5.2.1 | **The redactor** (`internal/redact`): every rule of the studio's redactor, the three leak classes fixed, a fixed point; and what a tool call is reduced to (command heads in bash and PowerShell, paths, a host, an MCP tool, a subagent type, a skill, an ask's question) | Go tests written fresh by class, with made-up secrets; `FuzzRedact`; time on long inputs; the scripted differential against the studio's redactor at `25b6450` (note 9); the verifier's own differential and break-it | 10-15 | Spec §8, §3 (rules learnt from Windows); contract §2.6, §8.1; "What changes", item 10; read-only, the studio's files at `25b6450`: `tools/lib/redact.mjs`, `tools/lib/redact.test.mjs`, `studio-app/bridge/redact.test.ts`, the three leak rows of `studio/bugs.md`, and the generated shapes in the run report of the change that made that commit (the brief names it) |
+| 5.2.2 | **Appends, reads and the salt** (`internal/record`): one append path for every writer of `.bonsai/local/` (whole lines, busy retries); the reader (a file's records, its last line, the files; a torn line skipped and counted); the main checkout's `local/`; `.bonsai/.gitignore` restored by every writer; the home's `salt`; `bonsai --version` with the build's commit stamp | Go tests: eight processes appending at once, on both sides; a Windows file held busy, then released; two first writers racing for the salt; the main-checkout cases (main, a worktree, a `.git` file pointing elsewhere); a torn line; check 10; CI | 2-3 | Contract §2.5, §3, §8.5; spec §3 (where it lives; the tripwire), §6 (`.bonsai/local/`); `internal/guard/record.go`; `internal/workspace` (`write.go`, `home.go`, `checkout.go`); gate report §2.11 |
+| 5.2.3 | **The sessions table and `bonsai logs`**: a session's spans and its subagent runs, read from the log; `check --write` adding their rows, the hours below them; the stale-table warning; `bonsai logs` | Go tests on fixture logs written fresh, one per span rule; the table byte-stable on two runs and on both sides; `logs --json` against its schema; check 10; CI | 2-3 | Spec §6 ("The two tables"), §8; contract §7.5, §8.1, §8.5, §13; this plan's 5.1.8 note |
+| 5.2.4 | **The recorder**: `bonsai hook record` for ten events and `bonsai hook start` (its opening context; the `session_start` record with the binary's path and hash); Bonsai's own hook lines in the engine; the input hash; the two `check` rows that wait for them: the memory secret scan, and Bonsai's own lines out of date | Go tests on payloads written fresh for every event; every record against `bonsai.log/1`; no byte on stdout from `hook record`, exit 0 on any input; the engine's consent tests for the new lines; scripted sessions on WSL (note 12); the studio's recorded payloads through both recorders, scripted (note 13); the hooks' timings on both sides; the verifier's break-it | 3-4 | Spec §3, §6 (findings; the preview), §7 (the hook lines), §8; contract §5.3, §8, §13; this plan's 5.1.1 rules 1 and 6; Claude Code's hooks reference (the version read goes in the run report); read-only, the studio's `tools/hooks/event-sink.mjs` and `tools/lib/spool.mjs` at `25b6450` (today's event mapping); gate report §2.5, §2.15, §5 |
+| 5.2.5 | **Asks, and `log append`**: `bonsai ask` (filing, `--resolve`, `--status`), `bonsai answer`, `bonsai asks`; `bonsai log append` | Go tests walking a table of every ask case (types, limits, states, the asking session refused, a repeated answer, Bless refused); every free-text field redacted; `--json` against `bonsai.asks/1` and `bonsai.logs/1`; check 10; CI | 5-7 | Spec §4, §8; contract §2.6, §5.2-§5.4, §8.4, §9; format review 4.3; read-only, the studio's `tools/lib/asks.mjs` and `tools/studio/ask.mjs` at `25b6450` (today's flags and limits) |
+| 5.2.6 | **Cleaning per kind**: `log`, `asks`, `ladder` and the sessions rows by `generated:`'s `keep_days` and `keep_newest`, the protections first; a `clean` record per file or row; at a session's end, in `check --write`, and a call 5.4's runner makes; the generated-files page, generated | A fixture project with old, new, protected and decoy files of every kind: exactly the right ones go; the page's test; check 10; CI | 2-3 | Spec §6 ("Generated files"); contract §7.5, §8.2, §8.5, §9.1, §11; format review R2.6 |
+| **5.2** | | | **25-37** (re-ask 48) | |
+
+**The order, side by side where truly independent.** Rohan, 9 Oct: "if you can orchestrate work in parallel do that
+whenever possible"; his 8 Oct bar stands: no shared file, and neither's proof resting on the other's. A piece that
+runs beside another rebases on `main` and re-runs its proof if the other lands first ("What changes", item 2). The
+files each piece owns:
+
+| Piece | Owns |
+|---|---|
+| 5.2.0 | `formats/` (the two new schemas, `log.schema.json`, `sessions` if needed, examples, README, manifest); the log type's Go file from 5.1.4a, with the table of events and categories; the error words' Go table; `docs/reference/lists.md` |
+| 5.2.1 | `internal/redact/` only |
+| 5.2.2 | `internal/record/` (new); in `internal/workspace/`, the salt and the main checkout's `local/`; the `.gitignore` text, moved from `internal/engine/plan.go` to its one home; `cmd/bonsai/main.go` for `--version` only |
+| 5.2.3 | `internal/sessions/` (new); 5.1.8's `check --write` code; 5.1.6's table of findings and warnings (one warning); the `logs` word in `cmd/bonsai` (its dispatch, its entry in the flag table, `logs.go`) |
+| 5.2.4 | `internal/recorder/` (new); `cmd/bonsai/hook.go` and the hook's entry in the flag table; `internal/engine/settings.go` and the engine tests that hold today's lines; 5.1.6's table (one finding, one warning) |
+| 5.2.5 | `internal/asks/` (new); the `ask`, `answer`, `asks` and `log` words in `cmd/bonsai` (dispatch, flag-table entries, `ask.go`, `log.go`) |
+| 5.2.6 | `internal/clean/` (new); its calls in `internal/recorder/` and in the sessions part of `check --write`; the generated kinds' Go table; `docs/reference/generated-files.md`, its generator and test; one `.gitattributes` line |
+
+1. **5.2.0, 5.2.1 and 5.2.2 start together, side by side.** 5.2.0 sets every shared list and schema first, so no later
+   piece edits a shared list file; 5.2.1 is the longest and riskiest piece, so it starts at once; 5.2.2 is the base
+   every writer stands on. They share no file (the table above), and none's proof rests on another's: the formats
+   test and the schema compare need no redactor and no appender; the redactor is text in, text out; the appender
+   takes bytes, and the reader keeps a field it does not know (contract §2.2), so neither needs set 5.
+2. **5.2.3 after 5.2.0 and 5.2.2 have landed, beside the rest of 5.2.1.** It reads the log through 5.2.2's reader and
+   writes set 5's `sessions` row and `logs` output; it redacts nothing (records are redacted when written), so its
+   proof does not rest on 5.2.1, and 5.2.1 touches only `internal/redact/`.
+3. **5.2.4 after 5.2.1 and 5.2.3 have landed.** It redacts targets and text (5.2.1), writes 5.2.0's fields through
+   5.2.2's append path and salt, and adds two rows to the `check` table 5.2.3 also changes.
+4. **5.2.5 after 5.2.1 and 5.2.3 have landed; beside 5.2.4 when the flag table allows it.** Asks redact every string
+   (5.2.1) and add words in `cmd/bonsai`, as 5.2.3 does. 5.2.4 and 5.2.5 share no proof: an ask needs no recorder,
+   and the recorder writes no ask. They share no file if 5.1.4b's flag table keeps each word's entry in a file of its
+   own; if it is one file, 5.2.5 starts after 5.2.4 lands. The orchestrator decides from what 5.1.4b landed, and the
+   run reports say which.
+5. **5.2.6 last.** It protects what 5.2.3 (a span still open, a session with no row yet), 5.2.4 (the session end it
+   runs at) and 5.2.5 (an open ask) define, and it calls into their files.
+
+**Who builds and verifies.** Opus builders for 5.2.1 (redaction), 5.2.2 (appends under concurrency on Windows, the
+salt), 5.2.4 (hooks every session runs, and the engine's own lines under consent), 5.2.5 (its refusals, and every
+string redacted) and 5.2.6 (it deletes files); Sonnet for 5.2.0 and 5.2.3, whose shapes and rules this section fixes,
+with the orchestrator's read. Fresh Opus verifiers: **5.2.1** (redaction is security: what may leave the machine),
+with its own differential and break-it; **5.2.4** (guards and hooks: every session in a linked project runs these
+lines, and they change what `update` writes). 5.2.0, 5.2.2, 5.2.3, 5.2.5 and 5.2.6 land on green tests on both sides,
+CI and the orchestrator's read of the diff, which the run report says; **the 5.2 end verifier** covers them, and
+re-runs 5.2.1's differential and 5.2.4's sessions on the final build. This section's planning and review runs count in
+5.2's hours, carried in 5.2.0's run report ("What changes", item 3).
+
+#### Where each inherited finding is settled
+
+The gate report's section 5, its 5.2 list, item by item; then the outline's "Settles" and what 5.1 and the code hand
+on:
+
+| Finding | Settled in | How |
+|---|---|---|
+| The log's `bonsai_path` and `bonsai_sha256` are Bonsai's own names, outside the log schema (gate §5) | 5.2.0 | The guard's two names added at the end of `bonsai.log/1`: an addition, set 5 with its manifest; the README's "A name not invented" becomes a choice made |
+| `input_hash` is null until the salt (gate §5) | 5.2.2, 5.2.4 | The home's `salt` made at first need, and never leaving the machine (5.2.2); the recorder fills `input_hash` on its four tool events (5.2.4). The guard's records keep null until 5.3 changes guard code |
+| The binary's hash is logged once per session file (gate §5) | 5.2.4 | `hook start` makes the session's file and writes the path and hash on its `session_start`; the guard then finds the file made and hashes nothing, so the self-hash leaves a session's first tool call (5.3 measures the guard's first call again) |
+| Builds without a commit stamp (gate §5; "What changes", item 7) | 5.2.2 | `bonsai --version` names the build's commit or says it has none; the builder finds why worktree builds lack it and writes the build line every scripted run then uses; the end verifier ties a logged hash to its commit |
+| The secret scan of memory notes, handed on by 5.1.6 | 5.2.4 | A `check` finding on the redactor's patterns (`redact.Find`), naming the note and line, never the value |
+| The log's events, an open list read by code at many places (outline; 5.1.3's note) | 5.2.0 | Their known words, and the categories', in one Go table, printed by `check --schema bonsai.log` and the reference page; the schema's descriptions name the command and copy no word |
+| `asks` and `logs` get `--json` schemas as additions (outline) | 5.2.0 | `bonsai.asks/1` and `bonsai.logs/1`, new schema files, each documented with an example |
+| §8's three older leaks, named by studio bug ids (this plan, "Stale or in tension") | 5.2.1 | Fixed as classes; code and tests describe their shapes, never the ids |
+| The generated-files page is a `base` skill, and `base` comes in 5.5 (this plan, "Stale or in tension") | 5.2.6 | `docs/reference/generated-files.md` meanwhile, generated from the code and tested; 5.5 moves its words into the skill |
+| "5.2 fills the sessions table from the log and adds it to `--write`" (5.1.8's note) | 5.2.3 | Rows from the log's spans, only added, byte-stable; the stale warning |
+| The other three of Bonsai's own lines come "as they are built" (`internal/engine/settings.go`) | 5.2.4 | `hook start` and `hook record` lines added; a project linked before takes them at `update --allow-exec --yes`. The stop gate's line stays 5.3's |
+| `hook start`, `stop` and `record` refuse as not built (`cmd/bonsai/hook.go`) | 5.2.4 | `start` and `record` built; `stop` stays 5.3's |
+
 ### Steps 5.2-5.7, outlined
 
 Each gets its detailed section, in 5.1's shape, before it starts ("What changes", item 1). The spec rows are §14's.
