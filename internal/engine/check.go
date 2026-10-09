@@ -88,7 +88,9 @@ type CheckResult struct {
 
 // Check checks the workspace holding dir, every finding and warning but the two that ask Claude Code. Its error is
 // for a folder that is no linked checkout at all (exit 4).
-func Check(dir, home string) (*CheckResult, error) { return CheckWith(dir, home, CheckOptions{History: true}) }
+func Check(dir, home string) (*CheckResult, error) {
+	return CheckWith(dir, home, CheckOptions{History: true})
+}
 
 // CheckOptions say what Check may leave out.
 type CheckOptions struct {
