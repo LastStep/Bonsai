@@ -3516,6 +3516,11 @@ saying yes to its trust question (with the login first only if it has lapsed). N
   commented), `bonsai/block.md`, `bonsai/files/`, `README.md`, `.gitattributes`.
 - `formats/schemas/pack.schema.json` (set 4): `files`, `hooks`, `deny`, `documents`, `protected`; a `files` entry's
   `path` is project-relative and may not be Bonsai's own, `CLAUDE.md`, or a place Claude Code or git loads on its own.
+- **The reader refuses `<` today.** `internal/workspace/pack.go` checks every `files` entry's `path` with
+  `CheckRelPath` (`internal/workspace/paths.go`), which refuses `<`, `>` and the other characters Windows cannot hold,
+  though the schema's pattern allows them. So today's `bonsai`, and the pre-release Rohan installs at 5.4 (built before
+  5.5), refuse a `pack.yaml` with a `<protocols>/` path: `workflow`'s. The lock's paths are resolved ones, which
+  `CheckRelPath` keeps checking.
   `labels.schema.json` and `lanes.schema.json` for `bonsai/labels.yaml` and `bonsai/lanes.yaml`.
 - `internal/engine/declares.go` (5.1.5): what a pack declares, copied into the lock (lanes, document kinds, labels,
   protected paths, hooks, deny rules); a pack's labels in its own namespace or `bonsai`.
@@ -3576,7 +3581,7 @@ verification. P0's reads run under the task of the piece they read.
 
 | # | What is built | What proves it | Hours | Reads |
 |---|---|---|---|---|
-| 5.5.0 | **The engine's part for packs** (Go): a pack file's path may start with `<protocols>/`, written into the project's `documents.protocols` folder and imported by the block; `init` writes `.bonsai/STATE.md` when there is none; the templates of the two files the engine writes (`bonsai.yaml`, STATE) keep their one home in the engine, and base's `workspace` and `state` skills are generated from them; the generated-files page moves into base's `generated-files` skill; formats set N (descriptions) | Go tests (a project whose protocols folder is not the default; a moved folder; each refusal); `init`'s STATE in a `t.TempDir()` project, never overwritten; `go generate` changes nothing and a changed template in a temporary copy fails the test; the formats test; P0's privacy read of STATE's template before it lands; check 10 and the ladder; CI | 2-3 | Spec §4 (`init`), §5 ("What loads always", "Every template and pack file documents itself"), §6 (`bonsai.yaml`, "Generated files", the block, "How `update` decides"); contract §2.2, §2.8, §7.2, §14; `formats/README.md` ("How the set changes"); this plan's 5.1.5, 5.1.9 and 5.2.6a notes; 5.1.5's run report, item 5 |
+| 5.5.0 | **The engine's part for packs** (Go): a pack file's path may start with `<protocols>/` (the pack reader accepts it; today's refuses `<`), written into the project's `documents.protocols` folder and imported by the block; `init` writes `.bonsai/STATE.md` when there is none; the templates of the two files the engine writes (`bonsai.yaml`, STATE) keep their one home in the engine, and base's `workspace` and `state` skills are generated from them; the generated-files page moves into base's `generated-files` skill; formats set N (descriptions) | Go tests (a project whose protocols folder is not the default; a moved folder; each refusal); `init`'s STATE in a `t.TempDir()` project, never overwritten; `go generate` changes nothing and a changed template in a temporary copy fails the test; the formats test; P0's privacy read of STATE's template before it lands; check 10 and the ladder; CI | 2-3 | Spec §4 (`init`), §5 ("What loads always", "Every template and pack file documents itself"), §6 (`bonsai.yaml`, "Generated files", the block, "How `update` decides"); contract §2.2, §2.8, §7.2, §14; `formats/README.md` ("How the set changes"); this plan's 5.1.5, 5.1.9 and 5.2.6a notes; 5.1.5's run report, item 5 |
 | 5.5.1 | **The pack template** `packs/template/` (one role, one skill, one documented template, `pack.yaml`, `labels.yaml`, README, `.gitattributes`), its checks in one script (`ci/check.sh`), its `pack.yml` (validate, `check --pack`, a scratch link, release on a `v*` tag), and Bonsai's CI running the script on every pack folder | `check --pack` and `claude plugin validate --json` on the template (only the missing `version`); the script green on both sides locally; a copy of the template in a temporary repository whose version is wrong fails the release rule; Bonsai's `packs` job and `windows` job green on CI; validate's need of a login measured; check 10 and the ladder | 3-5 | Spec §5 (the folder layout, "The pack template", pinning, "Adopting a release", mods), §12 step 8 (supply chain); gate report §2.13 (the eval's flags); the test pack's files; this plan's 5.1.1 rules 3-4 and 5.1.9 note |
 | 5.5.2 | **`base`** in `packs/base/`: the plugin manifest; `pack.yaml` with the walls, each with its `why`, and base's protected paths; `labels.yaml`, contract §5.6's four; `block.md`; README; the template skills `task`, `run`, `memory` and `ci`; a Go test holding base free of code and its labels equal to the contract's | `check --pack` and validate; Bonsai's `packs` job; the Go test; a scratch project linked to base with `--yes` alone (nothing under "Runs code"), its block and deny rules read back; P0's privacy read of the task and run-report templates (after a Haiku grep) before it lands; the orchestrator's read; check 10 and the ladder | 3-4 | Spec §5 ("The two packs", template docs), §6 (the preview's sentences), §7 (the walls, deny rules), §10 (memory); contract §4, §5.6, §7.1, §7.2, §7.4; this plan's 5.3.5 note 2; the studio's three templates at `7017d63` (below), read only |
 | 5.5.3 | **The "operating Bonsai" skill** in `base` (`skills/operating-bonsai/`), and a Go test that keeps it in step with the command words, flags and error words | The test (a skill line naming an unknown word or flag fails; a word the registry has and the skill never names fails); its size; its real sessions in 5.5.5 | 2-3 | Spec §3 (unattended, `error`), §4, §6, §9; contract §10.1-§10.2 (status moves in both modes); this section's "The pin rule"; this plan's 5.1.6 and 5.1.10 notes, 5.2.5 note 1, 5.3.6 note 8, 5.4.2 note 12, 5.4.3 note 2 and 5.4.4 note 4; Rohan's 9 Oct direction (`STATE.md`) |
@@ -3595,7 +3600,7 @@ owns:
 
 | Piece | Owns |
 |---|---|
-| 5.5.0 | `internal/engine/` (the `<protocols>/` start, `init`'s STATE, the generators), the placeholder's Go table beside the pack's type in `internal/format/`, `formats/` (the pack schema's descriptions, README, manifest), `docs/reference/lists.md` (regenerated), `docs/reference/generated-files.md` (removed), `packs/base/skills/workspace/`, `packs/base/skills/state/`, `packs/base/skills/generated-files/` (generated whole), `.gitattributes`; the rule for `<protocols>/` where 5.1.9 put `check --pack` |
+| 5.5.0 | `internal/engine/` (the `<protocols>/` start, `init`'s STATE, the generators), `internal/workspace/pack.go` and `internal/workspace/paths.go` (the reader's check of a `files` path), the placeholder's Go table beside the pack's type in `internal/format/`, `formats/` (the pack schema's descriptions, README, manifest), `docs/reference/lists.md` (regenerated), `docs/reference/generated-files.md` (removed), `packs/base/skills/workspace/`, `packs/base/skills/state/`, `packs/base/skills/generated-files/` (generated whole), `.gitattributes`; the rule for `<protocols>/` where 5.1.9 put `check --pack` |
 | 5.5.1 | `packs/template/` (all); its last commit: the `packs` job and one step of the `windows` job in `.github/workflows/ci.yml` |
 | 5.5.2 | `packs/base/` but 5.5.0's three skill folders and `skills/operating-bonsai/`; `packs/packs_test.go` |
 | 5.5.3 | `packs/base/skills/operating-bonsai/`; its line in base's `block.md` and its row in base's README; `cmd/bonsai/operating_test.go` |
@@ -3643,8 +3648,9 @@ his part); **V1** after 5.5.6, on the walls (security: what an agent may read on
 machine) and on the packs' CI and release (the template's `pack.yml`, `ci/check.sh`, Bonsai's `packs` job, the workflow
 repo's CI); **the 5.5 end verifier** on "5.5 done", after 5.5.7. 5.5.0 to 5.5.3 land on the landing rule (a green
 climb by the installed `bonsai` at the exact commit), check 10's Windows half, CI and the orchestrator's read of the
-diff, which the run report says; 5.5.0 needs no verifier of its own because it touches no guard, stop gate or ladder
-code (if it must, it gets one).
+diff, which the run report says. 5.5.0 needs no verifier of its own: it touches no guard, stop gate or ladder code (if
+it must, it gets one), and V1 break-tests its `<protocols>/` resolution, the one place it changes where pack files
+land. It lands before V1 on its proof and the orchestrator's read; a must-fix V1 finds is fixed forward.
 
 #### Where each inherited finding is settled
 
@@ -3712,8 +3718,11 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
    imported by the block". A pack cannot know a project's folder (the studio's is `studio/protocols`, `init`'s default
    `work/protocols`), so a `files` entry's `path` may start with `<protocols>/`: the engine writes the file under
    `bonsai.yaml`'s `documents.protocols`, and the block, which already imports the pack files under that folder, imports
-   it. Rules: only as the first segment, and no other `<...>` anywhere (`check --pack` refuses one); the resolved path
-   passes every check a path passes today (`checkPackTarget`, the relative-path rules); the lock records the resolved
+   it. Rules: only as the first segment, and no other `<...>` anywhere (`check --pack` refuses one); the pack reader
+   (`internal/workspace/pack.go`) accepts the placeholder there and checks the rest of the path with `CheckRelPath`,
+   which keeps refusing `<` everywhere else; the resolved path passes every check a path passes today
+   (`checkPackTarget`, `CheckRelPath`), so a `documents.protocols` of `.claude`, `.git`, `.bonsai`, `..` or a short
+   name such as `CLAUDE~1` is refused, at a first link and at a folder change alike; the lock records the resolved
    path; a project whose `documents.protocols` is null or empty is refused with the word the engine uses for a bad
    `bonsai.yaml`, its `next.do` naming the line to set; a project that changes its folder gets, at its next `update`,
    the old file handled as one the pack no longer has (removed when unedited, a conflict when edited, as `plan.go` does
@@ -4163,7 +4172,12 @@ spec §7, 5.3.5 note 2 and this section; re-runs on both sides, itself, one rule
 real secret); reads 5.5.6's table; reads `ci/check.sh`, `pack.yml` (pins, permissions, no secret, the release rule, a
 fork's pull request) and Bonsai's `packs` job, and re-runs the script on the template and on `workflow` on both sides;
 breaks it: a copy with a hook line added must need `--allow-exec` at a scratch link, a copy with a `version` in
-`plugin.json` must fail, a tag unlike the version must fail the release check. It passes or fails; it fixes nothing.
+`plugin.json` must fail, a tag unlike the version must fail the release check. It also breaks 5.5.0's `<protocols>/`
+resolution, the one place 5.5 changes where pack files land (5.1.1's verifier failed that once): a scratch project
+whose `documents.protocols` is `.claude`, `.git`, `.bonsai`, `..` or a short name (`CLAUDE~1`, `GIT~1`), at a first
+link and as a folder change from a good one at `update`, each refused with nothing written; a `<protocols>/` path
+with a second `<...>`, a `..` after it or a backslash, refused by `check --pack` and the reader. It passes or fails; it
+fixes nothing.
 
 **5.5.7, Bonsai takes `base`** (spec §14 step 6: Bonsai "then links its packs (5.5)").
 1. **When:** after V1; `base` is on `main` at a pushed commit. Only step 5, the fetch, waits for Rohan's line making
@@ -4202,7 +4216,9 @@ breaks it: a copy with a hook line added must need `--allow-exec` at a scratch l
    Rohan's word.
 5. **The fetch from GitHub:** once `workflow` is public, a Sonnet agent links a scratch project on each side to `base`
    and `workflow` by their GitHub sources at their commits, with no login in that run's git (no credential helper), and
-   `check` finds nothing.
+   `check` finds nothing. The `bonsai` it uses: the stamped build of the final commit on WSL, and a stamped Windows build
+   of the same commit on Windows, each on its scratch home; never the installed 5.4 pre-release, which refuses
+   `workflow`'s `pack.yaml` ("What exists").
 
 #### Proof for each piece
 
@@ -4263,7 +4279,8 @@ both sides where a check names them, and passes or fails 5.5:
    `.bonsai/STATE.md` holds its frontmatter and no root `STATE.md` is left; `CLAUDE.md` as 5.5.7's steps say; in a
    scripted session in a fresh worktree of Bonsai, a Read of `~/.ssh/bonsai-wall-probe` is refused by the wall.
 10. **The fetch:** `workflow` and `base` fetched from GitHub with no login and linked in a scratch project on each side
-    with no finding (the run report); the verifier repeats it on WSL.
+    with no finding, by the stamped build of the final commit on WSL and a stamped Windows build of it on Windows (the
+    run report); the verifier repeats it on WSL with its own stamped build.
 11. **Unattended:** each new refusal (a `<protocols>/` file with no folder; the release check) names its step; every
     `--json` refusal carries `error` with `next.do` and `who`.
 12. **Check 10, the ladder and CI:** `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on
@@ -4652,8 +4669,10 @@ source.
   `bonsai settings`, both 5.6's. Bonsai links itself at 5.4; full registration waits for 5.6; when it shows on the Desk
   is the studio's plan.
 - **Step 7, "the studio links (after 5.5)"**, includes the machine installs of `bonsai`, but a 5.x build is not a
-  release (§3, §18) and the one pre-release is WSL's, at 5.4. Before 1.0 the studio would link on that pre-release
-  (WSL only) or wait for 5.7: the studio's plan decides; nothing here waits on it.
+  release (§3, §18) and the one pre-release is WSL's, at 5.4. That pre-release refuses the `workflow` pack (its reader
+  refuses the `<protocols>/` path, which 5.5.0 adds), so before 1.0 the studio's link of `workflow` needs a pre-release
+  built after 5.5.0, a new install of Rohan's in WSL (5.4's four lines), or waits for 1.0 at 5.7: the studio's plan
+  decides; nothing here waits on it.
 - **Bonsai's own screens are gone** (Rohan, 9 Oct: "completely remove the idea of bonsai's own screens ... this
   visual part of the job will be handled by the studio, while bonsai is a pure cli tool"). Overtaken: §11 whole
   (`bonsai serve`, the static bundle, the Fable mock), §1's and §14's 30-50 h for the screens, §4's `bonsai serve`
