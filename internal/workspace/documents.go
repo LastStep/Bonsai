@@ -275,3 +275,28 @@ func NameID(name string, idp *regexp.Regexp) string {
 	}
 	return ""
 }
+
+// LaneDef is one lane in force, and the pack that defines it (status --json's lanes).
+type LaneDef struct {
+	format.Lane
+	From string // the pack's id
+}
+
+// Lanes lists the lanes the locked packs define (contract §6), from the lock's declares, in the lock's order. lock
+// may be nil (none).
+func Lanes(lock *Lock) ([]LaneDef, error) {
+	var out []LaneDef
+	if lock == nil {
+		return out, nil
+	}
+	for _, lp := range lock.Packs {
+		d, err := lp.Declared()
+		if err != nil {
+			return nil, lockError("the pack %s's %v", showValue(lp.ID), err)
+		}
+		for _, l := range d.Lanes {
+			out = append(out, LaneDef{Lane: l, From: lp.ID})
+		}
+	}
+	return out, nil
+}
