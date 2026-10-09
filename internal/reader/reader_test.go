@@ -4,6 +4,7 @@ package reader
 // messages. Each row is a file (YAML unless md is set) and its outcome: a value as JSON, a code, or format-0.
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -341,12 +342,16 @@ func TestMapAndJSON(t *testing.T) {
 	if _, ok := nilMap.Get("a"); ok {
 		t.Errorf("a nil Map holds a key")
 	}
+	// A float64 is a format-0 number; any other type is a bug in the caller.
+	if JSON(1.5) != json.Number("1.5") {
+		t.Errorf("JSON of a float64: %#v", JSON(1.5))
+	}
 	defer func() {
 		if recover() == nil {
-			t.Errorf("JSON of a float did not panic")
+			t.Errorf("JSON of a float32 did not panic")
 		}
 	}()
-	JSON(1.5)
+	JSON(float32(1.5))
 }
 
 // The outcome names are expect.json's.

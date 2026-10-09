@@ -1,11 +1,20 @@
-// Package reader is Bonsai's format-1 YAML reader (contract §2.4): its own grammar, no general YAML library (spec
-// §3). It reads a YAML definition file (ReadYAML) or a markdown file's frontmatter (ReadMarkdown) and reaches one of
-// the three outcomes formats/README.md defines for every case of the formats set:
+// Package reader is Bonsai's YAML reader for both formats of contract §2.4, with no general YAML library (spec §3):
+// format 1's own grammar, and format 0's hand port of yaml.mjs. It reads a YAML definition file (ReadYAML) or a
+// markdown file's frontmatter (ReadMarkdown) and reaches one of the three outcomes formats/README.md defines for every
+// case of the formats set:
 //
 //   - Accepted, with the value: the top-level mapping, its keys in file order (a *Map);
 //   - Refused, with one reason code (Codes) and the line it was found on;
-//   - Format0, when the file has no top-level format: key, so the file is format 0 (contract §2.3). This reader
-//     reads nothing under format 0: the hand port of yaml.mjs is step 5.1 (plan part 2), so the caller decides.
+//   - Format0, when the file has no top-level format: key, so the file is format 0 (contract §2.3). ReadYAML and
+//     ReadMarkdown read nothing more; the caller decides whether it reads the file under format 0 at all, and reads
+//     it with the format-0 mode: ReadFormat0YAML or ReadFormat0Markdown, on the same bytes.
+//
+// The format-0 mode (format0.go) is a hand port of the studio's yaml.mjs at commit 4a05eac, the contract's own
+// definition of format 0: "Format 0 reads exactly as [yaml.mjs] reads today, forever, with no new refusals" (contract
+// §2.4). Its outcome is a Result0: Accepted with the value yaml.mjs returns (a *Map, or []any when
+// the top level is a list; numbers are float64, as JavaScript's are) or Refused where yaml.mjs throws, with a message
+// and a next step but no reason code. Bonsai's own checks read only Bonsai's kinds (task, run, state; contract §2.3,
+// §7.3) under format 0; a file Bonsai reads only as format 1, such as bonsai.yaml, is refused when it is format 0.
 //
 // Dispatch comes first (contract §2.4): the first top-level key decides. format: first means format 1; no top-level
 // format: key means format 0; a top-level format: anywhere else is refused (format-not-first), whatever else the
@@ -19,9 +28,10 @@
 // lists first. Every rule of §2.4 is enforced in this package's code, each at the place the grammar meets it; the
 // comments there name the rule.
 //
-// Values: a mapping is a *Map, a sequence []any, text string, true and false bool, null nil, an integer int64 (at
-// most 15 digits), a decimal Decimal (its exact digits). A date or a time stays text. JSON gives the value as the
-// JSON a reader returns (formats/README.md, "value").
+// Values under format 1: a mapping is a *Map, a sequence []any, text string, true and false bool, null nil, an integer
+// int64 (at most 15 digits), a decimal Decimal (its exact digits). A date or a time stays text. Under format 0, the
+// same but every number a float64 (Result0). JSON gives either as the JSON a reader returns (formats/README.md,
+// "value").
 package reader
 
 import (
@@ -41,7 +51,8 @@ const (
 	Accepted Outcome = iota
 	// Refused: the file breaks a rule; Result.Refusal says which, and where.
 	Refused
-	// Format0: the file has no top-level format: key, so it is format 0 (contract §2.3).
+	// Format0: the file has no top-level format: key, so it is format 0 (contract §2.3); ReadFormat0YAML and
+	// ReadFormat0Markdown read it.
 	Format0
 )
 
@@ -73,9 +84,9 @@ func (r Result) Err() error {
 	return nil
 }
 
-// Refusal says why a file was refused: one reason code, the line (1-based, counted in the whole file, a markdown
-// file's opening --- being line 1), what is wrong and what to do. Message and Next are ASCII: a file's own text is
-// quoted with Go's ASCII escapes.
+// Refusal says why a file was refused: one reason code (none under format 0, whose refusals have no codes), the line
+// (1-based, counted in the whole file, a markdown file's opening --- being line 1), what is wrong and what to do.
+// Message and Next are ASCII: a file's own text is quoted with Go's ASCII escapes.
 type Refusal struct {
 	Code    string
 	Line    int
@@ -86,6 +97,9 @@ type Refusal struct {
 
 // Error prints the refusal as one ASCII line that names the next step.
 func (r *Refusal) Error() string {
+	if r.Code == "" {
+		return fmt.Sprintf("line %d: %s; next: %s", r.Line, r.Message, r.Next)
+	}
 	return fmt.Sprintf("line %d: %s (%s); next: %s", r.Line, r.Message, r.Code, r.Next)
 }
 
