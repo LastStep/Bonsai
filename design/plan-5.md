@@ -3570,16 +3570,17 @@ judgment, for sizing briefs (5.5.0 2-3, 5.5.2 2-3, 5.5.3 2-3, 5.5.4 4-6, 5.5.5 1
 otherwise, and `CLAUDE.md` asks a field change and its docs in one commit), so it is spread over the two packs (5.5.2 1,
 5.5.4 2-3). In all: low 2+3+3+2+6+1+1+1 = 19; high 3+5+4+3+9+2+2+2 = 30 (pieces 5.5.0 to 5.5.7). The operating skill is
 5.5.3, inside those hours. This section's planning and review runs count in 5.5's hours, carried in 5.5.0's run report
-("What changes", item 3). Tasks: piece 5.5.y is `T-550y` (5.4's rule); `T-5590` onward, in order, for the privacy
-check, V1, the floors and the end verification.
+("What changes", item 3). Tasks: piece 5.5.y is `T-550y` (5.4's rule); `T-5590` onward, in order, for the work outside
+the pieces: `CLAUDE.md`'s Safety line before 5.5.4 (order, item 2), the privacy check P, V1, the floors and the end
+verification. P0's reads run under the task of the piece they read.
 
 | # | What is built | What proves it | Hours | Reads |
 |---|---|---|---|---|
-| 5.5.0 | **The engine's part for packs** (Go): a pack file's path may start with `<protocols>/`, written into the project's `documents.protocols` folder and imported by the block; `init` writes `.bonsai/STATE.md` when there is none; the templates of the two files the engine writes (`bonsai.yaml`, STATE) keep their one home in the engine, and base's `workspace` and `state` skills are generated from them; the generated-files page moves into base's `generated-files` skill; formats set N (descriptions) | Go tests (a project whose protocols folder is not the default; a moved folder; each refusal); `init`'s STATE in a `t.TempDir()` project, never overwritten; `go generate` changes nothing and a changed template in a temporary copy fails the test; the formats test; check 10 and the ladder; CI | 2-3 | Spec §4 (`init`), §5 ("What loads always", "Every template and pack file documents itself"), §6 (`bonsai.yaml`, "Generated files", the block, "How `update` decides"); contract §2.2, §2.8, §7.2, §14; `formats/README.md` ("How the set changes"); this plan's 5.1.5, 5.1.9 and 5.2.6a notes; 5.1.5's run report, item 5 |
+| 5.5.0 | **The engine's part for packs** (Go): a pack file's path may start with `<protocols>/`, written into the project's `documents.protocols` folder and imported by the block; `init` writes `.bonsai/STATE.md` when there is none; the templates of the two files the engine writes (`bonsai.yaml`, STATE) keep their one home in the engine, and base's `workspace` and `state` skills are generated from them; the generated-files page moves into base's `generated-files` skill; formats set N (descriptions) | Go tests (a project whose protocols folder is not the default; a moved folder; each refusal); `init`'s STATE in a `t.TempDir()` project, never overwritten; `go generate` changes nothing and a changed template in a temporary copy fails the test; the formats test; P0's privacy read of STATE's template before it lands; check 10 and the ladder; CI | 2-3 | Spec §4 (`init`), §5 ("What loads always", "Every template and pack file documents itself"), §6 (`bonsai.yaml`, "Generated files", the block, "How `update` decides"); contract §2.2, §2.8, §7.2, §14; `formats/README.md` ("How the set changes"); this plan's 5.1.5, 5.1.9 and 5.2.6a notes; 5.1.5's run report, item 5 |
 | 5.5.1 | **The pack template** `packs/template/` (one role, one skill, one documented template, `pack.yaml`, `labels.yaml`, README, `.gitattributes`), its checks in one script (`ci/check.sh`), its `pack.yml` (validate, `check --pack`, a scratch link, release on a `v*` tag), and Bonsai's CI running the script on every pack folder | `check --pack` and `claude plugin validate --json` on the template (only the missing `version`); the script green on both sides locally; a copy of the template in a temporary repository whose version is wrong fails the release rule; Bonsai's `packs` job and `windows` job green on CI; validate's need of a login measured; check 10 and the ladder | 3-5 | Spec §5 (the folder layout, "The pack template", pinning, "Adopting a release", mods), §12 step 8 (supply chain); gate report §2.13 (the eval's flags); the test pack's files; this plan's 5.1.1 rules 3-4 and 5.1.9 note |
-| 5.5.2 | **`base`** in `packs/base/`: the plugin manifest; `pack.yaml` with the walls, each with its `why`, and base's protected paths; `labels.yaml`, contract §5.6's four; `block.md`; README; the template skills `task`, `run`, `memory` and `ci`; a Go test holding base free of code and its labels equal to the contract's | `check --pack` and validate; Bonsai's `packs` job; the Go test; a scratch project linked to base with `--yes` alone (nothing under "Runs code"), its block and deny rules read back; the orchestrator's read and a Haiku grep for anything private; check 10 and the ladder | 3-4 | Spec §5 ("The two packs", template docs), §6 (the preview's sentences), §7 (the walls, deny rules), §10 (memory); contract §4, §5.6, §7.1, §7.2, §7.4; this plan's 5.3.5 note 2; the studio's three templates at `7017d63` (below), read only |
+| 5.5.2 | **`base`** in `packs/base/`: the plugin manifest; `pack.yaml` with the walls, each with its `why`, and base's protected paths; `labels.yaml`, contract §5.6's four; `block.md`; README; the template skills `task`, `run`, `memory` and `ci`; a Go test holding base free of code and its labels equal to the contract's | `check --pack` and validate; Bonsai's `packs` job; the Go test; a scratch project linked to base with `--yes` alone (nothing under "Runs code"), its block and deny rules read back; P0's privacy read of the task and run-report templates (after a Haiku grep) before it lands; the orchestrator's read; check 10 and the ladder | 3-4 | Spec §5 ("The two packs", template docs), §6 (the preview's sentences), §7 (the walls, deny rules), §10 (memory); contract §4, §5.6, §7.1, §7.2, §7.4; this plan's 5.3.5 note 2; the studio's three templates at `7017d63` (below), read only |
 | 5.5.3 | **The "operating Bonsai" skill** in `base` (`skills/operating-bonsai/`), and a Go test that keeps it in step with the command words, flags and error words | The test (a skill line naming an unknown word or flag fails; a word the registry has and the skill never names fails); its size; its real sessions in 5.5.5 | 2-3 | Spec §3 (unattended, `error`), §4, §6, §9; contract §10.1-§10.2 (status moves in both modes); this section's "The pin rule"; this plan's 5.1.6 and 5.1.10 notes, 5.2.5 note 1, 5.3.6 note 8, 5.4.2 note 12, 5.4.3 note 2 and 5.4.4 note 4; Rohan's 9 Oct direction (`STATE.md`) |
-| 5.5.4 | **`workflow`**, its own repository, made from the template: five roles with their `skills:` preloads; `session-start` as the always-on file, five protocol skills; `lanes.yaml`; `labels.yaml`; eight document kinds with documented templates; the walls for the studio's secret files; block, README, LICENSE, its CI pinned to a Bonsai commit | `check --pack` and validate locally; a scratch project linked to it alone with `--yes` alone, and with `base`, its block under 40 lines; the privacy verifier P before its first push; its CI green on both sides after the push; Rohan's read | 6-9 | Spec §5 ("Where roles live", "What loads always", "The two packs"), §6 (the tables' closing step), §7 (the studio's secret files); contract §4.3, §5.4, §6, §7.1-§7.3, §9, §10.2, §11, §13; the studio's roles, protocols and templates at `7017d63` (below), read only |
+| 5.5.4 | **`workflow`**, its own repository, made from the template: five roles with their `skills:` preloads; `session-start` as the always-on file, five protocol skills; `lanes.yaml`; `labels.yaml`; eight document kinds with documented templates; the walls for the studio's secret files; block, README, LICENSE, its CI pinned to a Bonsai commit | `check --pack` and validate locally; a scratch project linked to it alone with `--yes` alone, and with `base`, its block under 40 lines; the privacy verifier P on every commit from the root before its first push; every later commit grepped and read before Rohan is told it can go public; its CI green on both sides after the push; Rohan's read | 6-9 | Spec §5 ("Where roles live", "What loads always", "The two packs"), §6 (the tables' closing step), §7 (the studio's secret files); contract §4.3, §5.4, §6, §7.1-§7.3, §9, §10.2, §11, §13; the studio's roles, protocols and templates at `7017d63` (below), read only |
 | 5.5.5 | **The packs in real sessions**, by a Sonnet agent: a role's preloaded skills, a role as a subagent, the always-on file, the operating skill's four scenarios, `--agent workflow:builder --bg`, an interactive session through a terminal multiplexer; on Windows after Rohan's trust | Each session's transcript (stream JSON) and answers in the run report, with Claude Code's version and the user settings hashes before and after | 1-2 | Gate report §2.7, §5 (5.5); this plan's 5.1.7 note (trust); `design/plan.md` ("Test sessions and the launcher") |
 | 5.5.6 | **The walls, tried once on both sides**, by a Sonnet agent: the secret files listed again on each side (names only), each rule's form tried on decoys, each real rule tried where no secret can be shown | The run report's table, one row per rule and side; the user settings hashes; V1 | 1-2 | Spec §7 ("The walls", "Deny rules the engine writes"); this plan's 5.3.5 notes 3-4 |
 | 5.5.7 | **Bonsai links `base`**, and the rest of the switch's hand-offs: `bonsai.yaml` gains the pack and one protected path; the update; `STATE.md` to `.bonsai/STATE.md`; `CLAUDE.md`'s lines; the workflow repo fetched from GitHub with no login, on both sides | The preview read before `--yes` (no "Runs code"); `check` with no finding; a green climb at the link's commit; `status --json` showing the four labels in force; the end verifier's checks on the real repo | 1-2 | Spec §6, §14 step 6; this plan's 5.4 section ("The switch", "Tasks and names", "Labels with no definition in force until `base`") and 5.3's two answers |
@@ -3606,16 +3607,22 @@ owns:
    They share no file: the template holds no always-on file, so 5.5.1's checks do not rest on `<protocols>/`; the
    template's own `.gitattributes` sits inside its folder. 5.5.1's last commit, the CI jobs in `ci.yml` (a protected
    path), is made while it is the only task reading `running`: once 5.5.0 has landed, or with 5.5.0's task at `verify`.
-2. **5.5.2 and 5.5.4 after both have landed, side by side.** `base` needs 5.5.0's three generated skills beside its
+   5.5.0 lands only after P0 has passed STATE's template.
+2. **5.5.2 and 5.5.4 after both have landed, side by side.** Before either starts, with no other task `running`, the
+   orchestrator changes `CLAUDE.md`'s Safety line under `T-5590` (granting `CLAUDE.md`): Bonsai's work now also writes
+   the workflow pack's repository, `LastStep/bonsai-workflow` (its local copy in the scratch folder, then GitHub from
+   P on), and lands it as a records commit before 5.5.4's builder starts. `base` needs 5.5.0's three generated skills beside its
    own and 5.5.1's CI job for its proof; `workflow` is made from the template (5.5.1) and its session-start file needs
    `<protocols>/` (5.5.0) in the Bonsai commit its CI pins. They live in different repositories, and neither's proof
    reads the other: `workflow`'s CI builds Bonsai at a commit that holds no `base`, and its scratch links prove it alone
-   (the link with both packs is 5.5.5's and the end verifier's).
+   (the link with both packs is 5.5.5's and the end verifier's). 5.5.2 lands only after P0 has passed its two
+   templates.
 3. **5.5.3 after 5.5.2 has landed**, beside the rest of 5.5.4: it adds a skill to `base` and edits base's `block.md` and
    README, which 5.5.2 makes.
 4. **P, the privacy check, once 5.5.4's builder has committed;** then the orchestrator creates the repository private
    and pushes it, and its CI runs on both sides. Rohan's read starts then and may run beside what follows; his changes
-   are a fix round of 5.5.4.
+   are a fix round of 5.5.4, each commit grepped and read before it is pushed (P's paragraph). He gets the public line
+   only once every commit since P has been read.
 5. **5.5.5 and 5.5.6 after 5.5.3 has landed and `workflow`'s CI is green**, run by one Sonnet agent, WSL first, one
    after the other (two agents running Claude Code at once would confuse whose session changed a user settings file).
    Their Windows halves wait for Rohan's login in a scratch folder. Their scratch projects link both packs from local
@@ -3627,10 +3634,12 @@ owns:
 **Who builds and verifies.** Opus builders for 5.5.0 (the engine), 5.5.1 (CI and release), 5.5.2 (the walls are
 security), 5.5.3 (the skill every agent in a linked project leans on) and 5.5.4 (Rohan's content, rewritten with
 judgment); a Sonnet agent for 5.5.5 and 5.5.6 (hand checks an agent can run, Rohan's 8 Oct word); the orchestrator links
-Bonsai's repo in 5.5.7, with a Sonnet agent for its fetch on both sides. A Haiku agent greps every new file of `base`
-and `workflow` for the privacy list before P and before 5.5.2 lands, reporting facts only. Fresh Opus verifiers, each
-re-running what it judges itself: **P**, the privacy check, on `workflow`'s commits before their first push (Rohan's
-content goes public; "Risk" in his part); **V1** after 5.5.6, on the walls (security: what an agent may read on this
+Bonsai's repo in 5.5.7, with a Sonnet agent for its fetch on both sides. A Haiku agent greps for the privacy list,
+reporting facts only: before each P0 (base's studio-derived templates, at 5.5.0 and 5.5.2), every new file of `base`
+before 5.5.2 lands, `workflow`'s history before P, and each commit made after P. Fresh Opus verifiers, each re-running
+what it judges itself: **P0**, P's rules on base's three studio-derived templates, before 5.5.0 and 5.5.2 land;
+**P**, the privacy check, on `workflow`'s whole history before its first push (Rohan's content goes public; "Risk" in
+his part); **V1** after 5.5.6, on the walls (security: what an agent may read on this
 machine) and on the packs' CI and release (the template's `pack.yml`, `ci/check.sh`, Bonsai's `packs` job, the workflow
 repo's CI); **the 5.5 end verifier** on "5.5 done", after 5.5.7. 5.5.0 to 5.5.3 land on the landing rule (a green
 climb by the installed `bonsai` at the exact commit), check 10's Windows half, CI and the orchestrator's read of the
@@ -4036,15 +4045,31 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
     `workflow` alone with `--yes` alone writes `work/protocols/session-start.md` and the block's import of it; one
     whose `documents.protocols` is `docs/agents` gets it there.
 
-**P, the privacy check.** A fresh Opus agent, before the first push, reads every file of `workflow` at the builder's
-last commit in full, with every commit message, and base's three studio-derived templates; it compares each file with
-its studio original (`git show 7017d63:<path>`, read only) against the builder's list; it runs its own grep (home
-folders, `C:\Users\` with a name, machine and tailnet names, `ts.net`, email addresses, token and key shapes, studio
-task and bug ids, `studio/`, `<studio>`, `tools/`, the studio's services, Mimas's paths; the walls' three file names
-in `~/.trinetra/` are the one studio name this section allows); and it checks that the commits' author line is the one
-Bonsai's public commits already carry. A Haiku grep runs first and reports facts only. P
-passes or fails; it fixes nothing. Then the orchestrator creates the repository private (`gh repo create
-LastStep/bonsai-workflow --private`), pushes `main`, reads CI, and sends Rohan the link and the list.
+**P0, P's rules run early, on `base`'s three templates from the studio.** `base` lands on Bonsai's public `main`
+before `workflow`'s first push, so its studio-derived templates are read before they land: a fresh Opus agent reads, by
+P's rules below, STATE's template before 5.5.0 lands (the engine's template and base's generated `state` skill), and
+the task's and the run report's before 5.5.2 lands (base's `task` and `run` skills): each file in full against its
+studio original, every commit on the piece's branch that touches it (`git log -p main..<branch> -- <files>`) with its
+message, and its own grep; also that each names no person ("a person", never Rohan) and carries no studio ritual. A
+Haiku grep runs first and reports facts only. P0 passes or fails; it fixes nothing; the piece lands only after a pass.
+Its runs count in that piece's hours and run under its task.
+
+**P, the privacy check.** A fresh Opus agent, before the first push, reads what a public repository publishes: its
+whole history, not only its last tree. It reads every commit's diff from the root (`git log -p --root`) and every commit
+message, then every file of `workflow` at the builder's last commit in full, and base's three studio-derived templates
+as they landed; it compares each file with its studio original (`git show 7017d63:<path>`, read only) against the
+builder's list; it runs its own grep over the history and the tree (home folders, `C:\Users\` with a name, machine and
+tailnet names, `ts.net`, email addresses, token and key shapes, studio task and bug ids, `studio/`, `<studio>`,
+`tools/`, the studio's services, Mimas's paths; the walls' three file names in `~/.trinetra/` are the one studio name
+this section allows); and it checks that the commits' author line is the one Bonsai's public commits already carry. A
+Haiku grep runs first and reports facts only. P passes or fails; it fixes nothing. Then the orchestrator creates the
+repository private (`gh repo create LastStep/bonsai-workflow --private`), pushes `main`, reads CI, and sends Rohan the
+link and the list.
+
+**Every commit after P**, a fix round's and those made on Rohan's change requests alike, gets a Haiku grep (facts
+only) and the orchestrator's read of its diff and message before it is pushed. The orchestrator tells Rohan the repo is
+ready to go public, with his line, only when every commit since P has had both, and the run report lists each commit
+with its grep and read. The end verifier's check 8 reads the whole history again.
 
 **5.5.5, the packs in real sessions** (a Sonnet agent; spec §5; gate report §2.7).
 1. **The scratch projects:** under `~/bonsai-checks/packs/` and `%USERPROFILE%\bonsai-checks\packs\`, linked by the
@@ -4195,9 +4220,11 @@ both sides where a check names them, and passes or fails 5.5:
    verifier repeats R1 and R3 on WSL itself; Rohan's words on the Windows trust question recorded.
 7. **The walls:** 5.5.6's table holds a row per rule and side; V1's report read; the verifier tries one rule of each
    form on each side itself, by 5.5.6's method, never opening a real secret or editing a real person's file.
-8. **Nothing private:** the verifier's own grep and read of every file and commit message in `workflow`, of `base`,
-   the template, the part's diff, its commit messages and its task files: no home folder, machine or tailnet name,
-   email address, token, studio task id, studio path or service address; P's report read.
+8. **Nothing private:** the verifier's own grep and read of `workflow`'s whole history (every commit's diff from the
+   root and every message) and its files, of `base`, the template, the part's diff, its commit messages and its task
+   files: no home folder, machine or tailnet name, email address, token, studio task id, studio path or service
+   address; `base`'s templates name no person; P0's and P's reports read, and every commit made after P matched to its
+   Haiku grep and the orchestrator's read in the run report.
 9. **Bonsai's link:** `bonsai.yaml` lists `base` at a 40-character commit of Bonsai's `main`, and `protected` holds
    `packs/base/bonsai/pack.yaml`; the lock, `.claude/settings.json` (base's walls and plugin lines added, Bonsai's own
    lines unchanged in the diff) and the block are committed; the update's preview in the run report listed nothing
@@ -4221,9 +4248,10 @@ both sides where a check names them, and passes or fails 5.5:
 
 #### Risk in the code, 5.5
 
-- **Rohan's content goes public.** P reads every file before the first push, and Rohan reads the repository while it is
-  private; nothing of his is public before his line. A public repository cannot be made unseen: the order is the
-  safeguard.
+- **Rohan's content goes public.** P reads every commit and file before the first push, every later commit is read
+  before he gets the public line, and Rohan reads the repository while it is private; nothing of `workflow` is public
+  before his line. Base's three templates from the studio go public earlier, on Bonsai's `main`, each after P0 and named
+  in this section he approves. A public repository cannot be made unseen: the order is the safeguard.
 - **A wall that fails its own try** would show a secret. 5.5.6 never opens a real secret or edits a real person's file:
   decoys for the forms, names that cannot exist for folders, and nothing at all for an exact file that exists.
 - **Walls that cry wolf.** In Bonsai's repo and every project with `base`, Rohan's own sessions cannot read his key and
@@ -4475,7 +4503,7 @@ source.
 | 5.2 | Its section's "Proof for each piece"; fresh verifiers for 5.2.1 and 5.2.4; the end verifier on "5.2 done" |
 | 5.3 | Its section's "Proof for each piece"; fresh verifiers at 5.3.1, at 5.3.2 with 5.3.3, and at 5.3.6; the end verifier on "5.3 done", after Rohan's sitting |
 | 5.4 | Its section's "Proof for each piece"; fresh verifiers V1 (5.4.1 to 5.4.3) and V2 (the code, before the pre-release); the end verifier on "5.4 done", after Rohan's install and link |
-| 5.5 | Its section's "Proof for each piece"; fresh verifiers P (privacy, before `workflow`'s first push) and V1 (the walls and the packs' CI); the end verifier on "5.5 done", after Bonsai takes `base` |
+| 5.5 | Its section's "Proof for each piece"; fresh verifiers P0 (privacy, base's three templates from the studio before they land), P (privacy, `workflow`'s whole history before its first push) and V1 (the walls, the `<protocols>/` resolution and the packs' CI); the end verifier on "5.5 done", after Bonsai takes `base` |
 | 5.6 and 5.7 | Each part's section; its verifiers as outlined; its end verifier |
 | The interim proof (to 5.3) | Before each push, `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on Windows, counts in the run report; CI green on the pushed commit; no Windows-only skip without a named reason |
 | The ladder proof (from 5.4) | `bonsai ladder` green on Bonsai's own `bonsai.yaml`, run by the pre-release Rohan installed; CI and check 10 beside it until a rung covers them; fresh verifiers for the big steps |
