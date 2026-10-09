@@ -50,6 +50,14 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   the record of what happened, the proof that work is done) and works with no studio; the studio is everything across
   projects and anything that acts on agents (dispatch, approvals, status moves, notifications, every visual). The
   recorder and the ladder runner stay in Bonsai; Bonsai has no scheduler.
+- **9 Oct, 15:35: Bonsai is managed by AI agents inside projects** ("bonsai will mostly (and probably completely) be
+  managed by the ai agents within a project. so make sure the support for that is top notch"). Asked whether that
+  includes the program on each machine, he chose "inside projects": agents link, update, fix, check, read status and
+  edit; the `bonsai` program stays his install per release (root/admin), which keeps his 5.3 (a) safe. Three additions
+  follow: `bonsai --help --json`, a machine-readable list of every command, flag, exit code and error word (5.1.10);
+  every `check` finding's `next.do` the exact command that fixes it where one exists (5.1.6); an "operating Bonsai"
+  skill in `base` (5.5). Offered, not planned: a root/admin updater that installs only official releases, if he wants
+  his program step gone (5.6).
 - **9 Oct, 5.3's two questions:** the hook lines name the installed `bonsai` (Windows' place, then WSL's
   `/usr/local/bin/bonsai`), never the PATH, with check 2's one named exception ((a)); and an agent may pass
   `--allow-exec`, run `unlink` or change Bonsai's guard lines only under his tap's grant in a project the studio
