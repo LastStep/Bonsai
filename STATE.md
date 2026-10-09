@@ -1,7 +1,7 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 13:42, when 5.1.0 to 5.1.3 had landed and 5.1.4a was next
-(`records/runs/R-2026-10-09-5.1.3-formats-set4.md`).
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 14:23, when 5.1.0 to 5.1.4a had landed and 5.1.4b was next
+(`records/runs/R-2026-10-09-5.1.4a-types.md`).
 
 ## In short
 
@@ -105,10 +105,15 @@ field names. 5.2 starts when 5.1 ends.
   contract §13's active-task fixtures, the schema-compare test (base set 3's `4936b37`), CI's history for it and
   lint's online check off. Its fresh verifier passed it.
 
-Next, **5.1.4a** (every format in Go, the guard's read kept lean), then 5.1.4b and the rest in the plan's order. **5.3's
+- **5.1.4a** (`37125a4`): a Go type for each of the eighteen formats (`internal/format`, one registry), the engine
+  and `check` reading `bonsai.yaml` and `pack.yaml` in full while the guard's read stays lean (its code unchanged),
+  `check --schema`.
+
+Next, **5.1.4b** (every command's `--json` to set 4's shapes, the `error` object with its words, help from one table;
+then Rohan's look at the error words and the two output shapes), then the rest in the plan's order. **5.3's
 section** is being planned beside it.
 
-5.1's hours so far: 397 minutes (6 h 37 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
+5.1's hours so far: 435 minutes (7 h 15 min) of 61 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
