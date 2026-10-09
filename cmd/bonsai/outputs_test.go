@@ -208,6 +208,9 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		"bonsai/pack.yaml":       "format: bonsai.pack/1\nid: dup-pack\nversion: \"0.1.0\"\nfiles:\n  - path: quiet/readme.md\n    from: readme.md\n    kind: pack\nhooks: []\ndeny: []\n",
 		"bonsai/files/readme.md": "# Mine\n",
 	})
+	tagged, tc := testpack.Fixture(t, c.tmp, "tagged",
+		map[string]string{"bonsai/pack.yaml": "format: bonsai.pack/1\nid: tagged\nversion: \"0.1.0\"\nfiles: []\nhooks: []\ndeny: []\n"},
+		map[string]string{"notes.md": "a second commit at the same version\n"})
 	link := []string{"init", "--name", "demo", "--source", p.Source, "--ref", p.A}
 	linked := func(c *cli) {
 		if code, out, errOut := c.run("", append(link, "--yes", "--allow-exec")...); code != 0 {
@@ -302,6 +305,13 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		{"update, conflicts", then(linked, write("demo/guide.md", "mine\n"), func(c *cli) { testpack.SetRef(c.t, c.root, p.A, p.B) }),
 			[]string{"update", "--yes"}, 5, "conflicts", ""},
 		{"update --keep of no conflict", linked, []string{"update", "--keep", "demo/start.md"}, 2, "bad-value", ""},
+		{"update, a moved tag", func(c *cli) {
+			testpack.Tag(c.t, tagged, "v0.1.0", tc[0])
+			if code, out, errOut := c.run("", "init", "--name", "demo", "--source", tagged, "--ref", "v0.1.0", "--yes"); code != 0 {
+				c.t.Fatalf("link: %d\n%s%s", code, out, errOut)
+			}
+			testpack.Tag(c.t, tagged, "v0.1.0", tc[1])
+		}, []string{"update"}, 4, "tag-moved", ""},
 		{"update, a flag it does not take", nil, []string{"update", "--name", "x"}, 2, "bad-flag", ""},
 
 		{"check, not linked", nil, []string{"check"}, 4, "not-linked", ""},

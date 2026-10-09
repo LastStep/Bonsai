@@ -43,7 +43,7 @@ is written, at a terminal too. A removed hook line runs nothing.
 		{Code: 0, Means: "updated (or nothing to change)"},
 		{Code: 2, Means: "bad input: a flag or value wrong, a pack Bonsai cannot link, or a bonsai.yaml or .claude/settings.json\nBonsai does not read (nothing written)"},
 		{Code: 3, Means: "runtime: a fetch failed, git or the Bonsai home missing, a file that cannot be read or written (nothing\nwritten); or the write stopped part-way (--json: result failed): run the same command again"},
-		{Code: 4, Means: "wrong state (not linked, no lock, a lock Bonsai does not read, a pack taken out of bonsai.yaml), no\n--yes, or code without --allow-exec (the preview was printed; nothing written)"},
+		{Code: 4, Means: "wrong state (not linked, no lock, a lock Bonsai does not read, a pack taken out of bonsai.yaml, a\npack's tag moved to another commit), no --yes, or code without --allow-exec (the preview was printed;\nnothing written)"},
 		{Code: 5, Means: "conflicts (nothing written)"},
 	},
 	Examples: []string{"bonsai update --yes"},

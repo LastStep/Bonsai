@@ -310,6 +310,7 @@ func Build(req Request) (_ *Plan, err error) {
 		if err != nil {
 			return nil, err
 		}
+		c.recordResolved(ref.Source, ref.Ref, commit)
 		pd, err := c.packAt(ref, commit)
 		if err != nil {
 			return nil, err
@@ -384,10 +385,18 @@ func Build(req Request) (_ *Plan, err error) {
 	// Each pack at its ref, and at its locked commit.
 	if newPacks == nil {
 		for _, r := range cfg.Packs {
+			was := c.lastResolved(r.Source, r.Ref)
 			commit, err := c.fetch(r.Source, r.Ref)
 			if err != nil {
 				return nil, err
 			}
+			if lp, ok := lockedPack[r.ID]; ok && movedTag(r, lp, was, commit) {
+				return nil, errorf("tag-moved", ExitState, "a person checks the tag (git ls-remote -- "+r.Source+" refs/tags/"+r.Ref+
+					"); to take the new commit, set the pack's ref in bonsai.yaml to "+commit+" (or a new tag), then run bonsai update",
+					"the pack %s's tag %s resolved to %s when the lock was written and now resolves to %s: a tag that moves is "+
+						"refused (spec section 5), so nothing was written", r.ID, r.Ref, short(lp.Commit), short(commit)).whose("person")
+			}
+			c.recordResolved(r.Source, r.Ref, commit)
 			pd, err := c.packAt(r, commit)
 			if err != nil {
 				return nil, err

@@ -43,7 +43,7 @@ too. With bonsai.yaml but no lock (a link again), each is judged against what is
 		{Code: 0, Means: "linked (or nothing to change)"},
 		{Code: 2, Means: "bad input: a flag or value missing or wrong, a pack Bonsai cannot link, or a bonsai.yaml or\n.claude/settings.json Bonsai does not read (nothing written)"},
 		{Code: 3, Means: "runtime: a fetch failed, git or the Bonsai home missing, a file that cannot be read or written (nothing\nwritten); or the write stopped part-way (--json: result failed): run the same command again"},
-		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, --new-id in a worktree), no --yes,\nor code without --allow-exec (the preview was printed; nothing written)"},
+		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, --new-id in a worktree, a pack's tag\nmoved to another commit), no --yes, or code without --allow-exec (the preview was printed; nothing written)"},
 		{Code: 5, Means: "conflicts (nothing written)"},
 	},
 	Examples: []string{"bonsai init --name demo --source https://github.com/LastStep/bonsai-test-pack --ref 506205354b7589f82f849820987aad17dba3309d --yes --allow-exec"},

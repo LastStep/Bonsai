@@ -365,6 +365,13 @@ func DeclaringPack(t *testing.T, tmp string) (string, []string) {
 	})
 }
 
+// Tag points the tag name at commit in a pack repository (a bare one, as Fixture and Build make), moving it if it is
+// there: a pack's maker moving a release tag, which Bonsai refuses (spec §5).
+func Tag(t *testing.T, source, name, commit string) {
+	t.Helper()
+	Git(t, source, "tag", "-f", name, commit)
+}
+
 // Project makes an empty git checkout at tmp/<name> and returns it.
 func Project(t *testing.T, tmp, name string) string {
 	t.Helper()

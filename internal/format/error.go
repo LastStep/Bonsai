@@ -52,6 +52,7 @@ var ErrorWords = []Word{
 	{Word: "bad-pack", Who: "person", Means: "a pack is not one Bonsai can link (no bonsai/pack.yaml, a pack.yaml refused, a file it names missing, an id other than bonsai.yaml's, a hook line's runs not matching what it runs)"},
 	{Word: "packs-overlap", Who: "person", Means: "two packs write one path"},
 	{Word: "ref-not-found", Who: "person", Means: "a pack's tag or commit is not in its source, or is not a commit"},
+	{Word: "tag-moved", Who: "person", Means: "a pack's tag now resolves to another commit than the one the lock holds (spec section 5: a moved tag is refused): nothing was written"},
 	{Word: "fetch-failed", Who: "agent", Means: "fetching a pack failed (the network, the server, or git)"},
 	// This machine (exit 3).
 	{Word: "git-missing", Who: "person", Means: "git is not on the PATH"},

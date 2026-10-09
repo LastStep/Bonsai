@@ -183,6 +183,74 @@ func (c cache) fetch(source, ref string) (string, error) {
 	return commit, c.keep(dir, commit)
 }
 
+// The moved tag (spec §5: "A tag that later resolves to another commit is refused"; vision A.1). The lock holds a
+// pack's commit and version, not the ref bonsai.yaml named, so a tag's earlier answer is known two ways, either of
+// which refuses: this machine's pack cache records the commit each ref last resolved to (lastResolved, written only
+// when the run goes on, so a refused run leaves it, and the next run refuses again); and a release tag names the
+// pack's version (spec §5: the tag must equal pack.yaml's version), which the lock holds, so a tag that names the
+// locked version and now resolves to another commit moved, on any machine. A ref that is a 40-character commit
+// never moves. Not caught: a tag that names no version (not a release tag) moved on a machine whose cache never
+// resolved it.
+
+// resolvedRef is the cache's ref recording what a ref last resolved to: its name hashed, since a tag's name may hold
+// what a git ref cannot.
+func resolvedRef(ref string) string {
+	sum := sha256.Sum256([]byte(ref))
+	return "refs/bonsai/resolved/" + hex.EncodeToString(sum[:])[:16]
+}
+
+// lastResolved is the commit ref last resolved to on this machine, "" for none (a commit ref, or never fetched).
+func (c cache) lastResolved(source, ref string) string {
+	if commitPattern.MatchString(ref) {
+		return ""
+	}
+	dir := c.dir(source)
+	if _, err := os.Stat(filepath.Join(dir, "HEAD")); err != nil {
+		return ""
+	}
+	out, err := git(dir, nil, "rev-parse", "--verify", "-q", resolvedRef(ref)+"^{commit}")
+	if commit := strings.TrimSpace(string(out)); err == nil && commitPattern.MatchString(commit) {
+		return commit
+	}
+	return ""
+}
+
+// recordResolved records what ref resolved to; a failure to record is no failure of the run (the version check
+// still holds).
+func (c cache) recordResolved(source, ref, commit string) {
+	if commitPattern.MatchString(ref) {
+		return
+	}
+	_, _ = git(c.dir(source), nil, "update-ref", resolvedRef(ref), commit)
+}
+
+// movedTag reports whether bonsai.yaml's ref r, which now resolves to commit, is a tag that resolved to the lock's
+// commit when the lock was written: the same source, not a commit ref, another commit now, and either this machine's
+// cache recorded the lock's commit for it (was) or it names the locked version.
+func movedTag(r workspace.PackRef, lp workspace.LockedPack, was, commit string) bool {
+	if commitPattern.MatchString(r.Ref) || r.Source != lp.Source || commit == lp.Commit {
+		return false
+	}
+	return was == lp.Commit || tagNames(r.Ref, lp.Version)
+}
+
+// tagNames reports whether a release tag names a version (spec §5: the tag equals pack.yaml's version): the
+// version itself or v and the version (1.0.0, v1.0.0), alone or after a prefix that ends in - or / (base-v1.0.0).
+func tagNames(tag, version string) bool {
+	if version == "" {
+		return false
+	}
+	for _, t := range []string{version, "v" + version} {
+		if tag == t {
+			return true
+		}
+		if n := len(tag) - len(t); n > 0 && strings.HasSuffix(tag, t) && (tag[n-1] == '-' || tag[n-1] == '/') {
+			return true
+		}
+	}
+	return false
+}
+
 // keep holds a fetched commit with a ref, so git never prunes it.
 func (c cache) keep(dir, commit string) error {
 	if _, err := git(dir, nil, "update-ref", "refs/bonsai/commits/"+commit, commit); err != nil {
