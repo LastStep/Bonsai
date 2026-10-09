@@ -1,6 +1,6 @@
 package workspace
 
-// The active task (contract §13, T-0011): one definition, one function, every reader's: status --json's
+// The active task (contract §13): one definition, one function, every reader's: status --json's
 // active_task and status --active, check, the tables (step 5.1.8), and from step 5.3 on the guard, rung 0 and the stop
 // gate, each doing its own thing with the answer (the guard honours grants only while the task reads running; rung 0
 // judges a named task at any status; the stop gate engages only for a named task).
