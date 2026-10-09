@@ -375,15 +375,19 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 			})
 		}
 	}
-	// The words a test reaches are most of the table; the rest (read and write failures, the unexpected, a write
-	// stopped part-way) are reached below or by internal/engine's tests.
-	for _, w := range format.ErrorWords {
-		switch w.Word {
+	// Every word the engine, status and the command line's shared code name is reached by a case above, but a read
+	// or write failure, the unexpected, and a write stopped part-way (TestPartialWriteFails). A word named only in a
+	// word's own file (check.go's unknown-format among them) is that word's tests' to reach, so a later word's file
+	// and its tests need no case here.
+	for word, where := range codeWords(t, func(dir, file string) bool {
+		return dir != "." || file == "word.go" || file == "main.go"
+	}) {
+		switch word {
 		case "read-failed", "write-failed", "partly-written", "unexpected":
 			continue
 		}
-		if !seen[w.Word] {
-			t.Errorf("no case reaches the word %s", w.Word)
+		if !seen[word] {
+			t.Errorf("no case reaches the word %s (named in %s)", word, where)
 		}
 	}
 }
@@ -477,9 +481,30 @@ func TestPartialWriteFails(t *testing.T) {
 // and fileError call and each Code: of an Error in cmd/bonsai, internal/engine and internal/status, so a refusal no
 // test reaches cannot carry a word the table does not have.
 func TestErrorWordsInTheCode(t *testing.T) {
-	n := 0
+	words := codeWords(t, func(string, string) bool { return true })
+	for word, where := range words {
+		if _, ok := format.ErrorWord(word); !ok {
+			t.Errorf("%s: the word %q is not in format.ErrorWords", where, word)
+		}
+	}
+	if len(words) < 20 {
+		t.Errorf("only %d words found in the code: the reader missed some", len(words))
+	}
+}
+
+// packageDir is this package's folder, where go test starts (before any test moves into a project).
+var packageDir, _ = os.Getwd()
+
+// codeWords reads the words refusals name in the non-test Go files of cmd/bonsai (dir "."), internal/engine and
+// internal/status that keep says to read: each errorf, wsError and fileError call's word and each Code: of an Error
+// literal, with a file that names it.
+func codeWords(t *testing.T, keep func(dir, file string) bool) map[string]string {
+	t.Helper()
+	found := map[string]string{}
 	for _, dir := range []string{".", "../../internal/engine", "../../internal/status"} {
-		pkgs, err := parser.ParseDir(token.NewFileSet(), dir, func(fi os.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }, 0)
+		pkgs, err := parser.ParseDir(token.NewFileSet(), filepath.Join(packageDir, dir), func(fi os.FileInfo) bool {
+			return !strings.HasSuffix(fi.Name(), "_test.go") && keep(dir, fi.Name())
+		}, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -524,17 +549,10 @@ func TestErrorWordsInTheCode(t *testing.T) {
 						}
 					}
 					for _, l := range lits {
-						bl, ok := l.(*ast.BasicLit)
-						if !ok || bl.Kind != token.STRING {
-							continue
-						}
-						word, _ := strconv.Unquote(bl.Value)
-						if word == "" {
-							continue
-						}
-						n++
-						if _, ok := format.ErrorWord(word); !ok {
-							t.Errorf("%s: the word %q is not in format.ErrorWords", name, word)
+						if bl, ok := l.(*ast.BasicLit); ok && bl.Kind == token.STRING {
+							if word, _ := strconv.Unquote(bl.Value); word != "" {
+								found[word] = filepath.ToSlash(filepath.Join(dir, filepath.Base(name)))
+							}
 						}
 					}
 					return true
@@ -542,9 +560,7 @@ func TestErrorWordsInTheCode(t *testing.T) {
 			}
 		}
 	}
-	if n < 40 {
-		t.Errorf("only %d words found in the code: the reader missed some", n)
-	}
+	return found
 }
 
 // A first link's changes output (bonsai.changes/1): Bonsai's own hook line is in own_hooks and is a settings line
