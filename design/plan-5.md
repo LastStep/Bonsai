@@ -4057,8 +4057,8 @@ it (the (B) paragraph). It is stated here once; the operating skill teaches it t
      "screenshots, where the project keeps them", "the project's own decision log".
    - The studio's tools become Bonsai's: its ladder script `bonsai ladder --task <id> --json`; its task variable
      `BONSAI_TASK` or `bonsai status --active --json` (contract §13); `allows_assets` the task's `bonsai.allows`;
-     `game.yaml`'s rungs, protected list and ratchets `bonsai.yaml`'s; `cost_usd` a body line (its field is the
-     studio's `trinetra.cost` label, contract §7.1); asking Rohan, `bonsai ask` (contract §9).
+     `game.yaml`'s rungs, protected list and ratchets `bonsai.yaml`'s; `cost_usd` a body line (a cost label is the
+     studio's own to define, contract §7.1; `workflow` names none); asking Rohan, `bonsai ask` (contract §9).
    - The studio's services leave: Discord, email, the bridge's unit (with its `systemctl` line), the Desk, the registry
      (notifications and screens are the studio's; the producer writes the brief and the studio delivers it). The
      producer's "Runs on a schedule" says who starts it: a studio's scheduler or a person (Bonsai has none).
