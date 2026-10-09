@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 9 Oct 2026 at 02:18, when the plan for step 5 went to Rohan for approval
+Rewritten, never appended. Last rewritten 9 Oct 2026 at 10:10, when Rohan approved the plan for step 5 and 5.1 started
 (`records/runs/R-2026-10-09-plan-5.md`).
 
 ## In short
@@ -8,9 +8,8 @@ Rewritten, never appended. Last rewritten 9 Oct 2026 at 02:18, when the plan for
 Bonsai is being rebuilt as one small Go program that gives every project the same formats, packs, guards, recorder and
 proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). **Part 0 and all six parts of the walking skeleton
 are done; the skeleton's last fresh verifier passed it. At the gate (9 Oct) Rohan chose path (a), the full Bonsai
-1.0. The plan for step 5, `design/plan-5.md`, is written, reviewed fresh and fixed, and waits for his approval;
-nothing in step 5 is built before.** The gate report is
-`records/gate-skeleton.md`. Everything below is on `main` (now `1170c92` and the records after it), pushed.
+1.0. He approved the plan for step 5, `design/plan-5.md`, on 9 Oct; step 5.1 (formats and engine to 1.0, 30-47 h,
+re-ask at 61) is under way.** The gate report is `records/gate-skeleton.md`. Everything below is on `main`, pushed.
 
 - **Part 0, the formats** (`3770d04`, now set 3 at `3a1f195`): `formats/` holds a JSON Schema for each of the
   contract's ten formats, an example of each, 116 trick files with their format-0 and format-1 outcomes in
@@ -81,13 +80,17 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: Rohan's approval of the step 5 plan
+## The one thing to do next: step 5.1, pieces 5.1.0, 5.1.1 and 5.1.2
 
-`design/plan-5.md` (on `main`): Rohan's part over all of step 5, then 5.1 in full (eleven pieces, 5.1.0 to 5.1.10
-with 5.1.4 split in two) and 5.2-5.7 outlined. Reviewed by a fresh Opus agent (ready after fixes), fixed on every
-finding, the fixes audited. On his approval: 5.1 starts with 5.1.0 (the timing-shaped guard test) beside 5.1.1 (the
-consent rules: `--allow-exec`, every first link to the test pack needing it, a no-hook fixture pack), in plain
-worktrees, as the plan's "How the work runs in step 5" says.
+`design/plan-5.md`, "Step 5.1". Three pieces run side by side, as the plan's order allows (items 1-3): **5.1.0** (the
+timing-shaped guard test, test files only), **5.1.1** (consent to code: `--allow-exec`, every first link to the test
+pack needing it, test-pack commits E and F, a fresh Opus verifier) and **5.1.2** (the format-0 reader, `internal/reader`
+only, a fresh Opus verifier). Each in its own plain worktree (`~/Servers/Bonsai-<piece>`) with its own run report
+(`records/runs/R-2026-10-09-<piece>-<topic>.md`). Pieces land one at a time; a piece that lands second rebases on `main`
+and re-runs its proof. Then 5.1.3 (formats set 4) once 5.1.1 and 5.1.2 have landed, and the rest in the plan's order.
+
+5.1's hours so far: the plan's 42 minutes (`R-2026-10-09-plan-5.md`). Step 5's Windows-only tally: 0. Option rounds in
+5.1: none.
 
 A flaky Windows test was fixed on the way (`1170c92`): `TestRenameRetryOnWindows` held a file for a fixed 150 ms
 and failed once in CI on a loaded runner; it now holds the file until the first busy refusal
@@ -95,7 +98,8 @@ and failed once in CI on a loaded runner; it now holds the file until the first 
 
 ## Waiting on Rohan
 
-- The step 5 plan's approval (`design/plan-5.md`, his part down to "Size").
+- Nothing now. In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s
+  and `update`'s JSON (5.1.3/5.1.4b).
 - Later: step 8 at 5.4 (a pre-release `bonsai`); at 5.7 the `release` environment and a new tap token (the working
   environment command is in spec §17 step 4's note).
 - Whenever he likes: turn GitHub Pages off (the old website).

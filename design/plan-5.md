@@ -1,8 +1,8 @@
 # Bonsai's plan for step 5: path (a), Bonsai 1.0, with 5.1 in full
 
-- **Status:** draft, 9 Oct 2026. Reviewed by a fresh Opus agent (ready after fixes) and fixed on its findings and on
-  Rohan's two answers of 9 Oct (the plans of later parts, and Bonsai's scope); for Rohan's approval. Nothing in step 5
-  is built before he approves it.
+- **Status:** approved by Rohan, 9 Oct 2026 ("the step 5 plan is approved"). Reviewed by a fresh Opus agent (ready
+  after fixes) and fixed on its findings and on Rohan's two answers of 9 Oct (the plans of later parts, and Bonsai's
+  scope).
 - **What it follows:** Rohan's gate, 9 Oct: **path (a), the full Bonsai 1.0** (spec §14, "Path (a) after the gate
   (step 5), 139-218 h"), parts 5.1 to 5.7 in the spec's order.
 - **Design:** `design/bonsai-spec.md` (the spec: §14 the parts, their hours and re-ask lines, "How Bonsai's work is
@@ -63,7 +63,7 @@ such pair.
 - No release and no tag until you say so at 5.7.
 
 **What you must do, and when.** Each item reaches you in one batch with exact lines, when its part gets there.
-- **Now:** approve this plan. Nothing in step 5 is built before.
+- **Now:** approve this plan. Nothing in step 5 is built before. (Approved, 9 Oct.)
 - **In 5.1, a look (no vote needed):** the list of error words every command's `--json` uses, and its "what next"
   part, which becomes two fields (what to do, and whether an agent or a person does it) instead of the one sentence you
   saw in format review 4.5; with it, the shapes of `check`'s and `update`'s JSON, which the studio will read. Until
