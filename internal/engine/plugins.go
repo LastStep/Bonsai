@@ -339,8 +339,9 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 		if !installed {
 			r.Warnings = append(r.Warnings, Finding{Code: "plugin", File: SettingsFile,
 				Message: "Claude Code reports the plugin " + want + " (" + lp.ID + " at " + version + ") not installed for this checkout",
-				Next: "run bonsai update: it installs it once Claude Code has registered this checkout's marketplace, which a " +
-					"Claude Code session here does (accept its trust question if it asks)"})
+				Next: "run bonsai update (with --allow-exec when the plugin carries code: its update says so): it installs it " +
+					"once Claude Code has registered this checkout's marketplace, which a Claude Code session here does (accept " +
+					"its trust question if it asks)"})
 		}
 	}
 }
