@@ -149,7 +149,7 @@ func (f *Format) tableDoc(v any) (schema.Object, error) {
 func frontmatter(b *strings.Builder, f *Format, comment string, extra schema.Object) error {
 	b.WriteString("---\nformat: " + f.Versioned() + "   # " + comment + "\n")
 	if len(extra) > 0 {
-		y, err := yamlDocument(append(schema.Object{{Key: "format", Value: f.Versioned()}}, normalize(extra).(schema.Object)...), nil)
+		y, err := yamlDocument(append(schema.Object{{Key: "format", Value: f.Versioned()}}, normalize(extra).(schema.Object)...), YAMLOptions{})
 		if err != nil {
 			return err
 		}

@@ -64,7 +64,9 @@ func TestBlockComplete(t *testing.T) {
 // A block over 40 lines is refused, naming the packs' makers' step; nothing is written.
 func TestBlockOverItsCap(t *testing.T) {
 	e := setup(t)
-	long := strings.Repeat("A line of the pack's block.\n", MaxBlockLines-2)
+	// The block of a pack linked by init's values: its markers, the workspace line and the memory import, then the
+	// pack's lines.
+	long := strings.Repeat("A line of the pack's block.\n", MaxBlockLines-3)
 	src, shas := testpack.Fixture(t, e.tmp, "long-block", map[string]string{
 		".claude-plugin/plugin.json": pluginJSON("long-block"),
 		"bonsai/pack.yaml":           "format: bonsai.pack/1\nid: long-block\nversion: \"1.0.0\"\nblock: block.md\nfiles: []\nhooks: []\ndeny: []\n",
@@ -82,7 +84,7 @@ func TestBlockOverItsCap(t *testing.T) {
 	src2, shas2 := testpack.Fixture(t, e.tmp, "full-block", map[string]string{
 		".claude-plugin/plugin.json": pluginJSON("full-block"),
 		"bonsai/pack.yaml":           "format: bonsai.pack/1\nid: full-block\nversion: \"1.0.0\"\nblock: block.md\nfiles: []\nhooks: []\ndeny: []\n",
-		"bonsai/block.md":            strings.Repeat("A line of the pack's block.\n", MaxBlockLines-3),
+		"bonsai/block.md":            strings.Repeat("A line of the pack's block.\n", MaxBlockLines-4),
 	})
 	root2 := testpack.Project(t, e.tmp, "full")
 	e.apply(t, root2, Request{Command: "init", Init: &InitValues{Name: "demo", Source: src2, Ref: shas2[0]}})

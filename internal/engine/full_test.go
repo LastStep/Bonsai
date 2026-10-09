@@ -17,8 +17,12 @@ func TestFullConfigRead(t *testing.T) {
 	root := testpack.Project(t, e.tmp, "full")
 	e.link(t, root, e.pack.A)
 	before := snapshot(t, root)
-	writeFile(t, root, workspace.ConfigFile, read(t, root, workspace.ConfigFile)+
-		"ladder:\n  - rung: 0\n    kind: guard\n    required: maybe\n")
+	cfg := read(t, root, workspace.ConfigFile)
+	if !strings.Contains(cfg, "\nladder: []\n") {
+		t.Fatalf("init's bonsai.yaml has no empty ladder:\n%s", cfg)
+	}
+	writeFile(t, root, workspace.ConfigFile, strings.Replace(cfg, "\nladder: []\n",
+		"\nladder:\n  - rung: 0\n    kind: guard\n    required: maybe\n", 1))
 	r, err := Check(root, e.home)
 	if err != nil {
 		t.Fatal(err)

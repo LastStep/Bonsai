@@ -211,7 +211,7 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 	// bonsai.yaml: a comment on every line (at its end, or the line above).
 	lines := strings.Split(strings.TrimSuffix(read(t, root, "bonsai.yaml"), "\n"), "\n")
 	for i, l := range lines {
-		if !strings.Contains(l, "#") && (i == 0 || !strings.HasPrefix(lines[i-1], "#")) {
+		if !strings.Contains(l, "#") && (i == 0 || !strings.HasPrefix(strings.TrimSpace(lines[i-1]), "#")) {
 			t.Errorf("bonsai.yaml line %d has no comment: %q", i+1, l)
 		}
 	}

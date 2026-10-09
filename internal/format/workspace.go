@@ -105,3 +105,8 @@ func WorkspaceFromMap(m *reader.Map) (*Workspace, error) {
 func (w *Workspace) EncodeYAML(comment func(path string) string) ([]byte, error) {
 	return MustLookup("workspace").EncodeYAML(w, comment)
 }
+
+// EncodeYAMLWith writes bonsai.yaml with its options (yaml.go): comments, and the text values written quoted.
+func (w *Workspace) EncodeYAMLWith(o YAMLOptions) ([]byte, error) {
+	return MustLookup("workspace").EncodeYAMLWith(w, o)
+}

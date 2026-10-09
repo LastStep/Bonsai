@@ -321,7 +321,9 @@ func Build(req Request) (_ *Plan, err error) {
 		if err != nil {
 			return nil, errorf("unexpected", ExitRuntime, "run the command again", "no random id: %v", err)
 		}
-		rawConfig = ConfigYAML(id, *req.Init, pd.Manifest.ID)
+		if rawConfig, err = ConfigYAML(id, *req.Init, pd); err != nil {
+			return nil, errorf("bad-value", ExitInput, "bonsai init --help shows each value's form", "init's values cannot be written as bonsai.yaml: %v", err)
+		}
 		if cfg, err = workspace.ReadConfigFull(rawConfig); err != nil {
 			return nil, fileError(err, "", "bad-value", ExitInput)
 		}
@@ -1040,7 +1042,7 @@ func checkValues(v *InitValues) error {
 	}
 	// The rest (the name's form, the path, each never_edit path) bonsai.yaml's own reader checks, on the bonsai.yaml
 	// init would write, before it is written.
-	probe := ConfigYAML("ws-aaaaaaaaaaaaaaaaaaaaaaaaaa", *v, "probe")
+	probe := probeYAML(*v)
 	if _, err := workspace.ReadConfigFull(probe); err != nil {
 		return fileError(err, "", "bad-value", ExitInput).(*Error).withNext(next)
 	}

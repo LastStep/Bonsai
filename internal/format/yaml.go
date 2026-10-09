@@ -16,13 +16,32 @@ import (
 	"github.com/LastStep/Bonsai/internal/schema"
 )
 
-// commentColumn is the column a line's comment starts at when the line leaves room (bonsai.yaml as init writes it).
-const commentColumn = 38
+// commentColumn is the column a line's comment starts at when the line leaves room (bonsai.yaml as init writes it);
+// a comment that would carry its line past maxCommentedLine characters goes on a line of its own just above, at the
+// line's indentation (spec §5: "a # comment for every key, at the end of its line or on the line just above").
+const (
+	commentColumn    = 38
+	maxCommentedLine = 120
+)
 
 // EncodeYAML writes v (see Document) as format 1's YAML once Check passes: the format line first, then every
 // field in the schema's order. comment, when not nil, gives a line's comment by its field's path ("packs[1].ref";
 // a list's items by their index); "" for none.
 func (f *Format) EncodeYAML(v any, comment func(path string) string) ([]byte, error) {
+	return f.EncodeYAMLWith(v, YAMLOptions{Comment: comment})
+}
+
+// YAMLOptions are how EncodeYAMLWith writes a document: Comment gives a line's comment by its field's path (as
+// EncodeYAML's comment), and Quote, when not nil, says which text values are written in double quotes even when
+// format 1 would read them plain (a value a person edits, such as a pack's ref: a commit pasted over a tag then stays
+// text).
+type YAMLOptions struct {
+	Comment func(path string) string
+	Quote   func(path string) bool
+}
+
+// EncodeYAMLWith is EncodeYAML with its options.
+func (f *Format) EncodeYAMLWith(v any, o YAMLOptions) ([]byte, error) {
 	if !f.Writes || f.Shape != YAMLFile {
 		return nil, fmt.Errorf("format: Bonsai does not write %s as YAML", f.ID())
 	}
@@ -33,12 +52,12 @@ func (f *Format) EncodeYAML(v any, comment func(path string) string) ([]byte, er
 	if err := f.Check(doc); err != nil {
 		return nil, err
 	}
-	return yamlDocument(doc, comment)
+	return yamlDocument(doc, o)
 }
 
 // yamlDocument writes a mapping as format 1's YAML and reads it back: the value must be the same.
-func yamlDocument(doc schema.Object, comment func(string) string) ([]byte, error) {
-	w := &yamlWriter{comment: comment}
+func yamlDocument(doc schema.Object, o YAMLOptions) ([]byte, error) {
+	w := &yamlWriter{comment: o.Comment, quote: o.Quote}
 	if err := w.mapping(doc, 0, ""); err != nil {
 		return nil, err
 	}
@@ -60,6 +79,7 @@ func yamlDocument(doc schema.Object, comment func(string) string) ([]byte, error
 type yamlWriter struct {
 	b       strings.Builder
 	comment func(string) string
+	quote   func(string) bool
 }
 
 // line writes one line, with its path's comment.
@@ -75,6 +95,11 @@ func (w *yamlWriter) line(text, path string) {
 	pad := commentColumn - len(text)
 	if pad < 2 {
 		pad = 2
+	}
+	if len(text)+pad+2+len(c) > maxCommentedLine {
+		indent := len(text) - len(strings.TrimLeft(text, " "))
+		w.b.WriteString(strings.Repeat(" ", indent) + "# " + c + "\n" + text + "\n")
+		return
 	}
 	w.b.WriteString(text + strings.Repeat(" ", pad) + "# " + c + "\n")
 }
@@ -114,6 +139,9 @@ func (w *yamlWriter) mappingAt(o schema.Object, first, rest, path string) error 
 			s, err := yamlScalar(x, false)
 			if err != nil {
 				return fmt.Errorf("%s: %w", p, err)
+			}
+			if text, isText := x.(string); isText && w.quote != nil && w.quote(p) {
+				s = yamlQuote(text)
 			}
 			w.line(key+" "+s, p)
 		}
