@@ -14,8 +14,8 @@
 - **Records:** `STATE.md`; run reports in `records/runs/`.
 
 Two readers. **Rohan** reads down to "Size" and reads no code. The **orchestrator, builders and verifiers** read the
-rest. 5.1 to 5.5 are planned in full here; 5.6 and 5.7 are outlined, and each gets its own detailed section in this
-file before it starts.
+rest. 5.1 to 5.6 are planned in full here; 5.7 is outlined, and gets its own detailed section in this file before it
+starts.
 
 ## For Rohan (plain words)
 
@@ -5280,6 +5280,7 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
   CI needs one.
 
 **5.6 Machine pieces (13-20 h, re-ask at 26).**
+- **Planned in full** in "Step 5.6" above; this outline is kept as it was written.
 - **Builds:** `settings` (with `--machine` and `cache_keep_days`), `labels`, the personal memory layer and its check,
   the stranded-folder report (6-9); `status --line`, the workspace half of today's statusline (5-8); the installers
   for `/usr/local/bin` and `C:\Program Files\Bonsai` with `install.json` (2-3).
@@ -5357,7 +5358,8 @@ source.
 | 5.3 | Its section's "Proof for each piece"; fresh verifiers at 5.3.1, at 5.3.2 with 5.3.3, and at 5.3.6; the end verifier on "5.3 done", after Rohan's sitting |
 | 5.4 | Its section's "Proof for each piece"; fresh verifiers V1 (5.4.1 to 5.4.3) and V2 (the code, before the pre-release); the end verifier on "5.4 done", after Rohan's install and link |
 | 5.5 | Its section's "Proof for each piece"; fresh verifiers P0 (privacy, base's three templates from the studio before they land), P (privacy, `workflow`'s whole history before its first push) and V1 (the walls, the `<protocols>/` resolution and the packs' CI); the end verifier on "5.5 done", after Bonsai takes `base` |
-| 5.6 and 5.7 | Each part's section; its verifiers as outlined; its end verifier |
+| 5.6 | Its section's "Proof for each piece"; fresh verifier V1 (the installers and the machine's tripwires, after 5.6.6 with its CI job green); the end verifier on "5.6 done" |
+| 5.7 | Its section; its verifiers as outlined; its end verifier |
 | The interim proof (to 5.3) | Before each push, `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on Windows, counts in the run report; CI green on the pushed commit; no Windows-only skip without a named reason |
 | The ladder proof (from 5.4) | `bonsai ladder` green on Bonsai's own `bonsai.yaml`, run by the pre-release Rohan installed; CI and check 10 beside it until a rung covers them; fresh verifiers for the big steps |
 | Stop lines | The run reports' rows and tallies, judged by each part's end verifier |
@@ -5445,9 +5447,10 @@ source.
   both templates live in the engine, and base's `workspace` and `state` skills are generated from them.
 - **§14's 5.1 row says "all of §6's findings and warnings"**, while its 5.6 row names "the stranded-folder report" and
   "the personal memory layer and its check". The stranded folder goes to 5.6; the secret scan of memory notes to 5.2
-  (the redactor's patterns are its one home); the rest of §6 is 5.1's.
+  (the redactor's patterns are its one home); the rest of §6 is 5.1's. Settled in 5.6's section: the stranded folder in
+  note 5.6.1, 5; the personal layer's check in note 5.6.3, 3, reusing 5.2's redactor.
 - **`status_writes` and `status_command`:** the status test's comment puts them in 5.1 "(bonsai settings)", but
-  `settings` is 5.6's word. 5.1 reads the machine settings; 5.6 writes them.
+  `settings` is 5.6's word. 5.1 reads the machine settings; 5.6 writes them (note 5.6.1, 3).
 - **Contract §12's `formats.write`** is a required integer, but Bonsai only reads some formats; read as the major a
   writer writes (contract §12's own example), so no schema changes.
 - **Contract §2.2's "fails on any schema change but additions"** does not say what an addition is for a JSON Schema;
@@ -5471,7 +5474,8 @@ source.
 - **Step 6, "it registers as its own studio project"**, needs the studio's registration (contract §15.2, "after the
   skeleton"), which is studio work while its Desk is on upkeep until step 7, and which runs `bonsai labels attach` and
   `bonsai settings`, both 5.6's. Bonsai links itself at 5.4; full registration waits for 5.6; when it shows on the Desk
-  is the studio's plan.
+  is the studio's plan. Both commands refuse in an agent's session (5.6's section), so the registration is run by a
+  person or by the studio's own program outside one.
 - **Step 7, "the studio links (after 5.5)"**, includes the machine installs of `bonsai`, but a 5.x build is not a
   release (§3, §18) and the one pre-release is WSL's, at 5.4. That pre-release refuses the `workflow` pack (its reader
   refuses the `<protocols>/` path, which 5.5.0 adds), so before 1.0 the studio's link of `workflow` needs a pre-release
