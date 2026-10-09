@@ -2,11 +2,17 @@
 // and consistent. Standard library plus Bonsai's schema checker (internal/schema, moved out of this file in plan part
 // 2 so Bonsai's code uses the same one), so it runs on any machine that has Go. It checks that:
 //   - manifest.json matches every file's raw bytes, lists every file and nothing more, sorted by path;
-//   - the CRLF case holds CRLF line endings and the BOM cases start with EF BB BF, as checked out;
+//   - the CRLF case holds CRLF line endings, the lone-CR case CR alone, and the BOM cases start with EF BB BF, as
+//     checked out;
 //   - every rule of contract §2.4 has a case (the hand list below), and every case has both outcomes in expect.json;
 //   - every schema is valid JSON, declares draft 2020-12, and documents itself (a description, and a description and
 //     examples on every property); each example validates under the schema checker, keeps the schema's field
-//     order, and each YAML or markdown example's format-1 value in expect.json equals its <name>.json;
+//     order, and each YAML or markdown example's format-1 value in expect.json equals its <name>.json (for the two
+//     tables, the fields of <name>.json before what a reader reads from the body);
+//   - the error object held inline in status, check and changes, and every next object, are error.schema.json's,
+//     and a rung's kind in bonsai.yaml is the ladder result's list (copies held to their one home);
+//   - contract §13's fixtures and their answers file are well formed and agree (fixtures_test.go);
+//   - each schema changed from the set's base commit only by additions (compare_test.go);
 //   - the embedded schemas (embed.go) are exactly the files in schemas/, byte for byte;
 //   - no file in the set holds a private string: an absolute home path, a drive letter, an email address, a tailnet
 //     host.
@@ -28,20 +34,33 @@ import (
 	"github.com/LastStep/Bonsai/internal/schema"
 )
 
-// The five formats whose files are YAML or markdown: their example source is also a case in expect.json.
+// The formats whose files are YAML or markdown: their example source is also a case in expect.json.
 var sourceExamples = map[string]string{
-	"task":   "examples/task.md",
-	"labels": "examples/labels.yaml",
-	"lanes":  "examples/lanes.yaml",
-	"run":    "examples/run.md",
-	"state":  "examples/state.md",
+	"task":      "examples/task.md",
+	"labels":    "examples/labels.yaml",
+	"lanes":     "examples/lanes.yaml",
+	"run":       "examples/run.md",
+	"state":     "examples/state.md",
+	"workspace": "examples/workspace.yaml",
+	"pack":      "examples/pack.yaml",
+	"tasks":     "examples/tasks.md",
+	"sessions":  "examples/sessions.md",
+	"memory":    "examples/memory.md",
+}
+
+// bodyFields are, for the two generated tables, the fields a reader reads from the markdown body rather than the
+// frontmatter (README.md, "The examples"): they come after the frontmatter's, and the case's format-1 value is the
+// example without them.
+var bodyFields = map[string][]string{
+	"tasks":    {"active", "tasks"},
+	"sessions": {"sessions", "hours"},
 }
 
 // The rules of contract §2.4 (and the format-0 oddities and dispatch cases plan part 0 names). Every rule here needs
-// at least one case in expect.json, and every case names one of these rules (or "example" for the five sources).
+// at least one case in expect.json, and every case names one of these rules (or "example" for the example sources).
 var rules = []string{
 	// Lines.
-	"lines-lf", "lines-crlf", "bom-frontmatter", "bom-definition", "tab-indent", "doc-marker", "every-line-read",
+	"lines-lf", "lines-crlf", "lines-cr", "bom-frontmatter", "bom-definition", "tab-indent", "doc-marker", "every-line-read",
 	"not-text",
 	// Keys.
 	"key-pattern", "key-label", "key-uppercase", "key-hyphen", "key-quoted", "key-complex", "key-merge", "key-twice",
@@ -69,7 +88,10 @@ var rules = []string{
 }
 
 // Files whose bytes are the point of their case, checked as checked out.
-const crlfCase = "trick/yaml-1/lines-crlf/case.md"
+const (
+	crlfCase = "trick/yaml-1/lines-crlf/case.md"
+	crCase   = "trick/yaml-1/lines-cr/case.yaml"
+)
 
 var bomCases = []string{"trick/yaml-1/bom-frontmatter/case.md", "trick/yaml-1/bom-definition/case.yaml"}
 
@@ -178,6 +200,13 @@ func TestLineEndingsAndBOMSurviveCheckout(t *testing.T) {
 	}
 	if n := bytes.Count(raw, []byte("\n")); n != bytes.Count(raw, []byte("\r\n")) {
 		t.Errorf("%s has a line ending in a bare LF: every line must end in CRLF", crlfCase)
+	}
+	raw, err = os.ReadFile(filepath.FromSlash(crCase))
+	if err != nil {
+		t.Fatalf("the lone-CR case: %v", err)
+	}
+	if bytes.Contains(raw, []byte("\n")) || bytes.Count(raw, []byte("\r")) < 2 {
+		t.Errorf("%s must end its lines in CR alone, with no LF: a checkout changed its bytes", crCase)
 	}
 	for _, p := range bomCases {
 		raw, err := os.ReadFile(filepath.FromSlash(p))
@@ -392,10 +421,90 @@ func TestSchemasDocumentThemselvesAndValidateTheirExamples(t *testing.T) {
 				t.Fatalf("%s: format1 outcome is %q, want accepted", src, f1.String("outcome"))
 			}
 			v, _ := f1.Get("value")
-			if !schema.Equal(v, example) {
+			want := example
+			if body := bodyFields[name]; len(body) > 0 {
+				want = frontmatterOf(t, example.(schema.Object), body, name)
+			}
+			if !schema.Equal(v, want) {
 				t.Errorf("%s: its format-1 value in expect.json differs from examples/%s.json", src, name)
 			}
 		})
+	}
+}
+
+// frontmatterOf gives a table's example without the fields a reader reads from its body, which must be its last.
+func frontmatterOf(t *testing.T, example schema.Object, body []string, name string) schema.Object {
+	t.Helper()
+	keys := example.Keys()
+	if len(keys) < len(body) || strings.Join(keys[len(keys)-len(body):], " ") != strings.Join(body, " ") {
+		t.Fatalf("examples/%s.json: its last fields are %v, want the body's %v", name, keys, body)
+	}
+	return example[:len(keys)-len(body)]
+}
+
+// ---------------------------------------------------------------- copies held to their one home
+
+// schemaAt walks a schema by keys, failing the test where a key is missing.
+func schemaAt(t *testing.T, s schema.Object, where string, keys ...string) schema.Object {
+	t.Helper()
+	var v any = s
+	for _, k := range keys {
+		o, ok := v.(schema.Object)
+		if !ok {
+			t.Fatalf("%s: no %s", where, strings.Join(keys, "/"))
+		}
+		v, ok = o.Get(k)
+		if !ok {
+			t.Fatalf("%s: no %s", where, strings.Join(keys, "/"))
+		}
+	}
+	o, ok := v.(schema.Object)
+	if !ok {
+		t.Fatalf("%s: %s is not an object", where, strings.Join(keys, "/"))
+	}
+	return o
+}
+
+func loadSchema(t *testing.T, name string) schema.Object {
+	t.Helper()
+	file := "schemas/" + name + ".schema.json"
+	return mustObject(t, readJSON(t, file), file)
+}
+
+// sameShape holds a copy's required list and properties equal to its home's, key order and every word included.
+func sameShape(t *testing.T, copyOf, home schema.Object, where string) {
+	t.Helper()
+	for _, k := range []string{"required", "properties"} {
+		a, _ := copyOf.Get(k)
+		b, _ := home.Get(k)
+		if b == nil || schema.Show(a) != schema.Show(b) {
+			t.Errorf("%s: its %s differ from its one home's: change the home and every copy together", where, k)
+		}
+	}
+}
+
+// The schema checker has no $ref, so status, check and changes hold the error object inline, and findings, warnings
+// and the plugin step hold its next object: each copy is error.schema.json's, its one home (README.md). And a rung's
+// kind in bonsai.yaml is the ladder result's closed list.
+func TestCopiesAreTheirHomes(t *testing.T) {
+	errorSchema := loadSchema(t, "error")
+	next := schemaAt(t, errorSchema, "error", "properties", "next")
+	for _, name := range []string{"status", "check", "changes"} {
+		sameShape(t, schemaAt(t, loadSchema(t, name), name, "properties", "error"), errorSchema, name+"'s error")
+	}
+	check := loadSchema(t, "check")
+	for _, list := range []string{"findings", "warnings"} {
+		sameShape(t, schemaAt(t, check, "check", "properties", list, "items", "properties", "next"), next,
+			"check's "+list+"[].next")
+	}
+	sameShape(t, schemaAt(t, loadSchema(t, "changes"), "changes", "properties", "plugins", "items", "properties", "next"),
+		next, "changes' plugins[].next")
+	rung := schemaAt(t, loadSchema(t, "workspace"), "workspace", "properties", "ladder", "items", "properties", "kind")
+	home := schemaAt(t, loadSchema(t, "ladder"), "ladder", "properties", "rungs", "items", "properties", "kind")
+	a, _ := rung.Get("enum")
+	b, _ := home.Get("enum")
+	if b == nil || schema.Show(a) != schema.Show(b) {
+		t.Errorf("workspace's ladder[].kind is %s, the ladder result's rung kind %s: one list", schema.Show(a), schema.Show(b))
 	}
 }
 

@@ -1,0 +1,11 @@
+{
+  "about": "BONSAI_TASK names a task whose file does not parse: there is none, and the stop gate, which engages for a named task, blocks.",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": null,
+  "env": "T-0901",
+  "does_not_parse": [
+    "main/work/tasks/T-0901-broken.md"
+  ]
+}

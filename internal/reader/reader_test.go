@@ -311,6 +311,62 @@ func TestRefusalMessages(t *testing.T) {
 	}
 }
 
+// Formats set 4: a refusal names the next step that fits it. A file whose lines end in a CR alone is one line to
+// format 1, so its refusal names the line endings, whatever its code (trick/yaml-1/lines-cr), and only once; an empty
+// flow sequence item, refused line-not-read, names its own next step, not the indentation one (the question 5.1.2's
+// builder raised); a line with no lone CR keeps its code's next step.
+func TestNextStepsThatFit(t *testing.T) {
+	cases := []struct {
+		name, in, code, next, message string
+	}{
+		{"lone CR", "format: bonsai.lanes/1\rlanes: []\r", CodeQuoteThisValue, nextCREnds, "a CR that ends no line"},
+		{"lone CR, two keys", "format: bonsai.lanes/1\rmode: 0755\r", CodeQuoteThisValue, nextCREnds,
+			"a CR alone"},
+		{"lone CR after a quoted value", "format: bonsai.lanes/1\nnote: \"a\" b\rc: d\n", CodeAfterQuote, nextCREnds,
+			"a CR that ends no line"},
+		{"trailing comma", "format: bonsai.lanes/1\nitems: [a, ]\n", CodeLineNotRead, nextEmptyFlowItem, "an empty item"},
+		{"empty item mid-list", "format: bonsai.lanes/1\nitems: [a, , b]\n", CodeLineNotRead, nextEmptyFlowItem, "an empty item"},
+		{"a plain refusal", "format: bonsai.lanes/1\nmode: 0755\n", CodeQuoteThisValue, next[CodeQuoteThisValue], "does not start"},
+		{"a line not read", "format: bonsai.lanes/1\nitems:\n- a\n", CodeLineNotRead, next[CodeLineNotRead], "where a key belongs"},
+	}
+	for _, c := range cases {
+		r := ReadYAML([]byte(c.in))
+		if r.Outcome != Refused {
+			t.Errorf("%s: outcome %s, want refused", c.name, r.Outcome)
+			continue
+		}
+		if r.Refusal.Code != c.code || r.Refusal.Next != c.next || !strings.Contains(r.Refusal.Message, c.message) {
+			t.Errorf("%s: %v\nwant code %s, next %q, a message holding %q", c.name, r.Refusal, c.code, c.next, c.message)
+		}
+		if strings.Count(r.Refusal.Message, "ends no line") > 1 {
+			t.Errorf("%s: the line endings are named twice: %v", c.name, r.Refusal)
+		}
+	}
+}
+
+// Formats set 4: a quoted "format": and a tab is the file's first key, as format: and a tab is and as format 0's
+// reader reads it; a quoted key followed by anything else after its colon is no key to dispatch.
+func TestDispatchQuotedKeyAndTab(t *testing.T) {
+	cases := []struct {
+		in   string
+		want Outcome
+		code string
+	}{
+		{"\"format\":\tbonsai.lanes/1\nlanes: []\n", Refused, CodeKeyQuoted},
+		{"'format':\tbonsai.lanes/1\nlanes: []\n", Refused, CodeKeyQuoted},
+		{"\"format\": bonsai.lanes/1\nlanes: []\n", Refused, CodeKeyQuoted},
+		{"\"format\":\n", Refused, CodeKeyQuoted},
+		{"\"format\":x\nlanes: []\n", Format0, ""},
+		{"format:\tbonsai.lanes/1\nlanes: []\n", Refused, CodeQuoteThisValue},
+	}
+	for _, c := range cases {
+		r := ReadYAML([]byte(c.in))
+		if r.Outcome != c.want || (c.code != "" && r.Refusal.Code != c.code) {
+			t.Errorf("%q: %s %v, want %s %s", c.in, r.Outcome, r.Err(), c.want, c.code)
+		}
+	}
+}
+
 // Map's accessors, and JSON of every value kind.
 func TestMapAndJSON(t *testing.T) {
 	r := ReadYAML([]byte(f1 + "a: 1\nb:\n  c: [x, 2.5]\nd: |\n  t\n"))

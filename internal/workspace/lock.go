@@ -3,7 +3,7 @@ package workspace
 // The lock, .bonsai/lock.json (bonsai.lock/1, contract §14, spec §6): exactly which pack versions and files a
 // workspace holds. Bonsai's engine writes it (parts 3 and 4); bonsai check and status --json read it.
 //
-// Read and written here in full: format, written_by, packs (id, source, version, commit, sha256, declares), files
+// Read and written here in full: format, written_by, packs (id, source, version, commit, sha256, declares, path), files
 // (kind, pack, sha256 per path) and format0 (sha256 per path). The schema in formats/schemas/lock.schema.json holds
 // every field's form and the closed list of file kinds; this file adds what a schema cannot say: no path leaves the
 // project or names a file Windows cannot hold (CheckRelPath), and no pack is locked twice. declares stays an open
@@ -12,6 +12,12 @@ package workspace
 // Written byte-stable: fields in the schema's order, files and format0 sorted by path, two-space indent, LF, ASCII
 // (schema.Encode). An unknown field (a newer Bonsai of the same major wrote it) is kept, value for value, after the
 // fields this Bonsai knows, at the top level, in a pack and in a file entry (contract §2.2).
+//
+// A pack's path (formats set 4, an addition): the pack's folder in its repository, as bonsai.yaml names it, null for
+// the repository's root. A lock written before set 4 has none, and a reader reads that as null, the root (contract
+// §2.2). Step 5.1.5's engine writes it and judges against it; until then the engine leaves it unset, so Encode writes
+// a pack's path only when the pack has one (PathSet: read from the lock, or set by a caller), and holds the lock to
+// the schema with that one field allowed missing. A lock read and written again keeps its bytes, path or no path.
 
 import (
 	"errors"
@@ -50,6 +56,8 @@ type LockedPack struct {
 	Commit   string        // the resolved 40-character commit
 	SHA256   string        // the pack's content hash
 	Declares schema.Object // what the pack declared at that commit; {} for nothing
+	Path     string        // the pack's folder in its repository, as bonsai.yaml names it; "" for its root (null)
+	PathSet  bool          // the lock records Path: false for a lock written before formats set 4, and until 5.1.5
 	Extra    schema.Object
 }
 
@@ -62,8 +70,8 @@ type LockedFile struct {
 }
 
 var (
-	lockSchemaOnce             sync.Once
-	lockSchema, lockReadSchema schema.Object
+	lockSchemaOnce                              sync.Once
+	lockSchema, lockReadSchema, lockWriteSchema schema.Object
 )
 
 // LockSchema is bonsai.lock/1's schema, from formats/schemas (embedded): what a writer writes.
@@ -77,8 +85,33 @@ func LockSchema() schema.Object {
 			panic(err)
 		}
 		lockReadSchema = schema.Lenient(lockSchema)
+		if lockWriteSchema, err = schema.Parse(raw); err != nil {
+			panic(err)
+		}
+		withoutPackPath(lockWriteSchema)
 	})
 	return lockSchema
+}
+
+// withoutPackPath takes path out of the required list of the lock schema's packs, in place: the one field Encode
+// lets a pack lack, until step 5.1.5's engine writes it (above). Every other field stays required.
+func withoutPackPath(s schema.Object) {
+	props, _ := s.Get("properties")
+	packs, _ := props.(schema.Object).Get("packs")
+	items, _ := packs.(schema.Object).Get("items")
+	io := items.(schema.Object)
+	for i, m := range io {
+		if m.Key != "required" {
+			continue
+		}
+		var kept []any
+		for _, r := range m.Value.([]any) {
+			if r != "path" {
+				kept = append(kept, r)
+			}
+		}
+		io[i].Value = kept
+	}
 }
 
 // knownLockFields are the fields this Bonsai reads, per level, in the schema's order: a null one reads as missing.
@@ -173,6 +206,10 @@ func ReadLock(raw []byte) (*Lock, error) {
 						p.SHA256 = pm.Value.(string)
 					case "declares":
 						p.Declares = pm.Value.(schema.Object)
+					case "path":
+						// null and a string both mean the lock records it; null, the repository's root, reads as "".
+						p.PathSet = true
+						p.Path, _ = pm.Value.(string)
 					default:
 						p.Extra = append(p.Extra, pm)
 					}
@@ -211,8 +248,8 @@ func ReadLock(raw []byte) (*Lock, error) {
 	return l, nil
 }
 
-// check holds the lock to what its schema cannot say: every path a project path Bonsai may write or record, and
-// each pack once.
+// check holds the lock to what its schema cannot say: every path a project path Bonsai may write or record, each
+// pack's folder a relative path as bonsai.yaml's is, and each pack once.
 func (l *Lock) check() error {
 	seen := map[string]bool{}
 	for _, p := range l.Packs {
@@ -220,6 +257,12 @@ func (l *Lock) check() error {
 			return lockError("the pack %s is locked twice", showValue(p.ID))
 		}
 		seen[p.ID] = true
+		// A pack's folder is held as bonsai.yaml's is (config.go).
+		if p.Path != "" {
+			if err := CheckRelPath(p.Path); err != nil {
+				return lockError("the pack %s's path: %v", showValue(p.ID), err)
+			}
+		}
 	}
 	for _, list := range []struct {
 		name  string
@@ -253,6 +296,13 @@ func (l *Lock) JSON() schema.Object {
 		}
 		o := schema.Object{{Key: "id", Value: p.ID}, {Key: "source", Value: p.Source}, {Key: "version", Value: p.Version},
 			{Key: "commit", Value: p.Commit}, {Key: "sha256", Value: p.SHA256}, {Key: "declares", Value: declares}}
+		if p.PathSet {
+			var path any
+			if p.Path != "" {
+				path = p.Path
+			}
+			o = append(o, schema.Member{Key: "path", Value: path})
+		}
 		packs = append(packs, append(o, p.Extra...))
 	}
 	files := schema.Object{}
@@ -270,11 +320,12 @@ func (l *Lock) JSON() schema.Object {
 	return append(doc, l.Extra...)
 }
 
-// Encode writes the lock's bytes, refusing a lock its own reader would refuse: one that does not fit the schema, or
-// whose paths or packs fail check.
+// Encode writes the lock's bytes, refusing a lock its own reader would refuse: one that does not fit the schema (a
+// pack's path aside, until step 5.1.5), or whose paths or packs fail check.
 func (l *Lock) Encode() ([]byte, error) {
 	doc := l.JSON()
-	if msgs := schema.Validate(LockSchema(), doc); len(msgs) > 0 {
+	LockSchema() // loads lockWriteSchema too
+	if msgs := schema.Validate(lockWriteSchema, doc); len(msgs) > 0 {
 		return nil, fmt.Errorf("the lock does not fit bonsai.lock/1, so it is not written: %s", asciiOnly(msgs[0]))
 	}
 	if err := l.check(); err != nil {

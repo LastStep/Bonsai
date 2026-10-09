@@ -1,0 +1,655 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.workspace/1",
+  "description": "bonsai.yaml (spec §6; format review 1.4, R2.5, R2.6): a project's Bonsai settings, the Bonsai half of a studio's project file: which packs it uses, where its documents live, which paths are protected, its ladder and how long generated files are kept. Lives at the root of the project's main checkout, committed, person-only (contract §14), the one Bonsai file a person edits. Written by bonsai init from a documented template, a comment on every line (format review 1.4), then changed only by a person, or by an agent whose running task a person granted it (contract §5.5); read by every Bonsai command, bonsai check (in CI too), the ladder runner and, through status --json, the studio. The guard keeps its own lean read of the fields it judges. Format-1 YAML (contract §2.4); this schema describes the file as a reader returns it (JSON). Writers keep comments; check does not require them in a project. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "name",
+    "packs",
+    "documents",
+    "protected",
+    "person_only",
+    "never_edit",
+    "ladder_floor",
+    "ladder",
+    "ratchets",
+    "ci_marked_tests",
+    "generated"
+  ],
+  "properties": {
+    "format": {
+      "description": "The format and its version, always the first key (contract §2.2); a newer major is refused, never guessed. The line carries the pointer to these docs as a trailing comment (contract §2.8).",
+      "examples": [
+        "bonsai.workspace/1"
+      ],
+      "const": "bonsai.workspace/1"
+    },
+    "id": {
+      "description": "The workspace id: ws- and 26 lowercase base32 characters (contract §3), written once by bonsai init. Every clone and worktree shares it; a copy meant as a new project gets its own (init --new-id). It is not a key to anything on the machine, and a changed id is a check finding.",
+      "examples": [
+        "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+      ],
+      "type": "string",
+      "pattern": "^ws-[a-z0-9]{26}$"
+    },
+    "name": {
+      "description": "The workspace's name, a slug: a lower-case letter, then up to 39 lower-case letters, digits and dashes (contract §3).",
+      "examples": [
+        "example"
+      ],
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,39}$"
+    },
+    "packs": {
+      "description": "The packs this project uses, in the order they apply; a path two packs write stops the command (spec §6, Layers). [] for none.",
+      "examples": [
+        [
+          {
+            "id": "base",
+            "source": "https://example.com/packs/bonsai.git",
+            "path": "packs/base",
+            "ref": "base-v1.0.0"
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "path",
+          "ref"
+        ],
+        "properties": {
+          "id": {
+            "description": "The pack's id, as its bonsai/pack.yaml says: a lower-case letter, then lower-case letters, digits and dashes (it equals the plugin's name, spec §5). bonsai is Bonsai's own and never a pack's.",
+            "examples": [
+              "base",
+              "workflow"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "source": {
+            "description": "The git repository the pack is fetched from, as git reads it (a URL); it never starts with -, which git would read as an option.",
+            "examples": [
+              "https://example.com/packs/workflow.git"
+            ],
+            "type": "string",
+            "pattern": "^[^-]"
+          },
+          "path": {
+            "description": "The pack's folder inside that repository, forward slashes, no leading slash; null when the pack is the repository's root. The lock records it (bonsai.lock/1).",
+            "examples": [
+              "packs/base",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "ref": {
+            "description": "The release tag (spec §5); the lock records the 40-character commit it resolves to, and a tag that later resolves to another commit is refused. Change it and run bonsai update to take a new release. It never starts with -.",
+            "examples": [
+              "base-v1.0.0",
+              "v1.2.0"
+            ],
+            "type": "string",
+            "pattern": "^[^-]"
+          }
+        }
+      }
+    },
+    "documents": {
+      "description": "Where this project keeps the documents Bonsai knows (contract §7.3), by kind: a folder (one file per document, top level only) or a single file, project-relative with forward slashes. Bonsai's own kinds come first and are always written; a pack's document kind (its pack.yaml documents, bonsai.pack/1) takes an entry under the kind's name, which init writes from the pack's default. STATE (.bonsai/STATE.md) and the two generated tables (.bonsai/tasks.md, .bonsai/sessions.md) have fixed places and no entry (contract §3).",
+      "examples": [
+        {
+          "task": "work/tasks",
+          "run": "work/runs",
+          "answers": "work/answers.md",
+          "memory": "work/memory",
+          "protocols": "work/protocols",
+          "plan": "work/plans"
+        }
+      ],
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[^/\\\\:][^\\\\:]*$"
+      },
+      "type": "object",
+      "required": [
+        "task",
+        "run",
+        "answers",
+        "memory",
+        "protocols"
+      ],
+      "properties": {
+        "task": {
+          "description": "The tasks' folder (bonsai.task/1), one file per task.",
+          "examples": [
+            "work/tasks"
+          ],
+          "type": "string",
+          "pattern": "^[^/\\\\:][^\\\\:]*$"
+        },
+        "run": {
+          "description": "The run reports' folder (bonsai.run/1), one report per agent session.",
+          "examples": [
+            "work/runs"
+          ],
+          "type": "string",
+          "pattern": "^[^/\\\\:][^\\\\:]*$"
+        },
+        "answers": {
+          "description": "The file for answers to asks that name no file (contract §7.3, §9).",
+          "examples": [
+            "work/answers.md"
+          ],
+          "type": "string",
+          "pattern": "^[^/\\\\:][^\\\\:]*$"
+        },
+        "memory": {
+          "description": "The memory notes' folder, with their INDEX.md (bonsai.memory/1, spec §10).",
+          "examples": [
+            "work/memory"
+          ],
+          "type": "string",
+          "pattern": "^[^/\\\\:][^\\\\:]*$"
+        },
+        "protocols": {
+          "description": "The folder a pack's always-on protocol files are written to, which the instruction block imports (spec §5, §6). A place, not a document kind.",
+          "examples": [
+            "work/protocols"
+          ],
+          "type": "string",
+          "pattern": "^[^/\\\\:][^\\\\:]*$"
+        }
+      }
+    },
+    "protected": {
+      "description": "Paths an agent changes only while its running task lists them in bonsai.allows (contract §5.5), as globs, project-relative with forward slashes; [] for none. The packs' own protected paths (their pack.yaml protected, copied into the lock's declares) apply beside them.",
+      "examples": [
+        [
+          ".claude/**",
+          "bonsai.yaml",
+          ".bonsai/lock.json",
+          ".github/**"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[^/\\\\:][^\\\\:]*$"
+      }
+    },
+    "person_only": {
+      "description": "Of the protected paths, the globs only a person may grant (contract §5.5, §18 B): an approve or grant tap; [] for none. status --json prints them (person_only).",
+      "examples": [
+        [
+          ".claude/**",
+          "bonsai.yaml",
+          ".bonsai/lock.json"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[^/\\\\:][^\\\\:]*$"
+      }
+    },
+    "never_edit": {
+      "description": "Paths no agent ever changes, each written as the deny rule Edit(<path>) in .claude/settings.json (spec §6, §7); [] for none. Since it becomes a deny rule, a path holds no parenthesis and does not start with ~.",
+      "examples": [
+        [
+          "work/ledger.json"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[^/\\\\:~()][^\\\\:()]*$"
+      }
+    },
+    "ladder_floor": {
+      "description": "The rungs every task climbs, whatever the task lists: a ladder run's requested rungs are the floor plus the task's bonsai.ladder (contract §5.6, §11); [] for none.",
+      "examples": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "ladder": {
+      "description": "The ladder's rungs, in rung order (spec §9): today's rung shape (rung, name, kind, command, required, timeout_s, ratchet, capture, means) plus tests and base_setup (spec §6, §16 row 23); [] for none.",
+      "examples": [
+        [
+          {
+            "rung": 1,
+            "name": "unit tests",
+            "kind": "command",
+            "command": "go test ./...",
+            "required": true,
+            "timeout_s": 600,
+            "ratchet": null,
+            "capture": null,
+            "means": "Every unit test passes.",
+            "tests": null,
+            "base_setup": null
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rung",
+          "name",
+          "kind",
+          "command",
+          "required",
+          "timeout_s",
+          "ratchet",
+          "capture",
+          "means",
+          "tests",
+          "base_setup"
+        ],
+        "properties": {
+          "rung": {
+            "description": "The rung's number; the floor (ladder_floor) and a task's bonsai.ladder name rungs by it.",
+            "examples": [
+              0,
+              3
+            ],
+            "type": "integer",
+            "minimum": 0
+          },
+          "name": {
+            "description": "The rung's short name, or null for none (a ladder result then shows '', as today).",
+            "examples": [
+              "unit tests",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "description": "The rung's kind, the same closed list as a ladder result's (bonsai.ladder/1; the formats test holds the two equal): guard (rung 0: the diff against the named task's grants, contract §13), command (a shell command), ver-git (git integrity, spec §9).",
+            "examples": [
+              "command",
+              "guard"
+            ],
+            "enum": [
+              "guard",
+              "command",
+              "ver-git"
+            ]
+          },
+          "command": {
+            "description": "The shell command a command rung runs; null for the other kinds. It never calls bash by name (spec §3).",
+            "examples": [
+              "go test ./...",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "required": {
+            "description": "Whether a red result here stops the run: the rungs after it are skipped. It does not decide the colour: any red rung makes the run red (bonsai.ladder/1).",
+            "examples": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "timeout_s": {
+            "description": "The longest the rung may run, in seconds; null for the runner's default.",
+            "examples": [
+              600,
+              null
+            ],
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "ratchet": {
+            "description": "The ratchet the rung feeds, a count that may not fall below its floor in ratchets (contract §11), as today's ladder names it; null when the rung has none. Today's shape is not in Bonsai's sources, so this schema gives it no type at all: any value reads (formats/README.md). The ladder runner (step 5.4) reads it and fixes its shape, in a later major if it must.",
+            "examples": [
+              "tests",
+              null
+            ]
+          },
+          "capture": {
+            "description": "The patterns that pick numbers or text out of the rung's output, by name: what a ladder result shows as the rung's captures; null when the rung captures nothing. Untyped, as ratchet is: step 5.4 fixes its shape, in a later major if it must (formats/README.md).",
+            "examples": [
+              {
+                "tests": "([0-9]+) passed"
+              },
+              null
+            ]
+          },
+          "means": {
+            "description": "One line: what the rung proves when it is green; null for none.",
+            "examples": [
+              "Every unit test passes.",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tests": {
+            "description": "The form of the rung's test output, from which the runner names new tests to run on the base (spec §9): TAP, go test -json or JUnit; null when the rung prints no tests. The words for the three are step 5.4's to fix, so it is an open string (readers show an unknown word as other).",
+            "examples": [
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "base_setup": {
+            "description": "The shell command the runner runs first in a temporary worktree at the merge base (installing dependencies) when it checks that new tests fail there (spec §9); null for none.",
+            "examples": [
+              "npm ci",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "ratchets": {
+      "description": "Counts that may only rise, by ratchet name: each the floor a rung's count may not fall below (contract §11). A floor rises only when the studio applies a person's Bless tap (contract §10.3); {} for none.",
+      "examples": [
+        {
+          "tests": 120
+        },
+        {}
+      ],
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "ci_marked_tests": {
+      "description": "Tests allowed to skip in CI only, each by its name as the test output gives it; [] for none.",
+      "examples": [
+        [
+          "TestNeedsADisplay"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "generated": {
+      "description": "How long each kind of generated file is kept (spec §6, Generated files; format review R2.6; base's generated-files skill), by kind: these properties are the list of generated kinds (a new kind is an addition). Each kind takes keep_days (clean what is older), keep_newest (keep only the newest), both (either one cleans) or neither (kept); the protections each kind names always win, and every file or row cleaned is a clean record in the log. The tasks table is rebuilt whole by check --write, so it has nothing to clean and no entry; the pack cache is the home's (cache_keep_days, a machine setting).",
+      "examples": [
+        {
+          "log": {
+            "keep_days": 30,
+            "keep_newest": null
+          },
+          "asks": {
+            "keep_days": null,
+            "keep_newest": null
+          },
+          "ladder": {
+            "keep_days": 7,
+            "keep_newest": null
+          },
+          "run": {
+            "keep_days": null,
+            "keep_newest": null
+          },
+          "sessions": {
+            "keep_days": null,
+            "keep_newest": null
+          }
+        }
+      ],
+      "type": "object",
+      "required": [
+        "log",
+        "asks",
+        "ladder",
+        "run",
+        "sessions"
+      ],
+      "properties": {
+        "log": {
+          "description": "The log, .bonsai/local/log/: a file goes keep_days after its last line (default 30); never an open session's file, nor one holding an ended session or subagent run with no row yet in .bonsai/sessions.md.",
+          "examples": [
+            {
+              "keep_days": 30,
+              "keep_newest": null
+            }
+          ],
+          "type": "object",
+          "required": [
+            "keep_days",
+            "keep_newest"
+          ],
+          "properties": {
+            "keep_days": {
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "examples": [
+                30,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "keep_newest": {
+              "description": "Keep only this many of the newest, cleaning the rest; 0 keeps none the protections do not hold (they always win); null for no count rule.",
+              "examples": [
+                100,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "asks": {
+          "description": "Asks and their answers, .bonsai/local/asks/: kept by default (both null); never a day file holding an open ask.",
+          "examples": [
+            {
+              "keep_days": null,
+              "keep_newest": null
+            }
+          ],
+          "type": "object",
+          "required": [
+            "keep_days",
+            "keep_newest"
+          ],
+          "properties": {
+            "keep_days": {
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "examples": [
+                30,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "keep_newest": {
+              "description": "Keep only this many of the newest, cleaning the rest; 0 keeps none the protections do not hold (they always win); null for no count rule.",
+              "examples": [
+                100,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "ladder": {
+          "description": "Ladder results, .bonsai/local/ladder/: keep_days after the result's finished (default 7); never the result of a task that is not done or cut.",
+          "examples": [
+            {
+              "keep_days": 7,
+              "keep_newest": null
+            }
+          ],
+          "type": "object",
+          "required": [
+            "keep_days",
+            "keep_newest"
+          ],
+          "properties": {
+            "keep_days": {
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "examples": [
+                30,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "keep_newest": {
+              "description": "Keep only this many of the newest, cleaning the rest; 0 keeps none the protections do not hold (they always win); null for no count rule.",
+              "examples": [
+                100,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "run": {
+          "description": "Run reports, in documents.run: kept by default (committed history). Bonsai never deletes one: past a rule, check lists them for a person, whose delete it is.",
+          "examples": [
+            {
+              "keep_days": null,
+              "keep_newest": null
+            }
+          ],
+          "type": "object",
+          "required": [
+            "keep_days",
+            "keep_newest"
+          ],
+          "properties": {
+            "keep_days": {
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "examples": [
+                30,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "keep_newest": {
+              "description": "Keep only this many of the newest, cleaning the rest; 0 keeps none the protections do not hold (they always win); null for no count rule.",
+              "examples": [
+                100,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "sessions": {
+          "description": "Rows of .bonsai/sessions.md: kept by default; never the rows of an open task.",
+          "examples": [
+            {
+              "keep_days": null,
+              "keep_newest": null
+            }
+          ],
+          "type": "object",
+          "required": [
+            "keep_days",
+            "keep_newest"
+          ],
+          "properties": {
+            "keep_days": {
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "examples": [
+                30,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "keep_newest": {
+              "description": "Keep only this many of the newest, cleaning the rest; 0 keeps none the protections do not hold (they always win); null for no count rule.",
+              "examples": [
+                100,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

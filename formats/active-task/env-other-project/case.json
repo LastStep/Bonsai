@@ -1,0 +1,9 @@
+{
+  "about": "The session's own project (main) names T-0901 in BONSAI_TASK, while the path is in another project (other): the environment counts only for the session's own project, so in other the task reading running is active; the stop gate, for the session's project, engages for T-0901.",
+  "layout": "plain",
+  "checkout": "other",
+  "session": "main",
+  "task": null,
+  "env": "T-0901",
+  "does_not_parse": []
+}

@@ -1,0 +1,26 @@
+{
+  "format": "bonsai.check/1",
+  "findings": [
+    {
+      "code": "changed",
+      "file": "work/protocols/session-start.md",
+      "message": "work/protocols/session-start.md was edited since Bonsai wrote it",
+      "next": {
+        "do": "run: bonsai update --adopt work/protocols/session-start.md --yes, or restore the file from git",
+        "who": "person"
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "tables",
+      "file": ".bonsai/tasks.md",
+      "message": ".bonsai/tasks.md differs from what check --write would write",
+      "next": {
+        "do": "run: bonsai check --write in the main checkout",
+        "who": "agent"
+      }
+    }
+  ],
+  "error": null
+}

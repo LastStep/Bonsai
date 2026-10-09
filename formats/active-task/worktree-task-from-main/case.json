@@ -1,0 +1,9 @@
+{
+  "about": "A session in a task worktree, nothing named: tasks are read from the main checkout, where T-0901 reads running, never from the worktree's own copies, where T-0902 does.",
+  "layout": "worktree",
+  "checkout": "worktree",
+  "session": "worktree",
+  "task": null,
+  "env": null,
+  "does_not_parse": []
+}

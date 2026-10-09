@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.tasks/1",
+  "description": "The tasks table, .bonsai/tasks.md (contract §7.5, spec §6): one row per task, newest id first, under a line naming the active task as contract §13's step 2 finds it (the one task reading running, or none and why). Built from the task files, format 0 and format 1 alike. Generated: written only by bonsai check --write, in the main checkout, and never by hand (the guard refuses an agent's edit, a tripwire); committed, never changed on a branch (rung 0 refuses one). Read by people (on GitHub and the Desk), agents and the studio. The task files and the log stay the truth: nothing reads a table to decide, and a table grants nothing. A stale table is a check warning everywhere, never a finding (contract §7.5). A markdown file whose frontmatter holds format and whose body holds the rest; a JSON Schema cannot describe a markdown table, so this schema describes what a reader returns (the frontmatter's fields, then what it reads from the body), and the body's lines and column order are formats/README.md's. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "active",
+    "tasks"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, the frontmatter's only key (contract §2.2); it carries a comment saying the file is generated and never edited by hand.",
+      "examples": [
+        "bonsai.tasks/1"
+      ],
+      "const": "bonsai.tasks/1"
+    },
+    "active": {
+      "description": "The line above the table: the active task when none is named (contract §13, step 2), its id or none and why.",
+      "examples": [
+        {
+          "id": "T-0902",
+          "why": null
+        },
+        {
+          "id": null,
+          "why": "no task reads running"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "id",
+        "why"
+      ],
+      "properties": {
+        "id": {
+          "description": "The one task reading running, or null when there is none.",
+          "examples": [
+            "T-0902",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^T-[0-9]{4,6}$"
+        },
+        "why": {
+          "description": "Why there is none, a few words; null when there is one.",
+          "examples": [
+            "no task reads running",
+            "two tasks read running (T-0901, T-0902)",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "tasks": {
+      "description": "One row per task file in the project's tasks folder that parses, newest id first (by its number); [] for none. A task file that does not parse under its format gives no row: check reports it as a finding (spec §6), and the active line then says none, naming it (contract §13: such a file makes the answer none).",
+      "examples": [
+        [
+          {
+            "id": "T-0902",
+            "title": "Show the build number on the title screen",
+            "status": "running",
+            "lane": "light",
+            "started": "2026-10-09",
+            "finished": null
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "lane",
+          "started",
+          "finished"
+        ],
+        "properties": {
+          "id": {
+            "description": "The task's id.",
+            "examples": [
+              "T-0902"
+            ],
+            "type": "string",
+            "pattern": "^T-[0-9]{4,6}$"
+          },
+          "title": {
+            "description": "The task's title.",
+            "examples": [
+              "Show the build number on the title screen"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "The task's status as its file says: bonsai.task/1's closed list (its one home, task.schema.json), or a format-0 task's own word, shown as it is.",
+            "examples": [
+              "running",
+              "done"
+            ],
+            "type": "string"
+          },
+          "lane": {
+            "description": "The task's lane, or null for none.",
+            "examples": [
+              "light",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "started": {
+            "description": "The day work started, as the task file gives it; null before.",
+            "examples": [
+              "2026-10-09",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "finished": {
+            "description": "The day the task reached done or cut, as the task file gives it; null before.",
+            "examples": [
+              "2026-10-09",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

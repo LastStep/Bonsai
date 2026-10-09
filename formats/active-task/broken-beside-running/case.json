@@ -1,0 +1,11 @@
+{
+  "about": "Nothing named, one task reads running, and another task file does not parse: there is none (it could be the running one).",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": null,
+  "env": null,
+  "does_not_parse": [
+    "main/work/tasks/T-0903-broken.md"
+  ]
+}

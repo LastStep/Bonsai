@@ -1,0 +1,33 @@
+{
+  "format": "bonsai.tasks/1",
+  "active": {
+    "id": "T-0902",
+    "why": null
+  },
+  "tasks": [
+    {
+      "id": "T-0903",
+      "title": "Write the release notes",
+      "status": "todo",
+      "lane": "light",
+      "started": null,
+      "finished": null
+    },
+    {
+      "id": "T-0902",
+      "title": "Show the build number on the title screen",
+      "status": "running",
+      "lane": "light",
+      "started": "2026-10-09",
+      "finished": null
+    },
+    {
+      "id": "T-0901",
+      "title": "Add a dark mode switch to the settings page",
+      "status": "done",
+      "lane": "full",
+      "started": "2026-10-08",
+      "finished": "2026-10-09"
+    }
+  ]
+}

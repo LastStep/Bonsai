@@ -62,7 +62,7 @@ func TestLockOutputFitsTheSchema(t *testing.T) {
 	l := &Lock{
 		WrittenBy: "dev",
 		Packs: []LockedPack{{ID: "test-pack", Source: "https://example.com/test-pack.git", Version: "0.1.0",
-			Commit: strings.Repeat("a", 40), SHA256: strings.Repeat("b", 64)}},
+			Commit: strings.Repeat("a", 40), SHA256: strings.Repeat("b", 64), Path: "packs/test", PathSet: true}},
 		Files: map[string]LockedFile{
 			"z/last.md":             {Kind: "pack", Pack: "test-pack", SHA256: strings.Repeat("c", 64)},
 			".claude/settings.json": {Kind: "keys", Pack: "test-pack", SHA256: strings.Repeat("d", 64)},
@@ -95,6 +95,78 @@ func TestLockOutputFitsTheSchema(t *testing.T) {
 		if !bytes.Equal(again, out) {
 			t.Fatal("two encodings differ")
 		}
+	}
+}
+
+// Formats set 4 gives each locked pack its folder, path (null for the repository's root). A lock written before has
+// none: it reads (as the root) and writes back byte for byte, with no path, as the engine's own locks do until step
+// 5.1.5 fills it; a path, null or a folder, is read and written back; and a written path is held to the schema.
+func TestLockPackPath(t *testing.T) {
+	commit, sum := strings.Repeat("0", 40), strings.Repeat("1", 64)
+	pack := func(path string) string {
+		return `{
+      "id": "p",
+      "source": "https://example.com/p.git",
+      "version": "1.0.0",
+      "commit": "` + commit + `",
+      "sha256": "` + sum + `",
+      "declares": {}` + path + `
+    }`
+	}
+	doc := func(path string) string {
+		return `{
+  "format": "bonsai.lock/1",
+  "written_by": "dev",
+  "packs": [
+    ` + pack(path) + `
+  ],
+  "files": {},
+  "format0": {}
+}
+`
+	}
+	for _, c := range []struct {
+		name, path, want string
+		set              bool
+	}{
+		{"a lock from before set 4", "", "", false},
+		{"the repository's root", ",\n      \"path\": null", "", true},
+		{"a folder", ",\n      \"path\": \"packs/p\"", "packs/p", true},
+	} {
+		raw := []byte(doc(c.path))
+		l, err := ReadLock(raw)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if l.Packs[0].Path != c.want || l.Packs[0].PathSet != c.set {
+			t.Errorf("%s: path %q set %v, want %q %v", c.name, l.Packs[0].Path, l.Packs[0].PathSet, c.want, c.set)
+		}
+		out, err := l.Encode()
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if !bytes.Equal(out, raw) {
+			t.Errorf("%s: written back as\n%s\nwant\n%s", c.name, out, raw)
+		}
+		back, _ := schema.Decode(out)
+		msgs := schema.Validate(LockSchema(), back)
+		if c.set && len(msgs) != 0 {
+			t.Errorf("%s: the written lock does not fit the schema: %v", c.name, msgs)
+		}
+		if !c.set && (len(msgs) != 1 || !strings.Contains(msgs[0], `"path" is missing`)) {
+			t.Errorf("%s: against the writer's schema, want only path missing, got %v", c.name, msgs)
+		}
+	}
+	// A path that is not a project-relative folder does not fit the schema, read or written.
+	for _, bad := range []string{`"/abs"`, `"c:/x"`, `"a\\b"`, `7`, `"../up"`, `"x/.git/y"`} {
+		if _, err := ReadLock([]byte(doc(",\n      \"path\": " + bad))); err == nil {
+			t.Errorf("a lock whose pack path is %s was read", bad)
+		}
+	}
+	l := &Lock{WrittenBy: "dev", Packs: []LockedPack{{ID: "p", Source: "s", Version: "1", Commit: commit, SHA256: sum,
+		Path: "/abs", PathSet: true}}}
+	if _, err := l.Encode(); err == nil {
+		t.Errorf("a lock whose pack path is absolute was written")
 	}
 }
 

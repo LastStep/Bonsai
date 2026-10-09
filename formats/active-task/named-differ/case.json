@@ -1,0 +1,9 @@
+{
+  "about": "--task and BONSAI_TASK name different tasks: there is none for a reader given both (the ladder); the hooks, which take no --task, go by the environment alone.",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": "T-0901",
+  "env": "T-0902",
+  "does_not_parse": []
+}

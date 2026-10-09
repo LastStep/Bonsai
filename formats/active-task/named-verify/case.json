@@ -1,0 +1,9 @@
+{
+  "about": "--task and BONSAI_TASK name a task at verify: it is active, named; the guard grants nothing (it honours grants only while the task reads running), and rung 0 judges against its grants.",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": "T-0901",
+  "env": "T-0901",
+  "does_not_parse": []
+}

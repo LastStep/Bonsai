@@ -62,7 +62,7 @@ func TestEveryCaseReachesItsFormat0Outcome(t *testing.T) {
 	}
 	t.Logf("format-0 outcomes reached: %d of %d (%d accepted, %d refused)", reached, len(cases), accepted, refused)
 	if reached != len(cases) || len(cases) != setCases {
-		t.Errorf("reached %d of %d cases; set 3 has %d", reached, len(cases), setCases)
+		t.Errorf("reached %d of %d cases; set 4 has %d", reached, len(cases), setCases)
 	}
 }
 

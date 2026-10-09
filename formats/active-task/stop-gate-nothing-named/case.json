@@ -1,0 +1,9 @@
+{
+  "about": "Nothing named and nothing running: there is none, and the stop gate, which engages only for a named task, allows.",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": null,
+  "env": null,
+  "does_not_parse": []
+}

@@ -1,0 +1,8 @@
+{
+  "code": "needs-allow-exec",
+  "message": "this update writes code that runs on this machine (1 item under Runs code), which needs --allow-exec as well as --yes: nothing was written",
+  "next": {
+    "do": "read each item under Runs code; to write them with the rest, run: bonsai update --allow-exec --yes",
+    "who": "person"
+  }
+}

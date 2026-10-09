@@ -1,0 +1,85 @@
+# bonsai/pack.yaml: a pack's Bonsai manifest (format bonsai.pack/1, Bonsai spec section 5). A made-up pack: the
+# example for bonsai.pack/1; pack.json holds what a reader returns.
+# Purpose: what Bonsai's engine reads from the pack and writes into a linked project, beside what Claude Code
+# loads from the plugin itself (agents/, skills/), and what the pack declares besides labels.yaml and lanes.yaml.
+# When to use: every pack has one, at bonsai/pack.yaml. bonsai init and update read it at the locked commit and copy
+# its declarations (document kinds, protected paths) into the lock; bonsai check --pack checks it and its comments.
+# Format-1 YAML (contract section 2.4): format first; quote every text value that does not start with a letter.
+# Every field and its allowed values: bonsai check --schema bonsai.pack
+# Fields of the file (each key below also has its own comment):
+#   format       always bonsai.pack/1, the first key.
+#   id           the pack's id: lower-case letters, digits and dashes; equals "name" in .claude-plugin/plugin.json.
+#   version      the pack's version, quoted; a release tag must equal it.
+#   needs        what a machine needs for the pack.
+#     claude_code  the oldest Claude Code the pack works with, quoted, or null; older gets a check warning.
+#   block        the pack's part of the instruction block, a file in bonsai/, or null for none.
+#   files        the files the engine writes into a project, each from bonsai/files/; [] for none.
+#     path         where it goes: project-relative, forward slashes. Example work/protocols/session-start.md.
+#     from         its source in bonsai/files/. Example session-start.md.
+#     kind         pack (Bonsai's; an edit is a conflict) or once (written once, then the project's).
+#   hooks        hook lines for the project's .claude/settings.json; [] for none. Each runs code, so init and
+#                update write a new or changed one only with --allow-exec.
+#     event        the Claude Code hook event. Example SessionStart.
+#     matcher      the event's matcher, or null for none. Example startup.
+#     command      the shell line, quoted; it never calls bash by name.
+#     runs         the pack files the command runs, by their paths in the project; [] for none.
+#     why          one plain sentence, quoted: what the line does, as update's preview prints it.
+#   deny         deny rules for the project's .claude/settings.json; [] for none.
+#     rule         a Claude Code permission rule, quoted. Example "Read(.env)".
+#     why          one plain sentence, quoted: what the rule stops; check --pack requires it.
+#   documents    the document kinds the pack declares (contract section 7.3); [] for none.
+#     kind         the kind's name, a key in bonsai.yaml's documents. Example plan.
+#     path         its default folder, or null for a kind that is one file.
+#     file         its default single file, or null for a kind that is a folder.
+#     id           the pattern a document's id matches, quoted, or null.
+#     statuses     its statuses, the first where a new document starts; [] for none.
+#     person       the status moves a person makes, as [from, to] pairs; [] for none.
+#     agent        the status moves agents make, as [from, to] pairs; [] for none.
+#     stamp        {status: field} set to the day's date when a document reaches the status; {} for none.
+#     task_field   the field naming the task a document belongs to, or null.
+#   protected    paths the pack declares protected, as globs, quoted; [] for none.
+format: bonsai.pack/1                    # the format and its version; always the first key
+id: workflow                             # the pack's id; roles load as workflow:<role>
+version: "1.2.0"                         # the pack's version; its release tag is v1.2.0
+needs:                                   # what a machine needs for this pack
+  claude_code: "2.1.294"                 # the oldest Claude Code it works with
+block: block.md                          # bonsai/block.md, written into the project's CLAUDE.md (kind block)
+files:                                   # the files the engine writes into a project, from bonsai/files/
+  - path: work/protocols/session-start.md   # the always-on protocol every session reads
+    from: session-start.md               # its source, bonsai/files/session-start.md
+    kind: pack                           # Bonsai's file: an edit in the project is a conflict
+  - path: work/tools/greet.sh            # the script the hook line below runs
+    from: greet.sh                       # its source, bonsai/files/greet.sh
+    kind: pack                           # Bonsai's file, so a change to it is code (the hook runs it)
+hooks:                                   # hook lines for the project's .claude/settings.json (kind keys)
+  - event: SessionStart                  # runs when a session starts; it cannot block
+    matcher: startup                     # new sessions only, not resume, clear or compact
+    command: "sh work/tools/greet.sh"    # the shell line
+    runs: ["work/tools/greet.sh"]        # the pack file this line runs
+    why: "Prints the project's greeting when a session starts; it blocks nothing."  # preview text
+deny:                                    # deny rules for the project's .claude/settings.json (kind keys)
+  - rule: "Read(.env)"                   # agents may not read the project's .env file
+    why: "Agents cannot read the project's .env file."  # preview text
+documents:                               # the document kinds this pack declares
+  - kind: plan                           # a plan for one task
+    path: work/plans                     # its default folder; the project's bonsai.yaml may move it
+    file: null                           # a folder, not one file
+    id: "^P-T-\\d{4,6}$"                 # a plan's id: P- and its task's id
+    statuses: [draft, approved, done]    # a new plan starts as draft
+    person:                              # the moves a person makes
+      - [draft, approved]                # a person approves a plan
+    agent:                               # the moves agents make
+      - [approved, done]                 # an agent marks it done
+    stamp:                               # fields set to the day's date
+      approved: approved                 # approved: set when the plan reaches approved
+    task_field: task                     # a plan's task: names its task
+  - kind: bugs                           # the bugs file
+    path: null                           # one file, not a folder
+    file: work/bugs.md                   # its default place
+    id: null                             # no ids: one file
+    statuses: []                         # no statuses
+    person: []                           # no moves
+    agent: []                            # no moves
+    stamp: {}                            # nothing stamped
+    task_field: null                     # it belongs to no one task
+protected: ["work/protocols/**"]         # paths an agent changes only with a grant

@@ -197,8 +197,24 @@ func settle(l *line, r *Refusal) *Refusal {
 	if r == nil || l.bad <= r.pos {
 		return refuseAt(CodeNotText, l, l.bad, "the line holds %s", l.badWhy)
 	}
+	return crEnds(l, r)
+}
+
+// crEnds names the line endings in a refusal of a line that holds a CR ending no line, whatever its code. Format 1's
+// lines end in LF or CRLF (§2.4), so a file whose lines end in a CR alone is one line, and its first problem is most
+// often a value that holds the next line's key: the code's own next step (quote the value) would not help
+// (formats/README.md, "Reason codes"; formats set 4, trick/yaml-1/lines-cr).
+func crEnds(l *line, r *Refusal) *Refusal {
+	if !strings.Contains(l.text, "\r") || r.Next == nextCREnds {
+		return r
+	}
+	r.Message += "; the line also holds a CR that ends no line, so the file's lines may end in a CR alone, which format 1 does not read as line endings"
+	r.Next = nextCREnds
 	return r
 }
+
+// nextCREnds is the next step of a refusal on a line that holds a CR ending no line.
+const nextCREnds = "save the file with its lines ending in LF or CRLF, then read it again"
 
 // show quotes a piece of the file for a message, in ASCII, cut to 60 bytes.
 func show(s string) string {
@@ -395,7 +411,9 @@ func dispatch(lines []line) (first, format int, ok bool) {
 }
 
 // dispatchKey reads a line as a key: line for dispatch: a quoted key (its text between the quotes) or a plain key
-// (the text before the first colon followed by a space or the line's end, before any comment).
+// (the text before the first colon), the colon followed by a space, a tab or the line's end, before any comment, as
+// format 0's reader reads a key (formats/README.md, "Reason codes"): "format": and a tab is the file's format key,
+// as format: and a tab is (formats set 4, trick/yaml-1/dispatch-tab-quoted). The parser then refuses the quoted key.
 func dispatchKey(body string) (string, bool) {
 	if body == "" || isSeqItem(body) || body[0] == '?' {
 		return "", false
@@ -406,7 +424,7 @@ func dispatchKey(body string) (string, bool) {
 			return "", false
 		}
 		rest := strings.TrimLeft(body[end+2:], " ")
-		if rest == ":" || strings.HasPrefix(rest, ": ") {
+		if rest == ":" || strings.HasPrefix(rest, ": ") || strings.HasPrefix(rest, ":\t") {
 			return body[1 : end+1], true
 		}
 		return "", false

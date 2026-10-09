@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.sessions/1",
+  "description": "The sessions table, .bonsai/sessions.md (contract §7.5, spec §6): one row per ended session and per ended subagent run (Claude Code only: a subagent runs inside its session and carries its environment), then the hours per task and role. Built from the log's session_start, session_end, subagent_start and subagent_stop records (contract §8); rows are only added, so a row outlives the log file it came from (contract §8.5). It replaces the run report's Sessions table. Times are UTC. Generated: written only by bonsai check --write, in the main checkout, and never by hand (the guard refuses an agent's edit, a tripwire); committed, never changed on a branch (rung 0 refuses one). Read by people (on GitHub and the Desk), agents and the studio. The task files and the log stay the truth: nothing reads a table to decide, and a table grants nothing. A stale table is a check warning everywhere, never a finding (contract §7.5). A markdown file whose frontmatter holds format and whose body holds the rest; a JSON Schema cannot describe a markdown table, so this schema describes what a reader returns (the frontmatter's fields, then what it reads from the body), and the body's lines and column order are formats/README.md's. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "sessions",
+    "hours"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, the frontmatter's only key (contract §2.2); it carries a comment saying the file is generated and never edited by hand.",
+      "examples": [
+        "bonsai.sessions/1"
+      ],
+      "const": "bonsai.sessions/1"
+    },
+    "sessions": {
+      "description": "One row per ended session and per ended subagent run, sorted by start, then by session; [] for none.",
+      "examples": [
+        [
+          {
+            "session": "3f2a9c1e",
+            "kind": "session",
+            "task": "T-0901",
+            "role": "builder",
+            "model": "claude-sonnet",
+            "start": "2026-10-08 09:05",
+            "end": "2026-10-08 10:35",
+            "minutes": 90
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "session",
+          "kind",
+          "task",
+          "role",
+          "model",
+          "start",
+          "end",
+          "minutes"
+        ],
+        "properties": {
+          "session": {
+            "description": "The session id's first 8 characters (a subagent run: its session's).",
+            "examples": [
+              "3f2a9c1e"
+            ],
+            "type": "string",
+            "pattern": "^.{8}$"
+          },
+          "kind": {
+            "description": "session for a session's row, subagent for a subagent run's (Claude Code only), a closed list.",
+            "examples": [
+              "session",
+              "subagent"
+            ],
+            "enum": [
+              "session",
+              "subagent"
+            ]
+          },
+          "task": {
+            "description": "The row's task, by one rule (contract §7.5): the task named by --task or the environment, if set; else the active task (contract §13) of the checkout or worktree it ran in; else none. As the recorder found it at the start.",
+            "examples": [
+              "T-0901",
+              "none"
+            ],
+            "type": "string"
+          },
+          "role": {
+            "description": "The role: BONSAI_ROLE for a session, the subagent_type for a subagent run; null when none was set.",
+            "examples": [
+              "builder",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model": {
+            "description": "The model, as the agent names it; null when the log does not say.",
+            "examples": [
+              "claude-sonnet",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "start": {
+            "description": "When it started, UTC, YYYY-MM-DD HH:MM as text.",
+            "examples": [
+              "2026-10-08 09:05"
+            ],
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$"
+          },
+          "end": {
+            "description": "When it ended, UTC, YYYY-MM-DD HH:MM as text.",
+            "examples": [
+              "2026-10-08 10:35"
+            ],
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$"
+          },
+          "minutes": {
+            "description": "Whole minutes from start to end.",
+            "examples": [
+              90
+            ],
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "hours": {
+      "description": "Hours per task and role, with sessions and subagent runs apart: a subagent run lies inside its session's row, so the two are shown apart and never added; sorted by task, role, then kind. [] for none.",
+      "examples": [
+        [
+          {
+            "task": "T-0901",
+            "role": "builder",
+            "kind": "session",
+            "hours": 1.5
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "task",
+          "role",
+          "kind",
+          "hours"
+        ],
+        "properties": {
+          "task": {
+            "description": "The task, as the rows name it.",
+            "examples": [
+              "T-0901",
+              "none"
+            ],
+            "type": "string"
+          },
+          "role": {
+            "description": "The role, as the rows name it; null for rows with none.",
+            "examples": [
+              "builder",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "description": "session or subagent: which rows are added up, a closed list.",
+            "examples": [
+              "session",
+              "subagent"
+            ],
+            "enum": [
+              "session",
+              "subagent"
+            ]
+          },
+          "hours": {
+            "description": "The rows' minutes added up, in hours, as the table prints them (one decimal place).",
+            "examples": [
+              1.5
+            ],
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

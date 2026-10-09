@@ -208,6 +208,210 @@
       }
     },
     {
+      "path": "examples/memory.md",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.memory/1: its format-1 value is examples/memory.json, which schemas/memory.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.memory/1",
+          "id": "M-fewer-verifications",
+          "title": "Fewer verifications",
+          "kind": "feedback",
+          "updated": "2026-10-06",
+          "source": "the project's owner, 6 Oct",
+          "labels": {}
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.memory/1",
+          "id": "M-fewer-verifications",
+          "title": "Fewer verifications",
+          "kind": "feedback",
+          "updated": "2026-10-06",
+          "source": "the project's owner, 6 Oct",
+          "labels": {}
+        }
+      }
+    },
+    {
+      "path": "examples/pack.yaml",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.pack/1: its format-1 value is examples/pack.json, which schemas/pack.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.pack/1",
+          "id": "workflow",
+          "version": "1.2.0",
+          "needs": {
+            "claude_code": "2.1.294"
+          },
+          "block": "block.md",
+          "files": [
+            {
+              "path": "work/protocols/session-start.md",
+              "from": "session-start.md",
+              "kind": "pack"
+            },
+            {
+              "path": "work/tools/greet.sh",
+              "from": "greet.sh",
+              "kind": "pack"
+            }
+          ],
+          "hooks": [
+            {
+              "event": "SessionStart",
+              "matcher": "startup",
+              "command": "sh work/tools/greet.sh",
+              "runs": [
+                "work/tools/greet.sh"
+              ],
+              "why": "Prints the project's greeting when a session starts; it blocks nothing."
+            }
+          ],
+          "deny": [
+            {
+              "rule": "Read(.env)",
+              "why": "Agents cannot read the project's .env file."
+            }
+          ],
+          "documents": [
+            {
+              "kind": "plan",
+              "path": "work/plans",
+              "file": null,
+              "id": "^P-T-\\d{4,6}$",
+              "statuses": [
+                "draft",
+                "approved",
+                "done"
+              ],
+              "person": [
+                [
+                  "draft",
+                  "approved"
+                ]
+              ],
+              "agent": [
+                [
+                  "approved",
+                  "done"
+                ]
+              ],
+              "stamp": {
+                "approved": "approved"
+              },
+              "task_field": "task"
+            },
+            {
+              "kind": "bugs",
+              "path": null,
+              "file": "work/bugs.md",
+              "id": null,
+              "statuses": [],
+              "person": [],
+              "agent": [],
+              "stamp": {},
+              "task_field": null
+            }
+          ],
+          "protected": [
+            "work/protocols/**"
+          ]
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.pack/1",
+          "id": "workflow",
+          "version": "1.2.0",
+          "needs": {
+            "claude_code": "2.1.294"
+          },
+          "block": "block.md",
+          "files": [
+            {
+              "path": "work/protocols/session-start.md",
+              "from": "session-start.md",
+              "kind": "pack"
+            },
+            {
+              "path": "work/tools/greet.sh",
+              "from": "greet.sh",
+              "kind": "pack"
+            }
+          ],
+          "hooks": [
+            {
+              "event": "SessionStart",
+              "matcher": "startup",
+              "command": "sh work/tools/greet.sh",
+              "runs": [
+                "work/tools/greet.sh"
+              ],
+              "why": "Prints the project's greeting when a session starts; it blocks nothing."
+            }
+          ],
+          "deny": [
+            {
+              "rule": "Read(.env)",
+              "why": "Agents cannot read the project's .env file."
+            }
+          ],
+          "documents": [
+            {
+              "kind": "plan",
+              "path": "work/plans",
+              "file": null,
+              "id": "^P-T-\\d{4,6}$",
+              "statuses": [
+                "draft",
+                "approved",
+                "done"
+              ],
+              "person": [
+                [
+                  "draft",
+                  "approved"
+                ]
+              ],
+              "agent": [
+                [
+                  "approved",
+                  "done"
+                ]
+              ],
+              "stamp": {
+                "approved": "approved"
+              },
+              "task_field": "task"
+            },
+            {
+              "kind": "bugs",
+              "path": null,
+              "file": "work/bugs.md",
+              "id": null,
+              "statuses": [],
+              "person": [],
+              "agent": [],
+              "stamp": {},
+              "task_field": null
+            }
+          ],
+          "protected": [
+            "work/protocols/**"
+          ]
+        }
+      }
+    },
+    {
       "path": "examples/run.md",
       "rule": "example",
       "settled_by": "rule",
@@ -246,6 +450,24 @@
             "5d6e7f8"
           ],
           "labels": {}
+        }
+      }
+    },
+    {
+      "path": "examples/sessions.md",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.sessions/1: its format-1 value is the frontmatter, the fields of examples/sessions.json before what a reader reads from the body (formats/README.md), which schemas/sessions.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.sessions/1"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.sessions/1"
         }
       }
     },
@@ -353,6 +575,272 @@
             "workflow.owner": "builder",
             "workflow.model": "sonnet",
             "workflow.estimate_h": 2.5
+          }
+        }
+      }
+    },
+    {
+      "path": "examples/tasks.md",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.tasks/1: its format-1 value is the frontmatter, the fields of examples/tasks.json before what a reader reads from the body (formats/README.md), which schemas/tasks.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.tasks/1"
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.tasks/1"
+        }
+      }
+    },
+    {
+      "path": "examples/workspace.yaml",
+      "rule": "example",
+      "settled_by": "rule",
+      "about": "The example for bonsai.workspace/1: its format-1 value is examples/workspace.json, which schemas/workspace.schema.json validates.",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.workspace/1",
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "packs": [
+            {
+              "id": "base",
+              "source": "https://example.com/packs/bonsai.git",
+              "path": "packs/base",
+              "ref": "base-v1.0.0"
+            },
+            {
+              "id": "workflow",
+              "source": "https://example.com/packs/workflow.git",
+              "path": null,
+              "ref": "v1.2.0"
+            }
+          ],
+          "documents": {
+            "task": "work/tasks",
+            "run": "work/runs",
+            "answers": "work/answers.md",
+            "memory": "work/memory",
+            "protocols": "work/protocols",
+            "plan": "work/plans"
+          },
+          "protected": [
+            ".claude/**",
+            "bonsai.yaml",
+            ".bonsai/lock.json",
+            "work/protocols/**",
+            ".github/**"
+          ],
+          "person_only": [
+            ".claude/**",
+            "bonsai.yaml",
+            ".bonsai/lock.json",
+            "work/protocols/**",
+            ".github/**"
+          ],
+          "never_edit": [
+            "work/ledger.json"
+          ],
+          "ladder_floor": [
+            0,
+            1,
+            2
+          ],
+          "ladder": [
+            {
+              "rung": 0,
+              "name": "guard",
+              "kind": "guard",
+              "command": null,
+              "required": true,
+              "timeout_s": null,
+              "ratchet": null,
+              "capture": null,
+              "means": "The diff stays inside the task's grants.",
+              "tests": null,
+              "base_setup": null
+            },
+            {
+              "rung": 1,
+              "name": "unit tests",
+              "kind": "command",
+              "command": "go test ./...",
+              "required": true,
+              "timeout_s": 600,
+              "ratchet": "tests",
+              "capture": {
+                "tests": "ok ([0-9]+) tests"
+              },
+              "means": "Every unit test passes.",
+              "tests": null,
+              "base_setup": null
+            },
+            {
+              "rung": 2,
+              "name": "build",
+              "kind": "command",
+              "command": "go build ./...",
+              "required": false,
+              "timeout_s": null,
+              "ratchet": null,
+              "capture": null,
+              "means": null,
+              "tests": null,
+              "base_setup": null
+            }
+          ],
+          "ratchets": {
+            "tests": 120
+          },
+          "ci_marked_tests": [],
+          "generated": {
+            "log": {
+              "keep_days": 30,
+              "keep_newest": null
+            },
+            "asks": {
+              "keep_days": null,
+              "keep_newest": null
+            },
+            "ladder": {
+              "keep_days": 7,
+              "keep_newest": null
+            },
+            "run": {
+              "keep_days": null,
+              "keep_newest": null
+            },
+            "sessions": {
+              "keep_days": null,
+              "keep_newest": null
+            }
+          }
+        }
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.workspace/1",
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "packs": [
+            {
+              "id": "base",
+              "source": "https://example.com/packs/bonsai.git",
+              "path": "packs/base",
+              "ref": "base-v1.0.0"
+            },
+            {
+              "id": "workflow",
+              "source": "https://example.com/packs/workflow.git",
+              "path": null,
+              "ref": "v1.2.0"
+            }
+          ],
+          "documents": {
+            "task": "work/tasks",
+            "run": "work/runs",
+            "answers": "work/answers.md",
+            "memory": "work/memory",
+            "protocols": "work/protocols",
+            "plan": "work/plans"
+          },
+          "protected": [
+            ".claude/**",
+            "bonsai.yaml",
+            ".bonsai/lock.json",
+            "work/protocols/**",
+            ".github/**"
+          ],
+          "person_only": [
+            ".claude/**",
+            "bonsai.yaml",
+            ".bonsai/lock.json",
+            "work/protocols/**",
+            ".github/**"
+          ],
+          "never_edit": [
+            "work/ledger.json"
+          ],
+          "ladder_floor": [
+            0,
+            1,
+            2
+          ],
+          "ladder": [
+            {
+              "rung": 0,
+              "name": "guard",
+              "kind": "guard",
+              "command": null,
+              "required": true,
+              "timeout_s": null,
+              "ratchet": null,
+              "capture": null,
+              "means": "The diff stays inside the task's grants.",
+              "tests": null,
+              "base_setup": null
+            },
+            {
+              "rung": 1,
+              "name": "unit tests",
+              "kind": "command",
+              "command": "go test ./...",
+              "required": true,
+              "timeout_s": 600,
+              "ratchet": "tests",
+              "capture": {
+                "tests": "ok ([0-9]+) tests"
+              },
+              "means": "Every unit test passes.",
+              "tests": null,
+              "base_setup": null
+            },
+            {
+              "rung": 2,
+              "name": "build",
+              "kind": "command",
+              "command": "go build ./...",
+              "required": false,
+              "timeout_s": null,
+              "ratchet": null,
+              "capture": null,
+              "means": null,
+              "tests": null,
+              "base_setup": null
+            }
+          ],
+          "ratchets": {
+            "tests": 120
+          },
+          "ci_marked_tests": [],
+          "generated": {
+            "log": {
+              "keep_days": 30,
+              "keep_newest": null
+            },
+            "asks": {
+              "keep_days": null,
+              "keep_newest": null
+            },
+            "ladder": {
+              "keep_days": 7,
+              "keep_newest": null
+            },
+            "run": {
+              "keep_days": null,
+              "keep_newest": null
+            },
+            "sessions": {
+              "keep_days": null,
+              "keep_newest": null
+            }
           }
         }
       }
@@ -625,6 +1113,29 @@
           "format": "bonsai.lanes/1",
           "text": "First line.\n  A deeper line keeps its extra spaces.\n\nAfter an empty line.\n",
           "after": "here"
+        }
+      }
+    },
+    {
+      "path": "trick/yaml-1/block-sequence-comment-item/case.yaml",
+      "rule": "block-sequence",
+      "settled_by": "libraries",
+      "about": "A sequence item whose - and one space are followed by a comment takes the deeper block sequence below as its value, as a key with nothing after its colon does; both libraries read a list in a list (format 0 reads the item as null and refuses the deeper line).",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 5: unexpected indentation"
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [],
+          "groups": [
+            [
+              "light",
+              "full"
+            ]
+          ]
         }
       }
     },
@@ -946,6 +1457,23 @@
       }
     },
     {
+      "path": "trick/yaml-1/dispatch-tab-quoted/case.yaml",
+      "rule": "dispatch-tab",
+      "settled_by": "rule",
+      "about": "A quoted \"format\": key and a tab is the file's first key, as its plain form is and as format 0's reader reads it, so the file is format 1, which refuses the quoted key at its first character (format 0 reads it as format).",
+      "format0": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": []
+        }
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "key-quoted"
+      }
+    },
+    {
       "path": "trick/yaml-1/dispatch-tab/case.yaml",
       "rule": "dispatch-tab",
       "settled_by": "libraries",
@@ -1081,6 +1609,24 @@
       "format1": {
         "outcome": "refused",
         "reason": "line-not-read"
+      }
+    },
+    {
+      "path": "trick/yaml-1/flow-empty-space/case.yaml",
+      "rule": "flow-empty",
+      "settled_by": "libraries",
+      "about": "[ ] and { } with a space inside are an empty list and an empty map: no item, and a flow mapping with no content, which contract §2.4 does not refuse; both libraries read them so (format 0 refuses the { }).",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 3: flow mappings are not supported: { }"
+      },
+      "format1": {
+        "outcome": "accepted",
+        "value": {
+          "format": "bonsai.lanes/1",
+          "lanes": [],
+          "notes": {}
+        }
       }
     },
     {
@@ -1732,6 +2278,20 @@
       "format1": {
         "outcome": "refused",
         "reason": "key-form"
+      }
+    },
+    {
+      "path": "trick/yaml-1/lines-cr/case.yaml",
+      "rule": "lines-cr",
+      "settled_by": "rule",
+      "about": "Lines ending in a CR alone: format 1 reads only LF and CRLF as line endings (contract §2.4), so the file is one line whose value holds the next key, refused: quote this value; the refusal names the line endings (a YAML 1.1 library reads the lines, a YAML 1.2 one refuses the file).",
+      "format0": {
+        "outcome": "refused",
+        "message": "YAML line 1: cannot parse as \"key: value\": format: bonsai.lanes/1\rlanes: []"
+      },
+      "format1": {
+        "outcome": "refused",
+        "reason": "quote-this-value"
       }
     },
     {

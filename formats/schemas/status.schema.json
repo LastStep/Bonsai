@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.status/1",
-  "description": "bonsai status --json (contract §12): one workspace at a glance, for the studio's bridge, Bonsai's own screens and an assistant. Printed, never stored. Written by bonsai status --json (cheap and offline; --full adds checks); read by the studio's bridge, Bonsai's screens and agents. Spec §16 row 24's additions arrive as values, not new fields: a pack not installed on this machine is a needs entry of kind plugin, the Claude Code floor a needs entry of kind tool (never a problem, warn only), plugin drift and a bonsai on the PATH that is not the installed one are problems; --line prints the statusline's workspace half instead of this document. A writer writes every field below, in this order (contract §2.2); when Bonsai cannot read the workspace at all it exits 3 and fills format, bonsai and problems, with every other field null. Absolute paths appear only here, printed locally, and the bridge never forwards them (contract §2.6). A reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "description": "bonsai status --json (contract §12): one workspace at a glance, for the studio's bridge and an assistant (Bonsai has no screens of its own: every visual is the studio's). Printed, never stored. Written by bonsai status --json (cheap and offline; --full adds checks); read by the studio's bridge and agents. Spec §16 row 24's additions arrive as values, not new fields: a pack not installed on this machine is a needs entry of kind plugin, the Claude Code floor a needs entry of kind tool (never a problem, warn only), plugin drift and a bonsai on the PATH that is not the installed one are problems; --line prints the statusline's workspace half instead of this document. A writer writes every field below, in this order (contract §2.2); when Bonsai cannot read the workspace at all it exits 3 and fills format, bonsai, problems and error, with every other field null. Absolute paths appear only here, printed locally, and the bridge never forwards them (contract §2.6). A reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
   "type": "object",
   "required": [
     "format",
@@ -22,7 +22,8 @@
     "active_task",
     "needs",
     "problems",
-    "checks"
+    "checks",
+    "error"
   ],
   "properties": {
     "format": {
@@ -837,6 +838,82 @@
         "object",
         "null"
       ]
+    },
+    "error": {
+      "description": "null unless the command refuses or fails: on exit 3 (Bonsai cannot read the workspace at all) it says what went wrong and the next step, as bonsai.error has it (spec §3, §16 row 29).",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
     }
   }
 }

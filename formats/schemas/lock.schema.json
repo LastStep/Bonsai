@@ -26,7 +26,7 @@
       "type": "string"
     },
     "packs": {
-      "description": "Each pack in bonsai.yaml's order: its source, version, resolved commit, content hash, and what it declares.",
+      "description": "Each pack in bonsai.yaml's order: its source, version, resolved commit, content hash, what it declares, and its folder in its repository.",
       "examples": [
         [
           {
@@ -35,7 +35,8 @@
             "version": "1.0.0",
             "commit": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4",
             "sha256": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-            "declares": {}
+            "declares": {},
+            "path": "packs/base"
           }
         ]
       ],
@@ -48,7 +49,8 @@
           "version",
           "commit",
           "sha256",
-          "declares"
+          "declares",
+          "path"
         ],
         "properties": {
           "id": {
@@ -105,6 +107,18 @@
               }
             ],
             "type": "object"
+          },
+          "path": {
+            "description": "The pack's folder inside its repository, as bonsai.yaml names it (forward slashes, no leading slash); null when the pack is the repository's root. Added in formats set 4, an addition: a lock written before has none, which a reader reads as null. With it, update sees a pack's folder change in bonsai.yaml itself, rather than only through content hashes, which miss file modes and submodules (step 5.1.1's verifier).",
+            "examples": [
+              "packs/base",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
           }
         }
       }

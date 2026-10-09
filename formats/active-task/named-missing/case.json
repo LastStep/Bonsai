@@ -1,0 +1,9 @@
+{
+  "about": "--task and BONSAI_TASK name a task no file holds: there is none, and it never falls through to the task reading running.",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": "T-0999",
+  "env": "T-0999",
+  "does_not_parse": []
+}

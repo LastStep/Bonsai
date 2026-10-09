@@ -1,0 +1,33 @@
+format: bonsai.workspace/1   # fields: bonsai check --schema bonsai.workspace
+id: ws-7kq2m4xw5r3t6y2u7p4a5c3e2b
+name: example
+packs: []
+documents:
+  task: work/tasks
+  run: work/runs
+  answers: work/answers.md
+  memory: work/memory
+  protocols: work/protocols
+protected: [".claude/**", "bonsai.yaml", ".bonsai/lock.json", "assets/**"]
+person_only: [".claude/**", "bonsai.yaml", ".bonsai/lock.json"]
+never_edit: []
+ladder_floor: [0]
+ladder: []
+ratchets: {}
+ci_marked_tests: []
+generated:
+  log:
+    keep_days: 30
+    keep_newest: null
+  asks:
+    keep_days: null
+    keep_newest: null
+  ladder:
+    keep_days: 7
+    keep_newest: null
+  run:
+    keep_days: null
+    keep_newest: null
+  sessions:
+    keep_days: null
+    keep_newest: null

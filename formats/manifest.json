@@ -1,14 +1,282 @@
 {
   "about": "The formats set's manifest: the set version and the SHA-256 of every file's raw bytes in formats/, all but this file and the Go files, sorted by path. Every field is described in README.md.",
-  "set": 3,
+  "set": 4,
   "files": [
     {
       "path": "README.md",
-      "sha256": "ac4a1fba413b1b5a28805c8620ebadecae10171fa4ad8a65eb77f3921a891635"
+      "sha256": "539ff28f4ba35d585e6b9b5d0d6b692a3fa45a3e2fb14c8251f83360694e778a"
+    },
+    {
+      "path": "active-task/answers.json",
+      "sha256": "9e7b40fc71e8fbe0a6bc4e17ed984a0e3c2491e901757b5cde447434b0908d2c"
+    },
+    {
+      "path": "active-task/broken-beside-running/case.json",
+      "sha256": "2adc405fbd55a648cf97dbbda0f3553da8d14f643238a1817ac9f21714717631"
+    },
+    {
+      "path": "active-task/broken-beside-running/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/broken-beside-running/main/work/tasks/T-0901-running.md",
+      "sha256": "6724823e46cd220262261aa3926c412be47ffc0559242428425e5316a4358a33"
+    },
+    {
+      "path": "active-task/broken-beside-running/main/work/tasks/T-0903-broken.md",
+      "sha256": "602030f865c178ed985e19b93ef6ea196b4a89d6619d73c4288533d33c5ac0bd"
+    },
+    {
+      "path": "active-task/env-other-project/case.json",
+      "sha256": "6fd138a9754cb0bd67f8248f89d7f38aecef7a8d8745aede43f1145eb8a602e9"
+    },
+    {
+      "path": "active-task/env-other-project/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/env-other-project/main/work/tasks/T-0901-session.md",
+      "sha256": "34ddf23058e93c3306c49a4ddf4374713eeb1b9637f35c204bf0579246988de8"
+    },
+    {
+      "path": "active-task/env-other-project/other/bonsai.yaml",
+      "sha256": "4625866c202f49c921bec028fa6858aaa9a13b2e0b62b5c37a43e28a500bb15f"
+    },
+    {
+      "path": "active-task/env-other-project/other/work/tasks/T-0950-other.md",
+      "sha256": "d1e5bd9a1bc57fe9ac315206abf8a76ddcad7ad851b75d917b19ac139c4b2004"
+    },
+    {
+      "path": "active-task/format0-running/case.json",
+      "sha256": "fa8fbcbff1ca09e85cb9b919304077a82b694c685dfbebc3f0b6f03b74622a44"
+    },
+    {
+      "path": "active-task/format0-running/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/format0-running/main/work/tasks/T-0901-format0.md",
+      "sha256": "4e76ad16b97194e5dbb0a45afa06efa978c4a127807181f9177e6d2fed09ce0e"
+    },
+    {
+      "path": "active-task/format0-running/main/work/tasks/T-0902-todo.md",
+      "sha256": "e4ea6d6aba98c7bd35902d229ea9b48334ad58f894e1e2f5093ff1188dd0c966"
+    },
+    {
+      "path": "active-task/named-differ/case.json",
+      "sha256": "7b0964ffc8e28213529bb9310320cb662f8250e0b3281655e5b6e6a185e89fa5"
+    },
+    {
+      "path": "active-task/named-differ/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/named-differ/main/work/tasks/T-0901-flag.md",
+      "sha256": "fa75bf18907980896e89f2f9e8bcebcd5f9382795717527faad5098aea1f45b1"
+    },
+    {
+      "path": "active-task/named-differ/main/work/tasks/T-0902-env.md",
+      "sha256": "3ab68ca7e21ab2af1ab64cd4777dd111ce857441f2168e6eeb57a30e2f43e431"
+    },
+    {
+      "path": "active-task/named-duplicate/case.json",
+      "sha256": "3c67d49e90c5b319bb3bc5c07f8a346b2b265c00cfb4507b1de981f7beadd3ca"
+    },
+    {
+      "path": "active-task/named-duplicate/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/named-duplicate/main/work/tasks/T-0901-first.md",
+      "sha256": "026cbcde1679f03028cdafbbb3358e173afeac20dd2a27815b345dbed4024d91"
+    },
+    {
+      "path": "active-task/named-duplicate/main/work/tasks/T-0901-second.md",
+      "sha256": "4758af7082f7178db1a2d746cd9f57cb9ec156fe0939eb91b774746a2a505a22"
+    },
+    {
+      "path": "active-task/named-env/case.json",
+      "sha256": "d9f1b5d82aa8d07176a904b9c3656fbc612c1601a78b36681aebc314a54bbbc2"
+    },
+    {
+      "path": "active-task/named-env/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/named-env/main/work/tasks/T-0901-named.md",
+      "sha256": "7db6a3c3d8cb916ef553911d62379b5b48191de30f7e5ea684c69710cdefcf79"
+    },
+    {
+      "path": "active-task/named-env/main/work/tasks/T-0902-todo.md",
+      "sha256": "e4ea6d6aba98c7bd35902d229ea9b48334ad58f894e1e2f5093ff1188dd0c966"
+    },
+    {
+      "path": "active-task/named-missing/case.json",
+      "sha256": "202c8d2f1387dd0f1202d57e6c5364f717a847317d962d4dd65c7369335536c5"
+    },
+    {
+      "path": "active-task/named-missing/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/named-missing/main/work/tasks/T-0901-running.md",
+      "sha256": "2f944cfd4f0499b23a7f58d8d8faaac694e3631a23fa5dd42909c422e1f69a69"
+    },
+    {
+      "path": "active-task/named-verify/case.json",
+      "sha256": "e53fe020b4fa4640264349be02f0f25e24f9e533e3bde18b9108aa8e5171ddbf"
+    },
+    {
+      "path": "active-task/named-verify/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/named-verify/main/work/tasks/T-0901-verify.md",
+      "sha256": "1250dd1c1e4e0c7f68a7d347352b87d3fcb627ecb89f0c4294b8fdfe99ff8ef8"
+    },
+    {
+      "path": "active-task/named/case.json",
+      "sha256": "9c14943e8603fdd00f148270a514e13ca7136016e0ea542809ab9b685bde69a2"
+    },
+    {
+      "path": "active-task/named/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/named/main/work/tasks/T-0901-named.md",
+      "sha256": "cca2e491b8765e2e7f2010f754339ddbb617843307ecdea11b4f0193abc7577e"
+    },
+    {
+      "path": "active-task/named/main/work/tasks/T-0902-also-running.md",
+      "sha256": "34955e64e1b6bfdc9c7bac5847e89533b9ec94c82901fe4592c417c3f2ec82a5"
+    },
+    {
+      "path": "active-task/none-running/case.json",
+      "sha256": "b658098a26e6970f50df58e4657d466e8e7f6b2b9e7e6d55d9d7b5d8972aaebe"
+    },
+    {
+      "path": "active-task/none-running/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/none-running/main/work/tasks/T-0901-todo.md",
+      "sha256": "62dfbfc402345c4f47cbe4f2afc55d9d18de5fb50c38d0ce9298c3a941532380"
+    },
+    {
+      "path": "active-task/none-running/main/work/tasks/T-0902-done.md",
+      "sha256": "d2c755764e7486891b7e1a2d69ecf38ee08c7a7111b53efb3b21549b06e3458a"
+    },
+    {
+      "path": "active-task/one-running/case.json",
+      "sha256": "cdad273151e5735db043475d25f4640f10e2645d877c3cd792addf08566f8e15"
+    },
+    {
+      "path": "active-task/one-running/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/one-running/main/work/tasks/T-0901-running.md",
+      "sha256": "6724823e46cd220262261aa3926c412be47ffc0559242428425e5316a4358a33"
+    },
+    {
+      "path": "active-task/one-running/main/work/tasks/T-0902-todo.md",
+      "sha256": "e4ea6d6aba98c7bd35902d229ea9b48334ad58f894e1e2f5093ff1188dd0c966"
+    },
+    {
+      "path": "active-task/stop-gate-named-broken/case.json",
+      "sha256": "c0ca91f94c42edf436c0cce24c11d371045588cbdf60960a37dc89ed024b5c8a"
+    },
+    {
+      "path": "active-task/stop-gate-named-broken/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/stop-gate-named-broken/main/work/tasks/T-0901-broken.md",
+      "sha256": "7a57d344936b725e9a2d64faab2ddac23b1d1a35e6545559f20cfb981e3867bc"
+    },
+    {
+      "path": "active-task/stop-gate-named-broken/main/work/tasks/T-0902-todo.md",
+      "sha256": "e4ea6d6aba98c7bd35902d229ea9b48334ad58f894e1e2f5093ff1188dd0c966"
+    },
+    {
+      "path": "active-task/stop-gate-nothing-named/case.json",
+      "sha256": "dbbed79f22429d1a5172d5585abc226eb99c4a92e009798480c20d90441d17cf"
+    },
+    {
+      "path": "active-task/stop-gate-nothing-named/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/stop-gate-nothing-named/main/work/tasks/T-0901-todo.md",
+      "sha256": "62dfbfc402345c4f47cbe4f2afc55d9d18de5fb50c38d0ce9298c3a941532380"
+    },
+    {
+      "path": "active-task/two-running/case.json",
+      "sha256": "709f27a601a1f5db83d2e59a12bf95ecb8594ea17c5b5f764d9e877eb811b711"
+    },
+    {
+      "path": "active-task/two-running/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/two-running/main/work/tasks/T-0901-first.md",
+      "sha256": "8b1401eafc91472882fd07743e43ce93769f81ad4abdec0d7bf74491ec4e72ac"
+    },
+    {
+      "path": "active-task/two-running/main/work/tasks/T-0902-second.md",
+      "sha256": "34955e64e1b6bfdc9c7bac5847e89533b9ec94c82901fe4592c417c3f2ec82a5"
+    },
+    {
+      "path": "active-task/worktree-ladder-from-main/case.json",
+      "sha256": "1de91c1bd4aea210ef38cae56756b8c2f55975e206f7c7250b776ce189dbcc7a"
+    },
+    {
+      "path": "active-task/worktree-ladder-from-main/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/worktree-ladder-from-main/main/work/tasks/T-0901-running.md",
+      "sha256": "73a4d7cf4808846af35856865edce2f8f0ea8666015d9156bf95f3e1805dda66"
+    },
+    {
+      "path": "active-task/worktree-task-from-main/case.json",
+      "sha256": "1894292be289a28d9bbd343179976dba98bde9e053d36042033deb9fd4de0a98"
+    },
+    {
+      "path": "active-task/worktree-task-from-main/main/bonsai.yaml",
+      "sha256": "6037974c57caf5cc6e6ea254b6b21ff9b7738ce12abcff9aab592b6958eabc3c"
+    },
+    {
+      "path": "active-task/worktree-task-from-main/main/work/tasks/T-0901-main-running.md",
+      "sha256": "fde3f9b97d8d35d530958485e42860a6c000182752e7bc3f1a35667ac52359dd"
+    },
+    {
+      "path": "active-task/worktree-task-from-main/main/work/tasks/T-0902-main-todo.md",
+      "sha256": "08d8e17140b8bfb212b8e5ce8a34d238d2edd9680eb802e778fa075f21a9cdfe"
+    },
+    {
+      "path": "active-task/worktree-task-from-main/worktree/work/tasks/T-0901-main-running.md",
+      "sha256": "378c3a8739ef3fa1c9cc4e79578b8207ea96b020320850f10ed7ea87626c431d"
+    },
+    {
+      "path": "active-task/worktree-task-from-main/worktree/work/tasks/T-0902-main-todo.md",
+      "sha256": "7992ef649d7a58e52a1cd38885a466d92ac5e34f39e75bbff4757f7c5cc120d9"
     },
     {
       "path": "examples/ask.json",
       "sha256": "a7bb5d81189da75d046d2532513b3128342cddd0791b32915c18056c237b9c0d"
+    },
+    {
+      "path": "examples/changes.json",
+      "sha256": "e7fc0bc06cc46f8fbc46f678f783c8ae4cfd97abdff828ee9dde25e867033bf1"
+    },
+    {
+      "path": "examples/check.json",
+      "sha256": "79d1736738bbf45823f45a5c77dfee8c2b71d1f937377a0a31ac16045e352209"
+    },
+    {
+      "path": "examples/error.json",
+      "sha256": "bc47363bfc7cb891644957e7776d5b7096890408d2f3e4cf373cf46b4f9d9bec"
     },
     {
       "path": "examples/labels.json",
@@ -32,11 +300,27 @@
     },
     {
       "path": "examples/lock.json",
-      "sha256": "74d464243da3e4f870b3f1fcffc6515382b7a85c237160ce58813aad6e371f77"
+      "sha256": "2a4f343c0694075af338bea1122f0339b58959a182509045a4e7af99f274308d"
     },
     {
       "path": "examples/log.json",
       "sha256": "f8a55df5e12861da595a18dfe41525d9bfccdf15bab61a6bf90c7c404304e520"
+    },
+    {
+      "path": "examples/memory.json",
+      "sha256": "a11fa413420da1ce351ce6e1f4d28260b08ffcc38dbe7ceb78c096e7151fbdde"
+    },
+    {
+      "path": "examples/memory.md",
+      "sha256": "c099be015d086560db34562eec623e099ef4170582e2b1c801ebb02182e6c7b0"
+    },
+    {
+      "path": "examples/pack.json",
+      "sha256": "d30e7e1b7bbac48af311dc00e6a906953638d90bc5291ce2722b55abbf77c673"
+    },
+    {
+      "path": "examples/pack.yaml",
+      "sha256": "fa1775ec001a2ee7d72108419552f0b5b052d9092d8119deda756820f17862c8"
     },
     {
       "path": "examples/run.json",
@@ -45,6 +329,14 @@
     {
       "path": "examples/run.md",
       "sha256": "a8fd6eaf8944ba7b2ca7d7b15f2725a44b7e0c267cafa15d43db8ff8e1f688c5"
+    },
+    {
+      "path": "examples/sessions.json",
+      "sha256": "610e6670fe6b5681db50dabd6693f3f3c284dbb8067fa3a6b107076cbbad39b7"
+    },
+    {
+      "path": "examples/sessions.md",
+      "sha256": "7443dcae8b81b4af48da933138dc700af16ffeadf67760a3ab2e953ebb8c2922"
     },
     {
       "path": "examples/state.json",
@@ -56,7 +348,7 @@
     },
     {
       "path": "examples/status.json",
-      "sha256": "112e2ec241dd0e19ec2601d5146d1a1d42586e31c88ac750ca0fbb987d28c0d3"
+      "sha256": "a571bd662ea77f4549fe76d6234248a20535692a27c3073a9554fd7f29d85da6"
     },
     {
       "path": "examples/task.json",
@@ -67,12 +359,40 @@
       "sha256": "1c1e480ccd51f597c4af22af503dcda86063b816ffb4259ae21a97cc56b03fd6"
     },
     {
+      "path": "examples/tasks.json",
+      "sha256": "fb1a35c27e363575e0e6c4a87112a2cf6020b2166ad595bed8e5e07061e7b73a"
+    },
+    {
+      "path": "examples/tasks.md",
+      "sha256": "a150e1055dafbabba320d954ad9e218ca1420bd7843a4e7fc51d94054f554331"
+    },
+    {
+      "path": "examples/workspace.json",
+      "sha256": "41222969d63fc45214fdd9dc1075e230c29b507e28feb27881772c2bfe6aa2e9"
+    },
+    {
+      "path": "examples/workspace.yaml",
+      "sha256": "60b12feaa69d2c64106272c46975509aeac16b4ab12b847f37d70a90c8228cbb"
+    },
+    {
       "path": "expect.json",
-      "sha256": "afa8c7c4208d606bef82734bb1896e1e65f2ef927e0b42b13c0007fe1b3d6680"
+      "sha256": "46e5e3347721e5946d4b79d51a611f381ca7f4d5d4631bea0ae0edc33d129525"
     },
     {
       "path": "schemas/ask.schema.json",
       "sha256": "e8d5c588c3b5a67c96bf05cca048951e652ab3bbed80a552f8cc4ebff6f7100b"
+    },
+    {
+      "path": "schemas/changes.schema.json",
+      "sha256": "963e1a4d5971717f8a1c899b08b7b572330189bab74a6fcb828687d814e5a15e"
+    },
+    {
+      "path": "schemas/check.schema.json",
+      "sha256": "cf1f5af332669e0f606e76c9b121043239332b5f54f457375d78c4b381da3497"
+    },
+    {
+      "path": "schemas/error.schema.json",
+      "sha256": "d86885a209c7ae7b27e030b5bb1b728022211e3cda3fe89f4b6ce7b69ea9dd01"
     },
     {
       "path": "schemas/labels.schema.json",
@@ -88,15 +408,27 @@
     },
     {
       "path": "schemas/lock.schema.json",
-      "sha256": "dba34973d00a3953693923ba874ebc9319f7cb1f1aa1a9cef070fcaf988d5c8f"
+      "sha256": "fc83fe75faef9649879e3ccc244c6e14b508b9ecb206e0f6952a8d728eaa2c32"
     },
     {
       "path": "schemas/log.schema.json",
-      "sha256": "bee39c69b3758d7bdf64bda5f851291694055a59814bda3620c55ccbdca86bfe"
+      "sha256": "aa40e2c7d799ebbaf6d64b2db5915908a7e4d39d16c9b950662e33e9e2721dae"
+    },
+    {
+      "path": "schemas/memory.schema.json",
+      "sha256": "960bd597fedadf0613501b93971c998225a7fa2b13c61bc3afe4f62d8ec3ecef"
+    },
+    {
+      "path": "schemas/pack.schema.json",
+      "sha256": "dc24d524cc059e323448160e99cc73404efb15b9724993abcf2c861f57021aea"
     },
     {
       "path": "schemas/run.schema.json",
       "sha256": "c45ff151ee013971bd8c893b1c4e279cf64a100cc54e45d882abeab818ff6071"
+    },
+    {
+      "path": "schemas/sessions.schema.json",
+      "sha256": "2afe425535f76cda28a7a89891b0b56d0032d11b33f1c9a248f7824a1bc76ae2"
     },
     {
       "path": "schemas/state.schema.json",
@@ -104,11 +436,19 @@
     },
     {
       "path": "schemas/status.schema.json",
-      "sha256": "94f9ad3c81c06c53b6820d5883d3da7495858b897cabc043e0d761a343cfdf91"
+      "sha256": "949dd265592325f82b8fb569d9835c0ace1e4423a866a33db515ba7845846aa6"
     },
     {
       "path": "schemas/task.schema.json",
       "sha256": "d7931ccb37dd44718760ffc43dd82d4501c52c4a9d42b5c5c136db0214077d39"
+    },
+    {
+      "path": "schemas/tasks.schema.json",
+      "sha256": "45a12becc5b78c4a77a6afe97b688e6f86186ca32b3f5009d457c857d3f7f1c4"
+    },
+    {
+      "path": "schemas/workspace.schema.json",
+      "sha256": "ce57b54027c1a53a35df19bbdc0f8e823c5122093448c18bfb96de1657804110"
     },
     {
       "path": "trick/yaml-0/colon-in-value/case.md",
@@ -171,6 +511,10 @@
       "sha256": "261dd37748ef896056c9d129a07e9618dd22c0a262d3e09641b33510b8b4051f"
     },
     {
+      "path": "trick/yaml-1/block-sequence-comment-item/case.yaml",
+      "sha256": "4dd33d89de51c84af8e8be7c97d479503caa15860b943c0893528fa26df0decf"
+    },
+    {
       "path": "trick/yaml-1/block-sequence/case.yaml",
       "sha256": "f37d5f75937b97a9ea03afe58d4078aa8b51807a9fae747b101923ca4063b500"
     },
@@ -227,6 +571,10 @@
       "sha256": "ab1e77463fb28e672c9575ec2f25190df2ce301000f53c1e1dea583b073f0a03"
     },
     {
+      "path": "trick/yaml-1/dispatch-tab-quoted/case.yaml",
+      "sha256": "80434212ea7c5933ec83813d2df4754af3b70016b97eb892030d232a23d3b6a4"
+    },
+    {
       "path": "trick/yaml-1/dispatch-tab/case.yaml",
       "sha256": "6b9f9a1314c42c9b9011e5aa5f6d9f4cc6d51c2f4f7720848be060ee25d42083"
     },
@@ -257,6 +605,10 @@
     {
       "path": "trick/yaml-1/every-line-read-stray-item/case.yaml",
       "sha256": "a103f5786cceeaead67e1a77a547f822b3512c805e0398a90e16b8ea388fc751"
+    },
+    {
+      "path": "trick/yaml-1/flow-empty-space/case.yaml",
+      "sha256": "ce91671042e3303c5d454f60f665828c718f58abac554a9d3edf4d020367e454"
     },
     {
       "path": "trick/yaml-1/flow-empty/case.md",
@@ -385,6 +737,10 @@
     {
       "path": "trick/yaml-1/key-uppercase/case.md",
       "sha256": "497f87d9e5505b1db4fd9fac96100c5b82cc64da5b3d4788e2f092382f6fa2df"
+    },
+    {
+      "path": "trick/yaml-1/lines-cr/case.yaml",
+      "sha256": "3265fb5dd03064e190592e496e1bd82b86069794e9264b69cb3b7e9b2e82e0c9"
     },
     {
       "path": "trick/yaml-1/lines-crlf/case.md",

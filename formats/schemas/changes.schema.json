@@ -1,0 +1,695 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.changes/1",
+  "description": "The preview or the result of bonsai init, update and unlink, as --json prints it (spec §4, §6; spec §3, §16 row 29, row 35): the packs and their commits, every file with its result, every settings line with its sentence, what runs code and needs --allow-exec, this machine's plugin step, and the error when the command refuses. Printed, never stored. Written by those commands with --json; read by agents and the studio, now that Bonsai has no screens of its own. A preview, a conflict or a refusal after the plan was made gives what the plan would do, though nothing was written: its packs, files, lock, settings lines and code as they would be. When the command stops before it has a plan, every field after result is null or [] but allow_exec and error. Absolute paths appear only in workspace.root and files[].saved, printed locally (contract §2.6). A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "command",
+    "result",
+    "workspace",
+    "packs",
+    "files",
+    "lock",
+    "settings",
+    "runs_code",
+    "own_hooks",
+    "allow_exec",
+    "left_hooks",
+    "unverified",
+    "conflicts",
+    "plugins",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.changes/1"
+      ],
+      "const": "bonsai.changes/1"
+    },
+    "command": {
+      "description": "The command that printed it, a closed list (spec §4).",
+      "examples": [
+        "update",
+        "init"
+      ],
+      "enum": [
+        "init",
+        "update",
+        "unlink"
+      ]
+    },
+    "result": {
+      "description": "What came of it, a fixed word: an open list (a reader shows a word it does not know as other), whose words today are preview (nothing written: no --yes, or no terminal to ask at; error says how to go on), applied (written), nothing (nothing to change; the plugin step may still have run), conflict (exit 5: nothing written, each conflict named; error says how to settle them), refused (exit 2, 3 or 4: nothing written; error says why: a plan that writes code without --allow-exec, or a stop before any plan) and failed (exit 3: the command stopped part-way through writing, some files written and the lock not; error says to run the same command again, which finishes the rest).",
+      "examples": [
+        "preview",
+        "applied",
+        "failed"
+      ],
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "workspace": {
+      "description": "The workspace: its id and name from bonsai.yaml (as init writes them; init --new-id: the new id), and the checkout's absolute path, forward slashes (printed locally, never stored or forwarded); null when the command stopped before reading bonsai.yaml.",
+      "examples": [
+        {
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "root": "/srv/projects/example"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "name",
+        "root"
+      ],
+      "properties": {
+        "id": {
+          "description": "The workspace id (contract §3).",
+          "examples": [
+            "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+          ],
+          "type": "string",
+          "pattern": "^ws-[a-z0-9]{26}$"
+        },
+        "name": {
+          "description": "The workspace's name (contract §3).",
+          "examples": [
+            "example"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        },
+        "root": {
+          "description": "The checkout's absolute path, forward slashes.",
+          "examples": [
+            "/srv/projects/example"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "packs": {
+      "description": "Each pack in bonsai.yaml's order, with the commit the lock held and the one it locks now; [] when the command stopped before a plan.",
+      "examples": [
+        [
+          {
+            "id": "base",
+            "source": "https://example.com/packs/bonsai.git",
+            "version": "1.0.0",
+            "from": null,
+            "to": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4"
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "version",
+          "from",
+          "to"
+        ],
+        "properties": {
+          "id": {
+            "description": "The pack's id.",
+            "examples": [
+              "base"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "source": {
+            "description": "Where it is fetched from (a git URL).",
+            "examples": [
+              "https://example.com/packs/bonsai.git"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "description": "The pack's version, from its tag.",
+            "examples": [
+              "1.0.0"
+            ],
+            "type": "string"
+          },
+          "from": {
+            "description": "The commit the lock held; null at a first link, or for a pack new to the project.",
+            "examples": [
+              "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "to": {
+            "description": "The commit the lock records after this run; null for a pack taken out (update, unlink).",
+            "examples": [
+              "1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      }
+    },
+    "files": {
+      "description": "Every file the command looked at, with its result (spec §6, How update decides), in the preview's order; [] when the command stopped before a plan.",
+      "examples": [
+        [
+          {
+            "path": "work/protocols/session-start.md",
+            "kind": "pack",
+            "pack": "base",
+            "result": "updated",
+            "why": null,
+            "saved": null
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "kind",
+          "pack",
+          "result",
+          "why",
+          "saved"
+        ],
+        "properties": {
+          "path": {
+            "description": "The file, project-relative with forward slashes.",
+            "examples": [
+              "work/protocols/session-start.md"
+            ],
+            "type": "string",
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "kind": {
+            "description": "Its kind in the lock: pack, once, block, keys or kept (bonsai.lock/1's closed list, its one home); null for Bonsai's own files outside the lock (.bonsai/.gitignore).",
+            "examples": [
+              "pack",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pack": {
+            "description": "The pack it comes from; null for none.",
+            "examples": [
+              "base",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "result": {
+            "description": "What happens to it (spec §6's table and the engine's own cases): an open list, whose words today are unchanged, updated, created, adopted, changed (edited, left alone), conflict, restored, left missing, found, kept, replaced, removed, released (left to the project) and dropped (from the lock); a reader shows a word it does not know as other.",
+            "examples": [
+              "updated",
+              "conflict"
+            ],
+            "type": "string"
+          },
+          "why": {
+            "description": "A few words on the result, for a person; null for none.",
+            "examples": [
+              "edited here, and the pack changed it too",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "saved": {
+            "description": "With --adopt: where the project's copy was saved, in the Bonsai home's cache (never in the repo), absolute with forward slashes; null otherwise.",
+            "examples": [
+              null,
+              "/srv/bonsai-home/cache/adopted/ws-7kq2m4xw5r3t6y2u7p4a5c3e2b/3f2a9c1e5b7d/work/protocols/session-start.md"
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "lock": {
+      "description": "What happens to .bonsai/lock.json, written last when it changes (or, in a preview or a refusal, would happen): written or unchanged, an open list (unlink adds its own word, step 5.1.7); null when the command stopped before a plan.",
+      "examples": [
+        "written",
+        "unchanged",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "settings": {
+      "description": "Every settings line the command adds, changes or removes (spec §6, The preview names every settings line), one entry per line, in the preview's order; [] for none.",
+      "examples": [
+        [
+          {
+            "file": ".claude/settings.json",
+            "change": "add",
+            "kind": "deny",
+            "line": "Read(.env)",
+            "was": null,
+            "why": "base: Agents cannot read the project's .env file.",
+            "runs_code": false
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "file",
+          "change",
+          "kind",
+          "line",
+          "was",
+          "why",
+          "runs_code"
+        ],
+        "properties": {
+          "file": {
+            "description": "The settings file, project-relative.",
+            "examples": [
+              ".claude/settings.json"
+            ],
+            "type": "string",
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "change": {
+            "description": "add, change or remove, a closed list.",
+            "examples": [
+              "add",
+              "change"
+            ],
+            "enum": [
+              "add",
+              "change",
+              "remove"
+            ]
+          },
+          "kind": {
+            "description": "What the line is: hook, deny, key (autoMemoryEnabled, disableAllHooks), marketplace or plugin; an open list, and a reader shows a word it does not know as other.",
+            "examples": [
+              "deny",
+              "hook"
+            ],
+            "type": "string"
+          },
+          "line": {
+            "description": "The line as the preview shows it, after the change (a removed line: as it was).",
+            "examples": [
+              "Read(.env)"
+            ],
+            "type": "string"
+          },
+          "was": {
+            "description": "For a change: the line before; null otherwise.",
+            "examples": [
+              null,
+              "SessionStart (startup): sh work/tools/greet.sh"
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "why": {
+            "description": "One plain sentence on what the line does: Bonsai's own sentence for its entries, the pack.yaml's why for a pack's hook line or deny rule.",
+            "examples": [
+              "base: Agents cannot read the project's .env file."
+            ],
+            "type": "string"
+          },
+          "runs_code": {
+            "description": "true when the line is one of runs_code's items, so it needs --allow-exec as well as --yes (a hook line added or changed that the lock had not consented to); false otherwise, Bonsai's own hook lines at a first link among them, which --yes writes (own_hooks).",
+            "examples": [
+              false,
+              true
+            ],
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "runs_code": {
+      "description": "What the command writes that runs code (spec §6, Code is consented to separately; step 5.1.1): each item needs --allow-exec as well as --yes, and without it nothing is written (result refused); [] for none.",
+      "examples": [
+        [
+          {
+            "kind": "hook",
+            "change": "add",
+            "pack": "workflow",
+            "item": "SessionStart (startup): sh work/tools/greet.sh",
+            "was": null,
+            "why": "A new hook line: Claude Code runs it on its event."
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "change",
+          "pack",
+          "item",
+          "was",
+          "why"
+        ],
+        "properties": {
+          "kind": {
+            "description": "hook (a hook line added or changed), file (a pack file a hook line runs, new or changed) or plugin (one of a plugin's own code parts: hooks, MCP or LSP servers, monitors, settings, a symbolic link or a submodule). An open list, since what counts as code widens as Claude Code adds parts; a reader shows a word it does not know as other.",
+            "examples": [
+              "hook",
+              "plugin"
+            ],
+            "type": "string"
+          },
+          "change": {
+            "description": "add, change or remove (remove: a file of a plugin that still carries code), a closed list.",
+            "examples": [
+              "add",
+              "change"
+            ],
+            "enum": [
+              "add",
+              "change",
+              "remove"
+            ]
+          },
+          "pack": {
+            "description": "The pack it comes from; bonsai for Bonsai's own hook line.",
+            "examples": [
+              "workflow",
+              "bonsai"
+            ],
+            "type": "string"
+          },
+          "item": {
+            "description": "The hook line as the preview shows it, the file's path in the project, or the part's path in the plugin.",
+            "examples": [
+              "SessionStart (startup): sh work/tools/greet.sh",
+              "hooks/hooks.json"
+            ],
+            "type": "string"
+          },
+          "was": {
+            "description": "For a changed hook line: the line before; null otherwise.",
+            "examples": [
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "why": {
+            "description": "Why it is code, for a person.",
+            "examples": [
+              "A new hook line: Claude Code runs it on its event."
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "own_hooks": {
+      "description": "At a first link: Bonsai's own hook lines the command adds, as the preview shows them, written with --yes, since linking the project is the person's consent to them (step 5.1.1); [] otherwise. Each is also a settings line, with runs_code false.",
+      "examples": [
+        [
+          "PreToolUse (Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell): bonsai hook guard || exit 2"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "allow_exec": {
+      "description": "Whether the command was given --allow-exec.",
+      "examples": [
+        false,
+        true
+      ],
+      "type": "boolean"
+    },
+    "left_hooks": {
+      "description": "Hook lines left in place as the project's own: at a link again with the lock missing, or for an unverified pack, Bonsai cannot tell them from its own, so it leaves them for a person to take out any not wanted; [] for none.",
+      "examples": [
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unverified": {
+      "description": "The locked packs whose lock does not match their commit read at bonsai.yaml's folder (a folder changed in bonsai.yaml, a lock edited by hand): their hook lines and plugin count as at a first link; [] for none.",
+      "examples": [
+        [],
+        [
+          "workflow"
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "conflicts": {
+      "description": "The files in conflict (edited here, and the pack changed them too): nothing is written until each is settled with --keep or --adopt; [] for none.",
+      "examples": [
+        [],
+        [
+          "work/protocols/session-start.md"
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[^/\\\\:][^\\\\:]*$"
+      }
+    },
+    "plugins": {
+      "description": "This machine's plugin step (spec §5, This machine's install follows the lock): after the files are written, or when there is nothing to change, each locked pack's plugin as Claude Code was asked to install it, at project scope; [] when the step did not run. Its results never change the exit code.",
+      "examples": [
+        [
+          {
+            "pack": "workflow",
+            "plugin": "workflow@bonsai-example-1a2b3c4d",
+            "commit": "1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5",
+            "result": "waiting",
+            "message": "the plugin carries code Claude Code runs on its own (hooks/), so Bonsai installs it on this machine only with --allow-exec",
+            "next": {
+              "do": "if you consent to that code running on this machine, run: bonsai update --allow-exec",
+              "who": "person"
+            }
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "pack",
+          "plugin",
+          "commit",
+          "result",
+          "message",
+          "next"
+        ],
+        "properties": {
+          "pack": {
+            "description": "The pack's id.",
+            "examples": [
+              "workflow"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "plugin": {
+            "description": "The plugin as Claude Code names it: <pack>@<the workspace's marketplace> (spec §5).",
+            "examples": [
+              "workflow@bonsai-example-1a2b3c4d"
+            ],
+            "type": "string"
+          },
+          "commit": {
+            "description": "The locked commit it is installed at.",
+            "examples": [
+              "1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5"
+            ],
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "result": {
+            "description": "What came of it: installed; waiting (a plugin that carries code, on a machine without --allow-exec; or Claude Code has not yet registered the workspace's marketplace, which a person's first session in the trusted folder does); failed; skipped (Claude Code is not on the PATH). An open list: a reader shows a word it does not know as other.",
+            "examples": [
+              "installed",
+              "waiting"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "description": "What happened, one sentence, in ASCII.",
+            "examples": [
+              "at 1b2c3d4e5f60"
+            ],
+            "type": "string"
+          },
+          "next": {
+            "description": "The next step and who takes it, as the error object's next is (bonsai.error); null when there is none.",
+            "examples": [
+              null,
+              {
+                "do": "run: bonsai update --allow-exec",
+                "who": "person"
+              }
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "do",
+              "who"
+            ],
+            "properties": {
+              "do": {
+                "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+                "examples": [
+                  "run: bonsai update --yes",
+                  "open Claude Code in this checkout and accept its trust question"
+                ],
+                "type": "string"
+              },
+              "who": {
+                "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+                "examples": [
+                  "person",
+                  "agent"
+                ],
+                "enum": [
+                  "agent",
+                  "person"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "description": "null unless the command refused or failed (results preview, conflict and refused): then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "needs-yes",
+          "message": "no --yes, and no terminal to ask at: nothing was written",
+          "next": {
+            "do": "run: bonsai update --yes",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

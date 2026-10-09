@@ -122,6 +122,9 @@ func quoted(s string, l *line, pos int) (string, int, *Refusal) {
 	return b.String(), end, nil
 }
 
+// nextEmptyFlowItem is the next step of an empty flow sequence item's refusal (code line-not-read).
+const nextEmptyFlowItem = "remove the empty item (a trailing comma's among them), or write null where an empty item is meant"
+
 // emptyMap reads a value that starts with { (at byte pos of line l): {} (spaces allowed inside) is an empty map; a
 // flow mapping with content is refused (Structure, §2.4).
 func emptyMap(s string, l *line, pos int) (any, *Refusal) {
@@ -197,7 +200,10 @@ scan:
 			if item == "" {
 				// An empty item, a trailing comma's among them: split at its commas it would be an empty plain
 				// scalar, null, where both libraries read no item at all (formats/README.md): refused.
-				return nil, refuseAt(CodeLineNotRead, l, pos+c, "an empty item in the flow sequence %s", show(s[:last+1]))
+				// Its own next step: line-not-read's, about indentation, does not fit it (formats set 4).
+				r := refuseAt(CodeLineNotRead, l, pos+c, "an empty item in the flow sequence %s", show(s[:last+1]))
+				r.Next = nextEmptyFlowItem
+				return nil, r
 			}
 			v, err := flowItem(item, l, itemPos)
 			if err != nil {

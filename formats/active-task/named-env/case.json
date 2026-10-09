@@ -1,0 +1,9 @@
+{
+  "about": "BONSAI_TASK alone names the task, for the session's own project: it is active, named.",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": null,
+  "env": "T-0901",
+  "does_not_parse": []
+}

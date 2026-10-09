@@ -1,0 +1,9 @@
+{
+  "about": "A session in a task worktree whose environment names T-0901: the stop gate reads the task from the main checkout and the ladder result from the main checkout's .bonsai/local/ladder/, which must prove the worktree's HEAD (a reader's test writes that result; a worktree has no .bonsai/local/ of its own).",
+  "layout": "worktree",
+  "checkout": "worktree",
+  "session": "worktree",
+  "task": null,
+  "env": "T-0901",
+  "does_not_parse": []
+}

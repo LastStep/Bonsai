@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.error",
+  "description": "The error object (spec §3, §16 row 29; format review 4.5): what a command's --json carries when the command refuses or fails, so an agent can go on unattended: a fixed word for what went wrong, a sentence, and the next step with who takes it. Every command but hook prints it as the error field of its --json document (bonsai.status/1, bonsai.check/1, bonsai.changes/1, and the outputs later steps add), null when the command did not refuse. Those schemas hold it inline, since Bonsai's schema checker has no $ref; the formats test holds each copy equal to this file, its one home. It is part of another document, so it has no format field of its own and no major: it changes only by additions, with the documents that hold it. Printed, never stored. A writer writes every field below, in this order (contract §2.2); a reader treats a missing field as null and keeps an unknown one.",
+  "type": "object",
+  "required": [
+    "code",
+    "message",
+    "next"
+  ],
+  "properties": {
+    "code": {
+      "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+      "examples": [
+        "needs-yes",
+        "not-linked"
+      ],
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "message": {
+      "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+      "examples": [
+        "no --yes, and no terminal to ask at: nothing was written"
+      ],
+      "type": "string"
+    },
+    "next": {
+      "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+      "examples": [
+        {
+          "do": "run: bonsai update --yes",
+          "who": "person"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "do",
+        "who"
+      ],
+      "properties": {
+        "do": {
+          "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+          "examples": [
+            "run: bonsai update --yes",
+            "open Claude Code in this checkout and accept its trust question"
+          ],
+          "type": "string"
+        },
+        "who": {
+          "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+          "examples": [
+            "person",
+            "agent"
+          ],
+          "enum": [
+            "agent",
+            "person"
+          ]
+        }
+      }
+    }
+  }
+}

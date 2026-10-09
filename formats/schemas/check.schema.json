@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.check/1",
+  "description": "bonsai check --json (spec §6, findings and warnings; spec §3, §16 row 29): what check found in a project. Printed, never stored. Written by bonsai check --json; read by CI, rung 0, agents and the studio, now that Bonsai has no screens of its own. Any finding makes check exit 1; warnings never change the exit code. When check cannot run (exit 2 or 3), findings and warnings are [] and error says why. With --write (step 5.1.8) check rebuilds the two tables, in the main checkout only: in a worktree it refuses, exit 4, its error naming the main checkout; and its exit code then says only whether it wrote (0 written, 3 it could not), the findings listed but changing nothing (spec §6). Later steps add fields as additions (check --write's result among them). A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "findings",
+    "warnings",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.check/1"
+      ],
+      "const": "bonsai.check/1"
+    },
+    "findings": {
+      "description": "What check found (spec §6, bonsai check findings), in the order check looks; [] for none.",
+      "examples": [
+        [
+          {
+            "code": "changed",
+            "file": "work/protocols/session-start.md",
+            "message": "work/protocols/session-start.md was edited since Bonsai wrote it",
+            "next": {
+              "do": "run: bonsai update --adopt work/protocols/session-start.md --yes",
+              "who": "person"
+            }
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "file",
+          "message",
+          "next"
+        ],
+        "properties": {
+          "code": {
+            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's one table of findings and warnings (step 5.1.6), which bonsai check --schema bonsai.check prints; this schema does not copy them, and a reader shows a word it does not know as other.",
+            "examples": [
+              "changed",
+              "plugin"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "file": {
+            "description": "The project file it is about, project-relative with forward slashes; null when it is about no one file.",
+            "examples": [
+              ".claude/settings.json",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "message": {
+            "description": "What is wrong, one sentence for a person, in ASCII.",
+            "examples": [
+              "work/protocols/session-start.md was edited since Bonsai wrote it"
+            ],
+            "type": "string"
+          },
+          "next": {
+            "description": "The next thing to do and who does it, as the error object's next is (bonsai.error).",
+            "examples": [
+              {
+                "do": "run: bonsai update --adopt work/protocols/session-start.md --yes",
+                "who": "person"
+              }
+            ],
+            "type": "object",
+            "required": [
+              "do",
+              "who"
+            ],
+            "properties": {
+              "do": {
+                "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+                "examples": [
+                  "run: bonsai update --yes",
+                  "open Claude Code in this checkout and accept its trust question"
+                ],
+                "type": "string"
+              },
+              "who": {
+                "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+                "examples": [
+                  "person",
+                  "agent"
+                ],
+                "enum": [
+                  "agent",
+                  "person"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "warnings": {
+      "description": "What check warns of (spec §6, Warnings): printed, never changing the exit code, never a rung's colour or a status --json problem; [] for none.",
+      "examples": [
+        [],
+        [
+          {
+            "code": "tables",
+            "file": ".bonsai/tasks.md",
+            "message": ".bonsai/tasks.md differs from what check --write would write",
+            "next": {
+              "do": "run: bonsai check --write in the main checkout",
+              "who": "agent"
+            }
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "file",
+          "message",
+          "next"
+        ],
+        "properties": {
+          "code": {
+            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's one table of findings and warnings (step 5.1.6), which bonsai check --schema bonsai.check prints; this schema does not copy them, and a reader shows a word it does not know as other.",
+            "examples": [
+              "changed",
+              "plugin"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "file": {
+            "description": "The project file it is about, project-relative with forward slashes; null when it is about no one file.",
+            "examples": [
+              ".claude/settings.json",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "message": {
+            "description": "What is wrong, one sentence for a person, in ASCII.",
+            "examples": [
+              "work/protocols/session-start.md was edited since Bonsai wrote it"
+            ],
+            "type": "string"
+          },
+          "next": {
+            "description": "The next thing to do and who does it, as the error object's next is (bonsai.error).",
+            "examples": [
+              {
+                "do": "run: bonsai update --adopt work/protocols/session-start.md --yes",
+                "who": "person"
+              }
+            ],
+            "type": "object",
+            "required": [
+              "do",
+              "who"
+            ],
+            "properties": {
+              "do": {
+                "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+                "examples": [
+                  "run: bonsai update --yes",
+                  "open Claude Code in this checkout and accept its trust question"
+                ],
+                "type": "string"
+              },
+              "who": {
+                "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+                "examples": [
+                  "person",
+                  "agent"
+                ],
+                "enum": [
+                  "agent",
+                  "person"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "description": "null unless check could not run (exit 2 or 3): then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

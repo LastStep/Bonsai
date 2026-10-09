@@ -1,0 +1,331 @@
+{
+  "about": "The answers to contract §13's fixtures, one section per reader of the active task, one entry per case folder in the folders' order. Every field is described in README.md.",
+  "function": [
+    {
+      "case": "broken-beside-running",
+      "id": null,
+      "how": null,
+      "why": "broken-file"
+    },
+    {
+      "case": "env-other-project",
+      "id": "T-0950",
+      "how": "running",
+      "why": null
+    },
+    {
+      "case": "format0-running",
+      "id": "T-0901",
+      "how": "running",
+      "why": null
+    },
+    {
+      "case": "named",
+      "id": "T-0901",
+      "how": "named",
+      "why": null
+    },
+    {
+      "case": "named-differ",
+      "id": null,
+      "how": null,
+      "why": "named-differ"
+    },
+    {
+      "case": "named-duplicate",
+      "id": null,
+      "how": null,
+      "why": "named-duplicate"
+    },
+    {
+      "case": "named-env",
+      "id": "T-0901",
+      "how": "named",
+      "why": null
+    },
+    {
+      "case": "named-missing",
+      "id": null,
+      "how": null,
+      "why": "named-missing"
+    },
+    {
+      "case": "named-verify",
+      "id": "T-0901",
+      "how": "named",
+      "why": null
+    },
+    {
+      "case": "none-running",
+      "id": null,
+      "how": null,
+      "why": "none-running"
+    },
+    {
+      "case": "one-running",
+      "id": "T-0901",
+      "how": "running",
+      "why": null
+    },
+    {
+      "case": "stop-gate-named-broken",
+      "id": null,
+      "how": null,
+      "why": "named-broken"
+    },
+    {
+      "case": "stop-gate-nothing-named",
+      "id": null,
+      "how": null,
+      "why": "none-running"
+    },
+    {
+      "case": "two-running",
+      "id": null,
+      "how": null,
+      "why": "many-running"
+    },
+    {
+      "case": "worktree-ladder-from-main",
+      "id": "T-0901",
+      "how": "named",
+      "why": null
+    },
+    {
+      "case": "worktree-task-from-main",
+      "id": "T-0901",
+      "how": "running",
+      "why": null
+    }
+  ],
+  "guard": [
+    {
+      "case": "broken-beside-running",
+      "grants": null
+    },
+    {
+      "case": "env-other-project",
+      "grants": "T-0950"
+    },
+    {
+      "case": "format0-running",
+      "grants": "T-0901"
+    },
+    {
+      "case": "named",
+      "grants": "T-0901"
+    },
+    {
+      "case": "named-differ",
+      "grants": "T-0902"
+    },
+    {
+      "case": "named-duplicate",
+      "grants": null
+    },
+    {
+      "case": "named-env",
+      "grants": "T-0901"
+    },
+    {
+      "case": "named-missing",
+      "grants": null
+    },
+    {
+      "case": "named-verify",
+      "grants": null
+    },
+    {
+      "case": "none-running",
+      "grants": null
+    },
+    {
+      "case": "one-running",
+      "grants": "T-0901"
+    },
+    {
+      "case": "stop-gate-named-broken",
+      "grants": null
+    },
+    {
+      "case": "stop-gate-nothing-named",
+      "grants": null
+    },
+    {
+      "case": "two-running",
+      "grants": null
+    },
+    {
+      "case": "worktree-ladder-from-main",
+      "grants": "T-0901"
+    },
+    {
+      "case": "worktree-task-from-main",
+      "grants": "T-0901"
+    }
+  ],
+  "rung0": [
+    {
+      "case": "broken-beside-running",
+      "grants": null
+    },
+    {
+      "case": "env-other-project",
+      "grants": null
+    },
+    {
+      "case": "format0-running",
+      "grants": null
+    },
+    {
+      "case": "named",
+      "grants": "T-0901"
+    },
+    {
+      "case": "named-differ",
+      "grants": null
+    },
+    {
+      "case": "named-duplicate",
+      "grants": null
+    },
+    {
+      "case": "named-env",
+      "grants": "T-0901"
+    },
+    {
+      "case": "named-missing",
+      "grants": null
+    },
+    {
+      "case": "named-verify",
+      "grants": "T-0901"
+    },
+    {
+      "case": "none-running",
+      "grants": null
+    },
+    {
+      "case": "one-running",
+      "grants": null
+    },
+    {
+      "case": "stop-gate-named-broken",
+      "grants": null
+    },
+    {
+      "case": "stop-gate-nothing-named",
+      "grants": null
+    },
+    {
+      "case": "two-running",
+      "grants": null
+    },
+    {
+      "case": "worktree-ladder-from-main",
+      "grants": "T-0901"
+    },
+    {
+      "case": "worktree-task-from-main",
+      "grants": null
+    }
+  ],
+  "stop_gate": [
+    {
+      "case": "broken-beside-running",
+      "engages": false,
+      "task": null,
+      "ladder": null
+    },
+    {
+      "case": "env-other-project",
+      "engages": true,
+      "task": "ok",
+      "ladder": "main/.bonsai/local/ladder/T-0901.json"
+    },
+    {
+      "case": "format0-running",
+      "engages": false,
+      "task": null,
+      "ladder": null
+    },
+    {
+      "case": "named",
+      "engages": true,
+      "task": "ok",
+      "ladder": "main/.bonsai/local/ladder/T-0901.json"
+    },
+    {
+      "case": "named-differ",
+      "engages": true,
+      "task": "ok",
+      "ladder": "main/.bonsai/local/ladder/T-0902.json"
+    },
+    {
+      "case": "named-duplicate",
+      "engages": true,
+      "task": "blocks",
+      "ladder": null
+    },
+    {
+      "case": "named-env",
+      "engages": true,
+      "task": "ok",
+      "ladder": "main/.bonsai/local/ladder/T-0901.json"
+    },
+    {
+      "case": "named-missing",
+      "engages": true,
+      "task": "blocks",
+      "ladder": null
+    },
+    {
+      "case": "named-verify",
+      "engages": true,
+      "task": "ok",
+      "ladder": "main/.bonsai/local/ladder/T-0901.json"
+    },
+    {
+      "case": "none-running",
+      "engages": false,
+      "task": null,
+      "ladder": null
+    },
+    {
+      "case": "one-running",
+      "engages": false,
+      "task": null,
+      "ladder": null
+    },
+    {
+      "case": "stop-gate-named-broken",
+      "engages": true,
+      "task": "blocks",
+      "ladder": null
+    },
+    {
+      "case": "stop-gate-nothing-named",
+      "engages": false,
+      "task": null,
+      "ladder": null
+    },
+    {
+      "case": "two-running",
+      "engages": false,
+      "task": null,
+      "ladder": null
+    },
+    {
+      "case": "worktree-ladder-from-main",
+      "engages": true,
+      "task": "ok",
+      "ladder": "main/.bonsai/local/ladder/T-0901.json"
+    },
+    {
+      "case": "worktree-task-from-main",
+      "engages": false,
+      "task": null,
+      "ladder": null
+    }
+  ]
+}

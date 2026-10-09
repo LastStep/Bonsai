@@ -31,6 +31,7 @@ var notBuiltYet = map[string]string{
 	"active_task":    "null", // contract §13: step 5.1
 	"needs":          "[]",   // packs and the Claude Code floor: part 3 and step 5.1
 	"checks":         "null", // --full: step 5.1
+	"error":          "null", // the error object (formats set 4), filled on exit 3: step 5.1.4b
 }
 
 const cfg = `format: bonsai.workspace/1   # comments are fine

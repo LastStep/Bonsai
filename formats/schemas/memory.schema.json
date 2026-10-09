@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.memory/1",
+  "description": "A memory note, or the memory index (spec §10, option D; contract §7.4; format review 3.5): one markdown file per fact, and INDEX.md, one line per note, in the folder bonsai.yaml names (documents.memory); the personal layer, on the machine under the Bonsai home's personal/, uses the same format and never enters a project. The instruction block imports the project's index; notes are read when needed. Written by agents through the workflow pack's memory skill; read by agents, people and the studio, which indexes notes like other documents (the personal layer is never forwarded, contract §2.6). bonsai check holds the budgets (a note at most 4 KB, the index at most 120 lines and 12 KB) and the secret scan (spec §6). This schema describes the frontmatter as a reader returns it (JSON); the body is the fact, why, and how to apply it (an index: one line per note). The frontmatter follows the format-1 YAML rules (contract §2.4). A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "title",
+    "kind",
+    "updated",
+    "source",
+    "labels"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, always the first key (contract §2.2). In a file made from a template it carries a one-line pointer back as a trailing comment (contract §2.8).",
+      "examples": [
+        "bonsai.memory/1"
+      ],
+      "const": "bonsai.memory/1"
+    },
+    "id": {
+      "description": "The note's id: M- and a slug of lower-case letters, digits and dashes, unique in its folder; null for the index.",
+      "examples": [
+        "M-fewer-verifications",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^M-[a-z0-9][a-z0-9-]*$"
+    },
+    "title": {
+      "description": "What the note is about, one line (the index: its own title).",
+      "examples": [
+        "Fewer verifications",
+        "Memory index"
+      ],
+      "type": "string",
+      "pattern": "^[^\\r\\n]*$"
+    },
+    "kind": {
+      "description": "A closed list: project (a fact about the project), feedback (how the person wants the work done), reference (where something is found), or index for INDEX.md (spec §10).",
+      "examples": [
+        "feedback",
+        "index"
+      ],
+      "enum": [
+        "project",
+        "feedback",
+        "reference",
+        "index"
+      ]
+    },
+    "updated": {
+      "description": "The day the note was last changed, YYYY-MM-DD as text (contract §2.4).",
+      "examples": [
+        "2026-10-06"
+      ],
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "source": {
+      "description": "Who said it, and when, as text; null for the index.",
+      "examples": [
+        "the project's owner, 6 Oct",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "labels": {
+      "description": "A map of label name to value (contract §5); {} when none. Names are <namespace>.<name> with one dot.",
+      "examples": [
+        {}
+      ],
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      }
+    }
+  }
+}

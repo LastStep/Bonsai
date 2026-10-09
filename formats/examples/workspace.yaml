@@ -1,0 +1,82 @@
+# bonsai.yaml: this project's Bonsai settings (format bonsai.workspace/1). Only a person changes this file.
+# Every field and its allowed values: bonsai check --schema bonsai.workspace
+# A made-up project: the example for bonsai.workspace/1. workspace.json holds what a reader returns.
+format: bonsai.workspace/1            # the format and its version; a newer one is refused, never guessed
+id: ws-7kq2m4xw5r3t6y2u7p4a5c3e2b     # this project's id, written once by bonsai init; a copy gets its own (init --new-id)
+name: example                         # a short name: lower-case letters, digits and dashes
+packs:                                # the packs this project uses, applied in this order
+  - id: base                          # Bonsai's own pack: core labels, templates, the walls round secret files
+    source: "https://example.com/packs/bonsai.git"   # the git repo the pack comes from
+    path: packs/base                  # the pack's folder inside that repo
+    ref: base-v1.0.0                  # the release tag; change it and run bonsai update to take a new release
+  - id: workflow                      # roles, lanes, protocols and templates
+    source: "https://example.com/packs/workflow.git" # its own repo
+    path: null                        # null: the pack is the whole repo
+    ref: v1.2.0                       # its release tag
+documents:                            # where this project keeps the documents Bonsai knows
+  task: work/tasks                    # one file per task
+  run: work/runs                      # one run report per agent session
+  answers: work/answers.md            # answers to questions that name no file
+  memory: work/memory                 # memory notes and their INDEX.md
+  protocols: work/protocols           # the always-on protocol files the instruction block imports
+  plan: work/plans                    # the workflow pack's plans, one file per plan
+# protected: paths an agent changes only while its running task lists them in bonsai.allows
+protected: [".claude/**", "bonsai.yaml", ".bonsai/lock.json", "work/protocols/**", ".github/**"]
+# person_only: of those, the paths only a person grants (an approve or grant tap)
+person_only: [".claude/**", "bonsai.yaml", ".bonsai/lock.json", "work/protocols/**", ".github/**"]
+never_edit: ["work/ledger.json"]      # paths no agent ever changes; written as deny rules
+ladder_floor: [0, 1, 2]               # the rungs every task climbs, whatever the task lists
+ladder:                               # the rungs: what each runs and what it proves
+  - rung: 0                           # rung 0 is the guard rung
+    name: guard                       # its short name
+    kind: guard                       # the diff against the named task's grants
+    command: null                     # only a command rung runs a command
+    required: true                    # red here skips the rungs after it
+    timeout_s: null                   # null: the runner's default
+    ratchet: null                     # no count to keep from falling
+    capture: null                     # nothing picked out of its output
+    means: "The diff stays inside the task's grants."   # what green proves
+    tests: null                       # it prints no tests
+    base_setup: null                  # nothing to set up on the base
+  - rung: 1                           # the unit tests
+    name: unit tests                  # its short name
+    kind: command                     # a shell command
+    command: "go test ./..."          # the command; it never calls bash by name
+    required: true                    # red here skips the rungs after it
+    timeout_s: 600                    # ten minutes at most
+    ratchet: tests                    # the count of tests may not fall below its floor in ratchets
+    capture:                          # what to pick out of its output, by name
+      tests: "ok ([0-9]+) tests"      # a pattern whose number is the count
+    means: "Every unit test passes."  # what green proves
+    tests: null                       # the runner reads no test names from it
+    base_setup: null                  # nothing to set up on the base
+  - rung: 2                           # the build
+    name: build                       # its short name
+    kind: command                     # a shell command
+    command: "go build ./..."         # the command
+    required: false                   # red here still lets the later rungs run
+    timeout_s: null                   # null: the runner's default
+    ratchet: null                     # no count to keep from falling
+    capture: null                     # nothing picked out of its output
+    means: null                       # no line of its own
+    tests: null                       # it prints no tests
+    base_setup: null                  # nothing to set up on the base
+ratchets:                             # counts that may only rise; they rise when a person taps Bless
+  tests: 120                          # the unit tests' floor
+ci_marked_tests: []                   # tests allowed to skip in CI only, each by name
+generated:                            # how long generated files are kept, per kind (skill base:generated-files)
+  log:                                # the log, in .bonsai/local/log/
+    keep_days: 30                     # a log file goes 30 days after its last line, never before its rows are in
+    keep_newest: null                 # no limit on how many are kept
+  asks:                               # questions for you and their answers, in .bonsai/local/asks/
+    keep_days: null                   # kept: never cleaned by age
+    keep_newest: null                 # kept: never cleaned by count
+  ladder:                             # ladder results, in .bonsai/local/ladder/
+    keep_days: 7                      # the result of a task not done or cut is never cleaned
+    keep_newest: null                 # no limit on how many are kept
+  run:                                # run reports: committed history
+    keep_days: null                   # kept; past a rule, check lists them for a person
+    keep_newest: null                 # kept
+  sessions:                           # rows of .bonsai/sessions.md
+    keep_days: null                   # kept
+    keep_newest: null                 # kept

@@ -1,0 +1,433 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.pack/1",
+  "description": "A pack's manifest, bonsai/pack.yaml (spec §5; format review 6.1): what Bonsai's engine reads from a pack beside what Claude Code loads from the plugin itself. Its id and version, what a machine needs, the files and settings lines the engine writes into a project, and what the pack declares besides its labels.yaml (bonsai.labels/1) and lanes.yaml (bonsai.lanes/1): its document kinds and its protected paths. At each update the engine copies the four declarations into the lock's declares (spec §6), so bonsai check runs with no pack fetched. Lives in the pack's repository at bonsai/pack.yaml, beside the plugin's own folders. Written by the pack's maker; as a pack file it documents itself in # comments (contract §2.8), which bonsai check --pack keeps in step with the fields (step 5.1.9). Read by bonsai init and update at the locked commit, and by check --pack. Format-1 YAML (contract §2.4); this schema describes the file as a reader returns it (JSON). A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key. A hook entry with no runs reads as [] (step 5.1.1).",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "version",
+    "needs",
+    "block",
+    "files",
+    "hooks",
+    "deny",
+    "documents",
+    "protected"
+  ],
+  "properties": {
+    "format": {
+      "description": "The format and its version, always the first key (contract §2.2).",
+      "examples": [
+        "bonsai.pack/1"
+      ],
+      "const": "bonsai.pack/1"
+    },
+    "id": {
+      "description": "The pack's id: a lower-case letter, then lower-case letters, digits and dashes. It equals name in the plugin's .claude-plugin/plugin.json, so the pack's roles and skills load as <id>:<name> (spec §5). bonsai is Bonsai's own (its own hook lines go by it), so no pack takes it.",
+      "examples": [
+        "base",
+        "workflow"
+      ],
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "version": {
+      "description": "The pack's version, quoted. A release tag must equal it (spec §5: vX.Y.Z, or base-vX.Y.Z for base); the plugin's plugin.json never carries a version.",
+      "examples": [
+        "1.0.0"
+      ],
+      "type": "string"
+    },
+    "needs": {
+      "description": "What a machine needs for the pack; status --json lists each as a needs entry (contract §12).",
+      "examples": [
+        {
+          "claude_code": "2.1.294"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "claude_code"
+      ],
+      "properties": {
+        "claude_code": {
+          "description": "The oldest Claude Code the pack works with, a version, quoted; null for none. It raises Bonsai's own floor (spec §7); an older Claude Code gets a check warning, never a refusal.",
+          "examples": [
+            "2.1.294",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "block": {
+      "description": "The pack's part of the instruction block in the project's CLAUDE.md (file kind block): a file in the pack's bonsai/ folder, by its path there; null for none. Its docs stay in the pack: the block written into CLAUDE.md carries one pointer line (spec §5).",
+      "examples": [
+        "block.md",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[^/\\\\:][^\\\\:]*$"
+    },
+    "files": {
+      "description": "The files the engine writes into a project, each from the pack's bonsai/files/ (always-on protocol files and templates of kind once among them, spec §5); [] for none. A path may not be Bonsai's own (bonsai.yaml, .bonsai/), CLAUDE.md (kind block), or a place Claude Code or git loads on its own (a .claude or .claude-plugin folder, a .mcp.json, .lsp.json or .gitmodules file), letter case aside (step 5.1.1); a pack's roles, skills and hooks ride in its plugin.",
+      "examples": [
+        [
+          {
+            "path": "work/protocols/session-start.md",
+            "from": "session-start.md",
+            "kind": "pack"
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "from",
+          "kind"
+        ],
+        "properties": {
+          "path": {
+            "description": "Where the file goes in the project: project-relative, forward slashes, no leading slash.",
+            "examples": [
+              "work/protocols/session-start.md"
+            ],
+            "type": "string",
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "from": {
+            "description": "Its source in the pack's bonsai/files/, forward slashes.",
+            "examples": [
+              "session-start.md"
+            ],
+            "type": "string",
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "kind": {
+            "description": "How the engine treats it, a closed list: pack (Bonsai's; an edit in the project is a conflict) or once (written once, then the project's). The lock's other file kinds come from elsewhere: block from block, keys from hooks and deny, kept from the engine (bonsai.lock/1).",
+            "examples": [
+              "pack",
+              "once"
+            ],
+            "enum": [
+              "pack",
+              "once"
+            ]
+          }
+        }
+      }
+    },
+    "hooks": {
+      "description": "Hook lines the engine writes into the project's .claude/settings.json (file kind keys); [] for none. A hook line runs code: init and update write a new or changed one only with --allow-exec as well as --yes (spec §6, step 5.1.1). Bonsai's own hooks never ride in a plugin (spec §5).",
+      "examples": [
+        [
+          {
+            "event": "SessionStart",
+            "matcher": "startup",
+            "command": "sh work/tools/greet.sh",
+            "runs": [
+              "work/tools/greet.sh"
+            ],
+            "why": "Prints the project's greeting when a session starts; it blocks nothing."
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "event",
+          "matcher",
+          "command",
+          "runs",
+          "why"
+        ],
+        "properties": {
+          "event": {
+            "description": "The Claude Code hook event (Claude Code's own list, so a plain string).",
+            "examples": [
+              "SessionStart",
+              "PreToolUse"
+            ],
+            "type": "string"
+          },
+          "matcher": {
+            "description": "The event's matcher, or null for none.",
+            "examples": [
+              "startup",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "command": {
+            "description": "The shell line Claude Code runs, quoted; it never calls bash by name (spec §3).",
+            "examples": [
+              "sh work/tools/greet.sh"
+            ],
+            "type": "string"
+          },
+          "runs": {
+            "description": "The pack files the command runs, each by its path in the project (a files entry's path, this pack's or another linked pack's); [] for none. A change to one is code even when the line stays the same (spec §6); a command naming a linked pack's file that runs does not list is refused (step 5.1.1).",
+            "examples": [
+              [
+                "work/tools/greet.sh"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[^/\\\\:][^\\\\:]*$"
+            }
+          },
+          "why": {
+            "description": "One plain sentence: what the line does, as update's preview prints it.",
+            "examples": [
+              "Prints the project's greeting when a session starts; it blocks nothing."
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "deny": {
+      "description": "Deny rules the engine writes into the project's .claude/settings.json (file kind keys); [] for none.",
+      "examples": [
+        [
+          {
+            "rule": "Read(.env)",
+            "why": "Agents cannot read the project's .env file."
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule",
+          "why"
+        ],
+        "properties": {
+          "rule": {
+            "description": "A Claude Code permission rule, quoted.",
+            "examples": [
+              "Read(.env)"
+            ],
+            "type": "string"
+          },
+          "why": {
+            "description": "One plain sentence: what the rule stops, as update's preview prints it; bonsai check --pack requires it (spec §5).",
+            "examples": [
+              "Agents cannot read the project's .env file."
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "documents": {
+      "description": "The document kinds the pack declares (contract §7.3): copied into the lock's declares and listed by status --json's documents with from set to this pack; [] for none. A project keeps each kind's place in its bonsai.yaml documents, under the kind's name.",
+      "examples": [
+        [
+          {
+            "kind": "plan",
+            "path": "work/plans",
+            "file": null,
+            "id": "^P-T-\\d{4,6}$",
+            "statuses": [
+              "draft",
+              "approved",
+              "done"
+            ],
+            "person": [
+              [
+                "draft",
+                "approved"
+              ]
+            ],
+            "agent": [
+              [
+                "approved",
+                "done"
+              ]
+            ],
+            "stamp": {
+              "approved": "approved"
+            },
+            "task_field": "task"
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "path",
+          "file",
+          "id",
+          "statuses",
+          "person",
+          "agent",
+          "stamp",
+          "task_field"
+        ],
+        "properties": {
+          "kind": {
+            "description": "The kind's name, unique in the workspace; it is a key in bonsai.yaml's documents, so it has a key's form (contract §2.4).",
+            "examples": [
+              "plan",
+              "decision"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "path": {
+            "description": "The kind's default folder (one file per document, top level only), project-relative, which bonsai init writes into bonsai.yaml's documents and a project may change there; null for a kind that is one file.",
+            "examples": [
+              "work/plans",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "file": {
+            "description": "The kind's default single file, project-relative, as path is; null for a kind that is a folder.",
+            "examples": [
+              "work/bugs.md",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "id": {
+            "description": "The pattern a document's id must match, a regular expression; an id resolves to exactly one file, never a path. null for a kind with no ids.",
+            "examples": [
+              "^P-T-\\d{4,6}$",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "statuses": {
+            "description": "The kind's statuses: the pack's closed list for this kind, its one home (contract §2.2); the first is where a new document starts. [] for none.",
+            "examples": [
+              [
+                "draft",
+                "approved",
+                "done"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "person": {
+            "description": "The status moves a person makes, as [from, to] pairs (contract §10.2); [] for none.",
+            "examples": [
+              [
+                [
+                  "draft",
+                  "approved"
+                ]
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "agent": {
+            "description": "The status moves agents make, as [from, to] pairs; [] for none.",
+            "examples": [
+              [
+                [
+                  "approved",
+                  "done"
+                ]
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "stamp": {
+            "description": "Fields set to the day's date when a document reaches a status, as {status: field}; {} for none.",
+            "examples": [
+              {
+                "approved": "approved"
+              },
+              {}
+            ],
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "task_field": {
+            "description": "The field naming the task a document belongs to (a plan's task:); null for none.",
+            "examples": [
+              "task",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "protected": {
+      "description": "Paths the pack declares protected (contract §5.5): an agent changes them only while its running task grants them. Globs, project-relative with forward slashes, copied into the lock's declares and applied beside bonsai.yaml's protected; [] for none. Base declares bonsai.yaml and the lock (contract §14).",
+      "examples": [
+        [
+          "bonsai.yaml",
+          ".bonsai/lock.json",
+          ".claude/**"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[^/\\\\:][^\\\\:]*$"
+      }
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "format": "bonsai.pack/1",
+  "id": "workflow",
+  "version": "1.2.0",
+  "needs": {
+    "claude_code": "2.1.294"
+  },
+  "block": "block.md",
+  "files": [
+    {
+      "path": "work/protocols/session-start.md",
+      "from": "session-start.md",
+      "kind": "pack"
+    },
+    {
+      "path": "work/tools/greet.sh",
+      "from": "greet.sh",
+      "kind": "pack"
+    }
+  ],
+  "hooks": [
+    {
+      "event": "SessionStart",
+      "matcher": "startup",
+      "command": "sh work/tools/greet.sh",
+      "runs": [
+        "work/tools/greet.sh"
+      ],
+      "why": "Prints the project's greeting when a session starts; it blocks nothing."
+    }
+  ],
+  "deny": [
+    {
+      "rule": "Read(.env)",
+      "why": "Agents cannot read the project's .env file."
+    }
+  ],
+  "documents": [
+    {
+      "kind": "plan",
+      "path": "work/plans",
+      "file": null,
+      "id": "^P-T-\\d{4,6}$",
+      "statuses": [
+        "draft",
+        "approved",
+        "done"
+      ],
+      "person": [
+        [
+          "draft",
+          "approved"
+        ]
+      ],
+      "agent": [
+        [
+          "approved",
+          "done"
+        ]
+      ],
+      "stamp": {
+        "approved": "approved"
+      },
+      "task_field": "task"
+    },
+    {
+      "kind": "bugs",
+      "path": null,
+      "file": "work/bugs.md",
+      "id": null,
+      "statuses": [],
+      "person": [],
+      "agent": [],
+      "stamp": {},
+      "task_field": null
+    }
+  ],
+  "protected": [
+    "work/protocols/**"
+  ]
+}

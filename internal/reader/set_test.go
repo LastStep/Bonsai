@@ -18,9 +18,9 @@ import (
 // setDir is the formats set, from this package's folder.
 var setDir = filepath.Join("..", "..", "formats")
 
-// setCases is how many cases the set this reader is held to has (set 3); a case dropped or added fails the test until
+// setCases is how many cases the set this reader is held to has (set 4); a case dropped or added fails the test until
 // this follows.
-const setCases = 116
+const setCases = 125
 
 // readCase reads one input file of the set the way its extension says.
 func readCase(raw []byte, path string) Result {
@@ -83,7 +83,7 @@ func TestEveryCaseReachesItsFormat1Outcome(t *testing.T) {
 	}
 	t.Logf("format-1 outcomes reached: %d of %d", reached, len(cases))
 	if reached != len(cases) || len(cases) != setCases {
-		t.Errorf("reached %d of %d cases; set 3 has %d", reached, len(cases), setCases)
+		t.Errorf("reached %d of %d cases; set 4 has %d", reached, len(cases), setCases)
 	}
 }
 
@@ -150,4 +150,94 @@ func TestLabelKeyPatternIsTheSchemas(t *testing.T) {
 	if !strings.Contains(string(raw), `"pattern": "`+strings.ReplaceAll(labelPattern.String(), `\`, `\\`)+`"`) {
 		t.Errorf("labels.schema.json holds no pattern %s", labelPattern)
 	}
+}
+
+// Contract §13's fixtures (formats/active-task, formats/README.md): every bonsai.yaml and task file reads as its case
+// says. A file case.json lists under does_not_parse is refused by its format; every other one is accepted under
+// format 1, or is format 0 and accepted by the format-0 reader. So the fixtures' answers rest on files that are what
+// they claim.
+func TestActiveTaskFixturesRead(t *testing.T) {
+	dir := filepath.Join(setDir, "active-task")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	read, refused, format0 := 0, 0, 0
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(dir, e.Name(), "case.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		v, err := schema.Decode(raw)
+		if err != nil {
+			t.Fatalf("%s/case.json: %v", e.Name(), err)
+		}
+		broken := map[string]bool{}
+		list, _ := v.(schema.Object).Get("does_not_parse")
+		for _, p := range list.([]any) {
+			broken[p.(string)] = true
+		}
+		root := filepath.Join(dir, e.Name())
+		err = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+			if err != nil || d.IsDir() || (!strings.HasSuffix(p, ".md") && !strings.HasSuffix(p, ".yaml")) {
+				return err
+			}
+			rel, _ := filepath.Rel(root, p)
+			rel = filepath.ToSlash(rel)
+			raw, err := os.ReadFile(p)
+			if err != nil {
+				return err
+			}
+			got := readCase(raw, rel)
+			switch {
+			case broken[rel]:
+				if got.Outcome != Refused {
+					t.Errorf("%s/%s: %s, but case.json says it does not parse", e.Name(), rel, got.Outcome)
+				}
+				refused++
+			case got.Outcome == Format0:
+				if r0 := readCase0(raw, rel); r0.Outcome != Accepted {
+					t.Errorf("%s/%s: format 0, and the format-0 reader refuses it: %v", e.Name(), rel, r0.Err())
+				}
+				format0++
+			case got.Outcome != Accepted:
+				t.Errorf("%s/%s: %v", e.Name(), rel, got.Err())
+			default:
+				// A format-1 file is valid under its schema: bonsai.yaml under the workspace's, a task under the task's.
+				name := "task"
+				if strings.HasSuffix(rel, "bonsai.yaml") {
+					name = "workspace"
+				}
+				s, err := schema.Parse(mustSchema(t, name))
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, msg := range schema.Validate(s, JSON(got.Value)) {
+					t.Errorf("%s/%s: not a valid bonsai.%s/1: %s", e.Name(), rel, name, msg)
+				}
+			}
+			read++
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Logf("fixture files read: %d (%d refused as their case says, %d format 0)", read, refused, format0)
+	if read == 0 || refused == 0 || format0 == 0 {
+		t.Errorf("the fixtures hold %d files, %d refused and %d format 0: each kind is expected", read, refused, format0)
+	}
+}
+
+// mustSchema reads one of the set's schemas, by its short name.
+func mustSchema(t *testing.T, name string) []byte {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(setDir, "schemas", name+".schema.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
 }

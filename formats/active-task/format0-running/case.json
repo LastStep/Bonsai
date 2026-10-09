@@ -1,0 +1,9 @@
+{
+  "about": "Nothing named, and the one task reading running is a format-0 task (no format line): format-0 and format-1 tasks count alike, so it is active, running; the stop gate, with nothing named, allows.",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": null,
+  "env": null,
+  "does_not_parse": []
+}
