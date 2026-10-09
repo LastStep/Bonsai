@@ -391,10 +391,10 @@ func hasCode(list []any, code string) bool {
 }
 
 var (
-	runCommand = regexp.MustCompile(`run: ([^;]+)`)
+	runCommand    = regexp.MustCompile(`run: ([^;]+)`)
 	bonsaiMention = regexp.MustCompile(`(?:^|[\s(:])bonsai ([a-z][a-z-]*)\b`)
-	gitWords   = map[string]bool{"checkout": true, "rm": true, "fetch": true, "status": true}
-	claudeArgs = map[string]bool{"update": true, "--version": true, "plugin uninstall": true, "plugin list": true}
+	gitWords      = map[string]bool{"checkout": true, "rm": true, "fetch": true, "status": true}
+	claudeArgs    = map[string]bool{"update": true, "--version": true, "plugin uninstall": true, "plugin list": true}
 )
 
 // checkNext holds a next step to the commands Bonsai has: each "run: <command>" is one it can run as written, and each
