@@ -82,15 +82,28 @@ type CheckResult struct {
 	Changed        int // files the lock lists that were edited
 	Missing        int // files the lock lists that are gone
 	Format0Changed int
+
+	history bool // CheckOptions.History
 }
 
-// Check checks the workspace holding dir. Its error is for a folder that is no linked checkout at all (exit 4).
-func Check(dir, home string) (*CheckResult, error) {
+// Check checks the workspace holding dir, every finding and warning but the two that ask Claude Code. Its error is
+// for a folder that is no linked checkout at all (exit 4).
+func Check(dir, home string) (*CheckResult, error) { return CheckWith(dir, home, CheckOptions{History: true}) }
+
+// CheckOptions say what Check may leave out.
+type CheckOptions struct {
+	// History: read git history for approve_first (checkhistory.go). status's default leaves it out to stay cheap
+	// for a program that runs it often (contract §12): it reads every commit that touched the task folder.
+	History bool
+}
+
+// CheckWith is Check with its options.
+func CheckWith(dir, home string, o CheckOptions) (*CheckResult, error) {
 	co, err := workspace.Find(dir)
 	if err != nil {
 		return nil, findError(err)
 	}
-	r := &CheckResult{Root: co.Root, Main: co.Main, Home: home}
+	r := &CheckResult{Root: co.Root, Main: co.Main, Home: home, history: o.History}
 	cfg, err := workspace.LoadConfigFull(co.Root)
 	if err != nil {
 		var we *workspace.Error
@@ -135,7 +148,9 @@ func (r *CheckResult) missingLockNext() string {
 // PATH, .bonsai/.gitignore and .bonsai/local/.
 func (r *CheckResult) checkProject() {
 	r.checkDocuments()
-	r.checkHistory()
+	if r.history {
+		r.checkHistory()
+	}
 	r.checkSettingsFiles()
 	r.checkMachine()
 	r.checkGitignore()

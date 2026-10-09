@@ -602,3 +602,40 @@ func TestStatusActive(t *testing.T) {
 		t.Errorf("outside git: %v", e)
 	}
 }
+
+// approve_first reads git history, so status's default leaves it out of problems (cheap, for a program that runs it
+// often) and --full adds it, as check reports it.
+func TestStatusHistoryOnlyWithFull(t *testing.T) {
+	tmp := t.TempDir()
+	if r, err := filepath.EvalSymlinks(tmp); err == nil {
+		tmp = r
+	}
+	home := testpack.Isolate(t, tmp)
+	src, shas := testpack.DeclaringPack(t, tmp)
+	root := testpack.Project(t, tmp, "history")
+	p, err := engine.Build(engine.Request{Command: "init", Dir: root, Home: home, Version: "test",
+		Init: &engine.InitValues{Name: "demo", Source: src, Ref: shas[0]}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := engine.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	task := "---\nformat: bonsai.task/1\nid: T-0901\ntitle: x\nstatus: running\nlane: full\n---\n"
+	if err := os.MkdirAll(filepath.Join(root, "work", "tasks"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "work", "tasks", "T-0901-x.md"), []byte(task), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	testpack.Git(t, root, "add", "-A")
+	testpack.Git(t, root, "commit", "-q", "-m", "a task running with no approval")
+	doc, _ := Build(root, "dev")
+	if v, _ := doc.Get("problems"); strings.Contains(schema.Show(v), "approved") {
+		t.Errorf("the default read git history: %s", schema.Show(v))
+	}
+	doc, _ = BuildWith(root, "dev", Options{Full: true})
+	if v, _ := doc.Get("problems"); !strings.Contains(schema.Show(v), "T-0901 (work/tasks/T-0901-x.md) reads running in the lane full") {
+		t.Errorf("--full: %s", schema.Show(v))
+	}
+}

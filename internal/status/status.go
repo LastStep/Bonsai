@@ -8,7 +8,8 @@
 //     git (plan part 2);
 //   - packs, files, problems: bonsai check's own findings (internal/engine's Check, offline from the lock), problems
 //     one sentence each with its next step (contract §12: "the same findings bonsai check reports"); check's warnings
-//     are never problems (spec §6);
+//     are never problems (spec §6). Two need more than the default may spend, so --full alone adds them: approve_first
+//     from git history (every commit that touched the task folder) and the plugin drift Claude Code reports;
 //   - formats: internal/format's registry (step 5.1.4a);
 //   - documents, labels, lanes, status_writes, status_command, active_task: internal/workspace's reads (step 5.1.5);
 //   - needs (step 5.1.6): the Claude Code floor (kind tool, name claude-code, the higher of Bonsai's and the packs'
@@ -137,9 +138,14 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		{Key: "format0_changed", Value: 0}}, []any{}
 	var lock *workspace.Lock
 	var checked *engine.CheckResult
-	if r, err := engine.Check(dir, home); err == nil {
+	if r, err := engine.CheckWith(dir, home, engine.CheckOptions{History: o.Full}); err == nil {
 		checked = r
 		lock = r.Lock
+		if o.Full {
+			// Plugin drift that only Claude Code can report is a problem too (bonsai.status/1), asked with --full only:
+			// the default never runs Claude Code.
+			engine.ComparePlugins(r, o.Plugins)
+		}
 		for _, p := range r.Packs {
 			packs = append(packs, schema.Object{{Key: "id", Value: p.ID}, {Key: "version", Value: p.Version},
 				{Key: "commit", Value: p.Commit}, {Key: "state", Value: p.State}})
