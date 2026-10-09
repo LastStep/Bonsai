@@ -58,8 +58,8 @@ such pair.
 - A run report per piece of work in `records/runs/`, and `STATE.md` rewritten at the end of each part.
 - Your roadmap's Bonsai cards updated after each part (your 8 Oct decision).
 - New commits on the public test pack (`LastStep/bonsai-test-pack`) in 5.1, added after its four, never rewriting them.
-  A new public repo for your `workflow` pack in 5.5 (the spec names `LastStep/bonsai-workflow`), once you approve
-  5.5's section.
+  A new repo for your `workflow` pack in 5.5 (`LastStep/bonsai-workflow`, the spec's name), once you approve 5.5's
+  section: created private, and made public only by your own line after you have read it.
 - No release and no tag until you say so at 5.7.
 
 **What you must do, and when.** Each item reaches you in one batch with exact lines, when its part gets there.
@@ -71,6 +71,9 @@ such pair.
 - **In 5.2, a look (no vote needed):** the names of the log's two new fields, the `bonsai` binary's path and its
   fingerprint (`bonsai_path`, `bonsai_sha256`), which format review 4.2 left for you to see before building; any change
   you want is made before they land (added 9 Oct with 5.2's section).
+- **Before 5.3 (overdue since 5.1):** renew Claude Code's login on Windows. In PowerShell, one line at a time:
+  `claude`, then type `/login` and sign in, then `/exit` (about 2 minutes). 5.3's Windows runs and your 5.3 sitting
+  need it, and 5.5's Windows sessions after. If it lapses again, the orchestrator sends these lines again.
 - **In 5.3:** the second Windows check (spec §17 step 7, about 10 minutes): a real Windows session in a scratch folder,
   asking Claude for one edit and two deletes and reporting what happened. A Sonnet agent runs every check an agent can
   first, so your sitting is only what needs a person typing (your 8 Oct word). Two questions, each an option round in
@@ -86,13 +89,33 @@ such pair.
   planned before 1.0). From the switch: your word before an agent loosens a check in Bonsai's `bonsai.yaml`; your own
   Claude sessions there refused on its protected files; the floor numbers in a line at each part's end (nothing to
   answer); the way back only if the guard breaks.
-- **In 5.5:** approve the new public repo for your `workflow` pack and what goes into it (your roles, lanes, protocols
-  and templates, after a check for anything private); possibly a repository secret, if a pack's checks on GitHub need
-  a Claude login or a model key.
+- **In 5.5:** approve its section. It makes your roles, lanes, protocols and templates public in a new repo,
+  `LastStep/bonsai-workflow`, and puts three of your templates (task, run report, STATE), reworded and naming no one,
+  into Bonsai's own public `base` pack; your approval is your word for those three, which go public when their pieces
+  land, each after a fresh agent's check for anything private.
+  - The new repo: a fresh agent checks every file and every commit for anything private first. It is created private,
+    and you read it on GitHub (your phone works) with a file-by-file list of what changed from your studio's copies,
+    asking for any change. When you are happy, and the orchestrator has said every change since the check was read,
+    one line in WSL makes it public: `gh repo edit LastStep/bonsai-workflow --visibility public`. Then (optional,
+    recommended) one more line stops anyone rewriting or deleting its `main`. Its commits carry the same author line
+    (your name and email address) that Bonsai's public history already shows: nothing new is shown.
+  - Once, about 3 minutes on Windows: start Claude Code through the scratch launcher in a scratch folder the
+    orchestrator names, say yes to the trust question, and tell the orchestrator what it said.
+  - One rule to approve with the section: an agent may move a project to a newer commit of a pack when Bonsai's preview
+    shows the move takes away no wall, label meaning or protected file and adds no code that runs; anything else, and
+    taking a pack out, still waits for you.
+  - No repository secret, no install and no password in 5.5. If the studio links the `workflow` pack before 1.0, it
+    first needs a newer pre-release `bonsai` installed in WSL (5.4's four lines again, about 5 minutes, your password),
+    since 5.4's cannot read that pack.
+  - From 5.5's end, Claude in `~/Servers/Bonsai` (your own sessions included) cannot read your key, token and login
+    files, nor change your own Claude settings, `~/.claude/CLAUDE.md`, your shell's start files or git's and SSH's
+    settings: you change those yourself. Bonsai's STATE moves to `.bonsai/STATE.md`.
 - **In 5.6:** one line in your own `~/.claude/CLAUDE.md` that loads your personal memory in every project (spec §10).
   No agent edits that file.
 - **At 5.7:** the GitHub release steps that are yours (the `release` environment and a new Homebrew tap token, spec §17
-  step 4's note; switching the release workflow back on), then your word for 1.0.
+  step 4's note; switching the release workflow back on), then your word for 1.0; and, with the same word, the first
+  release tags of the two packs: `base-v1.0.0` on Bonsai's repo and `v1.0.0` on the workflow repo, whose checks then
+  publish its GitHub release. Until then projects name each pack by its exact commit.
 - **Outside step 5:** the sandbox probe (spec §7) waits for its own small plan after step 5 and ends in a root step of
   yours (installing `socat`). Turn GitHub Pages off (the old website) whenever you like.
 - Hand checks: a Sonnet agent runs them wherever an agent can (your 8 Oct word). Yours are only what needs a person: a
@@ -127,7 +150,9 @@ such pair.
   plugins install only after a person trusts its folder. Each part records the Claude Code version it ran on.
 - **From 5.4, Bonsai guards its own repo.** A broken pre-release could block edits in Bonsai's own checkout, because
   the guard blocks when it fails. 5.4's section writes your way back (one or two lines) before the switch.
-- **Your roles and protocols go public in 5.5.** 5.5 checks every file for anything private before the first push.
+- **Your roles and protocols go public in 5.5.** A fresh agent checks every file and every commit for anything private
+  before the first push. The repo starts private, and only your own line makes it public, after your read. Three of
+  your templates go public earlier, reworded inside Bonsai's `base` pack, each after its own check.
 - **Agents act on GitHub as your account.** They never tag, release, switch a workflow on, or change a setting, secret
   or ruleset; those stay yours (5.7).
 - **Stop lines.** Work stops and you get the numbers and three choices (continue, the smaller cut, or pause) if: a
@@ -141,8 +166,9 @@ against its 30-47 h, a ratio of 0.1337-0.2094 (gate report section 2.2). At that
 **That is not a promise**, for four reasons (gate report section 1): it counts only the agents' own runs, not the
 orchestrating session, your sittings or waiting; it comes from six parts over two days; it swung by part from
 0.06-0.09 (the engine) to 0.32-0.53 (the hook path), and the parts that dealt with Windows and Claude Code ran highest,
-which is more of step 5; and the stop lines use the spec's hours, not the ratio. Your own time: about 10 minutes at
-5.3 and 5 at 5.4, the 5.7 GitHub steps, and the plan approvals your choice above sets. Nothing here waits on the
+which is more of step 5; and the stop lines use the spec's hours, not the ratio. Your own time: about 2 minutes for the
+Windows login before 5.3, about 10 at 5.3 and 5 at 5.4, your read of the workflow repo and about 3 minutes on Windows at
+5.5, the 5.7 GitHub steps, and the plan approvals your choice above sets. Nothing here waits on the
 studio.
 
 ## For the orchestrator, builders and verifiers
