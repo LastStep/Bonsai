@@ -17,21 +17,26 @@ package redact
 
 type nameKind uint8
 
-// The kinds in the studio's rule order.
+// The kinds in the studio's rule order, then the one findNames never gives.
 const (
 	nameExtra nameKind = iota
 	nameAuth
 	nameBearer
 	nameFlag
 	nameKey
+	// nameAuthToken is an Authorization header whose name and scheme word a shape took into its span while its token,
+	// after the scheme word, lies past that span (withLost, redact.go): its value is that token, read as after a
+	// scheme word.
+	nameAuthToken
 )
 
 var nameKinds = [...]Kind{
-	nameExtra:  KindExtraHeader,
-	nameAuth:   KindAuthorization,
-	nameBearer: KindBearer,
-	nameFlag:   KindFlag,
-	nameKey:    KindKey,
+	nameExtra:     KindExtraHeader,
+	nameAuth:      KindAuthorization,
+	nameBearer:    KindBearer,
+	nameFlag:      KindFlag,
+	nameKey:       KindKey,
+	nameAuthToken: KindAuthorization,
 }
 
 // name is one name: where it starts, and where its value may start (past its separator and the whitespace after

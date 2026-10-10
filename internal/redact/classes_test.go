@@ -262,3 +262,57 @@ func TestShapeGluedToAName(t *testing.T) {
 		t.Errorf("%d strings, %d with a value to take", n, asked)
 	}
 }
+
+// A shape that takes an Authorization header's name and scheme word (a webhook URL runs on to the next whitespace,
+// so `...,authorization=Basic` is all its own) leaves the token after the scheme word, and the token still goes:
+// every webhook URL glued by every character it holds to every header form whose separator its scheme word follows
+// straight, every scheme word in several folds, the token after each kind of whitespace (a line's end among them),
+// bare, quoted or with its quote left open. Wherever the header takes its token with a plain word in the URL's place,
+// it takes it with the URL there too, and every output is a fixed point at every cut.
+func TestHeaderTokenPastAShape(t *testing.T) {
+	m := newMaker(17)
+	urls := []string{"https://discord.com/api/webhooks/31/", "http://canary.discordapp.com/api/webhooks/31/",
+		"https://hooks.slack.com/services/T5/", "HTTPS://HOOKS.SLACK.COM/SERVICES/"}
+	glues := []string{"", ",", ";", "&", "?", "/", "=", "_", "-", ".", ":", "#", "|", "!", "*"}
+	headers := []string{"authorization=", "Authorization:", "Proxy-AUTHORIZATION=", "X-Upstream-Authorization:", "AUTHORIZATION ="}
+	schemes := []string{"Basic", "basic", "BASIC", "Baſic", "Token", "token", "TOKEN", "ToKen", "Digest",
+		"digeſt", "DIGEST", "Bearer", "bearer"}
+	between := []string{" ", "\t", "  ", " ", "　", "\n", "\r\n"}
+	tokens := []string{"%s", `"%s"`, "'%s'", `"%s more"`, `"%s`, "%s,rest"}
+	frames := []string{"%s", "in the log %s and so on", "x\n%s\r\nnext: line"}
+	n, asked, cut := 0, 0, 0
+	for _, u := range urls {
+		for _, g := range glues {
+			for _, h := range headers {
+				for si, sc := range schemes {
+					for bi, b := range between {
+						tok := tokens[(si+bi)%len(tokens)]
+						frame := frames[(si+bi+len(g))%len(frames)]
+						v := m.secret(14)
+						header := h + sc + b + fmt.Sprintf(tok, v)
+						in := fmt.Sprintf(frame, u+m.secret(20)+g+header)
+						out := Text(in)
+						n++
+						if survives(Text(fmt.Sprintf(frame, "word"+g+header)), v) == "" {
+							asked++
+							if w := survives(out, v); w != "" {
+								t.Errorf("%q kept %q of the token: %q", in, w, out)
+							}
+						}
+						if Text(out) != out {
+							t.Errorf("not a fixed point: %q gave %q, then %q", in, out, Text(out))
+						}
+						if n%5 == 0 {
+							cut++
+							fixedAtEveryCut(t, in, out)
+						}
+					}
+				}
+			}
+		}
+	}
+	t.Logf("%d strings, %d with a token to take, %d checked at every cut", n, asked, cut)
+	if asked < n*9/10 {
+		t.Errorf("%d strings, only %d with a token to take", n, asked)
+	}
+}

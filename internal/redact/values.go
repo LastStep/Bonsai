@@ -489,6 +489,13 @@ func (st *state) value(nm name, virt bool) (int, int, bool) {
 			}
 		}
 		return 0, 0, false
+	case nameAuthToken:
+		if p < st.n && !st.belowBlocked(p, virt) {
+			if e, _, ok := st.token(p, virt); ok {
+				return p, e, true
+			}
+		}
+		return 0, 0, false
 	default:
 		return st.authorization(p, virt)
 	}
@@ -530,53 +537,33 @@ func (st *state) flag(p int, virt bool) (int, int, bool) {
 }
 
 // authorization reads an Authorization header's value. After its separator: an optional quote, whitespace, then
-// with a scheme word and whitespace the value after it; a quoted value there takes the scheme word with it (the
-// header's whole value: the quoted token and what is glued after its closing quote, or, when the quote does not
-// close on its line, the word it opens), and `token` followed by `:` or `=` is a key, not a scheme. Without a scheme
-// word, or when nothing can follow it, the value is what stands there, the scheme word itself among it.
+// with a scheme word and whitespace the token after it; a quoted token takes the scheme word with it (the header's
+// whole value: the quoted token and what is glued after its closing quote, or, when the quote does not close on its
+// line, the word it opens), and `token` followed by `:` or `=` is a key, not a scheme. Without a scheme word, or when
+// nothing can follow it, the value is what stands there, the scheme word itself among it.
 func (st *state) authorization(p0 int, virt bool) (int, int, bool) {
 	s := st.s
-	p := p0
-	if p < st.n && isQuote(s[p]) {
-		p++
-	}
-	p = skipSpace(s, p)
+	p, v, w, ok := schemeAt(s, p0)
 	tail := 0
-	for _, w := range schemes {
-		e, ok := matchWord(s, p, w, true)
-		if !ok {
-			continue
-		}
-		if r, _ := runeAt(s, e); !isSpace(r) {
-			break
-		}
-		v := skipSpace(s, e)
-		if v < st.n && w == "token" && (s[v] == ':' || s[v] == '=') {
-			// `token :` is a key, so the header's value is the word token; what stands after the separator is
-			// taken too, as it would be after a scheme word.
+	if ok {
+		switch {
+		case v < st.n && w == "token" && (s[v] == ':' || s[v] == '='):
+			// `token :` is a key, so the header's value is the word token; what stands after the separator is taken
+			// too, as it would be after a scheme word.
 			if !st.belowBlocked(v, virt) {
 				tail, _ = st.authCore(v, virt)
 			}
-			break
-		}
-		if v >= st.n || st.belowBlocked(v, virt) {
-			break
-		}
-		if isQuote(s[v]) {
-			// A token is one word: a quote not closed on its line takes that word, not the rest of the line.
-			e := st.classEnd(clsQuoteless, v+1, virt)
-			if c, ok := st.closeQuote(v+1, s[v], virt); ok && !st.opensNext(c, virt) {
-				e = st.classEnd(clsQuoteless, c+1, virt)
-			}
-			return p, e, true
-		}
-		if e, ok := st.authCore(v, virt); ok {
-			if st.cutTail(v, e, virt, true) {
+		case v >= st.n || st.belowBlocked(v, virt):
+		default:
+			e, quoted, ok := st.token(v, virt)
+			switch {
+			case !ok:
 				return 0, 0, false
+			case quoted:
+				return p, e, true
 			}
 			return v, e, true
 		}
-		break
 	}
 	if p >= st.n || st.belowBlocked(p, virt) {
 		return 0, 0, false
@@ -586,6 +573,49 @@ func (st *state) authorization(p0 int, virt bool) (int, int, bool) {
 		return 0, 0, false
 	}
 	return p, max(e, tail), true
+}
+
+// schemeAt reads what may open an Authorization header's value at p0: an optional quote, whitespace, and a scheme
+// word (read widely, as every word is) with whitespace after it. It gives where the scheme word would start (p, also
+// when none stands there), where what follows its whitespace starts (v), the word, and whether one stands there.
+func schemeAt(s string, p0 int) (p, v int, word string, ok bool) {
+	p = p0
+	if p < len(s) && isQuote(s[p]) {
+		p++
+	}
+	p = skipSpace(s, p)
+	for _, w := range schemes {
+		e, ok := matchWord(s, p, w, true)
+		if !ok {
+			continue
+		}
+		if r, _ := runeAt(s, e); !isSpace(r) {
+			return p, 0, "", false
+		}
+		return p, skipSpace(s, e), w, true
+	}
+	return p, 0, "", false
+}
+
+// token reads an Authorization header's token at v, after its scheme word and the whitespace after it (v is not
+// whitespace): a quoted token runs to its closing quote and takes what is glued after it, or, when the quote does not
+// close on its line, the word it opens (quoted is true); a bare one is authCore's value, and none when that is a cut
+// tail.
+func (st *state) token(v int, virt bool) (e int, quoted, ok bool) {
+	s := st.s
+	if isQuote(s[v]) {
+		// A token is one word: a quote not closed on its line takes that word, not the rest of the line.
+		e := st.classEnd(clsQuoteless, v+1, virt)
+		if c, ok := st.closeQuote(v+1, s[v], virt); ok && !st.opensNext(c, virt) {
+			e = st.classEnd(clsQuoteless, c+1, virt)
+		}
+		return e, true, true
+	}
+	e, ok = st.authCore(v, virt)
+	if !ok || st.cutTail(v, e, virt, true) {
+		return 0, false, false
+	}
+	return e, false, true
 }
 
 // authCore is an Authorization header's value at p: a marker already written that `,` `;` `&` `}` `)` follows is

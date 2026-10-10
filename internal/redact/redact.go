@@ -21,7 +21,8 @@
 //     before the next rule could see the name inside it, and leaked in three classes of shape; read this way the
 //     three are one rule: every name's value goes, wherever the name stands. A name a shape took into its span
 //     (`AKIA...PASSWORD: x`, a token or a webhook URL with `_token=` or `,password:` glued on) is still a name: it
-//     is found in the text as it stood before the shapes, and its value goes too (withLost, below).
+//     is found in the text as it stood before the shapes, and its value goes too (withLost, below); an
+//     Authorization header whose scheme word the shape took has its token, after the scheme word, taken there.
 //  3. random.go: a long run of token characters that looks random.
 //
 // The three run again over their own output until it no longer changes (one pass is nearly always enough).
@@ -193,10 +194,18 @@ func redactDoc(s string) *doc {
 }
 
 // withLost adds to names, the names of the current text, the names this pass's shapes took into their spans: those
-// found in the text as it stood before the shapes (preText, mapped onto orig by preSegs) and not now, whose values
-// start outside every span. Each stands in the current text where it stood, a part of it inside a marker at the
-// marker's start, so its value is read as any other name's. A value that starts inside the span that took its name
-// is that span's: the password of a URL's credentials ends at its `@`, and the host after it stays.
+// found in the text as it stood before the shapes (preText, mapped onto orig by preSegs) and not now. Each stands in
+// the current text where it stood, a part of it inside a marker at the marker's start, so its value is read as any
+// other name's.
+//
+// Where a lost name's value starts inside a span, what decides is where the value's secret starts. A key's, a
+// flag's, extraheader's and a Bearer's value is secret from its first character: an opening quote (no span ends just
+// after one), a URL with its userinfo, what follows a key's `=`. Such a value starting inside a span is that span's,
+// whatever of it lies past the span: inside a URL's credentials the password ends at the `@`, and the host after it
+// stays. An Authorization header's value opens with its scheme word, and its secret, the token, follows the scheme
+// word and its whitespace: a webhook URL glued to `authorization=Basic` ends at the space and takes the scheme word,
+// but the token after the space is the header's, so it is read there, as after a scheme word (nameAuthToken). A
+// `token:` after the header's separator is a key of its own, found and read as one.
 func (d *doc) withLost(names []name, preText string, preSegs []seg) []name {
 	pre := findNames(preText)
 	if len(pre) == 0 {
@@ -216,16 +225,33 @@ func (d *doc) withLost(names []name, preText string, preSegs []seg) []name {
 		if now[at{nm.kind, v}] {
 			continue
 		}
-		if k := sort.Search(len(d.spans), func(i int) bool { return d.spans[i].End > v }); k < len(d.spans) && d.spans[k].Start < v {
-			continue
+		kind := nm.kind
+		if d.inside(v) {
+			if nm.kind != nameAuth {
+				continue
+			}
+			_, t, w, ok := schemeAt(preText, nm.val)
+			if !ok || t < len(preText) && w == "token" && (preText[t] == ':' || preText[t] == '=') {
+				continue // no scheme word, or `token:`, a key found on its own
+			}
+			if v = origAt(preSegs, t); d.inside(v) {
+				continue
+			}
+			kind = nameAuthToken
 		}
-		names = append(names, name{nm.kind, d.textAt(origAt(preSegs, nm.start)), d.textAt(v)})
+		names = append(names, name{kind, d.textAt(origAt(preSegs, nm.start)), d.textAt(v)})
 		added = true
 	}
 	if added {
 		sort.SliceStable(names, func(i, j int) bool { return names[i].start < names[j].start })
 	}
 	return names
+}
+
+// inside reports whether byte o of orig lies inside a span, past its first byte.
+func (d *doc) inside(o int) bool {
+	k := sort.Search(len(d.spans), func(i int) bool { return d.spans[i].End > o })
+	return k < len(d.spans) && d.spans[k].Start < o
 }
 
 // origAt gives the byte of orig that byte pos of a text stands for, by the text's map: in a marker, the start of
