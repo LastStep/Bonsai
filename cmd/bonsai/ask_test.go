@@ -105,7 +105,11 @@ func TestAskCommands(t *testing.T) {
 		!strings.HasSuffix(out, "no answer yet\n") {
 		t.Errorf("--status, open: %d\n%s", code, out)
 	}
-	// A terminal's answer, then the same answer again: written once.
+	// A terminal's answer, then the same answer again: written once. The answer restores a missing .bonsai/.gitignore
+	// first, as every writer of .bonsai/local/ does.
+	if err := os.Remove(filepath.Join(c.root, ".bonsai", ".gitignore")); err != nil {
+		t.Fatal(err)
+	}
 	code, out, _ = c.run("", "answer", "agent:colour", "--choice", "Darker password=MadeUpAskSecret2", "--words", "Darker. secret=MadeUpAskSecret3")
 	if code != 0 || out != "agent:colour: answered\n" {
 		t.Errorf("the answer: %d %q", code, out)

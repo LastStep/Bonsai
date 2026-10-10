@@ -129,7 +129,11 @@ func TestLogAppend(t *testing.T) {
 		t.Errorf("a refusal wrote something")
 	}
 
-	// Written: every kind, a pack's label and the machine's; the target and text redacted.
+	// Written: every kind, a pack's label and the machine's; the target and text redacted; a missing
+	// .bonsai/.gitignore restored first, as every writer of .bonsai/local/ does.
+	if err := os.Remove(filepath.Join(c.root, ".bonsai", ".gitignore")); err != nil {
+		t.Fatal(err)
+	}
 	code, out, errOut := c.run("", "log", "append", "--label", "ops.event=deploy", "--label", "ops.ref=c6ba392", "--label", "ops.cost=-12.50",
 		"--label", "ops.counts=1,2", "--label", "bonsai.allows=docs/**,assets/*.png", "--label", "ops.note=hello token=MadeUpLog0",
 		"--target", "T-0901 password=MadeUpLogSecret1", "--text", "deployed with api_key=MadeUpLogSecret2 "+strings.Repeat("x", 400))

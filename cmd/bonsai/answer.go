@@ -1,8 +1,9 @@
 package main
 
-// bonsai answer (spec section 4, section 8; contract section 9.3; plan-5 5.2.5): a person answers an open ask, at a
-// terminal, or the studio records a Desk answer (--by act:<id> --via desk). A thin command over internal/asks; with
-// --json it prints bonsai.asks/1 (format.Asks). Its table is answerWord. An answer answers; it never grants.
+// bonsai answer (spec section 4, section 8; contract section 9.3; plan-5 5.2.5): a person answers an open ask at a
+// terminal, or a program records an answer a person gave elsewhere (--by its own reference, --via who carried it:
+// Bonsai stores what it is given, and its code names no caller). A thin command over internal/asks; with --json it
+// prints bonsai.asks/1 (format.Asks). Its table is answerWord. An answer answers; it never grants.
 
 import (
 	"github.com/LastStep/Bonsai/internal/asks"
@@ -29,7 +30,7 @@ text is checked as ask checks it: no hidden or control character, every secret r
 		{Name: "--verdict", Value: "pass|fail", Help: "a Look's verdict"},
 		{Name: "--words", Value: "TEXT", Help: "the person's own words, at most 2,000 characters (they may hold line feeds)"},
 		{Name: "--by", Value: "TEXT", Help: "who answered: terminal unless given; a caller's own reference, at most 60 characters"},
-		{Name: "--via", Value: "TEXT", Help: "who carried the answer (the studio's desk, say), at most 30 characters; null unless given"},
+		{Name: "--via", Value: "TEXT", Help: "who carried the answer, at most 30 characters; null unless given"},
 		{Name: "--json", Help: "print the bonsai.asks/1 document (for programs) instead of plain text"},
 	},
 	Exits: []Exit{

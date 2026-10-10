@@ -12,8 +12,8 @@ package asks
 //  3. The redactor (internal/redact's Text) takes every secret it finds out.
 //  4. The limit, in characters (code points), on the redacted text: a field over it is refused, never cut.
 //
-// No NFC normalising, unlike today's: it needs a library outside Go's standard one, and the studio's bridge may
-// normalise. A title, an option and every one-line field refuse a line feed with their own sentence.
+// No NFC normalising, unlike today's: it needs a library outside Go's standard one, and whatever forwards the asks
+// may normalise them. A title, an option and every one-line field refuse a line feed with their own sentence.
 
 import (
 	"fmt"
