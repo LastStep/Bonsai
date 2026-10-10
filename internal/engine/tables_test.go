@@ -5,6 +5,9 @@ package engine
 // tables.
 
 import (
+	"time"
+
+	"github.com/LastStep/Bonsai/internal/record"
 	"os"
 	"path/filepath"
 	"strings"
@@ -127,7 +130,7 @@ func TestWriteTables(t *testing.T) {
 	}
 	// Twice: the same bytes, and nothing rewritten. A CRLF checkout of the table is the same table.
 	before := snapshot(t, root)
-	if res, werr = WriteTables(root); werr != nil || len(res.Written) != 0 || len(res.Same) != 1 || snapshot(t, root)[workspace.TasksTableFile] != before[workspace.TasksTableFile] {
+	if res, werr = WriteTables(root); werr != nil || len(res.Written) != 0 || len(res.Same) != 2 || snapshot(t, root)[workspace.TasksTableFile] != before[workspace.TasksTableFile] {
 		t.Errorf("second write: %v %+v", werr, res)
 	}
 	writeFile(t, root, workspace.TasksTableFile, strings.ReplaceAll(wantAfter, "\n", "\r\n"))
@@ -205,5 +208,239 @@ func TestWriteTablesRefusals(t *testing.T) {
 	}
 	if _, werr := WriteTables(t.TempDir()); werr == nil || werr.Code != "not-a-checkout" || werr.Exit != ExitState {
 		t.Errorf("not a checkout: %+v", werr)
+	}
+}
+
+// The sessions table (step 5.2.3): rows added from fixture logs written fresh by each test.
+
+const (
+	wsFixture = "ws-abcdefghijklmnopqrstuvwxyz"
+	sessA     = "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a"
+	sessB     = "7a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+)
+
+// logEvent is one record of a fixture log: a clock time on 2026-10-08, its event, and what it sets.
+type logEvent struct {
+	at, event string
+	set       func(*format.Log)
+}
+
+func sp(s string) *string { return &s }
+
+func startEv(at, task, role string) logEvent {
+	return logEvent{at, "session_start", func(l *format.Log) { l.Target, l.Role, l.Model = sp(task), sp(role), sp("claude-opus") }}
+}
+func endEv(at string) logEvent  { return logEvent{at, "session_end", nil} }
+func toolEv(at string) logEvent { return logEvent{at, "tool_end", nil} }
+func subEv(at, event, id string) logEvent {
+	return logEvent{at, event, func(l *format.Log) { l.SubagentID, l.SubagentType, l.Target = sp(id), sp("builder"), sp("T-0901") }}
+}
+
+// writeSessionLog writes the session's file in the project's main log folder.
+func writeSessionLog(t *testing.T, root, session string, events ...logEvent) string {
+	t.Helper()
+	var b []byte
+	for _, e := range events {
+		ts, err := time.Parse(record.AtLayout, "2026-10-08T"+e.at+":00.000Z")
+		if err != nil {
+			t.Fatal(err)
+		}
+		l := record.New(e.event, record.Common{Workspace: wsFixture, Session: session, Agent: "claude-code", At: ts})
+		if e.set != nil {
+			e.set(l)
+		}
+		line, err := record.Line(l)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b = append(b, line...)
+	}
+	rel := ".bonsai/local/log/s-" + session + ".ndjson"
+	writeFile(t, root, rel, string(b))
+	return rel
+}
+
+// clock sets the sessions table's clock for the test.
+func clock(t *testing.T, at string) {
+	t.Helper()
+	ts, err := time.Parse("2006-01-02 15:04", at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := tablesNow
+	tablesNow = func() time.Time { return ts }
+	t.Cleanup(func() { tablesNow = old })
+}
+
+// tablesWarnings are the warnings with the code tables, as "file: message".
+func tablesWarnings(r *CheckResult) []string {
+	var out []string
+	for _, w := range r.Warnings {
+		if w.Code == "tables" {
+			out = append(out, w.File+": "+w.Message)
+		}
+	}
+	return out
+}
+
+func TestWriteTablesAddsSessionRows(t *testing.T) {
+	e := setup(t)
+	root := e.linked(t, "rows")
+	clock(t, "2026-10-08 12:00") // a session open at 11:00 is open here
+	writeSessionLog(t, root, sessA, startEv("09:05", "T-0901", "orchestrator"), subEv("09:10", "subagent_start", "agent-aaaaaaaa-1"),
+		subEv("10:00", "subagent_stop", "agent-aaaaaaaa-1"), endEv("10:35"))
+	writeSessionLog(t, root, sessB, startEv("11:00", "T-0901", "builder"), toolEv("11:20")) // open: no row yet
+
+	// Before --write: one warning, naming the sessions table, with the exact command. Never a finding.
+	r, err := checkLocal(t, root, e.home)
+	if err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "tables" || r.Warnings[0].File != workspace.SessionsTableFile ||
+		!strings.HasPrefix(r.Warnings[0].Message, ".bonsai/sessions.md lacks 2 row") ||
+		r.Warnings[0].Next != "run: bonsai check --write" {
+		t.Fatalf("a stale sessions table: %v %+v %+v", err, r.Findings, r.Warnings)
+	}
+	res, werr := WriteTables(root)
+	if werr != nil || len(res.Written) != 1 || res.Written[0] != workspace.SessionsTableFile {
+		t.Fatalf("write: %v %+v", werr, res)
+	}
+	got := read(t, root, workspace.SessionsTableFile)
+	if strings.Count(got, "\n| 6d1e2f3a |") != 2 || strings.Contains(got, "7a2b3c4d") || !strings.Contains(got, "| T-0901 | builder | subagent | 0.8 |") ||
+		!strings.Contains(got, "| T-0901 | orchestrator | session | 1.5 |") {
+		t.Errorf("the table after the write:\n%s", got)
+	}
+	if _, err := format.ReadSessions([]byte(got)); err != nil {
+		t.Errorf("the table does not read back: %v", err)
+	}
+	if r, err = checkLocal(t, root, e.home); err != nil || len(r.Warnings) != 0 || len(r.Findings) != 0 {
+		t.Errorf("after the write: %v %+v %+v", err, r.Findings, r.Warnings)
+	}
+	// Twice: the same bytes, nothing written.
+	res, werr = WriteTables(root)
+	if werr != nil || len(res.Written) != 0 || len(res.Same) != 2 || read(t, root, workspace.SessionsTableFile) != got {
+		t.Errorf("second write: %v %+v", werr, res)
+	}
+	// A CRLF checkout of the table is the same table.
+	writeFile(t, root, workspace.SessionsTableFile, strings.ReplaceAll(got, "\n", "\r\n"))
+	if r, _ = checkLocal(t, root, e.home); len(tablesWarnings(r)) != 0 {
+		t.Errorf("a CRLF table: %v", tablesWarnings(r))
+	}
+	if res, werr = WriteTables(root); werr != nil || len(res.Written) != 0 {
+		t.Errorf("a CRLF table was rewritten: %v %+v", werr, res)
+	}
+
+	// The log file goes (cleaned): its rows stay. The open session ends (a day later): it gets its row, and the
+	// stale warning comes back first.
+	if err := os.Remove(filepath.Join(root, ".bonsai/local/log/s-"+sessA+".ndjson")); err != nil {
+		t.Fatal(err)
+	}
+	if res, werr = WriteTables(root); werr != nil || len(res.Written) != 0 || strings.ReplaceAll(read(t, root, workspace.SessionsTableFile), "\r\n", "\n") != got {
+		t.Errorf("rows of a gone file: %v %+v", werr, res)
+	}
+	clock(t, "2026-10-09 11:21")
+	if r, _ = checkLocal(t, root, e.home); len(tablesWarnings(r)) != 1 {
+		t.Errorf("a span that ended by the 24-hour rule has no row: %v", tablesWarnings(r))
+	}
+	if res, werr = WriteTables(root); werr != nil || len(res.Written) != 1 {
+		t.Fatalf("write after the 24 hours: %v %+v", werr, res)
+	}
+	got2 := read(t, root, workspace.SessionsTableFile)
+	if !strings.Contains(got2, "| 7a2b3c4d | session | T-0901 | builder | claude-opus | 2026-10-08 11:00 | 2026-10-08 11:20 | 20 | |") ||
+		strings.Count(got2, "\n| 6d1e2f3a |") != 2 || strings.Index(got2, "6d1e2f3a") > strings.Index(got2, "7a2b3c4d") {
+		t.Errorf("the table with the second session:\n%s", got2)
+	}
+}
+
+func TestWriteTablesRewritesTheEightColumnTable(t *testing.T) {
+	e := setup(t)
+	root := e.linked(t, "old")
+	clock(t, "2026-10-09 12:00")
+	old := "---\nformat: bonsai.sessions/1   # generated by bonsai check --write from the log; never edit by hand\n---\n" +
+		"| Session | Kind | Task | Role | Model | Start | End | Minutes |\n|---|---|---|---|---|---|---|---|\n" +
+		"| 11111111 | session | T-0001 | builder | claude-sonnet | 2026-10-01 09:00 | 2026-10-01 10:00 | 60 |\n" +
+		"| 22222222 | session | none | | | 2026-10-02 09:00 | 2026-10-02 09:30 | 30 |\n" +
+		"\nHours per task and role (a subagent run lies inside its session's row, so the two are never added):\n\n" +
+		"| Task | Role | Kind | Hours |\n|---|---|---|---|\n| T-0001 | builder | session | 1.0 |\n"
+	writeFile(t, root, workspace.SessionsTableFile, old)
+	writeSessionLog(t, root, sessA, startEv("09:05", "T-0901", "builder"), endEv("10:05"))
+	res, werr := WriteTables(root)
+	if werr != nil || len(res.Written) != 1 {
+		t.Fatalf("write: %v %+v", werr, res)
+	}
+	got := read(t, root, workspace.SessionsTableFile)
+	for _, want := range []string{
+		"| Session | Kind | Task | Role | Model | Start | End | Minutes | Subagent |\n|---|---|---|---|---|---|---|---|---|\n",
+		"| 11111111 | session | T-0001 | builder | claude-sonnet | 2026-10-01 09:00 | 2026-10-01 10:00 | 60 | |\n",
+		"| 22222222 | session | none | | | 2026-10-02 09:00 | 2026-10-02 09:30 | 30 | |\n",
+		"| 6d1e2f3a | session | T-0901 | builder | claude-opus | 2026-10-08 09:05 | 2026-10-08 10:05 | 60 | |\n",
+		"| none | | session | 0.5 |\n"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the rewritten table lacks %q:\n%s", want, got)
+		}
+	}
+	// With no new row, an 8-column table is still written with nine columns, every row kept.
+	if err := os.Remove(filepath.Join(root, ".bonsai/local/log/s-"+sessA+".ndjson")); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, root, workspace.SessionsTableFile, old)
+	if res, werr = WriteTables(root); werr != nil || len(res.Written) != 1 || !strings.Contains(read(t, root, workspace.SessionsTableFile), "| 22222222 | session | none | | | 2026-10-02 09:00 | 2026-10-02 09:30 | 30 | |\n") {
+		t.Errorf("the old table alone: %v %+v\n%s", werr, res, read(t, root, workspace.SessionsTableFile))
+	}
+}
+
+func TestWriteTablesRefusesATableThatDoesNotReadBack(t *testing.T) {
+	e := setup(t)
+	root := e.linked(t, "broken")
+	clock(t, "2026-10-09 12:00")
+	writeSessionLog(t, root, sessA, startEv("09:05", "T-0901", "builder"), endEv("10:05"))
+	if _, werr := WriteTables(root); werr != nil {
+		t.Fatal(werr)
+	}
+	good := read(t, root, workspace.SessionsTableFile)
+	bad := strings.Replace(good, "| 6d1e2f3a | session | T-0901 | builder | claude-opus | 2026-10-08 09:05 | 2026-10-08 10:05 | 60 | |",
+		"| 6d1e2f3a | session | T-0901 | builder | claude-opus | 2026-10-08 09:05 | 60 |", 1)
+	if bad == good {
+		t.Fatal("the fixture row changed")
+	}
+	writeFile(t, root, workspace.SessionsTableFile, bad)
+	// A stale tasks table too: the refusal writes neither.
+	writeFile(t, root, "work/tasks/T-0902-c.md", f1Todo)
+	tasksBefore := read(t, root, workspace.TasksTableFile)
+	writeSessionLog(t, root, sessB, startEv("11:00", "T-0901", "builder"), endEv("11:30"))
+	res, werr := WriteTables(root)
+	if werr == nil || werr.Code != "bad-file" || werr.Exit != ExitRuntime || !strings.Contains(werr.What, ".bonsai/sessions.md") ||
+		!strings.Contains(werr.What, "at line 6") || !strings.Contains(werr.What, "no row was dropped") || !strings.Contains(werr.Next, "run: bonsai check --write") {
+		t.Fatalf("a broken table: %+v", werr)
+	}
+	if res != nil || read(t, root, workspace.SessionsTableFile) != bad || read(t, root, workspace.TasksTableFile) != tasksBefore {
+		t.Errorf("the refusal wrote something")
+	}
+	if o := werr.Object(); o.Next.Who == "" {
+		t.Errorf("no who: %+v", o)
+	}
+	// The reading check does not warn about a table it cannot read (that is the finding document's).
+	if r, _ := checkLocal(t, root, e.home); len(tablesWarnings(r)) != 1 || !strings.Contains(tablesWarnings(r)[0], "tasks.md") {
+		t.Errorf("warnings: %v", tablesWarnings(r))
+	}
+}
+
+func TestWorktreeWarnsOfTheMainCheckoutsSessionsTable(t *testing.T) {
+	e := setup(t)
+	root := e.linked(t, "main")
+	testpack.Git(t, root, "add", "-A")
+	testpack.Git(t, root, "commit", "-q", "-m", "linked")
+	clock(t, "2026-10-09 12:00")
+	writeSessionLog(t, root, sessA, startEv("09:05", "T-0901", "builder"), endEv("10:05"))
+	wt := filepath.Join(e.tmp, "branch")
+	testpack.Git(t, root, "worktree", "add", "-q", "-b", "branch", wt)
+	r, err := checkLocal(t, wt, e.home)
+	w := tablesWarnings(r)
+	if err != nil || len(r.Findings) != 0 || len(w) != 1 || !strings.Contains(w[0], "the main checkout's .bonsai/sessions.md lacks 1 row") ||
+		!strings.Contains(r.Warnings[0].Next, "from there, run: bonsai check --write") {
+		t.Errorf("a worktree: %v %v %+v", err, w, r.Findings)
+	}
+	if _, werr := WriteTables(root); werr != nil {
+		t.Fatal(werr)
+	}
+	if r, _ = checkLocal(t, wt, e.home); len(tablesWarnings(r)) != 0 {
+		t.Errorf("after main's write: %v", tablesWarnings(r))
 	}
 }

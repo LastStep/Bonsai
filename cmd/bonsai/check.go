@@ -37,8 +37,11 @@ and .bonsai/local/ in git; and what Claude Code reports: the packs' plugins (cla
 version against the floor (claude --version; Bonsai's ` + engine.ClaudeCodeFloor + `, or a pack's needs.claude_code). Each
 finding and warning has a code (bonsai check --schema bonsai.check lists them all) and a next step: the exact
 command, written "run: <command>", wherever one fixes it. It fetches nothing, and writes nothing but with --write,
-which rebuilds the tasks table (.bonsai/tasks.md) from the task files, in the main checkout only: in a worktree it
-refuses, exit 4, naming the main checkout. A tasks table that differs from a rebuild is a warning, never a finding.
+which rebuilds the tasks table (.bonsai/tasks.md) from the task files and adds to the sessions table
+(.bonsai/sessions.md) a row for every ended session and subagent run in the log, in the main checkout only: in a
+worktree it refuses, exit 4, naming the main checkout; a sessions table that does not read back is refused, exit 3,
+naming the line, and no row is dropped. A table that is stale (a tasks table that differs from a rebuild, a sessions
+table lacking a row for an ended span in the log) is a warning, never a finding.
 Findings exit 1; warnings never change the exit code; with --write the exit code says only whether it wrote.
 With --pack <folder> it checks a pack's folder instead of a checkout (spec section 5, in each pack's CI): every
 rule's finding has its word, each file is the pack's own, and it reads nothing else (no project, home or network).
@@ -51,7 +54,7 @@ rule's finding has its word, each file is the pack's own, and it reads nothing e
 				"anywhere. <format> is a name (bonsai.task), a short name (task) or a name and major\n" +
 				"(bonsai.task/1), one of:",
 			More: func() string { return strings.Join(format.Names(), ", ") }},
-		{Name: "--write", Help: "rebuild the tasks table in .bonsai/ (the sessions table joins in step 5.2.3), in the main checkout\nonly; the exit code then says only whether it wrote (0 written, 3 could not); findings are still\nlisted"},
+		{Name: "--write", Help: "rebuild the tasks table and add the sessions rows in .bonsai/, in the main checkout\nonly; the exit code then says only whether it wrote (0 written, 3 could not); findings are still\nlisted"},
 		{Name: "--pack", Value: "<folder>", Need: "a pack's folder (the one holding bonsai/pack.yaml)",
 			Help: "check a pack's folder instead (in the pack's CI): pack.yaml, labels.yaml and lanes.yaml held\n" +
 				"to their formats, a comment on every key, each template skill's fields table, each deny rule's\n" +
@@ -63,7 +66,7 @@ rule's finding has its word, each file is the pack's own, and it reads nothing e
 		{Code: 0, Means: "no findings (or the format printed); with --write, the table was written (or already current)"},
 		{Code: 1, Means: "findings (never with --write); with --pack, the pack folder's"},
 		{Code: 2, Means: "bad input (a flag check does not take, one not built yet, --pack with --write or --schema, or a format\nBonsai does not know: the refusal lists every name)"},
-		{Code: 3, Means: "runtime (git is not on the PATH, the Bonsai home cannot be found, a file cannot be read; with --write,\nthe table could not be written)"},
+		{Code: 3, Means: "runtime (git is not on the PATH, the Bonsai home cannot be found, a file cannot be read; with --write,\na table could not be written, or the sessions table does not read back)"},
 		{Code: 4, Means: "not a linked checkout (not in a git checkout, or no bonsai.yaml), or --write in a worktree; with --pack,\nnot a pack's folder (not there, or no bonsai/pack.yaml in it)"},
 	},
 	Examples: []string{"bonsai check --json", "bonsai check --schema bonsai.task", "bonsai check --pack . --json"},
