@@ -13,9 +13,10 @@ package redact
 // another value reached it first, and wherever a name stands, its value goes.
 //
 // A value's shapes, by name (the studio's, with its three leak classes closed):
-//   - a quoted value ends at its closing quote on its line and takes what is glued after the quote (a shell reads
-//     `"a b"c` as one word), unless a name is glued there; a quote that never closes on its line runs to the line's
-//     end, and so does one whose next quote opens another key's value (`PASSWORD: "x ... TOKEN="a b"`);
+//   - a quoted value ends at its closing quote on its line and takes everything glued after the quote, a name too (a
+//     shell reads `"a b"c` as one word; a marker left glued to a name would change when a cut shortened the name); a
+//     quote that never closes on its line runs to the line's end, and so does one whose next quote opens another
+//     key's value (`PASSWORD: "x ... TOKEN="a b"`);
 //   - a key's bare value stops at whitespace, a quote, `,` `;` `&` `}` `)`; a flag's and an Authorization header's at
 //     whitespace or a quote, and a flag's never starts with `-`; a Bearer's is 8 or more of [A-Za-z0-9._~+/=-];
 //     extraheader's is everything to the next whitespace;
@@ -23,8 +24,9 @@ package redact
 //     with a name on its own line (`secrets:`, then `  password: x`: the name below has the value), or is the last
 //     line of the text and one word (it may be a name the recorder's cut left: `secrets:`, then `  passw`);
 //   - after an Authorization header, its scheme word (Basic, Bearer, Token, Digest) is the header's own and the
-//     value follows it, quoted or not; `token` followed by `:` or `=` is a key, not the scheme, so the header takes
-//     it as its value and the key's value goes too;
+//     value follows it, quoted or not (a quoted token takes the scheme word with it, and when its quote does not
+//     close on its line, only the word it opens); `token` followed by `:` or `=` is a key, not the scheme, so the
+//     header takes it as its value and the key's value goes too;
 //   - a value that is only a cut tail of the marker (`password=[reda`), or after an Authorization header of a scheme
 //     word (`Authorization: Bea`), with nothing after it but whitespace, is kept: it is what a cut of the redactor's
 //     own output leaves, and a second pass must leave it.
