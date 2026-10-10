@@ -553,15 +553,202 @@ func shellSplit(s string) []string {
 // The next-step checker itself: it passes the commands Bonsai has and fails the ones it does not.
 func TestCheckNextCommands(t *testing.T) {
 	for _, ok := range []string{"bonsai update --yes --adopt CLAUDE.md", "bonsai check --schema bonsai.task", "git checkout -- 'a b.md'",
-		"claude plugin uninstall x@y --scope local", "bonsai init --yes", "claude update", "bonsai check --write"} {
+		"claude plugin uninstall x@y --scope local", "bonsai init --yes", "claude update", "bonsai check --write", "bonsai check --pack . --json"} {
 		if err := runnable(ok); err != nil {
 			t.Errorf("%s: %v", ok, err)
 		}
 	}
 	for _, bad := range []string{"bonsai frobnicate", "bonsai update --frob", "bonsai check --write --frob", "bonsai update now", "rm -rf x",
-		"git push", "bonsai check --schema"} {
+		"git push", "bonsai check --schema", "bonsai check --pack"} {
 		if err := runnable(bad); err == nil {
 			t.Errorf("%s: passed", bad)
+		}
+	}
+}
+
+// check --pack's words (format.PackCheckWords, plan-5 5.1.9), walked as TestCheckTable walks check's: each word has a
+// case that changes one file of the documented pack (testpack.DocumentedPack, which passes every rule) to break that
+// rule, and more cases where a rule has more than one way to break; bonsai check --pack on each, with --json and
+// without, finds that word and no other (each fixture fails on its own rule only). A word with no case fails, and so
+// does a case for a word not in the table.
+type packCase func(t *testing.T, files map[string]string)
+
+// swap changes one file of a pack: old, which must be there once, becomes new.
+func swap(file, old, new string) packCase {
+	return func(t *testing.T, files map[string]string) {
+		t.Helper()
+		if strings.Count(files[file], old) != 1 {
+			t.Fatalf("%s does not hold %q once:\n%s", file, old, files[file])
+		}
+		files[file] = strings.Replace(files[file], old, new, 1)
+	}
+}
+
+// set writes one file of a pack whole ("" leaves it out).
+func set(file, content string) packCase {
+	return func(t *testing.T, files map[string]string) { files[file] = content }
+}
+
+var packCases = map[string][]packCase{
+	"pack-schema": {
+		swap("bonsai/pack.yaml", `protected: ["work/notes/**"]          # paths an agent changes only with a grant`+"\n", ""),
+		swap("bonsai/pack.yaml", `version: "0.1.0"`, `version: 1.5     `),
+		swap("bonsai/pack.yaml", "id: docs-pack                         # the pack's id\n", "id: 0755 # refused\n"),
+		swap("bonsai/pack.yaml", "  - path: work/protocols/start.md", "  - path: \".claude/start.md\"   "),
+		set("bonsai/files/start.md", ""),
+		swap("bonsai/labels.yaml", "namespace: docs-pack ", "namespace: other-ns "),
+		swap("bonsai/labels.yaml", "format: bonsai.labels/1               # the format\n", ""),
+		swap("bonsai/lanes.yaml", "  - name: full ", "  - name: light"),
+		swap("bonsai/lanes.yaml", "    close: person                     # a person closes it", "    close: everyone                   # a person closes it"),
+	},
+	"pack-comment": {
+		swap("bonsai/pack.yaml", `version: "0.1.0"                      # the pack's version`, `version: "0.1.0"`),
+		swap("bonsai/pack.yaml", `why: "Agents cannot read docs/secret.txt."  # the preview's sentence`, `why: "Agents cannot read docs/secret.txt #1."`),
+		swap("bonsai/pack.yaml", "    # why: the line in the preview, too long to share its line\n", ""),
+		swap("bonsai/labels.yaml", "    max: null                         # no length limit", "    max: null"),
+		swap("bonsai/lanes.yaml", "lanes:                                # its lanes", "lanes:"),
+	},
+	"pack-fields": {
+		swap("skills/note/SKILL.md", "| `lane` | Its lane | `light`, `full`, or `null` | `light` |\n", ""),
+		swap("skills/note/SKILL.md", "| `labels` | Its labels | a mapping | `{}` |\n", "| `labels` | Its labels | a mapping | `{}` |\n| `owner` | Who | text | `me` |\n"),
+		swap("skills/task/SKILL.md", "finished: null\n", ""),
+		swap("skills/task/SKILL.md", "format: bonsai.task/1   #", "format: bonsai.nope/1   #"),
+		func(t *testing.T, files map[string]string) { // the template taken out
+			files["skills/note/SKILL.md"], _, _ = strings.Cut(files["skills/note/SKILL.md"], "```markdown")
+		},
+	},
+	"pack-values": {
+		swap("skills/task/SKILL.md", "`blocked`, `cut` | `todo` |", "`blocked` | `todo` |"),
+		swap("skills/note/SKILL.md", "| `status` | Where it stands | `draft`, `done` |", "| `status` | Where it stands | `draft`, `final` |"),
+		swap("skills/note/SKILL.md", "| `lane` | Its lane | `light`, `full`, or `null` |", "| `lane` | Its lane | `light` |"),
+		swap("skills/note/SKILL.md", "`small` or `large` |", "`small`, `medium` or `large` |"),
+		swap("skills/task/SKILL.md", "| `format` | The format | `bonsai.task/1` |", "| `format` | The format | `bonsai.task/2` |"),
+	},
+	"pack-why": {
+		swap("bonsai/pack.yaml", `why: "Agents cannot read docs/secret.txt."`, `why: "   "                         `),
+		swap("bonsai/pack.yaml", `    why: "Agents cannot read docs/secret.txt."  # the preview's sentence`+"\n", ""),
+		swap("bonsai/pack.yaml", `why: "Agents cannot read docs/secret.txt."  #`, `why:   #`),
+		swap("bonsai/pack.yaml", `why: "Agents cannot read docs/secret.txt."`, `why: ""`),
+	},
+	"pack-plugin-version": {
+		set(".claude-plugin/plugin.json", "{\"name\": \"docs-pack\", \"version\": \"1.0.0\"}\n"),
+		set(".claude-plugin/plugin.json", "[\"not an object\"]\n"),
+	},
+	"pack-block": {
+		set("bonsai/block.md", "<!-- the docs -->\n"+strings.Repeat("A line of the block.\n", 37)),
+	},
+	"pack-documents": {
+		swap("bonsai/pack.yaml", "    file: null                        # a folder, not one file", "    file: work/notes.md               # a folder, not one file"),
+		swap("bonsai/pack.yaml", "  - kind: note  ", "  - kind: task  "),
+		swap("bonsai/pack.yaml", "  - kind: note  ", "  - kind: Note  "),
+		swap("bonsai/pack.yaml", `"^N-[0-9]{4}$"   `, `"^N-([0-9]{4}$"  `),
+		swap("bonsai/pack.yaml", "      - [draft, done]   ", "      - [draft, gone]   "),
+		swap("bonsai/pack.yaml", "      done: finished   ", "      gone: finished   "),
+		swap("bonsai/pack.yaml", "statuses: [draft, done]   ", "statuses: [draft, done, done]"),
+	},
+	"pack-protected": {
+		swap("bonsai/pack.yaml", `["work/notes/**"]`, `["work/../notes"]`),
+		swap("bonsai/pack.yaml", `["work/notes/**"]`, `["/work/notes"]  `),
+		swap("bonsai/pack.yaml", `["work/notes/**"]`, `["work/[notes"]  `),
+		swap("bonsai/pack.yaml", `["work/notes/**"]`, `["work//notes"]  `),
+	},
+	"pack-bash": {
+		swap("bonsai/pack.yaml", `command: "sh docs/run.sh"  `, `command: "bash docs/run.sh"`),
+		swap("hooks/hooks.json", `"echo docs plugin hook"`, `"bash -c 'echo hook'"`),
+		set(".claude-plugin/plugin.json", `{"name": "docs-pack", "hooks": {"Stop": [{"hooks": [{"type": "command", "command": "env BASH.EXE x"}]}]}}`+"\n"),
+	},
+	"pack-runs": {
+		swap("bonsai/pack.yaml", `runs: ["docs/run.sh"]`, `runs: []             `),
+		swap("bonsai/pack.yaml", `command: "sh docs/run.sh"         `, `command: "sh docs/run.sh ./START.md" `),
+	},
+}
+
+func TestCheckPackTable(t *testing.T) {
+	for code := range packCases {
+		if _, ok := format.PackCheckWord(code); !ok {
+			t.Errorf("a case for %s, which is not in format.PackCheckWords", code)
+		}
+	}
+	tmp := t.TempDir()
+	n := 0
+	check := func(t *testing.T, files map[string]string) (int, []any, string) {
+		t.Helper()
+		n++
+		dir := filepath.Join(tmp, "pack-"+strconv.Itoa(n))
+		testpack.WriteFolder(t, dir, files)
+		code, out, errOut := runArgs("check", "--pack", dir, "--json")
+		doc := fits(t, out, "check")
+		if w, _ := doc.Get("warnings"); len(w.([]any)) > 0 || errOut != "" {
+			t.Errorf("check --pack gave warnings or wrote to stderr:\n%s%s", out, errOut)
+		}
+		if e, _ := doc.Get("error"); e != nil {
+			t.Errorf("check --pack's error is not null:\n%s", out)
+		}
+		textCode, text, _ := runArgs("check", "--pack", dir)
+		asciiOnly(t, "check --pack", out+text)
+		if textCode != code {
+			t.Errorf("check --pack's text exits %d, its --json %d", textCode, code)
+		}
+		findings, _ := doc.Get("findings")
+		return code, findings.([]any), text
+	}
+	t.Run("the documented pack", func(t *testing.T) {
+		code, findings, text := check(t, testpack.DocumentedPack())
+		if code != 0 || len(findings) != 0 || !strings.HasPrefix(text, "bonsai check: no findings.\n") ||
+			!strings.Contains(text, "bonsai/pack.yaml, bonsai/labels.yaml, bonsai/lanes.yaml; 2 template skills (skills/note, skills/task)") {
+			t.Fatalf("exit %d, %d findings:\n%s", code, len(findings), text)
+		}
+	})
+	for _, w := range format.PackCheckWords {
+		t.Run(w.Word, func(t *testing.T) {
+			cases, ok := packCases[w.Word]
+			if !ok || len(cases) == 0 {
+				t.Fatalf("format.PackCheckWords has %s, and TestCheckPackTable no case for it", w.Word)
+			}
+			for i, pc := range cases {
+				files := testpack.DocumentedPack()
+				pc(t, files)
+				code, findings, text := check(t, files)
+				if code != 1 || len(findings) == 0 || !strings.Contains(text, "\n    next: ") {
+					t.Errorf("case %d: exit %d, %d findings, want 1 and its own:\n%s", i+1, code, len(findings), text)
+				}
+				for _, f := range findings {
+					fo := f.(schema.Object)
+					next, _ := fo.Get("next")
+					if fo.String("code") != w.Word || next.(schema.Object).String("who") != w.Who {
+						t.Errorf("case %d finds %s (who %s), not only %s:\n%s", i+1, fo.String("code"), next.(schema.Object).String("who"), w.Word, text)
+					}
+					checkNext(t, fo.String("code"), next.(schema.Object).String("do"))
+				}
+			}
+		})
+	}
+}
+
+// The test pack, as testpack mirrors it: at F its pack.yaml lacks documents, protected and two comments, which G
+// writes (no behaviour change); G passes.
+func TestCheckPackTestPack(t *testing.T) {
+	tmp := t.TempDir()
+	testpack.Isolate(t, tmp)
+	p := testpack.Build(t, tmp)
+	work := filepath.Join(tmp, "checkout")
+	testpack.Git(t, tmp, "clone", "-q", "--", p.Source, work)
+	for _, sc := range []struct {
+		name, commit string
+		want         []string
+	}{
+		{"F", p.F, []string{"pack-schema", "pack-schema", "pack-comment", "pack-comment"}},
+		{"G", p.G, nil},
+	} {
+		testpack.Git(t, work, "checkout", "-q", sc.commit)
+		code, out, _ := runArgs("check", "--pack", work, "--json")
+		findings, _ := fits(t, out, "check").Get("findings")
+		var got []string
+		for _, f := range findings.([]any) {
+			got = append(got, f.(schema.Object).String("code"))
+		}
+		if strings.Join(got, ",") != strings.Join(sc.want, ",") || code != map[bool]int{true: 0, false: 1}[len(sc.want) == 0] {
+			t.Errorf("the test pack at %s: exit %d, findings %v, want %v:\n%s", sc.name, code, got, sc.want, out)
 		}
 	}
 }

@@ -329,7 +329,12 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		{"check --schema, a format not there", nil, []string{"check", "--schema", "bonsai.nope"}, 2, "unknown-format", ""},
 		{"check --schema with no name", nil, []string{"check", "--schema"}, 2, "bad-flag", ""},
 		{"check --write, not linked", nil, []string{"check", "--write"}, 4, "not-linked", ""},
-		{"check --pack", nil, []string{"check", "--pack", "somewhere"}, 2, "not-built", ""},
+		{"check --pack, a folder not there", nil, []string{"check", "--pack", "somewhere"}, 4, "not-a-pack", ""},
+		{"check --pack, a folder with no bonsai/pack.yaml", nil, []string{"check", "--pack", "."}, 4, "not-a-pack", ""},
+		{"check --pack, a file", write("notes.md", "a file\n"), []string{"check", "--pack", "notes.md"}, 4, "not-a-pack", ""},
+		{"check --pack with no folder", nil, []string{"check", "--pack"}, 2, "bad-flag", ""},
+		{"check --pack with --write", nil, []string{"check", "--pack", ".", "--write"}, 2, "bad-flag", ""},
+		{"check --pack with --schema", nil, []string{"check", "--schema", "task", "--pack", "."}, 2, "bad-flag", ""},
 		{"check, a word left over", nil, []string{"check", "now"}, 2, "bad-flag", ""},
 
 		{"status, not linked", nil, []string{"status"}, 3, "not-linked", ""},

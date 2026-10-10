@@ -1,7 +1,9 @@
 package main
 
-// bonsai check (spec §4, §6): findings on this checkout, or with --schema a format. Its table of flags and exit codes
-// is checkWord; with --json it prints bonsai.check/1 (format.Check), its error object filled when check could not run.
+// bonsai check (spec §4, §6): findings on this checkout, or with --schema a format, or with --pack a pack's folder's
+// findings (spec §5; plan-5 5.1.9: engine.CheckPack, its words format.PackCheckWords). Its table of flags and exit codes
+// is checkWord; with --json it prints bonsai.check/1 (format.Check), its error object filled when check could not run:
+// --pack's findings are in the same document, each file the pack's own (relative to its folder), its warnings [].
 
 import (
 	"fmt"
@@ -38,6 +40,8 @@ command, written "run: <command>", wherever one fixes it. It fetches nothing, an
 which rebuilds the tasks table (.bonsai/tasks.md) from the task files, in the main checkout only: in a worktree it
 refuses, exit 4, naming the main checkout. A tasks table that differs from a rebuild is a warning, never a finding.
 Findings exit 1; warnings never change the exit code; with --write the exit code says only whether it wrote.
+With --pack <folder> it checks a pack's folder instead of a checkout (spec section 5, in each pack's CI): every
+rule's finding has its word, each file is the pack's own, and it reads nothing else (no project, home or network).
 `,
 	Flags: []Flag{
 		{Name: "--json", Help: "print the bonsai.check/1 document (for programs) instead of text; with --schema, the format's\nJSON Schema"},
@@ -48,16 +52,21 @@ Findings exit 1; warnings never change the exit code; with --write the exit code
 				"(bonsai.task/1), one of:",
 			More: func() string { return strings.Join(format.Names(), ", ") }},
 		{Name: "--write", Help: "rebuild the tasks table in .bonsai/ (the sessions table joins in step 5.2.3), in the main checkout\nonly; the exit code then says only whether it wrote (0 written, 3 could not); findings are still\nlisted"},
-		{Name: "--pack", Value: "P", Help: "check a pack folder", Later: "step 5.1.9"},
+		{Name: "--pack", Value: "<folder>", Need: "a pack's folder (the one holding bonsai/pack.yaml)",
+			Help: "check a pack's folder instead (in the pack's CI): pack.yaml, labels.yaml and lanes.yaml held\n" +
+				"to their formats, a comment on every key, each template skill's fields table, each deny rule's\n" +
+				"why, no version in plugin.json, the block's 40 lines, document kinds and protected paths, no\n" +
+				"bash by name in a hook, every pack file a hook names in its runs. It reads that folder only,\n" +
+				"so it runs anywhere; its words: bonsai check --schema bonsai.check. Not with --write or --schema"},
 	},
 	Exits: []Exit{
 		{Code: 0, Means: "no findings (or the format printed); with --write, the table was written (or already current)"},
-		{Code: 1, Means: "findings (never with --write)"},
-		{Code: 2, Means: "bad input (a flag check does not take, one not built yet, or a format Bonsai does not know: the\nrefusal lists every name)"},
+		{Code: 1, Means: "findings (never with --write); with --pack, the pack folder's"},
+		{Code: 2, Means: "bad input (a flag check does not take, one not built yet, --pack with --write or --schema, or a format\nBonsai does not know: the refusal lists every name)"},
 		{Code: 3, Means: "runtime (git is not on the PATH, the Bonsai home cannot be found, a file cannot be read; with --write,\nthe table could not be written)"},
-		{Code: 4, Means: "not a linked checkout (not in a git checkout, or no bonsai.yaml), or --write in a worktree"},
+		{Code: 4, Means: "not a linked checkout (not in a git checkout, or no bonsai.yaml), or --write in a worktree; with --pack,\nnot a pack's folder (not there, or no bonsai/pack.yaml in it)"},
 	},
-	Examples: []string{"bonsai check --json", "bonsai check --schema bonsai.task"},
+	Examples: []string{"bonsai check --json", "bonsai check --schema bonsai.task", "bonsai check --pack . --json"},
 	Refused:  func(c *call, e *engine.Error) encoder { return engine.CheckRefused(e) },
 	Run:      runCheck,
 }
@@ -65,6 +74,16 @@ Findings exit 1; warnings never change the exit code; with --write the exit code
 func runCheck(c *call) int {
 	if len(c.rest) > 0 {
 		return c.refuse(c.flagError("check takes no %+q", c.rest[0]))
+	}
+	if c.has("--pack") {
+		for _, other := range []string{"--write", "--schema"} {
+			if c.has(other) {
+				e := c.flagError("check takes --pack alone: not with %s", other)
+				e.Next = "run `bonsai check --pack <folder>` without " + other + ", and check " + other + " on its own"
+				return c.refuse(e)
+			}
+		}
+		return runPack(c, c.value("--pack"))
 	}
 	if c.has("--schema") {
 		return runSchema(c, c.value("--schema"))
@@ -118,6 +137,25 @@ func runCheck(c *call) int {
 	if werr != nil {
 		noted(c.word, werr)
 		_, _ = fmt.Fprintf(c.stderr, "bonsai check: %s.\nnext: %s\n", strings.TrimSuffix(werr.What, "."), werr.Next)
+	}
+	return exit
+}
+
+// runPack is check --pack: a pack's folder held to its rules (engine.CheckPack), findings in check's own document.
+func runPack(c *call, dir string) int {
+	r, e := engine.CheckPack(dir)
+	if e != nil {
+		return c.fail(e)
+	}
+	exit := engine.ExitOK
+	if len(r.Findings) > 0 {
+		exit = engine.ExitFindings
+	}
+	if c.json {
+		return c.printDoc(r.Doc(), exit)
+	}
+	if write(c.stdout, r.Text()) != exitOK {
+		return exitRuntime
 	}
 	return exit
 }
