@@ -87,6 +87,16 @@ func BonsaiKind(name string) bool {
 	return false
 }
 
+// BonsaiKindNames are Bonsai's own document kinds' names, in contract §7.3's order: the list the reference page of
+// lists (step 5.1.10) prints.
+func BonsaiKindNames() []string {
+	out := make([]string, len(bonsaiKinds))
+	for i, k := range bonsaiKinds {
+		out[i] = k.Kind
+	}
+	return out
+}
+
 // Format0Kinds are the kinds bonsai check holds to format 0 (contract §2.3): Bonsai's own markdown kinds that had a
 // format 0, task, run and state.
 var Format0Kinds = []string{"task", "run", "state"}

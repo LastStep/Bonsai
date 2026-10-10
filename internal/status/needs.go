@@ -4,6 +4,7 @@ package status
 
 import (
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -12,6 +13,17 @@ import (
 func need(kind string, id, name, source, version any) schema.Object {
 	return schema.Object{{Key: "kind", Value: kind}, {Key: "id", Value: id}, {Key: "name", Value: name},
 		{Key: "source", Value: source}, {Key: "version", Value: version}}
+}
+
+// NeedKinds are the known kinds of a needs entry (status --json's needs[].kind): an open list (formats/README.md), its
+// known words here, their one home. A test holds the kinds needsOf gives to it. mcp and shell are the schema's, which
+// nothing in this build writes yet.
+var NeedKinds = []format.Word{
+	{Word: "pack", Means: "a locked pack, with its source and version, whose plugin is installed here or was not asked about"},
+	{Word: "plugin", Means: "a locked pack whose plugin Claude Code reports not installed for this checkout (status --full only)"},
+	{Word: "tool", Means: "a tool by name with the version it needs: the Claude Code floor (name claude-code)"},
+	{Word: "mcp", Means: "an MCP server a pack's needs name (not written by this build: pack.yaml's needs holds only claude_code)"},
+	{Word: "shell", Means: "a shell the workspace needs (not written by this build)"},
 }
 
 // needsOf lists what the workspace needs from a machine: the Claude Code floor (kind tool, never a problem), then each
