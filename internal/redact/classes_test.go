@@ -383,6 +383,17 @@ func TestShapeLeftovers(t *testing.T) {
 		checkGone(t, in, awsKeyID, awsSecretKey)
 		n++
 	}
+	// Exact-length keys glued end to end, then a token: every one is a shape, each after the marker before it.
+	chain := ""
+	for k := 0; k < 12; k++ {
+		chain += "AIza" + m.from(urlsafe, 35)
+	}
+	for _, tail := range []string{"", "ya29." + m.secret(30), "eyJ" + m.from(alnum, 12) + "." + m.from(alnum, 16) + "." + m.from(alnum, 20)} {
+		if got := Text("keys " + chain + tail + " end"); got != "keys "+Marker+" end" {
+			t.Errorf("Text(%q) = %q, want every key taken", chain+tail, got)
+		}
+		n++
+	}
 	for _, in := range []string{
 		"ASIA" + strings.ToUpper(m.secret(16)) + m.random(14),
 		"AIza" + m.from(urlsafe, 35) + m.random(14) + " and on",

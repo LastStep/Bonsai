@@ -91,9 +91,11 @@ func TestLinearTime(t *testing.T) {
 			repeatTo(unit, 512*kb) + "password" + strings.Repeat(" \t", 256*kb) + "x"})
 	}
 	// Shapes glued into one run, so that every shape leaves a part of the run for the others (the leftovers of each are
-	// read once), and key ids each followed by a word character, the run judged whole once.
+	// read once), key ids each followed by a word character (the run judged whole once), and chained keys.
 	for _, unit := range []string{"-ghp_" + strings.Repeat("Qx7", 8), "-AKIA" + strings.Repeat("Q7", 8) + "zz",
-		"-AKIA" + strings.Repeat("QZ", 8) + "a", "+AIza" + strings.Repeat("Qx7Wk", 8)} {
+		"-AKIA" + strings.Repeat("QZ", 8) + "a", "+AIza" + strings.Repeat("Qx7Wk", 8),
+		// Exact-length keys glued end to end, each a word's start only for the marker before it: read in one sweep.
+		"AIza" + strings.Repeat("qx-wk", 7), "AIza" + strings.Repeat("Qx7Wk", 7) + "ya29."} {
 		cases = append(cases, struct {
 			name string
 			text string

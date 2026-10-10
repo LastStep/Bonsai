@@ -2,15 +2,15 @@ package redact
 
 // The rules that take a whole value by its own shape, with no name before it: private-key blocks, webhook URLs,
 // credentials inside a URL, and the known token shapes. They run first, one after another in this order, each over
-// the text the ones before it left, as the studio's redactor runs them.
+// the text the ones before it left, as the studio's redactor runs them, and then again until none finds more.
 //
 // Two departures, both so a cut of the output reads the same a second time:
 //   - An AWS key id is `AKIA` or `ASIA` and 16 of [0-9A-Z], and any more of [0-9A-Z] glued after it go with it. The
 //     studio's rule also wants a word's end after the 16, so `AKIA` and 17 such characters kept all 21; cut after
 //     the 16th, a second pass took them. Here the 16 go wherever the word ends, and where the studio's rule took
 //     nothing, the whole run goes when it looks random, as its random-run rule took it (leftovers).
-//   - A token shape needs a word's start before it (JavaScript's \b). Where an earlier pass's marker stands right
-//     before it, the marker's `]` is that start, so the next pass takes it; the passes run until nothing changes.
+//   - A token shape needs a word's start before it (JavaScript's \b). Where a marker written before it stands right
+//     before it, the marker's `]` is that start, so the rules' next round takes it.
 //
 // And one addition, so no part of a secret is left because a shape took the rest: a shape takes part of a run of the
 // random run's characters ([A-Za-z0-9_+/=-]), and what it leaves on either side, too short to be judged on its own,
@@ -63,16 +63,19 @@ func runOf(s string, i int, body func(rune) bool) int {
 }
 
 // tokenRule is a token shape: \b, a prefix, one of the second parts if any, then at least min characters body
-// accepts (exactly min when exact).
+// accepts (exactly min when exact). Where a match ends, the marker written for it is a word's start for what follows,
+// so a token straight after the last one this rule found is read as one in the same sweep (only an exact-length
+// shape can end where its own prefix starts again: `AIza` keys glued end to end).
 func tokenRule(prefix string, second []string, body func(rune) bool, min int, exact bool) func(string, func(int, int)) {
 	return func(s string, add func(a, b int)) {
+		last := -1 // where the last match ended
 		for i := 0; i < len(s); {
 			j := strings.Index(s[i:], prefix)
 			if j < 0 {
 				return
 			}
 			j += i
-			if !wordStart(s, j) {
+			if !wordStart(s, j) && j != last {
 				i = j + 1
 				continue
 			}
@@ -101,7 +104,7 @@ func tokenRule(prefix string, second []string, body func(rune) bool, min int, ex
 				continue
 			}
 			add(j, e)
-			i = e
+			i, last = e, e
 		}
 	}
 }
