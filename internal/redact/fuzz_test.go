@@ -28,7 +28,9 @@ func FuzzRedact(f *testing.F) {
 		"git -c http.extraheader= {\"authKey\": \"Hq7v\"}", "--secret \"Hq {\"passwd\": \"7v\"}", "pa\u017f\u017fphrase\u00a0= Hq7v",
 		"my-secret-authorization= 'passwd'= Hq7v", "-----BEGIN OPENSSH PRIVATE KEY-----\nb3Bl", "secret: \"Hq passwd=\"7 v\" w",
 		"AKIAIOSFODNN7EXAMPLE9QPASSWORD: Zt5", "ftp+ssh://deploy:Zk4q@files.example.org", "vault_token:\n\tQ8m2Lk\n",
-		"proxy-authorization= Token := y7Gh",
+		"proxy-authorization= Token := y7Gh", "X-Authorization:\tdigeſt Hq7v", "toKen= 'Hq7v",
+		"http://canary.discordapp.com/api/webhooks/5/Zq8,Proxy-Authorization:Digest\t'Hq7v w'",
+		"AKIA" + "Q7R2" + "ZX9M" + "KD4L" + "W8NP" + "vb3Lq9Tm2Wz7Xc", "-xoxp-31-Wq2Lm7Zk9Tz-qWR842zzbq93Lk+npm_" + "Tq8Lw2Zm9Vx4Kc7Rb3Nd6Hf1Gj5Pa0Yq",
 	} {
 		f.Add(s)
 	}

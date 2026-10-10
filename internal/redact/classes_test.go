@@ -316,3 +316,100 @@ func TestHeaderTokenPastAShape(t *testing.T) {
 		t.Errorf("%d strings, only %d with a token to take", n, asked)
 	}
 }
+
+// What a shape leaves of a run it took part of goes with it when that is part of a secret: a token, a key id, a JSON
+// web token or a webhook URL glued to a random piece, after it or before it, with no separator between or with each
+// one. The piece goes wherever its whole run (the shape's characters of the run with it) is long enough for the
+// random-run rule, though the piece alone is not. AWS's documented key id glued to its documented secret key goes
+// whole. Words and names glued to a token stay, as before (`-backup`, `_token=` and its value, `TOKEN_FOR_CI=`).
+func TestShapeLeftovers(t *testing.T) {
+	m := newMaker(18)
+	urlsafe := alnum + "_-"
+	shapes := []struct{ kind, text string }{
+		{"webhook-url", "https://discord.com/api/webhooks/42/" + m.secret(24)},
+		{"anthropic-key", "sk-ant-api03-" + m.secret(30)},
+		{"openai-key", "sk-proj-" + m.secret(26)},
+		{"stripe-key", "sk_live_" + m.secret(20)},
+		{"github-token, fine-grained", "github_pat_" + m.secret(30)},
+		{"github-token", "ghp_" + m.secret(36)},
+		{"slack-token", "xoxb-2718281828-" + m.secret(16)},
+		{"npm-token", "npm_" + m.secret(36)},
+		{"aws-key-id", "AKIA" + strings.ToUpper(m.secret(16))},
+		{"aws-key-id, temporary", "ASIA" + strings.ToUpper(m.secret(16))},
+		{"google-api-key", "AIza" + m.from(urlsafe, 35)},
+		{"google-oauth-token", "ya29." + m.secret(30)},
+		{"jwt", "eyJ" + m.from(alnum, 12) + "." + m.from(alnum, 16) + "." + m.from(alnum, 20)},
+	}
+	// wholeRun is the length of the run of the random run's characters holding text[i].
+	wholeRun := func(text string, i int) int {
+		l, r := runAround(text, i)
+		return r - l
+	}
+	n, asked := 0, 0
+	try := func(in, piece string, at int) {
+		n++
+		out := Text(in)
+		if wholeRun(in, at) >= 32 {
+			asked++
+			if w := survives(out, piece); w != "" {
+				t.Errorf("%q kept %q of the piece %q: %q", in, w, piece, out)
+			}
+		}
+		fixedAtEveryCut(t, in, out)
+	}
+	for _, sh := range shapes {
+		for _, sep := range []string{"", "_", "-", "+", "/", "="} {
+			for _, size := range []int{16, 20, 28} {
+				for _, frame := range []string{"%s", "seen %s in the log"} {
+					// After the shape: a random piece, alone or with more of the run after it.
+					for _, rest := range []string{"", "/" + m.from(alnum, 6), "-v2"} {
+						piece := m.random(size)
+						in := fmt.Sprintf(frame, sh.text+sep+piece+rest)
+						try(in, piece, strings.Index(in, piece))
+					}
+					// Before it. A token shape needs a word's start, so with nothing or `_` between there is no shape,
+					// and the random-run rule judges the run as it is.
+					piece := m.random(size)
+					in := fmt.Sprintf(frame, piece+sep+sh.text)
+					try(in, piece, strings.Index(in, piece))
+				}
+			}
+		}
+	}
+	for _, in := range []string{
+		"creds " + awsKeyID + awsSecretKey + " end",
+		awsKeyID + "q" + awsSecretKey,
+	} {
+		checkGone(t, in, awsKeyID, awsSecretKey)
+		n++
+	}
+	for _, in := range []string{
+		"ASIA" + strings.ToUpper(m.secret(16)) + m.random(14),
+		"AIza" + m.from(urlsafe, 35) + m.random(14) + " and on",
+	} {
+		if Text(in) != Marker && Text(in) != Marker+" and on" {
+			t.Errorf("Text(%q) = %q, want the whole run taken", in, Text(in))
+		}
+		n++
+	}
+	t.Logf("%d strings, %d with a piece to take", n, asked)
+	if asked < n/2 {
+		t.Errorf("%d strings, only %d with a piece to take", n, asked)
+	}
+	// What stays: words and names glued to a token, and a run the random-run rule never takes.
+	ghp := "ghp_" + m.secret(36)
+	id := "toolu_01" + m.secret(24)
+	for in, want := range map[string]string{
+		ghp + "-backup.txt":                  "[redacted]-backup.txt",
+		ghp + "_token=Tq83vz and on":         "[redacted]_token=[redacted] and on",
+		"export TOKEN_FOR_CI=" + ghp + " ok": "export TOKEN_FOR_CI=[redacted] ok",
+		"see " + ghp + "/pulls/7":            "see [redacted]/pulls/7",
+		id + "-" + ghp:                       id + "-[redacted]",
+	} {
+		got := Text(in)
+		if got != want {
+			t.Errorf("Text(%q) = %q, want %q", in, got, want)
+		}
+		fixedAtEveryCut(t, in, got)
+	}
+}

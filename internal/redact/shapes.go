@@ -7,9 +7,14 @@ package redact
 // Two departures, both so a cut of the output reads the same a second time:
 //   - An AWS key id is `AKIA` or `ASIA` and 16 of [0-9A-Z], and any more of [0-9A-Z] glued after it go with it. The
 //     studio's rule also wants a word's end after the 16, so `AKIA` and 17 such characters kept all 21; cut after
-//     the 16th, a second pass took them. Here the 16 go wherever the word ends.
+//     the 16th, a second pass took them. Here the 16 go wherever the word ends, and where the studio's rule took
+//     nothing, the whole run goes when it looks random, as its random-run rule took it (findAWS).
 //   - A token shape needs a word's start before it (JavaScript's \b). Where an earlier pass's marker stands right
 //     before it, the marker's `]` is that start, so the next pass takes it; the passes run until nothing changes.
+//
+// And one addition, so no part of a secret is left because a shape took the rest: a shape takes part of a run of the
+// random run's characters ([A-Za-z0-9_+/=-]), and what it leaves on either side, too short to be judged on its own,
+// goes with it when it holds a piece that looks random (leftovers, below).
 
 import "strings"
 
@@ -121,9 +126,13 @@ func findStripe(s string, add func(a, b int)) {
 	}
 }
 
-// findAWS is \b(?:AKIA|ASIA)[0-9A-Z]{16}, and any more of [0-9A-Z] glued after it.
+// findAWS is \b(?:AKIA|ASIA)[0-9A-Z]{16}, and any more of [0-9A-Z] glued after it. The studio's rule also wants a word's
+// end after the 16; where a word character follows them, it takes nothing, and its random-run rule then judges the
+// whole run: so here, where a word character follows the 16, the whole run goes when it looks random (the key id glued
+// to its secret goes with the secret).
 func findAWS(s string, add func(a, b int)) {
 	upperDigit := func(r rune) bool { return r >= 'A' && r <= 'Z' || isDigit(r) }
+	runL, runR, random := 0, 0, false // the run last judged whole
 	for i := 0; i+4 <= len(s); i++ {
 		if s[i] != 'A' || (s[i+1:i+4] != "KIA" && s[i+1:i+4] != "SIA") || !wordStart(s, i) {
 			continue
@@ -131,6 +140,17 @@ func findAWS(s string, add func(a, b int)) {
 		e := runOf(s, i+4, upperDigit)
 		if e-(i+4) < 16 {
 			continue
+		}
+		if i+20 < len(s) && isWord(rune(s[i+20])) {
+			if i >= runR {
+				runL, runR = runAround(s, i)
+				random = runR-runL >= 32 && randomRun(s[runL:runR])
+			}
+			if random {
+				add(runL, runR)
+				i = runR - 1
+				continue
+			}
 		}
 		add(i, e)
 		i = e - 1
@@ -352,4 +372,75 @@ func findURLCredentials(s string, add func(a, b int)) {
 		add(u, pe)
 		i = pe
 	}
+}
+
+// leftovers gives the parts of their runs that the spans a shape rule found in s (in order, apart) leave and that
+// must go with them. A shape takes part of a run of the random run's characters (a token with more glued after it, an
+// exact-length key, a JSON web token's first or last part, the start of a webhook URL with a word glued before it);
+// the random-run rule then judges what is left on each side as a run of its own, which is often under its 32
+// characters, though the whole run is not: a secret glued to a key id (`AKIA...` and AWS's secret after it) would be
+// kept. So each such leftover is judged with its run: when the whole run is 32 or more and the leftover holds a piece
+// that looks random (between the run's separators, a piece the shape's edge and the leftover share counted whole), it
+// goes. A leftover of names and words (`TOKEN_FOR_CI=` before a token, `_token=` or `-backup` after one) has no such
+// piece and stays, as the studio's redactor leaves it; and a leftover the random-run rule never takes (one starting
+// with `toolu_`) stays too. Every run and piece is read once, so the time stays linear.
+func leftovers(s string, spans []Span) []Span {
+	var out []Span
+	runL, runR := 0, 0 // the run last read: the leftovers of one run share it
+	judge := func(x, y int, kind Kind) {
+		if x >= runR {
+			runL, runR = runAround(s, x)
+		}
+		if runR-runL < 32 || strings.HasPrefix(s[x:], "toolu_") || strings.HasPrefix(s[x:], "srvtoolu_") {
+			return
+		}
+		// The piece the leftover shares with the shape on either side, when no separator stands between them.
+		ps, pe := x, y
+		if x > runL && !isPieceSep(s[x-1]) && !isPieceSep(s[x]) {
+			for ps > runL && !isPieceSep(s[ps-1]) {
+				ps--
+			}
+		}
+		if y < runR && !isPieceSep(s[y-1]) && !isPieceSep(s[y]) {
+			for pe < runR && !isPieceSep(s[pe]) {
+				pe++
+			}
+		}
+		for start, k := ps, ps; k <= pe; k++ {
+			if k == pe || isPieceSep(s[k]) {
+				if looksRandom(s[start:k]) {
+					out = append(out, Span{x, y, kind})
+					return
+				}
+				start = k + 1
+			}
+		}
+	}
+	prevEnd := 0
+	for i, sp := range spans {
+		// Before the span, back to the run's start or the span before it; when that span's leftover reached this one,
+		// it was judged with that span.
+		if x := sp.Start; x > prevEnd || i == 0 {
+			for x > prevEnd && isRunByte(s[x-1]) {
+				x--
+			}
+			if x < sp.Start && (x > prevEnd || i == 0) {
+				judge(x, sp.Start, sp.Kind)
+			}
+		}
+		// After it, to the run's end or the next span.
+		next := len(s)
+		if i+1 < len(spans) {
+			next = spans[i+1].Start
+		}
+		y := sp.End
+		for y < next && isRunByte(s[y]) {
+			y++
+		}
+		if y > sp.End {
+			judge(sp.End, y, sp.Kind)
+		}
+		prevEnd = sp.End
+	}
+	return out
 }

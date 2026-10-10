@@ -13,7 +13,8 @@
 //
 // How Text reads a string, in the order it runs:
 //  1. shapes.go: the rules that take a whole value by its shape: private-key blocks, webhook URLs, credentials
-//     inside a URL, and the known token shapes.
+//     inside a URL, and the known token shapes. What a shape leaves of a run of token characters it took part of
+//     is judged with the whole run, so a secret glued to a token or a key id goes with it.
 //  2. names.go and values.go: every name a value follows is found first (a secret-named key before `:` or `=`, a
 //     flag ending in a secret word, an Authorization header, a Bearer, extraheader=), then each name's value. A name
 //     that stands inside another name's value has its own value taken, and the outer value takes the inner name
@@ -171,7 +172,7 @@ func redactDoc(s string) *doc {
 		changed, shaped := false, false
 		preText, preSegs := d.text, d.segs // render makes new ones, so these stay the text before the shapes
 		for _, r := range shapeRules {
-			if d.apply(r.kind, r.find) {
+			if d.applyShape(r.kind, r.find) {
 				changed, shaped = true, true
 			}
 		}
@@ -293,6 +294,19 @@ func (d *doc) textAt(o int) int {
 func (d *doc) apply(kind Kind, find func(string, func(int, int))) bool {
 	var found []Span
 	find(d.text, func(a, b int) { found = append(found, Span{a, b, kind}) })
+	if !d.merge(d.mapSpans(found)) {
+		return false
+	}
+	d.render()
+	return true
+}
+
+// applyShape is apply for a whole-value shape: what the shape leaves of a run it took part of is judged with that run
+// (leftovers, shapes.go).
+func (d *doc) applyShape(kind Kind, find func(string, func(int, int))) bool {
+	var found []Span
+	find(d.text, func(a, b int) { found = append(found, Span{a, b, kind}) })
+	found = append(found, leftovers(d.text, found)...)
 	if !d.merge(d.mapSpans(found)) {
 		return false
 	}

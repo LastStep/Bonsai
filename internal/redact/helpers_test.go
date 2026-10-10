@@ -42,6 +42,16 @@ func (m *maker) secret(n int) string {
 	return string(s)
 }
 
+// random is n random letters and digits (at least 6) that the random-run rule calls random wherever it stands: at a
+// random place in it, a small letter that is not a hex digit, two capitals in a row and three digits.
+func (m *maker) random(n int) string {
+	n = max(n, 6)
+	b := []byte(m.from(alnum, n))
+	at := m.r.Intn(n - 5)
+	copy(b[at:], "q"+m.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ", 2)+m.from("0123456789", 3))
+	return string(b)
+}
+
 // folds gives word (lower-case ASCII) in the forms simple case folding matches: an s as s, S or the long s, a k as k,
 // K or the Kelvin sign; every other letter small or capital in every combination (every), or all small and all
 // capitals (not every), so the forms stay few for a long word.

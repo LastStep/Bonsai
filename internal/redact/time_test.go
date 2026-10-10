@@ -90,6 +90,15 @@ func TestLinearTime(t *testing.T) {
 		}{fmt.Sprintf("%q flags sharing one end, then whitespace [1 MB]", unit),
 			repeatTo(unit, 512*kb) + "password" + strings.Repeat(" \t", 256*kb) + "x"})
 	}
+	// Shapes glued into one run, so that every shape leaves a part of the run for the others (the leftovers of each are
+	// read once), and key ids each followed by a word character, the run judged whole once.
+	for _, unit := range []string{"-ghp_" + strings.Repeat("Qx7", 8), "-AKIA" + strings.Repeat("Q7", 8) + "zz",
+		"-AKIA" + strings.Repeat("QZ", 8) + "a", "+AIza" + strings.Repeat("Qx7Wk", 8)} {
+		cases = append(cases, struct {
+			name string
+			text string
+		}{fmt.Sprintf("%q repeated [1 MB]", unit), repeatTo(unit, 1024*kb)})
+	}
 	Text("first call: passwd=Tq83vz")
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

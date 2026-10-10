@@ -13,6 +13,18 @@ func isRunByte(c byte) bool {
 
 func isPieceSep(c byte) bool { return c == '_' || c == '-' || c == '+' || c == '/' || c == '=' }
 
+// runAround gives the run of [A-Za-z0-9_+/=-] holding byte i: [l, r), empty at i when s[i] is not one.
+func runAround(s string, i int) (int, int) {
+	l, r := i, i
+	for l > 0 && isRunByte(s[l-1]) {
+		l--
+	}
+	for r < len(s) && isRunByte(s[r]) {
+		r++
+	}
+	return l, r
+}
+
 func findRandom(s string, add func(a, b int)) {
 	for i := 0; i < len(s); {
 		if !isRunByte(s[i]) {
