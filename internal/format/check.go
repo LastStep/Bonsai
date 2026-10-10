@@ -30,8 +30,8 @@ type Finding struct {
 // problem). Who is who usually takes the next step; a finding names the other when its own step is the other's.
 // cmd/bonsai's TestCheckTable walks this table: a word with no test case fails, and so does a next step naming a
 // command Bonsai does not have or a flag its word does not take. A later piece adds a word by adding an entry here
-// with its case (5.2 the secret-shaped string, 5.6 the stranded machine folder: engine's
-// checkLater names them); a word is added, never renamed or taken out.
+// with its case (5.6 the stranded machine folder: engine's checkLater names it); a word is added, never renamed or
+// taken out.
 var CheckWords = []Word{
 	// The project's own files against the lock and bonsai.yaml (offline: the lock alone).
 	{Word: "config", Kind: "finding", Who: "person", Means: "bonsai.yaml is not one Bonsai reads"},
@@ -53,6 +53,7 @@ var CheckWords = []Word{
 	{Word: "memory-index-size", Kind: "finding", Who: "agent", Means: "the memory index is over its fixed 120 lines or 12 KB (spec section 10)"},
 	{Word: "memory-note-size", Kind: "finding", Who: "agent", Means: "a memory note is over 4 KB (spec section 10)"},
 	{Word: "missing-path", Kind: "finding", Who: "agent", Means: "a project path named in CLAUDE.md, STATE or a memory note does not exist (Bonsai's own block left out: the lock checks it)"},
+	{Word: "secret", Kind: "finding", Who: "agent", Means: "a memory note or the memory index in the working tree holds a secret-shaped string, as Bonsai's redactor finds one: the finding names the note, the line and the kind of secret (the secret kinds' list), never the value; a person decides whether to rotate it (spec section 6)"},
 	// Claude Code's settings in the project (spec sections 5 and 7).
 	{Word: "settings-rule", Kind: "finding", Who: "person", Means: "a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own"},
 	{Word: "hooks-off", Kind: "finding", Who: "person", Means: "disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them"},
@@ -73,6 +74,7 @@ var CheckWords = []Word{
 	{Word: "cache", Kind: "warning", Who: "person", Means: "a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked"},
 	{Word: "tables", Kind: "warning", Who: "agent", Means: "a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5)"},
 	{Word: "local-unchecked", Kind: "warning", Who: "agent", Means: "git ls-files failed, so files from .bonsai/local/ in git's index were not looked for"},
+	{Word: "own-hooks", Kind: "warning", Who: "person", Means: "Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1)"},
 }
 
 // CheckWord finds a word in CheckWords.

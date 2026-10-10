@@ -23,11 +23,15 @@ package engine
 // Two more need Claude Code, so cmd/bonsai runs them after Check and status never does (status stays cheap and
 // offline, contract section 12): what Claude Code reports installed (ComparePlugins, plugins.go: plugin, plugin-missing,
 // plugin-unchecked) and its version against the floor (CompareClaudeCode, claude.go: claude-code-old,
-// claude-code-unknown). checkLater names the two that later steps build. tables.go: the tasks table (tables).
+// claude-code-unknown). checkLater names the one a later step builds. tables.go: the tasks table (tables).
+//
+// Two more read here: the memory notes' secret scan (secret, checkSecrets: redact.Find, the redactor's patterns being
+// their one home), and Bonsai's own hook lines against this build's (own-hooks, in checkSettings).
 
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,6 +39,7 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/redact"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -56,7 +61,6 @@ func (f Finding) Sentence() string {
 // checkLater are spec section 6's findings and warnings that later steps build (5.1.8's tables is built), each with
 // its step: their words join format.CheckWords when they are built (TestCheckTable holds that none is there before).
 var checkLater = []struct{ Code, Step, What string }{
-	{"secret", "step 5.2", "a secret-shaped string in a committed memory note: the redactor's patterns are its one home"},
 	{"stranded", "step 5.6", "a machine folder stranded under an old path (contract section 3)"},
 }
 
@@ -149,6 +153,7 @@ func (r *CheckResult) missingLockNext() string {
 // PATH, .bonsai/.gitignore and .bonsai/local/.
 func (r *CheckResult) checkProject() {
 	r.checkDocuments()
+	r.checkSecrets()
 	r.checkTables()
 	if r.history {
 		r.checkHistory()
@@ -340,13 +345,122 @@ func (r *CheckResult) checkSettings(lf workspace.LockedFile, mark func(string, s
 		pl.known, pl.hooks, pl.deny = true, pd.Manifest.Hooks, pd.Manifest.Deny
 		pls = append(pls, pl)
 	}
-	_, same := claim(diskLines(sd.root), buildLines(cfg, pls), false, lf.SHA256)
+	claimed, same := claim(diskLines(sd.root), buildLines(cfg, pls), false, lf.SHA256)
+	if same {
+		r.checkOwnHooks(claimed)
+	}
 	if !same {
 		r.Changed++
 		mark(lf.Pack, "changed")
 		r.add("changed", SettingsFile, "", "Bonsai's lines in "+SettingsFile+" were edited, or bonsai.yaml changed since the last update",
 			"to see the lines, run: bonsai update; to take Bonsai's lines back (your copy is saved in the Bonsai home), run: bonsai update --yes --adopt "+SettingsFile)
 	}
+}
+
+// checkOwnHooks warns when Bonsai's own hook lines in the settings file (claimed, Bonsai's lines as the lock says it
+// last wrote them) are not this build's ownHooks: a project linked or last updated by another Bonsai. Each line this
+// build adds runs code, so update writes them only with --allow-exec (step 5.1.1, rule 1): a person's step.
+func (r *CheckResult) checkOwnHooks(claimed []Line) {
+	have := map[string]bool{}
+	for _, l := range claimed {
+		if l.Kind == "hook" && l.Own {
+			have[l.canon()] = true
+		}
+	}
+	want := map[string]bool{}
+	var add []string
+	for _, l := range ownHooks {
+		want[l.canon()] = true
+		if !have[l.canon()] {
+			add = append(add, l.Text())
+		}
+	}
+	var drop []string
+	for _, l := range claimed {
+		if l.Kind == "hook" && l.Own && !want[l.canon()] {
+			drop = append(drop, l.Text())
+		}
+	}
+	if len(add) == 0 && len(drop) == 0 {
+		return
+	}
+	msg := "Bonsai's own hook lines in " + SettingsFile + " are not this build's"
+	if len(add) > 0 {
+		msg += fmt.Sprintf(": %d to add (%s)", len(add), strings.Join(add, "; "))
+	}
+	if len(drop) > 0 {
+		sep := ": "
+		if len(add) > 0 {
+			sep = "; "
+		}
+		msg += fmt.Sprintf("%s%d to take out (%s)", sep, len(drop), strings.Join(drop, "; "))
+	}
+	msg += "; until then this project's sessions run without them (a new hook line runs code, so it needs a person's --allow-exec)"
+	r.add("own-hooks", SettingsFile, "", msg, run("bonsai update --allow-exec --yes"))
+}
+
+// checkSecrets finds a secret-shaped string in a memory note or the memory index, in the working tree (spec section 6:
+// "a secret-shaped string in a committed memory note"; what is about to be committed is caught before it is), by the
+// redactor's patterns (redact.Find, their one home). Each finding names the note, the line and the kind of secret,
+// never the value: one per line, its kinds in the order found.
+func (r *CheckResult) checkSecrets() {
+	if r.Config == nil || r.Config.Full == nil {
+		return
+	}
+	kinds, err := workspace.DocKinds(r.Config.Full, r.Lock)
+	if err != nil {
+		kinds, _ = workspace.DocKinds(r.Config.Full, nil)
+	}
+	for _, k := range kinds {
+		if k.From != "bonsai" || k.Format != "bonsai.memory" {
+			continue
+		}
+		files, err := workspace.DocFiles(r.Root, k)
+		if err != nil {
+			continue // checkDocuments names the folder that cannot be read
+		}
+		if k.Path != "" {
+			index := strings.TrimSuffix(k.Path, "/") + "/" + MemoryIndex
+			if _, exists, _ := readFile(r.Root, index); exists {
+				files = append(files, index)
+			}
+		}
+		for _, p := range files {
+			raw, exists, err := readFile(r.Root, p)
+			if err != nil || !exists {
+				continue
+			}
+			for _, f := range secretLines(string(raw)) {
+				r.add("secret", p, "", fmt.Sprintf("the memory note %s holds a secret-shaped string on line %d (%s); its value is not shown here",
+					p, f.line, strings.Join(f.kinds, ", ")),
+					fmt.Sprintf("take the secret out of %s (line %d), then run: bonsai check; a person decides whether to rotate it", p, f.line))
+			}
+		}
+	}
+}
+
+// secretLine is one line of a note holding secrets: its number (from 1) and the kinds found on it, each once.
+type secretLine struct {
+	line  int
+	kinds []string
+}
+
+// secretLines lists the lines of text that hold a span redact.Find gives, in order. A span over several lines (a
+// private-key block) is named at its first line.
+func secretLines(text string) []secretLine {
+	var out []secretLine
+	for _, sp := range redact.Find(text) {
+		n := strings.Count(text[:sp.Start], "\n") + 1
+		if len(out) > 0 && out[len(out)-1].line == n {
+			last := &out[len(out)-1]
+			if !contains(last.kinds, string(sp.Kind)) {
+				last.kinds = append(last.kinds, string(sp.Kind))
+			}
+			continue
+		}
+		out = append(out, secretLine{line: n, kinds: []string{string(sp.Kind)}})
+	}
+	return out
 }
 
 func (r *CheckResult) checkGitignore() {

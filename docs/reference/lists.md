@@ -30,6 +30,7 @@ error words.
 - Claude Code's key order: the keys of an inline marketplace's source object
 - Log events
 - Log categories
+- Secret kinds
 - Lane rules
 - Task statuses
 - Label value kinds
@@ -144,6 +145,7 @@ error words.
 | `memory-index-size` | finding | agent | the memory index is over its fixed 120 lines or 12 KB (spec section 10) |
 | `memory-note-size` | finding | agent | a memory note is over 4 KB (spec section 10) |
 | `missing-path` | finding | agent | a project path named in CLAUDE.md, STATE or a memory note does not exist (Bonsai's own block left out: the lock checks it) |
+| `secret` | finding | agent | a memory note or the memory index in the working tree holds a secret-shaped string, as Bonsai's redactor finds one: the finding names the note, the line and the kind of secret (the secret kinds' list), never the value; a person decides whether to rotate it (spec section 6) |
 | `settings-rule` | finding | person | a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own |
 | `hooks-off` | finding | person | disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them |
 | `plugin-version` | finding | person | a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5) |
@@ -161,6 +163,7 @@ error words.
 | `cache` | warning | person | a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked |
 | `tables` | warning | agent | a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5) |
 | `local-unchecked` | warning | agent | git ls-files failed, so files from .bonsai/local/ in git's index were not looked for |
+| `own-hooks` | warning | person | Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1) |
 
 ## Check --pack words
 
@@ -192,7 +195,6 @@ error words.
 
 | Word | Built in | Means |
 |---|---|---|
-| `secret` | step 5.2 | a secret-shaped string in a committed memory note: the redactor's patterns are its one home |
 | `stranded` | step 5.6 | a machine folder stranded under an old path (contract section 3) |
 
 ## Ask types
@@ -376,6 +378,35 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `Agent` | starting a subagent |
 | `Web` | fetching or searching the web |
 | `Other` | any other tool, or one the recorder cannot place |
+
+## Secret kinds
+
+- Closed list.
+- Defined in: redact.Kinds (internal/redact/redact.go), in the order its rules run.
+- Printed in a project by: `bonsai check` (a `secret` finding names the kind it found).
+- The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value.
+
+| Kind | Takes out |
+|---|---|
+| `private-key` | a private-key block, from its BEGIN line to its END line or the text's end |
+| `webhook-url` | a Discord or Slack webhook URL, whole |
+| `url-credentials` | the user:password inside scheme://user:password@host |
+| `anthropic-key` | an sk-ant- key |
+| `openai-key` | an sk- key |
+| `stripe-key` | an sk_live_, sk_test_, rk_live_ or rk_test_ key |
+| `github-token` | a github_pat_, ghp_, gho_, ghu_, ghs_ or ghr_ token |
+| `slack-token` | an xoxa-, xoxb-, xoxp-, xoxo-, xoxs- or xoxr- token |
+| `npm-token` | an npm_ token |
+| `aws-key-id` | an AKIA or ASIA key id |
+| `google-api-key` | an AIza key |
+| `google-oauth-token` | a ya29. token |
+| `jwt` | a JSON web token (eyJ..., three dotted parts) |
+| `secret-named-key` | the value after a secret-named key and its : or = (password: x, DB_TOKEN=x, "apiKey": "x") |
+| `secret-flag` | the value after a flag ending in a secret word (--password x, --client-secret x) |
+| `authorization-header` | the value of an Authorization header, after its scheme word |
+| `bearer-token` | a Bearer value of eight or more token characters |
+| `extra-header` | the value after extraheader= (git's http.extraHeader) |
+| `random-run` | a run of 32 or more token characters that looks random |
 
 ## Lane rules
 
