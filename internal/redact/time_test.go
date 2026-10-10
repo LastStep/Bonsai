@@ -11,9 +11,9 @@ import (
 // and past 100 KB no more than 1 ms a KB), far above what these take (a few milliseconds for 26 KB, under 300 ms
 // for 1 MB) and far below what a rule that rescans a run would take (the studio once took 97 s on the first input).
 
-// gluedWords is size bytes of secret words joined by sep.
+// gluedWords is size bytes of secret words with sep between them.
 func gluedWords(sep string, size int) string {
-	words := []string{"password", "token", "apikey", "secret", "credentials", "passwd"}
+	words := []string{"passphrase", "api-key", "pwd", "privatekey", "token", "accesskey", "secret"}
 	var b strings.Builder
 	for i := 0; b.Len() < size; i++ {
 		b.WriteString(words[i%len(words)])
@@ -26,23 +26,24 @@ func repeatTo(unit string, size int) string {
 	return strings.Repeat(unit, size/len(unit)+1)[:size]
 }
 
-// mixedText is size bytes of the kind of text the redactor meets: notes, YAML and JSON holding secrets, a mirror URL
-// with credentials, a header, flags, a table, an attachment's base64 and long runs of glued words.
+// mixedText is size bytes of the kind of text the redactor meets: a shell session, an env file, a service's config,
+// a stack trace, a request dump, a CSV export, a package lock's hashes, and long runs of secret words.
 func mixedText(size int) string {
 	m := newMaker(21)
 	block := strings.Join([]string{
-		"## Release checklist", "",
-		"Tag the build after review; commit 9be04c7d21aa3f58e6b1c0d4f7a29e83b5c6d1f0 is the last green one.",
-		"rollout:", "  region: eu-west", "  access_key: " + m.secret(18), "  passwd: Zq81", "  readers: [ops, qa]",
-		"secret:", "\t" + m.secret(10),
-		`[{"name": "cache", "client_secret": "` + m.secret(22) + `"}, {"name": "queue", "port": 5672}]`,
-		"mirror https://mirror:" + m.secret(9) + "@pkgs.example.org/simple and retry",
-		`wget --header "Proxy-Authorization: Basic ` + m.secret(20) + `" -q https://dl.example.org/x.tgz?access_token=` + m.secret(14),
-		"| step | owner | state |", "| -- | -- | -- |", "| sign | release | done |",
-		"tool sync --api-key '" + m.secret(12) + "' --dry-run; git -c http.extraheader=\"Bearer " + m.secret(16) + "\" pull",
-		"attachment " + strings.Repeat("U29tZSBhdHRhY2hlZCBieXRlcw", 30),
-		"glued " + gluedWords("_", 3000), "glued " + gluedWords("-", 3000),
-		"glued " + gluedWords(".", 3000) + " " + strings.Repeat("a+", 1500) + "://",
+		"$ make deploy ENV=staging",
+		"reading .env.staging",
+		"DATABASE_URL=postgres://svc_orders:" + m.secret(11) + "@db-3.internal:5432/orders",
+		"SMTP_PASS=" + m.secret(15) + "  # rotated each quarter",
+		"services:", "  queue:", "    image: queue:4.1", "    signing_secret:", "      " + m.secret(19),
+		"panic: runtime error: index out of range [5] with length 5",
+		"goroutine 17 [running]:", "main.(*Ledger).Post(0xc000112000)", "\t/src/ledger/post.go:88 +0x1d4",
+		"POST /v2/charges HTTP/1.1", "Host: pay.example.net", "X-Api-Key: " + m.secret(26), "Content-Length: 64",
+		`id,owner,"access_key",note`, `17,ops,"` + m.secret(16) + `","moved, then tagged 4f9c2e81a7d03b56"`,
+		"integrity sha512-" + strings.Repeat("Zm9yIHRoZSBsb2NrIGZpbGU", 25),
+		"ssh-keygen -t ed25519 --passphrase '" + m.secret(13) + "' -f ./deploy_key && echo done",
+		"words " + gluedWords("-", 2500), "words " + gluedWords("_", 2500), "words " + gluedWords("", 2500),
+		"scheme " + strings.Repeat("v1.", 1200) + "://", "words " + gluedWords(".", 2500),
 		"",
 	}, "\n")
 	return repeatTo(block, size)
@@ -54,42 +55,42 @@ func TestLinearTime(t *testing.T) {
 		name string
 		text string
 	}{
-		{"26 KB of secret words glued by _", gluedWords("_", 26*kb)},
-		{"26 KB of secret words glued by -", gluedWords("-", 26*kb)},
-		{"26 KB of secret words glued by .", gluedWords(".", 26*kb)},
-		{"26 KB of secret words glued", gluedWords("", 26*kb)},
-		{"1 MB of mixed text", mixedText(1024 * kb)},
-		{"1 MB of names after names", repeatTo(`use Bearer secret= 'k1' as before; store: passwd= m2, -password access_key= n3; Proxy-Authorization: Token pwd= p4 extraHeader= BEARER zyxw98765`+"\n", 1024*kb)},
-		{"1 MB of token=password= glued", repeatTo("token=password=", 1024*kb)},
-		{"1 MB of quotes left open", repeatTo(`token: "x `, 1024*kb)},
-		{"1 MB of PROXY-AUTHORIZATION: digest", repeatTo("PROXY-AUTHORIZATION:\tdigest ", 1024*kb)},
-		{"1 MB of x-authorization=", repeatTo("x-authorization=", 1024*kb)},
-		{"1 MB of a bearer Token=x", repeatTo("a bearer Token=x ", 1024*kb)},
-		{"1 MB of names at line ends", repeatTo("password:\n", 1024*kb)},
-		{"1 MB of quotes after a separator", repeatTo(`x' token='`, 1024*kb)},
-		{"1 MB of dashes", strings.Repeat("-", 1024*kb)},
-		{"1 MB of whitespace then a quote", strings.Repeat(" ", 1024*kb) + `"`},
-		{"1 MB of scheme characters", repeatTo("a+", 1024*kb) + "://"},
+		{"secret words with _ between [26 KB]", gluedWords("_", 26*kb)},
+		{"secret words with - between [26 KB]", gluedWords("-", 26*kb)},
+		{"secret words with . between [26 KB]", gluedWords(".", 26*kb)},
+		{"secret words with nothing between [26 KB]", gluedWords("", 26*kb)},
+		{"a shell session, configs and logs [1 MB]", mixedText(1024 * kb)},
+		{"one line of names behind names [1 MB]", repeatTo(`use Bearer secret= 'k1' as before; store: passwd= m2, -password access_key= n3; Proxy-Authorization: Token pwd= p4 extraHeader= BEARER zyxw98765`+"\n", 1024*kb)},
+		{"apikey: and pwd= with nothing between [1 MB]", repeatTo("apikey:pwd=", 1024*kb)},
+		{"an open quote after every name [1 MB]", repeatTo(`passwd: 'q `, 1024*kb)},
+		{"a digest header on every line [1 MB]", repeatTo("PROXY-AUTHORIZATION:\tdigest ", 1024*kb)},
+		{"header names with nothing between [1 MB]", repeatTo("Upstream-AUTHORIZATION=", 1024*kb)},
+		{"a key after every bearer [1 MB]", repeatTo("send bearer apiKey:q ", 1024*kb)},
+		{"a name ending every line [1 MB]", repeatTo("password:\n", 1024*kb)},
+		{"a quote after every separator [1 MB]", repeatTo(`x' token='`, 1024*kb)},
+		{"dashes [1 MB]", strings.Repeat("-", 1024*kb)},
+		{"spaces and then a quote [1 MB]", strings.Repeat(" ", 1024*kb) + `"`},
+		{"a scheme's characters before :// [1 MB]", repeatTo("v1.", 1024*kb) + "://"},
 	}
 	// Runs that every match used to rescan to their end: a flag's characters after the long s or the Kelvin sign (each
 	// `-` read the rest of the run), JSON web token starts that never become one, and the exact-length Google key.
-	for _, unit := range []string{"\u017f-", "\u212a-", "eyJ-", "AIza-"} {
+	for _, unit := range []string{"ſ-", "K-", "eyJ-", "AIza-"} {
 		for _, size := range []int{256 * kb, 1024 * kb} {
 			cases = append(cases, struct {
 				name string
 				text string
-			}{fmt.Sprintf("%d KB of %q", size/kb, unit), repeatTo(unit, size)})
+			}{fmt.Sprintf("%q repeated [%d KB]", unit, size/kb), repeatTo(unit, size)})
 		}
 	}
 	// Every flag in one such run ends where the run does, and each used to skip the whitespace after that end again.
-	for _, unit := range []string{"\u017f-", "\u212a-"} {
+	for _, unit := range []string{"ſ-", "K-"} {
 		cases = append(cases, struct {
 			name string
 			text string
-		}{fmt.Sprintf("1 MB of %q flags sharing one end, then whitespace", unit),
+		}{fmt.Sprintf("%q flags sharing one end, then whitespace [1 MB]", unit),
 			repeatTo(unit, 512*kb) + "password" + strings.Repeat(" \t", 256*kb) + "x"})
 	}
-	Text("warm: password=hunter2")
+	Text("first call: passwd=Tq83vz")
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			best := time.Duration(1 << 62)
