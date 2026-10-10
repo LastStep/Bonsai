@@ -45,6 +45,20 @@ func TestAfterTheSchemeWord(t *testing.T) {
 	if n != 6*(6*2*4+4*2*4) {
 		t.Errorf("%d strings", n)
 	}
+	// A quote after the scheme that does not close on its line takes the word it opens: a token is one word, and the
+	// prose after it stays.
+	for in, want := range map[string]string{
+		`see Authorization: Bearer "hunter2, then more words`: "see Authorization: [redacted] then more words",
+		`Authorization: token 'hunter2`:                       "Authorization: [redacted]",
+		`Authorization: Basic "aHVudGVyMg==" ok`:              "Authorization: [redacted] ok",
+		"Authorization: token : hunter2":                      "Authorization: [redacted] : [redacted]",
+	} {
+		got := Text(in)
+		if got != want {
+			t.Errorf("Text(%q) = %q, want %q", in, got, want)
+		}
+		fixedAtEveryCut(t, in, got)
+	}
 }
 
 // valueTakers are names whose value would start where a second name stands.

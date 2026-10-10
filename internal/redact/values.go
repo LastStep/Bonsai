@@ -545,8 +545,9 @@ func (st *state) flag(p int, virt bool) (int, int, bool) {
 
 // authorization reads an Authorization header's value. After its separator: an optional quote, whitespace, then
 // with a scheme word and whitespace the value after it; a quoted value there takes the scheme word with it (the
-// header's whole value), and `token` followed by `:` or `=` is a key, not a scheme. Without a scheme word, or when
-// nothing can follow it, the value is what stands there, the scheme word itself among it.
+// header's whole value: the quoted token and what is glued after its closing quote, or, when the quote does not
+// close on its line, the word it opens), and `token` followed by `:` or `=` is a key, not a scheme. Without a scheme
+// word, or when nothing can follow it, the value is what stands there, the scheme word itself among it.
 func (st *state) authorization(p0 int, virt bool) (int, int, bool) {
 	s := st.s
 	p := p0
@@ -567,7 +568,11 @@ func (st *state) authorization(p0 int, virt bool) (int, int, bool) {
 			break
 		}
 		if isQuote(s[v]) {
-			e, _ := st.quoted(v, clsQuoteless, virt)
+			// A token is one word: a quote not closed on its line takes that word, not the rest of the line.
+			e := st.classEnd(clsQuoteless, v+1, virt)
+			if c, ok := st.closeQuote(v+1, s[v], virt); ok && !st.opensNext(c, virt) {
+				e = st.classEnd(clsQuoteless, c+1, virt)
+			}
 			return p, e, true
 		}
 		if e, ok := st.authCore(v, virt); ok {
