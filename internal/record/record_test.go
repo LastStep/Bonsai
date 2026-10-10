@@ -165,6 +165,17 @@ func TestLine(t *testing.T) {
 		t.Errorf("the label's value was not cut")
 	}
 
+	// The binary's path is cut when it is the longest (set 6's bonsai_path); its hash never is.
+	l.Labels = schema.Object{}
+	path, sum := strings.Repeat("folder/", 300)+"bonsai", strings.Repeat("ab", 32)
+	l.BonsaiPath, l.BonsaiSHA256 = &path, &sum
+	line = mustLine(t, l)
+	doc = decode(t, line)
+	if s := doc.String("bonsai_path"); len(line) > max || !strings.HasSuffix(s, "...") || doc.String("bonsai_sha256") != sum {
+		t.Errorf("a long bonsai_path: %d bytes, path %d characters, hash %q", len(line), len(s), doc.String("bonsai_sha256"))
+	}
+	l.BonsaiPath, l.BonsaiSHA256 = nil, nil
+
 	// What cannot be cut cannot fit: many labels, each name long and each value short.
 	l.Labels = schema.Object{}
 	for i := 0; i < 80; i++ {
