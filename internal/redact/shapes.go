@@ -14,7 +14,7 @@ package redact
 //
 // And one addition, so no part of a secret is left because a shape took the rest: a shape takes part of a run of the
 // random run's characters ([A-Za-z0-9_+/=-]), and what it leaves on either side, too short to be judged on its own,
-// goes with it when it holds a piece that looks random (leftovers, below).
+// goes with it when it holds a piece that looks random. It is judged once every shape has run (leftovers, below).
 
 import "strings"
 
@@ -374,16 +374,18 @@ func findURLCredentials(s string, add func(a, b int)) {
 	}
 }
 
-// leftovers gives the parts of their runs that the spans a shape rule found in s (in order, apart) leave and that
-// must go with them. A shape takes part of a run of the random run's characters (a token with more glued after it, an
-// exact-length key, a JSON web token's first or last part, the start of a webhook URL with a word glued before it);
-// the random-run rule then judges what is left on each side as a run of its own, which is often under its 32
-// characters, though the whole run is not: a secret glued to a key id (`AKIA...` and AWS's secret after it) would be
-// kept. So each such leftover is judged with its run: when the whole run is 32 or more and the leftover holds a piece
-// that looks random (between the run's separators, a piece the shape's edge and the leftover share counted whole), it
-// goes. A leftover of names and words (`TOKEN_FOR_CI=` before a token, `_token=` or `-backup` after one) has no such
-// piece and stays, as the studio's redactor leaves it; and a leftover the random-run rule never takes (one starting
-// with `toolu_`) stays too. Every run and piece is read once, so the time stays linear.
+// leftovers gives the parts of their runs that the shapes' spans in s (in order, apart: every span the shapes of one
+// pass found, in the text as it stood before them) leave, and that must go with them. A shape takes part of a run of
+// the random run's characters (a token with more glued after it, an exact-length key, a JSON web token's first or
+// last part, the start of a webhook URL with a word glued before it); the random-run rule then judges what is left on
+// each side as a run of its own, which is often under its 32 characters, though the whole run is not: a secret glued
+// to a key id (`AKIA...` and AWS's secret after it) would be kept. So each such leftover is judged with its run: when
+// the whole run is 32 or more and the leftover holds a piece that looks random (between the run's separators, a piece
+// the shape's edge and the leftover share counted whole), it goes. A leftover of names and words (`TOKEN_FOR_CI=`
+// before a token, `_token=` or `-backup` after one) has no such piece and stays, as the studio's redactor leaves it;
+// and a leftover the random-run rule never takes (one starting with `toolu_`) stays too. Judged with every shape's
+// span at once, a leftover never holds another shape's start. Every run and piece is read once, so the time stays
+// linear.
 func leftovers(s string, spans []Span) []Span {
 	var out []Span
 	runL, runR := 0, 0 // the run last read: the leftovers of one run share it

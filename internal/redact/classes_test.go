@@ -413,3 +413,65 @@ func TestShapeLeftovers(t *testing.T) {
 		fixedAtEveryCut(t, in, got)
 	}
 }
+
+// Shapes glued to shapes: what one shape leaves is judged once every shape has run, so no shape's leftover takes the
+// start of another and costs it its own match (an exact-length Google key glued to a `ya29.` token, a token glued
+// after one). Wherever a shape's words go with the other shape standing as a marker, they go with it there too. The
+// glues are those neither shape's characters take (a body that runs on into the other shape takes it whole or not).
+func TestShapesGluedToShapes(t *testing.T) {
+	m := newMaker(19)
+	urlsafe := alnum + "_-"
+	shapes := []struct{ text, body string }{ // body: what a shape's characters may take of a glue after it
+		{"https://hooks.slack.com/services/T5/" + m.secret(24), ""},
+		{"sk-ant-api03-" + m.secret(30), "-"},
+		{"sk-proj-" + m.secret(26), "-"},
+		{"rk_test_" + m.secret(20), ""},
+		{"github_pat_" + m.secret(30), ""},
+		{"gho_" + m.secret(36), ""},
+		{"xoxp-2718281828-" + m.secret(16), "-"},
+		{"npm_" + m.secret(36), ""},
+		{"ASIA" + strings.ToUpper(m.secret(16)), ""},
+		{"AIza" + m.from(urlsafe, 35), "exact"},
+		{"ya29." + m.secret(30), "-"},
+		{"eyJ" + m.from(alnum, 12) + "." + m.from(alnum, 16) + "." + m.from(alnum, 20), "-"},
+	}
+	words := func(s string) []string {
+		var out []string
+		for _, w := range wordsOf(s) {
+			if len(w) >= 3 {
+				out = append(out, w)
+			}
+		}
+		return out
+	}
+	n := 0
+	for _, a := range shapes {
+		for _, b := range shapes {
+			for _, g := range []string{"", "-", "+", "/", "=", ".", ",", ":", " "} {
+				if strings.Contains(a.body, g) && a.body != "exact" {
+					continue
+				}
+				for _, frame := range []string{"%s", "seen %s in the log"} {
+					in := fmt.Sprintf(frame, a.text+g+b.text)
+					out := Text(in)
+					n++
+					for _, side := range []struct{ text, ref string }{
+						{a.text, fmt.Sprintf(frame, a.text+g+Marker)},
+						{b.text, fmt.Sprintf(frame, Marker+g+b.text)},
+					} {
+						refOut := Text(side.ref)
+						for _, w := range words(side.text) {
+							if !hasWord(refOut, w) && hasWord(out, w) {
+								t.Errorf("%q kept %q, which goes with the other shape a marker (%q): %q", in, w, refOut, out)
+							}
+						}
+					}
+					if n%3 == 0 {
+						fixedAtEveryCut(t, in, out)
+					}
+				}
+			}
+		}
+	}
+	t.Logf("%d strings", n)
+}

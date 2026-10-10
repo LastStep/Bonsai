@@ -171,9 +171,15 @@ func redactDoc(s string) *doc {
 	for pass := 0; pass < maxPasses; pass++ {
 		changed, shaped := false, false
 		preText, preSegs := d.text, d.segs // render makes new ones, so these stay the text before the shapes
+		var found []Span                   // the spans the shapes found, each rule in the text the ones before it left
 		for _, r := range shapeRules {
-			if d.applyShape(r.kind, r.find) {
-				changed, shaped = true, true
+			f, ch := d.apply(r.kind, r.find)
+			found = append(found, f...)
+			changed, shaped = changed || ch, shaped || ch
+		}
+		if shaped {
+			if d.merge(d.leftovers(preText, preSegs, found)) {
+				d.render()
 			}
 		}
 		names := findNames(d.text)
@@ -184,7 +190,7 @@ func redactDoc(s string) *doc {
 			d.render()
 			changed = true
 		}
-		if d.apply(KindRandom, findRandom) {
+		if _, ch := d.apply(KindRandom, findRandom); ch {
 			changed = true
 		}
 		if !changed {
@@ -274,12 +280,15 @@ func origAt(segs []seg, pos int) int {
 }
 
 // textAt gives the byte of the current text that stands for byte o of orig: inside a span, its marker's start.
-func (d *doc) textAt(o int) int {
-	k := sort.Search(len(d.segs), func(i int) bool { return d.segs[i].o > o }) - 1
+func (d *doc) textAt(o int) int { return posIn(d.segs, o) }
+
+// posIn gives the byte of a text that stands for byte o of orig, by the text's map: inside a marker, its start.
+func posIn(segs []seg, o int) int {
+	k := sort.Search(len(segs), func(i int) bool { return segs[i].o > o }) - 1
 	if k < 0 {
 		return 0
 	}
-	g := d.segs[k]
+	g := segs[k]
 	switch {
 	case !g.marker:
 		return g.t + min(o-g.o, g.ol)
@@ -290,28 +299,39 @@ func (d *doc) textAt(o int) int {
 	}
 }
 
-// apply runs one rule over the current text and takes out what it finds; it reports whether anything changed.
-func (d *doc) apply(kind Kind, find func(string, func(int, int))) bool {
+// apply runs one rule over the current text and takes out what it finds: it gives the spans found (in orig's
+// offsets) and whether anything changed.
+func (d *doc) apply(kind Kind, find func(string, func(int, int))) ([]Span, bool) {
 	var found []Span
 	find(d.text, func(a, b int) { found = append(found, Span{a, b, kind}) })
-	if !d.merge(d.mapSpans(found)) {
-		return false
+	found = d.mapSpans(found)
+	if !d.merge(found) {
+		return found, false
 	}
 	d.render()
-	return true
+	return found, true
 }
 
-// applyShape is apply for a whole-value shape: what the shape leaves of a run it took part of is judged with that run
-// (leftovers, shapes.go).
-func (d *doc) applyShape(kind Kind, find func(string, func(int, int))) bool {
-	var found []Span
-	find(d.text, func(a, b int) { found = append(found, Span{a, b, kind}) })
-	found = append(found, leftovers(d.text, found)...)
-	if !d.merge(d.mapSpans(found)) {
-		return false
+// leftovers gives what this pass's shapes left of the runs they took part of and that goes with them (leftovers,
+// shapes.go). It is judged once all the shapes have run, on the text as it stood before them (preText, mapped onto
+// orig by preSegs) with every span the shapes found, so a shape that the studio's order lets match after another
+// (a `ya29.` token glued after an exact-length key) is never taken as the other's leftover, its own shape lost.
+func (d *doc) leftovers(preText string, preSegs []seg, found []Span) []Span {
+	sort.SliceStable(found, func(i, j int) bool { return found[i].Start < found[j].Start })
+	var in []Span // the shapes' spans in preText's offsets, apart
+	for _, sp := range found {
+		a, b := posIn(preSegs, sp.Start), posIn(preSegs, sp.End)
+		if n := len(in); n > 0 && a < in[n-1].End {
+			in[n-1].End = max(in[n-1].End, b)
+			continue
+		}
+		in = append(in, Span{a, b, sp.Kind})
 	}
-	d.render()
-	return true
+	var out []Span
+	for _, lo := range leftovers(preText, in) {
+		out = append(out, Span{origAt(preSegs, lo.Start), origAt(preSegs, lo.End), lo.Kind})
+	}
+	return out
 }
 
 // render rebuilds the current text and its map from orig and the spans.
