@@ -1,9 +1,9 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 11 Oct 2026 at 02:18. **5.1 is done** (10 Oct). **All of 5.2's code is on
-`main`** (`5883d53`, pushed 02:15): every piece built and landed, the redactor on Rohan's "one more round, then land"
-with known limits. **The 5.2 end verifier's part B runs on the final commit next** (part A, 00:41-01:12, passed all but
-one check, now fixed). Then the roadmap and this file.
+Rewritten, never appended. Last rewritten 11 Oct 2026 at 04:10. **5.1 and 5.2 are done.** 5.2's end verifier (two
+fresh Opus parts, A and B) passed every check of "5.2 done" but CI's lint, which was fixed forward with a CI-timing test
+(`4cf6b20`, `8243800`), CI then green; the redactor landed on Rohan's "one more round, then land" with known limits.
+**Next: step 5.3, the guards**, starting with Claude Code's Windows login (Rohan) and the orchestrator's start check.
 
 ## In short
 
@@ -25,14 +25,17 @@ approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5
   stopped at the last session's close, 14:06-14:30) passed all 21 checks of "5.1 done", no defect. Tests on `5fa9bd8`:
   WSL 2065 runs plain and 2071 tagged (2 skipped, Windows/macOS-only), Windows natively 2069 and 2075 (1 skipped,
   symbolic links); vet clean; CI green on both sides.
-- **Step 5.2, the recorder, logs and asks: all landed, the end verifier's part B next** (25-37 h, re-ask at 48). On
-  `main` at `5883d53`: formats set 6; the redactor (`internal/redact`, known limits below); one append path, the
-  reader and the salt; the sessions table and `bonsai logs`; the recorder (`hook start`, `hook record`, 12 own hook
-  lines, the memory secret scan); asks and `log append`; the generated-files page; cleaning per kind.
+- **Step 5.2, the recorder, logs and asks: done** (code at `8243800`). Formats set 6; the redactor
+  (`internal/redact`, known limits below); one append path, the reader and the salt; the sessions table and `bonsai
+  logs`; the recorder (`hook start`, `hook record`, 12 own hook lines under consent, the memory secret scan); asks and
+  `log append`; the generated-files page; cleaning per kind. Tests: WSL 2409 passed plain and 2415 tagged, Windows 2413
+  and 2419 (2 skipped each); vet, lint clean; CI green.
+- **Step 5.3, the guards: next** (18-29 h, re-ask at 38; its section approved 9 Oct).
 
 Hours: part 0 45 minutes; the skeleton 6 h 18 min of 30-47 h. **5.1: 866 minutes (14 h 26 min) of its 61 h re-ask
-line**, under its 30-47 h estimate. 5.2 so far: 1,034 minutes (17 h 14 min) of 48 h (every run's row in its piece's report; the
-redactor alone 140 + three verifiers 54, 62, 58 + two fix rounds 81, 144 = 539).
+line**, under its 30-47 h estimate. **5.2: 1,061 minutes (17 h 41 min) of its 48 h line**, under its 25-37 h estimate (the redactor alone 539
+minutes: 140 built, two fix rounds 81 and 144, three verifiers 54, 62 and 58). Step 5 so far: 5.1 866, 5.2 1,061, and
+the later parts' planning (5.3 72, 5.4 79, 5.5 84, 5.6 67, 5.7 117).
 5.5's planning 84 minutes, 5.6's 67, 5.7's 117 (84 of planning and review, 33 of the Go switch). Step 5's Windows-only
 tally: about 3 minutes (of 8 h; 5.2.2's over-strict salt test). Option rounds: one in 5.1, one in 5.2 (the redactor's finish line). No change to Mimas or the studio's repo. No stop line
 crossed.
@@ -117,40 +120,41 @@ crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at G (`cf356d3`), no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## Now: step 5.2, the end verifier's part B
+## Now: step 5.3, the guards
 
-`design/plan-5.md`, "Step 5.2". Run reports `records/runs/R-2026-10-10-5.2.*` (5.2.0's holds the part's running total).
-Briefs in `~/bonsai-checks/briefs/` (`rules.md`, every builder's rules block; `verify-5.2b-template.md`, part B).
-- **Landed** (`main` at `5883d53`): 5.2.0, 5.2.2, 5.2.6a, 5.2.3 (each with CI green), then the stack 5.2.1 (`de3ff16`),
-  5.2.5 (`d8cb82b`), 5.2.4 (`698e634`), 5.2.6b (`5883d53`, with the small fix `37ee150` rebased). Check 10 on `5883d53`:
-  WSL 2409 passed plain, 2415 tagged; Windows natively 2413 and 2419; vet clean.
-- **The end verifier is split** (Rohan, 00:41: "if you can queue other things in parallel then do them"): **part A**
-  (Opus, 00:41-01:12, on `4b0e1f7`) passed checks 1, 6, 9-14 and 16's tests and failed check 2's last clause (the
-  generated-files page's defaults were hand-written words nothing tied to the numbers; 5.2.6a's report had claimed a
-  failing copy that did not fail); fixed by `37ee150` (the words built from the numbers), the failing copy re-run by
-  the orchestrator. **Part B** (next, on the final commit): part A's standing (the diff from `4b0e1f7` only in
-  `internal/redact/` and the small fix's files), check 2's clause again, 3-5 (the redactor: the third verifier's
-  evidence on the identical package, the package's tests and a fuzz run), 7 (real sessions on WSL, `bonsai ask` in a
-  session), 8 (never blocks; timings), 15, 16 (tests and CI), 17 (stop lines, hours, the private grep).
-- **The redactor's known limits, after 1.0** (Rohan, 10 Oct 22:54: "One more round, then land"; the third verifier's
-  report in `R-2026-10-10-5.2.1-redact.md`, 02:14), ranked: **L1**, Bonsai-only and rare: an exact-length Google key
-  (`AIza` + 35) glued with nothing between to another token (`AIza`, `ghp_`, `npm_`, `github_pat_`, `sk-`), then a
-  separator and more of the run: what follows the separator is kept unless it holds a random-looking piece of 16+
-  characters, where the studio's redactor takes it (`redact.go:175-194`, `shapes.go:69-110`, `150-154`, `386-401`; a
-  regression of the second fix round's `c76bb34`; fix: judge such a run whole, as `awsWhole` does). **Shared** with the
-  studio's: `'password' => 'x'` (PHP, Ruby, Perl) and `password := "x"` (Go), common in source code (read `=>` and
-  `:=` as separators); `"""x"""`; dotted or dotless i and full-width letters not folded (simple folding, by
-  design); escaped JSON keys; bare secrets with no name or shape; a lower-case secret used as a program or subcommand
-  name. Also accepted earlier: folded names kept while their value goes; ordinary words lost only inside values.
-- **Placed for later by 5.2** (in the reports): 5.3: guarding `lock.json` (5.2.4's note A: a relink without a lock
-  writes Bonsai's own lines on `--yes`); `hook start` reading the task folder twice (one shared read, with the hook
-  adapter); the cleaner's 1 s budget not checked during a folder's listing, and `keep_newest` ranking a huge folder on
-  Windows (with 5.3's Windows check); a worktree session's guard hashing in its own folder. The next formats set:
-  `formats/examples/workspace.yaml`'s old "skill base:generated-files" comment, and the workspace schema's words for
-  cleaning's two added protections. 5.5: `needs.mcp`, a lock `ref` for the moved-tag gap.
-- **Windows runs:** hand the Windows process its `PATH` through `WSLENV=PATH/l` holding only Go, Git and Windows
-  (`where claude` finds nothing); use `-timeout 30m` (`cmd/bonsai` and `internal/engine` take about 5-7 minutes each
-  under load).
+`design/plan-5.md`, "Step 5.3" (~line 1479; its two questions answered 9 Oct: (a) the hook lines name the installed
+`bonsai`, and (ii) consent and `unlink` only a person's outside the studio's managed projects; spec §3 and §18's dated
+notes). **Its start:** Claude Code's Windows login back first (Rohan; his sitting's first lines, below), since the agent's
+Windows run needs it; then the orchestrator's start check of 5.3's files against what 5.1 and 5.2 landed (as 5.2's was:
+a read-only Opus run reading the section's "What exists" and each piece's files against `main`; 5.3's set numbers
+moved by one since 5.2.0 took set 6); then its pieces as "The order" says, side by side where they share no file. The
+builders' rules block and the brief drafts this session used are in `~/bonsai-checks/briefs/` (`rules.md` carries every
+rule, CI's lint line included).
+
+**5.2's record, for 5.3 and later** (run reports `records/runs/R-2026-10-10-5.2.*`; 5.2.0's holds the part's log):
+- **The redactor's known limits, after 1.0** (Rohan, 10 Oct 22:54; the third verifier's report in
+  `R-2026-10-10-5.2.1-redact.md`, 02:14), ranked: **L1**, Bonsai-only and rare: an exact-length Google key (`AIza` + 35)
+  glued with nothing between to another token (`AIza`, `ghp_`, `npm_`, `github_pat_`, `sk-`), then a separator and more
+  of the run, keeps what follows the separator unless it holds a random-looking piece of 16+ characters
+  (`redact.go:175-194`, `shapes.go:69-110`, `150-154`, `386-401`; fix: judge such a run whole, as `awsWhole` does).
+  **Shared** with the studio's redactor: `'password' => 'x'` (PHP, Ruby, Perl) and `password := "x"` (Go), common in
+  source code and able to reach records through notice text, ask words and question text: **part B suggests Rohan may
+  want these in a named part before the release**; `"""x"""`; dotted or dotless i and full-width letters not folded;
+  escaped JSON keys; bare secrets with no name or shape; a lower-case secret used as a program or subcommand name.
+- **Placed with 5.3:** guarding `lock.json` (5.2.4's note A: a relink without a lock writes Bonsai's own lines on
+  `--yes`); one shared task read in `hook start` (it reads the task folder twice), with the hook adapter; **the
+  cleaner's budget is checked between files, not during the listing and judging**: on the Windows CI runner a session
+  end's cleaning of 600 files took 2.17 s against its 1 s (still inside the recorder's 4 s and SessionEnd's 5 s), and
+  `keep_newest` ranking a huge folder may not finish in 1 s, with 5.3's Windows check; a worktree session's guard
+  hashing in its own folder; `internal/clean/clean.go:13`'s doc comment stating the defaults in words.
+- **The next formats set:** `formats/examples/workspace.yaml`'s old "skill base:generated-files" comment; the workspace
+  schema's words for cleaning's two added protections. **5.5:** `needs.mcp`, a lock `ref` for the moved-tag gap.
+- **Lessons this session:** the installed `golangci-lint` cannot run on this module, so CI's linter is run as
+  `GOTOOLCHAIN=go1.27.2 go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./...` before a
+  push (now in `rules.md`); a builder's "shown failing" claim is re-run by the orchestrator before it lands (5.2.6a's
+  was false); Windows processes get their `PATH` through `WSLENV=PATH/l` (else the Windows user `PATH`, holding
+  `claude.exe`); Windows test runs use `-timeout 30m`; tests that time a run hold it to a hard limit, not to the
+  machine's speed; after a second failing verifier on edge cases, Rohan sets the finish line.
 
 **Carried into later briefs:** 5.6.5's brief counts a tag as a release only once its release is published; 5.7's runs
 so far (84 minutes of planning and review, 33 of the Go switch) go into 5.7.0's run report; the later sections' formats
@@ -181,12 +185,12 @@ product's Plastic workspace).
 
 ## Waiting on Rohan
 
-- **Claude Code's login on Windows has lapsed** ("OAuth session expired"): 5.2's real sessions ran on WSL only (5.2.4
-  piped the studio's 62 recorded payloads into the Windows build instead). 5.3's Windows check needs a real Windows
-  session: a login before then (`claude` in PowerShell).
-- **For his note:** in the verifier's first Windows session (14:21), Claude Code's failed login refresh rewrote
-  `%USERPROFILE%\.claude\.credentials.json`, which is not on the accepted list of writes; its contents were not read.
-  The user settings files are unchanged on both sides.
+- **At 5.3's start: Claude Code's login on Windows** (expired; 5.2's real sessions ran on WSL only). In PowerShell:
+  `claude`, then type `/login`, sign in, and type `/exit`.
+- **During 5.3** (its section, "Rohan's sitting"): one check of about 10 minutes in PowerShell, three asks to Claude in
+  a scratch project, after a Sonnet agent's run on both sides; the exact lines come to him then.
+- **Whenever he likes:** whether the redactor's shared `=>` and `:=` limits go in a named part before the release (part
+  B's suggestion; today they are "after 1.0").
 - Later, as the plan has them: at 5.4, a pre-release `bonsai` in WSL (about 5 minutes); at 5.5, reading the `workflow`
   repo and making it public; at 5.7, the release settings, the `rc.1` tag and his approval, the installs, the trial's
   analysis, his own trial on a fresh project, his word for 1.0 (about 1 h 45 min in all).
@@ -194,8 +198,8 @@ product's Plastic workspace).
 
 ## Loose ends
 
-- Rohan's roadmap artifact: Bonsai's cards updated at 5.1's end (5.1 done, 5.2 under way); the studio's cards
-  untouched. Next update at 5.2's end (plan item 9).
+- Rohan's roadmap artifact: Bonsai's cards updated at 5.2's end (5.2 done, 5.3 next); the studio's cards untouched.
+  Next update at 5.3's end (plan item 9).
 - Another of Rohan's sessions also works in `~/Servers/Bonsai` (10 Oct: two commits taking Jev out of Bonsai's plans,
   pushed). Read `origin/main`'s new commits before each push, and never stage a file this session did not write.
 
