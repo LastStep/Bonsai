@@ -118,8 +118,8 @@ such pair.
   (yours, or the studio's registration's; typed in a terminal of your own, not inside Claude); and installing a newer
   Bonsai release when `bonsai status` or `bonsai check` says one exists (six lines a side, run one at a time; if the
   fingerprint line does not print `OK`, or `True` in PowerShell, stop and send the orchestrator what it printed).
-- **At 5.7** (its section, "Step 5.7", comes back to you for approval with its new hours: you answered its decisions on
-  10 Oct and asked for a trial). Five batches and rc.2, about an hour and three quarters in all, plus about 15 minutes
+- **At 5.7** (its section, "Step 5.7", approved 10 Oct with its new hours: you answered its decisions that day and
+  asked for a trial). Five batches and rc.2, about an hour and three quarters in all, plus about 15 minutes
   for each further pre-release and your own trial, untimed. **Batch 1, the settings** (about 10 minutes, in WSL, each
   setting read back by a line after it): your `gh` checked (you updated it on 10 Oct), a look on github.com for the old
   Homebrew token, the `release` environment with your approval on each release, GitHub's lock on published releases, the
@@ -154,15 +154,15 @@ such pair.
 platform's own package manager named for after step 5; your approval holds each release; the packs' tags are locked;
 and, before 1.0, a trial of Bonsai on itself on a pre-release you install, then your own trial on a fresh project. Go
 1.27 for the release ("we can go with go 1.27 latest") and a newer `gh` in WSL, which you installed, were settled
-earlier that day. The section comes back to you for approval with its new hours. 5.6's section was approved on 10 Oct,
-with (A) for who saves notes about you that every project reads: you save them, from an agent's draft (5.6's "Who saves
-notes about you"). The five other decisions you confirmed that day: this machine's settings and the studio's label files
-are all yours, even `cache_keep_days`; a newer release is shown as planned, `status --full` reading Bonsai's tags at
-most daily and keeping the answer in the home's `cache/release.json`, which `status`, `check` and `--line` show offline;
-the installers first run on your machines at 5.7 with 1.0 (now rc.1, in 5.7's trial); `status --line` is kept; the
-personal index is 40 lines and 4 KB, a note 4 KB. Three were decided on 9 Oct: the two in 5.3's section, how the hook
-lines find `bonsai` (your answer: (a)) and who may consent to code and take the guard out (your answer: (ii)), and this
-one:
+earlier that day. You approved the section on 10 Oct, at 9.5-18.75 hours, re-ask at 24. 5.6's section was approved on
+10 Oct, with (A) for who saves notes about you that every project reads: you save them, from an agent's draft (5.6's
+"Who saves notes about you"). The five other decisions you confirmed that day: this machine's settings and the studio's
+label files are all yours, even `cache_keep_days`; a newer release is shown as planned, `status --full` reading Bonsai's
+tags at most daily and keeping the answer in the home's `cache/release.json`, which `status`, `check` and `--line` show
+offline; the installers first run on your machines at 5.7 with 1.0 (now rc.1, in 5.7's trial); `status --line` is kept;
+the personal index is 40 lines and 4 KB, a note 4 KB. Three were decided on 9 Oct: the two in 5.3's section, how the
+hook lines find `bonsai` (your answer: (a)) and who may consent to code and take the guard out (your answer: (ii)), and
+this one:
 - **How the later parts' plans reach you: (B).** You were offered (A) every part's section, (B) only when it changes
   what is yours, and (C) none; you first said (A), then chose (B) once the scope question above was settled. So: 5.1
   is planned in full here. Before each later part starts, a planner writes its section into this file, a fresh Opus
@@ -5458,7 +5458,7 @@ review, his memory line), a public release that cannot be taken back, and his de
 `1.0.0-rc.1`** before 1.0, with his own trial on a fresh project after it (3). Two more were settled earlier that day:
 Go 1.27 for the release ("we can go with go 1.27 latest"; the bump is its own piece, landed before 5.7 starts) and a
 newer `gh` in WSL (2 (A), done). The trial takes 5.7 past the spec's hours: **9.5-18.75 hours, re-ask at 24**, against
-the spec's 6-11 and 14 ("Hours, order and your steps"); the section comes back to him for approval with those figures.
+the spec's 6-11 and 14 ("Hours, order and your steps"); he approved the section with those figures on 10 Oct (12:06).
 The release files, `.github/workflows/release.yml` and `.goreleaser.yaml`, are person-only in Bonsai's repo (5.4's
 switch, the stricter-only rule): his approval of this section is his word for the changes it names to them, and for
 nothing more. The order of the parts stands: 5.7 is the last. No repo is new. What goes public: Bonsai 1.0 (its files,
@@ -6641,10 +6641,10 @@ His lines are in his part, above; each batch goes in one message. The orchestrat
 
 #### Stale or in tension in the spec, for 5.7
 
-The orchestrator writes these dated notes on `main` once Rohan has approved the section (this plan does not edit the
-spec); they carry his answers of 10 Oct.
+These dated notes are written in the spec (10 Oct, after Rohan approved the section); they carry his answers of 10
+Oct.
 - **§3, "Go version: the module says `go 1.25` with a `toolchain` line"; the gate's "a later 1.25.x patch fixes
-  them":** Go 1.25's last patch was 1.25.14 (19 Aug 2026). Note: "> **Changed <date> (step 5.7's section):** the `go`
+  them":** Go 1.25's last patch was 1.25.14 (19 Aug 2026). Note: "> **Changed 10 Oct (step 5.7's section):** the `go`
   line stays `go 1.25.0`; on Rohan's word (10 Oct, "we can go with go 1.27 latest") the `toolchain` line moves to Go
   1.27's newest patch, because Go 1.25 has had no security fix since Go 1.27 came out (19 Aug 2026). govulncheck's pin
   moves with it. The next such bump comes when Go 1.29 is out."
@@ -6653,27 +6653,27 @@ spec); they carry his answers of 10 Oct.
   project's hook lines name (§3's 9 Oct note, (a)), so it could never guard. The tap keeps `bonsai` at 0.4.3, unchanged,
   so 0.4.3 stays downloadable (Q8); there is no `bonsai@0.4` and no tap token, and no release writes outside Bonsai's
   repo. The new Bonsai installs with its installers. Later, outside step 5: a Mac, and each platform's own package
-  manager, each installing into the two places the guard trusts." §14's row gets a one-line pointer to it.
-- **§12 step 8, "immutable releases, build provenance":** "> **Changed <date> (step 5.7's section):** immutable releases
+  manager, each needing the guard's trusted places revisited first." §14's row gets a one-line pointer to it.
+- **§12 step 8, "immutable releases, build provenance":** "> **Changed 10 Oct (step 5.7's section):** immutable releases
   are a repository setting, switched on by Rohan's line; GoReleaser builds in a job that cannot publish or sign; a
   second job, in the `release` environment and running nothing from the build, signs every archive, `checksums.txt` and
   every program with GitHub's artifact attestations, makes a draft, checks it, publishes it, and checks the release as
   published. The re-release input went in part 1 and the manual run now: `release.yml` runs on `vX.Y.Z` and
   `vX.Y.Z-rc.N` tags only, for a commit on `main` whose checks are green. The install lines check the record before
   unpacking (`gh attestation verify`)."
-- **§17 step 4:** "> **Changed <date> (step 5.7's section, Rohan's answers of 10 Oct):** no new tap token: the `release`
+- **§17 step 4:** "> **Changed 10 Oct (step 5.7's section, Rohan's answers of 10 Oct):** no new tap token: the `release`
   environment holds no secret. The environment asks Rohan's approval before each release run, in place of the optional
   tag ruleset. Immutable releases are switched on with `gh api -X PUT repos/LastStep/Bonsai/immutable-releases`. Tag
   rules stop `base-v*` tags in Bonsai's repo and `v*` tags in the workflow repo being moved or deleted, and the workflow
-  repo's releases are locked too. The old token's revocation [is confirmed / was not found], <date>." Also the line "At
-  step 5.7, on your word, switch it back on" stands, with the date it was done.
+  repo's releases are locked too. The old token's revocation is confirmed in batch 1." The line "At step 5.7, on your
+  word, switch it back on" stands.
 - **§14 row 10, "the first public release, on Rohan's word", and §14's 5.7 row (6-11 h):** "> **Changed 10 Oct
   (Rohan):** before 1.0, a trial of Bonsai on itself on a public pre-release, `v1.0.0-rc.1`, which he installs: a small
   real feature he picks, built through the whole pipeline on Bonsai's own repo, its results analysed for him, fixes as
   further pre-releases; then his own trial on a fresh project; then his word for 1.0 on the same code. 5.7 becomes
   9.5-18.75 hours, re-ask at 24 (the trial adds 3.5-7.75); step 5 142.5-225.75." (`design/plan-5.md`, "Step 5.7".)
 - **§5, the pack's CI step 2, and §5 and §6's examples `ref: base-v1.0.0`, `ref: v1.0.0`:** done at 5.7.6, no note
-  needed beyond the plan's; `init`'s template still names no pack (note 5.7.6, 1).
+  needed beyond the plan's; `init`'s template still names no pack (note 5.7.4, 8).
 - **§3, "No agent installs or replaces it":** unchanged; from 1.0 the installers and Bonsai's printed lines replace
   §17 step 8's typed lines (5.6's note), with the check of §12 step 8 among them.
 - **This plan's own text:** 5.6's "six lines a side" reads seven from 5.7.3 (Rohan's list says so); the outline's
