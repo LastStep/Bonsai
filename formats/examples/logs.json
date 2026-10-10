@@ -1,0 +1,37 @@
+{
+  "format": "bonsai.logs/1",
+  "workspace": {
+    "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+    "name": "example",
+    "root": "/srv/projects/example"
+  },
+  "files": [
+    {
+      "file": "s-6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a.ndjson",
+      "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+      "day": null,
+      "first": "2026-10-08T14:08:00.000Z",
+      "last": "2026-10-08T14:31:02.113Z",
+      "records": 42,
+      "unreadable": 0,
+      "ended": true,
+      "task": "T-0901",
+      "role": "builder"
+    },
+    {
+      "file": "w-2026-10-08.ndjson",
+      "session": null,
+      "day": "2026-10-08",
+      "first": "2026-10-08T16:00:00.000Z",
+      "last": "2026-10-08T16:00:00.000Z",
+      "records": 1,
+      "unreadable": 0,
+      "ended": null,
+      "task": null,
+      "role": null
+    }
+  ],
+  "records": null,
+  "written": null,
+  "error": null
+}

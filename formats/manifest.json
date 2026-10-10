@@ -1,10 +1,10 @@
 {
   "about": "The formats set's manifest: the set version and the SHA-256 of every file's raw bytes in formats/, all but this file and the Go files, sorted by path. Every field is described in README.md.",
-  "set": 5,
+  "set": 6,
   "files": [
     {
       "path": "README.md",
-      "sha256": "f3acb0bd66f51245490d44140cd62711bf092d0162ce24c36e1782184d40d4ff"
+      "sha256": "a0efcf2d1a6ee904ff9ebd8fb5e6ffbc922a69a26ed27b5441021454bd6d55a9"
     },
     {
       "path": "active-task/answers.json",
@@ -267,12 +267,16 @@
       "sha256": "a7bb5d81189da75d046d2532513b3128342cddd0791b32915c18056c237b9c0d"
     },
     {
+      "path": "examples/asks.json",
+      "sha256": "fc28b11261a36ed3c8c0cda578865a921e8fda16e47a4b52c354d4481e5d8ce3"
+    },
+    {
       "path": "examples/changes.json",
-      "sha256": "e7fc0bc06cc46f8fbc46f678f783c8ae4cfd97abdff828ee9dde25e867033bf1"
+      "sha256": "e9e7bfdbad987a968c8f5fe6defa5eee05b112537dd86da1b15beb3674eba53a"
     },
     {
       "path": "examples/check.json",
-      "sha256": "79d1736738bbf45823f45a5c77dfee8c2b71d1f937377a0a31ac16045e352209"
+      "sha256": "56b6e45ce0aaf352535110226f67865fdf4e99bcf49e4ca7c085ed207632501b"
     },
     {
       "path": "examples/error.json",
@@ -288,7 +292,7 @@
     },
     {
       "path": "examples/labels.yaml",
-      "sha256": "ac40dd6cd6a2441afdf941b193a4222cda580045a11b98947d471bbefbf3d289"
+      "sha256": "ec361a98148c7092fbe58ba6c0871cefad6c336bbcf1972473b515f059ab6348"
     },
     {
       "path": "examples/ladder.json",
@@ -300,7 +304,7 @@
     },
     {
       "path": "examples/lanes.yaml",
-      "sha256": "07f067ce4befef70c7a34ba122d3d0a1cf573422594aa7d7102e92b176138419"
+      "sha256": "bc8066506fdf009f19bcd3729e1fa2caf73b7d8e99148364c1c0ae9bff6bc11a"
     },
     {
       "path": "examples/lock.json",
@@ -308,7 +312,11 @@
     },
     {
       "path": "examples/log.json",
-      "sha256": "f8a55df5e12861da595a18dfe41525d9bfccdf15bab61a6bf90c7c404304e520"
+      "sha256": "4a9ea60fd67864123b09bd9cae74ec51032f26190b038657f81afeb6a4908ae6"
+    },
+    {
+      "path": "examples/logs.json",
+      "sha256": "15df5086427c2738ff8de6d529d6d8a00bff279ddfdb434677d2082542f12164"
     },
     {
       "path": "examples/memory.json",
@@ -336,11 +344,11 @@
     },
     {
       "path": "examples/sessions.json",
-      "sha256": "610e6670fe6b5681db50dabd6693f3f3c284dbb8067fa3a6b107076cbbad39b7"
+      "sha256": "919763e2e2c6d0e2790e81bb9598722f789a97bd6f0af7ef284d0c430971e8d4"
     },
     {
       "path": "examples/sessions.md",
-      "sha256": "7443dcae8b81b4af48da933138dc700af16ffeadf67760a3ab2e953ebb8c2922"
+      "sha256": "9b0e71dd3a1ccc755d6134345b02c1e9f92840e6ac61288078aa16915fd5c57b"
     },
     {
       "path": "examples/state.json",
@@ -387,16 +395,20 @@
       "sha256": "e8d5c588c3b5a67c96bf05cca048951e652ab3bbed80a552f8cc4ebff6f7100b"
     },
     {
+      "path": "schemas/asks.schema.json",
+      "sha256": "7ec88deff9c9cbd1f6f2f1d65d3fe82b28f58fe885688a79730c7b1e2cad2210"
+    },
+    {
       "path": "schemas/changes.schema.json",
-      "sha256": "963e1a4d5971717f8a1c899b08b7b572330189bab74a6fcb828687d814e5a15e"
+      "sha256": "a5bf9b3cf2634e2c95f916ce0aa5f3dfb3c65ff33e54647452900c7eaa839a67"
     },
     {
       "path": "schemas/check.schema.json",
-      "sha256": "cf1f5af332669e0f606e76c9b121043239332b5f54f457375d78c4b381da3497"
+      "sha256": "2afaa7ab9cede3ecd048f44569d34f0435e41177bb6a7c34c7df07d3c9f4c757"
     },
     {
       "path": "schemas/error.schema.json",
-      "sha256": "d86885a209c7ae7b27e030b5bb1b728022211e3cda3fe89f4b6ce7b69ea9dd01"
+      "sha256": "8c5ba0f47117ab926f3f4d264d07760028b863ecd33705d9f50fa79487bfb50b"
     },
     {
       "path": "schemas/help.schema.json",
@@ -416,11 +428,15 @@
     },
     {
       "path": "schemas/lock.schema.json",
-      "sha256": "fc83fe75faef9649879e3ccc244c6e14b508b9ecb206e0f6952a8d728eaa2c32"
+      "sha256": "d78abe486acd5d010eba42e00cfc52559b3d7415fd4e2abba9d304755120f6ed"
     },
     {
       "path": "schemas/log.schema.json",
-      "sha256": "aa40e2c7d799ebbaf6d64b2db5915908a7e4d39d16c9b950662e33e9e2721dae"
+      "sha256": "f88c9e9efb5d6d01670dff254db7b96584f96ef6d3f462025d3efe85e7948ab0"
+    },
+    {
+      "path": "schemas/logs.schema.json",
+      "sha256": "fda9bbe4b02315156c3222ee947bba561b7cd1b1e9be9a9617fae7a28ec42740"
     },
     {
       "path": "schemas/memory.schema.json",
@@ -436,7 +452,7 @@
     },
     {
       "path": "schemas/sessions.schema.json",
-      "sha256": "2afe425535f76cda28a7a89891b0b56d0032d11b33f1c9a248f7824a1bc76ae2"
+      "sha256": "99fa52b1ff44821bada51a9bc68b18119d03292b3fc5a80edee4449c6b27fb2e"
     },
     {
       "path": "schemas/state.schema.json",
@@ -444,7 +460,7 @@
     },
     {
       "path": "schemas/status.schema.json",
-      "sha256": "949dd265592325f82b8fb569d9835c0ace1e4423a866a33db515ba7845846aa6"
+      "sha256": "e39160637e87035d7a7989e8b5081732d4103c3e4bd20e2a594f2bdc01847aed"
     },
     {
       "path": "schemas/task.schema.json",

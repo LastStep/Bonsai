@@ -22,6 +22,7 @@ type Changes struct {
 	Conflicts  []string         `json:"conflicts"`
 	Plugins    []ChangesPlugin  `json:"plugins"`
 	Error      *ErrorObject     `json:"error"`
+	Left       []string         `json:"left"` // unlink: what it leaves in place that is not among its files (set 6)
 	Extra      schema.Object    `json:"-"`
 }
 

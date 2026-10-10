@@ -18,46 +18,46 @@
 #     grants       true when the value grants a right (only bonsai.allows today); false otherwise.
 #     description  one line, at most 200 characters: what agents see.
 format: bonsai.labels/1
-namespace: example
-version: 1
-labels:
-  - name: example.size
-    kind: choice
-    values: [small, large]
-    items:
-    pattern:
-    max:
-    kinds: [task]
-    set_by: agent
-    grants: false
-    description: "How big the change is, as the planner judged it."
-  - name: example.ref
-    kind: text
-    values: []
-    items:
-    pattern: "^[0-9a-f]{7,40}$"
-    max: 60
-    kinds: [task, run]
-    set_by: outside
-    grants: false
-    description: "The commit an outside program recorded. Agents never write it."
-  - name: example.cost
-    kind: number
-    values: []
-    items:
-    pattern:
-    max:
-    kinds: [task, run]
-    set_by: outside
-    grants: false
-    description: "Dollars this work cost. Agents never write it."
-  - name: example.paths
-    kind: list
-    values: []
-    items: text
-    pattern:
-    max:
-    kinds: [task]
-    set_by: agent
-    grants: false
-    description: "Paths this task reads often, as globs. It grants nothing."
+namespace: example  # the namespace every label here belongs to
+version: 1  # this set's own version; it only grows
+labels:  # one entry per label, each with every field below
+  - name: example.size  # the label: <namespace>.<name>
+    kind: choice  # the kind of value: choice, text, number or list
+    values: [small, large]  # the allowed values for a choice; [] otherwise
+    items:  # what a list holds, text or number; empty (null) otherwise
+    pattern:  # a regular expression a text value must match; empty (null) when none
+    max:  # the most characters a text value may have (up to 300); empty (null) when none
+    kinds: [task]  # the document kinds that may carry it
+    set_by: agent  # who writes it: agent, or outside (only a program outside agent sessions)
+    grants: false  # true when the value grants a right (only bonsai.allows today)
+    description: "How big the change is, as the planner judged it."  # one line, at most 200 characters: what agents see
+  - name: example.ref  # the label: <namespace>.<name>
+    kind: text  # the kind of value: choice, text, number or list
+    values: []  # the allowed values for a choice; [] otherwise
+    items:  # what a list holds, text or number; empty (null) otherwise
+    pattern: "^[0-9a-f]{7,40}$"  # a regular expression a text value must match; empty (null) when none
+    max: 60  # the most characters a text value may have (up to 300); empty (null) when none
+    kinds: [task, run]  # the document kinds that may carry it
+    set_by: outside  # who writes it: agent, or outside (only a program outside agent sessions)
+    grants: false  # true when the value grants a right (only bonsai.allows today)
+    description: "The commit an outside program recorded. Agents never write it."  # one line, at most 200 characters: what agents see
+  - name: example.cost  # the label: <namespace>.<name>
+    kind: number  # the kind of value: choice, text, number or list
+    values: []  # the allowed values for a choice; [] otherwise
+    items:  # what a list holds, text or number; empty (null) otherwise
+    pattern:  # a regular expression a text value must match; empty (null) when none
+    max:  # the most characters a text value may have (up to 300); empty (null) when none
+    kinds: [task, run]  # the document kinds that may carry it
+    set_by: outside  # who writes it: agent, or outside (only a program outside agent sessions)
+    grants: false  # true when the value grants a right (only bonsai.allows today)
+    description: "Dollars this work cost. Agents never write it."  # one line, at most 200 characters: what agents see
+  - name: example.paths  # the label: <namespace>.<name>
+    kind: list  # the kind of value: choice, text, number or list
+    values: []  # the allowed values for a choice; [] otherwise
+    items: text  # what a list holds, text or number; empty (null) otherwise
+    pattern:  # a regular expression a text value must match; empty (null) when none
+    max:  # the most characters a text value may have (up to 300); empty (null) when none
+    kinds: [task]  # the document kinds that may carry it
+    set_by: agent  # who writes it: agent, or outside (only a program outside agent sessions)
+    grants: false  # true when the value grants a right (only bonsai.allows today)
+    description: "Paths this task reads often, as globs. It grants nothing."  # one line, at most 200 characters: what agents see

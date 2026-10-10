@@ -100,5 +100,6 @@
       "do": "read each item under Runs code; to write them with the rest, run: bonsai update --allow-exec --yes",
       "who": "person"
     }
-  }
+  },
+  "left": []
 }

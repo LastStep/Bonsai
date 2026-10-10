@@ -27,5 +27,7 @@
   "decision": null,
   "rule": null,
   "labels": {},
-  "remote": null
+  "remote": null,
+  "bonsai_path": null,
+  "bonsai_sha256": null
 }

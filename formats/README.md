@@ -1,9 +1,10 @@
 # The formats set
 
 This folder holds Bonsai's formats as files any program can test against: a JSON Schema for each of the ten formats
-of the formats contract (`design/contract.md` §2) the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row
-29) and the one that set 5 added (`help`, plan-5 5.1.10), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files, each with
-the one right outcome a reader must reach (accepted with this value, or refused for this reason), and contract §13's
+of the formats contract (`design/contract.md` §2), the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row 29),
+the one that set 5 added (`help`, plan-5 5.1.10) and the two that set 6 added (`asks` and `logs`, plan-5 5.2.0), one
+example document for each, the **trick files**: small, deliberately tricky YAML and markdown files, each with the one
+right outcome a reader must reach (accepted with this value, or refused for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
 file's bytes.
 
@@ -21,7 +22,8 @@ formats/
   compare_test.go           ... that each schema changed from the set's base commit only by additions
   embed.go                  embeds the schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
-                                status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help
+                                status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help;
+                                asks, logs
   examples/<name>.json      one valid document per format, as a reader returns it
   examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
@@ -40,11 +42,13 @@ a pack's `bonsai/pack.yaml`, spec §5), `tasks` and `sessions` (`bonsai.tasks/1`
 generated tables, contract §7.5), `memory` (`bonsai.memory/1`, a memory note and the index, spec §10), `error` (the
 `error` object, `bonsai.error`, spec §3 and §16 row 29), and the two command outputs the studio reads now that Bonsai
 has no screens: `check` (`bonsai.check/1`, `bonsai check --json`) and `changes` (`bonsai.changes/1`, the preview or
-result of `init`, `update` and `unlink` with `--json`); and, from set 5, `help` (`bonsai.help/1`, `bonsai --help
---json`: every command word with its flags, exit codes and examples, the exit codes every word shares, and every `error`
-word with its meaning and usual `who`, so an agent learns the tool without reading a page). Each documents itself: a top-level `description` (what the
-format is for, who writes and reads it, where it lives) and a `description` and `examples` on every property. Later
-steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each a new schema file: an addition.
+result of `init`, `update` and `unlink` with `--json`); from set 5, `help` (`bonsai.help/1`, `bonsai --help --json`:
+every command word with its flags, exit codes and examples, the exit codes every word shares, and every `error` word
+with its meaning and usual `who`, so an agent learns the tool without reading a page); and, from set 6, `asks`
+(`bonsai.asks/1`, the `--json` of `ask`, `answer` and `asks`) and `logs` (`bonsai.logs/1`, the `--json` of `logs` and
+`log append`). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
+where it lives) and a `description` and `examples` on every property. Later steps add their commands' outputs
+(`ladder`) the same way, each a new schema file: an addition.
 
 - **A schema describes what a writer writes** (contract §2.2): every field the version knows, in the contract's fixed
   order (the order of `properties`), all of them `required`, with `null` or `[]` where a field does not apply. A
@@ -54,14 +58,18 @@ steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each 
   unknown value as `other`) is a plain string, its known values named in the description. These schemas are the one
   home of every list in the formats (contract §2.2, format review R2.8): Bonsai's code embeds them and keeps no
   second copy. **One kind of open list lives in Bonsai's code instead:** a list of fixed words that code reads at many
-  places, the `error` object's `code` and `check`'s finding and warning `code` (and, from step 5.2, the log's
-  events). Its known words live in one Go table, their one home, which `bonsai check --schema <format>` prints (and the
-  reference page of lists, `docs/reference/lists.md`, generated from the code by `go generate ./...`); the schema's description names those commands and does not
-  copy the words, and the words in its examples are illustrative.
+  places: the `error` object's `code`, `check`'s finding and warning `code`, and (from set 6) the log's `event` and
+  `category`. Its known words live in one Go table, their one home, which `bonsai check --schema <format>` prints (and
+  the reference page of lists, `docs/reference/lists.md`, generated from the code by `go generate ./...`); the
+  schema's description names those commands and does not copy the words, and the words in its examples are
+  illustrative.
 - **Copies held to their home.** The schema checker has no `$ref`, so a shape two schemas share is written in both,
-  and a test holds the copy equal to its home: the `error` object, inline in `status`, `check` and `changes`, is
-  `error.schema.json`'s (its `required` and `properties`, word for word), and so is every `next` object (a finding's,
-  a warning's, the plugin step's); a ladder rung's `kind` in `bonsai.yaml` is the ladder result's closed list.
+  and a test holds the copy equal to its home: the `error` object, inline in `status`, `check`, `changes`, `asks` and
+  `logs`, is `error.schema.json`'s (its `required` and `properties`, word for word), and so is every `next` object (a
+  finding's, a warning's, the plugin step's); a ladder rung's `kind` in `bonsai.yaml` is the ladder result's closed
+  list; the `workspace` object of `asks` and `logs` is `changes`'. The records `asks` and `logs` carry
+  (`bonsai.ask/1`, `bonsai.log/1`) are not copied: they are open `object`s there, whose descriptions name their home,
+  because a full copy would make the writer refuse an older or hand-written record.
 - **Spec §16's additions** are in from the start: the lock's `declares` (row 18), the ladder's third rung kind
   `ver-git` (row 23), and `status --json`'s additions (row 24), which arrive as values, not new fields: a `needs`
   entry of kind `plugin` for a pack not installed on the machine, the Claude Code floor as a `needs` entry of kind
@@ -70,11 +78,11 @@ steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each 
   - `ladder`: a rung's `status` (a string; today's values are `green`, `red`, `pending`, `skipped`, `error`; the
     contract lists none), a rung's `tests` (an object or `null`; today's inner fields are described, none required),
     `leftovers` (an object, a text or `null`, as today's three shapes).
-  - `status`: `mode` (the contract shows only `offline`), each `documents` entry (only `kind` and `from` required:
-    contract §7.3 says `format` is absent for a pack's kind and a kind has `path` or `file`), and `checks` (an object
-    or `null`).
-  - `lock`: each pack's `declares` (an object: the four kinds it holds are fixed, their key names and inner layout are
-    not; format review 6.3).
+  - `status`: `mode` (`offline`, or `full` with `--full`; an open list), each `documents` entry (only `kind` and `from`
+    required: contract §7.3 says `format` is absent for a pack's kind and a kind has `path` or `file`), and `checks`
+    (an object or `null`; with `--full` it holds `packs`, `plugins`, `claude_code` and `mcp`).
+  - `lock`: each pack's `declares` (an object: its kinds are `format.DeclaresKeys`, seven today, their key names and
+    inner layout are not fixed; format review 6.3).
   - `ask`: `data` (an object or `null`: a pack type's own payload).
   - `workspace`: a ladder rung's `ratchet` and `capture` have no `type` at all, so any value reads: spec §6 names
     them as today's rung shape, whose form is not in Bonsai's sources, and a type given now could only be widened
@@ -83,9 +91,10 @@ steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each 
     words, which step 5.4 fixes.
   - The workspace id is `ws-` and 26 lowercase base32 characters (contract §3); which base32 alphabet is not fixed,
     so the schemas take `[a-z0-9]{26}`.
-- **A name not invented.** Spec §16 row 27 adds the `bonsai` binary's own path and SHA-256 to the log's
-  `session_start` records, but neither the spec nor the format review (4.2) fixes the two field names. They are not
-  in `log.schema.json`; they are added, as an addition inside `bonsai.log/1`, once the names are fixed.
+- **The binary's two names, chosen in set 6.** Spec §16 row 27 adds the `bonsai` binary's own path and SHA-256 to the
+  log's `session_start` records, and the format review (4.2) left the two field names open. Set 6 takes the names the
+  guard has written since part 5, `bonsai_path` and `bonsai_sha256`, at the end of `bonsai.log/1` (see "Choices made in
+  set 6" below).
 
 **Choices made here**, where the sources leave a detail open (each the smallest that fits):
 - Field order: each schema follows its contract table or example. The ladder result follows the format review's
@@ -116,9 +125,10 @@ steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each 
 
 **Choices made in set 4**, where the sources leave a detail open:
 - **The lock's `path`** (each pack's folder in its repository, as `bonsai.yaml` names it) is `null` for a pack at
-  its repository's root. A lock written before set 4 has none, which a reader reads as `null`, the root (contract
-  §2.2's "a new optional field"): an engine that compares it with `bonsai.yaml` sees such a pack's folder as changed.
-  Until step 5.1.5's engine writes it, Bonsai's lock writer leaves it out of a pack it has none for.
+  its repository's root. A lock written before set 4 has none, which a reader reads as unknown, not as the root
+  (contract §2.2's "a new optional field"): a pack in a folder does not look moved after an upgrade, and the engine
+  judges that pack by its content hash alone until the next `update` writes its path (step 5.1.5). Bonsai's lock
+  writer records the path of every pack it writes.
 - **`bonsai.yaml`'s `documents`** holds Bonsai's own kinds (`task`, `run`, `answers`, `memory`) and the `protocols`
   folder as required properties, and a pack's document kind as an entry under its own name (spec §6, contract
   §7.3); STATE and the two tables have fixed places and no entry. `generated` has one property per kind that takes a
@@ -130,8 +140,8 @@ steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each 
 - **Memory:** a note and `INDEX.md` share one format; the index has `kind: index`, and its `id` and `source` are
   `null`.
 - **The tables:** a reader returns `tasks.md`'s active line as `active` (`id`, `why`) and its rows as `tasks`;
-  `sessions.md`'s rows as `sessions`, each with `kind` (`session` or `subagent`), and its hours as `hours`, sessions
-  and subagent runs apart (contract §7.5: never added), in hours to one decimal place.
+  `sessions.md`'s rows as `sessions`, each with `kind` (`session` or `subagent`) and, from set 6, `subagent`, and its
+  hours as `hours`, sessions and subagent runs apart (contract §7.5: never added), in hours to one decimal place.
 - **The `error` object** has no `format` field and no major: it is part of other documents and changes with them,
   only by additions. Its `next` is an object, `do` and `who` (format review 4.5's question, taken: `who` is its own
   field), and a finding's, a warning's and the plugin step's next step take the same shape, so an agent reads one.
@@ -145,17 +155,48 @@ steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each 
   `kind` (`pack`, `once`); a memory `kind`; a sessions row's and an hours row's `kind`; `next.who` (`agent`,
   `person`); a ladder rung's `kind` in `bonsai.yaml` (the ladder result's list). Open, where what they name may
   widen: `changes`' `result` (no source fixes its words, and a run can stop part-way: `failed`), a file's `result`,
-  a settings line's and a code item's `kind`, the plugin step's `result`, the lock's word in `changes`, the `error`
-  and finding codes (above), and a ladder rung's `tests`.
+  a settings line's and a code item's `kind`, the plugin step's `result` (`installed`, `waiting`, `failed`, `skipped`,
+  and unlink's `uninstalled`), the lock's word in `changes` (`written`, `unchanged`, and unlink's `removed`), the
+  `error` and finding codes (above), and a ladder rung's `tests`. A finding's `code` has two tables, `CheckWords` (a
+  project's) and `PackCheckWords` (`check --pack`'s); its `file` is project-relative, or under `--pack` relative to
+  the pack's folder.
 - **`help`, set 5.** One document, `bonsai --help --json`, read from the same tables the human `--help` and the
   behaviour are made from (the word registry in `cmd/bonsai`, `format.ExitCodes`, `format.ErrorWords`), so it cannot
-  drift; a test holds it to every word, flag and error word the tables have, and to this schema. Only the bare
-  `bonsai --help --json` prints it: a word's own `--help` stays text, with or without `--json`. `words` lists the sub-words
+  drift; a test holds it to every word, flag and error word the tables have, and to this schema. Only the bare `bonsai
+  --help --json` prints it: a word's own `--help` stays text, with or without `--json`. `words` lists the sub-words
   (`hook guard`) as entries of their own, a sub-word not built yet with `later` set and its text fields empty; `later`
   on a word or a flag names the step that builds it. `exit_codes` is the codes every word shares and `hook`'s own;
-  each word's `exits` says which it returns and what each means for it. `error_words` is `format.ErrorWords`, an
-  open list like the `error` object's `code` it describes. An addition (a new schema file), so the schema-compare test
+  each word's `exits` says which it returns and what each means for it. `error_words` is `format.ErrorWords`, an open
+  list like the `error` object's `code` it describes. An addition (a new schema file), so the schema-compare test
   passes unchanged.
+- **Set 6** (plan-5 5.2.0), every change an addition:
+  - **`bonsai_path` and `bonsai_sha256`** close `bonsai.log/1`, after `remote`. `bonsai_path` is the binary's path,
+    forward slashes: under the person's home folder it starts with a tilde and a slash, so no user name is in the log
+    (contract §2.6), else as it is, or null; `hook start` writes it at every `session_start` (step 5.2.4). The guard
+    writes its own absolute form until step 5.3 changes guard code, so the schema holds no pattern on it that an
+    absolute path would fail. `bonsai_sha256` is 64 lower-case hex, on every `session_start` and on the guard record
+    that made its log file, else null. The log's `event` and `category` descriptions now name `bonsai check --schema
+    bonsai.log` and the reference page, and copy no word; `text`, `kind`, `task`, `role`, `labels` and `target` say
+    what Bonsai writes there now.
+  - **`asks` and `logs`**, two command outputs. `bonsai.asks/1`: `format`, `workspace` (null when the command refused
+    before reading one), `asks` (a list of `{key, state, filed, closed}`: `state` is `open`, `answered` or `resolved`, a
+    closed list; `filed` is the key's latest `file` record and `closed` the `answer` or `resolve` record that closed
+    it, or null, both `bonsai.ask/1` records as stored), `written` (the record this run appended, or null) and
+    `error`. `bonsai.logs/1`: `format`, `workspace`, `files` (a list or null; each `{file, session, day, first, last,
+    records, unreadable, ended, task, role}`, a day file with `session` null and `day` its date, and `ended`, `task`
+    and `role` a session's, else null), `records` (one file's records as written, or null), `written` (the record
+    `log append` appended, or null) and `error`. Their records are open objects, as said above.
+  - **A sessions row's `subagent`**, at the end of the row: the subagent run's own id, its first 8 characters, or null
+    for a session's row (`-` is not used: an empty cell). Without it two subagent runs of one session started in the
+    same minute share a key (the session, the subagent and the start). `sessions.md` gains a ninth column, `Subagent`;
+    a reader also reads the eight-column header a table written before set 6 has, every row's `subagent` null.
+  - **`check`'s `notes`** (what check says to a person that is neither a finding nor a warning) and **`changes`'
+    `left`** (what `unlink` leaves in place that is not among its files), each a list of strings at the end of its
+    object, [] for none. They were text-only until now.
+  - **Descriptions only**: the `uninstalled` plugin result and the `removed` lock word; the seven `declares` kinds;
+    a lock written before set 4 reads its pack's `path` as unknown, not the root (above); `status`'s `mode`, `checks`
+    and `formats` (every format with a major, so `bonsai.error` is not in it); `check`'s two code tables and `file`
+    under `--pack`; `labels.yaml` and `lanes.yaml` carry a comment on every key, as a pack's files must.
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,
@@ -182,8 +223,9 @@ that a file made from a template carries, and the tables a line saying they are 
 - `tasks.md`: after the frontmatter, the line `Active task when none is named: <id>`, or `Active task when none is
   named: none (<why>)`; a blank line; then the table `| Task | Title | Status | Lane | Started | Finished |`, its
   `|---|` line, and one row per task, newest id first.
-- `sessions.md`: after the frontmatter, the table `| Session | Kind | Task | Role | Model | Start | End | Minutes |`,
-  its `|---|` line and one row per session or subagent run; a blank line; the line `Hours per task and role (a
+- `sessions.md`: after the frontmatter, the table `| Session | Kind | Task | Role | Model | Start | End | Minutes |
+  Subagent |` (from set 6; before it, the same without `Subagent`, which a reader still reads), its `|---|` line and one
+  row per session or subagent run; a blank line; the line `Hours per task and role (a
   subagent run lies inside its session's row, so the two are never added):`; a blank line; then the table `| Task |
   Role | Kind | Hours |`, its `|---|` line and one row per task, role and kind.
 - In both, a `null` is an empty cell, a `|` inside a cell is written `\|`, and nothing else is escaped.
@@ -322,9 +364,10 @@ guard's and the stop gate's, step 5.4 rung 0's; the studio's readers test agains
 §14 step 7). Every file is made up; the task files follow `bonsai.task/1` (one is format 0, with no `format:` line,
 and the files `does_not_parse` names are refused by their format).
 
-**A case folder** holds `case.json` and one folder per project: `main/` (always), `other/` (a second project), and,
-in a worktree case whose worktree's files differ from main's, `worktree/`. Each project folder holds `bonsai.yaml`, whose `documents.task` is `work/tasks`,
-and its task files. No case holds a `.git`: a case that needs git is a layout each reader's test builds.
+**A case folder** holds `case.json` and one folder per project: `main/` (always), `other/` (a second project), and, in
+a worktree case whose worktree's files differ from main's, `worktree/`. Each project folder holds `bonsai.yaml`, whose
+`documents.task` is `work/tasks`, and its task files. No case holds a `.git`: a case that needs git is a layout each
+reader's test builds.
 
 | `case.json` field | Meaning |
 |---|---|
@@ -423,6 +466,7 @@ compares each schema with the same file at the set's base commit, read with `git
 Anything else fails: a schema file removed; a property removed, renamed or moved; a `type`, `const`, `enum`,
 `pattern` or bound changed, added or taken away; a name taken out of `required`; any other keyword added or removed.
 The base is a constant beside the test (`schemaBase`): the commit of the set before, moved forward in each set's own
-commit, and a second test holds it there: the base's `manifest.json` has `set` one below this one's. A checkout without the base commit (no git, or a shallow clone) skips the test with that reason, except under
-CI (the `CI` variable set), where it fails; Bonsai's CI checks out the history it needs. From step 5.4 the same test
+commit, and a second test holds it there: the base's `manifest.json` has `set` one below this one's. A checkout
+without the base commit (no git, or a shallow clone) skips the test with that reason, except under CI (the `CI`
+variable set), where it fails; Bonsai's CI checks out the history it needs. From step 5.4 the same test
 is a rung of Bonsai's own ladder.

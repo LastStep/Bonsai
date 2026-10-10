@@ -27,8 +27,8 @@ type Next struct {
 // it. One word per cause, not per message: every refusal and failure of every command names one of them (step
 // 5.1.4b), and cmd/bonsai's tests fail on a word that is not here. Each entry says what the word means and who
 // usually takes the next step (Who: agent or person, the error object's next.who); a refusal may name the other
-// when its own next step is the other's. A later piece adds a word by adding an entry here (step 5.2.0 adds
-// 5.2's); a word is added, never renamed or taken out (format review 4.5: adding one is an addition).
+// when its own next step is the other's. A later piece adds a word by adding an entry here (step 5.2.0 added
+// 5.2's four: ask-not-open, answer-own-session, label-not-defined and session-not-found); a word is added, never renamed or taken out (format review 4.5: adding one is an addition).
 var ErrorWords = []Word{
 	// The command line (exit 2).
 	{Word: "unknown-command", Who: "agent", Means: "no command word was given, or one this Bonsai does not have"},
@@ -64,6 +64,11 @@ var ErrorWords = []Word{
 	{Word: "needs-yes", Who: "person", Means: "the command writes, and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing"},
 	{Word: "needs-allow-exec", Who: "person", Means: "the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written"},
 	{Word: "conflicts", Who: "person", Means: "files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt"},
+	// Asks, answers, the log's append and logs (steps 5.2.3 and 5.2.5).
+	{Word: "ask-not-open", Who: "agent", Means: "bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved: the message says which, and nothing was written (exit 4)"},
+	{Word: "answer-own-session", Who: "person", Means: "the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4)"},
+	{Word: "label-not-defined", Who: "agent", Means: "bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2)"},
+	{Word: "session-not-found", Who: "agent", Means: "bonsai logs --session matches no session in the log, or matches several (exit 2)"},
 	// Part-way, and the unexpected (exit 3).
 	{Word: "partly-written", Who: "agent", Means: "the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest"},
 	{Word: "unexpected", Who: "agent", Means: "something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats"},

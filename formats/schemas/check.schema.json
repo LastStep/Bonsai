@@ -7,7 +7,8 @@
     "format",
     "findings",
     "warnings",
-    "error"
+    "error",
+    "notes"
   ],
   "properties": {
     "format": {
@@ -44,7 +45,7 @@
         ],
         "properties": {
           "code": {
-            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's one table of findings and warnings (step 5.1.6), which bonsai check --schema bonsai.check prints; this schema does not copy them, and a reader shows a word it does not know as other.",
+            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's tables of findings and warnings, which bonsai check --schema bonsai.check prints: CheckWords (a project's findings and warnings) and PackCheckWords (a pack's findings, under --pack). This schema does not copy them, and a reader shows a word it does not know as other.",
             "examples": [
               "changed",
               "plugin"
@@ -53,9 +54,10 @@
             "pattern": "^[a-z][a-z0-9-]*$"
           },
           "file": {
-            "description": "The project file it is about, project-relative with forward slashes; null when it is about no one file.",
+            "description": "The file it is about, forward slashes; null when it is about no one file. In a project's check it is project-relative; under --pack it is a file of the pack, relative to the pack's folder (bonsai/pack.yaml).",
             "examples": [
               ".claude/settings.json",
+              "bonsai/pack.yaml",
               null
             ],
             "type": [
@@ -136,7 +138,7 @@
         ],
         "properties": {
           "code": {
-            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's one table of findings and warnings (step 5.1.6), which bonsai check --schema bonsai.check prints; this schema does not copy them, and a reader shows a word it does not know as other.",
+            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's tables of findings and warnings, which bonsai check --schema bonsai.check prints: CheckWords (a project's findings and warnings) and PackCheckWords (a pack's findings, under --pack). This schema does not copy them, and a reader shows a word it does not know as other.",
             "examples": [
               "changed",
               "plugin"
@@ -145,9 +147,10 @@
             "pattern": "^[a-z][a-z0-9-]*$"
           },
           "file": {
-            "description": "The project file it is about, project-relative with forward slashes; null when it is about no one file.",
+            "description": "The file it is about, forward slashes; null when it is about no one file. In a project's check it is project-relative; under --pack it is a file of the pack, relative to the pack's folder (bonsai/pack.yaml).",
             "examples": [
               ".claude/settings.json",
+              "bonsai/pack.yaml",
               null
             ],
             "type": [
@@ -275,6 +278,19 @@
             }
           }
         }
+      }
+    },
+    "notes": {
+      "description": "What check says to a person that is neither a finding nor a warning, one sentence each, in ASCII: for example that the Bonsai home holds no install record yet, that no bonsai was found on the PATH to compare, what --write wrote, or a note under --pack. [] for none. Added in set 6, an addition.",
+      "examples": [
+        [
+          "no install.json in the Bonsai home yet (Bonsai's installer writes it from step 5.6): the bonsai on the PATH was not compared with an installed one"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     }
   }

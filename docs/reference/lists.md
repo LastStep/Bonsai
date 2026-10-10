@@ -53,6 +53,7 @@ error words.
 - Changes: commands
 - Changes: a settings line's change
 - Changes: a code item's change
+- Asks: an ask's state
 
 ## Exit codes
 
@@ -109,6 +110,10 @@ error words.
 | `needs-yes` | person | the command writes, and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing |
 | `needs-allow-exec` | person | the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written |
 | `conflicts` | person | files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt |
+| `ask-not-open` | agent | bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved: the message says which, and nothing was written (exit 4) |
+| `answer-own-session` | person | the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4) |
+| `label-not-defined` | agent | bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2) |
+| `session-not-found` | agent | bonsai logs --session matches no session in the log, or matches several (exit 2) |
 | `partly-written` | agent | the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest |
 | `unexpected` | agent | something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats |
 
@@ -329,18 +334,48 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 ## Log events
 
 - Open list.
-- Defined in: not built yet (step 5.2.0: the log's events in one Go table beside the log's Go type).
-- Printed in a project by: none yet (step 5.2.0: `bonsai check --schema bonsai.log`).
-- Contract section 8.2's event names; the page lists them from the table once it exists.
+- Defined in: format.LogEvents (internal/format/log.go).
+- Printed in a project by: `bonsai check --schema bonsai.log`.
+- Contract section 8.2's event names, in the log record's `event`; a reader shows a word it does not know as other.
 
+| Word | Means |
+|---|---|
+| `session_start` | a session began, resumed or was cleared (the agent's SessionStart); it carries the active task found, the model, and the bonsai binary's path and hash |
+| `prompt` | a person's prompt was submitted (the agent's UserPromptSubmit); its words are never kept, only its kind |
+| `tool_start` | a tool call is about to run (the agent's PreToolUse) |
+| `tool_end` | a tool call finished (the agent's PostToolUse) |
+| `tool_fail` | a tool call failed or was interrupted (the agent's PostToolUseFailure) |
+| `permission` | the agent asked for a permission (the agent's PermissionRequest) |
+| `notice` | the agent noticed something to tell a person, such as that it is waiting (the agent's Notification) |
+| `subagent_start` | a subagent run began (the agent's SubagentStart); it carries the active task found |
+| `subagent_stop` | a subagent run ended (the agent's SubagentStop) |
+| `stop` | the agent finished a turn (the agent's Stop) |
+| `session_end` | a session ended (the agent's SessionEnd); its reason says why |
+| `guard` | the guard decided on a tool call, allow or deny, by a named rule |
+| `ladder` | a ladder result was written (contract section 11) |
+| `ask` | an ask was filed, resolved or answered; the target is its key and the kind its op |
+| `event` | an outside event, written by bonsai log append with its labels (contract section 8.4) |
+| `clean` | a generated file Bonsai deleted; the target is its project-relative path and the reason the rule that cleaned it (contract section 8.5) |
 
 ## Log categories
 
 - Open list.
-- Defined in: not built yet (step 5.2.0: the log's categories in one Go table beside the log's Go type).
-- Printed in a project by: none yet (step 5.2.0: `bonsai check --schema bonsai.log`).
-- Contract section 8.2's tool categories; a pack's own are `<namespace>.<Name>`.
+- Defined in: format.LogCategories (internal/format/log.go).
+- Printed in a project by: `bonsai check --schema bonsai.log`.
+- Contract section 8.2's tool categories, in the log record's `category`; a pack's own are `<namespace>.<Name>`, and a reader shows a word it does not know as other.
 
+| Word | Means |
+|---|---|
+| `Read` | reading a file or a folder |
+| `Search` | searching files or their contents (today's Grep and Glob) |
+| `Edit` | changing a file in place |
+| `Write` | writing a whole file |
+| `Shell` | running a command line (today's Bash and PowerShell) |
+| `Ladder` | running Bonsai's ladder |
+| `MCP` | calling a tool of an MCP server |
+| `Agent` | starting a subagent |
+| `Web` | fetching or searching the web |
+| `Other` | any other tool, or one the recorder cannot place |
 
 ## Lane rules
 
@@ -527,3 +562,11 @@ Values: `add`, `change`, `remove`.
 - Printed in a project by: `bonsai check --schema bonsai.changes`.
 
 Values: `add`, `change`, `remove`.
+
+## Asks: an ask's state
+
+- Closed list.
+- Defined in: formats/schemas/asks.schema.json (`asks[].state`).
+- Printed in a project by: `bonsai check --schema bonsai.asks`.
+
+Values: `open`, `answered`, `resolved`.

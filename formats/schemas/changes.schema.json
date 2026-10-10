@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.changes/1",
-  "description": "The preview or the result of bonsai init, update and unlink, as --json prints it (spec §4, §6; spec §3, §16 row 29, row 35): the packs and their commits, every file with its result, every settings line with its sentence, what runs code and needs --allow-exec, this machine's plugin step, and the error when the command refuses. Printed, never stored. Written by those commands with --json; read by agents and the studio, now that Bonsai has no screens of its own. A preview, a conflict or a refusal after the plan was made gives what the plan would do, though nothing was written: its packs, files, lock, settings lines and code as they would be. When the command stops before it has a plan, every field after result is null or [] but allow_exec and error. Absolute paths appear only in workspace.root and files[].saved, printed locally (contract §2.6). A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "description": "The preview or the result of bonsai init, update and unlink, as --json prints it (spec §4, §6; spec §3, §16 row 29, row 35): the packs and their commits, every file with its result, every settings line with its sentence, what runs code and needs --allow-exec, this machine's plugin step, what unlink leaves in place, and the error when the command refuses. Printed, never stored. Written by those commands with --json; read by agents and the studio, now that Bonsai has no screens of its own. A preview, a conflict or a refusal after the plan was made gives what the plan would do, though nothing was written: its packs, files, lock, settings lines and code as they would be. When the command stops before it has a plan, every field after result is null or [] but allow_exec and error. Absolute paths appear only in workspace.root, files[].saved and left, printed locally (contract §2.6). A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
   "type": "object",
   "required": [
     "format",
@@ -19,7 +19,8 @@
     "unverified",
     "conflicts",
     "plugins",
-    "error"
+    "error",
+    "left"
   ],
   "properties": {
     "format": {
@@ -259,7 +260,7 @@
       }
     },
     "lock": {
-      "description": "What happens to .bonsai/lock.json, written last when it changes (or, in a preview or a refusal, would happen): written or unchanged, an open list (unlink adds its own word, step 5.1.7); null when the command stopped before a plan.",
+      "description": "What happens to .bonsai/lock.json, written last when it changes (or, in a preview or a refusal, would happen): written or unchanged, an open list (unlink adds its own word, removed: it deletes the lock, step 5.1.7); null when the command stopped before a plan.",
       "examples": [
         "written",
         "unchanged",
@@ -559,7 +560,7 @@
             "pattern": "^[0-9a-f]{40}$"
           },
           "result": {
-            "description": "What came of it: installed; waiting (a plugin that carries code, on a machine without --allow-exec; or Claude Code has not yet registered the workspace's marketplace, which a person's first session in the trusted folder does); failed; skipped (Claude Code is not on the PATH). An open list: a reader shows a word it does not know as other.",
+            "description": "What came of it: installed; waiting (a plugin that carries code, on a machine without --allow-exec; or Claude Code has not yet registered the workspace's marketplace, which a person's first session in the trusted folder does); failed; skipped (Claude Code is not on the PATH); uninstalled (unlink only: the plugin was removed for this checkout, or was not installed; step 5.1.7). An open list: a reader shows a word it does not know as other.",
             "examples": [
               "installed",
               "waiting"
@@ -689,6 +690,20 @@
             }
           }
         }
+      }
+    },
+    "left": {
+      "description": "What unlink leaves that is not among its files, one line each as the text output's \"Left in place\" prints it, in ASCII: .bonsai/STATE.md (the project's STATE), .bonsai/local/ (this checkout's log, asks and ladder results, never committed) and this machine's folder for the checkout in the Bonsai home, each when it is there; [] for init and update, and for an unlink with nothing left. Added in set 6, an addition. Absolute paths appear in it as in workspace.root, printed locally.",
+      "examples": [
+        [
+          ".bonsai/STATE.md: the project's STATE",
+          ".bonsai/local/: this checkout's log, asks and ladder results, never committed"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     }
   }

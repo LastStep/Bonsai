@@ -7,7 +7,7 @@ package format
 //   - tasks.md: the line "Active task when none is named: <id>" or "... none (<why>)", a blank line, the table
 //     | Task | Title | Status | Lane | Started | Finished |, its |---| line, one row per task (newest id first, the
 //     writer's caller's order);
-//   - sessions.md: the table | Session | Kind | Task | Role | Model | Start | End | Minutes |, its |---| line and one
+//   - sessions.md: the table | Session | Kind | Task | Role | Model | Start | End | Minutes | Subagent |, its |---| line and one
 //     row per session or subagent run; a blank line; the hours line; a blank line; the table
 //     | Task | Role | Kind | Hours |, its |---| line and one row per task, role and kind;
 //   - in both, a null is an empty cell, a | inside a cell is written \|, and nothing else is escaped.
@@ -58,15 +58,18 @@ type Sessions struct {
 
 // SessionRow is one session's or subagent run's row.
 type SessionRow struct {
-	Session string        `json:"session"` // the session id's first 8 characters
-	Kind    string        `json:"kind"`    // the closed list: session, subagent
-	Task    string        `json:"task"`    // a task id, or none
-	Role    *string       `json:"role"`
-	Model   *string       `json:"model"`
-	Start   string        `json:"start"` // YYYY-MM-DD HH:MM
-	End     string        `json:"end"`
-	Minutes int64         `json:"minutes"`
-	Extra   schema.Object `json:"-"`
+	Session string  `json:"session"` // the session id's first 8 characters
+	Kind    string  `json:"kind"`    // the closed list: session, subagent
+	Task    string  `json:"task"`    // a task id, or none
+	Role    *string `json:"role"`
+	Model   *string `json:"model"`
+	Start   string  `json:"start"` // YYYY-MM-DD HH:MM
+	End     string  `json:"end"`
+	Minutes int64   `json:"minutes"`
+	// Subagent is a subagent run's own id, its first 8 characters; null for a session's row (set 6). A row's key is its
+	// session, subagent and start.
+	Subagent *string       `json:"subagent"`
+	Extra    schema.Object `json:"-"`
 }
 
 // HoursRow is one task, role and kind's hours.
@@ -87,8 +90,12 @@ const (
 
 var (
 	tasksHeader    = []string{"Task", "Title", "Status", "Lane", "Started", "Finished"}
-	sessionsHeader = []string{"Session", "Kind", "Task", "Role", "Model", "Start", "End", "Minutes"}
-	hoursHeader    = []string{"Task", "Role", "Kind", "Hours"}
+	sessionsHeader = []string{"Session", "Kind", "Task", "Role", "Model", "Start", "End", "Minutes", "Subagent"}
+	// sessionsHeader8 is the header a table written before set 6 has: no Subagent column. ReadSessions reads it, every
+	// row's subagent null; Encode always writes sessionsHeader.
+	sessionsHeader8 = sessionsHeader[:8]
+	sessionKeys     = []string{"session", "kind", "task", "role", "model", "start", "end", "minutes", "subagent"}
+	hoursHeader     = []string{"Task", "Role", "Kind", "Hours"}
 )
 
 // Encode writes the tasks table, held to bonsai.tasks/1.
@@ -128,7 +135,7 @@ func (s *Sessions) Encode() ([]byte, error) {
 		return nil, err
 	}
 	rows, _ := doc.Get("sessions")
-	writeTable(&b, sessionsHeader, rows.([]any), []string{"session", "kind", "task", "role", "model", "start", "end", "minutes"})
+	writeTable(&b, sessionsHeader, rows.([]any), sessionKeys)
 	b.WriteString("\n" + hoursLine + "\n\n")
 	hours, _ := doc.Get("hours")
 	writeTable(&b, hoursHeader, hours.([]any), []string{"task", "role", "kind", "hours"})
@@ -245,10 +252,19 @@ func ReadSessions(raw []byte) (*Sessions, error) {
 		return nil, err
 	}
 	tb := &tableBody{f: f, lines: body, no: first}
-	sessions, err := tb.table(sessionsHeader, "sessions", []string{"session", "kind", "task", "role", "model", "start", "end", "minutes"},
-		map[string]bool{"role": true, "model": true}, map[string]bool{"minutes": true})
+	header, keys := sessionsHeader, sessionKeys
+	if len(body) > 0 && equalCells(body[0], sessionsHeader8) {
+		header, keys = sessionsHeader8, sessionKeys[:8] // a table written before set 6: no Subagent column
+	}
+	sessions, err := tb.table(header, "sessions", keys,
+		map[string]bool{"role": true, "model": true, "subagent": true}, map[string]bool{"minutes": true})
 	if err != nil {
 		return nil, err
+	}
+	if len(keys) == 8 {
+		for i, row := range sessions {
+			sessions[i] = append(row.(schema.Object), schema.Member{Key: "subagent", Value: nil})
+		}
 	}
 	for _, want := range []string{"", hoursLine, ""} {
 		if l, n := tb.next(); l != want {

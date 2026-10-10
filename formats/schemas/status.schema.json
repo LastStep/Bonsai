@@ -41,7 +41,7 @@
       "type": "string"
     },
     "mode": {
-      "description": "How the status was gathered: offline for the default (cheap, no network). The contract shows only offline; the value for --full is not fixed, so the field is typed open (formats/README.md). null on exit 3.",
+      "description": "How the status was gathered: offline for the default (cheap, no network, no Claude Code) or full for --full (which asks the network and Claude Code); a reader shows a word it does not know as other, so the field is typed open (formats/README.md). null on exit 3.",
       "examples": [
         "offline",
         null
@@ -175,7 +175,7 @@
       }
     },
     "formats": {
-      "description": "Which majors this Bonsai reads and writes, per format name (contract §2.2); the bridge reads a workspace only at majors it knows. null on exit 3.",
+      "description": "Which majors this Bonsai reads and writes, per format name (contract §2.2); the bridge reads a workspace only at majors it knows. It lists every format that has a major, so bonsai.error, which is part of other documents and has none, is not in it. null on exit 3.",
       "examples": [
         {
           "bonsai.task": {
@@ -830,7 +830,7 @@
       }
     },
     "checks": {
-      "description": "With --full only: newer pack versions, the agent's version, MCP servers reachable; null without --full. Its inner shape is not fixed yet, so it is typed open (formats/README.md).",
+      "description": "With --full only: {packs, plugins, claude_code, mcp}: newer pack versions, this machine's plugins against the lock, Claude Code's version against the floor, and the MCP servers (a list, [] until step 5.5 fills it); null without --full. Its inner layout is not fixed, so it is typed open (formats/README.md).",
       "examples": [
         null
       ],

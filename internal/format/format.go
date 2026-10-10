@@ -1,4 +1,4 @@
-// Package format holds a Go type for each of Bonsai's eighteen formats (contract §2; formats set 4), held to the
+// Package format holds a Go type for each of Bonsai's twenty-one formats (contract §2; formats sets 4 to 6), held to the
 // format's schema in formats/schemas, embedded by package formats: the schemas are the one home of every field and
 // of every closed list, and this package keeps no second copy of either.
 //
@@ -104,18 +104,21 @@ const (
 // ErrorWords.
 var errorCode = []List{{Field: "error.code", Table: "format.ErrorWords", Words: &ErrorWords}}
 
-// All is every format, in formats.Names' order (the ten of contract §2, the eight of set 4, then set 5's help). Its test holds it
-// to formats.Names and to the schemas, so a schema with no entry here, or an entry with no schema, fails.
+// All is every format, in formats.Names' order (the ten of contract §2, the eight of set 4, set 5's help, then set 6's
+// asks and logs). Its test holds it to formats.Names and to the schemas, so a schema with no entry here, or an entry
+// with no schema, fails.
 //
 // To add a format: its schema in formats/ (a new set), its Go file here, and an entry below. To add an open list's
-// table (step 5.2.0's log events and categories): the table beside its format's Go type, and a List in its entry.
+// table (as the log's events and categories, set 6): the table beside its format's Go type, and a List in its entry.
 var All = []*Format{
 	{Name: "task", Major: 1, Shape: Markdown, Read0: true, GoType: "format.Task", Next: nextPersonFile},
 	{Name: "labels", Major: 1, Shape: YAMLFile, GoType: "format.Labels", Next: nextPack},
 	{Name: "lanes", Major: 1, Shape: YAMLFile, GoType: "format.Lanes", Next: nextPack},
 	{Name: "run", Major: 1, Shape: Markdown, Read0: true, GoType: "format.Run", Next: nextPersonFile},
 	{Name: "state", Major: 1, Shape: Markdown, Read0: true, GoType: "format.State", Next: nextPersonFile},
-	{Name: "log", Major: 1, Shape: JSONLine, Writes: true, GoType: "format.Log", Next: nextRecord},
+	{Name: "log", Major: 1, Shape: JSONLine, Writes: true, GoType: "format.Log", Next: nextRecord,
+		Lists: []List{{Field: "event", Table: "format.LogEvents", Words: &LogEvents},
+			{Field: "category", Table: "format.LogCategories", Words: &LogCategories}}},
 	{Name: "ask", Major: 1, Shape: JSONLine, Writes: true, GoType: "format.Ask", Next: nextRecord,
 		Lists: []List{{Field: "type", Table: "format.AskTypes", Words: &AskTypes}}},
 	{Name: "ladder", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Ladder", Next: nextLadder},
@@ -137,6 +140,8 @@ var All = []*Format{
 	{Name: "changes", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Changes", Next: nextOutput, Lists: errorCode},
 	{Name: "help", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Help", Next: nextOutput,
 		Lists: []List{{Field: "error_words[].code", Table: "format.ErrorWords", Words: &ErrorWords}}},
+	{Name: "asks", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Asks", Next: nextOutput, Lists: errorCode},
+	{Name: "logs", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Logs", Next: nextOutput, Lists: errorCode},
 }
 
 // Lookup finds a format by its short name ("task"), its name ("bonsai.task") or its name and major

@@ -24,6 +24,7 @@ var goTypes = map[string]any{
 	"task": Task{}, "labels": Labels{}, "lanes": Lanes{}, "run": Run{}, "state": State{}, "log": Log{}, "ask": Ask{},
 	"ladder": Ladder{}, "status": Status{}, "workspace": Workspace{}, "pack": Pack{}, "tasks": Tasks{},
 	"sessions": Sessions{}, "memory": Memory{}, "error": ErrorObject{}, "check": Check{}, "changes": Changes{}, "help": Help{},
+	"asks": Asks{}, "logs": Logs{},
 }
 
 // readers read each format's example source into its Go type.
@@ -46,6 +47,8 @@ var readers = map[string]func([]byte) (any, error){
 	"check":     func(b []byte) (any, error) { return ReadCheck(b) },
 	"changes":   func(b []byte) (any, error) { return ReadChanges(b) },
 	"help":      func(b []byte) (any, error) { return ReadHelp(b) },
+	"asks":      func(b []byte) (any, error) { return ReadAsks(b) },
+	"logs":      func(b []byte) (any, error) { return ReadLogs(b) },
 }
 
 func example(t *testing.T, file string) []byte {
@@ -255,7 +258,7 @@ func TestKeepsAnUnknownField(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.HasSuffix(out, []byte(`"remote":null,"newer":{"b":1.50,"a":[true]}}`+"\n")) {
+	if !bytes.HasSuffix(out, []byte(`"bonsai_sha256":null,"newer":{"b":1.50,"a":[true]}}`+"\n")) {
 		t.Errorf("the unknown field is not kept, value for value, after the known ones: %s", out)
 	}
 	ws, err := ReadWorkspace([]byte("format: bonsai.workspace/1\nid: ws-7kq2m4xw5r3t6y2u7p4a5c3e2b\nname: x\nlater: [1, 2]\n" +

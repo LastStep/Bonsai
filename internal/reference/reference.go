@@ -74,10 +74,12 @@ func Page() []byte {
 		"What the plugin step did for one pack's plugin on this machine; a reader shows a result it does not know as other.")
 	p.words(engine.PluginResults)
 	p.orders()
-	p.section("Log events", "open", "not built yet (step 5.2.0: the log's events in one Go table beside the log's Go type)", "none yet (step 5.2.0: `bonsai check --schema bonsai.log`)",
-		"Contract section 8.2's event names; the page lists them from the table once it exists.")
-	p.section("Log categories", "open", "not built yet (step 5.2.0: the log's categories in one Go table beside the log's Go type)", "none yet (step 5.2.0: `bonsai check --schema bonsai.log`)",
-		"Contract section 8.2's tool categories; a pack's own are `<namespace>.<Name>`.")
+	p.section("Log events", "open", "format.LogEvents (internal/format/log.go)", "`bonsai check --schema bonsai.log`",
+		"Contract section 8.2's event names, in the log record's `event`; a reader shows a word it does not know as other.")
+	p.words(format.LogEvents)
+	p.section("Log categories", "open", "format.LogCategories (internal/format/log.go)", "`bonsai check --schema bonsai.log`",
+		"Contract section 8.2's tool categories, in the log record's `category`; a pack's own are `<namespace>.<Name>`, and a reader shows a word it does not know as other.")
+	p.words(format.LogCategories)
 	p.schemaLists()
 	// The contents go between the header and the sections.
 	body := p.b.String()
@@ -230,6 +232,7 @@ var listNames = map[string]string{
 	"sessions:hours[].kind":      "Sessions: an hours row's kind",
 	"labels:labels[].items":      "Label items kinds",
 	"ask:verdict":                "Ask verdicts",
+	"asks:asks[].state":          "Asks: an ask's state",
 }
 
 // skipped are the enums the page does not list again: a copy of a list shown at its home (the formats test holds each
@@ -247,6 +250,8 @@ var skipped = map[string]string{
 	"lanes:lanes[].close":        "shown under Lane rules",
 	"pack:files[].kind":          "shown as Pack file kinds",
 	"ask:answer.verdict":         "a copy of ask:verdict",
+	"asks:error.next.who":        "a copy of error:next.who",
+	"logs:error.next.who":        "a copy of error:next.who",
 }
 
 type enum struct {

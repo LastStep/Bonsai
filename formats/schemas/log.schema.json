@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.log/1",
-  "description": "The log record (contract §8.1): one JSON line, at most 2,048 bytes, per thing an agent did or Bonsai recorded (a tool call, a guard decision, a ladder result, an ask, an outside event, a cleaned file). Records are appended whole to the main checkout's .bonsai/local/log/ (s-<session>.ndjson per session, w-<YYYY-MM-DD>.ndjson outside one), never committed, redacted as written. Written by Bonsai's recorder (the hooks) and its own commands; read by bonsai logs and the studio's forwarder (Bonsai has no screens of its own). A writer writes every field below, in this order, null where it does not apply (contract §2.2, §2.5); a reader treats a missing field as null, keeps an unknown one, and refuses a duplicate key. Spec §16 row 27 adds the bonsai binary's own path and SHA-256 to session_start records; their two field names are not fixed yet, so they are not in this schema (formats/README.md).",
+  "description": "The log record (contract §8.1): one JSON line, at most 2,048 bytes, per thing an agent did or Bonsai recorded (a tool call, a guard decision, a ladder result, an ask, an outside event, a cleaned file). Records are appended whole to the main checkout's .bonsai/local/log/ (s-<session>.ndjson per session, w-<YYYY-MM-DD>.ndjson outside one), never committed, redacted as written. Written by Bonsai's recorder (the hooks) and its own commands; read by bonsai logs and the studio's forwarder (Bonsai has no screens of its own). A writer writes every field below, in this order, null where it does not apply (contract §2.2, §2.5); a reader treats a missing field as null, keeps an unknown one, and refuses a duplicate key. The last two fields, bonsai_path and bonsai_sha256, name the bonsai binary that wrote a session's records (spec §16 row 27); they are the names the guard has written since part 5, added to the schema in set 6.",
   "type": "object",
   "required": [
     "format",
@@ -32,7 +32,9 @@
     "decision",
     "rule",
     "labels",
-    "remote"
+    "remote",
+    "bonsai_path",
+    "bonsai_sha256"
   ],
   "properties": {
     "format": {
@@ -100,7 +102,7 @@
       ]
     },
     "event": {
-      "description": "Bonsai's event name (contract §8.2). An open list: session_start, prompt, tool_start, tool_end, tool_fail, permission, notice, subagent_start, subagent_stop, stop, session_end, guard, ladder, ask, event, clean; a reader shows an unknown name as other.",
+      "description": "Bonsai's event name (contract §8.2). An open list: its known words, one line each on what they mean, live in Bonsai's one table of log events, which bonsai check --schema bonsai.log prints (and the reference page of lists, docs/reference/lists.md, lists); this schema does not copy them, and a reader shows a word it does not know as other.",
       "examples": [
         "tool_end",
         "guard"
@@ -176,7 +178,7 @@
       ]
     },
     "task": {
-      "description": "The task the session's environment names (BONSAI_TASK), raw, as given; null when unset. The recorder decides nothing from it. Today's spool field: task_env.",
+      "description": "The task the session's environment names (BONSAI_TASK), raw, as given and redacted like every free-text field; null when unset. The recorder decides nothing from it. Today's spool field: task_env.",
       "examples": [
         "T-0901",
         null
@@ -187,7 +189,7 @@
       ]
     },
     "role": {
-      "description": "The role the session's environment names (BONSAI_ROLE), raw; null when unset. Today's spool field: role_env.",
+      "description": "The role the session's environment names (BONSAI_ROLE), raw, as given and redacted like every free-text field; null when unset. Today's spool field: role_env.",
       "examples": [
         "builder",
         null
@@ -209,7 +211,7 @@
       ]
     },
     "category": {
-      "description": "The tool's category (contract §8.2). An open list: Read, Search, Edit, Write, Shell, Ladder, MCP, Agent, Web, Other, plus a pack's own as <namespace>.<Name>; null when no tool.",
+      "description": "The tool's category (contract §8.2). An open list: its known words live in Bonsai's one table of log categories, which bonsai check --schema bonsai.log prints (and the reference page of lists lists); this schema does not copy them. A pack's own categories are written <namespace>.<Name>, and a reader shows a word it does not know as other. null when no tool.",
       "examples": [
         "Edit",
         null
@@ -220,7 +222,7 @@
       ]
     },
     "target": {
-      "description": "What the tool acted on, redacted, at most 200 characters; for session_start and subagent_start the active task the recorder found (contract §13), or null; for clean the project-relative path deleted; for ask the ask's key.",
+      "description": "What the tool acted on, redacted, at most 200 characters; a path outside the checkout is null, never written. For session_start and subagent_start the active task the recorder found (contract §13), or null; for clean the project-relative path deleted; for ask the ask's key.",
       "examples": [
         "src/settings/theme.go",
         null
@@ -243,7 +245,7 @@
       ]
     },
     "kind": {
-      "description": "As today: a notice's kind (Claude Code's notification type), or null.",
+      "description": "What kind of the event it is, or null: a prompt's user or task-notification; a failure's interrupt or error; a notice's type (Claude Code's notification type); for an ask record, its op (file, resolve or answer).",
       "examples": [
         "idle_prompt",
         null
@@ -254,7 +256,7 @@
       ]
     },
     "text": {
-      "description": "As today: short text, redacted, at most 300 characters (a notice's message, a prompt's start), or null.",
+      "description": "Short text, redacted, at most 300 characters: a notice's message, or an ask record's question; never the words of a prompt (a prompt record's text is null). null where it does not apply.",
       "examples": [
         "Claude is waiting for your input",
         null
@@ -322,7 +324,7 @@
       ]
     },
     "labels": {
-      "description": "For an event record only: the outside event's labels (contract §8.4), checked against the definitions attached on the machine; {} otherwise.",
+      "description": "For an event record only: the outside event's labels (contract §8.4), checked against the label definitions in force (the packs' declarations and the label files attached on this machine, not this machine's alone); {} otherwise.",
       "examples": [
         {
           "example.event": "deploy",
@@ -360,6 +362,29 @@
         "null"
       ],
       "pattern": "^session_[A-Za-z0-9]{10,60}$"
+    },
+    "bonsai_path": {
+      "description": "The bonsai binary's own path, forward slashes, on a session_start record (written at every start) and on the guard record that made its log file; null elsewhere. Under the person's home folder it is written from a tilde and a slash, so no user name is in the log (contract §2.6); elsewhere as it is. The guard writes its absolute form until step 5.3 changes guard code, so no form is required here. Added in set 6, an addition (spec §16 row 27; the name is the one the guard has written since part 5).",
+      "examples": [
+        "/usr/local/bin/bonsai",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "bonsai_sha256": {
+      "description": "The SHA-256 of the bonsai binary at bonsai_path, 64 lower-case hex characters, on a session_start record (hashed at every start, so a binary swapped between a session and its resume is seen) and on the guard record that made its log file; null elsewhere. Added in set 6, an addition (spec §16 row 27).",
+      "examples": [
+        "9b2f4c1ad07e53b8c6a1f09d2e48b7a3c5d60f1e8a97b24c3d5e6f708192a3b4",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
     }
   }
 }

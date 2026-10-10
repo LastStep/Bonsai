@@ -12,16 +12,16 @@
 #     close          person: done is a person's move. agent: an agent may make it.
 #     description    what agents read about the lane: everything the two rules do not say.
 format: bonsai.lanes/1
-lanes:
-  - name: light
-    approve_first: false
-    close: agent
-    description: "Small fixes, tests and docs. Build it, climb the ladder, merge."
-  - name: full
+lanes:  # one entry per lane, each with every field below
+  - name: light  # the lane's name, as a task's lane field writes it
+    approve_first: false  # true: the plan needs a person first; false: no such gate
+    close: agent  # person: done is a person's move; agent: an agent may make it
+    description: "Small fixes, tests and docs. Build it, climb the ladder, merge."  # what agents read about the lane
+  - name: full  # the lane's name, as a task's lane field writes it
     approve_first: true   # a person approves the plan before any code
-    close: person
-    description: "A feature or a format change. A person approves the plan first and closes the task."
-  - name: director
-    approve_first: false
-    close: person
-    description: "A decision, not code. Write the options and stop; a person chooses."
+    close: person  # person: done is a person's move; agent: an agent may make it
+    description: "A feature or a format change. A person approves the plan first and closes the task."  # what agents read about the lane
+  - name: director  # the lane's name, as a task's lane field writes it
+    approve_first: false  # true: the plan needs a person first; false: no such gate
+    close: person  # person: done is a person's move; agent: an agent may make it
+    description: "A decision, not code. Write the options and stop; a person chooses."  # what agents read about the lane

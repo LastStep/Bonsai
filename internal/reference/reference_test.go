@@ -81,7 +81,7 @@ func TestPageHoldsEveryList(t *testing.T) {
 			t.Errorf("the page has no list %q", name)
 		}
 	}
-	for _, tbl := range [][]format.Word{format.ErrorWords, format.CheckWords, format.PackCheckWords, format.AskTypes, engine.PluginResults, engine.ClaudeStates} {
+	for _, tbl := range [][]format.Word{format.ErrorWords, format.CheckWords, format.PackCheckWords, format.AskTypes, format.LogEvents, format.LogCategories, engine.PluginResults, engine.ClaudeStates} {
 		for _, w := range tbl {
 			if !strings.Contains(page, "| `"+w.Word+"` |") {
 				t.Errorf("the word %s of a table is not on the page", w.Word)

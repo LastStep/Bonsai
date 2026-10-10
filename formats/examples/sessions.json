@@ -9,7 +9,8 @@
       "model": "claude-sonnet",
       "start": "2026-10-08 09:05",
       "end": "2026-10-08 10:35",
-      "minutes": 90
+      "minutes": 90,
+      "subagent": null
     },
     {
       "session": "3f2a9c1e",
@@ -19,7 +20,8 @@
       "model": "claude-opus",
       "start": "2026-10-08 10:00",
       "end": "2026-10-08 10:30",
-      "minutes": 30
+      "minutes": 30,
+      "subagent": "e7c4b1d2"
     },
     {
       "session": "7b41d0aa",
@@ -29,7 +31,8 @@
       "model": null,
       "start": "2026-10-09 08:00",
       "end": "2026-10-09 08:12",
-      "minutes": 12
+      "minutes": 12,
+      "subagent": null
     }
   ],
   "hours": [

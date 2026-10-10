@@ -17,7 +17,7 @@
       "const": "bonsai.sessions/1"
     },
     "sessions": {
-      "description": "One row per ended session and per ended subagent run, sorted by start, then by session; [] for none.",
+      "description": "One row per ended session and per ended subagent run, sorted by start, then by session, then by subagent; [] for none.",
       "examples": [
         [
           {
@@ -28,7 +28,8 @@
             "model": "claude-sonnet",
             "start": "2026-10-08 09:05",
             "end": "2026-10-08 10:35",
-            "minutes": 90
+            "minutes": 90,
+            "subagent": null
           }
         ],
         []
@@ -44,7 +45,8 @@
           "model",
           "start",
           "end",
-          "minutes"
+          "minutes",
+          "subagent"
         ],
         "properties": {
           "session": {
@@ -119,6 +121,18 @@
             ],
             "type": "integer",
             "minimum": 0
+          },
+          "subagent": {
+            "description": "The subagent run's own id, its first 8 characters (or all of a shorter id); null for a session's row (an empty cell in the table). It tells a subagent run from its session, and keeps two subagent runs of one session apart: a row's key is its session, subagent and start (step 5.2.3). Added in set 6, an addition. A table written before it has no such column, and a reader reads its rows with subagent null.",
+            "examples": [
+              "e7c4b1d2",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^.{1,8}$"
           }
         }
       }

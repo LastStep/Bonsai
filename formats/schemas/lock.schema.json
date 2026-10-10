@@ -92,7 +92,7 @@
             "pattern": "^[0-9a-f]{64}$"
           },
           "declares": {
-            "description": "What the pack declared at the locked commit, copied in so bonsai check runs in CI with no pack fetched (spec §6, §16 row 18): its lanes, document kinds, label definitions and protected paths. The four kinds are fixed; their key names and inner layout are not, so it is typed open (formats/README.md). {} for a pack that declares nothing.",
+            "description": "What the pack declared at the locked commit, copied in so bonsai check runs in CI with no pack fetched (spec §6, §16 row 18): its kinds are the seven of format.DeclaresKeys (bonsai check --schema bonsai.lock prints them with the rest): lanes, documents, labels, protected, hooks, deny and needs, in that order, and a key a newer Bonsai adds is kept. Their inner layout is not fixed, so it is typed open (formats/README.md). {} for a pack that declares nothing; a lock written before step 5.1.6 has no needs, which reads as the pack needing nothing.",
             "examples": [
               {},
               {
@@ -109,7 +109,7 @@
             "type": "object"
           },
           "path": {
-            "description": "The pack's folder inside its repository, as bonsai.yaml names it (forward slashes, no leading slash); null when the pack is the repository's root. Added in formats set 4, an addition: a lock written before has none, which a reader reads as null. With it, update sees a pack's folder change in bonsai.yaml itself, rather than only through content hashes, which miss file modes and submodules (step 5.1.1's verifier).",
+            "description": "The pack's folder inside its repository, as bonsai.yaml names it (forward slashes, no leading slash); null when the pack is the repository's root. Added in formats set 4, an addition: a lock written before has none, which a reader reads as unknown, not as the root, so a pack in a folder does not look moved after an upgrade and update judges that pack by its content hash alone, until the next update writes the path (step 5.1.5). With it, update sees a pack's folder change in bonsai.yaml itself, rather than only through content hashes, which miss file modes and submodules (step 5.1.1's verifier).",
             "examples": [
               "packs/base",
               null

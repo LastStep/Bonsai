@@ -10,6 +10,7 @@ type Check struct {
 	Findings []Finding     `json:"findings"` // each one makes the exit code 1
 	Warnings []Finding     `json:"warnings"` // never the exit code
 	Error    *ErrorObject  `json:"error"`    // null unless check refused or failed
+	Notes    []string      `json:"notes"`    // what check says to a person that is neither a finding nor a warning (set 6)
 	Extra    schema.Object `json:"-"`
 }
 

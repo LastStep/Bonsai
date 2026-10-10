@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.logs/1",
+  "description": "bonsai logs and bonsai log append, with --json (contract §8, spec §8, §16 row 30): the log files of the main checkout's .bonsai/local/log/, or one file's records, or the record log append just wrote. Printed, never stored (the log itself is the log records, bonsai.log/1, one JSON line each). Written by those commands with --json; read by agents, the studio's forwarder and bridge, and CI, now that Bonsai has no screens of its own. bonsai logs lists the files (files filled, records null); bonsai logs for one file or session gives its records (files filled with that file, records filled); bonsai log append gives written. The records inside are bonsai.log/1's, as written; they are open objects here, because the schema checker has no $ref and a full copy would refuse an older or hand-written record, so bonsai.log/1 is their home. When the command refuses (exit 2 or 4), workspace is null, files and records and written are null, and error says why. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "workspace",
+    "files",
+    "records",
+    "written",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.logs/1"
+      ],
+      "const": "bonsai.logs/1"
+    },
+    "workspace": {
+      "description": "The workspace: its id and name from bonsai.yaml, and the checkout's absolute path, forward slashes (printed locally, never stored or forwarded); null when the command stopped before reading bonsai.yaml.",
+      "examples": [
+        {
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "root": "/srv/projects/example"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "name",
+        "root"
+      ],
+      "properties": {
+        "id": {
+          "description": "The workspace id (contract §3).",
+          "examples": [
+            "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+          ],
+          "type": "string",
+          "pattern": "^ws-[a-z0-9]{26}$"
+        },
+        "name": {
+          "description": "The workspace's name (contract §3).",
+          "examples": [
+            "example"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        },
+        "root": {
+          "description": "The checkout's absolute path, forward slashes.",
+          "examples": [
+            "/srv/projects/example"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "files": {
+      "description": "The log files, oldest first (a session's by its first record, a day file by its day), with what each holds; [] for a log with none; null when the command gave no list (log append, or a refusal).",
+      "examples": [
+        [
+          {
+            "file": "s-6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a.ndjson",
+            "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+            "day": null,
+            "first": "2026-10-08T14:08:00.000Z",
+            "last": "2026-10-08T14:31:02.113Z",
+            "records": 42,
+            "unreadable": 0,
+            "ended": true,
+            "task": "T-0901",
+            "role": "builder"
+          },
+          {
+            "file": "w-2026-10-08.ndjson",
+            "session": null,
+            "day": "2026-10-08",
+            "first": "2026-10-08T16:00:00.000Z",
+            "last": "2026-10-08T16:00:00.000Z",
+            "records": 1,
+            "unreadable": 0,
+            "ended": null,
+            "task": null,
+            "role": null
+          }
+        ],
+        null
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "file",
+          "session",
+          "day",
+          "first",
+          "last",
+          "records",
+          "unreadable",
+          "ended",
+          "task",
+          "role"
+        ],
+        "properties": {
+          "file": {
+            "description": "The log file's name in .bonsai/local/log/: s-<session>.ndjson for a session, w-<YYYY-MM-DD>.ndjson for the records outside one (contract §8.5).",
+            "examples": [
+              "s-6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a.ndjson",
+              "w-2026-10-08.ndjson"
+            ],
+            "type": "string",
+            "pattern": "^[^/\\\\]+\\.ndjson$"
+          },
+          "session": {
+            "description": "The session's id, for a session's file; null for a day file.",
+            "examples": [
+              "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "day": {
+            "description": "The UTC date, for a day file; null for a session's file.",
+            "examples": [
+              "2026-10-08",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "first": {
+            "description": "The first readable record's time, as the log writes it; null when the file holds none.",
+            "examples": [
+              "2026-10-08T14:08:00.000Z",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          },
+          "last": {
+            "description": "The last readable record's time; null when the file holds none.",
+            "examples": [
+              "2026-10-08T14:31:02.113Z",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          },
+          "records": {
+            "description": "How many records were read from the file.",
+            "examples": [
+              42
+            ],
+            "type": "integer",
+            "minimum": 0
+          },
+          "unreadable": {
+            "description": "How many lines were skipped as unreadable (a torn line a crash left): counted, never an error.",
+            "examples": [
+              0
+            ],
+            "type": "integer",
+            "minimum": 0
+          },
+          "ended": {
+            "description": "For a session's file: true when its last span has ended (a session_end record, or a span old enough to count as ended), false while it is open; null for a day file.",
+            "examples": [
+              true,
+              false,
+              null
+            ],
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "task": {
+            "description": "For a session's file: the task its session_start record found (contract §13), or null; null for a day file.",
+            "examples": [
+              "T-0901",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "description": "For a session's file: the role its session_start record names, or null; null for a day file.",
+            "examples": [
+              "builder",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "records": {
+      "description": "One file's records, as written (bonsai.log/1, which is their home), in file order; null when the command gave none.",
+      "examples": [
+        [
+          {
+            "format": "bonsai.log/1",
+            "id": "0b6f3c2e-5d1a-4e8b-9c7f-2a4d6e8f0a1b",
+            "at": "2026-10-08T14:20:31.512Z",
+            "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+            "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+            "agent": "claude-code",
+            "agent_event": "PostToolUse",
+            "event": "tool_end",
+            "subagent_id": null,
+            "subagent_type": null,
+            "tool_use_id": "toolu_01ABCDEFGHJKMNPQRSTUVWXY",
+            "input_hash": "3f9a1c0e7b2d4a68",
+            "checkout": "example-t0901",
+            "branch": "t0901-dark-mode",
+            "task": "T-0901",
+            "role": "builder",
+            "tool": "Edit",
+            "category": "Edit",
+            "target": "src/settings/theme.go",
+            "ok": true,
+            "kind": null,
+            "text": null,
+            "source": null,
+            "model": null,
+            "reason": null,
+            "decision": null,
+            "rule": null,
+            "labels": {},
+            "remote": null,
+            "bonsai_path": null,
+            "bonsai_sha256": null
+          }
+        ],
+        null
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object"
+      }
+    },
+    "written": {
+      "description": "The record log append just wrote (an event record, as written: bonsai.log/1); null when the run wrote none.",
+      "examples": [
+        {
+          "format": "bonsai.log/1",
+          "id": "0b6f3c2e-5d1a-4e8b-9c7f-2a4d6e8f0a1b",
+          "at": "2026-10-08T14:20:31.512Z",
+          "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+          "agent": "claude-code",
+          "agent_event": "PostToolUse",
+          "event": "tool_end",
+          "subagent_id": null,
+          "subagent_type": null,
+          "tool_use_id": "toolu_01ABCDEFGHJKMNPQRSTUVWXY",
+          "input_hash": "3f9a1c0e7b2d4a68",
+          "checkout": "example-t0901",
+          "branch": "t0901-dark-mode",
+          "task": "T-0901",
+          "role": "builder",
+          "tool": "Edit",
+          "category": "Edit",
+          "target": "src/settings/theme.go",
+          "ok": true,
+          "kind": null,
+          "text": null,
+          "source": null,
+          "model": null,
+          "reason": null,
+          "decision": null,
+          "rule": null,
+          "labels": {},
+          "remote": null,
+          "bonsai_path": null,
+          "bonsai_sha256": null
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,332 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.asks/1",
+  "description": "bonsai ask, bonsai ask --resolve, bonsai ask --status, bonsai answer and bonsai asks, with --json (contract §9, spec §4, §8, §16 row 30): the asks a command read, each key with its state, and the record the command appended. Printed, never stored (the asks themselves are the ask records, bonsai.ask/1, in the main checkout's .bonsai/local/asks/). Written by those commands with --json; read by agents, the studio's bridge and CI, now that Bonsai has no screens of its own. An ask's state follows its records: open until an answer record or a resolve record for its key closes it, then answered or resolved. The records inside are bonsai.ask/1's, as stored; they are open objects here, because the schema checker has no $ref and a full copy would refuse an older or hand-written record, so bonsai.ask/1 is their home. When the command refuses before it reads a workspace (exit 2 or 4), workspace is null, asks is [] and error says why. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "workspace",
+    "asks",
+    "written",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.asks/1"
+      ],
+      "const": "bonsai.asks/1"
+    },
+    "workspace": {
+      "description": "The workspace: its id and name from bonsai.yaml, and the checkout's absolute path, forward slashes (printed locally, never stored or forwarded); null when the command stopped before reading bonsai.yaml.",
+      "examples": [
+        {
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "root": "/srv/projects/example"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "name",
+        "root"
+      ],
+      "properties": {
+        "id": {
+          "description": "The workspace id (contract §3).",
+          "examples": [
+            "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+          ],
+          "type": "string",
+          "pattern": "^ws-[a-z0-9]{26}$"
+        },
+        "name": {
+          "description": "The workspace's name (contract §3).",
+          "examples": [
+            "example"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        },
+        "root": {
+          "description": "The checkout's absolute path, forward slashes.",
+          "examples": [
+            "/srv/projects/example"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "asks": {
+      "description": "The asks the command read, each a key with its state: for ask --status, asks and answer, the key or keys asked about; for ask and ask --resolve, the key filed or resolved. Sorted by the time of their latest file record, then key. [] for none, and when the command refused.",
+      "examples": [
+        [
+          {
+            "key": "agent:h-3e9f0a1b2c4d",
+            "state": "answered",
+            "filed": {
+              "format": "bonsai.ask/1",
+              "id": "9c8b7a6f-5e4d-4c3b-8a29-1f0e9d8c7b6a",
+              "at": "2026-10-08T14:22:05.000Z",
+              "op": "file",
+              "key": "agent:h-3e9f0a1b2c4d",
+              "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+              "source": "agent",
+              "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+              "type": "Decide",
+              "task": "T-0901",
+              "doc": null,
+              "title": "Which colour should the dark theme use for links?",
+              "why": "The design file gives two blues and the contrast check passes for both.",
+              "then_text": "The builder applies the chosen colour and reruns the contrast check.",
+              "options": [
+                "The lighter blue",
+                "The darker blue"
+              ],
+              "verdict": null,
+              "data": null,
+              "answer": null
+            },
+            "closed": {
+              "format": "bonsai.ask/1",
+              "id": "5d4c3b2a-1f0e-4d9c-8b7a-6e5f4d3c2b1a",
+              "at": "2026-10-08T14:31:40.000Z",
+              "op": "answer",
+              "key": "agent:h-3e9f0a1b2c4d",
+              "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+              "source": "agent",
+              "session": null,
+              "type": null,
+              "task": null,
+              "doc": null,
+              "title": null,
+              "why": null,
+              "then_text": null,
+              "options": [],
+              "verdict": null,
+              "data": null,
+              "answer": {
+                "by": "terminal",
+                "via": null,
+                "choice": "The darker blue",
+                "verdict": null,
+                "words": null
+              }
+            }
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "state",
+          "filed",
+          "closed"
+        ],
+        "properties": {
+          "key": {
+            "description": "The ask's key, <source>:<part> (bonsai.ask/1's key).",
+            "examples": [
+              "agent:h-3e9f0a1b2c4d",
+              "ladder:bless-T-0901"
+            ],
+            "type": "string",
+            "pattern": "^(agent|ladder):.+$"
+          },
+          "state": {
+            "description": "Where the ask stands, a closed list: open (no answer and no resolve record yet), answered (an answer record closed it) or resolved (the asker withdrew it with a resolve record).",
+            "examples": [
+              "open",
+              "answered"
+            ],
+            "enum": [
+              "open",
+              "answered",
+              "resolved"
+            ]
+          },
+          "filed": {
+            "description": "The key's latest file record, as stored (bonsai.ask/1, which is its home); an open object here.",
+            "examples": [
+              {
+                "format": "bonsai.ask/1",
+                "id": "9c8b7a6f-5e4d-4c3b-8a29-1f0e9d8c7b6a",
+                "at": "2026-10-08T14:22:05.000Z",
+                "op": "file",
+                "key": "agent:h-3e9f0a1b2c4d",
+                "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+                "source": "agent",
+                "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+                "type": "Decide",
+                "task": "T-0901",
+                "doc": null,
+                "title": "Which colour should the dark theme use for links?",
+                "why": "The design file gives two blues and the contrast check passes for both.",
+                "then_text": "The builder applies the chosen colour and reruns the contrast check.",
+                "options": [
+                  "The lighter blue",
+                  "The darker blue"
+                ],
+                "verdict": null,
+                "data": null,
+                "answer": null
+              }
+            ],
+            "type": "object"
+          },
+          "closed": {
+            "description": "The answer or resolve record that closed the ask, as stored (bonsai.ask/1); null while it is open.",
+            "examples": [
+              {
+                "format": "bonsai.ask/1",
+                "id": "5d4c3b2a-1f0e-4d9c-8b7a-6e5f4d3c2b1a",
+                "at": "2026-10-08T14:31:40.000Z",
+                "op": "answer",
+                "key": "agent:h-3e9f0a1b2c4d",
+                "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+                "source": "agent",
+                "session": null,
+                "type": null,
+                "task": null,
+                "doc": null,
+                "title": null,
+                "why": null,
+                "then_text": null,
+                "options": [],
+                "verdict": null,
+                "data": null,
+                "answer": {
+                  "by": "terminal",
+                  "via": null,
+                  "choice": "The darker blue",
+                  "verdict": null,
+                  "words": null
+                }
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "written": {
+      "description": "The ask record this run appended (a file, resolve or answer record, as stored: bonsai.ask/1); null when the run wrote none (asks, ask --status, or a refusal).",
+      "examples": [
+        {
+          "format": "bonsai.ask/1",
+          "id": "2b1a0f9e-8d7c-4b6a-9f5e-4d3c2b1a0f9e",
+          "at": "2026-10-08T15:02:10.000Z",
+          "op": "file",
+          "key": "agent:h-7a1d4e8c0b93",
+          "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "source": "agent",
+          "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+          "type": "Look",
+          "task": "T-0901",
+          "doc": null,
+          "title": "Does the new settings screen read well in the dark theme?",
+          "why": "A person has to look at it; the screenshots pass the contrast check.",
+          "then_text": "The builder moves the task to verify.",
+          "options": [],
+          "verdict": "pass",
+          "data": null,
+          "answer": null
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

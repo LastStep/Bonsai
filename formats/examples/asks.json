@@ -1,0 +1,90 @@
+{
+  "format": "bonsai.asks/1",
+  "workspace": {
+    "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+    "name": "example",
+    "root": "/srv/projects/example"
+  },
+  "asks": [
+    {
+      "key": "agent:h-3e9f0a1b2c4d",
+      "state": "answered",
+      "filed": {
+        "format": "bonsai.ask/1",
+        "id": "9c8b7a6f-5e4d-4c3b-8a29-1f0e9d8c7b6a",
+        "at": "2026-10-08T14:22:05.000Z",
+        "op": "file",
+        "key": "agent:h-3e9f0a1b2c4d",
+        "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+        "source": "agent",
+        "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+        "type": "Decide",
+        "task": "T-0901",
+        "doc": null,
+        "title": "Which colour should the dark theme use for links?",
+        "why": "The design file gives two blues and the contrast check passes for both.",
+        "then_text": "The builder applies the chosen colour and reruns the contrast check.",
+        "options": [
+          "The lighter blue",
+          "The darker blue"
+        ],
+        "verdict": null,
+        "data": null,
+        "answer": null
+      },
+      "closed": {
+        "format": "bonsai.ask/1",
+        "id": "5d4c3b2a-1f0e-4d9c-8b7a-6e5f4d3c2b1a",
+        "at": "2026-10-08T14:31:40.000Z",
+        "op": "answer",
+        "key": "agent:h-3e9f0a1b2c4d",
+        "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+        "source": "agent",
+        "session": null,
+        "type": null,
+        "task": null,
+        "doc": null,
+        "title": null,
+        "why": null,
+        "then_text": null,
+        "options": [],
+        "verdict": null,
+        "data": null,
+        "answer": {
+          "by": "terminal",
+          "via": null,
+          "choice": "The darker blue",
+          "verdict": null,
+          "words": null
+        }
+      }
+    },
+    {
+      "key": "agent:h-7a1d4e8c0b93",
+      "state": "open",
+      "filed": {
+        "format": "bonsai.ask/1",
+        "id": "2b1a0f9e-8d7c-4b6a-9f5e-4d3c2b1a0f9e",
+        "at": "2026-10-08T15:02:10.000Z",
+        "op": "file",
+        "key": "agent:h-7a1d4e8c0b93",
+        "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+        "source": "agent",
+        "session": "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a",
+        "type": "Look",
+        "task": "T-0901",
+        "doc": null,
+        "title": "Does the new settings screen read well in the dark theme?",
+        "why": "A person has to look at it; the screenshots pass the contrast check.",
+        "then_text": "The builder moves the task to verify.",
+        "options": [],
+        "verdict": "pass",
+        "data": null,
+        "answer": null
+      },
+      "closed": null
+    }
+  ],
+  "written": null,
+  "error": null
+}
