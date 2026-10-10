@@ -14,8 +14,7 @@
 - **Records:** `STATE.md`; run reports in `records/runs/`.
 
 Two readers. **Rohan** reads down to "Size" and reads no code. The **orchestrator, builders and verifiers** read the
-rest. 5.1 to 5.6 are planned in full here; 5.7 is outlined, and gets its own detailed section in this file before it
-starts.
+rest. 5.1 to 5.7 are planned in full here.
 
 ## For Rohan (plain words)
 
@@ -118,9 +117,14 @@ such pair.
   (yours, or the studio's registration's; typed in a terminal of your own, not inside Claude); and installing a newer
   Bonsai release when `bonsai status` or `bonsai check` says one exists (six lines a side, run one at a time; if the
   fingerprint line does not print `OK`, or `True` in PowerShell, stop and send the orchestrator what it printed).
-- **At 5.7:** the GitHub release steps that are yours (the `release` environment and a new Homebrew tap token, spec §17
-  step 4's note; switching the release workflow back on), then your word for 1.0; installing 1.0 on both sides with the
-  new installers (in WSL about 5 minutes and your password; on Windows about 5 minutes and one "allow this app to make
+- **At 5.7** (its section, "Step 5.7", comes to you first, with four decisions in it): three batches, about 45 minutes
+  in all. **Batch 1, the settings** (about 15 minutes, in WSL): a newer `gh` in WSL (your password; decision 2), a look
+  on github.com for the old Homebrew token, the `release` environment, GitHub's lock on published releases, and
+  switching the release workflow back on (a new tap token only if you choose Homebrew for the new Bonsai, decision 1).
+  **Batch 2, a rehearsal** (about 3 minutes; decision 3): one tag line for a pre-release, `1.0.0-rc.1`, and your
+  approval on GitHub (decision 4). **Batch 3, 1.0** (about 25 minutes): your word, the `v1.0.0` tag and your approval;
+  then installing 1.0 on both sides with the new installers (seven lines a side, one more than 5.6's: it checks
+  GitHub's signed record of how the file was built; in WSL your password, on Windows one "allow this app to make
   changes" prompt), and with it one line in WSL that makes your own `~/.claude/CLAUDE.md` load your personal memory in
   every project (spec §10; no agent edits that file; an agent then checks that it loads); and, with the same word, the
   first release tags of the two packs: `base-v1.0.0` on Bonsai's repo and `v1.0.0` on the workflow repo, whose checks
@@ -138,14 +142,16 @@ such pair.
 - **The studio links** (spec step 7) after 5.5: its own plan, in its own repo. Mimas links last (step 8). This plan
   changes nothing in either repo, and waits on neither.
 
-**Choices that are yours.** 5.6's section was approved on 10 Oct, with (A) for who saves notes about you that every
-project reads: you save them, from an agent's draft (5.6's "Who saves notes about you"). The five other decisions you
-confirmed that day: this machine's settings and the studio's label files are all yours, even `cache_keep_days`; a newer
-release is shown as planned, `status --full` reading Bonsai's tags at most daily and keeping the answer in the home's
-`cache/release.json`, which `status`, `check` and `--line` show offline; the installers first run on your machines at
-5.7 with 1.0; `status --line` is kept; the personal index is 40 lines and 4 KB, a note 4 KB. Three were decided on
-9 Oct: the two in 5.3's section, how the hook lines find `bonsai` (your answer: (a)) and who may consent to code and
-take the guard out (your answer: (ii)), and this one:
+**Choices that are yours.** Waiting: 5.7's section holds four decisions of yours, each put with its context, options,
+costs and a recommendation (its "Decisions for Rohan"): Homebrew for the new Bonsai, how your WSL side checks that a
+release is genuine, a rehearsal before 1.0, and what stops an accidental release. 5.6's section was approved on 10 Oct,
+with (A) for who saves notes about you that every project reads: you save them, from an agent's draft (5.6's "Who saves
+notes about you"). The five other decisions you confirmed that day: this machine's settings and the studio's label files
+are all yours, even `cache_keep_days`; a newer release is shown as planned, `status --full` reading Bonsai's tags at
+most daily and keeping the answer in the home's `cache/release.json`, which `status`, `check` and `--line` show offline;
+the installers first run on your machines at 5.7 with 1.0; `status --line` is kept; the personal index is 40 lines and
+4 KB, a note 4 KB. Three were decided on 9 Oct: the two in 5.3's section, how the hook lines find `bonsai` (your answer:
+(a)) and who may consent to code and take the guard out (your answer: (ii)), and this one:
 - **How the later parts' plans reach you: (B).** You were offered (A) every part's section, (B) only when it changes
   what is yours, and (C) none; you first said (A), then chose (B) once the scope question above was settled. So: 5.1
   is planned in full here. Before each later part starts, a planner writes its section into this file, a fresh Opus
@@ -183,8 +189,8 @@ orchestrating session, your sittings or waiting; it comes from six parts over tw
 0.06-0.09 (the engine) to 0.32-0.53 (the hook path), and the parts that dealt with Windows and Claude Code ran highest,
 which is more of step 5; and the stop lines use the spec's hours, not the ratio. Your own time: about 2 minutes for the
 Windows login before 5.3, about 10 at 5.3 and 5 at 5.4, your read of the workflow repo and about 3 minutes on Windows at
-5.5, the 5.7 GitHub steps and about 10 minutes for the 1.0 installs on both sides at 5.7, and the plan approvals your
-choice above sets. Nothing here waits on the studio.
+5.5, about 45 minutes over three batches at 5.7 (the GitHub settings, a rehearsal, your word, the 1.0 installs and the
+pack tags), and the plan approvals your choice above sets. Nothing here waits on the studio.
 
 ## For the orchestrator, builders and verifiers
 
@@ -255,8 +261,9 @@ plugin sync rewriting its own files under `~/.claude/plugins/synced/` (part 4b; 
     and its run report may name `yaml.mjs` at `4a05eac`, the contract's own definition of format 0 (contract §2.4); the
     skeleton's last verifier noted the reader already does (`STATE.md`, loose ends).
 11. **The toolchain bump moves to where it is needed.** The Go 1.25.x bump that clears govulncheck's standard-library
-    findings is listed for 5.7 (gate report §5). If `govulncheck` turns red on CI before then, the piece that meets it
-    lands the one-line bump as its own commit first, and its run report says so.
+    findings is listed for 5.7 (gate report §5; 5.7's section moves it to Go 1.26, since Go 1.25's fixes ended on 19
+    Aug). If `govulncheck` turns red on CI before then, the piece that meets it lands the one-line bump as its own
+    commit first, and its run report says so.
 
 **Outside step 5, named so they are not lost.**
 - **The sandbox probe** (spec §7, §16 row 25; contract §9.5): it "waits for its probe after the gate", with its
@@ -6352,6 +6359,7 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
   and the studio's link (spec §3, step 7).
 
 **5.7 Release (6-11 h, re-ask at 14).**
+- **Planned in full** in "Step 5.7" above; this outline is kept as it was written.
 - **Builds:** the supply-chain fixes (actions pinned by commit, GoReleaser pinned, the re-release input removed,
   immutable releases, build provenance; spec §12 step 8), `release.yml` back to tag runs inside the `release`
   environment and switched on again (Rohan's step), `bonsai@0.4` for Homebrew, the README.
@@ -6417,7 +6425,7 @@ source.
 | 5.4 | Its section's "Proof for each piece"; fresh verifiers V1 (5.4.1 to 5.4.3) and V2 (the code, before the pre-release); the end verifier on "5.4 done", after Rohan's install and link |
 | 5.5 | Its section's "Proof for each piece"; fresh verifiers P0 (privacy, base's three templates from the studio before they land), P (privacy, `workflow`'s whole history before its first push) and V1 (the walls, the `<protocols>/` resolution and the packs' CI); the end verifier on "5.5 done", after Bonsai takes `base` |
 | 5.6 | Its section's "Proof for each piece"; fresh verifier V1 (the installers and the machine's tripwires, after 5.6.6 with its CI job green); the end verifier on "5.6 done" |
-| 5.7 | Its section; its verifiers as outlined; its end verifier |
+| 5.7 | Its section's "Proof for each piece"; fresh verifiers V1 (the release path, before anything is switched on) and V2 (the published rehearsal, before Rohan's word for 1.0); the end verifier on "5.7 done", after the 1.0 installs and the pack tags |
 | The interim proof (to 5.3) | Before each push, `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on Windows, counts in the run report; CI green on the pushed commit; no Windows-only skip without a named reason |
 | The ladder proof (from 5.4) | `bonsai ladder` green on Bonsai's own `bonsai.yaml`, run by the pre-release Rohan installed; CI and check 10 beside it until a rung covers them; fresh verifiers for the big steps |
 | Stop lines | The run reports' rows and tallies, judged by each part's end verifier |
