@@ -10,3 +10,7 @@ go.sum       text eol=lf
 # included. The CRLF and BOM trick files are the point. This line must stay after `*.yaml text eol=lf`: the last
 # matching line wins.
 formats/** -text
+
+# The reference page of lists (docs/reference/lists.md) is generated, and its test compares it byte for byte with what the
+# code builds: LF on every checkout, Windows' core.autocrlf included.
+docs/reference/lists.md text eol=lf
