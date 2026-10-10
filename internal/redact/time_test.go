@@ -26,20 +26,23 @@ func repeatTo(unit string, size int) string {
 	return strings.Repeat(unit, size/len(unit)+1)[:size]
 }
 
-// mixedText is size bytes of the kind of text the redactor meets: prose, YAML and JSON with secrets in them, a URL
-// with credentials, headers, flags, a table, base64 and long runs of glued words.
+// mixedText is size bytes of the kind of text the redactor meets: notes, YAML and JSON holding secrets, a mirror URL
+// with credentials, a header, flags, a table, an attachment's base64 and long runs of glued words.
 func mixedText(size int) string {
 	m := newMaker(21)
 	block := strings.Join([]string{
-		"# Notes for the next session", "",
-		"Two drafts, or three? I have 2 ready. Merged at 3f1c2a9e8b7d6c5f4e3d2c1b0a9f8e7d6c5b4a3f.",
-		"vault:", "  password: hunter2", "  api_key: " + m.secret(16), "roles:", "  deploy-token: read", "token:", "  hunter2",
-		`{"apiKey": "` + m.secret(20) + `", "user": "pat", "url": "https://builder:` + m.secret(10) + `@example.com/r.git"}`,
-		`curl -H "Authorization: Bearer ` + m.secret(24) + `" https://api.example.com/v2?api_key=` + m.secret(12) + "&x=1",
-		"| id | what | where | who |", "|---|---|---|---|", "| 7 | a table row | docs/notes.md | builder |",
-		`tool --password "` + m.secret(8) + ` -u root; git -c http.extraHeader="AUTHORIZATION: basic aHVudGVyMg==" push`,
-		"blob " + strings.Repeat("QmFzZTY0IGJsb2Igb2YgdGV4dA", 30),
-		"run " + gluedWords("_", 3000), "run " + gluedWords("-", 3000), "run " + gluedWords(".", 3000) + " " + strings.Repeat("a+", 1500) + "://",
+		"## Release checklist", "",
+		"Tag the build after review; commit 9be04c7d21aa3f58e6b1c0d4f7a29e83b5c6d1f0 is the last green one.",
+		"rollout:", "  region: eu-west", "  access_key: " + m.secret(18), "  passwd: Zq81", "  readers: [ops, qa]",
+		"secret:", "\t" + m.secret(10),
+		`[{"name": "cache", "client_secret": "` + m.secret(22) + `"}, {"name": "queue", "port": 5672}]`,
+		"mirror https://mirror:" + m.secret(9) + "@pkgs.example.org/simple and retry",
+		`wget --header "Proxy-Authorization: Basic ` + m.secret(20) + `" -q https://dl.example.org/x.tgz?access_token=` + m.secret(14),
+		"| step | owner | state |", "| -- | -- | -- |", "| sign | release | done |",
+		"tool sync --api-key '" + m.secret(12) + "' --dry-run; git -c http.extraheader=\"Bearer " + m.secret(16) + "\" pull",
+		"attachment " + strings.Repeat("U29tZSBhdHRhY2hlZCBieXRlcw", 30),
+		"glued " + gluedWords("_", 3000), "glued " + gluedWords("-", 3000),
+		"glued " + gluedWords(".", 3000) + " " + strings.Repeat("a+", 1500) + "://",
 		"",
 	}, "\n")
 	return repeatTo(block, size)
@@ -56,11 +59,11 @@ func TestLinearTime(t *testing.T) {
 		{"26 KB of secret words glued by .", gluedWords(".", 26*kb)},
 		{"26 KB of secret words glued", gluedWords("", 26*kb)},
 		{"1 MB of mixed text", mixedText(1024 * kb)},
-		{"1 MB of names after names", repeatTo(`a bearer password: "x" then vault: token: y, --token api_key: z, Authorization: Bearer token: w, extraheader= bearer abcdefgh123`+"\n", 1024*kb)},
+		{"1 MB of names after names", repeatTo(`use Bearer secret= 'k1' as before; store: passwd= m2, -password access_key= n3; Proxy-Authorization: Token pwd= p4 extraHeader= BEARER zyxw98765`+"\n", 1024*kb)},
 		{"1 MB of token=password= glued", repeatTo("token=password=", 1024*kb)},
 		{"1 MB of quotes left open", repeatTo(`token: "x `, 1024*kb)},
-		{"1 MB of Authorization: Bearer", repeatTo("Authorization: Bearer ", 1024*kb)},
-		{"1 MB of authorization=", repeatTo("authorization=", 1024*kb)},
+		{"1 MB of PROXY-AUTHORIZATION: digest", repeatTo("PROXY-AUTHORIZATION:\tdigest ", 1024*kb)},
+		{"1 MB of x-authorization=", repeatTo("x-authorization=", 1024*kb)},
 		{"1 MB of a bearer Token=x", repeatTo("a bearer Token=x ", 1024*kb)},
 		{"1 MB of names at line ends", repeatTo("password:\n", 1024*kb)},
 		{"1 MB of quotes after a separator", repeatTo(`x' token='`, 1024*kb)},

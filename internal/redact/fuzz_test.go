@@ -9,12 +9,12 @@ import (
 // plants are lines that hold a made-up secret no context may keep: each starts its own line, so a name before it
 // cannot hide it, and whatever text surrounds it, its secret goes.
 var plants = []string{
-	"password=%s",
-	"--token %s",
-	"Authorization: Bearer %s",
-	"use a bearer %s",
-	`"apiKey": "%s"`,
-	"git -c http.extraheader=%s",
+	"passwd=%s",
+	"--secret %s",
+	"Authorization: Basic %s",
+	"send as bearer %s",
+	`"authKey": "%s"`,
+	"-c http.extraHeader=%s",
 	"ghp_%s",
 }
 
@@ -24,10 +24,11 @@ const plantedSecret = "Qx7Rv2Lm9Tz4Wk8Pn3Hc6Jd5"
 // and a secret planted on a line of its own, in whatever text, never survives.
 func FuzzRedact(f *testing.F) {
 	for _, s := range []string{
-		"", "password=hunter2", "a bearer password: \"hunter2\"", "secrets:\n  token: x\n", "Authorization: Bearer \"x y\"",
-		"git -c http.extraHeader= {\"apiKey\": \"x\"}", "--password \"x {\"token\": \"y\"}", "paſſword = x",
-		"x-token-authorization= 'password'= y", "-----BEGIN RSA PRIVATE KEY-----\nabc", "token: \"x token=\"a b\" c",
-		"AKIAIOSFODNN7EXAMPLEXYZ", "https://u:p@example.com", "password:\n  hunter2\n", "Authorization: token : x",
+		"", "passwd=Hq7v", "a bearer password: \"hunter2\"", "store:\n  secret: Hq7v\n", "Proxy-Authorization: Token \"Hq 7v\"",
+		"git -c http.extraheader= {\"authKey\": \"Hq7v\"}", "--secret \"Hq {\"passwd\": \"7v\"}", "pa\u017f\u017fphrase\u00a0= Hq7v",
+		"my-secret-authorization= 'passwd'= Hq7v", "-----BEGIN OPENSSH PRIVATE KEY-----\nb3Bl", "secret: \"Hq passwd=\"7 v\" w",
+		"AKIAIOSFODNN7EXAMPLE9QPASSWORD: Zt5", "ftp+ssh://deploy:Zk4q@files.example.org", "vault_token:\n\tQ8m2Lk\n",
+		"proxy-authorization= Token := y7Gh",
 	} {
 		f.Add(s)
 	}

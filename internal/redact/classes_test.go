@@ -11,9 +11,10 @@ import (
 // Each string here plants a distinct made-up secret in every value slot; none may survive, and every output is a
 // fixed point at every cut.
 
-// framings puts a string at the start, after a word, before more words, and on a line of its own.
+// framings puts a string at the start, after a word, before more words, and on a line of its own between a line and
+// a CRLF line holding a key with no secret word.
 func framings(s string) []string {
-	return []string{s, "note " + s, s + " and more words after it", "x\n" + s + "\r\nnext: line\n"}
+	return []string{s, "seen " + s, s + " so the line goes on", "head\n" + s + "\r\nafter: it\n"}
 }
 
 // Class one: what follows an Authorization header's scheme word. A quoted token is a value like any other, and a
@@ -48,10 +49,10 @@ func TestAfterTheSchemeWord(t *testing.T) {
 	// A quote after the scheme that does not close on its line takes the word it opens: a token is one word, and the
 	// prose after it stays.
 	for in, want := range map[string]string{
-		`see Authorization: Bearer "hunter2, then more words`: "see Authorization: [redacted] then more words",
-		`Authorization: token 'hunter2`:                       "Authorization: [redacted]",
-		`Authorization: Basic "aHVudGVyMg==" ok`:              "Authorization: [redacted] ok",
-		"Authorization: token : hunter2":                      "Authorization: [redacted] [redacted]",
+		`read Authorization: Token "Tq83vz, and the line goes on`: "read Authorization: [redacted] and the line goes on",
+		`X-Upstream-Authorization: digest 'Tq83vz`:                "X-Upstream-Authorization: [redacted]",
+		`proxy-authorization: Basic "dXNlcjpwYXNz" fine`:          "proxy-authorization: [redacted] fine",
+		"AUTHORIZATION:\tTOKEN = Tq83vz":                          "AUTHORIZATION:\t[redacted] [redacted]",
 	} {
 		got := Text(in)
 		if got != want {
@@ -62,12 +63,12 @@ func TestAfterTheSchemeWord(t *testing.T) {
 }
 
 // valueTakers are names whose value would start where a second name stands.
-var valueTakers = []string{"secrets:", "TOKEN=", "--token", "a bearer", "Authorization:", "Authorization: Bearer",
-	"Authorization: token", "git -c http.extraHeader=", `"apiKey":`, "--client-secret", "db_password ="}
+var valueTakers = []string{"store:", "PASSWD=", "--secret", "use bearer", "Proxy-Authorization:", "authorization: Basic",
+	"Authorization:\ttoken", "http.extraheader=", `"clientSecret":`, "--api-key", "db_passphrase ="}
 
 // seconds are second names, each with a slot for its secret.
-var seconds = []string{"password: %s", "api_key=%s", `"token": "%s"`, "--secret %s", "authorization: %s",
-	"bearer %s", "extraHeader=%s", "Password = '%s'", "x-auth-key:%s"}
+var seconds = []string{"passwd: %s", "access_key=%s", `"secret": "%s"`, "--token %s", "proxy-authorization: %s",
+	"bearer %s", "extraheader=%s", "PassPhrase = '%s'", "x-api-key:%s"}
 
 // Class two: a second name not at the very start of the first name's value: behind punctuation, one character in,
 // behind another extraHeader=, or with any whitespace before its `:` or `=`.
@@ -116,9 +117,9 @@ func TestNamesInARow(t *testing.T) {
 	m := newMaker(13)
 	n := 0
 	for _, first := range valueTakers {
-		for _, mid := range []string{"password:", "token=", "--secret", "bearer", "Authorization:"} {
+		for _, mid := range []string{"secret:", "passwd=", "--token", "Bearer", "authorization="} {
 			for _, p := range []string{"(", "{", "[", "`", "<", "\""} {
-				for _, f := range framings(first + " " + mid + " " + p + "api_key: %s" + p) {
+				for _, f := range framings(first + " " + mid + " " + p + "auth_key: %s" + p) {
 					s := m.secret(12)
 					checkGone(t, fmt.Sprintf(f, s), s)
 					n++
@@ -126,30 +127,30 @@ func TestNamesInARow(t *testing.T) {
 			}
 		}
 		// A name that takes extraheader= as its value, the rest of that value after a key's value.
-		for _, f := range framings(first + " extraheader= password:%s;x9%s") {
+		for _, f := range framings(first + " extraHeader= passwd:%s;q7%s") {
 			s1, s2 := m.secret(10), m.secret(10)
 			checkGone(t, fmt.Sprintf(f, s1, s2), s1, s2)
 			n++
 		}
 		// A quote left open before a name at the line's end, the second value on the line below.
 		s1, s2 := m.secret(10), m.secret(10)
-		checkGone(t, fmt.Sprintf("%s password: \"%s more  password:\n  %s\n", first, s1, s2), s1, s2)
+		checkGone(t, fmt.Sprintf("%s secret: \"%s and then  passwd:\n  %s\n", first, s1, s2), s1, s2)
 		n++
 	}
 	// A header name holding a secret word, a quoted secret word, a separator and a value.
 	for _, sep := range []string{"=", ":"} {
 		for _, q := range []string{"'", "\""} {
 			s := m.secret(12)
-			checkGone(t, fmt.Sprintf("x-token-authorization%s %spassword%s%s %s", sep, q, q, sep, s), s)
+			checkGone(t, fmt.Sprintf("my-secret-authorization%s %spasswd%s%s %s", sep, q, q, sep, s), s)
 			n++
 		}
 	}
 	// A key's open quote, then a flag and a quoted key glued after it: no cut of the output changes on a second pass.
-	for _, first := range []string{"token=", "secret: ", "--password "} {
+	for _, first := range []string{"passwd=", "token: ", "--secret "} {
 		s := m.secret(12)
-		checkGone(t, fmt.Sprintf(`%s"mysql --password "apiKey": "%s"`, first, s), s)
+		checkGone(t, fmt.Sprintf(`%s"psql --secret "accessKey": "%s"`, first, s), s)
 		s = m.secret(12)
-		checkGone(t, fmt.Sprintf(`%s"hunter2 {"apiKey": "%s"}`, first, s), s)
+		checkGone(t, fmt.Sprintf(`%s"Tq83vz {"authKey": "%s"}`, first, s), s)
 		n += 2
 	}
 	if n < 1300 {
@@ -175,7 +176,7 @@ func TestOuterValueTakesTheInnerName(t *testing.T) {
 // Names packed together, each with its own made-up value: none survives.
 func TestManyNamesTogether(t *testing.T) {
 	m := newMaker(14)
-	parts := []string{"password: %s", "--token %s", "Authorization: Bearer %s", "bearer %s", "extraheader=%s", "\"secret\": \"%s\"", "TOKEN=%s"}
+	parts := []string{"passwd: %s", "--secret %s", "Authorization: Digest %s", "bearer %s", "extraHeader=%s", "\"apiKey\": \"%s\"", "SIGNING_TOKEN=%s"}
 	// Glued with nothing between, a flag or a Bearer would not start a word, and would be no name.
 	glue := []string{" ", ", ", "\n", " (", "\t", "; ", "\r\n"}
 	for round := 0; round < 200; round++ {
@@ -205,26 +206,26 @@ func TestShapeGluedToAName(t *testing.T) {
 	add := func(kind, before, secret, after string) {
 		shapes = append(shapes, shape{kind, before + secret + after, secret})
 	}
-	add("private key with no END line", "-----BEGIN EC PRIVATE KEY-----\n", m.from(b64, 48), "")
-	add("Discord webhook", "https://discord.com/api/webhooks/42/", m.secret(24), "")
-	add("Slack webhook", "https://hooks.slack.com/services/T07/", m.secret(20), "")
-	add("Slack webhook in capitals", "HTTPS://HOOKS.SLACK.COM/services/", m.secret(20), "")
-	add("credentials in a URL", "https://builder:", m.secret(12), "@example.com/team")
-	add("Anthropic key", "sk-ant-api03-", m.secret(30), "")
-	add("OpenAI-style key", "sk-proj-", m.secret(26), "")
-	add("Stripe-style key", "rk_live_", m.secret(20), "")
-	add("GitHub fine-grained token", "github_pat_", m.secret(30), "")
-	add("GitHub token", "gho_", m.secret(30), "")
-	add("Slack token", "xoxp-2718281828-", m.secret(16), "")
-	add("npm token", "npm_", m.secret(36), "")
-	add("AWS key id", "ASIA", strings.ToUpper(m.secret(16)), "")
-	add("Google API key", "AIza", m.from(urlsafe, 35), "")
-	add("Google OAuth token", "ya29.", m.secret(30), "")
-	add("JSON web token", "eyJ"+m.from(urlsafe, 12)+"."+m.from(urlsafe, 16)+".", m.from(alnum, 20), "")
-	add("a long random run", "", m.secret(40), "")
+	add("private-key, no END line", "-----BEGIN DSA PRIVATE KEY-----\n", m.from(b64, 48), "")
+	add("webhook-url, discord.com", "https://discord.com/api/webhooks/42/", m.secret(24), "")
+	add("webhook-url, Slack", "https://hooks.slack.com/services/T07/", m.secret(20), "")
+	add("webhook-url, Slack in capitals", "HTTPS://HOOKS.SLACK.COM/services/", m.secret(20), "")
+	add("url-credentials", "https://ci:", m.secret(12), "@pkgs.example.org/team")
+	add("anthropic-key", "sk-ant-api03-", m.secret(30), "")
+	add("openai-key", "sk-proj-", m.secret(26), "")
+	add("stripe-key", "rk_live_", m.secret(20), "")
+	add("github-token, fine-grained", "github_pat_", m.secret(30), "")
+	add("github-token, OAuth", "gho_", m.secret(30), "")
+	add("slack-token", "xoxp-2718281828-", m.secret(16), "")
+	add("npm-token", "npm_", m.secret(36), "")
+	add("aws-key-id", "ASIA", strings.ToUpper(m.secret(16)), "")
+	add("google-api-key", "AIza", m.from(urlsafe, 35), "")
+	add("google-oauth-token", "ya29.", m.secret(30), "")
+	add("jwt", "eyJ"+m.from(urlsafe, 12)+"."+m.from(urlsafe, 16)+".", m.from(alnum, 20), "")
+	add("random-run", "", m.secret(40), "")
 	names := []string{
 		"password: %s", "token=%s", "api_key = '%s'", "secret\":\"%s\"", "--password %s", "-token %s",
-		"--client-secret %s", "authorization: Bearer %s", "authorization=%s", "proxy-authorization: token %s",
+		"--client-secret %s", "upstream-authorization: bearer %s", "authorization=%s", "proxy-authorization: token %s",
 		"bearer %s", "extraheader=%s", "extraheader= %s",
 	}
 	glues := []string{"", "_", "-", ".", "/", ",", ";", "&", "?", "=", ":"}
@@ -235,7 +236,7 @@ func TestShapeGluedToAName(t *testing.T) {
 		for _, g := range glues {
 			for _, nm := range names {
 				for _, form := range []string{nm, strings.Replace(strings.ToUpper(nm), "%S", "%s", 1)} {
-					for _, frame := range []string{"%s", "see %s and more"} {
+					for _, frame := range []string{"%s", "in the log %s and so on"} {
 						v := m.secret(12)
 						in := fmt.Sprintf(frame, sh.text+g+fmt.Sprintf(form, v))
 						out := Text(in)
