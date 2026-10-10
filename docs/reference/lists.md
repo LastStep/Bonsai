@@ -381,10 +381,10 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 
 ## Secret kinds
 
-- Closed list.
+- Open list.
 - Defined in: redact.Kinds (internal/redact/redact.go), in the order its rules run.
 - Printed in a project by: `bonsai check` (a `secret` finding names the kind it found).
-- The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value.
+- The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value. A new rule of the redactor adds a kind.
 
 | Kind | Takes out |
 |---|---|

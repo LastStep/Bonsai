@@ -81,8 +81,8 @@ func Page() []byte {
 	p.section("Log categories", "open", "format.LogCategories (internal/format/log.go)", "`bonsai check --schema bonsai.log`",
 		"Contract section 8.2's tool categories, in the log record's `category`; a pack's own are `<namespace>.<Name>`, and a reader shows a word it does not know as other.")
 	p.words(format.LogCategories)
-	p.section("Secret kinds", "closed", "redact.Kinds (internal/redact/redact.go), in the order its rules run", "`bonsai check` (a `secret` finding names the kind it found)",
-		"The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value.")
+	p.section("Secret kinds", "open", "redact.Kinds (internal/redact/redact.go), in the order its rules run", "`bonsai check` (a `secret` finding names the kind it found)",
+		"The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value. A new rule of the redactor adds a kind.")
 	p.secretKinds()
 	p.schemaLists()
 	// The contents go between the header and the sections.
