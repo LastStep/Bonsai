@@ -121,6 +121,11 @@ word: other agents and `AGENTS.md` (Q5), polish for strangers, layer overrides, 
   start in under 5 ms on Linux, because hooks call it on every tool call.
 - **Go version:** the module says `go 1.25` with a `toolchain` line. WSL's Go 1.24.2 builds it through Go's own toolchain
   download (measured: 42 s the first time, nothing installed). Windows has Go 1.26.2.
+
+  > **Changed 10 Oct (Rohan, step 5.7's section):** the `go` line stays `go 1.25.0`; on Rohan's word ("we can go with
+  > go 1.27 latest") the `toolchain` line moved to Go 1.27's newest patch (`go1.27.2`, landed 10 Oct), because Go 1.25
+  > has had no security fix since Go 1.27 came out (19 Aug 2026; 1.25.14 its last patch). govulncheck's pin moved with
+  > it (v1.8.0), and golangci-lint's (v2.14.0). The next such bump comes when Go 1.29 is out.
 - **Where it lives, so that every launch finds it and only Rohan replaces it.** WSL: `/usr/local/bin/bonsai`, owned by
   root. Windows: `C:\Program Files\Bonsai\bonsai.exe`, on the machine PATH, behind the UAC prompt. Both are Rohan's
   steps, once per Bonsai release on each side (vision A.1: machine pieces update on his word). A 5.x build is not a
@@ -939,8 +944,22 @@ only working clone; the ZenGarden one is left untouched (§17).
 7. **Homebrew** (Q8: "0.4.3 stays downloadable (Homebrew included)"): with the first new release, the tap gains a
    `bonsai@0.4` formula pinned to 0.4.3; `brew install bonsai` moves to the new product. The old website stays online on
    GitHub Pages until Rohan turns Pages off (optional). The first release is Rohan's word.
+
+   > **Changed 10 Oct (Rohan, step 5.7's section, 1 (A)):** no Homebrew for the new Bonsai. A Homebrew install lands
+   > outside the two places every project's hook lines name (§3's 9 Oct note, (a)), so it could never guard. The tap
+   > keeps `bonsai` at 0.4.3, unchanged, so 0.4.3 stays downloadable (Q8); there is no `bonsai@0.4` and no tap token,
+   > and no release writes outside Bonsai's repo. The new Bonsai installs with its installers (§3). Later, outside
+   > step 5: a Mac, and each platform's own package manager, each needing the guard's trusted places revisited first.
 8. **Supply chain** (vision A.9), in step 5.7: actions pinned by commit, goreleaser pinned, the re-release input removed,
    immutable releases, build provenance. Projects' CI pins the archive's SHA-256 (Q9).
+
+   > **Changed 10 Oct (step 5.7's section, approved by Rohan):** immutable releases are a repository setting, switched
+   > on by Rohan's line; GoReleaser builds in a job that cannot publish or sign; a second job, in the `release`
+   > environment and running nothing from the build, signs every archive, `checksums.txt` and every program with
+   > GitHub's artifact attestations, makes a draft, checks it, publishes it, and checks the release as published. The
+   > re-release input went in part 1 and the manual run now: `release.yml` runs on `vX.Y.Z` and `vX.Y.Z-rc.N` tags
+   > only, for a commit on `main` whose checks are green. The install lines check the record before unpacking (`gh
+   > attestation verify`). The packs' CI takes the 1.0 archive by its SHA-256 from the packs' 1.0 on.
 
 **Records** (Q9 b): Bonsai's tasks, plans and run reports live in this repo under Trinetra's task numbers and a one-pager
 `studio/features/F-bonsai.md`, so they show under Trinetra on the Desk for a few weeks (Q9's stated cost). They move to
@@ -997,7 +1016,7 @@ merge, waits included, so it overstates session time. A studio-day covers about 
 | 2 | The readers task (contract §15) | studio | 28-44 (contract's) | contract's |
 | 3 | **The walking skeleton** (below), beside slice 3 once slice 3's plan is approved, unless Rohan keeps slice 3 strictly first | Bonsai, on scratch copies | **30-47** AI hours, plus Rohan's hand checks (§17 step 6) | 61 (stop line 1) |
 | 4 | **Rohan's gate** on the measured numbers (§15): path (a), (b) or (d) | — | — | — |
-| 5 | The chosen path; path (a) below, in this order | Bonsai | **139-218** | per part |
+| 5 | The chosen path; path (a) below, in this order | Bonsai | **142.5-225.75** (139-218 before 5.7's trial, 10 Oct) | per part |
 | 6 | Bonsai proves and guards itself from 5.4 (question C: `bonsai ladder` on its own `bonsai.yaml`, with the pre-release Rohan installs), then links its packs (5.5); its records move to its repo; it registers as its own studio project (decision 4) | Bonsai | in 5.4-5.5 | — |
 | 7 | The studio links (after 5.5): `bonsai.yaml` from `game.yaml`, hooks and CI on `bonsai`, roles and protocols from the packs, the `.claude/agents/` and `studio/roles/` copies removed, `studio/STATE.md` moved to `.bonsai/STATE.md` with the references to it, the bridge reading `.bonsai/local/`, the machine installs of `bonsai` (Rohan's steps); one ordinary week on Bonsai; a plain `git revert` of the link tried once; then today's `tools/` guards, ladder and statusline retire | studio | 9-13 (my estimate; +1 for STATE's move, 7 Oct), plus contract §15.2's after-skeleton parts (22-37) from 5.2 on | — |
 | 8 | Mimas links last, in one step, on Rohan's yes (Q14 a), in Mimas's repo | Mimas | its own task | — |
@@ -1005,6 +1024,10 @@ merge, waits included, so it overstates session time. A studio-day covers about 
 | 10 | The first public release, on Rohan's word | Bonsai | — | — |
 
 > **Changed 9 Oct (Rohan):** row 4's gate chose path (a); row 9 is dropped: Bonsai has no screens (§11's note).
+
+> **Changed 10 Oct (Rohan, step 5.7's section, approved):** row 10 comes after a trial of Bonsai on itself on a public
+> pre-release that he installs, and his own trial on a fresh project (path (a)'s 5.7 row and its note); row 5 grows with
+> it, to 142.5-225.75.
 
 > **Changed 8 Oct (Rohan):** the schemas and trick files move out of row 2 into Bonsai, as its first job (`design/plan.md`
 > part 0, 6-10 h, the contract's figure for that part); the studio's readers task pins a copy. The skeleton (row 3)
@@ -1110,7 +1133,14 @@ dropped, C (c), D (a), and his format review (+16-23 h, below):
 | 5.4 Ladder runner | Rungs, process groups and job objects, one ladder at a time, leftovers, `mode`, the fingerprint, results in the main checkout's `.bonsai/local/ladder/`, rung 0's refusal of branch changes to the tables and of tracked `local/` files (13-19); floors, ratchets, Bless filing (4-6); new tests must fail, by name, with `base_setup` (7-12); git integrity (3-5); Bonsai's own `bonsai.yaml`, the switch from the interim proof and the pre-release build Rohan installs (question C, 1-2) | 28-44 | 57 |
 | 5.5 Packs | `base` and `workflow` from this repo's roles, protocols and templates; the always-on and skill split, the roles' `skills:` preloads; `claude plugin validate --json` in each pack's CI, failing on every warning but the missing `version`; the walls in base's deny rules and the studio's in `workflow`, each tried once on both sides (question B, 1-2) (13-21); the documentation in every template and pack file of `base` and `workflow`, and each deny rule's `why` (3-4); the pack template `packs/template/` with its CI and release, and Bonsai's CI job that runs it (3-5) | 19-30 | 39 |
 | 5.6 Machine pieces | `settings` (with `--machine` and `cache_keep_days`), `labels`, the personal memory layer and its check, the stranded-folder report (6-9); `status --line`, the workspace half of today's statusline (5-8); the installers for `/usr/local/bin` and `C:\Program Files\Bonsai` with `install.json` (2-3) | 13-20 | 26 |
-| 5.7 Release | The supply-chain fixes, `release.yml` back to tag runs inside the `release` environment and switched on again (Rohan's step, §17), `bonsai@0.4`, the README | 6-11 | 14 |
+| 5.7 Release | The supply-chain fixes, `release.yml` back to tag runs inside the `release` environment and switched on again (Rohan's step, §17), `bonsai@0.4` (dropped 10 Oct: §12 step 7's note), the README; and, from 10 Oct, a trial of Bonsai on itself on a pre-release (the note below) | 9.5-18.75 (6-11 before the trial) | 24 |
+
+> **Changed 10 Oct (Rohan, step 5.7's section, approved):** before 1.0, a trial of Bonsai on itself on a public
+> pre-release, `v1.0.0-rc.1`, which he installs: a small real feature he picks, built through the whole pipeline on
+> Bonsai's own repo, its results analysed for him, fixes as further pre-releases (`rc.2` always, since the feature lands
+> after rc.1); then his own trial on a fresh project; then his word for 1.0 on the same code as the last pre-release.
+> 5.7 becomes 9.5-18.75 hours, re-ask at 24 (the trial adds 3.5-7.75); step 5 becomes 142.5-225.75, and this path's
+> 139-218 and the totals below grow by the same. `design/plan-5.md`, "Step 5.7".
 
 Rohan's answer B took out `walls --print` (5.6, about 1 h) and the probe script for pin raises (5.7, about 2-3 h), and
 the uncosted work round the managed file: the orchestrator writing and checking it, the second batch's probe, and
@@ -1325,6 +1355,14 @@ gh workflow disable release.yml -R LastStep/Bonsai
 > ```
 >
 > Not confirmed yet: that the old tap token was revoked on github.com. There is no `rebuild` branch (§12's note).
+
+> **Changed 10 Oct (step 5.7's section, Rohan's answers of 10 Oct):** no new tap token: the `release` environment holds
+> no secret. The environment asks Rohan's approval before each release run, in place of the optional tag ruleset.
+> Immutable releases are switched on with `gh api -X PUT repos/LastStep/Bonsai/immutable-releases`. Tag rules stop
+> `base-v*` tags in Bonsai's repo and `v*` tags in the workflow repo being moved or deleted, and the workflow repo's
+> releases are locked too. The old token's revocation is confirmed in batch 1; the release workflow is switched back
+> on there, last ("At step 5.7, on your word, switch it back on" stands). `design/plan-5.md`, "Step 5.7", batch 1,
+> has every line and its read-back.
 
 **5. Optional: the administrators' bypass on Bonsai's `main`** (your account, admin on the repo; any time). The ruleset
 `main-protection` (read on 7 Oct) asks for a pull request and a green `test` check, refuses force pushes and deletion,
