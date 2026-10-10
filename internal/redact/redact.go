@@ -396,14 +396,6 @@ func (d *doc) render() {
 	d.text = string(b)
 }
 
-// tlen is a piece's length in the current text.
-func (g seg) tlen() int {
-	if g.marker {
-		return len(Marker)
-	}
-	return g.ol
-}
-
 // mapSpans turns spans of the current text into spans of orig, sorted. A span that starts or ends inside a marker
 // takes the whole of what that marker stands for.
 func (d *doc) mapSpans(in []Span) []Span {

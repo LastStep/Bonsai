@@ -1,7 +1,9 @@
 package clean
 
 // The budget: a run on a folder of many files stops when its budget runs out, cleans what it judged before that, and
-// the next runs go on from there until the folder is clean.
+// the next runs go on from there until the folder is clean. Each delete is slowed to a fixed pace through removeFile,
+// so the test holds on a fast machine (which would otherwise clean every file inside one budget) and on a slow CI
+// runner (where listing 600 files once took longer than a 100 ms budget, and a run cleaned nothing).
 
 import (
 	"fmt"
@@ -13,7 +15,8 @@ import (
 
 func TestBudgetStopsTheRun(t *testing.T) {
 	const files = 600
-	const budget = 100 * time.Millisecond
+	const budget = SessionEndBudget
+	const pace = 5 * time.Millisecond // each delete's floor: at most about 200 files in one budget
 	l := project(t, "  log:\n    keep_days: 30\n")
 	dir := filepath.Join(l.Main, ".bonsai", "local", "log")
 	for i := 0; i < files; i++ {
@@ -25,6 +28,12 @@ func TestBudgetStopsTheRun(t *testing.T) {
 		}
 		stamp(t, p, at)
 	}
+	slow := removeFile
+	removeFile = func(name string) error {
+		time.Sleep(pace)
+		return slow(name)
+	}
+	t.Cleanup(func() { removeFile = slow })
 	o := opts(l)
 	o.Budget = budget
 	start := time.Now()

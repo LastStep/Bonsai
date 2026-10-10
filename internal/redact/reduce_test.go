@@ -116,7 +116,7 @@ func TestTarget(t *testing.T) {
 		{"Read", obj("file_path", `d:\CODE\App\src\main.go`), winRoot, "", "src/main.go"},
 		{"Read", obj("file_path", `D:\code\app`), winRoot, "", "."},
 		{"Read", obj("file_path", `D:\code\apple\x.txt`), winRoot, "", ""},
-		{"Read", obj("file_path", `E:\other\x.txt`), winRoot, "", ""},
+		{"Read", obj("file_path", `E:\elsewhere\x.txt`), winRoot, "", ""},
 		{"Read", obj("file_path", `D:\code\app\..\secrets.txt`), winRoot, "", ""},
 		{"Read", obj("file_path", "/srv/code/app/docs/a.md"), unixRoot, "", "docs/a.md"},
 		{"Read", obj("file_path", "/SRV/code/app/docs/a.md"), unixRoot, "", ""},
