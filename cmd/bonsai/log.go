@@ -64,7 +64,7 @@ its pattern and max; a number an integer or a decimal; a list its items separate
 			Help: "a label of the event, <namespace>.<name>=<value>; one or more, each name once"},
 		{Name: "--target", Value: "TEXT", Help: "what the event is about (an id, a key), redacted, cut to 200 characters"},
 		{Name: "--text", Value: "TEXT", Help: "a short text, redacted, cut to 300 characters"},
-		{Name: "--json", Help: "print the bonsai.logs/1 document (for programs), its written the record, instead of plain text"},
+		{Name: "--json", Help: "print the bonsai.logs/1 document (for programs) instead of plain text; written is the record"},
 	},
 	Exits: []Exit{
 		{Code: 0, Means: "the record was written"},
