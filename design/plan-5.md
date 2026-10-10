@@ -5737,7 +5737,7 @@ weighed.
 
 #### What exists, and what 5.1 to 5.6 will have added
 
-**On `main` at `648e132`** (5.1.0 to 5.1.8 landed; read each file; 5.1.8 changed none of them):
+**On `main` at `692cdae`** (5.1.0 to 5.1.8 landed; read each file; 5.1.8 changed none of them):
 - `.goreleaser.yaml` (v2): `./cmd/bonsai` for linux, darwin and windows on amd64 and arm64, `CGO_ENABLED=0`, ldflags
   `-s -w -X main.version={{.Version}}`, `mod_timestamp`, no `-trimpath`; archives `bonsai_<version>_<os>_<arch>`
   (`tar.gz`; `zip` on Windows) holding `LICENSE*` and `README*`; `checksums.txt`; a changelog from commit titles with
