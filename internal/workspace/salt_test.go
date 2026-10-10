@@ -6,7 +6,6 @@ package workspace
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -139,9 +138,9 @@ func TestSaltRefusesABadFile(t *testing.T) {
 	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv(HomeEnv, file)
-	if _, err := Salt(); err == nil || !strings.Contains(err.Error(), "next: ") || errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("a home that is a file: %v", err)
+	t.Setenv(HomeEnv, file) // Linux reads the salt as "not a folder", Windows as "not there", then cannot make it
+	if s, err := Salt(); err == nil || s != "" || !strings.Contains(err.Error(), "next: ") {
+		t.Errorf("a home that is a file: %q, %v", s, err)
 	}
 }
 
