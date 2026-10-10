@@ -198,10 +198,10 @@ func BuildUnlink(dir, home string) (_ *Plan, err error) {
 			p.Files = append(p.Files, &FileResult{Path: path, Result: Removed, Why: "a table Bonsai rebuilds", old: raw, remove: true})
 		}
 	}
-	if raw, exists, err := readFile(co.Root, GitignoreFile); err != nil {
+	if raw, exists, err := readFile(co.Root, workspace.GitignoreFile); err != nil {
 		return nil, err
 	} else if exists {
-		f := &FileResult{Path: GitignoreFile, Result: Removed, Why: "Bonsai's; .bonsai/local/ holds nothing", old: raw, remove: true}
+		f := &FileResult{Path: workspace.GitignoreFile, Result: Removed, Why: "Bonsai's; .bonsai/local/ holds nothing", old: raw, remove: true}
 		if countFiles(filepath.Join(co.Root, filepath.FromSlash(LocalDir))) > 0 {
 			f.Result, f.Why, f.remove = Released, "it stays while .bonsai/local/ holds files, so git does not show them; delete both "+
 				"when you no longer need them", false

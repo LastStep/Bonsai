@@ -350,12 +350,12 @@ func (r *CheckResult) checkSettings(lf workspace.LockedFile, mark func(string, s
 }
 
 func (r *CheckResult) checkGitignore() {
-	raw, exists, _ := readFile(r.Root, GitignoreFile)
+	raw, exists, _ := readFile(r.Root, workspace.GitignoreFile)
 	switch {
 	case !exists:
-		r.add("gitignore", GitignoreFile, "", GitignoreFile+" is missing, so .bonsai/local/ could be committed", run("bonsai update --yes"))
-	case workspace.HashLF(raw) != workspace.HashLF([]byte(GitignoreText)):
-		r.add("gitignore", GitignoreFile, "", GitignoreFile+" was changed, so .bonsai/local/ could be committed", run("bonsai update --yes"))
+		r.add("gitignore", workspace.GitignoreFile, "", workspace.GitignoreFile+" is missing, so .bonsai/local/ could be committed", run("bonsai update --yes"))
+	case workspace.HashLF(raw) != workspace.HashLF([]byte(workspace.GitignoreText)):
+		r.add("gitignore", workspace.GitignoreFile, "", workspace.GitignoreFile+" was changed, so .bonsai/local/ could be committed", run("bonsai update --yes"))
 	}
 }
 

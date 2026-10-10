@@ -60,7 +60,7 @@ func TestUnlink(t *testing.T) {
 		t.Fatalf("the plan: %+v", p)
 	}
 	for path, want := range map[string]string{"demo/guide.md": Removed, "demo/start.md": Released, "CLAUDE.md": Updated,
-		SettingsFile: Updated, GitignoreFile: Released, "bonsai.yaml": Removed, workspace.TasksTableFile: Removed,
+		SettingsFile: Updated, workspace.GitignoreFile: Released, "bonsai.yaml": Removed, workspace.TasksTableFile: Removed,
 		workspace.SessionsTableFile: Removed} {
 		if got := result(t, p, path); got.Result != want {
 			t.Errorf("%s: %s (%s), want %s", path, got.Result, got.Why, want)
@@ -108,7 +108,7 @@ func TestUnlink(t *testing.T) {
 			t.Errorf("%s is still there", path)
 		}
 	}
-	for _, path := range []string{"demo/start.md", GitignoreFile, ".bonsai/local/log/s-1.ndjson", workspace.StateFile} {
+	for _, path := range []string{"demo/start.md", workspace.GitignoreFile, ".bonsai/local/log/s-1.ndjson", workspace.StateFile} {
 		if _, ok := after[path]; !ok {
 			t.Errorf("%s is gone", path)
 		}
@@ -156,7 +156,7 @@ func TestUnlinkLeavesEdits(t *testing.T) {
 	writeFile(t, root, "CLAUDE.md", strings.Replace(claude, "The demo pack is linked", "The demo pack (edited) is linked", 1))
 	p := unlinkPlan(t, e, root)
 	for path, want := range map[string]string{"demo/guide.md": Released, "demo/extra.md": Removed, "CLAUDE.md": Released,
-		SettingsFile: Removed, GitignoreFile: Removed} {
+		SettingsFile: Removed, workspace.GitignoreFile: Removed} {
 		if got := result(t, p, path); got.Result != want {
 			t.Errorf("%s: %s (%s), want %s", path, got.Result, got.Why, want)
 		}

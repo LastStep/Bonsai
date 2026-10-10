@@ -70,16 +70,9 @@ const (
 	Dropped     = "dropped"
 )
 
-// GitignoreFile and GitignoreText: .bonsai/.gitignore, written by Bonsai (spec §6, contract §3).
-const (
-	GitignoreFile = ".bonsai/.gitignore"
-	GitignoreText = "# .bonsai/.gitignore: written by Bonsai (spec section 6). .bonsai/local/ holds this checkout's log, questions\n" +
-		"# and ladder results, never committed. Bonsai writes this file again when it is missing or changed.\n" +
-		"local/\n"
-)
-
-// LocalDir is the project's folder that is never committed (contract §3).
-const LocalDir = ".bonsai/local"
+// LocalDir is the project's folder that is never committed (contract §3); its one home is workspace.LocalDir, beside
+// .bonsai/.gitignore's text (workspace.GitignoreFile, workspace.GitignoreText), which every writer of it restores.
+const LocalDir = workspace.LocalDir
 
 // Request is what a person asked init or update to do.
 type Request struct {
@@ -866,19 +859,19 @@ func Build(req Request) (_ *Plan, err error) {
 	p.Files = append(p.Files, sf)
 
 	// .bonsai/.gitignore.
-	gi, giExists, err := readFile(co.Root, GitignoreFile)
+	gi, giExists, err := readFile(co.Root, workspace.GitignoreFile)
 	if err != nil {
 		return nil, err
 	}
-	gf := &FileResult{Path: GitignoreFile, old: gi, Result: Unchanged}
+	gf := &FileResult{Path: workspace.GitignoreFile, old: gi, Result: Unchanged}
 	switch {
 	case !giExists:
-		gf.Result, gf.Why, gf.write = Created, "keeps .bonsai/local/ out of git", []byte(GitignoreText)
+		gf.Result, gf.Why, gf.write = Created, "keeps .bonsai/local/ out of git", []byte(workspace.GitignoreText)
 		if !p.FirstLink {
 			gf.Result, gf.Why = Restored, "missing: written again"
 		}
-	case workspace.HashLF(gi) != workspace.HashLF([]byte(GitignoreText)):
-		gf.Result, gf.Why, gf.write = Restored, "changed: Bonsai's copy written again", []byte(GitignoreText)
+	case workspace.HashLF(gi) != workspace.HashLF([]byte(workspace.GitignoreText)):
+		gf.Result, gf.Why, gf.write = Restored, "changed: Bonsai's copy written again", []byte(workspace.GitignoreText)
 	}
 	p.Files = append(p.Files, gf)
 

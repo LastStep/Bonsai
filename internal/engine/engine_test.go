@@ -259,8 +259,8 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 	if got := strings.Join(kinds, " "); got != ".claude/settings.json=keys CLAUDE.md=block demo/guide.md=pack demo/start.md=once" {
 		t.Errorf("lock files %s", got)
 	}
-	if read(t, root, GitignoreFile) != GitignoreText {
-		t.Errorf(".bonsai/.gitignore %q", read(t, root, GitignoreFile))
+	if read(t, root, workspace.GitignoreFile) != workspace.GitignoreText {
+		t.Errorf(".bonsai/.gitignore %q", read(t, root, workspace.GitignoreFile))
 	}
 	if got := read(t, root, "demo/guide.md"); got != "# Guide\n\nEdition 1.\n" {
 		t.Errorf("guide.md %q", got)
@@ -325,7 +325,7 @@ func TestCheck2NoAbsolutePath(t *testing.T) {
 	e := setup(t)
 	root := testpack.Project(t, e.tmp, "fresh")
 	e.link(t, root, e.pack.A)
-	for _, rel := range []string{"bonsai.yaml", workspace.LockFile, SettingsFile, "CLAUDE.md", GitignoreFile, "demo/guide.md", "demo/start.md"} {
+	for _, rel := range []string{"bonsai.yaml", workspace.LockFile, SettingsFile, "CLAUDE.md", workspace.GitignoreFile, "demo/guide.md", "demo/start.md"} {
 		s := read(t, root, rel)
 		for _, abs := range []string{root, filepath.ToSlash(root), e.home, filepath.ToSlash(e.home)} {
 			if strings.Contains(s, abs) {
@@ -352,7 +352,7 @@ func TestCheck3CRLF(t *testing.T) {
 			t.Errorf("lock key %q", path)
 		}
 	}
-	for _, rel := range []string{"bonsai.yaml", workspace.LockFile, SettingsFile, "CLAUDE.md", GitignoreFile, "demo/guide.md", "demo/start.md"} {
+	for _, rel := range []string{"bonsai.yaml", workspace.LockFile, SettingsFile, "CLAUDE.md", workspace.GitignoreFile, "demo/guide.md", "demo/start.md"} {
 		writeFile(t, root, rel, strings.ReplaceAll(read(t, root, rel), "\n", "\r\n"))
 	}
 	r, err := checkLocal(t, root, e.home)
@@ -637,7 +637,7 @@ func TestMissingFiles(t *testing.T) {
 	e := setup(t)
 	root := testpack.Project(t, e.tmp, "missing")
 	e.link(t, root, e.pack.A)
-	for _, rel := range []string{"demo/guide.md", "demo/start.md", GitignoreFile} {
+	for _, rel := range []string{"demo/guide.md", "demo/start.md", workspace.GitignoreFile} {
 		if err := os.Remove(filepath.Join(root, filepath.FromSlash(rel))); err != nil {
 			t.Fatal(err)
 		}
@@ -652,7 +652,7 @@ func TestMissingFiles(t *testing.T) {
 	}
 	p := e.apply(t, root, Request{})
 	if result(t, p, "demo/guide.md").Result != Restored || result(t, p, "demo/start.md").Result != LeftMissing ||
-		result(t, p, GitignoreFile).Result != Restored {
+		result(t, p, workspace.GitignoreFile).Result != Restored {
 		t.Errorf("plan:\n%s", p.Preview(false))
 	}
 	if _, err := os.Stat(filepath.Join(root, "demo", "start.md")); !os.IsNotExist(err) {
