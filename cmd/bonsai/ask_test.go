@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/format"
@@ -50,6 +51,10 @@ func (c *cli) localFiles() map[string]string {
 func TestAskCommands(t *testing.T) {
 	c := newCLI(t)
 	t.Setenv(asks.SessionEnv, "")
+	// A clock a second a record from 2026-10-08 12:00 UTC, so the list's newest-first order is the test's.
+	defer func(f func() time.Time) { asksNow = f }(asksNow)
+	tick := time.Date(2026, 10, 8, 12, 0, 0, 0, time.UTC)
+	asksNow = func() time.Time { tick = tick.Add(time.Second); return tick }
 	// Not linked: exit 4, not-linked naming bonsai init, the workspace null.
 	code, out, errOut := c.run("", "asks")
 	if code != 4 || !strings.Contains(errOut, "next: run bonsai init") {

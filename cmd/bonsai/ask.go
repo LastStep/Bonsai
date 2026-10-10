@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/engine"
@@ -20,6 +21,9 @@ import (
 )
 
 func init() { register(askWord) }
+
+// asksNow is the clock an ask, answer or resolve record's at is read from; a test sets it.
+var asksNow = time.Now
 
 // askFiling are the flags that file an ask, which --resolve and --status do not take.
 var askFiling = []string{"--type", "--title", "--why", "--then", "--task", "--doc", "--option", "--verdict", "--key"}
@@ -155,7 +159,7 @@ func askSite() (*asksSite, *engine.Error) {
 	}
 	local := workspace.FindLocal(co.Root, cfg.ID)
 	return &asksSite{co: co, cfg: cfg,
-		place: asks.Place{Workspace: cfg.ID, Local: local, Session: os.Getenv(asks.SessionEnv)},
+		place: asks.Place{Workspace: cfg.ID, Local: local, Session: os.Getenv(asks.SessionEnv), Now: asksNow},
 		ref:   &format.WorkspaceRef{ID: cfg.ID, Name: cfg.Name, Root: filepath.ToSlash(local.Main)}}, nil
 }
 
