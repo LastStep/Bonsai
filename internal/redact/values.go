@@ -452,19 +452,16 @@ func (st *state) cutTail(p, e int, virt, scheme bool) bool {
 	if virt && st.spanFrom(p) >= 0 && st.stack[st.spanFrom(p)].a < e {
 		return false
 	}
-	v := st.s[p:e]
-	if len(v) > len(Marker) {
-		return false
-	}
-	if strings.HasPrefix(Marker, v) {
+	if v := st.s[p:e]; len(v) <= len(Marker) && strings.HasPrefix(Marker, v) {
 		return true
 	}
 	if !scheme {
 		return false
 	}
-	low := strings.ToLower(v)
+	// A scheme word's start is read as authorization reads the word itself (widely), so a cut inside `Baſic` is the
+	// start of `basic` here as `Baſic` is `basic` there.
 	for _, w := range schemes {
-		if strings.HasPrefix(w, low) {
+		if startsWord(st.s, p, e, w, true) {
 			return true
 		}
 	}

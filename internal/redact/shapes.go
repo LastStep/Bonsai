@@ -212,9 +212,11 @@ func pemLine(s string, i int) (int, bool) {
 	return k + 5, true
 }
 
-// hasPrefixFold is strings.HasPrefix ignoring ASCII case.
+// hasPrefixFold reports whether p (lower-case ASCII) starts at byte i of s, ignoring ASCII case only, as the studio's
+// URL rules read a host and a path (its `i` flag without `u`).
 func hasPrefixFold(s string, i int, p string) bool {
-	return len(s)-i >= len(p) && strings.EqualFold(s[i:i+len(p)], p)
+	_, ok := matchWord(s, i, p, false)
+	return ok
 }
 
 // urlScheme reads `http://` or `https://` (any case) at i and gives where it ends.

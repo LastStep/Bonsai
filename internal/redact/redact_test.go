@@ -226,6 +226,65 @@ func TestCaseFolding(t *testing.T) {
 	}
 }
 
+// A word is read under one folding wherever it is read, and so is every start of it a cut can leave: a scheme word
+// after an Authorization header in every form simple case folding matches (each letter small or capital, an s also
+// the long s, a k also the Kelvin sign), its token taken and every cut of the output a fixed point, each start of the
+// word kept as a cut tail; and every secret word as a key and as a flag in every fold of its s and k, the same.
+func TestEveryFoldAndItsCuts(t *testing.T) {
+	m := newMaker(16)
+	headers := []string{"Authorization: ", "proxy-authorization=", "X-AUTHORIZATION:\t", "x-upstream-authorization = ",
+		"Authorization: ", "authorization: '"}
+	n := 0
+	for _, scheme := range schemes {
+		for _, form := range folds(scheme, true) {
+			for _, h := range headers {
+				s := m.secret(14)
+				checkGone(t, h+form+" "+s+" after", s)
+				checkGone(t, "x\n"+h+form+"\t"+s, s)
+				n += 2
+				// What a cut leaves of the scheme word is a cut tail, kept with or without whitespace after it.
+				for k := range form {
+					for _, tail := range []string{form[:k], form[:k] + " "} {
+						if in := h + tail; k > 0 && Text(in) != in {
+							t.Errorf("Text(%q) = %q, want it kept", in, Text(in))
+						}
+					}
+				}
+				if in := h + form + " "; Text(in) != in {
+					t.Errorf("Text(%q) = %q, want it kept", in, Text(in))
+				}
+			}
+		}
+	}
+	for _, w := range keywords {
+		for _, form := range folds(w, false) {
+			for _, f := range []string{"%s: %s", "db_%s=%s", "\"%s\" : \"%s\"", "x-%s=\n  %s\nnext"} {
+				s := m.secret(14)
+				checkGone(t, fmt.Sprintf(f, form, s), s)
+				n++
+			}
+		}
+	}
+	for _, w := range flagWords {
+		for _, form := range folds(w, false) {
+			for _, f := range []string{"run --%s %s now", "-%s\t'%s x'", "tool --db-%s %s"} {
+				s := m.secret(14)
+				checkGone(t, fmt.Sprintf(f, form, s), s)
+				n++
+			}
+		}
+	}
+	for _, form := range folds("bearer", true) {
+		s := m.secret(14)
+		checkGone(t, "send it as "+form+" "+s+" now", s)
+		n++
+	}
+	t.Logf("%d strings", n)
+	if n < 4000 {
+		t.Errorf("only %d strings", n)
+	}
+}
+
 // Any character JavaScript's \s matches may stand between a name and its separator.
 func TestEveryWhitespaceBeforeTheSeparator(t *testing.T) {
 	spaces := []rune{'\t', '\v', '\f', ' ', 0xA0, 0x1680, 0x2000, 0x2005, 0x200A, 0x2028, 0x2029, 0x202F, 0x205F, 0x3000, 0xFEFF}

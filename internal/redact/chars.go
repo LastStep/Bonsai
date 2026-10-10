@@ -7,10 +7,14 @@ package redact
 // matches in any case under Unicode's simple case folding, so the long s (U+017F) counts as s and the Kelvin sign
 // (U+212A) as k: those two are the only characters outside ASCII that fold to an ASCII letter.
 //
-// Two readings of a name exist side by side. Where a name makes a value be taken out, it is read widely: case folded,
-// and its characters with the long s and the Kelvin sign among them. Where a rule holds a value back (a name on the
-// line below, a name glued after a quote, a lone word at the end), the name is read narrowly, ASCII only, so a value
-// is held back no more often than the narrow reading allows and more is taken out, never less.
+// Every word is read through one function, readWord, under foldIs: a word, and each start of it a cut can leave, are
+// read under the same folding wherever they are read. Two readings of a name exist side by side, and they differ on
+// purpose. Where a name makes a value be taken out, it is read widely: case folded, and its characters with the long
+// s and the Kelvin sign among them; a scheme word after an Authorization header, and what a cut leaves of it, are
+// read so too. Where a rule holds a value back (a name on the line below, a name glued after a quote, a lone word at
+// the end), the name is read narrowly, ASCII only, so a value is held back no more often than the narrow reading
+// allows and more is taken out, never less. The URL rules read a host and a path in ASCII case only, as the
+// studio's do.
 
 import "unicode/utf8"
 
@@ -99,16 +103,36 @@ func foldIs(r rune, c byte, wide bool) bool {
 	return false
 }
 
-// matchWord reports whether word (lower-case ASCII) starts at byte i of s, and where it ends.
-func matchWord(s string, i int, word string, wide bool) (int, bool) {
-	for k := 0; k < len(word); k++ {
+// readWord reads word (lower-case ASCII) from byte i of s, no further than byte end, each character matched by foldIs:
+// it gives where the reading stopped and how many of word's letters it matched. Every reading of a word goes through
+// it, so a word and each of its starts (what a cut leaves of it) are read under the same folding.
+func readWord(s string, i, end int, word string, wide bool) (int, int) {
+	k := 0
+	for k < len(word) && i < end {
 		r, n := runeAt(s, i)
-		if n == 0 || !foldIs(r, word[k], wide) {
-			return 0, false
+		if n == 0 || i+n > end || !foldIs(r, word[k], wide) {
+			break
 		}
 		i += n
+		k++
 	}
-	return i, true
+	return i, k
+}
+
+// matchWord reports whether word (lower-case ASCII) starts at byte i of s, and where it ends.
+func matchWord(s string, i int, word string, wide bool) (int, bool) {
+	e, k := readWord(s, i, len(s), word, wide)
+	if k < len(word) {
+		return 0, false
+	}
+	return e, true
+}
+
+// startsWord reports whether s[i:e] is a start of word (what a cut can leave of it): every character of it is word's
+// next letter, read as matchWord reads them.
+func startsWord(s string, i, e int, word string, wide bool) bool {
+	end, _ := readWord(s, i, e, word, wide)
+	return end == e
 }
 
 // skipSpace gives the first byte at or after i that is not whitespace (JavaScript's \s*).

@@ -42,6 +42,39 @@ func (m *maker) secret(n int) string {
 	return string(s)
 }
 
+// folds gives word (lower-case ASCII) in the forms simple case folding matches: an s as s, S or the long s, a k as k,
+// K or the Kelvin sign; every other letter small or capital in every combination (every), or all small and all
+// capitals (not every), so the forms stay few for a long word.
+func folds(word string, every bool) []string {
+	var out []string
+	for _, base := range []string{word, strings.ToUpper(word)} {
+		forms := []string{""}
+		for i := 0; i < len(word); i++ {
+			alts := []string{base[i : i+1]}
+			switch c := word[i]; {
+			case c == 's':
+				alts = []string{"s", "S", "ſ"}
+			case c == 'k':
+				alts = []string{"k", "K", "K"}
+			case every && c >= 'a' && c <= 'z':
+				alts = []string{word[i : i+1], strings.ToUpper(word[i : i+1])}
+			}
+			var next []string
+			for _, f := range forms {
+				for _, a := range alts {
+					next = append(next, f+a)
+				}
+			}
+			forms = next
+		}
+		out = append(out, forms...)
+		if every {
+			break // the forms already hold every case
+		}
+	}
+	return out
+}
+
 // survives reports what of secret the text still holds: a word of it (a maximal run of letters and digits, three or
 // more long) or a run of 6 or more of its characters. "" when nothing survives.
 func survives(text, secret string) string {
