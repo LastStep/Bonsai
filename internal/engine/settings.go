@@ -52,6 +52,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/recorder"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -79,20 +80,6 @@ const (
 	RecordEndTimeout = "5"
 )
 
-// RecordEvents are the events `bonsai hook record` records in the background (async), in the order the engine
-// writes their lines; SessionEnd's line comes after them, synchronous. SessionStart's record is hook start's.
-var RecordEvents = []struct{ Event, What string }{
-	{"UserPromptSubmit", "each prompt submitted (its kind only, never its words)"},
-	{"PreToolUse", "each tool call before it runs (the tool, its target reduced and redacted, a hash of its input)"},
-	{"PermissionRequest", "each permission the session asks for"},
-	{"PostToolUse", "each tool call that finished"},
-	{"PostToolUseFailure", "each tool call that failed or was interrupted"},
-	{"Notification", "each notice Claude Code gives a person (redacted)"},
-	{"SubagentStart", "each subagent run's start and the active task it found"},
-	{"SubagentStop", "each subagent run's end"},
-	{"Stop", "the end of each turn"},
-}
-
 // ownHooks is this build's table of Bonsai's own hook lines. Spec §7 lists four kinds: the guard (PreToolUse), the
 // stop gate (Stop), start (SessionStart) and the recorder (eleven events, async). This build writes the guard's,
 // start's and the recorder's (step 5.2.4): SessionStart's record is written by hook start itself, so the recorder's
@@ -110,12 +97,21 @@ func buildOwnHooks() []Line {
 			Why: "Gives each session (new, resumed, cleared or compacted) the active task, its last ladder result and this " +
 				"machine's labels, and records the session's start, with bonsai's own path and hash, in .bonsai/local/log/; never blocks."},
 	}
-	for _, e := range RecordEvents {
-		ls = append(ls, Line{Kind: "hook", Origin: "bonsai", Own: true, Event: e.Event, Command: RecordCommand, Timeout: RecordTimeout,
-			Async: true, Why: "Records " + e.What + " in the project's log, .bonsai/local/log/ (never committed), in the background; never blocks."})
+	// The recorder's lines, one per event it records (recorder.Events, their one home), in its order: async, but
+	// SessionEnd's; SessionStart's record is hook start's.
+	for _, e := range recorder.Events {
+		switch e.Agent {
+		case StartEvent:
+			continue
+		case RecordEndEvent:
+			ls = append(ls, Line{Kind: "hook", Origin: "bonsai", Own: true, Event: e.Agent, Command: RecordCommand, Timeout: RecordEndTimeout,
+				Why: "Records " + e.What + " in the project's log, .bonsai/local/log/; waits at most 5 s and never blocks."})
+		default:
+			ls = append(ls, Line{Kind: "hook", Origin: "bonsai", Own: true, Event: e.Agent, Command: RecordCommand, Timeout: RecordTimeout,
+				Async: true, Why: "Records " + e.What + " in the project's log, .bonsai/local/log/ (never committed), in the background; never blocks."})
+		}
 	}
-	return append(ls, Line{Kind: "hook", Origin: "bonsai", Own: true, Event: RecordEndEvent, Command: RecordCommand,
-		Timeout: RecordEndTimeout, Why: "Records the session's end in the project's log, .bonsai/local/log/; waits at most 5 s and never blocks."})
+	return ls
 }
 
 // OwnHookLines lists this build's own hook lines as the preview shows them, in the order the engine writes them.

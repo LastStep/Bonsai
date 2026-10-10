@@ -1,6 +1,7 @@
 package recorder
 
-// One payload as one bonsai.log/1 record (contract §8.1-§8.3; design/plan-5.md, 5.2.4 notes 4-7).
+// One payload as one bonsai.log/1 record (contract §8.1-§8.3; design/plan-5.md, 5.2.4 notes 4-7). The events are
+// Events, their one home.
 //
 // Beside the fields every record has (record.New: format, id, at, workspace, session, agent as claude-code, checkout
 // as the folder's name, branch, task and role from BONSAI_TASK and BONSAI_ROLE, labels as {}), each record names the
@@ -43,26 +44,44 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// eventNames maps the Claude Code events the recorder writes to the log's event (contract §8.3).
-var eventNames = map[string]string{
-	"SessionStart":       "session_start",
-	"UserPromptSubmit":   "prompt",
-	"PreToolUse":         "tool_start",
-	"PermissionRequest":  "permission",
-	"PostToolUse":        "tool_end",
-	"PostToolUseFailure": "tool_fail",
-	"Notification":       "notice",
-	"SubagentStart":      "subagent_start",
-	"SubagentStop":       "subagent_stop",
-	"Stop":               "stop",
-	"SessionEnd":         "session_end",
+// Event is one Claude Code event the recorder writes a record for (contract §8.3).
+type Event struct {
+	Agent string // the Claude Code hook event: the record's agent_event
+	Log   string // the log's event (contract §8.2)
+	What  string // what its record holds, as the preview's sentence for its hook line says it
 }
 
-// recorded reports an event `bonsai hook record` writes: every event of eventNames but SessionStart, whose record
+// Events are the Claude Code events Bonsai records, their one home: SessionStart (written by bonsai hook start) and
+// the ten bonsai hook record writes, in the order the engine writes their hook lines (engine.ownHooks reads this
+// table). A word of the log's events (format.LogEvents) for each.
+var Events = []Event{
+	{"SessionStart", "session_start", "the session's start, with the active task and bonsai's own path and hash"},
+	{"UserPromptSubmit", "prompt", "each prompt submitted (its kind only, never its words)"},
+	{"PreToolUse", "tool_start", "each tool call before it runs (the tool, its target reduced and redacted, a hash of its input)"},
+	{"PermissionRequest", "permission", "each permission the session asks for"},
+	{"PostToolUse", "tool_end", "each tool call that finished"},
+	{"PostToolUseFailure", "tool_fail", "each tool call that failed or was interrupted"},
+	{"Notification", "notice", "each notice Claude Code gives a person (redacted)"},
+	{"SubagentStart", "subagent_start", "each subagent run's start and the active task it found"},
+	{"SubagentStop", "subagent_stop", "each subagent run's end"},
+	{"Stop", "stop", "the end of each turn"},
+	{"SessionEnd", "session_end", "the session's end"},
+}
+
+// logEvent gives the log's event for a Claude Code event, "" for one Bonsai does not record.
+func logEvent(agent string) string {
+	for _, e := range Events {
+		if e.Agent == agent {
+			return e.Log
+		}
+	}
+	return ""
+}
+
+// recorded reports an event `bonsai hook record` writes: every event of Events but SessionStart, whose record
 // `bonsai hook start` writes (one process makes the session's file first).
 func recorded(event string) bool {
-	_, ok := eventNames[event]
-	return ok && event != "SessionStart"
+	return logEvent(event) != "" && event != "SessionStart"
 }
 
 // toolEvent reports the four events that describe one tool call.
@@ -89,8 +108,8 @@ var salt = workspace.Salt
 // build lays out the record of one payload, or nil for an event the recorder does not write. proj is the session's
 // checkout (the project's folder), local where it writes.
 func build(o Options, p *Payload, proj string, cfg *workspace.Config, local workspace.Local) *format.Log {
-	ev, ok := eventNames[p.Event]
-	if !ok {
+	ev := logEvent(p.Event)
+	if ev == "" {
 		return nil
 	}
 	l := record.New(ev, record.Common{Workspace: cfg.ID, Local: local, Session: p.Session, Agent: "claude-code",

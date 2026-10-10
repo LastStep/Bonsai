@@ -496,3 +496,22 @@ func TestLongPayload(t *testing.T) {
 		t.Errorf("%+v", l)
 	}
 }
+
+// Events is the one home of the events Bonsai records: each is a word of the log's events, once, in contract §8.3's
+// table, and the record for each names it.
+func TestEventsAreTheLogs(t *testing.T) {
+	known := map[string]bool{}
+	for _, w := range format.LogEvents {
+		known[w.Word] = true
+	}
+	seen := map[string]bool{}
+	for _, e := range Events {
+		if !known[e.Log] || seen[e.Agent] || e.What == "" {
+			t.Errorf("%+v: not a log event, twice, or no sentence", e)
+		}
+		seen[e.Agent] = true
+	}
+	if len(Events) != 11 || !recorded("SessionEnd") || recorded("SessionStart") || recorded("PreCompact") {
+		t.Errorf("%d events", len(Events))
+	}
+}
