@@ -117,12 +117,13 @@ such pair.
   (yours, or the studio's registration's; typed in a terminal of your own, not inside Claude); and installing a newer
   Bonsai release when `bonsai status` or `bonsai check` says one exists (six lines a side, run one at a time; if the
   fingerprint line does not print `OK`, or `True` in PowerShell, stop and send the orchestrator what it printed).
-- **At 5.7** (its section, "Step 5.7", comes to you first, with four decisions in it): three batches, about 45 minutes
-  in all. **Batch 1, the settings** (about 15 minutes, in WSL): a newer `gh` in WSL (your password; decision 2), a look
-  on github.com for the old Homebrew token, the `release` environment, GitHub's lock on published releases, and
-  switching the release workflow back on (a new tap token only if you choose Homebrew for the new Bonsai, decision 1).
-  **Batch 2, a rehearsal** (about 3 minutes; decision 3): one tag line for a pre-release, `1.0.0-rc.1`, and your
-  approval on GitHub (decision 4). **Batch 3, 1.0** (about 25 minutes): your word, the `v1.0.0` tag and your approval;
+- **At 5.7** (its section, "Step 5.7", comes to you first, with four decisions in it): three batches, about 40 minutes
+  in all. **Batch 1, the settings** (about 10 minutes, in WSL, each setting read back by a line after it): your `gh`
+  checked (you updated it on 10 Oct), a look on github.com for the old Homebrew token, the `release` environment,
+  GitHub's lock on published releases, the packs' tags locked (decision 5), and switching the release workflow back on
+  (a new tap token only if you choose Homebrew for the new Bonsai, decision 1). **Batch 2, a rehearsal** (about 3
+  minutes; decision 3): one tag line for a pre-release, `1.0.0-rc.1`, and your approval on GitHub (decision 4). **Batch
+  3, 1.0** (about 25 minutes): your word, the `v1.0.0` tag and your approval;
   then installing 1.0 on both sides with the new installers (seven lines a side, one more than 5.6's: it checks
   GitHub's signed record of how the file was built; in WSL your password, on Windows one "allow this app to make
   changes" prompt), and with it one line in WSL that makes your own `~/.claude/CLAUDE.md` load your personal memory in
@@ -143,8 +144,9 @@ such pair.
   changes nothing in either repo, and waits on neither.
 
 **Choices that are yours.** Waiting: 5.7's section holds four decisions of yours, each put with its context, options,
-costs and a recommendation (its "Decisions for Rohan"): Homebrew for the new Bonsai, how your WSL side checks that a
-release is genuine, a rehearsal before 1.0, and what stops an accidental release. 5.6's section was approved on 10 Oct,
+costs and a recommendation (its "Decisions for Rohan"): Homebrew for the new Bonsai, a rehearsal before 1.0, what stops
+an accidental release, and locking the packs' tags. Two were settled on 10 Oct: Go 1.27 for the release ("we can go
+with go 1.27 latest") and a newer `gh` in WSL, which you installed. 5.6's section was approved on 10 Oct,
 with (A) for who saves notes about you that every project reads: you save them, from an agent's draft (5.6's "Who saves
 notes about you"). The five other decisions you confirmed that day: this machine's settings and the studio's label files
 are all yours, even `cache_keep_days`; a newer release is shown as planned, `status --full` reading Bonsai's tags at
@@ -189,7 +191,7 @@ orchestrating session, your sittings or waiting; it comes from six parts over tw
 0.06-0.09 (the engine) to 0.32-0.53 (the hook path), and the parts that dealt with Windows and Claude Code ran highest,
 which is more of step 5; and the stop lines use the spec's hours, not the ratio. Your own time: about 2 minutes for the
 Windows login before 5.3, about 10 at 5.3 and 5 at 5.4, your read of the workflow repo and about 3 minutes on Windows at
-5.5, about 45 minutes over three batches at 5.7 (the GitHub settings, a rehearsal, your word, the 1.0 installs and the
+5.5, about 40 minutes over three batches at 5.7 (the GitHub settings, a rehearsal, your word, the 1.0 installs and the
 pack tags), and the plan approvals your choice above sets. Nothing here waits on the studio.
 
 ## For the orchestrator, builders and verifiers
@@ -261,9 +263,10 @@ plugin sync rewriting its own files under `~/.claude/plugins/synced/` (part 4b; 
     and its run report may name `yaml.mjs` at `4a05eac`, the contract's own definition of format 0 (contract §2.4); the
     skeleton's last verifier noted the reader already does (`STATE.md`, loose ends).
 11. **The toolchain bump moves to where it is needed.** The Go 1.25.x bump that clears govulncheck's standard-library
-    findings is listed for 5.7 (gate report §5; 5.7's section moves it to Go 1.26, since Go 1.25's fixes ended on 19
-    Aug). If `govulncheck` turns red on CI before then, the piece that meets it lands the one-line bump as its own
-    commit first, and its run report says so.
+    findings is listed for 5.7 (gate report §5). Go 1.25's fixes ended on 19 Aug, and on Rohan's word (10 Oct, "we can
+    go with go 1.27 latest") the toolchain moves to Go 1.27's newest patch as its own piece, landed before 5.7 starts;
+    5.7.0 checks it still holds. If `govulncheck` turns red on CI before then, the piece that meets it lands the
+    one-line bump as its own commit first, and its run report says so.
 
 **Outside step 5, named so they are not lost.**
 - **The sandbox probe** (spec §7, §16 row 25; contract §9.5): it "waits for its probe after the gate", with its
