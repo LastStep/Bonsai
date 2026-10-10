@@ -53,8 +53,8 @@ func (f Finding) Sentence() string {
 	return ascii(strings.TrimSuffix(f.Message, ".")) + "; next: " + ascii(f.Next)
 }
 
-// checkLater are spec section 6's findings and warnings that later steps build (5.1.8's tables is built), each with its step: their words join
-// format.CheckWords when they are built (TestCheckTable holds that none is there before).
+// checkLater are spec section 6's findings and warnings that later steps build (5.1.8's tables is built), each with
+// its step: their words join format.CheckWords when they are built (TestCheckTable holds that none is there before).
 var checkLater = []struct{ Code, Step, What string }{
 	{"secret", "step 5.2", "a secret-shaped string in a committed memory note: the redactor's patterns are its one home"},
 	{"stranded", "step 5.6", "a machine folder stranded under an old path (contract section 3)"},

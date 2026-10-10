@@ -172,12 +172,32 @@ func TestWriteTablesRefusals(t *testing.T) {
 	if after := snapshot(t, wt); len(after) != len(before) || after[workspace.TasksTableFile] != before[workspace.TasksTableFile] {
 		t.Errorf("the refusal wrote something")
 	}
-	// The worktree's check still warns: its table against a rebuild from the main checkout's task files, with the
-	// main checkout's command to run.
+	// A worktree's check reads the main checkout's table, never its own copy. Main's table is stale (a task file is new):
+	// the warning names the main checkout.
 	r, err := checkLocal(t, wt, e.home)
 	if err != nil || len(r.Findings) != 0 || len(r.Warnings) != 1 || r.Warnings[0].Code != "tables" ||
+		!strings.Contains(r.Warnings[0].Message, "the main checkout's .bonsai/tasks.md differs") ||
 		!strings.Contains(r.Warnings[0].Next, "main checkout, "+filepath.ToSlash(root)+": from there, run: bonsai check --write") {
-		t.Errorf("a worktree's check: %v %+v %+v", err, r.Findings, r.Warnings)
+		t.Errorf("a worktree, main's table stale: %v %+v %+v", err, r.Findings, r.Warnings)
+	}
+	// Main's table missing: the same warning.
+	saved := read(t, root, workspace.TasksTableFile)
+	if err := os.Remove(filepath.Join(root, workspace.TasksTableFile)); err != nil {
+		t.Fatal(err)
+	}
+	if r, _ = checkLocal(t, wt, e.home); len(r.Warnings) != 1 || !strings.Contains(r.Warnings[0].Message, "the main checkout's .bonsai/tasks.md is missing") {
+		t.Errorf("a worktree, main's table missing: %+v", r.Warnings)
+	}
+	// Main's table current, the worktree's own copy stale: no warning.
+	writeFile(t, root, workspace.TasksTableFile, saved)
+	if _, werr := WriteTables(root); werr != nil {
+		t.Fatal(werr)
+	}
+	if r, _ = checkLocal(t, wt, e.home); len(r.Warnings) != 0 || len(r.Findings) != 0 {
+		t.Errorf("a worktree, main's table current: %+v %+v", r.Findings, r.Warnings)
+	}
+	if read(t, wt, workspace.TasksTableFile) == read(t, root, workspace.TasksTableFile) {
+		t.Errorf("the worktree's own copy should lag main's")
 	}
 	// Not linked, and not a checkout.
 	if _, werr := WriteTables(testpack.Project(t, e.tmp, "bare")); werr == nil || werr.Code != "not-linked" || werr.Exit != ExitState {

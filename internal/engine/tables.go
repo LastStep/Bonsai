@@ -13,8 +13,9 @@ package engine
 // 5.2.3 fills it from the log and adds it to check --write.
 //
 // A table never grants anything and is never a finding: a tasks table that differs from a rebuild is the warning
-// tables, in a main checkout, a worktree and CI alike (checkTables). A worktree compares its own table with a rebuild
-// from the main checkout's task files, the ones --write would use.
+// tables, in a main checkout, a worktree and CI alike (checkTables). It is always the main checkout's table that is
+// compared, with a rebuild from the main checkout's task files, the ones --write would use: a branch never changes a
+// table, so a worktree's own copy lags by design and is never read for this.
 
 import (
 	"bytes"
@@ -143,30 +144,31 @@ func taskDir(root, main string, cfg *workspace.Config) string {
 	return cfg.Full.Documents.Task
 }
 
-// checkTables is the warning tables: this checkout's tasks table differs from a rebuild (or is missing). A table that
-// does not read is the finding document's, and a task folder that cannot be read is document's too: no warning then.
+// checkTables is the warning tables: the main checkout's tasks table (this checkout's own, in the main checkout and
+// in CI) differs from a rebuild (or is missing). A table that does not read is the finding document's, and a task folder that cannot be read is document's too: no warning then.
 func (r *CheckResult) checkTables() {
 	want, err := BuildTasksTable(r.Main, taskDir(r.Root, r.Main, r.Config))
 	if err != nil {
 		return
 	}
-	raw, exists, err := readFile(r.Root, workspace.TasksTableFile)
+	raw, exists, err := readFile(r.Main, workspace.TasksTableFile)
 	if err != nil {
 		return
 	}
-	next := run(WriteCommand)
+	next, whose := run(WriteCommand), workspace.TasksTableFile
 	if r.Root != r.Main {
 		next = "the tables change only in the main checkout, " + filepath.ToSlash(r.Main) + ": from there, run: " + WriteCommand
+		whose = "the main checkout's " + workspace.TasksTableFile
 	}
 	switch {
 	case !exists:
-		r.add("tables", workspace.TasksTableFile, "", workspace.TasksTableFile+" is missing", next)
+		r.add("tables", workspace.TasksTableFile, "", whose+" is missing", next)
 	default:
 		if _, err := format.ReadTasks(raw); err != nil {
 			return
 		}
 		if !bytes.Equal(bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n")), want) {
-			r.add("tables", workspace.TasksTableFile, "", workspace.TasksTableFile+" differs from a rebuild of the task files (the tables lag between moves; a table grants nothing)", next)
+			r.add("tables", workspace.TasksTableFile, "", whose+" differs from a rebuild of the task files (the tables lag between moves; a table grants nothing)", next)
 		}
 	}
 }
