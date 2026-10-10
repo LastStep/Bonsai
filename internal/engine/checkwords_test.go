@@ -68,7 +68,7 @@ func TestCheckWordsInTheCode(t *testing.T) {
 			t.Errorf("%s: who %q", w.Word, w.Who)
 		}
 	}
-	// The three later steps' words are not built yet: none is in the table, and each names its step.
+	// The later steps' words are not built yet: none is in the table, and each names its step.
 	for _, l := range checkLater {
 		if _, ok := format.CheckWord(l.Code); ok || l.Step == "" || l.What == "" {
 			t.Errorf("checkLater's %s: in the table already, or no step", l.Code)

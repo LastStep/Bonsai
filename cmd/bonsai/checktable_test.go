@@ -337,6 +337,8 @@ var checkCases = map[string]func(c *cli){
 		_ = os.RemoveAll(filepath.Join(home, "cache"))
 	},
 	"local-unchecked": func(c *cli) { c.link(); c.write(".git/index", "not an index") },
+	// init wrote the tasks table with no rows; a task file since makes it stale: a warning, never the exit code.
+	"tables": func(c *cli) { c.link(); c.task("T-0901", "todo", "", "") },
 }
 
 // checkMore: more of a word's cases, run after the walk's own on the same project.
@@ -551,12 +553,12 @@ func shellSplit(s string) []string {
 // The next-step checker itself: it passes the commands Bonsai has and fails the ones it does not.
 func TestCheckNextCommands(t *testing.T) {
 	for _, ok := range []string{"bonsai update --yes --adopt CLAUDE.md", "bonsai check --schema bonsai.task", "git checkout -- 'a b.md'",
-		"claude plugin uninstall x@y --scope local", "bonsai init --yes", "claude update"} {
+		"claude plugin uninstall x@y --scope local", "bonsai init --yes", "claude update", "bonsai check --write"} {
 		if err := runnable(ok); err != nil {
 			t.Errorf("%s: %v", ok, err)
 		}
 	}
-	for _, bad := range []string{"bonsai frobnicate", "bonsai update --frob", "bonsai check --write", "bonsai update now", "rm -rf x",
+	for _, bad := range []string{"bonsai frobnicate", "bonsai update --frob", "bonsai check --write --frob", "bonsai update now", "rm -rf x",
 		"git push", "bonsai check --schema"} {
 		if err := runnable(bad); err == nil {
 			t.Errorf("%s: passed", bad)

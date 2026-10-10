@@ -47,6 +47,11 @@ func TestUnlink(t *testing.T) {
 	e.link(t, root, e.pack.A, "ledger.json")
 	writeFile(t, root, ".bonsai/local/log/s-1.ndjson", "{}\n")
 	writeFile(t, root, workspace.StateFile, "# STATE\n")
+	for _, table := range []string{workspace.TasksTableFile, workspace.SessionsTableFile} { // init wrote them (step 5.1.8)
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(table))); err != nil {
+			t.Errorf("init did not write %s: %v", table, err)
+		}
+	}
 	// A person's edit of bonsai.yaml: it goes all the same.
 	writeFile(t, root, "bonsai.yaml", read(t, root, "bonsai.yaml")+"# a person's note\n")
 
@@ -55,7 +60,8 @@ func TestUnlink(t *testing.T) {
 		t.Fatalf("the plan: %+v", p)
 	}
 	for path, want := range map[string]string{"demo/guide.md": Removed, "demo/start.md": Released, "CLAUDE.md": Updated,
-		SettingsFile: Updated, GitignoreFile: Released, "bonsai.yaml": Removed} {
+		SettingsFile: Updated, GitignoreFile: Released, "bonsai.yaml": Removed, workspace.TasksTableFile: Removed,
+		workspace.SessionsTableFile: Removed} {
 		if got := result(t, p, path); got.Result != want {
 			t.Errorf("%s: %s (%s), want %s", path, got.Result, got.Why, want)
 		}
@@ -97,7 +103,7 @@ func TestUnlink(t *testing.T) {
 	}
 
 	after := snapshot(t, root)
-	for _, path := range []string{"demo/guide.md", "bonsai.yaml", workspace.LockFile} {
+	for _, path := range []string{"demo/guide.md", "bonsai.yaml", workspace.LockFile, workspace.TasksTableFile, workspace.SessionsTableFile} {
 		if _, ok := after[path]; ok {
 			t.Errorf("%s is still there", path)
 		}
@@ -128,6 +134,11 @@ func TestUnlink(t *testing.T) {
 	p = e.link(t, root, e.pack.A, "ledger.json")
 	if r := result(t, p, "demo/start.md"); r.Result != Found {
 		t.Errorf("start.md at the link again: %s", r.Result)
+	}
+	for _, table := range []string{workspace.TasksTableFile, workspace.SessionsTableFile} {
+		if r := result(t, p, table); r.Result != Created {
+			t.Errorf("%s at the link again: %s", table, r.Result)
+		}
 	}
 	if r, err := checkLocal(t, root, e.home); err != nil || len(r.Findings) != 0 {
 		t.Errorf("check after the link again: %v %+v", err, r.Findings)

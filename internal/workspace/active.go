@@ -199,6 +199,30 @@ func readTasks(main, dir string) ([]taskFile, error) {
 	return out, nil
 }
 
+// TaskEntry is one task file as the tasks table reads it: its id (the frontmatter's, else its name's), its
+// project-relative path with forward slashes, and the task as read; Task is nil, and Broken true, for a file that does
+// not parse (it has no row: check reports it).
+type TaskEntry struct {
+	ID     string
+	Path   string
+	Broken bool
+	Task   *format.Task
+}
+
+// ReadTaskFiles reads every task file of the main checkout's task folder, in path order, as Active does (the one
+// reader of the task folder): the tasks table (step 5.1.8) is built from it.
+func ReadTaskFiles(main, dir string) ([]TaskEntry, error) {
+	files, err := readTasks(main, dir)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]TaskEntry, len(files))
+	for i, f := range files {
+		out[i] = TaskEntry{ID: f.id, Path: f.path, Broken: f.broken, Task: f.task}
+	}
+	return out, nil
+}
+
 func paths(fs []taskFile) string {
 	var out []string
 	for _, f := range fs {

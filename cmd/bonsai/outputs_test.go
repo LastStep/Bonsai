@@ -328,7 +328,7 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		{"check with no home", noHome, []string{"check"}, 3, "bad-home", ""},
 		{"check --schema, a format not there", nil, []string{"check", "--schema", "bonsai.nope"}, 2, "unknown-format", ""},
 		{"check --schema with no name", nil, []string{"check", "--schema"}, 2, "bad-flag", ""},
-		{"check --write", nil, []string{"check", "--write"}, 2, "not-built", ""},
+		{"check --write, not linked", nil, []string{"check", "--write"}, 4, "not-linked", ""},
 		{"check --pack", nil, []string{"check", "--pack", "somewhere"}, 2, "not-built", ""},
 		{"check, a word left over", nil, []string{"check", "now"}, 2, "bad-flag", ""},
 

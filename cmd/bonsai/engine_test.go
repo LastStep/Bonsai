@@ -236,7 +236,7 @@ func TestCheckCommand(t *testing.T) {
 	if code != 1 || codesIn(fits(t, out, "check"), "findings") != "changed absolute-path" {
 		t.Errorf("check --json: %d %s", code, out)
 	}
-	for _, args := range [][]string{{"check", "--write"}, {"check", "now"}} {
+	for _, args := range [][]string{{"check", "now"}} {
 		if code, _, errOut := c.run("", args...); code != 2 || !strings.Contains(errOut, "\nnext: ") {
 			t.Errorf("%v: %d %q", args, code, errOut)
 		}

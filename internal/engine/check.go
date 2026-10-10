@@ -23,7 +23,7 @@ package engine
 // Two more need Claude Code, so cmd/bonsai runs them after Check and status never does (status stays cheap and
 // offline, contract section 12): what Claude Code reports installed (ComparePlugins, plugins.go: plugin, plugin-missing,
 // plugin-unchecked) and its version against the floor (CompareClaudeCode, claude.go: claude-code-old,
-// claude-code-unknown). checkLater names the three that later steps build.
+// claude-code-unknown). checkLater names the two that later steps build. tables.go: the tasks table (tables).
 
 import (
 	"bytes"
@@ -53,10 +53,9 @@ func (f Finding) Sentence() string {
 	return ascii(strings.TrimSuffix(f.Message, ".")) + "; next: " + ascii(f.Next)
 }
 
-// checkLater are spec section 6's findings and warnings that later steps build, each with its step: their words join
+// checkLater are spec section 6's findings and warnings that later steps build (5.1.8's tables is built), each with its step: their words join
 // format.CheckWords when they are built (TestCheckTable holds that none is there before).
 var checkLater = []struct{ Code, Step, What string }{
-	{"tables", "step 5.1.8", "a stale tasks table: a warning, never the exit code (check --write rebuilds it)"},
 	{"secret", "step 5.2", "a secret-shaped string in a committed memory note: the redactor's patterns are its one home"},
 	{"stranded", "step 5.6", "a machine folder stranded under an old path (contract section 3)"},
 }
@@ -150,6 +149,7 @@ func (r *CheckResult) missingLockNext() string {
 // PATH, .bonsai/.gitignore and .bonsai/local/.
 func (r *CheckResult) checkProject() {
 	r.checkDocuments()
+	r.checkTables()
 	if r.history {
 		r.checkHistory()
 	}

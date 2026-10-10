@@ -29,7 +29,7 @@ type Finding struct {
 // problem). Who is who usually takes the next step; a finding names the other when its own step is the other's.
 // cmd/bonsai's TestCheckTable walks this table: a word with no test case fails, and so does a next step naming a
 // command Bonsai does not have or a flag its word does not take. A later piece adds a word by adding an entry here
-// with its case (step 5.1.8 the stale tables, 5.2 the secret-shaped string, 5.6 the stranded machine folder: engine's
+// with its case (5.2 the secret-shaped string, 5.6 the stranded machine folder: engine's
 // checkLater names them); a word is added, never renamed or taken out.
 var CheckWords = []Word{
 	// The project's own files against the lock and bonsai.yaml (offline: the lock alone).
@@ -70,6 +70,7 @@ var CheckWords = []Word{
 	{Word: "plugin-trust", Kind: "warning", Who: "person", Means: "Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet"},
 	{Word: "plugin-unchecked", Kind: "warning", Who: "person", Means: "this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread)"},
 	{Word: "cache", Kind: "warning", Who: "person", Means: "a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked"},
+	{Word: "tables", Kind: "warning", Who: "agent", Means: "the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or is missing; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5)"},
 	{Word: "local-unchecked", Kind: "warning", Who: "agent", Means: "git ls-files failed, so files from .bonsai/local/ in git's index were not looked for"},
 }
 

@@ -12,7 +12,8 @@ var initWord = &Word{
 	Summary: "link this project to Bonsai: bonsai.yaml, the packs' files, the lock",
 	Args:    "[flags]",
 	About: `It writes bonsai.yaml (a comment on every line), then the packs' files, the instruction block in CLAUDE.md,
-Bonsai's lines in .claude/settings.json (hook line, deny rules, plugin wiring), .bonsai/.gitignore, and the lock
+Bonsai's lines in .claude/settings.json (hook line, deny rules, plugin wiring), .bonsai/.gitignore, at a first link
+the two tables (.bonsai/tasks.md as bonsai check --write builds it, .bonsai/sessions.md with no rows), and the lock
 .bonsai/lock.json last. It previews every file and settings line first, and writes with --yes (or y at a terminal).
 Then it asks Claude Code to install each pack's plugin on this machine at the locked commit, as update does (a
 plugin that carries code parts only with --allow-exec), and, as update does, removes this checkout's stale records

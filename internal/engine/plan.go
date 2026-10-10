@@ -882,6 +882,35 @@ func Build(req Request) (_ *Plan, err error) {
 	}
 	p.Files = append(p.Files, gf)
 
+	// The two tables, at a first link (spec section 4; step 5.1.8): tasks.md as check --write builds it, sessions.md
+	// with its frontmatter and no rows (step 5.2.3 fills it). Only written when missing; rebuilt by check --write.
+	if p.FirstLink {
+		for _, t := range []struct {
+			path, why string
+			build     func() ([]byte, error)
+		}{
+			{workspace.TasksTableFile, "the tasks table, rebuilt by bonsai check --write", func() ([]byte, error) {
+				return BuildTasksTable(co.Root, cfg.Full.Documents.Task)
+			}},
+			{workspace.SessionsTableFile, "the sessions table, empty until the log has sessions", EmptySessionsTable},
+		} {
+			old, exists, err := readFile(co.Root, t.path)
+			if err != nil {
+				return nil, err
+			}
+			tf := &FileResult{Path: t.path, old: old, Result: Unchanged}
+			if !exists {
+				b, err := t.build()
+				if err != nil {
+					return nil, errorf("read-failed", ExitRuntime, "check that the task folder can be read, then run the command again",
+						"%s cannot be built: %v", t.path, err)
+				}
+				tf.Result, tf.Why, tf.write = Created, t.why, b
+			}
+			p.Files = append(p.Files, tf)
+		}
+	}
+
 	// --keep and --adopt.
 	if err := p.resolve(req, newLock, claimed, lnew, consented, disk, bd, body, settingsBytes, targets); err != nil {
 		return nil, err
