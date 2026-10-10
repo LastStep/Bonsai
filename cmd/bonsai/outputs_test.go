@@ -525,7 +525,7 @@ var packageDir, _ = os.Getwd()
 func codeWords(t *testing.T, keep func(dir, file string) bool) map[string]string {
 	t.Helper()
 	found := map[string]string{}
-	for _, dir := range []string{".", "../../internal/engine", "../../internal/status"} {
+	for _, dir := range []string{".", "../../internal/engine", "../../internal/status", "../../internal/sessions"} {
 		pkgs, err := parser.ParseDir(token.NewFileSet(), filepath.Join(packageDir, dir), func(fi os.FileInfo) bool {
 			return !strings.HasSuffix(fi.Name(), "_test.go") && keep(dir, fi.Name())
 		}, 0)
