@@ -110,8 +110,8 @@ such pair.
   - From 5.5's end, Claude in `~/Servers/Bonsai` (your own sessions included) cannot read your key, token and login
     files, nor change your own Claude settings, `~/.claude/CLAUDE.md`, your shell's start files or git's and SSH's
     settings: you change those yourself. Bonsai's STATE moves to `.bonsai/STATE.md`.
-- **In 5.6:** approve its section (it changes your steps), with one choice in it: who saves notes about you that every
-  project reads (recommended: you, from a draft an agent hands you). No install, no password and no Windows sitting in
+- **In 5.6:** its section approved (10 Oct), with your answer on who saves notes about you that every project reads:
+  you, from a draft an agent hands you. No install, no password and no Windows sitting in
   5.6. From 5.6 three kinds of step are yours, each handed to you by an agent as exact lines it never runs itself:
   saving a note about you into your personal memory (by hand, or by asking Claude in a session opened outside any
   linked project, such as your home folder); this computer's Bonsai settings for a project and the studio's label files
