@@ -132,3 +132,57 @@ func TestEverySchemaEnumIsOnThePage(t *testing.T) {
 		}
 	}
 }
+
+// The generated-files page is exactly what the code builds now (CRLF read as LF, as for the lists page). A changed
+// default, writer or protection in format.GeneratedKinds without the page fails here, naming the fix.
+func TestGeneratedFilesPageIsCurrent(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(GeneratedFilesPath)))
+	if err != nil {
+		t.Fatalf("%s cannot be read: %v. Run `go generate ./...` from the repository's root to write it.", GeneratedFilesPath, err)
+	}
+	have := bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n"))
+	want := GeneratedFilesPage()
+	if bytes.Equal(have, want) {
+		return
+	}
+	hl, wl := strings.Split(string(have), "\n"), strings.Split(string(want), "\n")
+	for i := 0; i < len(hl) || i < len(wl); i++ {
+		var h, w string
+		if i < len(hl) {
+			h = hl[i]
+		}
+		if i < len(wl) {
+			w = wl[i]
+		}
+		if h != w {
+			t.Fatalf("%s is not what the code builds: first difference at line %d\n  committed: %q\n  built:     %q\n"+
+				"A generated kind changed in its table without the page: run `go generate ./...` from the repository's root and commit the page.", GeneratedFilesPath, i+1, h, w)
+		}
+	}
+}
+
+// The generated-files page is byte-stable and plain, and names every kind with its writer and when it is cleaned.
+func TestGeneratedFilesPageIsPlain(t *testing.T) {
+	a := GeneratedFilesPage()
+	if !bytes.Equal(a, GeneratedFilesPage()) {
+		t.Fatalf("two builds of the page differ")
+	}
+	for i, l := range strings.Split(strings.TrimSuffix(string(a), "\n"), "\n") {
+		if strings.TrimRight(l, " \t") != l {
+			t.Errorf("line %d ends in a space", i+1)
+		}
+		for _, r := range l {
+			if r > 126 || r < 32 {
+				t.Errorf("line %d holds %q, which is not ASCII", i+1, r)
+			}
+		}
+	}
+	page := string(a)
+	for _, k := range format.GeneratedKinds {
+		for _, want := range []string{"### `" + k.Kind + "`", "Written by: " + k.Writer, "Cleaned: " + k.When, "Never cleaned: " + k.Never} {
+			if !strings.Contains(page, want) {
+				t.Errorf("the page lacks %q", want)
+			}
+		}
+	}
+}

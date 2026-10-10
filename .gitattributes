@@ -14,3 +14,6 @@ formats/** -text
 # The reference page of lists (docs/reference/lists.md) is generated, and its test compares it byte for byte with what the
 # code builds: LF on every checkout, Windows' core.autocrlf included.
 docs/reference/lists.md text eol=lf
+
+# The generated-files page (docs/reference/generated-files.md) is generated the same way and kept LF the same way.
+docs/reference/generated-files.md text eol=lf

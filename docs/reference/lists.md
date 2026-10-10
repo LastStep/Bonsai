@@ -234,14 +234,14 @@ error words.
 - Printed in a project by: none; `bonsai init` writes each kind's default rule into bonsai.yaml's `generated:` section.
 - Spec section 6, "Generated files".
 
-| Kind | Where | What | Default | Never cleaned | Takes a rule |
-|---|---|---|---|---|---|
-| `log` | .bonsai/local/log/ | the log, one file per session | 30 days after a file's last line | an open session's file, or one holding an ended session or subagent run with no row yet in .bonsai/sessions.md | yes |
-| `asks` | .bonsai/local/asks/ | questions for a person and their answers | kept | a day file holding an open ask | yes |
-| `ladder` | .bonsai/local/ladder/ | ladder results, one per task | 7 days after the result's finished | the result of a task that is not done or cut | yes |
-| `run` | the run reports' folder (documents.run) | run reports, committed history | kept | any, by Bonsai: past a rule, bonsai check lists them and a person deletes them | yes |
-| `sessions` | .bonsai/sessions.md | rows of the sessions table | kept | rows of an open task | yes |
-| `tasks` | .bonsai/tasks.md | the tasks table | a rebuild: nothing to clean | - | no |
+| Kind | Where | What | Written by | Default | Never cleaned | Cleaned | Takes a rule |
+|---|---|---|---|---|---|---|---|
+| `log` | .bonsai/local/log/ | the log, one file per session | the recorder, from the hooks, one line at a time | 30 days after a file's last line | an open session's file, or one holding an ended session or subagent run with no row yet in .bonsai/sessions.md | at a session's end, after its session_end line, within a budget of 1 second | yes |
+| `asks` | .bonsai/local/asks/ | questions for a person and their answers | bonsai ask, one day file a day | kept | a day file holding an open ask | at a session's end, within the same budget; by default nothing, as the default keeps | yes |
+| `ladder` | .bonsai/local/ladder/ | ladder results, one per task | the ladder runner (step 5.4), one file per task | 7 days after the result's finished | the result of a task that is not done or cut | at a session's end, and by the ladder runner after each run | yes |
+| `run` | the run reports' folder (documents.run) | run reports, committed history | the agent that did the work, in the run report format | kept | any, by Bonsai: past a rule, bonsai check lists them and a person deletes them | never, by Bonsai | yes |
+| `sessions` | .bonsai/sessions.md | rows of the sessions table | bonsai check --write, from the log | kept | rows of an open task | in bonsai check --write, the only writer of the table | yes |
+| `tasks` | .bonsai/tasks.md | the tasks table | bonsai check --write, from the task files | a rebuild: nothing to clean | - | never: the table is rebuilt whole | no |
 
 ## Bonsai's document kinds
 

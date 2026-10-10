@@ -104,7 +104,7 @@ var Comments = map[string]string{
 	"ladder[].base_setup": "the command run first in a worktree at the merge base (installing dependencies); null for none",
 	"ratchets":            "counts that may only rise, by name, each the floor a rung's count may not fall below; e.g. tests: 120",
 	"ci_marked_tests":     `tests allowed to skip in CI only, each by its name in the test output; e.g. ["TestNeedsADisplay"]`,
-	"generated":           "how long generated files are kept, per kind; null keeps all; the protections always win",
+	"generated":           "how long generated files are kept; null keeps all; docs/reference/generated-files.md in LastStep/Bonsai",
 }
 
 // comment gives a line's comment by its field's path ("packs[0].ref"): Comments' entry for the path with its list

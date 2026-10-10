@@ -18,7 +18,7 @@ func TestGeneratedKindsAreTheSchemas(t *testing.T) {
 		if k.Rule {
 			ours = append(ours, k.Kind)
 		}
-		if k.Where == "" || k.What == "" || k.Default == "" || k.Never == "" {
+		if k.Where == "" || k.What == "" || k.Default == "" || k.Never == "" || k.Writer == "" || k.When == "" {
 			t.Errorf("%s is not documented in full", k.Kind)
 		}
 	}

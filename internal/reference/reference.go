@@ -11,7 +11,7 @@
 // schema appears on the page without a change here (the generator's list of copies it skips is below). A list the
 // code holds in a table is added here by one entry. Standard library only.
 //
-//go:generate go run ./gen ../../docs/reference/lists.md
+//go:generate go run ./gen ../../docs/reference/lists.md ../../docs/reference/generated-files.md
 package reference
 
 import (
@@ -191,10 +191,10 @@ func (p *page) reasons() {
 }
 
 func (p *page) generated() {
-	p.line("| Kind | Where | What | Default | Never cleaned | Takes a rule |")
-	p.line("|---|---|---|---|---|---|")
+	p.line("| Kind | Where | What | Written by | Default | Never cleaned | Cleaned | Takes a rule |")
+	p.line("|---|---|---|---|---|---|---|---|")
 	for _, k := range format.GeneratedKinds {
-		p.line("| `%s` | %s | %s | %s | %s | %s |", k.Kind, cell(k.Where), cell(k.What), cell(k.Default), cell(k.Never), map[bool]string{true: "yes", false: "no"}[k.Rule])
+		p.line("| `%s` | %s | %s | %s | %s | %s | %s | %s |", k.Kind, cell(k.Where), cell(k.What), cell(k.Writer), cell(k.Default), cell(k.Never), cell(k.When), map[bool]string{true: "yes", false: "no"}[k.Rule])
 	}
 }
 

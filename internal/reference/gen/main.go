@@ -1,4 +1,4 @@
-// Command gen writes the reference page of lists (docs/reference/lists.md) from the code's tables: `go generate ./...`
+// Command gen writes the reference page of lists (docs/reference/lists.md and docs/reference/generated-files.md) from the code's tables: `go generate ./...`
 // runs it from internal/reference with the page's path. It is a build tool, never part of the bonsai binary.
 package main
 
@@ -10,12 +10,14 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "usage: go run ./gen <path of the page>")
+	if len(os.Args) != 3 {
+		fmt.Fprintln(os.Stderr, "usage: go run ./gen <path of the lists page> <path of the generated-files page>")
 		os.Exit(2)
 	}
-	if err := os.WriteFile(os.Args[1], reference.Page(), 0o644); err != nil {
-		fmt.Fprintln(os.Stderr, "gen:", err)
-		os.Exit(1)
+	for i, page := range [][]byte{reference.Page(), reference.GeneratedFilesPage()} {
+		if err := os.WriteFile(os.Args[i+1], page, 0o644); err != nil {
+			fmt.Fprintln(os.Stderr, "gen:", err)
+			os.Exit(1)
+		}
 	}
 }
