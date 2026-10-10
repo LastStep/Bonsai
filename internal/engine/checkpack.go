@@ -792,7 +792,7 @@ func (c *packCheck) templates(pf packYAMLRead, labels *format.Labels, lanes *for
 		}
 		found = append(found, skillsDir+"/"+ent.Name())
 		lists := closedLists{kind: ent.Name(), documents: pf.documents, labels: labels, lanes: lanes}
-		c.put(sk.fields(file, &lists)...)
+		c.put(sk.fields(file)...)
 		c.put(sk.values(file, &lists)...)
 	}
 	return found, nil
@@ -964,7 +964,7 @@ func (sk templateSkill) bonsaiFormat() (f *format.Format, ok bool) {
 }
 
 // fields finds where a template skill's fields table and its template differ (pack-fields).
-func (sk templateSkill) fields(file string, lists *closedLists) []packFound {
+func (sk templateSkill) fields(file string) []packFound {
 	next := "make the fields table and the template hold the same fields: a row for each field of the template, and no row for a " +
 		"field it does not hold"
 	if !sk.template {
@@ -1026,7 +1026,6 @@ func (sk templateSkill) fields(file string, lists *closedLists) []packFound {
 				"bonsai check --schema " + f.ID()})
 		}
 	}
-	_ = lists
 	return out
 }
 

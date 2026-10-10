@@ -699,6 +699,16 @@ func TestCheckPackTable(t *testing.T) {
 			t.Fatalf("exit %d, %d findings:\n%s", code, len(findings), text)
 		}
 	})
+	// A checkout with CRLF line endings (git's autocrlf on Windows) reads the same.
+	t.Run("the documented pack, CRLF", func(t *testing.T) {
+		files := testpack.DocumentedPack()
+		for name, content := range files {
+			files[name] = strings.ReplaceAll(content, "\n", "\r\n")
+		}
+		if code, findings, text := check(t, files); code != 0 || len(findings) != 0 {
+			t.Fatalf("exit %d, %d findings:\n%s", code, len(findings), text)
+		}
+	})
 	for _, w := range format.PackCheckWords {
 		t.Run(w.Word, func(t *testing.T) {
 			cases, ok := packCases[w.Word]
