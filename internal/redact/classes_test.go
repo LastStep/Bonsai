@@ -405,6 +405,8 @@ func TestShapeLeftovers(t *testing.T) {
 		"export TOKEN_FOR_CI=" + ghp + " ok": "export TOKEN_FOR_CI=[redacted] ok",
 		"see " + ghp + "/pulls/7":            "see [redacted]/pulls/7",
 		id + "-" + ghp:                       id + "-[redacted]",
+		// Inside a URL's credentials the password ends at the `@`: a key there keeps the host after it.
+		"https://ci:token=Tq83vz@pkgs.example.org/x": "https://[redacted]@pkgs.example.org/x",
 	} {
 		got := Text(in)
 		if got != want {
@@ -421,24 +423,27 @@ func TestShapeLeftovers(t *testing.T) {
 func TestShapesGluedToShapes(t *testing.T) {
 	m := newMaker(19)
 	urlsafe := alnum + "_-"
-	shapes := []struct{ text, body string }{ // body: what a shape's characters may take of a glue after it
-		{"https://hooks.slack.com/services/T5/" + m.secret(24), ""},
-		{"sk-ant-api03-" + m.secret(30), "-"},
-		{"sk-proj-" + m.secret(26), "-"},
-		{"rk_test_" + m.secret(20), ""},
-		{"github_pat_" + m.secret(30), ""},
-		{"gho_" + m.secret(36), ""},
-		{"xoxp-2718281828-" + m.secret(16), "-"},
-		{"npm_" + m.secret(36), ""},
-		{"ASIA" + strings.ToUpper(m.secret(16)), ""},
-		{"AIza" + m.from(urlsafe, 35), "exact"},
-		{"ya29." + m.secret(30), "-"},
-		{"eyJ" + m.from(alnum, 12) + "." + m.from(alnum, 16) + "." + m.from(alnum, 20), "-"},
+	// body: what a shape's characters may take of a glue after it; keep: the words the shape itself keeps (they are not
+	// asked of either shape).
+	shapes := []struct{ text, body, keep string }{
+		{"https://hooks.slack.com/services/T5/" + m.secret(24), "", ""},
+		{"sk-ant-api03-" + m.secret(30), "-", ""},
+		{"sk-proj-" + m.secret(26), "-", ""},
+		{"rk_test_" + m.secret(20), "", ""},
+		{"github_pat_" + m.secret(30), "", ""},
+		{"gho_" + m.secret(36), "", ""},
+		{"xoxp-2718281828-" + m.secret(16), "-", ""},
+		{"npm_" + m.secret(36), "", ""},
+		{"ASIA" + strings.ToUpper(m.secret(16)), "", ""},
+		{"AIza" + m.from(urlsafe, 35), "exact", ""},
+		{"ya29." + m.secret(30), "-", ""},
+		{"eyJ" + m.from(alnum, 12) + "." + m.from(alnum, 16) + "." + m.from(alnum, 20), "-", ""},
+		{"https://ci:" + m.secret(14) + "@pkgs.example.org/simple", "", "https ci pkgs example org simple"},
 	}
-	words := func(s string) []string {
+	words := func(s, keep string) []string {
 		var out []string
 		for _, w := range wordsOf(s) {
-			if len(w) >= 3 {
+			if len(w) >= 3 && !strings.Contains(" "+keep+" ", " "+w+" ") {
 				out = append(out, w)
 			}
 		}
@@ -460,7 +465,7 @@ func TestShapesGluedToShapes(t *testing.T) {
 						{b.text, fmt.Sprintf(frame, Marker+g+b.text)},
 					} {
 						refOut := Text(side.ref)
-						for _, w := range words(side.text) {
+						for _, w := range words(side.text, a.keep+" "+b.keep) {
 							if !hasWord(refOut, w) && hasWord(out, w) {
 								t.Errorf("%q kept %q, which goes with the other shape a marker (%q): %q", in, w, refOut, out)
 							}
@@ -470,6 +475,29 @@ func TestShapesGluedToShapes(t *testing.T) {
 						fixedAtEveryCut(t, in, out)
 					}
 				}
+			}
+		}
+	}
+	// Names glued after a shape: a name the shape's marker makes a name (`]BEARER x`, `]passwd: x`) keeps its value
+	// taken, all of it, though what the shape leaves of its run goes with the shape.
+	names := []string{"BEARER %s", "passwd: %s", "extraHeader=%s'more", "Authorization: Basic %s", "secret=%s.tail"}
+	for _, a := range shapes {
+		for _, g := range []string{"", "-", "=", "/", ".", " "} {
+			if strings.Contains(a.body, g) && a.body != "exact" || g == "" && a.body != "exact" {
+				continue
+			}
+			for _, nm := range names {
+				v := m.secret(14)
+				in := a.text + g + fmt.Sprintf(nm, v)
+				out := Text(in)
+				n++
+				refOut := Text(Marker + g + fmt.Sprintf(nm, v))
+				for _, w := range words(fmt.Sprintf(nm, v), "") {
+					if !hasWord(refOut, w) && hasWord(out, w) {
+						t.Errorf("%q kept %q, which goes with the shape a marker (%q): %q", in, w, refOut, out)
+					}
+				}
+				fixedAtEveryCut(t, in, out)
 			}
 		}
 	}

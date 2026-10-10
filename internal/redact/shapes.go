@@ -8,7 +8,7 @@ package redact
 //   - An AWS key id is `AKIA` or `ASIA` and 16 of [0-9A-Z], and any more of [0-9A-Z] glued after it go with it. The
 //     studio's rule also wants a word's end after the 16, so `AKIA` and 17 such characters kept all 21; cut after
 //     the 16th, a second pass took them. Here the 16 go wherever the word ends, and where the studio's rule took
-//     nothing, the whole run goes when it looks random, as its random-run rule took it (findAWS).
+//     nothing, the whole run goes when it looks random, as its random-run rule took it (leftovers).
 //   - A token shape needs a word's start before it (JavaScript's \b). Where an earlier pass's marker stands right
 //     before it, the marker's `]` is that start, so the next pass takes it; the passes run until nothing changes.
 //
@@ -126,13 +126,11 @@ func findStripe(s string, add func(a, b int)) {
 	}
 }
 
-// findAWS is \b(?:AKIA|ASIA)[0-9A-Z]{16}, and any more of [0-9A-Z] glued after it. The studio's rule also wants a word's
-// end after the 16; where a word character follows them, it takes nothing, and its random-run rule then judges the
-// whole run: so here, where a word character follows the 16, the whole run goes when it looks random (the key id glued
-// to its secret goes with the secret).
+// findAWS is \b(?:AKIA|ASIA)[0-9A-Z]{16}, and any more of [0-9A-Z] glued after it. Where a word character follows the
+// 16, the studio's rule takes nothing and its random-run rule judges the whole run; what that means here is read with
+// the leftovers (awsWhole, below).
 func findAWS(s string, add func(a, b int)) {
 	upperDigit := func(r rune) bool { return r >= 'A' && r <= 'Z' || isDigit(r) }
-	runL, runR, random := 0, 0, false // the run last judged whole
 	for i := 0; i+4 <= len(s); i++ {
 		if s[i] != 'A' || (s[i+1:i+4] != "KIA" && s[i+1:i+4] != "SIA") || !wordStart(s, i) {
 			continue
@@ -141,20 +139,15 @@ func findAWS(s string, add func(a, b int)) {
 		if e-(i+4) < 16 {
 			continue
 		}
-		if i+20 < len(s) && isWord(rune(s[i+20])) {
-			if i >= runR {
-				runL, runR = runAround(s, i)
-				random = runR-runL >= 32 && randomRun(s[runL:runR])
-			}
-			if random {
-				add(runL, runR)
-				i = runR - 1
-				continue
-			}
-		}
 		add(i, e)
 		i = e - 1
 	}
+}
+
+// awsWhole reports whether sp is a key id the studio's rule would not take (a word character follows its 16), so that
+// its random-run rule judges the whole run it stands in instead.
+func awsWhole(s string, sp Span) bool {
+	return sp.Kind == KindAWSKeyID && (sp.End-sp.Start > 20 || sp.End < len(s) && isWord(rune(s[sp.End])))
 }
 
 // findJWT is \beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}. When a start fails, every `eyJ` up to
@@ -383,15 +376,29 @@ func findURLCredentials(s string, add func(a, b int)) {
 // the whole run is 32 or more and the leftover holds a piece that looks random (between the run's separators, a piece
 // the shape's edge and the leftover share counted whole), it goes. A leftover of names and words (`TOKEN_FOR_CI=`
 // before a token, `_token=` or `-backup` after one) has no such piece and stays, as the studio's redactor leaves it;
-// and a leftover the random-run rule never takes (one starting with `toolu_`) stays too. Judged with every shape's
-// span at once, a leftover never holds another shape's start. Every run and piece is read once, so the time stays
-// linear.
+// and a leftover the random-run rule never takes (one starting with `toolu_`) stays too. In a run holding a key id
+// the studio's rule would not take (awsWhole), its random-run rule took the whole run, so every leftover of that run
+// goes when the run looks random. Judged with every shape's span at once, a leftover never holds another shape's
+// start. Every run and piece is read once, so the time stays linear.
 func leftovers(s string, spans []Span) []Span {
 	var out []Span
-	runL, runR := 0, 0 // the run last read: the leftovers of one run share it
+	runL, runR, whole := 0, 0, false // the run last read: the leftovers of one run share it
+	k := 0                           // the first span that may lie in a run read later
 	judge := func(x, y int, kind Kind) {
 		if x >= runR {
 			runL, runR = runAround(s, x)
+			whole = false
+			for k < len(spans) && spans[k].End <= runL {
+				k++
+			}
+			for j := k; j < len(spans) && spans[j].Start < runR && !whole; j++ {
+				whole = awsWhole(s, spans[j])
+			}
+			whole = whole && runR-runL >= 32 && randomRun(s[runL:runR])
+		}
+		if whole {
+			out = append(out, Span{x, y, kind})
+			return
 		}
 		if runR-runL < 32 || strings.HasPrefix(s[x:], "toolu_") || strings.HasPrefix(s[x:], "srvtoolu_") {
 			return
@@ -408,13 +415,13 @@ func leftovers(s string, spans []Span) []Span {
 				pe++
 			}
 		}
-		for start, k := ps, ps; k <= pe; k++ {
-			if k == pe || isPieceSep(s[k]) {
-				if looksRandom(s[start:k]) {
+		for start, i := ps, ps; i <= pe; i++ {
+			if i == pe || isPieceSep(s[i]) {
+				if looksRandom(s[start:i]) {
 					out = append(out, Span{x, y, kind})
 					return
 				}
-				start = k + 1
+				start = i + 1
 			}
 		}
 	}

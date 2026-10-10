@@ -13,8 +13,9 @@
 //
 // How Text reads a string, in the order it runs:
 //  1. shapes.go: the rules that take a whole value by its shape: private-key blocks, webhook URLs, credentials
-//     inside a URL, and the known token shapes. What a shape leaves of a run of token characters it took part of
-//     is judged with the whole run, so a secret glued to a token or a key id goes with it.
+//     inside a URL, and the known token shapes, each rule again until none finds more. What a shape leaves of a run
+//     of token characters it took part of is judged with the whole run (so a secret glued to a token or a key id
+//     goes with it), and taken after the names' values, as a random run is.
 //  2. names.go and values.go: every name a value follows is found first (a secret-named key before `:` or `=`, a
 //     flag ending in a secret word, an Authorization header, a Bearer, extraheader=), then each name's value. A name
 //     that stands inside another name's value has its own value taken, and the outer value takes the inner name
@@ -171,22 +172,40 @@ func redactDoc(s string) *doc {
 	for pass := 0; pass < maxPasses; pass++ {
 		changed, shaped := false, false
 		preText, preSegs := d.text, d.segs // render makes new ones, so these stay the text before the shapes
-		var found []Span                   // the spans the shapes found, each rule in the text the ones before it left
-		for _, r := range shapeRules {
-			f, ch := d.apply(r.kind, r.find)
-			found = append(found, f...)
-			changed, shaped = changed || ch, shaped || ch
-		}
-		if shaped {
-			if d.merge(d.leftovers(preText, preSegs, found)) {
-				d.render()
+		// The shapes, each rule in the text the ones before it left, again until none finds more: a shape a marker gave a
+		// word's start (a `ya29.` token or a URL's scheme glued after an exact-length key) is found before any leftover
+		// is judged.
+		var found []Span
+		for round := 0; round < maxPasses; round++ {
+			more := false
+			for _, r := range shapeRules {
+				f, ch := d.apply(r.kind, r.find)
+				found = append(found, f...)
+				more = more || ch
 			}
+			if !more {
+				break
+			}
+			changed, shaped = true, true
+		}
+		var lefts []Span // what the shapes left of the runs they took part of, judged now, taken after the names
+		if shaped {
+			lefts = d.leftovers(preText, preSegs, found)
 		}
 		names := findNames(d.text)
+		var tails []Span
 		if shaped {
-			names = d.withLost(names, preText, preSegs)
+			names, tails = d.withLost(names, preText, preSegs)
 		}
-		if d.merge(d.mapSpans(nameValues(d.text, names))) {
+		vals := append(d.mapSpans(nameValues(d.text, names)), tails...)
+		sort.SliceStable(vals, func(i, j int) bool { return vals[i].Start < vals[j].Start })
+		if d.merge(vals) {
+			d.render()
+			changed = true
+		}
+		// The leftovers go as the random-run rule's own do, after the names' values, so a name a leftover holds still
+		// has its value read, all of it, as the studio's redactor reads its names before its random-run rule.
+		if d.merge(lefts) {
 			d.render()
 			changed = true
 		}
@@ -205,18 +224,20 @@ func redactDoc(s string) *doc {
 // the current text where it stood, a part of it inside a marker at the marker's start, so its value is read as any
 // other name's.
 //
-// Where a lost name's value starts inside a span, what decides is where the value's secret starts. A key's, a
-// flag's, extraheader's and a Bearer's value is secret from its first character: an opening quote (no span ends just
-// after one), a URL with its userinfo, what follows a key's `=`. Such a value starting inside a span is that span's,
-// whatever of it lies past the span: inside a URL's credentials the password ends at the `@`, and the host after it
-// stays. An Authorization header's value opens with its scheme word, and its secret, the token, follows the scheme
-// word and its whitespace: a webhook URL glued to `authorization=Basic` ends at the space and takes the scheme word,
-// but the token after the space is the header's, so it is read there, as after a scheme word (nameAuthToken). A
-// `token:` after the header's separator is a key of its own, found and read as one.
-func (d *doc) withLost(names []name, preText string, preSegs []seg) []name {
+// A lost name's value may start inside a span. What the span holds of it is gone with the span; what the value holds
+// past the span goes too, when it is the value's secret part. An Authorization header's value opens with its scheme
+// word, and its secret, the token, follows the scheme word and its whitespace: a webhook URL glued to
+// `authorization=Basic` ends at the space and takes the scheme word, but the token after the space is the header's,
+// so it is read there, as after a scheme word (nameAuthToken). Every other value is secret from its first character
+// (an opening quote, which no span ends just after, or the first character after a separator), so its tail past the
+// span goes: read on preText, where the value stands whole, it is given back as tails (a webhook URL stops at a quote,
+// `<` or `>`, and `extraheader=v'x` glued to it keeps no `'x`). Inside a URL's credentials the URL's own syntax ends
+// the password at the `@`, so a value starting there is the span's, and the host after it stays. A `token:` after
+// the header's separator is a key of its own, found and read as one.
+func (d *doc) withLost(names []name, preText string, preSegs []seg) ([]name, []Span) {
 	pre := findNames(preText)
 	if len(pre) == 0 {
-		return names
+		return names, nil
 	}
 	type at struct {
 		kind nameKind
@@ -227,24 +248,28 @@ func (d *doc) withLost(names []name, preText string, preSegs []seg) []name {
 		now[at{nm.kind, origAt(d.segs, nm.val)}] = true
 	}
 	added := false
+	var inner []name // lost names whose values start inside a span that does not end them
 	for _, nm := range pre {
 		v := origAt(preSegs, nm.val)
 		if now[at{nm.kind, v}] {
 			continue
 		}
 		kind := nm.kind
-		if d.inside(v) {
-			if nm.kind != nameAuth {
+		if k := d.spanHolding(v); k >= 0 {
+			if d.spans[k].Kind == KindURLCredentials {
 				continue
 			}
-			_, t, w, ok := schemeAt(preText, nm.val)
-			if !ok || t < len(preText) && w == "token" && (preText[t] == ':' || preText[t] == '=') {
-				continue // no scheme word, or `token:`, a key found on its own
+			if nm.kind == nameAuth {
+				if _, t, w, ok := schemeAt(preText, nm.val); ok && !(t < len(preText) && w == "token" && (preText[t] == ':' || preText[t] == '=')) {
+					if v = origAt(preSegs, t); d.spanHolding(v) < 0 {
+						names = append(names, name{nameAuthToken, d.textAt(origAt(preSegs, nm.start)), d.textAt(v)})
+						added = true
+						continue
+					}
+				}
 			}
-			if v = origAt(preSegs, t); d.inside(v) {
-				continue
-			}
-			kind = nameAuthToken
+			inner = append(inner, nm)
+			continue
 		}
 		names = append(names, name{kind, d.textAt(origAt(preSegs, nm.start)), d.textAt(v)})
 		added = true
@@ -252,13 +277,23 @@ func (d *doc) withLost(names []name, preText string, preSegs []seg) []name {
 	if added {
 		sort.SliceStable(names, func(i, j int) bool { return names[i].start < names[j].start })
 	}
-	return names
+	var tails []Span
+	for _, val := range nameValues(preText, inner) {
+		a, b := origAt(preSegs, val.Start), origAt(preSegs, val.End)
+		if k := d.spanHolding(a); k >= 0 && d.spans[k].Kind != KindURLCredentials && b > d.spans[k].End {
+			tails = append(tails, Span{d.spans[k].End, b, val.Kind})
+		}
+	}
+	return names, tails
 }
 
-// inside reports whether byte o of orig lies inside a span, past its first byte.
-func (d *doc) inside(o int) bool {
+// spanHolding gives the index of the span that byte o of orig lies inside, past its first byte, or -1.
+func (d *doc) spanHolding(o int) int {
 	k := sort.Search(len(d.spans), func(i int) bool { return d.spans[i].End > o })
-	return k < len(d.spans) && d.spans[k].Start < o
+	if k < len(d.spans) && d.spans[k].Start < o {
+		return k
+	}
+	return -1
 }
 
 // origAt gives the byte of orig that byte pos of a text stands for, by the text's map: in a marker, the start of
@@ -313,9 +348,10 @@ func (d *doc) apply(kind Kind, find func(string, func(int, int))) ([]Span, bool)
 }
 
 // leftovers gives what this pass's shapes left of the runs they took part of and that goes with them (leftovers,
-// shapes.go). It is judged once all the shapes have run, on the text as it stood before them (preText, mapped onto
-// orig by preSegs) with every span the shapes found, so a shape that the studio's order lets match after another
-// (a `ya29.` token glued after an exact-length key) is never taken as the other's leftover, its own shape lost.
+// shapes.go), in orig's offsets. It is judged once all the shapes have run, on the text as it stood before them
+// (preText, mapped onto orig by preSegs) with every span the shapes found, so a shape that the studio's order lets
+// match after another (a `ya29.` token glued after an exact-length key) is never taken as the other's leftover, its
+// own shape lost.
 func (d *doc) leftovers(preText string, preSegs []seg, found []Span) []Span {
 	sort.SliceStable(found, func(i, j int) bool { return found[i].Start < found[j].Start })
 	var in []Span // the shapes' spans in preText's offsets, apart
