@@ -1,8 +1,8 @@
 # The formats set
 
 This folder holds Bonsai's formats as files any program can test against: a JSON Schema for each of the ten formats
-of the formats contract (`design/contract.md` §2) and the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row
-29), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files, each with
+of the formats contract (`design/contract.md` §2) the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row
+29) and the one that set 5 added (`help`, plan-5 5.1.10), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files, each with
 the one right outcome a reader must reach (accepted with this value, or refused for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
 file's bytes.
@@ -21,7 +21,7 @@ formats/
   compare_test.go           ... that each schema changed from the set's base commit only by additions
   embed.go                  embeds the schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
-                                status, lock; workspace, pack, tasks, sessions, memory, error, check, changes
+                                status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help
   examples/<name>.json      one valid document per format, as a reader returns it
   examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
@@ -40,7 +40,9 @@ a pack's `bonsai/pack.yaml`, spec §5), `tasks` and `sessions` (`bonsai.tasks/1`
 generated tables, contract §7.5), `memory` (`bonsai.memory/1`, a memory note and the index, spec §10), `error` (the
 `error` object, `bonsai.error`, spec §3 and §16 row 29), and the two command outputs the studio reads now that Bonsai
 has no screens: `check` (`bonsai.check/1`, `bonsai check --json`) and `changes` (`bonsai.changes/1`, the preview or
-result of `init`, `update` and `unlink` with `--json`). Each documents itself: a top-level `description` (what the
+result of `init`, `update` and `unlink` with `--json`); and, from set 5, `help` (`bonsai.help/1`, `bonsai --help
+--json`: every command word with its flags, exit codes and examples, the exit codes every word shares, and every `error`
+word with its meaning and usual `who`, so an agent learns the tool without reading a page). Each documents itself: a top-level `description` (what the
 format is for, who writes and reads it, where it lives) and a `description` and `examples` on every property. Later
 steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each a new schema file: an addition.
 
@@ -54,7 +56,7 @@ steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each 
   second copy. **One kind of open list lives in Bonsai's code instead:** a list of fixed words that code reads at many
   places, the `error` object's `code` and `check`'s finding and warning `code` (and, from step 5.2, the log's
   events). Its known words live in one Go table, their one home, which `bonsai check --schema <format>` prints (and the
-  reference page of lists once step 5.1.10 builds it); the schema's description names those commands and does not
+  reference page of lists, `docs/reference/lists.md`, generated from the code by `go generate ./...`); the schema's description names those commands and does not
   copy the words, and the words in its examples are illustrative.
 - **Copies held to their home.** The schema checker has no `$ref`, so a shape two schemas share is written in both,
   and a test holds the copy equal to its home: the `error` object, inline in `status`, `check` and `changes`, is
@@ -145,6 +147,15 @@ steps add their commands' outputs (`asks`, `logs`, `ladder`) the same way, each 
   widen: `changes`' `result` (no source fixes its words, and a run can stop part-way: `failed`), a file's `result`,
   a settings line's and a code item's `kind`, the plugin step's `result`, the lock's word in `changes`, the `error`
   and finding codes (above), and a ladder rung's `tests`.
+- **`help`, set 5.** One document, `bonsai --help --json`, read from the same tables the human `--help` and the
+  behaviour are made from (the word registry in `cmd/bonsai`, `format.ExitCodes`, `format.ErrorWords`), so it cannot
+  drift; a test holds it to every word, flag and error word the tables have, and to this schema. Only the bare
+  `bonsai --help --json` prints it: a word's own `--help` stays text, with or without `--json`. `words` lists the sub-words
+  (`hook guard`) as entries of their own, a sub-word not built yet with `later` set and its text fields empty; `later`
+  on a word or a flag names the step that builds it. `exit_codes` is the codes every word shares and `hook`'s own;
+  each word's `exits` says which it returns and what each means for it. `error_words` is `format.ErrorWords`, an
+  open list like the `error` object's `code` it describes. An addition (a new schema file), so the schema-compare test
+  passes unchanged.
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,

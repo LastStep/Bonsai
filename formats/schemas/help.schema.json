@@ -1,0 +1,441 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.help/1",
+  "description": "bonsai --help --json (plan-5 5.1.10; Rohan, 9 Oct: Bonsai is managed by agents inside projects): the whole tool as one document, so an agent learns it without reading a page. Every command word with its flags, its exit codes and its examples; the exit codes every word shares; and every known word of the error object's code with its meaning and who usually takes the next step. It is read from the same tables that make the human --help and the behaviour (the word registry in cmd/bonsai, format.ExitCodes, format.ErrorWords), so it cannot drift from them; a test holds it to every word, flag and error word the tables have. Printed, never stored. bonsai --help --json prints every word; a word's own --help stays text. Written by bonsai; read by agents, CI and the studio. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract section 2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "bonsai",
+    "about",
+    "exit_codes",
+    "words",
+    "error_words"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract section 2.2).",
+      "examples": [
+        "bonsai.help/1"
+      ],
+      "const": "bonsai.help/1"
+    },
+    "bonsai": {
+      "description": "The version of the Bonsai that printed it (contract section 2.2).",
+      "examples": [
+        "1.0.0",
+        "dev"
+      ],
+      "type": "string"
+    },
+    "about": {
+      "description": "What to know before the words: that every word takes --help, which lists its flags, its exit codes and an example; that every word but hook takes --json; that a refusal names the next step, with --json the error object (code, message, next with do and who); and where this document and the reference page of lists come from.",
+      "examples": [
+        "bonsai: the structure inside each project."
+      ],
+      "type": "string"
+    },
+    "exit_codes": {
+      "description": "The exit codes every word shares, then hook's own (spec section 3); each word's own table, in words, says which of them it returns.",
+      "examples": [
+        [
+          {
+            "code": 0,
+            "short": "ok",
+            "means": "the command did what it was asked",
+            "applies": "every word but hook"
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "description": "One exit code every word shares, or hook's.",
+        "examples": [
+          {
+            "code": 4,
+            "short": "wrong state or no --yes",
+            "means": "the project is in a state the command does not run in",
+            "applies": "every word but hook"
+          }
+        ],
+        "type": "object",
+        "required": [
+          "code",
+          "short",
+          "means",
+          "applies"
+        ],
+        "properties": {
+          "code": {
+            "description": "The exit code (spec section 3).",
+            "examples": [
+              0,
+              4
+            ],
+            "type": "integer",
+            "minimum": 0
+          },
+          "short": {
+            "description": "The code in a few words, as bonsai --help lists it.",
+            "examples": [
+              "bad input",
+              "allow"
+            ],
+            "type": "string"
+          },
+          "means": {
+            "description": "One line: what the code means.",
+            "examples": [
+              "the project is in a state the command does not run in"
+            ],
+            "type": "string"
+          },
+          "applies": {
+            "description": "Which words return it, a closed list in practice: every word but hook, or hook (hook speaks Claude Code's hook format, where 2 blocks the call). Typed open: a later word with its own codes adds its own.",
+            "examples": [
+              "every word but hook",
+              "hook"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "words": {
+      "description": "Every command word this build has or knows, with its flags, exit codes and examples, in the order bonsai --help lists them; a word's sub-words follow it, a sub-word not built yet with later set and its text fields empty.",
+      "examples": [
+        []
+      ],
+      "type": "array",
+      "items": {
+        "description": "One command word, or one sub-word of a word (hook guard).",
+        "examples": [
+          {
+            "name": "status",
+            "summary": "one workspace at a glance",
+            "title": "one workspace at a glance (contract section 12), from the folder you run it in.",
+            "usage": "bonsai status [flags]",
+            "about": "By default it is cheap and offline.\n",
+            "takes_json": true,
+            "later": null,
+            "flags": [
+              {
+                "name": "--json",
+                "value": null,
+                "many": false,
+                "help": "print the bonsai.status/1 document",
+                "later": null
+              }
+            ],
+            "notes": "",
+            "exits": [
+              {
+                "code": 0,
+                "means": "the status was read"
+              }
+            ],
+            "examples": [
+              "bonsai status --json"
+            ],
+            "subs": []
+          }
+        ],
+        "type": "object",
+        "required": [
+          "name",
+          "summary",
+          "title",
+          "usage",
+          "about",
+          "takes_json",
+          "later",
+          "flags",
+          "notes",
+          "exits",
+          "examples",
+          "subs"
+        ],
+        "properties": {
+          "name": {
+            "description": "The word as typed after bonsai: status, check; a sub-word gives its parent's name too (hook guard).",
+            "examples": [
+              "check",
+              "hook guard"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "description": "The word's line in bonsai --help. Empty for a sub-word this build does not have yet.",
+            "examples": [
+              "one workspace at a glance",
+              ""
+            ],
+            "type": "string"
+          },
+          "title": {
+            "description": "The first line of the word's human --help, after bonsai <name>: . Empty for a sub-word this build does not have yet.",
+            "examples": [
+              "one workspace at a glance (contract section 12), from the folder you run it in.",
+              ""
+            ],
+            "type": "string"
+          },
+          "usage": {
+            "description": "The word's usage line, as the human --help prints it after Usage: .",
+            "examples": [
+              "bonsai status [flags]",
+              "bonsai hook <name>"
+            ],
+            "type": "string"
+          },
+          "about": {
+            "description": "The human --help's text before the flags, as printed (lines end in a line feed); empty when there is none.",
+            "examples": [
+              "By default it is cheap and offline.\n",
+              ""
+            ],
+            "type": "string"
+          },
+          "takes_json": {
+            "description": "True when the word prints a --json document (every word but hook, which speaks Claude Code's hook format).",
+            "examples": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "later": {
+            "description": "The step of the rebuild that builds the word while this build does not have it (bonsai refuses it, exit 2, error word not-built); null for a word that works.",
+            "examples": [
+              null,
+              "step 5.2.4"
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "flags": {
+            "description": "Every flag the word takes, in the order its human --help lists them, but --help, which every word takes (--help, or -h, prints the word's human help). [] for none.",
+            "examples": [
+              [],
+              [
+                {
+                  "name": "--json",
+                  "value": null,
+                  "many": false,
+                  "help": "print the bonsai.status/1 document",
+                  "later": null
+                }
+              ]
+            ],
+            "type": "array",
+            "items": {
+              "description": "One flag of a word.",
+              "examples": [
+                {
+                  "name": "--json",
+                  "value": null,
+                  "many": false,
+                  "help": "print the bonsai.status/1 document (for programs) instead of plain text",
+                  "later": null
+                }
+              ],
+              "type": "object",
+              "required": [
+                "name",
+                "value",
+                "many",
+                "help",
+                "later"
+              ],
+              "properties": {
+                "name": {
+                  "description": "The flag as typed, two dashes and its name.",
+                  "examples": [
+                    "--json",
+                    "--keep"
+                  ],
+                  "type": "string"
+                },
+                "value": {
+                  "description": "The placeholder of the flag's value as the human help shows it, or null for a switch that takes none.",
+                  "examples": [
+                    "PATH",
+                    null
+                  ],
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "many": {
+                  "description": "True when the flag may be given more than once (each value is kept); false when a second one is refused.",
+                  "examples": [
+                    true,
+                    false
+                  ],
+                  "type": "boolean"
+                },
+                "help": {
+                  "description": "What the flag does, as the human help prints it (a line feed starts a line under the first).",
+                  "examples": [
+                    "print the bonsai.status/1 document (for programs) instead of plain text"
+                  ],
+                  "type": "string"
+                },
+                "later": {
+                  "description": "The step of the rebuild that builds the flag while this build does not have it (the word refuses it, exit 2, error word not-built); null for a flag that works.",
+                  "examples": [
+                    null,
+                    "step 5.6"
+                  ],
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "notes": {
+            "description": "The human --help's text after the flags, as printed; empty when there is none.",
+            "examples": [
+              "",
+              ""
+            ],
+            "type": "string"
+          },
+          "exits": {
+            "description": "Every exit code the word returns, with what it means for the word; a test fails on a code the word returns that is not here. [] for a sub-word not built yet.",
+            "examples": [
+              [
+                {
+                  "code": 0,
+                  "means": "the status was read"
+                }
+              ]
+            ],
+            "type": "array",
+            "items": {
+              "description": "One exit code a word returns, and what it means for that word.",
+              "examples": [
+                {
+                  "code": 2,
+                  "means": "bad input (a flag status does not take, or one not built yet)"
+                }
+              ],
+              "type": "object",
+              "required": [
+                "code",
+                "means"
+              ],
+              "properties": {
+                "code": {
+                  "description": "The exit code (spec section 3).",
+                  "examples": [
+                    0,
+                    2
+                  ],
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "means": {
+                  "description": "What the code means for this word, as the human help prints it.",
+                  "examples": [
+                    "bad input (a flag status does not take, or one not built yet)"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "examples": {
+            "description": "Full command lines that work in a project, one per example.",
+            "examples": [
+              [
+                "bonsai status --json"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subs": {
+            "description": "The names of the word's sub-words, each also an entry in words; [] for a word with none.",
+            "examples": [
+              [
+                "hook guard",
+                "hook start"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "error_words": {
+      "description": "Every known word of the error object's code, with its meaning and who usually takes its next step: format.ErrorWords, the one table the whole tool reads. An open list: a reader shows a word it does not know as other.",
+      "examples": [
+        [
+          {
+            "code": "needs-yes",
+            "means": "the command writes, and was given no --yes with no terminal to ask at",
+            "who": "person"
+          }
+        ]
+      ],
+      "type": "array",
+      "items": {
+        "description": "One known word of the error object's code.",
+        "examples": [
+          {
+            "code": "needs-yes",
+            "means": "the command writes, and was given no --yes with no terminal to ask at",
+            "who": "person"
+          }
+        ],
+        "type": "object",
+        "required": [
+          "code",
+          "means",
+          "who"
+        ],
+        "properties": {
+          "code": {
+            "description": "The word: what an error object's code (bonsai.error) holds, and what a refusal's --json carries.",
+            "examples": [
+              "needs-yes",
+              "bad-flag"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "means": {
+            "description": "What the word means, one line.",
+            "examples": [
+              "the command writes, and was given no --yes with no terminal to ask at"
+            ],
+            "type": "string"
+          },
+          "who": {
+            "description": "Who usually takes the next step of a refusal with this word, a closed list: agent or person. A refusal may name the other when its own next step is the other's; read next.who of the error object itself.",
+            "examples": [
+              "person",
+              "agent"
+            ],
+            "enum": [
+              "agent",
+              "person"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

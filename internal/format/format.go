@@ -104,7 +104,7 @@ const (
 // ErrorWords.
 var errorCode = []List{{Field: "error.code", Table: "format.ErrorWords", Words: &ErrorWords}}
 
-// All is every format, in formats.Names' order (the ten of contract §2, then the eight of set 4). Its test holds it
+// All is every format, in formats.Names' order (the ten of contract §2, the eight of set 4, then set 5's help). Its test holds it
 // to formats.Names and to the schemas, so a schema with no entry here, or an entry with no schema, fails.
 //
 // To add a format: its schema in formats/ (a new set), its Go file here, and an entry below. To add an open list's
@@ -116,7 +116,8 @@ var All = []*Format{
 	{Name: "run", Major: 1, Shape: Markdown, Read0: true, GoType: "format.Run", Next: nextPersonFile},
 	{Name: "state", Major: 1, Shape: Markdown, Read0: true, GoType: "format.State", Next: nextPersonFile},
 	{Name: "log", Major: 1, Shape: JSONLine, Writes: true, GoType: "format.Log", Next: nextRecord},
-	{Name: "ask", Major: 1, Shape: JSONLine, Writes: true, GoType: "format.Ask", Next: nextRecord},
+	{Name: "ask", Major: 1, Shape: JSONLine, Writes: true, GoType: "format.Ask", Next: nextRecord,
+		Lists: []List{{Field: "type", Table: "format.AskTypes", Words: &AskTypes}}},
 	{Name: "ladder", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Ladder", Next: nextLadder},
 	{Name: "status", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Status", Next: nextOutput, Lists: errorCode},
 	{Name: "lock", Major: 1, Shape: JSONDoc, Writes: true, GoType: "workspace.Lock (internal/workspace/lock.go)", Next: nextLock},
@@ -134,6 +135,8 @@ var All = []*Format{
 			{Field: "warnings[].code", Table: "format.CheckWords", Words: &CheckWords},
 		}, errorCode...)},
 	{Name: "changes", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Changes", Next: nextOutput, Lists: errorCode},
+	{Name: "help", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Help", Next: nextOutput,
+		Lists: []List{{Field: "error_words[].code", Table: "format.ErrorWords", Words: &ErrorWords}}},
 }
 
 // Lookup finds a format by its short name ("task"), its name ("bonsai.task") or its name and major

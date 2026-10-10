@@ -37,6 +37,18 @@ type AskAnswer struct {
 	Extra   schema.Object `json:"-"`
 }
 
+// AskTypes are the known words of an ask's type: an open list (a pack may define its own type, contract section 9.1),
+// whose one home is this table; bonsai check --schema bonsai.ask prints it, and the reference page of lists reads it.
+// The ask schema's description of the field names the same words (TestAskTypesAreTheSchemas holds the two equal). Who
+// files each is contract section 9.2's: agents the first four, the ladder alone Bless.
+var AskTypes = []Word{
+	{Word: "Answer", Means: "filed by an agent (contract section 9.2)"},
+	{Word: "Decide", Means: "filed by an agent (contract section 9.2)"},
+	{Word: "Look", Means: "filed by an agent (contract section 9.2)"},
+	{Word: "Play", Means: "filed by an agent (contract section 9.2)"},
+	{Word: "Bless", Means: "filed by the ladder alone, when a ratchet count rose (contract sections 9.2 and 11)"},
+}
+
 // ReadAsk reads one ask record (one line, its line feed allowed).
 func ReadAsk(raw []byte) (*Ask, error) {
 	a := &Ask{}

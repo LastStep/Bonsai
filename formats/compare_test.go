@@ -26,9 +26,9 @@ import (
 	"github.com/LastStep/Bonsai/internal/schema"
 )
 
-// schemaBase is the set's base: the commit of the set before this one (set 3), whose schemas this set may only add
+// schemaBase is the set's base: the commit of the set before this one (set 4), whose schemas this set may only add
 // to. Each set's commit moves it forward to the commit of the set before it.
-const schemaBase = "4936b37d1d695d609c171f55a6fafac63cb16642"
+const schemaBase = "22dd08af9cf3691a61aee71e3aeec5d3fde71b38"
 
 // annotationKeys may change freely: they document, they do not constrain.
 var annotationKeys = map[string]bool{"description": true, "examples": true, "title": true}

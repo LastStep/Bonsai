@@ -1,0 +1,208 @@
+{
+  "format": "bonsai.help/1",
+  "bonsai": "1.0.0",
+  "about": "bonsai: the structure inside each project (formats, packs, guards, a recorder, a ladder). Every word takes --help, which lists its flags, its exit codes and an example; every word but hook takes --json. A word that writes previews first and writes with --yes; without a terminal it never asks: it prints the preview and exits 4. Every refusal names the next step; with --json it is the error object of the word's document (code, a fixed word; message; next, with do and who: agent or person), and a refusal before any word prints the error object alone. bonsai check --schema bonsai.error lists every code. bonsai --help --json prints this document (bonsai.help/1); a word's own --help is text. bonsai check --schema <format> prints any format; docs/reference/lists.md in Bonsai's repository lists every list.",
+  "exit_codes": [
+    {
+      "code": 0,
+      "short": "ok",
+      "means": "the command did what it was asked (check found nothing, status read the workspace, a preview was printed and nothing was due)",
+      "applies": "every word but hook"
+    },
+    {
+      "code": 1,
+      "short": "check findings",
+      "means": "check found at least one finding (a warning never makes it 1)",
+      "applies": "every word but hook"
+    },
+    {
+      "code": 2,
+      "short": "bad input",
+      "means": "the command line, or a file the command was given, is not one Bonsai reads: nothing was done",
+      "applies": "every word but hook"
+    },
+    {
+      "code": 3,
+      "short": "runtime",
+      "means": "something failed that the command line did not cause: a file or folder could not be read or written, git is missing, a fetch failed",
+      "applies": "every word but hook"
+    },
+    {
+      "code": 4,
+      "short": "wrong state or no --yes",
+      "means": "the project is in a state the command does not run in, or the command writes and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing",
+      "applies": "every word but hook"
+    },
+    {
+      "code": 5,
+      "short": "conflicts",
+      "means": "files edited here were changed by the pack too: nothing is written until each is settled",
+      "applies": "every word but hook"
+    },
+    {
+      "code": 0,
+      "short": "allow",
+      "means": "the hook lets the call go on",
+      "applies": "hook"
+    },
+    {
+      "code": 2,
+      "short": "block",
+      "means": "the hook stops the call; the reason and the next step are on stderr, which Claude Code shows to the agent",
+      "applies": "hook"
+    }
+  ],
+  "words": [
+    {
+      "name": "status",
+      "summary": "one workspace at a glance",
+      "title": "one workspace at a glance (contract section 12), from the folder you run it in.",
+      "usage": "bonsai status [flags]",
+      "about": "By default it is cheap and offline (it runs git and reads files, never Claude Code or the network), for a\nprogram to run often. problems are the findings bonsai check reports, one sentence each with its next step; needs\nlists the Claude Code floor and each locked pack. Fields that do not apply print null or [] (contract section 12).\n",
+      "takes_json": true,
+      "later": null,
+      "flags": [
+        {
+          "name": "--json",
+          "value": null,
+          "many": false,
+          "help": "print the bonsai.status/1 document (for programs) instead of plain text; with --active,\nthe active_task object alone",
+          "later": null
+        },
+        {
+          "name": "--full",
+          "value": null,
+          "many": false,
+          "help": "add checks (mode full): each pack's newer release tags (git ls-remote), its plugin as Claude\nCode reports it (claude plugin list), Claude Code's version against the floor (claude --version),\nand the MCP servers the packs' needs name; a pack whose plugin is not installed here becomes a\nneeds entry of kind plugin",
+          "later": null
+        },
+        {
+          "name": "--active",
+          "value": null,
+          "many": false,
+          "help": "print only the active task (contract section 13): its id and how it was found (named, or the\none task reading running), or none and why; it reads bonsai.yaml and the task files only",
+          "later": null
+        },
+        {
+          "name": "--line",
+          "value": null,
+          "many": false,
+          "help": "print the statusline's workspace half",
+          "later": "step 5.6"
+        }
+      ],
+      "notes": "",
+      "exits": [
+        {
+          "code": 0,
+          "means": "the status was read (a check --full could not make reads unknown, never a failure)"
+        },
+        {
+          "code": 2,
+          "means": "bad input (a flag status does not take, one not built yet, or --active with --full); --json prints\nformat, bonsai, problems [] and error, and every other field null"
+        },
+        {
+          "code": 3,
+          "means": "the workspace cannot be read at all (not in a git checkout, no bonsai.yaml, a bonsai.yaml Bonsai refuses);\n--json then prints format, bonsai, problems and error, and every other field null (with --active, the\nerror object alone)"
+        }
+      ],
+      "examples": [
+        "bonsai status --json",
+        "bonsai status --full --json",
+        "bonsai status --active --json"
+      ],
+      "subs": []
+    },
+    {
+      "name": "hook",
+      "summary": "a hook Claude Code's hook lines call",
+      "title": "the hook entry point Claude Code's hook lines call (spec section 7).",
+      "usage": "bonsai hook <name>",
+      "about": "A hook speaks Claude Code's hook format: it takes no --json.\n",
+      "takes_json": false,
+      "later": null,
+      "flags": [],
+      "notes": "",
+      "exits": [
+        {
+          "code": 0,
+          "means": "allow (or the help was printed)"
+        },
+        {
+          "code": 2,
+          "means": "block, or bad input (no hook name, a hook this build does not have)"
+        }
+      ],
+      "examples": [
+        "bonsai hook guard --help"
+      ],
+      "subs": [
+        "hook guard",
+        "hook start",
+        "hook stop",
+        "hook record"
+      ]
+    },
+    {
+      "name": "hook guard",
+      "summary": "the PreToolUse guard",
+      "title": "the PreToolUse guard that bonsai init writes as the hook line",
+      "usage": "bonsai hook guard",
+      "about": "  bonsai hook guard || exit 2\non PreToolUse (Edit, Write, MultiEdit, NotebookEdit, Bash, PowerShell), timeout 10 s.\nIt reads Claude Code's PreToolUse payload on stdin and the project from CLAUDE_PROJECT_DIR, and refuses an Edit,\nWrite, MultiEdit or NotebookEdit of a path on bonsai.yaml's protected or person_only list. Bash and PowerShell are\nallowed in this build. It blocks whatever it cannot read or decide, and blocks itself after 5 s, before the hook's\ntimeout could let the call through. In a project with no bonsai.yaml it allows and records nothing.\nEach decision is a guard record (bonsai.log/1) in .bonsai/local/log/, naming the binary's own path, and on a\nsession's first record its SHA-256.\n",
+      "takes_json": false,
+      "later": null,
+      "flags": [],
+      "notes": "",
+      "exits": [
+        {
+          "code": 0,
+          "means": "allow: the call goes on (nothing printed)"
+        },
+        {
+          "code": 2,
+          "means": "block: the reason and the next step on stderr, which Claude Code shows to the agent"
+        }
+      ],
+      "examples": [
+        "CLAUDE_PROJECT_DIR=. bonsai hook guard < payload.json"
+      ],
+      "subs": []
+    },
+    {
+      "name": "hook start",
+      "summary": "",
+      "title": "",
+      "usage": "bonsai hook start",
+      "about": "",
+      "takes_json": false,
+      "later": "step 5.2.4",
+      "flags": [],
+      "notes": "",
+      "exits": [],
+      "examples": [],
+      "subs": []
+    }
+  ],
+  "error_words": [
+    {
+      "code": "bad-flag",
+      "means": "the command line has a flag the word does not take, a flag without its value, a value given to a switch, a flag given twice that is taken once, or a word left over",
+      "who": "agent"
+    },
+    {
+      "code": "not-a-pack",
+      "means": "check --pack was given a folder that is not a pack's: it is not there, is not a folder, or holds no bonsai/pack.yaml",
+      "who": "agent"
+    },
+    {
+      "code": "needs-yes",
+      "means": "the command writes, and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing",
+      "who": "person"
+    },
+    {
+      "code": "unexpected",
+      "means": "something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats",
+      "who": "agent"
+    }
+  ]
+}
