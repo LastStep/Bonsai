@@ -354,6 +354,9 @@ func (p *Plan) Changes(result string, refusal *Error) *format.Changes {
 		c.Plugins = append(c.Plugins, format.ChangesPlugin{Pack: r.Pack, Plugin: r.Plugin, Commit: r.Commit, Result: r.Result,
 			Message: r.Message, Next: next})
 	}
+	for _, l := range p.Left {
+		c.Left = append(c.Left, ascii(l))
+	}
 	if refusal != nil {
 		c.Error = refusal.Object()
 	}
@@ -405,7 +408,7 @@ func (p *Plan) PluginsText() string {
 }
 
 // Doc is check's result as check --json prints it (bonsai.check/1, written by format.Check.Encode): every finding
-// and warning with its next step and who takes it; error null.
+// and warning with its next step and who takes it, and the notes check says to a person; error null.
 func (r *CheckResult) Doc() *format.Check {
 	list := func(fs []Finding) []format.Finding {
 		out := []format.Finding{}
@@ -415,7 +418,11 @@ func (r *CheckResult) Doc() *format.Check {
 		}
 		return out
 	}
-	return &format.Check{Findings: list(r.Findings), Warnings: list(r.Warnings)}
+	notes := []string{}
+	for _, n := range r.Notes {
+		notes = append(notes, ascii(n))
+	}
+	return &format.Check{Findings: list(r.Findings), Warnings: list(r.Warnings), Notes: notes}
 }
 
 // CheckRefused is check --json when check could not run: no findings, no warnings, and the error.
