@@ -182,7 +182,7 @@ out after that (vision 2.6).
 | `bonsai init [--name N --source URL --ref R] [--path P] [--never-edit P] [--new-id] [--diff] [--yes] [--allow-exec] [--keep P] [--adopt P] [--json]` | Links a project: writes `bonsai.yaml` (a comment on every line), `.bonsai/` (the lock, its `.gitignore`, the tables, and `STATE.md` from base's template when there is none, kind `once`), Bonsai's settings entries, the instruction block and the always-on protocol files (§5, §6); previews each settings line first, as `update` does; ends by saying where everything lives (§6). `--new-id` gives a copy its own id and empties its `.bonsai/local/` | Project files |
 | `bonsai update [--diff] [--yes] [--allow-exec] [--keep P] [--adopt P] [--json]` | Brings packs to the refs in `bonsai.yaml`; previews by default, naming every file and every settings line with what it does (§6); all or nothing; exit 5 on a conflict; brings this machine's plugin install to the locked commit (§5) | Project files |
 | `bonsai unlink [--yes] [--json]` | Removes what Bonsai wrote, leaving edited files, `.bonsai/STATE.md` and `.bonsai/local/` in place | Project files |
-| `bonsai status [--json] [--full] [--active] [--line]` | One workspace at a glance (contract §12), the home, `.bonsai/` and the id among it. `--active`: only `active_task` (contract §13's read-only command). `--line`: the statusline's workspace half | Nothing |
+| `bonsai status [--json] [--full] [--active] [--line]` | One workspace at a glance (contract §12), the home, `.bonsai/` and the id among it. `--active`: only `active_task` (contract §13's read-only command). `--line`: the statusline's workspace half | Nothing in the project; with `--full`, the home's cache |
 | `bonsai check [--json] [--write] [--schema F] [--pack P]` | Findings (§6); exit 1 on any; warnings never change the exit code. CI and rung 0 run it. `--write`: rebuilds the two tables in `.bonsai/`, in the main checkout only; its exit code then says only whether it wrote (§6). `--schema F`: a format with every allowed value. `--pack P`: checks a pack folder (§5) | Nothing; with `--write`, the two tables |
 | `bonsai hook <name>` | The hook entry point: `guard`, `stop`, `start`, `record` (§7, §8) | The log; cleaning (§6) |
 | `bonsai ladder --task T [--root P] [--ci] [--json]` | The ladder runner (§9) | The ladder result (`--ci`: its own file), the log, a Bless ask |
@@ -197,6 +197,13 @@ out after that (vision 2.6).
 > **Changed 9 Oct (step 5.1.1):** `init` takes the flags `update` takes, and both take `--allow-exec`: a pack's hook
 > lines, the pack files they run and a plugin's own code parts are written or installed only with it as well as `--yes`
 > (§6, "Code is consented to separately"; §5's note on each machine's install).
+
+> **Changed 10 Oct (step 5.6's section, approved by Rohan):** `status` writes nothing in the project, but `status
+> --full` keeps its online read of Bonsai's newer releases in the home's `cache/release.json`, a refillable copy
+> (deleting it costs one read), and `status --line` may keep a cache in the home's `cache/line/<machine key>.json` if
+> its speed budget ever needs one. A write that fails (a read-only home, say) never fails `status`. So `status`'s
+> "Writes" reads "Nothing in the project; with `--full`, the home's cache". `design/plan-5.md`, "Step 5.6", notes 5.6.4
+> and 5.6.5.
 
 Ten commands gained `--json` on 7 Oct (§3); no word was added. `bonsai walls --print` went with the machine-wide
 settings file it printed for (question B, 7 Oct). Flags, not words: `bonsai --version`, `--help` on every
