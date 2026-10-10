@@ -78,7 +78,7 @@ so if you pause, nothing public changes.
 > **Changed 8 Oct (Rohan):** no branch, no marker tag, no pull request: the clear-out and the rebuild land on `main`
 > directly, so if you pause, `main` holds the work so far and 0.4.3 stays at its tag and in git history (§12's note).
 
-**What you answered on 7 Oct** (§19). A: your 4 Oct guard answer holds; a later upgrade comes after the Jev trial. B:
+**What you answered on 7 Oct** (§19). A: your 4 Oct guard answer holds. B:
 no admin batch: no machine-wide settings file and no Claude Code version pin; the walls are deny rules in each linked
 project, and `bonsai check` warns when Claude Code is too old. C: Bonsai's work is proven by Go tests, CI and a fresh
 verifier until step 5.4, then by its own ladder, with a pre-release `bonsai` you install. D: the log and asks move to
@@ -1126,8 +1126,7 @@ studio's adoption gains 1-2 h (contract §15.2: the tables in each move's commit
 **Totals.** Bonsai 1.0 under path (a), with the skeleton: 169-265 AI hours (270-424 on the record), about 15-24
 studio-days, roughly three to five weeks for Bonsai alone, best case; the studio's own work (contract §15) comes on top.
 Path (b), the smaller cut, defers the new-tests check, git integrity, `status --line` and half of 5.7: about 121-188 h
-after the gate. Path (d) adds the screens: about 169-268 h after the gate. A later upgrade of the
-guard's shell side waits for the Jev trial and Rohan's decision on its research (§19 A); it is not costed here.
+after the gate. Path (d) adds the screens: about 169-268 h after the gate.
 
 > **Changed 9 Oct (Rohan):** the gate chose path (a). Path (d) is gone with the screens (§11's note).
 
@@ -1445,7 +1444,7 @@ Rohan's answers, 7 Oct, after the recheck:
   > "Step 5.3", the second question for Rohan.
 - **Agents other than Claude Code: Claude Code first** in 1.0 (Q5 a); others later, on his word.
 - **Question A, the guard: (a), his 4 Oct answer** (the file guard, deny rules, the delete check; shell writes to his
-  paths caught after the fact by the first rung and the Desk). A later upgrade comes with Jev, after its trial (§19 A).
+  paths caught after the fact by the first rung and the Desk).
 - **Question B, the admin batch: dropped** (no managed file, no pin, no second batch; Q10 and Q11 reversed). Why, in
   his words: "why do we need this. i dont think we do, seems to be overenginnering." The walls move into the base
   pack's deny rules; `check` warns on a Claude Code older than Bonsai needs (§7, §19 B).
@@ -1488,10 +1487,11 @@ Rohan answered the four questions on 7 Oct. The options, their costs and the rec
 
 ### A. Does your 4 Oct guard answer still hold?
 
-**(a), yes:** "a is fine now. later we will upgrade this setup with jev". The file guard, deny rules for never-edited
-files and the delete check; a shell write to his paths (TB-029's case included) is caught after the fact by rung 0 and
-the Desk (§7). The upgrade waits for the Jev trial (7-21 Oct) and his decision on
-`studio/decisions/RESEARCH-2026-10-04-jev-guard.md`.
+**(a), yes:** "a is fine now." The file guard, deny rules for never-edited files and the delete check; a shell write to
+his paths (TB-029's case included) is caught after the fact by rung 0 and the Desk (§7).
+
+> **Changed 10 Oct (Rohan):** no later upgrade of the guard with an outside model is planned. Bonsai's guard stays
+> offline (§3), and the trial of one is closed for Bonsai.
 
 ### B. When, and how wide, is the admin batch?
 
