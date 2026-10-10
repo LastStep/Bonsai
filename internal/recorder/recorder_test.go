@@ -317,6 +317,20 @@ func TestStartContextCases(t *testing.T) {
 	if len(lines) != MaxContextLines || lines[MaxContextLines-1] != "More than fits here: run bonsai status --json." {
 		t.Errorf("%d lines, the last %q", len(lines), lines[len(lines)-1])
 	}
+	// A log folder that cannot be written (a file where it goes): the context is still printed, and the exit is 0.
+	logDir := filepath.Join(root, ".bonsai", "local", "log")
+	if err := os.RemoveAll(logDir); err != nil {
+		t.Fatal(err)
+	}
+	write(t, root, ".bonsai/local/log", "in the way")
+	out.Reset()
+	if code := Start(opts(root, `{"session_id":"s2","hook_event_name":"SessionStart","source":"startup"}`, nil), &out); code != 0 ||
+		!strings.Contains(out.String(), "Active task: none: no task reads running.\n") {
+		t.Errorf("an unwritable log folder: %d\n%s", code, out.String())
+	}
+	if err := os.Remove(logDir); err != nil {
+		t.Fatal(err)
+	}
 	write(t, root, "bonsai.yaml", "format: bonsai.workspace/1\nid: [\n")
 	out.Reset()
 	if code := Start(opts(root, `{"session_id":"s9","hook_event_name":"SessionStart"}`, nil), &out); code != 0 ||
