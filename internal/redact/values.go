@@ -89,9 +89,8 @@ type run struct {
 	keyword    bool
 }
 
-// nameValues gives the spans of s that names' values take, in order.
-func nameValues(s string) []Span {
-	names := findNames(s)
+// nameValues gives the spans of s that the values of names (in order of where they start) take, in order.
+func nameValues(s string, names []name) []Span {
 	if len(names) == 0 {
 		return nil
 	}

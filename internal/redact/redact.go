@@ -19,7 +19,9 @@
 //     that stands inside another name's value has its own value taken, and the outer value takes the inner name
 //     too, so no value is left because another rule reached it first. The studio's redactor took a name's value
 //     before the next rule could see the name inside it, and leaked in three classes of shape; read this way the
-//     three are one rule: every name's value goes, wherever the name stands.
+//     three are one rule: every name's value goes, wherever the name stands. A name a shape took into its span
+//     (`AKIA...PASSWORD: x`, a token or a webhook URL with `_token=` or `,password:` glued on) is still a name: it
+//     is found in the text as it stood before the shapes, and its value goes too (lost, below).
 //  3. random.go: a long run of token characters that looks random.
 //
 // The three run again over their own output until it no longer changes (one pass is nearly always enough).
@@ -165,13 +167,18 @@ func redactDoc(s string) *doc {
 	d := &doc{orig: s}
 	d.render()
 	for pass := 0; pass < maxPasses; pass++ {
-		changed := false
+		changed, shaped := false, false
+		preText, preSegs := d.text, d.segs // render makes new ones, so these stay the text before the shapes
 		for _, r := range shapeRules {
 			if d.apply(r.kind, r.find) {
-				changed = true
+				changed, shaped = true, true
 			}
 		}
-		if d.merge(d.mapSpans(nameValues(d.text))) {
+		names := findNames(d.text)
+		if shaped {
+			names = d.withLost(names, preText, preSegs)
+		}
+		if d.merge(d.mapSpans(nameValues(d.text, names))) {
 			d.render()
 			changed = true
 		}
@@ -183,6 +190,77 @@ func redactDoc(s string) *doc {
 		}
 	}
 	return d
+}
+
+// withLost adds to names, the names of the current text, the names this pass's shapes took into their spans: those
+// found in the text as it stood before the shapes (preText, mapped onto orig by preSegs) and not now, whose values
+// start outside every span. Each stands in the current text where it stood, a part of it inside a marker at the
+// marker's start, so its value is read as any other name's. A value that starts inside the span that took its name
+// is that span's: the password of a URL's credentials ends at its `@`, and the host after it stays.
+func (d *doc) withLost(names []name, preText string, preSegs []seg) []name {
+	pre := findNames(preText)
+	if len(pre) == 0 {
+		return names
+	}
+	type at struct {
+		kind nameKind
+		val  int
+	}
+	now := make(map[at]bool, len(names))
+	for _, nm := range names {
+		now[at{nm.kind, origAt(d.segs, nm.val)}] = true
+	}
+	added := false
+	for _, nm := range pre {
+		v := origAt(preSegs, nm.val)
+		if now[at{nm.kind, v}] {
+			continue
+		}
+		if k := sort.Search(len(d.spans), func(i int) bool { return d.spans[i].End > v }); k < len(d.spans) && d.spans[k].Start < v {
+			continue
+		}
+		names = append(names, name{nm.kind, d.textAt(origAt(preSegs, nm.start)), d.textAt(v)})
+		added = true
+	}
+	if added {
+		sort.SliceStable(names, func(i, j int) bool { return names[i].start < names[j].start })
+	}
+	return names
+}
+
+// origAt gives the byte of orig that byte pos of a text stands for, by the text's map: in a marker, the start of
+// what it stands for; at the text's end, orig's end.
+func origAt(segs []seg, pos int) int {
+	k := sort.Search(len(segs), func(i int) bool { return segs[i].t > pos }) - 1
+	if k < 0 {
+		return 0
+	}
+	g := segs[k]
+	switch {
+	case !g.marker:
+		return g.o + min(pos-g.t, g.ol)
+	case pos >= g.t+len(Marker):
+		return g.o + g.ol
+	default:
+		return g.o
+	}
+}
+
+// textAt gives the byte of the current text that stands for byte o of orig: inside a span, its marker's start.
+func (d *doc) textAt(o int) int {
+	k := sort.Search(len(d.segs), func(i int) bool { return d.segs[i].o > o }) - 1
+	if k < 0 {
+		return 0
+	}
+	g := d.segs[k]
+	switch {
+	case !g.marker:
+		return g.t + min(o-g.o, g.ol)
+	case o >= g.o+g.ol:
+		return g.t + len(Marker)
+	default:
+		return g.t
+	}
 }
 
 // apply runs one rule over the current text and takes out what it finds; it reports whether anything changed.
@@ -204,7 +282,7 @@ func (d *doc) render() {
 		return
 	}
 	b := make([]byte, 0, len(d.orig))
-	d.segs = d.segs[:0]
+	d.segs = make([]seg, 0, 2*len(d.spans)+1)
 	at := 0
 	for _, sp := range d.spans {
 		if sp.Start > at {

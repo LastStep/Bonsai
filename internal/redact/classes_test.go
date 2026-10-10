@@ -191,3 +191,73 @@ func TestManyNamesTogether(t *testing.T) {
 		checkGone(t, b.String(), secrets...)
 	}
 }
+
+// A shape glued to a name: a token, a key id or a webhook URL whose run goes straight on into a secret-named name
+// takes the name into its own span, and the name's value still goes. Every shape kind is glued to every kind of name,
+// with nothing between and with each separator a shape's run may hold, the name in small letters and in capitals;
+// wherever a name takes its value with a plain word in the shape's place, it takes it with the shape there too.
+func TestShapeGluedToAName(t *testing.T) {
+	m := newMaker(15)
+	urlsafe := alnum + "_-"
+	b64 := alnum + "+/"
+	type shape struct{ kind, text, secret string }
+	var shapes []shape
+	add := func(kind, before, secret, after string) {
+		shapes = append(shapes, shape{kind, before + secret + after, secret})
+	}
+	add("private key with no END line", "-----BEGIN EC PRIVATE KEY-----\n", m.from(b64, 48), "")
+	add("Discord webhook", "https://discord.com/api/webhooks/42/", m.secret(24), "")
+	add("Slack webhook", "https://hooks.slack.com/services/T07/", m.secret(20), "")
+	add("Slack webhook in capitals", "HTTPS://HOOKS.SLACK.COM/services/", m.secret(20), "")
+	add("credentials in a URL", "https://builder:", m.secret(12), "@example.com/team")
+	add("Anthropic key", "sk-ant-api03-", m.secret(30), "")
+	add("OpenAI-style key", "sk-proj-", m.secret(26), "")
+	add("Stripe-style key", "rk_live_", m.secret(20), "")
+	add("GitHub fine-grained token", "github_pat_", m.secret(30), "")
+	add("GitHub token", "gho_", m.secret(30), "")
+	add("Slack token", "xoxp-2718281828-", m.secret(16), "")
+	add("npm token", "npm_", m.secret(36), "")
+	add("AWS key id", "ASIA", strings.ToUpper(m.secret(16)), "")
+	add("Google API key", "AIza", m.from(urlsafe, 35), "")
+	add("Google OAuth token", "ya29.", m.secret(30), "")
+	add("JSON web token", "eyJ"+m.from(urlsafe, 12)+"."+m.from(urlsafe, 16)+".", m.from(alnum, 20), "")
+	add("a long random run", "", m.secret(40), "")
+	names := []string{
+		"password: %s", "token=%s", "api_key = '%s'", "secret\":\"%s\"", "--password %s", "-token %s",
+		"--client-secret %s", "authorization: Bearer %s", "authorization=%s", "proxy-authorization: token %s",
+		"bearer %s", "extraheader=%s", "extraheader= %s",
+	}
+	glues := []string{"", "_", "-", ".", "/", ",", ";", "&", "?", "=", ":"}
+	n, asked := 0, 0
+	for _, sh := range shapes {
+		// A plain word ending as the shape ends: the reference a name is read against.
+		stand := "w" + sh.text[len(sh.text)-1:]
+		for _, g := range glues {
+			for _, nm := range names {
+				for _, form := range []string{nm, strings.Replace(strings.ToUpper(nm), "%S", "%s", 1)} {
+					for _, frame := range []string{"%s", "see %s and more"} {
+						v := m.secret(12)
+						in := fmt.Sprintf(frame, sh.text+g+fmt.Sprintf(form, v))
+						out := Text(in)
+						n++
+						if w := survives(out, sh.secret); w != "" {
+							t.Errorf("%s: %q kept %q of the shape: %q", sh.kind, in, w, out)
+						}
+						ref := fmt.Sprintf(frame, stand+g+fmt.Sprintf(form, v))
+						if survives(Text(ref), v) == "" {
+							asked++
+							if w := survives(out, v); w != "" {
+								t.Errorf("%s: %q kept %q of the value: %q", sh.kind, in, w, out)
+							}
+						}
+						fixedAtEveryCut(t, in, out)
+					}
+				}
+			}
+		}
+	}
+	t.Logf("%d strings, %d with a value to take", n, asked)
+	if n != len(shapes)*len(glues)*len(names)*4 || asked < n*3/4 {
+		t.Errorf("%d strings, %d with a value to take", n, asked)
+	}
+}
