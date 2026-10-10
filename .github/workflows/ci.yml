@@ -85,7 +85,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11.4
+          version: v2.14.0
           verify: false
 
   govulncheck:
@@ -99,10 +99,11 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # Pinned: v1.8.0 and later need Go 1.26, and CI runs the go.mod toolchain (Go 1.25) with GOTOOLCHAIN=local.
-      # v1.7.0 is the newest release whose go.mod says go 1.25.0. Move the pin when go.mod moves to Go 1.26.
+      # Pinned exactly, so a new release cannot change what CI checks on its own. v1.8.0 is the newest release; its go.mod
+      # says go 1.26.0, which the go.mod toolchain (Go 1.27) satisfies. CI runs that toolchain with GOTOOLCHAIN=local.
+      # Move the pin on purpose, when a newer release is wanted.
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
 
       - name: Run govulncheck
         run: govulncheck ./...
