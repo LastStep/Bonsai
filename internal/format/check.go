@@ -84,6 +84,38 @@ func CheckWord(code string) (Word, bool) {
 	return Word{}, false
 }
 
+// PackCheckWords are the known words of a finding's code from bonsai check --pack <folder> (step 5.1.9; spec section
+// 5, "Every template and pack file documents itself"): one per rule a pack's folder is held to, their one home, beside
+// CheckWords in the same bonsai.check/1 document and the same open list (bonsai check --schema bonsai.check prints both
+// tables; no word is in both). Every one is a finding (it makes check --pack exit 1); a pack's folder has no warnings,
+// and status --json never lists these (they are about a pack, not a project). Who is agent for each: a pack's maker,
+// an agent in the pack's repository, edits the pack's own files. What counts for each rule is engine's checkpack.go.
+// cmd/bonsai's TestCheckTable walks this table as it walks CheckWords: a word with no failing fixture fails, a
+// fixture that fails on any other word fails, and so does a next step naming a command Bonsai does not have.
+var PackCheckWords = []Word{
+	{Word: "pack-schema", Kind: "finding", Who: "agent", Means: "bonsai/pack.yaml, bonsai/labels.yaml or bonsai/lanes.yaml does not fit its format as its writer writes it (format 1's YAML, the format line, every field present, each of a type and value the schema allows, in the schema's order), or the engine would refuse it at a link (a rule a schema cannot say, or a file pack.yaml names missing from the pack)"},
+	{Word: "pack-comment", Kind: "finding", Who: "agent", Means: "a key in bonsai/pack.yaml, labels.yaml or lanes.yaml has no # comment at the end of its line or on the line just above it (spec section 5: every key documents itself)"},
+	{Word: "pack-fields", Kind: "finding", Who: "agent", Means: "a template skill's fields table and its template differ: a field of the template with no row, a row naming no field the template holds, no template after the table, or, for a Bonsai format, fields other than the format's schema"},
+	{Word: "pack-values", Kind: "finding", Who: "agent", Means: "an allowed-values cell of a template skill's fields table lists values other than the closed list its field has (a Bonsai format's schema, or the pack's own lanes, a declared kind's statuses or a choice label's values)"},
+	{Word: "pack-why", Kind: "finding", Who: "agent", Means: "a deny rule in bonsai/pack.yaml has no why, the sentence update's preview prints for it: missing, null or blank"},
+	{Word: "pack-plugin-version", Kind: "finding", Who: "agent", Means: ".claude-plugin/plugin.json carries a version, which a pack pinned by commit never does (spec section 5), or is not a JSON object Bonsai reads"},
+	{Word: "pack-block", Kind: "finding", Who: "agent", Means: "the instruction block a project linked to this pack alone would get (its markers, imports, label definitions and bonsai/block.md) is over its fixed 40 lines (spec section 6)"},
+	{Word: "pack-documents", Kind: "finding", Who: "agent", Means: "a document kind bonsai/pack.yaml declares is not well formed (contract section 7.3): a field the schema does not allow, a name of Bonsai's own or given twice, not exactly one of path and file, an id pattern Go does not read, a status twice, or a move or stamp naming a status the kind does not have"},
+	{Word: "pack-protected", Kind: "finding", Who: "agent", Means: "a protected path bonsai/pack.yaml declares is not a well-formed glob: project-relative with forward slashes, no empty, . or .. segment, each segment one path.Match reads (** whole segments only)"},
+	{Word: "pack-bash", Kind: "finding", Who: "agent", Means: "a hook command calls bash by name (spec section 3): a hook line in bonsai/pack.yaml, or a hook of the plugin itself"},
+	{Word: "pack-runs", Kind: "finding", Who: "agent", Means: "a hook command in bonsai/pack.yaml names a file the pack writes (by its path in the project or its file name) that its runs does not list, so a change to that file would run unseen (step 5.1.1)"},
+}
+
+// PackCheckWord finds a word in PackCheckWords.
+func PackCheckWord(code string) (Word, bool) {
+	for _, w := range PackCheckWords {
+		if w.Word == code {
+			return w, true
+		}
+	}
+	return Word{}, false
+}
+
 // ReadCheck reads check --json's output.
 func ReadCheck(raw []byte) (*Check, error) {
 	c := &Check{}

@@ -44,6 +44,7 @@ var ErrorWords = []Word{
 	{Word: "old-workspace", Who: "person", Means: "the checkout is a Bonsai 0.4.3 workspace, which this Bonsai neither reads nor changes"},
 	{Word: "not-main-checkout", Who: "agent", Means: "the step runs only in the project's main checkout, and this is a worktree"},
 	{Word: "no-lock", Who: "person", Means: "bonsai.yaml is in the checkout but .bonsai/lock.json is not, so update cannot tell what was consented to, nor unlink what Bonsai wrote"},
+	{Word: "not-a-pack", Who: "agent", Means: "check --pack was given a folder that is not a pack's: it is not there, is not a folder, or holds no bonsai/pack.yaml"},
 	// A file Bonsai reads (exit 2, or 4 for the lock).
 	{Word: "bad-config", Who: "person", Means: "bonsai.yaml is not one Bonsai reads (a line the reader refuses, a field of the wrong kind, another format)"},
 	{Word: "bad-lock", Who: "person", Means: ".bonsai/lock.json is not one Bonsai reads"},

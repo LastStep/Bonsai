@@ -130,6 +130,7 @@ var All = []*Format{
 	{Name: "check", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Check", Next: nextOutput,
 		Lists: append([]List{
 			{Field: "findings[].code", Table: "format.CheckWords", Words: &CheckWords},
+			{Field: "findings[].code", Table: "format.PackCheckWords", Words: &PackCheckWords},
 			{Field: "warnings[].code", Table: "format.CheckWords", Words: &CheckWords},
 		}, errorCode...)},
 	{Name: "changes", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Changes", Next: nextOutput, Lists: errorCode},
