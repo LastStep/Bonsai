@@ -37,6 +37,7 @@ const MaxContextLines = 60
 // Start is one run of `bonsai hook start`: the session_start record, then the opening context on stdout. It
 // returns 0, always.
 func Start(o Options, stdout io.Writer) int {
+	ignoreBrokenPipe()
 	o.defaults()
 	out := make(chan string, 1)
 	within(o.Budget, func() { out <- start(o) })

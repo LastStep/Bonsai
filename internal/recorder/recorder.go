@@ -15,7 +15,7 @@
 // and is not redacted. No prompt's words are kept: a prompt record has its kind only.
 //
 // They never interfere: `hook record` prints nothing, ever (an async hook's stdout can reach the conversation), and
-// both exit 0 whatever happens. A payload either cannot read (empty, broken, an event it does not record, no session
+// both exit 0 whatever happens, a reader of their output gone first among it (pipe_unix.go: SIGPIPE ignored). A payload either cannot read (empty, broken, an event it does not record, no session
 // id) writes nothing. Each runs under its own time limit (Budget), past which it exits 0 with what it has done. Its
 // payload reader is the recorder's own for now: spec §14 gives the one hook adapter to step 5.3, which then makes one
 // reader for the guard and the recorder.
@@ -24,6 +24,11 @@
 //   - payload.go: Claude Code's hook payload, as the recorder reads it.
 //   - record.go: one payload as one record: the events, the categories, the input hash.
 //   - start.go: bonsai hook start's opening context and the binary's path and hash.
+//   - pipe_unix.go, pipe_other.go: SIGPIPE ignored, so a write to a closed pipe is an error, not the process's end.
+//
+// At a session's end, after its session_end line is written, `hook record` runs the cleaner (internal/clean,
+// SessionEnd: the main checkout's ladder results, asks and log by bonsai.yaml's generated: rules, within 1 s of the
+// line's 5 s timeout and the hook's own 4 s budget). A session_end line that cannot be written cleans nothing.
 package recorder
 
 import (
@@ -34,6 +39,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/clean"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -79,6 +85,7 @@ func (o *Options) defaults() {
 // Record is one run of `bonsai hook record`: it writes the payload's record and returns 0, always. It writes nothing
 // on stdout (it is given none).
 func Record(o Options) int {
+	ignoreBrokenPipe()
 	o.defaults()
 	within(o.Budget, func() { work(o) })
 	return 0
@@ -115,8 +122,18 @@ func work(o Options) {
 	if l == nil {
 		return
 	}
-	_, _ = writeLog(local.Main, l)
+	if _, err := writeLog(local.Main, l); err != nil {
+		return // a log that cannot be written takes no clean record either: nothing is cleaned
+	}
+	if p.Event == "SessionEnd" {
+		// After the session_end line, the cleaning (internal/clean): ladder results, asks and the log of the main
+		// checkout's local/, within clean.SessionEndBudget; the clean records name this session's checkout.
+		_ = cleanAtEnd(clean.Options{Local: local, Now: o.Now, Getenv: o.Getenv})
+	}
 }
+
+// cleanAtEnd is the cleaning at a session's end (a variable for the tests).
+var cleanAtEnd = clean.SessionEnd
 
 // payloadAndProject reads the payload and finds the project, in the order spec §7 asks: with CLAUDE_PROJECT_DIR set,
 // the project first, so an unlinked folder costs nothing but draining stdin; without it, the payload's cwd. ok is
