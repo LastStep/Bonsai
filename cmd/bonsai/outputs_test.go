@@ -16,6 +16,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
@@ -344,6 +345,14 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		{"status --line", nil, []string{"status", "--line"}, 2, "not-built", ""},
 		{"status --active --full", nil, []string{"status", "--active", "--full"}, 2, "bad-flag", ""},
 		{"status, a word left over", nil, []string{"status", "now"}, 2, "bad-flag", ""},
+
+		{"answer, a key with no ask", linked, []string{"answer", "agent:none-here", "--words", "yes"}, 4, "ask-not-open", ""},
+		{"answer from the session that asked", then(linked, func(c *cli) {
+			c.t.Setenv(asks.SessionEnv, "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a")
+			if code, out, errOut := c.run("", "ask", "--type", "Answer", "--title", "Which one?", "--why", "To know.", "--key", "own"); code != 0 {
+				c.t.Fatalf("ask: %d\n%s%s", code, out, errOut)
+			}
+		}), []string{"answer", "agent:own", "--words", "this one"}, 4, "answer-own-session", ""},
 	}
 	seen := map[string]bool{}
 	for i, cc := range cases {
@@ -525,7 +534,9 @@ var packageDir, _ = os.Getwd()
 func codeWords(t *testing.T, keep func(dir, file string) bool) map[string]string {
 	t.Helper()
 	found := map[string]string{}
-	for _, dir := range []string{".", "../../internal/engine", "../../internal/status", "../../internal/sessions"} {
+	for _, dir := range []string{".", "../../internal/engine", "../../internal/status", "../../internal/sessions",
+		"../../internal/asks",
+	} {
 		pkgs, err := parser.ParseDir(token.NewFileSet(), filepath.Join(packageDir, dir), func(fi os.FileInfo) bool {
 			return !strings.HasSuffix(fi.Name(), "_test.go") && keep(dir, fi.Name())
 		}, 0)
