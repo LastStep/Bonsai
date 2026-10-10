@@ -21,7 +21,7 @@
 //     before the next rule could see the name inside it, and leaked in three classes of shape; read this way the
 //     three are one rule: every name's value goes, wherever the name stands. A name a shape took into its span
 //     (`AKIA...PASSWORD: x`, a token or a webhook URL with `_token=` or `,password:` glued on) is still a name: it
-//     is found in the text as it stood before the shapes, and its value goes too (lost, below).
+//     is found in the text as it stood before the shapes, and its value goes too (withLost, below).
 //  3. random.go: a long run of token characters that looks random.
 //
 // The three run again over their own output until it no longer changes (one pass is nearly always enough).
