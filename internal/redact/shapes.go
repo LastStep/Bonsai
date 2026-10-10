@@ -85,13 +85,15 @@ func tokenRule(prefix string, second []string, body func(rune) bool, min int, ex
 					continue
 				}
 			}
-			e := runOf(s, k, body)
+			// An exact shape reads no further than the characters it keeps.
+			limit := len(s)
+			if exact && k+min < limit {
+				limit = k + min
+			}
+			e := runOf(s[:limit], k, body)
 			if e-k < min {
 				i = j + 1
 				continue
-			}
-			if exact {
-				e = k + min
 			}
 			add(j, e)
 			i = e
@@ -135,7 +137,9 @@ func findAWS(s string, add func(a, b int)) {
 	}
 }
 
-// findJWT is \beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}.
+// findJWT is \beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}. When a start fails, every `eyJ` up to
+// where the reading stopped fails the same way (its part ends where the failed one's did, and is shorter), so the
+// search goes on from there and reads each part once.
 func findJWT(s string, add func(a, b int)) {
 	for i := 0; i < len(s); {
 		j := strings.Index(s[i:], "eyJ")
@@ -143,20 +147,23 @@ func findJWT(s string, add func(a, b int)) {
 			return
 		}
 		j += i
-		i = j + 1
 		if !wordStart(s, j) {
+			i = j + 1
 			continue
 		}
 		e := runOf(s, j+3, isTokenRune)
 		if e-(j+3) < 8 || e >= len(s) || s[e] != '.' {
+			i = e
 			continue
 		}
 		f := runOf(s, e+1, isTokenRune)
 		if f-(e+1) < 8 || f >= len(s) || s[f] != '.' {
+			i = f
 			continue
 		}
 		g := runOf(s, f+1, isTokenRune)
 		if g-(f+1) < 8 {
+			i = g
 			continue
 		}
 		add(j, g)

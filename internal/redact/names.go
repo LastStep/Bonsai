@@ -47,6 +47,8 @@ func findNames(s string) []name {
 	var out []name
 	n := len(s)
 	prev := rune(-1)
+	flags := flagReader{s: s, wide: true, follow: isHSpace}
+	flagEnd, flagVal := -1, 0 // every flag in one run ends where the run does: its value's start is read once
 	for i := 0; i < n; {
 		r, size := runeAt(s, i)
 		if isNameRune(r) {
@@ -68,8 +70,11 @@ func findNames(s string) []name {
 			switch {
 			case r == '-':
 				if !isASCIIFlagLead(prev) {
-					if e, ok := flagAt(s, i, true, isHSpace); ok {
-						out = append(out, name{nameFlag, i, skipHSpace(s, e)})
+					if e, ok := flags.at(i); ok {
+						if e != flagEnd {
+							flagEnd, flagVal = e, skipHSpace(s, e)
+						}
+						out = append(out, name{nameFlag, i, flagVal})
 					}
 				}
 			case foldIs(r, 'b', true):

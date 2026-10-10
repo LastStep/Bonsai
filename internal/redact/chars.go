@@ -162,11 +162,33 @@ func hasKeyword(s string, a, b int, wide bool) bool {
 }
 
 // The words a flag may end in (`--password`, `--client-secret`, `-token`): their one home.
-var flagWords = []string{"password", "passwd", "token", "secret", "api-key", "apikey", "auth-token"}
+var flagWords = [...]string{"password", "passwd", "token", "secret", "api-key", "apikey", "auth-token"}
 
 // flagAt reads a flag starting at byte i (its first `-`): `-` or `--`, then words of [A-Za-z0-9] each ending in `-`,
 // then a flag word, then a character follow accepts. It gives where the flag ends. It does not look before i.
 func flagAt(s string, i int, wide bool, follow func(rune) bool) (int, bool) {
+	fr := flagReader{s: s, wide: wide, follow: follow}
+	return fr.at(i)
+}
+
+// flagReader reads the flags of one text from left to right. Every `-` in one run of flag characters shares that
+// run's end, the flag words it ends in and where the last `--` before each stands, so a run is read once however
+// many `-` it holds (in the wide reading, the long s and `-` repeated have a `-` that may start a flag every two
+// characters, since the long s is a flag's character but not one a flag may follow).
+type flagReader struct {
+	s      string
+	wide   bool
+	follow func(rune) bool
+
+	from, end int                 // the run last read: from its first `-` read, to its end
+	ok        bool                // whether follow accepts the character at end
+	start     [len(flagWords)]int // where each flag word starts at the run's end, or -1
+	dd        [len(flagWords)]int // the start of the last `--` that ends before start, or -1
+}
+
+// at is flagAt for the reader's text; calls come in ascending order of i.
+func (fr *flagReader) at(i int) (int, bool) {
+	s := fr.s
 	if i >= len(s) || s[i] != '-' {
 		return 0, false
 	}
@@ -174,37 +196,53 @@ func flagAt(s string, i int, wide bool, follow func(rune) bool) (int, bool) {
 	if j < len(s) && s[j] == '-' {
 		j++
 	}
-	k := j
-	for k < len(s) {
-		r, n := runeAt(s, k)
-		if !isFlagRune(r, wide) {
-			break
-		}
-		k += n
+	if i < fr.from || i >= fr.end {
+		fr.read(i)
 	}
-	if r, n := runeAt(s, k); n == 0 || !follow(r) {
+	if !fr.ok {
 		return 0, false
 	}
-	for _, w := range flagWords {
-		start, ok := suffixWord(s, j, k, w, wide)
-		if !ok {
+	for w := range flagWords {
+		start := fr.start[w]
+		if start < j {
 			continue
 		}
 		// What comes before the flag word: nothing, or words of [A-Za-z0-9] each ending in one `-`.
-		if start == j || s[j] != '-' && s[start-1] == '-' && !containsDoubleDash(s[j:start]) {
-			return k, true
+		if start == j || s[j] != '-' && s[start-1] == '-' && fr.dd[w] < j {
+			return fr.end, true
 		}
 	}
 	return 0, false
 }
 
-func containsDoubleDash(s string) bool {
-	for i := 0; i+1 < len(s); i++ {
-		if s[i] == '-' && s[i+1] == '-' {
-			return true
+// read reads the run of flag characters holding the `-` at i.
+func (fr *flagReader) read(i int) {
+	s := fr.s
+	k := i + 1
+	for k < len(s) {
+		r, n := runeAt(s, k)
+		if !isFlagRune(r, fr.wide) {
+			break
+		}
+		k += n
+	}
+	fr.from, fr.end = i, k
+	r, n := runeAt(s, k)
+	fr.ok = n > 0 && fr.follow(r)
+	for w, word := range flagWords {
+		fr.start[w], fr.dd[w] = -1, -1
+		start, ok := suffixWord(s, i, k, word, fr.wide)
+		if !ok {
+			continue
+		}
+		fr.start[w] = start
+		for p := start - 2; p >= i; p-- {
+			if s[p] == '-' && s[p+1] == '-' {
+				fr.dd[w] = p
+				break
+			}
 		}
 	}
-	return false
 }
 
 // suffixWord reports whether s[a:b] ends with word (lower-case ASCII, matched in any case), and where it starts.

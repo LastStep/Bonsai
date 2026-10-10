@@ -1,6 +1,7 @@
 package redact
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -67,23 +68,43 @@ func TestLinearTime(t *testing.T) {
 		{"1 MB of whitespace then a quote", strings.Repeat(" ", 1024*kb) + `"`},
 		{"1 MB of scheme characters", repeatTo("a+", 1024*kb) + "://"},
 	}
+	// Runs that every match used to rescan to their end: a flag's characters after the long s or the Kelvin sign (each
+	// `-` read the rest of the run), JSON web token starts that never become one, and the exact-length Google key.
+	for _, unit := range []string{"\u017f-", "\u212a-", "eyJ-", "AIza-"} {
+		for _, size := range []int{256 * kb, 1024 * kb} {
+			cases = append(cases, struct {
+				name string
+				text string
+			}{fmt.Sprintf("%d KB of %q", size/kb, unit), repeatTo(unit, size)})
+		}
+	}
+	// Every flag in one such run ends where the run does, and each used to skip the whitespace after that end again.
+	for _, unit := range []string{"\u017f-", "\u212a-"} {
+		cases = append(cases, struct {
+			name string
+			text string
+		}{fmt.Sprintf("1 MB of %q flags sharing one end, then whitespace", unit),
+			repeatTo(unit, 512*kb) + "password" + strings.Repeat(" \t", 256*kb) + "x"})
+	}
 	Text("warm: password=hunter2")
 	for _, c := range cases {
-		best := time.Duration(1 << 62)
-		for try := 0; try < 3; try++ {
-			start := time.Now()
-			Text(c.text)
-			if d := time.Since(start); d < best {
-				best = d
+		t.Run(c.name, func(t *testing.T) {
+			best := time.Duration(1 << 62)
+			for try := 0; try < 3; try++ {
+				start := time.Now()
+				Text(c.text)
+				if d := time.Since(start); d < best {
+					best = d
+				}
 			}
-		}
-		limit := 100 * time.Millisecond
-		if len(c.text) > 100*kb {
-			limit = time.Duration(len(c.text)/kb) * time.Millisecond
-		}
-		t.Logf("%s: %v (limit %v)", c.name, best, limit)
-		if best > limit {
-			t.Errorf("%s took %v, over its limit %v", c.name, best, limit)
-		}
+			limit := 100 * time.Millisecond
+			if len(c.text) > 100*kb {
+				limit = time.Duration(len(c.text)/kb) * time.Millisecond
+			}
+			t.Logf("%v (limit %v)", best, limit)
+			if best > limit {
+				t.Errorf("took %v, over its limit %v", best, limit)
+			}
+		})
 	}
 }
