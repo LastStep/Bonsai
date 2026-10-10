@@ -12,9 +12,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
 )
 
 // version is the build's version. GoReleaser sets it with `-ldflags "-X main.version=<version>"`
@@ -46,19 +48,40 @@ func usage() string {
 	b.WriteString("This build is Bonsai's rebuild in progress; it answers:\n")
 	fmt.Fprintf(&b, "  %-26s %s\n", "bonsai --version", "print this build's version")
 	fmt.Fprintf(&b, "  %-26s %s\n", "bonsai --help", "print this help")
+	fmt.Fprintf(&b, "  %-26s %s\n", "bonsai --help --json", "print this help as one JSON document (bonsai.help/1)")
 	for _, w := range wordList() {
 		fmt.Fprintf(&b, "  %-26s %s (%s --help)\n", strings.TrimSpace("bonsai "+w.Name+" "+w.Args), w.Summary, w.Name)
 	}
-	b.WriteString(`Every word takes --help, which lists its flags, its exit codes and an example; every word but hook takes
+	b.WriteString(commonNotes)
+	b.WriteString("Exit codes: ")
+	var every, hook []string
+	for _, e := range format.ExitCodes {
+		item := strconv.Itoa(e.Code) + " " + e.Short
+		if e.Applies == format.ExitHook {
+			hook = append(hook, item)
+		} else {
+			every = append(every, item)
+		}
+	}
+	b.WriteString(strings.Join(every, ", ") + ";\nbonsai hook: " + strings.Join(hook, ", ") + ".\n")
+	b.WriteString("Example: bonsai status --json\n")
+	return b.String()
+}
+
+// commonNotes is what every word shares, as bonsai --help prints it and bonsai --help --json says it in about.
+const commonNotes = `Every word takes --help, which lists its flags, its exit codes and an example; every word but hook takes
 --json. A word that writes previews first and writes with --yes; without a terminal it never asks: it prints the
 preview and exits 4. Every refusal names the next step; with --json it is the error object of the word's document
 (code, a fixed word; message; next, with do and who: agent or person), and a refusal before any word prints the
 error object alone. bonsai check --schema bonsai.error lists every code.
-Exit codes: 0 ok, 1 check findings, 2 bad input, 3 runtime, 4 wrong state or no --yes, 5 conflicts;
-bonsai hook: 0 allow, 2 block.
-Example: bonsai status --json
-`)
-	return b.String()
+`
+
+// helpAbout is the help document's about: the common notes and how to ask for the document.
+func helpAbout() string {
+	return "bonsai: the structure inside each project (formats, packs, guards, a recorder, a ladder). " +
+		strings.Join(strings.Fields(commonNotes), " ") +
+		" bonsai --help --json prints this document (bonsai.help/1); a word's own --help is text." +
+		" bonsai check --schema <format> prints any format; docs/reference/lists.md in Bonsai's repository lists every list."
 }
 
 // bonsaiWord is bonsai itself, before any word: --version and --help, and the refusal of a command line with no
@@ -76,6 +99,13 @@ var bonsaiWord = &Word{
 // run answers one invocation and returns its exit code. Output is ASCII and names the next step on a refusal.
 func run(args []string, stdout, stderr io.Writer) int {
 	w, ok := bonsaiWord, false
+	if helpRequest(args) {
+		code := runHelpJSON(stdout, stderr)
+		if noteExit != nil {
+			noteExit(bonsaiWord, code)
+		}
+		return code
+	}
 	if len(args) > 0 {
 		w, ok = words[args[0]]
 	}
