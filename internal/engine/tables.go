@@ -145,7 +145,8 @@ func taskDir(root, main string, cfg *workspace.Config) string {
 }
 
 // checkTables is the warning tables: the main checkout's tasks table (this checkout's own, in the main checkout and
-// in CI) differs from a rebuild (or is missing). A table that does not read is the finding document's, and a task folder that cannot be read is document's too: no warning then.
+// in CI) differs from a rebuild (or is missing). A table that does not read is the finding document's, and a task
+// folder that cannot be read is document's too: no warning then.
 func (r *CheckResult) checkTables() {
 	want, err := BuildTasksTable(r.Main, taskDir(r.Root, r.Main, r.Config))
 	if err != nil {
