@@ -10,8 +10,8 @@
 - **Builds on:** `design/plan.md` (part 0 and the walking skeleton, approved 8 Oct, done) and
   `records/gate-skeleton.md` (the gate report: section 1 the measured pace, section 5 the findings step 5 inherits).
 - **Hours** (AI hours, verification included, spec §14): 5.1 30-47, 5.2 25-37, 5.3 18-29, 5.4 28-44, 5.5 19-30,
-  5.6 13-20, 5.7 9.5-18.5 (the spec's 6-11 and the trial of Bonsai on itself Rohan asked for on 10 Oct); in all
-  142.5-225.5. Each part stops and comes back to Rohan at its own re-ask line (below).
+  5.6 13-20, 5.7 9.5-18.75 (the spec's 6-11 and the trial of Bonsai on itself Rohan asked for on 10 Oct); in all
+  142.5-225.75. Each part stops and comes back to Rohan at its own re-ask line (below).
 - **Records:** `STATE.md`; run reports in `records/runs/`.
 
 Two readers. **Rohan** reads down to "Size" and reads no code. The **orchestrator, builders and verifiers** read the
@@ -29,8 +29,8 @@ rest. 5.1 to 5.7 are planned in full here.
 | 5.4 Ladder runner | `bonsai ladder` proves a task's work, on WSL and Windows. From here Bonsai proves and guards its own repo with it, on a pre-release you install in WSL (about 5 minutes, your password). | 28-44 | 57 |
 | 5.5 Packs | Bonsai's `base` pack and your `workflow` pack (your roles, lanes, protocols and templates) as public Claude Code plugins, each with its own checks on GitHub; a template for new packs; the walls round your key and token files. | 19-30 | 39 |
 | 5.6 Machine pieces | Bonsai's settings for each project on this computer, and the label files the studio attaches (set by you or the studio, never by an agent); your personal memory, which every Claude session on this computer reads; Bonsai's part of the status line; installers for both sides; and Bonsai telling you when a newer release exists, with the exact lines to install it. | 13-20 | 26 |
-| 5.7 Release | The release path made safe and switched back on with you; a pre-release you install, and a trial of Bonsai on itself on it, analysed for you; your own trial on a fresh project; on your word, Bonsai 1.0. | 9.5-18.5 (the spec's 6-11, plus the trial) | 24 |
-| **Step 5** | | **142.5-225.5** | each part its own |
+| 5.7 Release | The release path made safe and switched back on with you; a pre-release you install, and a trial of Bonsai on itself on it, analysed for you; your own trial on a fresh project; on your word, Bonsai 1.0. | 9.5-18.75 (the spec's 6-11, plus the trial) | 24 |
+| **Step 5** | | **142.5-225.75** | each part its own |
 
 **What Bonsai is, and what the studio is** (your 7 Oct split, which you confirmed on 9 Oct). Bonsai is everything
 that lives inside one project: its rules, its guard, the record of what happened, and the proof that work is done. It
@@ -119,23 +119,26 @@ such pair.
   Bonsai release when `bonsai status` or `bonsai check` says one exists (six lines a side, run one at a time; if the
   fingerprint line does not print `OK`, or `True` in PowerShell, stop and send the orchestrator what it printed).
 - **At 5.7** (its section, "Step 5.7", comes back to you for approval with its new hours: you answered its decisions on
-  10 Oct and asked for a trial). Five batches, about an hour and a half in all, plus about 10 minutes for each further
-  pre-release and your own trial, untimed. **Batch 1, the settings** (about 10 minutes, in WSL, each setting read back
-  by a line after it): your `gh` checked (you updated it on 10 Oct), a look on github.com for the old Homebrew token,
-  the `release` environment with your approval on each release, GitHub's lock on published releases, the packs' tags
-  locked, and switching the release workflow back on. **Batch 2** (about 3 minutes): your tag for a pre-release,
-  `1.0.0-rc.1`, and your approval on GitHub. **Batch 3** (about 15 minutes): installing rc.1 on both sides with the new
-  installers (seven lines a side, one more than 5.6's: it checks GitHub's signed record of how the file was built; in
-  WSL your password, on Windows one "allow this app to make changes" prompt), so Bonsai's own repo runs it; then your
-  pick of one of two or three small features for the trial. **Batch 4** (about 30 minutes): the trial's analysis to
-  read, and "happy" or what to fix; each fix round a new pre-release (your tag, approval and WSL install again). **Your
-  own trial** on a fresh project, on your own. **Batch 5** (about 25 minutes): your word for 1.0, its tag and approval,
-  installing 1.0 on both sides, one line in WSL that makes your own `~/.claude/CLAUDE.md` load your personal memory in
-  every project (spec §10; no agent edits that file; an agent then checks that it loads), and the first release tags
-  of the two packs: `base-v1.0.0` on Bonsai's repo and `v1.0.0` on the workflow repo, whose checks then publish its
-  GitHub release. Until then projects name each pack by its exact commit.
+  10 Oct and asked for a trial). Five batches and rc.2, about an hour and three quarters in all, plus about 15 minutes
+  for each further pre-release and your own trial, untimed. **Batch 1, the settings** (about 10 minutes, in WSL, each
+  setting read back by a line after it): your `gh` checked (you updated it on 10 Oct), a look on github.com for the old
+  Homebrew token, the `release` environment with your approval on each release, GitHub's lock on published releases, the
+  packs' tags locked, and switching the release workflow back on. **Batch 2** (about 3 minutes): your tag for a
+  pre-release, `1.0.0-rc.1`, and your approval on GitHub. **Batch 3** (about 15 minutes): installing rc.1 on both sides
+  with the new installers (seven lines a side, one more than 5.6's: it checks GitHub's signed record of how the file was
+  built; in WSL your password, on Windows one "allow this app to make changes" prompt), so Bonsai's own repo runs it;
+  then your pick of one of two or three small features for the trial, and later the trial's one question to you (about 3
+  minutes). **Batch 4** (about 30 minutes): the trial's analysis to read, and "happy" or what to fix; then rc.2, which
+  always follows, since the feature lands after rc.1 (your tag, approval and WSL install again, and a short analysis:
+  about 15 minutes), and the same for each further fix round. **Your own trial** on a fresh project, on your own, on the
+  last pre-release. **Batch 5** (about 25 minutes): your word for 1.0, its tag and approval, installing 1.0 on both
+  sides, one line in WSL that makes your own `~/.claude/CLAUDE.md` load your personal memory in every project (spec §10;
+  no agent edits that file; an agent then checks that it loads), and the first release tags of the two packs:
+  `base-v1.0.0` on Bonsai's repo and `v1.0.0` on the workflow repo, whose checks then publish its GitHub release. Until
+  then projects name each pack by its exact commit.
 - **Outside step 5:** the sandbox probe (spec §7) waits for its own small plan after step 5 and ends in a root step of
-  yours (installing `socat`). Turn GitHub Pages off (the old website) whenever you like.
+  yours (installing `socat`). The two later pieces you named on 10 Oct wait there too: Bonsai on a Mac, and Bonsai from
+  each platform's own package manager. Turn GitHub Pages off (the old website) whenever you like.
 - Hand checks: a Sonnet agent runs them wherever an agent can (your 8 Oct word). Yours are only what needs a person: a
   typed session, a password, a GitHub setting, a file in your own home.
 
@@ -147,19 +150,19 @@ such pair.
 - **The studio links** (spec step 7) after 5.5: its own plan, in its own repo. Mimas links last (step 8). This plan
   changes nothing in either repo, and waits on neither.
 
-**Choices that are yours.** 5.7's decisions, answered on 10 Oct: Homebrew stays at the old product, with a Mac and
-each platform's own package manager named for after step 5; your approval holds each release; the packs' tags are
-locked; and, before 1.0, a trial of Bonsai on itself on a pre-release you install, then your own trial on a fresh
-project. Go 1.27 for the release ("we can go with go 1.27 latest") and a newer `gh` in WSL, which you installed, were
-settled earlier that day. The section comes back to you for approval with its new hours. 5.6's section was approved on
-10 Oct,
+**Choices that are yours.** 5.7's decisions, answered on 10 Oct: Homebrew stays at the old product, with a Mac and each
+platform's own package manager named for after step 5; your approval holds each release; the packs' tags are locked;
+and, before 1.0, a trial of Bonsai on itself on a pre-release you install, then your own trial on a fresh project. Go
+1.27 for the release ("we can go with go 1.27 latest") and a newer `gh` in WSL, which you installed, were settled
+earlier that day. The section comes back to you for approval with its new hours. 5.6's section was approved on 10 Oct,
 with (A) for who saves notes about you that every project reads: you save them, from an agent's draft (5.6's "Who saves
 notes about you"). The five other decisions you confirmed that day: this machine's settings and the studio's label files
 are all yours, even `cache_keep_days`; a newer release is shown as planned, `status --full` reading Bonsai's tags at
 most daily and keeping the answer in the home's `cache/release.json`, which `status`, `check` and `--line` show offline;
-the installers first run on your machines at 5.7 with 1.0; `status --line` is kept; the personal index is 40 lines and
-4 KB, a note 4 KB. Three were decided on 9 Oct: the two in 5.3's section, how the hook lines find `bonsai` (your answer:
-(a)) and who may consent to code and take the guard out (your answer: (ii)), and this one:
+the installers first run on your machines at 5.7 with 1.0 (now rc.1, in 5.7's trial); `status --line` is kept; the
+personal index is 40 lines and 4 KB, a note 4 KB. Three were decided on 9 Oct: the two in 5.3's section, how the hook
+lines find `bonsai` (your answer: (a)) and who may consent to code and take the guard out (your answer: (ii)), and this
+one:
 - **How the later parts' plans reach you: (B).** You were offered (A) every part's section, (B) only when it changes
   what is yours, and (C) none; you first said (A), then chose (B) once the scope question above was settled. So: 5.1
   is planned in full here. Before each later part starts, a planner writes its section into this file, a fresh Opus
@@ -189,17 +192,18 @@ the installers first run on your machines at 5.7 with 1.0; `status --line` is ke
   you inside one part; or step 5's own work changes anything in Mimas or the studio's repo (the studio now works in its
   own repo at the same time, so only step 5's own commands count). Your choice is written down before any more work.
 
-**Size.** The spec's hours: 139-218 AI hours for step 5, 142.5-225.5 with 5.7's trial (228-361 on the studio's record of
-estimates growing 1.6 times), each part with its own re-ask line (the table above). The skeleton's measured pace:
+**Size.** The spec's hours: 139-218 AI hours for step 5, 142.5-225.75 with 5.7's trial (228-361 on the studio's record
+of estimates growing 1.6 times), each part with its own re-ask line (the table above). The skeleton's measured pace:
 6 h 17 min of agent runs against its 30-47 h, a ratio of 0.1337-0.2094 (gate report section 2.2). At that ratio step 5
-would take 19.1-47.2 h. **That is not a promise**, for four reasons (gate report section 1): it counts only the agents'
+would take 19.1-47.3 h. **That is not a promise**, for four reasons (gate report section 1): it counts only the agents'
 own runs, not the orchestrating session, your sittings or waiting; it comes from six parts over two days; it swung by
 part from 0.06-0.09 (the engine) to 0.32-0.53 (the hook path), and the parts that dealt with Windows and Claude Code ran
 highest, which is more of step 5; and the stop lines use the spec's hours, not the ratio. Your own time: about 2 minutes
 for the Windows login before 5.3, about 10 at 5.3 and 5 at 5.4, your read of the workflow repo and about 3 minutes on
-Windows at 5.5, about an hour and a half over five batches at 5.7 (the GitHub settings, a pre-release and its installs,
-the trial's pick and its analysis, your word, the 1.0 installs and the pack tags) plus about 10 minutes for each further
-pre-release and your own trial on a fresh project, untimed, and the plan approvals your choice above sets. Nothing here
+Windows at 5.5, about an hour and three quarters at 5.7 (the GitHub settings, a pre-release and its installs, the
+trial's pick, its question and its analysis, rc.2, your word, the 1.0 installs and the pack tags) plus about 15 minutes
+for each further pre-release and your own trial on a fresh project, untimed, and the plan approvals your choice above
+sets. Nothing here
 waits on the studio.
 
 ## For the orchestrator, builders and verifiers
@@ -285,12 +289,13 @@ plugin sync rewriting its own files under `~/.claude/plugins/synced/` (part 4b; 
   id out in a records commit of its own.
 - **Bonsai on a Mac** (Rohan, 10 Oct, with 5.7's answer on Homebrew): not in 1.0, because every project's guard runs
   Bonsai only from its two fixed places (5.3's (a): `/usr/local/bin/bonsai` and `C:\Program Files\Bonsai\bonsai.exe`),
-  neither of which a Mac has as a place only an administrator writes, and 1.0's macOS build is untested and has no
-  installer; it needs its own place, installer and tests.
+  and on a Mac `/usr/local/bin` is not reliably a place only an administrator writes (Homebrew on Intel Macs makes it
+  the user's); 1.0's macOS build is untested and has no installer. It needs its own trusted place, installer and tests.
 - **Bonsai from each platform's own package manager** (Rohan, 10 Oct: "adding bonsai on official distributers for each
-  platform", such as an apt package or winget): not in 1.0, because each must install into the two places the guard
-  trusts (5.3's (a)), which Homebrew, for one, cannot, and each is a new channel to sign, publish and keep, beyond the
-  installers 1.0 ships.
+  platform", such as an apt package or winget): not in 1.0, because a package manager puts programs where its own rules
+  say (an apt package in `/usr/bin`, by Debian's policy; Homebrew in its own folder), not in the two places the guard
+  trusts (5.3's (a)): it needs those trusted places revisited first, and each channel is a new one to sign, publish and
+  keep, beyond the installers 1.0 ships.
 
 ### Step 5.1: formats and engine to 1.0 (30-47 h, re-ask at 61)
 
@@ -6804,7 +6809,7 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
   and the studio's link (spec §3, step 7).
 
 **5.7 Release (6-11 h, re-ask at 14).**
-- **Planned in full** in "Step 5.7" above (9.5-18.5 h with the trial Rohan asked for on 10 Oct, re-ask at 24); this
+- **Planned in full** in "Step 5.7" above (9.5-18.75 h with the trial Rohan asked for on 10 Oct, re-ask at 24); this
   outline is kept as it was written.
 - **Builds:** the supply-chain fixes (actions pinned by commit, GoReleaser pinned, the re-release input removed,
   immutable releases, build provenance; spec §12 step 8), `release.yml` back to tag runs inside the `release`
@@ -6828,7 +6833,7 @@ Judged by each part's end verifier, not the builder. Done means **no line crosse
 past a line, his recorded choice to go on.**
 1. **A part's hours over its re-ask line:** 5.1 61, 5.2 48, 5.3 38, 5.4 57, 5.5 39, 5.6 26, 5.7 24 (spec §14: 1.3 times
    each part's high estimate, rounded: 47 x 1.3 = 61.1; 37 x 1.3 = 48.1; 29 x 1.3 = 37.7; 44 x 1.3 = 57.2; 30 x 1.3 =
-   39; 20 x 1.3 = 26; 5.7's 18.5, the spec's 11 and the trial Rohan asked for on 10 Oct, x 1.3 = 24.05). A part that
+   39; 20 x 1.3 = 26; 5.7's 18.75, the spec's 11 and the trial Rohan asked for on 10 Oct, x 1.3 = 24.4). A part that
    ends under its line passes nothing on to the next.
 2. **Windows-only failures over 8 hours in step 5**, carried over from the skeleton's line 2 ("more than a day lost
    to Go on Windows", spec §14). Kept for the whole step, not per part: it is the signal that Go on Windows is failing,
