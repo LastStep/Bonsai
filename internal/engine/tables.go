@@ -11,9 +11,11 @@ package engine
 //
 // .bonsai/sessions.md is written empty by init (frontmatter, an empty table, the hours line, an empty table), and
 // check --write adds to it: a row for every ended session and subagent run in the main checkout's log that the table
-// lacks (internal/sessions: the spans, the rows, the hours). Rows are only added, never rewritten or dropped; a table
-// that does not read back is refused (exit 3, naming the line) and nothing is written, so no row is lost. A table
-// written before set 6 (eight columns, no Subagent) is written again with nine, every row kept.
+// lacks (internal/sessions: the spans, the rows, the hours). Rows are only added, never rewritten; the one way a row
+// leaves is bonsai.yaml's generated.sessions rule (internal/clean, Rows: by default none), with a clean record for
+// each in the log once the table is written. A table that does not read back is refused (exit 3, naming the line) and
+// nothing is written, so no row is lost. A table written before set 6 (eight columns, no Subagent) is written again
+// with nine, every row kept.
 //
 // A table never grants anything and is never a finding: a tasks table that differs from a rebuild, or a sessions table
 // that lacks a row for an ended span in the log, is the warning tables, in a main checkout, a worktree and CI alike
@@ -35,6 +37,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/clean"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/reader"
 	"github.com/LastStep/Bonsai/internal/record"
@@ -226,25 +229,36 @@ func logDir(main string) string {
 }
 
 // BuildSessionsTable gives the bytes of .bonsai/sessions.md for the main checkout main: its table now (none yet: an
-// empty one) with a row added for every ended session and subagent run in the log that it lacks. A table that does not
-// read is the error (exit 3, naming the line) and nothing is built.
-func BuildSessionsTable(main string) ([]byte, error) {
+// empty one) with a row added for every ended session and subagent run in the log that it lacks, then the rows
+// bonsai.yaml's generated.sessions cleans taken out (internal/clean, Rows: never a row of a task not done or cut, nor
+// one whose span is still in the log), and the hours rebuilt from the rows that stay. It gives the rows cleaned too,
+// whose clean records are written once the table is (WriteTables). A table that does not read is the error (exit 3,
+// naming the line) and nothing is built. local names the main checkout for the cleaner (workspace.FindLocal).
+func BuildSessionsTable(main string, local workspace.Local) ([]byte, []clean.Item, error) {
 	table := &format.Sessions{Sessions: []format.SessionRow{}, Hours: []format.HoursRow{}}
 	raw, exists, err := readFile(main, workspace.SessionsTableFile)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if exists {
 		if table, err = format.ReadSessions(raw); err != nil {
-			return nil, unreadTable(err)
+			return nil, nil, unreadTable(err)
 		}
 	}
 	found, err := sessions.Found(logDir(main), tablesNow())
 	if err != nil {
-		return nil, errorf("read-failed", ExitRuntime, "check that the log folder (.bonsai/local/log/) can be read, then run: "+WriteCommand,
+		return nil, nil, errorf("read-failed", ExitRuntime, "check that the log folder (.bonsai/local/log/) can be read, then run: "+WriteCommand,
 			"the log cannot be read: %v", err)
 	}
-	return sessions.Merge(table, found).Encode()
+	// A rule that does not read cleans nothing; bonsai check names it as bonsai.yaml's problem.
+	kept, cleaned, _ := clean.Rows(cleanOptions(local), sessions.Merge(table, found), found)
+	b, err := kept.Encode()
+	return b, cleaned, err
+}
+
+// cleanOptions are the cleaner's options for check --write: the main checkout, the tables' clock.
+func cleanOptions(local workspace.Local) clean.Options {
+	return clean.Options{Local: local, Now: tablesNow}
 }
 
 // unreadTable is the refusal of a table that does not read back: the line, and that no row was dropped.
@@ -265,6 +279,7 @@ func unreadTable(err error) *Error {
 type TablesResult struct {
 	Written []string // the tables whose bytes changed
 	Same    []string // the tables already as a rebuild gives them
+	Cleaned []string // the sessions rows generated.sessions cleaned, each a clean record in the log
 }
 
 // WriteTables is check --write: it rebuilds the tables in the main checkout holding dir. A worktree is refused
@@ -298,7 +313,8 @@ func WriteTables(dir string) (*TablesResult, *Error) {
 	}
 	// Both tables are built before either is written, so a sessions table that does not read back stops the write
 	// with nothing changed.
-	sb, err := BuildSessionsTable(co.Root)
+	local := workspace.FindLocal(co.Root, cfg.ID)
+	sb, cleaned, err := BuildSessionsTable(co.Root, local)
 	if err != nil {
 		if e, ok := err.(*Error); ok {
 			return nil, e
@@ -323,6 +339,18 @@ func WriteTables(dir string) (*TablesResult, *Error) {
 		}
 		res.Written = append(res.Written, t.rel)
 	}
+	// The rows cleaned are gone once the table is written: then each row's clean record, as a file's follows its
+	// delete.
+	if len(cleaned) > 0 {
+		if err := clean.Record(cleanOptions(local), cleaned); err != nil {
+			return res, errorf("partly-written", ExitRuntime, "check that .bonsai/local/log/ can be written; the rows are out of the table already, so nothing needs running again",
+				"%s was written without %d row(s) generated.sessions cleans, but their clean records cannot be written: %v",
+				workspace.SessionsTableFile, len(cleaned), fmt.Sprint(err))
+		}
+		for _, it := range cleaned {
+			res.Cleaned = append(res.Cleaned, it.Target)
+		}
+	}
 	return res, nil
 }
 
@@ -337,6 +365,9 @@ func (t *TablesResult) Notes() []string {
 	}
 	for _, p := range t.Same {
 		out = append(out, p+" is already as a rebuild gives it")
+	}
+	if n := len(t.Cleaned); n > 0 {
+		out = append(out, fmt.Sprintf("cleaned %d row(s) of %s by bonsai.yaml's generated.sessions, each a clean record in the log", n, workspace.SessionsTableFile))
 	}
 	return out
 }
