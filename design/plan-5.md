@@ -138,10 +138,14 @@ such pair.
 - **The studio links** (spec step 7) after 5.5: its own plan, in its own repo. Mimas links last (step 8). This plan
   changes nothing in either repo, and waits on neither.
 
-**Choices that are yours.** One open, inside your approval of 5.6's section: who saves notes about you that every
-project reads (5.6's "Who saves notes about you"). Three were decided on 9 Oct: the two in 5.3's section, how the hook
-lines find `bonsai` (your answer: (a)) and who may consent to code and take the guard out (your answer: (ii)), and this
-one:
+**Choices that are yours.** 5.6's section was approved on 10 Oct, with (A) for who saves notes about you that every
+project reads: you save them, from an agent's draft (5.6's "Who saves notes about you"). The five other decisions you
+confirmed that day: this machine's settings and the studio's label files are all yours, even `cache_keep_days`; a newer
+release is shown as planned, `status --full` reading Bonsai's tags at most daily and keeping the answer in the home's
+`cache/release.json`, which `status`, `check` and `--line` show offline; the installers first run on your machines at
+5.7 with 1.0; `status --line` is kept; the personal index is 40 lines and 4 KB, a note 4 KB. Three were decided on
+9 Oct: the two in 5.3's section, how the hook lines find `bonsai` (your answer: (a)) and who may consent to code and
+take the guard out (your answer: (ii)), and this one:
 - **How the later parts' plans reach you: (B).** You were offered (A) every part's section, (B) only when it changes
   what is yours, and (C) none; you first said (A), then chose (B) once the scope question above was settled. So: 5.1
   is planned in full here. Before each later part starts, a planner writes its section into this file, a fresh Opus
@@ -4476,22 +4480,23 @@ both sides where a check names them, and passes or fails 5.5:
 
 ### Step 5.6: the machine pieces (13-20 h, re-ask at 26)
 
-**Rohan's (B), and what else of his changes.** This section comes to Rohan, because it changes his steps and holds one
-choice of his, made inside his approval (no option round). The one step on his list for 5.6, a line in his own
-`~/.claude/CLAUDE.md` that loads his personal memory, moves to 5.7, into the 1.0 install batch: the index it loads
-exists on his machine only once 1.0 runs there, and an agent then checks that it loads. His choice: who saves the notes
-about him that every project reads, **(A)** he does, from a draft an agent hands him (recommended), or **(B)** agents
-do, through base's memory skill (his part, "Who saves notes about you"). Two standing rules make steps his, each for a
-reason given in plain words below: this machine's Bonsai settings for a project and the label files the studio attaches
-are set only by him or by the studio's registration, never by an agent, which hands him the line; and when a newer
-Bonsai release exists, the agent hands him the install lines (his 9 Oct decision, now with their shape). Under (A) a
-third: notes about him are his to save. Nothing else of his changes under (A): the hours (13-20) and the re-ask line
-(26) are the spec's, one addition since the spec (telling him of a newer release) fitting inside them; the order of the
-parts stands; no repo is new and nothing of his goes public; 5.6 asks no install, no password and no Windows sitting
-(the installers' root and administrator halves are proved on GitHub's throwaway machines; his real installs on both
-sides come with 1.0, at 5.7). Under (B) the hours become 14-22 (re-ask 29) and 5.6 asks one WSL install (note 5.6.3, 2,
-"Under (B)"). Every format change is an addition: three new command outputs (`bonsai.settings/1`, `bonsai.attach/1`,
-`bonsai.line/1`), one field at the end of `status --json` (`bonsai_release`), new words in open lists, and descriptions.
+**Rohan's (B), and what else of his changes.** This section comes to Rohan, because it changes his steps and held one
+choice of his, made inside his approval (no option round); he approved it on 10 Oct. The one step on his list for 5.6, a
+line in his own `~/.claude/CLAUDE.md` that loads his personal memory, moves to 5.7, into the 1.0 install batch: the
+index it loads exists on his machine only once 1.0 runs there, and an agent then checks that it loads. His choice, made
+10 Oct: who saves the notes about him that every project reads, **(A)** he does, from a draft an agent hands him
+(chosen), or **(B)** agents do, through base's memory skill (not chosen; his part, "Who saves notes about you"). Two
+standing rules make steps his, each for a reason given in plain words below: this machine's Bonsai settings for a
+project and the label files the studio attaches are set only by him or by the studio's registration, never by an agent,
+which hands him the line; and when a newer Bonsai release exists, the agent hands him the install lines (his 9 Oct
+decision, now with their shape). Under (A) a third: notes about him are his to save. Nothing else of his changes under
+(A): the hours (13-20) and the re-ask line (26) are the spec's, one addition since the spec (telling him of a newer
+release) fitting inside them; the order of the parts stands; no repo is new and nothing of his goes public; 5.6 asks no
+install, no password and no Windows sitting (the installers' root and administrator halves are proved on GitHub's
+throwaway machines; his real installs on both sides come with 1.0, at 5.7). Under (B), not chosen, the hours would have
+become 14-22 (re-ask 29) and 5.6 one WSL install (note 5.6.3, 2, "Under (B)"). Every format change is an addition: three
+new command outputs (`bonsai.settings/1`, `bonsai.attach/1`, `bonsai.line/1`), one field at the end of `status --json`
+(`bonsai_release`), new words in open lists, and descriptions.
 
 #### For Rohan, in plain words
 
@@ -4534,21 +4539,21 @@ comes at 5.7 with your 1.0 installs, not in 5.6: the index exists on your comput
 runs there, which means 1.0. In 5.6 an agent tries the line's form in a scratch folder only; at 5.7, after your line, an
 agent checks that your sessions load your memory, changing nothing of yours.
 
-**Who saves notes about you: your choice.** Whatever sits in that index is read by every Claude session on this
-computer, in every project, so one agent's words there would reach all your work. Two ways:
-- **(A) You save them, from a draft an agent hands you (recommended).** An agent that learns something about how you
-  like work done drafts the note and hands it to you; you save it by hand, or by asking Claude in a session opened
+**Who saves notes about you: you (your answer, 10 Oct: (A)).** Whatever sits in that index is read by every Claude
+session on this computer, in every project, so one agent's words there would reach all your work. Two ways:
+- **(A) You save them, from a draft an agent hands you (recommended; chosen).** An agent that learns something about how
+  you like work done drafts the note and hands it to you; you save it by hand, or by asking Claude in a session opened
   outside any linked project (your home folder, say), where Bonsai's walls do not apply. Facts about how you want work
   done in one project go into that project's own memory, which agents do write. It costs nothing more: Bonsai's guard
   already keeps agents' file tools out of Bonsai's folder on this computer, as the walls keep them out of your
   `~/.claude/CLAUDE.md` (a stop for mistakes, as above, not for a determined agent). No guard change and no install in
   5.6. What you give up: a note about you is not saved until you save it.
-- **(B) Agents may write them,** through base's memory skill, as the spec first had it. It costs a change to Bonsai's
-  guard (letting agents write that one folder), and so a new pre-release install in WSL during 5.6 (5.4's four lines,
-  about 5 minutes, your password), and 1-2 more AI hours (5.6 then 14-22 hours, re-ask at 29). And one agent's words,
-  right or wrong, reach every session in every project until you notice them.
+- **(B) Agents may write them (not chosen),** through base's memory skill, as the spec first had it. It costs a change
+  to Bonsai's guard (letting agents write that one folder), and so a new pre-release install in WSL during 5.6 (5.4's
+  four lines, about 5 minutes, your password), and 1-2 more AI hours (5.6 then 14-22 hours, re-ask at 29). And one
+  agent's words, right or wrong, reach every session in every project until you notice them.
 
-Either way, the studio's move of today's notes about you into this folder (spec step 7) follows your choice; and on
+The studio's move of today's notes about you into this folder (spec step 7) follows your choice, (A); and on
 Windows, Bonsai keeps a copy of WSL's notes once you name WSL's folder with one setting, a line that comes with Mimas's
 link (step 8), not now.
 
@@ -4613,11 +4618,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 
 **Hours, order and your steps.** 13-20 hours, re-ask at 26, as the spec has them; 5.6 after 5.5 and before 5.7. The one
 addition since the spec was written, telling you of a newer release (your 9 Oct choice), takes 1-2 of the status line's
-5-8 hours, which needs less than the studio's whole line did: it shows only Bonsai's part, from Go. Under (B), 14-22
-hours, re-ask at 29 (above). Your steps in 5.6: approve this section, with its one choice; under (B), also the WSL
-install. Standing from 5.6: this machine's settings and the studio's label files are yours or the studio's
-registration's; a newer release is yours to install, from the lines an agent hands you; under (A), notes about you are
-yours to save. At 5.7: your memory line, with the 1.0 installs.
+5-8 hours, which needs less than the studio's whole line did: it shows only Bonsai's part, from Go. Under (B), not
+chosen, 14-22 hours, re-ask at 29 (above). Your steps in 5.6: none (the section approved 10 Oct, with (A)). Standing
+from 5.6: this machine's settings and the studio's label files are yours or the studio's registration's; a newer release
+is yours to install, from the lines an agent hands you; under (A), notes about you are yours to save. At 5.7: your
+memory line, with the 1.0 installs.
 
 #### What exists, and what 5.1 to 5.5 will have added
 
@@ -4691,10 +4696,10 @@ git's counts, Unity's editor and the studio's services, with caches round them),
 --full`'s `git ls-remote` read. The third row's 2-3 is 5.6.6's. In all: low 0.5+2.5+1+2+4+1+2 = 13; high 1+3+2+3+6+2+3 =
 20 (pieces 5.6.0 to 5.6.6); re-ask 26 (20 x 1.3). The review's fixes (the inline elevated child and its CI switch, the
 install over a running copy, the cross-side home rules, the release lines' version rule) add work inside 5.6.3's and
-5.6.6's ranges, not past their highs, so the figures stand. Under Rohan's (B) (note 5.6.3, 2), 5.6.3 becomes 3-5: low
-14, high 22, re-ask 29 (22 x 1.3 = 28.6). This section's planning and review runs count in 5.6's hours, carried in
-5.6.0's run report ("What changes", item 3). Tasks (5.4's rule): piece 5.6.y is `T-560y`; `T-5690` onward, in order,
-for V1, the floors and the end verification.
+5.6.6's ranges, not past their highs, so the figures stand. Under Rohan's (B), not chosen on 10 Oct (note 5.6.3, 2),
+5.6.3 would become 3-5: low 14, high 22, re-ask 29 (22 x 1.3 = 28.6). This section's planning and review runs count in
+5.6's hours, carried in 5.6.0's run report ("What changes", item 3). Tasks (5.4's rule): piece 5.6.y is `T-560y`;
+`T-5690` onward, in order, for V1, the floors and the end verification.
 
 | # | What is built | What proves it | Hours | Reads |
 |---|---|---|---|---|
@@ -4739,8 +4744,8 @@ The files each piece owns:
      the others at `verify` or not started.
 3. **5.6.5 once 5.6.3 and 5.6.4 have landed:** it adds a word to lane A's table and its marker to 5.6.4's line.
 4. **V1** once 5.6.6 has landed with its CI job green, and 5.6.1 and 5.6.2 have landed; it may run beside 5.6.3 to 5.6.5
-   (it writes no repository file). Under (B), it also waits for 5.6.3 and Rohan's install of the pre-release built
-   after it.
+   (it writes no repository file). Under (B), not chosen, it would also wait for 5.6.3 and Rohan's install of the
+   pre-release built after it.
 5. **The floors** (5.4's "once a part", under a `T-569x` task), the Haiku audit of `.bonsai/sessions.md` against the run
    reports, then **the 5.6 end verifier**.
 
@@ -4754,8 +4759,8 @@ read of the diff, which the run report says. **V1**, a fresh Opus verifier, on t
 the machine's tripwires (5.6.1's and 5.6.2's refusals) and the machine settings reader the guard shares (note 5.6.1, 1);
 **the 5.6 end verifier**, fresh Opus, on "5.6 done". Under (A) 5.6.3 needs no verifier of its own: it adds warnings, an
 empty file and deny rules (each tried once in a session), and changes no guard, stop gate or ladder code; the end
-verifier breaks its warnings and the Windows copy and reads its rules. Under (B) V1 also reads 5.6.3's guard change, and
-so waits for 5.6.3 to land.
+verifier breaks its warnings and the Windows copy and reads its rules. Under (B), not chosen, V1 would also read 5.6.3's
+guard change, and so wait for 5.6.3 to land.
 
 #### Where each inherited finding is settled
 
@@ -4790,7 +4795,7 @@ hand on:
 | Rohan's (ii): `--allow-exec`, `unlink` and changes to Bonsai's own lines are a person's where the studio does not manage (5.3) | 5.6.5 | Unchanged: an installer touches no project; a release that changes Bonsai's lines shows as `check`'s finding, its step the person's line (note 5.6.5, 6) |
 | A pack's version, a pack added or taken out stay his step; agents hand over the line (Rohan, 9 Oct, 18:32, approving 5.5) | This section | The same shape for machine settings, attached labels and installs: the agent prepares and hands over the exact line |
 | The studio's registration "runs `bonsai labels attach` and `bonsai settings`, both 5.6's"; "full registration waits for 5.6" (this plan's "Stale or in tension"; contract §15.2) | 5.6.1, 5.6.2 | Built; both refuse in an agent session, so the registration is run by a person or the studio's own program (a note for the studio's plan, step 7) |
-| A later install only when a part changes the guard, the stop gate or the ladder (spec §17 step 8; 5.4) | This section | Under (A), 5.6 changes none of them (the guard's rule 7 is 5.3's; `--line`, `settings` and `labels` are no hook), so 5.6 asks no install; but for the machine settings reader the guard shares, which now refuses a `status_command` outside its rule (note 5.6.1, 1): that reaches the installed guard with 1.0, and nothing waits on it, since Bonsai's own repo has no machine settings. Under (B), 5.6.3 changes the guard's rule 5, so one WSL install (note 5.6.3, 2) |
+| A later install only when a part changes the guard, the stop gate or the ladder (spec §17 step 8; 5.4) | This section | Under (A), 5.6 changes none of them (the guard's rule 7 is 5.3's; `--line`, `settings` and `labels` are no hook), so 5.6 asks no install; but for the machine settings reader the guard shares, which now refuses a `status_command` outside its rule (note 5.6.1, 1): that reaches the installed guard with 1.0, and nothing waits on it, since Bonsai's own repo has no machine settings. Under (B), not chosen on 10 Oct, 5.6.3 would change the guard's rule 5, so one WSL install (note 5.6.3, 2) |
 | The floors at a part's end (5.4, "Tasks and names") | After 5.6.5 | One climb of `main`, the floors raised to its counts under a `T-569x` task, the numbers in Rohan's last line |
 
 #### Notes per piece
@@ -4947,17 +4952,17 @@ hand on:
    bonsai.memory/1` with its pointer comment, `id: null`, `title: Personal memory`, `kind: index`, `updated` today,
    `source: null`, `labels: {}`, and one body line saying what goes there and who writes it), never over an existing
    one; `unlink` leaves it (the machine's, not the project's).
-2. **Who writes it: Rohan's choice** (his part, "Who saves notes about you").
-   - **Under (A), recommended: a person.** 5.3.2 rule 5 and 5.3.5's `Edit(~/.bonsai/**)` refuse an agent's file-tool
-     writes anywhere in the home, in every linked project, and that stays: the index loads into every session in every
-     project on the machine, so a note one agent wrote would carry its words into all of them, as a write to
+2. **Who writes it: a person (Rohan's choice, 10 Oct: (A))** (his part, "Who saves notes about you").
+   - **Under (A), recommended and chosen: a person.** 5.3.2 rule 5 and 5.3.5's `Edit(~/.bonsai/**)` refuse an agent's
+     file-tool writes anywhere in the home, in every linked project, and that stays: the index loads into every session
+     in every project on the machine, so a note one agent wrote would carry its words into all of them, as a write to
      `~/.claude/CLAUDE.md` would (which base walls, 5.5.2 note 2). An agent drafts a note about the person with base's
      `memory` skill and hands it over; the person saves it by hand, or in a session opened outside any linked project. A
      fact about how the person wants work done in one project goes into that project's memory, which agents write.
      Base's `memory` skill and the operating skill say so (this piece edits their lines; `check --pack` and the
      operating test pass). As with the machine's settings, the walls stop a mistake, not a determined agent (a shell
      write gets through, 5.3.3 note 5). What lost: a note about the person is not saved until they save it.
-   - **Under (B): agents write it, through base's `memory` skill.** What changes, so his answer is applied at once:
+   - **Under (B), not chosen on 10 Oct: agents write it, through base's `memory` skill.** What would change:
      - **The guard,** 5.3.2 rule 5 (`internal/guard/`, owned by 5.6.3): an agent's file-tool write in the home is
        allowed for `<home>/personal/INDEX.md` and `<home>/personal/notes/<name>.md` only (a plain name ending `.md`, no
        deeper folder), and still refused everywhere else in the home; tests both ways. V1 reads it (guards and hooks),
@@ -5258,11 +5263,11 @@ both sides where a check names them, and passes or fails 5.6:
 8. **The personal layer:** `init --yes` writes the empty index once and never over one; a preview and `check` write
    nothing in the home; each of the five warnings from a fixture, none changing the exit code, the caps from their one
    table; the decoy secret's value in no output; on Windows the copy refreshed by `update --yes` (only `INDEX.md` and
-   `notes/*.md`, within the limits), `personal-copy` from the record after the copy changes, `check` never reaching
-   the source, and an unreachable source answered with a note within 2 s; the import's measurement in the run report
-   (the `@~/` form, a missing file, any external-import prompt); the cross-side deny rules written by `update` and
-   their tries in the run report, one form re-tried by the verifier on each side by 5.5.6's method; under (B), also an
-   agent's file-tool write of a personal note allowed and of any other file in the home refused.
+   `notes/*.md`, within the limits), `personal-copy` from the record after the copy changes, `check` never reaching the
+   source, and an unreachable source answered with a note within 2 s; the import's measurement in the run report (the
+   `@~/` form, a missing file, any external-import prompt); the cross-side deny rules written by `update` and their
+   tries in the run report, one form re-tried by the verifier on each side by 5.5.6's method; under (B), not chosen,
+   also an agent's file-tool write of a personal note allowed and of any other file in the home refused.
 9. **`--line`:** each part on fixtures, `N running` among them; it returns with its input held open; nothing printed
    and exit 0 outside a linked checkout; a broken `bonsai.yaml`
    gives its short line and exit 0; a title holding an escape code printed without it; `--json` valid against
@@ -5361,11 +5366,11 @@ both sides where a check names them, and passes or fails 5.6:
   a note, in one Go table with the project's caps (note 5.6.3, 3); its checks are warnings, not findings, as the layer
   is the machine's.
 - **§10: "Agents write notes through the workflow pack's memory skill"** (5.5 moved it to base's): true of the project's
-  notes. For the personal layer it is settled by Rohan's choice in this section: under (A) the person's, 5.3's guard
-  and deny rule refusing agents in the home (note 5.6.3, 2); under (B) as the spec has it, in base's skill, with a
-  guard change. The memory schema's description says which (5.6.0).
-- **§13 item 4, the memory move "to `~/.bonsai/personal/`":** follows Rohan's choice: under (A) done by a person, or in
-  a session outside any linked project, the studio's plan's choice (step 7); under (B) an agent may do it.
+  notes. For the personal layer it is settled by Rohan's choice in this section, (A), the person's, 5.3's guard
+  and deny rule refusing agents in the home (note 5.6.3, 2); (B), as the spec has it, in base's skill, with a
+  guard change, was not chosen. The memory schema's description says which (5.6.0).
+- **§13 item 4, the memory move "to `~/.bonsai/personal/`":** follows Rohan's choice, (A): done by a person, or in a
+  session outside any linked project, the studio's plan's choice (step 7); under (B), not chosen, an agent could do it.
 - **Contract §15.2: registration "runs Bonsai's attach and settings commands":** both refuse in an agent's session, so
   the studio's registration is run by a person or by the studio's own program outside one; a note for the studio's plan.
 - **§3: "Each install writes `<home>/install.json`":** the installing person's home, never root's (the installer refuses
