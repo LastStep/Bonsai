@@ -5427,67 +5427,89 @@ both sides where a check names them, and passes or fails 5.6:
   Windows `~/.claude/CLAUDE.md` (Rohan's), and the engine's cross-side deny rules over each side's Bonsai home (note
   5.6.3, 6), re-tried on that machine.
 
-### Step 5.7: the release (6-11 h, re-ask at 14)
+### Step 5.7: the release (9.5-18.5 h with the trial, re-ask at 24)
 
 **Rohan's (B), and what else of his changes.** This section comes to Rohan: it holds his steps (the GitHub settings,
-switching the release workflow on, every tag, the 1.0 installs, his memory line), a public release that cannot be taken
-back, and four decisions of his, made inside his approval (no option round; "Decisions for Rohan", below). Two more
-were settled on 10 Oct, before the section reached him: Go 1.27 for the release (his word, "we can go with go 1.27
-latest"; the bump is its own piece, landed before 5.7 starts) and a newer `gh` in WSL (decision 2, (A), which he
-installed that day). The release files, `.github/workflows/release.yml` and `.goreleaser.yaml`, are person-only in
-Bonsai's repo (5.4's switch, the stricter-only rule): his approval of this section is his word for the changes it names
-to them, and for nothing more. Under his recommended answers the hours (6-11) and the re-ask line (14) are the spec's;
-under 1 (B) they become 6.5-12 and 16. The order of the parts stands: 5.7 is the last. No repo is new. What goes
-public: Bonsai 1.0 (its files, the README, the release notes), one pre-release under 3 (A), and the first tags of the
-two packs. No format changes: the install lines Bonsai prints gain one line (a list's entry, so `bonsai_release.lines`
-keeps its schema), and `base`'s `version` becomes `1.0.0`.
+switching the release workflow on, every tag, the installs of a pre-release and of 1.0, the trial's pick and its
+review, his memory line), a public release that cannot be taken back, and his decisions, all answered on 10 Oct
+(11:19-11:29; "Decisions for Rohan", below): Homebrew stays at the old product (1 (A)); his approval holds each release
+(4 (A)); the packs' tags are locked (5 (A)); and, in place of a plain rehearsal, **a trial of Bonsai on itself on
+`1.0.0-rc.1`** before 1.0, with his own trial on a fresh project after it (3). Two more were settled earlier that day:
+Go 1.27 for the release ("we can go with go 1.27 latest"; the bump is its own piece, landed before 5.7 starts) and a
+newer `gh` in WSL (2 (A), done). The trial takes 5.7 past the spec's hours: **9.5-18.5 hours, re-ask at 24**, against
+the spec's 6-11 and 14 ("Hours, order and your steps"); the section comes back to him for approval with those figures.
+The release files, `.github/workflows/release.yml` and `.goreleaser.yaml`, are person-only in Bonsai's repo (5.4's
+switch, the stricter-only rule): his approval of this section is his word for the changes it names to them, and for
+nothing more. The order of the parts stands: 5.7 is the last. No repo is new. What goes public: Bonsai 1.0 (its files,
+the README, the release notes), one or more pre-releases (`1.0.0-rc.N`), the trial's feature as an ordinary commit on
+`main`, and the first tags of the two packs. No format changes are planned: the install lines Bonsai prints gain one
+line (a list's entry, so `bonsai_release.lines` keeps its schema), and `base`'s `version` becomes `1.0.0`; a trial
+finding that needs one comes to him first ("Risk in the code, 5.7").
 
 #### For Rohan, in plain words
 
-**What 5.7 gives you.** Bonsai 1.0, released on your word and installed by you on both sides.
+**What 5.7 gives you.** Bonsai 1.0, released on your word once Bonsai has worked on itself cleanly, and installed by
+you on both sides.
 - **The release path made safe before it is switched on.** Every action and tool Bonsai's workflows name is fixed to
   one exact version, so no update of theirs slips in unseen (GitHub's own machines and its code-scanning bundle still
   update themselves). A release runs only from a tag on a commit already on `main` whose checks are green. The program
   is built and checked in a step that cannot publish anything or sign anything; the step that publishes runs nothing
-  from the build, and it waits inside a GitHub setting that holds it back until its rules are met (the `release`
-  environment). GitHub signs a record of how each file was built (by Bonsai's own release workflow, from that tag, on
-  GitHub's own machines), and a GitHub lock (immutable releases) stops anyone changing a published release's files or
-  moving its tag. Under decision 1 (A) no secret is needed at all, so nothing in a release can write outside Bonsai's
-  repo.
+  from the build, and it waits for your approval inside a GitHub setting (the `release` environment). GitHub signs a
+  record of how each file was built (by Bonsai's own release workflow, from that tag, on GitHub's own machines), and a
+  GitHub lock (immutable releases) stops anyone changing a published release's files or moving its tag. No secret is
+  needed at all, so nothing in a release can write outside Bonsai's repo.
 - **A rehearsal on every push.** GitHub builds every file a release would publish, checks each (the right files in each
   archive, no test-only code in the program, the installer working from its archive) and publishes nothing.
 - **A stronger check in your install lines.** One more line on each side, before anything from the download runs,
-  checks GitHub's signed record (decision 2, settled: your WSL `gh` is new enough for it). What it proves: the files
-  were built by Bonsai's release workflow from that tag, on GitHub's own machines. What it does not: that the code is
-  good. A commit on `main` is built and signed like any other, whoever made it; the guard, the ladder and the verifiers
-  stand there, as before.
+  checks GitHub's signed record (your WSL `gh` is new enough for it). What it proves: the files were built by Bonsai's
+  release workflow from that tag, on GitHub's own machines. What it does not: that the code is good. A commit on `main`
+  is built and signed like any other, whoever made it; the guard, the ladder and the verifiers stand there, as before.
+- **The trial you asked for: Bonsai on itself, on a pre-release.** You install `1.0.0-rc.1` with the real install lines,
+  so Bonsai's own repo runs it. Agents propose two or three small real features for Bonsai; you pick one; it is built as
+  an ordinary Bonsai task through the whole pipeline (its task file, Bonsai's guard, the ladder, the log of every
+  session, the tables, any question to you, a verifier, the landing). Then you get an analysis in plain words with the
+  evidence: which files Bonsai created and changed, what the log and the tables hold, how the agents worked (sessions,
+  runs, refusals, questions, ladder results), and anything rough. Fixes go out as `rc.2` and so on, the trial or its
+  affected part repeated, until you are happy. Then your own trial on a fresh project, on your own, and only then your
+  word for 1.0, from the same code as the last pre-release.
 - **Go kept current** (your word, 10 Oct). 1.0 is built with Go 1.27's newest patch: Go 1.25 got its last security fix
   on 19 Aug, when Go 1.27 came out. The bump lands before 5.7 starts; 5.7 checks it still holds at release time and
   that the vulnerability check is clean.
-- **The words brought up to date.** The README (what Bonsai is, how to install and check it), the contributing guide,
-  the changelog with 1.0's notes, the security policy, the issue templates, and `bonsai --help`, which still says
-  "rebuild in progress".
+- **The words brought up to date.** The README (what Bonsai is, how to install and check it, and the steps to link a
+  first project, which your own trial follows), the contributing guide, the changelog with 1.0's notes, the security
+  policy, the issue templates, and `bonsai --help`, which still says "rebuild in progress".
 - **The packs' first versions.** `base` and `workflow` at `1.0.0`, their checks taking Bonsai from the 1.0 release by
   its fingerprint, then tagged by you.
 
 **What stays yours, and why.** Agents act on GitHub as your account, so every step that makes something public or
-changes a setting is yours, typed by you: the settings, switching the release workflow on, every tag, and (under 4 (A))
-approving each release. From 1.0, `CLAUDE.md` tells every agent the same in one rule: only you tag and approve a
-release; no agent approves, re-runs or cancels a release run, or changes a setting. A release is public and stays:
-GitHub's lock means its files can never be changed, only followed by a newer version. Installing the program stays
-yours (your 9 Oct choice), and so does the memory line in your own `~/.claude/CLAUDE.md` (no agent edits that file).
-Everything else is the agents': the code, every check on every file, reading each setting back after you change it,
-and checking each release before you install it.
+changes a setting is yours, typed by you: the settings, switching the release workflow on, every tag, and approving
+each release. From 1.0, `CLAUDE.md` tells every agent the same in one rule: only you tag and approve a release; no
+agent approves, re-runs or cancels a release run, or changes a setting. A release is public and stays: GitHub's lock
+means its files can never be changed, only followed by a newer version. Installing the program stays yours (your 9 Oct
+choice), so every pre-release Bonsai runs on itself is your install too; so do the trial's pick and the judgement of its
+results, your own trial on a fresh project, and the memory line in your own `~/.claude/CLAUDE.md` (no agent edits that
+file). Everything else is the agents': the code, every check on every file, reading each setting back after you change
+it, checking each release before you install it, running the trial and writing its analysis.
 
 **How 1.0 happens, in order.** Each batch reaches you in one message, with every number filled in.
 1. Agents build and check everything; a fresh verifier passes the release path, and reads every line of batch 1
    against GitHub's documentation, before anything is switched on.
 2. **Batch 1, the settings** (about 10 minutes, in WSL).
-3. **Batch 2, the rehearsal** (about 3 minutes; under 3 (A)): a pre-release, `1.0.0-rc.1`, which agents and a fresh
-   verifier check on both sides. Nothing to install.
-4. **Batch 3, 1.0** (about 25 minutes, in two or three sittings the same day): your word, after reading the notes and
-   the rehearsal's report; the tag and your approval; once agents have checked the published files, the installs (WSL
-   first, then your memory line, then Windows); and last, the two pack tags.
+3. **Batch 2, `1.0.0-rc.1`** (about 3 minutes): your tag and your approval; agents and a fresh verifier check every
+   published file on both sides.
+4. **Batch 3, rc.1 installed** (about 15 minutes): on WSL, so Bonsai's own repo runs it, and on Windows, so the Windows
+   installer's first real run (its one "allow this app" question) happens on a pre-release, where a problem costs a new
+   `rc` and not a 1.0.1; then your pick of the trial's feature.
+5. **The trial on Bonsai** (agents; nothing of yours unless the work asks you a question, which reaches you as Bonsai's
+   own question to a person).
+6. **Batch 4, the analysis** (about 30 minutes to read): you say "happy", or what to fix. Each fix round is a new
+   pre-release: your tag, your approval and your WSL install again (about 10 minutes; Windows too only if the fix
+   touches Windows), then the trial or its affected part again and a short analysis.
+7. **Your own trial on a fresh project**, on your own and in your own time, once you are happy with the trial on
+   Bonsai: the README's steps link a new project to Bonsai and its `base` pack; agents help only if you ask.
+8. **Batch 5, 1.0** (about 25 minutes, in two or three sittings the same day): your word; the tag, on the same code as
+   the last pre-release, and your approval; once agents have checked the published files, the installs (WSL, then your
+   memory line, then Windows); and last, the two pack tags.
 
 **Batch 1, the settings.** In WSL, one line at a time. None of these can be tried without changing a setting, so a
 fresh verifier has read each against GitHub's documentation before it reaches you. Several print nothing when they work,
@@ -5499,10 +5521,10 @@ every setting back once more (changing none) and tells you what it found.
   (a `/bin/gh` after it is the same file, as on 10 Oct).
 - **The old Homebrew token,** never confirmed revoked: on github.com, your Settings, Developer settings, Personal
   access tokens (both lists). Delete any token made for the Homebrew tap, and tell the orchestrator what you found: a
-  live one could still change the tap. (Under 1 (B), the new one is made below.)
-- **The `release` environment,** open only to tags starting `v`, and (under 4 (A)) waiting for your approval. The first
-  line prints the environment; the second prints its tag rule; the last two must print `v* tag`, then
-  `required_reviewers` and `branch_policy` (in either order):
+  live one could still change the tap.
+- **The `release` environment,** open only to tags starting `v`, and waiting for your approval. The first line prints
+  the environment; the second prints its tag rule; the last two must print `v* tag`, then `required_reviewers` and
+  `branch_policy` (in either order):
 
   ```bash
   printf '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"User","id":%s}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}' "$(gh api user --jq .id)" | gh api -X PUT repos/LastStep/Bonsai/environments/release --input -
@@ -5518,10 +5540,9 @@ every setting back once more (changing none) and tells you what it found.
   gh api repos/LastStep/Bonsai/immutable-releases --jq .enabled
   ```
 
-- **Under 5 (A), the packs' tags locked.** In Bonsai's repo a rule that stops `base-v*` tags being moved or deleted;
-  in the workflow repo the same rule for its `v*` tags, and GitHub's lock on its published releases. The first two
-  lines print each rule; the third prints nothing; the last three must print `pack-tags tag`, `release-tags tag` and
-  `true`:
+- **The packs' tags locked.** In Bonsai's repo a rule that stops `base-v*` tags being moved or deleted; in the workflow
+  repo the same rule for its `v*` tags, and GitHub's lock on its published releases. The first two lines print each
+  rule; the third prints nothing; the last three must print `pack-tags tag`, `release-tags tag` and `true`:
 
   ```bash
   echo '{"name":"pack-tags","target":"tag","enforcement":"active","bypass_actors":[],"conditions":{"ref_name":{"include":["refs/tags/base-v*"],"exclude":[]}},"rules":[{"type":"update"},{"type":"deletion"}]}' | gh api -X POST repos/LastStep/Bonsai/rulesets --input -
@@ -5539,11 +5560,7 @@ every setting back once more (changing none) and tells you what it found.
   gh api repos/LastStep/Bonsai/actions/workflows/release.yml --jq .state
   ```
 
-- **Under 1 (B) only:** on github.com, a new fine-grained token for the repository `LastStep/homebrew-tap` with
-  "Contents: read and write" (spec §17 step 4); then `gh secret set HOMEBREW_TAP_TOKEN --env release -R
-  LastStep/Bonsai` and paste it when asked; `gh secret list --env release -R LastStep/Bonsai` must list it.
-
-**Batch 2, the rehearsal** (under 3 (A)). One line, with the commit the orchestrator names:
+**Batch 2, `1.0.0-rc.1`.** One line, with the commit the orchestrator names:
 
 ```bash
 gh api -X POST repos/LastStep/Bonsai/git/refs -f ref=refs/tags/v1.0.0-rc.1 -f sha=<the commit the orchestrator names>
@@ -5559,68 +5576,50 @@ first, then one line takes the tag away and the tag line is typed again on the f
 gh api -X DELETE repos/LastStep/Bonsai/git/refs/tags/<the tag the orchestrator names>
 ```
 
-**Batch 3, 1.0.**
-- **Your word.** The orchestrator sends the link to 1.0's notes (the changelog's 1.0 section) and the rehearsal's report
-  in plain words. Reply "release 1.0", or say what to change first.
-- **The tag and your approval**, as in batch 2, with `v1.0.0` and the commit named then (under 3 (A), the rehearsal's
-  plus the notes' date):
-
-  ```bash
-  gh api -X POST repos/LastStep/Bonsai/git/refs -f ref=refs/tags/v1.0.0 -f sha=<the commit the orchestrator names>
-  ```
-
-- **WSL**, once the orchestrator says 1.0's files are checked. Seven lines, one at a time:
+**Batch 3, rc.1 installed, and your pick.**
+- **WSL**, once the orchestrator says rc.1's files are checked. Seven lines, one at a time (for 1.0, batch 5, the same
+  lines name `1.0.0`):
 
   ```bash
   cd "$(mktemp -d)"
-  curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0/bonsai_1.0.0_linux_amd64.tar.gz
-  curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0/checksums.txt
+  curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0-rc.1/bonsai_1.0.0-rc.1_linux_amd64.tar.gz
+  curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0-rc.1/checksums.txt
   sha256sum -c --ignore-missing checksums.txt
-  gh attestation verify bonsai_1.0.0_linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0 --deny-self-hosted-runners
-  tar -xzf bonsai_1.0.0_linux_amd64.tar.gz
+  gh attestation verify bonsai_1.0.0-rc.1_linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0-rc.1 --deny-self-hosted-runners
+  tar -xzf bonsai_1.0.0-rc.1_linux_amd64.tar.gz
   sh install.sh
   ```
 
   The fourth line must print `OK`; the fifth, `Verification succeeded`; the last ends with Bonsai's fingerprint, a list
-  of `bonsai` programs naming `/usr/local/bin/bonsai` alone, and `bonsai 1.0.0 (commit ...)`. Anything else: stop and
-  send the orchestrator what it printed. The way back in WSL is not the installer's remove (without a `bonsai` there,
-  every edit in Bonsai's own repo is refused): it is 5.4's "back to the build before", whose two lines the orchestrator
-  sends with the 5.4 pre-release's number. After it, `bonsai check` reports that the installed program is not the one
-  Bonsai's install record names (the record still says 1.0): expected, and cleared by the next install through the
-  installer.
-- **Only if the orchestrator says 1.0 changed Bonsai's own hook lines** (your answer (ii)):
+  of `bonsai` programs naming `/usr/local/bin/bonsai` alone, and `bonsai 1.0.0-rc.1 (commit ...)`. Anything else: stop
+  and send the orchestrator what it printed. The way back in WSL is not the installer's remove (without a `bonsai`
+  there, every edit in Bonsai's own repo is refused): it is 5.4's "back to the build before", whose two lines the
+  orchestrator sends with the 5.4 pre-release's number. After it, `bonsai check` reports that the installed program is
+  not the one Bonsai's install record names: expected, and cleared by the next install through the installer.
+- **Only if the orchestrator says the pre-release changed Bonsai's own hook lines** (your answer (ii)):
 
   ```bash
   cd ~/Servers/Bonsai
   /usr/local/bin/bonsai update --allow-exec --yes
   ```
 
-- **Your memory line**, once the orchestrator says your memory's index exists:
-
-  ```bash
-  printf '\n@~/.bonsai/personal/INDEX.md\n' >> ~/.claude/CLAUDE.md
-  tail -n 2 ~/.claude/CLAUDE.md
-  ```
-
-  The second line must end with `@~/.bonsai/personal/INDEX.md`; send the orchestrator what it printed. An agent then
-  checks that your Claude sessions load it, changing nothing of yours.
 - **Windows**, in a normal PowerShell (not as administrator), one line at a time:
 
   ```powershell
   cd (New-Item -ItemType Directory (Join-Path $env:TEMP ("bonsai-" + [guid]::NewGuid())))
-  curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0/bonsai_1.0.0_windows_amd64.zip
-  curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0/checksums.txt
-  (Get-FileHash bonsai_1.0.0_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.0.0_windows_amd64.zip).Line -split ' ')[0]
-  gh attestation verify bonsai_1.0.0_windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0 --deny-self-hosted-runners
-  Expand-Archive bonsai_1.0.0_windows_amd64.zip -DestinationPath . -Force
+  curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0-rc.1/bonsai_1.0.0-rc.1_windows_amd64.zip
+  curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0-rc.1/checksums.txt
+  (Get-FileHash bonsai_1.0.0-rc.1_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.0.0-rc.1_windows_amd64.zip).Line -split ' ')[0]
+  gh attestation verify bonsai_1.0.0-rc.1_windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0-rc.1 --deny-self-hosted-runners
+  Expand-Archive bonsai_1.0.0-rc.1_windows_amd64.zip -DestinationPath . -Force
   powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
   ```
 
   The fourth line must print `True`; the fifth, `Verification succeeded` (PowerShell may show a stray character before
   it). The last line brings one Windows question, "Do you want to allow this app to make changes to your device?":
   choose Yes. It ends with the fingerprint, the `bonsai` programs Windows finds (`C:\Program Files\Bonsai\bonsai.exe`
-  first) and `bonsai 1.0.0 (commit ...)`. **The way out:** if you chose No, run the last line again and choose Yes. To
-  take it out, in the same window (one more question):
+  first) and `bonsai 1.0.0-rc.1 (commit ...)`. **The way out:** if you chose No, run the last line again and choose
+  Yes. To take it out, in the same window (one more question):
 
   ```powershell
   powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Remove
@@ -5634,6 +5633,46 @@ gh api -X DELETE repos/LastStep/Bonsai/git/refs/tags/<the tag the orchestrator n
   ```
 
   No Windows project uses Bonsai yet, so a failed install there blocks no work.
+- **Your pick.** The orchestrator sends two or three small features for Bonsai, each in plain words: what it does for
+  you, what it touches, its hours, and which parts of the pipeline it puts to work. Reply with one.
+
+**The trial and its analysis (batch 4).** The orchestrator tells you when the feature has landed. The analysis is a page
+in `records/` (and, if you like, a page you can read on your phone): what Bonsai created and changed, with the files
+named; what its log and tables hold; how the agents worked, run by run; every refusal, question and ladder result; and
+anything that was rough, with what the plan proposes for each. Reply "happy", or what to fix. For each fix round:
+
+```bash
+gh api -X POST repos/LastStep/Bonsai/git/refs -f ref=refs/tags/v1.0.0-rc.2 -f sha=<the commit the orchestrator names>
+```
+
+then your approval, then the WSL lines again with the new number (Windows too only if the orchestrator says the fix
+touches Windows); the trial or its affected part runs again, and a shorter analysis follows.
+
+**Your own trial on a fresh project.** Once you are happy with the trial on Bonsai, in your own time: a new folder, git,
+and the README's "first project" steps (link it to Bonsai and its `base` pack, check it, open Claude Code there and ask
+for something small), with the last pre-release installed. Tell the orchestrator what you found, or nothing at all:
+your word for 1.0 is what counts. Agents help only if you ask.
+
+**Batch 5, 1.0.**
+- **Your word.** Reply "release 1.0", or say what to change first (a change means another pre-release first).
+- **The tag and your approval**, as in batch 2, with `v1.0.0` and the commit named then: the last pre-release's code,
+  with the notes' date the only change:
+
+  ```bash
+  gh api -X POST repos/LastStep/Bonsai/git/refs -f ref=refs/tags/v1.0.0 -f sha=<the commit the orchestrator names>
+  ```
+
+- **WSL and Windows**, once the orchestrator says 1.0's files are checked: batch 3's lines with `1.0.0` in place of
+  `1.0.0-rc.1` (the orchestrator sends them written out). Each install replaces the pre-release in place.
+- **Your memory line**, once the orchestrator says your memory's index exists:
+
+  ```bash
+  printf '\n@~/.bonsai/personal/INDEX.md\n' >> ~/.claude/CLAUDE.md
+  tail -n 2 ~/.claude/CLAUDE.md
+  ```
+
+  The second line must end with `@~/.bonsai/personal/INDEX.md`; send the orchestrator what it printed. An agent then
+  checks that your Claude sessions load it, changing nothing of yours.
 - **Last, the two pack tags**, once the orchestrator says the packs' checks take Bonsai from 1.0 (the same day or
   later):
 
@@ -5643,22 +5682,23 @@ gh api -X DELETE repos/LastStep/Bonsai/git/refs/tags/<the tag the orchestrator n
   ```
 
   The first starts nothing; the second starts the workflow repo's own checks, which publish its release (that repo has
-  no `release` environment, so no approval). Under 5 (A) neither tag can then be moved or deleted. Projects may then
-  name the packs by these tags. Bonsai's own repo keeps naming `base` by its commit; moving it to the tag waits for your
-  word, whenever you like (5.5's rule), not planned here.
+  no `release` environment, so no approval). Neither tag can then be moved or deleted. Projects may then name the packs
+  by these tags. Bonsai's own repo keeps naming `base` by its commit; moving it to the tag waits for your word, whenever
+  you like (5.5's rule), not planned here.
 
-**Hours, order and your steps.** 6-11 hours, re-ask at 14, as the spec has them, for more than the spec's row: since it
-was written, 5.7 gained the gate's findings, the stronger install check, the packs' move to the release and the
-rehearsal. They fit because, under 1 (A), the Homebrew work the row counted (the token, the old version's formula, the
-tap's update) is gone, because the Go bump is done before 5.7 on your word (its hours are its own piece's), and because
-each piece's hours hold its checks, as every part's do. The review's fixes (a build step that cannot publish, the draft
-checked before it is published, the packs' tag locks) add about a quarter of an hour, inside the high. This section's
-planning and review count in the 6-11 too; if the measured total nears 11 before your word for 1.0, you get the numbers
-first. Under 1 (B): 6.5-12, re-ask at 16. Under 3 (B): 5.5-10.5, the re-ask line kept at 14. If a stop line were
-crossed, the smaller cut's "half of 5.7" would be the rehearsal and the packs' move (5.7.6): 1.0 would still go out
-with every check, and projects would keep naming the packs by commit. Your time: about 10 minutes for batch 1, 3 for
-batch 2, 25 for batch 3, so about 40 in all (the plan's earlier "about 10 minutes for the installs" did not count the
-settings, the rehearsal or the stronger check). Your steps are the three batches above; nothing else of yours changes.
+**Hours, order and your steps.** **9.5-18.5 hours, re-ask at 24, past the spec's 6-11 and 14 because of the trial you
+asked for.** The release work itself stays at the spec's 6-11 (it gained the gate's findings, the stronger install
+check, the packs' move to the release and the review's fixes, and lost the Homebrew work and the Go bump, which is its
+own piece before 5.7). The trial adds 3.5-7.5 hours: setting Bonsai up on rc.1 and running the feature through the
+pipeline (0.5-1), the feature itself (1-3, as you pick: each proposal names its own figure), the analysis (1-1.5), and
+one round of fixes as `rc.2` with the trial's affected part again (1-2). Low 6 + 3.5 = 9.5; high 11 + 7.5 = 18.5; re-ask
+18.5 x 1.3 = 24.05, so 24. Each further round (`rc.3` and on) is 1-2 hours more: at the high figures two more fit under
+24 (18.5 + 2 + 2 = 22.5) and a third would cross it, when you get the numbers and the three choices. Step 5 becomes
+142.5-225.5 hours. This section's planning and review count in the figures. If a stop line were crossed, the smaller
+cut's "half of 5.7" would be the packs' move (5.7.6) and further pre-release rounds: 1.0 would still go out with every
+check, and projects would keep naming the packs by commit. Your time: about 10 minutes for batch 1, 3 for batch 2, 15
+for batch 3 with your pick, 30 to read the analysis, 25 for batch 5: about an hour and a half; plus about 10 minutes for
+each further pre-release, and your own trial on a fresh project, untimed.
 
 **Settled without you (technical):** the release notes come from the changelog, not from commit titles; builds for
 Linux and Windows (and macOS, built but untested, with no installer: `install.sh` refuses there); GitHub's signed record
@@ -5666,33 +5706,33 @@ covers every archive, the fingerprint list and every program, so an installed co
 release must come from a commit on `main` whose checks are green; the build and the publishing are separate steps, the
 second running nothing from the first; Dependabot stays, its pull requests landed by the orchestrator's own commits (it
 closes its own); the native Windows test run stays beside the ladder (no Windows climb for 1.0); `bonsai init` still
-names no pack by default, its template showing `base-v1.0.0` as the example to add.
+names no pack by default, its template showing `base-v1.0.0` as the example to add; rc.1 is installed on Windows too,
+for the installer's first real run, though the trial on Bonsai runs in WSL.
 
-**Decisions for Rohan.** Four are open (1, 3, 4 and 5), each made by your approval of this section; each says what it
-is, what the plan does, what it costs, and a recommendation. Decision 2 is settled and kept as the record of what was
-weighed.
+**Decisions for Rohan.** All answered on 10 Oct (11:19-11:29); each keeps its context and the options not taken, as
+the record.
 
-1. **Homebrew for the new Bonsai.** The spec moves `brew install bonsai` to the new product and keeps the old one as
-   `bonsai@0.4`. But your 5.3 answer (a) has every project's guard run Bonsai only from `/usr/local/bin/bonsai` (WSL) or
-   `C:\Program Files\Bonsai\bonsai.exe` (Windows), and Homebrew puts programs in its own folder
-   (`/home/linuxbrew/.linuxbrew/bin` on Linux): a Homebrew-installed Bonsai would refuse every edit in every linked
-   project until the installer were run as well.
-   - **(A) Leave Homebrew at the old product (recommended).** The tap stays exactly as it is: `brew install
+1. **Homebrew for the new Bonsai. Your answer: (A).** The spec moved `brew install bonsai` to the new product and kept
+   the old one as `bonsai@0.4`. But your 5.3 answer (a) has every project's guard run Bonsai only from
+   `/usr/local/bin/bonsai` (WSL) or `C:\Program Files\Bonsai\bonsai.exe` (Windows), and Homebrew puts programs in its
+   own folder (`/home/linuxbrew/.linuxbrew/bin` on Linux): a Homebrew-installed Bonsai would refuse every edit in every
+   linked project until the installer were run as well.
+   - **(A) Leave Homebrew at the old product (chosen).** The tap stays exactly as it is: `brew install
      LastStep/tap/bonsai` keeps giving 0.4.3, so 0.4.3 stays downloadable, as you asked (spec §12, Q8). The new Bonsai
-     installs only with its installers. No tap token is made, the `release` environment holds no secret, and no
-     release can write outside Bonsai's repo. Lost: no `brew install` for the new Bonsai, and so no install route at
-     all on a Mac (the installer refuses there; a Mac user copies the program by hand); the README says both.
-   - **(B) As the spec has it.** The tap's `bonsai` moves to 1.0, and `bonsai@0.4` keeps 0.4.3. Costs: a new token you
-     make on github.com and store in the `release` environment (about 5 minutes; a long-lived key that can write to the
-     tap), a release that writes to a second repo, and about 0.5-1 AI hour more (5.7 becomes 6.5-12 hours, re-ask at
-     16). A Homebrew install of the new Bonsai still guards nothing by itself.
-2. **The stronger check on your WSL side. Settled (A), 10 Oct: you updated `gh` in WSL.** 5.6's fingerprint line proves
-   the download arrived whole, not that the release is genuine (you were told on 10 Oct: "5.7 adds the stronger check
-   before your first real install"). 5.7 makes GitHub sign a record of how each file was built, and the line `gh
-   attestation verify ...` checks it before anything from the download runs (the installer runs with your password or
-   administrator rights). Measured on 10 Oct: Windows' `gh` (2.102, logged in) does the check; WSL's was 2.4, from 2022,
-   which cannot. Your read-back that day: WSL's is now 2.102.0, GitHub's package, still logged in, at `/usr/bin/gh`.
-   Weighed:
+     installs only with its installers. No tap token, no secret in the `release` environment, and no release writes
+     outside Bonsai's repo. Lost: no `brew install` for the new Bonsai, and so no install route at all on a Mac (the
+     installer refuses there; a Mac user copies the program by hand); the README says both. With it you named two
+     later pieces of work, a Mac and each platform's own package manager, now in the plan's list of work outside step 5.
+   - **(B) As the spec had it (not chosen):** the tap's `bonsai` moved to 1.0 and `bonsai@0.4` keeping 0.4.3, at the
+     cost of a token you would make and store (a long-lived key that can write to the tap), a release writing to a
+     second repo, and 0.5-1 AI hour more; a Homebrew install still guarding nothing by itself.
+2. **The stronger check on your WSL side. Your answer: (A), done 10 Oct: you updated `gh` in WSL.** 5.6's fingerprint
+   line proves the download arrived whole, not that the release is genuine (you were told on 10 Oct: "5.7 adds the
+   stronger check before your first real install"). 5.7 makes GitHub sign a record of how each file was built, and the
+   line `gh attestation verify ...` checks it before anything from the download runs (the installer runs with your
+   password or administrator rights). Measured on 10 Oct: Windows' `gh` (2.102, logged in) does the check; WSL's was
+   2.4, from 2022, which cannot. Your read-back that day: WSL's is now 2.102.0, GitHub's package, still logged in, at
+   `/usr/bin/gh`. Weighed:
    - **(A) Update `gh` in WSL from GitHub's package source (chosen; done 10 Oct):** both sides run the same install
      lines, now and at every later release; one more package source on your WSL (GitHub's), kept current by `apt
      upgrade`.
@@ -5700,40 +5740,36 @@ weighed.
      different from what Bonsai prints, at every release (note 5.7.3, 6 writes it out).
    - **(C) Skip the check line in WSL:** an agent checks the same file's record before you install; on WSL you would
      trust the agent's report, not GitHub's signature.
-3. **A rehearsal before 1.0.** A release's first real run needs a real tag, and it runs the release workflow as that
-   tagged commit holds it. A run that fails before it publishes costs nothing lasting: the fix lands, your one line
-   takes the tag away (batch 2) and the same number is tagged again. But a defect found after publishing cannot be fixed
-   under that number (a published release is locked): it becomes 1.0.1. Everything that can be checked without a tag
-   runs on every push, and the release job checks its draft before publishing; what only a real, published release
-   shows (GitHub's own record of the release, the files at their public addresses, both installers run from them by
-   agents on both sides) is what a rehearsal finds.
-   - **(A) A public pre-release first, `1.0.0-rc.1` (recommended):** your one tag line and one approval (about 3
-     minutes), on the code meant for 1.0; agents and a fresh verifier check the published files on both sides; then
-     your word for 1.0 on the same code. It also proves, before 1.0, the steps no push can reach: the approval, the
-     signing, the lock, a tag made with `gh` (which the workflow pack's tag needs too). Costs: about half an AI hour;
-     the pre-release stays listed on GitHub for good (locked); Bonsai's own newer-release check ignores it.
-   - **(B) Straight to 1.0:** one batch fewer and half an hour less; a defect that only a published release shows costs
-     a version number (1.0.1).
-4. **What stops an accidental release.** Agents act on GitHub as your account, and the rules alone stop them tagging.
-   - **(A) Each release waits for your approval (recommended):** after a tag, the release does nothing until you click
+3. **Before 1.0. Your answer: a trial of Bonsai on itself on `1.0.0-rc.1`, then your own trial on a fresh project.**
+   Your words: "first when we have a proper build going, i want to setup bonsai on itself. then do a test through
+   adding a small feature, which goes through everything in the pipeline. then we analyze the results, like see what
+   files were created, how the agents worked etc. then once im happy with everything, then we do the 1.0 release. so
+   the main point is that bonsai should work on itself cleanly"; and "okay lets do rc.1, and i also want to do a trial
+   on a fresh project, which i will do independently once im satisfied with the trial on bonsai". What was put to you:
+   a release's first real run needs a real tag, and a defect found after publishing costs a version number.
+   - **(A) A public pre-release first, `1.0.0-rc.1`, checked by agents (recommended then):** kept, and grown into the
+     trial: rc.1 is installed and used for real, on Bonsai itself, and fixes go out as further pre-releases.
+   - **(B) Straight to 1.0 (not chosen):** one batch fewer; a defect that only a published release shows would have
+     cost a version number.
+4. **What stops an accidental release. Your answer: (A).** Agents act on GitHub as your account, and the rules alone
+   stopped them tagging.
+   - **(A) Each release waits for your approval (chosen):** after a tag, the release does nothing until you click
      "Approve and deploy" on GitHub (the orchestrator sends the link). One click per release. An agent could approve
      through GitHub's API too, which the rules forbid: it stops accidents, not intent.
-   - **(B) The spec's optional tag ruleset:** no `v` tag can be made at all until you switch the ruleset off, for each
-     release, and on again after (two visits to the repo's Settings each time).
-   - **(C) Neither:** a tag starts the release at once.
-
-   A rule that stops tags being moved or deleted, but not made, needs no switching per release: it is decision 5's.
-5. **Locking the packs' tags.** Bonsai's own releases get GitHub's lock, which also stops their tags being moved or
-   deleted once published. The packs' tags get no such lock: `base-v1.0.0` has no release at all, and the workflow repo
-   publishes its release on any `v` tag with no approval and no lock. Anyone acting as you could move or delete them. A
-   project already linked notices (Bonsai refuses a pack tag that moved, 5.1), but a new link would take the moved one.
-   - **(A) Lock both (recommended):** in Bonsai's repo a tag rule that stops `base-v*` tags being moved or deleted; in
-     the workflow repo the same rule for its `v*` tags, and GitHub's lock on its published releases. Creating a tag
-     stays free, so nothing is switched per release. Costs: six lines in batch 1 (about 3 minutes); a pack tag made by
-     mistake stays for good (a later version supersedes it; deleting it means switching the rule off for a minute).
-   - **(B) The workflow repo's releases locked only:** two lines; `base-v*` tags and the workflow repo's tags before
-     its release is published stay movable.
-   - **(C) Neither:** as today.
+   - **(B) The spec's optional tag ruleset (not chosen):** no `v` tag could be made at all until you switched the
+     ruleset off, for each release, and on again after.
+   - **(C) Neither (not chosen):** a tag would start the release at once.
+5. **Locking the packs' tags. Your answer: (A).** Bonsai's own releases get GitHub's lock, which also stops their tags
+   being moved or deleted once published. The packs' tags got no such lock: `base-v1.0.0` has no release at all, and the
+   workflow repo publishes its release on any `v` tag with no approval and no lock. A project already linked notices a
+   moved tag (Bonsai refuses it, 5.1), but a new link would take the moved one.
+   - **(A) Lock both (chosen):** in Bonsai's repo a tag rule that stops `base-v*` tags being moved or deleted; in the
+     workflow repo the same rule for its `v*` tags, and GitHub's lock on its published releases. Creating a tag stays
+     free, so nothing is switched per release. Six lines in batch 1 (about 3 minutes); a pack tag made by mistake stays
+     for good (a later version supersedes it; deleting it means switching the rule off for a minute).
+   - **(B) The workflow repo's releases locked only (not chosen):** `base-v*` tags and the workflow repo's tags before
+     its release is published would stay movable.
+   - **(C) Neither (not chosen).**
 
 #### What exists, and what 5.1 to 5.6 will have added
 
@@ -5800,29 +5836,38 @@ weighed.
 
 The spec's row (§14): "The supply-chain fixes, `release.yml` back to tag runs inside the `release` environment and
 switched on again (Rohan's step, §17), `bonsai@0.4`, the README" (6-11). The gate report's 5.7 findings, 5.5's and
-5.6's hand-offs and the rehearsal are added to it ("Hours, order and your steps").
+5.6's hand-offs are added to it, and the trial of Bonsai on itself that Rohan asked for on 10 Oct (pieces 5.7.7 to
+5.7.10) comes on top ("Hours, order and your steps").
 
-**Hours.** The split is the planner's judgment, for sizing briefs, as in every part: 5.7.0 0.5-0.75, 5.7.1 1.5-2.5,
-5.7.2 1-2.25, 5.7.3 0.5-1, 5.7.4 1-1.5, 5.7.5 1-2, 5.7.6 0.5-1. In all: low 0.5+1.5+1+0.5+1+1+0.5 = 6; high
-0.75+2.5+2.25+1+1.5+2+1 = 11 (pieces 5.7.0 to 5.7.6); re-ask 14 (11 x 1.3 = 14.3). Since the first draft: the Go bump
-left 5.7.0 (done before 5.7 on Rohan's word, its hours its own piece's), a quarter of an hour off its high; the review's
-fixes (two jobs, the draft checked before publishing, the tag-check query) add a quarter to 5.7.2's. The verifiers (V1,
-V2, the end verifier), the floors and this section's planning and review count inside, carried in 5.7.0's run report
-("What changes", item 3). Under 1 (B), all of its 0.5-1 hour is 5.7.1's (2-3.5): low 6.5, high 12, re-ask 16 (12 x 1.3 =
-15.6). Under 3 (B), 5.7.5 becomes 0.5-1.5: low 5.5, high 10.5, the re-ask line kept at the spec's 14. Tasks (5.4's
-rule): piece 5.7.y is `T-570y`; `T-5790` onward, in order, for V1, V2, each fix after the rehearsal, the date of the
-notes, the floors and the end verification.
+**Hours.** The split is the planner's judgment, for sizing briefs, as in every part. **The release pieces:** 5.7.0
+0.5-0.75, 5.7.1 1.5-2.5, 5.7.2 1-2.25, 5.7.3 0.5-1, 5.7.4 1-1.5, 5.7.5 1-2, 5.7.6 0.5-1: low 0.5+1.5+1+0.5+1+1+0.5 = 6;
+high 0.75+2.5+2.25+1+1.5+2+1 = 11, the spec's 6-11. **The trial** (Rohan, 10 Oct): 5.7.7 0.5-1, 5.7.8 1-3 (the
+feature he picks; each proposal names its own figure inside that range, and a pick above it is said to him with the new
+total before it starts), 5.7.9 1-1.5, 5.7.10 1-2 (one fix round, to `rc.2`): low 0.5+1+1+1 = 3.5; high 1+3+1.5+2 =
+7.5. **In all:** low 6 + 3.5 = 9.5; high 11 + 7.5 = 18.5; re-ask 24 (18.5 x 1.3 = 24.05). Each further fix round
+(`rc.3` and on, `T-5711` and on) is 1-2 hours more: two fit under 24 at the high figures (18.5 + 2 + 2 = 22.5), a third
+crosses it. Since the first draft: the Go bump left 5.7.0 (done before 5.7 on Rohan's word, its hours its own
+piece's), a quarter of an hour off its high; the review's fixes (two jobs, the draft checked before publishing, the
+tag-check query) add a quarter to 5.7.2's. The verifiers (V1, V2, the end verifier), the floors and this section's
+planning and review count inside, carried in 5.7.0's run report ("What changes", item 3). Homebrew's (B), not chosen,
+would have put 0.5-1 hour more in 5.7.1. Tasks (5.4's rule): piece 5.7.y is `T-570y` (5.7.10 is `T-5710`, each
+further fix round the next); `T-5790` onward, in order, for V1, V2, each fix to the release path, the date of the notes,
+the floors and the end verification.
 
 | # | What is built | What proves it | Hours | Reads |
 |---|---|---|---|---|
 | 5.7.0 | **CI's own checks, and Go held**: the Go 1.27 toolchain (landed before 5.7) checked to hold, at Go 1.27's newest patch at release time, govulncheck clean on it; `lint` plain and with the fault tag; `actionlint` over every workflow; every action in `ci.yml` and `codeql.yml` pinned by its full commit with its version in a comment; `persist-credentials: false` on every checkout; a test holding every workflow file to those pins | `govulncheck -show verbose ./...` with no finding in the standard library on the toolchain in use; the pin test failing on a temporary copy that names `@v6`; both lint steps and `actionlint` green; check 10; the ladder; CI, each job's `go version` read | 0.5-0.75 | Gate §5 (5.7); this plan's "What changes", item 11; the Go piece's run report; spec §12 step 8 |
 | 5.7.1 | **The release build and its rehearsal**: `.goreleaser.yaml` (GoReleaser pinned; `-trimpath`; the installers at each archive's top; no GitHub release and no changelog of its own; `base-v*` tags ignored; Homebrew by decision 1); a `release-check` job building every file in snapshot mode on each push and checking it; the dist checks in Go (no fault code, build settings, each archive's files, `checksums.txt`, the Linux installer run from its archive); the notes script; `install.sh` refusing all but Linux | The dist checks green in the job and locally on both sides against a local snapshot, and failing on each doctored copy; a snapshot passing with a scratch `base-v*` tag on its commit; `goreleaser check`; 5.6.5's name test green; 5.6.6's installer tests with the new refusal; check 10; the ladder; CI | 1.5-2.5 | Spec §3, §12 steps 7-8; GoReleaser's documentation at the pinned version (read, its version recorded); 5.6.5 note 5; 5.6.6 notes 1-4 |
-| 5.7.2 | **The release workflow**: `release.yml` on the two tag patterns only, in two jobs: `build` (read-only, no environment: the tag and its commit's checks, the tests, GoReleaser, the dist checks, the files handed over) and `publish` (inside the `release` environment, running nothing from the build: GitHub's signed record, a draft, the draft checked, publish, the published release checked); the issue and pull request templates; `CLAUDE.md`'s release lines | `actionlint` and the pin test; the tag-check script run locally against Bonsai's own history (a commit on `main` passes, a scratch branch's fails, a malformed name fails) and its checks query against a commit whose CI is still running; the draft-reading way measured first; V1's line-by-line read; the first real run (batch 2, or batch 3 under 3 (B)) | 1-2.25 | Spec §12 step 8, §17 step 4 and its 8 Oct note; GitHub's documentation on environments, check runs, immutable releases and artifact attestations (read, dated in the run report) |
+| 5.7.2 | **The release workflow**: `release.yml` on the two tag patterns only, in two jobs: `build` (read-only, no environment: the tag and its commit's checks, the tests, GoReleaser, the dist checks, the files handed over) and `publish` (inside the `release` environment, running nothing from the build: GitHub's signed record, a draft, the draft checked, publish, the published release checked); the issue and pull request templates; `CLAUDE.md`'s release lines | `actionlint` and the pin test; the tag-check script run locally against Bonsai's own history (a commit on `main` passes, a scratch branch's fails, a malformed name fails) and its checks query against a commit whose CI is still running; the draft-reading way measured first; V1's line-by-line read; the first real run (batch 2, `rc.1`) | 1-2.25 | Spec §12 step 8, §17 step 4 and its 8 Oct note; GitHub's documentation on environments, check runs, immutable releases and artifact attestations (read, dated in the run report) |
 | 5.7.3 | **The stronger check in the install lines**: 5.6.5's table gains `gh attestation verify` of the archive before it is unpacked, on each side; `docs/install.md` (the lines for 1.0.0, what each proves, the way out, checking an installed copy) held to the table; the operating skill's install line | 5.6.5's exact-text test with the new line, built only from the checked version; the doc test failing on a changed line; the line run on both sides against a known signed file (its words and exit codes recorded); the operating skill's test; check 10; the ladder; CI | 0.5-1 | 5.6.5 notes 1-5; 5.6's "Hand-offs to 5.7"; `gh attestation verify --help` on the versions in use |
 | 5.7.4 | **The words for 1.0**: README; CONTRIBUTING; CHANGELOG (the rebuild's section replaced by `## [1.0.0]`, its notes); SECURITY; `.gitattributes`; `bonsai --help`'s and `main.go`'s words; the Makefile's build flags | A stale-phrase list grepped to nothing (Haiku lists, the orchestrator reads each hit); the privacy grep; `--help`'s tests; the notes script extracting 1.0's section; check 10; the ladder; CI; the orchestrator's read | 1-1.5 | Gate §5 (wording); spec §1-§3; `design/one-pager.md`; 5.4's CONTRIBUTING line; this section |
-| 5.7.5 | **The releases, checked**: the rehearsal (under 3 (A)) and 1.0, every published file checked on both sides; V2; Rohan's word; the date of the notes; 1.0's install lines handed over; his installs read back; Bonsai's repo on 1.0; the memory line's check | Each check's output in the run report; V2's report; Rohan's lines and words; `check` in Bonsai's repo; the memory check as 5.6's hand-off writes it | 1-2 | This section's batches; 5.4's way back; 5.6's "Hand-offs to 5.7" |
+| 5.7.5 | **The releases, checked**: each pre-release (`rc.1`, and each fix round's) and 1.0, every published file checked on both sides; V2 on rc.1; Rohan's installs read back (rc.1 on both sides, each later rc in WSL, then 1.0); Bonsai's repo on each; the date of the notes at his word; the memory line's check | Each check's output in the run report; V2's report; Rohan's lines and words; `check` in Bonsai's repo; the memory check as 5.6's hand-off writes it | 1-2 | This section's batches; 5.4's way back; 5.6's "Hand-offs to 5.7" |
 | 5.7.6 | **The packs at 1.0**: the template's `pack.yml`, base's `ci` skill and the workflow repo's `pack.yml` take `bonsai` from the 1.0 archive checked by its SHA-256; `base` and `workflow` at `version: "1.0.0"`; `init`'s template comment; the two tag lines; the workflow repo's release checked | The template's checks green on both sides with the archive; Bonsai's `packs` job and the workflow repo's CI green; after the tags, the workflow repo's release made by its own job, and nothing started by `base-v1.0.0` | 0.5-1 | Spec §5 (the pack's CI, step 2), §12 step 8; 5.5.0 note 5, 5.5.1 note 4, 5.5.2, 5.5's "Stale or in tension" |
-| **5.7** | | | **6-11** (re-ask 14) | |
+| 5.7.7 | **Bonsai on itself on rc.1** (Rohan, 10 Oct): Bonsai's repo brought to rc.1 (its lines, `check`, a climb by rc.1); two or three small real features proposed; the one he picks run as an ordinary Bonsai task end to end; the trial's records | `check` clean in Bonsai's repo on rc.1; the proposals sent; the chosen task through every stage, each with its evidence (note 5.7.7, 4) | 0.5-1 | Spec §14 step 6; 5.4's switch and "Tasks and names"; 5.5.7; `CLAUDE.md`; this plan's pipeline as built by 5.7 |
+| 5.7.8 | **The trial's feature**: Rohan's pick, built by a named builder session under rc.1's guard, climbed by rc.1's ladder (new tests failing first), recorded, verified and landed | Its own proof, by its kind; the landing rule; check 10; CI; its verifier | 1-3 | Its proposal; the parts of the spec and plan it touches |
+| 5.7.9 | **The trial's analysis**: a records page for Rohan, in plain words with evidence: what Bonsai created and changed, the log and the tables, how the agents worked, every refusal, ask and ladder result, what was rough and what is proposed | The page's every claim pointing at a file, a record or a command's output; a Haiku listing of files and records checked against it; Rohan's reply recorded | 1-1.5 | The trial's run reports, `.bonsai/local/` (read, never committed), the tables, `git log` |
+| 5.7.10 | **One fix round, to `rc.2`** (each further round the same, numbered on): the analysis's fixes as tasks, the release path's untouched or read again by V1's brief, a new pre-release, its files checked, Rohan's WSL install, the trial or its affected part again, a short analysis | As each fix's kind asks; 5.7.5's checks on the new pre-release; the repeated part's evidence; Rohan's reply | 1-2 | The analysis; this section |
+| **5.7** | | | **9.5-18.5** (re-ask 24; the spec's 6-11 and 14, with the trial) | |
 
 **The order, side by side where truly independent.** Rohan, 9 Oct: "if you can orchestrate work in parallel do that
 whenever possible"; his 8 Oct bar stands: no shared file, and neither's proof resting on the other's. 5.7 starts once
@@ -5839,6 +5884,10 @@ other task `running`, and 5.7.0, 5.7.1, 5.7.2 and 5.7.6 each change protected fi
 | 5.7.4 | `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `.gitattributes`, `Makefile`; `cmd/bonsai/main.go`'s doc comment and `usage()`, and their tests |
 | 5.7.5 | `records/` only (its run report; the orchestrator's date commit of `CHANGELOG.md`'s 1.0 heading is under its own task, `T-579x`) |
 | 5.7.6 | `packs/template/.github/workflows/pack.yml` and `packs/template/ci/check.sh`; `packs/base/bonsai/pack.yaml` (protected) and `packs/base/skills/ci/SKILL.md`; the engine's `bonsai.yaml` template comment; in the workflow repo, `.github/workflows/pack.yml` and `bonsai/pack.yaml` |
+| 5.7.7 | `records/` (the trial's run report, the proposals); Bonsai's own link files only as an update to rc.1's lines needs them (`bonsai.yaml`, the lock, Claude Code's settings: person-only, under 5.5.7 note 4's rule, anything that runs code Rohan's line) |
+| 5.7.8 | Whatever the chosen feature's proposal names, written into its task's grants before it starts |
+| 5.7.9 | `records/trial-rc1.md` (new) |
+| 5.7.10 | Whatever each fix names, as its own task |
 
 1. **5.7.0 first, alone** (the Go 1.27 piece already landed): every later workflow change meets its pin test.
 2. **Then 5.7.3 and 5.7.4 side by side.** Neither changes a protected file, they share no file, and neither's proof
@@ -5848,25 +5897,35 @@ other task `running`, and 5.7.0, 5.7.1, 5.7.2 and 5.7.6 each change protected fi
 4. **Then 5.7.2, alone**: its job runs 5.7.1's dist checks and notes script.
 5. **V1** once 5.7.0 to 5.7.4 have landed with CI green, the `release-check` job among it. Then **batch 1**, its
    settings read back by an agent.
-6. **The rehearsal** (batch 2, under 3 (A)), then 5.7.5's checks and **V2**. A fix to the release path is a task of its
-   own (`T-579x`), read by V1's brief again (a fresh Opus agent), and a new pre-release (`rc.2`) follows, since the
-   tag's commit holds the workflow that runs.
-7. **Batch 3**: Rohan's word, the date commit, the tag, 5.7.5's checks of 1.0's files, then his installs.
-8. **5.7.6** once 1.0's files are checked; its task is then the only one `running` (5.7.5's install checks, which change
-   no repository file, go on under `T-5705` at `verify`). Then batch 3's last two lines.
-9. **The floors** (5.4's "once a part", under a `T-579x` task, climbed by the installed 1.0), the Haiku audit of
+6. **`rc.1`** (batch 2), then 5.7.5's checks and **V2**. A fix to the release path is a task of its own (`T-579x`),
+   read by V1's brief again (a fresh Opus agent), and a new pre-release follows, since the tag's commit holds the
+   workflow that runs.
+7. **Batch 3**: Rohan installs rc.1 on both sides; 5.7.5 reads it back; **5.7.7** brings Bonsai's repo to rc.1 and
+   sends the proposals; he picks.
+8. **5.7.8**, the feature, alone (it is the trial: nothing else runs beside it, so its sessions, log and tables hold
+   only its work); then **5.7.9**, the analysis, and **batch 4**, his review.
+9. **5.7.10**, a fix round per "what to fix" (`rc.2`, then on), each with its pre-release, his WSL install and the
+   trial or its affected part again, until he says "happy". Then **his own trial on a fresh project**, on his own.
+10. **Batch 5**: his word, the date commit, the `v1.0.0` tag on the last pre-release's code, 5.7.5's checks of 1.0's
+    files, then his installs and his memory line.
+11. **5.7.6** once 1.0's files are checked; its task is then the only one `running` (5.7.5's install checks, which
+    change no repository file, go on under `T-5705` at `verify`). Then batch 5's last two lines.
+12. **The floors** (5.4's "once a part", under a `T-579x` task, climbed by the installed 1.0), the Haiku audit of
    `.bonsai/sessions.md` against the run reports, then **the 5.7 end verifier**. Then `.bonsai/STATE.md` rewritten and
    Rohan's roadmap updated: Bonsai 1.0.
 
 **Who builds and verifies.** Opus builders for 5.7.1, 5.7.2 (the release path, security) and 5.7.3 (lines Rohan
 types); Sonnet builders for 5.7.0 (mechanical; V1 reads it), 5.7.4 (prose; the orchestrator's read and the greps
 behind it) and 5.7.6 (pins written in full here); Sonnet agents for 5.7.5's scripted checks on both sides and the
-memory check; a Haiku agent for the stale-phrase and privacy listings and the sessions audit. Every piece lands on the
+memory check; for the trial (5.7.7 to 5.7.10) the orchestrator itself, the feature's builder by its kind (Opus for a
+guard, hook or release change, Sonnet otherwise) as a named session, a fresh verifier for it by `CLAUDE.md`'s rule, an
+Opus agent writing the analysis and a Haiku agent listing the files and records it rests on; a Haiku agent for the
+stale-phrase and privacy listings and the sessions audit. Every piece lands on the
 landing rule (a green climb of its task by `/usr/local/bin/bonsai` at the exact commit), check 10's Windows half, CI and
 the orchestrator's read of the diff, which the run report says. **V1**, a fresh Opus verifier, on the release path
-before anything is switched on (CI and release, Rohan's rule); **V2**, a fresh Opus verifier, on the rehearsal's
-published files before Rohan's word (on 1.0's under 3 (B), before his installs); **the 5.7 end verifier**, fresh Opus,
-on "5.7 done".
+before anything is switched on (CI and release, Rohan's rule); **V2**, a fresh Opus verifier, on rc.1's published
+files before Rohan installs it (the release path's first real run); **the 5.7 end verifier**, fresh Opus, on "5.7
+done".
 
 #### Where each inherited finding is settled
 
@@ -5887,19 +5946,19 @@ The gate report's section 5, its 5.7 list; then the outline's "Settles", and wha
 | "Projects' CI pins the archive's SHA-256" (§12 step 8; spec §5's pack CI, step 2) | 5.7.6 | The template's `pack.yml`, base's `ci` skill and the workflow repo's `pack.yml` take the 1.0 archive, checked by its SHA-256 |
 | `bonsai@0.4` and `brew install bonsai` moving (§12 step 7; outline "Builds"); "the Homebrew tap is written only by the release workflow" (outline, "Risks") | Decision 1 | Under (A): the tap untouched, no token; under (B): GoReleaser's formula and `bonsai@0.4`, the token inside the `release` environment (note 5.7.1, 2) |
 | "A Homebrew install ... lands in a folder the line never looks in, so 5.7 must settle Homebrew" (5.3's (a)); "Homebrew's place against 5.3's (a) stays 5.7's" (5.6) | Decision 1 | Stated for Rohan; (A) recommended |
-| `gh workflow enable release.yml`; the optional tag ruleset (§17 step 4; outline) | Batch 1; decision 4 | His enable line; under 4 (A) the environment's approval replaces the ruleset |
+| `gh workflow enable release.yml`; the optional tag ruleset (§17 step 4; outline) | Batch 1; decision 4 | His enable line; his answer 4 (A): the environment's approval, no ruleset on creating tags |
 | The release files person-only, "the release files 5.7 changes with Rohan" (5.4, the switch) | This section | Its approval is his word for the changes named here to `release.yml` and `.goreleaser.yaml`, under the stricter-only rule |
 | "At 1.0, with `bonsai.exe` installed, a climb in a Windows clone can replace check 10's Windows half; 5.7's section decides" (5.4) | This section | Not for 1.0: check 10's Windows half and CI's `windows` job stay; a Windows climb would need a machine-specific script and its result is not what the stop gate reads |
 | The way back if a new install blocks work (5.4) | 5.7.5 | The 5.4 pre-release kept in `~/bonsai-checks/prerelease/previous/` before his WSL install, its number from 5.4.7's report; 5.4's two lines are the way back, never `--remove` in WSL |
 | Archives hold `install.sh` and `install.ps1` at their top (5.6, "Hand-offs to 5.7") | 5.7.1 | `archives.files` with `strip_parent`; the dist checks hold each archive's files |
 | 5.6.5's test holds the lines' names to `.goreleaser.yaml` (5.6) | 5.7.1, 5.7.3 | The name template unchanged; the test stays green; its table gains the check line |
-| His 1.0 installs through the installers, the UAC prompt's first real run, with its way out (5.6) | Batch 3; 5.7.5 | His lines and the way out on each side, written above |
-| His memory import line and the agent's check that it loads (5.6) | Batch 3; 5.7.5 | His two lines once 1.0's first `--yes` has made the index; the check as 5.6 wrote it (note 5.7.5, 7) |
+| His 1.0 installs through the installers, the UAC prompt's first real run, with its way out (5.6) | Batches 3 and 5; 5.7.5 | His first real installs are rc.1's (batch 3), the UAC prompt's first real run among them; then 1.0's (batch 5); the way out on each side written |
+| His memory import line and the agent's check that it loads (5.6) | Batch 5; 5.7.5 | His two lines at 1.0, the index made by rc.1's first `--yes` in Bonsai's repo; the check as 5.6 wrote it (note 5.7.5, 7) |
 | The install lines' stronger check; `gh attestation verify`'s login (5.6) | 5.7.2, 5.7.3; decision 2 | Measured: it needs `gh` logged in; 2.97 is the floor (`--signer-workflow` came in 2.51, `--source-ref` in 2.68, and 2.97 fixed GHSA-mm27-mwq9-fr5g, a signer match built without escaping); Windows' is 2.102, WSL's updated by Rohan on 10 Oct; signed records for archives and programs; `--deny-self-hosted-runners` so "on GitHub's own machines" is checked; the check runs before anything from the download |
 | `-ForceChild` "for 5.7's verifier to read" (5.6.6 note 4) | V1 | Read in the shipped `install.ps1`: documented as for tests, refused unless already elevated, raising no prompt, skipping no step |
 | `check`'s comparison "waits for `install.json`" until the first real install (5.6; spec §3) | 5.7.5 | His 1.0 install writes it; `check` in Bonsai's repo then reads it with no `bonsai-path` note |
 | The machine settings reader's stricter rule "reaches the installed guard only with 1.0's install" (note 5.6.1, 1) | 5.7.5 | Nothing waits on it (Bonsai's repo has no machine settings); `check` there reads clean on 1.0 |
-| The packs' first tags with 1.0; tag lines "typable without a clone of the workflow repo (for example through `gh`)", and "5.7 checks that a tag made that way starts the repo's `release` job" (5.5) | Batch 3; 5.7.6; decision 3 | Every tag by `gh api .../git/refs`; the rehearsal proves a tag made so starts a tag workflow in Bonsai's repo, and 5.7.6 checks the workflow repo's release after its tag |
+| The packs' first tags with 1.0; tag lines "typable without a clone of the workflow repo (for example through `gh`)", and "5.7 checks that a tag made that way starts the repo's `release` job" (5.5) | Batch 5; 5.7.6 | Every tag by `gh api .../git/refs`; rc.1 proves a tag made so starts a tag workflow in Bonsai's repo, and 5.7.6 checks the workflow repo's release after its tag; under his answer 5 (A) neither pack tag can then move |
 | The template's pinned `bonsai` moves to the release archive; `base`'s `version` becomes `1.0.0`; base's `ci` skill takes the archive "after" 1.0 (5.5) | 5.7.6 | Note 5.7.6, 1-2 |
 | "Whether 1.0's template names `base-v1.0.0` is 5.7's" (5.5.0 note 5) | 5.7.6 | No: `init` keeps `packs: []` for 5.5.0's reasons (offline, nothing installed unasked); the template's comment shows `base` at `base-v1.0.0` as the line to add |
 | "Nobody tags or releases. `release.yml` stays disabled" (`CLAUDE.md`) | 5.7.2; his part | Rewritten for after 1.0 (note 5.7.2, 6), and said to Rohan in one line ("What stays yours") |
@@ -5908,9 +5967,12 @@ The gate report's section 5, its 5.7 list; then the outline's "Settles", and wha
 | `base-v*` and the workflow repo's tags left unlocked (the review) | Decision 5; batch 1 | Under (A), tag rules against moving or deleting them, and the lock on the workflow repo's releases |
 | GoReleaser reading a `base-v*` tag as the current tag in `release-check` (the review, from memory, not measured) | 5.7.1 | `git.ignore_tags` (or the current tag set by hand), proved on a doctored copy (note 5.7.1, 2 and 7) |
 | The old tap token "not confirmed" revoked (spec §17 step 4's note) | Batch 1 | His look on github.com, his words in the run report |
-| §14 row 10, "the first public release, on Rohan's word" | Batch 3 | His word after the rehearsal's report and V2 |
+| §14 row 10, "the first public release, on Rohan's word" | Batch 5 | His word after the trial on Bonsai (5.7.7 to 5.7.10), his review of its analysis and his own trial on a fresh project |
 | The floors at a part's end (5.4, "Tasks and names") | After 5.7.6 | One climb of `main` by the installed 1.0, the floors raised under a `T-579x` task, the numbers in Rohan's last line |
 | GitHub Pages, the old website ("whenever you like") | Not 5.7 | Unchanged; his whenever he likes |
+| Rohan's trial of Bonsai on itself on `1.0.0-rc.1` before 1.0 (10 Oct: "bonsai should work on itself cleanly") | 5.7.7 to 5.7.10; batches 2-4 | rc.1 installed by him on both sides; his pick of two or three features run through the whole pipeline; the analysis; fix rounds as further pre-releases |
+| His own trial on a fresh project, "independently once im satisfied with the trial on bonsai" | His; 5.7.4 | His time, untimed; the README's "first project" steps are what the plan gives him; agents help only if he asks |
+| His future items with 1 (A): "support for mac" and "adding bonsai on official distributers for each platform" | "Outside step 5" | Each named with why it is not in 1.0 |
 
 #### Notes per piece
 
@@ -5965,7 +6027,8 @@ The gate report's section 5, its 5.7 list; then the outline's "Settles", and wha
      previous tag: from the pack tags on, GoReleaser would otherwise meet a tag it cannot read as a version on every
      push (the review's point, from memory; the builder measures it on a doctored copy, item 7). If the pinned
      open-source version takes no pattern there, each job sets the current tag itself (`GORELEASER_CURRENT_TAG`).
-   - **Homebrew, under 1 (A):** `brews:` removed; nothing names the tap or a token. **Under 1 (B):** the formula by what
+   - **Homebrew** (Rohan's answer 1 (A)): `brews:` removed; nothing names the tap or a token. **Under 1 (B), not chosen
+     and kept as the record:** the formula by what
      the pinned GoReleaser supports (its documentation lists `brews` as deprecated; the builder reads its replacement
      and records which runs on Linux), written into `dist/` and never pushed by GoReleaser (`skip_upload: true`); and
      `bonsai@0.4`: a file in Bonsai's repo, `packaging/homebrew/bonsai@0.4.rb` (0.4.3's URLs and SHA-256s from today's
@@ -6033,9 +6096,9 @@ may write and who switches it on).
         here, where nothing can be written to GitHub and no signing token can be asked for);
      8. the archives, `checksums.txt`, the programs and the notes uploaded as one artifact (the upload action pinned);
         `checksums.txt`'s SHA-256 as the job's output.
-   - **`publish`:** `needs: build`; `environment: release` (under 4 (A) it waits for Rohan's approval before any step
-     runs); permissions `contents: write`, `id-token: write`, `attestations: write`; it runs no file from the build. Its
-     steps:
+   - **`publish`:** `needs: build`; `environment: release` (it waits for Rohan's approval before any step runs, his
+     answer 4 (A)); permissions `contents: write`, `id-token: write`, `attestations: write`; it runs no file from the
+     build. Its steps:
      1. the artifact downloaded (the download action pinned); `checksums.txt`'s SHA-256 equal to `build`'s output, and
         each archive's equal to its line in `checksums.txt`;
      2. **the signed record:** GitHub's attestation action, pinned, over every archive, `checksums.txt` and every
@@ -6061,19 +6124,19 @@ may write and who switches it on).
    defect found after publishing is fixed under the next number. A failure outside the code (GitHub down) is re-run by
    Rohan's line, `gh run rerun <id> -R LastStep/Bonsai`, which the orchestrator sends; no agent re-runs, cancels or
    approves a run.
-4. **Under 1 (B):** a last step of `publish`, after step 6 and the only step given `HOMEBREW_TAP_TOKEN` (from the
-   environment), pushes the formula GoReleaser wrote and, when the tap lacks it, `bonsai@0.4.rb` (note 5.7.1, 2): files
-   from the build, but text, written to another repo, never run.
+4. **Under 1 (B), not chosen, kept as the record:** a last step of `publish`, after step 6 and the only step given
+   `HOMEBREW_TAP_TOKEN` (from the environment), pushes the formula GoReleaser wrote and, when the tap lacks it,
+   `bonsai@0.4.rb` (note 5.7.1, 2): files from the build, but text, written to another repo, never run.
 5. **The issue and pull request templates** (`.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`), public
    with 1.0 and under `.github/**`, so this piece's grant: the bug report asks for `bonsai --version`, the side (WSL,
    Linux or Windows), how it was installed (the installer, or by hand) and Claude Code's version; no `go install`, no
    Homebrew under 1 (A), no "Select ..." left from the old product. Every action pinned (5.7.0's test covers this file).
 6. **`CLAUDE.md`'s GitHub lines:** "Nobody tags or releases. `release.yml` stays disabled; releases are Rohan's word at
-   spec step 5.7" becomes: only Rohan tags (`v*`, `base-v*`, the workflow repo's) and, under 4 (A), approves a release
-   run; `release.yml` runs only on his tag, its publishing inside the `release` environment; no agent tags, approves,
-   re-runs or cancels a release run, or changes a setting, secret, ruleset or workflow switch; a release is published
-   by the workflow, never by hand. True from the landing (before batch 1 the workflow is still off on GitHub). Rohan's
-   part says it in one line ("What stays yours").
+   spec step 5.7" becomes: only Rohan tags (`v*`, `base-v*`, the workflow repo's) and approves a release run;
+   `release.yml` runs only on his tag, its publishing inside the `release` environment; no agent tags, approves, re-runs
+   or cancels a release run, or changes a setting, secret, ruleset or workflow switch; a release is published by the
+   workflow, never by hand. True from the landing (before batch 1 the workflow is still off on GitHub). Rohan's part
+   says it in one line ("What stays yours").
 7. **Proof** beyond the table: the builder runs the tag-check script locally against Bonsai's own history with
    `GITHUB_SHA` set by hand: a commit on `main` passes, a commit on a scratch branch fails, a name `v1.0` or
    `v1.0.0-beta` fails. Its checks query runs read-only against a real `main` commit while that commit's CI is still
@@ -6120,8 +6183,12 @@ may write and who switches it on).
 
 **5.7.4, the words for 1.0.**
 1. **README:** what Bonsai is and is not (from the one-pager, in plain words); install and check it (a pointer to
-   `docs/install.md`; the two installed places and why the guard needs them; `gh` for the check); first steps in a
-   project (`bonsai init`, `check`, `status`, `ladder`, and `bonsai --help --json` for agents); the packs (`base`, the
+   `docs/install.md`; the two installed places and why the guard needs them; `gh` for the check); **a "first project"
+   section**, the steps Rohan's own trial follows (a new folder and git; `bonsai init` naming `base` by its commit until
+   `base-v1.0.0` exists; `bonsai check` and `status`; Claude Code opened there, the folder trusted, something small
+   asked for; `bonsai ladder` once a rung is added), which an agent runs once as written in a scratch folder with the
+   installed pre-release before Rohan's own trial, writing what it met in 5.7.9's records; then `bonsai --help --json`
+   for agents; the packs (`base`, the
    template, `workflow`); platforms (Linux and WSL, Windows; macOS built, untested, with no installer, so a Mac user
    copies the program by hand); the old product (0.4.3 at its tag; Homebrew as decision 1 leaves it); where the design
    lives; licence. ASCII.
@@ -6143,49 +6210,52 @@ may write and who switches it on).
    `STATE.md`, `design/plan.md` where step 5's plan is meant, "0.4.3, the latest") over the repo but `records/` and
    `design/`, each hit read by the orchestrator; the privacy grep of the diff ("How it is proved").
 
-**5.7.5, the releases, checked.**
-1. **Before the rehearsal's tag:** the orchestrator names the commit: `main`'s, V1 passed at it or before it, with
-   `git diff --stat <V1's commit>..<commit>` holding only `records/`, `.bonsai/STATE.md` and `design/` (5.4's rule for
-   its pre-release, carried), and its CI green, `release-check` included.
-2. **After each tag** (the rehearsal's, then 1.0's): the orchestrator reads the run's log; a Sonnet agent, in a fresh
-   scratch folder on each side, downloads every file of the release and runs: `gh release verify` and `gh release
-   verify-asset` for each; `gh attestation verify` for each archive and program (the signer workflow, the tag's ref and
-   `--deny-self-hosted-runners`);
-   `sha256sum -c` against `checksums.txt`; the dist checks with `BONSAI_CHECK_DIST` on the download and
-   `BONSAI_CHECK_COMMIT` the tag's commit; each side's installer from the real archive at a scratch target with a
-   scratch `BONSAI_HOME` (on Windows `-Target`, so no prompt); **a rebuild compared:** a clean clone at the tag, `go
-   build` with the release's flags for linux/amd64 and windows/amd64 (`go version -m` of the release's program gives
-   them), its SHA-256 against the release's program; a difference is shown setting by setting from `go version -m` side
-   by side and is a finding unless explained; and a plain scratch build's `status --full --json` on a scratch home
-   reading the real tags (an rc changes nothing; after 1.0, `newest` reads 1.0.0). Under 1 (A), the tap read before and
-   after (`pushed_at`, `Formula/bonsai.rb`'s SHA): unchanged.
-3. **V2** (fresh Opus) runs item 2's checks itself on the rehearsal's files and reads the run's log, before Rohan's
-   word; under 3 (B), on 1.0's files before his installs.
-4. **Rohan's word:** the orchestrator sends the notes' link and the rehearsal's and V2's findings in plain words. On his
-   word, its own commit under a `T-579x` task dates the heading (`## [1.0.0] - <date>`); `git diff --stat` from the
-   rehearsal's commit holds only that line, `records/` and `.bonsai/STATE.md`; CI green; then batch 3's tag line with
-   that commit.
-5. **Before his WSL install:** `/usr/local/bin/bonsai` (the 5.4 pre-release) copied to
-   `~/bonsai-checks/prerelease/previous/bonsai`, its SHA-256 matched to 5.4.7's run report; the install lines from
-   `docs/install.md` (held to Bonsai's table), checked by the orchestrator against the release's file names.
-6. **After it:** his output read; `/usr/local/bin/bonsai --version`, its owner and mode, `install.json`, `which -a
-   bonsai`; then in `~/Servers/Bonsai`, `/usr/local/bin/bonsai check --json`: `bonsai-path` with no note, and either
-   nothing or the finding for Bonsai's own lines out of date, which sends him the (ii) lines (`cd ~/Servers/Bonsai`,
-   then `/usr/local/bin/bonsai update --allow-exec --yes`, by its full path). Otherwise the orchestrator
-   runs `bonsai update --json` there and reads the preview: when it changes nothing in the project, `bonsai update --yes
-   --json` writes only the home's empty index; when it changes Bonsai's own files, 5.5.7 note 4's rule holds (a task
-   granting `bonsai.yaml` and the lock, the preview read line by line, anything under "Runs code" his line). Once
-   `~/.bonsai/personal/INDEX.md` exists, his memory line goes out.
-7. **The memory check**, after his `tail` output, exactly as 5.6's "Hand-offs to 5.7" writes it: a Sonnet agent, a
-   scratch project, an interactive `tmux` session through `claude-here` (which reads his real `~/.claude/CLAUDE.md`),
-   `/memory` listing `~/.bonsai/personal/INDEX.md` (or the session asked for the index's `title:`, `Personal memory`),
-   any external-import prompt recorded with its words, nothing of the index copied into a report, Claude Code's version
-   and the user settings hashes before and after.
-8. **After his Windows install:** an agent reads `Get-Command bonsai -All`, `install.json`, `--version`, and runs `gh
-   attestation verify` on `C:\Program Files\Bonsai\bonsai.exe`; check 10's Windows half runs once more and its counts
-   are compared with the last run's (a test that changes once `bonsai.exe` is installed is named with its reason).
-9. **Bonsai's repo on 1.0:** from his WSL install the ladder is climbed by 1.0; the first climb's counts are read
-   against the floors (a fall is a finding before any floor moves).
+**5.7.5, the releases, checked** (each pre-release, then 1.0).
+1. **Before each tag:** the orchestrator names the commit: `main`'s, V1 passed at it or before it, with `git diff
+   --stat <V1's commit>..<commit>` holding no change to the release path (`.github/**`, `.goreleaser.yaml`, `install/`,
+   the dist checks) that V1's brief has not read again, and its CI green, `release-check` included. For 1.0: the last
+   pre-release's commit plus only the notes' date (item 4).
+2. **After each tag:** the orchestrator reads the run's log; a Sonnet agent, in a fresh scratch folder on each side,
+   downloads every file of the release and runs: `gh release verify` and `gh release verify-asset` for each; `gh
+   attestation verify` for each archive and program (the signer workflow, the tag's ref and
+   `--deny-self-hosted-runners`); `sha256sum -c` against `checksums.txt`; the dist checks with `BONSAI_CHECK_DIST` on
+   the download and `BONSAI_CHECK_COMMIT` the tag's commit; each side's installer from the real archive at a scratch
+   target with a scratch `BONSAI_HOME` (on Windows `-Target`, so no prompt); **a rebuild compared:** a clean clone at
+   the tag, `go build` with the release's flags for linux/amd64 and windows/amd64 (`go version -m` of the release's
+   program gives them), its SHA-256 against the release's program; a difference is shown setting by setting from `go
+   version -m` side by side and is a finding unless explained; and a plain scratch build's `status --full --json` on a
+   scratch home reading the real tags (a pre-release changes nothing; after 1.0, `newest` reads 1.0.0). The tap read
+   before and after (`pushed_at`, `Formula/bonsai.rb`'s SHA): unchanged.
+3. **V2** (fresh Opus) runs item 2's checks itself on rc.1's files and reads the run's log, before Rohan installs rc.1.
+   A later pre-release gets V2's brief again (a fresh agent) only if the release path changed since rc.1.
+4. **Rohan's word for 1.0,** after his own trial: the orchestrator sends the notes' link. On his word, its own commit
+   under a `T-579x` task dates the heading (`## [1.0.0] - <date>`); `git diff --stat` from the last pre-release's commit
+   holds only that line, `records/` and `.bonsai/STATE.md`; CI green; then batch 5's tag line with that commit.
+5. **The install lines.** Bonsai's table gives lines only for a version of three whole numbers (5.6.5 note 5), so a
+   pre-release's lines are `docs/install.md`'s with the version written in by the orchestrator, and an agent checks
+   each against the release's file names and its tag before they go out; 1.0's are `docs/install.md`'s as they stand.
+   Before Rohan's first WSL install (rc.1): `/usr/local/bin/bonsai` (the 5.4 pre-release) copied to
+   `~/bonsai-checks/prerelease/previous/bonsai`, its SHA-256 matched to 5.4.7's run report; before each later one, the
+   installed rc copied there the same way, its SHA-256 from `install.json` and the run report.
+6. **After each WSL install:** his output read; `/usr/local/bin/bonsai --version`, its owner and mode, `install.json`,
+   `which -a bonsai`; then in `~/Servers/Bonsai`, `/usr/local/bin/bonsai check --json`: `bonsai-path` with no note, and
+   either nothing or the finding for Bonsai's own lines out of date, which sends him the (ii) lines (`cd
+   ~/Servers/Bonsai`, then `/usr/local/bin/bonsai update --allow-exec --yes`, by its full path). Otherwise the
+   orchestrator runs `bonsai update --json` there and reads the preview: when it changes nothing in the project,
+   `bonsai update --yes --json` writes only the home's empty personal index; when it changes Bonsai's own files, 5.5.7
+   note 4's rule holds (a task granting `bonsai.yaml` and the lock, the preview read line by line, anything under "Runs
+   code" his line). At 1.0, once `~/.bonsai/personal/INDEX.md` exists (rc.1 made it), his memory line goes out.
+7. **The memory check**, after his `tail` output at 1.0, exactly as 5.6's "Hand-offs to 5.7" writes it: a Sonnet
+   agent, a scratch project, an interactive `tmux` session through `claude-here` (which reads his real
+   `~/.claude/CLAUDE.md`), `/memory` listing `~/.bonsai/personal/INDEX.md` (or the session asked for the index's
+   `title:`, `Personal memory`), any external-import prompt recorded with its words, nothing of the index copied into a
+   report, Claude Code's version and the user settings hashes before and after.
+8. **After each Windows install** (rc.1, then 1.0): an agent reads `Get-Command bonsai -All`, `install.json`,
+   `--version`, and runs `gh attestation verify` on `C:\Program Files\Bonsai\bonsai.exe`; after rc.1, check 10's
+   Windows half runs once more and its counts are compared with the last run's (a test that changes once `bonsai.exe` is
+   installed is named with its reason).
+9. **Bonsai's repo on each install:** from his WSL install the ladder is climbed by that copy; the first climb's counts
+   are read against the floors (a fall is a finding before any floor moves).
 10. **Processes:** each agent stops what it started (`tmux` sessions, downloads) and checks with `ps`; the orchestrator
     sweeps after each.
 
@@ -6201,11 +6271,59 @@ archive checked by its SHA-256").
 2. **In the workflow repo** (its clone under `~/bonsai-checks/`, as 5.5 made it): its `pack.yml` as the template's new
    one; its `bonsai/pack.yaml` at `version: "1.0.0"`; one commit, pushed by the orchestrator, its CI green on both
    sides.
-3. **The tag lines** for batch 3's end name those two commits. After them: the workflow repo's `release` job green and
+3. **The tag lines** for batch 5's end name those two commits. After them: the workflow repo's `release` job green and
    its release made (`gh release view v1.0.0 -R LastStep/bonsai-workflow`); no run started by `base-v1.0.0` in Bonsai's
    repo (`gh run list -R LastStep/Bonsai -L 10`).
 4. **Proof** beyond the table: the template's checks on both sides with the archive (a temporary copy with a wrong
    SHA-256 fails before running anything); `check --pack` on base at 1.0.0.
+
+**5.7.7, Bonsai on itself on rc.1** (Rohan, 10 Oct: "the main point is that bonsai should work on itself cleanly").
+1. **Set up:** once rc.1 is installed and read back (note 5.7.5, 6), Bonsai's repo runs it: `check` clean; Bonsai's
+   own lines brought to rc.1's (his (ii) line if they changed); a climb of `main` by rc.1, green, its counts against the
+   floors. Nothing else is `running` from here until the trial's feature lands (5.4's one-task rule, and so that the
+   log, the sessions table and the trial's records hold only the trial).
+2. **The proposals:** two or three small real features for Bonsai, from what the plan has left for later or what 5.1
+   to 5.6 named as worth having, each in plain words for Rohan: what it does for him, what it touches, its hours
+   (inside 1-3; one above that is said with the new total), and which parts of the pipeline it puts to work. Between
+   them they reach: a protected file under a task's grant; a new test that must fail on the code before it (the
+   ladder's new-tests rung and a Bless); a question to the person through Bonsai's asks, where the work truly has one;
+   and the tables rebuilt by `check --write`. None needs a format change (a removal or a new major) or touches the
+   release path.
+3. **The run:** Rohan's pick as an ordinary task, by the plan's own pipeline as 5.4 and 5.5.7 left it: the task file in
+   `records/tasks/` (`T-5708`, its grants from the proposal), moved by the orchestrator; a worktree; the builder started
+   as 5.4's named session (`BONSAI_TASK` and `BONSAI_ROLE=builder`), so the guard, the recorder and the stop gate bind
+   it; its climbs by `/usr/local/bin/bonsai` (rc.1); a fresh verifier by `CLAUDE.md`'s rule; the landing rule; CI;
+   `check --write` for the tables; the run report. The orchestrator changes nothing in how Bonsai works for the trial:
+   a step that does not work is a finding, not a workaround.
+4. **Its evidence**, kept for 5.7.9: the commits; the task file's moves; every session's log file (`.bonsai/local/`,
+   read in place, never committed or copied whole); the sessions and tasks tables; each ladder result and its log
+   record; every guard refusal and stop-gate block; each ask and its answer; the verifier's report; the minutes per
+   run; the files Bonsai itself wrote or changed (in the repo, in `.bonsai/local/`, in `~/.bonsai/`), listed before and
+   after with their sizes.
+
+**5.7.8, the trial's feature.** Rohan's pick, built and proved by its own proposal's terms. Its builder by its kind
+(Opus for a guard, hook or release change; Sonnet otherwise); its proof check 10, the ladder by rc.1 and CI, plus what
+its kind asks. It lands on `main` as an ordinary commit and goes out with the next pre-release.
+
+**5.7.9, the trial's analysis** (`records/trial-rc1.md`, then a short page per later round).
+1. **For Rohan, in plain words with evidence:** what Bonsai created and changed, every file named (in the repo, in
+   `.bonsai/local/`, in his Bonsai home), and why each exists; what the log and the tables hold, with a few lines quoted
+   (nothing private, no secret: the log is already redacted); how the agents worked, run by run: who ran, how long, what
+   each was refused and why, every question to him, every ladder result; what was rough, each with what the plan
+   proposes (a fix in the next pre-release, a change after 1.0, or nothing, and why).
+2. **Checked before he reads it:** each claim points at a file, a record or a command's output; a Haiku agent lists the
+   files and records and the orchestrator compares them with the page; the privacy grep runs over it. The orchestrator
+   may also publish it as a page he can read on his phone (an artifact), the same text.
+3. **His reply** goes in the run report in his words: "happy", or the list of what to fix, each then a 5.7.10 task.
+
+**5.7.10, a fix round** (`rc.2`, then `rc.3` and on).
+1. Each fix a task of its own, by the pipeline, landed with its proof. A fix to the release path gets V1's brief again.
+   A fix that would change a format by removal or a new major comes to Rohan first (his (B) on format changes); an
+   addition does not.
+2. The next pre-release (Rohan's tag and approval), 5.7.5's checks on its files, his WSL install (Windows only if a fix
+   touches Windows), then the trial again, or only its affected part when the fix is narrow (the orchestrator says which
+   and why), and a short analysis.
+3. The hours of each round go against the re-ask line ("Hours"); the round that would cross it waits for Rohan's choice.
 
 **V1, the release path.** A fresh Opus agent, once 5.7.0 to 5.7.4 have landed with CI green: reads every workflow file
 and `.goreleaser.yaml` line by line against spec §12 step 8 and this section (the triggers; the two jobs, their
@@ -6222,9 +6340,9 @@ environments (reviewers on a public repository among it), deployment branch poli
 workflow states (dated), and the delete-tag line. It passes or fails; it fixes nothing; a must-fix is fixed forward and
 read again by a fresh agent with V1's brief.
 
-**V2, the published files.** A fresh Opus agent, after the rehearsal's run (under 3 (B), after 1.0's): runs note 5.7.5,
-2's checks itself on both sides, reads the run's log step by step against note 5.7.2, 2, and passes or fails the files
-as fit for Rohan's word (or his installs).
+**V2, the published files.** A fresh Opus agent, after rc.1's run and before Rohan installs it: runs note 5.7.5, 2's
+checks itself on both sides, reads the run's log step by step against note 5.7.2, 2, and passes or fails the files as
+fit for his install. A later pre-release gets V2's brief again only if the release path changed since rc.1.
 
 #### Proof for each piece
 
@@ -6259,18 +6377,17 @@ commit and on the published 1.0, on both sides where a check names them, and pas
    inside `environment: release`, with exactly `contents: write`, `id-token: write` and `attestations: write`, running
    no file from the build; a token in a step's `env` only, on the steps note 5.7.2, 2 names; no cache; the steps in
    that note's order, the draft deleted on a failure before publishing; the tag-check query tried against a commit
-   whose CI is still running; under 1 (A) no secret named anywhere.
-5. **The settings,** read back: the `release` environment open to `v*` tags only (and, under 4 (A), Rohan as its
-   reviewer); immutable releases on; under 5 (A), the `base-v*` tag rule on Bonsai's repo and the `v*` tag rule and
-   immutable releases on the workflow repo; `release.yml` active; no repository secret (under 1 (A), none in the
-   environment); WSL's `gh --version` 2.97 or newer and `which -a gh` naming `/usr/bin/gh` first (`/bin/gh`, the same
-   file, may follow); Rohan's word on the
-   old token in the run report.
+   whose CI is still running; no secret named anywhere.
+5. **The settings,** read back: the `release` environment open to `v*` tags only, Rohan its reviewer; immutable releases
+   on; the `base-v*` tag rule on Bonsai's repo and the `v*` tag rule and immutable releases on the workflow repo;
+   `release.yml` active; no secret in the repository or the environment; WSL's `gh --version` 2.97 or newer and `which
+   -a gh` naming `/usr/bin/gh` first (`/bin/gh`, the same file, may follow); Rohan's word on the old token in the run
+   report.
 6. **1.0 as published:** `gh release verify v1.0.0`; `gh release verify-asset` and `gh attestation verify` (signer
    workflow, `refs/tags/v1.0.0`, `--deny-self-hosted-runners`) for every archive, and `gh attestation verify` for every
    program; `checksums.txt`
    right; the dist checks green on the downloaded files; the notes equal `CHANGELOG.md`'s 1.0 section; 1.0 is "latest";
-   under 3 (A) the rehearsal listed as a pre-release; under 1 (A) the tap unchanged since 13 May.
+   every `1.0.0-rc.N` listed as a pre-release, never "latest"; the tap unchanged since 13 May.
 7. **A rebuild:** the verifier's own build from a clean clone at `v1.0.0`, with the release's flags, matches the
    release's linux/amd64 and windows/amd64 programs byte for byte, or every difference is explained from `go version
    -m`.
@@ -6287,12 +6404,24 @@ commit and on the published 1.0, on both sides where a check names them, and pas
     `v1.0.0` names a commit at `1.0.0` and its release exists, made by its own job; the template's `pack.yml`, base's
     `ci` skill and the workflow repo's `pack.yml` name the 1.0 archives with the SHA-256s in `checksums.txt`; their CI
     green.
-12. **The words:** the stale-phrase list finds nothing outside `records/` and `design/`; `bonsai --help` says nothing of
+12. **The trial on Bonsai:** the trial's feature (`T-5708`) landed on `main` by the pipeline while the installed copy
+    was a pre-release (its ladder records name `/usr/local/bin/bonsai` with that pre-release's SHA-256, matched to
+    `install.json` and the run report); its task file moved through every status by the orchestrator; its builder a
+    named session (its sessions rows carry the task); its guard refusals, stop-gate blocks, asks and Bless, where they
+    happened, each in the log; its verifier's report; the tables rebuilt by `check --write`; nothing else `running`
+    from the set-up to the landing. Each later round's repeat recorded the same way.
+13. **The analysis:** `records/trial-rc1.md` (and each round's page) exists; each claim checked against the file,
+    record or output it names; Rohan's reply in his words; every fix he asked for landed or, with his word, left for
+    after 1.0.
+14. **His word for 1.0:** in the run report in his words, after his reply "happy" and after his own trial on a fresh
+    project (his report of it, or his word that it is done); `v1.0.0`'s commit equal to the last pre-release's but for
+    the notes' date line, `records/` and `.bonsai/STATE.md` (`git diff --stat`).
+15. **The words:** the stale-phrase list finds nothing outside `records/` and `design/`; `bonsai --help` says nothing of
     a rebuild; `SECURITY.md` names 1.0; the issue templates ask for nothing of the old product.
-13. **Check 10, the ladder and CI:** `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on
+16. **Check 10, the ladder and CI:** `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on
     Windows, run by the verifier; `/usr/local/bin/bonsai ladder --task <its task>` green on the final commit, by 1.0; CI
     green.
-14. **Stop lines and records:** 5.7's hours under 14 (16 under 1 (B)), this section's planning and review included (the
+17. **Stop lines and records:** 5.7's hours under 24, this section's planning and review included (the
     Go piece's in its own report); step
     5's Windows-only tally; option rounds (none planned); nothing written or run in the studio's checkout or in Mimas;
     nothing written outside the repo, the workflow repo and the scratch folders but `~/.bonsai/` by the orchestrator's
@@ -6305,40 +6434,44 @@ commit and on the published 1.0, on both sides where a check names them, and pas
 #### Rohan's sittings
 
 His lines are in his part, above; each batch goes in one message. The orchestrator's side:
-- **Before batch 1:** V1 passed, every line and its read-back read against GitHub's documentation; the batch sent with
-  the decisions' answers applied (the reviewer part of the environment line only under 4 (A); the tag rules and the
-  workflow repo's lock only under 5 (A); the token lines only under 1 (B)). **After:** Rohan's read-backs read, then an
-  agent reads everything again, changing nothing: `gh api repos/LastStep/Bonsai/environments/release`, its
-  `deployment-branch-policies`, both repos' `immutable-releases` and tag rulesets, the workflow's state, and in WSL `gh
-  --version`, `which -a gh` and `gh auth status`; then the check line's form against `gh`'s own signed file on WSL's
-  `gh` (note 5.7.3, 5). A line that failed gets a corrected line, read against GitHub's documentation, in a new
-  message.
-- **Before batch 2:** note 5.7.5, 1. **After:** note 5.7.5, 2-3.
-- **Before batch 3:** V2 passed; note 5.7.5, 4; then the tag; note 5.7.5, 2 on 1.0's files; notes 5.7.5, 5-9 around his
-  installs; 5.7.6, then the pack tags.
-- His words, what each line printed, and what was read back go in 5.7.5's run report.
+- **Before batch 1:** V1 passed, every line and its read-back read against GitHub's documentation. **After:** Rohan's
+  read-backs read, then an agent reads everything again, changing nothing: `gh api
+  repos/LastStep/Bonsai/environments/release`, its `deployment-branch-policies`, both repos' `immutable-releases` and
+  tag rulesets, the workflow's state, and in WSL `gh --version`, `which -a gh` and `gh auth status`; then the check
+  line's form against `gh`'s own signed file on WSL's `gh` (note 5.7.3, 5). A line that failed gets a corrected line,
+  read against GitHub's documentation, in a new message.
+- **Before batch 2:** note 5.7.5, 1. **After:** note 5.7.5, 2-3 (V2).
+- **Batch 3:** note 5.7.5, 5 before his installs, 6, 8 and 9 after them; note 5.7.7, 1-2; the proposals sent with
+  their hours; his pick recorded.
+- **Batch 4:** the analysis sent (note 5.7.9) when the feature has landed; his reply recorded; each fix round (note
+  5.7.10) with its tag line, its install lines and its short analysis, in one message each.
+- **His own trial:** nothing is sent unless he asks; his report, if any, recorded.
+- **Batch 5:** note 5.7.5, 4 at his word; then the tag; note 5.7.5, 2 on 1.0's files; notes 5.7.5, 5-9 around his
+  installs and his memory line; 5.7.6, then the pack tags.
+- His words, what each line printed, and what was read back go in the run report of the piece they belong to (5.7.5's,
+  the trial's).
 
 #### Risk in the code, 5.7
 
 - **A release is public and cannot be taken back.** GitHub's lock makes a published release final. So: the rehearsal
-  job on every push, V1 before anything is switched on, the rehearsal's real run and V2 before Rohan's word (under 3
-  (A)), and the draft published only after signing and the dist checks.
+  job on every push, V1 before anything is switched on, V2 on rc.1, the trial on Bonsai and Rohan's own trial before
+  his word, and the draft published only after signing and the dist checks.
 - **A tag runs the workflow its commit holds.** A failure before publishing is fixed on `main`, the tag deleted by
   Rohan's line and made again on the fixed commit, keeping its number; a defect found after publishing needs the next
-  number: the pre-release takes those under 3 (A), 1.0.1 under 3 (B).
+  number: before 1.0 that is only the next `rc`.
 - **A tag with no published release.** While a tag waits for Rohan's approval, after a run failed before publishing,
   or if a stray tag is ever made, 5.6.5's newer-release read (`status --full` reads tags with git) takes it for a
   release, and the install lines it hands over fail to download ("try again in a few minutes" is all 5.6 says). The
   failure path deletes the tag; the run deletes its own draft; and a hand-off back to 5.6 ("Stale or in tension")
   asks 5.6.5 to count only a tag whose release is published.
-- **Agents act as Rohan's admin account.** Every tag, approval, enable, setting and re-run is his typed line; under 4
-  (A) a tag waits for his approval. An agent could still do any of it through GitHub's API: the rules and the end
+- **Agents act as Rohan's admin account.** Every tag, approval, enable, setting and re-run is his typed line; a tag
+  waits for his approval. An agent could still do any of it through GitHub's API: the rules and the end
   verifier's audit stop accidents, not intent (decision D).
 - **The publishing job can write releases and sign records.** It runs only on GitHub's own machines, only after the
   `build` job has passed a tag on a commit on `main` whose checks are green, inside the `release` environment; it runs
   no file from the build (the program and `install.sh` run only in `build`, which can neither write to GitHub nor ask
   for a signing token); tokens go only to the steps that call `gh`; no cache, every action pinned by commit,
-  `persist-credentials` off; under 1 (A) it holds no secret and can write nowhere but Bonsai's own releases.
+  `persist-credentials` off; it holds no secret and can write nowhere but Bonsai's own releases.
 - **What the signed record proves.** That the files came from `release.yml` for that tag on GitHub's machines; not that
   the code is good: a commit on `main` made by anyone acting as Rohan is built and signed like any other.
 - **The install lines run with root or administrator rights.** The archive's origin is checked before anything from it
@@ -6353,11 +6486,22 @@ His lines are in his part, above; each batch goes in one message. The orchestrat
   not a shell (spec §3's tripwire).
 - **Go 1.27.** The move from Go 1.25 (Rohan's word, its own piece before 5.7) is checked by that piece's check 10 on
   both sides, counts before and after; 5.7.0 checks it still holds at release time.
-- **Bonsai's own guard on 1.0.** From his WSL install, every Claude Code session in Bonsai's repo runs 1.0's guard; if
-  it blocks work, 5.4's way back with the pre-release kept for it. A change to Bonsai's own hook lines shows as
-  `check`'s finding and is his (ii) line.
-- **The UAC prompt's first real run** is at his 1.0 install: its way out is written, and nothing on Windows depends on
-  Bonsai yet.
+- **Bonsai's own guard on a pre-release.** From his rc.1 install, every Claude Code session in Bonsai's repo, the
+  orchestrator's included, runs rc.1's guard, stop gate and recorder; if it blocks work, 5.4's way back with the copy
+  kept for it (note 5.7.5, 5). A change to Bonsai's own hook lines shows as `check`'s finding and is his (ii) line.
+- **The trial is real work on the real repo.** Its feature lands on `main` and ships in the next pre-release and in
+  1.0; a feature that turns out wrong is reverted by a task like any other. The trial runs alone, so a fault it finds
+  stops Bonsai's other work until it is fixed or worked round by 5.4's way back.
+- **What the trial finds may be large.** A finding that needs a format change by removal or a new major comes to Rohan
+  first (his (B)); one that needs a guard, hook or release-path change gets its verifier (V1's brief for the release
+  path) and its own pre-release; one that is not a defect of 1.0 may wait for after 1.0, on his word, written in the
+  analysis.
+- **How many pre-releases.** rc.2 is in the figures; two more rounds fit under 24 at the high figures, and the round
+  that would cross it waits for Rohan's choice (continue, a smaller cut, or pause). Each round costs him about 10
+  minutes.
+- **His own trial, on his own.** Agents do not watch it; what he finds reaches the plan only through his words.
+- **The UAC prompt's first real run** is at his rc.1 install: its way out is written, nothing on Windows depends on
+  Bonsai yet, and a problem found there costs a new `rc`, not a 1.0.1.
 - **Windows tests after the Windows install.** A test that assumes no installed `bonsai.exe` may change; check 10's
   Windows half is run again and compared.
 - **Dependabot and pinned actions.** Its pull requests wait for no agent: the orchestrator lands the same move, and
@@ -6368,18 +6512,19 @@ His lines are in his part, above; each batch goes in one message. The orchestrat
 
 #### Stale or in tension in the spec, for 5.7
 
-The orchestrator writes these dated notes on `main` once Rohan has answered (this plan does not edit the spec); the
-text assumes the recommended answers, and the bracketed part changes with his answer.
+The orchestrator writes these dated notes on `main` once Rohan has approved the section (this plan does not edit the
+spec); they carry his answers of 10 Oct.
 - **§3, "Go version: the module says `go 1.25` with a `toolchain` line"; the gate's "a later 1.25.x patch fixes
   them":** Go 1.25's last patch was 1.25.14 (19 Aug 2026). Note: "> **Changed <date> (step 5.7's section):** the `go`
   line stays `go 1.25.0`; on Rohan's word (10 Oct, "we can go with go 1.27 latest") the `toolchain` line moves to Go
   1.27's newest patch, because Go 1.25 has had no security fix since Go 1.27 came out (19 Aug 2026). govulncheck's pin
   moves with it. The next such bump comes when Go 1.29 is out."
-- **§12 step 7, Homebrew; §14's 5.7 row, "`bonsai@0.4`":** under 1 (A), note in §12: "> **Changed <date> (Rohan,
-  step 5.7's section, 1 (A)):** no Homebrew for the new Bonsai. A Homebrew install lands outside the two places every
+- **§12 step 7, Homebrew; §14's 5.7 row, "`bonsai@0.4`":** note in §12: "> **Changed 10 Oct (Rohan, step 5.7's
+  section, 1 (A)):** no Homebrew for the new Bonsai. A Homebrew install lands outside the two places every
   project's hook lines name (§3's 9 Oct note, (a)), so it could never guard. The tap keeps `bonsai` at 0.4.3, unchanged,
   so 0.4.3 stays downloadable (Q8); there is no `bonsai@0.4` and no tap token, and no release writes outside Bonsai's
-  repo. The new Bonsai installs with its installers." §14's row gets a one-line pointer to it.
+  repo. The new Bonsai installs with its installers. Later, outside step 5: a Mac, and each platform's own package
+  manager, each installing into the two places the guard trusts." §14's row gets a one-line pointer to it.
 - **§12 step 8, "immutable releases, build provenance":** "> **Changed <date> (step 5.7's section):** immutable releases
   are a repository setting, switched on by Rohan's line; GoReleaser builds in a job that cannot publish or sign; a
   second job, in the `release` environment and running nothing from the build, signs every archive, `checksums.txt` and
@@ -6387,14 +6532,17 @@ text assumes the recommended answers, and the bracketed part changes with his an
   published. The re-release input went in part 1 and the manual run now: `release.yml` runs on `vX.Y.Z` and
   `vX.Y.Z-rc.N` tags only, for a commit on `main` whose checks are green. The install lines check the record before
   unpacking (`gh attestation verify`)."
-- **§17 step 4:** "> **Changed <date> (step 5.7's section):** [under 1 (A)] no new tap token: the `release` environment
-  holds no secret. [under 4 (A)] The environment asks Rohan's approval before each release run, in place of the optional
-  tag ruleset. Immutable releases are switched on with `gh api -X PUT repos/LastStep/Bonsai/immutable-releases`. [under
-  5 (A)] Tag rules stop `base-v*` tags in Bonsai's repo and `v*` tags in the workflow repo being moved or deleted, and
-  the workflow repo's releases are locked too. The old token's revocation [is confirmed / was not found], <date>." Also
-  the line "At step 5.7, on your word, switch it back on" stands, with the date it was done.
-- **§14 row 10, "the first public release, on Rohan's word":** under 3 (A), "> **Changed <date>:** a public
-  pre-release, `v1.0.0-rc.1`, rehearses the release first, on his tag; 1.0 follows on his word."
+- **§17 step 4:** "> **Changed <date> (step 5.7's section, Rohan's answers of 10 Oct):** no new tap token: the `release`
+  environment holds no secret. The environment asks Rohan's approval before each release run, in place of the optional
+  tag ruleset. Immutable releases are switched on with `gh api -X PUT repos/LastStep/Bonsai/immutable-releases`. Tag
+  rules stop `base-v*` tags in Bonsai's repo and `v*` tags in the workflow repo being moved or deleted, and the workflow
+  repo's releases are locked too. The old token's revocation [is confirmed / was not found], <date>." Also the line "At
+  step 5.7, on your word, switch it back on" stands, with the date it was done.
+- **§14 row 10, "the first public release, on Rohan's word", and §14's 5.7 row (6-11 h):** "> **Changed 10 Oct
+  (Rohan):** before 1.0, a trial of Bonsai on itself on a public pre-release, `v1.0.0-rc.1`, which he installs: a small
+  real feature he picks, built through the whole pipeline on Bonsai's own repo, its results analysed for him, fixes as
+  further pre-releases; then his own trial on a fresh project; then his word for 1.0 on the same code. 5.7 becomes
+  9.5-18.5 hours, re-ask at 24 (the trial adds 3.5-7.5); step 5 142.5-225.5." (`design/plan-5.md`, "Step 5.7".)
 - **§5, the pack's CI step 2, and §5 and §6's examples `ref: base-v1.0.0`, `ref: v1.0.0`:** done at 5.7.6, no note
   needed beyond the plan's; `init`'s template still names no pack (note 5.7.6, 1).
 - **§3, "No agent installs or replaces it":** unchanged; from 1.0 the installers and Bonsai's printed lines replace
