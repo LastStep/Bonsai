@@ -11,6 +11,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -23,15 +24,26 @@ import (
 )
 
 // Every word the code adds a finding or a warning with (each r.add call's first argument) is in format.CheckWords,
-// and every word there is added somewhere: the table and the code cannot drift apart.
+// and every word there is added somewhere: the table and the code cannot drift apart. The same for check --pack's
+// words (format.PackCheckWords), found as every string literal in the code shaped like one (pack-<word>).
 func TestCheckWordsInTheCode(t *testing.T) {
 	pkgs, err := parser.ParseDir(token.NewFileSet(), ".", func(fi os.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	used := map[string]string{}
+	packUsed := map[string]string{} // check --pack's words: every literal shaped like one (checkpack.go)
+	packWord := regexp.MustCompile(`^pack-[a-z][a-z-]*$`)
 	for _, pkg := range pkgs {
 		for name, f := range pkg.Files {
+			ast.Inspect(f, func(n ast.Node) bool {
+				if lit, ok := n.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+					if s, err := strconv.Unquote(lit.Value); err == nil && packWord.MatchString(s) {
+						packUsed[s] = name
+					}
+				}
+				return true
+			})
 			ast.Inspect(f, func(n ast.Node) bool {
 				call, ok := n.(*ast.CallExpr)
 				if !ok || len(call.Args) == 0 {
@@ -66,6 +78,17 @@ func TestCheckWordsInTheCode(t *testing.T) {
 		}
 		if w.Who != "agent" && w.Who != "person" {
 			t.Errorf("%s: who %q", w.Word, w.Who)
+		}
+	}
+	// check --pack's words (step 5.1.9): each one the code names is in format.PackCheckWords, and each there is named.
+	for word, where := range packUsed {
+		if _, ok := format.PackCheckWord(word); !ok {
+			t.Errorf("%s names %q, which is not in format.PackCheckWords", where, word)
+		}
+	}
+	for _, w := range format.PackCheckWords {
+		if _, ok := packUsed[w.Word]; !ok {
+			t.Errorf("format.PackCheckWords has %s, which no code names", w.Word)
 		}
 	}
 	// The later steps' words are not built yet: none is in the table, and each names its step.

@@ -1,7 +1,7 @@
-// Package testpack builds, for Go tests, a local pack repository with six commits, A to F, shaped like Bonsai's
-// public test pack (github.com/LastStep/bonsai-test-pack, plan part 4a; E and F from step 5.1.1), so the engine's
-// tests fetch a pack with no network; and fixture packs (Fixture) for the cases the test pack does not hold. Only
-// tests import it.
+// Package testpack builds, for Go tests, a local pack repository with seven commits, A to G, shaped like Bonsai's
+// public test pack (github.com/LastStep/bonsai-test-pack, plan part 4a; E and F from step 5.1.1, G from 5.1.9), so
+// the engine's tests fetch a pack with no network; fixture packs (Fixture) for the cases the test pack does not hold;
+// and a documented pack folder (DocumentedPack) that every rule of bonsai check --pack reaches. Only tests import it.
 //
 // What each commit changes, as in the public pack (its README's table):
 //
@@ -11,6 +11,8 @@
 //	D  only the hook line's command: "echo demo hook D"
 //	E  the mixed update: guide.md becomes edition 4 and the hook line "echo demo hook E" (its entry now says runs: [])
 //	F  only a hook of the plugin itself: hooks/hooks.json, a SessionStart hook that runs an echo
+//	G  only documentation: pack.yaml gains a comment on every key that had none, and documents: [] and protected: []
+//	   (every field written, as bonsai check --pack holds a pack's maker to); nothing the engine writes changes
 //
 // Every repository and project it makes lives in the test's temporary folder, with git isolated from the
 // machine's own configuration (no global or system config, no repository above the folder).
@@ -29,10 +31,10 @@ import (
 // ID is the pack's id.
 const ID = "demo-pack"
 
-// Pack is a built pack repository: its source (a bare repository's folder) and its six commits.
+// Pack is a built pack repository: its source (a bare repository's folder) and its seven commits.
 type Pack struct {
-	Source           string
-	A, B, C, D, E, F string
+	Source              string
+	A, B, C, D, E, F, G string
 }
 
 // PluginHooks is commit F's hooks/hooks.json: a hook of the plugin itself, which Claude Code runs on its own.
@@ -85,8 +87,9 @@ func Git(t *testing.T, dir string, args ...string) string {
 }
 
 // PackYAML is the pack's bonsai/pack.yaml: hook is the hook line's letter, extra whether extra.md is listed, runs
-// whether the hook entry says runs: [] (from E; a missing runs reads the same).
-func PackYAML(hook string, extra, runs bool) string {
+// whether the hook entry says runs: [] (from E; a missing runs reads the same), documented whether every key has its
+// comment and every field is written, documents: [] and protected: [] among them (from G; missing, they read the same).
+func PackYAML(hook string, extra, runs, documented bool) string {
 	s := `# bonsai/pack.yaml: a test pack for Bonsai's engine tests.
 format: bonsai.pack/1                # the format
 id: demo-pack                        # the pack's id
@@ -117,17 +120,25 @@ files:                               # the files the engine writes
 		s += `    runs: []                         # the pack files it runs: none
 `
 	}
-	s += `    why: "Prints which demo hook line is in place; it blocks nothing."
+	if !documented {
+		return s + `    why: "Prints which demo hook line is in place; it blocks nothing."
 deny:                                # deny rules
   - rule: "Edit(demo/never.txt)"     # an example rule
     why: "Agents cannot edit demo/never.txt (the demo pack's rule)."
 `
-	return s
+	}
+	return s + `    why: "Prints which demo hook line is in place; it blocks nothing."  # preview text
+deny:                                # deny rules
+  - rule: "Edit(demo/never.txt)"     # an example rule
+    why: "Agents cannot edit demo/never.txt (the demo pack's rule)."  # preview text
+documents: []                        # the document kinds it declares: none
+protected: []                        # the paths it declares protected: none
+`
 }
 
 const block = "<!--\nbonsai/block.md: the demo pack's block. This comment stays in the pack.\n-->\nThe demo pack is linked: its role is demo-pack:marker.\n"
 
-// Build makes the pack repository with commits A to D and returns it.
+// Build makes the pack repository with commits A to G and returns it.
 func Build(t *testing.T, tmp string) *Pack {
 	t.Helper()
 	work := filepath.Join(tmp, "pack-work")
@@ -152,7 +163,7 @@ func Build(t *testing.T, tmp string) *Pack {
 	p := &Pack{}
 	write(".claude-plugin/plugin.json", "{\"name\": \"demo-pack\", \"description\": \"A test pack.\"}\n")
 	write("agents/marker.md", "---\nname: marker\ndescription: says commit A\n---\nSay commit A.\n")
-	write("bonsai/pack.yaml", PackYAML("A", false, false))
+	write("bonsai/pack.yaml", PackYAML("A", false, false, false))
 	write("bonsai/block.md", block)
 	write("bonsai/files/guide.md", "# Guide\n\nEdition 1.\n")
 	write("bonsai/files/start.md", "# Start here\n\nThe project's own file once written.\n")
@@ -160,17 +171,19 @@ func Build(t *testing.T, tmp string) *Pack {
 	write("agents/marker.md", "---\nname: marker\ndescription: says commit B\n---\nSay commit B.\n")
 	write("bonsai/files/guide.md", "# Guide\n\nEdition 2.\n")
 	write("bonsai/files/extra.md", "# Extra\n\nNew at commit B.\n")
-	write("bonsai/pack.yaml", PackYAML("A", true, false))
+	write("bonsai/pack.yaml", PackYAML("A", true, false, false))
 	p.B = commit("B")
 	write("bonsai/files/guide.md", "# Guide\n\nEdition 3.\n")
 	p.C = commit("C")
-	write("bonsai/pack.yaml", PackYAML("D", true, false))
+	write("bonsai/pack.yaml", PackYAML("D", true, false, false))
 	p.D = commit("D")
 	write("bonsai/files/guide.md", "# Guide\n\nEdition 4.\n")
-	write("bonsai/pack.yaml", PackYAML("E", true, true))
+	write("bonsai/pack.yaml", PackYAML("E", true, true, false))
 	p.E = commit("E")
 	write("hooks/hooks.json", PluginHooks)
 	p.F = commit("F")
+	write("bonsai/pack.yaml", PackYAML("E", true, true, true))
+	p.G = commit("G")
 	p.Source = filepath.Join(tmp, "demo-pack.git")
 	Git(t, tmp, "clone", "-q", "--bare", "--", work, p.Source)
 	return p
@@ -422,5 +435,132 @@ func SetRef(t *testing.T, root, from, to string) {
 	}
 	if err := os.WriteFile(p, []byte(strings.Replace(string(b), from, to, 1)), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// DocumentedPack is a pack folder's files (a path in the folder, forward slashes, to its content) that every rule of
+// bonsai check --pack reaches and that passes them all (step 5.1.9): a pack.yaml with a comment on every key and every
+// field written (a files entry the hook line runs, listed in its runs; a deny rule with its why; the document kind
+// note; a protected glob), a labels.yaml (one choice label) and a lanes.yaml (light and full), each key commented, a
+// block.md, a plugin.json with no version, a plugin hook, and two template skills: note (the pack's own kind) and task
+// (bonsai.task/1, its fields table equal to the schema's fields). Each test case changes one file to break one rule.
+func DocumentedPack() map[string]string {
+	return map[string]string{
+		".claude-plugin/plugin.json": "{\"name\": \"docs-pack\", \"description\": \"A fixture pack, documented in full.\"}\n",
+		"hooks/hooks.json":           `{"hooks": {"SessionStart": [{"matcher": "startup", "hooks": [{"type": "command", "command": "echo docs plugin hook"}]}]}}` + "\n",
+		"bonsai/pack.yaml": `# bonsai/pack.yaml: the documented fixture pack's manifest (bonsai.pack/1).
+# Every key carries its comment, and every field is written.
+format: bonsai.pack/1                 # the format and its version
+id: docs-pack                         # the pack's id
+version: "0.1.0"                      # the pack's version
+needs:                                # what a machine needs
+  claude_code: null                   # no floor of its own
+block: block.md                       # its part of the block
+files:                                # the files the engine writes
+  - path: docs/run.sh                 # the script the hook line runs
+    from: run.sh                      # its source
+    kind: pack                        # Bonsai's file
+  - path: work/protocols/start.md     # an always-on protocol file
+    from: start.md                    # its source
+    kind: pack                        # Bonsai's file
+hooks:                                # hook lines
+  - event: SessionStart               # a session starts
+    matcher: startup                  # new sessions only
+    command: "sh docs/run.sh"         # runs the pack's script
+    runs: ["docs/run.sh"]             # the file it runs
+    # why: the line in the preview, too long to share its line
+    why: "Runs the pack's greeting when a session starts; it blocks nothing."
+deny:                                 # deny rules
+  - rule: "Read(docs/secret.txt)"     # an example rule
+    why: "Agents cannot read docs/secret.txt."  # the preview's sentence
+documents:                            # the kinds it declares
+  - kind: note                        # a note
+    path: work/notes                  # its folder
+    file: null                        # a folder, not one file
+    id: "^N-[0-9]{4}$"                # a note's id
+    statuses: [draft, done]           # its statuses
+    person: []                        # no person's moves
+    agent:                            # the moves agents make
+      - [draft, done]                 # an agent finishes a note
+    stamp:                            # dates set on a status
+      done: finished                  # finished: set at done
+    task_field: null                  # it belongs to no task
+protected: ["work/notes/**"]          # paths an agent changes only with a grant
+`,
+		"bonsai/labels.yaml": `# bonsai/labels.yaml: the documented fixture pack's labels (bonsai.labels/1).
+format: bonsai.labels/1               # the format
+namespace: docs-pack                  # the pack's own id
+version: 1                            # this set's version
+labels:                               # one entry per label
+  - name: docs-pack.size              # a choice label
+    kind: choice                      # one of its values
+    values: [small, large]            # its values
+    items: null                       # not a list
+    pattern: null                     # no pattern
+    max: null                         # no length limit
+    kinds: [note]                     # notes carry it
+    set_by: agent                     # agents write it
+    grants: false                     # it grants nothing
+    description: "How big the note is."  # what agents see
+`,
+		"bonsai/lanes.yaml": `# bonsai/lanes.yaml: the documented fixture pack's lanes (bonsai.lanes/1).
+format: bonsai.lanes/1                # the format
+lanes:                                # its lanes
+  - name: light                       # the light lane
+    approve_first: false              # no approval first
+    close: agent                      # an agent closes it
+    description: "Small fixes."       # what agents read
+  - name: full                        # the full lane
+    approve_first: true               # a person approves first
+    close: person                     # a person closes it
+    description: "A feature."         # what agents read
+`,
+		"bonsai/block.md":       "<!--\nbonsai/block.md: the documented fixture pack's block. This comment stays in the pack.\n-->\nThe docs pack is linked.\n",
+		"bonsai/files/run.sh":   "echo hello from the docs pack\n",
+		"bonsai/files/start.md": "# Start\n\nRead this first.\n",
+		"skills/hello/SKILL.md": "---\nname: hello\ndescription: \"Says hello; no template.\"\n---\n\n| Field | Meaning |\n|---|---|\n| `x` | not a fields table |\n",
+		"skills/note/SKILL.md": "---\nname: note\ndescription: \"The note template: use it to write a note.\"\n---\n\n" +
+			"<!-- The note template of the docs fixture pack. -->\n\n" +
+			"| Field | Meaning | Allowed values | Example |\n|---|---|---|---|\n" +
+			"| `id` | The note's id | `N-` and four digits | `N-0001` |\n" +
+			"| `status` | Where it stands | `draft`, `done` | `draft` |\n" +
+			"| `lane` | Its lane | `light`, `full`, or `null` | `light` |\n" +
+			"| `labels` | Its labels | a mapping | `{}` |\n" +
+			"| `labels.docs-pack.size` | How big it is | `small` or `large` | `small` |\n\n" +
+			"```markdown\n---\nid: N-0000   # the note's id; how to fill: skill docs-pack:note\nstatus: draft\nlane: null\nlabels: {}\n---\n\n# A note\n```\n",
+		"skills/task/SKILL.md": "---\nname: task\ndescription: \"The task template.\"\n---\n\n" +
+			"| Field | Meaning | Allowed values | Example |\n| --- | --- | --- | --- |\n" +
+			"| `format` | The format | `bonsai.task/1` | `bonsai.task/1` |\n" +
+			"| `id` | The task's id | T- and digits | `T-0001` |\n" +
+			"| `title` | Its title | text | `A task` |\n" +
+			"| `status` | Where it stands | `todo`, `plan`, `approved`, `running`, `verify`, `done`, `blocked`, `cut` | `todo` |\n" +
+			"| `lane` | Its lane | `light`, `full`, or `null` | `light` |\n" +
+			"| `done_when` | What done means | a list of text | `[]` |\n" +
+			"| `depends_on` | Tasks first | task ids | `[]` |\n" +
+			"| `blocked_by` | What blocks it | text, or `null` | `null` |\n" +
+			"| `created` | Its day | a date | `2026-10-10` |\n" +
+			"| `started` | When it ran | a date, or `null` | `null` |\n" +
+			"| `finished` | When it ended | a date, or `null` | `null` |\n" +
+			"| `labels` | Its labels | a mapping | `{}` |\n\n" +
+			"~~~markdown\n---\nformat: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill docs-pack:task\n" +
+			"id: T-0000\ntitle: <a title>\nstatus: todo\nlane: null\ndone_when: []\ndepends_on: []\nblocked_by: null\n" +
+			"created: <today>\nstarted: null\nfinished: null\nlabels: {}\n---\n\n# <a title>\n~~~\n",
+	}
+}
+
+// WriteFolder writes files (a path in the folder, forward slashes, to its content; "" leaves the file out) into dir.
+func WriteFolder(t *testing.T, dir string, files map[string]string) {
+	t.Helper()
+	for rel, content := range files {
+		if content == "" {
+			continue
+		}
+		p := filepath.Join(dir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

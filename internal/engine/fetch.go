@@ -352,14 +352,11 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 	// plugin.json has none, so a pack whose plugin.json has one is refused here and a locked pack never has one
 	// (check's plugin-version finding then reads the lock alone).
 	if raw, err := read(manifestPath); err == nil {
-		v, _ := schema.Decode(raw)
-		if o, ok := v.(schema.Object); ok {
-			if ver, has := o.Get("version"); has && ver != nil {
-				return nil, errorf("bad-pack", ExitInput, "the pack's maker takes version out of its "+manifestPath+" and releases the pack "+
-					"again; until then keep bonsai.yaml's ref at a release without it", "the pack %s (%s): its plugin's %s carries the "+
-					"version %s, so Claude Code would take the plugin by that version, not by its locked commit (spec section 5)",
-					ref.ID, where, manifestPath, schema.Show(ver)).whose("person")
-			}
+		if ver, has, _ := manifestVersion(raw); has {
+			return nil, errorf("bad-pack", ExitInput, "the pack's maker takes version out of its "+manifestPath+" and releases the pack "+
+				"again; until then keep bonsai.yaml's ref at a release without it", "the pack %s (%s): its plugin's %s carries the "+
+				"version %s, so Claude Code would take the plugin by that version, not by its locked commit (spec section 5)",
+				ref.ID, where, manifestPath, schema.Show(ver)).whose("person")
 		}
 	}
 	pd.SHA256 = contentHash(entries, blobs)
@@ -369,6 +366,19 @@ func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 	}
 	pd.Code = pluginCode(entries, blobs)
 	return pd, nil
+}
+
+// manifestVersion reads a plugin.json's version: has when it carries one that is not null (a pack's never does, spec
+// §5: Claude Code takes the commit as the version only when there is none), and read false when the file is not a
+// JSON object Bonsai reads (then nothing is known of its version). Its one home, for the link and check --pack.
+func manifestVersion(raw []byte) (version any, has, read bool) {
+	v, err := schema.Decode(raw)
+	o, ok := v.(schema.Object)
+	if err != nil || !ok {
+		return nil, false, false
+	}
+	version, has = o.Get("version")
+	return version, has && version != nil, true
 }
 
 func missingOr(err error) string {

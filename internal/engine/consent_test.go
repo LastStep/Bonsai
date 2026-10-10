@@ -1,7 +1,7 @@
 package engine
 
 // Consent to code (consent.go; plan-5, piece 5.1.1, rules 1-8) at the engine's level: what each plan lists under
-// "Runs code" on the test pack's commits A to F and on fixture packs, that Apply writes nothing without AllowExec,
+// "Runs code" on the test pack's commits A to G and on fixture packs, that Apply writes nothing without AllowExec,
 // and a plugin's code parts read from its files. cmd/bonsai/consent_test.go walks the same cases through the flags.
 
 import (
@@ -84,6 +84,8 @@ func TestConsentCases(t *testing.T) {
 			"hook change SessionStart (startup): echo demo hook E (demo-pack)"},
 		{"E to F, a hook of the plugin itself", move(e.pack.E, e.pack.F), Request{}, "plugin add hooks/hooks.json (demo-pack)"},
 		{"F to E, the plugin's hook taken out", move(e.pack.F, e.pack.E), Request{}, ""},
+		{"F to G, documentation only, in a plugin that carries code", move(e.pack.F, e.pack.G), Request{},
+			"plugin change bonsai/pack.yaml (demo-pack)"},
 		{"the hook-run file changed alone", other(run, rc[0], rc[1]), Request{}, "file change run/hello.sh (run-pack)"},
 		{"a file no hook runs changed", other(run, rc[1], rc[2]), Request{}, ""},
 		{"a role of a plugin that carries code", other(mcp, mc[0], mc[1]), Request{},
@@ -130,6 +132,35 @@ func TestConsentCases(t *testing.T) {
 				t.Errorf("after the write, update would write again:\n%s", again.Preview(false))
 			}
 		})
+	}
+}
+
+// Test-pack commit G (step 5.1.9) documents the pack and changes nothing it does: an update from F to G writes no
+// project file but the lock and the plugin wiring in .claude/settings.json (the marketplace named for the new commit,
+// spec section 5). Every pack file, the block, the hook line and the deny rule stay. It still needs --allow-exec, and
+// says why: from F the plugin carries a code part, which can run any of its files, so any file of the plugin changed
+// is code (step 5.1.1, rule 3); here, only the documented bonsai/pack.yaml.
+func TestTestPackGChangesOnlyDocumentation(t *testing.T) {
+	e := setup(t)
+	root := testpack.Project(t, e.tmp, "f-to-g")
+	e.link(t, root, e.pack.F)
+	testpack.SetRef(t, root, e.pack.F, e.pack.G)
+	p := e.plan(t, root, Request{})
+	if items(p) != "plugin change bonsai/pack.yaml (demo-pack)" || len(p.Conflicts) > 0 {
+		t.Fatalf("F to G: runs code %q, %d conflicts:\n%s", items(p), len(p.Conflicts), p.Preview(false))
+	}
+	for _, f := range p.Files {
+		if f.Result != Unchanged && f.Path != SettingsFile {
+			t.Errorf("F to G: %s %s", f.Path, f.Result)
+		}
+	}
+	for _, s := range p.Settings {
+		if s.Kind != "marketplace" && s.Kind != "plugin" {
+			t.Errorf("F to G changes a settings line that is not the plugin wiring: %+v", s)
+		}
+	}
+	if len(p.Settings) == 0 {
+		t.Errorf("F to G does not move the plugin wiring to G's commit:\n%s", p.Preview(false))
 	}
 }
 

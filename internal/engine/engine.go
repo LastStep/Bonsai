@@ -12,7 +12,9 @@
 //   - apply.go: the all-or-nothing write: every file staged, renames, the lock last;
 //   - check.go, checkdocs.go, checkhistory.go, checksettings.go, checkmachine.go, claude.go: bonsai check's findings
 //     and warnings, each a word of format.CheckWords (step 5.1.6), and Claude Code's floor (claude.go); newer.go: a
-//     pack's newer release tags, for status --full;
+//     pack's newer release tags, for status --full; checkpack.go: bonsai check --pack, a pack's folder held to the
+//     rules that keep its declarations and documentation in step with its fields, each a word of
+//     format.PackCheckWords (step 5.1.9);
 //   - plugins.go: this machine's plugins (plan part 4b): the install Claude Code is asked for after init and update
 //     (at project scope, the checkout's own .claude/settings.json), the uninstall of a pack taken out and of the
 //     stale records an older marketplace name left (step 5.1.7),

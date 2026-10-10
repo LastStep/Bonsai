@@ -34,6 +34,8 @@ const (
 )
 
 // readDeclares reads what a pack declares, read giving a file of the pack's folder (os.ErrNotExist when it has none).
+// It refuses the first problem the rules below find (labelsProblems, lanesProblems, documentsProblems,
+// protectedProblems), which bonsai check --pack lists all of (checkpack.go).
 func readDeclares(manifest *workspace.Pack, read func(string) ([]byte, error)) (*format.Declares, error) {
 	d := &format.Declares{Documents: manifest.Full.Documents, Protected: manifest.Full.Protected,
 		Hooks: manifest.Full.Hooks, Deny: manifest.Full.Deny}
@@ -41,18 +43,13 @@ func readDeclares(manifest *workspace.Pack, read func(string) ([]byte, error)) (
 		needs := manifest.Full.Needs
 		d.Needs = &needs
 	}
-	id := manifest.ID
 	if raw, err := read(LanesFile); err == nil {
 		lanes, err := format.ReadLanes(raw)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %v", LanesFile, err)
 		}
-		seen := map[string]bool{}
-		for _, l := range lanes.Lanes {
-			if seen[l.Name] {
-				return nil, fmt.Errorf("%s defines the lane %s twice", LanesFile, quote(l.Name))
-			}
-			seen[l.Name] = true
+		if ps := lanesProblems(lanes); len(ps) > 0 {
+			return nil, errors.New(ps[0])
 		}
 		d.Lanes = lanes.Lanes
 	} else if !missing(err) {
@@ -63,56 +60,106 @@ func readDeclares(manifest *workspace.Pack, read func(string) ([]byte, error)) (
 		if err != nil {
 			return nil, fmt.Errorf("%s: %v", LabelsFile, err)
 		}
-		if labels.Namespace != id && labels.Namespace != ReservedNamespace {
-			return nil, fmt.Errorf("%s's namespace is %s: a pack's labels use its own id (%s), or bonsai for Bonsai's own packs",
-				LabelsFile, quote(labels.Namespace), id)
-		}
-		seen := map[string]bool{}
-		for _, l := range labels.Labels {
-			if !strings.HasPrefix(l.Name, labels.Namespace+".") {
-				return nil, fmt.Errorf("%s's label %s is not in its namespace %s", LabelsFile, quote(l.Name), labels.Namespace)
-			}
-			if seen[l.Name] {
-				return nil, fmt.Errorf("%s defines the label %s twice", LabelsFile, quote(l.Name))
-			}
-			seen[l.Name] = true
+		if ps := labelsProblems(labels, manifest.ID); len(ps) > 0 {
+			return nil, errors.New(ps[0])
 		}
 		d.Labels = labels
 	} else if !missing(err) {
 		return nil, fmt.Errorf("%s is %v", LabelsFile, err)
 	}
+	if ps := documentsProblems(d.Documents); len(ps) > 0 {
+		return nil, errors.New(ps[0].text)
+	}
+	if ps := protectedProblems(d.Protected); len(ps) > 0 {
+		return nil, errors.New(ps[0].text)
+	}
+	return d, nil
+}
+
+// lanesProblems are a lanes.yaml's problems its schema cannot say: each lane's name once.
+func lanesProblems(lanes *format.Lanes) []string {
+	var out []string
 	seen := map[string]bool{}
-	for i, k := range d.Documents {
+	for _, l := range lanes.Lanes {
+		if seen[l.Name] {
+			out = append(out, fmt.Sprintf("%s defines the lane %s twice", LanesFile, quote(l.Name)))
+		}
+		seen[l.Name] = true
+	}
+	return out
+}
+
+// labelsProblems are a labels.yaml's problems its schema cannot say (contract §5.1): its namespace is the pack's own
+// id or bonsai, and each label's name starts with the namespace and a dot, once.
+func labelsProblems(labels *format.Labels, id string) []string {
+	var out []string
+	if labels.Namespace != id && labels.Namespace != ReservedNamespace {
+		out = append(out, fmt.Sprintf("%s's namespace is %s: a pack's labels use its own id (%s), or bonsai for Bonsai's own packs",
+			LabelsFile, quote(labels.Namespace), id))
+	}
+	seen := map[string]bool{}
+	for _, l := range labels.Labels {
+		switch {
+		case !strings.HasPrefix(l.Name, labels.Namespace+"."):
+			out = append(out, fmt.Sprintf("%s's label %s is not in its namespace %s", LabelsFile, quote(l.Name), labels.Namespace))
+		case seen[l.Name]:
+			out = append(out, fmt.Sprintf("%s defines the label %s twice", LabelsFile, quote(l.Name)))
+		}
+		seen[l.Name] = true
+	}
+	return out
+}
+
+// itemProblem is a problem of one item of a pack.yaml list (documents, protected): the item's index and the sentence.
+type itemProblem struct {
+	item int
+	text string
+}
+
+// documentsProblems are the problems of pack.yaml's document kinds that their schema cannot say: each kind's name
+// once and none of Bonsai's own kinds (DocKinds' bonsai rows) nor protocols (bonsai.yaml's documents key for the
+// protocols folder), exactly one of path and file, each a project path, and an id pattern Go's regexp reads.
+func documentsProblems(docs []format.PackDocument) []itemProblem {
+	var out []itemProblem
+	seen := map[string]bool{}
+	for i, k := range docs {
 		where := fmt.Sprintf("pack.yaml's documents item %d (%s)", i+1, k.Kind)
+		add := func(f string, args ...any) { out = append(out, itemProblem{i, where + fmt.Sprintf(f, args...)}) }
 		switch {
 		case workspace.BonsaiKind(k.Kind) || k.Kind == "protocols":
-			return nil, fmt.Errorf("%s takes the name of Bonsai's own %s; a pack's kind has a name of its own", where, k.Kind)
+			add(" takes the name of Bonsai's own %s; a pack's kind has a name of its own", k.Kind)
 		case seen[k.Kind]:
-			return nil, fmt.Errorf("%s: the kind is declared twice", where)
+			add(": the kind is declared twice")
 		case (k.Path == nil) == (k.File == nil):
-			return nil, fmt.Errorf("%s has %s: a kind is a folder (path) or one file (file)", where,
+			add(" has %s: a kind is a folder (path) or one file (file)",
 				map[bool]string{true: "neither path nor file", false: "both path and file"}[k.Path == nil])
 		}
 		seen[k.Kind] = true
 		for _, p := range []*string{k.Path, k.File} {
 			if p != nil {
 				if err := workspace.CheckRelPath(*p); err != nil {
-					return nil, fmt.Errorf("%s: %v", where, err)
+					add(": %v", err)
 				}
 			}
 		}
 		if k.ID != nil {
 			if _, err := regexp.Compile(*k.ID); err != nil {
-				return nil, fmt.Errorf("%s's id pattern %s is not a regular expression Bonsai reads: %v", where, quote(*k.ID), err)
+				add("'s id pattern %s is not a regular expression Bonsai reads: %v", quote(*k.ID), err)
 			}
 		}
 	}
-	for _, g := range d.Protected {
+	return out
+}
+
+// protectedProblems are the problems of pack.yaml's protected globs: each project-relative with forward slashes.
+func protectedProblems(globs []string) []itemProblem {
+	var out []itemProblem
+	for i, g := range globs {
 		if strings.HasPrefix(g, "/") || strings.ContainsAny(g, `\:`) {
-			return nil, fmt.Errorf("pack.yaml's protected glob %s is not project-relative with forward slashes", quote(g))
+			out = append(out, itemProblem{i, fmt.Sprintf("pack.yaml's protected glob %s is not project-relative with forward slashes", quote(g))})
 		}
 	}
-	return d, nil
+	return out
 }
 
 // ReservedNamespace is the label namespace Bonsai keeps for itself and its own packs (contract §5.1, §5.6).
