@@ -1,45 +1,36 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 10 Oct 2026 at 12:29, when Rohan closed the session ("find a good stop point
-for this session. and then wrap up. we will continue in next fresh session. also update the roadmap once done"): every
-5.1 piece landed, 5.6 and 5.7 approved, the Go toolchain at go1.27.2, his roadmap at version 33; the 5.1 end verifier
-was stopped part-way and runs again, fresh, at the next session's start (`records/runs/R-2026-10-10-*`).
+Rewritten, never appended. Last rewritten 10 Oct 2026 at 14:36: **5.1 is done** (its second fresh verifier passed it
+at 14:30, all 21 checks standing; `records/runs/R-2026-10-10-5.1-verify.md`), and **5.2 has started**: 5.2.0, 5.2.1
+and 5.2.2 are being built side by side.
 
 ## In short
 
 Bonsai is being rebuilt as one small Go program that gives every project the same formats, packs, guards, recorder and
-proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). **Part 0 and all six parts of the walking skeleton
-are done; the skeleton's last fresh verifier passed it. At the gate (9 Oct) Rohan chose path (a), the full Bonsai
-1.0. He approved the plan for step 5, `design/plan-5.md`, on 9 Oct; step 5.1 (formats and engine to 1.0, 30-47 h,
-re-ask at 61): every piece, 5.1.0 to 5.1.10, has landed; its end verifier runs next. The sections of 5.2 to 5.7 are all
-written and approved (5.6's and 5.7's on 10 Oct), so every part of step 5 has its plan.** The gate report is `records/gate-skeleton.md`. Everything below is on `main`, pushed.
+proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). Part 0 and all six parts of the walking skeleton
+are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) Rohan chose path (a), the full Bonsai 1.0, and
+approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5.7, is written and approved.
 
-- **Part 0, the formats** (`3770d04`, now set 3 at `3a1f195`): `formats/` holds a JSON Schema for each of the
-  contract's ten formats, an example of each, 116 trick files with their format-0 and format-1 outcomes in
-  `expect.json`, a raw-byte manifest (138 files) and a Go test.
-- **Part 1, the clear-out** (`17f2938`): the old product's code gone (358 files; 0.4.3 stays at its tag); CI has
-  `test` (Linux), `windows`, `lint`, `govulncheck` (pinned to `v1.7.0`) and CodeQL; `release.yml` can only build.
-- **Part 4a, the test pack**: `LastStep/bonsai-test-pack`, public, commits A `5062053`, B `ab09e4b`, C `abfb5de`, D
-  `1d4f46f`; `main` at D.
-- **Part 2, the reader** (`3a1f195`): the format-1 reader without a YAML library, reaching all 116 format-1 outcomes;
-  `bonsai.yaml`, `pack.yaml`, the lock; `bonsai status [--json]`.
-- **Part 3, the engine** (`ee50971`): `bonsai init`, `update`, `check`; staged writes, the lock last; a hook-line
-  change refused (exit 4).
-- **Part 5, the hook path** (`33a6122`): `bonsai hook guard`, one rule, failing closed under every fault.
-- **Part 4b, packs as plugins** (`54b4fdd`): each locked pack installed at project scope at its commit; two projects
-  and a worktree each load their own commit, on WSL and Windows.
-- **Part 6, the gate report** (`5633721`): spec §15's list measured on both sides, the twelve checks, the four stop
-  lines, the findings step 5 inherits (its section 5, by step 5 part), a three-case `claude plugin eval` of the test
-  pack. The last verifier re-ran the tests on both sides, part 3's scripted checks on the final build, check 3's
-  Windows half and check 11 on WSL, and passed every part, check and stop line; its findings are fixed (one spec line
-  named a user folder: fixed forward in `5633721`).
-- Tests at `5633721` (the Go code is `54b4fdd`'s), run by the last verifier: WSL 773 runs (2 skipped, Windows-only
-  tests) and 779 with the fault tag; natively on Windows 777 (1 skipped, symbolic links) and 783; `go vet` clean.
+- **Part 0, the formats** (`3770d04`): a JSON Schema for each format, examples, trick files, a raw-byte manifest and
+  its Go test. Now set 5 (`d11f704`); 5.2.0 makes set 6.
+- **The skeleton, parts 1-6** (`17f2938` to `5633721`): the clear-out, the format-1 reader, the engine (`init`,
+  `update`, `check`), the hook path (`hook guard`), packs as Claude Code plugins, the gate report. The test pack
+  `LastStep/bonsai-test-pack` is public, `main` at G (`cf356d3`).
+- **Step 5.1, formats and engine to 1.0: done** (code `11d871c`; verified on `5fa9bd8`). 5.1.0-5.1.10: consent to code
+  (`--allow-exec`), the format-0 reader, formats sets 4 and 5, a Go type for every format and `check --schema`, every
+  command's `--json` and error words, the lock's `declares`, `check` and `status` to 1.0 (33 check words, `--full`,
+  `--active`), `unlink` and taking a pack out, `check --write`'s tasks table, `check --pack`, the generated reference
+  page `docs/reference/lists.md` and `bonsai --help --json`; the toolchain at go1.27.2. Two fresh verifiers (12:02-12:27
+  stopped at the last session's close, 14:06-14:30) passed all 21 checks of "5.1 done", no defect. Tests on `5fa9bd8`:
+  WSL 2065 runs plain and 2071 tagged (2 skipped, Windows/macOS-only), Windows natively 2069 and 2075 (1 skipped,
+  symbolic links); vet clean; CI green on both sides.
+- **Step 5.2, the recorder, logs and asks: started 14:34** (25-37 h, re-ask at 48).
 
-Hours (AI, builder and verifier runs, from the run reports): part 0 45 minutes against 6-10 h; the skeleton, parts
-1-6, 6 h 18 min against 30-47 h (stop line 61 h; the gate report says 6 h 17 min, its hours filled a minute before
-its last round ended). Windows-only failures about 18 minutes against 8 h. Option rounds asked of Rohan inside the
-skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
+Hours: part 0 45 minutes; the skeleton 6 h 18 min of 30-47 h. **5.1: 866 minutes (14 h 26 min) of its 61 h re-ask
+line**, under its 30-47 h estimate. 5.2 so far: 66 minutes (55 of planning on 9 Oct, 11 of today's start check).
+5.5's planning 84 minutes, 5.6's 67, 5.7's 117 (84 of planning and review, 33 of the Go switch). Step 5's Windows-only
+tally: 0 (of 8 h). Option rounds: one in 5.1, none in 5.2. No change to Mimas or the studio's repo. No stop line
+crossed.
 
 ## Rohan's decisions
 
@@ -113,106 +104,72 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `release.yml` is disabled (`disabled_manually`) and can only build; no repository secret. The `release` environment
   and a new tap token wait for step 5.7.
 - Ruleset `main-protection`: blocks force pushes and deletion only.
-- `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
+- `LastStep/bonsai-test-pack`: public, `main` at G (`cf356d3`), no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: the 5.1 end verifier, then 5.2
+## Now: step 5.2
 
-`design/plan-5.md`, "Step 5.1". Landed, each with CI green (run reports `records/runs/R-2026-10-0*-5.1.*`):
-- **5.1.0** (`6a3a419`): `TestEachFaultBlocks` no longer races a 200 ms budget (test file only).
-- **5.1.1** (`6c6fc33`): consent to code: `--allow-exec` real for `init` and `update`; test-pack commits E and F; its
-  fresh verifier passed the fix round.
-- **5.1.2** (`c4816eb`): the format-0 reader, a hand port of `yaml.mjs` at `4a05eac`; its fresh verifier passed it.
-- **5.1.3** (`254572f`; set 4 is `22dd08a`): formats set 4 (eight new schemas, 125 trick cases, the schema-compare
-  test); its fresh verifier passed it.
-- **5.1.4a** (`37125a4`): a Go type for each of the eighteen formats; `check --schema`.
-- **5.1.4b** (`c2864c0`): every command's `--json` in set 4's shapes; the error words; one flag-and-exit table.
-- **5.1.5** (`a9148e4`): the lock's `declares`, `format0` and `path`; the moved tag refused; the active-task function;
-  the block; `bonsai.yaml` with every field; `check` offline from the lock.
-- **5.1.6** (`107f843`): `check` and `status` to 1.0. `format.CheckWords` holds 33 words (24 findings, 9 warnings),
-  one test walking every word, every `next.do` an exact `run: <command>` checked against the flag table; a pack's local
-  `source` in `bonsai.yaml` is an `absolute-path` finding; `status --json` with every field, `--full` (newer tags,
-  plugins, Claude Code's version) and `--active`; the Claude Code floor 2.1.294; this machine's `workspace.json`;
-  the forged-lock loose end fixed. Tests: WSL 1976 run (2 skipped), Windows 1980 (1 skipped).
-- **5.1.7** (`f070474`): `bonsai unlink`; `update` taking a pack out; the project-scope uninstall after Bonsai's
-  write (measured on both sides); `update` removing this checkout's stale records under an older marketplace name;
-  trust's `waiting` in every output and a `plugin-trust` warning; Claude Code's key order kept (`git diff` holds only
-  Bonsai's lines on both sides); check 12's `git revert` run on both sides (the record stays disabled, no plugin
-  loads); `TestPluginScopeOnly`. Tests: WSL 2012 run (2 skipped), Windows 2016 (1 skipped).
+`design/plan-5.md`, "Step 5.2". The start check (Opus, read-only, 14:06-14:17; `R-2026-10-10-5.2.0-formats.md`) found
+that 5.2.0, 5.2.1 and 5.2.2 share no source file, so all three run side by side from `5fa9bd8`, each in its own
+worktree (`~/Servers/Bonsai-5.2.0`, `-5.2.1`, `-5.2.2`), briefed at 14:34:
+- **5.2.0** (Sonnet): formats **set 6** (not 5: 5.1.10 took set 5): the log's `bonsai_path` and `bonsai_sha256`, the
+  `asks` and `logs` outputs, the sessions row's `subagent` (the old header still read), the log's events and
+  categories as a Go table, the new error words, the description fixes 5.1 placed, `check`'s `notes` and unlink's
+  left-in-place. About 2-3 h with these, against the section's 1-2.
+- **5.2.1** (Opus): the redactor, `internal/redact/`, with its scripted differential against the studio's at
+  `25b6450` (read-only); a fresh Opus verifier after it.
+- **5.2.2** (Opus): one append path, the reader, the salt, the main checkout's `local/`, `bonsai --version` with its
+  commit.
 
-- **5.1.8** (`c0d7cd6`, 10 Oct): `check --write` rebuilds `.bonsai/tasks.md` from format-0 and format-1 tasks (the
-  active task, newest id first), in the main checkout only (a worktree exits 4 naming it); with `--write` exit 0 or 3;
-  a stale table the `tables` warning, never a finding (in a worktree, the main checkout's table is judged); `init`
-  writes both tables. Tests: WSL 2018 run (2 skipped), Windows 2022 (1 skipped, twice tagged).
+Then, as "The order" says: 5.2.3 (the sessions table and `bonsai logs`) after 5.2.0 and 5.2.2 land, beside the rest of
+5.2.1; 5.2.6a (the generated-files page) after 5.2.0, beside them; 5.2.4 (the recorder; a fresh verifier) and 5.2.5
+(asks and `log append`; it may run beside 5.2.4, the flag table being one file per word) after 5.2.1 and 5.2.3;
+5.2.6b (cleaning) last; then the 5.2 end verifier. Each piece's brief carries the start check's items for it (in
+5.2.0's report). Each lands by `merge --ff-only` after its proof, the orchestrator pushing and reading CI.
 
-- **5.1.9** (`a034db5`, 10 Oct): `bonsai check --pack <folder>`, eleven words in `format.PackCheckWords` (a pack's
-  files held to their formats as written, every key commented, template fields tables, closed lists, deny `why`s, no
-  `plugin.json` version, the block's 40 lines, document kinds, protected globs, no `bash` by name, `runs`); test-pack
-  commit G (`cf356d3`, documentation only), pushed. Tests: WSL 2047 run, Windows 2051.
-- **5.1.10** (`8a45729`, 10 Oct): `docs/reference/lists.md`, generated by `go generate ./...` from the code's tables,
-  held by `TestPageIsCurrent`; `bonsai --help --json` (`bonsai.help/1`, every word, flag, exit code and error word).
-  **Formats set 5** (the help format added); **5.2.0's set is now 6**, not 5 as the plan's 5.2 section says.
-- **The Go toolchain** (`3b6d599`, 10 Oct, Rohan: "we can go with go 1.27 latest"): `toolchain go1.27.2` (the `go
-  1.25.0` line kept); `govulncheck` `v1.8.0` (33 standard-library findings on go1.25.9, none now), `golangci-lint`
-  `v2.14.0`; CI runs 1.27.2. Counted in 5.7's hours (5.7.0's bump, done early).
+**Carried into later briefs:** 5.6.5's brief counts a tag as a release only once its release is published; 5.7's runs
+so far (84 minutes of planning and review, 33 of the Go switch) go into 5.7.0's run report; the later sections' formats
+set numbers move by one (5.4.0's set 7, 5.6.0's 9); 5.7.0 checks the toolchain still holds.
 
-**The next session starts here** (nothing is running; `main` is pushed):
-1. **A fresh 5.1 end verifier** (Opus), on `main`'s newest commit (5.1's code is unchanged since `11d871c`; later
-   commits are design and records). Its brief is the 12:04 entry of `records/runs/R-2026-10-10-5.1-verify.md`, in full:
-   "5.1 done" checks 1-21 in its own clones on both sides, the go1.27.2 switch, the items the run reports placed for
-   it, real Claude Code only through `claude-here` in scratch targets with the settings hashes before and after. The
-   first verifier was stopped when Rohan closed the session, after passing every check it finished (no defect found);
-   the next one finishes it: 6 on Windows, 7, 8, 19's timing on a quiet machine, 21's Mimas and studio look and private
-   grep, and the placed items it lists, plus check 10 on the newest commit; the passed checks stand as evidence on the
-   same code. Keep Windows' `claude.exe` (in `%USERPROFILE%\.local\bin`) off the PATH: the first verifier's filter
-   missed it once (read-only `plugin list` calls; the settings file unchanged).
-   On PASS: 5.1 is done; `STATE.md` rewritten; the roadmap's 5.1 card marked done. On FAIL: the fixes it names, then a
-   verifier again.
-2. **Then 5.2** (`design/plan-5.md`, "Step 5.2", approved 9 Oct; "5.2 starts once 5.1's end verifier has passed 5.1"):
-   5.2.0, 5.2.1 and 5.2.2 side by side once the orchestrator has checked their files against what 5.1 landed. **5.2.0's
-   formats set is 6**, not 5 as the section says (5.1.10 took set 5 for `bonsai.help/1`). Rohan's look on the log's
-   field names is done (10 Oct, "Both fine"): `bonsai_path` and `bonsai_sha256` stand. 5.1.10's hand-off: the log's
-   events and categories as a Go table registered on the `log` format, the reference page's two "not built yet" lists
-   filled, `go generate ./...`.
-3. **Carried into later briefs:** 5.6.5's brief counts a tag as a release only once its release is published (5.7's
-   review; 5.7's section names it in "Stale or in tension"); 5.7's runs so far (84 minutes of planning and review, 33
-   of the Go switch) go into 5.7.0's run report.
+**Placed for later by 5.1 and its verifiers:**
+- 5.2.3: the sessions rows in `check --write` and its help's "joins in step 5.2.3"; a missing `sessions.md`.
+- 5.2.4: `secret` out of `checkLater` into the check table (the memory secret scan); the guard's first call over spec
+  §3's 5 ms (p50 7.2-7.5 ms on the final build, about 1 ms of it from go1.27.2).
+- 5.3: the guard judging `unlink` as a person's under (ii); guarding `lock.json` (a forged lock whose files match its
+  hashes is seen by nothing today); the toolchain's millisecond on the first call in its timing bar.
+- 5.5: `needs.mcp` and a lock `ref` for the moved-tag gap (moved here from 5.2.0 at its start check); the operating
+  skill covering `unlink` and taking a pack out; 5.1.9's limits (a template with no fields table is not seen;
+  `plugin.json`'s `name` against the pack id checked nowhere; plugin hooks given as a path not walked by `pack-bash`);
+  the "the pack  (...)" wording at `init --source` (`internal/engine/fetch.go`); **the marketplace observation**: in
+  a scripted session Claude Code itself installed a pack plugin under its new marketplace name and ran its hook before
+  Bonsai's `update --allow-exec`, so Bonsai's flag gates only Bonsai's own install; whether a person's trusted session
+  does the same needs a person.
+- 5.6: the machine folder `unlink` leaves (`stranded`); `install.json`'s keys; spec §10's Windows personal-memory
+  warning (5.6.3).
 
-Placed by 5.1.6, 5.1.7 and 5.1.8 for later: 5.2.3 (the sessions rows in `check --write`, its help's
-"joins in step 5.2.3" taken out); 5.2.0's set 5 (`uninstalled` in `changes.plugins[].result`; unlink's "left in
-place" in JSON; `needs.mcp`; the lock's `declares` holding `needs`, `hooks` and `deny`; a place for `check`'s
-notes; `status`'s `mode: full` and `checks`' layout; a lock `ref` for the moved-tag gap; the lock README's wording on
-an old lock's `path`; `bonsai --help --json`'s shape with 5.1.10); 5.1.8 (the tables in `TestUnlink`); 5.3 (the guard
-judging `unlink` as a person's under (ii)); 5.5 (the operating skill covers `unlink` and taking a pack out); the 5.1 end verifier and
-5.2.0's start check (a plugin at the same commit and folder asked for `--allow-exec` again when the marketplace name
-moves: kept strict); 5.6 (the machine folder `unlink` leaves, with `stranded`; `install.json`'s keys `path`,
-`version`, `sha256`; the spec §10 Windows personal-memory warning, in no 5.1 piece); 5.1.10 (the
-new lists: `CheckWords` with kinds, `checkLater`, `status`'s needs kinds, `checks.claude_code.state`, Claude Code's
-measured key orders, the plugin results, `plugin-trust`).
-
-How this session runs, for the next orchestrator: pieces and later parts' plans side by side; every brief carries its
-rules in full; each builder rebases on `main` before it lands; a part's section goes through a fresh review, fixes and
-a Haiku audit before it lands, then to Rohan under his (B); times in the run reports come from `date`; no test or
-script reaches the real `claude` except a builder's scripted run in a scratch target through `claude-here`, with the
-settings hashes before and after.
-
-5.1's hours: 842 minutes (14 h 2 min) of 61 h, the stopped verifier's 25 included. 5.5's planning: 84
-minutes. 5.6's planning: 67 minutes. 5.7's so far: 117 minutes (84 of planning and review, 33 of the Go switch), of
-24 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
+How a session runs, for the next orchestrator: pieces and later parts' plans side by side; every brief carries its
+rules in full (this session wrote them to a scratch file each builder reads first); each builder rebases on `main`
+before it lands; times in the run reports from `date`; no test or script reaches the real `claude` except through
+`claude-here` in a scratch target, with the settings hashes before and after; Windows' `claude.exe` kept off the PATH
+of every other Windows run. Mimas's git checkout is the `MimasGame` folder (the `Mimas` folder beside it is the old
+product's Plastic workspace).
 
 ## Waiting on Rohan
 
-- Nothing now. Every plan section is approved, and his looks are done (10 Oct).
+- **Claude Code's login on Windows has lapsed again** (the 5.1 verifier's Windows sessions ended "OAuth session
+  expired"). 5.2.4 runs a real Windows session (or reads the log of his 5.3 session), so a login before then helps.
+- **For his note:** in the verifier's first Windows session (14:21), Claude Code's failed login refresh rewrote
+  `%USERPROFILE%\.claude\.credentials.json`, which is not on the accepted list of writes; its contents were not read.
+  The user settings files are unchanged on both sides.
 - Later, as the plan has them: at 5.4, a pre-release `bonsai` in WSL (about 5 minutes); at 5.5, reading the `workflow`
   repo and making it public; at 5.7, the release settings, the `rc.1` tag and his approval, the installs, the trial's
-  analysis, his own trial on a fresh project, his word for 1.0 (about 1 h 45 min in all, 5.7's section).
+  analysis, his own trial on a fresh project, his word for 1.0 (about 1 h 45 min in all).
 - Whenever he likes: turn GitHub Pages off (the old website).
 
 ## Loose ends
 
-- Rohan's roadmap artifact is at version 33 (10 Oct, on his word at the session's close): Bonsai's cards for 5.1
-  (built, its verifier next), 5.2 (up next), 5.3-5.7, the 1.0 trial and the after-1.0 items; the studio's cards
-  untouched. Next update at 5.1's end (plan item 9).
+- Rohan's roadmap artifact: Bonsai's cards updated at 5.1's end (5.1 done, 5.2 under way); the studio's cards
+  untouched. Next update at 5.2's end (plan item 9).
 - Another of Rohan's sessions also works in `~/Servers/Bonsai` (10 Oct: two commits taking Jev out of Bonsai's plans,
   pushed). Read `origin/main`'s new commits before each push, and never stage a file this session did not write.
 
