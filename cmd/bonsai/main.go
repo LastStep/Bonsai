@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -22,6 +23,37 @@ import (
 // version is the build's version. GoReleaser sets it with `-ldflags "-X main.version=<version>"`
 // (.goreleaser.yaml), as does `make build VERSION=<version>`; a plain `go build` leaves "dev".
 var version = "dev"
+
+// readBuildInfo reads what Go stamped into this build (a variable so a test can stand in a build).
+var readBuildInfo = debug.ReadBuildInfo
+
+// versionLine is bonsai --version's line: the version and the commit the build was made from, as Go stamped it
+// (vcs.revision, its first 12 hex characters, and +modified when the tree had changes: vcs.modified), "bonsai dev
+// (commit 0123456789ab)"; or "(no commit stamp)" when the build carries none, so a binary whose hash a report quotes
+// can be tied to its commit or is seen not to be (design/plan-5.md, 5.2.2 note 7). Go leaves the stamp out of a
+// build with -buildvcs=false, a build outside a git checkout, and a build in a git worktree by a Go older than 1.27,
+// which took only a .git folder for a checkout; go version -m <binary> shows the same stamp.
+func versionLine() string {
+	stamp := "no commit stamp"
+	if bi, ok := readBuildInfo(); ok && bi != nil {
+		rev, modified := "", false
+		for _, s := range bi.Settings {
+			switch s.Key {
+			case "vcs.revision":
+				rev = s.Value
+			case "vcs.modified":
+				modified = s.Value == "true"
+			}
+		}
+		if len(rev) >= 12 && strings.Trim(rev, "0123456789abcdef") == "" {
+			stamp = "commit " + rev[:12]
+			if modified {
+				stamp += "+modified"
+			}
+		}
+	}
+	return "bonsai " + version + " (" + stamp + ")\n"
+}
 
 func main() {
 	pluginCLI = engine.ClaudeCLI{}
@@ -126,7 +158,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 func runBonsai(args []string, stdout, stderr io.Writer) int {
 	switch {
 	case len(args) == 1 && args[0] == "--version":
-		return write(stdout, fmt.Sprintf("bonsai %s\n", version))
+		return write(stdout, versionLine())
 	case len(args) == 1 && (args[0] == "--help" || args[0] == "-h"):
 		return write(stdout, usage())
 	}

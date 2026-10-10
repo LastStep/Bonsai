@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"debug/buildinfo"
 	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -24,7 +27,10 @@ func asciiOnly(t *testing.T, what, s string) {
 }
 
 // The words this build answers, and the refusals of everything else: exit 2, ASCII lines on stderr, a next step.
+// The build stands in as one with no commit stamp, so --version's line is the same wherever the test runs.
 func TestRun(t *testing.T) {
+	defer func(r func() (*debug.BuildInfo, bool)) { readBuildInfo = r }(readBuildInfo)
+	readBuildInfo = func() (*debug.BuildInfo, bool) { return &debug.BuildInfo{}, true }
 	cases := []struct {
 		name     string
 		args     []string
@@ -33,7 +39,7 @@ func TestRun(t *testing.T) {
 		inStderr string
 		next     string
 	}{
-		{"version", []string{"--version"}, 0, "bonsai dev\n", "", ""},
+		{"version", []string{"--version"}, 0, "bonsai dev (no commit stamp)\n", "", ""},
 		{"no command", nil, 2, "", "bonsai: no command given:", "\nnext: run `bonsai --help`"},
 		{"unknown command", []string{"ladder"}, 2, "", `bonsai: "ladder" is not a command yet:`, "\nnext: run `bonsai --help`"},
 		{"version with more", []string{"--version", "now"}, 2, "", "bonsai: --version takes no other argument:", "\nnext: run `bonsai --help`"},
@@ -68,6 +74,83 @@ func TestRun(t *testing.T) {
 			}
 			asciiOnly(t, "stderr", out)
 		})
+	}
+}
+
+// --version names the commit Go stamped, its first 12 hex characters, with +modified for a tree that had changes;
+// a build with no stamp, or one Bonsai does not read, says it has none.
+func TestVersionLine(t *testing.T) {
+	defer func(r func() (*debug.BuildInfo, bool), v string) { readBuildInfo, version = r, v }(readBuildInfo, version)
+	const rev = "0123456789abcdef0123456789abcdef01234567"
+	for _, c := range []struct {
+		name     string
+		settings []debug.BuildSetting
+		ok       bool
+		want     string
+	}{
+		{"stamped", []debug.BuildSetting{{Key: "vcs", Value: "git"}, {Key: "vcs.revision", Value: rev},
+			{Key: "vcs.modified", Value: "false"}}, true, "bonsai 1.0.0 (commit 0123456789ab)\n"},
+		{"modified", []debug.BuildSetting{{Key: "vcs.modified", Value: "true"}, {Key: "vcs.revision", Value: rev}}, true,
+			"bonsai 1.0.0 (commit 0123456789ab+modified)\n"},
+		{"no stamp", []debug.BuildSetting{{Key: "-buildvcs", Value: "false"}}, true, "bonsai 1.0.0 (no commit stamp)\n"},
+		{"no build information", nil, false, "bonsai 1.0.0 (no commit stamp)\n"},
+		{"a revision too short", []debug.BuildSetting{{Key: "vcs.revision", Value: "0123abc"}}, true, "bonsai 1.0.0 (no commit stamp)\n"},
+		{"a revision not hex", []debug.BuildSetting{{Key: "vcs.revision", Value: "0123456789ab\u00e9" + rev}}, true,
+			"bonsai 1.0.0 (no commit stamp)\n"},
+	} {
+		version = "1.0.0"
+		readBuildInfo = func() (*debug.BuildInfo, bool) { return &debug.BuildInfo{Settings: c.settings}, c.ok }
+		if got := versionLine(); got != c.want {
+			t.Errorf("%s: %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// A real build's --version names the commit the binary carries, as Go's own reader of a binary finds it (go version
+// -m reads the same): from a git checkout, its commit; and a build made with -buildvcs=false says it has none.
+func TestVersionNamesTheBuildsCommit(t *testing.T) {
+	normal, _ := bonsaiBuilds(t)
+	unstamped := filepath.Join(t.TempDir(), "bonsai")
+	if runtime.GOOS == "windows" {
+		unstamped += ".exe"
+	}
+	goTool, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out, err := exec.Command(goTool, "build", "-buildvcs=false", "-o", unstamped, ".").CombinedOutput(); err != nil {
+		t.Fatalf("building with -buildvcs=false: %v\n%s", err, out)
+	}
+	for _, c := range []struct{ bin, want string }{{normal, ""}, {unstamped, "bonsai dev (no commit stamp)\n"}} {
+		bi, err := buildinfo.ReadFile(c.bin)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := c.want
+		if want == "" {
+			stamp := "no commit stamp"
+			rev, modified := "", ""
+			for _, s := range bi.Settings {
+				switch s.Key {
+				case "vcs.revision":
+					rev = s.Value
+				case "vcs.modified":
+					modified = s.Value
+				}
+			}
+			if len(rev) >= 12 {
+				stamp = "commit " + rev[:12]
+				if modified == "true" {
+					stamp += "+modified"
+				}
+			}
+			want = "bonsai dev (" + stamp + ")\n"
+			t.Logf("the test build: %s", strings.TrimSpace(want))
+		}
+		out, err := exec.Command(c.bin, "--version").Output()
+		if err != nil || string(out) != want {
+			t.Errorf("%s --version: %q, %v; want %q", filepath.Base(filepath.Dir(c.bin)), out, err, want)
+		}
 	}
 }
 
