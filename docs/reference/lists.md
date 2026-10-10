@@ -111,7 +111,7 @@ error words.
 | `needs-yes` | person | the command writes, and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing |
 | `needs-allow-exec` | person | the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written |
 | `conflicts` | person | files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt |
-| `ask-not-open` | agent | bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved: the message says which, and nothing was written (exit 4) |
+| `ask-not-open` | agent | bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved, or ask --status names a key that has no ask: the message says which, and nothing was written (exit 4) |
 | `answer-own-session` | person | the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4) |
 | `label-not-defined` | agent | bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2) |
 | `session-not-found` | agent | bonsai logs --session matches no session in the log, or matches several: the message names the matches (exit 4) |
@@ -238,11 +238,11 @@ error words.
 
 | Kind | Where | What | Written by | Default | Never cleaned | Cleaned | Takes a rule |
 |---|---|---|---|---|---|---|---|
-| `log` | .bonsai/local/log/ | the log, one file per session | the recorder, from the hooks, one line at a time | 30 days after a file's last line | an open session's file, or one holding an ended session or subagent run with no row yet in .bonsai/sessions.md | at a session's end, after its session_end line, within a budget of 1 second | yes |
-| `asks` | .bonsai/local/asks/ | questions for a person and their answers | bonsai ask, one day file a day | kept | a day file holding an open ask | at a session's end, within the same budget; by default nothing, as the default keeps | yes |
-| `ladder` | .bonsai/local/ladder/ | ladder results, one per task | the ladder runner (step 5.4), one file per task | 7 days after the result's finished | the result of a task that is not done or cut | at a session's end, and by the ladder runner after each run | yes |
+| `log` | .bonsai/local/log/ | the log, one file per session | the recorder, from the hooks, one line at a time | 30 days after a file's last line | an open session's file, or one holding an ended session or subagent run with no row yet in .bonsai/sessions.md | at a session's end, after its session_end line, within a budget of 1 second, oldest first; what the budget leaves waits for the next end | yes |
+| `asks` | .bonsai/local/asks/ | questions for a person and their answers | bonsai ask and bonsai answer (and the ladder runner from step 5.4, as its Bless), one day file a day | kept | a day file holding an open ask, or the answer or withdrawal of an ask whose filing stays (else it would read open again) | at a session's end, within the same budget; by default nothing, as the default keeps | yes |
+| `ladder` | .bonsai/local/ladder/ | ladder results, one per task | the ladder runner (step 5.4), one file per task | 7 days after the result's finished | the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done) | at a session's end, and by the ladder runner after each run | yes |
 | `run` | the run reports' folder (documents.run) | run reports, committed history | the agent that did the work, in the run report format | kept | any, by Bonsai: past a rule, bonsai check lists them and a person deletes them | never, by Bonsai | yes |
-| `sessions` | .bonsai/sessions.md | rows of the sessions table | bonsai check --write, from the log | kept | rows of an open task | in bonsai check --write, the only writer of the table | yes |
+| `sessions` | .bonsai/sessions.md | rows of the sessions table | bonsai check --write, from the log | kept | rows of a task that is not done or cut (none is never protected), and rows whose span is still in the log (the next write would add them again) | in bonsai check --write, the only writer of the table | yes |
 | `tasks` | .bonsai/tasks.md | the tasks table | bonsai check --write, from the task files | a rebuild: nothing to clean | - | never: the table is rebuilt whole | no |
 
 ## Bonsai's document kinds

@@ -3,7 +3,7 @@ package format
 // The generated kinds (spec §6, "Generated files"; format review R2.6): every kind of file or row Bonsai or an agent
 // generates in a project, where it lives, how long it is kept by default, and what is never cleaned. GeneratedKinds
 // is the one home of their defaults and their protections: bonsai init writes the defaults into bonsai.yaml's
-// generated: section, the cleaner (step 5.2.6b) and check's warning on run reports read them, and base's
+// generated: section, the cleaner (internal/clean, step 5.2.6b) and check's warning on run reports read them, and base's
 // generated-files skill (until step 5.5 its page, docs/reference/generated-files.md, step 5.2.6a) and the reference page of lists (step 5.1.10) are generated from it. The kinds that take a
 // rule are bonsai.workspace/1's generated properties, in the same order (TestGeneratedKindsAreTheSchemas holds the
 // two equal: a new kind is an addition to the schema, a set change, and an entry here in the same commit).
@@ -37,22 +37,23 @@ var GeneratedKinds = []GeneratedKind{
 		Writer:  "the recorder, from the hooks, one line at a time",
 		Default: "30 days after a file's last line",
 		Never:   "an open session's file, or one holding an ended session or subagent run with no row yet in .bonsai/sessions.md",
-		When:    "at a session's end, after its session_end line, within a budget of 1 second", Rule: true},
+		When:    "at a session's end, after its session_end line, within a budget of 1 second, oldest first; what the budget leaves waits for the next end", Rule: true},
 	{Kind: "asks", Where: ".bonsai/local/asks/", What: "questions for a person and their answers",
-		Writer: "bonsai ask, one day file a day", Default: "kept",
-		Never: "a day file holding an open ask",
+		Writer: "bonsai ask and bonsai answer (and the ladder runner from step 5.4, as its Bless), one day file a day", Default: "kept",
+		Never: "a day file holding an open ask, or the answer or withdrawal of an ask whose filing stays (else it would read open again)",
 		When:  "at a session's end, within the same budget; by default nothing, as the default keeps", Rule: true},
 	{Kind: "ladder", Where: ".bonsai/local/ladder/", What: "ladder results, one per task", KeepDays: days(7),
 		Writer:  "the ladder runner (step 5.4), one file per task",
-		Default: "7 days after the result's finished", Never: "the result of a task that is not done or cut",
-		When: "at a session's end, and by the ladder runner after each run", Rule: true},
+		Default: "7 days after the result's finished",
+		Never:   "the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done)",
+		When:    "at a session's end, and by the ladder runner after each run", Rule: true},
 	{Kind: "run", Where: "the run reports' folder (documents.run)", What: "run reports, committed history",
 		Writer: "the agent that did the work, in the run report format", Default: "kept",
 		Never: "any, by Bonsai: past a rule, bonsai check lists them and a person deletes them",
 		When:  "never, by Bonsai", Rule: true},
 	{Kind: "sessions", Where: ".bonsai/sessions.md", What: "rows of the sessions table",
 		Writer: "bonsai check --write, from the log", Default: "kept",
-		Never: "rows of an open task",
+		Never: "rows of a task that is not done or cut (none is never protected), and rows whose span is still in the log (the next write would add them again)",
 		When:  "in bonsai check --write, the only writer of the table", Rule: true},
 	{Kind: "tasks", Where: ".bonsai/tasks.md", What: "the tasks table",
 		Writer: "bonsai check --write, from the task files", Default: "a rebuild: nothing to clean",

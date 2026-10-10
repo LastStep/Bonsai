@@ -65,7 +65,7 @@ var ErrorWords = []Word{
 	{Word: "needs-allow-exec", Who: "person", Means: "the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written"},
 	{Word: "conflicts", Who: "person", Means: "files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt"},
 	// Asks, answers, the log's append and logs (steps 5.2.3 and 5.2.5).
-	{Word: "ask-not-open", Who: "agent", Means: "bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved: the message says which, and nothing was written (exit 4)"},
+	{Word: "ask-not-open", Who: "agent", Means: "bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved, or ask --status names a key that has no ask: the message says which, and nothing was written (exit 4)"},
 	{Word: "answer-own-session", Who: "person", Means: "the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4)"},
 	{Word: "label-not-defined", Who: "agent", Means: "bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2)"},
 	{Word: "session-not-found", Who: "agent", Means: "bonsai logs --session matches no session in the log, or matches several: the message names the matches (exit 4)"},
