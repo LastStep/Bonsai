@@ -1,8 +1,9 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 10 Oct 2026 at 14:36: **5.1 is done** (its second fresh verifier passed it
-at 14:30, all 21 checks standing; `records/runs/R-2026-10-10-5.1-verify.md`), and **5.2 has started**: 5.2.0, 5.2.1
-and 5.2.2 are being built side by side.
+Rewritten, never appended. Last rewritten 10 Oct 2026 at 16:58. **5.1 is done** (its second fresh verifier passed it
+at 14:30; `records/runs/R-2026-10-10-5.1-verify.md`). **5.2 is under way and paused on Rohan's word** (15:20: "pause
+after the current agents are done. then resume on my go"): 5.2.0, 5.2.2 and 5.2.6a have landed; 5.2.1 is built and
+waits for its fresh verifier; nothing is running. **The next session (or Rohan's go) starts at "Now: step 5.2".**
 
 ## In short
 
@@ -24,12 +25,15 @@ approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5
   stopped at the last session's close, 14:06-14:30) passed all 21 checks of "5.1 done", no defect. Tests on `5fa9bd8`:
   WSL 2065 runs plain and 2071 tagged (2 skipped, Windows/macOS-only), Windows natively 2069 and 2075 (1 skipped,
   symbolic links); vet clean; CI green on both sides.
-- **Step 5.2, the recorder, logs and asks: started 14:34** (25-37 h, re-ask at 48).
+- **Step 5.2, the recorder, logs and asks: under way, paused** (25-37 h, re-ask at 48). Landed: 5.2.0 formats set 6
+  (`cbc34c3`), 5.2.2 appends, the reader and the salt (`0573c0b`), 5.2.6a the generated-files page (`ca3b0ff`); CI
+  green on each. 5.2.1, the redactor, built on its branch (`e9d9d93`), not landed.
 
 Hours: part 0 45 minutes; the skeleton 6 h 18 min of 30-47 h. **5.1: 866 minutes (14 h 26 min) of its 61 h re-ask
-line**, under its 30-47 h estimate. 5.2 so far: 66 minutes (55 of planning on 9 Oct, 11 of today's start check).
+line**, under its 30-47 h estimate. 5.2 so far: 310 minutes (5 h 10 min) of 48 h: 55 of planning on 9 Oct, 11 of the start check, then
+5.2.0 23, 5.2.2 47, 5.2.6a 34, 5.2.1 140.
 5.5's planning 84 minutes, 5.6's 67, 5.7's 117 (84 of planning and review, 33 of the Go switch). Step 5's Windows-only
-tally: 0 (of 8 h). Option rounds: one in 5.1, none in 5.2. No change to Mimas or the studio's repo. No stop line
+tally: about 3 minutes (of 8 h; 5.2.2's over-strict salt test). Option rounds: one in 5.1, none in 5.2. No change to Mimas or the studio's repo. No stop line
 crossed.
 
 ## Rohan's decisions
@@ -107,25 +111,40 @@ crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at G (`cf356d3`), no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## Now: step 5.2
+## Now: step 5.2 (paused; resume on Rohan's go)
 
-`design/plan-5.md`, "Step 5.2". The start check (Opus, read-only, 14:06-14:17; `R-2026-10-10-5.2.0-formats.md`) found
-that 5.2.0, 5.2.1 and 5.2.2 share no source file, so all three run side by side from `5fa9bd8`, each in its own
-worktree (`~/Servers/Bonsai-5.2.0`, `-5.2.1`, `-5.2.2`), briefed at 14:34:
-- **5.2.0** (Sonnet): formats **set 6** (not 5: 5.1.10 took set 5): the log's `bonsai_path` and `bonsai_sha256`, the
-  `asks` and `logs` outputs, the sessions row's `subagent` (the old header still read), the log's events and
-  categories as a Go table, the new error words, the description fixes 5.1 placed, `check`'s `notes` and unlink's
-  left-in-place. About 2-3 h with these, against the section's 1-2.
-- **5.2.1** (Opus): the redactor, `internal/redact/`, with its scripted differential against the studio's at
-  `25b6450` (read-only); a fresh Opus verifier after it.
-- **5.2.2** (Opus): one append path, the reader, the salt, the main checkout's `local/`, `bonsai --version` with its
-  commit.
-
-Then, as "The order" says: 5.2.3 (the sessions table and `bonsai logs`) after 5.2.0 and 5.2.2 land, beside the rest of
-5.2.1; 5.2.6a (the generated-files page) after 5.2.0, beside them; 5.2.4 (the recorder; a fresh verifier) and 5.2.5
-(asks and `log append`; it may run beside 5.2.4, the flag table being one file per word) after 5.2.1 and 5.2.3;
-5.2.6b (cleaning) last; then the 5.2 end verifier. Each piece's brief carries the start check's items for it (in
-5.2.0's report). Each lands by `merge --ff-only` after its proof, the orchestrator pushing and reading CI.
+`design/plan-5.md`, "Step 5.2". Run reports `records/runs/R-2026-10-10-5.2.*`; 5.2.0's holds the part's running total
+and the start check (14:06-14:17), whose items for each later piece go in its brief.
+- **Landed** (each on green check 10 on both sides, CI and the orchestrator's read of the diff; the 5.2 end verifier
+  covers them): **5.2.0** (Sonnet, 23 min): formats **set 6**: the log's `bonsai_path` and `bonsai_sha256`,
+  `bonsai.asks/1` and `bonsai.logs/1`, the sessions row's `subagent` (the old 8-column header still read),
+  `format.LogEvents` and `LogCategories`, four error words, `check`'s `notes`, unlink's `left`. **5.2.2** (Opus, 47
+  min): `internal/record` (one append path, the reader, the common fields, the cut in `record.Line`),
+  `workspace.FindLocal` (main's `local/` with no git process), the salt, `bonsai --version` with its commit. **5.2.6a**
+  (Sonnet, 34 min): `docs/reference/generated-files.md` from `format.GeneratedKinds`.
+- **Built, not landed: 5.2.1, the redactor** (Opus, 140 min; branch `5.2.1` at `e9d9d93`, worktree
+  `~/Servers/Bonsai-5.2.1`, rebased on `ca3b0ff`). Its differential found no leak in about 1.03 M strings and 77 M cuts.
+  **Next on Rohan's go: its fresh Opus verifier** (the plan's: its own differential and break-it), briefed with the two
+  things the builder left for judgment: 1,397 generated strings holding the long s or the Kelvin sign where Bonsai
+  keeps a folded name's fragment the studio's redactor removed (the value goes in both), and 9 class strings losing
+  an ordinary word; and one comment naming the studio's Desk (`internal/redact/redact.go:44`). On PASS, 5.2.1 lands.
+- **Then, as "The order" says:** 5.2.3 (the sessions table and `bonsai logs`; 5.2.0 and 5.2.2 have landed, so it may
+  start on the go, beside 5.2.1's verifier); 5.2.4 (the recorder; a fresh verifier) and 5.2.5 (asks and `log append`;
+  beside 5.2.4, the flag table being one file per word) after 5.2.1 and 5.2.3 land; 5.2.6b (cleaning) last; then the
+  5.2 end verifier, the roadmap and `STATE.md`.
+- **For the next briefs** (from the start check and the builders): 5.2.3: the sessions rows in `check --write`, its
+  help's "joins in step 5.2.3", the `tables` warning's reach, `internal/sessions` in `cmd/bonsai/outputs_test.go`'s
+  `codeWords`, the two error words 5.2.0 added for it, a 5.1-written 8-column `sessions.md` rewritten at the first
+  `--write`. 5.2.4: `secret` out of `checkLater`; `hook start`/`record`'s `Later`; pass `internal/redact` as
+  `record.Common`'s redactor; `input_hash` null when the salt errors; the guard's first call over 5 ms. 5.2.5:
+  `format.AskTypes`, `internal/asks` in `codeWords`, distinct word orders, its error words' exits. 5.2.6b: a changed
+  rule edits `generatedfiles.go`'s prose too. Every piece changing a listed table runs `go generate ./...`. **The
+  build line for every scripted run** (5.2.2, gate report §2.11): `go build -buildvcs=true -o
+  ~/bonsai-checks/<piece>/bonsai ./cmd/bonsai && ~/bonsai-checks/<piece>/bonsai --version | grep -E '\(commit
+  [0-9a-f]{12}\)$'`, from a clean worktree or clone (go1.27 stamps worktree builds; an older Go does not, and
+  `-buildvcs=true` does not refuse). Builders who rebase re-run the full check 10, not only their packages.
+- Small, unplaced: `internal/workspace/workspace.go`'s package doc does not name `local.go` and `salt.go`;
+  `formats/examples/workspace.yaml` keeps the old "skill base:generated-files" comment (the next formats set).
 
 **Carried into later briefs:** 5.6.5's brief counts a tag as a release only once its release is published; 5.7's runs
 so far (84 minutes of planning and review, 33 of the Go switch) go into 5.7.0's run report; the later sections' formats
@@ -156,6 +175,7 @@ product's Plastic workspace).
 
 ## Waiting on Rohan
 
+- **His go to resume 5.2:** 5.2.1's fresh verifier and 5.2.3 start side by side ("Now: step 5.2").
 - **Claude Code's login on Windows has lapsed again** (the 5.1 verifier's Windows sessions ended "OAuth session
   expired"). 5.2.4 runs a real Windows session (or reads the log of his 5.3 session), so a login before then helps.
 - **For his note:** in the verifier's first Windows session (14:21), Claude Code's failed login refresh rewrote
