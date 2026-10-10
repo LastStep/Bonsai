@@ -1,5 +1,10 @@
 package format
 
+import (
+	"strconv"
+	"strings"
+)
+
 // The generated kinds (spec §6, "Generated files"; format review R2.6): every kind of file or row Bonsai or an agent
 // generates in a project, where it lives, how long it is kept by default, and what is never cleaned. GeneratedKinds
 // is the one home of their defaults and their protections: bonsai init writes the defaults into bonsai.yaml's
@@ -16,10 +21,34 @@ type GeneratedKind struct {
 	Writer     string // who writes it
 	KeepDays   *int64 // the default keep_days, nil for none (no age rule)
 	KeepNewest *int64 // the default keep_newest, nil for none
-	Default    string // the default, in words
+	Age        string // what the age counts from, in words ("after a file's last line"); empty when KeepDays is nil
 	Never      string // what is never cleaned, whatever the rule
 	When       string // when it is cleaned (step 5.2.6b), "never, by Bonsai" where so
 	Rule       bool   // it takes a rule in bonsai.yaml (false for the tasks table, rebuilt whole)
+}
+
+// DefaultWords is the default rule in words, built from KeepDays and KeepNewest so that the number is the one home:
+// "30 days after a file's last line", "kept" when the kind has no default rule, and so on. Every page and comment
+// that prints a default calls it.
+func (k GeneratedKind) DefaultWords() string {
+	if !k.Rule {
+		return "a rebuild: nothing to clean"
+	}
+	var parts []string
+	if k.KeepDays != nil {
+		w := strconv.FormatInt(*k.KeepDays, 10) + " days"
+		if k.Age != "" {
+			w += " " + k.Age
+		}
+		parts = append(parts, w)
+	}
+	if k.KeepNewest != nil {
+		parts = append(parts, "the newest "+strconv.FormatInt(*k.KeepNewest, 10))
+	}
+	if len(parts) == 0 {
+		return "kept"
+	}
+	return strings.Join(parts, ", and ")
 }
 
 func days(n int64) *int64 { return &n }
@@ -34,30 +63,30 @@ func copyInt(p *int64) *int64 {
 // GeneratedKinds are the generated kinds, in spec §6's order.
 var GeneratedKinds = []GeneratedKind{
 	{Kind: "log", Where: ".bonsai/local/log/", What: "the log, one file per session", KeepDays: days(30),
-		Writer:  "the recorder, from the hooks, one line at a time",
-		Default: "30 days after a file's last line",
-		Never:   "an open session's file, or one holding an ended session or subagent run with no row yet in .bonsai/sessions.md",
-		When:    "at a session's end, after its session_end line, within a budget of 1 second, oldest first; what the budget leaves waits for the next end", Rule: true},
+		Writer: "the recorder, from the hooks, one line at a time",
+		Age:    "after a file's last line",
+		Never:  "an open session's file, or one holding an ended session or subagent run with no row yet in .bonsai/sessions.md",
+		When:   "at a session's end, after its session_end line, within a budget of 1 second, oldest first; what the budget leaves waits for the next end", Rule: true},
 	{Kind: "asks", Where: ".bonsai/local/asks/", What: "questions for a person and their answers",
-		Writer: "bonsai ask and bonsai answer (and the ladder runner from step 5.4, as its Bless), one day file a day", Default: "kept",
-		Never: "a day file holding an open ask, or the answer or withdrawal of an ask whose filing stays (else it would read open again)",
-		When:  "at a session's end, within the same budget; by default nothing, as the default keeps", Rule: true},
+		Writer: "bonsai ask and bonsai answer (and the ladder runner from step 5.4, as its Bless), one day file a day",
+		Never:  "a day file holding an open ask, or the answer or withdrawal of an ask whose filing stays (else it would read open again)",
+		When:   "at a session's end, within the same budget; by default nothing, as the default keeps", Rule: true},
 	{Kind: "ladder", Where: ".bonsai/local/ladder/", What: "ladder results, one per task", KeepDays: days(7),
-		Writer:  "the ladder runner (step 5.4), one file per task",
-		Default: "7 days after the result's finished",
-		Never:   "the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done)",
-		When:    "at a session's end, and by the ladder runner after each run", Rule: true},
+		Writer: "the ladder runner (step 5.4), one file per task",
+		Age:    "after the result's finished",
+		Never:  "the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done)",
+		When:   "at a session's end, and by the ladder runner after each run", Rule: true},
 	{Kind: "run", Where: "the run reports' folder (documents.run)", What: "run reports, committed history",
-		Writer: "the agent that did the work, in the run report format", Default: "kept",
-		Never: "any, by Bonsai: past a rule, bonsai check lists them and a person deletes them",
-		When:  "never, by Bonsai", Rule: true},
+		Writer: "the agent that did the work, in the run report format",
+		Never:  "any, by Bonsai: past a rule, bonsai check lists them and a person deletes them",
+		When:   "never, by Bonsai", Rule: true},
 	{Kind: "sessions", Where: ".bonsai/sessions.md", What: "rows of the sessions table",
-		Writer: "bonsai check --write, from the log", Default: "kept",
-		Never: "rows of a task that is not done or cut (none is never protected), and rows whose span is still in the log (the next write would add them again)",
-		When:  "in bonsai check --write, the only writer of the table", Rule: true},
+		Writer: "bonsai check --write, from the log",
+		Never:  "rows of a task that is not done or cut (none is never protected), and rows whose span is still in the log (the next write would add them again)",
+		When:   "in bonsai check --write, the only writer of the table", Rule: true},
 	{Kind: "tasks", Where: ".bonsai/tasks.md", What: "the tasks table",
-		Writer: "bonsai check --write, from the task files", Default: "a rebuild: nothing to clean",
-		Never: "-", When: "never: the table is rebuilt whole", Rule: false},
+		Writer: "bonsai check --write, from the task files",
+		Never:  "-", When: "never: the table is rebuilt whole", Rule: false},
 }
 
 // DefaultGenerated is bonsai.yaml's generated: section as init writes it: each kind's default rule.

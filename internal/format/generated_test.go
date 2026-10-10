@@ -18,7 +18,7 @@ func TestGeneratedKindsAreTheSchemas(t *testing.T) {
 		if k.Rule {
 			ours = append(ours, k.Kind)
 		}
-		if k.Where == "" || k.What == "" || k.Default == "" || k.Never == "" || k.Writer == "" || k.When == "" {
+		if k.Where == "" || k.What == "" || k.DefaultWords() == "" || k.Never == "" || k.Writer == "" || k.When == "" {
 			t.Errorf("%s is not documented in full", k.Kind)
 		}
 	}
@@ -41,5 +41,20 @@ func TestGeneratedKindsAreTheSchemas(t *testing.T) {
 	*d.Log.KeepDays = 1
 	if *DefaultGenerated().Log.KeepDays != 30 {
 		t.Errorf("DefaultGenerated shares the table's values")
+	}
+}
+
+// A kind's default in words is built from its numbers, so a changed number changes every page that prints it.
+func TestDefaultWordsFollowTheNumbers(t *testing.T) {
+	want := map[string]string{"log": "30 days after a file's last line", "asks": "kept", "ladder": "7 days after the result's finished",
+		"run": "kept", "sessions": "kept", "tasks": "a rebuild: nothing to clean"}
+	for _, k := range GeneratedKinds {
+		if got := k.DefaultWords(); got != want[k.Kind] {
+			t.Errorf("%s default %q, want %q", k.Kind, got, want[k.Kind])
+		}
+	}
+	k := GeneratedKind{Rule: true, KeepDays: days(8), KeepNewest: days(5), Age: "after the end"}
+	if got := k.DefaultWords(); got != "8 days after the end, and the newest 5" {
+		t.Errorf("both numbers: %q", got)
 	}
 }

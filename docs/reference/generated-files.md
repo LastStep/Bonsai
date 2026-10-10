@@ -78,6 +78,7 @@ from the same Go table.
 2. **`keep_days`** cleans a file or row older than that many days. Age is a log or asks file's last record (its
    modification time when no record reads), a ladder result's `finished` (its modification time when the result
    does not read), or a row's end.
+   A file is cleaned only when both its modification time and its content say it is older than the rule.
 3. **`keep_newest`** keeps only that many of the newest of its kind and cleans the rest.
 4. Either one cleans. `null` for both keeps everything. A kind or the whole `generated:` section left out of
    bonsai.yaml takes the defaults above; a rule that does not read cleans nothing of its kind.

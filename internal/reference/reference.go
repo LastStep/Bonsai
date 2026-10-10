@@ -206,7 +206,7 @@ func (p *page) generated() {
 	p.line("| Kind | Where | What | Written by | Default | Never cleaned | Cleaned | Takes a rule |")
 	p.line("|---|---|---|---|---|---|---|---|")
 	for _, k := range format.GeneratedKinds {
-		p.line("| `%s` | %s | %s | %s | %s | %s | %s | %s |", k.Kind, cell(k.Where), cell(k.What), cell(k.Writer), cell(k.Default), cell(k.Never), cell(k.When), map[bool]string{true: "yes", false: "no"}[k.Rule])
+		p.line("| `%s` | %s | %s | %s | %s | %s | %s | %s |", k.Kind, cell(k.Where), cell(k.What), cell(k.Writer), cell(k.DefaultWords()), cell(k.Never), cell(k.When), map[bool]string{true: "yes", false: "no"}[k.Rule])
 	}
 }
 

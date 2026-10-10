@@ -128,7 +128,7 @@ func comment(kinds map[string]string) func(path string) string {
 			}
 			switch field {
 			case "":
-				return g.What + ", in " + g.Where + "; default: " + g.Default
+				return g.What + ", in " + g.Where + "; default: " + g.DefaultWords()
 			case "keep_days":
 				return "clean what is older than this many days; null: no age rule"
 			case "keep_newest":
