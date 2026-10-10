@@ -306,7 +306,7 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 		}
 		named = append(named, c.Change+" "+c.Kind)
 	}
-	if got := strings.Join(named, ", "); got != "add key, add key, add deny, add deny, add hook, add hook, add marketplace, add plugin, remove hook" {
+	if got := strings.Join(named, ", "); got != "add key, add key, add deny, add deny, "+strings.Repeat("add hook, ", len(ownHooks)+1)+"add marketplace, add plugin, remove hook" {
 		t.Errorf("settings lines %s", got)
 	}
 	if !strings.Contains(p.Preview(false), "remove  hook        PreToolUse (Edit|Write): /opt/bonsai-0.4/bin/bonsai hook guard") {

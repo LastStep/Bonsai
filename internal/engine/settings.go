@@ -59,23 +59,73 @@ import (
 // SettingsFile is the project's shared Claude Code settings file, the one settings file the engine writes.
 const SettingsFile = ".claude/settings.json"
 
-// The engine's own hook line (spec §7's table; the skeleton writes the guard line only, below).
+// Bonsai's own hook lines (spec §7's table, with design/plan-5.md's 5.2.4 note 1): the guard's, the start line and
+// the recorder's.
 const (
 	GuardEvent   = "PreToolUse"
 	GuardMatcher = "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell"
 	GuardCommand = "bonsai hook guard || exit 2"
 	GuardTimeout = "10"
+
+	StartEvent   = "SessionStart"
+	StartCommand = "bonsai hook start"
+	StartTimeout = "10"
+
+	RecordCommand = "bonsai hook record"
+	RecordTimeout = "10"
+	// The SessionEnd line is synchronous (an async hook is killed as the session exits, so its line would be lost),
+	// with 5 s: its timeout also raises Claude Code's 1.5 s budget for SessionEnd hooks to 5 s.
+	RecordEndEvent   = "SessionEnd"
+	RecordEndTimeout = "5"
 )
 
-// ownHooks is this build's table of Bonsai's own hook lines. Spec §7 lists four: the guard (PreToolUse), the stop
-// gate (Stop), start (SessionStart) and the recorder (eleven events, async). The walking skeleton builds the guard
-// only (plan part 5), so only its line is written: a line that runs a `bonsai hook` word this build does not have
-// would fail every time it runs, and the stop line (|| exit 2) would then block every session's end. Step 5.1-5.3
-// add the other three as they build them.
-var ownHooks = []Line{{
-	Kind: "hook", Origin: "bonsai", Own: true, Event: GuardEvent, Matcher: GuardMatcher, Command: GuardCommand, Timeout: GuardTimeout,
-	Why: "Checks every file edit and shell command against the task's rights; blocks if bonsai is missing.",
-}}
+// RecordEvents are the events `bonsai hook record` records in the background (async), in the order the engine
+// writes their lines; SessionEnd's line comes after them, synchronous. SessionStart's record is hook start's.
+var RecordEvents = []struct{ Event, What string }{
+	{"UserPromptSubmit", "each prompt submitted (its kind only, never its words)"},
+	{"PreToolUse", "each tool call before it runs (the tool, its target reduced and redacted, a hash of its input)"},
+	{"PermissionRequest", "each permission the session asks for"},
+	{"PostToolUse", "each tool call that finished"},
+	{"PostToolUseFailure", "each tool call that failed or was interrupted"},
+	{"Notification", "each notice Claude Code gives a person (redacted)"},
+	{"SubagentStart", "each subagent run's start and the active task it found"},
+	{"SubagentStop", "each subagent run's end"},
+	{"Stop", "the end of each turn"},
+}
+
+// ownHooks is this build's table of Bonsai's own hook lines. Spec §7 lists four kinds: the guard (PreToolUse), the
+// stop gate (Stop), start (SessionStart) and the recorder (eleven events, async). This build writes the guard's,
+// start's and the recorder's (step 5.2.4): SessionStart's record is written by hook start itself, so the recorder's
+// lines are ten, nine async and SessionEnd's synchronous. The stop gate's line comes with step 5.3: a line that runs a
+// `bonsai hook` word this build does not have would fail every time it runs, and the stop line (|| exit 2) would then
+// block every session's end. A project linked before a line was added gets it at its next update only with
+// --allow-exec (a hook line added runs code, step 5.1.1); bonsai check warns until then (own-hooks).
+var ownHooks = buildOwnHooks()
+
+func buildOwnHooks() []Line {
+	ls := []Line{
+		{Kind: "hook", Origin: "bonsai", Own: true, Event: GuardEvent, Matcher: GuardMatcher, Command: GuardCommand, Timeout: GuardTimeout,
+			Why: "Checks every file edit and shell command against the task's rights; blocks if bonsai is missing."},
+		{Kind: "hook", Origin: "bonsai", Own: true, Event: StartEvent, Command: StartCommand, Timeout: StartTimeout,
+			Why: "Gives each session (new, resumed, cleared or compacted) the active task, its last ladder result and this " +
+				"machine's labels, and records the session's start, with bonsai's own path and hash, in .bonsai/local/log/; never blocks."},
+	}
+	for _, e := range RecordEvents {
+		ls = append(ls, Line{Kind: "hook", Origin: "bonsai", Own: true, Event: e.Event, Command: RecordCommand, Timeout: RecordTimeout,
+			Async: true, Why: "Records " + e.What + " in the project's log, .bonsai/local/log/ (never committed), in the background; never blocks."})
+	}
+	return append(ls, Line{Kind: "hook", Origin: "bonsai", Own: true, Event: RecordEndEvent, Command: RecordCommand,
+		Timeout: RecordEndTimeout, Why: "Records the session's end in the project's log, .bonsai/local/log/; waits at most 5 s and never blocks."})
+}
+
+// OwnHookLines lists this build's own hook lines as the preview shows them, in the order the engine writes them.
+func OwnHookLines() []string {
+	var out []string
+	for _, l := range ownHooks {
+		out = append(out, l.Text())
+	}
+	return out
+}
 
 // Line is one of Bonsai's entries in .claude/settings.json.
 type Line struct {

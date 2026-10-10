@@ -598,8 +598,8 @@ func codeWords(t *testing.T, keep func(dir, file string) bool) map[string]string
 	return found
 }
 
-// A first link's changes output (bonsai.changes/1): Bonsai's own hook line is in own_hooks and is a settings line
-// with runs_code false (--yes writes it); the pack's hook line is a runs_code item and a settings line with
+// A first link's changes output (bonsai.changes/1): Bonsai's own hook lines are in own_hooks and are settings lines
+// with runs_code false (--yes writes them); the pack's hook line is a runs_code item and a settings line with
 // runs_code true; the workspace, the packs, every file, the lock and the error, each in the schema's shape.
 func TestChangesFirstLink(t *testing.T) {
 	c := newCLI(t)
@@ -609,7 +609,11 @@ func TestChangesFirstLink(t *testing.T) {
 		t.Fatalf("the preview: %d\n%s", code, out)
 	}
 	own, _ := doc.Get("own_hooks")
-	if l := own.([]any); len(l) != 1 || !strings.Contains(l[0].(string), "bonsai hook guard || exit 2") {
+	var ownLines []string
+	for _, l := range own.([]any) {
+		ownLines = append(ownLines, l.(string))
+	}
+	if strings.Join(ownLines, "\n") != strings.Join(engine.OwnHookLines(), "\n") {
 		t.Errorf("own_hooks %s", schema.Show(own))
 	}
 	settings, _ := doc.Get("settings")
@@ -618,10 +622,10 @@ func TestChangesFirstLink(t *testing.T) {
 		o := s.(schema.Object)
 		rc, _ := o.Get("runs_code")
 		switch {
-		case strings.Contains(o.String("line"), "bonsai hook guard"):
+		case strings.Contains(o.String("line"), ": bonsai hook "):
 			hooks++
 			if rc != false {
-				t.Errorf("Bonsai's own hook line at a first link has runs_code %v", rc)
+				t.Errorf("Bonsai's own hook line %s at a first link has runs_code %v", o.String("line"), rc)
 			}
 		case strings.Contains(o.String("line"), "echo demo hook A"):
 			hooks++
@@ -632,7 +636,7 @@ func TestChangesFirstLink(t *testing.T) {
 			t.Errorf("a %s line has runs_code %v", o.String("kind"), rc)
 		}
 	}
-	if hooks != 2 || jsonItems(t, doc) != "hook add SessionStart (startup): echo demo hook A (demo-pack)" {
+	if hooks != 1+len(ownLines) || jsonItems(t, doc) != "hook add SessionStart (startup): echo demo hook A (demo-pack)" {
 		t.Errorf("settings %s", schema.Show(settings))
 	}
 	ws, _ := doc.Get("workspace")

@@ -126,7 +126,7 @@ func TestPackLineIsNeverOwn(t *testing.T) {
 		hooks: []workspace.HookEntry{{Event: "SessionStart", Matcher: "startup", Command: "echo a pack named bonsai runs this", Why: "x"}}}})
 	p := &Plan{FirstLink: true}
 	p.consent(lineChanges(nil, lnew, nil, nil), nil, nil)
-	if got := items(p); got != "hook add SessionStart (startup): echo a pack named bonsai runs this (bonsai)" || len(p.OwnHooks) != 1 {
+	if got := items(p); got != "hook add SessionStart (startup): echo a pack named bonsai runs this (bonsai)" || len(p.OwnHooks) != len(ownHooks) {
 		t.Errorf("runs code %q, own hooks %+v", got, p.OwnHooks)
 	}
 }
