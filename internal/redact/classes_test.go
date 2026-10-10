@@ -51,7 +51,7 @@ func TestAfterTheSchemeWord(t *testing.T) {
 		`see Authorization: Bearer "hunter2, then more words`: "see Authorization: [redacted] then more words",
 		`Authorization: token 'hunter2`:                       "Authorization: [redacted]",
 		`Authorization: Basic "aHVudGVyMg==" ok`:              "Authorization: [redacted] ok",
-		"Authorization: token : hunter2":                      "Authorization: [redacted] : [redacted]",
+		"Authorization: token : hunter2":                      "Authorization: [redacted] [redacted]",
 	} {
 		got := Text(in)
 		if got != want {

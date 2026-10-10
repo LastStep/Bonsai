@@ -26,7 +26,8 @@ package redact
 //   - after an Authorization header, its scheme word (Basic, Bearer, Token, Digest) is the header's own and the
 //     value follows it, quoted or not (a quoted token takes the scheme word with it, and when its quote does not
 //     close on its line, only the word it opens); `token` followed by `:` or `=` is a key, not the scheme, so the
-//     header takes it as its value and the key's value goes too;
+//     header takes it as its value (with what follows its separator, as after a scheme word) and the key's value
+//     goes too;
 //   - a value that is only a cut tail of the marker (`password=[reda`), or after an Authorization header of a scheme
 //     word (`Authorization: Bea`), with nothing after it but whitespace, is kept: it is what a cut of the redactor's
 //     own output leaves, and a second pass must leave it.
@@ -432,19 +433,6 @@ func (st *state) opensNext(c int, virt bool) bool {
 	return !virt || !st.spanEndIn(rn.start+1, c)
 }
 
-// markerAt reports a marker at p, a value taken (with virt) or one written by an earlier pass, and where it ends.
-func (st *state) markerAt(p int, virt bool) (int, bool) {
-	if virt {
-		if k := st.spanAt(p); k >= 0 {
-			return st.stack[k].b, true
-		}
-	}
-	if strings.HasPrefix(st.s[p:], Marker) {
-		return p + len(Marker), true
-	}
-	return 0, false
-}
-
 // quoted reads a quoted value at p, with glue the class of what may be glued after its closing quote.
 func (st *state) quoted(p int, glue cls, virt bool) (int, bool) {
 	if p < st.n && isQuote(st.s[p]) {
@@ -557,6 +545,7 @@ func (st *state) authorization(p0 int, virt bool) (int, int, bool) {
 		p++
 	}
 	p = skipSpace(s, p)
+	tail := 0
 	for _, w := range schemes {
 		e, ok := matchWord(s, p, w, true)
 		if !ok {
@@ -566,7 +555,15 @@ func (st *state) authorization(p0 int, virt bool) (int, int, bool) {
 			break
 		}
 		v := skipSpace(s, e)
-		if v >= st.n || w == "token" && (s[v] == ':' || s[v] == '=') || st.belowBlocked(v, virt) {
+		if v < st.n && w == "token" && (s[v] == ':' || s[v] == '=') {
+			// `token :` is a key, so the header's value is the word token; what stands after the separator is
+			// taken too, as it would be after a scheme word.
+			if !st.belowBlocked(v, virt) {
+				tail, _ = st.authCore(v, virt)
+			}
+			break
+		}
+		if v >= st.n || st.belowBlocked(v, virt) {
 			break
 		}
 		if isQuote(s[v]) {
@@ -592,14 +589,22 @@ func (st *state) authorization(p0 int, virt bool) (int, int, bool) {
 	if !ok || st.cutTail(p, e, virt, true) {
 		return 0, 0, false
 	}
-	return p, e, true
+	return p, max(e, tail), true
 }
 
-// authCore is an Authorization header's value at p: a marker that `,` `;` `&` `}` `)` follows is whole (a key's
-// value the header's name also holds stops there); else a run of [^\s"'].
+// authCore is an Authorization header's value at p: a marker already written that `,` `;` `&` `}` `)` follows is
+// whole (a key's value the header's name also holds stops there, so a second pass leaves it); else a run of
+// [^\s"']. A value taken in this reading (virt) that stands at p is read through, as any other text.
 func (st *state) authCore(p int, virt bool) (int, bool) {
-	if e, ok := st.markerAt(p, virt); ok {
-		if e < st.n && strings.IndexByte(",;&})", st.s[e]) >= 0 && !(virt && st.spanAt(e) >= 0) {
+	if strings.HasPrefix(st.s[p:], Marker) {
+		e := p + len(Marker)
+		whole := true
+		if virt {
+			if k := st.spanAt(p); k >= 0 && st.stack[k].b != e {
+				whole = false
+			}
+		}
+		if whole && e < st.n && strings.IndexByte(",;&})", st.s[e]) >= 0 && !(virt && st.spanAt(e) >= 0) {
 			return e, true
 		}
 	}
