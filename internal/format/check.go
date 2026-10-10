@@ -71,7 +71,7 @@ var CheckWords = []Word{
 	{Word: "plugin-trust", Kind: "warning", Who: "person", Means: "Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet"},
 	{Word: "plugin-unchecked", Kind: "warning", Who: "person", Means: "this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread)"},
 	{Word: "cache", Kind: "warning", Who: "person", Means: "a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked"},
-	{Word: "tables", Kind: "warning", Who: "agent", Means: "the main checkout's tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or is missing; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5)"},
+	{Word: "tables", Kind: "warning", Who: "agent", Means: "a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5)"},
 	{Word: "local-unchecked", Kind: "warning", Who: "agent", Means: "git ls-files failed, so files from .bonsai/local/ in git's index were not looked for"},
 }
 

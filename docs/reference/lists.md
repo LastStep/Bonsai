@@ -113,7 +113,7 @@ error words.
 | `ask-not-open` | agent | bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved: the message says which, and nothing was written (exit 4) |
 | `answer-own-session` | person | the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4) |
 | `label-not-defined` | agent | bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2) |
-| `session-not-found` | agent | bonsai logs --session matches no session in the log, or matches several (exit 2) |
+| `session-not-found` | agent | bonsai logs --session matches no session in the log, or matches several: the message names the matches (exit 4) |
 | `partly-written` | agent | the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest |
 | `unexpected` | agent | something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats |
 
@@ -159,7 +159,7 @@ error words.
 | `plugin-trust` | warning | person | Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet |
 | `plugin-unchecked` | warning | person | this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread) |
 | `cache` | warning | person | a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked |
-| `tables` | warning | agent | the main checkout's tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or is missing; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5) |
+| `tables` | warning | agent | a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5) |
 | `local-unchecked` | warning | agent | git ls-files failed, so files from .bonsai/local/ in git's index were not looked for |
 
 ## Check --pack words
