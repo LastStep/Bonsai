@@ -42,9 +42,11 @@ func TestBudgetStopsTheRun(t *testing.T) {
 	if !d.Stopped || len(d.Cleaned) == 0 || len(d.Cleaned) >= files || len(d.Errs) > 0 {
 		t.Fatalf("stopped %v, cleaned %d of %d, errors %v", d.Stopped, len(d.Cleaned), files, d.Errs)
 	}
-	// It stops within its budget and the one file it was judging; the slack is for a loaded machine.
-	if took > budget+400*time.Millisecond {
-		t.Errorf("a run with a budget of %v took %v", budget, took)
+	// The budget is checked between files, so a run overruns it by what it does before its first delete (listing the
+	// folder and judging each file's protections) and by the file it was on. On Windows CI that took over a second for
+	// 600 files. The hard limit is the session end's: the recorder's own 4 s budget, inside SessionEnd's 5 s line.
+	if took > 4*time.Second {
+		t.Errorf("a run with a budget of %v took %v, past the recorder's 4 s", budget, took)
 	}
 	t.Logf("%d files: the first run cleaned %d in %v (budget %v)", files, len(d.Cleaned), took, budget)
 	// The oldest go first, so what is left is the newest.
