@@ -78,11 +78,21 @@ func usage() string {
 	var b strings.Builder
 	b.WriteString("bonsai: the structure inside each project (formats, packs, guards, a recorder, a ladder).\n")
 	b.WriteString("This build is Bonsai's rebuild in progress; it answers:\n")
-	fmt.Fprintf(&b, "  %-26s %s\n", "bonsai --version", "print this build's version")
-	fmt.Fprintf(&b, "  %-26s %s\n", "bonsai --help", "print this help")
-	fmt.Fprintf(&b, "  %-26s %s\n", "bonsai --help --json", "print this help as one JSON document (bonsai.help/1)")
+	// The left column is as wide as its longest entry and one more, so every line keeps two spaces before its words.
+	left := [][2]string{
+		{"bonsai --version", "print this build's version"},
+		{"bonsai --help", "print this help"},
+		{"bonsai --help --json", "print this help as one JSON document (bonsai.help/1)"},
+	}
 	for _, w := range wordList() {
-		fmt.Fprintf(&b, "  %-26s %s (%s --help)\n", strings.TrimSpace("bonsai "+w.Name+" "+w.Args), w.Summary, w.Name)
+		left = append(left, [2]string{strings.TrimSpace("bonsai " + w.Name + " " + w.Args), w.Summary + " (" + w.Name + " --help)"})
+	}
+	width := 0
+	for _, l := range left {
+		width = max(width, len(l[0])+1)
+	}
+	for _, l := range left {
+		fmt.Fprintf(&b, "  %-*s %s\n", width, l[0], l[1])
 	}
 	b.WriteString(commonNotes)
 	b.WriteString("Exit codes: ")

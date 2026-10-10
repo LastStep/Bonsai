@@ -168,6 +168,37 @@ func TestHelp(t *testing.T) {
 	}
 }
 
+// The help's commands keep their words in one column, at least two spaces after the longest command (bonsai answer
+// <key> [flags] is 27 characters).
+func TestHelpColumn(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--help"}, &stdout, &stderr); code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	col, lines := -1, 0
+	for _, line := range strings.Split(stdout.String(), "\n") {
+		if !strings.HasPrefix(line, "  bonsai ") {
+			continue
+		}
+		lines++
+		i := strings.Index(line[2:], "  ")
+		if i < 0 {
+			t.Errorf("no two spaces before the words: %q", line)
+			continue
+		}
+		rest := line[2+i:]
+		at := 2 + i + len(rest) - len(strings.TrimLeft(rest, " "))
+		if col == -1 {
+			col = at
+		} else if at != col {
+			t.Errorf("%q: its words at column %d, the first line's at %d", line, at, col)
+		}
+	}
+	if lines < 10 || !strings.Contains(stdout.String(), "  bonsai answer <key> [flags]  answer an open ask") {
+		t.Errorf("the help's commands:\n%s", stdout.String())
+	}
+}
+
 // An answer that cannot be written exits 3 (runtime), not 0.
 func TestRunWriteFails(t *testing.T) {
 	var stderr bytes.Buffer
