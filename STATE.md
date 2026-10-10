@@ -1,8 +1,9 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 10 Oct 2026 at 12:03: every 5.1 piece has landed and the 5.1 end verifier is
-running; the Go toolchain moved to go1.27.2 on Rohan's word; Rohan answered all of 5.7's decisions and asked for a
-trial of Bonsai on itself on `rc.1` before 1.0, which its planner is writing in (`records/runs/R-2026-10-10-*`).
+Rewritten, never appended. Last rewritten 10 Oct 2026 at 12:29, when Rohan closed the session ("find a good stop point
+for this session. and then wrap up. we will continue in next fresh session. also update the roadmap once done"): every
+5.1 piece landed, 5.6 and 5.7 approved, the Go toolchain at go1.27.2, his roadmap at version 33; the 5.1 end verifier
+was stopped part-way and runs again, fresh, at the next session's start (`records/runs/R-2026-10-10-*`).
 
 ## In short
 
@@ -10,8 +11,8 @@ Bonsai is being rebuilt as one small Go program that gives every project the sam
 proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). **Part 0 and all six parts of the walking skeleton
 are done; the skeleton's last fresh verifier passed it. At the gate (9 Oct) Rohan chose path (a), the full Bonsai
 1.0. He approved the plan for step 5, `design/plan-5.md`, on 9 Oct; step 5.1 (formats and engine to 1.0, 30-47 h,
-re-ask at 61): every piece, 5.1.0 to 5.1.10, has landed; its end verifier is running. The sections of 5.2 to 5.6 are
-written and approved (5.6's on 10 Oct); 5.7's is answered by Rohan and being reworked for his trial, then his approval.** The gate report is `records/gate-skeleton.md`. Everything below is on `main`, pushed.
+re-ask at 61): every piece, 5.1.0 to 5.1.10, has landed; its end verifier runs next. The sections of 5.2 to 5.7 are all
+written and approved (5.6's and 5.7's on 10 Oct), so every part of step 5 has its plan.** The gate report is `records/gate-skeleton.md`. Everything below is on `main`, pushed.
 
 - **Part 0, the formats** (`3770d04`, now set 3 at `3a1f195`): `formats/` holds a JSON Schema for each of the
   contract's ten formats, an example of each, 116 trick files with their format-0 and format-1 outcomes in
@@ -115,7 +116,7 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
 - `LastStep/bonsai-test-pack`: public, `main` at D, no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## The one thing to do next: 5.1.9, and 5.7's section to Rohan
+## The one thing to do next: the 5.1 end verifier, then 5.2
 
 `design/plan-5.md`, "Step 5.1". Landed, each with CI green (run reports `records/runs/R-2026-10-0*-5.1.*`):
 - **5.1.0** (`6a3a419`): `TestEachFaultBlocks` no longer races a 200 ms budget (test file only).
@@ -155,19 +156,27 @@ skeleton: none. No change to Mimas or the studio's repo. No stop line crossed.
   1.25.0` line kept); `govulncheck` `v1.8.0` (33 standard-library findings on go1.25.9, none now), `golangci-lint`
   `v2.14.0`; CI runs 1.27.2. Counted in 5.7's hours (5.7.0's bump, done early).
 
-**Running now** (10 Oct):
-1. **The 5.1 end verifier** (fresh Opus): "5.1 done" checks 1-21 on `11d871c` in its own clones on both sides, the Go
-   switch, the items placed for it (`records/runs/R-2026-10-10-5.1-verify.md`). On PASS: 5.1 is done, STATE and his
-   roadmap artifact updated (plan item 9). On FAIL: the fixes it names, then it again.
-2. **5.7's section** on `plan5.7` (`~/Servers/Bonsai-plan5.7`): Rohan's answers (10 Oct): Homebrew stays at 0.4.3
-   (and two items outside step 5: Mac support; Bonsai in each platform's package managers); `gh` in WSL updated to
-   2.102.0 by him; his approval click holds each release; both packs' tags locked; and, instead of a bare rehearsal,
-   **a trial on `1.0.0-rc.1`**: he installs rc.1 on both sides with the real installers, picks one of two or three
-   small features, which goes through the whole pipeline on Bonsai itself; agents write an analysis (files, log,
-   tables, how agents worked, refusals, ladder results, anything rough); rc.2 always follows (it carries the feature);
-   then his own trial on a fresh project, independently; then his word for 1.0 from the last rc's code. 5.7 becomes
-   9.5-18.75 h, re-ask 24. A fresh review of the trial part found nothing blocking; its fixes are being made; then a
-   Haiku audit, then **his approval of the section** (the one question left), with the new hours.
+**The next session starts here** (nothing is running; `main` is pushed):
+1. **A fresh 5.1 end verifier** (Opus), on `main`'s newest commit (5.1's code is unchanged since `11d871c`; later
+   commits are design and records). Its brief is the 12:04 entry of `records/runs/R-2026-10-10-5.1-verify.md`, in full:
+   "5.1 done" checks 1-21 in its own clones on both sides, the go1.27.2 switch, the items the run reports placed for
+   it, real Claude Code only through `claude-here` in scratch targets with the settings hashes before and after. The
+   first verifier was stopped when Rohan closed the session, after passing every check it finished (no defect found);
+   the next one finishes it: 6 on Windows, 7, 8, 19's timing on a quiet machine, 21's Mimas and studio look and private
+   grep, and the placed items it lists, plus check 10 on the newest commit; the passed checks stand as evidence on the
+   same code. Keep Windows' `claude.exe` (in `%USERPROFILE%\.local\bin`) off the PATH: the first verifier's filter
+   missed it once (read-only `plugin list` calls; the settings file unchanged).
+   On PASS: 5.1 is done; `STATE.md` rewritten; the roadmap's 5.1 card marked done. On FAIL: the fixes it names, then a
+   verifier again.
+2. **Then 5.2** (`design/plan-5.md`, "Step 5.2", approved 9 Oct; "5.2 starts once 5.1's end verifier has passed 5.1"):
+   5.2.0, 5.2.1 and 5.2.2 side by side once the orchestrator has checked their files against what 5.1 landed. **5.2.0's
+   formats set is 6**, not 5 as the section says (5.1.10 took set 5 for `bonsai.help/1`). Rohan's look on the log's
+   field names is done (10 Oct, "Both fine"): `bonsai_path` and `bonsai_sha256` stand. 5.1.10's hand-off: the log's
+   events and categories as a Go table registered on the `log` format, the reference page's two "not built yet" lists
+   filled, `go generate ./...`.
+3. **Carried into later briefs:** 5.6.5's brief counts a tag as a release only once its release is published (5.7's
+   review; 5.7's section names it in "Stale or in tension"); 5.7's runs so far (84 minutes of planning and review, 33
+   of the Go switch) go into 5.7.0's run report.
 
 Placed by 5.1.6, 5.1.7 and 5.1.8 for later: 5.2.3 (the sessions rows in `check --write`, its help's
 "joins in step 5.2.3" taken out); 5.2.0's set 5 (`uninstalled` in `changes.plugins[].result`; unlink's "left in
@@ -187,32 +196,32 @@ a Haiku audit before it lands, then to Rohan under his (B); times in the run rep
 script reaches the real `claude` except a builder's scripted run in a scratch target through `claude-here`, with the
 settings hashes before and after.
 
-5.1's hours: 817 minutes (13 h 37 min) of 61 h, before its end verifier. 5.5's planning: 84 minutes. 5.6's planning:
-67 minutes. 5.7's so far: 75 minutes of planning and review, and 33 of the Go switch. Step 5's Windows-only tally: 0.
-Option rounds in 5.1: one.
+5.1's hours: 842 minutes (14 h 2 min) of 61 h, the stopped verifier's 25 included. 5.5's planning: 84
+minutes. 5.6's planning: 67 minutes. 5.7's so far: 117 minutes (84 of planning and review, 33 of the Go switch), of
+24 h. Step 5's Windows-only tally: 0. Option rounds in 5.1: one.
 
 ## Waiting on Rohan
 
-- **His approval of 5.7's section** with the trial's hours ("Running now", item 2); his decisions are answered.
-- In 5.1, a look (no vote): the error words and their two-part "what next", and the shapes of `check`'s and
-  `update`'s JSON (5.1.3/5.1.4b). In 5.2, a look (no vote): the log's two new field names, `bonsai_path` and
-  `bonsai_sha256`.
-- Later: step 8 at 5.4 (a pre-release `bonsai`); at 5.7 his GitHub steps, his word for 1.0, his installs on both
-  sides and his memory line (5.7's section has the batches).
+- Nothing now. Every plan section is approved, and his looks are done (10 Oct).
+- Later, as the plan has them: at 5.4, a pre-release `bonsai` in WSL (about 5 minutes); at 5.5, reading the `workflow`
+  repo and making it public; at 5.7, the release settings, the `rc.1` tag and his approval, the installs, the trial's
+  analysis, his own trial on a fresh project, his word for 1.0 (about 1 h 45 min in all, 5.7's section).
 - Whenever he likes: turn GitHub Pages off (the old website).
 
 ## Loose ends
 
-- Rohan's roadmap artifact is at version 31 (its plan card still "waiting on you"): updated at 5.1's end, as the plan
-  says (item 9), or sooner if he asks. Since then: the plan approved; 5.1.0 to 5.1.8 landed; 5.2 to 5.6 planned and
-  approved; his answers of 9 and 10 Oct; his Windows login renewed (9 Oct, 19:07; the settings file unchanged).
+- Rohan's roadmap artifact is at version 33 (10 Oct, on his word at the session's close): Bonsai's cards for 5.1
+  (built, its verifier next), 5.2 (up next), 5.3-5.7, the 1.0 trial and the after-1.0 items; the studio's cards
+  untouched. Next update at 5.1's end (plan item 9).
+- Another of Rohan's sessions also works in `~/Servers/Bonsai` (10 Oct: two commits taking Jev out of Bonsai's plans,
+  pushed). Read `origin/main`'s new commits before each push, and never stage a file this session did not write.
 
 - The WSL user settings file's baseline is `c3978abe...e73ee7` since Rohan's `/plugin` and `/reload-plugins` at the
   start of the 10 Oct session (told him; before it `9e049dea...80d8d6`, from his `/plugin` of 9 Oct). Windows' is
   unchanged, `2b6295c1...4ff6c9`.
 - From 5.1.1: S3's rest (a hook running a pack file by a glob or a built name escapes the `runs` scan) is the limit
   of the plan's rule 4, kept; `update --yes` says "nothing to change" on a forged lock while `check` finds it (5.1.6);
-  the test pack's header still names A-D (fixed in G, 5.1.9, running).
+  the test pack's header named A-D until G (`cf356d3`, 5.1.9), which fixed it.
 
 - Every finding and loose end the skeleton leaves is in `records/gate-skeleton.md` section 5, grouped by the step 5
   part that must settle it (5.1 to 5.7, and the spec's own text). This file no longer repeats them.
