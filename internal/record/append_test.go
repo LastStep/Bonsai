@@ -61,7 +61,7 @@ func appendChild(spec string) int {
 	}
 	made := 0
 	for i := 0; i < n; i++ {
-		l := New("note", Common{Workspace: raceWorkspace, Local: workspace.Local{Root: main, Main: main, Branch: "main"},
+		l := New("event", Common{Workspace: raceWorkspace, Local: workspace.Local{Root: main, Main: main, Branch: "main"},
 			Session: raceSession, Agent: "claude-code", Getenv: func(string) string { return "" }})
 		target := fmt.Sprintf("child-%d/record-%d", child, i)
 		l.Target = &target
@@ -313,7 +313,7 @@ func TestAppend(t *testing.T) {
 func TestAppendRestoresTheGitignore(t *testing.T) {
 	main := t.TempDir()
 	gi := filepath.Join(main, ".bonsai", ".gitignore")
-	l := New("note", Common{Workspace: raceWorkspace, Local: workspace.Local{Root: main, Main: main}})
+	l := New("event", Common{Workspace: raceWorkspace, Local: workspace.Local{Root: main, Main: main}})
 	if _, err := WriteLog(main, l); err != nil {
 		t.Fatal(err)
 	}
@@ -323,7 +323,7 @@ func TestAppendRestoresTheGitignore(t *testing.T) {
 	if err := os.Remove(gi); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := WriteLog(main, New("note", Common{Workspace: raceWorkspace})); err != nil {
+	if _, err := WriteLog(main, New("event", Common{Workspace: raceWorkspace})); err != nil {
 		t.Fatal(err)
 	}
 	if b, err := os.ReadFile(gi); err != nil || string(b) != workspace.GitignoreText {
@@ -332,7 +332,7 @@ func TestAppendRestoresTheGitignore(t *testing.T) {
 	if err := os.WriteFile(gi, []byte("mine\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := WriteLog(main, New("note", Common{Workspace: raceWorkspace})); err != nil {
+	if _, err := WriteLog(main, New("event", Common{Workspace: raceWorkspace})); err != nil {
 		t.Fatal(err)
 	}
 	if b, _ := os.ReadFile(gi); string(b) != "mine\n" {

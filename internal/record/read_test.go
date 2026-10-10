@@ -24,7 +24,7 @@ func lines(t *testing.T, n int) ([][]byte, []string) {
 	var out [][]byte
 	var ids []string
 	for i := 0; i < n; i++ {
-		l := New("note", Common{Workspace: raceWorkspace, Session: raceSession, Agent: "claude-code"})
+		l := New("event", Common{Workspace: raceWorkspace, Session: raceSession, Agent: "claude-code"})
 		target := "file-" + strings.Repeat("x", i%40)
 		l.Target = &target
 		line, err := Line(l)
@@ -213,11 +213,11 @@ func TestLogFileName(t *testing.T) {
 	}
 	// WriteLog refuses the same, and a record whose at is not Bonsai's form.
 	main := t.TempDir()
-	l := New("note", Common{Workspace: raceWorkspace, Session: "../escape"})
+	l := New("event", Common{Workspace: raceWorkspace, Session: "../escape"})
 	if _, err := WriteLog(main, l); err == nil {
 		t.Errorf("a session id holding ../ was written")
 	}
-	l = New("note", Common{Workspace: raceWorkspace})
+	l = New("event", Common{Workspace: raceWorkspace})
 	l.At = "yesterday"
 	if _, err := WriteLog(main, l); err == nil {
 		t.Errorf("an at of %q was written", l.At)

@@ -37,7 +37,7 @@ func TestNew(t *testing.T) {
 	root := filepath.Join(t.TempDir(), "example-project")
 	env := map[string]string{"BONSAI_TASK": "T-0001 hunter2", "BONSAI_ROLE": "builder"}
 	at := time.Date(2026, 10, 10, 9, 8, 7, 654321000, time.FixedZone("east", 3600))
-	l := New("note", Common{Workspace: raceWorkspace, Local: workspace.Local{Root: root, Main: root, Branch: "t0001-thing"},
+	l := New("event", Common{Workspace: raceWorkspace, Local: workspace.Local{Root: root, Main: root, Branch: "t0001-thing"},
 		Session: raceSession, Agent: "claude-code", Getenv: func(k string) string { return env[k] }, Redact: fakeRedact, At: at})
 	line, err := Line(l)
 	if err != nil {
@@ -50,7 +50,7 @@ func TestNew(t *testing.T) {
 		{Key: "workspace", Value: raceWorkspace},
 		{Key: "session", Value: raceSession},
 		{Key: "agent", Value: "claude-code"},
-		{Key: "event", Value: "note"},
+		{Key: "event", Value: "event"},
 		{Key: "checkout", Value: "example-project"},
 		{Key: "branch", Value: "t0001-thing"},
 		{Key: "task", Value: "T-0001 [redacted]"},
@@ -91,7 +91,7 @@ func TestNew(t *testing.T) {
 	if got, err := time.Parse(AtLayout, l.At); err != nil || got.Before(before) || got.After(time.Now().Add(time.Second)) {
 		t.Errorf("at %q, %v; want now", l.At, err)
 	}
-	if New("note", Common{}).ID == New("note", Common{}).ID {
+	if New("event", Common{}).ID == New("event", Common{}).ID {
 		t.Errorf("two records share an id")
 	}
 }
@@ -110,7 +110,7 @@ func TestCheckoutName(t *testing.T) {
 // or pair a record. The record given is not changed.
 func TestLine(t *testing.T) {
 	max := format.MustLookup("log").MaxLine()
-	l := New("note", Common{Workspace: raceWorkspace, Session: raceSession})
+	l := New("event", Common{Workspace: raceWorkspace, Session: raceSession})
 	line, err := Line(l)
 	if err != nil {
 		t.Fatal(err)
@@ -175,7 +175,7 @@ func TestLine(t *testing.T) {
 	}
 
 	// A record the schema refuses is refused, not cut.
-	bad := New("note", Common{Workspace: "not-an-id"})
+	bad := New("event", Common{Workspace: "not-an-id"})
 	if _, err := Line(bad); err == nil {
 		t.Errorf("a record with a bad workspace id was written")
 	}
