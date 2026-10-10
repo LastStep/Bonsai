@@ -139,9 +139,9 @@ func TestAskCommands(t *testing.T) {
 	if code != 0 || out != "agent:play: resolved\n" {
 		t.Errorf("--resolve: %d %q", code, out)
 	}
-	code, out, _ = c.run("", "ask", "--resolve", "agent:play")
-	if code != 0 || !strings.Contains(out, "agent:play was resolved already") {
-		t.Errorf("--resolve again: %d %q", code, out)
+	code, _, errOut = c.run("", "ask", "--resolve", "agent:play")
+	if code != 4 || !strings.Contains(errOut, "agent:play is resolved already (at 2026-10-08T12:00:0") {
+		t.Errorf("--resolve again: %d %q", code, errOut)
 	}
 
 	// The list: the open asks, then every key, newest first.

@@ -344,14 +344,14 @@ func TestStates(t *testing.T) {
 	if _, e = answer("act:4711", "x"); e != nil {
 		t.Errorf("an answer once filed again: %v", e)
 	}
-	// Resolved, resolved again, then answered.
+	// Resolved, then resolved again and answered: neither is open.
 	file("fourth")
 	if d, e = Resolve(p, "agent:k"); e != nil || d.Written == nil || d.Entry.State != Resolved {
 		t.Errorf("resolve: %+v %v", d, e)
 	}
 	before = files(t, p.Local.Main)
-	if d, e = Resolve(p, "agent:k"); e != nil || d.Written != nil || !strings.Contains(d.Nothing, "was resolved already") {
-		t.Errorf("resolve again: %+v %v", d, e)
+	if _, e = Resolve(p, "agent:k"); e == nil || e.Code != "ask-not-open" || !strings.Contains(e.What, "agent:k is resolved already (at") {
+		t.Errorf("resolve again: %v", e)
 	}
 	if _, e = answer("", "x"); e == nil || e.Code != "ask-not-open" || !strings.Contains(e.What, "was withdrawn (resolved at") {
 		t.Errorf("an answer to a resolved ask: %v", e)

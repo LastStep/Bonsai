@@ -60,12 +60,12 @@ refused when over (never cut). CLAUDE_CODE_SESSION_ID names the asking session, 
 with --status; an answer never grants anything (contract section 9.3).
 `,
 	Exits: []Exit{
-		{Code: 0, Means: "filed (the key is printed), withdrawn, read, or nothing to do (an ask resolved already)"},
+		{Code: 0, Means: "filed (the key is printed), withdrawn, or read"},
 		{Code: 2, Means: "bad input: a flag ask does not take, a missing or wrong value, a rule of contract section 9 broken\n" +
 			"(the message names it); bonsai.yaml refused. Nothing was written"},
 		{Code: 3, Means: "the ask could not be written or read (partly-written: the ask record stands, its log record not)"},
-		{Code: 4, Means: "not in a git checkout or not linked (bonsai init); a key with no ask, or --resolve on an answered\n" +
-			"ask (ask-not-open); the lock unreadable when --doc needs the packs' kinds. Nothing was written"},
+		{Code: 4, Means: "not in a git checkout or not linked (bonsai init); a key with no ask, or --resolve on an ask answered\n" +
+			"or resolved already (ask-not-open); the lock unreadable when --doc needs the packs' kinds. Nothing was written"},
 	},
 	Examples: []string{
 		`bonsai ask --type Decide --task T-0901 --title "Which colour for links?" --why "Both pass the contrast check." --option "Lighter blue" --option "Darker blue"`,

@@ -19,8 +19,9 @@ package asks
 // never read as ask-not-open; any other answer on a key that is not open is ask-not-open (exit 4), saying whether it
 // is unknown, answered or resolved: the first answer stands. An answer from the session that asked is refused
 // (answer-own-session, exit 4), comparing CLAUDE_CODE_SESSION_ID with the ask's session (contract §9.3). A Decide's
-// --choice must be one of its options; a Look's --verdict is pass or fail. Withdrawing (resolve) an ask already
-// resolved writes nothing and exits 0, as today; one already answered is ask-not-open.
+// --choice must be one of its options; a Look's --verdict is pass or fail. Withdrawing (resolve) an ask that is not
+// open is ask-not-open too (exit 4: format.ErrorWords' meaning of the word), saying whether it is unknown, answered
+// or resolved; today's command took a second resolve as done.
 
 import (
 	"crypto/sha256"
@@ -235,8 +236,8 @@ func List(p Place, all bool) ([]*Entry, int, *Error) {
 	return b.Entries(all), b.Unreadable, nil
 }
 
-// Resolve withdraws an agent's open ask (bonsai ask --resolve): a resolve record and its log record. An ask resolved
-// already writes nothing (exit 0); an unknown or answered one is ask-not-open.
+// Resolve withdraws an agent's open ask (bonsai ask --resolve): a resolve record and its log record. An unknown,
+// answered or resolved one is ask-not-open (exit 4), nothing written.
 func Resolve(p Place, key string) (*Done, *Error) {
 	source, e := checkKey(key)
 	if e != nil {
@@ -251,7 +252,9 @@ func Resolve(p Place, key string) (*Done, *Error) {
 	}
 	switch entry.State {
 	case Resolved:
-		return &Done{Entry: entry, Nothing: key + " was resolved already, at " + entry.Closed.At + ": nothing was written"}, nil
+		return nil, &Error{Code: "ask-not-open", Exit: ExitState,
+			What: fmt.Sprintf("%s is resolved already (at %s): nothing was written", key, entry.Closed.At),
+			Next: "nothing to withdraw: run bonsai asks to see the open asks"}
 	case Answered:
 		return nil, &Error{Code: "ask-not-open", Exit: ExitState,
 			What: fmt.Sprintf("%s is answered already (by %s, at %s): nothing was written", key, ascii(answeredBy(entry.Closed)), entry.Closed.At),
