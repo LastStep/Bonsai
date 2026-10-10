@@ -5,15 +5,14 @@ package engine
 // tables.
 
 import (
-	"time"
-
-	"github.com/LastStep/Bonsai/internal/record"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/testpack"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
