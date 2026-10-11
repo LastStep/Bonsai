@@ -290,31 +290,19 @@ func base(w string) string {
 	return strings.TrimSuffix(w, ".exe")
 }
 
-// emptyEnvironment says how a line starts a program with an empty or new environment ("" for none): env -i, env -,
-// env --ignore-environment (any unambiguous prefix), exec -c, Start-Process -UseNewEnvironment (any prefix PowerShell
-// takes).
+// emptyEnvironment says how a line starts a program with an empty or new environment ("" for none): a command whose
+// program is env with -i, - or --ignore-environment (any unambiguous prefix), exec with -c, or Start-Process with
+// -UseNewEnvironment (any prefix PowerShell takes). The program is the command's first word past NAME=value words and
+// the words that run another program (lineRunners), as programAt finds it.
 func emptyEnvironment(low string) string {
 	for _, cmd := range splitRough(low) {
 		words := strings.Fields(cmd)
-		for k := 0; k < len(words); k++ {
-			w := base(strings.Trim(words[k], `"'`))
-			switch w {
-			case "env":
-				for m := k + 1; m < len(words); m++ {
-					a := strings.Trim(words[m], `"'`)
-					long := strings.HasPrefix(a, "--")
-					switch {
-					case a == "-" || (long && len(a) > 2 && strings.HasPrefix("--ignore-environment", a)):
-						return "starts a program with an empty environment (env " + a + ")"
-					case !long && strings.HasPrefix(a, "-") && strings.ContainsRune(shortOpts(a), 'i'):
-						return "starts a program with an empty environment (env " + a + ")"
-					case a == "-u" || a == "-c" || a == "-s" || a == "-p" || a == "--unset" || a == "--chdir" || a == "--split-string":
-						m++ // its value is the next word
-					case !strings.HasPrefix(a, "-") && !strings.Contains(a, "="):
-						m = len(words) // the program: env's own words end
-					}
-				}
-			case "exec":
+		k := 0
+		for k < len(words) {
+			w := strings.Trim(words[k], `"'`)
+			b := base(w)
+			switch {
+			case b == "exec":
 				for _, a := range words[k+1:] {
 					a = strings.Trim(a, `"'`)
 					if !strings.HasPrefix(a, "-") {
@@ -324,7 +312,17 @@ func emptyEnvironment(low string) string {
 						return "starts a program with an empty environment (exec " + a + ")"
 					}
 				}
-			case "start-process", "saps", "start":
+				k++
+				continue
+			case listHas(lineRunners, b) || strings.HasPrefix(w, "-") || (len(w) == 2 && w[0] == '/') ||
+				(strings.Contains(w, "=") && !strings.HasPrefix(w, "=") && !strings.ContainsAny(w[:strings.IndexByte(w, '=')], "/\\$")):
+				k++
+				continue
+			case b == "env":
+				if a := envClears(words[k+1:]); a != "" {
+					return "starts a program with an empty environment (env " + a + ")"
+				}
+			case b == "start-process" || b == "saps" || b == "start":
 				for _, a := range words[k+1:] {
 					a, _, _ = strings.Cut(strings.Trim(a, `"'`), ":")
 					if strings.HasPrefix(a, "-usen") && strings.HasPrefix("-usenewenvironment", a) {
@@ -332,6 +330,27 @@ func emptyEnvironment(low string) string {
 					}
 				}
 			}
+			break
+		}
+	}
+	return ""
+}
+
+// envClears gives the option of env's words that clears its environment (-i, a bundle holding it, -, or
+// --ignore-environment by any unambiguous prefix), "" for none: env's own words end at the program it runs.
+func envClears(words []string) string {
+	for m := 0; m < len(words); m++ {
+		a := strings.Trim(words[m], `"'`)
+		long := strings.HasPrefix(a, "--")
+		switch {
+		case a == "-" || (long && len(a) > 2 && strings.HasPrefix("--ignore-environment", a)):
+			return a
+		case !long && strings.HasPrefix(a, "-") && strings.ContainsRune(shortOpts(a), 'i'):
+			return a
+		case a == "-u" || a == "-c" || a == "-s" || a == "-p" || a == "--unset" || a == "--chdir" || a == "--split-string":
+			m++ // its value is the next word
+		case !strings.HasPrefix(a, "-") && !strings.Contains(a, "="):
+			return "" // the program: env's own words end
 		}
 	}
 	return ""

@@ -420,7 +420,8 @@ var ruleTests = map[string]func(t *testing.T){
 		}
 		for _, line := range []string{"unset CLAUDE_CODE_CHILD_SESSION; bonsai update --yes",
 			"CLAUDE_CODE_CHILD_SESSION= bonsai unlink --yes", "env -u CLAUDE_CODE_CHILD_SESSION ./link.sh",
-			"env -i PATH=/usr/bin ./script.sh", "export CLAUDE_CODE_CHILD_SESSION=", "bash -c 'unset CLAUDE_CODE_CHILD_SESSION'"} {
+			"env -i PATH=/usr/bin ./script.sh", "export CLAUDE_CODE_CHILD_SESSION=", "bash -c 'unset CLAUDE_CODE_CHILD_SESSION'",
+			"sudo env -i ./x.sh", `bash -c "env - ./x.sh"`, "env -u HOME --ignore-env ./x.sh", "exec -c ./x.sh", "X=1 /usr/bin/env -vi ./x.sh"} {
 			wantRule(t, dir, bashIn(dir, "Bash", line), RulePersonCommand)
 		}
 		for _, line := range []string{"$env:CLAUDE_CODE_CHILD_SESSION = ''", "Remove-Item Env:CLAUDE_CODE_CHILD_SESSION",
@@ -487,7 +488,8 @@ var ruleTests = map[string]func(t *testing.T){
 		for _, c := range []struct{ tool, line string }{{"Bash", "ls -la"}, {"PowerShell", "Get-ChildItem"}, {"Monitor", "tail -f x.log"},
 			{"Bash", "echo $CLAUDE_CODE_CHILD_SESSION"}, {"Bash", "grep -rn CLAUDE_CODE_CHILD_SESSION internal/"},
 			{"PowerShell", "if ($env:CLAUDE_CODE_CHILD_SESSION) { 'agent' }"}, {"Bash", "printenv CLAUDE_CODE_CHILD_SESSION"},
-			{"PowerShell", "Get-ChildItem Env:CLAUDE_CODE_CHILD_SESSION"}, {"Bash", "env | grep CLAUDE_CODE_CHILD_SESSION"}} {
+			{"PowerShell", "Get-ChildItem Env:CLAUDE_CODE_CHILD_SESSION"}, {"Bash", "env | grep CLAUDE_CODE_CHILD_SESSION"},
+			{"Bash", "grep env -i notes.txt"}, {"Bash", "env -u HOME ./x.sh"}, {"Bash", "env X=1 -- ./x.sh -i"}} {
 			wantRule(t, dir, bashIn(dir, c.tool, c.line), RuleShell)
 		}
 	},

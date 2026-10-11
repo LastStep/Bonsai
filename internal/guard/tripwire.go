@@ -241,7 +241,7 @@ func (j *judge) tripwire(c change, x judged) (Decision, bool) {
 				"bonsai.allows, which only a person's grant may do in command mode", next), false
 		}
 	}
-	if changed := changedLabels(bf.labels, af.labels); len(changed) > 0 {
+	if changed := changedLabels(bf.labels, af.labels); len(changed) > 0 && !allBonsai(changed) {
 		name, err := j.outsideLabel(x, changed)
 		switch {
 		case err != nil:
@@ -440,6 +440,16 @@ func changedLabels(before, after schema.Object) []string {
 	return out
 }
 
+// allBonsai reports labels that are all Bonsai's own (bonsai.*), which the label definitions need not be read for.
+func allBonsai(names []string) bool {
+	for _, n := range names {
+		if !strings.HasPrefix(n, "bonsai.") {
+			return false
+		}
+	}
+	return true
+}
+
 // personOnlyGrant gives the first glob an edit adds to a task's bonsai.allows that is a person-only path (""
 // for none): one the floor counts as person-only (floorOf, in the floor's order, so .bonsai/STATE.md is not), one
 // inside a glob of bonsai.yaml's person_only list or covering one, or one covering a floor person-only glob (**,
@@ -477,7 +487,8 @@ func listHas(list []string, s string) bool {
 	return false
 }
 
-// outsideLabel gives the first of the changed labels whose definition in force reads set_by: outside, "" for none.
+// outsideLabel gives the first of the changed labels whose definition in force reads set_by: outside, "" for none;
+// Bonsai's own (bonsai.*) are never set from outside.
 // The definitions are the locked packs' (the lock read in full) and those attached on this machine; a changed label
 // with no definition, while a definition file could not be read, is refused (its definition may be the one missing).
 func (j *judge) outsideLabel(x judged, changed []string) (string, error) {
@@ -503,6 +514,9 @@ func (j *judge) outsideLabel(x judged, changed []string) (string, error) {
 		}
 	}
 	for _, name := range changed {
+		if strings.HasPrefix(name, "bonsai.") {
+			continue // Bonsai's own labels (contract §5.6) are set by agents
+		}
 		set, ok := defs[name]
 		switch {
 		case ok && set == "outside":
