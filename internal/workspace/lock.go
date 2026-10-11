@@ -357,3 +357,116 @@ func sortedKeys[V any](m map[string]V) []string {
 	sort.Strings(keys)
 	return keys
 }
+
+// PackDeclared is what one pack of the lock declares that the guard judges by (ReadDeclared): its protected paths and
+// its document kinds' places.
+type PackDeclared struct {
+	Pack      string     // the pack's id
+	Protected []string   // declares.protected: project-relative globs an agent changes only under a running task's grant
+	Documents []DocPlace // declares.documents: each kind and its place (path, else file), the pack's default
+}
+
+// ReadDeclared reads, from the lock's bytes, each pack's id and the parts of its declares the guard judges by
+// (declares.protected and declares.documents' kinds and places), and nothing else: the guard's lean read of the lock
+// (design/plan-5.md, 5.3.1 note 3), on every hook call that judges a path, as ReadConfig is bonsai.yaml's. ReadLock reads
+// the whole lock, held to its schema, for the engine and bonsai check (about 4 ms on a 30 KB lock, against this read's
+// fraction of one: a hook starts in under 5 ms, spec §3).
+//
+// It holds the bytes to what it reads and to JSON as the strict decoder reads it (no key twice at any depth, valid
+// UTF-8), the format line to bonsai.lock/1 (a newer major refused, never guessed), and each value it takes to its
+// kind: packs a list of objects each with an id; declares an object; protected a list of project-relative globs;
+// documents a list of objects each with a kind and a project-relative path or file. A missing or null field reads as
+// none (contract §2.2). Everything else (files, format0, a pack's other declares) is left unread: bonsai check holds
+// it. Its error is an *Error naming the lock and a person's step.
+func ReadDeclared(raw []byte) ([]PackDeclared, error) {
+	v, err := schema.Decode(raw)
+	if err != nil {
+		return nil, lockError("is not a JSON document Bonsai reads: %s", oneLine(err))
+	}
+	doc, ok := v.(schema.Object)
+	if !ok {
+		return nil, lockError("is not a JSON object")
+	}
+	if f, _ := doc.Get("format"); f != LockFormat {
+		if s, isText := f.(string); isText && strings.HasPrefix(s, "bonsai.lock/") {
+			return nil, &Error{File: LockFile, Msg: "format too new: " + showValue(s) + " (this Bonsai reads bonsai.lock/1)",
+				Next: "use a Bonsai that reads it"}
+		}
+		return nil, lockError("its format is %s, not %s", schema.Show(f), LockFormat)
+	}
+	packs, _ := doc.Get("packs")
+	if packs == nil {
+		return nil, nil
+	}
+	list, ok := packs.([]any)
+	if !ok {
+		return nil, lockError("its packs is %s, not a list", schema.Show(packs))
+	}
+	out := make([]PackDeclared, 0, len(list))
+	for i, pv := range list {
+		po, ok := pv.(schema.Object)
+		if !ok || po.String("id") == "" {
+			return nil, lockError("packs item %d is %s, not a pack with an id", i+1, schema.Show(pv))
+		}
+		p := PackDeclared{Pack: po.String("id")}
+		where := "the pack " + showValue(p.Pack) + "'s declares"
+		dv, _ := po.Get("declares")
+		if dv == nil {
+			out = append(out, p)
+			continue
+		}
+		d, ok := dv.(schema.Object)
+		if !ok {
+			return nil, lockError("%s is %s, not an object", where, schema.Show(dv))
+		}
+		if pv, _ := d.Get("protected"); pv != nil {
+			globs, ok := pv.([]any)
+			if !ok {
+				return nil, lockError("%s.protected is %s, not a list", where, schema.Show(pv))
+			}
+			for _, g := range globs {
+				s, ok := g.(string)
+				if !ok || !relativeGlob(s) {
+					return nil, lockError("%s.protected holds %s, not a project-relative glob with forward slashes", where, schema.Show(g))
+				}
+				p.Protected = append(p.Protected, s)
+			}
+		}
+		if dv, _ := d.Get("documents"); dv != nil {
+			docs, ok := dv.([]any)
+			if !ok {
+				return nil, lockError("%s.documents is %s, not a list", where, schema.Show(dv))
+			}
+			for _, e := range docs {
+				eo, ok := e.(schema.Object)
+				place := ""
+				if ok {
+					place = eo.String("path")
+					if place == "" {
+						place = eo.String("file")
+					}
+				}
+				if !ok || eo.String("kind") == "" || !relativeGlob(place) {
+					return nil, lockError("%s.documents holds %s, not a kind with a project-relative path or file", where, schema.Show(e))
+				}
+				p.Documents = append(p.Documents, DocPlace{Kind: eo.String("kind"), Path: place})
+			}
+		}
+		out = append(out, p)
+	}
+	return out, nil
+}
+
+// LoadDeclared reads root/.bonsai/lock.json leanly (ReadDeclared). A missing lock is an *Error whose
+// errors.Is(err, fs.ErrNotExist) holds, as LoadLock's is.
+func LoadDeclared(root string) ([]PackDeclared, error) {
+	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(LockFile)))
+	if err != nil {
+		e := &Error{File: LockFile, Msg: "cannot be read: " + oneLine(err), Err: err, Next: lockNext}
+		if errors.Is(err, fs.ErrNotExist) {
+			e.Msg, e.Next = "is missing", "a person restores it (git checkout -- .bonsai/lock.json) or runs bonsai update"
+		}
+		return nil, e
+	}
+	return ReadDeclared(raw)
+}

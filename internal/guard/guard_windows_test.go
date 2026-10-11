@@ -10,7 +10,6 @@ import (
 	"unsafe"
 
 	"github.com/LastStep/Bonsai/internal/hookin"
-	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // kernel32's procedures these tests use, which the syscall package does not wrap.
@@ -30,8 +29,8 @@ func call(t *testing.T, p *syscall.LazyProc, args ...uintptr) uintptr {
 	return r
 }
 
-// windowsProject is project with a protected folder docs holding guide.md, and its config.
-func windowsProject(t *testing.T) (string, *workspace.Config) {
+// windowsProject is project with a protected folder docs holding guide.md.
+func windowsProject(t *testing.T) string {
 	t.Helper()
 	dir := project(t, testYAML)
 	if err := os.MkdirAll(filepath.Join(dir, "docs"), 0o755); err != nil {
@@ -40,16 +39,13 @@ func windowsProject(t *testing.T) (string, *workspace.Config) {
 	if err := os.WriteFile(filepath.Join(dir, "docs", "guide.md"), []byte("guide\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	cfg, err := workspace.LoadConfig(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return dir, cfg
+	return dir
 }
 
-func refused(t *testing.T, cfg *workspace.Config, root, p string) {
+// refused holds a Write of p, in a session of the project at root, to a refusal.
+func refused(t *testing.T, root, p string) {
 	t.Helper()
-	d := Decide(&hookin.Payload{Tool: "Write", Path: p}, root, cfg)
+	d := decide(&hookin.Payload{Tool: "Write", Path: p}, root)
 	if d.Allow {
 		t.Errorf("%s allowed (rule %s), want refused", p, d.Rule)
 	}
@@ -57,14 +53,14 @@ func refused(t *testing.T, cfg *workspace.Config, root, p string) {
 
 // A stream in a folder's name is the folder: secrets::$INDEX_ALLOCATION\key.txt writes secrets\key.txt.
 func TestDecideReadsDirectoryStreams(t *testing.T) {
-	dir, cfg := windowsProject(t)
+	dir := windowsProject(t)
 	for _, p := range []string{
 		dir + `\docs::$INDEX_ALLOCATION\guide.md`,
 		dir + `\docs::$INDEX_ALLOCATION\new.md`,
 		dir + `\docs:$I30:$INDEX_ALLOCATION\guide.md`,
 		dir + `\docs:$I30:$INDEX_ALLOCATION\new.md`,
 	} {
-		refused(t, cfg, dir, p)
+		refused(t, dir, p)
 	}
 }
 
@@ -79,26 +75,26 @@ func mklinkJ(t *testing.T, link, target string) {
 
 // A junction to a protected folder, or to the project, is followed: Go no longer follows junctions itself.
 func TestDecideFollowsJunctions(t *testing.T) {
-	dir, cfg := windowsProject(t)
+	dir := windowsProject(t)
 	outside, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
 	mklinkJ(t, filepath.Join(outside, "j"), filepath.Join(dir, "docs"))
 	mklinkJ(t, filepath.Join(outside, "proj"), dir)
-	refused(t, cfg, dir, filepath.Join(outside, "j", "guide.md"))
-	refused(t, cfg, dir, filepath.Join(outside, "j", "new.md"))
-	refused(t, cfg, dir, filepath.Join(outside, "proj", "protected.txt"))
+	refused(t, dir, filepath.Join(outside, "j", "guide.md"))
+	refused(t, dir, filepath.Join(outside, "j", "new.md"))
+	refused(t, dir, filepath.Join(outside, "proj", "protected.txt"))
 	// The project reached through a junction, the path by its real folder.
-	refused(t, cfg, filepath.Join(outside, "proj"), filepath.Join(dir, "protected.txt"))
-	if d := Decide(&hookin.Payload{Tool: "Write", Path: filepath.Join(outside, "j2.txt")}, dir, cfg); !d.Allow {
+	refused(t, filepath.Join(outside, "proj"), filepath.Join(dir, "protected.txt"))
+	if d := decide(&hookin.Payload{Tool: "Write", Path: filepath.Join(outside, "j2.txt")}, dir); !d.Allow {
 		t.Errorf("a file beside the junctions refused: %+v", d)
 	}
 }
 
 // Device and volume forms of a protected path: \\?\GLOBALROOT\Device\HarddiskVolumeN\... and \\?\Volume{...}\....
 func TestDecideReadsDevicePaths(t *testing.T) {
-	dir, cfg := windowsProject(t)
+	dir := windowsProject(t)
 	vol := filepath.VolumeName(dir) // C:
 	vp, err := syscall.UTF16PtrFromString(vol)
 	if err != nil {
@@ -108,25 +104,21 @@ func TestDecideReadsDevicePaths(t *testing.T) {
 	n := call(t, procQueryDosDevice, uintptr(unsafe.Pointer(vp)), uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf)))
 	device := syscall.UTF16ToString(buf[:n]) // \Device\HarddiskVolumeN
 	rest := dir[len(vol):]                   // \Users\...
-	refused(t, cfg, dir, `\\?\GLOBALROOT`+device+rest+`\protected.txt`)
-	refused(t, cfg, dir, `\\?\GLOBALROOT`+device+rest+`\docs\new.md`)
+	refused(t, dir, `\\?\GLOBALROOT`+device+rest+`\protected.txt`)
+	refused(t, dir, `\\?\GLOBALROOT`+device+rest+`\docs\new.md`)
 	mp, err := syscall.UTF16PtrFromString(vol + `\`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	call(t, procGetVolumeNameForRoot, uintptr(unsafe.Pointer(mp)), uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf)))
 	guid := strings.TrimSuffix(syscall.UTF16ToString(buf), `\`) // \\?\Volume{...}
-	refused(t, cfg, dir, guid+rest+`\protected.txt`)
-	refused(t, cfg, dir, guid+rest+`\docs\guide.md`)
+	refused(t, dir, guid+rest+`\protected.txt`)
+	refused(t, dir, guid+rest+`\docs\guide.md`)
 }
 
 // An NTFS short (8.3) name of a protected file is the protected file.
 func TestDecideReadsShortNames(t *testing.T) {
 	dir := project(t, testYAML)
-	cfg, err := workspace.LoadConfig(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
 	long := filepath.Join(dir, "protected.txt")
 	in, err := syscall.UTF16PtrFromString(long)
 	if err != nil {
@@ -141,7 +133,7 @@ func TestDecideReadsShortNames(t *testing.T) {
 	if strings.EqualFold(filepath.Base(short), "protected.txt") {
 		t.Skip("short (8.3) names are off on this volume: protected.txt has none")
 	}
-	d := Decide(&hookin.Payload{Tool: "Write", Path: short}, dir, cfg)
+	d := decide(&hookin.Payload{Tool: "Write", Path: short}, dir)
 	if d.Allow || d.Rule != RuleProtected {
 		t.Fatalf("%s: %+v, want refused as protected", short, d)
 	}

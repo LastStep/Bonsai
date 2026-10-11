@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -33,9 +35,43 @@ person_only: [".claude/**", "bonsai.yaml", ".bonsai/lock.json", "secret/*.key"]
 never_edit: []
 `
 
+// TestMain gives the package's tests a Bonsai home of their own, so no test reaches the real one (the salt, this
+// machine's records); project gives each test its own home in turn.
+func TestMain(m *testing.M) {
+	home, err := os.MkdirTemp("", "bonsai-guard-home-")
+	if err != nil {
+		panic(err)
+	}
+	if err := os.Setenv(workspace.HomeEnv, home); err != nil {
+		panic(err)
+	}
+	code := m.Run()
+	_ = os.RemoveAll(home)
+	os.Exit(code)
+}
+
+// testNow is the clock of the runs whose day's file a test reads, so a run that crosses midnight (UTC) finds its
+// records in the file it wrote.
+var testNow = time.Date(2026, 10, 11, 23, 59, 59, 0, time.UTC)
+
 // project makes a linked project in a temporary folder: bonsai.yaml, a .git folder on branch main, protected.txt
-// and free.txt. It gives the folder's real path.
+// and free.txt, recorded on this machine as bonsai init records it (workspace.RecordCheckout), in a Bonsai home of the
+// test's own (BONSAI_HOME), so it is a verified main checkout. It gives the folder's real path.
 func project(t *testing.T, yaml string) string {
+	t.Helper()
+	dir := unrecordedProject(t, yaml)
+	home := t.TempDir()
+	t.Setenv(workspace.HomeEnv, home)
+	if m := regexp.MustCompile(`(?m)^id: (ws-[a-z0-9]{26})`).FindStringSubmatch(yaml); m != nil {
+		if _, err := workspace.RecordCheckout(home, dir, m[1], time.Now()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}
+
+// unrecordedProject is project with no record on this machine: a clone that never ran bonsai update here.
+func unrecordedProject(t *testing.T, yaml string) string {
 	t.Helper()
 	dir, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
@@ -96,12 +132,31 @@ func env(dir string, kv ...string) func(string) string {
 // strings.Reader, and a busy log file is retried for openWait at most). Only the over-time tests run on a short budget.
 const untimed = time.Minute
 
-// guardRun runs Main with a payload and gives its exit code and stderr.
+// guardRun runs Main with a payload and gives its exit code and stderr. Its clock is testNow.
 func guardRun(t *testing.T, getenv func(string) string, stdin io.Reader, budget time.Duration) (int, string) {
 	t.Helper()
 	var stderr bytes.Buffer
-	code := Main(Options{Stdin: stdin, Stderr: &stderr, Getenv: getenv, Budget: budget})
+	code := Main(Options{Stdin: stdin, Stderr: &stderr, Getenv: getenv, Budget: budget, Now: func() time.Time { return testNow }})
 	return code, stderr.String()
+}
+
+// decide judges one payload as a run does with root the session's project, each file read afresh.
+func decide(in *hookin.Payload, root string) Decision {
+	j := newJudge(guardHome())
+	j.session = j.project(root)
+	d, _ := j.decide(in, root)
+	return d
+}
+
+// dayRecords reads the records of the one day's file (w-<date>.ndjson) in a project's log: a run with no session
+// writes there, by its own clock.
+func dayRecords(t *testing.T, dir string) []schema.Object {
+	t.Helper()
+	names, err := filepath.Glob(filepath.Join(dir, filepath.FromSlash(LogDir), "w-*.ndjson"))
+	if err != nil || len(names) != 1 {
+		t.Fatalf("day files %v (%v), want one", names, err)
+	}
+	return records(t, dir, filepath.Base(names[0]))
 }
 
 // records reads a log file's records, each checked against log.schema.json and for its field order.
@@ -185,7 +240,7 @@ func TestProtectedEditIsRefusedAndFreeEditAllowed(t *testing.T) {
 	if v, _ := recs[1].Get("text"); v != nil {
 		t.Errorf("an allow's record has text %v", v)
 	}
-	// The binary's path on every record, its SHA-256 on the session file's first only.
+	// The binary's path (from ~/ under the user's home) and its SHA-256 on the record that made the file only.
 	exe, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
@@ -195,11 +250,26 @@ func TestProtectedEditIsRefusedAndFreeEditAllowed(t *testing.T) {
 		t.Fatal(err)
 	}
 	sum := sha256.Sum256(raw)
-	if recs[0].String("bonsai_path") != filepath.ToSlash(exe) || recs[0].String("bonsai_sha256") != hex.EncodeToString(sum[:]) {
-		t.Errorf("first record names %s %s, want %s %x", recs[0].String("bonsai_path"), recs[0].String("bonsai_sha256"), filepath.ToSlash(exe), sum)
+	if want := fromHome(exe); recs[0].String("bonsai_path") != want || recs[0].String("bonsai_sha256") != hex.EncodeToString(sum[:]) {
+		t.Errorf("first record names %s %s, want %s %x", recs[0].String("bonsai_path"), recs[0].String("bonsai_sha256"), want, sum)
 	}
-	if v, _ := recs[1].Get("bonsai_sha256"); v != nil || recs[1].String("bonsai_path") != filepath.ToSlash(exe) {
-		t.Errorf("second record: path %s, hash %v; want the path and null", recs[1].String("bonsai_path"), v)
+	if p, _ := recs[1].Get("bonsai_path"); p != nil {
+		t.Errorf("second record names the binary %v; want null", p)
+	}
+	if v, _ := recs[1].Get("bonsai_sha256"); v != nil {
+		t.Errorf("second record names the hash %v; want null", v)
+	}
+	// The input hash: the salt's HMAC over the tool input, as the recorder's tool_start has it.
+	key, err := workspace.Salt()
+	if err != nil {
+		t.Fatal(err)
+	}
+	in, err := hookin.Parse([]byte(editOf("s-1", dir, "free.txt")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := recs[1].String("input_hash"), hookin.InputHash(key, in.Input); got != want || len(got) != 16 {
+		t.Errorf("input_hash %q, want %q", got, want)
 	}
 }
 
@@ -214,10 +284,6 @@ func asciiOnly(t *testing.T, s string) {
 
 func TestDecide(t *testing.T) {
 	dir := project(t, testYAML)
-	cfg, err := workspace.LoadConfig(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
 	if err := os.MkdirAll(filepath.Join(dir, "sub"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -264,7 +330,7 @@ func TestDecide(t *testing.T) {
 					in.Path = filepath.Join(dir, filepath.FromSlash(c.path))
 				}
 			}
-			d := Decide(in, dir, cfg)
+			d := decide(in, dir)
 			if d.Rule != c.rule || d.Target != c.target {
 				t.Fatalf("%s %s: rule %s target %q, want %s %q", c.tool, c.path, d.Rule, d.Target, c.rule, c.target)
 			}
@@ -282,17 +348,13 @@ func TestDecide(t *testing.T) {
 // A path starting with ~ is judged in the user's home folder too.
 func TestDecideReadsTilde(t *testing.T) {
 	dir := project(t, testYAML)
-	cfg, err := workspace.LoadConfig(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
 	t.Setenv("HOME", filepath.Dir(dir))
 	t.Setenv("USERPROFILE", filepath.Dir(dir))
-	d := Decide(&hookin.Payload{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/protected.txt"}, dir, cfg)
+	d := decide(&hookin.Payload{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/protected.txt"}, dir)
 	if d.Allow || d.Rule != RuleProtected {
 		t.Fatalf("%+v", d)
 	}
-	if d := Decide(&hookin.Payload{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/free.txt"}, dir, cfg); !d.Allow {
+	if d := decide(&hookin.Payload{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/free.txt"}, dir); !d.Allow {
 		t.Fatalf("%+v", d)
 	}
 }
@@ -302,12 +364,8 @@ func TestDecideOnACaseInsensitiveSystem(t *testing.T) {
 		t.Skip("letter case is folded where the file system ignores it: Windows and macOS; matchGlob's own test covers the fold")
 	}
 	dir := project(t, testYAML)
-	cfg, err := workspace.LoadConfig(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
 	for _, p := range []string{"PROTECTED.TXT", "Protected.Txt", ".CLAUDE/settings.json"} {
-		d := Decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, p)}, dir, cfg)
+		d := decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, p)}, dir)
 		if d.Allow {
 			t.Errorf("%s allowed: %+v", p, d)
 		}
@@ -319,10 +377,6 @@ func TestDecideOnWindowsForms(t *testing.T) {
 		t.Skip("these forms name a file only on Windows; windowsForms' own test reads them on every system")
 	}
 	dir := project(t, testYAML)
-	cfg, err := workspace.LoadConfig(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
 	slash := filepath.ToSlash(dir)
 	msys := "/" + strings.ToLower(slash[:1]) + slash[2:]
 	for _, p := range []string{
@@ -334,7 +388,7 @@ func TestDecideOnWindowsForms(t *testing.T) {
 		msys + "/protected.txt",
 		dir + `\sub\..\PROTECTED.txt`,
 	} {
-		d := Decide(&hookin.Payload{Tool: "Write", Path: p}, dir, cfg)
+		d := decide(&hookin.Payload{Tool: "Write", Path: p}, dir)
 		if d.Allow || d.Rule != RuleProtected {
 			t.Errorf("%s: %+v, want refused as protected", p, d)
 		}
@@ -354,10 +408,6 @@ func symlink(t *testing.T, target, link string) {
 
 func TestDecideFollowsLinks(t *testing.T) {
 	dir := project(t, testYAML)
-	cfg, err := workspace.LoadConfig(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
 	// A link to the protected file, a link to a protected file not yet made, and a link to the project folder.
 	symlink(t, "protected.txt", filepath.Join(dir, "free-link.txt"))
 	symlink(t, filepath.Join(dir, "secret", "new.key"), filepath.Join(dir, "dangling.txt"))
@@ -368,14 +418,14 @@ func TestDecideFollowsLinks(t *testing.T) {
 		filepath.Join(dir, "dangling.txt"),
 		filepath.Join(outside, "project-link", "protected.txt"),
 	} {
-		d := Decide(&hookin.Payload{Tool: "Write", Path: p}, dir, cfg)
+		d := decide(&hookin.Payload{Tool: "Write", Path: p}, dir)
 		if d.Allow {
 			t.Errorf("%s allowed: %+v", p, d)
 		}
 	}
 	// The project reached through a link: CLAUDE_PROJECT_DIR is the link, the path the real folder.
 	link := filepath.Join(outside, "project-link")
-	d := Decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, "protected.txt")}, link, cfg)
+	d := decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, "protected.txt")}, link)
 	if d.Allow {
 		t.Errorf("a protected path under the real folder of a linked project allowed: %+v", d)
 	}
@@ -425,11 +475,7 @@ func TestMatchGlob(t *testing.T) {
 
 func TestBadGlobBlocks(t *testing.T) {
 	dir := project(t, strings.Replace(testYAML, `"protected.txt", "docs"`, `"protected.txt", "[docs"`, 1))
-	cfg, err := workspace.LoadConfig(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	d := Decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, "free.txt")}, dir, cfg)
+	d := decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, "free.txt")}, dir)
 	if d.Allow || d.Rule != RuleBadGlob || !strings.Contains(d.Why, `"[docs"`) {
 		t.Fatalf("%+v", d)
 	}
@@ -537,7 +583,7 @@ func TestReadsThroughTheAdapter(t *testing.T) {
 		}
 		asciiOnly(t, stderr)
 	}
-	recs := records(t, dir, recordFile("", time.Now()))
+	recs := dayRecords(t, dir)
 	if len(recs) != len(bad) {
 		t.Fatalf("%d records of bad input, want %d", len(recs), len(bad))
 	}
@@ -613,8 +659,7 @@ func TestBlocksWhatItCannotReadOrDecide(t *testing.T) {
 		})
 	}
 	// A bad input is recorded, in the day's file (no session known).
-	day := recordFile("", time.Now())
-	recs := records(t, dir, day)
+	recs := dayRecords(t, dir)
 	if len(recs) != 3 || recs[0].String("rule") != RuleBadInput || recs[0].String("decision") != "deny" {
 		t.Fatalf("records %d: %v", len(recs), recs)
 	}
@@ -655,7 +700,7 @@ func TestOverTimeBlocks(t *testing.T) {
 	t.Run("the record half", func(t *testing.T) {
 		const wait = time.Minute
 		overTimeRun(t, wait, func(write func()) func() { return write }, func(dir string) {
-			recs := records(t, dir, recordFile("", time.Now()))
+			recs := dayRecords(t, dir)
 			if len(recs) != 1 || recs[0].String("rule") != RuleOverTime || recs[0].String("decision") != "deny" {
 				t.Fatalf("records when Main returned: %v", recs)
 			}
@@ -681,7 +726,7 @@ func TestOverTimeBlocks(t *testing.T) {
 			case <-time.After(time.Minute):
 				t.Fatal("the released writer did not finish within a minute")
 			}
-			if recs := records(t, dir, recordFile("", time.Now())); len(recs) != 1 || recs[0].String("rule") != RuleOverTime {
+			if recs := dayRecords(t, dir); len(recs) != 1 || recs[0].String("rule") != RuleOverTime {
 				t.Fatalf("records once released: %v", recs)
 			}
 		})
@@ -804,22 +849,32 @@ func TestBudgetIsHalfTheHookTimeout(t *testing.T) {
 	}
 }
 
-func TestRecordIDsAreUUIDs(t *testing.T) {
-	seen := map[string]bool{}
-	for i := 0; i < 50; i++ {
-		id := newID()
-		if len(id) != 36 || id[14] != '4' || !strings.ContainsRune("89ab", rune(id[19])) || seen[id] {
-			t.Fatalf("id %s", id)
-		}
-		seen[id] = true
-	}
-	if got := cut("abcdef", 4); got != "a..." {
-		t.Errorf("cut: %q", got)
-	}
+// The record's own small rules: categories, and the binary's path from ~/ under the user's home (letter case
+// ignored on Windows), else as it is.
+func TestRecordFields(t *testing.T) {
 	if got := category("NotebookEdit") + category("Bash") + category("Glob"); got != "EditShellOther" {
 		t.Errorf("category: %q", got)
 	}
-	if got := fmt.Sprint(checkoutName(string(filepath.Separator))); got != "" {
-		t.Errorf("checkout at the root: %q", got)
+	defer func(f func() (string, error)) { userHome = f }(userHome)
+	home := filepath.Join(t.TempDir(), "Me")
+	userHome = func() (string, error) { return home, nil }
+	cases := map[string]string{
+		filepath.Join(home, "bin", "bonsai"):                    "~/bin/bonsai",
+		filepath.Join(filepath.Dir(home), "Mentor", "bin", "x"): filepath.ToSlash(filepath.Join(filepath.Dir(home), "Mentor", "bin", "x")),
+		home: filepath.ToSlash(home),
+		filepath.Join(filepath.Dir(home), "other", "bonsai"): filepath.ToSlash(filepath.Join(filepath.Dir(home), "other", "bonsai")),
+		"": "",
+	}
+	if runtime.GOOS == "windows" {
+		cases[filepath.Join(strings.ToUpper(home), "bonsai.exe")] = "~/bonsai.exe"
+	}
+	for in, want := range cases {
+		if got := fromHome(in); got != want {
+			t.Errorf("fromHome(%q) = %q, want %q", in, got, want)
+		}
+	}
+	userHome = func() (string, error) { return "", errors.New("no home") }
+	if got := fromHome(filepath.Join(home, "bonsai")); got != filepath.ToSlash(filepath.Join(home, "bonsai")) {
+		t.Errorf("with no home: %q", got)
 	}
 }

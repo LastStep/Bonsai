@@ -15,13 +15,15 @@ package guard
 //   - on Windows, also as Windows itself names it (finalPath, final_windows.go): the longest part of the path that
 //     exists, opened and named by GetFinalPathNameByHandle, which resolves junctions, symbolic links, mount points,
 //     short (8.3) names, streams and device or volume forms (\\?\GLOBALROOT\Device\..., \\?\Volume{...}\...) to the
-//     drive-letter path and letter case on disk, then the rest of the path;
-// each against the project's folder as given and as resolved. Letter case is folded where the project's folder is
-// case-insensitive: always on Windows and macOS, and on Linux when bonsai.yaml answers to BONSAI.YAML too (a folder
-// on /mnt/c in WSL).
+//     drive-letter path and letter case on disk, then the rest of the path.
 //
-// Not covered, the limits of a tripwire until step 5.3: a hard link made to a protected file, a short (8.3) name of
-// a file that does not exist yet, and another route to the same disk (a network share of it).
+// Each form is judged by the projects holding it (holding: every folder at or above it that holds bonsai.yaml, past
+// any .git, to the volume's root; design/plan-5.md, 5.3.1 note 1), each against its own folder. Letter case is folded
+// where a project's folder is case-insensitive: always on Windows and macOS, and on Linux when bonsai.yaml answers to
+// BONSAI.YAML too (a folder on /mnt/c in WSL).
+//
+// Not covered, the limits of a tripwire: a hard link made to a protected file, a short (8.3) name of a file that does
+// not exist yet, and another route to the same disk (a network share of it).
 //
 // On Windows, Go since 1.23 no longer reports a junction as a symbolic link, nor follows one in EvalSymlinks, so
 // resolve alone misses junctions (which need no privilege to make); finalPath is what follows them.
@@ -37,20 +39,11 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// projectPaths gives every project-relative form of an edit's path p (forward slashes, each once, in a fixed
-// order: as written first), or none when p lies outside the project in every form. root is the project's absolute
-// folder; cwd the payload's. Its error says Windows opened a part of a path but could not name it: the guard cannot
-// tell where that path leads.
-func projectPaths(root, cwd, p string) ([]string, error) {
-	roots := []string{filepath.Clean(root)}
-	if real, err := filepath.EvalSymlinks(root); err == nil {
-		roots = appendNew(roots, real)
-	}
-	if f, ok, err := finalPath(root); err != nil {
-		return nil, err
-	} else if ok {
-		roots = appendNew(roots, f)
-	}
+// pathForms gives every absolute form an edit's path p may take (the package comment's list), each once, in a fixed
+// order (as written first): made absolute against the payload's cwd, else base (the session's project folder). Its
+// error says Windows opened a part of the path but could not name it, or the path runs through a junction or link
+// that does not resolve: either way the guard cannot tell where it leads.
+func pathForms(base, cwd, p string) ([]string, error) {
 	written := []string{p}
 	if t := tildeForm(p); t != "" {
 		written = append(written, t)
@@ -62,7 +55,7 @@ func projectPaths(root, cwd, p string) ([]string, error) {
 	}
 	var targets []string
 	for _, w := range written {
-		a := absolute(cwd, root, w)
+		a := absolute(cwd, base, w)
 		targets = appendNew(targets, a)
 		targets = appendNew(targets, resolve(a))
 		if f, ok, err := finalPath(a); err != nil {
@@ -70,6 +63,26 @@ func projectPaths(root, cwd, p string) ([]string, error) {
 		} else if ok {
 			targets = appendNew(targets, f)
 		}
+	}
+	return targets, nil
+}
+
+// projectPaths gives every project-relative form of an edit's path p (forward slashes, each once, in a fixed
+// order: as written first), or none when p lies outside the project in every form. root is the project's absolute
+// folder; cwd the payload's. Its error is pathForms'.
+func projectPaths(root, cwd, p string) ([]string, error) {
+	roots := []string{filepath.Clean(root)}
+	if real, err := filepath.EvalSymlinks(root); err == nil {
+		roots = appendNew(roots, real)
+	}
+	if f, ok, err := finalPath(root); err != nil {
+		return nil, err
+	} else if ok {
+		roots = appendNew(roots, f)
+	}
+	targets, err := pathForms(root, cwd, p)
+	if err != nil {
+		return nil, err
 	}
 	var out []string
 	for _, t := range targets {

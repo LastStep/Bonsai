@@ -36,11 +36,10 @@ type Options struct {
 
 // run is one guard run's state, shared by the worker and the timer under mu.
 type run struct {
-	o    Options
-	mu   sync.Mutex
-	root string
-	cfg  *workspace.Config
-	in   *hookin.Payload
+	o  Options
+	mu sync.Mutex
+	at *place // where the record goes: the session's project, then the project whose rules decided; nil until known
+	in *hookin.Payload
 }
 
 // Main answers one PreToolUse call: 0 allows it, 2 blocks it with the reason and the next step on stderr. It
@@ -77,36 +76,42 @@ func panicked(p any) Decision {
 }
 
 // work does the guard's whole job and gives its decision. A panic inside is the frame's to answer (panicked).
+//
+// The order (spec §7): the session's project first, from CLAUDE_PROJECT_DIR (set by Claude Code, not by any file an
+// agent edits), so a bonsai.yaml that does not read blocks before anything else; then the payload; then the decision,
+// by the projects holding the path (rule.go). When the session's folder is in no linked project, the guard still
+// judges a file tool's path in a linked one, and allows and records nothing otherwise (spec §7).
 func (r *run) work() (d Decision) {
 	dir := r.o.Getenv(hookin.ProjectEnv)
 	if dir == "" {
 		return deny(RuleNoProject, hookin.ProjectEnv+" is not set, so the guard cannot tell which project this call is in, and it blocks",
 			"run the guard as Claude Code's hook (Claude Code sets "+hookin.ProjectEnv+"); to run it by hand, set "+hookin.ProjectEnv+" to the project's folder")
 	}
-	root, linked, err := hookin.FindProject(dir)
+	roots, base, err := hookin.FindProjects(dir)
 	if err != nil {
 		return deny(RuleNoProject, fmt.Sprintf("the project's folder %s cannot be read (%s), so the guard blocks",
 			quote(filepath.ToSlash(dir), 120), oneLine(err.Error())), "tell the person: check that the folder exists and can be read")
 	}
-	if !linked {
-		hookin.Drain(r.o.Stdin, r.o.StdinTerminal)
-		return allow(RuleNotLinked, "")
-	}
-	cfg, err := workspace.LoadConfig(root)
-	if err != nil {
-		next := "leave the change and tell the person: a person fixes bonsai.yaml (bonsai check names the line)"
-		var we *workspace.Error
-		if errors.As(err, &we) {
-			next = "tell the person: " + we.Next
+	j := newJudge(guardHome())
+	if len(roots) > 0 {
+		s := j.project(roots[0])
+		if err := s.own.err; err != nil {
+			next := "leave the change and tell the person: a person fixes bonsai.yaml (bonsai check names the line)"
+			var we *workspace.Error
+			if errors.As(err, &we) {
+				next = "tell the person: " + we.Next
+			}
+			return deny(RuleBadConfig, "bonsai.yaml cannot be read ("+oneLine(err.Error())+"), so the guard cannot tell what "+
+				"is protected, and it blocks", oneLine(next))
 		}
-		return deny(RuleBadConfig, "bonsai.yaml cannot be read ("+oneLine(err.Error())+"), so the guard cannot tell what "+
-			"is protected, and it blocks", oneLine(next))
+		j.session, base = s, s.root
+		r.setPlace(j, s)
 	}
-	r.mu.Lock()
-	r.root, r.cfg = root, cfg
-	r.mu.Unlock()
 	in, err := r.readInput()
 	if err != nil {
+		if j.session == nil {
+			return allow(RuleNotLinked, "")
+		}
 		d = deny(RuleBadInput, "the hook input "+err.Error()+", and an input the guard cannot read is blocked",
 			"tell the person: a person checks the payload Claude Code sends (bonsai hook guard, by hand, with it on stdin)")
 		return r.recorded(d)
@@ -114,10 +119,38 @@ func (r *run) work() (d Decision) {
 	r.mu.Lock()
 	r.in = in
 	r.mu.Unlock()
-	if fd := testFault(r); fd != nil {
-		return r.recorded(*fd)
+	if j.session != nil {
+		if fd := testFault(r); fd != nil {
+			return r.recorded(*fd)
+		}
 	}
-	return r.recorded(Decide(in, root, cfg))
+	d, rec := j.decide(in, base)
+	if rec == nil {
+		if j.session == nil && d.Rule == RuleBadPath {
+			return allow(RuleNotLinked, "") // in no linked project that can be told: a write through it fails anyway
+		}
+		return d
+	}
+	r.setPlace(j, rec)
+	return r.recorded(d)
+}
+
+// setPlace makes p the project the run's record goes in.
+func (r *run) setPlace(j *judge, p *linkedProject) {
+	at := &place{id: p.id(), local: j.local(p)}
+	r.mu.Lock()
+	r.at = at
+	r.mu.Unlock()
+}
+
+// guardHome is the Bonsai home the guard reads this machine's records from (workspace.Home: BONSAI_HOME as the hook
+// sees it, else ~/.bonsai); "" when there is none, which verifies no main checkout.
+func guardHome() string {
+	home, err := workspace.Home()
+	if err != nil {
+		return ""
+	}
+	return home
 }
 
 // recorded writes d's record and gives the decision to answer: an allow that cannot be recorded becomes a refusal.
@@ -138,12 +171,12 @@ func (r *run) recorded(d Decision) Decision {
 // record writes d's record with what the run has read so far.
 func (r *run) record(d Decision) error {
 	r.mu.Lock()
-	root, cfg, in := r.root, r.cfg, r.in
+	at, in := r.at, r.in
 	r.mu.Unlock()
-	if cfg == nil {
+	if at == nil {
 		return errors.New("no workspace id to record")
 	}
-	return writeRecord(root, cfg, in, d, r.o.Getenv, r.o.Now())
+	return writeRecord(at, in, d, r.o.Getenv, r.o.Now())
 }
 
 // overTime is the answer when the budget runs out first: a refusal, and, once bonsai.yaml has been read, the writer
@@ -154,7 +187,7 @@ func (r *run) overTime() (hookin.Answer, func()) {
 		"the hook's timeout pass it through", r.o.Budget),
 		"try the call again; if it is blocked again, tell the person (a slow disk, or a stdin that never ends)")
 	r.mu.Lock()
-	known := r.cfg != nil
+	known := r.at != nil
 	r.mu.Unlock()
 	if !known {
 		return d.answer(), nil

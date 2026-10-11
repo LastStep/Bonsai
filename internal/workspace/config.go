@@ -4,11 +4,12 @@ package workspace
 // person edits.
 //
 // Read here, by ReadConfig and LoadConfig (what the walking skeleton's parts 2 to 5 use, and all the guard reads, on
-// every hook call): format, id, name, packs (id, source, path, ref), protected, person_only and never_edit (part 3
-// writes each never_edit path as a deny rule). Every other key spec §6 shows (documents, ladder_floor, ladder,
-// ratchets, ci_marked_tests, generated) and any unknown key is kept in Config.Doc as read and not checked here.
-// The engine and bonsai check read the file in full (full.go, ReadConfigFull: every field held to
-// bonsai.workspace/1's schema, in Config.Full); the guard keeps this lean read (plan-5 5.1.4a).
+// every hook call): format, id, name, packs (id, source, path, ref), documents (each kind's folder or file: the task
+// folder, and the declared kinds' places the guard reads from step 5.3), protected, person_only and never_edit (part
+// 3 writes each never_edit path as a deny rule). Every other key spec §6 shows (ladder_floor, ladder, ratchets,
+// ci_marked_tests, generated) and any unknown key is kept in Config.Doc as read and not checked here. The engine and
+// bonsai check read the file in full (full.go, ReadConfigFull: every field held to bonsai.workspace/1's schema, in
+// Config.Full); the guard keeps this lean read (plan-5 5.1.4a, widened by 5.3.1 note 3 to the fields it judges by).
 
 import (
 	"errors"
@@ -34,6 +35,7 @@ type Config struct {
 	ID         string      // the workspace id: ws- and 26 characters (contract §3)
 	Name       string      // a slug: [a-z][a-z0-9-]{0,39} (contract §3)
 	Packs      []PackRef   // the packs, in the order they apply
+	Documents  []DocPlace  // documents: each kind's place, in the file's order; none when the file names none
 	Protected  []string    // globs an agent changes only while its running task lists them (spec §6); [] for none
 	PersonOnly []string    // of those, the globs only a person grants (contract §5.5); [] for none
 	NeverEdit  []string    // paths no agent ever changes, written as Edit deny rules (spec §6, §7); [] for none
@@ -51,6 +53,14 @@ type PackRef struct {
 	Path   string // the pack's folder inside that repository, "" for its root
 	Ref    string // the release tag (spec §5); the lock records the commit it resolves to
 	Line   int    // the line of the entry in bonsai.yaml
+}
+
+// DocPlace is one entry of bonsai.yaml's documents: a document kind and its place, a folder (one file per document)
+// or a single file, project-relative with forward slashes (contract §7.3: task: work/tasks).
+type DocPlace struct {
+	Kind string // the kind's name: task, run, answers, memory, protocols, or a pack's kind
+	Path string // its folder or file, project-relative
+	Line int    // the entry's line in bonsai.yaml
 }
 
 // The id and name patterns are the ones bonsai.status/1 prints them under (formats/schemas/status.schema.json, their
@@ -133,6 +143,19 @@ func ReadConfig(raw []byte) (*Config, error) {
 			f.fail(e.Line, "%s's ref %s starts with -, which git would read as an option", where, showValue(p.Ref))
 		}
 		c.Packs = append(c.Packs, p)
+	}
+	if docs := f.mapping(m, "documents", "the file"); docs != nil {
+		for _, e := range docs.Entries() {
+			place, isText := e.Value.(string)
+			switch {
+			case f.err != nil:
+			case !isText || place == "":
+				f.fail(e.Line, "documents' %s is %s, not a folder or file (quote it)", showValue(e.Key), kindOf(e.Value))
+			case !relativeGlob(place):
+				f.fail(e.Line, "documents' %s place %s is not project-relative with forward slashes", showValue(e.Key), showValue(place))
+			}
+			c.Documents = append(c.Documents, DocPlace{Kind: e.Key, Path: place, Line: e.Line})
+		}
 	}
 	c.Protected = f.texts(m, "protected", "the file")
 	c.PersonOnly = f.texts(m, "person_only", "the file")
