@@ -78,7 +78,7 @@ func TestPageHoldsEveryList(t *testing.T) {
 		"Active task: reasons there is none", "Generated kinds", "Task statuses", "Run outcomes", "Label value kinds",
 		"Lane rules", "Log events", "Log categories", "Lock file kinds", "Pack file kinds", "Bonsai's document kinds",
 		"Needs kinds", "Claude Code states", "Plugin results", "Check words later steps build", "Guard rules", "The guard's floor",
-		"Stand-in names"} {
+		"Stand-in names", "Delete words", "Words that run another program"} {
 		if !strings.Contains(page, "\n## "+name+"\n") {
 			t.Errorf("the page has no list %q", name)
 		}
@@ -99,6 +99,17 @@ func TestPageHoldsEveryList(t *testing.T) {
 	for _, f := range guard.Floor {
 		if !strings.Contains(page, "| `"+f.Glob+"` | "+f.At+" | `"+f.Class+"` |") {
 			t.Errorf("the floor's %s is not on the page", f.Glob)
+		}
+	}
+	// The delete check's two tables (plan-5 5.3.3): every row on the page.
+	for _, w := range guard.DeleteWords {
+		if !strings.Contains(page, "| `"+w.Word+"` | ") {
+			t.Errorf("the delete word %s is not on the page", w.Word)
+		}
+	}
+	for _, w := range guard.RunnerWords {
+		if !strings.Contains(page, "| `"+w.Word+"` | "+w.Shells()+" |") {
+			t.Errorf("the runner word %s is not on the page", w.Word)
 		}
 	}
 	for _, l := range engine.CheckLaterWords() {

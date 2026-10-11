@@ -91,6 +91,12 @@ func Page() []byte {
 	p.section("Stand-in names", "closed", "guard.StandInNames (internal/guard/own.go)", "none",
 		"The file names the guard refuses an agent's file tools writing outside every linked project, letter case ignored: a stand-in for Bonsai's program in a folder on the PATH.")
 	p.values(guard.StandInNames)
+	p.section("Delete words", "open", "guard.DeleteWords (internal/guard/shell_words.go)", "none",
+		"The words the guard's delete check reads in a Bash, PowerShell or Monitor call (plan-5 5.3.3): matched by base name, letter case ignored, .exe dropped; in PowerShell a bare name is the cmdlet's alias, a name with a folder or .exe the program. A recursive or bulk delete that does not name what it deletes is refused (`delete-unnamed`), a delete or move of a guarded path judged as an edit of it (`delete-protected`).")
+	p.deleteWords()
+	p.section("Words that run another program", "open", "guard.RunnerWords (internal/guard/shell_words.go)", "none",
+		"The words the delete check passes over, with their options, to reach the program they run (plan-5 5.3.3 note 1).")
+	p.runnerWords()
 	p.section("Secret kinds", "open", "redact.Kinds (internal/redact/redact.go), in the order its rules run", "`bonsai check` (a `secret` finding names the kind it found)",
 		"The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value. A new rule of the redactor adds a kind.")
 	p.secretKinds()
@@ -201,6 +207,26 @@ func (p *page) floor() {
 			del = "no"
 		}
 		p.line("| `%s` | %s | `%s` | %s | %s |", f.Glob, f.At, f.Class, del, cell(f.Why))
+	}
+}
+
+func (p *page) deleteWords() {
+	p.line("| Word | Names | Read by | Deletes |")
+	p.line("|---|---|---|---|")
+	for _, w := range guard.DeleteWords {
+		var q []string
+		for _, n := range w.Names {
+			q = append(q, "`"+n+"`")
+		}
+		p.line("| `%s` | %s | %s | %s |", w.Word, strings.Join(q, ", "), w.Shells(), cell(w.Deletes))
+	}
+}
+
+func (p *page) runnerWords() {
+	p.line("| Word | Read by | What the check reads |")
+	p.line("|---|---|---|")
+	for _, w := range guard.RunnerWords {
+		p.line("| `%s` | %s | %s |", w.Word, w.Shells(), cell(w.Does))
 	}
 }
 

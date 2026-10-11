@@ -33,6 +33,8 @@ error words.
 - Guard rules
 - The guard's floor
 - Stand-in names
+- Delete words
+- Words that run another program
 - Secret kinds
 - Lane rules
 - Task statuses
@@ -410,10 +412,14 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `outside-label` | deny | command mode: an edit that sets a label whose definition reads set_by: outside |
 | `bad-format` | deny | command mode: a write of a task, run report or STATE that fails its format |
 | `bad-settings` | deny | this machine's settings for the workspace cannot be read when a judgment needs its mode |
+| `delete-unnamed` | deny | a shell call's recursive or bulk delete that does not name what it deletes (an operand holding a glob, a variable or a substitution, or one that is ., .., /, ~ or a drive's root; xargs, a pipeline or a loop feeding it; git clean with no path; a delete of several files by a glob), and always git clean -x or -X, git stash --all and rm --no-preserve-root |
+| `delete-protected` | deny | a shell call's delete or move of a guarded path, or of a folder holding one, judged as an edit of that path (the reason says what guards it) |
+| `delete-unsplit` | deny | a shell call's line the delete check cannot split (a quote or bracket left open, nesting past three levels) that holds a delete word |
+| `delete-named` | allow | a shell call whose deletes and moves all name what they take, none of it guarded |
 | `person-command` | deny | bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes CLAUDE_CODE_CHILD_SESSION: a person's commands, allowed to an agent only in a project in command mode under a running task's grant of bonsai.yaml and .bonsai/lock.json |
 | `home-command` | deny | bonsai settings set, bonsai labels attach or detach: never in an agent session |
 | `bonsai-command` | allow | a bonsai command an agent may run: init and update judged as an edit of bonsai.yaml and the lock, every other word free |
-| `shell-not-judged` | allow | a Bash, PowerShell or Monitor call whose line changes nothing the guard judges |
+| `shell-not-judged` | allow | a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, no bonsai command, CLAUDE_CODE_CHILD_SESSION left as it is |
 | `tool-not-judged` | allow | a tool other than the file tools and the shells |
 | `bad-input` | deny | the hook's payload cannot be read |
 | `bad-glob` | deny | a glob on a list is not a glob the guard reads |
@@ -458,6 +464,67 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 - The file names the guard refuses an agent's file tools writing outside every linked project, letter case ignored: a stand-in for Bonsai's program in a folder on the PATH.
 
 Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps1`, `bonsai.com`.
+
+## Delete words
+
+- Open list.
+- Defined in: guard.DeleteWords (internal/guard/shell_words.go).
+- Printed in a project by: none.
+- The words the guard's delete check reads in a Bash, PowerShell or Monitor call (plan-5 5.3.3): matched by base name, letter case ignored, .exe dropped; in PowerShell a bare name is the cmdlet's alias, a name with a folder or .exe the program. A recursive or bulk delete that does not name what it deletes is refused (`delete-unnamed`), a delete or move of a guarded path judged as an edit of it (`delete-protected`).
+
+| Word | Names | Read by | Deletes |
+|---|---|---|---|
+| `rm` | `rm` | every shell, as a program | its operands; recursive with -r, -R or --recursive (bundled, any prefix); always refused with --no-preserve-root |
+| `rmdir` | `rmdir` | every shell, as a program | its operands (empty folders) |
+| `unlink` | `unlink` | every shell, as a program | its operand |
+| `shred` | `shred` | every shell, as a program | its operands (overwritten, and deleted with -u) |
+| `mv` | `mv` | every shell, as a program | moves its sources away (with all they hold) onto its destination |
+| `git rm` | `git` | every shell, as a program | its paths; recursive with -r; its paths from --pathspec-from-file are unnamed; not with -n |
+| `git clean` | `git` | every shell, as a program | the untracked files under its paths (bulk); with no path unnamed; always refused with -x or -X; not with -n |
+| `git stash` | `git` | every shell, as a program | with --all or -a, ignored files moved away (.bonsai/local/ among them): always refused |
+| `git mv` | `git` | every shell, as a program | moves its sources away onto its destination; not with -n |
+| `find` | `find` | every shell, as a program | with -delete, or -exec, -execdir, -ok or -okdir running a delete word: what it finds under its starting points (bulk) |
+| `rsync` | `rsync` | every shell, as a program | with any --delete option (--del): files in its destination (bulk); with --remove-source-files: moves its sources |
+| `robocopy` | `robocopy` | every shell, as a program | with /MIR or /PURGE: files in its destination (bulk); with /MOV or /MOVE: moves its source; not with /L |
+| `Remove-Item` | `remove-item`, `rm`, `ri`, `del`, `erase`, `rd`, `rmdir` | PowerShell, as a cmdlet or its alias | its -Path or -LiteralPath (-LiteralPath names it as written); recursive with -Recurse (any prefix); bulk when piped into or with -Include, -Exclude or -Filter; not with -WhatIf |
+| `Move-Item` | `move-item`, `mv`, `mi`, `move` | PowerShell, as a cmdlet or its alias | moves its -Path or -LiteralPath onto its -Destination; piped into, unnamed |
+| `Rename-Item` | `rename-item`, `ren`, `rni` | PowerShell, as a cmdlet or its alias | moves its -Path or -LiteralPath onto -NewName beside it; piped into, unnamed |
+| `del` | `del`, `erase` | cmd.exe, as its own command | the files in its operands; recursive with /s |
+| `rd` | `rd`, `rmdir` | cmd.exe, as its own command | its folders; recursive with /s |
+| `move` | `move` | cmd.exe, as its own command | moves its sources onto its destination |
+| `ren` | `ren`, `rename` | cmd.exe, as its own command | moves its source onto a new name beside it |
+
+## Words that run another program
+
+- Open list.
+- Defined in: guard.RunnerWords (internal/guard/shell_words.go).
+- Printed in a project by: none.
+- The words the delete check passes over, with their options, to reach the program they run (plan-5 5.3.3 note 1).
+
+| Word | Read by | What the check reads |
+|---|---|---|
+| `sudo` | bash | its options skipped; -D (--chdir) names the folder |
+| `doas` | bash | its options skipped |
+| `env` | bash | its options and NAME=value words skipped; -C (--chdir) names the folder; -S (--split-string) is split again |
+| `command` | bash | skipped; with -v or -V it runs nothing |
+| `builtin` | bash | skipped |
+| `exec` | bash | its options skipped |
+| `nice` | bash | its options skipped |
+| `ionice` | bash | its options skipped |
+| `nohup` | bash | skipped |
+| `setsid` | bash | its options skipped |
+| `stdbuf` | bash | its options skipped |
+| `time` | bash | its options skipped |
+| `timeout` | bash | its options and its duration skipped |
+| `xargs` | bash | its options skipped; a delete it runs takes its operands from input, so it does not name them |
+| `busybox` | bash | skipped: the word after it is the program |
+| `chronic` | bash | skipped |
+| `unbuffer` | bash | skipped |
+| `fakeroot` | bash | its options skipped |
+| `watch` | bash | its options skipped; its words joined and split again, as sh -c runs them, unless -x (--exec) |
+| `wsl` | bash, PowerShell, cmd.exe | its options skipped; the program runs in bash, its words joined and split again unless -e (--exec); --cd names the folder |
+| `start` | cmd.exe | its /options and a quoted title skipped; /d names the folder |
+| `call` | cmd.exe | skipped |
 
 ## Secret kinds
 
