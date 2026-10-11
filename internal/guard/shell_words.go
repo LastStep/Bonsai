@@ -14,6 +14,7 @@ package guard
 
 import (
 	"encoding/base64"
+	"fmt"
 	"path"
 	"runtime"
 	"strings"
@@ -100,10 +101,37 @@ func delSplitWords(text string, depth int) ([]shWord, bool) {
 	return delExpandAlts(l.cmds[0].words), true
 }
 
-// delSValue reports whether words[k] is the value of an -S (or --split-string) written as the word before it.
-func delSValue(words []shWord, k int) bool {
-	p := words[k-1].text
-	return p == "-S" || p == "--split-string" || strings.HasPrefix("--split-string", p) && len(p) > 3
+// delEnvSplit reads env's first -S (--split-string), the option g.on[k] of words (env's words after its name, env),
+// as GNU env does: its text split into words that take the place of the option and its value, ahead of the words
+// after them, for env's options to be read again. The words are rebuilt from delParse's reading, however the -S was
+// written (bundled after other options as in -vS, its value glued as in -Srm, long, or abbreviated as in --spl), with
+// the options before it kept for their effect; a -S in its text or after it is read on the next pass, one at a time.
+// It gives env's words anew, nil when the -S has no text (env runs nothing); ok is false when the text does not split
+// into one simple command.
+func delEnvSplit(env shWord, words []shWord, g delGot, k, depth int) ([]shWord, bool) {
+	vals := g.vals[g.on[k]]
+	if len(vals) == 0 {
+		return nil, true
+	}
+	more, ok := delSplitWords(vals[0].text, depth) // the first -S's text: the first value of its name
+	if !ok {
+		return nil, false
+	}
+	at := g.at[k]
+	out := append([]shWord{env}, words[:at]...)
+	if !strings.HasPrefix(words[at].text, "--") {
+		// The short options bundled before the S (-vS): each is an option of its own, its letter as delParse read it.
+		var b strings.Builder
+		for j := 0; j < k; j++ {
+			if g.at[j] == at {
+				b.WriteString(g.on[j])
+			}
+		}
+		if b.Len() > 0 {
+			out = append(out, shWord{text: "-" + b.String(), raw: "-" + b.String()})
+		}
+	}
+	return append(append(out, more...), words[g.end[k]:]...), true
 }
 
 // delParseWord gives the reading of a delete word of the table (git's are read by delRun.git).
@@ -333,10 +361,18 @@ func delCdKind(name string, d shDialect) int {
 	return delCdNone
 }
 
+// delSteps bounds the walk past the words that run another program (each runner word, each env -S text, one step):
+// a command exec reaches it in is refused (delete-unsplit), and one delProbe reaches it in counts as a delete; neither
+// is allowed unread.
+const delSteps = 256
+
 // exec reads one command from its program on: past assignments and runners to the program, then a folder word, a
 // shell given text, or a delete word, each judged. It gives what the command did to the folder.
 func (r *delRun) exec(x delExec) delCd {
-	for steps := 0; steps < 256 && r.deny == nil; steps++ {
+	for steps := 0; steps < delSteps; steps++ {
+		if r.deny != nil {
+			return delCd{}
+		}
 		w := x.words
 		if x.d == shBash {
 			r.envAssignWords(w)
@@ -391,6 +427,11 @@ func (r *delRun) exec(x delExec) delCd {
 		}
 		return delCd{}
 	}
+	r.refuse(Decision{Rule: RuleDeleteUnsplit,
+		Why: fmt.Sprintf("%s refused: a command runs its program through more than %d words that run another program "+
+			"(sudo, env, nice and their kind, env -S texts among them), more than the check reads, so it cannot tell what "+
+			"it runs (rule %s)", r.tool, delSteps, RuleDeleteUnsplit),
+		Next: "run the program with fewer words before it that run another program"})
 	return delCd{}
 }
 
@@ -491,25 +532,15 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 	}
 	switch rn.Word {
 	case "env":
-		if s := g.val("S", "split-string"); len(s) > 0 {
-			// -S's text is more of env's own words (its options, assignments, then the program): read them again as
-			// env's, ahead of the words that follow.
-			more, ok := delSplitWords(s[0].text, x.depth)
+		if k := g.first("S", "split-string"); k >= 0 {
+			// -S's text is more of env's own words (its options, assignments, then the program).
+			more, ok := delEnvSplit(x.words[0], words, g, k, x.depth)
 			if !ok {
-				r.text(s[0].text+" "+delJoin(words[g.rest:], false), shBash, x.depth+1, x.dirs, x.loop)
+				r.text(g.vals[g.on[k]][0].text+" "+delJoin(words[g.rest:], false), shBash, x.depth+1, x.dirs, x.loop)
 				return x, false
 			}
-			var again []shWord
-			for k, w := range words {
-				if k >= g.rest {
-					break
-				}
-				if t := w.text; t != "-S" && !strings.HasPrefix(t, "-S") && !strings.HasPrefix(t, "--s") && (k == 0 || !delSValue(words, k)) {
-					again = append(again, w)
-				}
-			}
-			x.words = append(append(append([]shWord{x.words[0]}, again...), more...), words[g.rest:]...)
-			return x, true
+			x.words = more
+			return x, more != nil
 		}
 		// env's own NAME=value words, up to its program, on their quote-free text (env reads 'NAME=' as one too).
 		k := g.rest
@@ -982,6 +1013,8 @@ type delOpt struct {
 // delGot is a command's options as read.
 type delGot struct {
 	on   []string            // the options given: a short one by its letter, a long one by its full name
+	at   []int               // per option of on, the index of the word it is written in
+	end  []int               // per option of on, the index of the word after its word and the value that word takes
 	vals map[string][]shWord // the values of those that take one
 	ops  []shWord            // the operands, in order
 	rest int                 // without permute: the index of the first operand
@@ -996,6 +1029,18 @@ func (g delGot) has(names ...string) bool {
 		}
 	}
 	return false
+}
+
+// first gives the index in on of the first of the options names, -1 for none.
+func (g delGot) first(names ...string) int {
+	for k, o := range g.on {
+		for _, n := range names {
+			if o == n {
+				return k
+			}
+		}
+	}
+	return -1
 }
 
 func (g delGot) val(names ...string) []shWord {
@@ -1054,9 +1099,9 @@ func delParse(words []shWord, o delOpt) delGot {
 		}
 		if len(t) > 2 && strings.HasPrefix(t, "--") && !w.expand {
 			name, v, hasVal := strings.Cut(t[2:], "=")
-			took := false
+			took, first := false, len(g.on)
 			for _, full := range o.resolve(name) {
-				g.on = append(g.on, full)
+				g.on, g.at = append(g.on, full), append(g.at, i)
 				switch {
 				case hasVal:
 					g.vals[full] = append(g.vals[full], delValue(w, v))
@@ -1068,12 +1113,16 @@ func delParse(words []shWord, o delOpt) delGot {
 			if took {
 				i++
 			}
+			for range g.on[first:] {
+				g.end = append(g.end, i+1)
+			}
 			continue
 		}
 		if len(t) > 1 && t[0] == '-' && !w.expand {
+			first := len(g.on)
 			for k := 1; k < len(t); k++ {
 				ch := t[k : k+1]
-				g.on = append(g.on, ch)
+				g.on, g.at = append(g.on, ch), append(g.at, i)
 				if strings.Contains(o.shortVal, ch) {
 					if k+1 < len(t) {
 						g.vals[ch] = append(g.vals[ch], delValue(w, t[k+1:]))
@@ -1083,6 +1132,9 @@ func delParse(words []shWord, o delOpt) delGot {
 					}
 					break
 				}
+			}
+			for range g.on[first:] {
+				g.end = append(g.end, i+1)
 			}
 			continue
 		}
@@ -1272,10 +1324,14 @@ func delDropBraces(words []shWord) []shWord {
 	return out
 }
 
-// delProbe reports whether a command, past its runners, is a delete word or a shell (which may delete), without
-// judging it: what makes find a bulk delete.
+// delProbe reports whether a command, past its runners (env -S's text read as exec reads it), is a delete word or a
+// shell (which may delete), without judging it: what makes find a bulk delete. What it cannot read (runners past the
+// walk's bound, a -S text that is not one simple command) counts as a delete.
 func delProbe(words []shWord, d shDialect) bool {
-	for steps := 0; steps < 64 && len(words) > 0; steps++ {
+	for steps := 0; len(words) > 0; steps++ {
+		if steps == delSteps {
+			return true
+		}
 		for len(words) > 0 && words[0].assign {
 			words = words[1:]
 		}
@@ -1285,6 +1341,14 @@ func delProbe(words []shWord, d shDialect) bool {
 		name, native := delName(words[0].text, d)
 		if rn := delRunnerFor(name, d); rn != nil {
 			g := delParse(words[1:], rn.opt)
+			if k := g.first("S", "split-string"); rn.Word == "env" && k >= 0 {
+				more, ok := delEnvSplit(words[0], words[1:], g, k, 0)
+				if !ok {
+					return true
+				}
+				words = more
+				continue
+			}
 			words = words[1:][g.rest:]
 			if rn.Word == "timeout" && len(words) > 0 {
 				words = words[1:]
