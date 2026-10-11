@@ -123,3 +123,25 @@ func TestFindGitBash(t *testing.T) {
 		t.Errorf("on Windows: %+v, want Git Bash found", g)
 	}
 }
+
+// A Git Bash in a Program Files folder is installed for all users; anywhere else, for one (git-user). Read from the
+// variables Windows sets, letter case and slashes aside; with none set, Windows' default folders.
+func TestInProgramFiles(t *testing.T) {
+	env := map[string]string{"ProgramW6432": `C:\Program Files`, "ProgramFiles(x86)": `C:\Program Files (x86)`}
+	getenv := func(k string) string { return env[k] }
+	for p, want := range map[string]bool{
+		"C:/Program Files/Git/bin/bash.exe":                        true,
+		`c:\program files\Git\bin\bash.exe`:                        true,
+		"C:/Program Files (x86)/Git/bin/bash.exe":                  true,
+		"C:/Users/someone/AppData/Local/Programs/Git/bin/bash.exe": false,
+		"C:/Program Files Evil/Git/bin/bash.exe":                   false,
+		"D:/Program Files/Git/bin/bash.exe":                        false,
+	} {
+		if got := inProgramFiles(p, getenv); got != want {
+			t.Errorf("inProgramFiles(%q) = %v", p, got)
+		}
+	}
+	if !inProgramFiles("C:/Program Files/Git/bin/bash.exe", func(string) string { return "" }) {
+		t.Error("with no variable set, Windows' default folder is not read as Program Files")
+	}
+}

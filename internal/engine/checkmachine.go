@@ -9,6 +9,9 @@ package engine
 //   - same-id (a warning): another checkout on this machine holds the same id: another machine folder's record whose
 //     last id is this one, at a path that still holds a bonsai.yaml with it (a record whose checkout moved or changed
 //     its id is left alone: the stranded folder is step 5.6's);
+//   - machine-record: a record of a checkout in the Bonsai home that Bonsai does not read (workspace/record.go): one
+//     such record un-verifies every main checkout on the machine (FirstClaim cannot name the first claim while it might
+//     hold it), so the guard honours no task's grant anywhere here until a person mends it (step 5.3.1's verifier);
 //   - bonsai-path: the bonsai found on the PATH is not the installed one (spec §3, "A tripwire, not a wall"): the home's
 //     install.json, which Bonsai's installer writes from step 5.6 (its path, version and SHA-256, spec §3), names
 //     another file, or the installed file is not the one it recorded. With no install.json there is nothing to compare
@@ -39,6 +42,7 @@ func (r *CheckResult) checkMachine() {
 	if r.Home == "" {
 		return
 	}
+	r.checkMachineRecords()
 	id := r.Config.ID
 	if rec, err := workspace.LoadMachineRecord(r.Home, r.Main); err == nil && rec != nil && rec.Current() != "" && rec.Current() != id && id != "" {
 		r.add("id-changed", workspace.ConfigFile, "", "bonsai.yaml's id changed from "+rec.Current()+" to "+ascii(id)+
@@ -70,6 +74,44 @@ func (r *CheckResult) checkMachine() {
 		}
 	}
 	r.checkInstalled()
+}
+
+// checkMachineRecords gives a machine-record finding for each record of a checkout in the home that Bonsai does not
+// read (a folder workspaces/r-* holding a workspace.json that workspace.MachineRecords leaves out), in the folders'
+// order, naming the file, why when FirstClaim names it, and the person's step.
+func (r *CheckResult) checkMachineRecords() {
+	dir := filepath.Join(r.Home, "workspaces")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	read := map[string]bool{}
+	for _, kr := range workspace.MachineRecords(r.Home) {
+		read[kr.Key] = true
+	}
+	var named *workspace.Error
+	if _, _, err := workspace.FirstClaim(r.Home, ""); err != nil {
+		_ = errors.As(err, &named)
+	}
+	for _, e := range entries {
+		if !e.IsDir() || !strings.HasPrefix(e.Name(), "r-") || read[e.Name()] {
+			continue
+		}
+		p := filepath.Join(dir, e.Name(), workspace.MachineRecordFile)
+		if _, err := os.Lstat(p); err != nil {
+			continue // a folder with no record holds nothing to verify
+		}
+		show := filepath.ToSlash(p)
+		why := "is not a record Bonsai reads"
+		next := "a person checks " + show + " (this machine's record of a checkout) and deletes it; bonsai update in that checkout " +
+			"then writes it again, its claim on the id starting then"
+		if named != nil && named.File == show {
+			why, next = named.Msg, named.Next
+		}
+		r.add("machine-record", "", "", "this machine's record "+ascii(show)+" in Bonsai's home "+ascii(why)+": until it is mended, no main "+
+			"checkout on this machine is verified, so the guard honours no task's grant in any project here (main-not-verified)",
+			ascii(next))
+	}
 }
 
 // install is the home's install.json as spec §3 names its fields.

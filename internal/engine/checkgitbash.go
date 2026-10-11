@@ -4,8 +4,10 @@ package engine
 // Git Bash on Windows, and in PowerShell when Git Bash isn't installed (its hooks reference, "Shell form", and the
 // shell field's default). Windows PowerShell 5.1 cannot read `||`, and no PowerShell reads a line in Bonsai's form, so
 // the line fails, and a hook that fails is a non-blocking error unless it sets onFailure: "block" (Claude Code 2.1.295
-// or later): the call goes through unguarded. So check and status give a finding on Windows when Git Bash is not where
-// Claude Code looks for it.
+// or later), which the guard's line does: the call is then refused, and on an older Claude Code it goes through
+// unguarded. So check and status give a finding on Windows when Git Bash is not where Claude Code looks for it; and one
+// when the Git Bash found is a Git for Windows installed for one user (git-user, plan-5 5.3.6 note 2), whose
+// /usr/local/bin, the lines' second place as Git Bash names it, that user can write.
 //
 // Where Claude Code looks (its env-vars reference and setup page, read on 2.1.294 and 2.1.296): the file
 // CLAUDE_CODE_GIT_BASH_PATH names, when it exists and is named bash.exe, sh.exe, bash or sh (any other value is
@@ -27,6 +29,7 @@ type GitBash struct {
 	Applies bool     // Claude Code would need Git Bash here: native Windows; false elsewhere, and check looks no further
 	Path    string   // where Git Bash was found, forward slashes; "" when it was not
 	Looked  []string // the places looked in, in order, forward slashes: the finding names them
+	PerUser bool     // the Git Bash found lies outside the Program Files folders: a Git for Windows installed for one user
 }
 
 // FindGitBash looks for Git Bash where Claude Code looks for it, on Windows; elsewhere it does not apply.
@@ -34,7 +37,32 @@ func FindGitBash() GitBash {
 	if runtime.GOOS != "windows" {
 		return GitBash{}
 	}
-	return lookGitBash(os.Getenv, exec.LookPath, gitInstallFolders(os.Getenv))
+	g := lookGitBash(os.Getenv, exec.LookPath, gitInstallFolders(os.Getenv))
+	g.PerUser = g.Path != "" && !inProgramFiles(g.Path, os.Getenv)
+	return g
+}
+
+// inProgramFiles reports whether a path lies in one of Windows' Program Files folders (ProgramW6432, ProgramFiles,
+// ProgramFiles(x86); C:/Program Files and C:/Program Files (x86) when none is set), letter case ignored: where only an
+// administrator writes, so a Git for Windows there is installed for all users (plan-5 5.3.6 note 2).
+func inProgramFiles(p string, getenv func(string) string) bool {
+	var dirs []string
+	for _, v := range []string{"ProgramW6432", "ProgramFiles", "ProgramFiles(x86)"} {
+		if d := getenv(v); d != "" {
+			dirs = append(dirs, d)
+		}
+	}
+	if len(dirs) == 0 {
+		dirs = []string{"C:/Program Files", "C:/Program Files (x86)"}
+	}
+	// Windows paths on any side (a test gives them on Linux too): a backslash is a separator here.
+	low := strings.ToLower(strings.ReplaceAll(p, `\`, "/"))
+	for _, d := range dirs {
+		if prefix := strings.TrimSuffix(strings.ToLower(strings.ReplaceAll(d, `\`, "/")), "/") + "/"; strings.HasPrefix(low, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // gitInstallFolders are Git for Windows' install folders, for all users then for one: <Program Files>\Git and
@@ -108,6 +136,13 @@ func (r *CheckResult) checkGitBash() {
 		look = FindGitBash
 	}
 	g := look()
+	if g.Applies && g.Path != "" && g.PerUser {
+		r.add("git-user", "", "", "the Git Bash Claude Code runs hook lines in, "+ascii(g.Path)+", is a Git for Windows installed for one user "+
+			"(outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when "+
+			"C:/Program Files/Bonsai/bonsai.exe is not there, is a folder this user, and any agent's shell command, can write",
+			"a person installs Git for Windows for all users (it puts Git Bash in C:/Program Files/Git/bin) and takes the "+
+				"one-user install out, then run: bonsai check")
+	}
 	if !g.Applies || g.Path != "" {
 		return
 	}
@@ -116,7 +151,8 @@ func (r *CheckResult) checkGitBash() {
 		where = strings.Join(g.Looked, ", ")
 	}
 	r.add("git-bash", "", "", "Git Bash is not where Claude Code looks for it (looked in: "+ascii(where)+"), so Claude Code runs every hook "+
-		"line in PowerShell, where Bonsai's lines do not parse, and a hook that fails does not block: every edit and command in this "+
-		"project goes through unguarded", "a person installs Git for Windows for all users (it puts Git Bash in C:/Program Files/Git/bin), "+
+		"line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, refuses every edit and command "+
+		"on Claude Code 2.1.295 or later and lets every one through unguarded on an older one, and the stop gate's and the "+
+		"recorder's lines never run", "a person installs Git for Windows for all users (it puts Git Bash in C:/Program Files/Git/bin), "+
 		"then run: bonsai check")
 }

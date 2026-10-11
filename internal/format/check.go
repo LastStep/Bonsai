@@ -67,7 +67,9 @@ var CheckWords = []Word{
 	// This machine (the home and the PATH).
 	{Word: "id-changed", Kind: "finding", Who: "person", Means: "bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3)"},
 	{Word: "bonsai-path", Kind: "finding", Who: "person", Means: "the bonsai on the PATH is not the installed one that install.json records (spec section 3)"},
-	{Word: "git-bash", Kind: "finding", Who: "person", Means: "on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse and a hook that fails does not block: every call goes through unguarded (step 5.3.6)"},
+	{Word: "git-bash", Kind: "finding", Who: "person", Means: "on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run (step 5.3.6)"},
+	{Word: "git-user", Kind: "finding", Who: "person", Means: "on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write (step 5.3.6)"},
+	{Word: "machine-record", Kind: "finding", Who: "person", Means: "a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here (step 5.3.6)"},
 	// Warnings.
 	{Word: "claude-code-old", Kind: "warning", Who: "person", Means: "Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7)"},
 	{Word: "claude-code-unknown", Kind: "warning", Who: "person", Means: "Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read)"},

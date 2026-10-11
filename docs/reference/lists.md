@@ -160,7 +160,9 @@ error words.
 | `plugin` | finding | person | plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5) |
 | `id-changed` | finding | person | bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3) |
 | `bonsai-path` | finding | person | the bonsai on the PATH is not the installed one that install.json records (spec section 3) |
-| `git-bash` | finding | person | on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse and a hook that fails does not block: every call goes through unguarded (step 5.3.6) |
+| `git-bash` | finding | person | on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run (step 5.3.6) |
+| `git-user` | finding | person | on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write (step 5.3.6) |
+| `machine-record` | finding | person | a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here (step 5.3.6) |
 | `claude-code-old` | warning | person | Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7) |
 | `claude-code-unknown` | warning | person | Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read) |
 | `same-id` | warning | person | another checkout on this machine holds the same workspace id (contract section 3) |
