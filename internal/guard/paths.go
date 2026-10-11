@@ -11,7 +11,9 @@ package guard
 //   - on Windows, also as Windows itself reduces a name: the \\?\ prefix of a drive or share dropped, Git Bash's
 //     /c/... read as C:\..., a stream after a colon cut off in every name (protected.txt::$DATA is protected.txt,
 //     secrets::$INDEX_ALLOCATION\key.txt is secrets\key.txt), and the dots and spaces Windows drops from the end of
-//     a name dropped (protected.txt. is protected.txt);
+//     a name dropped (protected.txt. is protected.txt); and a path through this machine's own administrative share
+//     (\\localhost\C$\..., \\127.0.0.1\C$\..., \\?\UNC\localhost\C$\..., and the machine's own name) read as
+//     its drive, C:\... (adminShare);
 //   - on Windows, also as Windows itself names it (finalPath, final_windows.go): the longest part of the path that
 //     exists, opened and named by GetFinalPathNameByHandle, which resolves junctions, symbolic links, mount points,
 //     short (8.3) names, streams and device or volume forms (\\?\GLOBALROOT\Device\..., \\?\Volume{...}\...) to the
@@ -22,19 +24,28 @@ package guard
 // where a project's folder is case-insensitive: always on Windows and macOS, and on Linux when bonsai.yaml answers to
 // BONSAI.YAML too (a folder on /mnt/c in WSL).
 //
-// Not covered, the limits of a tripwire: a hard link made to a protected file, a short (8.3) name of a file that does
-// not exist yet, and another route to the same disk (a network share of it).
+// On Windows, a path whose longest existing part is a junction or symbolic link that does not resolve is refused
+// (bad-path, final_windows.go): Windows would fail the write through it anyway, so nothing is lost, and the guard
+// cannot tell where it leads.
+//
+// Not covered, the limits of a hook that runs before the call (gate report section 5; 5.3.1 note 6): a junction or
+// link swapped between the guard's check and Claude Code's write (a race no such hook can close: it needs a second
+// process the agent runs); a share of a folder under another name, and another machine's share of this disk; a hard
+// link made to a protected file; a short (8.3) name of a file that does not exist yet; this machine's other
+// administrative shares (ADMIN$, IPC$) and a name for it the guard does not know (another DNS name or address).
 //
 // On Windows, Go since 1.23 no longer reports a junction as a symbolic link, nor follows one in EvalSymlinks, so
 // resolve alone misses junctions (which need no privilege to make); finalPath is what follows them.
 
 import (
 	"io/fs"
+	"net"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -62,6 +73,9 @@ func pathForms(base, cwd, p string) ([]string, error) {
 			return nil, err
 		} else if ok {
 			targets = appendNew(targets, f)
+			if d := adminShare(f); d != "" {
+				targets = appendNew(targets, d)
+			}
 		}
 	}
 	return targets, nil
@@ -198,8 +212,75 @@ func windowsForms(p string) []string {
 	for _, f := range written {
 		forms = appendNew(forms, win32Names(f))
 	}
+	for _, f := range append([]string(nil), forms...) {
+		if d := adminShare(f); d != "" {
+			forms = appendNew(forms, d)
+		}
+	}
 	return forms
 }
+
+// adminShare reads a path through this machine's own administrative share of a drive as that drive's path:
+// \\localhost\C$\p\x.txt is C:\p\x.txt (gate report section 5; design/plan-5.md, 5.3.1 note 6). The share's
+// server is this machine when it is localhost, a loopback address (127.x.x.x, ::1 as 0--1.ipv6-literal.net), or one of
+// the machine's own names (thisMachine); the share is a drive letter and $. Letter case is ignored, as Windows ignores
+// it. "" for any other path. It works on a \\server\share\... string (windowsForms gives \\?\UNC\ forms in that
+// form first), so its tests run on any system, and 5.3.3's delete check reads a shell operand's forms through it too.
+func adminShare(p string) string {
+	if !strings.HasPrefix(p, `\\`) {
+		return ""
+	}
+	parts := strings.SplitN(p[2:], `\`, 3)
+	if len(parts) < 2 {
+		return ""
+	}
+	server, share := parts[0], parts[1]
+	if len(share) != 2 || !isLetter(share[0]) || share[1] != '$' || !thisMachine(server) {
+		return ""
+	}
+	rest := ""
+	if len(parts) == 3 {
+		rest = parts[2]
+	}
+	return strings.ToUpper(share[:1]) + `:\` + rest
+}
+
+// thisMachine reports whether a share's server name is this machine (adminShare's list).
+func thisMachine(server string) bool {
+	s := strings.ToLower(strings.TrimSuffix(server, "."))
+	if s == "localhost" || s == "0--1.ipv6-literal.net" {
+		return true
+	}
+	if ip := net.ParseIP(s); ip != nil && ip.IsLoopback() {
+		return true
+	}
+	for _, n := range machineNames() {
+		if s == n {
+			return true
+		}
+	}
+	return false
+}
+
+// machineNames are this machine's own names, lower case: os.Hostname's, its first label, and on Windows
+// COMPUTERNAME (the NetBIOS name). A variable, so a test names the machine.
+var machineNames = sync.OnceValue(func() []string {
+	var names []string
+	add := func(n string) {
+		n = strings.ToLower(strings.TrimSpace(n))
+		if n != "" {
+			names = appendNew(names, n)
+		}
+	}
+	if h, err := os.Hostname(); err == nil {
+		add(h)
+		add(strings.SplitN(h, ".", 2)[0])
+	}
+	if runtime.GOOS == "windows" {
+		add(os.Getenv("COMPUTERNAME"))
+	}
+	return names
+})
 
 // win32Names reduces each name in a Windows path as Windows does when it opens it: a stream after a colon cut off
 // in every name (secrets::$INDEX_ALLOCATION is the folder secrets, protected.txt::$DATA the file), then the dots and

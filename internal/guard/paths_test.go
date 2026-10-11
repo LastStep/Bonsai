@@ -316,6 +316,45 @@ func TestAWorktreeInsideTheMainCheckout(t *testing.T) {
 	}
 }
 
+// The admin share's forms (5.3.1 note 6), read on the string alone, so on every system: this machine's share of a
+// drive is the drive, by its names, any letter case, through \\?\UNC\ too; another server's share, or a share that
+// is not a drive's, is not.
+func TestAdminShareForms(t *testing.T) {
+	saved := machineNames
+	machineNames = func() []string { return []string{"build-box", "build-box.example.lan"} }
+	defer func() { machineNames = saved }()
+	for in, want := range map[string]string{
+		`\\localhost\C$\p\protected.txt`:    `C:\p\protected.txt`,
+		`\\LOCALHOST\c$\p\protected.txt`:    `C:\p\protected.txt`,
+		`\\127.0.0.1\C$\p\protected.txt`:    `C:\p\protected.txt`,
+		`\\127.0.0.2\d$\x`:                  `D:\x`,
+		`\\0--1.ipv6-literal.net\C$\p`:      `C:\p`,
+		`\\build-box\C$\p\protected.txt`:    `C:\p\protected.txt`,
+		`\\Build-Box.Example.Lan\C$\p\x`:    `C:\p\x`,
+		`\\localhost\C$`:                    `C:\`,
+		`\\far-box\C$\p\protected.txt`:      "",
+		`\\localhost\share\p\protected.txt`: "",
+		`\\localhost\CC$\p`:                 "",
+		`\\localhost\1$\p`:                  "",
+		`C:\p\protected.txt`:                "",
+		`\\localhost`:                       "",
+	} {
+		if got := adminShare(in); got != want {
+			t.Errorf("adminShare(%q) = %q, want %q", in, got, want)
+		}
+	}
+	// windowsForms reads them, the \\?\UNC\ and forward-slash spellings among them.
+	for _, in := range []string{`\\?\UNC\localhost\C$\p\protected.txt`, `//localhost/C$/p/protected.txt`, `\\.\UNC\127.0.0.1\c$\p\protected.txt`} {
+		found := false
+		for _, f := range windowsForms(in) {
+			found = found || f == `C:\p\protected.txt`
+		}
+		if !found {
+			t.Errorf("windowsForms(%q) = %q, lacks the drive form", in, windowsForms(in))
+		}
+	}
+}
+
 // projectPaths gives a path's forms relative to one project's folder (the delete check, step 5.3.3, reads a shell
 // operand so): as written and resolved, each once, none for a path outside it.
 func TestProjectPaths(t *testing.T) {

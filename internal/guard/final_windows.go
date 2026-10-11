@@ -5,6 +5,8 @@ package guard
 // The path Windows itself reaches, asked of Windows (paths.go's package comment says why the guard needs it).
 
 import (
+	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -20,8 +22,10 @@ var procGetFinalPathNameByHandle = syscall.NewLazyDLL("kernel32.dll").NewProc("G
 // finalPath gives the path a write to p reaches on Windows: the longest part of p that exists, opened (following
 // every junction, symbolic link and mount point) and named by GetFinalPathNameByHandle in its drive-letter form and
 // its case on disk, then the rest of p as written. ok is false when no part of p opens. err is set when a part opens
-// but Windows cannot give it a drive-letter name (a volume with none): the guard then cannot tell where p leads.
-// It opens each part with no access asked for, so it reads and locks nothing.
+// but Windows cannot give it a drive-letter name (a volume with none), or when the longest part that exists is a
+// junction or symbolic link that does not open (a dangling one, gate report section 5): the guard then cannot tell
+// where p leads, and Windows would fail the write through it anyway. It opens each part with no access asked for, so
+// it reads and locks nothing.
 func finalPath(p string) (final string, ok bool, err error) {
 	var rest []string
 	cur := p
@@ -33,6 +37,9 @@ func finalPath(p string) (final string, ok bool, err error) {
 			}
 			return filepath.Join(append([]string{name}, rest...)...), true, nil
 		}
+		if dangling(cur) {
+			return "", false, errDangling
+		}
 		parent := filepath.Dir(cur)
 		if parent == cur {
 			break
@@ -41,6 +48,20 @@ func finalPath(p string) (final string, ok bool, err error) {
 		cur = parent
 	}
 	return "", false, nil
+}
+
+// errDangling is finalPath's error for a path through a junction or link that does not resolve.
+var errDangling = errors.New("a junction or symbolic link on the path leads nowhere that exists")
+
+// dangling reports whether p is itself a reparse point (a junction, a symbolic link, a mount point) that does not
+// open: finalName could not open p, yet p is there. Anything else that does not open is not there.
+func dangling(p string) bool {
+	fi, err := os.Lstat(p)
+	if err != nil {
+		return false
+	}
+	d, ok := fi.Sys().(*syscall.Win32FileAttributeData)
+	return ok && d.FileAttributes&syscall.FILE_ATTRIBUTE_REPARSE_POINT != 0
 }
 
 // volumeNameDOS is GetFinalPathNameByHandle's flags for a drive-letter name, normalized: VOLUME_NAME_DOS (0) with

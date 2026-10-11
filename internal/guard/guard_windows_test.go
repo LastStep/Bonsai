@@ -138,3 +138,74 @@ func TestDecideReadsShortNames(t *testing.T) {
 		t.Fatalf("%s: %+v, want refused as protected", short, d)
 	}
 }
+
+// Windows only (junctions are Windows'; mklink /J needs no privilege): a junction inside the project to a protected
+// folder is followed; one past 260 characters too; a dangling junction (its target gone) on the way to a path is
+// refused as bad-path, since the guard cannot tell where it leads and Windows would fail the write anyway (gate
+// report section 5); a junction to a free place stays free.
+func TestJunctionLimits(t *testing.T) {
+	dir := windowsProject(t)
+	outside, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Inside the project, to the protected folder.
+	mklinkJ(t, filepath.Join(dir, "free-j"), filepath.Join(dir, "docs"))
+	refused(t, dir, filepath.Join(dir, "free-j", "guide.md"))
+	refused(t, dir, filepath.Join(dir, "free-j", "new.md"))
+	// Past 260 characters: a long tail under a junction to the protected folder.
+	mklinkJ(t, filepath.Join(outside, "j"), filepath.Join(dir, "docs"))
+	long := filepath.Join(outside, "j", strings.Repeat("a", 120), strings.Repeat("b", 120), "new.md")
+	if len(long) <= 260 {
+		t.Fatalf("the path is %d characters, not past 260", len(long))
+	}
+	refused(t, dir, long)
+	// Dangling: a junction to a protected folder made, then its target removed.
+	gone := filepath.Join(dir, "docs", "gone")
+	if err := os.MkdirAll(gone, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	mklinkJ(t, filepath.Join(outside, "dangling"), gone)
+	if err := os.Remove(gone); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []string{filepath.Join(outside, "dangling", "new.md"), filepath.Join(outside, "dangling")} {
+		d := decide(&hookin.Payload{Tool: "Write", Path: p}, dir)
+		if d.Allow || d.Rule != RuleBadPath || !strings.Contains(d.Why, "leads nowhere that exists") {
+			t.Errorf("%s: %+v, want refused as bad-path", p, d)
+		}
+	}
+	// To a free place outside: free.
+	free := filepath.Join(outside, "free")
+	if err := os.MkdirAll(free, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	mklinkJ(t, filepath.Join(dir, "to-free"), free)
+	if d := decide(&hookin.Payload{Tool: "Write", Path: filepath.Join(dir, "to-free", "x.txt")}, dir); !d.Allow {
+		t.Errorf("a junction to a free place: %+v", d)
+	}
+}
+
+// Windows only (administrative shares are Windows'): a path through this machine's own share of the drive, by
+// localhost, a loopback address or the machine's name, is judged as the drive's path: a protected one refused, a free
+// one allowed (gate report section 5; 5.3.1 note 6). It holds whether or not the share opens for this user: the forms
+// are read from the string.
+func TestAdminShare(t *testing.T) {
+	dir := windowsProject(t)
+	vol := filepath.VolumeName(dir) // C:
+	rest := dir[len(vol):]          // \Users\...
+	share := strings.TrimSuffix(vol, ":") + "$"
+	host, err := os.Hostname()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, server := range []string{"localhost", "127.0.0.1", host, strings.ToUpper(host)} {
+		for _, form := range []string{`\\` + server + `\` + share + rest, `\\?\UNC\` + server + `\` + share + rest} {
+			refused(t, dir, form+`\protected.txt`)
+			refused(t, dir, form+`\docs\new.md`)
+			if d := decide(&hookin.Payload{Tool: "Write", Path: form + `\free.txt`}, dir); !d.Allow {
+				t.Errorf("%s: %+v, want allowed", form+`\free.txt`, d)
+			}
+		}
+	}
+}
