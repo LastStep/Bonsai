@@ -383,6 +383,14 @@ var checkMore = map[string]func(t *testing.T, c *cli){
 		if _, out, _ := c.run("", "check", "--json"); strings.Contains(codesIn(fits(t, out, "check"), "findings"), "settings-env") {
 			t.Errorf("a clean project:\n%s", out)
 		}
+		// The user's own settings file is the person's, and not read: a scratch home's, with a name that counts.
+		userHome := filepath.Join(c.tmp, "user-home")
+		t.Setenv("HOME", userHome)
+		t.Setenv("USERPROFILE", userHome)
+		c.write("../user-home/.claude/settings.json", `{"env": {"CLAUDE_CODE_SHELL_PREFIX": "/a/wrapper"}}`)
+		if _, out, _ := c.run("", "check", "--json"); strings.Contains(codesIn(fits(t, out, "check"), "findings"), "settings-env") {
+			t.Errorf("the user's own settings file was read:\n%s", out)
+		}
 		names := []string{"BONSAI_HOME", "BONSAI_TASK", "bonsai_test_fault", "Path", "Claude_Code_Shell_Prefix"}
 		for _, k := range format.HookEnvKeys {
 			names = append(names, k.Word)
