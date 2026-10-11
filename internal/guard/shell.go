@@ -419,28 +419,48 @@ func delLoopCmd(c *shCommand, d shDialect) bool {
 	return false
 }
 
-// delPSAssign drops a PowerShell assignment's left side ($x = ..., $x += ...), so the program after it is read.
+// delPSAssign drops PowerShell assignments' left sides, a chain's too ($x = ..., $x += ..., $x =..., $x = $y = ...),
+// so the program after them is read.
 func delPSAssign(words []shWord) []shWord {
+	for {
+		next, ok := delPSAssignOne(words)
+		if !ok {
+			return words
+		}
+		words = next
+	}
+}
+
+// delPSAssignOne drops one assignment's left side, its operator glued to it, written as the next word, or glued to
+// what it assigns after a space ($x =Remove-Item x runs Remove-Item); ok is false when words start with none.
+func delPSAssignOne(words []shWord) ([]shWord, bool) {
 	if len(words) == 0 || words[0].quoted || !strings.HasPrefix(words[0].text, "$") {
-		return words
+		return words, false
 	}
 	t := words[0].text
 	if k := strings.IndexByte(t, '='); k > 0 {
 		rest := strings.TrimLeft(t[k+1:], "=")
 		if rest == "" {
-			return words[1:]
+			return words[1:], true
 		}
 		w := words[0]
 		w.text, w.raw, w.expand = rest, rest, strings.Contains(rest, "$")
-		return append([]shWord{w}, words[1:]...)
+		return append([]shWord{w}, words[1:]...), true
 	}
-	if len(words) >= 2 {
-		switch words[1].text {
-		case "=", "+=", "-=", "*=", "/=", "%=", "??=":
-			return words[2:]
-		}
+	if len(words) < 2 {
+		return words, false
 	}
-	return words
+	op := envPSOperator(strings.ToLower(words[1].raw))
+	if op == "" {
+		return words, false
+	}
+	_, rest, _ := strings.Cut(words[1].text, "=")
+	if rest == "" {
+		return words[2:], true
+	}
+	w := words[1]
+	w.text, w.raw, w.expand = rest, w.raw[len(op):], strings.Contains(rest, "$")
+	return append([]shWord{w}, words[2:]...), true
 }
 
 // delCmdPrelude reads cmd.exe's words before a program: @, if's condition, for's loop up to do.

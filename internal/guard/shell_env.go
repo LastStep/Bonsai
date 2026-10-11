@@ -169,40 +169,48 @@ type psAssign struct {
 	right []string
 }
 
-// envPSAssigns finds PowerShell's assignments among a command's words, wherever they stand (chained too: $x =
-// $env:NAME = 'v'): a word whose written form starts with a variable, then an assignment operator (=, +=, -=, *=,
-// /=, %=, ??=) glued to it or written as the next word. What follows the operator, quoted or not, is what it assigns.
+// envPSAssigns finds PowerShell's assignments among a command's words, wherever they stand, chained too ($x =
+// $env:NAME = 'v', $x=$env:NAME='v', $x =$env:NAME =""): a word whose written form starts with a variable, then an
+// assignment operator (=, +=, -=, *=, /=, %=, ??=) glued to it, or starting the next word, alone or glued to what it
+// assigns (= "", ="", =$null). What follows the operator, quoted or not, is what it assigns; a word that starts with
+// an operator holds the right side of the word before it, and may be a chain's next left side.
 func envPSAssigns(words []shWord) []psAssign {
 	var out []psAssign
 	for k, w := range words {
-		raw := strings.ToLower(w.raw)
-		if !strings.HasPrefix(raw, "$") {
-			continue
+		raw, text := strings.ToLower(w.raw), w.text
+		if op := envPSOperator(raw); op != "" && k > 0 {
+			raw = raw[len(op):]
+			_, text, _ = strings.Cut(text, "=")
 		}
-		v := envPSVariable(raw)
-		if v == "" {
-			continue
-		}
-		rest := raw[len(v):]
-		op := envPSOperator(rest)
-		var right []string
-		switch {
-		case op != "":
-			_, after, _ := strings.Cut(w.text, "=")
-			right = append(right, after)
-			for _, x := range words[k+1:] {
-				right = append(right, x.text)
+		for strings.HasPrefix(raw, "$") {
+			v := envPSVariable(raw)
+			if v == "" {
+				break
 			}
-		case rest == "" && k+1 < len(words) && !words[k+1].quoted && envPSOperator(words[k+1].text) == words[k+1].text:
-			for _, x := range words[k+2:] {
-				right = append(right, x.text)
+			rest := raw[len(v):]
+			if op := envPSOperator(rest); op != "" {
+				_, after, _ := strings.Cut(text, "=")
+				out = append(out, psAssign{left: v, right: envPSRight(after, words[k+1:])})
+				raw, text = rest[len(op):], after
+				continue
 			}
-		default:
-			continue
+			if rest == "" && k+1 < len(words) && envPSOperator(strings.ToLower(words[k+1].raw)) != "" {
+				_, after, _ := strings.Cut(words[k+1].text, "=")
+				out = append(out, psAssign{left: v, right: envPSRight(after, words[k+2:])})
+			}
+			break
 		}
-		out = append(out, psAssign{left: v, right: right})
 	}
 	return out
+}
+
+// envPSRight gives an assignment's right side: the text after its operator, then the texts of the words after it.
+func envPSRight(after string, words []shWord) []string {
+	right := []string{after}
+	for _, x := range words {
+		right = append(right, x.text)
+	}
+	return right
 }
 
 // envPSVariable gives the variable a written PowerShell word starts with: ${...} up to its brace, or $ and the
