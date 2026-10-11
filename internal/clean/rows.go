@@ -72,8 +72,7 @@ func Rows(o Options, table *format.Sessions, found []format.SessionRow) (*format
 			}
 		}
 	}
-	if rule.KeepDays != nil {
-		cutoff := r.now.Add(-time.Duration(*rule.KeepDays) * 24 * time.Hour)
+	if cutoff, byAge := rule.cutoff(r.now); byAge {
 		for _, e := range entries {
 			if e.ok && e.end.Before(cutoff) {
 				e.reason = reason(Sessions, "keep_days", *rule.KeepDays)

@@ -91,15 +91,12 @@ func (r *run) files(k fileKind) {
 			return
 		}
 	}
-	var cutoff time.Time
-	if rule.KeepDays != nil {
-		cutoff = r.now.Add(-time.Duration(*rule.KeepDays) * 24 * time.Hour)
-	}
+	cutoff, byAge := rule.cutoff(r.now)
 	judge := func(f *file) bool {
 		if r.keep[f.target] {
 			return false
 		}
-		if rule.KeepDays != nil && (f.aged || f.mtime.Before(cutoff)) {
+		if byAge && (f.aged || f.mtime.Before(cutoff)) {
 			if !f.aged {
 				f.age, f.aged = k.age(r, f), true
 			}

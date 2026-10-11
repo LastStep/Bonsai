@@ -10,10 +10,14 @@ package clean
 //     treats a missing field as null").
 //   - Anything else (a text, a negative number, a list): the kind's rule does not read, and nothing of that kind is
 //     cleaned until a person fixes it; bonsai check's full read names the line.
+//   - A keep_days past maxKeepDays (about 292 years, the most a time.Duration holds) cleans nothing by age: nothing is
+//     that old. Counted back as a time.Duration it would wrap round to a cutoff in the future and clean everything.
 
 import (
 	"fmt"
+	"math"
 	"strconv"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/reader"
@@ -27,6 +31,18 @@ type Rule struct {
 
 // Keeps reports a rule that cleans nothing: both off.
 func (r Rule) Keeps() bool { return r.KeepDays == nil && r.KeepNewest == nil }
+
+// maxKeepDays is the largest keep_days a cutoff is counted back by: a time.Duration holds about 292 years.
+const maxKeepDays = int64(math.MaxInt64 / int64(24*time.Hour))
+
+// cutoff is the moment keep_days counts back to from now: a file or row older than it goes. byAge is false when the
+// rule has no keep_days, or one past maxKeepDays, which nothing is older than (this file's comment).
+func (r Rule) cutoff(now time.Time) (at time.Time, byAge bool) {
+	if r.KeepDays == nil || *r.KeepDays > maxKeepDays {
+		return time.Time{}, false
+	}
+	return now.Add(-time.Duration(*r.KeepDays) * 24 * time.Hour), true
+}
 
 // RuleOf reads kind's rule from bonsai.yaml as read (doc: workspace.Config.Doc).
 func RuleOf(doc *reader.Map, kind string) (Rule, error) {
