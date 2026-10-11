@@ -42,7 +42,7 @@ import (
 type change struct {
 	tool string          // the tool or command, as a refusal names it: "Edit", "rm"; never ""
 	path string          // the path as written
-	cwd  string          // the folder a relative path is read against (the payload's cwd, a command's folder)
+	dir  string          // the folder a relative path is read against (the payload's cwd, a command's folder)
 	base string          // the folder used when cwd is not absolute: the session's project
 	del  bool            // a delete or a move (step 5.3.3): note 3 of the comment above, and the floor's NotForDeletes
 	in   *hookin.Payload // the file tool's call, which says what the file holds after it; nil when that is unknown
@@ -60,7 +60,7 @@ func caseFoldSystem() bool {
 // may judges one change (this file's comment): the decision, and the project its record goes in (nil: the session's
 // project is nil too, and nothing is recorded).
 func (j *judge) may(c change) (Decision, *linkedProject) {
-	forms, err := pathForms(c.base, c.cwd, c.path)
+	forms, err := pathForms(c.base, c.dir, c.path)
 	switch {
 	case errors.Is(err, errProc):
 		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: %s, so the guard cannot tell whether it is guarded", c.tool,
@@ -118,7 +118,7 @@ func (j *judge) may(c change) (Decision, *linkedProject) {
 // read against the payload's cwd, as an edit of that path: step 5.3.3's delete check calls it for each operand (its
 // delMay), so the delete check holds no rule of its own about what is guarded.
 func (j *judge) mayDelete(dir, p string) Decision {
-	d, _ := j.may(change{tool: "a delete or move", path: p, cwd: dir, base: dir, del: true})
+	d, _ := j.may(change{tool: "a delete or move", path: p, dir: dir, base: dir, del: true})
 	return d
 }
 

@@ -43,12 +43,12 @@ func TestADeleteIsJudgedAsAnEdit(t *testing.T) {
 		}
 	}
 	// Relative to the folder the command runs in.
-	if d, _ := j.may(change{tool: "rm", path: "../.git", cwd: filepath.Join(dir, "work"), base: dir, del: true}); d.Rule != RuleNeverGranted {
+	if d, _ := j.may(change{tool: "rm", path: "../.git", dir: filepath.Join(dir, "work"), base: dir, del: true}); d.Rule != RuleNeverGranted {
 		t.Errorf("rm ../.git from work/: %+v", d)
 	}
 	// Bonsai's home: the folder itself and anything in it.
 	for _, p := range []string{".", "workspaces", filepath.Join("workspaces", "r-0123456789abcdef", "workspace.json")} {
-		if d, _ := j.may(change{tool: "rm", path: p, cwd: home, base: dir, del: true}); d.Rule != RuleBonsaiFiles {
+		if d, _ := j.may(change{tool: "rm", path: p, dir: home, base: dir, del: true}); d.Rule != RuleBonsaiFiles {
 			t.Errorf("a delete of %s in Bonsai's home: %+v", p, d)
 		}
 	}

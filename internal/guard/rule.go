@@ -273,7 +273,7 @@ func (l *lists) all() []list {
 // session only (the delete check, step 5.3.3, judges the rest of it); any other tool is allowed.
 func (j *judge) decide(in *hookin.Payload, base string) (Decision, *linkedProject) {
 	if hookin.FileTool(in.Tool) {
-		return j.may(change{tool: in.Tool, path: in.Path, cwd: in.Cwd, base: base, in: in})
+		return j.may(change{tool: in.Tool, path: in.Path, dir: in.Cwd, base: base, in: in})
 	}
 	if shellTool(in.Tool) {
 		if j.session == nil {

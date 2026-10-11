@@ -164,7 +164,7 @@ func mayIn(j *judge, dir, path string, del bool) Decision {
 	if del {
 		return j.mayDelete(dir, path)
 	}
-	d, _ := j.may(change{tool: "Edit", path: path, cwd: dir, base: dir})
+	d, _ := j.may(change{tool: "Edit", path: path, dir: dir, base: dir})
 	return d
 }
 

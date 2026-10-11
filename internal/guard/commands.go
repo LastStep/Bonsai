@@ -106,7 +106,7 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 	}
 	if word == "init" || word == "update" || word == "unlink" {
 		for _, rel := range []string{workspace.ConfigFile, workspace.LockFile} {
-			d, _ := j.may(change{tool: "bonsai " + word, path: filepath.Join(top, filepath.FromSlash(rel)), cwd: top, base: top})
+			d, _ := j.may(change{tool: "bonsai " + word, path: filepath.Join(top, filepath.FromSlash(rel)), dir: top, base: top})
 			if !d.Allow {
 				d.Why = "bonsai " + word + " writes bonsai.yaml and .bonsai/lock.json, so it is judged as an edit of them: " + d.Why
 				return d
