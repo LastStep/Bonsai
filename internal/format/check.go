@@ -3,7 +3,11 @@ package format
 // bonsai check --json (bonsai.check/1, spec §6): what check found in a project. Printed, never stored. Written by
 // bonsai check (step 5.1.4b moves it onto Check.Encode); read by the studio, agents and CI.
 
-import "github.com/LastStep/Bonsai/internal/schema"
+import (
+	"strings"
+
+	"github.com/LastStep/Bonsai/internal/schema"
+)
 
 // Check is check --json's document.
 type Check struct {
@@ -57,11 +61,13 @@ var CheckWords = []Word{
 	// Claude Code's settings in the project (spec sections 5 and 7).
 	{Word: "settings-rule", Kind: "finding", Who: "person", Means: "a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own"},
 	{Word: "hooks-off", Kind: "finding", Who: "person", Means: "disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them"},
+	{Word: "settings-env", Kind: "finding", Who: "person", Means: "the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: " + hookEnvNames() + "; the finding names the file and the name, never the value (step 5.3.6)"},
 	{Word: "plugin-version", Kind: "finding", Who: "person", Means: "a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5)"},
 	{Word: "plugin", Kind: "finding", Who: "person", Means: "plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5)"},
 	// This machine (the home and the PATH).
 	{Word: "id-changed", Kind: "finding", Who: "person", Means: "bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3)"},
 	{Word: "bonsai-path", Kind: "finding", Who: "person", Means: "the bonsai on the PATH is not the installed one that install.json records (spec section 3)"},
+	{Word: "git-bash", Kind: "finding", Who: "person", Means: "on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse and a hook that fails does not block: every call goes through unguarded (step 5.3.6)"},
 	// Warnings.
 	{Word: "claude-code-old", Kind: "warning", Who: "person", Means: "Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7)"},
 	{Word: "claude-code-unknown", Kind: "warning", Who: "person", Means: "Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read)"},
@@ -75,6 +81,52 @@ var CheckWords = []Word{
 	{Word: "tables", Kind: "warning", Who: "agent", Means: "a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5)"},
 	{Word: "local-unchecked", Kind: "warning", Who: "agent", Means: "git ls-files failed, so files from .bonsai/local/ in git's index were not looked for"},
 	{Word: "own-hooks", Kind: "warning", Who: "person", Means: "Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1)"},
+}
+
+// HookEnvKeys are the names that, set in the env of a project's Claude Code settings (.claude/settings.json or
+// .claude/settings.local.json), wrap, redirect or steer a hook line, Bonsai's guard and stop gate among them: their one
+// home (plan-5 5.3.6 note 3), which check's settings-env finding reads and its word's meaning lists (so the reference
+// page and bonsai check --schema bonsai.check show them). Claude Code copies a settings file's env into the environment
+// of every hook and every tool command, and applies a change to it in the running session (its env-vars and settings
+// references). A name matches whatever its case, as Windows reads Path as PATH, and every name starting with
+// HookEnvPrefix counts too. The user's own settings file is not read: it is the person's. Means says why each counts;
+// a name is added here with its why, and the reference page is regenerated in the same commit.
+var HookEnvKeys = []Word{
+	{Word: "PATH", Means: "where a hook line's shell finds a program it calls by name, bonsai among them"},
+	{Word: "BASH_ENV", Means: "a script bash (Git Bash on Windows) runs before every hook line it runs"},
+	{Word: "ENV", Means: "a script sh runs first when it starts interactive or as POSIX bash"},
+	{Word: "CLAUDE_CODE_SHELL_PREFIX", Means: "a program Claude Code runs in place of every shell hook line, handing it the line"},
+	{Word: "CLAUDE_CODE_GIT_BASH_PATH", Means: "on Windows, the bash.exe that runs every hook line (any file of that name)"},
+	{Word: "CLAUDE_PROJECT_DIR", Means: "the project a hook is told it runs in, whose lists and task Bonsai's guard reads"},
+	{Word: "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP", Means: "how many times in a row the stop gate may block a session's end (0: no cap)"},
+	{Word: "CLAUDE_CODE_CHILD_SESSION", Means: "how Bonsai's commands know they run inside an agent's session (step 5.3.6)"},
+}
+
+// HookEnvPrefix starts the names of Bonsai's own variables (its home, the running task, a test build's fault): any
+// of them in a project's settings env is a settings-env finding too.
+const HookEnvPrefix = "BONSAI_"
+
+// HookEnvKey says whether a settings env name is one of HookEnvKeys or starts with HookEnvPrefix, whatever its case,
+// and why it counts.
+func HookEnvKey(name string) (why string, ok bool) {
+	for _, k := range HookEnvKeys {
+		if strings.EqualFold(name, k.Word) {
+			return k.Means, true
+		}
+	}
+	if len(name) >= len(HookEnvPrefix) && strings.EqualFold(name[:len(HookEnvPrefix)], HookEnvPrefix) {
+		return "one of Bonsai's own variables (its home, the running task, a test build's fault)", true
+	}
+	return "", false
+}
+
+// hookEnvNames lists HookEnvKeys for the settings-env word's meaning.
+func hookEnvNames() string {
+	var names []string
+	for _, k := range HookEnvKeys {
+		names = append(names, k.Word)
+	}
+	return strings.Join(names, ", ") + ", or any name starting " + HookEnvPrefix
 }
 
 // CheckWord finds a word in CheckWords.

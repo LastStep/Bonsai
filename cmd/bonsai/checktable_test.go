@@ -180,6 +180,17 @@ func fakeBonsai(t *testing.T, dir string) string {
 	return p
 }
 
+// setGitBash stands in for the Git Bash lookup check and status make (engine.FindGitBash).
+func setGitBash(t *testing.T, g engine.GitBash) {
+	t.Helper()
+	saved := gitBash
+	t.Cleanup(func() { gitBash = saved })
+	gitBash = func() engine.GitBash { return g }
+}
+
+// gitBashFound is a lookup on Windows that found Git Bash.
+var gitBashFound = engine.GitBash{Applies: true, Path: "C:/Program Files/Git/bin/bash.exe", Looked: []string{"C:/Program Files/Git/bin/bash.exe"}}
+
 // checkCases: one case per word of format.CheckWords.
 var checkCases = map[string]func(c *cli){
 	"config": func(c *cli) { c.write("bonsai.yaml", "format: bonsai.workspace/1\nid: 0755\n") },
@@ -242,6 +253,10 @@ var checkCases = map[string]func(c *cli){
 		c.write(".claude/settings.local.json", `{"permissions": {"deny": ["Read(", "Edit(work/ledger.json)"]}}`)
 	},
 	"hooks-off": func(c *cli) { c.link(); c.write(".claude/settings.local.json", `{"disableAllHooks": true}`) },
+	"settings-env": func(c *cli) {
+		c.link()
+		c.write(".claude/settings.local.json", `{"env": {"CLAUDE_CODE_SHELL_PREFIX": "`+filepath.ToSlash(c.tmp)+`/value-never-shown"}}`)
+	},
 	"plugin-version": func(c *cli) {
 		c.link()
 		c.write(".claude/settings.local.json", `{"extraKnownMarketplaces": {"bonsai-demo-0123abcd": {"source": {"source": "settings", `+
@@ -269,6 +284,11 @@ var checkCases = map[string]func(c *cli){
 			c.t.Fatal(err)
 		}
 		fakeBonsai(c.t, filepath.Join(c.tmp, "elsewhere"))
+	},
+	// Git Bash not found where Claude Code looks, as a lookup on Windows without it says: proved on both sides.
+	"git-bash": func(c *cli) {
+		c.link()
+		setGitBash(c.t, engine.GitBash{Applies: true, Looked: []string{"C:/Program Files/Git/bin/bash.exe"}})
 	},
 	"claude-code-old":     func(c *cli) { c.link(); fakeClaude(c.t, "2.1.200 (Claude Code)", nil) },
 	"claude-code-unknown": func(c *cli) { c.link(); fakeClaude(c.t, "Claude Code, the latest", nil) },
@@ -343,6 +363,79 @@ var checkCases = map[string]func(c *cli){
 
 // checkMore: more of a word's cases, run after the walk's own on the same project.
 var checkMore = map[string]func(t *testing.T, c *cli){
+	// status --json carries the walk's finding as a problem with its next step, never the value. A clean project gives
+	// none. Then each name of format.HookEnvKeys, Bonsai's own names and names in another case, in the project's
+	// settings file and in the local one, each beside names that do not count: one finding naming the file and the
+	// name, never the value.
+	"settings-env": func(t *testing.T, c *cli) {
+		_, out, _ := c.run("", "status", "--json")
+		if !hasProblem(fits(t, out, "status"), ".claude/settings.local.json's env sets CLAUDE_CODE_SHELL_PREFIX, a program Claude Code runs",
+			"; next: a person takes CLAUDE_CODE_SHELL_PREFIX out of the env in .claude/settings.local.json") || strings.Contains(out, "value-never-shown") {
+			t.Errorf("status --json does not carry the finding, or shows its value:\n%s", out)
+		}
+		if _, out, _ = c.run("", "check", "--json"); strings.Contains(out, "value-never-shown") {
+			t.Errorf("check shows the value:\n%s", out)
+		}
+		local := filepath.Join(c.root, ".claude", "settings.local.json")
+		if err := os.Remove(local); err != nil {
+			t.Fatal(err)
+		}
+		if _, out, _ := c.run("", "check", "--json"); strings.Contains(codesIn(fits(t, out, "check"), "findings"), "settings-env") {
+			t.Errorf("a clean project:\n%s", out)
+		}
+		names := []string{"BONSAI_HOME", "BONSAI_TASK", "bonsai_test_fault", "Path", "Claude_Code_Shell_Prefix"}
+		for _, k := range format.HookEnvKeys {
+			names = append(names, k.Word)
+		}
+		shared := c.read(".claude/settings.json")
+		for _, file := range []string{".claude/settings.json", ".claude/settings.local.json"} {
+			for i, name := range names {
+				value := "value-" + strconv.Itoa(i) + "-never-shown"
+				env := schema.Object{{Key: "NODE_ENV", Value: "x"}, {Key: name, Value: value}, {Key: "MY_PATH", Value: "x"},
+					{Key: "BONSAI", Value: "x"}, {Key: "XBONSAI_HOME", Value: "x"}}
+				base := "{}"
+				if file == ".claude/settings.json" {
+					base = shared
+				}
+				c.write(file, withEnv(t, base, env))
+				code, out, _ := c.run("", "check", "--json")
+				doc := fits(t, out, "check")
+				findings, _ := doc.Get("findings")
+				var mine []schema.Object
+				for _, f := range findings.([]any) {
+					if fo := f.(schema.Object); fo.String("code") == "settings-env" {
+						mine = append(mine, fo)
+					}
+				}
+				if code != 1 || len(mine) != 1 || mine[0].String("file") != file || !strings.Contains(mine[0].String("message"), "env sets "+name+",") ||
+					strings.Contains(out, value) {
+					t.Errorf("%s in %s: exit %d, %d settings-env findings, or the value shown:\n%s", name, file, code, len(mine), out)
+				}
+			}
+			if file == ".claude/settings.json" {
+				c.write(file, shared)
+			} else {
+				_ = os.Remove(local)
+			}
+		}
+	},
+	// status --json carries the finding as a problem with its next step; a lookup that found Git Bash, and one off
+	// Windows, give none in either.
+	"git-bash": func(t *testing.T, c *cli) {
+		_, out, _ := c.run("", "status", "--json")
+		if !hasProblem(fits(t, out, "status"), "Git Bash is not where Claude Code looks for it (looked in: C:/Program Files/Git/bin/bash.exe)",
+			"; next: a person installs Git for Windows for all users") {
+			t.Errorf("status --json does not carry the finding:\n%s", out)
+		}
+		for _, g := range []engine.GitBash{gitBashFound, {}} {
+			setGitBash(t, g)
+			_, out, _ := c.run("", "check", "--json")
+			_, st, _ := c.run("", "status", "--json")
+			if strings.Contains(codesIn(fits(t, out, "check"), "findings"), "git-bash") || strings.Contains(st, "Git Bash") {
+				t.Errorf("%+v: a finding all the same:\n%s\n%s", g, out, st)
+			}
+		}
+	},
 	// A pack's source (spec §14 check 2: the pack's remote URL): a local absolute path, a Windows one or a file: URL
 	// is a finding; a remote URL is not. And a field of a document holding one.
 	"absolute-path": func(t *testing.T, c *cli) {
@@ -382,6 +475,38 @@ var checkMore = map[string]func(t *testing.T, c *cli){
 	},
 }
 
+// hasProblem says whether status --json's problems hold one sentence holding both parts, in order.
+func hasProblem(doc schema.Object, first, then string) bool {
+	problems, _ := doc.Get("problems")
+	for _, p := range problems.([]any) {
+		s, _ := p.(string)
+		if i := strings.Index(s, first); i >= 0 && strings.Contains(s[i:], then) {
+			return true
+		}
+	}
+	return false
+}
+
+// withEnv gives a settings file's text with its env set to env.
+func withEnv(t *testing.T, raw string, env schema.Object) string {
+	t.Helper()
+	v, err := schema.Decode([]byte(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	o := v.(schema.Object)
+	if i := o.Index("env"); i >= 0 {
+		o[i].Value = env
+	} else {
+		o = append(o, schema.Member{Key: "env", Value: env})
+	}
+	out, err := schema.Encode(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(out)
+}
+
 func TestCheckTable(t *testing.T) {
 	for code := range checkCases {
 		if _, ok := format.CheckWord(code); !ok {
@@ -395,6 +520,7 @@ func TestCheckTable(t *testing.T) {
 				t.Fatalf("format.CheckWords has %s, and TestCheckTable no case for it", w.Word)
 			}
 			fakeClaude(t, "2.1.294 (Claude Code)", nil)
+			setGitBash(t, gitBashFound) // the walk reads no machine's Git Bash; git-bash's case says it is missing
 			c := newCLI(t)
 			setup(c)
 			code, out, _ := c.run("", "check", "--json")

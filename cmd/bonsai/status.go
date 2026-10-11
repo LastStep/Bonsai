@@ -68,7 +68,7 @@ func runStatus(c *call) int {
 	if c.has("--active") {
 		return runActive(c, dir)
 	}
-	o := status.Options{Full: c.has("--full")}
+	o := status.Options{Full: c.has("--full"), GitBash: gitBash}
 	if o.Full {
 		o.Plugins, o.Claude = pluginCLI, claudeVersion
 	}

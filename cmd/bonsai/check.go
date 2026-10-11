@@ -22,6 +22,10 @@ func init() { register(checkWord) }
 // nil, as in tests, asks nothing.
 var claudeVersion func() (string, error)
 
+// gitBash looks for Git Bash where Claude Code does on Windows (engine.FindGitBash; elsewhere it does not apply), for
+// check's and status's git-bash finding; a test gives one that finds nothing, so the finding is proved on both sides.
+var gitBash = engine.FindGitBash
+
 var checkWord = &Word{
 	Name:    "check",
 	Order:   5,
@@ -109,7 +113,7 @@ func runCheck(c *call) int {
 			return c.fail(werr)
 		}
 	}
-	r, err := engine.Check(dir, home)
+	r, err := engine.CheckWith(dir, home, engine.CheckOptions{History: true, GitBash: gitBash})
 	if err != nil {
 		return c.fail(engine.Unexpected(err))
 	}

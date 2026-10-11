@@ -10,6 +10,10 @@ package engine
 //     guards nothing;
 //   - hooks-off: disableAllHooks true, which turns off every hook, Bonsai's guard among them (spec §7). Bonsai writes
 //     disableAllHooks: false into .claude/settings.json itself;
+//   - settings-env: a name in env that wraps, redirects or steers a hook line (format.HookEnvKeys, their one home, or
+//     any BONSAI_ name), named with its file, never its value (plan-5 5.3.6 note 3). Claude Code copies a settings
+//     file's env into every hook's environment and applies a change to it in the running session; the user's own
+//     settings file is the person's and is not read;
 //   - plugin-version: a version in a plugin entry of one of the workspace's marketplaces (bonsai-<name>-<8 hex>):
 //     a pack's plugin is pinned by its commit, which Claude Code takes as its version only when plugin.json and the
 //     entry carry none (spec §5). A pack whose own plugin.json carries one is refused when it is linked (fetch.go), so
@@ -24,6 +28,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 )
 
@@ -115,6 +120,7 @@ func (r *CheckResult) checkSettingsFiles() {
 			r.add("hooks-off", f.rel, "", f.shown+" sets disableAllHooks: true, which turns off every hook, Bonsai's guard among them "+
 				"(spec section 7)", next)
 		}
+		r.checkSettingsEnv(f, o)
 		mk, _ := o.Get("extraKnownMarketplaces")
 		markets, _ := mk.(schema.Object)
 		for _, m := range markets {
@@ -139,6 +145,36 @@ func (r *CheckResult) checkSettingsFiles() {
 			}
 		}
 	}
+}
+
+// checkSettingsEnv finds, in a settings file's env, each name of format.HookEnvKeys or starting with BONSAI_, whatever
+// its case (settings-env, plan-5 5.3.6 note 3), in the file's order: one finding per name, naming the file and the
+// name, never the value. An env that is not an object gives nothing here.
+func (r *CheckResult) checkSettingsEnv(f settingsFile, o schema.Object) {
+	env, _ := o.Get("env")
+	vars, _ := env.(schema.Object)
+	for _, m := range vars {
+		why, ok := format.HookEnvKey(m.Key)
+		if !ok {
+			continue
+		}
+		name := envName(m.Key)
+		r.add("settings-env", f.rel, "", f.shown+"'s env sets "+name+", "+why+": Claude Code gives a settings file's env to every hook, "+
+			"Bonsai's guard among them, and applies a change to it in the running session (the value is not shown here)",
+			"a person takes "+name+" out of the env in "+f.shown+" (Bonsai never writes env there; a variable a person needs belongs "+
+				"in their own shell or user settings), then run: bonsai check")
+	}
+}
+
+// envVarName is a variable's name as a shell writes it.
+var envVarName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+// envName shows a settings env name in a finding: as it is when a shell could name it, else quoted, in ASCII.
+func envName(key string) string {
+	if envVarName.MatchString(key) {
+		return key
+	}
+	return ascii(schema.Show(key))
 }
 
 // bonsaiMarket matches the names of a workspace's marketplaces, bonsai-<name>-<8 hex> (settings.go).

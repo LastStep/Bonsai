@@ -17,8 +17,9 @@ package engine
 //     (label-twice), the budgets (block-size, memory-index-size, memory-note-size), the paths CLAUDE.md, STATE and the
 //     memory notes name (missing-path), and the run reports past generated.run's rule (run-reports);
 //   - checkhistory.go: approve_first from git history (approve-first, approve-first-unchecked);
-//   - checksettings.go: Claude Code's settings in the project (settings-rule, hooks-off, plugin-version);
-//   - checkmachine.go: this machine's record of the checkout and the PATH (id-changed, same-id, bonsai-path).
+//   - checksettings.go: Claude Code's settings in the project (settings-rule, hooks-off, settings-env, plugin-version);
+//   - checkmachine.go: this machine's record of the checkout and the PATH (id-changed, same-id, bonsai-path);
+//   - checkgitbash.go: on Windows, Git Bash where Claude Code looks for it (git-bash).
 //
 // Two more need Claude Code, so cmd/bonsai runs them after Check and status never does (status stays cheap and
 // offline, contract section 12): what Claude Code reports installed (ComparePlugins, plugins.go: plugin, plugin-missing,
@@ -86,7 +87,8 @@ type CheckResult struct {
 	Missing        int // files the lock lists that are gone
 	Format0Changed int
 
-	history bool // CheckOptions.History
+	history bool           // CheckOptions.History
+	gitBash func() GitBash // CheckOptions.GitBash
 }
 
 // Check checks the workspace holding dir, every finding and warning but the two that ask Claude Code. Its error is
@@ -100,6 +102,9 @@ type CheckOptions struct {
 	// History: read git history for approve_first (checkhistory.go). status's default leaves it out to stay cheap
 	// for a program that runs it often (contract §12): it reads every commit that touched the task folder.
 	History bool
+	// GitBash: how to look for Git Bash (checkgitbash.go); nil looks where Claude Code does, FindGitBash. A test gives
+	// a lookup that finds nothing, on either side.
+	GitBash func() GitBash
 }
 
 // CheckWith is Check with its options.
@@ -108,7 +113,7 @@ func CheckWith(dir, home string, o CheckOptions) (*CheckResult, error) {
 	if err != nil {
 		return nil, findError(err)
 	}
-	r := &CheckResult{Root: co.Root, Main: co.Main, Home: home, history: o.History}
+	r := &CheckResult{Root: co.Root, Main: co.Main, Home: home, history: o.History, gitBash: o.GitBash}
 	cfg, err := workspace.LoadConfigFull(co.Root)
 	if err != nil {
 		var we *workspace.Error
@@ -150,7 +155,7 @@ func (r *CheckResult) missingLockNext() string {
 }
 
 // checkProject runs the checks that need no lock: the documents, the settings files, this machine's record and the
-// PATH, .bonsai/.gitignore and .bonsai/local/.
+// PATH, Git Bash on Windows, .bonsai/.gitignore and .bonsai/local/.
 func (r *CheckResult) checkProject() {
 	r.checkDocuments()
 	r.checkSecrets()
@@ -160,6 +165,7 @@ func (r *CheckResult) checkProject() {
 	}
 	r.checkSettingsFiles()
 	r.checkMachine()
+	r.checkGitBash()
 	r.checkGitignore()
 	r.checkLocal()
 }

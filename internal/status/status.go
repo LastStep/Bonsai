@@ -62,6 +62,7 @@ type Options struct {
 	Plugins engine.PluginCLI                      // claude plugin list
 	Claude  func() (string, error)                // claude --version's first line
 	Tags    func(source string) ([]string, error) // a source's tags (engine.RemoteTags when nil)
+	GitBash func() engine.GitBash                 // how check looks for Git Bash (engine.FindGitBash when nil)
 }
 
 var (
@@ -138,7 +139,7 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		{Key: "format0_changed", Value: 0}}, []any{}
 	var lock *workspace.Lock
 	var checked *engine.CheckResult
-	if r, err := engine.CheckWith(dir, home, engine.CheckOptions{History: o.Full}); err == nil {
+	if r, err := engine.CheckWith(dir, home, engine.CheckOptions{History: o.Full, GitBash: o.GitBash}); err == nil {
 		checked = r
 		lock = r.Lock
 		if o.Full {

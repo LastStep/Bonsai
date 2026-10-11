@@ -148,10 +148,12 @@ error words.
 | `secret` | finding | agent | a memory note or the memory index in the working tree holds a secret-shaped string, as Bonsai's redactor finds one: the finding names the note, the line and the kind of secret (the secret kinds' list), never the value; a person decides whether to rotate it (spec section 6) |
 | `settings-rule` | finding | person | a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own |
 | `hooks-off` | finding | person | disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them |
+| `settings-env` | finding | person | the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: PATH, BASH_ENV, ENV, CLAUDE_CODE_SHELL_PREFIX, CLAUDE_CODE_GIT_BASH_PATH, CLAUDE_PROJECT_DIR, CLAUDE_CODE_STOP_HOOK_BLOCK_CAP, CLAUDE_CODE_CHILD_SESSION, or any name starting BONSAI_; the finding names the file and the name, never the value (step 5.3.6) |
 | `plugin-version` | finding | person | a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5) |
 | `plugin` | finding | person | plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5) |
 | `id-changed` | finding | person | bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3) |
 | `bonsai-path` | finding | person | the bonsai on the PATH is not the installed one that install.json records (spec section 3) |
+| `git-bash` | finding | person | on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse and a hook that fails does not block: every call goes through unguarded (step 5.3.6) |
 | `claude-code-old` | warning | person | Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7) |
 | `claude-code-unknown` | warning | person | Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read) |
 | `same-id` | warning | person | another checkout on this machine holds the same workspace id (contract section 3) |
