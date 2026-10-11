@@ -429,7 +429,7 @@ const linkedYAML = "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaa
 
 // hook takes no --json: its refusals are lines on stderr, each with a known word (noteError) and a next step.
 func TestHookRefusals(t *testing.T) {
-	for _, args := range [][]string{{"hook"}, {"hook", "nap"}, {"hook", "stop"}, {"hook", "guard", "now"}, {"hook", "guard", "--json"}} {
+	for _, args := range [][]string{{"hook"}, {"hook", "nap"}, {"hook", "stop", "now"}, {"hook", "guard", "now"}, {"hook", "guard", "--json"}} {
 		code, out, errOut := runArgs(args...)
 		if code != 2 || out != "" || !strings.Contains(errOut, "\nnext: ") || strings.Contains(errOut, "{") {
 			t.Errorf("%v: exit %d, %q %q", args, code, out, errOut)

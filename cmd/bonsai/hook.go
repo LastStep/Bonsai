@@ -1,9 +1,9 @@
 package main
 
 // bonsai hook <name>: the hook entry point (spec §4, §7). This build answers `bonsai hook guard` (plan part 5,
-// internal/guard), `bonsai hook start` and `bonsai hook record` (step 5.2.4, internal/recorder); stop comes with step
-// 5.3, and the engine writes no line that calls it. Its tables are hookWord and its sub-words'. A hook speaks Claude
-// Code's hook format: it takes no --json, and its refusals are lines on stderr.
+// internal/guard), `bonsai hook stop` (step 5.3.4, internal/stopgate), `bonsai hook start` and `bonsai hook record`
+// (step 5.2.4, internal/recorder). Its tables are hookWord and its sub-words'. A hook speaks Claude Code's hook format:
+// it takes no --json, and its refusals are lines on stderr.
 
 import (
 	"os"
@@ -11,11 +11,10 @@ import (
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/guard"
 	"github.com/LastStep/Bonsai/internal/recorder"
+	"github.com/LastStep/Bonsai/internal/stopgate"
 )
 
 func init() { register(hookWord) }
-
-const notBuiltHookNext = "take that hook line out of .claude/settings.json; bonsai init writes no line that calls it in this build"
 
 var hookWord = &Word{
 	Name:    "hook",
@@ -32,7 +31,7 @@ var hookWord = &Word{
 	Subs: []*Word{
 		guardWord,
 		startWord,
-		{Name: "hook stop", Later: "step 5.3", LaterNext: notBuiltHookNext},
+		stopWord,
 		recordWord,
 	},
 }
@@ -68,6 +67,40 @@ path (from ~/ under the home) and SHA-256.
 			return c.refuse(c.flagError("hook guard takes no %+q", c.rest[0]))
 		}
 		return guard.Main(guard.Options{Stdin: os.Stdin, Stderr: c.stderr, StdinTerminal: isTerminal(os.Stdin)})
+	},
+}
+
+var stopWord = &Word{
+	Name:    "hook stop",
+	Title:   "the Stop gate that bonsai init writes as the hook line",
+	Summary: "the Stop gate",
+	About: `  bonsai hook stop || exit 2
+on Stop (no matcher), timeout 10 s.
+It engages only when BONSAI_TASK names a task and the session's own project (from CLAUDE_PROJECT_DIR) is linked;
+otherwise it lets the session end and records nothing. Engaged, it keeps the session going (exit 2, the reason and
+the next step on stderr, which Claude Code gives the agent as the reason to go on) until all of these hold: the
+checkout's main checkout is verified (git's own link back, and this machine's record written by bonsai init and
+update there); the named task is one task file there that parses; this checkout holds a run report for the task
+(documents.run, R-<date>-<task id>.md); and the main checkout's .bonsai/local/ladder/<task id>.json reads as
+bonsai.ladder/1 with mode local, green, git.sha this checkout's HEAD (read from its git files: a branch's ref file,
+packed-refs or a detached HEAD), git.dirty false, and the workspace's ladder_floor and the task's bonsai.ladder each
+among its requested rungs and green. The next step names bonsai ladder --task <id>.
+It does not read stop_hook_active: Claude Code itself ends the turn after eight blocks in a row with no tool call
+between them (CLAUDE_CODE_STOP_HOOK_BLOCK_CAP), and each block is a guard record (bonsai.log/1, agent_event Stop) in
+the main checkout's .bonsai/local/log/, as each allow is. It blocks whatever it cannot read or decide, and blocks
+itself after 5 s, before the hook's timeout could let the session end unchecked.
+`,
+	FlagNext: "use the hook line bonsai init writes: bonsai hook stop || exit 2",
+	Exits: []Exit{
+		{Code: 0, Means: "allow: the session ends (nothing printed)"},
+		{Code: 2, Means: "block: the session goes on, with the reason and the next step on stderr"},
+	},
+	Examples: []string{"BONSAI_TASK=T-0001 CLAUDE_PROJECT_DIR=. bonsai hook stop < payload.json"},
+	Run: func(c *call) int {
+		if len(c.rest) > 0 {
+			return c.refuse(c.flagError("hook stop takes no %+q", c.rest[0]))
+		}
+		return stopgate.Main(stopgate.Options{Stdin: os.Stdin, Stderr: c.stderr, StdinTerminal: isTerminal(os.Stdin)})
 	},
 }
 

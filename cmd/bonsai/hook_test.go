@@ -363,7 +363,8 @@ func TestHookCommand(t *testing.T) {
 		{[]string{"hook", "guard", "--help"}, 0, "bonsai hook guard || exit 2", ""},
 		{[]string{"hook"}, 2, "", "bonsai: bonsai hook needs a hook name.\nnext: run `bonsai hook --help`"},
 		{[]string{"hook", "guard", "--json"}, 2, "", `bonsai: hook guard takes no "--json".`},
-		{[]string{"hook", "stop"}, 2, "", "bonsai hook stop is not built yet"},
+		{[]string{"hook", "stop", "--help"}, 0, "  bonsai hook stop || exit 2\non Stop (no matcher), timeout 10 s.", ""},
+		{[]string{"hook", "stop", "now"}, 2, "", `bonsai: hook stop takes no "now".`},
 		{[]string{"hook", "nap"}, 2, "", `bonsai: "nap" is not a hook.`},
 	}
 	for _, c := range cases {

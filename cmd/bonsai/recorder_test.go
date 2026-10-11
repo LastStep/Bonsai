@@ -27,8 +27,8 @@ func TestHookStartAndRecordWords(t *testing.T) {
 			t.Errorf("%v: exit %d, %q, %q", c.args, code, out, errOut)
 		}
 	}
-	if code, _, errOut := runArgs("hook", "stop"); code != 2 || !strings.Contains(errOut, "bonsai hook stop is not built yet") {
-		t.Errorf("hook stop: exit %d, %q", code, errOut)
+	if code, out, errOut := runArgs("hook", "stop", "--help"); code != 0 || !strings.Contains(out, "  bonsai hook stop || exit 2\non Stop") || errOut != "" {
+		t.Errorf("hook stop --help: exit %d, %q, %q", code, out, errOut)
 	}
 }
 
