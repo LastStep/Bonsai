@@ -80,22 +80,26 @@ func TestUnlink(t *testing.T) {
 	got := strings.Join(lines, "\n")
 	wants := []string{"key autoMemoryEnabled: false", "key disableAllHooks: false", "deny Edit(/ledger.json)", "deny Edit(demo/never.txt)",
 		"hook SessionStart (startup): echo demo hook A", "marketplace bonsai-demo-", "plugin demo-pack@bonsai-demo-"}
-	// Every one of Bonsai's own hook lines goes: the guard's, start's and the recorder's (step 5.2.4).
+	// Every one of Bonsai's own lines goes: the guard's, start's and the recorder's hook lines (step 5.2.4), and its own
+	// deny rules (step 5.3.5).
 	for _, own := range OwnHookLines() {
 		wants = append(wants, "hook "+own+"\n")
+	}
+	for _, own := range ownDeny {
+		wants = append(wants, "deny "+own.Rule+"\n")
 	}
 	for _, want := range wants {
 		if !strings.Contains(got+"\n", want) {
 			t.Errorf("the settings lines lack %q:\n%s", want, got)
 		}
 	}
-	if len(lines) != 7+len(ownHooks) || strings.Contains(got, "secrets") || strings.Contains(got, "lint-staged") {
+	if len(lines) != 7+len(ownHooks)+len(ownDeny) || strings.Contains(got, "secrets") || strings.Contains(got, "lint-staged") {
 		t.Errorf("the settings lines:\n%s", got)
 	}
 	preview := p.Preview(false)
 	for _, want := range []string{"  demo-pack 0.1.0  " + e.pack.A[:7] + " -> taken out  (", "  removed      demo/guide.md [pack]: a pack file nobody edited",
 		"  released     demo/start.md [once]: the project's file: it stays", "  removed      .bonsai/lock.json: removed last",
-		fmt.Sprintf(".claude/settings.json: %d lines\n  remove  key", 7+len(ownHooks)), "Left in place:\n  .bonsai/STATE.md: the project's STATE\n  .bonsai/local/: this checkout's log"} {
+		fmt.Sprintf(".claude/settings.json: %d lines\n  remove  key", 7+len(ownHooks)+len(ownDeny)), "Left in place:\n  .bonsai/STATE.md: the project's STATE\n  .bonsai/local/: this checkout's log"} {
 		if !strings.Contains(preview, want) {
 			t.Errorf("the preview lacks %q:\n%s", want, preview)
 		}
@@ -196,8 +200,8 @@ func TestUnlinkFinishesFromTheLock(t *testing.T) {
 	if p.Config != nil || p.OldMarket != "" || !p.LockRemove || p.lists("bonsai.yaml") {
 		t.Fatalf("the plan: %+v", p)
 	}
-	if len(p.Settings) != 7+len(ownHooks) {
-		t.Errorf("%d settings lines, want %d:\n%s", len(p.Settings), 7+len(ownHooks), p.Preview(false))
+	if len(p.Settings) != 7+len(ownHooks)+len(ownDeny) {
+		t.Errorf("%d settings lines, want %d:\n%s", len(p.Settings), 7+len(ownHooks)+len(ownDeny), p.Preview(false))
 	}
 	if err := Apply(p); err != nil {
 		t.Fatal(err)

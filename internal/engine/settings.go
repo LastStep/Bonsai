@@ -6,8 +6,8 @@ package engine
 // A line is one entry Bonsai writes, as the preview names it (spec §6, "The preview names every settings line"):
 //
 //	hook         a hook command under hooks.<event>, in a group with its matcher (spec §7; a pack's hooks)
-//	deny         a rule in permissions.deny (each never_edit path in bonsai.yaml as Edit(/<path>), neverEditRule;
-//	             a pack's deny, as the pack gives it)
+//	deny         a rule in permissions.deny (Bonsai's own, ownDeny; each never_edit path in bonsai.yaml as
+//	             Edit(/<path>), neverEditRule; a pack's deny, as the pack gives it)
 //	key          autoMemoryEnabled: false (spec §10) and disableAllHooks: false (spec §7)
 //	marketplace  the inline marketplace under extraKnownMarketplaces, bonsai-<workspace name>-<8 hex>, each pack's
 //	             plugin pinned to its locked commit by sha, with no version (spec §5)
@@ -53,6 +53,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/recorder"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -115,6 +116,47 @@ func buildOwnHooks() []Line {
 	return ls
 }
 
+// ownDeny is this build's table of Bonsai's own deny rules (design/plan-5.md, step 5.3.5; spec §6 and §7, "Deny
+// rules the engine writes"; contract §3, §10.6): one over the files only Bonsai writes in each project, its log, asks
+// and ladder results in .bonsai/local/; one for each table check --write rebuilds (tableFiles, from
+// format.GeneratedKinds, their one home); and one over Bonsai's home, ~/.bonsai/, whose machine records the guard
+// trusts to find a worktree's main checkout (5.3.1 note 2). Bonsai writes all of them as a program, never through the
+// file tools, so the rules do not stop it (bonsai check --write, run through an agent's shell tool, still writes the
+// tables); they stop an agent's Edit, Write and NotebookEdit and the shell routes Claude Code checks against Edit
+// rules (a redirect, and tee and sed as the permissions reference says), and from step 5.3.2 the guard refuses the
+// file tools there too. A home moved by BONSAI_HOME is not under ~/.bonsai: the guard alone covers it. A deny rule
+// runs no code, so --yes alone writes these lines (step 5.1.1, rule 1), at a first link and when a project linked by
+// an older build takes them at its next update; unlink takes them out; taking a pack out keeps them, since no pack
+// gives them.
+//
+// The form (step 5.3.5 note 3; the permissions reference: a rule's path anchors at the filesystem root with //, at the
+// user's home with ~/, at the session's starting folder with /, at its current folder with none), as measured in real
+// -p sessions on Claude Code 2.1.296 (WSL) and 2.1.294 (Windows): //**/ matches the folder at any depth, on Windows on
+// every drive and in any letter case, so a session started in the project's top folder meets it after a cd too, and a
+// worktree session, whose .bonsai/local/ is the main checkout's, outside its own folder, meets it there; the tables
+// take the same form, so a worktree session cannot edit its own tables or main's. ~/ held for a Write and a redirect
+// into a folder of the home (tried on a scratch folder, never on a real ~/.bonsai).
+//
+// Why these are the engine's lines and not the base pack's (5.3.5 note 2; spec §7 lists the .bonsai/local/ rule among
+// base's walls): from step 5.4 the stop gate trusts the ladder results in .bonsai/local/, and Bonsai links its own repo
+// at 5.4, before base exists (5.5); and a project may link without base. When step 5.5 writes base's walls, these
+// lines stay here, their one home, and base leaves them out; the walls round secret files stay base's, and base keeps
+// Read(~/.bonsai/salt), a secret's wall.
+var ownDeny = buildOwnDeny()
+
+func buildOwnDeny() []Line {
+	ls := []Line{{Kind: "deny", Origin: "bonsai", Own: true, Rule: "Edit(//**/" + LocalDir + "/**)",
+		Why: "Agents can never write in " + LocalDir + "/, in this checkout or the main one (the log, asks and ladder " +
+			"results): only Bonsai writes there, as a program."}}
+	for _, t := range tableFiles() {
+		ls = append(ls, Line{Kind: "deny", Origin: "bonsai", Own: true, Rule: "Edit(//**/" + t + ")",
+			Why: "Agents can never edit " + t + " by hand: Bonsai rebuilds that table, run: bonsai check --write."})
+	}
+	return append(ls, Line{Kind: "deny", Origin: "bonsai", Own: true, Rule: "Edit(~/" + homeFolder + "/**)",
+		Why: "Agents can never write in Bonsai's home, ~/" + homeFolder + "/ (this machine's records and settings for each " +
+			"workspace, which the guard trusts): only Bonsai's own commands write there."})
+}
+
 // neverEditRule is the deny rule for a never_edit path of bonsai.yaml (spec §7, "Deny rules the engine writes"):
 // Edit(/<path>), anchored at the session's starting folder, the project's top folder (step 5.3.5 note 3). Measured in
 // real sessions (Claude Code 2.1.296 on WSL, 2.1.294 on Windows): the form part 3 wrote, Edit(<path>), anchors at the
@@ -125,6 +167,22 @@ func neverEditRule(path string) string { return "Edit(/" + path + ")" }
 
 // neverEditSlot starts a never_edit rule's slot: the path, whatever the rule's form.
 const neverEditSlot = "never_edit:"
+
+// homeFolder is the Bonsai home's folder in the user's home when BONSAI_HOME is not set (workspace.Home).
+const homeFolder = ".bonsai"
+
+// tableFiles lists the tables Bonsai rebuilds, from format.GeneratedKinds (their one home): the generated kinds that
+// are one file in .bonsai/, outside .bonsai/local/, in the order the kinds are listed.
+func tableFiles() []string {
+	var out []string
+	for _, k := range format.GeneratedKinds {
+		if strings.HasPrefix(k.Where, ".bonsai/") && !strings.HasSuffix(k.Where, "/") &&
+			!strings.HasPrefix(k.Where, LocalDir+"/") {
+			out = append(out, k.Where)
+		}
+	}
+	return out
+}
 
 // OwnHookLines lists this build's own hook lines as the preview shows them, in the order the engine writes them.
 func OwnHookLines() []string {
@@ -139,7 +197,7 @@ func OwnHookLines() []string {
 type Line struct {
 	Kind    string // hook, deny, key, marketplace or plugin
 	Origin  string // where it comes from: bonsai (this build's own), bonsai.yaml (never_edit), old (an old Bonsai hook line), or a pack id
-	Own     bool   // a hook line of Bonsai's own (ownHooks, or a `bonsai hook` line claim finds): set only here, never from a pack
+	Own     bool   // a line of Bonsai's own (ownHooks and ownDeny, or a `bonsai hook` line claim finds): set only here, never from a pack
 	Slot    string // two lines with one slot are one line changed, not one removed and one added
 	Event   string // hook: the Claude Code hook event
 	Matcher string // hook: the group's matcher, "" for none
@@ -294,8 +352,9 @@ func Pin(commit, folder string) string {
 }
 
 // buildLines gives every line Bonsai writes for a workspace and its packs, in the order it writes them: the two
-// keys, the deny rules (never_edit, then each pack's), the hook lines (Bonsai's own, then each pack's), the
-// marketplace, then each pack's plugin. A line that two sources give is written once.
+// keys, the deny rules (Bonsai's own, then never_edit, then each pack's), the hook lines (Bonsai's own, then each
+// pack's), the marketplace, then each pack's plugin. A line that two sources give is written once, as the first
+// gives it: a pack's rule equal to one of Bonsai's own stays Bonsai's.
 func buildLines(cfg *workspace.Config, packs []packLines) []Line {
 	ls := []Line{
 		{Kind: "key", Origin: "bonsai", Name: "autoMemoryEnabled", Value: false,
@@ -303,6 +362,7 @@ func buildLines(cfg *workspace.Config, packs []packLines) []Line {
 		{Kind: "key", Origin: "bonsai", Name: "disableAllHooks", Value: false,
 			Why: "Keeps hooks on in this project, so Bonsai's guard runs even when a user setting turns hooks off."},
 	}
+	ls = append(ls, ownDeny...)
 	for _, p := range cfg.NeverEdit {
 		ls = append(ls, Line{Kind: "deny", Origin: "bonsai.yaml", Rule: neverEditRule(p), Slot: neverEditSlot + p,
 			Why: "Agents can never edit " + p + ": it is in never_edit in bonsai.yaml."})
@@ -819,7 +879,7 @@ type SettingsChange struct {
 	Why      string
 	RunsCode bool   // a hook line added or changed, and not one the lock last consented to: it runs code (spec §6)
 	Origin   string // where the line comes from (Line.Origin): bonsai for Bonsai's own, or a pack id
-	Own      bool   // Bonsai's own hook line (Line.Own), which no pack can set
+	Own      bool   // a line of Bonsai's own (Line.Own), which no pack can set
 }
 
 // lineChanges lists the changes from Bonsai's lines in the file (claimed) to the new lines: a new line the file

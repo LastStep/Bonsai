@@ -162,7 +162,8 @@ func TestApplyLines(t *testing.T) {
 		t.Errorf("applied twice:\n%s\n%s", a, b)
 	}
 	got := schema.Show(once)
-	for _, want := range []string{`"deny":["Read(secrets/**)","Edit(/ledger.json)"]`, `{"matcher":"Bash","hooks":[{"type":"command","command":"npm run lint-staged"}]}`,
+	for _, want := range []string{`"deny":["Read(secrets/**)","Edit(//**/.bonsai/local/**)","Edit(//**/.bonsai/sessions.md)",` +
+		`"Edit(//**/.bonsai/tasks.md)","Edit(~/.bonsai/**)","Edit(/ledger.json)"]`, `{"matcher":"Bash","hooks":[{"type":"command","command":"npm run lint-staged"}]}`,
 		`{"matcher":"Bash","hooks":[{"type":"command","command":"echo p"}]}`, `"repo":"o/p"`} {
 		if !strings.Contains(got, want) {
 			t.Errorf("lacks %s:\n%s", want, got)
