@@ -65,7 +65,7 @@ var Rules = []Rule{
 	{RuleNeverGranted, false, "a path of the floor no grant opens: .claude/settings.json, .claude/settings.local.json and .git at a " +
 		"checkout's top, and a .git at any depth (for a delete, the project's own top .git only)"},
 	{RuleBonsaiFiles, false, "Bonsai's own files, in every mode and under any grant: .bonsai/local/, .bonsai/.gitignore, the two " +
-		"tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home"},
+		"tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home (from WSL, a Windows user's too)"},
 	{RuleStandIn, false, "a file named as Bonsai's program (bonsai, bonsai.exe, bonsai.cmd, bonsai.bat, bonsai.ps1, bonsai.com) " +
 		"outside every linked project, which a folder on the PATH could hold"},
 	{RuleMainNotVerified, false, "a guarded path where no project holding it is a verified checkout, so no task's grant can count"},

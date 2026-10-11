@@ -396,7 +396,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `protected` | deny | a path on a protected list (bonsai.yaml's protected, a pack's declared protected paths) that no running task grants |
 | `person-only` | deny | a path on bonsai.yaml's person_only list, or one the floor counts as person-only (bonsai.yaml, .bonsai/lock.json, anything else in .bonsai/, and a bonsai.yaml or .bonsai/ at any depth), that no running task grants |
 | `never-granted` | deny | a path of the floor no grant opens: .claude/settings.json, .claude/settings.local.json and .git at a checkout's top, and a .git at any depth (for a delete, the project's own top .git only) |
-| `bonsai-files` | deny | Bonsai's own files, in every mode and under any grant: .bonsai/local/, .bonsai/.gitignore, the two tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home |
+| `bonsai-files` | deny | Bonsai's own files, in every mode and under any grant: .bonsai/local/, .bonsai/.gitignore, the two tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home (from WSL, a Windows user's too) |
 | `bonsai-stand-in` | deny | a file named as Bonsai's program (bonsai, bonsai.exe, bonsai.cmd, bonsai.bat, bonsai.ps1, bonsai.com) outside every linked project, which a folder on the PATH could hold |
 | `main-not-verified` | deny | a guarded path where no project holding it is a verified checkout, so no task's grant can count |
 | `other-project` | deny | a delete or move of another linked project's top folder or its .git, .bonsai or .claude folder (that project on this machine's record) |

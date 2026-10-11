@@ -7,6 +7,8 @@ package guard
 //     its settings hold status_writes, so one write there could turn command mode's tripwires off. The engine's deny
 //     rule (step 5.3.5) stops a shell redirect into ~/.bonsai; a home moved by BONSAI_HOME is guarded by the guard
 //     alone.
+//     On Linux, a Windows user's Bonsai home as WSL mounts it (/mnt/<drive>/Users/<name>/.bonsai) counts as Bonsai's
+//     home too: Bonsai's Windows side trusts its machine records, and a WSL session can reach it (wslWindowsHome).
 //   - outside every linked project, a file named as Bonsai's program (bonsai-stand-in, StandInNames), so the Write
 //     tool cannot place a stand-in for Bonsai in a folder on the PATH, under every answer to the hook-line question.
 //
@@ -74,7 +76,21 @@ func (j *judge) inHome(abs string) string {
 			}
 		}
 	}
-	return ""
+	return wslWindowsHome(abs, runtime.GOOS)
+}
+
+// wslWindowsHome gives, on Linux, the Windows user's Bonsai home a path lies in as WSL mounts it,
+// /mnt/<drive>/Users/<name>/.bonsai (letter case ignored, as Windows ignores it), or "" for any other path or system.
+func wslWindowsHome(abs, goos string) string {
+	if goos != "linux" {
+		return ""
+	}
+	segs := strings.Split(filepath.ToSlash(filepath.Clean(abs)), "/")
+	if len(segs) < 6 || segs[0] != "" || segs[1] != "mnt" || len(segs[2]) != 1 || !isLetter(segs[2][0]) ||
+		!strings.EqualFold(segs[3], "Users") || segs[4] == "" || !strings.EqualFold(segs[5], ".bonsai") {
+		return ""
+	}
+	return strings.Join(segs[:6], "/")
 }
 
 // within reports whether abs is the folder root or lies inside it, letter case ignored.

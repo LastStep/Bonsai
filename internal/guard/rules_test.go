@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -244,6 +245,24 @@ var ruleTests = map[string]func(t *testing.T){
 		in := toolPayload("r1", dir, "Write", schema.Object{{Key: "file_path", Value: filepath.Join(user, ".bonsai", "salt")},
 			{Key: "content", Value: "x"}})
 		wantRule(t, dir, in, RuleBonsaiFiles)
+		// On Linux, a Windows user's Bonsai home as WSL mounts it (read on the string alone, so on every system).
+		for p, want := range map[string]string{
+			"/mnt/c/Users/nobody-here/.bonsai/workspaces/r-0/workspace.json": "/mnt/c/Users/nobody-here/.bonsai",
+			"/mnt/D/users/x/.BONSAI": "/mnt/D/users/x/.BONSAI", "/mnt/c/Users/x/.bonsai2/y": "", "/mnt/c/Users/.bonsai/y": "",
+			"/mnt/cc/Users/x/.bonsai/y": "", "/home/x/mnt/c/Users/x/.bonsai/y": "",
+		} {
+			if got := wslWindowsHome(p, "linux"); got != want {
+				t.Errorf("wslWindowsHome(%s) = %q, want %q", p, got, want)
+			}
+			if got := wslWindowsHome(p, "windows"); got != "" {
+				t.Errorf("wslWindowsHome(%s) on Windows = %q", p, got)
+			}
+		}
+		if runtime.GOOS == "linux" {
+			in := toolPayload("r1", dir, "Write", schema.Object{{Key: "file_path",
+				Value: "/mnt/c/Users/nobody-here/.bonsai/workspaces/r-0123456789abcdef/workspace.json"}, {Key: "content", Value: "{}"}})
+			wantRule(t, dir, in, RuleBonsaiFiles)
+		}
 	},
 	RuleStandIn: func(t *testing.T) {
 		dir := withTask(t, "running", "**")
