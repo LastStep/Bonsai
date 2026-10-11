@@ -1,0 +1,3 @@
+go test fuzz v1
+string("bash <<'EOF'\nrm -rf junk/*\nEOF\nls")
+bool(false)

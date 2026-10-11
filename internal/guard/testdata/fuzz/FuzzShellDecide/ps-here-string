@@ -1,0 +1,3 @@
+go test fuzz v1
+string("@'\nRemove-Item -Recurse junk/*\n'@ | powershell -Command -")
+bool(true)
