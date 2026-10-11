@@ -9,13 +9,14 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // Decide judges one call against bonsai.yaml's lists. root is the project's absolute folder, the one holding
 // bonsai.yaml.
-func Decide(in *Input, root string, cfg *workspace.Config) Decision {
-	if _, ok := fileTools[in.Tool]; !ok {
+func Decide(in *hookin.Payload, root string, cfg *workspace.Config) Decision {
+	if !hookin.FileTool(in.Tool) {
 		if in.Tool == "Bash" || in.Tool == "PowerShell" {
 			return allow(RuleShell, "")
 		}

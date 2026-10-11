@@ -9,6 +9,7 @@ import (
 	"testing"
 	"unsafe"
 
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -48,7 +49,7 @@ func windowsProject(t *testing.T) (string, *workspace.Config) {
 
 func refused(t *testing.T, cfg *workspace.Config, root, p string) {
 	t.Helper()
-	d := Decide(&Input{Tool: "Write", Path: p}, root, cfg)
+	d := Decide(&hookin.Payload{Tool: "Write", Path: p}, root, cfg)
 	if d.Allow {
 		t.Errorf("%s allowed (rule %s), want refused", p, d.Rule)
 	}
@@ -90,7 +91,7 @@ func TestDecideFollowsJunctions(t *testing.T) {
 	refused(t, cfg, dir, filepath.Join(outside, "proj", "protected.txt"))
 	// The project reached through a junction, the path by its real folder.
 	refused(t, cfg, filepath.Join(outside, "proj"), filepath.Join(dir, "protected.txt"))
-	if d := Decide(&Input{Tool: "Write", Path: filepath.Join(outside, "j2.txt")}, dir, cfg); !d.Allow {
+	if d := Decide(&hookin.Payload{Tool: "Write", Path: filepath.Join(outside, "j2.txt")}, dir, cfg); !d.Allow {
 		t.Errorf("a file beside the junctions refused: %+v", d)
 	}
 }
@@ -140,7 +141,7 @@ func TestDecideReadsShortNames(t *testing.T) {
 	if strings.EqualFold(filepath.Base(short), "protected.txt") {
 		t.Skip("short (8.3) names are off on this volume: protected.txt has none")
 	}
-	d := Decide(&Input{Tool: "Write", Path: short}, dir, cfg)
+	d := Decide(&hookin.Payload{Tool: "Write", Path: short}, dir, cfg)
 	if d.Allow || d.Rule != RuleProtected {
 		t.Fatalf("%s: %+v, want refused as protected", short, d)
 	}

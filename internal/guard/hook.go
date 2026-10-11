@@ -1,17 +1,20 @@
 package guard
 
-// Main: one run of `bonsai hook guard`, from its own timer to its exit code.
+// Main: one run of `bonsai hook guard`, from its own timer to its exit code, in the frame of the hooks that block
+// (internal/hookin: the timer first, the work in a goroutine, a panic as a block, the answer and its exit code).
 
 import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -20,14 +23,6 @@ import (
 // §7), so the guard blocks itself before that can happen.
 const Budget = 5 * time.Second
 
-// ProjectEnv names the variable Claude Code sets for a hook to the project's folder, the one the session started in.
-// The guard finds the project from it, never from the payload's cwd (an agent's cd moves that) or from git (whose
-// answer comes from files an agent may edit).
-const ProjectEnv = "CLAUDE_PROJECT_DIR"
-
-// recordWait caps the time the over-time answer spends writing its record.
-const recordWait = 500 * time.Millisecond
-
 // Options are what Main needs besides the payload.
 type Options struct {
 	Stdin         io.Reader           // the payload
@@ -35,6 +30,7 @@ type Options struct {
 	StdinTerminal bool                // stdin is a terminal: the guard was run by hand with no payload piped in
 	Getenv        func(string) string // os.Getenv, or a test's own
 	Budget        time.Duration       // the guard's own time limit; 0 means Budget
+	RecordWait    time.Duration       // how long the over-time refusal waits for its record; 0 means hookin.RecordWait
 	Now           func() time.Time    // the clock; nil means time.Now
 }
 
@@ -44,11 +40,12 @@ type run struct {
 	mu   sync.Mutex
 	root string
 	cfg  *workspace.Config
-	in   *Input
+	in   *hookin.Payload
 }
 
 // Main answers one PreToolUse call: 0 allows it, 2 blocks it with the reason and the next step on stderr. It
-// returns by its budget whatever the work is doing; the caller then exits, which stops the work.
+// returns by its budget (and the over-time record's wait) whatever the work is doing; the caller then exits, which
+// stops the work.
 func Main(o Options) int {
 	if o.Getenv == nil {
 		o.Getenv = os.Getenv
@@ -60,48 +57,39 @@ func Main(o Options) int {
 		o.Now = time.Now
 	}
 	r := &run{o: o}
-	timer := time.NewTimer(o.Budget)
-	defer timer.Stop()
-	done := make(chan Decision, 1)
-	go func() { done <- r.work() }()
-	select {
-	case d := <-done:
-		return r.answer(d)
-	case <-timer.C:
-		return r.answer(r.overTime())
-	}
+	f := hookin.Frame{Name: "guard", Budget: o.Budget, Wait: o.RecordWait, Stderr: o.Stderr}
+	return f.Run(hookin.Job{
+		Work:     func() hookin.Answer { return r.work().answer() },
+		Panic:    func(p any) hookin.Answer { return panicked(p).answer() },
+		OverTime: r.overTime,
+	})
 }
 
-// answer prints a refusal and gives the exit code. A refusal that cannot be printed still blocks: the code is the
-// answer.
-func (r *run) answer(d Decision) int {
-	if d.Allow {
-		return 0
-	}
-	_, _ = fmt.Fprintf(r.o.Stderr, "bonsai guard: %s.\nnext: %s.\n", d.Why, d.Next)
-	return 2
+// answer gives a decision as the frame's answer.
+func (d Decision) answer() hookin.Answer {
+	return hookin.Answer{Block: !d.Allow, Why: d.Why, Next: d.Next}
 }
 
-// work does the guard's whole job and gives its decision. A panic inside becomes a refusal.
+// panicked is the refusal of a guard that failed inside.
+func panicked(p any) Decision {
+	return deny(RuleInternal, fmt.Sprintf("the guard failed inside (%s), and a guard that fails blocks the call",
+		oneLine(fmt.Sprint(p))), "tell the person; a person runs `bonsai hook guard` by hand with this payload on stdin to see the failure")
+}
+
+// work does the guard's whole job and gives its decision. A panic inside is the frame's to answer (panicked).
 func (r *run) work() (d Decision) {
-	defer func() {
-		if p := recover(); p != nil {
-			d = deny(RuleInternal, fmt.Sprintf("the guard failed inside (%s), and a guard that fails blocks the call",
-				oneLine(fmt.Sprint(p))), "tell the person; a person runs `bonsai hook guard` by hand with this payload on stdin to see the failure")
-		}
-	}()
-	dir := r.o.Getenv(ProjectEnv)
+	dir := r.o.Getenv(hookin.ProjectEnv)
 	if dir == "" {
-		return deny(RuleNoProject, ProjectEnv+" is not set, so the guard cannot tell which project this call is in, and it blocks",
-			"run the guard as Claude Code's hook (Claude Code sets "+ProjectEnv+"); to run it by hand, set "+ProjectEnv+" to the project's folder")
+		return deny(RuleNoProject, hookin.ProjectEnv+" is not set, so the guard cannot tell which project this call is in, and it blocks",
+			"run the guard as Claude Code's hook (Claude Code sets "+hookin.ProjectEnv+"); to run it by hand, set "+hookin.ProjectEnv+" to the project's folder")
 	}
-	root, linked, err := findProject(dir)
+	root, linked, err := hookin.FindProject(dir)
 	if err != nil {
 		return deny(RuleNoProject, fmt.Sprintf("the project's folder %s cannot be read (%s), so the guard blocks",
 			quote(filepath.ToSlash(dir), 120), oneLine(err.Error())), "tell the person: check that the folder exists and can be read")
 	}
 	if !linked {
-		r.drain()
+		hookin.Drain(r.o.Stdin, r.o.StdinTerminal)
 		return allow(RuleNotLinked, "")
 	}
 	cfg, err := workspace.LoadConfig(root)
@@ -158,82 +146,65 @@ func (r *run) record(d Decision) error {
 	return writeRecord(root, cfg, in, d, r.o.Getenv, r.o.Now())
 }
 
-// overTime is the answer when the budget runs out first: a refusal, recorded if that can be done in recordWait. If
-// the work was itself writing a record just then, the log holds both, and the later over-time one is the answer
-// that counted.
-func (r *run) overTime() Decision {
+// overTime is the answer when the budget runs out first: a refusal, and, once bonsai.yaml has been read, the writer
+// of its record, which the frame awaits for the run's RecordWait. If the work was itself writing a record just then,
+// the log holds both, and the later over-time one is the answer that counted.
+func (r *run) overTime() (hookin.Answer, func()) {
 	d := deny(RuleOverTime, fmt.Sprintf("the guard ran past its own %s limit, so it blocks the call rather than let "+
 		"the hook's timeout pass it through", r.o.Budget),
 		"try the call again; if it is blocked again, tell the person (a slow disk, or a stdin that never ends)")
 	r.mu.Lock()
 	known := r.cfg != nil
 	r.mu.Unlock()
-	if known {
-		wrote := make(chan struct{})
-		go func() {
-			_ = r.record(d)
-			close(wrote)
-		}()
-		select {
-		case <-wrote:
-		case <-time.After(recordWait):
-		}
+	if !known {
+		return d.answer(), nil
 	}
-	return d
+	return d.answer(), recordOverTime(func() { _ = r.record(d) })
 }
 
-// readInput reads and parses the payload. Its error follows "the hook input".
-func (r *run) readInput() (*Input, error) {
-	if r.o.StdinTerminal {
-		return nil, errors.New("is a terminal, not a payload (the guard reads Claude Code's PreToolUse payload on stdin)")
-	}
-	raw, err := io.ReadAll(io.LimitReader(r.o.Stdin, MaxInput+1))
+// recordOverTime hands the over-time refusal's record writer to the frame (a variable for the tests, which see it
+// handed over, and hold it to see the answer come back within its wait).
+var recordOverTime = func(write func()) func() { return write }
+
+// readInput reads the payload through the hook adapter. Its error follows "the hook input": a payload that does not
+// read, a fault in a value the guard reads, or an event other than PreToolUse.
+func (r *run) readInput() (*hookin.Payload, error) {
+	p, err := hookin.Read(r.o.Stdin, r.o.StdinTerminal)
 	if err != nil {
-		return nil, fmt.Errorf("cannot be read (%s)", oneLine(err.Error()))
+		return nil, err
 	}
-	if len(raw) > MaxInput {
-		return nil, fmt.Errorf("is larger than %d MiB", MaxInput>>20)
+	if p.Fault != nil {
+		return nil, p.Fault
 	}
-	return ParseInput(raw)
+	if p.Event != "PreToolUse" {
+		return nil, fmt.Errorf("is a %s payload: the guard answers PreToolUse only", strconv.QuoteToASCII(p.Event))
+	}
+	return p, nil
 }
 
-// drain reads and drops the payload of a project that is not linked, so Claude Code never writes into a closed
-// pipe.
-func (r *run) drain() {
-	if r.o.StdinTerminal || r.o.Stdin == nil {
-		return
+// quote gives a value as an ASCII Go string, cut to max runes.
+func quote(s string, max int) string {
+	r := []rune(s)
+	if len(r) > max {
+		s = string(r[:max]) + "..."
 	}
-	_, _ = io.Copy(io.Discard, io.LimitReader(r.o.Stdin, MaxInput))
+	return strconv.QuoteToASCII(s)
 }
 
-// findProject finds the project a session's folder belongs to: the folder itself or the nearest one above it that
-// holds bonsai.yaml, looking no higher than a checkout's top (a folder holding .git). linked is false when there is
-// none (spec §7: in a project with no bonsai.yaml the guard allows and records nothing).
-func findProject(dir string) (root string, linked bool, err error) {
-	abs, err := filepath.Abs(dir)
-	if err != nil {
-		return "", false, err
-	}
-	if fi, err := os.Stat(abs); err != nil {
-		return "", false, err
-	} else if !fi.IsDir() {
-		return "", false, errors.New("it is not a folder")
-	}
-	for d := abs; ; {
-		if _, err := os.Lstat(filepath.Join(d, workspace.ConfigFile)); err == nil {
-			return d, true, nil
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			return "", false, err
+// oneLine keeps a message on one ASCII line: printable ASCII as itself, a line break as a space, any other
+// character as a Go escape, so it prints unbroken in PowerShell 5.1 (spec §3).
+func oneLine(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r == '\n' || r == '\r' || r == '\t':
+			b.WriteByte(' ')
+		case r >= 0x20 && r < 0x7f:
+			b.WriteRune(r)
+		default:
+			q := strconv.QuoteRuneToASCII(r)
+			b.WriteString(q[1 : len(q)-1])
 		}
-		if _, err := os.Lstat(filepath.Join(d, ".git")); err == nil {
-			return d, false, nil
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			return "", false, err
-		}
-		parent := filepath.Dir(d)
-		if parent == d {
-			return abs, false, nil
-		}
-		d = parent
 	}
+	return b.String()
 }

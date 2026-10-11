@@ -12,13 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/schema"
 )
-
-// untimed is the budget of a run that ends on the guard's own decision: one no run comes near, so the outcome never
-// rests on the guard's timer. Nothing in such a run can hang (its payload is a strings.Reader, and a busy log file is
-// retried for openWait at most), so it needs no timer as a backstop.
-const untimed = time.Hour
 
 // crashStandIn is the panic the test's die ends the work with, in place of the crash fault's hard death.
 const crashStandIn = "the test's stand-in for the crash fault's hard death"
@@ -38,8 +34,8 @@ func TestEachFaultBlocks(t *testing.T) {
 	}
 	// A crash cannot end the test binary, so the test stands in its own die. The old stand-in held the work in die
 	// until the budget ran out, which put the crash case's outcome on the timer. This one ends the work with a panic,
-	// which the guard's own recover turns into a block (internal-error, as TestBlocksWhatItCannotReadOrDecide's "a
-	// panic inside" shows), with no timer. What the case proves of the crash fault itself is what it does before it
+	// which the frame's recover (internal/hookin) answers with the guard's internal-error block (as
+	// TestBlocksWhatItCannotReadOrDecide's "a panic inside" shows), with no timer. What the case proves of the crash fault itself is what it does before it
 	// dies: its record, its message, its call to die, and no decision of its own after that. No work is left in die,
 	// so die is restored.
 	var died atomic.Int32
@@ -111,10 +107,9 @@ func TestEachFaultBlocks(t *testing.T) {
 // the work had reached the fault. The work reads BONSAI_TEST_FAULT at the fault, and a record reads the clock as it
 // begins (the slow work records nothing, so the clock is the timer's alone). A run that does not count gives why.
 //
-// The answer waits recordWait at most for its record (hook.go), and a loaded machine can take longer to hash the
-// binary and write it: the record then lands after the answer, as the guard allows ("recorded if that can be done in
-// recordWait"). The record is awaited here, not raced; that the answer waits for it is TestOverTimeBlocks's record
-// half, whose wait is guard code (step 5.3).
+// The answer waits the frame's default wait (hookin.RecordWait) at most for its record, and a loaded machine can take
+// longer to hash the binary and write it: the record then lands after the answer, as the frame allows. The record is
+// awaited here, not raced; that the answer waits for it is TestOverTimeBlocks's record half, with a wait of a minute.
 func slowRun(t *testing.T, budget time.Duration) (early string) {
 	t.Helper()
 	dir := project(t, testYAML)
@@ -156,7 +151,7 @@ func slowRun(t *testing.T, budget time.Duration) (early string) {
 	}
 	file, late := awaitRecord(t, dir)
 	if late {
-		t.Logf("budget %v: the record landed after the answer (the answer waits %v at most)", budget, recordWait)
+		t.Logf("budget %v: the record landed after the answer (the answer waits %v at most)", budget, hookin.RecordWait)
 	}
 	// The timer's record takes the payload first and reads the clock next: a work that reached the fault between the
 	// two leaves a record with no session, in a day's file.
@@ -213,10 +208,10 @@ func checkFaultRecord(t *testing.T, r schema.Object, rule string) {
 // With the switch unset, a fault build decides as a normal one.
 func TestFaultBuildWithNoFaultIsNormal(t *testing.T) {
 	dir := project(t, testYAML)
-	if code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("s-g", dir, "free.txt")), 0); code != 0 || stderr != "" {
+	if code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("s-g", dir, "free.txt")), untimed); code != 0 || stderr != "" {
 		t.Fatalf("free.txt: exit %d, %q", code, stderr)
 	}
-	if code, _ := guardRun(t, env(dir), strings.NewReader(editOf("s-g", dir, "protected.txt")), 0); code != 2 {
+	if code, _ := guardRun(t, env(dir), strings.NewReader(editOf("s-g", dir, "protected.txt")), untimed); code != 2 {
 		t.Fatalf("protected.txt: exit %d", code)
 	}
 }

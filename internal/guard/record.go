@@ -37,6 +37,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -59,9 +60,9 @@ func recordFile(session string, at time.Time) string {
 }
 
 // writeRecord appends the record of decision d to the project's log. in is nil when the payload could not be read.
-func writeRecord(root string, cfg *workspace.Config, in *Input, d Decision, getenv func(string) string, at time.Time) error {
+func writeRecord(root string, cfg *workspace.Config, in *hookin.Payload, d Decision, getenv func(string) string, at time.Time) error {
 	if in == nil {
-		in = &Input{}
+		in = &hookin.Payload{}
 	}
 	dir := filepath.Join(root, filepath.FromSlash(LogDir))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -130,7 +131,7 @@ func self(hash bool) (string, string) {
 
 // buildRecord lays out one guard record, every field of contract §8.1 in its order, then bonsai_path and
 // bonsai_sha256.
-func buildRecord(root string, cfg *workspace.Config, in *Input, d Decision, getenv func(string) string, at time.Time,
+func buildRecord(root string, cfg *workspace.Config, in *hookin.Payload, d Decision, getenv func(string) string, at time.Time,
 	exe, sum string) schema.Object {
 	decision, text := "deny", d.Why
 	if d.Allow {

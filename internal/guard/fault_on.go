@@ -10,7 +10,8 @@ package guard
 //	              killed by the system (Linux, macOS) or terminated with an access-violation code (Windows): it ends
 //	              with no decision and an exit code other than 0 and 2, and the hook line's `|| exit 2` blocks the call.
 //	slow          the guard stops before it decides and sleeps past its own budget and past the hook's 10 s timeout;
-//	              its timer (hook.go, the code a normal build runs too) answers first and blocks (rule over-time).
+//	              its timer (the frame's, internal/hookin, which a normal build runs too) answers first and blocks
+//	              (rule over-time).
 //	missing       the launcher (claude-here) starts the session with no bonsai anywhere on its PATH, so the hook
 //	minimal-path  line's shell finds none and `|| exit 2` blocks; for minimal-path the PATH is a bare one (the
 //	              system's folders and git's). If a bonsai built with this tag answers anyway, the launcher did not
@@ -54,10 +55,13 @@ func testFault(r *run) *Decision {
 		_, _ = fmt.Fprintf(r.o.Stderr, "bonsai guard: test fault crash (%s=crash): the guard dies now, before it "+
 			"decides; the hook line's `|| exit 2` blocks the call.\nnext: %s.\n", FaultEnv, faultNext)
 		die()
-		select {} // a real die never returns; a test's waits here for the timer
+		// A real die never returns. TestEachFaultBlocks's stand-in panics instead, and the frame answers the panic as
+		// internal-error, so no run waits here: this only stops a die that returned from deciding.
+		select {}
 	case "slow":
 		time.Sleep(slowFor)
-		// Reached only when slowFor is shorter than the budget (a test): a real run's timer has answered long before.
+		// Reached only when slowFor is shorter than the budget, which no run has: a real run sleeps a minute and
+		// TestEachFaultBlocks an hour, and the timer answers long before.
 		d = deny("fault-slow", "test fault slow ("+FaultEnv+"=slow): the guard was slow on purpose", faultNext)
 	case "missing", "minimal-path":
 		exe, _ := self(false)

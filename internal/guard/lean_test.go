@@ -47,11 +47,11 @@ func TestGuardReadIsLean(t *testing.T) {
 				t.Fatalf("the full read does not refuse the broken %s: %v", field, err)
 			}
 			// ... and the guard still decides: a protected path is refused for being protected, a free one allowed.
-			code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("lean", dir, "protected.txt")), 0)
+			code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("lean", dir, "protected.txt")), untimed)
 			if code != 2 || !strings.Contains(stderr, "protected") || strings.Contains(stderr, "bonsai.yaml cannot be read") {
 				t.Errorf("a protected edit: exit %d, %s", code, stderr)
 			}
-			code, stderr = guardRun(t, env(dir), strings.NewReader(editOf("lean", dir, "free.txt")), 0)
+			code, stderr = guardRun(t, env(dir), strings.NewReader(editOf("lean", dir, "free.txt")), untimed)
 			if code != 0 {
 				t.Errorf("a free edit: exit %d, %s", code, stderr)
 			}
@@ -59,7 +59,7 @@ func TestGuardReadIsLean(t *testing.T) {
 	}
 	// A broken field the guard does read still blocks, as it always has: the guard cannot tell what is protected.
 	dir := project(t, strings.Replace(testYAML, `protected: [`, `protected: ["/abs", `, 1))
-	if code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("lean", dir, "free.txt")), 0); code != 2 ||
+	if code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("lean", dir, "free.txt")), untimed); code != 2 ||
 		!strings.Contains(stderr, "bonsai.yaml cannot be read") {
 		t.Errorf("a broken protected list: exit %d, %s", code, stderr)
 	}

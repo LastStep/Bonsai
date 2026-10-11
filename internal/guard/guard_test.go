@@ -17,6 +17,7 @@ import (
 
 	"github.com/LastStep/Bonsai/formats"
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -83,12 +84,17 @@ func editOf(session, dir, rel string) string {
 
 // env gives a Getenv with CLAUDE_PROJECT_DIR set to dir and the other variables given as pairs.
 func env(dir string, kv ...string) func(string) string {
-	m := map[string]string{ProjectEnv: dir}
+	m := map[string]string{hookin.ProjectEnv: dir}
 	for i := 0; i+1 < len(kv); i += 2 {
 		m[kv[i]] = kv[i+1]
 	}
 	return func(k string) string { return m[k] }
 }
+
+// untimed is the budget of every run that ends on the guard's own decision: a minute, which no run comes near, so a
+// loaded machine can never turn its answer into over-time. Nothing in such a run can hang (its payload is a
+// strings.Reader, and a busy log file is retried for openWait at most). Only the over-time tests run on a short budget.
+const untimed = time.Minute
 
 // guardRun runs Main with a payload and gives its exit code and stderr.
 func guardRun(t *testing.T, getenv func(string) string, stdin io.Reader, budget time.Duration) (int, string) {
@@ -145,7 +151,7 @@ func mustSchema(t *testing.T) []byte {
 
 func TestProtectedEditIsRefusedAndFreeEditAllowed(t *testing.T) {
 	dir := project(t, testYAML)
-	code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("s-1", dir, "protected.txt")), 0)
+	code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("s-1", dir, "protected.txt")), untimed)
 	if code != 2 {
 		t.Fatalf("protected.txt: exit %d, want 2; stderr %q", code, stderr)
 	}
@@ -155,7 +161,7 @@ func TestProtectedEditIsRefusedAndFreeEditAllowed(t *testing.T) {
 		}
 	}
 	asciiOnly(t, stderr)
-	code, stderr = guardRun(t, env(dir), strings.NewReader(editOf("s-1", dir, "free.txt")), 0)
+	code, stderr = guardRun(t, env(dir), strings.NewReader(editOf("s-1", dir, "free.txt")), untimed)
 	if code != 0 || stderr != "" {
 		t.Fatalf("free.txt: exit %d, stderr %q; want 0 and nothing", code, stderr)
 	}
@@ -244,7 +250,7 @@ func TestDecide(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			in := &Input{Event: "PreToolUse", Tool: c.tool, Cwd: dir}
+			in := &hookin.Payload{Event: "PreToolUse", Tool: c.tool, Cwd: dir}
 			switch c.cwd {
 			case "-":
 				in.Cwd = ""
@@ -282,11 +288,11 @@ func TestDecideReadsTilde(t *testing.T) {
 	}
 	t.Setenv("HOME", filepath.Dir(dir))
 	t.Setenv("USERPROFILE", filepath.Dir(dir))
-	d := Decide(&Input{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/protected.txt"}, dir, cfg)
+	d := Decide(&hookin.Payload{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/protected.txt"}, dir, cfg)
 	if d.Allow || d.Rule != RuleProtected {
 		t.Fatalf("%+v", d)
 	}
-	if d := Decide(&Input{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/free.txt"}, dir, cfg); !d.Allow {
+	if d := Decide(&hookin.Payload{Tool: "Edit", Path: "~/" + filepath.Base(dir) + "/free.txt"}, dir, cfg); !d.Allow {
 		t.Fatalf("%+v", d)
 	}
 }
@@ -301,7 +307,7 @@ func TestDecideOnACaseInsensitiveSystem(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []string{"PROTECTED.TXT", "Protected.Txt", ".CLAUDE/settings.json"} {
-		d := Decide(&Input{Tool: "Edit", Path: filepath.Join(dir, p)}, dir, cfg)
+		d := Decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, p)}, dir, cfg)
 		if d.Allow {
 			t.Errorf("%s allowed: %+v", p, d)
 		}
@@ -328,7 +334,7 @@ func TestDecideOnWindowsForms(t *testing.T) {
 		msys + "/protected.txt",
 		dir + `\sub\..\PROTECTED.txt`,
 	} {
-		d := Decide(&Input{Tool: "Write", Path: p}, dir, cfg)
+		d := Decide(&hookin.Payload{Tool: "Write", Path: p}, dir, cfg)
 		if d.Allow || d.Rule != RuleProtected {
 			t.Errorf("%s: %+v, want refused as protected", p, d)
 		}
@@ -362,14 +368,14 @@ func TestDecideFollowsLinks(t *testing.T) {
 		filepath.Join(dir, "dangling.txt"),
 		filepath.Join(outside, "project-link", "protected.txt"),
 	} {
-		d := Decide(&Input{Tool: "Write", Path: p}, dir, cfg)
+		d := Decide(&hookin.Payload{Tool: "Write", Path: p}, dir, cfg)
 		if d.Allow {
 			t.Errorf("%s allowed: %+v", p, d)
 		}
 	}
 	// The project reached through a link: CLAUDE_PROJECT_DIR is the link, the path the real folder.
 	link := filepath.Join(outside, "project-link")
-	d := Decide(&Input{Tool: "Edit", Path: filepath.Join(dir, "protected.txt")}, link, cfg)
+	d := Decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, "protected.txt")}, link, cfg)
 	if d.Allow {
 		t.Errorf("a protected path under the real folder of a linked project allowed: %+v", d)
 	}
@@ -423,7 +429,7 @@ func TestBadGlobBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d := Decide(&Input{Tool: "Edit", Path: filepath.Join(dir, "free.txt")}, dir, cfg)
+	d := Decide(&hookin.Payload{Tool: "Edit", Path: filepath.Join(dir, "free.txt")}, dir, cfg)
 	if d.Allow || d.Rule != RuleBadGlob || !strings.Contains(d.Why, `"[docs"`) {
 		t.Fatalf("%+v", d)
 	}
@@ -471,25 +477,27 @@ func TestWindowsForms(t *testing.T) {
 	}
 }
 
-func TestParseInput(t *testing.T) {
-	good := payload("0b6f3c2e-5d1a-4e8b-9c7f-2a4d6e8f0a1b", "/p", "Edit", "file_path", "/p/a.txt")
-	in, err := ParseInput([]byte(good))
-	if err != nil || in.Tool != "Edit" || in.Path != "/p/a.txt" || in.Cwd != "/p" || in.ToolUseID != "toolu_01TEST" {
-		t.Fatalf("%+v %v", in, err)
+// The guard reads its payload through the hook adapter (internal/hookin, whose own tests read every event and tool)
+// and blocks whatever it cannot read: a payload that does not read, any fault in a value it reads, an event other
+// than PreToolUse. Each refusal is bad-input, says what is wrong after "the hook input", in ASCII, and names a next
+// step; a payload that reads is decided.
+func TestReadsThroughTheAdapter(t *testing.T) {
+	dir := project(t, testYAML)
+	free := filepath.ToSlash(filepath.Join(dir, "free.txt"))
+	good := map[string]string{
+		"an edit":           payload("0b6f3c2e-5d1a-4e8b-9c7f-2a4d6e8f0a1b", dir, "Edit", "file_path", free),
+		"a byte order mark": "\xEF\xBB\xBF" + payload("s", dir, "Edit", "file_path", free),
+		"a notebook":        payload("s", dir, "NotebookEdit", "notebook_path", free),
+		"a shell command":   payload("s", dir, "Bash", "command", "ls"),
+		"an unknown tool":   payload("s", dir, "SomeNewTool", "anything", "x"),
+		"a subagent's, with fields of later versions": `{"session_id":"s","hook_event_name":"PreToolUse","tool_name":"Write",` +
+			`"tool_input":{"file_path":"` + free + `","content":"x"},"agent_id":"a1","agent_type":"workflow:builder",` +
+			`"prompt_id":"p","effort":{"level":"high"},"new_field":{"deep":[1,2],"deep":"twice, unread"},"bad":"` + "\xff" + `"}`,
 	}
-	if in, err := ParseInput(append([]byte{0xEF, 0xBB, 0xBF}, good...)); err != nil || in.Path != "/p/a.txt" {
-		t.Errorf("with a byte order mark: %+v %v", in, err)
-	}
-	if in, err := ParseInput([]byte(payload("s", "/p", "NotebookEdit", "notebook_path", "/p/n.ipynb"))); err != nil || in.Path != "/p/n.ipynb" {
-		t.Errorf("NotebookEdit: %+v %v", in, err)
-	}
-	if in, err := ParseInput([]byte(payload("s", "/p", "Bash", "command", "ls"))); err != nil || in.Path != "" {
-		t.Errorf("Bash: %+v %v", in, err)
-	}
-	sub := `{"session_id":"s","hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"/p/x"},` +
-		`"agent_id":"a1","agent_type":"workflow:builder","new_field":{"deep":[1,2]}}`
-	if in, err := ParseInput([]byte(sub)); err != nil || in.AgentID != "a1" || in.AgentType != "workflow:builder" {
-		t.Errorf("a subagent's payload with an unknown field: %+v %v", in, err)
+	for name, raw := range good {
+		if code, stderr := guardRun(t, env(dir), strings.NewReader(raw), untimed); code != 0 || stderr != "" {
+			t.Errorf("%s: exit %d, stderr %q; want it allowed", name, code, stderr)
+		}
 	}
 	bad := map[string]string{
 		"empty":            "",
@@ -497,6 +505,7 @@ func TestParseInput(t *testing.T) {
 		"not JSON":         "edit protected.txt",
 		"an array":         `[{"tool_name":"Edit"}]`,
 		"two documents":    `{"hook_event_name":"PreToolUse"} {}`,
+		"a key twice":      `{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_name":"Read","tool_input":{"file_path":"/p/a"}}`,
 		"duplicate key":    `{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/free.txt","file_path":"/p/protected.txt"}}`,
 		"no event":         `{"tool_name":"Edit","tool_input":{"file_path":"/p/a"}}`,
 		"other event":      `{"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/a"}}`,
@@ -510,16 +519,31 @@ func TestParseInput(t *testing.T) {
 		"file_path number": `{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":3}}`,
 		"empty file_path":  `{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":""}}`,
 		"NUL in path":      `{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/a\u0000b"}}`,
+		"NUL in the cwd":   `{"cwd":"/p\u0000","hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/a"}}`,
+		"no command":       `{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"description":"x"}}`,
 		"session escapes":  `{"session_id":"../../x","hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/a"}}`,
 		"session slash":    `{"session_id":"a/b","hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/a"}}`,
+		"session dot":      `{"session_id":"a.b","hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/a"}}`,
+		"session number":   `{"session_id":5,"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/a"}}`,
 		"bad UTF-8":        "{\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/p/\xff\"}}",
+		"bad UTF-8, event": "{\"hook_event_name\":\"PreToolUse\xff\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/p/a\"}}",
 		"notebook no path": `{"hook_event_name":"PreToolUse","tool_name":"NotebookEdit","tool_input":{"file_path":"/p/n.ipynb"}}`,
+		"agent id number":  `{"agent_id":1,"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"/p/a"}}`,
 	}
 	for name, raw := range bad {
-		if in, err := ParseInput([]byte(raw)); err == nil {
-			t.Errorf("%s: read as %+v", name, in)
-		} else {
-			asciiOnly(t, err.Error())
+		code, stderr := guardRun(t, env(dir), strings.NewReader(raw), untimed)
+		if code != 2 || !strings.Contains(stderr, "bonsai guard: the hook input ") || !strings.Contains(stderr, "\nnext: ") {
+			t.Errorf("%s: exit %d, stderr %q; want it blocked as bad input", name, code, stderr)
+		}
+		asciiOnly(t, stderr)
+	}
+	recs := records(t, dir, recordFile("", time.Now()))
+	if len(recs) != len(bad) {
+		t.Fatalf("%d records of bad input, want %d", len(recs), len(bad))
+	}
+	for _, r := range recs {
+		if r.String("rule") != RuleBadInput || r.String("decision") != "deny" {
+			t.Errorf("record: %s", schema.Show(r))
 		}
 	}
 }
@@ -536,7 +560,7 @@ func TestNotLinkedAllowsAndRecordsNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, start := range []string{dir, filepath.Join(dir, "sub")} {
-		code, stderr := guardRun(t, env(start), strings.NewReader("not even a payload"), 0)
+		code, stderr := guardRun(t, env(start), strings.NewReader("not even a payload"), untimed)
 		if code != 0 || stderr != "" {
 			t.Errorf("from %s: exit %d, stderr %q; want 0 and nothing", start, code, stderr)
 		}
@@ -552,7 +576,7 @@ func TestStartedInASubfolderFindsTheProject(t *testing.T) {
 	if err := os.MkdirAll(sub, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	code, stderr := guardRun(t, env(sub), strings.NewReader(editOf("s-2", dir, "protected.txt")), 0)
+	code, stderr := guardRun(t, env(sub), strings.NewReader(editOf("s-2", dir, "protected.txt")), untimed)
 	if code != 2 || !strings.Contains(stderr, `"protected.txt" refused`) {
 		t.Fatalf("exit %d, stderr %q", code, stderr)
 	}
@@ -573,7 +597,7 @@ func TestBlocksWhatItCannotReadOrDecide(t *testing.T) {
 		{"empty input", env(dir), "", RuleBadInput, "the hook input is empty"},
 		{"wrong event", env(dir), strings.Replace(editOf("s-3", dir, "free.txt"), "PreToolUse", "Stop", 1), RuleBadInput, `"Stop" payload`},
 		{"a panic inside", func(k string) string {
-			if k == ProjectEnv {
+			if k == hookin.ProjectEnv {
 				panic("boom")
 			}
 			return ""
@@ -581,7 +605,7 @@ func TestBlocksWhatItCannotReadOrDecide(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			code, stderr := guardRun(t, c.getenv, strings.NewReader(c.stdin), 0)
+			code, stderr := guardRun(t, c.getenv, strings.NewReader(c.stdin), untimed)
 			if code != 2 || !strings.Contains(stderr, c.inErr) || !strings.Contains(stderr, "\nnext: ") {
 				t.Fatalf("exit %d, stderr %q; want 2 with %q and a next step", code, stderr, c.inErr)
 			}
@@ -599,7 +623,7 @@ func TestBlocksWhatItCannotReadOrDecide(t *testing.T) {
 	}
 	// A stdin that is a terminal (the guard run by hand) is not waited on.
 	var stderr bytes.Buffer
-	code := Main(Options{Stdin: strings.NewReader(""), StdinTerminal: true, Stderr: &stderr, Getenv: env(dir)})
+	code := Main(Options{Stdin: strings.NewReader(""), StdinTerminal: true, Stderr: &stderr, Getenv: env(dir), Budget: untimed})
 	if code != 2 || !strings.Contains(stderr.String(), "is a terminal") {
 		t.Errorf("terminal: exit %d, %q", code, stderr.String())
 	}
@@ -607,7 +631,7 @@ func TestBlocksWhatItCannotReadOrDecide(t *testing.T) {
 
 func TestBadConfigBlocksWithNoRecord(t *testing.T) {
 	dir := project(t, "format: bonsai.workspace/1\nid: nonsense\n")
-	code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("s-4", dir, "free.txt")), 0)
+	code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("s-4", dir, "free.txt")), untimed)
 	if code != 2 || !strings.Contains(stderr, "bonsai.yaml cannot be read") || !strings.Contains(stderr, "\nnext: tell the person: ") {
 		t.Fatalf("exit %d, stderr %q", code, stderr)
 	}
@@ -616,24 +640,85 @@ func TestBadConfigBlocksWithNoRecord(t *testing.T) {
 	}
 }
 
-// A stdin that never ends: the work is still reading when the budget runs out, and the guard blocks by itself.
+// A stdin that never ends: the work is still reading when the budget runs out, and the guard blocks by itself
+// (over-time), its record's writer awaited for the run's RecordWait (the frame's option). Two cases:
+//   - the record half: a wait far past any load, so the record is in the log when Main returns, read with no polling;
+//   - the held writer: the writer held by the test (recordOverTime), so the answer comes back within the wait with
+//     the record unwritten; released, the record lands.
+//
+// The over-time record needs bonsai.yaml read, so a run whose timer fires before the work has read it hands the frame
+// no writer and writes nothing, rightly: that run is tried again on a new project with twice the budget, up to the
+// guard's real Budget (a guard that cannot read bonsai.yaml in that time fails a real run too). Each answer's time is
+// held only to a ceiling a hang alone crosses: the budget, the wait and the real Budget.
 func TestOverTimeBlocks(t *testing.T) {
-	dir := project(t, testYAML)
-	// The pipe's writer is never closed: the work stays blocked in its read, as a stdin that never ends would, and
-	// writes nothing more into the test's folder.
-	pr, _ := io.Pipe()
-	start := time.Now()
-	code, stderr := guardRun(t, env(dir), pr, 150*time.Millisecond)
-	took := time.Since(start)
-	if code != 2 || !strings.Contains(stderr, "the guard ran past its own 150ms limit") {
-		t.Fatalf("exit %d, stderr %q", code, stderr)
-	}
-	if took > 150*time.Millisecond+recordWait+500*time.Millisecond {
-		t.Errorf("answered after %v", took)
-	}
-	recs := records(t, dir, recordFile("", time.Now()))
-	if len(recs) != 1 || recs[0].String("rule") != RuleOverTime || recs[0].String("decision") != "deny" {
-		t.Fatalf("records: %v", recs)
+	defer func(f func(func()) func()) { recordOverTime = f }(recordOverTime)
+	t.Run("the record half", func(t *testing.T) {
+		const wait = time.Minute
+		overTimeRun(t, wait, func(write func()) func() { return write }, func(dir string) {
+			recs := records(t, dir, recordFile("", time.Now()))
+			if len(recs) != 1 || recs[0].String("rule") != RuleOverTime || recs[0].String("decision") != "deny" {
+				t.Fatalf("records when Main returned: %v", recs)
+			}
+		})
+	})
+	t.Run("the held writer", func(t *testing.T) {
+		const wait = 100 * time.Millisecond
+		release, finished := make(chan struct{}), make(chan struct{})
+		hold := func(write func()) func() {
+			return func() {
+				<-release
+				defer close(finished)
+				write()
+			}
+		}
+		overTimeRun(t, wait, hold, func(dir string) {
+			if names, _ := filepath.Glob(filepath.Join(dir, filepath.FromSlash(LogDir), "*.ndjson")); len(names) != 0 {
+				t.Fatalf("a record was written while its writer was held: %v", names)
+			}
+			close(release)
+			select {
+			case <-finished:
+			case <-time.After(time.Minute):
+				t.Fatal("the released writer did not finish within a minute")
+			}
+			if recs := records(t, dir, recordFile("", time.Now())); len(recs) != 1 || recs[0].String("rule") != RuleOverTime {
+				t.Fatalf("records once released: %v", recs)
+			}
+		})
+	})
+}
+
+// overTimeRun runs the guard on a stdin that never ends with the given RecordWait and stand-in for recordOverTime, from
+// a 150 ms budget, doubling it while the timer fires before the work has read bonsai.yaml (no writer handed over);
+// then checks the answer, and hands the project to after.
+func overTimeRun(t *testing.T, wait time.Duration, stand func(func()) func(), after func(dir string)) {
+	t.Helper()
+	for budget := 150 * time.Millisecond; ; budget *= 2 {
+		dir := project(t, testYAML)
+		handed := false
+		recordOverTime = func(write func()) func() { handed = true; return stand(write) }
+		// The pipe's writer is never closed: the work stays blocked in its read, as a stdin that never ends would, and
+		// writes nothing more into the test's folder.
+		pr, _ := io.Pipe()
+		var stderr bytes.Buffer
+		start := time.Now()
+		code := Main(Options{Stdin: pr, Stderr: &stderr, Getenv: env(dir), Budget: budget, RecordWait: wait})
+		took := time.Since(start)
+		if code != 2 || !strings.Contains(stderr.String(), fmt.Sprintf("the guard ran past its own %s limit", budget)) ||
+			!strings.Contains(stderr.String(), "\nnext: ") {
+			t.Fatalf("budget %v: exit %d, stderr %q", budget, code, stderr.String())
+		}
+		if ceiling := budget + wait + Budget; took > ceiling {
+			t.Fatalf("budget %v, wait %v: answered after %v, past %v", budget, wait, took, ceiling)
+		}
+		if handed {
+			after(dir)
+			return
+		}
+		if budget > Budget {
+			t.Fatalf("budget %v, past the guard's real %v: the timer still fired before the work had read bonsai.yaml", budget, Budget)
+		}
+		t.Logf("budget %v: the timer fired before the work had read bonsai.yaml; again with %v", budget, 2*budget)
 	}
 }
 
@@ -646,11 +731,11 @@ func TestAnAllowItCannotRecordIsBlocked(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, filepath.FromSlash(LogDir)), []byte("in the way"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("s-5", dir, "free.txt")), 0)
+	code, stderr := guardRun(t, env(dir), strings.NewReader(editOf("s-5", dir, "free.txt")), untimed)
 	if code != 2 || !strings.Contains(stderr, "the guard would allow this call but cannot write its record") {
 		t.Fatalf("free.txt: exit %d, stderr %q", code, stderr)
 	}
-	code, stderr = guardRun(t, env(dir), strings.NewReader(editOf("s-5", dir, "protected.txt")), 0)
+	code, stderr = guardRun(t, env(dir), strings.NewReader(editOf("s-5", dir, "protected.txt")), untimed)
 	if code != 2 || !strings.Contains(stderr, "its record in .bonsai/local/log could not be written either") {
 		t.Fatalf("protected.txt: exit %d, stderr %q", code, stderr)
 	}
@@ -660,7 +745,7 @@ func TestLongValuesStayUnderTheRecordCap(t *testing.T) {
 	dir := project(t, testYAML)
 	long := strings.Repeat("d/", 600) + "x.txt"
 	in := strings.Replace(editOf("s-6", dir, long), "toolu_01TEST", "toolu_"+strings.Repeat("Z", 1500), 1)
-	code, stderr := guardRun(t, env(dir, "BONSAI_TASK", strings.Repeat("T", 900), "BONSAI_ROLE", "builder"), strings.NewReader(in), 0)
+	code, stderr := guardRun(t, env(dir, "BONSAI_TASK", strings.Repeat("T", 900), "BONSAI_ROLE", "builder"), strings.NewReader(in), untimed)
 	if code != 0 {
 		t.Fatalf("exit %d, %q", code, stderr)
 	}
@@ -684,7 +769,7 @@ func TestParallelCallsAppendWholeRecords(t *testing.T) {
 			if i%2 == 1 {
 				rel = "protected.txt"
 			}
-			codes[i], _ = guardRun(t, env(dir), strings.NewReader(editOf("s-7", dir, rel)), 0)
+			codes[i], _ = guardRun(t, env(dir), strings.NewReader(editOf("s-7", dir, rel)), untimed)
 		}(i)
 	}
 	wg.Wait()
