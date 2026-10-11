@@ -55,7 +55,15 @@ package guard
 //   - ~-, ~N and ~-N after a line's own cd or pushd: judged in the payload's folder only, not every folder the line
 //     visited (a plain delete of an operand that cannot be placed stays allowed, rule 3's scope);
 //   - the program itself from xargs's input (echo bonsai | xargs -I{} sh -c '{} unlink', echo bonsai | xargs sh -c
-//     '$0 unlink'): a program the check cannot see is not read.
+//     '$0 unlink'): a program the check cannot see is not read;
+//   - cd and pushd through CDPATH, or under shopt -s cdable_vars: a bare cd <name> is read as ./<name>, where bash may
+//     go elsewhere (CDPATH=.. cd s && rm -rf .git deletes the checkout's own .git); the 5.3 end verifier, 12 Oct;
+//   - Git Bash's /proc/cygdrive/<drive>/... (a link to /): read as a plain path on no project, not as the drive's
+//     (rm -rf /proc/cygdrive/c/.../.git); the 5.3 end verifier, 12 Oct;
+//   - printf or echo with escapes (\xNN, echo -e) or a format (%s) piped into a shell: the text the shell runs is not
+//     rebuilt; Start-Process -ArgumentList's command text is not read.
+//
+// Known wrong refusal: rm of a link to itself is refused (fail closed).
 //
 // The answer (note 6) names the command by its head only (redact.CommandHead: the program and, for git and its kind,
 // one subcommand word), the operand and the rule, and the next step; it quotes no command line, and an operand that
