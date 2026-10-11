@@ -168,6 +168,28 @@ type delRun struct {
 	firstSet bool      // first is set (it may be "": an operand outside the project)
 	feed     string    // set while splitting text a shell runs under xargs: its deletes' operands come from input
 	deny     *Decision // the first refusal
+
+	rootForms [][]string // per root, its forms (delRootForms), read once per line; nil until read
+	rootFold  []bool     // per root, whether letter case is folded there
+	rootErr   error      // why a root's forms could not be read
+}
+
+// rootsRead reads every root's forms once per line.
+func (r *delRun) rootsRead() error {
+	if r.rootForms != nil || r.rootErr != nil {
+		return r.rootErr
+	}
+	r.rootForms = make([][]string, len(r.roots))
+	r.rootFold = make([]bool, len(r.roots))
+	for k, root := range r.roots {
+		f, err := delRootForms(root.Dir)
+		if err != nil {
+			r.rootErr = err
+			return err
+		}
+		r.rootForms[k], r.rootFold[k] = f, caseInsensitive(root.Dir)
+	}
+	return nil
 }
 
 func (r *delRun) refuse(d Decision) {
@@ -721,8 +743,11 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 		if !tree && !glob {
 			continue
 		}
-		for _, root := range r.roots {
-			rels, whole, err := delPlace(root.Dir, dir, text)
+		forms, err := delForms(dir, text)
+		if err == nil {
+			err = r.rootsRead()
+		}
+		for k, root := range r.roots {
 			if err != nil {
 				r.refuse(Decision{Rule: RuleBadPath, Target: delRel(r.own, dir, text),
 					Why: fmt.Sprintf("%s refused: %s %s %s, which Windows opens but cannot name (%s), so the check "+
@@ -731,6 +756,8 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 					Next: "give the path in its plain form inside the project (a drive letter and folders), or tell the person"})
 				return
 			}
+			fold := r.rootFold[k]
+			rels, whole := delPlace(r.rootForms[k], forms, fold)
 			if root.Whole && tree && (whole || len(rels) > 0) {
 				dec := r.j.delMay(root.Dir, ".")
 				if dec.Allow {
@@ -743,7 +770,6 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 			if whole {
 				places = append([][]string{{}}, rels...)
 			}
-			fold := caseInsensitive(root.Dir)
 			lastLiteral := !strings.ContainsAny(delBase(text), "*?[")
 			for _, g := range root.Globs {
 				fixed := delFixed(g)

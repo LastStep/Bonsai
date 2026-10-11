@@ -141,23 +141,25 @@ func delForms(dir, p string) ([]string, error) {
 	return out, nil
 }
 
-// delPlace places the operand p, read in the folder dir, against a project's top folder root: the root-relative
-// segments of each form that lies inside it, and whether a form is the root itself or a folder holding it (whole).
-func delPlace(root, dir, p string) (rels [][]string, whole bool, err error) {
-	forms, err := delForms(dir, p)
-	if err != nil {
-		return nil, false, err
-	}
+// delRootForms gives a project's top folder in every form a path under it may be met in: as given, with its links
+// resolved, and on Windows as Windows names it.
+func delRootForms(root string) ([]string, error) {
 	roots := []string{filepath.Clean(root)}
 	if real, err := filepath.EvalSymlinks(root); err == nil {
 		roots = appendNew(roots, real)
 	}
 	if f, ok, err := finalPath(root); err != nil {
-		return nil, false, err
+		return nil, err
 	} else if ok {
 		roots = appendNew(roots, f)
 	}
-	fold := caseInsensitive(root)
+	return roots, nil
+}
+
+// delPlace places an operand, given in its absolute forms (delForms), against a project's top folder, given in its
+// forms (delRootForms): the root-relative segments of each form that lies inside it, and whether a form is the root
+// itself or a folder holding it (whole). With fold, letter case is ignored.
+func delPlace(roots, forms []string, fold bool) (rels [][]string, whole bool) {
 	seen := map[string]bool{}
 	for _, t := range forms {
 		for _, r := range roots {
@@ -188,7 +190,7 @@ func delPlace(root, dir, p string) (rels [][]string, whole bool, err error) {
 			}
 		}
 	}
-	return rels, whole, nil
+	return rels, whole
 }
 
 // delFixed reports whether a guarded glob has a fixed start: its first segment holds no wildcard.
