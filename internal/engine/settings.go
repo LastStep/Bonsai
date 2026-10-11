@@ -62,13 +62,19 @@ import (
 // SettingsFile is the project's shared Claude Code settings file, the one settings file the engine writes.
 const SettingsFile = ".claude/settings.json"
 
-// Bonsai's own hook lines (spec §7's table, with design/plan-5.md's 5.2.4 note 1): the guard's, the start line and
-// the recorder's.
+// Bonsai's own hook lines (spec §7's table, with design/plan-5.md's 5.2.4 note 1 and 5.3.4 note 6): the guard's, the
+// stop gate's, the start line and the recorder's.
 const (
 	GuardEvent   = "PreToolUse"
 	GuardMatcher = "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell"
 	GuardCommand = "bonsai hook guard || exit 2"
 	GuardTimeout = "10"
+
+	// The stop gate's line (step 5.3.4 note 6) has no matcher, since Stop takes none; its || exit 2 turns any other
+	// ending of bonsai into exit 2, as the guard's does.
+	StopEvent   = "Stop"
+	StopCommand = "bonsai hook stop || exit 2"
+	StopTimeout = "10"
 
 	StartEvent   = "SessionStart"
 	StartCommand = "bonsai hook start"
@@ -82,12 +88,10 @@ const (
 	RecordEndTimeout = "5"
 )
 
-// ownHooks is this build's table of Bonsai's own hook lines. Spec §7 lists four kinds: the guard (PreToolUse), the
-// stop gate (Stop), start (SessionStart) and the recorder (eleven events, async). This build writes the guard's,
-// start's and the recorder's (step 5.2.4): SessionStart's record is written by hook start itself, so the recorder's
-// lines are ten, nine async and SessionEnd's synchronous. The stop gate's line comes with step 5.3: a line that runs a
-// `bonsai hook` word this build does not have would fail every time it runs, and the stop line (|| exit 2) would then
-// block every session's end. A project linked before a line was added gets it at its next update only with
+// ownHooks is this build's table of Bonsai's own hook lines, in spec §7's order. Spec §7 lists four kinds, and this
+// build writes each: the guard (PreToolUse), the stop gate (Stop, step 5.3.4), start (SessionStart) and the recorder
+// (step 5.2.4): SessionStart's record is written by hook start itself, so the recorder's lines are ten, nine async and
+// SessionEnd's synchronous. A project linked before a line was added gets it at its next update only with
 // --allow-exec (a hook line added runs code, step 5.1.1); bonsai check warns until then (own-hooks).
 var ownHooks = buildOwnHooks()
 
@@ -95,6 +99,9 @@ func buildOwnHooks() []Line {
 	ls := []Line{
 		{Kind: "hook", Origin: "bonsai", Own: true, Event: GuardEvent, Matcher: GuardMatcher, Command: GuardCommand, Timeout: GuardTimeout,
 			Why: "Checks every file edit and shell command against the task's rights; blocks if bonsai is missing."},
+		{Kind: "hook", Origin: "bonsai", Own: true, Event: StopEvent, Command: StopCommand, Timeout: StopTimeout,
+			Why: "Keeps a session whose BONSAI_TASK names a task from ending until a green local ladder result proves the " +
+				"checkout's HEAD (bonsai ladder --task <id>); does nothing in a session that names no task."},
 		{Kind: "hook", Origin: "bonsai", Own: true, Event: StartEvent, Command: StartCommand, Timeout: StartTimeout,
 			Why: "Gives each session (new, resumed, cleared or compacted) the active task, its last ladder result and this " +
 				"machine's labels, and records the session's start, with bonsai's own path and hash, in .bonsai/local/log/; never blocks."},

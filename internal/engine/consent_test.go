@@ -192,8 +192,9 @@ func TestRelinkNamesTheHookLinesItLeaves(t *testing.T) {
 	}
 }
 
-// A first link writes Bonsai's own hook lines on --yes alone (the guard's, start's and the recorder's ten), naming
-// them apart from Runs code; a pack's needs --allow-exec. A changed own line is code even at a first link (rule 7).
+// A first link writes Bonsai's own hook lines on --yes alone (the guard's, the stop gate's, start's and the recorder's
+// ten), naming them apart from Runs code; a pack's needs --allow-exec. A changed own line is code even at a first link
+// (rule 7).
 func TestOwnHookLines(t *testing.T) {
 	e := setup(t)
 	quiet, qc := testpack.QuietPack(t, e.tmp)
@@ -203,17 +204,18 @@ func TestOwnHookLines(t *testing.T) {
 	for _, c := range p.OwnHooks {
 		own = append(own, c.Line)
 	}
-	if strings.Join(own, "\n") != strings.Join(OwnHookLines(), "\n") || len(own) != 12 || p.NeedsExec() {
+	if strings.Join(own, "\n") != strings.Join(OwnHookLines(), "\n") || len(own) != 13 || p.NeedsExec() {
 		t.Fatalf("own hooks %+v, runs code %+v", p.OwnHooks, p.RunsCode)
 	}
 	if pv := p.Preview(false); !strings.Contains(pv, "Bonsai's own hook lines, written with --yes (linking the project is your consent to them):\n"+
-		"  add     hook        PreToolUse ("+GuardMatcher+"): "+GuardCommand+"\n  add     hook        SessionStart: bonsai hook start\n") {
+		"  add     hook        PreToolUse ("+GuardMatcher+"): "+GuardCommand+"\n  add     hook        Stop: "+StopCommand+
+		"\n  add     hook        SessionStart: bonsai hook start\n") {
 		t.Errorf("preview:\n%s", pv)
 	}
 	if err := Apply(p); err != nil {
 		t.Fatal(err)
 	}
-	for _, cmd := range []string{GuardCommand, StartCommand, RecordCommand} {
+	for _, cmd := range []string{GuardCommand, StopCommand, StartCommand, RecordCommand} {
 		if !strings.Contains(read(t, root, SettingsFile), `"`+cmd+`"`) {
 			t.Errorf("Bonsai's own line %q was not written", cmd)
 		}

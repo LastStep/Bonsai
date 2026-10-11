@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -409,5 +410,47 @@ func TestConsentWithConflicts(t *testing.T) {
 				t.Errorf("something was written")
 			}
 		})
+	}
+}
+
+// The stop gate's line through the command line (step 5.3.4 note 6): a first link writes it on --yes alone; a project
+// linked by a build before it takes it at its next update only with --allow-exec --yes (exit 4 and nothing written
+// without, at --json too), check warning until then; unlink takes it out.
+func TestStopLineConsentCommand(t *testing.T) {
+	c := newCLI(t)
+	quiet, qc := testpack.QuietPack(t, c.tmp)
+	if code, out, errOut := c.run("", "init", "--name", "demo", "--source", quiet, "--ref", qc[0], "--yes"); code != 0 ||
+		!strings.Contains(c.read(".claude/settings.json"), `"command": "`+engine.StopCommand+`"`) {
+		t.Fatalf("a first link on --yes: exit %d\n%s%s\n%s", code, out, errOut, c.read(".claude/settings.json"))
+	}
+	c.linkedWithout(func(cmd string) bool { return cmd == engine.StopCommand })
+	before := tree(t, c.root)
+	if code, out, _ := c.run("", "check", "--json"); code > 1 || !strings.Contains(out, `"code": "own-hooks"`) ||
+		!strings.Contains(out, "not this build's: 1 to add (Stop: "+engine.StopCommand+")") {
+		t.Errorf("check: exit %d\n%s", code, out)
+	}
+	if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(out, "add     hook    Stop: "+engine.StopCommand+"  (bonsai)") ||
+		!strings.Contains(out, "--allow-exec") {
+		t.Errorf("update --yes: exit %d\n%s", code, out)
+	}
+	code, out, _ := c.run("", "update", "--yes", "--json")
+	if doc := fits(t, out, "changes"); code != 4 || jsonItems(t, doc) != "hook add Stop: "+engine.StopCommand+" (bonsai)" {
+		t.Errorf("update --yes --json: exit %d\n%s", code, out)
+	}
+	if tree(t, c.root) != before {
+		t.Error("a refused update wrote")
+	}
+	if code, out, errOut := c.run("", "update", "--allow-exec", "--yes"); code != 0 ||
+		!strings.Contains(c.read(".claude/settings.json"), `"command": "`+engine.StopCommand+`"`) {
+		t.Fatalf("update --allow-exec --yes: exit %d\n%s%s", code, out, errOut)
+	}
+	if _, out, _ := c.run("", "check", "--json"); strings.Contains(out, `"code": "own-hooks"`) || strings.Contains(out, `"code": "changed"`) {
+		t.Errorf("check after the update:\n%s", out)
+	}
+	if code, out, errOut := c.run("", "unlink", "--yes"); code != 0 {
+		t.Fatalf("unlink --yes: exit %d\n%s%s", code, out, errOut)
+	}
+	if raw, err := os.ReadFile(filepath.Join(c.root, ".claude", "settings.json")); err == nil && strings.Contains(string(raw), "bonsai hook stop") {
+		t.Errorf("unlink leaves the stop line:\n%s", raw)
 	}
 }

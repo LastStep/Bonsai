@@ -51,7 +51,7 @@ func init() {
 	checkCases["own-hooks"] = func(c *cli) { c.link(); c.linkedBefore() }
 	checkMore["own-hooks"] = func(t *testing.T, c *cli) {
 		_, out, _ := c.run("", "check", "--json")
-		if !strings.Contains(out, "11 to add (SessionStart: bonsai hook start; UserPromptSubmit: bonsai hook record [async]") ||
+		if !strings.Contains(out, "12 to add (Stop: bonsai hook stop || exit 2; SessionStart: bonsai hook start; UserPromptSubmit: bonsai hook record [async]") ||
 			!strings.Contains(out, `"do": "run: bonsai update --allow-exec --yes"`) || strings.Contains(out, `"code": "changed"`) {
 			t.Errorf("the warning:\n%s", out)
 		}
@@ -76,11 +76,18 @@ func init() {
 func madeUpToken() string { return "ghp_" + strings.Repeat("Qz7Wk2", 6) }
 
 // linkedBefore turns a project this build linked into one a build before step 5.2.4 linked: Bonsai's own hook lines
-// in .claude/settings.json are the guard's only, and the lock's fingerprint of Bonsai's lines is the one such a build
-// wrote (the SHA-256 of the lines' canon forms, sorted, each followed by a line feed: engine's linesHash). The
-// fingerprint of the file as linked is computed the same way first and must equal the lock's, so this reading of
-// the rule is checked against the engine's.
+// in .claude/settings.json are the guard's only (linkedWithout).
 func (c *cli) linkedBefore() {
+	c.t.Helper()
+	c.linkedWithout(func(cmd string) bool { return cmd != engine.GuardCommand })
+}
+
+// linkedWithout turns a project this build linked into one an older build linked: Bonsai's own hook lines whose
+// command drop names are taken out of .claude/settings.json, and the lock's fingerprint of Bonsai's lines is the one
+// such a build wrote (the SHA-256 of the lines' canon forms, sorted, each followed by a line feed: engine's
+// linesHash). The fingerprint of the file as linked is computed the same way first and must equal the lock's, so this
+// reading of the rule is checked against the engine's.
+func (c *cli) linkedWithout(drop func(cmd string) bool) {
 	c.t.Helper()
 	v, err := schema.Decode([]byte(c.read(".claude/settings.json")))
 	if err != nil {
@@ -97,7 +104,7 @@ func (c *cli) linkedBefore() {
 	if got := fingerprint(doc); got != entry.(schema.Object).String("sha256") {
 		c.t.Fatalf("the fingerprint read here (%s) is not the lock's (%s): engine's linesHash changed", got, entry.(schema.Object).String("sha256"))
 	}
-	// Take out every hook line but the guard's that runs bonsai, and the events left empty.
+	// Take out the hook lines that run bonsai and drop names, and the events left empty.
 	hooks, _ := doc.Get("hooks")
 	var kept schema.Object
 	for _, ev := range hooks.(schema.Object) {
@@ -108,7 +115,7 @@ func (c *cli) linkedBefore() {
 			var keep []any
 			for _, h := range hs.([]any) {
 				cmd := h.(schema.Object).String("command")
-				if strings.HasPrefix(cmd, "bonsai hook ") && cmd != engine.GuardCommand {
+				if strings.HasPrefix(cmd, "bonsai hook ") && drop(cmd) {
 					continue
 				}
 				keep = append(keep, h)

@@ -1,8 +1,9 @@
 package engine
 
-// Bonsai's own lines across builds. Its hook lines (step 5.2.4; plan-5 5.2.4 note 2): a project linked by a build that
-// wrote the guard's line only gets the start and recorder lines at its next update only with --allow-exec and --yes,
-// and check warns (own-hooks) until then. Its own deny rules (step 5.3.5): written at a first link and taken by a
+// Bonsai's own lines across builds. Its hook lines (step 5.2.4; plan-5 5.2.4 note 2; step 5.3.4 note 6): a project
+// linked by a build that wrote the guard's line only gets the stop gate's, start's and the recorder's lines at its
+// next update only with --allow-exec and --yes, and a project linked by a build before the stop gate (step 5.3.4) gets
+// its line the same way; check warns (own-hooks) until then. Its own deny rules (step 5.3.5): written at a first link and taken by a
 // project linked before at its next update on --yes alone, since a deny rule runs no code, each previewed with its
 // sentence, the file's key order kept; never_edit's rules move to the form that anchors at the project's top folder.
 // Taking a pack out keeps Bonsai's own lines, which are not the pack's, and unlink takes every one of them out.
@@ -19,6 +20,14 @@ import (
 // linkedBefore rewrites a project this build linked as a build before step 5.2.4 left it: in .claude/settings.json
 // Bonsai's own hook lines are the guard's only, and the lock's fingerprint is of the lines that build wrote.
 func linkedBefore(t *testing.T, root string) {
+	t.Helper()
+	linkedWithout(t, root, func(l Line) bool { return l.Command != GuardCommand })
+}
+
+// linkedWithout rewrites a project this build linked as a build without some of Bonsai's own hook lines left it: the
+// lines drop names are taken out of .claude/settings.json, and the lock's fingerprint is of the lines left, as that
+// build wrote it.
+func linkedWithout(t *testing.T, root string, drop func(Line) bool) {
 	t.Helper()
 	sd, err := readSettings(root)
 	if err != nil {
@@ -42,18 +51,24 @@ func linkedBefore(t *testing.T, root string) {
 	if !same {
 		t.Fatal("the settings file does not hold the lines the lock records")
 	}
-	var old, drop []Line
+	var old, dropped []Line
+	want := 0
+	for _, l := range ownHooks {
+		if drop(l) {
+			want++
+		}
+	}
 	for _, l := range claimed {
-		if l.Kind == "hook" && isBonsaiHook(l.Command) && l.Command != GuardCommand {
-			drop = append(drop, l)
+		if l.Kind == "hook" && isBonsaiHook(l.Command) && drop(l) {
+			dropped = append(dropped, l)
 			continue
 		}
 		old = append(old, l)
 	}
-	if len(drop) != len(ownHooks)-1 {
-		t.Fatalf("%d own lines to take out, want %d", len(drop), len(ownHooks)-1)
+	if len(dropped) != want || want == 0 {
+		t.Fatalf("%d own lines to take out, want %d", len(dropped), want)
 	}
-	b, err := schema.EncodeUTF8(applyLines(sd.root, drop, nil))
+	b, err := schema.EncodeUTF8(applyLines(sd.root, dropped, nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,11 +85,12 @@ func TestOwnLinesOfAProjectLinkedBefore(t *testing.T) {
 	e.apply(t, root, Request{Command: "init", Init: &InitValues{}, AllowExec: true})
 	linkedBefore(t, root)
 	before := read(t, root, SettingsFile)
-	if strings.Contains(before, StartCommand) || strings.Contains(before, RecordCommand) || !strings.Contains(before, GuardCommand) {
+	if strings.Contains(before, StopCommand) || strings.Contains(before, StartCommand) || strings.Contains(before, RecordCommand) ||
+		!strings.Contains(before, GuardCommand) {
 		t.Fatalf("not as a build before 5.2.4 left it:\n%s", before)
 	}
 
-	// check: a warning naming the eleven lines, its next step the consent; no finding but the two local sources'.
+	// check: a warning naming the twelve lines, its next step the consent; no finding but the two local sources'.
 	r, err := Check(root, e.home)
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +102,8 @@ func TestOwnLinesOfAProjectLinkedBefore(t *testing.T) {
 		}
 	}
 	if warned == nil || warned.Next != "run: bonsai update --allow-exec --yes" || warned.Who != "person" || warned.File != SettingsFile ||
-		!strings.Contains(warned.Message, "11 to add (SessionStart: bonsai hook start; UserPromptSubmit: bonsai hook record [async];") {
+		!strings.Contains(warned.Message, "12 to add (Stop: bonsai hook stop || exit 2; SessionStart: bonsai hook start; "+
+			"UserPromptSubmit: bonsai hook record [async];") {
 		t.Fatalf("the own-hooks warning: %+v", r.Warnings)
 	}
 	for _, f := range r.Findings {
@@ -97,7 +114,8 @@ func TestOwnLinesOfAProjectLinkedBefore(t *testing.T) {
 
 	// update --yes is refused whole: each new line runs code (rule 1), named under Runs code; nothing is written.
 	p := e.plan(t, root, Request{})
-	if got := items(p); !p.NeedsExec() || len(p.RunsCode) != len(ownHooks)-1 || !strings.HasPrefix(got, "hook add SessionStart: bonsai hook start (bonsai); ") {
+	if got := items(p); !p.NeedsExec() || len(p.RunsCode) != len(ownHooks)-1 ||
+		!strings.HasPrefix(got, "hook add Stop: bonsai hook stop || exit 2 (bonsai); hook add SessionStart: bonsai hook start (bonsai); ") {
 		t.Fatalf("runs code: %s", got)
 	}
 	if err := Apply(p); err == nil {
@@ -167,6 +185,101 @@ func TestOwnLinesOfAProjectLinkedBefore(t *testing.T) {
 	}
 	if s, err := readSettings(root); err != nil || (s.exists && (strings.Contains(string(s.raw), "bonsai hook") || strings.Contains(string(s.raw), ".bonsai"))) {
 		t.Errorf("after unlink: %v", err)
+	}
+}
+
+// The stop gate's line (step 5.3.4 note 6): bonsai hook stop || exit 2 on Stop, timeout 10, no matcher, with its
+// sentence. A first link writes it on --yes alone, among Bonsai's own lines; a project linked by a build before it
+// (every other own line in place) takes it at its next update only with --allow-exec and --yes, the update refused
+// whole and nothing written without, and check warns until then; unlink takes it out.
+func TestStopLineOfAProjectLinkedBefore(t *testing.T) {
+	var stop *Line
+	for i, l := range ownHooks {
+		if l.Event == StopEvent && l.Command == StopCommand {
+			stop = &ownHooks[i]
+		}
+	}
+	if stop == nil || stop.Matcher != "" || stop.Timeout != StopTimeout || stop.Async || !stop.Own || stop.Origin != "bonsai" ||
+		!strings.HasSuffix(stop.Why, ".") || ascii(stop.Why) != stop.Why || StopTimeout != "10" || StopCommand != "bonsai hook stop || exit 2" {
+		t.Fatalf("the stop gate's line %+v", stop)
+	}
+
+	e := setup(t)
+	quiet, qc := testpack.QuietPack(t, e.tmp)
+	root := testpack.Project(t, e.tmp, "stop")
+	p := e.linkTo(t, root, "stop", quiet, qc[0], false)
+	if p.NeedsExec() || !strings.Contains(p.Preview(false), "  add     hook        Stop: "+StopCommand+"\n          "+stop.Why+"\n") {
+		t.Fatalf("a first link, the stop line on --yes alone:\n%s", p.Preview(false))
+	}
+	if err := Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	hooks, _ := settingsDocOf(t, root).Get("hooks")
+	groups, _ := hooks.(schema.Object).Get(StopEvent)
+	// One group with no matcher, the stop gate's line first, the recorder's async line on Stop beside it.
+	if got := schema.Show(groups); !strings.HasPrefix(got, `[{"hooks":[{"type":"command","command":"`+StopCommand+`","timeout":10},`) ||
+		strings.Contains(got, `"matcher"`) {
+		t.Fatalf("the Stop groups as written: %s", got)
+	}
+
+	linkedWithout(t, root, func(l Line) bool { return l.Command == StopCommand })
+	before := read(t, root, SettingsFile)
+	if strings.Contains(before, StopCommand) || !strings.Contains(before, GuardCommand) || !strings.Contains(before, StartCommand) {
+		t.Fatalf("not as a build before 5.3.4 left it:\n%s", before)
+	}
+	r, err := Check(root, e.home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	warned := false
+	for _, w := range r.Warnings {
+		if w.Code == "own-hooks" {
+			warned = w.Message == "Bonsai's own hook lines in "+SettingsFile+" are not this build's: 1 to add (Stop: "+StopCommand+
+				"); until then this project's sessions run without them (a new hook line runs code, so it needs a person's --allow-exec)" &&
+				w.Next == "run: bonsai update --allow-exec --yes" && w.Who == "person"
+		}
+	}
+	if !warned {
+		t.Errorf("the own-hooks warning: %+v", r.Warnings)
+	}
+
+	// update --yes: refused whole, the stop line named under Runs code, nothing written.
+	p = e.plan(t, root, Request{})
+	if got := items(p); !p.NeedsExec() || got != "hook add Stop: "+StopCommand+" (bonsai)" || len(p.OwnHooks) != 0 {
+		t.Fatalf("runs code: %s; own at a first link %+v", got, p.OwnHooks)
+	}
+	if err := Apply(p); err == nil {
+		t.Fatal("update --yes wrote the stop line without --allow-exec")
+	}
+	if read(t, root, SettingsFile) != before {
+		t.Error("a refused update wrote the settings file")
+	}
+
+	// update --allow-exec --yes writes it, and check is quiet.
+	e.apply(t, root, Request{AllowExec: true})
+	if !strings.Contains(read(t, root, SettingsFile), `"`+StopCommand+`"`) {
+		t.Errorf("the stop line is not written:\n%s", read(t, root, SettingsFile))
+	}
+	if r, _ := checkLocal(t, root, e.home); hasWarning(r, "own-hooks") || len(r.Findings) != 0 {
+		t.Errorf("check after the update: %+v %+v", r.Findings, r.Warnings)
+	}
+
+	// unlink takes it out.
+	u := unlinkPlan(t, e, root)
+	removed := false
+	for _, c := range u.Settings {
+		if c.Line == "Stop: "+StopCommand {
+			removed = c.Change == "remove" && !c.RunsCode
+		}
+	}
+	if !removed {
+		t.Errorf("unlink does not remove the stop line: %+v", u.Settings)
+	}
+	if err := Apply(u); err != nil {
+		t.Fatal(err)
+	}
+	if s, err := readSettings(root); err != nil || (s.exists && strings.Contains(string(s.raw), "bonsai hook stop")) {
+		t.Errorf("after unlink the stop line stays (%v)", err)
 	}
 }
 
