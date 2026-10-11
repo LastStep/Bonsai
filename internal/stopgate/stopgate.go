@@ -18,8 +18,8 @@
 // git's link does not tie to it (a broken link back, another repository inside the project, a .git Bonsai cannot read)
 // fails closed: CLAUDE_PROJECT_DIR's checkout is judged, and the result must prove the HEAD of the checkout holding cwd
 // as well. A cwd in no checkout of the project (none, a folder in no checkout, a repository outside the project) leaves
-// CLAUDE_PROJECT_DIR's checkout judged alone. An agent can move cwd, as it can move HEAD; either way the result must prove the HEAD of the
-// checkout the session is in when it ends.
+// CLAUDE_PROJECT_DIR's checkout judged alone. An agent can move cwd, as it can move HEAD; either way the result must
+// prove the HEAD of the checkout the session is in when it ends.
 //
 // What it checks once engaged, in this order. Each failure blocks (exit 2) with its reason first and its next step,
 // which Claude Code gives the agent as the reason to go on; the rule that decided is the record's (rules below):
@@ -64,7 +64,11 @@
 // line each, never words that say a file is missing as the operating system says it ("No such file or directory"):
 // Claude Code reads a Stop hook's exit 2 with such words on stderr as a hook that failed to start, and lets the
 // session end (its hooks reference, read on 2.1.296; measured in a -p session on WSL the same day, while "bonsai: not
-// found" still kept the session going).
+// found" still kept the session going). The reason is the one the record keeps (cut to the record's text cap), so it
+// names no user's folder (contract §2.6): a path relative to the project when it lies inside it, else where it lies in
+// plain words; an operating system's error by its kind, never its text (osWords); and any whole path still in it
+// (another package's words, a rung's reason) said as "a path on this machine" (noPaths). The next step is printed
+// only, never recorded, and may name a folder.
 package stopgate
 
 import (
@@ -80,6 +84,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -149,8 +154,10 @@ type Decision struct {
 
 func allow(rule, target string) Decision { return Decision{Allow: true, Rule: rule, Target: target} }
 
+// deny gives a block. Its reason is said with no whole path in it (noPaths), so the reason it prints and the one it
+// records are the same and name no user's folder (contract §2.6); its next step is printed only, never recorded.
 func deny(rule, target, why, next string) Decision {
-	return Decision{Rule: rule, Target: target, Why: why, Next: next}
+	return Decision{Rule: rule, Target: target, Why: noPaths(why), Next: next}
 }
 
 // run is one gate run's state, shared by the worker and the timer under mu.
@@ -223,8 +230,9 @@ func (r *run) work() Decision {
 	roots, _, err := hookin.FindProjects(dir)
 	if err != nil {
 		r.drain()
-		return deny(RuleNoProject, "", "the project's folder "+quote(filepath.ToSlash(dir))+" cannot be read ("+osWords(err)+
-			"), so the stop gate keeps the session going", "tell the person: check that the folder exists and can be read")
+		return deny(RuleNoProject, "", "the project's folder ("+hookin.ProjectEnv+") cannot be read ("+osWords(err)+
+			"), so the stop gate keeps the session going", "tell the person: check that the folder "+quote(filepath.ToSlash(dir))+
+			" exists and can be read")
 	}
 	if len(roots) == 0 {
 		r.drain()
@@ -234,7 +242,7 @@ func (r *run) work() Decision {
 	own, err := workspace.LoadConfig(root)
 	if err != nil {
 		r.drain()
-		return deny(RuleBadConfig, "", "bonsai.yaml cannot be read ("+oneLine(err.Error())+"), so the stop gate cannot tell where "+
+		return deny(RuleBadConfig, "", "bonsai.yaml cannot be read ("+osWords(err)+"), so the stop gate cannot tell where "+
 			"the task "+quote(named)+" and its proof are, and it keeps the session going", nextOf(err,
 			"a person fixes bonsai.yaml (bonsai check names the line)"))
 	}
@@ -333,7 +341,7 @@ func cwdCheckout(cwd, root, main string) (layout workspace.GitLayout, ok bool, a
 		if !sameFolder(top, root) && !sameFolder(top, main) && !(l.Worktree() && sameFolder(l.Main, main)) {
 			continue
 		}
-		why := "another repository inside this project's checkout"
+		why := "another repository inside a checkout of this project"
 		switch {
 		case g.GitDir == "":
 			why = "a checkout whose .git Bonsai cannot read"
@@ -372,8 +380,9 @@ func checkoutTops(dir string) []string {
 	}
 }
 
-// shown gives a folder as a reason prints it: from the main checkout, or else from root, when it lies inside one of
-// them; else whole. Forward slashes.
+// shown gives a folder as a reason says it: its path from the main checkout, or else from root, when it lies inside
+// one of them (forward slashes); else, in plain words, that it lies outside them, never its whole path, which would
+// put a user's folder in the record (contract §2.6).
 func shown(p, main, root string) string {
 	for _, base := range []string{main, root} {
 		rel, err := filepath.Rel(base, p)
@@ -382,8 +391,11 @@ func shown(p, main, root string) string {
 			return filepath.ToSlash(rel)
 		}
 	}
-	return filepath.ToSlash(p)
+	return outside
 }
+
+// outside is how a reason says where a folder lies outside the main checkout and the session's own checkout.
+const outside = "a folder outside the main checkout and the session's starting folder"
 
 // sameFolder reports whether two folders are one: the same clean path (letter case ignored on Windows), or one folder
 // reached two ways (a link on the path, a short name), as the system tells it.
@@ -411,7 +423,7 @@ func judge(local workspace.Local, layout workspace.GitLayout, also *untied, name
 	ladder := "run: bonsai ladder --task " + named
 	cfg, err := workspace.LoadConfigFull(local.Main)
 	if err != nil {
-		return deny(RuleBadConfig, "", "the main checkout's bonsai.yaml cannot be read in full ("+oneLine(err.Error())+"), so the "+
+		return deny(RuleBadConfig, "", "the main checkout's bonsai.yaml cannot be read in full ("+osWords(err)+"), so the "+
 			"stop gate cannot tell where the task "+quote(named)+" is or which rungs it needs", nextOf(err,
 			"a person fixes bonsai.yaml (bonsai check names the line)")+"; then "+ladder)
 	}
@@ -420,7 +432,7 @@ func judge(local workspace.Local, layout workspace.GitLayout, also *untied, name
 	act, err := workspace.Active(workspace.ActiveInput{Main: local.Main, TaskDir: taskDir, Env: named, EnvCounts: true})
 	if err != nil {
 		return deny(RuleTaskUnreadable, "", "the main checkout's task folder "+quote(taskDir)+" cannot be read ("+
-			oneLine(err.Error())+"), so the stop gate cannot read the task "+quote(named), nextOf(err,
+			osWords(err)+"), so the stop gate cannot read the task "+quote(named), nextOf(err,
 			"tell the person: check that the task folder can be read")+"; then "+ladder)
 	}
 	if act.ID == "" {
@@ -728,6 +740,9 @@ func readCapped(path string, max int64) ([]byte, error) {
 		return nil, err
 	}
 	defer func() { _ = f.Close() }()
+	if fi, err := f.Stat(); err == nil && fi.IsDir() {
+		return nil, errFolder
+	}
 	raw, err := io.ReadAll(io.LimitReader(f, max+1))
 	if err != nil {
 		return nil, err
@@ -828,17 +843,74 @@ func nextOf(err error, def string) string {
 	return def
 }
 
-// osWords says why a file operation failed in the gate's own words for the common cases, never the operating
-// system's (safe says why).
+// errFolder is a file read that met a folder.
+var errFolder = errors.New("it is a folder, not a file")
+
+// osWords says why something failed in the gate's own words. An operating system's error is said by its kind, never
+// by its text, which names the file by its whole path (contract §2.6: a record names no user's folder) and may hold the
+// words safe takes out; a Bonsai error that wraps one (a *workspace.Error) is said by the file it names, when that is
+// relative to the project, and the kind. Any other error is Bonsai's own words, said as they are.
 func osWords(err error) string {
+	if !isOS(err) {
+		return oneLine(err.Error())
+	}
+	file := ""
+	var we *workspace.Error
+	if errors.As(err, &we) && we.File != "" && !filepath.IsAbs(we.File) {
+		file = filepath.ToSlash(we.File) + ": "
+	}
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		return "it is not there"
+		return file + "it is not there"
 	case errors.Is(err, fs.ErrPermission):
-		return "permission denied"
+		return file + "permission denied"
+	case errors.Is(err, errFolder), errors.Is(err, syscall.EISDIR):
+		return file + "it is a folder, not a file"
+	case errors.Is(err, syscall.ENOTDIR):
+		return file + "a file stands where a folder belongs"
 	}
-	return oneLine(err.Error())
+	return file + "the system could not read it"
 }
+
+// isOS reports whether err is, or wraps, an operating system's error, or errFolder.
+func isOS(err error) bool {
+	var pe *fs.PathError
+	var le *os.LinkError
+	var se *os.SyscallError
+	var en syscall.Errno
+	return errors.As(err, &pe) || errors.As(err, &le) || errors.As(err, &se) || errors.As(err, &en) || errors.Is(err, errFolder)
+}
+
+// noPaths gives a reason with every whole path in it (one written from the root at the start of a word: /..., C:\...,
+// C:/..., \\share\...) said as "a path on this machine": a last guard, after the gate's own words, for the words it
+// passes on (another package's message, a rung's reason in a ladder result). A path runs to a quote, a bracket, a
+// comma, a semicolon, a colon followed by a space, or the end, over spaces (a Windows user folder may hold one), so it
+// may take a few words after it too, never fewer. A path relative to the project, or one from ~/, is left as it is.
+func noPaths(s string) string {
+	var b strings.Builder
+	for {
+		m := pathStart.FindStringSubmatchIndex(s)
+		if m == nil {
+			b.WriteString(s)
+			return b.String()
+		}
+		start, end := m[2], len(s)
+		for i := start + 1; i < len(s); i++ {
+			c := s[i]
+			if strings.IndexByte("\"'(),;\r\n", c) >= 0 || (c == ':' && (i+1 == len(s) || s[i+1] == ' ')) {
+				end = i
+				break
+			}
+		}
+		b.WriteString(s[:start])
+		b.WriteString("a path on this machine")
+		s = s[end:]
+	}
+}
+
+// pathStart finds where a whole path starts: a slash, a drive letter with a slash or backslash, or two backslashes,
+// at the start of a word (after a space, a quote, a bracket or an equals sign).
+var pathStart = regexp.MustCompile(`(?:^|[\s"'(=\[])((?:/|[A-Za-z]:[\\/]|\\\\))`)
 
 // unsafeWords are what a refusal never says, in any letter case: the words an operating system uses for a file that is
 // not there. Claude Code reads a Stop hook's exit 2 with such words on stderr as a hook that failed to start, which
