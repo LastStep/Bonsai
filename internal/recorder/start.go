@@ -63,14 +63,15 @@ func start(o Options) string {
 			"edit and shell command until a person fixes it (bonsai check names the line); no active task is read."})
 	}
 	local := workspace.FindLocal(proj, cfg.ID)
+	act := &active{o: o, cfg: cfg, local: local} // the record's target and the context's task: one read of the task folder
 	if p != nil && p.Event == "SessionStart" {
-		if l := build(o, p, proj, cfg, local); l != nil {
+		if l := build(o, p, proj, cfg, local, act); l != nil {
 			path, sum := self(o)
 			l.BonsaiPath, l.BonsaiSHA256 = ptr(path), ptr(sum)
 			_, _ = writeLog(local.Main, l)
 		}
 	}
-	return openingContext(o, cfg, local)
+	return openingContext(cfg, local, act)
 }
 
 // self gives the running binary's path as a record keeps it (from ~/ under the user's home, forward slashes) and its
@@ -113,12 +114,12 @@ func underHome(path, home string) string {
 	return p
 }
 
-// openingContext is the context hook start prints (this file's comment).
-func openingContext(o Options, cfg *workspace.Config, local workspace.Local) string {
+// openingContext is the context hook start prints (this file's comment); act is the run's active task.
+func openingContext(cfg *workspace.Config, local workspace.Local, act *active) string {
 	var out []string
 	add := func(format string, a ...any) { out = append(out, fmt.Sprintf(format, a...)) }
 	add("Bonsai: this project is the workspace %s (%s). Its log is in .bonsai/local/ (never committed).", cfg.Name, cfg.ID)
-	a, err := activeTask(o, cfg, local)
+	a, err := act.get()
 	switch {
 	case err != nil:
 		add("Active task: none (the task folder cannot be read: %s).", err.Error())

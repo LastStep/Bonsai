@@ -10,12 +10,13 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -56,7 +57,7 @@ func env(vars map[string]string) func(string) string {
 
 // opts gives Options for a payload, the project in CLAUDE_PROJECT_DIR.
 func opts(root, payload string, extra map[string]string) Options {
-	vars := map[string]string{ProjectEnv: root}
+	vars := map[string]string{hookin.ProjectEnv: root}
 	for k, v := range extra {
 		vars[k] = v
 	}
@@ -199,7 +200,7 @@ func TestEveryEvent(t *testing.T) {
 		if l.InputHash != nil {
 			hashes[*l.InputHash] = true
 		}
-		if toolEvent(s(l.AgentEvent)) != (l.InputHash != nil) {
+		if hookin.ToolEvent(s(l.AgentEvent)) != (l.InputHash != nil) {
 			t.Errorf("%s: input_hash %s", cases[i].event, s(l.InputHash))
 		}
 	}
@@ -445,28 +446,9 @@ func TestToolCalls(t *testing.T) {
 	}
 }
 
-// The input hash: keyed by the salt, over the input with keys sorted at every depth and numbers as written, so key
-// order does not count and a number's text does; 16 hex.
-func TestInputHash(t *testing.T) {
-	dec := func(raw string) any {
-		v, err := schema.Decode([]byte(raw))
-		if err != nil {
-			t.Fatal(err)
-		}
-		return v
-	}
-	a := InputHash("k1", dec(`{"b":{"y":1,"x":[{"q":2,"p":1}]},"a":"\u00e9"}`))
-	b := InputHash("k1", dec(`{"a":"\u00e9","b":{"x":[{"p":1,"q":2}],"y":1}}`))
-	if a != b || !regexp.MustCompile(`^[0-9a-f]{16}$`).MatchString(a) {
-		t.Errorf("key order counted: %s %s", a, b)
-	}
-	if InputHash("k2", dec(`{"a":1}`)) == InputHash("k1", dec(`{"a":1}`)) || InputHash("k1", dec(`{"a":1.0}`)) == InputHash("k1", dec(`{"a":1}`)) ||
-		InputHash("k1", dec(`{"a":[1,2]}`)) == InputHash("k1", dec(`{"a":[2,1]}`)) {
-		t.Error("the salt, a number's text or a list's order did not count")
-	}
-}
-
-// Within its budget or not, the hook returns 0: a stdin that never ends stops at the budget.
+// Within its budget or not, the hook returns 0: a stdin that never ends stops at the budget. The run is held to the
+// hard limit the code itself must meet, the recorder's own Budget (under its lines' timeouts), never to this
+// machine's speed.
 func TestBudget(t *testing.T) {
 	_, root := project(t)
 	r, w, err := os.Pipe()
@@ -477,7 +459,7 @@ func TestBudget(t *testing.T) {
 	o := opts(root, "", nil)
 	o.Stdin, o.Budget = r, 200*time.Millisecond
 	start := time.Now()
-	if code := Record(o); code != 0 || time.Since(start) > 2*time.Second {
+	if code := Record(o); code != 0 || time.Since(start) > Budget {
 		t.Errorf("exit %d after %s", code, time.Since(start))
 	}
 	var out bytes.Buffer
@@ -527,5 +509,87 @@ func TestEventsAreTheLogs(t *testing.T) {
 	}
 	if len(Events) != 11 || !recorded("SessionEnd") || recorded("SessionStart") || recorded("PreCompact") {
 		t.Errorf("%d events", len(Events))
+	}
+}
+
+// hook start reads the task folder once: the session_start record's target and the context's active task come from
+// one reading of it.
+func TestStartReadsTheTasksOnce(t *testing.T) {
+	_, root := project(t)
+	write(t, root, "work/tasks/T-0905-x.md", "---\nformat: bonsai.task/1\nid: T-0905\ntitle: x\nstatus: running\nlane: null\n"+
+		"done_when: []\ndepends_on: []\nblocked_by: null\ncreated: null\nstarted: null\nfinished: null\nlabels: {}\n---\n")
+	saved := findActive
+	defer func() { findActive = saved }()
+	reads := 0
+	findActive = func(o Options, cfg *workspace.Config, local workspace.Local) (workspace.ActiveTask, error) {
+		reads++
+		return saved(o, cfg, local)
+	}
+	sess := "0f1e2d3c-aaaa-4bbb-8ccc-00000000000c"
+	var out bytes.Buffer
+	Start(opts(root, `{"session_id":"`+sess+`","hook_event_name":"SessionStart","source":"startup"}`, nil), &out)
+	if reads != 1 {
+		t.Errorf("the task folder read %d times, want once", reads)
+	}
+	if got := records(t, root, sess); len(got) != 1 || s(got[0].Target) != "T-0905" || !strings.Contains(out.String(), "Active task: T-0905 ") {
+		t.Errorf("the record %+v, the context:\n%s", got, out.String())
+	}
+	// A subagent's start reads it once too; a Stop, which names no task, not at all.
+	reads = 0
+	Record(opts(root, `{"session_id":"`+sess+`","hook_event_name":"SubagentStart","agent_id":"a9","agent_type":"Explore"}`, nil))
+	Record(opts(root, `{"session_id":"`+sess+`","hook_event_name":"Stop"}`, nil))
+	if reads != 1 {
+		t.Errorf("a subagent's start and a stop read the task folder %d times, want once", reads)
+	}
+}
+
+// What an unread payload does is the caller's (plan 5.3.0 note 2): hook record writes nothing and returns 0; hook
+// start prints what it can, the context with no record. A payload read with a fault is recorded as step 5.2.4 read
+// payloads: a key twice keeps its last value, a wrong type reads as absent, bad UTF-8 as U+FFFD, a NUL kept; a tool
+// input the strict decoder refuses has no hash and no target.
+func TestUnreadPayloads(t *testing.T) {
+	_, root := project(t)
+	for _, raw := range []string{"", "  ", `{"session_id":`, `["Stop"]`, `{"session_id":"u1","hook_event_name":"Stop"} {}`,
+		`{"hook_event_name":"Stop"}`, `{"session_id":"u.1","hook_event_name":"Stop"}`, `{"session_id":"u1"}`,
+		`{"session_id":"u1","hook_event_name":7}`} {
+		if code := Record(opts(root, raw, nil)); code != 0 {
+			t.Errorf("%q: exit %d", raw, code)
+		}
+		var out bytes.Buffer
+		if code := Start(opts(root, raw, nil), &out); code != 0 || !strings.Contains(out.String(), "Active task: none") {
+			t.Errorf("%q: start exit %d, context %q", raw, code, out.String())
+		}
+	}
+	if names, _ := filepath.Glob(filepath.Join(root, ".bonsai", "local", "log", "*.ndjson")); len(names) != 0 {
+		t.Errorf("payloads that do not read wrote %v", names)
+	}
+	sess := "0f1e2d3c-aaaa-4bbb-8ccc-00000000000d"
+	for _, raw := range []string{
+		// tool_name twice (the last counts), is_interrupt of the wrong type (absent: an error, not an interrupt), a
+		// NUL and bad UTF-8 in values the guard would refuse, bad UTF-8 in an unread value.
+		`{"session_id":"` + sess + `","hook_event_name":"PostToolUseFailure","tool_name":"Read","tool_name":"Grep",` +
+			`"tool_input":{"pattern":"x","path":"src"},"is_interrupt":"yes","permission_mode":"default\u0000","cwd":"` + filepath.ToSlash(root) +
+			`","tool_response":"` + "\xff" + `"}`,
+		`{"session_id":"` + sess + `","hook_event_name":"Notification","message":"caf` + "\xe9" + `","notification_type":"idle\u0000prompt"}`,
+		`{"session_id":"` + sess + `","hook_event_name":"PreToolUse","tool_name":"Read","tool_input":{"file_path":"a","file_path":"b"}}`,
+		`{"session_id":"` + sess + `","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":7}}`,
+	} {
+		Record(opts(root, raw, nil))
+	}
+	got := records(t, root, sess)
+	if len(got) != 4 {
+		t.Fatalf("%d records, want 4", len(got))
+	}
+	if s(got[0].Tool) != "Grep" || s(got[0].Category) != "Search" || s(got[0].Kind) != "error" || s(got[0].Target) != "src" || got[0].InputHash == nil {
+		t.Errorf("a failure read with faults: %+v", got[0])
+	}
+	if s(got[1].Text) != "caf"+string(utf8.RuneError) || s(got[1].Kind) != "idle\x00prompt" {
+		t.Errorf("a notice read with faults: text %q kind %q", s(got[1].Text), s(got[1].Kind))
+	}
+	if got[2].InputHash != nil || got[2].Target != nil || s(got[2].Category) != "Read" {
+		t.Errorf("a refused tool input: %+v", got[2])
+	}
+	if got[3].InputHash == nil || s(got[3].Category) != "Shell" {
+		t.Errorf("a command of the wrong type: %+v", got[3])
 	}
 }

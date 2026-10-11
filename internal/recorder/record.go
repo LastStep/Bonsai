@@ -21,23 +21,18 @@ package recorder
 //	Stop                           stop                       nothing more
 //	SessionEnd                     session_end                reason
 //
-// The input hash (contract §8.1) is HMAC-SHA-256 keyed by the home's salt (its text), over the tool input with its
-// object keys sorted at every depth and numbers as their source text, as one compact JSON line; its first 16 hex
-// characters. Bonsai's own canonical form, not byte-equal to the studio's: the two never share a salt, so no hash is
-// compared across them. The tool input is the same bytes in a call's events, so a call's records pair. With no salt
-// (workspace.Salt failed) it is null and the record is still written; a tool input the strict JSON reader refuses (a
-// duplicate key) has no hash and no target.
+// The input hash (contract §8.1) is hookin.InputHash, keyed by the home's salt, over the tool input the hook adapter
+// decoded; a call's events carry the same input, so a call's records pair. With no salt (workspace.Salt failed) it is
+// null and the record is still written; a tool input the strict decoder refuses (a duplicate key, bad UTF-8) has no
+// hash and no target.
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"regexp"
-	"sort"
 	"strings"
 	"unicode"
 
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/redact"
 	"github.com/LastStep/Bonsai/internal/schema"
@@ -84,15 +79,6 @@ func recorded(event string) bool {
 	return logEvent(event) != "" && event != "SessionStart"
 }
 
-// toolEvent reports the four events that describe one tool call.
-func toolEvent(event string) bool {
-	switch event {
-	case "PreToolUse", "PermissionRequest", "PostToolUse", "PostToolUseFailure":
-		return true
-	}
-	return false
-}
-
 // RemoteEnv names the variable Claude Code sets for a hook while Remote Control is connected: the session's Remote
 // Control id, kept in remote only when it matches remotePattern (the log schema's), and never redacted.
 const RemoteEnv = "CLAUDE_CODE_BRIDGE_SESSION_ID"
@@ -106,8 +92,8 @@ var writeLog = record.WriteLog
 var salt = workspace.Salt
 
 // build lays out the record of one payload, or nil for an event the recorder does not write. proj is the session's
-// checkout (the project's folder), local where it writes.
-func build(o Options, p *Payload, proj string, cfg *workspace.Config, local workspace.Local) *format.Log {
+// checkout (the project's folder), local where it writes, act the active task, read once when a record names it.
+func build(o Options, p *hookin.Payload, proj string, cfg *workspace.Config, local workspace.Local, act *active) *format.Log {
 	ev := logEvent(p.Event)
 	if ev == "" {
 		return nil
@@ -115,7 +101,7 @@ func build(o Options, p *Payload, proj string, cfg *workspace.Config, local work
 	l := record.New(ev, record.Common{Workspace: cfg.ID, Local: local, Session: p.Session, Agent: "claude-code",
 		Getenv: o.Getenv, Redact: redact.Text, At: o.Now()})
 	l.AgentEvent = ptr(p.Event)
-	l.SubagentID = ptr(id(p.AgentID))
+	l.SubagentID = ptr(hookin.ID(p.AgentID))
 	l.SubagentType = text(p.AgentType)
 	l.Checkout = text(str(l.Checkout))
 	l.Branch = text(str(l.Branch))
@@ -129,17 +115,17 @@ func build(o Options, p *Payload, proj string, cfg *workspace.Config, local work
 			kind = "task-notification"
 		}
 		l.Kind = ptr(kind)
-	case toolEvent(p.Event):
+	case hookin.ToolEvent(p.Event):
 		toolFields(l, p, proj)
 	case p.Event == "Notification":
 		l.Kind = text(p.NotificationType)
 		l.Text = ptr(redact.Capped(p.Message, redact.TextCap))
 	case p.Event == "SubagentStart":
-		l.Target = activeTarget(o, cfg, local)
+		l.Target = act.target()
 	case p.Event == "SessionStart":
 		l.Source = text(p.Source)
 		l.Model = text(p.Model)
-		l.Target = activeTarget(o, cfg, local)
+		l.Target = act.target()
 	case p.Event == "SessionEnd":
 		l.Reason = text(p.Reason)
 	}
@@ -147,10 +133,10 @@ func build(o Options, p *Payload, proj string, cfg *workspace.Config, local work
 }
 
 // toolFields fills a tool event's fields: tool, category, target, tool_use_id, input_hash, ok, and a failure's kind.
-func toolFields(l *format.Log, p *Payload, proj string) {
+func toolFields(l *format.Log, p *hookin.Payload, proj string) {
 	l.Tool = text(p.Tool)
 	l.Category = ptr(Category(p.Tool, nil))
-	l.ToolUseID = ptr(id(p.ToolUseID))
+	l.ToolUseID = ptr(hookin.ID(p.ToolUseID))
 	switch p.Event {
 	case "PostToolUse":
 		l.OK = boolPtr(true)
@@ -161,14 +147,10 @@ func toolFields(l *format.Log, p *Payload, proj string) {
 			l.Kind = ptr("interrupt")
 		}
 	}
-	if p.ToolInput == nil {
+	if p.Input == nil {
 		return
 	}
-	v, err := schema.Decode(p.ToolInput)
-	if err != nil {
-		return
-	}
-	in, _ := v.(schema.Object)
+	in := p.InputObject()
 	l.Category = ptr(Category(p.Tool, in))
 	if p.Tool == "AskUserQuestion" {
 		l.Text = ptr(redact.Question(in))
@@ -176,7 +158,7 @@ func toolFields(l *format.Log, p *Payload, proj string) {
 		l.Target = ptr(redact.Target(p.Tool, in, proj, p.Cwd))
 	}
 	if key, err := salt(); err == nil {
-		l.InputHash = ptr(InputHash(key, v))
+		l.InputHash = ptr(hookin.InputHash(key, p.Input))
 	}
 }
 
@@ -210,51 +192,40 @@ func Category(tool string, input schema.Object) string {
 	return "Other"
 }
 
-// InputHash is a tool input's hash (this file's comment): HMAC-SHA-256 keyed by the salt's text over the input in
-// canonical form, its first 16 hex characters. input is a value schema.Decode gave.
-func InputHash(key string, input any) string {
-	line, err := schema.EncodeLine(canonical(input))
-	if err != nil {
-		return ""
-	}
-	mac := hmac.New(sha256.New, []byte(key))
-	_, _ = mac.Write(line)
-	return hex.EncodeToString(mac.Sum(nil))[:16]
+// active is the active task of one hook run (contract §13, BONSAI_TASK counting: the hook's project is the session's
+// own), read from the main checkout's task folder once, when a record or the opening context first names it: hook
+// start's record and its context share one read.
+type active struct {
+	o     Options
+	cfg   *workspace.Config
+	local workspace.Local
+	read  bool
+	task  workspace.ActiveTask
+	err   error
 }
 
-// canonical gives a JSON value with every object's keys in sorted (byte) order, at every depth.
-func canonical(v any) any {
-	switch x := v.(type) {
-	case schema.Object:
-		out := make(schema.Object, len(x))
-		for i, m := range x {
-			out[i] = schema.Member{Key: m.Key, Value: canonical(m.Value)}
-		}
-		sort.SliceStable(out, func(i, j int) bool { return out[i].Key < out[j].Key })
-		return out
-	case []any:
-		out := make([]any, len(x))
-		for i, e := range x {
-			out[i] = canonical(e)
-		}
-		return out
+// get reads the active task the first time it is asked for, and gives that reading every time.
+func (a *active) get() (workspace.ActiveTask, error) {
+	if !a.read {
+		a.read = true
+		a.task, a.err = findActive(a.o, a.cfg, a.local)
 	}
-	return v
+	return a.task, a.err
 }
 
-// activeTarget is the active task found for a session's start or a subagent's (contract §13, BONSAI_TASK counting:
-// the hook's project is the session's own), read from the main checkout's task folder; nil for none.
-func activeTarget(o Options, cfg *workspace.Config, local workspace.Local) *string {
-	a, err := activeTask(o, cfg, local)
-	if err != nil || a.ID == "" {
+// target is the active task's id as a record's target, nil for none.
+func (a *active) target() *string {
+	t, err := a.get()
+	if err != nil || t.ID == "" {
 		return nil
 	}
-	return ptr(redact.Capped(a.ID, redact.TargetCap))
+	return ptr(redact.Capped(t.ID, redact.TargetCap))
 }
 
-// activeTask finds the active task: tasks read from the main checkout's task folder, its bonsai.yaml's
-// documents.task (the session's own checkout's when main's cannot be read).
-func activeTask(o Options, cfg *workspace.Config, local workspace.Local) (workspace.ActiveTask, error) {
+// findActive finds the active task: tasks read from the main checkout's task folder, its bonsai.yaml's
+// documents.task (the session's own checkout's when main's cannot be read). A variable for the tests, which count
+// its reads.
+var findActive = func(o Options, cfg *workspace.Config, local workspace.Local) (workspace.ActiveTask, error) {
 	dir := taskDir(cfg)
 	if local.Main != local.Root {
 		if main, err := workspace.LoadConfig(local.Main); err == nil && taskDir(main) != "" {

@@ -15,13 +15,17 @@
 // and is not redacted. No prompt's words are kept: a prompt record has its kind only.
 //
 // They never interfere: `hook record` prints nothing, ever (an async hook's stdout can reach the conversation), and
-// both exit 0 whatever happens, a reader of their output gone first among it (pipe_unix.go: SIGPIPE ignored). A payload either cannot read (empty, broken, an event it does not record, no session
-// id) writes nothing. Each runs under its own time limit (Budget), past which it exits 0 with what it has done. Its
-// payload reader is the recorder's own for now: spec §14 gives the one hook adapter to step 5.3, which then makes one
-// reader for the guard and the recorder.
+// both exit 0 whatever happens, a reader of their output gone first among it (pipe_unix.go: SIGPIPE ignored). Each
+// runs under its own time limit (Budget), past which it exits 0 with what it has done; neither runs in the frame of
+// the hooks that block, since neither blocks.
+//
+// The payload is read by the one hook adapter (internal/hookin), as every hook reads it. A payload that does not read
+// (empty, broken, too large), names no event the recorder writes, or has no session id that can name a log file,
+// writes nothing. A payload read with a fault is recorded: each field as Go's lenient decoder reads it (a wrong type
+// absent), as the recorder has read payloads since step 5.2.4; a tool input the strict decoder refuses has no hash
+// and no target.
 //
 //   - recorder.go (this file): Options, Record and Start, the project and its config.
-//   - payload.go: Claude Code's hook payload, as the recorder reads it.
 //   - record.go: one payload as one record: the events, the categories, the input hash.
 //   - start.go: bonsai hook start's opening context and the binary's path and hash.
 //   - pipe_unix.go, pipe_other.go: SIGPIPE ignored, so a write to a closed pipe is an error, not the process's end.
@@ -32,26 +36,19 @@
 package recorder
 
 import (
-	"errors"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/clean"
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // Budget is each hook's own time limit. SessionEnd's line has a timeout of 5 s, which also raises Claude Code's 1.5 s
 // budget for SessionEnd hooks; hook start's has 10 s. Past Budget the hook exits 0 with what it has done.
 const Budget = 4 * time.Second
-
-// ProjectEnv names the variable Claude Code sets for a hook to the project's folder, the one the session started in.
-const ProjectEnv = "CLAUDE_PROJECT_DIR"
-
-// MaxInput caps the payload the recorder reads, as the guard caps its own: a larger one writes nothing.
-const MaxInput = 64 << 20
 
 // Options are what a hook needs besides its payload.
 type Options struct {
@@ -118,7 +115,7 @@ func work(o Options) {
 		return // no workspace id to record under; bonsai check names the file's problem
 	}
 	local := workspace.FindLocal(proj, cfg.ID)
-	l := build(o, p, proj, cfg, local)
+	l := build(o, p, proj, cfg, local, &active{o: o, cfg: cfg, local: local})
 	if l == nil {
 		return
 	}
@@ -137,12 +134,12 @@ var cleanAtEnd = clean.SessionEnd
 
 // payloadAndProject reads the payload and finds the project, in the order spec §7 asks: with CLAUDE_PROJECT_DIR set,
 // the project first, so an unlinked folder costs nothing but draining stdin; without it, the payload's cwd. ok is
-// false when there is no linked project; p is nil when the payload does not read.
-func payloadAndProject(o Options) (p *Payload, proj string, ok bool) {
-	if dir := o.Getenv(ProjectEnv); dir != "" {
-		root, linked := findProject(dir)
-		if !linked {
-			drain(o)
+// false when there is no linked project; p is nil when the payload does not read (readStdin).
+func payloadAndProject(o Options) (p *hookin.Payload, proj string, ok bool) {
+	if dir := o.Getenv(hookin.ProjectEnv); dir != "" {
+		root, linked, err := hookin.FindProject(dir)
+		if err != nil || !linked {
+			hookin.Drain(o.Stdin, o.StdinTerminal)
 			return nil, "", false
 		}
 		return readStdin(o), root, true
@@ -151,60 +148,17 @@ func payloadAndProject(o Options) (p *Payload, proj string, ok bool) {
 	if p == nil || p.Cwd == "" || !filepath.IsAbs(p.Cwd) {
 		return nil, "", false
 	}
-	root, linked := findProject(p.Cwd)
-	return p, root, linked
+	root, linked, err := hookin.FindProject(p.Cwd)
+	return p, root, linked && err == nil
 }
 
-// readStdin reads and parses the payload: nil when it cannot (a terminal, too large, not a payload).
-func readStdin(o Options) *Payload {
-	if o.StdinTerminal || o.Stdin == nil {
-		return nil
-	}
-	raw, err := io.ReadAll(io.LimitReader(o.Stdin, MaxInput+1))
-	if err != nil || len(raw) > MaxInput {
-		return nil
-	}
-	p, err := ParsePayload(raw)
-	if err != nil {
+// readStdin reads the payload through the hook adapter, as the recorder takes it: nil when it does not read, or names
+// no event, or has no session id that can name a log file (there is nothing to record); a fault is passed over
+// (this package's comment).
+func readStdin(o Options) *hookin.Payload {
+	p, err := hookin.Read(o.Stdin, o.StdinTerminal)
+	if err != nil || p.Event == "" || p.Session == "" {
 		return nil
 	}
 	return p
-}
-
-// drain reads and drops the payload of a project that is not linked, so Claude Code never writes into a closed pipe.
-func drain(o Options) {
-	if o.StdinTerminal || o.Stdin == nil {
-		return
-	}
-	_, _ = io.Copy(io.Discard, io.LimitReader(o.Stdin, MaxInput))
-}
-
-// findProject finds the project a folder belongs to, as the guard does (internal/guard/hook.go): the folder itself or
-// the nearest one above it that holds bonsai.yaml, looking no higher than a checkout's top (a folder holding .git).
-// linked is false when there is none, or the folder cannot be read.
-func findProject(dir string) (root string, linked bool) {
-	abs, err := filepath.Abs(dir)
-	if err != nil {
-		return "", false
-	}
-	if fi, err := os.Stat(abs); err != nil || !fi.IsDir() {
-		return "", false
-	}
-	for d := abs; ; {
-		if _, err := os.Lstat(filepath.Join(d, workspace.ConfigFile)); err == nil {
-			return d, true
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			return "", false
-		}
-		if _, err := os.Lstat(filepath.Join(d, ".git")); err == nil {
-			return d, false
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			return "", false
-		}
-		parent := filepath.Dir(d)
-		if parent == d {
-			return abs, false
-		}
-		d = parent
-	}
 }
