@@ -84,7 +84,7 @@ func recordTargets(t *testing.T, l workspace.Local) []string {
 }
 
 // A huge folder, by the wall clock: 4,000 log files, of which 300 go (old, no span), 100 are old but kept (an ended
-// session with no row yet) and the rest are new. A run with a budget of 100 ms ends within the budget and
+// session with no row yet, one among each four old) and the rest are new. A run with a budget of 100 ms ends within the budget and
 // stepCeiling, and deletes only files it judged, each with its record; a run with time then finishes the job.
 func TestBudgetHugeFolder(t *testing.T) {
 	const files = 4000
@@ -96,8 +96,9 @@ func TestBudgetHugeFolder(t *testing.T) {
 		id := fmt.Sprintf("c%07d-0000-4000-8000-000000000000", i)
 		name := "s-" + id + ".ndjson"
 		switch {
-		case i%40 == 0: // old, kept: an ended session with no row
-			logFile(t, l, name, session(id, "none", daysAgo(41), daysAgo(40))...)
+		case i%40 == 0: // old, kept: an ended session with no row, among the old that go
+			end := daysAgo(40).Add(time.Duration(i) * time.Second)
+			logFile(t, l, name, session(id, "none", end.Add(-time.Hour), end)...)
 		case i%10 == 0: // old, goes
 			logFile(t, l, name, rec{event: "guard", at: daysAgo(40).Add(time.Duration(i) * time.Second), session: id})
 			goes = append(goes, target(Log, name))
