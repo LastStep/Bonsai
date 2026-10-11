@@ -20,9 +20,9 @@ package engine
 //   - A hook that fails to start, or a line run in PowerShell, does not block the call; with "onFailure": "block"
 //     (Claude Code 2.1.295 and later) it does, so the guard's line carries it (GuardOnFailure, settings.go).
 //
-// Test builds (note 2): a build made with
+// Test builds (note 2): a build made with, P standing for github.com/LastStep/Bonsai/internal/engine,
 //
-//	go build -ldflags "-X github.com/LastStep/Bonsai/internal/engine.hookPlace=<a place> -X github.com/LastStep/Bonsai/internal/engine.scratchRoot=<a folder>"
+//	go build -ldflags "-X P.hookPlace=<a place> -X P.scratchRoot=<a folder>" -o <a scratch folder>/bonsai ./cmd/bonsai
 //
 // writes that one place alone in its lines (b=<the place>; ...), so a scratch session runs the build it was linked
 // by, and refuses init, update and unlink in any folder outside its scratch root (confine), so a stamped line never

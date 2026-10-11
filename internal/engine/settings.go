@@ -104,9 +104,9 @@ const (
 // C:\Program Files\Bonsai\bonsai.exe as Git Bash names it, which only an administrator can place; then WSL's and
 // Linux's, which only root can place. Windows' comes first because on Linux a /c folder at the root needs root to make,
 // while under Git Bash /usr/local/bin is a folder inside Git's own install, which a Git for Windows installed for one
-// user lets that user write (check's git-user finding). They are the same on every machine and name no user, the one
-// named exception to check 2's rule that no committed file holds a full path. Their one home: the hook lines (HookCommand),
-// check, and from step 5.6 the installers read them. The PATH is never read.
+// user lets that user write (check's git-user finding). They are the same on every machine and name no user, the
+// one named exception to check 2's rule that no committed file holds a full path. Their one home: the hook lines
+// (HookCommand), check, and from step 5.6 the installers read them. The PATH is never read.
 const (
 	PlaceWindows = "/c/Program Files/Bonsai/bonsai.exe"
 	PlaceLinux   = "/usr/local/bin/bonsai"

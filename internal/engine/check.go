@@ -18,8 +18,10 @@ package engine
 //     memory notes name (missing-path), and the run reports past generated.run's rule (run-reports);
 //   - checkhistory.go: approve_first from git history (approve-first, approve-first-unchecked);
 //   - checksettings.go: Claude Code's settings in the project (settings-rule, hooks-off, settings-env, plugin-version);
-//   - checkmachine.go: this machine's records in the home and the PATH (machine-record, id-changed, same-id, bonsai-path);
-//   - checkgitbash.go: on Windows, Git Bash where Claude Code looks for it, installed for all users (git-bash, git-user).
+//   - checkmachine.go: this machine's records in the home and the PATH (machine-record, id-changed, same-id,
+//     bonsai-path);
+//   - checkgitbash.go: on Windows, Git Bash where Claude Code looks for it, installed for all users (git-bash,
+//     git-user).
 //
 // Two more need Claude Code, so cmd/bonsai runs them after Check and status never does (status stays cheap and
 // offline, contract section 12): what Claude Code reports installed (ComparePlugins, plugins.go: plugin, plugin-missing,

@@ -17,8 +17,8 @@ package main
 // command in a terminal of their own. The variable counts when it holds any value, as interactive (engine.go) reads it
 // for the y/N question: Claude Code sets it to 1, and tests clear it to run as a person (testpack.Isolate). The guard's
 // rule 7 judges the same commands in a shell call, and a line that unsets the variable, as a second layer: a flag in a
-// variable, a script or xargs is hidden from it, but not from the command. A test build (engine.Stamped) skips this: its scratch
-// root confines it (engine's confine), so builders' links to the test pack keep working.
+// variable, a script or xargs is hidden from it, but not from the command. A test build (engine.Stamped) skips this:
+// its scratch root confines it (engine's confine), so builders' links to the test pack keep working.
 //
 // --allow-exec has one spelling: the word tables' parser takes --allow-exec alone and refuses --allow-exec=true and
 // any other spelling, and no variable or file stands for it.

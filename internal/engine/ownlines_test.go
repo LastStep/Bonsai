@@ -187,10 +187,10 @@ func TestOwnLinesOfAProjectLinkedBefore(t *testing.T) {
 	}
 }
 
-// The stop gate's line (step 5.3.4 note 6): bonsai hook stop in Bonsai's form, blocking, on Stop, timeout 10, no matcher, with its
-// sentence. A first link writes it on --yes alone, among Bonsai's own lines; a project linked by a build before it
-// (every other own line in place) takes it at its next update only with --allow-exec and --yes, the update refused
-// whole and nothing written without, and check warns until then; unlink takes it out.
+// The stop gate's line (step 5.3.4 note 6): bonsai hook stop in Bonsai's form, blocking, on Stop, timeout 10, no
+// matcher, with its sentence. A first link writes it on --yes alone, among Bonsai's own lines; a project linked by a
+// build before it (every other own line in place) takes it at its next update only with --allow-exec and --yes, the
+// update refused whole and nothing written without, and check warns until then; unlink takes it out.
 func TestStopLineOfAProjectLinkedBefore(t *testing.T) {
 	var stop *Line
 	for i, l := range ownHooks {
