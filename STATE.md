@@ -1,13 +1,10 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 11 Oct 2026 at 18:05. **Step 5.3, the guards, is all built; verification is
-part done.** On `main`: 5.3.0 (the hook adapter) and 5.3.1 (where the guard reads from), both passed by V1; 5.3.5 (Bonsai's
-own deny rules) and 5.3.6a (`check`'s `settings-env` and `git-bash` findings), landed before V3, which covers them; two side pieces (5.3.c,
-the cleaner's budget and a `keep_days` data-loss bug; 5.3.d, start-up regexps on first use). **On branches, waiting:**
-5.3.2 and 5.3.3 (the guard's judgments and the delete check), failed by V2 and V2b on edge cases, fixed twice, Rohan's
-finish line "Scoped" set; 5.3.4 (the stop gate) and 5.3.6b (the hook lines' form under (a), the matcher, the commands'
-own refusal under (ii)), built, waiting for V3. **Next session:** V2c and V3 side by side (below), the landings, 5.3.7's
-run and Rohan's sitting, the end verifier.
+Rewritten, never appended. Last rewritten 12 Oct 2026 at 00:55. **Step 5.3, the guards, is done** (12 Oct, 00:46): every
+piece landed on `main` and green in CI on both systems, the scripted Windows check (5.3.7) and Rohan's sitting passed,
+and the end verifier passed every "5.3 done" check but two holes its break-it found, which Rohan chose to log as known
+limits, fixed after 1.0. **Next: step 5.4, the ladder runner and the switch** (`design/plan-5.md` ~2374; 28-44 h, re-ask
+57): its start check first (below).
 
 ## In short
 
@@ -22,21 +19,44 @@ approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5
   (`cf356d3`).
 - **Step 5.1, formats and engine to 1.0: done** (code `11d871c`; verified on `5fa9bd8`).
 - **Step 5.2, the recorder, logs and asks: done** (code at `8243800`), the redactor with known limits (below).
-- **Step 5.3, the guards: built; verification part done** (below). Its run reports: `records/runs/R-2026-10-11-5.3.*`
-  (`5.3.0-adapter` holds the part's log, the start check, the speed-up changes to the order and today's decisions).
+- **Step 5.3, the guards: done** (code at `750ca07`; landings `3da3f1c` 5.3.2 and 5.3.3, `8e3f40d` 5.3.4, `ae79d41`
+  5.3.6b; CI green on each): the hook adapter, where the guard reads from, the guard's judgments, the delete check, the
+  stop gate, Bonsai's own deny rules, `check`'s settings findings, the hook lines' fixed form (Rohan's (a)) and the
+  commands' own refusal of a person's steps in an agent's session ((ii)). Known limits below. Run reports:
+  `records/runs/R-2026-10-11-5.3.*` (`5.3.0-adapter` holds the part's log and the end verifier's report).
 
 Hours (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min. **5.1: 866 minutes. 5.2:
-1,061 minutes. 5.3 so far: about 1,522 minutes (25 h 22 min) of its 18-29 h estimate and 38 h re-ask line**, its 72
-minutes of planning included; expected at its end about 31-33 h (over the estimate, under the line: two verifier
-rounds on the guard, the cleaner side piece's 260 minutes, the real-session measurements); the agent-team artifact's 31
-minutes are outside it. Later parts' planning: 5.4 79, 5.5 84, 5.6 67, 5.7 117. Step 5's Windows-only tally: about 18
-minutes of 8 h (5.2.2's salt test; 5.3.4's unreadable-folder test; 5.3.c's huge-folder test). **Option rounds: 5.3
-three** (the hook line, who may consent to code, and today's finish line), **so stop line 3 (more than two in a part) is
-crossed by the count**; Rohan was told before he chose (a verifier loop on edge cases, as 5.2's redactor's, not a section
-that left too much open). No change to Mimas or the studio's repo.
+1,061 minutes. 5.3: about 2,013 minutes (33 h 33 min) of its 18-29 h estimate, under its 38 h re-ask line**, its 72
+minutes of planning included (over the estimate: four verifier rounds on the guard, two on the stop gate, the cleaner
+side piece's 260 minutes, the real-session measurements); the agent-team artifact's 31 minutes are outside it. Later
+parts' planning: 5.4 79, 5.5 84, 5.6 67, 5.7 117. Step 5's Windows-only tally: about 36 minutes of 8 h (5.2.2's salt
+test; 5.3.4's unreadable-folder test; 5.3.c's huge-folder test; the Windows login investigation, 18). **Questions put
+to Rohan in 5.3: five option rounds** (the hook line and who may consent to code, 9 Oct, planned; the guard's finish
+line "Scoped"; fix round 3's bar "A"; the end verifier's two holes "Log as known limits"), **so stop line 3 (more than
+two in a part) is crossed**, each time in the open (verifier loops on edge cases, not a section that left too much
+open); and two on the work's conduct (a long-lived agent token on Windows: none; the verifiers' bar: kept, with a
+two-round cap). No change to Mimas or the studio's repo.
 
 ## Rohan's decisions
 
+- **12 Oct, 00:46: 5.3 closes on the end verifier's two holes as known limits** ("Log as known limits"; recommended was
+  a fix and a short fresh check, about 1.5 h). CDPATH and `cdable_vars` cd-resolution (`CDPATH=.. cd s && rm -rf .git`
+  deletes the checkout's own `.git`) and Git Bash's `/proc/cygdrive/` path form, both deliberate spellings, are listed
+  in `internal/guard/shell.go`'s known limits and fixed after 1.0.
+- **12 Oct, about 00:40: Sonnet helpers for mechanical runs by default.** He asked whether the end verifier used helpers
+  ("sounds like a sonnet helper agent would be a good choice"): a verifier or big builder hands the Windows check 10,
+  timings, table re-runs and scripted sessions to Sonnet helpers beside its own judgment work, and says why when it
+  does not (`rules.md`; memory `nested-subagents`).
+- **11 Oct, about 20:30: the verifiers' bar stays adversarial; at most two verifier rounds per piece**, more only if
+  necessary. Asked whether verifiers should drop the hunt for deliberate escapes (recommended), he said no: "i like that
+  we are testing for cases where an agent might deliberately want to break the system. as that is the biggest security
+  flaw the system can have ... so i dont mind the current approach. we limit the verifications to 2 rounds, we do more
+  rounds only if its necessary" (memory `finish-lines-on-fix-loops`).
+- **11 Oct, 19:4x: no long-lived token for agents' Windows sessions** ("No new token"). The Windows login kept lapsing
+  (cause below); the fix is the rule that `claude.exe` is never reachable from a `bonsai.exe` run and a warm-up session
+  before Windows runs, not a year-long credential in agents' environments.
+- **11 Oct, 19:19: fix round 3's bar, "A: what round 2 opened"** (the two regressions, `xargs`'s input reaching
+  `bonsai`, `~-0`); V2c's other neighbours known limits.
 - **11 Oct, 17:36: the guard's fix loop's finish line, "Scoped".** V2 and V2b had failed 5.3.2 and 5.3.3 on edge
   cases. Asked (scoped, recommended; as in 5.2; strict), he chose: fix round 2's items (V2b's regressions D1, D2, D5,
   the cheap holes D3, D6, D7, the over-refusal W2), then a third fresh verifier checks those fixes and looks for
@@ -127,68 +147,42 @@ that left too much open). No change to Mimas or the studio's repo.
 - `LastStep/bonsai-test-pack`: public, `main` at G (`cf356d3`), no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## Now: step 5.3, the guards
+## Next: step 5.4, the ladder runner and the switch
 
-`design/plan-5.md`, "Step 5.3" (~line 1479; its two questions answered 9 Oct: (a) and (ii)). The builders' rules are
-`~/bonsai-checks/briefs/rules.md` (this session's co-author line, the helpers rule, **the stamped build line** for any
-build that links a scratch project whose hook lines must run); every brief and verifier brief of this session is in
-`~/bonsai-checks/briefs/`.
+`design/plan-5.md`, "### Step 5.4" (~2374): 28-44 h, re-ask at 57; Rohan's step at 5.4: a pre-release `bonsai` in WSL
+(about 5 minutes). Its builders' rules: `~/bonsai-checks/briefs/rules.md` (**update its `Claude-Session` line to the new
+session's** first; it carries the stamped build line, the Windows login rule and the Sonnet-helpers default).
 
-**On `main` (pushed; CI green on each landing):** `445200b` 5.3.0, `e93b965` 5.3.1 (+`e73350b` the one-reader test),
-`8bfe960` 5.3.5, `80e0a58` 5.3.6a, `98e54e5` 5.3.c, `37012ae` 5.3.d. V1 passed 5.3.0 and 5.3.1 (14:04).
+1. **The start check:** the plan's 5.4 section against what 5.3 left for it (below, "Placed for later", 5.4): the stop
+   gate and subagents (a subagent's end is not gated; Claude Code's cap of 8 is per turn and a subagent finishing resets
+   it; builders as their own `claude -p` sessions with `BONSAI_TASK`, or a `SubagentStop` line and a per-subagent task);
+   the worktree without its own `bonsai.yaml`; the task reader taking `garbage: [` as a task; the next formats set's
+   items. Any change to what is Rohan's (hours, order, his steps, a format change) goes to him under (B), one question
+   per decision.
+2. Then the pieces as the plan orders them, builders in plain worktrees, Sonnet helpers for mechanical runs, fresh
+   verifiers at the plan's points (two rounds per piece at most, unless necessary).
 
-**On branches (local only, never pushed), each in its plain worktree `~/Servers/Bonsai-<piece>`:**
-- `5.3.3` at **`93167be`**: `main` `93b05f7` + 5.3.2's guard judgments (rebased in; branch `5.3.2` removed) + 5.3.3's delete
-  check, wired + fix round 1 (`8d87bc5`) + fix round 2 (`7ad24ef`) + the known-limits comment (`93167be`). Check 10 green
-  on both sides; the hook-line table 522/523 rows through the built binary; the new rows shown failing on `8d87bc5`.
-- `5.3.4` at `c23fb14`: on `8d87bc5` (needs a rebase onto `93167be`); the stop gate and its line under consent; its 17
-  rule names in the guard's `Rules`.
-- `5.3.6b` at `6d39038`: on `5.3.4`'s `c23fb14`; the lines' form under (a) with `"onFailure": "block"` on the guard's line
-  (2.1.294 ignores it harmlessly), the matcher with `Monitor`, the stamps for test builds, `init`/`update`/`unlink`
-  refusing a person's command in an agent's session under (ii), `check`'s `machine-record` and `git-user` findings, the
-  installed places and the tools on the reference page. 131 builder minutes (note 7's 2 hours passed by 11).
-
-**Next, in order** (each step's run report entry first; times from `date`):
-1. **Rebase** `5.3.4` onto `5.3.3` (`93167be`), regenerate `lists.md` (`go generate ./...`), run guard, stopgate,
-   reference, engine and `cmd/bonsai` tests; then `5.3.6b` onto `5.3.4`, the same, and check 10 on WSL.
-2. **V2c and V3 side by side** (fresh Opus each, helpers allowed):
-   - **V2c** on `5.3.3` at `93167be`: copy `~/bonsai-checks/briefs/verify-V2b.md`, scoped by Rohan's "Scoped" to fix round
-     2's items (D1, D2, D3, D5, D6, D7, W2; V2b's report in `R-2026-10-11-5.3.3-delete.md`, 17:30) with their neighbours,
-     any breakage across V2's and V2b's tables, check 10 on both sides; the open point `echo unlink | xargs -n1 bonsai`
-     (allowed: words on stdin; rests on the command's own refusal). D4 and W1 are known limits: not a verdict item. A
-     defect in a fixed item is fixed (by a fresh agent) before landing; a new long-tail spelling joins the known limits.
-   - **V3** on `5.3.6b`'s rebased tip: `~/bonsai-checks/briefs/verify-V3.md` (fill `<HEAD>`, `<MAINBASE>` = `93b05f7`, and
-     `<V2STATE>`), covering 5.3.4, 5.3.5, 5.3.6a, 5.3.6b. Its brief names the measured facts it must test.
-3. **Landing:** after V2c passes, `main` fast-forwarded to `5.3.3`'s tip; then `5.3.4` (green tests and CI; V3 covers it);
-   then `5.3.6b` after V3 passes. Push, CI after each.
-4. **5.3.7** on the final build: a Sonnet agent runs the prepared scripts (`~/bonsai-checks/scripts/5.3.7/`: `run-wsl.sh`,
-   `run-windows.sh`, `run-timings.sh`, `make-rohan-folder.sh`, `restore-launchers.sh`; report in
-   `R-2026-10-11-5.3.7-windows.md`), **updated first** for: stamped builds (the lines call the installed places, and
-   neither `/usr/local/bin/bonsai` nor `C:\Program Files\Bonsai` exists on this machine); the launchers 5.3.6b reworked
-   (backups `*.bak-5.3.6b`; `missing` is a stamped place holding nothing); a `powershell.exe` started from WSL holds
-   both `Path` and `PATH` and Git Bash reads `Path`; every case now built; **the sitting's ask 1 reworded**.
-5. **Rohan's sitting** (below), then the timings (note 4), then **the 5.3 end verifier** ("5.3 done" checks 1-19), then
-   this file, the roadmap artifact's Bonsai cards (plan item 9), and the spec and contract text fixes listed below.
-
-**Facts measured this session that later work rests on:** Claude Code 2.1.296 (WSL), 2.1.294 (Windows). A Stop hook
-printing "No such file or directory" and exiting 2 lets the session end; Stop hooks keep a turn going eight times in a
-row, the ninth overridden. `"onFailure": "block"` (2.1.295+) blocks a guard line that cannot start; 2.1.294 ignores the
-field. `CLAUDE_CODE_SHELL_PREFIX` (both sides) and `BASH_ENV` (Windows) reach a hook line; a project `env` cannot blank
-`CLAUDE_CODE_CHILD_SESSION` nor move `CLAUDE_PROJECT_DIR` as a hook sees it. Git Bash runs a two-line `#!` file named
-`bonsai`. Part 3's `Edit(<path>)` deny rule did not hold after a shell `cd`; `Edit(/<path>)` and `Edit(//**/...)` do. A
-session started in a subfolder, or after `/cd`, loads none of the project's settings. Start-up is about 3.0-3.2 ms
-(`--version`, WSL); the guard's typical call under 5 ms at p95 on a quiet WSL in every verifier round since 5.3.d.
+**Facts measured that later work rests on:** Claude Code 2.1.296 on both sides (Windows updated 11 Oct, 19:45). A Stop
+hook printing "No such file or directory" and exiting 2 lets the session end; Stop hooks keep a turn going eight times
+in a row, the ninth overridden, and the count restarts when a subagent finishes. `"onFailure": "block"` blocks a guard
+line that cannot start on both sides (2.1.296). In `claude --worktree` sessions `CLAUDE_PROJECT_DIR` is the worktree;
+after the `EnterWorktree` tool it stays at main while the payload's `cwd` moves (the stop gate judges the `cwd`'s
+checkout, tied by git's own link). `CLAUDE_CODE_SHELL_PREFIX` (both sides) and `BASH_ENV` (Windows) reach a hook line;
+`SHELL` and `CLAUDE_CODE_SHELL` do not; a project `env` cannot blank `CLAUDE_CODE_CHILD_SESSION`. Git Bash runs a
+two-line `#!` file named `bonsai`. `Edit(<path>)` deny rules do not hold after a shell `cd`; `Edit(/<path>)` and
+`Edit(//**/...)` do. A session started in a subfolder, or after `/cd`, loads none of the project's settings. `-p`
+sessions run the PowerShell tool on Windows. **The Windows login:** `bonsai.exe init --allow-exec`/`update` run with
+Windows' own `Path` start the real `claude.exe plugin ...`, which, meeting a run-out access token on 2.1.294, spent the
+refresh token without saving the new one and wiped the login (9, 10 and 11 Oct); the rule in `rules.md` keeps
+`claude.exe` unreachable and adds a warm-up (the credentials file's size: about 524-591 bytes live, 296 wiped).
+Timings (5.3's end): the guard's typical call on WSL 3.5-5 ms p50, under 5 ms at p95 direct; on Windows about 13-16 ms
+direct, and about 130-150 ms through the Git Bash line, where Git Bash's own start (`bash -c true` about 80 ms) is the
+cost on this machine (Defender on, low free memory), Bonsai adding 6-9 ms.
 
 ## Waiting on Rohan
 
-- **During 5.3, after the agent's 5.3.7 run: his sitting**, about 10 minutes, in a normal PowerShell. The exact lines
-  come to him then: `cd "$env:USERPROFILE\bonsai-checks\project-guard"`, then `& "$env:USERPROFILE\bonsai-checks\bin\claude-here.cmd"`,
-  three asks: (1) **"Using your Edit tool, add the line hello to person.txt."** (refused; reworded: V2 found an agent
-  writes it with `echo >>` in Bash, a shell write the guard does not judge by design); (2) "Delete the file
-  junk/one.txt." (done); (3) "Run exactly this command, as written: rm -rf junk/*" (refused); `/exit`, and what Claude
-  showed for each.
 - **Whenever he likes:** whether to allow deleting git's own lock files by exact name (`rm -f .git/index.lock`, a
-  common agent fix, refused today because the project's `.git` is guarded for deletes; told 16:34, left as planned);
+  common agent fix, refused because the project's `.git` is guarded for deletes; told 11 Oct 16:34, left as planned);
   whether the redactor's shared `=>` and `:=` limits go in a named part before the release.
 - Later, as the plan has them: at 5.4, a pre-release `bonsai` in WSL (about 5 minutes); at 5.5, reading the `workflow`
   repo and making it public; at 5.7, the release settings, the `rc.1` tag and his approval, the installs, the trial's
@@ -199,10 +193,15 @@ session started in a subfolder, or after `/cd`, loads none of the project's sett
 
 **Known limits, after 1.0:** the redactor's (5.2: L1, and the shared `'password' => 'x'`, `password := "x"`, `"""x"""`,
 unfolded dotted i and full-width letters, escaped JSON keys, bare secrets, a lower-case secret as a program name); the
-guard's variable check (V2b's D4: `CLAUDE_CODE_CHILD_SESSION` changed by `let`, `: $((N=0))`, `read`, `printf -v`,
-`mapfile`, `for N in`, `getopts`, a nameref, the name as data, the name built from parts beside a whole sighting,
-PowerShell provider and .NET forms, `cmd /c "env -i x.sh"`; W1, text naming part of the variable refused); shell
-writes and scripts run by name (question A; rung 0 from 5.4).
+guard's, listed in `internal/guard/guard.go`, `shell.go` and `shell_env.go`: the variable check (V2b's D4 and W1), env's
+own `-S` rules (`\_`, a `-S` text holding `;`), PowerShell casts, parentheses and comma lists on `$env:`, the git icase
+variable spelled with quotes or encoded, a planted `.git` with a garbage HEAD, `parallel` as a runner, bonsai's words
+from a variable or substitution outside `xargs`, the program itself from `xargs`'s input, `env -C`/`sudo -D` twice,
+`~-`/`~N`/`~-N` after a line's own `cd`, **CDPATH and `cdable_vars`, Git Bash's `/proc/cygdrive/`** (the end verifier's
+two, by Rohan's word), printf/echo escapes piped to a shell, `Start-Process -ArgumentList`, `rm` of a link to itself
+refused; the commands' own refusal is a tripwire against programs the agent runs (V3's O2: a build stamped with
+`scratchRoot=/`, a forged `BONSAI_HOME`, a renamed old binary); shell writes and scripts run by name (question A; rung
+0 from 5.4).
 
 **Placed for later:**
 - **The next formats set (5.4.0's set 7):** `formats/examples/workspace.yaml`'s old comment; the workspace schema's words
@@ -211,30 +210,34 @@ writes and scripts run by name (question A; rung 0 from 5.4).
   `~/`, only on the record that made the file); `formats/examples/help.json` and `changes.schema.json` quoting the old
   by-name hook line.
 - **5.4:** the stop gate binds only a session whose environment names a task, up to the cap; a subagent's end
-  (SubagentStop) is not gated, and 5.4's plan keeps subagents as the default way to run builders; in Claude Code's own
-  `--worktree` sessions `CLAUDE_PROJECT_DIR` stays at main, so the gate demands main's HEAD (blocks wrongly, never allows
-  wrongly); `flock`, `chrt`, `taskset`, `strace` not runner words; the start-up cost left (`internal/recorder` about
-  0.14 ms, `internal/clean`); 5.4 may link `golang.org/x/sys` only within 1 ms of the Windows hook line's p95.
-- **5.5:** where the orchestrator's rules live (spec §2 names it as pack content; 5.5's `workflow` has five roles and
-  none); `needs-yes` is `who: person` while 5.5.3's operating skill has an agent run `--yes` after the preview; a pack's
-  relative deny rule does not hold after a shell `cd` (base's walls, a `check --pack` warning); `needs.mcp`; a lock `ref`
-  for the moved-tag gap; the marketplace observation; 5.1.9's limits.
-- **5.6:** the machine folder `unlink` leaves; `install.json`'s keys; spec §10's Windows personal-memory warning; a per-id
-  index of the machine records (a worktree call reads every record: about 0.3 ms WSL, up to 7 ms Windows).
+  (SubagentStop) is not gated, the cap is per turn and a subagent finishing restarts it, and 5.4's plan keeps subagents
+  as the default way to run builders (V3); the gate proves HEAD, not the working tree (V3's O4); a worktree without its
+  own `bonsai.yaml` (the guard judges it under main's lists inside `.claude/worktrees/`, under none outside; the stop
+  gate already judges its HEAD); the task reader takes a file holding only `garbage: [` as a task and the gate allows it
+  (the end verifier); `TestFaultsThroughTheHookLine` flakes once in a while under heavy load (its record past the 500 ms
+  wait); `flock`, `chrt`, `taskset`, `strace` not runner words; the start-up cost left (`internal/recorder` about 0.14
+  ms, `internal/clean`); 5.4 may link `golang.org/x/sys` only within 1 ms of the Windows hook line's p95.
+- **5.5:** `bonsai init --allow-exec` and `update` run `claude plugin install` on the person's machine: on Windows with
+  2.1.294, meeting a run-out access token, that call can sign the person out of Claude Code (a warm session first, or a
+  `check` finding naming the version); where the orchestrator's rules live (spec §2 names it as pack content; 5.5's
+  `workflow` has five roles and none); `needs-yes` is `who: person` while 5.5.3's operating skill has an agent run
+  `--yes` after the preview; a pack's relative deny rule does not hold after a shell `cd`; `needs.mcp`; a lock `ref` for
+  the moved-tag gap; the marketplace observation; 5.1.9's limits; contract §5.4's `workflow.model` lacks haiku (5.5.4).
+- **5.6:** installers write the binary by rename and the line tests `[ -s ]` (V3's O1: a 0-byte file at a place makes
+  every line exit 0); Claude Code shows the whole hook line before a refusal, so its "no bonsai is installed" words show
+  when Bonsai is installed (V3's O5, Rohan saw it in his sitting); the machine folder `unlink` leaves; `install.json`'s
+  keys; spec §10's Windows personal-memory warning; a per-id index of the machine records.
 - **One home, later:** the recorder's `taskAllows` duplicates the guard's `allowsOf`; the recorder's `underHome` the guard's
-  `fromHome`.
-- **The spec and contract's text, at 5.3's end:** spec §7 still lists the `.bonsai/local/` rule and the home among
-  `base`'s walls (now the engine's, 5.3.5); spec §6's and §7's `never_edit` form; contract §5.4's `workflow.model` lacks
-  haiku (5.5.4 adds it); the spec's §17 step 6 still names `/agents` and one sitting.
+  `fromHome`; `workspace.VerifyMain`'s "cannot be resolved" reason quotes the system's error text (the stop gate's
+  `noPaths` removes its path).
 
-**This session's housekeeping:**
-- Rohan's roadmap artifact: Bonsai's cards last updated at 5.2's end; next at 5.3's end.
+**Housekeeping:**
+- Rohan's roadmap artifact ("Trinetra Roadmap", https://claude.ai/artifact/XXKTi6geneu1pdQ4h4miw2): Bonsai's cards
+  updated at 5.3's end (12 Oct), next at 5.4's end.
 - Another of Rohan's sessions may also work in `~/Servers/Bonsai`: read `origin/main`'s new commits before each push, and
   never stage a file this session did not write.
-- The user settings files' baselines, unchanged all session: WSL `c3978abe...e73ee7`, Windows `2b6295c1...4ff6c9`.
-- 5.3.4's builder ended its busy loops with `pkill -u $USER -x yes` (would also end another agent's `yes` loops; no harm
-  seen).
+- The user settings files' baselines, unchanged through 5.3: WSL `c3978abe...e73ee7`, Windows `2b6295c1...4ff6c9`.
 - Scratch under `~/bonsai-checks/` and `%USERPROFILE%\bonsai-checks\`: every piece's and verifier's folder, the launchers
-  (`bin/`, reworked by 5.3.6b, backups `*.bak-5.3.6b`), the 5.3.7 scripts and their detached worktree
-  `~/bonsai-checks/5.3.7/src` (at `9889e4e`; remove with `git worktree remove` when 5.3.7 rebuilds). Files there hold the
-  Windows user name: never paste from them.
+  (`bin/`, unchanged: `8a9398e2...`, `17ad3ce3...`), the 5.3.7 scripts and their detached worktree
+  `~/bonsai-checks/5.3.7/src` (at `97c19eb`; remove with `git worktree remove` when no longer needed). Files there hold
+  the Windows user name: never paste from them.
