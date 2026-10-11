@@ -427,7 +427,7 @@ documents:                          # where this project keeps the documents Bon
 protected: [".claude/**", "bonsai.yaml", ".bonsai/lock.json", "studio/protocols/**", ".github/**", "docs/PLAN.md", "docs/research/**"]
 # person_only: of those, the paths only a person grants (an approve or grant tap)
 person_only: [".claude/**", "bonsai.yaml", ".bonsai/lock.json", "studio/protocols/**", ".github/**"]
-never_edit: ["studio/ledger.json"]  # paths no agent ever changes; written as deny rules
+never_edit: ["studio/ledger.json"]  # paths no agent ever changes; written as deny rules, Edit(/<path>)
 ladder_floor: [0, 1, 2, 3, 4]       # the rungs every task climbs, whatever the task lists
 ladder: []                          # the rungs: what each runs and what it proves (left out here)
 ratchets: {}                        # counts that may only rise; they rise when a person taps Bless
@@ -607,7 +607,7 @@ own table for its entries, and from the pack's `pack.yaml` for a pack's deny rul
           Agents cannot read your SSH keys (base: the walls).
   change  hook  PreToolUse: bonsai hook guard || exit 2
           Checks every file edit and shell command against the task's rights; blocks if bonsai is missing.
-  remove  deny  Edit(studio/old-ledger.json)
+  remove  deny  Edit(/studio/old-ledger.json)
           This file is no longer in never_edit in bonsai.yaml, so agents may edit it again.
 ```
 
@@ -703,9 +703,16 @@ running after `unlink` or on a commit from before the link. An `rm` of `bonsai.y
 protected path); another shell route is caught after the fact, as question A says.
 
 **Deny rules the engine writes** (in `.claude/settings.json`, kind `keys`):
-- `Edit(...)` for each `never_edit` path. One such rule stops the Edit, Write, Bash (redirects, in-place edits, copies)
+- `Edit(/<path>)` for each `never_edit` path, the project-root form: the path is read from the project's top folder,
+  whatever folder a shell has since moved to. One such rule stops the Edit, Write, Bash (redirects, in-place edits, copies)
   and PowerShell routes in bypass mode, on both machines (P2, 5 Oct); only a write wrapped in another interpreter gets
   past. Today's ledger guard becomes this rule.
+
+  > **Changed 11 Oct (5.3.5; `records/runs/R-2026-10-11-5.3.5-deny.md`):** the rule was `Edit(<path>)` since part 3. It
+  > did not hold after a shell `cd` into a subfolder (measured on Claude Code 2.1.296 in WSL and 2.1.294 on Windows: a
+  > Write by absolute path and `echo > ../ledger.json` were both allowed), while `Edit(/<path>)` held before and after,
+  > as `Edit(//**/...)` does. `never_edit` now writes the `/<path>` form. A project linked before shows each such rule as
+  > one line changed.
 - Deny rules cannot open for a granted task, so grantable protected paths stay with the guard hook.
 - Base's baseline: the walls (below). **Bonsai's own rules** (the engine writes them into every linked project whatever
   its packs, first in the deny list; 5.3.5, 11 Oct): `Edit(//**/.bonsai/local/**)`, `Edit(//**/.bonsai/sessions.md)`,
