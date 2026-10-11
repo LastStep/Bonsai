@@ -166,6 +166,7 @@ type delRun struct {
 	found    bool      // a delete was judged
 	first    string    // the first operand judged, project-relative, for an allow's target
 	firstSet bool      // first is set (it may be "": an operand outside the project)
+	feed     string    // set while splitting text a shell runs under xargs: its deletes' operands come from input
 	deny     *Decision // the first refusal
 }
 
@@ -494,6 +495,9 @@ func (r *delRun) judge(a delAct, x delExec) {
 	verb := "deletes"
 	if a.move {
 		verb = "moves"
+	}
+	if x.feed == "" {
+		x.feed = r.feed
 	}
 	if x.feed != "" {
 		r.refuse(Decision{Rule: delRuleUnnamed, Why: fmt.Sprintf("%s refused: %s does not name what it %s: its "+

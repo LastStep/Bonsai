@@ -269,6 +269,14 @@ var delTable = []delRow{
 	{tB, "", "stdbuf -o0 rm -rf junk/*", delRuleUnnamed, ""},
 	{tB, "", "zsh -c 'rm -rf junk/*'", delRuleUnnamed, ""},
 	{tB, "", "dash -c 'rm -rf junk/*'", delRuleUnnamed, ""},
+	{tB, "", "chronic rm -rf junk/*", delRuleUnnamed, ""},
+	{tB, "", "unbuffer rm -rf junk/*", delRuleUnnamed, ""},
+	{tB, "", "fakeroot -- rm -rf junk/*", delRuleUnnamed, ""},
+	{tB, "", `ls | xargs sh -c 'rm "$1"' _`, delRuleUnnamed, ""},
+	{tP, "", "Remove-Item (Get-Item x).FullName -Recurse", delRuleUnnamed, ""},
+	// A computed operand outside a recursive or bulk delete is judged as written (note 3 refuses a variable only
+	// there), so this one is not seen: the check's known limit, kept visible.
+	{tP, "", "Remove-Item (Get-Item bonsai.yaml).Name", delRuleNamed, ""},
 	{tB, "", "ls; rm -rf junk/*", delRuleUnnamed, ""},
 	{tB, "", "ls && rm -rf junk/*", delRuleUnnamed, ""},
 	{tB, "", "false || rm -rf junk/*", delRuleUnnamed, ""},

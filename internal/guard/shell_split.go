@@ -391,7 +391,15 @@ func (sc *shScan) words(cmd *shCommand, closer byte) {
 			}
 			if l := sc.nested(closeBy); l != nil {
 				cmd.nested = append(cmd.nested, shNest{list: l, sub: c == '('})
-				cmd.words = append(cmd.words, shWord{text: sc.s[p:sc.i], raw: sc.s[p:sc.i], expand: true})
+				w := shWord{text: sc.s[p:sc.i], raw: sc.s[p:sc.i], expand: true}
+				if sc.i < len(sc.s) && sc.blank(sc.i) == 0 && !sc.ends(cmd, closer) && strings.IndexByte("(){}<>,", sc.s[sc.i]) < 0 {
+					// (Get-Item x).FullName: what follows the brackets is the same argument
+					rest := sc.word(cmd)
+					w.text += rest.text
+					w.raw = sc.s[p:sc.i]
+					w.glob, w.comma = rest.glob, rest.comma
+				}
+				cmd.words = append(cmd.words, w)
 			}
 		case sc.d == shPower && c == '&' && len(cmd.words) == 0 && !sc.at("&&"):
 			sc.i++ // PowerShell's call operator: the next word is the program

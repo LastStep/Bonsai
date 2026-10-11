@@ -164,6 +164,10 @@ var delRunners = []delRunner{
 			"verbose", "exit", "open-tty", "show-limits"}, longVal: []string{"arg-file", "delimiter", "max-args", "max-lines",
 			"max-procs", "max-chars", "process-slot-var"}, longOpt: []string{"eof", "replace"}}},
 	{Word: "busybox", In: delInBash, Does: "skipped: the word after it is the program"},
+	{Word: "chronic", In: delInBash, Does: "skipped"},
+	{Word: "unbuffer", In: delInBash, Does: "skipped"},
+	{Word: "fakeroot", In: delInBash, Does: "its options skipped",
+		opt: delOpt{shortVal: "lsi", long: []string{"unknown-is-real", "version", "help"}, longVal: []string{"lib", "faked"}}},
 	{Word: "watch", In: delInBash, Does: "its options skipped; its words joined and split again, as sh -c runs them, unless -x (--exec)",
 		opt: delOpt{short: "bcdegptwx", shortVal: "nq", long: []string{"beep", "color", "no-color", "errexit", "chgexit",
 			"precise", "no-title", "no-wrap", "exec", "help", "version"}, longVal: []string{"interval", "equexit"},
@@ -456,8 +460,13 @@ func (r *delRun) unknownProgram(x delExec) {
 	r.judge(delAct{word: "a program named by a variable", recursive: true, tree: true, ops: delOps(ops, x.d, false, false)}, x)
 }
 
-// shell splits again the text a shell is given; false when the program is not a shell.
+// shell splits again the text a shell is given; false when the program is not a shell. A shell run by xargs passes
+// xargs's input on to the deletes in its text.
 func (r *delRun) shell(name string, x delExec) bool {
+	if x.feed != "" && r.feed == "" {
+		r.feed = x.feed
+		defer func() { r.feed = "" }()
+	}
 	switch {
 	case delBashNames[name]:
 		r.bashShell(x)
