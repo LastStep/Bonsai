@@ -26,9 +26,12 @@ package guard
 // What it leaves (note 5; question A): a shell write to a guarded path (a redirect, cp or ln over it, an
 // interpreter such as python -c or node -e) is not judged, nor a delete inside a script run by name, nor, in
 // another linked project, a named delete below its top and floor folders (5.3.2 rule 8); rung 0 and the Desk catch
-// them after the fact. Nor are deletes made by a program's own calls ([IO.File]::Delete, $item.Delete(),
-// Start-Process with arguments, shutil.rmtree), a program named only by a variable without a recursive flag, or
-// one file deleted through a variable outside a loop (rm "$tmp"), which is judged as written.
+// them after the fact. Nor, being a splitter and not a shell, does it see: deletes made by a program's own calls
+// ([IO.File]::Delete, $item.Delete(), Start-Process with arguments, shutil.rmtree) or by programs outside its
+// tables (rimraf, trash, GNU parallel, forfiles); one file deleted through a variable outside a loop (rm "$tmp"),
+// which is judged as written; a command assembled in a variable across the line (c=rm; $c x) or named by an alias
+// or function defined outside it; and a link made earlier in the same line and deleted through (ln -s .git g && rm
+// -rf g/), since the check reads the disk as it is before the line runs.
 //
 // The answer (note 6) names the command, the operand and the rule, and the next step; the guard's record keeps the
 // command's head only (redact.CommandHead) and the deciding operand, project-relative, as its target.
@@ -568,18 +571,29 @@ func (r *delRun) judge(a delAct, x delExec) {
 // delLiterals reads in place of an operand that is a substitution of literal output ("$(echo x)", PowerShell's
 // ('x')) the text it stands for.
 func delLiterals(ops []delOp, x delExec) []delOp {
-	for k, op := range ops {
+	out := make([]delOp, 0, len(ops))
+	for _, op := range ops {
 		if !op.expand || op.word == nil {
+			out = append(out, op)
 			continue
 		}
-		if text, ok := delLiteral(*op.word, x.d, x.depth); ok {
-			op.text, op.expand, op.word = text, false, nil
-			op.glob = strings.ContainsAny(text, "*?[")
-			op.pipeVar = false
-			ops[k] = op
+		text, ok := delLiteral(*op.word, x.d, x.depth)
+		if !ok {
+			out = append(out, op)
+			continue
+		}
+		texts := []string{text}
+		if x.d == shBash && !strings.HasPrefix(strings.TrimSpace(op.word.raw), `"`) {
+			texts = strings.Fields(text) // unquoted, bash splits the output into words
+		}
+		for _, t := range texts {
+			n := op
+			n.text, n.expand, n.word, n.pipeVar = t, false, nil, false
+			n.glob = strings.ContainsAny(t, "*?[")
+			out = append(out, n)
 		}
 	}
-	return ops
+	return out
 }
 
 // delLiteral gives the text a word stands for when the word is one substitution of a command whose output is

@@ -262,6 +262,13 @@ var delTable = []delRow{
 	{tB, "", "time rm -rf junk/*", delRuleUnnamed, ""},
 	{tB, "", "timeout -s KILL 5 rm -rf junk/*", delRuleUnnamed, ""},
 	{tB, "", "env -S 'rm -rf junk/*'", delRuleUnnamed, ""},
+	{tB, "", "doas -u root rm -rf junk/*", delRuleUnnamed, ""},
+	{tB, "", "builtin command rm -rf junk/*", delRuleUnnamed, ""},
+	{tB, "", "ionice -c 3 rm -rf junk/*", delRuleUnnamed, ""},
+	{tB, "", "setsid -f rm -rf junk/*", delRuleUnnamed, ""},
+	{tB, "", "stdbuf -o0 rm -rf junk/*", delRuleUnnamed, ""},
+	{tB, "", "zsh -c 'rm -rf junk/*'", delRuleUnnamed, ""},
+	{tB, "", "dash -c 'rm -rf junk/*'", delRuleUnnamed, ""},
 	{tB, "", "ls; rm -rf junk/*", delRuleUnnamed, ""},
 	{tB, "", "ls && rm -rf junk/*", delRuleUnnamed, ""},
 	{tB, "", "false || rm -rf junk/*", delRuleUnnamed, ""},
@@ -526,6 +533,10 @@ var delTable = []delRow{
 	{tB, "", `rm "$(echo bonsai.yaml)"`, delRuleProtected, ""},
 	{tB, "", "rm `echo bonsai.yaml`", delRuleProtected, ""},
 	{tB, "", "$(echo rm) bonsai.yaml", delRuleProtected, ""},
+	{tB, "", "$(echo rm -rf junk/*)", delRuleUnnamed, ""},
+	{tB, "", "bash <<< \"$(echo rm -rf junk/*)\"", delRuleUnnamed, ""},
+	{tB, "", "rm $(echo a.txt bonsai.yaml)", delRuleProtected, ""},
+	{tB, "", `rm "$(echo a.txt bonsai.yaml)"`, delRuleNamed, ""},
 	{tB, "", "mv */bonsai.yaml old/", delRuleProtected, ""},
 	{tB, "", `find build -exec rm -rf {} bonsai.yaml \;`, delRuleProtected, ""},
 	{tB, "", "git -C .. stash -a", delRuleUnnamed, ""},
@@ -717,6 +728,26 @@ func TestShellWordsEachHaveARow(t *testing.T) {
 		}
 		if !found {
 			t.Errorf("the delete word %s has no refusing row", w.Word)
+		}
+	}
+}
+
+// Each word that runs another program has a row whose delete it reaches.
+func TestShellRunnersEachHaveARow(t *testing.T) {
+	for _, rn := range delRunners {
+		found := false
+		for _, row := range delTable {
+			if row.want != delRuleUnnamed && row.want != delRuleProtected {
+				continue
+			}
+			for _, f := range strings.Fields(strings.ToLower(row.line)) {
+				if f == rn.Word {
+					found = true
+				}
+			}
+		}
+		if !found {
+			t.Errorf("the runner %s has no refusing row", rn.Word)
 		}
 	}
 }

@@ -409,11 +409,16 @@ func (r *delRun) runner(rn *delRunner, x delExec) (delExec, bool) {
 // failing closed; else it is not judged.
 func (r *delRun) unknownProgram(x delExec) {
 	if text, ok := delLiteral(x.words[0], x.d, x.depth); ok {
-		// "$(echo rm) -rf x": the program is literal text after all
-		w := x.words[0]
-		w.text, w.raw, w.expand = text, text, false
-		x.words = append([]shWord{w}, x.words[1:]...)
-		r.exec(x)
+		// "$(echo rm) -rf x": the program is literal text after all; unquoted, bash splits it into words, and the
+		// check reads it as a command line again, failing closed.
+		if strings.HasPrefix(strings.TrimSpace(x.words[0].raw), `"`) {
+			w := x.words[0]
+			w.text, w.raw, w.expand = text, text, false
+			x.words = append([]shWord{w}, x.words[1:]...)
+			r.exec(x)
+			return
+		}
+		r.text(text+" "+delJoin(x.words[1:], false), x.d, x.depth+1, x.dirs, x.loop)
 		return
 	}
 	words := x.words[1:]
