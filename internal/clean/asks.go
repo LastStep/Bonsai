@@ -16,6 +16,10 @@ package clean
 // not read skipped, a record glued after a torn line still read), to know which file holds which record; asks.Read
 // itself gives the state. An open key whose file record is not found here (a write between the two reads) keeps every
 // asks file this run.
+//
+// The history is read within the budget (files.go): the folder a batch at a time, and each day file a step. A history
+// the budget cuts short deletes no asks file that run (asksProtected fails on it), and is not an error: the run is
+// Stopped.
 
 import (
 	"bufio"
@@ -27,6 +31,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/asks"
@@ -75,23 +80,30 @@ func asksAge(r *run, f *file) time.Time {
 	return f.mtime
 }
 
-// asksHistory reads the asks folder's records once a run.
+// asksHistory reads the asks folder's records once a run, within the budget (errStopped when it ran out first).
 func (r *run) asksHistory() (*asksHistory, error) {
 	if r.asks != nil {
 		return r.asks, r.asksErr
 	}
 	r.asks = &asksHistory{last: map[string]time.Time{}}
 	dir := filepath.Join(r.localDir(), record.AsksFolder)
-	entries, err := os.ReadDir(dir)
+	var names []string
+	err := r.readDir(dir, func(de fs.DirEntry) {
+		if de.Type().IsRegular() && asksDayName.MatchString(de.Name()) {
+			names = append(names, de.Name())
+		}
+	})
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		r.asksErr = err
 		return r.asks, err
 	}
-	for _, de := range entries { // os.ReadDir sorts by name: the days in order
-		if !de.Type().IsRegular() || !asksDayName.MatchString(de.Name()) {
-			continue
+	sort.Strings(names) // the days in order, as asks.Read reads them
+	for _, name := range names {
+		if r.out() {
+			r.asksErr = errStopped
+			return r.asks, errStopped
 		}
-		if err := r.asks.readFile(filepath.Join(dir, de.Name()), de.Name()); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := r.asks.readFile(filepath.Join(dir, name), name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			r.asksErr = err
 			return r.asks, err
 		}

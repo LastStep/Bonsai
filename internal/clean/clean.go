@@ -29,8 +29,9 @@
 // .bonsai/local/, that folder and the two above it real folders, not links (a link is never followed). Anything else
 // is left alone and never named.
 //
-// When: at a session's end, after its session_end line (internal/recorder, SessionEnd: ladder, asks and log within a
-// budget of 1 s, oldest first; what the budget leaves waits for the next end); in check --write, the sessions rows
+// When: at a session's end, after its session_end line (internal/recorder, SessionEnd: ladder, asks and log within
+// SessionEndBudget, oldest first; the budget is checked before each step of the listing and the judging, a run ends
+// within it and one step, and what it leaves waits for the next end: files.go); in check --write, the sessions rows
 // (internal/engine, Rows and Record: the table's only writer); and by the ladder runner after each run (step 5.4,
 // Ladder). No process outlives its caller. The cleaner reads the main checkout's local/ only (workspace.FindLocal).
 //
@@ -39,14 +40,14 @@
 // project-relative path (a row: .bonsai/sessions.md# and its key), reason the rule (generated.log.keep_days=30). A
 // delete that finds the file gone writes nothing (another cleaner took it). A file Windows reports held open by
 // another process is skipped after one try and cleaned at a later run; one that changed since it was judged is left
-// for a later run too. A cleaning killed between a delete and its record leaves the file gone with no record: the
-// session end's budget of 1 s keeps it well inside SessionEnd's line's 5 s (Claude Code sends SIGTERM at the line's
-// timeout, measured in step 5.2.4), and a record that cannot be written stops the run, so no further file goes
-// unrecorded.
+// for a later run too. A cleaning killed between a delete and its record leaves the file gone with no record: a run
+// ends within its budget and one step, so the session end's SessionEndBudget keeps it well inside SessionEnd's line's
+// 5 s (Claude Code sends SIGTERM at the line's timeout, measured in step 5.2.4), and a record that cannot be written
+// stops the run, so no further file goes unrecorded.
 //
 //   - clean.go (this file): Options, the run, the delete and its record.
 //   - rule.go: generated.<kind> read from bonsai.yaml, and the reasons.
-//   - files.go: a kind's folder, its files' ages and the order they are judged in.
+//   - files.go: a kind's folder, its files' ages, the order they are judged in, and the budget.
 //   - log.go, asks.go, ladder.go: each file kind's names, clock and protections.
 //   - rows.go: the sessions table's rows, for check --write.
 package clean
@@ -78,7 +79,8 @@ const LadderFolder = "ladder"
 
 // SessionEndBudget is how long the cleaning at a session's end may take. SessionEnd's line has a timeout of 5 s, at
 // which Claude Code sends SIGTERM (measured in step 5.2.4), and the recorder's own budget is 4 s; the session_end
-// line takes a few milliseconds, so 1 s of cleaning leaves room for its longest single read.
+// line takes a few milliseconds, and a run ends within its budget and one step (files.go), so 1 s of cleaning leaves
+// about 3 s for that step, its longest single read.
 const SessionEndBudget = time.Second
 
 // Options are where and how a run cleans.
@@ -91,8 +93,9 @@ type Options struct {
 	Now func() time.Time
 	// Getenv reads BONSAI_TASK and BONSAI_ROLE, the records' task and role (redacted); nil reads the process's own.
 	Getenv func(string) string
-	// Budget is how long the run may take, by the wall clock; 0 for no limit. Past it, no new file is judged or
-	// deleted, and the rest waits for the next run.
+	// Budget is how long the run may take, by the wall clock; 0 for no limit. It is checked before each step (a batch
+	// of a folder's listing, a file's age for keep_newest, an asks day file read, a file judged and deleted: files.go),
+	// so a run ends within it and one step. Past it, no new step begins, and the rest waits for the next run.
 	Budget time.Duration
 	// Keep are project-relative paths (forward slashes) this run never cleans: the ladder runner's own result.
 	Keep []string
@@ -109,7 +112,7 @@ type Item struct {
 type Done struct {
 	Cleaned []Item  // deleted, each with its clean record written, in the order deleted
 	Busy    []Item  // held open by another process (Windows) after one try: left for a later run
-	Stopped bool    // the budget ran out: what was not judged waits for the next run
+	Stopped bool    // the budget ran out: what was not judged waits for the next run (not an error)
 	Errs    []error // what could not be read, deleted or recorded; a file that cannot be judged is kept
 }
 
@@ -122,6 +125,10 @@ var busy = workspace.IsBusy
 
 // writeLog appends a clean record (a variable for the tests: a record that cannot be written).
 var writeLog = record.WriteLog
+
+// clock is the wall clock a run's budget is measured by, apart from Options.Now, the clock of ages (a variable for the
+// tests: a clock the test moves, so where a run stops depends on the code, not on the machine).
+var clock = time.Now
 
 // run is one run's state: its options, the main checkout's config, and what it read once.
 type run struct {
@@ -149,7 +156,7 @@ func start(o Options) (*run, *Done) {
 	}
 	r := &run{o: o, main: o.Local.Main, now: o.Now(), done: d, keep: map[string]bool{}}
 	if o.Budget > 0 {
-		r.deadline = time.Now().Add(o.Budget)
+		r.deadline = clock().Add(o.Budget)
 	}
 	for _, k := range o.Keep {
 		r.keep[k] = true
@@ -205,16 +212,24 @@ func SessionEnd(o Options) *Done {
 // result in o.Keep, so the result a run wrote is never cleaned by that run.
 func LadderResults(o Options) *Done { return Files(o, Ladder) }
 
-// out reports whether the budget has run out, and marks the run stopped when it has.
+// out reports whether the budget has run out, and marks the run stopped when it has. Each step of a run asks it
+// first (files.go).
 func (r *run) out() bool {
-	if r.deadline.IsZero() || time.Now().Before(r.deadline) {
+	if r.deadline.IsZero() || clock().Before(r.deadline) {
 		return false
 	}
 	r.done.Stopped = true
 	return true
 }
 
-func (r *run) fail(err error) { r.done.Errs = append(r.done.Errs, err) }
+// fail notes what the run could not do. The budget run out in the middle of a read (errStopped) is not one: Stopped
+// says it.
+func (r *run) fail(err error) {
+	if errors.Is(err, errStopped) {
+		return
+	}
+	r.done.Errs = append(r.done.Errs, err)
+}
 
 // remove deletes one judged file and writes its clean record. The file is looked at once more first: one that is
 // gone writes nothing; one that is no longer a regular file, or changed since it was listed (a session writing it),

@@ -7,16 +7,29 @@ package clean
 // newest. The modification time only orders the files and spares reads: a file modified within keep_days is not
 // read for keep_days, since Bonsai writes each line a moment after its record's at, so such a file's own clock is
 // within keep_days too (or, for a file touched since, it is kept until its modification time ages as well: the safe
-// side). Every file that is read is judged by its own clock (the kind's age). keep_newest ranks every file by age, so
-// with it every file is read first; if the budget runs out before that ranking is whole, the run stops and
-// keep_newest waits for a run that finishes it.
+// side). Every file that is read is judged by its own clock (the kind's age).
 //
 // Log and ladder files are judged one at a time, each deleted as soon as it is judged, so a run the budget cuts short
 // has still cleaned what it judged. Asks are judged all at once (asks.go), since whether one day file may go depends on
 // which others stay.
+//
+// The budget (Options.Budget) is checked before each step, and a step once begun is finished. The steps: a batch of
+// listBatch entries of a folder (a folder is read a batch at a time, never whole at once); one file's age read for
+// keep_newest's ranking; one asks day file read for the asks' history (asks.go); one file judged, deleted and
+// recorded. A read a run makes once is part of the step that first needs it (the task files, the sessions table, the
+// asks as internal/asks reads them). So a run ends within its budget and one step. A run the budget stops leaves each
+// file deleted with its clean record, or as it was: nothing is half-done. It says Stopped, which is not an error, and
+// the next run (the next session's end) lists the folder again from the start, oldest first, and goes on from there.
+//
+// keep_newest ranks every file of the kind by its own clock, so every file's age is read before any file is judged.
+// A ranking the budget cuts short is dropped, and nothing of that kind is deleted by that run, by either rule: no
+// file is judged on a ranking that is not whole, so none that might be among the newest goes. A folder too large to
+// rank within one run's budget is therefore not cleaned of that kind while it stays that large (at a session's end,
+// each run stops in the ranking): keep_newest suits a number of files a run can read within its budget.
 
 import (
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -109,7 +122,7 @@ func (r *run) files(k fileKind) {
 				cands = append(cands, f)
 			}
 		}
-		if len(cands) == 0 {
+		if len(cands) == 0 || r.out() {
 			return
 		}
 		kept, err := k.protectAll(r, list, cands)
@@ -145,8 +158,9 @@ func (r *run) files(k fileKind) {
 	}
 }
 
-// rank reads every file's age and marks those beyond the newest n (newest first by age, then by name). ok is false
-// when the budget ran out first.
+// rank reads every file's age and marks those beyond the newest n (newest first by age, then by name), the budget
+// checked before each read. ok is false when the budget ran out first: the ranking is dropped, and the kind waits
+// (this file's comment).
 func (r *run) rank(k fileKind, list []*file, n int64) (map[*file]bool, bool) {
 	for _, f := range list {
 		if r.out() {
@@ -172,9 +186,46 @@ func (r *run) rank(k fileKind, list []*file, n int64) (map[*file]bool, bool) {
 	return beyond, true
 }
 
+// listBatch is how many of a folder's entries a run reads at a time: the budget is checked between batches, so a huge
+// folder's listing stops at the budget too.
+const listBatch = 256
+
+// errStopped is the budget run out in the middle of a read. The run stops, with Stopped set; it is not an error.
+var errStopped = errors.New("clean: the budget ran out")
+
+// readBatch reads a folder's next n entries at most (a variable for the tests: a folder slowed to a fixed pace,
+// standing in for a huge one).
+var readBatch = func(fh *os.File, n int) ([]fs.DirEntry, error) { return fh.ReadDir(n) }
+
+// readDir reads a folder listBatch entries at a time, in the folder's own order, giving each entry to each. The budget
+// is checked before each batch: errStopped when it ran out first. A folder not there is fs.ErrNotExist.
+func (r *run) readDir(dir string, each func(fs.DirEntry)) error {
+	fh, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = fh.Close() }()
+	for {
+		if r.out() {
+			return errStopped
+		}
+		batch, err := readBatch(fh, listBatch)
+		for _, de := range batch {
+			each(de)
+		}
+		switch {
+		case errors.Is(err, io.EOF), err == nil && len(batch) == 0:
+			return nil
+		case err != nil:
+			return err
+		}
+	}
+}
+
 // list lists a kind's folder in the main checkout's .bonsai/local/: the names Bonsai writes there, regular files only,
-// oldest modification time first. The folder, and .bonsai and .bonsai/local above it, must be real folders: a link
-// (or a Windows junction) is never followed, and then nothing is listed. A folder not there holds nothing.
+// oldest modification time first, read a batch at a time (readDir: errStopped when the budget runs out first). The
+// folder, and .bonsai and .bonsai/local above it, must be real folders: a link (or a Windows junction) is never
+// followed, and then nothing is listed. A folder not there holds nothing.
 func (r *run) list(k fileKind) ([]*file, error) {
 	dir := r.localPath(k.folder)
 	for _, p := range []string{filepath.Join(r.main, ".bonsai"), filepath.Dir(dir), dir} {
@@ -189,24 +240,23 @@ func (r *run) list(k fileKind) ([]*file, error) {
 			return nil, nil // a link, a junction or a file where a folder should be: left alone
 		}
 	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, nil
-		}
-		return nil, err
-	}
 	var out []*file
-	for _, de := range entries {
+	err := r.readDir(dir, func(de fs.DirEntry) {
 		if !de.Type().IsRegular() || !k.match(de.Name()) {
-			continue
+			return
 		}
 		fi, err := de.Info()
 		if err != nil || !fi.Mode().IsRegular() {
-			continue // gone since the folder was read, or not a regular file after all
+			return // gone since the folder was read, or not a regular file after all
 		}
 		out = append(out, &file{kind: k.name, name: de.Name(), path: filepath.Join(dir, de.Name()),
 			target: target(k.folder, de.Name()), mtime: fi.ModTime(), size: fi.Size()})
+	})
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 	sort.Slice(out, func(i, j int) bool { // names are distinct
 		if !out[i].mtime.Equal(out[j].mtime) {
