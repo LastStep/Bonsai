@@ -819,6 +819,15 @@ var delTable = []delRow{
 	{tB, "", "ls | xargs sh -c 'bonsai status'", RuleBonsaiCommand, ""},
 	{tB, "", "echo x | xargs xargs bonsai check", RuleBonsaiCommand, ""},
 
+	// --- V2c's fix round (93167be): bash's ~-0 is the folder stack's bottom (the folder before a pushd), read as a
+	// folder the check cannot tell, as ~- and ~-N are.
+	{tB, "", "pushd src && rm ~-0/config/app.key", RuleDeleteProtected, ""},
+	{tB, "", "pushd src && rm -rf ~-0/docs", RuleDeleteUnnamed, ""},
+	{tB, "", "pushd src && cd ~-0 && rm -rf docs", RuleDeleteUnnamed, ""},
+	{tB, "", "pushd src >/dev/null; rm -rf ~-0/build", RuleDeleteUnnamed, ""},
+	{tB, "", "pushd src && rm ~0/main.go", RuleDeleteNamed, ""},
+	{tB, "", "pushd src && rm -rf ~+0/build", RuleDeleteNamed, ""},
+
 	// --- A line the check cannot split.
 	{tB, "", "rm -rf 'junk", RuleDeleteUnsplit, ""},
 	{tB, "", `rm -rf "junk`, RuleDeleteUnsplit, ""},

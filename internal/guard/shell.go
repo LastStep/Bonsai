@@ -774,9 +774,9 @@ func delGitMagic(op *delOp) string {
 }
 
 // delTildeOp reads bash's tilde forms in an operand: ~+ is the command's folder ($PWD), so ~+/x is x there; ~- is the
-// previous folder ($OLDPWD), which the check cannot tell (away); of the folder stack's forms, ~0, ~+0 and ~-0 are the
-// command's folder and ~N, ~+N, ~-N for any other N folders the check cannot tell; ~name/x is x in the home folder
-// when name is the home folder's own (delTildeUser).
+// previous folder ($OLDPWD), which the check cannot tell (away); of the folder stack's forms, ~0 and ~+0 are the
+// command's folder and ~-0 (the stack's bottom, the folder before a pushd) and ~N, ~+N, ~-N for any other N folders the
+// check cannot tell; ~name/x is x in the home folder when name is the home folder's own (delTildeUser).
 func delTildeOp(op *delOp) {
 	t := op.text
 	if !strings.HasPrefix(t, "~") {
@@ -800,10 +800,11 @@ func delTildeOp(op *delOp) {
 }
 
 // delTildeStack reads a tilde's word as bash's folder stack does: ok for +, -, +N, -N and N; here when it is the
-// command's folder (+, 0, +0, -0), not when it is another the check cannot tell (-, and any other N).
+// command's folder (+, 0, +0), not when it is another the check cannot tell (-, -0 the stack's bottom, which a pushd
+// leaves behind, and any other N).
 func delTildeStack(head string) (here, ok bool) {
 	switch head {
-	case "+", "0", "+0", "-0":
+	case "+", "0", "+0":
 		return true, true
 	case "-":
 		return false, true
