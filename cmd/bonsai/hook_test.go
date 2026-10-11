@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -304,12 +305,20 @@ func TestFaultsThroughTheHookLine(t *testing.T) {
 		}
 	})
 	t.Run("slow", func(t *testing.T) {
+		// The block must come before the hook line's timeout, past which Claude Code lets the call through: held to that
+		// timeout (engine.GuardTimeout, the line's own constant) less a second for the shell and the process start, so
+		// the two cannot drift. The guard needs its 5 s budget and the record's wait.
+		secs, err := strconv.Atoi(engine.GuardTimeout)
+		if err != nil {
+			t.Fatalf("engine.GuardTimeout %q: %v", engine.GuardTimeout, err)
+		}
+		limit := time.Duration(secs)*time.Second - time.Second
 		code, stderr, took := runLine(t, faultPath, proj, "slow", editPayload(t, "s-slow", proj, "free.txt"))
 		if code != 2 || !strings.Contains(stderr, "the guard ran past its own 5s limit") {
 			t.Fatalf("exit %d, stderr %q", code, stderr)
 		}
-		if took > 9*time.Second {
-			t.Errorf("blocked after %v: past the hook line's 10 s timeout, Claude Code would have let it through", took)
+		if took > limit {
+			t.Errorf("blocked after %v, past %v: so near the hook line's %s s timeout, Claude Code could have let it through", took, limit, engine.GuardTimeout)
 		}
 		if r := lastRecord(t, proj, "s-slow"); r.String("rule") != "over-time" {
 			t.Errorf("record: %s", schema.Show(r))
