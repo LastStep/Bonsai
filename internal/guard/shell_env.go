@@ -22,6 +22,16 @@ package guard
 // is no word, so its line fails closed too, the price of reading no raw text. Not seen, as before: the name built where no part of
 // it is in the line, an interpreter's own calls (python -c, node -e), a new session that starts without the variable
 // (ssh, su, a terminal multiplexer, a scheduler); the commands' own refusal and the Desk stand behind them.
+//
+// Known limits, fixed after 1.0 (Rohan, 11 Oct, "Scoped"); the command's own refusal (5.3.6b) is the first layer
+// behind them and rung 0 (5.4) the after-the-fact one:
+//   - a name changer the check does not read: let, : $((N=0)), read, printf -v, mapfile, for N in, getopts, a nameref;
+//   - the name as data: declare v=NAME, a loop, a function argument, a command substitution, xargs -I{};
+//   - the name built from parts in a line that also names it whole elsewhere, so the backstop stays quiet;
+//   - PowerShell's provider and .NET forms: New-Item -Path Env:, Set-Location Env:, ('Env:'+'NAME'), [string]'NAME',
+//     .ToUpper(), Start-Process -Environment @{...}, a ProcessStartInfo;
+//   - cmd /c "env -i x.sh";
+//   - a wolf: the backstop refuses a text that names part of the variable (env | grep CLAUDE_CODE_CHILD, a comment).
 
 import "strings"
 
