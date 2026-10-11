@@ -38,7 +38,9 @@ func TestInputHash(t *testing.T) {
 	}
 }
 
-// FindProject: the folder or the nearest one above it holding bonsai.yaml, no higher than a checkout's top.
+// FindProject and FindProjects (design/plan-5.md, 5.3.1 note 1): every folder at or above holding bonsai.yaml,
+// nearest first, walking past any .git to the volume's root, so a nested repository or a .git placed in a subfolder
+// does not hide the project around it; FindProject is the nearest.
 func TestFindProject(t *testing.T) {
 	dir, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
@@ -51,31 +53,56 @@ func TestFindProject(t *testing.T) {
 		}
 		return p
 	}
+	linkAt := func(p string) {
+		if err := os.WriteFile(filepath.Join(p, "bonsai.yaml"), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
 	proj, sub, plain, plainSub := mk("proj"), mk("proj/a/b"), mk("plain"), mk("plain/x")
+	nested, nestedSub, planted := mk("proj/vendor/lib"), mk("proj/vendor/lib/src"), mk("proj/a/dotgit")
 	mk("proj/.git")
 	mk("plain/.git")
-	if err := os.WriteFile(filepath.Join(proj, "bonsai.yaml"), []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	mk("proj/vendor/lib/.git") // a nested repository, not linked
+	mk("proj/a/dotgit/.git")   // a .git someone placed in a subfolder
+	linkAt(proj)
 	for _, c := range []struct {
 		from, root string
 		linked     bool
-	}{{proj, proj, true}, {sub, proj, true}, {plain, plain, false}, {plainSub, plain, false}} {
+	}{
+		{proj, proj, true}, {sub, proj, true}, {plain, plain, false}, {plainSub, plainSub, false},
+		{nested, proj, true}, {nestedSub, proj, true}, {planted, proj, true},
+	} {
 		root, linked, err := FindProject(c.from)
 		if err != nil || root != c.root || linked != c.linked {
 			t.Errorf("from %s: %s %v %v; want %s %v", c.from, root, linked, err, c.root, c.linked)
 		}
 	}
-	// A bonsai.yaml above a checkout's top is not this folder's project.
-	if err := os.WriteFile(filepath.Join(dir, "bonsai.yaml"), []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
+	// A bonsai.yaml placed in the nested repository, and one above every checkout: each holds the folder too, the
+	// nearest first.
+	linkAt(nested)
+	linkAt(dir)
+	roots, abs, err := FindProjects(nestedSub)
+	if err != nil || abs != nestedSub || len(roots) < 3 || roots[0] != nested || roots[1] != proj || roots[2] != dir {
+		t.Errorf("FindProjects from the nested repository: %v %s %v", roots, abs, err)
 	}
-	if root, linked, err := FindProject(plainSub); err != nil || linked || root != plain {
+	if root, linked, err := FindProject(plainSub); err != nil || !linked || root != dir {
 		t.Errorf("past a checkout's top: %s %v %v", root, linked, err)
 	}
 	for _, bad := range []string{filepath.Join(proj, "bonsai.yaml"), filepath.Join(dir, "missing")} {
 		if _, linked, err := FindProject(bad); err == nil || linked {
 			t.Errorf("%s: linked %v, err %v", bad, linked, err)
 		}
+	}
+	// Holding: for a folder that need not exist (a new file's), each folder looked up once with seen.
+	seen := map[string]bool{}
+	got := Holding(filepath.Join(nestedSub, "new", "deeper"), seen)
+	if len(got) < 3 || got[0] != nested || got[1] != proj || got[2] != dir {
+		t.Errorf("Holding: %v", got)
+	}
+	if !seen[nested] || seen[nestedSub] || !seen[dir] {
+		t.Errorf("seen: %v", seen)
+	}
+	if again := Holding(filepath.Join(nestedSub, "other"), seen); len(again) != len(got) || again[0] != nested {
+		t.Errorf("Holding again: %v", again)
 	}
 }

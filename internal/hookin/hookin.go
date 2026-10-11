@@ -68,33 +68,72 @@ func Drain(stdin io.Reader, terminal bool) {
 }
 
 // FindProject finds the project a folder belongs to: the folder itself or the nearest one above it that holds
-// bonsai.yaml, looking no higher than a checkout's top (a folder holding .git). linked is false when there is none
-// (spec §7: in a project with no bonsai.yaml a hook allows and records nothing); err says why the folder cannot be
-// read. Every hook finds its project with it; the recorder, with no CLAUDE_PROJECT_DIR, from the payload's cwd.
+// bonsai.yaml (FindProjects' first). linked is false when there is none (spec §7: in a project with no bonsai.yaml a
+// hook allows and records nothing), and root is then the folder, made absolute; err says why the folder cannot be read.
+// Every hook finds its project with it; the recorder, with no CLAUDE_PROJECT_DIR, from the payload's cwd.
 func FindProject(dir string) (root string, linked bool, err error) {
-	abs, err := filepath.Abs(dir)
+	roots, abs, err := FindProjects(dir)
 	if err != nil {
 		return "", false, err
 	}
-	if fi, err := os.Stat(abs); err != nil {
-		return "", false, err
-	} else if !fi.IsDir() {
-		return "", false, errors.New("it is not a folder")
+	if len(roots) == 0 {
+		return abs, false, nil
 	}
-	for d := abs; ; {
-		if _, err := os.Lstat(filepath.Join(d, workspace.ConfigFile)); err == nil {
-			return d, true, nil
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			return "", false, err
+	return roots[0], true, nil
+}
+
+// FindProjects finds every project holding a folder (design/plan-5.md, 5.3.1 note 1; contract §13: "the project is
+// the one holding the path"): the folder itself and each folder above it, up to the volume's root, that holds
+// bonsai.yaml, nearest first. It walks past any .git: a nested repository, or a .git someone placed in a subfolder,
+// does not hide the project around it. abs is the folder, absolute and clean; err says why it cannot be read (it must
+// be a folder that exists, and whether each folder on the way holds bonsai.yaml must be told). It costs one Lstat per
+// folder on the way.
+func FindProjects(dir string) (roots []string, abs string, err error) {
+	abs, err = filepath.Abs(dir)
+	if err != nil {
+		return nil, "", err
+	}
+	if fi, err := os.Stat(abs); err != nil {
+		return nil, "", err
+	} else if !fi.IsDir() {
+		return nil, "", errors.New("it is not a folder")
+	}
+	roots, err = walk(abs, true, nil)
+	return roots, abs, err
+}
+
+// Holding gives the folders at or above the folder dir (absolute and clean) that hold bonsai.yaml, nearest first, up
+// to the volume's root: FindProjects' walk, for a folder that need not exist (a new file's folder). A folder where
+// bonsai.yaml cannot be looked for (one that cannot be searched, so nothing can be written in it either) is passed
+// over, and the walk goes on above it. seen keeps what each folder held, so the forms of one path, which share most
+// of their folders, look each up once; nil keeps nothing.
+func Holding(dir string, seen map[string]bool) []string {
+	roots, _ := walk(dir, false, seen)
+	return roots
+}
+
+// walk is FindProjects' and Holding's walk up from dir. strict stops it at a folder where bonsai.yaml cannot be looked
+// for (an error other than its absence), with that error.
+func walk(dir string, strict bool, seen map[string]bool) ([]string, error) {
+	var roots []string
+	for d := dir; ; {
+		holds, known := seen[d]
+		if !known {
+			_, err := os.Lstat(filepath.Join(d, workspace.ConfigFile))
+			if strict && err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
+			holds = err == nil
+			if seen != nil {
+				seen[d] = holds
+			}
 		}
-		if _, err := os.Lstat(filepath.Join(d, ".git")); err == nil {
-			return d, false, nil
-		} else if !errors.Is(err, fs.ErrNotExist) {
-			return "", false, err
+		if holds {
+			roots = append(roots, d)
 		}
 		parent := filepath.Dir(d)
 		if parent == d {
-			return abs, false, nil
+			return roots, nil
 		}
 		d = parent
 	}
