@@ -201,8 +201,13 @@ func TestAdminShare(t *testing.T) {
 	}
 	for _, server := range []string{"localhost", "127.0.0.1", host, strings.ToUpper(host)} {
 		for _, form := range []string{`\\` + server + `\` + share + rest, `\\?\UNC\` + server + `\` + share + rest} {
-			refused(t, dir, form+`\protected.txt`)
-			refused(t, dir, form+`\docs\new.md`)
+			// Refused as the drive's path is: protected, in the project this machine recorded (not a second project
+			// found through the share, which no record names).
+			for _, p := range []string{form + `\protected.txt`, form + `\docs\new.md`} {
+				if d := decide(&hookin.Payload{Tool: "Write", Path: p}, dir); d.Allow || d.Rule != RuleProtected {
+					t.Errorf("%s: %+v, want refused as protected", p, d)
+				}
+			}
 			if d := decide(&hookin.Payload{Tool: "Write", Path: form + `\free.txt`}, dir); !d.Allow {
 				t.Errorf("%s: %+v, want allowed", form+`\free.txt`, d)
 			}

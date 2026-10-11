@@ -223,7 +223,8 @@ func windowsForms(p string) []string {
 // devicePath reports a Windows path in a device or long form (\\?\..., \\.\..., \??\...). Its projects are looked
 // for in its other forms: windowsForms gives a drive's or a share's form of it, and finalPath what Windows names a
 // device or volume form; walked as written, its folders would name each project a second time, under a name no
-// record on this machine holds.
+// record on this machine holds. A path through this machine's admin share is passed over the same way, for its
+// drive's form (adminShare).
 func devicePath(p string) bool {
 	if runtime.GOOS != "windows" {
 		return false
