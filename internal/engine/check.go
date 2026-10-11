@@ -187,7 +187,7 @@ func (r *CheckResult) checkLockedFiles() {
 			r.add("packs", workspace.ConfigFile, "", "bonsai.yaml lists the pack "+ref.ID+", which the lock does not hold", run("bonsai update --yes"))
 		case lp.Source != ref.Source:
 			r.add("packs", workspace.ConfigFile, "", "bonsai.yaml takes "+ref.ID+" from "+ref.Source+", the lock from "+lp.Source, run("bonsai update --yes"))
-		case commitPattern.MatchString(ref.Ref) && ref.Ref != lp.Commit:
+		case commitPattern().MatchString(ref.Ref) && ref.Ref != lp.Commit:
 			r.add("packs", workspace.ConfigFile, "", "bonsai.yaml's ref for "+ref.ID+" is "+short(ref.Ref)+", the lock holds "+short(lp.Commit), run("bonsai update --yes"))
 		case lp.PathSet && lp.Path != ref.Path:
 			r.add("packs", workspace.ConfigFile, "", "bonsai.yaml takes "+ref.ID+" from the folder "+folderName(ref.Path)+

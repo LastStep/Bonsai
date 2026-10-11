@@ -31,13 +31,14 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-var commitPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
+var commitPattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[0-9a-f]{40}$`) })
 
 // PackData is a pack read at one commit: what the engine writes from it.
 type PackData struct {
@@ -152,7 +153,7 @@ func (c cache) fetch(source, ref string) (string, error) {
 		}
 	}
 	next := "check the pack's source and ref in bonsai.yaml, and that this machine reaches " + source + ", then run again"
-	if commitPattern.MatchString(ref) {
+	if commitPattern().MatchString(ref) {
 		if !c.has(source, ref) {
 			_, err := git(dir, nil, "fetch", "-q", "--no-tags", "--", source, ref)
 			if err != nil || !c.has(source, ref) {
@@ -178,7 +179,7 @@ func (c cache) fetch(source, ref string) (string, error) {
 	}
 	out, err := git(dir, nil, "rev-parse", "--verify", "-q", "FETCH_HEAD^{commit}")
 	commit := strings.TrimSpace(string(out))
-	if err != nil || !commitPattern.MatchString(commit) {
+	if err != nil || !commitPattern().MatchString(commit) {
 		return "", errorf("ref-not-found", ExitInput, next, "the ref %s of %s is not a commit", ref, source)
 	}
 	return commit, c.keep(dir, commit)
@@ -202,7 +203,7 @@ func resolvedRef(ref string) string {
 
 // lastResolved is the commit ref last resolved to on this machine, "" for none (a commit ref, or never fetched).
 func (c cache) lastResolved(source, ref string) string {
-	if commitPattern.MatchString(ref) {
+	if commitPattern().MatchString(ref) {
 		return ""
 	}
 	dir := c.dir(source)
@@ -210,7 +211,7 @@ func (c cache) lastResolved(source, ref string) string {
 		return ""
 	}
 	out, err := git(dir, nil, "rev-parse", "--verify", "-q", resolvedRef(ref)+"^{commit}")
-	if commit := strings.TrimSpace(string(out)); err == nil && commitPattern.MatchString(commit) {
+	if commit := strings.TrimSpace(string(out)); err == nil && commitPattern().MatchString(commit) {
 		return commit
 	}
 	return ""
@@ -219,7 +220,7 @@ func (c cache) lastResolved(source, ref string) string {
 // recordResolved records what ref resolved to; a failure to record is no failure of the run (the version check
 // still holds).
 func (c cache) recordResolved(source, ref, commit string) {
-	if commitPattern.MatchString(ref) {
+	if commitPattern().MatchString(ref) {
 		return
 	}
 	_, _ = git(c.dir(source), nil, "update-ref", resolvedRef(ref), commit)
@@ -229,7 +230,7 @@ func (c cache) recordResolved(source, ref, commit string) {
 // commit when the lock was written: the same source, not a commit ref, another commit now, and either this machine's
 // cache recorded the lock's commit for it (was) or it names the locked version.
 func movedTag(r workspace.PackRef, lp workspace.LockedPack, was, commit string) bool {
-	if commitPattern.MatchString(r.Ref) || r.Source != lp.Source || commit == lp.Commit {
+	if commitPattern().MatchString(r.Ref) || r.Source != lp.Source || commit == lp.Commit {
 		return false
 	}
 	return was == lp.Commit || tagNames(r.Ref, lp.Version)
@@ -467,13 +468,15 @@ func pluginSource(source, folder, commit string) any {
 	if folder != "" {
 		return objectOf("source", "git-subdir", "url", u, "path", folder, "sha", commit)
 	}
-	if m := githubPattern.FindStringSubmatch(source); m != nil {
+	if m := githubPattern().FindStringSubmatch(source); m != nil {
 		return objectOf("source", "github", "repo", m[1]+"/"+m[2], "sha", commit)
 	}
 	return objectOf("source", "url", "url", u, "sha", commit)
 }
 
-var githubPattern = regexp.MustCompile(`^https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$`)
+var githubPattern = sync.OnceValue(func() *regexp.Regexp {
+	return regexp.MustCompile(`^https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$`)
+})
 
 // gitURL turns a source into a URL Claude Code fetches: a URL stays as it is; a local folder (a test's bare
 // repository) becomes a file:// URL.

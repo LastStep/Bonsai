@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -48,7 +49,7 @@ func RemoteTags(source string) ([]string, error) {
 	return tags, nil
 }
 
-var releaseTag = regexp.MustCompile(`^(.*?)v?([0-9]+\.[0-9]+\.[0-9]+)$`)
+var releaseTag = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^(.*?)v?([0-9]+\.[0-9]+\.[0-9]+)$`) })
 
 // NewerTags gives the tags that name a version newer than the locked one, oldest first: tags with ref's prefix when
 // ref is a release tag, else with none or "<id>-".
@@ -58,7 +59,7 @@ func NewerTags(tags []string, ref, id, version string) []string {
 		return []string{}
 	}
 	prefixes := map[string]bool{"": true, id + "-": true, id + "/": true}
-	if m := releaseTag.FindStringSubmatch(ref); m != nil {
+	if m := releaseTag().FindStringSubmatch(ref); m != nil {
 		prefixes = map[string]bool{m[1]: true}
 	}
 	type tagged struct {
@@ -67,7 +68,7 @@ func NewerTags(tags []string, ref, id, version string) []string {
 	}
 	var newer []tagged
 	for _, t := range tags {
-		m := releaseTag.FindStringSubmatch(t)
+		m := releaseTag().FindStringSubmatch(t)
 		if m == nil || !prefixes[m[1]] {
 			continue
 		}

@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // inline reads a value that sits whole on its line: s is the text after the key's colon (or the item's "- "),
@@ -260,10 +261,10 @@ func flowItem(t string, l *line, pos int) (any, *Refusal) {
 }
 
 var (
-	intPattern      = regexp.MustCompile(`^-?(0|[1-9][0-9]{0,14})$`)
-	decimalPattern  = regexp.MustCompile(`^-?(0|[1-9][0-9]*)\.[0-9]+$`)
-	datePattern     = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}$`)
-	dateTimePattern = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$`)
+	intPattern      = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^-?(0|[1-9][0-9]{0,14})$`) })
+	decimalPattern  = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^-?(0|[1-9][0-9]*)\.[0-9]+$`) })
+	datePattern     = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}$`) })
+	dateTimePattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$`) })
 	// The words a plain text value may not be in any case: null, true and false in any case but lower (lower case
 	// reads as null or a boolean), and y, n, yes, no, on, off in every case.
 	plainWords = map[string]bool{"null": true, "true": true, "false": true,
@@ -280,15 +281,15 @@ func plain(s string, inFlow bool, l *line, pos int) (any, *Refusal) {
 		return true, nil
 	case s == "false":
 		return false, nil
-	case intPattern.MatchString(s): // -?(0|[1-9][0-9]{0,14}): an integer of at most 15 digits
+	case intPattern().MatchString(s): // -?(0|[1-9][0-9]{0,14}): an integer of at most 15 digits
 		n, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
 			return nil, refuseAt(CodeQuoteThisValue, l, pos, "%s does not read as an integer", show(s))
 		}
 		return n, nil
-	case decimalPattern.MatchString(s): // -?(0|[1-9][0-9]*)\.[0-9]+: a decimal
+	case decimalPattern().MatchString(s): // -?(0|[1-9][0-9]*)\.[0-9]+: a decimal
 		return Decimal(s), nil
-	case datePattern.MatchString(s), dateTimePattern.MatchString(s): // YYYY-MM-DD, YYYY-MM-DD HH:MM: text
+	case datePattern().MatchString(s), dateTimePattern().MatchString(s): // YYYY-MM-DD, YYYY-MM-DD HH:MM: text
 		return s, nil
 	}
 	if why := notText(s, inFlow); why != "" {

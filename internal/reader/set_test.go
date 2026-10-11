@@ -147,8 +147,8 @@ func TestLabelKeyPatternIsTheSchemas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), `"pattern": "`+strings.ReplaceAll(labelPattern.String(), `\`, `\\`)+`"`) {
-		t.Errorf("labels.schema.json holds no pattern %s", labelPattern)
+	if !strings.Contains(string(raw), `"pattern": "`+strings.ReplaceAll(labelPattern().String(), `\`, `\\`)+`"`) {
+		t.Errorf("labels.schema.json holds no pattern %s", labelPattern())
 	}
 }
 

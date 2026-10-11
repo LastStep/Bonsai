@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -132,7 +133,7 @@ func openRetry(name string, flag int) (*os.File, error) {
 // Code's are UUIDs). Anything else could reach outside the log folder or name a file Windows cannot hold.
 const sessionChars = `[A-Za-z0-9_-]{1,128}`
 
-var sessionPattern = regexp.MustCompile(`^` + sessionChars + `$`)
+var sessionPattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^` + sessionChars + `$`) })
 
 // LogFileName names the log file a record goes to (contract §8.5): s-<session>.ndjson for a session's records,
 // w-<YYYY-MM-DD>.ndjson, the record's UTC day, for one with no session. A session id that cannot name a file is
@@ -141,7 +142,7 @@ func LogFileName(session string, at time.Time) (string, error) {
 	if session == "" {
 		return "w-" + at.UTC().Format("2006-01-02") + ".ndjson", nil
 	}
-	if !sessionPattern.MatchString(session) {
+	if !sessionPattern().MatchString(session) {
 		return "", fmt.Errorf("record: the session id %q cannot name a log file: it is not letters, digits, _ and -", session)
 	}
 	return "s-" + session + ".ndjson", nil

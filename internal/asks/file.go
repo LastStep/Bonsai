@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/record"
@@ -39,8 +40,8 @@ import (
 
 // keyPart is what an agent's --key may be, and keyPattern a whole key (bonsai.ask/1's key: <source>:<part>).
 var (
-	keyPart    = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,59}$`)
-	keyPattern = regexp.MustCompile(`^(agent|ladder):[A-Za-z0-9][A-Za-z0-9._-]{0,59}$`)
+	keyPart    = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,59}$`) })
+	keyPattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^(agent|ladder):[A-Za-z0-9][A-Za-z0-9._-]{0,59}$`) })
 )
 
 // Done is what a command did: the key's entry after it, and the record it wrote, or why it wrote none.
@@ -142,7 +143,7 @@ func File(p Place, f Filing, kinds []workspace.DocKind) (*Done, *Error) {
 // fileKey is a filed ask's key: the agent's --key, or the hash of type, target and stored title (contract §9.1).
 func fileKey(given, typ, task, doc, title string) (string, *Error) {
 	if given != "" {
-		if !keyPart.MatchString(given) {
+		if !keyPart().MatchString(given) {
 			return "", badValue(fmt.Sprintf("--key %+q is not a key: a letter or digit, then letters, digits, dot, dash or underscore, "+
 				"at most 60 in all", redact.Text(given)), "give --key a name such as colour-choice, or leave it out for a key made from the ask")
 		}
@@ -194,7 +195,7 @@ func checkID(flag, id string, kinds []workspace.DocKind, kind string) *Error {
 
 // checkKey holds a key given on the command line to bonsai.ask/1's shape, and gives its source.
 func checkKey(key string) (string, *Error) {
-	if !keyPattern.MatchString(key) {
+	if !keyPattern().MatchString(key) {
 		return "", badValue(fmt.Sprintf("%+q is not an ask's key (agent:<part> or ladder:<part>)", redact.Text(key)),
 			"run: bonsai asks --all, to list the keys")
 	}

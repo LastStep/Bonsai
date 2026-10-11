@@ -83,6 +83,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/reader"
@@ -292,9 +293,9 @@ type packYAMLRead struct {
 }
 
 var (
-	denyWhyPointer = regexp.MustCompile(`^#/deny/[0-9]+/why$`)
-	denyPointer    = regexp.MustCompile(`^#/deny/[0-9]+$`)
-	itemPointer    = regexp.MustCompile(`^#/(documents|protected)/([0-9]+)`)
+	denyWhyPointer = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^#/deny/[0-9]+/why$`) })
+	denyPointer    = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^#/deny/[0-9]+$`) })
+	itemPointer    = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^#/(documents|protected)/([0-9]+)`) })
 )
 
 // packYAML checks bonsai/pack.yaml: pack-schema, pack-comment, pack-why, pack-documents, pack-protected, pack-bash and
@@ -317,15 +318,15 @@ func (c *packCheck) packYAML(raw []byte) packYAMLRead {
 	probs := format.MustLookup("pack").WriterProblems(m)
 	for _, p := range probs {
 		switch {
-		case itemPointer.MatchString(p.Pointer):
-			sm := itemPointer.FindStringSubmatch(p.Pointer)
+		case itemPointer().MatchString(p.Pointer):
+			sm := itemPointer().FindStringSubmatch(p.Pointer)
 			badItem[sm[1]+"/"+sm[2]] = true
 			if sm[1] == "documents" {
 				docsF = append(docsF, writerFound("pack-documents", file, "pack", p))
 			} else {
 				protF = append(protF, writerFound("pack-protected", file, "pack", p))
 			}
-		case denyWhyPointer.MatchString(p.Pointer) || denyPointer.MatchString(p.Pointer) && p.Msg == `required field "why" is missing`:
+		case denyWhyPointer().MatchString(p.Pointer) || denyPointer().MatchString(p.Pointer) && p.Msg == `required field "why" is missing`:
 			// pack-why's, which reads the deny rules itself.
 		default:
 			schemaF = append(schemaF, writerFound("pack-schema", file, "pack", p))
@@ -821,9 +822,9 @@ type templateKey struct {
 }
 
 var (
-	templateKeyLine = regexp.MustCompile(`^([a-z][a-z0-9_]*):( |$)`)
-	tableSeparator  = regexp.MustCompile(`^:?-+:?$`)
-	backquoted      = regexp.MustCompile("`([^`]*)`")
+	templateKeyLine = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^([a-z][a-z0-9_]*):( |$)`) })
+	tableSeparator  = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^:?-+:?$`) })
+	backquoted      = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile("`([^`]*)`") })
 )
 
 // fieldsHeader is the header row's cells of a fields table (spec §5), in order, in lower case.
@@ -863,7 +864,7 @@ func readTemplateSkill(lines []string) (templateSkill, bool) {
 		}
 		sep := true
 		for _, s := range cells(lines[i+1]) {
-			sep = sep && tableSeparator.MatchString(s)
+			sep = sep && tableSeparator().MatchString(s)
 		}
 		if match && sep {
 			break
@@ -926,7 +927,7 @@ func templateKeys(lines []string, body []int) ([]templateKey, string) {
 	formatValue := ""
 	seen := map[string]bool{}
 	for _, n := range body {
-		m := templateKeyLine.FindStringSubmatch(lines[n])
+		m := templateKeyLine().FindStringSubmatch(lines[n])
 		if m == nil || seen[m[1]] {
 			continue
 		}
@@ -1139,7 +1140,7 @@ func (sk templateSkill) values(file string, lists *closedLists) []packFound {
 	var out []packFound
 	for _, r := range sk.rows {
 		var cell []string
-		for _, m := range backquoted.FindAllStringSubmatch(r.allowed, -1) {
+		for _, m := range backquoted().FindAllStringSubmatch(r.allowed, -1) {
 			if v := m[1]; v != "" && v != "null" && !strings.ContainsAny(v, " \t") {
 				cell = append(cell, v)
 			}

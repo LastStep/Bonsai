@@ -18,6 +18,7 @@ import (
 	"io/fs"
 	"os"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -142,8 +143,8 @@ func lastLine(b []byte, atStart bool) (line, rest []byte, ok bool) {
 
 // The names of a log folder's files (contract §8.5).
 var (
-	sessionFile = regexp.MustCompile(`^s-(` + sessionChars + `)\.ndjson$`)
-	dayFile     = regexp.MustCompile(`^w-([0-9]{4}-[0-9]{2}-[0-9]{2})\.ndjson$`)
+	sessionFile = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^s-(` + sessionChars + `)\.ndjson$`) })
+	dayFile     = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^w-([0-9]{4}-[0-9]{2}-[0-9]{2})\.ndjson$`) })
 )
 
 // LogFiles are a log folder's files, by name, each list sorted.
@@ -169,7 +170,7 @@ func ListLog(dir string) (LogFiles, error) {
 		}
 		name := e.Name()
 		switch {
-		case sessionFile.MatchString(name):
+		case sessionFile().MatchString(name):
 			out.Sessions = append(out.Sessions, name)
 		case DayOf(name) != "":
 			out.Days = append(out.Days, name)
@@ -180,7 +181,7 @@ func ListLog(dir string) (LogFiles, error) {
 
 // SessionOf gives the session a session file's name holds, "" for any other name.
 func SessionOf(name string) string {
-	if m := sessionFile.FindStringSubmatch(name); m != nil {
+	if m := sessionFile().FindStringSubmatch(name); m != nil {
 		return m[1]
 	}
 	return ""
@@ -188,7 +189,7 @@ func SessionOf(name string) string {
 
 // DayOf gives the day (YYYY-MM-DD) a day file's name holds, "" for any other name or a day that is no date.
 func DayOf(name string) string {
-	m := dayFile.FindStringSubmatch(name)
+	m := dayFile().FindStringSubmatch(name)
 	if m == nil {
 		return ""
 	}

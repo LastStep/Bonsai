@@ -10,6 +10,7 @@ package reader
 import (
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type parser struct {
@@ -118,8 +119,8 @@ func (p *parser) keyValue(m *Map, l *line, body string, n int) *Refusal {
 }
 
 var (
-	keyPattern   = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
-	labelPattern = regexp.MustCompile(`^[a-z][a-z0-9-]*\.[a-z][a-z0-9_]*$`) // contract §5.1, the label name pattern
+	keyPattern   = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[a-z][a-z0-9_]*$`) })
+	labelPattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[a-z][a-z0-9-]*\.[a-z][a-z0-9_]*$`) }) // contract §5.1, the label name pattern
 	reservedKeys = map[string]bool{"y": true, "n": true, "yes": true, "no": true, "on": true, "off": true,
 		"true": true, "false": true, "null": true}
 )
@@ -154,7 +155,7 @@ func splitKey(body string, l *line) (key, rest string, err *Refusal) {
 	switch {
 	case key == "<<": // Keys: never <<.
 		return "", "", refuseAt(CodeKeyMerge, l, pos, "the merge key <<")
-	case !keyPattern.MatchString(key) && !labelPattern.MatchString(key):
+	case !keyPattern().MatchString(key) && !labelPattern().MatchString(key):
 		// Keys: [a-z][a-z0-9_]* for core and definition fields, <namespace>.<name> for label names.
 		return "", "", refuseAt(CodeKeyForm, l, pos, "the key %s is neither [a-z][a-z0-9_]* nor a label name <namespace>.<name>", show(key))
 	case len(key) > maxKey:

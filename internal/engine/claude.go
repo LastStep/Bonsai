@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -32,12 +33,12 @@ const ClaudeCodeFloor = "2.1.294"
 // versionTimeout is the longest claude --version may take.
 const versionTimeout = 20 * time.Second
 
-var versionWord = regexp.MustCompile(`(^|[^0-9.])([0-9]+)\.([0-9]+)\.([0-9]+)([^0-9.]|$)`)
+var versionWord = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`(^|[^0-9.])([0-9]+)\.([0-9]+)\.([0-9]+)([^0-9.]|$)`) })
 
 // ParseVersion finds the first version-shaped word (digits.digits.digits) in a version line; ok false when there is
 // none.
 func ParseVersion(s string) (v [3]int, text string, ok bool) {
-	m := versionWord.FindStringSubmatch(s)
+	m := versionWord().FindStringSubmatch(s)
 	if m == nil {
 		return v, "", false
 	}

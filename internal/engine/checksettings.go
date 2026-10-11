@@ -27,14 +27,15 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 )
 
 var (
-	ruleName = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]*$`)
-	ruleFull = regexp.MustCompile(`^([A-Za-z][A-Za-z0-9_-]*)\((.*)\)$`)
+	ruleName = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]*$`) })
+	ruleFull = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^([A-Za-z][A-Za-z0-9_-]*)\((.*)\)$`) })
 )
 
 // ruleProblem says why a permission rule is not valid on its own, "" when it is.
@@ -47,10 +48,10 @@ func ruleProblem(v any) string {
 		return "it is empty"
 	case strings.TrimSpace(s) != s:
 		return "it has spaces around it"
-	case ruleName.MatchString(s):
+	case ruleName().MatchString(s):
 		return ""
 	}
-	m := ruleFull.FindStringSubmatch(s)
+	m := ruleFull().FindStringSubmatch(s)
 	switch {
 	case m == nil:
 		return "it is not Tool or Tool(specifier)"
@@ -167,11 +168,11 @@ func (r *CheckResult) checkSettingsEnv(f settingsFile, o schema.Object) {
 }
 
 // envVarName is a variable's name as a shell writes it.
-var envVarName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+var envVarName = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`) })
 
 // envName shows a settings env name in a finding: as it is when a shell could name it, else quoted, in ASCII.
 func envName(key string) string {
-	if envVarName.MatchString(key) {
+	if envVarName().MatchString(key) {
 		return key
 	}
 	return ascii(schema.Show(key))

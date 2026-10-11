@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
@@ -111,7 +112,7 @@ var Comments = map[string]string{
 // indexes written as [], a pack's document kind's from its declaration, a generated kind's from format.GeneratedKinds.
 func comment(kinds map[string]string) func(path string) string {
 	return func(path string) string {
-		key := listIndex.ReplaceAllString(path, "[]")
+		key := listIndex().ReplaceAllString(path, "[]")
 		if c, ok := Comments[key]; ok {
 			return c
 		}
@@ -142,14 +143,14 @@ func comment(kinds map[string]string) func(path string) string {
 // quoted says which values init writes in double quotes: a pack's source, folder and ref, which a person edits (a
 // commit pasted over a tag stays text).
 func quoted(path string) bool {
-	switch listIndex.ReplaceAllString(path, "[]") {
+	switch listIndex().ReplaceAllString(path, "[]") {
 	case "packs[].source", "packs[].path", "packs[].ref":
 		return true
 	}
 	return false
 }
 
-var listIndex = regexp.MustCompile(`\[[0-9]+\]`)
+var listIndex = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`\[[0-9]+\]`) })
 
 // ConfigYAML is a new bonsai.yaml from the template: id, init's values and the pack read at its ref (its id, and its
 // document kinds, each written under documents at the pack's default place).

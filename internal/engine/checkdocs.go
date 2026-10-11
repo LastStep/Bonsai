@@ -41,6 +41,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -378,8 +379,8 @@ func (r *CheckResult) checkAbsolute(file string, doc schema.Object) {
 				walk(field+"["+strconv.Itoa(i)+"]", e)
 			}
 		case string:
-			source := file == workspace.ConfigFile && packSource.MatchString(field)
-			if source && remoteURL.MatchString(x) {
+			source := file == workspace.ConfigFile && packSource().MatchString(field)
+			if source && remoteURL().MatchString(x) {
 				return // a remote URL, which every clone fetches
 			}
 			if abs, ok := absoluteIn(x); ok {
@@ -401,10 +402,14 @@ func (r *CheckResult) checkAbsolute(file string, doc schema.Object) {
 }
 
 var (
-	packSource  = regexp.MustCompile(`^packs\[[0-9]+\]\.source$`)
-	remoteURL   = regexp.MustCompile(`^((https?|ssh|git|git\+ssh)://[^/]|[A-Za-z0-9._-]+@[A-Za-z0-9.-]+:)`)
-	absRoots    = regexp.MustCompile(`^(/(home|Users|root|mnt|tmp|var|srv|opt|usr|etc|private|Volumes)/|[A-Za-z]:[\\/]|\\\\[^\\]|file:/)`)
-	absWholeVal = regexp.MustCompile(`^/[A-Za-z0-9._-]`)
+	packSource = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^packs\[[0-9]+\]\.source$`) })
+	remoteURL  = sync.OnceValue(func() *regexp.Regexp {
+		return regexp.MustCompile(`^((https?|ssh|git|git\+ssh)://[^/]|[A-Za-z0-9._-]+@[A-Za-z0-9.-]+:)`)
+	})
+	absRoots = sync.OnceValue(func() *regexp.Regexp {
+		return regexp.MustCompile(`^(/(home|Users|root|mnt|tmp|var|srv|opt|usr|etc|private|Volumes)/|[A-Za-z]:[\\/]|\\\\[^\\]|file:/)`)
+	})
+	absWholeVal = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^/[A-Za-z0-9._-]`) })
 )
 
 // absoluteIn finds an absolute path in a value: the whole value one (/x, C:\x, \\host, a file: URL), or a word of
@@ -412,11 +417,11 @@ var (
 // taken for one. ~/ is a home's place, never absolute here.
 func absoluteIn(s string) (string, bool) {
 	v := strings.TrimSpace(s)
-	if absWholeVal.MatchString(v) || absRoots.MatchString(v) {
+	if absWholeVal().MatchString(v) || absRoots().MatchString(v) {
 		return firstWord(v), true
 	}
 	for _, w := range strings.FieldsFunc(s, func(r rune) bool { return strings.ContainsRune(" \t\"'`()[]{}<>,;=", r) }) {
-		if absRoots.MatchString(w) {
+		if absRoots().MatchString(w) {
 			return w, true
 		}
 	}
@@ -461,10 +466,10 @@ func (r *CheckResult) checkBudgets() {
 }
 
 var (
-	importRef   = regexp.MustCompile(`(?:^|\s)@([^\s]+)`)
-	linkRef     = regexp.MustCompile(`\]\(([^)\s]+)\)`)
-	backtickRef = regexp.MustCompile("`([^`\\s]+)`")
-	lineSuffix  = regexp.MustCompile(`:[0-9]+(-[0-9]+)?$`)
+	importRef   = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`(?:^|\s)@([^\s]+)`) })
+	linkRef     = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`\]\(([^)\s]+)\)`) })
+	backtickRef = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile("`([^`\\s]+)`") })
+	lineSuffix  = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`:[0-9]+(-[0-9]+)?$`) })
 )
 
 // checkNamedPaths finds project paths that CLAUDE.md (outside Bonsai's block), STATE and the memory notes name and
@@ -488,19 +493,19 @@ func (r *CheckResult) checkNamedPaths(files []string) {
 				p        string
 				fromFile bool
 			}
-			for _, m := range importRef.FindAllStringSubmatch(line, -1) {
+			for _, m := range importRef().FindAllStringSubmatch(line, -1) {
 				refs = append(refs, struct {
 					p        string
 					fromFile bool
 				}{strings.TrimRight(m[1], ".,;:)"), true})
 			}
-			for _, m := range linkRef.FindAllStringSubmatch(line, -1) {
+			for _, m := range linkRef().FindAllStringSubmatch(line, -1) {
 				refs = append(refs, struct {
 					p        string
 					fromFile bool
 				}{m[1], true})
 			}
-			for _, m := range backtickRef.FindAllStringSubmatch(line, -1) {
+			for _, m := range backtickRef().FindAllStringSubmatch(line, -1) {
 				if strings.Contains(m[1], "/") {
 					refs = append(refs, struct {
 						p        string
@@ -549,7 +554,7 @@ func projectRef(root, dir, ref string, fromFile bool) (string, bool) {
 	if i := strings.IndexByte(ref, '#'); i >= 0 {
 		ref = ref[:i]
 	}
-	ref = lineSuffix.ReplaceAllString(ref, "")
+	ref = lineSuffix().ReplaceAllString(ref, "")
 	switch {
 	case ref == "" || strings.Contains(ref, "://") || strings.HasPrefix(ref, "mailto:"),
 		strings.HasPrefix(ref, "~") || strings.HasPrefix(ref, "/") || strings.HasPrefix(ref, `\`),
@@ -573,7 +578,7 @@ func projectRef(root, dir, ref string, fromFile bool) (string, bool) {
 	return p, true
 }
 
-var runDate = regexp.MustCompile(`^R-([0-9]{4}-[0-9]{2}-[0-9]{2})-`)
+var runDate = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^R-([0-9]{4}-[0-9]{2}-[0-9]{2})-`) })
 
 // checkRunReports lists the run reports past bonsai.yaml's generated.run rule (spec §6): keep_days by the date in a
 // report's id, keep_newest by that date, newest first. One warning for them all, for a person: Bonsai cleans no run
@@ -594,7 +599,7 @@ func (r *CheckResult) checkRunReports(kinds []workspace.DocKind) {
 		}
 		files, _ := workspace.DocFiles(r.Root, k)
 		for _, f := range files {
-			if m := runDate.FindStringSubmatch(path.Base(f)); m != nil {
+			if m := runDate().FindStringSubmatch(path.Base(f)); m != nil {
 				reports = append(reports, report{f, m[1]})
 			}
 		}

@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -30,7 +31,7 @@ import (
 )
 
 // dayFile is how an asks file is named: its UTC day (contract §9.1).
-var dayFile = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}\.ndjson$`)
+var dayFile = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}\.ndjson$`) })
 
 // recordStart is how every ask record Bonsai writes begins.
 var recordStart = []byte(`{"format":"bonsai.ask/`)
@@ -104,7 +105,7 @@ func Read(main, only string) (*Book, error) {
 		mark = []byte(`"` + only + `"`) // a key needs no escaping in JSON
 	}
 	for _, de := range entries { // os.ReadDir sorts by name: the days in order
-		if !de.Type().IsRegular() || !dayFile.MatchString(de.Name()) {
+		if !de.Type().IsRegular() || !dayFile().MatchString(de.Name()) {
 			continue
 		}
 		if err := b.readFile(filepath.Join(dir, de.Name()), mark); err != nil {

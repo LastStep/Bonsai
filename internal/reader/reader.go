@@ -41,6 +41,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode/utf8"
 )
 
@@ -351,7 +352,7 @@ func badChar(r rune) string {
 }
 
 // formatKey matches a format: value that names a format and its major.
-var formatValue = regexp.MustCompile(`^[a-z][a-z0-9_.-]*/([1-9][0-9]*)$`)
+var formatValue = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[a-z][a-z0-9_.-]*/([1-9][0-9]*)$`) })
 
 // read dispatches, then reads under format 1.
 func read(lines []line) Result {
@@ -365,7 +366,7 @@ func read(lines []line) Result {
 	}
 	// Contract §2.2: a newer major is refused before anything else is read.
 	if v, ok := formatLineValue(&lines[at]); ok {
-		if m := formatValue.FindStringSubmatch(v); m != nil && m[1] != "1" {
+		if m := formatValue().FindStringSubmatch(v); m != nil && m[1] != "1" {
 			return Result{Outcome: Refused, Refusal: refuse(CodeFormatTooNew, lines[at].no,
 				"format too new: %s (this Bonsai reads major 1)", show(v))}
 		}
