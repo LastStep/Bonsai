@@ -2,11 +2,21 @@
 
 package guard
 
-import "testing"
+import (
+	"runtime"
+	"testing"
 
-// ruleBadPath is bad-path's test (TestEveryRule). The rule comes from Windows' own name for a path (final_windows.go:
-// a part it opens but cannot name, a junction or link that does not resolve), which no other system gives, so it is
-// proved on Windows (rules_windows_test.go, and TestJunctionLimits).
+	"github.com/LastStep/Bonsai/internal/schema"
+)
+
+// ruleBadPath is bad-path's test (TestEveryRule). On Linux, a write into /proc (TestAPathIntoProcIsRefused has the
+// rest); on Windows, a junction that leads nowhere (rules_windows_test.go). Elsewhere (macOS) neither exists, so it is
+// proved on those two.
 func ruleBadPath(t *testing.T) {
-	t.Skip("bad-path comes only from Windows' own name for a path; rules_windows_test.go proves it on Windows")
+	if runtime.GOOS != "linux" {
+		t.Skip("bad-path comes from /proc on Linux and from Windows' own name for a path; neither exists here")
+	}
+	dir := withTask(t, "running", "**")
+	wantRule(t, dir, toolPayload("r1", dir, "Write", schema.Object{{Key: "file_path", Value: "/proc/self/cwd/x.txt"},
+		{Key: "content", Value: "x"}}), RuleBadPath)
 }
