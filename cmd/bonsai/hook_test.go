@@ -252,6 +252,24 @@ func lastRecord(t *testing.T, project, session string) schema.Object {
 
 // Check 11's fail-closed half, on the built binaries and part 3's real hook line: the guard refuses the protected
 // edit and allows the free one, and each of the four faults blocks the free edit.
+// logPath is a binary's path as a guard record names it (the log schema's bonsai_path; contract §2.6): forward slashes,
+// written from ~/ when it lies under the user's home folder (letter case ignored on Windows), else as it is. Worked
+// out here on its own, from os.UserHomeDir, so a wrong conversion in the guard fails the test. On Windows the test's
+// builds lie in %TEMP%, under the home; on Linux in /tmp, outside it.
+func logPath(t *testing.T, bin string) string {
+	t.Helper()
+	p := filepath.ToSlash(filepath.Clean(bin))
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return p
+	}
+	prefix := strings.TrimSuffix(filepath.ToSlash(filepath.Clean(home)), "/") + "/"
+	if len(p) > len(prefix) && (p[:len(prefix)] == prefix || (runtime.GOOS == "windows" && strings.EqualFold(p[:len(prefix)], prefix))) {
+		return "~/" + p[len(prefix):]
+	}
+	return p
+}
+
 func TestFaultsThroughTheHookLine(t *testing.T) {
 	normal, fault := bonsaiBuilds(t)
 	proj := guardProject(t)
@@ -266,8 +284,8 @@ func TestFaultsThroughTheHookLine(t *testing.T) {
 		if code != 2 || !strings.Contains(stderr, `Edit of "protected.txt" refused`) {
 			t.Fatalf("protected.txt: exit %d, stderr %q", code, stderr)
 		}
-		if r := lastRecord(t, proj, "s-prot"); r.String("bonsai_path") != filepath.ToSlash(normal) || len(r.String("bonsai_sha256")) != 64 {
-			t.Errorf("the record names %s %s, want %s and a hash", r.String("bonsai_path"), r.String("bonsai_sha256"), filepath.ToSlash(normal))
+		if r := lastRecord(t, proj, "s-prot"); r.String("bonsai_path") != logPath(t, normal) || len(r.String("bonsai_sha256")) != 64 {
+			t.Errorf("the record names %s %s, want %s and a hash", r.String("bonsai_path"), r.String("bonsai_sha256"), logPath(t, normal))
 		}
 		// The normal build has no switch: set or not, it decides the same.
 		if code, stderr, _ := runLine(t, normalPath, proj, "crash", free); code != 0 {
@@ -300,7 +318,7 @@ func TestFaultsThroughTheHookLine(t *testing.T) {
 		if code != 2 || !strings.Contains(stderr, "test fault crash") {
 			t.Fatalf("exit %d, stderr %q", code, stderr)
 		}
-		if r := lastRecord(t, proj, "s-crash"); r.String("rule") != "fault-"+"crash" || r.String("bonsai_path") != filepath.ToSlash(fault) {
+		if r := lastRecord(t, proj, "s-crash"); r.String("rule") != "fault-"+"crash" || r.String("bonsai_path") != logPath(t, fault) {
 			t.Errorf("record: %s", schema.Show(r))
 		}
 	})
