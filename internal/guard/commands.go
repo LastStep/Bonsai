@@ -133,8 +133,11 @@ func allowExec(args []string) bool {
 func (j *judge) personGrant(top string) string {
 	chain := j.chain(filepath.Join(top, workspace.ConfigFile))
 	g := j.grantor(chain)
-	if g == nil {
-		return "no linked project verified on this machine holds the folder it runs in"
+	switch {
+	case g == nil && len(chain) > 0:
+		return "the project it runs in is not verified on this machine (" + j.notVerified(chain[0]).Why + ")"
+	case g == nil:
+		return "no linked project holds the folder it runs in"
 	}
 	ms, err := j.modeOf(g)
 	switch {

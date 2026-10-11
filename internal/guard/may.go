@@ -122,6 +122,34 @@ func (j *judge) mayDelete(dir, p string) Decision {
 	return d
 }
 
+// notVerified is why a project's main checkout is not verified, and the person's step (workspace.VerifyMain's), with
+// the record it could not read named when that is why: one damaged record in Bonsai's home un-verifies every project on
+// the machine (workspace.FirstClaim cannot tell which checkout claimed an id first), so the refusal names that record,
+// from the home's folder, and the step that mends it.
+func (j *judge) notVerified(p *linkedProject) workspace.Trust {
+	t := j.verified(p)
+	if t.Verified || j.home == "" || p.id() == "" {
+		return t
+	}
+	_, _, err := workspace.FirstClaim(j.home, p.id())
+	var we *workspace.Error
+	if !errors.As(err, &we) || we.File == "" {
+		return t
+	}
+	file := filepath.FromSlash(we.File)
+	shown := j.shown(file)
+	if rel, ok := relTo(filepath.Clean(j.home), file); ok {
+		shown = rel + " in Bonsai's home"
+	}
+	if !strings.Contains(t.Why, shown) {
+		t.Why += " (the record that cannot be read: " + shown + ", " + oneLine(we.Msg) + ")"
+	}
+	if !strings.Contains(t.Next, filepath.Base(file)) {
+		t.Next = "a person checks " + shown + ": " + t.Next
+	}
+	return t
+}
+
 // shown gives a path as a refusal, and so its record, names it (contract §2.6: no user name in the log): relative to
 // the session's project when it lies inside it; else from ~/ under the user's home folder (fromHome); else as it is,
 // forward slashes. A relative path is shown as written.
@@ -234,7 +262,7 @@ func (j *judge) form(c change, abs string, chain []*linkedProject) (Decision, *l
 		}
 		g := j.grantor(chain)
 		if g == nil {
-			t := j.verified(chain[0])
+			t := j.notVerified(chain[0])
 			d := deny(RuleMainNotVerified, hitOn(c, h)+", and no task can grant it here: its main checkout is not verified, as "+
 				t.Why, t.Next+"; until then, leave the file as it is and tell the person")
 			d.Target = target(j.recordIn(h.x.chain), []string{h.x.abs})
