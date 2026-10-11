@@ -40,6 +40,10 @@
 // A session started in a folder below a project's top, or moved by a person's /cd, loads none of the project's
 // settings (Claude Code reads .claude/settings.json from the folder a session starts in), so no hook line, the guard's
 // among them, runs there: bonsai init's closing words and this hook's help say so.
+//
+// Known limit, placed for step 5.4: a worktree with no bonsai.yaml of its own. Inside the main checkout's
+// .claude/worktrees/, its edits are judged as the main checkout's paths under its lists, so a person_only .claude/**
+// refuses every one of them; outside the main checkout, it is judged by no lists at all.
 package guard
 
 // Decision is the guard's answer to one call.

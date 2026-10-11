@@ -53,7 +53,9 @@ package guard
 //   - bonsai's words from a variable, a substitution, or a positional parameter outside xargs (bonsai $X);
 //   - env -C or sudo -D given twice, or env -C and a -S text's -C: read together, where the program takes the last;
 //   - ~-, ~N and ~-N after a line's own cd or pushd: judged in the payload's folder only, not every folder the line
-//     visited (a plain delete of an operand that cannot be placed stays allowed, rule 3's scope).
+//     visited (a plain delete of an operand that cannot be placed stays allowed, rule 3's scope);
+//   - the program itself from xargs's input (echo bonsai | xargs -I{} sh -c '{} unlink', echo bonsai | xargs sh -c
+//     '$0 unlink'): a program the check cannot see is not read.
 //
 // The answer (note 6) names the command by its head only (redact.CommandHead: the program and, for git and its kind,
 // one subcommand word), the operand and the rule, and the next step; it quotes no command line, and an operand that
