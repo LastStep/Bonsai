@@ -42,12 +42,16 @@ Runs code: Bonsai's own hook lines are the link's purpose, so --yes writes them.
 files they run and a plugin's own code parts (hooks, MCP and LSP servers, monitors, mods) are the pack's code: the
 preview lists each under "Runs code", and nothing is written without --allow-exec as well as --yes, at a terminal
 too. With bonsai.yaml but no lock (a link again), each is judged against what is on disk.
+An agent's session (CLAUDE_CODE_CHILD_SESSION set, as Claude Code sets it for every command its tools run): --allow-exec
+is a person's command, refused (exit 4, nothing written) but in a project in command mode under a running task whose
+bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json; so is a run that changes or takes out Bonsai's own guard
+or stop line. A person runs it in a terminal of their own.
 `,
 	Exits: []Exit{
 		{Code: 0, Means: "linked (or nothing to change)"},
 		{Code: 2, Means: "bad input: a flag or value missing or wrong, a pack Bonsai cannot link, or a bonsai.yaml or\n.claude/settings.json Bonsai does not read (nothing written)"},
 		{Code: 3, Means: "runtime: a fetch failed, git or the Bonsai home missing, a file that cannot be read or written (nothing\nwritten); or the write stopped part-way (--json: result failed): run the same command again"},
-		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, --new-id in a worktree, a pack's tag\nmoved to another commit, a test build outside its scratch folder), no --yes, or code without --allow-exec (the\npreview was printed; nothing written)"},
+		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, --new-id in a worktree, a pack's tag\nmoved to another commit, a test build outside its scratch folder), no --yes, code without --allow-exec, or a\nperson's command in an agent's session (nothing written)"},
 		{Code: 5, Means: "conflicts (nothing written)"},
 	},
 	Examples: []string{"bonsai init --name demo --source https://github.com/LastStep/bonsai-test-pack --ref 506205354b7589f82f849820987aad17dba3309d --yes --allow-exec"},

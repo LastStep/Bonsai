@@ -4,7 +4,8 @@ package main
 // codes is unlinkWord; its plan is internal/engine/unlink.go's BuildUnlink, written by engine.Apply; with --json it
 // prints the changes output (bonsai.changes/1, command unlink). The consent rule is init's and update's (engine.go):
 // it previews first, writes with --yes, asks y/N only at a terminal, and without one exits 4. It needs no
-// --allow-exec: it adds no code, and a removed hook line runs nothing.
+// --allow-exec: it adds no code, and a removed hook line runs nothing. In an agent's session it is a person's command,
+// refused but under a person's grant in a project in command mode (agent.go).
 
 import (
 	"os"
@@ -35,6 +36,9 @@ checkout: a worktree's install record is its own, so run bonsai unlink in each c
 link commit takes Bonsai's files out but leaves Claude Code's record (installed_plugins.json, in Claude Code's own
 folder, outside git); to remove it, run claude plugin uninstall <pack>@<marketplace> --scope project in the checkout.
 Run again, it changes nothing; bonsai init links the project again.
+In an agent's session (CLAUDE_CODE_CHILD_SESSION set) it is a person's command, refused (exit 4, nothing read or
+written) but in a project in command mode under a running task whose bonsai.allows a person gave bonsai.yaml and
+.bonsai/lock.json: a person runs it in a terminal of their own.
 `,
 	Flags: []Flag{
 		{Name: "--yes", Help: "write without asking"},
@@ -44,7 +48,7 @@ Run again, it changes nothing; bonsai init links the project again.
 		{Code: 0, Means: "unlinked (or nothing to change: no bonsai.yaml and no lock here)"},
 		{Code: 2, Means: "bad input: a flag wrong, or a bonsai.yaml, .claude/settings.json or CLAUDE.md block Bonsai does not\nread (nothing written)"},
 		{Code: 3, Means: "runtime: git or the Bonsai home missing, a file that cannot be read or written (nothing written); or\nthe write stopped part-way (--json: result failed): run the same command again"},
-		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, bonsai.yaml with no lock, a lock Bonsai\ndoes not read, a test build outside its scratch folder)) or no --yes (the preview was printed; nothing written)"},
+		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, bonsai.yaml with no lock, a lock Bonsai\ndoes not read, a test build outside its scratch folder), no --yes (the preview was printed; nothing written), or an\nagent's session (a person's command)"},
 	},
 	Examples: []string{"bonsai unlink --yes"},
 	Refused:  changesRefused,
@@ -63,6 +67,10 @@ func runUnlink(c *call) int {
 	home, err := workspace.Home()
 	if err != nil {
 		return c.fail(engine.HomeError(err))
+	}
+	// In an agent's session, unlink is a person's command (agent.go), refused before anything is read.
+	if e := personCommand(dir, home, "bonsai unlink", "it takes Bonsai's guard and stop gate out of the project", "bonsai unlink --yes"); e != nil {
+		return c.fail(e)
 	}
 	plan, err := engine.BuildUnlink(dir, home)
 	if err != nil {

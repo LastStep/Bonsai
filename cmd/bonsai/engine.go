@@ -98,6 +98,12 @@ func runEngine(c *call) int {
 	if err != nil {
 		return c.fail(engine.HomeError(err))
 	}
+	// In an agent's session, --allow-exec is a person's command (agent.go), refused before anything is read or fetched.
+	if f.allowExec {
+		if e := personCommand(dir, home, cmdline, "--allow-exec consents to code that runs on this machine", cmdline+" --yes"); e != nil {
+			return c.fail(e)
+		}
+	}
 	req := engine.Request{Command: word, Dir: dir, Home: home, Version: version, NewID: f.newID, Keep: f.keep, Adopt: f.adopt,
 		AllowExec: f.allowExec}
 	if word == "init" {
@@ -136,6 +142,22 @@ func runEngine(c *call) int {
 	}
 	head := "bonsai " + word + ": the preview.\n"
 	preview := head + plan.Preview(f.diff)
+	// In an agent's session, a change or removal of Bonsai's own guard or stop line is a person's command (agent.go):
+	// refused with the preview, whatever else the command says.
+	if touched := plan.OwnGuardChanges(); len(touched) > 0 {
+		person := cmdline
+		if plan.NeedsExec() && !f.allowExec {
+			person += " --allow-exec"
+		}
+		lines := make([]string, len(touched))
+		for i, t := range touched {
+			lines[i] = t.Change + " " + strings.SplitN(t.Line, ":", 2)[0]
+		}
+		if e := personCommand(dir, home, cmdline, "this "+word+" changes or takes out Bonsai's own guard or stop line ("+
+			strings.Join(lines, "; ")+"), which is what guards this project", person+" --yes"); e != nil {
+			return out("refused", e.Exit, e, preview+"Refused: "+e.What+".\nnext: "+e.Next+"\n")
+		}
+	}
 	// Code is consented to separately (spec §6): without --allow-exec, a plan that runs code is refused whole, at a
 	// terminal too. The next step repeats the command with --allow-exec, and settles any conflict in the same run.
 	if plan.NeedsExec() && !f.allowExec {
@@ -143,6 +165,13 @@ func runEngine(c *call) int {
 		next := "read each item under Runs code; to write them with the rest, run: " + base + " --yes"
 		if len(plan.Conflicts) > 0 {
 			next = "read each item under Runs code, and settle the conflicts: " + plan.ConflictNext(base)
+		}
+		if agentSession() {
+			// --allow-exec is a person's command here (agent.go): the next step is the person's.
+			next = "read each item under Runs code; " + personNext(base+" --yes")
+			if len(plan.Conflicts) > 0 {
+				next = "read each item under Runs code; settle the conflicts, and " + personNext(plan.ConflictNext(base))
+			}
 		}
 		n := len(plan.RunsCode)
 		e := &engine.Error{Code: "needs-allow-exec", Exit: engine.ExitState,

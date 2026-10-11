@@ -116,6 +116,7 @@ error words.
 | `needs-yes` | person | the command writes, and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing |
 | `needs-allow-exec` | person | the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written |
 | `conflicts` | person | files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt |
+| `person-command` | person | an agent's session (CLAUDE_CODE_CHILD_SESSION set) ran a command only a person runs: init or update with --allow-exec, unlink, or an update that changes or takes out Bonsai's guard or stop line; an agent may run one only in a project in command mode, under a running task whose bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json. Nothing was written |
 | `test-build` | agent | a test build of Bonsai (stamped with its hook lines' place and a scratch folder) was asked to link, update or unlink outside its scratch folder, or was stamped with one of the two only: it writes nothing there |
 | `ask-not-open` | agent | bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved, or ask --status names a key that has no ask: the message says which, and nothing was written (exit 4) |
 | `answer-own-session` | person | the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4) |

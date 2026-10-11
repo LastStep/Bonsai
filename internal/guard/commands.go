@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -194,6 +195,29 @@ func (j *judge) personGrant(top string) string {
 		}
 	}
 	return ""
+}
+
+// PersonGrant is personGrant for bonsai init, update and unlink themselves (step 5.3.6 note 8: the command refuses a
+// person's command in an agent's session too, since a variable, xargs, a script or a subprocess can hide a flag from
+// the guard), so the judgment of a person's grant has one home: "" when the checkout holding dir is a project in
+// command mode whose running task grants bonsai.yaml and .bonsai/lock.json, else the reason, ASCII words that follow
+// "and". home is the Bonsai home; getenv the command's environment. The session's own project, for BONSAI_TASK, is
+// CLAUDE_PROJECT_DIR's when it is set, as in the guard; else the project holding dir, since Claude Code gives a tool's
+// commands no CLAUDE_PROJECT_DIR (measured at step 5.3.6a) and the command's checkout stands for the session's.
+func PersonGrant(home, dir string, getenv func(string) string) string {
+	if r, err := filepath.EvalSymlinks(dir); err == nil {
+		dir = r
+	}
+	j := newJudge(home)
+	j.getenv = getenv
+	at := getenv(hookin.ProjectEnv)
+	if at == "" {
+		at = dir
+	}
+	if roots, _, err := hookin.FindProjects(at); err == nil && len(roots) > 0 {
+		j.session = j.project(roots[0])
+	}
+	return j.personGrant(checkoutTop(dir))
 }
 
 // checkoutTop is the top of the checkout holding dir, as git finds it: the nearest folder at or above it holding a

@@ -295,6 +295,8 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		{"init with no git", noGit, link, 3, "git-missing", ""},
 		{"init with no home", noHome, link, 3, "bad-home", ""},
 
+		{"update --allow-exec in an agent's session", then(linked, asAgent), []string{"update", "--allow-exec", "--yes"}, 4, "person-command", ""},
+		{"unlink in an agent's session", then(linked, asAgent), []string{"unlink"}, 4, "person-command", ""},
 		{"update, not linked", nil, []string{"update"}, 4, "not-linked", ""},
 		{"update, no lock", then(linked, func(c *cli) { _ = os.Remove(filepath.Join(c.root, ".bonsai", "lock.json")) }), []string{"update"}, 4, "no-lock", ""},
 		{"update, a lock Bonsai does not read", then(linked, write(".bonsai/lock.json", "{")), []string{"update"}, 4, "bad-lock", ""},

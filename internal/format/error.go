@@ -64,7 +64,8 @@ var ErrorWords = []Word{
 	{Word: "needs-yes", Who: "person", Means: "the command writes, and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing"},
 	{Word: "needs-allow-exec", Who: "person", Means: "the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written"},
 	{Word: "conflicts", Who: "person", Means: "files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt"},
-	// Where a command runs (exit 4; step 5.3.6).
+	// Who runs a command, and where (exit 4; step 5.3.6).
+	{Word: "person-command", Who: "person", Means: "an agent's session (CLAUDE_CODE_CHILD_SESSION set) ran a command only a person runs: init or update with --allow-exec, unlink, or an update that changes or takes out Bonsai's guard or stop line; an agent may run one only in a project in command mode, under a running task whose bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json. Nothing was written"},
 	{Word: "test-build", Who: "agent", Means: "a test build of Bonsai (stamped with its hook lines' place and a scratch folder) was asked to link, update or unlink outside its scratch folder, or was stamped with one of the two only: it writes nothing there"},
 	// Asks, answers, the log's append and logs (steps 5.2.3 and 5.2.5).
 	{Word: "ask-not-open", Who: "agent", Means: "bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved, or ask --status names a key that has no ask: the message says which, and nothing was written (exit 4)"},
