@@ -72,13 +72,13 @@ func TestRefusalsNameNoUserFolder(t *testing.T) {
 	}
 }
 
-// A person-command's reason quotes the words it found as ASCII (oneLine): a non-ASCII option word of exec or env,
-// or a bonsai call's word, never reaches stderr or the record as it is.
+// A person-command's reason is ASCII: a non-ASCII option word of exec or env is not quoted, and a bonsai call's word
+// is written through oneLine, so neither reaches stderr or the record as it is.
 func TestPersonCommandReasonsAreASCII(t *testing.T) {
 	dir := withTask(t, "todo")
 	for _, c := range []struct{ tool, line, want string }{
-		{"Bash", "exec -\u00e4c ./x.sh", `(exec -\u00e4c)`},
-		{"Bash", "env -\u00e4i ./x.sh", `(env -\u00e4i)`},
+		{"Bash", "exec -\u00e4c ./x.sh", `(exec -c)`},
+		{"Bash", "env -\u00e4i ./x.sh", `(env -i)`},
 		{"Bash", "bonsai \u00e4dd --allow-exec", `bonsai \u00e4dd --allow-exec refused`},
 		{"PowerShell", "Start-Process x -UseNewEnvironment", "(Start-Process -usenewenvironment)"},
 	} {

@@ -14,13 +14,16 @@ package guard
 //     ...), the program. A shell given text (bash -c, eval, cmd /c, powershell -Command, a here-document fed to
 //     bash) has that text split again; a delete word (DeleteWords, the list's one home) gives what it deletes; a
 //     bonsai call goes to the guard's judgment of Bonsai's own commands (commands.go's ownCommand).
-//   - this file: every text split (the line, and each text nested in it or decoded) is given to commands.go's
-//     ownLine for CLAUDE_CODE_CHILD_SESSION; the list walked in order, the folder each command runs in followed
+//   - shell_env.go: CLAUDE_CODE_CHILD_SESSION read on the words of every simple command, at every depth; a change of
+//     it, or a program started with an empty or new environment, goes to commands.go's personStep.
+//   - this file: every text split (the line, and each text nested in it or decoded); the list walked in order, the
+//     folder each command runs in followed
 //     through cd (note 4: a cd to a name moves it; one that cannot be told leaves it unknown; a cd that may fail
 //     leaves both folders), and each delete judged. Rule 3 (delete-unnamed): a recursive or bulk delete with an
 //     operand that is not a plain name (shell_paths.go's delPlain), a delete of several files by a glob, a delete fed
-//     its operands by xargs, a pipeline or a loop's variable, git clean with no path, and always git clean -x or -X,
-//     git stash --all and rm --no-preserve-root. Rule 4 (delete-protected): every operand, and both sides of a move,
+//     its operands by xargs, a pipeline or a loop's variable, git clean with no path, a git pathspec with magic other
+//     than :/, :(top) or :(literal) (delGitMagic, which reads those three), and always git clean -x or -X, git stash
+//     --all and rm --no-preserve-root. bash's ~+/x is read in the command's folder, ~-/x in one that cannot be told. Rule 4 (delete-protected): every operand, and both sides of a move,
 //     read in the command's folder and judged by the guard's one function for a delete (may.go's mayDelete); a
 //     recursive delete or a move of a folder also against the guarded paths under it, found from the guarded globs
 //     (may.go's judgedRoots, read only once a delete needs them: it reads this machine's records) without reading
@@ -64,8 +67,9 @@ type delJudge interface {
 	judgedRoots() []judgedRoot
 	// ownCommand judges one bonsai call: argv its words, dir the folder it runs in (commands.go).
 	ownCommand(dir string, argv []string) Decision
-	// ownLine judges a text for CLAUDE_CODE_CHILD_SESSION (commands.go): each text the check splits is given to it.
-	ownLine(tool, text string) Decision
+	// personStep judges a person's step the check found (commands.go): a change of CLAUDE_CODE_CHILD_SESSION
+	// (shell_env.go), a bonsai call whose words it cannot see.
+	personStep(tool, what string) Decision
 }
 
 // delOp is one operand of a delete or a move: one word, or one word its brace list writes out.
@@ -78,6 +82,8 @@ type delOp struct {
 	pipeVar bool    // PowerShell's $_ or $PSItem: an item a pipeline or loop gives
 	item    bool    // find's {}: judged as find's starting points are, not here
 	word    *shWord // the word it came from, when it holds an expansion that may stand for literal text
+	top     bool    // read against the checkout's top, not the command's folder (git's :/x, :(top)x)
+	away    bool    // read in a folder the check cannot tell (bash's ~-/x, the previous folder)
 }
 
 // delAct is one delete or move a command makes.
@@ -179,18 +185,26 @@ func (r *delRun) text(s string, d shDialect, depth int, dirs delDirs, loop bool)
 	if r.deny != nil {
 		return dirs
 	}
-	if own := r.j.ownLine(r.tool, s); !own.Allow {
-		r.refuse(own)
-		return dirs
-	}
 	l, why := shSplit(s, d, depth)
 	if why != "" {
+		if envBackstop(s) {
+			r.envStep("holds CLAUDE_CODE_CHILD in a form the check cannot split")
+			return dirs
+		}
+		if b := delHoldsBonsai(s); b != "" {
+			r.unsplitBonsai(b)
+			return dirs
+		}
 		if word := delHoldsWord(s); word != "" {
 			r.refuse(Decision{Rule: RuleDeleteUnsplit,
 				Why: fmt.Sprintf("%s refused: the command line holds the delete word %s, and the check cannot split it (%s), "+
 					"so it cannot tell what it deletes (rule %s)", r.tool, quote(word, 40), why, RuleDeleteUnsplit),
 				Next: "close every quote and bracket, nest at most three levels deep, and name what the delete removes"})
 		}
+		return dirs
+	}
+	if envBackstop(s) && envSightings(l) == 0 {
+		r.envStep("holds CLAUDE_CODE_CHILD in a form the check cannot read (the name built from parts)")
 		return dirs
 	}
 	return r.list(l, d, dirs, loop)
@@ -220,6 +234,9 @@ func (r *delRun) list(l *shList, d shDialect, dirs delDirs, loop bool) delDirs {
 			for _, n := range f.nested {
 				r.list(n.list, d, cur, inLoop)
 			}
+		}
+		if d == shPower {
+			r.envDotNet(c)
 		}
 		var cd delCd
 		if c.group != nil {
@@ -370,6 +387,8 @@ func (r *delRun) simple(c *shCommand, d shDialect, depth int, dirs delDirs, loop
 			}
 		}
 	case shPower:
+		r.envPSAssign(words)
+		r.envPSData(words)
 		words = delPSAssign(words)
 		for len(words) > 0 && !words[0].quoted && (words[0].text == "&" || words[0].text == ".") {
 			words = words[1:]
@@ -509,6 +528,24 @@ func (r *delRun) judge(a delAct, x delExec) {
 	}
 	a.ops = delLiterals(a.ops, x)
 	a.dests = delLiterals(a.dests, x)
+	for _, list := range [][]delOp{a.ops, a.dests} {
+		for k := range list {
+			op := &list[k]
+			if x.d == shBash {
+				delTildeOp(op)
+			}
+			if !op.git || !strings.HasPrefix(op.text, ":") {
+				continue
+			}
+			if why := delGitMagic(op); why != "" {
+				r.refuse(Decision{Rule: RuleDeleteUnnamed, Target: r.target(x.dirs, *op),
+					Why: fmt.Sprintf("%s refused: %s does not name what it %s: its operand %s %s (rule %s)", r.tool,
+						r.head(x), verb, r.shownText(op.text), why, RuleDeleteUnnamed),
+					Next: "name the paths plainly, or with :/ or :(top) for the checkout's top"})
+				return
+			}
+		}
+	}
 	bulk := a.bulk != "" || x.find
 	for _, op := range a.ops {
 		if op.item {
@@ -524,7 +561,7 @@ func (r *delRun) judge(a delAct, x delExec) {
 			if p := delPlain(op); p != "" {
 				why = fmt.Sprintf("its operand %s %s", r.shownOp(op), p)
 				next = delNextFor(p)
-			} else if x.dirs.unknown && !delIsAbs(op.text) {
+			} else if (x.dirs.unknown || op.away) && !delIsAbs(op.text) {
 				why = fmt.Sprintf("its operand %s is read in a folder the check cannot tell (after a cd it cannot "+
 					"follow)", r.shownOp(op))
 				next = "cd to a plain folder name first, or give the operand as an absolute path"
@@ -648,6 +685,83 @@ func delExpandAlts(words []shWord) []shWord {
 	return out
 }
 
+// delGitMagic reads a git pathspec that starts with a colon (its magic) in place: :/x, :/:x and :(top)x name x at the
+// checkout's top (top); :x, ::x and :(literal)x name x in the command's folder (:(literal)'s glob characters as
+// written). Any other magic (icase, glob, exclude and its ! and ^, attr, or more than one) gives why it is refused:
+// the check cannot tell which paths it takes.
+func delGitMagic(op *delOp) string {
+	t := op.text
+	const other = "is a git pathspec with magic the check does not read (icase, glob, exclude, attr, or more than one)"
+	var magic []string
+	rest := ""
+	if strings.HasPrefix(t, ":(") {
+		end := strings.IndexByte(t, ')')
+		if end < 0 {
+			return other
+		}
+		for _, m := range strings.Split(t[2:end], ",") {
+			if m = strings.ToLower(strings.TrimSpace(m)); m != "" {
+				magic = append(magic, m)
+			}
+		}
+		rest = t[end+1:]
+	} else {
+		k := 1
+		for k < len(t) && strings.IndexByte("/!^", t[k]) >= 0 {
+			if t[k] == '/' {
+				magic = appendNew(magic, "top")
+			} else {
+				magic = appendNew(magic, "exclude")
+			}
+			k++
+		}
+		if k < len(t) && t[k] == ':' {
+			k++
+		}
+		rest = t[k:]
+	}
+	if len(magic) > 1 {
+		return other
+	}
+	if len(magic) == 1 {
+		switch magic[0] {
+		case "top":
+			op.top = true
+		case "literal":
+			op.literal = true
+		default:
+			return other
+		}
+	}
+	if rest == "" {
+		rest = "."
+	}
+	op.text = rest
+	op.glob = !op.literal && strings.ContainsAny(rest, "*?[")
+	return ""
+}
+
+// delTildeOp reads bash's tilde forms in an operand: ~+ is the command's folder ($PWD), so ~+/x is x there; ~- is the
+// previous folder ($OLDPWD), which the check cannot tell (away); ~name/x is x in the home folder when name is the
+// home folder's own (delTildeUser).
+func delTildeOp(op *delOp) {
+	t := op.text
+	switch {
+	case t == "~+" || t == "~+/":
+		op.text = "."
+	case strings.HasPrefix(t, "~+/"):
+		op.text = t[3:]
+	case t == "~-" || t == "~-/":
+		op.text, op.away = ".", true
+	case strings.HasPrefix(t, "~-/"):
+		op.text, op.away = t[3:], true
+	case strings.HasPrefix(t, "~") && !strings.HasPrefix(t, "~/") && strings.Contains(t, "/"):
+		if abs := delTildeUser("", t); abs != "" {
+			op.text = abs
+		}
+	}
+}
+
 func delVerb(move bool) string {
 	if move {
 		return "move"
@@ -710,7 +824,18 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 		text = delProvider(text)
 	}
 	glob := op.glob && !op.literal
-	for _, dir := range r.dirsFor(x.dirs, text) {
+	dirs := r.dirsFor(x.dirs, text)
+	switch {
+	case op.away && r.base != "":
+		dirs = []string{r.base} // judged as if in the payload's folder (note 4)
+	case op.top:
+		var tops []string
+		for _, d := range dirs {
+			tops = appendNew(tops, checkoutTop(d))
+		}
+		dirs = tops
+	}
+	for _, dir := range dirs {
 		if !r.firstSet {
 			r.first, r.firstSet = delRel(r.own, dir, text), true
 		}

@@ -412,7 +412,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `outside-label` | deny | command mode: an edit that sets a label whose definition reads set_by: outside |
 | `bad-format` | deny | command mode: a write of a task, run report or STATE that fails its format |
 | `bad-settings` | deny | this machine's settings for the workspace cannot be read when a judgment needs its mode |
-| `delete-unnamed` | deny | a shell call's recursive or bulk delete that does not name what it deletes (an operand holding a glob, a variable or a substitution, or one that is ., .., /, ~ or a drive's root; xargs, a pipeline or a loop feeding it; git clean with no path; a delete of several files by a glob), and always git clean -x or -X, git stash --all and rm --no-preserve-root |
+| `delete-unnamed` | deny | a shell call's recursive or bulk delete that does not name what it deletes (an operand holding a glob, a variable or a substitution, or one that is ., .., /, ~ or a drive's root; xargs, a pipeline or a loop feeding it; git clean with no path; a delete of several files by a glob; a git pathspec with magic other than :/, :(top) or :(literal)), and always git clean -x or -X, git stash --all and rm --no-preserve-root |
 | `delete-protected` | deny | a shell call's delete or move of a guarded path, or of a folder holding one, judged as an edit of that path (the reason says what guards it) |
 | `delete-unsplit` | deny | a shell call's line the delete check cannot split (a quote or bracket left open, nesting past three levels) that holds a delete word |
 | `delete-named` | allow | a shell call whose deletes and moves all name what they take, none of it guarded |
@@ -479,10 +479,10 @@ Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps
 | `unlink` | `unlink` | every shell, as a program | its operand |
 | `shred` | `shred` | every shell, as a program | its operands (overwritten, and deleted with -u) |
 | `mv` | `mv` | every shell, as a program | moves its sources away (with all they hold) onto its destination |
-| `git rm` | `git` | every shell, as a program | its paths; recursive with -r; its paths from --pathspec-from-file are unnamed; not with -n |
-| `git clean` | `git` | every shell, as a program | the untracked files under its paths (bulk); with no path unnamed; always refused with -x or -X; not with -n |
+| `git rm` | `git` | every shell, as a program | its paths; recursive with -r; :/x and :(top)x at the checkout's top, other pathspec magic unnamed; its paths from --pathspec-from-file are unnamed; not with -n |
+| `git clean` | `git` | every shell, as a program | the untracked files under its paths (bulk); with no path unnamed; pathspec magic read as git rm's; always refused with -x or -X; not with -n |
 | `git stash` | `git` | every shell, as a program | with --all or -a, ignored files moved away (.bonsai/local/ among them): always refused |
-| `git mv` | `git` | every shell, as a program | moves its sources away onto its destination; not with -n |
+| `git mv` | `git` | every shell, as a program | moves its sources away onto its destination; pathspec magic read as git rm's; not with -n |
 | `find` | `find` | every shell, as a program | with -delete, or -exec, -execdir, -ok or -okdir running a delete word: what it finds under its starting points (bulk) |
 | `rsync` | `rsync` | every shell, as a program | with any --delete option (--del): files in its destination (bulk); with --remove-source-files: moves its sources |
 | `robocopy` | `robocopy` | every shell, as a program | with /MIR or /PURGE: files in its destination (bulk); with /MOV or /MOVE: moves its source; not with /L |

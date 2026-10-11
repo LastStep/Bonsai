@@ -22,7 +22,7 @@ type delStub struct {
 	calls            int
 	rootReads        int      // judgedRoots calls: made only once a delete needs them
 	commands         []string // ownCommand's calls: the folder and the words
-	lines            []string // ownLine's texts
+	steps            []string // personStep's calls: what each line did
 }
 
 // delStubGlobs are the own project's guarded globs, as delRoots gives them.
@@ -54,14 +54,10 @@ func (s *delStub) ownCommand(dir string, argv []string) Decision {
 	return allow(RuleBonsaiCommand, "")
 }
 
-// ownLine stands in for commands.go's in agents mode: its reading of the line (childSessionChange) decides, and the
-// stub gives a reason of its own (commands.go's reasons are its own tests' to hold).
-func (s *delStub) ownLine(tool, text string) Decision {
-	s.lines = append(s.lines, text)
-	if childSessionChange(text) != "" {
-		return deny(RulePersonCommand, tool+" refused: the command line changes "+ChildSessionEnv, personNext)
-	}
-	return allow(RuleShell, "")
+// personStep stands in for commands.go's in agents mode: every person's step refused. It keeps what each said.
+func (s *delStub) personStep(tool, what string) Decision {
+	s.steps = append(s.steps, what)
+	return deny(RulePersonCommand, tool+" refused: the command line "+what, personNext)
 }
 
 func (s *delStub) mayDelete(dir, p string) Decision {
@@ -620,6 +616,64 @@ var delTable = []delRow{
 	{tB, "", "exec -\u00e4c ./x.sh", RulePersonCommand, ""},
 	{tB, "", "bonsai \u00e4dd --allow-exec", RulePersonCommand, ""},
 
+	// --- V2's fix round (008b452): git's pathspec magic, the runner words before env -i, the variable's name in any
+	// quoting, bash's ~+ and ~-, and bonsai where the check cannot split or find -exec or xargs runs it.
+	{tB, "", "git rm :/config/app.key", RuleDeleteProtected, ""},
+	{tB, "", "git rm ':(top)config/app.key'", RuleDeleteProtected, ""},
+	{tB, "", "git rm :config/app.key", RuleDeleteProtected, ""},
+	{tB, "", "git rm ::config/app.key", RuleDeleteProtected, ""},
+	{tB, "", "git rm ':(literal)config/app.key'", RuleDeleteProtected, ""},
+	{tB, "src", "git rm :/config/app.key", RuleDeleteProtected, ""},
+	{tB, "src", "git rm -r :/:docs", RuleDeleteProtected, ""},
+	{tB, "", "git mv :/notes/a.md old.md", RuleDeleteProtected, ""},
+	{tB, "", "git rm ':(icase)CONFIG/APP.KEY'", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm ':(glob)*.yaml'", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm ':!src'", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm ':^src'", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm ':(top,literal)config/app.key'", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm ':(attr:x)y'", RuleDeleteUnnamed, ""},
+	{tB, "", "git clean -f ':(exclude)src'", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm :src/main.go", RuleDeleteNamed, ""},
+	{tB, "src", "git rm :/src/main.go", RuleDeleteNamed, ""},
+	{tB, "", "git clean -fd :/build", RuleDeleteNamed, ""},
+	{tB, "", "timeout 5 env -i ./x.sh", RulePersonCommand, ""},
+	{tB, "", "nice -n 5 env -i ./x.sh", RulePersonCommand, ""},
+	{tB, "", "setsid -f env - ./x.sh", RulePersonCommand, ""},
+	{tB, "", "stdbuf -o0 env --ignore-env ./x.sh", RulePersonCommand, ""},
+	{tB, "", "ionice -c 3 doas exec -c ./x.sh", RulePersonCommand, ""},
+	{tB, "", "timeout -k 5 10 env -u CLAUDE_CODE_CHILD_SESSION ./x.sh", RulePersonCommand, ""},
+	{tB, "", "unset CLAUDE_CODE_CHILD_'SESSION'", RulePersonCommand, ""},
+	{tB, "", `unset CLAUDE_CODE_CHILD_SESS\ION`, RulePersonCommand, ""},
+	{tB, "", `unset "CLAUDE_CODE_CHILD"_SESSION`, RulePersonCommand, ""},
+	{tB, "", "unset CLAUDE_CODE_CHILD_SESSIO{N,}", RulePersonCommand, ""},
+	{tB, "", "X=CLAUDE_CODE_CHILD; unset ${X}_SESSION", RulePersonCommand, ""},
+	{tB, "", "N=CLAUDE_CODE_CHILD_SESSION; unset $N", RulePersonCommand, ""},
+	{tP, "", "[Environment]::SetEnvironmentVariable(('CLAUDE_CODE_CHILD_SESSION'),$null)", RulePersonCommand, ""},
+	{tP, "", `[Environment]::SetEnvironmentVariable("CLAUDE_CODE_CHILD" + "_SESSION", $null)`, RulePersonCommand, ""},
+	{tP, "", "$n = 'CLAUDE_CODE_CHILD_SESSION'; Remove-Item \"Env:$n\"", RulePersonCommand, ""},
+	{tP, "", "Microsoft.PowerShell.Core\\Environment::CLAUDE_CODE_CHILD_SESSION | Clear-Item", RulePersonCommand, ""},
+	{tB, "", "echo $CLAUDE_CODE_CHILD_SESSION; printenv CLAUDE_CODE_CHILD_SESSION", RuleShell, ""},
+	{tB, "", "grep -rn CLAUDE_CODE_CHILD_SESSION internal/ && X=$CLAUDE_CODE_CHILD_SESSION", RuleShell, ""},
+	{tP, "", "if ($env:CLAUDE_CODE_CHILD_SESSION) { 'agent' }; Get-ChildItem Env:CLAUDE_CODE_CHILD_SESSION", RuleShell, ""},
+	{tB, "", "cat > notes.md <<'EOF'\nCLAUDE_CODE_CHILD_SESSION is set by Claude Code\nEOF", RuleShell, ""},
+	// A comment naming the variable is no word the check reads, so its line fails closed (shell_env.go's known cost).
+	{tB, "", "ls # CLAUDE_CODE_CHILD_SESSION", RulePersonCommand, ""},
+	{tB, "", "rm ~+/config/app.key", RuleDeleteProtected, ""},
+	{tB, "", "rm ~-/config/app.key", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf ~-/build", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ~+", RuleDeleteUnnamed, ""},
+	{tB, "", "cd ~- && rm -rf build", RuleDeleteUnnamed, ""},
+	{tB, "", "rm ~+/file.txt", RuleDeleteNamed, ""},
+	{tB, "", "bonsai update --allow-exec 'x", RulePersonCommand, ""},
+	{tB, "", "bonsai unlink --yes \"", RulePersonCommand, ""},
+	{tB, "", "bonsai settings set x 'y", RuleHomeCommand, ""},
+	{tP, "", "bonsai labels attach \"x", RuleHomeCommand, ""},
+	{tB, "", `find . -name x -exec bonsai unlink \;`, RulePersonCommand, ""},
+	{tB, "", "find . -execdir bonsai update --allow-exec {} +", RulePersonCommand, ""},
+	{tB, "", "ls | xargs bonsai", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -n1 bonsai", RulePersonCommand, ""},
+	{tB, "", `find build -exec bonsai status \;`, RuleBonsaiCommand, ""},
+
 	// --- A line the check cannot split.
 	{tB, "", "rm -rf 'junk", RuleDeleteUnsplit, ""},
 	{tB, "", `rm -rf "junk`, RuleDeleteUnsplit, ""},
@@ -856,8 +910,8 @@ func delLastTarget(t *testing.T, dir string) string {
 }
 
 // The machine's records (judgedRoots) are read only once a delete needs them: never for a call with no delete word,
-// nor for a delete of named files; once for a line however many folders it deletes. Each text the check splits,
-// the line and every text nested in it or decoded, goes to ownLine; each bonsai call to ownCommand, in its folder.
+// nor for a delete of named files; once for a line however many folders it deletes. A change of CLAUDE_CODE_CHILD_SESSION in
+// any text it splits, nested or decoded, goes to personStep; each bonsai call to ownCommand, in its folder.
 func TestShellAsksTheJudgeOnlyWhatItNeeds(t *testing.T) {
 	s := delFixture(t)
 	for _, line := range []string{"ls -la && git status", "rm file.txt a.txt", "mv a.txt b.txt", "git stash", "rm -rf junk/*"} {
@@ -872,13 +926,11 @@ func TestShellAsksTheJudgeOnlyWhatItNeeds(t *testing.T) {
 	if s.rootReads != 1 {
 		t.Errorf("a line with four folders deleted or moved read the records %d times, want once", s.rootReads)
 	}
-	s.lines = nil
-	shellDecide(tB, `bash -c 'echo inner' && eval "echo second"`, s.own, s.own, s)
-	shellDecide(tP, "pwsh -EncodedCommand "+delEncode("Write-Output decoded"), s.own, s.own, s)
-	joined := strings.Join(s.lines, "\n")
-	for _, want := range []string{"echo inner", "echo second", "Write-Output decoded"} {
-		if !strings.Contains(joined, want) {
-			t.Errorf("ownLine never saw %q: %q", want, s.lines)
+	for _, c := range []struct{ tool, line string }{{tB, `bash -c 'unset CLAUDE_CODE_CHILD_SESSION'`},
+		{tB, `eval "export CLAUDE_CODE_CHILD_SESSION="`}, {tP, "pwsh -EncodedCommand " + delEncode("Remove-Item Env:CLAUDE_CODE_CHILD_SESSION")}} {
+		s.steps = nil
+		if d := shellDecide(c.tool, c.line, s.own, s.own, s); d.Rule != RulePersonCommand || len(s.steps) != 1 {
+			t.Errorf("%q: %s, person's steps %q", c.line, d.Rule, s.steps)
 		}
 	}
 	s.commands = nil

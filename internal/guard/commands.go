@@ -17,19 +17,10 @@ package guard
 //
 // The command itself refuses too (step 5.3.6 note 8), since a variable, xargs, a script or a subprocess can hide a
 // flag from the guard: the guard is the second layer. ownCommand judges one bonsai call's words, found by step 5.3.3's
-// splitter whatever folder bonsai is called from; ownLine judges a command line's text for the variable, and is called
-// for every Bash, PowerShell and Monitor call (and may be called again for each text the splitter finds nested).
-//
-// What ownLine reads (no shell reader: a scan of the text for the variable's name, letter case ignored as Windows
-// ignores it): an assignment of it (NAME=..., export NAME=..., set NAME=..., $env:NAME = ...,
-// [Environment]::SetEnvironmentVariable('NAME', ...)); the name in a command that unsets or sets variables (unset,
-// export, declare, typeset, local, readonly, env, set, setx); the name as a PowerShell provider path (Env:NAME) in a
-// command that is not one of the read cmdlets; and, whatever it names, a command that starts a program with an empty
-// or new environment (env -i, env -, env --ignore-environment, exec -c, Start-Process -UseNewEnvironment). A read of
-// the variable ($NAME, ${NAME}, %NAME%, $env:NAME, printenv NAME) and the name as an argument of another program
-// (grep NAME) are allowed. Not seen: the name built from parts or decoded at run time, an interpreter's own calls
-// (python -c, node -e), and a new session that starts without the variable (ssh, su, a terminal multiplexer, a
-// scheduler); the command's own refusal and the Desk stand behind it, as question A says for every shell write.
+// splitter whatever folder bonsai is called from (through sudo, env, bash -c, find -exec and the rest); a bonsai call
+// whose words come from xargs's input, and a line the splitter cannot split that holds a refused bonsai call, are
+// judged as a person's step (personStep). What changes the variable is read on the splitter's words, not the line's
+// text (shell_env.go), and judged here by personStep too.
 
 import (
 	"fmt"
@@ -174,14 +165,11 @@ func checkoutTop(dir string) string {
 	}
 }
 
-// ownLine judges a command line's text for CLAUDE_CODE_CHILD_SESSION (this file's comment): tool is Bash, PowerShell
-// or Monitor. A line that changes it is a person's command, allowed only with a person's grant in the session's
-// project in command mode.
-func (j *judge) ownLine(tool, text string) Decision {
-	what := childSessionChange(text)
-	if what == "" {
-		return allow(RuleShell, "")
-	}
+// personStep judges a person's step the delete check found in a shell call (shell_env.go: a change of
+// CLAUDE_CODE_CHILD_SESSION, a program started with an empty or new environment; a bonsai call whose words the check
+// cannot see): allowed only with a person's grant in the session's project in command mode, else person-command. what
+// says what the line does, in ASCII words that follow "the command line" (the line itself is never quoted).
+func (j *judge) personStep(tool, what string) Decision {
 	why := "the session is in no linked project"
 	if j.session != nil {
 		why = j.personGrant(j.session.root)
@@ -189,195 +177,7 @@ func (j *judge) ownLine(tool, text string) Decision {
 	if why == "" {
 		return allow(RuleShell, "")
 	}
-	return deny(RulePersonCommand, fmt.Sprintf("%s refused: the command line %s, which hides an agent's session from Bonsai's "+
-		"commands; that is a person's step, allowed to an agent only in a project in command mode under a person's grant "+
-		"of bonsai.yaml and .bonsai/lock.json, and %s", tool, what, why), personNext)
-}
-
-// envChangers are the commands that set or unset a shell's variables, by base name, letter case ignored.
-var envChangers = []string{"unset", "export", "declare", "typeset", "local", "readonly", "env", "set", "setx"}
-
-// envReaders are the PowerShell commands that only read an Env: provider path.
-var envReaders = []string{"get-item", "gi", "get-childitem", "gci", "ls", "dir", "test-path", "get-content", "gc", "cat",
-	"type", "get-itemproperty", "gp", "resolve-path", "rvpa", "get-itempropertyvalue", "gpv"}
-
-// envPrinters are the commands that only print their words.
-var envPrinters = []string{"echo", "printf", "print", "write-host", "write-output", "write"}
-
-// childSessionChange says how a line's text changes CLAUDE_CODE_CHILD_SESSION or starts a program without it ("" for
-// neither), in words that follow "the line ...".
-func childSessionChange(text string) string {
-	low := strings.ToLower(text)
-	if what := emptyEnvironment(low); what != "" {
-		return what
-	}
-	name := strings.ToLower(ChildSessionEnv)
-	for from := 0; ; {
-		i := strings.Index(low[from:], name)
-		if i < 0 {
-			return ""
-		}
-		i += from
-		from = i + len(name)
-		pre, post := low[:i], low[i+len(name):]
-		prog := programAt(low, i)
-		switch {
-		case strings.HasSuffix(pre, "$env:") || strings.HasSuffix(pre, "${env:"):
-			if assigns(strings.TrimPrefix(post, "}"), true) {
-				return "assigns " + ChildSessionEnv
-			}
-		case strings.HasSuffix(pre, "$") || strings.HasSuffix(pre, "${") || strings.HasSuffix(pre, "%"):
-			// a read
-		case strings.HasSuffix(pre, "env:") || strings.HasSuffix(pre, `env:\`) || strings.HasSuffix(pre, "env:/"):
-			if !listHas(envReaders, prog) {
-				return "changes " + ChildSessionEnv + " through its Env: path"
-			}
-		case setEnvironmentCall(pre):
-			return "sets " + ChildSessionEnv + " through .NET"
-		case assigns(post, false) && !strings.HasSuffix(pre, `"`) && !strings.HasSuffix(pre, "'") && !listHas(envPrinters, prog):
-			return "assigns " + ChildSessionEnv
-		case listHas(envChangers, prog):
-			return "unsets or exports " + ChildSessionEnv + " (" + prog + ")"
-		}
-	}
-}
-
-// assigns reports an assignment's operator at the start of the text after a variable's name: = (not ==), and with
-// spaced (PowerShell) spaces allowed before it.
-func assigns(post string, spaced bool) bool {
-	if spaced {
-		post = strings.TrimLeft(post, " \t")
-	}
-	return strings.HasPrefix(post, "=") && !strings.HasPrefix(post, "==")
-}
-
-// setEnvironmentCall reports text ending in a .NET call that sets a variable: SetEnvironmentVariable(, then a quote.
-func setEnvironmentCall(pre string) bool {
-	p := strings.TrimRight(pre, `'" `+"\t")
-	p = strings.TrimRight(strings.TrimSuffix(p, "("), " \t")
-	return strings.HasSuffix(p, "setenvironmentvariable")
-}
-
-// programAt gives the program of the simple command holding the text at i (lower case): its first word after the
-// last command boundary before i, past NAME=value words and the words that run another program, by base name,
-// without .exe.
-func programAt(low string, i int) string {
-	start := strings.LastIndexAny(low[:i], ";&|\n\r(){}`") + 1
-	words := strings.Fields(low[start:i])
-	for len(words) > 0 {
-		w := strings.Trim(words[0], `"'`)
-		switch {
-		case w == "!" || w == "if" || w == "then" || w == "do" || w == "else" || w == "&" || w == "." || w == "@":
-		case listHas(lineRunners, base(w)):
-		case strings.HasPrefix(w, "-") || (len(w) == 2 && w[0] == '/'):
-		case strings.Contains(w, "=") && !strings.HasPrefix(w, "="):
-			eq := strings.IndexByte(w, '=')
-			if strings.ContainsAny(w[:eq], "/\\$") {
-				return base(w)
-			}
-		default:
-			return base(w)
-		}
-		words = words[1:]
-	}
-	return ""
-}
-
-// lineRunners are the words that run the program or the text after them (programAt passes over them, and over their
-// options): sudo and its kind, and the shells given a command's text (bash -c "unset ...", cmd /c set ...).
-var lineRunners = []string{"sudo", "command", "builtin", "exec", "nohup", "nice", "time", "eval", "xargs", "bash", "sh",
-	"zsh", "dash", "ksh", "cmd", "powershell", "pwsh", "wsl", "invoke-expression", "iex"}
-
-// base is a program word's base name, without .exe.
-func base(w string) string {
-	w = strings.ReplaceAll(w, `\`, "/")
-	if k := strings.LastIndexByte(w, '/'); k >= 0 {
-		w = w[k+1:]
-	}
-	return strings.TrimSuffix(w, ".exe")
-}
-
-// emptyEnvironment says how a line starts a program with an empty or new environment ("" for none): a command whose
-// program is env with -i, - or --ignore-environment (any unambiguous prefix), exec with -c, or Start-Process with
-// -UseNewEnvironment (any prefix PowerShell takes). The program is the command's first word past NAME=value words and
-// the words that run another program (lineRunners), as programAt finds it.
-func emptyEnvironment(low string) string {
-	for _, cmd := range splitRough(low) {
-		words := strings.Fields(cmd)
-		k := 0
-		for k < len(words) {
-			w := strings.Trim(words[k], `"'`)
-			b := base(w)
-			switch {
-			case b == "exec":
-				for _, a := range words[k+1:] {
-					a = strings.Trim(a, `"'`)
-					if !strings.HasPrefix(a, "-") {
-						break
-					}
-					if !strings.HasPrefix(a, "--") && strings.ContainsRune(a[1:], 'c') {
-						return "starts a program with an empty environment (exec " + oneLine(a) + ")"
-					}
-				}
-				k++
-				continue
-			case listHas(lineRunners, b) || strings.HasPrefix(w, "-") || (len(w) == 2 && w[0] == '/') ||
-				(strings.Contains(w, "=") && !strings.HasPrefix(w, "=") && !strings.ContainsAny(w[:strings.IndexByte(w, '=')], "/\\$")):
-				k++
-				continue
-			case b == "env":
-				if a := envClears(words[k+1:]); a != "" {
-					return "starts a program with an empty environment (env " + oneLine(a) + ")"
-				}
-			case b == "start-process" || b == "saps" || b == "start":
-				for _, a := range words[k+1:] {
-					a, _, _ = strings.Cut(strings.Trim(a, `"'`), ":")
-					if strings.HasPrefix(a, "-usen") && strings.HasPrefix("-usenewenvironment", a) {
-						return "starts a program with a new environment (Start-Process " + oneLine(a) + ")"
-					}
-				}
-			}
-			break
-		}
-	}
-	return ""
-}
-
-// envClears gives the option of env's words that clears its environment (-i, a bundle holding it, -, or
-// --ignore-environment by any unambiguous prefix), "" for none: env's own words end at the program it runs.
-func envClears(words []string) string {
-	for m := 0; m < len(words); m++ {
-		a := strings.Trim(words[m], `"'`)
-		long := strings.HasPrefix(a, "--")
-		switch {
-		case a == "-" || (long && len(a) > 2 && strings.HasPrefix("--ignore-environment", a)):
-			return a
-		case !long && strings.HasPrefix(a, "-") && strings.ContainsRune(shortOpts(a), 'i'):
-			return a
-		case a == "-u" || a == "-c" || a == "-s" || a == "-p" || a == "--unset" || a == "--chdir" || a == "--split-string":
-			m++ // its value is the next word
-		case !strings.HasPrefix(a, "-") && !strings.Contains(a, "="):
-			return "" // the program: env's own words end
-		}
-	}
-	return ""
-}
-
-// shortOpts gives a bundle of short options' letters (-iu -> iu), stopping at an option that takes a value in the same
-// word (env's -u, -C, -S, -P take one).
-func shortOpts(a string) string {
-	var b strings.Builder
-	for _, r := range a[1:] {
-		b.WriteRune(r)
-		if strings.ContainsRune("ucsp", r) {
-			break
-		}
-	}
-	return b.String()
-}
-
-// splitRough cuts a line's text at the shell's command boundaries, without reading quotes: a rough cut, enough to
-// find a command's own words.
-func splitRough(low string) []string {
-	return strings.FieldsFunc(low, func(r rune) bool { return strings.ContainsRune(";&|\n\r(){}`", r) })
+	return deny(RulePersonCommand, fmt.Sprintf("%s refused: the command line %s, which hides an agent's session or its "+
+		"words from Bonsai's commands; that is a person's step, allowed to an agent only in a project in command mode "+
+		"under a person's grant of bonsai.yaml and .bonsai/lock.json, and %s", tool, what, why), personNext)
 }

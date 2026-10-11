@@ -61,13 +61,13 @@ var DeleteWords = []DeleteWord{
 	{Word: "mv", Names: []string{"mv"}, in: delInBash, ByName: true,
 		Deletes: "moves its sources away (with all they hold) onto its destination"},
 	{Word: "git rm", Names: []string{"git"}, Sub: "rm", in: delInBash, ByName: false,
-		Deletes: "its paths; recursive with -r; its paths from --pathspec-from-file are unnamed; not with -n"},
+		Deletes: "its paths; recursive with -r; :/x and :(top)x at the checkout's top, other pathspec magic unnamed; its paths from --pathspec-from-file are unnamed; not with -n"},
 	{Word: "git clean", Names: []string{"git"}, Sub: "clean", in: delInBash,
-		Deletes: "the untracked files under its paths (bulk); with no path unnamed; always refused with -x or -X; not with -n"},
+		Deletes: "the untracked files under its paths (bulk); with no path unnamed; pathspec magic read as git rm's; always refused with -x or -X; not with -n"},
 	{Word: "git stash", Names: []string{"git"}, Sub: "stash", in: delInBash,
 		Deletes: "with --all or -a, ignored files moved away (.bonsai/local/ among them): always refused"},
 	{Word: "git mv", Names: []string{"git"}, Sub: "mv", in: delInBash,
-		Deletes: "moves its sources away onto its destination; not with -n"},
+		Deletes: "moves its sources away onto its destination; pathspec magic read as git rm's; not with -n"},
 	{Word: "find", Names: []string{"find"}, in: delInBash,
 		Deletes: "with -delete, or -exec, -execdir, -ok or -okdir running a delete word: what it finds under its starting points (bulk)"},
 	{Word: "rsync", Names: []string{"rsync"}, in: delInBash,
@@ -322,6 +322,9 @@ func delCdKind(name string, d shDialect) int {
 func (r *delRun) exec(x delExec) delCd {
 	for steps := 0; steps < 256 && r.deny == nil; steps++ {
 		w := x.words
+		if x.d == shBash {
+			r.envAssignWords(w)
+		}
 		for len(w) > 0 && w[0].assign {
 			w = w[1:]
 		}
@@ -344,6 +347,9 @@ func (r *delRun) exec(x delExec) delCd {
 			}
 			x = next
 			continue
+		}
+		if r.envCommand(x, name); r.deny != nil {
+			return delCd{}
 		}
 		if kind := delCdKind(name, x.d); kind != delCdNone && (x.d != shPower || !native) {
 			return r.cd(x, kind)
@@ -387,8 +393,16 @@ func delBonsai(t string) bool {
 }
 
 // bonsaiCall gives one bonsai call to the guard's judgment of Bonsai's own commands (commands.go's ownCommand),
-// in each folder it may run in, or in the session's project folder when that cannot be told (5.3.2 note 7).
+// in each folder it may run in, or in the session's project folder when that cannot be told (5.3.2 note 7). A call
+// whose words come from xargs's input is a person's step: the check cannot see whether they hold --allow-exec or
+// unlink.
 func (r *delRun) bonsaiCall(x delExec) {
+	if x.feed != "" || r.feed != "" {
+		r.envStep("runs bonsai with words from " + x.feed + r.feed + "'s input, which the check cannot see")
+		if r.deny != nil {
+			return
+		}
+	}
 	argv := make([]string, len(x.words))
 	for k, w := range x.words {
 		argv[k] = w.text
@@ -447,6 +461,25 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 		if g.has("v", "V") {
 			return x, false
 		}
+	case "exec":
+		if g.has("c") {
+			r.envStep("starts a program with an empty environment (exec -c)")
+			return x, false
+		}
+	}
+	if rn.Word == "env" {
+		for _, u := range g.val("u", "unset") {
+			if envIs(u.text) {
+				r.envStep("unsets " + ChildSessionEnv + " (env -u)")
+				return x, false
+			}
+		}
+		if g.has("i", "ignore-environment") || g.rest < len(words) && words[g.rest].text == "-" {
+			r.envStep("starts a program with an empty environment (env -i)")
+			return x, false
+		}
+	}
+	switch rn.Word {
 	case "env":
 		if s := g.val("S", "split-string"); len(s) > 0 {
 			r.text(s[0].text+" "+delJoin(words[g.rest:], false), shBash, x.depth+1, x.dirs, x.loop)
@@ -856,8 +889,12 @@ func (r *delRun) cd(x delExec, kind int) delCd {
 // for a variable, a substitution, a glob, -, or a stack entry.
 func (r *delRun) cdTo(dirs delDirs, w shWord, d shDialect) delDirs {
 	t := w.text
-	if w.expand || w.glob || w.splat || len(w.alts) > 0 || t == "" || t == "-" || d == shBash && (strings.HasPrefix(t, "+") || strings.HasPrefix(t, "-")) {
+	if w.expand || w.glob || w.splat || len(w.alts) > 0 || t == "" || t == "-" || d == shBash && (strings.HasPrefix(t, "+") ||
+		strings.HasPrefix(t, "-") || t == "~-" || strings.HasPrefix(t, "~-/")) {
 		return delDirs{unknown: true}
+	}
+	if d == shBash && (t == "~+" || strings.HasPrefix(t, "~+/")) {
+		t = "." + t[2:] // ~+ is the folder it runs in
 	}
 	if d != shBash && strings.ContainsRune(t, '\\') && !strings.ContainsRune(t, ':') && delSlashOS() {
 		t = strings.ReplaceAll(t, `\`, "/")
@@ -1154,11 +1191,12 @@ func delFind(r *delRun, x delExec, words []shWord) []delAct {
 			run := expr[k+1 : end]
 			if delProbe(run, x.d) {
 				deletes = true
-				sub := x
-				sub.find = true
-				sub.words = delDropBraces(run)
-				r.exec(sub)
 			}
+			// What -exec runs is read as any command is (a delete among find's items, a bonsai call, a shell's text).
+			sub := x
+			sub.find = true
+			sub.words = delDropBraces(run)
+			r.exec(sub)
 			k = end
 		}
 	}
@@ -1650,6 +1688,44 @@ func delCmdRen(r *delRun, x delExec, words []shWord) []delAct {
 		a.dests = delBeside(ops[:1], ops[1:2])
 	}
 	return []delAct{a}
+}
+
+// delHoldsBonsai gives the kind of refused bonsai call a text the check cannot split holds, "" for none: "home" for
+// bonsai settings set and bonsai labels attach or detach (always refused), "person" for bonsai with --allow-exec or
+// unlink (a person's step). Words are cut and matched as delHoldsWord cuts them.
+func delHoldsBonsai(s string) string {
+	low := strings.ToLower(s)
+	toks := strings.FieldsFunc(low, func(c rune) bool {
+		return !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || strings.ContainsRune("._-/\\:", c) || c >= 0x80)
+	})
+	seen, kind := false, ""
+	for k, t := range toks {
+		if delBonsai(t) {
+			seen = true
+			continue
+		}
+		if !seen {
+			continue
+		}
+		switch {
+		case t == "settings" && k+1 < len(toks) && toks[k+1] == "set", t == "labels":
+			return "home"
+		case t == "unlink" || strings.HasPrefix(strings.TrimLeft(t, "-"), "allow-exec") && strings.HasPrefix(t, "-"):
+			kind = "person"
+		}
+	}
+	return kind
+}
+
+// unsplitBonsai refuses a line the check cannot split that holds a refused bonsai call (delHoldsBonsai's kind).
+func (r *delRun) unsplitBonsai(kind string) {
+	if kind == "home" {
+		r.refuse(deny(RuleHomeCommand, r.tool+" refused: the command line holds bonsai settings set or bonsai labels, "+
+			"and the check cannot split it; those write this machine's settings or label files in Bonsai's home, which "+
+			"never change from an agent's session", personNext))
+		return
+	}
+	r.envStep("holds a bonsai call with --allow-exec or unlink that the check cannot split")
 }
 
 // delHoldsWord gives the delete word a text the check cannot split holds, "" for none: a word that deletes by its

@@ -90,8 +90,8 @@ var Rules = []Rule{
 	{RuleBadSettings, false, "this machine's settings for the workspace cannot be read when a judgment needs its mode"},
 	{RuleDeleteUnnamed, false, "a shell call's recursive or bulk delete that does not name what it deletes (an operand " +
 		"holding a glob, a variable or a substitution, or one that is ., .., /, ~ or a drive's root; xargs, a pipeline or a " +
-		"loop feeding it; git clean with no path; a delete of several files by a glob), and always git clean -x or -X, git " +
-		"stash --all and rm --no-preserve-root"},
+		"loop feeding it; git clean with no path; a delete of several files by a glob; a git pathspec with magic other than " +
+		":/, :(top) or :(literal)), and always git clean -x or -X, git stash --all and rm --no-preserve-root"},
 	{RuleDeleteProtected, false, "a shell call's delete or move of a guarded path, or of a folder holding one, judged as an " +
 		"edit of that path (the reason says what guards it)"},
 	{RuleDeleteUnsplit, false, "a shell call's line the delete check cannot split (a quote or bracket left open, nesting " +
