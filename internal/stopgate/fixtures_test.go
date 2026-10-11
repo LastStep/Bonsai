@@ -201,6 +201,31 @@ func TestStopGateFixtures(t *testing.T) {
 				testpack.Git(t, session, "commit", "-q", "--allow-empty", "-m", "more")
 				code, stderr = run()
 				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", "bonsai ladder --task "+task)
+
+				// Seen as Claude Code's EnterWorktree leaves a session (CLAUDE_PROJECT_DIR the main checkout, the
+				// payload's cwd the worktree), the gate judges the worktree all the same, even with a run report in
+				// the main checkout and the result proving the main checkout's HEAD; a result at the worktree's HEAD
+				// lets it end.
+				write(t, main, cfg.Full.Documents.Run+"/R-2026-10-11-"+task+".md", "# R-2026-10-11-"+task+"\n")
+				entered := func() (int, string) {
+					t.Helper()
+					return gate(t, env(main, workspace.TaskEnv, task), strings.NewReader(stopPayload("s1", session)), untimed)
+				}
+				code, stderr = entered()
+				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", "bonsai ladder --task "+task)
+				l.Git.SHA = testpack.Git(t, session, "rev-parse", "HEAD")
+				if raw, err = l.Encode(); err != nil {
+					t.Fatal(err)
+				}
+				write(t, dir, at, string(raw))
+				code, stderr = entered()
+				if code != 0 || stderr != "" {
+					t.Fatalf("entered, a green result proving the worktree's HEAD: exit %d %q", code, stderr)
+				}
+				if r := lastRecord(t, main); r.String("rule") != RuleProven || r.String("checkout") != "wt" || r.String("branch") != "task" {
+					t.Errorf("entered, the allow's record: %s", schema.Show(r))
+				}
+				noLog(t, session)
 			}
 		})
 	}

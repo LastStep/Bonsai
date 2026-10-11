@@ -85,6 +85,8 @@ update there); the named task is one task file there that parses; this checkout 
 bonsai.ladder/1 with mode local, green, git.sha this checkout's HEAD (read from its git files: a branch's ref file,
 packed-refs or a detached HEAD), git.dirty false, and the workspace's ladder_floor and the task's bonsai.ladder each
 among its requested rungs and green. The next step names bonsai ladder --task <id>.
+This checkout is the one holding the session's working folder (the payload's cwd) when it is a verified checkout of
+the same project, such as a worktree the session entered with EnterWorktree; else CLAUDE_PROJECT_DIR's.
 It does not read stop_hook_active: Claude Code itself keeps a turn going eight times in a row at most, with no tool
 call between them, and ends it at the ninth block (CLAUDE_CODE_STOP_HOOK_BLOCK_CAP); each block is a guard record
 (bonsai.log/1, agent_event Stop) in the main checkout's .bonsai/local/log/, as each allow is. It blocks whatever it

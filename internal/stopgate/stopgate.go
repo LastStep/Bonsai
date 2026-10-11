@@ -8,6 +8,16 @@
 // it allows and writes no record (the recorder's stop record stands). A hook takes no --task: the environment alone
 // names the task, and it counts here, the session's own project (contract §13).
 //
+// The session's checkout, whose HEAD the result must prove and whose run report is read (contract §13: the gate's
+// project is the one holding the session's working folder): the checkout holding the payload's cwd when it is a
+// verified checkout of the same project (cwdCheckout: its bonsai.yaml holds the same workspace id and its verified main
+// checkout is CLAUDE_PROJECT_DIR's: a worktree of it, or that main checkout itself), else CLAUDE_PROJECT_DIR's. Claude
+// Code keeps CLAUDE_PROJECT_DIR at the folder the session started in while cwd follows the session: after its
+// EnterWorktree tool, CLAUDE_PROJECT_DIR is the main checkout and cwd the worktree; in a `claude --worktree` session
+// both are the worktree (measured on 2.1.296). A cwd elsewhere (none, another project, a folder in none, a checkout
+// that is not verified) leaves CLAUDE_PROJECT_DIR's checkout judged. An agent can move cwd, as it can move HEAD; either
+// way the result must prove the HEAD of the checkout the session is in when it ends.
+//
 // What it checks once engaged, in this order. Each failure blocks (exit 2) with its reason first and its next step,
 // which Claude Code gives the agent as the reason to go on; the rule that decided is the record's (rules below):
 //  1. the session's own bonsai.yaml reads (bad-config: blocked with no record, since a record needs the workspace id),
@@ -61,6 +71,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -222,15 +233,8 @@ func (r *run) work() Decision {
 			"the task "+quote(named)+" and its proof are, and it keeps the session going", nextOf(err,
 			"a person fixes bonsai.yaml (bonsai check names the line)"))
 	}
-	layout := workspace.ReadGitLayout(root)
-	mainID := own.ID
-	if layout.Worktree() {
-		mainID = ""
-		if c, err := workspace.LoadConfig(layout.Main); err == nil {
-			mainID = c.ID
-		}
-	}
-	trust := workspace.VerifyMain(home(), layout, own.ID, mainID)
+	h := home()
+	layout, trust := verify(h, root, own.ID)
 	at := &place{id: own.ID, local: workspace.Local{Root: layout.Root, Main: layout.Root, Branch: layout.Branch()}}
 	if trust.Verified {
 		at.local.Main = layout.Main
@@ -252,7 +256,73 @@ func (r *run) work() Decision {
 			"; the task "+quote(named)+" and its ladder result are read from the main checkout, so the stop gate cannot trust them",
 			trust.Next+"; then run: bonsai ladder --task "+named))
 	}
+	if co, ok := cwdCheckout(h, in.Cwd, root, own.ID, at.local.Main); ok {
+		layout = co
+		at = &place{id: own.ID, local: workspace.Local{Root: co.Root, Main: at.local.Main, Branch: co.Branch()}}
+		r.mu.Lock()
+		r.at = at
+		r.mu.Unlock()
+	}
 	return r.recorded(judgeFn(at.local, layout, named))
+}
+
+// verify reads the git layout of the checkout at root, whose bonsai.yaml holds the workspace id id, and whether its
+// main checkout is verified (workspace.VerifyMain, given the main checkout's own id for a worktree), as the guard asks.
+func verify(home, root, id string) (workspace.GitLayout, workspace.Trust) {
+	layout := workspace.ReadGitLayout(root)
+	mainID := id
+	if layout.Worktree() {
+		mainID = ""
+		if c, err := workspace.LoadConfig(layout.Main); err == nil {
+			mainID = c.ID
+		}
+	}
+	return layout, workspace.VerifyMain(home, layout, id, mainID)
+}
+
+// cwdCheckout finds the checkout the session works in when it is not CLAUDE_PROJECT_DIR's (contract §13: the stop
+// gate's project is the one holding the session's working folder, and the result proves that checkout's HEAD).
+// Claude Code keeps CLAUDE_PROJECT_DIR at the folder the session started in, while the payload's cwd follows the
+// session: after its EnterWorktree tool, CLAUDE_PROJECT_DIR is still the main checkout and cwd the worktree (measured
+// on 2.1.296). The checkout holding cwd is found as every hook finds a project (hookin.FindProjects: the nearest
+// folder at or above it holding bonsai.yaml), and it is the session's when it is a verified checkout of the session's
+// own project: its bonsai.yaml holds the same workspace id, its main checkout is verified (VerifyMain, as
+// CLAUDE_PROJECT_DIR's is), and that main checkout is main, the session's verified one: a worktree of it, or main
+// itself. ok is false, and CLAUDE_PROJECT_DIR's checkout (root) stays the one judged, for anything else: no cwd, a cwd
+// that is not an absolute folder there, one in no project or in another project, one in root itself, a checkout that
+// is not verified or whose main checkout is another. home is the Bonsai home; id the session's workspace id.
+func cwdCheckout(home, cwd, root, id, main string) (workspace.GitLayout, bool) {
+	if cwd == "" || !filepath.IsAbs(cwd) {
+		return workspace.GitLayout{}, false
+	}
+	roots, _, err := hookin.FindProjects(cwd)
+	if err != nil || len(roots) == 0 || sameFolder(roots[0], root) {
+		return workspace.GitLayout{}, false
+	}
+	cfg, err := workspace.LoadConfig(roots[0])
+	if err != nil || cfg.ID != id {
+		return workspace.GitLayout{}, false
+	}
+	layout, trust := verify(home, roots[0], id)
+	if !trust.Verified || !sameFolder(layout.Main, main) {
+		return workspace.GitLayout{}, false
+	}
+	return layout, true
+}
+
+// sameFolder reports whether two folders are one: the same clean path (letter case ignored on Windows), or one folder
+// reached two ways (a link on the path, a short name), as the system tells it.
+func sameFolder(a, b string) bool {
+	a, b = filepath.Clean(a), filepath.Clean(b)
+	if a == b || (runtime.GOOS == "windows" && strings.EqualFold(a, b)) {
+		return true
+	}
+	x, err := os.Stat(a)
+	if err != nil {
+		return false
+	}
+	y, err := os.Stat(b)
+	return err == nil && os.SameFile(x, y)
 }
 
 // judgeFn is judge, a variable for the tests, which hold it to run past the budget once the record's place is known.
