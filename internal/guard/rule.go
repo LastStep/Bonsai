@@ -4,14 +4,15 @@ package guard
 //
 // The projects holding a path (contract §13: "the project is the one holding the path, for the guard"; 5.3.1 note 1):
 // for each form of the path (paths.go), every folder at or above it that holds bonsai.yaml, past any .git, to the
-// volume's root. The nearest one judges alone when it is a verified checkout (workspace.VerifyMain; Claude Code's own
-// worktrees sit inside the main checkout, under .claude/worktrees/, where the main checkout's .claude/** would refuse
-// every edit, and are verified there). When it is not (a folder with no .git of its own, a bonsai.yaml someone
-// planted, a nested repository never linked on this machine), the lists of every project holding the path apply,
-// each read against its own folder: so a bonsai.yaml with empty lists in docs/, or a .git placed there, narrows
-// nothing. A path in another linked project is judged by that project's lists. A path in no linked project is
-// judged by Bonsai's own files alone (own.go: Bonsai's home, a stand-in for its program), else allowed
-// (outside-project).
+// volume's root. The nearest one judges alone, among the projects of its own workspace id, when it is a verified
+// checkout (workspace.VerifyMain; Claude Code's own worktrees sit inside the main checkout, under .claude/worktrees/,
+// where the main checkout's .claude/** would refuse every edit, and are verified there); an enclosing project of
+// another workspace id judges beside it (judges). When the nearest is not verified (a folder with no .git of its own,
+// a bonsai.yaml someone planted, a nested repository never linked on this machine), the lists of every project
+// holding the path apply, each read against its own folder: so a bonsai.yaml with empty lists in docs/, or a .git
+// placed there, narrows nothing. A path in another linked project is judged by that project's lists. A path in no
+// linked project is judged by Bonsai's own files alone (own.go: Bonsai's home, a stand-in for its program), else
+// allowed (outside-project).
 //
 // The lists a project judges by: the person_only and protected globs of its bonsai.yaml, and each pack's declared
 // protected paths in its lock (workspace.ReadConfig and workspace.ReadDeclared, both lean: 5.3.1 note 3). A worktree
@@ -185,13 +186,23 @@ func (j *judge) chain(abs string) []*linkedProject {
 	return out
 }
 
-// judges are the projects whose lists judge a path held by chain: the nearest alone when it is a verified checkout,
-// else every one.
+// judges are the projects whose lists judge a path held by chain: every one, but that a verified nearest checkout
+// sets aside the enclosing projects that share its workspace id (its own main checkout, when it is a worktree placed
+// inside it, as Claude Code places its own: the main checkout's .claude/** would otherwise refuse every edit there).
+// An enclosing project of another id still judges: a checkout of another project linked inside it (bonsai init run
+// in one of its folders), or another project's worktree placed there, never sets aside its protection. Grants still
+// come only from the nearest verified one (grantor).
 func (j *judge) judges(chain []*linkedProject) []*linkedProject {
-	if len(chain) > 1 && j.verified(chain[0]).Verified {
-		return chain[:1]
+	if len(chain) < 2 || !j.verified(chain[0]).Verified {
+		return chain
 	}
-	return chain
+	out := chain[:1:1]
+	for _, p := range chain[1:] {
+		if p.id() == "" || p.id() != chain[0].id() {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // grantor is the nearest verified project holding a path, the only one a grant may come from (grant.go); nil when
