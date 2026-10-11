@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -424,6 +425,9 @@ func TestEachCase(t *testing.T) {
 			}},
 		{name: "a task folder that cannot be read", rule: RuleTaskUnreadable, why: `the main checkout's task folder "work/tasks" cannot be read`,
 			next: ladder, change: func(t *testing.T, root string) {
+				if runtime.GOOS == "windows" {
+					t.Skip(unreadableOnWindows)
+				}
 				if err := os.RemoveAll(filepath.Join(root, "work", "tasks")); err != nil {
 					t.Fatal(err)
 				}
@@ -668,6 +672,13 @@ func TestAnAllowItCannotRecordIsBlocked(t *testing.T) {
 		t.Errorf("exit %d %q", code, stderr)
 	}
 }
+
+// unreadableOnWindows is why a task folder that cannot be read is tried on Linux alone: on Windows a file where the
+// folder goes reads as no folder at all (the system reports the path not found, which the task folder's reader takes
+// as an empty folder, and the gate blocks with stop-task-missing), and any other way needs a permission change, which
+// no test may need there.
+const unreadableOnWindows = "on Windows a file where the task folder goes reads as no folder (stop-task-missing), and " +
+	"any other unreadable folder needs a permission change; the Linux run holds this case"
 
 // The gate's rule names are copies of rows of the guard's rules table, their one home: each the same name with the
 // same answer (allow or block), the shared eight the guard's own constants, and every stop- row of the table one of

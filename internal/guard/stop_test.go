@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -132,6 +133,11 @@ func init() {
 			writeFile(t, filepath.Join(dir, "work", "tasks", "T-0901-gated.md"), strings.Replace(stopTask, "status: running", "status: [", 1))
 		}},
 		{rule: RuleStopTaskUnreadable, task: "T-0901", change: func(t *testing.T, dir string) {
+			if runtime.GOOS == "windows" {
+				// A file where the folder goes reads as no folder there (stop-task-missing), and any other unreadable
+				// folder needs a permission change; the stop gate's own tests say so too, and the Linux run holds it.
+				t.Skip("on Windows a file where the task folder goes reads as no folder; the Linux run holds this rule")
+			}
 			tasks := filepath.Join(dir, "work", "tasks")
 			if err := os.RemoveAll(tasks); err != nil {
 				t.Fatal(err)
