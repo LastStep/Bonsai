@@ -14,7 +14,55 @@ import (
 // that hard one, never this machine's speed (5.2's lesson); the times are logged for the run report.
 func TestShellBigTreeWithinBudget(t *testing.T) {
 	s := delFixture(t)
-	nm := filepath.Join(s.own, "node_modules")
+	entries := delBigTree(t, s.own)
+	for _, c := range []struct{ tool, line string }{
+		{tB, "rm -rf node_modules"},
+		{tB, "find node_modules -delete"},
+		{tB, "rm -rf node_modules/pkg000/.git"},
+		{tP, "Remove-Item -Recurse -Force node_modules"},
+		{tP, `cmd /c "rd /s /q node_modules"`},
+	} {
+		start := time.Now()
+		d := shellDecide(c.tool, c.line, s.own, s.own, s)
+		took := time.Since(start)
+		if !d.Allow {
+			t.Errorf("%s %q on %d entries refused: %s", c.tool, c.line, entries, d.Why)
+		}
+		if took >= Budget {
+			t.Errorf("%s %q on %d entries took %v, past the guard's budget of %v", c.tool, c.line, entries, took, Budget)
+		}
+		t.Logf("%s %q on %d entries: %v", c.tool, c.line, entries, took)
+	}
+}
+
+// The same through the guard itself (Main: the payload read, the real judge, this machine's records, the record
+// written), in a real project, held to the same budget.
+func TestShellBigTreeThroughTheGuard(t *testing.T) {
+	proj := delRealFixture(t)
+	entries := delBigTree(t, proj)
+	for _, c := range []struct{ tool, line string }{
+		{tB, "rm -rf node_modules"},
+		{tB, "rm -rf node_modules/pkg000/.git"},
+		{tP, "Remove-Item -Recurse -Force node_modules"},
+	} {
+		start := time.Now()
+		code, stderr := answer(t, proj, bashIn(proj, c.tool, c.line))
+		took := time.Since(start)
+		if code != 0 {
+			t.Errorf("%s %q on %d entries refused: %s", c.tool, c.line, entries, stderr)
+		}
+		if took >= Budget {
+			t.Errorf("%s %q on %d entries took %v, past the guard's budget of %v", c.tool, c.line, entries, took, Budget)
+		}
+		t.Logf("through the guard, %s %q on %d entries: %v", c.tool, c.line, entries, took)
+	}
+}
+
+// delBigTree makes node_modules under dir: about 10,000 entries, a nested .git in every tenth package. It gives the
+// count of entries.
+func delBigTree(t *testing.T, dir string) int {
+	t.Helper()
+	nm := filepath.Join(dir, "node_modules")
 	for p := 0; p < 100; p++ {
 		dir := filepath.Join(nm, fmt.Sprintf("pkg%03d", p), "lib")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -42,22 +90,5 @@ func TestShellBigTreeWithinBudget(t *testing.T) {
 	if entries < 10000 {
 		t.Fatalf("node_modules holds %d entries, want about 10,000", entries)
 	}
-	for _, c := range []struct{ tool, line string }{
-		{tB, "rm -rf node_modules"},
-		{tB, "find node_modules -delete"},
-		{tB, "rm -rf node_modules/pkg000/.git"},
-		{tP, "Remove-Item -Recurse -Force node_modules"},
-		{tP, `cmd /c "rd /s /q node_modules"`},
-	} {
-		start := time.Now()
-		d := shellDecide(c.tool, c.line, s.own, s.own, s)
-		took := time.Since(start)
-		if !d.Allow {
-			t.Errorf("%s %q on %d entries refused: %s", c.tool, c.line, entries, d.Why)
-		}
-		if took >= Budget {
-			t.Errorf("%s %q on %d entries took %v, past the guard's budget of %v", c.tool, c.line, entries, took, Budget)
-		}
-		t.Logf("%s %q on %d entries: %v", c.tool, c.line, entries, took)
-	}
+	return entries
 }
