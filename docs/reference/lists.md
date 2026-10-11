@@ -360,7 +360,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `subagent_stop` | a subagent run ended (the agent's SubagentStop) |
 | `stop` | the agent finished a turn (the agent's Stop) |
 | `session_end` | a session ended (the agent's SessionEnd); its reason says why |
-| `guard` | the guard decided on a tool call, allow or deny, by a named rule |
+| `guard` | the guard decided on a tool call, or the stop gate on a session's end (agent_event Stop), allow or deny, by a named rule |
 | `ladder` | a ladder result was written (contract section 11) |
 | `ask` | an ask was filed, resolved or answered; the target is its key and the kind its op |
 | `event` | an outside event, written by bonsai log append with its labels (contract section 8.4) |
@@ -400,7 +400,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `never-granted` | deny | a path of the floor no grant opens: .claude/settings.json, .claude/settings.local.json and .git at a checkout's top, and a .git at any depth (for a delete, the project's own top .git only) |
 | `bonsai-files` | deny | Bonsai's own files, in every mode and under any grant: .bonsai/local/, .bonsai/.gitignore, the two tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home (from WSL, a Windows user's too) |
 | `bonsai-stand-in` | deny | a file named as Bonsai's program (bonsai, bonsai.exe, bonsai.cmd, bonsai.bat, bonsai.ps1, bonsai.com) outside every linked project, which a folder on the PATH could hold |
-| `main-not-verified` | deny | a guarded path where no project holding it is a verified checkout, so no task's grant can count |
+| `main-not-verified` | deny | a guarded path where no project holding it is a verified checkout, so no task's grant can count; for the stop gate, the session's checkout's main checkout is not verified, so its task and ladder result are not trusted |
 | `other-project` | deny | a delete or move of another linked project's top folder or its .git, .bonsai or .claude folder (that project on this machine's record) |
 | `granted` | allow | a guarded path the running task's bonsai.allows holds (the task read from the verified main checkout) |
 | `not-protected` | allow | a path inside a linked project that nothing guards |
@@ -421,16 +421,33 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `bonsai-command` | allow | a bonsai command an agent may run: init and update judged as an edit of bonsai.yaml and the lock, every other word free |
 | `shell-not-judged` | allow | a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, no bonsai command, CLAUDE_CODE_CHILD_SESSION left as it is |
 | `tool-not-judged` | allow | a tool other than the file tools and the shells |
-| `bad-input` | deny | the hook's payload cannot be read |
+| `bad-input` | deny | the hook's payload cannot be read (for the stop gate, or it is not a Stop payload) |
 | `bad-glob` | deny | a glob on a list is not a glob the guard reads |
 | `bad-path` | deny | Windows cannot name where the path leads, or it runs through a junction or link that does not resolve |
 | `bad-lock` | deny | the lock's declares cannot be read (or the lock is missing while bonsai.yaml names packs) |
 | `bad-config` | deny | a bonsai.yaml is there but cannot be read (the session's own: blocked with no record) |
 | `no-project` | deny | CLAUDE_PROJECT_DIR is not set, or its folder cannot be read (blocked with no record) |
-| `log-failed` | deny | the guard would allow the call but cannot write its record |
-| `over-time` | deny | the guard ran past its own time limit |
-| `internal-error` | deny | the guard failed inside (a panic) |
-| `not-linked` | allow | neither the session's folder nor the path is in a linked project: allowed with no record (spec section 7) |
+| `log-failed` | deny | the guard would allow the call, or the stop gate the session's end, but cannot write its record |
+| `over-time` | deny | the guard or the stop gate ran past its own time limit |
+| `internal-error` | deny | the guard or the stop gate failed inside (a panic) |
+| `not-linked` | allow | neither the session's folder nor the path is in a linked project: allowed with no record (spec section 7); for the stop gate, the session's folder is in no linked project |
+| `stop-not-named` | allow | the stop gate: BONSAI_TASK names no task, so it does not engage: the session ends, with no record |
+| `stop-task-missing` | deny | the stop gate: no task file in the main checkout has the id BONSAI_TASK names |
+| `stop-task-twice` | deny | the stop gate: two or more task files have the named id |
+| `stop-task-broken` | deny | the stop gate: the named task's file does not parse under its format |
+| `stop-task-unreadable` | deny | the stop gate: the main checkout's task folder, or a file in it, cannot be read |
+| `stop-bad-rungs` | deny | the stop gate: the task's bonsai.ladder (format 0's ladder) or the workspace's ladder_floor is not a list of rung numbers |
+| `stop-no-run-report` | deny | the stop gate: the session's checkout holds no run report for the task in its run folder (a file named R-YYYY-MM-DD-T-nnnn.md for the task) |
+| `stop-no-result` | deny | the stop gate: the main checkout holds no ladder result for the task (.bonsai/local/ladder/T-nnnn.json for the task) |
+| `stop-bad-result` | deny | the stop gate: the ladder result cannot be read, or does not read as bonsai.ladder/1 |
+| `stop-not-local` | deny | the stop gate: the ladder result's mode is not local (a CI run is never a task's proof) |
+| `stop-red` | deny | the stop gate: the ladder result is not green |
+| `stop-head-unreadable` | deny | the stop gate: the commit at the checkout's HEAD cannot be read from its git files |
+| `stop-other-commit` | deny | the stop gate: the ladder result proves another commit than the checkout's HEAD |
+| `stop-dirty` | deny | the stop gate: the ladder result was made on a tree with uncommitted changes |
+| `stop-rung-missing` | deny | the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the task's bonsai.ladder |
+| `stop-rung-not-green` | deny | the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result |
+| `stop-proven` | allow | the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the task's rungs green: the session ends |
 
 ## The guard's floor
 

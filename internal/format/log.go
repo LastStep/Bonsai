@@ -62,7 +62,7 @@ var LogEvents = []Word{
 	{Word: "subagent_stop", Means: "a subagent run ended (the agent's SubagentStop)"},
 	{Word: "stop", Means: "the agent finished a turn (the agent's Stop)"},
 	{Word: "session_end", Means: "a session ended (the agent's SessionEnd); its reason says why"},
-	{Word: "guard", Means: "the guard decided on a tool call, allow or deny, by a named rule"},
+	{Word: "guard", Means: "the guard decided on a tool call, or the stop gate on a session's end (agent_event Stop), allow or deny, by a named rule"},
 	{Word: "ladder", Means: "a ladder result was written (contract section 11)"},
 	{Word: "ask", Means: "an ask was filed, resolved or answered; the target is its key and the kind its op"},
 	{Word: "event", Means: "an outside event, written by bonsai log append with its labels (contract section 8.4)"},

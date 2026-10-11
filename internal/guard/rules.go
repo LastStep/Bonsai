@@ -6,7 +6,10 @@ package guard
 // so a rule with no test fails. Names are kebab-case and never renamed (a log reader keys on them); a rule is added
 // with a row here, its test and the page.
 //
-// Step 5.3.4's stop gate adds its rows when it is wired in.
+// The stop gate (step 5.3.4, internal/stopgate: bonsai hook stop) names its decisions from this table too, its records
+// guard records with agent_event Stop: the shared rows below (bad-input to not-linked) for the same cases, and its own
+// stop- rows. Its package keeps the names as its own constants (it cannot import this package, whose tests run it),
+// and a test there holds them to these rows, name and answer; stop_test.go here is each stop- row's test.
 
 const (
 	// What a path is judged by (rule.go, may.go).
@@ -54,6 +57,25 @@ const (
 	RuleOverTime  = "over-time"
 	RuleInternal  = "internal-error"
 	RuleNotLinked = "not-linked"
+
+	// The stop gate's own (internal/stopgate), in the order it checks.
+	RuleStopNotNamed       = "stop-not-named"
+	RuleStopTaskMissing    = "stop-task-missing"
+	RuleStopTaskTwice      = "stop-task-twice"
+	RuleStopTaskBroken     = "stop-task-broken"
+	RuleStopTaskUnreadable = "stop-task-unreadable"
+	RuleStopBadRungs       = "stop-bad-rungs"
+	RuleStopNoRunReport    = "stop-no-run-report"
+	RuleStopNoResult       = "stop-no-result"
+	RuleStopBadResult      = "stop-bad-result"
+	RuleStopNotLocal       = "stop-not-local"
+	RuleStopRed            = "stop-red"
+	RuleStopHeadUnreadable = "stop-head-unreadable"
+	RuleStopOtherCommit    = "stop-other-commit"
+	RuleStopDirty          = "stop-dirty"
+	RuleStopRungMissing    = "stop-rung-missing"
+	RuleStopRungNotGreen   = "stop-rung-not-green"
+	RuleStopProven         = "stop-proven"
 )
 
 // Rule is one row of the rules table.
@@ -74,7 +96,8 @@ var Rules = []Rule{
 		"tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home (from WSL, a Windows user's too)"},
 	{RuleStandIn, false, "a file named as Bonsai's program (bonsai, bonsai.exe, bonsai.cmd, bonsai.bat, bonsai.ps1, bonsai.com) " +
 		"outside every linked project, which a folder on the PATH could hold"},
-	{RuleMainNotVerified, false, "a guarded path where no project holding it is a verified checkout, so no task's grant can count"},
+	{RuleMainNotVerified, false, "a guarded path where no project holding it is a verified checkout, so no task's grant can count; " +
+		"for the stop gate, the session's checkout's main checkout is not verified, so its task and ladder result are not trusted"},
 	{RuleOtherProject, false, "a delete or move of another linked project's top folder or its .git, .bonsai or .claude folder (that " +
 		"project on this machine's record)"},
 	{RuleGranted, true, "a guarded path the running task's bonsai.allows holds (the task read from the verified main checkout)"},
@@ -106,14 +129,36 @@ var Rules = []Rule{
 	{RuleShell, true, "a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, " +
 		"no bonsai command, CLAUDE_CODE_CHILD_SESSION left as it is"},
 	{RuleOtherTool, true, "a tool other than the file tools and the shells"},
-	{RuleBadInput, false, "the hook's payload cannot be read"},
+	{RuleBadInput, false, "the hook's payload cannot be read (for the stop gate, or it is not a Stop payload)"},
 	{RuleBadGlob, false, "a glob on a list is not a glob the guard reads"},
 	{RuleBadPath, false, "Windows cannot name where the path leads, or it runs through a junction or link that does not resolve"},
 	{RuleBadLock, false, "the lock's declares cannot be read (or the lock is missing while bonsai.yaml names packs)"},
 	{RuleBadConfig, false, "a bonsai.yaml is there but cannot be read (the session's own: blocked with no record)"},
 	{RuleNoProject, false, "CLAUDE_PROJECT_DIR is not set, or its folder cannot be read (blocked with no record)"},
-	{RuleLogFailed, false, "the guard would allow the call but cannot write its record"},
-	{RuleOverTime, false, "the guard ran past its own time limit"},
-	{RuleInternal, false, "the guard failed inside (a panic)"},
-	{RuleNotLinked, true, "neither the session's folder nor the path is in a linked project: allowed with no record (spec section 7)"},
+	{RuleLogFailed, false, "the guard would allow the call, or the stop gate the session's end, but cannot write its record"},
+	{RuleOverTime, false, "the guard or the stop gate ran past its own time limit"},
+	{RuleInternal, false, "the guard or the stop gate failed inside (a panic)"},
+	{RuleNotLinked, true, "neither the session's folder nor the path is in a linked project: allowed with no record (spec section 7); " +
+		"for the stop gate, the session's folder is in no linked project"},
+	{RuleStopNotNamed, true, "the stop gate: BONSAI_TASK names no task, so it does not engage: the session ends, with no record"},
+	{RuleStopTaskMissing, false, "the stop gate: no task file in the main checkout has the id BONSAI_TASK names"},
+	{RuleStopTaskTwice, false, "the stop gate: two or more task files have the named id"},
+	{RuleStopTaskBroken, false, "the stop gate: the named task's file does not parse under its format"},
+	{RuleStopTaskUnreadable, false, "the stop gate: the main checkout's task folder, or a file in it, cannot be read"},
+	{RuleStopBadRungs, false, "the stop gate: the task's bonsai.ladder (format 0's ladder) or the workspace's ladder_floor is " +
+		"not a list of rung numbers"},
+	{RuleStopNoRunReport, false, "the stop gate: the session's checkout holds no run report for the task in its run folder " +
+		"(a file named R-YYYY-MM-DD-T-nnnn.md for the task)"},
+	{RuleStopNoResult, false, "the stop gate: the main checkout holds no ladder result for the task (.bonsai/local/ladder/T-nnnn.json for the task)"},
+	{RuleStopBadResult, false, "the stop gate: the ladder result cannot be read, or does not read as bonsai.ladder/1"},
+	{RuleStopNotLocal, false, "the stop gate: the ladder result's mode is not local (a CI run is never a task's proof)"},
+	{RuleStopRed, false, "the stop gate: the ladder result is not green"},
+	{RuleStopHeadUnreadable, false, "the stop gate: the commit at the checkout's HEAD cannot be read from its git files"},
+	{RuleStopOtherCommit, false, "the stop gate: the ladder result proves another commit than the checkout's HEAD"},
+	{RuleStopDirty, false, "the stop gate: the ladder result was made on a tree with uncommitted changes"},
+	{RuleStopRungMissing, false, "the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the " +
+		"task's bonsai.ladder"},
+	{RuleStopRungNotGreen, false, "the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result"},
+	{RuleStopProven, true, "the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the " +
+		"task's rungs green: the session ends"},
 }
