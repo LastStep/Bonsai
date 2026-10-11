@@ -287,6 +287,16 @@ func (p *Plan) LeftAlone() string {
 	return "Left as they are, edited here (bonsai check reports each as changed until it is settled):\n" + b.String()
 }
 
+// SessionFolderWords say where a session must start for Bonsai's hook lines to run (design/plan-5.md, 5.3.1 note 1):
+// Claude Code reads a project's .claude/settings.json from the folder a session starts in, and reads it again from a
+// folder a person's /cd moves the session to, so a session started below the project's top folder, or moved out of
+// it, runs none of them, the guard's among them. Measured 11 Oct with a scratch project's own hooks: on Claude Code
+// 2.1.296 in WSL, a session started in a subfolder of the checkout ran none, and in a session started at the top none
+// ran after a /cd into a subfolder until a /cd back; on 2.1.294 on Windows, the subfolder start alike. bonsai hook
+// guard --help says the same.
+const SessionFolderWords = "Start Claude Code in the project's top folder, and do not /cd out of it: a session started or\n" +
+	"moved elsewhere loads none of the project's Claude Code settings, so no Bonsai hook guards it.\n"
+
 // ClosingWords are what init ends with and status shows (spec §6, "Said in plain words").
 func ClosingWords(cfg *workspace.Config, home string) string {
 	var b strings.Builder
@@ -299,6 +309,7 @@ func ClosingWords(cfg *workspace.Config, home string) string {
 	fmt.Fprintf(&b, "  %s\n", ascii(filepath.ToSlash(home)))
 	b.WriteString("    Bonsai's home: a secret salt, this machine's settings for each project, label files attached\n")
 	b.WriteString("    on this machine, your personal memory, the pack cache. None of it enters git.\n")
+	b.WriteString(SessionFolderWords)
 	b.WriteString("A copy meant as a new project needs its own id: bonsai init --new-id\n")
 	return b.String()
 }

@@ -8,6 +8,7 @@ package main
 import (
 	"os"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/guard"
 	"github.com/LastStep/Bonsai/internal/recorder"
 )
@@ -42,13 +43,20 @@ var guardWord = &Word{
 	Summary: "the PreToolUse guard",
 	About: `  bonsai hook guard || exit 2
 on PreToolUse (Edit, Write, MultiEdit, NotebookEdit, Bash, PowerShell), timeout 10 s.
-It reads Claude Code's PreToolUse payload on stdin and the project from CLAUDE_PROJECT_DIR, and refuses an Edit,
-Write, MultiEdit or NotebookEdit of a path on bonsai.yaml's protected or person_only list. Bash and PowerShell are
-allowed in this build. It blocks whatever it cannot read or decide, and blocks itself after 5 s, before the hook's
-timeout could let the call through. In a project with no bonsai.yaml it allows and records nothing.
-Each decision is a guard record (bonsai.log/1) in .bonsai/local/log/, naming the binary's own path, and on a
-session's first record its SHA-256.
-`,
+It reads Claude Code's PreToolUse payload on stdin and the session's project from CLAUDE_PROJECT_DIR, and refuses an
+Edit, Write, MultiEdit or NotebookEdit of a path on the protected or person_only list of a project holding it, or
+among the protected paths its packs declare (the lock). A path is judged by every folder at or above it holding
+bonsai.yaml, past any .git; the nearest alone when it is a verified checkout. A worktree judges by its main
+checkout's bonsai.yaml and lock once the main checkout is verified: git's own link back names the worktree, and
+this machine's record (written by bonsai init and update in the main checkout) is the first to claim the id. Where
+nothing holding a refused path is verified, no task's grant can count (rule main-not-verified), and the refusal names
+the step: a person runs bonsai update in the main checkout. Bash and PowerShell are allowed in this build. It blocks
+whatever it cannot read or decide, and blocks itself after 5 s, before the hook's timeout could let the call through.
+When neither the session's folder nor the path is in a linked project, it allows and records nothing.
+Each decision is a guard record (bonsai.log/1) in the .bonsai/local/log/ of the project whose rules decided (a
+verified worktree's main checkout's), with the input's hash, and on the record that made its file the binary's own
+path (from ~/ under the home) and SHA-256.
+` + engine.SessionFolderWords,
 	FlagNext: "use the hook line bonsai init writes: bonsai hook guard || exit 2",
 	Exits: []Exit{
 		{Code: 0, Means: "allow: the call goes on (nothing printed)"},
