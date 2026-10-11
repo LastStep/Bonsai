@@ -77,7 +77,8 @@ func TestPageHoldsEveryList(t *testing.T) {
 	for _, name := range []string{"Exit codes", "Error words", "Check words", "Check --pack words", "Ask types", "Ask ops",
 		"Active task: reasons there is none", "Generated kinds", "Task statuses", "Run outcomes", "Label value kinds",
 		"Lane rules", "Log events", "Log categories", "Lock file kinds", "Pack file kinds", "Bonsai's document kinds",
-		"Needs kinds", "Claude Code states", "Plugin results", "Check words later steps build", "Guard rules"} {
+		"Needs kinds", "Claude Code states", "Plugin results", "Check words later steps build", "Guard rules", "The guard's floor",
+		"Stand-in names"} {
 		if !strings.Contains(page, "\n## "+name+"\n") {
 			t.Errorf("the page has no list %q", name)
 		}
@@ -89,10 +90,15 @@ func TestPageHoldsEveryList(t *testing.T) {
 			}
 		}
 	}
-	// The guard's rules table (plan-5 5.3.2 note 9): every row on the page.
+	// The guard's rules table and its floor (plan-5 5.3.2 notes 2 and 9): every row on the page.
 	for _, r := range guard.Rules {
 		if !strings.Contains(page, "| `"+r.Name+"` |") {
 			t.Errorf("the guard rule %s is not on the page", r.Name)
+		}
+	}
+	for _, f := range guard.Floor {
+		if !strings.Contains(page, "| `"+f.Glob+"` | "+f.At+" | `"+f.Class+"` |") {
+			t.Errorf("the floor's %s is not on the page", f.Glob)
 		}
 	}
 	for _, l := range engine.CheckLaterWords() {

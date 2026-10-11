@@ -85,6 +85,12 @@ func Page() []byte {
 	p.section("Guard rules", "open", "guard.Rules (internal/guard/rules.go)", "`bonsai logs --json` (a guard record's `rule`)",
 		"Every rule a guard decision names, the log record's `rule` (contract section 8.1), and whether it allows or refuses the call; a reader shows a rule it does not know as other.")
 	p.guardRules()
+	p.section("The guard's floor", "closed", "guard.Floor (internal/guard/floor.go)", "none",
+		"The paths the guard guards in every project whatever bonsai.yaml's lists say, matched as the lists' globs are, the first entry that matches deciding: person-only (a running task's grant opens it), never-granted, bonsai-files (no grant opens either), or free. A delete or move does not meet an entry marked so.")
+	p.floor()
+	p.section("Stand-in names", "closed", "guard.StandInNames (internal/guard/own.go)", "none",
+		"The file names the guard refuses an agent's file tools writing outside every linked project, letter case ignored: a stand-in for Bonsai's program in a folder on the PATH.")
+	p.values(guard.StandInNames)
 	p.section("Secret kinds", "open", "redact.Kinds (internal/redact/redact.go), in the order its rules run", "`bonsai check` (a `secret` finding names the kind it found)",
 		"The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value. A new rule of the redactor adds a kind.")
 	p.secretKinds()
@@ -183,6 +189,18 @@ func (p *page) guardRules() {
 			d = "allow"
 		}
 		p.line("| `%s` | %s | %s |", r.Name, d, cell(r.Line))
+	}
+}
+
+func (p *page) floor() {
+	p.line("| Path | At | Class | For deletes | What it is |")
+	p.line("|---|---|---|---|---|")
+	for _, f := range guard.Floor {
+		del := "yes"
+		if f.NotForDeletes {
+			del = "no"
+		}
+		p.line("| `%s` | %s | `%s` | %s | %s |", f.Glob, f.At, f.Class, del, cell(f.Why))
 	}
 }
 

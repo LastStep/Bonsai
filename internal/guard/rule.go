@@ -10,7 +10,8 @@ package guard
 // planted, a nested repository never linked on this machine), the lists of every project holding the path apply,
 // each read against its own folder: so a bonsai.yaml with empty lists in docs/, or a .git placed there, narrows
 // nothing. A path in another linked project is judged by that project's lists. A path in no linked project is
-// allowed (outside-project).
+// judged by Bonsai's own files alone (own.go: Bonsai's home, a stand-in for its program), else allowed
+// (outside-project).
 //
 // The lists a project judges by: the person_only and protected globs of its bonsai.yaml, and each pack's declared
 // protected paths in its lock (workspace.ReadConfig and workspace.ReadDeclared, both lean: 5.3.1 note 3). A worktree
@@ -32,6 +33,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -43,11 +45,18 @@ import (
 // judge is one guard run's view of the linked projects its call touches: each project's files read once, and its
 // main checkout verified only when an answer needs it (5.3.1 note 5: this machine's records are read only then).
 type judge struct {
-	home     string                    // the Bonsai home, "" when there is none
-	session  *linkedProject            // the session's own project, nil when CLAUDE_PROJECT_DIR is in none
-	projects map[string]*linkedProject // by the folder holding bonsai.yaml, as found
-	configs  map[string]*config        // bonsai.yaml by folder: a project's own, or a worktree's main checkout's
-	holding  map[string]bool           // whether a folder holds bonsai.yaml, looked up once (hookin.Holding)
+	home      string                               // the Bonsai home, "" when there is none
+	getenv    func(string) string                  // the hook's environment (BONSAI_TASK)
+	session   *linkedProject                       // the session's own project, nil when CLAUDE_PROJECT_DIR is in none
+	projects  map[string]*linkedProject            // by the folder holding bonsai.yaml, as found
+	configs   map[string]*config                   // bonsai.yaml by folder: a project's own, or a worktree's main checkout's
+	holding   map[string]bool                      // whether a folder holds bonsai.yaml, looked up once (hookin.Holding)
+	modes     map[string]workspace.MachineSettings // this machine's settings by main checkout, read once (tripwire.go)
+	homeForms [][]string                           // Bonsai's home folders in their forms, read once (own.go)
+
+	// taskGrants, when set, gives what a project's task grants in place of its active task while it reads running:
+	// rung 0 (step 5.4) judges with the named task's grants at any status (contract §13). nil for the guard.
+	taskGrants func(p *linkedProject) *taskGrant
 }
 
 // linkedProject is one folder holding bonsai.yaml: a project, linked or planted.
@@ -57,6 +66,7 @@ type linkedProject struct {
 	own    *config             // its own bonsai.yaml
 	trust  *workspace.Trust    // nil until asked (verified)
 	lists  *lists              // nil until asked (listsOf)
+	grant  *taskGrant          // nil until asked (grantOf)
 }
 
 // config is one bonsai.yaml as the guard reads it (workspace.LoadConfig, lean), or why it does not read.
@@ -76,7 +86,8 @@ type lists struct {
 }
 
 func newJudge(home string) *judge {
-	return &judge{home: home, projects: map[string]*linkedProject{}, configs: map[string]*config{}, holding: map[string]bool{}}
+	return &judge{home: home, getenv: os.Getenv, projects: map[string]*linkedProject{}, configs: map[string]*config{},
+		holding: map[string]bool{}, modes: map[string]workspace.MachineSettings{}}
 }
 
 // project gives the project whose bonsai.yaml lies in root, reading its layout and its own bonsai.yaml once.
@@ -183,7 +194,7 @@ func (j *judge) judges(chain []*linkedProject) []*linkedProject {
 	return chain
 }
 
-// grantor is the nearest verified project holding a path, the only one a grant may come from (step 5.3.2); nil when
+// grantor is the nearest verified project holding a path, the only one a grant may come from (grant.go); nil when
 // none is verified.
 func (j *judge) grantor(chain []*linkedProject) *linkedProject {
 	for _, p := range chain {
@@ -245,116 +256,31 @@ func (l *lists) all() []list {
 	return out
 }
 
-// judged is one form of a path, a project judging it, and the path relative to that project's folder.
-type judged struct {
-	abs   string
-	chain []*linkedProject
-	p     *linkedProject
-	rel   string
-}
-
 // decide judges one call. base is the folder a relative path is read against (the session's project, else
-// CLAUDE_PROJECT_DIR). It gives the decision and the project its record goes in (nil: no record).
+// CLAUDE_PROJECT_DIR). It gives the decision and the project its record goes in (nil: no record). A file tool's path
+// is judged by the one function (may.go); a shell call's line for Bonsai's own commands (commands.go), in a linked
+// session only (the delete check, step 5.3.3, judges the rest of it); any other tool is allowed.
 func (j *judge) decide(in *hookin.Payload, base string) (Decision, *linkedProject) {
-	if !hookin.FileTool(in.Tool) {
-		if in.Tool == "Bash" || in.Tool == "PowerShell" {
-			return allow(RuleShell, ""), j.session
-		}
-		return allow(RuleOtherTool, ""), j.session
+	if hookin.FileTool(in.Tool) {
+		return j.may(change{tool: in.Tool, path: in.Path, cwd: in.Cwd, base: base, in: in})
 	}
-	forms, err := pathForms(base, in.Cwd, in.Path)
-	if err != nil {
-		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: on Windows the guard cannot tell where the path leads (%s), "+
-			"so it cannot tell whether it is protected", in.Tool, quote(filepath.ToSlash(in.Path), 120), oneLine(err.Error())),
-			"write to the file by its plain path inside the project (a drive letter and folders), or tell the person"), j.session
+	if shellTool(in.Tool) {
+		if j.session == nil {
+			return allow(RuleShell, ""), nil
+		}
+		return j.ownLine(in.Tool, in.Command), j.session
 	}
-	var all []judged
-	var first []*linkedProject // the chain of the first form a project holds: an allow is recorded there
-	for _, abs := range forms {
-		if devicePath(abs) || adminShare(abs) != "" {
-			continue // a \\?\ form, or one through this machine's admin share, names no project folder of its own: its
-			// drive or share form is among the forms
-		}
-		chain := j.chain(abs)
-		if len(chain) == 0 {
-			continue
-		}
-		if first == nil {
-			first = chain
-		}
-		for _, p := range j.judges(chain) {
-			if rel, ok := relTo(p.root, abs); ok {
-				all = append(all, judged{abs: abs, chain: chain, p: p, rel: rel})
-			}
-		}
-	}
-	if first == nil {
-		return allow(RuleOutside, ""), j.session
-	}
-	// Every list that judges must read, and every glob on it must be one the guard reads: else nothing can be told.
-	for _, x := range all {
-		l := j.listsOf(x.p)
-		if l.err != nil {
-			return j.unread(in, x, l), j.recordIn(x.chain)
-		}
-		for _, li := range l.all() {
-			for _, g := range li.globs {
-				if err := checkGlob(g); err != nil {
-					return deny(RuleBadGlob, fmt.Sprintf("%s refused: the glob %s on %s is not a glob the guard reads (%s), so it "+
-						"cannot tell whether the path is protected", in.Tool, strconv.QuoteToASCII(g), li.name, oneLine(err.Error())),
-						"leave the file as it is and tell the person: a person fixes that glob"), j.recordIn(x.chain)
-				}
-			}
-		}
-	}
-	// The lists, in their order (all), across every form and project: the first glob that matches refuses.
-	for i := 0; ; i++ {
-		tried := false
-		for _, x := range all {
-			lists := j.listsOf(x.p).all()
-			if i >= len(lists) {
-				continue
-			}
-			tried = true
-			for _, g := range lists[i].globs {
-				if matchGlob(g, x.rel, caseInsensitive(x.p.root)) {
-					rec := j.recordIn(x.chain)
-					d := j.refuse(in, x, lists[i], g)
-					d.Target = target(rec, []string{x.abs})
-					return d, rec
-				}
-			}
-		}
-		if !tried {
-			break
-		}
-	}
-	rec := j.recordIn(first)
-	return allow(RuleNotProtected, target(rec, forms)), rec
+	return allow(RuleOtherTool, ""), j.session
 }
 
-// refuse is the refusal of a path on a list: protected or person-only when a verified project holds it (a grant could
-// come from there, from step 5.3.2), else main-not-verified, naming the person's step that verifies it.
-func (j *judge) refuse(in *hookin.Payload, x judged, li list, glob string) Decision {
-	shown := quote(x.rel, 120)
-	if len(x.chain) > 1 {
-		shown += " (in the project " + quote(filepath.Base(x.p.root), 60) + ")"
-	}
-	on := fmt.Sprintf("%s of %s refused: it is on %s (%s)", in.Tool, shown, li.name, strconv.QuoteToASCII(glob))
-	switch {
-	case j.grantor(x.chain) == nil:
-		t := j.verified(x.chain[0])
-		return deny(RuleMainNotVerified, on+", and no task can grant it here: its main checkout is not verified, as "+t.Why,
-			t.Next+"; until then, leave the file as it is and tell the person")
-	case li.rule == RulePersonOnly:
-		return deny(RulePersonOnly, on+", so only a person changes it", "leave the file as it is and ask the person to make this change")
-	}
-	return deny(RuleProtected, on+", and this build gives no task the right to change it",
-		"leave the file as it is and tell the person; a person changes it (a task's grants come with Bonsai's step 5.3)")
+// shellTool reports the tools that run a command line: Bash, PowerShell and Monitor (which runs its command under
+// Bash's rules: Claude Code's tools reference).
+func shellTool(tool string) bool {
+	return tool == "Bash" || tool == "PowerShell" || tool == "Monitor"
 }
 
 // unread is the refusal of a path whose project's lists cannot be read.
-func (j *judge) unread(in *hookin.Payload, x judged, l *lists) Decision {
+func (j *judge) unread(tool string, x judged, l *lists) Decision {
 	file := "bonsai.yaml"
 	if l.rule == RuleBadLock {
 		file = workspace.LockFile
@@ -368,7 +294,7 @@ func (j *judge) unread(in *hookin.Payload, x judged, l *lists) Decision {
 		next = "leave the change and tell the person: " + we.Next
 	}
 	return deny(l.rule, fmt.Sprintf("%s refused: %s cannot be read (%s), so the guard cannot tell what is protected",
-		in.Tool, file, oneLine(l.err.Error())), oneLine(next))
+		tool, file, oneLine(l.err.Error())), oneLine(next))
 }
 
 // target is the path a record names: relative to the project the record goes in, for the first form it holds; "" for

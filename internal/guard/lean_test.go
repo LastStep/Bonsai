@@ -2,9 +2,10 @@ package guard
 
 // The guard's reads stay lean (plan-5 5.1.4a, widened by 5.3.1 note 3): it reads the fields of bonsai.yaml it judges
 // by through workspace.LoadConfig, never the full read the engine and check use (workspace.LoadConfigFull), and of the
-// lock only each pack's id and its declares' protected paths and document kinds (workspace.ReadDeclared), never the
-// full read (workspace.ReadLock). So a field it does not judge by, broken, never blocks an edit, and a hook call never
-// pays for a full read.
+// lock only each pack's id and its declares' protected paths and document kinds (workspace.ReadDeclared), not the
+// full read (workspace.ReadLock), which only command mode's tripwires make, for a document whose labels change or a
+// new document of a pack's kind (tripwire.go). So a field it does not judge by, broken, never blocks an ordinary edit,
+// and an ordinary hook call never pays for a full read.
 
 import (
 	"errors"

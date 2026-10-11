@@ -298,7 +298,8 @@ func TestDecide(t *testing.T) {
 		{"notebook protected", "NotebookEdit", "protected.txt", "", RuleProtected, "protected.txt"},
 		{"free", "Edit", "free.txt", "", RuleNotProtected, "free.txt"},
 		{"new free file", "Write", "sub/new.txt", "", RuleNotProtected, "sub/new.txt"},
-		{"glob", "Write", ".claude/settings.local.json", "", RulePersonOnly, ".claude/settings.local.json"},
+		{"glob", "Write", ".claude/agents/x.md", "", RulePersonOnly, ".claude/agents/x.md"},
+		{"floor never granted", "Write", ".claude/settings.local.json", "", RuleNeverGranted, ".claude/settings.local.json"},
 		{"person only first", "Edit", "bonsai.yaml", "", RulePersonOnly, "bonsai.yaml"},
 		{"person only glob", "Write", "secret/a.key", "", RulePersonOnly, "secret/a.key"},
 		{"person only glob miss", "Write", "secret/a.txt", "", RuleNotProtected, "secret/a.txt"},
@@ -334,7 +335,7 @@ func TestDecide(t *testing.T) {
 			if d.Rule != c.rule || d.Target != c.target {
 				t.Fatalf("%s %s: rule %s target %q, want %s %q", c.tool, c.path, d.Rule, d.Target, c.rule, c.target)
 			}
-			denied := c.rule == RuleProtected || c.rule == RulePersonOnly
+			denied := c.rule == RuleProtected || c.rule == RulePersonOnly || c.rule == RuleNeverGranted
 			if d.Allow == denied {
 				t.Fatalf("allow is %v for rule %s", d.Allow, d.Rule)
 			}

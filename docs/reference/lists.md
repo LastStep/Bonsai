@@ -31,6 +31,8 @@ error words.
 - Log events
 - Log categories
 - Guard rules
+- The guard's floor
+- Stand-in names
 - Secret kinds
 - Lane rules
 - Task statuses
@@ -423,6 +425,39 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `over-time` | deny | the guard ran past its own time limit |
 | `internal-error` | deny | the guard failed inside (a panic) |
 | `not-linked` | allow | neither the session's folder nor the path is in a linked project: allowed with no record (spec section 7) |
+
+## The guard's floor
+
+- Closed list.
+- Defined in: guard.Floor (internal/guard/floor.go).
+- Printed in a project by: none.
+- The paths the guard guards in every project whatever bonsai.yaml's lists say, matched as the lists' globs are, the first entry that matches deciding: person-only (a running task's grant opens it), never-granted, bonsai-files (no grant opens either), or free. A delete or move does not meet an entry marked so.
+
+| Path | At | Class | For deletes | What it is |
+|---|---|---|---|---|
+| `.bonsai/STATE.md` | top | `free` | yes | where the project stands; agents rewrite it (spec section 6) |
+| `.bonsai/local/` | top | `bonsai-files` | yes | the log, the asks and the ladder results, which only Bonsai writes |
+| `.bonsai/.gitignore` | top | `bonsai-files` | yes | written by Bonsai, so .bonsai/local/ is never committed |
+| `.bonsai/tasks.md` | top | `bonsai-files` | yes | a generated table: bonsai check --write rebuilds it |
+| `.bonsai/sessions.md` | top | `bonsai-files` | yes | a generated table: bonsai check --write rebuilds it |
+| `.bonsai/lock.json` | top | `person-only` | yes | the lock: what each pack wrote and declares |
+| `.bonsai` | top | `person-only` | yes | Bonsai's folder in the project; nothing else of an agent's belongs in it |
+| `bonsai.yaml` | top | `person-only` | yes | the project's Bonsai settings, its lists among them |
+| `.claude/settings.json` | top | `never-granted` | yes | Claude Code's project settings, which hold Bonsai's hook lines and deny rules |
+| `.claude/settings.local.json` | top | `never-granted` | yes | Claude Code's local settings, which beat the project's |
+| `.git` | top | `never-granted` | yes | the checkout's git folder or file, which says where its main checkout is |
+| `**/.git` | any depth | `never-granted` | no | a .git below the top would plant a checkout inside the project |
+| `**/bonsai.yaml` | any depth | `person-only` | yes | a bonsai.yaml below the top would plant a project inside this one |
+| `**/.bonsai` | any depth | `person-only` | yes | a .bonsai folder below the top is a planted project's |
+
+## Stand-in names
+
+- Closed list.
+- Defined in: guard.StandInNames (internal/guard/own.go).
+- Printed in a project by: none.
+- The file names the guard refuses an agent's file tools writing outside every linked project, letter case ignored: a stand-in for Bonsai's program in a folder on the PATH.
+
+Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps1`, `bonsai.com`.
 
 ## Secret kinds
 

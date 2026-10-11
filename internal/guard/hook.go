@@ -93,6 +93,7 @@ func (r *run) work() (d Decision) {
 			quote(filepath.ToSlash(dir), 120), oneLine(err.Error())), "tell the person: check that the folder exists and can be read")
 	}
 	j := newJudge(guardHome())
+	j.getenv = r.o.Getenv
 	if len(roots) > 0 {
 		s := j.project(roots[0])
 		if err := s.own.err; err != nil {
