@@ -19,8 +19,8 @@
 //
 // For a reviewer, in the order a call runs:
 //   - hook.go: Main, the whole run, in the frame of the hooks that block (internal/hookin's Frame). The frame arms
-//     the guard's own timer first (Budget, under the 10 s timeout part 3's hook line carries: a hook that times out
-//     does not block, spec §7), then runs the guard's work in a goroutine: it finds the session's project from
+//     the guard's own timer first (Budget, under the hook line's 10 s timeout, engine.GuardTimeout: a hook that times
+//     out does not block, spec §7), then runs the guard's work in a goroutine: it finds the session's project from
 //     CLAUDE_PROJECT_DIR (set by Claude Code, not by any file an agent edits), reads its bonsai.yaml and the payload,
 //     decides, writes the guard record. What does not finish in time blocks, its over-time record awaited for
 //     RecordWait; a panic inside blocks.
@@ -35,7 +35,9 @@
 //     normal build has fault_off.go alone, which holds no fault code and reads no variable for it.
 //
 // Exit codes (spec §3): 0 allows the call, 2 blocks it, and Claude Code shows a blocked call's stderr to the agent.
-// Part 3's hook line, `bonsai hook guard || exit 2`, turns every other ending (a crash, a missing binary) into a block.
+// The hook line (engine.GuardCommand, plan-5 5.3.6) runs the installed bonsai at its fixed place, never one on the
+// PATH: it refuses the call in its own words when bonsai is at neither place, its || exit 2 turns every other ending
+// (a crash) into a block, and its onFailure: block (Claude Code 2.1.295 and later) blocks a line that cannot start.
 //
 // A session started in a folder below a project's top, or moved by a person's /cd, loads none of the project's
 // settings (Claude Code reads .claude/settings.json from the folder a session starts in), so no hook line, the guard's

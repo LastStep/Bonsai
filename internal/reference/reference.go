@@ -75,6 +75,7 @@ func Page() []byte {
 	p.section("Plugin results", "open", "engine.PluginResults (internal/engine/lists.go)", "`bonsai init --json`, `bonsai update --json`, `bonsai unlink --json` (plugins[].result)",
 		"What the plugin step did for one pack's plugin on this machine; a reader shows a result it does not know as other.")
 	p.words(engine.PluginResults)
+	p.hookLines()
 	p.orders()
 	p.section("Log events", "open", "format.LogEvents (internal/format/log.go)", "`bonsai check --schema bonsai.log`",
 		"Contract section 8.2's event names, in the log record's `event`; a reader shows a word it does not know as other.")
@@ -413,5 +414,30 @@ func (p *page) schemaLists() {
 			p.section(name, "closed", "formats/schemas/"+f.Name+".schema.json (`"+e.path+"`)", "`bonsai check --schema "+f.ID()+"`", "")
 			p.line("Values: %s.", strings.Join(vs, ", "))
 		}
+	}
+}
+
+// hookLines lists the two lists of Bonsai's hook lines' form (plan-5 5.3.6 notes 2 and 5): the installed places the
+// lines run bonsai from, and the tools the guard's line matches. Their sections stand apart from the guard's.
+func (p *page) hookLines() {
+	p.section("Installed places", "closed", "engine.PlaceWindows and engine.PlaceLinux (internal/engine/settings.go)",
+		"`bonsai hook guard --help` (the line), `bonsai init --help`",
+		"Where Bonsai's hook lines run bonsai from, in this order, as the shell that runs a hook line names them (spec "+
+			"section 3; Rohan's answer (a)): the PATH is never read, and with neither there the guard's line refuses every "+
+			"call and the stop gate's every session's end. Check 2's one named exception: the same on every machine, naming "+
+			"no user. A test build stamped with its own place writes that place alone.")
+	p.line("| Order | Place | Where |")
+	p.line("|---|---|---|")
+	p.line("| 1 | `%s` | Windows: C:/Program Files/Bonsai/bonsai.exe, as Git Bash names it; only an administrator places it |", engine.PlaceWindows)
+	p.line("| 2 | `%s` | WSL and Linux; only root places it (under Git Bash, a folder of Git's own install) |", engine.PlaceLinux)
+	p.section("The guard line's tools", "open", "engine.GuardTools (internal/engine/settings.go)",
+		"`bonsai hook guard --help` (its matcher)",
+		"The tools the guard's hook line matches, joined by | as its matcher: every tool that writes a file or runs a "+
+			"command, read from Claude Code's tools reference on the version in use. A changed list is a changed hook "+
+			"line, which a project linked before takes only with --allow-exec --yes.")
+	p.line("| Tool | What it does that the guard judges |")
+	p.line("|---|---|")
+	for _, tool := range engine.GuardTools {
+		p.line("| `%s` | %s |", tool.Name, cell(tool.Why))
 	}
 }

@@ -210,3 +210,22 @@ func TestGeneratedFilesPageIsPlain(t *testing.T) {
 		}
 	}
 }
+
+// The hook lines' two lists (plan-5 5.3.6 notes 2 and 5): the installed places, in their order, and every tool of the
+// guard's matcher.
+func TestPageHoldsTheHookLinesLists(t *testing.T) {
+	page := string(Page())
+	for _, name := range []string{"Installed places", "The guard line's tools"} {
+		if !strings.Contains(page, "\n## "+name+"\n") {
+			t.Errorf("the page has no list %q", name)
+		}
+	}
+	if !strings.Contains(page, "| 1 | `"+engine.PlaceWindows+"` |") || !strings.Contains(page, "| 2 | `"+engine.PlaceLinux+"` |") {
+		t.Error("the installed places are not on the page, in their order")
+	}
+	for _, tool := range engine.GuardTools {
+		if !strings.Contains(page, "| `"+tool.Name+"` | "+tool.Why+" |") {
+			t.Errorf("the guard line's tool %s is not on the page", tool.Name)
+		}
+	}
+}

@@ -12,10 +12,15 @@ package guard
 //	slow          the guard stops before it decides and sleeps past its own budget and past the hook's 10 s timeout;
 //	              its timer (the frame's, internal/hookin, which a normal build runs too) answers first and blocks
 //	              (rule over-time).
-//	missing       the launcher (claude-here) starts the session with no bonsai anywhere on its PATH, so the hook
-//	minimal-path  line's shell finds none and `|| exit 2` blocks; for minimal-path the PATH is a bare one (the
-//	              system's folders and git's). If a bonsai built with this tag answers anyway, the launcher did not
-//	              hide it: it blocks, naming itself (rule fault-missing or fault-minimal-path).
+//	missing       no bonsai at the hook line's place: the session runs in a project linked by a build stamped with a
+//	              place that holds nothing (step 5.3.6; claude-here checks it), and the line, which tests for bonsai
+//	              before it starts it, refuses each call in its own words. In a project whose lines still call bonsai
+//	              by name (a build before step 5.3.6), the launcher hides every bonsai on the PATH instead, and the
+//	              line's || exit 2 blocks.
+//	minimal-path  a bare PATH (the system's folders and git's): Bonsai's line never reads the PATH, so a normal build
+//	              at its place still decides as ever; a line by name finds no bonsai and blocks.
+//	              If a bonsai built with this tag answers either one anyway, nothing hid it: it blocks, naming
+//	              itself (rule fault-missing or fault-minimal-path).
 //	other values  blocked, naming the four (rule fault-unknown).
 //
 // The variable is read once bonsai.yaml and the payload are read, so a crash's or a slow run's record has its

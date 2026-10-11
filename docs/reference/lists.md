@@ -25,6 +25,8 @@ error words.
 - Needs kinds
 - Claude Code states
 - Plugin results
+- Installed places
+- The guard line's tools
 - Claude Code's key order: the top-level keys of a settings file
 - Claude Code's key order: the keys of permissions
 - Claude Code's key order: the keys of an inline marketplace's source object
@@ -316,6 +318,35 @@ Values, in order: `pack`, `once`.
 | `failed` | Claude Code was asked and could not install (or list) the plugin; the next step is the command to run |
 | `skipped` | Claude Code is not on the PATH, so nothing was installed (or, on unlink, nothing removed) on this machine |
 | `uninstalled` | unlink only: the plugin was removed for this checkout, or was not installed (nothing to remove) |
+
+## Installed places
+
+- Closed list.
+- Defined in: engine.PlaceWindows and engine.PlaceLinux (internal/engine/settings.go).
+- Printed in a project by: `bonsai hook guard --help` (the line), `bonsai init --help`.
+- Where Bonsai's hook lines run bonsai from, in this order, as the shell that runs a hook line names them (spec section 3; Rohan's answer (a)): the PATH is never read, and with neither there the guard's line refuses every call and the stop gate's every session's end. Check 2's one named exception: the same on every machine, naming no user. A test build stamped with its own place writes that place alone.
+
+| Order | Place | Where |
+|---|---|---|
+| 1 | `/c/Program Files/Bonsai/bonsai.exe` | Windows: C:/Program Files/Bonsai/bonsai.exe, as Git Bash names it; only an administrator places it |
+| 2 | `/usr/local/bin/bonsai` | WSL and Linux; only root places it (under Git Bash, a folder of Git's own install) |
+
+## The guard line's tools
+
+- Open list.
+- Defined in: engine.GuardTools (internal/engine/settings.go).
+- Printed in a project by: `bonsai hook guard --help` (its matcher).
+- The tools the guard's hook line matches, joined by | as its matcher: every tool that writes a file or runs a command, read from Claude Code's tools reference on the version in use. A changed list is a changed hook line, which a project linked before takes only with --allow-exec --yes.
+
+| Tool | What it does that the guard judges |
+|---|---|
+| `Edit` | edits a file |
+| `Write` | creates or overwrites a file |
+| `MultiEdit` | edits a file several times in one call (older Claude Code) |
+| `NotebookEdit` | edits a Jupyter notebook's cells |
+| `Bash` | runs a shell command |
+| `PowerShell` | runs a PowerShell command |
+| `Monitor` | runs a command in the background, under Bash's permission rules |
 
 ## Claude Code's key order: the top-level keys of a settings file
 
