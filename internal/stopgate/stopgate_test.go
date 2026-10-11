@@ -8,6 +8,7 @@ package stopgate
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -587,39 +588,63 @@ func TestOverTimeAndPanicBlock(t *testing.T) {
 	defer func(f func()) { beforeWork = f }(beforeWork)
 	defer func(f func(workspace.Local, workspace.GitLayout, string) Decision) { judgeFn = f }(judgeFn)
 
-	// Past the budget before anything is read: blocked, with no record (no workspace id to record under yet).
-	release := make(chan struct{})
-	beforeWork = func() { <-release; panic("let go") }
+	// Past the budget before anything is read: blocked, with no record (no workspace id to record under yet). The
+	// held run says it started before the test goes on, so the test's later changes to the hooks come after its read.
+	started, release1 := make(chan struct{}, 1), make(chan struct{})
+	beforeWork = func() { started <- struct{}{}; <-release1; panic("let go") }
 	start := time.Now()
 	var stderr bytes.Buffer
 	code := Main(Options{Stdin: strings.NewReader(stopPayload("s1", root)), Stderr: &stderr, Budget: 50 * time.Millisecond,
 		RecordWait: time.Minute, Getenv: env(root, workspace.TaskEnv, "T-0901"), Now: func() time.Time { return testNow }})
 	took := time.Since(start)
-	close(release)
+	<-started
+	close(release1)
 	if code != 2 || !strings.Contains(stderr.String(), "ran past its own 50ms limit") || took > 30*time.Second {
 		t.Fatalf("over time: exit %d after %v, %q", code, took, stderr.String())
 	}
 	blocks(t, code, stderr.String(), "", RuleOverTime, "ran past its own 50ms limit", "end the session again")
 	noLog(t, root)
 
-	// Past the budget once bonsai.yaml was read and the payload too: the over-time block is recorded.
+	// Past the budget once bonsai.yaml was read and the payload too: the over-time block is recorded. As the guard's
+	// test does, a run whose timer fires before its work knows where the record goes (no record, rightly) is tried
+	// again on a new project with twice the budget, up to the gate's real Budget. Every held run is let go into a
+	// panic only once each has reached its judgment, so none writes after its test.
 	beforeWork = func() {}
-	release, reached := make(chan struct{}), make(chan struct{})
+	release2, entered := make(chan struct{}), make(chan struct{}, 64)
 	judgeFn = func(workspace.Local, workspace.GitLayout, string) Decision {
-		close(reached)
-		<-release
+		entered <- struct{}{}
+		<-release2
 		panic("let go")
 	}
-	stderr.Reset()
-	code = Main(Options{Stdin: strings.NewReader(stopPayload("s1", root)), Stderr: &stderr, Budget: 200 * time.Millisecond,
-		RecordWait: time.Minute, Getenv: env(root, workspace.TaskEnv, "T-0901"), Now: func() time.Time { return testNow }})
-	select {
-	case <-reached:
-	case <-time.After(30 * time.Second):
-		t.Fatalf("the work never reached its judgment: exit %d %q", code, stderr.String())
+	runs := 0
+	for budget := 150 * time.Millisecond; ; budget *= 2 {
+		dir := project(t)
+		stderr.Reset()
+		start := time.Now()
+		code = Main(Options{Stdin: strings.NewReader(stopPayload("s1", dir)), Stderr: &stderr, Budget: budget,
+			RecordWait: time.Minute, Getenv: env(dir, workspace.TaskEnv, "T-0901"), Now: func() time.Time { return testNow }})
+		runs++
+		limit := fmt.Sprintf("ran past its own %s limit", budget)
+		if took := time.Since(start); code != 2 || !strings.Contains(stderr.String(), limit) || took > budget+time.Minute+Budget {
+			t.Fatalf("budget %v: exit %d after %v, %q", budget, code, took, stderr.String())
+		}
+		if len(records(t, dir)) > 0 {
+			blocks(t, code, stderr.String(), dir, RuleOverTime, limit, "end the session again")
+			break
+		}
+		if budget > Budget {
+			t.Fatalf("budget %v, past the gate's real %v: the timer still fired before the work had read bonsai.yaml", budget, Budget)
+		}
+		t.Logf("budget %v: the timer fired before the work knew where its record goes; again with %v", budget, 2*budget)
 	}
-	blocks(t, code, stderr.String(), root, RuleOverTime, "ran past its own 200ms limit", "end the session again")
-	close(release)
+	for i := 0; i < runs; i++ {
+		select {
+		case <-entered:
+		case <-time.After(time.Minute):
+			t.Fatalf("%d of %d held runs reached their judgment within a minute", i, runs)
+		}
+	}
+	close(release2)
 
 	judgeFn = judge
 	beforeWork = func() { panic("a test panic") }
