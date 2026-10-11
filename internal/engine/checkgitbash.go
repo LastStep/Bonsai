@@ -10,8 +10,9 @@ package engine
 // Where Claude Code looks (its env-vars reference and setup page, read on 2.1.294 and 2.1.296): the file
 // CLAUDE_CODE_GIT_BASH_PATH names, when it exists and is named bash.exe, sh.exe, bash or sh (any other value is
 // ignored, and Git Bash found as if it were unset); else Git Bash found from the git on the PATH. The pages say no
-// more, so FindGitBash also looks in Git for Windows' own install folders (for all users, then for one user), where
-// Git puts it. A lookup is a function, so a test gives one that finds nothing, on both sides (CheckOptions.GitBash).
+// more, and with no Git folder on its PATH Claude Code 2.1.294 still ran hook lines in Git Bash (step 5.3.6's
+// sessions), so FindGitBash also looks in Git for Windows' own install folders (for all users, then for one user). A
+// lookup is a function, so a test gives one that finds nothing, on both sides (CheckOptions.GitBash).
 
 import (
 	"os"

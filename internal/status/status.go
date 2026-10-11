@@ -9,7 +9,8 @@
 //   - packs, files, problems: bonsai check's own findings (internal/engine's Check, offline from the lock), problems
 //     one sentence each with its next step (contract §12: "the same findings bonsai check reports"); check's warnings
 //     are never problems (spec §6). Two need more than the default may spend, so --full alone adds them: approve_first
-//     from git history (every commit that touched the task folder) and the plugin drift Claude Code reports;
+//     from git history (every commit that touched the task folder) and the plugin drift Claude Code reports. The
+//     default does look for Git Bash on Windows (check's git-bash: a few file reads, Options.GitBash);
 //   - formats: internal/format's registry (step 5.1.4a);
 //   - documents, labels, lanes, status_writes, status_command, active_task: internal/workspace's reads (step 5.1.5);
 //   - needs (step 5.1.6): the Claude Code floor (kind tool, name claude-code, the higher of Bonsai's and the packs'

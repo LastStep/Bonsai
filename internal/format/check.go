@@ -84,21 +84,34 @@ var CheckWords = []Word{
 }
 
 // HookEnvKeys are the names that, set in the env of a project's Claude Code settings (.claude/settings.json or
-// .claude/settings.local.json), wrap, redirect or steer a hook line, Bonsai's guard and stop gate among them: their one
-// home (plan-5 5.3.6 note 3), which check's settings-env finding reads and its word's meaning lists (so the reference
-// page and bonsai check --schema bonsai.check show them). Claude Code copies a settings file's env into the environment
-// of every hook and every tool command, and applies a change to it in the running session (its env-vars and settings
-// references). A name matches whatever its case, as Windows reads Path as PATH, and every name starting with
-// HookEnvPrefix counts too. The user's own settings file is not read: it is the person's. Means says why each counts;
-// a name is added here with its why, and the reference page is regenerated in the same commit.
+// .claude/settings.local.json), wrap, redirect or steer a hook line, Bonsai's guard and stop gate among them, or what
+// Bonsai's own commands read: their one home (plan-5 5.3.6 note 3), which check's settings-env finding reads and its
+// word's meaning lists (so the reference page and bonsai check --schema bonsai.check show them). Claude Code copies a
+// settings file's env into the environment of every hook and every tool command, and applies a change to it in the
+// running session (its env-vars and settings references). A name matches whatever its case, as Windows reads Path as
+// PATH, and every name starting with HookEnvPrefix counts too. The user's own settings file is not read: it is the
+// person's. Means says why each counts; a name is added here with its why, and the reference page is regenerated in
+// the same commit. What step 5.3.6's sessions saw of each, set in a project's settings before a session and written
+// into its local settings during one (Claude Code 2.1.296 in WSL, where hook lines run in sh; 2.1.294 on Windows,
+// where they run in Git Bash) is in the comment beside it.
 var HookEnvKeys = []Word{
+	// Reached hook lines on both sides, set before and changed during: a decoy bonsai first in it answered the line.
 	{Word: "PATH", Means: "where a hook line's shell finds a program it calls by name, bonsai among them"},
+	// Reached hook lines on Windows, before and during; in WSL only the Bash tool's bash read it, not sh.
 	{Word: "BASH_ENV", Means: "a script bash (Git Bash on Windows) runs before every hook line it runs"},
+	// Reached no hook line on either side; listed as the plan has it, for a shell that reads it.
 	{Word: "ENV", Means: "a script sh runs first when it starts interactive or as POSIX bash"},
+	// Reached hook lines on both sides, before and during: the wrapper ran with the line as its argument.
 	{Word: "CLAUDE_CODE_SHELL_PREFIX", Means: "a program Claude Code runs in place of every shell hook line, handing it the line"},
+	// A decoy bash.exe named in a project's env was never started, before or during (Claude Code 2.1.294); the
+	// env-vars reference names the variable, and the user's settings set it.
 	{Word: "CLAUDE_CODE_GIT_BASH_PATH", Means: "on Windows, the bash.exe that runs every hook line (any file of that name)"},
-	{Word: "CLAUDE_PROJECT_DIR", Means: "the project a hook is told it runs in, whose lists and task Bonsai's guard reads"},
+	// Hooks were told the real project whatever env said; tool commands, and so Bonsai's commands an agent runs, were
+	// told env's value, on both sides, before and during.
+	{Word: "CLAUDE_PROJECT_DIR", Means: "the project a session's commands are told they run in, which Bonsai reads"},
+	// Not set in the sessions; its reference: 0 turns the cap off.
 	{Word: "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP", Means: "how many times in a row the stop gate may block a session's end (0: no cap)"},
+	// A blank value changed nothing: Claude Code set 1 in every hook and tool command, on both sides, before and during.
 	{Word: "CLAUDE_CODE_CHILD_SESSION", Means: "how Bonsai's commands know they run inside an agent's session (step 5.3.6)"},
 }
 
