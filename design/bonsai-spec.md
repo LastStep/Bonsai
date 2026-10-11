@@ -707,10 +707,17 @@ protected path); another shell route is caught after the fact, as question A say
   and PowerShell routes in bypass mode, on both machines (P2, 5 Oct); only a write wrapped in another interpreter gets
   past. Today's ledger guard becomes this rule.
 - Deny rules cannot open for a granted task, so grantable protected paths stay with the guard hook.
-- Base's baseline: the walls (below); `Edit` of the home's `settings.json` and `labels/` (contract §10.6); `Edit` of
-  `.bonsai/local/` (the last line of the walls below). Rohan named the asks and the log (round 1); the rule covers all
-  of `local/` because Bonsai is its only writer, the ladder results included, which the stop gate trusts. Bonsai writes
+- Base's baseline: the walls (below). **Bonsai's own rules** (the engine writes them into every linked project whatever
+  its packs, first in the deny list; 5.3.5, 11 Oct): `Edit(//**/.bonsai/local/**)`, `Edit(//**/.bonsai/sessions.md)`,
+  `Edit(//**/.bonsai/tasks.md)` (the two tables) and `Edit(~/.bonsai/**)` (Bonsai's home, which covers the home's
+  `settings.json` and `labels/`, contract §10.6). Rohan named the asks and the log (round 1); the rule covers all of
+  `local/` because Bonsai is its only writer, the ladder results included, which the stop gate trusts. Bonsai writes
   there as a program, not through the file tools, so the rule does not stop it; under the sandbox it may (contract §9.5).
+
+  > **Changed 11 Oct (5.3.5; `records/runs/R-2026-10-11-5.3.5-deny.md`):** the `.bonsai/local/` rule and the rule over
+  > Bonsai's home are no longer among `base`'s walls: they are the engine's own deny rules (`ownDeny`, beside the hook
+  > lines), written by Bonsai into every linked project whatever its packs, and with them the two tables. `unlink`
+  > removes them; taking a pack out keeps them.
 - **No `Bash(...)` deny rules:** on Windows any of them removes the PowerShell tool (P2), and the delete check lives in
   the hook.
 
@@ -734,8 +741,7 @@ sides again:
 "Edit(//**/.claude/settings.local.json)",
 "Edit(~/.claude/settings.json)",
 "Edit(~/go/bin/**)",
-"Edit(~/.local/bin/bonsai*)",
-"Edit(//**/.bonsai/local/**)"
+"Edit(~/.local/bin/bonsai*)"
 ```
 
 - **What they cover:** the key, token and credential files named; the rules starting `//mnt/c/` stop WSL sessions
@@ -747,7 +753,7 @@ sides again:
   files). They are narrow on purpose: Rohan's own sessions and T-0072's Windows-side checks read elsewhere on C:, and
   narrow rules survive the sandbox (below). The environment scrub the research's `g-walls` row named waits for the
   sandbox: on Linux `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` puts every command in it (env-vars page). The `.bonsai/local/`
-  rule uses `//**/` too, so a worktree session, whose `local/` is the main checkout's, outside its own folder, meets it.
+  rule uses `//**/` too (now the engine's own rule, above), so a worktree session, whose `local/` is the main checkout's, outside its own folder, meets it.
 - **The studio's own secret files** (`~/.trinetra/token`, `deploy_ed25519` and `salt`) get the same rules from the
   public `workflow` pack, since base never names the studio. The rules name the files; nothing secret is in the pack.
 - **Checked in step 5.5:** each rule tried once in a scratch session on both sides (`--settings` loads the same rules).
