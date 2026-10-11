@@ -40,10 +40,11 @@
 // project-relative path (a row: .bonsai/sessions.md# and its key), reason the rule (generated.log.keep_days=30). A
 // delete that finds the file gone writes nothing (another cleaner took it). A file Windows reports held open by
 // another process is skipped after one try and cleaned at a later run; one that changed since it was judged is left
-// for a later run too. A cleaning killed between a delete and its record leaves the file gone with no record: a run
-// ends within its budget and one step, so the session end's SessionEndBudget keeps it well inside SessionEnd's line's
-// 5 s (Claude Code sends SIGTERM at the line's timeout, measured in step 5.2.4), and a record that cannot be written
-// stops the run, so no further file goes unrecorded.
+// for a later run too (an asks day file left so stops that run's asks there: files.go). A cleaning killed between a
+// delete and its record leaves the file gone with no record: a run ends within its budget and one step, so the session
+// end's SessionEndBudget keeps it well inside SessionEnd's line's 5 s (Claude Code sends SIGTERM at the line's
+// timeout, measured in step 5.2.4), and a record that cannot be written stops the run, so no further file goes
+// unrecorded.
 //
 //   - clean.go (this file): Options, the run, the delete and its record.
 //   - rule.go: generated.<kind> read from bonsai.yaml, and the reasons.
@@ -233,37 +234,39 @@ func (r *run) fail(err error) {
 
 // remove deletes one judged file and writes its clean record. The file is looked at once more first: one that is
 // gone writes nothing; one that is no longer a regular file, or changed since it was listed (a session writing it),
-// is left alone. A file Windows reports held open is skipped after one try.
-func (r *run) remove(f *file) {
+// is left alone. A file Windows reports held open is skipped after one try. gone reports the file gone, by this delete
+// or another cleaner's; false when it is still there.
+func (r *run) remove(f *file) (gone bool) {
 	fi, err := os.Lstat(f.path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		return
+		return true
 	case err != nil:
 		r.fail(fmt.Errorf("clean: %s cannot be read: %w", f.target, err))
-		return
+		return false
 	case !fi.Mode().IsRegular() || !fi.ModTime().Equal(f.mtime) || fi.Size() != f.size:
-		return
+		return false
 	}
 	err = removeFile(f.path)
 	switch {
 	case err == nil:
 	case errors.Is(err, fs.ErrNotExist):
-		return // another session's cleaner took it
+		return true // another session's cleaner took it
 	case busy(err):
 		r.done.Busy = append(r.done.Busy, Item{Kind: f.kind, Target: f.target, Reason: f.reason})
-		return
+		return false
 	default:
 		r.fail(fmt.Errorf("clean: %s cannot be deleted: %w", f.target, err))
-		return
+		return false
 	}
 	it := Item{Kind: f.kind, Target: f.target, Reason: f.reason}
 	if err := r.record(it); err != nil {
 		r.fail(fmt.Errorf("clean: %s was deleted, but its clean record cannot be written: %w", f.target, err))
 		r.halt = true
-		return
+		return true
 	}
 	r.done.Cleaned = append(r.done.Cleaned, it)
+	return true
 }
 
 // record writes one clean record: in today's day file (session null), target and reason filled.

@@ -7,6 +7,7 @@ package clean
 // so where a run stops depends on the code alone.
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -413,4 +414,67 @@ func TestStoppedAnywhereLeavesAWholeState(t *testing.T) {
 		stops++
 	}
 	t.Logf("%d places a run can stop, each left whole", stops)
+}
+
+// Asks go in day order: the earlier day's file, holding a filing, touched later than the next day's, holding its
+// answer (a copy, a restore). By modification time the answer's file would go first, and a run stopped between the
+// two would leave the filing without its answer: the ask would read open again. A sweep of budgets stops the run at
+// each of its checks.
+func TestAsksGoInDayOrder(t *testing.T) {
+	tickingClock(t)
+	for b := 1; ; b++ {
+		if b > 10000 {
+			t.Fatal("no budget of up to 10 s let the run finish")
+		}
+		l := project(t, "  asks:\n    keep_days: 30\n")
+		filed := asksFile(t, l, "2026-08-01", askLine(t, "file", "agent:k", daysAgo(70)))
+		asksFile(t, l, "2026-08-02", askLine(t, "answer", "agent:k", daysAgo(69)))
+		stamp(t, filed, daysAgo(50))
+		o := opts(l)
+		o.Budget = time.Duration(b) * time.Millisecond
+		d := Files(o, Asks)
+		if len(d.Errs) != 0 {
+			t.Fatalf("budget %d: errors %v", b, d.Errs)
+		}
+		if got := openKeys(t, l); len(got) != 0 {
+			t.Fatalf("budget %d: %v reads open again (cleaned %v)", b, got, targets(d.Cleaned))
+		}
+		if !d.Stopped {
+			if len(d.Cleaned) != 2 || d.Cleaned[0].Target != ".bonsai/local/asks/2026-08-01.ndjson" {
+				t.Errorf("cleaned %v, want both, the earlier day first", d.Cleaned)
+			}
+			break
+		}
+	}
+}
+
+// An asks day file that does not go (held open, here) stops that run's asks: the next day's file, holding the answer
+// to its filing, stays with it, so the ask does not read open again. A later run cleans both. The hold is stood in
+// on every system: a real hold on Windows refuses reads too, and then the asks are not judged at all.
+func TestAnAsksFileThatStaysStopsTheAsks(t *testing.T) {
+	l := project(t, "  asks:\n    keep_days: 30\n")
+	asksFile(t, l, "2026-08-01", askLine(t, "file", "agent:k", daysAgo(70)))
+	asksFile(t, l, "2026-08-02", askLine(t, "answer", "agent:k", daysAgo(69)))
+	errAskHeld := errors.New("the process cannot access the file because it is being used by another process")
+	del, isBusy := removeFile, busy
+	t.Cleanup(func() { removeFile, busy = del, isBusy })
+	removeFile = func(p string) error {
+		if filepath.Base(p) == "2026-08-01.ndjson" {
+			return errAskHeld
+		}
+		return del(p)
+	}
+	busy = func(err error) bool { return errors.Is(err, errAskHeld) || isBusy(err) }
+	d := Files(opts(l), Asks)
+	if len(d.Cleaned) != 0 || len(d.Busy) != 1 || len(d.Errs) != 0 {
+		t.Fatalf("cleaned %v, busy %v, errors %v", d.Cleaned, d.Busy, d.Errs)
+	}
+	if got := openKeys(t, l); len(got) != 0 {
+		t.Errorf("%v reads open again", got)
+	}
+	removeFile, busy = del, isBusy
+	d = Files(opts(l), Asks)
+	if len(d.Cleaned) != 2 || len(d.Busy) != 0 || len(d.Errs) != 0 {
+		t.Errorf("the later run: cleaned %v, busy %v, errors %v", d.Cleaned, d.Busy, d.Errs)
+	}
 }

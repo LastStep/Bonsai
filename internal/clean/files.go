@@ -11,7 +11,9 @@ package clean
 //
 // Log and ladder files are judged one at a time, each deleted as soon as it is judged, so a run the budget cuts short
 // has still cleaned what it judged. Asks are judged all at once (asks.go), since whether one day file may go depends on
-// which others stay.
+// which others stay; they go in day order, and a run stops deleting them at the first that does not go (the budget, a
+// file held open or changed since it was listed, a delete that fails), so the day files that stay are always a set
+// the protections allow: an ask whose filing stays keeps its answer, wherever the run stopped.
 //
 // The budget (Options.Budget) is checked before each step, and a step once begun is finished. The steps: a batch of
 // listBatch entries of a folder (a folder is read a batch at a time, never whole at once); one file's age read for
@@ -130,12 +132,14 @@ func (r *run) files(k fileKind) {
 			r.fail(err)
 			return
 		}
+		// In day order (the names), stopping at the first that does not go: this file's comment.
+		sort.Slice(cands, func(i, j int) bool { return cands[i].name < cands[j].name }) // names are distinct
 		for _, f := range cands {
-			if r.out() || r.halt {
-				return
+			if kept[f] {
+				continue
 			}
-			if !kept[f] {
-				r.remove(f)
+			if r.out() || r.halt || !r.remove(f) {
+				return
 			}
 		}
 		return
