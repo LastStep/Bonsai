@@ -54,11 +54,12 @@ func (s *delStub) ownCommand(dir string, argv []string) Decision {
 	return allow(RuleBonsaiCommand, "")
 }
 
-// ownLine stands in for commands.go's with its own reading of the line (childSessionChange), in agents mode.
+// ownLine stands in for commands.go's in agents mode: its reading of the line (childSessionChange) decides, and the
+// stub gives a reason of its own (commands.go's reasons are its own tests' to hold).
 func (s *delStub) ownLine(tool, text string) Decision {
 	s.lines = append(s.lines, text)
-	if what := childSessionChange(text); what != "" {
-		return deny(RulePersonCommand, tool+" refused: the command line "+what, personNext)
+	if childSessionChange(text) != "" {
+		return deny(RulePersonCommand, tool+" refused: the command line changes "+ChildSessionEnv, personNext)
 	}
 	return allow(RuleShell, "")
 }
