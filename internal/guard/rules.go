@@ -95,7 +95,7 @@ var Rules = []Rule{
 	{RuleDeleteProtected, false, "a shell call's delete or move of a guarded path, or of a folder holding one, judged as an " +
 		"edit of that path (the reason says what guards it)"},
 	{RuleDeleteUnsplit, false, "a shell call's line the delete check cannot split (a quote or bracket left open, nesting " +
-		"past three levels) that holds a delete word"},
+		"past three levels) that holds a delete word, or whose runner words run past the walk's bound"},
 	{RuleDeleteNamed, true, "a shell call whose deletes and moves all name what they take, none of it guarded"},
 	{RulePersonCommand, false, "bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes CLAUDE_CODE_CHILD_SESSION: " +
 		"a person's commands, allowed to an agent only in a project in command mode under a running task's grant of " +

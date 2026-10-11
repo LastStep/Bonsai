@@ -50,7 +50,10 @@ package guard
 //   - a planted .git folder holding HEAD, objects and refs whose HEAD git does not take: it ends the walk up to a
 //     checkout's top (gitEntry) where git walks on;
 //   - parallel as a runner word (GNU parallel ... ::: x): what it runs is not read;
-//   - bonsai's words from a variable, a substitution, or a positional parameter outside xargs (bonsai $X).
+//   - bonsai's words from a variable, a substitution, or a positional parameter outside xargs (bonsai $X);
+//   - env -C or sudo -D given twice, or env -C and a -S text's -C: read together, where the program takes the last;
+//   - ~-, ~N and ~-N after a line's own cd or pushd: judged in the payload's folder only, not every folder the line
+//     visited (a plain delete of an operand that cannot be placed stays allowed, rule 3's scope).
 //
 // The answer (note 6) names the command by its head only (redact.CommandHead: the program and, for git and its kind,
 // one subcommand word), the operand and the rule, and the next step; it quotes no command line, and an operand that

@@ -414,7 +414,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `bad-settings` | deny | this machine's settings for the workspace cannot be read when a judgment needs its mode |
 | `delete-unnamed` | deny | a shell call's recursive or bulk delete that does not name what it deletes (an operand holding a glob, a variable or a substitution, or one that is ., .., /, ~ or a drive's root; xargs, a pipeline or a loop feeding it; git clean with no path; a delete of several files by a glob; a git pathspec with magic other than :/, :(top) or :(literal)), and always git clean -x or -X, git stash --all and rm --no-preserve-root |
 | `delete-protected` | deny | a shell call's delete or move of a guarded path, or of a folder holding one, judged as an edit of that path (the reason says what guards it) |
-| `delete-unsplit` | deny | a shell call's line the delete check cannot split (a quote or bracket left open, nesting past three levels) that holds a delete word |
+| `delete-unsplit` | deny | a shell call's line the delete check cannot split (a quote or bracket left open, nesting past three levels) that holds a delete word, or whose runner words run past the walk's bound |
 | `delete-named` | allow | a shell call whose deletes and moves all name what they take, none of it guarded |
 | `person-command` | deny | bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes CLAUDE_CODE_CHILD_SESSION: a person's commands, allowed to an agent only in a project in command mode under a running task's grant of bonsai.yaml and .bonsai/lock.json |
 | `home-command` | deny | bonsai settings set, bonsai labels attach or detach: never in an agent session |
