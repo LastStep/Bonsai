@@ -71,7 +71,11 @@ const (
 	GuardTimeout = "10"
 
 	// The stop gate's line (step 5.3.4 note 6) has no matcher, since Stop takes none; its || exit 2 turns any other
-	// ending of bonsai into exit 2, as the guard's does.
+	// ending of bonsai into exit 2, as the guard's does. Measured on Claude Code 2.1.296 (WSL, a -p session): with no
+	// bonsai on the PATH (/bin/sh: 1: bonsai: not found), the line kept the session going until Claude Code's cap
+	// ended the turn. Claude Code reads a Stop hook's exit 2 whose stderr says "No such file or directory" as a hook
+	// that failed to start and lets the session end (its hooks reference; measured the same day), so a line naming
+	// bonsai by a path a shell reports that way when it is not there would not hold (the lines' form, step 5.3.6).
 	StopEvent   = "Stop"
 	StopCommand = "bonsai hook stop || exit 2"
 	StopTimeout = "10"

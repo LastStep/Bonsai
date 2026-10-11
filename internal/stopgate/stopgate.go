@@ -36,9 +36,10 @@
 // a goroutine, a panic as a block (internal-error), past the budget a block (over-time) whose record is awaited for
 // hookin.RecordWait.
 //
-// Claude Code's own limit (note 5): after eight blocks in a row with no tool call between them Claude Code ends the
-// turn (CLAUDE_CODE_STOP_HOOK_BLOCK_CAP raises it). The gate does not read stop_hook_active: it blocks each time, and
-// each block is recorded, so the log shows every one.
+// Claude Code's own limit (note 5): Stop hooks keep a turn going eight times in a row at most (a tool call starts the
+// count again); the ninth block in a row is overridden and the turn ends (CLAUDE_CODE_STOP_HOOK_BLOCK_CAP raises it;
+// measured on 2.1.296: nine records of a block, the ninth overridden). The gate does not read stop_hook_active: it
+// blocks each time, and each block is recorded, so the log shows every one.
 //
 // Its records (note 7): a guard record (bonsai.log/1, agent_event Stop) for every decision once it engages, allow or
 // deny, through internal/record's one append path, in the verified main checkout's .bonsai/local/log/ (the session's own
@@ -47,7 +48,8 @@
 // What it prints: nothing on an allow; on a block, "bonsai stop gate: <why>.\nnext: <next>.\n" on stderr, one ASCII
 // line each, never words that say a file is missing as the operating system says it ("No such file or directory"):
 // Claude Code reads a Stop hook's exit 2 with such words on stderr as a hook that failed to start, and lets the
-// session end (its hooks reference, read on 2.1.296).
+// session end (its hooks reference, read on 2.1.296; measured in a -p session on WSL the same day, while "bonsai: not
+// found" still kept the session going).
 package stopgate
 
 import (
