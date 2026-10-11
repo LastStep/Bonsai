@@ -3,11 +3,12 @@
 // session's opening context and writes its session_start record, with the bonsai binary's path and SHA-256.
 //
 // Where: the project is found from CLAUDE_PROJECT_DIR, else the payload's cwd (never a later cd), as the guard finds
-// it: the folder itself or the nearest one above it holding bonsai.yaml, looking no higher than a checkout's top. In
-// a folder with no bonsai.yaml both hooks exit 0 at once and write nothing (spec §3, §7). bonsai.yaml is read leanly
-// (workspace.LoadConfig: the id, and documents.task for the active task, from the file as read). The records go to
-// the main checkout's .bonsai/local/log/ (workspace.FindLocal; contract §3: a worktree writes main's), through
-// internal/record's one append path, so a missing .bonsai/.gitignore is restored first.
+// it (hookin.FindProject): the folder itself or the nearest one above it holding bonsai.yaml, walking past any .git.
+// In a folder with no bonsai.yaml both hooks exit 0 at once and write nothing (spec §3, §7). bonsai.yaml is read
+// leanly (workspace.LoadConfig: the id, and documents.task for the active task, from the file as read). The records go
+// to the main checkout's .bonsai/local/log/ when it is verified (workspace.FindLocal; contract §3: a worktree writes
+// main's), else the checkout's own, through internal/record's one append path, so a missing .bonsai/.gitignore is
+// restored first.
 //
 // What each event fills is the table in record.go (eventNames). Every free-text string passes the redactor
 // (internal/redact), then its cap (target 200, text 300), then the record's 2,048 bytes (record.Line). Ids are held to
