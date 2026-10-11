@@ -62,7 +62,7 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 			break
 		}
 	}
-	shown := "bonsai " + word // the word alone: the call's other words may name paths or values (contract §2.6)
+	shown := "bonsai " + oneLine(word) // the word alone: the call's other words may name paths or values (contract §2.6)
 	if allowExec(args) {
 		shown += " --allow-exec"
 	}
@@ -316,7 +316,7 @@ func emptyEnvironment(low string) string {
 						break
 					}
 					if !strings.HasPrefix(a, "--") && strings.ContainsRune(a[1:], 'c') {
-						return "starts a program with an empty environment (exec " + a + ")"
+						return "starts a program with an empty environment (exec " + oneLine(a) + ")"
 					}
 				}
 				k++
@@ -327,13 +327,13 @@ func emptyEnvironment(low string) string {
 				continue
 			case b == "env":
 				if a := envClears(words[k+1:]); a != "" {
-					return "starts a program with an empty environment (env " + a + ")"
+					return "starts a program with an empty environment (env " + oneLine(a) + ")"
 				}
 			case b == "start-process" || b == "saps" || b == "start":
 				for _, a := range words[k+1:] {
 					a, _, _ = strings.Cut(strings.Trim(a, `"'`), ":")
 					if strings.HasPrefix(a, "-usen") && strings.HasPrefix("-usenewenvironment", a) {
-						return "starts a program with a new environment (Start-Process " + a + ")"
+						return "starts a program with a new environment (Start-Process " + oneLine(a) + ")"
 					}
 				}
 			}

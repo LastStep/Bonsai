@@ -617,6 +617,8 @@ var delTable = []delRow{
 	{tP, "", `cmd /c "bonsai unlink --yes"`, RulePersonCommand, ""},
 	{tP, "", "powershell -EncodedCommand " + delEncode("$env:CLAUDE_CODE_CHILD_SESSION = ''"), RulePersonCommand, ""},
 	{tB, "", "bash <<EOF\nunset CLAUDE_CODE_CHILD_SESSION\nEOF", RulePersonCommand, ""},
+	{tB, "", "exec -\u00e4c ./x.sh", RulePersonCommand, ""},
+	{tB, "", "bonsai \u00e4dd --allow-exec", RulePersonCommand, ""},
 
 	// --- A line the check cannot split.
 	{tB, "", "rm -rf 'junk", RuleDeleteUnsplit, ""},

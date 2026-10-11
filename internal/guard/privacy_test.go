@@ -71,3 +71,28 @@ func TestRefusalsNameNoUserFolder(t *testing.T) {
 		t.Errorf("a bonsai call's reason: %+v", d)
 	}
 }
+
+// A person-command's reason quotes the words it found as ASCII (oneLine): a non-ASCII option word of exec or env,
+// or a bonsai call's word, never reaches stderr or the record as it is.
+func TestPersonCommandReasonsAreASCII(t *testing.T) {
+	dir := withTask(t, "todo")
+	for _, c := range []struct{ tool, line, want string }{
+		{"Bash", "exec -\u00e4c ./x.sh", `(exec -\u00e4c)`},
+		{"Bash", "env -\u00e4i ./x.sh", `(env -\u00e4i)`},
+		{"Bash", "bonsai \u00e4dd --allow-exec", `bonsai \u00e4dd --allow-exec refused`},
+		{"PowerShell", "Start-Process x -UseNewEnvironment", "(Start-Process -usenewenvironment)"},
+	} {
+		stderr := wantRule(t, dir, bashIn(dir, c.tool, c.line), RulePersonCommand)
+		recs := records(t, dir, "s-r1.ndjson")
+		text := recs[len(recs)-1].String("text")
+		if !strings.Contains(stderr, c.want) {
+			t.Errorf("%q: the reason does not quote the word as %s: %s", c.line, c.want, stderr)
+		}
+		for _, r := range text {
+			if r >= 0x80 {
+				t.Errorf("%q: a non-ASCII character in the record's text: %q", c.line, text)
+				break
+			}
+		}
+	}
+}
