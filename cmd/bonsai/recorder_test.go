@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/LastStep/Bonsai/internal/engine"
 )
 
 // The hook words from the command line: help, and hook record printing nothing and exiting 0 whatever it is handed.
@@ -18,8 +20,8 @@ func TestHookStartAndRecordWords(t *testing.T) {
 		args []string
 		in   string
 	}{
-		{[]string{"hook", "start", "--help"}, "  bonsai hook start\non SessionStart"},
-		{[]string{"hook", "record", "--help"}, "  bonsai hook record\non UserPromptSubmit"},
+		{[]string{"hook", "start", "--help"}, engine.ShownLine(engine.StartCommand) + "on SessionStart"},
+		{[]string{"hook", "record", "--help"}, engine.ShownLine(engine.RecordCommand) + "on UserPromptSubmit"},
 		{[]string{"hook", "--help"}, "bonsai hook record"},
 	} {
 		code, out, errOut := runArgs(c.args...)
@@ -27,7 +29,7 @@ func TestHookStartAndRecordWords(t *testing.T) {
 			t.Errorf("%v: exit %d, %q, %q", c.args, code, out, errOut)
 		}
 	}
-	if code, out, errOut := runArgs("hook", "stop", "--help"); code != 0 || !strings.Contains(out, "  bonsai hook stop || exit 2\non Stop") || errOut != "" {
+	if code, out, errOut := runArgs("hook", "stop", "--help"); code != 0 || !strings.Contains(out, engine.ShownLine(engine.StopCommand)+"on Stop") || errOut != "" {
 		t.Errorf("hook stop --help: exit %d, %q, %q", code, out, errOut)
 	}
 }

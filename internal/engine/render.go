@@ -310,6 +310,7 @@ func ClosingWords(cfg *workspace.Config, home string) string {
 	b.WriteString("    Bonsai's home: a secret salt, this machine's settings for each project, label files attached\n")
 	b.WriteString("    on this machine, your personal memory, the pack cache. None of it enters git.\n")
 	b.WriteString(SessionFolderWords)
+	b.WriteString(HookPlaceWords())
 	b.WriteString("A copy meant as a new project needs its own id: bonsai init --new-id\n")
 	return b.String()
 }

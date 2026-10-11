@@ -418,6 +418,8 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		switch word {
 		case "read-failed", "write-failed", "partly-written", "unexpected":
 			continue
+		case "test-build": // a test build's refusal: TestStampedBuild runs a stamped build, which this test binary is not
+			continue
 		}
 		if !seen[word] {
 			t.Errorf("no case reaches the word %s (named in %s)", word, where)
@@ -622,7 +624,7 @@ func TestChangesFirstLink(t *testing.T) {
 		o := s.(schema.Object)
 		rc, _ := o.Get("runs_code")
 		switch {
-		case strings.Contains(o.String("line"), ": bonsai hook "):
+		case o.String("kind") == "hook" && ownCommand(o.String("line")[strings.Index(o.String("line"), ": ")+2:]):
 			hooks++
 			if rc != false {
 				t.Errorf("Bonsai's own hook line %s at a first link has runs_code %v", o.String("line"), rc)

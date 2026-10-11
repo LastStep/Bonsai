@@ -217,8 +217,8 @@ func TestConsentCommand(t *testing.T) {
 	hookA := "hook add SessionStart (startup): echo demo hook A (demo-pack)"
 	cases := []consentCase{
 		{"a first link to A", nil, initTo(p.Source, p.A), hookA, p.A,
-			settingsHold("echo demo hook A", "bonsai hook guard || exit 2")},
-		{"a first link to the no-hook fixture", nil, initTo(quiet, qc[0]), "", qc[0], settingsHold("bonsai hook guard || exit 2")},
+			settingsHold("echo demo hook A", jsonCmd(engine.GuardCommand))},
+		{"a first link to the no-hook fixture", nil, initTo(quiet, qc[0]), "", qc[0], settingsHold(jsonCmd(engine.GuardCommand))},
 		{"a first link to F", nil, initTo(p.Source, p.F),
 			"hook add SessionStart (startup): echo demo hook E (demo-pack); plugin add hooks/hooks.json (demo-pack)", p.F, nil},
 		{"a first link to the hook-run fixture", nil, initTo(run, rc[0]),
@@ -420,13 +420,13 @@ func TestStopLineConsentCommand(t *testing.T) {
 	c := newCLI(t)
 	quiet, qc := testpack.QuietPack(t, c.tmp)
 	if code, out, errOut := c.run("", "init", "--name", "demo", "--source", quiet, "--ref", qc[0], "--yes"); code != 0 ||
-		!strings.Contains(c.read(".claude/settings.json"), `"command": "`+engine.StopCommand+`"`) {
+		!strings.Contains(c.read(".claude/settings.json"), `"command": `+jsonCmd(engine.StopCommand)) {
 		t.Fatalf("a first link on --yes: exit %d\n%s%s\n%s", code, out, errOut, c.read(".claude/settings.json"))
 	}
 	c.linkedWithout(func(cmd string) bool { return cmd == engine.StopCommand })
 	before := tree(t, c.root)
 	if code, out, _ := c.run("", "check", "--json"); code > 1 || !strings.Contains(out, `"code": "own-hooks"`) ||
-		!strings.Contains(out, "not this build's: 1 to add (Stop: "+engine.StopCommand+")") {
+		!strings.Contains(out, "not this build's: 1 to add ("+jsonText(engine.OwnHookLines()[1])+")") {
 		t.Errorf("check: exit %d\n%s", code, out)
 	}
 	if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(out, "add     hook    Stop: "+engine.StopCommand+"  (bonsai)") ||
@@ -441,7 +441,7 @@ func TestStopLineConsentCommand(t *testing.T) {
 		t.Error("a refused update wrote")
 	}
 	if code, out, errOut := c.run("", "update", "--allow-exec", "--yes"); code != 0 ||
-		!strings.Contains(c.read(".claude/settings.json"), `"command": "`+engine.StopCommand+`"`) {
+		!strings.Contains(c.read(".claude/settings.json"), `"command": `+jsonCmd(engine.StopCommand)) {
 		t.Fatalf("update --allow-exec --yes: exit %d\n%s%s", code, out, errOut)
 	}
 	if _, out, _ := c.run("", "check", "--json"); strings.Contains(out, `"code": "own-hooks"`) || strings.Contains(out, `"code": "changed"`) {
@@ -450,7 +450,7 @@ func TestStopLineConsentCommand(t *testing.T) {
 	if code, out, errOut := c.run("", "unlink", "--yes"); code != 0 {
 		t.Fatalf("unlink --yes: exit %d\n%s%s", code, out, errOut)
 	}
-	if raw, err := os.ReadFile(filepath.Join(c.root, ".claude", "settings.json")); err == nil && strings.Contains(string(raw), "bonsai hook stop") {
+	if raw, err := os.ReadFile(filepath.Join(c.root, ".claude", "settings.json")); err == nil && strings.Contains(string(raw), "hook stop") {
 		t.Errorf("unlink leaves the stop line:\n%s", raw)
 	}
 }

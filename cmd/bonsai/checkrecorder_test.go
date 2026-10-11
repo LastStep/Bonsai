@@ -51,13 +51,14 @@ func init() {
 	checkCases["own-hooks"] = func(c *cli) { c.link(); c.linkedBefore() }
 	checkMore["own-hooks"] = func(t *testing.T, c *cli) {
 		_, out, _ := c.run("", "check", "--json")
-		if !strings.Contains(out, "12 to add (Stop: bonsai hook stop || exit 2; SessionStart: bonsai hook start; UserPromptSubmit: bonsai hook record [async]") ||
+		own := engine.OwnHookLines()
+		if !strings.Contains(out, "12 to add ("+jsonText(own[1]+"; "+own[2]+"; "+own[3])) ||
 			!strings.Contains(out, `"do": "run: bonsai update --allow-exec --yes"`) || strings.Contains(out, `"code": "changed"`) {
 			t.Errorf("the warning:\n%s", out)
 		}
 		// update --yes alone is refused (a hook line added runs code), writing nothing.
 		before := c.read(".claude/settings.json")
-		if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(out, "add     hook    SessionStart: bonsai hook start  (bonsai)") {
+		if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(out, "add     hook    "+engine.OwnHookLines()[2]+"  (bonsai)") {
 			t.Errorf("update --yes: exit %d\n%s", code, out)
 		}
 		if c.read(".claude/settings.json") != before {
@@ -70,6 +71,17 @@ func init() {
 			t.Errorf("after the update:\n%s", out)
 		}
 	}
+}
+
+// jsonCmd is a hook line's command as .claude/settings.json holds it: a JSON string, its quotes escaped.
+func jsonCmd(cmd string) string { return schema.Show(cmd) }
+
+// jsonText is text as a JSON document holds it inside a string: jsonCmd without its outer quotes.
+func jsonText(s string) string { j := schema.Show(s); return j[1 : len(j)-1] }
+
+// ownCommand reports a hook line of Bonsai's own, in either form: by name (builds before step 5.3.6), or Bonsai's.
+func ownCommand(cmd string) bool {
+	return strings.HasPrefix(cmd, "bonsai hook ") || strings.Contains(cmd, `"$b" hook `)
 }
 
 // madeUpToken is a made-up GitHub-shaped token, built at run time so no token-shaped literal sits in the repo.
@@ -115,7 +127,7 @@ func (c *cli) linkedWithout(drop func(cmd string) bool) {
 			var keep []any
 			for _, h := range hs.([]any) {
 				cmd := h.(schema.Object).String("command")
-				if strings.HasPrefix(cmd, "bonsai hook ") && drop(cmd) {
+				if ownCommand(cmd) && drop(cmd) {
 					continue
 				}
 				keep = append(keep, h)
@@ -172,8 +184,12 @@ func fingerprint(doc schema.Object) string {
 						timeout = string(t.(json.Number))
 					}
 					async, _ := ho.Get("async")
-					set[strings.Join([]string{"hook", ev.Key, gObj.String("matcher"), ho.String("command"), timeout,
-						strconv.FormatBool(async == true)}, "\t")] = true
+					line := strings.Join([]string{"hook", ev.Key, gObj.String("matcher"), ho.String("command"), timeout,
+						strconv.FormatBool(async == true)}, "\t")
+					if f := ho.String("onFailure"); f != "" {
+						line += "\tonFailure=" + f // a line that carries it, as the guard's does (step 5.3.6)
+					}
+					set[line] = true
 				}
 			}
 		}

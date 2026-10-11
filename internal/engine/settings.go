@@ -62,34 +62,96 @@ import (
 // SettingsFile is the project's shared Claude Code settings file, the one settings file the engine writes.
 const SettingsFile = ".claude/settings.json"
 
-// Bonsai's own hook lines (spec §7's table, with design/plan-5.md's 5.2.4 note 1 and 5.3.4 note 6): the guard's, the
-// stop gate's, the start line and the recorder's.
+// Bonsai's own hook lines (spec §7's table, with design/plan-5.md's 5.2.4 note 1, 5.3.4 note 6 and 5.3.6 notes 2 and
+// 5): the guard's, the stop gate's, the start line and the recorder's. Each line's command is in Bonsai's form
+// (HookCommand), naming the installed bonsai's places; the constants below are each line's event, its timeout and, for
+// the guard, its matcher.
 const (
 	GuardEvent   = "PreToolUse"
-	GuardMatcher = "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell"
-	GuardCommand = "bonsai hook guard || exit 2"
 	GuardTimeout = "10"
+	// GuardOnFailure is the guard's line's onFailure (Claude Code's hooks reference: "onFailure": "block", from
+	// 2.1.295): a hook that cannot start, ends with an exit other than 0 or 2, times out or gives output Claude Code
+	// cannot read then blocks the call as exit 2 does, so a line run in PowerShell (a Windows machine without Git Bash,
+	// where no PowerShell reads the line) or a bonsai that cannot start refuses the call. Measured 11 Oct (step 5.3.6b,
+	// real -p sessions): Claude Code 2.1.294 on Windows reads a settings file whose hook carries the field and ignores
+	// the field (a hook exiting 2 still blocked, the file's other hooks ran, and a hook that could not start let the
+	// call through, as before the field); 2.1.296 on WSL blocks such a call. It has no effect on Stop hooks or async
+	// ones (the hooks reference), so only the guard's line carries it.
+	GuardOnFailure = "block"
 
 	// The stop gate's line (step 5.3.4 note 6) has no matcher, since Stop takes none; its || exit 2 turns any other
 	// ending of bonsai into exit 2, as the guard's does. Measured on Claude Code 2.1.296 (WSL, a -p session): with no
 	// bonsai on the PATH (/bin/sh: 1: bonsai: not found), the line kept the session going until Claude Code's cap
 	// ended the turn. Claude Code reads a Stop hook's exit 2 whose stderr says "No such file or directory" as a hook
-	// that failed to start and lets the session end (its hooks reference; measured the same day), so a line naming
-	// bonsai by a path a shell reports that way when it is not there would not hold (the lines' form, step 5.3.6).
+	// that failed to start and lets the session end (its hooks reference; measured the same day), so the lines test
+	// for bonsai before they run it, and their own words for a bonsai that is not there use none of those words
+	// (HookCommand).
 	StopEvent   = "Stop"
-	StopCommand = "bonsai hook stop || exit 2"
 	StopTimeout = "10"
 
 	StartEvent   = "SessionStart"
-	StartCommand = "bonsai hook start"
 	StartTimeout = "10"
 
-	RecordCommand = "bonsai hook record"
 	RecordTimeout = "10"
 	// The SessionEnd line is synchronous (an async hook is killed as the session exits, so its line would be lost),
 	// with 5 s: its timeout also raises Claude Code's 1.5 s budget for SessionEnd hooks to 5 s.
 	RecordEndEvent   = "SessionEnd"
 	RecordEndTimeout = "5"
+)
+
+// The installed bonsai's two places (spec §3; Rohan's answer (a) to step 5.3's first question, 9 Oct; plan-5 5.3.6
+// note 2), as the shell that runs a hook line names them, in the order the lines try them: Windows' place first,
+// C:\Program Files\Bonsai\bonsai.exe as Git Bash names it, which only an administrator can place; then WSL's and
+// Linux's, which only root can place. Windows' comes first because on Linux a /c folder at the root needs root to make,
+// while under Git Bash /usr/local/bin is a folder inside Git's own install, which a Git for Windows installed for one
+// user lets that user write (check's git-user finding). They are the same on every machine and name no user, the one
+// named exception to check 2's rule that no committed file holds a full path. Their one home: the hook lines (HookCommand),
+// check, and from step 5.6 the installers read them. The PATH is never read.
+const (
+	PlaceWindows = "/c/Program Files/Bonsai/bonsai.exe"
+	PlaceLinux   = "/usr/local/bin/bonsai"
+)
+
+// GuardTool is one tool the guard's line matches.
+type GuardTool struct {
+	Name string // the tool's name, as a hook matcher names it
+	Why  string // what it does that the guard judges
+}
+
+// GuardTools are the tools the guard's line matches (plan-5 5.3.6 note 5), their one home: every tool that writes a
+// file or runs a command, read from Claude Code's tools reference on 2.1.296 (11 Oct), which says a hook matcher names
+// a tool by its exact name, and its hooks reference, which reads a matcher of names and | as a list of exact names.
+// The other tools there read, search, fetch, ask, plan, schedule or message (Agent's and Workflow's subagents make
+// their own tool calls, which this line meets). MultiEdit is not on the 2.1.296 page; it stays for a Claude Code that
+// still has it, since the hook adapter reads it and a name no tool has matches nothing.
+var GuardTools = []GuardTool{
+	{"Edit", "edits a file"},
+	{"Write", "creates or overwrites a file"},
+	{"MultiEdit", "edits a file several times in one call (older Claude Code)"},
+	{"NotebookEdit", "edits a Jupyter notebook's cells"},
+	{"Bash", "runs a shell command"},
+	{"PowerShell", "runs a PowerShell command"},
+	{"Monitor", "runs a command in the background, under Bash's permission rules"},
+}
+
+// GuardMatcher is the guard's line's matcher: GuardTools' names joined by |.
+var GuardMatcher = guardMatcher()
+
+func guardMatcher() string {
+	names := make([]string, len(GuardTools))
+	for i, t := range GuardTools {
+		names[i] = t.Name
+	}
+	return strings.Join(names, "|")
+}
+
+// The command of each of Bonsai's own hook lines, in this build's form: GuardCommand and StopCommand block (exit 2
+// when bonsai is not at its place), StartCommand and RecordCommand never do.
+var (
+	GuardCommand  = HookCommand("guard", true, hookPlaces()...)
+	StopCommand   = HookCommand("stop", true, hookPlaces()...)
+	StartCommand  = HookCommand("start", false, hookPlaces()...)
+	RecordCommand = HookCommand("record", false, hookPlaces()...)
 )
 
 // ownHooks is this build's table of Bonsai's own hook lines, in spec §7's order. Spec §7 lists four kinds, and this
@@ -102,10 +164,12 @@ var ownHooks = buildOwnHooks()
 func buildOwnHooks() []Line {
 	ls := []Line{
 		{Kind: "hook", Origin: "bonsai", Own: true, Event: GuardEvent, Matcher: GuardMatcher, Command: GuardCommand, Timeout: GuardTimeout,
-			Why: "Checks every file edit and shell command against the task's rights; blocks if bonsai is missing."},
+			OnFailure: GuardOnFailure, Why: "Checks every file edit and shell command against the task's rights; refuses each one while " +
+				"bonsai is not installed at its place, or cannot start."},
 		{Kind: "hook", Origin: "bonsai", Own: true, Event: StopEvent, Command: StopCommand, Timeout: StopTimeout,
 			Why: "Keeps a session whose BONSAI_TASK names a task from ending until a green local ladder result proves the " +
-				"checkout's HEAD (bonsai ladder --task <id>); does nothing in a session that names no task."},
+				"checkout's HEAD (bonsai ladder --task <id>); does nothing in a session that names no task. While bonsai is not " +
+				"installed at its place, it refuses each session's end until Claude Code ends the turn after its cap of blocks."},
 		{Kind: "hook", Origin: "bonsai", Own: true, Event: StartEvent, Command: StartCommand, Timeout: StartTimeout,
 			Why: "Gives each session (new, resumed, cleared or compacted) the active task, its last ladder result and this " +
 				"machine's labels, and records the session's start, with bonsai's own path and hash, in .bonsai/local/log/; never blocks."},
@@ -206,26 +270,33 @@ func OwnHookLines() []string {
 
 // Line is one of Bonsai's entries in .claude/settings.json.
 type Line struct {
-	Kind    string // hook, deny, key, marketplace or plugin
-	Origin  string // where it comes from: bonsai (this build's own), bonsai.yaml (never_edit), old (an old Bonsai hook line), or a pack id
-	Own     bool   // a line of Bonsai's own (ownHooks and ownDeny, or a `bonsai hook` line claim finds): set only here, never from a pack
-	Slot    string // two lines with one slot are one line changed, not one removed and one added
-	Event   string // hook: the Claude Code hook event
-	Matcher string // hook: the group's matcher, "" for none
-	Command string // hook: the shell line
-	Timeout string // hook: the timeout in seconds, as JSON number text; "" for none
-	Async   bool   // hook: runs without waiting
-	Rule    string // deny: the permission rule
-	Name    string // key, marketplace, plugin: its key in its object
-	Value   any    // key, marketplace, plugin: its JSON value
-	Why     string // the sentence the preview prints
+	Kind      string // hook, deny, key, marketplace or plugin
+	Origin    string // where it comes from: bonsai (this build's own), bonsai.yaml (never_edit), old (an old Bonsai hook line), or a pack id
+	Own       bool   // a line of Bonsai's own (ownHooks and ownDeny, or a `bonsai hook` line claim finds): set only here, never from a pack
+	Slot      string // two lines with one slot are one line changed, not one removed and one added
+	Event     string // hook: the Claude Code hook event
+	Matcher   string // hook: the group's matcher, "" for none
+	Command   string // hook: the shell line
+	Timeout   string // hook: the timeout in seconds, as JSON number text; "" for none
+	Async     bool   // hook: runs without waiting
+	OnFailure string // hook: its onFailure, "block" on the guard's line (GuardOnFailure); "" for none
+	Rule      string // deny: the permission rule
+	Name      string // key, marketplace, plugin: its key in its object
+	Value     any    // key, marketplace, plugin: its JSON value
+	Why       string // the sentence the preview prints
 }
 
 // canon is the line's identity: two lines are the same line when their canon is.
 func (l Line) canon() string {
 	switch l.Kind {
 	case "hook":
-		return strings.Join([]string{"hook", l.Event, l.Matcher, l.Command, l.Timeout, strconv.FormatBool(l.Async)}, "\t")
+		c := strings.Join([]string{"hook", l.Event, l.Matcher, l.Command, l.Timeout, strconv.FormatBool(l.Async)}, "\t")
+		if l.OnFailure != "" {
+			// Only a line that has it says so: a line without it keeps the canon every build before step 5.3.6 took the
+			// lock's fingerprint over.
+			c += "\tonFailure=" + l.OnFailure
+		}
+		return c
 	case "deny":
 		return "deny\t" + l.Rule
 	}
@@ -275,6 +346,9 @@ func (l Line) Text() string {
 		if l.Async {
 			s += " [async]"
 		}
+		if l.OnFailure != "" {
+			s += " [onFailure: " + l.OnFailure + "]"
+		}
 		return s
 	case "deny":
 		return l.Rule
@@ -314,6 +388,9 @@ func (l Line) hookEntry() schema.Object {
 	o := schema.Object{{Key: "type", Value: "command"}, {Key: "command", Value: l.Command}}
 	if l.Timeout != "" {
 		o = append(o, schema.Member{Key: "timeout", Value: json.Number(l.Timeout)})
+	}
+	if l.OnFailure != "" {
+		o = append(o, schema.Member{Key: "onFailure", Value: l.OnFailure})
 	}
 	if l.Async {
 		o = append(o, schema.Member{Key: "async", Value: true})
@@ -701,20 +778,37 @@ func hookLine(event, matcher string, h any) (Line, bool) {
 	if a, ok := o.Get("async"); ok && a == true {
 		l.Async = true
 	}
+	if f, ok := o.Get("onFailure"); ok {
+		if v, isText := f.(string); isText {
+			l.OnFailure = v
+		}
+	}
 	return l, true
 }
 
-// isBonsaiHook reports a hook line that runs bonsai by name, as Bonsai's lines do (spec §3).
+// isBonsaiHook reports a hook line of Bonsai's own: one in exactly the form HookCommand writes (any word, its places
+// the installed ones or a test build's one), or one that runs bonsai by name, `bonsai hook <word>...`, the form every
+// build before step 5.3.6 wrote, so that a project linked by such a build has its lines taken and replaced. A line
+// that only resembles the form (another message, another quoting, a command added) is not Bonsai's and is left as the
+// project's own.
 func isBonsaiHook(command string) bool {
 	c := strings.TrimSpace(command)
-	return c == "bonsai hook" || strings.HasPrefix(c, "bonsai hook ")
+	if c == "bonsai hook" || strings.HasPrefix(c, "bonsai hook ") {
+		return true
+	}
+	places, word, ok := parseHookForm(c)
+	return ok && (HookCommand(word, true, places...) == c || HookCommand(word, false, places...) == c)
 }
 
 // isOldBonsaiHook reports an old Bonsai hook line, one that calls Bonsai by an absolute path: a bonsai binary by
 // its full path (/.../bonsai, C:\...\bonsai.exe, ~/.../bonsai), or Bonsai 0.4.3's sensor scripts
 // (bash "<absolute>/agent/Sensors/<name>.sh" "<absolute>"). init takes such a line out when it links a project
-// (spec §14, check 1: "the old absolute line is gone"); Bonsai's own lines call bonsai by name.
+// (spec §14, check 1: "the old absolute line is gone"). A line in Bonsai's own form (isBonsaiHook), which names the
+// installed places, is never an old one.
 func isOldBonsaiHook(command string) bool {
+	if isBonsaiHook(command) {
+		return false
+	}
 	words := shellWords(command)
 	if len(words) == 0 {
 		return false
@@ -795,8 +889,20 @@ func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 			claimed = append(claimed, l)
 		}
 	}
+	// ownAt counts Bonsai's own hook lines on the file's each event and matcher, in the file's order, so an own line
+	// this build does not write takes the slot of its place there (the stop gate's line before the recorder's on Stop)
+	// and pairs, in the preview, with this build's line in that place as one line changed.
+	ownAt := map[string]int{}
 	for _, d := range disk {
+		ownKey, ownPos := "", 0
+		if d.Kind == "hook" {
+			ownKey = "hook:@own:" + d.Event + ":" + d.Matcher
+			ownPos = ownAt[ownKey]
+		}
 		if r, ok := refs[d.match()]; ok {
+			if r.Kind == "hook" && r.Own {
+				ownAt[ownKey]++
+			}
 			add(r)
 			continue
 		}
@@ -815,12 +921,13 @@ func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 			d.Why = "Enables a plugin from an old marketplace of Bonsai's."
 			add(d)
 		case d.Kind == "hook" && isBonsaiHook(d.Command):
-			d.Origin, d.Own, d.Slot = "bonsai", true, "hook:@own:"+d.Event+":"+d.Matcher+":0"
+			ownAt[ownKey]++
+			d.Origin, d.Own, d.Slot = "bonsai", true, ownKey+":"+strconv.Itoa(ownPos)
 			d.Why = "A Bonsai hook line this build does not write."
 			add(d)
 		case d.Kind == "hook" && firstLink && isOldBonsaiHook(d.Command):
 			d.Origin, d.Slot = "old", "old:"+d.canon()
-			d.Why = "An old Bonsai hook line that calls bonsai by an absolute path; Bonsai's lines call it by name."
+			d.Why = "An old Bonsai hook line that calls bonsai by an absolute path; Bonsai's lines call it at its installed place."
 			add(d)
 		case d.Kind == "deny" && strings.HasPrefix(d.Rule, "Edit(") && strings.HasSuffix(d.Rule, ")"):
 			// Its slot is its path's, in either form a build wrote (Edit(<path>) before step 5.3.5, Edit(/<path>)
@@ -891,6 +998,33 @@ type SettingsChange struct {
 	RunsCode bool   // a hook line added or changed, and not one the lock last consented to: it runs code (spec §6)
 	Origin   string // where the line comes from (Line.Origin): bonsai for Bonsai's own, or a pack id
 	Own      bool   // a line of Bonsai's own (Line.Own), which no pack can set
+	event    string // a hook line's event (Line.Event)
+}
+
+// OwnGuardChanges are the plan's changes that change or take out Bonsai's own guard line or stop gate's line (a line
+// of Bonsai's own on PreToolUse or Stop that runs bonsai hook guard or stop): in an agent's session they are a
+// person's command (step 5.3.6 note 8, cmd/bonsai), though a removed line runs nothing (consent.go). Adding one is not
+// among them: it only puts the guard back.
+func (p *Plan) OwnGuardChanges() []SettingsChange {
+	var out []SettingsChange
+	for _, c := range p.Settings {
+		if c.Kind == "hook" && c.Own && (c.Change == "change" || c.Change == "remove") && (c.event == GuardEvent || c.event == StopEvent) &&
+			guardOrStop(c) {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// guardOrStop reports a change of Bonsai's own line on PreToolUse or Stop that runs the guard or the stop gate, before
+// or after (the recorder's own line on PreToolUse and on Stop is neither).
+func guardOrStop(c SettingsChange) bool {
+	for _, t := range []string{c.Line, c.Was} {
+		if strings.Contains(t, "hook guard") || strings.Contains(t, "hook stop") {
+			return true
+		}
+	}
+	return false
 }
 
 // lineChanges lists the changes from Bonsai's lines in the file (claimed) to the new lines: a new line the file
@@ -923,7 +1057,7 @@ func lineChanges(claimed, lnew []Line, disk []Line, consented []Line) []Settings
 			continue
 		}
 		sc := SettingsChange{Change: "add", Kind: l.Kind, Line: l.Text(), Why: l.Why,
-			RunsCode: l.Kind == "hook" && !ok[c], Origin: l.Origin, Own: l.Own}
+			RunsCode: l.Kind == "hook" && !ok[c], Origin: l.Origin, Own: l.Own, event: l.Event}
 		for i, r := range removed {
 			if r.Slot == l.Slot {
 				sc.Change, sc.Was = "change", r.Text()
@@ -934,7 +1068,7 @@ func lineChanges(claimed, lnew []Line, disk []Line, consented []Line) []Settings
 		out = append(out, sc)
 	}
 	for _, r := range removed {
-		out = append(out, SettingsChange{Change: "remove", Kind: r.Kind, Line: r.Text(), Why: r.Why, Origin: r.Origin, Own: r.Own})
+		out = append(out, SettingsChange{Change: "remove", Kind: r.Kind, Line: r.Text(), Why: r.Why, Origin: r.Origin, Own: r.Own, event: r.Event})
 	}
 	return out
 }

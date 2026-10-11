@@ -1,5 +1,7 @@
 package main
 
+import "github.com/LastStep/Bonsai/internal/engine"
+
 // bonsai init (spec §4, §6): link this project to Bonsai. Its table of flags and exit codes is initWord; it runs
 // with update's run (engine.go), and with --json prints the changes output (bonsai.changes/1).
 
@@ -20,7 +22,7 @@ plugin that carries code parts only with --allow-exec), and, as update does, rem
 of them under an older marketplace name of this workspace.
 Run it in the project's checkout. In a project that already has bonsai.yaml it needs no values and works as
 bonsai update does; run again with nothing changed, it changes no byte.
-`,
+` + engine.HookPlaceWords(),
 	Flags: []Flag{
 		{Name: "--name", Value: "N", Help: "the workspace's name: a lower-case letter, then lower-case letters, digits and dashes"},
 		{Name: "--source", Value: "URL", Help: "the pack's git repository (fetched with this machine's git, into the Bonsai home's cache)"},
@@ -45,7 +47,7 @@ too. With bonsai.yaml but no lock (a link again), each is judged against what is
 		{Code: 0, Means: "linked (or nothing to change)"},
 		{Code: 2, Means: "bad input: a flag or value missing or wrong, a pack Bonsai cannot link, or a bonsai.yaml or\n.claude/settings.json Bonsai does not read (nothing written)"},
 		{Code: 3, Means: "runtime: a fetch failed, git or the Bonsai home missing, a file that cannot be read or written (nothing\nwritten); or the write stopped part-way (--json: result failed): run the same command again"},
-		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, --new-id in a worktree, a pack's tag\nmoved to another commit), no --yes, or code without --allow-exec (the preview was printed; nothing written)"},
+		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, --new-id in a worktree, a pack's tag\nmoved to another commit, a test build outside its scratch folder), no --yes, or code without --allow-exec (the\npreview was printed; nothing written)"},
 		{Code: 5, Means: "conflicts (nothing written)"},
 	},
 	Examples: []string{"bonsai init --name demo --source https://github.com/LastStep/bonsai-test-pack --ref 506205354b7589f82f849820987aad17dba3309d --yes --allow-exec"},

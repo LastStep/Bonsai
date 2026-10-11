@@ -116,6 +116,7 @@ error words.
 | `needs-yes` | person | the command writes, and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing |
 | `needs-allow-exec` | person | the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written |
 | `conflicts` | person | files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt |
+| `test-build` | agent | a test build of Bonsai (stamped with its hook lines' place and a scratch folder) was asked to link, update or unlink outside its scratch folder, or was stamped with one of the two only: it writes nothing there |
 | `ask-not-open` | agent | bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved, or ask --status names a key that has no ask: the message says which, and nothing was written (exit 4) |
 | `answer-own-session` | person | the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4) |
 | `label-not-defined` | agent | bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2) |

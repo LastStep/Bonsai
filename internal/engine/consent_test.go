@@ -208,26 +208,26 @@ func TestOwnHookLines(t *testing.T) {
 		t.Fatalf("own hooks %+v, runs code %+v", p.OwnHooks, p.RunsCode)
 	}
 	if pv := p.Preview(false); !strings.Contains(pv, "Bonsai's own hook lines, written with --yes (linking the project is your consent to them):\n"+
-		"  add     hook        PreToolUse ("+GuardMatcher+"): "+GuardCommand+"\n  add     hook        Stop: "+StopCommand+
-		"\n  add     hook        SessionStart: bonsai hook start\n") {
+		"  add     hook        "+ownHooks[0].Text()+"\n  add     hook        "+ownHooks[1].Text()+
+		"\n  add     hook        "+ownHooks[2].Text()+"\n") {
 		t.Errorf("preview:\n%s", pv)
 	}
 	if err := Apply(p); err != nil {
 		t.Fatal(err)
 	}
 	for _, cmd := range []string{GuardCommand, StopCommand, StartCommand, RecordCommand} {
-		if !strings.Contains(read(t, root, SettingsFile), `"`+cmd+`"`) {
+		if !strings.Contains(read(t, root, SettingsFile), jsonCmd(cmd)) {
 			t.Errorf("Bonsai's own line %q was not written", cmd)
 		}
 	}
 	// Bonsai's line edited on disk to an older form, the lock deleted: init again changes a hook line: code.
 	s := read(t, root, SettingsFile)
-	writeFile(t, root, SettingsFile, strings.Replace(s, `"bonsai hook guard || exit 2"`, `"bonsai hook guard"`, 1))
+	writeFile(t, root, SettingsFile, strings.Replace(s, jsonCmd(GuardCommand), `"bonsai hook guard"`, 1))
 	if err := os.Remove(filepath.Join(root, filepath.FromSlash(workspace.LockFile))); err != nil {
 		t.Fatal(err)
 	}
 	p = e.plan(t, root, Request{Command: "init", Init: &InitValues{}})
-	if got := items(p); got != "hook change "+GuardEvent+" ("+GuardMatcher+"): "+GuardCommand+" (bonsai)" || len(p.OwnHooks) != 0 {
+	if got := items(p); got != "hook change "+ownHooks[0].Text()+" (bonsai)" || len(p.OwnHooks) != 0 {
 		t.Errorf("a changed own line at a relink: %s, own %+v", got, p.OwnHooks)
 	}
 }

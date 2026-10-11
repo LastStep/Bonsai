@@ -44,7 +44,7 @@ Run again, it changes nothing; bonsai init links the project again.
 		{Code: 0, Means: "unlinked (or nothing to change: no bonsai.yaml and no lock here)"},
 		{Code: 2, Means: "bad input: a flag wrong, or a bonsai.yaml, .claude/settings.json or CLAUDE.md block Bonsai does not\nread (nothing written)"},
 		{Code: 3, Means: "runtime: git or the Bonsai home missing, a file that cannot be read or written (nothing written); or\nthe write stopped part-way (--json: result failed): run the same command again"},
-		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, bonsai.yaml with no lock, a lock Bonsai\ndoes not read), or no --yes (the preview was printed; nothing written)"},
+		{Code: 4, Means: "wrong state (not in a git checkout, a Bonsai 0.4.3 workspace, bonsai.yaml with no lock, a lock Bonsai\ndoes not read, a test build outside its scratch folder)) or no --yes (the preview was printed; nothing written)"},
 	},
 	Examples: []string{"bonsai unlink --yes"},
 	Refused:  changesRefused,

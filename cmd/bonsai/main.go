@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -32,7 +33,8 @@ var readBuildInfo = debug.ReadBuildInfo
 // (commit 0123456789ab)"; or "(no commit stamp)" when the build carries none, so a binary whose hash a report quotes
 // can be tied to its commit or is seen not to be (design/plan-5.md, 5.2.2 note 7). Go leaves the stamp out of a
 // build with -buildvcs=false, a build outside a git checkout, and a build in a git worktree by a Go older than 1.27,
-// which took only a .git folder for a checkout; go version -m <binary> shows the same stamp.
+// which took only a .git folder for a checkout; go version -m <binary> shows the same stamp. A test build (stamped with
+// its hook lines' place and its scratch folder, internal/engine/hookline.go) says so on a second line, naming both.
 func versionLine() string {
 	stamp := "no commit stamp"
 	if bi, ok := readBuildInfo(); ok && bi != nil {
@@ -52,7 +54,13 @@ func versionLine() string {
 			}
 		}
 	}
-	return "bonsai " + version + " (" + stamp + ")\n"
+	line := "bonsai " + version + " (" + stamp + ")\n"
+	if engine.Stamped() {
+		place, root := engine.TestBuild()
+		line += "test build: its hook lines run " + engine.ASCII(filepath.ToSlash(place)) + "; it links, updates and unlinks only inside " +
+			engine.ASCII(filepath.ToSlash(root)) + "\n"
+	}
+	return line
 }
 
 func main() {

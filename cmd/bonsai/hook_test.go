@@ -26,6 +26,9 @@ var builds struct {
 	err           error
 }
 
+// pkgDir is this package's folder, where go test starts: the builds are made there, whatever folder a test moved to.
+var pkgDir, _ = os.Getwd()
+
 func TestMain(m *testing.M) {
 	code := m.Run()
 	if builds.dir != "" {
@@ -60,7 +63,9 @@ func bonsaiBuilds(t *testing.T) (normal, fault string) {
 			if b.tags != "" {
 				args = append(args, "-tags", b.tags)
 			}
-			out, err := exec.Command(goTool, append(args, ".")...).CombinedOutput()
+			cmd := exec.Command(goTool, append(args, ".")...)
+			cmd.Dir = pkgDir
+			out, err := cmd.CombinedOutput()
 			if err != nil {
 				builds.err = errors.New(err.Error() + ": " + string(out))
 				return
@@ -193,11 +198,18 @@ func hookEnv(vars ...string) []string {
 	return append(out, vars...)
 }
 
-// runLine runs part 3's hook line in the hook shell with a PATH and a payload, as Claude Code does, and gives its
-// exit code and stderr.
-func runLine(t *testing.T, path, project, fault, stdin string) (int, string, time.Duration) {
+// runLine runs the guard's hook line, in Bonsai's form with places as its places (engine.HookCommand, the function
+// that makes the shipped line), in the hook shell with a PATH and a payload, as Claude Code does, and gives its exit
+// code and stderr.
+func runLine(t *testing.T, places []string, path, project, fault, stdin string) (int, string, time.Duration) {
 	t.Helper()
-	cmd := exec.Command(hookShell(t), "-c", engine.GuardCommand)
+	return runHookText(t, engine.HookCommand("guard", true, places...), path, project, fault, stdin)
+}
+
+// runHookText runs a hook line's text in the hook shell, as runLine does.
+func runHookText(t *testing.T, line, path, project, fault, stdin string) (int, string, time.Duration) {
+	t.Helper()
+	cmd := exec.Command(hookShell(t), "-c", line)
 	cmd.Env = hookEnv("PATH="+path, "CLAUDE_PROJECT_DIR="+project, "BONSAI_HOME="+t.TempDir(), "BONSAI_TEST"+"_FAULT="+fault)
 	cmd.Stdin = strings.NewReader(stdin)
 	var stderr bytes.Buffer
@@ -215,6 +227,23 @@ func runLine(t *testing.T, path, project, fault, stdin string) (int, string, tim
 	return code, stderr.String(), took
 }
 
+// shellPath is a path as the hook shell names it: as it is on Linux and macOS; on Windows with forward slashes and its
+// drive as Git Bash names one, C:\x as /c/x, the form Bonsai's lines name Windows' installed place in.
+func shellPath(p string) string {
+	p = filepath.ToSlash(p)
+	if runtime.GOOS == "windows" && len(p) >= 3 && p[1] == ':' && p[2] == '/' {
+		return "/" + strings.ToLower(p[:1]) + p[2:]
+	}
+	return p
+}
+
+// hookPath is the PATH a hook line gets in these tests: the test's own, which may hold a bonsai of its own (an old
+// build, a decoy): Bonsai's line never reads it.
+func hookPath(t *testing.T) string {
+	t.Helper()
+	return os.Getenv("PATH")
+}
+
 // minimalPath is a bare PATH, the system's own folders only, as a session started by a service might have.
 func minimalPath(t *testing.T) string {
 	t.Helper()
@@ -225,13 +254,6 @@ func minimalPath(t *testing.T) string {
 			root = `C:\Windows`
 		}
 		dirs = []string{filepath.Join(root, "System32"), root}
-	}
-	for _, d := range dirs {
-		for _, name := range []string{"bonsai", "bonsai.exe"} {
-			if fileExists(filepath.Join(d, name)) {
-				t.Skipf("a bonsai is installed in %s, so a bare PATH still finds one", d)
-			}
-		}
 	}
 	return strings.Join(dirs, string(os.PathListSeparator))
 }
@@ -273,14 +295,15 @@ func logPath(t *testing.T, bin string) string {
 func TestFaultsThroughTheHookLine(t *testing.T) {
 	normal, fault := bonsaiBuilds(t)
 	proj := guardProject(t)
-	normalPath, faultPath := filepath.Dir(normal), filepath.Dir(fault)
+	nowhere := shellPath(filepath.Join(t.TempDir(), "bonsai"))
 	free := editPayload(t, "s-free", proj, "free.txt")
 
 	t.Run("normal build", func(t *testing.T) {
-		if code, stderr, _ := runLine(t, normalPath, proj, "", free); code != 0 || stderr != "" {
+		at := []string{shellPath(normal)}
+		if code, stderr, _ := runLine(t, at, hookPath(t), proj, "", free); code != 0 || stderr != "" {
 			t.Fatalf("free.txt: exit %d, stderr %q", code, stderr)
 		}
-		code, stderr, _ := runLine(t, normalPath, proj, "", editPayload(t, "s-prot", proj, "protected.txt"))
+		code, stderr, _ := runLine(t, at, hookPath(t), proj, "", editPayload(t, "s-prot", proj, "protected.txt"))
 		if code != 2 || !strings.Contains(stderr, `Edit of "protected.txt" refused`) {
 			t.Fatalf("protected.txt: exit %d, stderr %q", code, stderr)
 		}
@@ -288,20 +311,26 @@ func TestFaultsThroughTheHookLine(t *testing.T) {
 			t.Errorf("the record names %s %s, want %s and a hash", r.String("bonsai_path"), r.String("bonsai_sha256"), logPath(t, normal))
 		}
 		// The normal build has no switch: set or not, it decides the same.
-		if code, stderr, _ := runLine(t, normalPath, proj, "crash", free); code != 0 {
+		if code, stderr, _ := runLine(t, at, hookPath(t), proj, "crash", free); code != 0 {
 			t.Fatalf("normal build with the crash switch set: exit %d, stderr %q", code, stderr)
 		}
 	})
 	t.Run("missing", func(t *testing.T) {
-		code, stderr, _ := runLine(t, t.TempDir(), proj, "missing", free)
-		if code != 2 || !strings.Contains(stderr, "bonsai") || !strings.Contains(stderr, "not found") {
-			t.Fatalf("exit %d, stderr %q; want 2 and the shell's not found", code, stderr)
+		// No bonsai at either place: the line refuses itself, in its own words, and starts no bonsai.
+		code, stderr, _ := runLine(t, []string{nowhere, nowhere + "-too"}, hookPath(t), proj, "missing", free)
+		if code != 2 || !strings.HasPrefix(stderr, "bonsai guard: no bonsai is installed at ") || failedToStart(stderr) {
+			t.Fatalf("exit %d, stderr %q; want 2 and the line's own words", code, stderr)
 		}
 	})
 	t.Run("minimal-path", func(t *testing.T) {
-		code, stderr, _ := runLine(t, minimalPath(t), proj, "minimal-path", free)
-		if code != 2 || !strings.Contains(stderr, "bonsai") || !strings.Contains(stderr, "not found") {
-			t.Fatalf("exit %d, stderr %q; want 2 and the shell's not found", code, stderr)
+		// A bare PATH changes nothing: the line never reads it.
+		at := []string{nowhere, shellPath(normal)}
+		if code, stderr, _ := runLine(t, at, minimalPath(t), proj, "minimal-path", free); code != 0 || stderr != "" {
+			t.Fatalf("free.txt: exit %d, stderr %q", code, stderr)
+		}
+		if code, stderr, _ := runLine(t, at, minimalPath(t), proj, "minimal-path", editPayload(t, "s-min", proj, "protected.txt")); code != 2 ||
+			!strings.Contains(stderr, `Edit of "protected.txt" refused`) {
+			t.Fatalf("protected.txt: exit %d, stderr %q", code, stderr)
 		}
 	})
 	t.Run("crash", func(t *testing.T) {
@@ -314,7 +343,7 @@ func TestFaultsThroughTheHookLine(t *testing.T) {
 		if !errors.As(err, &ee) || ee.ExitCode() == 0 || ee.ExitCode() == 2 {
 			t.Fatalf("the crashed guard alone: %v; want an exit other than 0 and 2", err)
 		}
-		code, stderr, _ := runLine(t, faultPath, proj, "crash", editPayload(t, "s-crash", proj, "free.txt"))
+		code, stderr, _ := runLine(t, []string{shellPath(fault)}, hookPath(t), proj, "crash", editPayload(t, "s-crash", proj, "free.txt"))
 		if code != 2 || !strings.Contains(stderr, "test fault crash") {
 			t.Fatalf("exit %d, stderr %q", code, stderr)
 		}
@@ -331,7 +360,7 @@ func TestFaultsThroughTheHookLine(t *testing.T) {
 			t.Fatalf("engine.GuardTimeout %q: %v", engine.GuardTimeout, err)
 		}
 		limit := time.Duration(secs)*time.Second - time.Second
-		code, stderr, took := runLine(t, faultPath, proj, "slow", editPayload(t, "s-slow", proj, "free.txt"))
+		code, stderr, took := runLine(t, []string{shellPath(fault)}, hookPath(t), proj, "slow", editPayload(t, "s-slow", proj, "free.txt"))
 		if code != 2 || !strings.Contains(stderr, "the guard ran past its own 5s limit") {
 			t.Fatalf("exit %d, stderr %q", code, stderr)
 		}
@@ -342,14 +371,28 @@ func TestFaultsThroughTheHookLine(t *testing.T) {
 			t.Errorf("record: %s", schema.Show(r))
 		}
 	})
-	t.Run("a hidden bonsai found anyway", func(t *testing.T) {
+	t.Run("a fault build answering missing", func(t *testing.T) {
+		// A fault build at the place, with the switch saying no bonsai should answer: it blocks, naming itself.
 		for _, f := range []string{"missing", "minimal-path"} {
-			code, stderr, _ := runLine(t, faultPath, proj, f, free)
+			code, stderr, _ := runLine(t, []string{shellPath(fault)}, hookPath(t), proj, f, free)
 			if code != 2 || !strings.Contains(stderr, "the launcher did not hide it") {
 				t.Fatalf("%s: exit %d, stderr %q", f, code, stderr)
 			}
 		}
 	})
+}
+
+// failedToStart reports words a shell or an operating system uses for a file that is not there: Claude Code reads a
+// Stop hook's exit 2 with such words on stderr as a hook that failed to start, and lets the session end (its hooks
+// reference; step 5.3.4).
+func failedToStart(stderr string) bool {
+	l := strings.ToLower(stderr)
+	for _, w := range []string{"no such file", "not found", "missing", "cannot find", "enoent", "does not exist", "failed to start"} {
+		if strings.Contains(l, w) {
+			return true
+		}
+	}
+	return false
 }
 
 func TestHookCommand(t *testing.T) {
@@ -360,10 +403,15 @@ func TestHookCommand(t *testing.T) {
 		inStderr string
 	}{
 		{[]string{"hook", "--help"}, 0, "bonsai hook guard ", ""},
-		{[]string{"hook", "guard", "--help"}, 0, "bonsai hook guard || exit 2", ""},
+		{[]string{"hook", "guard", "--help"}, 0, engine.ShownLine(engine.GuardCommand) + "on PreToolUse (Edit, Write, MultiEdit, NotebookEdit, Bash, PowerShell, Monitor), timeout 10 s, onFailure block.\n", ""},
+		{[]string{"hook", "guard", "--help"}, 0, "A Bash, PowerShell or Monitor call is judged too", ""},
+		{[]string{"hook", "start", "--help"}, 0, engine.ShownLine(engine.StartCommand) + "on SessionStart", ""},
+		{[]string{"hook", "record", "--help"}, 0, engine.ShownLine(engine.RecordCommand) + "on UserPromptSubmit", ""},
+		{[]string{"hook", "--help"}, 0, "never one on the PATH", ""},
 		{[]string{"hook"}, 2, "", "bonsai: bonsai hook needs a hook name.\nnext: run `bonsai hook --help`"},
 		{[]string{"hook", "guard", "--json"}, 2, "", `bonsai: hook guard takes no "--json".`},
-		{[]string{"hook", "stop", "--help"}, 0, "  bonsai hook stop || exit 2\non Stop (no matcher), timeout 10 s.", ""},
+		{[]string{"hook", "stop", "--help"}, 0, engine.ShownLine(engine.StopCommand) + "on Stop (no matcher), timeout 10 s.\n", ""},
+		{[]string{"hook", "stop", "--help"}, 0, engine.HookPlaceWords(), ""},
 		{[]string{"hook", "stop", "now"}, 2, "", `bonsai: hook stop takes no "now".`},
 		{[]string{"hook", "nap"}, 2, "", `bonsai: "nap" is not a hook.`},
 	}

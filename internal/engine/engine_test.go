@@ -270,7 +270,7 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 	s := settingsDocOf(t, root)
 	text := schema.Show(s)
 	for _, want := range []string{`"allow":["Bash(npm test)"]`, `"Read(secrets/**)"`, `"npm run lint-staged"`, `"model":"opus"`,
-		`"command":"bonsai hook guard || exit 2"`, `"Edit(/ledger.json)"`, `"Edit(demo/never.txt)"`, `"echo demo hook A"`,
+		`"command":` + jsonCmd(GuardCommand), `"Edit(/ledger.json)"`, `"Edit(demo/never.txt)"`, `"echo demo hook A"`,
 		`"autoMemoryEnabled":false`, `"disableAllHooks":false`, `"Edit(//**/.bonsai/local/**)"`, `"Edit(//**/.bonsai/sessions.md)"`,
 		`"Edit(//**/.bonsai/tasks.md)"`, `"Edit(~/.bonsai/**)"`} {
 		if !strings.Contains(text, want) {
