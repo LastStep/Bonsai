@@ -35,8 +35,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -177,7 +179,7 @@ func buildRecord(at *place, in *hookin.Payload, d Decision, getenv func(string) 
 	decision := "allow"
 	if !d.Allow {
 		decision = "deny"
-		l.Text = ptr(redact.Capped(d.Why, redact.TextCap))
+		l.Text = ptr(redact.Capped(userless(d.Why), redact.TextCap))
 	}
 	l.Decision, l.Rule = ptr(decision), ptr(d.Rule)
 	return l
@@ -227,6 +229,51 @@ func fromHome(path string) string {
 		}
 	}
 	return p
+}
+
+// userless keeps user names out of a record's text (contract §2.6; as bonsai_path, written from ~/): the user's home
+// folder, in each form a reason may quote it (forward slashes, backslashes, a Go-quoted backslash), written as ~, and
+// the name in any other user folder a reason quotes (/home/<name>, /Users/<name>, C:/Users/<name>,
+// /mnt/c/Users/<name>), written as ~. The refusals name paths from the project or from ~/ already (may.go's shown);
+// this holds for every reason, an error a reason quotes among them. stderr keeps the reason as it is.
+func userless(s string) string {
+	if home, err := userHome(); err == nil && home != "" {
+		h := filepath.ToSlash(filepath.Clean(home))
+		for _, form := range []string{strings.ReplaceAll(h, "/", `\\`), strings.ReplaceAll(h, "/", `\`), h} {
+			if len(form) > 1 {
+				s = replaceFold(s, form, "~", runtime.GOOS == "windows")
+			}
+		}
+	}
+	low := strings.ToLower(s)
+	if strings.Contains(low, "users") || strings.Contains(low, "home") {
+		s = userFolder().ReplaceAllString(s, "${1}~")
+	}
+	return s
+}
+
+// userFolder matches a user folder's name in a path, as userless writes it: its folder (home or Users, after a drive
+// letter, WSL's /mnt/<drive>, or a root), then the name.
+var userFolder = sync.OnceValue(func() *regexp.Regexp {
+	return regexp.MustCompile(`(?i)((?:[a-z]:)?[/\\]+(?:mnt[/\\]+[a-z][/\\]+)?(?:users|home)[/\\]+)([^/\\\s"'~][^/\\\s"']*)`)
+})
+
+// replaceFold replaces every old in s with new, letter case ignored when fold is set.
+func replaceFold(s, old, repl string, fold bool) string {
+	if !fold {
+		return strings.ReplaceAll(s, old, repl)
+	}
+	var b strings.Builder
+	low, lowOld := strings.ToLower(s), strings.ToLower(old)
+	for {
+		i := strings.Index(low, lowOld)
+		if i < 0 || len(low) != len(s) {
+			b.WriteString(s)
+			return b.String()
+		}
+		b.WriteString(s[:i] + repl)
+		s, low = s[i+len(old):], low[i+len(old):]
+	}
 }
 
 // category maps a tool to its log category (contract §8.2: today's Bash becomes Shell).

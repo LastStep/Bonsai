@@ -3,6 +3,7 @@ package guard
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -19,4 +20,13 @@ func ruleBadPath(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantRule(t, dir, writeOf(dir, "link/x.txt", "x\n"), RuleBadPath)
+	// Its record names the path from the project, never from the user's folder (the temporary folder is in it).
+	recs := records(t, dir, "s-r1.ndjson")
+	text := recs[len(recs)-1].String("text")
+	if user, err := os.UserHomeDir(); err == nil && strings.Contains(strings.ToLower(filepath.ToSlash(text)), strings.ToLower(filepath.ToSlash(user))) {
+		t.Errorf("the record's text names the user's folder: %q", text)
+	}
+	if !strings.Contains(text, `"link/x.txt"`) {
+		t.Errorf("the record's text: %q", text)
+	}
 }

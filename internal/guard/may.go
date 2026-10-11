@@ -62,7 +62,7 @@ func (j *judge) may(c change) (Decision, *linkedProject) {
 	forms, err := pathForms(c.base, c.cwd, c.path)
 	if err != nil {
 		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: on Windows the guard cannot tell where the path leads (%s), "+
-			"so it cannot tell whether it is guarded", c.tool, quote(filepath.ToSlash(c.path), 120), oneLine(err.Error())),
+			"so it cannot tell whether it is guarded", c.tool, quote(j.shown(c.path), 120), oneLine(err.Error())),
 			"write to the file by its plain path inside the project (a drive letter and folders), or tell the person"), j.session
 	}
 	var first []*linkedProject // the chain of the first form a project holds: an allow is recorded there
@@ -76,8 +76,8 @@ func (j *judge) may(c change) (Decision, *linkedProject) {
 		if home := j.inHome(abs); home != "" {
 			rec := j.recordIn(chain)
 			d := deny(RuleBonsaiFiles, fmt.Sprintf("%s of %s refused: it is in Bonsai's home (%s), whose files only Bonsai "+
-				"writes: this machine's records and settings, which the guard itself trusts", c.tool, quote(filepath.ToSlash(abs), 120),
-				quote(filepath.ToSlash(home), 120)), "leave Bonsai's home as it is; a person runs the bonsai command that "+
+				"writes: this machine's records and settings, which the guard itself trusts", c.tool, quote(j.shown(abs), 120),
+				quote(j.shown(home), 120)), "leave Bonsai's home as it is; a person runs the bonsai command that "+
 				"changes it, in a terminal of their own")
 			d.Target = target(rec, []string{abs})
 			return d, rec
@@ -85,7 +85,7 @@ func (j *judge) may(c change) (Decision, *linkedProject) {
 		if len(chain) == 0 {
 			if standIn(abs) {
 				return deny(RuleStandIn, fmt.Sprintf("%s of %s refused: outside every linked project, a file named as "+
-					"Bonsai's program could stand in for it in a folder on the PATH", c.tool, quote(filepath.ToSlash(abs), 120)),
+					"Bonsai's program could stand in for it in a folder on the PATH", c.tool, quote(j.shown(abs), 120)),
 					"give the file another name; a person installs Bonsai"), j.session
 			}
 			continue
@@ -115,6 +115,21 @@ func (j *judge) may(c change) (Decision, *linkedProject) {
 func (j *judge) mayDelete(dir, p string) Decision {
 	d, _ := j.may(change{tool: "a delete or move", path: p, cwd: dir, base: dir, del: true})
 	return d
+}
+
+// shown gives a path as a refusal, and so its record, names it (contract §2.6: no user name in the log): relative to
+// the session's project when it lies inside it; else from ~/ under the user's home folder (fromHome); else as it is,
+// forward slashes. A relative path is shown as written.
+func (j *judge) shown(p string) string {
+	if !filepath.IsAbs(p) {
+		return filepath.ToSlash(p)
+	}
+	if j.session != nil {
+		if rel, ok := relTo(j.session.root, filepath.Clean(p)); ok {
+			return rel
+		}
+	}
+	return fromHome(p)
 }
 
 // judged is one form of a path, a project judging it, and the path relative to that project's folder.
@@ -148,7 +163,7 @@ func (j *judge) form(c change, abs string, chain []*linkedProject) (Decision, *l
 			}
 			d := deny(RuleOtherProject, fmt.Sprintf("%s of %s refused: it is the %s folder of another linked project (%s), "+
 				"whose top folder and floor folders a shell call outside it may not delete or move", c.tool,
-				quote(filepath.ToSlash(abs), 120), rel, quote(filepath.Base(p.root), 60)),
+				quote(j.shown(abs), 120), rel, quote(filepath.Base(p.root), 60)),
 				"leave that project as it is; a person deletes or moves it")
 			d.Target = target(rec, []string{abs})
 			return d, rec

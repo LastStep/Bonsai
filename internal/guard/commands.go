@@ -62,7 +62,11 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 			break
 		}
 	}
-	shown := quote("bonsai "+strings.Join(args, " "), 120)
+	shown := "bonsai " + word // the word alone: the call's other words may name paths or values (contract §2.6)
+	if allowExec(args) {
+		shown += " --allow-exec"
+	}
+	shown = strings.TrimSpace(shown)
 	later := func(subs ...string) bool {
 		seen := false
 		for _, a := range args {
@@ -182,9 +186,9 @@ func (j *judge) ownLine(tool, text string) Decision {
 	if why == "" {
 		return allow(RuleShell, "")
 	}
-	return deny(RulePersonCommand, fmt.Sprintf("%s refused: the line %s %s, which hides an agent's session from Bonsai's "+
+	return deny(RulePersonCommand, fmt.Sprintf("%s refused: the command line %s, which hides an agent's session from Bonsai's "+
 		"commands; that is a person's step, allowed to an agent only in a project in command mode under a person's grant "+
-		"of bonsai.yaml and .bonsai/lock.json, and %s", tool, quote(text, 120), what, why), personNext)
+		"of bonsai.yaml and .bonsai/lock.json, and %s", tool, what, why), personNext)
 }
 
 // envChangers are the commands that set or unset a shell's variables, by base name, letter case ignored.
