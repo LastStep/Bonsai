@@ -87,16 +87,17 @@ type delJudge interface {
 
 // delOp is one operand of a delete or a move: one word, or one word its brace list writes out.
 type delOp struct {
-	text    string
-	expand  bool    // a variable or substitution
-	glob    bool    // a glob character
-	literal bool    // given as -LiteralPath: its glob characters are literal
-	git     bool    // a git pathspec: a leading : is pathspec magic
-	pipeVar bool    // PowerShell's $_ or $PSItem: an item a pipeline or loop gives
-	item    bool    // find's {}: judged as find's starting points are, not here
-	word    *shWord // the word it came from, when it holds an expansion that may stand for literal text
-	top     bool    // read against the checkout's top, not the command's folder (git's :/x, :(top)x)
-	away    bool    // read in a folder the check cannot tell (bash's ~-/x, the previous folder)
+	text     string
+	expand   bool    // a variable or substitution
+	glob     bool    // a glob character
+	literal  bool    // given as -LiteralPath: its glob characters are literal
+	git      bool    // a git pathspec: a leading : is pathspec magic
+	pipeVar  bool    // PowerShell's $_ or $PSItem: an item a pipeline or loop gives
+	item     bool    // find's {}: judged as find's starting points are, not here
+	word     *shWord // the word it came from, when it holds an expansion that may stand for literal text
+	top      bool    // read against the checkout's top, not the command's folder (git's :/x, :(top)x)
+	away     bool    // read in a folder the check cannot tell (bash's ~-/x, the previous folder)
+	alsoHere bool    // with away: read in the command's folder too (bash's ~-0, the command's folder until a pushd)
 }
 
 // delAct is one delete or move a command makes.
@@ -787,8 +788,9 @@ func delGitMagic(op *delOp) string {
 
 // delTildeOp reads bash's tilde forms in an operand: ~+ is the command's folder ($PWD), so ~+/x is x there; ~- is the
 // previous folder ($OLDPWD), which the check cannot tell (away); of the folder stack's forms, ~0 and ~+0 are the
-// command's folder and ~-0 (the stack's bottom, the folder before a pushd) and ~N, ~+N, ~-N for any other N folders the
-// check cannot tell; ~name/x is x in the home folder when name is the home folder's own (delTildeUser).
+// command's folder, ~-0 (the stack's bottom: the command's folder until a pushd, then the folder before it) both the
+// command's folder and one the check cannot tell, and ~N, ~+N, ~-N for any other N folders the check cannot tell;
+// ~name/x is x in the home folder when name is the home folder's own (delTildeUser).
 func delTildeOp(op *delOp) {
 	t := op.text
 	if !strings.HasPrefix(t, "~") {
@@ -803,7 +805,7 @@ func delTildeOp(op *delOp) {
 	case ok && here:
 		op.text = rel
 	case ok:
-		op.text, op.away = rel, true
+		op.text, op.away, op.alsoHere = rel, true, head == "-0"
 	case slashed && head != "":
 		if abs := delTildeUser("", t); abs != "" {
 			op.text = abs
@@ -892,6 +894,8 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 	glob := op.glob && !op.literal
 	dirs := r.dirsFor(x.dirs, text)
 	switch {
+	case op.away && r.base != "" && op.alsoHere:
+		dirs = appendNew(dirs, r.base)
 	case op.away && r.base != "":
 		dirs = []string{r.base} // judged as if in the payload's folder (note 4)
 	case op.top:

@@ -827,6 +827,9 @@ var delTable = []delRow{
 	{tB, "", "pushd src >/dev/null; rm -rf ~-0/build", RuleDeleteUnnamed, ""},
 	{tB, "", "pushd src && rm ~0/main.go", RuleDeleteNamed, ""},
 	{tB, "", "pushd src && rm -rf ~+0/build", RuleDeleteNamed, ""},
+	{tB, "", "cd docs && rm ~-0/secret/plan.md", RuleDeleteProtected, ""},
+	{tB, "", "cd docs && cd ~-0 && rm secret/plan.md", RuleDeleteProtected, ""},
+	{tB, "", "cd docs && cd ~-0 && rm readme.md", RuleDeleteNamed, ""},
 
 	// --- A line the check cannot split.
 	{tB, "", "rm -rf 'junk", RuleDeleteUnsplit, ""},

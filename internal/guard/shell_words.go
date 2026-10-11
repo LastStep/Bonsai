@@ -1000,6 +1000,11 @@ func (r *delRun) cdTo(dirs delDirs, w shWord, d shDialect) delDirs {
 		switch here, ok := delTildeStack(head); {
 		case ok && here:
 			t = "./" + rest // ~+, ~0: the folder it runs in
+		case ok && head == "-0":
+			// The stack's bottom: the folder it runs in until a pushd, then the one before it, which the check cannot tell.
+			out := r.cdTo(dirs, shWord{text: "./" + rest, raw: "./" + rest}, d)
+			out.unknown = true
+			return out
 		case ok:
 			return delDirs{unknown: true} // ~-, ~N: a folder the check cannot tell
 		}
