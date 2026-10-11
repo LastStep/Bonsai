@@ -808,7 +808,7 @@ func delTildeOp(op *delOp) {
 	case ok && here:
 		op.text = rel
 	case ok:
-		op.text, op.away, op.alsoHere = rel, true, head == "-0"
+		op.text, op.away, op.alsoHere = rel, true, delTildeBottom(head)
 	case slashed && head != "":
 		if abs := delTildeUser("", t); abs != "" {
 			op.text = abs
@@ -816,12 +816,12 @@ func delTildeOp(op *delOp) {
 	}
 }
 
-// delTildeStack reads a tilde's word as bash's folder stack does: ok for +, -, +N, -N and N; here when it is the
-// command's folder (+, 0, +0), not when it is another the check cannot tell (-, -0 the stack's bottom, which a pushd
-// leaves behind, and any other N).
+// delTildeStack reads a tilde's word as bash's folder stack does: ok for +, -, +N, -N and N, N read as a number
+// (00 is 0); here when it is the command's folder (+, 0, +0), not when it is another the check cannot tell (-, -0 the
+// stack's bottom, which a pushd leaves behind, and any other N).
 func delTildeStack(head string) (here, ok bool) {
 	switch head {
-	case "+", "0", "+0":
+	case "+":
 		return true, true
 	case "-":
 		return false, true
@@ -830,7 +830,13 @@ func delTildeStack(head string) (here, ok bool) {
 	if n == "" || len(head)-len(n) > 1 || strings.Trim(n, "0123456789") != "" {
 		return false, false
 	}
-	return false, true
+	return strings.Trim(n, "0") == "" && !strings.HasPrefix(head, "-"), true
+}
+
+// delTildeBottom reports bash's ~-0 (any count of zeros): the folder stack's bottom, the command's folder until a
+// pushd.
+func delTildeBottom(head string) bool {
+	return len(head) > 1 && head[0] == '-' && strings.Trim(head[1:], "0") == ""
 }
 
 func delVerb(move bool) string {

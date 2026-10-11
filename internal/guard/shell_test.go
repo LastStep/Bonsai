@@ -852,6 +852,13 @@ var delTable = []delRow{
 	{tB, "", "cd docs && rm ~-0/secret/plan.md", RuleDeleteProtected, ""},
 	{tB, "", "cd docs && cd ~-0 && rm secret/plan.md", RuleDeleteProtected, ""},
 	{tB, "", "cd docs && cd ~-0 && rm readme.md", RuleDeleteNamed, ""},
+	// A stack entry's N is a number: ~-00 is ~-0, ~00 and ~+00 the command's folder.
+	{tB, "", "cd docs && rm ~-00/secret/plan.md", RuleDeleteProtected, ""},
+	{tB, "", "cd docs && rm ~00/secret/plan.md", RuleDeleteProtected, ""},
+	{tB, "", "cd docs && rm ~+00/secret/plan.md", RuleDeleteProtected, ""},
+	{tB, "", "pushd src && rm ~-00/config/app.key", RuleDeleteProtected, ""},
+	{tB, "", "cd docs && cd ~-000 && rm secret/plan.md", RuleDeleteProtected, ""},
+	{tB, "", "cd docs && rm ~00/readme.md", RuleDeleteNamed, ""},
 
 	// --- A line the check cannot split.
 	{tB, "", "rm -rf 'junk", RuleDeleteUnsplit, ""},
