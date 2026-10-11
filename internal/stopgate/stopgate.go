@@ -9,14 +9,17 @@
 // names the task, and it counts here, the session's own project (contract §13).
 //
 // The session's checkout, whose HEAD the result must prove and whose run report is read (contract §13: the gate's
-// project is the one holding the session's working folder): the checkout holding the payload's cwd when it is a
-// verified checkout of the same project (cwdCheckout: its bonsai.yaml holds the same workspace id and its verified main
-// checkout is CLAUDE_PROJECT_DIR's: a worktree of it, or that main checkout itself), else CLAUDE_PROJECT_DIR's. Claude
-// Code keeps CLAUDE_PROJECT_DIR at the folder the session started in while cwd follows the session: after its
-// EnterWorktree tool, CLAUDE_PROJECT_DIR is the main checkout and cwd the worktree; in a `claude --worktree` session
-// both are the worktree (measured on 2.1.296). A cwd elsewhere (none, another project, a folder in none, a checkout
-// that is not verified) leaves CLAUDE_PROJECT_DIR's checkout judged. An agent can move cwd, as it can move HEAD; either
-// way the result must prove the HEAD of the checkout the session is in when it ends.
+// project is the one holding the session's working folder): the git checkout holding the payload's cwd when git's own
+// link ties it to the project (cwdCheckout: the verified main checkout itself, or a worktree whose .git names the main
+// checkout's .git/worktrees/<name> and whose gitdir there names it back, with or without a bonsai.yaml of its own),
+// else CLAUDE_PROJECT_DIR's. Claude Code keeps CLAUDE_PROJECT_DIR at the folder the session started in while cwd
+// follows the session: after its EnterWorktree tool, CLAUDE_PROJECT_DIR is the main checkout and cwd the worktree; in a
+// `claude --worktree` session both are the worktree (measured on 2.1.296). A cwd in a checkout of the project that
+// git's link does not tie to it (a broken link back, another repository inside the project, a .git Bonsai cannot read)
+// fails closed: CLAUDE_PROJECT_DIR's checkout is judged, and the result must prove the HEAD of the checkout holding cwd
+// as well. A cwd in no checkout of the project (none, a folder in no checkout, a repository outside the project) leaves
+// CLAUDE_PROJECT_DIR's checkout judged alone. An agent can move cwd, as it can move HEAD; either way the result must prove the HEAD of the
+// checkout the session is in when it ends.
 //
 // What it checks once engaged, in this order. Each failure blocks (exit 2) with its reason first and its next step,
 // which Claude Code gives the agent as the reason to go on; the rule that decided is the record's (rules below):
@@ -258,14 +261,15 @@ func (r *run) work() Decision {
 			"; the task "+quote(named)+" and its ladder result are read from the main checkout, so the stop gate cannot trust them",
 			trust.Next+"; then run: bonsai ladder --task "+named))
 	}
-	if co, ok := cwdCheckout(h, in.Cwd, root, own.ID, at.local.Main); ok {
+	co, ok, also := cwdCheckout(in.Cwd, root, at.local.Main)
+	if ok {
 		layout = co
 		at = &place{id: own.ID, local: workspace.Local{Root: co.Root, Main: at.local.Main, Branch: co.Branch()}}
 		r.mu.Lock()
 		r.at = at
 		r.mu.Unlock()
 	}
-	return r.recorded(judgeFn(at.local, layout, named))
+	return r.recorded(judgeFn(at.local, layout, also, named))
 }
 
 // verify reads the git layout of the checkout at root, whose bonsai.yaml holds the workspace id id, and whether its
@@ -286,30 +290,99 @@ func verify(home, root, id string) (workspace.GitLayout, workspace.Trust) {
 // gate's project is the one holding the session's working folder, and the result proves that checkout's HEAD).
 // Claude Code keeps CLAUDE_PROJECT_DIR at the folder the session started in, while the payload's cwd follows the
 // session: after its EnterWorktree tool, CLAUDE_PROJECT_DIR is still the main checkout and cwd the worktree (measured
-// on 2.1.296). The checkout holding cwd is found as every hook finds a project (hookin.FindProjects: the nearest
-// folder at or above it holding bonsai.yaml), and it is the session's when it is a verified checkout of the session's
-// own project: its bonsai.yaml holds the same workspace id, its main checkout is verified (VerifyMain, as
-// CLAUDE_PROJECT_DIR's is), and that main checkout is main, the session's verified one: a worktree of it, or main
-// itself. ok is false, and CLAUDE_PROJECT_DIR's checkout (root) stays the one judged, for anything else: no cwd, a cwd
-// that is not an absolute folder there, one in no project or in another project, one in root itself, a checkout that
-// is not verified or whose main checkout is another. home is the Bonsai home; id the session's workspace id.
-func cwdCheckout(home, cwd, root, id, main string) (workspace.GitLayout, bool) {
+// on 2.1.296).
+//
+// The checkout holding cwd is the git checkout: the nearest folder at or above it holding a .git (checkoutTops), its
+// layout read by workspace.ReadGitLayout. It is the session's (ok) when git's own link ties it to main, the session's
+// verified main checkout: it is main itself, or a worktree whose .git names main's .git/worktrees/<name> and whose
+// gitdir there names it back (GitLayout.LinksBack), whatever its own bonsai.yaml says or whether it has one (a branch
+// made before the project was linked, a bonsai.yaml never committed): only its HEAD and its run report are read, and
+// the task and the result still come from main. CLAUDE_PROJECT_DIR's checkout (root) stays the one judged otherwise.
+// When cwd lies in a checkout git's link does not tie to the project (a worktree whose link back does not hold, another
+// repository, a .git Bonsai cannot read) while a checkout of the project holds it further up (root, main, or a folder
+// whose .git names main), it fails closed: also names that checkout, whose HEAD the result must prove as well as
+// root's. A cwd in no checkout, or in a repository outside every checkout of the project, leaves root's checkout
+// judged alone, as before; so do no cwd and a cwd that is not an absolute folder there.
+func cwdCheckout(cwd, root, main string) (layout workspace.GitLayout, ok bool, also *untied) {
+	var none workspace.GitLayout
 	if cwd == "" || !filepath.IsAbs(cwd) {
-		return workspace.GitLayout{}, false
+		return none, false, nil
 	}
-	roots, _, err := hookin.FindProjects(cwd)
-	if err != nil || len(roots) == 0 || sameFolder(roots[0], root) {
-		return workspace.GitLayout{}, false
+	if fi, err := os.Stat(cwd); err != nil || !fi.IsDir() {
+		return none, false, nil
 	}
-	cfg, err := workspace.LoadConfig(roots[0])
-	if err != nil || cfg.ID != id {
-		return workspace.GitLayout{}, false
+	tops := checkoutTops(filepath.Clean(cwd))
+	if len(tops) == 0 {
+		return none, false, nil
 	}
-	layout, trust := verify(home, roots[0], id)
-	if !trust.Verified || !sameFolder(layout.Main, main) {
-		return workspace.GitLayout{}, false
+	g := workspace.ReadGitLayout(tops[0])
+	named := g.Worktree() && sameFolder(g.Main, main) // its .git names main's git folder
+	switch {
+	case sameFolder(g.Root, root):
+		return none, false, nil
+	case sameFolder(g.Root, main) && !g.Worktree():
+		return g, true, nil
+	case named && g.LinksBack():
+		return g, true, nil
 	}
-	return layout, true
+	for i, top := range tops {
+		l := g
+		if i > 0 {
+			l = workspace.ReadGitLayout(top)
+		}
+		if !sameFolder(top, root) && !sameFolder(top, main) && !(l.Worktree() && sameFolder(l.Main, main)) {
+			continue
+		}
+		why := "another repository inside this project's checkout"
+		switch {
+		case g.GitDir == "":
+			why = "a checkout whose .git Bonsai cannot read"
+		case named:
+			why = "a checkout whose .git names this project's main checkout, though git's own link back (gitdir in its git " +
+				"folder) does not name it"
+		}
+		return none, false, &untied{layout: g, at: shown(g.Root, main, root), why: why}
+	}
+	return none, false, nil
+}
+
+// untied is a git checkout holding the session's working folder that git's own link does not tie to the project, inside
+// a checkout of the project (cwdCheckout): the result must prove its HEAD as well as the judged checkout's.
+type untied struct {
+	layout workspace.GitLayout // its git layout, read with no git process
+	at     string              // its folder as a reason prints it (shown)
+	why    string              // what it is, in words that follow its folder
+}
+
+// checkoutTops gives the folders at or above dir that hold a .git, nearest first: the git checkouts holding dir, as git
+// finds a checkout's top, each to be read by workspace.ReadGitLayout. Any .git ends a checkout here, one git itself
+// would not take as well (an empty folder, a stray file), and so does a folder where .git cannot be looked for: a
+// checkout Bonsai cannot read is never passed over (fail closed). It costs one Lstat per folder on the way.
+func checkoutTops(dir string) []string {
+	var tops []string
+	for d := dir; ; {
+		if _, err := os.Lstat(filepath.Join(d, ".git")); err == nil || !errors.Is(err, fs.ErrNotExist) {
+			tops = append(tops, d)
+		}
+		parent := filepath.Dir(d)
+		if parent == d {
+			return tops
+		}
+		d = parent
+	}
+}
+
+// shown gives a folder as a reason prints it: from the main checkout, or else from root, when it lies inside one of
+// them; else whole. Forward slashes.
+func shown(p, main, root string) string {
+	for _, base := range []string{main, root} {
+		rel, err := filepath.Rel(base, p)
+		if err == nil && rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) &&
+			!filepath.IsAbs(rel) {
+			return filepath.ToSlash(rel)
+		}
+	}
+	return filepath.ToSlash(p)
 }
 
 // sameFolder reports whether two folders are one: the same clean path (letter case ignored on Windows), or one folder
@@ -332,8 +405,9 @@ var judgeFn = judge
 
 // judge decides an engaged gate's answer once the main checkout is verified: the task, the run report, the ladder
 // result (the package's comment, steps 3 to 6). local names the session's checkout (Root) and the verified main
-// checkout (Main); layout is the session's checkout's git layout.
-func judge(local workspace.Local, layout workspace.GitLayout, named string) Decision {
+// checkout (Main); layout is the session's checkout's git layout; also, when not nil, a checkout holding the session's
+// working folder whose HEAD the result must prove too (cwdCheckout).
+func judge(local workspace.Local, layout workspace.GitLayout, also *untied, named string) Decision {
 	ladder := "run: bonsai ladder --task " + named
 	cfg, err := workspace.LoadConfigFull(local.Main)
 	if err != nil {
@@ -365,7 +439,7 @@ func judge(local workspace.Local, layout workspace.GitLayout, named string) Deci
 	if d, ok := runReport(local.Root, w, named); !ok {
 		return d
 	}
-	return result(local, layout, named, cfg.ID, want)
+	return result(local, layout, also, named, cfg.ID, want)
 }
 
 // taskRefusal is the block when the named task is not active: missing, named twice, or not parsing (contract §13).
@@ -486,8 +560,8 @@ func runReport(root string, w *format.Workspace, named string) (Decision, bool) 
 const maxResult = 32 << 20
 
 // result judges the task's ladder result in the main checkout against the session's checkout's HEAD (the package's
-// comment, step 6), and gives the decision. id is the workspace id.
-func result(local workspace.Local, layout workspace.GitLayout, named, id string, want []int64) Decision {
+// comment, step 6), and the HEAD of also when it is not nil, and gives the decision. id is the workspace id.
+func result(local workspace.Local, layout workspace.GitLayout, also *untied, named, id string, want []int64) Decision {
 	rel := workspace.LocalDir + "/ladder/" + named + ".json"
 	ladder := "run: bonsai ladder --task " + named
 	raw, err := readCapped(filepath.Join(local.Main, filepath.FromSlash(rel)), maxResult)
@@ -523,6 +597,19 @@ func result(local workspace.Local, layout workspace.GitLayout, named, id string,
 	if !strings.EqualFold(l.Git.SHA, head) {
 		return deny(RuleOtherCommit, rel, "the ladder result for "+named+" proves commit "+quote(short(l.Git.SHA))+", but this "+
 			"checkout's HEAD is "+short(head)+": it does not describe the code here now", "commit the work, then "+ladder+" at this HEAD")
+	}
+	if also != nil {
+		where := "the session's working folder is in " + also.at + ", " + also.why + ", so the ladder result for " + named +
+			" must prove its HEAD as well as this project's checkout's"
+		next := "cd back into this project's own checkout (the folder the session started in) and end the session there; a " +
+			"person runs git worktree repair in the main checkout when that folder is meant as one of its worktrees; then " + ladder
+		h, err := Head(also.layout)
+		if err != nil {
+			return deny(RuleHeadUnreadable, rel, where+", and that HEAD cannot be read from its git files ("+err.Error()+")", next)
+		}
+		if !strings.EqualFold(l.Git.SHA, h) {
+			return deny(RuleOtherCommit, rel, where+": it proves commit "+quote(short(l.Git.SHA))+", and that HEAD is "+short(h), next)
+		}
 	}
 	if l.Git.Dirty {
 		return deny(RuleDirty, rel, "the ladder result for "+named+" was made on a tree with uncommitted changes (git.dirty is "+

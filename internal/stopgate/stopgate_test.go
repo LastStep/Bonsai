@@ -617,7 +617,7 @@ func TestPayloadFaults(t *testing.T) {
 func TestOverTimeAndPanicBlock(t *testing.T) {
 	root := project(t)
 	defer func(f func()) { beforeWork = f }(beforeWork)
-	defer func(f func(workspace.Local, workspace.GitLayout, string) Decision) { judgeFn = f }(judgeFn)
+	defer func(f func(workspace.Local, workspace.GitLayout, *untied, string) Decision) { judgeFn = f }(judgeFn)
 
 	// Past the budget before anything is read: blocked, with no record (no workspace id to record under yet). The
 	// held run says it started before the test goes on, so the test's later changes to the hooks come after its read.
@@ -642,7 +642,7 @@ func TestOverTimeAndPanicBlock(t *testing.T) {
 	// panic only once each has reached its judgment, so none writes after its test.
 	beforeWork = func() {}
 	release2, entered := make(chan struct{}), make(chan struct{}, 64)
-	judgeFn = func(workspace.Local, workspace.GitLayout, string) Decision {
+	judgeFn = func(workspace.Local, workspace.GitLayout, *untied, string) Decision {
 		entered <- struct{}{}
 		<-release2
 		panic("let go")

@@ -226,6 +226,26 @@ func TestStopGateFixtures(t *testing.T) {
 					t.Errorf("entered, the allow's record: %s", schema.Show(r))
 				}
 				noLog(t, session)
+
+				// A worktree with no bonsai.yaml of its own (its branch made before the project was linked, or
+				// bonsai.yaml never committed) is the worktree all the same, by git's own link: kept going after a
+				// commit there, and allowed on a result proving its new HEAD.
+				testpack.Git(t, session, "rm", "-q", "bonsai.yaml")
+				testpack.Git(t, session, "commit", "-q", "-m", "no bonsai.yaml")
+				code, stderr = entered()
+				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", "bonsai ladder --task "+task)
+				l.Git.SHA = testpack.Git(t, session, "rev-parse", "HEAD")
+				if raw, err = l.Encode(); err != nil {
+					t.Fatal(err)
+				}
+				write(t, dir, at, string(raw))
+				code, stderr = entered()
+				if code != 0 || stderr != "" {
+					t.Fatalf("entered, no bonsai.yaml in the worktree, a green result proving its HEAD: exit %d %q", code, stderr)
+				}
+				if r := lastRecord(t, main); r.String("rule") != RuleProven || r.String("checkout") != "wt" {
+					t.Errorf("entered, no bonsai.yaml in the worktree, the allow's record: %s", schema.Show(r))
+				}
 			}
 		})
 	}
