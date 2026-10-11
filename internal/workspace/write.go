@@ -70,17 +70,17 @@ func CommitStaged(tmp, path string) error {
 // RemoveFile removes a file, retrying while Windows reports it busy, as renameRetry does; a file already gone is
 // no error.
 func RemoveFile(path string) error {
-	deadline := time.Now().Add(renameWait)
+	deadline := now().Add(renameWait)
 	delay := 5 * time.Millisecond
 	for {
 		err := remove(path)
 		if err == nil || os.IsNotExist(err) {
 			return nil
 		}
-		if !busy(err) || time.Now().After(deadline) {
+		if !busy(err) || now().After(deadline) {
 			return err
 		}
-		time.Sleep(delay)
+		sleep(delay)
 		if delay < 160*time.Millisecond {
 			delay *= 2
 		}
@@ -91,11 +91,15 @@ func RemoveFile(path string) error {
 // editor), for a caller that keeps its own retry, as the guard's log append does. It is never true on Linux or macOS.
 func IsBusy(err error) bool { return isBusy(err) }
 
-// rename and busy are variables so a test can stand in a busy Windows target on any system.
+// rename and busy are variables so a test can stand in a busy Windows target on any system; now and sleep are the
+// retries' clock, variables so a test counts a retry's tries against a clock of its own, never against the time a
+// loaded machine takes.
 var (
 	rename = os.Rename
 	remove = os.Remove
 	busy   = isBusy
+	now    = time.Now
+	sleep  = time.Sleep
 )
 
 // renameWait is how long renameRetry keeps trying while the target is busy (a variable for the tests).
@@ -105,14 +109,14 @@ var renameWait = 2 * time.Second
 // search indexer, an editor), for up to renameWait, waiting 5 ms and doubling to 160 ms. Any other error returns
 // at once.
 func renameRetry(from, to string) error {
-	deadline := time.Now().Add(renameWait)
+	deadline := now().Add(renameWait)
 	delay := 5 * time.Millisecond
 	for {
 		err := rename(from, to)
-		if err == nil || !busy(err) || time.Now().After(deadline) {
+		if err == nil || !busy(err) || now().After(deadline) {
 			return err
 		}
-		time.Sleep(delay)
+		sleep(delay)
 		if delay < 160*time.Millisecond {
 			delay *= 2
 		}

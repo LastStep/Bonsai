@@ -254,11 +254,32 @@ func TestOpenRetry(t *testing.T) {
 	if _, err := openRetry(path, os.O_WRONLY); err != other || calls != 1 {
 		t.Errorf("another error: %v after %d calls", err, calls)
 	}
-	openWait = 30 * time.Millisecond
-	openFile = func(string, int, os.FileMode) (*os.File, error) { return nil, errBusy }
-	began := time.Now()
-	if _, err := openRetry(path, os.O_WRONLY); err != errBusy || time.Since(began) > 2*time.Second {
-		t.Errorf("busy forever: %v after %v", err, time.Since(began))
+	// Busy forever: it gives up once openWait has passed, its tries counted against a clock of the test's own (a sleep
+	// moves it on at once), never against the time a loaded machine takes. The schedule: 5 ms, doubling to 80 ms, until a
+	// try finds the 1 s wait passed: tries at 0, 5, 15, 35, 75 and 155 ms, then every 80 ms to 1,035 ms, 17 in all.
+	defer func(n func() time.Time, s func(time.Duration)) { now, sleep = n, s }(now, sleep)
+	at := time.Date(2026, 10, 11, 9, 0, 0, 0, time.UTC)
+	var slept []time.Duration
+	now = func() time.Time { return at }
+	sleep = func(d time.Duration) { slept = append(slept, d); at = at.Add(d) }
+	if openWait != time.Second {
+		t.Fatalf("openWait is %v; this schedule is for 1s", openWait)
+	}
+	calls = 0
+	openFile = func(string, int, os.FileMode) (*os.File, error) { calls++; return nil, errBusy }
+	if _, err := openRetry(path, os.O_WRONLY); err != errBusy || calls != 17 || len(slept) != 16 {
+		t.Fatalf("busy forever: %v after %d tries and %d sleeps, want 17 and 16 (%v)", err, calls, len(slept), slept)
+	}
+	var total time.Duration
+	for i, d := range slept {
+		want := []time.Duration{5, 10, 20, 40, 80}[min(i, 4)] * time.Millisecond
+		if d != want {
+			t.Errorf("sleep %d was %v, want %v", i, d, want)
+		}
+		total += d
+	}
+	if total <= openWait || total-slept[len(slept)-1] > openWait {
+		t.Errorf("gave up after %v of sleep: want the last try the first past %v", total, openWait)
 	}
 	// Through Append, a file busy for longer than the wait is an error, and nothing is written.
 	main := t.TempDir()

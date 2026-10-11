@@ -37,12 +37,15 @@ const (
 )
 
 // openWait is how long an append keeps retrying while Windows reports its file busy; openFile opens it; busy tells a
-// busy error; ensureGitignore restores .bonsai/.gitignore. Variables for the tests.
+// busy error; ensureGitignore restores .bonsai/.gitignore; now and sleep are the retry's clock. Variables for the
+// tests, which count a retry's tries against a clock of their own.
 var (
 	openWait        = time.Second
 	openFile        = os.OpenFile
 	busy            = workspace.IsBusy
 	ensureGitignore = workspace.EnsureGitignore
+	now             = time.Now
+	sleep           = time.Sleep
 )
 
 // Append appends one line to the file rel (forward slashes, inside .bonsai/local/: "log/s-<session>.ndjson") of the
@@ -111,14 +114,14 @@ func appendLine(path string, line []byte) (bool, error) {
 
 // openRetry opens a file, retrying while Windows reports it busy, for up to openWait: 5 ms, doubling to 80 ms.
 func openRetry(name string, flag int) (*os.File, error) {
-	deadline := time.Now().Add(openWait)
+	deadline := now().Add(openWait)
 	delay := 5 * time.Millisecond
 	for {
 		f, err := openFile(name, flag, 0o644)
-		if err == nil || !busy(err) || time.Now().After(deadline) {
+		if err == nil || !busy(err) || now().After(deadline) {
 			return f, err
 		}
-		time.Sleep(delay)
+		sleep(delay)
 		if delay < 80*time.Millisecond {
 			delay *= 2
 		}

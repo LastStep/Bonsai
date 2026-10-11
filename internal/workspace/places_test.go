@@ -181,10 +181,67 @@ func TestRemoveFile(t *testing.T) {
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Errorf("the file is still there")
 	}
+	// Busy forever: it gives up once renameWait has passed, counted against a clock of the test's own.
+	c := useFakeClock(t)
+	calls = 0
+	remove = func(string) error { calls++; return errBusy }
+	if err := RemoveFile(path); err != errBusy {
+		t.Errorf("busy forever: %v", err)
+	}
+	c.check(t, "RemoveFile", calls)
 }
 
-// renameRetry waits out a busy target, gives up on any other error at once, and stops after renameWait. The busy
-// error is stood in, so this runs on every system; TestRenameRetryOnWindows meets a real one.
+// fakeClock stands in for the retries' clock (now and sleep): a sleep moves its time on at once, so a retry's tries
+// are counted against it, never against the time a loaded machine takes.
+type fakeClock struct {
+	at    time.Time
+	slept []time.Duration
+}
+
+// useFakeClock puts a fake clock in place of now and sleep for the rest of the test.
+func useFakeClock(t *testing.T) *fakeClock {
+	t.Helper()
+	saved, savedSleep := now, sleep
+	t.Cleanup(func() { now, sleep = saved, savedSleep })
+	c := &fakeClock{at: time.Date(2026, 10, 11, 9, 0, 0, 0, time.UTC)}
+	now = func() time.Time { return c.at }
+	sleep = func(d time.Duration) { c.slept = append(c.slept, d); c.at = c.at.Add(d) }
+	return c
+}
+
+// check holds a retry that was busy on every try to renameWait's schedule (5 ms, doubling to 160 ms, until a try
+// finds renameWait passed): with the default 2 s, tries at 0, 5, 15, 35, 75 and 155 ms, then every 160 ms to 2,075 ms,
+// 18 in all; the last sleep ends past the wait and the one before does not.
+func (c *fakeClock) check(t *testing.T, what string, tries int) {
+	t.Helper()
+	if renameWait != 2*time.Second {
+		t.Fatalf("renameWait is %v; this schedule is for 2s", renameWait)
+	}
+	want := []time.Duration{5, 10, 20, 40, 80, 160}
+	for len(want) < 17 {
+		want = append(want, 160)
+	}
+	for i := range want {
+		want[i] *= time.Millisecond
+	}
+	if tries != 18 || len(c.slept) != 17 {
+		t.Fatalf("%s busy forever: %d tries and %d sleeps, want 18 and 17 (%v)", what, tries, len(c.slept), c.slept)
+	}
+	var total time.Duration
+	for i, d := range c.slept {
+		if d != want[i] {
+			t.Errorf("%s: sleep %d was %v, want %v", what, i, d, want[i])
+		}
+		total += d
+	}
+	if total <= renameWait || total-c.slept[len(c.slept)-1] > renameWait {
+		t.Errorf("%s gave up after %v of sleep: want the last try the first past %v", what, total, renameWait)
+	}
+}
+
+// renameRetry waits out a busy target, gives up on any other error at once, and stops after renameWait, its tries
+// counted against a fake clock. The busy error is stood in, so this runs on every system; TestRenameRetryOnWindows
+// meets a real one.
 func TestRenameRetry(t *testing.T) {
 	defer func(r func(string, string) error, b func(error) bool, w time.Duration) {
 		rename, busy, renameWait = r, b, w
@@ -208,12 +265,14 @@ func TestRenameRetry(t *testing.T) {
 	if err := renameRetry("a", "b"); err != other || calls != 1 {
 		t.Errorf("another error: %v after %d calls", err, calls)
 	}
-	renameWait = 30 * time.Millisecond
-	rename = func(string, string) error { return errBusy }
-	start := time.Now()
-	if err := renameRetry("a", "b"); err != errBusy || time.Since(start) > 2*time.Second {
-		t.Errorf("busy forever: %v after %v", err, time.Since(start))
+	// Busy forever: it gives up once renameWait has passed, counted against a clock of the test's own.
+	c := useFakeClock(t)
+	calls = 0
+	rename = func(string, string) error { calls++; return errBusy }
+	if err := renameRetry("a", "b"); err != errBusy {
+		t.Errorf("busy forever: %v", err)
 	}
+	c.check(t, "renameRetry", calls)
 }
 
 // A target another process holds open: on Windows a rename over it fails busy until it is closed, and the write
