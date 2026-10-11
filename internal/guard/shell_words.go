@@ -90,6 +90,22 @@ var DeleteWords = []DeleteWord{
 		Deletes: "moves its source onto a new name beside it"},
 }
 
+// delSplitWords splits env -S's text into words, as one command's (bash's quoting): ok is false when it does not
+// split into one simple command.
+func delSplitWords(text string, depth int) ([]shWord, bool) {
+	l, why := shSplit(text, shBash, depth+1)
+	if why != "" || len(l.cmds) != 1 || l.cmds[0].group != nil || len(l.cmds[0].nested) > 0 {
+		return nil, false
+	}
+	return delExpandAlts(l.cmds[0].words), true
+}
+
+// delSValue reports whether words[k] is the value of an -S (or --split-string) written as the word before it.
+func delSValue(words []shWord, k int) bool {
+	p := words[k-1].text
+	return p == "-S" || p == "--split-string" || strings.HasPrefix("--split-string", p) && len(p) > 3
+}
+
 // delParseWord gives the reading of a delete word of the table (git's are read by delRun.git).
 func delParseWord(word string) func(r *delRun, x delExec, words []shWord) []delAct {
 	switch word {
@@ -393,16 +409,10 @@ func delBonsai(t string) bool {
 }
 
 // bonsaiCall gives one bonsai call to the guard's judgment of Bonsai's own commands (commands.go's ownCommand),
-// in each folder it may run in, or in the session's project folder when that cannot be told (5.3.2 note 7). A call
-// whose words come from xargs's input is a person's step: the check cannot see whether they hold --allow-exec or
-// unlink.
+// in each folder it may run in, or in the session's project folder when that cannot be told (5.3.2 note 7). Under
+// xargs its visible words are judged; what xargs adds from its input is the command's own refusal to make (step 5.3.6
+// note 8).
 func (r *delRun) bonsaiCall(x delExec) {
-	if x.feed != "" || r.feed != "" {
-		r.envStep("runs bonsai with words from " + x.feed + r.feed + "'s input, which the check cannot see")
-		if r.deny != nil {
-			return
-		}
-	}
 	argv := make([]string, len(x.words))
 	for k, w := range x.words {
 		argv[k] = w.text
@@ -482,9 +492,40 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 	switch rn.Word {
 	case "env":
 		if s := g.val("S", "split-string"); len(s) > 0 {
-			r.text(s[0].text+" "+delJoin(words[g.rest:], false), shBash, x.depth+1, x.dirs, x.loop)
-			return x, false
+			// -S's text is more of env's own words (its options, assignments, then the program): read them again as
+			// env's, ahead of the words that follow.
+			more, ok := delSplitWords(s[0].text, x.depth)
+			if !ok {
+				r.text(s[0].text+" "+delJoin(words[g.rest:], false), shBash, x.depth+1, x.dirs, x.loop)
+				return x, false
+			}
+			var again []shWord
+			for k, w := range words {
+				if k >= g.rest {
+					break
+				}
+				if t := w.text; t != "-S" && !strings.HasPrefix(t, "-S") && !strings.HasPrefix(t, "--s") && (k == 0 || !delSValue(words, k)) {
+					again = append(again, w)
+				}
+			}
+			x.words = append(append(append([]shWord{x.words[0]}, again...), more...), words[g.rest:]...)
+			return x, true
 		}
+		// env's own NAME=value words, up to its program, on their quote-free text (env reads 'NAME=' as one too).
+		k := g.rest
+		for k < len(words) && strings.Contains(words[k].text, "=") && !strings.HasPrefix(words[k].text, "=") {
+			_, value, _ := strings.Cut(words[k].text, "=")
+			switch {
+			case envAssigns(words[k].text):
+				r.envStep("assigns " + ChildSessionEnv + " (env)")
+				return x, false
+			case envAsData(value):
+				r.envStep("puts the name " + ChildSessionEnv + " in a variable, which the check cannot follow")
+				return x, false
+			}
+			k++
+		}
+		g.rest = k
 	}
 	for _, o := range rn.dir {
 		for _, v := range g.vals[o] {
@@ -890,11 +931,17 @@ func (r *delRun) cd(x delExec, kind int) delCd {
 func (r *delRun) cdTo(dirs delDirs, w shWord, d shDialect) delDirs {
 	t := w.text
 	if w.expand || w.glob || w.splat || len(w.alts) > 0 || t == "" || t == "-" || d == shBash && (strings.HasPrefix(t, "+") ||
-		strings.HasPrefix(t, "-") || t == "~-" || strings.HasPrefix(t, "~-/")) {
+		strings.HasPrefix(t, "-")) {
 		return delDirs{unknown: true}
 	}
-	if d == shBash && (t == "~+" || strings.HasPrefix(t, "~+/")) {
-		t = "." + t[2:] // ~+ is the folder it runs in
+	if d == shBash && strings.HasPrefix(t, "~") {
+		head, rest, _ := strings.Cut(t[1:], "/")
+		switch here, ok := delTildeStack(head); {
+		case ok && here:
+			t = "./" + rest // ~+, ~0: the folder it runs in
+		case ok:
+			return delDirs{unknown: true} // ~-, ~N: a folder the check cannot tell
+		}
 	}
 	if d != shBash && strings.ContainsRune(t, '\\') && !strings.ContainsRune(t, ':') && delSlashOS() {
 		t = strings.ReplaceAll(t, `\`, "/")
@@ -1359,6 +1406,9 @@ func (r *delRun) git(x delExec) (delExec, []delAct) {
 		case "--git-dir", "--work-tree":
 			x.dirs.unknown = true
 			i += 2
+		case "--icase-pathspecs":
+			x.icase = true
+			i++
 		default:
 			if strings.HasPrefix(t, "--git-dir=") || strings.HasPrefix(t, "--work-tree=") {
 				x.dirs.unknown = true

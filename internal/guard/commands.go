@@ -150,11 +150,11 @@ func (j *judge) personGrant(top string) string {
 }
 
 // checkoutTop is the top of the checkout holding dir, as git finds it: the nearest folder at or above it holding a
-// .git; dir itself when none does.
+// .git git takes as one (gitEntry); dir itself when none does.
 func checkoutTop(dir string) string {
 	dir = filepath.Clean(dir)
 	for d := dir; ; {
-		if _, err := os.Lstat(filepath.Join(d, ".git")); err == nil {
+		if gitEntry(filepath.Join(d, ".git")) {
 			return d
 		}
 		parent := filepath.Dir(d)
@@ -163,6 +163,31 @@ func checkoutTop(dir string) string {
 		}
 		d = parent
 	}
+}
+
+// gitEntry reports a .git git itself takes as one: a file naming the repository (gitdir: ...), or a folder holding HEAD,
+// objects and refs. Any other .git (an empty folder, a stray file) does not end the walk up to a checkout's top.
+func gitEntry(p string) bool {
+	fi, err := os.Stat(p)
+	if err != nil {
+		return false
+	}
+	if !fi.IsDir() {
+		b := make([]byte, 8)
+		f, err := os.Open(p)
+		if err != nil {
+			return false
+		}
+		n, _ := f.Read(b)
+		_ = f.Close()
+		return string(b[:n]) == "gitdir: "
+	}
+	for _, need := range []string{"HEAD", "objects", "refs"} {
+		if _, err := os.Stat(filepath.Join(p, need)); err != nil {
+			return false
+		}
+	}
+	return true
 }
 
 // personStep judges a person's step the delete check found in a shell call (shell_env.go: a change of

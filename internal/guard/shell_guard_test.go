@@ -51,6 +51,7 @@ func delRealFixture(t *testing.T) string {
 	files := map[string]string{
 		"proj/bonsai.yaml": delRealYAML, "proj/.bonsai/STATE.md": "x\n",
 		"proj/.bonsai/local/log/old.ndjson": "", "proj/.bonsai/tasks.md": "x\n", "proj/.git/HEAD": "ref: refs/heads/main\n",
+		"proj/.git/objects/.keep": "", "proj/.git/refs/.keep": "", "proj/plant/.git/.keep": "", "proj/plant/sub/x.txt": "x\n",
 		"proj/.claude/settings.json": "{}\n", "proj/.claude/notes.md": "x\n", "proj/docs/secret/plan.md": "x\n",
 		"proj/docs/readme.md": "x\n", "proj/config/app.key": "x\n", "proj/config/app.yaml": "x\n", "proj/notes/a.md": "x\n",
 		"proj/src/main.go": "x\n", "proj/build/out/x.o": "x\n", "proj/junk/one.txt": "x\n", "proj/junk/two.txt": "x\n",

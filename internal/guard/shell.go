@@ -110,7 +110,7 @@ func shellDecide(tool, command, cwd, base string, j delJudge) Decision {
 	if tool == "PowerShell" {
 		d = shPower
 	}
-	r := &delRun{tool: tool, j: j, own: base, base: base}
+	r := &delRun{tool: tool, j: j, own: base, base: base, icase: strings.Contains(strings.ToUpper(command), "GIT_ICASE_PATHSPECS")}
 	if cwd != "" && filepath.IsAbs(cwd) {
 		r.base = filepath.Clean(cwd)
 	}
@@ -143,6 +143,7 @@ type delRun struct {
 	first    string    // the first operand judged, project-relative, for an allow's target
 	firstSet bool      // first is set (it may be "": an operand outside the project)
 	feed     string    // set while splitting text a shell runs under xargs: its deletes' operands come from input
+	icase    bool      // the line names GIT_ICASE_PATHSPECS: git may read every pathspec case-blind
 	deny     *Decision // the first refusal
 
 	roots     []judgedRoot // the folders a delete is judged in, read once, when a delete first needs them
@@ -343,6 +344,7 @@ type delExec struct {
 	loop  bool     // inside a loop's body
 	feed  string   // set when a runner feeds the program its operands from input ("xargs"), which the check cannot see
 	find  bool     // run by find -exec: its own operands are a bulk delete's
+	icase bool     // git was given --icase-pathspecs
 	piped bool     // fed by a pipe
 	stdin []string // text fed to it: here-documents, here-strings, a literal piped in
 }
@@ -388,7 +390,6 @@ func (r *delRun) simple(c *shCommand, d shDialect, depth int, dirs delDirs, loop
 		}
 	case shPower:
 		r.envPSAssign(words)
-		r.envPSData(words)
 		words = delPSAssign(words)
 		for len(words) > 0 && !words[0].quoted && (words[0].text == "&" || words[0].text == ".") {
 			words = words[1:]
@@ -533,6 +534,14 @@ func (r *delRun) judge(a delAct, x delExec) {
 			op := &list[k]
 			if x.d == shBash {
 				delTildeOp(op)
+			}
+			if op.git && (r.icase || x.icase) {
+				r.refuse(Decision{Rule: RuleDeleteUnnamed, Target: r.target(x.dirs, *op),
+					Why: fmt.Sprintf("%s refused: %s does not name what it %s: git reads its pathspecs case-blind here "+
+						"(--icase-pathspecs or GIT_ICASE_PATHSPECS), which the check does not read (rule %s)", r.tool,
+						r.head(x), verb, RuleDeleteUnnamed),
+					Next: "run the git command without --icase-pathspecs or GIT_ICASE_PATHSPECS, naming the paths as they are"})
+				return
 			}
 			if !op.git || !strings.HasPrefix(op.text, ":") {
 				continue
@@ -742,24 +751,45 @@ func delGitMagic(op *delOp) string {
 }
 
 // delTildeOp reads bash's tilde forms in an operand: ~+ is the command's folder ($PWD), so ~+/x is x there; ~- is the
-// previous folder ($OLDPWD), which the check cannot tell (away); ~name/x is x in the home folder when name is the
-// home folder's own (delTildeUser).
+// previous folder ($OLDPWD), which the check cannot tell (away); of the folder stack's forms, ~0, ~+0 and ~-0 are the
+// command's folder and ~N, ~+N, ~-N for any other N folders the check cannot tell; ~name/x is x in the home folder
+// when name is the home folder's own (delTildeUser).
 func delTildeOp(op *delOp) {
 	t := op.text
-	switch {
-	case t == "~+" || t == "~+/":
-		op.text = "."
-	case strings.HasPrefix(t, "~+/"):
-		op.text = t[3:]
-	case t == "~-" || t == "~-/":
-		op.text, op.away = ".", true
-	case strings.HasPrefix(t, "~-/"):
-		op.text, op.away = t[3:], true
-	case strings.HasPrefix(t, "~") && !strings.HasPrefix(t, "~/") && strings.Contains(t, "/"):
+	if !strings.HasPrefix(t, "~") {
+		return
+	}
+	head, rest, slashed := strings.Cut(t[1:], "/")
+	rel := "."
+	if slashed {
+		rel = "./" + rest // never the root: ~+//x is x in the folder
+	}
+	switch here, ok := delTildeStack(head); {
+	case ok && here:
+		op.text = rel
+	case ok:
+		op.text, op.away = rel, true
+	case slashed && head != "":
 		if abs := delTildeUser("", t); abs != "" {
 			op.text = abs
 		}
 	}
+}
+
+// delTildeStack reads a tilde's word as bash's folder stack does: ok for +, -, +N, -N and N; here when it is the
+// command's folder (+, 0, +0, -0), not when it is another the check cannot tell (-, and any other N).
+func delTildeStack(head string) (here, ok bool) {
+	switch head {
+	case "+", "0", "+0", "-0":
+		return true, true
+	case "-":
+		return false, true
+	}
+	n := strings.TrimLeft(head, "+-")
+	if n == "" || len(head)-len(n) > 1 || strings.Trim(n, "0123456789") != "" {
+		return false, false
+	}
+	return false, true
 }
 
 func delVerb(move bool) string {

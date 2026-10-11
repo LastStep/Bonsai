@@ -152,44 +152,93 @@ func envProviderPath(t string) bool {
 	}
 }
 
-// envPSAssign judges PowerShell's $env:NAME = ... (with any assignment operator, the = written with or apart from
-// the name), before the assignment's left side is dropped (delPSAssign).
-func (r *delRun) envPSAssign(words []shWord) {
-	if len(words) == 0 || words[0].quoted {
-		return
-	}
-	t := strings.ToLower(words[0].text)
-	left, _, glued := strings.Cut(t, "=")
-	left = strings.TrimRight(left, "+-*/%?")
-	if left != "$env:"+envName && left != "${env:"+envName+"}" {
-		return
-	}
-	if glued || len(words) >= 2 && strings.HasSuffix(words[1].text, "=") {
-		r.envStep("assigns " + ChildSessionEnv)
-	}
+// psAssign is one PowerShell assignment among a command's words: its left side (lower case, as written: $env:name,
+// ${env:name}, $x) and the texts of what it assigns.
+type psAssign struct {
+	left  string
+	right []string
 }
 
-// envPSData judges PowerShell's $x = ... whose right side holds the variable's name as data ($n =
-// 'CLAUDE_CODE_CHILD_SESSION'; Remove-Item "Env:$n"), which the check cannot follow.
-func (r *delRun) envPSData(words []shWord) {
-	if len(words) < 2 || words[0].quoted || !strings.HasPrefix(words[0].text, "$") {
-		return
+// envPSAssigns finds PowerShell's assignments among a command's words, wherever they stand (chained too: $x =
+// $env:NAME = 'v'): a word whose written form starts with a variable, then an assignment operator (=, +=, -=, *=,
+// /=, %=, ??=) glued to it or written as the next word. What follows the operator, quoted or not, is what it assigns.
+func envPSAssigns(words []shWord) []psAssign {
+	var out []psAssign
+	for k, w := range words {
+		raw := strings.ToLower(w.raw)
+		if !strings.HasPrefix(raw, "$") {
+			continue
+		}
+		v := envPSVariable(raw)
+		if v == "" {
+			continue
+		}
+		rest := raw[len(v):]
+		op := envPSOperator(rest)
+		var right []string
+		switch {
+		case op != "":
+			_, after, _ := strings.Cut(w.text, "=")
+			right = append(right, after)
+			for _, x := range words[k+1:] {
+				right = append(right, x.text)
+			}
+		case rest == "" && k+1 < len(words) && !words[k+1].quoted && envPSOperator(words[k+1].text) == words[k+1].text:
+			for _, x := range words[k+2:] {
+				right = append(right, x.text)
+			}
+		default:
+			continue
+		}
+		out = append(out, psAssign{left: v, right: right})
+	}
+	return out
+}
+
+// envPSVariable gives the variable a written PowerShell word starts with: ${...} up to its brace, or $ and the
+// characters of a name (letters, digits, _, and : for a scope or drive such as env:); "" for none.
+func envPSVariable(raw string) string {
+	if strings.HasPrefix(raw, "${") {
+		if end := strings.IndexByte(raw, '}'); end > 0 {
+			return raw[:end+1]
+		}
+		return ""
 	}
 	k := 1
-	if strings.Contains(words[0].text, "=") {
-		k = 0
-	} else if !strings.HasSuffix(words[1].text, "=") {
-		return
+	for k < len(raw) && (shNameChar(raw[k]) || raw[k] == ':') {
+		k++
 	}
-	for _, w := range words[k:] {
-		t := w.text
-		if k == 0 {
-			_, t, _ = strings.Cut(t, "=")
-			k = -1
+	if k == 1 {
+		return ""
+	}
+	return raw[:k]
+}
+
+// envPSOperator gives the assignment operator a text starts with, "" for none (== is a comparison).
+func envPSOperator(t string) string {
+	for _, op := range []string{"??=", "+=", "-=", "*=", "/=", "%=", "="} {
+		if strings.HasPrefix(t, op) && !strings.HasPrefix(t, "==") {
+			return op
 		}
-		if envAsData(t) {
-			r.envStep("puts the name " + ChildSessionEnv + " in a variable, which the check cannot follow")
+	}
+	return ""
+}
+
+// envPSAssign judges PowerShell's assignments among a command's words, before its left side is dropped
+// (delPSAssign): one of the variable ($env:NAME, ${env:NAME}, any letter case, any operator, the value quoted or
+// not); one of another variable whose value holds the name as data ($n = 'CLAUDE_CODE_CHILD_SESSION'; Remove-Item
+// "Env:$n"), which the check cannot follow.
+func (r *delRun) envPSAssign(words []shWord) {
+	for _, a := range envPSAssigns(words) {
+		if a.left == "$env:"+envName || a.left == "${env:"+envName+"}" {
+			r.envStep("assigns " + ChildSessionEnv)
 			return
+		}
+		for _, t := range a.right {
+			if envAsData(t) {
+				r.envStep("puts the name " + ChildSessionEnv + " in a variable, which the check cannot follow")
+				return
+			}
 		}
 	}
 }
