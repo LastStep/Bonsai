@@ -32,7 +32,12 @@ never_edit: []
 `
 
 // delRealAnswers are the rows the real judge answers otherwise than the stub, with why.
-var delRealAnswers = map[string]struct{ rule, why string }{}
+var delRealAnswers = map[string]struct{ rule, why string }{
+	"Bash echo --allow-exec | xargs bonsai update": {RulePersonOnly, "the real judge reads bonsai update as an edit of " +
+		"bonsai.yaml, person-only here, before what xargs's input adds"},
+	"Bash echo --allow-exec | xargs bonsai init --yes": {RulePersonOnly, "the real judge reads bonsai init as an edit of " +
+		"bonsai.yaml, person-only here, before what xargs's input adds"},
+}
 
 // delRealFixture makes the real projects: proj (the session's, recorded), other (another project, recorded) and a home
 // folder holding Bonsai's home; it gives proj's folder.

@@ -234,7 +234,8 @@ var RunnerWords = []RunnerWord{
 	{Word: "timeout", in: delInBash, Does: "its options and its duration skipped",
 		opt: delOpt{short: "v", shortVal: "sk", long: []string{"preserve-status", "foreground", "verbose"},
 			longVal: []string{"signal", "kill-after"}}},
-	{Word: "xargs", in: delInBash, Does: "its options skipped; a delete it runs takes its operands from input, so it does not name them",
+	{Word: "xargs", in: delInBash, Does: "its options skipped; a delete it runs takes its operands from input, so it does not name them; " +
+		"a bonsai call it runs is a person's step unless its own words settle a command that is not a person's",
 		opt: delOpt{short: "0prtxeil", shortVal: "adEILnPs", long: []string{"null", "no-run-if-empty", "interactive",
 			"verbose", "exit", "open-tty", "show-limits"}, longVal: []string{"arg-file", "delimiter", "max-args", "max-lines",
 			"max-procs", "max-chars", "process-slot-var"}, longOpt: []string{"eof", "replace"}}},
@@ -451,8 +452,8 @@ func delBonsai(t string) bool {
 
 // bonsaiCall gives one bonsai call to the guard's judgment of Bonsai's own commands (commands.go's ownCommand),
 // in each folder it may run in, or in the session's project folder when that cannot be told (5.3.2 note 7). Under
-// xargs its visible words are judged; what xargs adds from its input is the command's own refusal to make (step 5.3.6
-// note 8).
+// xargs, directly or through a shell's text xargs runs, it is allowed only when its own words settle a command that
+// is not a person's (delFedBonsai); else it is a person's step.
 func (r *delRun) bonsaiCall(x delExec) {
 	argv := make([]string, len(x.words))
 	for k, w := range x.words {
@@ -468,7 +469,32 @@ func (r *delRun) bonsaiCall(x delExec) {
 			return
 		}
 	}
+	if x.feed != "" || r.feed != "" {
+		if why := delFedBonsai(x.words, argv, append(append([]string(nil), x.places...), r.places...)); why != "" {
+			if r.envStep("runs bonsai under xargs " + why + ", so what xargs's input adds could make it a person's " +
+				"command"); r.deny != nil {
+				return
+			}
+		}
+	}
 	r.bonsai = true
+}
+
+// delFedBonsai says why a bonsai call xargs runs is open to its input, "" when its own words settle a command that
+// is not a person's: a word holding a text xargs's input replaces (places: {} and -I's), or a variable or
+// substitution, stands for one of its words; or its words leave the command open (commands.go's ownOpen).
+func delFedBonsai(words []shWord, argv, places []string) string {
+	for _, w := range words {
+		if w.expand || w.splat {
+			return "with a word a variable or substitution stands for"
+		}
+		for _, p := range places {
+			if p != "" && strings.Contains(w.text, p) {
+				return "with a word its input replaces (" + oneLine(p) + ")"
+			}
+		}
+	}
+	return ownOpen(argv)
 }
 
 // delCmdGlued splits a cmd.exe program glued to its options (rd/s/q) into its words.
@@ -571,6 +597,10 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 		}
 	case "xargs":
 		x.feed = "xargs"
+		x.places = append(x.places, "{}") // -i's and --replace's own, and a {} xargs may replace
+		for _, v := range g.val("I", "replace") {
+			x.places = append(x.places, v.text)
+		}
 	case "wsl", "watch":
 		x.d = shBash
 		if !g.has("e", "exec") && rn.Word == "wsl" || !g.has("x", "exec") && rn.Word == "watch" {
@@ -638,8 +668,8 @@ func (r *delRun) unknownProgram(x delExec) {
 // xargs's input on to the deletes in its text.
 func (r *delRun) shell(name string, x delExec) bool {
 	if x.feed != "" && r.feed == "" {
-		r.feed = x.feed
-		defer func() { r.feed = "" }()
+		r.feed, r.places = x.feed, x.places
+		defer func() { r.feed, r.places = "", nil }()
 	}
 	switch {
 	case delBashNames[name]:

@@ -516,7 +516,7 @@ Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps
 | `stdbuf` | bash | its options skipped |
 | `time` | bash | its options skipped |
 | `timeout` | bash | its options and its duration skipped |
-| `xargs` | bash | its options skipped; a delete it runs takes its operands from input, so it does not name them |
+| `xargs` | bash | its options skipped; a delete it runs takes its operands from input, so it does not name them; a bonsai call it runs is a person's step unless its own words settle a command that is not a person's |
 | `busybox` | bash | skipped: the word after it is the program |
 | `chronic` | bash | skipped |
 | `unbuffer` | bash | skipped |

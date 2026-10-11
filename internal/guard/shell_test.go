@@ -671,8 +671,8 @@ var delTable = []delRow{
 	{tP, "", "bonsai labels attach \"x", RuleHomeCommand, ""},
 	{tB, "", `find . -name x -exec bonsai unlink \;`, RulePersonCommand, ""},
 	{tB, "", "find . -execdir bonsai update --allow-exec {} +", RulePersonCommand, ""},
-	{tB, "", "ls | xargs bonsai", RuleBonsaiCommand, ""},
-	{tB, "", "echo unlink | xargs -n1 bonsai", RuleBonsaiCommand, ""},
+	{tB, "", "ls | xargs bonsai", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -n1 bonsai", RulePersonCommand, ""},
 	{tB, "", `find build -exec bonsai status \;`, RuleBonsaiCommand, ""},
 
 	// --- V2b's fix round (8d87bc5): PowerShell's assignment written with its value, env's quoted NAME=value and -S
@@ -788,6 +788,36 @@ var delTable = []delRow{
 	{tP, "", "$x = $y = bonsai unlink", RulePersonCommand, ""},
 	{tP, "", "$x =Remove-Item build/out/x.o", RuleDeleteNamed, ""},
 	{tP, "", "$files =Get-ChildItem *.log; $n =5", RuleShell, ""},
+
+	// --- V2c's fix round (93167be): bonsai under xargs allowed only when its own words settle a command that is not
+	// a person's (W2's opening closed): none when they are empty, hold a word xargs's input or a variable stands for,
+	// or leave settings or labels without a subcommand, or name init, update or unlink.
+	{tB, "", "echo unlink | xargs bonsai", RulePersonCommand, ""},
+	{tB, "", `printf 'unlink\n' | xargs bonsai`, RulePersonCommand, ""},
+	{tB, "", "xargs bonsai <<< unlink", RulePersonCommand, ""},
+	{tB, "", "xargs bonsai <<EOF\nunlink\nEOF", RulePersonCommand, ""},
+	{tB, "", "xargs -a list.txt bonsai", RulePersonCommand, ""},
+	{tB, "", "xargs --arg-file=list.txt bonsai", RulePersonCommand, ""},
+	{tB, "", "xargs bonsai < list.txt", RulePersonCommand, ""},
+	{tB, "", "cat list.txt | xargs bonsai", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -I{} bonsai {}", RulePersonCommand, ""},
+	{tB, "", "echo x | xargs -I% bonsai % unlink", RulePersonCommand, ""},
+	{tB, "", "echo x | xargs --replace=@@ bonsai status @@", RulePersonCommand, ""},
+	{tB, "", "echo set | xargs bonsai settings", RulePersonCommand, ""},
+	{tB, "", "echo attach | xargs bonsai labels --json", RulePersonCommand, ""},
+	{tB, "", `echo unlink | xargs sh -c 'bonsai "$@"' _`, RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs bash -c 'bonsai $0'", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -I{} sh -c 'bonsai {}'", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs xargs bonsai", RulePersonCommand, ""},
+	{tB, "", "echo --allow-exec | xargs bonsai update", RulePersonCommand, ""},
+	{tB, "", "echo --allow-exec | xargs bonsai init --yes", RulePersonCommand, ""},
+	{tB, "", "echo status | xargs -n1 bonsai --json", RulePersonCommand, ""},
+	{tB, "", "xargs bonsai status", RuleBonsaiCommand, ""},
+	{tB, "", "find . -name '*.yaml' | xargs bonsai check", RuleBonsaiCommand, ""},
+	{tB, "", "xargs bonsai settings get", RuleBonsaiCommand, ""},
+	{tB, "", "xargs bonsai labels list --json", RuleBonsaiCommand, ""},
+	{tB, "", "ls | xargs sh -c 'bonsai status'", RuleBonsaiCommand, ""},
+	{tB, "", "echo x | xargs xargs bonsai check", RuleBonsaiCommand, ""},
 
 	// --- A line the check cannot split.
 	{tB, "", "rm -rf 'junk", RuleDeleteUnsplit, ""},

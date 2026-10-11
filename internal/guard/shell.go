@@ -144,6 +144,7 @@ type delRun struct {
 	first    string    // the first operand judged, project-relative, for an allow's target
 	firstSet bool      // first is set (it may be "": an operand outside the project)
 	feed     string    // set while splitting text a shell runs under xargs: its deletes' operands come from input
+	places   []string  // with feed: the texts xargs's input replaces in the words (delExec's places)
 	icase    bool      // the line names GIT_ICASE_PATHSPECS: git may read every pathspec case-blind
 	deny     *Decision // the first refusal
 
@@ -337,17 +338,18 @@ func delOutput(c *shCommand, d shDialect) []string {
 
 // delExec is a command from its program on, as it runs.
 type delExec struct {
-	words []shWord
-	shown string // the simple command as written, for an answer
-	d     shDialect
-	dirs  delDirs
-	depth int      // the depth of the list it stands in
-	loop  bool     // inside a loop's body
-	feed  string   // set when a runner feeds the program its operands from input ("xargs"), which the check cannot see
-	find  bool     // run by find -exec: its own operands are a bulk delete's
-	icase bool     // git was given --icase-pathspecs
-	piped bool     // fed by a pipe
-	stdin []string // text fed to it: here-documents, here-strings, a literal piped in
+	words  []shWord
+	shown  string // the simple command as written, for an answer
+	d      shDialect
+	dirs   delDirs
+	depth  int      // the depth of the list it stands in
+	loop   bool     // inside a loop's body
+	feed   string   // set when a runner feeds the program its operands from input ("xargs"), which the check cannot see
+	places []string // with feed: the texts xargs's input replaces in the words ({}, -I's and --replace's)
+	find   bool     // run by find -exec: its own operands are a bulk delete's
+	icase  bool     // git was given --icase-pathspecs
+	piped  bool     // fed by a pipe
+	stdin  []string // text fed to it: here-documents, here-strings, a literal piped in
 }
 
 // simple judges one simple command, after the shell's own words that come before a program (bash's if, do, time;

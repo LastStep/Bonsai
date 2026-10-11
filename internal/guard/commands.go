@@ -18,8 +18,9 @@ package guard
 // The command itself refuses too (step 5.3.6 note 8), since a variable, xargs, a script or a subprocess can hide a
 // flag from the guard: the guard is the second layer. ownCommand judges one bonsai call's words, found by step 5.3.3's
 // splitter whatever folder bonsai is called from (through sudo, env, bash -c, find -exec and the rest); a bonsai call
-// whose words come from xargs's input, and a line the splitter cannot split that holds a refused bonsai call, are
-// judged as a person's step (personStep). What changes the variable is read on the splitter's words, not the line's
+// xargs runs whose own words leave it open to what xargs's input adds (ownOpen, or a word its input or a variable
+// stands for), and a line the splitter cannot split that holds a refused bonsai call, are judged as a person's step
+// (personStep). What changes the variable is read on the splitter's words, not the line's
 // text (shell_env.go), and judged here by personStep too.
 
 import (
@@ -38,6 +39,58 @@ const ChildSessionEnv = "CLAUDE_CODE_CHILD_SESSION"
 // personNext is the next step of a person's command refused to an agent.
 const personNext = "a person runs this command in a terminal of their own, not one Claude Code started"
 
+// ownHome are Bonsai's commands that write this machine's settings or label files, each with the subcommands that do
+// (home-command); ownWrites are those judged as an edit of bonsai.yaml and .bonsai/lock.json: init and update, which
+// take the consent flag --allow-exec, and unlink, which takes the guard out. These lists' one home: ownCommand reads
+// a bonsai call by them, and ownOpen a call whose last words xargs gives.
+var (
+	ownHome = []struct {
+		word string
+		subs []string
+	}{{"settings", []string{"set"}}, {"labels", []string{"attach", "detach"}}}
+	ownWrites = []string{"init", "update", "unlink"}
+)
+
+// ownWord gives a bonsai call's command word, lower case (the first of its words after the program that is not an
+// option), and its index in args; "" and -1 for none.
+func ownWord(args []string) (string, int) {
+	for k, a := range args {
+		if !strings.HasPrefix(a, "-") {
+			return strings.ToLower(a), k
+		}
+	}
+	return "", -1
+}
+
+// ownSubs gives the subcommands of a command word that write this machine's files (ownHome), nil for none.
+func ownSubs(word string) []string {
+	for _, h := range ownHome {
+		if h.word == word {
+			return h.subs
+		}
+	}
+	return nil
+}
+
+// ownOpen says why words appended to a bonsai call's own, as xargs appends its input, could still make it a person's
+// or a home command, "" when its own words settle a command that is neither: argv as ownCommand takes it. Open are a
+// call with no command word, a command of ownHome with no subcommand given, and a command of ownWrites (the consent
+// flag may follow it).
+func ownOpen(argv []string) string {
+	word, k := ownWord(argv[1:])
+	switch {
+	case word == "":
+		return "with no command word of its own"
+	case listHas(ownWrites, word):
+		return "with the command " + oneLine(word) + ", which its input may give --allow-exec"
+	case ownSubs(word) != nil:
+		if sub, _ := ownWord(argv[2+k:]); sub == "" {
+			return "with the command " + oneLine(word) + " and no subcommand of its own"
+		}
+	}
+	return ""
+}
+
 // ownCommand judges one bonsai call: argv its words as the shell gives them to the program (argv[0] the program),
 // dir the folder it runs in (absolute; the session's project folder when it cannot be told). Its record goes in the
 // session's project (rule 8: a shell call is judged there).
@@ -46,13 +99,7 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 		return allow(RuleBonsaiCommand, "")
 	}
 	args := argv[1:]
-	word := ""
-	for _, a := range args {
-		if !strings.HasPrefix(a, "-") {
-			word = strings.ToLower(a)
-			break
-		}
-	}
+	word, _ := ownWord(args)
 	shown := "bonsai " + oneLine(word) // the word alone: the call's other words may name paths or values (contract §2.6)
 	if allowExec(args) {
 		shown += " --allow-exec"
@@ -74,11 +121,11 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 		}
 		return false
 	}
-	switch {
-	case word == "settings" && later("set"), word == "labels" && later("attach", "detach"):
+	switch subs := ownSubs(word); {
+	case subs != nil && later(subs...):
 		return deny(RuleHomeCommand, fmt.Sprintf("%s refused: it writes this machine's settings or label files in Bonsai's "+
 			"home, which never change from an agent's session", shown), personNext)
-	case word != "init" && word != "update" && word != "unlink" && !allowExec(args):
+	case !listHas(ownWrites, word) && !allowExec(args):
 		return allow(RuleBonsaiCommand, "")
 	}
 	top := checkoutTop(dir)
@@ -95,7 +142,7 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 			return d
 		}
 	}
-	if word == "init" || word == "update" || word == "unlink" {
+	if listHas(ownWrites, word) {
 		for _, rel := range []string{workspace.ConfigFile, workspace.LockFile} {
 			d, _ := j.may(change{tool: "bonsai " + word, path: filepath.Join(top, filepath.FromSlash(rel)), dir: top, base: top})
 			if !d.Allow {
