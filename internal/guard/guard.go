@@ -1,11 +1,14 @@
 // Package guard is `bonsai hook guard` (spec §7, plan part 5): the PreToolUse hook that refuses an agent's edit of
 // a protected path, and blocks whenever it cannot read its input or decide.
 //
-// This build's guard refuses an Edit, Write, MultiEdit or NotebookEdit of a path on the protected or person_only list
-// (a part of the protected one, spec §6) of a project holding it, or among the protected paths a pack of that project
-// declares. Nothing grants a protected path yet: the active task's grants, the floor, command mode's tripwires and
-// the .bonsai/local/ and table refusals are step 5.3.2's, the shell delete check 5.3.3's; Bash and PowerShell calls
-// are allowed here.
+// What it judges (design/plan-5.md, 5.3.2; spec §7, "What the guard judges"): an Edit, Write, MultiEdit or
+// NotebookEdit of a path is judged by one function, "may this agent change this path now" (may.go), which step
+// 5.3.3's delete check and rung 0 (step 5.4) call too: the floor of paths guarded whatever a project's lists say
+// (floor.go), the lists and the packs' declared paths, the active task's grants, read from the main checkout and
+// honoured only while it reads running (grant.go), Bonsai's own files in every mode (own.go and the floor), and in
+// command mode the tripwires of contract §10.1 (tripwire.go). A Bash, PowerShell or Monitor call is judged for
+// Bonsai's own commands (commands.go): a line that unsets CLAUDE_CODE_CHILD_SESSION here, each bonsai call once
+// step 5.3.3's splitter finds it. Every rule a decision names is a row of the rules table (rules.go), its one home.
 //
 // Where it reads from (design/plan-5.md, 5.3.1): a path is judged by the projects holding it, walking past any .git to
 // the volume's root, the nearest alone only when it is a verified checkout; a worktree's main checkout is found from
@@ -23,8 +26,9 @@
 //     RecordWait; a panic inside blocks.
 //   - The payload: Claude Code's PreToolUse payload is read by the one hook adapter (internal/hookin). A payload that
 //     does not read, any fault in a value the guard reads, or an event other than PreToolUse blocks.
-//   - rule.go: the projects holding a path, the lists each judges by (read leanly, once per run), the decision, and
-//     the project a record goes in; paths.go: every form an edit's path may take, and the glob match.
+//   - rule.go: the projects holding a path, the lists each judges by (read leanly, once per run), which call goes to
+//     which judgment, and the project a record goes in; paths.go: every form an edit's path may take, and the glob
+//     match; may.go and the files it names: the judgment itself; rules.go: the rules table.
 //   - record.go: the guard record (bonsai.log/1, contract §8.1), through internal/record's one append path, in the
 //     .bonsai/local/log/ of the project whose rules decided.
 //   - fault_off.go, fault_on.go: the test fault switch, compiled in only with the build tag bonsai_test_fault. A
@@ -38,37 +42,10 @@
 // among them, runs there: bonsai init's closing words and this hook's help say so.
 package guard
 
-// The rules a guard decision names: the log record's rule field (contract §8.1). This block is the list's one home.
-const (
-	RuleProtected       = "protected"         // deny: the path is on a protected list (bonsai.yaml's, or a pack's declared paths)
-	RulePersonOnly      = "person-only"       // deny: the path is on bonsai.yaml's person_only list
-	RuleMainNotVerified = "main-not-verified" // deny: the path is on a list, and no project holding it is verified, so no grant counts
-	RuleNotProtected    = "not-protected"     // allow: a file tool's path inside a project, on no list
-	RuleOutside         = "outside-project"   // allow: a file tool's path in no linked project, in every form it takes
-	RuleShell           = "shell-not-judged"  // allow: Bash or PowerShell (the delete check is step 5.3.3)
-	RuleOtherTool       = "tool-not-judged"   // allow: a tool other than the file tools and the shells
-	RuleBadInput        = "bad-input"         // deny: the payload cannot be read
-	RuleBadGlob         = "bad-glob"          // deny: a glob on a list is not a glob the guard reads
-	RuleBadPath         = "bad-path"          // deny: Windows cannot name where the path leads, or it runs through a dangling junction or link
-	RuleBadLock         = "bad-lock"          // deny: the lock's declares cannot be read (or the lock is missing while bonsai.yaml names packs)
-	RuleLogFailed       = "log-failed"        // deny: the guard would allow the call but cannot record it
-	RuleOverTime        = "over-time"         // deny: the guard ran past its own time limit
-	RuleInternal        = "internal-error"    // deny: the guard failed inside (a panic)
-
-	// Blocked with no record when it is the session's own bonsai.yaml, since the workspace id a record needs is not
-	// known; recorded in the session's project when it is the bonsai.yaml of another project holding the path.
-	RuleNoProject = "no-project" // deny: CLAUDE_PROJECT_DIR is not set, or its folder cannot be read
-	RuleBadConfig = "bad-config" // deny: bonsai.yaml is there but cannot be read
-
-	// Allowed with no record (spec §3, §7: in a project with no bonsai.yaml, bonsai hook exits 0 and records nothing):
-	// neither the session's folder nor the path is in a linked project.
-	RuleNotLinked = "not-linked"
-)
-
 // Decision is the guard's answer to one call.
 type Decision struct {
 	Allow  bool   // true: exit 0, the call goes on; false: exit 2, the call is blocked
-	Rule   string // the rule that decided (the constants above)
+	Rule   string // the rule that decided: a name of the rules table (rules.go)
 	Target string // the path judged, relative to the project its record goes in, forward slashes; "" for none
 	Why    string // a refusal's reason, said first (spec §7); ASCII
 	Next   string // a refusal's next step (spec §3: every refusal names one); ASCII

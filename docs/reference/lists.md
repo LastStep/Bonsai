@@ -30,6 +30,7 @@ error words.
 - Claude Code's key order: the keys of an inline marketplace's source object
 - Log events
 - Log categories
+- Guard rules
 - Secret kinds
 - Lane rules
 - Task statuses
@@ -380,6 +381,48 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `Agent` | starting a subagent |
 | `Web` | fetching or searching the web |
 | `Other` | any other tool, or one the recorder cannot place |
+
+## Guard rules
+
+- Open list.
+- Defined in: guard.Rules (internal/guard/rules.go).
+- Printed in a project by: `bonsai logs --json` (a guard record's `rule`).
+- Every rule a guard decision names, the log record's `rule` (contract section 8.1), and whether it allows or refuses the call; a reader shows a rule it does not know as other.
+
+| Rule | Decision | Means |
+|---|---|---|
+| `protected` | deny | a path on a protected list (bonsai.yaml's protected, a pack's declared protected paths) that no running task grants |
+| `person-only` | deny | a path on bonsai.yaml's person_only list, or one the floor counts as person-only (bonsai.yaml, .bonsai/lock.json, anything else in .bonsai/, and a bonsai.yaml or .bonsai/ at any depth), that no running task grants |
+| `never-granted` | deny | a path of the floor no grant opens: .claude/settings.json, .claude/settings.local.json and .git at a checkout's top, and a .git at any depth (for a delete, the project's own top .git only) |
+| `bonsai-files` | deny | Bonsai's own files, in every mode and under any grant: .bonsai/local/, .bonsai/.gitignore, the two tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home |
+| `bonsai-stand-in` | deny | a file named as Bonsai's program (bonsai, bonsai.exe, bonsai.cmd, bonsai.bat, bonsai.ps1, bonsai.com) outside every linked project, which a folder on the PATH could hold |
+| `main-not-verified` | deny | a guarded path where no project holding it is a verified checkout, so no task's grant can count |
+| `other-project` | deny | a delete or move of another linked project's top folder or its .git, .bonsai or .claude folder (that project on this machine's record) |
+| `granted` | allow | a guarded path the running task's bonsai.allows holds (the task read from the verified main checkout) |
+| `not-protected` | allow | a path inside a linked project that nothing guards |
+| `outside-project` | allow | a path in no linked project, in every form it takes |
+| `task-outside-main` | deny | command mode: an edit of a task file outside the main checkout |
+| `status-line` | deny | command mode: an edit of a declared document's status line (a new document may start at its kind's first status only) |
+| `lane-line` | deny | command mode: an edit of a task's lane line |
+| `grant-person-only` | deny | command mode: an edit that puts a person-only path into a task's bonsai.allows |
+| `outside-label` | deny | command mode: an edit that sets a label whose definition reads set_by: outside |
+| `bad-format` | deny | command mode: a write of a task, run report or STATE that fails its format |
+| `bad-settings` | deny | this machine's settings for the workspace cannot be read when a judgment needs its mode |
+| `person-command` | deny | bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes CLAUDE_CODE_CHILD_SESSION: a person's commands, allowed to an agent only in a project in command mode under a running task's grant of bonsai.yaml and .bonsai/lock.json |
+| `home-command` | deny | bonsai settings set, bonsai labels attach or detach: never in an agent session |
+| `bonsai-command` | allow | a bonsai command an agent may run: init and update judged as an edit of bonsai.yaml and the lock, every other word free |
+| `shell-not-judged` | allow | a Bash, PowerShell or Monitor call whose line changes nothing the guard judges |
+| `tool-not-judged` | allow | a tool other than the file tools and the shells |
+| `bad-input` | deny | the hook's payload cannot be read |
+| `bad-glob` | deny | a glob on a list is not a glob the guard reads |
+| `bad-path` | deny | Windows cannot name where the path leads, or it runs through a junction or link that does not resolve |
+| `bad-lock` | deny | the lock's declares cannot be read (or the lock is missing while bonsai.yaml names packs) |
+| `bad-config` | deny | a bonsai.yaml is there but cannot be read (the session's own: blocked with no record) |
+| `no-project` | deny | CLAUDE_PROJECT_DIR is not set, or its folder cannot be read (blocked with no record) |
+| `log-failed` | deny | the guard would allow the call but cannot write its record |
+| `over-time` | deny | the guard ran past its own time limit |
+| `internal-error` | deny | the guard failed inside (a panic) |
+| `not-linked` | allow | neither the session's folder nor the path is in a linked project: allowed with no record (spec section 7) |
 
 ## Secret kinds
 

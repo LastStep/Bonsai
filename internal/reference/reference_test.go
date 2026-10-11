@@ -9,6 +9,7 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/guard"
 )
 
 // root is the repository's root, from this package's folder.
@@ -76,7 +77,7 @@ func TestPageHoldsEveryList(t *testing.T) {
 	for _, name := range []string{"Exit codes", "Error words", "Check words", "Check --pack words", "Ask types", "Ask ops",
 		"Active task: reasons there is none", "Generated kinds", "Task statuses", "Run outcomes", "Label value kinds",
 		"Lane rules", "Log events", "Log categories", "Lock file kinds", "Pack file kinds", "Bonsai's document kinds",
-		"Needs kinds", "Claude Code states", "Plugin results", "Check words later steps build"} {
+		"Needs kinds", "Claude Code states", "Plugin results", "Check words later steps build", "Guard rules"} {
 		if !strings.Contains(page, "\n## "+name+"\n") {
 			t.Errorf("the page has no list %q", name)
 		}
@@ -86,6 +87,12 @@ func TestPageHoldsEveryList(t *testing.T) {
 			if !strings.Contains(page, "| `"+w.Word+"` |") {
 				t.Errorf("the word %s of a table is not on the page", w.Word)
 			}
+		}
+	}
+	// The guard's rules table (plan-5 5.3.2 note 9): every row on the page.
+	for _, r := range guard.Rules {
+		if !strings.Contains(page, "| `"+r.Name+"` |") {
+			t.Errorf("the guard rule %s is not on the page", r.Name)
 		}
 	}
 	for _, l := range engine.CheckLaterWords() {
