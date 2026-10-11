@@ -150,10 +150,11 @@ func ReadConfig(raw []byte) (*Config, error) {
 			if f.err == nil && !relativeGlob(g) {
 				f.fail(e.Line, "the %s glob %s is not project-relative with forward slashes", key, showValue(g))
 			}
-			// A never_edit path becomes the deny rule Edit(<path>) in .claude/settings.json: a parenthesis would end
-			// the rule early, and a leading ~ would make it a path in the home folder, not the project.
+			// A never_edit path becomes the deny rule Edit(/<path>) in .claude/settings.json, anchored at the
+			// project's top folder: a parenthesis would end the rule early. A leading ~ is refused too, as it was when
+			// the rule was Edit(<path>), where it named the home folder.
 			if f.err == nil && key == "never_edit" && (strings.ContainsAny(g, "()") || strings.HasPrefix(g, "~")) {
-				f.fail(e.Line, "the never_edit path %s holds a parenthesis or starts with ~; it becomes the deny rule Edit(<path>)", showValue(g))
+				f.fail(e.Line, "the never_edit path %s holds a parenthesis or starts with ~; it becomes the deny rule Edit(/<path>)", showValue(g))
 			}
 		}
 	}

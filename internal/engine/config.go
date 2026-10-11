@@ -87,7 +87,7 @@ var Comments = map[string]string{
 	"documents.protocols": "the folder the packs' always-on protocol files go to; the block in CLAUDE.md imports each",
 	"protected":           "paths (globs) an agent changes only while its running task lists them in bonsai.allows",
 	"person_only":         "of those, the paths only a person grants (an approve or grant tap)",
-	"never_edit":          `paths no agent ever changes, each a deny rule Edit(<path>) in .claude/settings.json; e.g. ["work/ledger.json"]`,
+	"never_edit":          `paths no agent changes: deny rules Edit(/<path>), anchored at the project's top folder; e.g. ["ledger.json"]`,
 	"ladder_floor":        "the rungs every task climbs, whatever its bonsai.ladder lists; e.g. [0, 1]",
 	"ladder":              "the rungs: what each runs and proves (rung, name, kind, command, required, timeout_s and more)",
 	"ladder[]":            "one rung; its fields: bonsai check --schema bonsai.workspace",

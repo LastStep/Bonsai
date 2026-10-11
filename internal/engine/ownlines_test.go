@@ -408,7 +408,7 @@ func TestDisableAllHooksHeld(t *testing.T) {
 		t.Fatalf("disableAllHooks is %v", off())
 	}
 	cfg := read(t, root, "bonsai.yaml")
-	writeFile(t, root, "bonsai.yaml", strings.Replace(cfg, `["ledger.json"]`, `["ledger.json", "other.json"]`, 1))
+	writeFile(t, root, "bonsai.yaml", strings.Replace(cfg, `never_edit: ["ledger.json"]`, `never_edit: ["ledger.json", "other.json"]`, 1))
 	if p := e.apply(t, root, Request{}); len(p.Settings) != 1 || off() != false {
 		t.Errorf("an update of another line: %d lines, disableAllHooks %v", len(p.Settings), off())
 	}
