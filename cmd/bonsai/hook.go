@@ -82,9 +82,10 @@ the next step on stderr, which Claude Code gives the agent as the reason to go o
 checkout's main checkout is verified (git's own link back, and this machine's record written by bonsai init and
 update there); the named task is one task file there that parses; this checkout holds a run report for the task
 (documents.run, R-<date>-<task id>.md); and the main checkout's .bonsai/local/ladder/<task id>.json reads as
-bonsai.ladder/1 with mode local, green, git.sha this checkout's HEAD (read from its git files: a branch's ref file,
-packed-refs or a detached HEAD), git.dirty false, and the workspace's ladder_floor and the task's bonsai.ladder each
-among its requested rungs and green. The next step names bonsai ladder --task <id>.
+bonsai.ladder/1, made for the task (its task that id, its workspace this project's), with mode local, green, git.sha
+this checkout's HEAD (read from its git files: a branch's ref file, packed-refs or a detached HEAD), git.dirty false,
+and the workspace's ladder_floor and the task's bonsai.ladder each among its requested rungs and green. The next step
+names bonsai ladder --task <id>.
 This checkout is the one holding the session's working folder (the payload's cwd) when it is a verified checkout of
 the same project, such as a worktree the session entered with EnterWorktree; else CLAUDE_PROJECT_DIR's.
 It does not read stop_hook_active: Claude Code itself keeps a turn going eight times in a row at most, with no tool

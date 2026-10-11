@@ -440,6 +440,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `stop-no-run-report` | deny | the stop gate: the session's checkout holds no run report for the task in its run folder (a file named R-YYYY-MM-DD-T-nnnn.md for the task) |
 | `stop-no-result` | deny | the stop gate: the main checkout holds no ladder result for the task (.bonsai/local/ladder/T-nnnn.json for the task) |
 | `stop-bad-result` | deny | the stop gate: the ladder result cannot be read, or does not read as bonsai.ladder/1 |
+| `stop-other-task` | deny | the stop gate: the ladder result at the task's path was made for another task: its task is another id or null, or its workspace is another project's |
 | `stop-not-local` | deny | the stop gate: the ladder result's mode is not local (a CI run is never a task's proof) |
 | `stop-red` | deny | the stop gate: the ladder result is not green |
 | `stop-head-unreadable` | deny | the stop gate: the commit at the checkout's HEAD cannot be read from its git files |

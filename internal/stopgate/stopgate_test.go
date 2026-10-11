@@ -398,6 +398,26 @@ func TestEachCase(t *testing.T) {
 				l.Rungs = l.Rungs[:2]
 				writeResult(t, root, "T-0901", l)
 			}},
+		{name: "another task's result", rule: RuleOtherTask, why: `the ladder result .bonsai/local/ladder/T-0901.json was made for ` +
+			`another task: its task is "T-0902", not T-0901`, next: ladder + ", which writes T-0901's own result there",
+			change: func(t *testing.T, root string) {
+				l := greenResult(headSHA)
+				l.Task = ptr("T-0902")
+				writeResult(t, root, "T-0901", l)
+			}},
+		{name: "a result with no task", rule: RuleOtherTask, why: "was made for another task: its task is null (a run for no task), not T-0901",
+			next: ladder, change: func(t *testing.T, root string) {
+				l := greenResult(headSHA)
+				l.Task = nil
+				writeResult(t, root, "T-0901", l)
+			}},
+		{name: "another workspace's result", rule: RuleOtherTask, why: `was made for another task: its workspace is ` +
+			`"ws-bbbbbbbbbbbbbbbbbbbbbbbbbb", not this project's ` + testID, next: ladder,
+			change: func(t *testing.T, root string) {
+				l := greenResult(headSHA)
+				l.Workspace = "ws-bbbbbbbbbbbbbbbbbbbbbbbbbb"
+				writeResult(t, root, "T-0901", l)
+			}},
 		{name: "no result", rule: RuleNoResult, why: "no ladder result proves T-0901: the main checkout has no .bonsai/local/ladder/T-0901.json",
 			next: "commit the work, then run: " + ladder, change: func(t *testing.T, root string) {
 				remove(t, root, workspace.LocalDir+"/ladder/T-0901.json")
@@ -696,7 +716,7 @@ func TestRuleNames(t *testing.T) {
 	mine := map[string]bool{}
 	for _, r := range []string{RuleBadInput, RuleBadConfig, RuleNoProject, RuleMainNotVerified, RuleLogFailed, RuleOverTime,
 		RuleInternal, RuleNotLinked, RuleProven, RuleTaskMissing, RuleTaskTwice, RuleTaskBroken, RuleTaskUnreadable,
-		RuleBadRungs, RuleNoRunReport, RuleNoResult, RuleBadResult, RuleNotLocal, RuleRed, RuleHeadUnreadable,
+		RuleBadRungs, RuleNoRunReport, RuleNoResult, RuleBadResult, RuleOtherTask, RuleNotLocal, RuleRed, RuleHeadUnreadable,
 		RuleOtherCommit, RuleDirty, RuleRungMissing, RuleRungNotGreen, RuleNotNamed} {
 		if mine[r] {
 			t.Errorf("rule %q twice", r)

@@ -33,7 +33,8 @@
 //     R-<date>-<task id>[-<more>].md by the run kind's id pattern (stop-no-run-report): today's gate's first check,
 //     as contract §13 has the gate read "the run report from the session's own checkout, where the builder writes it";
 //  6. the ladder result at main's .bonsai/local/ladder/<task id>.json (contract §11): there (stop-no-result), reading
-//     as bonsai.ladder/1 (stop-bad-result), mode local (stop-not-local), green (stop-red), proving the commit at the
+//     as bonsai.ladder/1 (stop-bad-result), made for the task (its task the named id and its workspace this one's:
+//     stop-other-task), mode local (stop-not-local), green (stop-red), proving the commit at the
 //     session's checkout's HEAD (stop-other-commit; HEAD read from the checkout's git files with no git process,
 //     head.go, and a HEAD it cannot read blocks: stop-head-unreadable), made on a clean tree (stop-dirty), its
 //     requested rungs holding the workspace's ladder_floor and the task's bonsai.ladder (contract §5.6:
@@ -109,6 +110,7 @@ const (
 	RuleNoRunReport    = "stop-no-run-report"   // deny: the session's checkout holds no run report for the task
 	RuleNoResult       = "stop-no-result"       // deny: there is no ladder result for the task in the main checkout
 	RuleBadResult      = "stop-bad-result"      // deny: the ladder result cannot be read, or does not read as bonsai.ladder/1
+	RuleOtherTask      = "stop-other-task"      // deny: the ladder result at the task's path was made for another task (another id, none, or another workspace)
 	RuleNotLocal       = "stop-not-local"       // deny: the ladder result's mode is not local (a CI run is never a task's proof)
 	RuleRed            = "stop-red"             // deny: the ladder result is not green
 	RuleHeadUnreadable = "stop-head-unreadable" // deny: the commit at the checkout's HEAD cannot be read from its git files
@@ -363,7 +365,7 @@ func judge(local workspace.Local, layout workspace.GitLayout, named string) Deci
 	if d, ok := runReport(local.Root, w, named); !ok {
 		return d
 	}
-	return result(local, layout, named, want)
+	return result(local, layout, named, cfg.ID, want)
 }
 
 // taskRefusal is the block when the named task is not active: missing, named twice, or not parsing (contract §13).
@@ -484,8 +486,8 @@ func runReport(root string, w *format.Workspace, named string) (Decision, bool) 
 const maxResult = 32 << 20
 
 // result judges the task's ladder result in the main checkout against the session's checkout's HEAD (the package's
-// comment, step 6), and gives the decision.
-func result(local workspace.Local, layout workspace.GitLayout, named string, want []int64) Decision {
+// comment, step 6), and gives the decision. id is the workspace id.
+func result(local workspace.Local, layout workspace.GitLayout, named, id string, want []int64) Decision {
 	rel := workspace.LocalDir + "/ladder/" + named + ".json"
 	ladder := "run: bonsai ladder --task " + named
 	raw, err := readCapped(filepath.Join(local.Main, filepath.FromSlash(rel)), maxResult)
@@ -500,6 +502,9 @@ func result(local workspace.Local, layout workspace.GitLayout, named string, wan
 	if err != nil {
 		return deny(RuleBadResult, rel, "the ladder result "+rel+" does not read as bonsai.ladder/1 ("+oneLine(err.Error())+")",
 			ladder+", which writes it again")
+	}
+	if d, ok := theTasks(l, rel, named, id); !ok {
+		return d
 	}
 	if l.Mode != "local" {
 		return deny(RuleNotLocal, rel, "the ladder result for "+named+" is a "+quote(l.Mode)+" result, and only a local run is a "+
@@ -545,6 +550,26 @@ func result(local workspace.Local, layout workspace.GitLayout, named string, wan
 		}
 	}
 	return allow(RuleProven, rel)
+}
+
+// theTasks checks the result at the task's path was made for the task: its task is the named id and its workspace this
+// workspace's (contract §11: a result names the task it proves and the workspace it ran in). A result moved or copied
+// there from another task, a run for no task (task null), or another workspace's result for a task of the same id
+// proves nothing of this one. ok is false, with the block, when it was made for another.
+func theTasks(l *format.Ladder, rel, named, id string) (Decision, bool) {
+	var why string
+	switch {
+	case l.Task == nil:
+		why = "its task is null (a run for no task), not " + named
+	case *l.Task != named:
+		why = "its task is " + quote(*l.Task) + ", not " + named
+	case l.Workspace != id:
+		why = "its workspace is " + quote(l.Workspace) + ", not this project's " + id
+	default:
+		return Decision{}, true
+	}
+	return deny(RuleOtherTask, rel, "the ladder result "+rel+" was made for another task: "+why,
+		"run: bonsai ladder --task "+named+", which writes "+named+"'s own result there"), false
 }
 
 // rungStatus says whether rung n is green in the result: every entry for it green, and at least one. When it is not,

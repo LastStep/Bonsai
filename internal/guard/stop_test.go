@@ -160,6 +160,7 @@ func init() {
 		{rule: RuleStopBadResult, task: "T-0901", change: func(t *testing.T, dir string) {
 			writeFile(t, filepath.Join(dir, filepath.FromSlash(workspace.LocalDir), "ladder", "T-0901.json"), "{")
 		}},
+		{rule: RuleStopOtherTask, task: "T-0901", result: func(l *format.Ladder) { other := "T-0902"; l.Task = &other }},
 		{rule: RuleStopNotLocal, task: "T-0901", result: func(l *format.Ladder) { l.Mode = "ci" }},
 		{rule: RuleStopRed, task: "T-0901", result: func(l *format.Ladder) { l.Green, l.Rungs[1].Status = false, "red" }},
 		{rule: RuleStopHeadUnreadable, task: "T-0901", change: func(t *testing.T, dir string) {

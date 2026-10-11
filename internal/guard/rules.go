@@ -68,6 +68,7 @@ const (
 	RuleStopNoRunReport    = "stop-no-run-report"
 	RuleStopNoResult       = "stop-no-result"
 	RuleStopBadResult      = "stop-bad-result"
+	RuleStopOtherTask      = "stop-other-task"
 	RuleStopNotLocal       = "stop-not-local"
 	RuleStopRed            = "stop-red"
 	RuleStopHeadUnreadable = "stop-head-unreadable"
@@ -151,6 +152,8 @@ var Rules = []Rule{
 		"(a file named R-YYYY-MM-DD-T-nnnn.md for the task)"},
 	{RuleStopNoResult, false, "the stop gate: the main checkout holds no ladder result for the task (.bonsai/local/ladder/T-nnnn.json for the task)"},
 	{RuleStopBadResult, false, "the stop gate: the ladder result cannot be read, or does not read as bonsai.ladder/1"},
+	{RuleStopOtherTask, false, "the stop gate: the ladder result at the task's path was made for another task: its task is " +
+		"another id or null, or its workspace is another project's"},
 	{RuleStopNotLocal, false, "the stop gate: the ladder result's mode is not local (a CI run is never a task's proof)"},
 	{RuleStopRed, false, "the stop gate: the ladder result is not green"},
 	{RuleStopHeadUnreadable, false, "the stop gate: the commit at the checkout's HEAD cannot be read from its git files"},
