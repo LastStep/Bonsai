@@ -9,10 +9,10 @@
 //
 // The rule, per kind (generated.<kind> in the main checkout's bonsai.yaml, read leanly from the file as read: rule.go):
 // a file or row goes when it is older than keep_days, or beyond the newest keep_newest of its kind, either one
-// cleaning; null keeps. A kind left out, or generated: left out, takes its default (format.GeneratedKinds: log 30
-// days, asks kept, ladder 7 days, sessions kept). Age is a log or asks file's last record's at (its modification time
-// when no record reads), a ladder result's finished (its modification time when the result does not read), and a
-// row's end.
+// cleaning; null keeps. A kind left out, or generated: left out, takes its default: format.GeneratedKinds holds each
+// kind's default numbers, their one home, and docs/reference/generated-files.md prints them in words. Age is a log or
+// asks file's last record's at (its modification time when no record reads), a ladder result's finished (its
+// modification time when the result does not read), and a row's end.
 //
 // The protections come first and always win, and a protected file or row still counts among the newest:
 //   - a log file holding an open span (internal/sessions: the one rule that says "open"), or an ended session or
