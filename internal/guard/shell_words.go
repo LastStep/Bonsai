@@ -481,8 +481,8 @@ func (r *delRun) bonsaiCall(x delExec) {
 }
 
 // delFedBonsai says why a bonsai call xargs runs is open to its input, "" when its own words settle a command that
-// is not a person's: a word holding a text xargs's input replaces (places: {} and -I's), or a variable or
-// substitution, stands for one of its words; or its words leave the command open (commands.go's ownOpen).
+// is not a person's: a word holding a text xargs's input replaces (places: -I's, -i's and --replace's), or a variable
+// or substitution, stands for one of its words; or its words leave the command open (commands.go's ownOpen).
 func delFedBonsai(words []shWord, argv, places []string) string {
 	for _, w := range words {
 		if w.expand || w.splat {
@@ -597,9 +597,11 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 		}
 	case "xargs":
 		x.feed = "xargs"
-		x.places = append(x.places, "{}") // -i's and --replace's own, and a {} xargs may replace
 		for _, v := range g.val("I", "replace") {
 			x.places = append(x.places, v.text)
+		}
+		if g.has("i", "replace") {
+			x.places = append(x.places, "{}") // -i's and --replace's own when given none
 		}
 	case "wsl", "watch":
 		x.d = shBash

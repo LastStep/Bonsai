@@ -358,7 +358,7 @@ type delExec struct {
 	depth  int      // the depth of the list it stands in
 	loop   bool     // inside a loop's body
 	feed   string   // set when a runner feeds the program its operands from input ("xargs"), which the check cannot see
-	places []string // with feed: the texts xargs's input replaces in the words ({}, -I's and --replace's)
+	places []string // with feed: the texts xargs's input replaces in the words (-I's, -i's and --replace's)
 	find   bool     // run by find -exec: its own operands are a bulk delete's
 	icase  bool     // git was given --icase-pathspecs
 	piped  bool     // fed by a pipe

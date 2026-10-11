@@ -818,6 +818,8 @@ var delTable = []delRow{
 	{tB, "", "xargs bonsai labels list --json", RuleBonsaiCommand, ""},
 	{tB, "", "ls | xargs sh -c 'bonsai status'", RuleBonsaiCommand, ""},
 	{tB, "", "echo x | xargs xargs bonsai check", RuleBonsaiCommand, ""},
+	{tB, "", "echo unlink | xargs -i bonsai {}", RulePersonCommand, ""},
+	{tB, "", `echo x | xargs -0 find . -exec bonsai check {} \;`, RuleBonsaiCommand, ""},
 
 	// --- V2c's fix round (93167be): bash's ~-0 is the folder stack's bottom (the folder before a pushd), read as a
 	// folder the check cannot tell, as ~- and ~-N are.
