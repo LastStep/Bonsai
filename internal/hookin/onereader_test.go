@@ -3,8 +3,15 @@ package hookin
 // One reader (design/plan-5.md, 5.3.0 note 2): no package but this one decodes a hook payload, so a field Claude Code
 // adds or renames is read in one place.
 //
-// What "decodes a payload" means here: a package's code (its .go files, tests aside) names, as a string literal or
-// as the JSON name in a struct tag, a key of a hook payload's top level that only a payload has: a key of this
+// What "decodes a payload" means here: a package's code (its .go files, tests aside) names a key of a hook payload's
+// top level that only a payload has, in any of the ways Go's decoders find a key:
+//   - as a string literal (a map key, a lookup), or a concatenation of string literals ("tool_"+"input"), folded;
+//   - as the JSON name in a struct field's tag;
+//   - as an untagged struct field's own name (or one whose tag gives no name), which encoding/json matches to a key
+//     regardless of letter case: a field Hook_event_name or Tool_input reads hook_event_name or tool_input.
+// A key built at run time any other way (from a constant declared elsewhere, strings.Join, fmt.Sprintf, a variable)
+// is not caught: telling those would take the type checker over the whole module on every test run, for a reader no
+// one writes by accident. The key is one of this
 // package's own table (fields) or one of the payload keys it passes over (passedOver), less every property any of
 // Bonsai's formats names (formats/schemas, their one home) and every word of the log's events (format.LogEvents),
 // since a format's own key or word (session, source, tool_use_id; the event prompt) is no sign of a payload. A grep of schema.Decode would not do: the lock, the settings and the log are read with it
@@ -147,29 +154,41 @@ func payloadReaders(t *testing.T, root string, keys []string) []string {
 		if err != nil {
 			return err
 		}
+		mark := func(s string, at token.Pos) {
+			if marks[s] {
+				rel, _ := filepath.Rel(root, fset.Position(at).Filename)
+				found = append(found, filepath.ToSlash(rel)+":"+strconv.Itoa(fset.Position(at).Line)+": "+s)
+			}
+		}
 		ast.Inspect(f, func(n ast.Node) bool {
-			var names []string
-			var at token.Pos
 			switch x := n.(type) {
-			case *ast.Field:
-				if x.Tag != nil {
-					if tag, err := strconv.Unquote(x.Tag.Value); err == nil {
-						names = append(names, strings.Split(reflect.StructTag(tag).Get("json"), ",")[0])
+			case *ast.StructType:
+				for _, field := range x.Fields.List {
+					name := ""
+					if field.Tag != nil {
+						if tag, err := strconv.Unquote(field.Tag.Value); err == nil {
+							name = strings.Split(reflect.StructTag(tag).Get("json"), ",")[0]
+						}
 					}
-					at = x.Tag.Pos()
+					switch name {
+					case "-":
+					case "":
+						// No JSON name: encoding/json matches the field's own name, letter case aside.
+						for _, id := range field.Names {
+							mark(strings.ToLower(id.Name), id.Pos())
+						}
+					default:
+						mark(name, field.Tag.Pos())
+					}
+				}
+			case *ast.BinaryExpr:
+				if s, ok := literal(x); ok {
+					mark(s, x.Pos())
+					return false // a concatenation of literals, read whole: its parts are not counted again
 				}
 			case *ast.BasicLit:
-				if x.Kind == token.STRING {
-					if s, err := strconv.Unquote(x.Value); err == nil {
-						names = append(names, s)
-					}
-					at = x.Pos()
-				}
-			}
-			for _, s := range names {
-				if marks[s] {
-					rel, _ := filepath.Rel(root, fset.Position(at).Filename)
-					found = append(found, filepath.ToSlash(rel)+":"+strconv.Itoa(fset.Position(at).Line)+": "+s)
+				if s, ok := literal(x); ok {
+					mark(s, x.Pos())
 				}
 			}
 			return true
@@ -180,6 +199,31 @@ func payloadReaders(t *testing.T, root string, keys []string) []string {
 		t.Fatal(err)
 	}
 	return found
+}
+
+// literal gives a string literal's text, or a concatenation of string literals folded (in parentheses too).
+func literal(e ast.Expr) (string, bool) {
+	switch x := e.(type) {
+	case *ast.BasicLit:
+		if x.Kind != token.STRING {
+			return "", false
+		}
+		s, err := strconv.Unquote(x.Value)
+		return s, err == nil
+	case *ast.ParenExpr:
+		return literal(x.X)
+	case *ast.BinaryExpr:
+		if x.Op != token.ADD {
+			return "", false
+		}
+		a, ok := literal(x.X)
+		if !ok {
+			return "", false
+		}
+		b, ok := literal(x.Y)
+		return a + b, ok
+	}
+	return "", false
 }
 
 func TestOneReader(t *testing.T) {
@@ -195,13 +239,20 @@ func TestOneReader(t *testing.T) {
 	}
 }
 
-// The walk sees a payload's reader, by a literal or a struct tag: a folder of its own holding one is found.
+// The walk sees a payload's reader, by a literal, a concatenation of literals, a struct tag, or an untagged field's
+// name in any letter case, and a literal compared inside a larger expression: a folder of its own holding each is
+// found. A function's parameter of such a name, a field the decoder skips (json:"-") and a concatenation with a
+// variable are not readers it can tell.
 func TestOneReaderSeesAReader(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module x\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	src := "package x\n\ntype p struct {\n\tTool string `json:\"tool_name,omitempty\"`\n}\n\nvar k = map[string]int{\"hook_event_name\": 1}\n"
+	src := "package x\n\ntype p struct {\n\tTool string `json:\"tool_name,omitempty\"`\n}\n\nvar k = map[string]int{\"hook_event_name\": 1}\n" +
+		"\ntype q struct {\n\tHook_event_name string\n\tTool_Input      map[string]any `json:\",omitempty\"`\n" +
+		"\tTool_name       string `json:\"-\"`\n\tSessionID, Session_id string\n}\n" +
+		"\nvar m = map[string]any{\"tool_\" + \"input\": 1, (\"transcript\" + \"_\") + \"path\": 2}\n" +
+		"\nfunc f(tool_input string, v string) bool { return \"agent_\"+v == \"x\" || v == \"stop_hook_active\" }\n"
 	if err := os.MkdirAll(filepath.Join(root, "a"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +264,9 @@ func TestOneReaderSeesAReader(t *testing.T) {
 		t.Fatal(err)
 	}
 	found := payloadReaders(t, root, payloadOnly(t))
-	want := []string{"a/x.go:4: tool_name", "a/x.go:7: hook_event_name"}
+	want := []string{"a/x.go:4: tool_name", "a/x.go:7: hook_event_name", "a/x.go:10: hook_event_name",
+		"a/x.go:11: tool_input", "a/x.go:13: session_id", "a/x.go:16: tool_input", "a/x.go:16: transcript_path",
+		"a/x.go:18: stop_hook_active"}
 	if !reflect.DeepEqual(found, want) {
 		t.Errorf("found %v, want %v", found, want)
 	}
