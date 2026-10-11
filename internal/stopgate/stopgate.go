@@ -123,8 +123,8 @@ const (
 	RuleRungNotGreen   = "stop-rung-not-green"  // deny: a rung of the floor or of the task's bonsai.ladder is not green in the result
 
 	// Allowed with no record: the gate does not engage.
-	RuleNotNamed  = "stop-not-named" // BONSAI_TASK names no task
-	RuleNotLinked = "not-linked"     // the session's folder is in no linked project
+	RuleNotNamed  = "stop-not-named" // allow (no record): BONSAI_TASK names no task
+	RuleNotLinked = "not-linked"     // allow (no record): the session's folder is in no linked project
 )
 
 // Options are what Main needs besides the payload.

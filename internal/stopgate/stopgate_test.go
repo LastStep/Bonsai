@@ -9,6 +9,9 @@ package stopgate
 import (
 	"bytes"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io"
 	"os"
 	"path/filepath"
@@ -702,7 +705,8 @@ const unreadableOnWindows = "on Windows a file where the task folder goes reads 
 
 // The gate's rule names are copies of rows of the guard's rules table, their one home: each the same name with the
 // same answer (allow or block), the shared eight the guard's own constants, and every stop- row of the table one of
-// them.
+// them. The gate's names are read from its own Go source (ruleConsts), so a constant added there and not to the table
+// fails here.
 func TestRuleNames(t *testing.T) {
 	shared := map[string]string{RuleBadInput: guard.RuleBadInput, RuleBadConfig: guard.RuleBadConfig,
 		RuleNoProject: guard.RuleNoProject, RuleMainNotVerified: guard.RuleMainNotVerified, RuleLogFailed: guard.RuleLogFailed,
@@ -712,33 +716,91 @@ func TestRuleNames(t *testing.T) {
 			t.Errorf("%q is the guard's %q", mine, theirs)
 		}
 	}
-	allows := map[string]bool{RuleNotLinked: true, RuleNotNamed: true, RuleProven: true}
-	mine := map[string]bool{}
-	for _, r := range []string{RuleBadInput, RuleBadConfig, RuleNoProject, RuleMainNotVerified, RuleLogFailed, RuleOverTime,
-		RuleInternal, RuleNotLinked, RuleProven, RuleTaskMissing, RuleTaskTwice, RuleTaskBroken, RuleTaskUnreadable,
-		RuleBadRungs, RuleNoRunReport, RuleNoResult, RuleBadResult, RuleOtherTask, RuleNotLocal, RuleRed, RuleHeadUnreadable,
-		RuleOtherCommit, RuleDirty, RuleRungMissing, RuleRungNotGreen, RuleNotNamed} {
-		if mine[r] {
-			t.Errorf("rule %q twice", r)
+	mine := ruleConsts(t)
+	for _, r := range []string{RuleProven, RuleNotNamed, RuleBadInput, RuleOtherTask} {
+		if _, ok := mine[r]; !ok { // the reader found the constants at all
+			t.Fatalf("the package's source read gives no constant for %q: %v", r, mine)
 		}
-		mine[r] = true
 	}
 	table := map[string]bool{}
 	for _, r := range guard.Rules {
 		table[r.Name] = r.Allow
-		if strings.HasPrefix(r.Name, "stop-") && !mine[r.Name] {
+		if _, ok := mine[r.Name]; strings.HasPrefix(r.Name, "stop-") && !ok {
 			t.Errorf("the rules table's %q is no rule of the stop gate", r.Name)
 		}
 	}
-	for r := range mine {
-		allow, ok := table[r]
+	for r, allow := range mine {
+		theirs, ok := table[r]
 		switch {
 		case !ok:
 			t.Errorf("the stop gate's %q is not in the guard's rules table", r)
-		case allow != allows[r]:
-			t.Errorf("%q: the table says allow %v, the stop gate %v", r, allow, allows[r])
+		case theirs != allow:
+			t.Errorf("%q: the table says allow %v, the stop gate's constant %v", r, theirs, allow)
 		}
 	}
+}
+
+// ruleConsts reads the stop gate's rule names from its own Go source, every file of the package but its tests: each
+// constant named Rule..., by its value, with its answer as its line comment says it ("allow..." or "deny..."). A Rule
+// constant it cannot read (a value that is not a string literal, a comment that says neither, a value twice) fails
+// the test, so none is passed over.
+func ruleConsts(t *testing.T) map[string]bool {
+	t.Helper()
+	files, err := filepath.Glob("*.go")
+	if err != nil || len(files) == 0 {
+		t.Fatalf("the package's Go files: %v %v", files, err)
+	}
+	out := map[string]bool{}
+	fset := token.NewFileSet()
+	for _, name := range files {
+		if strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		f, err := parser.ParseFile(fset, name, nil, parser.ParseComments)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, decl := range f.Decls {
+			gd, ok := decl.(*ast.GenDecl)
+			if !ok || gd.Tok != token.CONST {
+				continue
+			}
+			for _, spec := range gd.Specs {
+				vs := spec.(*ast.ValueSpec)
+				for i, id := range vs.Names {
+					if !strings.HasPrefix(id.Name, "Rule") {
+						continue
+					}
+					var lit *ast.BasicLit
+					if i < len(vs.Values) {
+						lit, _ = vs.Values[i].(*ast.BasicLit)
+					}
+					if lit == nil || lit.Kind != token.STRING {
+						t.Errorf("%s: %s is not a string literal", name, id.Name)
+						continue
+					}
+					value, err := strconv.Unquote(lit.Value)
+					if err != nil {
+						t.Errorf("%s: %s: %v", name, id.Name, err)
+						continue
+					}
+					says := strings.TrimSpace(vs.Comment.Text())
+					if _, twice := out[value]; twice {
+						t.Errorf("%s: %s: the rule %q is named twice", name, id.Name, value)
+					}
+					switch {
+					case strings.HasPrefix(says, "allow"):
+						out[value] = true
+					case strings.HasPrefix(says, "deny"):
+						out[value] = false
+					default:
+						t.Errorf("%s: %s's comment says neither allow nor deny: %q", name, id.Name, says)
+					}
+				}
+			}
+		}
+	}
+	return out
 }
 
 // The gate's own limit is half the timeout of its hook line.
