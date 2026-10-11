@@ -10,10 +10,11 @@
 //
 // What it checks once engaged, in this order. Each failure blocks (exit 2) with its reason first and its next step,
 // which Claude Code gives the agent as the reason to go on; the rule that decided is the record's (rules below):
-//  1. the session's own bonsai.yaml reads (bad-config: blocked with no record, since a record needs the workspace id);
+//  1. the session's own bonsai.yaml reads (bad-config: blocked with no record, since a record needs the workspace id),
+//     and the payload reads as a Stop payload (bad-input);
 //  2. the main checkout is verified (workspace.VerifyMain: git's own link back for a worktree, and this machine's
 //     record), since the task and the ladder result are read from it and an unverified main could be a decoy
-//     (main-not-verified); the payload reads as a Stop payload (bad-input);
+//     (main-not-verified, recorded in the session's own checkout);
 //  3. main's bonsai.yaml reads in full (bad-config): its task folder, its run folder and ladder_floor;
 //  4. the named task: exactly one file in main's task folder has the id, and it parses under its format (the active-task
 //     function, workspace.Active: stop-task-missing, stop-task-twice, stop-task-broken; stop-task-unreadable when the
@@ -33,8 +34,8 @@
 //
 // The frame (internal/hookin's Frame, as the guard's): its own timer first, at Budget, half the line's 10 s timeout (a
 // Stop hook that times out does not block, and Claude Code's onFailure setting has no effect on Stop hooks), the work in
-// a goroutine, a panic as a block (internal-error), past the budget a block (over-time) whose record is awaited for
-// hookin.RecordWait.
+// a goroutine, a panic as a block (internal-error, unrecorded, as the guard's), past the budget a block (over-time)
+// whose record, once the workspace id is known, is awaited for hookin.RecordWait.
 //
 // Claude Code's own limit (note 5): Stop hooks keep a turn going eight times in a row at most (a tool call starts the
 // count again); the ninth block in a row is overridden and the turn ends (CLAUDE_CODE_STOP_HOOK_BLOCK_CAP raises it;
