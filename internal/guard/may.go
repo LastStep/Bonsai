@@ -128,11 +128,12 @@ type judged struct {
 
 // hit is a guard on one judged form: the floor's entry or a list's glob that matched it.
 type hit struct {
-	x    judged
-	rule string // RulePersonOnly, RuleProtected, RuleNeverGranted, RuleBonsaiFiles
-	on   string // what holds it, for the refusal: "bonsai.yaml's protected list", "the floor (...)"
-	glob string
-	next string // the floor's own next step, "" for the rule's
+	x     judged
+	rule  string // RulePersonOnly, RuleProtected, RuleNeverGranted, RuleBonsaiFiles
+	on    string // what holds it, for the refusal: "bonsai.yaml's protected list", or what a floor entry is
+	glob  string
+	next  string // the floor's own next step, "" for the rule's
+	floor bool   // the floor's entry (on is what it is), not a list's glob
 }
 
 // form judges one form of a path that the projects in chain hold (may's steps 3 to 5); an allow is not-protected
@@ -183,8 +184,7 @@ func (j *judge) form(c change, abs string, chain []*linkedProject) (Decision, *l
 			if f.Class == RuleBonsaiFiles && strings.HasSuffix(f.Glob, ".md") {
 				next = "leave the table as it is: bonsai check --write, run in the main checkout, rebuilds it from the task files and the log"
 			}
-			hits = append(hits, hit{x: x, rule: f.Class, on: "the floor of paths Bonsai guards in every project (" + f.Why + ")",
-				glob: f.Glob, next: next})
+			hits = append(hits, hit{x: x, rule: f.Class, on: f.Why, glob: f.Glob, next: next, floor: true})
 		}
 		for _, li := range j.listsOf(x.p).all() {
 			for _, g := range li.globs {
@@ -239,11 +239,16 @@ func (j *judge) form(c change, abs string, chain []*linkedProject) (Decision, *l
 	return allow(outcome, ""), rec
 }
 
-// hitOn says what refused a guarded path: "<tool> of <path> refused: it is on <what> (<glob>)".
+// hitOn says what refused a guarded path: "<tool> of <path> refused: it is on <list> (<glob>)", or for the floor
+// "... refused: Bonsai guards it in every project (<glob>: <what it is>)".
 func hitOn(c change, h hit) string {
 	shown := quote(h.x.rel, 120)
 	if len(h.x.chain) > 1 {
 		shown += " (in the project " + quote(filepath.Base(h.x.p.root), 60) + ")"
+	}
+	if h.floor {
+		return fmt.Sprintf("%s of %s refused: Bonsai guards it in every project (%s: %s)", c.tool, shown,
+			strconv.QuoteToASCII(h.glob), h.on)
 	}
 	return fmt.Sprintf("%s of %s refused: it is on %s (%s)", c.tool, shown, h.on, strconv.QuoteToASCII(h.glob))
 }
@@ -258,10 +263,10 @@ func (j *judge) refuseHit(c change, h hit, why string) Decision {
 		if next == "" {
 			next = "leave it as it is: only Bonsai writes it, as a program"
 		}
-		d = deny(RuleBonsaiFiles, on+", one of Bonsai's own files, which no grant opens", next)
+		d = deny(RuleBonsaiFiles, on+", and no grant opens it", next)
 	case RuleNeverGranted:
-		d = deny(RuleNeverGranted, on+", which no grant opens: Bonsai's own lines and the checkout's git live there",
-			"leave it as it is and tell the person: a person changes it, or runs bonsai update")
+		d = deny(RuleNeverGranted, on+", and no grant opens it", "leave it as it is and tell the person: a person changes it, "+
+			"or runs bonsai update")
 	case RulePersonOnly:
 		d = deny(RulePersonOnly, on+", which only a person changes or grants to a task, and "+why,
 			"leave the file as it is and ask the person to make this change, or to grant it to the running task (its bonsai.allows)")

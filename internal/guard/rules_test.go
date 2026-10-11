@@ -189,7 +189,8 @@ var ruleTests = map[string]func(t *testing.T){
 		// else in .bonsai/ (5.3 done, check 4: an agent's Write of docs/bonsai.yaml refused).
 		for _, rel := range []string{"docs/bonsai.yaml", "a/b/.bonsai/lock.json", ".bonsai/extra.json", "bonsai.yaml",
 			".bonsai/lock.json", "docs/bonsai.yaml/x"} {
-			if s := wantRule(t, dir, writeOf(dir, rel, "x\n"), RulePersonOnly); !strings.Contains(s, "refused: it is on") {
+			if s := wantRule(t, dir, writeOf(dir, rel, "x\n"), RulePersonOnly); !strings.Contains(s, "refused: it is on") &&
+				!strings.Contains(s, "refused: Bonsai guards it in every project (") {
 				t.Errorf("%s: %s", rel, s)
 			}
 		}
