@@ -7,11 +7,14 @@
 // and the shell delete check are step 5.3's; Bash and PowerShell calls are allowed here.
 //
 // For a reviewer, in the order a call runs:
-//   - hook.go: Main, the whole run. It arms the guard's own timer first (Budget, under the 10 s timeout part 3's hook
-//     line carries: a hook that times out does not block, spec §7), then works in a goroutine: finds the project
-//     from CLAUDE_PROJECT_DIR (set by Claude Code, not by any file an agent edits), reads bonsai.yaml and the
-//     payload, decides, writes the guard record. What does not finish in time blocks; a panic inside blocks.
-//   - input.go: Claude Code's PreToolUse payload. A payload the guard cannot read blocks.
+//   - hook.go: Main, the whole run, in the frame of the hooks that block (internal/hookin's Frame). The frame arms
+//     the guard's own timer first (Budget, under the 10 s timeout part 3's hook line carries: a hook that times out
+//     does not block, spec §7), then runs the guard's work in a goroutine: it finds the project from
+//     CLAUDE_PROJECT_DIR (set by Claude Code, not by any file an agent edits), reads bonsai.yaml and the payload,
+//     decides, writes the guard record. What does not finish in time blocks, its over-time record awaited for
+//     RecordWait; a panic inside blocks.
+//   - The payload: Claude Code's PreToolUse payload is read by the one hook adapter (internal/hookin). A payload that
+//     does not read, any fault in a value the guard reads, or an event other than PreToolUse blocks.
 //   - rule.go: the rule; paths.go: every project-relative form an edit's path may take, and the glob match.
 //   - record.go: the guard record (bonsai.log/1, contract §8.1) in the project's .bonsai/local/log/, with the
 //     binary's own path on every record and its SHA-256 on a session's first (spec §3, §8).
