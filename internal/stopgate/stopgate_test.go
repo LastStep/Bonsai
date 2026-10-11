@@ -422,6 +422,13 @@ func TestEachCase(t *testing.T) {
 			next: ladder, change: func(t *testing.T, root string) {
 				write(t, root, "work/tasks/T-0901-gated.md", strings.Replace(testTask, "status: running", "status: [", 1))
 			}},
+		{name: "a task folder that cannot be read", rule: RuleTaskUnreadable, why: `the main checkout's task folder "work/tasks" cannot be read`,
+			next: ladder, change: func(t *testing.T, root string) {
+				if err := os.RemoveAll(filepath.Join(root, "work", "tasks")); err != nil {
+					t.Fatal(err)
+				}
+				write(t, root, "work/tasks", "a file where the task folder goes\n")
+			}},
 		{name: "a task's rungs that are not numbers", rule: RuleBadRungs, why: `the task's bonsai.ladder holds "two", not a rung number`,
 			next: ladder, change: func(t *testing.T, root string) {
 				write(t, root, "work/tasks/T-0901-gated.md", strings.Replace(testTask, "bonsai.ladder: [2]", `bonsai.ladder: ["two"]`, 1))
@@ -662,8 +669,9 @@ func TestAnAllowItCannotRecordIsBlocked(t *testing.T) {
 	}
 }
 
-// The rule names the gate shares with the guard are the guard's words for the same case; each of its own is a
-// distinct word.
+// The gate's rule names are copies of rows of the guard's rules table, their one home: each the same name with the
+// same answer (allow or block), the shared eight the guard's own constants, and every stop- row of the table one of
+// them.
 func TestRuleNames(t *testing.T) {
 	shared := map[string]string{RuleBadInput: guard.RuleBadInput, RuleBadConfig: guard.RuleBadConfig,
 		RuleNoProject: guard.RuleNoProject, RuleMainNotVerified: guard.RuleMainNotVerified, RuleLogFailed: guard.RuleLogFailed,
@@ -673,14 +681,32 @@ func TestRuleNames(t *testing.T) {
 			t.Errorf("%q is the guard's %q", mine, theirs)
 		}
 	}
-	seen := map[string]bool{}
-	for _, r := range []string{RuleProven, RuleTaskMissing, RuleTaskTwice, RuleTaskBroken, RuleTaskUnreadable, RuleBadRungs,
-		RuleNoRunReport, RuleNoResult, RuleBadResult, RuleNotLocal, RuleRed, RuleHeadUnreadable, RuleOtherCommit, RuleDirty,
-		RuleRungMissing, RuleRungNotGreen, RuleNotNamed} {
-		if seen[r] || !strings.HasPrefix(r, "stop-") {
-			t.Errorf("rule %q", r)
+	allows := map[string]bool{RuleNotLinked: true, RuleNotNamed: true, RuleProven: true}
+	mine := map[string]bool{}
+	for _, r := range []string{RuleBadInput, RuleBadConfig, RuleNoProject, RuleMainNotVerified, RuleLogFailed, RuleOverTime,
+		RuleInternal, RuleNotLinked, RuleProven, RuleTaskMissing, RuleTaskTwice, RuleTaskBroken, RuleTaskUnreadable,
+		RuleBadRungs, RuleNoRunReport, RuleNoResult, RuleBadResult, RuleNotLocal, RuleRed, RuleHeadUnreadable,
+		RuleOtherCommit, RuleDirty, RuleRungMissing, RuleRungNotGreen, RuleNotNamed} {
+		if mine[r] {
+			t.Errorf("rule %q twice", r)
 		}
-		seen[r] = true
+		mine[r] = true
+	}
+	table := map[string]bool{}
+	for _, r := range guard.Rules {
+		table[r.Name] = r.Allow
+		if strings.HasPrefix(r.Name, "stop-") && !mine[r.Name] {
+			t.Errorf("the rules table's %q is no rule of the stop gate", r.Name)
+		}
+	}
+	for r := range mine {
+		allow, ok := table[r]
+		switch {
+		case !ok:
+			t.Errorf("the stop gate's %q is not in the guard's rules table", r)
+		case allow != allows[r]:
+			t.Errorf("%q: the table says allow %v, the stop gate %v", r, allow, allows[r])
+		}
 	}
 }
 

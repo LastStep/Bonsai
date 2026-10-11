@@ -76,9 +76,10 @@ import (
 // before the timeout could let the session end.
 const Budget = 5 * time.Second
 
-// The rules a stop gate decision names: the record's rule field (contract §8.1). Until the guard's rules table holds
-// them (step 5.3.2's, then this piece's last commit), this block is their home. The first seven are the guard's own
-// words for the same case, held equal to its constants by a test.
+// The rules a stop gate decision names: the record's rule field (contract §8.1). Their one home is the guard's rules
+// table (guard.Rules, internal/guard/rules.go), which the reference page lists; this package cannot import the guard,
+// whose tests run the stop gate, so it keeps these copies, and TestRuleNames holds them to that table, name and answer.
+// The first eight are the guard's own words for the same case.
 const (
 	RuleBadInput        = "bad-input"         // deny: the payload cannot be read, or it is not a Stop payload
 	RuleBadConfig       = "bad-config"        // deny: a bonsai.yaml the gate reads cannot be read
