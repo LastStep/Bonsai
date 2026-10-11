@@ -109,6 +109,14 @@ func (j *judge) may(c change) (Decision, *linkedProject) {
 	return allow(RuleNotProtected, target(rec, forms)), rec
 }
 
+// mayDelete judges a delete or move of the path p, read against the folder dir (absolute) as a file tool's path is
+// read against the payload's cwd, as an edit of that path: step 5.3.3's delete check calls it for each operand (its
+// delMay), so the delete check holds no rule of its own about what is guarded.
+func (j *judge) mayDelete(dir, p string) Decision {
+	d, _ := j.may(change{tool: "a delete or move", path: p, cwd: dir, base: dir, del: true})
+	return d
+}
+
 // judged is one form of a path, a project judging it, and the path relative to that project's folder.
 type judged struct {
 	abs   string

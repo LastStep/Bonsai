@@ -159,9 +159,12 @@ func judgeIn(dir string) *judge {
 	return j
 }
 
-// mayIn judges a change of path (absolute) as the delete check does, or as a file tool with no content.
+// mayIn judges a change of path (absolute) as the delete check does (mayDelete), or as a file tool with no content.
 func mayIn(j *judge, dir, path string, del bool) Decision {
-	d, _ := j.may(change{tool: "rm", path: path, cwd: dir, base: dir, del: del})
+	if del {
+		return j.mayDelete(dir, path)
+	}
+	d, _ := j.may(change{tool: "Edit", path: path, cwd: dir, base: dir})
 	return d
 }
 
