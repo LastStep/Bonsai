@@ -178,7 +178,7 @@ func TestCheckOfflineFromTheLock(t *testing.T) {
 		// An edited pack file, a deny rule of the pack's taken out, the never_edit rule taken out, a hook line edited.
 		writeFile(t, demo, "demo/guide.md", "edited\n")
 		writeFile(t, root, SettingsFile, strings.Replace(read(t, root, SettingsFile), `"Read(secrets/**)"`, `"Read(secret/**)"`, 1))
-		writeFile(t, demo, SettingsFile, strings.Replace(strings.Replace(read(t, demo, SettingsFile), `"Edit(ledger.json)",`, "", 1),
+		writeFile(t, demo, SettingsFile, strings.Replace(strings.Replace(read(t, demo, SettingsFile), `"Edit(/ledger.json)",`, "", 1),
 			"echo demo hook D", "echo demo hook X", 1))
 	}
 	offline := func() {

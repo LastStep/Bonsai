@@ -270,7 +270,7 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 	s := settingsDocOf(t, root)
 	text := schema.Show(s)
 	for _, want := range []string{`"allow":["Bash(npm test)"]`, `"Read(secrets/**)"`, `"npm run lint-staged"`, `"model":"opus"`,
-		`"command":"bonsai hook guard || exit 2"`, `"Edit(ledger.json)"`, `"Edit(demo/never.txt)"`, `"echo demo hook A"`,
+		`"command":"bonsai hook guard || exit 2"`, `"Edit(/ledger.json)"`, `"Edit(demo/never.txt)"`, `"echo demo hook A"`,
 		`"autoMemoryEnabled":false`, `"disableAllHooks":false`} {
 		if !strings.Contains(text, want) {
 			t.Errorf("settings lack %s:\n%s", want, text)
@@ -688,7 +688,7 @@ func TestCheckFindings(t *testing.T) {
 	e.link(t, root, e.pack.A, "ledger.json")
 	writeFile(t, root, "demo/guide.md", "edited\n")
 	writeFile(t, root, "CLAUDE.md", strings.Replace(read(t, root, "CLAUDE.md"), "demo-pack:marker", "someone-else", 1))
-	writeFile(t, root, SettingsFile, strings.Replace(read(t, root, SettingsFile), `"Edit(ledger.json)",`, "", 1))
+	writeFile(t, root, SettingsFile, strings.Replace(read(t, root, SettingsFile), `"Edit(/ledger.json)",`, "", 1))
 	writeFile(t, root, ".bonsai/local/log/x.ndjson", "{}\n")
 	testpack.Git(t, root, "add", "-f", ".bonsai/local/log/x.ndjson")
 	r, err := checkLocal(t, root, e.home)
@@ -712,7 +712,7 @@ func TestCheckFindings(t *testing.T) {
 		t.Errorf("settings %+v", f)
 	}
 	p = e.apply(t, root, Request{Adopt: []string{SettingsFile, "CLAUDE.md", "demo/guide.md"}})
-	if !strings.Contains(read(t, root, SettingsFile), `"Edit(ledger.json)"`) {
+	if !strings.Contains(read(t, root, SettingsFile), `"Edit(/ledger.json)"`) {
 		t.Errorf("--adopt did not take Bonsai's lines back")
 	}
 	testpack.Git(t, root, "rm", "-q", "--cached", ".bonsai/local/log/x.ndjson")
@@ -746,14 +746,14 @@ func TestNeverEditChange(t *testing.T) {
 	for _, c := range p.Settings {
 		got = append(got, c.Change+" "+c.Line+": "+c.Why)
 	}
-	want := "add Edit(new.json): Agents can never edit new.json: it is in never_edit in bonsai.yaml.; " +
-		"remove Edit(old-ledger.json): This file is no longer in never_edit in bonsai.yaml, so agents may edit it again."
+	want := "add Edit(/new.json): Agents can never edit new.json: it is in never_edit in bonsai.yaml.; " +
+		"remove Edit(/old-ledger.json): This file is no longer in never_edit in bonsai.yaml, so agents may edit it again."
 	if strings.Join(got, "; ") != want {
 		t.Errorf("settings lines\n  %s\nwant\n  %s", strings.Join(got, "; "), want)
 	}
 	// With a deny rule of the project's own beside them, its rule stays whatever never_edit does.
 	s := read(t, root, SettingsFile)
-	writeFile(t, root, SettingsFile, strings.Replace(s, `"Edit(new.json)"`, `"Edit(new.json)", "Edit(mine.txt)"`, 1))
+	writeFile(t, root, SettingsFile, strings.Replace(s, `"Edit(/new.json)"`, `"Edit(/new.json)", "Edit(mine.txt)"`, 1))
 	writeFile(t, root, "bonsai.yaml", strings.Replace(read(t, root, "bonsai.yaml"), `"new.json"`, `"other.json"`, 1))
 	p = e.plan(t, root, Request{})
 	if !strings.Contains(schema.Show(func() any { b, _ := schema.Decode(result(t, p, SettingsFile).write); return b }()), "Edit(mine.txt)") {

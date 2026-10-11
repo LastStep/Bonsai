@@ -6,7 +6,8 @@ package engine
 // A line is one entry Bonsai writes, as the preview names it (spec §6, "The preview names every settings line"):
 //
 //	hook         a hook command under hooks.<event>, in a group with its matcher (spec §7; a pack's hooks)
-//	deny         a rule in permissions.deny (each never_edit path in bonsai.yaml as Edit(<path>); a pack's deny)
+//	deny         a rule in permissions.deny (each never_edit path in bonsai.yaml as Edit(/<path>), neverEditRule;
+//	             a pack's deny, as the pack gives it)
 //	key          autoMemoryEnabled: false (spec §10) and disableAllHooks: false (spec §7)
 //	marketplace  the inline marketplace under extraKnownMarketplaces, bonsai-<workspace name>-<8 hex>, each pack's
 //	             plugin pinned to its locked commit by sha, with no version (spec §5)
@@ -113,6 +114,17 @@ func buildOwnHooks() []Line {
 	}
 	return ls
 }
+
+// neverEditRule is the deny rule for a never_edit path of bonsai.yaml (spec §7, "Deny rules the engine writes"):
+// Edit(/<path>), anchored at the session's starting folder, the project's top folder (step 5.3.5 note 3). Measured in
+// real sessions (Claude Code 2.1.296 on WSL, 2.1.294 on Windows): the form part 3 wrote, Edit(<path>), anchors at the
+// session's current folder, so after a shell cd into a subfolder neither it nor a bare file name stopped a Write or a
+// redirect to the path, while Edit(/<path>) still did. A project linked before takes the new form at its next
+// update --yes, shown as each rule changed.
+func neverEditRule(path string) string { return "Edit(/" + path + ")" }
+
+// neverEditSlot starts a never_edit rule's slot: the path, whatever the rule's form.
+const neverEditSlot = "never_edit:"
 
 // OwnHookLines lists this build's own hook lines as the preview shows them, in the order the engine writes them.
 func OwnHookLines() []string {
@@ -292,7 +304,7 @@ func buildLines(cfg *workspace.Config, packs []packLines) []Line {
 			Why: "Keeps hooks on in this project, so Bonsai's guard runs even when a user setting turns hooks off."},
 	}
 	for _, p := range cfg.NeverEdit {
-		ls = append(ls, Line{Kind: "deny", Origin: "bonsai.yaml", Rule: "Edit(" + p + ")",
+		ls = append(ls, Line{Kind: "deny", Origin: "bonsai.yaml", Rule: neverEditRule(p), Slot: neverEditSlot + p,
 			Why: "Agents can never edit " + p + ": it is in never_edit in bonsai.yaml."})
 	}
 	for _, p := range packs {
@@ -740,7 +752,9 @@ func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 			d.Why = "An old Bonsai hook line that calls bonsai by an absolute path; Bonsai's lines call it by name."
 			add(d)
 		case d.Kind == "deny" && strings.HasPrefix(d.Rule, "Edit(") && strings.HasSuffix(d.Rule, ")"):
-			d.Origin, d.Slot = "bonsai.yaml", "deny:"+d.Rule
+			// Its slot is its path's, in either form a build wrote (Edit(<path>) before step 5.3.5, Edit(/<path>)
+			// since), so a rule that only changes form shows as one line changed, not as a path taken out.
+			d.Origin, d.Slot = "bonsai.yaml", neverEditSlot+strings.TrimPrefix(strings.TrimSuffix(strings.TrimPrefix(d.Rule, "Edit("), ")"), "/")
 			d.Why = "This file is no longer in never_edit in bonsai.yaml, so agents may edit it again."
 			spare = append(spare, d)
 		}

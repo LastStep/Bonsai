@@ -78,7 +78,7 @@ func TestUnlink(t *testing.T) {
 		lines = append(lines, c.Kind+" "+c.Line)
 	}
 	got := strings.Join(lines, "\n")
-	wants := []string{"key autoMemoryEnabled: false", "key disableAllHooks: false", "deny Edit(ledger.json)", "deny Edit(demo/never.txt)",
+	wants := []string{"key autoMemoryEnabled: false", "key disableAllHooks: false", "deny Edit(/ledger.json)", "deny Edit(demo/never.txt)",
 		"hook SessionStart (startup): echo demo hook A", "marketplace bonsai-demo-", "plugin demo-pack@bonsai-demo-"}
 	// Every one of Bonsai's own hook lines goes: the guard's, start's and the recorder's (step 5.2.4).
 	for _, own := range OwnHookLines() {
