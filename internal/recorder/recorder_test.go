@@ -29,13 +29,17 @@ const testYAML = "format: bonsai.workspace/1\nid: " + testID + "\nname: demo\ndo
 // fakeToken is a made-up GitHub-shaped token, built at run time so no token-shaped literal sits in the repo.
 func fakeToken() string { return "ghp_" + strings.Repeat("Mn4Rt8", 6) }
 
-// project makes a linked checkout (bonsai.yaml written, git on branch main) in an isolated home.
+// project makes a linked checkout (bonsai.yaml written, git on branch main) in an isolated home, recorded on this
+// machine as bonsai init records it (workspace.RecordCheckout), so its worktrees' main checkout is verified.
 func project(t *testing.T) (tmp, root string) {
 	t.Helper()
 	tmp = t.TempDir()
-	testpack.Isolate(t, tmp)
+	home := testpack.Isolate(t, tmp)
 	root = testpack.Project(t, tmp, "proj")
 	write(t, root, "bonsai.yaml", testYAML)
+	if _, err := workspace.RecordCheckout(home, root, testID, time.Now()); err != nil {
+		t.Fatal(err)
+	}
 	return tmp, root
 }
 
@@ -381,6 +385,26 @@ func TestWorktreeWritesMain(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(wt, ".bonsai", "local")); err == nil {
 		t.Error("the worktree has a local/ of its own")
+	}
+}
+
+// A worktree whose main checkout is not verified (workspace.FindLocal: this machine has no record of it, so the
+// worktree's .git file could point anywhere) writes its own local/, never the main checkout's.
+func TestWorktreeOfAnUnverifiedMain(t *testing.T) {
+	tmp, root := project(t)
+	testpack.Git(t, root, "add", "-A")
+	testpack.Git(t, root, "commit", "-q", "-m", "x")
+	wt := filepath.Join(tmp, "wt")
+	testpack.Git(t, root, "worktree", "add", "-q", "-b", "t0906", wt)
+	if err := os.RemoveAll(filepath.Join(os.Getenv(workspace.HomeEnv), "workspaces")); err != nil {
+		t.Fatal(err)
+	}
+	Record(opts(wt, `{"session_id":"wt-3","hook_event_name":"Stop"}`, nil))
+	if got := records(t, wt, "wt-3"); len(got) != 1 || s(got[0].Checkout) != "wt" {
+		t.Errorf("the worktree's own records: %+v", got)
+	}
+	if _, err := os.Stat(filepath.Join(root, ".bonsai", "local", "log", "s-wt-3.ndjson")); err == nil {
+		t.Error("a worktree of an unverified main wrote the main checkout's local/")
 	}
 }
 

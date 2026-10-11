@@ -22,6 +22,12 @@ package workspace
 // an entry is never changed or taken out. A key this Bonsai does not know is kept as read. It has no format line and
 // no schema in formats/: like the machine folder's settings.json it is Bonsai's own file on one machine, read by
 // Bonsai alone.
+//
+// A record Bonsai cannot read (not a JSON object, a path or ids of the wrong kind, an entry with no id, or a since
+// that is not RFC 3339) is damaged, and RecordCheckout does not write over it: a record written again would take a
+// new since, and so lose its first claim on the id to any later checkout claiming it (a decoy among them). A person
+// checks it and deletes it; the next init or update writes it again, its claim starting then (FirstClaim says which
+// checkout claimed an id first; bonsai check's same-id warning names the others).
 
 import (
 	"bytes"
@@ -67,7 +73,8 @@ func readMachineRecord(path string) (*MachineRecord, error) {
 		return nil, nil
 	}
 	show := filepath.ToSlash(path)
-	next := "delete " + show + ": bonsai update in the main checkout writes it again"
+	next := "a person checks " + show + " (this machine's record of a checkout) and deletes it; bonsai update in that " +
+		"checkout then writes it again, its claim on the id starting then"
 	if err != nil {
 		return nil, &Error{File: show, Msg: "cannot be read: " + oneLine(err), Err: err, Next: "check the file's permissions"}
 	}
@@ -95,6 +102,11 @@ func readMachineRecord(path string) (*MachineRecord, error) {
 				id, since := io.String("id"), io.String("since")
 				if id == "" {
 					return nil, &Error{File: show, Msg: "an ids entry " + schema.Show(it) + " has no id", Next: next}
+				}
+				if _, err := time.Parse(time.RFC3339, since); err != nil {
+					raw, _ := io.Get("since")
+					return nil, &Error{File: show, Msg: "the ids entry of " + showValue(id) + " has the since " + schema.Show(raw) +
+						", not a time (RFC 3339)", Next: next}
 				}
 				m.IDs = append(m.IDs, RecordedID{ID: id, Since: since})
 			}
@@ -126,7 +138,8 @@ func (m *MachineRecord) Encode() ([]byte, error) {
 
 // RecordCheckout writes this machine's record of the main checkout main: its real path, and id at the end of its
 // ids unless it is already the last, since at. It writes nothing when the record already says so. It reports
-// whether it wrote.
+// whether it wrote. A damaged record (one Bonsai cannot read) is not written over: its error names a person's step
+// (this file's comment says why).
 func RecordCheckout(home, main, id string, at time.Time) (bool, error) {
 	dir, err := MachineDir(home, main)
 	if err != nil {
@@ -136,10 +149,10 @@ func RecordCheckout(home, main, id string, at time.Time) (bool, error) {
 	m, err := readMachineRecord(key)
 	if err != nil {
 		var we *Error
-		if !errors.As(err, &we) || we.Err != nil {
-			return false, err // the file cannot be read at all
+		if errors.As(err, &we) && we.Err == nil {
+			we.Msg += ", so it is not written over (a record written again would lose its first claim on the id)"
 		}
-		m = nil // a record Bonsai does not read is written again: it is Bonsai's own
+		return false, err
 	}
 	real, err := filepath.EvalSymlinks(main)
 	if err != nil {
@@ -177,12 +190,15 @@ type KeyedRecord struct {
 	Record *MachineRecord
 }
 
-// MachineRecords reads every workspace's record in the home, by machine folder name; a folder with no record, or one
-// Bonsai does not read, is left out.
-func MachineRecords(home string) []KeyedRecord {
+// machineFolders lists the home's machine folders (workspaces/r-*, folders only: Bonsai makes no other kind there), by
+// name. A home with no workspaces folder has none.
+func machineFolders(home string) ([]string, error) {
 	entries, err := os.ReadDir(filepath.Join(home, "workspaces"))
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	var names []string
 	for _, e := range entries {
@@ -191,6 +207,13 @@ func MachineRecords(home string) []KeyedRecord {
 		}
 	}
 	sort.Strings(names)
+	return names, nil
+}
+
+// MachineRecords reads every workspace's record in the home, by machine folder name; a folder with no record, or one
+// Bonsai does not read, is left out.
+func MachineRecords(home string) []KeyedRecord {
+	names, _ := machineFolders(home)
 	var out []KeyedRecord
 	for _, n := range names {
 		m, err := readMachineRecord(filepath.Join(home, "workspaces", n, MachineRecordFile))
@@ -199,4 +222,72 @@ func MachineRecords(home string) []KeyedRecord {
 		}
 	}
 	return out
+}
+
+// Claim is one record's claim on a workspace id: its machine folder, the record, and when it first claimed the id
+// (the earliest since among its entries holding it).
+type Claim struct {
+	KeyedRecord
+	Since time.Time
+}
+
+// ClaimOf gives a record's claim on id, and false when its current id is another (a record that gave the id up no
+// longer claims it) or it has none.
+func (m *MachineRecord) ClaimOf(id string) (time.Time, bool) {
+	if m == nil || id == "" || m.Current() != id {
+		return time.Time{}, false
+	}
+	var first time.Time
+	for _, e := range m.IDs {
+		if e.ID != id {
+			continue
+		}
+		at, err := time.Parse(time.RFC3339, e.Since)
+		if err != nil {
+			continue // readMachineRecord refuses such an entry, so none is left here
+		}
+		if first.IsZero() || at.Before(first) {
+			first = at
+		}
+	}
+	return first, !first.IsZero()
+}
+
+// FirstClaim says which checkout on this machine first claimed the workspace id id (design/plan-5.md, 5.3.1 note 2:
+// the guard trusts a main checkout only when its record is the first on this machine to claim the id, so a checkout
+// that claims it later, a decoy among them, is never honoured). Every record in the home is read; among those whose
+// current id is id, the one with the earliest claim is first. first is nil when none can be named:
+//   - no record claims the id (ties and first are nil);
+//   - two or more claimed it in the same second, the earliest (ties holds them, by machine folder): since is kept to
+//     the second, so none of them can be told first, and none is honoured (a tie never honours a decoy);
+//   - a record in the home cannot be read (err, an *Error naming the file and a person's step): it might hold the
+//     earliest claim (a damaged main record while a decoy's reads), so none is honoured until a person mends it.
+func FirstClaim(home, id string) (first *Claim, ties []Claim, err error) {
+	names, err := machineFolders(home)
+	if err != nil {
+		return nil, nil, &Error{File: filepath.ToSlash(filepath.Join(home, "workspaces")), Msg: "cannot be read: " + oneLine(err),
+			Err: err, Next: "check the folder's permissions"}
+	}
+	var claims []Claim
+	for _, n := range names {
+		m, err := readMachineRecord(filepath.Join(home, "workspaces", n, MachineRecordFile))
+		if err != nil {
+			return nil, nil, err
+		}
+		if at, ok := m.ClaimOf(id); ok {
+			claims = append(claims, Claim{KeyedRecord: KeyedRecord{Key: n, Record: m}, Since: at})
+		}
+	}
+	for _, c := range claims {
+		switch {
+		case len(ties) == 0 || c.Since.Before(ties[0].Since):
+			ties = []Claim{c}
+		case c.Since.Equal(ties[0].Since):
+			ties = append(ties, c)
+		}
+	}
+	if len(ties) == 1 {
+		return &ties[0], nil, nil
+	}
+	return nil, ties, nil
 }

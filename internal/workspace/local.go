@@ -18,11 +18,29 @@ package workspace
 //     folder), a common folder not named .git (a bare repository's worktree, or a separate git folder's), no .git,
 //     or a file that cannot be read. Paths are compared case-blind on Windows.
 //
-// FindLocal uses that main only when its bonsai.yaml holds the same workspace id as the writer's; else the writer's
-// own checkout. It is a tripwire, as the log is (spec §7): an agent can rewrite a worktree's .git file, so at worst a
-// record lands in another checkout holding the same id, never in a folder holding none. This finder is the
-// recorder's, the asks' and the cleaner's; the guard keeps its own folder until step 5.3 decides what the hook path
-// may trust (design/plan-5.md, 5.2.2 note 3).
+// An agent can rewrite those files (a worktree's .git file, a commondir file), so the main checkout they name is used
+// only when it is verified (VerifyMain; Rohan's 8 Oct rule, spec §7: whatever the guard trusts to find the main
+// checkout "cannot be rewritten by an agent without the guard noticing (fail closed)"; design/plan-5.md, 5.3.1 note
+// 2). A worktree's main checkout is verified when all three hold:
+//
+//   - git's own link back: <common>/worktrees/<name>/gitdir, the file git keeps beside the worktree's HEAD, names this
+//     worktree's .git file;
+//   - the main checkout's bonsai.yaml holds the workspace id this checkout's holds;
+//   - this machine's record (record.go: <home>/workspaces/r-<key of main>/workspace.json, written only by bonsai init
+//     and update run in a main checkout) names the main checkout's path and that id, and is the first record on this
+//     machine to claim the id (FirstClaim: a checkout claiming it later, a decoy among them, is never honoured).
+//
+// A checkout that is its own main needs the third alone. The link back and the main's bonsai.yaml lie in folders an
+// agent can write, so they alone prove nothing; the record lies outside every project, where only Bonsai writes (the
+// guard refuses an agent's file tools there, and the engine's deny rule a shell redirect: a program the agent runs
+// that forges it stays the tripwire case question A accepts). Not verified: a rewritten .git file, a forged
+// commondir, a decoy main with or without a record, a worktree made to look like its own main, a clone that never
+// ran bonsai update on this machine, and a second clone of one project on one machine (bonsai check warns of it).
+//
+// FindLocal is where every writer of .bonsai/local/ writes, and the guard's records go the same way: a worktree whose
+// main checkout is verified writes the main checkout's local/; any other checkout writes its own. Every reader of
+// local/ (the recorder, bonsai hook start, the asks, bonsai logs, the cleaner, check --write) takes this answer, so
+// the rule has one home.
 
 import (
 	"errors"
@@ -133,20 +151,160 @@ func (g GitLayout) Branch() string {
 	return branch
 }
 
+// Worktree reports whether the layout names a main checkout other than the checkout itself.
+func (g GitLayout) Worktree() bool { return !samePath(g.Main, g.Root, runtime.GOOS == "windows") }
+
+// LinksBack reports whether git's own link back holds for a worktree: <its git folder>/gitdir, which git writes when it
+// adds the worktree, names this checkout's .git file (as written, relative to that git folder or absolute; or the
+// same file reached another way, a link on the path). False for a checkout that is not a worktree.
+func (g GitLayout) LinksBack() bool {
+	if g.GitDir == "" || !g.Worktree() {
+		return false
+	}
+	line, ok := firstLine(filepath.Join(g.GitDir, "gitdir"))
+	named := strings.TrimSpace(line)
+	if !ok || named == "" {
+		return false
+	}
+	named = resolve(g.GitDir, named)
+	own := filepath.Join(g.Root, ".git")
+	if samePath(named, own, runtime.GOOS == "windows") {
+		return true
+	}
+	a, err := os.Stat(named)
+	if err != nil {
+		return false
+	}
+	b, err := os.Stat(own)
+	return err == nil && os.SameFile(a, b)
+}
+
+// Trust is whether a checkout's main checkout is verified (VerifyMain), and when it is not, why and the person's step
+// that would verify it.
+type Trust struct {
+	Verified bool
+	Why      string // why not, in ASCII words that follow "its main checkout is not verified: "; never a path outside the home
+	Next     string // the step that would verify it, a person's; it may name a path on this machine
+}
+
+// notVerified is a Trust that is not verified, with its reason and step.
+func notVerified(why, next string) Trust { return Trust{Why: why, Next: next} }
+
+// updateNext is the step that verifies most checkouts: this machine's record written by the main checkout itself.
+const updateNext = "a person runs bonsai update in the project's main checkout, which records it on this machine"
+
+// VerifyMain says whether the main checkout of the checkout laid out as g is verified (this file's comment): for a
+// worktree, git's link back, the main checkout's id (mainID, its bonsai.yaml's, read by the caller) and this
+// machine's record; for a checkout that is its own main, the record alone. id is the checkout's own bonsai.yaml's id;
+// home the Bonsai home ("" when there is none). It starts no process and writes nothing.
+func VerifyMain(home string, g GitLayout, id, mainID string) Trust {
+	switch {
+	case g.GitDir == "":
+		return notVerified("the folder is not a checkout's top (it holds no .git Bonsai reads)",
+			"a project's settings live at a checkout's top: a person moves this bonsai.yaml there, or removes it")
+	case id == "":
+		return notVerified("its bonsai.yaml holds no workspace id", "a person fixes bonsai.yaml (bonsai check names the line)")
+	}
+	if g.Worktree() {
+		if !g.LinksBack() {
+			return notVerified("git's own link back to this worktree (gitdir in its git folder) does not name it, so its .git "+
+				"file may point at another checkout", "a person checks the worktree's .git file (git worktree repair, run in the "+
+				"main checkout, mends git's links), or makes the worktree again")
+		}
+		if mainID != id {
+			return notVerified("the main checkout its .git file names does not hold this workspace's id in its bonsai.yaml",
+				"a person checks the worktree's .git file and the main checkout's bonsai.yaml (bonsai check in each)")
+		}
+	}
+	if home == "" {
+		return notVerified("there is no Bonsai home to read this machine's record of the main checkout from",
+			"set BONSAI_HOME, or give the user a home folder")
+	}
+	real, err := realPath(g.Main)
+	if err != nil {
+		return notVerified("the main checkout's folder cannot be resolved ("+oneLine(err)+")", updateNext)
+	}
+	key := machineKey(real, runtime.GOOS)
+	rec, err := readMachineRecord(filepath.Join(home, "workspaces", key, MachineRecordFile))
+	switch {
+	case err != nil:
+		return notVerified("this machine's record of the main checkout, workspaces/"+key+"/"+MachineRecordFile+
+			" in the Bonsai home, cannot be read", nextOf(err))
+	case rec == nil:
+		return notVerified("this machine has no record of the main checkout (bonsai update has not run in it here)", updateNext)
+	case !samePath(filepath.FromSlash(rec.Path), real, runtime.GOOS == "windows"):
+		return notVerified("this machine's record of the main checkout names another folder", updateNext)
+	case rec.Current() != id:
+		return notVerified("this machine's record of the main checkout holds another workspace id (bonsai update has not "+
+			"run in it since the id changed)", updateNext)
+	}
+	first, ties, err := FirstClaim(home, id)
+	switch {
+	case err != nil:
+		return notVerified("a record in the Bonsai home cannot be read, so which checkout on this machine claimed the "+
+			"workspace id first cannot be told", nextOf(err))
+	case first != nil && first.Key == key:
+		return Trust{Verified: true}
+	case first != nil:
+		return notVerified("another checkout on this machine claimed this workspace's id before its main checkout did",
+			rivalNext(home, []Claim{*first}))
+	}
+	return notVerified("another checkout on this machine claimed this workspace's id in the same second as its main "+
+		"checkout, so neither is trusted", rivalNext(home, ties))
+}
+
+// rivalNext is a person's step when the first claim on an id is not the main checkout's alone: the checkouts that
+// claimed it first, by path and machine folder.
+func rivalNext(home string, rivals []Claim) string {
+	var paths []string
+	for _, r := range rivals {
+		paths = append(paths, r.Record.Path+" (machine folder workspaces/"+r.Key+")")
+	}
+	return "a person checks which checkout is the project's main checkout (first to claim the id on this machine: " +
+		strings.Join(paths, " and ") + ", in the Bonsai home " + filepath.ToSlash(home) + "): a copy meant as its own " +
+		"project runs bonsai init --new-id in it, a checkout that is gone has its machine folder deleted, and a worktree " +
+		"whose .git file points at another main checkout is mended with git worktree repair"
+}
+
+// nextOf gives an error's next step, when it is an *Error.
+func nextOf(err error) string {
+	var we *Error
+	if errors.As(err, &we) && we.Next != "" {
+		return we.Next
+	}
+	return "a person checks the Bonsai home's workspaces folder"
+}
+
+// realPath is a folder's real path: absolute, symbolic links resolved (MachineKey's path).
+func realPath(p string) (string, error) {
+	abs, err := filepath.Abs(p)
+	if err != nil {
+		return "", err
+	}
+	return filepath.EvalSymlinks(abs)
+}
+
 // Local is where a writer in one checkout writes .bonsai/local/ (FindLocal).
 type Local struct {
 	Root   string // the checkout the writer runs in: its top folder, absolute
-	Main   string // the checkout whose .bonsai/local/ is written: the main checkout, or Root
+	Main   string // the checkout whose .bonsai/local/ is written: the verified main checkout, or Root
 	Branch string // Root's branch, read from its HEAD; "" when detached or unreadable
 }
 
 // FindLocal finds where a writer of workspace id, running in the checkout whose top folder is root, writes: the main
-// checkout its .git names (ReadGitLayout) when that checkout's bonsai.yaml holds the same id, else root itself. It
-// starts no process and never fails.
+// checkout its .git names (ReadGitLayout) when it is verified (VerifyMain, with the Bonsai home Home names), else root
+// itself. It starts no process and never fails.
 func FindLocal(root, id string) Local {
 	g := ReadGitLayout(root)
 	l := Local{Root: g.Root, Main: g.Root, Branch: g.Branch()}
-	if id != "" && !samePath(g.Main, g.Root, runtime.GOOS == "windows") && configID(g.Main) == id {
+	if id == "" || !g.Worktree() {
+		return l
+	}
+	home, err := Home()
+	if err != nil {
+		home = ""
+	}
+	if VerifyMain(home, g, id, configID(g.Main)).Verified {
 		l.Main = g.Main
 	}
 	return l
