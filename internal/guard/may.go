@@ -26,6 +26,7 @@ package guard
 // Every refusal says why first and names the next step (spec §3, §7).
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -60,7 +61,11 @@ func caseFoldSystem() bool {
 // project is nil too, and nothing is recorded).
 func (j *judge) may(c change) (Decision, *linkedProject) {
 	forms, err := pathForms(c.base, c.cwd, c.path)
-	if err != nil {
+	switch {
+	case errors.Is(err, errProc):
+		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: %s, so the guard cannot tell whether it is guarded", c.tool,
+			quote(j.shown(c.path), 120), err.Error()), "write to the file by its plain path inside the project, not through /proc"), j.session
+	case err != nil:
 		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: on Windows the guard cannot tell where the path leads (%s), "+
 			"so it cannot tell whether it is guarded", c.tool, quote(j.shown(c.path), 120), oneLine(err.Error())),
 			"write to the file by its plain path inside the project (a drive letter and folders), or tell the person"), j.session

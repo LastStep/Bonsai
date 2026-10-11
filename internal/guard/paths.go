@@ -38,6 +38,7 @@ package guard
 // resolve alone misses junctions (which need no privilege to make); finalPath is what follows them.
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path"
@@ -66,8 +67,12 @@ func pathForms(base, cwd, p string) ([]string, error) {
 	var targets []string
 	for _, w := range written {
 		a := absolute(cwd, base, w)
+		r := resolve(a)
+		if intoProc(a, r, runtime.GOOS) {
+			return nil, errProc
+		}
 		targets = appendNew(targets, a)
-		targets = appendNew(targets, resolve(a))
+		targets = appendNew(targets, r)
 		if f, ok, err := finalPath(a); err != nil {
 			return nil, err
 		} else if ok {
@@ -78,6 +83,65 @@ func pathForms(base, cwd, p string) ([]string, error) {
 		}
 	}
 	return targets, nil
+}
+
+// errProc is pathForms' error for a path into /proc on Linux.
+var errProc = errors.New("it leads into /proc, whose names (/proc/self, /proc/<pid>) the guard would read as its own " +
+	"process's, not the one that writes")
+
+// intoProc reports, on Linux, a path into /proc (a written, made absolute; r, a with its links resolved): /proc/self/...
+// and /proc/<pid>/... name one process's files, and the guard runs in a process of its own, so it cannot tell what a
+// write there reaches. A link on the path that leads into /proc counts too (it is resolved in the guard's process:
+// procLink reads each link's target as written). Nothing else is read unless a link is on the path.
+func intoProc(a, r, goos string) bool {
+	if goos != "linux" {
+		return false
+	}
+	if underProc(a) || underProc(r) {
+		return true
+	}
+	return r != a && procLink(a)
+}
+
+// underProc reports /proc itself or a path under it.
+func underProc(p string) bool {
+	return p == "/proc" || strings.HasPrefix(p, "/proc/")
+}
+
+// procLink follows the links on an absolute path one by one, by their targets as written, and reports one that leads
+// into /proc; past 64 links it reports true (the guard cannot tell where it leads).
+func procLink(a string) bool {
+	cur := filepath.Clean(a)
+	for hops := 0; hops < 64; hops++ {
+		if underProc(cur) {
+			return true
+		}
+		parts := strings.Split(strings.TrimPrefix(cur, "/"), "/")
+		dir, linked := "/", false
+		for i, name := range parts {
+			next := filepath.Join(dir, name)
+			fi, err := os.Lstat(next)
+			if err != nil {
+				return false // the rest does not exist: no link further on
+			}
+			if fi.Mode()&fs.ModeSymlink != 0 {
+				t, err := os.Readlink(next)
+				if err != nil {
+					return false
+				}
+				if !filepath.IsAbs(t) {
+					t = filepath.Join(dir, t)
+				}
+				cur, linked = filepath.Clean(filepath.Join(append([]string{t}, parts[i+1:]...)...)), true
+				break
+			}
+			dir = next
+		}
+		if !linked {
+			return false
+		}
+	}
+	return true
 }
 
 // projectPaths gives every project-relative form of an edit's path p (forward slashes, each once, in a fixed
