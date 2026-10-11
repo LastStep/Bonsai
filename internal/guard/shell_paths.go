@@ -14,11 +14,14 @@ package guard
 // folder deleted by its name is not seen (the deletion shows in rung 0's diff).
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 )
 
 // delDirs is where a command's relative paths are read: the folders it may run in (more than one when a cd before
@@ -68,6 +71,17 @@ func delDriveForm(p string) string {
 	return ""
 }
 
+// delFolder reports whether an operand may be a folder: it is one, or what it is cannot be told (an error other than
+// its not being there). A file holds nothing, and a path that is not there is not deleted, so neither needs a
+// folder's guarded paths met (nor this machine's records read for them).
+func delFolder(dir, p string) bool {
+	fi, err := os.Stat(delAbs(dir, p))
+	if err != nil {
+		return !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, syscall.ENOTDIR)
+	}
+	return fi.IsDir()
+}
+
 // delTildeUser reads bash's other tilde forms: ~name/x as x in the home folder when name is its folder's name (the
 // current user's), ~+/x as x in the folder the command runs in; "" for any other path.
 func delTildeUser(dir, p string) string {
@@ -87,13 +101,16 @@ func delTildeUser(dir, p string) string {
 	return ""
 }
 
-// delAbs makes an operand absolute in the folder dir, in its one most likely form: a ~ path in the home folder, a
-// Git Bash or WSL drive path as Windows names it, any other against dir.
+// delAbs makes an operand absolute in the folder dir, in its one most likely form: a ~ path in the home folder (and
+// bash's ~name/ and ~+/, delTildeUser), a Git Bash or WSL drive path as Windows names it, any other against dir.
 func delAbs(dir, p string) string {
 	if p == "~" || strings.HasPrefix(p, "~/") || strings.HasPrefix(p, `~\`) {
 		if h := delHome(); h != "" {
 			return filepath.Join(h, p[1:])
 		}
+	}
+	if t := delTildeUser(dir, p); t != "" {
+		return t
 	}
 	if runtime.GOOS == "windows" {
 		if f := delDriveForm(p); f != "" {
@@ -103,38 +120,30 @@ func delAbs(dir, p string) string {
 	return absolute(dir, dir, p)
 }
 
-// delForms gives every absolute form of the operand p read in the folder dir, each once and in a fixed order: as
-// written, and as a path in the home folder when it starts with ~; on Windows also as Windows reads it
-// (windowsForms, and WSL's /mnt/c/...); each also with its symbolic links resolved, and on Windows as Windows names
-// it (finalPath). Its error says Windows opened a part of a path but could not name it.
+// delForms gives every absolute form of the operand p read in the folder dir, each once and in a fixed order: the
+// forms the guard reads any path in (paths.go's pathForms: as written, ~, Windows' forms and this machine's admin
+// share, links resolved, Windows' own name), and two of bash's own: ~name/x and ~+/x (delTildeUser) and, on Windows,
+// WSL's /mnt/c/... as C:\... (delDriveForm). Its error says the guard cannot tell where a form leads (paths.go).
 func delForms(dir, p string) ([]string, error) {
-	written := []string{p}
-	if t := tildeForm(p); t != "" {
-		written = append(written, t)
+	out, err := pathForms(dir, dir, p)
+	if err != nil {
+		return nil, err
 	}
+	var extra []string
 	if t := delTildeUser(dir, p); t != "" {
-		written = append(written, t)
+		extra = append(extra, t)
 	}
 	if runtime.GOOS == "windows" {
-		for _, w := range append([]string(nil), written...) {
-			for _, f := range windowsForms(w) {
-				written = appendNew(written, f)
-			}
-			if f := delDriveForm(w); f != "" {
-				written = appendNew(written, f)
-			}
+		if f := delDriveForm(p); f != "" {
+			extra = append(extra, f)
 		}
 	}
-	var out []string
-	for _, w := range written {
-		a := absolute(dir, dir, w)
-		out = appendNew(out, a)
-		out = appendNew(out, resolve(a))
-		f, ok, err := finalPath(a)
+	for _, e := range extra {
+		more, err := pathForms(dir, dir, e)
 		if err != nil {
 			return nil, err
 		}
-		if ok {
+		for _, f := range more {
 			out = appendNew(out, f)
 		}
 	}

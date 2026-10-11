@@ -29,8 +29,8 @@ func FuzzShellDecide(f *testing.F) {
 		if ps {
 			tool, d, prefix = tP, shPower, "Remove-Item -Recurse junk/*; "
 		}
-		a := shellDecide(tool, line, s.own, s)
-		if b := shellDecide(tool, line, s.own, s); a != b {
+		a := shellDecide(tool, line, s.own, s.own, s)
+		if b := shellDecide(tool, line, s.own, s.own, s); a != b {
 			t.Fatalf("%q: two answers: %+v and %+v", line, a, b)
 		}
 		if !a.Allow {
@@ -39,14 +39,14 @@ func FuzzShellDecide(f *testing.F) {
 					t.Fatalf("%q: a refusal's reason and next step are one ASCII line each: %q / %q", line, a.Why, a.Next)
 				}
 			}
-			if !strings.Contains(a.Why, a.Rule) {
+			if strings.HasPrefix(a.Rule, "delete-") && !strings.Contains(a.Why, a.Rule) {
 				t.Fatalf("%q: the reason does not name the rule %s: %s", line, a.Rule, a.Why)
 			}
 		}
-		if _, why := shSplit(line, d, 0); why != "" && delHoldsWord(line) && a.Allow {
+		if _, why := shSplit(line, d, 0); why != "" && delHoldsWord(line) != "" && a.Allow {
 			t.Fatalf("%q cannot be split (%s), holds a delete word, and was allowed", line, why)
 		}
-		if p := shellDecide(tool, prefix+line, s.own, s); p.Allow {
+		if p := shellDecide(tool, prefix+line, s.own, s.own, s); p.Allow {
 			t.Fatalf("%q after an unnamed delete was allowed: %+v", line, p)
 		}
 	})

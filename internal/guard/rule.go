@@ -269,8 +269,8 @@ func (l *lists) all() []list {
 
 // decide judges one call. base is the folder a relative path is read against (the session's project, else
 // CLAUDE_PROJECT_DIR). It gives the decision and the project its record goes in (nil: no record). A file tool's path
-// is judged by the one function (may.go); a shell call's line for Bonsai's own commands (commands.go), in a linked
-// session only (the delete check, step 5.3.3, judges the rest of it); any other tool is allowed.
+// is judged by the one function (may.go); a shell call's line by the delete check (shell.go), which gives Bonsai's own
+// commands it finds to commands.go, in a linked session only; any other tool is allowed.
 func (j *judge) decide(in *hookin.Payload, base string) (Decision, *linkedProject) {
 	if hookin.FileTool(in.Tool) {
 		return j.may(change{tool: in.Tool, path: in.Path, dir: in.Cwd, base: base, in: in})
@@ -279,7 +279,7 @@ func (j *judge) decide(in *hookin.Payload, base string) (Decision, *linkedProjec
 		if j.session == nil {
 			return allow(RuleShell, ""), nil
 		}
-		return j.ownLine(in.Tool, in.Command), j.session
+		return shellDecide(in.Tool, in.Command, in.Cwd, j.session.root, j), j.session
 	}
 	return allow(RuleOtherTool, ""), j.session
 }

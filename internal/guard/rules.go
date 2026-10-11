@@ -6,7 +6,7 @@ package guard
 // so a rule with no test fails. Names are kebab-case and never renamed (a log reader keys on them); a rule is added
 // with a row here, its test and the page.
 //
-// Step 5.3.3's delete check and step 5.3.4's stop gate add their rows when they are wired in.
+// Step 5.3.4's stop gate adds its rows when it is wired in.
 
 const (
 	// What a path is judged by (rule.go, may.go).
@@ -29,6 +29,12 @@ const (
 	RuleOutsideLabel    = "outside-label"
 	RuleBadFormat       = "bad-format"
 	RuleBadSettings     = "bad-settings"
+
+	// The delete check in a shell call (shell.go).
+	RuleDeleteUnnamed   = "delete-unnamed"
+	RuleDeleteProtected = "delete-protected"
+	RuleDeleteUnsplit   = "delete-unsplit"
+	RuleDeleteNamed     = "delete-named"
 
 	// Bonsai's own commands in a shell call (commands.go).
 	RulePersonCommand = "person-command"
@@ -82,13 +88,23 @@ var Rules = []Rule{
 	{RuleOutsideLabel, false, "command mode: an edit that sets a label whose definition reads set_by: outside"},
 	{RuleBadFormat, false, "command mode: a write of a task, run report or STATE that fails its format"},
 	{RuleBadSettings, false, "this machine's settings for the workspace cannot be read when a judgment needs its mode"},
+	{RuleDeleteUnnamed, false, "a shell call's recursive or bulk delete that does not name what it deletes (an operand " +
+		"holding a glob, a variable or a substitution, or one that is ., .., /, ~ or a drive's root; xargs, a pipeline or a " +
+		"loop feeding it; git clean with no path; a delete of several files by a glob), and always git clean -x or -X, git " +
+		"stash --all and rm --no-preserve-root"},
+	{RuleDeleteProtected, false, "a shell call's delete or move of a guarded path, or of a folder holding one, judged as an " +
+		"edit of that path (the reason says what guards it)"},
+	{RuleDeleteUnsplit, false, "a shell call's line the delete check cannot split (a quote or bracket left open, nesting " +
+		"past three levels) that holds a delete word"},
+	{RuleDeleteNamed, true, "a shell call whose deletes and moves all name what they take, none of it guarded"},
 	{RulePersonCommand, false, "bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes CLAUDE_CODE_CHILD_SESSION: " +
 		"a person's commands, allowed to an agent only in a project in command mode under a running task's grant of " +
 		"bonsai.yaml and .bonsai/lock.json"},
 	{RuleHomeCommand, false, "bonsai settings set, bonsai labels attach or detach: never in an agent session"},
 	{RuleBonsaiCommand, true, "a bonsai command an agent may run: init and update judged as an edit of bonsai.yaml and the lock, " +
 		"every other word free"},
-	{RuleShell, true, "a Bash, PowerShell or Monitor call whose line changes nothing the guard judges"},
+	{RuleShell, true, "a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, " +
+		"no bonsai command, CLAUDE_CODE_CHILD_SESSION left as it is"},
 	{RuleOtherTool, true, "a tool other than the file tools and the shells"},
 	{RuleBadInput, false, "the hook's payload cannot be read"},
 	{RuleBadGlob, false, "a glob on a list is not a glob the guard reads"},

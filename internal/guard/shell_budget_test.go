@@ -50,7 +50,7 @@ func TestShellBigTreeWithinBudget(t *testing.T) {
 		{tP, `cmd /c "rd /s /q node_modules"`},
 	} {
 		start := time.Now()
-		d := shellDecide(c.tool, c.line, s.own, s)
+		d := shellDecide(c.tool, c.line, s.own, s.own, s)
 		took := time.Since(start)
 		if !d.Allow {
 			t.Errorf("%s %q on %d entries refused: %s", c.tool, c.line, entries, d.Why)

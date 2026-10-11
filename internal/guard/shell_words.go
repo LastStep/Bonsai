@@ -1,8 +1,9 @@
 package guard
 
-// The delete check's words (plan-5 5.3.3 notes 1 and 2): the delete words and how each is read (delWords, the
-// list's one home, which the reference page shows), the words that run another program (delRunners), the shells
-// whose text is split again, and the folder words (cd and its kin).
+// The delete check's words (plan-5 5.3.3 notes 1 and 2): the delete words and how each is read (DeleteWords), the
+// words that run another program (RunnerWords), each table its list's one home and on the reference page
+// (docs/reference/lists.md, go generate ./...); the shells whose text is split again, the folder words (cd and its
+// kin), and Bonsai's own program, whose calls go to commands.go's ownCommand.
 //
 // A program is matched by its base name, case-folded, with .exe dropped (/bin/rm, RM.EXE, C:\...\robocopy.exe). In
 // PowerShell a bare rm, del or mv is the cmdlet's alias; a program named with a folder or .exe is the program
@@ -20,60 +21,72 @@ import (
 
 // Where a word is read.
 const (
-	delInBash = 1 << iota // by bash, and as a program from PowerShell or cmd.exe
+	delInBash = 1 << iota // by bash; for a delete word, as a program from PowerShell or cmd.exe too
 	delInPS               // by PowerShell, as a cmdlet or its alias
 	delInCmd              // by cmd.exe, as its own command
 )
 
-// delWord is one delete word.
-type delWord struct {
+// DeleteWord is one delete word.
+type DeleteWord struct {
 	Word    string   // as the reference page shows it, e.g. "git clean"
 	Names   []string // the program names it answers to: base names, case-folded, .exe dropped ("git" for git's words)
 	Sub     string   // git's subcommand, for git's words; "" for others
-	In      int      // where it is read (delInBash, delInPS, delInCmd)
 	ByName  bool     // its name alone makes it a delete (an unsplittable line holding it is refused)
 	Deletes string   // what it deletes or moves, and what makes it recursive or bulk: the reference page's words
+	in      int      // where it is read (delInBash, delInPS, delInCmd)
 }
 
-// delWords is the delete check's table of delete words (plan-5 5.3.3 note 2), its one home.
-var delWords = []delWord{
-	{Word: "rm", Names: []string{"rm"}, In: delInBash, ByName: true,
+// Shells names where a delete word is read, for the reference page: a program's name in every shell (in PowerShell
+// a bare name that is also a cmdlet's alias is the alias), a cmdlet in PowerShell, cmd.exe's own command in cmd.exe.
+func (w DeleteWord) Shells() string {
+	switch {
+	case w.in&delInBash != 0:
+		return "every shell, as a program"
+	case w.in&delInPS != 0:
+		return "PowerShell, as a cmdlet or its alias"
+	}
+	return "cmd.exe, as its own command"
+}
+
+// DeleteWords is the delete check's table of delete words (plan-5 5.3.3 note 2), its one home.
+var DeleteWords = []DeleteWord{
+	{Word: "rm", Names: []string{"rm"}, in: delInBash, ByName: true,
 		Deletes: "its operands; recursive with -r, -R or --recursive (bundled, any prefix); always refused with --no-preserve-root"},
-	{Word: "rmdir", Names: []string{"rmdir"}, In: delInBash, ByName: true,
+	{Word: "rmdir", Names: []string{"rmdir"}, in: delInBash, ByName: true,
 		Deletes: "its operands (empty folders)"},
-	{Word: "unlink", Names: []string{"unlink"}, In: delInBash, ByName: true,
+	{Word: "unlink", Names: []string{"unlink"}, in: delInBash, ByName: true,
 		Deletes: "its operand"},
-	{Word: "shred", Names: []string{"shred"}, In: delInBash, ByName: true,
+	{Word: "shred", Names: []string{"shred"}, in: delInBash, ByName: true,
 		Deletes: "its operands (overwritten, and deleted with -u)"},
-	{Word: "mv", Names: []string{"mv"}, In: delInBash, ByName: true,
+	{Word: "mv", Names: []string{"mv"}, in: delInBash, ByName: true,
 		Deletes: "moves its sources away (with all they hold) onto its destination"},
-	{Word: "git rm", Names: []string{"git"}, Sub: "rm", In: delInBash, ByName: false,
+	{Word: "git rm", Names: []string{"git"}, Sub: "rm", in: delInBash, ByName: false,
 		Deletes: "its paths; recursive with -r; its paths from --pathspec-from-file are unnamed; not with -n"},
-	{Word: "git clean", Names: []string{"git"}, Sub: "clean", In: delInBash,
+	{Word: "git clean", Names: []string{"git"}, Sub: "clean", in: delInBash,
 		Deletes: "the untracked files under its paths (bulk); with no path unnamed; always refused with -x or -X; not with -n"},
-	{Word: "git stash", Names: []string{"git"}, Sub: "stash", In: delInBash,
+	{Word: "git stash", Names: []string{"git"}, Sub: "stash", in: delInBash,
 		Deletes: "with --all or -a, ignored files moved away (.bonsai/local/ among them): always refused"},
-	{Word: "git mv", Names: []string{"git"}, Sub: "mv", In: delInBash,
+	{Word: "git mv", Names: []string{"git"}, Sub: "mv", in: delInBash,
 		Deletes: "moves its sources away onto its destination; not with -n"},
-	{Word: "find", Names: []string{"find"}, In: delInBash,
+	{Word: "find", Names: []string{"find"}, in: delInBash,
 		Deletes: "with -delete, or -exec, -execdir, -ok or -okdir running a delete word: what it finds under its starting points (bulk)"},
-	{Word: "rsync", Names: []string{"rsync"}, In: delInBash,
+	{Word: "rsync", Names: []string{"rsync"}, in: delInBash,
 		Deletes: "with any --delete option (--del): files in its destination (bulk); with --remove-source-files: moves its sources"},
-	{Word: "robocopy", Names: []string{"robocopy"}, In: delInBash | delInPS | delInCmd,
+	{Word: "robocopy", Names: []string{"robocopy"}, in: delInBash,
 		Deletes: "with /MIR or /PURGE: files in its destination (bulk); with /MOV or /MOVE: moves its source; not with /L"},
-	{Word: "Remove-Item", Names: []string{"remove-item", "rm", "ri", "del", "erase", "rd", "rmdir"}, In: delInPS, ByName: true,
+	{Word: "Remove-Item", Names: []string{"remove-item", "rm", "ri", "del", "erase", "rd", "rmdir"}, in: delInPS, ByName: true,
 		Deletes: "its -Path or -LiteralPath (-LiteralPath names it as written); recursive with -Recurse (any prefix); bulk when piped into or with -Include, -Exclude or -Filter; not with -WhatIf"},
-	{Word: "Move-Item", Names: []string{"move-item", "mv", "mi", "move"}, In: delInPS, ByName: true,
+	{Word: "Move-Item", Names: []string{"move-item", "mv", "mi", "move"}, in: delInPS, ByName: true,
 		Deletes: "moves its -Path or -LiteralPath onto its -Destination; piped into, unnamed"},
-	{Word: "Rename-Item", Names: []string{"rename-item", "ren", "rni"}, In: delInPS, ByName: true,
+	{Word: "Rename-Item", Names: []string{"rename-item", "ren", "rni"}, in: delInPS, ByName: true,
 		Deletes: "moves its -Path or -LiteralPath onto -NewName beside it; piped into, unnamed"},
-	{Word: "del", Names: []string{"del", "erase"}, In: delInCmd, ByName: true,
+	{Word: "del", Names: []string{"del", "erase"}, in: delInCmd, ByName: true,
 		Deletes: "the files in its operands; recursive with /s"},
-	{Word: "rd", Names: []string{"rd", "rmdir"}, In: delInCmd, ByName: true,
+	{Word: "rd", Names: []string{"rd", "rmdir"}, in: delInCmd, ByName: true,
 		Deletes: "its folders; recursive with /s"},
-	{Word: "move", Names: []string{"move"}, In: delInCmd, ByName: true,
+	{Word: "move", Names: []string{"move"}, in: delInCmd, ByName: true,
 		Deletes: "moves its sources onto its destination"},
-	{Word: "ren", Names: []string{"ren", "rename"}, In: delInCmd, ByName: true,
+	{Word: "ren", Names: []string{"ren", "rename"}, in: delInCmd, ByName: true,
 		Deletes: "moves its source onto a new name beside it"},
 }
 
@@ -114,70 +127,88 @@ func delParseWord(word string) func(r *delRun, x delExec, words []shWord) []delA
 	return func(*delRun, delExec, []shWord) []delAct { return nil }
 }
 
-// delRunner is a word that runs another program (plan-5 5.3.3 note 1): the check skips it, its options and their
+// RunnerWord is a word that runs another program (plan-5 5.3.3 note 1): the check skips it, its options and their
 // values, to reach the program it runs.
-type delRunner struct {
+type RunnerWord struct {
 	Word string   // as the reference page shows it
-	In   int      // where it is read
 	Does string   // what the check reads in it: the reference page's words
+	in   int      // where it is read
 	opt  delOpt   // its options (options stop at the program it runs)
 	dir  []string // the options naming the folder the program runs in
 }
 
-// delRunners is the delete check's table of words that run another program, its one home.
-var delRunners = []delRunner{
-	{Word: "sudo", In: delInBash, Does: "its options skipped; -D (--chdir) names the folder",
+// Shells names where a runner word is read, for the reference page.
+func (w RunnerWord) Shells() string { return delShells(w.in) }
+
+// delShells names the shells of a where-read mask.
+func delShells(in int) string {
+	var out []string
+	if in&delInBash != 0 {
+		out = append(out, "bash")
+	}
+	if in&delInPS != 0 {
+		out = append(out, "PowerShell")
+	}
+	if in&delInCmd != 0 {
+		out = append(out, "cmd.exe")
+	}
+	return strings.Join(out, ", ")
+}
+
+// RunnerWords is the delete check's table of words that run another program, its one home.
+var RunnerWords = []RunnerWord{
+	{Word: "sudo", in: delInBash, Does: "its options skipped; -D (--chdir) names the folder",
 		opt: delOpt{short: "AbEeHiKklnPSsVv", shortVal: "ugpChDrtTUR", long: []string{"askpass", "background", "edit",
 			"help", "login", "remove-timestamp", "reset-timestamp", "list", "non-interactive", "preserve-groups", "shell",
 			"stdin", "validate", "version"}, longVal: []string{"user", "group", "host", "prompt", "close-from", "chdir",
 			"chroot", "role", "type", "command-timeout", "other-user"}, longOpt: []string{"preserve-env"}},
 		dir: []string{"D", "chdir"}},
-	{Word: "doas", In: delInBash, Does: "its options skipped",
+	{Word: "doas", in: delInBash, Does: "its options skipped",
 		opt: delOpt{short: "nLs", shortVal: "uC"}},
-	{Word: "env", In: delInBash, Does: "its options and NAME=value words skipped; -C (--chdir) names the folder; -S (--split-string) is split again",
+	{Word: "env", in: delInBash, Does: "its options and NAME=value words skipped; -C (--chdir) names the folder; -S (--split-string) is split again",
 		opt: delOpt{short: "i0v", shortVal: "uCSa", long: []string{"ignore-environment", "null", "debug", "help", "version",
 			"list-signal-handling"}, longVal: []string{"unset", "chdir", "split-string", "argv0"},
 			longOpt: []string{"ignore-signal", "default-signal", "block-signal"}},
 		dir: []string{"C", "chdir"}},
-	{Word: "command", In: delInBash, Does: "skipped; with -v or -V it runs nothing",
+	{Word: "command", in: delInBash, Does: "skipped; with -v or -V it runs nothing",
 		opt: delOpt{short: "pvV"}},
-	{Word: "builtin", In: delInBash, Does: "skipped"},
-	{Word: "exec", In: delInBash, Does: "its options skipped",
+	{Word: "builtin", in: delInBash, Does: "skipped"},
+	{Word: "exec", in: delInBash, Does: "its options skipped",
 		opt: delOpt{short: "cl", shortVal: "a"}},
-	{Word: "nice", In: delInBash, Does: "its options skipped",
+	{Word: "nice", in: delInBash, Does: "its options skipped",
 		opt: delOpt{shortVal: "n", longVal: []string{"adjustment"}}},
-	{Word: "ionice", In: delInBash, Does: "its options skipped",
+	{Word: "ionice", in: delInBash, Does: "its options skipped",
 		opt: delOpt{short: "t", shortVal: "cnpPu"}},
-	{Word: "nohup", In: delInBash, Does: "skipped"},
-	{Word: "setsid", In: delInBash, Does: "its options skipped",
+	{Word: "nohup", in: delInBash, Does: "skipped"},
+	{Word: "setsid", in: delInBash, Does: "its options skipped",
 		opt: delOpt{short: "cfw", long: []string{"ctty", "fork", "wait"}}},
-	{Word: "stdbuf", In: delInBash, Does: "its options skipped",
+	{Word: "stdbuf", in: delInBash, Does: "its options skipped",
 		opt: delOpt{shortVal: "ioe", longVal: []string{"input", "output", "error"}}},
-	{Word: "time", In: delInBash, Does: "its options skipped",
+	{Word: "time", in: delInBash, Does: "its options skipped",
 		opt: delOpt{short: "pvaq", shortVal: "fo", long: []string{"portability", "append", "verbose", "quiet", "help",
 			"version"}, longVal: []string{"format", "output"}}},
-	{Word: "timeout", In: delInBash, Does: "its options and its duration skipped",
+	{Word: "timeout", in: delInBash, Does: "its options and its duration skipped",
 		opt: delOpt{short: "v", shortVal: "sk", long: []string{"preserve-status", "foreground", "verbose"},
 			longVal: []string{"signal", "kill-after"}}},
-	{Word: "xargs", In: delInBash, Does: "its options skipped; a delete it runs takes its operands from input, so it does not name them",
+	{Word: "xargs", in: delInBash, Does: "its options skipped; a delete it runs takes its operands from input, so it does not name them",
 		opt: delOpt{short: "0prtxeil", shortVal: "adEILnPs", long: []string{"null", "no-run-if-empty", "interactive",
 			"verbose", "exit", "open-tty", "show-limits"}, longVal: []string{"arg-file", "delimiter", "max-args", "max-lines",
 			"max-procs", "max-chars", "process-slot-var"}, longOpt: []string{"eof", "replace"}}},
-	{Word: "busybox", In: delInBash, Does: "skipped: the word after it is the program"},
-	{Word: "chronic", In: delInBash, Does: "skipped"},
-	{Word: "unbuffer", In: delInBash, Does: "skipped"},
-	{Word: "fakeroot", In: delInBash, Does: "its options skipped",
+	{Word: "busybox", in: delInBash, Does: "skipped: the word after it is the program"},
+	{Word: "chronic", in: delInBash, Does: "skipped"},
+	{Word: "unbuffer", in: delInBash, Does: "skipped"},
+	{Word: "fakeroot", in: delInBash, Does: "its options skipped",
 		opt: delOpt{shortVal: "lsi", long: []string{"unknown-is-real", "version", "help"}, longVal: []string{"lib", "faked"}}},
-	{Word: "watch", In: delInBash, Does: "its options skipped; its words joined and split again, as sh -c runs them, unless -x (--exec)",
+	{Word: "watch", in: delInBash, Does: "its options skipped; its words joined and split again, as sh -c runs them, unless -x (--exec)",
 		opt: delOpt{short: "bcdegptwx", shortVal: "nq", long: []string{"beep", "color", "no-color", "errexit", "chgexit",
 			"precise", "no-title", "no-wrap", "exec", "help", "version"}, longVal: []string{"interval", "equexit"},
 			longOpt: []string{"differences"}}},
-	{Word: "wsl", In: delInBash | delInPS | delInCmd, Does: "its options skipped; the program runs in bash, its words joined and split again unless -e (--exec); --cd names the folder",
+	{Word: "wsl", in: delInBash | delInPS | delInCmd, Does: "its options skipped; the program runs in bash, its words joined and split again unless -e (--exec); --cd names the folder",
 		opt: delOpt{short: "e", shortVal: "du", long: []string{"exec", "system"}, longVal: []string{"distribution",
 			"user", "cd", "shell-type"}},
 		dir: []string{"cd"}},
-	{Word: "start", In: delInCmd, Does: "its /options and a quoted title skipped; /d names the folder"},
-	{Word: "call", In: delInCmd, Does: "skipped"},
+	{Word: "start", in: delInCmd, Does: "its /options and a quoted title skipped; /d names the folder"},
+	{Word: "call", in: delInCmd, Does: "skipped"},
 }
 
 // delBashNames are the programs read as bash-like shells: their -c text, or their input, is split again as bash.
@@ -187,7 +218,7 @@ var delBashNames = map[string]bool{"bash": true, "sh": true, "zsh": true, "dash"
 // delByName holds every name of a delete word that is a delete by its name alone.
 var delByName = func() map[string]bool {
 	m := map[string]bool{}
-	for _, w := range delWords {
+	for _, w := range DeleteWords {
 		if w.ByName {
 			for _, n := range w.Names {
 				m[n] = true
@@ -199,11 +230,11 @@ var delByName = func() map[string]bool {
 
 // delWordFor finds the delete word a program name is, where it is read; nil for none. git's words are found by
 // their subcommand (delRun.git).
-func delWordFor(name string, d shDialect, native bool) *delWord {
-	pick := func(in int) *delWord {
-		for k := range delWords {
-			w := &delWords[k]
-			if w.In&in == 0 || w.Sub != "" {
+func delWordFor(name string, d shDialect, native bool) *DeleteWord {
+	pick := func(in int) *DeleteWord {
+		for k := range DeleteWords {
+			w := &DeleteWords[k]
+			if w.in&in == 0 || w.Sub != "" {
 				continue
 			}
 			for _, n := range w.Names {
@@ -228,7 +259,7 @@ func delWordFor(name string, d shDialect, native bool) *delWord {
 }
 
 // delRunnerFor finds the runner a program name is, where it is read; nil for none.
-func delRunnerFor(name string, d shDialect) *delRunner {
+func delRunnerFor(name string, d shDialect) *RunnerWord {
 	in := delInBash
 	switch d {
 	case shPower:
@@ -236,9 +267,9 @@ func delRunnerFor(name string, d shDialect) *delRunner {
 	case shCmd:
 		in = delInCmd
 	}
-	for k := range delRunners {
-		if delRunners[k].Word == name && delRunners[k].In&in != 0 {
-			return &delRunners[k]
+	for k := range RunnerWords {
+		if RunnerWords[k].Word == name && RunnerWords[k].in&in != 0 {
+			return &RunnerWords[k]
 		}
 	}
 	return nil
@@ -320,6 +351,10 @@ func (r *delRun) exec(x delExec) delCd {
 		if r.shell(name, x) {
 			return delCd{}
 		}
+		if delBonsai(x.words[0].text) {
+			r.bonsaiCall(x)
+			return delCd{}
+		}
 		if name == "git" {
 			nx, acts := r.git(x)
 			for _, a := range acts {
@@ -335,6 +370,40 @@ func (r *delRun) exec(x delExec) delCd {
 		return delCd{}
 	}
 	return delCd{}
+}
+
+// delBonsai reports a program word that names Bonsai's own program: bonsai, by its base name with any of the
+// endings a stand-in takes (StandInNames), letter case ignored.
+func delBonsai(t string) bool {
+	if k := strings.LastIndexAny(t, `/\`); k >= 0 {
+		t = t[k+1:]
+	}
+	for _, n := range StandInNames {
+		if strings.EqualFold(t, n) {
+			return true
+		}
+	}
+	return false
+}
+
+// bonsaiCall gives one bonsai call to the guard's judgment of Bonsai's own commands (commands.go's ownCommand),
+// in each folder it may run in, or in the session's project folder when that cannot be told (5.3.2 note 7).
+func (r *delRun) bonsaiCall(x delExec) {
+	argv := make([]string, len(x.words))
+	for k, w := range x.words {
+		argv[k] = w.text
+	}
+	dirs := append([]string(nil), x.dirs.known...)
+	if (x.dirs.unknown || len(dirs) == 0) && r.own != "" {
+		dirs = appendNew(dirs, r.own)
+	}
+	for _, dir := range dirs {
+		if d := r.j.ownCommand(dir, argv); !d.Allow {
+			r.refuse(d)
+			return
+		}
+	}
+	r.bonsai = true
 }
 
 // delCmdGlued splits a cmd.exe program glued to its options (rd/s/q) into its words.
@@ -356,7 +425,7 @@ func delCmdGlued(words []shWord) []shWord {
 
 // runner skips a runner word to the program it runs. ok is false when it runs none, or the check has split what
 // it runs already (env -S, wsl).
-func (r *delRun) runner(rn *delRunner, x delExec) (delExec, bool) {
+func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 	words := x.words[1:]
 	if rn.Word == "start" {
 		for len(words) > 0 && strings.HasPrefix(words[0].text, "/") && !words[0].quoted {
@@ -450,7 +519,7 @@ func (r *delRun) unknownProgram(x delExec) {
 		}
 	}
 	if !recursive {
-		if delHoldsWord(x.words[0].raw) {
+		if delHoldsWord(x.words[0].raw) != "" {
 			r.judge(delAct{word: "a program named by a variable or substitution", unnamed: "its program is a variable " +
 				"or substitution that holds a delete word, so the check cannot tell what it runs",
 				next: "name the program plainly (rm, Remove-Item), not through a variable or substitution"}, x)
@@ -1583,11 +1652,11 @@ func delCmdRen(r *delRun, x delExec, words []shWord) []delAct {
 	return []delAct{a}
 }
 
-// delHoldsWord reports whether a text the check cannot split holds a delete word: a word that deletes by its name,
-// git with rm, clean, mv or stash, find with -delete or -exec, rsync with --del or --remove, robocopy with /MIR,
+// delHoldsWord gives the delete word a text the check cannot split holds, "" for none: a word that deletes by its
+// name, git with rm, clean, mv or stash, find with -delete or -exec, rsync with --del or --remove, robocopy with /MIR,
 // /PURGE or /MOV. Words are cut at anything but letters, digits and . _ - / \ : and matched by base name, .exe
 // dropped, case-folded.
-func delHoldsWord(s string) bool {
+func delHoldsWord(s string) string {
 	low := strings.ToLower(s)
 	toks := strings.FieldsFunc(low, func(c rune) bool {
 		return !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || strings.ContainsRune("._-/\\:", c) || c >= 0x80)
@@ -1600,28 +1669,28 @@ func delHoldsWord(s string) bool {
 		}
 		base = strings.TrimSuffix(base, ".exe")
 		if delByName[base] {
-			return true
+			return base
 		}
 		switch base {
 		case "git":
 			git = true
 		case "clean", "stash":
 			if git {
-				return true
+				return "git " + base
 			}
 		case "find":
 			if strings.Contains(low, "-delete") || strings.Contains(low, "-exec") || strings.Contains(low, "-ok") {
-				return true
+				return base
 			}
 		case "rsync":
 			if strings.Contains(low, "--del") || strings.Contains(low, "--remove") {
-				return true
+				return base
 			}
 		case "robocopy":
 			if strings.Contains(low, "mir") || strings.Contains(low, "purge") || strings.Contains(low, "mov") {
-				return true
+				return base
 			}
 		}
 	}
-	return false
+	return ""
 }

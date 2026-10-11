@@ -10,18 +10,21 @@ package guard
 //   - shell_split.go: the line cut into simple commands and words by the quoting of the shell that runs it (bash's
 //     for Bash and Monitor, PowerShell's for PowerShell, cmd.exe's inside cmd /c), nested text split again to a
 //     depth of three. A line it cannot split is refused only when it holds a delete word (delete-unsplit).
-//   - shell_words.go: past NAME=value words and the words that run another program (delRunners: sudo, env, xargs,
+//   - shell_words.go: past NAME=value words and the words that run another program (RunnerWords: sudo, env, xargs,
 //     ...), the program. A shell given text (bash -c, eval, cmd /c, powershell -Command, a here-document fed to
-//     bash) has that text split again; a delete word (delWords, the list's one home) gives what it deletes.
-//   - this file: the list walked in order, the folder each command runs in followed through cd (note 4: a cd to a
-//     name moves it; one that cannot be told leaves it unknown; a cd that may fail leaves both folders), and each
-//     delete judged. Rule 3 (delete-unnamed): a recursive or bulk delete with an operand that is not a plain name
-//     (shell_paths.go's delPlain), a delete of several files by a glob, a delete fed its operands by xargs, a
-//     pipeline or a loop's variable, git clean with no path, and always git clean -x or -X, git stash --all and
-//     rm --no-preserve-root. Rule 4 (delete-protected): every operand, and both sides of a move, read in the
-//     command's folder and judged by the guard's function for an edit of that path (delJudge); a recursive delete or
-//     a move of a folder also against the guarded paths under it, found from the guarded globs without reading the
-//     folder's tree (shell_paths.go).
+//     bash) has that text split again; a delete word (DeleteWords, the list's one home) gives what it deletes; a
+//     bonsai call goes to the guard's judgment of Bonsai's own commands (commands.go's ownCommand).
+//   - this file: every text split (the line, and each text nested in it or decoded) is given to commands.go's
+//     ownLine for CLAUDE_CODE_CHILD_SESSION; the list walked in order, the folder each command runs in followed
+//     through cd (note 4: a cd to a name moves it; one that cannot be told leaves it unknown; a cd that may fail
+//     leaves both folders), and each delete judged. Rule 3 (delete-unnamed): a recursive or bulk delete with an
+//     operand that is not a plain name (shell_paths.go's delPlain), a delete of several files by a glob, a delete fed
+//     its operands by xargs, a pipeline or a loop's variable, git clean with no path, and always git clean -x or -X,
+//     git stash --all and rm --no-preserve-root. Rule 4 (delete-protected): every operand, and both sides of a move,
+//     read in the command's folder and judged by the guard's one function for a delete (may.go's mayDelete); a
+//     recursive delete or a move of a folder also against the guarded paths under it, found from the guarded globs
+//     (may.go's judgedRoots, read only once a delete needs them: it reads this machine's records) without reading
+//     the folder's tree (shell_paths.go).
 //
 // What it leaves (note 5; question A): a shell write to a guarded path (a redirect, cp or ln over it, an
 // interpreter such as python -c or node -e) is not judged, nor a delete inside a script run by name, nor, in
@@ -33,64 +36,36 @@ package guard
 // or function defined outside it; and a link made earlier in the same line and deleted through (ln -s .git g && rm
 // -rf g/), since the check reads the disk as it is before the line runs.
 //
-// The answer (note 6) names the command, the operand and the rule, and the next step; the guard's record keeps the
-// command's head only (redact.CommandHead) and the deciding operand, project-relative, as its target.
+// The answer (note 6) names the command by its head only (redact.CommandHead: the program and, for git and its kind,
+// one subcommand word), the operand and the rule, and the next step; it quotes no command line, and an operand that
+// holds a variable or a substitution is not quoted either (contract §2.6: the record keeps no part of the line beyond
+// the head). The deciding operand is the record's target, relative to the session's project ("" outside it).
+//
+// The rules (rules.go's table, their one home): delete-unnamed, delete-protected and delete-unsplit refuse;
+// delete-named allows a call whose deletes all name what they take; a call with no delete is allowed as
+// bonsai-command when it ran a bonsai command, else as shell-not-judged.
 
 import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/LastStep/Bonsai/internal/redact"
 )
 
-// The delete check's rules, the guard record's rule field (contract §8.1). Until the check is wired into the
-// guard's rules table (plan-5 5.3, "The order", item 5), delRules below is their one home.
-const (
-	delRuleUnnamed   = "delete-unnamed"   // deny: a recursive or bulk delete that does not name what it deletes
-	delRuleProtected = "delete-protected" // deny: a delete or move of a guarded path, or of a folder holding one
-	delRuleUnsplit   = "delete-unsplit"   // deny: a line the check cannot split, holding a delete word
-	delRuleNamed     = "delete-named"     // allow: every delete names what it deletes, and none is guarded
-	delRuleNone      = "shell-no-delete"  // allow: no delete word (a line that cannot be split holds none either)
-)
-
-// delRules is the delete check's part of the guard's rules table: each rule's name, whether it allows, and one line
-// on it. Every rule has a row in the delete check's test table (TestShellRulesEachHaveARow).
-var delRules = []struct {
-	Name  string
-	Allow bool
-	Line  string
-}{
-	{delRuleUnnamed, false, "a recursive or bulk delete that does not name what it deletes (a glob, a variable, " +
-		"., .., /, ~, a drive's root; xargs or a pipeline feeding it; git clean with no path), and always git clean " +
-		"-x or -X, git stash --all and rm --no-preserve-root"},
-	{delRuleProtected, false, "a delete or move of a guarded path, or of a folder holding one, judged as an edit of " +
-		"that path"},
-	{delRuleUnsplit, false, "a command line the check cannot split (a quote or bracket left open, nesting past " +
-		"three levels) that holds a delete word"},
-	{delRuleNamed, true, "a shell call whose deletes and moves all name what they take, none of it guarded"},
-	{delRuleNone, true, "a shell call with no delete word"},
-}
-
-// delJudge is what the delete check asks of the guard's rules (plan-5 5.3.2 notes 1 and 8): the one function that
-// answers "may this agent change this path now", and the projects a shell call's deletes are judged in.
+// delJudge is what the delete check asks of the guard's rules (plan-5 5.3.2 notes 1, 7 and 8); the guard's judge
+// (rule.go) is one, a test's stub another.
 type delJudge interface {
-	// delMay judges a delete or move of the path p, read against the folder dir as a file tool's path is read
-	// against the payload's cwd, as an edit of that path (5.3.2 note 1). For deletes, the floor's .git is the
-	// project's own top one only (5.3.2 note 2): a .git deeper down is not guarded here.
-	delMay(dir, p string) Decision
-	// delRoots gives the folders whose guarded paths a delete can take: the projects a shell call is judged in (the
-	// session's own, from a worktree its verified main too, and the other linked projects on this machine's record,
-	// 5.3.2 rule 8), and Bonsai's home.
-	delRoots() []delRoot
-}
-
-// delRoot is one folder a delete is judged in.
-type delRoot struct {
-	Dir   string   // its top folder, absolute
-	Globs []string // its guarded paths as folder-relative globs with forward slashes: the lists, the packs' declared
-	//                paths, the floor's top paths; a glob with no fixed start (**/x) is judged against the
-	//                operand itself only, never against what a deleted folder holds (5.3.3 note 4)
-	Whole bool //     everything in it is guarded (Bonsai's home): a delete of a folder holding it is refused
-	Own   bool //     the session's own project: a refusal's target is kept relative to it
+	// mayDelete judges a delete or move of the path p, read against the folder dir (absolute), as an edit of that
+	// path: the one function (may.go), for which the floor's .git is the project's own top one only.
+	mayDelete(dir, p string) Decision
+	// judgedRoots gives the folders whose guarded paths a delete can take (judgedRoot): the projects a shell call is
+	// judged in and Bonsai's home. It reads this machine's records, so it is asked only once a delete needs it.
+	judgedRoots() []judgedRoot
+	// ownCommand judges one bonsai call: argv its words, dir the folder it runs in (commands.go).
+	ownCommand(dir string, argv []string) Decision
+	// ownLine judges a text for CLAUDE_CODE_CHILD_SESSION (commands.go): each text the check splits is given to it.
+	ownLine(tool, text string) Decision
 }
 
 // delOp is one operand of a delete or a move: one word, or one word its brace list writes out.
@@ -121,24 +96,17 @@ type delAct struct {
 }
 
 // shellDecide judges one shell call by the delete check: tool is Bash, Monitor or PowerShell (any other name is read
-// as bash), command its command line, cwd the payload's folder. No input makes it panic (FuzzShellDecide).
-func shellDecide(tool, command, cwd string, j delJudge) Decision {
+// as bash), command its command line, cwd the payload's folder, base the session's project folder (where the line
+// runs when cwd is not absolute, and what a refusal's target is relative to). No input makes it panic
+// (FuzzShellDecide).
+func shellDecide(tool, command, cwd, base string, j delJudge) Decision {
 	d := shBash
 	if tool == "PowerShell" {
 		d = shPower
 	}
-	r := &delRun{tool: tool, j: j, roots: j.delRoots()}
-	for _, root := range r.roots {
-		if root.Own {
-			r.own = root.Dir
-			break
-		}
-	}
-	switch {
-	case cwd != "" && filepath.IsAbs(cwd):
+	r := &delRun{tool: tool, j: j, own: base, base: base}
+	if cwd != "" && filepath.IsAbs(cwd) {
 		r.base = filepath.Clean(cwd)
-	case r.own != "":
-		r.base = r.own
 	}
 	start := delDirs{}
 	if r.base != "" {
@@ -147,37 +115,45 @@ func shellDecide(tool, command, cwd string, j delJudge) Decision {
 		start.unknown = true
 	}
 	r.text(command, d, 0, start, false)
-	if r.deny != nil {
+	switch {
+	case r.deny != nil:
 		return *r.deny
+	case r.found:
+		return allow(RuleDeleteNamed, r.first)
+	case r.bonsai:
+		return allow(RuleBonsaiCommand, "")
 	}
-	if r.found {
-		return allow(delRuleNamed, r.first)
-	}
-	return allow(delRuleNone, "")
+	return allow(RuleShell, "")
 }
 
 // delRun is one judgment of a command line.
 type delRun struct {
 	tool     string
 	j        delJudge
-	roots    []delRoot
-	own      string    // the session's own project's top folder, "" for none
+	own      string    // the session's project folder: a refusal's target is relative to it, "" for none
 	base     string    // the payload's folder: where an operand is read when its folder cannot be told
 	found    bool      // a delete was judged
+	bonsai   bool      // a bonsai command was judged, and allowed
 	first    string    // the first operand judged, project-relative, for an allow's target
 	firstSet bool      // first is set (it may be "": an operand outside the project)
 	feed     string    // set while splitting text a shell runs under xargs: its deletes' operands come from input
 	deny     *Decision // the first refusal
 
-	rootForms [][]string // per root, its forms (delRootForms), read once per line; nil until read
-	rootFold  []bool     // per root, whether letter case is folded there
-	rootErr   error      // why a root's forms could not be read
+	roots     []judgedRoot // the folders a delete is judged in, read once, when a delete first needs them
+	rootsSet  bool         // roots has been read
+	rootForms [][]string   // per root, its forms (delRootForms), read once per line; nil until read
+	rootFold  []bool       // per root, whether letter case is folded there
+	rootErr   error        // why a root's forms could not be read
 }
 
-// rootsRead reads every root's forms once per line.
+// rootsRead reads the folders a delete is judged in, and each one's forms, once per line: only when a recursive
+// delete, a move or a glob needs them.
 func (r *delRun) rootsRead() error {
 	if r.rootForms != nil || r.rootErr != nil {
 		return r.rootErr
+	}
+	if !r.rootsSet {
+		r.roots, r.rootsSet = r.j.judgedRoots(), true
 	}
 	r.rootForms = make([][]string, len(r.roots))
 	r.rootFold = make([]bool, len(r.roots))
@@ -203,12 +179,16 @@ func (r *delRun) text(s string, d shDialect, depth int, dirs delDirs, loop bool)
 	if r.deny != nil {
 		return dirs
 	}
+	if own := r.j.ownLine(r.tool, s); !own.Allow {
+		r.refuse(own)
+		return dirs
+	}
 	l, why := shSplit(s, d, depth)
 	if why != "" {
-		if delHoldsWord(s) {
-			r.refuse(Decision{Rule: delRuleUnsplit, Target: "",
-				Why: fmt.Sprintf("%s refused: the command %s holds a delete word, and the check cannot split it (%s), "+
-					"so it cannot tell what it deletes (rule %s)", r.tool, quote(s, 120), why, delRuleUnsplit),
+		if word := delHoldsWord(s); word != "" {
+			r.refuse(Decision{Rule: RuleDeleteUnsplit,
+				Why: fmt.Sprintf("%s refused: the command line holds the delete word %s, and the check cannot split it (%s), "+
+					"so it cannot tell what it deletes (rule %s)", r.tool, quote(word, 40), why, RuleDeleteUnsplit),
 				Next: "close every quote and bracket, nest at most three levels deep, and name what the delete removes"})
 		}
 		return dirs
@@ -510,8 +490,8 @@ func (r *delRun) judge(a delAct, x delExec) {
 	}
 	r.found = true
 	if a.unnamed != "" {
-		r.refuse(Decision{Rule: delRuleUnnamed, Why: fmt.Sprintf("%s refused: %s does not name what it deletes: %s "+
-			"(rule %s)", r.tool, quote(x.shown, 120), a.unnamed, delRuleUnnamed), Next: a.next})
+		r.refuse(Decision{Rule: RuleDeleteUnnamed, Why: fmt.Sprintf("%s refused: %s does not name what it deletes: %s "+
+			"(rule %s)", r.tool, r.head(x), a.unnamed, RuleDeleteUnnamed), Next: a.next})
 		return
 	}
 	verb := "deletes"
@@ -522,9 +502,9 @@ func (r *delRun) judge(a delAct, x delExec) {
 		x.feed = r.feed
 	}
 	if x.feed != "" {
-		r.refuse(Decision{Rule: delRuleUnnamed, Why: fmt.Sprintf("%s refused: %s does not name what it %s: its "+
-			"operands come from %s, so the check cannot see them (rule %s)", r.tool, quote(x.shown, 120), verb, x.feed,
-			delRuleUnnamed), Next: "name what to " + delVerb(a.move) + " in the command itself, not through " + x.feed})
+		r.refuse(Decision{Rule: RuleDeleteUnnamed, Why: fmt.Sprintf("%s refused: %s does not name what it %s: its "+
+			"operands come from %s, so the check cannot see them (rule %s)", r.tool, r.head(x), verb, x.feed,
+			RuleDeleteUnnamed), Next: "name what to " + delVerb(a.move) + " in the command itself, not through " + x.feed})
 		return
 	}
 	a.ops = delLiterals(a.ops, x)
@@ -537,25 +517,25 @@ func (r *delRun) judge(a delAct, x delExec) {
 		why, next := "", ""
 		switch {
 		case op.pipeVar || x.loop && op.expand:
-			why = fmt.Sprintf("%s takes %s from a pipeline or a loop, one item after another, so the check "+
-				"cannot see what it %s", a.word, quote(op.text, 60), verb)
+			why = fmt.Sprintf("%s takes its operand from a pipeline or a loop's variable, one item after another, so "+
+				"the check cannot see what it %s", a.word, verb)
 			next = "name the files in the command, or " + delVerb(a.move) + " their folder by its name"
 		case (a.recursive || bulk) && !a.move:
 			if p := delPlain(op); p != "" {
-				why = fmt.Sprintf("its operand %s %s", quote(op.text, 60), p)
+				why = fmt.Sprintf("its operand %s %s", r.shownOp(op), p)
 				next = delNextFor(p)
 			} else if x.dirs.unknown && !delIsAbs(op.text) {
 				why = fmt.Sprintf("its operand %s is read in a folder the check cannot tell (after a cd it cannot "+
-					"follow)", quote(op.text, 60))
+					"follow)", r.shownOp(op))
 				next = "cd to a plain folder name first, or give the operand as an absolute path"
 			}
 		case op.glob && !op.literal && !a.move:
-			why = fmt.Sprintf("its operand %s holds a glob, which deletes several files it does not name", quote(op.text, 60))
+			why = fmt.Sprintf("its operand %s holds a glob, which deletes several files it does not name", r.shownOp(op))
 			next = "name the files, or delete the folder by its name"
 		}
 		if why != "" {
-			r.refuse(Decision{Rule: delRuleUnnamed, Target: r.target(x.dirs, op),
-				Why:  fmt.Sprintf("%s refused: %s does not name what it %s: %s (rule %s)", r.tool, quote(x.shown, 120), verb, why, delRuleUnnamed),
+			r.refuse(Decision{Rule: RuleDeleteUnnamed, Target: r.target(x.dirs, op),
+				Why:  fmt.Sprintf("%s refused: %s does not name what it %s: %s (rule %s)", r.tool, r.head(x), verb, why, RuleDeleteUnnamed),
 				Next: next})
 			return
 		}
@@ -735,35 +715,35 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 			r.first, r.firstSet = delRel(r.own, dir, text), true
 		}
 		if !glob {
-			if dec := r.j.delMay(dir, text); !dec.Allow {
+			if dec := r.j.mayDelete(dir, text); !dec.Allow {
 				r.protected(x, dir, text, "", dec, verb)
 				return
 			}
 		}
-		if !tree && !glob {
-			continue
+		if !tree && !glob || tree && !glob && !delFolder(dir, text) {
+			continue // a file holds nothing, and what does not exist is not deleted: no folder to meet the globs with
 		}
 		forms, err := delForms(dir, text)
 		if err == nil {
 			err = r.rootsRead()
 		}
+		if err != nil {
+			r.refuse(Decision{Rule: RuleBadPath, Target: delRel(r.own, dir, text),
+				Why: fmt.Sprintf("%s refused: %s %s %s, and the check cannot tell where it leads (%s), so it cannot "+
+					"tell what it %s (rule %s)", r.tool, r.head(x), verb, r.shownText(text), oneLine(err.Error()), verb, RuleBadPath),
+				Next: "give the path in its plain form inside the project (a drive letter and folders), or tell the person"})
+			return
+		}
 		for k, root := range r.roots {
-			if err != nil {
-				r.refuse(Decision{Rule: RuleBadPath, Target: delRel(r.own, dir, text),
-					Why: fmt.Sprintf("%s refused: %s %s %s, which Windows opens but cannot name (%s), so the check "+
-						"cannot tell what it %s (rule %s)", r.tool, quote(x.shown, 120), verb, quote(text, 60),
-						oneLine(err.Error()), verb, RuleBadPath),
-					Next: "give the path in its plain form inside the project (a drive letter and folders), or tell the person"})
-				return
-			}
 			fold := r.rootFold[k]
 			rels, whole := delPlace(r.rootForms[k], forms, fold)
 			if root.Whole && tree && (whole || len(rels) > 0) {
-				dec := r.j.delMay(root.Dir, ".")
+				dec := r.j.mayDelete(root.Dir, root.Dir)
 				if dec.Allow {
-					dec = deny("", "everything in "+quote(filepath.ToSlash(root.Dir), 80)+" is Bonsai's own", "leave it as it is")
+					dec = deny(RuleBonsaiFiles, "everything in "+quote(fromHome(root.Dir), 80)+" is Bonsai's own",
+						"leave Bonsai's home as it is")
 				}
-				r.protected(x, dir, text, filepath.ToSlash(root.Dir), dec, verb)
+				r.protected(x, dir, text, fromHome(root.Dir), dec, verb)
 				return
 			}
 			places := rels
@@ -774,7 +754,7 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 			for _, g := range root.Globs {
 				fixed := delFixed(g)
 				if !fixed && (!glob || !lastLiteral) {
-					// Judged against the operand itself only (delMay, above): never against what a folder holds,
+					// Judged against the operand itself only (mayDelete, above): never against what a folder holds,
 					// nor the names a glob may stand for (mv dist/* . is not refused for a dist/bonsai.yaml it may
 					// hold); a glob that names the file (*/bonsai.yaml) is met.
 					continue
@@ -786,7 +766,7 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 						continue
 					}
 					shownRep := strings.Join(rep, "/")
-					if dec := r.j.delMay(root.Dir, shownRep); !dec.Allow {
+					if dec := r.j.mayDelete(root.Dir, shownRep); !dec.Allow {
 						r.protected(x, dir, text, shownRep, dec, verb)
 						return
 					}
@@ -798,7 +778,7 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 
 // protected refuses a delete of a guarded path: the operand, and the guarded path under it when that decided.
 func (r *delRun) protected(x delExec, dir, text, under string, dec Decision, verb string) {
-	what := quote(text, 60)
+	what := r.shownText(text)
 	if under != "" {
 		what += ", which takes " + quote(under, 80) + " with it"
 	}
@@ -810,10 +790,37 @@ func (r *delRun) protected(x delExec, dir, text, under string, dec Decision, ver
 	if next == "" {
 		next = "leave it as it is and tell the person"
 	}
-	r.refuse(Decision{Rule: delRuleProtected, Target: delRel(r.own, dir, text),
+	r.refuse(Decision{Rule: RuleDeleteProtected, Target: delRel(r.own, dir, text),
 		Why: fmt.Sprintf("%s refused: %s %s %s, a guarded path; the guard's answer for changing it: %s (rule %s)",
-			r.tool, quote(x.shown, 120), verb, what, why, delRuleProtected),
+			r.tool, r.head(x), verb, what, why, RuleDeleteProtected),
 		Next: next})
+}
+
+// head names a command in an answer by its head alone (redact.CommandHead), never its line: "rm", "git clean",
+// "Remove-Item"; "the command" when no head is safe to keep.
+func (r *delRun) head(x delExec) string {
+	if h := redact.CommandHead(x.shown, x.d == shPower); h != "" {
+		return quote(h, 60)
+	}
+	return "the command"
+}
+
+// shownOp names an operand in an answer: as shownText does, or, when it holds a variable or a substitution (a part of
+// the line beyond a path), not at all.
+func (r *delRun) shownOp(op delOp) string {
+	if op.expand {
+		return "(a variable or substitution)"
+	}
+	return r.shownText(op.text)
+}
+
+// shownText names a path in an answer: as written when it is relative, else from ~/ under the user's home folder
+// (fromHome), quoted.
+func (r *delRun) shownText(text string) string {
+	if delIsAbs(text) && !strings.HasPrefix(text, "~") {
+		return quote(fromHome(text), 80)
+	}
+	return quote(text, 80)
 }
 
 // target gives an operand's target for a refusal: project-relative in the command's first folder, or "".

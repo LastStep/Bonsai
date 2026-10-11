@@ -20,6 +20,9 @@ type delStub struct {
 	own, other, home string
 	grants           []string // the globs a running task grants
 	calls            int
+	rootReads        int      // judgedRoots calls: made only once a delete needs them
+	commands         []string // ownCommand's calls: the folder and the words
+	lines            []string // ownLine's texts
 }
 
 // delStubGlobs are the own project's guarded globs, as delRoots gives them.
@@ -27,15 +30,40 @@ var delStubGlobs = []string{"bonsai.yaml", ".bonsai/lock.json", ".bonsai/local/"
 	".bonsai/tasks.md", ".bonsai/sessions.md", ".git", ".claude/settings.json", ".claude/settings.local.json",
 	"**/bonsai.yaml", "**/.bonsai/", "docs/secret/**", "config/*.key", "notes/"}
 
-func (s *delStub) delRoots() []delRoot {
-	return []delRoot{
+func (s *delStub) judgedRoots() []judgedRoot {
+	s.rootReads++
+	return []judgedRoot{
 		{Dir: s.own, Globs: delStubGlobs, Own: true},
 		{Dir: s.other, Globs: []string{".git", ".bonsai", ".claude"}},
 		{Dir: s.home, Whole: true},
 	}
 }
 
-func (s *delStub) delMay(dir, p string) Decision {
+// ownCommand stands in for commands.go's in a project in agents mode: --allow-exec and unlink refused, settings set
+// and labels attach or detach refused, any other word allowed. It counts the calls and keeps the last.
+func (s *delStub) ownCommand(dir string, argv []string) Decision {
+	s.commands = append(s.commands, dir+" "+strings.Join(argv, " "))
+	for _, a := range argv[1:] {
+		if strings.HasPrefix(strings.TrimLeft(strings.ToLower(a), "-"), "allow-exec") && strings.HasPrefix(a, "-") || a == "unlink" {
+			return deny(RulePersonCommand, "bonsai refused: a person's command", personNext)
+		}
+		if a == "set" || a == "attach" || a == "detach" {
+			return deny(RuleHomeCommand, "bonsai refused: it writes this machine's settings", personNext)
+		}
+	}
+	return allow(RuleBonsaiCommand, "")
+}
+
+// ownLine stands in for commands.go's with its own reading of the line (childSessionChange), in agents mode.
+func (s *delStub) ownLine(tool, text string) Decision {
+	s.lines = append(s.lines, text)
+	if what := childSessionChange(text); what != "" {
+		return deny(RulePersonCommand, tool+" refused: the command line "+what, personNext)
+	}
+	return allow(RuleShell, "")
+}
+
+func (s *delStub) mayDelete(dir, p string) Decision {
 	s.calls++
 	for _, root := range []string{s.home, s.own, s.other} {
 		rels, err := projectPaths(root, dir, p)
@@ -162,442 +190,455 @@ const (
 // delTable is the delete check's table. Its rows, by rule, are counted by TestShellTable.
 var delTable = []delRow{
 	// --- Ordinary work: must pass.
-	{tB, "", "rm -rf node_modules", delRuleNamed, ""},
-	{tB, "", "rm file.txt", delRuleNamed, ""},
-	{tB, "", "git rm src/main.go", delRuleNamed, ""},
-	{tB, "", "mv a.txt b.txt", delRuleNamed, ""},
-	{tB, "", "git stash", delRuleNone, ""},
-	{tB, "", "git clean -n", delRuleNone, ""},
-	{tB, "", "git clean -nd", delRuleNone, ""},
-	{tB, "", "git clean -fdx --dry-run", delRuleNone, ""},
-	{tB, "", "git clean -fd build", delRuleNamed, ""},
-	{tB, "", "rm -rf build dist", delRuleNamed, ""},
-	{tB, "", "rm -f junk/one.txt junk/two.txt", delRuleNamed, ""},
-	{tB, "", "rm -rf ./build", delRuleNamed, ""},
-	{tB, "", "rm -r build/", delRuleNamed, ""},
-	{tB, "", "mv src/main.go src/app.go", delRuleNamed, ""},
-	{tB, "", "git mv src/main.go src/app.go", delRuleNamed, ""},
-	{tB, "", "rmdir build/out", delRuleNamed, ""},
-	{tB, "", "rm -rf /tmp/bonsai-scratch-xyz", delRuleNamed, ""},
-	{tB, "", "ls -la && git status", delRuleNone, ""},
-	{tB, "", "go test ./... && go vet ./...", delRuleNone, ""},
-	{tB, "", `git commit -m "drop the rm -rf junk/* step"`, delRuleNone, ""},
-	{tB, "", "git commit -m \"$(cat <<'EOF'\nDelete junk with rm -rf junk/* and git clean -fdx.\nIt's done.\nEOF\n)\"", delRuleNone, ""},
-	{tB, "", "echo 'rm -rf /' > notes.txt", delRuleNone, ""},
-	{tB, "", "cat > clean.sh <<'EOF'\nrm -rf junk/*\nEOF\nchmod +x clean.sh", delRuleNone, ""},
-	{tB, "", "git stash -u", delRuleNone, ""},
-	{tB, "", "git stash pop", delRuleNone, ""},
-	{tB, "", `git stash push -m "wip: -a test"`, delRuleNone, ""},
-	{tB, "", "find . -name '*.go' -newer go.mod", delRuleNone, ""},
-	{tB, "", "find build -name '*.o' -delete", delRuleNamed, ""},
-	{tB, "", "rsync -a src/ backup/", delRuleNone, ""},
-	{tB, "", "rsync -a --delete src/ backup/", delRuleNamed, ""},
-	{tB, "", "rsync -a --delay-updates src/ backup/", delRuleNone, ""},
-	{tB, "", "rm -rf node_modules && npm install", delRuleNamed, ""},
-	{tB, "", "cd build && rm -rf out", delRuleNamed, ""},
-	{tB, "", "(cd build && rm -rf out) && ls", delRuleNamed, ""},
-	{tB, "", "rm -rf vendor/lib/.git", delRuleNamed, ""},
-	{tB, "", "rm .bonsai/STATE.md", delRuleNamed, ""},
-	{tB, "", "mv *.png assets/", delRuleNamed, ""},
-	{tB, "", "git rm -r --cached build", delRuleNamed, ""},
-	{tB, "", "docker run --rm -v x:/y image", delRuleNone, ""},
-	{tB, "", "npm run clean", delRuleNone, ""},
-	{tB, "", "rm -- -weird-name", delRuleNamed, ""},
-	{tB, "", "unlink file.txt", delRuleNamed, ""},
-	{tB, "", "rm -rf {build,dist}", delRuleNamed, ""},
-	{tB, "", "find . -type f | xargs grep -l TODO", delRuleNone, ""},
-	{tB, "", "git -C sub clean -fd src", delRuleNamed, ""},
-	{tB, "", "for f in a b; do echo $f; done", delRuleNone, ""},
-	{tB, "", "if [ -d build ]; then rm -rf build; fi", delRuleNamed, ""},
-	{tB, "", "test -d build && rm -rf build || true", delRuleNamed, ""},
-	{tB, "", "rm -rf build 2>/dev/null; mkdir -p build", delRuleNamed, ""},
-	{tB, "", `rm -rf "build" 'dist'`, delRuleNamed, ""},
-	{tB, "", "cd src; cd ..; rm -rf build", delRuleNamed, ""},
-	{tB, "", "pushd build && rm -rf out && popd && rm -rf dist", delRuleNamed, ""},
-	{tB, "", "f() { rm -rf build; }; f", delRuleNamed, ""},
-	{tB, "", "timeout 60 go test ./...", delRuleNone, ""},
-	{tB, "", "command -v rm", delRuleNone, ""},
-	{tB, "", "robocopy src backup /MIR", delRuleNamed, ""},
-	{tB, "", "robocopy src backup /MIR /L", delRuleNone, ""},
-	{tB, "", "rm -rf ../proj-scratch", delRuleNamed, ""},
-	{tB, "", "rm -rf ../other/src", delRuleNamed, ""},
-	{tB, "", "rm -rf ~/notes-old", delRuleNamed, ""},
-	{tB, "", "cd nowhere && rm -rf .git", delRuleNamed, ""},
-	{tM, "", "rm -rf build && npm run build -- --watch", delRuleNamed, ""},
-	{tP, "", "Remove-Item -Recurse -Force node_modules", delRuleNamed, ""},
-	{tP, "", "Remove-Item file.txt", delRuleNamed, ""},
-	{tP, "", "Move-Item a.txt b.txt", delRuleNamed, ""},
-	{tP, "", "Rename-Item a.txt b.txt", delRuleNamed, ""},
-	{tP, "", "Get-ChildItem -Recurse | Select-Object Name", delRuleNone, ""},
-	{tP, "", "Remove-Item -LiteralPath 'junk/*'", delRuleNamed, ""},
-	{tP, "", "rm build -Recurse", delRuleNamed, ""},
-	{tP, "", `Remove-Item .\build -Recurse -Force -ErrorAction SilentlyContinue`, delRuleNamed, ""},
-	{tP, "", "Remove-Item junk/one.txt, junk/two.txt", delRuleNamed, ""},
-	{tP, "", "Remove-Item -Path build -Recurse -Include *.o", delRuleNamed, ""},
-	{tP, "", "Remove-Item -Recurse -WhatIf *", delRuleNone, ""},
-	{tP, "", "if (Test-Path build) { Remove-Item -Recurse -Force build }", delRuleNamed, ""},
-	{tP, "", `cmd /c "rd /s /q build"`, delRuleNamed, ""},
-	{tP, "", `cmd /c del junk\one.txt`, delRuleNamed, ""},
-	{tP, "", "git clean -fd build; git status", delRuleNamed, ""},
-	{tP, "", "Write-Output 'Remove-Item -Recurse junk/*'", delRuleNone, ""},
+	{tB, "", "rm -rf node_modules", RuleDeleteNamed, ""},
+	{tB, "", "rm file.txt", RuleDeleteNamed, ""},
+	{tB, "", "git rm src/main.go", RuleDeleteNamed, ""},
+	{tB, "", "mv a.txt b.txt", RuleDeleteNamed, ""},
+	{tB, "", "git stash", RuleShell, ""},
+	{tB, "", "git clean -n", RuleShell, ""},
+	{tB, "", "git clean -nd", RuleShell, ""},
+	{tB, "", "git clean -fdx --dry-run", RuleShell, ""},
+	{tB, "", "git clean -fd build", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf build dist", RuleDeleteNamed, ""},
+	{tB, "", "rm -f junk/one.txt junk/two.txt", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf ./build", RuleDeleteNamed, ""},
+	{tB, "", "rm -r build/", RuleDeleteNamed, ""},
+	{tB, "", "mv src/main.go src/app.go", RuleDeleteNamed, ""},
+	{tB, "", "git mv src/main.go src/app.go", RuleDeleteNamed, ""},
+	{tB, "", "rmdir build/out", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf /tmp/bonsai-scratch-xyz", RuleDeleteNamed, ""},
+	{tB, "", "ls -la && git status", RuleShell, ""},
+	{tB, "", "go test ./... && go vet ./...", RuleShell, ""},
+	{tB, "", `git commit -m "drop the rm -rf junk/* step"`, RuleShell, ""},
+	{tB, "", "git commit -m \"$(cat <<'EOF'\nDelete junk with rm -rf junk/* and git clean -fdx.\nIt's done.\nEOF\n)\"", RuleShell, ""},
+	{tB, "", "echo 'rm -rf /' > notes.txt", RuleShell, ""},
+	{tB, "", "cat > clean.sh <<'EOF'\nrm -rf junk/*\nEOF\nchmod +x clean.sh", RuleShell, ""},
+	{tB, "", "git stash -u", RuleShell, ""},
+	{tB, "", "git stash pop", RuleShell, ""},
+	{tB, "", `git stash push -m "wip: -a test"`, RuleShell, ""},
+	{tB, "", "find . -name '*.go' -newer go.mod", RuleShell, ""},
+	{tB, "", "find build -name '*.o' -delete", RuleDeleteNamed, ""},
+	{tB, "", "rsync -a src/ backup/", RuleShell, ""},
+	{tB, "", "rsync -a --delete src/ backup/", RuleDeleteNamed, ""},
+	{tB, "", "rsync -a --delay-updates src/ backup/", RuleShell, ""},
+	{tB, "", "rm -rf node_modules && npm install", RuleDeleteNamed, ""},
+	{tB, "", "cd build && rm -rf out", RuleDeleteNamed, ""},
+	{tB, "", "(cd build && rm -rf out) && ls", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf vendor/lib/.git", RuleDeleteNamed, ""},
+	{tB, "", "rm .bonsai/STATE.md", RuleDeleteNamed, ""},
+	{tB, "", "mv *.png assets/", RuleDeleteNamed, ""},
+	{tB, "", "git rm -r --cached build", RuleDeleteNamed, ""},
+	{tB, "", "docker run --rm -v x:/y image", RuleShell, ""},
+	{tB, "", "npm run clean", RuleShell, ""},
+	{tB, "", "rm -- -weird-name", RuleDeleteNamed, ""},
+	{tB, "", "unlink file.txt", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf {build,dist}", RuleDeleteNamed, ""},
+	{tB, "", "find . -type f | xargs grep -l TODO", RuleShell, ""},
+	{tB, "", "git -C sub clean -fd src", RuleDeleteNamed, ""},
+	{tB, "", "for f in a b; do echo $f; done", RuleShell, ""},
+	{tB, "", "if [ -d build ]; then rm -rf build; fi", RuleDeleteNamed, ""},
+	{tB, "", "test -d build && rm -rf build || true", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf build 2>/dev/null; mkdir -p build", RuleDeleteNamed, ""},
+	{tB, "", `rm -rf "build" 'dist'`, RuleDeleteNamed, ""},
+	{tB, "", "cd src; cd ..; rm -rf build", RuleDeleteNamed, ""},
+	{tB, "", "pushd build && rm -rf out && popd && rm -rf dist", RuleDeleteNamed, ""},
+	{tB, "", "f() { rm -rf build; }; f", RuleDeleteNamed, ""},
+	{tB, "", "timeout 60 go test ./...", RuleShell, ""},
+	{tB, "", "command -v rm", RuleShell, ""},
+	{tB, "", "robocopy src backup /MIR", RuleDeleteNamed, ""},
+	{tB, "", "robocopy src backup /MIR /L", RuleShell, ""},
+	{tB, "", "rm -rf ../proj-scratch", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf ../other/src", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf ~/notes-old", RuleDeleteNamed, ""},
+	{tB, "", "cd nowhere && rm -rf .git", RuleDeleteNamed, ""},
+	{tM, "", "rm -rf build && npm run build -- --watch", RuleDeleteNamed, ""},
+	{tP, "", "Remove-Item -Recurse -Force node_modules", RuleDeleteNamed, ""},
+	{tP, "", "Remove-Item file.txt", RuleDeleteNamed, ""},
+	{tP, "", "Move-Item a.txt b.txt", RuleDeleteNamed, ""},
+	{tP, "", "Rename-Item a.txt b.txt", RuleDeleteNamed, ""},
+	{tP, "", "Get-ChildItem -Recurse | Select-Object Name", RuleShell, ""},
+	{tP, "", "Remove-Item -LiteralPath 'junk/*'", RuleDeleteNamed, ""},
+	{tP, "", "rm build -Recurse", RuleDeleteNamed, ""},
+	{tP, "", `Remove-Item .\build -Recurse -Force -ErrorAction SilentlyContinue`, RuleDeleteNamed, ""},
+	{tP, "", "Remove-Item junk/one.txt, junk/two.txt", RuleDeleteNamed, ""},
+	{tP, "", "Remove-Item -Path build -Recurse -Include *.o", RuleDeleteNamed, ""},
+	{tP, "", "Remove-Item -Recurse -WhatIf *", RuleShell, ""},
+	{tP, "", "if (Test-Path build) { Remove-Item -Recurse -Force build }", RuleDeleteNamed, ""},
+	{tP, "", `cmd /c "rd /s /q build"`, RuleDeleteNamed, ""},
+	{tP, "", `cmd /c del junk\one.txt`, RuleDeleteNamed, ""},
+	{tP, "", "git clean -fd build; git status", RuleDeleteNamed, ""},
+	{tP, "", "Write-Output 'Remove-Item -Recurse junk/*'", RuleShell, ""},
 
 	// --- Rule 1, the splitter, and rule 2, the delete words: every spelling reaches the program.
-	{tB, "", "rm -rf junk/*", delRuleUnnamed, ""},
-	{tM, "", "rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "/bin/rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "RM.EXE -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", `\rm -rf junk/*`, delRuleUnnamed, ""},
-	{tB, "", `"rm" -rf junk/*`, delRuleUnnamed, ""},
-	{tB, "", "r''m -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", `$'\x72\x6d' -rf junk/*`, delRuleUnnamed, ""},
-	{tB, "", "sudo rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "sudo -u root -E rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "env FOO=1 BAR=2 rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "FOO=1 rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "command rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "exec rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "nice -n 5 rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "nice -10 rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "nohup rm -rf junk/* &", delRuleUnnamed, ""},
-	{tB, "", "time rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "timeout -s KILL 5 rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "env -S 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", "doas -u root rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "builtin command rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "ionice -c 3 rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "setsid -f rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "stdbuf -o0 rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "zsh -c 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", "dash -c 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", "chronic rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "unbuffer rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "fakeroot -- rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", `ls | xargs sh -c 'rm "$1"' _`, delRuleUnnamed, ""},
-	{tP, "", "Remove-Item (Get-Item x).FullName -Recurse", delRuleUnnamed, ""},
+	{tB, "", "rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tM, "", "rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "/bin/rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "RM.EXE -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", `\rm -rf junk/*`, RuleDeleteUnnamed, ""},
+	{tB, "", `"rm" -rf junk/*`, RuleDeleteUnnamed, ""},
+	{tB, "", "r''m -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", `$'\x72\x6d' -rf junk/*`, RuleDeleteUnnamed, ""},
+	{tB, "", "sudo rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "sudo -u root -E rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "env FOO=1 BAR=2 rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "FOO=1 rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "command rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "exec rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "nice -n 5 rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "nice -10 rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "nohup rm -rf junk/* &", RuleDeleteUnnamed, ""},
+	{tB, "", "time rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "timeout -s KILL 5 rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "env -S 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "doas -u root rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "builtin command rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "ionice -c 3 rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "setsid -f rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "stdbuf -o0 rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "zsh -c 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "dash -c 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "chronic rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "unbuffer rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "fakeroot -- rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", `ls | xargs sh -c 'rm "$1"' _`, RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item (Get-Item x).FullName -Recurse", RuleDeleteUnnamed, ""},
 	// A computed operand outside a recursive or bulk delete is judged as written (note 3 refuses a variable only
 	// there), so this one is not seen: the check's known limit, kept visible.
-	{tP, "", "Remove-Item (Get-Item bonsai.yaml).Name", delRuleNamed, ""},
-	{tB, "", "ls; rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "ls && rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "false || rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "ls | rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "ls\nrm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "ls \\\n && rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "echo $(rm -rf junk/*)", delRuleUnnamed, ""},
-	{tB, "", "echo `rm -rf junk/*`", delRuleUnnamed, ""},
-	{tB, "", "(rm -rf junk/*)", delRuleUnnamed, ""},
-	{tB, "", "{ rm -rf junk/*; }", delRuleUnnamed, ""},
-	{tB, "", "f() { rm -rf junk/*; }; f", delRuleUnnamed, ""},
-	{tB, "", "diff <(rm -rf junk/*) x", delRuleUnnamed, ""},
-	{tB, "", "x=$(rm -rf junk/*)", delRuleUnnamed, ""},
-	{tB, "", `echo "${X:-$(rm -rf junk/*)}"`, delRuleUnnamed, ""},
-	{tB, "", "bash -c 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", `sh -c "rm -rf junk/*"`, delRuleUnnamed, ""},
-	{tB, "", "bash -lc 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", "bash -o pipefail -c 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", `bash -c "bash -c 'rm -rf junk/*'"`, delRuleUnnamed, ""},
-	{tB, "", "eval 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", "eval rm -rf 'junk/*'", delRuleUnnamed, ""},
-	{tB, "", "bash <<EOF\nrm -rf junk/*\nEOF", delRuleUnnamed, ""},
-	{tB, "", "bash -s <<'EOF'\nrm -rf junk/*\nEOF", delRuleUnnamed, ""},
-	{tB, "", "sh <<< 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", "echo 'rm -rf junk/*' | bash", delRuleUnnamed, ""},
-	{tB, "", "cat <<EOF | sh\nrm -rf junk/*\nEOF", delRuleUnnamed, ""},
-	{tB, "", "cat <<EOF\n$(rm -rf junk/*)\nEOF", delRuleUnnamed, ""},
-	{tB, "", `cmd /c "rd /s /q ."`, delRuleUnnamed, ""},
-	{tB, "", "cmd.exe //c del /s *.log", delRuleUnnamed, ""},
-	{tB, "", "cmd /c rd/s/q %TEMP%", delRuleUnnamed, ""},
-	{tB, "", `powershell -Command "Remove-Item -Recurse junk/*"`, delRuleUnnamed, ""},
-	{tB, "", "pwsh -NoProfile -c 'Remove-Item -r junk/*'", delRuleUnnamed, ""},
-	{tB, "", "wsl rm -rf 'junk/*'", delRuleUnnamed, ""},
-	{tB, "", "busybox rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "$RM -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", `"$(which rm)" -r junk/*`, delRuleUnnamed, ""},
-	{tB, "", "if true; then rm -rf junk/*; fi", delRuleUnnamed, ""},
-	{tB, "", "while false; do rm -rf junk/*; done", delRuleUnnamed, ""},
-	{tB, "", "! rm -rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "# a comment\nrm -rf junk/* # it's gone", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item -Recurse junk/*", delRuleUnnamed, ""},
-	{tP, "", `Remove-Item junk\* -Recurse`, delRuleUnnamed, ""},
-	{tP, "", "rm -r junk/*", delRuleUnnamed, ""},
-	{tP, "", "ri -Rec junk/*", delRuleUnnamed, ""},
-	{tP, "", "del -recurse junk/*", delRuleUnnamed, ""},
-	{tP, "", "erase junk/*", delRuleUnnamed, ""},
-	{tP, "", "rd -r junk/*", delRuleUnnamed, ""},
-	{tP, "", "rmdir -R junk/*", delRuleUnnamed, ""},
-	{tP, "", "REMOVE-ITEM -RECURSE junk/*", delRuleUnnamed, ""},
-	{tP, "", "Microsoft.PowerShell.Management\\Remove-Item -Recurse junk/*", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item \u2013Recurse $p", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item\u00a0-Recurse\u00a0junk/*", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item -Recurse:$true $p", delRuleUnnamed, ""},
-	{tP, "", "$null = Remove-Item -Recurse junk/*", delRuleUnnamed, ""},
-	{tP, "", "$r=Remove-Item -Recurse junk/*", delRuleUnnamed, ""},
-	{tP, "", "& { Remove-Item -Recurse junk/* }", delRuleUnnamed, ""},
-	{tP, "", "& 'Remove-Item' -Recurse junk/*", delRuleUnnamed, ""},
-	{tP, "", "[void](Remove-Item -Recurse junk/*)", delRuleUnnamed, ""},
-	{tP, "", `powershell -Command "Remove-Item -Recurse junk/*"`, delRuleUnnamed, ""},
-	{tP, "", "pwsh -c 'Remove-Item -r junk/*'", delRuleUnnamed, ""},
-	{tP, "", "powershell -NoProfile -EncodedCommand " + delEncode("Remove-Item -Recurse junk/*"), delRuleUnnamed, ""},
-	{tP, "", "@'\nRemove-Item -Recurse junk/*\n'@ | powershell -Command -", delRuleUnnamed, ""},
-	{tP, "", "'Remove-Item -Recurse junk/*' | iex", delRuleUnnamed, ""},
-	{tP, "", "Invoke-Expression 'rm -r junk/*'", delRuleUnnamed, ""},
-	{tP, "", `cmd /c "rd /s /q ."`, delRuleUnnamed, ""},
-	{tP, "", "bash -c 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tP, "", "wsl -e rm -rf junk/x junk/*", delRuleUnnamed, ""},
-	{tP, "", "rm.exe -rf junk/*", delRuleUnnamed, ""},
-	{tP, "", "git clean -fdx", delRuleUnnamed, ""},
-	{tP, "", "Get-ChildItem | ForEach-Object { if ($_.Name -like '*.log') { Remove-Item $_ } }", delRuleUnnamed, ""},
-	{tP, "", "# Remove-Item is safe here\nRemove-Item -Recurse junk/* # it's gone", delRuleUnnamed, ""},
-	{tP, "", "<# a block\ncomment #> Remove-Item -Recurse junk/*", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item `\n  -Recurse `\n  junk/*", delRuleUnnamed, ""},
+	{tP, "", "Remove-Item (Get-Item bonsai.yaml).Name", RuleDeleteNamed, ""},
+	{tB, "", "ls; rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "ls && rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "false || rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "ls | rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "ls\nrm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "ls \\\n && rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "echo $(rm -rf junk/*)", RuleDeleteUnnamed, ""},
+	{tB, "", "echo `rm -rf junk/*`", RuleDeleteUnnamed, ""},
+	{tB, "", "(rm -rf junk/*)", RuleDeleteUnnamed, ""},
+	{tB, "", "{ rm -rf junk/*; }", RuleDeleteUnnamed, ""},
+	{tB, "", "f() { rm -rf junk/*; }; f", RuleDeleteUnnamed, ""},
+	{tB, "", "diff <(rm -rf junk/*) x", RuleDeleteUnnamed, ""},
+	{tB, "", "x=$(rm -rf junk/*)", RuleDeleteUnnamed, ""},
+	{tB, "", `echo "${X:-$(rm -rf junk/*)}"`, RuleDeleteUnnamed, ""},
+	{tB, "", "bash -c 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", `sh -c "rm -rf junk/*"`, RuleDeleteUnnamed, ""},
+	{tB, "", "bash -lc 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "bash -o pipefail -c 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", `bash -c "bash -c 'rm -rf junk/*'"`, RuleDeleteUnnamed, ""},
+	{tB, "", "eval 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "eval rm -rf 'junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "bash <<EOF\nrm -rf junk/*\nEOF", RuleDeleteUnnamed, ""},
+	{tB, "", "bash -s <<'EOF'\nrm -rf junk/*\nEOF", RuleDeleteUnnamed, ""},
+	{tB, "", "sh <<< 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "echo 'rm -rf junk/*' | bash", RuleDeleteUnnamed, ""},
+	{tB, "", "cat <<EOF | sh\nrm -rf junk/*\nEOF", RuleDeleteUnnamed, ""},
+	{tB, "", "cat <<EOF\n$(rm -rf junk/*)\nEOF", RuleDeleteUnnamed, ""},
+	{tB, "", `cmd /c "rd /s /q ."`, RuleDeleteUnnamed, ""},
+	{tB, "", "cmd.exe //c del /s *.log", RuleDeleteUnnamed, ""},
+	{tB, "", "cmd /c rd/s/q %TEMP%", RuleDeleteUnnamed, ""},
+	{tB, "", `powershell -Command "Remove-Item -Recurse junk/*"`, RuleDeleteUnnamed, ""},
+	{tB, "", "pwsh -NoProfile -c 'Remove-Item -r junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "wsl rm -rf 'junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "busybox rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "$RM -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", `"$(which rm)" -r junk/*`, RuleDeleteUnnamed, ""},
+	{tB, "", "if true; then rm -rf junk/*; fi", RuleDeleteUnnamed, ""},
+	{tB, "", "while false; do rm -rf junk/*; done", RuleDeleteUnnamed, ""},
+	{tB, "", "! rm -rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "# a comment\nrm -rf junk/* # it's gone", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item -Recurse junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", `Remove-Item junk\* -Recurse`, RuleDeleteUnnamed, ""},
+	{tP, "", "rm -r junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "ri -Rec junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "del -recurse junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "erase junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "rd -r junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "rmdir -R junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "REMOVE-ITEM -RECURSE junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "Microsoft.PowerShell.Management\\Remove-Item -Recurse junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item \u2013Recurse $p", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item\u00a0-Recurse\u00a0junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item -Recurse:$true $p", RuleDeleteUnnamed, ""},
+	{tP, "", "$null = Remove-Item -Recurse junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "$r=Remove-Item -Recurse junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "& { Remove-Item -Recurse junk/* }", RuleDeleteUnnamed, ""},
+	{tP, "", "& 'Remove-Item' -Recurse junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "[void](Remove-Item -Recurse junk/*)", RuleDeleteUnnamed, ""},
+	{tP, "", `powershell -Command "Remove-Item -Recurse junk/*"`, RuleDeleteUnnamed, ""},
+	{tP, "", "pwsh -c 'Remove-Item -r junk/*'", RuleDeleteUnnamed, ""},
+	{tP, "", "powershell -NoProfile -EncodedCommand " + delEncode("Remove-Item -Recurse junk/*"), RuleDeleteUnnamed, ""},
+	{tP, "", "@'\nRemove-Item -Recurse junk/*\n'@ | powershell -Command -", RuleDeleteUnnamed, ""},
+	{tP, "", "'Remove-Item -Recurse junk/*' | iex", RuleDeleteUnnamed, ""},
+	{tP, "", "Invoke-Expression 'rm -r junk/*'", RuleDeleteUnnamed, ""},
+	{tP, "", `cmd /c "rd /s /q ."`, RuleDeleteUnnamed, ""},
+	{tP, "", "bash -c 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tP, "", "wsl -e rm -rf junk/x junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "rm.exe -rf junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "git clean -fdx", RuleDeleteUnnamed, ""},
+	{tP, "", "Get-ChildItem | ForEach-Object { if ($_.Name -like '*.log') { Remove-Item $_ } }", RuleDeleteUnnamed, ""},
+	{tP, "", "# Remove-Item is safe here\nRemove-Item -Recurse junk/* # it's gone", RuleDeleteUnnamed, ""},
+	{tP, "", "<# a block\ncomment #> Remove-Item -Recurse junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item `\n  -Recurse `\n  junk/*", RuleDeleteUnnamed, ""},
 
 	// --- Rule 3, not naming what it deletes: every form of recursive and bulk, the operand tests, the always-refused.
-	{tB, "", "rm -rf *", delRuleUnnamed, ""},
-	{tB, "", "rm -rf .", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ./", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ..", delRuleUnnamed, ""},
-	{tB, "", "rm -rf /", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ~", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ~/", delRuleUnnamed, ""},
-	{tB, "", `rm -rf ""`, delRuleUnnamed, ""},
-	{tB, "", "rm -rf build/.", delRuleUnnamed, ""},
-	{tB, "", "rm -rf build/..", delRuleUnnamed, ""},
-	{tB, "", "rm -rf /mnt/c", delRuleUnnamed, ""},
-	{tB, "", "rm -rf /c/", delRuleUnnamed, ""},
-	{tB, "", `rm -rf "$DIR"`, delRuleUnnamed, ""},
-	{tB, "", "rm -rf $DIR/build", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ${DIR}", delRuleUnnamed, ""},
-	{tB, "", "rm -rf $(pwd)/build", delRuleUnnamed, ""},
-	{tB, "", "rm -rf `pwd`", delRuleUnnamed, ""},
-	{tB, "", "rm -rf %TEMP%", delRuleUnnamed, ""},
-	{tB, "", "rm -fR junk/*", delRuleUnnamed, ""},
-	{tB, "", "rm -Rf junk/*", delRuleUnnamed, ""},
-	{tB, "", "rm -vfr junk/*", delRuleUnnamed, ""},
-	{tB, "", "rm -r -f junk/*", delRuleUnnamed, ""},
-	{tB, "", "rm --recursive junk/*", delRuleUnnamed, ""},
-	{tB, "", "rm --rec --force junk/*", delRuleUnnamed, ""},
-	{tB, "", "rm --r junk/*", delRuleUnnamed, ""},
-	{tB, "", "rm junk/* -rf", delRuleUnnamed, ""},
-	{tB, "", "rm *.log", delRuleUnnamed, ""},
-	{tB, "", "rm junk/file?.txt", delRuleUnnamed, ""},
-	{tB, "", "rm junk/[ab].txt", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ./*", delRuleUnnamed, ""},
-	{tB, "", "rm -rf junk/ build/ *", delRuleUnnamed, ""},
-	{tB, "", "rm -rf {junk,build}/*", delRuleUnnamed, ""},
-	{tB, "", "rm -rf junk/{1..3}", delRuleUnnamed, ""},
-	{tB, "", `rm -rf $'junk/\x2a'`, delRuleUnnamed, ""},
-	{tB, "", "rm -rf !(keep)", delRuleUnnamed, ""},
-	{tB, "", "ls | xargs rm", delRuleUnnamed, ""},
-	{tB, "", "find . -name x | xargs rm -f", delRuleUnnamed, ""},
-	{tB, "", "xargs -I{} rm -rf {} < list.txt", delRuleUnnamed, ""},
-	{tB, "", "xargs -0 -n 1 mv -t old/ < list.txt", delRuleUnnamed, ""},
-	{tB, "", "find . -delete", delRuleUnnamed, ""},
-	{tB, "", "find -delete", delRuleUnnamed, ""},
-	{tB, "", "find . -name '*.log' -delete", delRuleUnnamed, ""},
-	{tB, "", `find . -exec rm {} \;`, delRuleUnnamed, ""},
-	{tB, "", "find . -type d -execdir rm -rf {} +", delRuleUnnamed, ""},
-	{tB, "", `find . -ok rm {} \;`, delRuleUnnamed, ""},
-	{tB, "", `find . -exec sudo /bin/rm -f {} \;`, delRuleUnnamed, ""},
-	{tB, "", "find junk/* -delete", delRuleUnnamed, ""},
-	{tB, "", "find $DIR -delete", delRuleUnnamed, ""},
-	{tB, "", "git clean -fd", delRuleUnnamed, ""},
-	{tB, "", "git clean -f .", delRuleUnnamed, ""},
-	{tB, "", "git clean -fdx build", delRuleUnnamed, ""},
-	{tB, "", "git clean -fdX", delRuleUnnamed, ""},
-	{tB, "", "git clean -xfd", delRuleUnnamed, ""},
-	{tB, "", "git clean -d -f -x -- build", delRuleUnnamed, ""},
-	{tB, "", "git -C sub clean -fdx", delRuleUnnamed, ""},
-	{tB, "", "git -c core.quotepath=off clean -ffdx", delRuleUnnamed, ""},
-	{tB, "", "git clean -fd :/", delRuleUnnamed, ""},
-	{tB, "", "git stash --all", delRuleUnnamed, ""},
-	{tB, "", "git stash -a", delRuleUnnamed, ""},
-	{tB, "", "git stash push --all", delRuleUnnamed, ""},
-	{tB, "", `git stash save -a "x"`, delRuleUnnamed, ""},
-	{tB, "", "git stash --al", delRuleUnnamed, ""},
-	{tB, "", "git stash push -ka -- src", delRuleUnnamed, ""},
-	{tB, "", "rm -rf --no-preserve-root build", delRuleUnnamed, ""},
-	{tB, "", "rm -rf --no-p build", delRuleUnnamed, ""},
-	{tB, "", "git rm -r .", delRuleUnnamed, ""},
-	{tB, "", "git rm '*.log'", delRuleUnnamed, ""},
-	{tB, "", "git rm -r :/", delRuleUnnamed, ""},
-	{tB, "", "git rm --pathspec-from-file=list.txt", delRuleUnnamed, ""},
-	{tB, "", "rsync -a --delete src/ .", delRuleUnnamed, ""},
-	{tB, "", "rsync -a --delete-after src/ ./", delRuleUnnamed, ""},
-	{tB, "", "rsync -a --del src/ $DEST", delRuleUnnamed, ""},
-	{tB, "", "robocopy src . /MIR", delRuleUnnamed, ""},
-	{tB, "", "robocopy src . //PURGE", delRuleUnnamed, ""},
-	{tB, "", `cd "$X" && rm -rf build`, delRuleUnnamed, ""},
-	{tB, "", "cd $(mktemp -d); rm -rf build", delRuleUnnamed, ""},
-	{tB, "", "cd -; rm -rf build", delRuleUnnamed, ""},
-	{tB, "", "env -C \"$X\" rm -rf build", delRuleUnnamed, ""},
-	{tB, "", `for f in *.log; do rm "$f"; done`, delRuleUnnamed, ""},
-	{tB, "", "for d in */; do\n  rm -r \"$d\"\ndone", delRuleUnnamed, ""},
-	{tB, "", "while read -r f; do mv \"$f\" old/; done < list.txt", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item -Recurse .", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item -Recurse $env:TEMP\\x", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item -Recurse \"$HOME\\build\"", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item -Recurse -Path (Join-Path $root 'x')", delRuleUnnamed, ""},
-	{tP, "", "Get-ChildItem *.log | Remove-Item", delRuleUnnamed, ""},
-	{tP, "", "gci build | ri -Recurse", delRuleUnnamed, ""},
-	{tP, "", "Get-ChildItem *.txt | Move-Item -Destination old", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item * -Include *.log -Recurse", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item -Recurse:$false junk/*", delRuleUnnamed, ""},
-	{tP, "", "Remove-Item @params", delRuleUnnamed, ""},
-	{tP, "", "foreach ($f in $files) { Remove-Item $f }", delRuleUnnamed, ""},
-	{tP, "", "$files | ForEach-Object { Remove-Item -LiteralPath $_.FullName }", delRuleUnnamed, ""},
-	{tP, "", `robocopy src C:\ /MIR`, delRuleUnnamed, ""},
-	{tP, "", "cmd /c for /d %i in (*) do rd /s /q %i", delRuleUnnamed, ""},
-	{tP, "", "cmd /c del /s /q *.tmp", delRuleUnnamed, ""},
-	{tP, "", "cmd /c \"if exist build rd /s /q %CD%\"", delRuleUnnamed, ""},
-	{tP, "", "Set-Location $env:TEMP; Remove-Item -Recurse build", delRuleUnnamed, ""},
+	{tB, "", "rm -rf *", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf .", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ./", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ..", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf /", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ~", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ~/", RuleDeleteUnnamed, ""},
+	{tB, "", `rm -rf ""`, RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf build/.", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf build/..", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf /mnt/c", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf /c/", RuleDeleteUnnamed, ""},
+	{tB, "", `rm -rf "$DIR"`, RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf $DIR/build", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ${DIR}", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf $(pwd)/build", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf `pwd`", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf %TEMP%", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -fR junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -Rf junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -vfr junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -r -f junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm --recursive junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm --rec --force junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm --r junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm junk/* -rf", RuleDeleteUnnamed, ""},
+	{tB, "", "rm *.log", RuleDeleteUnnamed, ""},
+	{tB, "", "rm junk/file?.txt", RuleDeleteUnnamed, ""},
+	{tB, "", "rm junk/[ab].txt", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ./*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf junk/ build/ *", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf {junk,build}/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf junk/{1..3}", RuleDeleteUnnamed, ""},
+	{tB, "", `rm -rf $'junk/\x2a'`, RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf !(keep)", RuleDeleteUnnamed, ""},
+	{tB, "", "ls | xargs rm", RuleDeleteUnnamed, ""},
+	{tB, "", "find . -name x | xargs rm -f", RuleDeleteUnnamed, ""},
+	{tB, "", "xargs -I{} rm -rf {} < list.txt", RuleDeleteUnnamed, ""},
+	{tB, "", "xargs -0 -n 1 mv -t old/ < list.txt", RuleDeleteUnnamed, ""},
+	{tB, "", "find . -delete", RuleDeleteUnnamed, ""},
+	{tB, "", "find -delete", RuleDeleteUnnamed, ""},
+	{tB, "", "find . -name '*.log' -delete", RuleDeleteUnnamed, ""},
+	{tB, "", `find . -exec rm {} \;`, RuleDeleteUnnamed, ""},
+	{tB, "", "find . -type d -execdir rm -rf {} +", RuleDeleteUnnamed, ""},
+	{tB, "", `find . -ok rm {} \;`, RuleDeleteUnnamed, ""},
+	{tB, "", `find . -exec sudo /bin/rm -f {} \;`, RuleDeleteUnnamed, ""},
+	{tB, "", "find junk/* -delete", RuleDeleteUnnamed, ""},
+	{tB, "", "find $DIR -delete", RuleDeleteUnnamed, ""},
+	{tB, "", "git clean -fd", RuleDeleteUnnamed, ""},
+	{tB, "", "git clean -f .", RuleDeleteUnnamed, ""},
+	{tB, "", "git clean -fdx build", RuleDeleteUnnamed, ""},
+	{tB, "", "git clean -fdX", RuleDeleteUnnamed, ""},
+	{tB, "", "git clean -xfd", RuleDeleteUnnamed, ""},
+	{tB, "", "git clean -d -f -x -- build", RuleDeleteUnnamed, ""},
+	{tB, "", "git -C sub clean -fdx", RuleDeleteUnnamed, ""},
+	{tB, "", "git -c core.quotepath=off clean -ffdx", RuleDeleteUnnamed, ""},
+	{tB, "", "git clean -fd :/", RuleDeleteUnnamed, ""},
+	{tB, "", "git stash --all", RuleDeleteUnnamed, ""},
+	{tB, "", "git stash -a", RuleDeleteUnnamed, ""},
+	{tB, "", "git stash push --all", RuleDeleteUnnamed, ""},
+	{tB, "", `git stash save -a "x"`, RuleDeleteUnnamed, ""},
+	{tB, "", "git stash --al", RuleDeleteUnnamed, ""},
+	{tB, "", "git stash push -ka -- src", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf --no-preserve-root build", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf --no-p build", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm -r .", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm '*.log'", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm -r :/", RuleDeleteUnnamed, ""},
+	{tB, "", "git rm --pathspec-from-file=list.txt", RuleDeleteUnnamed, ""},
+	{tB, "", "rsync -a --delete src/ .", RuleDeleteUnnamed, ""},
+	{tB, "", "rsync -a --delete-after src/ ./", RuleDeleteUnnamed, ""},
+	{tB, "", "rsync -a --del src/ $DEST", RuleDeleteUnnamed, ""},
+	{tB, "", "robocopy src . /MIR", RuleDeleteUnnamed, ""},
+	{tB, "", "robocopy src . //PURGE", RuleDeleteUnnamed, ""},
+	{tB, "", `cd "$X" && rm -rf build`, RuleDeleteUnnamed, ""},
+	{tB, "", "cd $(mktemp -d); rm -rf build", RuleDeleteUnnamed, ""},
+	{tB, "", "cd -; rm -rf build", RuleDeleteUnnamed, ""},
+	{tB, "", "env -C \"$X\" rm -rf build", RuleDeleteUnnamed, ""},
+	{tB, "", `for f in *.log; do rm "$f"; done`, RuleDeleteUnnamed, ""},
+	{tB, "", "for d in */; do\n  rm -r \"$d\"\ndone", RuleDeleteUnnamed, ""},
+	{tB, "", "while read -r f; do mv \"$f\" old/; done < list.txt", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item -Recurse .", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item -Recurse $env:TEMP\\x", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item -Recurse \"$HOME\\build\"", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item -Recurse -Path (Join-Path $root 'x')", RuleDeleteUnnamed, ""},
+	{tP, "", "Get-ChildItem *.log | Remove-Item", RuleDeleteUnnamed, ""},
+	{tP, "", "gci build | ri -Recurse", RuleDeleteUnnamed, ""},
+	{tP, "", "Get-ChildItem *.txt | Move-Item -Destination old", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item * -Include *.log -Recurse", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item -Recurse:$false junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", "Remove-Item @params", RuleDeleteUnnamed, ""},
+	{tP, "", "foreach ($f in $files) { Remove-Item $f }", RuleDeleteUnnamed, ""},
+	{tP, "", "$files | ForEach-Object { Remove-Item -LiteralPath $_.FullName }", RuleDeleteUnnamed, ""},
+	{tP, "", `robocopy src C:\ /MIR`, RuleDeleteUnnamed, ""},
+	{tP, "", "cmd /c for /d %i in (*) do rd /s /q %i", RuleDeleteUnnamed, ""},
+	{tP, "", "cmd /c del /s /q *.tmp", RuleDeleteUnnamed, ""},
+	{tP, "", "cmd /c \"if exist build rd /s /q %CD%\"", RuleDeleteUnnamed, ""},
+	{tP, "", "Set-Location $env:TEMP; Remove-Item -Recurse build", RuleDeleteUnnamed, ""},
 
 	// --- Rule 4, a guarded path: deleted, moved, or held by a folder deleted or moved.
-	{tB, "", "rm bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "rm -f ./bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "rm .bonsai/lock.json", delRuleProtected, ""},
-	{tB, "", "rm -rf .bonsai", delRuleProtected, ""},
-	{tB, "", "rm -rf .bonsai/local", delRuleProtected, ""},
-	{tB, "", "rm -rf .git", delRuleProtected, ""},
-	{tB, "", "rm -rf .git/hooks", delRuleProtected, ""},
-	{tB, "", "rm -rf .claude", delRuleProtected, ""},
-	{tB, "", "rm .claude/settings.json", delRuleProtected, ""},
-	{tB, "", "rm -rf docs/secret", delRuleProtected, ""},
-	{tB, "", "rm -rf docs", delRuleProtected, ""},
-	{tB, "", "rm config/app.key", delRuleProtected, ""},
-	{tB, "", "rm -rf config", delRuleProtected, ""},
-	{tB, "", "rm notes/a.md", delRuleProtected, ""},
-	{tB, "", "rm -rf notes", delRuleProtected, ""},
-	{tB, "", "rm sub/bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "rm -rf sub/.bonsai", delRuleProtected, ""},
-	{tB, "", "mv bonsai.yaml bonsai.yaml.bak", delRuleProtected, ""},
-	{tB, "", "mv x.yaml bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "mv settings.json .claude/", delRuleProtected, ""},
-	{tB, "", "mv -t .claude settings.json", delRuleProtected, ""},
-	{tB, "", "mv .git .git-old", delRuleProtected, ""},
-	{tB, "", "mv * src/", delRuleProtected, ""},
-	{tB, "", "mv docs/* archive/", delRuleProtected, ""},
-	{tB, "", "mv .claude old-claude", delRuleProtected, ""},
-	{tB, "", "git rm bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "git rm -r --cached .bonsai", delRuleProtected, ""},
-	{tB, "", "git mv bonsai.yaml x.yaml", delRuleProtected, ""},
-	{tB, "", "git clean -fd .bonsai", delRuleProtected, ""},
-	{tB, "", "shred -u bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "unlink .bonsai/lock.json", delRuleProtected, ""},
-	{tB, "", "rm -rf ../proj", delRuleProtected, ""},
-	{tB, "src", "rm -rf ../../proj", delRuleProtected, ""},
-	{tB, "", "cd .. && rm -rf proj", delRuleProtected, ""},
-	{tB, "", "cd build; rm -f ../bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "cd nowhere; rm -rf .git", delRuleProtected, ""},
-	{tB, "src", "rm ../bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "find .git -delete", delRuleProtected, ""},
-	{tB, "", "find .bonsai -name '*.json' -delete", delRuleProtected, ""},
-	{tB, "", "rsync -a --delete empty/ .git/", delRuleProtected, ""},
-	{tB, "", "robocopy empty .git /MIR", delRuleProtected, ""},
-	{tB, "", "rm -rf {bonsai.yaml,x}", delRuleProtected, ""},
-	{tB, "", "rm {bonsai.yaml,}", delRuleProtected, ""},
-	{tB, "", "rm -rf ~/.bonsai", delRuleProtected, ""},
-	{tB, "", "rm -rf ~/.bonsai/workspaces", delRuleProtected, ""},
-	{tB, "", "rm -rf ../home", delRuleProtected, ""},
-	{tB, "", "rm -rf ../other", delRuleProtected, ""},
-	{tB, "", "rm -rf ../other/.git", delRuleProtected, ""},
-	{tB, "", "git -C .. rm -r proj/.git", delRuleProtected, ""},
-	{tB, "", "bash -c 'rm bonsai.yaml'", delRuleProtected, ""},
-	{tB, "", "rm -rf build bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "rsync -a --remove-source-files bonsai.yaml backup/", delRuleProtected, ""},
-	{tB, "", "robocopy .git backup /MOVE", delRuleProtected, ""},
-	{tB, "", "$RM -rf .git", delRuleProtected, ""},
-	{tP, "", "Remove-Item bonsai.yaml", delRuleProtected, ""},
-	{tP, "", "Remove-Item -Recurse .git -Force", delRuleProtected, ""},
-	{tP, "", `Remove-Item -LiteralPath .claude\settings.json`, delRuleProtected, ""},
-	{tP, "", "Remove-Item .claude", delRuleProtected, ""},
-	{tP, "", "Move-Item bonsai.yaml x.yaml", delRuleProtected, ""},
-	{tP, "", "Move-Item -Path x.yaml -Destination bonsai.yaml", delRuleProtected, ""},
-	{tP, "", "Rename-Item bonsai.yaml x.yaml", delRuleProtected, ""},
-	{tP, "", "Rename-Item -Path x.yaml -NewName bonsai.yaml", delRuleProtected, ""},
-	{tP, "", "Remove-Item FileSystem::bonsai.yaml", delRuleProtected, ""},
-	{tP, "", "Remove-Item -Path .bonsai\\lock.json, x.txt", delRuleProtected, ""},
-	{tP, "", `cmd /c del bonsai.yaml`, delRuleProtected, ""},
-	{tP, "", `cmd /c rd /s /q .git`, delRuleProtected, ""},
-	{tP, "", `cmd /c "move bonsai.yaml x"`, delRuleProtected, ""},
-	{tP, "", `cmd /c ren bonsai.yaml x.yaml`, delRuleProtected, ""},
-	{tP, "", `cmd /c del .claude`, delRuleProtected, ""},
-	{tP, "", "Set-Location src; Remove-Item ..\\bonsai.yaml", delRuleProtected, ""},
-	{tP, "", "Push-Location ..; Remove-Item -Recurse proj; Pop-Location", delRuleProtected, ""},
+	{tB, "", "rm bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "rm -f ./bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "rm .bonsai/lock.json", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf .bonsai", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf .bonsai/local", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf .git", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf .git/hooks", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf .claude", RuleDeleteProtected, ""},
+	{tB, "", "rm .claude/settings.json", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf docs/secret", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf docs", RuleDeleteProtected, ""},
+	{tB, "", "rm config/app.key", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf config", RuleDeleteProtected, ""},
+	{tB, "", "rm notes/a.md", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf notes", RuleDeleteProtected, ""},
+	{tB, "", "rm sub/bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf sub/.bonsai", RuleDeleteProtected, ""},
+	{tB, "", "mv bonsai.yaml bonsai.yaml.bak", RuleDeleteProtected, ""},
+	{tB, "", "mv x.yaml bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "mv settings.json .claude/", RuleDeleteProtected, ""},
+	{tB, "", "mv -t .claude settings.json", RuleDeleteProtected, ""},
+	{tB, "", "mv .git .git-old", RuleDeleteProtected, ""},
+	{tB, "", "mv * src/", RuleDeleteProtected, ""},
+	{tB, "", "mv docs/* archive/", RuleDeleteProtected, ""},
+	{tB, "", "mv .claude old-claude", RuleDeleteProtected, ""},
+	{tB, "", "git rm bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "git rm -r --cached .bonsai", RuleDeleteProtected, ""},
+	{tB, "", "git mv bonsai.yaml x.yaml", RuleDeleteProtected, ""},
+	{tB, "", "git clean -fd .bonsai", RuleDeleteProtected, ""},
+	{tB, "", "shred -u bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "unlink .bonsai/lock.json", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf ../proj", RuleDeleteProtected, ""},
+	{tB, "src", "rm -rf ../../proj", RuleDeleteProtected, ""},
+	{tB, "", "cd .. && rm -rf proj", RuleDeleteProtected, ""},
+	{tB, "", "cd build; rm -f ../bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "cd nowhere; rm -rf .git", RuleDeleteProtected, ""},
+	{tB, "src", "rm ../bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "find .git -delete", RuleDeleteProtected, ""},
+	{tB, "", "find .bonsai -name '*.json' -delete", RuleDeleteProtected, ""},
+	{tB, "", "rsync -a --delete empty/ .git/", RuleDeleteProtected, ""},
+	{tB, "", "robocopy empty .git /MIR", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf {bonsai.yaml,x}", RuleDeleteProtected, ""},
+	{tB, "", "rm {bonsai.yaml,}", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf ~/.bonsai", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf ~/.bonsai/workspaces", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf ../home", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf ../other", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf ../other/.git", RuleDeleteProtected, ""},
+	{tB, "", "git -C .. rm -r proj/.git", RuleDeleteProtected, ""},
+	{tB, "", "bash -c 'rm bonsai.yaml'", RuleDeleteProtected, ""},
+	{tB, "", "rm -rf build bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "rsync -a --remove-source-files bonsai.yaml backup/", RuleDeleteProtected, ""},
+	{tB, "", "robocopy .git backup /MOVE", RuleDeleteProtected, ""},
+	{tB, "", "$RM -rf .git", RuleDeleteProtected, ""},
+	{tP, "", "Remove-Item bonsai.yaml", RuleDeleteProtected, ""},
+	{tP, "", "Remove-Item -Recurse .git -Force", RuleDeleteProtected, ""},
+	{tP, "", `Remove-Item -LiteralPath .claude\settings.json`, RuleDeleteProtected, ""},
+	{tP, "", "Remove-Item .claude", RuleDeleteProtected, ""},
+	{tP, "", "Move-Item bonsai.yaml x.yaml", RuleDeleteProtected, ""},
+	{tP, "", "Move-Item -Path x.yaml -Destination bonsai.yaml", RuleDeleteProtected, ""},
+	{tP, "", "Rename-Item bonsai.yaml x.yaml", RuleDeleteProtected, ""},
+	{tP, "", "Rename-Item -Path x.yaml -NewName bonsai.yaml", RuleDeleteProtected, ""},
+	{tP, "", "Remove-Item FileSystem::bonsai.yaml", RuleDeleteProtected, ""},
+	{tP, "", "Remove-Item -Path .bonsai\\lock.json, x.txt", RuleDeleteProtected, ""},
+	{tP, "", `cmd /c del bonsai.yaml`, RuleDeleteProtected, ""},
+	{tP, "", `cmd /c rd /s /q .git`, RuleDeleteProtected, ""},
+	{tP, "", `cmd /c "move bonsai.yaml x"`, RuleDeleteProtected, ""},
+	{tP, "", `cmd /c ren bonsai.yaml x.yaml`, RuleDeleteProtected, ""},
+	{tP, "", `cmd /c del .claude`, RuleDeleteProtected, ""},
+	{tP, "", "Set-Location src; Remove-Item ..\\bonsai.yaml", RuleDeleteProtected, ""},
+	{tP, "", "Push-Location ..; Remove-Item -Recurse proj; Pop-Location", RuleDeleteProtected, ""},
 
 	// --- Lines written to slip past the splitter (the builder's own break-it), each refused or rightly allowed.
-	{tB, "", "{rm,-rf,junk/*}", delRuleUnnamed, ""},
-	{tB, "", "rm${IFS}-rf${IFS}junk/*", delRuleUnnamed, ""},
-	{tB, "", "rm${IFS}bonsai.yaml", delRuleUnnamed, ""},
-	{tB, "", "bash -c \"$(cat <<'EOF'\nrm -rf junk/*\nEOF\n)\"", delRuleUnnamed, ""},
-	{tB, "", "bash <(echo 'rm -rf junk/*')", delRuleUnnamed, ""},
-	{tB, "", "source <(echo 'rm -rf junk/*')", delRuleUnnamed, ""},
-	{tB, "", `eval "$(echo rm -rf junk/*)"`, delRuleUnnamed, ""},
-	{tB, "", "trap 'rm -rf junk/*' EXIT", delRuleUnnamed, ""},
-	{tB, "", "su -c 'rm -rf junk/*' root", delRuleUnnamed, ""},
-	{tB, "", "watch -n 1 'rm -rf junk/*'", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ~home", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ~+", delRuleUnnamed, ""},
-	{tB, "", "rm -rf ~home/.bonsai", delRuleProtected, ""},
-	{tB, "", `rm "$(echo bonsai.yaml)"`, delRuleProtected, ""},
-	{tB, "", "rm `echo bonsai.yaml`", delRuleProtected, ""},
-	{tB, "", "$(echo rm) bonsai.yaml", delRuleProtected, ""},
-	{tB, "", "$(echo rm -rf junk/*)", delRuleUnnamed, ""},
-	{tB, "", "bash <<< \"$(echo rm -rf junk/*)\"", delRuleUnnamed, ""},
-	{tB, "", "rm $(echo a.txt bonsai.yaml)", delRuleProtected, ""},
-	{tB, "", `rm "$(echo a.txt bonsai.yaml)"`, delRuleNamed, ""},
-	{tB, "", "mv */bonsai.yaml old/", delRuleProtected, ""},
-	{tB, "", `find build -exec rm -rf {} bonsai.yaml \;`, delRuleProtected, ""},
-	{tB, "", "git -C .. stash -a", delRuleUnnamed, ""},
-	{tB, "", "mv junk/* .", delRuleNamed, ""},
-	{tB, "", "find build -exec rm -rf {} +", delRuleNamed, ""},
-	{tB, "", "rm -rf .git.bak .gitignore .claude/agents", delRuleNamed, ""},
-	{tB, "", "git stash -- --all", delRuleNone, ""},
-	{tB, "", "git clean -fde -x build", delRuleNamed, ""},
-	{tP, "", `Remove-Item ("bonsai.yaml")`, delRuleProtected, ""},
-	{tP, "", "Remove-Item $('bonsai.yaml')", delRuleProtected, ""},
-	{tP, "", "Remove-Item -Recurse 'build','.git'", delRuleProtected, ""},
-	{tP, "", "Remove-Item -Recurse @('build','.git')", delRuleUnnamed, ""},
-	{tP, "", "'rm -r junk/*' | powershell -noprofile -", delRuleUnnamed, ""},
-	{tP, "", "& (Get-Command Remove-Item) -Recurse junk/*", delRuleUnnamed, ""},
-	{tP, "", `cmd /c "cd .. & rd /s /q proj"`, delRuleProtected, ""},
-	{tP, "", "cmd /c start /b rd /s /q .", delRuleUnnamed, ""},
-	{tP, "", "cmd /c call rd /s /q .", delRuleUnnamed, ""},
-	{tP, "", "cmd /c r^d /s /q .", delRuleUnnamed, ""},
-	{tP, "", "cmd /c rd .git /s /q", delRuleProtected, ""},
-	{tP, "", `cmd /v:on /c "set X=. & rd /s /q !X!"`, delRuleUnnamed, ""},
-	{tP, "", `Move-Item junk\* .`, delRuleNamed, ""},
-	{tP, "", "Move-Item -Path build -Destination .git", delRuleProtected, ""},
+	{tB, "", "{rm,-rf,junk/*}", RuleDeleteUnnamed, ""},
+	{tB, "", "rm${IFS}-rf${IFS}junk/*", RuleDeleteUnnamed, ""},
+	{tB, "", "rm${IFS}bonsai.yaml", RuleDeleteUnnamed, ""},
+	{tB, "", "bash -c \"$(cat <<'EOF'\nrm -rf junk/*\nEOF\n)\"", RuleDeleteUnnamed, ""},
+	{tB, "", "bash <(echo 'rm -rf junk/*')", RuleDeleteUnnamed, ""},
+	{tB, "", "source <(echo 'rm -rf junk/*')", RuleDeleteUnnamed, ""},
+	{tB, "", `eval "$(echo rm -rf junk/*)"`, RuleDeleteUnnamed, ""},
+	{tB, "", "trap 'rm -rf junk/*' EXIT", RuleDeleteUnnamed, ""},
+	{tB, "", "su -c 'rm -rf junk/*' root", RuleDeleteUnnamed, ""},
+	{tB, "", "watch -n 1 'rm -rf junk/*'", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ~home", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ~+", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -rf ~home/.bonsai", RuleDeleteProtected, ""},
+	{tB, "", `rm "$(echo bonsai.yaml)"`, RuleDeleteProtected, ""},
+	{tB, "", "rm `echo bonsai.yaml`", RuleDeleteProtected, ""},
+	{tB, "", "$(echo rm) bonsai.yaml", RuleDeleteProtected, ""},
+	{tB, "", "$(echo rm -rf junk/*)", RuleDeleteUnnamed, ""},
+	{tB, "", "bash <<< \"$(echo rm -rf junk/*)\"", RuleDeleteUnnamed, ""},
+	{tB, "", "rm $(echo a.txt bonsai.yaml)", RuleDeleteProtected, ""},
+	{tB, "", `rm "$(echo a.txt bonsai.yaml)"`, RuleDeleteNamed, ""},
+	{tB, "", "mv */bonsai.yaml old/", RuleDeleteProtected, ""},
+	{tB, "", `find build -exec rm -rf {} bonsai.yaml \;`, RuleDeleteProtected, ""},
+	{tB, "", "git -C .. stash -a", RuleDeleteUnnamed, ""},
+	{tB, "", "mv junk/* .", RuleDeleteNamed, ""},
+	{tB, "", "find build -exec rm -rf {} +", RuleDeleteNamed, ""},
+	{tB, "", "rm -rf .git.bak .gitignore .claude/agents", RuleDeleteNamed, ""},
+	{tB, "", "git stash -- --all", RuleShell, ""},
+	{tB, "", "git clean -fde -x build", RuleDeleteNamed, ""},
+	{tP, "", `Remove-Item ("bonsai.yaml")`, RuleDeleteProtected, ""},
+	{tP, "", "Remove-Item $('bonsai.yaml')", RuleDeleteProtected, ""},
+	{tP, "", "Remove-Item -Recurse 'build','.git'", RuleDeleteProtected, ""},
+	{tP, "", "Remove-Item -Recurse @('build','.git')", RuleDeleteUnnamed, ""},
+	{tP, "", "'rm -r junk/*' | powershell -noprofile -", RuleDeleteUnnamed, ""},
+	{tP, "", "& (Get-Command Remove-Item) -Recurse junk/*", RuleDeleteUnnamed, ""},
+	{tP, "", `cmd /c "cd .. & rd /s /q proj"`, RuleDeleteProtected, ""},
+	{tP, "", "cmd /c start /b rd /s /q .", RuleDeleteUnnamed, ""},
+	{tP, "", "cmd /c call rd /s /q .", RuleDeleteUnnamed, ""},
+	{tP, "", "cmd /c r^d /s /q .", RuleDeleteUnnamed, ""},
+	{tP, "", "cmd /c rd .git /s /q", RuleDeleteProtected, ""},
+	{tP, "", `cmd /v:on /c "set X=. & rd /s /q !X!"`, RuleDeleteUnnamed, ""},
+	{tP, "", `Move-Item junk\* .`, RuleDeleteNamed, ""},
+	{tP, "", "Move-Item -Path build -Destination .git", RuleDeleteProtected, ""},
 
 	// --- Lines ordinary work might write that are refused, each by the plan's rule 3 (the report lists why).
-	{tB, "", "git rm -r --cached .", delRuleUnnamed, ""},
-	{tB, "", "find . -maxdepth 1 -name '*.tmp' -delete", delRuleUnnamed, ""},
-	{tB, "", "rm -f *.pyc", delRuleUnnamed, ""},
-	{tB, "", `rm -rf "$TMPDIR/bonsai-x"`, delRuleUnnamed, ""},
-	{tB, "", `cd "$(git rev-parse --show-toplevel)" && rm -rf build`, delRuleUnnamed, ""},
-	{tP, "", "Get-ChildItem -Filter *.log | Remove-Item", delRuleUnnamed, ""},
+	{tB, "", "git rm -r --cached .", RuleDeleteUnnamed, ""},
+	{tB, "", "find . -maxdepth 1 -name '*.tmp' -delete", RuleDeleteUnnamed, ""},
+	{tB, "", "rm -f *.pyc", RuleDeleteUnnamed, ""},
+	{tB, "", `rm -rf "$TMPDIR/bonsai-x"`, RuleDeleteUnnamed, ""},
+	{tB, "", `cd "$(git rev-parse --show-toplevel)" && rm -rf build`, RuleDeleteUnnamed, ""},
+	{tP, "", "Get-ChildItem -Filter *.log | Remove-Item", RuleDeleteUnnamed, ""},
+
+	// --- Bonsai's own commands the splitter finds, and CLAUDE_CODE_CHILD_SESSION in a text it splits (the stub reads
+	// them as commands.go does in a project in agents mode).
+	{tB, "", "bonsai status --json", RuleBonsaiCommand, ""},
+	{tB, "", "cd build && /usr/local/bin/bonsai check --write", RuleBonsaiCommand, ""},
+	{tB, "", "bonsai update --allow-exec --yes", RulePersonCommand, ""},
+	{tB, "", "sudo bonsai unlink --yes", RulePersonCommand, ""},
+	{tB, "", "bash -c 'bonsai update --ALLOW-EXEC'", RulePersonCommand, ""},
+	{tB, "", "bonsai settings set status_writes=agents", RuleHomeCommand, ""},
+	{tP, "", "& 'C:\\Program Files\\Bonsai\\bonsai.exe' labels attach x", RuleHomeCommand, ""},
+	{tP, "", `cmd /c "bonsai unlink --yes"`, RulePersonCommand, ""},
+	{tP, "", "powershell -EncodedCommand " + delEncode("$env:CLAUDE_CODE_CHILD_SESSION = ''"), RulePersonCommand, ""},
+	{tB, "", "bash <<EOF\nunset CLAUDE_CODE_CHILD_SESSION\nEOF", RulePersonCommand, ""},
 
 	// --- A line the check cannot split.
-	{tB, "", "rm -rf 'junk", delRuleUnsplit, ""},
-	{tB, "", `rm -rf "junk`, delRuleUnsplit, ""},
-	{tB, "", "rm $(echo $(echo $(echo $(echo x))))", delRuleUnsplit, ""},
-	{tB, "", "echo $(echo $(echo $(echo $(echo x))))", delRuleNone, ""},
-	{tB, "", `echo "unterminated`, delRuleNone, ""},
-	{tB, "", delNest("rm -rf build", 3), delRuleNamed, ""},
-	{tB, "", delNest("rm -rf build", 4), delRuleUnsplit, ""},
-	{tB, "", "( ( ( ( rm -rf build ) ) ) )", delRuleUnsplit, ""},
-	{tB, "", "( ( ( rm -rf build ) ) )", delRuleNamed, ""},
-	{tB, "", "git clean -fdx `echo", delRuleUnsplit, ""},
-	{tP, "", "Remove-Item 'junk", delRuleUnsplit, ""},
-	{tP, "", "<# never closed\nRemove-Item junk", delRuleUnsplit, ""},
-	{tP, "", "@'\nRemove-Item -Recurse junk/*", delRuleUnsplit, ""},
+	{tB, "", "rm -rf 'junk", RuleDeleteUnsplit, ""},
+	{tB, "", `rm -rf "junk`, RuleDeleteUnsplit, ""},
+	{tB, "", "rm $(echo $(echo $(echo $(echo x))))", RuleDeleteUnsplit, ""},
+	{tB, "", "echo $(echo $(echo $(echo $(echo x))))", RuleShell, ""},
+	{tB, "", `echo "unterminated`, RuleShell, ""},
+	{tB, "", delNest("rm -rf build", 3), RuleDeleteNamed, ""},
+	{tB, "", delNest("rm -rf build", 4), RuleDeleteUnsplit, ""},
+	{tB, "", "( ( ( ( rm -rf build ) ) ) )", RuleDeleteUnsplit, ""},
+	{tB, "", "( ( ( rm -rf build ) ) )", RuleDeleteNamed, ""},
+	{tB, "", "git clean -fdx `echo", RuleDeleteUnsplit, ""},
+	{tP, "", "Remove-Item 'junk", RuleDeleteUnsplit, ""},
+	{tP, "", "<# never closed\nRemove-Item junk", RuleDeleteUnsplit, ""},
+	{tP, "", "@'\nRemove-Item -Recurse junk/*", RuleDeleteUnsplit, ""},
 
 	// --- System-only rows (each says why).
 	// Windows reads names case-blind: BONSAI.YAML is bonsai.yaml there, and another file elsewhere.
-	{tB, "", "rm BONSAI.YAML", delRuleProtected, "windows"},
-	{tB, "", "rm BONSAI.YAML", delRuleNamed, "unix"},
-	{tP, "", "Remove-Item .GIT -Recurse", delRuleProtected, "windows"},
+	{tB, "", "rm BONSAI.YAML", RuleDeleteProtected, "windows"},
+	{tB, "", "rm BONSAI.YAML", RuleDeleteNamed, "unix"},
+	{tP, "", "Remove-Item .GIT -Recurse", RuleDeleteProtected, "windows"},
 	// Only on Windows does PowerShell's \ before a name stand for the drive's root folder.
-	{tP, "", `Remove-Item -Recurse C:\`, delRuleUnnamed, ""},
+	{tP, "", `Remove-Item -Recurse C:\`, RuleDeleteUnnamed, ""},
 }
 
 // delNest wraps a command in bash -c n times, quoting it each time.
@@ -643,7 +684,7 @@ func delRunRow(t *testing.T, s *delStub, row delRow) Decision {
 	if row.dir != "" {
 		cwd = filepath.Join(s.own, filepath.FromSlash(row.dir))
 	}
-	return shellDecide(row.tool, row.line, cwd, s)
+	return shellDecide(row.tool, row.line, cwd, s.own, s)
 }
 
 func TestShellTable(t *testing.T) {
@@ -675,7 +716,7 @@ func TestShellTable(t *testing.T) {
 					t.Errorf("%s %q: a refusal's reason and next step are one ASCII line each: %q / %q", row.tool, row.line, d.Why, d.Next)
 				}
 			}
-			if !strings.Contains(d.Why, row.want) {
+			if strings.HasPrefix(row.want, "delete-") && !strings.Contains(d.Why, row.want) {
 				t.Errorf("%s %q: the reason does not name its rule: %s", row.tool, row.line, d.Why)
 			}
 		}
@@ -691,7 +732,7 @@ func TestShellTable(t *testing.T) {
 }
 
 func delAllows(rule string) bool {
-	for _, r := range delRules {
+	for _, r := range Rules {
 		if r.Name == rule {
 			return r.Allow
 		}
@@ -699,17 +740,21 @@ func delAllows(rule string) bool {
 	return false
 }
 
-// A rule with no row in the table fails.
+// delCheckRules are the rules the delete check answers with (rules.go's table holds them).
+var delCheckRules = []string{RuleDeleteUnnamed, RuleDeleteProtected, RuleDeleteUnsplit, RuleDeleteNamed, RuleShell,
+	RuleBonsaiCommand, RulePersonCommand, RuleHomeCommand}
+
+// A rule of the delete check with no row in the table fails.
 func TestShellRulesEachHaveARow(t *testing.T) {
-	for _, r := range delRules {
+	for _, name := range delCheckRules {
 		found := false
 		for _, row := range delTable {
-			if row.want == r.Name && row.only == "" {
+			if row.want == name && row.only == "" {
 				found = true
 			}
 		}
 		if !found {
-			t.Errorf("the delete check's rule %s has no row in the table", r.Name)
+			t.Errorf("the delete check's rule %s has no row in the table", name)
 		}
 	}
 }
@@ -717,10 +762,10 @@ func TestShellRulesEachHaveARow(t *testing.T) {
 // Each delete word of the table has a row that refuses it and, unless it deletes only by its options, one it is
 // read in: no word in the table goes untested.
 func TestShellWordsEachHaveARow(t *testing.T) {
-	for _, w := range delWords {
+	for _, w := range DeleteWords {
 		found := false
 		for _, row := range delTable {
-			if row.want != delRuleUnnamed && row.want != delRuleProtected {
+			if row.want != RuleDeleteUnnamed && row.want != RuleDeleteProtected {
 				continue
 			}
 			for _, n := range w.Names {
@@ -740,12 +785,113 @@ func TestShellWordsEachHaveARow(t *testing.T) {
 	}
 }
 
+// The delete check's rules in the guard's one test per rule (rules_test.go's ruleTests, walked by TestEveryRule from
+// the rules table): each answered through Main on a real project, its record holding the command's head and the
+// deciding operand, never the line.
+func init() {
+	ruleTests[RuleDeleteUnnamed] = func(t *testing.T) {
+		dir := withTask(t, "todo")
+		for _, c := range []struct{ tool, line string }{{"Bash", "rm -rf junk/*"}, {"Monitor", "git clean -fdx"},
+			{"PowerShell", "Remove-Item -Recurse $env:TEMP\\x"}, {"Bash", "cp ~/secret.txt x; ls | xargs rm"}} {
+			stderr := wantRule(t, dir, bashIn(dir, c.tool, c.line), RuleDeleteUnnamed)
+			text := delLastText(t, dir)
+			if !strings.Contains(stderr, "(rule delete-unnamed)") || strings.Contains(text, "secret") || strings.Contains(text, "cp ") ||
+				strings.Contains(text, "TEMP") || strings.Contains(text, c.line) {
+				t.Errorf("%q: the reason names the rule and keeps no part of the line beyond its head: %q", c.line, text)
+			}
+		}
+		if got := delLastTarget(t, dir); got != "" {
+			t.Errorf("an operand from xargs names no target: %q", got)
+		}
+		wantRule(t, dir, bashIn(dir, "Bash", "rm -rf junk/*"), RuleDeleteUnnamed)
+		if got := delLastTarget(t, dir); got != "junk/*" {
+			t.Errorf("the deciding operand as target: %q", got)
+		}
+	}
+	ruleTests[RuleDeleteProtected] = func(t *testing.T) {
+		dir := withTask(t, "todo")
+		for _, line := range []string{"rm bonsai.yaml", "rm -rf .git", "mv x.yaml .bonsai/", "rm -rf .claude", "rm -rf keys"} {
+			stderr := wantRule(t, dir, bashIn(dir, "Bash", line), RuleDeleteProtected)
+			if !strings.Contains(stderr, "(rule delete-protected)") || !strings.Contains(stderr, "refused: ") {
+				t.Errorf("%q: %s", line, stderr)
+			}
+		}
+		// A running task's grant opens a guarded path to a delete as to an edit; the floor's never-granted paths stay.
+		dir = withTask(t, "running", "assets/**")
+		wantRule(t, dir, bashIn(dir, "Bash", "rm -rf .git"), RuleDeleteProtected)
+		wantRule(t, dir, bashIn(dir, "Bash", "rm -rf assets"), RuleDeleteNamed)
+		if got := delLastTarget(t, dir); got != "assets" {
+			t.Errorf("an allowed delete's target: %q", got)
+		}
+	}
+	ruleTests[RuleDeleteUnsplit] = func(t *testing.T) {
+		dir := withTask(t, "todo")
+		wantRule(t, dir, bashIn(dir, "Bash", "rm -rf 'junk"), RuleDeleteUnsplit)
+		wantRule(t, dir, bashIn(dir, "PowerShell", "Remove-Item \"junk"), RuleDeleteUnsplit)
+		wantRule(t, dir, bashIn(dir, "Bash", "echo 'not closed"), RuleShell)
+	}
+	ruleTests[RuleDeleteNamed] = func(t *testing.T) {
+		dir := withTask(t, "todo")
+		for _, c := range []struct{ tool, line string }{{"Bash", "rm -rf node_modules build"}, {"PowerShell", "Remove-Item -Recurse -Force dist"},
+			{"Monitor", "rm -f free.txt && npm run watch"}, {"Bash", "rm -rf vendor/lib/.git"}} {
+			wantRule(t, dir, bashIn(dir, c.tool, c.line), RuleDeleteNamed)
+		}
+	}
+}
+
+// delLastText and delLastTarget read the last guard record of the test session's file in the project at dir.
+func delLastText(t *testing.T, dir string) string {
+	t.Helper()
+	recs := records(t, dir, "s-r1.ndjson")
+	return recs[len(recs)-1].String("text")
+}
+
+func delLastTarget(t *testing.T, dir string) string {
+	t.Helper()
+	recs := records(t, dir, "s-r1.ndjson")
+	return recs[len(recs)-1].String("target")
+}
+
+// The machine's records (judgedRoots) are read only once a delete needs them: never for a call with no delete word,
+// nor for a delete of named files; once for a line however many folders it deletes. Each text the check splits,
+// the line and every text nested in it or decoded, goes to ownLine; each bonsai call to ownCommand, in its folder.
+func TestShellAsksTheJudgeOnlyWhatItNeeds(t *testing.T) {
+	s := delFixture(t)
+	for _, line := range []string{"ls -la && git status", "rm file.txt a.txt", "mv a.txt b.txt", "git stash", "rm -rf junk/*"} {
+		s.rootReads = 0
+		shellDecide(tB, line, s.own, s.own, s)
+		if s.rootReads != 0 {
+			t.Errorf("%q read the machine's records", line)
+		}
+	}
+	s.rootReads = 0
+	shellDecide(tB, "rm -rf build dist node_modules && mv src old-src", s.own, s.own, s)
+	if s.rootReads != 1 {
+		t.Errorf("a line with four folders deleted or moved read the records %d times, want once", s.rootReads)
+	}
+	s.lines = nil
+	shellDecide(tB, `bash -c 'echo inner' && eval "echo second"`, s.own, s.own, s)
+	shellDecide(tP, "pwsh -EncodedCommand "+delEncode("Write-Output decoded"), s.own, s.own, s)
+	joined := strings.Join(s.lines, "\n")
+	for _, want := range []string{"echo inner", "echo second", "Write-Output decoded"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("ownLine never saw %q: %q", want, s.lines)
+		}
+	}
+	s.commands = nil
+	shellDecide(tB, "cd build && bonsai status; bonsai check", s.own, s.own, s)
+	want := []string{filepath.Join(s.own, "build") + " bonsai status", filepath.Join(s.own, "build") + " bonsai check", s.own + " bonsai check"}
+	if strings.Join(s.commands, "|") != strings.Join(want, "|") {
+		t.Errorf("ownCommand's calls %q, want %q", s.commands, want)
+	}
+}
+
 // Each word that runs another program has a row whose delete it reaches.
 func TestShellRunnersEachHaveARow(t *testing.T) {
-	for _, rn := range delRunners {
+	for _, rn := range RunnerWords {
 		found := false
 		for _, row := range delTable {
-			if row.want != delRuleUnnamed && row.want != delRuleProtected {
+			if row.want != RuleDeleteUnnamed && row.want != RuleDeleteProtected {
 				continue
 			}
 			for _, f := range strings.Fields(strings.ToLower(row.line)) {
@@ -775,7 +921,7 @@ func TestShellAnswerNamesTheOperand(t *testing.T) {
 		{tP, "Remove-Item -Recurse junk/*", "junk/*", "name the files"},
 	}
 	for _, c := range cases {
-		d := shellDecide(c.tool, c.line, s.own, s)
+		d := shellDecide(c.tool, c.line, s.own, s.own, s)
 		if d.Allow {
 			t.Errorf("%q allowed", c.line)
 			continue
@@ -790,7 +936,7 @@ func TestShellAnswerNamesTheOperand(t *testing.T) {
 			t.Errorf("%q: the reason does not name the operand %q: %s", c.line, c.target, d.Why)
 		}
 	}
-	d := shellDecide(tB, "rm -rf build", s.own, s)
+	d := shellDecide(tB, "rm -rf build", s.own, s.own, s)
 	if !d.Allow || d.Target != "build" {
 		t.Errorf("a named delete: %+v", d)
 	}
@@ -799,16 +945,16 @@ func TestShellAnswerNamesTheOperand(t *testing.T) {
 // A running task's grant opens a guarded path to a delete as it does to an edit.
 func TestShellGrantOpensAGuardedPath(t *testing.T) {
 	s := delFixture(t)
-	if d := shellDecide(tB, "rm -rf docs/secret", s.own, s); d.Allow {
+	if d := shellDecide(tB, "rm -rf docs/secret", s.own, s.own, s); d.Allow {
 		t.Fatalf("not granted, allowed: %+v", d)
 	}
 	s.grants = []string{"docs/secret/**"}
 	for _, line := range []string{"rm -rf docs/secret", "rm -rf docs", "mv docs/secret old-secret"} {
-		if d := shellDecide(tB, line, s.own, s); !d.Allow {
+		if d := shellDecide(tB, line, s.own, s.own, s); !d.Allow {
 			t.Errorf("%q granted, refused: %s", line, d.Why)
 		}
 	}
-	if d := shellDecide(tB, "rm -rf .git", s.own, s); d.Allow {
+	if d := shellDecide(tB, "rm -rf .git", s.own, s.own, s); d.Allow {
 		t.Errorf("a grant opened .git: %+v", d)
 	}
 }
@@ -820,23 +966,23 @@ func TestShellFollowsTheFolder(t *testing.T) {
 	cases := []struct {
 		line, want string
 	}{
-		{"cd src && rm ../bonsai.yaml", delRuleProtected},
-		{"cd src; rm ../bonsai.yaml", delRuleProtected},
-		{"cd src && rm -rf .git", delRuleNamed},
-		{"cd sub && rm bonsai.yaml", delRuleProtected},
-		{"cd sub; cd ..; rm -rf .git", delRuleProtected},
-		{"(cd vendor/lib && rm -rf .git); ls", delRuleNamed},
-		{"(cd vendor/lib; rm -rf .git)", delRuleProtected},
-		{"cd vendor/lib && rm -rf .git && cd ../.. && ls", delRuleNamed},
-		{"cd \"$(git rev-parse --show-toplevel)\" && rm -rf build", delRuleUnnamed},
-		{"cd \"$X\" && rm bonsai.yaml", delRuleProtected},
-		{"cd \"$X\" && rm notes.txt", delRuleNamed},
-		{"pushd vendor/lib && rm -rf .git && popd && rm -rf build", delRuleNamed},
-		{"cd " + filepath.ToSlash(s.own) + "/src && rm -rf ../.git", delRuleProtected},
-		{"cd ~ && rm -rf .bonsai", delRuleProtected},
+		{"cd src && rm ../bonsai.yaml", RuleDeleteProtected},
+		{"cd src; rm ../bonsai.yaml", RuleDeleteProtected},
+		{"cd src && rm -rf .git", RuleDeleteNamed},
+		{"cd sub && rm bonsai.yaml", RuleDeleteProtected},
+		{"cd sub; cd ..; rm -rf .git", RuleDeleteProtected},
+		{"(cd vendor/lib && rm -rf .git); ls", RuleDeleteNamed},
+		{"(cd vendor/lib; rm -rf .git)", RuleDeleteProtected},
+		{"cd vendor/lib && rm -rf .git && cd ../.. && ls", RuleDeleteNamed},
+		{"cd \"$(git rev-parse --show-toplevel)\" && rm -rf build", RuleDeleteUnnamed},
+		{"cd \"$X\" && rm bonsai.yaml", RuleDeleteProtected},
+		{"cd \"$X\" && rm notes.txt", RuleDeleteNamed},
+		{"pushd vendor/lib && rm -rf .git && popd && rm -rf build", RuleDeleteNamed},
+		{"cd " + filepath.ToSlash(s.own) + "/src && rm -rf ../.git", RuleDeleteProtected},
+		{"cd ~ && rm -rf .bonsai", RuleDeleteProtected},
 	}
 	for _, c := range cases {
-		if d := shellDecide(tB, c.line, s.own, s); d.Rule != c.want {
+		if d := shellDecide(tB, c.line, s.own, s.own, s); d.Rule != c.want {
 			t.Errorf("%q: %s, want %s (%s)", c.line, d.Rule, c.want, d.Why)
 		}
 	}
