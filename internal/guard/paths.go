@@ -39,7 +39,6 @@ package guard
 
 import (
 	"io/fs"
-	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -263,7 +262,7 @@ func thisMachine(server string) bool {
 	if s == "localhost" || s == "0--1.ipv6-literal.net" {
 		return true
 	}
-	if ip := net.ParseIP(s); ip != nil && ip.IsLoopback() {
+	if loopbackV4(s) {
 		return true
 	}
 	for _, n := range machineNames() {
@@ -272,6 +271,33 @@ func thisMachine(server string) bool {
 		}
 	}
 	return false
+}
+
+// loopbackV4 reports an IPv4 loopback address written as four decimal numbers, 127.x.y.z. Read by hand: the net
+// package would link the system's resolver into the binary (cgo on Linux) and slow every hook's start.
+func loopbackV4(s string) bool {
+	parts := strings.Split(s, ".")
+	if len(parts) != 4 || parts[0] != "127" {
+		return false
+	}
+	for _, p := range parts {
+		if p == "" || len(p) > 3 || strings.Trim(p, "0123456789") != "" {
+			return false
+		}
+		if atoiSmall(p) > 255 {
+			return false
+		}
+	}
+	return true
+}
+
+// atoiSmall reads a run of at most three decimal digits.
+func atoiSmall(p string) int {
+	n := 0
+	for i := 0; i < len(p); i++ {
+		n = n*10 + int(p[i]-'0')
+	}
+	return n
 }
 
 // machineNames are this machine's own names, lower case: os.Hostname's, its first label, and on Windows

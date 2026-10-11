@@ -8,6 +8,7 @@ package guard
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -338,6 +339,10 @@ func TestAdminShareForms(t *testing.T) {
 		`\\localhost\1$\p`:                  "",
 		`C:\p\protected.txt`:                "",
 		`\\localhost`:                       "",
+		`\\127.0.0.256\C$\p`:                "",
+		`\\127.1\C$\p`:                      "",
+		`\\128.0.0.1\C$\p`:                  "",
+		`\\127.0.0.1a\C$\p`:                 "",
 	} {
 		if got := adminShare(in); got != want {
 			t.Errorf("adminShare(%q) = %q, want %q", in, got, want)
@@ -368,5 +373,24 @@ func TestProjectPaths(t *testing.T) {
 	}
 	if got, err := projectPaths(dir, dir, filepath.Join(filepath.Dir(dir), "x.txt")); err != nil || len(got) != 0 {
 		t.Errorf("a path outside: %q %v", got, err)
+	}
+}
+
+// The guard's binary links no name resolver: the net package (which adminShare does without) would make the Linux
+// build use cgo and link dynamically, slowing every hook's start; the end check of step 5.3 holds the same for
+// golang.org/x/sys (design/plan-5.md, "Where each inherited finding is settled").
+func TestTheBinaryLinksNoResolver(t *testing.T) {
+	goTool, err := exec.LookPath("go")
+	if err != nil {
+		t.Skip("go is not on the PATH: go test puts its own first, so this runs under go test")
+	}
+	out, err := exec.Command(goTool, "list", "-deps", "github.com/LastStep/Bonsai/cmd/bonsai").Output()
+	if err != nil {
+		t.Fatalf("go list: %v", err)
+	}
+	for _, dep := range strings.Fields(string(out)) {
+		if dep == "net" || dep == "runtime/cgo" || strings.HasPrefix(dep, "golang.org/x/sys") {
+			t.Errorf("cmd/bonsai links %s", dep)
+		}
 	}
 }
