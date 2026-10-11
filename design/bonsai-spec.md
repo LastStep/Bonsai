@@ -1389,9 +1389,17 @@ is a pull request with CI anyway (§12). If you want it off: on github.com, the 
 > the ruleset's pull-request and required-check rules; force pushes and deletion stay blocked. The orchestrator pushes
 > `main` after a verifier passes and checks CI after every push.
 
-**6. The skeleton's hand checks** (your time, about 45 minutes in one sitting, when the builder says the scratch build
+**6. The skeleton's hand checks** (your time, about 45 minutes in two sittings, when the builder says the scratch build
 is ready; they save about 3 AI hours, §14). The builder leaves the folders and a `claude-here` launcher in
 `~/bonsai-checks` and `%USERPROFILE%\bonsai-checks`. Tell the orchestrator what you saw, one line per check.
+
+> **Changed 11 Oct (`records/runs/R-2026-10-08-plugins.md`, `records/gate-skeleton.md`):** two sittings, your choice of
+> 8 Oct (`design/plan.md`): the first, about 25 minutes after part 5 (checks b, c, d), the second, about 20 minutes after
+> part 4 (check a). And a Sonnet agent runs the scripted hand checks where an agent can (check a was run so, on your
+> word, 8 Oct); you take only what an agent cannot: the PowerShell console, a real Windows session, a typed session.
+> `/agents` was removed in Claude Code 2.1.294 ("The /agents wizard has been removed"), so check a no longer has you
+> type it: a role is read by starting a session as it, `claude --agent <plugin>:<role>`, for example
+> `--agent test-pack:marker`.
 
 *a. The pack loads in a session* (check 8). In WSL, then the PowerShell pair in a normal PowerShell:
 
@@ -1405,8 +1413,10 @@ cd "$env:USERPROFILE\bonsai-checks\project-a"
 & "$env:USERPROFILE\bonsai-checks\claude-here.cmd"
 ```
 
-Type `/agents`: the test pack's `marker` role should say "commit A". Type `/exit`. Do the same in `project-b` ("commit
-B") and in `project-a-worktree`, a fresh worktree of `project-a` moved to commit B: there, note whether a trust question
+Start a session as the role instead (`/agents` is gone): in WSL
+`~/bonsai-checks/claude-here --agent test-pack:marker`, in PowerShell
+`& "$env:USERPROFILE\bonsai-checks\claude-here.cmd" --agent test-pack:marker`. Ask it which commit it is from: the
+`marker` role should say "commit A". Type `/exit`. Do the same in `project-b` ("commit B") and in `project-a-worktree`, a fresh worktree of `project-a` moved to commit B: there, note whether a trust question
 appears and whether the role shows ("commit B"). Then open `project-a` once more: still "commit A".
 
 *b. The PowerShell console* (check 9). In a normal PowerShell:
