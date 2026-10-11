@@ -1,9 +1,12 @@
 package clean
 
 // The budget: a run on a folder of many files stops when its budget runs out, cleans what it judged before that, and
-// the next runs go on from there until the folder is clean. Each delete is slowed to a fixed pace through removeFile,
-// so the test holds on a fast machine (which would otherwise clean every file inside one budget) and on a slow CI
-// runner (where listing 600 files once took longer than a 100 ms budget, and a run cleaned nothing).
+// the next runs go on from there until the folder is clean. The budget's clock is the test's (heldClock): each delete
+// moves it on by a fixed pace and nothing else does, so each session end's run cleans exactly its budget's worth, the
+// oldest first, on any machine. Timed by the wall clock, this test failed on a loaded Windows runner (listing 600 files
+// once took longer than a 100 ms budget; later, under load, a 1 s budget ran out before a run reached its first file),
+// on the code before the budget was checked during the listing as on the code after. The wall clock's own limit, a run
+// ending within its budget and one step, is TestBudgetHugeFolder's (stop_test.go).
 
 import (
 	"fmt"
@@ -16,9 +19,11 @@ import (
 func TestBudgetStopsTheRun(t *testing.T) {
 	const files = 600
 	const budget = SessionEndBudget
-	const pace = 5 * time.Millisecond // each delete's floor: at most about 200 files in one budget
+	const pace = 5 * time.Millisecond // each delete moves the budget's clock on this much: 200 files a run
+	const perRun = int(budget / pace)
 	l := project(t, "  log:\n    keep_days: 30\n")
 	dir := filepath.Join(l.Main, ".bonsai", "local", "log")
+	var oldest []string // the targets, oldest first
 	for i := 0; i < files; i++ {
 		id := fmt.Sprintf("f%07d-0000-4000-8000-000000000000", i)
 		at := daysAgo(40).Add(time.Duration(i) * time.Second)
@@ -27,44 +32,43 @@ func TestBudgetStopsTheRun(t *testing.T) {
 			t.Fatal(err)
 		}
 		stamp(t, p, at)
+		oldest = append(oldest, target(Log, "s-"+id+".ndjson"))
 	}
-	slow := removeFile
+	advance := heldClock(t)
+	del := removeFile
+	t.Cleanup(func() { removeFile = del })
 	removeFile = func(name string) error {
-		time.Sleep(pace)
-		return slow(name)
+		advance(pace)
+		return del(name)
 	}
-	t.Cleanup(func() { removeFile = slow })
 	o := opts(l)
 	o.Budget = budget
-	start := time.Now()
-	d := SessionEnd(o)
-	took := time.Since(start)
-	if !d.Stopped || len(d.Cleaned) == 0 || len(d.Cleaned) >= files || len(d.Errs) > 0 {
-		t.Fatalf("stopped %v, cleaned %d of %d, errors %v", d.Stopped, len(d.Cleaned), files, d.Errs)
-	}
-	// The budget is checked between files, so a run overruns it by what it does before its first delete (listing the
-	// folder and judging each file's protections) and by the file it was on. On Windows CI that took over a second for
-	// 600 files. The hard limit is the session end's: the recorder's own 4 s budget, inside SessionEnd's 5 s line.
-	if took > 4*time.Second {
-		t.Errorf("a run with a budget of %v took %v, past the recorder's 4 s", budget, took)
-	}
-	t.Logf("%d files: the first run cleaned %d in %v (budget %v)", files, len(d.Cleaned), took, budget)
-	// The oldest go first, so what is left is the newest.
-	if d.Cleaned[0].Target != ".bonsai/local/log/s-f0000000-0000-4000-8000-000000000000.ndjson" {
-		t.Errorf("the first cleaned is %s, not the oldest", d.Cleaned[0].Target)
-	}
-	// The next runs go on until the folder is clean, each cleaning some.
-	total, runs := len(d.Cleaned), 1
-	for d.Stopped {
-		d = SessionEnd(o)
-		total += len(d.Cleaned)
+	// Each run stops when its budget runs out, having cleaned its budget's worth; the next goes on from there, the
+	// oldest first, until the folder is clean.
+	var cleaned []Item
+	runs := 0
+	for {
 		runs++
-		if d.Stopped && len(d.Cleaned) == 0 {
-			t.Fatalf("run %d stopped having cleaned nothing (%d of %d cleaned before it)", runs, total, files)
+		d := SessionEnd(o)
+		want := min(perRun, files-len(cleaned))
+		if len(d.Errs) > 0 || len(d.Cleaned) != want {
+			t.Fatalf("run %d: cleaned %d, want %d (%d of %d cleaned before it); errors %v", runs, len(d.Cleaned), want,
+				len(cleaned), files, d.Errs)
+		}
+		cleaned = append(cleaned, d.Cleaned...)
+		if !d.Stopped {
+			break
+		}
+		if runs > files {
+			t.Fatalf("%d runs and the folder is not clean", runs)
 		}
 	}
-	if total != files || len(d.Errs) > 0 {
-		t.Errorf("after %d runs, %d of %d cleaned, errors %v", runs, total, files, d.Errs)
+	if len(cleaned) != files {
+		t.Errorf("%d runs cleaned %d of %d", runs, len(cleaned), files)
 	}
-	t.Logf("%d runs cleaned all %d", runs, files)
+	for i, it := range cleaned {
+		if it.Target != oldest[i] {
+			t.Fatalf("cleaned %d is %s, want %s: the oldest first", i, it.Target, oldest[i])
+		}
+	}
 }
