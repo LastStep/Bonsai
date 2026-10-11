@@ -820,6 +820,26 @@ var delTable = []delRow{
 	{tB, "", "echo x | xargs xargs bonsai check", RuleBonsaiCommand, ""},
 	{tB, "", "echo unlink | xargs -i bonsai {}", RulePersonCommand, ""},
 	{tB, "", `echo x | xargs -0 find . -exec bonsai check {} \;`, RuleBonsaiCommand, ""},
+	// GNU xargs's -i, -e and -l take a value glued only (-iX: X is the placeholder), --max-lines one after = only.
+	{tB, "", "echo unlink | xargs -iX bonsai X", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -i'X' bonsai X", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -0iX bonsai X", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -iX sh -c 'bonsai X'", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -iX env bonsai X", RulePersonCommand, ""},
+	{tB, "", "echo set | xargs -iX bonsai settings X k v", RulePersonCommand, ""},
+	{tB, "", "echo attach | xargs -iY bonsai labels Y T-0001 x", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -iUNL bonsai UNL", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs --max-lines bonsai", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -l bonsai", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -l1 bonsai", RulePersonCommand, ""},
+	{tB, "", "echo unlink | xargs -eEOF bonsai", RulePersonCommand, ""},
+	{tB, "", "find . -name '*.tmp' | xargs --max-lines rm -f", RuleDeleteUnnamed, ""},
+	{tB, "", "find . | xargs -iX rm -rf X", RuleDeleteUnnamed, ""},
+	{tB, "", "ls | xargs -I{} cp {} out/", RuleShell, ""},
+	{tB, "", "ls | xargs -i echo {}", RuleShell, ""},
+	{tB, "", "ls | xargs -l1 wc", RuleShell, ""},
+	{tB, "", "ls | xargs --max-lines=1 bonsai check", RuleBonsaiCommand, ""},
+	{tB, "", "ls | xargs -iX bonsai check X", RulePersonCommand, ""},
 
 	// --- V2c's fix round (93167be): bash's ~-0 is the folder stack's bottom (the folder before a pushd), read as a
 	// folder the check cannot tell, as ~- and ~-N are.

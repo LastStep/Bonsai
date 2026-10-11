@@ -236,9 +236,9 @@ var RunnerWords = []RunnerWord{
 			longVal: []string{"signal", "kill-after"}}},
 	{Word: "xargs", in: delInBash, Does: "its options skipped; a delete it runs takes its operands from input, so it does not name them; " +
 		"a bonsai call it runs is a person's step unless its own words settle a command that is not a person's",
-		opt: delOpt{short: "0prtxeil", shortVal: "adEILnPs", long: []string{"null", "no-run-if-empty", "interactive",
-			"verbose", "exit", "open-tty", "show-limits"}, longVal: []string{"arg-file", "delimiter", "max-args", "max-lines",
-			"max-procs", "max-chars", "process-slot-var"}, longOpt: []string{"eof", "replace"}}},
+		opt: delOpt{short: "0prtxo", shortOpt: "eil", shortVal: "adEILnPs", long: []string{"null", "no-run-if-empty",
+			"interactive", "verbose", "exit", "open-tty", "show-limits"}, longVal: []string{"arg-file", "delimiter",
+			"max-args", "max-procs", "max-chars", "process-slot-var"}, longOpt: []string{"eof", "replace", "max-lines"}}},
 	{Word: "busybox", in: delInBash, Does: "skipped: the word after it is the program"},
 	{Word: "chronic", in: delInBash, Does: "skipped"},
 	{Word: "unbuffer", in: delInBash, Does: "skipped"},
@@ -597,11 +597,17 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 		}
 	case "xargs":
 		x.feed = "xargs"
-		for _, v := range g.val("I", "replace") {
+		bare := 0 // -i and --replace given with no text of their own: {} is theirs
+		for _, o := range g.on {
+			if o == "i" || o == "replace" {
+				bare++
+			}
+		}
+		for _, v := range g.val("I", "i", "replace") {
 			x.places = append(x.places, v.text)
 		}
-		if g.has("i", "replace") {
-			x.places = append(x.places, "{}") // -i's and --replace's own when given none
+		if bare > len(g.val("i", "replace")) {
+			x.places = append(x.places, "{}")
 		}
 	case "wsl", "watch":
 		x.d = shBash
@@ -1040,6 +1046,7 @@ func (r *delRun) cdTo(dirs delDirs, w shWord, d shDialect) delDirs {
 // delOpt is a GNU-style program's options.
 type delOpt struct {
 	short    string   // short options with no value
+	shortOpt string   // short options whose value is optional: the rest of the bundle only (GNU xargs's -iR, -l5)
 	shortVal string   // short options that take a value (the rest of the bundle, or the next word)
 	long     []string // long options with no value
 	longVal  []string // long options that take a value (after =, or the next word)
@@ -1166,6 +1173,12 @@ func delParse(words []shWord, o delOpt) delGot {
 					} else if i+1 < len(words) {
 						g.vals[ch] = append(g.vals[ch], words[i+1])
 						i++
+					}
+					break
+				}
+				if strings.Contains(o.shortOpt, ch) {
+					if k+1 < len(t) {
+						g.vals[ch] = append(g.vals[ch], delValue(w, t[k+1:]))
 					}
 					break
 				}
