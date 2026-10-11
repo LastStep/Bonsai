@@ -31,6 +31,10 @@ package guard
 //   - PowerShell's provider and .NET forms: New-Item -Path Env:, Set-Location Env:, ('Env:'+'NAME'), [string]'NAME',
 //     .ToUpper(), Start-Process -Environment @{...}, a ProcessStartInfo;
 //   - cmd /c "env -i x.sh";
+//   - PowerShell casts, parentheses and comma lists on $env: ([string]$env:NAME = "", ($env:NAME) = "",
+//     $env:NAME, $x = "", 1);
+//   - env's own -S splitting rules (\_ as env's space, a -S text holding ; read as a command line), as in the
+//     delete check's limits (shell.go);
 //   - a wolf: the backstop refuses a text that names part of the variable (env | grep CLAUDE_CODE_CHILD, a comment).
 
 import "strings"

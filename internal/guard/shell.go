@@ -40,6 +40,18 @@ package guard
 // or function defined outside it; and a link made earlier in the same line and deleted through (ln -s .git g && rm
 // -rf g/), since the check reads the disk as it is before the line runs.
 //
+// Known limits, fixed after 1.0 (Rohan, 11 Oct; V2c's items 3 and 6), each adversarial; the commands' own refusal
+// (5.3.6b) and rung 0 (5.4) stand behind them:
+//   - env's own -S splitting rules: \_ (env's space) is read as bash reads it, and a -S text holding ;, |, && or ( is
+//     read as a command line, not as env's words;
+//   - env -v echo '...' | bash: a literal piped into a shell is read only when echo, printf or a here-document's cat
+//     writes it, not through a runner word;
+//   - the git icase variable named with quotes or encoded (GIT_ICASE_PATH""SPECS=1), read on the line's raw text;
+//   - a planted .git folder holding HEAD, objects and refs whose HEAD git does not take: it ends the walk up to a
+//     checkout's top (gitEntry) where git walks on;
+//   - parallel as a runner word (GNU parallel ... ::: x): what it runs is not read;
+//   - bonsai's words from a variable, a substitution, or a positional parameter outside xargs (bonsai $X).
+//
 // The answer (note 6) names the command by its head only (redact.CommandHead: the program and, for git and its kind,
 // one subcommand word), the operand and the rule, and the next step; it quotes no command line, and an operand that
 // holds a variable or a substitution is not quoted either (contract §2.6: the record keeps no part of the line beyond
