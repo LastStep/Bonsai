@@ -704,15 +704,15 @@ protected path); another shell route is caught after the fact, as question A say
 
 **Deny rules the engine writes** (in `.claude/settings.json`, kind `keys`):
 - `Edit(/<path>)` for each `never_edit` path, the project-root form: the path is read from the project's top folder,
-  whatever folder a shell has since moved to. One such rule stops the Edit, Write, Bash (redirects, in-place edits, copies)
-  and PowerShell routes in bypass mode, on both machines (P2, 5 Oct); only a write wrapped in another interpreter gets
-  past. Today's ledger guard becomes this rule.
+  whatever folder a shell has since moved to. One such rule stops the Edit, Write, Bash (redirects, in-place edits,
+  copies) and PowerShell routes in bypass mode, on both machines (P2, 5 Oct); only a write wrapped in another
+  interpreter gets past. Today's ledger guard becomes this rule.
 
   > **Changed 11 Oct (5.3.5; `records/runs/R-2026-10-11-5.3.5-deny.md`):** the rule was `Edit(<path>)` since part 3. It
   > did not hold after a shell `cd` into a subfolder (measured on Claude Code 2.1.296 in WSL and 2.1.294 on Windows: a
   > Write by absolute path and `echo > ../ledger.json` were both allowed), while `Edit(/<path>)` held before and after,
-  > as `Edit(//**/...)` does. `never_edit` now writes the `/<path>` form. A project linked before shows each such rule as
-  > one line changed.
+  > as `Edit(//**/...)` does. `never_edit` now writes the `/<path>` form. A project linked before shows each such rule
+  > as one line changed.
 - Deny rules cannot open for a granted task, so grantable protected paths stay with the guard hook.
 - Base's baseline: the walls (below). **Bonsai's own rules** (the engine writes them into every linked project whatever
   its packs, first in the deny list; 5.3.5, 11 Oct): `Edit(//**/.bonsai/local/**)`, `Edit(//**/.bonsai/sessions.md)`,
@@ -760,7 +760,8 @@ sides again:
   files). They are narrow on purpose: Rohan's own sessions and T-0072's Windows-side checks read elsewhere on C:, and
   narrow rules survive the sandbox (below). The environment scrub the research's `g-walls` row named waits for the
   sandbox: on Linux `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` puts every command in it (env-vars page). The `.bonsai/local/`
-  rule uses `//**/` too (now the engine's own rule, above), so a worktree session, whose `local/` is the main checkout's, outside its own folder, meets it.
+  rule uses `//**/` too (now the engine's own rule, above), so a worktree session, whose `local/` is the main
+  checkout's, outside its own folder, meets it.
 - **The studio's own secret files** (`~/.trinetra/token`, `deploy_ed25519` and `salt`) get the same rules from the
   public `workflow` pack, since base never names the studio. The rules name the files; nothing secret is in the pack.
 - **Checked in step 5.5:** each rule tried once in a scratch session on both sides (`--settings` loads the same rules).
@@ -1394,11 +1395,11 @@ is ready; they save about 3 AI hours, §14). The builder leaves the folders and 
 `~/bonsai-checks` and `%USERPROFILE%\bonsai-checks`. Tell the orchestrator what you saw, one line per check.
 
 > **Changed 11 Oct (`records/runs/R-2026-10-08-plugins.md`, `records/gate-skeleton.md`):** two sittings, your choice of
-> 8 Oct (`design/plan.md`): the first, about 25 minutes after part 5 (checks b, c, d), the second, about 20 minutes after
-> part 4 (check a). And a Sonnet agent runs the scripted hand checks where an agent can (check a was run so, on your
-> word, 8 Oct); you take only what an agent cannot: the PowerShell console, a real Windows session, a typed session.
-> `/agents` was removed in Claude Code 2.1.294 ("The /agents wizard has been removed"), so check a no longer has you
-> type it: a role is read by starting a session as it, `claude --agent <plugin>:<role>`, for example
+> 8 Oct (`design/plan.md`): the first, about 25 minutes after part 5 (checks b, c, d), the second, about 20 minutes
+> after part 4 (check a). And a Sonnet agent runs the scripted hand checks where an agent can (check a was run so, on
+> your word, 8 Oct); you take only what an agent cannot: the PowerShell console, a real Windows session, a typed
+> session. `/agents` was removed in Claude Code 2.1.294 ("The /agents wizard has been removed"), so check a no longer
+> has you type it: a role is read by starting a session as it, `claude --agent <plugin>:<role>`, for example
 > `--agent test-pack:marker`.
 
 *a. The pack loads in a session* (check 8). In WSL, then the PowerShell pair in a normal PowerShell:
@@ -1416,8 +1417,9 @@ cd "$env:USERPROFILE\bonsai-checks\project-a"
 Start a session as the role instead (`/agents` is gone): in WSL
 `~/bonsai-checks/claude-here --agent test-pack:marker`, in PowerShell
 `& "$env:USERPROFILE\bonsai-checks\claude-here.cmd" --agent test-pack:marker`. Ask it which commit it is from: the
-`marker` role should say "commit A". Type `/exit`. Do the same in `project-b` ("commit B") and in `project-a-worktree`, a fresh worktree of `project-a` moved to commit B: there, note whether a trust question
-appears and whether the role shows ("commit B"). Then open `project-a` once more: still "commit A".
+`marker` role should say "commit A". Type `/exit`. Do the same in `project-b` ("commit B") and in
+`project-a-worktree`, a fresh worktree of `project-a` moved to commit B: there, note whether a trust question appears
+and whether the role shows ("commit B"). Then open `project-a` once more: still "commit A".
 
 *b. The PowerShell console* (check 9). In a normal PowerShell:
 
