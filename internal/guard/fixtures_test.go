@@ -62,7 +62,7 @@ func copyTree(t *testing.T, from, to string) {
 	}
 }
 
-var allowsLine = regexp.MustCompile(`(?m)^  bonsai\.allows: \[(.*)\]$`)
+var allowsLine = regexp.MustCompile(`(?m)^  bonsai\.allows: \[(.*)\]\r?$`)
 
 // allowsIn gives each task file's id and bonsai.allows globs in a project folder's work/tasks.
 func allowsIn(t *testing.T, dir string) map[string][]string {
@@ -192,6 +192,9 @@ func guardFixture(t *testing.T, name, mode string, grants *string) {
 		}
 	}
 	sort.Strings(globs)
+	if len(globs) < 2 {
+		t.Fatalf("no task of the case grants anything the test can probe: %v", globs)
+	}
 	var want []string // the globs the expected task grants, read from the main checkout of the checkout's project
 	if grants != nil {
 		from := folders["main"]
