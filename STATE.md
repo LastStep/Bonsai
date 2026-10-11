@@ -153,9 +153,12 @@ two-round cap). No change to Mimas or the studio's repo.
 (about 5 minutes). Its builders' rules: `~/bonsai-checks/briefs/rules.md` (**update its `Claude-Session` line to the new
 session's** first; it carries the stamped build line, the Windows login rule and the Sonnet-helpers default).
 
-1. **The start check:** the plan's 5.4 section against what 5.3 left for it (below, "Placed for later", 5.4): the stop
-   gate and subagents (a subagent's end is not gated; Claude Code's cap of 8 is per turn and a subagent finishing resets
-   it; builders as their own `claude -p` sessions with `BONSAI_TASK`, or a `SubagentStop` line and a per-subagent task);
+1. **The start check:** the plan's 5.4 section against what 5.3 left for it (below, "Placed for later", 5.4). **First, a
+   question for Rohan** (one decision, its stakes and a pros/cons table): **how builders are held to the stop gate.**
+   Today a subagent's end is not gated and `BONSAI_TASK` is per session, so builders run as subagents (5.4's plan, and
+   how every project's work runs) end unproven: "nothing is done until it is proven" is not enforced for them. Options:
+   builders as their own `claude -p` sessions with `BONSAI_TASK`, or a `SubagentStop` line and a per-subagent task
+   (Claude Code's cap of 8 is per turn, and a subagent finishing resets it). Then the rest:
    the worktree without its own `bonsai.yaml`; the task reader taking `garbage: [` as a task; the next formats set's
    items. Any change to what is Rohan's (hours, order, his steps, a format change) goes to him under (B), one question
    per decision.
