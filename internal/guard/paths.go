@@ -220,6 +220,17 @@ func windowsForms(p string) []string {
 	return forms
 }
 
+// devicePath reports a Windows path in a device or long form (\\?\..., \\.\..., \??\...). Its projects are looked
+// for in its other forms: windowsForms gives a drive's or a share's form of it, and finalPath what Windows names a
+// device or volume form; walked as written, its folders would name each project a second time, under a name no
+// record on this machine holds.
+func devicePath(p string) bool {
+	if runtime.GOOS != "windows" {
+		return false
+	}
+	return strings.HasPrefix(p, `\\?\`) || strings.HasPrefix(p, `\\.\`) || strings.HasPrefix(p, `\??\`)
+}
+
 // adminShare reads a path through this machine's own administrative share of a drive as that drive's path:
 // \\localhost\C$\p\x.txt is C:\p\x.txt (gate report section 5; design/plan-5.md, 5.3.1 note 6). The share's
 // server is this machine when it is localhost, a loopback address (127.x.x.x, ::1 as 0--1.ipv6-literal.net), or one of

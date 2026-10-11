@@ -271,6 +271,9 @@ func (j *judge) decide(in *hookin.Payload, base string) (Decision, *linkedProjec
 	var all []judged
 	var first []*linkedProject // the chain of the first form a project holds: an allow is recorded there
 	for _, abs := range forms {
+		if devicePath(abs) {
+			continue // a \\?\ form names no project folder of its own: its drive or share form is among the forms
+		}
 		chain := j.chain(abs)
 		if len(chain) == 0 {
 			continue

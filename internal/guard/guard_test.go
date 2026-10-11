@@ -370,6 +370,12 @@ func TestDecideOnACaseInsensitiveSystem(t *testing.T) {
 			t.Errorf("%s allowed: %+v", p, d)
 		}
 	}
+	// The project's own folder written in another letter case is the same project, verified as this machine recorded it.
+	for _, p := range []string{filepath.Join(strings.ToUpper(dir), "PROTECTED.TXT"), filepath.Join(strings.ToLower(dir), "protected.txt")} {
+		if d := decide(&hookin.Payload{Tool: "Edit", Path: p}, dir); d.Allow || d.Rule != RuleProtected {
+			t.Errorf("%s: %+v, want refused as protected", p, d)
+		}
+	}
 }
 
 func TestDecideOnWindowsForms(t *testing.T) {
