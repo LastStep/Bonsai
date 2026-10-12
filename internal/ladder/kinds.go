@@ -2,7 +2,8 @@ package ladder
 
 // The one file through which the runner calls each rung kind and each step after a rung (plan-5 5.4, "The order"): a
 // piece built beside the runner in a package of its own wires itself in here with one last commit, as 5.3.3 wired into
-// the guard. The runner itself (rungs.go) calls only runKind, afterRung and afterResult, and reads only what they give.
+// the guard. The runner itself (rungs.go) calls only runKind, afterRung, afterRungs and afterResult, and reads only what
+// they give.
 //
 //   - guardKind: rung 0 (step 5.4.3, internal/rung0): rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home:
 //     c.Home, Active: the climbed task (*c.Task, the zero ActiveTask when c.Task is nil: no grants), Base: c.Base,
@@ -26,14 +27,21 @@ package ladder
 //     its kind's own default: a command rung the rung job's (rungjob.DefaultTimeout, 600 s), rung 0 rung0.DefaultTimeout
 //     and git integrity vergit.DefaultTimeout (120 s each: git reads, which a limit only ends when git does not answer),
 //     so a floor of rung 0 and ver-git does not make a waiting climb wait as if each ran tests for ten minutes.
-//   - afterRung: the steps after each rung that ran, in order. First the ratchet's judgment (internal/ratchet's Judge,
-//     step 5.4.4): the count written on the rung (was, now and whether now is at least was), and the rung red when the
-//     count is below its floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), the
-//     reason added to the rung's own. Then, after the last rung, the rise step: on a local climb that is green and clean,
-//     each ratchet above its floor gets its new_tests from ratchet.NewTests, which step 5.4.5's check replaces.
+//   - afterRung: the steps after each rung that ran: the ratchet's judgment (internal/ratchet's Judge, step 5.4.4): the
+//     count written on the rung (was, now and whether now is at least was), and the rung red when the count is below its
+//     floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), the reason added to the
+//     rung's own.
+//   - afterRungs: the steps after the last rung, once every rung's line is printed: the rise step. On a local climb
+//     that is green and clean (clean at its start and now, HEAD where it started, nothing hidden from git), each ratchet
+//     above its floor gets its new_tests from ratchet.NewTests, internal/newtests' check (step 5.4.5): the rung run on
+//     the base in a temporary worktree, with the rung's limit, the climb's environment and its stop. Its lines print
+//     under the rungs' (a line before it starts, since it runs the rung twice more), and its one-line summary goes to
+//     the Bless step for the ask's why. A check stopped or past its limit says "check not run" and never changes a
+//     colour. On any other climb new_tests stays null.
 //   - afterResult: once the result and its fingerprint are written, the Bless step (ratchet.Bless, step 5.4.4): on the
-//     base branch, every open Bless ask whose offer is gone resolved, and the climb's own offer filed; it gives the ask
-//     records written, the climb's bless, and its lines go under the rungs'.
+//     base branch, every open Bless ask whose offer is gone resolved, and the climb's own offer filed, its why giving
+//     each rise's new-tests line from the rise step (Result.Checks); it gives the ask records written, the climb's
+//     bless, and its lines go under the rungs'.
 //
 // A kind's Reason goes into the result only when the rung is not green (bonsai.ladder/1: reason is null when green); a
 // green rung's reason (what was found, what was not judged) is printed under its line in the human output, and its
@@ -41,6 +49,7 @@ package ladder
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -224,6 +233,7 @@ type Step struct {
 	Tests  *testout.Report    // its tests as read (a command rung with a tests form Bonsai knows), or nil
 	Count  *Count             // its ratchet and the count read for it, or nil when the rung has no ratchet
 	Output []byte             // a command rung's output, both streams (up to rungjob.OutputCap); nil for other kinds
+	rise   *ratchet.Checked   // the rise step's check of its ratchet's new tests, nil when none ran
 	next   string             // the kind's own fix for a red climb's next step
 	note   string             // a green kind's reason: printed under its line, never in the result
 	who    string             // who takes it ("" for agent)
@@ -240,12 +250,14 @@ type Count struct {
 	From  string      // "capture" or "tests"; "" when none could be read
 }
 
-// afterRung runs the steps after a rung that ran, in order (this file's comment).
+// afterRung runs the steps after a rung that ran (this file's comment).
 func afterRung(c *Climb, s *Step) {
 	judgeRatchet(c, s)
-	if len(c.steps)+1 == len(c.rungs) {
-		riseStep(c, s)
-	}
+}
+
+// afterRungs runs the steps after the last rung, once every rung's line is printed (this file's comment).
+func afterRungs(c *Climb) {
+	riseStep(c)
 }
 
 // judgeRatchet judges the rung's ratchet (ratchet.Judge): its count written on the entry, and when the count is below
@@ -282,14 +294,14 @@ var newTests = ratchet.NewTests
 
 // riseStep is the rise step, after the last rung (internal/ratchet's rise.go): on a local climb whose every rung is
 // green, each ratchet above its floor gets its new_tests from ratchet.NewTests, once the tree is seen clean (clean at
-// the start and now, HEAD where it started, nothing hidden from git). On any other climb new_tests stays null.
-func riseStep(c *Climb, last *Step) {
-	if c.CI {
+// the start and now, HEAD where it started, nothing hidden from git), its lines printed. On any other climb new_tests
+// stays null.
+func riseStep(c *Climb) {
+	if c.CI || len(c.steps) == 0 {
 		return
 	}
-	steps := append(append([]*Step{}, c.steps...), last)
 	var risen []*Step
-	for _, s := range steps {
+	for _, s := range c.steps {
 		if s.Entry.Status != statusGreen {
 			return
 		}
@@ -302,9 +314,21 @@ func riseStep(c *Climb, last *Step) {
 	}
 	for _, s := range risen {
 		rt := s.Entry.Ratchet
-		rt.NewTests = newTests(ratchet.RiseInput{Name: rt.Name, Was: rt.Was, Now: rt.Now, Rung: s.Rung, Tests: s.Tests, Root: c.Root,
+		what := strings.TrimSpace(fmt.Sprintf("rung %d %s", s.Entry.Rung, s.Entry.Name)) + fmt.Sprintf(" (%s %s->%s)", rt.Name, rt.Was, rt.Now)
+		c.say("")
+		c.say("  new tests, %s: checking them on the base (the rung runs there twice, in a temporary worktree)", what)
+		got := newTests(ratchet.RiseInput{Name: rt.Name, Was: rt.Was, Now: rt.Now, Rung: s.Rung, Tests: s.Tests, Root: c.Root,
 			Main: c.Main, Task: c.TaskID(), Head: c.git.SHA, Base: c.Base, MergeBase: c.MergeBase, Prior: c.Prior, Env: c.o.Env,
 			Timeout: rungTimeout(s.Rung), Stop: c.o.Stop})
+		s.rise = &got
+		rt.NewTests = got.NewTests
+		for i, line := range got.Lines {
+			if i == 0 {
+				c.say("  new tests, %s, %.1fs: %s", what, got.Took.Seconds(), redact.Text(line))
+				continue
+			}
+			c.say("  %s", redact.Text(line))
+		}
 	}
 }
 
@@ -324,7 +348,7 @@ func afterResult(c *Climb, w *Written) []schema.Object {
 	d := ratchet.Bless(ratchet.Step{
 		Place:  asks.Place{Workspace: c.Config.ID, Local: c.local(), Session: c.Getenv(SessionEnv), Now: c.Now},
 		Task:   c.TaskID(),
-		Result: ratchet.Result{Ladder: w.Result, SHA256: w.SHA256, Elsewhere: !samePlace(c.Root, c.Main)},
+		Result: ratchet.Result{Ladder: w.Result, SHA256: w.SHA256, Elsewhere: !samePlace(c.Root, c.Main), Checks: c.checks()},
 		Where: ratchet.Where{Workspace: c.Config.ID, Base: c.Base, Branch: workspace.ReadGitLayout(c.Main).Branch(), Head: head(c.Main),
 			Floors: c.Config.Full.Ratchets},
 	})
@@ -338,4 +362,20 @@ func afterResult(c *Climb, w *Written) []schema.Object {
 		return []schema.Object{}
 	}
 	return d.Records
+}
+
+// checks are the rise step's one-line summaries, one per rung climbed in the result's order ("" for a rung with none),
+// for the Bless ask's why; nil when the rise step checked nothing.
+func (c *Climb) checks() []string {
+	var out []string
+	for i, s := range c.steps {
+		if s.rise == nil {
+			continue
+		}
+		if out == nil {
+			out = make([]string, len(c.steps))
+		}
+		out[i] = s.rise.Summary
+	}
+	return out
 }

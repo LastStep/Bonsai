@@ -12,7 +12,8 @@
 //     count that cannot be read is red too: a ratchet that measures nothing is none. Under --ci the accepted marked
 //     skips count (the runner adds them, as today), and a red reason says how many.
 //   - rise.go: the rise step (NewTests): where a local, green, clean climb finds a ratchet above its floor, the one
-//     call that gives the rise's new_tests (step 5.4.5's check, nil until its last commit wires it in).
+//     call that gives the rise's new_tests, its human lines and its line for the Bless ask's why (internal/newtests'
+//     check, step 5.4.5).
 //   - offer.go: the Bless offer (OfferFor, today's blessOffer): the climb was local and green, in the main checkout
 //     on the base branch at its HEAD with a clean tree, and at least one green rung's ratchet has now above its floor,
 //     its name a key of ratchets; and the ask's words and data.

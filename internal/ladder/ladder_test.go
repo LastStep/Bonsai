@@ -34,6 +34,7 @@ type rung struct {
 	required              bool
 	timeout               int    // 0 for null
 	ratchet, capture, tst string // the YAML values as written ("" for null)
+	setup                 string // base_setup's command ("" for null)
 }
 
 // yamlOf writes a fixture's bonsai.yaml: floor, ratchets and ci_marked_tests as YAML values (a mapping with content in
@@ -62,10 +63,14 @@ func yamlOf(floor, ratchets, marked string, rungs ...rung) string {
 		if r.timeout > 0 {
 			timeout = strconv.Itoa(r.timeout)
 		}
+		setup := "null"
+		if r.setup != "" {
+			setup = strconv.Quote(r.setup)
+		}
 		b.WriteString("  - rung: " + strconv.Itoa(r.n) + "\n    name: " + strconv.Quote(r.name) + "\n    kind: " + kind +
 			"\n    command: " + cmd + "\n    required: " + strconv.FormatBool(r.required) + "\n    timeout_s: " + timeout +
 			"\n    ratchet: " + null(r.ratchet) + "\n    capture: " + null(r.capture) + "\n    means: \"A rung of the test.\"\n" +
-			"    tests: " + null(r.tst) + "\n    base_setup: null\n")
+			"    tests: " + null(r.tst) + "\n    base_setup: " + setup + "\n")
 	}
 	if len(rungs) == 0 {
 		b.WriteString("  []\n")

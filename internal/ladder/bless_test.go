@@ -118,7 +118,8 @@ func TestBlessOffered(t *testing.T) {
 	}
 	rec := a.Doc.Bless[0]
 	data, _ := rec.Get("data")
-	want := `{"task":"T-0901","head":"` + f.head() + `","result_sha":"` + *a.Doc.SHA256 + `","rises":[{"name":"found","was":3,"now":5,"new_tests":null}]}`
+	want := `{"task":"T-0901","head":"` + f.head() + `","result_sha":"` + *a.Doc.SHA256 + `","rises":[{"name":"found","was":3,"now":5,` +
+		`"new_tests":{"base":"","count":2,"failed_on_base":0,"passed_on_base":0,"not_run":2}}]}` // a capture's count: its tests cannot be named
 	if schema.Show(data) != want || rec.String("source") != "ladder" || rec.String("type") != "Bless" || rec.String("task") != "T-0901" ||
 		rec.String("title") != "Bless T-0901's ratchets" || rec.String("then_text") != ratchet.Then || rec.String("workspace") != testID ||
 		rec.String("session") != f.env[SessionEnv] {
@@ -334,11 +335,13 @@ func TestRatchetJudged(t *testing.T) {
 // new_tests from ratchet.NewTests, carried into the result, the Bless ask's why and its data; on a red, dirty or --ci
 // climb, or with no rise, it is not called and new_tests stays null. A branch climb, green and clean, gets it too.
 func TestRiseStep(t *testing.T) {
-	defer func(saved func(ratchet.RiseInput) *format.LadderNewTests) { newTests = saved }(newTests)
+	defer func(saved func(ratchet.RiseInput) ratchet.Checked) { newTests = saved }(newTests)
 	var calls []ratchet.RiseInput
-	newTests = func(in ratchet.RiseInput) *format.LadderNewTests {
+	newTests = func(in ratchet.RiseInput) ratchet.Checked {
 		calls = append(calls, in)
-		return &format.LadderNewTests{Base: in.MergeBase, Count: 2, FailedOnBase: 2}
+		summary := "2 new tests, run on the base " + in.MergeBase[:12] + ": 2 failed there, 0 prove nothing new, 0 check not run"
+		return ratchet.Checked{NewTests: &format.LadderNewTests{Base: in.MergeBase, Count: 2, FailedOnBase: 2}, Summary: summary,
+			Lines: []string{summary, "  failed on the base: TestA, TestB"}}
 	}
 	f := blessProject(t, "\n  found: 3")
 	a := f.climb("", Options{Task: "T-0901"})
@@ -348,14 +351,23 @@ func TestRiseStep(t *testing.T) {
 	}
 	in := calls[0]
 	if in.Name != "found" || in.Was != "3" || in.Now != "5" || in.Task != "T-0901" || in.Head != f.head() || in.Base != "main" ||
-		in.MergeBase != f.head() || in.Root != f.root || in.Main != f.root || in.Rung.Rung != 1 || in.Tests != nil || in.Timeout <= 0 || in.Stop == nil {
+		in.MergeBase != f.head() || in.Root != f.root || in.Main != f.root || in.Rung.Rung != 1 || in.Tests != nil || in.Timeout <= 0 || in.Stop == nil ||
+		len(in.Env) == 0 {
 		t.Errorf("the input: %+v", in)
 	}
 	rec := a.Doc.Bless[0]
 	data, _ := rec.Get("data")
-	if !strings.Contains(rec.String("why"), "found rose from 3 to 5, 2 new tests: 2 failed on the base, 0 passed there") ||
+	if !strings.Contains(rec.String("why"), "found rose from 3 to 5, 2 new tests, run on the base "+f.head()[:12]+": 2 failed there, 0 prove "+
+		"nothing new, 0 check not run.") ||
 		!strings.Contains(schema.Show(data), `"new_tests":{"base":"`+f.head()+`","count":2,"failed_on_base":2,"passed_on_base":0,"not_run":0}`) {
 		t.Errorf("the ask: %s", schema.Show(rec))
+	}
+	// The check's lines print after the rungs': a line before it starts, then its summary and its names.
+	if out := f.out.String(); !strings.Contains(out, "  new tests, rung 1 count (found 3->5): checking them on the base") ||
+		!strings.Contains(out, "s: 2 new tests, run on the base "+f.head()[:12]+": 2 failed there") ||
+		!strings.Contains(out, "\n    failed on the base: TestA, TestB\n") ||
+		strings.Index(out, "count") > strings.Index(out, "new tests, rung 1") {
+		t.Errorf("the human lines:\n%s", out)
 	}
 	for _, c := range []struct {
 		name   string

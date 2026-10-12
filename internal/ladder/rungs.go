@@ -2,7 +2,8 @@ package ladder
 
 // The rungs climbed (notes 2 to 5): in number order, a command rung through its rung job, its tests read and judged,
 // its captures and its ratchet's count; a guard or ver-git rung through kinds.go; each followed by the steps after a
-// rung (kinds.go's afterRung). A required rung that is not green marks every later rung skipped.
+// rung (kinds.go's afterRung), and after the last, the steps after the rungs (kinds.go's afterRungs: the rise step). A
+// required rung that is not green marks every later rung skipped.
 
 import (
 	"encoding/json"
@@ -94,6 +95,7 @@ func (c *Climb) climb() {
 			}
 		}
 	}
+	afterRungs(c)
 	for _, e := range entries {
 		c.results = append(c.results, *e)
 	}
