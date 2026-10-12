@@ -29,6 +29,8 @@ package guard
 import (
 	"fmt"
 	"time"
+
+	"github.com/LastStep/Bonsai/internal/record"
 )
 
 // FaultBuild reports whether this build holds the test fault switch.
@@ -69,7 +71,7 @@ func testFault(r *run) *Decision {
 		// TestEachFaultBlocks an hour, and the timer answers long before.
 		d = deny("fault-slow", "test fault slow ("+FaultEnv+"=slow): the guard was slow on purpose", faultNext)
 	case "missing", "minimal-path":
-		exe, _ := self(false)
+		exe, _ := record.Self(nil, false)
 		d = deny("fault-"+v, fmt.Sprintf("test fault %s (%s=%s): this session should find no bonsai on its PATH, yet "+
 			"%s answered, so the launcher did not hide it; the call is blocked", v, FaultEnv, v, quote(exe, 200)),
 			"start the session through claude-here, which hides every bonsai for this fault")

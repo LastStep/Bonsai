@@ -17,8 +17,6 @@ package recorder
 // an unreadable bonsai.yaml gives one line saying so, and that the guard blocks edits until a person fixes it.
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -28,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -75,26 +74,16 @@ func start(o Options) string {
 }
 
 // self gives the running binary's path as a record keeps it (from ~/ under the user's home, forward slashes) and its
-// SHA-256 in hex; "" for what cannot be found.
+// SHA-256 in hex; "" for what cannot be found (record.Self, the binary's one reader).
 func self(o Options) (string, string) {
-	exe, err := o.Executable()
-	if err != nil || exe == "" {
+	path, sum := record.Self(o.Executable, true)
+	if path == "" {
 		return "", ""
 	}
-	shown := filepath.ToSlash(exe)
 	if home, err := o.UserHome(); err == nil && home != "" {
-		shown = underHome(exe, home)
+		path = underHome(path, home)
 	}
-	f, err := os.Open(exe)
-	if err != nil {
-		return shown, ""
-	}
-	defer func() { _ = f.Close() }()
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return shown, ""
-	}
-	return shown, hex.EncodeToString(h.Sum(nil))
+	return path, sum
 }
 
 // underHome writes path from ~/ when it lies under home (case-blind on Windows), else as it is, with forward slashes.

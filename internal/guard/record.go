@@ -29,10 +29,7 @@ package guard
 // from ~/ under the user's home folder (contract §2.6: no user name in the log), else as it is, forward slashes.
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -77,7 +74,7 @@ func writeRecord(at *place, in *hookin.Payload, d Decision, getenv func(string) 
 	}
 	l := buildRecord(at, in, d, getenv, now)
 	if claimFile(filepath.Join(at.local.Dir(), record.LogFolder, name)) {
-		exe, sum := self(true)
+		exe, sum := record.Self(nil, true)
 		l.BonsaiPath, l.BonsaiSHA256 = ptr(fromHome(exe)), ptr(sum)
 	}
 	b, err := line(l)
@@ -183,28 +180,6 @@ func buildRecord(at *place, in *hookin.Payload, d Decision, getenv func(string) 
 	}
 	l.Decision, l.Rule = ptr(decision), ptr(d.Rule)
 	return l
-}
-
-// self gives the running binary's own path (forward slashes) and, when hash is true, its SHA-256 in hex. What
-// cannot be found is "" (written as null).
-func self(hash bool) (string, string) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", ""
-	}
-	if !hash {
-		return filepath.ToSlash(exe), ""
-	}
-	f, err := os.Open(exe)
-	if err != nil {
-		return filepath.ToSlash(exe), ""
-	}
-	defer func() { _ = f.Close() }()
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return filepath.ToSlash(exe), ""
-	}
-	return filepath.ToSlash(exe), hex.EncodeToString(h.Sum(nil))
 }
 
 // userHome is the user's home folder, which fromHome writes a path under from ~/ (a variable for the tests).

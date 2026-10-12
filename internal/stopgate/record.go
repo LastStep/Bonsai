@@ -18,9 +18,6 @@ package stopgate
 // slashes.
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -56,7 +53,7 @@ func writeRecord(at *place, in *hookin.Payload, d Decision, getenv func(string) 
 	}
 	l.Decision, l.Rule = ptr(decision), ptr(d.Rule)
 	if claimFile(filepath.Join(at.local.Dir(), record.LogFolder, name)) {
-		exe, sum := self()
+		exe, sum := record.Self(nil, true)
 		l.BonsaiPath, l.BonsaiSHA256 = ptr(fromHome(exe)), ptr(sum)
 	}
 	_, err = record.WriteLog(at.local.Main, l)
@@ -76,24 +73,6 @@ func claimFile(path string) bool {
 	}
 	_ = f.Close()
 	return true
-}
-
-// self gives the running binary's own path (forward slashes) and its SHA-256 in hex; what cannot be found is "".
-func self() (string, string) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", ""
-	}
-	f, err := os.Open(exe)
-	if err != nil {
-		return filepath.ToSlash(exe), ""
-	}
-	defer func() { _ = f.Close() }()
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return filepath.ToSlash(exe), ""
-	}
-	return filepath.ToSlash(exe), hex.EncodeToString(h.Sum(nil))
 }
 
 // userHome is the user's home folder, which fromHome writes a path under from ~/ (a variable for the tests).
