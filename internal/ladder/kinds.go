@@ -6,11 +6,12 @@ package ladder
 //
 //   - guardKind: rung 0 (step 5.4.3, internal/rung0): rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home:
 //     c.Home, Active: the climbed task (*c.Task, the zero ActiveTask when c.Task is nil: no grants), Base: c.Base,
-//     MergeBase: c.MergeBase, Timeout: rungTimeout(r)}), its Status, Reason and Captures copied (checked, and not_judged: what a green rung's
-//     reason says was not judged, which the result keeps only there). A red one's Next names each refused path with
-//     its rule and the grant or revert it needs (Refused[].Needs), how a revert is made, and bonsai check's step when
-//     its findings count (5.4.2 note 12); NextWho is person when a refused path is person-only and this machine's
-//     settings put the workspace in command mode, where only a person's grant opens one.
+//     MergeBase: c.MergeBase, Timeout: rungTimeout(r)}), its Status, Reason and Captures copied (checked, and
+//     not_judged: what a green rung's reason says was not judged, which the result would not keep). A red one's Next
+//     names each refused path with its rule and the grant or revert it needs (Refused[].Needs), how a revert is made,
+//     and bonsai check's step when its findings count (5.4.2 note 12); NextWho is person when a refused path is
+//     person-only and this machine's settings put the workspace in command mode, where only a person's grant opens
+//     one. An error (git cannot say what changed, or the limit passed) names git status as the next step.
 //   - verGitKind: git integrity (step 5.4.6, internal/vergit): vergit.Judge(vergit.Input{Root: c.Root, BaseBranch:
 //     c.Base, MergeBase: c.MergeBase, Tests: the rung's own tests form, else the forms the ladder's other rungs name in
 //     rung order (c.Config.Full.Ladder), each once, Earlier: c.PriorCaptures(r.Rung), Timeout: rungTimeout(r)}), its
@@ -34,9 +35,9 @@ package ladder
 //     base branch, every open Bless ask whose offer is gone resolved, and the climb's own offer filed; it gives the ask
 //     records written, the climb's bless, and its lines go under the rungs'.
 //
-// A kind's Reason goes into the result only when the rung is not
-// green (bonsai.ladder/1: reason is null when green); a green rung's reason (what was found, what was not judged) is
-// printed under its line in the human output, and its findings are in its captures.
+// A kind's Reason goes into the result only when the rung is not green (bonsai.ladder/1: reason is null when green); a
+// green rung's reason (what was found, what was not judged) is printed under its line in the human output, and its
+// findings are in its captures.
 
 import (
 	"encoding/json"
@@ -94,8 +95,12 @@ func guardKind(c *Climb, r format.Rung) Outcome {
 	o := rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home: c.Home, Active: active, Base: c.Base, MergeBase: c.MergeBase,
 		Timeout: rungTimeout(r)})
 	out := Outcome{Status: o.Status, Reason: o.Reason, Captures: redactCaptures(o.Captures)}
-	if o.Status == statusRed {
+	switch o.Status {
+	case statusRed:
 		out.Next, out.NextWho = rung0Next(c, o)
+	case statusError:
+		out.Next = "rung 0 could not judge this checkout's changes (the rung's reason says why): run: git status, and fix " +
+			"what it reports (a rung 0 past its limit needs a longer timeout_s in bonsai.yaml, a person's change)"
 	}
 	return out
 }

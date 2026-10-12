@@ -303,3 +303,18 @@ func TestRung0TheStopGate(t *testing.T) {
 		t.Errorf("green again, refused: %d %q", code, stderr)
 	}
 }
+
+// A rung 0 that cannot judge (git cannot read the checkout's index) is error, and next names git status.
+func TestRung0ErrorNamesGitStatus(t *testing.T) {
+	f := r0Project(t)
+	f.write(".git/index", "not an index")
+	a := f.climb("", Options{Task: "T-0901"})
+	l := f.result("T-0901")
+	if a.Exit != ExitRed || statuses(l) != "0:error 1:skipped" || !strings.Contains(reasonOf(f, "T-0901", 0), "git cannot say what this checkout changed") {
+		t.Fatalf("exit %d, %s: %s", a.Exit, statuses(l), reasonOf(f, "T-0901", 0))
+	}
+	if a.Doc.Next == nil || !strings.HasPrefix(a.Doc.Next.Do, "fix the guard rung (rung 0): rung 0 could not judge this checkout's changes "+
+		"(the rung's reason says why): run: git status") {
+		t.Errorf("next: %+v", a.Doc.Next)
+	}
+}
