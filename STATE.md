@@ -1,9 +1,10 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 13 Oct 2026 at 01:45. **Step 5.4, the ladder runner and the switch, is under
+Rewritten, never appended. Last rewritten 13 Oct 2026 at 02:40. **Step 5.4, the ladder runner and the switch, is under
 way** (`design/plan-5.md` ~2374; 28-44 h, re-ask 57), started 12 Oct 23:35 (an earlier session's start at 10:42 stopped
-unfinished). **5.4.0 and 5.4.1 landed** (`6688f81` formats set 7; `e97afb1` rung jobs; CI green on both systems);
-**5.4.2, 5.4.3 and 5.4.6 are building** side by side (below). Step 5.3, the guards, is done (12 Oct, 00:46), two holes logged as known limits.
+unfinished). **5.4.0, 5.4.1, 5.4.2, 5.4.3 and 5.4.6 landed** (`447909f`, the runner among them); **the wiring of rung 0
+and git integrity, 5.4.4 and 5.4.5 are building** side by side; CI's `windows` job is red on a timing check in
+5.4.1's tests (a fix under way, below). Step 5.3, the guards, is done (12 Oct, 00:46), two holes logged as known limits.
 
 ## In short
 
@@ -168,12 +169,13 @@ and line; the orchestrator's rulings in `records/runs/R-2026-10-12-5.4.0-formats
 | Piece | State | Run report |
 |---|---|---|
 | 5.4.0 formats set 7 and the ladder's lists | **landed** `6688f81`, CI green | `R-2026-10-12-5.4.0-formats.md` (also the part's log) |
-| 5.4.1 rung jobs and leftovers | **landed** `e97afb1`, CI green | `R-2026-10-12-5.4.1-rungjobs.md` |
-| 5.4.3 rung 0 (and the `garbage: [` task fix) | building (Opus), from 00:25 | `R-2026-10-13-5.4.3-rung0.md` |
-| 5.4.6 git integrity | built 01:33; a fix for Claude Code's `.claude/` files under way | `R-2026-10-13-5.4.6-vergit.md` |
-| 5.4.2 the runner | building (Opus), from 01:18 | `R-2026-10-13-5.4.2-runner.md` |
-| 5.4.3 and 5.4.6 wiring into `kinds.go` | after 5.4.2 lands, 5.4.3 first; then V1 (5.4.1-5.4.3) | |
-| 5.4.4 floors and Bless, 5.4.5 new tests fail on the base | after 5.4.3's wiring, side by side, beside V1 | |
+| 5.4.1 rung jobs and leftovers | **landed** `e97afb1`; a Windows test flake fixed `725b5d9`; CI's red timing check being fixed (`5.4.1c`, Opus) | `R-2026-10-12-5.4.1-rungjobs.md` |
+| 5.4.6 git integrity | **landed** `18decac` (its `.claude/` ruling in its report) | `R-2026-10-13-5.4.6-vergit.md` |
+| 5.4.3 rung 0 (and the `garbage: [` task fix) | **landed** `c704783` | `R-2026-10-13-5.4.3-rung0.md` |
+| 5.4.2 the runner, `bonsai ladder` | **landed** `447909f` | `R-2026-10-13-5.4.2-runner.md` |
+| Wiring of 5.4.3, then 5.4.6, into `kinds.go` | building (Opus, branch `5.4.3w`), from 02:38; then V1 (5.4.1-5.4.3) | the two pieces' reports |
+| 5.4.4 floors, ratchets and Bless | building (Opus), from 02:38; its `kinds.go` commit after the wiring's | `R-2026-10-13-5.4.4-ratchets.md` |
+| 5.4.5 new tests fail on the base | building (Opus), from 02:38; its last commit after 5.4.4 lands | `R-2026-10-13-5.4.5-newtests.md` |
 | 5.4.7 the switch | prep beside 5.4.4/5.4.5; lands after V2; then Rohan's install, the link, the end verifier | |
 
 **Facts measured that later work rests on:** Claude Code 2.1.296 on both sides (Windows updated 11 Oct, 19:45). A Stop
