@@ -91,6 +91,9 @@ const tailBytes = 16 << 10
 // them: a process the end could not reach (the job off, an escape) still holds them.
 const PipeCutoff = 10 * time.Second
 
+// pipeCutoff is PipeCutoff, in a variable a test can shorten.
+var pipeCutoff = PipeCutoff
+
 // EndWait is how long the end lists and ends again until none of the rung's processes is left.
 const EndWait = 2 * time.Second
 
@@ -219,10 +222,10 @@ func Run(ctx context.Context, s Spec) Result {
 	go func() { readers.Wait(); close(pipes) }()
 	select {
 	case <-pipes:
-	case <-time.After(time.Until(commandEnd.Add(PipeCutoff))):
+	case <-time.After(time.Until(commandEnd.Add(pipeCutoff))):
 		out.freeze()
-		notes = append(notes, fmt.Sprintf("output cut %d s after the command ended: a process outside the rung's "+
-			"job holds its pipes", int(PipeCutoff/time.Second)))
+		notes = append(notes, fmt.Sprintf("output cut %s s after the command ended: a process outside the rung's "+
+			"job holds its pipes", seconds(pipeCutoff)))
 	}
 	closeReads()
 	notes = append(notes, r.finish()...)

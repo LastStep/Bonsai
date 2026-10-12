@@ -128,13 +128,15 @@ func writePID(file string, pid int) error {
 
 func waitFile(file string, d time.Duration) bool {
 	end := time.Now().Add(d)
-	for time.Now().Before(end) {
+	for {
 		if _, err := os.Stat(file); err == nil {
 			return true
 		}
+		if time.Now().After(end) {
+			return false
+		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	return false
 }
 
 // testDir is a test's own folder: its name is the marker track finds the test's processes by.

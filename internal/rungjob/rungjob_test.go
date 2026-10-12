@@ -82,11 +82,14 @@ func TestEnvironment(t *testing.T) {
 // Every way a rung leaves a process: the rung stays green, the process is named among what it ended, and it is
 // gone when Run returns (or within goneWithin, the system's own delay).
 func TestEndsWhatItLeaves(t *testing.T) {
-	for _, c := range leaveCases("<dir>") {
+	for i, c := range leaveCases(t.TempDir()) {
 		t.Run(c.name, func(t *testing.T) {
 			dir := testDir(t)
-			cmd := strings.ReplaceAll(c.command, "<dir>", dir)
+			cmd := leaveCases(dir)[i].command
 			r := Run(context.Background(), Spec{Command: cmd, Dir: dir, Timeout: time.Minute})
+			if !waitFile(filepath.Join(dir, "left.pid"), 0) {
+				t.Fatalf("the rung left nothing: exit %d, reason %q\n%s", r.Exit, r.Reason, r.Out)
+			}
 			pid := readPID(t, filepath.Join(dir, "left.pid"))
 			if !r.Green() {
 				t.Errorf("exit %d, reason %q, notes %q; want green (a leftover never changes the colour)\n%s",
