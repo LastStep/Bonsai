@@ -41,6 +41,28 @@ func green(t *testing.T, o Outcome, checked int) {
 			t.Errorf("a green rung's reason says more than what was not judged: %q", l)
 		}
 	}
+	notJudgedKept(t, o)
+}
+
+// notJudgedKept fails the test unless the not_judged capture holds what the reason's "not judged here" lines say,
+// joined by "; ", and is null when there are none: a green rung's reason is not in the result, its captures are.
+func notJudgedKept(t *testing.T, o Outcome) {
+	t.Helper()
+	var items []string
+	for _, l := range strings.Split(o.Reason, "\n") {
+		if rest, ok := strings.CutPrefix(l, "not judged here: "); ok {
+			items = append(items, rest)
+		}
+	}
+	got, ok := o.Captures.Get("not_judged")
+	switch {
+	case !ok:
+		t.Errorf("no not_judged capture: %v", o.Captures)
+	case len(items) == 0 && got != nil:
+		t.Errorf("not_judged %v, want null: %q", got, o.Reason)
+	case len(items) > 0 && got != strings.Join(items, "; "):
+		t.Errorf("not_judged %v, want %q", got, strings.Join(items, "; "))
+	}
 }
 
 // red fails the test unless the outcome is red and its reason holds every one of words.
@@ -49,6 +71,7 @@ func red(t *testing.T, o Outcome, words ...string) {
 	if o.Status != "red" {
 		t.Fatalf("want red, got %s: %s", o.Status, o.Reason)
 	}
+	notJudgedKept(t, o)
 	for _, w := range words {
 		if !strings.Contains(o.Reason, w) {
 			t.Errorf("the reason lacks %q:\n%s", w, o.Reason)
@@ -238,6 +261,9 @@ func TestCheckFindings(t *testing.T) {
 		green(t, o, 0)
 		if !strings.Contains(o.Reason, "not judged here: bonsai check's findings about this machine, not the commit (bonsai-path)") {
 			t.Errorf("the machine finding is not listed as not judged: %q", o.Reason)
+		}
+		if got := o.Captures.String("not_judged"); got != "bonsai check's findings about this machine, not the commit (bonsai-path)" {
+			t.Errorf("not_judged %q", got)
 		}
 	})
 	t.Run("warnings never count", func(t *testing.T) {

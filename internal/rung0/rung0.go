@@ -45,7 +45,9 @@
 // The outcome (note 5): green, with the count of changed paths in captures (checked); red, with each refused path and
 // its rule, at most MaxListed of them, bonsai check's findings by word and file, and the next step, in the reason; error
 // when git cannot say what changed. The reason also says what was not judged (the branch's commits with no base,
-// machine findings), on a green rung too. The result never holds a whole diff.
+// machine findings), on a green rung too; and since a result keeps a rung's reason only when it is not green
+// (bonsai.ladder/1), the same is a text capture, not_judged (each thing not judged, joined by "; "; null when
+// everything was judged), so a green result keeps it for the verifiers. The result never holds a whole diff.
 //
 // Labels (note 6): bonsai.allows is read by the guard's own reader (allowsOf), which reads contract §5.6's meaning
 // with no definition in force, as the stop gate reads bonsai.ladder; rung 0 adds no reader of its own.
@@ -89,7 +91,7 @@ type Input struct {
 type Outcome struct {
 	Status   string        // a word of format.RungStatuses: green, red or error
 	Reason   string        // why it is not green, and what was not judged; "" when green and everything was judged
-	Captures schema.Object // checked: the count of changed paths; nil on error
+	Captures schema.Object // checked: the count of changed paths; not_judged: what was not judged, or null; nil on error
 	Refused  []Refusal     // the refused paths, at most MaxListed, in path order: what the reason lists
 	More     int           // refused paths past MaxListed
 }
@@ -185,6 +187,11 @@ func Judge(in Input) Outcome {
 	for _, n := range notJudged {
 		lines = append(lines, "not judged here: "+n)
 	}
+	var nj any
+	if len(notJudged) > 0 {
+		nj = strings.Join(notJudged, "; ")
+	}
+	o.Captures = append(o.Captures, schema.Member{Key: "not_judged", Value: nj})
 	o.Reason = strings.Join(lines, "\n")
 	return o
 }
