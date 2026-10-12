@@ -21,8 +21,9 @@ vendor/
 # Legacy
 .venv/
 
-# Claude Code local state
+# Claude Code local state (settings.local.json: a person's own permission choices, never committed)
 .claude/worktrees/
+.claude/settings.local.json
 .obsidian/
 
 # Research / scratch
