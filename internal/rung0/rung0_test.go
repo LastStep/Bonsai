@@ -560,3 +560,16 @@ func TestNestedRepositories(t *testing.T) {
 		}
 	})
 }
+
+func TestASubfolderReadsAsTheTop(t *testing.T) {
+	f := newProject(t, nil)
+	wt := f.worktree(t)
+	write(t, wt, "assets/old/a.txt", "changed\n")
+	write(t, wt, "src/deep/new.txt", "new\n")
+	at := f.climb(t, wt, "T-0901")
+	below := f.climb(t, filepath.Join(wt, "src"), "T-0901")
+	if !reflect.DeepEqual(at, below) {
+		t.Errorf("from the top:\n%s\nfrom src/:\n%s", at.Reason, below.Reason)
+	}
+	red(t, below, `"assets/old/a.txt" (protected)`)
+}

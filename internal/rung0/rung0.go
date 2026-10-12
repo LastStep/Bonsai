@@ -77,7 +77,7 @@ const maxRead = 1 << 20
 
 // Input is what rung 0 judges.
 type Input struct {
-	Root      string               // the checkout the ladder runs in: its top folder, absolute
+	Root      string               // the checkout the ladder runs in: its top folder (a folder inside it is read as its top)
 	Main      string               // the verified main checkout's top folder (Root itself in the main checkout)
 	Home      string               // this machine's Bonsai home, "" for none
 	Active    workspace.ActiveTask // the active-task function's answer for the run, with --task and BONSAI_TASK; its task grants only when How is named
@@ -107,7 +107,11 @@ func Judge(in Input) Outcome {
 	if in.Root == "" || in.Main == "" {
 		return errorOutcome("rung 0 was given no checkout or no main checkout")
 	}
-	g := gitIn(in.Root)
+	top, err := gitIn(in.Root).top()
+	if err != nil {
+		return errorOutcome("git cannot say what this checkout changed (" + oneLine(err.Error()) + ")")
+	}
+	g := gitIn(top)
 	branch := g.branch()
 	head := g.hasHead()
 	onBase := in.Base != "" && branch == in.Base
@@ -133,7 +137,7 @@ func Judge(in Input) Outcome {
 		from = "HEAD"
 	}
 	named := grantsOf(in.Active)
-	j := guard.NewChangeJudge(in.Home, in.Main, named, !samePlace(in.Root, in.Main))
+	j := guard.NewChangeJudge(in.Home, in.Main, named, !samePlace(top, in.Main))
 	var refused []Refusal
 	for _, c := range changed {
 		if underLocal(c.path) || (onBase && table(c.path)) {

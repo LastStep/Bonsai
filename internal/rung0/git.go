@@ -60,6 +60,20 @@ func gitEnv() []string {
 	return append(env, "GIT_TERMINAL_PROMPT=0")
 }
 
+// top is the checkout's top folder, as git names it (the folder git's paths are relative to), in the system's
+// separators.
+func (g git) top() (string, error) {
+	out, err := g.run("rev-parse", "--show-toplevel")
+	if err != nil {
+		return "", err
+	}
+	t := strings.TrimSpace(string(out))
+	if t == "" {
+		return "", fmt.Errorf("git rev-parse --show-toplevel names no folder (a bare repository?)")
+	}
+	return filepath.FromSlash(t), nil
+}
+
 // branch is the checkout's branch, "" for a detached HEAD.
 func (g git) branch() string {
 	out, err := g.run("symbolic-ref", "-q", "--short", "HEAD")
