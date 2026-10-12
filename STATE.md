@@ -1,10 +1,9 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 12 Oct 2026 at 00:55. **Step 5.3, the guards, is done** (12 Oct, 00:46): every
-piece landed on `main` and green in CI on both systems, the scripted Windows check (5.3.7) and Rohan's sitting passed,
-and the end verifier passed every "5.3 done" check but two holes its break-it found, which Rohan chose to log as known
-limits, fixed after 1.0. **Next: step 5.4, the ladder runner and the switch** (`design/plan-5.md` ~2374; 28-44 h, re-ask
-57): its start check first (below).
+Rewritten, never appended. Last rewritten 13 Oct 2026 at 00:45. **Step 5.4, the ladder runner and the switch, is under
+way** (`design/plan-5.md` ~2374; 28-44 h, re-ask 57), started 12 Oct 23:35 (an earlier session's start at 10:42 stopped
+unfinished). **5.4.0 landed** (`6688f81`, formats set 7, CI green on both systems); **5.4.1, 5.4.3 and 5.4.6 are
+building** side by side (below). Step 5.3, the guards, is done (12 Oct, 00:46), two holes logged as known limits.
 
 ## In short
 
@@ -14,7 +13,7 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) Rohan cho
 approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5.7, is written and approved.
 
 - **Part 0, the formats** (`3770d04`): a JSON Schema for each format, examples, trick files, a raw-byte manifest and
-  its Go test. Now set 6 (5.2.0); 5.4.0 makes set 7.
+  its Go test. Now set 7 (5.4.0, `6688f81`).
 - **The skeleton, parts 1-6** (`17f2938` to `5633721`). The test pack `LastStep/bonsai-test-pack` is public, `main` at G
   (`cf356d3`).
 - **Step 5.1, formats and engine to 1.0: done** (code `11d871c`; verified on `5fa9bd8`).
@@ -39,6 +38,18 @@ two-round cap). No change to Mimas or the studio's repo.
 
 ## Rohan's decisions
 
+- **13 Oct, 00:00: build several pieces, then one verification pass**, where efficient and without lowering the bar:
+  "whenever it is possible to build multiple steps together, and then just do one verification pass over then ... only
+  do this when it seems like a good efficient choice, and not something that compromises the quality of work". 5.4
+  already has three passes for eight pieces (V1 beside 5.4.4/5.4.5); merging V1 into V2 was weighed and not taken
+  (memory `batch-verification`).
+- **12 Oct, 23:58: past records are left as they are** ("dont need any action for past records anywhere, like logs,
+  tasks, runs etc. just let them be. only focus on the main build"): no lock, edit or cleanup of past run reports, logs
+  or tasks at the switch or later; part 0's report keeps its quoted id (memory `past-records-left-alone`).
+- **12 Oct, about 23:42: builders stay subagents, as planned** ("A. Keep the plan"): the landing rule (a green result at
+  the landed commit, written only by the installed `bonsai`, audited by the end verifier) is the lock; a subagent's end
+  stays ungated; how builders start is for 5.5's agent-pipelines redesign. Offered: own `claude -p` sessions (about 1-2
+  h) or a `SubagentStop` line (about 3-5 h); plan lines 2762-2789 stand.
 - **12 Oct, 00:46: 5.3 closes on the end verifier's two holes as known limits** ("Log as known limits"; recommended was
   a fix and a short fresh check, about 1.5 h). CDPATH and `cdable_vars` cd-resolution (`CDPATH=.. cd s && rm -rf .git`
   deletes the checkout's own `.git`) and Git Bash's `/proc/cygdrive/` path form, both deliberate spellings, are listed
@@ -147,23 +158,23 @@ two-round cap). No change to Mimas or the studio's repo.
 - `LastStep/bonsai-test-pack`: public, `main` at G (`cf356d3`), no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## Next: step 5.4, the ladder runner and the switch
+## Now: step 5.4, the ladder runner and the switch
 
-`design/plan-5.md`, "### Step 5.4" (~2374): 28-44 h, re-ask at 57; Rohan's step at 5.4: a pre-release `bonsai` in WSL
-(about 5 minutes). Its builders' rules: `~/bonsai-checks/briefs/rules.md` (**update its `Claude-Session` line to the new
-session's** first; it carries the stamped build line, the Windows login rule and the Sonnet-helpers default).
+`design/plan-5.md`, "### Step 5.4" (~2374): 28-44 h, re-ask at 57. Builders' rules: `~/bonsai-checks/briefs/rules.md`
+(its `Claude-Session` line is this session's; a new session updates it first). Briefs: `~/bonsai-checks/briefs/brief-5.4.*`.
+The start check's report: `~/bonsai-checks/startcheck-5.4/report.md` (the plan's names that landed otherwise, with file
+and line; the orchestrator's rulings in `records/runs/R-2026-10-12-5.4.0-formats.md`, 23:52).
 
-1. **The start check:** the plan's 5.4 section against what 5.3 left for it (below, "Placed for later", 5.4). **First, a
-   question for Rohan** (one decision, its stakes and a pros/cons table): **how builders are held to the stop gate.**
-   Today a subagent's end is not gated and `BONSAI_TASK` is per session, so builders run as subagents (5.4's plan, and
-   how every project's work runs) end unproven: "nothing is done until it is proven" is not enforced for them. Options:
-   builders as their own `claude -p` sessions with `BONSAI_TASK`, or a `SubagentStop` line and a per-subagent task
-   (Claude Code's cap of 8 is per turn, and a subagent finishing resets it). Then the rest:
-   the worktree without its own `bonsai.yaml`; the task reader taking `garbage: [` as a task; the next formats set's
-   items. Any change to what is Rohan's (hours, order, his steps, a format change) goes to him under (B), one question
-   per decision.
-2. Then the pieces as the plan orders them, builders in plain worktrees, Sonnet helpers for mechanical runs, fresh
-   verifiers at the plan's points (two rounds per piece at most, unless necessary).
+| Piece | State | Run report |
+|---|---|---|
+| 5.4.0 formats set 7 and the ladder's lists | **landed** `6688f81`, CI green | `R-2026-10-12-5.4.0-formats.md` (also the part's log) |
+| 5.4.1 rung jobs and leftovers | building (Opus), from 23:44 | `R-2026-10-12-5.4.1-rungjobs.md` |
+| 5.4.3 rung 0 (and the `garbage: [` task fix) | building (Opus), from 00:25 | `R-2026-10-13-5.4.3-rung0.md` |
+| 5.4.6 git integrity | building (Opus), from 00:25 | `R-2026-10-13-5.4.6-vergit.md` |
+| 5.4.2 the runner | after 5.4.1 lands | |
+| 5.4.3 and 5.4.6 wiring into `kinds.go` | after 5.4.2 lands, 5.4.3 first; then V1 (5.4.1-5.4.3) | |
+| 5.4.4 floors and Bless, 5.4.5 new tests fail on the base | after 5.4.3's wiring, side by side, beside V1 | |
+| 5.4.7 the switch | prep beside 5.4.4/5.4.5; lands after V2; then Rohan's install, the link, the end verifier | |
 
 **Facts measured that later work rests on:** Claude Code 2.1.296 on both sides (Windows updated 11 Oct, 19:45). A Stop
 hook printing "No such file or directory" and exiting 2 lets the session end; Stop hooks keep a turn going eight times
@@ -207,19 +218,13 @@ refused; the commands' own refusal is a tripwire against programs the agent runs
 0 from 5.4).
 
 **Placed for later:**
-- **The next formats set (5.4.0's set 7):** `formats/examples/workspace.yaml`'s old comment; the workspace schema's words
-  for cleaning's two protections, a maximum for `keep_days`, and `never_edit`'s rule now `Edit(/<path>)` (and
-  `formats/README.md` ~206); the log schema's and `internal/format/log.go`'s `bonsai_path` words (the guard writes it from
-  `~/`, only on the record that made the file); `formats/examples/help.json` and `changes.schema.json` quoting the old
-  by-name hook line.
-- **5.4:** the stop gate binds only a session whose environment names a task, up to the cap; a subagent's end
-  (SubagentStop) is not gated, the cap is per turn and a subagent finishing restarts it, and 5.4's plan keeps subagents
-  as the default way to run builders (V3); the gate proves HEAD, not the working tree (V3's O4); a worktree without its
-  own `bonsai.yaml` (the guard judges it under main's lists inside `.claude/worktrees/`, under none outside; the stop
-  gate already judges its HEAD); the task reader takes a file holding only `garbage: [` as a task and the gate allows it
-  (the end verifier); `TestFaultsThroughTheHookLine` flakes once in a while under heavy load (its record past the 500 ms
-  wait); `flock`, `chrt`, `taskset`, `strace` not runner words; the start-up cost left (`internal/recorder` about 0.14
-  ms, `internal/clean`); 5.4 may link `golang.org/x/sys` only within 1 ms of the Windows hook line's p95.
+- **The next formats set (5.5's):** a shared active-task fixture case for a task file holding only `garbage: [` (5.4.3
+  fixes the reader with Go tests).
+- **5.4, settled at its start:** builders stay subagents (Rohan); the worktree without its own `bonsai.yaml` (rung 0
+  judges against main; the guard's own limit, `guard.go:46-48`, a known limit after 1.0) and V3's O4 (the gate proves
+  HEAD; only commits land) known limits; the `garbage: [` task in 5.4.3; `TestFaultsThroughTheHookLine`'s wait in 5.4.2;
+  `golang.org/x/sys` stays out (5.4.1 loads Windows calls lazily). Still open for 5.4's pieces: `flock`, `chrt`,
+  `taskset`, `strace` not runner words; the start-up cost left (`internal/recorder` about 0.14 ms, `internal/clean`).
 - **5.5:** `bonsai init --allow-exec` and `update` run `claude plugin install` on the person's machine: on Windows with
   2.1.294, meeting a run-out access token, that call can sign the person out of Claude Code (a warm session first, or a
   `check` finding naming the version); where the orchestrator's rules live (spec §2 names it as pack content; 5.5's
