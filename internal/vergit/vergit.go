@@ -31,13 +31,15 @@
 // assume-unchanged or skip-worktree entry, or a file only info/exclude, core.excludesFile or an untracked .gitignore
 // ignores, is exactly such a change, and git status, which the runner's dirty reads, is fooled by it. So Outcome.Hides
 // is true for those findings, the runner makes the result's dirty true, and the stop gate, which refuses a dirty
-// result, refuses it, while this rung itself stays green and informative. The other half of dirty is git status,
-// which settings outside any diff can also fool (status.showUntrackedFiles=no or a lying core.fsmonitor in the
-// repository's config; a filter and an attributes file in the user's global config): Dirty runs it as this package
-// runs git, so the runner's dirty is Dirty(in) or Outcome.Hides. The fix is the repository's own: undo the
+// result, refuses it, while this rung itself stays green and informative. The fix is the repository's own: undo the
 // entry, remove the file, or ignore it in a committed .gitignore, which shows in the diff (and which the guard
 // protects where a project says so). Chosen over a red rung, which the spec defers, and over leaving dirty to git's
-// status alone.
+// status alone. Tools write such rules too: Claude Code puts its own local files in the global excludes
+// (.claude/settings.local.json) and in info/exclude (its other .claude/ files), so a checkout holding them counts as
+// dirty until the repository's .gitignore names them. The other half of dirty is git status, which settings outside
+// any diff can also fool (status.showUntrackedFiles=no or a lying core.fsmonitor in the repository's config; a filter
+// and an attributes file in the user's global config): Dirty runs it as this package runs git, so the runner's dirty
+// is Dirty(in) or Outcome.Hides.
 //
 // How git runs (git.go): one program, the judgment's deadline, a fixed environment (no user configuration, no GIT_*
 // variable from the caller, no pager, no prompt, no network) and settings pinned on the command line, so nothing the
@@ -71,6 +73,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path"
@@ -329,11 +332,16 @@ func (j *judgment) index() error {
 
 // ignored finds the files present that git ignores, and which of them only a rule outside the repository's committed
 // .gitignore files ignores: info/exclude or the global excludes file (exclude-hidden), or a .gitignore git does not
-// track (untracked-gitignore). Ignored folders count once, as git lists them.
+// track (untracked-gitignore). A folder git ignores whole counts once, and only when a file is in it: an empty folder
+// hides nothing.
+//
+// git ls-files --ignored --directory lists a folder whose files are all ignored by finer rules (.claude/ when only
+// .claude/settings.local.json is ignored) and then what is inside it; with --no-empty-directory it would list the
+// folder alone, which no rule matches, and the files inside would go unseen. So empty folders are listed and judged
+// here, and a folder no rule matches whose insides git did not list is listed again, file by file.
 func (j *judgment) ignored() error {
 	hidden, untracked := j.newFinding(findHidden), j.newFinding(findUntrackedGI)
-	out, err := j.git.run(nil, "ls-files", "-z", "--others", "--ignored", "--directory", "--no-empty-directory",
-		"--exclude-standard")
+	out, err := j.git.run(nil, ignoredListing...)
 	if err != nil {
 		return fmt.Errorf("git cannot list the ignored files: %v", err)
 	}
@@ -341,26 +349,30 @@ func (j *judgment) ignored() error {
 	if len(paths) == 0 {
 		return nil
 	}
-	out, err = j.git.run([]byte(strings.Join(paths, "\x00")+"\x00"), "check-ignore", "-z", "--verbose",
-		"--non-matching", "--no-index", "--stdin")
-	if err != nil && exitCode(err) != 1 {
-		return fmt.Errorf("git cannot say why files are ignored: %v", err)
+	matched, unmatched, err := j.whyIgnored(paths)
+	if err != nil {
+		return err
 	}
-	f := splitZ(out)
-	if len(f)%4 != 0 {
-		return fmt.Errorf("git check-ignore gave an answer this rung does not read (%d fields)", len(f))
-	}
-	type entry struct{ src, path string }
-	var matched []entry
-	var dirs []string // folders git ignores whole: what it lists inside one is not counted again
-	for i := 0; i < len(f); i += 4 {
-		src, pattern, p := f[i], f[i+2], f[i+3]
-		if src == "" || strings.HasPrefix(pattern, "!") {
-			continue // not ignored itself: git lists what is inside it on its own
+	for _, d := range unmatched {
+		if !strings.HasSuffix(d, "/") || listsInside(paths, d) {
+			continue
 		}
-		matched = append(matched, entry{src, p})
-		if strings.HasSuffix(p, "/") {
-			dirs = append(dirs, p)
+		out, err := j.git.run(nil, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--", d)
+		if err != nil {
+			return fmt.Errorf("git cannot list the ignored files in %s: %v", shown(d), err)
+		}
+		if inside := splitZ(out); len(inside) > 0 {
+			more, _, err := j.whyIgnored(inside)
+			if err != nil {
+				return err
+			}
+			matched = append(matched, more...)
+		}
+	}
+	var dirs []string // folders git ignores whole: what it lists inside one is not counted again
+	for _, e := range matched {
+		if strings.HasSuffix(e.path, "/") {
+			dirs = append(dirs, e.path)
 		}
 	}
 next:
@@ -369,6 +381,9 @@ next:
 			if e.path != d && strings.HasPrefix(e.path, d) {
 				continue next
 			}
+		}
+		if strings.HasSuffix(e.path, "/") && !holdsFile(filepath.Join(j.git.dir, filepath.FromSlash(e.path))) {
+			continue
 		}
 		switch {
 		case isPerDirectory(e.src):
@@ -382,6 +397,62 @@ next:
 		}
 	}
 	return nil
+}
+
+// ignoredListing lists the ignored files and folders present (a test adds --no-empty-directory, to prove the
+// listing again file by file).
+var ignoredListing = []string{"ls-files", "-z", "--others", "--ignored", "--directory", "--exclude-standard"}
+
+// ignoredEntry is a path git ignores and the source of the rule that decides it.
+type ignoredEntry struct{ src, path string }
+
+// whyIgnored asks git check-ignore which rule decides each path: the paths a rule ignores (a negation decides that a
+// path is not ignored), and the rest.
+func (j *judgment) whyIgnored(paths []string) (matched []ignoredEntry, unmatched []string, err error) {
+	out, err := j.git.run([]byte(strings.Join(paths, "\x00")+"\x00"), "check-ignore", "-z", "--verbose",
+		"--non-matching", "--no-index", "--stdin")
+	if err != nil && exitCode(err) != 1 {
+		return nil, nil, fmt.Errorf("git cannot say why files are ignored: %v", err)
+	}
+	f := splitZ(out)
+	if len(f)%4 != 0 {
+		return nil, nil, fmt.Errorf("git check-ignore gave an answer this rung does not read (%d fields)", len(f))
+	}
+	for i := 0; i < len(f); i += 4 {
+		src, pattern, p := f[i], f[i+2], f[i+3]
+		if src == "" || strings.HasPrefix(pattern, "!") {
+			unmatched = append(unmatched, p)
+			continue
+		}
+		matched = append(matched, ignoredEntry{src, p})
+	}
+	return matched, unmatched, nil
+}
+
+// listsInside reports whether a listing holds a path inside the folder d.
+func listsInside(paths []string, d string) bool {
+	for _, p := range paths {
+		if p != d && strings.HasPrefix(p, d) {
+			return true
+		}
+	}
+	return false
+}
+
+// holdsFile reports whether a folder holds a file at any depth (anything but a folder counts). A folder that cannot be
+// read counts as holding one: what cannot be looked at is not taken as empty.
+func holdsFile(dir string) bool {
+	found := errors.New("found")
+	err := filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return found
+		}
+		if !d.IsDir() {
+			return found
+		}
+		return nil
+	})
+	return err != nil
 }
 
 // isPerDirectory reports whether check-ignore's source is a .gitignore file in the working tree (a path relative to
@@ -733,9 +804,9 @@ func (j *judgment) outcome() Outcome {
 	case kinds == 0:
 		b.WriteString("nothing found")
 	case hides > 0:
-		fmt.Fprintf(&b, "%d kinds found, %d hiding a change from git status, so the run counts as dirty", kinds, hides)
+		fmt.Fprintf(&b, "%s found, %d hiding a change from git status, so the run counts as dirty", plural(kinds, "kind"), hides)
 	default:
-		fmt.Fprintf(&b, "%d kinds found, none hiding a change from git status", kinds)
+		fmt.Fprintf(&b, "%s found, none hiding a change from git status", plural(kinds, "kind"))
 	}
 	for _, s := range found {
 		b.WriteString("; " + s)
@@ -748,7 +819,7 @@ func (j *judgment) outcome() Outcome {
 	} else {
 		b.WriteString(". Base " + j.baseHow)
 	}
-	fmt.Fprintf(&b, "; %d stash entries", j.stashes)
+	b.WriteString("; " + plural(j.stashes, "stash entry"))
 	if j.head == "" {
 		b.WriteString("; HEAD has no commit yet")
 	}
@@ -757,6 +828,17 @@ func (j *judgment) outcome() Outcome {
 	}
 	o.Reason = asciiOnly(b.String())
 	return o
+}
+
+// plural is a count and its noun.
+func plural(n int, noun string) string {
+	switch {
+	case n == 1:
+		return "1 " + noun
+	case strings.HasSuffix(noun, "y"):
+		return fmt.Sprintf("%d %sies", n, noun[:len(noun)-1])
+	}
+	return fmt.Sprintf("%d %ss", n, noun)
 }
 
 // names lists at most maxNames names (each already as shown), then how many more.

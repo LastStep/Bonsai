@@ -303,7 +303,7 @@ func TestOrdinaryShapesAreGreen(t *testing.T) {
 		git(t, root, "stash", "-q")
 		o := judge(t, input(root, base))
 		only(t, o, false, nil)
-		has(t, o, "1 stash entries")
+		has(t, o, "1 stash entry")
 	})
 }
 
@@ -394,7 +394,7 @@ func TestIndexEntriesHide(t *testing.T) {
 			o := judge(t, input(root, base))
 			only(t, o, true, map[string]int{c.word: 1})
 			has(t, o, c.word+" 1: a.txt (hides a change from git; undo each: git update-index --no-"+c.word,
-				"1 kinds found, 1 hiding a change from git status, so the run counts as dirty")
+				"1 kind found, 1 hiding a change from git status, so the run counts as dirty")
 		})
 	}
 	t.Run("both on one file", func(t *testing.T) {
@@ -435,6 +435,17 @@ func TestExcludeHidden(t *testing.T) {
 		write(t, root, "pkg/secret.txt", "x\n") // pkg/ is tracked: the file is listed on its own
 		only(t, judge(t, input(root, base)), true, map[string]int{"exclude-hidden": 1, "exclude-lines": 1})
 	})
+	t.Run("a rule naming a folder git tracks", func(t *testing.T) {
+		root, base := repo(t)
+		appendExclude(t, root, "pkg/\n")
+		write(t, root, "pkg/new.go", "package pkg\n")
+		if s := git(t, root, "status", "--porcelain"); s != "" {
+			t.Fatalf("git status shows the file: %s", s)
+		}
+		o := judge(t, input(root, base))
+		only(t, o, true, map[string]int{"exclude-hidden": 1, "exclude-lines": 1})
+		has(t, o, "exclude-hidden 1: pkg/new.go (by info/exclude)")
+	})
 	t.Run("info/exclude seen from a linked worktree", func(t *testing.T) {
 		root, base := repo(t)
 		wt := filepath.Join(filepath.Dir(root), "wt")
@@ -447,6 +458,35 @@ func TestExcludeHidden(t *testing.T) {
 		o := judge(t, input(wt, base))
 		only(t, o, true, map[string]int{"exclude-hidden": 1, "exclude-lines": 1})
 		has(t, o, "exclude-hidden 1: secret.txt (by info/exclude)")
+	})
+	t.Run("Claude Code's own local files", func(t *testing.T) {
+		// The lines Claude Code writes: its local settings in the global excludes, its other files in info/exclude.
+		// Folders whose files only finer rules ignore, an ignored folder holding a checkout, and an empty one.
+		root, base := repo(t)
+		write(t, home, ".config/git/ignore", "**/.claude/settings.local.json\n")
+		defer func() { must(t, os.RemoveAll(filepath.Join(home, ".config"))) }()
+		appendExclude(t, root, "**/.claude/scheduled_tasks.lock\n**/.claude/worktrees/\n**/.claude/checkpoints/\nc.txt\n")
+		write(t, root, ".claude/settings.local.json", "{}\n")
+		write(t, root, ".claude/scheduled_tasks.lock", "")
+		write(t, root, ".claude/worktrees/agent-1/pkg/a.go", "package pkg\n")
+		must(t, os.MkdirAll(filepath.Join(root, ".claude", "checkpoints", "empty"), 0o755))
+		write(t, root, "deep/er/c.txt", "x\n")
+		if s := git(t, root, "status", "--porcelain"); s != "" {
+			t.Fatalf("git status shows the files: %s", s)
+		}
+		o := judge(t, input(root, base))
+		only(t, o, true, map[string]int{"exclude-hidden": 4, "exclude-lines": 4})
+		has(t, o, "exclude-hidden 4: .claude/scheduled_tasks.lock (by info/exclude), .claude/settings.local.json "+
+			"(by core.excludesFile), .claude/worktrees/ (by info/exclude), deep/er/c.txt (by info/exclude)")
+		// With --no-empty-directory git lists .claude/ and deep/ alone, which no rule matches: the rung lists them
+		// again, file by file, and finds the same files.
+		saved := ignoredListing
+		ignoredListing = append(append([]string{}, saved...), "--no-empty-directory")
+		o = judge(t, input(root, base))
+		ignoredListing = saved
+		only(t, o, true, map[string]int{"exclude-hidden": 4, "exclude-lines": 4})
+		has(t, o, ".claude/scheduled_tasks.lock (by info/exclude), .claude/settings.local.json (by core.excludesFile), "+
+			".claude/worktrees/agent-1/pkg/a.go (by info/exclude), deep/er/c.txt (by info/exclude)")
 	})
 	excludes := filepath.Join(home, "my-ignore")
 	write(t, home, "my-ignore", "secret.txt\n")
@@ -615,7 +655,7 @@ func TestStashAdded(t *testing.T) {
 	in.Earlier = first.Captures
 	o := judge(t, in)
 	only(t, o, false, map[string]int{"stash-added": 1})
-	has(t, o, "stash-added 1: stash@{0}", "1 stash entries")
+	has(t, o, "stash-added 1: stash@{0}", "1 stash entry")
 	if n, _ := count(t, o, "stash-count"); n != 1 {
 		t.Errorf("stash-count %d", n)
 	}
