@@ -11,10 +11,12 @@ package ladder
 //     its rule and the grant or revert it needs (Refused[].Needs), how a revert is made, and bonsai check's step when
 //     its findings count (5.4.2 note 12); NextWho is person when a refused path is person-only and this machine's
 //     settings put the workspace in command mode, where only a person's grant opens one.
-//   - verGitKind: git integrity (step 5.4.6). Its wiring replaces the body with vergit.Judge(vergit.Input{Root: c.Root,
-//     BaseBranch: c.Base, MergeBase: c.MergeBase, Tests: the rung's own tests form, else the other rungs' forms in rung
-//     order (c.Config.Full.Ladder), Earlier: c.PriorCaptures(r.Rung), Timeout: rungTimeout(r)}), copying Status, Reason, Captures
-//     and Hides: the runner already turns Hides into the result's git.dirty.
+//   - verGitKind: git integrity (step 5.4.6, internal/vergit): vergit.Judge(vergit.Input{Root: c.Root, BaseBranch:
+//     c.Base, MergeBase: c.MergeBase, Tests: the rung's own tests form, else the forms the ladder's other rungs name in
+//     rung order (c.Config.Full.Ladder), each once, Earlier: c.PriorCaptures(r.Rung), Timeout: rungTimeout(r)}), its
+//     Status, Reason, Captures (base, stash-count, exclude-hash and each finding's count; text redacted) and Hides
+//     copied: the runner turns Hides into the result's git.dirty. Its findings never turn it red; error (git cannot be
+//     read) names git status as the next step.
 //   - treeDirty: whether git's status shows the tree dirty, read at the climb's start and its end. Today git status
 //     (git.go); 5.4.6's wiring replaces it with vergit.Dirty (its error counting dirty), so the result's git.dirty is
 //     that or a ver-git rung's Hides.
@@ -31,8 +33,7 @@ package ladder
 //     base branch, every open Bless ask whose offer is gone resolved, and the climb's own offer filed; it gives the ask
 //     records written, the climb's bless, and its lines go under the rungs'.
 //
-// Until its wiring lands, a ver-git rung ends in error, "not built yet", so a floor holding one climbs red (the runner
-// lands before it, "The order" item 3). A kind's Reason goes into the result only when the rung is not
+// A kind's Reason goes into the result only when the rung is not
 // green (bonsai.ladder/1: reason is null when green); a green rung's reason (what was found, what was not judged) is
 // printed under its line in the human output, and its findings are in its captures.
 
@@ -152,9 +153,42 @@ func redactCaptures(caps schema.Object) schema.Object {
 	return out
 }
 
-// verGitKind is git integrity (step 5.4.6 wires it in).
+// verGitKind is git integrity (this file's comment).
 func verGitKind(c *Climb, r format.Rung) Outcome {
-	return notBuilt(r, "git integrity comes with step 5.4.6")
+	o := vergit.Judge(vergit.Input{Root: c.Root, BaseBranch: c.Base, MergeBase: c.MergeBase, Tests: testForms(c, r),
+		Earlier: c.PriorCaptures(r.Rung), Timeout: rungTimeout(r)})
+	out := Outcome{Status: o.Status, Reason: o.Reason, Captures: redactCaptures(o.Captures), Hides: o.Hides}
+	if o.Status != statusGreen {
+		out.Next = "git cannot be read in this checkout (the rung's reason says why): run: git status, and fix what it reports"
+	}
+	return out
+}
+
+// testForms are the tests forms whose test-file conventions git integrity reads: the rung's own tests form when it
+// names one, else every form the ladder's other rungs name, in rung order, each once.
+func testForms(c *Climb, r format.Rung) []string {
+	if r.Tests != nil && *r.Tests != "" {
+		return []string{*r.Tests}
+	}
+	rungs := append([]format.Rung{}, c.Config.Full.Ladder...)
+	sortRungs(rungs)
+	var forms []string
+	for _, o := range rungs {
+		if o.Tests != nil && *o.Tests != "" && !contains(forms, *o.Tests) {
+			forms = append(forms, *o.Tests)
+		}
+	}
+	return forms
+}
+
+// contains reports whether a list holds a word.
+func contains(list []string, s string) bool {
+	for _, x := range list {
+		if x == s {
+			return true
+		}
+	}
+	return false
 }
 
 // rungTimeout is a rung's limit (this file's comment): its timeout_s, else its kind's default.
@@ -173,12 +207,6 @@ func rungTimeout(r format.Rung) time.Duration {
 
 // treeDirty reports whether the climbed checkout's tree is dirty by git's status (this file's comment).
 func treeDirty(c *Climb) bool { return dirtyNow(c.Root) }
-
-// notBuilt is a kind this build does not run yet.
-func notBuilt(r format.Rung, when string) Outcome {
-	return Outcome{Status: "error", Reason: "not built yet: this Bonsai does not run " + r.Kind + " rungs (" + when + ")",
-		Next: "a " + r.Kind + " rung needs a Bonsai that runs it (" + when + "): use that build, or climb without the rung"}
-}
 
 // Step is one rung that ran, as the steps after a rung see it.
 type Step struct {

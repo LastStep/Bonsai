@@ -258,15 +258,6 @@ func grantsIn(t *testing.T, dir string) map[string][]string {
 	return out
 }
 
-func contains(list []string, s string) bool {
-	for _, x := range list {
-		if x == s {
-			return true
-		}
-	}
-	return false
-}
-
 func exists(p string) bool {
 	_, err := os.Stat(p)
 	return err == nil
