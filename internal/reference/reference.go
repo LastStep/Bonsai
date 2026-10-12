@@ -43,14 +43,29 @@ func Page() []byte {
 		"The word of a refusal's `error.code` in every word's `--json`; who is who usually takes the next step. A word is added, never renamed or taken out.")
 	p.words(format.ErrorWords, "Who")
 	p.section("Check words", "open", "format.CheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
-		"The code of a finding (makes `check` exit 1, and is a problem in `status --json`) or a warning (printed, never the exit code); who is who usually takes the next step.")
-	p.words(format.CheckWords, "Kind", "Who")
+		"The code of a finding (makes `check` exit 1, and is a problem in `status --json`) or a warning (printed, never the exit code); who is who usually takes the next step. Machine says the word is about this machine rather than the commit (the home, the PATH, Claude Code and its plugins): rung 0 does not judge it, since a proof is of a commit.")
+	p.words(format.CheckWords, "Kind", "Who", "Machine")
+	p.section("Check words about the ladder's shape", "open", "format.LadderCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
+		"The code of a finding or a warning about the ladder in bonsai.yaml (plan-5 5.4.0; the checks are 5.4.2's), in the same open list as the check words above; who is who usually takes the next step.")
+	p.words(format.LadderCheckWords, "Kind", "Who", "Machine")
 	p.section("Check --pack words", "open", "format.PackCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
 		"The code of a finding from `bonsai check --pack <folder>`; every one is a finding, and none appears in a project's check.")
 	p.words(format.PackCheckWords, "Kind", "Who")
 	p.section("Check words later steps build", "closed", "engine.checkLater (internal/engine/check.go)", "none",
 		"Spec section 6's findings and warnings that are not built yet; each joins the check words above when its step lands.")
 	p.later()
+	p.section("Rung statuses", "open", "format.RungStatuses (internal/format/ladder.go)", "`bonsai check --schema bonsai.ladder`",
+		"How a rung of a ladder result ended, in `rungs[].status`; a reader shows a word it does not know as other.")
+	p.words(format.RungStatuses)
+	p.section("Tests forms", "open", "format.TestForms (internal/format/ladder.go)", "`bonsai check --schema bonsai.workspace`",
+		"The form of a rung's test output in bonsai.yaml (`ladder[].tests`); an unknown word means the tests are not read, and `check` warns.")
+	p.words(format.TestForms)
+	p.section("Test files by tests form", "closed", "format.TestFileConventions (internal/format/ladder.go)", "`bonsai check --schema bonsai.workspace`",
+		"Which files are a project's test files for each tests form: what new tests must fail on the base reads (5.4.5), and git integrity's changed-test-file finding (5.4.6). Patterns are project-relative globs with forward slashes (`**` is a whole segment); a path matching any is a test file.")
+	p.testFiles()
+	p.section("Git integrity findings", "open", "format.GitFindings (internal/format/ladder.go)", "`bonsai check --schema bonsai.ladder`",
+		"The names a `ver-git` rung gives what it found, as keys of the rung's `captures`; the rung informs a verifier and never turns red for one.")
+	p.words(format.GitFindings)
 	p.section("Ask types", "open", "format.AskTypes (internal/format/ask.go), held to the ask schema's description of `type`",
 		"`bonsai check --schema bonsai.ask`", "A pack may define its own type (contract section 9.1).")
 	p.words(format.AskTypes)
@@ -175,8 +190,14 @@ func (p *page) words(ws []format.Word, extra ...string) {
 		row := "| `" + w.Word + "` |"
 		for _, x := range extra {
 			v := w.Who
-			if x == "Kind" {
+			switch x {
+			case "Kind":
 				v = w.Kind
+			case "Machine":
+				v = ""
+				if w.Machine {
+					v = "yes"
+				}
 			}
 			if v == "" {
 				v = "-"
@@ -184,6 +205,22 @@ func (p *page) words(ws []format.Word, extra ...string) {
 			row += " " + v + " |"
 		}
 		p.line("%s %s |", row, cell(w.Means))
+	}
+}
+
+func (p *page) testFiles() {
+	p.line("| Form | Patterns | Means |")
+	p.line("|---|---|---|")
+	for _, c := range format.TestFileConventions {
+		pat := "the files the report names"
+		if len(c.Patterns) > 0 {
+			var q []string
+			for _, g := range c.Patterns {
+				q = append(q, "`"+g+"`")
+			}
+			pat = strings.Join(q, ", ")
+		}
+		p.line("| `%s` | %s | %s |", c.Form, cell(pat), cell(c.Means))
 	}
 }
 
@@ -319,6 +356,9 @@ var skipped = map[string]string{
 	"changes:error.next.who":     "a copy of error:next.who",
 	"changes:plugins[].next.who": "a copy of error:next.who",
 	"workspace:ladder[].kind":    "a copy of ladder:rungs[].kind",
+	"climb:mode":                 "a copy of ladder:mode",
+	"climb:error.next.who":       "a copy of error:next.who",
+	"climb:next.who":             "a copy of error:next.who",
 	"status:lanes[].close":       "a copy of lanes:lanes[].close, shown under Lane rules",
 	"lanes:lanes[].close":        "shown under Lane rules",
 	"pack:files[].kind":          "shown as Pack file kinds",

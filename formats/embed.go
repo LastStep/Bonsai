@@ -19,9 +19,9 @@ var schemas embed.FS
 // Names lists the formats the set has a schema for, in the order README.md gives them: the ten of contract §2, then
 // the eight set 4 added (bonsai.yaml, pack.yaml, the two tables, memory, the error object, and the --json of check
 // and of init, update and unlink), then set 5's help (bonsai --help --json), then set 6's two command outputs: asks
-// (bonsai ask, answer and asks) and logs (bonsai logs and log append).
+// (bonsai ask, answer and asks) and logs (bonsai logs and log append), then set 7's climb (bonsai ladder).
 var Names = []string{"task", "labels", "lanes", "run", "state", "log", "ask", "ladder", "status", "lock",
-	"workspace", "pack", "tasks", "sessions", "memory", "error", "check", "changes", "help", "asks", "logs"}
+	"workspace", "pack", "tasks", "sessions", "memory", "error", "check", "changes", "help", "asks", "logs", "climb"}
 
 // Schema returns the committed bytes of one format's schema, by its short name ("lock", "status").
 func Schema(name string) ([]byte, error) {

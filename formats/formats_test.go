@@ -489,12 +489,12 @@ func sameShape(t *testing.T, copyOf, home schema.Object, where string) {
 func TestCopiesAreTheirHomes(t *testing.T) {
 	errorSchema := loadSchema(t, "error")
 	next := schemaAt(t, errorSchema, "error", "properties", "next")
-	for _, name := range []string{"status", "check", "changes", "asks", "logs"} {
+	for _, name := range []string{"status", "check", "changes", "asks", "logs", "climb"} {
 		sameShape(t, schemaAt(t, loadSchema(t, name), name, "properties", "error"), errorSchema, name+"'s error")
 	}
-	// The workspace object of the two set 6 outputs is changes', their home (the schema checker has no $ref).
+	// The workspace object of the set 6 and 7 outputs is changes', their home (the schema checker has no $ref).
 	changesWorkspace := schemaAt(t, loadSchema(t, "changes"), "changes", "properties", "workspace")
-	for _, name := range []string{"asks", "logs"} {
+	for _, name := range []string{"asks", "logs", "climb"} {
 		sameShape(t, schemaAt(t, loadSchema(t, name), name, "properties", "workspace"), changesWorkspace, name+"'s workspace")
 	}
 	check := loadSchema(t, "check")
@@ -504,6 +504,8 @@ func TestCopiesAreTheirHomes(t *testing.T) {
 	}
 	sameShape(t, schemaAt(t, loadSchema(t, "changes"), "changes", "properties", "plugins", "items", "properties", "next"),
 		next, "changes' plugins[].next")
+	// A climb's next step is the error object's next (set 7); its type adds null for a green climb.
+	sameShape(t, schemaAt(t, loadSchema(t, "climb"), "climb", "properties", "next"), next, "climb's next")
 	rung := schemaAt(t, loadSchema(t, "workspace"), "workspace", "properties", "ladder", "items", "properties", "kind")
 	home := schemaAt(t, loadSchema(t, "ladder"), "ladder", "properties", "rungs", "items", "properties", "kind")
 	a, _ := rung.Get("enum")

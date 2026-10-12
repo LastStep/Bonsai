@@ -108,5 +108,14 @@
   ],
   "problems": [],
   "checks": null,
-  "error": null
+  "error": null,
+  "ladder": {
+    "task": "T-0901",
+    "path": ".bonsai/local/ladder/T-0901.json",
+    "green": true,
+    "mode": "local",
+    "sha": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+    "finished": "2026-10-08T15:03:40.012Z",
+    "stale": false
+  }
 }

@@ -33,6 +33,7 @@ var doesNotApply = map[string]string{
 	"problems":       "[]",   // check finds nothing
 	"checks":         "null", // without --full
 	"error":          "null", // nothing refused
+	"ladder":         "null", // no result yet: the ladder runner (step 5.4.2) fills it
 }
 
 const cfg = `format: bonsai.workspace/1   # comments are fine

@@ -71,7 +71,9 @@
         "new_tests": {
           "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
           "count": 3,
-          "failed_on_base": 3
+          "failed_on_base": 3,
+          "passed_on_base": 0,
+          "not_run": 0
         }
       }
     }

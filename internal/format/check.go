@@ -36,6 +36,11 @@ type Finding struct {
 // command Bonsai does not have or a flag its word does not take. A later piece adds a word by adding an entry here
 // with its case (5.6 the stranded machine folder: engine's checkLater names it); a word is added, never renamed or
 // taken out.
+//
+// Machine marks a word that is about this machine rather than the commit (set 7, plan-5 5.4.3 note 4): the home, the
+// PATH, the installed Claude Code and its plugins, the cache and which Bonsai wrote the hook lines. A proof is of a
+// commit, so rung 0 lists these as "not judged here". The reference page and bonsai check --schema bonsai.check show
+// the mark.
 var CheckWords = []Word{
 	// The project's own files against the lock and bonsai.yaml (offline: the lock alone).
 	{Word: "config", Kind: "finding", Who: "person", Means: "bonsai.yaml is not one Bonsai reads"},
@@ -62,27 +67,27 @@ var CheckWords = []Word{
 	{Word: "settings-rule", Kind: "finding", Who: "person", Means: "a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own"},
 	{Word: "hooks-off", Kind: "finding", Who: "person", Means: "disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them"},
 	{Word: "settings-env", Kind: "finding", Who: "person", Means: "the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: " + hookEnvNames() + "; the finding names the file and the name, never the value (step 5.3.6)"},
-	{Word: "plugin-version", Kind: "finding", Who: "person", Means: "a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5)"},
-	{Word: "plugin", Kind: "finding", Who: "person", Means: "plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5)"},
+	{Word: "plugin-version", Kind: "finding", Who: "person", Machine: true, Means: "a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5)"},
+	{Word: "plugin", Kind: "finding", Who: "person", Machine: true, Means: "plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5)"},
 	// This machine (the home and the PATH).
-	{Word: "id-changed", Kind: "finding", Who: "person", Means: "bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3)"},
-	{Word: "bonsai-path", Kind: "finding", Who: "person", Means: "the bonsai on the PATH is not the installed one that install.json records (spec section 3)"},
-	{Word: "git-bash", Kind: "finding", Who: "person", Means: "on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run (step 5.3.6)"},
-	{Word: "git-user", Kind: "finding", Who: "person", Means: "on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write (step 5.3.6)"},
-	{Word: "machine-record", Kind: "finding", Who: "person", Means: "a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here (step 5.3.6)"},
+	{Word: "id-changed", Kind: "finding", Who: "person", Machine: true, Means: "bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3)"},
+	{Word: "bonsai-path", Kind: "finding", Who: "person", Machine: true, Means: "the bonsai on the PATH is not the installed one that install.json records (spec section 3)"},
+	{Word: "git-bash", Kind: "finding", Who: "person", Machine: true, Means: "on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run (step 5.3.6)"},
+	{Word: "git-user", Kind: "finding", Who: "person", Machine: true, Means: "on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write (step 5.3.6)"},
+	{Word: "machine-record", Kind: "finding", Who: "person", Machine: true, Means: "a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here (step 5.3.6)"},
 	// Warnings.
-	{Word: "claude-code-old", Kind: "warning", Who: "person", Means: "Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7)"},
-	{Word: "claude-code-unknown", Kind: "warning", Who: "person", Means: "Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read)"},
-	{Word: "same-id", Kind: "warning", Who: "person", Means: "another checkout on this machine holds the same workspace id (contract section 3)"},
+	{Word: "claude-code-old", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7)"},
+	{Word: "claude-code-unknown", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read)"},
+	{Word: "same-id", Kind: "warning", Who: "person", Machine: true, Means: "another checkout on this machine holds the same workspace id (contract section 3)"},
 	{Word: "run-reports", Kind: "warning", Who: "person", Means: "run reports are past bonsai.yaml's generated.run rule, listed for a person to delete (spec section 6)"},
 	{Word: "approve-first-unchecked", Kind: "warning", Who: "agent", Means: "approve_first was not checked: git history is not available (a shallow clone) or could not be read; never passed"},
-	{Word: "plugin-missing", Kind: "warning", Who: "person", Means: "Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has)"},
-	{Word: "plugin-trust", Kind: "warning", Who: "person", Means: "Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet"},
-	{Word: "plugin-unchecked", Kind: "warning", Who: "person", Means: "this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread)"},
-	{Word: "cache", Kind: "warning", Who: "person", Means: "a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked"},
+	{Word: "plugin-missing", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has)"},
+	{Word: "plugin-trust", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet"},
+	{Word: "plugin-unchecked", Kind: "warning", Who: "person", Machine: true, Means: "this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread)"},
+	{Word: "cache", Kind: "warning", Who: "person", Machine: true, Means: "a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked"},
 	{Word: "tables", Kind: "warning", Who: "agent", Means: "a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5)"},
 	{Word: "local-unchecked", Kind: "warning", Who: "agent", Means: "git ls-files failed, so files from .bonsai/local/ in git's index were not looked for"},
-	{Word: "own-hooks", Kind: "warning", Who: "person", Means: "Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1)"},
+	{Word: "own-hooks", Kind: "warning", Who: "person", Machine: true, Means: "Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1)"},
 }
 
 // HookEnvKeys are the names that, set in the env of a project's Claude Code settings (.claude/settings.json or
@@ -144,9 +149,31 @@ func hookEnvNames() string {
 	return strings.Join(names, ", ") + ", or any name starting " + HookEnvPrefix
 }
 
-// CheckWord finds a word in CheckWords.
+// LadderCheckWords are the known words of a finding's and a warning's code that are about the ladder's shape in
+// bonsai.yaml (set 7, plan-5 5.4.0; the checks themselves are step 5.4.2's): their one home, beside CheckWords in the
+// same bonsai.check/1 document and the same open list (bonsai check --schema bonsai.check prints both tables; no word
+// is in both). They are a table of their own so that this file is final before 5.4.2 writes the checks: cmd/bonsai's
+// TestCheckTable and engine's TestCheckWordsInTheCode walk CheckWords, and 5.4.2 walks this table the same way with
+// its checks. None is about this machine. Who is person: bonsai.yaml is a person's file (an agent edits it only under
+// a task a person gave it). CheckWord finds these too.
+var LadderCheckWords = []Word{
+	{Word: "rung-twice", Kind: "finding", Who: "person", Means: "two rungs of bonsai.yaml's ladder carry one number, so a task's bonsai.ladder and the ladder_floor cannot name one of them"},
+	{Word: "floor-no-rung", Kind: "finding", Who: "person", Means: "ladder_floor names a rung number that no rung of the ladder has"},
+	{Word: "ratchet-no-rung", Kind: "finding", Who: "person", Means: "a floor in bonsai.yaml's ratchets that no rung's ratchet names, so it holds back nothing"},
+	{Word: "capture-pattern", Kind: "finding", Who: "person", Means: "a rung's capture holds a pattern that does not compile as a Go (RE2) regular expression: the finding names the rung, the capture and the error"},
+	{Word: "ratchet-no-count", Kind: "finding", Who: "person", Means: "a rung's ratchet has no count: no capture of the same name, and the rung has no tests form to count passed tests from"},
+	{Word: "rung-bash", Kind: "finding", Who: "person", Means: "a rung's command calls bash by name (spec section 3), so it would run a different shell on Windows than elsewhere"},
+	{Word: "tests-unknown", Kind: "warning", Who: "person", Means: "a rung's tests is a word Bonsai does not know, so its tests are not read: the warning names the known ones (TestForms, bonsai check --schema bonsai.workspace)"},
+}
+
+// CheckWord finds a word in CheckWords, or in LadderCheckWords.
 func CheckWord(code string) (Word, bool) {
 	for _, w := range CheckWords {
+		if w.Word == code {
+			return w, true
+		}
+	}
+	for _, w := range LadderCheckWords {
 		if w.Word == code {
 			return w, true
 		}

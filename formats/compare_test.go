@@ -10,8 +10,9 @@ package formats
 // Anything else fails: a schema file removed; a property removed, renamed or moved; a type, const, enum, pattern or
 // bound changed, added or taken away; a name taken out of required, or required changed but for the new properties'
 // names; any other keyword added or removed. A checkout without the base commit (git missing, or a shallow clone)
-// skips with that reason, except under CI (the CI variable set), where it fails: CI checks out the history it needs.
-// From step 5.4 the same test is a rung of Bonsai's own ladder.
+// skips with that reason, except under CI (the CI variable set) or under Bonsai's ladder (BONSAI_LADDER set, which the
+// ladder's runner puts in every rung's environment), where it fails: CI checks out the history it needs, and a rung
+// of Bonsai's own ladder can never pass by skipping.
 
 import (
 	"bytes"
@@ -26,21 +27,21 @@ import (
 	"github.com/LastStep/Bonsai/internal/schema"
 )
 
-// schemaBase is the set's base: the commit of the set before this one (set 5), whose schemas this set may only add
+// schemaBase is the set's base: the commit of the set before this one (set 6), whose schemas this set may only add
 // to. Each set's commit moves it forward to the commit of the set before it.
-const schemaBase = "d11f70457301c1b4d4d2e7b49a97eeaff65f6b0d"
+const schemaBase = "6abd4fbe8ac266c26e8200788ff112d9374f3e2d"
 
 // annotationKeys may change freely: they document, they do not constrain.
 var annotationKeys = map[string]bool{"description": true, "examples": true, "title": true}
 
 // atBase gives a git runner for the repository, once it has checked the base commit is there. It skips the test (or
-// fails it under CI) when the base cannot be read.
+// fails it under CI or the ladder) when the base cannot be read.
 func atBase(t *testing.T, base string) func(args ...string) ([]byte, error) {
 	t.Helper()
 	unavailable := func(why string) {
 		t.Helper()
-		if os.Getenv("CI") != "" {
-			t.Fatalf("the schema-compare test cannot read the base commit %s: %s; CI must check out the history it needs (fetch-depth: 0)", base, why)
+		if os.Getenv("CI") != "" || os.Getenv("BONSAI_LADDER") != "" {
+			t.Fatalf("the schema-compare test cannot read the base commit %s: %s; CI and Bonsai's ladder must have the history it needs (CI: fetch-depth: 0)", base, why)
 		}
 		t.Skipf("the base commit %s cannot be read here (%s), so the schemas are not compared with it", base, why)
 	}

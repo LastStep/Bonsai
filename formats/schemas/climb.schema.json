@@ -1,0 +1,396 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.climb/1",
+  "description": "bonsai ladder --json (contract §11, spec §4, §9, §16 row 23): one climb of the ladder, for the agent or the person who ran it, the stop gate's reader and CI. Printed, never stored (the result itself, bonsai.ladder/1, is what the runner stores in the main checkout's .bonsai/local/ladder/). Named for the act, since bonsai.ladder/1 is the result's name. Written by bonsai ladder with --json, always whole; the exit code is the colour: 0 green, 1 red, 2 bad input, 3 could not run or write, 4 wrong state. A climb that ran is workspace, task, mode, result, sha256 and ladder filled, and a red one adds next, the first red rung's fix and then the climb again; a climb that refused (a missing task, a held lock, a rung not in bonsai.yaml, an unverified main checkout, a stamped build outside its scratch folder) has result, sha256 and ladder null, bless and cleaned [], and error saying why with the next step. The records inside (ladder, bless) are open objects whose homes are bonsai.ladder/1 and bonsai.ask/1. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "workspace",
+    "task",
+    "mode",
+    "result",
+    "sha256",
+    "ladder",
+    "bless",
+    "cleaned",
+    "next",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.climb/1"
+      ],
+      "const": "bonsai.climb/1"
+    },
+    "workspace": {
+      "description": "The workspace: its id and name from bonsai.yaml, and the main checkout's absolute path, forward slashes (printed locally, never stored or forwarded); null when the command refused before reading bonsai.yaml.",
+      "examples": [
+        {
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "root": "/srv/projects/example"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "name",
+        "root"
+      ],
+      "properties": {
+        "id": {
+          "description": "The workspace id (contract §3).",
+          "examples": [
+            "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+          ],
+          "type": "string",
+          "pattern": "^ws-[a-z0-9]{26}$"
+        },
+        "name": {
+          "description": "The workspace's name (contract §3).",
+          "examples": [
+            "example"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        },
+        "root": {
+          "description": "The checkout's absolute path, forward slashes.",
+          "examples": [
+            "/srv/projects/example"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "task": {
+      "description": "The task id the climb was run for (the named task, or the single running one), or null for a run with no task (a --ci run) or when the command refused before it knew one.",
+      "examples": [
+        "T-0901",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "mode": {
+      "description": "local or ci, as the result holds it (bonsai.ladder/1's mode); null when the command refused before it knew.",
+      "examples": [
+        "local",
+        "ci",
+        null
+      ],
+      "enum": [
+        "local",
+        "ci",
+        null
+      ]
+    },
+    "result": {
+      "description": "The result's project-relative path, forward slashes, in the main checkout's .bonsai/local/ladder/ (<task id>.json, or ci.json for a --ci run); null when no result was written (the command refused, or could not write it).",
+      "examples": [
+        ".bonsai/local/ladder/T-0901.json",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sha256": {
+      "description": "The SHA-256 of the result file's bytes, 64 lower-case hex, as the log's ladder record gives it after sha256:; null when no result was written.",
+      "examples": [
+        "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "ladder": {
+      "description": "The result as written (bonsai.ladder/1, its one home: an open object here, because the schema checker has no $ref and a full copy would refuse an older or hand-written result); null when no result was written. A red climb is a result too: green false, and each red rung's reason and failing tests inside.",
+      "examples": [
+        {
+          "format": "bonsai.ladder/1",
+          "task": "T-0901",
+          "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "mode": "local",
+          "started": "2026-10-08T15:01:12.345Z",
+          "finished": "2026-10-08T15:03:40.012Z",
+          "git": {
+            "sha": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+            "branch": "t0901-dark-mode",
+            "dirty": false
+          },
+          "requested": [
+            0,
+            1,
+            2
+          ],
+          "green": true,
+          "rungs": [
+            {
+              "rung": 0,
+              "name": "guard",
+              "kind": "guard",
+              "required": true,
+              "command": null,
+              "means": "The diff stays inside the task's grants.",
+              "status": "green",
+              "reason": null,
+              "duration_ms": 41,
+              "tests": null,
+              "captures": null,
+              "ratchet": null
+            },
+            {
+              "rung": 1,
+              "name": "vet",
+              "kind": "command",
+              "required": true,
+              "command": "go vet ./...",
+              "means": "The code passes go vet.",
+              "status": "green",
+              "reason": null,
+              "duration_ms": 3120,
+              "tests": null,
+              "captures": null,
+              "ratchet": null
+            },
+            {
+              "rung": 2,
+              "name": "unit tests",
+              "kind": "command",
+              "required": true,
+              "command": "go test ./...",
+              "means": "Every unit test passes, and there are no fewer than before.",
+              "status": "green",
+              "reason": null,
+              "duration_ms": 52480,
+              "tests": {
+                "seen": 123,
+                "skipped": [],
+                "todo": []
+              },
+              "captures": {
+                "tests": 123
+              },
+              "ratchet": {
+                "name": "tests",
+                "was": 120,
+                "now": 123,
+                "ok": true,
+                "new_tests": {
+                  "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+                  "count": 3,
+                  "failed_on_base": 3,
+                  "passed_on_base": 0,
+                  "not_run": 0
+                }
+              }
+            }
+          ],
+          "skipped": [],
+          "leftovers": {
+            "checkout": [],
+            "shared_deploy": [],
+            "ms": 212
+          },
+          "proof": null
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "bless": {
+      "description": "The ask records this run wrote for Bless (bonsai.ask/1, as stored; open objects for the same reason as ladder): each a file record (the offer, key ladder:bless-<task>) or a resolve record (an offer that is gone). One run can resolve several open ladder:bless-* asks and file one more. [] when the run wrote none, which is every red, dirty, --ci or off-base run.",
+      "examples": [
+        [
+          {
+            "format": "bonsai.ask/1",
+            "id": "7e6d5c4b-3a29-4180-9f7e-6d5c4b3a2918",
+            "at": "2026-10-08T15:03:40.500Z",
+            "op": "file",
+            "key": "ladder:bless-T-0901",
+            "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+            "source": "ladder",
+            "session": null,
+            "type": "Bless",
+            "task": "T-0901",
+            "doc": null,
+            "title": "Bless T-0901's ratchets",
+            "why": "tests rose from 120 to 123; 3 new tests, all 3 failed on the base.",
+            "then_text": "Blessing raises the floor in bonsai.yaml from that run; it runs nothing.",
+            "options": [],
+            "verdict": null,
+            "data": {
+              "task": "T-0901",
+              "head": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+              "result_sha": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+              "rises": [
+                {
+                  "name": "tests",
+                  "was": 120,
+                  "now": 123,
+                  "new_tests": {
+                    "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+                    "count": 3,
+                    "failed_on_base": 3,
+                    "passed_on_base": 0,
+                    "not_run": 0
+                  }
+                }
+              ]
+            },
+            "answer": null
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "cleaned": {
+      "description": "The project-relative paths the cleaner removed after the run (generated.ladder, contract §8.5), forward slashes, never the result just written; [] for none.",
+      "examples": [
+        [
+          ".bonsai/local/ladder/T-0850.json"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next": {
+      "description": "The step after a red climb (plan-5 5.4.2 note 12): what to do and who does it, as the error object's next has it. It names the first red rung's fix, with every value Bonsai knows filled in (the rung, the failing test's own command from the result's tests, the path), and then the climb again. null when the climb is green, or when the command refused (the error object's own next says what to do).",
+      "examples": [
+        {
+          "do": "fix the unit tests rung (rung 2): run: go test -count=1 -run '^TestDarkTheme$' ./internal/theme ; then run: bonsai ladder --task T-0901 --json",
+          "who": "agent"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "do",
+        "who"
+      ],
+      "properties": {
+        "do": {
+          "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+          "examples": [
+            "run: bonsai update --yes",
+            "open Claude Code in this checkout and accept its trust question"
+          ],
+          "type": "string"
+        },
+        "who": {
+          "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+          "examples": [
+            "person",
+            "agent"
+          ],
+          "enum": [
+            "agent",
+            "person"
+          ]
+        }
+      }
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

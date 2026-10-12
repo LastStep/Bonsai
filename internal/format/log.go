@@ -41,7 +41,7 @@ type Log struct {
 	Rule         *string       `json:"rule"`
 	Labels       schema.Object `json:"labels"`
 	Remote       *string       `json:"remote"`        // the Remote Control id
-	BonsaiPath   *string       `json:"bonsai_path"`   // the bonsai binary's path, forward slashes (set 6); the guard writes its absolute form
+	BonsaiPath   *string       `json:"bonsai_path"`   // the bonsai binary's path, forward slashes, from ~/ under the home (set 6); the guard writes it only on the record that made the file
 	BonsaiSHA256 *string       `json:"bonsai_sha256"` // the binary's SHA-256, 64 lower-case hex (set 6)
 	Extra        schema.Object `json:"-"`             // fields this Bonsai does not know, kept as read
 }

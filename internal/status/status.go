@@ -196,6 +196,7 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		"files":       files,
 		"person_only": personOnly,
 		"problems":    problems,
+		"ladder":      nil, // the active task's last result: the ladder runner fills it (bonsai.status/1, set 7)
 	}, nil
 }
 

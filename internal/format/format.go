@@ -86,6 +86,10 @@ type Word struct {
 	Means string // one line: what it means
 	Who   string // for a word that comes with a next step (the error object's, check's): who usually takes it, agent or person; else ""
 	Kind  string // for check's words: finding (exit 1) or warning (never the exit code); else ""
+	// Machine marks a check word that is about this machine rather than the commit (set 7): the home, the PATH, the
+	// installed Claude Code and its plugins. A proof is of a commit, so rung 0 does not judge these ("not judged
+	// here", plan-5 5.4.3 note 4). The reference page and bonsai check --schema bonsai.check show it.
+	Machine bool
 }
 
 // The next steps a refusal names, by who fixes the document.
@@ -105,7 +109,7 @@ const (
 var errorCode = []List{{Field: "error.code", Table: "format.ErrorWords", Words: &ErrorWords}}
 
 // All is every format, in formats.Names' order (the ten of contract §2, the eight of set 4, set 5's help, then set 6's
-// asks and logs). Its test holds it to formats.Names and to the schemas, so a schema with no entry here, or an entry
+// asks and logs, then set 7's climb). Its test holds it to formats.Names and to the schemas, so a schema with no entry here, or an entry
 // with no schema, fails.
 //
 // To add a format: its schema in formats/ (a new set), its Go file here, and an entry below. To add an open list's
@@ -121,10 +125,14 @@ var All = []*Format{
 			{Field: "category", Table: "format.LogCategories", Words: &LogCategories}}},
 	{Name: "ask", Major: 1, Shape: JSONLine, Writes: true, GoType: "format.Ask", Next: nextRecord,
 		Lists: []List{{Field: "type", Table: "format.AskTypes", Words: &AskTypes}}},
-	{Name: "ladder", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Ladder", Next: nextLadder},
+	{Name: "ladder", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Ladder", Next: nextLadder,
+		Lists: []List{{Field: "rungs[].status", Table: "format.RungStatuses", Words: &RungStatuses},
+			{Field: "rungs[].captures", Table: "format.GitFindings", Words: &GitFindings}}},
 	{Name: "status", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Status", Next: nextOutput, Lists: errorCode},
 	{Name: "lock", Major: 1, Shape: JSONDoc, Writes: true, GoType: "workspace.Lock (internal/workspace/lock.go)", Next: nextLock},
-	{Name: "workspace", Major: 1, Shape: YAMLFile, Writes: true, GoType: "format.Workspace", Next: nextConfig},
+	{Name: "workspace", Major: 1, Shape: YAMLFile, Writes: true, GoType: "format.Workspace", Next: nextConfig,
+		Lists: []List{{Field: "ladder[].tests", Table: "format.TestForms", Words: &TestForms},
+			{Field: "ladder[].tests", Table: "format.TestFileWords", Words: &TestFileWords}}},
 	{Name: "pack", Major: 1, Shape: YAMLFile, GoType: "format.Pack", Next: nextPack},
 	{Name: "tasks", Major: 1, Shape: Table, Writes: true, GoType: "format.Tasks", Next: nextTable},
 	{Name: "sessions", Major: 1, Shape: Table, Writes: true, GoType: "format.Sessions", Next: nextTable},
@@ -134,14 +142,17 @@ var All = []*Format{
 	{Name: "check", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Check", Next: nextOutput,
 		Lists: append([]List{
 			{Field: "findings[].code", Table: "format.CheckWords", Words: &CheckWords},
+			{Field: "findings[].code", Table: "format.LadderCheckWords", Words: &LadderCheckWords},
 			{Field: "findings[].code", Table: "format.PackCheckWords", Words: &PackCheckWords},
 			{Field: "warnings[].code", Table: "format.CheckWords", Words: &CheckWords},
+			{Field: "warnings[].code", Table: "format.LadderCheckWords", Words: &LadderCheckWords},
 		}, errorCode...)},
 	{Name: "changes", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Changes", Next: nextOutput, Lists: errorCode},
 	{Name: "help", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Help", Next: nextOutput,
 		Lists: []List{{Field: "error_words[].code", Table: "format.ErrorWords", Words: &ErrorWords}}},
 	{Name: "asks", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Asks", Next: nextOutput, Lists: errorCode},
 	{Name: "logs", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Logs", Next: nextOutput, Lists: errorCode},
+	{Name: "climb", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Climb", Next: nextOutput, Lists: errorCode},
 }
 
 // Lookup finds a format by its short name ("task"), its name ("bonsai.task") or its name and major

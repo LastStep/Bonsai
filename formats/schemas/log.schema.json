@@ -178,7 +178,7 @@
       ]
     },
     "task": {
-      "description": "The task the session's environment names (BONSAI_TASK), raw, as given and redacted like every free-text field; null when unset. The recorder decides nothing from it. Today's spool field: task_env.",
+      "description": "The task the session's environment names (BONSAI_TASK), raw, as given and redacted like every free-text field; null when unset. For a ladder record, the result's task. The recorder decides nothing from it. Today's spool field: task_env.",
       "examples": [
         "T-0901",
         null
@@ -222,7 +222,7 @@
       ]
     },
     "target": {
-      "description": "What the tool acted on, redacted, at most 200 characters; a path outside the checkout is null, never written. For session_start and subagent_start the active task the recorder found (contract §13), or null; for clean the project-relative path deleted; for ask the ask's key.",
+      "description": "What the tool acted on, redacted, at most 200 characters; a path outside the checkout is null, never written. For session_start and subagent_start the active task the recorder found (contract §13), or null; for clean the project-relative path deleted; for ask the ask's key; for ladder the result's project-relative path.",
       "examples": [
         "src/settings/theme.go",
         null
@@ -234,7 +234,7 @@
       "maxLength": 200
     },
     "ok": {
-      "description": "Whether the call succeeded (true), failed (false), or null when that does not apply.",
+      "description": "Whether the call succeeded (true), failed (false), or null when that does not apply; for a ladder record, the result's green.",
       "examples": [
         true,
         null
@@ -245,7 +245,7 @@
       ]
     },
     "kind": {
-      "description": "What kind of the event it is, or null: a prompt's user or task-notification; a failure's interrupt or error; a notice's type (Claude Code's notification type); for an ask record, its op (file, resolve or answer).",
+      "description": "What kind of the event it is, or null: a prompt's user or task-notification; a failure's interrupt or error; a notice's type (Claude Code's notification type); for an ask record, its op (file, resolve or answer); for a ladder record, the result's mode (local or ci).",
       "examples": [
         "idle_prompt",
         null
@@ -256,7 +256,7 @@
       ]
     },
     "text": {
-      "description": "Short text, redacted, at most 300 characters: a notice's message, or an ask record's question; never the words of a prompt (a prompt record's text is null). null where it does not apply.",
+      "description": "Short text, redacted, at most 300 characters: a notice's message, or an ask record's question, or for a ladder record sha256: and the result file's SHA-256 in hex; never the words of a prompt (a prompt record's text is null). null where it does not apply.",
       "examples": [
         "Claude is waiting for your input",
         null
@@ -364,7 +364,7 @@
       "pattern": "^session_[A-Za-z0-9]{10,60}$"
     },
     "bonsai_path": {
-      "description": "The bonsai binary's own path, forward slashes, on a session_start record (written at every start) and on the guard record that made its log file; null elsewhere. Under the person's home folder it is written from a tilde and a slash, so no user name is in the log (contract §2.6); elsewhere as it is. The guard writes its absolute form until step 5.3 changes guard code, so no form is required here. Added in set 6, an addition (spec §16 row 27; the name is the one the guard has written since part 5).",
+      "description": "The bonsai binary's own path, forward slashes, on a session_start record (written at every start), on the guard record that made its log file (and only on that one of the guard's records), and on a ladder record, where it is the runner's own, so the record names which bonsai made the result; null elsewhere. Under the person's home folder it is written from a tilde and a slash, so no user name is in the log (contract §2.6), by the recorder and by the guard alike; elsewhere as it is. Added in set 6, an addition (spec §16 row 27; the name is the one the guard has written since part 5).",
       "examples": [
         "/usr/local/bin/bonsai",
         null
@@ -375,7 +375,7 @@
       ]
     },
     "bonsai_sha256": {
-      "description": "The SHA-256 of the bonsai binary at bonsai_path, 64 lower-case hex characters, on a session_start record (hashed at every start, so a binary swapped between a session and its resume is seen) and on the guard record that made its log file; null elsewhere. Added in set 6, an addition (spec §16 row 27).",
+      "description": "The SHA-256 of the bonsai binary at bonsai_path, 64 lower-case hex characters, on a session_start record (hashed at every start, so a binary swapped between a session and its resume is seen), on the guard record that made its log file and on a ladder record (the runner's own); null elsewhere. Added in set 6, an addition (spec §16 row 27).",
       "examples": [
         "9b2f4c1ad07e53b8c6a1f09d2e48b7a3c5d60f1e8a97b24c3d5e6f708192a3b4",
         null

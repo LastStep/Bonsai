@@ -448,10 +448,10 @@
       }
     },
     "own_hooks": {
-      "description": "At a first link: Bonsai's own hook lines the command adds, as the preview shows them, written with --yes, since linking the project is the person's consent to them (step 5.1.1); [] otherwise. Each is also a settings line, with runs_code false.",
+      "description": "At a first link: Bonsai's own hook lines the command adds, as the preview shows them (a line tries bonsai at its installed place and never reads the PATH; the example is a build's line with one place), written with --yes, since linking the project is the person's consent to them (step 5.1.1); [] otherwise. Each is also a settings line, with runs_code false.",
       "examples": [
         [
-          "PreToolUse (Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell): bonsai hook guard || exit 2"
+          "PreToolUse (Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell|Monitor): b=/usr/local/bin/bonsai; [ -x \"$b\" ] || { echo \"bonsai guard: no bonsai is installed at /usr/local/bin/bonsai, so this call is refused; next: tell the person: a person installs Bonsai there\" >&2; exit 2; }; \"$b\" hook guard || exit 2 [onFailure: block]"
         ],
         []
       ],

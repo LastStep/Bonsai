@@ -1,8 +1,11 @@
 package format
 
 import (
+	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/LastStep/Bonsai/internal/schema"
 )
 
 // The ask schema's description of type names the known types; AskTypes, their one home in code, holds the same words
@@ -176,5 +179,188 @@ func TestNotesAndLeftAreWritten(t *testing.T) {
 	out, err = ch.Encode()
 	if err != nil || !strings.Contains(string(out), `"left": [`) {
 		t.Errorf("changes does not write left (%v):\n%s", err, out)
+	}
+}
+
+// The ladder's words (set 7) have one home each, their Go table beside the ladder's type or check's words: every word
+// has its line, none repeats, the schemas' descriptions name the command that prints them and copy none of the words,
+// and bonsai check --schema prints every one.
+func TestLadderListsHaveOneHome(t *testing.T) {
+	type list struct {
+		format, field string
+		words         []Word
+	}
+	lists := []list{
+		{"ladder", "status", RungStatuses},
+		{"ladder", "captures", GitFindings},
+		{"workspace", "tests", TestForms},
+		{"workspace", "tests", TestFileWords},
+	}
+	for _, l := range lists {
+		f := MustLookup(l.format)
+		seen := map[string]bool{}
+		for _, w := range l.words {
+			if !kebab.MatchString(w.Word) || w.Means == "" || seen[w.Word] {
+				t.Errorf("%s %s: the word %q is malformed, has no meaning or repeats", l.format, l.field, w.Word)
+			}
+			seen[w.Word] = true
+			for i := 0; i < len(w.Means); i++ {
+				if w.Means[i] < 0x20 || w.Means[i] > 0x7e {
+					t.Errorf("%s: its meaning is not one line of ASCII", w.Word)
+					break
+				}
+			}
+			if !strings.Contains(f.Describe(), w.Word) {
+				t.Errorf("bonsai check --schema bonsai.%s does not print %s", l.format, w.Word)
+			}
+		}
+		desc := descriptionOf(t, f, l.field)
+		if !strings.Contains(desc, "bonsai check --schema bonsai."+l.format) {
+			t.Errorf("the schema's description of %s does not name bonsai check --schema bonsai.%s", l.field, l.format)
+		}
+		for _, w := range l.words {
+			if strings.Contains(desc, w.Word+",") || strings.Contains(desc, "`"+w.Word+"`") {
+				t.Errorf("the schema's description of %s copies the word %s: the Go table is its one home", l.field, w.Word)
+			}
+		}
+	}
+	// The statuses are the five of the plan; the tests forms are the three of spec section 9; each form has a convention.
+	if got := wordList(RungStatuses); got != "green red skipped error pending" {
+		t.Errorf("rung statuses %q", got)
+	}
+	if got := wordList(TestForms); got != "go-test-json tap junit" {
+		t.Errorf("tests forms %q", got)
+	}
+	for _, w := range TestForms {
+		c, ok := TestFileConventionOf(w.Word)
+		if !ok || c.Means == "" {
+			t.Errorf("tests form %s has no test-file convention", w.Word)
+		}
+		if w.Word != TestsJUnit && len(c.Patterns) == 0 {
+			t.Errorf("tests form %s names no test-file pattern", w.Word)
+		}
+	}
+	if len(TestFileConventions) != len(TestForms) || len(TestFileWords) != len(TestForms) {
+		t.Errorf("%d conventions for %d forms", len(TestFileConventions), len(TestForms))
+	}
+}
+
+var kebab = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
+
+func wordList(ws []Word) string {
+	var out []string
+	for _, w := range ws {
+		out = append(out, w.Word)
+	}
+	return strings.Join(out, " ")
+}
+
+// descriptionOf finds the description of the first property named field anywhere in a format's schema.
+func descriptionOf(t *testing.T, f *Format, field string) string {
+	t.Helper()
+	var found string
+	var walk func(v any)
+	walk = func(v any) {
+		o, ok := v.(schema.Object)
+		if !ok || found != "" {
+			return
+		}
+		if ps, ok := o.Get("properties"); ok {
+			if po, ok := ps.(schema.Object); ok {
+				if p, ok := po.Get(field); ok {
+					if pobj, ok := p.(schema.Object); ok && pobj.String("description") != "" {
+						found = pobj.String("description")
+						return
+					}
+				}
+				for _, m := range po {
+					walk(m.Value)
+				}
+			}
+		}
+		if it, ok := o.Get("items"); ok {
+			walk(it)
+		}
+	}
+	walk(f.Schema())
+	if found == "" {
+		t.Fatalf("no property %s in bonsai.%s", field, f.Name)
+	}
+	return found
+}
+
+// The ladder's check words are a table of their own: none is in CheckWords or PackCheckWords, each is found by
+// CheckWord, and none is about this machine. The machine-marked words of CheckWords are the ones about this machine.
+func TestLadderCheckWordsAndTheMachineMark(t *testing.T) {
+	seen := map[string]bool{}
+	for _, w := range CheckWords {
+		seen[w.Word] = true
+	}
+	for _, w := range PackCheckWords {
+		seen[w.Word] = true
+	}
+	for _, w := range LadderCheckWords {
+		if seen[w.Word] || !kebab.MatchString(w.Word) || w.Means == "" || (w.Kind != "finding" && w.Kind != "warning") ||
+			(w.Who != "agent" && w.Who != "person") || w.Machine {
+			t.Errorf("ladder check word %+v: in another table, malformed, or marked machine", w)
+		}
+		seen[w.Word] = true
+		if got, ok := CheckWord(w.Word); !ok || got != w {
+			t.Errorf("CheckWord(%s) = %+v", w.Word, got)
+		}
+		if !strings.Contains(MustLookup("check").Describe(), w.Word) {
+			t.Errorf("bonsai check --schema bonsai.check does not print %s", w.Word)
+		}
+	}
+	var machine []string
+	for _, w := range CheckWords {
+		if w.Machine {
+			machine = append(machine, w.Word)
+		}
+	}
+	want := "plugin-version plugin id-changed bonsai-path git-bash git-user machine-record claude-code-old claude-code-unknown " +
+		"same-id plugin-missing plugin-trust plugin-unchecked cache own-hooks"
+	if strings.Join(machine, " ") != want {
+		t.Errorf("machine-marked check words %v, want %s", machine, want)
+	}
+	for _, w := range PackCheckWords {
+		if w.Machine {
+			t.Errorf("pack check word %s is about a pack, not this machine", w.Word)
+		}
+	}
+	if !strings.Contains(MustLookup("check").Describe(), "about this machine, not the commit") {
+		t.Errorf("bonsai check --schema bonsai.check does not show the machine mark")
+	}
+}
+
+// The ladder's four error words (set 7) are in the table, and test-build covers the ladder.
+func TestSetSevenErrorWords(t *testing.T) {
+	for _, code := range []string{"ladder-busy", "no-task", "rung-not-defined", "main-not-verified"} {
+		w, ok := ErrorWord(code)
+		if !ok || w.Means == "" || (w.Who != "agent" && w.Who != "person") {
+			t.Errorf("the error word %s is missing or incomplete: %+v", code, w)
+		}
+	}
+	if w, _ := ErrorWord("test-build"); !strings.Contains(w.Means, "ladder") {
+		t.Errorf("test-build does not name the ladder: %s", w.Means)
+	}
+}
+
+// A climb is registered as a format: read [1], write 1 in status --json's formats; its bless is a list.
+func TestClimbIsAFormat(t *testing.T) {
+	f, ok := Lookup("bonsai.climb/1")
+	if !ok || !f.Writes || f.Major != 1 {
+		t.Fatalf("climb: %+v", f)
+	}
+	v, _ := StatusFormats().Get("bonsai.climb")
+	entry, _ := v.(schema.Object)
+	read, _ := entry.Get("read")
+	write, _ := entry.Get("write")
+	if schema.Show(read) != "[1]" || schema.Show(write) != "1" {
+		t.Errorf("status formats for climb: read %s, write %s, want [1] and 1", schema.Show(read), schema.Show(write))
+	}
+	out, err := (&Climb{Bless: []schema.Object{}, Cleaned: []string{}}).Encode()
+	if err != nil || !strings.Contains(string(out), `"bless": []`) {
+		t.Errorf("a climb with no bless writes %v:\n%s", err, out)
 	}
 }

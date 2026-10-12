@@ -27,7 +27,21 @@ type Status struct {
 	Problems      []string         `json:"problems"`
 	Checks        schema.Object    `json:"checks"` // with --full only: typed open
 	Error         *ErrorObject     `json:"error"`
+	Ladder        *StatusLadder    `json:"ladder"` // the active task's last ladder result, or null (set 7; the ladder runner fills it)
 	Extra         schema.Object    `json:"-"`
+}
+
+// StatusLadder is the active task's last ladder result at a glance (set 7): where its proof stands, without running
+// anything. Stale is true when Sha is not this checkout's HEAD.
+type StatusLadder struct {
+	Task     string        `json:"task"`
+	Path     string        `json:"path"` // project-relative, forward slashes
+	Green    bool          `json:"green"`
+	Mode     string        `json:"mode"` // local or ci
+	Sha      string        `json:"sha"`  // the commit the result proves
+	Finished string        `json:"finished"`
+	Stale    bool          `json:"stale"`
+	Extra    schema.Object `json:"-"`
 }
 
 // WorkspaceRef names a workspace: in status --json and in the changes output.

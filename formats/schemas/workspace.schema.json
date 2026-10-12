@@ -206,7 +206,7 @@
       }
     },
     "never_edit": {
-      "description": "Paths no agent ever changes, each written as the deny rule Edit(<path>) in .claude/settings.json (spec §6, §7); [] for none. Since it becomes a deny rule, a path holds no parenthesis and does not start with ~.",
+      "description": "Paths no agent ever changes, each written as the deny rule Edit(/<path>) in .claude/settings.json, anchored at the project's top folder (spec §6, §7); [] for none. Since it becomes a deny rule, a path holds no parenthesis and does not start with ~.",
       "examples": [
         [
           "work/ledger.json"
@@ -338,14 +338,14 @@
             "minimum": 1
           },
           "ratchet": {
-            "description": "The ratchet the rung feeds, a count that may not fall below its floor in ratchets (contract §11), as today's ladder names it; null when the rung has none. Today's shape is not in Bonsai's sources, so this schema gives it no type at all: any value reads (formats/README.md). The ladder runner (step 5.4) reads it and fixes its shape, in a later major if it must.",
+            "description": "The ratchet the rung feeds, a count that may not fall below its floor in ratchets (contract §11); null when the rung has none. It is the ratchet's name: a lower-case letter or underscore, then up to 39 lower-case letters, digits or underscores ([a-z_][a-z0-9_]{0,39}), as today's ladder has it. The name picks a floor in the top-level ratchets (a name with no floor there reads as 0). The ratchet's count is the rung's capture of the same name; on a rung with tests and no such capture, the number of tests its output names as passed; a ratchet with neither is a bonsai check finding and red at run time. This schema gives the field no type at all, so any value reads, and a reader holding only this schema accepts a shape Bonsai's check refuses; Bonsai's reader and bonsai check hold the form (formats/README.md, Typed open: chosen over a type here, which would be a new major).",
             "examples": [
               "tests",
               null
             ]
           },
           "capture": {
-            "description": "The patterns that pick numbers or text out of the rung's output, by name: what a ladder result shows as the rung's captures; null when the rung captures nothing. Untyped, as ratchet is: step 5.4 fixes its shape, in a later major if it must (formats/README.md).",
+            "description": "The patterns that pick numbers or text out of the rung's output, by name: what a ladder result shows as the rung's captures; null when the rung captures nothing. A mapping from a name (the form a ratchet's name has) to a pattern: a Go regular expression (RE2), matched line by line against the rung's output, whose first group is the value, a number when it reads as one and else text. Patterns written for the older ladder read the same in RE2; one that does not compile is a bonsai check finding naming it. Untyped, as ratchet is: Bonsai's reader and bonsai check hold the form (formats/README.md, Typed open).",
             "examples": [
               {
                 "tests": "([0-9]+) passed"
@@ -365,7 +365,7 @@
             ]
           },
           "tests": {
-            "description": "The form of the rung's test output, from which the runner names new tests to run on the base (spec §9): TAP, go test -json or JUnit; null when the rung prints no tests. The words for the three are step 5.4's to fix, so it is an open string (readers show an unknown word as other).",
+            "description": "The form of the rung's test output, read from the rung's standard output, from which the runner names the tests, their skips and the new tests to run on the base (spec §9); null when the rung prints no tests. An open list: its known words, one line each on what they read, and each form's test-file convention live in Bonsai's Go tables, their one home, which bonsai check --schema bonsai.workspace prints (and the reference page of lists, docs/reference/lists.md); this schema does not copy them. An unknown word means the tests are not read, and bonsai check warns, naming the known ones. A reader shows a word it does not know as other.",
             "examples": [
               null
             ],
@@ -464,7 +464,7 @@
           ],
           "properties": {
             "keep_days": {
-              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule. Any whole number from 0 up: no maximum is set, since a bound added later would be a new major, and a number past what a duration counts back (106,751 days, about 292 years) cleans nothing by age, so a huge number reads as keep.",
               "examples": [
                 30,
                 null
@@ -490,7 +490,7 @@
           }
         },
         "asks": {
-          "description": "Asks and their answers, .bonsai/local/asks/: kept by default (both null); never a day file holding an open ask.",
+          "description": "Asks and their answers, .bonsai/local/asks/: kept by default (both null); never a day file holding an open ask, nor one holding the answer or withdrawal of an ask whose filing stays (else the ask would read open again).",
           "examples": [
             {
               "keep_days": null,
@@ -504,7 +504,7 @@
           ],
           "properties": {
             "keep_days": {
-              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule. Any whole number from 0 up: no maximum is set, since a bound added later would be a new major, and a number past what a duration counts back (106,751 days, about 292 years) cleans nothing by age, so a huge number reads as keep.",
               "examples": [
                 30,
                 null
@@ -530,7 +530,7 @@
           }
         },
         "ladder": {
-          "description": "Ladder results, .bonsai/local/ladder/: keep_days after the result's finished (default 7); never the result of a task that is not done or cut.",
+          "description": "Ladder results, .bonsai/local/ladder/: keep_days after the result's finished (default 7); never the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done).",
           "examples": [
             {
               "keep_days": 7,
@@ -544,7 +544,7 @@
           ],
           "properties": {
             "keep_days": {
-              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule. Any whole number from 0 up: no maximum is set, since a bound added later would be a new major, and a number past what a duration counts back (106,751 days, about 292 years) cleans nothing by age, so a huge number reads as keep.",
               "examples": [
                 30,
                 null
@@ -584,7 +584,7 @@
           ],
           "properties": {
             "keep_days": {
-              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule. Any whole number from 0 up: no maximum is set, since a bound added later would be a new major, and a number past what a duration counts back (106,751 days, about 292 years) cleans nothing by age, so a huge number reads as keep.",
               "examples": [
                 30,
                 null
@@ -610,7 +610,7 @@
           }
         },
         "sessions": {
-          "description": "Rows of .bonsai/sessions.md: kept by default; never the rows of an open task.",
+          "description": "Rows of .bonsai/sessions.md: kept by default; never the rows of a task that is not done or cut (a row with no task is never held by this one), nor rows whose span is still in the log (the next write would add them again).",
           "examples": [
             {
               "keep_days": null,
@@ -624,7 +624,7 @@
           ],
           "properties": {
             "keep_days": {
-              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule.",
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule. Any whole number from 0 up: no maximum is set, since a bound added later would be a new major, and a number past what a duration counts back (106,751 days, about 292 years) cleans nothing by age, so a huge number reads as keep.",
               "examples": [
                 30,
                 null

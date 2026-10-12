@@ -23,7 +23,8 @@
     "needs",
     "problems",
     "checks",
-    "error"
+    "error",
+    "ladder"
   ],
   "properties": {
     "format": {
@@ -912,6 +913,88 @@
               ]
             }
           }
+        }
+      }
+    },
+    "ladder": {
+      "description": "The active task's last ladder result, so an agent reads where its proof stands without running anything (set 7): the task, the result's project-relative path, whether it was green, its mode, the commit it proves, when it finished and whether it is stale (its commit is not this checkout's HEAD). null when there is no active task or no result, and on exit 3. Bonsai's ladder runner (bonsai ladder) writes the result; status only reads it.",
+      "examples": [
+        {
+          "task": "T-0901",
+          "path": ".bonsai/local/ladder/T-0901.json",
+          "green": true,
+          "mode": "local",
+          "sha": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+          "finished": "2026-10-08T15:03:40.012Z",
+          "stale": false
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "task",
+        "path",
+        "green",
+        "mode",
+        "sha",
+        "finished",
+        "stale"
+      ],
+      "properties": {
+        "task": {
+          "description": "The active task's id, whose result this is.",
+          "examples": [
+            "T-0901"
+          ],
+          "type": "string"
+        },
+        "path": {
+          "description": "The result's project-relative path in the main checkout, forward slashes.",
+          "examples": [
+            ".bonsai/local/ladder/T-0901.json"
+          ],
+          "type": "string"
+        },
+        "green": {
+          "description": "The result's green: true when every rung the run took up was green.",
+          "examples": [
+            true,
+            false
+          ],
+          "type": "boolean"
+        },
+        "mode": {
+          "description": "The result's mode, local or ci (bonsai.ladder/1); a result whose mode is not local is never a task's proof.",
+          "examples": [
+            "local",
+            "ci"
+          ],
+          "type": "string"
+        },
+        "sha": {
+          "description": "The commit the result proves (its git.sha).",
+          "examples": [
+            "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80"
+          ],
+          "type": "string"
+        },
+        "finished": {
+          "description": "When the run finished: ISO-8601 UTC with milliseconds.",
+          "examples": [
+            "2026-10-08T15:03:40.012Z"
+          ],
+          "type": "string"
+        },
+        "stale": {
+          "description": "true when sha is not this checkout's HEAD: the result proves an older commit, so the ladder is to be climbed again.",
+          "examples": [
+            false,
+            true
+          ],
+          "type": "boolean"
         }
       }
     }

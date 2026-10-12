@@ -1,0 +1,145 @@
+{
+  "format": "bonsai.climb/1",
+  "workspace": {
+    "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+    "name": "example",
+    "root": "/srv/projects/example"
+  },
+  "task": "T-0901",
+  "mode": "local",
+  "result": ".bonsai/local/ladder/T-0901.json",
+  "sha256": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+  "ladder": {
+    "format": "bonsai.ladder/1",
+    "task": "T-0901",
+    "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+    "mode": "local",
+    "started": "2026-10-08T15:01:12.345Z",
+    "finished": "2026-10-08T15:03:40.012Z",
+    "git": {
+      "sha": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+      "branch": "t0901-dark-mode",
+      "dirty": false
+    },
+    "requested": [
+      0,
+      1,
+      2
+    ],
+    "green": true,
+    "rungs": [
+      {
+        "rung": 0,
+        "name": "guard",
+        "kind": "guard",
+        "required": true,
+        "command": null,
+        "means": "The diff stays inside the task's grants.",
+        "status": "green",
+        "reason": null,
+        "duration_ms": 41,
+        "tests": null,
+        "captures": null,
+        "ratchet": null
+      },
+      {
+        "rung": 1,
+        "name": "vet",
+        "kind": "command",
+        "required": true,
+        "command": "go vet ./...",
+        "means": "The code passes go vet.",
+        "status": "green",
+        "reason": null,
+        "duration_ms": 3120,
+        "tests": null,
+        "captures": null,
+        "ratchet": null
+      },
+      {
+        "rung": 2,
+        "name": "unit tests",
+        "kind": "command",
+        "required": true,
+        "command": "go test ./...",
+        "means": "Every unit test passes, and there are no fewer than before.",
+        "status": "green",
+        "reason": null,
+        "duration_ms": 52480,
+        "tests": {
+          "seen": 123,
+          "skipped": [],
+          "todo": []
+        },
+        "captures": {
+          "tests": 123
+        },
+        "ratchet": {
+          "name": "tests",
+          "was": 120,
+          "now": 123,
+          "ok": true,
+          "new_tests": {
+            "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+            "count": 3,
+            "failed_on_base": 3,
+            "passed_on_base": 0,
+            "not_run": 0
+          }
+        }
+      }
+    ],
+    "skipped": [],
+    "leftovers": {
+      "checkout": [],
+      "shared_deploy": [],
+      "ms": 212
+    },
+    "proof": null
+  },
+  "bless": [
+    {
+      "format": "bonsai.ask/1",
+      "id": "7e6d5c4b-3a29-4180-9f7e-6d5c4b3a2918",
+      "at": "2026-10-08T15:03:40.500Z",
+      "op": "file",
+      "key": "ladder:bless-T-0901",
+      "workspace": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+      "source": "ladder",
+      "session": null,
+      "type": "Bless",
+      "task": "T-0901",
+      "doc": null,
+      "title": "Bless T-0901's ratchets",
+      "why": "tests rose from 120 to 123; 3 new tests, all 3 failed on the base.",
+      "then_text": "Blessing raises the floor in bonsai.yaml from that run; it runs nothing.",
+      "options": [],
+      "verdict": null,
+      "data": {
+        "task": "T-0901",
+        "head": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+        "result_sha": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+        "rises": [
+          {
+            "name": "tests",
+            "was": 120,
+            "now": 123,
+            "new_tests": {
+              "base": "3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e",
+              "count": 3,
+              "failed_on_base": 3,
+              "passed_on_base": 0,
+              "not_run": 0
+            }
+          }
+        ]
+      },
+      "answer": null
+    }
+  ],
+  "cleaned": [
+    ".bonsai/local/ladder/T-0850.json"
+  ],
+  "next": null,
+  "error": null
+}

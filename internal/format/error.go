@@ -28,7 +28,8 @@ type Next struct {
 // 5.1.4b), and cmd/bonsai's tests fail on a word that is not here. Each entry says what the word means and who
 // usually takes the next step (Who: agent or person, the error object's next.who); a refusal may name the other
 // when its own next step is the other's. A later piece adds a word by adding an entry here (step 5.2.0 added
-// 5.2's four: ask-not-open, answer-own-session, label-not-defined and session-not-found); a word is added, never renamed or taken out (format review 4.5: adding one is an addition).
+// 5.2's four: ask-not-open, answer-own-session, label-not-defined and session-not-found; step 5.4.0 added the
+// ladder's four: ladder-busy, no-task, rung-not-defined and main-not-verified); a word is added, never renamed or taken out (format review 4.5: adding one is an addition).
 var ErrorWords = []Word{
 	// The command line (exit 2).
 	{Word: "unknown-command", Who: "agent", Means: "no command word was given, or one this Bonsai does not have"},
@@ -66,12 +67,18 @@ var ErrorWords = []Word{
 	{Word: "conflicts", Who: "person", Means: "files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt"},
 	// Who runs a command, and where (exit 4; step 5.3.6).
 	{Word: "person-command", Who: "person", Means: "an agent's session (CLAUDE_CODE_CHILD_SESSION set) ran a command only a person runs: init or update with --allow-exec, unlink, or an update that changes or takes out Bonsai's guard or stop line; an agent may run one only in a project in command mode, under a running task whose bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json. Nothing was written"},
-	{Word: "test-build", Who: "agent", Means: "a test build of Bonsai (stamped with its hook lines' place and a scratch folder) was asked to link, update or unlink outside its scratch folder, or was stamped with one of the two only: it writes nothing there"},
+	{Word: "test-build", Who: "agent", Means: "a test build of Bonsai (stamped with its hook lines' place and a scratch folder) was asked to link, update, unlink or run the ladder outside its scratch folder, or was stamped with one of the two only: it writes nothing there"},
 	// Asks, answers, the log's append and logs (steps 5.2.3 and 5.2.5).
 	{Word: "ask-not-open", Who: "agent", Means: "bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved, or ask --status names a key that has no ask: the message says which, and nothing was written (exit 4)"},
 	{Word: "answer-own-session", Who: "person", Means: "the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4)"},
 	{Word: "label-not-defined", Who: "agent", Means: "bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2)"},
 	{Word: "session-not-found", Who: "agent", Means: "bonsai logs --session matches no session in the log, or matches several: the message names the matches (exit 4)"},
+	// The ladder (step 5.4.0): a refusal of bonsai ladder. A stamped test build's ladder outside its scratch folder is
+	// test-build; a result that cannot be written is write-failed; a flag or value it refuses is the command line's.
+	{Word: "ladder-busy", Who: "agent", Means: "another ladder run holds this home's lock for the checkout and did not let go within the wait: nothing was run or written (exit 4); the message names the holder's process and when its budget ends, and the same command again after that is the next step"},
+	{Word: "no-task", Who: "agent", Means: "a local ladder run names no task, or the task named is none: the message carries the active-task function's reason code (no task, two running, the file unreadable, no such task), and nothing was run (exit 4)"},
+	{Word: "rung-not-defined", Who: "agent", Means: "a rung the command asked for is not in bonsai.yaml's ladder, or bonsai.yaml has no ladder: the message names the rung, and nothing was run (exit 2)"},
+	{Word: "main-not-verified", Who: "person", Means: "the project's main checkout is not verified on this machine, so no result can be written where the stop gate reads it, and nothing was run (exit 4); the person's step is bonsai update in the main checkout (contract section 13; the guard's rule of the same name)"},
 	// Part-way, and the unexpected (exit 3).
 	{Word: "partly-written", Who: "agent", Means: "the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest"},
 	{Word: "unexpected", Who: "agent", Means: "something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats"},

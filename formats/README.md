@@ -2,8 +2,8 @@
 
 This folder holds Bonsai's formats as files any program can test against: a JSON Schema for each of the ten formats
 of the formats contract (`design/contract.md` §2), the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row 29),
-the one that set 5 added (`help`, plan-5 5.1.10) and the two that set 6 added (`asks` and `logs`, plan-5 5.2.0), one
-example document for each, the **trick files**: small, deliberately tricky YAML and markdown files, each with the one
+the one that set 5 added (`help`, plan-5 5.1.10), the two that set 6 added (`asks` and `logs`, plan-5 5.2.0) and the
+one that set 7 added (`climb`, plan-5 5.4.0), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files, each with the one
 right outcome a reader must reach (accepted with this value, or refused for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
 file's bytes.
@@ -23,7 +23,7 @@ formats/
   embed.go                  embeds the schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
                                 status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help;
-                                asks, logs
+                                asks, logs; climb
   examples/<name>.json      one valid document per format, as a reader returns it
   examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
@@ -46,9 +46,10 @@ result of `init`, `update` and `unlink` with `--json`); from set 5, `help` (`bon
 every command word with its flags, exit codes and examples, the exit codes every word shares, and every `error` word
 with its meaning and usual `who`, so an agent learns the tool without reading a page); and, from set 6, `asks`
 (`bonsai.asks/1`, the `--json` of `ask`, `answer` and `asks`) and `logs` (`bonsai.logs/1`, the `--json` of `logs` and
-`log append`). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
+`log append`); and, from set 7, `climb` (`bonsai.climb/1`, the `--json` of `bonsai ladder`: one climb of the ladder,
+named for the act, since `bonsai.ladder/1` is the result's name). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
 where it lives) and a `description` and `examples` on every property. Later steps add their commands' outputs
-(`ladder`) the same way, each a new schema file: an addition.
+the same way, each a new schema file: an addition.
 
 - **A schema describes what a writer writes** (contract §2.2): every field the version knows, in the contract's fixed
   order (the order of `properties`), all of them `required`, with `null` or `[]` where a field does not apply. A
@@ -59,7 +60,8 @@ where it lives) and a `description` and `examples` on every property. Later step
   home of every list in the formats (contract §2.2, format review R2.8): Bonsai's code embeds them and keeps no
   second copy. **One kind of open list lives in Bonsai's code instead:** a list of fixed words that code reads at many
   places: the `error` object's `code`, `check`'s finding and warning `code`, and (from set 6) the log's `event` and
-  `category`. Its known words live in one Go table, their one home, which `bonsai check --schema <format>` prints (and
+  `category`; (from set 7) a ladder result's rung `status` and a `ver-git` rung's findings, and a rung's `tests` form in
+  `bonsai.yaml`, with each form's test-file convention. Its known words live in one Go table, their one home, which `bonsai check --schema <format>` prints (and
   the reference page of lists, `docs/reference/lists.md`, generated from the code by `go generate ./...`); the
   schema's description names those commands and does not copy the words, and the words in its examples are
   illustrative.
@@ -75,7 +77,7 @@ where it lives) and a `description` and `examples` on every property. Later step
   entry of kind `plugin` for a pack not installed on the machine, the Claude Code floor as a `needs` entry of kind
   `tool`, plugin drift and a swapped `bonsai` binary as `problems`; `--line` prints another output, not a field.
 - **Typed open**, because the sources do not fix their shape (plan part 0: a shape still unclear is typed open):
-  - `ladder`: a rung's `status` (a string; today's values are `green`, `red`, `pending`, `skipped`, `error`; the
+  - `ladder`: a rung's `status` (a string; its known words are a Go table, `format.RungStatuses`, since set 7; the
     contract lists none), a rung's `tests` (an object or `null`; today's inner fields are described, none required),
     `leftovers` (an object, a text or `null`, as today's three shapes).
   - `status`: `mode` (`offline`, or `full` with `--full`; an open list), each `documents` entry (only `kind` and `from`
@@ -84,11 +86,17 @@ where it lives) and a `description` and `examples` on every property. Later step
   - `lock`: each pack's `declares` (an object: its kinds are `format.DeclaresKeys`, seven today, their key names and
     inner layout are not fixed; format review 6.3).
   - `ask`: `data` (an object or `null`: a pack type's own payload).
-  - `workspace`: a ladder rung's `ratchet` and `capture` have no `type` at all, so any value reads: spec §6 names
-    them as today's rung shape, whose form is not in Bonsai's sources, and a type given now could only be widened
-    in a later major. The ladder runner (step 5.4) reads them and fixes their shape, in a later major if it must. A
-    rung's `tests` is an open string: spec §9 names its three forms (TAP, `go test -json`, JUnit) but not their
-    words, which step 5.4 fixes.
+  - `workspace`: a ladder rung's `ratchet` and `capture` have no `type` at all, so any value reads, and a rung's
+    `tests` is an open string. Set 7 fixes their shape **by description**, held by Bonsai's reader and `bonsai
+    check` (step 5.4.2), not by the schema: `ratchet` is a name (`[a-z_][a-z0-9_]{0,39}`) or `null`, picking a floor
+    in `ratchets` (none reads as 0), and its count is the rung's capture of the same name, or on a rung with `tests`
+    and no such capture the number of tests the output names as passed; `capture` is a map from such a name to a Go
+    (RE2) pattern, matched line by line against the rung's output, whose first group is the value; `tests` is one of
+    the forms in `format.TestForms` (`go-test-json`, `tap`, `junit`), read from the rung's standard output, and an
+    unknown word means the tests are not read and `check` warns, naming the known ones. A type in the schema was
+    refused: the compare calls a `type` added a change, so it would need `bonsai.workspace/2`, a new major and a
+    person's call (contract §2.2), for a shape today's files already have. **What lost:** a reader holding only the JSON
+    Schema (the studio's) accepts a shape Bonsai's `check` refuses.
   - The workspace id is `ws-` and 26 lowercase base32 characters (contract §3); which base32 alphabet is not fixed,
     so the schemas take `[a-z0-9]{26}`.
 - **The binary's two names, chosen in set 6.** Spec §16 row 27 adds the `bonsai` binary's own path and SHA-256 to the
@@ -197,14 +205,43 @@ where it lives) and a `description` and `examples` on every property. Later step
     a lock written before set 4 reads its pack's `path` as unknown, not the root (above); `status`'s `mode`, `checks`
     and `formats` (every format with a major, so `bonsai.error` is not in it); `check`'s two code tables and `file`
     under `--pack`; `labels.yaml` and `lanes.yaml` carry a comment on every key, as a pack's files must.
+- **Set 7** (plan-5 5.4.0, the ladder's shapes and lists, set before the runner is built), every change an addition:
+  - **`bonsai.climb/1`**, a new schema with an example: the `--json` of `bonsai ladder`. `format`; `workspace` (null
+    when the command refused before reading one); `task` (or null); `mode` (`local`, `ci` or null); `result`, the
+    project-relative path written, or null; `sha256` of the result file's bytes (64 lower-case hex), or null; `ladder`,
+    the result as written (`bonsai.ladder/1`; an open object here, as `asks` and `logs` hold theirs), or null; `bless`,
+    **a list** of the ask records this run wrote (`bonsai.ask/1`, each a `file` or a `resolve`; one run can resolve
+    several open `ladder:bless-*` asks and file one more), `[]` when none; `cleaned`, the project-relative paths the
+    cleaner removed; `next`, `{do, who}` as the `error` object's, the step after a red climb (the first red rung's fix,
+    then the climb again), or null when green; `error`. A reader of `status --json` finds it in `formats` (`read` `[1]`,
+    `write` 1).
+  - **`new_tests`** in a ladder result's ratchet ends with `passed_on_base` and `not_run`, beside `count` and
+    `failed_on_base`; its `base` is `""` when no base could be found (a `null` would retype it, a new major).
+  - **`status --json`'s `ladder`**, after `error`: the active task's last result `{task, path, green, mode, sha,
+    finished, stale}`, `stale` true when `sha` is not this checkout's HEAD; null when there is no active task or no
+    result. An agent reads where its proof stands without running anything.
+  - **Go tables for the ladder's words**, printed by `bonsai check --schema bonsai.ladder` and `bonsai.workspace` and
+    listed on the reference page: a rung's `status` words, git integrity's finding names (the keys of a `ver-git`
+    rung's `captures`), the `tests` forms and each form's test-file convention. The schemas' descriptions name those
+    commands and copy no word. Beside them, in `check`: the ladder-shape words (a table of their own, `format.LadderCheckWords`) and a **Machine** mark on every `check` word that is about this machine rather than the commit.
+    Four error words are new (`ladder-busy`, `no-task`, `rung-not-defined`, `main-not-verified`), and the existing
+    `test-build` now covers the ladder.
+  - **Descriptions only**: a rung's `ratchet`, `capture` and `tests` (above, "Typed open"); a failed test's `run` and a
+    `ver-git` rung's `captures`; what a `ladder` log record carries (`target` the result's path, `text` `sha256:` and
+    its hash, `ok` its `green`, `task`, `kind` its `mode`, `category` `Ladder`, `bonsai_path` and `bonsai_sha256` the
+    runner's own); `bonsai_path` (the recorder and the guard both write it from a tilde and a slash under the home; the guard only on
+    the record that made the file); cleaning's two protections for `asks`, `ladder` and `sessions`; `keep_days` (any
+    whole number from 0 up, **no maximum**: a bound is a new major, and a number past what a duration counts back,
+    about 292 years, cleans nothing by age); `never_edit`'s rule `Edit(/<path>)`; the hook line the `help` and `changes`
+    examples quote, in today's form.
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,
   then lower-case letters, digits and dashes, as Bonsai's reader of `pack.yaml` and `bonsai.yaml` holds it); a
   document kind's name (a key's form, contract §2.4, since it is a key in `bonsai.yaml`); a memory id (`M-` and a
   slug); a fixed word (`error` and finding codes); the session id's first 8 characters; a pack's `source` and `ref`,
-  which never start with `-` (git would read an option); a `never_edit` path, which as the deny rule `Edit(<path>)`
-  holds no parenthesis and does not start with `~`.
+  which never start with `-` (git would read an option); a `never_edit` path, which as the deny rule `Edit(/<path>)`
+  (anchored at the project's top folder) holds no parenthesis and does not start with `~`.
 
 ## The examples
 
@@ -468,5 +505,6 @@ Anything else fails: a schema file removed; a property removed, renamed or moved
 The base is a constant beside the test (`schemaBase`): the commit of the set before, moved forward in each set's own
 commit, and a second test holds it there: the base's `manifest.json` has `set` one below this one's. A checkout
 without the base commit (no git, or a shallow clone) skips the test with that reason, except under CI (the `CI`
-variable set), where it fails; Bonsai's CI checks out the history it needs. From step 5.4 the same test
-is a rung of Bonsai's own ladder.
+variable set) or under Bonsai's ladder (the `BONSAI_LADDER` variable set, which the ladder runner puts in every rung's
+environment), where it fails; Bonsai's CI checks out the history it needs, and a rung of Bonsai's own ladder can never
+pass by skipping.

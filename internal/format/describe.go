@@ -137,7 +137,11 @@ func wordsText(l List) string {
 		case "warning":
 			kind = "a warning (never the exit code): "
 		}
-		ws = append(ws, w.Word+" ("+kind+w.Means+who+")")
+		machine := ""
+		if w.Machine {
+			machine = "; about this machine, not the commit"
+		}
+		ws = append(ws, w.Word+" ("+kind+w.Means+who+machine+")")
 	}
 	return "known words (" + l.Table + ", their one home; a reader shows any other as other): " + strings.Join(ws, "; ")
 }

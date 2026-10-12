@@ -15,8 +15,13 @@ error words.
 - Exit codes
 - Error words
 - Check words
+- Check words about the ladder's shape
 - Check --pack words
 - Check words later steps build
+- Rung statuses
+- Tests forms
+- Test files by tests form
+- Git integrity findings
 - Ask types
 - Active task: reasons there is none
 - Generated kinds
@@ -119,11 +124,15 @@ error words.
 | `needs-allow-exec` | person | the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written |
 | `conflicts` | person | files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt |
 | `person-command` | person | an agent's session (CLAUDE_CODE_CHILD_SESSION set) ran a command only a person runs: init or update with --allow-exec, unlink, or an update that changes or takes out Bonsai's guard or stop line; an agent may run one only in a project in command mode, under a running task whose bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json. Nothing was written |
-| `test-build` | agent | a test build of Bonsai (stamped with its hook lines' place and a scratch folder) was asked to link, update or unlink outside its scratch folder, or was stamped with one of the two only: it writes nothing there |
+| `test-build` | agent | a test build of Bonsai (stamped with its hook lines' place and a scratch folder) was asked to link, update, unlink or run the ladder outside its scratch folder, or was stamped with one of the two only: it writes nothing there |
 | `ask-not-open` | agent | bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved, or ask --status names a key that has no ask: the message says which, and nothing was written (exit 4) |
 | `answer-own-session` | person | the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4) |
 | `label-not-defined` | agent | bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2) |
 | `session-not-found` | agent | bonsai logs --session matches no session in the log, or matches several: the message names the matches (exit 4) |
+| `ladder-busy` | agent | another ladder run holds this home's lock for the checkout and did not let go within the wait: nothing was run or written (exit 4); the message names the holder's process and when its budget ends, and the same command again after that is the next step |
+| `no-task` | agent | a local ladder run names no task, or the task named is none: the message carries the active-task function's reason code (no task, two running, the file unreadable, no such task), and nothing was run (exit 4) |
+| `rung-not-defined` | agent | a rung the command asked for is not in bonsai.yaml's ladder, or bonsai.yaml has no ladder: the message names the rung, and nothing was run (exit 2) |
+| `main-not-verified` | person | the project's main checkout is not verified on this machine, so no result can be written where the stop gate reads it, and nothing was run (exit 4); the person's step is bonsai update in the main checkout (contract section 13; the guard's rule of the same name) |
 | `partly-written` | agent | the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest |
 | `unexpected` | agent | something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats |
 
@@ -132,51 +141,68 @@ error words.
 - Open list.
 - Defined in: format.CheckWords (internal/format/check.go).
 - Printed in a project by: `bonsai check --schema bonsai.check`.
-- The code of a finding (makes `check` exit 1, and is a problem in `status --json`) or a warning (printed, never the exit code); who is who usually takes the next step.
+- The code of a finding (makes `check` exit 1, and is a problem in `status --json`) or a warning (printed, never the exit code); who is who usually takes the next step. Machine says the word is about this machine rather than the commit (the home, the PATH, Claude Code and its plugins): rung 0 does not judge it, since a proof is of a commit.
 
-| Word | Kind | Who | Means |
-|---|---|---|---|
-| `config` | finding | person | bonsai.yaml is not one Bonsai reads |
-| `lock` | finding | person | .bonsai/lock.json is missing or not one Bonsai reads |
-| `packs` | finding | person | bonsai.yaml and the lock name other packs, sources, refs or folders |
-| `changed` | finding | person | a file the lock lists was edited: a pack file, Bonsai's block in CLAUDE.md, or Bonsai's lines in .claude/settings.json |
-| `missing` | finding | person | a file the lock lists is gone |
-| `gitignore` | finding | person | .bonsai/.gitignore is missing or changed, so .bonsai/local/ could be committed |
-| `local` | finding | agent | git tracks or has staged a file from .bonsai/local/, which is never committed |
-| `format0` | finding | agent | a format-0 file the lock's format0 list fixes changed or is gone (contract section 2.3) |
-| `format0-new` | finding | agent | a task, run report or STATE file with no format: line that is not on the lock's format0 list: it takes a format: line first (contract section 2.3) |
-| `document` | finding | agent | a file of one of Bonsai's kinds (task, run, state, memory, the two tables) does not read under its format, 0 or 1 |
-| `label` | finding | agent | a label's value is not of the kind its definition says, or it is on a kind of document its definition does not name (contract section 5.2) |
-| `label-twice` | finding | person | two sources (packs, or a file attached on this machine) define one label name (contract section 5.1) |
-| `approve-first` | finding | person | a task in a lane with approve_first reached running, verify or done without reading approved since it last read todo or plan, as git history shows (contract section 6) |
-| `absolute-path` | finding | agent | a committed Bonsai file (bonsai.yaml, a document of one of Bonsai's kinds) holds an absolute path in a field, a pack's source among them unless it is a remote URL (contract section 2.6; spec section 14, check 2) |
-| `block-size` | finding | person | Bonsai's block in CLAUDE.md is over its fixed 40 lines (spec section 6) |
-| `memory-index-size` | finding | agent | the memory index is over its fixed 120 lines or 12 KB (spec section 10) |
-| `memory-note-size` | finding | agent | a memory note is over 4 KB (spec section 10) |
-| `missing-path` | finding | agent | a project path named in CLAUDE.md, STATE or a memory note does not exist (Bonsai's own block left out: the lock checks it) |
-| `secret` | finding | agent | a memory note or the memory index in the working tree holds a secret-shaped string, as Bonsai's redactor finds one: the finding names the note, the line and the kind of secret (the secret kinds' list), never the value; a person decides whether to rotate it (spec section 6) |
-| `settings-rule` | finding | person | a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own |
-| `hooks-off` | finding | person | disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them |
-| `settings-env` | finding | person | the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: PATH, BASH_ENV, ENV, CLAUDE_CODE_SHELL_PREFIX, CLAUDE_CODE_GIT_BASH_PATH, CLAUDE_PROJECT_DIR, CLAUDE_CODE_STOP_HOOK_BLOCK_CAP, CLAUDE_CODE_CHILD_SESSION, or any name starting BONSAI_; the finding names the file and the name, never the value (step 5.3.6) |
-| `plugin-version` | finding | person | a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5) |
-| `plugin` | finding | person | plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5) |
-| `id-changed` | finding | person | bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3) |
-| `bonsai-path` | finding | person | the bonsai on the PATH is not the installed one that install.json records (spec section 3) |
-| `git-bash` | finding | person | on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run (step 5.3.6) |
-| `git-user` | finding | person | on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write (step 5.3.6) |
-| `machine-record` | finding | person | a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here (step 5.3.6) |
-| `claude-code-old` | warning | person | Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7) |
-| `claude-code-unknown` | warning | person | Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read) |
-| `same-id` | warning | person | another checkout on this machine holds the same workspace id (contract section 3) |
-| `run-reports` | warning | person | run reports are past bonsai.yaml's generated.run rule, listed for a person to delete (spec section 6) |
-| `approve-first-unchecked` | warning | agent | approve_first was not checked: git history is not available (a shallow clone) or could not be read; never passed |
-| `plugin-missing` | warning | person | Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has) |
-| `plugin-trust` | warning | person | Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet |
-| `plugin-unchecked` | warning | person | this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread) |
-| `cache` | warning | person | a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked |
-| `tables` | warning | agent | a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5) |
-| `local-unchecked` | warning | agent | git ls-files failed, so files from .bonsai/local/ in git's index were not looked for |
-| `own-hooks` | warning | person | Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1) |
+| Word | Kind | Who | Machine | Means |
+|---|---|---|---|---|
+| `config` | finding | person | - | bonsai.yaml is not one Bonsai reads |
+| `lock` | finding | person | - | .bonsai/lock.json is missing or not one Bonsai reads |
+| `packs` | finding | person | - | bonsai.yaml and the lock name other packs, sources, refs or folders |
+| `changed` | finding | person | - | a file the lock lists was edited: a pack file, Bonsai's block in CLAUDE.md, or Bonsai's lines in .claude/settings.json |
+| `missing` | finding | person | - | a file the lock lists is gone |
+| `gitignore` | finding | person | - | .bonsai/.gitignore is missing or changed, so .bonsai/local/ could be committed |
+| `local` | finding | agent | - | git tracks or has staged a file from .bonsai/local/, which is never committed |
+| `format0` | finding | agent | - | a format-0 file the lock's format0 list fixes changed or is gone (contract section 2.3) |
+| `format0-new` | finding | agent | - | a task, run report or STATE file with no format: line that is not on the lock's format0 list: it takes a format: line first (contract section 2.3) |
+| `document` | finding | agent | - | a file of one of Bonsai's kinds (task, run, state, memory, the two tables) does not read under its format, 0 or 1 |
+| `label` | finding | agent | - | a label's value is not of the kind its definition says, or it is on a kind of document its definition does not name (contract section 5.2) |
+| `label-twice` | finding | person | - | two sources (packs, or a file attached on this machine) define one label name (contract section 5.1) |
+| `approve-first` | finding | person | - | a task in a lane with approve_first reached running, verify or done without reading approved since it last read todo or plan, as git history shows (contract section 6) |
+| `absolute-path` | finding | agent | - | a committed Bonsai file (bonsai.yaml, a document of one of Bonsai's kinds) holds an absolute path in a field, a pack's source among them unless it is a remote URL (contract section 2.6; spec section 14, check 2) |
+| `block-size` | finding | person | - | Bonsai's block in CLAUDE.md is over its fixed 40 lines (spec section 6) |
+| `memory-index-size` | finding | agent | - | the memory index is over its fixed 120 lines or 12 KB (spec section 10) |
+| `memory-note-size` | finding | agent | - | a memory note is over 4 KB (spec section 10) |
+| `missing-path` | finding | agent | - | a project path named in CLAUDE.md, STATE or a memory note does not exist (Bonsai's own block left out: the lock checks it) |
+| `secret` | finding | agent | - | a memory note or the memory index in the working tree holds a secret-shaped string, as Bonsai's redactor finds one: the finding names the note, the line and the kind of secret (the secret kinds' list), never the value; a person decides whether to rotate it (spec section 6) |
+| `settings-rule` | finding | person | - | a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own |
+| `hooks-off` | finding | person | - | disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them |
+| `settings-env` | finding | person | - | the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: PATH, BASH_ENV, ENV, CLAUDE_CODE_SHELL_PREFIX, CLAUDE_CODE_GIT_BASH_PATH, CLAUDE_PROJECT_DIR, CLAUDE_CODE_STOP_HOOK_BLOCK_CAP, CLAUDE_CODE_CHILD_SESSION, or any name starting BONSAI_; the finding names the file and the name, never the value (step 5.3.6) |
+| `plugin-version` | finding | person | yes | a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5) |
+| `plugin` | finding | person | yes | plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5) |
+| `id-changed` | finding | person | yes | bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3) |
+| `bonsai-path` | finding | person | yes | the bonsai on the PATH is not the installed one that install.json records (spec section 3) |
+| `git-bash` | finding | person | yes | on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run (step 5.3.6) |
+| `git-user` | finding | person | yes | on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write (step 5.3.6) |
+| `machine-record` | finding | person | yes | a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here (step 5.3.6) |
+| `claude-code-old` | warning | person | yes | Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7) |
+| `claude-code-unknown` | warning | person | yes | Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read) |
+| `same-id` | warning | person | yes | another checkout on this machine holds the same workspace id (contract section 3) |
+| `run-reports` | warning | person | - | run reports are past bonsai.yaml's generated.run rule, listed for a person to delete (spec section 6) |
+| `approve-first-unchecked` | warning | agent | - | approve_first was not checked: git history is not available (a shallow clone) or could not be read; never passed |
+| `plugin-missing` | warning | person | yes | Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has) |
+| `plugin-trust` | warning | person | yes | Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet |
+| `plugin-unchecked` | warning | person | yes | this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread) |
+| `cache` | warning | person | yes | a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked |
+| `tables` | warning | agent | - | a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5) |
+| `local-unchecked` | warning | agent | - | git ls-files failed, so files from .bonsai/local/ in git's index were not looked for |
+| `own-hooks` | warning | person | yes | Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1) |
+
+## Check words about the ladder's shape
+
+- Open list.
+- Defined in: format.LadderCheckWords (internal/format/check.go).
+- Printed in a project by: `bonsai check --schema bonsai.check`.
+- The code of a finding or a warning about the ladder in bonsai.yaml (plan-5 5.4.0; the checks are 5.4.2's), in the same open list as the check words above; who is who usually takes the next step.
+
+| Word | Kind | Who | Machine | Means |
+|---|---|---|---|---|
+| `rung-twice` | finding | person | - | two rungs of bonsai.yaml's ladder carry one number, so a task's bonsai.ladder and the ladder_floor cannot name one of them |
+| `floor-no-rung` | finding | person | - | ladder_floor names a rung number that no rung of the ladder has |
+| `ratchet-no-rung` | finding | person | - | a floor in bonsai.yaml's ratchets that no rung's ratchet names, so it holds back nothing |
+| `capture-pattern` | finding | person | - | a rung's capture holds a pattern that does not compile as a Go (RE2) regular expression: the finding names the rung, the capture and the error |
+| `ratchet-no-count` | finding | person | - | a rung's ratchet has no count: no capture of the same name, and the rung has no tests form to count passed tests from |
+| `rung-bash` | finding | person | - | a rung's command calls bash by name (spec section 3), so it would run a different shell on Windows than elsewhere |
+| `tests-unknown` | warning | person | - | a rung's tests is a word Bonsai does not know, so its tests are not read: the warning names the known ones (TestForms, bonsai check --schema bonsai.workspace) |
 
 ## Check --pack words
 
@@ -209,6 +235,63 @@ error words.
 | Word | Built in | Means |
 |---|---|---|
 | `stranded` | step 5.6 | a machine folder stranded under an old path (contract section 3) |
+
+## Rung statuses
+
+- Open list.
+- Defined in: format.RungStatuses (internal/format/ladder.go).
+- Printed in a project by: `bonsai check --schema bonsai.ladder`.
+- How a rung of a ladder result ended, in `rungs[].status`; a reader shows a word it does not know as other.
+
+| Word | Means |
+|---|---|
+| `green` | the rung ran and passed |
+| `red` | the rung ran and failed: its exit, its tests, its ratchet's count or its timeout; the reason says which |
+| `skipped` | the rung did not run: an earlier required rung was red, or the run did not ask for it |
+| `error` | the rung could not run or its outcome could not be read (the command did not start, a test output did not parse, a ver-git rung could not read git) |
+| `pending` | a rung not built yet, which today's results hold; Bonsai's runner never writes it |
+
+## Tests forms
+
+- Open list.
+- Defined in: format.TestForms (internal/format/ladder.go).
+- Printed in a project by: `bonsai check --schema bonsai.workspace`.
+- The form of a rung's test output in bonsai.yaml (`ladder[].tests`); an unknown word means the tests are not read, and `check` warns.
+
+| Word | Means |
+|---|---|
+| `go-test-json` | the rung's standard output is go test -json: one JSON event per line, tests named by package and test, subtests by their path |
+| `tap` | the rung's standard output is TAP, as node's test runner prints it (node --test --test-reporter=tap): ok and not ok lines, subtests indented |
+| `junit` | the rung's standard output is a JUnit XML report: testcase elements with their classname, name and file, failures and skips inside |
+
+## Test files by tests form
+
+- Closed list.
+- Defined in: format.TestFileConventions (internal/format/ladder.go).
+- Printed in a project by: `bonsai check --schema bonsai.workspace`.
+- Which files are a project's test files for each tests form: what new tests must fail on the base reads (5.4.5), and git integrity's changed-test-file finding (5.4.6). Patterns are project-relative globs with forward slashes (`**` is a whole segment); a path matching any is a test file.
+
+| Form | Patterns | Means |
+|---|---|---|
+| `go-test-json` | `**/*_test.go`, `**/testdata/**` | the *_test.go files, and the files under a package's testdata folder |
+| `tap` | `**/*.test.js`, `**/*-test.js`, `**/*_test.js`, `**/test-*.js`, `**/test.js`, `**/test/**/*.js`, `**/*.test.mjs`, `**/*-test.mjs`, `**/*_test.mjs`, `**/test-*.mjs`, `**/test.mjs`, `**/test/**/*.mjs`, `**/*.test.cjs`, `**/*-test.cjs`, `**/*_test.cjs`, `**/test-*.cjs`, `**/test.cjs`, `**/test/**/*.cjs`, `**/*.test.ts`, `**/*-test.ts`, `**/*_test.ts`, `**/test-*.ts`, `**/test.ts`, `**/test/**/*.ts` | node's test runner's default patterns, for .js, .mjs, .cjs and .ts: *.test.*, *-test.*, *_test.*, test-*.*, test.*, and files under a test folder |
+| `junit` | the files the report names | the files the report's testcase elements name (their file attribute); with none named, the test files cannot be told, and the check is not run |
+
+## Git integrity findings
+
+- Open list.
+- Defined in: format.GitFindings (internal/format/ladder.go).
+- Printed in a project by: `bonsai check --schema bonsai.ladder`.
+- The names a `ver-git` rung gives what it found, as keys of the rung's `captures`; the rung informs a verifier and never turns red for one.
+
+| Word | Means |
+|---|---|
+| `test-file-changed` | a test file (by the rung's tests form, TestFileConventions) differs between the task's base and the working tree |
+| `assume-unchanged` | the index marks a file assume-unchanged, so git stops looking for edits to it |
+| `skip-worktree` | the index marks a file skip-worktree, so git keeps the index's copy whatever the working tree holds |
+| `exclude-edited` | .git/info/exclude differs from the hash the task's last climb recorded, so files may be hidden from git status |
+| `stash-added` | the stash holds more entries than the task's last climb recorded |
+| `base-rewritten` | the task's recorded base commit is no longer in HEAD's history |
 
 ## Ask types
 
