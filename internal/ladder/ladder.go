@@ -172,7 +172,7 @@ func (o Options) nested() bool { return o.Getenv(rungjob.LadderEnv) == "1" }
 // prepare does the steps before a rung (this package's comment, steps 1 to 3 and 5): where, the task, the rungs and
 // the base. It returns the climb, partly filled when it refuses.
 func prepare(o Options) (*Climb, *engine.Error) {
-	c := &Climb{o: o, CI: o.CI, Getenv: o.Getenv, Now: o.Now, started: o.Now()}
+	c := &Climb{o: o, CI: o.CI, Getenv: o.Getenv, Now: o.Now}
 	dir := o.Dir
 	if o.Root != "" {
 		dir = o.Root

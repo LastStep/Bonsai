@@ -34,7 +34,7 @@ type Climb struct {
 	Now       func() time.Time      // the climb's clock
 
 	o          Options
-	started    time.Time
+	started    time.Time            // when the first rung's climb began, once the lock was taken
 	workspace  *format.WorkspaceRef // the climb document's workspace
 	unverified string               // under --ci, why Main is not verified ("" when it is)
 	rungs      []format.Rung        // the rungs climbed, in number order (bonsai.yaml's order within one number)

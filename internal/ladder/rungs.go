@@ -49,6 +49,7 @@ var jsonNumber = sync.OnceValue(func() *regexp.Regexp {
 
 // climb climbs the rungs and reads git at the start and the end (this package's comment, steps 6 and 8).
 func (c *Climb) climb() {
+	c.started = c.Now()
 	c.git = gitState(c.Root)
 	c.git.Dirty = treeDirty(c)
 	c.printHeader()
