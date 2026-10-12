@@ -28,7 +28,7 @@ func TestHoldLockHelper(t *testing.T) {
 	if home == "" {
 		return
 	}
-	c := &Climb{Home: home, Root: home, o: Options{}.withDefaults()}
+	c := &Climb{Home: home, Root: home, o: Options{Getenv: noEnv}.withDefaults()}
 	if _, e := takeLock(c); e != nil {
 		os.Exit(3)
 	}
@@ -36,11 +36,15 @@ func TestHoldLockHelper(t *testing.T) {
 	time.Sleep(time.Hour)
 }
 
+// noEnv is the environment of a test's own lock holder: empty, so a holder never reads as a nested climb (one that
+// takes no lock) when the tests themselves run inside a ladder's rung, whose environment holds BONSAI_LADDER=1.
+func noEnv(string) string { return "" }
+
 // holdLock takes the lock of a fixture's home, as a climb with a budget of budget s would, until release is called.
 func holdLock(t *testing.T, f *fx, budget int) func() {
 	t.Helper()
 	timeout := int64(budget)
-	c := &Climb{Home: f.home, Root: f.root, o: Options{LockPoll: f.lockPoll, LockGrace: f.lockGrace}.withDefaults()}
+	c := &Climb{Home: f.home, Root: f.root, o: Options{Getenv: noEnv, LockPoll: f.lockPoll, LockGrace: f.lockGrace}.withDefaults()}
 	c.rungs = append(c.rungs, format.Rung{Rung: 1, Kind: KindCommand, TimeoutS: &timeout})
 	release, e := takeLock(c)
 	if e != nil {
@@ -166,7 +170,7 @@ func TestLockOfADeadHolder(t *testing.T) {
 func TestLockTwoHomes(t *testing.T) {
 	f := lockFixture(t)
 	other := t.TempDir()
-	c := &Climb{Home: other, Root: other, o: Options{}.withDefaults()}
+	c := &Climb{Home: other, Root: other, o: Options{Getenv: noEnv}.withDefaults()}
 	release, e := takeLock(c)
 	if e != nil {
 		t.Fatal(e)
