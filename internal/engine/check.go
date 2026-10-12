@@ -13,6 +13,8 @@ package engine
 //   - check.go: bonsai.yaml and the lock (config, lock, packs); each file the lock lists (changed, missing; a once or
 //     kept file is the project's); plugin drift in the local settings files (plugin, plugins.go); the lock's format0
 //     list (format0); .bonsai/.gitignore and .bonsai/local/ in git's index (gitignore, local);
+//   - checkladder.go: the ladder's shape in bonsai.yaml (rung-twice, floor-no-rung, ratchet-no-rung, capture-pattern,
+//     ratchet-no-count, rung-bash, tests-unknown: format.LadderCheckWords);
 //   - checkdocs.go: the documents of Bonsai's kinds (format0-new, document, label, absolute-path), the labels in force
 //     (label-twice), the budgets (block-size, memory-index-size, memory-note-size), the paths CLAUDE.md, STATE and the
 //     memory notes name (missing-path), and the run reports past generated.run's rule (run-reports);
@@ -156,9 +158,10 @@ func (r *CheckResult) missingLockNext() string {
 	return "link the project again from bonsai.yaml (a pack's code also needs --allow-exec, a person's consent, which init names), run: bonsai init --yes"
 }
 
-// checkProject runs the checks that need no lock: the documents, the settings files, this machine's record and the
+// checkProject runs the checks that need no lock: the ladder's shape, the documents, the settings files, this machine's record and the
 // PATH, Git Bash on Windows, .bonsai/.gitignore and .bonsai/local/.
 func (r *CheckResult) checkProject() {
+	r.checkLadder()
 	r.checkDocuments()
 	r.checkSecrets()
 	r.checkTables()
