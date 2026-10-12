@@ -5,6 +5,8 @@ package newtests
 // the inputs refused before anything runs, and the words.
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -219,5 +221,53 @@ func TestWords(t *testing.T) {
 		if got := c.r.Summary(); got != c.lines[0] {
 			t.Errorf("Summary %q", got)
 		}
+	}
+}
+
+// Copying the branch's test files in: a file copied over the base's, a deleted one removed, one gone from the working
+// tree removed too; never through a link or a file the base holds where a folder should be.
+func TestCopyIn(t *testing.T) {
+	root, wt, outside := t.TempDir(), t.TempDir(), t.TempDir()
+	tr := &tree{dir: wt}
+	put := func(dir, rel, text string) {
+		p := filepath.Join(dir, filepath.FromSlash(rel))
+		must(t, os.MkdirAll(filepath.Dir(p), 0o755))
+		must(t, os.WriteFile(p, []byte(text), 0o644))
+	}
+	read := func(dir, rel string) string {
+		b, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(rel)))
+		if err != nil {
+			return "<none>"
+		}
+		return string(b)
+	}
+	put(root, "a/x_test.go", "new")
+	put(wt, "a/x_test.go", "old")
+	put(wt, "a/gone_test.go", "old")
+	put(wt, "a/missing_test.go", "old")
+	must(t, tr.copyIn(root, []change{{path: "a/x_test.go"}, {path: "a/gone_test.go", deleted: true},
+		{path: "a/missing_test.go"}, {path: "b/deep/new_test.go"}}))
+	if read(wt, "a/x_test.go") != "new" || read(wt, "a/gone_test.go") != "<none>" || read(wt, "a/missing_test.go") != "<none>" {
+		t.Errorf("copied %q, deleted %q, missing %q", read(wt, "a/x_test.go"), read(wt, "a/gone_test.go"), read(wt, "a/missing_test.go"))
+	}
+
+	put(wt, "f", "a file where a folder should be")
+	put(root, "f/y_test.go", "new")
+	if err := tr.copyIn(root, []change{{path: "f/y_test.go"}}); err == nil || !strings.Contains(err.Error(), "not a folder") {
+		t.Errorf("through a file: %v", err)
+	}
+
+	if err := os.Symlink(outside, filepath.Join(wt, "link")); err != nil {
+		t.Skipf("a symbolic link cannot be made here (Windows without the privilege): %v", err)
+	}
+	put(root, "link/z_test.go", "new")
+	put(outside, "kept_test.go", "outside")
+	for _, c := range []change{{path: "link/z_test.go"}, {path: "link/kept_test.go", deleted: true}} {
+		if err := tr.copyIn(root, []change{c}); err == nil || !strings.Contains(err.Error(), "as a link") {
+			t.Errorf("%+v through a link: %v", c, err)
+		}
+	}
+	if read(outside, "z_test.go") != "<none>" || read(outside, "kept_test.go") != "outside" {
+		t.Errorf("a copy or a removal went through the link")
 	}
 }

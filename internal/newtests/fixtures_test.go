@@ -338,6 +338,16 @@ func sleepFor(n int) string {
 
 const rise = 7 // the ratchet's rise every fixture passes: the count when the new tests cannot be named
 
+// stopOnceStarted stops a check once its base_setup has written started.txt in the base worktree (a minute at most).
+func stopOnceStarted(tmp string, stop func()) {
+	defer stop()
+	for end := time.Now().Add(time.Minute); time.Now().Before(end); time.Sleep(20 * time.Millisecond) {
+		if m, _ := filepath.Glob(filepath.Join(tmp, tempPrefix+"*", treeName, "started.txt")); len(m) > 0 {
+			return
+		}
+	}
+}
+
 func TestForms(t *testing.T) {
 	for _, f := range forms() {
 		t.Run(f.name, func(t *testing.T) {
@@ -432,11 +442,11 @@ func TestForms(t *testing.T) {
 
 			t.Run("a stop", func(t *testing.T) {
 				in := in
-				in.Rung = rungOf(f.command, f.name, sleepFor(30), 60)
+				in.Rung = rungOf(f.command, f.name, "echo started > started.txt && "+sleepFor(30), 60)
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				in.Stop = ctx
-				time.AfterFunc(1500*time.Millisecond, cancel)
+				go stopOnceStarted(tmp, cancel)
 				r := checked(t, tmp, in)
 				if r.Named || r.NewTests.NotRun != rise {
 					t.Fatalf("got %+v, named %v", r.NewTests, r.Named)
@@ -558,5 +568,30 @@ func TestSweep(t *testing.T) {
 	must(t, os.RemoveAll(running))
 	if after := git(t, root, "worktree", "list", "--porcelain"); after != before {
 		t.Errorf("git's worktrees:\n%s\nwas\n%s", after, before)
+	}
+}
+
+// A stop at any moment of the check (making the worktree, either base run, the removal) leaves no worktree behind.
+func TestStopAtAnyMoment(t *testing.T) {
+	f := forms()[0]
+	f.need(t)
+	tmp := isolate(t)
+	root, base := f.repo(t, nil, nil)
+	head := headRun(t, root, f.command, f.name)
+	ms := time.Millisecond
+	for _, d := range []time.Duration{0, 5 * ms, 10 * ms, 20 * ms, 40 * ms, 60 * ms, 100 * ms, 150 * ms, 250 * ms, 400 * ms,
+		700 * ms, time.Second, 2 * time.Second} {
+		t.Run(d.String(), func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			time.AfterFunc(d, cancel)
+			r := checked(t, tmp, Input{Root: root, Rung: rungOf(f.command, f.name, "", 0), Base: base, Head: head, Rise: rise, Stop: ctx})
+			if r.Why != "" && !strings.Contains(r.Why, "stopped") {
+				t.Errorf("why %q", r.Why)
+			}
+			for _, n := range r.Notes {
+				t.Logf("note: %s", n)
+			}
+		})
 	}
 }

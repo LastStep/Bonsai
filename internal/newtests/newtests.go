@@ -40,9 +40,11 @@
 //     branch adds does not build at the base, which proves nothing about the base), and every one when an old test
 //     failed, or the run timed out, was stopped or did not start.
 //
-// Then the worktree is removed (git worktree remove --force, the folder removed with Windows' busy retry, git worktree
-// prune when that failed), always: after a red run, a timeout, a stop, or a panic during the check, with a context of
-// its own so a stop cannot cut the removal short. A worktree left by a check whose process was killed (SIGKILL,
+// A stop (Input.Stop) ends a running base run at once, as the rung job ends a rung; git's own calls, each quick, are
+// let finish (a git worktree add cut short could leave its record behind), and the stop is read after each. Then the
+// worktree is removed (git worktree remove --force, the folder removed with Windows' busy retry, git worktree prune
+// when that failed), always: after a red run, a timeout, a stop, or a panic during the check, with a context of its
+// own so a stop cannot cut the removal short. A worktree left by a check whose process was killed (SIGKILL,
 // taskkill /f) is removed by the next check in the same repository, once its owner file names a process that no longer
 // runs.
 //
@@ -64,7 +66,14 @@
 //     the user's global configuration defines (Git LFS installed globally) leaves its files as pointers at the base,
 //     where the tests reading them fail: an old test failing makes every new test "check not run".
 //   - The process that made a worktree is told by its pid alone: a killed check's worktree whose pid now names another
-//     process is left until that process ends.
+//     process is left until that process ends. A check killed in the instant git worktree add has made its record but
+//     not yet the worktree's link can leave that record (a few bytes in the git folder's worktrees/, which git
+//     worktree list does not show).
+//   - The base runs in the system's temporary folder, not beside the checkout: a build that reaches outside the
+//     checkout by a relative path (a go.mod replace of ../x) does not build there, and every new test is "check not
+//     run". A folder of the base that is a link is never copied through.
+//   - A test whose name changes from run to run (a commit id or a time in a subtest's name) is new at every rise, and
+//     "check not run", never failed: the base run names it otherwise.
 //
 // Every path printed uses forward slashes; the output is byte-stable (names in the HEAD run's order, no map-order
 // iteration).
@@ -219,7 +228,9 @@ func (c *check) run() {
 	if c.stopped() {
 		return
 	}
-	ctx, cancel := context.WithTimeout(c.stop, gitWait)
+	// git's calls are not ended by a stop, which comes between them (a git worktree add cut short could leave its
+	// record behind): each is quick, and the stop is read after them.
+	ctx, cancel := context.WithTimeout(context.Background(), gitWait)
 	defer cancel()
 	g, note, err := vergit.NewRunner(ctx, in.Git, in.Root)
 	if err != nil {
@@ -254,6 +265,9 @@ func (c *check) run() {
 	c.tree = t
 	if err != nil {
 		c.notRun("the base could not be made: " + oneLine(err.Error()))
+		return
+	}
+	if c.stopped() {
 		return
 	}
 
@@ -330,6 +344,7 @@ func (c *check) stopped() bool {
 
 // notRun ends the check before the new tests were named: count is the rise, every one not run.
 func (c *check) notRun(why string) {
+	why = c.stopWhy(why)
 	n := c.in.Rise
 	if n < 0 {
 		n = 0
@@ -343,9 +358,19 @@ func (c *check) notRun(why string) {
 
 // allNotRun ends the check once the new tests were named: every one not run.
 func (c *check) allNotRun(news []string, why string) {
+	why = c.stopWhy(why)
 	c.res.NewTests.Count, c.res.NewTests.NotRun = int64(len(news)), int64(len(news))
 	c.res.NotRun = keep(news)
 	c.res.Why = why
+}
+
+// stopWhy is why, or once the stop signal has come "the climb was stopped" in its place: a git call or a run that
+// failed after a stop failed by it ("git did not answer in time" would mislead).
+func (c *check) stopWhy(why string) string {
+	if c.stop != nil && c.stop.Err() != nil && !strings.Contains(why, "stopped") {
+		return "the climb was stopped"
+	}
+	return why
 }
 
 // judge sorts the named new tests by what the base run with the branch's test files reported (step 4).

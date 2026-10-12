@@ -66,6 +66,9 @@ func makeTree(g *vergit.Runner, root, base string) (*tree, error) {
 func (t *tree) copyIn(root string, files []change) error {
 	for _, f := range files {
 		dst := filepath.Join(t.dir, filepath.FromSlash(f.path))
+		if err := t.noLinkAbove(f.path); err != nil {
+			return err
+		}
 		if f.deleted {
 			if err := os.Remove(dst); err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return fmt.Errorf("%s: %v", f.path, err)
@@ -98,6 +101,28 @@ func (t *tree) copyIn(root string, files []change) error {
 		}
 		if err := os.WriteFile(dst, data, info.Mode().Perm()|0o200); err != nil {
 			return fmt.Errorf("%s: %v", f.path, err)
+		}
+	}
+	return nil
+}
+
+// noLinkAbove refuses a file whose folders in the worktree hold a link (a symbolic link, or a Windows junction): the
+// base's own files could otherwise point a copy, or a removal, outside the worktree.
+func (t *tree) noLinkAbove(rel string) error {
+	parts := strings.Split(rel, "/")
+	dir := t.dir
+	for _, p := range parts[:len(parts)-1] {
+		dir = filepath.Join(dir, p)
+		info, err := os.Lstat(dir)
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("%s: %v", rel, err)
+		}
+		if info.Mode()&(fs.ModeSymlink|fs.ModeIrregular) != 0 || !info.IsDir() {
+			return fmt.Errorf("%s: the base holds %s as a link or a file, not a folder, so the test file is not copied through it",
+				rel, filepath.ToSlash(strings.TrimPrefix(dir, t.dir+string(filepath.Separator))))
 		}
 	}
 	return nil
