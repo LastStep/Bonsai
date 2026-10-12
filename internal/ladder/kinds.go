@@ -6,7 +6,7 @@ package ladder
 //
 //   - guardKind: rung 0 (step 5.4.3, internal/rung0): rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home:
 //     c.Home, Active: the climbed task (*c.Task, the zero ActiveTask when c.Task is nil: no grants), Base: c.Base,
-//     MergeBase: c.MergeBase}), its Status, Reason and Captures copied (checked, and not_judged: what a green rung's
+//     MergeBase: c.MergeBase, Timeout: rungTimeout(r)}), its Status, Reason and Captures copied (checked, and not_judged: what a green rung's
 //     reason says was not judged, which the result keeps only there). A red one's Next names each refused path with
 //     its rule and the grant or revert it needs (Refused[].Needs), how a revert is made, and bonsai check's step when
 //     its findings count (5.4.2 note 12); NextWho is person when a refused path is person-only and this machine's
@@ -18,6 +18,10 @@ package ladder
 //   - treeDirty: whether git's status shows the tree dirty, read at the climb's start and its end. Today git status
 //     (git.go); 5.4.6's wiring replaces it with vergit.Dirty (its error counting dirty), so the result's git.dirty is
 //     that or a ver-git rung's Hides.
+//   - rungTimeout: each rung's limit, used for its run and counted in the lock's budget (lock.go): its timeout_s, else
+//     its kind's own default: a command rung the rung job's (rungjob.DefaultTimeout, 600 s), rung 0 rung0.DefaultTimeout
+//     and git integrity vergit.DefaultTimeout (120 s each: git reads, which a limit only ends when git does not answer),
+//     so a floor of rung 0 and ver-git does not make a waiting climb wait as if each ran tests for ten minutes.
 //   - afterRung: the steps after each rung that ran, in order. First the ratchet's judgment (internal/ratchet's Judge,
 //     step 5.4.4): the count written on the rung (was, now and whether now is at least was), and the rung red when the
 //     count is below its floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), the
@@ -36,6 +40,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/format"
@@ -43,8 +48,10 @@ import (
 	"github.com/LastStep/Bonsai/internal/ratchet"
 	"github.com/LastStep/Bonsai/internal/redact"
 	"github.com/LastStep/Bonsai/internal/rung0"
+	"github.com/LastStep/Bonsai/internal/rungjob"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testout"
+	"github.com/LastStep/Bonsai/internal/vergit"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -82,7 +89,8 @@ func guardKind(c *Climb, r format.Rung) Outcome {
 	if c.Task != nil {
 		active = *c.Task
 	}
-	o := rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home: c.Home, Active: active, Base: c.Base, MergeBase: c.MergeBase})
+	o := rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home: c.Home, Active: active, Base: c.Base, MergeBase: c.MergeBase,
+		Timeout: rungTimeout(r)})
 	out := Outcome{Status: o.Status, Reason: o.Reason, Captures: redactCaptures(o.Captures)}
 	if o.Status == statusRed {
 		out.Next, out.NextWho = rung0Next(c, o)
@@ -147,6 +155,20 @@ func redactCaptures(caps schema.Object) schema.Object {
 // verGitKind is git integrity (step 5.4.6 wires it in).
 func verGitKind(c *Climb, r format.Rung) Outcome {
 	return notBuilt(r, "git integrity comes with step 5.4.6")
+}
+
+// rungTimeout is a rung's limit (this file's comment): its timeout_s, else its kind's default.
+func rungTimeout(r format.Rung) time.Duration {
+	if r.TimeoutS != nil && *r.TimeoutS > 0 {
+		return time.Duration(*r.TimeoutS) * time.Second
+	}
+	switch r.Kind {
+	case KindGuard:
+		return rung0.DefaultTimeout
+	case KindVerGit:
+		return vergit.DefaultTimeout
+	}
+	return rungjob.DefaultTimeout
 }
 
 // treeDirty reports whether the climbed checkout's tree is dirty by git's status (this file's comment).

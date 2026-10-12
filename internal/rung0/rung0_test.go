@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
@@ -552,6 +553,22 @@ func TestErrors(t *testing.T) {
 	o := Judge(Input{Root: dir, Main: dir})
 	if o.Status != "error" || !strings.Contains(o.Reason, "git cannot say what this checkout changed") || o.Captures != nil {
 		t.Errorf("not a repository: %+v", o)
+	}
+}
+
+// Past its limit, rung 0 is error, whatever its git calls had found: its changes are not judged. The same climb with
+// the default limit is green.
+func TestTimeout(t *testing.T) {
+	f := newProject(t, nil)
+	in := Input{Root: f.main, Main: f.main, Home: f.home, Timeout: time.Nanosecond}
+	o := Judge(in)
+	if o.Status != "error" || o.Captures != nil || o.Reason != "rung 0 did not finish within its limit of 1ns (bonsai.yaml's "+
+		"timeout_s, else 2m0s): git did not answer in time, so the changes are not judged" {
+		t.Errorf("past the limit: %+v", o)
+	}
+	in.Timeout = 0
+	if o := Judge(in); o.Status != "green" {
+		t.Errorf("the default limit: %+v", o)
 	}
 }
 

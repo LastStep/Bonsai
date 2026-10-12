@@ -44,7 +44,8 @@
 //
 // The outcome (note 5): green, with the count of changed paths in captures (checked); red, with each refused path and
 // its rule, at most MaxListed of them, bonsai check's findings by word and file, and the next step, in the reason; error
-// when git cannot say what changed. The reason also says what was not judged (the branch's commits with no base,
+// when git cannot say what changed, or when the judgment runs past its limit (Input.Timeout: the rung's timeout_s, else
+// DefaultTimeout), its git calls then ended (bonsai check's own few reads are Bonsai's and not cut). The reason also says what was not judged (the branch's commits with no base,
 // machine findings), on a green rung too; and since a result keeps a rung's reason only when it is not green
 // (bonsai.ladder/1), the same is a text capture, not_judged (each thing not judged, joined by "; "; null when
 // everything was judged), so a green result keeps it for the verifiers. For the runner's next step (a red climb names
@@ -56,6 +57,7 @@
 package rung0
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -66,6 +68,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/guard"
 	"github.com/LastStep/Bonsai/internal/schema"
@@ -74,6 +77,11 @@ import (
 
 // MaxListed is the most refused paths a reason lists (note 5).
 const MaxListed = 50
+
+// DefaultTimeout is rung 0's limit when Input gives none (a rung 0 with no timeout_s): 120 seconds, as git integrity's
+// (vergit.DefaultTimeout). Rung 0 runs git reads of the branch's changes and bonsai check, the same order of work, so
+// the limit only ends a git that does not answer; the runner counts it in its lock's budget.
+const DefaultTimeout = 120 * time.Second
 
 // maxRead is the largest file whose bytes rung 0 reads as what a declared document holds now: a bigger file is no
 // document, and if it were, what it holds counts as unknown (its status line then refused in command mode).
@@ -87,6 +95,7 @@ type Input struct {
 	Active    workspace.ActiveTask // the active-task function's answer for the run, with --task and BONSAI_TASK; its task grants only when How is named
 	Base      string               // the base branch: the branch the verified main checkout holds; "" when it holds none
 	MergeBase string               // the merge base of HEAD and the base branch, a commit; "" when there is none
+	Timeout   time.Duration        // the judgment's limit: a git call still running then is ended; 0 means DefaultTimeout
 }
 
 // Outcome is rung 0's answer: the rung's status, reason and captures, which the runner copies into the result's rung.
@@ -113,11 +122,27 @@ func Judge(in Input) Outcome {
 	if in.Root == "" || in.Main == "" {
 		return errorOutcome("rung 0 was given no checkout or no main checkout")
 	}
-	top, err := gitIn(in.Root).top()
+	timeout := in.Timeout
+	if timeout <= 0 {
+		timeout = DefaultTimeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	o := judge(ctx, in)
+	if ctx.Err() != nil {
+		return errorOutcome(fmt.Sprintf("rung 0 did not finish within its limit of %s (bonsai.yaml's timeout_s, else %s): "+
+			"git did not answer in time, so the changes are not judged", timeout, DefaultTimeout))
+	}
+	return o
+}
+
+// judge is Judge within its deadline: a git call still running when ctx ends is ended, and Judge then gives error.
+func judge(ctx context.Context, in Input) Outcome {
+	top, err := gitIn(in.Root).within(ctx).top()
 	if err != nil {
 		return errorOutcome("git cannot say what this checkout changed (" + oneLine(err.Error()) + ")")
 	}
-	g := gitIn(top)
+	g := gitIn(top).within(ctx)
 	branch := g.branch()
 	head := g.hasHead()
 	onBase := in.Base != "" && branch == in.Base

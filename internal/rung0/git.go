@@ -4,6 +4,7 @@ package rung0
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -12,24 +13,46 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/guard"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// git runs git in one checkout.
-type git struct{ root string }
+// waitDelay is how long a git call's pipes may stay open after it ends or is ended at the deadline (a helper it
+// started holding them), before the call gives up on them.
+const waitDelay = 2 * time.Second
+
+// git runs git in one checkout, within the judgment's deadline.
+type git struct {
+	root string
+	ctx  context.Context // the deadline; nil for none
+}
 
 func gitIn(root string) git { return git{root: root} }
+
+// within gives the same runner with a deadline: a git call still running when ctx ends is ended.
+func (g git) within(ctx context.Context) git {
+	g.ctx = ctx
+	return g
+}
 
 // run runs git with args in the checkout, git's own environment variables that would point it elsewhere taken out,
 // and gives its standard output.
 func (g git) run(args ...string) ([]byte, error) {
-	cmd := exec.Command("git", append([]string{"-C", g.root, "-c", "core.quotepath=off", "--literal-pathspecs"}, args...)...)
+	ctx := g.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	cmd := exec.CommandContext(ctx, "git", append([]string{"-C", g.root, "-c", "core.quotepath=off", "--literal-pathspecs"}, args...)...)
 	cmd.Env = gitEnv()
+	cmd.WaitDelay = waitDelay
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("git %s: ended at the rung's limit", args[0])
+		}
 		msg := strings.TrimSpace(stderr.String())
 		if i := strings.IndexAny(msg, "\r\n"); i >= 0 {
 			msg = msg[:i]

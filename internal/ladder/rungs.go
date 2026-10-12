@@ -420,14 +420,6 @@ func floorOf(ratchets schema.Object, name string) json.Number {
 	return "0"
 }
 
-// rungTimeout is a rung's limit: its timeout_s, else the rung job's default (600 s).
-func rungTimeout(r format.Rung) time.Duration {
-	if r.TimeoutS != nil && *r.TimeoutS > 0 {
-		return time.Duration(*r.TimeoutS) * time.Second
-	}
-	return rungjob.DefaultTimeout
-}
-
 // text redacts a free-text value for the result (note 6), nil for "".
 func text(s string) *string {
 	if s == "" {

@@ -84,7 +84,8 @@ func readHolder(path string) (holder, bool) {
 	return h, true
 }
 
-// budget is the sum of the climb's rungs' timeouts: each rung's timeout_s, else the rung job's default.
+// budget is the sum of the climb's rungs' timeouts: each rung's timeout_s, else its kind's default (kinds.go's
+// rungTimeout).
 func (c *Climb) budget() int64 {
 	var s int64
 	for _, r := range c.rungs {

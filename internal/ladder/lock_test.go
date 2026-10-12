@@ -190,3 +190,21 @@ func TestNestedTakesNoLock(t *testing.T) {
 		t.Errorf("a nested climb's leftovers: %v", l.Leftovers)
 	}
 }
+
+// The budget is the sum of the rungs' limits: each rung's timeout_s, else its kind's own default, which is also the
+// limit it runs with: a command rung 600 s, rung 0 and git integrity 120 s each (a floor of both is not a wait of 20
+// minutes).
+func TestBudgetByKind(t *testing.T) {
+	five := int64(5)
+	c := &Climb{rungs: []format.Rung{{Rung: 0, Kind: KindGuard}, {Rung: 1, Kind: KindCommand}, {Rung: 2, Kind: KindVerGit},
+		{Rung: 3, Kind: KindGuard, TimeoutS: &five}, {Rung: 4, Kind: KindVerGit, TimeoutS: &five}, {Rung: 5, Kind: KindCommand, TimeoutS: &five}}}
+	if got := c.budget(); got != 120+600+120+5+5+5 {
+		t.Errorf("the budget %d", got)
+	}
+	for _, r := range c.rungs[:3] {
+		if want := map[string]time.Duration{KindGuard: 120 * time.Second, KindCommand: 600 * time.Second,
+			KindVerGit: 120 * time.Second}[r.Kind]; rungTimeout(r) != want {
+			t.Errorf("%s's limit %v, want %v", r.Kind, rungTimeout(r), want)
+		}
+	}
+}
