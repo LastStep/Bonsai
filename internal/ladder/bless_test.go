@@ -9,6 +9,7 @@ package ladder
 // step called only on a local, green, clean climb. Every project is a real git repository in a temporary folder.
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
@@ -21,6 +22,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // countRung is rung 1 of a Bless fixture: it prints count.txt, whose "passed N" its capture reads as the ratchet found.
@@ -452,5 +454,47 @@ func TestBlessNeedsTheRecord(t *testing.T) {
 	f.out.Reset()
 	if a := f.climb("", Options{CI: true}); a.Exit != ExitRuntime || strings.Contains(f.out.String(), "bless:") {
 		t.Errorf("--ci: exit %d\n%s", a.Exit, f.out.String())
+	}
+}
+
+// A floor that is not a number is never read as 0, which would let a typo lower it: the rung is red, its reason and
+// its next naming the fix in bonsai.yaml, and no ratchet written; a floor that is a number, written as one or as
+// text, is judged. bonsai.yaml's own read refuses such a floor before anything runs (the second half), so the runner's
+// judgment guards a Config built otherwise.
+func TestFloorNotANumber(t *testing.T) {
+	cmd := "cat count.txt"
+	r := format.Rung{Rung: 1, Name: strPtr("count"), Kind: KindCommand, Command: &cmd, Required: true, Ratchet: "found"}
+	for _, c := range []struct {
+		floor any
+		red   bool
+	}{
+		{"many", true}, {true, true}, {nil, true}, {[]any{json.Number("3")}, true}, {json.Number("x"), true},
+		{json.Number("3"), false}, {"3", false}, {int64(3), false}, {3.5, false},
+	} {
+		climb := &Climb{Config: &workspace.Config{Full: &format.Workspace{Ratchets: schema.Object{{Key: "found", Value: c.floor}}}}}
+		e := &format.LadderRung{Rung: 1, Name: "count", Kind: KindCommand, Status: statusGreen}
+		floor, _ := floorOf(climb.Config.Full.Ratchets, "found")
+		s := &Step{Rung: r, Entry: e, Count: &Count{Name: "found", Floor: floor, Now: "5", From: "capture"}}
+		judgeRatchet(climb, s)
+		why := ""
+		if e.Reason != nil {
+			why = *e.Reason
+		}
+		switch {
+		case c.red && (e.Status != statusRed || e.Ratchet != nil || s.who != "person" ||
+			!strings.HasPrefix(why, "the ratchet found cannot be judged: its floor in bonsai.yaml's ratchets is "+schema.Show(c.floor)+", which is not a number") ||
+			!strings.Contains(why, "the floor in bonsai.yaml's ratchets must be a number") ||
+			!strings.HasPrefix(s.next, "a person writes ratchets.found in bonsai.yaml as a plain number")):
+			t.Errorf("%v: %s, %+v, %q, next %q (%s)", c.floor, e.Status, e.Ratchet, why, s.next, s.who)
+		case !c.red && (e.Status != statusGreen || e.Ratchet == nil || !e.Ratchet.OK || e.Ratchet.Was == "0"):
+			t.Errorf("%v: %s, %+v, %q", c.floor, e.Status, e.Ratchet, why)
+		}
+	}
+	// Through bonsai.yaml: a floor written as text is refused before a rung runs.
+	f := blessProject(t, "\n  found: many")
+	a := f.climb("", Options{Task: "T-0901"})
+	if a.Exit != ExitInput || a.Error == nil || !strings.Contains(a.Error.What, "ratchets.found: is string, want number") ||
+		a.Doc.Result != nil {
+		t.Errorf("exit %d, %+v", a.Exit, a.Error)
 	}
 }

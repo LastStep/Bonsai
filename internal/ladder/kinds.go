@@ -29,8 +29,8 @@ package ladder
 //     so a floor of rung 0 and ver-git does not make a waiting climb wait as if each ran tests for ten minutes.
 //   - afterRung: the steps after each rung that ran: the ratchet's judgment (internal/ratchet's Judge, step 5.4.4): the
 //     count written on the rung (was, now and whether now is at least was), and the rung red when the count is below its
-//     floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), the reason added to the
-//     rung's own.
+//     floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), or when its floor in
+//     ratchets is not a number (never read as 0, so a typo cannot lower a floor), the reason added to the rung's own.
 //   - afterRungs: the steps after the last rung, once every rung's line is printed: the rise step. On a local climb
 //     that is green and clean (clean at its start and now, HEAD where it started, nothing hidden from git), each ratchet
 //     above its floor gets its new_tests from ratchet.NewTests, internal/newtests' check (step 5.4.5): the rung run on
@@ -261,7 +261,7 @@ func afterRungs(c *Climb) {
 }
 
 // judgeRatchet judges the rung's ratchet (ratchet.Judge): its count written on the entry, and when the count is below
-// its floor or none was read, the rung red and the reason added to its own. The ratchet's fix is the climb's next step
+// its floor or none was read, or its floor is not a number (badFloor), the rung red and the reason added to its own. The ratchet's fix is the climb's next step
 // when it is the rung's only fault; a rung already red or in error keeps its status and its own fix.
 func judgeRatchet(c *Climb, s *Step) {
 	if s.Rung.Ratchet == nil {
@@ -269,11 +269,15 @@ func judgeRatchet(c *Climb, s *Step) {
 	}
 	in := ratchet.Reading{Rung: s.Rung, Captures: s.Entry.Captures, Tests: s.Entry.Tests, CI: c.CI}
 	in.Name, _ = s.Rung.Ratchet.(string)
-	in.Floor = floorOf(c.Config.Full.Ratchets, in.Name)
+	floor, bad := floorOf(c.Config.Full.Ratchets, in.Name)
+	in.Floor = floor
 	if s.Count != nil {
 		in.Floor, in.Now, in.From = s.Count.Floor, s.Count.Now, s.Count.From
 	}
 	v := ratchet.Judge(in)
+	if bad != "" {
+		v = badFloor(in.Name, bad)
+	}
 	s.Entry.Ratchet = v.Ratchet
 	if !v.Red {
 		return
@@ -287,6 +291,21 @@ func judgeRatchet(c *Climb, s *Step) {
 		why = *s.Entry.Reason + "\n" + why
 	}
 	s.Entry.Reason = &why
+}
+
+// badFloor is the judgment of a ratchet whose floor in bonsai.yaml's ratchets is not a number (floorOf): red, never
+// judged against 0, and the fix a person's, in bonsai.yaml.
+func badFloor(name, written string) ratchet.Verdict {
+	shown := name
+	if !ratchet.IsName(name) {
+		shown = strconv.QuoteToASCII(name)
+	}
+	return ratchet.Verdict{Red: true, Who: "person",
+		Reason: "the ratchet " + shown + " cannot be judged: its floor in bonsai.yaml's ratchets is " + written + ", which is not a " +
+			"number, and a floor is never read as 0 (a typo would lower it): the floor in bonsai.yaml's ratchets must be a number, " +
+			"the count the rung may not fall below",
+		Next: "a person writes ratchets." + name + " in bonsai.yaml as a plain number (the count it may not fall below, such as 812); " +
+			"then run: bonsai check --json"}
 }
 
 // newTests is the rise step's call (ratchet.NewTests), a variable for the tests.

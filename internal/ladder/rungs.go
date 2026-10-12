@@ -8,6 +8,7 @@ package ladder
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -386,7 +387,8 @@ func (c *Climb) count(r format.Rung, caps schema.Object, rep *testout.Report, ac
 	if !ratchetName().MatchString(name) {
 		return &Count{Name: name, Floor: "0"}
 	}
-	k := &Count{Name: name, Floor: floorOf(c.Config.Full.Ratchets, name)}
+	floor, _ := floorOf(c.Config.Full.Ratchets, name) // a floor that is not a number makes the rung red (judgeRatchet)
+	k := &Count{Name: name, Floor: floor}
 	if v, ok := caps.Get(name); ok {
 		if n, isNum := v.(json.Number); isNum {
 			k.Now, k.From = n, "capture"
@@ -399,27 +401,33 @@ func (c *Climb) count(r format.Rung, caps schema.Object, rep *testout.Report, ac
 	return k
 }
 
-// floorOf is a ratchet's floor in bonsai.yaml's ratchets, 0 when it names none.
-func floorOf(ratchets schema.Object, name string) json.Number {
+// floorOf is a ratchet's floor in bonsai.yaml's ratchets, 0 when it names none. bad is the floor as written when it is
+// not a number: it is never read as 0, which would let a typo lower the floor, and judgeRatchet makes the rung red
+// (bonsai.yaml's full read refuses such a floor before a climb, so only a Config built otherwise holds one).
+func floorOf(ratchets schema.Object, name string) (floor json.Number, bad string) {
 	v, ok := ratchets.Get(name)
 	if !ok {
-		return "0"
+		return "0", ""
 	}
 	switch n := v.(type) {
 	case json.Number:
-		return n
+		if jsonNumber().MatchString(string(n)) {
+			return n, ""
+		}
 	case string:
 		if jsonNumber().MatchString(n) {
-			return json.Number(n)
+			return json.Number(n), ""
 		}
 	case int64:
-		return json.Number(strconv.FormatInt(n, 10))
+		return json.Number(strconv.FormatInt(n, 10)), ""
 	case int:
-		return json.Number(strconv.Itoa(n))
+		return json.Number(strconv.Itoa(n)), ""
 	case float64:
-		return json.Number(strconv.FormatFloat(n, 'f', -1, 64))
+		if !math.IsNaN(n) && !math.IsInf(n, 0) {
+			return json.Number(strconv.FormatFloat(n, 'f', -1, 64)), ""
+		}
 	}
-	return "0"
+	return "0", schema.Show(v)
 }
 
 // text redacts a free-text value for the result (note 6), nil for "".
