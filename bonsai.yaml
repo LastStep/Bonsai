@@ -1,0 +1,128 @@
+# bonsai.yaml: Bonsai's own settings for this repository (format bonsai.workspace/1): from the link on, Bonsai
+# guards its own checkout and proves its own work with them (design/plan-5.md, step 5.4, "The switch").
+# Committed and person-only. An agent changes it only while its running task's bonsai.allows holds it, and only to
+# make the checks stricter: a floor raised to a green climb's count, or a rung, a floor entry or a protected path
+# added. Any other change loosens the checks and waits for the director's word (CLAUDE.md, the stricter-only rule).
+# Every field, its allowed values and an example: bonsai check --schema bonsai.workspace
+format: bonsai.workspace/1            # the format and its version; a newer one is refused, never guessed
+id: ws-ncmncsfhnhgrfd4ac42jigtccy     # this repository's id, made once; a copy meant as a new project: init --new-id
+name: bonsai                          # the workspace's short name
+packs: []                             # no pack yet: Bonsai's base pack is linked here in step 5.5
+documents:                            # where this repository keeps the documents Bonsai knows
+  task: records/tasks                 # one file per task, T-<number>-<slug>.md; every file there is a task
+  run: records/runs                   # the run reports (bonsai.run/1 from the switch); the older ones stay as they are
+  answers: records/answers.md         # answers to questions that name no file; nothing there yet
+  memory: records/memory              # memory notes and their INDEX.md; nothing there yet
+  protocols: records/protocols        # the packs' always-on protocol files; none until a pack brings them
+# protected: the paths an agent changes only while its running task lists them in bonsai.allows. Left off on
+# purpose: formats/ (the schema compare and the manifest test hold it), design/plan*.md, STATE.md, records/ and
+# every code folder (the rungs prove them). The guard's floor adds .git, .bonsai/ and any nested bonsai.yaml.
+protected:                            # the protected paths, as globs from the top folder
+  - "bonsai.yaml"                     # this file: the checks every task is held to
+  - ".bonsai/lock.json"               # the lock: what Bonsai wrote at the link
+  - ".claude/**"                      # Claude Code's settings: Bonsai's hook lines and deny rules
+  - ".github/**"                      # CI, CodeQL and the release workflow
+  - "CLAUDE.md"                       # the standing rules every agent here follows
+  - ".gitignore"                      # a line here hides a file from git, and so from rung 0
+  - "go.mod"                          # the module: its Go version, toolchain and dependencies
+  - "go.sum"                          # the dependencies' fingerprints
+  - ".golangci.yml"                   # the linter's settings
+  - ".goreleaser.yaml"                # the release build's settings
+  - "design/bonsai-spec.md"           # the approved spec
+  - "design/contract.md"              # the approved formats contract
+  - "design/one-pager.md"             # the approved one-pager
+  - "design/format-review.md"         # the approved format review
+# person_only: of the protected paths, those only a person grants: Bonsai's own link and the release files
+person_only:                          # the person-only paths, as globs from the top folder
+  - "bonsai.yaml"                     # this file
+  - ".bonsai/lock.json"               # the lock
+  - ".claude/**"                      # Claude Code's settings
+  - ".github/workflows/release.yml"   # the release workflow (step 5.7, with the director)
+  - ".goreleaser.yaml"                # the release build (step 5.7, with the director)
+never_edit: []                        # none: no file is closed to every agent; a deny rule would stop records commits
+ladder_floor: [0, 1, 2, 3, 4, 5]      # the rungs every task climbs, whatever its bonsai.ladder lists: all of them
+ladder:                               # the rungs, cheapest first; each command reads the same in sh and cmd
+  - rung: 0                           # rung 0: the guard rung
+    name: guard                       # its short name
+    kind: guard                       # the branch's changes against the named task's grants (contract section 13)
+    command: null                     # only a command rung runs a command
+    required: true                    # red here skips the rungs after it
+    timeout_s: 120                    # two minutes: git reads and bonsai check
+    ratchet: null                     # no count to keep from falling
+    capture: null                     # nothing picked out of its output
+    means: "Every change is inside the task's grants; no table changed on a branch; no local/ file tracked; no check finding."   # what green proves
+    tests: null                       # it prints no tests
+    base_setup: null                  # nothing to set up on the base
+  - rung: 1                           # go vet
+    name: vet                         # its short name
+    kind: command                     # a shell command
+    command: "go vet ./... && go vet -tags bonsai_test_fault ./..."   # plain, then with the test fault switch
+    required: true                    # red here skips the rungs after it
+    timeout_s: 300                    # five minutes at most
+    ratchet: null                     # no count to keep from falling
+    capture: null                     # nothing picked out of its output
+    means: "go vet finds nothing, plain or with the fault switch."   # what green proves
+    tests: null                       # its output names no tests
+    base_setup: null                  # nothing to set up on the base
+  - rung: 2                           # the schema compare (contract section 2.2)
+    name: schemas                     # its short name
+    kind: command                     # a shell command
+    command: "go test -count=1 -run TestSchema ./formats/"   # the formats' schema tests, run in this climb
+    required: true                    # red here skips the rungs after it
+    timeout_s: 300                    # five minutes at most
+    ratchet: null                     # no count to keep from falling
+    capture: null                     # nothing picked out of its output
+    means: "Every schema changed only by additions since its set's base (contract section 2.2)."   # what green proves
+    tests: null                       # its output is not read for test names
+    base_setup: null                  # nothing to set up on the base
+  - rung: 3                           # every test
+    name: tests                       # its short name
+    kind: command                     # a shell command
+    command: "go test -json -count=1 ./..."   # every package's tests, each named, run in this climb
+    required: true                    # red here skips the rungs after it
+    timeout_s: 900                    # fifteen minutes at most
+    ratchet: go_tests                 # its count, the tests that passed, may not fall below the floor in ratchets
+    capture: null                     # the count is read from the tests themselves
+    means: "Every test passes, and no fewer pass than the floor."   # what green proves
+    tests: go-test-json               # its output is go test -json: each test named, new tests run on the base
+    base_setup: null                  # nothing to set up on the base: the module cache serves it
+  - rung: 4                           # every test, with the test fault switch
+    name: tests with the fault switch   # its short name
+    kind: command                     # a shell command
+    command: "go test -json -count=1 -tags bonsai_test_fault ./..."   # the same, with the guard's test faults built in
+    required: true                    # red here skips the rungs after it
+    timeout_s: 900                    # fifteen minutes at most
+    ratchet: go_tests_tagged          # its count, the tests that passed, may not fall below the floor in ratchets
+    capture: null                     # the count is read from the tests themselves
+    means: "The same, with the guard's test faults compiled in."   # what green proves
+    tests: go-test-json               # its output is go test -json
+    base_setup: null                  # nothing to set up on the base: the module cache serves it
+  - rung: 5                           # git integrity
+    name: git integrity               # its short name
+    kind: ver-git                     # what git might hide from the other rungs (spec section 9)
+    command: null                     # only a command rung runs a command
+    required: false                   # informative: red here still lets the climb go on
+    timeout_s: 120                    # two minutes: git reads
+    ratchet: null                     # no count to keep from falling
+    capture: null                     # nothing picked out of its output
+    means: "What git might hide from the other rungs is listed for the verifier."   # what green proves
+    tests: null                       # it prints no tests
+    base_setup: null                  # nothing to set up on the base
+ratchets: {}                          # the floors, set from the first green climb after the link; each reads 0 until then
+ci_marked_tests: []                   # no test may skip in CI
+generated:                            # how long generated files are kept, per kind (docs/reference/generated-files.md)
+  log:                                # the log, in .bonsai/local/log/
+    keep_days: 30                     # a file goes 30 days after its last line; never an open session's, nor before its rows are in
+    keep_newest: null                 # no limit on how many are kept
+  asks:                               # questions for a person and their answers, in .bonsai/local/asks/
+    keep_days: null                   # kept
+    keep_newest: null                 # kept
+  ladder:                             # ladder results, in .bonsai/local/ladder/
+    keep_days: 7                      # a result goes 7 days after it finished, never that of a task not done or cut
+    keep_newest: null                 # no limit on how many are kept
+  run:                                # run reports: committed history
+    keep_days: null                   # kept; Bonsai never deletes one
+    keep_newest: null                 # kept
+  sessions:                           # rows of .bonsai/sessions.md
+    keep_days: null                   # kept
+    keep_newest: null                 # kept
