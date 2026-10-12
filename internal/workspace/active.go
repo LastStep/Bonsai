@@ -17,11 +17,17 @@ package workspace
 // Tasks are read from the main checkout's task folder (bonsai.yaml's documents.task), never a worktree's own copies.
 // Format-0 and format-1 tasks count alike (format.ReadTask reads both). A task file is one at the folder's top level
 // named <id>-<slug>.md or <id>.md (DocFiles); a file that parses has the id its frontmatter gives (else its name's), and
-// one that does not parse has its name's id, so a named task whose file is broken is found as such. The reasons
+// one that does not parse has its name's id, so a named task whose file is broken is found as such. A file whose
+// frontmatter holds nothing does not parse as a task either (readTask): format 0 reads a file with no frontmatter
+// block (one holding only "garbage: [", say), an empty block or one of comments alone as an empty mapping, as the
+// studio's reader does, which names no id, status or title; counted as a task, it would read as one with no status, and
+// a named one would pass the stop gate. Every reader of the task folder reads through readTasks, so each one meets it
+// as broken: none (named-broken, or broken-file beside any running task), never a guess. The reasons
 // there is none are ActiveReasons (formats/README.md's table "Why there is none" is their one home: a test holds this
 // copy to it, word for word and in order).
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -185,7 +191,7 @@ func readTasks(main, dir string) ([]taskFile, error) {
 			return nil, &Error{File: p, Msg: "cannot be read: " + oneLine(err), Err: err, Next: "check the file's permissions"}
 		}
 		f := taskFile{path: p, id: NameID(filepath.Base(p), taskID())}
-		t, err := format.ReadTask(raw)
+		t, err := readTask(raw)
 		if err != nil {
 			f.broken = true
 		} else {
@@ -197,6 +203,19 @@ func readTasks(main, dir string) ([]taskFile, error) {
 		out = append(out, f)
 	}
 	return out, nil
+}
+
+// errEmptyTask is a task file whose frontmatter holds nothing (readTask).
+var errEmptyTask = errors.New("its frontmatter holds nothing (no frontmatter block, or an empty one), so it is no task")
+
+// readTask reads one task file as every reader of the task folder counts it (this file's comment): under its format,
+// and refused when it read under format 0 to an empty mapping.
+func readTask(raw []byte) (*format.Task, error) {
+	t, err := format.ReadTask(raw)
+	if err == nil && t.Format0 != nil && t.Format0.Len() == 0 {
+		return nil, errEmptyTask
+	}
+	return t, err
 }
 
 // TaskEntry is one task file as the tasks table reads it: its id (the frontmatter's, else its name's), its
