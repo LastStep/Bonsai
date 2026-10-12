@@ -47,7 +47,9 @@
 // when git cannot say what changed. The reason also says what was not judged (the branch's commits with no base,
 // machine findings), on a green rung too; and since a result keeps a rung's reason only when it is not green
 // (bonsai.ladder/1), the same is a text capture, not_judged (each thing not judged, joined by "; "; null when
-// everything was judged), so a green result keeps it for the verifiers. The result never holds a whole diff.
+// everything was judged), so a green result keeps it for the verifiers. For the runner's next step (a red climb names
+// each path's fix, 5.4.2 note 12), the outcome also gives the refused paths (Refused, each with what clears it), how a
+// revert is made (Revert) and bonsai check's step (Check). The result never holds a whole diff.
 //
 // Labels (note 6): bonsai.allows is read by the guard's own reader (allowsOf), which reads contract §5.6's meaning
 // with no definition in force, as the stop gate reads bonsai.ladder; rung 0 adds no reader of its own.
@@ -94,6 +96,8 @@ type Outcome struct {
 	Captures schema.Object // checked: the count of changed paths; not_judged: what was not judged, or null; nil on error
 	Refused  []Refusal     // the refused paths, at most MaxListed, in path order: what the reason lists
 	More     int           // refused paths past MaxListed
+	Revert   string        // how a refused path goes back to the base's copy, a command with <path> for the path; "" with no commit
+	Check    string        // bonsai check's part of the next step when its findings make the rung red; "" when they do not
 }
 
 // Refusal is one changed path the guard's function refuses.
@@ -170,16 +174,21 @@ func Judge(in Input) Outcome {
 			lines = append(lines, fmt.Sprintf("- and %d more", o.More))
 		}
 		lines = append(lines, "next: "+nextFor(refused, from))
+		o.Revert = revertWith(from)
 	}
 	switch {
 	case checkErr != "":
 		o.Status = "red"
 		lines = append(lines, "bonsai check cannot run in this checkout ("+checkErr+"), so the commit's findings cannot be "+
 			"read; next: rebase the branch on the base branch so it holds the main checkout's bonsai.yaml, or restore it")
+		o.Check = "bonsai check cannot run in this checkout (" + checkErr + "): rebase the branch on the base branch so it " +
+			"holds the main checkout's bonsai.yaml, or restore it"
 	case len(found) > 0:
 		o.Status = "red"
 		lines = append(lines, fmt.Sprintf("bonsai check finds %d problem(s) about the commit: %s; next: run bonsai check, "+
 			"which names each one's next step", len(found), strings.Join(found, ", ")))
+		o.Check = fmt.Sprintf("bonsai check finds %d problem(s) about the commit (%s): run: bonsai check --json, which names "+
+			"each one's next step", len(found), strings.Join(found, ", "))
 	}
 	if len(machine) > 0 {
 		notJudged = append(notJudged, "bonsai check's findings about this machine, not the commit ("+strings.Join(machine, ", ")+")")
@@ -252,6 +261,15 @@ func refusal(p string, d guard.Decision, n guard.NamedGrants) Refusal {
 		r.Needs = d.Next
 	}
 	return r
+}
+
+// revertWith is how a path goes back to its copy at from (the merge base on a branch, else HEAD): "" when there is no
+// commit to go back to.
+func revertWith(from string) string {
+	if from == "" {
+		return ""
+	}
+	return "git checkout " + from + " -- <path> (a path " + from + " does not hold: delete it)"
 }
 
 // nextFor is a red reason's next step: a grant for what a grant opens, a revert for the rest.

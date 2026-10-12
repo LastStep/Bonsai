@@ -4,10 +4,13 @@ package ladder
 // piece built beside the runner in a package of its own wires itself in here with one last commit, as 5.3.3 wired into
 // the guard. The runner itself (rungs.go) calls only runKind, afterRung and afterResult, and reads only what they give.
 //
-//   - guardKind: rung 0 (step 5.4.3). Its wiring replaces the body with rung0.Judge(rung0.Input{Root: c.Root, Main:
-//     c.Main, Home: c.Home, Active: the climbed task (*c.Task, the zero ActiveTask when c.Task is nil: no grants), Base:
-//     c.Base, MergeBase: c.MergeBase}), copying Status, Reason and Captures into the Outcome, and its Refused[].Needs
-//     into Next (and NextWho person for a person's grant), so a red climb's next names each path's fix.
+//   - guardKind: rung 0 (step 5.4.3, internal/rung0): rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home:
+//     c.Home, Active: the climbed task (*c.Task, the zero ActiveTask when c.Task is nil: no grants), Base: c.Base,
+//     MergeBase: c.MergeBase}), its Status, Reason and Captures copied (checked, and not_judged: what a green rung's
+//     reason says was not judged, which the result keeps only there). A red one's Next names each refused path with
+//     its rule and the grant or revert it needs (Refused[].Needs), how a revert is made, and bonsai check's step when
+//     its findings count (5.4.2 note 12); NextWho is person when a refused path is person-only and this machine's
+//     settings put the workspace in command mode, where only a person's grant opens one.
 //   - verGitKind: git integrity (step 5.4.6). Its wiring replaces the body with vergit.Judge(vergit.Input{Root: c.Root,
 //     BaseBranch: c.Base, MergeBase: c.MergeBase, Tests: the rung's own tests form, else the other rungs' forms in rung
 //     order (c.Config.Full.Ladder), Earlier: c.PriorCaptures(r.Rung), Timeout: rungTimeout(r)}), copying Status, Reason, Captures
@@ -24,18 +27,22 @@ package ladder
 //     base branch, every open Bless ask whose offer is gone resolved, and the climb's own offer filed; it gives the ask
 //     records written, the climb's bless, and its lines go under the rungs'.
 //
-// Until their wiring lands, guard and ver-git rungs end in error, "not built yet", so a floor holding one climbs red
-// (the runner lands before them, "The order" item 3). A kind's Reason goes into the result only when the rung is not
+// Until its wiring lands, a ver-git rung ends in error, "not built yet", so a floor holding one climbs red (the runner
+// lands before it, "The order" item 3). A kind's Reason goes into the result only when the rung is not
 // green (bonsai.ladder/1: reason is null when green); a green rung's reason (what was found, what was not judged) is
 // printed under its line in the human output, and its findings are in its captures.
 
 import (
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/guard"
 	"github.com/LastStep/Bonsai/internal/ratchet"
+	"github.com/LastStep/Bonsai/internal/redact"
+	"github.com/LastStep/Bonsai/internal/rung0"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testout"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -69,9 +76,72 @@ func runKind(c *Climb, r format.Rung) Outcome {
 	return Outcome{Status: "error", Reason: "the kind " + strconv.Quote(r.Kind) + " is not one this Bonsai runs (guard, command, ver-git)"}
 }
 
-// guardKind is rung 0 (step 5.4.3 wires it in).
+// guardKind is rung 0 (this file's comment).
 func guardKind(c *Climb, r format.Rung) Outcome {
-	return notBuilt(r, "the guard's judgment of the task's changes comes with step 5.4.3")
+	var active workspace.ActiveTask // none named: no grants
+	if c.Task != nil {
+		active = *c.Task
+	}
+	o := rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home: c.Home, Active: active, Base: c.Base, MergeBase: c.MergeBase})
+	out := Outcome{Status: o.Status, Reason: o.Reason, Captures: redactCaptures(o.Captures)}
+	if o.Status == statusRed {
+		out.Next, out.NextWho = rung0Next(c, o)
+	}
+	return out
+}
+
+// rung0Next is a red rung 0's fix, as a red climb's next names it: each refused path with its rule and what clears it,
+// how a revert is made, and bonsai check's step; who is person when a person-only path is refused in command mode.
+func rung0Next(c *Climb, o rung0.Outcome) (string, string) {
+	var parts []string
+	person := false
+	for _, f := range o.Refused {
+		parts = append(parts, strconv.QuoteToASCII(f.Path)+" ("+f.Rule+") needs "+f.Needs)
+		person = person || f.Rule == guard.RulePersonOnly
+	}
+	if o.More > 0 {
+		parts = append(parts, "and "+strconv.Itoa(o.More)+" more paths past these, which the climb after them names")
+	}
+	if len(o.Refused) > 0 && o.Revert != "" {
+		parts = append(parts, "a revert: "+o.Revert)
+	}
+	if o.Check != "" {
+		parts = append(parts, o.Check)
+	}
+	if len(parts) == 0 {
+		return "", ""
+	}
+	who := ""
+	if person && commandMode(c) {
+		who = "person"
+	}
+	return strings.Join(parts, "; "), who
+}
+
+// commandMode reports whether this machine's settings for the workspace say command mode (status_writes: command),
+// read from the verified main checkout's machine folder as the guard reads them; settings that cannot be read say
+// agents here (the guard refuses the edit itself then).
+func commandMode(c *Climb) bool {
+	if c.Home == "" {
+		return false
+	}
+	ms, err := workspace.LoadMachineSettings(c.Home, c.Main)
+	return err == nil && ms.StatusWrites == workspace.StatusWritesCommand
+}
+
+// redactCaptures passes a kind's text captures through the redactor (note 6: every free-text value of a result).
+func redactCaptures(caps schema.Object) schema.Object {
+	if caps == nil {
+		return nil
+	}
+	out := make(schema.Object, 0, len(caps))
+	for _, m := range caps {
+		if s, ok := m.Value.(string); ok {
+			m.Value = redact.Text(s)
+		}
+		out = append(out, m)
+	}
+	return out
 }
 
 // verGitKind is git integrity (step 5.4.6 wires it in).

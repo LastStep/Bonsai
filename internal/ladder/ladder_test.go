@@ -531,13 +531,13 @@ func TestCaptures(t *testing.T) {
 	}
 }
 
-// A guard or ver-git rung ends in error until its piece wires into kinds.go: the floor holding one climbs red.
+// A ver-git rung ends in error until its piece wires into kinds.go: the floor holding one climbs red.
 func TestKindsNotBuilt(t *testing.T) {
-	f := project(t, yamlOf("[0, 5]", "{}", "[]", rung{n: 0, name: "guard", kind: "guard", required: true},
-		rung{n: 5, name: "git", kind: "ver-git", required: false}), map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
+	f := project(t, yamlOf("[5]", "{}", "[]", rung{n: 5, name: "git", kind: "ver-git", required: false}),
+		map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
 	a := f.climb("", Options{Task: "T-0901"})
 	l := f.result("T-0901")
-	if a.Exit != ExitRed || statuses(l) != "0:error 5:skipped" || l.Rungs[0].Command != nil || !strings.Contains(*l.Rungs[0].Reason, "not built yet") {
+	if a.Exit != ExitRed || statuses(l) != "5:error" || l.Rungs[0].Command != nil || !strings.Contains(*l.Rungs[0].Reason, "not built yet") {
 		t.Errorf("exit %d, %s, %+v", a.Exit, statuses(l), l.Rungs[0])
 	}
 }
