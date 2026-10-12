@@ -6,6 +6,7 @@ package leftovers
 // test's cleanup ends each one still alive, by pid, after checking that.
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -78,15 +79,34 @@ func readPID(t *testing.T, file string) int {
 	if !waitFile(file, 10*time.Second) {
 		t.Fatalf("no pid file %s", filepath.Base(file))
 	}
-	b, err := os.ReadFile(file)
-	if err != nil {
-		t.Fatal(err)
-	}
-	pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
+	pid, err := readPIDFile(file, 10*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return pid
+}
+
+// readPIDFile reads a pid file, again until d has passed when the read fails or the content is empty or not a pid.
+// Windows opens a file that is being written, or renamed onto, with a sharing violation; the file is whole a moment
+// later, so one failed read is not the answer.
+func readPIDFile(file string, d time.Duration) (int, error) {
+	end := time.Now().Add(d)
+	for {
+		b, err := os.ReadFile(file)
+		if err == nil {
+			var pid int
+			if pid, err = strconv.Atoi(strings.TrimSpace(string(b))); err == nil && pid > 0 {
+				return pid, nil
+			}
+			if err == nil {
+				err = fmt.Errorf("pid file %s holds %d", filepath.Base(file), pid)
+			}
+		}
+		if time.Now().After(end) {
+			return 0, err
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
 }
 
 // A leftover planted in the checkout is named; this process's own child working there and a process of the same
@@ -159,12 +179,8 @@ func TestCheckFindsAPlantedLeftover(t *testing.T) {
 func endTestProcesses(t *testing.T, dir string) {
 	files, _ := filepath.Glob(filepath.Join(dir, "*.pid"))
 	for _, f := range files {
-		b, err := os.ReadFile(f)
+		pid, err := readPIDFile(f, 2*time.Second)
 		if err != nil {
-			continue
-		}
-		pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
-		if err != nil || pid <= 0 {
 			continue
 		}
 		if namesDir(pid, dir) {

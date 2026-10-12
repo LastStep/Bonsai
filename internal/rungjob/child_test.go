@@ -6,6 +6,10 @@ package rungjob
 // exits, so the tests start real process trees with no shell tricks on Windows. Every process a test starts writes
 // its pid to a file in the test's own temporary folder, and the test's cleanup ends each one still alive whose
 // command line names that folder (track), so a failing test leaves nothing running.
+//
+// Every mode that ends by itself, as it ends, marks its end with a new file in the folder named by endsEnv, when
+// its environment names one; watchEnds sees the marks on the test's own clock. In a rung whose last command is a
+// child mode, the last mark is the moment the rung's shell comes to its end.
 
 import (
 	"context"
@@ -26,9 +30,22 @@ import (
 
 const childArg = "rungjob-child"
 
+// endsEnv names the folder a child mode marks its end in, when it is set.
+const endsEnv = "RUNGJOB_TEST_ENDS"
+
 func TestMain(m *testing.M) {
 	if len(os.Args) > 1 && os.Args[1] == childArg {
-		os.Exit(child(os.Args[2:]))
+		code := child(os.Args[2:])
+		if d := os.Getenv(endsEnv); d != "" {
+			f, err := os.CreateTemp(d, "*.end")
+			if err == nil {
+				err = f.Close()
+			}
+			if err != nil {
+				_, _ = fmt.Fprintln(os.Stderr, "end mark:", err)
+			}
+		}
+		os.Exit(code)
 	}
 	os.Exit(m.Run())
 }
@@ -201,6 +218,39 @@ func readPIDFile(file string, d time.Duration) (int, error) {
 			return 0, err
 		}
 		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+// watchEnds watches a folder for the marks child modes leave as they end (endsEnv) and records, on this process's
+// monotonic clock, when it saw the last one. A time a child wrote would be a wall time, and the wall clock can step
+// between two readings (WSL resyncs it, by seconds), so the test does not compare one. A mark is seen within a poll
+// of its making. stop ends the watch and gives that moment, or the zero time if there was no mark.
+func watchEnds(dir string) (stop func() time.Time) {
+	done := make(chan struct{})
+	seen := make(chan time.Time, 1)
+	go func() {
+		marks, at := 0, time.Time{}
+		look := func() {
+			if es, err := os.ReadDir(dir); err == nil && len(es) > marks {
+				marks, at = len(es), time.Now()
+			}
+		}
+		tick := time.NewTicker(2 * time.Millisecond)
+		defer tick.Stop()
+		for {
+			select {
+			case <-done:
+				look()
+				seen <- at
+				return
+			case <-tick.C:
+				look()
+			}
+		}
+	}()
+	return func() time.Time {
+		close(done)
+		return <-seen
 	}
 }
 

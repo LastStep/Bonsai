@@ -29,20 +29,32 @@ func TestJobOff(t *testing.T) {
 		t.Errorf("ended %+v: with no job, what was left is not known", r.Ended)
 	}
 	// The sleeper outlives the shell and holds the rung's pipes (a child of cmd inherits them, whatever its own
-	// output), so they are cut: after a second here, PipeCutoff in a real run.
+	// output), so they are cut: after a second here, PipeCutoff in a real run. The shell must have started the
+	// sleeper before the limit ends it; a run in which it had not (the sleeper, which outlives the shell, never
+	// writes its pid file) is run again with retryLimit, as in TestTimeout, and that run is checked.
 	savedCut := pipeCutoff
 	pipeCutoff = time.Second
 	t.Cleanup(func() { pipeCutoff = savedCut })
-	p := filepath.Join(dir, "left.pid")
-	r = Run(context.Background(), Spec{Command: self("sleep", p), Dir: dir, Timeout: time.Second})
-	if !r.TimedOut || r.Reason != "timed out after 1 s; ended 1 processes; job: off: CreateJobObjectW: refused for the test" {
-		t.Errorf("timed out %v, reason %q", r.TimedOut, r.Reason)
+	for _, limit := range []time.Duration{time.Second, retryLimit} {
+		sub := testDir(t)
+		p := filepath.Join(sub, "left.pid")
+		r = Run(context.Background(), Spec{Command: self("sleep", p), Dir: sub, Timeout: limit})
+		if limit < retryLimit && !waitFile(p, 3*time.Second) {
+			t.Logf("the shell had not started the sleeper within the %s s limit; again with %s s", seconds(limit),
+				seconds(retryLimit))
+			continue
+		}
+		if want := "timed out after " + seconds(limit) + " s; ended 1 processes; job: off: CreateJobObjectW: " +
+			"refused for the test"; !r.TimedOut || r.Reason != want {
+			t.Errorf("timed out %v, reason %q, want %q", r.TimedOut, r.Reason, want)
+		}
+		if len(r.Notes) != 2 || !strings.Contains(r.Notes[0], "only the rung's shell was ended") ||
+			!strings.HasPrefix(r.Notes[1], "output cut 1 s after the command ended") {
+			t.Errorf("notes %q", r.Notes)
+		}
+		readPID(t, p) // left running: the test's cleanup ends it
+		return
 	}
-	if len(r.Notes) != 2 || !strings.Contains(r.Notes[0], "only the rung's shell was ended") ||
-		!strings.HasPrefix(r.Notes[1], "output cut 1 s after the command ended") {
-		t.Errorf("notes %q", r.Notes)
-	}
-	readPID(t, p) // left running: the test's cleanup ends it
 }
 
 // A child asking to leave the job is refused by the system.

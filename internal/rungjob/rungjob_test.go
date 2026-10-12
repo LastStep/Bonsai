@@ -27,6 +27,10 @@ type leaveCase struct {
 // The leftovers' lists end by themselves within this, after the rung's end.
 const goneWithin = 3 * time.Second
 
+// leaveLimit is a leave case's limit: ample for a rung that starts PowerShell, which on a loaded CI runner has taken
+// 21 s to start.
+const leaveLimit = 3 * time.Minute
+
 func TestOutputAndExit(t *testing.T) {
 	dir := testDir(t)
 	r := Run(context.Background(), Spec{Command: self("print", "to-out", "to-err", "3"), Dir: dir})
@@ -79,14 +83,25 @@ func TestEnvironment(t *testing.T) {
 	}
 }
 
-// Every way a rung leaves a process: the rung stays green, the process is named among what it ended, and it is
-// gone when Run returns (or within goneWithin, the system's own delay).
+// Every way a rung leaves a process: the rung stays green, the process is named among what it ended, it is gone
+// when Run returns (or within goneWithin, the system's own delay), and Run returns promptly once the rung's shell
+// has come to its end: a process the end missed that still holds the output pipes keeps Run waiting PipeCutoff.
+// That wait is timed from the end of the rung's last command (its mark, endsEnv), not from the rung's start, since
+// the rung's own commands may be slow (PowerShell's cold start on a CI runner), which says nothing about the pipes.
 func TestEndsWhatItLeaves(t *testing.T) {
 	for i, c := range leaveCases(t.TempDir()) {
 		t.Run(c.name, func(t *testing.T) {
 			dir := testDir(t)
 			cmd := leaveCases(dir)[i].command
-			r := Run(context.Background(), Spec{Command: cmd, Dir: dir, Timeout: time.Minute})
+			ends := filepath.Join(dir, "ends")
+			if err := os.Mkdir(ends, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			stop := watchEnds(ends)
+			env := append(os.Environ(), endsEnv+"="+ends)
+			r := Run(context.Background(), Spec{Command: cmd, Dir: dir, Env: env, Timeout: leaveLimit})
+			returned := time.Now()
+			lastEnd := stop()
 			if !waitFile(filepath.Join(dir, "left.pid"), 0) {
 				t.Fatalf("the rung left nothing: exit %d, reason %q\n%s", r.Exit, r.Reason, r.Out)
 			}
@@ -98,8 +113,13 @@ func TestEndsWhatItLeaves(t *testing.T) {
 			if !endedHas(r, pid) {
 				t.Errorf("the leftover (pid %d) is not among what the rung ended: %+v", pid, r.Ended)
 			}
-			if r.Duration > PipeCutoff/2 {
-				t.Errorf("the rung took %s: its pipes were held", r.Duration)
+			if lastEnd.IsZero() {
+				t.Errorf("the rung's last command left no mark of its end")
+			} else if after := returned.Sub(lastEnd); after > PipeCutoff/2 {
+				t.Errorf("Run returned %s after the rung's shell came to its end (the rung took %s): its pipes were "+
+					"held", after, r.Duration)
+			} else {
+				t.Logf("the rung took %s, %s of it after its shell came to its end", r.Duration, after)
 			}
 			for _, n := range r.Notes {
 				t.Errorf("note: %s", n)
@@ -112,27 +132,42 @@ func TestEndsWhatItLeaves(t *testing.T) {
 	}
 }
 
+// The limit ends the rung red, with everything it started, and Run returns soon after it: the limit cuts the
+// rung's own commands, so the whole rung is the limit and the package's own work. The sleepers must have started
+// (written their pid files) before the limit ends them; a loaded machine can be slower than a second at that, which
+// is not what the test is about, so a run in which one had not is run again with retryLimit, and that run is checked.
 func TestTimeout(t *testing.T) {
-	dir := testDir(t)
-	a, b := filepath.Join(dir, "a.pid"), filepath.Join(dir, "b.pid")
-	r := Run(context.Background(), Spec{Command: timeoutCommand(a, b), Dir: dir, Timeout: time.Second})
-	if !r.TimedOut || r.Exit != -1 || r.Green() {
-		t.Fatalf("timed out %v, exit %d; want a red timeout", r.TimedOut, r.Exit)
-	}
-	want := fmt.Sprintf("timed out after 1 s; ended %d processes", len(r.Ended))
-	if r.Reason != want {
-		t.Errorf("reason %q, want %q", r.Reason, want)
-	}
-	pa, pb := readPID(t, a), readPID(t, b)
-	if len(r.Ended) < 3 || !endedHas(r, pa) || !endedHas(r, pb) {
-		t.Errorf("ended %+v: want the shell and both sleepers (%d, %d)", r.Ended, pa, pb)
-	}
-	waitGone(t, pa, goneWithin, "the background sleeper")
-	waitGone(t, pb, goneWithin, "the foreground sleeper")
-	if r.Duration > 5*time.Second {
-		t.Errorf("a 1 s limit took %s", r.Duration)
+	for _, limit := range []time.Duration{time.Second, retryLimit} {
+		dir := testDir(t)
+		a, b := filepath.Join(dir, "a.pid"), filepath.Join(dir, "b.pid")
+		r := Run(context.Background(), Spec{Command: timeoutCommand(a, b), Dir: dir, Timeout: limit})
+		if limit < retryLimit && (!waitFile(a, 0) || !waitFile(b, 0)) {
+			t.Logf("the sleepers had not started within the %s s limit; again with %s s", seconds(limit),
+				seconds(retryLimit))
+			continue
+		}
+		if !r.TimedOut || r.Exit != -1 || r.Green() {
+			t.Fatalf("timed out %v, exit %d; want a red timeout", r.TimedOut, r.Exit)
+		}
+		want := fmt.Sprintf("timed out after %s s; ended %d processes", seconds(limit), len(r.Ended))
+		if r.Reason != want {
+			t.Errorf("reason %q, want %q", r.Reason, want)
+		}
+		pa, pb := readPID(t, a), readPID(t, b)
+		if len(r.Ended) < 3 || !endedHas(r, pa) || !endedHas(r, pb) {
+			t.Errorf("ended %+v: want the shell and both sleepers (%d, %d)", r.Ended, pa, pb)
+		}
+		waitGone(t, pa, goneWithin, "the background sleeper")
+		waitGone(t, pb, goneWithin, "the foreground sleeper")
+		if r.Duration > limit+4*time.Second {
+			t.Errorf("a %s s limit took %s", seconds(limit), r.Duration)
+		}
+		return
 	}
 }
+
+// retryLimit is a timed test's second limit, for a machine too loaded to start a rung's sleepers within a second.
+const retryLimit = 5 * time.Second
 
 func TestStop(t *testing.T) {
 	dir := testDir(t)
