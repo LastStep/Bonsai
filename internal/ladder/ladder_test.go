@@ -783,3 +783,32 @@ func sha256Hex(b []byte) string {
 	s := sha256.Sum256(b)
 	return hex.EncodeToString(s[:])
 }
+
+// A result that cannot be written, and a record that cannot be written, are write-failed (exit 3): the first proves
+// nothing and leaves no result; the second leaves the result, named in the document, with the error saying its record
+// is missing, so no climb counts as a proof without its fingerprint.
+func TestWriteFailures(t *testing.T) {
+	f := project(t, yamlOf("[1]", "{}", "[]", rung{n: 1, name: "one", command: "echo one", required: true}),
+		map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
+	saved := writeFile
+	writeFile = func(string, []byte) error { return os.ErrPermission }
+	a := f.climb("", Options{Task: "T-0901"})
+	writeFile = saved
+	if a.Exit != ExitRuntime || a.Error == nil || a.Error.Code != "write-failed" || a.Doc.Result != nil || a.Doc.Ladder != nil {
+		t.Errorf("the result not written: exit %d, %+v", a.Exit, a.Error)
+	}
+	if _, err := os.Stat(filepath.Join(f.root, ".bonsai", "local", "ladder", "T-0901.json")); err == nil {
+		t.Error("a result was written")
+	}
+	savedLog := writeLog
+	writeLog = func(string, *format.Log) (bool, error) { return false, os.ErrPermission }
+	a = f.climb("", Options{Task: "T-0901"})
+	writeLog = savedLog
+	if a.Exit != ExitRuntime || a.Error == nil || a.Error.Code != "write-failed" || a.Doc.Result == nil || a.Doc.SHA256 == nil ||
+		a.Doc.Next != nil || !strings.Contains(a.Error.What, "its ladder record cannot be written") {
+		t.Errorf("the record not written: exit %d, %+v, %+v", a.Exit, a.Error, a.Doc)
+	}
+	if len(ladderRecords(t, f.root)) != 0 {
+		t.Error("a record was written")
+	}
+}
