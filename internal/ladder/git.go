@@ -50,16 +50,12 @@ func git(dir string, args ...string) (string, bool) {
 	return out.String(), true
 }
 
-// gitState reads HEAD (the full lower-case SHA), its branch (HEAD when detached, as git rev-parse --abbrev-ref says)
-// and whether the tree is dirty (git status --porcelain printed anything, untracked files that are not ignored
-// included; a status that cannot be read counts as dirty).
+// gitState reads HEAD (the full lower-case SHA) and its branch (HEAD when detached, as git rev-parse --abbrev-ref
+// says); dirty is the caller's (kinds.go's treeDirty).
 func gitState(dir string) format.LadderGit {
-	g := format.LadderGit{SHA: head(dir), Dirty: true}
+	g := format.LadderGit{SHA: head(dir)}
 	if b, ok := git(dir, "rev-parse", "--abbrev-ref", "HEAD"); ok {
 		g.Branch = strings.TrimSpace(b)
-	}
-	if s, ok := git(dir, "status", "--porcelain"); ok {
-		g.Dirty = strings.TrimSpace(s) != ""
 	}
 	return g
 }
@@ -73,7 +69,8 @@ func head(dir string) string {
 	return strings.ToLower(strings.TrimSpace(s))
 }
 
-// dirtyNow is whether the tree is dirty now.
+// dirtyNow is whether the tree is dirty now: git status --porcelain printed anything (untracked files that are not
+// ignored included); a status that cannot be read counts as dirty.
 func dirtyNow(dir string) bool {
 	s, ok := git(dir, "status", "--porcelain")
 	return !ok || strings.TrimSpace(s) != ""

@@ -59,7 +59,9 @@ func (c *Climb) printRung(r format.Rung, e *format.LadderRung, notes []string) {
 	}
 	c.say("  %2d %-30s %-7s %7s%s", e.Rung, e.Name, e.Status, dur, rat)
 	for _, n := range notes {
-		c.say("       note: %s", oneLine(n))
+		for _, line := range strings.Split(strings.TrimSpace(n), "\n") {
+			c.say("       note: %s", line)
+		}
 	}
 }
 

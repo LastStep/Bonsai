@@ -50,6 +50,7 @@ var jsonNumber = sync.OnceValue(func() *regexp.Regexp {
 // climb climbs the rungs and reads git at the start and the end (this package's comment, steps 6 and 8).
 func (c *Climb) climb() {
 	c.git = gitState(c.Root)
+	c.git.Dirty = treeDirty(c)
 	c.printHeader()
 	var entries []*format.LadderRung
 	stopWhy := ""
@@ -73,6 +74,9 @@ func (c *Climb) climb() {
 			s, notes = c.runCommand(r, e)
 		} else {
 			s = c.runOther(r, e)
+			if s.note != "" {
+				notes = append(notes, s.note)
+			}
 		}
 		ms := time.Since(start).Milliseconds()
 		e.DurationMS = &ms
@@ -93,7 +97,7 @@ func (c *Climb) climb() {
 		c.results = append(c.results, *e)
 	}
 	c.headAfter = head(c.Root)
-	c.dirtyAfter = dirtyNow(c.Root)
+	c.dirtyAfter = treeDirty(c)
 	if !c.CI && !c.o.nested() {
 		v := leftovers.Check(c.Root)
 		c.leftovers, c.leftLines = v.Record(), v.Lines()
@@ -119,18 +123,21 @@ func (c *Climb) runOther(r format.Rung, e *format.LadderRung) *Step {
 	if e.Status == "" {
 		e.Status = statusError
 	}
+	s := &Step{Rung: r, Entry: e, next: o.Next, who: o.NextWho}
 	if e.Status != statusGreen {
 		why := o.Reason
 		if why == "" {
 			why = "the rung ended " + e.Status + " and gave no reason"
 		}
 		e.Reason = text(why)
+	} else {
+		s.note = o.Reason
 	}
 	e.Captures = o.Captures
 	if o.Hides {
 		c.hides = append(c.hides, strconv.FormatInt(r.Rung, 10))
 	}
-	return &Step{Rung: r, Entry: e, next: o.Next, who: o.NextWho}
+	return s
 }
 
 // runCommand runs a command rung through its rung job (note 2), reads its tests (note 3) and judges their skips and

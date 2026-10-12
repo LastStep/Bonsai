@@ -4,12 +4,17 @@ package ladder
 // piece built beside the runner in a package of its own wires itself in here with one last commit, as 5.3.3 wired into
 // the guard. The runner itself (rungs.go) calls only runKind, afterRung and afterResult, and reads only what they give.
 //
-//   - guardKind: rung 0 (step 5.4.3). Its wiring replaces the body with rung0's judgment, given the climb's Root, its
-//     verified main project (Main, Config), the named task (Task, nil under --ci with none: no grants), the base
-//     branch and the merge base (Base, MergeBase), and copies its Status, Reason and Captures into the Outcome.
-//   - verGitKind: git integrity (step 5.4.6). Its wiring replaces the body with vergit's judgment, given Root, Base,
-//     MergeBase, the rung's tests form (r.Tests) and the task's earlier captures for the rung (c.PriorCaptures(r.Rung)),
-//     and copies Status, Reason, Captures and Hides: the runner already turns Hides into the result's git.dirty.
+//   - guardKind: rung 0 (step 5.4.3). Its wiring replaces the body with rung0.Judge(rung0.Input{Root: c.Root, Main:
+//     c.Main, Home: c.Home, Active: the climbed task (*c.Task, the zero ActiveTask when c.Task is nil: no grants), Base:
+//     c.Base, MergeBase: c.MergeBase}), copying Status, Reason and Captures into the Outcome, and its Refused[].Needs
+//     into Next (and NextWho person for a person's grant), so a red climb's next names each path's fix.
+//   - verGitKind: git integrity (step 5.4.6). Its wiring replaces the body with vergit.Judge(vergit.Input{Root: c.Root,
+//     BaseBranch: c.Base, MergeBase: c.MergeBase, Tests: the rung's own tests form, else the other rungs' forms in rung
+//     order (c.Config.Full.Ladder), Earlier: c.PriorCaptures(r.Rung), Timeout: rungTimeout(r)}), copying Status, Reason, Captures
+//     and Hides: the runner already turns Hides into the result's git.dirty.
+//   - treeDirty: whether git's status shows the tree dirty, read at the climb's start and its end. Today git status
+//     (git.go); 5.4.6's wiring replaces it with vergit.Dirty (its error counting dirty), so the result's git.dirty is
+//     that or a ver-git rung's Hides.
 //   - afterRung: the steps after each rung that ran, in order. Today it writes the ratchet's count on the rung
 //     (note 5: was, now and whether now is at least was) and judges nothing. Step 5.4.4 judges it there (a count below
 //     its floor red, a count that cannot be read red: s.Count.Now is "" then), and 5.4.5 hangs the new-tests check on
@@ -18,7 +23,9 @@ package ladder
 //     whose offer is gone), giving the ask records it wrote for the climb's bless; [] until then.
 //
 // Until their wiring lands, guard and ver-git rungs end in error, "not built yet", so a floor holding one climbs red
-// (the runner lands before them, "The order" item 3).
+// (the runner lands before them, "The order" item 3). A kind's Reason goes into the result only when the rung is not
+// green (bonsai.ladder/1: reason is null when green); a green rung's reason (what was found, what was not judged) is
+// printed under its line in the human output, and its findings are in its captures.
 
 import (
 	"encoding/json"
@@ -67,6 +74,9 @@ func verGitKind(c *Climb, r format.Rung) Outcome {
 	return notBuilt(r, "git integrity comes with step 5.4.6")
 }
 
+// treeDirty reports whether the climbed checkout's tree is dirty by git's status (this file's comment).
+func treeDirty(c *Climb) bool { return dirtyNow(c.Root) }
+
 // notBuilt is a kind this build does not run yet.
 func notBuilt(r format.Rung, when string) Outcome {
 	return Outcome{Status: "error", Reason: "not built yet: this Bonsai does not run " + r.Kind + " rungs (" + when + ")",
@@ -81,6 +91,7 @@ type Step struct {
 	Count  *Count             // its ratchet and the count read for it, or nil when the rung has no ratchet
 	Output []byte             // a command rung's output, both streams (up to rungjob.OutputCap); nil for other kinds
 	next   string             // the kind's own fix for a red climb's next step
+	note   string             // a green kind's reason: printed under its line, never in the result
 	who    string             // who takes it ("" for agent)
 	timed  bool               // the rung's limit ended it
 }
