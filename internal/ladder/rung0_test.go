@@ -185,3 +185,121 @@ func TestRung0PersonOnlyInCommandMode(t *testing.T) {
 		t.Errorf("next: %s", d.Do)
 	}
 }
+
+// What rung 0 did not judge stays in a green result: its reason is null there, its not_judged capture is not. A
+// machine finding (this home's install record) is listed and does not count; with the main checkout on a detached HEAD
+// there is no base, so the branch's commits are not judged (a protected change committed on the branch passes), and the
+// result says so; the human lines print both as notes.
+func TestRung0NotJudgedKept(t *testing.T) {
+	f := r0Project(t)
+	f.writeIn(f.home, "install.json", "not the installed bonsai's record\n")
+	a := f.climb("", Options{Task: "T-0901"})
+	r := f.result("T-0901").Rungs[0]
+	if a.Exit != 0 || r.Status != "green" || r.Reason != nil ||
+		r.Captures.String("not_judged") != "bonsai check's findings about this machine, not the commit (bonsai-path)" {
+		t.Fatalf("a machine finding: exit %d, %+v, %s\n%s", a.Exit, r, showOf(r.Captures, "not_judged"), f.out.String())
+	}
+	if !strings.Contains(f.out.String(), "note: not judged here: bonsai check's findings about this machine") {
+		t.Errorf("the human lines:\n%s", f.out.String())
+	}
+	wt := f.worktree("t0901")
+	f.writeIn(wt, "assets/old/a.txt", "changed on the branch\n")
+	f.commitIn(wt, "a protected change")
+	testpack.Git(t, f.root, "checkout", "-q", "--detach")
+	a = f.climb(wt, Options{Task: "T-0901"})
+	r = f.result("T-0901").Rungs[0]
+	nj := r.Captures.String("not_judged")
+	if a.Exit != 0 || r.Status != "green" || !strings.HasPrefix(nj, "the branch's commits (no base branch: the main checkout's HEAD is detached") ||
+		!strings.HasSuffix(nj, "; bonsai check's findings about this machine, not the commit (bonsai-path)") {
+		t.Errorf("no base: exit %d, %s, not_judged %q", a.Exit, r.Status, nj)
+	}
+}
+
+// A branch that deletes bonsai.yaml: the climb runs in the worktree by its main checkout's bonsai.yaml, and rung 0 is
+// red: the deletion refused (bonsai.yaml is person-only, the floor's) and bonsai check unable to run there; next names
+// both fixes.
+func TestRung0BranchDeletesBonsaiYAML(t *testing.T) {
+	f := r0Project(t)
+	wt := f.worktree("t0901")
+	testpack.Git(t, wt, "rm", "-q", "bonsai.yaml")
+	f.commitIn(wt, "delete bonsai.yaml")
+	a := f.climb(wt, Options{Task: "T-0901"})
+	if a.Exit != ExitRed || a.Doc.Next == nil {
+		t.Fatalf("exit %d, %+v\n%s", a.Exit, a.Error, f.out.String())
+	}
+	reason := reasonOf(f, "T-0901", 0)
+	if !strings.Contains(reason, `- "bonsai.yaml" (person-only)`) || !strings.Contains(reason, "bonsai check cannot run in this checkout") {
+		t.Errorf("the reason:\n%s", reason)
+	}
+	if !strings.Contains(a.Doc.Next.Do, `"bonsai.yaml" (person-only) needs a person's grant in T-0901's bonsai.allows, or a revert`) ||
+		!strings.Contains(a.Doc.Next.Do, "rebase the branch on the base branch so it holds the main checkout's bonsai.yaml, or restore it") {
+		t.Errorf("next: %s", a.Doc.Next.Do)
+	}
+}
+
+// A worktree's climb is judged against the main checkout: its branch loosens its own bonsai.yaml (assets/** no longer
+// protected) and its own copy of the task (granting assets/**), and changes an asset; rung 0 judges by main's lists and
+// main's copy of the task, so the asset and bonsai.yaml are refused, while the task file, free in agents mode, is not.
+func TestRung0WorktreeJudgedAgainstMain(t *testing.T) {
+	f := r0Project(t)
+	wt := f.worktree("t0901")
+	f.writeIn(wt, "bonsai.yaml", strings.Replace(r0YAML(), `protected: ["assets/**", "secret/**", ".claude/**"]`, `protected: ["secret/**", ".claude/**"]`, 1))
+	f.writeIn(wt, "work/tasks/T-0901-a.md", allowsTask("T-0901", "running", `["assets/**", "secret/granted/**"]`))
+	f.writeIn(wt, "assets/old/a.txt", "changed\n")
+	f.commitIn(wt, "loosen the lists on the branch")
+	a := f.climb(wt, Options{Task: "T-0901"})
+	reason := reasonOf(f, "T-0901", 0)
+	if a.Exit != ExitRed || !strings.Contains(reason, "2 of 3 changed paths refused") || !strings.Contains(reason, `- "assets/old/a.txt" (protected)`) ||
+		!strings.Contains(reason, `- "bonsai.yaml" (person-only)`) || strings.Contains(reason, "T-0901-a.md") {
+		t.Errorf("exit %d, the reason:\n%s", a.Exit, reason)
+	}
+}
+
+// No task named under --ci: nothing is granted, so a protected change is red (contract §13: none fails closed).
+func TestRung0CINoTask(t *testing.T) {
+	f := r0Project(t)
+	f.write("assets/t-0901/new.txt", "granted to T-0901, but no task is named\n")
+	a := f.climb("", Options{CI: true})
+	l := f.result("ci")
+	reason := reasonOf(f, "ci", 0)
+	if a.Exit != ExitRed || l.Task != nil || statuses(l) != "0:red 1:skipped" ||
+		!strings.Contains(reason, "judged as the guard judges an edit by no named task (nothing granted)") ||
+		!strings.Contains(reason, `- "assets/t-0901/new.txt" (protected)`) {
+		t.Errorf("exit %d, %s:\n%s", a.Exit, statuses(l), reason)
+	}
+	if a.Doc.Next == nil || !strings.Contains(a.Doc.Next.Do, `needs a named task (--task) whose bonsai.allows grants it, or a revert`) ||
+		!strings.HasSuffix(a.Doc.Next.Do, "then run: bonsai ladder --ci --json") {
+		t.Errorf("next: %+v", a.Doc.Next)
+	}
+}
+
+// 5.3's stop gate with rung 0 in the floor: a green climb of the worktree's HEAD lets the named session end; a red
+// one (a refused path committed) keeps it going; the path reverted and climbed green again, it ends.
+func TestRung0TheStopGate(t *testing.T) {
+	f := r0Project(t)
+	wt := f.worktree("t0901")
+	f.writeIn(wt, "assets/t-0901/new.txt", "granted\n")
+	f.commitIn(wt, "the task's work")
+	if a := f.climb(wt, Options{Task: "T-0901"}); a.Exit != 0 {
+		t.Fatalf("the green climb: exit %d\n%s", a.Exit, f.out.String())
+	}
+	if code, stderr := gate(t, wt, "T-0901"); code != 0 {
+		t.Fatalf("a green climb with rung 0 refused: %d %q", code, stderr)
+	}
+	f.writeIn(wt, "assets/old/a.txt", "changed\n")
+	f.commitIn(wt, "beyond the grants")
+	if a := f.climb(wt, Options{Task: "T-0901"}); a.Exit != ExitRed {
+		t.Fatalf("the red climb: exit %d", a.Exit)
+	}
+	if code, stderr := gate(t, wt, "T-0901"); code != 2 || !strings.Contains(stderr, "is not green") {
+		t.Errorf("a red rung 0 let the session end: %d %q", code, stderr)
+	}
+	testpack.Git(t, wt, "checkout", "main", "--", "assets/old/a.txt")
+	f.commitIn(wt, "reverted")
+	if a := f.climb(wt, Options{Task: "T-0901"}); a.Exit != 0 {
+		t.Fatalf("green again: exit %d", a.Exit)
+	}
+	if code, stderr := gate(t, wt, "T-0901"); code != 0 {
+		t.Errorf("green again, refused: %d %q", code, stderr)
+	}
+}
