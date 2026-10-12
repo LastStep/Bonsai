@@ -31,7 +31,7 @@ documents:
 protected: ["assets/**", "secret/**", ".claude/**"]
 person_only: ["secret/**", ".claude/**"]
 never_edit: []
-ladder_floor: [0]
+ladder_floor: []
 ladder: []
 ratchets: {}
 ci_marked_tests: []
