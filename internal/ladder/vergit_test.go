@@ -1,11 +1,15 @@
 package ladder
 
-// Git integrity through the runner (plan-5 5.4.6, re-run through bonsai ladder; "5.4 done" check 11): a clean
-// fixture's ver-git rung green with its records; a stash added since the task's last climb found from that result's
-// records; the test files judged by the rung's own tests form, else the other rungs'; error only when git cannot be
-// read.
+// Git integrity through the runner (plan-5 5.4.6's proof, re-run through bonsai ladder; "5.4 done" check 11): a clean
+// fixture's ver-git rung green with its records; a change git hides (an assume-unchanged entry, a file only
+// info/exclude ignores) green but making the result dirty, which 5.3's stop gate refuses; Claude Code's own files inside
+// .claude/ named but not dirty; a stash added since the task's last climb found from that result's records; the test
+// files judged by the rung's own tests form, else the other rungs'; error only when git cannot be read; the result's
+// dirty read as git integrity reads git status.
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -38,6 +42,21 @@ func gitRung(t *testing.T, f *fx) format.LadderRung {
 	return format.LadderRung{}
 }
 
+// appendTo adds lines to a file in a checkout (info/exclude, say).
+func appendTo(t *testing.T, path, lines string) {
+	t.Helper()
+	fh, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fh.WriteString(lines); err != nil {
+		t.Fatal(err)
+	}
+	if err := fh.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // A clean fixture: the ver-git rung green, its reason not in the result but printed as a note, its captures the
 // records (base, the merge base; stash-count; exclude-hash) and every finding's count, 0; the result clean, and the
 // stop gate lets the session end on it.
@@ -64,6 +83,65 @@ func TestVerGitClean(t *testing.T) {
 	}
 	if code, stderr := gate(t, f.root, "T-0901"); code != 0 {
 		t.Errorf("the stop gate refused a clean climb: %d %q", code, stderr)
+	}
+}
+
+// A change git hides: plain git status shows a clean tree, the ver-git rung stays green (it informs) and names it, and
+// the result's dirty is true, so the stop gate refuses the climb as a proof.
+func TestVerGitHiddenChangeIsDirty(t *testing.T) {
+	for _, c := range []struct {
+		name, finding string
+		hide          func(f *fx)
+	}{
+		{"an assume-unchanged entry", "assume-unchanged", func(f *fx) {
+			testpack.Git(f.t, f.root, "update-index", "--assume-unchanged", "src/main.txt")
+			f.write("src/main.txt", "changed where git does not look\n")
+		}},
+		{"a file only info/exclude ignores", "exclude-hidden", func(f *fx) {
+			appendTo(f.t, filepath.Join(f.root, ".git", "info", "exclude"), "notes.txt\n")
+			f.write("notes.txt", "read by a test, shown by no git status\n")
+		}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f := vgProject(t)
+			c.hide(f)
+			if s := testpack.Git(t, f.root, "status", "--porcelain"); s != "" {
+				t.Fatalf("plain git status shows it: %q", s)
+			}
+			a := f.climb("", Options{Task: "T-0901"})
+			r := gitRung(t, f)
+			if a.Exit != 0 || r.Status != "green" || showOf(r.Captures, c.finding) != "1" || !f.result("T-0901").Git.Dirty {
+				t.Fatalf("exit %d, %s, %s %s, dirty %v\n%s", a.Exit, r.Status, c.finding, showOf(r.Captures, c.finding),
+					f.result("T-0901").Git.Dirty, f.out.String())
+			}
+			if !strings.Contains(f.out.String(), "git integrity found a change git hides (rung 5): the result counts the tree as dirty") {
+				t.Errorf("the human lines:\n%s", f.out.String())
+			}
+			if code, stderr := gate(t, f.root, "T-0901"); code != 2 || !strings.Contains(stderr, "uncommitted changes") {
+				t.Errorf("the stop gate: %d %q", code, stderr)
+			}
+		})
+	}
+}
+
+// Claude Code's own local files, hidden by its lines in info/exclude and the user's global excludes: named under
+// exclude-hidden, never dirty, so a session's own state does not keep it from stopping.
+func TestVerGitClaudeCodeFilesNotDirty(t *testing.T) {
+	f := vgProject(t)
+	appendTo(t, filepath.Join(f.root, ".git", "info", "exclude"), "# claude-code-runtime\n**/.claude/scheduled_tasks.lock\n")
+	f.writeIn(f.tmp, "xdg/git/ignore", "**/.claude/settings.local.json\n") // the user's global excludes (testpack.Isolate's XDG_CONFIG_HOME)
+	f.write(".claude/scheduled_tasks.lock", "")
+	f.write(".claude/settings.local.json", "{}\n")
+	a := f.climb("", Options{Task: "T-0901"})
+	r := gitRung(t, f)
+	if a.Exit != 0 || showOf(r.Captures, "exclude-hidden") != "2" || f.result("T-0901").Git.Dirty {
+		t.Fatalf("exit %d, exclude-hidden %s, dirty %v\n%s", a.Exit, showOf(r.Captures, "exclude-hidden"), f.result("T-0901").Git.Dirty, f.out.String())
+	}
+	if !strings.Contains(f.out.String(), "inside .claude/, not counted as dirty") {
+		t.Errorf("the human lines:\n%s", f.out.String())
+	}
+	if code, stderr := gate(t, f.root, "T-0901"); code != 0 {
+		t.Errorf("the stop gate: %d %q", code, stderr)
 	}
 }
 
