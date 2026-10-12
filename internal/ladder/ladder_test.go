@@ -158,7 +158,10 @@ func (f *fx) climb(dir string, o Options) *Answer {
 	}
 	o.Dir = dir
 	o.Getenv = func(k string) string { return f.env[k] }
-	o.Out, o.Notice = &f.out, &f.notice
+	o.Out = &f.out
+	if o.Notice == nil {
+		o.Notice = &f.notice
+	}
 	o.LockPoll, o.LockGrace = f.lockPoll, f.lockGrace
 	a := Run(o)
 	if _, err := a.Doc.Encode(); err != nil {

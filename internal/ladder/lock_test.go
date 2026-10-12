@@ -7,11 +7,13 @@ package ladder
 
 import (
 	"bufio"
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -58,6 +60,30 @@ func lockFixture(t *testing.T) *fx {
 		map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
 }
 
+// noticed is a climb's notice writer that says when the waiting line came, so a test lets go of the lock only once
+// the climb waits for it, however slowly the climb gets there (a loaded Windows machine takes seconds).
+type noticed struct {
+	mu   sync.Mutex
+	buf  bytes.Buffer
+	once sync.Once
+	came chan struct{}
+}
+
+func (n *noticed) Write(p []byte) (int, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if bytes.Contains(p, []byte("waiting while it runs")) {
+		n.once.Do(func() { close(n.came) })
+	}
+	return n.buf.Write(p)
+}
+
+func (n *noticed) String() string {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.buf.String()
+}
+
 // A climb waits while the holder runs inside its budget, says once whom it waits for, and climbs once the holder lets
 // go; the lock's file names the holder while it holds it.
 func TestLockWaitsThenClimbs(t *testing.T) {
@@ -68,17 +94,27 @@ func TestLockWaitsThenClimbs(t *testing.T) {
 		h.Checkout != filepath.ToSlash(f.root) {
 		t.Fatalf("the holder's words: %s", words)
 	}
+	n := &noticed{came: make(chan struct{})}
+	let := make(chan time.Time, 1)
 	go func() {
-		time.Sleep(300 * time.Millisecond)
+		select {
+		case <-n.came:
+			time.Sleep(200 * time.Millisecond) // the climb goes on waiting, polling, until the holder lets go
+		case <-time.After(30 * time.Second):
+		}
+		let <- time.Now()
 		release()
 	}()
-	start := time.Now()
-	a := f.climb("", Options{Task: "T-0901"})
-	if a.Exit != 0 || time.Since(start) < 250*time.Millisecond {
-		t.Fatalf("exit %d after %v, %+v", a.Exit, time.Since(start), a.Error)
+	a := f.climb("", Options{Task: "T-0901", Notice: n})
+	done := time.Now()
+	if a.Exit != 0 {
+		t.Fatalf("exit %d, %+v", a.Exit, a.Error)
 	}
-	if n := strings.Count(f.notice.String(), "waiting while it runs"); n != 1 || !strings.Contains(f.notice.String(), "the climb of no task") {
-		t.Errorf("the waiting line, %d times:\n%s", n, f.notice.String())
+	if released := <-let; done.Before(released) {
+		t.Errorf("the climb ended %v before the holder let go", released.Sub(done))
+	}
+	if c := strings.Count(n.String(), "waiting while it runs"); c != 1 || !strings.Contains(n.String(), "the climb of no task") {
+		t.Errorf("the waiting line, %d times:\n%s", c, n.String())
 	}
 	if raw, _ := os.ReadFile(filepath.Join(f.home, filepath.FromSlash(LockFile))); len(raw) != 0 {
 		t.Errorf("the released lock still names a holder: %s", raw)
