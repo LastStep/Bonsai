@@ -30,8 +30,9 @@ const waitDelay = 2 * time.Second
 // global excludes or global attributes by default), every GIT_* variable (GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE,
 // GIT_OBJECT_DIRECTORY and GIT_ALTERNATE_OBJECT_DIRECTORIES would point git at other files; GIT_CONFIG_* and
 // GIT_CONFIG_PARAMETERS would add settings; GIT_EXEC_PATH would swap its helpers; GIT_TRACE* would write into its
-// output; GIT_NAMESPACE, GIT_CEILING_DIRECTORIES and the pathspec switches would change what it reads), PAGER and the
-// editors. Windows variable names are matched without case.
+// output; GIT_NAMESPACE and the pathspec switches would change what it reads; GIT_CEILING_DIRECTORIES is set anew, in
+// newRunner), PAGER and the editors. Windows variable names are matched without case. Every call is one of git's own
+// commands, which no alias can replace, with --no-pager.
 var keepEnv = []string{"PATH", "PATHEXT", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "COMSPEC"}
 
 // fixedEnv is added to every call. GIT_CONFIG_NOSYSTEM and GIT_CONFIG_GLOBAL (set to the null device in env) leave
