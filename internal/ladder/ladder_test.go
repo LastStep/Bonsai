@@ -812,3 +812,25 @@ func TestWriteFailures(t *testing.T) {
 		t.Error("a record was written")
 	}
 }
+
+// The result's dirty is git's status at the start or at the end, or HEAD moved during the climb: a rung that leaves a
+// file, or commits, makes a climb that started clean dirty, so it proves no commit.
+func TestDirtyDuringTheClimb(t *testing.T) {
+	for _, c := range []struct{ name, command, says string }{
+		{"a file left", "echo made > made.txt", "the tree was dirty"},
+		{"a commit made", "git -c user.name=a -c user.email=a@example.invalid commit -q --allow-empty -m moved", "HEAD moved during the climb"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f := project(t, yamlOf("[1]", "{}", "[]", rung{n: 1, name: "one", command: c.command, required: true}),
+				map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
+			before := f.head()
+			if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 {
+				t.Fatalf("exit %d, %+v\n%s", a.Exit, a.Error, f.out.String())
+			}
+			l := f.result("T-0901")
+			if !l.Git.Dirty || l.Git.SHA != before || !strings.Contains(f.out.String(), c.says) {
+				t.Errorf("git %+v, before %s\n%s", l.Git, before, f.out.String())
+			}
+		})
+	}
+}
