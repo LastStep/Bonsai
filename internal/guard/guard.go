@@ -43,9 +43,13 @@
 // settings (Claude Code reads .claude/settings.json from the folder a session starts in), so no hook line, the guard's
 // among them, runs there: bonsai init's closing words and this hook's help say so.
 //
-// Known limit, placed for step 5.4: a worktree with no bonsai.yaml of its own. Inside the main checkout's
-// .claude/worktrees/, its edits are judged as the main checkout's paths under its lists, so a person_only .claude/**
-// refuses every one of them; outside the main checkout, it is judged by no lists at all.
+// Known limit: a worktree with no bonsai.yaml of its own (its branch made before the link, or one that deleted it).
+// Inside the main checkout's .claude/worktrees/, its edits are judged as the main checkout's paths under its lists, so
+// a person_only .claude/** refuses every one of them; outside the main checkout, it is judged by no lists at all. Rung
+// 0 (internal/rung0, step 5.4.3) catches that case at the climb: it judges every path such a worktree changed against
+// the verified main checkout's lists and the named task's grants, wherever the worktree lies, and it is red while
+// bonsai check cannot run there (no bonsai.yaml of its own), so such a worktree's work never climbs green on a floor
+// that holds rung 0.
 package guard
 
 // Decision is the guard's answer to one call.
