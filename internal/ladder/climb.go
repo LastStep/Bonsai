@@ -1,0 +1,118 @@
+package ladder
+
+// The climb's state: what the steps before a rung found (ladder.go), which kinds.go's functions read, and what the
+// rungs give (rungs.go) on the way to the result (result.go).
+
+import (
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sort"
+	"time"
+
+	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/workspace"
+)
+
+// Climb is one climb of the ladder. Its exported fields are what a rung kind and a step after a rung read
+// (kinds.go): set before the first rung, never changed by a kind.
+type Climb struct {
+	Root      string                // the checkout climbed: its top folder, absolute, system separators
+	Main      string                // the verified main checkout, whose .bonsai/local/ holds the result (under --ci with main not verified, Root)
+	Verified  bool                  // Main is verified (workspace.VerifyMain); false only under --ci
+	Home      string                // the Bonsai home
+	Config    *workspace.Config     // Main's bonsai.yaml, read in full (Config.Full): the ladder, the floor, the ratchets, the task folder
+	Task      *workspace.ActiveTask // the task climbed for, named (contract §13); nil for none (--ci with none)
+	CI        bool                  // --ci: mode ci
+	Requested []int64               // the rungs asked for, sorted, each once
+	Base      string                // the base branch: the branch Main has checked out; "" when its HEAD is detached
+	MergeBase string                // git merge-base of Base and HEAD in Root; "" when there is no base or git finds none
+	Prior     *format.Ladder        // the task's earlier result in Main's ladder folder (made for this task and workspace), or nil
+	Getenv    func(string) string   // the climb's environment reader
+	Now       func() time.Time      // the climb's clock
+
+	o          Options
+	started    time.Time
+	workspace  *format.WorkspaceRef // the climb document's workspace
+	unverified string               // under --ci, why Main is not verified ("" when it is)
+	rungs      []format.Rung        // the rungs climbed, in number order (bonsai.yaml's order within one number)
+	git        format.LadderGit     // HEAD at the start, its branch, dirty
+	headAfter  string               // HEAD at the end
+	dirtyAfter bool                 // git's status at the end
+	hides      []string             // the rungs whose findings hide a change from git (kinds.go: Outcome.Hides)
+	results    []format.LadderRung  // one per rung climbed
+	steps      []*Step              // one per rung climbed, as the steps after a rung saw it
+	skipped    []format.LadderSkip  // --ci: every skip, accepted or not
+	leftovers  any                  // the leftovers record (leftovers.Value.Record)
+	leftLines  []string             // the leftovers line
+	stopped    bool                 // the stop signal came
+}
+
+// TaskID is the climbed task's id, "" for none.
+func (c *Climb) TaskID() string {
+	if c.Task == nil {
+		return ""
+	}
+	return c.Task.ID
+}
+
+// PriorCaptures is the earlier result's captures for rung n (5.4.6 compares its stash count and exclude hash with
+// them), or nil when there is no earlier result or it holds none for the rung.
+func (c *Climb) PriorCaptures(n int64) schema.Object {
+	if c.Prior == nil {
+		return nil
+	}
+	for _, r := range c.Prior.Rungs {
+		if r.Rung == n {
+			return r.Captures
+		}
+	}
+	return nil
+}
+
+// ResultRel is the result's project-relative path: .bonsai/local/ladder/<task>.json, or ci.json for a --ci climb.
+func (c *Climb) ResultRel() string {
+	name := c.TaskID()
+	if c.CI {
+		name = "ci"
+	}
+	return workspace.LocalDir + "/ladder/" + name + ".json"
+}
+
+// mode is the result's mode.
+func (c *Climb) mode() string {
+	if c.CI {
+		return ModeCI
+	}
+	return ModeLocal
+}
+
+// prior reads the task's earlier local result in Main's ladder folder: nil when there is none, it does not read, or it
+// was made for another task or workspace.
+func (c *Climb) prior() *format.Ladder {
+	if c.Task == nil {
+		return nil
+	}
+	raw, err := os.ReadFile(filepath.Join(c.Main, filepath.FromSlash(workspace.LocalDir), "ladder", c.Task.ID+".json"))
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		return nil
+	}
+	l, err := format.ReadLadder(raw)
+	if err != nil || l.Task == nil || *l.Task != c.Task.ID || l.Workspace != c.Config.ID {
+		return nil
+	}
+	return l
+}
+
+func sortInts(list []int64) { sort.Slice(list, func(i, j int) bool { return list[i] < list[j] }) }
+
+// sortRungs puts rungs in number order, bonsai.yaml's order kept within one number (two rungs with one number is a
+// check finding, rung-twice; both are climbed).
+func sortRungs(list []format.Rung) {
+	sort.SliceStable(list, func(i, j int) bool { return list[i].Rung < list[j].Rung })
+}

@@ -264,7 +264,7 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		who  string // "" for the word's usual one
 	}{
 		{"no word", nil, nil, 2, "unknown-command", ""},
-		{"a word Bonsai does not have", nil, []string{"ladder"}, 2, "unknown-command", ""},
+		{"a word Bonsai does not have", nil, []string{"serve"}, 2, "unknown-command", ""},
 		{"--version with more", nil, []string{"--version", "now"}, 2, "bad-flag", ""},
 
 		{"init with no values", nil, []string{"init"}, 2, "missing-value", ""},
@@ -412,10 +412,11 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 	}
 	// Every word the engine, status and the command line's shared code name is reached by a case above, but a read
 	// or write failure, the unexpected, and a write stopped part-way (TestPartialWriteFails). A word named only in a
-	// word's own file (check.go's unknown-format among them) is that word's tests' to reach, so a later word's file
-	// and its tests need no case here.
+	// word's own file (check.go's unknown-format among them), or in the package only that word runs (internal/ladder,
+	// whose refusals ladder_test.go reaches), is that word's tests' to reach, so a later word's file and its tests need
+	// no case here.
 	for word, where := range codeWords(t, func(dir, file string) bool {
-		return dir != "." || file == "word.go" || file == "main.go"
+		return (dir != "." && dir != "../../internal/ladder") || file == "word.go" || file == "main.go"
 	}) {
 		switch word {
 		case "read-failed", "write-failed", "partly-written", "unexpected":
@@ -515,8 +516,8 @@ func TestPartialWriteFails(t *testing.T) {
 }
 
 // Every word a refusal names in the code is in format.ErrorWords, found by reading the code: each errorf, wsError
-// and fileError call and each Code: of an Error in cmd/bonsai, internal/engine and internal/status, so a refusal no
-// test reaches cannot carry a word the table does not have.
+// and fileError call and each Code: of an Error in cmd/bonsai, internal/engine, internal/status, internal/sessions,
+// internal/asks and internal/ladder, so a refusal no test reaches cannot carry a word the table does not have.
 func TestErrorWordsInTheCode(t *testing.T) {
 	words := codeWords(t, func(string, string) bool { return true })
 	for word, where := range words {
@@ -539,7 +540,7 @@ func codeWords(t *testing.T, keep func(dir, file string) bool) map[string]string
 	t.Helper()
 	found := map[string]string{}
 	for _, dir := range []string{".", "../../internal/engine", "../../internal/status", "../../internal/sessions",
-		"../../internal/asks",
+		"../../internal/asks", "../../internal/ladder",
 	} {
 		pkgs, err := parser.ParseDir(token.NewFileSet(), filepath.Join(packageDir, dir), func(fi os.FileInfo) bool {
 			return !strings.HasSuffix(fi.Name(), "_test.go") && keep(dir, fi.Name())

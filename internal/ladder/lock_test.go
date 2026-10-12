@@ -1,0 +1,190 @@
+package ladder
+
+// One ladder at a time per home (note 8): the lock held and released, a second climb waiting while the holder runs and
+// refusing past its budget, a dead holder's lock taken at once, a holder that never names itself, and two homes that
+// never block each other. The dead holder is this test binary run again as a helper process (TestHoldLockHelper),
+// killed by the test: the system lets go of its lock with it, on both systems.
+
+import (
+	"bufio"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/LastStep/Bonsai/internal/format"
+)
+
+// holdEnv makes this test binary a lock holder: it takes the lock of the home the variable names, says "held" on
+// stdout and waits to be killed.
+const holdEnv = "BONSAI_TEST_HOLD_LADDER_LOCK"
+
+// TestHoldLockHelper is the helper process's body; run as a plain test it does nothing.
+func TestHoldLockHelper(t *testing.T) {
+	home := os.Getenv(holdEnv)
+	if home == "" {
+		return
+	}
+	c := &Climb{Home: home, Root: home, o: Options{}.withDefaults()}
+	if _, e := takeLock(c); e != nil {
+		os.Exit(3)
+	}
+	_, _ = os.Stdout.WriteString("held\n")
+	time.Sleep(time.Hour)
+}
+
+// holdLock takes the lock of a fixture's home, as a climb with a budget of budget s would, until release is called.
+func holdLock(t *testing.T, f *fx, budget int) func() {
+	t.Helper()
+	timeout := int64(budget)
+	c := &Climb{Home: f.home, Root: f.root, o: Options{LockPoll: f.lockPoll, LockGrace: f.lockGrace}.withDefaults()}
+	c.rungs = append(c.rungs, format.Rung{Rung: 1, Kind: KindCommand, TimeoutS: &timeout})
+	release, e := takeLock(c)
+	if e != nil {
+		t.Fatalf("taking the lock: %+v", e)
+	}
+	return release
+}
+
+func lockFixture(t *testing.T) *fx {
+	return project(t, yamlOf("[1]", "{}", "[]", rung{n: 1, name: "one", command: "echo one", required: true}),
+		map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
+}
+
+// A climb waits while the holder runs inside its budget, says once whom it waits for, and climbs once the holder lets
+// go; the lock's file names the holder while it holds it.
+func TestLockWaitsThenClimbs(t *testing.T) {
+	f := lockFixture(t)
+	release := holdLock(t, f, 60)
+	words, _ := os.ReadFile(filepath.Join(f.home, filepath.FromSlash(LockFile)))
+	if h, ok := readHolder(filepath.Join(f.home, filepath.FromSlash(LockFile))); !ok || h.PID != os.Getpid() || h.BudgetS != 60 ||
+		h.Checkout != filepath.ToSlash(f.root) {
+		t.Fatalf("the holder's words: %s", words)
+	}
+	go func() {
+		time.Sleep(300 * time.Millisecond)
+		release()
+	}()
+	start := time.Now()
+	a := f.climb("", Options{Task: "T-0901"})
+	if a.Exit != 0 || time.Since(start) < 250*time.Millisecond {
+		t.Fatalf("exit %d after %v, %+v", a.Exit, time.Since(start), a.Error)
+	}
+	if n := strings.Count(f.notice.String(), "waiting while it runs"); n != 1 || !strings.Contains(f.notice.String(), "the climb of no task") {
+		t.Errorf("the waiting line, %d times:\n%s", n, f.notice.String())
+	}
+	if raw, _ := os.ReadFile(filepath.Join(f.home, filepath.FromSlash(LockFile))); len(raw) != 0 {
+		t.Errorf("the released lock still names a holder: %s", raw)
+	}
+}
+
+// Past the holder's budget, a waiting climb refuses: ladder-busy, exit 4, naming the holder's process and the next step;
+// nothing ran.
+func TestLockRefusesPastTheBudget(t *testing.T) {
+	f := lockFixture(t)
+	release := holdLock(t, f, 1)
+	defer release()
+	start := time.Now()
+	a := f.climb("", Options{Task: "T-0901"})
+	if a.Exit != ExitState || a.Error == nil || a.Error.Code != "ladder-busy" {
+		t.Fatalf("exit %d, %+v", a.Exit, a.Error)
+	}
+	if took := time.Since(start); took < 900*time.Millisecond || took > 10*time.Second {
+		t.Errorf("refused after %v, its holder's budget 1 s", took)
+	}
+	if !strings.Contains(a.Error.What, "process "+strconv.Itoa(os.Getpid())) || !strings.Contains(a.Error.Next, "wait until process "+strconv.Itoa(os.Getpid())+
+		" has ended") || !strings.HasSuffix(a.Error.Next, "then run: bonsai ladder --task T-0901 --json") || a.Doc.Error.Next.Who != "agent" {
+		t.Errorf("the refusal: %+v", a.Error)
+	}
+	if _, err := os.Stat(filepath.Join(f.root, ".bonsai", "local", "ladder", "T-0901.json")); err == nil {
+		t.Error("a result was written")
+	}
+}
+
+// A held lock whose holder names no process that runs is waited for LockGrace, then refused.
+func TestLockHolderUnnamed(t *testing.T) {
+	f := lockFixture(t)
+	release := holdLock(t, f, 60)
+	defer release()
+	path := filepath.Join(f.home, filepath.FromSlash(LockFile))
+	if err := os.WriteFile(path, nil, 0o644); err != nil {
+		t.Skipf("the lock file cannot be written beside its holder here: %v", err)
+	}
+	a := f.climb("", Options{Task: "T-0901"})
+	if a.Exit != ExitState || a.Error == nil || a.Error.Code != "ladder-busy" || !strings.Contains(a.Error.What, "has not written its words") {
+		t.Fatalf("exit %d, %+v", a.Exit, a.Error)
+	}
+}
+
+// A holder killed while it holds the lock lets go of it with its process: the next climb takes it at once.
+func TestLockOfADeadHolder(t *testing.T) {
+	f := lockFixture(t)
+	cmd := exec.Command(os.Args[0], "-test.run=^TestHoldLockHelper$", "-test.count=1")
+	cmd.Env = append(os.Environ(), holdEnv+"="+f.home)
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	held := make(chan bool, 1)
+	go func() {
+		line, _ := bufio.NewReader(out).ReadString('\n')
+		held <- strings.TrimSpace(line) == "held"
+	}()
+	select {
+	case ok := <-held:
+		if !ok {
+			_ = cmd.Process.Kill()
+			_ = cmd.Wait()
+			t.Fatal("the helper did not take the lock")
+		}
+	case <-time.After(30 * time.Second):
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		t.Fatal("the helper did not take the lock in 30 s")
+	}
+	if h, ok := readHolder(filepath.Join(f.home, filepath.FromSlash(LockFile))); !ok || h.PID != cmd.Process.Pid {
+		t.Errorf("the helper's words: %+v %v", h, ok)
+	}
+	_ = cmd.Process.Kill()
+	_ = cmd.Wait()
+	start := time.Now()
+	a := f.climb("", Options{Task: "T-0901"})
+	if a.Exit != 0 || strings.Contains(f.notice.String(), "waiting") || time.Since(start) > 5*time.Second {
+		t.Fatalf("exit %d after %v, %+v\n%s", a.Exit, time.Since(start), a.Error, f.notice.String())
+	}
+}
+
+// Two homes hold two locks: a climb on one never waits for the other's holder.
+func TestLockTwoHomes(t *testing.T) {
+	f := lockFixture(t)
+	other := t.TempDir()
+	c := &Climb{Home: other, Root: other, o: Options{}.withDefaults()}
+	release, e := takeLock(c)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer release()
+	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 || f.notice.Len() != 0 {
+		t.Fatalf("exit %d, %+v\n%s", a.Exit, a.Error, f.notice.String())
+	}
+}
+
+// A nested climb (BONSAI_LADDER=1: inside another climb's rung) takes no lock: its outer climb holds it.
+func TestNestedTakesNoLock(t *testing.T) {
+	f := lockFixture(t)
+	release := holdLock(t, f, 60)
+	defer release()
+	f.env["BONSAI_LADDER"] = "1"
+	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 || f.notice.Len() != 0 {
+		t.Fatalf("exit %d, %+v", a.Exit, a.Error)
+	}
+	if l := f.result("T-0901"); l.Leftovers != nil {
+		t.Errorf("a nested climb's leftovers: %v", l.Leftovers)
+	}
+}
