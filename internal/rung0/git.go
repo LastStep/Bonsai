@@ -9,10 +9,12 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/guard"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // git runs git in one checkout.
@@ -77,8 +79,11 @@ func (g git) hasHead() bool {
 type entry struct{ path string }
 
 // changed lists every path the checkout changed (note 1), sorted, each once: the branch's commits since from when
-// from is not "", and what is staged, unstaged or untracked and not ignored.
-func (g git) changed(from string) ([]entry, error) {
+// from is not "", and what is staged, unstaged or untracked and not ignored. An untracked nested repository (git names
+// its folder with a trailing slash and does not look inside) is its .git, a checkout planted below the top (the guard's
+// floor never grants one), unless it is a worktree of the main checkout main (Claude Code places its own worktrees
+// inside the main checkout): another checkout of the project, whose changes are its own climb's.
+func (g git) changed(from, main string) ([]entry, error) {
 	var paths []string
 	if from != "" {
 		out, err := g.run("diff", "--name-only", "--no-renames", "--no-ext-diff", "-z", from, "HEAD", "--")
@@ -97,7 +102,10 @@ func (g git) changed(from string) ([]entry, error) {
 		}
 		p := e[3:]
 		if e[:2] == "??" && strings.HasSuffix(p, "/") {
-			continue // an untracked nested repository (the package comment)
+			if ownWorktree(filepath.Join(g.root, filepath.FromSlash(p)), main) {
+				continue
+			}
+			p += ".git"
 		}
 		paths = append(paths, p)
 	}
@@ -106,6 +114,14 @@ func (g git) changed(from string) ([]entry, error) {
 		out2 = append(out2, entry{path: p})
 	}
 	return out2, nil
+}
+
+// ownWorktree reports whether the folder dir is a worktree of the main checkout main, by git's own files and its
+// link back (workspace.ReadGitLayout, GitLayout.LinksBack: the link back lies in the main checkout's .git, which the
+// floor never grants).
+func ownWorktree(dir, main string) bool {
+	l := workspace.ReadGitLayout(dir)
+	return l.Worktree() && samePlace(l.Main, main) && l.LinksBack()
 }
 
 // splitZ splits git's NUL-ended list.

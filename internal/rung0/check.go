@@ -36,7 +36,7 @@ func checkFindings(in Input) (found, machine []string, cannot string) {
 		}
 		s := f.Code
 		if f.File != "" {
-			s += " (" + f.File + ")"
+			s += " (" + oneLine(f.File) + ")"
 		}
 		found = append(found, s)
 	}

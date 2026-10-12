@@ -10,9 +10,10 @@
 //     the branch the verified main checkout holds, worked out once per run). With no base (the main checkout's HEAD is
 //     detached) or no merge base, the branch's commits are not judged, and the reason says so;
 //   - on any branch, what is staged, unstaged or untracked and not ignored (git status --no-renames
-//     --untracked-files=all; as today's changedFiles). An untracked nested repository (git names it with a trailing
-//     slash and does not look inside it) is passed over: its files are another checkout's, and a commit can only carry
-//     it as a gitlink, which the branch part judges by its path.
+//     --untracked-files=all; as today's changedFiles). An untracked nested repository (git names its folder with a
+//     trailing slash and does not look inside it) counts as its .git, a checkout planted below the top, which the
+//     guard's floor never grants; but a worktree of the same main checkout (Claude Code places its own inside the main
+//     checkout, under .claude/worktrees/), known by git's link back, is another checkout of the project and passed over.
 //
 // Each path (note 2) is judged by guard.ChangeJudge: the guard's one function, re-rooted at the verified main
 // checkout, with the named task's grants at any status, its declared documents' tripwires given the base's bytes
@@ -123,7 +124,7 @@ func Judge(in Input) Outcome {
 	default:
 		fromBranch = in.MergeBase
 	}
-	changed, err := g.changed(fromBranch)
+	changed, err := g.changed(fromBranch, in.Main)
 	if err != nil {
 		return errorOutcome("git cannot say what this checkout changed (" + oneLine(err.Error()) + ")")
 	}
@@ -316,20 +317,35 @@ func readNow(root, p string) (after []byte, known, deleted bool) {
 // quote quotes a path or word for the reason, ASCII.
 func quote(s string) string { return strconv.QuoteToASCII(s) }
 
-// oneLine keeps a message on one line.
+// oneLine keeps a message on one ASCII line: printable ASCII as itself, a line break or tab as a space, any other
+// character as a Go escape (a path or git's words may hold any), so a reason prints unbroken in PowerShell 5.1.
 func oneLine(s string) string {
-	s = strings.ReplaceAll(s, "\r\n", " ")
-	return strings.Map(func(r rune) rune {
-		if r == '\n' || r == '\r' {
-			return ' '
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r == '\n' || r == '\r' || r == '\t':
+			b.WriteByte(' ')
+		case r >= 0x20 && r < 0x7f:
+			b.WriteRune(r)
+		default:
+			q := strconv.QuoteRuneToASCII(r)
+			b.WriteString(q[1 : len(q)-1])
 		}
-		return r
-	}, s)
+	}
+	return b.String()
 }
 
-// samePlace compares two folders, letter case ignored on Windows and macOS.
+// samePlace compares two folders as places: links resolved where they resolve, letter case ignored on Windows and
+// macOS.
 func samePlace(a, b string) bool {
-	a, b = filepath.Clean(a), filepath.Clean(b)
+	real := func(p string) string {
+		p = filepath.Clean(p)
+		if r, err := filepath.EvalSymlinks(p); err == nil {
+			return r
+		}
+		return p
+	}
+	a, b = real(a), real(b)
 	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
 		return strings.EqualFold(a, b)
 	}

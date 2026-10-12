@@ -528,3 +528,35 @@ func TestErrors(t *testing.T) {
 		t.Errorf("not a repository: %+v", o)
 	}
 }
+
+func TestNestedRepositories(t *testing.T) {
+	t.Run("a checkout planted below the top", func(t *testing.T) {
+		f := newProject(t, nil)
+		wt := f.worktree(t)
+		planted := filepath.Join(wt, "docs", "planted")
+		write(t, planted, "readme.txt", "a nested repository\n")
+		testpack.Git(t, planted, "init", "-q")
+		o := f.climb(t, wt, "T-0901")
+		if want := map[string]string{"docs/planted/.git": guard.RuleNeverGranted}; !reflect.DeepEqual(refusedRules(o), want) {
+			t.Fatalf("refused %v, want %v:\n%s", refusedRules(o), want, o.Reason)
+		}
+	})
+	t.Run("Claude Code's own worktree inside the main checkout", func(t *testing.T) {
+		f := newProject(t, nil)
+		inside := filepath.Join(f.main, ".claude", "worktrees", "wt1")
+		testpack.Git(t, f.main, "worktree", "add", "-q", "-b", "wt1", inside)
+		green(t, f.climb(t, f.main, "T-0901"), 0)
+		// Its own climb judges its own changes, against the main checkout's lists.
+		write(t, inside, "assets/old/a.txt", "changed\n")
+		red(t, f.climb(t, inside, "T-0901"), `"assets/old/a.txt" (protected)`)
+		// A worktree of another repository there is a planted checkout all the same.
+		other := filepath.Join(f.tmp, "other")
+		write(t, other, "x.txt", "x\n")
+		testpack.Git(t, other, "init", "-q")
+		commit(t, other, "another repository")
+		testpack.Git(t, other, "worktree", "add", "-q", "-b", "wt2", filepath.Join(f.main, ".claude", "worktrees", "wt2"))
+		if r := refusedRules(f.climb(t, f.main, "T-0901")); r[".claude/worktrees/wt2/.git"] != guard.RuleNeverGranted || len(r) != 1 {
+			t.Errorf("refused %v", r)
+		}
+	})
+}
