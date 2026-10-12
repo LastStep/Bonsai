@@ -9,7 +9,7 @@ package asks
 // Then its log record (contract §8.2: ask, "an ask filed, resolved or answered: target is its key"): one ask record in
 // the log for each ask record written, after it, with kind the op and text null (the words stay in the asks file),
 // in the asking or answering session's file when there is a session, else in its day's file. An answer that writes
-// nothing writes no log record either. The ladder's Bless (step 5.4) goes through Write too.
+// nothing writes no log record either. The ladder's Bless (bless.go, step 5.4.4) goes through Write too.
 
 import (
 	"fmt"

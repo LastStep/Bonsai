@@ -245,8 +245,16 @@ func Resolve(p Place, key string) (*Done, *Error) {
 		return nil, e
 	}
 	if source != SourceAgent {
-		return nil, badValue("ask --resolve withdraws an agent's ask; "+key+" is the ladder's (step 5.4)", "give an agent's key, agent:<part>")
+		return nil, badValue("ask --resolve withdraws an agent's ask; "+key+" is the ladder's, which bonsai ladder resolves itself once "+
+			"its offer has gone", "give an agent's key, agent:<part>")
 	}
+	return resolve(p, key, source)
+}
+
+// resolve writes a resolve record for the open key (an agent's withdrawal, or the ladder's own, bless.go): an unknown,
+// answered or resolved one is ask-not-open (exit 4), nothing written. A resolve record written whose log record was not
+// (partly-written) gives its Done with the error, the record standing.
+func resolve(p Place, key, source string) (*Done, *Error) {
 	entry, e := lookup(p, key)
 	if e != nil {
 		return nil, e
@@ -263,11 +271,11 @@ func Resolve(p Place, key string) (*Done, *Error) {
 	}
 	rec := closing(p, OpResolve, key, source)
 	doc, e := Write(p, rec)
-	if e != nil {
+	if doc == nil {
 		return nil, e
 	}
 	entry.State, entry.Closed, entry.Docs[1] = Resolved, rec, doc
-	return &Done{Entry: entry, Written: doc}, nil
+	return &Done{Entry: entry, Written: doc}, e
 }
 
 // Answering is what bonsai answer gives, its flags as given ("" for a flag not given).

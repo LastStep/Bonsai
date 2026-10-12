@@ -1,13 +1,16 @@
 // Package asks is Bonsai's asks and answers (contract §9; spec §4, §8; design/plan-5.md, 5.2.5): an agent asks a
 // person something typed, a person answers, and every record of it is kept in the main checkout's
 // .bonsai/local/asks/, one file per UTC day, never committed. bonsai ask, answer and asks (cmd/bonsai) are thin
-// commands over this package; the ladder's Bless (step 5.4) writes through Write, the same function.
+// commands over this package; the ladder's Bless (step 5.4.4, internal/ratchet) files and resolves through bless.go,
+// which writes through Write, the same function.
 //
 //   - asks.go (this file): where the asks are kept and who writes them (Place), the limits, the refusal (Error).
 //   - text.go: the rules every free-text field goes through: CRLF made LF, a hidden character refused (not
 //     stripped), the redactor (internal/redact), then the limit, refused when over (never cut).
 //   - read.go: the records read back, and each key's state (open, answered or resolved).
 //   - file.go: filing, withdrawing (resolve), answering and reading one ask, each with the checks of 5.2.5's note.
+//   - bless.go: the ladder's own asks: filing its Bless ask (source ladder, key ladder:bless-<task>) and resolving it
+//     once its offer has gone.
 //   - write.go: Write, one ask record and then its ask log record (contract §8.2), through internal/record's one
 //     append path.
 //
