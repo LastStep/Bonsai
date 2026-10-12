@@ -461,32 +461,58 @@ func TestExcludeHidden(t *testing.T) {
 	})
 	t.Run("Claude Code's own local files", func(t *testing.T) {
 		// The lines Claude Code writes: its local settings in the global excludes, its other files in info/exclude.
-		// Folders whose files only finer rules ignore, an ignored folder holding a checkout, and an empty one.
+		// Folders whose files only finer rules ignore, an ignored folder holding a checkout, an empty one, and a
+		// .claude/ folder deeper down. Named, but not counted as dirty.
 		root, base := repo(t)
 		write(t, home, ".config/git/ignore", "**/.claude/settings.local.json\n")
 		defer func() { must(t, os.RemoveAll(filepath.Join(home, ".config"))) }()
-		appendExclude(t, root, "**/.claude/scheduled_tasks.lock\n**/.claude/worktrees/\n**/.claude/checkpoints/\nc.txt\n")
+		appendExclude(t, root, "# claude-code-runtime\n**/.claude/scheduled_tasks.lock\n**/.claude/worktrees/\n"+
+			"**/.claude/checkpoints/\nc.txt\n")
 		write(t, root, ".claude/settings.local.json", "{}\n")
 		write(t, root, ".claude/scheduled_tasks.lock", "")
 		write(t, root, ".claude/worktrees/agent-1/pkg/a.go", "package pkg\n")
 		must(t, os.MkdirAll(filepath.Join(root, ".claude", "checkpoints", "empty"), 0o755))
-		write(t, root, "deep/er/c.txt", "x\n")
+		write(t, root, "tools/.claude/c.txt", "x\n")
 		if s := git(t, root, "status", "--porcelain"); s != "" {
 			t.Fatalf("git status shows the files: %s", s)
 		}
+		const named = ".claude/scheduled_tasks.lock (by info/exclude; inside .claude/, not counted as dirty), " +
+			".claude/settings.local.json (by core.excludesFile; inside .claude/, not counted as dirty), "
 		o := judge(t, input(root, base))
-		only(t, o, true, map[string]int{"exclude-hidden": 4, "exclude-lines": 4})
-		has(t, o, "exclude-hidden 4: .claude/scheduled_tasks.lock (by info/exclude), .claude/settings.local.json "+
-			"(by core.excludesFile), .claude/worktrees/ (by info/exclude), deep/er/c.txt (by info/exclude)")
-		// With --no-empty-directory git lists .claude/ and deep/ alone, which no rule matches: the rung lists them
+		only(t, o, false, map[string]int{"exclude-hidden": 4, "exclude-lines": 4})
+		has(t, o, "2 kinds found, none making the run dirty", "exclude-hidden 4: "+named+
+			".claude/worktrees/ (by info/exclude; inside .claude/, not counted as dirty), "+
+			"tools/.claude/c.txt (by info/exclude; inside .claude/, not counted as dirty) "+
+			"(all inside a .claude/ folder: Claude Code's local files, named, not counted as dirty)")
+		// With --no-empty-directory git lists .claude/ and tools/ alone, which no rule matches: the rung lists them
 		// again, file by file, and finds the same files.
 		saved := ignoredListing
 		ignoredListing = append(append([]string{}, saved...), "--no-empty-directory")
 		o = judge(t, input(root, base))
 		ignoredListing = saved
-		only(t, o, true, map[string]int{"exclude-hidden": 4, "exclude-lines": 4})
-		has(t, o, ".claude/scheduled_tasks.lock (by info/exclude), .claude/settings.local.json (by core.excludesFile), "+
-			".claude/worktrees/agent-1/pkg/a.go (by info/exclude), deep/er/c.txt (by info/exclude)")
+		only(t, o, false, map[string]int{"exclude-hidden": 4, "exclude-lines": 4})
+		has(t, o, named+".claude/worktrees/agent-1/pkg/a.go (by info/exclude; inside .claude/, not counted as dirty)")
+
+		// A file outside .claude/ hidden the same way, by either rule, makes the run dirty; the .claude/ files stay named.
+		write(t, root, "deep/er/c.txt", "x\n")
+		o = judge(t, input(root, base))
+		only(t, o, true, map[string]int{"exclude-hidden": 5, "exclude-lines": 4})
+		has(t, o, "1 hiding a change from git status, so the run counts as dirty",
+			"deep/er/c.txt (by info/exclude), tools/", "not counted as dirty) (hides a change from git;")
+		must(t, os.Remove(filepath.Join(root, "deep", "er", "c.txt")))
+		write(t, home, ".config/git/ignore", "**/.claude/settings.local.json\nsettings.local.json\n")
+		write(t, root, "settings.local.json", "{}\n")
+		o = judge(t, input(root, base))
+		only(t, o, true, map[string]int{"exclude-hidden": 5, "exclude-lines": 4})
+		has(t, o, ", settings.local.json (by core.excludesFile), tools/", "not counted as dirty) (hides a change from git;")
+		must(t, os.Remove(filepath.Join(root, "settings.local.json")))
+
+		// The exemption is exclude-hidden's only: an untracked .gitignore inside .claude/ still hides.
+		write(t, root, ".claude/notes/.gitignore", "*\n")
+		write(t, root, ".claude/notes/code.go", "package notes\n")
+		o = judge(t, input(root, base))
+		only(t, o, true, map[string]int{"exclude-hidden": 4, "exclude-lines": 4, "untracked-gitignore": 1})
+		has(t, o, "untracked-gitignore 1: .claude/notes/ (by .claude/notes/.gitignore) (hides a change from git;")
 	})
 	excludes := filepath.Join(home, "my-ignore")
 	write(t, home, "my-ignore", "secret.txt\n")
@@ -984,6 +1010,28 @@ func TestNamesStayASCII(t *testing.T) {
 	o := judge(t, input(root, base))
 	only(t, o, true, map[string]int{"exclude-hidden": 1, "exclude-lines": 1})
 	has(t, o, `exclude-hidden 1: "caf\u00e9.txt" (by info/exclude)`)
+}
+
+func TestInsideClaude(t *testing.T) {
+	for p, want := range map[string]bool{
+		".claude/settings.local.json":   true,
+		".claude/":                      true,
+		".claude/worktrees/":            true,
+		"a/b/.claude/x.txt":             true,
+		"a/.claude/deep/":               true,
+		".claude":                       false, // a file named .claude
+		"a/.claude":                     false,
+		".claudex/x":                    false,
+		"x.claude/y":                    false,
+		"settings.local.json":           false,
+		"claude/settings.local.json":    false,
+		"a/b/c.txt":                     false,
+		".claude-code-runtime/state.go": false,
+	} {
+		if got := insideClaude(p); got != want {
+			t.Errorf("insideClaude(%q) = %v", p, got)
+		}
+	}
 }
 
 func TestTestFile(t *testing.T) {

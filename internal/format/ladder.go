@@ -193,7 +193,7 @@ var GitFindings = []Word{
 	{Word: "stash-added", Means: "the stash holds more entries than the task's last climb recorded"},
 	{Word: "base-rewritten", Means: "the base the task's last climb recorded is no longer in HEAD's history (or no longer in a clone that is not shallow)"},
 	{Word: "exclude-lines", Means: "the common git folder's info/exclude holds lines other than comments: patterns that ignore files for this clone alone, which no diff shows"},
-	{Word: "exclude-hidden", Means: "a file or folder present that git ignores only by info/exclude or core.excludesFile (no .gitignore ignores it), so git status does not show it: it hides a change, and the run counts as dirty"},
+	{Word: "exclude-hidden", Means: "a file or folder present that git ignores only by info/exclude or core.excludesFile (no .gitignore ignores it), so git status does not show it: it hides a change, and the run counts as dirty, but for one inside a .claude/ folder (Claude Code's own local files, which Claude Code ignores that way itself), named only"},
 	{Word: "untracked-gitignore", Means: "a file or folder present that git ignores by a .gitignore git does not track (one that ignores itself too), so git status does not show it: it hides a change, and the run counts as dirty"},
 	{Word: "filter-local", Means: "the repository's own git config defines a filter driver (filter.<name>.clean, smudge or process), which can change what git compares, so git status may not show a change"},
 }

@@ -296,7 +296,7 @@ error words.
 | `stash-added` | the stash holds more entries than the task's last climb recorded |
 | `base-rewritten` | the base the task's last climb recorded is no longer in HEAD's history (or no longer in a clone that is not shallow) |
 | `exclude-lines` | the common git folder's info/exclude holds lines other than comments: patterns that ignore files for this clone alone, which no diff shows |
-| `exclude-hidden` | a file or folder present that git ignores only by info/exclude or core.excludesFile (no .gitignore ignores it), so git status does not show it: it hides a change, and the run counts as dirty |
+| `exclude-hidden` | a file or folder present that git ignores only by info/exclude or core.excludesFile (no .gitignore ignores it), so git status does not show it: it hides a change, and the run counts as dirty, but for one inside a .claude/ folder (Claude Code's own local files, which Claude Code ignores that way itself), named only |
 | `untracked-gitignore` | a file or folder present that git ignores by a .gitignore git does not track (one that ignores itself too), so git status does not show it: it hides a change, and the run counts as dirty |
 | `filter-local` | the repository's own git config defines a filter driver (filter.<name>.clean, smudge or process), which can change what git compares, so git status may not show a change |
 

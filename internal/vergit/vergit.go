@@ -34,12 +34,13 @@
 // result, refuses it, while this rung itself stays green and informative. The fix is the repository's own: undo the
 // entry, remove the file, or ignore it in a committed .gitignore, which shows in the diff (and which the guard
 // protects where a project says so). Chosen over a red rung, which the spec defers, and over leaving dirty to git's
-// status alone. Tools write such rules too: Claude Code puts its own local files in the global excludes
-// (.claude/settings.local.json) and in info/exclude (its other .claude/ files), so a checkout holding them counts as
-// dirty until the repository's .gitignore names them. The other half of dirty is git status, which settings outside
-// any diff can also fool (status.showUntrackedFiles=no or a lying core.fsmonitor in the repository's config; a filter
-// and an attributes file in the user's global config): Dirty runs it as this package runs git, so the runner's dirty
-// is Dirty(in) or Outcome.Hides.
+// status alone. One exemption: Claude Code itself ignores its own local files in every project, through the user's
+// global excludes (.claude/settings.local.json) and a block in info/exclude (its other .claude/ files), by a list that
+// grows with its versions; a file inside a .claude/ folder (at any depth) that only those rules ignore is named under
+// exclude-hidden but does not set Hides, so Claude Code's own state never makes a checkout dirty. The other half of
+// dirty is git status, which settings outside any diff can also fool (status.showUntrackedFiles=no or a lying
+// core.fsmonitor in the repository's config; a filter and an attributes file in the user's global config): Dirty runs
+// it as this package runs git, so the runner's dirty is Dirty(in) or Outcome.Hides.
 //
 // How git runs (git.go): one program, the judgment's deadline, a fixed environment (no user configuration, no GIT_*
 // variable from the caller, no pager, no prompt, no network) and settings pinned on the command line, so nothing the
@@ -58,6 +59,11 @@
 //     Git LFS define one honestly. Changes inside a submodule are not looked at.
 //   - The repository's own configuration is read by every git call (no variable switches it off); the pinned
 //     settings cover the parts of it known to hide a change from these reads.
+//   - A file inside a .claude/ folder that only info/exclude or core.excludesFile ignores is named, not made dirty
+//     (Claude Code's own local files; no project's test reads them). So a test that reads a file an agent hid inside
+//     .claude/ through info/exclude passes here with the file named and the run clean; CI, which lacks the file,
+//     still fails it. The exemption is the folder's name, never Claude Code's marker line or its list of files, which
+//     an agent could write or Claude Code could change.
 //   - In a sparse checkout every file outside the cone is a skip-worktree entry, so such a checkout always counts as
 //     dirty: a proof is of the whole tree.
 //   - A checkout git refuses as another user's (safe.directory) is an error: the user's global configuration, where
@@ -155,8 +161,9 @@ var commitID = regexp.MustCompile(`^([0-9a-f]{40}|[0-9a-f]{64})$`)
 
 // finding is one kind found: its names (their number is its count), and why it was not judged ("" when it was).
 type finding struct {
-	names []string
-	why   string
+	names  []string
+	why    string
+	exempt int // names that do not make the run dirty (a hiding finding's files inside a .claude/ folder)
 }
 
 // judgment is one run's state.
@@ -390,13 +397,38 @@ next:
 			if !j.tracked[e.src] {
 				untracked.names = append(untracked.names, shown(e.path)+" (by "+shown(e.src)+")")
 			}
-		case j.git.excludes != "" && filepath.ToSlash(e.src) == j.git.excludes:
-			hidden.names = append(hidden.names, shown(e.path)+" (by core.excludesFile)")
 		default:
-			hidden.names = append(hidden.names, shown(e.path)+" (by info/exclude)")
+			by := "info/exclude"
+			if j.git.excludes != "" && filepath.ToSlash(e.src) == j.git.excludes {
+				by = "core.excludesFile"
+			}
+			if insideClaude(e.path) {
+				by += "; inside .claude/, not counted as dirty"
+				hidden.exempt++
+			}
+			hidden.names = append(hidden.names, shown(e.path)+" (by "+by+")")
 		}
 	}
 	return nil
+}
+
+// insideClaude reports whether a path lies inside a folder named .claude, at any depth: Claude Code's own local files,
+// which Claude Code itself ignores through info/exclude and the user's global excludes in every project, by a list
+// that grows with its versions. Such a file found under exclude-hidden is named but does not make the run dirty: no
+// project's test reads Claude Code's local state. Keyed on the folder, never on Claude Code's marker line in
+// info/exclude (an agent can write it) or on a list of its file names (which would chase Claude Code). A folder
+// listed whole (.claude/) counts as inside; a file named .claude does not.
+func insideClaude(p string) bool {
+	segs := strings.Split(strings.TrimSuffix(p, "/"), "/")
+	if !strings.HasSuffix(p, "/") {
+		segs = segs[:len(segs)-1] // a file: only the folders holding it count
+	}
+	for _, s := range segs {
+		if s == ".claude" {
+			return true
+		}
+	}
+	return false
 }
 
 // ignoredListing lists the ignored files and folders present (a test adds --no-empty-directory, to prove the
@@ -793,9 +825,13 @@ func (j *judgment) outcome() Outcome {
 		kinds++
 		s := fmt.Sprintf("%s %d: %s", w.Word, len(f.names), names(f.names))
 		if fix, ok := hiding[w.Word]; ok {
-			hides++
-			o.Hides = true
-			s += " (hides a change from git; " + fix + ")"
+			if len(f.names) > f.exempt {
+				hides++
+				o.Hides = true
+				s += " (hides a change from git; " + fix + ")"
+			} else {
+				s += " (all inside a .claude/ folder: Claude Code's local files, named, not counted as dirty)"
+			}
 		}
 		found = append(found, s)
 	}
@@ -806,7 +842,7 @@ func (j *judgment) outcome() Outcome {
 	case hides > 0:
 		fmt.Fprintf(&b, "%s found, %d hiding a change from git status, so the run counts as dirty", plural(kinds, "kind"), hides)
 	default:
-		fmt.Fprintf(&b, "%s found, none hiding a change from git status", plural(kinds, "kind"))
+		fmt.Fprintf(&b, "%s found, none making the run dirty", plural(kinds, "kind"))
 	}
 	for _, s := range found {
 		b.WriteString("; " + s)
