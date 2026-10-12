@@ -116,8 +116,10 @@ var HookEnvKeys = []Word{
 	// Hooks were told the real project whatever env said; tool commands, and so Bonsai's commands an agent runs, were
 	// told env's value, on both sides, before and during.
 	{Word: "CLAUDE_PROJECT_DIR", Means: "the project a session's commands are told they run in, which Bonsai reads"},
-	// Not set in the sessions; its reference: 0 turns the cap off.
-	{Word: "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP", Means: "how many times in a row the stop gate may block a session's end (0: no cap)"},
+	// Not set in the sessions; its reference: 0 turns the cap off. Claude Code 2.1.296 names it when a Stop hook has
+	// blocked nine times in a row ("Set CLAUDE_CODE_STOP_HOOK_BLOCK_CAP to raise this limit"), so a low value in a
+	// project's env would let a session end past Bonsai's stop gate sooner.
+	{Word: "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP", Means: "caps how many times in a row a Stop hook, Bonsai's stop gate among them, may block a session's end before Claude Code lets it end (0: no cap)"},
 	// A blank value changed nothing: Claude Code set 1 in every hook and tool command, on both sides, before and during.
 	{Word: "CLAUDE_CODE_CHILD_SESSION", Means: "how Bonsai's commands know they run inside an agent's session (step 5.3.6)"},
 }

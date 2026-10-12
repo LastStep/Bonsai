@@ -391,9 +391,13 @@ var checkMore = map[string]func(t *testing.T, c *cli){
 		if _, out, _ := c.run("", "check", "--json"); strings.Contains(codesIn(fits(t, out, "check"), "findings"), "settings-env") {
 			t.Errorf("the user's own settings file was read:\n%s", out)
 		}
-		names := []string{"BONSAI_HOME", "BONSAI_TASK", "bonsai_test_fault", "Path", "Claude_Code_Shell_Prefix"}
+		// CLAUDE_CODE_STOP_HOOK_BLOCK_CAP by name as well: set low, it would let a session end past the stop gate sooner,
+		// so it stays a finding even if the list lost it.
+		names := []string{"BONSAI_HOME", "BONSAI_TASK", "bonsai_test_fault", "Path", "Claude_Code_Shell_Prefix", "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP"}
 		for _, k := range format.HookEnvKeys {
-			names = append(names, k.Word)
+			if k.Word != "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP" {
+				names = append(names, k.Word)
+			}
 		}
 		shared := c.read(".claude/settings.json")
 		for _, file := range []string{".claude/settings.json", ".claude/settings.local.json"} {
