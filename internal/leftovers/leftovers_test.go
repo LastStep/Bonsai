@@ -21,24 +21,24 @@ func pids(ps []Process) []int {
 func TestFindPosix(t *testing.T) {
 	root := []string{"/work/repo"}
 	rows := []Row{
-		{PID: 1, PPID: 0, Name: "init", Start: 1, Exe: "/sbin/init", Cwd: "/", Argv: []string{"/sbin/init"}},
-		{PID: 10, PPID: 1, Name: "claude", Start: 10, Cwd: "/work/repo", Argv: []string{"claude"}},    // an ancestor
-		{PID: 11, PPID: 10, Name: "bash", Start: 11, Cwd: "/work/repo", Argv: []string{"bash", "-c"}}, // an ancestor
-		{PID: 12, PPID: 11, Name: "bonsai", Start: 12, Cwd: "/work/repo", Argv: []string{"bonsai", "ladder"}},
-		{PID: 13, PPID: 12, Name: "git", Start: 13, Cwd: "/work/repo", Argv: []string{"git", "status"}},   // a descendant
-		{PID: 14, PPID: 13, Name: "sh", Start: 14, Cwd: "/work/repo", Argv: []string{"sh"}},               // its child
-		{PID: 20, PPID: 10, Name: "node", Start: 20, Cwd: "/work/repo", Argv: []string{"node", "srv.js"}}, // an ancestor's other child
-		{PID: 21, PPID: 1, Name: "vite", Start: 21, Cwd: "/home", Exe: "/work/repo/node_modules/.bin/vite"},
-		{PID: 22, PPID: 1, Name: "node", Start: 22, Cwd: "/home", Argv: []string{"node", "/work/repo/server.js"}},
+		{PID: 1, PPID: 0, Name: "init", Start: 1, Exe: "/sbin/init", Folder: "/", Argv: []string{"/sbin/init"}},
+		{PID: 10, PPID: 1, Name: "claude", Start: 10, Folder: "/work/repo", Argv: []string{"claude"}},    // an ancestor
+		{PID: 11, PPID: 10, Name: "bash", Start: 11, Folder: "/work/repo", Argv: []string{"bash", "-c"}}, // an ancestor
+		{PID: 12, PPID: 11, Name: "bonsai", Start: 12, Folder: "/work/repo", Argv: []string{"bonsai", "ladder"}},
+		{PID: 13, PPID: 12, Name: "git", Start: 13, Folder: "/work/repo", Argv: []string{"git", "status"}},   // a descendant
+		{PID: 14, PPID: 13, Name: "sh", Start: 14, Folder: "/work/repo", Argv: []string{"sh"}},               // its child
+		{PID: 20, PPID: 10, Name: "node", Start: 20, Folder: "/work/repo", Argv: []string{"node", "srv.js"}}, // an ancestor's other child
+		{PID: 21, PPID: 1, Name: "vite", Start: 21, Folder: "/home", Exe: "/work/repo/node_modules/.bin/vite"},
+		{PID: 22, PPID: 1, Name: "node", Start: 22, Folder: "/home", Argv: []string{"node", "/work/repo/server.js"}},
 		{PID: 23, PPID: 1, Name: "x", Start: 23, Argv: []string{"x", "--config=/work/repo/x.json"}},
 		{PID: 24, PPID: 1, Name: "x", Start: 24, Argv: []string{"x", "file:///work/repo/a"}},
 		{PID: 25, PPID: 1, Name: "x", Start: 25, Argv: []string{"x", "/work/repo2/a"}},   // a sibling folder
 		{PID: 26, PPID: 1, Name: "x", Start: 26, Argv: []string{"x", "work/repo/a"}},     // relative: not a path
 		{PID: 27, PPID: 1, Name: "x", Start: 27, Argv: []string{"x", "/work/repo/../b"}}, // cleaned: outside
 		{PID: 28, PPID: 1, Name: "x", Start: 28, Argv: []string{"x", "/work/repo"}},      // the root itself
-		{PID: 29, PPID: 1, Name: "x", Start: 29, Cwd: "/work/Repo"},                      // POSIX keeps case
-		{PID: 30, PPID: 12, Name: "y", Start: 5, Cwd: "/work/repo"},                      // older than its "parent": a taken pid
-		{PID: 31, PPID: 1, Name: "go", Start: 31, Cwd: "/work/repo/cmd", Exe: "/tmp/go-build1/exe/x", Argv: []string{"/tmp/go-build1/exe/x"}},
+		{PID: 29, PPID: 1, Name: "x", Start: 29, Folder: "/work/Repo"},                   // POSIX keeps case
+		{PID: 30, PPID: 12, Name: "y", Start: 5, Folder: "/work/repo"},                   // older than its "parent": a taken pid
+		{PID: 31, PPID: 1, Name: "go", Start: 31, Folder: "/work/repo/cmd", Exe: "/tmp/go-build1/exe/x", Argv: []string{"/tmp/go-build1/exe/x"}},
 	}
 	got := find(rows, root, 12, posixStyle)
 	if want := []int{30, 20, 21, 22, 23, 24, 28, 31}; !slices.Equal(pids(got), want) {

@@ -165,7 +165,7 @@ type Row struct {
 	Name      string   // the program's name
 	Start     uint64   // when it started, in the system's own unit (Linux clock ticks, Windows FILETIME); compared only
 	Exe       string   // the program's path, or ""
-	Cwd       string   // its working folder, or "" (Linux only)
+	Folder    string   // its working folder, or "" (Linux only)
 	Argv      []string // its arguments, or nil when the system did not give them
 }
 
@@ -241,7 +241,7 @@ func find(rows []Row, rootList []string, self int, st style) []Process {
 
 // tied reports whether a row's working folder, program or an argument lies at or below one of the roots.
 func tied(r *Row, rootList []string, st style) bool {
-	cands := []string{r.Exe, r.Cwd}
+	cands := []string{r.Exe, r.Folder}
 	for _, a := range r.Argv {
 		cands = append(cands, a)
 		if strings.HasPrefix(a, "-") {

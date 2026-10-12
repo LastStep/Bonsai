@@ -123,9 +123,10 @@ func EnvValue(pid int, name string) (string, bool) {
 	return "", false
 }
 
-// link reads one of a process's links (exe, cwd), or "" (another user's process, a kernel thread, a gone one).
+// link reads one of a process's links (/exe, its program; /cwd, its working folder), or "" (another user's
+// process, a kernel thread, a gone one).
 func link(pid int, name string) string {
-	p, err := os.Readlink("/proc/" + strconv.Itoa(pid) + "/" + name)
+	p, err := os.Readlink("/proc/" + strconv.Itoa(pid) + name)
 	if err != nil {
 		return ""
 	}
@@ -143,8 +144,8 @@ func snapshot() ([]Row, style, error) {
 		if s.Dead() {
 			continue
 		}
-		rows = append(rows, Row{PID: s.PID, PPID: s.PPID, Name: s.Name, Start: s.Start, Exe: link(s.PID, "exe"),
-			Cwd: link(s.PID, "cwd"), Argv: Argv(s.PID)})
+		rows = append(rows, Row{PID: s.PID, PPID: s.PPID, Name: s.Name, Start: s.Start, Exe: link(s.PID, "/exe"),
+			Folder: link(s.PID, "/cwd"), Argv: Argv(s.PID)})
 	}
 	return rows, posixStyle, nil
 }
