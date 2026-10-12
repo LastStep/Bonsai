@@ -86,14 +86,16 @@ func TestLockWaitsThenClimbs(t *testing.T) {
 func TestLockRefusesPastTheBudget(t *testing.T) {
 	f := lockFixture(t)
 	start := time.Now()
-	release := holdLock(t, f, 1)
+	release := holdLock(t, f, 2)
 	defer release()
 	a := f.climb("", Options{Task: "T-0901"})
 	if a.Exit != ExitState || a.Error == nil || a.Error.Code != "ladder-busy" {
 		t.Fatalf("exit %d, %+v", a.Exit, a.Error)
 	}
-	if took := time.Since(start); took < 900*time.Millisecond || took > 10*time.Second { // the budget is read by the wall clock
-		t.Errorf("refused %v after the holder took the lock, its budget 1 s", took)
+	// The budget's end is read by the wall clock once (the holder's words), so a wall clock that jumps forward in that
+	// moment shortens it: a second's margin.
+	if took := time.Since(start); took < time.Second || took > 15*time.Second {
+		t.Errorf("refused %v after the holder took the lock, its budget 2 s", took)
 	}
 	if !strings.Contains(a.Error.What, "process "+strconv.Itoa(os.Getpid())) || !strings.Contains(a.Error.Next, "wait until process "+strconv.Itoa(os.Getpid())+
 		" has ended") || !strings.HasSuffix(a.Error.Next, "then run: bonsai ladder --task T-0901 --json") || a.Doc.Error.Next.Who != "agent" {

@@ -7,7 +7,8 @@ package ladder
 // started and its budget (the sum of its rungs' timeouts), one JSON object.
 //
 // A second climb tries the lock; held, it reads the holder's words, says once on its notice writer whom it waits for,
-// and tries again every LockPoll while the holder's process lives and the holder is inside its budget. Past the
+// and tries again every LockPoll while the holder's process lives and the holder is inside its budget (its end read
+// from the holder's words once, then counted down on the waiting process's own clock). Past the
 // budget it refuses: ladder-busy, exit 4, naming the holder and the next step (the same command once that process has
 // ended). A holder that died lets go of the lock with its process, so the lock is taken at once. A held lock whose
 // words do not read (a holder that has just taken it, or words left by an earlier holder whose process is gone) is
@@ -110,6 +111,8 @@ func takeLock(c *Climb) (release func(), e *engine.Error) {
 	var (
 		told         bool
 		unnamedSince time.Time
+		seen         holder    // the holder whose budget is counted down
+		deadline     time.Time // when its budget ends, on this process's own clock
 	)
 	for {
 		ok, err := tryLock(f)
@@ -135,7 +138,13 @@ func takeLock(c *Climb) (release func(), e *engine.Error) {
 		if named && alive(h.PID) {
 			unnamedSince = time.Time{}
 			end := h.until()
-			if !end.IsZero() && now.After(end) {
+			if h != seen {
+				// The budget's end is read from the holder's words by the wall clock once, then counted down on this
+				// process's own clock, so a wall clock set forward while it waits (WSL resyncs its clock) cannot cut
+				// the wait short.
+				seen, deadline = h, now.Add(time.Until(end))
+			}
+			if !end.IsZero() && now.After(deadline) {
 				_ = f.Close()
 				return nil, busy(c, h, "and is past its budget of "+strconv.FormatInt(h.BudgetS, 10)+" s, which ended at "+
 					end.UTC().Format(time.RFC3339))
