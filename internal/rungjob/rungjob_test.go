@@ -169,12 +169,15 @@ func TestTimeout(t *testing.T) {
 // retryLimit is a timed test's second limit, for a machine too loaded to start a rung's sleepers within a second.
 const retryLimit = 5 * time.Second
 
+// The caller's stop ends the rung and everything it started. It comes once both sleepers have started (written
+// their pid files): the background one can start after the foreground one, more so on a loaded machine.
 func TestStop(t *testing.T) {
 	dir := testDir(t)
 	a, b := filepath.Join(dir, "a.pid"), filepath.Join(dir, "b.pid")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
+		waitFile(a, 10*time.Second)
 		waitFile(b, 10*time.Second)
 		cancel()
 	}()
