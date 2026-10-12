@@ -1,6 +1,6 @@
 package workspace
 
-// A task file whose frontmatter holds nothing does not parse as a task (active.go's readTask; contract §13: "a task
+// A task file whose frontmatter holds nothing does not parse as a task (active.go's ReadTask; contract §13: "a task
 // file that does not parse makes the answer none"): beside a good running task it makes the active task none
 // (broken-file), --task naming it gives none (named-broken), and the tasks table reads it as broken. A format-0 task
 // with fields still reads (format 0 refuses nothing for a field).

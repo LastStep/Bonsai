@@ -314,12 +314,14 @@ func straightQuotes(s string) string {
 	return strings.NewReplacer("‘", "'", "’", "'", "“", `"`, "”", `"`).Replace(s)
 }
 
-// bonsaiFormat holds a document of one of Bonsai's kinds to its format, under format 0 or 1.
+// bonsaiFormat holds a document of one of Bonsai's kinds to its format, under format 0 or 1. A task is read as every
+// reader of the task folder reads one (workspace.ReadTask): a file whose frontmatter holds nothing is no task, and in
+// command mode it would make the active task none for everyone, so it is refused here as any other broken task is.
 func bonsaiFormat(kind string, raw []byte) error {
 	var err error
 	switch kind {
 	case "task":
-		_, err = format.ReadTask(raw)
+		_, err = workspace.ReadTask(raw)
 	case "run":
 		_, err = format.ReadRun(raw)
 	case "state":

@@ -423,6 +423,16 @@ var ruleTests = map[string]func(t *testing.T){
 			t.Errorf("the next step: %s", s)
 		}
 		wantRule(t, dir, writeOf(dir, ".bonsai/STATE.md", "---\nformat: bonsai.state/1\nupdated: never\n---\n"), RuleBadFormat)
+		// A task file whose frontmatter holds nothing is no task, as every reader of the task folder reads it
+		// (workspace.ReadTask): format 0 would read it as an empty mapping, and it would make the active task none for
+		// everyone. Refused new, and refused over a task that reads.
+		for _, body := range []string{"garbage: [\n", "---\n---\n\n# Notes\n", "# Notes alone\n", "---\n# a comment\n---\n"} {
+			s := wantRule(t, dir, writeOf(dir, "work/tasks/T-0004-empty.md", body), RuleBadFormat)
+			if !strings.Contains(s, "its frontmatter holds nothing") {
+				t.Errorf("%q: the reason: %s", body, s)
+			}
+		}
+		wantRule(t, dir, writeOf(dir, "work/tasks/T-0001-the-task.md", "garbage: [\n"), RuleBadFormat)
 	},
 	RuleBadSettings: func(t *testing.T) {
 		dir := withTask(t, "todo")
