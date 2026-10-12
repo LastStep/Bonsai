@@ -2,8 +2,8 @@ package ladder
 
 // The one file through which the runner calls each rung kind and each step after a rung (plan-5 5.4, "The order"): a
 // piece built beside the runner in a package of its own wires itself in here with one last commit, as 5.3.3 wired into
-// the guard. The runner itself (rungs.go) calls only runKind, afterRung, afterRungs and afterResult, and reads only what
-// they give.
+// the guard. The runner itself (rungs.go) calls only runKind, afterRung, afterRungs and afterResult, and reads only
+// what they give.
 //
 //   - guardKind: rung 0 (step 5.4.3, internal/rung0): rung0.Judge(rung0.Input{Root: c.Root, Main: c.Main, Home:
 //     c.Home, Active: the climbed task (*c.Task, the zero ActiveTask when c.Task is nil: no grants), Base: c.Base,
@@ -27,17 +27,18 @@ package ladder
 //     its kind's own default: a command rung the rung job's (rungjob.DefaultTimeout, 600 s), rung 0 rung0.DefaultTimeout
 //     and git integrity vergit.DefaultTimeout (120 s each: git reads, which a limit only ends when git does not answer),
 //     so a floor of rung 0 and ver-git does not make a waiting climb wait as if each ran tests for ten minutes.
-//   - afterRung: the steps after each rung that ran: the ratchet's judgment (internal/ratchet's Judge, step 5.4.4): the
-//     count written on the rung (was, now and whether now is at least was), and the rung red when the count is below its
-//     floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), or when its floor in
-//     ratchets is not a number (never read as 0, so a typo cannot lower a floor), the reason added to the rung's own.
+//   - afterRung: the steps after each rung that ran: the ratchet's judgment (internal/ratchet's Judge, step 5.4.4):
+//     the count written on the rung (was, now and whether now is at least was), and the rung red when the count is
+//     below its floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), or when its
+//     floor in ratchets is not a number (never read as 0, so a typo cannot lower a floor), the reason added to the
+//     rung's own.
 //   - afterRungs: the steps after the last rung, once every rung's line is printed: the rise step. On a local climb
-//     that is green and clean (clean at its start and now, HEAD where it started, nothing hidden from git), each ratchet
-//     above its floor gets its new_tests from ratchet.NewTests, internal/newtests' check (step 5.4.5): the rung run on
-//     the base in a temporary worktree, with the rung's limit, the climb's environment and its stop. Its lines print
-//     under the rungs' (a line before it starts, since it runs the rung twice more), and its one-line summary goes to
-//     the Bless step for the ask's why. A check stopped or past its limit says "check not run" and never changes a
-//     colour. On any other climb new_tests stays null.
+//     that is green and clean (clean at its start and now, HEAD where it started, nothing hidden from git), each
+//     ratchet above its floor gets its new_tests from ratchet.NewTests, internal/newtests' check (step 5.4.5): the
+//     rung run on the base in a temporary worktree, with the rung's limit, the climb's environment and its stop. Its
+//     lines print under the rungs' (a line before it starts, since it runs the rung twice more), and its one-line
+//     summary goes to the Bless step for the ask's why. A check stopped or past its limit says "check not run" and
+//     never changes a colour. On any other climb new_tests stays null.
 //   - afterResult: once the result and its fingerprint are written, the Bless step (ratchet.Bless, step 5.4.4): on the
 //     base branch, every open Bless ask whose offer is gone resolved, and the climb's own offer filed, its why giving
 //     each rise's new-tests line from the rise step (Result.Checks); it gives the ask records written, the climb's
@@ -261,8 +262,9 @@ func afterRungs(c *Climb) {
 }
 
 // judgeRatchet judges the rung's ratchet (ratchet.Judge): its count written on the entry, and when the count is below
-// its floor or none was read, or its floor is not a number (badFloor), the rung red and the reason added to its own. The ratchet's fix is the climb's next step
-// when it is the rung's only fault; a rung already red or in error keeps its status and its own fix.
+// its floor or none was read, or its floor is not a number (badFloor), the rung red and the reason added to its own.
+// The ratchet's fix is the climb's next step when it is the rung's only fault; a rung already red or in error keeps its
+// status and its own fix.
 func judgeRatchet(c *Climb, s *Step) {
 	if s.Rung.Ratchet == nil {
 		return
@@ -333,7 +335,8 @@ func riseStep(c *Climb) {
 	}
 	for _, s := range risen {
 		rt := s.Entry.Ratchet
-		what := strings.TrimSpace(fmt.Sprintf("rung %d %s", s.Entry.Rung, s.Entry.Name)) + fmt.Sprintf(" (%s %s->%s)", rt.Name, rt.Was, rt.Now)
+		what := strings.TrimSpace(fmt.Sprintf("rung %d %s", s.Entry.Rung, s.Entry.Name)) +
+			fmt.Sprintf(" (%s %s->%s)", rt.Name, rt.Was, rt.Now)
 		c.say("")
 		c.say("  new tests, %s: checking them on the base (the rung runs there twice, in a temporary worktree)", what)
 		got := newTests(ratchet.RiseInput{Name: rt.Name, Was: rt.Was, Now: rt.Now, Rung: s.Rung, Tests: s.Tests, Root: c.Root,
