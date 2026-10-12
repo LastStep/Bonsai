@@ -185,8 +185,8 @@ func writeHolder(f *os.File, h holder) error {
 func busy(c *Climb, h holder, why string) *engine.Error {
 	return &engine.Error{Code: "ladder-busy", Exit: ExitState,
 		What: "this home's ladder lock is held by " + h.who() + ", " + why + ", so nothing was run",
-		Next: "wait until process " + strconv.Itoa(h.PID) + " has ended (it may be stuck: a person may end it); then run: bonsai ladder " +
-			c.taskFlag() + " --json"}
+		Next: "wait until process " + strconv.Itoa(h.PID) + " has ended (its budget ended at " + h.until().UTC().Format(time.RFC3339) +
+			"; it may be stuck, and a person may end it); then run: bonsai ladder " + c.taskFlag() + " --json"}
 }
 
 // lockError is a lock file that cannot be made or locked.
