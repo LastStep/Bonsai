@@ -5,8 +5,9 @@ package ladder
 // rose, green and clean, writes the ratchet's new_tests: a new test failing at the base, one passing there and one that
 // does not build or load there, each counted, named in the human lines; on the base branch, the Bless ask's why and its
 // data.rises[].new_tests carry them; with no base, "check not run: no base"; a stop during the check leaves the result
-// written and every new test "check not run"; a dirty climb runs no check. Every climb leaves no base worktree in the
-// system's temporary folder (the test's own) and git's list of worktrees as it was.
+// written and every new test "check not run"; a dirty climb runs no check; on the base branch, the base git integrity
+// recorded on the task's branch. Every climb leaves no base worktree in the system's temporary folder (the test's own)
+// and git's list of worktrees as it was.
 
 import (
 	"context"
@@ -14,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -88,15 +90,19 @@ func (n ntForm) rung(setup string) rung {
 	return rung{n: 1, name: "tests", command: n.command, required: true, ratchet: n.ratchet, tst: n.name, setup: setup}
 }
 
-// project makes the fixture project on main with the base files, and gives it with the system's temporary folder,
-// which is the test's own.
-func (n ntForm) project(t *testing.T, setup string) (*fx, string) {
+// project makes the fixture project on main with the base files, its floor rung 1 and the more rungs given, and gives
+// it with the system's temporary folder, which is the test's own.
+func (n ntForm) project(t *testing.T, setup string, more ...rung) (*fx, string) {
 	t.Helper()
 	files := map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")}
 	for k, v := range n.base {
 		files[k] = v
 	}
-	f := project(t, yamlOf("[1]", "\n  "+n.ratchet+": 1", "[]", n.rung(setup)), files)
+	floor := "[1]"
+	for _, r := range more {
+		floor = strings.TrimSuffix(floor, "]") + ", " + strconv.Itoa(r.n) + "]"
+	}
+	f := project(t, yamlOf(floor, "\n  "+n.ratchet+": 1", "[]", append([]rung{n.rung(setup)}, more...)...), files)
 	tmp, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -329,5 +335,36 @@ func TestNewTestsDirty(t *testing.T) {
 	climbClean(t, f, tmp, "", Options{Task: "T-0901"})
 	if got := newTestsOf(t, f, "T-0901"); got != "null" || strings.Contains(f.out.String(), "new tests") {
 		t.Errorf("a dirty base branch: new_tests %s\n%s", got, f.out.String())
+	}
+}
+
+// The base on the base branch, as git integrity records it: the task's branch climbed in its worktree (its ver-git
+// rung recording the merge base), the branch merged into main, and main climbed: its check runs on the base the
+// branch's result recorded, and the Bless ask carries the numbers.
+func TestNewTestsRecordedBase(t *testing.T) {
+	n := ntGo
+	n.need(t)
+	f, tmp := n.project(t, "", rung{n: 5, name: "git", kind: KindVerGit})
+	base := f.head()
+	wt := filepath.Join(f.tmp, "wt")
+	testpack.Git(t, f.root, "worktree", "add", "-q", "-b", "t0901", wt)
+	n.lay(t, wt)
+	if a := climbClean(t, f, tmp, wt, Options{Task: "T-0901"}); a.Exit != 0 {
+		t.Fatalf("the branch: exit %d\n%s", a.Exit, f.out.String())
+	}
+	if got := schema.Show(f.result("T-0901").Rungs[1].Captures); !strings.Contains(got, `"base":"`+base+`"`) {
+		t.Fatalf("the ver-git rung recorded no base: %s\n%s", got, f.out.String())
+	}
+	testpack.Git(t, f.root, "merge", "-q", "--ff-only", "t0901")
+	f.out.Reset()
+	a := climbClean(t, f, tmp, "", Options{Task: "T-0901"})
+	if a.Exit != 0 || blessOps(a) != "file ladder:bless-T-0901" {
+		t.Fatalf("main: exit %d, bless %s\n%s", a.Exit, blessOps(a), f.out.String())
+	}
+	if got, want := newTestsOf(t, f, "T-0901"), counts(base, 3, 1, 1, 1); got != want {
+		t.Errorf("new_tests %s, want %s\n%s", got, want, f.out.String())
+	}
+	if why := a.Doc.Bless[0].String("why"); !strings.Contains(why, "3 new tests, run on the base "+base[:12]+": 1 failed there") {
+		t.Errorf("the why %q", why)
 	}
 }
