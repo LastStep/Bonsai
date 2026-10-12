@@ -259,20 +259,20 @@ func samePlace(a, b string) bool {
 // numbers read as rung numbers (json.Number).
 func TestRungsWanted(t *testing.T) {
 	task := &format.Task{Labels: schema.Object{{Key: "bonsai.ladder", Value: []any{json.Number("3"), json.Number("1")}}}}
-	if got, err := rungsWanted([]int64{1, 0}, task); err != nil || rungList(got) != "0, 1, 3" {
-		t.Errorf("rungsWanted %v (%v)", got, err)
+	if got, err := RungsWanted([]int64{1, 0}, task); err != nil || rungList(got) != "0, 1, 3" {
+		t.Errorf("RungsWanted %v (%v)", got, err)
 	}
 	for _, bad := range []any{"2", []any{json.Number("-1")}, []any{json.Number("1.5")}, []any{"x"}, []any{true}} {
 		task.Labels = schema.Object{{Key: "bonsai.ladder", Value: bad}}
-		if got, err := rungsWanted(nil, task); err == nil {
+		if got, err := RungsWanted(nil, task); err == nil {
 			t.Errorf("bonsai.ladder %v read as %v", bad, got)
 		}
 	}
 	task.Labels = schema.Object{{Key: "bonsai.ladder", Value: nil}}
-	if got, err := rungsWanted([]int64{0}, task); err != nil || rungList(got) != "0" {
+	if got, err := RungsWanted([]int64{0}, task); err != nil || rungList(got) != "0" {
 		t.Errorf("a null bonsai.ladder: %v (%v)", got, err)
 	}
-	if _, err := rungsWanted([]int64{-1}, nil); err == nil {
+	if _, err := RungsWanted([]int64{-1}, nil); err == nil {
 		t.Error("a floor of -1 read")
 	}
 }

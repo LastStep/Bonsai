@@ -442,7 +442,7 @@ func judge(local workspace.Local, layout workspace.GitLayout, also *untied, name
 		return deny(RuleTaskMissing, "", workspace.TaskEnv+" names "+quote(named)+", which is not a task id (T- and 4 to 6 digits)",
 			"check that "+workspace.TaskEnv+" names this session's task; then "+ladder)
 	}
-	want, err := rungsWanted(w.LadderFloor, act.Task)
+	want, err := RungsWanted(w.LadderFloor, act.Task)
 	if err != nil {
 		return deny(RuleBadRungs, act.File, err.Error()+", so the stop gate cannot tell which rungs the task needs",
 			"fix the task's bonsai.ladder label to a list of rung numbers, e.g. [1, 2], in the main checkout's "+act.File+
@@ -471,9 +471,11 @@ func taskRefusal(act workspace.ActiveTask, named, taskDir string) Decision {
 		"the main checkout's "+taskDir+", where bonsai ladder --task "+named+" reads it too")
 }
 
-// rungsWanted gives the rungs the result must hold green: the workspace's ladder_floor and the task's bonsai.ladder
+// RungsWanted gives the rungs the result must hold green: the workspace's ladder_floor and the task's bonsai.ladder
 // label (format 0's ladder), sorted, each once (contract §5.6: the label adds to the floor and never drops a rung).
-func rungsWanted(floor []int64, t *format.Task) ([]int64, error) {
+// It is the one reading of a task's rungs: the ladder runner (internal/ladder) asks for exactly these, so the result it
+// writes holds what this gate requires.
+func RungsWanted(floor []int64, t *format.Task) ([]int64, error) {
 	seen := map[int64]bool{}
 	var out []int64
 	add := func(n int64) {
