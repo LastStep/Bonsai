@@ -84,8 +84,7 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   log, not a summary. Each lists every run with its model, start, end and minutes; those rows are the hours the stop
   lines count. From the link, one per task, named `R-<date>-<task id>-<topic>.md`, with `bonsai.run/1` frontmatter
   (`id` R-(date)-(task id), `task`, `role: orchestrator`, `model`, `started`, `finished`, `outcome`, `commits`,
-  `labels`).
-  Past run reports, logs and tasks are left as they are (Rohan, 12 Oct): no lock, edit or cleanup.
+  `labels`). Past run reports, logs and tasks are left as they are (Rohan, 12 Oct): no lock, edit or cleanup.
 - **Proof** until the link: `go test ./...` and `go vet ./...` in WSL and natively on Windows, CI green on Linux and
   Windows, and a fresh verifier.
 - **Proof from the link: the landing rule**, the lock on `main`. The orchestrator fast-forwards a piece only when
