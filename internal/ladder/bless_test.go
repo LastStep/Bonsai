@@ -18,6 +18,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/ratchet"
+	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
 )
@@ -418,5 +419,38 @@ func TestRiseStep(t *testing.T) {
 	k := blessProject(t, "{}")
 	if a := k.climb("", Options{Task: "T-0901"}); len(calls) != 1 || len(a.Doc.Bless) != 0 {
 		t.Errorf("%d calls, bless %s", len(calls), blessOps(a))
+	}
+}
+
+// A climb whose ladder record cannot be written (write-failed, exit 3) runs no Bless step: its result has no
+// fingerprint, so nothing is filed from it, an open ask its HEAD move would resolve stays open, and the human lines
+// say so.
+func TestBlessNeedsTheRecord(t *testing.T) {
+	f := blessProject(t, "\n  found: 3")
+	defer func(saved func(string, *format.Log) (bool, error)) { writeLog = saved }(writeLog)
+	writeLog = func(string, *format.Log) (bool, error) { return false, os.ErrPermission }
+	a := f.climb("", Options{Task: "T-0901"})
+	if a.Exit != ExitRuntime || a.Error == nil || a.Error.Code != "write-failed" || len(a.Doc.Bless) != 0 || len(askLines(t, f.root)) != 0 {
+		t.Fatalf("exit %d, %v, bless %s\n%s", a.Exit, a.Error, blessOps(a), f.out.String())
+	}
+	says := "bless: not run: the result's ladder record is not in the log, so this climb files and resolves no Bless ask"
+	if !strings.Contains(f.out.String(), says) || strings.Contains(f.out.String(), "bless: offered") {
+		t.Errorf("the human lines:\n%s", f.out.String())
+	}
+	// An offer filed by a climb with its record; HEAD moves; a climb with no record resolves nothing.
+	writeLog = record.WriteLog
+	if a := f.climb("", Options{Task: "T-0901"}); blessOps(a) != "file ladder:bless-T-0901" {
+		t.Fatalf("not offered: %s\n%s", blessOps(a), f.out.String())
+	}
+	f.commit("HEAD moves")
+	writeLog = func(string, *format.Log) (bool, error) { return false, os.ErrPermission }
+	f.out.Reset()
+	if a := f.climb("", Options{Task: "T-0902"}); a.Exit != ExitRuntime || len(a.Doc.Bless) != 0 || openBless(t, f.root) != "ladder:bless-T-0901" {
+		t.Errorf("exit %d, bless %s, open %q\n%s", a.Exit, blessOps(a), openBless(t, f.root), f.out.String())
+	}
+	// Under --ci there is no Bless step to skip, and nothing is said.
+	f.out.Reset()
+	if a := f.climb("", Options{CI: true}); a.Exit != ExitRuntime || strings.Contains(f.out.String(), "bless:") {
+		t.Errorf("--ci: exit %d\n%s", a.Exit, f.out.String())
 	}
 }

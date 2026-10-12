@@ -38,7 +38,8 @@
 //     .bonsai/local/ladder/<task>.json (--ci: ci.json); git.dirty is git's status at the start or the end, HEAD moved
 //     during the climb, or a finding of git integrity that hides a change. Then the fingerprint (note 7): one ladder
 //     record through the log's one append path, naming the runner's own path and SHA-256. Then the cleaner's ladder
-//     kind (note 9), never the result just written; then the Bless step (kinds.go, 5.4.4's).
+//     kind (note 9), never the result just written; then the Bless step (kinds.go, 5.4.4's), only when the record was
+//     written: a result with no fingerprint files and resolves no Bless ask.
 //  8. The leftovers line (internal/leftovers), read-only, never under --ci nor in a nested climb.
 //
 // Exit codes (note 9): 0 green, 1 red, 2 bad input, 3 could not run or write, 4 wrong state. A stop (a signal) ends the

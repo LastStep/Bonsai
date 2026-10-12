@@ -71,7 +71,8 @@ func (c *Climb) result(finished string) *format.Ladder {
 	return l
 }
 
-// finish writes the result, its record, the cleaning and the Bless step, prints the summary, and gives the outcome.
+// finish writes the result, its record, the cleaning and the Bless step (only once the record is written), prints the
+// summary, and gives the outcome.
 func (c *Climb) finish() *Answer {
 	finished := c.Now().UTC()
 	l := c.result(finished.Format(timeLayout))
@@ -107,7 +108,14 @@ func (c *Climb) finish() *Answer {
 	for _, err := range done.Errs {
 		c.printNote("note: the cleaner: " + oneLine(err.Error()))
 	}
-	doc.Bless = afterResult(c, w)
+	switch {
+	case fail == nil:
+		doc.Bless = afterResult(c, w)
+	case !c.CI:
+		// A result with no fingerprint proves nothing, so no Bless ask is filed or resolved from it.
+		c.say("  bless: not run: the result's ladder record is not in the log, so this climb files and resolves no Bless ask; " +
+			"climb again once the log can be written")
+	}
 	if doc.Bless == nil {
 		doc.Bless = []schema.Object{}
 	}
