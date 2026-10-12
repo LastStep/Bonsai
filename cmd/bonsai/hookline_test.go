@@ -198,7 +198,7 @@ func TestStampedBuild(t *testing.T) {
 	stampedBuild(t, place, scratch)
 
 	if code, out, _ := runBin(t, place, c.root, nil, "--version"); code != 0 ||
-		!strings.Contains(out, "\ntest build: its hook lines run "+shellPath(place)+"; it links, updates and unlinks only inside "+filepath.ToSlash(scratch)+"\n") {
+		!strings.Contains(out, "\ntest build: its hook lines run "+shellPath(place)+"; it links, updates, unlinks and climbs the ladder only inside "+filepath.ToSlash(scratch)+"\n") {
 		t.Errorf("--version: %d %q", code, out)
 	}
 	initArgs := append(c.linkArgs(c.pack.A), "--yes")

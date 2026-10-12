@@ -57,7 +57,7 @@ func versionLine() string {
 	line := "bonsai " + version + " (" + stamp + ")\n"
 	if engine.Stamped() {
 		place, root := engine.TestBuild()
-		line += "test build: its hook lines run " + engine.ASCII(filepath.ToSlash(place)) + "; it links, updates and unlinks only inside " +
+		line += "test build: its hook lines run " + engine.ASCII(filepath.ToSlash(place)) + "; it links, updates, unlinks and climbs the ladder only inside " +
 			engine.ASCII(filepath.ToSlash(root)) + "\n"
 	}
 	return line
