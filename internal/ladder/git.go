@@ -1,7 +1,7 @@
 package ladder
 
-// The git reads a climb makes (note 6, note 13): HEAD, its branch and the tree's status at the start and the end, and
-// the merge base. Each is one git process in the checkout climbed, with git's own variables that would point it at
+// The git reads a climb makes (note 6, note 13): HEAD and its branch at the start and the end, and the merge base (the
+// tree's status is git integrity's, kinds.go's treeDirty). Each is one git process in the checkout climbed, with git's own variables that would point it at
 // another repository taken out of its environment. A read that fails gives "" (or dirty), never a guess that the tree
 // is clean.
 
@@ -67,13 +67,6 @@ func head(dir string) string {
 		return ""
 	}
 	return strings.ToLower(strings.TrimSpace(s))
-}
-
-// dirtyNow is whether the tree is dirty now: git status --porcelain printed anything (untracked files that are not
-// ignored included); a status that cannot be read counts as dirty.
-func dirtyNow(dir string) bool {
-	s, ok := git(dir, "status", "--porcelain")
-	return !ok || strings.TrimSpace(s) != ""
 }
 
 // mergeBase is git merge-base of base and HEAD in dir, "" when git finds none.

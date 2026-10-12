@@ -135,3 +135,22 @@ func TestVerGitErrorWhenGitCannotBeRead(t *testing.T) {
 		t.Errorf("next: %+v", a.Doc.Next)
 	}
 }
+
+// The result's dirty is git status as git integrity runs it (vergit.Dirty), on every climb, with or without a ver-git
+// rung: the repository's own configuration cannot talk it out of a change. Here status.showUntrackedFiles=no hides a
+// new file from plain git status; the climb, whose floor holds no ver-git rung, still counts the tree dirty.
+func TestDirtyAsGitIntegrityReadsIt(t *testing.T) {
+	f := project(t, yamlOf("[1]", "{}", "[]", rung{n: 1, name: "one", command: "echo one", required: true}),
+		map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
+	testpack.Git(t, f.root, "config", "status.showUntrackedFiles", "no")
+	f.write("new.txt", "a file plain git status no longer shows\n")
+	if s := testpack.Git(t, f.root, "status", "--porcelain"); s != "" {
+		t.Fatalf("plain git status shows it: %q", s)
+	}
+	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 || !f.result("T-0901").Git.Dirty {
+		t.Errorf("exit %d, dirty %v\n%s", a.Exit, f.result("T-0901").Git.Dirty, f.out.String())
+	}
+	if code, stderr := gate(t, f.root, "T-0901"); code != 2 || !strings.Contains(stderr, "uncommitted changes") {
+		t.Errorf("the stop gate: %d %q", code, stderr)
+	}
+}
