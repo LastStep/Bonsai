@@ -53,8 +53,10 @@
 // leaves the session and whose parent is gone cannot be told from a stranger without root once the runner is not
 // its reaper (the runner killed, or prctl refused, which a note says); and an adopted child of that kind cannot be
 // told between two rungs of one runner running at once, so a runner runs its rungs one at a time and starts no
-// child of its own in a new session beside a running rung. Windows: with the job off, only the shell is ended at a
-// timeout, and what it started is not listed.
+// child of its own in a new session beside a running rung. Windows: a process the rung has a program outside its
+// job start for it (the task scheduler, WMI, a running service, an elevation prompt) is not in the job; with the
+// job off, only the shell is ended at a timeout, and what it started is not listed. Both sides: what the end could
+// not reach the next run's leftovers line names, when it runs from the checkout.
 package rungjob
 
 import (

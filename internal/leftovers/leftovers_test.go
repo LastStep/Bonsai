@@ -125,6 +125,8 @@ func TestHeadOf(t *testing.T) {
 		{[]string{"env", "A=SECRET", "npm", "run", "dev"}, "npm run"},
 		{[]string{"/tmp/x/rungjob.test", "sleep"}, ""},
 		{[]string{"it's"}, ""},
+		{[]string{"npm exec @scope/some-server"}, "npm exec"},
+		{[]string{"/opt/My App/bin/tool", "x"}, "tool"},
 		{nil, ""},
 	} {
 		if got := HeadOf(c.argv); got != c.want {

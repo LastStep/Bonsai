@@ -346,6 +346,12 @@ func HeadOf(argv []string) string {
 		}
 		if i == 0 {
 			a = strings.ReplaceAll(a, `\`, "/") // a Windows program's path reads as its base name
+			if before, _, ok := strings.Cut(a, " "); ok && !strings.Contains(before, "/") {
+				// A program that rewrote its title (node's process.title: "npm exec x") holds its words in its
+				// first argument: they are read as words. A path with a space ("/opt/My App/x") stays one.
+				b.WriteString(a)
+				continue
+			}
 		}
 		b.WriteString(shellQuote(a))
 	}
