@@ -167,7 +167,7 @@ error words.
 | `settings-rule` | finding | person | - | a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own |
 | `hooks-off` | finding | person | - | disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them |
 | `settings-env` | finding | person | - | the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: PATH, BASH_ENV, ENV, CLAUDE_CODE_SHELL_PREFIX, CLAUDE_CODE_GIT_BASH_PATH, CLAUDE_PROJECT_DIR, CLAUDE_CODE_STOP_HOOK_BLOCK_CAP, CLAUDE_CODE_CHILD_SESSION, or any name starting BONSAI_; the finding names the file and the name, never the value (step 5.3.6) |
-| `plugin-version` | finding | person | yes | a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5) |
+| `plugin-version` | finding | person | - | a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5) |
 | `plugin` | finding | person | yes | plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5) |
 | `id-changed` | finding | person | yes | bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3) |
 | `bonsai-path` | finding | person | yes | the bonsai on the PATH is not the installed one that install.json records (spec section 3) |

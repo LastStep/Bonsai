@@ -67,7 +67,7 @@ var CheckWords = []Word{
 	{Word: "settings-rule", Kind: "finding", Who: "person", Means: "a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own"},
 	{Word: "hooks-off", Kind: "finding", Who: "person", Means: "disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them"},
 	{Word: "settings-env", Kind: "finding", Who: "person", Means: "the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: " + hookEnvNames() + "; the finding names the file and the name, never the value (step 5.3.6)"},
-	{Word: "plugin-version", Kind: "finding", Who: "person", Machine: true, Means: "a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5)"},
+	{Word: "plugin-version", Kind: "finding", Who: "person", Means: "a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5)"},
 	{Word: "plugin", Kind: "finding", Who: "person", Machine: true, Means: "plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5)"},
 	// This machine (the home and the PATH).
 	{Word: "id-changed", Kind: "finding", Who: "person", Machine: true, Means: "bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3)"},
