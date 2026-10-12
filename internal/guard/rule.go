@@ -58,6 +58,12 @@ type judge struct {
 	// taskGrants, when set, gives what a project's task grants in place of its active task while it reads running:
 	// rung 0 (step 5.4) judges with the named task's grants at any status (contract §13). nil for the guard.
 	taskGrants func(p *linkedProject) *taskGrant
+
+	// before and outside are rung 0's too (rung0.go), unset for the guard: what the path judged held before the change,
+	// in place of the file on disk (readBefore), and that the change was made outside the main checkout (a worktree),
+	// which command mode's task-outside-main meets as it meets an edit there.
+	before  func() ([]byte, error)
+	outside bool
 }
 
 // linkedProject is one folder holding bonsai.yaml: a project, linked or planted.

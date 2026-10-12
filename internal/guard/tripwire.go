@@ -33,7 +33,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -181,11 +180,11 @@ func (j *judge) tripwire(c change, x judged) (Decision, bool) {
 	}
 	next := "run this workspace's status command (" + quote(ms.StatusCommand, 80) + ") for status moves, lane changes, grants " +
 		"and outside labels, and keep the edit to the file's other lines"
-	if doc.kind == "task" && x.p.layout.Worktree() {
+	if doc.kind == "task" && (x.p.layout.Worktree() || j.outside) {
 		return j.trip(c, x, RuleTaskOutsideMain, "a task file outside the main checkout: in command mode tasks change on "+
 			"the main checkout only, through the status command", next), false
 	}
-	before, err := os.ReadFile(x.abs)
+	before, err := j.readBefore(x.abs)
 	exists := err == nil
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		if doc.status {
