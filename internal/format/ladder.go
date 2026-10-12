@@ -177,12 +177,23 @@ func TestFileConventionOf(form string) (TestFileConvention, bool) {
 }
 
 // GitFindings are the names a ver-git rung gives what it found, as keys of the rung's captures in a result: an open
-// list, whose one home is this table (5.4.6 writes them; the rung informs and never turns red for one).
+// list, whose one home is this table (5.4.6 writes them, in this order; the rung informs and never turns red for
+// one). The first three are what the rung records, so the task's next climb compares: base (a commit, or null when
+// there is none), stash-count (a number) and exclude-hash (sha256:<hex>). Every other word is a finding, its value
+// the count found, or null when the rung could not judge it (its reason says why). A finding whose line says it
+// hides a change makes the result's git.dirty true: git status would not show that change.
 var GitFindings = []Word{
-	{Word: "test-file-changed", Means: "a test file (by the rung's tests form, TestFileConventions) differs between the task's base and the working tree"},
-	{Word: "assume-unchanged", Means: "the index marks a file assume-unchanged, so git stops looking for edits to it"},
-	{Word: "skip-worktree", Means: "the index marks a file skip-worktree, so git keeps the index's copy whatever the working tree holds"},
-	{Word: "exclude-edited", Means: ".git/info/exclude differs from the hash the task's last climb recorded, so files may be hidden from git status"},
+	{Word: "base", Means: "recorded: the task's base commit, the merge base of HEAD with the base branch (on the base branch itself, the base an earlier climb of the task recorded); null when there is none"},
+	{Word: "stash-count", Means: "recorded: the number of entries the stash holds, which the task's next climb compares (stash-added)"},
+	{Word: "exclude-hash", Means: "recorded: sha256:<hex> of the common git folder's info/exclude with line ends read as LF (an absent file reads as empty), which the task's next climb compares (exclude-edited)"},
+	{Word: "test-file-changed", Means: "a test file (by the tests form, TestFileConventions) differs between the task's base and the working tree: changed, added (untracked ones too) or deleted"},
+	{Word: "assume-unchanged", Means: "the index marks a file assume-unchanged, so git stops looking for edits to it: it hides a change, and the run counts as dirty"},
+	{Word: "skip-worktree", Means: "the index marks a file skip-worktree, so git keeps the index's copy whatever the working tree holds: it hides a change, and the run counts as dirty"},
+	{Word: "exclude-edited", Means: "the common git folder's info/exclude (line ends read as LF) differs from the hash the task's last climb recorded"},
 	{Word: "stash-added", Means: "the stash holds more entries than the task's last climb recorded"},
-	{Word: "base-rewritten", Means: "the task's recorded base commit is no longer in HEAD's history"},
+	{Word: "base-rewritten", Means: "the base the task's last climb recorded is no longer in HEAD's history (or no longer in a clone that is not shallow)"},
+	{Word: "exclude-lines", Means: "the common git folder's info/exclude holds lines other than comments: patterns that ignore files for this clone alone, which no diff shows"},
+	{Word: "exclude-hidden", Means: "a file or folder present that git ignores only by info/exclude or core.excludesFile (no .gitignore ignores it), so git status does not show it: it hides a change, and the run counts as dirty"},
+	{Word: "untracked-gitignore", Means: "a file or folder present that git ignores by a .gitignore git does not track (one that ignores itself too), so git status does not show it: it hides a change, and the run counts as dirty"},
+	{Word: "filter-local", Means: "the repository's own git config defines a filter driver (filter.<name>.clean, smudge or process), which can change what git compares, so git status may not show a change"},
 }

@@ -286,12 +286,19 @@ error words.
 
 | Word | Means |
 |---|---|
-| `test-file-changed` | a test file (by the rung's tests form, TestFileConventions) differs between the task's base and the working tree |
-| `assume-unchanged` | the index marks a file assume-unchanged, so git stops looking for edits to it |
-| `skip-worktree` | the index marks a file skip-worktree, so git keeps the index's copy whatever the working tree holds |
-| `exclude-edited` | .git/info/exclude differs from the hash the task's last climb recorded, so files may be hidden from git status |
+| `base` | recorded: the task's base commit, the merge base of HEAD with the base branch (on the base branch itself, the base an earlier climb of the task recorded); null when there is none |
+| `stash-count` | recorded: the number of entries the stash holds, which the task's next climb compares (stash-added) |
+| `exclude-hash` | recorded: sha256:<hex> of the common git folder's info/exclude with line ends read as LF (an absent file reads as empty), which the task's next climb compares (exclude-edited) |
+| `test-file-changed` | a test file (by the tests form, TestFileConventions) differs between the task's base and the working tree: changed, added (untracked ones too) or deleted |
+| `assume-unchanged` | the index marks a file assume-unchanged, so git stops looking for edits to it: it hides a change, and the run counts as dirty |
+| `skip-worktree` | the index marks a file skip-worktree, so git keeps the index's copy whatever the working tree holds: it hides a change, and the run counts as dirty |
+| `exclude-edited` | the common git folder's info/exclude (line ends read as LF) differs from the hash the task's last climb recorded |
 | `stash-added` | the stash holds more entries than the task's last climb recorded |
-| `base-rewritten` | the task's recorded base commit is no longer in HEAD's history |
+| `base-rewritten` | the base the task's last climb recorded is no longer in HEAD's history (or no longer in a clone that is not shallow) |
+| `exclude-lines` | the common git folder's info/exclude holds lines other than comments: patterns that ignore files for this clone alone, which no diff shows |
+| `exclude-hidden` | a file or folder present that git ignores only by info/exclude or core.excludesFile (no .gitignore ignores it), so git status does not show it: it hides a change, and the run counts as dirty |
+| `untracked-gitignore` | a file or folder present that git ignores by a .gitignore git does not track (one that ignores itself too), so git status does not show it: it hides a change, and the run counts as dirty |
+| `filter-local` | the repository's own git config defines a filter driver (filter.<name>.clean, smudge or process), which can change what git compares, so git status may not show a change |
 
 ## Ask types
 
