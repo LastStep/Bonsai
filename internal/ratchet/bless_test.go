@@ -9,6 +9,7 @@ package ratchet
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -272,9 +273,19 @@ func TestBlessNotes(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := Bless(Step{Place: p, Task: "T-0901", Result: own, Where: here()})
-	if len(d.Records) != 0 || len(d.Notes) != 2 || !strings.HasPrefix(d.Notes[0], "the open Bless asks cannot be read (") ||
-		!strings.HasPrefix(d.Notes[1], "the Bless ask ladder:bless-T-0901 cannot be filed: ") {
-		t.Errorf("%+v", d)
+	// A file where the asks folder goes cannot be read on Linux; on Windows it reads as no folder (Go takes the system's
+	// "path not found" for not-there), so there the filing's note is the only one.
+	want := []string{"the open Bless asks cannot be read (", "the Bless ask ladder:bless-T-0901 cannot be filed: "}
+	if runtime.GOOS == "windows" {
+		want = want[1:]
+	}
+	if len(d.Records) != 0 || len(d.Notes) != len(want) {
+		t.Fatalf("%+v", d)
+	}
+	for i, w := range want {
+		if !strings.HasPrefix(d.Notes[i], w) {
+			t.Errorf("note %d: %q, want %q", i, d.Notes[i], w)
+		}
 	}
 	p = mainPlace(t)
 	odd := greenResult("T 0901", rung(1, "green", "go_tests", "812", "815"))
