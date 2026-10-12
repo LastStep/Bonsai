@@ -360,15 +360,30 @@ func TestFaultsThroughTheHookLine(t *testing.T) {
 			t.Fatalf("engine.GuardTimeout %q: %v", engine.GuardTimeout, err)
 		}
 		limit := time.Duration(secs)*time.Second - time.Second
-		code, stderr, took := runLine(t, []string{shellPath(fault)}, hookPath(t), proj, "slow", editPayload(t, "s-slow", proj, "free.txt"))
-		if code != 2 || !strings.Contains(stderr, "the guard ran past its own 5s limit") {
-			t.Fatalf("exit %d, stderr %q", code, stderr)
+		// The session's log file is made first, by a call the fault build decides at once, as bonsai hook start makes it
+		// in a real session: the over-time record is then an append, not the file's first record, which hashes the
+		// whole binary inside the frame's 500 ms wait for it (hookin.RecordWait). Under a loaded machine (every test of a
+		// climb's rung at once) that wait can still pass before the record lands; the frame then answers without it, by
+		// design (a record not written by then may land after the answer, or never), so the record is looked for over
+		// three slow calls, each of which must block in time.
+		if code, stderr, _ := runLine(t, []string{shellPath(fault)}, hookPath(t), proj, "", editPayload(t, "s-slow", proj, "free.txt")); code != 0 {
+			t.Fatalf("the call that makes the session's file: exit %d, stderr %q", code, stderr)
 		}
-		if took > limit {
-			t.Errorf("blocked after %v, past %v: so near the hook line's %s s timeout, Claude Code could have let it through", took, limit, engine.GuardTimeout)
+		var r schema.Object
+		for try := 0; try < 3; try++ {
+			code, stderr, took := runLine(t, []string{shellPath(fault)}, hookPath(t), proj, "slow", editPayload(t, "s-slow", proj, "free.txt"))
+			if code != 2 || !strings.Contains(stderr, "the guard ran past its own 5s limit") {
+				t.Fatalf("exit %d, stderr %q", code, stderr)
+			}
+			if took > limit {
+				t.Errorf("blocked after %v, past %v: so near the hook line's %s s timeout, Claude Code could have let it through", took, limit, engine.GuardTimeout)
+			}
+			if r = lastRecord(t, proj, "s-slow"); r.String("rule") == "over-time" {
+				break
+			}
 		}
-		if r := lastRecord(t, proj, "s-slow"); r.String("rule") != "over-time" {
-			t.Errorf("record: %s", schema.Show(r))
+		if r.String("rule") != "over-time" {
+			t.Errorf("no over-time record in three slow calls: %s", schema.Show(r))
 		}
 	})
 	t.Run("a fault build answering missing", func(t *testing.T) {

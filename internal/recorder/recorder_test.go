@@ -424,6 +424,7 @@ func TestToolCalls(t *testing.T) {
 		{"NotebookEdit", `{"notebook_path":"n.ipynb"}`, "Edit", "n.ipynb", "<null>"},
 		{"Write", `{"file_path":"c.go","content":"password: ` + fakeToken() + `"}`, "Write", "c.go", "<null>"},
 		{"Bash", `{"command":"bonsai ladder --task T-0901"}`, "Ladder", "bonsai ladder", "<null>"},
+		{"Bash", `{"command":"/usr/local/bin/bonsai ladder --task T-5407 --json"}`, "Ladder", "bonsai ladder", "<null>"},
 		{"PowerShell", `{"command":"Get-ChildItem -Path C:\\x"}`, "Shell", "Get-ChildItem", "<null>"},
 		{"Agent", `{"subagent_type":"Explore","prompt":"look"}`, "Agent", "Explore", "<null>"},
 		{"Task", `{"subagent_type":"Plan","prompt":"look"}`, "Agent", "Plan", "<null>"},
