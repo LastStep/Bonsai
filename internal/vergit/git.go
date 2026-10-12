@@ -56,7 +56,7 @@ var fixedEnv = []string{"GIT_CONFIG_NOSYSTEM=1", "GIT_ATTR_NOSYSTEM=1", "GIT_NO_
 //   - core.commitGraph=false: ancestry is read from the commits themselves, not from a cache file that could be
 //     made to say otherwise;
 //   - protocol.allow=never: no fetch of a missing object (a partial clone) reaches a network;
-//   - core.excludesFile is pinned per run (see excludesFile), so every call ignores by the same files.
+//   - core.excludesFile is pinned per run, and the user's core.autocrlf and core.eol kept (see userSettings).
 var pins = []string{"core.fsmonitor=false", "core.untrackedCache=false", "core.trustctime=true",
 	"core.checkStat=default", "core.ignoreStat=false", "core.attributesFile=", "core.commitGraph=false",
 	"protocol.allow=never"}
@@ -67,6 +67,7 @@ type gitRunner struct {
 	prog     string   // the git program
 	dir      string   // the folder git runs in
 	excludes string   // core.excludesFile for every call: the user's own, or "" for none
+	keep     []string // the user's line-end settings, given on every call (userSettings)
 	env      []string // the fixed environment
 }
 
@@ -121,6 +122,9 @@ func (g *gitRunner) run(stdin []byte, args ...string) ([]byte, error) {
 		full = append(full, "-c", p)
 	}
 	full = append(full, "-c", "core.excludesFile="+g.excludes)
+	for _, k := range g.keep {
+		full = append(full, "-c", k)
+	}
 	return g.exec(g.env, stdin, append(full, args...), args)
 }
 
@@ -160,13 +164,17 @@ func exitCode(err error) int {
 	return -1
 }
 
-// excludesFile finds the global excludes file the user's own git would read in this checkout: core.excludesFile as
-// the user's environment and configuration set it (the repository's own value wins, as in git), or git's default,
-// $XDG_CONFIG_HOME/git/ignore or ~/.config/git/ignore. It is read once, with the user's environment less the
-// variables that point git at another repository or run anything, and only to learn which file to read: a value
-// can add a file to look through, never take one away. "" when there is no such file. note says why a value could
-// not be read, when it could not.
-func (g *gitRunner) excludesFile() (file, note string) {
+// userSettings reads, once, the user's own settings that every later call keeps, with the user's environment less
+// the variables that point git at another repository or run anything (every GIT_* but GIT_CONFIG*):
+//   - core.excludesFile, as the user's git in this checkout reads it (the repository's own value wins, as in git), or
+//     git's default, $XDG_CONFIG_HOME/git/ignore or ~/.config/git/ignore. That file is what hides a file from the
+//     user's git status, so every call ignores by it; a value can only add a file to look through, never take one
+//     away. "" when there is no such file.
+//   - core.autocrlf and core.eol, so a file checked out with CRLF line ends (Git for Windows' own default) and merely
+//     touched reads as unchanged, as in the user's git: line ends alone hide no change worth a finding.
+//
+// It returns a note when the settings could not be read; git's defaults then stand for them.
+func (g *gitRunner) userSettings() (note string) {
 	var env []string
 	for _, kv := range os.Environ() {
 		k, _, _ := strings.Cut(kv, "=")
@@ -179,27 +187,48 @@ func (g *gitRunner) excludesFile() (file, note string) {
 		env = append(env, kv)
 	}
 	env = append(env, "GIT_TERMINAL_PROMPT=0", "GIT_OPTIONAL_LOCKS=0", "LC_ALL=C")
-	args := []string{"config", "--includes", "--path", "--get", "core.excludesFile"}
+	args := []string{"config", "-z", "--includes", "--path", "--get-regexp", `^core\.(excludesfile|autocrlf|eol)$`}
 	out, err := g.exec(env, nil, append([]string{"--no-pager"}, args...), args)
+	set := map[string]string{}
 	switch {
 	case err == nil:
-		file = strings.TrimRight(string(out), "\r\n")
-	case exitCode(err) == 1: // not set: git's default
+		for _, e := range splitZ(out) {
+			k, v, _ := strings.Cut(e, "\n")
+			set[k] = v // the last value of a key is the one git uses
+		}
+	case exitCode(err) == 1: // none set: git's defaults
 	default:
-		note = "the user's core.excludesFile could not be read (" + err.Error() + "), so git's default file stands for it"
+		note = "the user's git settings could not be read (" + err.Error() + "), so git's defaults stand for them"
 	}
+	if v := strings.ToLower(set["core.autocrlf"]); v != "" {
+		if v == "input" || boolWord(v) {
+			g.keep = append(g.keep, "core.autocrlf="+v)
+		}
+	}
+	if v := strings.ToLower(set["core.eol"]); v == "lf" || v == "crlf" || v == "native" {
+		g.keep = append(g.keep, "core.eol="+v)
+	}
+	file := set["core.excludesfile"]
 	if file == "" {
 		file = defaultExcludes()
 	} else if !filepath.IsAbs(filepath.FromSlash(file)) {
 		file = filepath.Join(g.dir, filepath.FromSlash(file))
 	}
-	if file == "" {
-		return "", note
+	if file != "" {
+		if fi, err := os.Stat(filepath.FromSlash(file)); err == nil && !fi.IsDir() {
+			g.excludes = filepath.ToSlash(file)
+		}
 	}
-	if fi, err := os.Stat(filepath.FromSlash(file)); err != nil || fi.IsDir() {
-		return "", note
+	return note
+}
+
+// boolWord reports whether git reads a value as a boolean.
+func boolWord(v string) bool {
+	switch v {
+	case "true", "false", "yes", "no", "on", "off", "1", "0":
+		return true
 	}
-	return filepath.ToSlash(file), note
+	return false
 }
 
 // defaultExcludes is git's default global excludes file, as git finds its home folder (Git for Windows: HOME, else

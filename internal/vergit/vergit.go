@@ -31,16 +31,19 @@
 // assume-unchanged or skip-worktree entry, or a file only info/exclude, core.excludesFile or an untracked .gitignore
 // ignores, is exactly such a change, and git status, which the runner's dirty reads, is fooled by it. So Outcome.Hides
 // is true for those findings, the runner makes the result's dirty true, and the stop gate, which refuses a dirty
-// result, refuses it, while this rung itself stays green and informative. The fix is the repository's own: undo the
+// result, refuses it, while this rung itself stays green and informative. The other half of dirty is git status,
+// which settings outside any diff can also fool (status.showUntrackedFiles=no or a lying core.fsmonitor in the
+// repository's config; a filter and an attributes file in the user's global config): Dirty runs it as this package
+// runs git, so the runner's dirty is Dirty(in) or Outcome.Hides. The fix is the repository's own: undo the
 // entry, remove the file, or ignore it in a committed .gitignore, which shows in the diff (and which the guard
 // protects where a project says so). Chosen over a red rung, which the spec defers, and over leaving dirty to git's
 // status alone.
 //
 // How git runs (git.go): one program, the judgment's deadline, a fixed environment (no user configuration, no GIT_*
 // variable from the caller, no pager, no prompt, no network) and settings pinned on the command line, so nothing the
-// user or the repository set can point git elsewhere or make it stop looking. The one thing read with the user's own
-// environment is which global excludes file their git uses, since that file is what hides; it can only add a file to
-// look through.
+// user or the repository set can point git elsewhere or make it stop looking. Read once with the user's own
+// environment: which global excludes file their git uses, since that file is what hides (it can only add a file to
+// look through), and their line-end settings, so a touched CRLF checkout reads as git reads it for them.
 //
 // Known limits, each for the verifier to know:
 //   - A test file edited under an assume-unchanged or skip-worktree entry is listed under that entry, not under
@@ -53,6 +56,8 @@
 //     Git LFS define one honestly. Changes inside a submodule are not looked at.
 //   - The repository's own configuration is read by every git call (no variable switches it off); the pinned
 //     settings cover the parts of it known to hide a change from these reads.
+//   - In a sparse checkout every file outside the cone is a skip-worktree entry, so such a checkout always counts as
+//     dirty: a proof is of the whole tree.
 //   - A checkout git refuses as another user's (safe.directory) is an error: the user's global configuration, where
 //     that setting lives, is not read.
 //   - It judges what git can see; a determined agent able to rewrite .git itself can do more, which the guard's
@@ -185,6 +190,19 @@ func Judge(in Input) Outcome {
 
 // judge runs every check; an error means git could not be read.
 func (j *judgment) judge(ctx context.Context) error {
+	if err := j.start(ctx); err != nil {
+		return err
+	}
+	for _, step := range []func() error{j.index, j.ignored, j.exclude, j.filters, j.stash, j.setBase, j.testFiles} {
+		if err := step(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// start finds git and the checkout, and reads the user's settings every call keeps.
+func (j *judgment) start(ctx context.Context) error {
 	root, err := filepath.Abs(j.in.Root)
 	if err == nil {
 		root, err = filepath.EvalSymlinks(root)
@@ -203,20 +221,41 @@ func (j *judgment) judge(ctx context.Context) error {
 	if err := j.locate(); err != nil {
 		return err
 	}
-	file, note := g.excludesFile()
+	note := g.userSettings()
 	if g.ctx.Err() != nil {
 		return errors.New("git did not answer in time")
 	}
-	g.excludes = file
 	if note != "" {
 		j.notes = append(j.notes, note)
 	}
-	for _, step := range []func() error{j.index, j.ignored, j.exclude, j.filters, j.stash, j.setBase, j.testFiles} {
-		if err := step(); err != nil {
-			return err
-		}
-	}
 	return nil
+}
+
+// Dirty reports whether git status, run as this package runs git (its fixed environment and pinned settings, with
+// the user's excludes file and line-end settings), shows a change in the checkout: a tracked file changed, staged or
+// deleted, or an untracked file nothing ignores. It is the git-status half of a ladder result's git.dirty, the other
+// half being Outcome.Hides: dirty = Dirty(in) or Hides. Run plainly, git status can be talked out of a change by
+// settings outside any diff (status.showUntrackedFiles=no or a lying core.fsmonitor in the repository's config; a
+// filter driver and an attributes file in the user's global configuration), which this run does not read or pins
+// off. On an error, the caller counts the run dirty: a status that cannot be read proves no clean tree. Only
+// in.Root, in.Git and in.Timeout are read.
+func Dirty(in Input) (bool, error) {
+	timeout := in.Timeout
+	if timeout <= 0 {
+		timeout = DefaultTimeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	j := &judgment{in: in, found: map[string]*finding{}}
+	if err := j.start(ctx); err != nil {
+		return true, err
+	}
+	out, err := j.git.run(nil, "status", "--porcelain=v1", "-z", "--untracked-files=normal",
+		"--ignore-submodules=none", "--no-renames")
+	if err != nil {
+		return true, fmt.Errorf("git cannot read the checkout's status: %v", err)
+	}
+	return len(out) > 0, nil
 }
 
 // locate finds the checkout's top folder, its common git folder, whether it is shallow, and HEAD.

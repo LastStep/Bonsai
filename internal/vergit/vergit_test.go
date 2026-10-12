@@ -341,6 +341,44 @@ func TestTestFileChanged(t *testing.T) {
 	}
 }
 
+// A test file checked out with CRLF line ends under the user's core.autocrlf (Git for Windows' default) and merely
+// touched is no change, as the user's git reads it.
+func TestLineEndsAsTheUserReadsThem(t *testing.T) {
+	home := isolate(t)
+	write(t, home, "gitconfig", "[core]\n\tautocrlf = true\n")
+	root := filepath.Join(t.TempDir(), "crlf")
+	must(t, os.MkdirAll(root, 0o755))
+	plain := func(args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", append([]string{"-c", "user.name=bonsai-test", "-c", "user.email=bonsai-test",
+			"-c", "commit.gpgsign=false", "-c", "init.defaultBranch=main"}, args...)...)
+		cmd.Dir = root
+		out, err := cmd.Output()
+		if err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	plain("init", "-q")
+	write(t, root, "pkg/a_test.go", "package pkg\n\nfunc x() {}\n")
+	plain("add", ".")
+	plain("commit", "-q", "-m", "base")
+	base := plain("rev-parse", "HEAD")
+	must(t, os.Remove(filepath.Join(root, "pkg", "a_test.go")))
+	plain("checkout", "--", "pkg/a_test.go")
+	raw, err := os.ReadFile(filepath.Join(root, "pkg", "a_test.go"))
+	must(t, err)
+	if !bytes.Contains(raw, []byte("\r\n")) {
+		t.Fatalf("the checkout has no CRLF, so the fixture proves nothing: %q", raw)
+	}
+	later := time.Now().Add(time.Hour)
+	must(t, os.Chtimes(filepath.Join(root, "pkg", "a_test.go"), later, later))
+	if plain("-c", "core.autocrlf=false", "diff", "--name-only", base) == "" {
+		t.Fatalf("git without the user's line-end setting sees no change, so the fixture proves nothing")
+	}
+	only(t, judge(t, input(root, base)), false, nil)
+}
+
 // assume-unchanged and skip-worktree make git status show a changed file as clean: the rung names the entry, and
 // Hides is true.
 func TestIndexEntriesHide(t *testing.T) {
@@ -396,6 +434,19 @@ func TestExcludeHidden(t *testing.T) {
 		appendExclude(t, root, "secret.txt\n")
 		write(t, root, "pkg/secret.txt", "x\n") // pkg/ is tracked: the file is listed on its own
 		only(t, judge(t, input(root, base)), true, map[string]int{"exclude-hidden": 1, "exclude-lines": 1})
+	})
+	t.Run("info/exclude seen from a linked worktree", func(t *testing.T) {
+		root, base := repo(t)
+		wt := filepath.Join(filepath.Dir(root), "wt")
+		git(t, root, "worktree", "add", "-q", "-b", "other", wt)
+		appendExclude(t, root, "secret.txt\n") // the common git folder's, which every worktree reads
+		write(t, wt, "secret.txt", "x\n")
+		if s := git(t, wt, "status", "--porcelain"); s != "" {
+			t.Fatalf("git status shows the file: %s", s)
+		}
+		o := judge(t, input(wt, base))
+		only(t, o, true, map[string]int{"exclude-hidden": 1, "exclude-lines": 1})
+		has(t, o, "exclude-hidden 1: secret.txt (by info/exclude)")
 	})
 	excludes := filepath.Join(home, "my-ignore")
 	write(t, home, "my-ignore", "secret.txt\n")
@@ -773,6 +824,94 @@ func TestErrorOnlyWhenGitCannotBeRead(t *testing.T) {
 		in := input(root, base)
 		in.Timeout = time.Nanosecond
 		check(t, in, "git did not answer in time")
+	})
+}
+
+// Dirty is git status as this package runs git: what plain git status can be talked out of, it still shows.
+func TestDirty(t *testing.T) {
+	home := isolate(t)
+	dirty := func(t *testing.T, root string, want bool) {
+		t.Helper()
+		got, err := Dirty(Input{Root: root})
+		if err != nil || got != want {
+			t.Errorf("Dirty = %v, %v; want %v", got, err, want)
+		}
+	}
+	plainStatus := func(t *testing.T, root string) string {
+		t.Helper()
+		cmd := exec.Command("git", "status", "--porcelain")
+		cmd.Dir = root
+		out, err := cmd.Output()
+		must(t, err)
+		return strings.TrimSpace(string(out))
+	}
+	t.Run("clean, with a file the .gitignore ignores", func(t *testing.T) {
+		root, _ := repo(t)
+		write(t, root, "build/out.bin", "x")
+		dirty(t, root, false)
+	})
+	t.Run("a changed file and an untracked one", func(t *testing.T) {
+		root, _ := repo(t)
+		write(t, root, "a.txt", "changed\n")
+		dirty(t, root, true)
+		git(t, root, "checkout", "--", "a.txt")
+		write(t, root, "new.go", "package x\n")
+		dirty(t, root, true)
+	})
+	t.Run("status.showUntrackedFiles=no in the repository", func(t *testing.T) {
+		root, _ := repo(t)
+		git(t, root, "config", "status.showUntrackedFiles", "no")
+		write(t, root, "new.go", "package x\n")
+		if s := plainStatus(t, root); s != "" {
+			t.Fatalf("plain git status shows the file, so the fixture proves nothing: %s", s)
+		}
+		dirty(t, root, true)
+	})
+	t.Run("a filter and an attributes file in the global configuration", func(t *testing.T) {
+		root, _ := repo(t)
+		attrs := filepath.Join(home, "attributes")
+		write(t, home, "attributes", "a.txt filter=hide\n")
+		write(t, home, "gitconfig", "[core]\n\tattributesFile = "+filepath.ToSlash(attrs)+
+			"\n[filter \"hide\"]\n\tclean = git show HEAD:a.txt\n")
+		defer write(t, home, "gitconfig", "")
+		write(t, root, "a.txt", "b\n") // the same size: git compares the cleaned content, which the filter fakes
+		later := time.Now().Add(time.Hour)
+		must(t, os.Chtimes(filepath.Join(root, "a.txt"), later, later))
+		if s := plainStatus(t, root); s != "" {
+			t.Fatalf("plain git status shows the change, so the fixture proves nothing: %s", s)
+		}
+		dirty(t, root, true)
+	})
+	t.Run("a lying file-system monitor in the repository", func(t *testing.T) {
+		root, _ := repo(t)
+		// The hook answers every query with a token and no changed path: git status then trusts the index.
+		write(t, root, ".git/fsmon", "#!/bin/sh\nprintf 'tok\\0'\n")
+		must(t, os.Chmod(filepath.Join(root, ".git", "fsmon"), 0o755))
+		git(t, root, "config", "core.fsmonitor", ".git/fsmon")
+		_ = plainStatus(t, root) // writes the index with the monitor's marks
+		_ = plainStatus(t, root)
+		write(t, root, "a.txt", "changed behind git's back\n")
+		if s := plainStatus(t, root); s != "" {
+			t.Logf("plain git status shows the change here (this git does not trust the hook): %s", s)
+		} else {
+			t.Logf("plain git status is fooled by the hook")
+		}
+		dirty(t, root, true)
+	})
+	t.Run("assume-unchanged: Hides makes up the other half", func(t *testing.T) {
+		root, base := repo(t)
+		git(t, root, "update-index", "--assume-unchanged", "a.txt")
+		write(t, root, "a.txt", "changed behind git's back\n")
+		dirty(t, root, false) // git status itself cannot see past the entry
+		if !judge(t, input(root, base)).Hides {
+			t.Errorf("Hides is false")
+		}
+	})
+	t.Run("git cannot be read", func(t *testing.T) {
+		got, err := Dirty(Input{Root: t.TempDir()})
+		if err == nil || !got {
+			t.Errorf("Dirty = %v, %v on a folder that is no checkout", got, err)
+		}
 	})
 }
 
