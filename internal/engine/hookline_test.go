@@ -147,7 +147,7 @@ func TestAStampedBuildIsConfined(t *testing.T) {
 	// One stamp alone, or a place a line cannot name: refused everywhere.
 	for _, s := range [][2]string{{place, ""}, {"", root}, {"relative/bonsai", root}, {`/a/"b"/bonsai`, root}, {"/a/bonsai", "relative"}} {
 		hookPlace, scratchRoot = s[0], s[1]
-		if err := confine(inside); err == nil {
+		if err := Confine(inside); err == nil {
 			t.Errorf("stamps %q: confined nothing", s)
 		}
 	}

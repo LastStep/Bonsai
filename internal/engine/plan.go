@@ -268,14 +268,14 @@ func readFile(root, rel string) ([]byte, bool, error) {
 // Build works out the plan for a request. It fetches each pack (the network), and writes nothing in the project.
 // Its error is an *Error; once bonsai.yaml was read, the error names the workspace (Error.Workspace).
 func Build(req Request) (_ *Plan, err error) {
-	if err := confine(req.Dir); err != nil {
+	if err := Confine(req.Dir); err != nil {
 		return nil, err
 	}
 	co, err := workspace.Find(req.Dir)
 	if err != nil {
 		return nil, findError(err)
 	}
-	if err := confine(co.Root, co.Main); err != nil {
+	if err := Confine(co.Root, co.Main); err != nil {
 		return nil, err
 	}
 	p := &Plan{Command: req.Command, Root: co.Root, Main: co.Main, Home: req.Home, EmptyLocal: -1, AllowExec: req.AllowExec}

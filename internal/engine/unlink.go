@@ -42,14 +42,14 @@ const LockRemoved = "removed"
 // for a lock written before formats set 4 (whose declares do not hold the pack's settings lines). Its error is an
 // *Error.
 func BuildUnlink(dir, home string) (_ *Plan, err error) {
-	if err := confine(dir); err != nil {
+	if err := Confine(dir); err != nil {
 		return nil, err
 	}
 	co, err := workspace.Find(dir)
 	if err != nil {
 		return nil, findError(err)
 	}
-	if err := confine(co.Root, co.Main); err != nil {
+	if err := Confine(co.Root, co.Main); err != nil {
 		return nil, err
 	}
 	p := &Plan{Command: "unlink", Root: co.Root, Main: co.Main, Home: home, EmptyLocal: -1}

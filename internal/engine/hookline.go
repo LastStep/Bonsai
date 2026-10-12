@@ -25,8 +25,8 @@ package engine
 //	go build -ldflags "-X P.hookPlace=<a place> -X P.scratchRoot=<a folder>" -o <a scratch folder>/bonsai ./cmd/bonsai
 //
 // writes that one place alone in its lines (b=<the place>; ...), so a scratch session runs the build it was linked
-// by, and refuses init, update and unlink in any folder outside its scratch root (confine), so a stamped line never
-// reaches a real project. A plain build has both stamps empty (a test holds that). bonsai --version names a stamped
+// by, and refuses init, update, unlink and the ladder in any folder outside its scratch root (Confine), so a stamped
+// line never reaches a real project and a test build never makes a proof there. A plain build has both stamps empty (a test holds that). bonsai --version names a stamped
 // build's stamps. bonsai's own commands' refusal of an agent's --allow-exec and unlink (step 5.3.6 note 8,
 // cmd/bonsai) is skipped by a stamped build: its scratch root confines it.
 
@@ -40,7 +40,7 @@ import (
 // The test build's stamps (this file's comment), set only by the linker's -X: empty in every plain build.
 var (
 	hookPlace   string // the one place a test build's hook lines run bonsai from, as the hook's shell names it
-	scratchRoot string // the folder a test build links, updates and unlinks in, and nowhere else
+	scratchRoot string // the folder a test build links, updates, unlinks and climbs the ladder in, and nowhere else
 )
 
 // TestBuild gives a test build's stamps: its hook lines' place and its scratch root; both "" in a plain build.
@@ -211,17 +211,19 @@ func stampProblem() string {
 	return ""
 }
 
-// confine refuses a test build's init, update and unlink (this file's comment) in a folder outside its scratch root:
-// each of dirs (the folder it runs in, the checkout's top and its main checkout) must lie inside it, links resolved.
-// A plain build is never confined.
-func confine(dirs ...string) error {
+// Confine refuses a test build's init, update and unlink, and its ladder (bonsai ladder, internal/ladder: a test build
+// never makes a proof in a real project, plan-5 5.4.2 note 10), in a folder outside its scratch root (this file's
+// comment): each of dirs (the folder it runs in, the checkout's top and its main checkout) must lie inside it, links
+// resolved. A plain build is never confined. The refusal is test-build, exit 4; its next step names the installed
+// bonsai or a plain build, which the ladder's caller replaces with its own command.
+func Confine(dirs ...string) error {
 	if !Stamped() {
 		return nil
 	}
 	next := "use the installed bonsai, or a plain build (go build -o <a scratch folder>/bonsai ./cmd/bonsai), for this folder"
 	if why := stampProblem(); why != "" {
 		return errorf("test-build", ExitState, "build it again with both stamps, or build it plain",
-			"this bonsai is a test build, and %s, so it links, updates and unlinks nothing", why)
+			"this bonsai is a test build, and %s, so it links, updates, unlinks and climbs the ladder nowhere", why)
 	}
 	root := realFolder(scratchRoot)
 	for _, d := range dirs {
@@ -229,8 +231,8 @@ func confine(dirs ...string) error {
 			continue
 		}
 		if p := realFolder(d); !insideFolder(root, p) {
-			return errorf("test-build", ExitState, next, "this bonsai is a test build: its hook lines run %s, and it links, updates and "+
-				"unlinks only inside its scratch folder %s, which %s is not in", ASCII(filepath.ToSlash(hookPlace)),
+			return errorf("test-build", ExitState, next, "this bonsai is a test build: its hook lines run %s, and it links, updates, "+
+				"unlinks and climbs the ladder only inside its scratch folder %s, which %s is not in", ASCII(filepath.ToSlash(hookPlace)),
 				ASCII(filepath.ToSlash(scratchRoot)), ASCII(filepath.ToSlash(d)))
 		}
 	}
