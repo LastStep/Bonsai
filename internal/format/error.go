@@ -76,7 +76,7 @@ var ErrorWords = []Word{
 	// The ladder (step 5.4.0): a refusal of bonsai ladder. A stamped test build's ladder outside its scratch folder is
 	// test-build; a result that cannot be written is write-failed; a flag or value it refuses is the command line's.
 	{Word: "ladder-busy", Who: "agent", Means: "another ladder run holds this home's lock for the checkout and did not let go within the wait: nothing was run or written (exit 4); the message names the holder's process and when its budget ends, and the same command again after that is the next step"},
-	{Word: "no-task", Who: "agent", Means: "a local ladder run names no task, or the task named is none: the message carries the active-task function's reason code (no task, two running, the file unreadable, no such task), and nothing was run (exit 4)"},
+	{Word: "no-task", Who: "agent", Means: "a local ladder run names no task, or the task named is none: the message carries the active-task function's reason code (no task, two running, the file unreadable, no such task), and nothing was run (exit 2)"},
 	{Word: "rung-not-defined", Who: "agent", Means: "a rung the command asked for is not in bonsai.yaml's ladder, or bonsai.yaml has no ladder: the message names the rung, and nothing was run (exit 2)"},
 	{Word: "main-not-verified", Who: "person", Means: "the project's main checkout is not verified on this machine, so no result can be written where the stop gate reads it, and nothing was run (exit 4); the person's step is bonsai update in the main checkout (contract section 13; the guard's rule of the same name)"},
 	// Part-way, and the unexpected (exit 3).

@@ -130,7 +130,7 @@ error words.
 | `label-not-defined` | agent | bonsai log append names a label that no definition in force has, or gives it a value of the wrong kind: nothing was written (exit 2) |
 | `session-not-found` | agent | bonsai logs --session matches no session in the log, or matches several: the message names the matches (exit 4) |
 | `ladder-busy` | agent | another ladder run holds this home's lock for the checkout and did not let go within the wait: nothing was run or written (exit 4); the message names the holder's process and when its budget ends, and the same command again after that is the next step |
-| `no-task` | agent | a local ladder run names no task, or the task named is none: the message carries the active-task function's reason code (no task, two running, the file unreadable, no such task), and nothing was run (exit 4) |
+| `no-task` | agent | a local ladder run names no task, or the task named is none: the message carries the active-task function's reason code (no task, two running, the file unreadable, no such task), and nothing was run (exit 2) |
 | `rung-not-defined` | agent | a rung the command asked for is not in bonsai.yaml's ladder, or bonsai.yaml has no ladder: the message names the rung, and nothing was run (exit 2) |
 | `main-not-verified` | person | the project's main checkout is not verified on this machine, so no result can be written where the stop gate reads it, and nothing was run (exit 4); the person's step is bonsai update in the main checkout (contract section 13; the guard's rule of the same name) |
 | `partly-written` | agent | the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest |
