@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A fixture of package testout's tests, written by hand in the shape JUnit reporters print: a testsuites root, suites
+  nested two deep, and one testcase of each outcome. A failure's or error's message is its message attribute, else
+  its text's first line; a skip's reason is its message, else its text. A testcase's file is its own attribute, else
+  its nearest suite's; a file inside the checkout (/work/project in the tests) is made project-relative.
+-->
+<testsuites name="all" tests="8" failures="2" errors="1" skipped="2">
+  <testsuite name="math" file="src/math.test.ts">
+    <testcase classname="math.add" name="adds two numbers" time="0.001"/>
+    <testcase classname="math.add" name="adds a negative" time="0.002">
+      <failure message="expected -1 to equal 1:&#10;  at add (src/math.ts:3)" type="AssertionError">expected -1 to equal 1:
+  at add (src/math.ts:3)</failure>
+    </testcase>
+    <testsuite name="math.divide">
+      <testcase classname="math.divide" name="by zero" file="/work/project/src/divide.test.ts">
+        <error type="TypeError">
+          Cannot read properties of undefined (reading 'x')
+          at divide (src/divide.ts:9)
+        </error>
+      </testcase>
+      <testcase classname="math.divide" name="slow path">
+        <skipped message="real-checkouts-only: needs a real checkout"/>
+      </testcase>
+    </testsuite>
+    <testcase classname="math.add" name="later">
+      <skipped>not on this machine</skipped>
+    </testcase>
+  </testsuite>
+  <testsuite name="loose">
+    <testcase name="no classname"/>
+    <testcase classname="loose" name="outside the checkout" file="/elsewhere/loose.test.ts">
+      <failure>boom</failure>
+    </testcase>
+    <testcase classname="loose" name="with output">
+      <system-out>printed lines</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,32 @@
+{"Action":"start","Package":"example.com/bp"}
+{"Action":"run","Package":"example.com/bp","Test":"FuzzF"}
+{"Action":"output","Package":"example.com/bp","Test":"FuzzF","Output":"=== RUN   FuzzF\n","OutputType":"frame"}
+{"Action":"run","Package":"example.com/bp","Test":"FuzzF/seed#0"}
+{"Action":"output","Package":"example.com/bp","Test":"FuzzF/seed#0","Output":"=== RUN   FuzzF/seed#0\n","OutputType":"frame"}
+{"Action":"output","Package":"example.com/bp","Test":"FuzzF/seed#0","Output":"--- PASS: FuzzF/seed#0 (0.00s)\n","OutputType":"frame"}
+{"Action":"pass","Package":"example.com/bp","Test":"FuzzF/seed#0","Elapsed":0}
+{"Action":"output","Package":"example.com/bp","Test":"FuzzF","Output":"--- PASS: FuzzF (0.00s)\n","OutputType":"frame"}
+{"Action":"pass","Package":"example.com/bp","Test":"FuzzF","Elapsed":0}
+{"Action":"output","Package":"example.com/bp","Output":"goos: linux\n"}
+{"Action":"output","Package":"example.com/bp","Output":"goarch: amd64\n"}
+{"Action":"output","Package":"example.com/bp","Output":"pkg: example.com/bp\n"}
+{"Action":"output","Package":"example.com/bp","Output":"cpu: a test machine\n"}
+{"Action":"run","Package":"example.com/bp","Test":"BenchmarkQuiet"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkQuiet","Output":"=== RUN   BenchmarkQuiet\n","OutputType":"frame"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkQuiet","Output":"BenchmarkQuiet\n"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkQuiet","Output":"BenchmarkQuiet-16    \t      10\t        35.20 ns/op\n"}
+{"Action":"run","Package":"example.com/bp","Test":"BenchmarkLogs"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkLogs","Output":"=== RUN   BenchmarkLogs\n","OutputType":"frame"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkLogs","Output":"BenchmarkLogs\n"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkLogs","Output":"    b_test.go:13: hello\n"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkLogs","Output":"BenchmarkLogs-16     \t      10\t        19.00 ns/op\n"}
+{"Action":"run","Package":"example.com/bp","Test":"BenchmarkFails"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkFails","Output":"=== RUN   BenchmarkFails\n","OutputType":"frame"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkFails","Output":"BenchmarkFails\n"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkFails","Output":"    b_test.go:19: the benchmark failed\n","OutputType":"error"}
+{"Action":"output","Package":"example.com/bp","Test":"BenchmarkFails","Output":"--- FAIL: BenchmarkFails\n","OutputType":"frame"}
+{"Action":"fail","Package":"example.com/bp","Test":"BenchmarkFails"}
+{"Action":"output","Package":"example.com/bp","Output":"FAIL\n","OutputType":"frame"}
+{"Action":"output","Package":"example.com/bp","Output":"exit status 1\n"}
+{"Action":"output","Package":"example.com/bp","Output":"FAIL\texample.com/bp\t0.008s\n","OutputType":"frame"}
+{"Action":"fail","Package":"example.com/bp","Elapsed":0.008}

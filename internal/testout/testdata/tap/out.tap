@@ -1,0 +1,404 @@
+TAP version 13
+# Subtest: outer suite
+    # Subtest: inner one
+    not ok 1 - inner one
+      ---
+      duration_ms: 1.032205
+      type: 'test'
+      location: '/work/project/a.test.mjs:8:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 2
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 2
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///work/project/a.test.mjs:8:34)
+        Test.runInAsyncScope (node:async_hooks:214:14)
+        Test.run (node:internal/test_runner/test:1047:25)
+        Test.start (node:internal/test_runner/test:944:17)
+        node:internal/test_runner/test:1440:71
+        node:internal/per_context/primordials:464:82
+        new Promise (<anonymous>)
+        new SafePromise (node:internal/per_context/primordials:433:3)
+        node:internal/per_context/primordials:464:9
+        Array.map (<anonymous>)
+      ...
+    # Subtest: inner two
+    ok 2 - inner two
+      ---
+      duration_ms: 0.136712
+      type: 'test'
+      ...
+    # Subtest: deeper
+        # Subtest: leaf \# hash
+        not ok 1 - leaf \# hash
+          ---
+          duration_ms: 1.264401
+          type: 'test'
+          location: '/work/project/a.test.mjs:10:30'
+          failureType: 'testCodeFailure'
+          error: |-
+            boom
+            second line
+          code: 'ERR_TEST_FAILURE'
+          stack: |-
+            TestContext.<anonymous> (file:///work/project/a.test.mjs:10:62)
+            Test.runInAsyncScope (node:async_hooks:214:14)
+            Test.run (node:internal/test_runner/test:1047:25)
+            Test.start (node:internal/test_runner/test:944:17)
+            node:internal/test_runner/test:1440:71
+            node:internal/per_context/primordials:464:82
+            new Promise (<anonymous>)
+            new SafePromise (node:internal/per_context/primordials:433:3)
+            node:internal/per_context/primordials:464:9
+            Array.map (<anonymous>)
+          ...
+        1..1
+    not ok 3 - deeper
+      ---
+      duration_ms: 1.453396
+      type: 'suite'
+      location: '/work/project/a.test.mjs:10:3'
+      failureType: 'subtestsFailed'
+      error: '1 subtest failed'
+      code: 'ERR_TEST_FAILURE'
+      ...
+    1..3
+not ok 1 - outer suite
+  ---
+  duration_ms: 3.276765
+  type: 'suite'
+  location: '/work/project/a.test.mjs:7:1'
+  failureType: 'subtestsFailed'
+  error: '2 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: top level
+    # Subtest: sub a
+    ok 1 - sub a
+      ---
+      duration_ms: 0.187728
+      type: 'test'
+      ...
+    # Subtest: sub b
+    not ok 2 - sub b
+      ---
+      duration_ms: 0.441957
+      type: 'test'
+      location: '/work/project/a.test.mjs:14:11'
+      failureType: 'testCodeFailure'
+      error: 'nope'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        TestContext.<anonymous> (file:///work/project/a.test.mjs:14:40)
+        Test.runInAsyncScope (node:async_hooks:214:14)
+        Test.run (node:internal/test_runner/test:1047:25)
+        Test.start (node:internal/test_runner/test:944:17)
+        TestContext.test (node:internal/test_runner/test:373:20)
+        TestContext.<anonymous> (file:///work/project/a.test.mjs:14:11)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    1..2
+not ok 2 - top level
+  ---
+  duration_ms: 1.030423
+  type: 'test'
+  location: '/work/project/a.test.mjs:12:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: skipped
+ok 3 - skipped # SKIP real-checkouts-only: needs a real checkout
+  ---
+  duration_ms: 0.279392
+  type: 'test'
+  ...
+# Subtest: todo one
+ok 4 - todo one # TODO later
+  ---
+  duration_ms: 0.227108
+  type: 'test'
+  ...
+# Subtest: plain skip
+ok 5 - plain skip # SKIP no reason mark
+  ---
+  duration_ms: 0.35864
+  type: 'test'
+  ...
+# file:///work/project/broken.test.mjs:3
+# throw new Error('load fails');
+#       ^
+# Error: load fails
+#     at file:///work/project/broken.test.mjs:3:7
+#     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+#     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+#     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+# Node.js v22.21.1
+# Subtest: broken.test.mjs
+not ok 2 - broken.test.mjs
+  ---
+  duration_ms: 31.900023
+  type: 'test'
+  location: '/work/project/broken.test.mjs:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: outer (suite)
+    # Subtest: passes
+    ok 1 - passes
+      ---
+      duration_ms: 0.394026
+      type: 'test'
+      ...
+    # Subtest: inner [x]
+        # Subtest: fails: a.b + c?
+        not ok 1 - fails: a.b + c?
+          ---
+          duration_ms: 1.948041
+          type: 'test'
+          location: '/work/project/test/b.test.mjs:9:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            Expected values to be strictly equal:
+            
+            1 !== 2
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: 2
+          actual: 1
+          operator: 'strictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///work/project/test/b.test.mjs:9:42)
+            Test.runInAsyncScope (node:async_hooks:214:14)
+            Test.run (node:internal/test_runner/test:1047:25)
+            Test.start (node:internal/test_runner/test:944:17)
+            node:internal/test_runner/test:1440:71
+            node:internal/per_context/primordials:464:82
+            new Promise (<anonymous>)
+            new SafePromise (node:internal/per_context/primordials:433:3)
+            node:internal/per_context/primordials:464:9
+            Array.map (<anonymous>)
+          ...
+        # Subtest: unrelated
+        not ok 2 - unrelated
+          ---
+          duration_ms: 0.223196
+          type: 'test'
+          location: '/work/project/test/b.test.mjs:10:5'
+          failureType: 'testCodeFailure'
+          error: 'unrelated failure'
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: true
+          actual: false
+          operator: '=='
+          stack: |-
+            TestContext.<anonymous> (file:///work/project/test/b.test.mjs:10:36)
+            Test.runInAsyncScope (node:async_hooks:214:14)
+            Test.run (node:internal/test_runner/test:1047:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:744:18)
+            Test.postRun (node:internal/test_runner/test:1173:19)
+            Test.run (node:internal/test_runner/test:1101:12)
+            async Promise.all (index 0)
+            async Suite.run (node:internal/test_runner/test:1442:7)
+            async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+          ...
+        1..2
+    not ok 2 - inner [x]
+      ---
+      duration_ms: 2.433428
+      type: 'suite'
+      location: '/work/project/test/b.test.mjs:8:3'
+      failureType: 'subtestsFailed'
+      error: '2 subtests failed'
+      code: 'ERR_TEST_FAILURE'
+      ...
+    1..2
+not ok 7 - outer (suite)
+  ---
+  duration_ms: 3.387027
+  type: 'suite'
+  location: '/work/project/test/b.test.mjs:6:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: second top
+    # Subtest: sub a
+    ok 1 - sub a
+      ---
+      duration_ms: 0.092895
+      type: 'test'
+      ...
+    # Subtest: sub b
+        # Subtest: sub b deep
+        not ok 1 - sub b deep
+          ---
+          duration_ms: 0.228578
+          type: 'test'
+          location: '/work/project/test/b.test.mjs:17:13'
+          failureType: 'testCodeFailure'
+          error: 'deep failed'
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: true
+          actual: false
+          operator: '=='
+          stack: |-
+            TestContext.<anonymous> (file:///work/project/test/b.test.mjs:17:47)
+            Test.runInAsyncScope (node:async_hooks:214:14)
+            Test.run (node:internal/test_runner/test:1047:25)
+            Test.start (node:internal/test_runner/test:944:17)
+            TestContext.test (node:internal/test_runner/test:373:20)
+            TestContext.<anonymous> (file:///work/project/test/b.test.mjs:17:13)
+            Test.runInAsyncScope (node:async_hooks:214:14)
+            Test.run (node:internal/test_runner/test:1047:25)
+            Test.start (node:internal/test_runner/test:944:17)
+            TestContext.test (node:internal/test_runner/test:373:20)
+          ...
+        1..1
+    not ok 2 - sub b
+      ---
+      duration_ms: 0.415534
+      type: 'test'
+      location: '/work/project/test/b.test.mjs:16:11'
+      failureType: 'subtestsFailed'
+      error: '1 subtest failed'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        async TestContext.<anonymous> (file:///work/project/test/b.test.mjs:16:3)
+      ...
+    1..2
+not ok 8 - second top
+  ---
+  duration_ms: 0.877952
+  type: 'test'
+  location: '/work/project/test/b.test.mjs:14:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: mixed
+    # Subtest: holder
+        # Subtest: child
+        not ok 1 - child
+          ---
+          duration_ms: 0.224142
+          type: 'test'
+          location: '/work/project/test/b.test.mjs:23:13'
+          failureType: 'testCodeFailure'
+          error: 'child failed'
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: true
+          actual: false
+          operator: '=='
+          stack: |-
+            TestContext.<anonymous> (file:///work/project/test/b.test.mjs:23:42)
+            Test.runInAsyncScope (node:async_hooks:214:14)
+            Test.run (node:internal/test_runner/test:1047:25)
+            Test.start (node:internal/test_runner/test:944:17)
+            TestContext.test (node:internal/test_runner/test:373:20)
+            TestContext.<anonymous> (file:///work/project/test/b.test.mjs:23:13)
+            Test.runInAsyncScope (node:async_hooks:214:14)
+            Test.run (node:internal/test_runner/test:1047:25)
+            Test.start (node:internal/test_runner/test:944:17)
+            node:internal/test_runner/test:1440:71
+          ...
+        1..1
+    not ok 1 - holder
+      ---
+      duration_ms: 0.562826
+      type: 'test'
+      location: '/work/project/test/b.test.mjs:22:3'
+      failureType: 'subtestsFailed'
+      error: '1 subtest failed'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        async Promise.all (index 0)
+      ...
+    1..1
+not ok 9 - mixed
+  ---
+  duration_ms: 0.842319
+  type: 'suite'
+  location: '/work/project/test/b.test.mjs:21:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: other
+not ok 10 - other
+  ---
+  duration_ms: 0.234235
+  type: 'test'
+  location: '/work/project/test/b.test.mjs:27:1'
+  failureType: 'testCodeFailure'
+  error: 'other failed'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///work/project/test/b.test.mjs:27:30)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Suite.postRun (node:internal/test_runner/test:1173:19)
+    Suite.run (node:internal/test_runner/test:1457:10)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a failing todo
+not ok 11 - a failing todo # TODO
+  ---
+  duration_ms: 0.134829
+  type: 'test'
+  location: '/work/project/test/b.test.mjs:28:1'
+  failureType: 'testCodeFailure'
+  error: 'not yet'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///work/project/test/b.test.mjs:28:55)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: bare skip
+ok 12 - bare skip # SKIP
+  ---
+  duration_ms: 0.143507
+  type: 'test'
+  ...
+1..12
+# tests 22
+# suites 5
+# pass 4
+# fail 13
+# cancelled 0
+# skipped 3
+# todo 2
+# duration_ms 72.475714
