@@ -20,6 +20,8 @@
 //     plugin as Claude Code reports it (claude plugin list), Claude Code's version against the floor (claude --version),
 //     and the MCP servers the packs' needs name (none can be named in formats set 4: bonsai.pack/1's needs holds only
 //     claude_code, so the list is empty until a later set adds one);
+//   - ladder: the active task's last ladder result, stale when it proves another commit than HEAD (lastLadder, step
+//     5.4.2);
 //   - error: null unless status refused (step 5.1.4b).
 //
 // The default is cheap and offline (contract §12: for the bridge to run often): it runs git and reads files, and
@@ -43,6 +45,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/stopgate"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -196,8 +199,32 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		"files":       files,
 		"person_only": personOnly,
 		"problems":    problems,
-		"ladder":      nil, // the active task's last result: the ladder runner fills it (bonsai.status/1, set 7)
+		"ladder":      lastLadder(co, known.activeID),
 	}, nil
+}
+
+// lastLadder is the active task's last ladder result (bonsai.status/1's ladder, set 7; plan-5 5.4.2 note 12), so an
+// agent reads where its proof stands without a climb: the result at the main checkout's .bonsai/local/ladder/<task>.json
+// that the runner wrote, its green, mode, commit and finished, and stale when that commit is not this checkout's HEAD
+// (read from its git files, as the stop gate reads it: stopgate.Head). null when there is no active task, no result,
+// or a result that does not read as bonsai.ladder/1 or was made for another task.
+func lastLadder(co *workspace.Checkout, task string) any {
+	if task == "" {
+		return nil
+	}
+	rel := workspace.LocalDir + "/ladder/" + task + ".json"
+	raw, err := os.ReadFile(filepath.Join(co.Main, filepath.FromSlash(rel)))
+	if err != nil {
+		return nil
+	}
+	l, err := format.ReadLadder(raw)
+	if err != nil || l.Task == nil || *l.Task != task {
+		return nil
+	}
+	head, err := stopgate.Head(workspace.ReadGitLayout(co.Root))
+	stale := err != nil || !strings.EqualFold(l.Git.SHA, head)
+	return schema.Object{{Key: "task", Value: task}, {Key: "path", Value: rel}, {Key: "green", Value: l.Green},
+		{Key: "mode", Value: l.Mode}, {Key: "sha", Value: l.Git.SHA}, {Key: "finished", Value: l.Finished}, {Key: "stale", Value: stale}}
 }
 
 // known is what step 5.1.5's reads give status: each field's value, and the problems they found.
@@ -205,6 +232,7 @@ type known struct {
 	documents, labels, lanes    []any
 	statusWrites, statusCommand any
 	active                      schema.Object
+	activeID                    string // the active task's id, "" for none
 	problems                    []any
 }
 
@@ -245,7 +273,8 @@ func knownFields(co *workspace.Checkout, cfg *workspace.Config, lock *workspace.
 	if settings.StatusCommand != "" {
 		k.statusCommand = settings.StatusCommand
 	}
-	k.active = activeTask(co, cfg).Object()
+	a := activeTask(co, cfg)
+	k.active, k.activeID = a.Object(), a.ID
 	return k
 }
 
@@ -380,6 +409,22 @@ func Text(doc schema.Object) string {
 				fmt.Fprintf(&b, "Active task: none (%s)\n", ascii(strings.TrimPrefix(a.String("why"), "no active task: ")))
 			}
 		}
+	}
+	if lv, _ := doc.Get("ladder"); lv != nil {
+		l := lv.(schema.Object)
+		green, stale := "not green", ""
+		if g, _ := l.Get("green"); g == true {
+			green = "green"
+		}
+		if s, _ := l.Get("stale"); s == true {
+			stale = "; stale: it proves another commit than HEAD, so climb again"
+		}
+		sha := l.String("sha")
+		if len(sha) > 12 {
+			sha = sha[:12]
+		}
+		fmt.Fprintf(&b, "Its last ladder result: %s at commit %s (%s), finished %s, %s%s\n", green, ascii(sha), ascii(l.String("mode")),
+			ascii(l.String("finished")), ascii(l.String("path")), stale)
 	}
 	if sw, _ := doc.Get("status_writes"); sw != nil {
 		line := "agents move task statuses themselves"
