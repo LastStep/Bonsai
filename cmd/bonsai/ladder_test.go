@@ -212,7 +212,8 @@ func mustKey(t *testing.T, root string) string {
 	return k
 }
 
-// bonsai --help --json lists ladder with its flags and exit codes.
+// bonsai --help --json lists ladder with its flags and exit codes, and its words say what the runner does with a
+// ratchet: judged against its floor, the new-tests check on a rise, and the Bless ask.
 func TestHelpJSONListsLadder(t *testing.T) {
 	h, _ := helpOut(t, "--help", "--json")
 	for _, w := range h.Words {
@@ -225,6 +226,21 @@ func TestHelpJSONListsLadder(t *testing.T) {
 		}
 		if strings.Join(flags, " ") != "--task --root --ci --json" || len(w.Exits) != 5 {
 			t.Errorf("ladder in the help: %v, %d exits", flags, len(w.Exits))
+		}
+		about := strings.Join(strings.Fields(w.About), " ")
+		for _, says := range []string{
+			"its ratchet's count is judged against its floor (bonsai.yaml's ratchets): below it, with no count read, or with a floor " +
+				"that is not a number, the rung is red.",
+			"On a local climb that is green and clean, each count that rose has its new tests run on the base, in a temporary worktree",
+			"A green, clean climb in the main checkout on the base branch at HEAD whose count rose files one Bless ask " +
+				"(ladder:bless-<task>); every climb on the base branch resolves the Bless asks whose offer has gone; --ci files nothing.",
+		} {
+			if !strings.Contains(about, says) {
+				t.Errorf("ladder's help does not say %q:\n%s", says, w.About)
+			}
+		}
+		if strings.Contains(about, "written beside its floor") {
+			t.Errorf("ladder's help still says the count is only written beside its floor")
 		}
 		return
 	}

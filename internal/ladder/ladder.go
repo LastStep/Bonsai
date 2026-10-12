@@ -43,7 +43,9 @@
 //  8. The leftovers line (internal/leftovers), read-only, never under --ci nor in a nested climb.
 //
 // Exit codes (note 9): 0 green, 1 red, 2 bad input, 3 could not run or write, 4 wrong state. A stop (a signal) ends the
-// running rung as at its timeout: the climb then writes a red result, the rest skipped, and exits 1.
+// running rung as at its timeout: the climb then writes a red result, the rest skipped, and exits 1. A stop during the
+// new-tests check, after the last rung (kinds.go's afterRungs), ends the check, whose new tests read "check not run",
+// and the climb writes its result as the rungs left it.
 //
 // Files: ladder.go (this file: Options, Run, the steps before a rung), climb.go (the climb's state, which kinds.go's
 // functions read), kinds.go (the one file through which the runner calls each rung kind and each step after a rung),

@@ -27,11 +27,16 @@ var ladderWord = &Word{
 	About: `It runs the project's rungs (bonsai.yaml's ladder, in the main checkout) in number order, cheapest first: the
 floor (ladder_floor) plus the task's bonsai.ladder label, each once. Each command rung runs in its own process group
 (Linux) or job object (Windows), so everything it starts ends with it; its tests are read from its output (its tests
-form), a skip with a mark is red (a local climb runs every marked test), and its ratchet's count is written beside its
-floor. A required rung that is not green skips the rest. The result goes to the main checkout's
+form), a skip with a mark is red (a local climb runs every marked test), and its ratchet's count is judged against its
+floor (bonsai.yaml's ratchets): below it, with no count read, or with a floor that is not a number, the rung is red.
+A required rung that is not green skips the rest. On a local climb that is green and clean, each count that rose has
+its new tests run on the base, in a temporary worktree: the result's new_tests counts those failing there, those
+passing there (they prove nothing new) and those not run. The result goes to the main checkout's
 .bonsai/local/ladder/<task>.json, wherever the climb ran (a worktree's included), with a ladder record in the log
 naming its sha256 and this bonsai's own path and hash: that is what the stop gate reads before a named session may
-end. The task comes from --task, or BONSAI_TASK in this project's session; a local climb needs one. One climb at a
+end. A green, clean climb in the main checkout on the base branch at HEAD whose count rose files one Bless ask
+(ladder:bless-<task>); every climb on the base branch resolves the Bless asks whose offer has gone; --ci files
+nothing. The task comes from --task, or BONSAI_TASK in this project's session; a local climb needs one. One climb at a
 time per Bonsai home: a second waits while the first runs inside its budget, then refuses. A red climb's next step
 names the first red rung's fix (each failing test carries the command that runs it alone), then the climb again.
 `,
@@ -60,8 +65,9 @@ names the first red rung's fix (each failing test carries the command that runs 
 	Run:      runLadder,
 }
 
-// runLadder climbs once. A signal (Ctrl-C, SIGTERM) ends the running rung as at its timeout and skips the rest; the
-// climb then writes its red result.
+// runLadder climbs once. A signal (Ctrl-C, SIGTERM) ends the running rung as at its timeout and skips the rest, and the
+// climb then writes its red result; during the new-tests check, after the last rung, it ends the check, whose new
+// tests read "check not run", and the climb writes its result as the rungs left it.
 func runLadder(c *call) int {
 	if len(c.rest) > 0 {
 		return c.refuse(c.flagError("ladder takes no %+q", c.rest[0]))
