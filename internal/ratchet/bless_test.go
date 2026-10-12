@@ -294,3 +294,23 @@ func TestBlessNotes(t *testing.T) {
 		t.Errorf("%+v", d)
 	}
 }
+
+// The climb's own offer carries its new-tests lines into the ask's why; the data keeps the counts.
+func TestBlessChecked(t *testing.T) {
+	p := mainPlace(t)
+	r := rung(1, "green", "go_tests", "812", "815")
+	r.Ratchet.NewTests = &format.LadderNewTests{Base: headB, Count: 1, FailedOnBase: 1}
+	own := writeResult(t, p.Local.Main, "T-0901", greenResult("T-0901", r))
+	own.Checks = []string{"1 new test, run on the base 0f1e2d3c4b5a: 1 failed there, 0 prove nothing new, 0 check not run"}
+	d := Bless(Step{Place: p, Task: "T-0901", Result: own, Where: here()})
+	if ops(d.Records) != "file ladder:bless-T-0901" || len(d.Notes) != 0 {
+		t.Fatalf("%+v", d)
+	}
+	fitsAsk(t, d.Records)
+	rec := d.Records[0]
+	data, _ := rec.Get("data")
+	if rec.String("why") != "A green, clean climb of main at 5d6e7f80: go_tests rose from 812 to 815, "+own.Checks[0]+"." ||
+		!strings.Contains(schema.Show(data), `"new_tests":{"base":"`+headB+`","count":1,"failed_on_base":1,"passed_on_base":0,"not_run":0}`) {
+		t.Errorf("the ask: %s", schema.Show(rec))
+	}
+}

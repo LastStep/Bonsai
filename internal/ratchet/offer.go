@@ -10,7 +10,10 @@ package ratchet
 // The ask's words and data (note 2): key ladder:bless-<task>, title "Bless <task>'s ratchets", why naming each rise and
 // its new-tests numbers, then "Blessing raises the floor in bonsai.yaml from that run; it runs nothing.", and data
 // {task, head, result_sha, rises: [{name, was, now, new_tests}]} (contract §9.1), result_sha the result's SHA-256 in 64
-// lower-case hex, as the climb document's sha256 gives it.
+// lower-case hex, as the climb document's sha256 gives it. A rise's new-tests words in the why are the climb's own
+// check in one line (internal/newtests' Summary: the counts, the base, and why a check was not run) when the offer is
+// worked out from the result that climb wrote (Result.Checks); an offer worked out again from a result read back has
+// only the counts, and says them.
 
 import (
 	"encoding/json"
@@ -37,6 +40,9 @@ type Rise struct {
 	Was      json.Number            // its floor, ratchets[name] as bonsai.yaml now holds it
 	Now      json.Number            // the result's count
 	NewTests *format.LadderNewTests // the result's new_tests for it, nil when the check did not run
+	// Checked is the climb's own new-tests check in one line (internal/newtests' Summary), which the why gives in place
+	// of the counts' words; "" for an offer worked out again from a result read back, which keeps the counts' words.
+	Checked string
 }
 
 // Offer is a Bless offer: the ask's data.
@@ -58,6 +64,10 @@ type Result struct {
 	// holds.
 	Elsewhere bool
 	Missing   string // why there is no Ladder ("" when there is one)
+	// Checks are the climb's own new-tests checks in one line each (internal/newtests' Summary), one per rung of
+	// Ladder.Rungs in its order, "" for a rung with none. Only the climb that wrote the result has them: nil for a
+	// result read back from its file, whose offer keeps the counts' words.
+	Checks []string
 }
 
 // Where is what an offer is worked out against, as things now are.
@@ -115,7 +125,7 @@ func OfferFor(task string, r Result, w Where) (*Offer, string) {
 	}
 	o := &Offer{Task: task, Head: strings.ToLower(l.Git.SHA), ResultSHA: strings.ToLower(r.SHA256), Base: w.Base}
 	seen := map[string]bool{}
-	for _, rung := range l.Rungs {
+	for i, rung := range l.Rungs {
 		rt := rung.Ratchet
 		if rung.Status != "green" || rt == nil || !IsName(rt.Name) || seen[rt.Name] {
 			continue
@@ -129,7 +139,11 @@ func OfferFor(task string, r Result, w Where) (*Offer, string) {
 			o.More++
 			continue
 		}
-		o.Rises = append(o.Rises, Rise{Name: rt.Name, Was: was, Now: rt.Now, NewTests: rt.NewTests})
+		checked := ""
+		if i < len(r.Checks) && rt.NewTests != nil {
+			checked = r.Checks[i]
+		}
+		o.Rises = append(o.Rises, Rise{Name: rt.Name, Was: was, Now: rt.Now, NewTests: rt.NewTests, Checked: checked})
 	}
 	if len(o.Rises) == 0 {
 		return nil, "the last climb for " + task + " measured no ratchet above its floor in bonsai.yaml's ratchets"
@@ -168,10 +182,20 @@ func floorOf(floors schema.Object, name string) (json.Number, bool) {
 // Title is a Bless ask's title (note 2).
 func Title(task string) string { return "Bless " + task + "'s ratchets" }
 
-// Why is a Bless ask's why: the climb, then each rise with its new-tests numbers, in at most WhyMax characters. Rises
+// Why is a Bless ask's why: the climb, then each rise with its new-tests numbers, in at most WhyMax characters. Each
+// rise's numbers are its check's own line (Rise.Checked) when every rise fits with them, else the counts' words. Rises
 // that do not fit are counted as in the ask's data, and rises past the MaxRises an ask carries as beyond it; a base
 // branch's name past 100 characters is shown by its first 100.
 func Why(o *Offer) string {
+	if s, all := why(o, true); all {
+		return s
+	}
+	s, _ := why(o, false)
+	return s
+}
+
+// why is Why with each rise's numbers from its check's line (checked) or from its counts; all says every rise fit.
+func why(o *Offer, checked bool) (string, bool) {
 	head := o.Head
 	if len(head) > 8 {
 		head = head[:8]
@@ -183,7 +207,11 @@ func Why(o *Offer) string {
 	start := "A green, clean climb of " + string(base) + " at " + head + ": "
 	var parts []string
 	for _, r := range o.Rises {
-		parts = append(parts, r.Name+" rose from "+string(r.Was)+" to "+string(r.Now)+", "+newTestsText(r.NewTests))
+		words := newTestsText(r.NewTests)
+		if checked && r.Checked != "" {
+			words = r.Checked
+		}
+		parts = append(parts, r.Name+" rose from "+string(r.Was)+" to "+string(r.Now)+", "+words)
 	}
 	beyond := ""
 	if o.More > 0 {
@@ -195,10 +223,10 @@ func Why(o *Offer) string {
 			s += fmt.Sprintf("; and %d more %s in the ask's data", n, plural(n, "rise", "rises"))
 		}
 		if s += beyond + "."; len([]rune(s)) <= WhyMax {
-			return s
+			return s, kept == len(parts)
 		}
 	}
-	return start + fmt.Sprintf("%d %s rose, each in the ask's data.", len(parts), plural(len(parts), "ratchet", "ratchets"))
+	return start + fmt.Sprintf("%d %s rose, each in the ask's data.", len(parts), plural(len(parts), "ratchet", "ratchets")), len(parts) == 0
 }
 
 // newTestsText is one rise's new-tests numbers in words (5.4.5's check), or that they were not checked.

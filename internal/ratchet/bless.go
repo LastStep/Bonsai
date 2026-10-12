@@ -9,9 +9,10 @@ package ratchet
 //     they now are, and resolved when its offer is gone (HEAD moved, the climb red or dirty, no rise left), its reason
 //     in the human lines. One whose offer stands stays open: it is never filed again from a result another climb wrote.
 //  3. Then the climb's own task: its offer, worked out from the result this climb wrote (its bytes' SHA-256, never the
-//     file read back), is filed (asks.FileBless; filing an open key again writes a new file record, so this climb's
-//     numbers replace the earlier ones); with no offer, its open ask is resolved with the reason. So a red or dirty
-//     climb on the base branch files nothing, and closes the offer its own task held.
+//     file read back) and the climb's own new-tests lines (Result.Checks, which its why gives), is filed
+//     (asks.FileBless; filing an open key again writes a new file record, so this climb's numbers replace the earlier
+//     ones); with no offer, its open ask is resolved with the reason. So a red or dirty climb on the base branch files
+//     nothing, and closes the offer its own task held.
 //
 // The records written are the climb's bless, in the order written: the other tasks' resolves by key, then the climb's
 // own. A write that fails is a note, never a colour: the result stands as written.

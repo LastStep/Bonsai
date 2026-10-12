@@ -195,3 +195,48 @@ func TestAskWords(t *testing.T) {
 		t.Errorf("%s", got)
 	}
 }
+
+// The climb's own new-tests lines (Result.Checks, one per rung): each rise carries its rung's line when the rung has
+// new_tests, and the why gives it in place of the counts' words; a result with no lines (read back from its file)
+// keeps the counts' words; a line too long for the why gives way to the counts' words for every rise.
+func TestAskWordsChecked(t *testing.T) {
+	nt := &format.LadderNewTests{Base: headB, Count: 3, FailedOnBase: 1, PassedOnBase: 1, NotRun: 1}
+	first := rung(1, "green", "go_tests", "800", "815")
+	first.Ratchet.NewTests = nt
+	second := rung(2, "green", "go_vet", "0", "5") // no new_tests: its line, if any, is not carried
+	third := rung(3, "green", "found", "0", "9")
+	third.Ratchet.NewTests = &format.LadderNewTests{Count: 9, NotRun: 9}
+	w := here()
+	w.Floors = floors("go_tests", "812", "go_vet", "3", "found", "1")
+	line := "3 new tests, run on the base 0f1e2d3c4b5a: 1 failed there, 1 proves nothing new, 1 check not run"
+	noBase := "9 new tests (the count's rise; they could not be named): check not run: no base"
+	res := Result{Ladder: greenResult("T-0901", first, second, third), SHA256: resultSH, Checks: []string{line, "stray", noBase}}
+	o, why := OfferFor("T-0901", res, w)
+	if o == nil || len(o.Rises) != 3 {
+		t.Fatalf("%v: %+v", why, o)
+	}
+	if o.Rises[0].Checked != line || o.Rises[1].Checked != "" || o.Rises[2].Checked != noBase {
+		t.Errorf("the rises' lines: %q, %q, %q", o.Rises[0].Checked, o.Rises[1].Checked, o.Rises[2].Checked)
+	}
+	want := "A green, clean climb of main at 5d6e7f80: go_tests rose from 812 to 815, " + line + "; go_vet rose from 3 to 5, its new " +
+		"tests not checked on the base; found rose from 1 to 9, " + noBase + "."
+	if got := Why(o); got != want {
+		t.Errorf("why\n%s\nwant\n%s", got, want)
+	}
+	// Read back from its file, the same result has no lines: the counts' words.
+	res.Checks = nil
+	o, _ = OfferFor("T-0901", res, w)
+	if got := Why(o); !strings.Contains(got, "go_tests rose from 812 to 815, 3 new tests: 1 failed on the base, 1 passed there "+
+		"(they prove nothing new), 1 not run;") || strings.Contains(got, "check not run") {
+		t.Errorf("read back: %s", got)
+	}
+	// A line too long for the why: every rise in the counts' words, all of them kept.
+	res.Checks = []string{"3 new tests: check not run: " + strings.Repeat("x", WhyMax), "", noBase}
+	o, _ = OfferFor("T-0901", res, w)
+	got := Why(o)
+	if len([]rune(got)) > WhyMax || strings.Contains(got, "xxx") || strings.Contains(got, "could not be named") ||
+		!strings.Contains(got, "found rose from 1 to 9, 9 new tests: 0 failed on the base, 0 passed there (they prove nothing new), 9 not run "+
+			"(no base was found).") {
+		t.Errorf("too long: %s", got)
+	}
+}
