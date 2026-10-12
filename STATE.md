@@ -1,9 +1,9 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 13 Oct 2026 at 00:45. **Step 5.4, the ladder runner and the switch, is under
+Rewritten, never appended. Last rewritten 13 Oct 2026 at 01:45. **Step 5.4, the ladder runner and the switch, is under
 way** (`design/plan-5.md` ~2374; 28-44 h, re-ask 57), started 12 Oct 23:35 (an earlier session's start at 10:42 stopped
-unfinished). **5.4.0 landed** (`6688f81`, formats set 7, CI green on both systems); **5.4.1, 5.4.3 and 5.4.6 are
-building** side by side (below). Step 5.3, the guards, is done (12 Oct, 00:46), two holes logged as known limits.
+unfinished). **5.4.0 and 5.4.1 landed** (`6688f81` formats set 7; `e97afb1` rung jobs; CI green on both systems);
+**5.4.2, 5.4.3 and 5.4.6 are building** side by side (below). Step 5.3, the guards, is done (12 Oct, 00:46), two holes logged as known limits.
 
 ## In short
 
@@ -168,10 +168,10 @@ and line; the orchestrator's rulings in `records/runs/R-2026-10-12-5.4.0-formats
 | Piece | State | Run report |
 |---|---|---|
 | 5.4.0 formats set 7 and the ladder's lists | **landed** `6688f81`, CI green | `R-2026-10-12-5.4.0-formats.md` (also the part's log) |
-| 5.4.1 rung jobs and leftovers | building (Opus), from 23:44 | `R-2026-10-12-5.4.1-rungjobs.md` |
+| 5.4.1 rung jobs and leftovers | **landed** `e97afb1`, CI green | `R-2026-10-12-5.4.1-rungjobs.md` |
 | 5.4.3 rung 0 (and the `garbage: [` task fix) | building (Opus), from 00:25 | `R-2026-10-13-5.4.3-rung0.md` |
-| 5.4.6 git integrity | building (Opus), from 00:25 | `R-2026-10-13-5.4.6-vergit.md` |
-| 5.4.2 the runner | after 5.4.1 lands | |
+| 5.4.6 git integrity | built 01:33; a fix for Claude Code's `.claude/` files under way | `R-2026-10-13-5.4.6-vergit.md` |
+| 5.4.2 the runner | building (Opus), from 01:18 | `R-2026-10-13-5.4.2-runner.md` |
 | 5.4.3 and 5.4.6 wiring into `kinds.go` | after 5.4.2 lands, 5.4.3 first; then V1 (5.4.1-5.4.3) | |
 | 5.4.4 floors and Bless, 5.4.5 new tests fail on the base | after 5.4.3's wiring, side by side, beside V1 | |
 | 5.4.7 the switch | prep beside 5.4.4/5.4.5; lands after V2; then Rohan's install, the link, the end verifier | |
@@ -219,7 +219,8 @@ refused; the commands' own refusal is a tripwire against programs the agent runs
 
 **Placed for later:**
 - **The next formats set (5.5's):** a shared active-task fixture case for a task file holding only `garbage: [` (5.4.3
-  fixes the reader with Go tests).
+  fixes the reader with Go tests); `ladder.schema.json`'s `leftovers` description still telling today's `shared_deploy`
+  shape (typed open, so Bonsai's `{checkout, ms}` fits).
 - **5.4, settled at its start:** builders stay subagents (Rohan); the worktree without its own `bonsai.yaml` (rung 0
   judges against main; the guard's own limit, `guard.go:46-48`, a known limit after 1.0) and V3's O4 (the gate proves
   HEAD; only commits land) known limits; the `garbage: [` task in 5.4.3; `TestFaultsThroughTheHookLine`'s wait in 5.4.2;
