@@ -237,7 +237,7 @@ func TestBlessKey(t *testing.T) {
 	if task, ok := IsBless("ladder:bless-T-0901"); !ok || task != "T-0901" {
 		t.Errorf("IsBless: %q %v", task, ok)
 	}
-	for _, key := range []string{"ladder:bless-", "agent:bless-T-0901", "ladder:other"} {
+	for _, key := range []string{"ladder:bless-", "agent:bless-T-0901", "ladder:other", "ladder:bless-../../x", "ladder:bless-a b"} {
 		if _, ok := IsBless(key); ok {
 			t.Errorf("IsBless(%q)", key)
 		}

@@ -239,9 +239,25 @@ func TestBlessOthers(t *testing.T) {
 	if got := openKeys(t, main); got != "ladder:bless-T-0805 ladder:bless-T-0901" {
 		t.Errorf("open: %s", got)
 	}
-	// The next climb with nothing changed resolves nothing more: the standing offers stay.
-	if d := Bless(Step{Place: p, Task: "T-0902", Result: writeResult(t, main, "T-0902", greenResult("T-0902")), Where: w}); len(d.Records) != 0 {
-		t.Errorf("a second climb: %s", ops(d.Records))
+	// A record written by hand under the prefix with a key Bonsai never makes (a path) is no Bless ask: left alone.
+	line := `{"format":"bonsai.ask/1","id":"9c8b7a6f-5e4d-4c3b-8a29-1f0e9d8c7b6a","at":"2026-10-13T10:00:00.000Z","op":"file",` +
+		`"key":"ladder:bless-../../x","workspace":"` + testWS + `","source":"ladder","session":null,"type":"Bless","task":null,"doc":null,` +
+		`"title":"t","why":"w","then_text":null,"options":[],"verdict":null,"data":null,"answer":null}` + "\n"
+	f, err := os.OpenFile(filepath.Join(asks.Folder(main), "2026-10-13.ndjson"), os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString(line); err != nil {
+		t.Fatal(err)
+	}
+	_ = f.Close()
+	// The next climb with nothing changed resolves nothing more: the standing offers stay, the hand-written one too.
+	if d := Bless(Step{Place: p, Task: "T-0902", Result: writeResult(t, main, "T-0902", greenResult("T-0902")), Where: w}); len(d.Records) != 0 ||
+		len(d.Notes) != 0 || len(d.Lines) != 0 {
+		t.Errorf("a second climb: %s %v %v", ops(d.Records), d.Lines, d.Notes)
+	}
+	if got := openKeys(t, main); got != "ladder:bless-../../x ladder:bless-T-0805 ladder:bless-T-0901" {
+		t.Errorf("open: %s", got)
 	}
 }
 

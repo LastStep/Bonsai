@@ -107,8 +107,9 @@ func ResolveLadder(p Place, key string) (*Done, *Error) {
 	return resolve(p, key, source)
 }
 
-// IsBless reports whether key is a Bless ask's key (ladder:bless-<task>), and gives its task.
+// IsBless reports whether key is a Bless ask's key as BlessKey makes it (ladder:bless-<task>), and gives its task. A
+// record written by hand with any other key under the prefix (a path, say) is not one.
 func IsBless(key string) (string, bool) {
 	task, ok := strings.CutPrefix(key, BlessPrefix)
-	return task, ok && task != ""
+	return task, ok && BlessKey(task) == key
 }
