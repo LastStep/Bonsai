@@ -73,14 +73,15 @@ func TestFolderChangeIsCode(t *testing.T) {
 }
 
 // S1: a lock edited by hand (its commit moved, bonsai.yaml with it) is no record of consent: D's hook line, and F's
-// plugin hook, are code.
+// plugin hook, are code. Each case is named by the test pack's commits as letters (C to D), never by their ids, which
+// differ every run: a test's name stays the same from run to run.
 func TestHandEditedLockIsNoConsent(t *testing.T) {
 	e := setup(t)
-	for _, c := range []struct{ from, to, want string }{
-		{e.pack.C, e.pack.D, "SessionStart (startup): echo demo hook D (demo-pack)"},
-		{e.pack.E, e.pack.F, "plugin add hooks/hooks.json (demo-pack)"},
+	for _, c := range []struct{ name, from, to, want string }{
+		{"C to D hook line", e.pack.C, e.pack.D, "SessionStart (startup): echo demo hook D (demo-pack)"},
+		{"E to F plugin hook", e.pack.E, e.pack.F, "plugin add hooks/hooks.json (demo-pack)"},
 	} {
-		t.Run(c.from[:7]+" to "+c.to[:7], func(t *testing.T) {
+		t.Run(c.name, func(t *testing.T) {
 			root := testpack.Project(t, e.tmp, "hand-"+c.to[:7])
 			e.link(t, root, c.from)
 			lock := read(t, root, workspace.LockFile)
