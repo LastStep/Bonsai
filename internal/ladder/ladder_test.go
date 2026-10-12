@@ -348,7 +348,7 @@ func TestSkipsAndMarks(t *testing.T) {
 		`{"name":"example.com/demo/good.TestPlainSkip","mark":null,"reason":"not on this system"}]`; showOf(tests, "skipped") != want {
 		t.Errorf("tests.skipped %s", showOf(tests, "skipped"))
 	}
-	// The count: the tests named as passed (1), the floor 5: written, not judged (5.4.4 judges it).
+	// The count: the tests named as passed (1), below the floor 5 (the rung is red already; bless_test.go judges counts).
 	if rt := l.Rungs[0].Ratchet; rt == nil || rt.Name != "go_tests" || rt.Was != "5" || rt.Now != "1" || rt.OK || rt.NewTests != nil {
 		t.Errorf("the ratchet: %+v", rt)
 	}
@@ -754,7 +754,8 @@ func TestCleaning(t *testing.T) {
 	f.result("T-0901")
 }
 
-// The climb document holds the result as written, and its every field in order; bless is [] (5.4.4 fills it).
+// The climb document holds the result as written, and its every field in order; bless is [] (no ratchet: bless_test.go
+// has the climbs that file and resolve).
 func TestClimbDocument(t *testing.T) {
 	f := project(t, yamlOf("[1]", "{}", "[]", rung{n: 1, name: "one", command: "echo one", required: true}),
 		map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})

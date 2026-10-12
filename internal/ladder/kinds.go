@@ -15,12 +15,14 @@ package ladder
 //   - treeDirty: whether git's status shows the tree dirty, read at the climb's start and its end. Today git status
 //     (git.go); 5.4.6's wiring replaces it with vergit.Dirty (its error counting dirty), so the result's git.dirty is
 //     that or a ver-git rung's Hides.
-//   - afterRung: the steps after each rung that ran, in order. Today it writes the ratchet's count on the rung
-//     (note 5: was, now and whether now is at least was) and judges nothing. Step 5.4.4 judges it there (a count below
-//     its floor red, a count that cannot be read red: s.Count.Now is "" then), and 5.4.5 hangs the new-tests check on
-//     5.4.4's rise step.
-//   - afterResult: once the result and its fingerprint are written, the Bless step (5.4.4: file one ask, resolve those
-//     whose offer is gone), giving the ask records it wrote for the climb's bless; [] until then.
+//   - afterRung: the steps after each rung that ran, in order. First the ratchet's judgment (internal/ratchet's Judge,
+//     step 5.4.4): the count written on the rung (was, now and whether now is at least was), and the rung red when the
+//     count is below its floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), the
+//     reason added to the rung's own. Then, after the last rung, the rise step: on a local climb that is green and clean,
+//     each ratchet above its floor gets its new_tests from ratchet.NewTests, which step 5.4.5's check replaces.
+//   - afterResult: once the result and its fingerprint are written, the Bless step (ratchet.Bless, step 5.4.4): on the
+//     base branch, every open Bless ask whose offer is gone resolved, and the climb's own offer filed; it gives the ask
+//     records written, the climb's bless, and its lines go under the rungs'.
 //
 // Until their wiring lands, guard and ver-git rungs end in error, "not built yet", so a floor holding one climbs red
 // (the runner lands before them, "The order" item 3). A kind's Reason goes into the result only when the rung is not
@@ -31,9 +33,12 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/ratchet"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testout"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // The rung kinds bonsai.yaml names (bonsai.workspace/1's closed list).
@@ -108,18 +113,70 @@ type Count struct {
 
 // afterRung runs the steps after a rung that ran, in order (this file's comment).
 func afterRung(c *Climb, s *Step) {
-	writeRatchet(s)
+	judgeRatchet(c, s)
+	if len(c.steps)+1 == len(c.rungs) {
+		riseStep(c, s)
+	}
 }
 
-// writeRatchet writes the ratchet's count on the rung's entry (note 5): its name, its floor (was), the count (now) and
-// whether now is at least was; new_tests stays null (5.4.5). It judges nothing: with no count the entry's ratchet stays
-// null, and a count below its floor leaves the rung's status as it is (5.4.4 judges both).
-func writeRatchet(s *Step) {
-	if s.Count == nil || s.Count.Now == "" {
+// judgeRatchet judges the rung's ratchet (ratchet.Judge): its count written on the entry, and when the count is below
+// its floor or none was read, the rung red and the reason added to its own. The ratchet's fix is the climb's next step
+// when it is the rung's only fault; a rung already red or in error keeps its status and its own fix.
+func judgeRatchet(c *Climb, s *Step) {
+	if s.Rung.Ratchet == nil {
 		return
 	}
-	s.Entry.Ratchet = &format.LadderRatchet{Name: s.Count.Name, Was: s.Count.Floor, Now: s.Count.Now,
-		OK: number(s.Count.Now) >= number(s.Count.Floor)}
+	in := ratchet.Reading{Rung: s.Rung, Captures: s.Entry.Captures, Tests: s.Entry.Tests, CI: c.CI}
+	in.Name, _ = s.Rung.Ratchet.(string)
+	in.Floor = floorOf(c.Config.Full.Ratchets, in.Name)
+	if s.Count != nil {
+		in.Floor, in.Now, in.From = s.Count.Floor, s.Count.Now, s.Count.From
+	}
+	v := ratchet.Judge(in)
+	s.Entry.Ratchet = v.Ratchet
+	if !v.Red {
+		return
+	}
+	if s.Entry.Status == statusGreen {
+		s.Entry.Status = statusRed
+		s.next, s.who = v.Next, v.Who
+	}
+	why := *text(v.Reason)
+	if s.Entry.Reason != nil {
+		why = *s.Entry.Reason + "\n" + why
+	}
+	s.Entry.Reason = &why
+}
+
+// newTests is the rise step's call (ratchet.NewTests), a variable for the tests.
+var newTests = ratchet.NewTests
+
+// riseStep is the rise step, after the last rung (internal/ratchet's rise.go): on a local climb whose every rung is
+// green, each ratchet above its floor gets its new_tests from ratchet.NewTests, once the tree is seen clean (clean at
+// the start and now, HEAD where it started, nothing hidden from git). On any other climb new_tests stays null.
+func riseStep(c *Climb, last *Step) {
+	if c.CI {
+		return
+	}
+	steps := append(append([]*Step{}, c.steps...), last)
+	var risen []*Step
+	for _, s := range steps {
+		if s.Entry.Status != statusGreen {
+			return
+		}
+		if rt := s.Entry.Ratchet; rt != nil && ratchet.Above(rt.Now, rt.Was) {
+			risen = append(risen, s)
+		}
+	}
+	if len(risen) == 0 || c.git.Dirty || len(c.hides) > 0 || head(c.Root) != c.git.SHA || treeDirty(c) {
+		return
+	}
+	for _, s := range risen {
+		rt := s.Entry.Ratchet
+		rt.NewTests = newTests(ratchet.RiseInput{Name: rt.Name, Was: rt.Was, Now: rt.Now, Rung: s.Rung, Tests: s.Tests, Root: c.Root,
+			Main: c.Main, Task: c.TaskID(), Head: c.git.SHA, Base: c.Base, MergeBase: c.MergeBase, Prior: c.Prior, Env: c.o.Env,
+			Timeout: rungTimeout(s.Rung), Stop: c.o.Stop})
+	}
 }
 
 // Written is the result as written: its project-relative path, the SHA-256 of its bytes and the result itself.
@@ -129,17 +186,27 @@ type Written struct {
 	Result *format.Ladder
 }
 
-// afterResult runs once the result and its record are written, and gives the ask records it wrote (the climb's
-// bless): [] until step 5.4.4's Bless.
+// afterResult runs once the result and its record are written (this file's comment): the Bless step, whose lines it
+// prints under the rungs', and whose ask records it gives for the climb's bless. A --ci climb has none.
 func afterResult(c *Climb, w *Written) []schema.Object {
-	return []schema.Object{}
-}
-
-// number reads a count, 0 when it does not read.
-func number(n json.Number) float64 {
-	f, err := strconv.ParseFloat(string(n), 64)
-	if err != nil {
-		return 0
+	if c.CI {
+		return []schema.Object{}
 	}
-	return f
+	d := ratchet.Bless(ratchet.Step{
+		Place:  asks.Place{Workspace: c.Config.ID, Local: c.local(), Session: c.Getenv(SessionEnv), Now: c.Now},
+		Task:   c.TaskID(),
+		Result: ratchet.Result{Ladder: w.Result, SHA256: w.SHA256, Elsewhere: !samePlace(c.Root, c.Main)},
+		Where: ratchet.Where{Workspace: c.Config.ID, Base: c.Base, Branch: workspace.ReadGitLayout(c.Main).Branch(), Head: head(c.Main),
+			Floors: c.Config.Full.Ratchets},
+	})
+	for _, line := range d.Lines {
+		c.say("  %s", line)
+	}
+	for _, n := range d.Notes {
+		c.printNote("note: " + n)
+	}
+	if d.Records == nil {
+		return []schema.Object{}
+	}
+	return d.Records
 }
