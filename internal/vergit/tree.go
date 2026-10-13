@@ -425,19 +425,37 @@ func (j *judgment) submodules() error {
 	return nil
 }
 
-// ErrNoCommit and ErrNotInHead are Committed's answers when HEAD holds no such file: HEAD names no commit yet, or its
-// commit holds no file at that path.
+// ErrNoCommit and ErrNotInHead are Committed's answers when HEAD holds no such file: HEAD names no commit yet (a new
+// repository's branch), or its commit holds no file at that path. ErrNotAFile: HEAD's commit holds a folder or a
+// submodule there. ErrHeadUnreadable: HEAD names a commit, but git cannot read it, its tree or the file it lists (an
+// object not in the repository or damaged: a clone whose borrowed objects are gone, a fetch cut short, a fault on the
+// disk); git fsck names which.
 var (
-	ErrNoCommit  = errors.New("HEAD names no commit yet")
-	ErrNotInHead = errors.New("HEAD's commit holds no such file")
+	ErrNoCommit       = errors.New("HEAD names no commit yet")
+	ErrNotInHead      = errors.New("HEAD's commit holds no such file")
+	ErrNotAFile       = errors.New("HEAD's commit holds a folder or a submodule there, not a file")
+	ErrHeadUnreadable = errors.New("git cannot read what HEAD names")
+	// ErrCommitUnreadable is ErrHeadUnreadable's case where HEAD's commit itself is not there: errors.Is matches both.
+	ErrCommitUnreadable = fmt.Errorf("git cannot read HEAD's commit: it is not in the repository, or is damaged (%w)", ErrHeadUnreadable)
 )
+
+// headError is an error of Committed's that wraps one of its answers (errors.Is) and says, in git's words, what failed.
+type headError struct {
+	is  error
+	msg string
+}
+
+func (e *headError) Error() string { return e.msg }
+func (e *headError) Unwrap() error { return e.is }
 
 // Committed reads the file rel (forward slashes, from the top) as committed at HEAD in the checkout whose top folder
 // is root: git's object, never the working file, read with one git call (git cat-file blob HEAD:<rel>) through this
-// package's fixed environment, so neither the user's nor the repository's settings can show another file. When HEAD
-// holds no such file the error is ErrNoCommit or ErrNotInHead (two more calls tell those apart, only then); any other
-// error says git could not read it. The ladder runner and the stop gate read bonsai.yaml this way
-// (stopgate.CommittedConfig).
+// package's fixed environment, so neither the user's nor the repository's settings can show another file. When that
+// call fails, up to three more tell why: ErrNoCommit (HEAD names no commit), ErrNotInHead (its commit holds no such
+// path), ErrNotAFile (it holds a folder or a submodule there), or an error wrapping ErrHeadUnreadable (HEAD names a
+// commit git cannot read, ErrCommitUnreadable too; or one whose tree or file git cannot read). Any other error says git
+// could not run, answer in time, or read HEAD or the repository at all. The ladder runner and the stop gate read
+// bonsai.yaml this way (stopgate.CommittedConfig).
 func Committed(root, rel string, timeout time.Duration) ([]byte, error) {
 	if timeout <= 0 {
 		timeout = DefaultTimeout
@@ -455,21 +473,41 @@ func Committed(root, rel string, timeout time.Duration) ([]byte, error) {
 	if err == nil {
 		return out, nil
 	}
-	if ctx.Err() != nil {
+	late := func() bool { return ctx.Err() != nil }
+	if late() {
 		return nil, errors.New("git did not answer in time")
 	}
 	if _, herr := g.run(nil, "rev-parse", "-q", "--verify", "HEAD^{commit}"); herr != nil {
-		if exitCode(herr) == 1 {
+		if late() {
+			return nil, errors.New("git did not answer in time")
+		}
+		_, nerr := g.run(nil, "rev-parse", "-q", "--verify", "HEAD")
+		switch {
+		case late():
+			return nil, errors.New("git did not answer in time")
+		case nerr == nil: // HEAD names an object id, which is no commit git can read
+			msg := "git cannot read HEAD's commit: it is not in the repository, or is damaged"
+			if exitCode(herr) != 1 {
+				msg += " (" + herr.Error() + ")"
+			}
+			return nil, &headError{is: ErrCommitUnreadable, msg: msg}
+		case exitCode(herr) == 1 && exitCode(nerr) == 1:
 			return nil, ErrNoCommit
 		}
-		return nil, fmt.Errorf("git cannot read HEAD: %v", herr)
+		return nil, fmt.Errorf("git cannot read HEAD: %v", herr) // HEAD itself, or the repository, cannot be read
 	}
 	listed, lerr := g.run(nil, "ls-tree", "-z", "HEAD", "--", rel)
 	switch {
+	case lerr != nil && late():
+		return nil, errors.New("git did not answer in time")
 	case lerr != nil:
-		return nil, fmt.Errorf("git cannot read HEAD's tree: %v", lerr)
+		return nil, &headError{is: ErrHeadUnreadable, msg: fmt.Sprintf("git cannot read HEAD's tree: %v", lerr)}
 	case len(listed) == 0:
 		return nil, ErrNotInHead
 	}
-	return nil, fmt.Errorf("HEAD's %s is not a file git can read: %v", shown(rel), err)
+	meta, _, _ := strings.Cut(strings.TrimSuffix(string(listed), "\x00"), "\t")
+	if f := strings.Fields(meta); len(f) != 3 || f[1] != "blob" {
+		return nil, &headError{is: ErrNotAFile, msg: fmt.Sprintf("HEAD's %s is a folder or a submodule, not a file", shown(rel))}
+	}
+	return nil, &headError{is: ErrHeadUnreadable, msg: fmt.Sprintf("HEAD's %s is not a file git can read: %v", shown(rel), err)}
 }

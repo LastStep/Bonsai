@@ -5,6 +5,7 @@ package vergit
 // submodule read the same way, and judged for the findings that hide a change (V2's S1).
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -317,5 +318,69 @@ func TestTreeTemporaryFolder(t *testing.T) {
 	st, err := Tree(Input{Root: root})
 	if want := "no temporary folder for a fresh index: it is not there"; err == nil || err.Error() != want || !st.Dirty {
 		t.Errorf("Tree = %+v, %v; want dirty and %q", st, err, want)
+	}
+}
+
+// dropObject removes an object from a repository's loose objects (git writes them read-only, which Windows will not
+// remove until made writable).
+func dropObject(t *testing.T, root, id string) {
+	t.Helper()
+	p := filepath.Join(root, ".git", "objects", id[:2], id[2:])
+	must(t, os.Chmod(p, 0o644))
+	must(t, os.Remove(p))
+}
+
+// Committed's answers (V2b's S6): the file; HEAD naming no commit yet; no such path; a folder there; and, telling them
+// apart from those, HEAD naming a commit git cannot read, or whose tree or file it cannot read.
+func TestCommitted(t *testing.T) {
+	isolate(t)
+	read := func(root, rel string) ([]byte, error) { return Committed(root, rel, 0) }
+	root, _ := repo(t)
+	if b, err := read(root, "a.txt"); err != nil || string(b) != "a\n" {
+		t.Errorf("a file: %q, %v", b, err)
+	}
+	for _, c := range []struct {
+		rel  string
+		want error
+	}{{"none.txt", ErrNotInHead}, {"pkg", ErrNotAFile}} {
+		if _, err := read(root, c.rel); !errors.Is(err, c.want) || errors.Is(err, ErrHeadUnreadable) {
+			t.Errorf("%s: %v, want %v", c.rel, err, c.want)
+		}
+	}
+	fresh := filepath.Join(t.TempDir(), "fresh")
+	must(t, os.MkdirAll(fresh, 0o755))
+	git(t, fresh, "init", "-q")
+	if _, err := read(fresh, "a.txt"); !errors.Is(err, ErrNoCommit) {
+		t.Errorf("no commit yet: %v", err)
+	}
+	for _, c := range []struct {
+		name, object string
+		commit       bool
+		says         string
+	}{
+		{"its commit not there", "HEAD", true, "git cannot read HEAD's commit: it is not in the repository, or is damaged"},
+		{"its tree not there", "HEAD^{tree}", false, "git cannot read HEAD's tree: "},
+		{"the file not there", "HEAD:a.txt", false, "HEAD's a.txt is not a file git can read: "},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			root, _ := repo(t)
+			dropObject(t, root, git(t, root, "rev-parse", c.object))
+			_, err := read(root, "a.txt")
+			if !errors.Is(err, ErrHeadUnreadable) || errors.Is(err, ErrCommitUnreadable) != c.commit ||
+				errors.Is(err, ErrNoCommit) || !strings.HasPrefix(err.Error(), c.says) {
+				t.Errorf("%v (commit %v)", err, errors.Is(err, ErrCommitUnreadable))
+			}
+		})
+	}
+}
+
+// A HEAD git cannot resolve at all (its file damaged) is none of Committed's answers: an error of its own.
+func TestCommittedHeadFileDamaged(t *testing.T) {
+	isolate(t)
+	root, _ := repo(t)
+	write(t, root, ".git/HEAD", "not a ref\n")
+	_, err := Committed(root, "a.txt", 0)
+	if err == nil || errors.Is(err, ErrHeadUnreadable) || errors.Is(err, ErrNoCommit) || !strings.HasPrefix(err.Error(), "git cannot read HEAD: ") {
+		t.Errorf("%v", err)
 	}
 }
