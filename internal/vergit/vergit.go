@@ -43,7 +43,9 @@
 // in the user's global config), run as this package runs git; and the checkout's contents read against HEAD through a
 // fresh index with the repository's own filters off, since git status trusts what its index kept from an earlier look
 // (stat times refreshed while a filter made a changed file read as unchanged, then the filter taken out; an index
-// flag). So the runner's dirty is Dirty(in) or Outcome.Hides.
+// flag). Every submodule checked out is read the same way and judged for the findings that hide a change (its own
+// assume-unchanged, skip-worktree and ignore rules), its paths named from the top. So the runner's dirty is Dirty(in)
+// or Outcome.Hides.
 //
 // How git runs (git.go): one program, the judgment's deadline, a fixed environment (no user configuration, no GIT_*
 // variable from the caller, no pager, no prompt, no network) and settings pinned on the command line, so nothing the
@@ -65,7 +67,9 @@
 //     needs its filtered files out of the tested tree, or a person's decision to drop the filter.
 //   - The contents' read hashes every tracked file at every climb's start and end (about 60 ms on Bonsai's own
 //     repository on Linux, against 6 ms for git status), and rung 0 reads them once more.
-//   - Changes inside a submodule are not looked at.
+//   - Inside a submodule, the hiding findings and the contents are judged; test-file-changed, info/exclude's lines
+//     and edits, filter-local, the stash and the base are the top checkout's only. A submodule more than 8 deep is
+//     not read, and named. Its own filters are switched off as the top's are.
 //   - The repository's own configuration is read by every git call (no variable switches it off); the pinned
 //     settings cover the parts of it known to hide a change from these reads.
 //   - A file inside a .claude/ folder that only info/exclude or core.excludesFile ignores is named, not made dirty
@@ -190,10 +194,12 @@ type judgment struct {
 	notes    []string
 	stashes  int
 	exclHash string
+	prefix   string // a submodule's path from the top checkout, with its slash ("lib/"); "" for the top checkout
+	depth    int    // how many submodules deep this checkout lies
 }
 
-// name is a path of this checkout as a finding names it, as shown.
-func (j *judgment) name(p string) string { return shown(p) }
+// name is a path of this checkout as a finding names it: from the top checkout (a submodule's prefix first), as shown.
+func (j *judgment) name(p string) string { return shown(j.prefix + p) }
 
 // Judge judges one checkout's git integrity.
 func Judge(in Input) Outcome {
@@ -215,7 +221,7 @@ func (j *judgment) judge(ctx context.Context) error {
 	if err := j.start(ctx); err != nil {
 		return err
 	}
-	for _, step := range []func() error{j.index, j.ignored, j.exclude, j.filters, j.stash, j.setBase, j.testFiles} {
+	for _, step := range []func() error{j.index, j.ignored, j.submodules, j.exclude, j.filters, j.stash, j.setBase, j.testFiles} {
 		if err := step(); err != nil {
 			return err
 		}

@@ -1,27 +1,35 @@
 package vergit
 
 // The tree's state as a ladder result's git.dirty reads it (Tree, Dirty): git status, and the checkout's contents read
-// against HEAD with nothing git keeps from an earlier look trusted.
+// against HEAD with nothing git keeps from an earlier look trusted, inside every submodule too.
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 )
 
+// maxDepth is how deep submodules inside submodules are read; one deeper cannot be proved and counts as dirty.
+const maxDepth = 8
+
 // TreeState is a checkout's tree as git.dirty reads it.
 type TreeState struct {
-	// Dirty: git status shows a change, or a path's contents differ from HEAD's though git status shows nothing.
+	// Dirty: git status shows a change, or a path's contents differ from HEAD's though git status shows nothing, or a
+	// submodule's state cannot be proved.
 	Dirty bool
 	// Shown are the paths git status shows (forward slashes, relative to the checkout's top), sorted.
 	Shown []string
 	// Hidden are the changed paths git status does not show, each with why, sorted by path: a tracked file whose
 	// contents differ from HEAD's (the index's stat times or an index flag kept git from looking, or a filter of the
-	// repository's own made it read as unchanged).
+	// repository's own made it read as unchanged), the same inside a submodule (its path from the top: lib/x.go), a file
+	// in a submodule's folder git does not read, and a submodule whose state cannot be read.
 	Hidden []Hidden
 }
 
@@ -45,7 +53,10 @@ type Hidden struct {
 //     still convert as the user's git converts them (core.autocrlf, core.eol, the text and eol attributes), which are
 //     no program.
 //
-// An error means the tree could not be read: the caller counts it dirty.
+// Every submodule checked out (a gitlink in HEAD or the index whose folder holds a .git) is read the same way, its
+// paths named from the top; a gitlink folder git does not read (no .git) that holds a file counts as dirty, its files
+// named, since git status shows nothing there; a submodule that cannot be read, or one past maxDepth, counts as dirty
+// and is named. An error means the tree could not be read: the caller counts it dirty.
 func Tree(in Input) (TreeState, error) {
 	timeout := in.Timeout
 	if timeout <= 0 {
@@ -57,7 +68,7 @@ func Tree(in Input) (TreeState, error) {
 	if err := j.start(ctx); err != nil {
 		return TreeState{Dirty: true}, err
 	}
-	st, err := j.tree()
+	st, err := j.tree(0)
 	if err != nil {
 		return TreeState{Dirty: true}, err
 	}
@@ -87,8 +98,8 @@ func Dirty(in Input) (bool, error) {
 // statusArgs are git status's arguments for both reads.
 var statusArgs = []string{"status", "--porcelain=v1", "-z", "--untracked-files=normal", "--ignore-submodules=none", "--no-renames"}
 
-// tree reads one checkout (the judgment's).
-func (j *judgment) tree() (TreeState, error) {
+// tree reads one checkout (the judgment's), and its submodules at depth+1.
+func (j *judgment) tree(depth int) (TreeState, error) {
 	var st TreeState
 	out, err := j.git.run(nil, statusArgs...)
 	if err != nil {
@@ -110,6 +121,17 @@ func (j *judgment) tree() (TreeState, error) {
 		if !shown[p] {
 			st.Hidden = append(st.Hidden, Hidden{Path: p, Why: "its contents differ from HEAD's, though git status shows no change"})
 		}
+	}
+	subs, err := j.gitlinks()
+	if err != nil {
+		return st, err
+	}
+	for _, s := range subs {
+		h, err := j.submodule(s, depth)
+		if err != nil {
+			return st, err
+		}
+		st.Hidden = append(st.Hidden, h...)
 	}
 	return st, nil
 }
@@ -189,4 +211,174 @@ func (j *judgment) filtersOff() ([]string, error) {
 		off = append(off, "filter."+n+".clean=", "filter."+n+".smudge=", "filter."+n+".process=", "filter."+n+".required=false")
 	}
 	return off, nil
+}
+
+// gitlinks gives the submodules' paths: every gitlink (mode 160000) in HEAD's tree or in the index, sorted, each once.
+func (j *judgment) gitlinks() ([]string, error) {
+	seen := map[string]bool{}
+	read := func(args ...string) error {
+		out, err := j.git.run(nil, args...)
+		if err != nil {
+			return fmt.Errorf("git cannot list the submodules: %v", err)
+		}
+		for _, e := range splitZ(out) {
+			meta, p, ok := strings.Cut(e, "\t")
+			if ok && strings.HasPrefix(meta, "160000 ") {
+				seen[p] = true
+			}
+		}
+		return nil
+	}
+	if j.head != "" {
+		if err := read("ls-tree", "-r", "-z", "--full-tree", j.head); err != nil {
+			return nil, err
+		}
+	}
+	if err := read("ls-files", "-z", "--stage"); err != nil {
+		return nil, err
+	}
+	var out []string
+	for p := range seen {
+		out = append(out, p)
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+// submodule reads one gitlink's folder (rel, from the checkout's top): a submodule checked out is read as Tree reads a
+// checkout, its paths named from the top; a folder git does not read that holds a file names its files; one past
+// maxDepth, or one that cannot be read, is named as dirty.
+func (j *judgment) submodule(rel string, depth int) ([]Hidden, error) {
+	dir := filepath.Join(j.git.dir, filepath.FromSlash(rel))
+	fi, err := os.Stat(dir)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return nil, nil // not there: git status shows a deleted gitlink, or none was checked out
+	case err != nil:
+		return []Hidden{{Path: rel + "/", Why: "a submodule's folder that cannot be read: " + osWords(err)}}, nil
+	case !fi.IsDir():
+		return nil, nil // a file where a gitlink was: git status shows it
+	}
+	if _, err := os.Lstat(filepath.Join(dir, ".git")); err != nil {
+		var files []Hidden
+		walkErr := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if !d.IsDir() {
+				r, _ := filepath.Rel(j.git.dir, p)
+				files = append(files, Hidden{Path: filepath.ToSlash(r), Why: "a file in a submodule's folder that is not checked out, which " +
+					"git does not read"})
+			}
+			return nil
+		})
+		if walkErr != nil {
+			return []Hidden{{Path: rel + "/", Why: "a submodule's folder that cannot be read: " + osWords(walkErr)}}, nil
+		}
+		return files, nil
+	}
+	if depth+1 > maxDepth {
+		return []Hidden{{Path: rel + "/", Why: fmt.Sprintf("a submodule more than %d deep, which is not read", maxDepth)}}, nil
+	}
+	sub := &judgment{in: Input{Root: dir, Git: j.in.Git}, found: map[string]*finding{}}
+	if err := sub.start(j.git.ctx); err != nil {
+		if j.git.ctx.Err() != nil {
+			return nil, err
+		}
+		return []Hidden{{Path: rel + "/", Why: "a submodule whose state cannot be read: " + oneLine(err.Error())}}, nil
+	}
+	if !sameDir(sub.top, filepath.ToSlash(dir)) {
+		return []Hidden{{Path: rel + "/", Why: "a submodule's folder whose .git is not a checkout's own"}}, nil
+	}
+	st, err := sub.tree(depth + 1)
+	if err != nil {
+		if j.git.ctx.Err() != nil {
+			return nil, err
+		}
+		return []Hidden{{Path: rel + "/", Why: "a submodule whose state cannot be read: " + oneLine(err.Error())}}, nil
+	}
+	var out []Hidden
+	for _, h := range st.Hidden {
+		out = append(out, Hidden{Path: path.Join(rel, h.Path) + trailingSlash(h.Path), Why: h.Why + " (inside the submodule " + rel + ")"})
+	}
+	return out, nil
+}
+
+// trailingSlash keeps a folder's slash through path.Join.
+func trailingSlash(p string) string {
+	if strings.HasSuffix(p, "/") {
+		return "/"
+	}
+	return ""
+}
+
+// sameDir compares two folders as git names them (forward slashes), case-blind on Windows.
+func sameDir(a, b string) bool {
+	a, b = strings.TrimSuffix(a, "/"), strings.TrimSuffix(b, "/")
+	return a == b || (os.PathSeparator == '\\' && strings.EqualFold(a, b))
+}
+
+// osWords says why a file could not be read by the error's kind, never its text (which names a whole path).
+func osWords(err error) string {
+	switch {
+	case errors.Is(err, fs.ErrPermission):
+		return "permission denied"
+	case errors.Is(err, fs.ErrNotExist):
+		return "it is not there"
+	}
+	return "the system could not read it"
+}
+
+// hidingInSubmodules are the findings a submodule's own index and ignore rules can hide a change by: each submodule
+// checked out is judged for them as the top checkout is, and what it finds counts in the top's findings.
+var hidingInSubmodules = []string{findAssume, findSkip, findHidden, findUntrackedGI}
+
+// submodules judges every submodule checked out (gitlinks) for the findings that hide a change (hidingInSubmodules),
+// their names from the top checkout, at any depth up to maxDepth; a submodule that cannot be judged, or one deeper,
+// is a note (Tree counts it dirty).
+func (j *judgment) submodules() error {
+	subs, err := j.gitlinks()
+	if err != nil {
+		return err
+	}
+	for _, rel := range subs {
+		dir := filepath.Join(j.git.dir, filepath.FromSlash(rel))
+		if fi, err := os.Stat(filepath.Join(dir, ".git")); err != nil || fi == nil {
+			continue // not checked out: Tree names any file in its folder
+		}
+		where := j.prefix + rel
+		if j.depth+1 > maxDepth {
+			j.notes = append(j.notes, fmt.Sprintf("the submodule %s is more than %d deep and not judged (the run counts as dirty)",
+				shown(where), maxDepth))
+			continue
+		}
+		sub := &judgment{in: Input{Root: dir, Git: j.in.Git}, found: map[string]*finding{}, prefix: where + "/", depth: j.depth + 1}
+		err := sub.start(j.git.ctx)
+		if err == nil && !sameDir(sub.top, filepath.ToSlash(dir)) {
+			err = errors.New("its .git is not a checkout's own")
+		}
+		for _, step := range []func() error{sub.index, sub.ignored, sub.submodules} {
+			if err != nil {
+				break
+			}
+			err = step()
+		}
+		if err != nil {
+			if j.git.ctx.Err() != nil {
+				return errors.New("git did not answer in time")
+			}
+			j.notes = append(j.notes, "the submodule "+shown(where)+" is not judged ("+oneLine(err.Error())+"; the run counts as dirty)")
+			continue
+		}
+		for _, w := range hidingInSubmodules {
+			f, got := j.found[w], sub.found[w]
+			if f == nil || got == nil || f.why != "" {
+				continue
+			}
+			f.names = append(f.names, got.names...)
+			f.exempt += got.exempt
+		}
+		j.notes = append(j.notes, sub.notes...)
+	}
+	return nil
 }

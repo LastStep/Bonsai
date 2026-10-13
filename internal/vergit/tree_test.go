@@ -1,7 +1,8 @@
 package vergit
 
 // The tree's state (Tree): the contents read against HEAD through a fresh index, the repository's own filters off,
-// so neither the index's stat times nor its flags nor a filter keep a change from the result's dirty (V2's M1).
+// so neither the index's stat times nor its flags nor a filter keep a change from the result's dirty (V2's M1); every
+// submodule read the same way, and judged for the findings that hide a change (V2's S1).
 
 import (
 	"os"
@@ -193,6 +194,99 @@ func TestTreeReadsContents(t *testing.T) {
 		must(t, err)
 		if string(before) != string(after) {
 			t.Error("the checkout's index changed")
+		}
+	})
+}
+
+// submoduleRepo makes a repository with a submodule at lib (its own repository beside it, lib.txt committed) and gives
+// the top checkout's folder.
+func submoduleRepo(t *testing.T) string {
+	t.Helper()
+	tmp := t.TempDir()
+	sub := filepath.Join(tmp, "sub")
+	must(t, os.MkdirAll(sub, 0o755))
+	git(t, sub, "init", "-q")
+	write(t, sub, "lib.txt", "two\n")
+	git(t, sub, "add", ".")
+	git(t, sub, "commit", "-q", "-m", "lib")
+	root := filepath.Join(tmp, "top")
+	must(t, os.MkdirAll(root, 0o755))
+	git(t, root, "init", "-q")
+	write(t, root, "a.txt", "a\n")
+	git(t, root, "-c", "protocol.file.allow=always", "submodule", "add", "-q", filepath.ToSlash(sub), "lib")
+	git(t, root, "add", ".")
+	git(t, root, "commit", "-q", "-m", "top")
+	return root
+}
+
+func TestTreeReadsSubmodules(t *testing.T) {
+	isolate(t)
+	t.Run("clean", func(t *testing.T) {
+		root := submoduleRepo(t)
+		if st := tree(t, root); st.Dirty {
+			t.Errorf("%+v", st)
+		}
+	})
+	t.Run("a change in a submodule git status shows", func(t *testing.T) {
+		root := submoduleRepo(t)
+		write(t, root, "lib/lib.txt", "three\n")
+		if st := tree(t, root); !st.Dirty || strings.Join(st.Shown, ",") != "lib" {
+			t.Errorf("%+v", st)
+		}
+	})
+	t.Run("a change a submodule's own assume-unchanged entry hides", func(t *testing.T) {
+		root := submoduleRepo(t)
+		write(t, root, "lib/lib.txt", "six\n")
+		git(t, filepath.Join(root, "lib"), "update-index", "--assume-unchanged", "lib.txt")
+		if s := plainStatus(t, root); s != "" {
+			t.Fatalf("plain git status: %s", s)
+		}
+		st := tree(t, root)
+		if !st.Dirty || hiddenPaths(st) != "lib/lib.txt" || !strings.HasSuffix(st.Hidden[0].Why, "(inside the submodule lib)") {
+			t.Errorf("%+v", st)
+		}
+		o := judge(t, Input{Root: root})
+		if n, ok := count(t, o, "assume-unchanged"); n != 1 || !ok || !o.Hides {
+			t.Errorf("assume-unchanged %d %v, hides %v: %s", n, ok, o.Hides, o.Reason)
+		}
+		has(t, o, "assume-unchanged 1: lib/lib.txt")
+	})
+	t.Run("a file only a submodule's info/exclude ignores", func(t *testing.T) {
+		root := submoduleRepo(t)
+		gitDir := git(t, filepath.Join(root, "lib"), "rev-parse", "--absolute-git-dir")
+		must(t, os.MkdirAll(filepath.Join(gitDir, "info"), 0o755))
+		must(t, os.WriteFile(filepath.Join(gitDir, "info", "exclude"), []byte("notes.txt\n"), 0o644))
+		write(t, root, "lib/notes.txt", "read by a test\n")
+		if s := plainStatus(t, root); s != "" {
+			t.Fatalf("plain git status: %s", s)
+		}
+		o := judge(t, Input{Root: root})
+		if n, _ := count(t, o, "exclude-hidden"); n != 1 || !o.Hides {
+			t.Errorf("exclude-hidden %d, hides %v: %s", n, o.Hides, o.Reason)
+		}
+		has(t, o, "exclude-hidden 1: lib/notes.txt (by info/exclude)")
+	})
+	t.Run("a file in a submodule's folder that is not checked out", func(t *testing.T) {
+		root := submoduleRepo(t)
+		git(t, root, "submodule", "deinit", "-q", "-f", "lib")
+		write(t, root, "lib/lib.go", "package lib\n")
+		if s := plainStatus(t, root); s != "" {
+			t.Fatalf("plain git status: %s", s)
+		}
+		st := tree(t, root)
+		if !st.Dirty || hiddenPaths(st) != "lib/lib.go" || !strings.Contains(st.Hidden[0].Why, "not checked out") {
+			t.Errorf("%+v", st)
+		}
+	})
+	t.Run("a submodule whose .git cannot be read: git status itself fails, which counts as dirty", func(t *testing.T) {
+		root := submoduleRepo(t)
+		write(t, root, "lib/.git", "gitdir: ../nowhere\n")
+		st, err := Tree(Input{Root: root})
+		if err == nil || !st.Dirty {
+			t.Errorf("%+v, %v", st, err)
+		}
+		if d, err := Dirty(Input{Root: root}); !d || err == nil {
+			t.Errorf("Dirty = %v, %v", d, err)
 		}
 	})
 }

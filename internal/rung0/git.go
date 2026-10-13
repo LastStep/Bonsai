@@ -127,8 +127,9 @@ type entry struct{ path string }
 // changed lists every path the checkout changed (note 1), sorted, each once: the branch's commits since from when
 // from is not "", what is staged, unstaged or untracked and not ignored, and what the checkout's contents read
 // against HEAD show changed though git status does not (vergit.Tree's hidden paths: a file whose stat times the index
-// kept from a look while a filter made it read as unchanged, one under an index flag), so a change hidden from git
-// status is judged by the guard's function, not only made dirty. An untracked nested repository (git names its folder with a trailing slash and does not look
+// kept from a look while a filter made it read as unchanged, one under an index flag, one inside a submodule, a file in
+// a submodule's folder git does not read), so a change hidden from git status is judged by the guard's function, not
+// only made dirty. An untracked nested repository (git names its folder with a trailing slash and does not look
 // inside) is its .git, a checkout planted below the top (the guard's floor never grants one), unless it is a worktree
 // of the main checkout main (Claude Code places its own worktrees inside the main checkout): another checkout of the
 // project, whose changes are its own climb's.

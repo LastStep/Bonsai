@@ -1,6 +1,7 @@
 package ladder
 
-// Changes hidden from git status, through the runner and the stop gate (V2's reproducer m1-filter-refresh): the result's dirty reads the checkout's contents against HEAD, so a change git status does not show
+// Changes hidden from git status, through the runner and the stop gate (V2's reproducers m1-filter-refresh and
+// s1-submodule): the result's dirty reads the checkout's contents against HEAD, so a change git status does not show
 // makes the result dirty and is named in the human lines; rung 0 judges each such path by the guard's function; the
 // stop gate refuses the result.
 
@@ -83,4 +84,37 @@ func TestHiddenByAFilterRefresh(t *testing.T) {
 			t.Errorf("the stop gate: %d %q", code, stderr)
 		}
 	})
+}
+
+func TestHiddenInASubmodule(t *testing.T) {
+	f := vgProject(t)
+	sub := filepath.Join(f.tmp, "sub")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	testpack.Git(t, sub, "init", "-q")
+	f.writeIn(sub, "lib.txt", "two\n")
+	f.commitIn(sub, "lib")
+	testpack.Git(t, f.root, "-c", "protocol.file.allow=always", "submodule", "add", "-q", filepath.ToSlash(sub), "lib")
+	f.commit("a submodule")
+	f.write("lib/lib.txt", "six\n")
+	testpack.Git(t, filepath.Join(f.root, "lib"), "update-index", "--assume-unchanged", "lib.txt")
+	if s := testpack.Git(t, f.root, "status", "--porcelain"); s != "" {
+		t.Fatalf("plain git status shows the change: %q", s)
+	}
+	a := f.climb("", Options{Task: "T-0901"})
+	l := f.result("T-0901")
+	r := gitRung(t, f)
+	if a.Exit != 0 || !l.Git.Dirty || showOf(r.Captures, "assume-unchanged") != "1" {
+		t.Fatalf("exit %d, dirty %v, %s\n%s", a.Exit, l.Git.Dirty, showOf(r.Captures, "assume-unchanged"), f.out.String())
+	}
+	for _, s := range []string{"assume-unchanged 1: lib/lib.txt (hides a change from git",
+		`"lib/lib.txt": its contents differ from HEAD's, though git status shows no change (inside the submodule lib)`} {
+		if !strings.Contains(f.out.String(), s) {
+			t.Errorf("the human lines lack %q:\n%s", s, f.out.String())
+		}
+	}
+	if code, stderr := gate(t, f.root, "T-0901"); code != 2 || !strings.Contains(stderr, "uncommitted changes") {
+		t.Errorf("the stop gate: %d %q", code, stderr)
+	}
 }
