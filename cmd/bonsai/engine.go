@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
@@ -130,6 +131,16 @@ func runEngine(c *call) int {
 	closing := ""
 	if word == "init" {
 		closing = engine.ClosingWords(plan.Config, home)
+	}
+	// In an agent's session, recording another base branch for the workspace is a person's command (agent.go): the
+	// ladder and the stop gate hold the main checkout to the base this machine recorded, and an agent that could
+	// record the branch it switched to would make that check moot. Refused before anything is written.
+	if was, now, changes := engine.BaseChange(plan); changes {
+		if e := personCommand(dir, home, cmdline, "it would record the main checkout's branch "+strconv.QuoteToASCII(now)+
+			" as the workspace's base branch in place of "+strconv.QuoteToASCII(was)+", the branch the ladder and the stop gate "+
+			"hold the main checkout to", cmdline+" --yes (or switch the main checkout back: git switch "+was+")"); e != nil {
+			return out("refused", e.Exit, e, "Refused: "+e.What+".\nnext: "+e.Next+"\n")
+		}
 	}
 	// The command that installs a plugin carrying code on this machine, a person's step: once the files are written
 	// (or have nothing to change) the same word with --allow-exec does it, without the values or the flags that

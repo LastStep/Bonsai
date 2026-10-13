@@ -90,11 +90,8 @@ labels:
 # The gated task
 `
 
-// headSHA is the commit the test project's HEAD names; otherSHA another.
-const (
-	headSHA  = "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80"
-	otherSHA = "0123456789abcdef0123456789abcdef01234567"
-)
+// otherSHA is a commit other than the test project's HEAD (headSHA, objects_test.go).
+const otherSHA = "0123456789abcdef0123456789abcdef01234567"
 
 // testNow is the runs' clock, so a record's day file is known.
 var testNow = time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC)
@@ -115,9 +112,9 @@ func TestMain(m *testing.M) {
 }
 
 // project makes the gated project in a temporary folder and gives its real path: bonsai.yaml, T-0901, a run report
-// for it, a .git folder on branch main at headSHA (a loose ref file, as git writes it), this machine's record of it
-// in a home of the test's own (so its main checkout is verified), and a green local result proving headSHA with rungs
-// 0, 1 and 2.
+// for it, a .git folder on branch main at headSHA (a loose ref file, as git writes it; the commit holding bonsai.yaml
+// written as loose objects, objects_test.go), this machine's record of it in a home of the test's own (so its main
+// checkout is verified, main its base branch), and a green local result proving headSHA with rungs 0, 1 and 2.
 func project(t *testing.T) string {
 	t.Helper()
 	root, err := filepath.EvalSymlinks(t.TempDir())
@@ -128,7 +125,7 @@ func project(t *testing.T) string {
 	write(t, root, "work/tasks/T-0901-gated.md", testTask)
 	write(t, root, "work/runs/R-2026-10-11-T-0901.md", "# R-2026-10-11-T-0901\n\nWhat changed.\n")
 	write(t, root, ".git/HEAD", "ref: refs/heads/main\n")
-	write(t, root, ".git/refs/heads/main", headSHA+"\n")
+	write(t, root, ".git/refs/heads/main", commitYAML(t, filepath.Join(root, ".git"), testYAML)+"\n")
 	home := t.TempDir()
 	t.Setenv(workspace.HomeEnv, home)
 	if _, err := workspace.RecordCheckout(home, root, testID, testNow); err != nil {
@@ -363,7 +360,7 @@ func TestEachCase(t *testing.T) {
 				l.Green, l.Rungs[1].Status, l.Rungs[1].Reason = false, "red", ptr("vet failed")
 				writeResult(t, root, "T-0901", l)
 			}},
-		{name: "another commit", rule: RuleOtherCommit, why: `proves commit "0123456789ab", but this checkout's HEAD is 5d6e7f8091a2`,
+		{name: "another commit", rule: RuleOtherCommit, why: `proves commit "0123456789ab", but this checkout's HEAD is ` + headSHA[:12],
 			next: ladder + " at this HEAD", change: func(t *testing.T, root string) { writeResult(t, root, "T-0901", greenResult(otherSHA)) }},
 		{name: "dirty", rule: RuleDirty, why: "uncommitted changes (git.dirty is true)", next: "commit or put away the changes, then run: " + ladder,
 			change: func(t *testing.T, root string) {
@@ -463,19 +460,47 @@ func TestEachCase(t *testing.T) {
 		{name: "main not verified", rule: RuleMainNotVerified, why: "the main checkout of this checkout is not verified: this machine has no record of the main checkout",
 			next:   "a person runs bonsai update in the project's main checkout, which records it on this machine; then run: " + ladder,
 			change: func(t *testing.T, root string) { t.Setenv(workspace.HomeEnv, t.TempDir()) }},
-		{name: "HEAD unreadable", rule: RuleHeadUnreadable, why: `this checkout's HEAD cannot be read from its git files (HEAD names "refs/heads/main", which has no commit yet`,
-			next: ladder, change: func(t *testing.T, root string) { remove(t, root, ".git/refs/heads/main") }},
-		{name: "HEAD not a commit", rule: RuleHeadUnreadable, why: "HEAD in its git folder holds neither a commit nor a ref", next: ladder,
-			change: func(t *testing.T, root string) { write(t, root, ".git/HEAD", "main\n") }},
+		{name: "main's HEAD with no commit yet", rule: RuleConfigUncommitted,
+			why:  "the main checkout's HEAD names no commit yet, so it holds no bonsai.yaml, and the ladder's rungs and floor are read from the committed one only",
+			next: UncommittedNext + "; then run: " + ladder, change: func(t *testing.T, root string) { remove(t, root, ".git/refs/heads/main") }},
+		{name: "main's HEAD not a commit", rule: RuleMainNotVerified, why: "the main checkout is not on its base branch: the main checkout is on a detached HEAD",
+			next: "a person checks out \"main\" in the main checkout", change: func(t *testing.T, root string) { write(t, root, ".git/HEAD", "main\n") }},
+		{name: "main on a detached HEAD", rule: RuleMainNotVerified, why: `the main checkout is on a detached HEAD, and this machine's record names "main" as the workspace's base branch`,
+			next: "(git switch main); then run: " + ladder, change: func(t *testing.T, root string) { write(t, root, ".git/HEAD", headSHA+"\n") }},
+		{name: "main on another branch", rule: RuleMainNotVerified, why: `the main checkout is not on its base branch: the main checkout holds the branch "loose", and this machine's record names "main"`,
+			next: "or, when \"loose\" is the base from now on, runs bonsai update in the main checkout to record it; then run: " + ladder,
+			change: func(t *testing.T, root string) {
+				write(t, root, ".git/HEAD", "ref: refs/heads/loose\n")
+				write(t, root, ".git/refs/heads/loose", headSHA+"\n")
+			}},
+		{name: "a record from before Bonsai kept a base", rule: RuleMainNotVerified, why: "names no base branch (it was written before Bonsai kept one)",
+			next: "a person checks out the project's base branch in the main checkout and runs bonsai update there, which records it as the base",
+			change: func(t *testing.T, root string) {
+				dir, err := workspace.MachineDir(os.Getenv(workspace.HomeEnv), root)
+				if err != nil {
+					t.Fatal(err)
+				}
+				rec, err := os.ReadFile(filepath.Join(dir, workspace.MachineRecordFile))
+				if err != nil {
+					t.Fatal(err)
+				}
+				write(t, dir, workspace.MachineRecordFile, strings.Replace(string(rec), `,
+  "base_branch": "main"`, "", 1))
+			}},
+		{name: "main's bonsai.yaml changed, not committed", rule: RuleConfigUncommitted,
+			why:  "the main checkout's bonsai.yaml differs from the one committed at its HEAD, and the ladder's rungs and floor are read from the committed one only",
+			next: UncommittedNext + "; then run: " + ladder, change: func(t *testing.T, root string) {
+				write(t, root, "bonsai.yaml", strings.Replace(testYAML, "ladder_floor: [0, 1]", "ladder_floor: [0]", 1))
+			}},
 		{name: "no run report", rule: RuleNoRunReport, why: "this checkout has no run report for T-0901 in its run folder work/runs",
 			next: "write this session's run report, work/runs/R-<YYYY-MM-DD>-T-0901.md, in this checkout", change: func(t *testing.T, root string) {
 				remove(t, root, "work/runs/R-2026-10-11-T-0901.md")
 				write(t, root, "work/runs/R-2026-10-11-T-09012.md", "another task's report\n")
 				write(t, root, "work/runs/notes-T-0901.md", "not a run report's name\n")
 			}},
-		{name: "a main bonsai.yaml that does not read in full", rule: RuleBadConfig, why: "cannot be read in full", next: ladder,
+		{name: "a main bonsai.yaml that does not read in full", rule: RuleBadConfig, why: "cannot be read in full as committed at its HEAD", next: ladder,
 			change: func(t *testing.T, root string) {
-				write(t, root, "bonsai.yaml", strings.Replace(testYAML, "ladder_floor: [0, 1]", "ladder_floor: [zero]", 1))
+				recommit(t, root, strings.Replace(testYAML, "ladder_floor: [0, 1]", "ladder_floor: [zero]", 1))
 			}},
 	}
 	for _, c := range cases {
@@ -522,9 +547,15 @@ func TestEachCase(t *testing.T) {
 		code, stderr := gateFor(t, root, "T-0901")
 		allows(t, code, stderr, root)
 	})
-	t.Run("green at a detached HEAD", func(t *testing.T) {
+	t.Run("green with a CRLF bonsai.yaml in the main checkout", func(t *testing.T) {
 		root := project(t)
-		write(t, root, ".git/HEAD", headSHA+"\n")
+		write(t, root, "bonsai.yaml", strings.ReplaceAll(testYAML, "\n", "\r\n"))
+		code, stderr := gateFor(t, root, "T-0901")
+		allows(t, code, stderr, root)
+	})
+	t.Run("green with another bonsai.yaml, committed", func(t *testing.T) {
+		root := project(t)
+		recommit(t, root, strings.Replace(testYAML, "ladder_floor: [0, 1]", "ladder_floor: [0, 1, 2]", 1))
 		code, stderr := gateFor(t, root, "T-0901")
 		allows(t, code, stderr, root)
 	})

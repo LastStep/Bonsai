@@ -67,7 +67,7 @@ func TestHeadIsGitsAnswer(t *testing.T) {
 
 // Each form of git's files made by hand, and each HEAD that cannot be read, with its words.
 func TestHeadForms(t *testing.T) {
-	const sha = headSHA
+	sha := headSHA
 	sha256 := strings.Repeat("ab", 32)
 	cases := []struct {
 		name  string

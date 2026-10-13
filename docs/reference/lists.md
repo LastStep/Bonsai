@@ -132,7 +132,8 @@ error words.
 | `ladder-busy` | agent | another ladder run holds this home's lock for the checkout and did not let go within the wait: nothing was run or written (exit 4); the message names the holder's process and when its budget ends, and the same command again after that is the next step |
 | `no-task` | agent | a local ladder run names no task, or the task named is none: the message carries the active-task function's reason code (no task, two running, the file unreadable, no such task), and nothing was run (exit 2) |
 | `rung-not-defined` | agent | a rung the command asked for is not in bonsai.yaml's ladder, or bonsai.yaml has no ladder: the message names the rung, and nothing was run (exit 2) |
-| `main-not-verified` | person | the project's main checkout is not verified on this machine, so no result can be written where the stop gate reads it, and nothing was run (exit 4); the person's step is bonsai update in the main checkout (contract section 13; the guard's rule of the same name) |
+| `main-not-verified` | person | the project's main checkout is not verified on this machine, or it is not on the workspace's base branch this machine recorded for it, so no result can be written where the stop gate reads it, and nothing was run (exit 4); the person's step is bonsai update in the main checkout, or switching it back to its base branch (contract section 13; the guard's rule of the same name) |
+| `config-uncommitted` | person | the main checkout's bonsai.yaml differs from the one committed at its HEAD, or its HEAD holds none: the ladder reads its rungs, floor, ratchets and ci_marked_tests from the committed one only, so nothing was run (exit 4); the person's step is to commit the change in the main checkout or revert it |
 | `partly-written` | agent | the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest |
 | `unexpected` | agent | something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats |
 
@@ -525,7 +526,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `never-granted` | deny | a path of the floor no grant opens: .claude/settings.json, .claude/settings.local.json and .git at a checkout's top, and a .git at any depth (for a delete, the project's own top .git only) |
 | `bonsai-files` | deny | Bonsai's own files, in every mode and under any grant: .bonsai/local/, .bonsai/.gitignore, the two tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home (from WSL, a Windows user's too) |
 | `bonsai-stand-in` | deny | a file named as Bonsai's program (bonsai, bonsai.exe, bonsai.cmd, bonsai.bat, bonsai.ps1, bonsai.com) outside every linked project, which a folder on the PATH could hold |
-| `main-not-verified` | deny | a guarded path where no project holding it is a verified checkout, so no task's grant can count; for the stop gate, the session's checkout's main checkout is not verified, so its task and ladder result are not trusted |
+| `main-not-verified` | deny | a guarded path where no project holding it is a verified checkout, so no task's grant can count; for the stop gate, the session's checkout's main checkout is not verified, or not on the base branch this machine recorded for it, so its task and ladder result are not trusted |
 | `other-project` | deny | a delete or move of another linked project's top folder or its .git, .bonsai or .claude folder (that project on this machine's record) |
 | `granted` | allow | a guarded path the running task's bonsai.allows holds (the task read from the verified main checkout) |
 | `not-protected` | allow | a path inside a linked project that nothing guards |
@@ -571,6 +572,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `stop-head-unreadable` | deny | the stop gate: the commit at the checkout's HEAD cannot be read from its git files |
 | `stop-other-commit` | deny | the stop gate: the ladder result proves another commit than the checkout's HEAD |
 | `stop-dirty` | deny | the stop gate: the ladder result was made on a tree with uncommitted changes |
+| `stop-config-uncommitted` | deny | the stop gate: the main checkout's bonsai.yaml differs from the one committed at its HEAD, or its HEAD holds none, so the ladder's settings there are not trusted |
 | `stop-rung-missing` | deny | the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the task's bonsai.ladder |
 | `stop-rung-not-green` | deny | the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result |
 | `stop-proven` | allow | the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the task's rungs green: the session ends |

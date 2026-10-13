@@ -6,6 +6,7 @@ package ladder
 // required rung that is not green marks every later rung skipped.
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -102,6 +103,7 @@ func (c *Climb) climb() {
 	}
 	c.headAfter = head(c.Root)
 	c.dirtyAfter = treeDirty(c)
+	c.configMoved = !bytes.Equal(mainConfigBytes(c.Main), c.configBytes)
 	if !c.CI && !c.o.nested() {
 		v := leftovers.Check(c.Root)
 		c.leftovers, c.leftLines = v.Record(), v.Lines()

@@ -38,24 +38,26 @@ type Climb struct {
 	Getenv    func(string) string   // the climb's environment reader
 	Now       func() time.Time      // the climb's clock
 
-	o          Options
-	started    time.Time            // when the first rung's climb began, once the lock was taken
-	workspace  *format.WorkspaceRef // the climb document's workspace
-	unverified string               // under --ci, why Main is not verified ("" when it is)
-	rungs      []format.Rung        // the rungs climbed, in number order (bonsai.yaml's order within one number)
-	git        format.LadderGit     // HEAD at the start, its branch, dirty
-	headAfter  string               // HEAD at the end
-	dirtyAfter bool                 // git's status at the end
-	hides      []string             // the rungs whose findings hide a change from git (kinds.go: Outcome.Hides)
-	results    []format.LadderRung  // one per rung climbed
-	steps      []*Step              // one per rung climbed, as the steps after a rung saw it
-	skipped    []format.LadderSkip  // --ci: every skip, accepted or not
-	leftovers  any                  // the leftovers record (leftovers.Value.Record)
-	leftLines  []string             // the leftovers line
-	stopped    bool                 // the stop signal came
-	priorNote  string               // why an earlier result that is there was not read ("" when it was, or there is none)
-	hidden     []vergit.Hidden      // changed paths git status does not show (treeDirty), the first read's that found any
-	treeErr    string               // why the tree could not be read (treeDirty), the first such
+	o           Options
+	started     time.Time            // when the first rung's climb began, once the lock was taken
+	workspace   *format.WorkspaceRef // the climb document's workspace
+	unverified  string               // under --ci, why Main is not verified ("" when it is)
+	rungs       []format.Rung        // the rungs climbed, in number order (bonsai.yaml's order within one number)
+	git         format.LadderGit     // HEAD at the start, its branch, dirty
+	headAfter   string               // HEAD at the end
+	dirtyAfter  bool                 // git's status at the end
+	hides       []string             // the rungs whose findings hide a change from git (kinds.go: Outcome.Hides)
+	results     []format.LadderRung  // one per rung climbed
+	steps       []*Step              // one per rung climbed, as the steps after a rung saw it
+	skipped     []format.LadderSkip  // --ci: every skip, accepted or not
+	leftovers   any                  // the leftovers record (leftovers.Value.Record)
+	leftLines   []string             // the leftovers line
+	stopped     bool                 // the stop signal came
+	priorNote   string               // why an earlier result that is there was not read ("" when it was, or there is none)
+	configBytes []byte               // the main checkout's bonsai.yaml at the climb's start (LF), the committed one's bytes
+	configMoved bool                 // the main checkout's bonsai.yaml changed during the climb
+	hidden      []vergit.Hidden      // changed paths git status does not show (treeDirty), the first read's that found any
+	treeErr     string               // why the tree could not be read (treeDirty), the first such
 }
 
 // TaskID is the climbed task's id, "" for none.

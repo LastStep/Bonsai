@@ -8,7 +8,11 @@ package guard
 
 import (
 	"bytes"
+	"compress/zlib"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -33,9 +37,52 @@ const (
 	stopTask = "---\nformat: bonsai.task/1\nid: T-0901\ntitle: A gated task\nstatus: running\nlane: light\ndone_when:\n" +
 		"  - \"It ends\"\ndepends_on: []\nblocked_by:\ncreated: 2026-10-11\nstarted: 2026-10-11\nfinished:\nlabels:\n" +
 		"  bonsai.ladder: [1]\n---\n\n# A gated task\n"
-	stopHead  = "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80"
 	stopOther = "0123456789abcdef0123456789abcdef01234567"
 )
+
+// stopHead is the commit the gated project's HEAD names: bonsai.yaml as stopYAML, committed (stopCommit).
+var stopHead = stopCommitObjects(stopYAML)[2].id
+
+// stopObject is one git object as git stores it loose before compression ("<kind> <size>\0<body>") and its id.
+type stopObject struct {
+	id  string
+	raw []byte
+}
+
+// stopCommitObjects are bonsai.yaml's blob holding yaml, a tree holding it, and a commit of that tree with a fixed
+// author and time, so its id is known before any test runs.
+func stopCommitObjects(yaml string) []stopObject {
+	obj := func(kind string, body []byte) stopObject {
+		raw := append([]byte(fmt.Sprintf("%s %d\x00", kind, len(body))), body...)
+		sum := sha1.Sum(raw)
+		return stopObject{id: hex.EncodeToString(sum[:]), raw: raw}
+	}
+	blob := obj("blob", []byte(yaml))
+	id, _ := hex.DecodeString(blob.id)
+	tree := obj("tree", append([]byte("100644 bonsai.yaml\x00"), id...))
+	commit := obj("commit", []byte("tree "+tree.id+"\nauthor t <t> 1760184000 +0000\ncommitter t <t> 1760184000 +0000\n\nthe fixture\n"))
+	return []stopObject{blob, tree, commit}
+}
+
+// stopCommit writes the commit holding bonsai.yaml with yaml into dir/.git as loose objects (the stop gate reads
+// bonsai.yaml as committed at the main checkout's HEAD, with git), with the config git needs, and gives its id.
+func stopCommit(t *testing.T, dir, yaml string) string {
+	t.Helper()
+	writeFile(t, filepath.Join(dir, ".git", "config"), "[core]\n\trepositoryformatversion = 0\n\tbare = false\n")
+	objs := stopCommitObjects(yaml)
+	for _, o := range objs {
+		var b bytes.Buffer
+		z := zlib.NewWriter(&b)
+		if _, err := z.Write(o.raw); err != nil {
+			t.Fatal(err)
+		}
+		if err := z.Close(); err != nil {
+			t.Fatal(err)
+		}
+		writeFile(t, filepath.Join(dir, ".git", "objects", o.id[:2], o.id[2:]), b.String())
+	}
+	return objs[2].id
+}
 
 // stopProject makes the gated project, recorded on this machine in a home of the test's own (so its main checkout is
 // verified), with a run report for T-0901 and a green local result proving stopHead with rungs 0 and 1; change, when
@@ -59,7 +106,7 @@ func stopProject(t *testing.T, change func(l *format.Ladder)) string {
 	put("work/tasks/T-0901-gated.md", stopTask)
 	put("work/runs/R-2026-10-11-T-0901.md", "# R-2026-10-11-T-0901\n")
 	put(".git/HEAD", "ref: refs/heads/main\n")
-	put(".git/refs/heads/main", stopHead+"\n")
+	put(".git/refs/heads/main", stopCommit(t, dir, stopYAML)+"\n")
 	home := t.TempDir()
 	t.Setenv(workspace.HomeEnv, home)
 	if _, err := workspace.RecordCheckout(home, dir, testID, testNow); err != nil {
@@ -83,11 +130,14 @@ func stopProject(t *testing.T, change func(l *format.Ladder)) string {
 	return dir
 }
 
-// stopRule runs the stop gate for a session in dir with BONSAI_TASK set to task ("" for unset) and gives its exit code
-// and the rule of the last record in the project's log ("" when it wrote none).
-func stopRule(t *testing.T, dir, task string) (int, string) {
+// stopRule runs the stop gate for a session in session (dir when "") with BONSAI_TASK set to task ("" for unset) and
+// gives its exit code and the rule of the last record in the project's log, in dir ("" when it wrote none).
+func stopRule(t *testing.T, dir, session, task string) (int, string) {
 	t.Helper()
-	vars := map[string]string{hookin.ProjectEnv: dir, workspace.TaskEnv: task}
+	if session == "" {
+		session = dir
+	}
+	vars := map[string]string{hookin.ProjectEnv: session, workspace.TaskEnv: task}
 	in := `{"session_id": "s1", "hook_event_name": "Stop", "stop_hook_active": false}`
 	var stderr bytes.Buffer
 	code := stopgate.Main(stopgate.Options{Stdin: strings.NewReader(in), Stderr: &stderr, Budget: untimed,
@@ -118,10 +168,11 @@ func stopRule(t *testing.T, dir, task string) (int, string) {
 
 func init() {
 	cases := []struct {
-		rule   string
-		task   string                         // BONSAI_TASK; "" for unset
-		result func(l *format.Ladder)         // a change to the green result
-		change func(t *testing.T, dir string) // a change to the project
+		rule    string
+		task    string                                // BONSAI_TASK; "" for unset
+		result  func(l *format.Ladder)                // a change to the green result
+		change  func(t *testing.T, dir string)        // a change to the project
+		session func(t *testing.T, dir string) string // the session's folder, made for it; nil for the project's own
 	}{
 		{rule: RuleStopProven, task: "T-0901"},
 		{rule: RuleStopNotNamed},
@@ -163,10 +214,21 @@ func init() {
 		{rule: RuleStopOtherTask, task: "T-0901", result: func(l *format.Ladder) { other := "T-0902"; l.Task = &other }},
 		{rule: RuleStopNotLocal, task: "T-0901", result: func(l *format.Ladder) { l.Mode = "ci" }},
 		{rule: RuleStopRed, task: "T-0901", result: func(l *format.Ladder) { l.Green, l.Rungs[1].Status = false, "red" }},
-		{rule: RuleStopHeadUnreadable, task: "T-0901", change: func(t *testing.T, dir string) {
-			if err := os.Remove(filepath.Join(dir, ".git", "refs", "heads", "main")); err != nil {
-				t.Fatal(err)
-			}
+		{rule: RuleStopHeadUnreadable, task: "T-0901", session: func(t *testing.T, dir string) string {
+			// A session in a worktree whose branch has no commit yet: its HEAD cannot be read, while the main
+			// checkout's, which the gate reads bonsai.yaml at, can.
+			wt := dir + "-wt"
+			gitdir := filepath.Join(dir, ".git", "worktrees", "wt")
+			writeFile(t, filepath.Join(wt, ".git"), "gitdir: "+filepath.ToSlash(gitdir)+"\n")
+			writeFile(t, filepath.Join(gitdir, "HEAD"), "ref: refs/heads/unborn\n")
+			writeFile(t, filepath.Join(gitdir, "commondir"), "../..\n")
+			writeFile(t, filepath.Join(gitdir, "gitdir"), filepath.ToSlash(filepath.Join(wt, ".git"))+"\n")
+			writeFile(t, filepath.Join(wt, "bonsai.yaml"), stopYAML)
+			writeFile(t, filepath.Join(wt, "work", "runs", "R-2026-10-11-T-0901.md"), "# R-2026-10-11-T-0901\n")
+			return wt
+		}},
+		{rule: RuleStopConfigUncommitted, task: "T-0901", change: func(t *testing.T, dir string) {
+			writeFile(t, filepath.Join(dir, "bonsai.yaml"), strings.Replace(stopYAML, "ladder_floor: [0]", "ladder_floor: []", 1))
 		}},
 		{rule: RuleStopOtherCommit, task: "T-0901", result: func(l *format.Ladder) { l.Git.SHA = stopOther }},
 		{rule: RuleStopDirty, task: "T-0901", result: func(l *format.Ladder) { l.Git.Dirty = true }},
@@ -180,7 +242,11 @@ func init() {
 			if c.change != nil {
 				c.change(t, dir)
 			}
-			code, rule := stopRule(t, dir, c.task)
+			session := ""
+			if c.session != nil {
+				session = c.session(t, dir)
+			}
+			code, rule := stopRule(t, dir, session, c.task)
 			want := ruleAllows(t, c.rule)
 			if c.rule == RuleStopNotNamed {
 				rule = c.rule // allowed with no record

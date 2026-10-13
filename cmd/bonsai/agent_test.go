@@ -13,6 +13,7 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/testpack"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -135,6 +136,59 @@ func TestAgentRefusedPersonCommands(t *testing.T) {
 	asPerson(c)
 	if code, out, errOut := c.run("", "unlink", "--yes"); code != 0 {
 		t.Errorf("unlink --yes as a person: exit %d\n%s%s", code, out, errOut)
+	}
+}
+
+// Recording another base branch is a person's command (the machine record's base_branch, workspace/record.go): with
+// the main checkout switched to another branch, update in an agent's session is refused, exit 4, nothing written and
+// the record's base unchanged; a person's update records the new base. The first record and the same branch again are
+// free to an agent.
+func TestAgentRecordingAnotherBase(t *testing.T) {
+	c := newCLI(t)
+	c.link()
+	c.commit("link")
+	home := os.Getenv(workspace.HomeEnv)
+	base := func() string {
+		t.Helper()
+		rec, err := workspace.LoadMachineRecord(home, c.root)
+		if err != nil || rec == nil {
+			t.Fatalf("the record: %+v %v", rec, err)
+		}
+		return rec.BaseBranch
+	}
+	if got := base(); got != "main" {
+		t.Fatalf("the base recorded at the link: %q", got)
+	}
+	asAgent(c)
+	if code, out, errOut := c.run("", "update", "--yes"); code != 0 {
+		t.Fatalf("the same base again, as an agent: exit %d\n%s%s", code, out, errOut)
+	}
+	testpack.Git(t, c.root, "checkout", "-q", "-b", "loose")
+	before := tree(t, c.root)
+	for _, args := range [][]string{{"update", "--yes"}, {"update", "--yes", "--json"}} {
+		code, out, errOut := c.run("", args...)
+		text := out + errOut
+		if args[len(args)-1] == "--json" {
+			e := errorIn(fits(t, out, "changes"), "changes")
+			n, _ := e.Get("next")
+			next, _ := n.(schema.Object)
+			if e.String("code") != "person-command" || next.String("who") != "person" {
+				t.Errorf("%v: error %s", args, schema.Show(e))
+			}
+			text = e.String("message") + "\n" + next.String("do")
+		}
+		if code != 4 || !strings.Contains(text, `it would record the main checkout's branch "loose" as the workspace's base branch `+
+			`in place of "main"`) || !strings.Contains(text, "a person runs it in a terminal of their own, not one Claude Code "+
+			"started: bonsai update --yes") {
+			t.Errorf("%v as an agent: exit %d\n%s", args, code, text)
+		}
+	}
+	if tree(t, c.root) != before || base() != "main" {
+		t.Errorf("a refused update wrote: the base %q", base())
+	}
+	asPerson(c)
+	if code, out, errOut := c.run("", "update", "--yes"); code != 0 || base() != "loose" {
+		t.Errorf("a person's update: exit %d, the base %q\n%s%s", code, base(), out, errOut)
 	}
 }
 

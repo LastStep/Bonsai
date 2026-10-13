@@ -124,3 +124,90 @@ func TestFirstClaim(t *testing.T) {
 		t.Fatalf("a record that cannot be read: %+v %+v %v", first, ties, err)
 	}
 }
+
+// The base branch: recorded from the main checkout's HEAD file each time the record is written (a detached HEAD keeps
+// the one before), always written (null for none); BaseOf holds the main checkout to it, a record from before it was
+// kept failing closed.
+func TestBaseBranch(t *testing.T) {
+	home, main := t.TempDir(), t.TempDir()
+	put := func(rel, body string) {
+		t.Helper()
+		p := filepath.Join(main, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	const id = "ws-aaaaaaaaaaaaaaaaaaaaaaaaaa"
+	at := time.Date(2026, 10, 13, 7, 0, 0, 0, time.UTC)
+	// A detached HEAD the first time: base_branch null, and BaseOf refuses.
+	put(".git/HEAD", "0123456789abcdef0123456789abcdef01234567\n")
+	if wrote, err := RecordCheckout(home, main, id, at); !wrote || err != nil {
+		t.Fatalf("first: %v %v", wrote, err)
+	}
+	dir, _ := MachineDir(home, main)
+	raw, _ := os.ReadFile(filepath.Join(dir, MachineRecordFile))
+	if !strings.Contains(string(raw), "\"base_branch\": null\n") {
+		t.Errorf("a detached HEAD's record:\n%s", raw)
+	}
+	if base, tr := BaseOf(home, main); base != "" || tr.Verified || !strings.Contains(tr.Why, "on a detached HEAD when it was recorded") {
+		t.Errorf("no base recorded: %q %+v", base, tr)
+	}
+	// On a branch: recorded, and BaseOf holds main to it.
+	put(".git/HEAD", "ref: refs/heads/main\n")
+	if wrote, err := RecordCheckout(home, main, id, at); !wrote || err != nil {
+		t.Fatalf("on main: %v %v", wrote, err)
+	}
+	if rec, _ := LoadMachineRecord(home, main); rec.BaseBranch != "main" || !rec.HasBase || len(rec.IDs) != 1 {
+		t.Errorf("the record %+v", rec)
+	}
+	if base, tr := BaseOf(home, main); base != "main" || !tr.Verified {
+		t.Errorf("on its base: %q %+v", base, tr)
+	}
+	if wrote, _ := RecordCheckout(home, main, id, at); wrote {
+		t.Error("the same base again wrote")
+	}
+	// Detached now: the record keeps main, and BaseOf refuses naming it.
+	put(".git/HEAD", "0123456789abcdef0123456789abcdef01234567\n")
+	if wrote, _ := RecordCheckout(home, main, id, at); wrote {
+		t.Error("a detached HEAD changed the record")
+	}
+	if base, tr := BaseOf(home, main); base != "main" || tr.Verified || !strings.Contains(tr.Why, `the main checkout is on a detached HEAD, and this `+
+		`machine's record names "main"`) || !strings.Contains(tr.Next, "git switch main") {
+		t.Errorf("detached: %q %+v", base, tr)
+	}
+	// Another branch: refused, naming both; recording it moves the base.
+	put(".git/HEAD", "ref: refs/heads/loose\n")
+	if base, tr := BaseOf(home, main); base != "main" || tr.Verified || !strings.Contains(tr.Why, `holds the branch "loose", and this machine's `+
+		`record names "main"`) || !strings.Contains(tr.Next, "runs bonsai update in the main checkout to record it") {
+		t.Errorf("another branch: %q %+v", base, tr)
+	}
+	if wrote, _ := RecordCheckout(home, main, id, at); !wrote {
+		t.Error("a new base was not recorded")
+	}
+	if base, tr := BaseOf(home, main); base != "loose" || !tr.Verified {
+		t.Errorf("the new base: %q %+v", base, tr)
+	}
+	// A record from before the base was kept, and one with no record at all.
+	if err := os.WriteFile(filepath.Join(dir, MachineRecordFile), []byte(`{"path": "`+filepath.ToSlash(main)+`", "ids": [{"id": "`+id+
+		`", "since": "2026-10-09T12:00:00Z"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, tr := BaseOf(home, main); tr.Verified || !strings.Contains(tr.Why, "(it was written before Bonsai kept one)") {
+		t.Errorf("an old record: %+v", tr)
+	}
+	if _, tr := BaseOf(t.TempDir(), main); tr.Verified || !strings.Contains(tr.Why, "no record") {
+		t.Errorf("no record: %+v", tr)
+	}
+	// A base_branch Bonsai does not read: the record is damaged.
+	for _, bad := range []string{`""`, `7`} {
+		if err := os.WriteFile(filepath.Join(dir, MachineRecordFile), []byte(`{"path": "/p", "ids": [], "base_branch": `+bad+`}`), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := LoadMachineRecord(home, main); err == nil || !strings.Contains(err.Error(), "base_branch") {
+			t.Errorf("base_branch %s: %v", bad, err)
+		}
+	}
+}

@@ -247,11 +247,14 @@ func TestBlessResolved(t *testing.T) {
 	})
 	t.Run("no rise left", func(t *testing.T) {
 		f := offered(t)
+		// A person raises the floor to the count and commits it (the ladder reads bonsai.yaml as committed); the task's
+		// next climb, at the new HEAD, measures no rise, and resolves the ask.
 		f.write("bonsai.yaml", yamlOf("[1]", "\n  found: 5", "[]", countRung(show("count.txt"))))
-		a := f.climb("", Options{Task: "T-0902"}) // dirty (bonsai.yaml changed), so it offers nothing of its own
-		if blessOps(a) != "resolve ladder:bless-T-0901" ||
+		f.commit("the floor raised to the blessed count")
+		a := f.climb("", Options{Task: "T-0901"})
+		if a.Exit != 0 || blessOps(a) != "resolve ladder:bless-T-0901" ||
 			!strings.Contains(f.out.String(), "its offer is gone: the last climb for T-0901 measured no ratchet above its floor") {
-			t.Fatalf("bless %s\n%s", blessOps(a), f.out.String())
+			t.Fatalf("exit %d, bless %s\n%s", a.Exit, blessOps(a), f.out.String())
 		}
 	})
 	t.Run("a second filing", func(t *testing.T) {

@@ -189,14 +189,36 @@ func fileSHA256(p string) (string, error) {
 }
 
 // RecordCheckout writes this machine's record of the plan's main checkout (workspace/record.go) once init or update
-// ended without a refusal, in the main checkout only: its path and bonsai.yaml's id. It reports what went wrong, for
-// the command's text, and never fails the command (the project's files are written).
+// ended without a refusal, in the main checkout only: its path, bonsai.yaml's id and the branch it holds as the
+// workspace's base (another base than the one recorded is refused to an agent before this: BaseChange). It reports
+// what went wrong, for the command's text, and never fails the command (the project's files are written).
 func RecordCheckout(p *Plan) error {
 	if p == nil || p.Config == nil || p.Home == "" || !samePath(p.Root, p.Main) {
 		return nil
 	}
 	_, err := workspace.RecordCheckout(p.Home, p.Main, p.Config.ID, recordClock())
 	return err
+}
+
+// BaseChange says whether this machine's record of the plan's main checkout, written once init or update ends
+// (RecordCheckout), would record a base branch other than the one it already names: was and now, and changes true
+// when they differ. Recording another base is a person's step (workspace/record.go: an agent could switch the main
+// checkout to a branch whose bonsai.yaml says otherwise and record it), which the command refuses in an agent's
+// session (cmd/bonsai). The first record, a record that names no base yet, the same branch again, and a detached HEAD
+// (which records none) are no change. Only the main checkout records.
+func BaseChange(p *Plan) (was, now string, changes bool) {
+	if p == nil || p.Config == nil || p.Home == "" || !samePath(p.Root, p.Main) {
+		return "", "", false
+	}
+	rec, err := workspace.LoadMachineRecord(p.Home, p.Main)
+	if err != nil || rec == nil || rec.BaseBranch == "" {
+		return "", "", false
+	}
+	now = workspace.ReadGitLayout(p.Main).Branch()
+	if now == "" || now == rec.BaseBranch {
+		return "", "", false
+	}
+	return rec.BaseBranch, now, true
 }
 
 // recordClock is the time a machine record is stamped with (a variable, so a test can set it).

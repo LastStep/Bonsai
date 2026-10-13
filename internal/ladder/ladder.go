@@ -22,7 +22,16 @@
 //  3. The rungs (note 2): the floor plus the task's bonsai.ladder (stopgate.RungsWanted, the stop gate's own reading,
 //     so the result asks for exactly what the gate requires); with --ci and no task, every rung. A requested rung that
 //     bonsai.yaml does not define is rung-not-defined (exit 2). The rungs are main's bonsai.yaml's: a branch never
-//     climbs by rungs of its own making.
+//     climbs by rungs of its own making. And main's bonsai.yaml as committed at its HEAD, git's object
+//     (stopgate.CommittedConfig, the stop gate's own reading): the ladder, the floor, the ratchets and ci_marked_tests
+//     come from it, and while the file in the main checkout differs from it, or HEAD holds none, the climb refuses
+//     (config-uncommitted, exit 4, a person's step: commit or revert it), since an uncommitted edit there (a shell
+//     write the guard does not judge in agents mode) could lower a floor for one climb. A local climb also needs the
+//     main checkout on the workspace's base branch, the one this machine's record names (workspace.BaseOf: another
+//     branch, a detached HEAD or a record from before Bonsai kept a base is main-not-verified, exit 4, a person's
+//     step); --ci, which proves no task and may run where there is no record, skips that. bonsai.yaml changed in the
+//     main checkout during the climb makes the result dirty. What remains: a commit on the base branch that loosens
+//     bonsai.yaml is history the ladder trusts, as it trusts the base branch's code.
 //  4. One ladder at a time per home (note 8, lock.go): the home's locks/ladder.lock, held by a lock the system ends
 //     with its holder; a second climb waits while the holder lives inside its budget, then refuses (ladder-busy,
 //     exit 4). A nested climb (BONSAI_LADDER=1: a ladder run inside a rung) takes no lock: its outer climb holds it.
@@ -58,6 +67,7 @@
 package ladder
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -239,11 +249,32 @@ func prepare(o Options) (*Climb, *engine.Error) {
 	default:
 		c.unverified = trust.Why
 	}
-	cfg, err := workspace.LoadConfigFull(c.Main)
-	if err != nil {
-		return c, engine.ConfigError(err)
+	if !o.CI {
+		if _, onBase := workspace.BaseOf(home, c.Main); !onBase.Verified {
+			return c, &engine.Error{Code: "main-not-verified", Exit: ExitState, Who: "person",
+				What: "the main checkout is not on its base branch: " + onBase.Why + "; the ladder's settings and the task are read from the " +
+					"main checkout, so nothing was run",
+				Next: onBase.Next + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
+		}
+	}
+	cfg, err := stopgate.CommittedConfig(c.Main, configWait)
+	var uncommitted *stopgate.UncommittedError
+	switch {
+	case errors.As(err, &uncommitted):
+		return c, &engine.Error{Code: "config-uncommitted", Exit: ExitState, Who: "person",
+			What: uncommitted.Why + ", and the ladder reads its rungs, floor, ratchets and ci_marked_tests from the committed one only, " +
+				"so nothing was run",
+			Next: stopgate.UncommittedNext + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
+	case err != nil:
+		var we *workspace.Error
+		if errors.As(err, &we) {
+			return c, engine.ConfigError(err)
+		}
+		return c, &engine.Error{Code: "read-failed", Exit: ExitRuntime, What: oneLine(err.Error()) + ", so nothing was run",
+			Next: "run: git status in the main checkout, and fix what it reports; then run: bonsai ladder " + c.taskFlag() + " --json"}
 	}
 	c.Config = cfg
+	c.configBytes = mainConfigBytes(c.Main)
 	c.workspace = &format.WorkspaceRef{ID: cfg.ID, Name: cfg.Name, Root: filepath.ToSlash(c.Main)}
 	if e := c.findTask(); e != nil {
 		return c, e
@@ -362,6 +393,19 @@ func (c *Climb) findRungs() *engine.Error {
 	}
 	sortRungs(c.rungs)
 	return nil
+}
+
+// configWait is the limit of the git call that reads bonsai.yaml at the main checkout's HEAD.
+const configWait = 30 * time.Second
+
+// mainConfigBytes is the main checkout's bonsai.yaml as the file holds it now, its line ends read as LF; nil when it
+// cannot be read. The climb reads it at its start and its end: a file changed in between makes the result dirty.
+func mainConfigBytes(main string) []byte {
+	raw, err := os.ReadFile(filepath.Join(main, workspace.ConfigFile))
+	if err != nil {
+		return nil
+	}
+	return bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n"))
 }
 
 // taskFlag is the --task part of a next step's command line: the task's id when it is known, else a placeholder.

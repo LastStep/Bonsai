@@ -206,10 +206,16 @@ func TestRung0NotJudgedKept(t *testing.T) {
 	f.writeIn(wt, "assets/old/a.txt", "changed on the branch\n")
 	f.commitIn(wt, "a protected change")
 	testpack.Git(t, f.root, "checkout", "-q", "--detach")
-	a = f.climb(wt, Options{Task: "T-0901"})
-	r = f.result("T-0901").Rungs[0]
+	// A local climb refuses while the main checkout is off its base branch; a --ci climb, which proves no task, runs and
+	// says what it could not judge.
+	if a = f.climb(wt, Options{Task: "T-0901"}); a.Exit != ExitState || a.Error == nil || a.Error.Code != "main-not-verified" ||
+		!strings.Contains(a.Error.What, "the main checkout is on a detached HEAD") {
+		t.Fatalf("a local climb with main detached: exit %d, %+v", a.Exit, a.Error)
+	}
+	a = f.climb(wt, Options{Task: "T-0901", CI: true})
+	r = f.result("ci").Rungs[0]
 	nj := r.Captures.String("not_judged")
-	if a.Exit != 0 || r.Status != "green" || !strings.HasPrefix(nj, "the branch's commits (no base branch: the main checkout's HEAD is detached") ||
+	if r.Status != "green" || !strings.HasPrefix(nj, "the branch's commits (no base branch: the main checkout's HEAD is detached") ||
 		!strings.HasSuffix(nj, "; bonsai check's findings about this machine, not the commit (bonsai-path)") {
 		t.Errorf("no base: exit %d, %s, not_judged %q", a.Exit, r.Status, nj)
 	}

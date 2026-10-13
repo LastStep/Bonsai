@@ -97,6 +97,9 @@ func (c *Climb) printSummary(l *format.Ladder, w *Written, d *format.Climb) {
 	if len(c.hides) > 0 {
 		c.say("  git integrity found a change git hides (rung %s): the result counts the tree as dirty", strings.Join(c.hides, ", "))
 	}
+	if c.configMoved {
+		c.say("  the main checkout's bonsai.yaml changed during the climb: the result counts the tree as dirty")
+	}
 	if c.treeErr != "" {
 		c.say("  the tree could not be read, so the result counts it as dirty: %s", c.treeErr)
 	}

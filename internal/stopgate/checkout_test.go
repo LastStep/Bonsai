@@ -114,7 +114,7 @@ func TestTheWorktreeTheSessionIsIn(t *testing.T) {
 				dir = wt
 			}
 			code, stderr := gateIn(t, dir, cwd)
-			blocks(t, code, stderr, root, RuleOtherCommit, `proves commit "5d6e7f8091a2", but this checkout's HEAD is 9a8b7c6d5e4f`,
+			blocks(t, code, stderr, root, RuleOtherCommit, `proves commit "`+headSHA[:12]+`", but this checkout's HEAD is 9a8b7c6d5e4f`,
 				"bonsai ladder --task T-0901 at this HEAD")
 			checkoutIs(t, root, filepath.Base(wt), "worktree-x")
 
@@ -194,7 +194,7 @@ func TestACwdOutsideTheProjectKeepsItsCheckout(t *testing.T) {
 
 			writeResult(t, root, "T-0901", greenResult(wtSHA))
 			code, stderr = gateIn(t, root, cwd)
-			blocks(t, code, stderr, root, RuleOtherCommit, `proves commit "9a8b7c6d5e4f", but this checkout's HEAD is 5d6e7f8091a2`,
+			blocks(t, code, stderr, root, RuleOtherCommit, `proves commit "9a8b7c6d5e4f", but this checkout's HEAD is `+headSHA[:12],
 				"bonsai ladder --task T-0901 at this HEAD")
 		})
 	}
@@ -282,7 +282,7 @@ func TestAnUntiedCheckoutMustBeProvenToo(t *testing.T) {
 			}
 			blocks(t, code, stderr, root, RuleOtherCommit, "the session's working folder is in "+c.at+", ", "cd back into")
 			if !strings.Contains(stderr, `so the ladder result for T-0901 must prove its HEAD as well as this project's checkout's: `+
-				`it proves commit "5d6e7f8091a2", and that HEAD is `) {
+				`it proves commit "`+headSHA[:12]+`", and that HEAD is `) {
 				t.Errorf("the reason: %q", stderr)
 			}
 			checkoutIs(t, root, filepath.Base(root), "main")
@@ -305,7 +305,7 @@ func TestAWorktreeSessionInItsMainCheckout(t *testing.T) {
 	checkoutIs(t, root, filepath.Base(root), "main")
 	writeResult(t, root, "T-0901", greenResult(wtSHA))
 	code, stderr = gateIn(t, wt, root)
-	blocks(t, code, stderr, root, RuleOtherCommit, "but this checkout's HEAD is 5d6e7f8091a2", "bonsai ladder --task T-0901")
+	blocks(t, code, stderr, root, RuleOtherCommit, "but this checkout's HEAD is "+headSHA[:12], "bonsai ladder --task T-0901")
 	// With no cwd, CLAUDE_PROJECT_DIR's checkout, the worktree, is judged, as before.
 	code, stderr = gateIn(t, wt, "")
 	allows(t, code, stderr, root)

@@ -184,6 +184,7 @@ func TestVerGitTestForms(t *testing.T) {
 	tap := yamlOf("[1, 5]", "{}", "[]", rung{n: 1, name: "one", command: "echo one", required: true},
 		rung{n: 5, name: "git", kind: "ver-git", tst: "tap"}, rung{n: 7, name: "go", command: "echo go", tst: "go-test-json"})
 	f.write("bonsai.yaml", tap)
+	f.commit("the git rung reads tap")
 	f.out.Reset()
 	if a := f.climb(wt, Options{Task: "T-0901"}); a.Exit != 0 {
 		t.Fatalf("exit %d\n%s", a.Exit, f.out.String())

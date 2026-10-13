@@ -59,24 +59,25 @@ const (
 	RuleNotLinked = "not-linked"
 
 	// The stop gate's own (internal/stopgate), in the order it checks.
-	RuleStopNotNamed       = "stop-not-named"
-	RuleStopTaskMissing    = "stop-task-missing"
-	RuleStopTaskTwice      = "stop-task-twice"
-	RuleStopTaskBroken     = "stop-task-broken"
-	RuleStopTaskUnreadable = "stop-task-unreadable"
-	RuleStopBadRungs       = "stop-bad-rungs"
-	RuleStopNoRunReport    = "stop-no-run-report"
-	RuleStopNoResult       = "stop-no-result"
-	RuleStopBadResult      = "stop-bad-result"
-	RuleStopOtherTask      = "stop-other-task"
-	RuleStopNotLocal       = "stop-not-local"
-	RuleStopRed            = "stop-red"
-	RuleStopHeadUnreadable = "stop-head-unreadable"
-	RuleStopOtherCommit    = "stop-other-commit"
-	RuleStopDirty          = "stop-dirty"
-	RuleStopRungMissing    = "stop-rung-missing"
-	RuleStopRungNotGreen   = "stop-rung-not-green"
-	RuleStopProven         = "stop-proven"
+	RuleStopNotNamed          = "stop-not-named"
+	RuleStopTaskMissing       = "stop-task-missing"
+	RuleStopTaskTwice         = "stop-task-twice"
+	RuleStopTaskBroken        = "stop-task-broken"
+	RuleStopTaskUnreadable    = "stop-task-unreadable"
+	RuleStopBadRungs          = "stop-bad-rungs"
+	RuleStopNoRunReport       = "stop-no-run-report"
+	RuleStopNoResult          = "stop-no-result"
+	RuleStopBadResult         = "stop-bad-result"
+	RuleStopOtherTask         = "stop-other-task"
+	RuleStopNotLocal          = "stop-not-local"
+	RuleStopRed               = "stop-red"
+	RuleStopHeadUnreadable    = "stop-head-unreadable"
+	RuleStopOtherCommit       = "stop-other-commit"
+	RuleStopDirty             = "stop-dirty"
+	RuleStopConfigUncommitted = "stop-config-uncommitted"
+	RuleStopRungMissing       = "stop-rung-missing"
+	RuleStopRungNotGreen      = "stop-rung-not-green"
+	RuleStopProven            = "stop-proven"
 )
 
 // Rule is one row of the rules table.
@@ -98,7 +99,8 @@ var Rules = []Rule{
 	{RuleStandIn, false, "a file named as Bonsai's program (bonsai, bonsai.exe, bonsai.cmd, bonsai.bat, bonsai.ps1, bonsai.com) " +
 		"outside every linked project, which a folder on the PATH could hold"},
 	{RuleMainNotVerified, false, "a guarded path where no project holding it is a verified checkout, so no task's grant can count; " +
-		"for the stop gate, the session's checkout's main checkout is not verified, so its task and ladder result are not trusted"},
+		"for the stop gate, the session's checkout's main checkout is not verified, or not on the base branch this machine " +
+		"recorded for it, so its task and ladder result are not trusted"},
 	{RuleOtherProject, false, "a delete or move of another linked project's top folder or its .git, .bonsai or .claude folder (that " +
 		"project on this machine's record)"},
 	{RuleGranted, true, "a guarded path the running task's bonsai.allows holds (the task read from the verified main checkout)"},
@@ -159,6 +161,8 @@ var Rules = []Rule{
 	{RuleStopHeadUnreadable, false, "the stop gate: the commit at the checkout's HEAD cannot be read from its git files"},
 	{RuleStopOtherCommit, false, "the stop gate: the ladder result proves another commit than the checkout's HEAD"},
 	{RuleStopDirty, false, "the stop gate: the ladder result was made on a tree with uncommitted changes"},
+	{RuleStopConfigUncommitted, false, "the stop gate: the main checkout's bonsai.yaml differs from the one committed at its HEAD, " +
+		"or its HEAD holds none, so the ladder's settings there are not trusted"},
 	{RuleStopRungMissing, false, "the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the " +
 		"task's bonsai.ladder"},
 	{RuleStopRungNotGreen, false, "the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result"},

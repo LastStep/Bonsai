@@ -27,8 +27,13 @@
 //     and the payload reads as a Stop payload (bad-input);
 //  2. the main checkout is verified (workspace.VerifyMain: git's own link back for a worktree, and this machine's
 //     record), since the task and the ladder result are read from it and an unverified main could be a decoy
-//     (main-not-verified, recorded in the session's own checkout);
-//  3. main's bonsai.yaml reads in full (bad-config): its task folder, its run folder and ladder_floor;
+//     (main-not-verified, recorded in the session's own checkout); and it holds the workspace's base branch, the one
+//     this machine's record names (workspace.BaseOf: a main switched to another branch, whose committed bonsai.yaml may
+//     say otherwise, or on a detached HEAD, or recorded before Bonsai kept a base: main-not-verified);
+//  3. main's bonsai.yaml as committed at its HEAD, git's object, read in full: its task folder, its run folder and
+//     ladder_floor (CommittedConfig, config.go; one git process, through internal/vergit's fixed environment); while
+//     the file in the main checkout differs from it, or HEAD holds none, the gate blocks (stop-config-uncommitted: a
+//     person commits or reverts it); a committed file that cannot be read is bad-config;
 //  4. the named task: exactly one file in main's task folder has the id, and it parses under its format (the active-task
 //     function, workspace.Active: stop-task-missing, stop-task-twice, stop-task-broken; stop-task-unreadable when the
 //     folder cannot be read), and its bonsai.ladder label (format 0's ladder) reads as rung numbers (stop-bad-rungs);
@@ -44,7 +49,13 @@
 //     stop-rung-missing), each of them green among its rungs (stop-rung-not-green).
 //
 // When every check holds it allows (stop-proven). Unlike today's gate, the ladder result is needed whatever the task's
-// status says, as spec §7 and the plan's note 2 have it, and a git process is never started.
+// status says, as spec §7 and the plan's note 2 have it. It starts one git process, to read bonsai.yaml at the main
+// checkout's HEAD (step 3); HEAD itself is read from git's files (head.go).
+//
+// What remains (5.4's fix round): the base branch is the one this machine recorded; a commit on that branch that
+// loosens bonsai.yaml is a commit like any other, which the gate trusts as it trusts the branch's history (a person
+// reads it, and the guard protects bonsai.yaml in an agent's edits). The machine record is the home's: an agent able to
+// write the Bonsai home can rewrite it, as it could rewrite any of the home's records.
 //
 // The frame (internal/hookin's Frame, as the guard's): its own timer first, at Budget, half the line's 10 s timeout (a
 // Stop hook that times out does not block, and Claude Code's onFailure setting has no effect on Stop hooks), the work in
@@ -96,6 +107,9 @@ import (
 // before the timeout could let the session end.
 const Budget = 5 * time.Second
 
+// gitWait is the limit of the gate's one git call (CommittedConfig), inside Budget.
+const gitWait = 4 * time.Second
+
 // The rules a stop gate decision names: the record's rule field (contract §8.1). Their one home is the guard's rules
 // table (guard.Rules, internal/guard/rules.go), which the reference page lists; this package cannot import the guard,
 // whose tests run the stop gate, so it keeps these copies, and TestRuleNames holds them to that table, name and answer.
@@ -109,23 +123,24 @@ const (
 	RuleOverTime        = "over-time"         // deny: the gate ran past its own time limit
 	RuleInternal        = "internal-error"    // deny: the gate failed inside (a panic)
 
-	RuleProven         = "stop-proven"          // allow: a green local ladder result proves the checkout's HEAD
-	RuleTaskMissing    = "stop-task-missing"    // deny: no task file has the named id
-	RuleTaskTwice      = "stop-task-twice"      // deny: two or more task files have the named id
-	RuleTaskBroken     = "stop-task-broken"     // deny: the named task's file does not parse under its format
-	RuleTaskUnreadable = "stop-task-unreadable" // deny: the main checkout's task folder or a file in it cannot be read
-	RuleBadRungs       = "stop-bad-rungs"       // deny: the task's bonsai.ladder, or the workspace's ladder_floor, is not a list of rung numbers
-	RuleNoRunReport    = "stop-no-run-report"   // deny: the session's checkout holds no run report for the task
-	RuleNoResult       = "stop-no-result"       // deny: there is no ladder result for the task in the main checkout
-	RuleBadResult      = "stop-bad-result"      // deny: the ladder result cannot be read, or does not read as bonsai.ladder/1
-	RuleOtherTask      = "stop-other-task"      // deny: the ladder result at the task's path was made for another task (another id, none, or another workspace)
-	RuleNotLocal       = "stop-not-local"       // deny: the ladder result's mode is not local (a CI run is never a task's proof)
-	RuleRed            = "stop-red"             // deny: the ladder result is not green
-	RuleHeadUnreadable = "stop-head-unreadable" // deny: the commit at the checkout's HEAD cannot be read from its git files
-	RuleOtherCommit    = "stop-other-commit"    // deny: the ladder result proves another commit than the checkout's HEAD
-	RuleDirty          = "stop-dirty"           // deny: the ladder result was made on a tree with uncommitted changes
-	RuleRungMissing    = "stop-rung-missing"    // deny: the result did not ask for a rung of the floor or of the task's bonsai.ladder
-	RuleRungNotGreen   = "stop-rung-not-green"  // deny: a rung of the floor or of the task's bonsai.ladder is not green in the result
+	RuleProven            = "stop-proven"             // allow: a green local ladder result proves the checkout's HEAD
+	RuleTaskMissing       = "stop-task-missing"       // deny: no task file has the named id
+	RuleTaskTwice         = "stop-task-twice"         // deny: two or more task files have the named id
+	RuleTaskBroken        = "stop-task-broken"        // deny: the named task's file does not parse under its format
+	RuleTaskUnreadable    = "stop-task-unreadable"    // deny: the main checkout's task folder or a file in it cannot be read
+	RuleBadRungs          = "stop-bad-rungs"          // deny: the task's bonsai.ladder, or the workspace's ladder_floor, is not a list of rung numbers
+	RuleNoRunReport       = "stop-no-run-report"      // deny: the session's checkout holds no run report for the task
+	RuleNoResult          = "stop-no-result"          // deny: there is no ladder result for the task in the main checkout
+	RuleBadResult         = "stop-bad-result"         // deny: the ladder result cannot be read, or does not read as bonsai.ladder/1
+	RuleOtherTask         = "stop-other-task"         // deny: the ladder result at the task's path was made for another task (another id, none, or another workspace)
+	RuleNotLocal          = "stop-not-local"          // deny: the ladder result's mode is not local (a CI run is never a task's proof)
+	RuleRed               = "stop-red"                // deny: the ladder result is not green
+	RuleHeadUnreadable    = "stop-head-unreadable"    // deny: the commit at the checkout's HEAD cannot be read from its git files
+	RuleOtherCommit       = "stop-other-commit"       // deny: the ladder result proves another commit than the checkout's HEAD
+	RuleDirty             = "stop-dirty"              // deny: the ladder result was made on a tree with uncommitted changes
+	RuleConfigUncommitted = "stop-config-uncommitted" // deny: the main checkout's bonsai.yaml differs from the one committed at its HEAD, or HEAD holds none
+	RuleRungMissing       = "stop-rung-missing"       // deny: the result did not ask for a rung of the floor or of the task's bonsai.ladder
+	RuleRungNotGreen      = "stop-rung-not-green"     // deny: a rung of the floor or of the task's bonsai.ladder is not green in the result
 
 	// Allowed with no record: the gate does not engage.
 	RuleNotNamed  = "stop-not-named" // allow (no record): BONSAI_TASK names no task
@@ -268,6 +283,11 @@ func (r *run) work() Decision {
 		return r.recorded(deny(RuleMainNotVerified, "", "the main checkout of this checkout is not verified: "+trust.Why+
 			"; the task "+quote(named)+" and its ladder result are read from the main checkout, so the stop gate cannot trust them",
 			trust.Next+"; then run: bonsai ladder --task "+named))
+	}
+	if _, onBase := workspace.BaseOf(h, at.local.Main); !onBase.Verified {
+		return r.recorded(deny(RuleMainNotVerified, "", "the main checkout is not on its base branch: "+onBase.Why+"; the task "+
+			quote(named)+" and the ladder's settings are read from the main checkout, so the stop gate cannot trust them",
+			onBase.Next+"; then run: bonsai ladder --task "+named))
 	}
 	co, ok, also := cwdCheckout(in.Cwd, root, at.local.Main)
 	if ok {
@@ -421,10 +441,15 @@ var judgeFn = judge
 // working folder whose HEAD the result must prove too (cwdCheckout).
 func judge(local workspace.Local, layout workspace.GitLayout, also *untied, named string) Decision {
 	ladder := "run: bonsai ladder --task " + named
-	cfg, err := workspace.LoadConfigFull(local.Main)
-	if err != nil {
-		return deny(RuleBadConfig, "", "the main checkout's bonsai.yaml cannot be read in full ("+osWords(err)+"), so the "+
-			"stop gate cannot tell where the task "+quote(named)+" is or which rungs it needs", nextOf(err,
+	cfg, err := CommittedConfig(local.Main, gitWait)
+	var uncommitted *UncommittedError
+	switch {
+	case errors.As(err, &uncommitted):
+		return deny(RuleConfigUncommitted, workspace.ConfigFile, uncommitted.Why+", and the ladder's rungs and floor are read "+
+			"from the committed one only, so the stop gate does not trust the settings there", UncommittedNext+"; then "+ladder)
+	case err != nil:
+		return deny(RuleBadConfig, "", "the main checkout's bonsai.yaml cannot be read in full as committed at its HEAD ("+
+			osWords(err)+"), so the stop gate cannot tell where the task "+quote(named)+" is or which rungs it needs", nextOf(err,
 			"a person fixes bonsai.yaml (bonsai check names the line)")+"; then "+ladder)
 	}
 	w := cfg.Full

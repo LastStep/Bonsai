@@ -42,7 +42,7 @@ var executable = os.Executable
 // result builds the climb's result (contract §11): every field, free text redacted where it was read.
 func (c *Climb) result(finished string) *format.Ladder {
 	g := c.git
-	if c.dirtyAfter || (c.headAfter != g.SHA) || len(c.hides) > 0 {
+	if c.dirtyAfter || (c.headAfter != g.SHA) || len(c.hides) > 0 || c.configMoved {
 		g.Dirty = true
 	}
 	green := len(c.results) > 0
