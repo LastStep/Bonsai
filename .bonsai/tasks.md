@@ -6,4 +6,4 @@ Active task when none is named: T-5490
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
 | T-5490 | The end verification of 5.4, a fresh verifier runs the 5.4 done checks 16 to 23 | running | | 2026-10-13 | |
-| T-5407 | The switch, Bonsai guards its own repo and proves its work with bonsai ladder | verify | | 2026-10-13 | |
+| T-5407 | The switch, Bonsai guards its own repo and proves its work with bonsai ladder | done | | 2026-10-13 | 2026-10-13 |

@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5407
 title: The switch, Bonsai guards its own repo and proves its work with bonsai ladder
-status: verify
+status: done
 lane:
 done_when:
   - "bonsai.yaml validates under bonsai.workspace/1, a comment on every line, with the rungs, floor, protected and person_only lists plan-5's switch sets"
@@ -18,7 +18,7 @@ depends_on: []
 blocked_by:
 created: 2026-10-13
 started: 2026-10-13
-finished:
+finished: 2026-10-13
 labels:
   bonsai.branch: "5.4.7"
   bonsai.ladder: []
