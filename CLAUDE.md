@@ -102,6 +102,11 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   edit: it runs the ladder with `--json`, reads the result, fixes what is red and climbs again, and asks a person only
   where a refusal's `next.who` says `person`.
 - **`STATE.md`** is rewritten, never appended, whenever where Bonsai stands changes.
+- **Claude Code's memory, from the link:** the link writes `autoMemoryEnabled: false` into `.claude/settings.json`; by
+  Rohan's word of 13 Oct ("A. Keep them on"), his sitting adds `"autoMemoryEnabled": true` to his own local settings
+  file (.claude/settings.local.json in the main checkout, out of git, read by no Bonsai check), so this repo's Claude
+  Code memory notes keep loading until 5.6's personal layer takes them over. No agent copies the notes anywhere or
+  edits that file (the guard refuses it).
 
 ## `bonsai.yaml`: stricter only, from the link
 
@@ -113,6 +118,15 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   `tests`, `ratchet` or `capture` changed; a rung, floor entry, protected or person-only path taken out; a name added to
   `ci_marked_tests`; a release file changed beyond its section. Why: an agent loosening the checks it is held to would
   be judging its own work. Each part's end verifier reads every change to `bonsai.yaml` in the part against this rule.
+- **A `bonsai.yaml` change reaches the ladder only once committed on `main`:** a climb reads the rungs, floor, ratchets
+  and `ci_marked_tests` from main's committed copy, and refuses while the main checkout's file differs from it
+  (`config-uncommitted`, a person's step: commit or revert it).
+- **Loosening is refused in code until Rohan re-records it:** a climb whose committed settings loosen any check (a
+  floor, a rung, a ratchet, a protected or person-only path, `ci_marked_tests`) against what this machine last accepted
+  is refused (`config-looser`) until Rohan runs `bonsai update` in the main checkout; tightening is accepted and
+  recorded automatically, so raising floors needs no person.
+- **`main` stays on its branch:** the main checkout keeps the base branch this machine recorded at the link checked
+  out; a climb (and the stop gate) refuses while it holds another branch or a detached HEAD.
 - **The floors, once a part:** after the part's last records commit, the orchestrator climbs `main` once under the
   part's last task, raises the floors to that climb's counts under a task (`T-5x9N`) granting `bonsai.yaml`, records the
   Bless numbers in its run report and gives Rohan the floors in the part's last line, with nothing to answer.
