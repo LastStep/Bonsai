@@ -67,6 +67,13 @@
 // new-tests check, after the last rung (kinds.go's afterRungs), ends the check, whose new tests read "check not run",
 // and the climb writes its result as the rungs left it.
 //
+// Known limits: the earlier result's fingerprint (step 5) is a line of main's log, plain NDJSON nothing signs, so a
+// ladder record appended by hand with the sha256 of a hand-edited result makes that result read as the last climb's
+// (V2b's S5; climb.go's prior says what it can steer: git integrity's comparisons and the rise step's recorded base,
+// never a rung's colour); a chain of fingerprints would close it, not built. The settings for the checks the machine
+// record keeps (step 3) are bonsai.yaml's: the packs' protected paths, which the guard and rung 0 read from
+// .bonsai/lock.json's declares, are not among them.
+//
 // Files: ladder.go (this file: Options, Run, the steps before a rung), climb.go (the climb's state, which kinds.go's
 // functions read), kinds.go (the one file through which the runner calls each rung kind and each step after a rung),
 // rungs.go (command rungs, tests, captures, ratchets), result.go (the result, the fingerprint, the cleaner), lock.go

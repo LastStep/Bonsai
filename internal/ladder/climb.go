@@ -106,6 +106,14 @@ func (c *Climb) mode() string {
 // base with, and what the rise step takes a recorded base from: a file put there by hand, or an older result copied
 // back, would steer both, so only the result the last climb wrote is read. note says why a result that is there is not
 // read, for the human lines ("" when it is read, or there is none).
+//
+// Known limit (V2b's S5): the fingerprint is only as good as the log. The log is plain NDJSON in the main checkout's
+// .bonsai/local/log/, which Bonsai writes and nothing signs, so one ladder record appended by hand (the right event,
+// workspace, task, target and kind, a later at, and the sha256 of a hand-edited result) makes that result read as the
+// last climb's. What it can steer is what this function feeds: git integrity's comparisons (the stash count, the
+// exclude hash, the recorded base) and the rise step's recorded base; never a rung's colour, and the stop gate reads
+// no earlier result. A chain (each ladder record naming the fingerprint of the one before, from the first) would
+// close it; it is not built (5.4's second fix round), and the package's comment names it.
 func (c *Climb) prior() (l *format.Ladder, note string) {
 	if c.Task == nil {
 		return nil, ""
