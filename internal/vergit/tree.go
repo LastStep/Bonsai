@@ -16,6 +16,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // maxDepth is how deep submodules inside submodules are read; one deeper cannot be proved and counts as dirty.
@@ -143,9 +145,9 @@ func (j *judgment) tree(depth int) (TreeState, error) {
 func (j *judgment) contents() ([]string, error) {
 	tmp, err := os.MkdirTemp("", "bonsai-index-")
 	if err != nil {
-		return nil, fmt.Errorf("no temporary folder for a fresh index: %v", err)
+		return nil, fmt.Errorf("no temporary folder for a fresh index: %s", osWords(err))
 	}
-	defer func() { _ = os.RemoveAll(tmp) }()
+	defer removeTree(tmp)
 	off, err := j.filtersOff()
 	if err != nil {
 		return nil, err
@@ -173,6 +175,27 @@ func (j *judgment) contents() ([]string, error) {
 		changed = append(changed, e[3:])
 	}
 	return changed, nil
+}
+
+// removeTree removes a temporary folder this package made and everything in it, each file and then each folder, the
+// deepest first, with workspace.RemoveFile, which retries while Windows reports one busy (an antivirus scan or an
+// indexer opening a fresh index). Best effort: what still cannot be removed is left in the system's temporary folder,
+// where it changes no read.
+func removeTree(dir string) {
+	var dirs []string
+	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+		case d.IsDir():
+			dirs = append(dirs, p)
+		default:
+			_ = workspace.RemoveFile(p)
+		}
+		return nil
+	})
+	for i := len(dirs) - 1; i >= 0; i-- {
+		_ = workspace.RemoveFile(dirs[i])
+	}
 }
 
 // filterKey is a filter driver's setting in git's configuration.

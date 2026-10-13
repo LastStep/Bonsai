@@ -290,3 +290,32 @@ func TestTreeReadsSubmodules(t *testing.T) {
 		}
 	})
 }
+
+// setTemp points the system's temporary folder at dir, as os.TempDir reads it on each system.
+func setTemp(t *testing.T, dir string) {
+	t.Helper()
+	for _, k := range []string{"TMPDIR", "TMP", "TEMP"} {
+		t.Setenv(k, dir)
+	}
+}
+
+// The fresh index's temporary folder (V2b's S7): removed after the read, each file through workspace.RemoveFile's
+// retry; an error making it says why in words and names no folder (on Windows, a path with backslashes and the
+// user's own folder).
+func TestTreeTemporaryFolder(t *testing.T) {
+	isolate(t)
+	root, _ := repo(t)
+	tmp := t.TempDir()
+	setTemp(t, tmp)
+	if st := tree(t, root); st.Dirty {
+		t.Fatalf("%+v", st)
+	}
+	if left, err := os.ReadDir(tmp); err != nil || len(left) != 0 {
+		t.Errorf("the read left %v behind (%v)", left, err)
+	}
+	setTemp(t, filepath.Join(tmp, "gone"))
+	st, err := Tree(Input{Root: root})
+	if want := "no temporary folder for a fresh index: it is not there"; err == nil || err.Error() != want || !st.Dirty {
+		t.Errorf("Tree = %+v, %v; want dirty and %q", st, err, want)
+	}
+}
