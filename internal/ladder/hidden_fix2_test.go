@@ -1,12 +1,14 @@
 package ladder
 
 // Changes hidden from git status by a setting inside the repository that no diff shows (V2b's reproducers b1-ident,
-// b1w-ident-worktree and b2-ident-committed, and its encoding probe), through the runner and the stop gate: the result counts the tree as dirty, names the path, rung 0 judges it by the guard's function,
+// b1w-ident-worktree, b2-ident-committed and b3-ignorecase, and its encoding and file-mode probes), through the runner
+// and the stop gate: the result counts the tree as dirty, names the path, rung 0 judges it by the guard's function,
 // and the stop gate refuses the result.
 
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -109,4 +111,48 @@ func TestHiddenByAnEncoding(t *testing.T) {
 	stageHidden(t, f.root, "src/want.txt", "caf\xe9\n")
 	hiddenClimb(t, f, f.root, "1",
 		`    "src/want.txt": its bytes differ from HEAD's, though the working-tree-encoding attribute makes git read them as HEAD's`+"\n")
+}
+
+// b3: core.ignorecase=true on a case-sensitive file system hides an untracked file beside a tracked one whose name
+// differs only in case; here a protected one, which rung 0 refuses. Needs a case-sensitive file system: Linux's.
+func TestHiddenByIgnorecase(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("needs a case-sensitive file system: two names differing only in case are one file on Windows and macOS")
+	}
+	f := r0Project(t)
+	testpack.Git(t, f.root, "config", "core.ignorecase", "true")
+	f.write("assets/old/A.TXT", "a protected asset, beside a.txt\n")
+	if s := testpack.Git(t, f.root, "status", "--porcelain", "--untracked-files=all"); s != "" {
+		t.Fatalf("plain git status shows the file: %q", s)
+	}
+	a := f.climb("", Options{Task: "T-0901"})
+	l := f.result("T-0901")
+	if a.Exit != ExitRed || statuses(l) != "0:red 1:skipped" || !l.Git.Dirty {
+		t.Fatalf("exit %d, %s, dirty %v\n%s", a.Exit, statuses(l), l.Git.Dirty, f.out.String())
+	}
+	if r := l.Rungs[0]; r.Reason == nil || !strings.Contains(*r.Reason, `"assets/old/A.TXT" (protected)`) {
+		t.Errorf("rung 0: %v", r.Reason)
+	}
+	if code, stderr := gate(t, f.root, "T-0901"); code != 2 {
+		t.Errorf("the stop gate let the session end: %d %q", code, stderr)
+	}
+}
+
+// core.fileMode=false hides an executable bit (a script HEAD cannot run by name). Needs a file system that keeps
+// executable bits: not Windows.
+func TestHiddenByFileMode(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("needs executable bits, which Windows files do not keep")
+	}
+	f := r0Project(t)
+	f.write("src/check.sh", "#!/bin/sh\nexit 0\n")
+	f.commit("a script")
+	testpack.Git(t, f.root, "config", "core.fileMode", "false")
+	if err := os.Chmod(filepath.Join(f.root, "src", "check.sh"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if s := testpack.Git(t, f.root, "status", "--porcelain"); s != "" {
+		t.Fatalf("plain git status shows the change: %q", s)
+	}
+	hiddenClimb(t, f, f.root, "1") // git status shows it once core.fileMode is pinned: dirty, not named as hidden
 }

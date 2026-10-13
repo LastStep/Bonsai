@@ -57,6 +57,9 @@ var fixedEnv = []string{"GIT_CONFIG_NOSYSTEM=1", "GIT_ATTR_NOSYSTEM=1", "GIT_NO_
 //   - core.commitGraph=false: ancestry is read from the commits themselves, not from a cache file that could be
 //     made to say otherwise;
 //   - protocol.allow=never: no fetch of a missing object (a partial clone) reaches a network;
+//   - core.ignorecase=false, core.fileMode=true and core.symlinks=true where the file system under the repository can
+//     hold what each would hide (probe.go: fsPins, probed once per run), so the repository's own value cannot make git
+//     look past a file differing only in case, an executable bit or a link;
 //   - core.excludesFile is pinned per run, and the user's core.autocrlf and core.eol kept (see userSettings).
 var pins = []string{"core.fsmonitor=false", "core.untrackedCache=false", "core.trustctime=true",
 	"core.checkStat=default", "core.ignoreStat=false", "core.attributesFile=", "core.commitGraph=false",
@@ -68,6 +71,7 @@ type gitRunner struct {
 	prog     string   // the git program
 	dir      string   // the folder git runs in
 	excludes string   // core.excludesFile for every call: the user's own, or "" for none
+	fs       []string // what the file system can hold, pinned on every call (fsPins), once the repository is found
 	keep     []string // the user's line-end settings, given on every call (userSettings)
 	extra    []string // more settings for one kind of read, given last (the contents' read: every filter off)
 	env      []string // the fixed environment
@@ -121,6 +125,9 @@ func newRunner(ctx context.Context, prog, dir string) (*gitRunner, error) {
 func (g *gitRunner) run(stdin []byte, args ...string) ([]byte, error) {
 	full := []string{"--no-pager"}
 	for _, p := range pins {
+		full = append(full, "-c", p)
+	}
+	for _, p := range g.fs {
 		full = append(full, "-c", p)
 	}
 	full = append(full, "-c", "core.excludesFile="+g.excludes)

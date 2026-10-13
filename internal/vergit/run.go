@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // Runner runs git in one checkout, in this package's fixed environment, within its context's deadline.
@@ -25,9 +27,10 @@ type Runner struct {
 }
 
 // NewRunner finds the git program (prog, or git on this process's PATH when prog is ""), builds the fixed environment
-// for the checkout whose top folder is dir (git never looks above it for another), and reads once, with the user's
-// own environment, the settings every call keeps: the user's global excludes file and core.autocrlf and core.eol, so a
-// file git checks out or compares reads as the user's git reads it. note is set when those settings could not be read
+// for the checkout whose top folder is dir (git never looks above it for another), probes what the file system under
+// its git folder can hold (fsPins: case, executable bits, links), and reads once, with the user's own environment, the
+// settings every call keeps: the user's global excludes file and core.autocrlf and core.eol, so a file git checks out
+// or compares reads as the user's git reads it. note is set when those settings could not be read
 // (git's defaults then stand for them). Every call ends with ctx: its deadline, or its cancel.
 func NewRunner(ctx context.Context, prog, dir string) (r *Runner, note string, err error) {
 	abs, err := filepath.Abs(dir)
@@ -46,6 +49,7 @@ func NewRunner(ctx context.Context, prog, dir string) (r *Runner, note string, e
 		}
 		return nil, "", fmt.Errorf("git cannot be found: %v", err)
 	}
+	g.fs = fsPins(workspace.ReadGitLayout(abs).Common)
 	note = g.userSettings()
 	if ctx.Err() != nil {
 		return nil, "", errors.New("git did not answer in time")

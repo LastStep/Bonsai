@@ -26,8 +26,9 @@ const waitDelay = 2 * time.Second
 
 // git runs git in one checkout, within the judgment's deadline.
 type git struct {
-	root string
-	ctx  context.Context // the deadline; nil for none
+	root     string
+	ctx      context.Context // the deadline; nil for none
+	settings []string        // more -c settings for every call (key=value)
 }
 
 func gitIn(root string) git { return git{root: root} }
@@ -53,7 +54,11 @@ func (g git) run(args ...string) ([]byte, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	cmd := exec.CommandContext(ctx, "git", append([]string{"-C", g.root, "-c", "core.quotepath=off", "--literal-pathspecs"}, args...)...)
+	full := []string{"-C", g.root, "-c", "core.quotepath=off", "--literal-pathspecs"}
+	for _, s := range g.settings {
+		full = append(full, "-c", s)
+	}
+	cmd := exec.CommandContext(ctx, "git", append(full, args...)...)
 	cmd.Env = gitEnv()
 	cmd.WaitDelay = waitDelay
 	var stdout, stderr bytes.Buffer
@@ -129,11 +134,13 @@ type entry struct{ path string }
 // against HEAD show changed though git status does not (vergit.Tree's hidden paths: a file whose stat times the index
 // kept from a look while a filter made it read as unchanged, one under an index flag, one whose bytes the ident or
 // working-tree-encoding attribute reads as HEAD's, one inside a submodule, a file in a submodule's folder git does not
-// read), so a change hidden from git status is judged by the guard's function, not only made dirty. An untracked
-// nested repository (git names its folder with a trailing slash and does not look inside) is its .git, a checkout
-// planted below the top (the guard's floor never grants one), unless it is a worktree of the main checkout main
-// (Claude Code places its own worktrees inside the main checkout): another checkout of the project, whose changes are
-// its own climb's.
+// read), so a change hidden from git status is judged by the guard's function, not only made dirty. git status runs
+// with what the file system can hold pinned (vergit.FileSystemSettings), so a stale core.ignorecase, core.fileMode or
+// core.symlinks in the repository's configuration hides no untracked file or change from it. An untracked nested
+// repository (git names its folder with a trailing slash and does not look inside) is its .git, a checkout planted
+// below the top (the guard's floor never grants one), unless it is a worktree of the main checkout main (Claude Code
+// places its own worktrees inside the main checkout): another checkout of the project, whose changes are its own
+// climb's.
 func (g git) changed(from, main string) ([]entry, error) {
 	var paths []string
 	if from != "" {
@@ -143,7 +150,9 @@ func (g git) changed(from, main string) ([]entry, error) {
 		}
 		paths = append(paths, splitZ(out)...)
 	}
-	out, err := g.run("status", "--porcelain=v1", "-z", "--no-renames", "--untracked-files=all")
+	pinned := g
+	pinned.settings = vergit.FileSystemSettings(g.root)
+	out, err := pinned.run("status", "--porcelain=v1", "-z", "--no-renames", "--untracked-files=all")
 	if err != nil {
 		return nil, err
 	}

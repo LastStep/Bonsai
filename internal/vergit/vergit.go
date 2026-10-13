@@ -72,7 +72,16 @@
 //     and edits, filter-local, the stash and the base are the top checkout's only. A submodule more than 8 deep is
 //     not read, and named. Its own filters are switched off as the top's are.
 //   - The repository's own configuration is read by every git call (no variable switches it off); the pinned
-//     settings cover the parts of it known to hide a change from these reads.
+//     settings cover the parts of it known to hide a change from these reads (git.go's pins). Three of them describe
+//     the file system and git keeps them from when it made the repository: core.ignorecase (true hides an untracked
+//     file whose name differs from a tracked one's only in case), core.fileMode (false hides an executable bit) and
+//     core.symlinks (false hides a tracked link replaced by a file holding the link's text). Each is pinned where the
+//     file system under the repository's common git folder can hold what it hides (probe.go, probed once per run by
+//     a temporary file and link there, as git init probes), and left as git has it where it cannot: Windows (NTFS is
+//     case-blind, keeps no executable bit, and Git for Windows checks links out as files) and macOS's case-blind
+//     volumes, where pinning would read honest files as changed. A working tree on another file system than its git
+//     folder (or a Windows folder made case-sensitive under a case-blind git folder) is read by the git folder's
+//     answer; macOS's core.precomposeUnicode (a name in two Unicode forms) is not pinned.
 //   - Conversions on a file's way into git make different bytes read as one blob. Filters are switched off for the
 //     contents' read; the ident and working-tree-encoding attributes are read by the file's bytes against HEAD's blob
 //     (convert.go), so an honest checkout under them always counts as dirty, as one with Git LFS does. Line ends are
@@ -258,6 +267,7 @@ func (j *judgment) start(ctx context.Context) error {
 	if err := j.locate(); err != nil {
 		return err
 	}
+	g.fs = fsPins(filepath.FromSlash(j.common))
 	note := g.userSettings()
 	if g.ctx.Err() != nil {
 		return errors.New("git did not answer in time")
