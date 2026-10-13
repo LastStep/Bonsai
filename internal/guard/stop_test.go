@@ -231,8 +231,8 @@ func init() {
 			writeFile(t, filepath.Join(dir, "bonsai.yaml"), strings.Replace(stopYAML, "ladder_floor: [0]", "ladder_floor: []", 1))
 		}},
 		{rule: RuleStopConfigLooser, task: "T-0901", change: func(t *testing.T, dir string) {
-			// This machine accepted stricter settings than the ones committed (a path on protected): the committed ones read
-			// as looser.
+			// This machine accepted stricter settings than the ones committed (a path on protected): the committed
+			// ones read as looser.
 			writeFile(t, filepath.Join(dir, "bonsai.yaml"), strings.Replace(stopYAML, "protected: []", `protected: ["x/**"]`, 1))
 			if _, err := workspace.RecordCheckout(os.Getenv(workspace.HomeEnv), dir, testID, testNow); err != nil {
 				t.Fatal(err)

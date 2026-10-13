@@ -19,28 +19,28 @@
 //     --task and BONSAI_TASK (the environment counts only when the session's own project, CLAUDE_PROJECT_DIR's, is this
 //     one). A local climb needs a named task: none named (a single running task is named in the next step, not taken),
 //     or a named task the function does not find, is no-task (exit 2). --ci may name none.
-//  3. The rungs (note 2): the floor plus the task's bonsai.ladder (stopgate.RungsWanted, the stop gate's own reading,
-//     so the result asks for exactly what the gate requires); with --ci and no task, every rung. A requested rung that
-//     bonsai.yaml does not define is rung-not-defined (exit 2). The rungs are main's bonsai.yaml's: a branch never
-//     climbs by rungs of its own making. And main's bonsai.yaml as committed at its HEAD, git's object
+//  3. The rungs (note 2): the floor plus the task's bonsai.ladder (stopgate.RungsWanted, the stop gate's own
+//     reading, so the result asks for exactly what the gate requires); with --ci and no task, every rung. A requested
+//     rung that bonsai.yaml does not define is rung-not-defined (exit 2). The rungs are main's bonsai.yaml's: a branch
+//     never climbs by rungs of its own making. And main's bonsai.yaml as committed at its HEAD, git's object
 //     (stopgate.CommittedConfig, the stop gate's own reading): the ladder, the floor, the ratchets and ci_marked_tests
 //     come from it, and while the file in the main checkout differs from it, or HEAD holds none, the climb refuses
 //     (config-uncommitted, exit 4, a person's step: commit or revert it), since an uncommitted edit there (a shell
 //     write the guard does not judge in agents mode) could lower a floor for one climb; HEAD naming a commit git cannot
-//     read it in (an object not there or damaged) is read-failed (exit 3), a person's git fsck. A local climb also needs the
-//     main checkout on the workspace's base branch, the one this machine's record names (workspace.BaseOf: another
-//     branch, a detached HEAD or a record from before Bonsai kept a base is main-not-verified, exit 4, a person's
-//     step), and the committed settings for the checks no looser than the ones this machine's record accepted
+//     read it in (an object not there or damaged) is read-failed (exit 3), a person's git fsck. A local climb also
+//     needs the main checkout on the workspace's base branch, the one this machine's record names (workspace.BaseOf:
+//     another branch, a detached HEAD or a record from before Bonsai kept a base is main-not-verified, exit 4, a
+//     person's step), and the committed settings for the checks no looser than the ones this machine's record accepted
 //     (stopgate.Accepted; workspace/checks.go says what is compared and what reads as looser): a commit on the base
 //     branch is history an agent can make too (a shell commit in the main checkout, git reset --hard, a branch ref
 //     moved), so looser settings, or a record holding none, refuse the climb (config-looser, exit 4, naming each
 //     loosening; a person's step: bonsai update in the main checkout records them, or a commit puts them back).
 //     Stricter or equal settings are accepted, and once the climb holds the lock (step 4) it brings the record up to
-//     them (workspace.RaiseChecks), so floors raised at a part's end need no person; a nested climb compares and
-//     writes nothing. --ci, which proves no task and may run where there is no record, skips both. bonsai.yaml changed
-//     in the main checkout during the climb makes the result dirty. The guard's live reading of the protected lists
-//     from the main checkout's working bonsai.yaml is unchanged: a shell write that loosens them can open a file-tool
-//     edit during the work, but no such work climbs green, refused as uncommitted, and once committed as looser.
+//     them (workspace.RaiseChecks), so floors raised at a part's end need no person; a nested climb compares and writes
+//     nothing. --ci, which proves no task and may run where there is no record, skips both. bonsai.yaml changed in the
+//     main checkout during the climb makes the result dirty. The guard's live reading of the protected lists from the
+//     main checkout's working bonsai.yaml is unchanged: a shell write that loosens them can open a file-tool edit
+//     during the work, but no such work climbs green, refused as uncommitted, and once committed as looser.
 //  4. One ladder at a time per home (note 8, lock.go): the home's locks/ladder.lock, held by a lock the system ends
 //     with its holder; a second climb waits while the holder lives inside its budget, then refuses (ladder-busy,
 //     exit 4). A nested climb (BONSAI_LADDER=1: a ladder run inside a rung) takes no lock: its outer climb holds it.
@@ -173,11 +173,11 @@ func Run(o Options) *Answer {
 	return c.finish()
 }
 
-// raiseChecks brings this machine's record of the main checkout up to the climb's settings for the checks, bonsai.yaml
-// as committed (step 3), when they are stricter than the ones it holds (workspace.RaiseChecks), once the climb holds the
-// home's lock, so two climbs never write the record at once. A --ci climb and a nested one write nothing. The record
-// changed since prepare compared it (a person's update meanwhile) is compared again: looser settings refuse the climb
-// as prepare's would.
+// raiseChecks brings this machine's record of the main checkout up to the climb's settings for the checks,
+// bonsai.yaml as committed (step 3), when they are stricter than the ones it holds (workspace.RaiseChecks), once the
+// climb holds the home's lock, so two climbs never write the record at once. A --ci climb and a nested one write
+// nothing. The record changed since prepare compared it (a person's update meanwhile) is compared again: looser
+// settings refuse the climb as prepare's would.
 func (c *Climb) raiseChecks() *engine.Error {
 	if c.CI || c.o.nested() {
 		return nil

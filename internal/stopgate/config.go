@@ -63,8 +63,8 @@ const HeadUnreadableNext = "a person runs git fsck in the main checkout, which n
 func CommittedConfig(main string, timeout time.Duration) (*workspace.Config, error) {
 	committed, err := vergit.Committed(main, workspace.ConfigFile, timeout)
 	if errors.Is(err, vergit.ErrNoCommit) || headUnreadable(err) {
-		// git found no commit, or could not read what HEAD names: when HEAD, read from git's files, names a commit, that
-		// commit or an object under it is not there or is damaged.
+		// git found no commit, or could not read what HEAD names: when HEAD, read from git's files, names a commit,
+		// that commit or an object under it is not there or is damaged.
 		if sha, herr := Head(workspace.ReadGitLayout(main)); herr == nil {
 			why := "the main checkout's HEAD names commit " + short(sha) + ", which git cannot read (the commit is not in the " +
 				"repository, or is damaged), so bonsai.yaml cannot be read as committed there"

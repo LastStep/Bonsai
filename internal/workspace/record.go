@@ -20,10 +20,10 @@ package workspace
 //	  ],
 //	  "base_branch": "main",                 the branch the main checkout held when it was recorded; null when it was on
 //	                                         a detached HEAD the first time (a record written before step 5.4 has none)
-//	  "checks": {...}                        the settings for the checks Bonsai last accepted for the workspace (checks.go):
-//	                                         ladder_floor, the rungs, ratchets, ci_marked_tests, the three path lists and
-//	                                         documents; null when none was recorded (a record written before step 5.4's
-//	                                         second fix round has none)
+//	  "checks": {...}                        the settings for the checks Bonsai last accepted (checks.go): the floor,
+//	                                         the rungs, ratchets, ci_marked_tests, the three path lists, documents;
+//	                                         null when none was recorded (a record written before step 5.4's second
+//	                                         fix round has none)
 //	}
 //
 // base_branch is written from the main checkout's HEAD file each time the record is written, but for a detached HEAD,
@@ -32,12 +32,12 @@ package workspace
 // update refuse it in an agent's session (cmd/bonsai, engine.BaseChange); the first record, and the same branch again,
 // are free.
 //
-// checks is written each time the record is written, from the bonsai.yaml init or update read in full (RecordCheckoutWith;
-// RecordCheckout reads the main checkout's file as it is), and brought up by a local climb to the settings committed
-// at the main checkout's HEAD when they are stricter (RaiseChecks). A local climb and the stop gate refuse committed
-// settings looser than them, and fail closed on a record with none (checks.go says what looser means). Recording
-// looser settings than the ones already recorded is a person's step: bonsai init and update refuse it in an agent's
-// session (cmd/bonsai, engine.ChecksLooser); the first record, and settings stricter or the same, are free.
+// checks is written each time the record is written, from the bonsai.yaml init or update read in full
+// (RecordCheckoutWith; RecordCheckout reads the main checkout's file as it is), and brought up by a local climb to the
+// settings committed at the main checkout's HEAD when they are stricter (RaiseChecks). A local climb and the stop gate
+// refuse committed settings looser than them, and fail closed on a record with none (checks.go says what looser means).
+// Recording looser settings than the ones already recorded is a person's step: bonsai init and update refuse it in an
+// agent's session (cmd/bonsai, engine.ChecksLooser); the first record, and settings stricter or the same, are free.
 //
 // Two commands may write the record at once (bonsai update, and a climb bringing its checks up; climbs in one home take
 // the ladder's lock first): each write reads the file, decides, stages the new bytes, and renames them into place only

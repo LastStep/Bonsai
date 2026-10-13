@@ -61,8 +61,8 @@ func TestCommittedConfig(t *testing.T) {
 		write(t, root, ".git/refs/heads/main", emptyCommit(t, filepath.Join(root, ".git"))+"\n")
 		refused(t, root, "the main checkout's HEAD holds no bonsai.yaml (it was never committed there)")
 	})
-	// HEAD names a commit, but an object it needs is not in the repository (V2b's S6: a clone whose borrowed objects are
-	// gone): no line of bonsai.yaml to fix and nothing to commit, so a HeadUnreadableError, whose step is git fsck.
+	// HEAD names a commit, but an object it needs is not in the repository (V2b's S6: a clone whose borrowed objects
+	// are gone): no line of bonsai.yaml to fix and nothing to commit, so a HeadUnreadableError, whose step is git fsck.
 	for _, c := range []struct {
 		name, why string
 		object    int // commitObjects' index: 0 the blob, 1 the tree, 2 the commit
@@ -97,9 +97,9 @@ func TestCommittedConfig(t *testing.T) {
 	})
 }
 
-// Accepted, read directly: the committed settings the same as, or stricter than, the ones this machine's record accepted
-// pass; looser ones are refused, each loosening named (cut at eight, the rest counted), with the person's step; a record
-// with none, or none at all, fails closed; and it writes nothing.
+// Accepted, read directly: the committed settings the same as, or stricter than, the ones this machine's record
+// accepted pass; looser ones are refused, each loosening named (cut at eight, the rest counted), with the person's
+// step; a record with none, or none at all, fails closed; and it writes nothing.
 func TestAccepted(t *testing.T) {
 	root := project(t)
 	home := os.Getenv(workspace.HomeEnv)
