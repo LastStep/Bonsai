@@ -18,6 +18,7 @@ import (
 //	double           a plain child that starts the sleeper and exits: the sleeper's parent is gone
 //	setsid           a child in a new session (it keeps the rung's tag)
 //	clearenv-setsid  a child in a new session with an empty environment (no tag): only the reaper can tell it
+//	foreign-setsid   a child in a new session whose tag is one no rung of this process runs (BONSAI_RUNG_TAG=other)
 func spawn(how, pidfile string) error {
 	cmd := sleeperCmd(pidfile)
 	switch how {
@@ -31,6 +32,9 @@ func spawn(how, pidfile string) error {
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	case "clearenv-setsid":
 		cmd.Env = []string{}
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	case "foreign-setsid":
+		cmd.Env = append(os.Environ(), TagEnv+"=other")
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	default:
 		return errors.New("unknown way: " + how)
@@ -48,10 +52,12 @@ func leaveCases(dir string) []leaveCase {
 		{"a double fork in the shell", "( " + self("sleep", p) + " & ) ; " + self("waitfile", p)},
 		{"a double fork, its parent gone", self("spawn", "double", p)},
 		{"a cleared environment in a new session, its parent gone", self("spawn", "clearenv-setsid", p)},
+		{"another tag in a new session, its parent gone", self("spawn", "foreign-setsid", p)},
 		{"a child holding the output pipe", self("hold", p) + " & " + self("waitfile", p)},
 	}
 	if _, err := os.Stat("/usr/bin/setsid"); err == nil {
-		cases = append(cases, leaveCase{"a setsid daemon", "setsid " + self("sleep", p) + " & " + self("waitfile", p)})
+		cases = append(cases, leaveCase{"a setsid daemon", "setsid " + self("sleep", p) + " & " + self("waitfile", p)},
+			leaveCase{"a setsid -f daemon with another tag", TagEnv + "=other setsid -f " + self("sleep", p) + "; " + self("waitfile", p)})
 	}
 	return cases
 }

@@ -13,7 +13,9 @@
 // handed to the runner, not to init. At the rung's exit, its timeout or a stop, the runner lists from /proc the
 // rung's session and group, every process whose environment carries the tag, its own adopted children (a child in
 // a session other than the runner's, started after the rung's shell, that is not a shell this package started and
-// carries no other rung's tag) and every live descendant of those; it ends the group, then each process, and lists
+// carries the tag of no other rung this process is running at that moment; a tag a rung's command set itself, of no
+// rung running here, does not keep an orphan from being adopted) and every live descendant of those; it ends the
+// group, then each process, and lists
 // again until none is left (EndWait at most). A pid is acted on only while its start time is the one listed; a
 // group only while it has a member, so its number cannot have passed to another process. Adopted orphans are reaped
 // by their own pids, never by wait4(-1), which would race os/exec's own wait.

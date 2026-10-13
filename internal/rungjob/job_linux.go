@@ -49,6 +49,18 @@ func isShell(pid int) bool {
 	return ok
 }
 
+// running are the tags of the rungs this process is running right now, from prepare to finish: an orphan handed to
+// the runner that carries one of them is that rung's (two rungs run side by side in one process, as the tests' parallel
+// Run calls do), and no other rung adopts it. A tag of no rung running here (another runner's, or one a rung's own
+// command wrote, such as BONSAI_RUNG_TAG=other) is no rung's claim on it.
+var running sync.Map
+
+// runningHere reports whether a tag names a rung this process is running now.
+func runningHere(tag string) bool {
+	_, ok := running.Load(tag)
+	return ok
+}
+
 // rung is one rung's job on Linux.
 type rung struct {
 	tag         string
@@ -77,6 +89,7 @@ func (r *rung) prepare(env []string) []string {
 		r.selfSID = st.SID
 	}
 	r.tag = randomTag()
+	running.Store(r.tag, true)
 	tag := r.tag
 	if outer := getEnv(env, TagEnv); outer != "" {
 		tag = outer + ":" + r.tag
@@ -248,13 +261,22 @@ func (r *rung) tagged(pid int) bool {
 
 // adopted reports a child of the runner that this rung's processes left to it: in a session other than the
 // runner's (no process can join the runner's session from the rung's), started after the rung's shell, not a
-// shell this package started, and carrying no other rung's tag. The caller has checked it is the runner's child.
+// shell this package started, and carrying no tag of another rung this process is running now (running). A tag of
+// no rung running here does not keep it: a rung's command can set the variable itself (BONSAI_RUNG_TAG=other setsid
+// ...), and an orphan only this runner was handed is this runner's to end. The caller has checked it is the runner's
+// child.
 func (r *rung) adopted(s leftovers.Stat) bool {
 	if s.SID == r.selfSID || s.Start < r.leaderStart || isShell(s.PID) {
 		return false
 	}
-	if v, ok := leftovers.EnvValue(s.PID, TagEnv); ok && v != "" {
-		return r.tagged(s.PID)
+	v, ok := leftovers.EnvValue(s.PID, TagEnv)
+	if !ok || v == "" || r.tagged(s.PID) {
+		return true
+	}
+	for _, t := range strings.Split(v, ":") {
+		if t != r.tag && runningHere(t) {
+			return false // another rung's, running beside this one
+		}
 	}
 	return true
 }
@@ -298,9 +320,11 @@ func (r *rung) reap() {
 	}
 }
 
-// finish reaps what the end left to the runner and gives the notes gathered on the way.
+// finish reaps what the end left to the runner and gives the notes gathered on the way. The rung's tag is no longer
+// one this process runs.
 func (r *rung) finish() []string {
 	r.reap()
+	running.Delete(r.tag)
 	return r.notes
 }
 

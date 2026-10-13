@@ -31,6 +31,7 @@ const (
 //	breakaway   a child asking to leave the job: the system must refuse it, which <pidfile>.refused records
 //	nested-job  a child in a job of its own, made inside the rung's (a nested job), without kill-on-close, so it
 //	            outlives the job's maker
+//	foreign     a plain child whose BONSAI_RUNG_TAG is another's (the job holds it whatever its environment)
 func spawn(how, pidfile string) error {
 	cmd := sleeperCmd(pidfile)
 	switch how {
@@ -50,6 +51,8 @@ func spawn(how, pidfile string) error {
 		return nil
 	case "nested-job":
 		return startInNestedJob(cmd)
+	case "foreign":
+		cmd.Env = append(os.Environ(), TagEnv+"=other")
 	default:
 		return errors.New("unknown way: " + how)
 	}
@@ -109,6 +112,7 @@ func leaveCases(dir string) []leaveCase {
 		{"a detached child in a new process group", self("spawn", "detached", p)},
 		{"a double fork, its parent gone", self("spawn", "double", p)},
 		{"a job inside the rung's job", self("spawn", "nested-job", p)},
+		{"another tag, its parent gone", self("spawn", "foreign", p)},
 		{"a child holding the output pipe", `start "" /b ` + self("hold", p) + " & " + self("waitfile", p)},
 	}
 }
