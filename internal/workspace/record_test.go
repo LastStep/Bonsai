@@ -149,7 +149,7 @@ func TestBaseBranch(t *testing.T) {
 	}
 	dir, _ := MachineDir(home, main)
 	raw, _ := os.ReadFile(filepath.Join(dir, MachineRecordFile))
-	if !strings.Contains(string(raw), "\"base_branch\": null\n") {
+	if !strings.Contains(string(raw), "\"base_branch\": null,\n") {
 		t.Errorf("a detached HEAD's record:\n%s", raw)
 	}
 	if base, tr := BaseOf(home, main); base != "" || tr.Verified || !strings.Contains(tr.Why, "on a detached HEAD when it was recorded") {
