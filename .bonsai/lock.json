@@ -1,0 +1,18 @@
+{
+  "format": "bonsai.lock/1",
+  "written_by": "dev",
+  "packs": [],
+  "files": {
+    ".claude/settings.json": {
+      "kind": "keys",
+      "pack": "",
+      "sha256": "dba01f1d67cf0740359179693d5b731bb887cca78cae75b7bb56456612c1d255"
+    },
+    "CLAUDE.md": {
+      "kind": "block",
+      "pack": "",
+      "sha256": "67142b43958aea330563d92101d0f431d01bff3b8b01c490ac70ae9c35260a28"
+    }
+  },
+  "format0": {}
+}

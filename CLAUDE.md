@@ -220,3 +220,8 @@ the one he had is kept in `~/bonsai-checks/prerelease/previous/`, and its instal
   scratch homes.
 - **Stop every process you start** (builds, tests, test sessions, watchers) and check with `ps -eo pid,etime,cmd` before
   you finish. Never kill what you did not start: another agent's run looks the same.
+
+<!-- bonsai:block start: written by bonsai init and update from bonsai.yaml and each pack's bonsai/block.md (its docs); edit those, not this block. -->
+This project is linked to Bonsai as workspace bonsai.
+Project memory, an index of notes kept in records/memory: @records/memory/INDEX.md
+<!-- bonsai:block end -->

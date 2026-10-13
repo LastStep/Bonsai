@@ -1,0 +1,160 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(//**/.bonsai/local/**)",
+      "Edit(//**/.bonsai/sessions.md)",
+      "Edit(//**/.bonsai/tasks.md)",
+      "Edit(~/.bonsai/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell|Monitor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || { echo \"bonsai guard: no bonsai is installed at C:/Program Files/Bonsai/bonsai.exe or /usr/local/bin/bonsai, so this call is refused; next: tell the person: a person installs Bonsai there\" >&2; exit 2; }; \"$b\" hook guard || exit 2",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || { echo \"bonsai stop: no bonsai is installed at C:/Program Files/Bonsai/bonsai.exe or /usr/local/bin/bonsai, so the stop gate cannot check this session, which may not end yet (Claude Code ends the turn after its cap of blocks); next: tell the person: a person installs Bonsai there\" >&2; exit 2; }; \"$b\" hook stop || exit 2",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook start",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "disableAllHooks": false,
+  "autoMemoryEnabled": false
+}
