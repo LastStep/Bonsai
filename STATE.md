@@ -1,10 +1,11 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 13 Oct 2026 at 11:09. **Step 5.4: all its code and the switch's files are on
-`main`** (`f9e28e3`); verification closed on Rohan's word ("any issues found now, just note them down, no need to fix
-or verify"). **Next session: the pre-release, Rohan's sitting, the link, the first climbs, the end verifier** (the
-exact steps below, "Now: step 5.4"). Rohan's word until 5.4 closes: **no local Windows test runs; CI is the Windows
-proof**, and close 5.4 quickly.
+Rewritten, never appended. Last rewritten 13 Oct 2026 at 14:00. **Step 5.4 is done: Bonsai guards its own repo and
+proves its own work with `bonsai ladder`.** Rohan installed the pre-release (`a88436a`, SHA-256 `356f787c...afeef644`),
+made the link and the first climbs himself; the floors are 4188 and 4194; the fresh end verifier passed every check but
+one clause, its D1, which Rohan had fixed ("Fix now", `T-5491`, the first piece landed by the landing rule). **Next:
+5.5's re-plan with the agent-pipelines redesign** ("Now: step 5.5" below). From here every change lands by
+`CLAUDE.md`'s rules "from the link".
 
 ## In short
 
@@ -19,26 +20,45 @@ approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5
   (`cf356d3`).
 - **Step 5.1, formats and engine to 1.0: done** (code `11d871c`; verified on `5fa9bd8`).
 - **Step 5.2, the recorder, logs and asks: done** (code at `8243800`), the redactor with known limits (below).
-- **Step 5.3, the guards: done** (code at `750ca07`; landings `3da3f1c` 5.3.2 and 5.3.3, `8e3f40d` 5.3.4, `ae79d41`
-  5.3.6b; CI green on each): the hook adapter, where the guard reads from, the guard's judgments, the delete check, the
-  stop gate, Bonsai's own deny rules, `check`'s settings findings, the hook lines' fixed form (Rohan's (a)) and the
-  commands' own refusal of a person's steps in an agent's session ((ii)). Known limits below. Run reports:
-  `records/runs/R-2026-10-11-5.3.*` (`5.3.0-adapter` holds the part's log and the end verifier's report).
+- **Step 5.3, the guards: done** (code at `750ca07`): the hook adapter, the guard, the delete check, the stop gate,
+  Bonsai's own deny rules, `check`'s settings findings, the hook lines' fixed form (Rohan's (a)) and the commands' own
+  refusal of a person's steps in an agent's session ((ii)). Run reports `records/runs/R-2026-10-11-5.3.*`.
+- **Step 5.4, the ladder runner and the switch: done** (13 Oct). `bonsai ladder` (rung jobs that end what a rung
+  leaves, on both systems; rung 0 the guard rung; floors, ratchets and Bless; new tests must fail on the base; git
+  integrity; the settings record that refuses looser checks until a person re-records them), then the switch: the
+  pre-release installed by Rohan at `/usr/local/bin/bonsai`, the link `c1bb21f` (by Rohan, `bonsai init`), the floors
+  `6f25dd6` (`go_tests` 4188, `go_tests_tagged` 4194, from his first climb), the end verifier (`T-5490`), and D1's fix
+  `d7037dc` (`T-5491`). Code at `d7037dc` (the binary's at `a88436a`; `d7037dc` changes only tests). Run reports
+  `records/runs/R-2026-10-1[23]-5.4.*` and, in format 1, `R-2026-10-13-T-5490-verify-5.4-end.md` and
+  `R-2026-10-13-T-5491-named-session-tests.md`. Tasks: `T-5407`, `T-5490`, `T-5491`, all `done`.
 
 Hours (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min. **5.1: 866 minutes. 5.2:
-1,061 minutes. 5.3: about 2,013 minutes (33 h 33 min) of its 18-29 h estimate, under its 38 h re-ask line**, its 72
-minutes of planning included (over the estimate: four verifier rounds on the guard, two on the stop gate, the cleaner
-side piece's 260 minutes, the real-session measurements); the agent-team artifact's 31 minutes are outside it. Later
-parts' planning: 5.4 79, 5.5 84, 5.6 67, 5.7 117. Step 5's Windows-only tally: about 36 minutes of 8 h (5.2.2's salt
-test; 5.3.4's unreadable-folder test; 5.3.c's huge-folder test; the Windows login investigation, 18). **Questions put
-to Rohan in 5.3: five option rounds** (the hook line and who may consent to code, 9 Oct, planned; the guard's finish
-line "Scoped"; fix round 3's bar "A"; the end verifier's two holes "Log as known limits"), **so stop line 3 (more than
-two in a part) is crossed**, each time in the open (verifier loops on edge cases, not a section that left too much
-open); and two on the work's conduct (a long-lived agent token on Windows: none; the verifiers' bar: kept, with a
-two-round cap). No change to Mimas or the studio's repo.
+1,061 minutes. 5.3: about 2,013 minutes (33 h 33 min). 5.4: about 2,372 minutes (39 h 32 min) of its 28-44 h
+estimate, under its 57 h re-ask line** (the verifier's count, 2,362, plus `T-5491`'s 10; its 79 minutes of planning
+included; the orchestrator's own time between runs only partly in them). Later parts' planning: 5.5 84, 5.6 67, 5.7 117.
+Step 5's Windows-only tally: about 143 minutes of 8 h (5.3's 36; 5.4's about 107: 5.4.1b and 5.4.1c's Windows rung
+jobs). **Questions put to Rohan in 5.4: five option rounds** (builders stay subagents; memory kept on; K1 fixed; K2 a
+known limit; D1 fixed), **so stop line 3 (more than two in a part) is crossed**, each in the open (the switch's own
+questions and the verifiers' findings, not a section that left too much open). No change to Mimas or the studio's
+repo.
 
 ## Rohan's decisions
 
+- **13 Oct, about 13:35: D1 fixed now** ("Fix now"): the end verifier's one must-fix (two tests read the caller's
+  `BONSAI_TASK`, so a named session's climbs are red and its stop gate never lets it end) fixed as `T-5491`, test-only,
+  no new pre-release, landed by the landing rule (`d7037dc`); offered: a known limit fixed at 5.5's start.
+- **13 Oct, about 13:45: stall stops for subagents go into 5.5's redesign.** He asked whether an idle agent can be
+  stopped, "even if we stop an idle agent, the message of that would propogate upwards to the orchestrator or any other
+  agent that started it, and they would be able to handle whatever needs to be done". Read in Claude Code's docs: no
+  hook fires on a timer or on idleness; hooks see a subagent's calls with its `agent_id`; a subagent definition's
+  `maxTurns` returns its output, marked partial, to the parent; a parent's stop tells it only "cancelled". So a soft
+  stop (the guard refusing a subagent's calls past a budget, telling it to report) carries its report up; a true idle
+  watch needs a clock outside Bonsai. He declined an ad-hoc watchdog for this session (memory
+  `agent-pipelines-redesign`).
+- **13 Oct, 12:31-12:56: Rohan ran the switch's steps himself** ("now i would like to do some steps myself if possible,
+  so i get familiar with the program"): the install, `bonsai status`, `bonsai init` (read and answered `y`), and both
+  first climbs, `bonsai ladder --task T-5407`; the orchestrator read, committed, probed the guard and set the floors.
+  Then: "okay i believe you can take this from here. and close out 5.4".
 - **13 Oct, 10:59: K2 is a known limit after 1.0** ("C. Known limit only"): a climb hands the caller's environment to every
   rung, so a fake program first on an agent's PATH can make a red branch climb green; until fixed, CI after the push is
   the independent check. His direction for the fix: "task done needs a green ci, and ci would run the ladder so that
@@ -168,53 +188,36 @@ two-round cap). No change to Mimas or the studio's repo.
 - `LastStep/bonsai-test-pack`: public, `main` at G (`cf356d3`), no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## Now: step 5.4, the ladder runner and the switch
+## Now: step 5.5, the packs, re-planned with the agent pipelines
 
-`design/plan-5.md`, "### Step 5.4" (~2374): 28-44 h, re-ask at 57; **about 36 h counted** (2,063 minutes in the run reports' Runs rows and 79 of planning; the
-orchestrator's own time between runs is only partly in them).
-Builders' rules: `~/bonsai-checks/briefs/rules.md` (**update its `Claude-Session` line to the new session's first**; it
-says no local Windows runs until 5.4 closes). The part's logs: `records/runs/R-2026-10-12-5.4.0-formats.md` (the start),
-`R-2026-10-12-5.4.1-rungjobs.md`, `R-2026-10-13-5.4.2-runner.md`, `-5.4.3-rung0.md`, `-5.4.4-ratchets.md`,
-`-5.4.5-newtests.md`, `-5.4.6-vergit.md`, `-5.4.7-switch.md`, and **`R-2026-10-13-5.4-verify.md`** (every verifier round,
-every fix round, Rohan's words on K1, K2, Windows and closing).
+`design/plan-5.md`, "### Step 5.5" (~3430): 19-30 h, re-ask at 39, approved 9 Oct without the pin rule. **Before any
+piece is built, its re-plan:** Rohan's 12 Oct agent-pipelines redesign changes the `workflow` pack's roles, so the
+section comes back to him under (B) (memory `agent-pipelines-redesign`): work sorted into kinds, each a pipeline of
+specialised agents (planning: a researcher, an auditor, a planner that questions the person, a plan reviewer; building:
+workers, helpers, several verifiers); agents talking to each other; little reliance on Claude Code; and, from 13 Oct,
+**stall stops for subagents** (a budget per role in minutes, turns or red climbs in a row, enforced by the guard as a
+soft stop that tells the agent to report; `maxTurns` on each role; what the parent does with a partial report). The
+research is in `~/bonsai-checks/research/` (notes and reports, 12 Oct); the current setup's diagram is the artifact
+"Workflow Pack Agents" (https://claude.ai/artifact/KjzSYPJ9LdXhcbCJ7iKrrU). Proposals go to him as one question per
+decision with diagrams, then 5.5 re-costed and approved.
 
-**Where it stands.** Every piece landed: 5.4.0 `6688f81`, 5.4.1 `e97afb1`, 5.4.2 `447909f`, 5.4.3 `c704783`, 5.4.6
-`18decac`, the wiring `41be2d9`, 5.4.4 `03a29c5`, 5.4.5 `271e0ae`, fix rounds 1-3 `0229fea`, `7905251`, `8ca6454`, 5.4.7
-`f9e28e3`. Verification: V1 and V2 (round 1), V2b (round 2), V2c (round 3 on 5.4.6 and K1), V2d (K1's second): every
-must-fix they found was fixed except the last, which Rohan's word leaves as a known limit (the rung 0 race below). The
-Go code the pre-release is built from is `8ca6454`'s (5.4.7 changed only `bonsai.yaml`, `T-5407`, `CLAUDE.md`,
-`CONTRIBUTING.md`, `.gitignore`). CI on `8ca6454`/`f9e28e3`: check it first (`gh run list -R LastStep/Bonsai -L 5`).
+**How work runs from here** (`CLAUDE.md`, "from the link"): every piece a task `T-55yy` in `records/tasks/` (the
+orchestrator alone writes and moves them), its run report `R-<date>-T-55yy-<topic>.md` in format 1; builders are
+subagents in plain worktrees from `main`, climbing `/usr/local/bin/bonsai ladder --task <id> --json`; a piece lands only
+on a green local result at its HEAD whose record names the installed `bonsai`, plus check 10's Windows half before the
+push (back from 5.5: `~/bonsai-checks/briefs/rules.md`) and CI after it; the part's end verifier audits every landing.
+The builders' rules: `~/bonsai-checks/briefs/rules.md` (**update its `Claude-Session` line to the new session's
+first**). The floors are raised once a part, after its last records commit.
 
-**The next session's steps, in order** (plan "The order of the switch", 2875-2898; "Rohan's sitting", 3200-3225):
-1. Read CI on `main`'s tip; commit any records; `main`'s tree clean.
-2. **The pre-release:** `git clone ~/Servers/Bonsai ~/bonsai-checks/prerelease/src-<commit>`, `git -C ... checkout
-   --detach <commit>`, then `cd` there and `CGO_ENABLED=0 go build -trimpath -buildvcs=true -o
-   ~/bonsai-checks/prerelease/bonsai ./cmd/bonsai`; `go version -m` shows the commit, `vcs.modified=false`,
-   `CGO_ENABLED=0`, no fault tag; `sha256sum`. Record the build line, the fingerprint, Claude Code's version and the user
-   settings hashes in 5.4.7's run report, committed, before sending Rohan anything.
-3. **Rohan's batch, in one message** (bash, one per line): `sudo install -o root -g root -m 0755
-   ~/bonsai-checks/prerelease/bonsai /usr/local/bin/bonsai`; `echo "<sha256>  /usr/local/bin/bonsai" | sha256sum -c`
-   (must print OK); `which -a bonsai` (only `/usr/local/bin/bonsai`; nothing named bonsai is on the PATH today);
-   `/usr/local/bin/bonsai --version`; and his memory line (his 13 Oct "A. Keep them on"), which merges into his existing
-   `~/Servers/Bonsai/.claude/settings.local.json` (it holds his `skillOverrides`): `python3 -c "import
-   json,os;p=os.path.expanduser('~/Servers/Bonsai/.claude/settings.local.json');s=json.load(open(p));s['autoMemoryEnabled']=True;open(p,'w').write(json.dumps(s,indent=2)+'\n')"`.
-   He sends back `--version`'s line.
-4. **The link** (plan 2860-2873): in the main checkout on `main`, `/usr/local/bin/bonsai init --json` (preview, read each
-   line), then `init --yes --json`; read `git status`/`git diff` (the lock, `.claude/settings.json` with every line in
-   Rohan's (a) form, the block in `CLAUDE.md`, `.bonsai/.gitignore`, the tables); `bonsai check --json` no finding;
-   commit `bonsai: Bonsai links itself`, push, read CI. Check the guard is live: a file-tool edit of a path `T-5407` does
-   not grant (`go.mod`) is refused; an interactive session takes the lines up at once (5.4.7 note 2); if not, Rohan
-   restarts with `claude --continue`.
-5. **The first climbs:** `T-5407` is `running`; with the tree clean, `/usr/local/bin/bonsai ladder --task T-5407` green
-   (floors 0; the rises read "check not run: the test files cannot be told", by design); write its counts into
-   `ratchets` in a commit under `T-5407` (stricter: accepted and recorded with no person); climb again at that commit,
-   green; `T-5407` to `done` in a records commit with the tables (`bonsai check --write`).
-6. **The end verifier:** write `T-5490` (running; grants nothing) and its run report in format 1
-   (`R-2026-10-13-T-5490-<topic>.md`, `bonsai.run/1` frontmatter), commit both; then a fresh Opus verifier on
-   `~/bonsai-checks/briefs/verify-5.4-end.md` (fill `<HEAD>`, `<SHA256>`, `<BUILD>`): "5.4 done" checks 16-23, the
-   Windows half of check 22 by CI only. Its findings are noted, not fixed, by Rohan's word, unless he says otherwise.
-7. Close 5.4: `STATE.md` rewritten; Rohan's roadmap artifact's Bonsai cards; 5.5's planning (with the agent-pipelines
-   redesign, memory `agent-pipelines-redesign`).
+**For 5.5 from 5.4's close:** the runner could clear `BONSAI_TASK` and `BONSAI_ROLE` from the rungs' environment, so no
+test reads a session's own task again (D1's repeat; a change to the binary, so with the next pre-release); the gate's
+next step names `bonsai ladder --task <id>` where `/usr/local/bin/bonsai ...` is meant (O1); `CLAUDE.md`'s scratch-link
+line covers only `--allow-exec` and a person's refusals, while any scratch link typed on the shell line in a project
+holding a `bonsai.yaml` is refused (D2: the guard reads the real home, not the command's `BONSAI_HOME`; the script
+route works), or the refusal's next step names the script for a scratch home. **The next pre-release** (5.5's packs
+need a newer `bonsai`): built the same way from a clean clone, the current one first copied to
+`~/bonsai-checks/prerelease/previous/` (its number is in 5.4.7's run report), Rohan's install lines and number sent in
+one batch.
 
 **Facts measured that later work rests on:** Claude Code 2.1.296 on both sides (Windows updated 11 Oct, 19:45). A Stop
 hook printing "No such file or directory" and exiting 2 lets the session end; Stop hooks keep a turn going eight times
@@ -232,19 +235,23 @@ refresh token without saving the new one and wiped the login (9, 10 and 11 Oct);
 Timings (5.3's end): the guard's typical call on WSL 3.5-5 ms p50, under 5 ms at p95 direct; on Windows about 13-16 ms
 direct, and about 130-150 ms through the Git Bash line, where Git Bash's own start (`bash -c true` about 80 ms) is the
 cost on this machine (Defender on, low free memory), Bonsai adding 6-9 ms.
+**Measured at the switch (13 Oct):** the guard took up the new hook lines in the running interactive session at once,
+no restart (a file-tool edit of `go.mod` refused right after the link); a climb of `main` takes 94-107 s (the two test
+rungs 46-59 s each, vet under 1 s warm); a named session with a green climb at its HEAD stops at once (`stop-proven`);
+the main checkout's `.bonsai/local/` is the guard's: an agent's `cp` out of it is refused.
 
 ## Waiting on Rohan
 
-- **At his install sitting:** the four install lines, and (his 13 Oct word "A. Keep them on") one line,
-  `"autoMemoryEnabled": true`, in his own `~/Servers/Bonsai/.claude/settings.local.json`, so the twelve memory notes
-  keep loading after the link until 5.6.
+- **Nothing now.** 5.5's re-plan comes to him as one question per decision.
 - **Whenever he likes:** whether to allow deleting git's own lock files by exact name (`rm -f .git/index.lock`, a
   common agent fix, refused because the project's `.git` is guarded for deletes; told 11 Oct 16:34, left as planned);
-  whether the redactor's shared `=>` and `:=` limits go in a named part before the release.
-- Later, as the plan has them: at 5.4, a pre-release `bonsai` in WSL (about 5 minutes); at 5.5, reading the `workflow`
-  repo and making it public; at 5.7, the release settings, the `rc.1` tag and his approval, the installs, the trial's
-  analysis, his own trial on a fresh project, his word for 1.0.
-- Whenever he likes: turn GitHub Pages off (the old website).
+  whether the redactor's shared `=>` and `:=` limits go in a named part before the release; turn GitHub Pages off (the
+  old website).
+- **Later, as the plan has them:** at 5.5, a newer pre-release `bonsai` in WSL (about 5 minutes), reading the
+  `workflow` repo and making it public, about 3 minutes on Windows (trusting a scratch folder); at 5.6, taking his
+  `"autoMemoryEnabled": true` line out of `.claude/settings.local.json` once the personal layer holds the notes; at
+  5.7, the release settings, the `rc.1` tag and his approval, the installs, the trial's analysis, his own trial on a
+  fresh project, his word for 1.0.
 
 ## Loose ends
 
@@ -256,7 +263,16 @@ committed settings, and the climb re-reads main's file once it holds the lock); 
 load its one git call can pass its 4 s limit; the refusal then says to fix `bonsai.yaml` instead of naming the timeout,
 and one stopgate test is timing-bound); **the machine record is writable** by an agent's shell (deleting it or nulling
 its `checks` lets the agent's own `update` write a free first record); a task file's grants are read from main's
-working tree (the landing rule's audit of each task's `bonsai.allows` is the check).
+working tree (the landing rule's audit of each task's `bonsai.allows` is the check); **two CI flakes**: on Windows,
+`internal/rungjob`'s `TestOutputAndExit` ("ended [{684  }]": a job member that has just exited is listed and, gone
+before it can be opened, reported with no name; fix: `member` skips a pid whose process is gone; red once, on
+`f9e28e3`), and on Linux, `internal/ladder`'s `TestLooserKindsRefused` in its temp folder's cleanup ("unlinkat
+.../.git/objects: directory not empty"; likely cause: since git 2.47 the upkeep `git commit` starts runs detached and
+locks the object database, and CI has git 2.55, this machine 2.34; fix, test-only: the fixtures' git calls set
+`maintenance.auto=false`; red once, on `81cb8d7`); **D2** (a scratch link typed on
+the shell line refused, above); the end verifier's observations: `T-5407`'s `bonsai.allows` leaves out
+`.bonsai/.gitignore` and the two tables its Owns names (harmless: `init` wrote them, run by Rohan), Bonsai's block
+imports `@records/memory/INDEX.md`, which does not exist (the plan allows it; `check` finds nothing).
 **Known limits, after 1.0:** **K2** (a fake program first on the caller's PATH fools a rung; fix: CI runs the
 ladder and a task is done only with it green, Rohan 13 Oct); Git LFS and git-crypt checkouts always read dirty; the packs'
 protected paths in `.bonsai/lock.json` outside the settings record (5.5); a `documents` kind added moves a pack's place
@@ -276,11 +292,10 @@ refused; the commands' own refusal is a tripwire against programs the agent runs
 - **The next formats set (5.5's):** a shared active-task fixture case for a task file holding only `garbage: [` (5.4.3
   fixes the reader with Go tests); `ladder.schema.json`'s `leftovers` description still telling today's `shared_deploy`
   shape (typed open, so Bonsai's `{checkout, ms}` fits).
-- **5.4, settled at its start:** builders stay subagents (Rohan); the worktree without its own `bonsai.yaml` (rung 0
-  judges against main; the guard's own limit, `guard.go:46-48`, a known limit after 1.0) and V3's O4 (the gate proves
-  HEAD; only commits land) known limits; the `garbage: [` task in 5.4.3; `TestFaultsThroughTheHookLine`'s wait in 5.4.2;
-  `golang.org/x/sys` stays out (5.4.1 loads Windows calls lazily). Still open for 5.4's pieces: `flock`, `chrt`,
-  `taskset`, `strace` not runner words; the start-up cost left (`internal/recorder` about 0.14 ms, `internal/clean`).
+- **From 5.4:** the worktree without its own `bonsai.yaml` (rung 0 judges against main; the guard's own limit,
+  `guard.go:46-48`) and V3's O4 (the gate proves HEAD; only commits land) are known limits after 1.0;
+  `golang.org/x/sys` stays out (Windows calls loaded lazily through `syscall`); `flock`, `chrt`, `taskset`, `strace`
+  are not runner words; the start-up cost left (`internal/recorder` about 0.14 ms, `internal/clean`).
 - **5.5:** `design/plan-5.md` ~4031 (the operating skill) says an agent may add a rung as a stricter change: since K1
   an added rung is a person's step; `bonsai init --allow-exec` and `update` run `claude plugin install` on the person's machine: on Windows with
   2.1.294, meeting a run-out access token, that call can sign the person out of Claude Code (a warm session first, or a
@@ -298,11 +313,15 @@ refused; the commands' own refusal is a tripwire against programs the agent runs
 
 **Housekeeping:**
 - Rohan's roadmap artifact ("Trinetra Roadmap", https://claude.ai/artifact/XXKTi6geneu1pdQ4h4miw2): Bonsai's cards
-  updated at 5.3's end (12 Oct), next at 5.4's end.
+  updated at 5.4's end (13 Oct), next at 5.5's end.
 - Another of Rohan's sessions may also work in `~/Servers/Bonsai`: read `origin/main`'s new commits before each push, and
   never stage a file this session did not write.
-- The user settings files' baselines: WSL `4ccccc6b...a0db` (changed 12 Oct 10:59, before 5.4's work), Windows
-  `2b6295c1...4ff6c9`.
+- The user settings files' baselines: WSL `4ccccc6b...a0db` (changed 12 Oct 10:59, before 5.4's work; unchanged at its
+  close), Windows `2b6295c1...4ff6c9`. Rohan's own `~/Servers/Bonsai/.claude/settings.local.json` holds his
+  `skillOverrides` and `"autoMemoryEnabled": true` (out of git; the guard refuses agents' edits of it).
+- The pre-release's source clone `~/bonsai-checks/prerelease/src-a88436a` and the build `~/bonsai-checks/prerelease/bonsai`
+  stay for the end verifier's record; the 5.4 end verifier's scratch (`~/bonsai-checks/verify-5.4-end/`, scripts in
+  `~/bonsai-checks/scripts/verify-5.4-end/`) and `T-5491`'s (`~/bonsai-checks/T-5491/`, `scripts/T-5491/`).
 - Scratch under `~/bonsai-checks/` and `%USERPROFILE%\bonsai-checks\`: every piece's and verifier's folder, the launchers
   (`bin/`, unchanged: `8a9398e2...`, `17ad3ce3...`), the 5.3.7 scripts and their detached worktree
   `~/bonsai-checks/5.3.7/src` (at `97c19eb`; remove with `git worktree remove` when no longer needed). Files there hold

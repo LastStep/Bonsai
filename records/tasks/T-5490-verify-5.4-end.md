@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5490
 title: The end verification of 5.4, a fresh verifier runs the 5.4 done checks 16 to 23
-status: running
+status: done
 lane:
 done_when:
   - "A fresh Opus verifier runs plan-5's 5.4 done checks 16 to 23 on the final commit and the installed bonsai, and passes or fails 5.4; its report is in this task's run report"
@@ -12,7 +12,7 @@ depends_on: [T-5407]
 blocked_by:
 created: 2026-10-13
 started: 2026-10-13
-finished:
+finished: 2026-10-13
 labels:
   bonsai.ladder: []
   bonsai.allows: []
