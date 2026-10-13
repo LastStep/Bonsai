@@ -39,6 +39,8 @@ two-round cap). No change to Mimas or the studio's repo.
 
 ## Rohan's decisions
 
+- **13 Oct, 07:08: Claude Code's memory stays on in Bonsai's repo until 5.6** ("A. Keep them on"): one line of his in
+  `.claude/settings.local.json` at his sitting; it comes out at 5.6.
 - **13 Oct, 00:00: build several pieces, then one verification pass**, where efficient and without lowering the bar:
   "whenever it is possible to build multiple steps together, and then just do one verification pass over then ... only
   do this when it seems like a good efficient choice, and not something that compromises the quality of work". 5.4
@@ -198,11 +200,9 @@ cost on this machine (Defender on, low free memory), Bonsai adding 6-9 ms.
 
 ## Waiting on Rohan
 
-- **Before the switch (5.4.7), a question to put to him:** linking Bonsai's repo writes `autoMemoryEnabled: false`
-  into the committed `.claude/settings.json` (spec §10; plan 2854-2858 assumed one memory note), which outranks his
-  user settings, so the twelve standing preferences in this repo's memory folder most likely stop loading here;
-  `"autoMemoryEnabled": true` in his own `.claude/settings.local.json` (a hand edit, out of git, read by no Bonsai
-  check) would keep them until 5.6's personal layer. Options to put to him (5.4.7's run report, 04:40).
+- **At his install sitting:** the four install lines, and (his 13 Oct word "A. Keep them on") one line,
+  `"autoMemoryEnabled": true`, in his own `~/Servers/Bonsai/.claude/settings.local.json`, so the twelve memory notes
+  keep loading after the link until 5.6.
 - **Whenever he likes:** whether to allow deleting git's own lock files by exact name (`rm -f .git/index.lock`, a
   common agent fix, refused because the project's `.git` is guarded for deletes; told 11 Oct 16:34, left as planned);
   whether the redactor's shared `=>` and `:=` limits go in a named part before the release.
