@@ -111,7 +111,9 @@ ladder:                               # the rungs, cheapest first; each command 
     means: "What git might hide from the other rungs is listed for the verifier."   # what green proves
     tests: null                       # it prints no tests
     base_setup: null                  # nothing to set up on the base
-ratchets: {}                          # the floors, set from the first green climb after the link; each reads 0 until then
+ratchets:                             # the floors: counts that may only rise, from the first green climb after the link
+  go_tests: 4188                      # rung 3's tests that passed, at 5a38f9a (13 Oct, T-5407)
+  go_tests_tagged: 4194               # rung 4's tests that passed with the fault switch, at 5a38f9a (13 Oct, T-5407)
 ci_marked_tests: []                   # no test may skip in CI
 generated:                            # how long generated files are kept, per kind (docs/reference/generated-files.md)
   log:                                # the log, in .bonsai/local/log/
