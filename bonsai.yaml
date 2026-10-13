@@ -61,7 +61,7 @@ ladder:                               # the rungs, cheapest first; each command 
     kind: command                     # a shell command
     command: "go vet ./... && go vet -tags bonsai_test_fault ./..."   # plain, then with the test fault switch
     required: true                    # red here skips the rungs after it
-    timeout_s: 300                    # five minutes at most
+    timeout_s: 180                    # three minutes: 3x a cold build (13 s) after a Go toolchain download (42 s, spec 3)
     ratchet: null                     # no count to keep from falling
     capture: null                     # nothing picked out of its output
     means: "go vet finds nothing, plain or with the fault switch."   # what green proves
@@ -72,7 +72,7 @@ ladder:                               # the rungs, cheapest first; each command 
     kind: command                     # a shell command
     command: "go test -count=1 -run TestSchema ./formats/"   # the formats' schema tests, run in this climb
     required: true                    # red here skips the rungs after it
-    timeout_s: 300                    # five minutes at most
+    timeout_s: 60                     # one minute, the least set here: the slowest seen in WSL was 5 s (cold build cache)
     ratchet: null                     # no count to keep from falling
     capture: null                     # nothing picked out of its output
     means: "Every schema changed only by additions since its set's base (contract section 2.2)."   # what green proves
@@ -83,7 +83,7 @@ ladder:                               # the rungs, cheapest first; each command 
     kind: command                     # a shell command
     command: "go test -json -count=1 ./..."   # every package's tests, each named, run in this climb
     required: true                    # red here skips the rungs after it
-    timeout_s: 900                    # fifteen minutes at most
+    timeout_s: 300                    # five minutes: about 3x the slowest seen in WSL (101 s, in a climb)
     ratchet: go_tests                 # its count, the tests that passed, may not fall below the floor in ratchets
     capture: null                     # the count is read from the tests themselves
     means: "Every test passes, and no fewer pass than the floor."   # what green proves
@@ -94,7 +94,7 @@ ladder:                               # the rungs, cheapest first; each command 
     kind: command                     # a shell command
     command: "go test -json -count=1 -tags bonsai_test_fault ./..."   # the same, with the guard's test faults built in
     required: true                    # red here skips the rungs after it
-    timeout_s: 900                    # fifteen minutes at most
+    timeout_s: 300                    # five minutes: about 3x the slowest seen in WSL (89 s, in a climb)
     ratchet: go_tests_tagged          # its count, the tests that passed, may not fall below the floor in ratchets
     capture: null                     # the count is read from the tests themselves
     means: "The same, with the guard's test faults compiled in."   # what green proves
