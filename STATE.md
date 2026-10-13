@@ -39,6 +39,13 @@ two-round cap). No change to Mimas or the studio's repo.
 
 ## Rohan's decisions
 
+- **13 Oct, 10:59: K2 is a known limit after 1.0** ("C. Known limit only"): a climb hands the caller's environment to every
+  rung, so a fake program first on an agent's PATH can make a red branch climb green; until fixed, CI after the push is
+  the independent check. His direction for the fix: "task done needs a green ci, and ci would run the ladder so that
+  should be enough" (a `bonsai ladder --ci` job in CI; a task moves to done only with it green).
+- **13 Oct, about 08:20: K1 fixed now** ("A. Fix now"): Bonsai records the checks' settings it last accepted and refuses
+  looser committed ones until a person re-records them (`config-looser`); tightening is automatic; an added rung counts
+  as looser (its command runs inside the climb).
 - **13 Oct, 07:08: Claude Code's memory stays on in Bonsai's repo until 5.6** ("A. Keep them on"): one line of his in
   `.claude/settings.local.json` at his sitting; it comes out at 5.6.
 - **13 Oct, 00:00: build several pieces, then one verification pass**, where efficient and without lowering the bar:
@@ -213,7 +220,10 @@ cost on this machine (Defender on, low free memory), Bonsai adding 6-9 ms.
 
 ## Loose ends
 
-**Known limits, after 1.0:** the redactor's (5.2: L1, and the shared `'password' => 'x'`, `password := "x"`, `"""x"""`,
+**Known limits, after 1.0:** **K2** (a fake program first on the caller's PATH fools a rung; fix: CI runs the
+ladder and a task is done only with it green, Rohan 13 Oct); Git LFS and git-crypt checkouts always read dirty; the packs'
+protected paths in `.bonsai/lock.json` outside the settings record (5.5); a `documents` kind added moves a pack's place
+(5.5); the machine record in the home is writable by an agent's shell; the redactor's (5.2: L1, and the shared `'password' => 'x'`, `password := "x"`, `"""x"""`,
 unfolded dotted i and full-width letters, escaped JSON keys, bare secrets, a lower-case secret as a program name); the
 guard's, listed in `internal/guard/guard.go`, `shell.go` and `shell_env.go`: the variable check (V2b's D4 and W1), env's
 own `-S` rules (`\_`, a `-S` text holding `;`), PowerShell casts, parentheses and comma lists on `$env:`, the git icase
@@ -234,7 +244,8 @@ refused; the commands' own refusal is a tripwire against programs the agent runs
   HEAD; only commits land) known limits; the `garbage: [` task in 5.4.3; `TestFaultsThroughTheHookLine`'s wait in 5.4.2;
   `golang.org/x/sys` stays out (5.4.1 loads Windows calls lazily). Still open for 5.4's pieces: `flock`, `chrt`,
   `taskset`, `strace` not runner words; the start-up cost left (`internal/recorder` about 0.14 ms, `internal/clean`).
-- **5.5:** `bonsai init --allow-exec` and `update` run `claude plugin install` on the person's machine: on Windows with
+- **5.5:** `design/plan-5.md` ~4031 (the operating skill) says an agent may add a rung as a stricter change: since K1
+  an added rung is a person's step; `bonsai init --allow-exec` and `update` run `claude plugin install` on the person's machine: on Windows with
   2.1.294, meeting a run-out access token, that call can sign the person out of Claude Code (a warm session first, or a
   `check` finding naming the version); where the orchestrator's rules live (spec §2 names it as pack content; 5.5's
   `workflow` has five roles and none); `needs-yes` is `who: person` while 5.5.3's operating skill has an agent run
