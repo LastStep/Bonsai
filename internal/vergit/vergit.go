@@ -87,6 +87,10 @@
 //     (convert.go), so an honest checkout under them always counts as dirty, as one with Git LFS does. Line ends are
 //     the one conversion left on (the text, eol and crlf attributes, core.autocrlf, core.eol), as the user's git
 //     reads them: a CR added before an LF reads as unchanged, which a test reading a file's bytes could see.
+//   - Hooks: the one call that writes an index (the contents' fresh index, in a temporary file) runs with
+//     core.hooksPath naming a folder that does not exist, so no hook the repository names runs during the read; no
+//     other call writes the index (GIT_OPTIONAL_LOCKS=0) or runs a hook. A process the agent left running beside the
+//     climb can still change files between the reads.
 //   - A file inside a .claude/ folder that only info/exclude or core.excludesFile ignores is named, not made dirty
 //     (Claude Code's own local files; no project's test reads them). So a test that reads a file an agent hid inside
 //     .claude/ through info/exclude passes here with the file named and the run clean; CI, which lacks the file,

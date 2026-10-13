@@ -52,9 +52,10 @@ type Hidden struct {
 //     git read-tree HEAD), whose entries carry no stat times and no index flags, so git reads and hashes every tracked
 //     file and compares its contents with HEAD's; with every filter driver the repository's own configuration
 //     defines switched off for that read (filter.<name>.clean, smudge and process emptied, required false), so a
-//     filter cannot make a changed file read as HEAD's. A file whose contents with filters off differ from HEAD's
-//     counts as changed even where a filter is honest (Git LFS, git-crypt): such a checkout always counts as dirty.
-//     Then each tracked file the
+//     filter cannot make a changed file read as HEAD's, and with core.hooksPath naming a folder inside the read's own
+//     temporary one, so no hook the repository names (post-index-change, run when git writes the fresh index) can mark
+//     a file in it as unchanged. A file whose contents with filters off differ from HEAD's counts as changed even where
+//     a filter is honest (Git LFS, git-crypt): such a checkout always counts as dirty. Then each tracked file the
 //     ident or working-tree-encoding attribute applies to, which git reads through a conversion that makes different
 //     bytes read as one blob, is read by its bytes against HEAD's blob (convert.go), and counts as changed when they
 //     differ: an honest checkout git made under such an attribute (an expanded $Id$, a UTF-16 file) counts as dirty
@@ -159,7 +160,8 @@ func (j *judgment) contents() ([]Hidden, error) {
 	}
 	g := *j.git
 	g.env = append(append([]string{}, j.git.env...), "GIT_INDEX_FILE="+filepath.Join(tmp, "index"))
-	g.extra = append(off, "core.splitIndex=false", "index.sparse=false")
+	g.extra = append(off, "core.splitIndex=false", "index.sparse=false",
+		"core.hooksPath="+filepath.ToSlash(filepath.Join(tmp, "no-hooks")))
 	if j.head != "" {
 		if _, err := g.run(nil, "read-tree", j.head); err != nil {
 			return nil, fmt.Errorf("git cannot read HEAD into a fresh index: %v", err)

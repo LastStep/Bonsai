@@ -3,7 +3,7 @@ package vergit
 // What the file system can hold, pinned (V2b's H2): a stale core.ignorecase, core.fileMode or core.symlinks in the
 // repository's own configuration hides nothing from the reads where the file system can hold the difference, and is
 // left as git has it where the file system cannot (Windows: no case twins, no executable bits, links checked out as
-// files).
+// files); and no hook the repository names runs during the contents' read.
 
 import (
 	"os"
@@ -137,5 +137,32 @@ func TestGitsOwnDetectionStands(t *testing.T) {
 	must(t, os.Rename(filepath.Join(root, "a.txt"), filepath.Join(root, "A.TXT")))
 	if st := tree(t, root); st.Dirty {
 		t.Errorf("a case-blind folder, the file renamed in case only: %+v", st)
+	}
+}
+
+// A post-index-change hook (one the repository names, in .git/hooks or by core.hooksPath) runs whenever git writes an
+// index: the contents' read writes its fresh one, so such a hook could mark the edited file there as assume-unchanged
+// and the read would trust it. The read names no hooks folder of the repository's.
+func TestNoHookDuringTheContentsRead(t *testing.T) {
+	isolate(t)
+	root, _ := repo(t)
+	hook := "#!/bin/sh\n[ -n \"$BONSAI_TEST_HOOKED\" ] && exit 0\nexport BONSAI_TEST_HOOKED=1\ngit update-index --assume-unchanged a.txt\n"
+	for _, dir := range []string{".git/hooks", ".git/more-hooks"} {
+		write(t, root, dir+"/post-index-change", hook)
+		must(t, os.Chmod(filepath.Join(root, filepath.FromSlash(dir), "post-index-change"), 0o755))
+	}
+	write(t, root, "a.txt", "changed\n")
+	git(t, root, "update-index", "--assume-unchanged", "a.txt")
+	for _, set := range []string{"", ".git/more-hooks"} {
+		if set != "" {
+			git(t, root, "config", "core.hooksPath", set)
+		}
+		if s := plainStatus(t, root); s != "" {
+			t.Fatalf("plain status shows the change: %s", s)
+		}
+		st := tree(t, root)
+		if !st.Dirty || hiddenPaths(st) != "a.txt" {
+			t.Errorf("hooks %q: %+v", set, st)
+		}
 	}
 }
