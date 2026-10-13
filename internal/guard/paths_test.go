@@ -212,6 +212,13 @@ func TestAWorktreeSession(t *testing.T) {
 	if local.Main != main {
 		t.Fatalf("FindLocal for the worktree: %+v", local)
 	}
+	// The cleaner takes a file's modified time as a first filter before it reads the last line, so the file's time is
+	// set to the test's clock: left at the real clock, the file turns younger than the cutoff once the real date is past
+	// testNow plus a day.
+	logFile := filepath.Join(main, filepath.FromSlash(LogDir), "s-w1.ndjson")
+	if err := os.Chtimes(logFile, testNow, testNow); err != nil {
+		t.Fatal(err)
+	}
 	done := clean.Files(clean.Options{Local: local, Now: func() time.Time { return testNow.Add(31 * 24 * time.Hour) }}, clean.Log)
 	if len(done.Cleaned) != 1 || done.Cleaned[0].Target != ".bonsai/local/log/s-w1.ndjson" || len(done.Errs) != 0 {
 		t.Fatalf("the cleaner: %+v", done)
