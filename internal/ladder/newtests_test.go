@@ -11,6 +11,8 @@ package ladder
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,8 +24,10 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/ratchet"
+	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // ntForm is one tests form's fixture project: its base files (committed with the fixture), its branch's files laid
@@ -271,6 +275,20 @@ func prior(t *testing.T, f *fx, base string) {
 		t.Fatal(err)
 	}
 	f.write(".bonsai/local/ladder/T-0901.json", string(raw))
+	fingerprinted(t, f.root, "T-0901", raw)
+}
+
+// fingerprinted appends the ladder record a climb writes after its result (the runner's fingerprint), so a result a
+// test writes by hand reads as the task's last climb's (an earlier result is read only with its record).
+func fingerprinted(t *testing.T, main, task string, raw []byte) {
+	t.Helper()
+	sum := sha256.Sum256(raw)
+	l := record.New("ladder", record.Common{Workspace: testID, Local: workspace.Local{Root: main, Main: main}, At: time.Now()})
+	rel, kind, text, ok := workspace.LocalDir+"/ladder/"+task+".json", ModeLocal, "sha256:"+hex.EncodeToString(sum[:]), true
+	l.Target, l.Kind, l.Text, l.OK, l.Task = &rel, &kind, &text, &ok, &task
+	if _, err := record.WriteLog(main, l); err != nil {
+		t.Fatal(err)
+	}
 }
 
 // A stop during the check, here while base_setup runs in the base worktree: the base run is ended at once, the result

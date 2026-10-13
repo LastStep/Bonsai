@@ -45,6 +45,9 @@ func (c *Climb) printHeader() {
 	if c.unverified != "" {
 		c.say("  this checkout's main checkout is not verified (%s): the ci result is written in this checkout", c.unverified)
 	}
+	if c.priorNote != "" {
+		c.say("  note: %s", c.priorNote)
+	}
 }
 
 // printRung is one rung's line as it ends, with the job's notes under it.

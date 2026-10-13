@@ -28,7 +28,10 @@
 //     exit 4). A nested climb (BONSAI_LADDER=1: a ladder run inside a rung) takes no lock: its outer climb holds it.
 //  5. The base, once (note 13): the base branch is the branch the main checkout has checked out (read from its HEAD
 //     file), and the merge base git's merge-base of it and HEAD; "" for both when main's HEAD is detached. Every kind
-//     gets the same answer (kinds.go).
+//     gets the same answer (kinds.go). Then the task's earlier result (climb.go's prior), which git integrity compares
+//     with and the rise step takes a recorded base from: read only when its bytes are the ones the log's last ladder
+//     record for the task fingerprints, else taken as none, the header saying why (a result changed by hand, an older
+//     one put back, one with no record).
 //  6. The rungs climbed in number order (rungs.go, kinds.go): a command rung through internal/rungjob (one at a time,
 //     its package's known limit), its tests read through internal/testout and judged for skips and marks (note 4), its
 //     captures and its ratchet's count (note 5); a guard or ver-git rung through kinds.go. A required rung that is not
