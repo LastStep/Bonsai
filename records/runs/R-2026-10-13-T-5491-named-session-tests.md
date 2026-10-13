@@ -65,6 +65,10 @@ labels: {}
 - 14:23 CI on `d7037dc` green on every job, Windows included (`81cb8d7`'s Linux red was the git flake above).
   `T-5491` to `done`. 5.4 closes: the end verifier's one must-fix is fixed and landed green; its other findings are
   noted (`STATE.md`, known limits). Next: the records commit, then one climb of `main` for the floors.
+- 14:27 **The part's closing climb** (`CLAUDE.md`, "The floors, once a part"): `/usr/local/bin/bonsai ladder --task
+  T-5491` in the main checkout at `d5f8e3b`, clean: GREEN 6 of 6, 99.0 s (tests 48.5 s `go_tests 4188->4188`, tagged
+  48.1 s `go_tests_tagged 4194->4194`), result sha256 `d7c5b1892e70c357992c1ce0f6226f97b0592c16276c497ceddd41924e13bec5`.
+  No count above its floor, so no Bless and nothing to raise: **5.4's floors stand at 4188 and 4194.**
 
 ## Runs
 

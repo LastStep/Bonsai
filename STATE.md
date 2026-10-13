@@ -207,7 +207,7 @@ subagents in plain worktrees from `main`, climbing `/usr/local/bin/bonsai ladder
 on a green local result at its HEAD whose record names the installed `bonsai`, plus check 10's Windows half before the
 push (back from 5.5: `~/bonsai-checks/briefs/rules.md`) and CI after it; the part's end verifier audits every landing.
 The builders' rules: `~/bonsai-checks/briefs/rules.md` (**update its `Claude-Session` line to the new session's
-first**). The floors are raised once a part, after its last records commit.
+first**). The floors are raised once a part, after its last records commit: **at 5.4's close they stand at `go_tests` 4188 and `go_tests_tagged` 4194** (the closing climb at `d5f8e3b`, green, no rise).
 
 **For 5.5 from 5.4's close:** the runner could clear `BONSAI_TASK` and `BONSAI_ROLE` from the rungs' environment, so no
 test reads a session's own task again (D1's repeat; a change to the binary, so with the next pre-release); the gate's
