@@ -189,15 +189,35 @@ func fileSHA256(p string) (string, error) {
 }
 
 // RecordCheckout writes this machine's record of the plan's main checkout (workspace/record.go) once init or update
-// ended without a refusal, in the main checkout only: its path, bonsai.yaml's id and the branch it holds as the
-// workspace's base (another base than the one recorded is refused to an agent before this: BaseChange). It reports
-// what went wrong, for the command's text, and never fails the command (the project's files are written).
+// ended without a refusal, in the main checkout only: its path, bonsai.yaml's id, the branch it holds as the
+// workspace's base, and the settings for the checks the plan's bonsai.yaml holds, the ones the command read and judged
+// (another base, or looser settings, than the ones recorded are refused to an agent before this: BaseChange,
+// ChecksLooser). It reports what went wrong, for the command's text, and never fails the command (the project's files
+// are written).
 func RecordCheckout(p *Plan) error {
 	if p == nil || p.Config == nil || p.Home == "" || !samePath(p.Root, p.Main) {
 		return nil
 	}
-	_, err := workspace.RecordCheckout(p.Home, p.Main, p.Config.ID, recordClock())
+	_, err := workspace.RecordCheckoutWith(p.Home, p.Main, p.Config.ID, recordClock(), workspace.ChecksOf(p.Config.Full))
 	return err
+}
+
+// ChecksLooser says how the settings for the checks in the plan's bonsai.yaml, which init or update records once it
+// ends (RecordCheckout), are looser than the ones this machine's record of the main checkout accepted
+// (workspace.Loosenings): each loosening, in words. None when they are the same or stricter, when there is no record
+// or it holds none yet (that first record is free, as the base's is), or when the plan's checkout is not the main one
+// (only the main checkout records). Recording looser settings is a person's step (workspace/checks.go: an agent could
+// commit a lowered floor on the base branch and record it, which would make the ladder's check moot), which the
+// command refuses in an agent's session (cmd/bonsai).
+func ChecksLooser(p *Plan) []string {
+	if p == nil || p.Config == nil || p.Home == "" || !samePath(p.Root, p.Main) {
+		return nil
+	}
+	rec, err := workspace.LoadMachineRecord(p.Home, p.Main)
+	if err != nil || rec == nil || rec.Checks == nil {
+		return nil
+	}
+	return workspace.Loosenings(rec.Checks, workspace.ChecksOf(p.Config.Full))
 }
 
 // BaseChange says whether this machine's record of the plan's main checkout, written once init or update ends

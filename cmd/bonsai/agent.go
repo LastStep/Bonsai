@@ -9,7 +9,11 @@ package main
 //   - unlink, which takes Bonsai's guard and stop gate out of the project;
 //   - an update (or init in a linked project) that changes or takes out Bonsai's own guard line or stop gate's line
 //     (engine.Plan.OwnGuardChanges): counted as a person's command here, though for consent a removed line runs
-//     nothing (5.1.1 rule 1), so a person's own update that takes one out still needs only --yes.
+//     nothing (5.1.1 rule 1), so a person's own update that takes one out still needs only --yes;
+//   - an update or init that would record, in this machine's record of the main checkout, another base branch than the
+//     one recorded (engine.BaseChange), or settings for the checks looser than the ones recorded (engine.ChecksLooser,
+//     workspace/checks.go): the ladder and the stop gate hold the project to both, and an agent that could record its
+//     own would make them moot. The first record of either is free.
 //
 // The one exception, (ii): a project in command mode whose running task's bonsai.allows holds bonsai.yaml and
 // .bonsai/lock.json, which in command mode only a person's tap puts there (guard.PersonGrant, the guard's own

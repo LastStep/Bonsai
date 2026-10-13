@@ -142,6 +142,15 @@ func runEngine(c *call) int {
 			return out("refused", e.Exit, e, "Refused: "+e.What+".\nnext: "+e.Next+"\n")
 		}
 	}
+	// So is recording settings for the checks looser than the ones this machine accepted (workspace/checks.go): the
+	// ladder and the stop gate refuse bonsai.yaml's committed settings while they are looser, and an agent that could
+	// record them would make that check moot. Refused before anything is written.
+	if looser := engine.ChecksLooser(plan); len(looser) > 0 {
+		if e := personCommand(dir, home, cmdline, "it would record settings for the checks looser than the ones this machine "+
+			"last accepted for the workspace: "+looserList(looser), cmdline+" --yes (or put bonsai.yaml's settings back)"); e != nil {
+			return out("refused", e.Exit, e, "Refused: "+e.What+".\nnext: "+e.Next+"\n")
+		}
+	}
 	// The command that installs a plugin carrying code on this machine, a person's step: once the files are written
 	// (or have nothing to change) the same word with --allow-exec does it, without the values or the flags that
 	// settled conflicts.
@@ -259,12 +268,30 @@ func pluginStep(plan *engine.Plan, again string, written bool) []engine.PluginRe
 }
 
 // recorded writes this machine's record of the checkout (engine.RecordCheckout) once init or update ended without a
-// refusal, and gives a line for the text when it could not: the project's files are written either way.
+// refusal, and gives a line for the text when it could not: the project's files are written either way. When it
+// recorded settings for the checks looser than the ones accepted before (a person's update: an agent's is refused
+// first), the line names each loosening.
 func recorded(plan *engine.Plan) string {
+	looser := engine.ChecksLooser(plan)
 	if err := engine.RecordCheckout(plan); err != nil {
 		return "note: this machine's record of the checkout was not written: " + engine.ASCII(err.Error()) + "\n"
 	}
+	if len(looser) > 0 {
+		return "note: this machine now accepts bonsai.yaml's settings for the checks, looser than the ones it accepted before: " +
+			looserList(looser) + "\n"
+	}
 	return ""
+}
+
+// maxLoosenings caps the loosenings a line names; the rest are counted.
+const maxLoosenings = 8
+
+// looserList joins loosenings for a line, at most maxLoosenings of them, the rest counted.
+func looserList(l []string) string {
+	if len(l) > maxLoosenings {
+		l = append(l[:maxLoosenings:maxLoosenings], "and "+strconv.Itoa(len(l)-maxLoosenings)+" more")
+	}
+	return engine.ASCII(strings.Join(l, "; "))
 }
 
 func conflictWhat(p *engine.Plan) string {

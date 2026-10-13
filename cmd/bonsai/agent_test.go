@@ -192,6 +192,69 @@ func TestAgentRecordingAnotherBase(t *testing.T) {
 	}
 }
 
+// Recording settings for the checks looser than the ones this machine accepted is a person's command (the machine
+// record's checks, workspace/checks.go): with a path taken off protected, update in an agent's session is refused,
+// exit 4, nothing written and the record's settings unchanged; stricter settings are free to an agent; a person's
+// update records looser ones, its text naming each loosening.
+func TestAgentRecordingLooserChecks(t *testing.T) {
+	c := newCLI(t)
+	c.link()
+	c.commit("link")
+	home := os.Getenv(workspace.HomeEnv)
+	accepted := func() string {
+		t.Helper()
+		ch, tr := workspace.AcceptedChecks(home, c.root)
+		if !tr.Verified {
+			t.Fatalf("no settings recorded at the link: %+v", tr)
+		}
+		return schema.Show(ch.JSON())
+	}
+	linked := c.read("bonsai.yaml")
+	lists := `".claude/**", "bonsai.yaml", ".bonsai/lock.json"`
+	if !strings.Contains(linked, "protected: ["+lists+"]") {
+		t.Fatalf("the linked bonsai.yaml's protected list:\n%s", linked)
+	}
+	was := accepted()
+	asAgent(c)
+	// Stricter: free.
+	c.write("bonsai.yaml", strings.Replace(linked, "protected: ["+lists+"]", "protected: ["+lists+`, "more/**"]`, 1))
+	if code, out, errOut := c.run("", "update", "--yes"); code != 0 || accepted() == was || !strings.Contains(accepted(), `"more/**"`) {
+		t.Fatalf("stricter settings, as an agent: exit %d\n%s%s", code, out, errOut)
+	}
+	stricter := accepted()
+	// Looser than recorded: a person's command.
+	c.write("bonsai.yaml", strings.Replace(linked, "protected: ["+lists+"]", `protected: ["bonsai.yaml", ".bonsai/lock.json"]`, 1))
+	before := tree(t, c.root)
+	for _, args := range [][]string{{"update", "--yes"}, {"update", "--yes", "--json"}} {
+		code, out, errOut := c.run("", args...)
+		text := out + errOut
+		if args[len(args)-1] == "--json" {
+			e := errorIn(fits(t, out, "changes"), "changes")
+			n, _ := e.Get("next")
+			next, _ := n.(schema.Object)
+			if e.String("code") != "person-command" || next.String("who") != "person" {
+				t.Errorf("%v: error %s", args, schema.Show(e))
+			}
+			text = e.String("message") + "\n" + next.String("do")
+		}
+		if code != 4 || !strings.Contains(text, "it would record settings for the checks looser than the ones this machine last "+
+			`accepted for the workspace: protected no longer holds ".claude/**"; protected no longer holds "more/**"`) ||
+			!strings.Contains(text, "a person runs it in a terminal of their own, not one Claude Code started: bonsai update --yes "+
+				"(or put bonsai.yaml's settings back)") {
+			t.Errorf("%v as an agent: exit %d\n%s", args, code, text)
+		}
+	}
+	if after := tree(t, c.root); after != before || accepted() != stricter {
+		t.Error("a refused update wrote the project or the record")
+	}
+	asPerson(c)
+	code, out, errOut := c.run("", "update", "--yes")
+	if code != 0 || accepted() == stricter || !strings.Contains(out, "note: this machine now accepts bonsai.yaml's settings for the "+
+		`checks, looser than the ones it accepted before: protected no longer holds ".claude/**"`) {
+		t.Errorf("a person's update: exit %d\n%s%s", code, out, errOut)
+	}
+}
+
 // A project linked by the build before (Bonsai's lines by name, the guard's matcher without Monitor): check warns; it
 // takes the new lines (Monitor and onFailure on the guard's) only with --allow-exec --yes: --yes alone is refused,
 // exit 4, nothing written. In an agent's session the same update is a person's command whatever its flags: it takes
