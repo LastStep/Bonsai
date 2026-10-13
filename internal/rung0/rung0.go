@@ -13,7 +13,11 @@
 //     --untracked-files=all; as today's changedFiles). An untracked nested repository (git names its folder with a
 //     trailing slash and does not look inside it) counts as its .git, a checkout planted below the top, which the
 //     guard's floor never grants; but a worktree of the same main checkout (Claude Code places its own inside the main
-//     checkout, under .claude/worktrees/), known by git's link back, is another checkout of the project and passed over.
+//     checkout, under .claude/worktrees/), known by git's link back, is another checkout of the project and passed over;
+//   - on any branch, what the checkout's contents read against HEAD show changed though git status does not
+//     (vergit.Tree: a fresh index read from HEAD, the repository's own filters off), so a change hidden from git
+//     status (the index's stat times kept from a look while a filter made a file read as unchanged, an index flag) is
+//     judged path by path, not only made dirty.
 //
 // Each path (note 2) is judged by guard.ChangeJudge: the guard's one function, re-rooted at the verified main
 // checkout, with the named task's grants at any status, its declared documents' tripwires given the base's bytes

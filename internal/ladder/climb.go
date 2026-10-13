@@ -17,6 +17,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/vergit"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -33,7 +34,7 @@ type Climb struct {
 	Requested []int64               // the rungs asked for, sorted, each once
 	Base      string                // the base branch: the branch Main has checked out; "" when its HEAD is detached
 	MergeBase string                // git merge-base of Base and HEAD in Root; "" when there is no base or git finds none
-	Prior     *format.Ladder        // the task's earlier result in Main's ladder folder (made for this task and workspace, its bytes the ones its last ladder record fingerprints), or nil
+	Prior     *format.Ladder        // the task's earlier result in Main's ladder folder (climb.go's prior), or nil
 	Getenv    func(string) string   // the climb's environment reader
 	Now       func() time.Time      // the climb's clock
 
@@ -53,6 +54,8 @@ type Climb struct {
 	leftLines  []string             // the leftovers line
 	stopped    bool                 // the stop signal came
 	priorNote  string               // why an earlier result that is there was not read ("" when it was, or there is none)
+	hidden     []vergit.Hidden      // changed paths git status does not show (treeDirty), the first read's that found any
+	treeErr    string               // why the tree could not be read (treeDirty), the first such
 }
 
 // TaskID is the climbed task's id, "" for none.

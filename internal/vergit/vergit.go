@@ -38,9 +38,12 @@
 // global excludes (.claude/settings.local.json) and a block in info/exclude (its other .claude/ files), by a list that
 // grows with its versions; a file inside a .claude/ folder (at any depth) that only those rules ignore is named under
 // exclude-hidden but does not set Hides, so Claude Code's own state never makes a checkout dirty. The other half of
-// dirty is git status, which settings outside any diff can also fool (status.showUntrackedFiles=no or a lying
-// core.fsmonitor in the repository's config; a filter and an attributes file in the user's global config): Dirty runs
-// it as this package runs git, so the runner's dirty is Dirty(in) or Outcome.Hides.
+// dirty is the tree's state (tree.go: Tree, Dirty): git status, which settings outside any diff can also fool
+// (status.showUntrackedFiles=no or a lying core.fsmonitor in the repository's config; a filter and an attributes file
+// in the user's global config), run as this package runs git; and the checkout's contents read against HEAD through a
+// fresh index with the repository's own filters off, since git status trusts what its index kept from an earlier look
+// (stat times refreshed while a filter made a changed file read as unchanged, then the filter taken out; an index
+// flag). So the runner's dirty is Dirty(in) or Outcome.Hides.
 //
 // How git runs (git.go): one program, the judgment's deadline, a fixed environment (no user configuration, no GIT_*
 // variable from the caller, no pager, no prompt, no network) and settings pinned on the command line, so nothing the
@@ -55,8 +58,14 @@
 //     (the folder, untracked), not file by file; git status shows that folder, so the run is dirty anyway.
 //   - stash-added compares counts: a dropped entry and an added one between two climbs cancel out. The stash is the
 //     main checkout's, shared by its worktrees.
-//   - A filter defined in the repository's own configuration is named, not judged: git-crypt and a repository-local
-//     Git LFS define one honestly. Changes inside a submodule are not looked at.
+//   - A filter defined in the repository's own configuration is named under filter-local, and switched off for the
+//     contents' read, so a file it changes reads as it is: a file whose contents differ from its blob without the
+//     filter counts as dirty. A filter that does so honestly (Git LFS, git-crypt, in the repository's configuration or
+//     the user's, which these reads do not load) therefore makes every climb of such a checkout dirty: a proof there
+//     needs its filtered files out of the tested tree, or a person's decision to drop the filter.
+//   - The contents' read hashes every tracked file at every climb's start and end (about 60 ms on Bonsai's own
+//     repository on Linux, against 6 ms for git status), and rung 0 reads them once more.
+//   - Changes inside a submodule are not looked at.
 //   - The repository's own configuration is read by every git call (no variable switches it off); the pinned
 //     settings cover the parts of it known to hide a change from these reads.
 //   - A file inside a .claude/ folder that only info/exclude or core.excludesFile ignores is named, not made dirty
@@ -183,6 +192,9 @@ type judgment struct {
 	exclHash string
 }
 
+// name is a path of this checkout as a finding names it, as shown.
+func (j *judgment) name(p string) string { return shown(p) }
+
 // Judge judges one checkout's git integrity.
 func Judge(in Input) Outcome {
 	timeout := in.Timeout
@@ -239,33 +251,6 @@ func (j *judgment) start(ctx context.Context) error {
 		j.notes = append(j.notes, note)
 	}
 	return nil
-}
-
-// Dirty reports whether git status, run as this package runs git (its fixed environment and pinned settings, with
-// the user's excludes file and line-end settings), shows a change in the checkout: a tracked file changed, staged or
-// deleted, or an untracked file nothing ignores. It is the git-status half of a ladder result's git.dirty, the other
-// half being Outcome.Hides: dirty = Dirty(in) or Hides. Run plainly, git status can be talked out of a change by
-// settings outside any diff (status.showUntrackedFiles=no or a lying core.fsmonitor in the repository's config; a
-// filter driver and an attributes file in the user's global configuration), which this run does not read or pins
-// off. On an error, the caller counts the run dirty: a status that cannot be read proves no clean tree. Only
-// in.Root, in.Git and in.Timeout are read.
-func Dirty(in Input) (bool, error) {
-	timeout := in.Timeout
-	if timeout <= 0 {
-		timeout = DefaultTimeout
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	j := &judgment{in: in, found: map[string]*finding{}}
-	if err := j.start(ctx); err != nil {
-		return true, err
-	}
-	out, err := j.git.run(nil, "status", "--porcelain=v1", "-z", "--untracked-files=normal",
-		"--ignore-submodules=none", "--no-renames")
-	if err != nil {
-		return true, fmt.Errorf("git cannot read the checkout's status: %v", err)
-	}
-	return len(out) > 0, nil
 }
 
 // locate finds the checkout's top folder, its common git folder, whether it is shallow, and HEAD.
@@ -328,10 +313,10 @@ func (j *judgment) index() error {
 		}
 		seen[p] = true
 		if tag >= 'a' && tag <= 'z' {
-			assume.names = append(assume.names, shown(p))
+			assume.names = append(assume.names, j.name(p))
 		}
 		if tag == 'S' || tag == 's' {
-			skip.names = append(skip.names, shown(p))
+			skip.names = append(skip.names, j.name(p))
 		}
 	}
 	return nil
@@ -395,7 +380,7 @@ next:
 		switch {
 		case isPerDirectory(e.src):
 			if !j.tracked[e.src] {
-				untracked.names = append(untracked.names, shown(e.path)+" (by "+shown(e.src)+")")
+				untracked.names = append(untracked.names, j.name(e.path)+" (by "+j.name(e.src)+")")
 			}
 		default:
 			by := "info/exclude"
@@ -406,7 +391,7 @@ next:
 				by += "; inside .claude/, not counted as dirty"
 				hidden.exempt++
 			}
-			hidden.names = append(hidden.names, shown(e.path)+" (by "+by+")")
+			hidden.names = append(hidden.names, j.name(e.path)+" (by "+by+")")
 		}
 	}
 	return nil

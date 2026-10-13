@@ -19,10 +19,12 @@ package ladder
 //     Status, Reason, Captures (base, stash-count, exclude-hash and each finding's count; text redacted) and Hides
 //     copied: the runner turns Hides into the result's git.dirty. Its findings never turn it red; error (git cannot be
 //     read) names git status as the next step.
-//   - treeDirty: whether git's status shows the tree dirty, read at the climb's start and its end: vergit.Dirty, git
-//     status as git integrity runs it (a fixed environment and settings pinned, so the repository's own configuration
-//     cannot talk it out of a change), an error counting dirty. The result's git.dirty is that, HEAD moved, or a
-//     ver-git rung's Hides.
+//   - treeDirty: whether the tree is dirty, read at the climb's start and its end: vergit.Tree, git status as git
+//     integrity runs it (a fixed environment and settings pinned, so the repository's own configuration cannot talk it
+//     out of a change) and the checkout's contents read against HEAD through a fresh index with the repository's own
+//     filters off (so neither the index's stat times nor its flags nor a filter keep a changed file from being read),
+//     every submodule's too; an error counting dirty. The changed paths only the contents' read finds are kept for the
+//     human lines. The result's git.dirty is that, HEAD moved, or a ver-git rung's Hides.
 //   - rungTimeout: each rung's limit, used for its run and counted in the lock's budget (lock.go): its timeout_s, else
 //     its kind's own default: a command rung the rung job's (rungjob.DefaultTimeout, 600 s), rung 0 rung0.DefaultTimeout
 //     and git integrity vergit.DefaultTimeout (120 s each: git reads, which a limit only ends when git does not answer),
@@ -221,10 +223,17 @@ func rungTimeout(r format.Rung) time.Duration {
 	return rungjob.DefaultTimeout
 }
 
-// treeDirty reports whether the climbed checkout's tree is dirty by git's status (this file's comment).
+// treeDirty reports whether the climbed checkout's tree is dirty (this file's comment), keeping the changed paths git
+// status does not show, and why the tree could not be read, for the human lines.
 func treeDirty(c *Climb) bool {
-	dirty, err := vergit.Dirty(vergit.Input{Root: c.Root})
-	return dirty || err != nil
+	st, err := vergit.Tree(vergit.Input{Root: c.Root})
+	if len(st.Hidden) > 0 && len(c.hidden) == 0 {
+		c.hidden = st.Hidden
+	}
+	if err != nil && c.treeErr == "" {
+		c.treeErr = oneLine(err.Error())
+	}
+	return st.Dirty || err != nil
 }
 
 // Step is one rung that ran, as the steps after a rung see it.

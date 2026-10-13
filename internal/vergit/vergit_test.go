@@ -903,14 +903,6 @@ func TestDirty(t *testing.T) {
 			t.Errorf("Dirty = %v, %v; want %v", got, err, want)
 		}
 	}
-	plainStatus := func(t *testing.T, root string) string {
-		t.Helper()
-		cmd := exec.Command("git", "status", "--porcelain")
-		cmd.Dir = root
-		out, err := cmd.Output()
-		must(t, err)
-		return strings.TrimSpace(string(out))
-	}
 	t.Run("clean, with a file the .gitignore ignores", func(t *testing.T) {
 		root, _ := repo(t)
 		write(t, root, "build/out.bin", "x")
@@ -964,11 +956,14 @@ func TestDirty(t *testing.T) {
 		}
 		dirty(t, root, true)
 	})
-	t.Run("assume-unchanged: Hides makes up the other half", func(t *testing.T) {
+	t.Run("assume-unchanged: the contents' read sees past it, and Hides names it", func(t *testing.T) {
 		root, base := repo(t)
 		git(t, root, "update-index", "--assume-unchanged", "a.txt")
 		write(t, root, "a.txt", "changed behind git's back\n")
-		dirty(t, root, false) // git status itself cannot see past the entry
+		if s := plainStatus(t, root); s != "" {
+			t.Fatalf("plain git status shows the change: %s", s)
+		}
+		dirty(t, root, true)
 		if !judge(t, input(root, base)).Hides {
 			t.Errorf("Hides is false")
 		}

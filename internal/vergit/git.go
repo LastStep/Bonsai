@@ -69,6 +69,7 @@ type gitRunner struct {
 	dir      string   // the folder git runs in
 	excludes string   // core.excludesFile for every call: the user's own, or "" for none
 	keep     []string // the user's line-end settings, given on every call (userSettings)
+	extra    []string // more settings for one kind of read, given last (the contents' read: every filter off)
 	env      []string // the fixed environment
 }
 
@@ -124,6 +125,9 @@ func (g *gitRunner) run(stdin []byte, args ...string) ([]byte, error) {
 	}
 	full = append(full, "-c", "core.excludesFile="+g.excludes)
 	for _, k := range g.keep {
+		full = append(full, "-c", k)
+	}
+	for _, k := range g.extra {
 		full = append(full, "-c", k)
 	}
 	return g.exec(g.env, stdin, append(full, args...), args)

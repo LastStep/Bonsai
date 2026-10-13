@@ -97,6 +97,22 @@ func (c *Climb) printSummary(l *format.Ladder, w *Written, d *format.Climb) {
 	if len(c.hides) > 0 {
 		c.say("  git integrity found a change git hides (rung %s): the result counts the tree as dirty", strings.Join(c.hides, ", "))
 	}
+	if c.treeErr != "" {
+		c.say("  the tree could not be read, so the result counts it as dirty: %s", c.treeErr)
+	}
+	if len(c.hidden) > 0 {
+		c.say("  %d changed %s git status does not show, so the result counts the tree as dirty (each read by its contents "+
+			"against HEAD):", len(c.hidden), plural(len(c.hidden), "path", "paths"))
+		for i, h := range c.hidden {
+			if i == FailedPrinted {
+				c.say("    ... and %d more", len(c.hidden)-FailedPrinted)
+				break
+			}
+			c.say("    %s: %s", strconv.QuoteToASCII(h.Path), h.Why)
+		}
+		c.say("  git keeps a file it saw unchanged in its index; to make git status show each again: git rm -q --cached -- <path> " +
+			"&& git add -- <path> (a submodule's file: inside the submodule), then commit or revert it")
+	}
 	for _, r := range l.Rungs {
 		if r.Status == statusGreen || r.Status == statusSkipped {
 			continue

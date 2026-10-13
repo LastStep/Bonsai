@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/guard"
+	"github.com/LastStep/Bonsai/internal/vergit"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -30,6 +31,14 @@ type git struct {
 }
 
 func gitIn(root string) git { return git{root: root} }
+
+// deadline is the judgment's deadline, when it has one.
+func (g git) deadline() (time.Time, bool) {
+	if g.ctx == nil {
+		return time.Time{}, false
+	}
+	return g.ctx.Deadline()
+}
 
 // within gives the same runner with a deadline: a git call still running when ctx ends is ended.
 func (g git) within(ctx context.Context) git {
@@ -116,10 +125,13 @@ func (g git) hasHead() bool {
 type entry struct{ path string }
 
 // changed lists every path the checkout changed (note 1), sorted, each once: the branch's commits since from when
-// from is not "", and what is staged, unstaged or untracked and not ignored. An untracked nested repository (git names
-// its folder with a trailing slash and does not look inside) is its .git, a checkout planted below the top (the guard's
-// floor never grants one), unless it is a worktree of the main checkout main (Claude Code places its own worktrees
-// inside the main checkout): another checkout of the project, whose changes are its own climb's.
+// from is not "", what is staged, unstaged or untracked and not ignored, and what the checkout's contents read
+// against HEAD show changed though git status does not (vergit.Tree's hidden paths: a file whose stat times the index
+// kept from a look while a filter made it read as unchanged, one under an index flag), so a change hidden from git
+// status is judged by the guard's function, not only made dirty. An untracked nested repository (git names its folder with a trailing slash and does not look
+// inside) is its .git, a checkout planted below the top (the guard's floor never grants one), unless it is a worktree
+// of the main checkout main (Claude Code places its own worktrees inside the main checkout): another checkout of the
+// project, whose changes are its own climb's.
 func (g git) changed(from, main string) ([]entry, error) {
 	var paths []string
 	if from != "" {
@@ -145,6 +157,19 @@ func (g git) changed(from, main string) ([]entry, error) {
 			p += ".git"
 		}
 		paths = append(paths, p)
+	}
+	in := vergit.Input{Root: g.root}
+	if dl, ok := g.deadline(); ok {
+		if in.Timeout = time.Until(dl); in.Timeout <= 0 {
+			return nil, errors.New("git: ended at the rung's limit")
+		}
+	}
+	tree, err := vergit.Tree(in)
+	if err != nil {
+		return nil, fmt.Errorf("the checkout's contents cannot be read against HEAD: %v", err)
+	}
+	for _, h := range tree.Hidden {
+		paths = append(paths, strings.TrimSuffix(h.Path, "/"))
 	}
 	var out2 []entry
 	for _, p := range sortedUnique(paths) {
