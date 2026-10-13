@@ -24,6 +24,9 @@ protected:                            # the protected paths, as globs from the t
   - ".github/**"                      # CI, CodeQL and the release workflow
   - "CLAUDE.md"                       # the standing rules every agent here follows
   - ".gitignore"                      # a line here hides a file from git, and so from rung 0
+  - "**/.gitignore"                   # the same in any folder: a nested .gitignore hides an untracked file below it
+  - ".gitattributes"                  # an attribute here (a filter, an encoding) changes what git reads from a file
+  - "**/.gitattributes"               # the same in any folder
   - "go.mod"                          # the module: its Go version, toolchain and dependencies
   - "go.sum"                          # the dependencies' fingerprints
   - ".golangci.yml"                   # the linter's settings
