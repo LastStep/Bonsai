@@ -63,6 +63,8 @@ func ladderOf(t *testing.T, root string) string {
 }
 
 func TestStatusLadder(t *testing.T) {
+	t.Setenv("BONSAI_TASK", "") // the caller's named task is not this test's
+	t.Setenv("BONSAI_ROLE", "")
 	root, _ := project(t, ladderCfg)
 	if err := os.MkdirAll(filepath.Join(root, "work", "tasks"), 0o755); err != nil {
 		t.Fatal(err)

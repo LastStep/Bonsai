@@ -371,6 +371,8 @@ func TestAgentUpdateTakingOutAStopLine(t *testing.T) {
 // .bonsai/lock.json (a person's tap), an agent's update --allow-exec --yes and unlink --yes run; with the lock left out
 // of the grant, refused, the reason naming it.
 func TestAgentUnderAPersonsGrant(t *testing.T) {
+	t.Setenv("BONSAI_TASK", "") // the caller's named task is not this test's: the running task grants
+	t.Setenv("BONSAI_ROLE", "")
 	c := newCLI(t)
 	c.link()
 	c.linkedByName()
