@@ -1,9 +1,10 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 13 Oct 2026 at 03:52. **Step 5.4, the ladder runner and the switch, is under
+Rewritten, never appended. Last rewritten 13 Oct 2026 at 05:50. **Step 5.4, the ladder runner and the switch, is under
 way** (`design/plan-5.md` ~2374; 28-44 h, re-ask 57), started 12 Oct 23:35 (an earlier session's start at 10:42 stopped
-unfinished). **5.4.0, 5.4.1, 5.4.2, 5.4.3 and 5.4.6 landed** (`447909f`, the runner among them); **the wiring of rung 0
-and git integrity, 5.4.4 and 5.4.5 are building** side by side; CI's red Windows timing check is fixed (`41e0815`). Step 5.3, the guards, is done (12 Oct, 00:46), two holes logged as known limits.
+unfinished). **All of 5.4's code is on `main`** (`271e0ae`: 5.4.0-5.4.6, the wiring and the fixes after); **5.4.7's
+preparation is built** on its branch (it lands after V2). Next: a fix for a test that broke on the date (13 Oct 00:00
+UTC), then **V1 and V2 side by side** on one commit, then the pre-release and Rohan's install. Step 5.3, the guards, is done (12 Oct, 00:46), two holes logged as known limits.
 
 ## In short
 
@@ -167,15 +168,16 @@ and line; the orchestrator's rulings in `records/runs/R-2026-10-12-5.4.0-formats
 
 | Piece | State | Run report |
 |---|---|---|
-| 5.4.0 formats set 7 and the ladder's lists | **landed** `6688f81`, CI green | `R-2026-10-12-5.4.0-formats.md` (also the part's log) |
-| 5.4.1 rung jobs and leftovers | **landed** `e97afb1`; Windows test fixes `725b5d9`, `41e0815` (CI's red timing check) | `R-2026-10-12-5.4.1-rungjobs.md` |
-| 5.4.6 git integrity | **landed** `18decac` (its `.claude/` ruling in its report) | `R-2026-10-13-5.4.6-vergit.md` |
-| 5.4.3 rung 0 (and the `garbage: [` task fix) | **landed** `c704783` | `R-2026-10-13-5.4.3-rung0.md` |
-| 5.4.2 the runner, `bonsai ladder` | **landed** `447909f` | `R-2026-10-13-5.4.2-runner.md` |
-| Wiring of 5.4.3, then 5.4.6, into `kinds.go` | building (Opus, branch `5.4.3w`), from 02:38; then V1 (5.4.1-5.4.3) | the two pieces' reports |
-| 5.4.4 floors, ratchets and Bless | building (Opus), from 02:38; its `kinds.go` commit after the wiring's | `R-2026-10-13-5.4.4-ratchets.md` |
-| 5.4.5 new tests fail on the base | building (Opus), from 02:38; its last commit after 5.4.4 lands | `R-2026-10-13-5.4.5-newtests.md` |
-| 5.4.7 the switch | preparation building (Opus), from 03:50; lands after V2; then Rohan's install, the link, the end verifier | `R-2026-10-13-5.4.7-switch.md` |
+| 5.4.0 formats set 7 and the ladder's lists | **landed** `6688f81` | `R-2026-10-12-5.4.0-formats.md` (also the part's log) |
+| 5.4.1 rung jobs and leftovers | **landed** `e97afb1`; Windows test fixes `725b5d9`, `41e0815` | `R-2026-10-12-5.4.1-rungjobs.md` |
+| 5.4.2 the runner, `bonsai ladder` | **landed** `447909f`; CI's `-timeout 20m` `aca075a` | `R-2026-10-13-5.4.2-runner.md` |
+| 5.4.3 rung 0, and its wiring | **landed** `c704783`, wired `41be2d9` | `R-2026-10-13-5.4.3-rung0.md` |
+| 5.4.4 floors, ratchets and Bless | **landed** `03a29c5` | `R-2026-10-13-5.4.4-ratchets.md` |
+| 5.4.5 new tests fail on the base | **landed** `ed85228`, hung on the rise step `271e0ae` | `R-2026-10-13-5.4.5-newtests.md` |
+| 5.4.6 git integrity, and its wiring | **landed** `18decac`, wired `41be2d9` | `R-2026-10-13-5.4.6-vergit.md` |
+| The date-bound test (`clockfix`) | building (Sonnet): `TestAWorktreeSession` fails since 13 Oct 00:00 UTC; a sweep of fixed-date tests | the 5.4.3 report |
+| V1 (5.4.1-5.4.3) and V2 (5.4.0, 5.4.4-5.4.6), side by side | next, on one commit; briefs `~/bonsai-checks/briefs/verify-5.4-V1.md`, `-V2.md` | |
+| 5.4.7 the switch | preparation built (branch `5.4.7`); lands after V2; then the pre-release, Rohan's install, the link, the end verifier | `R-2026-10-13-5.4.7-switch.md` |
 
 **Facts measured that later work rests on:** Claude Code 2.1.296 on both sides (Windows updated 11 Oct, 19:45). A Stop
 hook printing "No such file or directory" and exiting 2 lets the session end; Stop hooks keep a turn going eight times
@@ -197,8 +199,10 @@ cost on this machine (Defender on, low free memory), Bonsai adding 6-9 ms.
 ## Waiting on Rohan
 
 - **Before the switch (5.4.7), a question to put to him:** linking Bonsai's repo writes `autoMemoryEnabled: false`
-  (spec §10; plan 2854-2858 assumed one memory note), which would stop Claude Code loading the twelve standing
-  preferences in this repo's memory folder. The 5.4.7 builder reports what the link does to them; then the options.
+  into the committed `.claude/settings.json` (spec §10; plan 2854-2858 assumed one memory note), which outranks his
+  user settings, so the twelve standing preferences in this repo's memory folder most likely stop loading here;
+  `"autoMemoryEnabled": true` in his own `.claude/settings.local.json` (a hand edit, out of git, read by no Bonsai
+  check) would keep them until 5.6's personal layer. Options to put to him (5.4.7's run report, 04:40).
 - **Whenever he likes:** whether to allow deleting git's own lock files by exact name (`rm -f .git/index.lock`, a
   common agent fix, refused because the project's `.git` is guarded for deletes; told 11 Oct 16:34, left as planned);
   whether the redactor's shared `=>` and `:=` limits go in a named part before the release.
@@ -249,7 +253,8 @@ refused; the commands' own refusal is a tripwire against programs the agent runs
   updated at 5.3's end (12 Oct), next at 5.4's end.
 - Another of Rohan's sessions may also work in `~/Servers/Bonsai`: read `origin/main`'s new commits before each push, and
   never stage a file this session did not write.
-- The user settings files' baselines, unchanged through 5.3: WSL `c3978abe...e73ee7`, Windows `2b6295c1...4ff6c9`.
+- The user settings files' baselines: WSL `4ccccc6b...a0db` (changed 12 Oct 10:59, before 5.4's work), Windows
+  `2b6295c1...4ff6c9`.
 - Scratch under `~/bonsai-checks/` and `%USERPROFILE%\bonsai-checks\`: every piece's and verifier's folder, the launchers
   (`bin/`, unchanged: `8a9398e2...`, `17ad3ce3...`), the 5.3.7 scripts and their detached worktree
   `~/bonsai-checks/5.3.7/src` (at `97c19eb`; remove with `git worktree remove` when no longer needed). Files there hold
