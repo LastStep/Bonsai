@@ -3,6 +3,7 @@ package workspace
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -78,6 +79,12 @@ func checksOf(t *testing.T, yaml string) *Checks {
 	return ChecksOf(c.Full)
 }
 
+// addedRung is one more ladder entry of number n, for the fixture's ladder.
+func addedRung(n int, kind, command string) string {
+	return "  - rung: " + strconv.Itoa(n) + "\n    name: \"more\"\n    kind: " + kind + "\n    command: " + command + "\n    required: true\n" +
+		"    timeout_s: null\n    ratchet: null\n    capture: null\n    means: null\n    tests: null\n    base_setup: null\n"
+}
+
 // Each looser change is named, in words a person reads; each stricter or equal one reads as none (checks.go).
 func TestLoosenings(t *testing.T) {
 	was := checksOf(t, checksYAML)
@@ -96,7 +103,8 @@ func TestLoosenings(t *testing.T) {
 	}
 	looser := []struct{ name, yaml, want string }{
 		{"a rung taken out of the floor", edit("ladder_floor: [0, 1, 2]", "ladder_floor: [0, 2]"), "ladder_floor no longer holds rung 1"},
-		{"a rung taken out of the ladder", edit("  - rung: 2\n", "  - rung: 3\n"), "rung 2 is no longer in the ladder"},
+		{"a rung taken out of the ladder", checksYAML[:strings.Index(checksYAML, "  - rung: 2\n")] + checksYAML[strings.Index(checksYAML, "ratchets:\n"):],
+			"rung 2 is no longer in the ladder"},
 		{"a kind changed", edit("    kind: guard\n", "    kind: ver-git\n"), `rung 0's kind changed from "guard" to "ver-git"`},
 		{"a command changed", edit(`command: "go test -json ./..."`, `command: "true"`),
 			`rung 1's command changed from "go test -json ./..." to "true"`},
@@ -121,6 +129,13 @@ func TestLoosenings(t *testing.T) {
 		{"the task folder moved", edit("  task: work/tasks\n", "  task: elsewhere\n"), `documents.task changed from "work/tasks" to "elsewhere"`},
 		{"a glob made wider reads as looser", edit(`protected: ["guarded/**", "bonsai.yaml"]`, `protected: ["guarded/*", "bonsai.yaml"]`),
 			`protected no longer holds "guarded/**"`},
+		// A rung added runs inside the climb (V2c's break-it): a person records it, whatever it holds.
+		{"a rung added to the ladder", edit("ratchets:\n", addedRung(3, "command", `"echo more"`)+"ratchets:\n"),
+			"rung 3 was added to the ladder: its command runs inside the climb"},
+		{"a second rung of a number", edit("ratchets:\n", addedRung(2, "command", `"echo more"`)+"ratchets:\n"),
+			"rung 2 (its entry 2 in the ladder) was added: its command runs inside the climb"},
+		{"a guard rung added", edit("ratchets:\n", addedRung(4, "guard", "null")+"ratchets:\n"),
+			"rung 4 was added to the ladder: its check runs inside the climb"},
 	}
 	for _, c := range looser {
 		got := Loosenings(was, checksOf(t, c.yaml))
@@ -130,8 +145,6 @@ func TestLoosenings(t *testing.T) {
 	}
 	stricter := []struct{ name, yaml string }{
 		{"a rung added to the floor", edit("ladder_floor: [0, 1, 2]", "ladder_floor: [0, 1, 2, 3]")},
-		{"a second rung of a number", edit("ratchets:\n", "  - rung: 2\n    name: \"more\"\n    kind: command\n    command: \"echo more\"\n"+
-			"    required: true\n    timeout_s: null\n    ratchet: null\n    capture: null\n    means: null\n    tests: null\n    base_setup: null\nratchets:\n")},
 		{"required put on", edit("    required: false\n", "    required: true\n")},
 		{"a ratchet put on a rung", edit("    ratchet: null\n    capture:\n", "    ratchet: found\n    capture:\n")},
 		{"a floor raised", edit("  go_tests: 2\n", "  go_tests: 7\n")},
@@ -148,6 +161,18 @@ func TestLoosenings(t *testing.T) {
 		if got := Loosenings(was, now); len(got) != 0 {
 			t.Errorf("%s reads as looser: %q", c.name, got)
 		}
+	}
+	// A recorded rung put on the floor: its check is one the record holds.
+	if got := Loosenings(checksOf(t, edit("ladder_floor: [0, 1, 2]", "ladder_floor: [0, 1]")), was); len(got) != 0 {
+		t.Errorf("a recorded rung put on the floor reads as looser: %q", got)
+	}
+	// An entry put before a recorded one of its number: matched in the file's order, the new entry reads as the recorded
+	// one changed and the recorded one as added; the entries added come after the recorded rungs' findings.
+	before := edit("  - rung: 2\n", addedRung(2, "command", `"echo 3 passed"`)+"  - rung: 2\n")
+	moved := []string{`rung 2's capture changed from {"found":"([0-9]+) passed"} to null`,
+		"rung 2 (its entry 2 in the ladder) was added: its command runs inside the climb"}
+	if got := Loosenings(was, checksOf(t, before)); strings.Join(got, "|") != strings.Join(moved, "|") {
+		t.Errorf("an entry put before a recorded one: %q", got)
 	}
 	// Several at once: each named, in the fixed order (floor, rungs, ratchets, marks, lists, documents).
 	many := strings.NewReplacer("ladder_floor: [0, 1, 2]", "ladder_floor: [0]", "  go_tests: 2\n", "  go_tests: 0\n",

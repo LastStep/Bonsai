@@ -1,9 +1,10 @@
 package ladder
 
-// The settings for the checks through the runner and the stop gate (K1; workspace/checks.go): each looser kind
-// committed on the base branch refuses the climb (config-looser) and blocks the gate (stop-config-looser), naming it;
-// each stricter kind is accepted, and the climb brings this machine's record up to it, while the gate only compares; a
-// nested climb compares and writes nothing; a record that holds no settings fails closed until bonsai update.
+// The settings for the checks through the runner and the stop gate (K1; workspace/checks.go): each looser kind, a rung
+// added among them, committed on the base branch refuses the climb (config-looser) and blocks the gate
+// (stop-config-looser), naming it; each stricter kind (data a recorded check reads) is accepted, and the climb brings
+// this machine's record up to it, while the gate only compares; a nested climb compares and writes nothing; a record
+// that holds no settings fails closed until bonsai update.
 
 import (
 	"os"
@@ -82,6 +83,11 @@ func TestLooserKindsRefused(t *testing.T) {
 		{"a never-edit path taken out", replaced(t, base, `never_edit: ["ledger.json"]`, "never_edit: []"), `never_edit no longer holds "ledger.json"`},
 		{"the task folder moved", replaced(t, base, "  task: work/tasks\n", "  task: work/elsewhere\n"),
 			`documents.task changed from "work/tasks" to "work/elsewhere"`},
+		// A rung added runs its command inside the climb (V2c's break-it, looser_test.go): a person records it.
+		{"a rung added to the ladder", checksBase(rung{n: 3, name: "three", command: "echo three", required: true}),
+			"rung 3 was added to the ladder: its command runs inside the climb"},
+		{"a second entry of a rung on the floor", checksBase(rung{n: 1, name: "more", command: "echo more", required: true}),
+			"rung 1 (its entry 2 in the ladder) was added: its command runs inside the climb"},
 	}
 	was := f.accepted()
 	for _, c := range cases {
@@ -112,13 +118,13 @@ func TestLooserKindsRefused(t *testing.T) {
 	}
 }
 
+// Each stricter kind is data a recorded check reads (workspace/checks.go): the base holds rung 3, off the floor, which
+// one case puts on it.
 func TestStricterKindsAccepted(t *testing.T) {
-	base := checksBase()
+	base := checksBase(rung{n: 3, name: "three", command: "echo three", required: true})
 	f := project(t, base, map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
-	three := rung{n: 3, name: "three", command: "echo three", required: true}
 	cases := []struct{ name, yaml string }{
-		{"a rung added to the floor", replaced(t, checksBase(three), "ladder_floor: [1, 2]", "ladder_floor: [1, 2, 3]")},
-		{"a rung added to the ladder", checksBase(three)},
+		{"a recorded rung put on the floor", replaced(t, base, "ladder_floor: [1, 2]", "ladder_floor: [1, 2, 3]")},
 		{"required put on", inRung2(t, base, "required: false", "required: true")},
 		{"a ratchet put on a rung", inRung2(t, base, "ratchet: null", "ratchet: found")},
 		{"a floor raised", replaced(t, base, "\n  found: 3", "\n  found: 4")},

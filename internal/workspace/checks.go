@@ -13,16 +13,21 @@ package workspace
 // (cmd/bonsai, engine.ChecksLooser), as it refuses another base branch.
 //
 // What is kept and compared (Checks), and what reads as looser (Loosenings), field by field of bonsai.yaml:
-//   - ladder_floor: a rung taken out of it. One added is stricter.
-//   - ladder: a rung no longer there; or one whose kind, command, tests, capture or base_setup changed in any way
-//     (Bonsai cannot tell a stricter command from a looser one, and base_setup prepares the base on which new tests
-//     must fail: a setup that breaks the base makes a test that proves nothing look new); whose required went from
-//     true to false; or whose ratchet was taken out or renamed (one added to a rung that had none is stricter). Rungs
-//     are matched by number, and within one number in the file's order (two rungs of one number are both climbed, so
-//     a second one added is stricter). A rung added is stricter. Not kept: name and means (words a result shows, which
-//     decide nothing), timeout_s (a longer limit lets a slow rung finish; it never turns a red rung green, since a
-//     rung that runs out of time is red, and the lock's budget is no check) and any key this Bonsai does not know (it
-//     reads none of them).
+//   - ladder_floor: a rung taken out of it. One added is stricter (the climb takes up a rung whose check the record
+//     holds; a number the ladder does not define refuses the climb, rung-not-defined).
+//   - ladder: a rung no longer there; a rung added; or one whose kind, command, tests, capture or base_setup changed
+//     in any way (Bonsai cannot tell a stricter command from a looser one, and base_setup prepares the base on which
+//     new tests must fail: a setup that breaks the base makes a test that proves nothing look new); whose required
+//     went from true to false; or whose ratchet was taken out or renamed (one put on a rung that had none is
+//     stricter). Rungs are matched by number, and within one number in the file's order (two rungs of one number are
+//     both climbed): an entry with no counterpart in the record is a rung added, a second entry of a number too. A
+//     rung added reads as looser whatever it holds, since its check runs inside the climb, between the climb's two
+//     reads of the tree (V2c's break-it: two entries added for numbers already on the floor, one swapping a fixed file
+//     in before the tests and one putting the branch's file back after them, made a red branch climb green and clean),
+//     and a rung's tests form also tells git integrity which test files to read. Not kept: name and means (words a
+//     result shows, which decide nothing), timeout_s (a longer limit lets a slow rung finish; it never turns a red rung
+//     green, since a rung that runs out of time is red, and the lock's budget is no check) and any key this Bonsai
+//     does not know (it reads none of them).
 //   - ratchets: a floor lowered or taken out (a ratchet with no floor reads as 0), or one Bonsai cannot read as a
 //     number changed. A floor raised, or a new one, is stricter.
 //   - ci_marked_tests: a name added (a test named there may skip under --ci, and a local climb reads it as marked). One
@@ -32,6 +37,11 @@ package workspace
 //   - documents: a kind's place changed or taken out. The guard's tripwires and rung 0 judge a document by its declared
 //     place, and the stop gate reads the task and the run report there: a task folder moved out from under the
 //     protected list would let an agent write its own grants. A kind added is stricter.
+//
+// So what a climb accepts without a person is data the recorded checks read: a recorded rung put on the floor,
+// required put on, a ratchet put on a rung, a floor raised or added, a CI mark taken out, a path added to the three
+// lists, a document kind added. None adds a command or changes one: every command a climb runs (each rung's, and the
+// rise step's run of a rung on the base, with its base_setup) is one a person recorded.
 //
 // Not kept, and why: generated (how long Bonsai keeps what it generates in .bonsai/local/, and the session rows; run
 // reports it never cleans): no verdict rests on a generated file being kept (the stop gate needs a result proving HEAD
@@ -395,6 +405,8 @@ func Loosenings(was, now *Checks) []string {
 }
 
 // rungLoosenings compares the rungs (this file's comment): matched by number, and in file order within one number.
+// The recorded rungs come first, in the record's order, then each entry with no counterpart in the record, in
+// bonsai.yaml's order.
 func rungLoosenings(was, now []CheckedRung) []string {
 	byNumber := map[int64][]CheckedRung{}
 	for _, r := range now {
@@ -405,10 +417,7 @@ func rungLoosenings(was, now []CheckedRung) []string {
 	for _, w := range was {
 		i := seen[w.Rung]
 		seen[w.Rung]++
-		name := "rung " + strconv.FormatInt(w.Rung, 10)
-		if i > 0 {
-			name += " (its entry " + strconv.Itoa(i+1) + " in the ladder)"
-		}
+		name := rungName(w.Rung, i)
 		list := byNumber[w.Rung]
 		if i >= len(list) {
 			out = append(out, name+" is no longer in the ladder")
@@ -440,7 +449,34 @@ func rungLoosenings(was, now []CheckedRung) []string {
 			}
 		}
 	}
+	// An entry added: what it runs runs inside the climb, between its two reads of the tree, so a person records it.
+	at := map[int64]int{}
+	for _, n := range now {
+		i := at[n.Rung]
+		at[n.Rung]++
+		if i < seen[n.Rung] {
+			continue
+		}
+		what := "its check runs"
+		if n.Kind == "command" || n.Command != nil {
+			what = "its command runs"
+		}
+		if i == 0 {
+			out = append(out, rungName(n.Rung, i)+" was added to the ladder: "+what+" inside the climb")
+		} else {
+			out = append(out, rungName(n.Rung, i)+" was added: "+what+" inside the climb")
+		}
+	}
 	return out
+}
+
+// rungName names a rung's entry i (from 0) among the entries of its number, as a loosening names it.
+func rungName(n int64, i int) string {
+	name := "rung " + strconv.FormatInt(n, 10)
+	if i > 0 {
+		name += " (its entry " + strconv.Itoa(i+1) + " in the ladder)"
+	}
+	return name
 }
 
 // floorNumber reads a ratchet's floor as a number Bonsai compares: a json.Number, exactly.
