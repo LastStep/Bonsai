@@ -255,7 +255,7 @@ func prepare(o Options) (*Climb, *engine.Error) {
 	if c.Base != "" {
 		c.MergeBase = mergeBase(c.Root, c.Base)
 	}
-	c.Prior = c.prior()
+	c.Prior, c.priorNote = c.prior()
 	return c, nil
 }
 
@@ -311,10 +311,20 @@ func (c *Climb) findRungs() *engine.Error {
 		return &engine.Error{Code: "rung-not-defined", Exit: ExitInput, What: "bonsai.yaml defines no ladder (its ladder: is empty), so " +
 			"there is nothing to climb", Next: "a person writes the project's rungs in bonsai.yaml's ladder; then run: bonsai check --json"}
 	}
-	var missing []string
+	inFloor := map[int64]bool{}
+	for _, n := range w.LadderFloor {
+		inFloor[n] = true
+	}
+	var missing, fromFloor, fromTask []string
 	for _, n := range c.Requested {
 		if !defined[n] {
-			missing = append(missing, strconv.FormatInt(n, 10))
+			s := strconv.FormatInt(n, 10)
+			missing = append(missing, s)
+			if inFloor[n] || c.Task == nil {
+				fromFloor = append(fromFloor, s)
+			} else {
+				fromTask = append(fromTask, s)
+			}
 		}
 	}
 	if len(missing) > 0 {
@@ -326,11 +336,21 @@ func (c *Climb) findRungs() *engine.Error {
 		for _, r := range w.Ladder {
 			have = append(have, strconv.FormatInt(r.Rung, 10))
 		}
+		// A floor's rung that bonsai.yaml does not define is a bonsai check finding, and the floor a person's; a rung only
+		// the task's bonsai.ladder names is no check finding, and the label the task's own, so its step is that file.
+		var steps []string
+		if len(fromTask) > 0 {
+			steps = append(steps, "take rung "+strings.Join(fromTask, ", ")+" out of the task's bonsai.ladder label in the main checkout's "+
+				shownRel(c.Task.File)+" (bonsai.yaml's ladder defines "+strings.Join(have, ", ")+"; a task's bonsai.ladder may name only those)")
+		}
+		if len(fromFloor) > 0 {
+			steps = append(steps, "see what bonsai.yaml's ladder lacks for its ladder_floor (rung "+strings.Join(fromFloor, ", ")+
+				"): run: bonsai check --json; a person fixes the floor or the ladder in bonsai.yaml")
+		}
 		return &engine.Error{Code: "rung-not-defined", Exit: ExitInput,
 			What: "rung " + strings.Join(missing, ", ") + ", which " + where + " asks for, is not in bonsai.yaml's ladder (it defines " +
 				strings.Join(have, ", ") + "), so nothing was run",
-			Next: "see what bonsai.yaml's ladder lacks: run: bonsai check --json; then fix the rung list (the floor and bonsai.yaml " +
-				"are a person's, a task's bonsai.ladder its own) and run: bonsai ladder " + c.taskFlag() + " --json"}
+			Next: strings.Join(steps, "; ") + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
 	}
 	for _, r := range w.Ladder {
 		for _, n := range c.Requested {

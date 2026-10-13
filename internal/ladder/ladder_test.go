@@ -690,7 +690,15 @@ func TestRefusals(t *testing.T) {
 		{"a floor rung not defined", yamlOf("[1, 4]", "{}", "[]", rungs...), map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "todo", "")},
 			Options{Task: "T-0901"}, "rung-not-defined", ExitInput, "run: bonsai check --json"},
 		{"a task rung not defined", yamlOf("[1]", "{}", "[]", rungs...), map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "todo", "[9]")},
-			Options{Task: "T-0901"}, "rung-not-defined", ExitInput, "run: bonsai check --json"},
+			Options{Task: "T-0901"}, "rung-not-defined", ExitInput, "take rung 9 out of the task's bonsai.ladder label in the main checkout's " +
+				"work/tasks/T-0901-a.md (bonsai.yaml's ladder defines 1; a task's bonsai.ladder may name only those); then run: bonsai ladder " +
+				"--task T-0901 --json"},
+		{"a floor rung and a task rung not defined", yamlOf("[1, 4]", "{}", "[]", rungs...),
+			map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "todo", "[9]")},
+			Options{Task: "T-0901"}, "rung-not-defined", ExitInput, "take rung 9 out of the task's bonsai.ladder label in the main checkout's " +
+				"work/tasks/T-0901-a.md (bonsai.yaml's ladder defines 1; a task's bonsai.ladder may name only those); see what bonsai.yaml's " +
+				"ladder lacks for its ladder_floor (rung 4): run: bonsai check --json; a person fixes the floor or the ladder in bonsai.yaml; " +
+				"then run: bonsai ladder --task T-0901 --json"},
 		{"no ladder", yamlOf("[]", "{}", "[]"), map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "todo", "")},
 			Options{Task: "T-0901"}, "rung-not-defined", ExitInput, "bonsai check --json"},
 		{"a task's bonsai.ladder that is not rung numbers", yamlOf("[1]", "{}", "[]", rungs...),
