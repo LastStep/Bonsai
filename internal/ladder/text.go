@@ -48,6 +48,9 @@ func (c *Climb) printHeader() {
 	if c.priorNote != "" {
 		c.say("  note: %s", c.priorNote)
 	}
+	if c.checksNote != "" {
+		c.say("  note: %s", c.checksNote)
+	}
 }
 
 // printRung is one rung's line as it ends, with the job's notes under it.

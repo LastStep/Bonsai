@@ -24,14 +24,16 @@ var ladderWord = &Word{
 	Title:   "climb the ladder: prove a task's work done (spec section 9).",
 	Summary: "climb the project's rungs and write the result the stop gate reads",
 	Args:    "[flags]",
-	About: `It runs the project's rungs (bonsai.yaml's ladder, in the main checkout) in number order, cheapest first: the
-floor (ladder_floor) plus the task's bonsai.ladder label, each once. Each command rung runs in its own process group
-(Linux) or job object (Windows), so everything it starts ends with it; its tests are read from its output (its tests
-form), a skip with a mark is red (a local climb runs every marked test), and its ratchet's count is judged against its
-floor (bonsai.yaml's ratchets): below it, with no count read, or with a floor that is not a number, the rung is red.
-A required rung that is not green skips the rest. On a local climb that is green and clean, each count that rose has
-its new tests run on the base, in a temporary worktree: the result's new_tests counts those failing there, those
-passing there (they prove nothing new) and those not run. The result goes to the main checkout's
+	About: `It runs the project's rungs (bonsai.yaml's ladder, in the main checkout) in number order, cheapest first: the floor
+(ladder_floor) plus the task's bonsai.ladder label, each once. Each command rung runs in its own process group (Linux)
+or job object (Windows), so everything it starts ends with it; its tests are read from its output (its tests form), a
+skip with a mark is red (a local climb runs every marked test), and its ratchet's count is judged against its floor
+(bonsai.yaml's ratchets): below it, with no count read, or with a floor that is not a number, the rung is red. A
+required rung that is not green skips the rest. The rungs, the floor and the ratchets are bonsai.yaml's as committed
+at the main checkout's HEAD; a local climb refuses settings looser than the ones this machine last accepted (a person
+records those with bonsai update) and records stricter ones itself. On a local climb that is green and clean, each
+count that rose has its new tests run on the base, in a temporary worktree: the result's new_tests counts those
+failing there, those passing there (they prove nothing new) and those not run. The result goes to the main checkout's
 .bonsai/local/ladder/<task>.json, wherever the climb ran (a worktree's included), with a ladder record in the log
 naming its sha256 and this bonsai's own path and hash: that is what the stop gate reads before a named session may
 end. A green, clean climb in the main checkout on the base branch at HEAD whose count rose files one Bless ask
@@ -57,8 +59,10 @@ names the first red rung's fix (each failing test carries the command that runs 
 		{Code: 2, Means: "bad input: a flag ladder does not take, no task named for a local climb or the task named is none\n" +
 			"(no-task), a rung asked for that bonsai.yaml does not define (rung-not-defined)"},
 		{Code: 3, Means: "could not run or write: git missing, the Bonsai home, a file that cannot be read, the result or its\nrecord that cannot be written"},
-		{Code: 4, Means: "wrong state: not a linked checkout, its main checkout not verified on this machine (main-not-verified),\n" +
-			"another climb holding this home's lock past its budget (ladder-busy), a test build outside its scratch\nfolder (test-build)"},
+		{Code: 4, Means: "wrong state: not a linked checkout, its main checkout not verified on this machine or not on its base\n" +
+			"branch (main-not-verified), the main checkout's bonsai.yaml not as committed at its HEAD (config-uncommitted)\n" +
+			"or its committed settings looser than the ones this machine accepted (config-looser), another climb holding\n" +
+			"this home's lock past its budget (ladder-busy), a test build outside its scratch folder (test-build)"},
 	},
 	Examples: []string{"bonsai ladder --task T-0901 --json", "bonsai ladder --ci --json"},
 	Refused:  func(c *call, e *engine.Error) encoder { return ladder.Refused(e) },

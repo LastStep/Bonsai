@@ -72,6 +72,7 @@ func TestTheStopGateReadsTheResult(t *testing.T) {
 	f.write("verdict.txt", "fine\n")
 	f.write("bonsai.yaml", strings.Replace(yamlOf("[1]", "{}", "[]", rungs...), show("verdict.txt"), "exit 1", 1))
 	f.commit("rung 2 red")
+	f.accept() // a command changed reads as looser: a person's step
 	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != ExitRed {
 		t.Fatalf("the red climb: %d", a.Exit)
 	}
@@ -81,6 +82,7 @@ func TestTheStopGateReadsTheResult(t *testing.T) {
 	// A green result of the commit before.
 	f.write("bonsai.yaml", yamlOf("[1]", "{}", "[]", rungs...))
 	f.commit("rung 2 green again")
+	f.accept()
 	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 {
 		t.Fatalf("green again: %d", a.Exit)
 	}

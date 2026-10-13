@@ -185,6 +185,7 @@ func TestVerGitTestForms(t *testing.T) {
 		rung{n: 5, name: "git", kind: "ver-git", tst: "tap"}, rung{n: 7, name: "go", command: "echo go", tst: "go-test-json"})
 	f.write("bonsai.yaml", tap)
 	f.commit("the git rung reads tap")
+	f.accept() // a rung's tests changed reads as looser: a person's step
 	f.out.Reset()
 	if a := f.climb(wt, Options{Task: "T-0901"}); a.Exit != 0 {
 		t.Fatalf("exit %d\n%s", a.Exit, f.out.String())

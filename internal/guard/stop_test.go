@@ -230,6 +230,15 @@ func init() {
 		{rule: RuleStopConfigUncommitted, task: "T-0901", change: func(t *testing.T, dir string) {
 			writeFile(t, filepath.Join(dir, "bonsai.yaml"), strings.Replace(stopYAML, "ladder_floor: [0]", "ladder_floor: []", 1))
 		}},
+		{rule: RuleStopConfigLooser, task: "T-0901", change: func(t *testing.T, dir string) {
+			// This machine accepted stricter settings than the ones committed (a path on protected): the committed ones read
+			// as looser.
+			writeFile(t, filepath.Join(dir, "bonsai.yaml"), strings.Replace(stopYAML, "protected: []", `protected: ["x/**"]`, 1))
+			if _, err := workspace.RecordCheckout(os.Getenv(workspace.HomeEnv), dir, testID, testNow); err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, filepath.Join(dir, "bonsai.yaml"), stopYAML)
+		}},
 		{rule: RuleStopOtherCommit, task: "T-0901", result: func(l *format.Ladder) { l.Git.SHA = stopOther }},
 		{rule: RuleStopDirty, task: "T-0901", result: func(l *format.Ladder) { l.Git.Dirty = true }},
 		{rule: RuleStopRungMissing, task: "T-0901", result: func(l *format.Ladder) { l.Requested = []int64{0} }},

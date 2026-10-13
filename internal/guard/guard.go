@@ -17,6 +17,14 @@
 // writes its records into the main checkout's .bonsai/local/. Where nothing holding a refused path is verified, the
 // refusal is main-not-verified and names the person's step that verifies it.
 //
+// The lists are read live, from the main checkout's bonsai.yaml as the file holds it now (5.4's fix rounds left this
+// as it was): a shell write there that takes a path off protected, person_only or never_edit (question A leaves a shell
+// write unjudged in agents mode) opens that path to a file-tool edit during the work. No such work climbs green or ends
+// a session with a task: the ladder runner and the stop gate read bonsai.yaml as committed at the main checkout's HEAD,
+// refusing it while the file differs from it (config-uncommitted, stop-config-uncommitted), and once it is committed,
+// while its settings for the checks are looser than the ones this machine last accepted (config-looser,
+// stop-config-looser; stopgate.Accepted, workspace/checks.go), so a person sees the change before it counts.
+//
 // For a reviewer, in the order a call runs:
 //   - hook.go: Main, the whole run, in the frame of the hooks that block (internal/hookin's Frame). The frame arms
 //     the guard's own timer first (Budget, under the hook line's 10 s timeout, engine.GuardTimeout: a hook that times

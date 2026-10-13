@@ -33,7 +33,10 @@
 //  3. main's bonsai.yaml as committed at its HEAD, git's object, read in full: its task folder, its run folder and
 //     ladder_floor (CommittedConfig, config.go; one git process, through internal/vergit's fixed environment); while
 //     the file in the main checkout differs from it, or HEAD holds none, the gate blocks (stop-config-uncommitted: a
-//     person commits or reverts it); a committed file that cannot be read is bad-config;
+//     person commits or reverts it); a committed file that cannot be read is bad-config; and its settings for the
+//     checks no looser than the ones this machine's record accepted (Accepted, config.go: stop-config-looser, naming
+//     each loosening, also when the record holds none; a person's step, bonsai update). The gate only compares: a
+//     local climb brings the record up to stricter settings (config.go says why the gate need not);
 //  4. the named task: exactly one file in main's task folder has the id, and it parses under its format (the active-task
 //     function, workspace.Active: stop-task-missing, stop-task-twice, stop-task-broken; stop-task-unreadable when the
 //     folder cannot be read), and its bonsai.ladder label (format 0's ladder) reads as rung numbers (stop-bad-rungs);
@@ -52,10 +55,10 @@
 // status says, as spec §7 and the plan's note 2 have it. It starts one git process, to read bonsai.yaml at the main
 // checkout's HEAD (step 3); HEAD itself is read from git's files (head.go).
 //
-// What remains (5.4's fix round): the base branch is the one this machine recorded; a commit on that branch that
-// loosens bonsai.yaml is a commit like any other, which the gate trusts as it trusts the branch's history (a person
-// reads it, and the guard protects bonsai.yaml in an agent's edits). The machine record is the home's: an agent able to
-// write the Bonsai home can rewrite it, as it could rewrite any of the home's records.
+// What remains (5.4's fix rounds): the base branch is the one this machine recorded, and a commit on it that loosens
+// bonsai.yaml's settings for the checks is refused until a person records them (step 3). The machine record is the
+// home's: an agent able to write the Bonsai home can rewrite it, as it could rewrite any of the home's records. The
+// packs' protected paths come from .bonsai/lock.json's declares, which the record does not keep.
 //
 // The frame (internal/hookin's Frame, as the guard's): its own timer first, at Budget, half the line's 10 s timeout (a
 // Stop hook that times out does not block, and Claude Code's onFailure setting has no effect on Stop hooks), the work in
@@ -139,6 +142,7 @@ const (
 	RuleOtherCommit       = "stop-other-commit"       // deny: the ladder result proves another commit than the checkout's HEAD
 	RuleDirty             = "stop-dirty"              // deny: the ladder result was made on a tree with uncommitted changes
 	RuleConfigUncommitted = "stop-config-uncommitted" // deny: the main checkout's bonsai.yaml differs from the one committed at its HEAD, or HEAD holds none
+	RuleConfigLooser      = "stop-config-looser"      // deny: the committed bonsai.yaml sets the checks looser than this machine accepted, or the record holds none
 	RuleRungMissing       = "stop-rung-missing"       // deny: the result did not ask for a rung of the floor or of the task's bonsai.ladder
 	RuleRungNotGreen      = "stop-rung-not-green"     // deny: a rung of the floor or of the task's bonsai.ladder is not green in the result
 
@@ -451,6 +455,10 @@ func judge(local workspace.Local, layout workspace.GitLayout, also *untied, name
 		return deny(RuleBadConfig, "", "the main checkout's bonsai.yaml cannot be read in full as committed at its HEAD ("+
 			osWords(err)+"), so the stop gate cannot tell where the task "+quote(named)+" is or which rungs it needs", nextOf(err,
 			"a person fixes bonsai.yaml (bonsai check names the line)")+"; then "+ladder)
+	}
+	if le := Accepted(home(), local.Main, cfg); le != nil {
+		return deny(RuleConfigLooser, workspace.ConfigFile, le.Why+", so the stop gate does not trust the settings there",
+			le.Next+"; then "+ladder)
 	}
 	w := cfg.Full
 	taskDir := w.Documents.Task

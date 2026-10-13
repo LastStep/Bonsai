@@ -155,6 +155,15 @@ func (f *fx) commit(msg string) {
 
 func (f *fx) head() string { return testpack.Git(f.t, f.root, "rev-parse", "HEAD") }
 
+// accept is a person's bonsai update in the main checkout: this machine's record takes bonsai.yaml's settings for the
+// checks as accepted, so a test that changes them in a way that reads as looser (a command, a CI mark) climbs again.
+func (f *fx) accept() {
+	f.t.Helper()
+	if _, err := workspace.RecordCheckout(f.home, f.root, testID, time.Now()); err != nil {
+		f.t.Fatal(err)
+	}
+}
+
 // climb runs the ladder in dir (the project's root when "") and holds its document to bonsai.climb/1.
 func (f *fx) climb(dir string, o Options) *Answer {
 	f.t.Helper()
@@ -368,6 +377,7 @@ func TestSkipsAndMarks(t *testing.T) {
 	}
 	f.write("bonsai.yaml", yamlOf("[1]", "\n  go_tests: 5", `["example.com/demo/good.TestMarked"]`, r))
 	f.commit("name the marked test")
+	f.accept() // a CI mark added reads as looser: a person's step
 	a = f.climb("", Options{CI: true})
 	l = f.result("ci")
 	reason = ""
@@ -395,6 +405,7 @@ func TestSkipsAndMarks(t *testing.T) {
 	}
 	f.write("bonsai.yaml", yamlOf("[1]", "\n  go_tests: 1", "[]", r))
 	f.commit("none named")
+	f.accept() // a floor lowered reads as looser: a person's step
 	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 {
 		t.Errorf("local, unmarked skips only: exit %d\n%s", a.Exit, f.out.String())
 	}

@@ -492,6 +492,24 @@ func TestEachCase(t *testing.T) {
 			next: UncommittedNext + "; then run: " + ladder, change: func(t *testing.T, root string) {
 				write(t, root, "bonsai.yaml", strings.Replace(testYAML, "ladder_floor: [0, 1]", "ladder_floor: [0]", 1))
 			}},
+		{name: "settings committed looser than this machine accepted", rule: RuleConfigLooser,
+			why: "the main checkout's bonsai.yaml, as committed at its HEAD, sets the checks looser than the settings this machine last " +
+				"accepted for the workspace: ladder_floor no longer holds rung 1, so the stop gate does not trust the settings there",
+			next: LooserNext + "; then run: " + ladder, change: func(t *testing.T, root string) {
+				recommit(t, root, strings.Replace(testYAML, "ladder_floor: [0, 1]", "ladder_floor: [0]", 1))
+			}},
+		{name: "a record that holds no settings for the checks", rule: RuleConfigLooser,
+			why: "this machine's record of the main checkout holds no settings for the checks to compare bonsai.yaml's with (it was " +
+				"written before Bonsai kept them)",
+			next: "a person runs bonsai update in the main checkout, which records bonsai.yaml's settings for the checks as accepted; " +
+				"then run: " + ladder, change: func(t *testing.T, root string) {
+				dir, err := workspace.MachineDir(os.Getenv(workspace.HomeEnv), root)
+				if err != nil {
+					t.Fatal(err)
+				}
+				write(t, dir, workspace.MachineRecordFile, `{"path": "`+filepath.ToSlash(root)+`", "ids": [{"id": "`+testID+
+					`", "since": "2026-10-11T12:00:00Z"}], "base_branch": "main"}`)
+			}},
 		{name: "no run report", rule: RuleNoRunReport, why: "this checkout has no run report for T-0901 in its run folder work/runs",
 			next: "write this session's run report, work/runs/R-<YYYY-MM-DD>-T-0901.md, in this checkout", change: func(t *testing.T, root string) {
 				remove(t, root, "work/runs/R-2026-10-11-T-0901.md")

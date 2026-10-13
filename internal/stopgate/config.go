@@ -4,7 +4,17 @@ package stopgate
 // floor, the ratchets and ci_marked_tests from the bonsai.yaml committed at the main checkout's HEAD, git's object, and
 // refuse while the file in the main checkout differs from it. The file itself is a person's (person_only), but a shell
 // write in an agent's session is not judged by the guard in agents mode, so an uncommitted edit there could lower a
-// floor or drop a rung for one climb and one gate; a committed one is history a person reads.
+// floor or drop a rung for one climb and one gate.
+//
+// And no looser than this machine accepted (5.4's second fix round, K1; Rohan, 13 Oct): a commit on the base branch is
+// history, which an agent could make too (a shell commit in the main checkout, git reset --hard to a looser commit, a
+// branch ref moved by hand), so the settings committed there are compared with the ones this machine's record of the
+// main checkout last accepted (Accepted; workspace/checks.go says what is compared and what reads as looser), and
+// refused when they are looser, each loosening named, or when the record holds none: a person's step, bonsai update in
+// the main checkout, records them. Settings stricter or the same are accepted; a local climb then brings the record up
+// to them (workspace.RaiseChecks, under the home's ladder lock), and the stop gate, a hook, only compares: every allow
+// it gives rests on a green result of a climb, which compared and recorded the settings it ran by, and a stricter
+// commit after that climb holds the gate by its own reading of the committed floor.
 
 import (
 	"bytes"
@@ -13,6 +23,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/vergit"
@@ -60,3 +72,47 @@ func CommittedConfig(main string, timeout time.Duration) (*workspace.Config, err
 
 // lf reads a file's line ends as LF.
 func lf(b []byte) []byte { return bytes.ReplaceAll(b, []byte("\r\n"), []byte("\n")) }
+
+// LooserError is Accepted's refusal: the main checkout's bonsai.yaml, as committed at its HEAD, sets the checks looser
+// than the settings this machine last accepted for the workspace, or there are none to compare with. Why says which,
+// in words that end a sentence; Next is the person's step, before the command that confirms it.
+type LooserError struct{ Why, Next string }
+
+func (e *LooserError) Error() string { return e.Why }
+
+// LooserNext is the person's step after settings looser than the accepted ones.
+const LooserNext = "a person reads the change to bonsai.yaml on the base branch (git log -p -- bonsai.yaml in the main " +
+	"checkout): to keep the looser settings, a person runs bonsai update in the main checkout, in a terminal of their own " +
+	"(it records them as accepted); else a commit there puts bonsai.yaml's settings back"
+
+// maxLoosenings caps the loosenings a refusal names; the rest are counted.
+const maxLoosenings = 8
+
+// Accepted compares the settings for the checks in cfg (the main checkout's bonsai.yaml as committed at its HEAD, read
+// in full: CommittedConfig) with the ones this machine's record of the main checkout main accepted
+// (workspace.AcceptedChecks), and refuses (*LooserError) when they are looser (workspace.Loosenings), naming each, or
+// when the record holds none (written before Bonsai kept them: it fails closed). home is the Bonsai home. nil means
+// they are the same or stricter. It starts no process and writes nothing.
+func Accepted(home, main string, cfg *workspace.Config) *LooserError {
+	was, t := workspace.AcceptedChecks(home, main)
+	if !t.Verified {
+		return &LooserError{Why: t.Why, Next: t.Next}
+	}
+	var now *workspace.Checks
+	if cfg != nil {
+		now = workspace.ChecksOf(cfg.Full)
+	}
+	if now == nil {
+		return &LooserError{Why: "bonsai.yaml was not read in full, so its settings for the checks cannot be compared",
+			Next: "tell the person: Bonsai could not compare bonsai.yaml's settings"}
+	}
+	l := workspace.Loosenings(was, now)
+	if len(l) == 0 {
+		return nil
+	}
+	if len(l) > maxLoosenings {
+		l = append(l[:maxLoosenings:maxLoosenings], "and "+strconv.Itoa(len(l)-maxLoosenings)+" more")
+	}
+	return &LooserError{Why: "the main checkout's bonsai.yaml, as committed at its HEAD, sets the checks looser than the settings " +
+		"this machine last accepted for the workspace: " + strings.Join(l, "; "), Next: LooserNext}
+}

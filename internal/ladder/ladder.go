@@ -29,9 +29,17 @@
 //     write the guard does not judge in agents mode) could lower a floor for one climb. A local climb also needs the
 //     main checkout on the workspace's base branch, the one this machine's record names (workspace.BaseOf: another
 //     branch, a detached HEAD or a record from before Bonsai kept a base is main-not-verified, exit 4, a person's
-//     step); --ci, which proves no task and may run where there is no record, skips that. bonsai.yaml changed in the
-//     main checkout during the climb makes the result dirty. What remains: a commit on the base branch that loosens
-//     bonsai.yaml is history the ladder trusts, as it trusts the base branch's code.
+//     step), and the committed settings for the checks no looser than the ones this machine's record accepted
+//     (stopgate.Accepted; workspace/checks.go says what is compared and what reads as looser): a commit on the base
+//     branch is history an agent can make too (a shell commit in the main checkout, git reset --hard, a branch ref
+//     moved), so looser settings, or a record holding none, refuse the climb (config-looser, exit 4, naming each
+//     loosening; a person's step: bonsai update in the main checkout records them, or a commit puts them back).
+//     Stricter or equal settings are accepted, and once the climb holds the lock (step 4) it brings the record up to
+//     them (workspace.RaiseChecks), so floors raised at a part's end need no person; a nested climb compares and
+//     writes nothing. --ci, which proves no task and may run where there is no record, skips both. bonsai.yaml changed
+//     in the main checkout during the climb makes the result dirty. The guard's live reading of the protected lists
+//     from the main checkout's working bonsai.yaml is unchanged: a shell write that loosens them can open a file-tool
+//     edit during the work, but no such work climbs green, refused as uncommitted, and once committed as looser.
 //  4. One ladder at a time per home (note 8, lock.go): the home's locks/ladder.lock, held by a lock the system ends
 //     with its holder; a second climb waits while the holder lives inside its budget, then refuses (ladder-busy,
 //     exit 4). A nested climb (BONSAI_LADDER=1: a ladder run inside a rung) takes no lock: its outer climb holds it.
@@ -150,8 +158,46 @@ func Run(o Options) *Answer {
 		return refused(c, e)
 	}
 	defer release()
+	if e := c.raiseChecks(); e != nil {
+		return refused(c, e)
+	}
 	c.climb()
 	return c.finish()
+}
+
+// raiseChecks brings this machine's record of the main checkout up to the climb's settings for the checks, bonsai.yaml
+// as committed (step 3), when they are stricter than the ones it holds (workspace.RaiseChecks), once the climb holds the
+// home's lock, so two climbs never write the record at once. A --ci climb and a nested one write nothing. The record
+// changed since prepare compared it (a person's update meanwhile) is compared again: looser settings refuse the climb
+// as prepare's would.
+func (c *Climb) raiseChecks() *engine.Error {
+	if c.CI || c.o.nested() {
+		return nil
+	}
+	raised, looser, err := workspace.RaiseChecks(c.Home, c.Main, workspace.ChecksOf(c.Config.Full))
+	var we *workspace.Error
+	switch {
+	case len(looser) > 0:
+		if le := stopgate.Accepted(c.Home, c.Main, c.Config); le != nil {
+			return &engine.Error{Code: "config-looser", Exit: ExitState, Who: "person", What: le.Why + ", so nothing was run",
+				Next: le.Next + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
+		}
+	case errors.As(err, &we) && we.Err != nil:
+		return &engine.Error{Code: "write-failed", Exit: ExitRuntime, Who: "person", What: "this machine's record of the main checkout " +
+			"cannot be brought up to bonsai.yaml's settings for the checks (" + oneLine(we.Error()) + "), so nothing was run",
+			Next: oneLine(we.Next) + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
+	case err != nil:
+		next := "a person runs bonsai update in the main checkout"
+		if we != nil && we.Next != "" {
+			next = oneLine(we.Next)
+		}
+		return &engine.Error{Code: "config-looser", Exit: ExitState, Who: "person", What: "this machine's record of the main checkout " +
+			"cannot take bonsai.yaml's settings for the checks (" + oneLine(err.Error()) + "), so nothing was run",
+			Next: next + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
+	case raised:
+		c.checksNote = "this machine's record now holds bonsai.yaml's settings for the checks as committed, stricter than the ones it held"
+	}
+	return nil
 }
 
 func (o Options) withDefaults() Options {
@@ -272,6 +318,12 @@ func prepare(o Options) (*Climb, *engine.Error) {
 		}
 		return c, &engine.Error{Code: "read-failed", Exit: ExitRuntime, What: oneLine(err.Error()) + ", so nothing was run",
 			Next: "run: git status in the main checkout, and fix what it reports; then run: bonsai ladder " + c.taskFlag() + " --json"}
+	}
+	if !o.CI {
+		if le := stopgate.Accepted(home, c.Main, cfg); le != nil {
+			return c, &engine.Error{Code: "config-looser", Exit: ExitState, Who: "person", What: le.Why + ", so nothing was run",
+				Next: le.Next + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
+		}
 	}
 	c.Config = cfg
 	c.configBytes = mainConfigBytes(c.Main)

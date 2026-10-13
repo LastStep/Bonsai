@@ -333,9 +333,10 @@ func TestLadderCheckWordsAndTheMachineMark(t *testing.T) {
 	}
 }
 
-// The ladder's error words (set 7's four, and config-uncommitted) are in the table, and test-build covers the ladder.
+// The ladder's error words (set 7's four, config-uncommitted and config-looser) are in the table, and test-build covers the
+// ladder.
 func TestSetSevenErrorWords(t *testing.T) {
-	for _, code := range []string{"ladder-busy", "no-task", "rung-not-defined", "main-not-verified", "config-uncommitted"} {
+	for _, code := range []string{"ladder-busy", "no-task", "rung-not-defined", "main-not-verified", "config-uncommitted", "config-looser"} {
 		w, ok := ErrorWord(code)
 		if !ok || w.Means == "" || (w.Who != "agent" && w.Who != "person") {
 			t.Errorf("the error word %s is missing or incomplete: %+v", code, w)

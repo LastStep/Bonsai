@@ -54,6 +54,7 @@ type Climb struct {
 	leftLines   []string             // the leftovers line
 	stopped     bool                 // the stop signal came
 	priorNote   string               // why an earlier result that is there was not read ("" when it was, or there is none)
+	checksNote  string               // that the climb brought the record's settings for the checks up ("" when it did not)
 	configBytes []byte               // the main checkout's bonsai.yaml at the climb's start (LF), the committed one's bytes
 	configMoved bool                 // the main checkout's bonsai.yaml changed during the climb
 	hidden      []vergit.Hidden      // changed paths git status does not show (treeDirty), the first read's that found any
