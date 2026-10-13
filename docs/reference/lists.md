@@ -570,7 +570,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `stop-other-task` | deny | the stop gate: the ladder result at the task's path was made for another task: its task is another id or null, or its workspace is another project's |
 | `stop-not-local` | deny | the stop gate: the ladder result's mode is not local (a CI run is never a task's proof) |
 | `stop-red` | deny | the stop gate: the ladder result is not green |
-| `stop-head-unreadable` | deny | the stop gate: the commit at the checkout's HEAD cannot be read from its git files |
+| `stop-head-unreadable` | deny | the stop gate: the commit at the checkout's HEAD cannot be read from its git files, or git cannot read bonsai.yaml at the main checkout's HEAD (an object HEAD needs is not there, or is damaged: git fsck names it) |
 | `stop-other-commit` | deny | the stop gate: the ladder result proves another commit than the checkout's HEAD |
 | `stop-dirty` | deny | the stop gate: the ladder result was made on a tree with uncommitted changes |
 | `stop-config-uncommitted` | deny | the stop gate: the main checkout's bonsai.yaml differs from the one committed at its HEAD, or its HEAD holds none, so the ladder's settings there are not trusted |

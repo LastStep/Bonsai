@@ -61,6 +61,31 @@ func TestCommittedConfig(t *testing.T) {
 		write(t, root, ".git/refs/heads/main", emptyCommit(t, filepath.Join(root, ".git"))+"\n")
 		refused(t, root, "the main checkout's HEAD holds no bonsai.yaml (it was never committed there)")
 	})
+	// HEAD names a commit, but an object it needs is not in the repository (V2b's S6: a clone whose borrowed objects are
+	// gone): no line of bonsai.yaml to fix and nothing to commit, so a HeadUnreadableError, whose step is git fsck.
+	for _, c := range []struct {
+		name, why string
+		object    int // commitObjects' index: 0 the blob, 1 the tree, 2 the commit
+	}{
+		{"its commit not there", "the main checkout's HEAD names commit " + headSHA[:12] + ", which git cannot read (the commit is " +
+			"not in the repository, or is damaged)", 2},
+		{"its tree not there", "the main checkout's HEAD names commit " + headSHA[:12] + ", but git cannot read bonsai.yaml there " +
+			"(git cannot read HEAD's tree: ", 1},
+		{"bonsai.yaml's blob not there", "the main checkout's HEAD names commit " + headSHA[:12] + ", but git cannot read bonsai.yaml " +
+			"there (HEAD's bonsai.yaml is not a file git can read: ", 0},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			root := project(t)
+			id := commitObjects(testYAML)[c.object].id
+			remove(t, root, ".git/objects/"+id[:2]+"/"+id[2:])
+			_, err := CommittedConfig(root, time.Minute)
+			var h *HeadUnreadableError
+			var u *UncommittedError
+			if !errors.As(err, &h) || errors.As(err, &u) || !strings.Contains(h.Why, c.why) || h.Error() != h.Why {
+				t.Errorf("err %v, want a HeadUnreadableError saying %q", err, c.why)
+			}
+		})
+	}
 	t.Run("git cannot read the checkout", func(t *testing.T) {
 		root := project(t)
 		write(t, root, ".git/HEAD", "not a ref\n")

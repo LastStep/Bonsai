@@ -33,10 +33,12 @@
 //  3. main's bonsai.yaml as committed at its HEAD, git's object, read in full: its task folder, its run folder and
 //     ladder_floor (CommittedConfig, config.go; one git process, through internal/vergit's fixed environment); while
 //     the file in the main checkout differs from it, or HEAD holds none, the gate blocks (stop-config-uncommitted: a
-//     person commits or reverts it); a committed file that cannot be read is bad-config; and its settings for the
-//     checks no looser than the ones this machine's record accepted (Accepted, config.go: stop-config-looser, naming
-//     each loosening, also when the record holds none; a person's step, bonsai update). The gate only compares: a
-//     local climb brings the record up to stricter settings (config.go says why the gate need not);
+//     person commits or reverts it); while HEAD names a commit git cannot read it in (an object not there or
+//     damaged), stop-head-unreadable (a person runs git fsck); a committed file that cannot be read is bad-config;
+//     and its settings for the checks no looser than the ones this machine's record accepted (Accepted, config.go:
+//     stop-config-looser, naming each loosening, also when the record holds none; a person's step, bonsai update).
+//     The gate only compares: a local climb brings the record up to stricter settings (config.go says why the gate
+//     need not);
 //  4. the named task: exactly one file in main's task folder has the id, and it parses under its format (the active-task
 //     function, workspace.Active: stop-task-missing, stop-task-twice, stop-task-broken; stop-task-unreadable when the
 //     folder cannot be read), and its bonsai.ladder label (format 0's ladder) reads as rung numbers (stop-bad-rungs);
@@ -138,7 +140,7 @@ const (
 	RuleOtherTask         = "stop-other-task"         // deny: the ladder result at the task's path was made for another task (another id, none, or another workspace)
 	RuleNotLocal          = "stop-not-local"          // deny: the ladder result's mode is not local (a CI run is never a task's proof)
 	RuleRed               = "stop-red"                // deny: the ladder result is not green
-	RuleHeadUnreadable    = "stop-head-unreadable"    // deny: the commit at the checkout's HEAD cannot be read from its git files
+	RuleHeadUnreadable    = "stop-head-unreadable"    // deny: the commit at the checkout's HEAD cannot be read from its git files, or git cannot read bonsai.yaml at main's HEAD
 	RuleOtherCommit       = "stop-other-commit"       // deny: the ladder result proves another commit than the checkout's HEAD
 	RuleDirty             = "stop-dirty"              // deny: the ladder result was made on a tree with uncommitted changes
 	RuleConfigUncommitted = "stop-config-uncommitted" // deny: the main checkout's bonsai.yaml differs from the one committed at its HEAD, or HEAD holds none
@@ -447,10 +449,14 @@ func judge(local workspace.Local, layout workspace.GitLayout, also *untied, name
 	ladder := "run: bonsai ladder --task " + named
 	cfg, err := CommittedConfig(local.Main, gitWait)
 	var uncommitted *UncommittedError
+	var unreadable *HeadUnreadableError
 	switch {
 	case errors.As(err, &uncommitted):
 		return deny(RuleConfigUncommitted, workspace.ConfigFile, uncommitted.Why+", and the ladder's rungs and floor are read "+
 			"from the committed one only, so the stop gate does not trust the settings there", UncommittedNext+"; then "+ladder)
+	case errors.As(err, &unreadable):
+		return deny(RuleHeadUnreadable, workspace.ConfigFile, unreadable.Why+", and the stop gate reads the task's rungs there",
+			HeadUnreadableNext+"; then "+ladder)
 	case err != nil:
 		return deny(RuleBadConfig, "", "the main checkout's bonsai.yaml cannot be read in full as committed at its HEAD ("+
 			osWords(err)+"), so the stop gate cannot tell where the task "+quote(named)+" is or which rungs it needs", nextOf(err,

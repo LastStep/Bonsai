@@ -492,6 +492,19 @@ func TestEachCase(t *testing.T) {
 			next: UncommittedNext + "; then run: " + ladder, change: func(t *testing.T, root string) {
 				write(t, root, "bonsai.yaml", strings.Replace(testYAML, "ladder_floor: [0, 1]", "ladder_floor: [0]", 1))
 			}},
+		{name: "main's HEAD whose commit is not in the repository", rule: RuleHeadUnreadable,
+			why: "the main checkout's HEAD names commit " + headSHA[:12] + ", which git cannot read (the commit is not in the " +
+				"repository, or is damaged), so bonsai.yaml cannot be read as committed there, and the stop gate reads the task's rungs there",
+			next: HeadUnreadableNext + "; then run: " + ladder, change: func(t *testing.T, root string) {
+				remove(t, root, ".git/objects/"+headSHA[:2]+"/"+headSHA[2:])
+			}},
+		{name: "main's HEAD whose bonsai.yaml is not in the repository", rule: RuleHeadUnreadable,
+			why: "the main checkout's HEAD names commit " + headSHA[:12] + ", but git cannot read bonsai.yaml there (HEAD's bonsai.yaml " +
+				"is not a file git can read: ",
+			next: "a person runs git fsck in the main checkout, which names each object that is not there or is damaged", change: func(t *testing.T, root string) {
+				id := commitObjects(testYAML)[0].id
+				remove(t, root, ".git/objects/"+id[:2]+"/"+id[2:])
+			}},
 		{name: "settings committed looser than this machine accepted", rule: RuleConfigLooser,
 			why: "the main checkout's bonsai.yaml, as committed at its HEAD, sets the checks looser than the settings this machine last " +
 				"accepted for the workspace: ladder_floor no longer holds rung 1, so the stop gate does not trust the settings there",

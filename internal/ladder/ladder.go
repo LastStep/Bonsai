@@ -26,7 +26,8 @@
 //     (stopgate.CommittedConfig, the stop gate's own reading): the ladder, the floor, the ratchets and ci_marked_tests
 //     come from it, and while the file in the main checkout differs from it, or HEAD holds none, the climb refuses
 //     (config-uncommitted, exit 4, a person's step: commit or revert it), since an uncommitted edit there (a shell
-//     write the guard does not judge in agents mode) could lower a floor for one climb. A local climb also needs the
+//     write the guard does not judge in agents mode) could lower a floor for one climb; HEAD naming a commit git cannot
+//     read it in (an object not there or damaged) is read-failed (exit 3), a person's git fsck. A local climb also needs the
 //     main checkout on the workspace's base branch, the one this machine's record names (workspace.BaseOf: another
 //     branch, a detached HEAD or a record from before Bonsai kept a base is main-not-verified, exit 4, a person's
 //     step), and the committed settings for the checks no looser than the ones this machine's record accepted
@@ -312,12 +313,16 @@ func prepare(o Options) (*Climb, *engine.Error) {
 	}
 	cfg, err := stopgate.CommittedConfig(c.Main, configWait)
 	var uncommitted *stopgate.UncommittedError
+	var unreadable *stopgate.HeadUnreadableError
 	switch {
 	case errors.As(err, &uncommitted):
 		return c, &engine.Error{Code: "config-uncommitted", Exit: ExitState, Who: "person",
 			What: uncommitted.Why + ", and the ladder reads its rungs, floor, ratchets and ci_marked_tests from the committed one only, " +
 				"so nothing was run",
 			Next: stopgate.UncommittedNext + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
+	case errors.As(err, &unreadable):
+		return c, &engine.Error{Code: "read-failed", Exit: ExitRuntime, Who: "person", What: unreadable.Why + ", so nothing was run",
+			Next: stopgate.HeadUnreadableNext + "; then run: bonsai ladder " + c.taskFlag() + " --json"}
 	case err != nil:
 		var we *workspace.Error
 		if errors.As(err, &we) {

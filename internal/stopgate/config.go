@@ -41,14 +41,41 @@ func (e *UncommittedError) Error() string { return e.Why }
 const UncommittedNext = "a person commits the change to bonsai.yaml in the main checkout (git commit), or reverts it " +
 	"(git checkout HEAD -- bonsai.yaml)"
 
+// HeadUnreadableError is CommittedConfig's refusal when git cannot read bonsai.yaml at the main checkout's HEAD though
+// HEAD names a commit (V2b's S6): an object HEAD needs, its commit, a tree or the file, is not in the repository or is
+// damaged (a clone whose borrowed objects are gone, a fetch cut short, a fault on the disk). There is no line of
+// bonsai.yaml to fix, and nothing to commit: git fsck names what is wrong. Why says what, in words that end a sentence.
+type HeadUnreadableError struct{ Why string }
+
+func (e *HeadUnreadableError) Error() string { return e.Why }
+
+// HeadUnreadableNext is the person's step after a HeadUnreadableError, before the command that confirms it.
+const HeadUnreadableNext = "a person runs git fsck in the main checkout, which names each object that is not there or is " +
+	"damaged, then fetches them (git fetch) or makes a fresh clone of the project"
+
 // CommittedConfig reads the main checkout's bonsai.yaml as committed at its HEAD (vergit.Committed: one git call, git's
 // object) and in full (workspace.ReadConfigFull), and refuses (*UncommittedError) while the file in the main checkout
 // differs from it, its line ends read as LF (a CRLF checkout is the same file), or is not there, or HEAD holds none
-// (no commit yet, or none holding it).
+// (no commit yet, or none holding it); and (*HeadUnreadableError) when HEAD, read from git's files (Head), names a
+// commit git cannot read, or cannot read the file in (headUnreadable).
 // main is the main checkout's top folder; timeout limits the git call. Any other error says the file could not be
 // read: git could not run, or the committed file is not one Bonsai reads (a *workspace.Error naming its line).
 func CommittedConfig(main string, timeout time.Duration) (*workspace.Config, error) {
 	committed, err := vergit.Committed(main, workspace.ConfigFile, timeout)
+	if errors.Is(err, vergit.ErrNoCommit) || headUnreadable(err) {
+		// git found no commit, or could not read what HEAD names: when HEAD, read from git's files, names a commit, that
+		// commit or an object under it is not there or is damaged.
+		if sha, herr := Head(workspace.ReadGitLayout(main)); herr == nil {
+			why := "the main checkout's HEAD names commit " + short(sha) + ", which git cannot read (the commit is not in the " +
+				"repository, or is damaged), so bonsai.yaml cannot be read as committed there"
+			if !errors.Is(err, vergit.ErrNoCommit) {
+				why = "the main checkout's HEAD names commit " + short(sha) + ", but git cannot read bonsai.yaml there (" +
+					oneLine(err.Error()) + "): an object HEAD needs is not in the repository or is damaged (or HEAD holds " +
+					"bonsai.yaml as a folder, not a file)"
+			}
+			return nil, &HeadUnreadableError{Why: why}
+		}
+	}
 	switch {
 	case errors.Is(err, vergit.ErrNoCommit):
 		return nil, &UncommittedError{Why: "the main checkout's HEAD names no commit yet, so it holds no bonsai.yaml"}
@@ -68,6 +95,18 @@ func CommittedConfig(main string, timeout time.Duration) (*workspace.Config, err
 		return nil, &UncommittedError{Why: "the main checkout's bonsai.yaml differs from the one committed at its HEAD"}
 	}
 	return workspace.ReadConfigFull(committed)
+}
+
+// headUnreadable reports whether vergit.Committed's error says git could not read what HEAD names, as against git not
+// running at all: HEAD's commit (git cannot read HEAD), its tree (git cannot read HEAD's tree), or the file its tree
+// lists (is not a file git can read; git says "bad file" for a blob that is not there and for a folder alike). It
+// reads vergit's own words, until vergit gives these a sentinel error of their own (ErrHeadUnreadable).
+func headUnreadable(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.HasPrefix(msg, "git cannot read HEAD") || strings.Contains(msg, " is not a file git can read: ")
 }
 
 // lf reads a file's line ends as LF.
