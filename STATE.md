@@ -1,10 +1,10 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 13 Oct 2026 at 05:50. **Step 5.4, the ladder runner and the switch, is under
-way** (`design/plan-5.md` ~2374; 28-44 h, re-ask 57), started 12 Oct 23:35 (an earlier session's start at 10:42 stopped
-unfinished). **All of 5.4's code is on `main`** (`271e0ae`: 5.4.0-5.4.6, the wiring and the fixes after); **5.4.7's
-preparation is built** on its branch (it lands after V2). Next: a fix for a test that broke on the date (13 Oct 00:00
-UTC), then **V1 and V2 side by side** on one commit, then the pre-release and Rohan's install. Step 5.3, the guards, is done (12 Oct, 00:46), two holes logged as known limits.
+Rewritten, never appended. Last rewritten 13 Oct 2026 at 11:09. **Step 5.4: all its code and the switch's files are on
+`main`** (`f9e28e3`); verification closed on Rohan's word ("any issues found now, just note them down, no need to fix
+or verify"). **Next session: the pre-release, Rohan's sitting, the link, the first climbs, the end verifier** (the
+exact steps below, "Now: step 5.4"). Rohan's word until 5.4 closes: **no local Windows test runs; CI is the Windows
+proof**, and close 5.4 quickly.
 
 ## In short
 
@@ -170,23 +170,51 @@ two-round cap). No change to Mimas or the studio's repo.
 
 ## Now: step 5.4, the ladder runner and the switch
 
-`design/plan-5.md`, "### Step 5.4" (~2374): 28-44 h, re-ask at 57. Builders' rules: `~/bonsai-checks/briefs/rules.md`
-(its `Claude-Session` line is this session's; a new session updates it first). Briefs: `~/bonsai-checks/briefs/brief-5.4.*`.
-The start check's report: `~/bonsai-checks/startcheck-5.4/report.md` (the plan's names that landed otherwise, with file
-and line; the orchestrator's rulings in `records/runs/R-2026-10-12-5.4.0-formats.md`, 23:52).
+`design/plan-5.md`, "### Step 5.4" (~2374): 28-44 h, re-ask at 57; **about 36 h counted** (2,063 minutes in the run reports' Runs rows and 79 of planning; the
+orchestrator's own time between runs is only partly in them).
+Builders' rules: `~/bonsai-checks/briefs/rules.md` (**update its `Claude-Session` line to the new session's first**; it
+says no local Windows runs until 5.4 closes). The part's logs: `records/runs/R-2026-10-12-5.4.0-formats.md` (the start),
+`R-2026-10-12-5.4.1-rungjobs.md`, `R-2026-10-13-5.4.2-runner.md`, `-5.4.3-rung0.md`, `-5.4.4-ratchets.md`,
+`-5.4.5-newtests.md`, `-5.4.6-vergit.md`, `-5.4.7-switch.md`, and **`R-2026-10-13-5.4-verify.md`** (every verifier round,
+every fix round, Rohan's words on K1, K2, Windows and closing).
 
-| Piece | State | Run report |
-|---|---|---|
-| 5.4.0 formats set 7 and the ladder's lists | **landed** `6688f81` | `R-2026-10-12-5.4.0-formats.md` (also the part's log) |
-| 5.4.1 rung jobs and leftovers | **landed** `e97afb1`; Windows test fixes `725b5d9`, `41e0815` | `R-2026-10-12-5.4.1-rungjobs.md` |
-| 5.4.2 the runner, `bonsai ladder` | **landed** `447909f`; CI's `-timeout 20m` `aca075a` | `R-2026-10-13-5.4.2-runner.md` |
-| 5.4.3 rung 0, and its wiring | **landed** `c704783`, wired `41be2d9` | `R-2026-10-13-5.4.3-rung0.md` |
-| 5.4.4 floors, ratchets and Bless | **landed** `03a29c5` | `R-2026-10-13-5.4.4-ratchets.md` |
-| 5.4.5 new tests fail on the base | **landed** `ed85228`, hung on the rise step `271e0ae` | `R-2026-10-13-5.4.5-newtests.md` |
-| 5.4.6 git integrity, and its wiring | **landed** `18decac`, wired `41be2d9` | `R-2026-10-13-5.4.6-vergit.md` |
-| The date-bound test (`clockfix`) | building (Sonnet): `TestAWorktreeSession` fails since 13 Oct 00:00 UTC; a sweep of fixed-date tests | the 5.4.3 report |
-| V1 (5.4.1-5.4.3) and V2 (5.4.0, 5.4.4-5.4.6), side by side | next, on one commit; briefs `~/bonsai-checks/briefs/verify-5.4-V1.md`, `-V2.md` | |
-| 5.4.7 the switch | preparation built (branch `5.4.7`); lands after V2; then the pre-release, Rohan's install, the link, the end verifier | `R-2026-10-13-5.4.7-switch.md` |
+**Where it stands.** Every piece landed: 5.4.0 `6688f81`, 5.4.1 `e97afb1`, 5.4.2 `447909f`, 5.4.3 `c704783`, 5.4.6
+`18decac`, the wiring `41be2d9`, 5.4.4 `03a29c5`, 5.4.5 `271e0ae`, fix rounds 1-3 `0229fea`, `7905251`, `8ca6454`, 5.4.7
+`f9e28e3`. Verification: V1 and V2 (round 1), V2b (round 2), V2c (round 3 on 5.4.6 and K1), V2d (K1's second): every
+must-fix they found was fixed except the last, which Rohan's word leaves as a known limit (the rung 0 race below). The
+Go code the pre-release is built from is `8ca6454`'s (5.4.7 changed only `bonsai.yaml`, `T-5407`, `CLAUDE.md`,
+`CONTRIBUTING.md`, `.gitignore`). CI on `8ca6454`/`f9e28e3`: check it first (`gh run list -R LastStep/Bonsai -L 5`).
+
+**The next session's steps, in order** (plan "The order of the switch", 2875-2898; "Rohan's sitting", 3200-3225):
+1. Read CI on `main`'s tip; commit any records; `main`'s tree clean.
+2. **The pre-release:** `git clone ~/Servers/Bonsai ~/bonsai-checks/prerelease/src-<commit>`, `git -C ... checkout
+   --detach <commit>`, then `cd` there and `CGO_ENABLED=0 go build -trimpath -buildvcs=true -o
+   ~/bonsai-checks/prerelease/bonsai ./cmd/bonsai`; `go version -m` shows the commit, `vcs.modified=false`,
+   `CGO_ENABLED=0`, no fault tag; `sha256sum`. Record the build line, the fingerprint, Claude Code's version and the user
+   settings hashes in 5.4.7's run report, committed, before sending Rohan anything.
+3. **Rohan's batch, in one message** (bash, one per line): `sudo install -o root -g root -m 0755
+   ~/bonsai-checks/prerelease/bonsai /usr/local/bin/bonsai`; `echo "<sha256>  /usr/local/bin/bonsai" | sha256sum -c`
+   (must print OK); `which -a bonsai` (only `/usr/local/bin/bonsai`; nothing named bonsai is on the PATH today);
+   `/usr/local/bin/bonsai --version`; and his memory line (his 13 Oct "A. Keep them on"), which merges into his existing
+   `~/Servers/Bonsai/.claude/settings.local.json` (it holds his `skillOverrides`): `python3 -c "import
+   json,os;p=os.path.expanduser('~/Servers/Bonsai/.claude/settings.local.json');s=json.load(open(p));s['autoMemoryEnabled']=True;open(p,'w').write(json.dumps(s,indent=2)+'\n')"`.
+   He sends back `--version`'s line.
+4. **The link** (plan 2860-2873): in the main checkout on `main`, `/usr/local/bin/bonsai init --json` (preview, read each
+   line), then `init --yes --json`; read `git status`/`git diff` (the lock, `.claude/settings.json` with every line in
+   Rohan's (a) form, the block in `CLAUDE.md`, `.bonsai/.gitignore`, the tables); `bonsai check --json` no finding;
+   commit `bonsai: Bonsai links itself`, push, read CI. Check the guard is live: a file-tool edit of a path `T-5407` does
+   not grant (`go.mod`) is refused; an interactive session takes the lines up at once (5.4.7 note 2); if not, Rohan
+   restarts with `claude --continue`.
+5. **The first climbs:** `T-5407` is `running`; with the tree clean, `/usr/local/bin/bonsai ladder --task T-5407` green
+   (floors 0; the rises read "check not run: the test files cannot be told", by design); write its counts into
+   `ratchets` in a commit under `T-5407` (stricter: accepted and recorded with no person); climb again at that commit,
+   green; `T-5407` to `done` in a records commit with the tables (`bonsai check --write`).
+6. **The end verifier:** write `T-5490` (running; grants nothing) and its run report in format 1
+   (`R-2026-10-13-T-5490-<topic>.md`, `bonsai.run/1` frontmatter), commit both; then a fresh Opus verifier on
+   `~/bonsai-checks/briefs/verify-5.4-end.md` (fill `<HEAD>`, `<SHA256>`, `<BUILD>`): "5.4 done" checks 16-23, the
+   Windows half of check 22 by CI only. Its findings are noted, not fixed, by Rohan's word, unless he says otherwise.
+7. Close 5.4: `STATE.md` rewritten; Rohan's roadmap artifact's Bonsai cards; 5.5's planning (with the agent-pipelines
+   redesign, memory `agent-pipelines-redesign`).
 
 **Facts measured that later work rests on:** Claude Code 2.1.296 on both sides (Windows updated 11 Oct, 19:45). A Stop
 hook printing "No such file or directory" and exiting 2 lets the session end; Stop hooks keep a turn going eight times
@@ -220,6 +248,15 @@ cost on this machine (Defender on, low free memory), Bonsai adding 6-9 ms.
 
 ## Loose ends
 
+**Known limits, after 1.0, noted at 5.4's close (Rohan, 13 Oct: "just note them down, no need to fix or verify"):**
+**the rung 0 race** (V2d: rung 0 judges by main's `bonsai.yaml` as it reads when rung 0 runs, not the committed settings
+checked in prepare; a looser file swapped in during the climb and put back makes a red branch green, the gate 0;
+reproducers `~/bonsai-checks/verify-5.4-V2d/repro/r1-race.sh`, `r1b-race-commit.sh`; fix: rung 0 judges with the
+committed settings, and the climb re-reads main's file once it holds the lock); **the gate's git timeout** (under heavy
+load its one git call can pass its 4 s limit; the refusal then says to fix `bonsai.yaml` instead of naming the timeout,
+and one stopgate test is timing-bound); **the machine record is writable** by an agent's shell (deleting it or nulling
+its `checks` lets the agent's own `update` write a free first record); a task file's grants are read from main's
+working tree (the landing rule's audit of each task's `bonsai.allows` is the check).
 **Known limits, after 1.0:** **K2** (a fake program first on the caller's PATH fools a rung; fix: CI runs the
 ladder and a task is done only with it green, Rohan 13 Oct); Git LFS and git-crypt checkouts always read dirty; the packs'
 protected paths in `.bonsai/lock.json` outside the settings record (5.5); a `documents` kind added moves a pack's place
