@@ -57,13 +57,16 @@ var fixedEnv = []string{"GIT_CONFIG_NOSYSTEM=1", "GIT_ATTR_NOSYSTEM=1", "GIT_NO_
 //   - core.commitGraph=false: ancestry is read from the commits themselves, not from a cache file that could be
 //     made to say otherwise;
 //   - protocol.allow=never: no fetch of a missing object (a partial clone) reaches a network;
+//   - advice.graftFileDeprecated=false: with GIT_GRAFT_FILE set to the null device (newRunner), git (2.34 does)
+//     prints a hint that grafts are deprecated before its real error, and the hint, not the error, would be the first
+//     line a refusal shows;
 //   - core.ignorecase=false, core.fileMode=true and core.symlinks=true where the file system under the repository can
 //     hold what each would hide (probe.go: fsPins, probed once per run), so the repository's own value cannot make git
 //     look past a file differing only in case, an executable bit or a link;
 //   - core.excludesFile is pinned per run, and the user's core.autocrlf and core.eol kept (see userSettings).
 var pins = []string{"core.fsmonitor=false", "core.untrackedCache=false", "core.trustctime=true",
 	"core.checkStat=default", "core.ignoreStat=false", "core.attributesFile=", "core.commitGraph=false",
-	"protocol.allow=never"}
+	"protocol.allow=never", "advice.graftFileDeprecated=false"}
 
 // gitRunner runs git for one judgment.
 type gitRunner struct {
