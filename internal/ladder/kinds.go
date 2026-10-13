@@ -29,9 +29,9 @@ package ladder
 //     so a floor of rung 0 and ver-git does not make a waiting climb wait as if each ran tests for ten minutes.
 //   - afterRung: the steps after each rung that ran: the ratchet's judgment (internal/ratchet's Judge, step 5.4.4):
 //     the count written on the rung (was, now and whether now is at least was), and the rung red when the count is
-//     below its floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), or when its
-//     floor in ratchets is not a number (never read as 0, so a typo cannot lower a floor), the reason added to the
-//     rung's own.
+//     below its floor or none could be read (s.Count.Now is "" then, or the rung's kind counts nothing), when a count
+//     from the capture disagrees with the tests read from the same output (s.Count.Parsed), or when its floor in
+//     ratchets is not a number (never read as 0, so a typo cannot lower a floor), the reason added to the rung's own.
 //   - afterRungs: the steps after the last rung, once every rung's line is printed: the rise step. On a local climb
 //     that is green and clean (clean at its start and now, HEAD where it started, nothing hidden from git), each
 //     ratchet above its floor gets its new_tests from ratchet.NewTests, internal/newtests' check (step 5.4.5): the
@@ -245,10 +245,12 @@ type Step struct {
 // name, else, on a rung whose tests were read, the tests the output names as passed (under --ci with the accepted
 // marked skips added, as today).
 type Count struct {
-	Name  string      // the ratchet's name
-	Floor json.Number // the floor, ratchets[name] in bonsai.yaml; 0 when it names none
-	Now   json.Number // the count; "" when none could be read
-	From  string      // "capture" or "tests"; "" when none could be read
+	Name   string      // the ratchet's name
+	Floor  json.Number // the floor, ratchets[name] in bonsai.yaml; 0 when it names none
+	Now    json.Number // the count; "" when none could be read
+	From   string      // "capture" or "tests"; "" when none could be read
+	Parsed json.Number // with a count from the capture on a rung whose tests were read: the tests named as passed; else ""
+	Form   string      // the tests form Parsed was read in; "" with no Parsed
 }
 
 // afterRung runs the steps after a rung that ran (this file's comment).
@@ -274,7 +276,7 @@ func judgeRatchet(c *Climb, s *Step) {
 	floor, bad := floorOf(c.Config.Full.Ratchets, in.Name)
 	in.Floor = floor
 	if s.Count != nil {
-		in.Floor, in.Now, in.From = s.Count.Floor, s.Count.Now, s.Count.From
+		in.Floor, in.Now, in.From, in.Parsed, in.Form = s.Count.Floor, s.Count.Now, s.Count.From, s.Count.Parsed, s.Count.Form
 	}
 	v := ratchet.Judge(in)
 	if bad != "" {

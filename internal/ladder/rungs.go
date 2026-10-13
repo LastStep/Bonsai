@@ -329,9 +329,11 @@ func failedCount(rep testout.Report) int {
 }
 
 // captures reads a rung's capture patterns against its output (bonsai.workspace/1's capture): each pattern, a Go
-// (RE2) regular expression, is matched line by line; the first line it matches gives its first group (the whole match
-// when it has none), a number when it reads as one, else text (redacted). A pattern that does not compile gives null;
-// one that matches no line is left out. null when the rung captures nothing, or nothing matched.
+// (RE2) regular expression, is matched line by line; the last line it matches gives its first group (the whole match
+// when it has none), a number when it reads as one, else text (redacted). The last, since a runner prints its summary
+// after every test's own output: a test that prints a line like the summary's ("pass 50", which node's TAP gives as
+// "# pass 50") prints it before the runner's own. A pattern that does not compile gives null; one that matches no line
+// is left out. null when the rung captures nothing, or nothing matched.
 func captures(spec any, out []byte) schema.Object {
 	m, ok := spec.(schema.Object)
 	if !ok || len(m) == 0 {
@@ -353,8 +355,8 @@ func captures(spec any, out []byte) schema.Object {
 		if lines == nil {
 			lines = strings.Split(strings.ReplaceAll(string(out), "\r\n", "\n"), "\n")
 		}
-		for _, l := range lines {
-			sm := re.FindStringSubmatch(l)
+		for i := len(lines) - 1; i >= 0; i-- {
+			sm := re.FindStringSubmatch(lines[i])
 			if sm == nil {
 				continue
 			}
@@ -378,7 +380,9 @@ func captures(spec any, out []byte) schema.Object {
 
 // count reads a rung's ratchet and its count (5.4.0 note 2): the capture of the ratchet's name when it is a number,
 // else, on a rung whose tests were read, the tests named as passed plus the accepted skips (under --ci; 0 locally).
-// nil when the rung has no ratchet; Now "" when none could be read (or the ratchet is not a name).
+// On a rung whose tests were read, a count from the capture comes with the tests named as passed (Parsed), which
+// internal/ratchet's Judge holds it to: two reads of one output must agree. nil when the rung has no ratchet; Now ""
+// when none could be read (or the ratchet is not a name).
 func (c *Climb) count(r format.Rung, caps schema.Object, rep *testout.Report, accepted int) *Count {
 	if r.Ratchet == nil {
 		return nil
@@ -392,6 +396,9 @@ func (c *Climb) count(r format.Rung, caps schema.Object, rep *testout.Report, ac
 	if v, ok := caps.Get(name); ok {
 		if n, isNum := v.(json.Number); isNum {
 			k.Now, k.From = n, "capture"
+			if rep != nil {
+				k.Parsed, k.Form = json.Number(strconv.Itoa(rep.Passed())), rep.Form
+			}
 			return k
 		}
 	}

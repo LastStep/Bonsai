@@ -521,10 +521,11 @@ func TestBuildFailure(t *testing.T) {
 	}
 }
 
-// Captures: a pattern's first group, a number when it reads as one; a pattern that does not compile is null; the
-// ratchet's count is the capture of its name over the passed tests.
+// Captures: a pattern's first group on the last line it matches (a runner's summary comes after a test's own output),
+// a number when it reads as one; a pattern that does not compile is null; the ratchet's count is the capture of its
+// name over the passed tests.
 func TestCaptures(t *testing.T) {
-	r := rung{n: 1, name: "c", command: "echo passed 7 of 9 && echo version v1.2", required: true, ratchet: "found",
+	r := rung{n: 1, name: "c", command: "echo passed 50 of 9 && echo passed 7 of 9 && echo version v1.2", required: true, ratchet: "found",
 		capture: "\n      found: \"passed ([0-9]+) of\"\n      version: \"version (v[0-9.]+)\"\n      broken: \"(\"\n      whole: \"of [0-9]+\""}
 	f := project(t, yamlOf("[1]", "\n  found: 3", "[]", r), map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
 	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 {

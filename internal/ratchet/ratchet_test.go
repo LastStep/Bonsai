@@ -86,6 +86,18 @@ func TestJudge(t *testing.T) {
 			who: "person", reason: `the ratchet "Go-Tests" measured nothing: the rung's ratchet is not a ratchet's name`},
 		{name: "unread: not text", in: Reading{Rung: commandRung(json.Number("3"), nil, "go-test-json")}, red: true, none: true,
 			who: "person", reason: `the ratchet "" measured nothing: the rung's ratchet is not a ratchet's name`},
+		{name: "a capture agreeing with the tests read", in: Reading{Rung: commandRung("tap_pass", schema.Object{{Key: "tap_pass",
+			Value: `^# pass (\d+)`}}, "tap"), Name: "tap_pass", Floor: "3", Now: "3", From: "capture", Parsed: "3", Form: "tap"}, ok: true},
+		{name: "a capture disagreeing with the tests read", in: Reading{Rung: commandRung("tap_pass", schema.Object{{Key: "tap_pass",
+			Value: `^# pass (\d+)`}}, "tap"), Name: "tap_pass", Floor: "3", Now: "50", From: "capture", Parsed: "3", Form: "tap"}, red: true,
+			ok: true, reason: "the ratchet tap_pass's two counts disagree: its capture read 50, and the tests read as tap name 3 passed; a " +
+				"count is taken only when both reads of the output agree, since a test can print a line its runner prints",
+			next: "find the line the capture tap_pass took"},
+		{name: "a capture below its floor, agreeing", in: Reading{Rung: commandRung("tap_pass", schema.Object{{Key: "tap_pass",
+			Value: `^# pass (\d+)`}}, "tap"), Name: "tap_pass", Floor: "4", Now: "3", From: "capture", Parsed: "3", Form: "tap"}, red: true,
+			reason: "tap_pass went backwards: 4 -> 3"},
+		{name: "a count from the tests is not held to itself", in: Reading{Rung: counted, Name: "go_tests", Floor: "3", Now: "5", From: "tests",
+			Parsed: "4"}, ok: true},
 		{name: "a floor past compare", in: Reading{Rung: counted, Name: "go_tests", Floor: "1e999999999", Now: "5", From: "tests"}, red: true,
 			none: true, who: "person", reason: `its floor in bonsai.yaml's ratchets, "1e999999999", does not read as a number`},
 	} {

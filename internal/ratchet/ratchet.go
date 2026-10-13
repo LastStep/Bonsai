@@ -10,7 +10,9 @@
 //   - ratchet.go (this file): one rung's ratchet judged (Judge). was is ratchets[name] (0 when it names none), now the
 //     rung's count; below it the rung is red ("go_tests went backwards: 812 -> 805"), even with every test green. A
 //     count that cannot be read is red too: a ratchet that measures nothing is none. Under --ci the accepted marked
-//     skips count (the runner adds them, as today), and a red reason says how many.
+//     skips count (the runner adds them, as today), and a red reason says how many. On a rung with a tests form whose
+//     tests were read, a count taken from the capture must equal the tests read as passed from the same output; when
+//     the two disagree the rung is red, since one of them read a line the code under test printed.
 //   - rise.go: the rise step (NewTests): where a local, green, clean climb finds a ratchet above its floor, the one
 //     call that gives the rise's new_tests, its human lines and its line for the Bless ask's why (internal/newtests'
 //     check, step 5.4.5).
@@ -22,6 +24,16 @@
 //     when its offer is gone, with its reason; then the climb's own offer is filed (asks.FileBless), or its task's open
 //     ask resolved. Never under --ci, nor on a branch; never filed from a red or dirty climb, nor from a result another
 //     climb wrote (note 5).
+//
+// What a count cannot be kept from: the count is read from the output of the code under test, and a test can always
+// print what its runner prints. A Go test that prints "\x16--- PASS: TestX (0.00s)" (the frame go test's own lines
+// carry for test2json) makes go test -json report a pass for a test that never ran, so the tests read and any count
+// from them grow with it; a node test's console.log("pass 50") reaches node's TAP as the comment "# pass 50", which a
+// capture of the summary ("^# pass (\d+)") matches. The runner narrows this, never closes it: a capture takes the last
+// line it matches (a runner prints its summary after every test's output), a capture on a rung whose tests were read
+// must agree with them (one forged line moves one read, not both), and git integrity's test-file-changed names every
+// changed test file for the verifier. A test file that forges both reads is code a reviewer reads: the ladder proves
+// the tests a branch's own code runs, and a branch's tests are part of what is reviewed.
 package ratchet
 
 import (
@@ -53,6 +65,8 @@ type Reading struct {
 	Captures schema.Object // what the rung's captures read (the result's captures)
 	Tests    schema.Object // the result's tests: under --ci its skipped list marks each accepted skip
 	CI       bool          // a --ci climb, whose count holds the accepted marked skips
+	Parsed   json.Number   // with a count from the capture on a rung whose tests were read: the tests read as passed; else ""
+	Form     string        // the tests form Parsed was read in ("tap"), for the reason; "" with no Parsed
 }
 
 // Verdict is one rung's ratchet judged.
@@ -84,6 +98,18 @@ func Judge(r Reading) Verdict {
 			Next:   "a person writes ratchets." + r.Name + " in bonsai.yaml as a plain number; then run: bonsai check --json"}
 	}
 	v := Verdict{Ratchet: &format.LadderRatchet{Name: r.Name, Was: r.Floor, Now: r.Now, OK: now.Cmp(floor) >= 0}}
+	if r.From == "capture" && r.Parsed != "" {
+		if parsed, ok := Number(r.Parsed); !ok || parsed.Cmp(now) != 0 {
+			v.Red = true
+			v.Reason = fmt.Sprintf("the ratchet %s's two counts disagree: its capture read %s, and the tests read as %s name %s passed; a "+
+				"count is taken only when both reads of the output agree, since a test can print a line its runner prints", shownName(r),
+				r.Now, r.Form, r.Parsed)
+			v.Next = "find the line the capture " + r.Name + " took (the last line it matches; a test's own output can print a runner's " +
+				"summary line) and the test that printed it, and take that print out; if the capture counts something else than the " +
+				"passing tests, a person changes it in bonsai.yaml or takes it out, so the tests read are the count"
+			return v
+		}
+	}
 	if v.Ratchet.OK {
 		return v
 	}
