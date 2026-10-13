@@ -43,7 +43,8 @@
 // in the user's global config), run as this package runs git; and the checkout's contents read against HEAD through a
 // fresh index with the repository's own filters off, since git status trusts what its index kept from an earlier look
 // (stat times refreshed while a filter made a changed file read as unchanged, then the filter taken out; an index
-// flag). Every submodule checked out is read the same way and judged for the findings that hide a change (its own
+// flag), and each file under the ident or working-tree-encoding attribute by its bytes, since git reads different
+// bytes under those as one blob. Every submodule checked out is read the same way and judged for the findings that hide a change (its own
 // assume-unchanged, skip-worktree and ignore rules), its paths named from the top. So the runner's dirty is Dirty(in)
 // or Outcome.Hides.
 //
@@ -72,6 +73,11 @@
 //     not read, and named. Its own filters are switched off as the top's are.
 //   - The repository's own configuration is read by every git call (no variable switches it off); the pinned
 //     settings cover the parts of it known to hide a change from these reads.
+//   - Conversions on a file's way into git make different bytes read as one blob. Filters are switched off for the
+//     contents' read; the ident and working-tree-encoding attributes are read by the file's bytes against HEAD's blob
+//     (convert.go), so an honest checkout under them always counts as dirty, as one with Git LFS does. Line ends are
+//     the one conversion left on (the text, eol and crlf attributes, core.autocrlf, core.eol), as the user's git
+//     reads them: a CR added before an LF reads as unchanged, which a test reading a file's bytes could see.
 //   - A file inside a .claude/ folder that only info/exclude or core.excludesFile ignores is named, not made dirty
 //     (Claude Code's own local files; no project's test reads them). So a test that reads a file an agent hid inside
 //     .claude/ through info/exclude passes here with the file named and the run clean; CI, which lacks the file,
@@ -196,6 +202,9 @@ type judgment struct {
 	exclHash string
 	prefix   string // a submodule's path from the top checkout, with its slash ("lib/"); "" for the top checkout
 	depth    int    // how many submodules deep this checkout lies
+
+	headEntries []treeEntry // HEAD's tree, every entry (headTree), once read
+	headRead    bool
 }
 
 // name is a path of this checkout as a finding names it: from the top checkout (a submodule's prefix first), as shown.

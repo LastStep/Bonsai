@@ -52,10 +52,14 @@ type Hidden struct {
 //     git read-tree HEAD), whose entries carry no stat times and no index flags, so git reads and hashes every tracked
 //     file and compares its contents with HEAD's; with every filter driver the repository's own configuration
 //     defines switched off for that read (filter.<name>.clean, smudge and process emptied, required false), so a
-//     filter cannot make a changed file read as HEAD's. A file whose contents with filters off differ from HEAD's counts
-//     as changed even where a filter is honest (Git LFS, git-crypt): such a checkout always counts as dirty. Line ends
-//     still convert as the user's git converts them (core.autocrlf, core.eol, the text and eol attributes), which are
-//     no program.
+//     filter cannot make a changed file read as HEAD's. A file whose contents with filters off differ from HEAD's
+//     counts as changed even where a filter is honest (Git LFS, git-crypt): such a checkout always counts as dirty.
+//     Then each tracked file the
+//     ident or working-tree-encoding attribute applies to, which git reads through a conversion that makes different
+//     bytes read as one blob, is read by its bytes against HEAD's blob (convert.go), and counts as changed when they
+//     differ: an honest checkout git made under such an attribute (an expanded $Id$, a UTF-16 file) counts as dirty
+//     too, as with a filter. Line ends still convert as the user's git converts them (core.autocrlf, core.eol, the
+//     text, eol and crlf attributes), which are no program: a CR before an LF reads as unchanged.
 //
 // Every submodule checked out (a gitlink in HEAD or the index whose folder holds a .git) is read the same way, its
 // paths named from the top; a gitlink folder git does not read (no .git) that holds a file counts as dirty, its files
@@ -121,9 +125,9 @@ func (j *judgment) tree(depth int) (TreeState, error) {
 	if err != nil {
 		return st, err
 	}
-	for _, p := range changed {
-		if !shown[p] {
-			st.Hidden = append(st.Hidden, Hidden{Path: p, Why: "its contents differ from HEAD's, though git status shows no change"})
+	for _, h := range changed {
+		if !shown[h.Path] {
+			st.Hidden = append(st.Hidden, h)
 		}
 	}
 	subs, err := j.gitlinks()
@@ -140,9 +144,10 @@ func (j *judgment) tree(depth int) (TreeState, error) {
 	return st, nil
 }
 
-// contents gives the tracked paths whose contents differ from HEAD's (Tree's second read): changed, deleted or of
-// another type, by a status against a fresh index read from HEAD, the repository's own filters switched off.
-func (j *judgment) contents() ([]string, error) {
+// contents gives the tracked paths whose contents differ from HEAD's (Tree's second read), each with why: changed,
+// deleted or of another type, by a status against a fresh index read from HEAD, the repository's own filters switched
+// off; and a file whose bytes an attribute that converts them on their way into git makes read as HEAD's (converted).
+func (j *judgment) contents() ([]Hidden, error) {
 	tmp, err := os.MkdirTemp("", "bonsai-index-")
 	if err != nil {
 		return nil, fmt.Errorf("no temporary folder for a fresh index: %s", osWords(err))
@@ -164,7 +169,8 @@ func (j *judgment) contents() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("git cannot compare the checkout's contents with HEAD: %v", err)
 	}
-	var changed []string
+	var changed []Hidden
+	seen := map[string]bool{}
 	for _, e := range splitZ(out) {
 		if len(e) < 4 {
 			return nil, fmt.Errorf("git status gave a line this package does not read: %q", e)
@@ -172,9 +178,14 @@ func (j *judgment) contents() ([]string, error) {
 		if e[:2] == "??" {
 			continue // an untracked file shows to plain git status as well (or as staged there, when the index has it)
 		}
-		changed = append(changed, e[3:])
+		changed = append(changed, Hidden{Path: e[3:], Why: "its contents differ from HEAD's, though git status shows no change"})
+		seen[e[3:]] = true
 	}
-	return changed, nil
+	conv, err := j.converted(&g, seen)
+	if err != nil {
+		return nil, err
+	}
+	return append(changed, conv...), nil
 }
 
 // removeTree removes a temporary folder this package made and everything in it, each file and then each folder, the
@@ -254,9 +265,13 @@ func (j *judgment) gitlinks() ([]string, error) {
 		}
 		return nil
 	}
-	if j.head != "" {
-		if err := read("ls-tree", "-r", "-z", "--full-tree", j.head); err != nil {
-			return nil, err
+	entries, err := j.headTree()
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entries {
+		if e.mode == "160000" {
+			seen[e.path] = true
 		}
 	}
 	if err := read("ls-files", "-z", "--stage"); err != nil {
