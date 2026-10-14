@@ -382,7 +382,8 @@ func (rr *roleRun) briefPath(p string) string {
 }
 
 // exempt reports whether a call past the budget is one of the three it may still make (budget-exempt), and whether it
-// is the report.
+// is the report: the hand-back tool; reading a brief to its own address (its tied brief, or a newer one, which ties at
+// its read before the budget is judged); the report in its exact form (reportCall).
 func (rr *roleRun) exempt(w *who, reads string) (ok, report bool) {
 	in := rr.in
 	if listHas(HandBackTools, in.Tool) {
@@ -392,9 +393,9 @@ func (rr *roleRun) exempt(w *who, reads string) (ok, report bool) {
 	if addr == "" {
 		return false, false
 	}
-	if reads != "" && w.st != nil {
-		if t := w.st.Window().Tie; t != nil && t.Brief == reads {
-			return true, false
+	if reads != "" {
+		if b, why := readBrief(rr.main, reads); why == "" && b.kind == format.KindBrief && b.to == addr {
+			return true, false // its tied brief, or another to its address (a newer one ties at its read, count)
 		}
 	}
 	if shellTool(in.Tool) && in.Tool != "Monitor" && reportCall(in.Tool, in.Command, addr) {

@@ -276,8 +276,22 @@ func TestTheMeasuredRoutes(t *testing.T) {
 		}
 	}
 	if spawn == nil || spawn.String("parent") != "session" || spawn.String("subagent_id") != "ab8125621420b9524" ||
-		spawn.String("subagent_type") != "helper" || spawn.String("tool_use_id") != "toolu_016Z7tzdB6g9U9Z1bWHtsAah" {
+		spawn.String("subagent_type") != "helper" || spawn.String("tool_use_id") != "toolu_016Z7tzdB6g9U9Z1bWHtsAah" ||
+		spawn.String("agent_event") != "PreToolUse" || spawn.String("category") != "Agent" {
 		t.Errorf("the spawn record %v", spawn)
+	}
+	// Every record of the session, the spawn record among them, holds to log.schema.json and its field order.
+	sch, err := schema.Parse(mustSchema(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, r := range sessionRecords(t, dir, fx("c2-subagent/04-PreToolUse-Bash.json")) {
+		if msgs := schema.Validate(sch, r); len(msgs) != 0 {
+			t.Errorf("record %d against log.schema.json: %v", i, msgs)
+		}
+		if msgs := schema.CheckOrder(sch, r); len(msgs) != 0 {
+			t.Errorf("record %d field order: %v", i, msgs)
+		}
 	}
 
 	// c3: the session starts a lead; the lead starts a helper (allowed: a lead calls a helper); the helper's call.
