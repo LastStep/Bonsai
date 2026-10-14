@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +23,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/rungjob"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testout"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // The rung statuses Bonsai writes (format.RungStatuses, their one home, holds what each means).
@@ -146,6 +148,27 @@ func (c *Climb) runOther(r format.Rung, e *format.LadderRung) *Step {
 	return s
 }
 
+// sessionVars are the variables that name a session's task and role. No rung sees them: a test run under a climb must
+// never read the caller's own task (the climb's own reading of BONSAI_TASK, c.Getenv, is not changed by this).
+var sessionVars = []string{workspace.TaskEnv, "BONSAI_ROLE"}
+
+// rungEnv is the environment a rung runs in: the caller's, less sessionVars (the rest passes through unchanged, in
+// order). Windows names variables in any case.
+func rungEnv(env []string) []string {
+	out := make([]string, 0, len(env))
+next:
+	for _, kv := range env {
+		name, _, _ := strings.Cut(kv, "=")
+		for _, v := range sessionVars {
+			if name == v || (runtime.GOOS == "windows" && strings.EqualFold(name, v)) {
+				continue next
+			}
+		}
+		out = append(out, kv)
+	}
+	return out
+}
+
 // runCommand runs a command rung through its rung job (note 2), reads its tests (note 3) and judges their skips and
 // marks (note 4), reads its captures and its ratchet's count (note 5). notes are what the job could not do (never a
 // colour), for the human lines.
@@ -155,7 +178,7 @@ func (c *Climb) runCommand(r format.Rung, e *format.LadderRung) (*Step, []string
 		e.Status, e.Reason = statusError, text("the rung's kind is command, but bonsai.yaml gives it no command")
 		return s, nil
 	}
-	res := rungjob.Run(c.o.Stop, rungjob.Spec{Command: *r.Command, Dir: c.Root, Env: c.o.Env, Timeout: rungTimeout(r)})
+	res := rungjob.Run(c.o.Stop, rungjob.Spec{Command: *r.Command, Dir: c.Root, Env: rungEnv(c.o.Env), Timeout: rungTimeout(r)})
 	s.Output, s.timed = res.Out, res.TimedOut
 	var reason []string
 	switch {
