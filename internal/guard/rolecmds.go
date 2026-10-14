@@ -35,6 +35,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/LastStep/Bonsai/internal/message"
 )
 
 // shellRole is the roles' part of one shell call's judgment: nil where no role rule applies (the roles do not apply,
@@ -115,37 +117,93 @@ func claudeStart(name string, words []shWord) string {
 }
 
 // GitWriteWords are git's subcommands that change the checkout or its history, refused to a role that changes
-// nothing; each with the forms that only read, which stay allowed: their one home, on the reference page.
+// nothing, each with the forms that only read, which stay allowed (gitWrite): their one home, on the reference page.
+// Measured on git 2.x (15 Oct): git branch -v <name> and git tag --sort=<key> <name> make the ref, so a listing flag
+// counts only where it puts the call in its listing mode.
 var GitWriteWords = []struct {
-	Sub   string
-	Reads string // the first words after the subcommand that only read ("" for none): a listing form
+	Sub    string
+	Reads  string // the words after the subcommand that make the call only read ("" for none): a listing or a dry run
+	First  bool   // Reads count only as the first word after the subcommand (its own subcommand: stash list)
+	Writes string // options that make the call write whatever Reads it holds ("" for none)
+	Lists  bool   // with no word of Reads or Writes, it only reads when it names nothing: options alone list (branch -v)
 }{
-	{"add", ""}, {"am", ""}, {"apply", "--check --stat --numstat --summary"}, {"checkout", ""}, {"cherry-pick", ""},
-	{"clean", "-n --dry-run"}, {"commit", ""}, {"filter-branch", ""}, {"merge", ""}, {"mv", "-n --dry-run"},
-	{"notes", "list show"}, {"pull", ""}, {"push", "--dry-run -n"}, {"rebase", ""}, {"replace", "-l --list"},
-	{"reset", ""}, {"restore", ""}, {"revert", ""}, {"rm", "-n --dry-run"}, {"stash", "list show"}, {"switch", ""},
-	{"update-index", ""}, {"update-ref", ""}, {"worktree", "list"}, {"branch", "-l --list -a --all -r --remotes -v -vv --show-current --contains --merged --no-merged"},
-	{"tag", "-l --list -v --verify --contains"},
+	{Sub: "add"}, {Sub: "am"},
+	{Sub: "apply", Reads: "--check --stat --numstat --summary", Writes: "--apply"},
+	{Sub: "checkout"}, {Sub: "cherry-pick"},
+	{Sub: "clean", Reads: "-n --dry-run"},
+	{Sub: "commit"}, {Sub: "filter-branch"}, {Sub: "merge"},
+	{Sub: "mv", Reads: "-n --dry-run"},
+	{Sub: "notes", Reads: "list show", First: true},
+	{Sub: "pull"},
+	{Sub: "push", Reads: "--dry-run -n"},
+	{Sub: "rebase"},
+	{Sub: "replace", Reads: "-l --list", Writes: "-d --delete -f --force -e --edit --graft --convert-graft-file"},
+	{Sub: "reset"}, {Sub: "restore"}, {Sub: "revert"},
+	{Sub: "rm", Reads: "-n --dry-run"},
+	{Sub: "stash", Reads: "list show", First: true},
+	{Sub: "switch"}, {Sub: "update-index"}, {Sub: "update-ref"},
+	{Sub: "worktree", Reads: "list", First: true},
+	{Sub: "bisect", Reads: "log view visualize terms", First: true},
+	{Sub: "clone"}, {Sub: "init"},
+	{Sub: "submodule", Reads: "status summary", First: true},
+	{Sub: "sparse-checkout", Reads: "list", First: true},
+	{Sub: "read-tree"}, {Sub: "checkout-index"},
+	{Sub: "merge-file", Reads: "-p --stdout"},
+	{Sub: "format-patch", Reads: "--stdout"},
+	{Sub: "rerere", Reads: "status diff remaining", First: true},
+	{Sub: "branch", Reads: "-l --list -a --all -r --remotes --contains --no-contains --merged --no-merged --points-at --show-current",
+		Writes: "-d -D --delete -m -M --move -c -C --copy -f --force -u --set-upstream-to --unset-upstream --edit-description " +
+			"-t --track --no-track --create-reflog", Lists: true},
+	{Sub: "tag", Reads: "-l --list -v --verify --contains --no-contains --merged --no-merged --points-at",
+		Writes: "-d --delete -f --force -a --annotate -s --sign -u --local-user -m --message -F --file -e --edit --cleanup", Lists: true},
 }
 
-// gitWrite says which of git's write words a git call's subcommand is, "" for one that only reads (this file's
-// comment). sub is its subcommand, rest the words after it.
+// gitWrite says which of git's write words a git call's subcommand is, "" for one that only reads (GitWriteWords'
+// comment). sub is its subcommand, rest the words after it. A word is matched as written, its value after = cut off
+// (--set-upstream-to=x), and a short cluster (-dr) by each of its letters. Anything the table does not read as a
+// listing or a dry run is a write.
 func gitWrite(sub string, rest []shWord) string {
 	for _, g := range GitWriteWords {
 		if g.Sub != sub {
 			continue
 		}
-		reads := strings.Fields(g.Reads)
-		if len(rest) == 0 && (sub == "branch" || sub == "tag" || sub == "stash" || sub == "worktree" || sub == "notes") {
-			if sub == "stash" || sub == "worktree" || sub == "notes" {
-				return "git " + sub // a bare stash stashes; a bare worktree or notes call is refused by git: judged as written
-			}
+		reads, writes := strings.Fields(g.Reads), strings.Fields(g.Writes)
+		if len(rest) == 0 && (sub == "branch" || sub == "tag") {
 			return "" // a bare branch or tag lists
 		}
-		for _, w := range rest {
-			if listHas(reads, w.text) {
-				return ""
+		in := func(list []string, w string) bool {
+			name, _, _ := strings.Cut(w, "=")
+			if listHas(list, name) {
+				return true
 			}
+			if len(w) > 2 && w[0] == '-' && w[1] != '-' && !strings.Contains(w, "=") {
+				for _, c := range w[1:] {
+					if listHas(list, "-"+string(c)) {
+						return true
+					}
+				}
+			}
+			return false
+		}
+		named, read, dashes := false, false, false
+		for i, w := range rest {
+			t := w.text
+			switch {
+			case dashes || !strings.HasPrefix(t, "-") || t == "-":
+				named = true
+				if g.First && i == 0 && listHas(reads, t) {
+					read = true
+				}
+			case t == "--":
+				dashes = true
+			case in(writes, t):
+				return "git " + sub
+			case !g.First && in(reads, t):
+				read = true
+			}
+		}
+		if read || (g.Lists && !named) {
+			return ""
 		}
 		return "git " + sub
 	}
@@ -724,7 +782,7 @@ func briefShow(tool, command string) string {
 			return ""
 		}
 	}
-	if briefPattern().FindString(id) != id {
+	if !message.IsID(id) {
 		return ""
 	}
 	return id

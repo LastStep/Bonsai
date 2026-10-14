@@ -50,6 +50,9 @@ error words.
 - Stand-in names
 - Delete words
 - Words that run another program
+- Claude Code's start words
+- Git's write words
+- Hand-back tools
 - Secret kinds
 - Lane rules
 - Task statuses
@@ -811,6 +814,72 @@ Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps
 | `wsl` | bash, PowerShell, cmd.exe | its options skipped; the program runs in bash, its words joined and split again unless -e (--exec); --cd names the folder |
 | `start` | cmd.exe | its /options and a quoted title skipped; /d names the folder |
 | `call` | cmd.exe | skipped |
+
+## Claude Code's start words
+
+- Open list.
+- Defined in: guard.ClaudeStartWords and guard.ClaudePackage (internal/guard/rolecmds.go).
+- Printed in a project by: none.
+- Where the lock declares roles (plan-5 5.5.11): the program names whose start on an agent's shell line the guard refuses to every role but the session's (`call-refused`), matched by base name, letter case ignored, .exe, .cmd, .bat or .ps1 dropped; and Claude Code's npm package, refused through npx, pnpx or bunx and through npm exec, pnpm dlx or yarn dlx, any version, as is `node` running Claude Code's `cli.js`. A session started so would carry no agent id and read as the person's own.
+
+Values, in order: `claude`, `claude-here`.
+
+The npm package: `@anthropic-ai/claude-code`.
+
+## Git's write words
+
+- Open list.
+- Defined in: guard.GitWriteWords (internal/guard/rolecmds.go).
+- Printed in a project by: none.
+- Where the lock declares roles (plan-5 5.5.11): git's subcommands that change the checkout or its history, refused on the shell line of a role that changes nothing (`role-writes-nothing`), git's own options before the subcommand passed over. Each with the words that make it only read (a listing or a dry run), which stay allowed, unless an option that makes it write is there too (a short option's letter counts inside a cluster, `-dr`); where options alone list, a call naming nothing lists (`git branch -v`), and one naming something writes (`git branch -v new` makes the branch). Anything else is a write.
+
+| Subcommand | Words that make it only read | Read where | Options that make it write | Options alone list |
+|---|---|---|---|---|
+| `add` | none | - | none | no |
+| `am` | none | - | none | no |
+| `apply` | `--check`, `--stat`, `--numstat`, `--summary` | anywhere | `--apply` | no |
+| `checkout` | none | - | none | no |
+| `cherry-pick` | none | - | none | no |
+| `clean` | `-n`, `--dry-run` | anywhere | none | no |
+| `commit` | none | - | none | no |
+| `filter-branch` | none | - | none | no |
+| `merge` | none | - | none | no |
+| `mv` | `-n`, `--dry-run` | anywhere | none | no |
+| `notes` | `list`, `show` | first word | none | no |
+| `pull` | none | - | none | no |
+| `push` | `--dry-run`, `-n` | anywhere | none | no |
+| `rebase` | none | - | none | no |
+| `replace` | `-l`, `--list` | anywhere | `-d`, `--delete`, `-f`, `--force`, `-e`, `--edit`, `--graft`, `--convert-graft-file` | no |
+| `reset` | none | - | none | no |
+| `restore` | none | - | none | no |
+| `revert` | none | - | none | no |
+| `rm` | `-n`, `--dry-run` | anywhere | none | no |
+| `stash` | `list`, `show` | first word | none | no |
+| `switch` | none | - | none | no |
+| `update-index` | none | - | none | no |
+| `update-ref` | none | - | none | no |
+| `worktree` | `list` | first word | none | no |
+| `bisect` | `log`, `view`, `visualize`, `terms` | first word | none | no |
+| `clone` | none | - | none | no |
+| `init` | none | - | none | no |
+| `submodule` | `status`, `summary` | first word | none | no |
+| `sparse-checkout` | `list` | first word | none | no |
+| `read-tree` | none | - | none | no |
+| `checkout-index` | none | - | none | no |
+| `merge-file` | `-p`, `--stdout` | anywhere | none | no |
+| `format-patch` | `--stdout` | anywhere | none | no |
+| `rerere` | `status`, `diff`, `remaining` | first word | none | no |
+| `branch` | `-l`, `--list`, `-a`, `--all`, `-r`, `--remotes`, `--contains`, `--no-contains`, `--merged`, `--no-merged`, `--points-at`, `--show-current` | anywhere | `-d`, `-D`, `--delete`, `-m`, `-M`, `--move`, `-c`, `-C`, `--copy`, `-f`, `--force`, `-u`, `--set-upstream-to`, `--unset-upstream`, `--edit-description`, `-t`, `--track`, `--no-track`, `--create-reflog` | yes |
+| `tag` | `-l`, `--list`, `-v`, `--verify`, `--contains`, `--no-contains`, `--merged`, `--no-merged`, `--points-at` | anywhere | `-d`, `--delete`, `-f`, `--force`, `-a`, `--annotate`, `-s`, `--sign`, `-u`, `--local-user`, `-m`, `--message`, `-F`, `--file`, `-e`, `--edit`, `--cleanup` | yes |
+
+## Hand-back tools
+
+- Open list.
+- Defined in: guard.HandBackTools (internal/guard/roles.go).
+- Printed in a project by: none.
+- Where the lock declares roles (plan-5 5.5.11): Claude Code's tools that hand a subagent's result back to its caller, which an agent past its budget may still call (`budget-exempt`), beside its report and reading its brief.
+
+Values, in order: `SubagentHandback`.
 
 ## Secret kinds
 

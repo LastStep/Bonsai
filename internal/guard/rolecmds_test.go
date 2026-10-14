@@ -220,9 +220,43 @@ func TestTheRoleWordTables(t *testing.T) {
 			t.Errorf("%+v", g)
 		}
 	}
-	if gitWrite("branch", nil) != "" || gitWrite("branch", []shWord{{text: "-d"}, {text: "x"}}) == "" || gitWrite("status", nil) != "" ||
-		gitWrite("stash", nil) == "" || gitWrite("stash", []shWord{{text: "list"}}) != "" {
-		t.Error("gitWrite")
+	// Each form, as git reads it (measured on git 2.x, 15 Oct: branch -v <name> and tag --sort=<key> <name> make the ref).
+	words := func(line string) []shWord {
+		var out []shWord
+		for _, f := range strings.Fields(line) {
+			out = append(out, shWord{text: f})
+		}
+		return out
+	}
+	for _, c := range []struct {
+		line  string
+		write bool
+	}{
+		{"status", false}, {"log --oneline", false}, {"diff HEAD", false},
+		{"branch", false}, {"branch -v", false}, {"branch -vv --color", false}, {"branch -a", false}, {"branch -av", false},
+		{"branch --list feat*", false}, {"branch --contains HEAD", false}, {"branch --show-current", false},
+		{"branch new", true}, {"branch -v new", true}, {"branch -vv new", true}, {"branch --sort=refname new", true},
+		{"branch -d x", true}, {"branch -dr origin/x", true}, {"branch -l -D x", true}, {"branch --list --delete x", true},
+		{"branch --set-upstream-to=origin/x", true}, {"branch -m a b", true}, {"branch -- -v", true},
+		{"tag", false}, {"tag -l", false}, {"tag -n", false}, {"tag --sort=refname", false}, {"tag -v v1", false},
+		{"tag v1", true}, {"tag --sort=refname v1", true}, {"tag -a v1 -m x", true}, {"tag -l -d v1", true},
+		{"stash", true}, {"stash list", false}, {"stash show -p", false}, {"stash push -m list", true}, {"stash -p", true},
+		{"worktree list --porcelain", false}, {"worktree add list", true}, {"worktree", true},
+		{"notes list", false}, {"notes add -m show", true},
+		{"apply --check x.patch", false}, {"apply --stat x.patch", false}, {"apply --stat --apply x.patch", true}, {"apply x.patch", true},
+		{"clean -n", false}, {"clean -fn", false}, {"clean -f", true}, {"rm -n x", false}, {"rm x", true},
+		{"push --dry-run", false}, {"push origin main", true},
+		{"replace -l", false}, {"replace -l -d x", true}, {"replace a b", true},
+		{"bisect log", false}, {"bisect start", true}, {"bisect good", true}, {"clone url x", true}, {"init", true},
+		{"submodule status", false}, {"submodule update --init", true}, {"sparse-checkout list", false},
+		{"sparse-checkout set a", true}, {"read-tree -u HEAD", true}, {"checkout-index -a", true},
+		{"merge-file -p a b c", false}, {"merge-file a b c", true}, {"format-patch --stdout -1", false},
+		{"format-patch -1", true}, {"rerere status", false}, {"rerere forget x", true},
+	} {
+		sub, rest := gitSub(words(c.line))
+		if got := gitWrite(sub, rest) != ""; got != c.write {
+			t.Errorf("git %s: a write %v, want %v", c.line, got, c.write)
+		}
 	}
 	if claudeStart("claude", []shWord{{text: "claude"}}) == "" || claudeStart("claudette", []shWord{{text: "claudette"}}) != "" {
 		t.Error("claudeStart")

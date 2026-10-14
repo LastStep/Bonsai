@@ -139,6 +139,15 @@ func Page() []byte {
 	p.section("Words that run another program", "open", "guard.RunnerWords (internal/guard/shell_words.go)", "none",
 		"The words the delete check passes over, with their options, to reach the program they run (plan-5 5.3.3 note 1).")
 	p.runnerWords()
+	p.section("Claude Code's start words", "open", "guard.ClaudeStartWords and guard.ClaudePackage (internal/guard/rolecmds.go)", "none",
+		"Where the lock declares roles (plan-5 5.5.11): the program names whose start on an agent's shell line the guard refuses to every role but the session's (`call-refused`), matched by base name, letter case ignored, .exe, .cmd, .bat or .ps1 dropped; and Claude Code's npm package, refused through npx, pnpx or bunx and through npm exec, pnpm dlx or yarn dlx, any version, as is `node` running Claude Code's `cli.js`. A session started so would carry no agent id and read as the person's own.")
+	p.claudeStartWords()
+	p.section("Git's write words", "open", "guard.GitWriteWords (internal/guard/rolecmds.go)", "none",
+		"Where the lock declares roles (plan-5 5.5.11): git's subcommands that change the checkout or its history, refused on the shell line of a role that changes nothing (`role-writes-nothing`), git's own options before the subcommand passed over. Each with the words that make it only read (a listing or a dry run), which stay allowed, unless an option that makes it write is there too (a short option's letter counts inside a cluster, `-dr`); where options alone list, a call naming nothing lists (`git branch -v`), and one naming something writes (`git branch -v new` makes the branch). Anything else is a write.")
+	p.gitWriteWords()
+	p.section("Hand-back tools", "open", "guard.HandBackTools (internal/guard/roles.go)", "none",
+		"Where the lock declares roles (plan-5 5.5.11): Claude Code's tools that hand a subagent's result back to its caller, which an agent past its budget may still call (`budget-exempt`), beside its report and reading its brief.")
+	p.values(guard.HandBackTools)
 	p.section("Secret kinds", "open", "redact.Kinds (internal/redact/redact.go), in the order its rules run", "`bonsai check` (a `secret` finding names the kind it found)",
 		"The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value. A new rule of the redactor adds a kind.")
 	p.secretKinds()
@@ -313,6 +322,40 @@ func (p *page) runnerWords() {
 	p.line("|---|---|---|")
 	for _, w := range guard.RunnerWords {
 		p.line("| `%s` | %s | %s |", w.Word, w.Shells(), cell(w.Does))
+	}
+}
+
+func (p *page) claudeStartWords() {
+	p.values(guard.ClaudeStartWords)
+	p.line("")
+	p.line("The npm package: `%s`.", guard.ClaudePackage)
+}
+
+func (p *page) gitWriteWords() {
+	p.line("| Subcommand | Words that make it only read | Read where | Options that make it write | Options alone list |")
+	p.line("|---|---|---|---|---|")
+	quoted := func(words string) string {
+		if words == "" {
+			return "none"
+		}
+		var q []string
+		for _, r := range strings.Fields(words) {
+			q = append(q, "`"+r+"`")
+		}
+		return strings.Join(q, ", ")
+	}
+	for _, g := range guard.GitWriteWords {
+		where, lists := "anywhere", "no"
+		switch {
+		case g.Reads == "":
+			where = "-"
+		case g.First:
+			where = "first word"
+		}
+		if g.Lists {
+			lists = "yes"
+		}
+		p.line("| `%s` | %s | %s | %s | %s |", g.Sub, quoted(g.Reads), where, quoted(g.Writes), lists)
 	}
 }
 
