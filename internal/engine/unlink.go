@@ -108,8 +108,8 @@ func BuildUnlink(dir, home string) (_ *Plan, err error) {
 	// The files the lock lists of the packs' kinds.
 	for _, path := range sortedPaths(lock.Files) {
 		lf := lock.Files[path]
-		if lf.Kind != "pack" && lf.Kind != "once" && lf.Kind != "kept" {
-			continue
+		if lf.Kind != "pack" && lf.Kind != "once" && lf.Kind != "kept" || path == workspace.StateFile {
+			continue // STATE (kind once from step 5.5.0) is named with what unlink leaves in place, as before
 		}
 		disk, exists, err := readFile(co.Root, path)
 		if err != nil {

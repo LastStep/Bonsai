@@ -256,7 +256,7 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 	for _, path := range sortedPaths(lock.Files) {
 		kinds = append(kinds, path+"="+lock.Files[path].Kind)
 	}
-	if got := strings.Join(kinds, " "); got != ".claude/settings.json=keys CLAUDE.md=block demo/guide.md=pack demo/start.md=once" {
+	if got := strings.Join(kinds, " "); got != ".bonsai/STATE.md=once .claude/settings.json=keys CLAUDE.md=block demo/guide.md=pack demo/start.md=once" {
 		t.Errorf("lock files %s", got)
 	}
 	if read(t, root, workspace.GitignoreFile) != workspace.GitignoreText {
@@ -407,7 +407,7 @@ func TestCheck5UpdateAToB(t *testing.T) {
 	for _, f := range p.Files {
 		got = append(got, f.Result+" "+f.Path)
 	}
-	want := "created demo/extra.md, updated demo/guide.md, unchanged demo/start.md, unchanged CLAUDE.md, updated .claude/settings.json, unchanged .bonsai/.gitignore"
+	want := "created demo/extra.md, updated demo/guide.md, unchanged demo/start.md, unchanged CLAUDE.md, updated .claude/settings.json, unchanged .bonsai/.gitignore, unchanged .bonsai/STATE.md"
 	if strings.Join(got, ", ") != want {
 		t.Errorf("files\n  %s\nwant\n  %s", strings.Join(got, ", "), want)
 	}

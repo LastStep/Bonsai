@@ -176,10 +176,13 @@ func TestUnlinkLeavesEdits(t *testing.T) {
 	if read(t, root, "demo/guide.md") != "mine\n" || !strings.Contains(read(t, root, "CLAUDE.md"), "(edited)") {
 		t.Errorf("an edit was not left")
 	}
-	for _, gone := range []string{".claude", ".bonsai", "demo/extra.md"} {
+	for _, gone := range []string{".claude", ".bonsai/lock.json", ".bonsai/.gitignore", ".bonsai/tasks.md", ".bonsai/sessions.md", "demo/extra.md"} {
 		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(gone))); err == nil {
 			t.Errorf("%s is still there", gone)
 		}
+	}
+	if _, err := os.Stat(filepath.Join(root, ".bonsai", "STATE.md")); err != nil {
+		t.Errorf("the project's STATE is gone: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root, "demo")); err != nil {
 		t.Errorf("demo/, which holds files, is gone")
@@ -210,8 +213,9 @@ func TestUnlinkFinishesFromTheLock(t *testing.T) {
 	if s := settingsDocOf(t, root); schema.Show(s) != schema.Show(want) {
 		t.Errorf("the settings:\n%s", read(t, root, SettingsFile))
 	}
-	if _, err := os.Stat(filepath.Join(root, ".bonsai")); err == nil {
-		t.Errorf(".bonsai/ is still there")
+	entries, _ := os.ReadDir(filepath.Join(root, ".bonsai"))
+	if len(entries) != 1 || entries[0].Name() != "STATE.md" {
+		t.Errorf(".bonsai/ holds %v, want the project's STATE.md alone", entries)
 	}
 }
 

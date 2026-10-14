@@ -33,6 +33,8 @@ package engine
 //     pack's copy is written (replaced) and the project's copy saved in the home's cache, never in the repo. Neither
 //     keeps Bonsai's own part of CLAUDE.md or .claude/settings.json: --adopt takes Bonsai's, --keep is refused.
 //   - .bonsai/.gitignore is Bonsai's (spec §6): written when missing or changed, never in the lock.
+//   - .bonsai/STATE.md is the engine's, from its own template (state.go): init writes it when it is missing, kind once
+//     (one already there is found and locked as it is); update leaves a missing one missing; never written over.
 //   - The lock names one pack per file. CLAUDE.md's block and .claude/settings.json hold lines from every pack and
 //     from Bonsai itself; their entries name the first pack in bonsai.yaml's order, as contract §14's example names
 //     base for the settings file.
@@ -576,7 +578,7 @@ func Build(req Request) (_ *Plan, err error) {
 		paths[path] = true
 	}
 	for path, lf := range lock.Files {
-		if lf.Kind == "pack" || lf.Kind == "once" || lf.Kind == "kept" {
+		if (lf.Kind == "pack" || lf.Kind == "once" || lf.Kind == "kept") && path != workspace.StateFile { // STATE is the engine's (below)
 			paths[path] = true
 		}
 	}
@@ -918,6 +920,13 @@ func Build(req Request) (_ *Plan, err error) {
 			}
 			p.Files = append(p.Files, tf)
 		}
+	}
+
+	// STATE (state.go): written at init when there is none, kind once; never written over; update leaves it missing.
+	if sf, err := stateFile(req.Command, co.Root, lock, newLock, firstPack); err != nil {
+		return nil, err
+	} else if sf != nil {
+		p.Files = append(p.Files, sf)
 	}
 
 	// --keep and --adopt.
