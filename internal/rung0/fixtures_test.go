@@ -63,8 +63,8 @@ func TestTheRung0Fixtures(t *testing.T) {
 		}
 	}
 	sort.Strings(cases)
-	if len(cases) != len(answers.Rung0) || len(cases) != 16 {
-		t.Fatalf("%d case folders, %d rung0 answers; want 16 of each", len(cases), len(answers.Rung0))
+	if len(cases) != len(answers.Rung0) || len(cases) != 17 {
+		t.Fatalf("%d case folders, %d rung0 answers; want 17 of each (set 8 added named-garbage)", len(cases), len(answers.Rung0))
 	}
 	for i, name := range cases {
 		a := answers.Rung0[i]

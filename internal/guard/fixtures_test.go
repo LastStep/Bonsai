@@ -112,8 +112,8 @@ func TestTheGuardFixtures(t *testing.T) {
 		}
 	}
 	sort.Strings(cases)
-	if len(cases) != len(answers.Guard) || len(cases) != 16 {
-		t.Fatalf("%d case folders, %d guard answers; want 16 of each", len(cases), len(answers.Guard))
+	if len(cases) != len(answers.Guard) || len(cases) != 17 {
+		t.Fatalf("%d case folders, %d guard answers; want 17 of each (set 8 added named-garbage)", len(cases), len(answers.Guard))
 	}
 	for i, name := range cases {
 		a := answers.Guard[i]

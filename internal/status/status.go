@@ -200,6 +200,8 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		"person_only": personOnly,
 		"problems":    problems,
 		"ladder":      lastLadder(co, known.activeID),
+		"roles":       nil, // the roles in force: step 5.5.0 fills it (bonsai.status/1, set 8)
+		"messages":    nil, // the messages between agents, counted: step 5.5.10 fills it (set 8)
 	}, nil
 }
 

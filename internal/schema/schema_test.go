@@ -106,8 +106,8 @@ func TestEncodeRefusesWhatItDoesNotKnow(t *testing.T) {
 // Every example of the formats set reads and writes back to its own bytes: the writer's layout is the set's.
 func TestEncodeReproducesTheSetsExamples(t *testing.T) {
 	paths, err := filepath.Glob(filepath.Join("..", "..", "formats", "examples", "*.json"))
-	if err != nil || len(paths) != 22 {
-		t.Fatalf("want the twenty-two examples (formats set 7), got %d (%v)", len(paths), err)
+	if err != nil || len(paths) != 25 {
+		t.Fatalf("want the twenty-five examples (formats set 8), got %d (%v)", len(paths), err)
 	}
 	for _, p := range paths {
 		raw, err := os.ReadFile(p)

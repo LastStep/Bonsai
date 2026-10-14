@@ -61,6 +61,26 @@ from the same Go table.
 - Cleaned: in bonsai check --write, the only writer of the table.
 - Rule in bonsai.yaml: `generated.sessions` takes `keep_days` and `keep_newest`.
 
+### `messages`
+
+- What: messages between agents (set 8).
+- Where it lives: .bonsai/local/messages/.
+- Written by: bonsai message (step 5.5.10), one file per message, one folder per recipient, created new and never overwritten.
+- Default: 30 days after a thread's last message.
+- Never cleaned: an open thread (a brief with no report after it), whatever its age: it stays listed until a report answers it.
+- Cleaned: at a session's end, with the log, within the same budget (step 5.5.10).
+- Rule in bonsai.yaml: `generated.messages` takes `keep_days` and `keep_newest`.
+
+### `agents`
+
+- What: each agent's state (set 8).
+- Where it lives: .bonsai/local/agents/.
+- Written by: the guard (step 5.5.11): one folder per session, one file per agent with one line a call, and a tie file per brief.
+- Default: 30 days after a session folder's last line.
+- Never cleaned: a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept.
+- Cleaned: at a session's end, with the log, within the same budget (step 5.5.11).
+- Rule in bonsai.yaml: `generated.agents` takes `keep_days` and `keep_newest`.
+
 ### `tasks`
 
 - What: the tasks table.

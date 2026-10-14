@@ -50,14 +50,14 @@ func TestRung0Fixtures(t *testing.T) {
 	if err := json.Unmarshal(raw, &answers); err != nil {
 		t.Fatal(err)
 	}
-	if len(answers.Rung0) != 16 {
-		t.Fatalf("%d rung0 answers, want 16", len(answers.Rung0))
+	if len(answers.Rung0) != 17 {
+		t.Fatalf("%d rung0 answers, want 17 (set 8 added named-garbage)", len(answers.Rung0))
 	}
 	climbed := map[string]int{}
 	for _, a := range answers.Rung0 {
 		t.Run(a.Case, func(t *testing.T) { climbed[rung0FixtureClimb(t, a.Case, a.Grants)]++ })
 	}
-	if climbed["local"] != 4 || climbed["ci"] != 8 || climbed["refused"] != 4 {
+	if climbed["local"] != 4 || climbed["ci"] != 8 || climbed["refused"] != 5 {
 		t.Errorf("the cases climbed: %v", climbed)
 	}
 }
