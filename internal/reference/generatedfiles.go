@@ -1,32 +1,96 @@
 package reference
 
+// Every file go generate writes from Bonsai's code (Generated, their one list), and base's generated-files skill
+// among them (plan-5 5.2.6a; 5.5.0 note 4: the page moved into the skill). gen writes each at its path from the
+// repository's root; TestGeneratedAreCurrent rebuilds each and fails on any difference (Stale), naming go generate as
+// the fix, so no generated file drifts from the code that builds it.
+
 import (
+	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 )
 
-// GeneratedFilesPath is where the generated-files page lives, from the repository's root.
-const GeneratedFilesPath = "docs/reference/generated-files.md"
+// GeneratedFilesSkillPath is where go generate writes base's generated-files skill, from the repository's root.
+const GeneratedFilesSkillPath = "packs/base/skills/generated-files/SKILL.md"
 
-// GeneratedFilesPage builds the generated-files page (plan-5 5.2.6a; spec section 6, "Generated files"): each kind of
-// file Bonsai or an agent generates in a project, from format.GeneratedKinds, and the cleaning rules (5.2.6b) in plain
-// words. Step 5.5 moves the words into base's generated-files skill and keeps the table generated from the same Go
-// table. Same rules as Page: LF, ASCII, no map-order iteration.
-func GeneratedFilesPage() []byte {
+// GeneratedFile is one file go generate writes: its path from the repository's root, forward slashes, and the
+// function that builds its bytes from the code.
+type GeneratedFile struct {
+	Path  string
+	Build func() []byte
+}
+
+// Generated are every file go generate writes, in the order gen writes them: the reference page of lists, and base's
+// three skills built from the code (the workspace and state skills from the templates the engine writes, the
+// generated-files skill from format.GeneratedKinds).
+func Generated() []GeneratedFile {
+	return []GeneratedFile{
+		{Path, Page},
+		{engine.WorkspaceSkillPath, engine.WorkspaceSkill},
+		{engine.StateSkillPath, engine.StateSkill},
+		{GeneratedFilesSkillPath, GeneratedFilesSkill},
+	}
+}
+
+// Stale lists the files of Generated that differ, under the repository root, from what the code builds now (a
+// CRLF checkout's line ends read as LF), each with its first differing line, or that cannot be read.
+func Stale(root string) []string {
+	var out []string
+	for _, g := range Generated() {
+		raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(g.Path)))
+		if err != nil {
+			out = append(out, fmt.Sprintf("%s cannot be read: %v", g.Path, err))
+			continue
+		}
+		have, want := bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n")), g.Build()
+		if bytes.Equal(have, want) {
+			continue
+		}
+		hl, wl := strings.Split(string(have), "\n"), strings.Split(string(want), "\n")
+		for i := 0; i < len(hl) || i < len(wl); i++ {
+			var h, w string
+			if i < len(hl) {
+				h = hl[i]
+			}
+			if i < len(wl) {
+				w = wl[i]
+			}
+			if h != w {
+				out = append(out, fmt.Sprintf("%s is not what the code builds: first difference at line %d\n  committed: %q\n  built:     %q", g.Path, i+1, h, w))
+				break
+			}
+		}
+	}
+	return out
+}
+
+// GeneratedFilesSkill builds base's generated-files skill (spec section 6, "Generated files"; read on demand, never
+// always on): a skill's frontmatter, then each kind of file Bonsai or an agent generates in a project, from
+// format.GeneratedKinds, and the cleaning rules (5.2.6b) in plain words. Same rules as Page: LF, ASCII, no map-order
+// iteration.
+func GeneratedFilesSkill() []byte {
 	var b strings.Builder
 	line := func(f string, a ...any) { fmt.Fprintf(&b, f+"\n", a...) }
-	line("# Reference: generated files")
+	line("---")
+	line("name: generated-files")
+	line("description: \"How long Bonsai keeps each kind of file it and its agents generate in a project (the log, asks, ladder " +
+		"results, run reports, the sessions table, messages between agents, each agent's state), what is never cleaned, and how " +
+		"bonsai.yaml's generated: section sets it. Read it before changing generated:, or to know whether a generated file may go.\"")
+	line("---")
+	line("")
+	line("%s", engine.GeneratedNote)
+	line("")
+	line("# Generated files")
 	line("")
 	line("What Bonsai and its agents generate inside a project, who writes each kind, how long it is kept, what is never")
-	line("cleaned and when cleaning happens. Bonsai deletes only what this page says it may.")
-	line("")
-	line("**This page is generated. Never edit it by hand.** It is written by `go generate ./...` from the table")
-	line("`format.GeneratedKinds` (internal/format/generated.go); a test rebuilds it and fails on any difference, naming that")
-	line("command. Change a kind in the table, run `go generate ./...` from the repository's root, and commit the page with the")
-	line("change. At step 5.5 the `generated-files` skill of the `base` pack takes these words, and its table stays generated")
-	line("from the same Go table.")
+	line("cleaned and when cleaning happens. Bonsai deletes only what this skill says it may. Each kind's rule is set under")
+	line("`generated:` in bonsai.yaml (a person's file); a kind or the whole section left out takes the defaults below.")
 	line("")
 	line("## The kinds")
 	line("")

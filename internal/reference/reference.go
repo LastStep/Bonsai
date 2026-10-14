@@ -11,7 +11,7 @@
 // schema appears on the page without a change here (the generator's list of copies it skips is below). A list the
 // code holds in a table is added here by one entry. Standard library only.
 //
-//go:generate go run ./gen ../../docs/reference/lists.md ../../docs/reference/generated-files.md
+//go:generate go run ./gen ../..
 package reference
 
 import (

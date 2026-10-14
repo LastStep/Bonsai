@@ -157,39 +157,61 @@ func TestEverySchemaEnumIsOnThePage(t *testing.T) {
 	}
 }
 
-// The generated-files page is exactly what the code builds now (CRLF read as LF, as for the lists page). A changed
-// default, writer or protection in format.GeneratedKinds without the page fails here, naming the fix.
-func TestGeneratedFilesPageIsCurrent(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(GeneratedFilesPath)))
-	if err != nil {
-		t.Fatalf("%s cannot be read: %v. Run `go generate ./...` from the repository's root to write it.", GeneratedFilesPath, err)
+// Every file go generate writes (Generated: the lists page and base's three generated skills) is exactly what the code
+// builds now, a CRLF checkout's line ends read as LF: a changed template, schema or table without its file fails here,
+// naming the fix.
+func TestGeneratedAreCurrent(t *testing.T) {
+	for _, s := range Stale(root) {
+		t.Errorf("%s\nRun `go generate ./...` from the repository's root and commit what it writes.", s)
 	}
-	have := bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n"))
-	want := GeneratedFilesPage()
-	if bytes.Equal(have, want) {
-		return
-	}
-	hl, wl := strings.Split(string(have), "\n"), strings.Split(string(want), "\n")
-	for i := 0; i < len(hl) || i < len(wl); i++ {
-		var h, w string
-		if i < len(hl) {
-			h = hl[i]
-		}
-		if i < len(wl) {
-			w = wl[i]
-		}
-		if h != w {
-			t.Fatalf("%s is not what the code builds: first difference at line %d\n  committed: %q\n  built:     %q\n"+
-				"A generated kind changed in its table without the page: run `go generate ./...` from the repository's root and commit the page.", GeneratedFilesPath, i+1, h, w)
-		}
+	if len(Generated()) != 4 {
+		t.Errorf("Generated lists %d files", len(Generated()))
 	}
 }
 
-// The generated-files page is byte-stable and plain, and names every kind with its writer and when it is cleaned.
-func TestGeneratedFilesPageIsPlain(t *testing.T) {
-	a := GeneratedFilesPage()
-	if !bytes.Equal(a, GeneratedFilesPage()) {
-		t.Fatalf("two builds of the page differ")
+// Stale finds a generated file that differs from the code: a temporary copy of every generated file passes, a CRLF
+// copy too, and the copy fails once a template in it is changed or a file is gone.
+func TestStaleFindsAChange(t *testing.T) {
+	tmp := t.TempDir()
+	write := func(rel string, b []byte) {
+		t.Helper()
+		p := filepath.Join(tmp, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, g := range Generated() {
+		write(g.Path, bytes.ReplaceAll(g.Build(), []byte("\n"), []byte("\r\n")))
+	}
+	if s := Stale(tmp); len(s) != 0 {
+		t.Fatalf("a CRLF copy of what the code builds: %v", s)
+	}
+	state := string(engine.StateSkill())
+	write(engine.StateSkillPath, []byte(strings.Replace(state, "updated_by: bonsai init\n", "updated_by: someone\n", 1)))
+	s := Stale(tmp)
+	if len(s) != 1 || !strings.HasPrefix(s[0], engine.StateSkillPath+" is not what the code builds") || !strings.Contains(s[0], "updated_by: someone") {
+		t.Errorf("a changed template: %v", s)
+	}
+	if err := os.Remove(filepath.Join(tmp, filepath.FromSlash(GeneratedFilesSkillPath))); err != nil {
+		t.Fatal(err)
+	}
+	if s := Stale(tmp); len(s) != 2 || !strings.HasPrefix(s[1], GeneratedFilesSkillPath+" cannot be read") {
+		t.Errorf("a file gone: %v", s)
+	}
+}
+
+// The generated-files skill is byte-stable and plain, a skill's frontmatter first, and names every kind with its
+// writer and when it is cleaned.
+func TestGeneratedFilesSkillIsPlain(t *testing.T) {
+	a := GeneratedFilesSkill()
+	if !bytes.Equal(a, GeneratedFilesSkill()) {
+		t.Fatalf("two builds of the skill differ")
+	}
+	if !strings.HasPrefix(string(a), "---\nname: generated-files\ndescription: \"") {
+		t.Errorf("no skill frontmatter:\n%s", a)
 	}
 	for i, l := range strings.Split(strings.TrimSuffix(string(a), "\n"), "\n") {
 		if strings.TrimRight(l, " \t") != l {
@@ -205,7 +227,7 @@ func TestGeneratedFilesPageIsPlain(t *testing.T) {
 	for _, k := range format.GeneratedKinds {
 		for _, want := range []string{"### `" + k.Kind + "`", "Written by: " + k.Writer, "Cleaned: " + k.When, "Never cleaned: " + k.Never} {
 			if !strings.Contains(page, want) {
-				t.Errorf("the page lacks %q", want)
+				t.Errorf("the skill lacks %q", want)
 			}
 		}
 	}
