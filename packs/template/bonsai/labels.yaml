@@ -1,0 +1,20 @@
+# bonsai/labels.yaml: the labels this pack defines, format bonsai.labels/1. A label is a named value under a
+# document's labels: map, such as example-pack.priority: high on a note. Bonsai's engine copies these definitions
+# into a project's lock when it links the pack; bonsai check then holds every label value to its definition, and
+# agents see each description. Every label is in the pack's own namespace, its id. A definition may be added, never
+# redefined: add a label with version raised by one. Every key carries its comment; every field's full meaning and
+# allowed values: bonsai check --schema bonsai.labels.
+format: bonsai.labels/1               # the format and its version, always the first key; only bonsai.labels/1
+namespace: example-pack               # the namespace of every label here: the pack's id (bonsai/pack.yaml's id)
+version: 1                            # this set's version, a whole number from 1; raise it by one when a label is added
+labels:                               # the definitions, one per label
+  - name: example-pack.priority       # the label: the namespace, a dot, then a lower-case name (a-z, 0-9, _)
+    kind: choice                      # choice (one of values), text, number or list
+    values: [low, normal, high]       # for choice, the allowed values; [] for any other kind
+    items: null                       # for list, what each item is (text or number); null for any other kind
+    pattern: null                     # for text, a regular expression the value matches (e.g. "^N-[0-9]{4}$"); null for none
+    max: null                         # for text, the longest value in characters, at most 300; null for none
+    kinds: [note]                     # the document kinds that may carry it: Bonsai's (task, run, state) or a pack's
+    set_by: agent                     # agent (agents write it) or outside (a program outside agent sessions does)
+    grants: false                     # true only when the value grants a right, as bonsai.allows does; false here
+    description: "How soon a person should read the note."   # one line, at most 200 characters: what agents see

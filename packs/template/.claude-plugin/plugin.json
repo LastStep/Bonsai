@@ -1,0 +1,7 @@
+{
+  "name": "example-pack",
+  "description": "The Bonsai pack template: one role, one skill and one documented template. Copy it to start a pack.",
+  "author": {
+    "name": "Bonsai"
+  }
+}

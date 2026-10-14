@@ -1,0 +1,68 @@
+# bonsai/pack.yaml: this pack's Bonsai manifest, format bonsai.pack/1. Bonsai's engine reads it when a project links
+# the pack (bonsai init, bonsai update) and when the pack's CI runs bonsai check --pack; Claude Code never reads it.
+# It says who the pack is, what a machine needs, what the engine writes into a project (files, hook lines, deny
+# rules) and what the pack declares (document kinds, protected paths, roles). Copy it with the pack template and
+# change every value to your pack's. Every key carries its comment, at its line's end or on the line just above;
+# bonsai check --pack fails a key without one. Every field's full meaning, type and allowed values:
+# bonsai check --schema bonsai.pack. Text that does not start with a letter is quoted (format-1 YAML).
+format: bonsai.pack/1                 # the format and its version, always the first key; only bonsai.pack/1
+# id: the pack's id, equal to "name" in .claude-plugin/plugin.json; a lower-case letter, then lower-case letters,
+# digits and dashes; never "bonsai" (Bonsai's own). Its roles and skills load as <id>:<name>, e.g. example-pack:example
+id: example-pack
+# version: the pack's version, quoted, as X.Y.Z; a release tag must be "v" and this (v0.1.0). plugin.json never
+# carries one: a project pins the pack by commit, and that commit is the version Claude Code sees
+version: "0.1.0"
+needs:                                # what a machine needs for the pack; bonsai status --json lists each
+  # claude_code: the oldest Claude Code the pack works with, quoted (e.g. "2.1.294"); null: no floor beyond Bonsai's
+  claude_code: null
+# block: the pack's part of the instruction block in a project's CLAUDE.md, a file in bonsai/ by its path there
+# (e.g. block.md); null for none. What it says loads in every session, so keep it to a line or two
+block: null
+# files: the files the engine writes into a project, each from bonsai/files/ (path, from, kind pack or once);
+# [] for none. A path starting <protocols>/ lands in the project's protocols folder, which the block imports, so
+# the file loads in every session. README.md, "Adding an always-on file", shows an entry
+files: []
+# hooks: hook lines the engine writes into the project's .claude/settings.json (event, matcher, command, runs, why);
+# [] for none. A hook line runs code, so a project takes one only with --allow-exec. README.md, "Adding a hook line"
+hooks: []
+deny:                                 # deny rules the engine writes into .claude/settings.json; [] for none
+  # rule: a Claude Code permission rule, quoted. A project path starts with / (from the project's top) or //
+  # (from the disk's root): a relative one, such as Read(example-pack/secret.txt), does not hold after a shell cd
+  - rule: "Read(/example-pack/secret.txt)"
+    # why: one plain sentence, what the rule stops, as bonsai update's preview prints it; required
+    why: "Agents cannot read example-pack/secret.txt, the template's example of a wall."
+documents:                            # the document kinds the pack declares; [] for none
+  - kind: note                        # the kind's name, a key's form (a lower-case letter, then a-z, 0-9, _): note
+    path: notes                       # its default folder, one file per document, from the project's top; null for one file
+    file: null                        # its default single file (e.g. notes.md) for a kind that is one file; null here
+    id: "^N-[0-9]{4}$"                # the pattern a note's id matches, a regular expression (N-0001); null for no ids
+    statuses: [draft, done]           # its statuses, the first where a new note starts; [] for none
+    person: []                        # the status moves a person makes, as [from, to] pairs; [] for none
+    agent:                            # the status moves agents make, as [from, to] pairs; [] for none
+      - [draft, done]                 # an agent finishes a note
+    stamp:                            # fields set to the day's date when a note reaches a status; {} for none
+      done: finished                  # finished: the day the note reached done
+    task_field: task                  # the field naming the task a note belongs to; null for none
+# protected: paths an agent changes only while its running task grants them (bonsai.allows), as globs from the
+# project's top with forward slashes (e.g. "notes/archive/**"); [] for none
+protected: []
+roles:                                # the roles the pack declares, each with its agents/<name>.md file; [] for none
+  - name: example                     # the role's name, its file agents/example.md's; it loads as example-pack:example
+    kind: lead                        # lead (it may call helpers) or helper (it calls no one)
+    session: false                    # true only for the role a person's own session plays; false for any other
+    writes: true                      # true: it may change files; false: the guard refuses it every file edit
+    # max_turns: Claude Code's maxTurns for the role, equal to its file's maxTurns (bonsai check --pack holds the two
+    # equal): a backstop where the guard does not run, about four times its default actions; null for none
+    max_turns: 200
+    # minutes: minutes since the agent's first call, or since it read its newest brief. Each limit has a default
+    # (what an agent gets when its brief names none) and a max (the most a brief may give it), each a whole number
+    # or null for no limit; a pack ships the max equal to the default, and a project sets its own in its bonsai.yaml
+    minutes:
+      default: 30                     # thirty minutes unless the brief names another
+      max: 30                         # the most a brief may give, as shipped
+    actions:                          # tool calls the agent makes, refused ones counted, from the same start
+      default: 50                     # fifty calls unless the brief names another
+      max: 50                         # the most a brief may give, as shipped
+    red_runs:                         # failed ladder runs in a row; a green run sets the count back to 0
+      default: 3                      # three red runs in a row stop it
+      max: 3                          # the most a brief may give, as shipped
