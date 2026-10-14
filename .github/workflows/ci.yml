@@ -70,6 +70,64 @@ jobs:
       - name: Run vet with the fault tag
         run: go vet -tags bonsai_test_fault ./...
 
+      # The packs' checks on Windows, as the packs job runs them on Linux: packs/template/ci/check.sh check (bonsai
+      # check --pack, the README's rows, a scratch project linked to the pack at this commit, bonsai check there) on
+      # each packs/*/ folder holding bonsai/pack.yaml. Git Bash runs the script, as each pack's own CI does on
+      # Windows; claude plugin validate runs in the packs job only.
+      - name: Check the packs
+        shell: bash
+        run: |
+          CGO_ENABLED=0 go build -o bonsai.exe ./cmd/bonsai
+          n=0
+          for f in packs/*/bonsai/pack.yaml; do
+            [ -f "$f" ] || continue
+            d=${f%/bonsai/pack.yaml}
+            sh packs/template/ci/check.sh check ./bonsai.exe "$d" . "$GITHUB_SHA" "$d" || exit 1
+            n=$((n + 1))
+          done
+          [ "$n" -gt 0 ] || { echo "no pack folder under packs/"; exit 1; }
+
+  # The packs in this repository, each packs/*/ folder holding bonsai/pack.yaml, checked by the pack template's own
+  # script, packs/template/ci/check.sh, exactly as each pack's CI runs it (spec section 5, "The pack template"): bonsai
+  # check --pack, the README's rows, a scratch project linked to the pack at this commit (the checkout as its source)
+  # and bonsai check there, then claude plugin validate with the Claude Code the template's pack.yml pins (its
+  # CLAUDE_CODE_VERSION, read from there, so the two never differ). A template whose fields and docs drift apart, or
+  # a check Bonsai changed under the template, fails here. Validate runs with no secret: it needs no Claude login.
+  packs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install Claude Code
+        run: |
+          v=$(sed -n 's/^  CLAUDE_CODE_VERSION: "\([^"]*\)".*/\1/p' packs/template/.github/workflows/pack.yml)
+          [ -n "$v" ] || { echo "no CLAUDE_CODE_VERSION in packs/template/.github/workflows/pack.yml"; exit 1; }
+          npm install -g "@anthropic-ai/claude-code@$v"
+
+      - name: Check the packs
+        run: |
+          CGO_ENABLED=0 go build -o bonsai ./cmd/bonsai
+          n=0
+          for f in packs/*/bonsai/pack.yaml; do
+            [ -f "$f" ] || continue
+            d=${f%/bonsai/pack.yaml}
+            sh packs/template/ci/check.sh check ./bonsai "$d" . "$GITHUB_SHA" "$d" || exit 1
+            sh packs/template/ci/check.sh validate "$d" || exit 1
+            n=$((n + 1))
+          done
+          [ "$n" -gt 0 ] || { echo "no pack folder under packs/"; exit 1; }
+
   lint:
     runs-on: ubuntu-latest
     steps:
