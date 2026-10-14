@@ -146,12 +146,21 @@ func TestEveryTool(t *testing.T) {
 			Payload{Path: "C:/project/b.go", Edits: []Edit{{Old: "x", New: "y"}, {Old: "p", New: "q", ReplaceAll: true}}}},
 		{"NotebookEdit", `{"notebook_path":"\\\\?\\C:\\project\\n.ipynb","cell_id":"c1","new_source":"print(1)",` +
 			`"cell_type":"code","edit_mode":"replace"}`, Payload{Path: `\\?\C:\project\n.ipynb`}},
-		{"Read", `{"file_path":"/path/to/file.txt","offset":10,"limit":50}`, Payload{}},
+		{"Read", `{"file_path":"/path/to/file.txt","offset":10,"limit":50}`, Payload{ReadPath: "/path/to/file.txt"}},
 		{"Glob", `{"pattern":"**/*.ts","path":"/path/to/dir"}`, Payload{}},
 		{"Grep", `{"pattern":"TODO.*fix","path":"/path/to/dir","glob":"*.ts","output_mode":"content","-i":true,"multiline":false}`, Payload{}},
 		{"WebFetch", `{"url":"https://example.com/api","prompt":"Extract the API endpoints","offset":100000}`, Payload{}},
 		{"WebSearch", `{"query":"react hooks","allowed_domains":["docs.example.com"],"blocked_domains":[]}`, Payload{}},
-		{"Agent", `{"prompt":"Find all API endpoints","description":"Find API endpoints","subagent_type":"Explore","model":"sonnet"}`, Payload{}},
+		{"Agent", `{"prompt":"Find all API endpoints","description":"Find API endpoints","subagent_type":"Explore","model":"sonnet"}`,
+			Payload{SubagentType: "Explore", AgentPrompt: "Find all API endpoints"}},
+		{"Task", `{"prompt":"Brief M-2026-10-16-3f9a01bc","description":"d","subagent_type":"workflow:runner","name":"r1"}`,
+			Payload{SubagentType: "workflow:runner", AgentName: "r1", AgentPrompt: "Brief M-2026-10-16-3f9a01bc"}},
+		{"Agent", `{"description":"a fork","prompt":"go on","run_in_background":true}`, Payload{AgentPrompt: "go on"}},
+		{"SendMessage", `{"to":"a7abddc4051d7f39a","summary":"s","message":"read M-2026-10-16-3f9a01bc","type":"message",` +
+			`"recipient":"a7abddc4051d7f39a","recipient_kind":"agent","content":"read M-2026-10-16-3f9a01bc"}`,
+			Payload{To: "a7abddc4051d7f39a", MessageText: "read M-2026-10-16-3f9a01bc"}},
+		{"SendMessage", `{"to":"main","message":{"blocks":[1]}}`, Payload{To: "main"}},
+		{"Workflow", `{"script":"export const meta = {}\nawait agent('BRIEF')\n"}`, Payload{Script: "export const meta = {}\nawait agent('BRIEF')\n"}},
 		{"AskUserQuestion", `{"questions":[{"question":"Which framework?","header":"Framework","options":[{"label":"React",` +
 			`"description":"Component library"}],"multiSelect":false}]}`, Payload{}},
 		{"ExitPlanMode", `{"plan":"## Refactor auth\n1. Extract","planFilePath":"/home/someone/plans/a.md"}`, Payload{}},
@@ -166,6 +175,13 @@ func TestEveryTool(t *testing.T) {
 		if p.Tool != c.tool || p.Path != c.want.Path || p.Command != c.want.Command || p.Content != c.want.Content ||
 			!reflect.DeepEqual(p.Edits, c.want.Edits) {
 			t.Errorf("%s %s: path %q command %q content %q edits %+v", c.tool, c.input, p.Path, p.Command, p.Content, p.Edits)
+		}
+		if p.SubagentType != c.want.SubagentType || p.AgentName != c.want.AgentName || p.AgentPrompt != c.want.AgentPrompt ||
+			p.To != c.want.To || p.MessageText != c.want.MessageText || p.Script != c.want.Script || p.ReadPath != c.want.ReadPath {
+			t.Errorf("%s %s: the spawn tools' fields %+v", c.tool, c.input, p)
+		}
+		if SpawnTool(c.tool) != (c.tool == "Agent" || c.tool == "Task" || c.tool == "SendMessage" || c.tool == "Workflow") {
+			t.Errorf("%s: SpawnTool %v", c.tool, SpawnTool(c.tool))
 		}
 		whole, err := schema.Decode([]byte(c.input))
 		if err != nil {
@@ -339,6 +355,48 @@ func TestUnreadValuesAreOnlyJSON(t *testing.T) {
 	p = parse(t, `{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"/p/a","content":"a\u0000b"}}`)
 	if p.Fault != nil || p.Content != "a\x00b" {
 		t.Errorf("a NUL in content: %v %q", p.Fault, p.Content)
+	}
+}
+
+// A reader that judges some tools only (ReadJudged, the guard's) has every other tool's input passed over, held only to
+// being valid JSON: a key twice, a NUL or bad UTF-8 in it, or an input that is no object, is no fault there, while the
+// same input of a tool it judges is one. Its tool may come after it in the payload.
+func TestAnUnjudgedToolsInputIsPassedOver(t *testing.T) {
+	judged := func(tool string) bool { return tool == "Bash" }
+	odd := `{"a":1,"a":2,"p":"\u0000\ud800"}`
+	for _, c := range []struct {
+		raw   string
+		fault bool
+	}{
+		{`{"tool_input":` + odd + `,"hook_event_name":"PreToolUse","tool_name":"mcp__x__y"}`, false},
+		{`{"hook_event_name":"PreToolUse","tool_name":"mcp__x__y","tool_input":[1,2]}`, false},
+		{`{"hook_event_name":"PreToolUse","tool_name":"mcp__x__y","tool_input":"text"}`, false},
+		{`{"hook_event_name":"PreToolUse","tool_name":"mcp__x__y"}`, false},
+		{`{"tool_input":` + odd + `,"hook_event_name":"PreToolUse","tool_name":"Bash"}`, true},
+		{`{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}`, false},
+	} {
+		p, err := ParseJudged([]byte(c.raw), judged)
+		if err != nil {
+			t.Fatalf("%s: %v", c.raw, err)
+		}
+		if (p.Fault != nil) != c.fault {
+			t.Errorf("%s: fault %v, want one %v", c.raw, p.Fault, c.fault)
+		}
+		if judged(p.Tool) == p.InputPassed {
+			t.Errorf("%s: passed over %v", c.raw, p.InputPassed)
+		}
+		if p.Tool == "Bash" && !c.fault && p.Command != "ls" {
+			t.Errorf("%s: the judged tool's command %q", c.raw, p.Command)
+		}
+	}
+	// Still held to being JSON, as every unread value is.
+	if _, err := ParseJudged([]byte(`{"hook_event_name":"PreToolUse","tool_name":"x","tool_input":{"a":}}`), judged); err == nil {
+		t.Error("a tool_input that is not JSON was read")
+	}
+	// Parse, and ReadJudged with no judge, read every tool's input as before.
+	p, err := ReadJudged(strings.NewReader(`{"hook_event_name":"PreToolUse","tool_name":"mcp__x__y","tool_input":`+odd+`}`), false, nil)
+	if err != nil || p.Fault == nil || p.InputPassed {
+		t.Errorf("no judge: %v %+v", err, p)
 	}
 }
 

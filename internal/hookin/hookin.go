@@ -5,7 +5,8 @@
 //
 // What it gives:
 //   - payload.go: Read and Parse, the one decode of a payload, into Payload: the common fields and each event's own,
-//     the tool inputs Bonsai reads, and the first fault met;
+//     the tool inputs Bonsai reads (the spawn tools' among them), and the first fault met; ReadJudged and ParseJudged
+//     for a reader that judges some tools only, every other tool's input passed over unread;
 //   - hash.go: InputHash, a tool input's hash (contract §8.1), beside the one decode of the input it hashes;
 //   - frame.go: Frame, the run of a hook that blocks (the guard; the stop gate from step 5.3.4): its own timer, the
 //     work in a goroutine, a panic as a block, the answer and its exit code;
@@ -41,7 +42,11 @@ const ProjectEnv = "CLAUDE_PROJECT_DIR"
 // Read reads one payload from a hook's stdin, at most MaxInput bytes, and parses it (Parse). terminal is true when
 // stdin is a terminal: a hook run by hand with nothing piped in, which is not waited on. Its error, for a payload
 // that cannot be read at all, says why in ASCII words that follow "the hook input".
-func Read(stdin io.Reader, terminal bool) (*Payload, error) {
+func Read(stdin io.Reader, terminal bool) (*Payload, error) { return ReadJudged(stdin, terminal, nil) }
+
+// ReadJudged is Read for a reader that judges only the tools judged reports true for (ParseJudged): every other tool's
+// tool_input is passed over, held only to being valid JSON. judged nil reads every tool's, as Read.
+func ReadJudged(stdin io.Reader, terminal bool, judged func(tool string) bool) (*Payload, error) {
 	if terminal {
 		return nil, errors.New("is a terminal, not a payload (a hook reads Claude Code's payload on stdin)")
 	}
@@ -55,7 +60,7 @@ func Read(stdin io.Reader, terminal bool) (*Payload, error) {
 	if len(raw) > MaxInput {
 		return nil, errors.New("is larger than " + strconv.Itoa(MaxInput>>20) + " MiB")
 	}
-	return Parse(raw)
+	return ParseJudged(raw, judged)
 }
 
 // Drain reads and drops a payload, so Claude Code never writes into a closed pipe: what a hook does in a folder with

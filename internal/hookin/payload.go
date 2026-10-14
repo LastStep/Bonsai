@@ -16,7 +16,13 @@ package hookin
 //
 // Then each event's own checks: a tool event (ToolEvent) must name its tool and carry tool_input as an object, a file
 // tool its path, Bash and PowerShell their command. An unknown event, or an unknown tool, is passed on by name with
-// the common fields read.
+// the common fields read. The spawn tools' fields are read too (step 5.5.11: Agent and its alias Task, SendMessage,
+// Workflow), and Read's path, each where a guard of roles finds what it judges (SpawnTool).
+//
+// A reader that judges only some tools (ReadJudged: the guard, whose second line meets every tool, plan-5 5.5.11
+// note 2) has tool_input passed over unread for every other tool, held only to being valid JSON, as the payload's other
+// keys are: so a tool Claude Code adds later, or one whose input the strict decoder would refuse (a key twice in an
+// MCP tool's arguments), is counted, not blocked. Every other reader (the recorder) reads tool_input as before.
 //
 // A fault leaves the payload read: each field as Go's lenient decoder reads it (a wrong type absent, bad UTF-8 as
 // U+FFFD), which is how bonsai hook record has read payloads since step 5.2.4, so it writes every record it wrote
@@ -54,6 +60,21 @@ type Payload struct {
 	Content     string // Write's content: what it would write
 	Edits       []Edit // Edit's one replacement, or MultiEdit's edits: what they would replace
 	IsInterrupt bool   // PostToolUseFailure's is_interrupt
+
+	// The spawn tools' fields and Read's path (SpawnTool; step 5.5.11), each "" when absent. Of these only
+	// subagent_type and to are held to being a string (a fault otherwise), since a guard of roles judges by them; a
+	// prompt, a message, a script and a path to read are only searched, so a value of another type reads as "".
+	SubagentType string // Agent and Task: tool_input.subagent_type, as written ("" for Claude Code's general-purpose agent)
+	AgentName    string // Agent and Task: tool_input.name (no field of Claude Code 2.1.300's Agent tool; read when given)
+	AgentPrompt  string // Agent and Task: tool_input.prompt, where a brief's id is named
+	To           string // SendMessage: tool_input.to (an agent's id, a name it was given, main, or another session)
+	MessageText  string // SendMessage: tool_input.message, where a newer brief's id is named
+	Script       string // Workflow: tool_input.script
+	ReadPath     string // Read: tool_input.file_path, as written
+
+	// InputPassed: tool_input was passed over unread, as a reader that does not judge its tool asked (ReadJudged); Input
+	// is then nil, with no fault for its shape.
+	InputPassed bool
 
 	// The other events' own.
 	Prompt              string // UserPromptSubmit's prompt
@@ -137,7 +158,15 @@ var bom = []byte{0xEF, 0xBB, 0xBF}
 
 // Parse reads one payload (this file's comment). Its error, for one that is not a single JSON object, says what is
 // wrong in ASCII words that follow "the hook input"; a payload it reads with a fault comes back with Fault set.
-func Parse(raw []byte) (*Payload, error) {
+func Parse(raw []byte) (*Payload, error) { return parsePayload(raw, nil) }
+
+// ParseJudged is Parse for a reader that judges only the tools judged reports true for: every other tool's tool_input
+// is passed over, held only to being valid JSON (this file's comment). judged nil reads every tool's, as Parse.
+func ParseJudged(raw []byte, judged func(tool string) bool) (*Payload, error) {
+	return parsePayload(raw, judged)
+}
+
+func parsePayload(raw []byte, judged func(tool string) bool) (*Payload, error) {
 	raw = bytes.TrimPrefix(raw, bom)
 	if len(bytes.TrimSpace(raw)) == 0 {
 		return nil, errors.New("is empty")
@@ -152,6 +181,7 @@ func Parse(raw []byte) (*Payload, error) {
 	}
 	p := &Payload{}
 	seen := make(map[string]bool, 16)
+	var input json.RawMessage // tool_input, kept to read once the tool is known, for a reader that judges some tools only
 	for dec.More() {
 		kt, err := dec.Token()
 		if err != nil {
@@ -174,6 +204,10 @@ func Parse(raw []byte) (*Payload, error) {
 		if err := dec.Decode(&value); err != nil {
 			return nil, notOne(err)
 		}
+		if key == "tool_input" && judged != nil {
+			input = value // its tool may come after it
+			continue
+		}
 		read(p, key, value)
 	}
 	if _, err := dec.Token(); err != nil {
@@ -184,6 +218,12 @@ func Parse(raw []byte) (*Payload, error) {
 	}
 	if p.Event == "" {
 		p.fault("has no hook_event_name")
+	}
+	switch {
+	case judged != nil && !judged(p.Tool):
+		p.InputPassed = true // absent or present, of any shape: not this reader's to read
+	case input != nil:
+		p.Input = p.input("tool_input", input)
 	}
 	if ToolEvent(p.Event) {
 		p.tool(seen["tool_name"])
@@ -304,6 +344,9 @@ func (p *Payload) tool(named bool) {
 	case p.Tool == "":
 		p.fault("names no tool (tool_name is empty or null)")
 	}
+	if p.InputPassed {
+		return
+	}
 	if p.Input == nil {
 		p.fault("has no tool_input")
 		return
@@ -330,7 +373,35 @@ func (p *Payload) tool(named bool) {
 		p.Edits = []Edit{p.edit(in, "tool_input.")}
 	case "MultiEdit":
 		p.Edits = p.edits(in)
+	case "Agent", "Task":
+		p.SubagentType = p.inText(in, "subagent_type", false, true)
+		p.AgentName = p.inText(in, "name", false, true)
+		p.AgentPrompt = looseText(in, "prompt")
+	case "SendMessage":
+		p.To = p.inText(in, "to", false, true)
+		p.MessageText = looseText(in, "message")
+	case "Workflow":
+		p.Script = looseText(in, "script")
+	case "Read":
+		p.ReadPath = looseText(in, "file_path")
 	}
+}
+
+// SpawnTool reports the tools that start or resume an agent (step 5.5.11): Agent, its alias Task, SendMessage (which
+// resumes one) and Workflow (whose script starts its own).
+func SpawnTool(tool string) bool {
+	switch tool {
+	case "Agent", "Task", "SendMessage", "Workflow":
+		return true
+	}
+	return false
+}
+
+// looseText reads a string of tool_input that is only searched: any other type, or absent, is "", with no fault.
+func looseText(in schema.Object, key string) string {
+	v, _ := in.Get(key)
+	s, _ := v.(string)
+	return s
 }
 
 // inText reads a string of tool_input: absent or null is "" (a fault when required), any other type a fault; a NUL is
