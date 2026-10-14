@@ -1,11 +1,12 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 15 Oct 2026 at 02:56. **Step 5.5 is building, overnight on Rohan's word**
-("im leaving the session running for the night. work autonomosly", 15 Oct about 01:50). Landed: **5.5.8** (`8a3cfa8`),
-**5.5.9** (`f239f8f`) and **5.5.0** (`e1437d0`, the engine's part for packs; P0 passed STATE's template), and `T-5591`
-(`CLAUDE.md`'s Safety line names `LastStep/bonsai-workflow`). **Now:** 5.5.10 and 5.5.1 finish (their phase B on
-5.5.0), and 5.5.11's builder starts (WSL payloads measured at 01:47-02:01; Windows waits for Rohan). The morning batch of
-questions is in "Waiting on Rohan". Every change lands by `CLAUDE.md`'s rules "from the link".
+Rewritten, never appended. Last rewritten 15 Oct 2026 at 04:15. **Step 5.5 is building, overnight on Rohan's word**
+("im leaving the session running for the night. work autonomosly", 15 Oct about 01:50). Landed on `main`: **5.5.8**
+(`8a3cfa8`), **5.5.9** (`f239f8f`), **5.5.0** (`e1437d0`), `T-5591` (`CLAUDE.md`'s Safety line), **5.5.1** (`c641c15`) and
+**5.5.10** (`298ed35`); each at `verify` until its verifier passes. **`workflow`** (5.5.4) passed P and is pushed to
+the new **private** `LastStep/bonsai-workflow` (`f8add62`), its CI green on both sides; public only on Rohan's word.
+**Running:** 5.5.11 phase B (a fresh builder), 5.5.2 (`base`), `T-5592` (two Windows CI flakes on `e1437d0`), and VM
+(`T-5593`). The morning batch is in "Waiting on Rohan". Every change lands by `CLAUDE.md`'s rules "from the link".
 
 ## In short
 
@@ -233,8 +234,7 @@ repo.
 plain words" at 3494-3803; "Notes per piece" from 4577. **Approved by Rohan 14 Oct, 17:52.** **Tasks** in
 `records/tasks/`: `T-5508` and `T-5509` at `verify` (landed; each `done` once its verifier passes: VG re-reads 5.5.8's
 gate and runner lines, VM covers 5.5.9 with 5.5.0 and 5.5.10); `T-5500`, `T-5510`, `T-5511`, `T-5512`, `T-5501` to
-`T-5507` and `T-5591` at `todo`. The verifiers' tasks (VM, VG, P, V1, the end verifier, the floors) take `T-5592` on,
-in the order they start. Grants: `T-5509` the contract, spec and `formats/active-task/**/bonsai.yaml` (the
+`T-5507` and `T-5591` at `todo`. Outside-piece work takes `T-5592` on in the order it starts (`T-5592` the Windows flakes, `T-5593` VM). Grants: `T-5509` the contract, spec and `formats/active-task/**/bonsai.yaml` (the
 orchestrator's grant at 21:33, a change the section names); `T-5500` `.gitattributes`; `T-5501`
 `packs/template/.gitattributes` and `ci.yml`; `T-5591` `CLAUDE.md`; `T-5507` the link's files (each such commit made
 with no other task `running`).
@@ -299,11 +299,15 @@ the main checkout's `.bonsai/local/` is the guard's: an agent's `cp` out of it i
 
 ## Waiting on Rohan
 
-- **In the morning (15 Oct), one batch:** (1) the Windows half of 5.5.11's payload measurement: the auto-mode
-  permission classifier refuses the size check of `%USERPROFILE%\.claude\.credentials.json` that `rules.md`'s login
-  warm-up needs, so no Windows Claude Code session runs; allow that one check, run it himself, or let the Windows half
-  rest on WSL's facts and CI. (2) Told, nothing to answer: the test pack's relative deny rule meets 5.5.0's new
-  `pack-deny-relative`, so `check --pack` finds one finding at H, kept rather than a commit I.
+- **In the morning (15 Oct), one batch:** (1) the Windows half of 5.5.11's payload measurement and its Windows
+  scripted sessions: the auto-mode permission classifier refuses the size check of
+  `%USERPROFILE%\.claude\.credentials.json` that `rules.md`'s login warm-up needs, so no Windows Claude Code session
+  runs; allow that one check, run it himself, or let the Windows half rest on WSL's facts and CI. (2) His read of
+  `workflow` (private at `LastStep/bonsai-workflow`; the builder's file-by-file list in `T-5504`'s run report), then
+  his public line. Told, nothing to answer: the test pack's relative deny rule meets 5.5.0's `pack-deny-relative`
+  (one finding at H, kept); CI's `windows` red on `e1437d0` from two Windows pid-timing flakes, fixed forward in
+  `T-5592`; the orchestrator's brief for `workflow` wrongly said "no person's name", and the plan's rule (his name and
+  game wording kept in `workflow`'s prose) was restored in a fix round.
 - **Whenever he likes:** whether to allow deleting git's own lock files by exact name (`rm -f .git/index.lock`, a
   common agent fix, refused because the project's `.git` is guarded for deletes; told 11 Oct 16:34, left as planned);
   whether the redactor's shared `=>` and `:=` limits go in a named part before the release; turn GitHub Pages off (the

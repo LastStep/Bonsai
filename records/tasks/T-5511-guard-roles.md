@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5511
 title: The guard's role rules and stall stops (5.5.11)
-status: todo
+status: running
 lane:
 done_when:
   - "The hook payloads measured first, on every route an agent can be started by (note 5.5.11, 1), written in the run report"
@@ -14,7 +14,7 @@ done_when:
 depends_on: [T-5500, T-5508]
 blocked_by:
 created: 2026-10-14
-started:
+started: 2026-10-15
 finished:
 labels:
   bonsai.branch: "t5511"

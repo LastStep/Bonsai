@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5504
 title: workflow, its own repository, written around the six roles (5.5.4)
-status: todo
+status: running
 lane:
 done_when:
   - "LastStep/bonsai-workflow made from the template and written around the six roles: six role files with their skills: preloads and maxTurns, declared in pack.yaml with their budgets; session-start as the always-on file; the skills the note lists"
@@ -13,7 +13,7 @@ done_when:
 depends_on: [T-5500, T-5501, T-5591]
 blocked_by:
 created: 2026-10-14
-started:
+started: 2026-10-15
 finished:
 labels:
   bonsai.branch: null
