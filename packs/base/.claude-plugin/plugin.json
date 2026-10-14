@@ -1,0 +1,8 @@
+{
+  "name": "base",
+  "description": "Bonsai's own pack: the templates of Bonsai's documents as skills, the walls round key, token and login files, and Bonsai's four labels. It carries no code.",
+  "author": {
+    "name": "Bonsai"
+  },
+  "repository": "https://github.com/LastStep/Bonsai"
+}

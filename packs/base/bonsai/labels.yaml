@@ -1,0 +1,59 @@
+# bonsai/labels.yaml: Bonsai's own labels, format bonsai.labels/1, as contract section 5.6 defines them, the four that
+# Bonsai's guard, rung 0, the ladder runner and the stop gate read on a task. A label is a named value under a
+# document's labels: map (bonsai.branch: t0901-dark-mode on a task). Bonsai's engine copies these definitions into a
+# project's lock when the project links base; bonsai check then holds every bonsai.* value to its definition, and the
+# block in the project's CLAUDE.md shows agents each description. Only Bonsai and the packs Bonsai publishes use the
+# namespace bonsai. A definition may be added, never redefined: a new label raises version by one. Every key carries
+# its comment; every field's full meaning and allowed values: bonsai check --schema bonsai.labels.
+format: bonsai.labels/1               # the format and its version, always the first key; only bonsai.labels/1
+namespace: bonsai                     # the namespace of every label here: bonsai, Bonsai's own (contract section 5.1)
+version: 1                            # this set's version, a whole number from 1; raised by one when a label is added
+labels:                               # the definitions, one per label, in contract section 5.6's order
+  # bonsai.allows: the one label that grants a right (contract section 5.5); the guard and rung 0 read it
+  - name: bonsai.allows               # the label: the namespace, a dot, then a lower-case name (a-z, 0-9, _)
+    kind: list                        # choice (one of values), text, number or list: a list of globs
+    values: []                        # for choice, the allowed values; [] for a list
+    items: text                       # for list, what each item is (text or number): a glob, as text
+    pattern: null                     # for text, a regular expression the value matches; null for a list
+    max: null                         # for text, the longest value in characters; null for a list
+    kinds: [task]                     # the document kinds that may carry it: tasks only
+    set_by: agent                     # agent (agents write it) or outside (a program outside agent sessions does)
+    grants: true                      # true: the value grants a right, the protected paths it names
+    # description: one line, at most 200 characters, what agents see in the block
+    description: "Protected paths this task may change, as globs. A path on the person-only list counts only if a person granted it."
+  # bonsai.wants: what a task asks a person for; it grants nothing until a person copies it into bonsai.allows
+  - name: bonsai.wants                # the label's name
+    kind: list                        # a list of globs
+    values: []                        # [] for a list
+    items: text                       # each item a glob, as text
+    pattern: null                     # null for a list
+    max: null                         # null for a list
+    kinds: [task]                     # tasks only
+    set_by: agent                     # agents write it
+    grants: false                     # it grants nothing by itself
+    # description: one line, at most 200 characters, what agents see in the block
+    description: "Person-only paths this task asks for. A person's approval or grant copies them into bonsai.allows."
+  # bonsai.ladder: the rungs a task climbs above the floor; the ladder runner and the stop gate read it
+  - name: bonsai.ladder               # the label's name
+    kind: list                        # a list of rung numbers
+    values: []                        # [] for a list
+    items: number                     # each item a rung's number
+    pattern: null                     # null for a list
+    max: null                         # null for a list
+    kinds: [task]                     # tasks only
+    set_by: agent                     # agents write it
+    grants: false                     # it grants nothing: the floor in bonsai.yaml holds whatever it lists
+    # description: one line, at most 200 characters, what agents see in the block
+    description: "The rungs this task climbs. It adds rungs to the workspace's floor and never drops one."
+  # bonsai.branch: the branch a task is built on; the ladder and the stop gate read it
+  - name: bonsai.branch               # the label's name
+    kind: text                        # one line of text: a branch's name
+    values: []                        # [] for text
+    items: null                       # null for text
+    pattern: "^[A-Za-z0-9._/-]{1,100}$"   # the value matches it: letters, digits, . _ / -, from 1 to 100 characters
+    max: null                         # no length but the pattern's
+    kinds: [task]                     # tasks only
+    set_by: agent                     # agents write it
+    grants: false                     # it grants nothing
+    # description: one line, at most 200 characters, what agents see in the block
+    description: "The branch the task is built on; empty means the base branch."
