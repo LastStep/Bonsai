@@ -47,8 +47,11 @@ package workspace
 // reports it never cleans): no verdict rests on a generated file being kept (the stop gate needs a result proving HEAD
 // now; an earlier result is read only when the log fingerprints it, and a missing one reads as none), and a shell
 // command can delete those files outright; packs (they take effect through bonsai update, which writes the lock and the
-// settings: the packs' protected paths come from the lock's declares, not from bonsai.yaml); id, name and format (no
-// check reads them as a setting); and keys this Bonsai does not know.
+// settings: the packs' protected paths come from the lock's declares, not from bonsai.yaml), a packs entry's roles among
+// them, and messages (set 8: the limits a project sets for its packs' roles, and the thresholds of bonsai messages'
+// flags, are budgets and flags, no check: "raising a budget does not count as loosening the checks", Rohan, 14 Oct, so
+// a raised default or max is never config-looser; TestRolesAndMessagesAreNoLoosening holds it); id, name and format
+// (no check reads them as a setting); and keys this Bonsai does not know.
 //
 // In the record, checks is a JSON object written byte-stable, every field always written, lists in bonsai.yaml's
 // order (rungs in file order, ratchets and documents in their mapping's order):
