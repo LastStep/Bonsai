@@ -4466,8 +4466,8 @@ rule; `git.dirty`, rung 0).
    its own `Budget` (generous, or a held clock, as `budget_test.go` does), so it judges what is cleaned, not how fast;
    the budget's own behaviour stays `budget_test.go`'s. Shown first with a 1 ns budget in a temporary copy; then 20 runs
    green natively on Windows.
-3. **Windows, `internal/rungjob`'s `TestOutputAndExit`** ("ended [{684  }]", red once on `f9e28e3`): added by the
-   planner, marked, so a third flake does not redden a later landing. `member` (`job_windows.go`) returns a member with
+3. **Windows, `internal/rungjob`'s `TestOutputAndExit`** ("ended [{684  }]", red once on `f9e28e3`): Rohan, 14 Oct,
+   at approval: "A. Fix it too", so a third flake does not redden a later landing. `member` (`job_windows.go`) returns a member with
    no name when `OpenProcess` fails on a pid that has just exited; it skips a pid whose process is gone instead (the
    error `OpenProcess` gives for it, read and recorded by the builder), and keeps reporting one it cannot open for any
    other reason. A Go test with a process that exits between the listing and the open, where Windows lets one be staged;
@@ -4495,36 +4495,49 @@ design text.
    of the wrong shape, an unknown field kept (the major's rule), an address with a character Windows cannot hold.
 2. **`bonsai.messages/1`** (`messages.schema.json`), the `--json` of `bonsai messages`: each thread with its id, task,
    addresses, state, last message's time, flags (an open list: `unanswered`, `circling`, `budget-spent`, `malformed`)
-   and, from 5.5.11's last commit, its recipient agent's budget used.
-3. **Roles:** `pack.schema.json` gains `roles` (each: `name`, `kind` `lead`|`helper`, `session`, `writes`, `budget`
-   and `ceiling` with `minutes`, `actions`, `red_runs`); `workspace.schema.json`'s `packs` entry gains an optional
-   `roles` map (role name to `budget` and `ceiling`, any measure); the lock's `declares` gains `roles`. Additions: a
-   pack or a `bonsai.yaml` without them reads as before.
+   and its recipient agent's budget used (null until 5.5.11's last commit fills it).
+3. **Roles and limits,** each new field at the end of its object and in its `required` (`formats/README.md`, "How the
+   set changes": a schema describes what a writer writes; readers read a missing one as null, contract §2.2):
+   `pack.schema.json` gains `roles` (each: `name`, `kind` `lead`|`helper`, `session`, `writes`, `max_turns`, and
+   `minutes`, `actions` and `red_runs`, each with `default` and `max`, a whole number or null); so a pack with no roles
+   writes `roles: []` (`check --pack` holds `pack.yaml` as a writer's file). `workspace.schema.json`'s `packs` entry
+   gains `roles` (null, or a map from role name to any of its limits, each with `default`, `max` or both), and the file
+   gains `messages` (`unanswered_minutes`, `circling_briefs`, each null for the default; null for both). The lock's
+   `declares` gains `roles` (format.DeclaresKeys, eight kinds). `status.schema.json` gains `messages` and then `roles`
+   at its end (each role's pack, name, kind, `writes`, and each limit's default and max in force with where each came
+   from, `pack` or `bonsai.yaml`).
 4. **The rest of the set:** `files.path`'s description gains the `<protocols>/` rule (note 5.5.0, 1); the log's open
-   event list gains `message` (contract §8.2); `status.schema.json` gains `messages` at its end; the generated kinds'
-   table gains `messages` and `agents` with their default keeping (30 days; 7 days for agents' state, never an agent
-   seen in the last day); the error words 5.5 needs (`call-refused`, `role-writes-nothing`, `budget-spent`, and
-   `bonsai message`'s refusals), each with its usual `who`; the stop gate's `stop-budget` where its pass reasons live;
-   the two items `STATE.md` places with "the next formats set" (a shared active-task fixture case for a task file
+   event list gains `message` (contract §8.2); the generated kinds' table gains `messages` and `agents` with their
+   default keeping (30 days, never an open thread; 7 days for agents' state, never an agent seen in the last day);
+   `bonsai message`'s error words, each with its usual `who`; the check words 5.5.0 and 5.5.10 raise (a limit for a
+   role the pack does not declare, a default above its max, a max of actions above `max_turns`, a malformed message)
+   and the pack-check words (a declared role with no file, a role file not declared, a `maxTurns` other than
+   `max_turns`, a relative deny rule on a project path). Not here: the guard's new rule names (`call-refused`,
+   `role-writes-nothing`, `budget-spent`, `stop-budget` and the rest), which are rows of `guard.Rules`, each landing
+   with its test (`TestEveryRule`) and the stop gate's copy (`TestRuleNames`): 5.5.11's. Also here: the two items
+   `STATE.md` places with "the next formats set" (a shared active-task fixture case for a task file
    holding only `garbage: [`; `ladder.schema.json`'s `leftovers` description fixed to Bonsai's `{checkout, ms}`); and,
    from its start check, `needs.mcp` and the lock's `ref` for the moved-tag gap (5.2.0's run report), each placed as
    an addition or written in the run report as after 1.0, with why.
-5. **The Go tables** (in `internal/format/`, beside each format's type; on `docs/reference/lists.md`): message kinds,
-   statuses and flags with their thresholds, role kinds, budget measures, the error words, log events, generated kinds.
-   The reference page is regenerated in the same commit (`TestPageIsCurrent`).
+5. **The Go tables** (in `internal/format/`, beside each format's type; on `docs/reference/lists.md`, their sections
+   in `internal/reference/reference.go`): message kinds, statuses and flags with their default thresholds, role kinds,
+   the limits, the error words, the check and pack-check words, log events, generated kinds. The reference page is
+   regenerated in the same commit (`TestPageIsCurrent`).
 6. **The contract's new section** (its last commit, while it is the only task `running`, its `bonsai.allows` holding
    `design/contract.md` and `design/bonsai-spec.md`): "Messages between agents (`bonsai.message/1`)", dated 14 Oct, from
-   "Messages between agents" above (what a message is, its fields, where it lives on (A) or as Rohan answers, who writes
-   and reads it, the trust line, what Bonsai never does), and a dated line in §5.4 (`workflow.owner`'s values are the
+   "Messages between agents" above (what a message is, its fields, where it lives on Rohan's "A. Local, 30 days", who
+   writes and reads it, the trust line, what Bonsai never does), and a dated line in §5.4 (`workflow.owner`'s values are the
    six roles; `workflow.model` gains `haiku`), in §8.2 (the `message` event) and in §12 (`messages`). **The spec's dated
-   notes** ("Changed 14 Oct (Rohan)"), each pointing here: §5, the roles (six, two kinds, declared in `pack.yaml`, their
-   budgets; the preload table now "The six roles"'s); §6, a `packs` entry's `roles`; §7, the guard's line reading every
-   tool call, the role rules and stall stops; §8, the `message` record and the two words; §14 step 6, Bonsai links
-   `workflow` too; §18's minor 18, a second pre-release in 5.5. The orchestrator reads both texts against this section
+   notes** ("Changed 14 Oct (Rohan)"), each pointing here: §5, the roles (six, two kinds, declared in `pack.yaml`, each
+   limit's default and max; the preload table now "The six roles"'s); §6, a `packs` entry's `roles` and the `messages`
+   setting; §7, the guard's two lines where roles are declared, the role rules and stall stops, and what they cannot
+   do; §8, the `message` record and the two words; §14's 5.5 row, its hours and re-ask line now this section's, and
+   step 5's total; §14 step 6, Bonsai links `workflow` too; §18's minor 18, a second pre-release in 5.5. The orchestrator reads both texts against this section
    before the landing; they add and never remove (the contract's §2.2 and Rohan's 7 Oct confirmation that the formats
    are final: a new format is an addition, which he chose on 14 Oct).
-7. **Proof:** the formats test; the schema compare passing on set 8 and failing on a removal in a temporary copy;
-   `check --schema` printing each new word; the reference page's test; check 10; the ladder; CI.
+7. **Proof:** the formats test; the schema compare passing on set 8, and failing in a temporary copy on a removal and
+   on a new property left out of `required`; `check --schema` printing each new word; the reference page's test; check
+   10; the ladder; CI.
 
 **5.5.0, the engine's part for packs.**
 1. **`<protocols>/`.** Spec §5: `session-start` is "a pack file the engine writes to the workspace's protocols folder,
@@ -4569,20 +4582,30 @@ design text.
    whether 1.0's template names `base-v1.0.0` is 5.7's.
 6. **Formats:** none here; set 8 is 5.5.9's, landed before this piece starts. `.gitattributes` gains `packs/** text
    eol=lf`, so every pack file in Bonsai's repo is LF on a Windows checkout (its last commit, while it is the only task
-   `running`).
-7. **Roles in the lock.** The pack reader takes `pack.yaml`'s `roles` (5.5.9's shape) and the engine copies them into
-   the lock's `declares`, as it does lanes and labels, so `check`, `status` and the guard read them offline. Two packs
-   declaring one role name: each keeps its own (a role is `<pack>:<name>`, as Claude Code names it). At most one role
-   with `session: true` across the linked packs: two are refused at `init` and `update`, naming both.
-8. **The budgets in force.** The `bonsai.yaml` reader takes a `packs` entry's `roles`; one function every reader uses
-   (the guard, `bonsai message`, `status`) gives a role's budget and ceiling in force from the lock and `bonsai.yaml`
-   (the brief's part is 5.5.11's). `check`'s findings table gains a budget for a role its pack does not declare
-   (`next.who: agent`; `next.do` naming the pack's roles) and a ceiling below its own budget. A Go test holds that the
-   settings record's compare (`internal/workspace/checks.go`) ignores `roles`: a raised budget is never `config-looser`
-   (Rohan: "raising a budget does not count as loosening the checks").
-9. **`check --pack`** gains: each declared role has its `agents/<name>.md`, and each file in `agents/` is declared; a
-   deny rule on a project path written without its leading `/` or `//` (it would not hold after a shell `cd`, 5.3.5) is
-   a finding naming the form that holds.
+   `running`). The comment the engine writes into `.bonsai/.gitignore` names what `local/` now holds (the log, asks,
+   ladder results, messages between agents and each agent's counts); Bonsai's own copy is rewritten by the update at
+   5.5.7, whose task grants it (the file is protected by `**/.gitignore`).
+7. **Roles in the lock.** The pack reader takes `pack.yaml`'s `roles` (5.5.9's shape, `roles: []` for none) and the
+   engine copies them into the lock's `declares`, as it does lanes and labels, so `check`, `status` and the guard read
+   them offline. Two packs declaring one role name: each keeps its own (a role is `<pack>:<name>`, as Claude Code names
+   it). At most one role with `session: true` across the linked packs: two are refused at `init` and `update`, naming
+   both. A lock written before set 8 reads as declaring none.
+8. **The limits in force.** The `bonsai.yaml` reader takes a `packs` entry's `roles` (null keeps the pack's) and the
+   `messages` setting; `init`'s template writes `messages` with its comment, and `roles: null` on any `packs` entry it
+   writes (5.5.9: a writer writes every field). One function every reader uses (the guard, `bonsai message`, `status`)
+   gives each role's default and max for each limit in force from the lock and `bonsai.yaml`, from the copies it is
+   handed (the guard hands it the committed ones, note 5.5.11, 6; the brief's part is 5.5.11's). `check`'s findings
+   table gains, each with `next.who: agent`: a limit set for a role its pack does not declare (`next.do` naming the
+   pack's roles); a default above its max (the max then holds); a max of actions above the role's `max_turns` (Claude
+   Code would stop the agent first; `next.do`: lower the max, or move to a pack whose role allows more). A Go test
+   holds that the settings record's compare (`internal/workspace/checks.go`) ignores `roles` and `messages`: a raised
+   default or max is never `config-looser` (Rohan: "raising a budget does not count as loosening the checks").
+9. **`check --pack`** gains: each declared role has its `agents/<name>.md`, each file in `agents/` is declared, and each
+   role file's `maxTurns` equals its declared `max_turns`; a deny rule on a project path written without its leading
+   `/` or `//` (it would not hold after a shell `cd`, 5.3.5) is a finding naming the form that holds.
+10. **`status --json`'s `roles`** (5.5.9's shape): each declared role, its pack, kind and `writes`, and each limit's
+    default and max in force with where each came from. In `internal/status/`, landed with this piece; 5.5.10's
+    `messages` there lands after it.
 
 **5.5.10, messages between agents** (the shape is "Messages between agents", above; the schema 5.5.9's).
 1. **The reader** (`internal/message/`, new, the one reader every command uses): the frontmatter by Bonsai's own YAML
@@ -4594,18 +4617,24 @@ design text.
    create under a temporary name in the recipient's folder, then renamed, the rename retried on Windows' busy errors
    (`internal/workspace`'s helpers); never overwritten; the folder made on first use under the main checkout's
    `.bonsai/local/messages/` (found as the log finds it, from a worktree too). `--body -` reads standard input, so a
-   report can be written with no file first (the stall stop's case). A brief's budget is checked against its role's
-   ceiling in force (note 5.5.0, 8); `--to` names a declared role where the lock declares any; each pointer must exist
-   and is fingerprinted then. One `message` log record a message.
+   report can be written with no file first (the stall stop's case). `--from` and `--to` are addresses of the form
+   above; each pointer must exist and is fingerprinted then. One `message` log record a message. Held from its last
+   commits (note 5): a brief's budget against each limit's max in force (note 5.5.0, 8), and `--to` naming a declared
+   role where the lock declares any. Who may write a brief to whom, and `--from`, are the guard's (5.5.11), since only
+   the guard knows which agent is calling.
 3. **Reading** (`--show`): the trust line first, then the frontmatter and the body; a pointer whose file's fingerprint
    changed since shows as changed. `--json` against the schema.
 4. **The list** (`bonsai messages`): headers only; threads folded from their files (each file new, so no shared file is
    ever rewritten; a reader folds them into a view, the research's lesson from mailboxes that broke under many writers);
-   the flags of "Messages between agents"; `--open`, `--to`, `--task`. Until 5.5.11's last commit, `unanswered` reads
-   only a brief's age (no report for an hour); from it, also the recipient agent's state.
-5. **Its last commits, one at a time after 5.5.0 has landed:** the malformed-message warning in `check`'s findings
-   table; `messages` at the end of `status --json`; the `messages` kind in the cleaning (an open thread kept to twice
-   the keeping, each removal a `clean` record).
+   the flags of "Messages between agents", at the Go table's default thresholds until its last commits read the
+   project's `messages` setting; `--open`, `--to`, `--task`. Until 5.5.11's last commit, `unanswered` reads only a
+   brief's age (no report for the threshold's minutes); from it, also the recipient agent's state.
+5. **Its last commits, one at a time after 5.5.0 has landed:** the reads of 5.5.0's code (each limit's max through
+   its one function, `--to` against the lock's roles, the `messages` thresholds from `bonsai.yaml`), so nothing of
+   5.5.0's is written twice; the malformed-message warning in `check`'s findings table; `messages` at the end of
+   `status --json`, after 5.5.0's `roles`; the `messages` kind in the cleaning (a thread once its last message is older
+   than the keeping and it is not open; an open thread never, Rohan's "A. Local, 30 days"; each removal a `clean`
+   record).
 6. **The words** `message` and `messages` in the registry, `--help --json` and the reference page; every refusal with
    `error`, a word from `format.ErrorWords`, and `next.who`/`next.do`. `cmd/bonsai/operating_test.go` does not exist
    yet (5.5.3), so no skill line is owed here; 5.5.3 names both words.
@@ -4617,68 +4646,119 @@ design text.
 Opus builder, VG after it.
 1. **Measured first** (a Sonnet runner, in its first hour, on WSL and then Windows, with a stamped build of `main` in a
    scratch project linked to a fixture pack declaring two roles; the recorder's log already holds `subagent_id` and
-   `subagent_type` for every call): what a hook's payload carries for a call from the main session, a subagent, a
-   subagent's own subagent, an `--agent` session (`claude -p --agent`), a fork, a subagent resumed with `SendMessage`,
-   and a background subagent; whether `session_id` inside a subagent is its parent's; the Agent call's `tool_input`
-   (`subagent_type`, `name`, `prompt`); what a PreToolUse refusal of an Agent call shows the caller; what PostToolUse
-   gives for a shell call's exit code. Each route's payload is kept as a fixture for the tests (redacted), and the run
-   report's table is the builder's ground truth. A route that does not carry what "Role rules and stall stops" needs is
-   brought to the orchestrator before code is written on it.
-2. **The hook line.** The guard line's matcher reads every tool (the engine's hook lines, where 5.3 put them), its
-   timeout and `onFailure: block` unchanged. The guard's added cost is measured on both sides (100 Read calls with and
-   without the line, p50 and p95; Windows through Git Bash), and the 200 ms rule of "Role rules and stall stops"
-   applied. For 5.5.7: in a scratch project linked by the old line, an agent's `bonsai update --json` with the new build
-   must show the preview of the guard line's change and refuse only `--yes` (5.3.6 note 8); the run report says which.
-3. **Who may call whom** on `Agent`, `Task` and `SendMessage`, by the table above, from the caller's role and the
-   requested `subagent_type` (a scoped name; an unscoped one matched to a declared role only where one pack declares
-   it). Every refusal names its rule (`call-refused`) and writes a `guard` record with the caller's and the callee's
-   types.
-4. **Roles that change nothing:** the file tools refused; the shell writes the guard can read, as above, through the
-   shell judge's existing word reading (`internal/guard/shell.go`), its known limits listed again in the package's
-   header for these roles.
+   `subagent_type` for every call, but keeps some fields only, so each payload is caught whole by a scratch hook loaded
+   with `--settings` that saves its standard input to a file): what a hook's payload carries for a call from the main
+   session, a subagent, a subagent's own subagent, an `--agent` session (`claude -p --agent`), a fork, a subagent
+   resumed with `SendMessage`, a background subagent, a top-level `claude -p` started from an agent's shell (with and
+   without `--agent`, with and without `BONSAI_ROLE`), and a `Workflow` call from an `--agent` session; whether
+   `session_id` inside a subagent is its parent's; the Agent call's `tool_input` (`subagent_type`, `name`, `prompt`) and
+   what its PostToolUse gives (`agentId`); `SendMessage`'s `to` in each form (an id, a name, `main`, another session);
+   what SubagentStart carries; what a PreToolUse refusal of an Agent call shows the caller; which matcher pattern
+   reaches every tool but the first line's (a negative pattern, if Claude Code's matcher takes one); and whether
+   anything in a payload or a hook's environment tells a session started from an agent's shell from one the person
+   started (`CLAUDE_CODE_CHILD_SESSION` does not: Claude Code sets it in every hook). Each route's payload is kept as a
+   fixture for the tests (redacted), and the run report's table is the builder's ground truth. A route that does not
+   carry what "Role rules and stall stops" needs, or a signal that would close a known limit, is brought to the
+   orchestrator before code is written on it.
+2. **The hook lines,** where the engine writes them (`internal/engine/hookline.go`, `settings.go`): in a project whose
+   lock declares roles, the blocking line's matcher gains `Agent`, `Task`, `SendMessage` and `Workflow` (rows of
+   `engine.GuardTools`, on the reference page), its form, timeout and `onFailure: block` unchanged, and the second line
+   is written (note 1's pattern; its own word or flag on `bonsai hook guard`, so the guard knows which line called it
+   and lets the call through on a fault of its own); elsewhere the one line as today. `check`'s own-hooks finding knows
+   which form a lock calls for, and the preview lists both lines under "Runs code" when a project's first pack with
+   roles is added. **The adapter** (`internal/hookin/`) reads the spawn tools' fields (`subagent_type`, `name`, `to`) and
+   passes over unread the input of a tool the guard does not judge (held only to being JSON, as the payload's other
+   keys are), so a new Claude Code tool is counted, not blocked; the recorder reads every field it reads today. The
+   guard's added cost is measured on both sides (100 Read calls with and without the second line, p50 and p95; Windows
+   through Git Bash), in the run report and in the lines sent to Rohan at 5.5.7. For 5.5.7: in a scratch project
+   linked by the old line, an agent's `bonsai update --json` with the new build adding a pack with roles must show the
+   preview of the guard lines' change and refuse only `--yes` (5.3.6 note 8); the run report says which.
+3. **Who may call whom** on `Agent`, `Task`, `SendMessage` and `Workflow`, by the table above, from the caller's role
+   (in the order above: `agent_type`; an undeclared type; a top-level session's `BONSAI_ROLE`; the person's session)
+   and the requested type (a scoped name; an unscoped one matched to a declared role only where one pack declares it).
+   `SendMessage`'s `to` resolved from the names the guard recorded at the Agent calls it allowed and from the agents'
+   state, else refused. On the shell line, through the shell judge's word reading (`internal/guard/commands.go`): a
+   command starting Claude Code refused to every role but the `session` role; `bonsai message --kind brief` refused
+   from a role that may not call the `--to` role, and any `bonsai message` whose `--from` names another role than the
+   caller's. Every refusal names its rule (`call-refused`) and writes a `guard` record with the caller's and the
+   callee's types.
+4. **Roles that change nothing**, undeclared types among them: the file tools refused; the shell writes the guard can
+   read, as above, through the shell judge's existing word reading (`internal/guard/shell.go`), its known limits listed
+   again in the package's header for these roles.
 5. **Each agent's state** (`internal/agents/`, new): one folder per session under `.bonsai/local/agents/`, one file per
-   agent: its first line its role, the time of its first call and its brief once tied; then one fixed-length line a
-   call (appended, so calls made side by side lose no count; the count is the file's length); a `spent` line and a
-   `reported` line when they happen. The recorder's PostToolUse adds a red-run line for a `bonsai ladder` climb that
-   ended red and a reset line for a green one. Reads take only the file's size and its last lines, so a long session
+   agent: its first line its role, the time of its first call, and the limits in force read as committed; then one
+   fixed-length line a call (appended, so calls made side by side lose no count; the count is the file's length from
+   its last start line); a tie line (the brief, its limits, a fresh start) at each brief it ties; a climb line when the
+   guard passes a `bonsai ladder --task <id>`, and at the agent's next call a red or reset line from the climb's own
+   result ("How it is counted", above); a `spent` line and a `reported` line when they happen; for the session, the
+   `name` and role of each Agent call it allowed. Reads take only the file's size and its last lines, so a long session
    costs no more per call.
-6. **The budget** in force (note 5.5.0, 8, and the brief tied by its read, as above); past it, the refusal and the
-   allowed three (the report, the brief, the hand-back); the guard's `budget-spent` record once, then a short refusal.
-7. **The stop gate's exit:** a named session whose state reads spent and reported may stop (`stop-budget`), with a
-   `guard` record; otherwise the gate is as today. Tested with 5.4's named-session fixtures.
-8. **The cleaning** of `agents`: a session's folder goes 7 days after its last line, never one seen in the last day.
+6. **The budget** in force: the limits from the lock and `bonsai.yaml` as committed at the main checkout's HEAD (one
+   `git` call per agent, at its first call and at each tie; the files themselves, with a `guard` record, where HEAD
+   holds neither), through 5.5.0's function, and the brief tied by its read, a newer brief to its address re-tying it;
+   past it, the refusal and the allowed three (the report in its exact form, its brief or a newer one, the hand-back);
+   the guard's `budget-spent` record once, then a short refusal.
+7. **The stop gate's exit:** a named session whose state reads spent and reported may stop (`stop-budget`, a row of
+   `guard.Rules` with its test and the stop gate's own constant, `TestRuleNames`), with a `guard` record; otherwise the
+   gate is as today. Tested with 5.4's named-session fixtures.
+8. **The rule rows:** every new rule the guard and the stop gate name (`call-refused`, `role-writes-nothing`,
+   `budget-spent`, `stop-budget`, and the allowing rows beside them) in `guard.Rules`, each with its test
+   (`TestEveryRule`); the reference page regenerated in the commit that adds them.
 9. **Its last commit, after 5.5.10 has landed:** the brief's budget read through `internal/message/`; `bonsai
    messages`' recipient column (the agent tied to a brief, its budget used, spent or not) and the `unanswered` flag
-   reading the agent's state.
+   reading the agent's state; the cleaning of `agents` (a session's folder goes 7 days after its last line, never one
+   seen in the last day), beside 5.5.10's `messages` in the dispatch of `internal/clean/clean.go`; and `check`'s
+   own-hooks reading in `internal/engine/check.go`, if it needs a change there.
 10. **Proof** beyond the table: scripted sessions on both sides with the stamped build in a scratch project linked to a
-    fixture pack with a lead, a helper and the `session` role (Claude Code through `claude-here`, the Windows login
-    rule held): a lead calling a helper (allowed), the helper calling anyone (refused), a lead calling a lead (refused),
-    a no-write role's Edit (refused) and its redirect into the checkout (refused), a budget of 3 actions spent and the
-    report then written, the stop gate letting a spent, reported named session stop; each session's transcript and log
+    fixture pack with a lead, a helper and the `session` role (Claude Code through `claude-here`, from script files in
+    `~/bonsai-checks/scripts/`, the Windows login rule held): a lead calling a helper (allowed), the helper calling
+    anyone (refused), a lead calling a lead or an undeclared type (refused), a `SendMessage` to a name never started
+    (refused), a helper typing `claude -p` (refused), a no-write role's Edit (refused) and its redirect into the
+    checkout (refused), an Explore agent from the session (allowed, its Edit refused), a budget of 3 actions spent and
+    the report then written, the same helper resumed with a newer brief and working again, a red climb behind
+    `|| true` counted, the stop gate letting a spent, reported named session stop, and, with the stamped build moved
+    away from its place, a Read let through and an Edit refused; each session's transcript and log
     kept. VG's break-it on both sides.
 
 **VM, the messages and the formats set.** A fresh Opus agent after 5.5.10 has landed: reads 5.5.9's schemas and Go
-tables against this section, the contract's new section and the spec's notes (additions only; nothing this section
-does not name); 5.5.0's roles and budgets (the lock's copy, the budgets in force, `check`'s two findings, the settings
-record ignoring `roles`, `check --pack`'s new rules); and 5.5.10's reader and commands. It re-runs the tests on both
-sides itself and breaks them: malformed and hostile files (a frontmatter that never ends, a 10 MB body, a pointer to a
-path outside the project, an id with `..`, an address with `:` or a backslash, a newer major), two writers at once on
-both sides, a budget over the ceiling, a report with no status, a brief whose pointer changed, the trust line missing
-from any `--show`, `circling` and `unanswered` at and below their thresholds, the cleaning of an open thread, a
-`bonsai.yaml` budget for a role no pack declares, a raised budget against the settings record. It passes or fails; it
-fixes nothing; at most two rounds a piece.
+tables against this section, the contract's new section and the spec's notes (additions only, each new field in its
+object's `required`; nothing this section does not name); 5.5.0's roles and limits (the lock's copy, the limits in
+force, `check`'s three findings, the settings record ignoring `roles` and `messages`, `check --pack`'s new rules,
+`status --json`'s `roles`); and 5.5.10's reader and commands. It re-runs the tests on both sides itself and breaks them:
+malformed and hostile files (a frontmatter that never ends, a 10 MB body, a pointer to a path outside the project, an
+id with `..`, an address with `:` or a backslash, a newer major), two writers at once on both sides, a budget over its
+max, a report with no status, a brief whose pointer changed, the trust line missing from any `--show`, `circling` and
+`unanswered` at and below their thresholds (the defaults and a project's own), the cleaning of an open thread, a
+`bonsai.yaml` limit for a role no pack declares, a default above its max, a max of actions above `max_turns`, a raised
+default or max against the settings record. It passes or fails; it fixes nothing; at most two rounds a piece.
 
 **VG, the guard's role rules and stall stops.** A fresh Opus agent after 5.5.11 has landed: reads the guard's diff
 against "Role rules and stall stops" and spec §7; reads 5.5.8's stop-gate and runner lines; re-runs the tests on both
 sides itself and re-runs one scripted session of each kind of note 5.5.11, 10 on each side, by a Sonnet runner whose
-transcripts it reads. **It tries to break them on purpose** (Rohan's bar): a helper reaching a spawn by `Task`, by
-`SendMessage`, by a fork; a lead spawning an undeclared type to write for it; a verifier writing through a redirect, a
-`cp`, a `git` word, `bonsai check --write`, and through the forms the known limits name (each such case listed as
-caught after, by the diff and `git.dirty`, or as a hole for the orchestrator); counts under parallel calls; a brief for
-another role read to gain its budget; a state file deleted, truncated or garbled; the clock moved; the allowed three
-past a budget and nothing else; the stop gate's exit with no report; a payload with no `agent_type`, an unknown one,
-and one naming the `session` role from a subagent; the guard's cost against note 5.5.11, 2. It passes or fails; it
-fixes nothing; at most two rounds a piece.
+transcripts it reads. **It tries to break them on purpose** (Rohan's bar), each case listed as held, as caught after
+(by the diff, `git.dirty` and rung 0), or as a hole for the orchestrator, and every known limit in "What it cannot do"
+tried and confirmed as written there, no wider:
+- **Spawns:** a helper reaching a spawn by `Task`, by `SendMessage`, by a fork, by `Workflow`; a lead spawning an
+  undeclared type to write for it, or calling `Workflow` from an `--agent` session; `SendMessage` to an id, a reused
+  name, `main` and another session; a payload with no `agent_type`, an unknown one, and one naming the `session` role
+  from a subagent.
+- **Sessions from the shell:** `claude -p`, `claude -p --agent workflow:orchestrator`, `claude-here` and, from WSL,
+  `claude.exe`, each typed by a helper and by a lead (refused), and through a script and a variable (the known limit:
+  its session confirmed to read as the person's, and caught after); a named session with `BONSAI_ROLE` (held as its
+  role).
+- **Writes:** a verifier or an undeclared type writing through a redirect, a `cp`, a `git` word, `bonsai check
+  --write`, and through the forms the known limits name.
+- **Budgets:** counts under parallel calls; a brief for another role read to gain its budget; a brief written by a role
+  that may not call its recipient, or with a `--from` not its own (refused), and through a script (the known limit);
+  a limit raised in the main checkout's `bonsai.yaml` uncommitted (not in force) and committed (in force for agents
+  started after); a state file deleted, truncated or garbled; the clock moved; a red climb hidden behind `|| true`, `;
+  true` and a pipe (still counted); past a budget, the report chained with another command or with command
+  substitution (refused), the allowed three and nothing else; a spent helper resumed with and without a newer brief;
+  the stop gate's exit with no report.
+- **The two lines:** with `bonsai` missing or broken, a Read, a Grep and the question tool let through, an Edit, a
+  `Bash` call and an `Agent` call refused; an unjudged tool's input with a key twice let through by the second line;
+  the guard's cost against note 5.5.11, 2.
+It passes or fails; it fixes nothing; at most two rounds a piece.
 
 **5.5.1, the pack template, its checks and Bonsai's CI job.**
 1. **The folder** (spec §5: "a minimal valid pack (one role, one skill, one documented template, `pack.yaml`,
