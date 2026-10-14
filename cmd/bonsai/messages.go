@@ -81,8 +81,12 @@ func runMessages(c *call) int {
 	if e != nil {
 		return c.fail(e)
 	}
+	rules, e := messageRules(site, false)
+	if e != nil {
+		return c.fail(e)
+	}
 	var kept []message.Thread
-	for _, t := range message.Fold(st, messageRules(site), messageNow()) {
+	for _, t := range message.Fold(st, rules, messageNow()) {
 		if f.Keep(t) {
 			kept = append(kept, t)
 		}

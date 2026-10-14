@@ -16,6 +16,8 @@ import (
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/message"
 	"github.com/LastStep/Bonsai/internal/redact"
+	"github.com/LastStep/Bonsai/internal/vergit"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 func init() { register(messageWord) }
@@ -71,7 +73,8 @@ the caller names the brief's id in its Agent call.
 			"the packs do not declare, a budget over its max, a pointer to no file; bonsai.yaml refused. Nothing was written"},
 		{Code: 3, Means: "the message could not be written or the messages read (partly-written: the message stands, its log\nrecord not)"},
 		{Code: 4, Means: "not in a git checkout or not linked (bonsai init); --show, --thread or --reply-to naming no message\n" +
-			"(message-not-found); a report into a thread with no brief to its --from (report-not-in-thread). Nothing was\nwritten"},
+			"(message-not-found); a report into a thread with no brief to its --from (report-not-in-thread); the lock\n" +
+			"unreadable (bad-lock). Nothing was written"},
 	},
 	Examples: []string{
 		`bonsai message --from orchestrator --to builder@T-0901 --kind brief --task T-0901 --budget minutes=120 --body "Objective: dark mode for the settings screen."`,
@@ -110,7 +113,10 @@ func runMessage(c *call) int {
 		return c.fail(e)
 	}
 	p := messagePlace(site)
-	rules := messageRules(site)
+	rules, e := messageRules(site, !c.has("--show"))
+	if e != nil {
+		return c.fail(e)
+	}
 	if c.has("--show") {
 		st, e := readMessages(p)
 		if e != nil {
@@ -188,10 +194,65 @@ func messagePlace(site *asksSite) message.Place {
 	return message.Place{Workspace: site.cfg.ID, Local: site.place.Local, Session: site.place.Session, Now: messageNow}
 }
 
-// messageRules are what the site's project holds its messages to. Until step 5.5.0's code is read here (its one
-// function for each limit in force, the lock's roles, bonsai.yaml's messages), Bonsai's own: no role declared, no max,
-// the flags' default thresholds.
-func messageRules(*asksSite) message.Rules { return message.DefaultRules() }
+// messageRules are what the site's project holds its messages to (internal/message's Rules), from the lock and
+// bonsai.yaml as committed at the main checkout's HEAD (messageCopies). With roles, each limit's max in force for a
+// role comes from workspace.RolesInForce, the one function every reader of a role's limits uses; a role two linked
+// packs both declare is held to the lower of their maxes (an address names a role, not its pack), and a lock whose
+// declares do not read is refused (bad-lock). Without roles (--show, bonsai messages), the lock is not read.
+func messageRules(site *asksSite, roles bool) (message.Rules, *engine.Error) {
+	r := message.DefaultRules()
+	if !roles {
+		return r, nil
+	}
+	lock, cfg, e := messageCopies(site)
+	if e != nil {
+		return r, e
+	}
+	in, err := workspace.RolesInForce(lock, cfg)
+	if err != nil {
+		return r, &engine.Error{Code: "bad-lock", Exit: engine.ExitState, What: engine.ASCII(err.Error()),
+			Next: "restore the committed lock (git checkout -- .bonsai/lock.json), or run bonsai update"}
+	}
+	r.Max = func(role, limit string) *int64 {
+		var max *int64
+		for _, ri := range in {
+			l, ok := ri.Limit(limit)
+			if ri.Role.Name != role || !ok || l.Max == nil {
+				continue
+			}
+			if max == nil || *l.Max < *max {
+				max = l.Max
+			}
+		}
+		return max
+	}
+	return r, nil
+}
+
+// messageCopies are the lock and bonsai.yaml a message is held to: as committed at the main checkout's HEAD, as the
+// guard reads them (and status's roles), so a change counts once committed; a file HEAD does not hold, or git cannot
+// give, as it stands in this checkout. No lock is no role.
+func messageCopies(site *asksSite) (*workspace.Lock, *format.Workspace, *engine.Error) {
+	cfg := site.cfg.Full
+	if raw, err := vergit.Committed(site.co.Main, workspace.ConfigFile, 0); err == nil {
+		if c, err := workspace.ReadConfigFull(raw); err == nil {
+			cfg = c.Full
+		}
+	}
+	if raw, err := vergit.Committed(site.co.Main, workspace.LockFile, 0); err == nil {
+		if l, err := workspace.ReadLock(raw); err == nil {
+			return l, cfg, nil
+		}
+	}
+	lock, err := workspace.LoadLock(site.co.Root)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return nil, cfg, nil
+	case err != nil:
+		return nil, nil, lockError(err)
+	}
+	return lock, cfg, nil
+}
 
 // cwd is the folder the command runs in, where a relative --pointer is read from.
 func (s *asksSite) cwd() string {

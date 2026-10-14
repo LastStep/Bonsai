@@ -290,3 +290,40 @@ func threadsIn(doc schema.Object) []schema.Object {
 	}
 	return out
 }
+
+// A brief's budget against each limit's max in force for its recipient's role, through workspace.RolesInForce: the
+// pack's max, then the project's own in bonsai.yaml once committed (an uncommitted change counts for nothing); a
+// limit with no max takes any number.
+func TestMessageBudgetMax(t *testing.T) {
+	c := newCLI(t)
+	t.Setenv(asks.SessionEnv, "")
+	src, shas := rolesPack(t, c.tmp)
+	c.linkTo(src, shas[0])
+	c.commit("link")
+	brief := func(to, budget string) []string {
+		return []string{"message", "--from", "orchestrator", "--to", to, "--kind", "brief", "--budget", budget, "--body", "Go."}
+	}
+	e := errorIn(c.messagesDoc(2, brief("builder@T-0901", "minutes=181")...), "messages")
+	if e.String("code") != "budget-over-max" || !strings.Contains(e.String("message"), "minutes 181, over its max in force for the role builder, 180") {
+		t.Errorf("over the pack's max: %s", schema.Show(e))
+	}
+	wantRefusal(t, messageWord, brief("auditor@T-0901#2", "actions=151"), 2, "budget-over-max")
+	c.messagesDoc(0, brief("builder@T-0901", "minutes=180,actions=600,red_runs=4")...)
+	c.messagesDoc(0, brief("auditor@T-0901", "red_runs=99")...)
+	raw := c.read("bonsai.yaml")
+	c.write("bonsai.yaml", strings.Replace(raw, "    roles: null\n", "    roles:\n      builder:\n        minutes:\n          max: 480\n", 1))
+	c.messagesDoc(2, brief("builder@T-0901", "minutes=481")...)
+	c.messagesDoc(2, brief("builder@T-0901", "minutes=480")...)
+	c.commit("the builder's minutes")
+	c.messagesDoc(2, brief("builder@T-0901", "minutes=481")...)
+	if doc := c.messagesDoc(0, brief("builder@T-0901", "minutes=480")...); doc.String("path") == "" {
+		t.Errorf("within the project's max: %s", schema.Show(doc))
+	}
+	// A lock whose declares do not read is refused before anything is written; --show and messages do not read it.
+	c.write(".bonsai/lock.json", strings.Replace(c.read(".bonsai/lock.json"), `"roles": [`, `"roles": 7, "x": [`, 1))
+	c.commit("a broken lock")
+	if e := errorIn(c.messagesDoc(4, brief("builder@T-0901", "minutes=1")...), "messages"); e.String("code") != "bad-lock" {
+		t.Errorf("a broken lock: %s", schema.Show(e))
+	}
+	c.messagesDoc(0, "messages")
+}
