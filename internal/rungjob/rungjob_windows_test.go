@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -73,4 +74,34 @@ func TestBreakawayRefused(t *testing.T) {
 		t.Errorf("exit %d", r.Exit)
 	}
 	t.Logf("refused: %s", b)
+}
+
+// A pid whose process is gone (it exited between the job's listing and the open) is no member: OpenProcess gives it
+// ERROR_INVALID_PARAMETER, and member skips it. A pid the open refuses for another reason (access denied) is a process
+// that is there, so it is still reported.
+func TestMemberGonePid(t *testing.T) {
+	h, err := makeJob()
+	if err != nil {
+		t.Skipf("no job object here: %v", err)
+	}
+	t.Cleanup(func() { _ = syscall.CloseHandle(h) })
+	r := &rung{handle: h}
+
+	cmd := exec.Command(os.Getenv("COMSPEC"), "/c", "exit 0")
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+	pid := uint32(cmd.Process.Pid)
+	// Run has waited and closed the process's handle: its number is held by nothing, until Windows hands it out again.
+	if _, err := syscall.OpenProcess(0x1000, false, pid); err == nil {
+		t.Skipf("pid %d was taken by another process already", pid)
+	} else if !goneProcess(err) {
+		t.Fatalf("OpenProcess of a gone pid gave %v, not ERROR_INVALID_PARAMETER", err)
+	}
+	if p, ok := r.member(pid); ok {
+		t.Errorf("a gone pid was reported as a member: %+v", p)
+	}
+	if goneProcess(syscall.Errno(5)) || goneProcess(errors.New("other")) {
+		t.Error("an error other than ERROR_INVALID_PARAMETER read as a gone process")
+	}
 }

@@ -266,6 +266,9 @@ func (r *rung) members() ([]uint32, error) {
 func (r *rung) member(pid uint32) (Process, bool) {
 	h, err := syscall.OpenProcess(leftovers.QueryLimited, false, pid)
 	if err != nil {
+		if goneProcess(err) {
+			return Process{}, false
+		}
 		return Process{PID: int(pid)}, true
 	}
 	defer func() { _ = syscall.CloseHandle(h) }()
@@ -275,6 +278,14 @@ func (r *rung) member(pid uint32) (Process, bool) {
 	}
 	return describe(pid, h), true
 }
+
+// errorInvalidParameter is what OpenProcess gives for a pid that no process holds any more (it exited between the
+// job's listing and the open): ERROR_INVALID_PARAMETER.
+const errorInvalidParameter = syscall.Errno(87)
+
+// goneProcess reports an OpenProcess error that means the process is gone: such a pid is no member, so it is skipped.
+// Any other error (access denied and the rest) leaves a process that is there, which is still reported.
+func goneProcess(err error) bool { return errors.Is(err, errorInvalidParameter) }
 
 // describe names a process by its handle, or opens one for it when h is 0.
 func describe(pid uint32, h syscall.Handle) Process {
