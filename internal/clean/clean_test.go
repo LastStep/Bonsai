@@ -146,10 +146,16 @@ func mkdir(t *testing.T, l workspace.Local, rel string) {
 
 // The links are Linux's only: making one on Windows needs a privilege or developer mode, so the Windows run holds
 // every other decoy and the link is held on Linux.
+const everyKindBudget = time.Hour
+
 func TestEveryKind(t *testing.T) {
 	l := project(t, allRules)
 	links := fixture(t, l)
-	d := SessionEnd(opts(l))
+	// The test judges what is cleaned, not how fast: its budget is generous, so a slow runner cannot stop the run
+	// (the budget's own behaviour is budget_test.go's).
+	o := opts(l)
+	o.Budget = everyKindBudget
+	d := SessionEnd(o)
 	if len(d.Errs) > 0 || d.Stopped || len(d.Busy) > 0 {
 		t.Fatalf("errors %v, stopped %v, busy %v", d.Errs, d.Stopped, d.Busy)
 	}
@@ -207,7 +213,7 @@ func TestEveryKind(t *testing.T) {
 	}
 	// A second run removes nothing and writes no record.
 	before := cleanRecords(t, l)
-	d = SessionEnd(opts(l))
+	d = SessionEnd(o)
 	if len(d.Cleaned) != 0 || len(d.Errs) != 0 {
 		t.Errorf("a second run cleaned %v, errors %v", d.Cleaned, d.Errs)
 	}
