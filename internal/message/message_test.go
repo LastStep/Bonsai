@@ -793,3 +793,19 @@ func TestReadBody(t *testing.T) {
 		t.Errorf("a read that fails: %v", e)
 	}
 }
+
+// A report written in its brief's own millisecond, whose id sorts before the brief's, still answers it: it replies to
+// it.
+func TestReportInTheBriefsMillisecond(t *testing.T) {
+	f := newFixture(t)
+	f.p.Now = func() time.Time { return f.clock }
+	defer func(r func([]byte) (int, error)) { random = r }(random)
+	next := []byte{0xff, 0xff, 0xff, 0xff}
+	random = func(b []byte) (int, error) { copy(b, next); return len(b), nil }
+	brief := f.write(Writing{From: "orchestrator", To: "builder@T-0901", Kind: "brief"}, DefaultRules()).Message
+	next = []byte{0, 0, 0, 1}
+	rep := f.write(Writing{From: "builder@T-0901", To: "orchestrator", Kind: "report", Status: "done", Thread: brief.ID}, DefaultRules())
+	if rep.Message.Created != brief.Created || rep.Message.ID >= brief.ID || rep.Thread.State != Answered {
+		t.Errorf("the report %s (%s) of the brief %s (%s): %s", rep.Message.ID, rep.Message.Created, brief.ID, brief.Created, rep.Thread.State)
+	}
+}

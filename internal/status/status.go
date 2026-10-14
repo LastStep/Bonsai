@@ -25,6 +25,8 @@
 //   - roles (set 8; step 5.5.0): each role the linked packs declare, with each limit's default and max in force and
 //     where each came from (rolesOf: workspace.RolesInForce, the one function every reader of a role's limits uses),
 //     from the lock and bonsai.yaml as committed at the main checkout's HEAD, as the guard reads them;
+//   - messages (set 8; step 5.5.10): the threads of messages between agents, counted open and flagged (messagesOf:
+//     internal/message's reader and its folding, the flags' thresholds from bonsai.yaml as committed);
 //   - error: null unless status refused (step 5.1.4b).
 //
 // The default is cheap and offline (contract §12: for the bridge to run often): it runs git and reads files, and
@@ -43,10 +45,12 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/LastStep/Bonsai/formats"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/message"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/stopgate"
 	"github.com/LastStep/Bonsai/internal/vergit"
@@ -179,9 +183,14 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		c, installed = fullChecks(checked, cfg, lock, o)
 		checks = c
 	}
-	roles, rolesProblem := rolesOf(co, cfg, lock)
+	committed := committedConfig(co, cfg) // one git call, for the roles and the messages' thresholds
+	roles, rolesProblem := rolesOf(co, committed, lock)
 	if rolesProblem != "" {
 		problems = append(problems, rolesProblem)
+	}
+	messages, messagesProblem := messagesOf(co, cfg, committed)
+	if messagesProblem != "" {
+		problems = append(problems, messagesProblem)
 	}
 	return map[string]any{
 		"needs":          needsOf(lock, installed),
@@ -209,7 +218,7 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		"problems":    problems,
 		"ladder":      lastLadder(co, known.activeID),
 		"roles":       roles,
-		"messages":    nil, // the messages between agents, counted: step 5.5.10 fills it (set 8)
+		"messages":    messages,
 	}, nil
 }
 
@@ -240,17 +249,12 @@ func lastLadder(co *workspace.Checkout, task string) any {
 // rolesOf is status --json's roles (bonsai.status/1, set 8; plan-5 5.5.0 note 10): each role the lock's packs declare,
 // in the lock's order, its pack, name, kind and writes, and each of its limits' default and max in force with where
 // each came from (pack or bonsai.yaml), from workspace.RolesInForce, the one function every reader of a role's limits
-// uses. It reads the lock and bonsai.yaml as committed at the main checkout's HEAD, as the guard reads them, so an
-// uncommitted change shows only once committed; a file HEAD does not hold (a project not yet committed, a lock not yet
-// committed), or that git cannot give, is read as it stands in this checkout. [] when no linked pack declares a role.
+// uses. It reads the lock and bonsai.yaml (w, committedConfig's) as committed at the main checkout's HEAD, as the guard
+// reads them, so an uncommitted change shows only once committed; a file HEAD does not hold (a project not yet
+// committed, a lock not yet committed), or that git cannot give, is read as it stands in this checkout. [] when no
+// linked pack declares a role.
 // A lock whose declares do not read gives [] and a problem, its sentence naming the next step.
-func rolesOf(co *workspace.Checkout, cfg *workspace.Config, lock *workspace.Lock) (any, string) {
-	w := cfg.Full
-	if raw, err := vergit.Committed(co.Main, workspace.ConfigFile, 0); err == nil {
-		if c, err := workspace.ReadConfigFull(raw); err == nil {
-			w = c.Full
-		}
-	}
+func rolesOf(co *workspace.Checkout, w *format.Workspace, lock *workspace.Lock) (any, string) {
 	if raw, err := vergit.Committed(co.Main, workspace.LockFile, 0); err == nil {
 		if l, err := workspace.ReadLock(raw); err == nil {
 			lock = l
@@ -277,6 +281,46 @@ func rolesOf(co *workspace.Checkout, cfg *workspace.Config, lock *workspace.Lock
 			{Key: "red_runs", Value: limit(r.RedRuns)}})
 	}
 	return out, ""
+}
+
+// committedConfig is bonsai.yaml as committed at the main checkout's HEAD, as the guard reads it; where HEAD holds
+// none, or git cannot give it, the file as this checkout read it.
+func committedConfig(co *workspace.Checkout, cfg *workspace.Config) *format.Workspace {
+	if raw, err := vergit.Committed(co.Main, workspace.ConfigFile, 0); err == nil {
+		if c, err := workspace.ReadConfigFull(raw); err == nil {
+			return c.Full
+		}
+	}
+	return cfg.Full
+}
+
+// messagesNow is the clock the flags' ages are read from; a test sets it.
+var messagesNow = time.Now
+
+// messagesOf is status --json's messages (bonsai.status/1, set 8; plan-5 5.5.10 note 5): the threads of messages
+// between agents counted, open (a brief with no report after it) and flagged (any of bonsai messages' flags), as
+// bonsai messages folds them (internal/message, the one reader), with the flags' thresholds from bonsai.yaml as
+// committed (w, committedConfig's; workspace.MessageThreshold), as the guard and bonsai messages read them. The
+// messages are where every writer of .bonsai/local/ writes (workspace.FindLocal). A messages folder that cannot be
+// listed gives null and a problem naming the next step; a file that does not read is check's warning, never a problem.
+func messagesOf(co *workspace.Checkout, cfg *workspace.Config, w *format.Workspace) (any, string) {
+	st, err := message.Read(workspace.FindLocal(co.Root, cfg.ID).Main)
+	if err != nil {
+		return nil, message.Dir + " cannot be listed: " + ascii(err.Error()) + "; next: check that it can be read, then run: bonsai messages"
+	}
+	r := message.DefaultRules()
+	r.UnansweredMinutes, _ = workspace.MessageThreshold(w, "unanswered_minutes")
+	r.CirclingBriefs, _ = workspace.MessageThreshold(w, "circling_briefs")
+	var open, flagged int64
+	for _, t := range message.Fold(st, r, messagesNow()) {
+		if t.State == message.Open {
+			open++
+		}
+		if len(t.Flags) > 0 {
+			flagged++
+		}
+	}
+	return schema.Object{{Key: "open", Value: open}, {Key: "flagged", Value: flagged}}, ""
 }
 
 // known is what step 5.1.5's reads give status: each field's value, and the problems they found.

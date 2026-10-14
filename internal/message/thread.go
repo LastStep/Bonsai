@@ -8,9 +8,9 @@ package message
 //   - Its caller and recipient (from, to) and its task are its first brief's: the message whose id is the thread's,
 //     or where that does not read, its oldest brief; a thread holding only reports takes its oldest report's, turned
 //     round (a report goes back to its caller).
-//   - Its state: open while its newest brief has no report after it (by created, then id); answered once a report
-//     comes after it, its caller's own blocked report closing a dropped thread among them. A thread with no brief
-//     left is answered.
+//   - Its state: open while its newest brief has no report after it (by created, then id, or replying to it: a report
+//     written in the brief's own millisecond still answers it); answered once a report comes after it, its caller's own
+//     blocked report closing a dropped thread among them. A thread with no brief left is answered.
 //   - Its flags, in format.MessageFlags' order, reported and never acted on:
 //     unanswered, an open thread whose newest brief is the threshold's minutes old or older (until step 5.5.11 reads
 //     the agents' state, a brief's age alone);
@@ -121,8 +121,8 @@ func (t *Thread) fold(id string, r Rules, now time.Time) string {
 	}
 	if newest >= 0 {
 		t.State = Open
-		for _, e := range t.Entries[newest+1:] {
-			if e.Msg.Kind == format.KindReport {
+		for i, e := range t.Entries {
+			if e.Msg.Kind == format.KindReport && (i > newest || (e.Msg.ReplyTo != nil && *e.Msg.ReplyTo == t.Entries[newest].Msg.ID)) {
 				t.State = Answered
 				break
 			}
