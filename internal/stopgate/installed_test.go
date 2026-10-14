@@ -8,11 +8,11 @@ import (
 )
 
 // installed is the bonsai a next step names, written out here on purpose (the hook line's place, as a shell names it):
-// /usr/local/bin/bonsai on Linux, C:\Program Files\Bonsai\bonsai.exe, quoted for its space, on Windows. Every test
+// /usr/local/bin/bonsai on Linux, C:/Program Files/Bonsai/bonsai.exe, quoted for its space, on Windows. Every test
 // that reads a next step compares it to this, so each side reads its own.
 var installed = func() string {
 	if runtime.GOOS == "windows" {
-		return `"C:\Program Files\Bonsai\bonsai.exe"`
+		return `"C:/Program Files/Bonsai/bonsai.exe"`
 	}
 	return "/usr/local/bin/bonsai"
 }()

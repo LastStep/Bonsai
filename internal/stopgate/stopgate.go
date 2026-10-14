@@ -1002,7 +1002,7 @@ func oneLine(s string) string {
 }
 
 // ladderCommand is the command every next step gives for a proof: the installed bonsai the stop gate's own hook line
-// runs (the engine's one home of those places: PlaceLinux, or PlaceWindows shown as C:\...; a test build's stamped
+// runs (the engine's one home of those places: PlaceLinux, or PlaceWindows shown as C:/...; a test build's stamped
 // place instead), never a bonsai found on the PATH, so an agent cannot make a proof with another copy.
 func ladderCommand(task string) string {
 	return installedBonsai() + " ladder --task " + task
@@ -1019,7 +1019,7 @@ func installedBonsai() string {
 		place = filepath.ToSlash(stamped)
 	}
 	if windows && len(place) >= 3 && place[0] == '/' && place[2] == '/' {
-		place = strings.ToUpper(place[1:2]) + ":" + strings.ReplaceAll(place[2:], "/", `\`)
+		place = strings.ToUpper(place[1:2]) + ":" + place[2:]
 	}
 	if strings.Contains(place, " ") {
 		return `"` + place + `"`
