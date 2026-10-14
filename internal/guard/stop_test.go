@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/stopgate"
@@ -243,6 +244,20 @@ func init() {
 		{rule: RuleStopDirty, task: "T-0901", result: func(l *format.Ladder) { l.Git.Dirty = true }},
 		{rule: RuleStopRungMissing, task: "T-0901", result: func(l *format.Ladder) { l.Requested = []int64{0} }},
 		{rule: RuleStopRungNotGreen, task: "T-0901", result: func(l *format.Ladder) { l.Rungs[1].Status = "pending" }},
+		{rule: RuleStopBudget, task: "T-0901", result: func(l *format.Ladder) { l.Green, l.Rungs[1].Status = false, "red" },
+			change: func(t *testing.T, dir string) {
+				// The named session s1, past its budget, its report written: it may stop, its ladder red.
+				s := agents.Store{Main: dir}
+				at := agents.Stamp(testNow)
+				if _, err := s.Create(agents.Header{Agent: "s1", Session: "s1", Role: "builder", Kind: "lead", Named: true, First: at}); err != nil {
+					t.Fatal(err)
+				}
+				for _, e := range []agents.Event{{E: agents.EventSpent, At: at}, {E: agents.EventReported, At: at}} {
+					if err := s.Append("s1", "s1", e); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}},
 	}
 	for _, c := range cases {
 		c := c

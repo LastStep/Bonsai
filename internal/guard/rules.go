@@ -91,6 +91,7 @@ const (
 	RuleStopRungMissing       = "stop-rung-missing"
 	RuleStopRungNotGreen      = "stop-rung-not-green"
 	RuleStopProven            = "stop-proven"
+	RuleStopBudget            = "stop-budget"
 )
 
 // Rule is one row of the rules table.
@@ -213,4 +214,6 @@ var Rules = []Rule{
 	{RuleStopRungNotGreen, false, "the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result"},
 	{RuleStopProven, true, "the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the " +
 		"task's rungs green: the session ends"},
+	{RuleStopBudget, true, "the stop gate: a named session whose budget is spent has written its report: it may stop, its ladder " +
+		"red or not (step 5.5's stall stops)"},
 }

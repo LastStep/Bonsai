@@ -30,6 +30,9 @@
 //     (main-not-verified, recorded in the session's own checkout); and it holds the workspace's base branch, the one
 //     this machine's record names (workspace.BaseOf: a main switched to another branch, whose committed bonsai.yaml may
 //     say otherwise, or on a detached HEAD, or recorded before Bonsai kept a base: main-not-verified);
+//     Then, past the stall stops' budget (step 5.5.11): a named session whose state under the main checkout's
+//     .bonsai/local/agents/ reads its budget spent and its report written may stop, its ladder red or not
+//     (stop-budget, budgetExit);
 //  3. main's bonsai.yaml as committed at its HEAD, git's object, read in full: its task folder, its run folder and
 //     ladder_floor (CommittedConfig, config.go; one git process, through internal/vergit's fixed environment); while
 //     the file in the main checkout differs from it, or HEAD holds none, the gate blocks (stop-config-uncommitted: a
@@ -103,6 +106,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/hookin"
@@ -130,6 +134,7 @@ const (
 	RuleInternal        = "internal-error"    // deny: the gate failed inside (a panic)
 
 	RuleProven            = "stop-proven"             // allow: a green local ladder result proves the checkout's HEAD
+	RuleBudget            = "stop-budget"             // allow: a named session past its budget has written its report
 	RuleTaskMissing       = "stop-task-missing"       // deny: no task file has the named id
 	RuleTaskTwice         = "stop-task-twice"         // deny: two or more task files have the named id
 	RuleTaskBroken        = "stop-task-broken"        // deny: the named task's file does not parse under its format
@@ -296,6 +301,9 @@ func (r *run) work() Decision {
 			quote(named)+" and the ladder's settings are read from the main checkout, so the stop gate cannot trust them",
 			onBase.Next+"; then run: "+ladderCommand(named)))
 	}
+	if d, ok := budgetExit(at.local.Main, in); ok {
+		return r.recorded(d)
+	}
 	co, ok, also := cwdCheckout(in.Cwd, root, at.local.Main)
 	if ok {
 		layout = co
@@ -305,6 +313,25 @@ func (r *run) work() Decision {
 		r.mu.Unlock()
 	}
 	return r.recorded(judgeFn(at.local, layout, also, named))
+}
+
+// budgetExit is the stall stops' exit (design/plan-5.md, step 5.5, "Past a budget"; 5.5.11 note 7): a named session
+// (one playing a role, counted by its session id under the verified main checkout's .bonsai/local/agents/,
+// internal/agents) whose state reads its budget spent and its report written past it may stop, its ladder red or not
+// (stop-budget). ok is false otherwise, and the gate goes on as before.
+func budgetExit(main string, in *hookin.Payload) (Decision, bool) {
+	if hookin.ID(in.Session) == "" {
+		return Decision{}, false
+	}
+	st, err := (agents.Store{Main: main}).Read(in.Session, in.Session)
+	if err != nil || !st.Header.Named {
+		return Decision{}, false
+	}
+	sp := st.Spent()
+	if sp == nil || !st.Reported() {
+		return Decision{}, false
+	}
+	return allow(RuleBudget, ""), true
 }
 
 // verify reads the git layout of the checkout at root, whose bonsai.yaml holds the workspace id id, and whether its

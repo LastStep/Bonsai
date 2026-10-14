@@ -712,6 +712,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `stop-rung-missing` | deny | the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the task's bonsai.ladder |
 | `stop-rung-not-green` | deny | the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result |
 | `stop-proven` | allow | the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the task's rungs green: the session ends |
+| `stop-budget` | allow | the stop gate: a named session whose budget is spent has written its report: it may stop, its ladder red or not (step 5.5's stall stops) |
 
 ## The guard's floor
 
