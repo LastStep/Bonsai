@@ -1,0 +1,107 @@
+# .github/workflows/pack.yml: this pack's CI and release, from Bonsai's pack template. On every push and pull request
+# it checks the pack on Linux and Windows with a bonsai built from a pinned Bonsai commit, and validates it as a
+# Claude Code plugin with a pinned Claude Code; on a v* tag it also makes the GitHub release, once the tag equals
+# bonsai/pack.yaml's version. Every check is in ci/check.sh (its header documents each); this file gets the tools and
+# calls it. No secret is used anywhere, so a fork's pull request runs the same checks. Every action is pinned by its
+# full commit, its version in the comment beside it; move a pin only on purpose. Every key carries its comment.
+name: pack                                   # the workflow's name, as GitHub lists it
+
+on:                                          # when it runs
+  push:                                      # a push of commits or of a tag
+    branches: ["**"]                         # every branch
+    tags: ["v*"]                             # and every v tag, which makes a release
+  pull_request:                              # every pull request, a fork's included
+
+permissions:                                 # what the token may do in every job, unless a job says more
+  contents: read                             # read the repository, nothing more
+
+env:                                         # the pins every job reads
+  # BONSAI_COMMIT: the Bonsai commit whose bonsai checks the pack, all 40 characters. Bonsai has no release yet, so
+  # the check job builds it from this commit; from Bonsai 1.0 its release archive, checked by its SHA-256, replaces it
+  BONSAI_COMMIT: "60545a7d0fd42427db8e830551468c31b3c2bd02"
+  CLAUDE_CODE_VERSION: "2.1.300"             # the Claude Code whose claude plugin validate checks the pack
+
+jobs:                                        # check, validate, then release
+  check:                                     # bonsai check --pack, the README's rows, a scratch link, bonsai check
+    strategy:                                # one run per system
+      matrix:                                # the systems it runs on
+        os: [ubuntu-latest, windows-latest]  # Linux, and Windows (its Git Bash)
+    runs-on: ${{ matrix.os }}                # this run's system
+    defaults:                                # for every step of the job
+      run:                                   # its run steps
+        shell: bash                          # bash on both systems (Git Bash on Windows), so sh runs the script
+    steps:                                   # in order
+      - name: Check out the pack             # the pack at the commit being checked, into pack/
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:                                # the step's inputs
+          path: pack                         # into pack/
+          persist-credentials: false         # no token left in the checkout's git settings
+
+      - name: Check out Bonsai               # Bonsai's source at BONSAI_COMMIT, into bonsai-src/
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:                                # the step's inputs
+          repository: LastStep/Bonsai        # Bonsai's public repository
+          ref: ${{ env.BONSAI_COMMIT }}      # the pinned commit
+          path: bonsai-src                   # into bonsai-src/
+          persist-credentials: false         # no token left in the checkout's git settings
+
+      - name: Set up Go                      # the Go that Bonsai's go.mod names
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
+        with:                                # the step's inputs
+          go-version-file: bonsai-src/go.mod # Bonsai's go.mod, its toolchain line included
+          cache: false                       # nothing to cache: Bonsai uses Go's standard library only
+
+      - name: Build bonsai                   # a static build beside the two checkouts, bonsai or bonsai.exe
+        working-directory: bonsai-src        # in Bonsai's source
+        run: CGO_ENABLED=0 go build -o "../bonsai$(go env GOEXE)" ./cmd/bonsai   # the build, as Bonsai's release makes it
+
+      - name: Check the pack                 # ci/check.sh check: the pack's folder and source are its checkout
+        working-directory: pack              # in the pack's checkout
+        run: sh ci/check.sh check "../bonsai$(go env GOEXE)" . . "$GITHUB_SHA"   # the commit being checked
+
+  validate:                                  # claude plugin validate, on Linux
+    runs-on: ubuntu-latest                   # Linux
+    steps:                                   # in order
+      - name: Check out the pack             # the pack at the commit being checked
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:                                # the step's inputs
+          persist-credentials: false         # no token left in the checkout's git settings
+
+      - name: Set up Node                    # Node, which installs Claude Code and reads validate's JSON
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
+        with:                                # the step's inputs
+          node-version: "22"                 # Node 22, the oldest the pinned Claude Code takes
+
+      - name: Install Claude Code            # the pinned version, from npm
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"   # no login: validate needs none
+
+      - name: Validate the plugin            # ci/check.sh validate: only the missing version may be reported
+        run: sh ci/check.sh validate .       # on the pack's top
+
+  release:                                   # the release path, on every push; it makes a release on a v tag only
+    needs: [check, validate]                 # after both pass
+    runs-on: ubuntu-latest                   # Linux
+    permissions:                             # this job's token
+      contents: write                        # it alone may make a release
+    steps:                                   # in order
+      - name: Check out the pack             # the pack at the commit being checked
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:                                # the step's inputs
+          persist-credentials: false         # no token left in the checkout's git settings
+
+      # On a tag, the pushed tag's name; on any other push or pull request, the name the version needs, so the release
+      # check runs on every commit
+      - name: Check the tag against pack.yaml's version
+        run: |                               # ci/check.sh release, with the tag's name
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag=$GITHUB_REF_NAME
+          else
+            tag=v$(sh ci/check.sh version .)
+          fi
+          sh ci/check.sh release "$tag" .
+
+      - name: Make the GitHub release        # on a v tag only: the release with its notes, nothing uploaded
+        if: github.ref_type == 'tag'         # only for a tag
+        env:                                 # the step's environment
+          GH_TOKEN: ${{ github.token }}      # this job's token, which may write contents
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes   # notes from the commits since the last release
