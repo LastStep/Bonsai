@@ -645,6 +645,24 @@ func TestUnansweredAtItsThreshold(t *testing.T) {
 	}
 }
 
+// A budget past the 15 digits format 1 holds (VM's D4) is refused bad-value, saying so, before anything is written; the
+// old check took 16 digits and the write then failed unexpected. 15 digits are written and read back.
+func TestBudgetPastFifteenDigits(t *testing.T) {
+	f := newFixture(t)
+	b := func(s string) *string { return &s }
+	for _, budget := range []string{"minutes=1234567890123456", "actions=9999999999999999999", "red_runs=99999999999999999999999"} {
+		e := f.refused(Writing{From: "orchestrator", To: "builder@T-0901", Kind: "brief", Budget: b(budget)}, DefaultRules(), "bad-value")
+		if !strings.Contains(e.What, "over 999999999999999, the largest whole number a message holds") {
+			t.Errorf("%s: %s", budget, e.What)
+		}
+	}
+	w := f.write(Writing{From: "orchestrator", To: "builder@T-0901", Kind: "brief", Budget: b("minutes=999999999999999")}, DefaultRules())
+	got, _ := f.read().Find(w.Message.ID)
+	if got == nil || got.Msg.Budget == nil || got.Msg.Budget.Minutes == nil || *got.Msg.Budget.Minutes != MaxWhole {
+		t.Errorf("15 digits read back: %+v", got)
+	}
+}
+
 // unanswered against a threshold past what a duration holds (VM's D3): 153722867 minutes is the most whole minutes a
 // time.Duration holds (about 292 years); one more wrapped to a negative duration in the old compare and flagged a
 // brief a minute old. However large the threshold, up to the 15 digits bonsai.yaml holds and past them, a brief a

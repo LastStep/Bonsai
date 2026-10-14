@@ -7,8 +7,8 @@ package message
 //     kind, brief or report).
 //  2. A report has a --status (report-no-status), done, blocked or needs-input (bad-value); a brief has none, and a
 //     report no --budget (bad-flag).
-//  3. --budget is minutes=N,actions=N,red_runs=N, any of the three, each a whole number (bad-value); --task a task
-//     id, --thread and --reply-to message ids (bad-value).
+//  3. --budget is minutes=N,actions=N,red_runs=N, any of the three, each a whole number up to MaxWhole, 15 digits
+//     (bad-value); --task a task id, --thread and --reply-to message ids (bad-value).
 //  4. The body: given (missing-value), UTF-8 with no hidden or control character but a line feed and a tab (refused,
 //     not stripped, as an ask's text is: asks.Hidden), every secret taken out by the redactor, then at most MaxBody
 //     bytes (bad-value, never cut). A byte-order mark at its start (a Windows editor's) is dropped, CRLF is made LF,
@@ -217,7 +217,12 @@ func (w Writing) check(r Rules) (*format.Message, *Error) {
 	return msg, nil
 }
 
-// parseBudget reads --budget into b: minutes=N,actions=N,red_runs=N, any of the three once each, each a whole number.
+// MaxWhole is the largest whole number a message holds: format 1 reads an integer of at most 15 digits (contract
+// §2.4), so a budget past it could never be written.
+const MaxWhole = 999_999_999_999_999
+
+// parseBudget reads --budget into b: minutes=N,actions=N,red_runs=N, any of the three once each, each a whole number
+// up to MaxWhole.
 func parseBudget(s string, b *format.MessageBudget) *Error {
 	bad := func(why string) *Error {
 		return badValue("--budget "+strconv.QuoteToASCII(s)+" "+why, "give --budget as minutes=N,actions=N,red_runs=N, any of the three, each a whole number")
@@ -240,8 +245,12 @@ func parseBudget(s string, b *format.MessageBudget) *Error {
 			return bad("names " + strconv.QuoteToASCII(name) + ", which is not minutes, actions or red_runs")
 		}
 		n, err := strconv.ParseInt(value, 10, 64)
+		digits := ok && value != "" && strings.TrimLeft(value, "0123456789") == ""
 		switch {
-		case !ok || err != nil || n < 0 || strings.TrimLeft(value, "0123456789") != "":
+		case digits && (errors.Is(err, strconv.ErrRange) || n > MaxWhole):
+			return bad(fmt.Sprintf("gives %s %s, over %d, the largest whole number a message holds (15 digits, contract section 2.4)",
+				name, strconv.QuoteToASCII(value), int64(MaxWhole)))
+		case !digits || err != nil || n < 0:
 			return bad("gives " + name + " " + strconv.QuoteToASCII(value) + ", which is not a whole number")
 		case seen[name]:
 			return bad("gives " + name + " twice")
