@@ -76,21 +76,20 @@ func TestBaseWritesNoCode(t *testing.T) {
 	}
 }
 
+// baseFiles are the files base holds beside its skills, each always (paths from base's folder, forward slashes).
+var baseFiles = []string{".claude-plugin/plugin.json", "README.md", workspace.PackFile, "bonsai/labels.yaml", "bonsai/block.md"}
+
 // allowedFile reports whether a file of base (its path from base's folder, forward slashes) is one base may hold.
 func allowedFile(rel string) bool {
-	switch rel {
-	case ".claude-plugin/plugin.json", "README.md", workspace.PackFile, "bonsai/labels.yaml", "bonsai/block.md":
-		return true
-	}
-	return skillFile().MatchString(rel)
+	return slices.Contains(baseFiles, rel) || skillFile().MatchString(rel)
 }
 
 // skillFile matches a skill's one file: skills/<name>/SKILL.md, the name a skill's (a lower-case letter, then
 // lower-case letters, digits and dashes).
 func skillFile() *regexp.Regexp { return regexp.MustCompile(`^skills/[a-z][a-z0-9-]*/SKILL\.md$`) }
 
-// TestBaseHoldsOnlyItsFiles: no file that runs code, or that a skill could run, anywhere in base; and every skill
-// folder holds its SKILL.md and nothing else.
+// TestBaseHoldsOnlyItsFiles: base holds its own files, and no file that runs code, or that a skill could run,
+// anywhere; every skill folder holds its SKILL.md and nothing else.
 func TestBaseHoldsOnlyItsFiles(t *testing.T) {
 	var files []string
 	err := filepath.WalkDir(baseDir, func(p string, d fs.DirEntry, err error) error {
@@ -134,6 +133,12 @@ func TestBaseHoldsOnlyItsFiles(t *testing.T) {
 			why = "a file the engine would write into a project; base's files: is []"
 		}
 		t.Errorf("packs/base/%s: %s", rel, why)
+	}
+	for _, f := range baseFiles {
+		if !slices.Contains(files, f) {
+			t.Errorf("packs/base/%s is missing: base holds its plugin manifest, README.md and bonsai/'s pack.yaml, labels.yaml "+
+				"and block.md", f)
+		}
 	}
 	if len(skills) == 0 {
 		t.Errorf("base holds no skill: its templates are skills (skills/<name>/SKILL.md)")
