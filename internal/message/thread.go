@@ -13,7 +13,7 @@ package message
 //     blocked report closing a dropped thread among them. A thread with no brief left is answered.
 //   - Its flags, in format.MessageFlags' order, reported and never acted on:
 //     unanswered, an open thread whose newest brief is the threshold's minutes old or older (until step 5.5.11 reads
-//     the agents' state, a brief's age alone);
+//     the agents' state, a brief's age alone), compared without overflow however large the threshold (AtLeastMinutes);
 //     circling, more briefs one way between the same two addresses (from one to the other) than the threshold, so
 //     the threshold is how many each way a thread may hold before it is flagged: at the default 3, the fourth brief
 //     one way flags it;
@@ -25,6 +25,7 @@ package message
 // Threads are listed oldest first, by their first brief's created, then the thread's id.
 
 import (
+	"math"
 	"sort"
 	"time"
 
@@ -131,7 +132,7 @@ func (t *Thread) fold(id string, r Rules, now time.Time) string {
 	raised := map[string]bool{}
 	if t.State == Open {
 		at, err := time.Parse(record.AtLayout, t.Entries[newest].Msg.Created)
-		raised["unanswered"] = err == nil && now.Sub(at) >= time.Duration(r.UnansweredMinutes)*time.Minute
+		raised["unanswered"] = err == nil && AtLeastMinutes(now.Sub(at), r.UnansweredMinutes)
 	}
 	briefs := map[[2]string]int64{}
 	for _, e := range t.Entries {
@@ -150,6 +151,20 @@ func (t *Thread) fold(id string, r Rules, now time.Time) string {
 		}
 	}
 	return head.Created
+}
+
+// AtLeastMinutes reports whether d is n minutes or more, compared without overflow: time.Duration(n)*time.Minute
+// wraps past about 292 years (math.MaxInt64 nanoseconds), so a threshold beyond any duration (bonsai.yaml may set up
+// to 15 digits) is never reached, never read as a negative one.
+func AtLeastMinutes(d time.Duration, n int64) bool {
+	const most = math.MaxInt64 / int64(time.Minute)
+	switch {
+	case n > most:
+		return false
+	case n < -most:
+		return true
+	}
+	return d >= time.Duration(n)*time.Minute
 }
 
 // Header gives a message's frontmatter as bonsai messages lists it: bonsai.message/1's fields from format to labels,

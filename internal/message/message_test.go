@@ -8,6 +8,7 @@ package message
 
 import (
 	"errors"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -641,6 +642,29 @@ func TestUnansweredAtItsThreshold(t *testing.T) {
 		if got := flags(at.Add(10 * limit)); got != "" {
 			t.Errorf("%d: answered: %q", minutes, got)
 		}
+	}
+}
+
+// unanswered against a threshold past what a duration holds (VM's D3): 153722867 minutes is the most whole minutes a
+// time.Duration holds (about 292 years); one more wrapped to a negative duration in the old compare and flagged a
+// brief a minute old. However large the threshold, up to the 15 digits bonsai.yaml holds and past them, a brief a
+// minute old, or a year old, is not unanswered; the most a duration holds is still reached once that old.
+func TestUnansweredHugeThreshold(t *testing.T) {
+	f := newFixture(t)
+	w := f.write(Writing{From: "orchestrator", To: "builder@T-0901", Kind: "brief"}, DefaultRules())
+	at, _ := time.Parse(record.AtLayout, w.Message.Created)
+	for _, minutes := range []int64{153722867, 153722868, 999999999999999, math.MaxInt64} {
+		r := DefaultRules()
+		r.UnansweredMinutes = minutes
+		for _, age := range []time.Duration{time.Minute, 365 * 24 * time.Hour} {
+			if flags := Fold(f.read(), r, at.Add(age))[0].Flags; len(flags) != 0 {
+				t.Errorf("unanswered_minutes %d, a brief %s old: flagged %v", minutes, age, flags)
+			}
+		}
+	}
+	if !AtLeastMinutes(time.Duration(math.MaxInt64), 153722867) || AtLeastMinutes(time.Duration(math.MaxInt64), 153722868) ||
+		!AtLeastMinutes(0, math.MinInt64) || AtLeastMinutes(time.Minute-1, 1) || !AtLeastMinutes(time.Minute, 1) {
+		t.Error("AtLeastMinutes at its edges")
 	}
 }
 
