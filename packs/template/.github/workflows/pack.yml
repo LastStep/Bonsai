@@ -53,7 +53,7 @@ jobs:                                        # check, validate, then release
 
       - name: Build bonsai                   # a static build beside the two checkouts, bonsai or bonsai.exe
         working-directory: bonsai-src        # in Bonsai's source
-        run: CGO_ENABLED=0 go build -o "../bonsai$(go env GOEXE)" ./cmd/bonsai   # the build, as Bonsai's release makes it
+        run: CGO_ENABLED=0 go build -o "../bonsai$(go env GOEXE)" ./cmd/bonsai   # cgo off, as Bonsai's release builds it
 
       - name: Check the pack                 # ci/check.sh check: the pack's folder and source are its checkout
         working-directory: pack              # in the pack's checkout

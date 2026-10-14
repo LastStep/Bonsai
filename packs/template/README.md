@@ -186,8 +186,8 @@ does not hold after a shell `cd`.
 
 - `sh ci/check.sh check <bonsai> <folder> <source> <commit> [<path>]`: `bonsai check --pack` on the folder; this page's
   rows against `agents/` and `skills/`; a scratch project linked to the pack at the commit, with `claude` off the PATH;
-  `bonsai check` there. Run locally from the pack's top with a bonsai build and the commit to check:
-  `sh ci/check.sh check ~/bin/bonsai . . "$(git rev-parse HEAD)"` (committed work only).
+  `bonsai check` there. Run locally from the pack's top with the commit to check (committed work only):
+  `sh ci/check.sh check "$(command -v bonsai)" . . "$(git rev-parse HEAD)"`.
 - `sh ci/check.sh validate <folder>`: `claude plugin validate --json`, failing on every error and warning but the
   missing `version`. It needs no Claude login (measured with an empty Claude configuration folder and no key), so it
   runs in CI with no secret.
@@ -205,8 +205,9 @@ install meeting a run-out access token has signed the person out of Claude Code.
 
 ## Evals
 
-A pack may ship eval cases for `claude plugin eval` (`evals/<case>/prompt.md` and `evals/<case>/graders/*.md`). They
-call a model, so they run on a maker's machine, never in CI:
+A pack may ship eval cases for `claude plugin eval` under `evals/`, one folder per case (a `prompt.md` with its
+`graders/*.md`, or a `case.yaml`; `claude plugin eval init --bare <name>` writes a blank one). They call a model, so
+they run on a maker's machine, never in CI:
 
 ```sh
 claude plugin eval . --no-publish --trust-plugin --model haiku --judge-model haiku --runs 2 --max-cost-usd 2 --json
