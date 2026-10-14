@@ -12,8 +12,8 @@
 //     the rest; one message found by its id.
 //   - thread.go: the threads folded from the files (each file new, so no shared file is ever rewritten), their state
 //     and their flags, the filters of bonsai messages.
-//   - pointer.go: a pointer's file found and fingerprinted (SHA-256, line endings read as LF), at writing and again at
-//     --show, where a file changed since shows as changed.
+//   - pointer.go: a pointer's file found and fingerprinted (SHA-256, line endings read as LF), a regular file only,
+//     streamed and never held whole, at writing and again at --show, where a file changed since shows as changed.
 //   - write.go: Write, one message: its checks, the file created new and never overwritten, and its message log
 //     record (contract §8.2).
 //   - move_windows.go, move_other.go: the rename that never replaces a file, retried while Windows reports it busy.

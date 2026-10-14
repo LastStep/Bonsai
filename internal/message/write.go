@@ -16,8 +16,9 @@ package message
 //  5. The rules (Rules): --from's and --to's roles among the declared roles, where any are declared
 //     (role-not-declared); each limit a brief's budget gives at most its max in force for --to's role
 //     (budget-over-max).
-//  6. Each --pointer names a file that is there, inside the checkout or under the home (pointer-missing), and is
-//     fingerprinted then (pointer.go).
+//  6. Each --pointer names a regular file that is there (a folder, a device, a pipe or a link to one is refused, and
+//     never opened to read), inside the checkout or under the home (pointer-missing), and is fingerprinted then,
+//     streamed (pointer.go).
 //  7. The thread: --thread names a thread's first brief, --reply-to a message (message-not-found; a --reply-to of
 //     another thread than --thread is bad-value). A brief with neither starts a thread of its own; a report needs one
 //     (missing-value). A report goes only into a thread holding a brief to its --from, and only to that brief's
