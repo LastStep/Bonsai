@@ -45,7 +45,9 @@ package engine
 //   - pack-deny-relative (set 8; plan-5 5.5.0 note 9): a deny rule in pack.yaml on a project path, a file tool's rule
 //     (Read, Edit, Write, MultiEdit, NotebookEdit) whose path starts with neither / (the project's top folder), // (an
 //     absolute path), ~ (the home) nor a drive, is written relative to the session's folder, so it would not hold after
-//     a shell cd (step 5.3.5 measured it); the finding names the form that holds, the path from the top folder (/).
+//     a shell cd (step 5.3.5 measured it); the finding names the form that holds with the reach the rule has
+//     (relativeRule): a path with a slash before its end, from the top folder (/); a name with none, which matches at
+//     every depth, at every depth (//**/, the form Bonsai's own deny rules take, measured at step 5.3.5).
 //   - pack-block: the instruction block a project linked to this pack alone would get is at most MaxBlockLines (spec
 //     §6): blockBody, the engine's own, for a workspace with init's documents (DefaultDocuments) and this pack (its
 //     files in the protocols folder imported, each <protocols>/ file's resolved there, its label definitions, its
@@ -425,32 +427,42 @@ func denyRelative(file string, m *reader.Map) []packFound {
 		if !ok || !isText {
 			continue
 		}
-		holds, relative := relativeRule(rule)
+		holds, anyDepth, relative := relativeRule(rule)
 		if !relative {
 			continue
 		}
+		how, also := "from the project's top folder", " (or with // for an absolute path)"
+		if anyDepth {
+			how, also = "at any depth, as the rule's name with no slash matches now (the form Bonsai's own deny rules take)", ""
+		}
 		out = append(out, packFound{"pack-deny-relative", file, fmt.Sprintf("%s: deny item %d's rule %s names a project path relative to the "+
-			"session's folder, so it would not hold after a shell cd (step 5.3.5); the form that holds is %s, from the project's top folder",
-			at(file, e.Line), it.i+1, strconv.QuoteToASCII(rule), strconv.QuoteToASCII(holds)),
-			fmt.Sprintf("write deny item %d's rule in %s as %s (or with // for an absolute path)", it.i+1, file, strconv.QuoteToASCII(holds))})
+			"session's folder, so it would not hold after a shell cd (step 5.3.5); the form that holds is %s, %s",
+			at(file, e.Line), it.i+1, strconv.QuoteToASCII(rule), strconv.QuoteToASCII(holds), how),
+			fmt.Sprintf("write deny item %d's rule in %s as %s%s", it.i+1, file, strconv.QuoteToASCII(holds), also)})
 	}
 	return out
 }
 
 // relativeRule reads a permission rule: relative is true for a file tool's rule (pathRuleTools) whose path starts
-// with neither / nor ~ nor a drive (C:), and holds is then the rule with the path from the project's top folder
-// (/<path>, a leading ./ taken off).
-func relativeRule(rule string) (holds string, relative bool) {
+// with neither / nor ~ nor a drive (C:), and holds is then the rule in a form that holds after a cd with the reach it
+// has now. A rule's path is matched as a .gitignore line is (Claude Code's permissions reference): one with a slash
+// before its end (docs/secret.txt, ./docs/**, **/x) is anchored where it is written, so it holds from the project's
+// top folder (/<path>, a leading ./ taken off); one with none (*.env, .env, secrets/) matches at every depth, so it
+// holds at every depth (anyDepth: //**/<path>, as Bonsai's own deny rules are written, ownDeny), never only at the
+// top (/*.env would lose every .env below it).
+func relativeRule(rule string) (holds string, anyDepth, relative bool) {
 	m := ruleFull().FindStringSubmatch(rule)
 	if m == nil || !contains(pathRuleTools, m[1]) {
-		return "", false
+		return "", false, false
 	}
 	p := m[2]
 	switch {
 	case p == "", strings.HasPrefix(p, "/"), strings.HasPrefix(p, "~"), len(p) >= 2 && p[1] == ':' && isLetter(p[0]):
-		return "", false
+		return "", false, false
+	case !strings.Contains(strings.TrimSuffix(p, "/"), "/"):
+		return m[1] + "(//**/" + p + ")", true, true
 	}
-	return m[1] + "(/" + strings.TrimPrefix(p, "./") + ")", true
+	return m[1] + "(/" + strings.TrimPrefix(p, "./") + ")", false, true
 }
 
 func isLetter(b byte) bool { return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' }
