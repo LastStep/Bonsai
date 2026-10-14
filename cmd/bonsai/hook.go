@@ -43,6 +43,17 @@ var hookWord = &Word{
 // lineWords open each hook word's help, before its line.
 const lineWords = "Its line, as bonsai init writes it (one line in .claude/settings.json, broken across lines here):\n"
 
+// rolesTools names the guard line's tools matched only where the lock declares roles, for its help.
+func rolesTools() string {
+	var names []string
+	for _, t := range engine.GuardTools {
+		if t.Roles {
+			names = append(names, t.Name)
+		}
+	}
+	return strings.Join(names, ", ")
+}
+
 var guardWord = &Word{
 	Name:    "hook guard",
 	Title:   "the PreToolUse guard that bonsai init writes as the hook line",
@@ -71,7 +82,20 @@ path is in a linked project, it allows and records nothing.
 Each decision is a guard record (bonsai.log/1) in the .bonsai/local/log/ of the project whose rules decided (a
 verified worktree's main checkout's), with the input's hash, and on the record that made its file the binary's own
 path (from ~/ under the home) and SHA-256.
+Where the project's lock declares roles (as committed at the main checkout's HEAD), the line also matches
+` + rolesTools() + `, and the guard holds the role rules: who may call whom (the person's session
+any role; a lead its helpers and the types no pack declares; a helper no one), the file tools and the shell writes
+it can read refused to a role that changes nothing, an agent's shell writes into .bonsai/local/ and the lock refused,
+a claude started from an agent's shell refused, a bonsai message's --from held to its writer's own address, and each
+agent's budget (minutes, actions, red runs) counted under .bonsai/local/agents/, past which every call but its report
+is refused. There a second line runs it with --second on every other tool:
+` + engine.ShownLine(engine.SecondCommand) + `on PreToolUse, timeout 10 s, its matcher every tool the first line does not name:
+  ` + engine.SecondMatcher[:strings.Index(engine.SecondMatcher, "(?!Bash$)")] + `
+  ` + engine.SecondMatcher[strings.Index(engine.SecondMatcher, "(?!Bash$)"):] + `
+It never blocks while bonsai is not installed at its place, refuses only past an agent's budget, and lets a call
+through on a fault of its own.
 ` + engine.SessionFolderWords,
+	Flags:    []Flag{{Name: "--second", Help: "run as the guard's second line, on every tool the first does not match (only where the\nlock declares roles): it refuses only past an agent's budget, and lets a call through on a fault of its own"}},
 	FlagNext: "use the hook line bonsai init writes (bonsai hook guard --help quotes it)",
 	Exits: []Exit{
 		{Code: 0, Means: "allow: the call goes on (nothing printed)"},
@@ -82,7 +106,7 @@ path (from ~/ under the home) and SHA-256.
 		if len(c.rest) > 0 {
 			return c.refuse(c.flagError("hook guard takes no %+q", c.rest[0]))
 		}
-		return guard.Main(guard.Options{Stdin: os.Stdin, Stderr: c.stderr, StdinTerminal: isTerminal(os.Stdin)})
+		return guard.Main(guard.Options{Stdin: os.Stdin, Stderr: c.stderr, StdinTerminal: isTerminal(os.Stdin), Second: c.has("--second")})
 	},
 }
 

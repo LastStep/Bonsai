@@ -342,7 +342,7 @@ func (r *CheckResult) checkSettings(lf workspace.LockedFile, mark func(string, s
 				r.add("cache", SettingsFile, "", err.Error(), lockNext)
 				return
 			}
-			pl.known, pl.hooks, pl.deny = true, declaredHooks(d), declaredDeny(d)
+			pl.known, pl.hooks, pl.deny, pl.roles = true, declaredHooks(d), declaredDeny(d), declaresRoles(d)
 			pls = append(pls, pl)
 			continue
 		}
@@ -364,7 +364,11 @@ func (r *CheckResult) checkSettings(lf workspace.LockedFile, mark func(string, s
 	}
 	claimed, same := claim(diskLines(sd.root), buildLines(cfg, pls), false, lf.SHA256)
 	if same {
-		r.checkOwnHooks(claimed)
+		roles := false
+		for _, pl := range pls {
+			roles = roles || pl.roles
+		}
+		r.checkOwnHooks(claimed, roles)
 	}
 	if !same {
 		r.Changed++
@@ -375,9 +379,11 @@ func (r *CheckResult) checkSettings(lf workspace.LockedFile, mark func(string, s
 }
 
 // checkOwnHooks warns when Bonsai's own hook lines in the settings file (claimed, Bonsai's lines as the lock says it
-// last wrote them) are not this build's ownHooks: a project linked or last updated by another Bonsai. Each line this
-// build adds runs code, so update writes them only with --allow-exec (step 5.1.1, rule 1): a person's step.
-func (r *CheckResult) checkOwnHooks(claimed []Line) {
+// last wrote them) are not this build's own lines in the form the lock calls for (ownHooksFor: the guard's two lines
+// where it declares roles, step 5.5.11; the one line elsewhere): a project linked or last updated by another Bonsai.
+// Each line this build adds runs code, so update writes them only with --allow-exec (step 5.1.1, rule 1): a person's
+// step.
+func (r *CheckResult) checkOwnHooks(claimed []Line, roles bool) {
 	have := map[string]bool{}
 	for _, l := range claimed {
 		if l.Kind == "hook" && l.Own {
@@ -386,7 +392,7 @@ func (r *CheckResult) checkOwnHooks(claimed []Line) {
 	}
 	want := map[string]bool{}
 	var add []string
-	for _, l := range ownHooks {
+	for _, l := range ownHooksFor(roles) {
 		want[l.canon()] = true
 		if !have[l.canon()] {
 			add = append(add, l.Text())

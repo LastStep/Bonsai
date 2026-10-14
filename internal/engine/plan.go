@@ -771,13 +771,15 @@ func Build(req Request) (_ *Plan, err error) {
 	for _, pd := range newPacks {
 		byID[pd.Ref.ID] = pd
 		newPL = append(newPL, packLines{id: pd.Ref.ID, source: pd.Ref.Source, folder: pd.Ref.Path, commit: pd.Commit,
-			known: true, hooks: pd.Manifest.Hooks, deny: pd.Manifest.Deny})
+			known: true, hooks: pd.Manifest.Hooks, deny: pd.Manifest.Deny, roles: manifestRoles(pd.Manifest)})
 	}
 	for _, lp := range lock.Packs {
 		if pd, ok := byID[lp.ID]; ok {
 			pl := packLines{id: lp.ID, source: lp.Source, folder: lockedFolder(lp, pd.Ref.Path), commit: lp.Commit}
 			if od := oldPacks[lp.ID]; od != nil {
-				pl.known, pl.hooks, pl.deny = true, od.Manifest.Hooks, od.Manifest.Deny
+				pl.known, pl.hooks, pl.deny, pl.roles = true, od.Manifest.Hooks, od.Manifest.Deny, manifestRoles(od.Manifest)
+			} else if d, err := lp.Declared(); err == nil {
+				pl.roles = declaresRoles(d) // the lines last written: the lock's own roles
 			}
 			refPL = append(refPL, pl)
 			continue
@@ -1018,7 +1020,7 @@ func takenOutLines(c cache, lp workspace.LockedPack) (packLines, error) {
 			return pl, errorf("bad-lock", ExitState, "restore the committed lock, run: git checkout -- "+workspace.LockFile,
 				"the lock's declares for the pack %s cannot be read: %v", lp.ID, err).whose("person")
 		}
-		pl.known, pl.hooks, pl.deny = true, declaredHooks(d), declaredDeny(d)
+		pl.known, pl.hooks, pl.deny, pl.roles = true, declaredHooks(d), declaredDeny(d), declaresRoles(d)
 		return pl, nil
 	}
 	commit, err := c.fetch(lp.Source, lp.Commit)

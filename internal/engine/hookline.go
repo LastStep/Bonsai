@@ -8,9 +8,9 @@ package engine
 //	guard: no bonsai is installed at C:/Program Files/Bonsai/bonsai.exe or /usr/local/bin/bonsai, so this call is
 //	refused; next: tell the person: a person installs Bonsai there" >&2; exit 2; }; "$b" hook guard || exit 2
 //
-// (one line). The stop gate's line is the same with its own words; the start line's and the recorder's end
-// `[ -x "$b" ] || exit 0; "$b" hook <word>`, with no `|| exit 2`, so they print nothing and never block when Bonsai is
-// not there. `[`, `echo` and `exit` are built into sh and Git Bash, so a line starts no process but bonsai.
+// (one line). The stop gate's line is the same with its own words; the start line's, the recorder's and the guard's
+// second line's (step 5.5.11, where the lock declares roles: `hook guard --second`) end `[ -x "$b" ] || exit 0; "$b"
+// hook <word>`, with no `|| exit 2`, so they print nothing and never block when Bonsai is not there. `[`, `echo` and `exit` are built into sh and Git Bash, so a line starts no process but bonsai.
 //
 // Two things measured before this form, and how it meets them:
 //   - Claude Code reads a Stop hook's exit 2 whose stderr says a file is missing ("No such file or directory") as a
@@ -133,8 +133,15 @@ func validPlace(p string) bool {
 	return true
 }
 
-// validWord reports a hook word a line can name: lower-case letters.
+// validWord reports a hook word a line can name: lower-case letters, and at most one flag after them, a space, two
+// dashes and lower-case letters (the guard's second line, SecondWord: "guard --second").
 func validWord(w string) bool {
+	word, flag, hasFlag := strings.Cut(w, " --")
+	return letters(word) && (!hasFlag || letters(flag))
+}
+
+// letters reports a word of lower-case letters, at least one.
+func letters(w string) bool {
 	if w == "" {
 		return false
 	}

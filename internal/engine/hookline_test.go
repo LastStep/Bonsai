@@ -19,10 +19,11 @@ func stampAs(t *testing.T, place, root string) {
 	oldPlace, oldRoot := hookPlace, scratchRoot
 	remake := func() {
 		GuardCommand = HookCommand("guard", true, hookPlaces()...)
+		SecondCommand = HookCommand(SecondWord, false, hookPlaces()...)
 		StopCommand = HookCommand("stop", true, hookPlaces()...)
 		StartCommand = HookCommand("start", false, hookPlaces()...)
 		RecordCommand = HookCommand("record", false, hookPlaces()...)
-		ownHooks = buildOwnHooks()
+		ownHooks, ownRolesHooks = buildOwnHooks(false), buildOwnHooks(true)
 	}
 	hookPlace, scratchRoot = place, root
 	remake()
@@ -32,7 +33,12 @@ func stampAs(t *testing.T, place, root string) {
 func TestTheFormIsClaimedExactly(t *testing.T) {
 	installed := []string{PlaceWindows, PlaceLinux}
 	claimed := map[string]bool{
-		GuardCommand: true, StopCommand: true, StartCommand: true, RecordCommand: true,
+		GuardCommand: true, StopCommand: true, StartCommand: true, RecordCommand: true, SecondCommand: true,
+		HookCommand("guard --second", true, installed...):                 true, // a flag after the word: still Bonsai's form
+		HookCommand("guard --Second", false, installed...):                false,
+		HookCommand("guard --second --x", false, installed...):            false,
+		HookCommand("guard -- second", false, installed...):               false,
+		HookCommand("guard --", false, installed...):                      false,
 		HookCommand("guard", true, "/home/a b/bonsai-checks/x/bonsai"):    true, // a test build's one place, with a space
 		HookCommand("guard", true, "C:/Users/a/bonsai-checks/bonsai.exe"): true,
 		HookCommand("guard", true, "/c/one/bonsai", "/c/two/bonsai"):      true,
@@ -83,10 +89,13 @@ func TestTheFormIsClaimedExactly(t *testing.T) {
 			}
 		}
 	}
-	// The matcher is the table's.
-	names := make([]string, len(GuardTools))
-	for i, tool := range GuardTools {
-		names[i] = tool.Name
+	// The matcher is the table's: without the roles' tools where the lock declares none, with them where it does.
+	var names, all []string
+	for _, tool := range GuardTools {
+		all = append(all, tool.Name)
+		if !tool.Roles {
+			names = append(names, tool.Name)
+		}
 		if tool.Why == "" {
 			t.Errorf("%s has no reason", tool.Name)
 		}
@@ -94,12 +103,67 @@ func TestTheFormIsClaimedExactly(t *testing.T) {
 	if GuardMatcher != strings.Join(names, "|") || !strings.HasSuffix(GuardMatcher, "|Monitor") {
 		t.Errorf("the guard's matcher %q", GuardMatcher)
 	}
+	if GuardRolesMatcher != strings.Join(all, "|") || GuardRolesMatcher != GuardMatcher+"|Agent|Task|SendMessage|Workflow" {
+		t.Errorf("the guard's matcher where roles are declared %q", GuardRolesMatcher)
+	}
 	if ownHooks[0].OnFailure != "block" || ownHooks[0].Matcher != GuardMatcher {
 		t.Errorf("the guard's line %+v", ownHooks[0])
 	}
 	for _, l := range ownHooks[1:] {
 		if l.OnFailure != "" {
 			t.Errorf("onFailure on %s, which it does not apply to or need", l.Text())
+		}
+	}
+	// Where the lock declares roles: the guard's line widened, its form, timeout and onFailure unchanged, and the second
+	// line after it, in the never-blocking form, on every other tool; the rest as without roles.
+	r := ownRolesHooks
+	if len(r) != len(ownHooks)+1 || r[0].Command != ownHooks[0].Command || r[0].Timeout != ownHooks[0].Timeout ||
+		r[0].OnFailure != "block" || r[0].Matcher != GuardRolesMatcher {
+		t.Fatalf("the roles' guard line %+v", r[0])
+	}
+	if r[1].Event != "PreToolUse" || r[1].Matcher != SecondMatcher || r[1].Command != SecondCommand || r[1].OnFailure != "" ||
+		r[1].Async || r[1].Timeout != "10" || strings.Contains(r[1].Command, "exit 2") ||
+		!strings.HasSuffix(r[1].Command, `[ -x "$b" ] || exit 0; "$b" hook guard --second`) {
+		t.Errorf("the second line %+v", r[1])
+	}
+	for i, l := range ownHooks[1:] {
+		if r[i+2].canon() != l.canon() {
+			t.Errorf("line %d differs where roles are declared: %s", i+2, r[i+2].Text())
+		}
+	}
+	if want := "^(?!Edit$)(?!Write$)(?!MultiEdit$)(?!NotebookEdit$)(?!Bash$)(?!PowerShell$)(?!Monitor$)(?!Agent$)(?!Task$)" +
+		"(?!SendMessage$)(?!Workflow$).*"; SecondMatcher != want {
+		t.Errorf("the second line's matcher %q", SecondMatcher)
+	}
+}
+
+// The second line's matcher, read as Claude Code reads a matcher that is not a list of names (a JavaScript regular
+// expression; Go's regexp has no lookahead, so each name is tried by hand): every tool the first line names is left
+// out, every other one met, an MCP tool and a later tool among them.
+func TestTheSecondLineMeetsEveryOtherTool(t *testing.T) {
+	first := map[string]bool{}
+	for _, tool := range GuardTools {
+		first[tool.Name] = true
+	}
+	meets := func(tool string) bool {
+		// ^(?!A$)(?!B$)...(?!Z$).* : a name is met unless it is exactly one of the names.
+		rest := strings.TrimSuffix(strings.TrimPrefix(SecondMatcher, "^"), ".*")
+		for _, part := range strings.Split(strings.TrimSuffix(strings.TrimPrefix(rest, "(?!"), "$)"), "$)(?!") {
+			if part == tool {
+				return false
+			}
+		}
+		return true
+	}
+	for _, tool := range []string{"Read", "Grep", "Glob", "WebFetch", "Skill", "ToolSearch", "AskUserQuestion",
+		"mcp__claude_ai_Notion__notion-search", "SubagentHandback", "Edits", "BashOutput", "AgentX", "ATask"} {
+		if !meets(tool) {
+			t.Errorf("the second line does not meet %s", tool)
+		}
+	}
+	for tool := range first {
+		if meets(tool) {
+			t.Errorf("the second line meets %s, which the first judges", tool)
 		}
 	}
 }

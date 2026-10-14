@@ -15,8 +15,10 @@ import (
 	"testing"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // The shipped lines, as note 2 gives the guard's: Windows' place first, then WSL's; the stamps empty in a plain build
@@ -266,5 +268,79 @@ func TestStampedBuild(t *testing.T) {
 	other := testpack.Project(t, scratch, "other")
 	if code, out, errOut := runBin(t, half, other, nil, initArgs...); code != 4 || !strings.Contains(errOut, "only one of hookPlace and scratchRoot") {
 		t.Errorf("a half-stamped build: exit %d\n%s%s", code, out, errOut)
+	}
+}
+
+// The guard's second line (plan-5 5.5.11 note 2), run through the hook shell as Claude Code runs it: with bonsai at
+// neither place it lets a read through, printing nothing; with bonsai there it refuses a read past an agent's budget,
+// in a project whose committed lock declares a role of 3 actions; a tool the first line judges it passes at once.
+func TestTheSecondLineThroughTheShell(t *testing.T) {
+	normal, _ := bonsaiBuilds(t)
+	tmp := t.TempDir()
+	testpack.Isolate(t, tmp)
+	proj := filepath.Join(tmp, "proj")
+	pack, err := format.ReadPack([]byte("format: bonsai.pack/1\nid: workflow\nversion: \"1\"\nroles:\n  - name: tiny\n" +
+		"    kind: helper\n    session: false\n    writes: false\n    max_turns: null\n    minutes:\n      default: null\n" +
+		"      max: null\n    actions:\n      default: 3\n      max: 3\n    red_runs:\n      default: null\n      max: null\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	decl, err := (&format.Declares{Roles: pack.Roles}).Object()
+	if err != nil {
+		t.Fatal(err)
+	}
+	lock, err := (&workspace.Lock{WrittenBy: "0.5.0", Files: map[string]workspace.LockedFile{}, Packs: []workspace.LockedPack{{
+		ID: "workflow", Source: "https://example.invalid/workflow.git", Version: "1", Commit: strings.Repeat("a", 40),
+		SHA256: strings.Repeat("b", 64), Declares: decl, PathSet: true}}}).Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{
+		"bonsai.yaml": "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: roles\npacks:\n  - id: workflow\n" +
+			"    source: \"https://example.invalid/workflow.git\"\n    path: null\n    ref: \"" + strings.Repeat("a", 40) + "\"\n" +
+			"    roles: null\nprotected: []\nperson_only: []\nnever_edit: []\n",
+		".bonsai/lock.json": string(lock), "free.txt": "free\n"} {
+		p := filepath.Join(proj, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	testpack.Git(t, proj, "init", "-q")
+	testpack.Git(t, proj, "add", "-A")
+	testpack.Git(t, proj, "commit", "-q", "-m", "roles")
+	read := func(tool string) string {
+		b, err := schema.EncodeLine(schema.Object{{Key: "session_id", Value: "s-second"}, {Key: "cwd", Value: proj},
+			{Key: "agent_id", Value: "a1"}, {Key: "agent_type", Value: "workflow:tiny"}, {Key: "hook_event_name", Value: "PreToolUse"},
+			{Key: "tool_name", Value: tool}, {Key: "tool_input", Value: schema.Object{{Key: "file_path", Value: filepath.Join(proj, "free.txt")}}},
+			{Key: "tool_use_id", Value: "toolu_01S"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(b)
+	}
+	place := filepath.Join(tmp, "place", filepath.Base(normal))
+	line := engine.HookCommand(engine.SecondWord, false, shellPath(place))
+	// Neither place: let through, nothing printed, nothing counted.
+	for i := 0; i < 5; i++ {
+		if code, stderr, _ := runHookText(t, line, hookPath(t), proj, "", read("Read")); code != 0 || stderr != "" {
+			t.Fatalf("with bonsai missing: exit %d, stderr %q", code, stderr)
+		}
+	}
+	copyFile(t, normal, place)
+	for i := 0; i < 3; i++ {
+		if code, stderr, _ := runHookText(t, line, hookPath(t), proj, "", read("Read")); code != 0 {
+			t.Fatalf("read %d within the budget: exit %d, %s", i+1, code, stderr)
+		}
+	}
+	code, stderr, _ := runHookText(t, line, hookPath(t), proj, "", read("Read"))
+	if code != 2 || !strings.Contains(stderr, "budget spent (actions: 4 of 3)") {
+		t.Fatalf("a read past the budget: exit %d, stderr %q", code, stderr)
+	}
+	// A tool the first line judges: passed at once by the second.
+	if code, stderr, _ := runHookText(t, line, hookPath(t), proj, "", read("Edit")); code != 0 {
+		t.Errorf("an Edit through the second line: exit %d, %s", code, stderr)
 	}
 }

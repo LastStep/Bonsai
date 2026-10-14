@@ -114,8 +114,9 @@ const (
 
 // GuardTool is one tool the guard's line matches.
 type GuardTool struct {
-	Name string // the tool's name, as a hook matcher names it
-	Why  string // what it does that the guard judges
+	Name  string // the tool's name, as a hook matcher names it
+	Why   string // what it does that the guard judges
+	Roles bool   // matched only where the lock declares roles (plan-5 5.5.11 note 2): a tool that starts or resumes an agent
 }
 
 // GuardTools are the tools the guard's line matches (plan-5 5.3.6 note 5), their one home: every tool that writes a
@@ -124,56 +125,121 @@ type GuardTool struct {
 // The other tools there read, search, fetch, ask, plan, schedule or message (Agent's and Workflow's subagents make
 // their own tool calls, which this line meets). MultiEdit is not on the 2.1.296 page; it stays for a Claude Code that
 // still has it, since the hook adapter reads it and a name no tool has matches nothing.
+//
+// Where the lock declares roles (step 5.5, "Role rules and stall stops"; Rohan's "A. Two lines", 14 Oct), the line
+// also matches the tools that start or resume an agent (Roles): Agent, its older name Task, SendMessage and Workflow,
+// so the guard judges who may call whom; its form, timeout and onFailure are the same. Everywhere else the line is as
+// before, and such a project pays nothing new.
 var GuardTools = []GuardTool{
-	{"Edit", "edits a file"},
-	{"Write", "creates or overwrites a file"},
-	{"MultiEdit", "edits a file several times in one call (older Claude Code)"},
-	{"NotebookEdit", "edits a Jupyter notebook's cells"},
-	{"Bash", "runs a shell command"},
-	{"PowerShell", "runs a PowerShell command"},
-	{"Monitor", "runs a command in the background, under Bash's permission rules"},
+	{Name: "Edit", Why: "edits a file"},
+	{Name: "Write", Why: "creates or overwrites a file"},
+	{Name: "MultiEdit", Why: "edits a file several times in one call (older Claude Code)"},
+	{Name: "NotebookEdit", Why: "edits a Jupyter notebook's cells"},
+	{Name: "Bash", Why: "runs a shell command"},
+	{Name: "PowerShell", Why: "runs a PowerShell command"},
+	{Name: "Monitor", Why: "runs a command in the background, under Bash's permission rules"},
+	{Name: "Agent", Why: "starts a subagent of a type (only where the lock declares roles: who may call whom)", Roles: true},
+	{Name: "Task", Why: "Agent's older name (only where the lock declares roles)", Roles: true},
+	{Name: "SendMessage", Why: "resumes a subagent, or writes to the main session or another one (only where the lock declares roles)", Roles: true},
+	{Name: "Workflow", Why: "runs a script that starts agents of its own (only where the lock declares roles)", Roles: true},
 }
 
-// GuardMatcher is the guard's line's matcher: GuardTools' names joined by |.
-var GuardMatcher = guardMatcher()
+// GuardMatcher is the guard's line's matcher where the lock declares no roles: GuardTools' names joined by |, the
+// roles' tools left out. GuardRolesMatcher is the line's matcher where it does: every name.
+var (
+	GuardMatcher      = guardMatcher(false)
+	GuardRolesMatcher = guardMatcher(true)
+)
 
-func guardMatcher() string {
-	names := make([]string, len(GuardTools))
-	for i, t := range GuardTools {
-		names[i] = t.Name
+func guardMatcher(roles bool) string {
+	var names []string
+	for _, t := range GuardTools {
+		if roles || !t.Roles {
+			names = append(names, t.Name)
+		}
 	}
 	return strings.Join(names, "|")
 }
 
+// The guard's second line (plan-5 5.5.11 note 2; step 5.5, "The guard's two lines"), written only where the lock
+// declares roles: bonsai hook guard --second on every tool the first line does not match (reads, searches, skills, the
+// web, MCP tools, the question tool), in the form of the lines that never block when bonsai is missing (no || exit 2,
+// no onFailure), so a missing or broken bonsai lets the call through. When bonsai runs, it refuses only past an agent's
+// budget, and lets a call through on a fault of its own (internal/guard). Its matcher names every other tool by one
+// negative lookahead a name of GuardTools, ^(?!Edit$)(?!Write$)...(?!Workflow$).*: Claude Code 2.1.300 (WSL, 15 Oct)
+// took ^(?!Bash$).* as a pattern that met every tool but Bash; no | is used, which Claude Code may read as a list of
+// exact names. The guard also passes at once, uncounted, a tool the first line judges, should both meet one.
+const (
+	SecondWord    = "guard --second"
+	SecondTimeout = "10"
+)
+
+// SecondMatcher is the second line's matcher (above).
+var SecondMatcher = secondMatcher()
+
+func secondMatcher() string {
+	var b strings.Builder
+	b.WriteString("^")
+	for _, t := range GuardTools {
+		b.WriteString("(?!" + t.Name + "$)")
+	}
+	b.WriteString(".*")
+	return b.String()
+}
+
 // The command of each of Bonsai's own hook lines, in this build's form: GuardCommand and StopCommand block (exit 2
-// when bonsai is not at its place), StartCommand and RecordCommand never do.
+// when bonsai is not at its place), SecondCommand, StartCommand and RecordCommand never do.
 var (
 	GuardCommand  = HookCommand("guard", true, hookPlaces()...)
+	SecondCommand = HookCommand(SecondWord, false, hookPlaces()...)
 	StopCommand   = HookCommand("stop", true, hookPlaces()...)
 	StartCommand  = HookCommand("start", false, hookPlaces()...)
 	RecordCommand = HookCommand("record", false, hookPlaces()...)
 )
 
-// ownHooks is this build's table of Bonsai's own hook lines, in spec §7's order. Spec §7 lists four kinds, and this
-// build writes each: the guard (PreToolUse), the stop gate (Stop, step 5.3.4), start (SessionStart) and the recorder
-// (step 5.2.4): SessionStart's record is written by hook start itself, so the recorder's lines are ten, nine async and
-// SessionEnd's synchronous. A project linked before a line was added gets it at its next update only with
-// --allow-exec (a hook line added runs code, step 5.1.1); bonsai check warns until then (own-hooks).
-var ownHooks = buildOwnHooks()
+// ownHooks is this build's table of Bonsai's own hook lines, in spec §7's order, where the lock declares no roles;
+// ownRolesHooks where it does (step 5.5.11: the guard's line matching the roles' tools too, and the second line after
+// it). Spec §7 lists four kinds, and this build writes each: the guard (PreToolUse), the stop gate (Stop, step 5.3.4),
+// start (SessionStart) and the recorder (step 5.2.4): SessionStart's record is written by hook start itself, so the
+// recorder's lines are ten, nine async and SessionEnd's synchronous. A project linked before a line was added gets it
+// at its next update only with --allow-exec (a hook line added runs code, step 5.1.1); bonsai check warns until then
+// (own-hooks). A project's first pack with roles changes the guard's line and adds the second: a change to Bonsai's
+// own lines, listed under "Runs code".
+var (
+	ownHooks      = buildOwnHooks(false)
+	ownRolesHooks = buildOwnHooks(true)
+)
 
-func buildOwnHooks() []Line {
-	ls := []Line{
-		{Kind: "hook", Origin: "bonsai", Own: true, Event: GuardEvent, Matcher: GuardMatcher, Command: GuardCommand, Timeout: GuardTimeout,
-			OnFailure: GuardOnFailure, Why: "Checks every file edit and shell command against the task's rights; refuses each one while " +
-				"bonsai is not installed at its place, or cannot start."},
-		{Kind: "hook", Origin: "bonsai", Own: true, Event: StopEvent, Command: StopCommand, Timeout: StopTimeout,
+// ownHooksFor gives the own hook lines for a lock that declares roles, or not.
+func ownHooksFor(roles bool) []Line {
+	if roles {
+		return ownRolesHooks
+	}
+	return ownHooks
+}
+
+func buildOwnHooks(roles bool) []Line {
+	guard := Line{Kind: "hook", Origin: "bonsai", Own: true, Event: GuardEvent, Matcher: GuardMatcher, Command: GuardCommand, Timeout: GuardTimeout,
+		OnFailure: GuardOnFailure, Why: "Checks every file edit and shell command against the task's rights; refuses each one while " +
+			"bonsai is not installed at its place, or cannot start."}
+	ls := []Line{guard}
+	if roles {
+		ls[0].Matcher = GuardRolesMatcher
+		ls[0].Why = "Checks every file edit, shell command and agent start against the task's rights and the roles' rules " +
+			"(who may call whom, what each role may change, each agent's budget); refuses each one while bonsai is not installed " +
+			"at its place, or cannot start."
+		ls = append(ls, Line{Kind: "hook", Origin: "bonsai", Own: true, Event: GuardEvent, Matcher: SecondMatcher, Command: SecondCommand,
+			Timeout: SecondTimeout, Why: "Counts every other tool call (reads, searches, skills, the web, MCP tools, questions) against " +
+				"its agent's budget and refuses one past it; lets each through while bonsai is not installed at its place, or cannot start."})
+	}
+	ls = append(ls,
+		Line{Kind: "hook", Origin: "bonsai", Own: true, Event: StopEvent, Command: StopCommand, Timeout: StopTimeout,
 			Why: "Keeps a session whose BONSAI_TASK names a task from ending until a green local ladder result proves the " +
 				"checkout's HEAD (bonsai ladder --task <id>); does nothing in a session that names no task. While bonsai is not " +
 				"installed at its place, it refuses each session's end until Claude Code ends the turn after its cap of blocks."},
-		{Kind: "hook", Origin: "bonsai", Own: true, Event: StartEvent, Command: StartCommand, Timeout: StartTimeout,
+		Line{Kind: "hook", Origin: "bonsai", Own: true, Event: StartEvent, Command: StartCommand, Timeout: StartTimeout,
 			Why: "Gives each session (new, resumed, cleared or compacted) the active task, its last ladder result and this " +
-				"machine's labels, and records the session's start, with bonsai's own path and hash, in .bonsai/local/log/; never blocks."},
-	}
+				"machine's labels, and records the session's start, with bonsai's own path and hash, in .bonsai/local/log/; never blocks."})
 	// The recorder's lines, one per event it records (recorder.Events, their one home), in its order: async, but
 	// SessionEnd's; SessionStart's record is hook start's.
 	for _, e := range recorder.Events {
@@ -259,10 +325,16 @@ func tableFiles() []string {
 	return out
 }
 
-// OwnHookLines lists this build's own hook lines as the preview shows them, in the order the engine writes them.
-func OwnHookLines() []string {
+// OwnHookLines lists this build's own hook lines as the preview shows them, in the order the engine writes them, for a
+// lock that declares no roles; OwnRolesHookLines for one that does.
+func OwnHookLines() []string { return hookTexts(ownHooks) }
+
+// OwnRolesHookLines lists this build's own hook lines for a lock that declares roles (ownRolesHooks).
+func OwnRolesHookLines() []string { return hookTexts(ownRolesHooks) }
+
+func hookTexts(ls []Line) []string {
 	var out []string
-	for _, l := range ownHooks {
+	for _, l := range ls {
 		out = append(out, l.Text())
 	}
 	return out
@@ -413,7 +485,14 @@ type packLines struct {
 	known                      bool
 	hooks                      []workspace.HookEntry
 	deny                       []workspace.DenyEntry
+	roles                      bool // the pack declares roles: Bonsai's own lines are then ownRolesHooks (step 5.5.11)
 }
+
+// declaresRoles reports a pack's declares naming roles, for packLines.roles.
+func declaresRoles(d *format.Declares) bool { return d != nil && len(d.Roles) > 0 }
+
+// manifestRoles reports a pack.yaml declaring roles, for packLines.roles.
+func manifestRoles(m *workspace.Pack) bool { return m != nil && m.Full != nil && len(m.Full.Roles) > 0 }
 
 // MarketplaceName is the inline marketplace's name (spec §5): bonsai-<workspace name>-<8 hex>, the hex the first
 // 8 characters of the SHA-256 of the packs' pins (Pin), each followed by a line feed, in bonsai.yaml's order. Two
@@ -440,8 +519,8 @@ func Pin(commit, folder string) string {
 }
 
 // buildLines gives every line Bonsai writes for a workspace and its packs, in the order it writes them: the two
-// keys, the deny rules (Bonsai's own, then never_edit, then each pack's), the hook lines (Bonsai's own, then each
-// pack's), the marketplace, then each pack's plugin. A line that two sources give is written once, as the first
+// keys, the deny rules (Bonsai's own, then never_edit, then each pack's), the hook lines (Bonsai's own, its roles'
+// form when a pack declares roles, then each pack's), the marketplace, then each pack's plugin. A line that two sources give is written once, as the first
 // gives it: a pack's rule equal to one of Bonsai's own stays Bonsai's.
 func buildLines(cfg *workspace.Config, packs []packLines) []Line {
 	ls := []Line{
@@ -460,7 +539,11 @@ func buildLines(cfg *workspace.Config, packs []packLines) []Line {
 			ls = append(ls, Line{Kind: "deny", Origin: p.id, Rule: d.Rule, Why: p.id + ": " + d.Why})
 		}
 	}
-	ls = append(ls, ownHooks...)
+	roles := false
+	for _, p := range packs {
+		roles = roles || p.roles
+	}
+	ls = append(ls, ownHooksFor(roles)...)
 	for _, p := range packs {
 		for _, h := range p.hooks {
 			ls = append(ls, Line{Kind: "hook", Origin: p.id, Event: h.Event, Matcher: h.Matcher, Command: h.Command,

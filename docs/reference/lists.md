@@ -561,6 +561,10 @@ Values, in order: `pack`, `once`.
 | `Bash` | runs a shell command |
 | `PowerShell` | runs a PowerShell command |
 | `Monitor` | runs a command in the background, under Bash's permission rules |
+| `Agent` | starts a subagent of a type (only where the lock declares roles: who may call whom) |
+| `Task` | Agent's older name (only where the lock declares roles) |
+| `SendMessage` | resumes a subagent, or writes to the main session or another one (only where the lock declares roles) |
+| `Workflow` | runs a script that starts agents of its own (only where the lock declares roles) |
 
 ## Claude Code's key order: the top-level keys of a settings file
 
