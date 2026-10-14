@@ -830,6 +830,8 @@ var packCases = map[string][]packCase{
 		swap("bonsai/pack.yaml", `version: "0.1.0"`, `version: 1.5     `),
 		swap("bonsai/pack.yaml", "id: docs-pack                         # the pack's id\n", "id: 0755 # refused\n"),
 		swap("bonsai/pack.yaml", "  - path: work/protocols/start.md", "  - path: \".claude/start.md\"   "),
+		swap("bonsai/pack.yaml", "  - path: work/protocols/start.md", "  - path: \"<other>/start.md\"   "),
+		swap("bonsai/pack.yaml", "  - path: work/protocols/start.md", "  - path: \"a/<protocols>/s.md\" "),
 		set("bonsai/files/start.md", ""),
 		swap("bonsai/labels.yaml", "namespace: docs-pack ", "namespace: other-ns "),
 		swap("bonsai/labels.yaml", "format: bonsai.labels/1               # the format\n", ""),
@@ -871,6 +873,10 @@ var packCases = map[string][]packCase{
 	},
 	"pack-block": {
 		set("bonsai/block.md", "<!-- the docs -->\n"+strings.Repeat("A line of the block.\n", 37)),
+		func(t *testing.T, files map[string]string) { // a <protocols>/ file's import counts, resolved under init's folder
+			swap("bonsai/pack.yaml", "  - path: work/protocols/start.md", "  - path: \"<protocols>/start.md\"")(t, files)
+			set("bonsai/block.md", "<!-- the docs -->\n"+strings.Repeat("A line of the block.\n", 37))(t, files)
+		},
 	},
 	"pack-documents": {
 		swap("bonsai/pack.yaml", "    file: null                        # a folder, not one file", "    file: work/notes.md               # a folder, not one file"),
@@ -958,6 +964,14 @@ func TestCheckPackTable(t *testing.T) {
 		for name, content := range files {
 			files[name] = strings.ReplaceAll(content, "\n", "\r\n")
 		}
+		if code, findings, text := check(t, files); code != 0 || len(findings) != 0 {
+			t.Fatalf("exit %d, %d findings:\n%s", code, len(findings), text)
+		}
+	})
+	// A files entry under <protocols>/ (step 5.5.0): read, and its block counted with the file resolved under init's folder.
+	t.Run("a <protocols>/ path", func(t *testing.T) {
+		files := testpack.DocumentedPack()
+		files["bonsai/pack.yaml"] = strings.Replace(files["bonsai/pack.yaml"], "  - path: work/protocols/start.md", "  - path: \"<protocols>/start.md\"", 1)
 		if code, findings, text := check(t, files); code != 0 || len(findings) != 0 {
 			t.Fatalf("exit %d, %d findings:\n%s", code, len(findings), text)
 		}
