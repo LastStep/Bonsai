@@ -25,7 +25,9 @@ package engine
 //   - checkmachine.go: this machine's records in the home and the PATH (machine-record, id-changed, same-id,
 //     bonsai-path);
 //   - checkgitbash.go: on Windows, Git Bash where Claude Code looks for it, installed for all users (git-bash,
-//     git-user).
+//     git-user);
+//   - checkmessages.go: the messages between agents in .bonsai/local/messages/, each file that does not read a warning
+//     (message-malformed: format.MessageCheckWords).
 //
 // Two more need Claude Code, so cmd/bonsai runs them after Check and status never does (status stays cheap and
 // offline, contract section 12): what Claude Code reports installed (ComparePlugins, plugins.go: plugin, plugin-missing,
@@ -161,7 +163,7 @@ func (r *CheckResult) missingLockNext() string {
 }
 
 // checkProject runs the checks that need no lock: the ladder's shape, the documents, the settings files, this machine's record and the
-// PATH, Git Bash on Windows, .bonsai/.gitignore and .bonsai/local/.
+// PATH, Git Bash on Windows, .bonsai/.gitignore, .bonsai/local/ and the messages in it.
 func (r *CheckResult) checkProject() {
 	r.checkLadder()
 	r.checkDocuments()
@@ -175,6 +177,7 @@ func (r *CheckResult) checkProject() {
 	r.checkGitBash()
 	r.checkGitignore()
 	r.checkLocal()
+	r.checkMessages()
 }
 
 // checkLockedFiles checks bonsai.yaml against the lock, each file the lock lists, the local settings files' plugins

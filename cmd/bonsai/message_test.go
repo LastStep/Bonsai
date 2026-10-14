@@ -444,3 +444,55 @@ func TestMessageThresholds(t *testing.T) {
 		t.Errorf("two briefs one way at the project's 1: %q", got)
 	}
 }
+
+// check warns of each message file that does not read (format.MessageCheckWords' message-malformed, walked from its
+// table as TestCheckTable walks check's words): a warning, never the exit code, about the file, an agent's, its next
+// step naming only what Bonsai has; a message that reads, none.
+func TestMessageCheckWarning(t *testing.T) {
+	c := newCLI(t)
+	t.Setenv(asks.SessionEnv, "")
+	c.link()
+	c.commit("link")
+	if code, _, errOut := c.run("", "message", "--from", "orchestrator", "--to", "builder@T-0901", "--kind", "brief", "--body", "Go."); code != 0 {
+		t.Fatal(errOut)
+	}
+	before, out, _ := c.run("", "check", "--json")
+	if strings.Contains(out, "message-malformed") {
+		t.Fatalf("a message that reads is warned of:\n%s", out)
+	}
+	cases := map[string]string{
+		"message-malformed": "builder-T-0901/M-2026-10-16-0a0b0c0d.md",
+	}
+	for _, w := range format.MessageCheckWords {
+		rel, ok := cases[w.Word]
+		if !ok {
+			t.Fatalf("format.MessageCheckWords has %s, and this test no case for it", w.Word)
+		}
+		c.write(".bonsai/local/messages/"+rel, "---\nformat: bonsai.message/1\nid: M-2026-10-16-0a0b0c0d\n---\n")
+		code, out, _ := c.run("", "check", "--json")
+		doc := fits(t, out, "check")
+		warnings, _ := doc.Get("warnings")
+		found := false
+		for _, f := range warnings.([]any) {
+			fo := f.(schema.Object)
+			if fo.String("code") != w.Word {
+				continue
+			}
+			found = true
+			n, _ := fo.Get("next")
+			checkNext(t, w.Word, n.(schema.Object).String("do"))
+			if fo.String("file") != ".bonsai/local/messages/"+rel || whoOf(fo) != "agent" || !strings.Contains(fo.String("message"), "the file has no thread, so it cannot be filed") {
+				t.Errorf("%s: %s", w.Word, schema.Show(fo))
+			}
+		}
+		if !found || code != before {
+			t.Errorf("%s: exit %d (%d before), found %v:\n%s", w.Word, code, before, found, out)
+		}
+		if findings, _ := doc.Get("findings"); hasCode(findings.([]any), w.Word) {
+			t.Errorf("%s is a finding", w.Word)
+		}
+		if _, out, _ := c.run("", "check"); !strings.Contains(out, "\nwarning: .bonsai/local/messages/"+rel+" does not read as a message between agents") {
+			t.Errorf("check's text does not name it:\n%s", out)
+		}
+	}
+}

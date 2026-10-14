@@ -455,9 +455,9 @@ func TestMalformedFilesSkippedAndListed(t *testing.T) {
 	f.put(dir+"verifier-T-0901/M-2026-10-16-0a00000b.md", strings.Replace(dupe, "to: builder@T-0901", "to: verifier@T-0901", 1))
 	st := f.read()
 	want := map[string]string{
-		"builder-T-0901/M-2026-10-16-0a000001.md":  "it does not read as bonsai.message/1 (line 12): budget.minutes ",
-		"orchestrator/M-2026-10-16-0a000002.md":    "it does not read as bonsai.message/1: status is a report with no status",
-		"orchestrator/M-2026-10-16-0a000003.md":    "it does not read as bonsai.message/1 (line 3): id ",
+		"builder-T-0901/M-2026-10-16-0a000001.md":  "it does not read as bonsai.message/1 (line 12): field budget.minutes: is string",
+		"orchestrator/M-2026-10-16-0a000002.md":    "it does not read as bonsai.message/1: the file is a report with no status",
+		"orchestrator/M-2026-10-16-0a000003.md":    "it does not read as bonsai.message/1 (line 3): field id: ",
 		"builder-T-0901/M-2026-10-16-0a000004.md":  "it does not read as bonsai.message/1",
 		"builder-T-0901/M-2026-10-16-0a000005.md":  "format too new",
 		"verifier/M-2026-10-16-0a000006.md":        "it is addressed to builder@T-0901, whose folder is builder-T-0901, but it lies in verifier",

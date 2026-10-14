@@ -161,8 +161,11 @@ func reasonOf(err error) string {
 		where += fmt.Sprintf(" (line %d)", re.Line)
 	}
 	what := re.Msg
-	if re.Field != "" {
+	switch {
+	case re.Field != "" && !strings.Contains(what, re.Field):
 		what = re.Field + " " + what
+	case re.Field != "" && (strings.HasPrefix(what, "has ") || strings.HasPrefix(what, "is ")):
+		what = "the file " + what // the field is named in the sentence: "the file has no thread, so ..."
 	}
 	return where + ": " + ascii(what)
 }

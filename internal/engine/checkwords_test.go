@@ -26,7 +26,7 @@ import (
 // Every word the code adds a finding or a warning with (each r.add call's first argument) is in format.CheckWords,
 // and every word there is added somewhere: the table and the code cannot drift apart. The same for check --pack's
 // words (format.PackCheckWords), found as every string literal in the code shaped like one (pack-<word>), and for step
-// 5.5.0's two tables (format.RoleCheckWords, format.PackRoleCheckWords).
+// 5.5.0's two tables (format.RoleCheckWords, format.PackRoleCheckWords) and 5.5.10's (format.MessageCheckWords).
 func TestCheckWordsInTheCode(t *testing.T) {
 	pkgs, err := parser.ParseDir(token.NewFileSet(), ".", func(fi os.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }, 0)
 	if err != nil {
@@ -101,6 +101,12 @@ func TestCheckWordsInTheCode(t *testing.T) {
 	for _, w := range format.PackRoleCheckWords {
 		if _, ok := packUsed[w.Word]; !ok {
 			t.Errorf("format.PackRoleCheckWords has %s, which no code names", w.Word)
+		}
+	}
+	// Step 5.5.10's table, walked the same way: each message word is added somewhere.
+	for _, w := range format.MessageCheckWords {
+		if _, ok := used[w.Word]; !ok {
+			t.Errorf("format.MessageCheckWords has %s, which no code adds", w.Word)
 		}
 	}
 	// The later steps' words are not built yet: none is in the table, and each names its step.
