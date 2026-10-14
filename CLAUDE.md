@@ -213,11 +213,12 @@ the one he had is kept in `~/bonsai-checks/prerelease/previous/`, and its instal
   address in any file or commit message; write `~/...` and `%USERPROFILE%`.
 - Never touch `~/ZenGarden/Bonsai` (an old clone with branches on no remote).
 - Tests use temp folders (`t.TempDir()`), never a real home (`~/.bonsai`, `~/.claude`) or a real project.
-- Bonsai's work changes nothing outside this repo, its test pack and the scratch folders (`~/bonsai-checks`,
-  `%USERPROFILE%\bonsai-checks`), and, from the link, Bonsai's own home `~/.bonsai/` (its salt, this machine's record of
-  the repo, the ladder's lock). Sessions and climbs in the real repo and its worktrees run with `BONSAI_HOME` unset: on
-  a scratch home the guard finds no record of the real main checkout and grants nothing. Scratch projects keep their
-  scratch homes.
+- Bonsai's work changes nothing outside this repo, its test pack, the workflow pack's repository
+  (`LastStep/bonsai-workflow`: its local copy in `~/bonsai-checks/bonsai-workflow`, then GitHub once its privacy check
+  P has passed) and the scratch folders (`~/bonsai-checks`, `%USERPROFILE%\bonsai-checks`), and, from the link,
+  Bonsai's own home `~/.bonsai/` (its salt, this machine's record of the repo, the ladder's lock). Sessions and climbs
+  in the real repo and its worktrees run with `BONSAI_HOME` unset: on a scratch home the guard finds no record of the
+  real main checkout and grants nothing. Scratch projects keep their scratch homes.
 - **Stop every process you start** (builds, tests, test sessions, watchers) and check with `ps -eo pid,etime,cmd` before
   you finish. Never kill what you did not start: another agent's run looks the same.
 

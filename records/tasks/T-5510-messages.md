@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5510
 title: "Messages between agents: the reader, bonsai message and bonsai messages (5.5.10)"
-status: todo
+status: blocked
 lane:
 done_when:
   - "internal/message reads bonsai.message/1; bonsai message writes a brief or a report into its recipient's folder, its pointers fingerprinted; bonsai messages lists them"
@@ -11,9 +11,9 @@ done_when:
   - "Its last commits (the limits through 5.5.0's function, --to against the lock's roles, the flags' thresholds, check's malformed-message warning, messages in status, the messages kind in the cleaning) made one at a time after T-5500 has landed"
   - "Check 10 on both sides; the installed bonsai's ladder green at the branch's HEAD; landed by the landing rule; CI green; VM passes"
 depends_on: [T-5509]
-blocked_by:
+blocked_by: "Waits for T-5500 (5.5.0) to land: its last commits read the roles, limits and checks 5.5.0 builds."
 created: 2026-10-14
-started:
+started: 2026-10-15
 finished:
 labels:
   bonsai.branch: "t5510"

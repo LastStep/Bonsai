@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5501
 title: The pack template, its checks and Bonsai's CI job for packs (5.5.1)
-status: todo
+status: blocked
 lane:
 done_when:
   - "packs/template/ with one role declared with its budget, one skill, one documented template, pack.yaml, labels.yaml, README and .gitattributes; its checks in ci/check.sh; its pack.yml"
@@ -11,9 +11,9 @@ done_when:
   - "Its last commit (packs/template/.gitattributes, and the packs job and one step of the windows job in .github/workflows/ci.yml) made while T-5501 is the only task running, after T-5500 has landed; Bonsai's packs and windows jobs green on CI; validate's need of a login measured"
   - "Check 10 on both sides; the installed bonsai's ladder green at the branch's HEAD; landed by the landing rule; V1 passes"
 depends_on: [T-5509]
-blocked_by:
+blocked_by: "Waits for T-5500 (5.5.0) to land: its last commits read the roles, limits and checks 5.5.0 builds."
 created: 2026-10-14
-started:
+started: 2026-10-15
 finished:
 labels:
   bonsai.branch: "t5501"

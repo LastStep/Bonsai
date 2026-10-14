@@ -1,12 +1,11 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 15 Oct 2026 at 01:45. **Step 5.5 is building; Rohan's "go" at 01:44 (15 Oct).**
-He approved the re-planned section at 17:52 (`design/plan-5.md` "### Step 5.5", 63.5-106 h, re-ask 138) and said at
-about 19:00: **"take a pause once 5.5.9 and 5.5.8 are done, wait for my go"**. Both have landed: **5.5.8** (`T-5508`,
-the three CI flakes, the rungs' environment, O1) at `8a3cfa8`, CI green (`main` green again); **5.5.9** (`T-5509`,
-formats set 8, the contract's section 22 and the spec's notes, test pack commit H) at `f239f8f`, CI green. **Now:
-5.5.0, 5.5.10 and 5.5.1 side by side** ("Now: step 5.5" below). Step 5.4 is done (floors 4188 and 4194). Every change
-lands by `CLAUDE.md`'s rules "from the link".
+Rewritten, never appended. Last rewritten 15 Oct 2026 at 02:56. **Step 5.5 is building, overnight on Rohan's word**
+("im leaving the session running for the night. work autonomosly", 15 Oct about 01:50). Landed: **5.5.8** (`8a3cfa8`),
+**5.5.9** (`f239f8f`) and **5.5.0** (`e1437d0`, the engine's part for packs; P0 passed STATE's template), and `T-5591`
+(`CLAUDE.md`'s Safety line names `LastStep/bonsai-workflow`). **Now:** 5.5.10 and 5.5.1 finish (their phase B on
+5.5.0), and 5.5.11's builder starts (WSL payloads measured at 01:47-02:01; Windows waits for Rohan). The morning batch of
+questions is in "Waiting on Rohan". Every change lands by `CLAUDE.md`'s rules "from the link".
 
 ## In short
 
@@ -300,7 +299,11 @@ the main checkout's `.bonsai/local/` is the guard's: an agent's `cp` out of it i
 
 ## Waiting on Rohan
 
-- **Nothing now**: his go came 15 Oct, 01:44. Later 5.5 steps as below.
+- **In the morning (15 Oct), one batch:** (1) the Windows half of 5.5.11's payload measurement: the auto-mode
+  permission classifier refuses the size check of `%USERPROFILE%\.claude\.credentials.json` that `rules.md`'s login
+  warm-up needs, so no Windows Claude Code session runs; allow that one check, run it himself, or let the Windows half
+  rest on WSL's facts and CI. (2) Told, nothing to answer: the test pack's relative deny rule meets 5.5.0's new
+  `pack-deny-relative`, so `check --pack` finds one finding at H, kept rather than a commit I.
 - **Whenever he likes:** whether to allow deleting git's own lock files by exact name (`rm -f .git/index.lock`, a
   common agent fix, refused because the project's `.git` is guarded for deletes; told 11 Oct 16:34, left as planned);
   whether the redactor's shared `=>` and `:=` limits go in a named part before the release; turn GitHub Pages off (the

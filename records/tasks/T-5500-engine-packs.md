@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5500
 title: "The engine's part for packs: protocols paths, roles and limits in force, status's roles (5.5.0)"
-status: todo
+status: verify
 lane:
 done_when:
   - "A pack file's path may start with <protocols>/, written into the project's documents.protocols folder and imported by the block; Go tests for a non-default and a moved protocols folder and each refusal"
@@ -14,7 +14,7 @@ done_when:
 depends_on: [T-5509]
 blocked_by:
 created: 2026-10-14
-started:
+started: 2026-10-15
 finished:
 labels:
   bonsai.branch: "t5500"
