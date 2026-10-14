@@ -17,7 +17,6 @@ import (
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/message"
 	"github.com/LastStep/Bonsai/internal/redact"
-	"github.com/LastStep/Bonsai/internal/vergit"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -86,9 +85,20 @@ the caller names the brief's id in its Agent call.
 	Run:     runMessage,
 }
 
-// messagesRefused is the messages document of a refusal: the workspace null, no thread, the error filled.
+// messagesRefused is the messages document of a refusal before bonsai.yaml was read: the workspace null, no thread,
+// the error filled. Once it was read, messageFail names the workspace.
 func messagesRefused(c *call, e *engine.Error) encoder {
 	return &format.Messages{Threads: []format.MessageThread{}, Malformed: []format.MessageMalformed{}, Error: e.Object()}
+}
+
+// messageFail is c.fail once the site's bonsai.yaml was read: with --json the refusal's document names the workspace.
+func (c *call) messageFail(site *asksSite, e *engine.Error) int {
+	if !c.json {
+		return c.fail(e)
+	}
+	noted(c.word, e)
+	return c.printDoc(&format.Messages{Workspace: site.ref, Threads: []format.MessageThread{}, Malformed: []format.MessageMalformed{},
+		Error: e.Object()}, e.Exit)
 }
 
 func runMessage(c *call) int {
@@ -116,30 +126,30 @@ func runMessage(c *call) int {
 	p := messagePlace(site)
 	rules, e := messageRules(site, !c.has("--show"))
 	if e != nil {
-		return c.fail(e)
+		return c.messageFail(site, e)
 	}
 	if c.has("--show") {
 		st, e := readMessages(p)
 		if e != nil {
-			return c.fail(e)
+			return c.messageFail(site, e)
 		}
 		shown, me := message.Show(p, st, c.value("--show"), rules, messageNow())
 		if me != nil {
-			return c.fail(messageError(me))
+			return c.messageFail(site, messageError(me))
 		}
 		if c.json {
 			return c.messageOut(site, shown.Entry.Msg, shown.Entry.Path, shown.Thread)
 		}
 		text, err := shown.Text()
 		if err != nil {
-			return c.fail(&engine.Error{Code: "unexpected", Exit: exitRuntime, What: engine.ASCII(err.Error()),
+			return c.messageFail(site, &engine.Error{Code: "unexpected", Exit: exitRuntime, What: engine.ASCII(err.Error()),
 				Next: "run the command again; if it fails again, report it to Bonsai's maintainers"})
 		}
 		return c.print(text)
 	}
 	body, e := c.messageBody()
 	if e != nil {
-		return c.fail(e)
+		return c.messageFail(site, e)
 	}
 	w := message.Writing{From: c.value("--from"), To: c.value("--to"), Kind: c.value("--kind"), Task: c.value("--task"),
 		Thread: c.value("--thread"), ReplyTo: c.value("--reply-to"), Status: c.value("--status"), Pointers: c.all("--pointer"),
@@ -150,7 +160,7 @@ func runMessage(c *call) int {
 	}
 	written, me := message.Write(p, w, rules)
 	if me != nil {
-		return c.fail(messageError(me))
+		return c.messageFail(site, messageError(me))
 	}
 	if c.json {
 		return c.messageOut(site, written.Message, written.Path, written.Thread)
@@ -196,29 +206,45 @@ func messagePlace(site *asksSite) message.Place {
 }
 
 // messageRules are what the site's project holds its messages to (internal/message's Rules), from the lock and
-// bonsai.yaml as committed at the main checkout's HEAD (committedConfig, committedLock). The flags' thresholds are
-// bonsai.yaml's messages, each null for Bonsai's default (workspace.MessageThreshold). With roles, the roles the lock
-// declares, in its order (where it declares any, --from and --to must name one: role-not-declared), and each limit's
-// max in force for a role, both from workspace.RolesInForce, the one function every reader of a role's limits uses; a
-// role two linked packs both declare is held to the lower of their maxes (an address names a role, not its pack), and
-// a lock whose declares do not read is refused (bad-lock). Without roles (--show, bonsai messages), the lock is not
-// read.
+// bonsai.yaml as committed at the main checkout's HEAD (message.CommittedConfig, message.CommittedLock: the one reading
+// bonsai message and status share), each the file as it stands in this checkout only where HEAD holds none; a
+// committed copy that does not read is refused, naming it, never replaced by this checkout's. The flags' thresholds
+// are bonsai.yaml's messages, each null for Bonsai's default (workspace.MessageThreshold). With roles, the roles the
+// lock declares, in its order (where it declares any, --from and --to must name one: role-not-declared), and each
+// limit's max in force for a role, both from message.RolesInForce (workspace.RolesInForce, the one function every
+// reader of a role's limits uses), whose refusal names bonsai.yaml with its line (bad-config) or the lock (bad-lock),
+// whichever does not read; a role two linked packs both declare is held to the lower of their maxes (an address names
+// a role, not its pack). Without roles (--show, bonsai messages), the lock is not read.
 func messageRules(site *asksSite, roles bool) (message.Rules, *engine.Error) {
 	r := message.DefaultRules()
-	cfg := committedConfig(site)
-	r.UnansweredMinutes, _ = workspace.MessageThreshold(cfg, "unanswered_minutes")
-	r.CirclingBriefs, _ = workspace.MessageThreshold(cfg, "circling_briefs")
+	cfg, held, me := message.CommittedConfig(site.co.Main)
+	if me != nil {
+		return r, messageError(me)
+	}
+	if !held {
+		cfg = site.cfg
+	}
+	r.UnansweredMinutes, _ = workspace.MessageThreshold(cfg.Full, "unanswered_minutes")
+	r.CirclingBriefs, _ = workspace.MessageThreshold(cfg.Full, "circling_briefs")
 	if !roles {
 		return r, nil
 	}
-	lock, e := committedLock(site)
-	if e != nil {
-		return r, e
+	lock, held, me := message.CommittedLock(site.co.Main)
+	if me != nil {
+		return r, messageError(me)
 	}
-	in, err := workspace.RolesInForce(lock, cfg)
-	if err != nil {
-		return r, &engine.Error{Code: "bad-lock", Exit: engine.ExitState, What: engine.ASCII(err.Error()),
-			Next: "restore the committed lock (git checkout -- .bonsai/lock.json), or run bonsai update"}
+	if !held {
+		l, err := workspace.LoadLock(site.co.Root)
+		switch {
+		case errors.Is(err, fs.ErrNotExist): // no lock is no role
+		case err != nil:
+			return r, lockError(err)
+		}
+		lock = l
+	}
+	in, me := message.RolesInForce(lock, cfg)
+	if me != nil {
+		return r, messageError(me)
 	}
 	for _, ri := range in {
 		if !slices.Contains(r.Roles, ri.Role.Name) {
@@ -239,35 +265,6 @@ func messageRules(site *asksSite, roles bool) (message.Rules, *engine.Error) {
 		return max
 	}
 	return r, nil
-}
-
-// committedConfig is bonsai.yaml as committed at the main checkout's HEAD, as the guard reads it (and status's roles),
-// so a change counts once committed; where HEAD holds none, or git cannot give it, the file as this checkout read it.
-func committedConfig(site *asksSite) *format.Workspace {
-	if raw, err := vergit.Committed(site.co.Main, workspace.ConfigFile, 0); err == nil {
-		if c, err := workspace.ReadConfigFull(raw); err == nil {
-			return c.Full
-		}
-	}
-	return site.cfg.Full
-}
-
-// committedLock is the lock as committed at the main checkout's HEAD, read as committedConfig reads bonsai.yaml; where
-// HEAD holds none, the lock as it stands in this checkout. No lock is no role.
-func committedLock(site *asksSite) (*workspace.Lock, *engine.Error) {
-	if raw, err := vergit.Committed(site.co.Main, workspace.LockFile, 0); err == nil {
-		if l, err := workspace.ReadLock(raw); err == nil {
-			return l, nil
-		}
-	}
-	lock, err := workspace.LoadLock(site.co.Root)
-	switch {
-	case errors.Is(err, fs.ErrNotExist):
-		return nil, nil
-	case err != nil:
-		return nil, lockError(err)
-	}
-	return lock, nil
 }
 
 // cwd is the folder the command runs in, where a relative --pointer is read from.
@@ -299,7 +296,7 @@ func messageError(e *message.Error) *engine.Error {
 func (c *call) messageOut(site *asksSite, msg *format.Message, path string, t message.Thread) int {
 	obj, err := msg.Object()
 	if err != nil {
-		return c.fail(&engine.Error{Code: "unexpected", Exit: exitRuntime, What: engine.ASCII(err.Error()),
+		return c.messageFail(site, &engine.Error{Code: "unexpected", Exit: exitRuntime, What: engine.ASCII(err.Error()),
 			Next: "run the command again; if it fails again, report it to Bonsai's maintainers"})
 	}
 	doc := &format.Messages{Workspace: site.ref, Threads: []format.MessageThread{}, Malformed: []format.MessageMalformed{},

@@ -10,6 +10,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -494,5 +495,154 @@ func TestMessageCheckWarning(t *testing.T) {
 		if _, out, _ := c.run("", "check"); !strings.Contains(out, "\nwarning: .bonsai/local/messages/"+rel+" does not read as a message between agents") {
 			t.Errorf("check's text does not name it:\n%s", out)
 		}
+	}
+}
+
+// lineOf is the 1-based line of text in s that starts with prefix, 0 for none.
+func lineOf(s, prefix string) int {
+	for i, l := range strings.Split(s, "\n") {
+		if strings.HasPrefix(l, prefix) {
+			return i + 1
+		}
+	}
+	return 0
+}
+
+// problemsOf runs status --json and gives its problems and its roles and messages fields, the document held to
+// bonsai.status/1.
+func (c *cli) problemsOf() ([]string, any, any) {
+	c.t.Helper()
+	code, out, errOut := c.run("", "status", "--json")
+	if code != 0 {
+		c.t.Fatalf("status: exit %d\n%s%s", code, out, errOut)
+	}
+	doc := fits(c.t, out, "status")
+	p, _ := doc.Get("problems")
+	var problems []string
+	for _, x := range p.([]any) {
+		problems = append(problems, x.(string))
+	}
+	roles, _ := doc.Get("roles")
+	messages, _ := doc.Get("messages")
+	return problems, roles, messages
+}
+
+// An unknown limit name under a packs entry's roles (VM's D2: minutez). A role's limits are a closed list, so it is no
+// newer field to skip but a bonsai.yaml that does not read for the roles: check names it as config at bonsai.yaml's
+// line, an agent's step, and still raises every other role finding; bonsai message refuses bad-config naming
+// bonsai.yaml and its line (never the lock), with an agent's step that fixes it, its document naming the workspace;
+// status names bonsai.yaml with the line and the step, its roles []. Fixed and committed, each reads again.
+func TestMessageUnknownLimitName(t *testing.T) {
+	c := newCLI(t)
+	t.Setenv(asks.SessionEnv, "")
+	src, shas := rolesPack(t, c.tmp)
+	c.linkTo(src, shas[0])
+	c.commit("link")
+	good := c.read("bonsai.yaml")
+	typo := strings.Replace(good, "    roles: null\n", "    roles:\n      builder:\n        minutes:\n          default: 240\n"+
+		"        minutez:\n          max: 5\n", 1)
+	c.write("bonsai.yaml", typo)
+	line := strconv.Itoa(lineOf(typo, "        minutez:"))
+	sentence := "bonsai.yaml line " + line + " sets minutez for the role builder under the pack workflow " +
+		"(packs[0].roles.builder.minutez), which is not one of a role's limits (minutes, actions, red_runs)"
+	step := "in bonsai.yaml line " + line + ", write minutes, actions or red_runs in place of minutez, or take it out"
+
+	code, out, _ := c.run("", "check", "--json")
+	findings, _ := fits(t, out, "check").Get("findings")
+	var codes []string
+	for _, f := range findings.([]any) {
+		fo := f.(schema.Object)
+		codes = append(codes, fo.String("code"))
+		n, _ := fo.Get("next")
+		if fo.String("code") == "config" && (fo.String("message") != sentence || fo.String("file") != "bonsai.yaml" || whoOf(fo) != "agent" ||
+			n.(schema.Object).String("do") != step+"; then run: bonsai check") {
+			t.Errorf("check's config finding: %s", schema.Show(fo))
+		}
+	}
+	if code != 1 || !hasCode(findings.([]any), "config") || !hasCode(findings.([]any), "role-default-over-max") {
+		t.Errorf("check: exit %d, findings %v: the unknown name and the builder's default over its max", code, codes)
+	}
+
+	c.commit("a limit's name mistyped")
+	brief := []string{"message", "--from", "orchestrator", "--to", "builder@T-0901", "--kind", "brief", "--body", "Go."}
+	doc := c.messagesDoc(2, brief...)
+	e := errorIn(doc, "messages")
+	n, _ := e.Get("next")
+	if e.String("code") != "bad-config" || e.String("message") != sentence || whoOf(e) != "agent" ||
+		!strings.HasPrefix(n.(schema.Object).String("do"), step+", and commit it") || strings.Contains(schema.Show(e), "lock") {
+		t.Errorf("bonsai message: %s", schema.Show(e))
+	}
+	if ws, _ := doc.Get("workspace"); ws == nil {
+		t.Errorf("a refusal once bonsai.yaml was read names no workspace: %s", schema.Show(doc))
+	}
+	wantRefusal(t, messageWord, brief, 2, "bad-config")
+	problems, roles, _ := c.problemsOf()
+	named := false
+	for _, p := range problems {
+		named = named || strings.HasPrefix(p, sentence+"; next: "+step+", and commit it")
+		if strings.Contains(p, "lock") {
+			t.Errorf("a problem blames the lock: %s", p)
+		}
+	}
+	if !named || schema.Show(roles) != "[]" {
+		t.Errorf("status: roles %s, problems %q", schema.Show(roles), problems)
+	}
+
+	c.write("bonsai.yaml", strings.Replace(typo, "        minutez:\n          max: 5\n", "", 1))
+	c.commit("the limit's name fixed")
+	c.messagesDoc(0, brief...)
+	if _, roles, _ := c.problemsOf(); len(roles.([]any)) != 3 {
+		t.Errorf("status once fixed: roles %s", schema.Show(roles))
+	}
+}
+
+// bonsai.yaml or the lock committed in a form that does not read (VM's D5) is never quietly replaced by the working
+// copy, even one that reads: bonsai message (a brief, --show) and bonsai messages refuse naming the committed file
+// (bad-config, bad-lock), their documents naming the workspace; status names it as a problem, roles [] and messages
+// null for bonsai.yaml, roles [] for the lock. Where HEAD holds no such file (nothing committed yet), the working copy
+// is read.
+func TestMessageCommittedCopyUnread(t *testing.T) {
+	c := newCLI(t)
+	t.Setenv(asks.SessionEnv, "")
+	src, shas := rolesPack(t, c.tmp)
+	c.linkTo(src, shas[0])
+	brief := []string{"message", "--from", "orchestrator", "--to", "builder@T-0901", "--kind", "brief", "--body", "Go."}
+	shown := c.messagesDoc(0, brief...) // HEAD names no commit yet: the files as they stand
+	c.commit("link")
+	good := c.read("bonsai.yaml")
+	c.write("bonsai.yaml", strings.Replace(good, "messages: null", "messages:\n  unanswered_minutes: soon", 1))
+	c.commit("a bonsai.yaml that does not read")
+	c.write("bonsai.yaml", good) // the working copy reads; the committed one does not
+	m, _ := shown.Get("message")
+	for _, args := range [][]string{brief, {"message", "--show", m.(schema.Object).String("id")}, {"messages"}} {
+		doc := c.messagesDoc(2, args...)
+		e := errorIn(doc, "messages")
+		if e.String("code") != "bad-config" || !strings.HasPrefix(e.String("message"), "bonsai.yaml as committed at the main checkout's HEAD does not read: bonsai.yaml") {
+			t.Errorf("%v: %s", args, schema.Show(e))
+		}
+		if ws, _ := doc.Get("workspace"); ws == nil {
+			t.Errorf("%v: no workspace", args)
+		}
+	}
+	problems, roles, messages := c.problemsOf()
+	if !strings.Contains(strings.Join(problems, "\n"), "bonsai.yaml as committed at the main checkout's HEAD does not read") ||
+		schema.Show(roles) != "[]" || messages != nil {
+		t.Errorf("status: roles %s, messages %s, problems %q", schema.Show(roles), schema.Show(messages), problems)
+	}
+	c.commit("bonsai.yaml reads again")
+	c.messagesDoc(0, brief...)
+
+	lock := c.read(".bonsai/lock.json")
+	c.write(".bonsai/lock.json", "{\n")
+	c.commit("a lock that does not read")
+	c.write(".bonsai/lock.json", lock)
+	e := errorIn(c.messagesDoc(4, brief...), "messages")
+	if e.String("code") != "bad-lock" || !strings.HasPrefix(e.String("message"), "the lock as committed at the main checkout's HEAD does not read") {
+		t.Errorf("a committed lock that does not read: %s", schema.Show(e))
+	}
+	c.messagesDoc(0, "messages") // the lock is read only for the roles
+	problems, roles, _ = c.problemsOf()
+	if !strings.Contains(strings.Join(problems, "\n"), "the lock as committed at the main checkout's HEAD does not read") || schema.Show(roles) != "[]" {
+		t.Errorf("status with the committed lock unread: roles %s, problems %q", schema.Show(roles), problems)
 	}
 }

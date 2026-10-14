@@ -86,11 +86,11 @@ func runMessages(c *call) int {
 	p := messagePlace(site)
 	st, e := readMessages(p)
 	if e != nil {
-		return c.fail(e)
+		return c.messageFail(site, e)
 	}
 	rules, e := messageRules(site, false)
 	if e != nil {
-		return c.fail(e)
+		return c.messageFail(site, e)
 	}
 	var kept []message.Thread
 	now := messageNow()

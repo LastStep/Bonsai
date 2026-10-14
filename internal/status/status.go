@@ -26,7 +26,9 @@
 //     where each came from (rolesOf: workspace.RolesInForce, the one function every reader of a role's limits uses),
 //     from the lock and bonsai.yaml as committed at the main checkout's HEAD, as the guard reads them;
 //   - messages (set 8; step 5.5.10): the threads of messages between agents, counted open and flagged (messagesOf:
-//     internal/message's reader and its folding, the flags' thresholds from bonsai.yaml as committed);
+//     internal/message's reader and its folding, the flags' thresholds from bonsai.yaml as committed). A committed
+//     bonsai.yaml that does not read is a problem naming it, roles [] and messages null: neither is read from this
+//     checkout's copy in its place (message.CommittedConfig, the reading bonsai message shares);
 //   - error: null unless status refused (step 5.1.4b).
 //
 // The default is cheap and offline (contract §12: for the bridge to run often): it runs git and reads files, and
@@ -53,7 +55,6 @@ import (
 	"github.com/LastStep/Bonsai/internal/message"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/stopgate"
-	"github.com/LastStep/Bonsai/internal/vergit"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -183,14 +184,18 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		c, installed = fullChecks(checked, cfg, lock, o)
 		checks = c
 	}
-	committed := committedConfig(co, cfg) // one git call, for the roles and the messages' thresholds
-	roles, rolesProblem := rolesOf(co, committed, lock)
-	if rolesProblem != "" {
-		problems = append(problems, rolesProblem)
-	}
-	messages, messagesProblem := messagesOf(co, cfg, committed)
-	if messagesProblem != "" {
-		problems = append(problems, messagesProblem)
+	roles, messages := any([]any{}), any(nil)
+	committed, problem := committedConfig(co, cfg) // one git call, for the roles and the messages' thresholds
+	if problem != "" {
+		problems = append(problems, problem) // neither the roles nor the flags can be read: [] and null
+	} else {
+		var rolesProblem, messagesProblem string
+		if roles, rolesProblem = rolesOf(co, committed, lock); rolesProblem != "" {
+			problems = append(problems, rolesProblem)
+		}
+		if messages, messagesProblem = messagesOf(co, cfg, committed.Full); messagesProblem != "" {
+			problems = append(problems, messagesProblem)
+		}
 	}
 	return map[string]any{
 		"needs":          needsOf(lock, installed),
@@ -248,21 +253,24 @@ func lastLadder(co *workspace.Checkout, task string) any {
 
 // rolesOf is status --json's roles (bonsai.status/1, set 8; plan-5 5.5.0 note 10): each role the lock's packs declare,
 // in the lock's order, its pack, name, kind and writes, and each of its limits' default and max in force with where
-// each came from (pack or bonsai.yaml), from workspace.RolesInForce, the one function every reader of a role's limits
-// uses. It reads the lock and bonsai.yaml (w, committedConfig's) as committed at the main checkout's HEAD, as the guard
-// reads them, so an uncommitted change shows only once committed; a file HEAD does not hold (a project not yet
-// committed, a lock not yet committed), or that git cannot give, is read as it stands in this checkout. [] when no
-// linked pack declares a role.
-// A lock whose declares do not read gives [] and a problem, its sentence naming the next step.
-func rolesOf(co *workspace.Checkout, w *format.Workspace, lock *workspace.Lock) (any, string) {
-	if raw, err := vergit.Committed(co.Main, workspace.LockFile, 0); err == nil {
-		if l, err := workspace.ReadLock(raw); err == nil {
-			lock = l
-		}
+// each came from (pack or bonsai.yaml), from message.RolesInForce (workspace.RolesInForce, the one function every reader
+// of a role's limits uses). It reads the lock and bonsai.yaml (w, committedConfig's) as committed at the main
+// checkout's HEAD, as the guard reads them (message.CommittedLock, the reading bonsai message shares), so an
+// uncommitted change shows only once committed; a file HEAD does not hold (a project not yet committed, a lock not yet
+// committed) is read as it stands in this checkout (lock, check's). [] when no linked pack declares a role. A
+// committed lock that does not read, or roles whose lock or bonsai.yaml does not read for them, give [] and a problem
+// naming that file (bonsai.yaml with its line) and the next step; never the lock for bonsai.yaml's.
+func rolesOf(co *workspace.Checkout, w *workspace.Config, lock *workspace.Lock) (any, string) {
+	l, held, e := message.CommittedLock(co.Main)
+	switch {
+	case e != nil:
+		return []any{}, problemOf(e)
+	case held:
+		lock = l
 	}
-	in, err := workspace.RolesInForce(lock, w)
-	if err != nil {
-		return []any{}, ascii(err.Error()) + "; next: restore the committed lock, run: git checkout -- " + workspace.LockFile
+	in, e := message.RolesInForce(lock, w)
+	if e != nil {
+		return []any{}, problemOf(e)
 	}
 	out := []any{}
 	limit := func(l workspace.LimitInForce) schema.Object {
@@ -283,15 +291,24 @@ func rolesOf(co *workspace.Checkout, w *format.Workspace, lock *workspace.Lock) 
 	return out, ""
 }
 
-// committedConfig is bonsai.yaml as committed at the main checkout's HEAD, as the guard reads it; where HEAD holds
-// none, or git cannot give it, the file as this checkout read it.
-func committedConfig(co *workspace.Checkout, cfg *workspace.Config) *format.Workspace {
-	if raw, err := vergit.Committed(co.Main, workspace.ConfigFile, 0); err == nil {
-		if c, err := workspace.ReadConfigFull(raw); err == nil {
-			return c.Full
-		}
+// committedConfig is bonsai.yaml as committed at the main checkout's HEAD, as the guard reads it
+// (message.CommittedConfig, the reading bonsai message shares); where HEAD holds none, the file as this checkout read
+// it (cfg). A committed copy that does not read, or a HEAD git cannot read, gives nil and a problem naming it, never
+// this checkout's copy in its place.
+func committedConfig(co *workspace.Checkout, cfg *workspace.Config) (*workspace.Config, string) {
+	c, held, e := message.CommittedConfig(co.Main)
+	switch {
+	case e != nil:
+		return nil, problemOf(e)
+	case !held:
+		return cfg, ""
 	}
-	return cfg.Full
+	return c, ""
+}
+
+// problemOf is a refusal of internal/message's as a problem's sentence: what is wrong, then its next step.
+func problemOf(e *message.Error) string {
+	return strings.TrimSuffix(e.What, ".") + "; next: " + e.Next
 }
 
 // messagesNow is the clock the flags' ages are read from; a test sets it.
