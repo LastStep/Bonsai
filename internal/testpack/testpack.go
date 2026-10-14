@@ -1,5 +1,6 @@
-// Package testpack builds, for Go tests, a local pack repository with seven commits, A to G, shaped like Bonsai's
-// public test pack (github.com/LastStep/bonsai-test-pack, plan part 4a; E and F from step 5.1.1, G from 5.1.9), so
+// Package testpack builds, for Go tests, a local pack repository with eight commits, A to H, shaped like Bonsai's
+// public test pack (github.com/LastStep/bonsai-test-pack, plan part 4a; E and F from step 5.1.1, G from 5.1.9, H from
+// 5.5.9), so
 // the engine's tests fetch a pack with no network; fixture packs (Fixture) for the cases the test pack does not hold;
 // and a documented pack folder (DocumentedPack) that every rule of bonsai check --pack reaches. Only tests import it.
 //
@@ -13,6 +14,8 @@
 //	F  only a hook of the plugin itself: hooks/hooks.json, a SessionStart hook that runs an echo
 //	G  only documentation: pack.yaml gains a comment on every key that had none, and documents: [] and protected: []
 //	   (every field written, as bonsai check --pack holds a pack's maker to); nothing the engine writes changes
+//	H  only documentation: pack.yaml gains roles: [] (formats set 8: the roles it declares, none; the marker stays a
+//	   plain role of the plugin); nothing the engine writes changes
 //
 // Every repository and project it makes lives in the test's temporary folder, with git isolated from the
 // machine's own configuration (no global or system config, no repository above the folder).
@@ -31,10 +34,10 @@ import (
 // ID is the pack's id.
 const ID = "demo-pack"
 
-// Pack is a built pack repository: its source (a bare repository's folder) and its seven commits.
+// Pack is a built pack repository: its source (a bare repository's folder) and its eight commits.
 type Pack struct {
-	Source              string
-	A, B, C, D, E, F, G string
+	Source                 string
+	A, B, C, D, E, F, G, H string
 }
 
 // PluginHooks is commit F's hooks/hooks.json: a hook of the plugin itself, which Claude Code runs on its own.
@@ -139,9 +142,15 @@ protected: []                        # the paths it declares protected: none
 `
 }
 
+// packYAMLH is commit H's pack.yaml: G's, and roles: [] (formats set 8: a writer writes every field; missing, it reads
+// the same).
+func packYAMLH() string {
+	return PackYAML("E", true, true, true) + "roles: []                            # the roles it declares: none\n"
+}
+
 const block = "<!--\nbonsai/block.md: the demo pack's block. This comment stays in the pack.\n-->\nThe demo pack is linked: its role is demo-pack:marker.\n"
 
-// Build makes the pack repository with commits A to G and returns it.
+// Build makes the pack repository with commits A to H and returns it.
 func Build(t *testing.T, tmp string) *Pack {
 	t.Helper()
 	work := filepath.Join(tmp, "pack-work")
@@ -187,6 +196,8 @@ func Build(t *testing.T, tmp string) *Pack {
 	p.F = commit("F")
 	write("bonsai/pack.yaml", PackYAML("E", true, true, true))
 	p.G = commit("G")
+	write("bonsai/pack.yaml", packYAMLH())
+	p.H = commit("H")
 	p.Source = filepath.Join(tmp, "demo-pack.git")
 	Git(t, tmp, "clone", "-q", "--bare", "--", work, p.Source)
 	return p
@@ -489,6 +500,7 @@ documents:                            # the kinds it declares
       done: finished                  # finished: set at done
     task_field: null                  # it belongs to no task
 protected: ["work/notes/**"]          # paths an agent changes only with a grant
+roles: []                             # the roles it declares: none
 `,
 		"bonsai/labels.yaml": `# bonsai/labels.yaml: the documented fixture pack's labels (bonsai.labels/1).
 format: bonsai.labels/1               # the format

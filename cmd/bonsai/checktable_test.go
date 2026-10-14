@@ -874,7 +874,7 @@ func TestCheckPackTable(t *testing.T) {
 }
 
 // The test pack, as testpack mirrors it: at F its pack.yaml lacks documents, protected and two comments, which G
-// writes (no behaviour change); G passes.
+// writes (no behaviour change); at G it lacks roles (formats set 8), which H writes; H passes.
 func TestCheckPackTestPack(t *testing.T) {
 	tmp := t.TempDir()
 	testpack.Isolate(t, tmp)
@@ -885,8 +885,9 @@ func TestCheckPackTestPack(t *testing.T) {
 		name, commit string
 		want         []string
 	}{
-		{"F", p.F, []string{"pack-schema", "pack-schema", "pack-comment", "pack-comment"}},
-		{"G", p.G, nil},
+		{"F", p.F, []string{"pack-schema", "pack-schema", "pack-schema", "pack-comment", "pack-comment"}},
+		{"G", p.G, []string{"pack-schema"}}, // roles not written (formats set 8)
+		{"H", p.H, nil},
 	} {
 		testpack.Git(t, work, "checkout", "-q", sc.commit)
 		code, out, _ := runArgs("check", "--pack", work, "--json")
