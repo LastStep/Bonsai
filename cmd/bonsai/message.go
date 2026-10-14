@@ -196,17 +196,22 @@ func messagePlace(site *asksSite) message.Place {
 }
 
 // messageRules are what the site's project holds its messages to (internal/message's Rules), from the lock and
-// bonsai.yaml as committed at the main checkout's HEAD (messageCopies). With roles, the roles the lock declares, in its
-// order (where it declares any, --from and --to must name one: role-not-declared), and each limit's max in force for
-// a role, both from workspace.RolesInForce, the one function every reader of a role's limits uses; a role two linked
-// packs both declare is held to the lower of their maxes (an address names a role, not its pack), and a lock whose
-// declares do not read is refused (bad-lock). Without roles (--show, bonsai messages), the lock is not read.
+// bonsai.yaml as committed at the main checkout's HEAD (committedConfig, committedLock). The flags' thresholds are
+// bonsai.yaml's messages, each null for Bonsai's default (workspace.MessageThreshold). With roles, the roles the lock
+// declares, in its order (where it declares any, --from and --to must name one: role-not-declared), and each limit's
+// max in force for a role, both from workspace.RolesInForce, the one function every reader of a role's limits uses; a
+// role two linked packs both declare is held to the lower of their maxes (an address names a role, not its pack), and
+// a lock whose declares do not read is refused (bad-lock). Without roles (--show, bonsai messages), the lock is not
+// read.
 func messageRules(site *asksSite, roles bool) (message.Rules, *engine.Error) {
 	r := message.DefaultRules()
+	cfg := committedConfig(site)
+	r.UnansweredMinutes, _ = workspace.MessageThreshold(cfg, "unanswered_minutes")
+	r.CirclingBriefs, _ = workspace.MessageThreshold(cfg, "circling_briefs")
 	if !roles {
 		return r, nil
 	}
-	lock, cfg, e := messageCopies(site)
+	lock, e := committedLock(site)
 	if e != nil {
 		return r, e
 	}
@@ -236,29 +241,33 @@ func messageRules(site *asksSite, roles bool) (message.Rules, *engine.Error) {
 	return r, nil
 }
 
-// messageCopies are the lock and bonsai.yaml a message is held to: as committed at the main checkout's HEAD, as the
-// guard reads them (and status's roles), so a change counts once committed; a file HEAD does not hold, or git cannot
-// give, as it stands in this checkout. No lock is no role.
-func messageCopies(site *asksSite) (*workspace.Lock, *format.Workspace, *engine.Error) {
-	cfg := site.cfg.Full
+// committedConfig is bonsai.yaml as committed at the main checkout's HEAD, as the guard reads it (and status's roles),
+// so a change counts once committed; where HEAD holds none, or git cannot give it, the file as this checkout read it.
+func committedConfig(site *asksSite) *format.Workspace {
 	if raw, err := vergit.Committed(site.co.Main, workspace.ConfigFile, 0); err == nil {
 		if c, err := workspace.ReadConfigFull(raw); err == nil {
-			cfg = c.Full
+			return c.Full
 		}
 	}
+	return site.cfg.Full
+}
+
+// committedLock is the lock as committed at the main checkout's HEAD, read as committedConfig reads bonsai.yaml; where
+// HEAD holds none, the lock as it stands in this checkout. No lock is no role.
+func committedLock(site *asksSite) (*workspace.Lock, *engine.Error) {
 	if raw, err := vergit.Committed(site.co.Main, workspace.LockFile, 0); err == nil {
 		if l, err := workspace.ReadLock(raw); err == nil {
-			return l, cfg, nil
+			return l, nil
 		}
 	}
 	lock, err := workspace.LoadLock(site.co.Root)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		return nil, cfg, nil
+		return nil, nil
 	case err != nil:
-		return nil, nil, lockError(err)
+		return nil, lockError(err)
 	}
-	return lock, cfg, nil
+	return lock, nil
 }
 
 // cwd is the folder the command runs in, where a relative --pointer is read from.

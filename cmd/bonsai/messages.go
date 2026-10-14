@@ -38,7 +38,8 @@ skipped; it never blocks the rest. It reports, and never acts on an agent.
 	},
 	Notes: "Its flags: " + messageFlagWords() + " (bonsai check --schema bonsai.messages\n" +
 		"lists them). unanswered: an open thread's newest brief as old as messages.unanswered_minutes in bonsai.yaml;\n" +
-		"circling: more briefs one way between two addresses than messages.circling_briefs.\n",
+		"circling: more briefs one way between two addresses than messages.circling_briefs. Each threshold is\n" +
+		"bonsai.yaml's as committed, null for Bonsai's default.\n",
 	Exits: []Exit{
 		{Code: 0, Means: "the threads were read (none prints a line saying so)"},
 		{Code: 2, Means: "bad input (a flag messages does not take, an address or task id of the wrong form); bonsai.yaml\nrefused"},

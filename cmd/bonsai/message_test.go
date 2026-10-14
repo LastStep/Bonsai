@@ -352,3 +352,95 @@ func TestMessageDeclaredRoles(t *testing.T) {
 	p.commit("link")
 	p.messagesDoc(0, msg("tester@T-0901", "planner")...)
 }
+
+// The flags at their thresholds and not below, at Bonsai's defaults and at a project's own in bonsai.yaml (counted
+// once committed): unanswered, an open thread's newest brief as old as the threshold's minutes; circling, more briefs
+// one way between two addresses than the threshold.
+func TestMessageThresholds(t *testing.T) {
+	c := newCLI(t)
+	t.Setenv(asks.SessionEnv, "")
+	clock := time.Date(2026, 10, 16, 9, 0, 0, 0, time.UTC)
+	old := messageNow
+	t.Cleanup(func() { messageNow = old })
+	messageNow = func() time.Time { return clock }
+	c.link()
+	c.commit("link")
+	_, out, _ := c.run("", "message", "--from", "orchestrator", "--to", "builder@T-0901", "--kind", "brief", "--body", "Go.")
+	thread := strings.Split(out, "\n")[0]
+	flags := func() string {
+		th := threadsIn(c.messagesDoc(0, "messages"))
+		f, _ := th[0].Get("flags")
+		var out []string
+		for _, x := range f.([]any) {
+			out = append(out, x.(string))
+		}
+		return strings.Join(out, ",")
+	}
+	brief := func(from, to string) {
+		t.Helper()
+		if code, _, errOut := c.run("", "message", "--from", from, "--to", to, "--kind", "brief", "--thread", thread, "--body", "Again."); code != 0 {
+			t.Fatalf("a brief in the thread: %s", errOut)
+		}
+	}
+	start := clock
+	// The defaults: 60 minutes, 3 briefs one way.
+	clock = start.Add(59*time.Minute + 59*time.Second)
+	if got := flags(); got != "" {
+		t.Errorf("a second below 60 minutes: %q", got)
+	}
+	clock = start.Add(60 * time.Minute)
+	if got := flags(); got != "unanswered" {
+		t.Errorf("at 60 minutes: %q", got)
+	}
+	clock = start
+	brief("orchestrator", "builder@T-0901")
+	brief("orchestrator", "builder@T-0901")
+	if got := flags(); got != "" {
+		t.Errorf("three briefs one way: %q", got)
+	}
+	brief("orchestrator", "builder@T-0901")
+	if got := flags(); got != "circling" {
+		t.Errorf("four briefs one way: %q", got)
+	}
+	// A project's own: 5 minutes, 1 brief one way; uncommitted, the defaults still hold.
+	raw := c.read("bonsai.yaml")
+	if strings.Count(raw, "messages: null") != 1 {
+		t.Fatalf("init wrote no messages: null line:\n%s", raw)
+	}
+	c.write("bonsai.yaml", strings.Replace(raw, "messages: null", "messages:\n  unanswered_minutes: 5\n  circling_briefs: 1", 1))
+	_, out, _ = c.run("", "message", "--from", "orchestrator", "--to", "verifier", "--kind", "brief", "--body", "Check.")
+	second := strings.Split(out, "\n")[0]
+	own := func() string {
+		for _, th := range threadsIn(c.messagesDoc(0, "messages")) {
+			if th.String("id") == second {
+				f, _ := th.Get("flags")
+				var out []string
+				for _, x := range f.([]any) {
+					out = append(out, x.(string))
+				}
+				return strings.Join(out, ",")
+			}
+		}
+		return "no thread"
+	}
+	clock = start.Add(5 * time.Minute)
+	if got := own(); got != "" {
+		t.Errorf("five minutes, the project's own not committed: %q", got)
+	}
+	c.commit("the project's thresholds")
+	clock = start.Add(5*time.Minute - time.Second)
+	if got := own(); got != "" {
+		t.Errorf("a second below the project's 5 minutes: %q", got)
+	}
+	clock = start.Add(5 * time.Minute)
+	if got := own(); got != "unanswered" {
+		t.Errorf("at the project's 5 minutes: %q", got)
+	}
+	clock = start
+	if code, _, errOut := c.run("", "message", "--from", "orchestrator", "--to", "verifier", "--kind", "brief", "--thread", second, "--body", "Again."); code != 0 {
+		t.Fatal(errOut)
+	}
+	if got := own(); got != "circling" {
+		t.Errorf("two briefs one way at the project's 1: %q", got)
+	}
+}
