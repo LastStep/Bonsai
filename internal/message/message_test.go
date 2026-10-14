@@ -48,8 +48,8 @@ func (f *fixture) write(w Writing, r Rules) *Written {
 	if w.Body == "" {
 		w.Body = "Objective: one thing."
 	}
-	if w.Cwd == "" {
-		w.Cwd = f.main
+	if w.WorkDir == "" {
+		w.WorkDir = f.main
 	}
 	out, e := Write(f.p, w, r)
 	if e != nil {
@@ -65,8 +65,8 @@ func (f *fixture) refused(w Writing, r Rules, code string) Error {
 	if w.Body == "" {
 		w.Body = "Objective: one thing."
 	}
-	if w.Cwd == "" {
-		w.Cwd = f.main
+	if w.WorkDir == "" {
+		w.WorkDir = f.main
 	}
 	before := f.files()
 	out, e := Write(f.p, w, r)
@@ -762,7 +762,7 @@ func TestWriteFailures(t *testing.T) {
 	ensureGitignore = workspace.EnsureGitignore
 	defer func(l func(string, *format.Log) (bool, error)) { writeLog = l }(writeLog)
 	writeLog = func(string, *format.Log) (bool, error) { return false, errors.New("the log is full") }
-	w.Body, w.Cwd = "Words.", f.main
+	w.Body, w.WorkDir = "Words.", f.main
 	out, e := Write(f.p, w, DefaultRules())
 	if e == nil || e.Code != "partly-written" || out == nil || !strings.Contains(e.Next, "bonsai message --show "+out.Message.ID) {
 		t.Fatalf("partly written: %v %+v", e, out)

@@ -56,7 +56,7 @@ func writerChild(spec string) int {
 		Getenv: func(string) string { return "" }}
 	for i := 0; i < count; i++ {
 		w, e := Write(p, Writing{From: "orchestrator", To: "builder@T-0901", Kind: "brief", Task: "T-0901",
-			Body: fmt.Sprintf("Brief %d of writer %d.", i, child), Cwd: main}, DefaultRules())
+			Body: fmt.Sprintf("Brief %d of writer %d.", i, child), WorkDir: main}, DefaultRules())
 		if e != nil {
 			fmt.Fprintln(os.Stderr, e)
 			return 1

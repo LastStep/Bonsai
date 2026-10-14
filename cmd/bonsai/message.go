@@ -136,7 +136,7 @@ func runMessage(c *call) int {
 	}
 	w := message.Writing{From: c.value("--from"), To: c.value("--to"), Kind: c.value("--kind"), Task: c.value("--task"),
 		Thread: c.value("--thread"), ReplyTo: c.value("--reply-to"), Status: c.value("--status"), Pointers: c.all("--pointer"),
-		Body: body, Cwd: site.cwd()}
+		Body: body, WorkDir: site.cwd()}
 	if c.has("--budget") {
 		b := c.value("--budget")
 		w.Budget = &b

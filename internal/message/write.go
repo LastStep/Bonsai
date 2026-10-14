@@ -75,7 +75,7 @@ type Writing struct {
 	Budget                        *string  // --budget as given, nil when not given
 	Pointers                      []string // each --pointer as given
 	Body                          string   // the words, as given (--body, --body-file's file, or standard input)
-	Cwd                           string   // the folder the command runs in, where a relative --pointer is read from
+	WorkDir                       string   // the folder the command runs in, where a relative --pointer is read from
 }
 
 // Written is a message Write wrote.
@@ -99,7 +99,7 @@ func Write(p Place, w Writing, r Rules) (*Written, *Error) {
 		return nil, e
 	}
 	for _, given := range w.Pointers {
-		ptr, e := Pointer(p, given, w.Cwd)
+		ptr, e := Pointer(p, given, w.WorkDir)
 		if e != nil {
 			return nil, e
 		}
