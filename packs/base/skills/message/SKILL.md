@@ -11,7 +11,7 @@ rather than retelling them. Each is one message in the format `bonsai.message/1`
 in the main checkout's `.bonsai/local/messages/<recipient>/` (never committed; only Bonsai writes there).
 
 **When to use this skill.** Before writing a brief, and before writing your report back. The fields and their allowed
-values are printed by `bonsai check --schema bonsai.message`, and `bonsai message --help --json` lists every flag.
+values are printed by `bonsai check --schema bonsai.message`, and `bonsai message --help` lists every flag.
 
 **Write it with `bonsai message`, never by hand.** The command makes the id and the time, fingerprints each pointer,
 refuses a message that does not fit (a role no linked pack declares, a budget over its max, a report outside its
