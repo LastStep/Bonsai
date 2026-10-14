@@ -141,13 +141,16 @@ pack_check() {
 	work=$(abs "$tmp") || fail "the temporary folder $tmp cannot be read"
 	# A local source's commit is copied into a bare repository beside the project, on a branch, and linked by its
 	# relative path: bonsai check finds an absolute path in a project's bonsai.yaml (contract section 2.6).
+	# --update-shallow: CI's checkouts are shallow, and git refuses a branch at a shallow commit without it.
 	case $source in
 	*://* | git@*) ;;
 	*)
 		src=$(abs "$source") || fail "the source $source is neither a folder nor a URL"
 		git init -q --bare "$work/source.git" || fail "git init --bare failed"
-		git -C "$work/source.git" fetch -q --no-tags -- "$src" "+$commit:refs/heads/ci" ||
+		git -C "$work/source.git" fetch -q --update-shallow --no-tags -- "$src" "+$commit:refs/heads/ci" ||
 			fail "the commit $commit could not be fetched from $src"
+		got=$(git -C "$work/source.git" rev-parse -q --verify "refs/heads/ci^{commit}")
+		[ "$got" = "$commit" ] || fail "the commit $commit could not be copied from $src"
 		source=../source.git
 		;;
 	esac
