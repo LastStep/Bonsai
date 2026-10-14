@@ -348,7 +348,7 @@ func noLog(t *testing.T, root string) {
 // Green at HEAD allows, with its record; each blocking case of note 2 keeps the session going with its reason first
 // and bonsai ladder --task as the next step, and is recorded.
 func TestEachCase(t *testing.T) {
-	const ladder = "bonsai ladder --task T-0901"
+	ladder := installed + " ladder --task T-0901"
 	cases := []struct {
 		name, rule, why, next string
 		change                func(t *testing.T, root string) // from the green project
@@ -436,7 +436,7 @@ func TestEachCase(t *testing.T) {
 				write(t, root, workspace.LocalDir+"/ladder/T-0901.json/x", "")
 			}},
 		{name: "a task no file holds", rule: RuleTaskMissing, why: "BONSAI_TASK names T-0999, and no task file has the named id (T-0999) in the main checkout's task folder work/tasks",
-			next: "where bonsai ladder --task T-0999 reads it too", task: "T-0999"},
+			next: "where " + installed + " ladder --task T-0999 reads it too", task: "T-0999"},
 		{name: "a task named twice", rule: RuleTaskTwice, why: "two or more task files have the named id", next: ladder,
 			change: func(t *testing.T, root string) { write(t, root, "work/tasks/T-0901-again.md", testTask) }},
 		{name: "a task that does not parse", rule: RuleTaskBroken, why: "the named task's file does not parse (T-0901 in work/tasks/T-0901-gated.md)",
@@ -597,7 +597,7 @@ func TestEachCase(t *testing.T) {
 		allows(t, code, stderr, root)
 		write(t, root, "work/tasks/T-0901-gated.md", "---\nid: T-0901\ntitle: Today's task\nstatus: running\nladder: [3]\n---\n")
 		code, stderr = gateFor(t, root, "T-0901")
-		blocks(t, code, stderr, root, RuleRungMissing, "did not ask for rung 3", "bonsai ladder --task T-0901")
+		blocks(t, code, stderr, root, RuleRungMissing, "did not ask for rung 3", installed+" ladder --task T-0901")
 	})
 	t.Run("a session started in a subfolder", func(t *testing.T) {
 		root := project(t)

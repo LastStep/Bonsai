@@ -115,7 +115,7 @@ func TestTheWorktreeTheSessionIsIn(t *testing.T) {
 			}
 			code, stderr := gateIn(t, dir, cwd)
 			blocks(t, code, stderr, root, RuleOtherCommit, `proves commit "`+headSHA[:12]+`", but this checkout's HEAD is 9a8b7c6d5e4f`,
-				"bonsai ladder --task T-0901 at this HEAD")
+				installed+" ladder --task T-0901 at this HEAD")
 			checkoutIs(t, root, filepath.Base(wt), "worktree-x")
 
 			writeResult(t, root, "T-0901", greenResult(wtSHA))
@@ -195,7 +195,7 @@ func TestACwdOutsideTheProjectKeepsItsCheckout(t *testing.T) {
 			writeResult(t, root, "T-0901", greenResult(wtSHA))
 			code, stderr = gateIn(t, root, cwd)
 			blocks(t, code, stderr, root, RuleOtherCommit, `proves commit "9a8b7c6d5e4f", but this checkout's HEAD is `+headSHA[:12],
-				"bonsai ladder --task T-0901 at this HEAD")
+				installed+" ladder --task T-0901 at this HEAD")
 		})
 	}
 }
@@ -305,7 +305,7 @@ func TestAWorktreeSessionInItsMainCheckout(t *testing.T) {
 	checkoutIs(t, root, filepath.Base(root), "main")
 	writeResult(t, root, "T-0901", greenResult(wtSHA))
 	code, stderr = gateIn(t, wt, root)
-	blocks(t, code, stderr, root, RuleOtherCommit, "but this checkout's HEAD is "+headSHA[:12], "bonsai ladder --task T-0901")
+	blocks(t, code, stderr, root, RuleOtherCommit, "but this checkout's HEAD is "+headSHA[:12], installed+" ladder --task T-0901")
 	// With no cwd, CLAUDE_PROJECT_DIR's checkout, the worktree, is judged, as before.
 	code, stderr = gateIn(t, wt, "")
 	allows(t, code, stderr, root)
@@ -320,6 +320,6 @@ func TestAnUnverifiedMainBlocksWhateverTheCwd(t *testing.T) {
 	t.Setenv(workspace.HomeEnv, t.TempDir())
 	for _, dir := range []string{root, wt} {
 		code, stderr := gateIn(t, dir, wt)
-		blocks(t, code, stderr, "", RuleMainNotVerified, "is not verified", "bonsai ladder --task T-0901")
+		blocks(t, code, stderr, "", RuleMainNotVerified, "is not verified", installed+" ladder --task T-0901")
 	}
 }

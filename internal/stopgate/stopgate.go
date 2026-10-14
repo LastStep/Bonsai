@@ -103,6 +103,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -288,12 +289,12 @@ func (r *run) work() Decision {
 	if !trust.Verified {
 		return r.recorded(deny(RuleMainNotVerified, "", "the main checkout of this checkout is not verified: "+trust.Why+
 			"; the task "+quote(named)+" and its ladder result are read from the main checkout, so the stop gate cannot trust them",
-			trust.Next+"; then run: bonsai ladder --task "+named))
+			trust.Next+"; then run: "+ladderCommand(named)))
 	}
 	if _, onBase := workspace.BaseOf(h, at.local.Main); !onBase.Verified {
 		return r.recorded(deny(RuleMainNotVerified, "", "the main checkout is not on its base branch: "+onBase.Why+"; the task "+
 			quote(named)+" and the ladder's settings are read from the main checkout, so the stop gate cannot trust them",
-			onBase.Next+"; then run: bonsai ladder --task "+named))
+			onBase.Next+"; then run: "+ladderCommand(named)))
 	}
 	co, ok, also := cwdCheckout(in.Cwd, root, at.local.Main)
 	if ok {
@@ -446,7 +447,7 @@ var judgeFn = judge
 // checkout (Main); layout is the session's checkout's git layout; also, when not nil, a checkout holding the session's
 // working folder whose HEAD the result must prove too (cwdCheckout).
 func judge(local workspace.Local, layout workspace.GitLayout, also *untied, named string) Decision {
-	ladder := "run: bonsai ladder --task " + named
+	ladder := "run: " + ladderCommand(named)
 	cfg, err := CommittedConfig(local.Main, gitWait)
 	var uncommitted *UncommittedError
 	var unreadable *HeadUnreadableError
@@ -497,7 +498,7 @@ func judge(local workspace.Local, layout workspace.GitLayout, also *untied, name
 func taskRefusal(act workspace.ActiveTask, named, taskDir string) Decision {
 	why := workspace.TaskEnv + " names " + named + ", and " + strings.TrimPrefix(act.Sentence(), "no active task: ") +
 		" in the main checkout's task folder " + taskDir
-	ladder := "; then run: bonsai ladder --task " + named
+	ladder := "; then run: " + ladderCommand(named)
 	switch act.Why {
 	case workspace.ReasonNamedDuplicate:
 		return deny(RuleTaskTwice, taskDir, why+": an id names one task file",
@@ -507,7 +508,7 @@ func taskRefusal(act workspace.ActiveTask, named, taskDir string) Decision {
 			"fix the task file so it parses (bonsai check names the line) in the main checkout"+ladder)
 	}
 	return deny(RuleTaskMissing, taskDir, why, "check that "+workspace.TaskEnv+" names this session's task; its file belongs in "+
-		"the main checkout's "+taskDir+", where bonsai ladder --task "+named+" reads it too")
+		"the main checkout's "+taskDir+", where "+ladderCommand(named)+" reads it too")
 }
 
 // RungsWanted gives the rungs the result must hold green: the workspace's ladder_floor and the task's bonsai.ladder
@@ -587,11 +588,11 @@ func runReport(root string, w *format.Workspace, named string) (Decision, bool) 
 	}
 	folder := kind.Path
 	next := "write this session's run report, " + folder + "/R-<YYYY-MM-DD>-" + named + ".md, in this checkout (what changed, " +
-		"what did not work, what is left; an honest empty session says so); then run: bonsai ladder --task " + named
+		"what did not work, what is left; an honest empty session says so); then run: " + ladderCommand(named)
 	if folder == "" {
 		return deny(RuleNoRunReport, "", "the main checkout's bonsai.yaml names no run folder (documents.run), so this "+
 			"checkout holds no run report for "+named, "a person sets documents.run in bonsai.yaml; then "+
-			"write this session's run report there and run: bonsai ladder --task "+named), false
+			"write this session's run report there and run: "+ladderCommand(named)), false
 	}
 	files, err := workspace.DocFiles(root, kind)
 	if err != nil {
@@ -616,7 +617,7 @@ const maxResult = 32 << 20
 // comment, step 6), and the HEAD of also when it is not nil, and gives the decision. id is the workspace id.
 func result(local workspace.Local, layout workspace.GitLayout, also *untied, named, id string, want []int64) Decision {
 	rel := workspace.LocalDir + "/ladder/" + named + ".json"
-	ladder := "run: bonsai ladder --task " + named
+	ladder := "run: " + ladderCommand(named)
 	raw, err := readCapped(filepath.Join(local.Main, filepath.FromSlash(rel)), maxResult)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
@@ -709,7 +710,7 @@ func theTasks(l *format.Ladder, rel, named, id string) (Decision, bool) {
 		return Decision{}, true
 	}
 	return deny(RuleOtherTask, rel, "the ladder result "+rel+" was made for another task: "+why,
-		"run: bonsai ladder --task "+named+", which writes "+named+"'s own result there"), false
+		"run: "+ladderCommand(named)+", which writes "+named+"'s own result there"), false
 }
 
 // rungStatus says whether rung n is green in the result: every entry for it green, and at least one. When it is not,
@@ -998,4 +999,30 @@ func oneLine(s string) string {
 		}
 	}
 	return b.String()
+}
+
+// ladderCommand is the command every next step gives for a proof: the installed bonsai the stop gate's own hook line
+// runs (the engine's one home of those places: PlaceLinux, or PlaceWindows shown as C:\...; a test build's stamped
+// place instead), never a bonsai found on the PATH, so an agent cannot make a proof with another copy.
+func ladderCommand(task string) string {
+	return installedBonsai() + " ladder --task " + task
+}
+
+// installedBonsai is the installed bonsai as this system's shell names it, in double quotes when it holds a space.
+func installedBonsai() string {
+	windows := runtime.GOOS == "windows"
+	place := engine.PlaceLinux
+	if windows {
+		place = engine.PlaceWindows
+	}
+	if stamped, _ := engine.TestBuild(); stamped != "" {
+		place = filepath.ToSlash(stamped)
+	}
+	if windows && len(place) >= 3 && place[0] == '/' && place[2] == '/' {
+		place = strings.ToUpper(place[1:2]) + ":" + strings.ReplaceAll(place[2:], "/", `\`)
+	}
+	if strings.Contains(place, " ") {
+		return `"` + place + `"`
+	}
+	return place
 }

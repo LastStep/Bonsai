@@ -169,12 +169,12 @@ func TestStopGateFixtures(t *testing.T) {
 				t.Fatal(err)
 			}
 			code, stderr := run()
-			blocks(t, code, stderr, main, RuleNoRunReport, "this checkout has no run report for "+task, "bonsai ladder --task "+task)
+			blocks(t, code, stderr, main, RuleNoRunReport, "this checkout has no run report for "+task, installed+" ladder --task "+task)
 			// The run report goes in the session's own checkout (a worktree's own), uncommitted: the result says what
 			// the tree was when the ladder ran, and the run report is read from the checkout as it is.
 			write(t, session, cfg.Full.Documents.Run+"/R-2026-10-11-"+task+".md", "# R-2026-10-11-"+task+"\n")
 			code, stderr = run()
-			blocks(t, code, stderr, main, RuleNoResult, "the main checkout has no "+rel, "bonsai ladder --task "+task)
+			blocks(t, code, stderr, main, RuleNoResult, "the main checkout has no "+rel, installed+" ladder --task "+task)
 
 			head := testpack.Git(t, session, "rev-parse", "HEAD")
 			l := greenResult(head)
@@ -200,7 +200,7 @@ func TestStopGateFixtures(t *testing.T) {
 				// The same result at main's HEAD (another commit than the worktree's) does not prove the worktree.
 				testpack.Git(t, session, "commit", "-q", "--allow-empty", "-m", "more")
 				code, stderr = run()
-				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", "bonsai ladder --task "+task)
+				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", installed+" ladder --task "+task)
 
 				// Seen as Claude Code's EnterWorktree leaves a session (CLAUDE_PROJECT_DIR the main checkout, the
 				// payload's cwd the worktree), the gate judges the worktree all the same, even with a run report in
@@ -212,7 +212,7 @@ func TestStopGateFixtures(t *testing.T) {
 					return gate(t, env(main, workspace.TaskEnv, task), strings.NewReader(stopPayload("s1", session)), untimed)
 				}
 				code, stderr = entered()
-				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", "bonsai ladder --task "+task)
+				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", installed+" ladder --task "+task)
 				l.Git.SHA = testpack.Git(t, session, "rev-parse", "HEAD")
 				if raw, err = l.Encode(); err != nil {
 					t.Fatal(err)
@@ -233,7 +233,7 @@ func TestStopGateFixtures(t *testing.T) {
 				testpack.Git(t, session, "rm", "-q", "bonsai.yaml")
 				testpack.Git(t, session, "commit", "-q", "-m", "no bonsai.yaml")
 				code, stderr = entered()
-				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", "bonsai ladder --task "+task)
+				blocks(t, code, stderr, main, RuleOtherCommit, "but this checkout's HEAD is", installed+" ladder --task "+task)
 				l.Git.SHA = testpack.Git(t, session, "rev-parse", "HEAD")
 				if raw, err = l.Encode(); err != nil {
 					t.Fatal(err)

@@ -15,7 +15,7 @@ func TestTheGateBlocksATaskFileWithNothingInItsFrontmatter(t *testing.T) {
 			write(t, root, "work/tasks/T-0901-gated.md", c.junk)
 			code, stderr := gateFor(t, root, "T-0901")
 			blocks(t, code, stderr, root, RuleTaskBroken, "the named task's file does not parse (T-0901 in work/tasks/T-0901-gated.md)",
-				"run: bonsai ladder --task T-0901")
+				"run: "+installed+" ladder --task T-0901")
 		})
 	}
 	t.Run("beside the named task, another such file changes nothing", func(t *testing.T) {
