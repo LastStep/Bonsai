@@ -7015,22 +7015,22 @@ what counts. Agents help only if you ask.
   by these tags. Bonsai's own repo keeps naming `base` by its commit; moving it to the tag waits for your word, whenever
   you like (5.5's rule), not planned here.
 
-**Hours, order and your steps.** **9.5-18.75 hours, re-ask at 24, past the spec's 6-11 and 14 because of the trial
-you asked for.** The release work itself stays at the spec's 6-11 (it gained the gate's findings, the stronger install
+**Hours, order and your steps.** **9.5-18.75 hours, re-ask at 24, past the spec's 6-11 and 14 because of the trial you
+asked for.** The release work itself stays at the spec's 6-11 (it gained the gate's findings, the stronger install
 check, the packs' move to the release and the review's fixes, and lost the Homebrew work and the Go bump, which was its
 own piece before 5.7). The trial adds 3.5-7.75 hours: setting Bonsai up on rc.1 and running the feature through the
 pipeline (0.5-1), the feature itself (1-3, as you pick: each proposal names its own figure), the analysis with an
 agent's dry run of the README's first-project steps (1-1.75), and rc.2, which always follows, with the trial's touched
-parts checked again (1-2). Low 6 + 3.5 = 9.5; high 11 + 7.75 = 18.75; re-ask 18.75 x 1.3 = 24.4, so 24. Each further
-fix round (`rc.3` and on) is 1-2 hours more: at the high figures two more fit under 24 (18.75 + 2 + 2 = 22.75) and a
-third would cross it, when you get the numbers and the three choices. A second feature is not part of a round: if you
-want one, it is sized and told to you first. Step 5 becomes 142.5-225.75 hours (184.5-296.75 since 5.5's re-plan
-of 14 Oct). This section's planning and review count in the figures. If a stop line were crossed, the smaller cut's "half of 5.7" would be the packs' move (5.7.6) and
-further fix rounds: 1.0 would still go out with every check, and projects would keep naming the packs by commit. Your
-time: about 10 minutes for batch 1, 3 for batch 2, 15 for batch 3 with your pick, 3 for the trial's question, 30 to
-read the analysis, 15 for rc.2, 25 for batch 5: 10 + 3 + 15 + 3 + 30 + 15 + 25 = 101 minutes, about an hour and three
-quarters; plus about 15 minutes for each further pre-release, 5 more if you try your own project on Windows, and your
-own trial itself, untimed.
+parts checked again (1-2). Low 6 + 3.5 = 9.5; high 11 + 7.75 = 18.75; re-ask 18.75 x 1.3 = 24.4, so 24. Each further fix
+round (`rc.3` and on) is 1-2 hours more: at the high figures two more fit under 24 (18.75 + 2 + 2 = 22.75) and a third
+would cross it, when you get the numbers and the three choices. A second feature is not part of a round: if you want
+one, it is sized and told to you first. Step 5 becomes 142.5-225.75 hours (184.5-296.75 since 5.5's re-plan of 14 Oct).
+This section's planning and review count in the figures. If a stop line were crossed, the smaller cut's "half of 5.7"
+would be the packs' move (5.7.6) and further fix rounds: 1.0 would still go out with every check, and projects would
+keep naming the packs by commit. Your time: about 10 minutes for batch 1, 3 for batch 2, 15 for batch 3 with your pick,
+3 for the trial's question, 30 to read the analysis, 15 for rc.2, 25 for batch 5: 10 + 3 + 15 + 3 + 30 + 15 + 25 = 101
+minutes, about an hour and three quarters; plus about 15 minutes for each further pre-release, 5 more if you try your
+own project on Windows, and your own trial itself, untimed.
 
 **Settled without you (technical):** the release notes come from the changelog, not from commit titles; builds for
 Linux and Windows (and macOS, built but untested, with no installer: `install.sh` refuses there); GitHub's signed record
@@ -7951,8 +7951,8 @@ Oct.
   (Rohan):** before 1.0, a trial of Bonsai on itself on a public pre-release, `v1.0.0-rc.1`, which he installs: a small
   real feature he picks, built through the whole pipeline on Bonsai's own repo, its results analysed for him, fixes as
   further pre-releases; then his own trial on a fresh project; then his word for 1.0 on the same code. 5.7 becomes
-  9.5-18.75 hours, re-ask at 24 (the trial adds 3.5-7.75); step 5 184.5-296.75." (`design/plan-5.md`, "Step 5.7"; step 5's total as 5.5's re-plan
-  of 14 Oct left it, 142.5-225.75 before it.)
+  9.5-18.75 hours, re-ask at 24 (the trial adds 3.5-7.75); step 5 184.5-296.75." (`design/plan-5.md`, "Step 5.7"; step
+  5's total as 5.5's re-plan of 14 Oct left it, 142.5-225.75 before it.)
 - **§5, the pack's CI step 2, and §5 and §6's examples `ref: base-v1.0.0`, `ref: v1.0.0`:** done at 5.7.6, no note
   needed beyond the plan's; `init`'s template still names no pack (note 5.7.4, 8).
 - **§3, "No agent installs or replaces it":** unchanged; from 1.0 the installers and Bonsai's printed lines replace
@@ -8114,8 +8114,9 @@ Judged by each part's end verifier, not the builder. Done means **no line crosse
 past a line, his recorded choice to go on.**
 1. **A part's hours over its re-ask line:** 5.1 61, 5.2 48, 5.3 38, 5.4 57, 5.5 131, 5.6 26, 5.7 24 (spec §14: 1.3 times
    each part's high estimate, rounded: 47 x 1.3 = 61.1; 37 x 1.3 = 48.1; 29 x 1.3 = 37.7; 44 x 1.3 = 57.2; 5.5's 101,
-   its re-plan of 14 Oct on Rohan's redesign, x 1.3 = 131.3 (39 before, from 30); 20 x 1.3 = 26; 5.7's 18.75, the spec's 11 and the trial Rohan asked for on 10 Oct, x 1.3 = 24.4). A part that
-   ends under its line passes nothing on to the next.
+   its re-plan of 14 Oct on Rohan's redesign, x 1.3 = 131.3 (39 before, from 30); 20 x 1.3 = 26; 5.7's 18.75, the spec's
+   11 and the trial Rohan asked for on 10 Oct, x 1.3 = 24.4). A part that ends under its line passes nothing on to the
+   next.
 2. **Windows-only failures over 8 hours in step 5**, carried over from the skeleton's line 2 ("more than a day lost
    to Go on Windows", spec §14). Kept for the whole step, not per part: it is the signal that Go on Windows is failing,
    the skeleton spent about 18 minutes against it, and 5.3 and 5.4 hold most of the risk. Counted as before: a failure
