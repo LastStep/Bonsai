@@ -116,7 +116,8 @@ func TestBonsaiFilesOnAnAgentsShellLine(t *testing.T) {
 
 func TestBonsaiMessageFrom(t *testing.T) {
 	dir := rolesProject(t, map[string]string{".bonsai/local/messages/lead-T-0001/M-2026-10-15-0000000a.md": briefFile(
-		"M-2026-10-15-0000000a", "M-2026-10-15-0000000a", "orchestrator", "lead@T-0001", "2026-10-15T03:00:00.000Z", "")})
+		"M-2026-10-15-0000000a", "M-2026-10-15-0000000a", "orchestrator", "lead@T-0001", "2026-10-15T03:00:00.000Z", ""),
+		".bonsai/local/log/s-" + sessA + ".ndjson": messageRecords("M-2026-10-15-0000000a")})
 	agent := func(id, typ, command string) string {
 		return hookCall{session: sessA, agentID: id, agentType: typ, tool: "Bash", input: bash(command)}.payload(dir)
 	}

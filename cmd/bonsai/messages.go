@@ -2,14 +2,17 @@ package main
 
 // bonsai messages (contract §22; design/plan-5.md, step 5.5, "Messages between agents", note 5.5.10, 4): the threads
 // of messages between agents in the main checkout's .bonsai/local/messages/, headers only and never bodies, each with
-// its state (open or answered) and its flags, and every file that does not read. It reads and writes nothing else,
-// and reports, never acts. With --json it prints bonsai.messages/1 (format.Messages). Its table is messagesWord.
+// its state (open or answered) and its flags, and every file that does not read. Each thread's recipient, the agent
+// tied to its newest brief, and the flags that read it (budget-spent, and unanswered once an agent tied the brief)
+// come from the guard's state (internal/agents' Thread; note 5.5.11, 9). It reads and writes nothing else, and
+// reports, never acts. With --json it prints bonsai.messages/1 (format.Messages). Its table is messagesWord.
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/message"
@@ -26,9 +29,11 @@ var messagesWord = &Word{
 	Args:    "[flags]",
 	About: `It reads the main checkout's .bonsai/local/messages/ (a worktree reads its main checkout's) and writes nothing.
 Each thread is one line, oldest first: its state (open while its newest brief has no report after it, else
-answered), its id (its first brief's), its caller and recipient, its task, its messages and its flags. Headers
-only: bonsai message --show prints a message's words. A file that does not read is listed as malformed and
-skipped; it never blocks the rest. It reports, and never acts on an agent.
+answered), its id (its first brief's), its caller and recipient, its task, its messages, its flags, and the
+agent tied to its newest brief (its counts against its limits as the guard recorded them, and spent where it
+is; read from .bonsai/local/agents/). Headers only: bonsai message --show prints a message's words. A file
+that does not read is listed as malformed and skipped; it never blocks the rest. It reports, and never acts on
+an agent.
 `,
 	Flags: []Flag{
 		{Name: "--to", Value: "ADDRESS", Help: "only threads holding a message to this address"},
@@ -37,9 +42,10 @@ skipped; it never blocks the rest. It reports, and never acts on an agent.
 		{Name: "--json", Help: "print the bonsai.messages/1 document (for programs) instead of plain text"},
 	},
 	Notes: "Its flags: " + messageFlagWords() + " (bonsai check --schema bonsai.messages\n" +
-		"lists them). unanswered: an open thread's newest brief as old as messages.unanswered_minutes in bonsai.yaml;\n" +
-		"circling: more briefs one way between two addresses than messages.circling_briefs. Each threshold is\n" +
-		"bonsai.yaml's as committed, null for Bonsai's default.\n",
+		"lists them). unanswered: an open thread's newest brief as old as messages.unanswered_minutes in bonsai.yaml,\n" +
+		"or, once an agent tied it, that agent's last call as old; circling: more briefs one way between two\n" +
+		"addresses than messages.circling_briefs; budget-spent: the agent tied to the newest brief past its budget.\n" +
+		"Each threshold is bonsai.yaml's as committed, null for Bonsai's default.\n",
 	Exits: []Exit{
 		{Code: 0, Means: "the threads were read (none prints a line saying so)"},
 		{Code: 2, Means: "bad input (a flag messages does not take, an address or task id of the wrong form); bonsai.yaml\nrefused"},
@@ -87,8 +93,11 @@ func runMessages(c *call) int {
 		return c.fail(e)
 	}
 	var kept []message.Thread
-	for _, t := range message.Fold(st, rules, messageNow()) {
+	now := messageNow()
+	store := agents.Store{Main: p.Local.Main}
+	for _, t := range message.Fold(st, rules, now) {
 		if f.Keep(t) {
+			store.Thread(&t, rules.UnansweredMinutes, now) // the agent column, from the guard's state (internal/agents)
 			kept = append(kept, t)
 		}
 	}
@@ -109,8 +118,8 @@ func runMessages(c *call) int {
 		if len(t.Flags) > 0 {
 			flags = "  flags: " + strings.Join(t.Flags, ", ")
 		}
-		fmt.Fprintf(&b, "%-8s  %s  %s -> %s  %s  %d messages, last %s%s\n", t.State, t.ID, t.From, t.To, task,
-			len(t.Messages), t.LastAt, flags)
+		fmt.Fprintf(&b, "%-8s  %s  %s -> %s  %s  %d messages, last %s%s%s\n", t.State, t.ID, t.From, t.To, task,
+			len(t.Messages), t.LastAt, flags, recipientText(t.Recipient))
 	}
 	if len(kept) == 0 {
 		which := "threads"
@@ -126,4 +135,28 @@ func runMessages(c *call) int {
 		fmt.Fprintf(&b, "malformed  %s: %s\n", m.Path, m.Reason)
 	}
 	return c.print(engine.ASCII(b.String()))
+}
+
+// recipientText is the agent column of a thread's line: the agent tied to its newest brief, its counts against its
+// limits as the guard recorded them, and spent where it is; "" while no agent has tied it.
+func recipientText(r *format.ThreadRecipient) string {
+	if r == nil {
+		return ""
+	}
+	limit := func(l format.AgentLimit) string {
+		if l.Value == nil {
+			return "no limit"
+		}
+		return strconv.FormatInt(*l.Value, 10)
+	}
+	minutes := "-"
+	if r.Counts.Minutes != nil {
+		minutes = r.Counts.Minutes.String()
+	}
+	s := fmt.Sprintf("  agent %s: minutes %s of %s, actions %d of %s, red runs %d of %s", r.Agent, minutes,
+		limit(r.Limits.Minutes), r.Counts.Actions, limit(r.Limits.Actions), r.Counts.RedRuns, limit(r.Limits.RedRuns))
+	if r.Spent {
+		s += ", spent"
+	}
+	return s
 }

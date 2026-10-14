@@ -697,7 +697,7 @@ func (rr *roleRun) claimedBy(use string) string {
 	if hookin.ID(use) == "" || rr.in.Session == "" {
 		return ""
 	}
-	raw, err := os.ReadFile(filepath.Join(rr.store.SessionDir(rr.in.Session), "claims", use))
+	raw, err := os.ReadFile(filepath.Join(rr.store.SessionDir(rr.in.Session), agents.ClaimsFolder, use))
 	if err != nil {
 		return ""
 	}

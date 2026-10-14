@@ -25,19 +25,40 @@ const (
 	b2 = "M-2026-10-15-0000000b" // a newer one in its thread, actions 5
 	b3 = "M-2026-10-15-0000000c" // another role's
 	b4 = "M-2026-10-15-0000000d" // from a helper, which may not call a helper
-	b5 = "M-2026-10-15-0000000e" // to tiny, read by a second agent
+	b5 = "M-2026-10-15-0000000e" // to tiny, read by a second agent; its record in another session's log file
+	b6 = "M-2026-10-15-0000000f" // to tiny, written by hand: no message record in the log
 )
 
 func briefProject(t *testing.T) string {
 	t.Helper()
 	m := func(folder, id string) string { return ".bonsai/local/messages/" + folder + "/" + id + ".md" }
-	return rolesProject(t, map[string]string{
+	dir := rolesProject(t, map[string]string{
 		m("tiny-T-0001", b1):   briefFile(b1, b1, "orchestrator", "tiny@T-0001", "2026-10-15T03:00:00.000Z", "  minutes: null\n  actions: 3\n  red_runs: null"),
 		m("tiny-T-0001", b2):   briefFile(b2, b1, "orchestrator", "tiny@T-0001", "2026-10-15T04:00:00.000Z", "  minutes: null\n  actions: 5\n  red_runs: null"),
 		m("helper-T-0002", b3): briefFile(b3, b3, "orchestrator", "helper@T-0002", "2026-10-15T03:00:00.000Z", ""),
 		m("tiny-T-0003", b4):   briefFile(b4, b4, "helper@T-0001", "tiny@T-0003", "2026-10-15T03:00:00.000Z", ""),
 		m("tiny-T-0004", b5):   briefFile(b5, b5, "orchestrator", "tiny@T-0004", "2026-10-15T03:00:00.000Z", "  actions: 50"),
+		m("tiny-T-0005", b6):   briefFile(b6, b6, "orchestrator", "tiny@T-0005", "2026-10-15T03:00:00.000Z", ""),
+		// bonsai message's records: in the day file (written outside a session), and b5's in another session's file.
+		".bonsai/local/log/w-2026-10-15.ndjson": messageRecords(b1, b2, b3, b4),
+		".bonsai/local/log/s-other.ndjson":      messageRecords(b5),
 	})
+	// The other session's file was last written after b5 was made (a file written before it cannot hold its record).
+	later := time.Date(2026, 10, 15, 5, 0, 0, 0, time.UTC)
+	if err := os.Chtimes(filepath.Join(dir, ".bonsai", "local", "log", "s-other.ndjson"), later, later); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+// messageRecords are a log file's lines holding the message record bonsai message writes with each message: its
+// event, its target the message's id (contract §8.2).
+func messageRecords(ids ...string) string {
+	var b strings.Builder
+	for _, id := range ids {
+		b.WriteString(`{"format":"bonsai.log/1","event":"message","target":"` + id + `","text":"brief to tiny"}` + "\n")
+	}
+	return b.String()
 }
 
 // tinyFrom is a call from a tiny helper.
@@ -66,14 +87,16 @@ func TestTheBudgetOfActions(t *testing.T) {
 	}
 	// The fourth: spent, its refusal in full; the fifth, short.
 	s := wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, "free.txt")), 2, RuleBudgetSpent)
+	// b2, a newer brief to its address in its thread, is already waiting: the refusal names it.
+	waiting := "a newer brief to you is waiting: read it with bonsai message --show " + b2
 	for _, want := range []string{"budget spent (actions: 4 of 3): report what you have and what is left",
-		"bonsai message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1, "<<'EOF'"} {
+		"bonsai message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1, "<<'EOF'", waiting} {
 		if !strings.Contains(s, want) {
 			t.Errorf("the first refusal has no %q:\n%s", want, s)
 		}
 	}
 	s = wantAnswer(t, dir, tinyFrom(dir, "t1", "Grep", in("pattern", "x")), 2, RuleBudgetSpent)
-	if !strings.Contains(s, "budget spent (actions: 4 of 3): only your report") {
+	if !strings.Contains(s, "budget spent (actions: 4 of 3): only your report") || !strings.Contains(s, waiting) {
 		t.Errorf("the later refusal: %s", s)
 	}
 	// Past it: every call refused but its report, its brief and the hand-back.
@@ -104,7 +127,9 @@ func TestTheBudgetOfActions(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, "free.txt")), 0, RuleOtherTool)
 	}
-	wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, "free.txt")), 2, RuleBudgetSpent)
+	if s := wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, "free.txt")), 2, RuleBudgetSpent); strings.Contains(s, "waiting") {
+		t.Errorf("no newer brief waits, yet the refusal names one: %s", s)
+	}
 	st = stateOf(t, dir, sessA, "t1")
 	if w := st.Window(); w.Tie.Brief != b2 || *w.Limits.Actions.Value != 5 {
 		t.Errorf("after the re-brief: %+v", w)
@@ -221,8 +246,8 @@ func TestABriefTiesOnlyIfSound(t *testing.T) {
 		return out
 	}
 	// Named in the prompt: another address's brief (b3), one with no message file, one from a role that may not call
-	// tiny (b4): none ties, and each says why.
-	wantAnswer(t, dir, start(dir, "toolu_01T2", "Briefs: "+b3+", M-2026-10-15-ffffffff and "+b4+"."), 0, RuleCallAllowed)
+	// tiny (b4), one bonsai message did not write (b6, no message record): none ties, and each says why.
+	wantAnswer(t, dir, start(dir, "toolu_01T2", "Briefs: "+b3+", M-2026-10-15-ffffffff, "+b4+" and "+b6+"."), 0, RuleCallAllowed)
 	p := tinyFrom(dir, "t2", "Read", readOf(dir, "free.txt"))
 	wantAnswer(t, dir, p, 0, RuleOtherTool)
 	if st := stateOf(t, dir, sessA, "t2"); st.Window().Tie != nil {
@@ -232,6 +257,7 @@ func TestABriefTiesOnlyIfSound(t *testing.T) {
 	for _, want := range []string{b3 + ", named by the call that started it, ties nothing: it is to \"helper@T-0002\", not to this agent's role \"tiny\"",
 		"M-2026-10-15-ffffffff, named by the call that started it, ties nothing: no message file holds it",
 		b4 + ", named by the call that started it, ties nothing: its from \"helper@T-0001\" is a role that may not call this agent's",
+		b6 + ", named by the call that started it, ties nothing: the log holds no message record of it, so bonsai message did not write it",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("no note %q in:\n%s", want, got)
@@ -378,4 +404,46 @@ func TestALiveLockEditChangesNoRule(t *testing.T) {
 	testpack.Git(t, dir, "commit", "-q", "-am", "roles out")
 	wantAnswer(t, dir, edit("h4"), 0, RuleNotProtected)
 	wantAnswer(t, dir, edit("h1"), 2, RuleRoleWritesNothing)
+}
+
+// A brief's message record is found in the session's own log file, the day file of its created, or another file
+// written since it was made; a line longer than any record is passed over, and a file last written before the
+// message was made is not read.
+func TestMessageRecordFound(t *testing.T) {
+	main := t.TempDir()
+	logDir := filepath.Join(main, ".bonsai", "local", "log")
+	created := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
+	b := &brief{id: "M-2026-10-15-00000001", created: created}
+	if messageRecorded(main, sessA, b) {
+		t.Fatal("found with no log at all")
+	}
+	long := strings.Repeat("x", 200<<10) + `"` + b.id + `"` + "\n"
+	writeFile(t, filepath.Join(logDir, "s-"+sessA+".ndjson"), long+`{"event":"tool_start","target":"`+b.id+`"}`+"\n")
+	if messageRecorded(main, sessA, b) {
+		t.Error("found by a record of another event, or a line no record is")
+	}
+	writeFile(t, filepath.Join(logDir, "s-"+sessA+".ndjson"), long+messageRecords(b.id))
+	if !messageRecorded(main, sessA, b) {
+		t.Error("not found in the session's own file, after a line longer than any record")
+	}
+	// In another session's file: found only while that file was written to since the message was made.
+	other := filepath.Join(logDir, "s-other.ndjson")
+	writeFile(t, filepath.Join(logDir, "s-"+sessA+".ndjson"), "")
+	writeFile(t, other, messageRecords(b.id))
+	for _, c := range []struct {
+		mod  time.Time
+		want bool
+	}{{created.Add(time.Hour), true}, {created.Add(-time.Hour), false}} {
+		if err := os.Chtimes(other, c.mod, c.mod); err != nil {
+			t.Fatal(err)
+		}
+		if got := messageRecorded(main, sessA, b); got != c.want {
+			t.Errorf("another session's file written at %v: found %v, want %v", c.mod, got, c.want)
+		}
+	}
+	// In the day file of its created (a message written outside a session).
+	writeFile(t, filepath.Join(logDir, "w-2026-10-15.ndjson"), messageRecords(b.id))
+	if !messageRecorded(main, "", b) {
+		t.Error("not found in the day file")
+	}
 }

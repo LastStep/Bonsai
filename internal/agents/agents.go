@@ -46,14 +46,15 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// Folder is the agents folder inside .bonsai/local/; TiesFolder the brief ties' folder inside it.
+// Folder is the agents folder inside .bonsai/local/; TiesFolder the brief ties' folder inside it; ClaimsFolder the
+// claims' folder inside a session's.
 const (
-	Folder     = "agents"
-	TiesFolder = "ties"
-	spawnsFile = "spawns.ndjson"
-	claimsDir  = "claims"
-	stateExt   = ".state"
-	callsExt   = ".calls"
+	Folder       = "agents"
+	TiesFolder   = "ties"
+	ClaimsFolder = "claims"
+	spawnsFile   = "spawns.ndjson"
+	stateExt     = ".state"
+	callsExt     = ".calls"
 )
 
 // maxLine caps a state, spawn or tie line, in bytes.
@@ -561,7 +562,7 @@ func (s Store) Claim(session, use, agent string) (ok bool, err error) {
 			return false, err
 		}
 	}
-	path := filepath.Join(s.SessionDir(session), claimsDir, use)
+	path := filepath.Join(s.SessionDir(session), ClaimsFolder, use)
 	made, err := s.exclusive(path, []byte(agent+"\n"))
 	if err != nil || made {
 		return made, err
@@ -574,7 +575,7 @@ func (s Store) Claimed(session, use string) bool {
 	if validName(session) != nil || validName(use) != nil {
 		return false
 	}
-	_, err := os.Stat(filepath.Join(s.SessionDir(session), claimsDir, use))
+	_, err := os.Stat(filepath.Join(s.SessionDir(session), ClaimsFolder, use))
 	return err == nil
 }
 
