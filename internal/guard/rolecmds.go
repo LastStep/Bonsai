@@ -25,7 +25,8 @@ package guard
 //
 // Known limits for the roles that change nothing, said again here as shell.go says them for the delete check: what the
 // splitter cannot read is not judged: an interpreter's write (python -c, node -e), a script run by name, a path built
-// in a variable or a substitution whose output is not a literal, a program's own writes (make, a test run, git's hooks),
+// in a variable or a substitution whose output is not a literal, a program's own writes (make, a test run, git's hooks,
+// a git alias already in git's config files, git's subcommands outside GitWriteWords),
 // a link made earlier in the line and written through, and programs outside the tables (rsync's copies, unzip, tar -x,
 // patch, a compiler's -o); and an MCP tool whose server writes. They are caught after: by the lead's read of
 // the diff, and by the ladder's git.dirty and rung 0 at the next climb.
@@ -121,9 +122,10 @@ func claudeStart(name string, words []shWord) string {
 // Measured on git 2.x (15 Oct): git branch -v <name> and git tag --sort=<key> <name> make the ref, so a listing flag
 // counts only where it puts the call in its listing mode.
 var GitWriteWords = []struct {
-	Sub    string
-	Reads  string // the words after the subcommand that make the call only read ("" for none): a listing or a dry run
-	First  bool   // Reads count only as the first word after the subcommand (its own subcommand: stash list)
+	Sub   string
+	Reads string // the words after the subcommand that make the call only read ("" for none): a listing or a dry run
+	First bool   // Reads count only as the first word after the subcommand (its own subcommand: stash list); a word
+	// of Reads that is no option counts there in every row (config get)
 	Writes string // options that make the call write whatever Reads it holds ("" for none)
 	Lists  bool   // with no word of Reads or Writes, it only reads when it names nothing: options alone list (branch -v)
 }{
@@ -151,6 +153,8 @@ var GitWriteWords = []struct {
 	{Sub: "merge-file", Reads: "-p --stdout"},
 	{Sub: "format-patch", Reads: "--stdout"},
 	{Sub: "rerere", Reads: "status diff remaining", First: true},
+	{Sub: "config", Reads: "--get --get-all --get-regexp --get-urlmatch --get-color --get-colorbool --list -l get list",
+		Writes: "--add --unset --unset-all --replace-all --rename-section --remove-section --edit -e"},
 	{Sub: "branch", Reads: "-l --list -a --all -r --remotes --contains --no-contains --merged --no-merged --points-at --show-current",
 		Writes: "-d -D --delete -m -M --move -c -C --copy -f --force -u --set-upstream-to --unset-upstream --edit-description " +
 			"-t --track --no-track --create-reflog", Lists: true},
@@ -191,7 +195,7 @@ func gitWrite(sub string, rest []shWord) string {
 			switch {
 			case dashes || !strings.HasPrefix(t, "-") || t == "-":
 				named = true
-				if g.First && i == 0 && listHas(reads, t) {
+				if i == 0 && listHas(reads, t) {
 					read = true
 				}
 			case t == "--":
@@ -559,12 +563,43 @@ func (r *delRun) roleExec(rs *shellRole, name string, native bool, x delExec) {
 	}
 	if name == "git" && rs.changesNothing() {
 		sub, rest := gitSub(x.words[1:])
-		if w := gitWrite(sub, rest); w != "" {
+		w := gitWrite(sub, rest)
+		if gitInlineAlias(x.words[1:]) {
+			w = "git -c alias.<name>=..." // an alias given on the line can name any subcommand
+		}
+		if w != "" {
 			r.refuse(Decision{Rule: RuleRoleWritesNothing, Why: fmt.Sprintf("%s refused: %s changes the checkout or its history, "+
 				"and %s changes nothing (its role's writes: false)", r.tool, w, rs.w.shown()),
 				Next: "put what you would change in your report; reading git (status, diff, log, show) stays allowed"})
 		}
 	}
+}
+
+// gitInlineAlias reports a git call that defines an alias on its own line (-c alias.<name>=..., or --config-env
+// alias.<name>=...), before its subcommand: the subcommand it runs could be any of git's words, so a role that changes
+// nothing is refused it. An alias already in git's own config files is a known limit (this file's comment).
+func gitInlineAlias(words []shWord) bool {
+	for i := 0; i < len(words); i++ {
+		t := words[i].text
+		v := ""
+		switch {
+		case (t == "-c" || t == "--config-env") && i+1 < len(words):
+			v = words[i+1].text
+			i++
+		case strings.HasPrefix(t, "-c") && len(t) > 2:
+			v = t[2:]
+		case strings.HasPrefix(t, "--config-env="):
+			v = strings.TrimPrefix(t, "--config-env=")
+		case !strings.HasPrefix(t, "-"):
+			return false // the subcommand: options after it are its own
+		case listHas([]string{"-C", "--git-dir", "--work-tree", "--namespace", "--super-prefix"}, t):
+			i++
+		}
+		if strings.HasPrefix(strings.ToLower(v), "alias.") {
+			return true
+		}
+	}
+	return false
 }
 
 // gitSub gives a git call's subcommand and the words after it, past git's own options (-C <dir>, -c <name=value>,

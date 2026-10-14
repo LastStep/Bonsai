@@ -39,7 +39,7 @@ type FloorPath struct {
 // Floor is the floor's table, its one home, in the order it is matched: the first entry that matches a path decides.
 var Floor = []FloorPath{
 	{".bonsai/STATE.md", "top", floorFree, false, "where the project stands; agents rewrite it (spec section 6)"},
-	{".bonsai/local/", "top", RuleBonsaiFiles, false, "the log, the asks and the ladder results, which only Bonsai writes"},
+	{".bonsai/local/", "top", RuleBonsaiFiles, false, "the log, the asks, the ladder results, the messages and the agents' state, which only Bonsai writes"},
 	{".bonsai/.gitignore", "top", RuleBonsaiFiles, false, "written by Bonsai, so .bonsai/local/ is never committed"},
 	{".bonsai/tasks.md", "top", RuleBonsaiFiles, false, "a generated table: bonsai check --write rebuilds it"},
 	{".bonsai/sessions.md", "top", RuleBonsaiFiles, false, "a generated table: bonsai check --write rebuilds it"},

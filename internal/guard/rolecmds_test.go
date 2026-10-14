@@ -54,7 +54,8 @@ func TestWritesOfARoleThatChangesNothing(t *testing.T) {
 		"git reset --hard", "bonsai check --write", "bonsai update --yes", "cd sub && echo x > y.txt",
 		"echo x > " + filepath.Join(dir, "abs.txt"), "{ echo x; } > grouped.txt", "touch new.txt", "truncate -s 0 free.txt",
 		"install -m 644 free.txt inst.txt", "install -d newdir", "dd if=/dev/zero of=free.txt count=1",
-		"bash -c 'echo x > nested.txt'", "x=$(echo y > sub.txt)", "eval 'cp free.txt e.txt'"}
+		"bash -c 'echo x > nested.txt'", "x=$(echo y > sub.txt)", "eval 'cp free.txt e.txt'", "git branch -v new",
+		"git config alias.ci commit", "git -c alias.ci=commit ci -m x", "git stash push -m list"}
 	for i, line := range refused {
 		// A fresh agent each time: an undeclared type runs on the smallest helper's budget (tiny's 3 actions).
 		wantAnswer(t, dir, shellAs(dir, fmt.Sprint("h", i), "workflow:helper", line, false), 2, RuleRoleWritesNothing)
@@ -67,7 +68,8 @@ func TestWritesOfARoleThatChangesNothing(t *testing.T) {
 	allowed := []string{"echo x > " + filepath.Join(out, "a.txt"), "go build -o " + out + "/b ./...", "git status", "git diff HEAD~1",
 		"git log --oneline", "git show HEAD", "git branch", "git branch -a", "git tag -l", "git stash list", "cat free.txt",
 		"grep -r x .", "echo x 2>&1", "ls >&2", "cp free.txt " + out, "sed s/a/b/ free.txt", "bonsai check", "bonsai status --json",
-		"echo x > /dev/null", "touch " + filepath.Join(out, "t"), "dd if=free.txt of=" + filepath.Join(out, "d")}
+		"echo x > /dev/null", "touch " + filepath.Join(out, "t"), "dd if=free.txt of=" + filepath.Join(out, "d"),
+		"git config --get user.name", "git -c core.pager=cat log -1"}
 	for _, line := range allowed {
 		wantAnswer(t, dir, shellAs(dir, "h1", "workflow:helper", line, false), 0, "")
 	}
@@ -252,10 +254,18 @@ func TestTheRoleWordTables(t *testing.T) {
 		{"sparse-checkout set a", true}, {"read-tree -u HEAD", true}, {"checkout-index -a", true},
 		{"merge-file -p a b c", false}, {"merge-file a b c", true}, {"format-patch --stdout -1", false},
 		{"format-patch -1", true}, {"rerere status", false}, {"rerere forget x", true},
+		{"config --get user.name", false}, {"config -l", false}, {"config get user.name", false}, {"config list", false},
+		{"config alias.ci commit", true}, {"config user.name", true}, {"config --get-all x --unset x", true}, {"config set a b", true},
 	} {
 		sub, rest := gitSub(words(c.line))
 		if got := gitWrite(sub, rest) != ""; got != c.write {
 			t.Errorf("git %s: a write %v, want %v", c.line, got, c.write)
+		}
+	}
+	for line, want := range map[string]bool{"-c alias.ci=commit ci -m x": true, "-calias.st=status st": true,
+		"--config-env=alias.x=Y x": true, "-c core.pager=cat log": false, "-C . -c Alias.X=commit X": true, "log -c alias.x=y": false} {
+		if got := gitInlineAlias(words(line)); got != want {
+			t.Errorf("git %s: an inline alias %v, want %v", line, got, want)
 		}
 	}
 	if claudeStart("claude", []shWord{{text: "claude"}}) == "" || claudeStart("claudette", []shWord{{text: "claudette"}}) != "" {

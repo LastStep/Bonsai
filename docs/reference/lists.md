@@ -731,7 +731,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | Path | At | Class | For deletes | What it is |
 |---|---|---|---|---|
 | `.bonsai/STATE.md` | top | `free` | yes | where the project stands; agents rewrite it (spec section 6) |
-| `.bonsai/local/` | top | `bonsai-files` | yes | the log, the asks and the ladder results, which only Bonsai writes |
+| `.bonsai/local/` | top | `bonsai-files` | yes | the log, the asks, the ladder results, the messages and the agents' state, which only Bonsai writes |
 | `.bonsai/.gitignore` | top | `bonsai-files` | yes | written by Bonsai, so .bonsai/local/ is never committed |
 | `.bonsai/tasks.md` | top | `bonsai-files` | yes | a generated table: bonsai check --write rebuilds it |
 | `.bonsai/sessions.md` | top | `bonsai-files` | yes | a generated table: bonsai check --write rebuilds it |
@@ -869,6 +869,7 @@ The npm package: `@anthropic-ai/claude-code`.
 | `merge-file` | `-p`, `--stdout` | anywhere | none | no |
 | `format-patch` | `--stdout` | anywhere | none | no |
 | `rerere` | `status`, `diff`, `remaining` | first word | none | no |
+| `config` | `--get`, `--get-all`, `--get-regexp`, `--get-urlmatch`, `--get-color`, `--get-colorbool`, `--list`, `-l`, `get`, `list` | anywhere | `--add`, `--unset`, `--unset-all`, `--replace-all`, `--rename-section`, `--remove-section`, `--edit`, `-e` | no |
 | `branch` | `-l`, `--list`, `-a`, `--all`, `-r`, `--remotes`, `--contains`, `--no-contains`, `--merged`, `--no-merged`, `--points-at`, `--show-current` | anywhere | `-d`, `-D`, `--delete`, `-m`, `-M`, `--move`, `-c`, `-C`, `--copy`, `-f`, `--force`, `-u`, `--set-upstream-to`, `--unset-upstream`, `--edit-description`, `-t`, `--track`, `--no-track`, `--create-reflog` | yes |
 | `tag` | `-l`, `--list`, `-v`, `--verify`, `--contains`, `--no-contains`, `--merged`, `--no-merged`, `--points-at` | anywhere | `-d`, `--delete`, `-f`, `--force`, `-a`, `--annotate`, `-s`, `--sign`, `-u`, `--local-user`, `-m`, `--message`, `-F`, `--file`, `-e`, `--edit`, `--cleanup` | yes |
 
