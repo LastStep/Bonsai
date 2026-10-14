@@ -12,6 +12,12 @@ package engine
 //   - role-actions-over-turns: a role's max of actions in force is above the max_turns its pack declares (no limit is
 //     above any number), so Claude Code would stop the agent at its maxTurns before the guard's budget does.
 //
+// And a name under packs[].roles.<role> that is not one of a role's limits (format.RoleLimits, a closed list:
+// minutez, hours) is the config finding (bonsai.yaml is not one Bonsai reads: bonsai message refuses it bad-config,
+// and status names it), one for each such name, naming bonsai.yaml's line, the next step an agent's like the role
+// findings'; every role finding above is still raised, on the limits with those names left out
+// (workspace.KnownLimits).
+//
 // A pack bonsai.yaml lists that the lock does not hold is the packs finding's (check.go), and a lock whose declares do
 // not read is the lock's: neither gives a role finding.
 
@@ -25,7 +31,13 @@ import (
 
 // checkRoles adds the role findings.
 func (r *CheckResult) checkRoles() {
-	if r.Config == nil || r.Config.Full == nil || r.Lock == nil {
+	if r.Config == nil || r.Config.Full == nil {
+		return
+	}
+	for _, u := range workspace.UnknownLimits(r.Config) {
+		r.add("config", workspace.ConfigFile, "agent", ascii(u.Error()), ascii(u.Next())+"; then run: bonsai check")
+	}
+	if r.Lock == nil {
 		return
 	}
 	locked := map[string]workspace.LockedPack{}
@@ -67,9 +79,9 @@ func (r *CheckResult) checkRoles() {
 				"(%s), which that pack does not declare (%s)", quote(m.Key), p.ID, at, roles), next)
 		}
 	}
-	inForce, err := workspace.RolesInForce(r.Lock, r.Config.Full)
+	inForce, err := workspace.RolesInForce(r.Lock, workspace.KnownLimits(r.Config.Full))
 	if err != nil {
-		return // the lock's or bonsai.yaml's own finding names what does not read
+		return // the lock's own finding names what does not read
 	}
 	for _, ri := range inForce {
 		name := ri.Pack + ":" + ri.Role.Name

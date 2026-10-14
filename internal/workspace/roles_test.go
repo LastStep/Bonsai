@@ -4,6 +4,8 @@ package workspace
 // and from both, the messages thresholds, and the settings record's compare, which reads neither roles nor messages.
 
 import (
+	"errors"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -35,6 +37,13 @@ func rolesLock(t *testing.T) *Lock {
 // or null for "".
 func configWith(t *testing.T, roles string) *format.Workspace {
 	t.Helper()
+	c, _ := configFileWith(t, roles)
+	return c.Full
+}
+
+// configFileWith is configWith's Config, every key with its line, and the file's text.
+func configFileWith(t *testing.T, roles string) (*Config, string) {
+	t.Helper()
 	y := strings.Replace(checksYAML, "packs: []\n", "packs:\n  - id: workflow\n    source: \"https://example.com/workflow.git\"\n"+
 		"    path: null\n    ref: v1\n    roles: null\n", 1)
 	if roles != "" {
@@ -44,7 +53,7 @@ func configWith(t *testing.T, roles string) *format.Workspace {
 	if err != nil {
 		t.Fatalf("%v\n%s", err, y)
 	}
-	return c.Full
+	return c, y
 }
 
 // show writes a limit in force as "default(from)/max(from)", "-" for no limit, and "!" after it when the default set
@@ -167,6 +176,64 @@ func TestConfigRoles(t *testing.T) {
 		if _, err := ConfigRoles(c.roles); err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: %v, want %q", schema.Show(c.roles), err, c.want)
 		}
+	}
+	// A field of a limit other than default and max: kept in the file, never read, whatever its value.
+	got, err = ConfigRoles(schema.Object{{Key: "builder", Value: schema.Object{{Key: "minutes", Value: schema.Object{{Key: "maxx", Value: "x"},
+		{Key: "max", Value: int64(5)}}}}}})
+	if err != nil || !got["builder"]["minutes"].HasMax || got["builder"]["minutes"].HasDefault || *got["builder"]["minutes"].Max != 5 {
+		t.Errorf("an unknown field in a limit: %v, %v", got, err)
+	}
+}
+
+// An unknown limit name under a role (VM's D2: minutez): a role's limits are a closed list, so bonsai.yaml does not
+// read for the roles. RolesInForceOf's error names bonsai.yaml, its line and the step that fixes it, never the lock;
+// UnknownLimits names each such name with its line, in any packs entry; KnownLimits leaves them out so the rest is
+// read (the copy alone: the file's own is kept). A field inside a limit other than default and max is kept and never
+// read, whatever its value. The lock's declares that do not read are the lock's.
+func TestUnknownLimitNames(t *testing.T) {
+	roles := "      builder:\n        minutes:\n          default: 240\n          maxx: soon\n        minutez:\n          max: 5\n" +
+		"      auditor:\n        hours:\n          max: 1\n"
+	c, text := configFileWith(t, roles)
+	line := func(prefix string) int {
+		for i, l := range strings.Split(text, "\n") {
+			if strings.HasPrefix(l, prefix) {
+				return i + 1
+			}
+		}
+		return 0
+	}
+	_, err := RolesInForceOf(rolesLock(t), c)
+	var re *RolesError
+	if !errors.As(err, &re) || re.File != ConfigFile || re.Line != line("        minutez:") || !re.Unknown {
+		t.Fatalf("an unknown name: %#v", err)
+	}
+	at := "bonsai.yaml line " + strconv.Itoa(re.Line)
+	if re.Error() != at+" sets minutez for the role builder under the pack workflow (packs[0].roles.builder.minutez), which is not "+
+		"one of a role's limits (minutes, actions, red_runs)" || re.Next() != "in "+at+", write minutes, actions or red_runs in place "+
+		"of minutez, or take it out" || strings.Contains(re.Error()+re.Next(), "lock") {
+		t.Errorf("the error: %s; next: %s", re.Error(), re.Next())
+	}
+	unknown := UnknownLimits(c)
+	if len(unknown) != 2 || unknown[0].Line != line("        minutez:") || unknown[1].Line != line("        hours:") ||
+		!strings.Contains(unknown[1].Error(), "sets hours for the role auditor") {
+		t.Errorf("UnknownLimits: %v", unknown)
+	}
+	known := KnownLimits(c.Full)
+	in, err := RolesInForce(rolesLock(t), known)
+	if err != nil || len(in) != 3 || show(in[1].Minutes) != "180(pack)/180(pack)!240(bonsai.yaml)" {
+		t.Errorf("the known limits read: %v %v", in, err)
+	}
+	if len(UnknownLimits(c)) != 2 || len(UnknownLimits(&Config{Full: known})) != 0 {
+		t.Error("KnownLimits changed the file's own roles, or kept an unknown name")
+	}
+	// A role whose value is no mapping, built by hand, names its place; the lock's declares are the lock's.
+	_, err = RolesInForce(rolesLock(t), &format.Workspace{Packs: []format.WorkspacePack{{ID: "workflow", Roles: schema.Object{{Key: "builder", Value: "x"}}}}})
+	if !errors.As(err, &re) || re.File != ConfigFile || re.Unknown || !strings.Contains(re.Error(), "bonsai.yaml: the pack workflow's roles (packs[0].roles.builder)") {
+		t.Errorf("a role built by hand: %v", err)
+	}
+	bad := &Lock{Packs: []LockedPack{{ID: "workflow", Declares: schema.Object{{Key: "roles", Value: "builder"}}}}}
+	if _, err := RolesInForceOf(bad, c); !errors.As(err, &re) || re.File != LockFile || !strings.Contains(re.Next(), "bonsai update") {
+		t.Errorf("a declares that does not read: %v", err)
 	}
 }
 
