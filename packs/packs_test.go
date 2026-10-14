@@ -67,8 +67,11 @@ func TestBaseWritesNoCode(t *testing.T) {
 		switch {
 		case !ok:
 			t.Errorf("pack.yaml has no %s: base writes %s: [] (its writer writes every field)", key, key)
-		case !isList || len(list) > 0:
-			t.Errorf("pack.yaml's %s is %v, not []: base carries no code, so linking it never asks for --allow-exec", key, v)
+		case !isList:
+			t.Errorf("pack.yaml's %s is not a list: base writes %s: []", key, key)
+		case len(list) > 0:
+			t.Errorf("pack.yaml's %s is not [] (it holds %d): base carries no code, so linking it never asks for --allow-exec",
+				key, len(list))
 		}
 	}
 }
