@@ -1,12 +1,11 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 14 Oct 2026 at 15:00. **Step 5.5 is re-planned and waits for Rohan's
-approval.** On 14 Oct Rohan reshaped 5.5 around his agent-pipelines redesign (six roles in two kinds, a message format
-between agents, stall stops, a view of every agent for the studio) in seventeen answered questions; the re-plan
-(`T-5590`) was written, reviewed fresh twice (each "ready after fixes", every finding fixed) and landed on `main` at
-`c64f50a` by the landing rule: `design/plan-5.md` "### Step 5.5" (lines 3437-5967), **63.5-106 h, re-ask at 138** (was
-19-30, 39). **Next: Rohan approves it in a fresh session (one question), then 5.5.8 first** ("Now: step 5.5" below).
-Step 5.4 is done (13 Oct; floors 4188 and 4194). Every change lands by `CLAUDE.md`'s rules "from the link".
+Rewritten, never appended. Last rewritten 14 Oct 2026 at 18:00. **Step 5.5 is approved and under way.** Rohan
+approved the re-planned section on 14 Oct at 17:52, in a fresh session, as one question ("Approve"): `design/plan-5.md`
+"### Step 5.5" (lines 3437-5967 at `c64f50a`), **63.5-106 h, re-ask at 138**; step 5 now 187-301.75 h. `T-5590` is
+`done`; 5.5's tasks are written at `todo` (`T-5500` to `T-5512`, `T-5591`). **Now: 5.5.8 (`T-5508`) and 5.5.9
+(`T-5509`) side by side**, 5.5.8 landing first ("Now: step 5.5" below). Step 5.4 is done (13 Oct; floors 4188 and
+4194). Every change lands by `CLAUDE.md`'s rules "from the link".
 
 ## In short
 
@@ -32,10 +31,11 @@ approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5
   `d7037dc` (`T-5491`). Code at `d7037dc` (the binary's at `a88436a`; `d7037dc` changes only tests). Run reports
   `records/runs/R-2026-10-1[23]-5.4.*` and, in format 1, `R-2026-10-13-T-5490-verify-5.4-end.md` and
   `R-2026-10-13-T-5491-named-session-tests.md`. Tasks: `T-5407`, `T-5490`, `T-5491`, all `done`.
-- **Step 5.5, the packs, the roles and their messages: re-planned** (14 Oct, `T-5590`, at `verify` until Rohan's
-  approval and CI): the section on `main` at `c64f50a`; run report `records/runs/R-2026-10-14-T-5590-replan-5.5.md`
-  (open, with Rohan's words on every answer); the design drawn in the artifact "Workflow Pack Redesign"
-  (https://claude.ai/artifact/4j5RgCaPQs9QDh8sShbKNN, version 4).
+- **Step 5.5, the packs, the roles and their messages: approved, building** (re-planned 14 Oct, `T-5590` `done`;
+  Rohan's approval 17:52): the section on `main` at `c64f50a`; its run report
+  `records/runs/R-2026-10-14-T-5590-replan-5.5.md` (closed, with Rohan's words on every answer); the design drawn in
+  the artifact "Workflow Pack Redesign" (https://claude.ai/artifact/4j5RgCaPQs9QDh8sShbKNN, version 4). Tasks
+  `T-5500`-`T-5512` and `T-5591` in `records/tasks/`.
 
 Hours (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min. **5.1: 866 minutes. 5.2:
 1,061 minutes. 5.3: about 2,013 minutes (33 h 33 min). 5.4: about 2,372 minutes (39 h 32 min) of its 28-44 h
@@ -53,6 +53,8 @@ repo.
 
 ## Rohan's decisions
 
+- **14 Oct, 17:52: 5.5's re-planned section approved** ("Approve"), in a fresh session, as one question with its
+  hours (63.5-106, re-ask 138), step 5's new total (187-301.75) and its two fresh reviews.
 - **14 Oct, 11:13-14:26: 5.5 reshaped** (each asked with context, a story, a pros/cons table and a recommendation;
   his words in `T-5590`'s run report; the plan's "For Rohan" lists them):
   - `main`'s red CI (two flakes on `1b3067f`): "option 3": left red, fixed in 5.5's first piece (5.5.8), with a third
@@ -217,18 +219,15 @@ repo.
 - `LastStep/bonsai-test-pack`: public, `main` at G (`cf356d3`), no tag.
 - The old website stays on GitHub Pages until Rohan turns Pages off.
 
-## Now: step 5.5, the packs, re-planned with the agent pipelines
+## Now: step 5.5, the packs, building
 
 `design/plan-5.md`, "### Step 5.5: the packs, the roles and their messages (63.5-106 h, re-ask at 138)", lines
-3437-5967 on `main` at `c64f50a`; "For Rohan, in plain words" at 3494-3803. **First: Rohan's approval, in a fresh
-session, as one question** (his word, 14 Oct: "i will approve it in a fresh session"): give him the line range, the
-hours (63.5-106, re-ask 138; was 19-30, 39; step 5 now 187-301.75), what moved (the message format and its verifier
-9-15.5 h; the guard's role rules and stall stops with theirs 13-22 h; `bonsai agents` with token counts 4-7.5 h;
-limits' default and max 2-3.5 h; `workflow` written, not copied; Bonsai linking `workflow`; verifiers and planning
-costed explicitly), his new steps (a pre-release install and `bonsai update --allow-exec --yes` in one sitting with his
-password; his yes to adding `workflow` to Bonsai's `bonsai.yaml`), and that all seventeen of his answers are written in
-(none open). On approval: `T-5590` to `done` (CI on `c64f50a` green, all five jobs, 14:59), a records
-commit (run report finished, STATE), then 5.5's tasks from its order.
+3437-5967 at `c64f50a`; "For Rohan, in plain words" at 3494-3803. **Approved by Rohan 14 Oct, 17:52.** The tasks, one
+per piece, are in `records/tasks/` at `todo` (written from the section's pieces table, Owns and proof): `T-5508`,
+`T-5509`, `T-5500`, `T-5510`, `T-5511`, `T-5512`, `T-5501` to `T-5507`, and `T-5591` (the Safety line, before 5.5.2
+and 5.5.4). The verifiers' tasks (VM, VG, P, V1, the end verifier, the floors) take `T-5592` on, in the order they
+start. Grants: `T-5509` the contract and spec, `T-5500` `.gitattributes`, `T-5501` `packs/template/.gitattributes` and
+`ci.yml`, `T-5591` `CLAUDE.md`, `T-5507` the link's files (each such commit made with no other task `running`).
 
 **5.5's order** (the section's "The pieces and their order"): **5.5.8 first** (`T-5508`: the three CI flakes, the
 runner clearing `BONSAI_TASK`/`BONSAI_ROLE` from the rungs, O1); 5.5.9 (formats set 8: `bonsai.message/1`,

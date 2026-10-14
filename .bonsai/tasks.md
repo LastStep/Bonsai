@@ -5,7 +5,21 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
-| T-5590 | Step 5.5 re-planned on the agent-pipelines redesign and Rohan's six decisions of 14 Oct | verify | | 2026-10-14 | |
+| T-5591 | CLAUDE.md's Safety line names the workflow pack's repository among the places Bonsai's work writes | todo | | | |
+| T-5590 | Step 5.5 re-planned on the agent-pipelines redesign and Rohan's six decisions of 14 Oct | done | | 2026-10-14 | 2026-10-14 |
+| T-5512 | bonsai agents, the studio's view of every agent, and the usage records (5.5.12) | todo | | | |
+| T-5511 | The guard's role rules and stall stops (5.5.11) | todo | | | |
+| T-5510 | Messages between agents: the reader, bonsai message and bonsai messages (5.5.10) | todo | | | |
+| T-5509 | Formats set 8, the contract's new section and the spec's notes (5.5.9) | todo | | | |
+| T-5508 | CI green and 5.4's carry-overs: three flakes, the rungs' environment, the stop gate's installed path (5.5.8) | todo | | | |
+| T-5507 | Bonsai takes base and workflow: the new pre-release, Rohan's sitting, CLAUDE.md shrinks (5.5.7) | todo | | | |
+| T-5506 | The walls, each tried once on both sides (5.5.6) | todo | | | |
+| T-5505 | The packs in real Claude Code sessions, on both sides (5.5.5) | todo | | | |
+| T-5504 | workflow, its own repository, written around the six roles (5.5.4) | todo | | | |
+| T-5503 | The operating Bonsai skill in base, kept in step with the commands by a test (5.5.3) | todo | | | |
+| T-5502 | base, Bonsai's own pack: the walls, the labels, the block and the template skills (5.5.2) | todo | | | |
+| T-5501 | The pack template, its checks and Bonsai's CI job for packs (5.5.1) | todo | | | |
+| T-5500 | The engine's part for packs: protocols paths, roles and limits in force, status's roles (5.5.0) | todo | | | |
 | T-5491 | Tests that read the caller's BONSAI_TASK set their own, so a named session's climb is green (D1) | done | | 2026-10-13 | 2026-10-13 |
 | T-5490 | The end verification of 5.4, a fresh verifier runs the 5.4 done checks 16 to 23 | done | | 2026-10-13 | 2026-10-13 |
 | T-5407 | The switch, Bonsai guards its own repo and proves its work with bonsai ladder | done | | 2026-10-13 | 2026-10-13 |
