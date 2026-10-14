@@ -533,7 +533,14 @@ func TestSweep(t *testing.T) {
 	root, base := f.repo(t, nil, nil)
 	before := git(t, root, "worktree", "list", "--porcelain")
 	dead := exec.Command("git", "--version")
-	must(t, dead.Run())
+	must(t, dead.Start())
+	// A handle to the process, opened while it is ours and kept to the end: Windows gives the pid of a finished
+	// process to another one once nothing holds it, and the sweep must find this owner dead, not replaced. (On Linux
+	// the pid is the zombie's until Wait; the handle changes nothing there.)
+	hold, err := os.FindProcess(dead.Process.Pid)
+	must(t, err)
+	t.Cleanup(func() { _ = hold.Release() })
+	must(t, dead.Wait())
 	stale := func(pid int) string {
 		parent, err := os.MkdirTemp(tmp, tempPrefix)
 		must(t, err)

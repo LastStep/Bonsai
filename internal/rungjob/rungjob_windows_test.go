@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"testing"
 	"time"
+	"unsafe"
 )
 
 // A job that cannot be made: the rung runs without one and says so, in Job and in its reason, never silently. At a
@@ -104,4 +105,64 @@ func TestMemberGonePid(t *testing.T) {
 	if goneProcess(syscall.Errno(5)) || goneProcess(errors.New("other")) {
 		t.Error("an error other than ERROR_INVALID_PARAMETER read as a gone process")
 	}
+}
+
+// A process that has exited while something still holds a handle to it keeps its object and its pid, and OpenProcess
+// still opens it: its exit code is no longer STILL_ACTIVE, so member skips it. A live process is still a member.
+func TestMemberExitedPid(t *testing.T) {
+	h, err := makeJob()
+	if err != nil {
+		t.Skipf("no job object here: %v", err)
+	}
+	t.Cleanup(func() { _ = syscall.CloseHandle(h) })
+	r := &rung{handle: h}
+
+	// Started suspended, so it can be put in the job (member skips a pid outside it) before it runs and exits.
+	cmd := exec.Command(os.Getenv("COMSPEC"), "/c", "exit 0")
+	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: createSuspended, HideWindow: true}
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	pid := uint32(cmd.Process.Pid)
+	// Our own handle, opened while the process is ours: it keeps the object and the pid after Wait lets go of its own.
+	held, err := syscall.OpenProcess(0x1000|syscall.SYNCHRONIZE, false, pid)
+	if err != nil {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		t.Fatalf("OpenProcess: %v", err)
+	}
+	t.Cleanup(func() { _ = syscall.CloseHandle(held) })
+	if err := r.enter(pid); err != nil || r.handle == 0 {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		t.Fatalf("the process did not join the job: %v (job %q)", err, r.off)
+	}
+	if !inJob(t, held, h) {
+		t.Fatal("the process is not in the job")
+	}
+	if err := cmd.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := syscall.WaitForSingleObject(held, 10000); err != nil {
+		t.Fatal(err)
+	}
+	if !exited(held) {
+		t.Fatal("the process has not exited")
+	}
+	if !inJob(t, held, h) {
+		t.Fatal("the exited process left the job's record")
+	}
+	if p, ok := r.member(pid); ok {
+		t.Errorf("an exited pid was reported as a member: %+v", p)
+	}
+}
+
+// inJob reports whether the process behind p is in the job j.
+func inJob(t *testing.T, p, j syscall.Handle) bool {
+	t.Helper()
+	var in int32
+	if ok, _, err := procIsProcessInJob.Call(uintptr(p), uintptr(j), uintptr(unsafe.Pointer(&in))); ok == 0 {
+		t.Fatalf("IsProcessInJob: %v", err)
+	}
+	return in != 0
 }

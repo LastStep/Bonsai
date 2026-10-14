@@ -272,11 +272,28 @@ func (r *rung) member(pid uint32) (Process, bool) {
 		return Process{PID: int(pid)}, true
 	}
 	defer func() { _ = syscall.CloseHandle(h) }()
+	// A process that has exited still opens while anything holds a handle to it, and is no member: its code is no
+	// longer STILL_ACTIVE. One whose code cannot be read is still reported.
+	if exited(h) {
+		return Process{}, false
+	}
 	var in int32
 	if ok, _, _ := procIsProcessInJob.Call(uintptr(h), uintptr(r.handle), uintptr(unsafe.Pointer(&in))); ok != 0 && in == 0 {
 		return Process{}, false
 	}
 	return describe(pid, h), true
+}
+
+// stillActive is the exit code of a process that has not exited (STILL_ACTIVE).
+const stillActive = 259
+
+// exited reports whether the process behind h has exited.
+func exited(h syscall.Handle) bool {
+	var code uint32
+	if err := syscall.GetExitCodeProcess(h, &code); err != nil {
+		return false
+	}
+	return code != stillActive
 }
 
 // errorInvalidParameter is what OpenProcess gives for a pid that no process holds any more (it exited between the
