@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5508
 title: "CI green and 5.4's carry-overs: three flakes, the rungs' environment, the stop gate's installed path (5.5.8)"
-status: todo
+status: verify
 lane:
 done_when:
   - "internal/ladder's TestLooserKindsRefused: every git call through testpack.Git passes -c maintenance.auto=false -c gc.auto=0; shown failing first in a temporary copy with git 2.47 or later (or the run report says why it could not be made to fail), then 20 runs green"
@@ -14,7 +14,7 @@ done_when:
 depends_on: [T-5590]
 blocked_by:
 created: 2026-10-14
-started:
+started: 2026-10-14
 finished:
 labels:
   bonsai.branch: "t5508"

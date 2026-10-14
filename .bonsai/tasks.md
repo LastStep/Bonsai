@@ -10,8 +10,8 @@ Active task when none is named: none (no task reads running)
 | T-5512 | bonsai agents, the studio's view of every agent, and the usage records (5.5.12) | todo | | | |
 | T-5511 | The guard's role rules and stall stops (5.5.11) | todo | | | |
 | T-5510 | Messages between agents: the reader, bonsai message and bonsai messages (5.5.10) | todo | | | |
-| T-5509 | Formats set 8, the contract's new section and the spec's notes (5.5.9) | todo | | | |
-| T-5508 | CI green and 5.4's carry-overs: three flakes, the rungs' environment, the stop gate's installed path (5.5.8) | todo | | | |
+| T-5509 | Formats set 8, the contract's new section and the spec's notes (5.5.9) | verify | | 2026-10-14 | |
+| T-5508 | CI green and 5.4's carry-overs: three flakes, the rungs' environment, the stop gate's installed path (5.5.8) | verify | | 2026-10-14 | |
 | T-5507 | Bonsai takes base and workflow: the new pre-release, Rohan's sitting, CLAUDE.md shrinks (5.5.7) | todo | | | |
 | T-5506 | The walls, each tried once on both sides (5.5.6) | todo | | | |
 | T-5505 | The packs in real Claude Code sessions, on both sides (5.5.5) | todo | | | |
