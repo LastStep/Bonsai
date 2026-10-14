@@ -15,6 +15,8 @@ package engine
 //     list (format0); .bonsai/.gitignore and .bonsai/local/ in git's index (gitignore, local);
 //   - checkladder.go: the ladder's shape in bonsai.yaml (rung-twice, floor-no-rung, ratchet-no-rung, capture-pattern,
 //     ratchet-no-count, rung-bash, tests-unknown: format.LadderCheckWords);
+//   - checkroles.go: the limits bonsai.yaml sets for the packs' roles, against the lock's declares (role-undeclared,
+//     role-default-over-max, role-actions-over-turns: format.RoleCheckWords);
 //   - checkdocs.go: the documents of Bonsai's kinds (format0-new, document, label, absolute-path), the labels in force
 //     (label-twice), the budgets (block-size, memory-index-size, memory-note-size), the paths CLAUDE.md, STATE and the
 //     memory notes name (missing-path), and the run reports past generated.run's rule (run-reports);
@@ -276,6 +278,7 @@ func (r *CheckResult) checkLockedFiles() {
 		}
 		r.Packs = append(r.Packs, PackState{ID: lp.ID, Version: lp.Version, Commit: lp.Commit, State: s})
 	}
+	r.checkRoles()
 }
 
 // folderName names a pack's folder in its repository for a person: the folder, or "(the repository's root)".

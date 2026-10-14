@@ -4,16 +4,21 @@ package engine
 // lock's declares (format.Declares gives its layout), so bonsai check, status and the guard read them with no pack
 // fetched: its lanes (bonsai/lanes.yaml), document kinds (pack.yaml's documents), label definitions
 // (bonsai/labels.yaml), protected paths (pack.yaml's protected), the hook lines and deny rules check needs to tell
-// Bonsai's lines in .claude/settings.json from the project's own, and its needs (the Claude Code floor, step 5.1.6).
+// Bonsai's lines in .claude/settings.json from the project's own, its needs (the Claude Code floor, step 5.1.6), and
+// its roles (pack.yaml's roles, set 8; plan-5 5.5.0 note 7), each with its kind, session, writes, max_turns and its
+// three limits' default and max, which every reader of a role reads from the lock (workspace.RolesInForce).
 //
 // Read here with the rules a schema cannot say, each refused as bad-pack with the pack maker's step:
 //   - labels: the namespace is the pack's own id, or bonsai (contract §5.1: bonsai.* is Bonsai's and its own packs';
 //     each other pack uses its own id), and every label's name starts with the namespace and a dot, once;
 //   - lanes: each name once;
 //   - document kinds: each name once, none of Bonsai's own kinds (DocKinds' bonsai rows) nor protocols (bonsai.yaml's
-//     documents key for the protocols folder), exactly one of path and file, and an id pattern Go's regexp reads.
-// Two linked packs declaring one document kind are refused in Build (packs-overlap); two defining one label name are
-// a bonsai check finding (contract §5.1), not a refusal.
+//     documents key for the protocols folder), exactly one of path and file, and an id pattern Go's regexp reads;
+//   - roles: each name once, and at most one with session true (the role the person's own session plays).
+// Two linked packs declaring one document kind are refused in Build (packs-overlap), and so are two declaring a role
+// with session true between them (checkSessionRoles); two declaring one role's name each keep their own, since Claude
+// Code names a plugin's role <pack>:<name>; two defining one label name are a bonsai check finding (contract §5.1), not
+// a refusal.
 
 import (
 	"errors"
@@ -38,7 +43,7 @@ const (
 // protectedProblems), which bonsai check --pack lists all of (checkpack.go).
 func readDeclares(manifest *workspace.Pack, read func(string) ([]byte, error)) (*format.Declares, error) {
 	d := &format.Declares{Documents: manifest.Full.Documents, Protected: manifest.Full.Protected,
-		Hooks: manifest.Full.Hooks, Deny: manifest.Full.Deny}
+		Hooks: manifest.Full.Hooks, Deny: manifest.Full.Deny, Roles: manifest.Full.Roles}
 	if format.NeedsAny(&manifest.Full.Needs) {
 		needs := manifest.Full.Needs
 		d.Needs = &needs
@@ -73,7 +78,55 @@ func readDeclares(manifest *workspace.Pack, read func(string) ([]byte, error)) (
 	if ps := protectedProblems(d.Protected); len(ps) > 0 {
 		return nil, errors.New(ps[0].text)
 	}
+	if ps := rolesProblems(d.Roles); len(ps) > 0 {
+		return nil, errors.New(ps[0])
+	}
 	return d, nil
+}
+
+// rolesProblems are the problems of pack.yaml's roles that their schema cannot say: each role's name once, and at
+// most one role with session true (the role the person's own session plays, which no subagent plays).
+func rolesProblems(roles []format.PackRole) []string {
+	var out []string
+	seen := map[string]bool{}
+	session := ""
+	for i, r := range roles {
+		if seen[r.Name] {
+			out = append(out, fmt.Sprintf("pack.yaml's roles item %d declares the role %s twice", i+1, quote(r.Name)))
+		}
+		seen[r.Name] = true
+		if r.Session {
+			if session != "" {
+				out = append(out, fmt.Sprintf("pack.yaml's roles item %d (%s) has session true, and so does %s: at most one role is the one "+
+					"the person's own session plays", i+1, quote(r.Name), quote(session)))
+			}
+			session = r.Name
+		}
+	}
+	return out
+}
+
+// checkSessionRoles refuses two linked packs that between them declare two roles with session true (each pack holds at
+// most one, rolesProblems): a project's person's session plays one role. The refusal names both, <pack>:<name>.
+func checkSessionRoles(packs []*PackData) error {
+	first := ""
+	for _, pd := range packs {
+		if pd.Declares == nil {
+			continue
+		}
+		for _, r := range pd.Declares.Roles {
+			if !r.Session {
+				continue
+			}
+			name := pd.Ref.ID + ":" + r.Name
+			if first != "" {
+				return errorf("packs-overlap", ExitInput, "take one of the two packs out of bonsai.yaml; a project's own session plays one role",
+					"two packs declare the role the person's own session plays (session: true): %s and %s", first, name)
+			}
+			first = name
+		}
+	}
+	return nil
 }
 
 // lanesProblems are a lanes.yaml's problems its schema cannot say: each lane's name once.

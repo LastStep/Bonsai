@@ -521,6 +521,11 @@ func Build(req Request) (_ *Plan, err error) {
 			kinds[k.Kind] = pd.Ref.ID
 		}
 	}
+	// At most one role the person's own session plays (session: true) across the linked packs (set 8; plan-5 5.5.0
+	// note 7): two are refused, naming both. Two packs declaring one role's name each keep their own (<pack>:<name>).
+	if err := checkSessionRoles(newPacks); err != nil {
+		return nil, err
+	}
 	// The files a hook runs (consent.go, rule 4): each runs item is a file a linked pack writes, and a pack's hook
 	// command naming a file a linked pack writes lists it in its runs; else the plan is refused (S3).
 	if err := checkRuns(newPacks, targets); err != nil {

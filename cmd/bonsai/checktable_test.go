@@ -704,6 +704,103 @@ func TestCheckNextCommands(t *testing.T) {
 	}
 }
 
+// rolesPack is a fixture pack (id workflow) declaring three of workflow's roles as it ships them: orchestrator (the
+// session's, no limits), builder (a lead: 180 minutes, 600 actions, 4 red runs, max_turns 2400) and auditor (a helper:
+// 30, 150, none, max_turns 600).
+func rolesPack(t *testing.T, tmp string) (string, []string) {
+	t.Helper()
+	role := func(name, kind, session, writes, turns string, limits [3]string) string {
+		s := "  - name: " + name + "\n    kind: " + kind + "\n    session: " + session + "\n    writes: " + writes + "\n    max_turns: " + turns + "\n"
+		for i, l := range []string{"minutes", "actions", "red_runs"} {
+			d, m, _ := strings.Cut(limits[i], " ")
+			s += "    " + l + ":\n      default: " + d + "\n      max: " + m + "\n"
+		}
+		return s
+	}
+	return testpack.Fixture(t, tmp, "workflow", map[string]string{
+		".claude-plugin/plugin.json": "{\"name\": \"workflow\", \"description\": \"A fixture pack with roles.\"}\n",
+		"bonsai/pack.yaml": "format: bonsai.pack/1\nid: workflow\nversion: \"0.1.0\"\nfiles: []\nhooks: []\ndeny: []\nroles:\n" +
+			role("orchestrator", "lead", "true", "true", "null", [3]string{"null null", "null null", "null null"}) +
+			role("builder", "lead", "false", "true", "2400", [3]string{"180 180", "600 600", "4 4"}) +
+			role("auditor", "helper", "false", "false", "600", [3]string{"30 30", "150 150", "null null"}),
+	})
+}
+
+// roleCheckCases: the roles bonsai.yaml sets under the fixture's entry for each word of format.RoleCheckWords.
+var roleCheckCases = map[string]string{
+	"role-undeclared":         "      tester:\n        minutes:\n          default: 5\n",
+	"role-default-over-max":   "      builder:\n        minutes:\n          default: 240\n",
+	"role-actions-over-turns": "      builder:\n        actions:\n          max: 3000\n",
+}
+
+// check's role findings (format.RoleCheckWords, plan-5 5.5.0 note 8), walked from their table as TestCheckTable walks
+// check's: each word has a case, a project linked to the fixture whose bonsai.yaml sets the case's limits, where check
+// finds that word (a finding, about bonsai.yaml, an agent's) and no other role word; each next step names only commands
+// Bonsai has. Limits raised within their bounds find none.
+func TestRoleCheckTable(t *testing.T) {
+	for code := range roleCheckCases {
+		if w, ok := format.CheckWord(code); !ok || !inWords(format.RoleCheckWords, code) {
+			t.Errorf("a case for %s (%v), which is not in format.RoleCheckWords", code, w)
+		}
+	}
+	tmp := t.TempDir()
+	src, shas := rolesPack(t, tmp)
+	run := func(t *testing.T, roles string) (int, schema.Object, string) {
+		t.Helper()
+		c := newCLI(t)
+		c.linkTo(src, shas[0])
+		raw := c.read("bonsai.yaml")
+		if strings.Count(raw, "    roles: null\n") != 1 {
+			t.Fatalf("init wrote no roles: null line:\n%s", raw)
+		}
+		c.write("bonsai.yaml", strings.Replace(raw, "    roles: null\n", "    roles:\n"+roles, 1))
+		code, out, _ := c.run("", "check", "--json")
+		return code, fits(t, out, "check"), out
+	}
+	for _, w := range format.RoleCheckWords {
+		t.Run(w.Word, func(t *testing.T) {
+			roles, ok := roleCheckCases[w.Word]
+			if !ok {
+				t.Fatalf("format.RoleCheckWords has %s, and TestRoleCheckTable no case for it", w.Word)
+			}
+			code, doc, out := run(t, roles)
+			findings, _ := doc.Get("findings")
+			if code != 1 || !hasCode(findings.([]any), w.Word) {
+				t.Fatalf("exit %d, no finding %s:\n%s", code, w.Word, out)
+			}
+			for _, f := range findings.([]any) {
+				fo := f.(schema.Object)
+				n, _ := fo.Get("next")
+				checkNext(t, fo.String("code"), n.(schema.Object).String("do"))
+				if !inWords(format.RoleCheckWords, fo.String("code")) {
+					continue
+				}
+				if fo.String("code") != w.Word || fo.String("file") != "bonsai.yaml" || whoOf(fo) != "agent" {
+					t.Errorf("%s: file %s, who %s (the case is %s)", fo.String("code"), fo.String("file"), whoOf(fo), w.Word)
+				}
+			}
+		})
+	}
+	t.Run("within bounds", func(t *testing.T) {
+		_, doc, out := run(t, "      builder:\n        minutes:\n          default: 240\n          max: 480\n        actions:\n          max: 2400\n")
+		findings, _ := doc.Get("findings")
+		for _, f := range findings.([]any) {
+			if inWords(format.RoleCheckWords, f.(schema.Object).String("code")) {
+				t.Errorf("limits within bounds give %s:\n%s", f.(schema.Object).String("code"), out)
+			}
+		}
+	})
+}
+
+func inWords(table []format.Word, code string) bool {
+	for _, w := range table {
+		if w.Word == code {
+			return true
+		}
+	}
+	return false
+}
+
 // check --pack's words (format.PackCheckWords, plan-5 5.1.9), walked as TestCheckTable walks check's: each word has a
 // case that changes one file of the documented pack (testpack.DocumentedPack, which passes every rule) to break that
 // rule, and more cases where a rule has more than one way to break; bonsai check --pack on each, with --json and
