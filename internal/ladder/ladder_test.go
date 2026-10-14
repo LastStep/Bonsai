@@ -836,7 +836,7 @@ func TestWriteFailures(t *testing.T) {
 func TestDirtyDuringTheClimb(t *testing.T) {
 	for _, c := range []struct{ name, command, says string }{
 		{"a file left", "echo made > made.txt", "the tree was dirty"},
-		{"a commit made", "git -c user.name=a -c user.email=a@example.invalid commit -q --allow-empty -m moved", "HEAD moved during the climb"},
+		{"a commit made", "git -c maintenance.auto=false -c gc.auto=0 -c user.name=a -c user.email=a@example.invalid commit -q --allow-empty -m moved", "HEAD moved during the climb"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			f := project(t, yamlOf("[1]", "{}", "[]", rung{n: 1, name: "one", command: c.command, required: true}),

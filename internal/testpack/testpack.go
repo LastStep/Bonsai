@@ -78,7 +78,10 @@ func Isolate(t *testing.T, tmp string) (home string) {
 func Git(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-C", dir, "-c", "user.name=bonsai-test", "-c", "user.email=bonsai-test",
-		"-c", "commit.gpgsign=false", "-c", "init.defaultBranch=main", "-c", "core.autocrlf=false"}, args...)...)
+		"-c", "commit.gpgsign=false", "-c", "init.defaultBranch=main", "-c", "core.autocrlf=false",
+		// No upkeep: since git 2.47 a commit starts it detached, and it holds the object folder while a test's
+		// cleanup removes it ("directory not empty").
+		"-c", "maintenance.auto=false", "-c", "gc.auto=0"}, args...)...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
