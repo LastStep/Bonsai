@@ -5,6 +5,7 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-5590 | Step 5.5 re-planned on the agent-pipelines redesign and Rohan's six decisions of 14 Oct | verify | | 2026-10-14 | |
 | T-5491 | Tests that read the caller's BONSAI_TASK set their own, so a named session's climb is green (D1) | done | | 2026-10-13 | 2026-10-13 |
 | T-5490 | The end verification of 5.4, a fresh verifier runs the 5.4 done checks 16 to 23 | done | | 2026-10-13 | 2026-10-13 |
 | T-5407 | The switch, Bonsai guards its own repo and proves its work with bonsai ladder | done | | 2026-10-13 | 2026-10-13 |
