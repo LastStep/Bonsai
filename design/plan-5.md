@@ -3478,11 +3478,10 @@ And from 14 Oct: `main`'s CI is red on two flakes; Rohan: leave it red and fix b
 **Kept from 9 Oct: moving a pack's version stays his step**, and so do adding a pack to a linked project and taking one
 out: an agent prepares the change and hands him the exact line, and makes it only on his word ("Moving a pack's version:
 a person's step", below). No repository secret. **Seven questions were put to him at approval** ("Your questions at
-approval", in "For Rohan"): six answered on 14 Oct, each written here on his answer, and the seventh, on messages to
-other sessions, written on the recommendation until his word. **Stop line 3 is crossed, in the open:** with the CI
-question, the six decisions of 14 Oct, where the budgets live, whether `bonsai agents` joins 5.5 and the token counts,
-5.5's option rounds are seventeen by 5.4's count (each question one), past the line's two, as 5.3 and 5.4 crossed it;
-"For Rohan" says so, and his approval of this section is his recorded choice to go on (check 17).
+approval", in "For Rohan"), all answered on 14 Oct; each is written here on his answer. **Stop line 3 is crossed, in the
+open:** with the CI question, the six decisions of 14 Oct, where the budgets live, whether `bonsai agents` joins 5.5 and
+the token counts, 5.5's option rounds are seventeen by 5.4's count (each question one), past the line's two, as 5.3 and
+5.4 crossed it; "For Rohan" says so, and his approval of this section is his recorded choice to go on (check 17).
 
 Every format change is an addition, in one formats set (8): a new format for a message between agents, one for their
 list and one for the view of every agent (`bonsai agents`); new log events (`message`, `spawn`, `usage`) and fields
@@ -3527,8 +3526,8 @@ projects can take with a few lines in its `bonsai.yaml`:
   Claude Code's own agent types (Explore and the like) are held as helpers wherever they are started, from your session
   or by a builder or a verifier: they change nothing, run on a helper's budget and call no one (your "A. Treated as
   helpers", read by the plan for a lead's too). Your own session keeps Claude Code's messages to other sessions; the
-  agents below it cannot message your session or another one, and report through the message format (the recommendation,
-  until your answer at approval).
+  agents below it cannot message your session or another one, and report through the message format (your "A. Only your
+  sessions").
 - **A view of every agent for the studio** (your 14 Oct ask): `bonsai agents` lists each agent Bonsai has seen in a
   project, your own sessions included: who started it, its role, task and brief, its last call, the counts and limits
   the guard recorded for it, whether its budget is spent, and its report, as recorded. It shows only what Bonsai
@@ -3743,8 +3742,7 @@ answer is recorded; your approval of this section is your choice to go on past t
 too.
 
 **Your questions at approval (14 Oct).** Seven things the drafts of this re-plan settled without you, which its two
-reviews found. You answered the first six on 14 Oct, and each is written into this section on your answer; the seventh
-is written on the recommendation until your word.
+reviews found. You answered all seven on 14 Oct, and each is written into this section on your answer.
 1. **Where message files live.** (A) In `.bonsai/local/messages/`, never committed, cleaned after 30 days and never
    while a thread is open, like asks and the log; run reports name the ids and quote what matters (recommended).
    (B) Committed in a documents folder: a lasting record, but in a public repo every brief needs the privacy read.
@@ -3786,13 +3784,22 @@ is written on the recommendation until your word.
    session (`main`, or a separate session). (A) Your own session keeps its messages to other sessions; every agent below
    it (builders, verifiers, helpers, Claude Code's own types) may not message your session or another one, and reports
    through the message format instead (recommended). (B) Refused for every session, yours included, as the draft had it.
-   **Written on (A), the recommendation, until your answer at approval.**
+   **Your answer: "A. Only your sessions"**: your own top-level sessions keep Claude Code's messages to `main` and to
+   other sessions; every agent below them (builders, verifiers, helpers, Claude Code's own types) may not message `main`
+   or another session, and reports through the message format.
 
 Not put to you: the thresholds of `bonsai messages`' two flags (`unanswered`, a brief with no answer after an hour;
 `circling`, more than three briefs each way between the same two agents) stay the plan's defaults, and each project can
-change them in its `bonsai.yaml`. And each agent's record is kept 30 days, like the log and the messages, so the
-studio's agent screen keeps an agent as long as its log and briefs (the orchestrator's call, 14 Oct; each project can
-change it in its `bonsai.yaml`, under `generated`).
+change them in its `bonsai.yaml`.
+
+**Two calls the orchestrator made, so you know them** (14 Oct, after the plan's second review):
+- **Claude Code's own agent types are helpers wherever they are started.** Your "A. Treated as helpers" answered for
+  agents started from your session; the plan holds one that a builder or a verifier starts the same way. So a builder
+  may start an Explore agent like any helper, and it still changes nothing, runs on a helper's budget and calls no one.
+  The plan's earlier text had refused that, with no word of yours behind it.
+- **Each agent's record is kept 30 days**, like the log and the messages (the earlier text had 7), so the studio's agent
+  screen keeps an agent as long as its log and briefs. Each project can change it in its `bonsai.yaml`, under
+  `generated`.
 
 #### What exists on `main`, and what 5.1 to 5.4 added
 
@@ -4398,12 +4405,12 @@ named agents started from his session; a lead's are held the same way), not word
 Agent call, `main`, or another session. The guard keeps, for each Agent call it allows, the call's `name` with the role
 it starts (the newest call wins a reused name, as Claude Code's own does), and each agent's role from its own first call
 (its state, below, keyed by its `agent_id`). A `to` that resolves to an agent is judged by the table above. **Other
-sessions** (on the recommendation; Rohan's word at approval, 14 Oct): the person's own session (the `session` role)
-keeps Claude Code's messages to `main` and to other sessions, so a `to` from it that names no agent the guard recorded
-is let through; every agent below it (leads, helpers, undeclared types, named sessions) may not message `main` or
-another session, and a `to` from one that resolves to no recorded agent (`main`, another session, a name or id the guard
-never saw) is refused (`call-refused`; next: report through `bonsai message`), so a resume never reaches a role its
-caller may not call and no agent's words reach another session.
+sessions** (Rohan, 14 Oct, at approval: "A. Only your sessions"): the person's own session (the `session` role) keeps
+Claude Code's messages to `main` and to other sessions, so a `to` from it that names no agent the guard recorded is let
+through; every agent below it (leads, helpers, undeclared types, named sessions) may not message `main` or another
+session, and a `to` from one that resolves to no recorded agent (`main`, another session, a name or id the guard never
+saw) is refused (`call-refused`; next: report through `bonsai message`), so a resume never reaches a role its caller may
+not call and no agent's words reach another session.
 
 **A session started from the shell.** Any agent can run `claude` from its shell, and that top-level session's hooks
 carry no `agent_id`, so it would read as the person's own session (no budget, no role rule). So the shell judge refuses,
@@ -4844,14 +4851,14 @@ Opus builder, VG after it.
    (in the order above: `agent_type`; an undeclared type; a top-level session's `BONSAI_ROLE`; the person's session) and
    the requested type (a scoped name; an unscoped one matched to a declared role only where one pack declares it).
    `SendMessage`'s `to` resolved from the names the guard recorded at the Agent calls it allowed and from the agents'
-   state; one that resolves to no recorded agent let through from the `session` role (`main`, another session: on the
-   recommendation, Rohan's word at approval) and refused from every other caller. On the shell line, through the shell
-   judge's word reading (`internal/guard/commands.go`): a command starting Claude Code (the start words of "A session
-   started from the shell") refused to every role but the `session` role; `bonsai message --kind brief` refused from a
-   role that may not call the `--to` role; any `bonsai message` whose `--from` is not the caller's own address (its tied
-   brief's `to`; the `session` role's name; `<role>@<BONSAI_TASK>` for a named session) refused, as is every `bonsai
-   message` from a caller with no address (no tied brief, or an undeclared type). Every refusal names its rule
-   (`call-refused`) and writes a `guard` record with the caller's and the callee's types.
+   state; one that resolves to no recorded agent let through from the `session` role (`main`, another session: Rohan's
+   "A. Only your sessions") and refused from every other caller. On the shell line, through the shell judge's word
+   reading (`internal/guard/commands.go`): a command starting Claude Code (the start words of "A session started from
+   the shell") refused to every role but the `session` role; `bonsai message --kind brief` refused from a role that may
+   not call the `--to` role; any `bonsai message` whose `--from` is not the caller's own address (its tied brief's `to`;
+   the `session` role's name; `<role>@<BONSAI_TASK>` for a named session) refused, as is every `bonsai message` from a
+   caller with no address (no tied brief, or an undeclared type). Every refusal names its rule (`call-refused`) and
+   writes a `guard` record with the caller's and the callee's types.
 3a. **Bonsai's own records:** from every role but the `session` role, the shell writes the guard can read (a redirect or
     `tee` into a path, `cp`, `mv`, `ln` or `sed -i` onto one) into the main checkout's `.bonsai/local/` and
     `.bonsai/lock.json` refused (`bonsai-files`), through note 4's reader of shell writes, with Bonsai's own commands
