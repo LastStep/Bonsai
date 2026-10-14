@@ -198,7 +198,8 @@ func (w Writing) check(r Rules) (*format.Message, *Error) {
 		if role := RoleOf(f.value); !r.declares(role) {
 			return nil, &Error{Code: "role-not-declared", Exit: ExitInput,
 				What: fmt.Sprintf("%s names the role %s, which the linked packs do not declare (they declare %s)", f.name, role, strings.Join(r.Roles, ", ")),
-				Next: "address the message to a declared role, as bonsai status --json lists them"}
+				Next: fmt.Sprintf("give %s an address whose role the linked packs declare (%s), as bonsai status --json lists them", f.name,
+					strings.Join(r.Roles, ", "))}
 		}
 	}
 	if msg.Budget != nil && r.Max != nil {

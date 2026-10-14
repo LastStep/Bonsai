@@ -352,8 +352,15 @@ func TestWriteRules(t *testing.T) {
 		return nil
 	}
 	b := func(s string) *string { return &s }
-	f.refused(Writing{From: "orchestrator", To: "planner@T-0901", Kind: "brief"}, r, "role-not-declared")
-	f.refused(Writing{From: "lead@T-0901", To: "builder@T-0901", Kind: "brief"}, r, "role-not-declared")
+	// Each refusal's next step names the flag that names the role (VM's wording point): --to, or --from.
+	for flag, w := range map[string]Writing{"--to": {From: "orchestrator", To: "planner@T-0901", Kind: "brief"},
+		"--from": {From: "lead@T-0901", To: "builder@T-0901", Kind: "brief"}} {
+		e := f.refused(w, r, "role-not-declared")
+		if !strings.HasPrefix(e.What, flag+" names the role") ||
+			e.Next != "give "+flag+" an address whose role the linked packs declare (builder, orchestrator, verifier), as bonsai status --json lists them" {
+			t.Errorf("%s: %s; next: %s", flag, e.What, e.Next)
+		}
+	}
 	e := f.refused(Writing{From: "orchestrator", To: "builder@T-0901", Kind: "brief", Budget: b("minutes=481")}, r, "budget-over-max")
 	if !strings.Contains(e.What, "minutes 481, over its max in force for the role builder, 480") || !strings.Contains(e.Next, "minutes=480 or less") {
 		t.Errorf("the refusal: %v", e)
