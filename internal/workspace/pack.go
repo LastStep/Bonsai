@@ -25,10 +25,22 @@ package workspace
 //
 // bonsai check --pack (step 5.1.9) holds a pack folder to the same rule on its own.
 //
+// A files entry's path may start with a placeholder (PathPlaceholders, set 8; plan-5 5.5.0 note 1): <protocols>/ as
+// its first segment, for a file the engine writes under the project's documents.protocols folder (an always-on
+// protocol file, which the instruction block then imports). This reader takes the placeholder there and holds the
+// rest of the path to every rule a path is held to (CheckFilePath); the engine resolves it against bonsai.yaml at each
+// link and holds the path it gives to the same rules again (ResolveFilePath). Every other < and > is refused.
+//
+// The roles a pack declares (set 8: pack.yaml's roles) are read in full here, in Pack.Full.Roles; the engine copies
+// them into the lock's declares (internal/engine/declares.go), which every reader of a role reads (RolesInForce).
+//
 // The id bonsai is Bonsai's own (its hook lines, its marketplace's owner), so no pack may take it.
 
 import (
+	"errors"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -70,7 +82,7 @@ type Pack struct {
 
 // FileEntry is one of a pack's files.
 type FileEntry struct {
-	Path string // where it goes in the project: project-relative, forward slashes
+	Path string // where it goes in the project: project-relative, forward slashes; or <protocols>/ and such a path (ResolveFilePath)
 	From string // its source in the pack's bonsai/files/
 	Kind string // pack or once
 	Line int
@@ -136,9 +148,7 @@ func ReadPack(raw []byte) (*Pack, error) {
 		if f.err != nil {
 			break
 		}
-		if err := CheckRelPath(fe.Path); err != nil {
-			f.fail(first, "%s's path: %v", where, err)
-		} else if err := checkPackTarget(fe.Path); err != nil {
+		if err := CheckFilePath(fe.Path); err != nil {
 			f.fail(first, "%s's path: %v", where, err)
 		} else if err := CheckRelPath(fe.From); err != nil {
 			f.fail(first, "%s's from: %v", where, err)
@@ -203,6 +213,81 @@ func ReadPack(raw []byte) (*Pack, error) {
 	}
 	p.Full = full
 	return p, nil
+}
+
+// ProtocolsPlaceholder is the one placeholder a pack file's path may start with (set 8; plan-5 5.5.0 note 1): the
+// project's documents.protocols folder, which the instruction block imports. Its one home is PathPlaceholders.
+const ProtocolsPlaceholder = "<protocols>"
+
+// PathPlaceholders are the placeholders a files entry's path in a pack's bonsai/pack.yaml may start with, each as its
+// first segment only, and what the engine puts in its place when it links the pack: their one home, on the reference
+// page (a later placeholder is an addition here). A pack cannot know a project's folders (the studio keeps its
+// protocols in studio/protocols, bonsai init's default is work/protocols), so a pack names the folder this way and the
+// engine writes the file under the project's own; the lock records the path it resolved to. No other <...> may
+// appear anywhere in a path: CheckRelPath refuses < and >, which no Windows folder name holds, so a placeholder never
+// reads as a real folder.
+var PathPlaceholders = []format.Word{
+	{Word: ProtocolsPlaceholder, Means: "bonsai.yaml's documents.protocols: the folder the packs' always-on protocol files are written to, " +
+		"which the instruction block in CLAUDE.md imports (<protocols>/session-start.md is written at work/protocols/session-start.md " +
+		"in a project whose documents.protocols is work/protocols)"},
+}
+
+// CheckFilePath checks a files entry's path as a pack's pack.yaml gives it: a project path (CheckRelPath) that is no
+// file Bonsai, Claude Code or git keeps for itself (checkPackTarget), or one that starts with a placeholder of
+// PathPlaceholders as its first segment, whose rest is such a path (the engine checks the path it resolves to again,
+// ResolveFilePath). bonsai check --pack holds a pack's folder to the same rule, through this reader.
+func CheckFilePath(p string) error {
+	if rest, ok := strings.CutPrefix(p, ProtocolsPlaceholder+"/"); ok {
+		if rest == "" {
+			return pathError(p, "names the folder "+ProtocolsPlaceholder+" alone, not a file in it")
+		}
+		if err := CheckRelPath(rest); err != nil {
+			if strings.ContainsAny(rest, "<>") {
+				return fmt.Errorf("after %s/: %v (a placeholder is only ever the path's first segment)", ProtocolsPlaceholder, err)
+			}
+			return fmt.Errorf("after %s/: %v", ProtocolsPlaceholder, err)
+		}
+		if err := checkPackTarget(rest); err != nil {
+			return fmt.Errorf("after %s/: %v", ProtocolsPlaceholder, err)
+		}
+		return nil
+	}
+	if err := CheckRelPath(p); err != nil {
+		if strings.ContainsAny(p, "<>") {
+			return fmt.Errorf("%v; a placeholder may only start the path, as its whole first segment, and the one there is is %s",
+				err, ProtocolsPlaceholder)
+		}
+		return err
+	}
+	return checkPackTarget(p)
+}
+
+// ResolveFilePath gives the project path a files entry's path is written at: protocols (bonsai.yaml's
+// documents.protocols) in place of a leading <protocols>, the path as it is otherwise. The path it gives passes every
+// check a pack file's path passes (CheckRelPath, checkPackTarget), so a project whose folder makes it fail one
+// (.claude, .git, .bonsai, .., a short name such as CLAUDE~1) is refused, and so is one with no protocols folder at
+// all (null, empty or missing). Its error says what is wrong with the folder, for the engine to name the line of
+// bonsai.yaml to set.
+func ResolveFilePath(p, protocols string) (string, error) {
+	rest, ok := strings.CutPrefix(p, ProtocolsPlaceholder+"/")
+	if !ok {
+		return p, nil
+	}
+	folder := strings.TrimSuffix(protocols, "/")
+	if folder == "" {
+		return "", errors.New("bonsai.yaml names no documents.protocols folder (null, empty or missing), so the pack's " +
+			strconv.QuoteToASCII(p) + " has nowhere to go")
+	}
+	resolved := folder + "/" + rest
+	err := CheckRelPath(resolved)
+	if err == nil {
+		err = checkPackTarget(resolved)
+	}
+	if err != nil {
+		return "", fmt.Errorf("documents.protocols %s puts the pack's %s at %s, which %s", strconv.QuoteToASCII(protocols),
+			strconv.QuoteToASCII(p), strconv.QuoteToASCII(resolved), strings.TrimPrefix(err.Error(), "the path "+strconv.QuoteToASCII(resolved)+" "))
+	}
+	return resolved, nil
 }
 
 // entryOf takes a list item that must be a mapping, and its first line.

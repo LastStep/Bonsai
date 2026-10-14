@@ -104,6 +104,9 @@ func Page() []byte {
 	p.section("Pack file kinds", "closed", "workspace.PackFileKinds (internal/workspace/pack.go), held to the lock schema's list",
 		"`bonsai check --schema bonsai.pack`", "The kinds a pack gives its files in bonsai/pack.yaml (`files[].kind`).")
 	p.values(workspace.PackFileKinds)
+	p.section("Pack path placeholders", "closed", "workspace.PathPlaceholders (internal/workspace/pack.go)", "`bonsai check --schema bonsai.pack` (files[].path)",
+		"What a files entry's path in a pack's bonsai/pack.yaml may start with, as its first segment only, and what the engine writes in its place when it links the pack (set 8; plan-5 5.5.0); no other `<...>` may appear in a path, and the lock records the path it resolved to.")
+	p.words(workspace.PathPlaceholders)
 	p.section("Needs kinds", "open", "status.NeedKinds (internal/status/needs.go)", "`bonsai status --json` (needs[].kind)",
 		"What the workspace needs from a machine; a reader shows a kind it does not know as other.")
 	p.words(status.NeedKinds)

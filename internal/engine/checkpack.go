@@ -44,7 +44,8 @@ package engine
 //     where it sees every linked pack.
 //   - pack-block: the instruction block a project linked to this pack alone would get is at most MaxBlockLines (spec
 //     §6): blockBody, the engine's own, for a workspace with init's documents (DefaultDocuments) and this pack (its
-//     files in the protocols folder imported, its label definitions, its block.md without the leading comment).
+//     files in the protocols folder imported, each <protocols>/ file's resolved there, its label definitions, its
+//     block.md without the leading comment).
 //     Looked at only when pack.yaml reads as the engine reads it.
 //   - pack-plugin-version: .claude-plugin/plugin.json, when the pack has one, carries no version (manifestVersion, the
 //     link's own rule); one that is not a JSON object Bonsai reads is this rule's too, since its version cannot be
@@ -670,7 +671,16 @@ func (c *packCheck) block(pf packYAMLRead, labels *format.Labels) *Error {
 	if pf.manifest == nil {
 		return nil
 	}
-	pd := &PackData{Manifest: pf.manifest, Declares: &format.Declares{Labels: labels}}
+	// The block a project linked to this pack alone would get: init's documents, its <protocols>/ files resolved there.
+	manifest := *pf.manifest
+	manifest.Files = nil
+	for _, fe := range pf.manifest.Files {
+		if resolved, err := workspace.ResolveFilePath(fe.Path, DefaultDocuments.Protocols); err == nil {
+			fe.Path = resolved
+		}
+		manifest.Files = append(manifest.Files, fe)
+	}
+	pd := &PackData{Manifest: &manifest, Declares: &format.Declares{Labels: labels}}
 	file := workspace.PackFile
 	if pf.manifest.Block != "" {
 		file = "bonsai/" + pf.manifest.Block

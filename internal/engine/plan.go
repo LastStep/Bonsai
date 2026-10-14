@@ -431,6 +431,11 @@ func Build(req Request) (_ *Plan, err error) {
 			newPacks = append(newPacks, pd)
 		}
 	}
+	// A pack file's <protocols>/ start, the project's documents.protocols in its place (protocols.go), before any rule
+	// below reads a pack's files.
+	if err := resolveFiles(cfg, newPacks); err != nil {
+		return nil, err
+	}
 	// Each locked pack at its locked commit: the baseline consent is judged against (consent.go). It is read at the
 	// folder the lock records (formats set 4's path), and it is the baseline only when its content there hashes to the
 	// lock's own sha256 for the pack (contentHash: every file of the pack's folder at the commit). A folder in

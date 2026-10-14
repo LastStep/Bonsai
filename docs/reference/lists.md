@@ -34,6 +34,7 @@ error words.
 - Generated kinds
 - Bonsai's document kinds
 - Pack file kinds
+- Pack path placeholders
 - Needs kinds
 - Claude Code states
 - Plugin results
@@ -477,6 +478,17 @@ Values, in order: `task`, `run`, `state`, `answers`, `memory`, `tasks`, `session
 - The kinds a pack gives its files in bonsai/pack.yaml (`files[].kind`).
 
 Values, in order: `pack`, `once`.
+
+## Pack path placeholders
+
+- Closed list.
+- Defined in: workspace.PathPlaceholders (internal/workspace/pack.go).
+- Printed in a project by: `bonsai check --schema bonsai.pack` (files[].path).
+- What a files entry's path in a pack's bonsai/pack.yaml may start with, as its first segment only, and what the engine writes in its place when it links the pack (set 8; plan-5 5.5.0); no other `<...>` may appear in a path, and the lock records the path it resolved to.
+
+| Word | Means |
+|---|---|
+| `<protocols>` | bonsai.yaml's documents.protocols: the folder the packs' always-on protocol files are written to, which the instruction block in CLAUDE.md imports (<protocols>/session-start.md is written at work/protocols/session-start.md in a project whose documents.protocols is work/protocols) |
 
 ## Needs kinds
 

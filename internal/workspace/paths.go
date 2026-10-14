@@ -24,7 +24,9 @@ var windowsDevices = map[string]bool{"con": true, "prn": true, "aux": true, "nul
 // project); a .git segment or its NTFS short name GIT~1 (git's own folder, where a file would run as a hook; git
 // refuses both); a control character; any of < > " | ? * (Windows cannot hold them); a segment ending in a dot or a
 // space (Windows drops them); and a Windows device name (CON, NUL, CONIN$, COM1, COM with a superscript digit and
-// the rest), with or without an extension, spaces before the extension included (con .txt).
+// the rest), with or without an extension, spaces before the extension included (con .txt). A pack file's path that
+// starts with a placeholder (<protocols>/, PathPlaceholders) is read by CheckFilePath, which takes the placeholder off
+// and holds the rest here: every other < and > stays refused.
 func CheckRelPath(p string) error {
 	switch {
 	case p == "":
