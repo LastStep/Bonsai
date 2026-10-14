@@ -1,0 +1,19 @@
+{
+ "session_id": "cca93842-d4f8-4704-b6a0-de3bec4ceb81",
+ "transcript_path": "~/.claude/projects/p/cca93842-d4f8-4704-b6a0-de3bec4ceb81.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "17dca98c-8d67-49ba-8ffa-89bbbff6f55f",
+ "permission_mode": "bypassPermissions",
+ "agent_type": "lead",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Bash",
+ "tool_input": {
+  "command": "bash ~/scripts/inner.sh",
+  "timeout": 300000,
+  "description": "Run the T-5511 inner script"
+ },
+ "tool_use_id": "toolu_01CMQ1tS5eyMse95ymTQWCjT"
+}

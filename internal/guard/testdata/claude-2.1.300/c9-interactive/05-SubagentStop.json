@@ -1,0 +1,17 @@
+{
+ "session_id": "afc3936b-6e41-4ce8-b2df-2dcbdca06f3c",
+ "transcript_path": "~/.claude/projects/p/afc3936b-6e41-4ce8-b2df-2dcbdca06f3c.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "0c019469-c716-4b77-ade9-bf8911bb56bb",
+ "permission_mode": "bypassPermissions",
+ "agent_id": "a82b8913f6a07c2d8",
+ "agent_type": "",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "SubagentStop",
+ "stop_hook_active": false,
+ "agent_transcript_path": "~/.claude/projects/p/afc3936b-6e41-4ce8-b2df-2dcbdca06f3c/subagents/agent-a82b8913f6a07c2d8.jsonl",
+ "background_tasks": [],
+ "session_crons": []
+}

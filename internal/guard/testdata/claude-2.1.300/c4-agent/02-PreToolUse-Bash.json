@@ -1,0 +1,18 @@
+{
+ "session_id": "9542a4f3-bcff-4a84-ae74-651e50b58a94",
+ "transcript_path": "~/.claude/projects/p/9542a4f3-bcff-4a84-ae74-651e50b58a94.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "9321e0da-a190-4c49-b5d6-f2596c71a648",
+ "permission_mode": "bypassPermissions",
+ "agent_type": "lead",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Bash",
+ "tool_input": {
+  "command": "echo agentsession",
+  "description": "Print agentsession"
+ },
+ "tool_use_id": "toolu_01JTyB64Ywmu9JpjRfTJ22bM"
+}

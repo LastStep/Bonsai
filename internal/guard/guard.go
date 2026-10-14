@@ -10,6 +10,14 @@
 // Bonsai's own commands (commands.go): a line that unsets CLAUDE_CODE_CHILD_SESSION here, each bonsai call once
 // step 5.3.3's splitter finds it. Every rule a decision names is a row of the rules table (rules.go), its one home.
 //
+// Where the project's lock declares roles (step 5.5.11), the roles' rules and the stall stops come first (roles.go,
+// budget.go, rolecmds.go; their state in internal/agents): who may call whom on Agent, Task, SendMessage and Workflow;
+// the file tools and the shell writes it can read refused to a role that changes nothing; an agent's readable shell
+// writes into Bonsai's own records and the lock refused; a start of Claude Code on an agent's shell line refused;
+// bonsai message's --from held to its writer's address; and each agent's budget, counted on every call. There the
+// engine writes a second line, bonsai hook guard --second (Options.Second), on every other tool: it refuses only past
+// a budget, and lets a call through on a fault of its own.
+//
 // Where it reads from (design/plan-5.md, 5.3.1): a path is judged by the projects holding it, walking past any .git to
 // the volume's root, the nearest alone only when it is a verified checkout; a worktree's main checkout is found from
 // its .git with no git process and verified against git's own link back and this machine's record of the main
@@ -32,8 +40,9 @@
 //     CLAUDE_PROJECT_DIR (set by Claude Code, not by any file an agent edits), reads its bonsai.yaml and the payload,
 //     decides, writes the guard record. What does not finish in time blocks, its over-time record awaited for
 //     RecordWait; a panic inside blocks.
-//   - The payload: Claude Code's PreToolUse payload is read by the one hook adapter (internal/hookin). A payload that
-//     does not read, any fault in a value the guard reads, or an event other than PreToolUse blocks.
+//   - The payload: Claude Code's PreToolUse payload is read by the one hook adapter (internal/hookin), each tool's input
+//     the guard does not judge passed over unread (judgedTool). A payload that does not read, any fault in a value the
+//     guard reads, or an event other than PreToolUse blocks (on the second line, lets the call through).
 //   - rule.go: the projects holding a path, the lists each judges by (read leanly, once per run), which call goes to
 //     which judgment, and the project a record goes in; paths.go: every form an edit's path may take, and the glob
 //     match; may.go and the files it names: the judgment itself; rules.go: the rules table.

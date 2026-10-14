@@ -46,6 +46,18 @@ const (
 	RuleShell         = "shell-not-judged"
 	RuleOtherTool     = "tool-not-judged"
 
+	// The roles' rules and the stall stops, where the lock declares roles (step 5.5.11; roles.go, budget.go,
+	// rolecmds.go).
+	RuleCallAllowed       = "call-allowed"
+	RuleCallRefused       = "call-refused"
+	RuleRoleWritesNothing = "role-writes-nothing"
+	RuleBudgetSpent       = "budget-spent"
+	RuleBudgetExempt      = "budget-exempt"
+	RuleBriefNotTied      = "brief-not-tied"
+	RuleStateUnreadable   = "state-unreadable"
+	RuleRolesFromFiles    = "roles-from-files"
+	RuleSecondLineFault   = "second-line-fault"
+
 	// When the guard cannot read or decide.
 	RuleBadInput  = "bad-input"
 	RuleBadGlob   = "bad-glob"
@@ -133,6 +145,32 @@ var Rules = []Rule{
 	{RuleShell, true, "a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, " +
 		"no bonsai command, CLAUDE_CODE_CHILD_SESSION left as it is"},
 	{RuleOtherTool, true, "a tool other than the file tools and the shells"},
+	{RuleCallAllowed, true, "where the lock declares roles: an Agent, Task, SendMessage or Workflow call the caller's role may make " +
+		"(the person's session any role but its own; a lead a declared helper or a type no pack declares; SendMessage from the " +
+		"person's session to main or another session); the record's target is the type asked for, or the message's to"},
+	{RuleCallRefused, false, "where the lock declares roles: an Agent, Task, SendMessage or Workflow call the caller's role may not " +
+		"make (a helper or an undeclared type calls no one; a lead no lead, no Workflow, no main or other session; no one the " +
+		"session's role); a SendMessage from an agent whose to names no agent the guard recorded; on an agent's shell line, a " +
+		"command starting Claude Code, a bonsai message --kind brief to a role it may not call, and a bonsai message from a " +
+		"--from other than its own address or from an agent with none"},
+	{RuleRoleWritesNothing, false, "where the lock declares roles: a role that changes nothing (writes: false, every undeclared type " +
+		"among them) calling Edit, Write, MultiEdit or NotebookEdit, or a shell write the guard can read into a linked project " +
+		"(a redirect, tee, cp, ln or sed -i onto a path there; rm or mv of one; git's words that change the checkout or its " +
+		"history; bonsai init, update, unlink, check --write)"},
+	{RuleBudgetSpent, false, "where the lock declares roles: an agent past a limit in force (its minutes, actions or red runs), every " +
+		"call but the three budget-exempt names; the first refusal says what to report and how, later ones are short"},
+	{RuleBudgetExempt, true, "past an agent's budget, one of the three calls it may still make: its report, one shell call holding one " +
+		"bonsai message --kind report from its own address and nothing else; reading its tied brief or a newer one to its address " +
+		"(bonsai message --show <id>, or a Read of the brief's file); Claude Code's hand-back tool"},
+	{RuleBriefNotTied, true, "an agent's brief named at its start, by a SendMessage, or read by it, ties nothing (a record beside the " +
+		"call's own): no message file holds it, it is not a brief to the agent's address, its from may not call the agent's role, " +
+		"it is not newer than the tied one in its thread, or another agent tied it"},
+	{RuleStateUnreadable, true, "an agent's state under .bonsai/local/agents/ cannot be read or written, so its count starts afresh " +
+		"(a record beside the call's own: a budget bounds time, not proof, so it fails open)"},
+	{RuleRolesFromFiles, true, "the main checkout's HEAD holds neither bonsai.yaml nor the lock, so an agent's role facts and limits " +
+		"were read from the files as they stand (a record beside the call's own)"},
+	{RuleSecondLineFault, true, "the guard's second line could not read or decide (its input, bonsai.yaml, the lock, the roles as " +
+		"committed, an agent's state, its own time limit) and lets the call through, as its line does while bonsai is missing"},
 	{RuleBadInput, false, "the hook's payload cannot be read (for the stop gate, or it is not a Stop payload)"},
 	{RuleBadGlob, false, "a glob on a list is not a glob the guard reads"},
 	{RuleBadPath, false, "Windows cannot name where the path leads, or it runs through a junction or link that does not resolve"},

@@ -1,0 +1,20 @@
+{
+ "session_id": "416f9953-e089-4ce5-87fa-3a0ad4e93b2c",
+ "transcript_path": "~/.claude/projects/p/416f9953-e089-4ce5-87fa-3a0ad4e93b2c.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "9f9aad04-5fec-4a94-93e8-d42c8ea37aa9",
+ "permission_mode": "bypassPermissions",
+ "agent_type": "lead",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Agent",
+ "tool_input": {
+  "description": "Helper echo task",
+  "prompt": "BRIEF-ID-T-0013: run echo x with Bash then reply ok",
+  "subagent_type": "helper",
+  "run_in_background": false
+ },
+ "tool_use_id": "toolu_01KgeChnqjaf4JfijUeLguCi"
+}

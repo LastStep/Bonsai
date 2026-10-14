@@ -96,6 +96,8 @@ type delJudge interface {
 	// personStep judges a person's step the check found (commands.go): a change of CLAUDE_CODE_CHILD_SESSION
 	// (shell_env.go), a bonsai call whose words it cannot see.
 	personStep(tool, what string) Decision
+	// roleShell gives the roles' part of the call's judgment (rolecmds.go), nil where no role rule applies.
+	roleShell() *shellRole
 }
 
 // delOp is one operand of a delete or a move: one word, or one word its brace list writes out.
@@ -266,6 +268,11 @@ func (r *delRun) list(l *shList, d shDialect, dirs delDirs, loop bool) delDirs {
 		}
 		if d == shPower {
 			r.envDotNet(c)
+		}
+		if rs := r.j.roleShell(); rs.agent() {
+			if r.redirects(rs, c, d, cur, l.depth); r.deny != nil {
+				return cur
+			}
 		}
 		var cd delCd
 		if c.group != nil {
@@ -663,6 +670,15 @@ func (r *delRun) judge(a delAct, x delExec) {
 				}
 			}
 			if r.deny != nil {
+				return
+			}
+		}
+	}
+	// A role that changes nothing deletes and moves nothing inside a linked project (rolecmds.go), after the floor's
+	// own judgment of each path above.
+	if rs := r.j.roleShell(); rs.changesNothing() {
+		for _, op := range append(append([]delOp(nil), a.ops...), a.dests...) {
+			if r.writePath(rs, x, op, a.word, true); r.deny != nil {
 				return
 			}
 		}

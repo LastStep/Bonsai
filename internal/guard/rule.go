@@ -38,6 +38,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -64,7 +65,17 @@ type judge struct {
 	// which command mode's task-outside-main meets as it meets an edit there.
 	before  func() ([]byte, error)
 	outside bool
+
+	// The roles' part (roles.go), the guard's alone: its clock, whether it runs as the second line, the roles' run of
+	// this call (nil where they do not apply) and its shell part.
+	now    func() time.Time
+	second bool
+	role   *roleRun
+	sh     *shellRole
 }
+
+// roleShell gives the roles' part of a shell call's judgment (rolecmds.go), nil where no role rule applies.
+func (j *judge) roleShell() *shellRole { return j.sh }
 
 // linkedProject is one folder holding bonsai.yaml: a project, linked or planted.
 type linkedProject struct {
@@ -274,10 +285,27 @@ func (l *lists) all() []list {
 }
 
 // decide judges one call. base is the folder a relative path is read against (the session's project, else
-// CLAUDE_PROJECT_DIR). It gives the decision and the project its record goes in (nil: no record). A file tool's path
-// is judged by the one function (may.go); a shell call's line by the delete check (shell.go), which gives Bonsai's own
-// commands it finds to commands.go, in a linked session only; any other tool is allowed.
+// CLAUDE_PROJECT_DIR). It gives the decision and the project its record goes in (nil: no record). Where the lock
+// declares roles, the roles' rules and the caller's budget come first (roleDecide); then a file tool's path is judged
+// by the one function (may.go); a shell call's line by the delete check (shell.go), which gives Bonsai's own commands
+// it finds to commands.go, in a linked session only; any other tool is allowed. The second line passes at once,
+// uncounted and unrecorded, a tool the first line judges.
 func (j *judge) decide(in *hookin.Payload, base string) (Decision, *linkedProject) {
+	if j.second && firstLineTool(in.Tool) {
+		return allow(RuleOtherTool, ""), nil
+	}
+	if rr := j.newRoleRun(in); rr != nil {
+		j.role = rr
+		if d, rec, done := j.roleDecide(rr, in, base); done {
+			return d, rec
+		}
+	}
+	return j.plainDecide(in, base)
+}
+
+// plainDecide is decide's judgment of a path or a shell line, as before the roles (with the roles' shell part, when
+// they apply).
+func (j *judge) plainDecide(in *hookin.Payload, base string) (Decision, *linkedProject) {
 	if hookin.FileTool(in.Tool) {
 		return j.may(change{tool: in.Tool, path: in.Path, dir: in.Cwd, base: base, in: in})
 	}

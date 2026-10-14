@@ -1,0 +1,17 @@
+{
+ "session_id": "23e0333b-2ae2-4efd-b677-d539d43ef0b6",
+ "transcript_path": "~/.claude/projects/p/23e0333b-2ae2-4efd-b677-d539d43ef0b6.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "69434d3b-db96-4daf-b2e4-e1d73bb23277",
+ "permission_mode": "bypassPermissions",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Bash",
+ "tool_input": {
+  "command": "echo inner-plain",
+  "description": "Print inner-plain"
+ },
+ "tool_use_id": "toolu_01Vp63tn4jKkDzzE7o4sRQ3V"
+}

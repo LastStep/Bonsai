@@ -1,0 +1,17 @@
+{
+ "session_id": "ddad950e-7bdb-48cf-b4b9-d0074f6ab96b",
+ "transcript_path": "~/.claude/projects/p/ddad950e-7bdb-48cf-b4b9-d0074f6ab96b.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "f810f73a-3406-43bd-9169-6b37e7b0ff47",
+ "permission_mode": "bypassPermissions",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Bash",
+ "tool_input": {
+  "command": "echo hello",
+  "description": "Print hello"
+ },
+ "tool_use_id": "toolu_01Xe2RJg9bVYKVhEB8gaSWUa"
+}

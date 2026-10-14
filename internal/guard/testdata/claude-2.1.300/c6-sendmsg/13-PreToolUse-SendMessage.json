@@ -1,0 +1,22 @@
+{
+ "session_id": "4e3cffd5-bd72-4f4a-a089-220fd2fdbff5",
+ "transcript_path": "~/.claude/projects/p/4e3cffd5-bd72-4f4a-a089-220fd2fdbff5.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "ba8a61ee-9cb5-4ba3-8133-db3ec10e50bd",
+ "permission_mode": "bypassPermissions",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "SendMessage",
+ "tool_input": {
+  "to": "worker1",
+  "summary": "Send third message by name",
+  "message": "third-by-name",
+  "type": "message",
+  "recipient": "worker1",
+  "recipient_kind": "name",
+  "content": "third-by-name"
+ },
+ "tool_use_id": "toolu_01XthfSc3WGd9aAFbDJr3ANN"
+}

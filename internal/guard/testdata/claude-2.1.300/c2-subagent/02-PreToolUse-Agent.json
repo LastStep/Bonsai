@@ -1,0 +1,19 @@
+{
+ "session_id": "393fe3e7-4666-4e2a-80e7-62cfe58f6a23",
+ "transcript_path": "~/.claude/projects/p/393fe3e7-4666-4e2a-80e7-62cfe58f6a23.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "6e101108-12a7-4a12-85ef-f94437969081",
+ "permission_mode": "bypassPermissions",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Agent",
+ "tool_input": {
+  "description": "Run echo and reply ok",
+  "prompt": "BRIEF-ID-T-0001: run the shell command echo sub and reply ok",
+  "subagent_type": "helper",
+  "run_in_background": false
+ },
+ "tool_use_id": "toolu_016Z7tzdB6g9U9Z1bWHtsAah"
+}

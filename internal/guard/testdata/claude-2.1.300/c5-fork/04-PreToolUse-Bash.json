@@ -1,0 +1,19 @@
+{
+ "session_id": "8a4b38b8-0c83-46bc-ad49-6b215c2d1669",
+ "transcript_path": "~/.claude/projects/p/8a4b38b8-0c83-46bc-ad49-6b215c2d1669.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "1550dc22-8168-4a29-a886-01fc9fa43cb6",
+ "permission_mode": "bypassPermissions",
+ "agent_id": "a4f8a866200bdb3de",
+ "agent_type": "general-purpose",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Bash",
+ "tool_input": {
+  "command": "echo fork",
+  "description": "Print the word fork"
+ },
+ "tool_use_id": "toolu_015bNvrikRvgCzWj4xqnvXjN"
+}

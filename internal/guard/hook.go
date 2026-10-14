@@ -32,6 +32,11 @@ type Options struct {
 	Budget        time.Duration       // the guard's own time limit; 0 means Budget
 	RecordWait    time.Duration       // how long the over-time refusal waits for its record; 0 means hookin.RecordWait
 	Now           func() time.Time    // the clock; nil means time.Now
+
+	// Second runs the guard as its second line (bonsai hook guard --second; engine.SecondCommand, where the lock declares
+	// roles): on every tool the first line does not match, it refuses only past an agent's budget (budget-spent), and
+	// lets the call through on any fault of its own (second-line-fault), as its line does while bonsai is missing.
+	Second bool
 }
 
 // run is one guard run's state, shared by the worker and the timer under mu.
@@ -58,10 +63,32 @@ func Main(o Options) int {
 	r := &run{o: o}
 	f := hookin.Frame{Name: "guard", Budget: o.Budget, Wait: o.RecordWait, Stderr: o.Stderr}
 	return f.Run(hookin.Job{
-		Work:     func() hookin.Answer { return r.work().answer() },
-		Panic:    func(p any) hookin.Answer { return panicked(p).answer() },
+		Work: func() hookin.Answer { return r.work().answer() },
+		Panic: func(p any) hookin.Answer {
+			if o.Second {
+				return hookin.Answer{} // a fault of its own: the second line lets the call through
+			}
+			return panicked(p).answer()
+		},
 		OverTime: r.overTime,
 	})
+}
+
+// secondFault is the second line's answer in place of a refusal other than budget-spent: the call goes through, and
+// the record says why it was not judged (second-line-fault).
+func secondFault(d Decision) Decision {
+	f := allow(RuleSecondLineFault, d.Target)
+	f.Why = "the guard's second line could not judge this call (" + d.Rule + ": " + d.Why + "), so it lets it through"
+	return f
+}
+
+// faultFor gives the decision a run answers with: the second line turns a refusal other than budget-spent into
+// second-line-fault.
+func (r *run) faultFor(d Decision) Decision {
+	if r.o.Second && !d.Allow && d.Rule != RuleBudgetSpent {
+		return secondFault(d)
+	}
+	return d
 }
 
 // answer gives a decision as the frame's answer.
@@ -82,6 +109,11 @@ func panicked(p any) Decision {
 // by the projects holding the path (rule.go). When the session's folder is in no linked project, the guard still
 // judges a file tool's path in a linked one, and allows and records nothing otherwise (spec §7).
 func (r *run) work() (d Decision) {
+	defer func() {
+		if r.o.Second && !d.Allow && d.Rule != RuleBudgetSpent {
+			d = allow(RuleSecondLineFault, "") // a fault before any record could be written: let through, unrecorded
+		}
+	}()
 	dir := r.o.Getenv(hookin.ProjectEnv)
 	if dir == "" {
 		return deny(RuleNoProject, hookin.ProjectEnv+" is not set, so the guard cannot tell which project this call is in, and it blocks",
@@ -93,7 +125,7 @@ func (r *run) work() (d Decision) {
 			quote(filepath.ToSlash(dir), 120), oneLine(err.Error())), "tell the person: check that the folder exists and can be read")
 	}
 	j := newJudge(guardHome())
-	j.getenv = r.o.Getenv
+	j.getenv, j.now, j.second = r.o.Getenv, r.o.Now, r.o.Second
 	if len(roots) > 0 {
 		s := j.project(roots[0])
 		if err := s.own.err; err != nil {
@@ -126,6 +158,7 @@ func (r *run) work() (d Decision) {
 		}
 	}
 	d, rec := j.decide(in, base)
+	r.extraRecords(j)
 	if rec == nil {
 		if j.session == nil && d.Rule == RuleBadPath {
 			return allow(RuleNotLinked, "") // in no linked project that can be told: a write through it fails anyway
@@ -134,6 +167,23 @@ func (r *run) work() (d Decision) {
 	}
 	r.setPlace(j, rec)
 	return r.recorded(d)
+}
+
+// extraRecords writes the records the roles' part kept beside the call's own (roles.go: a brief that ties nothing, a
+// state that cannot be read, roles read from the files, a spawn record), in the session's project. One that cannot be
+// written is dropped: the call's own record still says what was decided.
+func (r *run) extraRecords(j *judge) {
+	if j.role == nil || j.session == nil || len(j.role.records) == 0 {
+		return
+	}
+	at := &place{id: j.session.id(), local: j.local(j.session)}
+	for _, x := range j.role.records {
+		if x.spawn != nil {
+			_ = writeSpawn(at, x.in, x.spawn, r.o.Getenv, x.atTime)
+			continue
+		}
+		_ = writeRecord(at, x.in, x.d, r.o.Getenv, x.atTime)
+	}
 }
 
 // setPlace makes p the project the run's record goes in.
@@ -154,13 +204,18 @@ func guardHome() string {
 	return home
 }
 
-// recorded writes d's record and gives the decision to answer: an allow that cannot be recorded becomes a refusal.
+// recorded writes d's record and gives the decision to answer: an allow that cannot be recorded becomes a refusal
+// (on the first line; the second lets it through).
 func (r *run) recorded(d Decision) Decision {
+	d = r.faultFor(d)
 	err := r.record(d)
 	if err == nil {
 		return d
 	}
 	if d.Allow {
+		if r.o.Second {
+			return d // the second line lets a call through on a fault of its own, its record's among them
+		}
 		return deny(RuleLogFailed, fmt.Sprintf("the guard would allow this call but cannot write its record in %s (%s), "+
 			"and a call it cannot record is blocked", LogDir, oneLine(err.Error())),
 			"tell the person: a person makes "+LogDir+"/ writable (or moves aside what is in its way), then the call is tried again")
@@ -187,6 +242,9 @@ func (r *run) overTime() (hookin.Answer, func()) {
 	d := deny(RuleOverTime, fmt.Sprintf("the guard ran past its own %s limit, so it blocks the call rather than let "+
 		"the hook's timeout pass it through", r.o.Budget),
 		"try the call again; if it is blocked again, tell the person (a slow disk, or a stdin that never ends)")
+	if r.o.Second {
+		d = secondFault(d)
+	}
 	r.mu.Lock()
 	known := r.at != nil
 	r.mu.Unlock()
@@ -203,7 +261,7 @@ var recordOverTime = func(write func()) func() { return write }
 // readInput reads the payload through the hook adapter. Its error follows "the hook input": a payload that does not
 // read, a fault in a value the guard reads, or an event other than PreToolUse.
 func (r *run) readInput() (*hookin.Payload, error) {
-	p, err := hookin.Read(r.o.Stdin, r.o.StdinTerminal)
+	p, err := hookin.ReadJudged(r.o.Stdin, r.o.StdinTerminal, judgedTool)
 	if err != nil {
 		return nil, err
 	}

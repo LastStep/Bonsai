@@ -404,6 +404,9 @@ func (r *delRun) exec(x delExec) delCd {
 		if r.envCommand(x, name); r.deny != nil {
 			return delCd{}
 		}
+		if r.roleExec(r.j.roleShell(), name, native, x); r.deny != nil {
+			return delCd{}
+		}
 		if kind := delCdKind(name, x.d); kind != delCdNone && (x.d != shPower || !native) {
 			return r.cd(x, kind)
 		}

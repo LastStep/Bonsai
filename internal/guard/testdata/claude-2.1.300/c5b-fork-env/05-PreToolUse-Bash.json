@@ -1,0 +1,19 @@
+{
+ "session_id": "0055fa27-943e-4a21-9c4f-aba17f60adff",
+ "transcript_path": "~/.claude/projects/p/0055fa27-943e-4a21-9c4f-aba17f60adff.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "13bc0578-8aee-42ce-9fff-df80dcca4280",
+ "permission_mode": "bypassPermissions",
+ "agent_id": "ab36a53ef235c9ff4",
+ "agent_type": "general-purpose",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Bash",
+ "tool_input": {
+  "command": "echo forkenv",
+  "description": "Print forkenv to stdout"
+ },
+ "tool_use_id": "toolu_01JcArQcJq8JY1oZmrqQcwxR"
+}

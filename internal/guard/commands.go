@@ -122,6 +122,11 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 		}
 		return false
 	}
+	if rs := j.sh; rs != nil {
+		if d := j.roleCommand(rs, word, argv); !d.Allow {
+			return d
+		}
+	}
 	switch subs := ownSubs(word); {
 	case subs != nil && later(subs...):
 		return deny(RuleHomeCommand, fmt.Sprintf("%s refused: it writes this machine's settings or label files in Bonsai's "+
@@ -153,6 +158,57 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 		}
 	}
 	return allow(RuleBonsaiCommand, "")
+}
+
+// roleCommand judges a bonsai call for the roles' rules (rolecmds.go): bonsai message's --from and --kind brief; bonsai
+// init, update, unlink and check --write refused to a role that changes nothing; and bonsai ladder --task <id> noted for
+// the agent's red runs once the call is allowed.
+func (j *judge) roleCommand(rs *shellRole, word string, argv []string) Decision {
+	args := argv[1:]
+	switch {
+	case word == "message":
+		return rs.messageCall(argv)
+	case rs.changesNothing() && (listHas(ownWrites, word) || word == "check" && hasArg(args, "--write")):
+		return deny(RuleRoleWritesNothing, fmt.Sprintf("bonsai %s refused: it writes the project's files, and %s changes nothing "+
+			"(its role's writes: false)", oneLine(word), rs.w.shown()), "put what you would change in your report")
+	case word == "ladder" && rs.w.counted:
+		for i, a := range args {
+			task := ""
+			switch {
+			case a == "--task" && i+1 < len(args):
+				task = args[i+1]
+			case strings.HasPrefix(a, "--task="):
+				task = strings.TrimPrefix(a, "--task=")
+			}
+			if task != "" && validTask(task) && !listHas(rs.rr.climbs, task) {
+				rs.rr.climbs = append(rs.rr.climbs, task)
+			}
+		}
+	}
+	return allow(RuleBonsaiCommand, "")
+}
+
+// hasArg reports a word among a call's words, its = form too.
+func hasArg(args []string, name string) bool {
+	for _, a := range args {
+		if a == name || strings.HasPrefix(a, name+"=") {
+			return true
+		}
+	}
+	return false
+}
+
+// validTask reports a task id the ladder's result can be named by (T- and digits).
+func validTask(t string) bool {
+	if !strings.HasPrefix(t, "T-") || len(t) < 3 || len(t) > 12 {
+		return false
+	}
+	for _, c := range t[2:] {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // allowExec reports the consent flag among a bonsai call's words, in any spelling the guard can see (--allow-exec,

@@ -1,0 +1,17 @@
+{
+ "session_id": "e13a6e1a-38af-419c-8ab1-78112c2d1907",
+ "transcript_path": "~/.claude/projects/p/e13a6e1a-38af-419c-8ab1-78112c2d1907.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "cf42b58d-ab25-4140-94d2-f8127425c67c",
+ "permission_mode": "bypassPermissions",
+ "agent_type": "lead",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Workflow",
+ "tool_input": {
+  "script": "export const meta = {\n  name: 'brief-id-t-0012',\n  description: 'Run one agent that replies ok',\n  phases: [{ title: 'Run' }],\n}\nphase('Run')\nconst text = await agent('BRIEF-ID-T-0012: reply ok', { label: 'brief', phase: 'Run' })\nreturn text\n"
+ },
+ "tool_use_id": "toolu_01U8XmTPr9dtZrLYJvMm9vEK"
+}

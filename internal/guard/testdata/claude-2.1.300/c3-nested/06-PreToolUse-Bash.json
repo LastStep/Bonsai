@@ -1,0 +1,19 @@
+{
+ "session_id": "922202a8-2835-40f9-b8f7-b480f3fd99e4",
+ "transcript_path": "~/.claude/projects/p/922202a8-2835-40f9-b8f7-b480f3fd99e4.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "99f983ba-0de2-430d-956b-e9a40b61ed77",
+ "permission_mode": "bypassPermissions",
+ "agent_id": "a4f70338d0c6cacb8",
+ "agent_type": "helper",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Bash",
+ "tool_input": {
+  "command": "echo nested",
+  "description": "Print the word nested"
+ },
+ "tool_use_id": "toolu_01MitdncV8s1oSHBSKMEZGGV"
+}

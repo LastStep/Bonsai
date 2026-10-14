@@ -1,0 +1,9 @@
+{
+ "session_id": "a7a8f330-78c4-4398-a265-2230b7719405",
+ "transcript_path": "~/.claude/projects/p/a7a8f330-78c4-4398-a265-2230b7719405.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "37ee8840-16d6-4837-8a5e-925c8d51c58c",
+ "agent_id": "a71418c4916da1718",
+ "agent_type": "workflow-subagent",
+ "hook_event_name": "SubagentStart"
+}

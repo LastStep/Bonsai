@@ -1,0 +1,19 @@
+{
+ "session_id": "9363b8fd-1444-439c-8d5d-f05ec544af8e",
+ "transcript_path": "~/.claude/projects/p/9363b8fd-1444-439c-8d5d-f05ec544af8e.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "3795a470-4f39-4801-b433-7d5eb3031f58",
+ "permission_mode": "bypassPermissions",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Agent",
+ "tool_input": {
+  "description": "Helper replies ok",
+  "prompt": "BRIEF-ID-T-0009: reply ok",
+  "subagent_type": "helper",
+  "run_in_background": false
+ },
+ "tool_use_id": "toolu_01JSrumkNxkztmkFqqy1XxK1"
+}

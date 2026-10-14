@@ -60,6 +60,9 @@ func (s *delStub) personStep(tool, what string) Decision {
 	return deny(RulePersonCommand, tool+" refused: the command line "+what, personNext)
 }
 
+// roleShell: the delete check's tests run where no role rule applies (rolecmds_test.go runs the roles' part).
+func (s *delStub) roleShell() *shellRole { return nil }
+
 func (s *delStub) mayDelete(dir, p string) Decision {
 	s.calls++
 	for _, root := range []string{s.home, s.own, s.other} {

@@ -75,7 +75,43 @@ func writeRecord(at *place, in *hookin.Payload, d Decision, getenv func(string) 
 	if err != nil {
 		return err
 	}
-	l := buildRecord(at, in, d, getenv, now)
+	return appendRecord(at, name, buildRecord(at, in, d, getenv, now))
+}
+
+// spawnRecord is a spawn record's fields (contract §8.2, set 8): the agent started, its type, the call that started
+// it, that call's tool, and its parent ("session", the calling agent's id, a named session's own id).
+type spawnRecord struct {
+	child, childType, use, tool, parent string
+}
+
+// writeSpawn appends a spawn record (roles.go's link) to the session's log at the place: written by the guard at the
+// agent's first call, when it is joined to its starting call (the first payload that names both, as measured).
+func writeSpawn(at *place, in *hookin.Payload, s *spawnRecord, getenv func(string) string, now time.Time) error {
+	name, err := record.LogFileName(in.Session, now)
+	if err != nil {
+		return err
+	}
+	l := record.New("spawn", record.Common{Workspace: at.id, Local: at.local, Session: in.Session, Agent: "claude-code",
+		Getenv: getenv, Redact: redact.Text, At: now})
+	l.AgentEvent = ptr("PreToolUse")
+	l.SubagentID = ptr(hookin.ID(s.child))
+	l.SubagentType = text(s.childType)
+	l.ToolUseID = ptr(hookin.ID(s.use))
+	l.Checkout = text(deref(l.Checkout))
+	l.Branch = text(deref(l.Branch))
+	l.Tool = text(s.tool)
+	l.Category = ptr("Agent")
+	parent := s.parent
+	if parent != "session" {
+		parent = hookin.ID(parent)
+	}
+	l.Parent = ptr(parent)
+	return appendRecord(at, name, l)
+}
+
+// appendRecord appends a record to the log file name at the place, the binary's path and hash on the record that
+// made the file.
+func appendRecord(at *place, name string, l *format.Log) error {
 	if claimFile(filepath.Join(at.local.Dir(), record.LogFolder, name)) {
 		exe, sum := record.Self(nil, true)
 		l.BonsaiPath, l.BonsaiSHA256 = ptr(fromHome(exe)), ptr(sum)
@@ -180,7 +216,9 @@ func buildRecord(at *place, in *hookin.Payload, d Decision, getenv func(string) 
 	decision := "allow"
 	if !d.Allow {
 		decision = "deny"
-		l.Text = ptr(redact.Capped(userless(d.Why), redact.TextCap))
+	}
+	if !d.Allow || d.Why != "" {
+		l.Text = ptr(redact.Capped(userless(d.Why), redact.TextCap)) // a refusal's reason, or what an allow's record notes
 	}
 	l.Decision, l.Rule = ptr(decision), ptr(d.Rule)
 	return l

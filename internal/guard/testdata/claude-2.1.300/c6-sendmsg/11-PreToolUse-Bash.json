@@ -1,0 +1,19 @@
+{
+ "session_id": "4e3cffd5-bd72-4f4a-a089-220fd2fdbff5",
+ "transcript_path": "~/.claude/projects/p/4e3cffd5-bd72-4f4a-a089-220fd2fdbff5.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "ba8a61ee-9cb5-4ba3-8133-db3ec10e50bd",
+ "permission_mode": "bypassPermissions",
+ "agent_id": "a7abddc4051d7f39a",
+ "agent_type": "helper",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Bash",
+ "tool_input": {
+  "command": "echo second",
+  "description": "Print the word second"
+ },
+ "tool_use_id": "toolu_01GXU8yH5kM6YviAxJzEgy4y"
+}

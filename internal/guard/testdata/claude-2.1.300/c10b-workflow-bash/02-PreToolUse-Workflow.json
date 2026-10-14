@@ -1,0 +1,17 @@
+{
+ "session_id": "a7a8f330-78c4-4398-a265-2230b7719405",
+ "transcript_path": "~/.claude/projects/p/a7a8f330-78c4-4398-a265-2230b7719405.jsonl",
+ "cwd": "~/proj",
+ "prompt_id": "37ee8840-16d6-4837-8a5e-925c8d51c58c",
+ "permission_mode": "bypassPermissions",
+ "agent_type": "lead",
+ "effort": {
+  "level": "xhigh"
+ },
+ "hook_event_name": "PreToolUse",
+ "tool_name": "Workflow",
+ "tool_input": {
+  "script": "export const meta = {\n  name: 'brief-id-t-0014',\n  description: 'Run one agent that echoes wfbash via Bash and replies ok',\n  phases: [{ title: 'Run' }],\n}\nphase('Run')\nconst text = await agent('BRIEF-ID-T-0014: run echo wfbash with Bash then reply ok', { label: 'echo-wfbash', phase: 'Run' })\nreturn text\n"
+ },
+ "tool_use_id": "toolu_01ULQKESxrJQUr87vScZxQKm"
+}
