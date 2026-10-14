@@ -22,6 +22,9 @@
 //     claude_code, so the list is empty until a later set adds one);
 //   - ladder: the active task's last ladder result, stale when it proves another commit than HEAD (lastLadder, step
 //     5.4.2);
+//   - roles (set 8; step 5.5.0): each role the linked packs declare, with each limit's default and max in force and
+//     where each came from (rolesOf: workspace.RolesInForce, the one function every reader of a role's limits uses),
+//     from the lock and bonsai.yaml as committed at the main checkout's HEAD, as the guard reads them;
 //   - error: null unless status refused (step 5.1.4b).
 //
 // The default is cheap and offline (contract §12: for the bridge to run often): it runs git and reads files, and
@@ -46,6 +49,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/stopgate"
+	"github.com/LastStep/Bonsai/internal/vergit"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -175,6 +179,10 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		c, installed = fullChecks(checked, cfg, lock, o)
 		checks = c
 	}
+	roles, rolesProblem := rolesOf(co, cfg, lock)
+	if rolesProblem != "" {
+		problems = append(problems, rolesProblem)
+	}
 	return map[string]any{
 		"needs":          needsOf(lock, installed),
 		"checks":         checks,
@@ -200,7 +208,7 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		"person_only": personOnly,
 		"problems":    problems,
 		"ladder":      lastLadder(co, known.activeID),
-		"roles":       nil, // the roles in force: step 5.5.0 fills it (bonsai.status/1, set 8)
+		"roles":       roles,
 		"messages":    nil, // the messages between agents, counted: step 5.5.10 fills it (set 8)
 	}, nil
 }
@@ -227,6 +235,48 @@ func lastLadder(co *workspace.Checkout, task string) any {
 	stale := err != nil || !strings.EqualFold(l.Git.SHA, head)
 	return schema.Object{{Key: "task", Value: task}, {Key: "path", Value: rel}, {Key: "green", Value: l.Green},
 		{Key: "mode", Value: l.Mode}, {Key: "sha", Value: l.Git.SHA}, {Key: "finished", Value: l.Finished}, {Key: "stale", Value: stale}}
+}
+
+// rolesOf is status --json's roles (bonsai.status/1, set 8; plan-5 5.5.0 note 10): each role the lock's packs declare,
+// in the lock's order, its pack, name, kind and writes, and each of its limits' default and max in force with where
+// each came from (pack or bonsai.yaml), from workspace.RolesInForce, the one function every reader of a role's limits
+// uses. It reads the lock and bonsai.yaml as committed at the main checkout's HEAD, as the guard reads them, so an
+// uncommitted change shows only once committed; a file HEAD does not hold (a project not yet committed, a lock not yet
+// committed), or that git cannot give, is read as it stands in this checkout. [] when no linked pack declares a role.
+// A lock whose declares do not read gives [] and a problem, its sentence naming the next step.
+func rolesOf(co *workspace.Checkout, cfg *workspace.Config, lock *workspace.Lock) (any, string) {
+	w := cfg.Full
+	if raw, err := vergit.Committed(co.Main, workspace.ConfigFile, 0); err == nil {
+		if c, err := workspace.ReadConfigFull(raw); err == nil {
+			w = c.Full
+		}
+	}
+	if raw, err := vergit.Committed(co.Main, workspace.LockFile, 0); err == nil {
+		if l, err := workspace.ReadLock(raw); err == nil {
+			lock = l
+		}
+	}
+	in, err := workspace.RolesInForce(lock, w)
+	if err != nil {
+		return []any{}, ascii(err.Error()) + "; next: restore the committed lock, run: git checkout -- " + workspace.LockFile
+	}
+	out := []any{}
+	limit := func(l workspace.LimitInForce) schema.Object {
+		n := func(p *int64) any {
+			if p == nil {
+				return nil
+			}
+			return *p
+		}
+		return schema.Object{{Key: "default", Value: n(l.Default)}, {Key: "default_from", Value: l.DefaultFrom},
+			{Key: "max", Value: n(l.Max)}, {Key: "max_from", Value: l.MaxFrom}}
+	}
+	for _, r := range in {
+		out = append(out, schema.Object{{Key: "pack", Value: r.Pack}, {Key: "name", Value: r.Role.Name}, {Key: "kind", Value: r.Role.Kind},
+			{Key: "writes", Value: r.Role.Writes}, {Key: "minutes", Value: limit(r.Minutes)}, {Key: "actions", Value: limit(r.Actions)},
+			{Key: "red_runs", Value: limit(r.RedRuns)}})
+	}
+	return out, ""
 }
 
 // known is what step 5.1.5's reads give status: each field's value, and the problems they found.
