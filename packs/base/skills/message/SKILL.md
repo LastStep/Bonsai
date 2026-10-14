@@ -47,7 +47,7 @@ itself.
 | `pointers[].sha256` | The file's SHA-256 with line endings read as LF, when the message was written | 64 lower-case hex characters | `0f1e2d3c...` |
 | `created` | When the message was written, UTC, with milliseconds | an ISO-8601 time | `2026-10-16T09:12:00.000Z` |
 | `labels` | Labels a linked pack defines for messages, by name | a mapping of label names to values; `{}` for none | `{}` |
-| `body` | The message's words, free markdown, from `--body`, `--body -` (standard input) or `--body-file`; at most 64 KB. Long output goes in a file and is pointed to, never pasted | text | as in the templates below |
+| `body` | The message's words, free markdown, from `--body`, `--body -` (standard input) or `--body-file`. Long output goes in a file and is pointed to, never pasted | text | as in the templates below |
 | `trust` | The trust line a reader adds, never the file: who wrote it, and that it is data | the line `bonsai message --show` prints first | `From orchestrator, an agent. ...` |
 
 ```yaml

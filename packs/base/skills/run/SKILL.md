@@ -61,8 +61,9 @@ be the usual one.
 
 ## Ladder
 
-The proof: `bonsai ladder --task <task id> --json`, whose result Bonsai keeps in `.bonsai/local/ladder/<task id>.json`
-(a CI run's is stamped `mode: ci`). Quote the result's `green`, its `git.sha` and each rung's line:
+The proof: `bonsai ladder --task <task id> --json`, whose result Bonsai keeps in the main checkout's
+`.bonsai/local/ladder/<task id>.json` (a CI run writes `ci.json` there, stamped `mode: ci`, never a task's proof).
+Quote the result's `green`, its `git.sha` and each rung's line:
 
 | Rung | Check | Result | Evidence |
 |---|---|---|---|

@@ -10,7 +10,7 @@
 - **Bonsai's four labels** (`bonsai.allows`, `bonsai.wants`, `bonsai.ladder`, `bonsai.branch`), whose definitions a
   project needs before `bonsai check` can hold a task's labels to them.
 - **Base's protected paths**: `bonsai.yaml` and the lock, `.bonsai/lock.json`.
-- **A short block**: two lines in the project's `CLAUDE.md` naming the skills, so every session knows they exist.
+- **A short block**: a few lines in the project's `CLAUDE.md` naming the skills, so every session knows they exist.
 
 It has no roles, no lanes and no document kinds of its own (Bonsai's kinds are built into Bonsai), and **it carries no
 code**: no hook line, no file the engine writes into a project, nothing in the plugin that Claude Code runs on its
