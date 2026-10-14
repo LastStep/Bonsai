@@ -896,12 +896,30 @@ var packCases = map[string][]packCase{
 		swap("bonsai/pack.yaml", `runs: ["docs/run.sh"]`, `runs: []             `),
 		swap("bonsai/pack.yaml", `command: "sh docs/run.sh"         `, `command: "sh docs/run.sh ./START.md" `),
 	},
+	// format.PackRoleCheckWords (step 5.5.0): the declared role helper against agents/, and the deny rule's form.
+	"pack-role-file": {
+		set("agents/helper.md", ""),
+	},
+	"pack-role-undeclared": {
+		set("agents/marker.md", "---\nname: marker\ndescription: \"A role no one declared.\"\n---\n\nSay hello.\n"),
+	},
+	"pack-role-turns": {
+		swap("agents/helper.md", "maxTurns: 600", "maxTurns: 601"),
+		swap("agents/helper.md", "maxTurns: 600\n", ""),
+		swap("agents/helper.md", "maxTurns: 600", "maxTurns: many"),
+		swap("bonsai/pack.yaml", "    max_turns: 600                    # its file's maxTurns, the same number",
+			"    max_turns: null                   # its file's maxTurns, the same number"),
+	},
+	"pack-deny-relative": {
+		swap("bonsai/pack.yaml", `"Read(/docs/secret.txt)"   `, `"Read(docs/secret.txt)"    `),
+		swap("bonsai/pack.yaml", `"Read(/docs/secret.txt)"   `, `"Edit(./docs/**)"          `),
+	},
 }
 
 func TestCheckPackTable(t *testing.T) {
 	for code := range packCases {
 		if _, ok := format.PackCheckWord(code); !ok {
-			t.Errorf("a case for %s, which is not in format.PackCheckWords", code)
+			t.Errorf("a case for %s, which is not in format.PackCheckWords or format.PackRoleCheckWords", code)
 		}
 	}
 	tmp := t.TempDir()
@@ -944,11 +962,22 @@ func TestCheckPackTable(t *testing.T) {
 			t.Fatalf("exit %d, %d findings:\n%s", code, len(findings), text)
 		}
 	})
-	for _, w := range format.PackCheckWords {
+	// A pack whose roles is [] opts out of the role rules (the orchestrator's ruling, 14 Oct): a plain role of its
+	// plugin, not declared, is no finding; and its deny rules are still held to their form.
+	t.Run("roles: [] beside a role file", func(t *testing.T) {
+		files := testpack.DocumentedPack()
+		raw := files["bonsai/pack.yaml"]
+		i := strings.Index(raw, "roles:")
+		files["bonsai/pack.yaml"] = raw[:i] + "roles: []                             # the roles it declares: none\n"
+		if code, findings, text := check(t, files); code != 0 || len(findings) != 0 {
+			t.Fatalf("exit %d, %d findings:\n%s", code, len(findings), text)
+		}
+	})
+	for _, w := range append(append([]format.Word{}, format.PackCheckWords...), format.PackRoleCheckWords...) {
 		t.Run(w.Word, func(t *testing.T) {
 			cases, ok := packCases[w.Word]
 			if !ok || len(cases) == 0 {
-				t.Fatalf("format.PackCheckWords has %s, and TestCheckPackTable no case for it", w.Word)
+				t.Fatalf("format.PackCheckWords or format.PackRoleCheckWords has %s, and TestCheckPackTable no case for it", w.Word)
 			}
 			for i, pc := range cases {
 				files := testpack.DocumentedPack()
@@ -971,7 +1000,10 @@ func TestCheckPackTable(t *testing.T) {
 }
 
 // The test pack, as testpack mirrors it: at F its pack.yaml lacks documents, protected and two comments, which G
-// writes (no behaviour change); at G it lacks roles (formats set 8), which H writes; H passes.
+// writes (no behaviour change); at G it lacks roles (formats set 8), which H writes. Its deny rule, Edit(demo/never.txt),
+// names a project path relative to the session's folder at every commit, which check --pack finds from step 5.5.0
+// (pack-deny-relative: it would not hold after a shell cd, step 5.3.5); H's agents/marker.md beside roles: [] is no
+// finding (a pack that declares no role opts out of the role rules).
 func TestCheckPackTestPack(t *testing.T) {
 	tmp := t.TempDir()
 	testpack.Isolate(t, tmp)
@@ -982,9 +1014,9 @@ func TestCheckPackTestPack(t *testing.T) {
 		name, commit string
 		want         []string
 	}{
-		{"F", p.F, []string{"pack-schema", "pack-schema", "pack-schema", "pack-comment", "pack-comment"}},
-		{"G", p.G, []string{"pack-schema"}}, // roles not written (formats set 8)
-		{"H", p.H, nil},
+		{"F", p.F, []string{"pack-schema", "pack-schema", "pack-schema", "pack-comment", "pack-comment", "pack-deny-relative"}},
+		{"G", p.G, []string{"pack-schema", "pack-deny-relative"}}, // roles not written (formats set 8)
+		{"H", p.H, []string{"pack-deny-relative"}},
 	} {
 		testpack.Git(t, work, "checkout", "-q", sc.commit)
 		code, out, _ := runArgs("check", "--pack", work, "--json")

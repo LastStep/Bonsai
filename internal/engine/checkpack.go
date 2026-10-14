@@ -42,6 +42,10 @@ package engine
 //     project, in full or by its file name: namesPath, the engine's own reading at a link, checkRuns) lists that path
 //     in its runs (step 5.1.1, rule 4). A runs item naming another pack's file is the engine's to judge at a link,
 //     where it sees every linked pack.
+//   - pack-deny-relative (set 8; plan-5 5.5.0 note 9): a deny rule in pack.yaml on a project path, a file tool's rule
+//     (Read, Edit, Write, MultiEdit, NotebookEdit) whose path starts with neither / (the project's top folder), // (an
+//     absolute path), ~ (the home) nor a drive, is written relative to the session's folder, so it would not hold after
+//     a shell cd (step 5.3.5 measured it); the finding names the form that holds, the path from the top folder (/).
 //   - pack-block: the instruction block a project linked to this pack alone would get is at most MaxBlockLines (spec
 //     §6): blockBody, the engine's own, for a workspace with init's documents (DefaultDocuments) and this pack (its
 //     files in the protocols folder imported, each <protocols>/ file's resolved there, its label definitions, its
@@ -50,6 +54,14 @@ package engine
 //   - pack-plugin-version: .claude-plugin/plugin.json, when the pack has one, carries no version (manifestVersion, the
 //     link's own rule); one that is not a JSON object Bonsai reads is this rule's too, since its version cannot be
 //     told.
+//   - pack-role-file, pack-role-undeclared and pack-role-turns (set 8; note 9): each role pack.yaml declares (those of
+//     its roles that fit the schema) has its file, agents/<name>.md in the plugin; each .md file in agents/ is a
+//     declared role, held only in a pack whose roles is not empty (the orchestrator's ruling of 14 Oct: a pack that
+//     declares no role, roles: [], opts out of the role rules, as the guard's role rules hold only where packs declare
+//     roles; the test pack's commit H keeps agents/marker.md, a plain role of its plugin, beside roles: []); and each
+//     declared role's file's maxTurns (its frontmatter's top-level key, read line by line) equals its max_turns, both
+//     missing or both the same whole number. Two roles of one name, or two with session true, are the engine's
+//     refusal at a link (rolesProblems), so pack-schema's. Looked at after the plugin's manifest and hooks.
 //   - pack-fields and pack-values: each template skill. A template skill is skills/<name>/SKILL.md whose body (after
 //     its frontmatter) holds a fields table: a markdown table whose header row's cells are Field, Meaning, Allowed
 //     values and Example, in that order, letter case aside (spec §5). Its template is the first fenced code block
@@ -132,6 +144,9 @@ func CheckPack(dir string) (*CheckResult, *Error) {
 		return nil, e
 	}
 	if e := c.plugin(); e != nil {
+		return nil, e
+	}
+	if e := c.roles(pf); e != nil {
 		return nil, e
 	}
 	skills, e := c.templates(pf, labels, lanes)
@@ -291,12 +306,14 @@ type packYAMLRead struct {
 	id        string                // its id as written, "" when it has none
 	manifest  *workspace.Pack       // as the engine reads it at a link; nil when it does not read so
 	documents []format.PackDocument // the document kinds that fit the schema, for the template skills' statuses
+	roles     []format.PackRole     // the roles that fit the schema, for the role rules
 }
 
 var (
 	denyWhyPointer = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^#/deny/[0-9]+/why$`) })
 	denyPointer    = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^#/deny/[0-9]+$`) })
 	itemPointer    = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^#/(documents|protected)/([0-9]+)`) })
+	rolePointer    = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^#/roles/([0-9]+)`) })
 )
 
 // packYAML checks bonsai/pack.yaml: pack-schema, pack-comment, pack-why, pack-documents, pack-protected, pack-bash and
@@ -318,6 +335,9 @@ func (c *packCheck) packYAML(raw []byte) packYAMLRead {
 	badItem := map[string]bool{} // "documents/0": an item the schema's problems are about
 	probs := format.MustLookup("pack").WriterProblems(m)
 	for _, p := range probs {
+		if sm := rolePointer().FindStringSubmatch(p.Pointer); sm != nil {
+			badItem["roles/"+sm[1]] = true
+		}
 		switch {
 		case itemPointer().MatchString(p.Pointer):
 			sm := itemPointer().FindStringSubmatch(p.Pointer)
@@ -339,6 +359,12 @@ func (c *packCheck) packYAML(raw []byte) packYAMLRead {
 	protF = append(protF, protectedWellFormed(file, doc, badItem)...)
 	bashF := hookBash(file, m)
 	runsF := hookRuns(file, m)
+	denyF := denyRelative(file, m)
+	out.roles = rolesThatFit(doc, badItem)
+	for _, p := range rolesProblems(out.roles) {
+		schemaF = append(schemaF, packFound{"pack-schema", file, file + ": " + strings.TrimPrefix(p, "pack.yaml's ") +
+			" (the engine refuses the pack at a link)", "fix the roles in " + file + ": each name once, and at most one role with session true"})
+	}
 
 	c.put(schemaF...)
 	if len(probs) == 0 && len(whyF)+len(docsF)+len(protF)+len(bashF) == 0 {
@@ -362,7 +388,168 @@ func (c *packCheck) packYAML(raw []byte) packYAMLRead {
 	c.put(protF...)
 	c.put(bashF...)
 	c.put(runsF...)
+	c.put(denyF...)
 	return out
+}
+
+// rolesThatFit gives the roles whose items fit the schema (badItem names those that do not), bound to their Go type;
+// none when roles is not a list.
+func rolesThatFit(doc schema.Object, badItem map[string]bool) []format.PackRole {
+	v, _ := doc.Get("roles")
+	list, _ := v.([]any)
+	var out []format.PackRole
+	for i, it := range list {
+		if badItem["roles/"+strconv.Itoa(i)] {
+			continue
+		}
+		var p format.Pack
+		if err := format.MustLookup("pack").Bind(schema.Object{{Key: "roles", Value: []any{it}}}, &p); err != nil || len(p.Roles) != 1 {
+			continue
+		}
+		out = append(out, p.Roles[0])
+	}
+	return out
+}
+
+// pathRuleTools are the file tools whose permission rules take a path (Claude Code's Read and Edit rules, Edit's
+// covering every tool that edits a file), whose path a deny rule may write relative to the session's folder.
+var pathRuleTools = []string{"Read", "Edit", "Write", "MultiEdit", "NotebookEdit"}
+
+// denyRelative finds pack.yaml's deny rules on a project path written without its leading / or // (pack-deny-relative):
+// a file tool's rule whose path is relative to the session's folder, which a shell cd moves (step 5.3.5).
+func denyRelative(file string, m *reader.Map) []packFound {
+	var out []packFound
+	for _, it := range mapItems(m, "deny") {
+		e, ok := it.m.Entry("rule")
+		rule, isText := e.Value.(string)
+		if !ok || !isText {
+			continue
+		}
+		holds, relative := relativeRule(rule)
+		if !relative {
+			continue
+		}
+		out = append(out, packFound{"pack-deny-relative", file, fmt.Sprintf("%s: deny item %d's rule %s names a project path relative to the "+
+			"session's folder, so it would not hold after a shell cd (step 5.3.5); the form that holds is %s, from the project's top folder",
+			at(file, e.Line), it.i+1, strconv.QuoteToASCII(rule), strconv.QuoteToASCII(holds)),
+			fmt.Sprintf("write deny item %d's rule in %s as %s (or with // for an absolute path)", it.i+1, file, strconv.QuoteToASCII(holds))})
+	}
+	return out
+}
+
+// relativeRule reads a permission rule: relative is true for a file tool's rule (pathRuleTools) whose path starts
+// with neither / nor ~ nor a drive (C:), and holds is then the rule with the path from the project's top folder
+// (/<path>, a leading ./ taken off).
+func relativeRule(rule string) (holds string, relative bool) {
+	m := ruleFull().FindStringSubmatch(rule)
+	if m == nil || !contains(pathRuleTools, m[1]) {
+		return "", false
+	}
+	p := m[2]
+	switch {
+	case p == "", strings.HasPrefix(p, "/"), strings.HasPrefix(p, "~"), len(p) >= 2 && p[1] == ':' && isLetter(p[0]):
+		return "", false
+	}
+	return m[1] + "(/" + strings.TrimPrefix(p, "./") + ")", true
+}
+
+func isLetter(b byte) bool { return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' }
+
+// agentsDir is the plugin's folder of roles (Claude Code loads each agents/<name>.md as <pack id>:<name>).
+const agentsDir = "agents"
+
+// roles holds the roles pack.yaml declares to the plugin's agents/ folder (pack-role-file, pack-role-undeclared,
+// pack-role-turns).
+func (c *packCheck) roles(pf packYAMLRead) *Error {
+	entries, err := os.ReadDir(filepath.Join(c.dir, agentsDir))
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return errorf("read-failed", ExitRuntime, "check the folder's permissions, then run the command again",
+			"the pack's %s folder cannot be read: %v", agentsDir, err)
+	}
+	files := map[string]bool{} // each role file's name, without .md
+	var names []string
+	for _, ent := range entries { // os.ReadDir sorts them by name
+		if ent.IsDir() || !strings.HasSuffix(ent.Name(), ".md") {
+			continue
+		}
+		name := strings.TrimSuffix(ent.Name(), ".md")
+		files[name] = true
+		names = append(names, name)
+	}
+	declared := map[string]bool{}
+	for _, r := range pf.roles {
+		declared[r.Name] = true
+		rel := agentsDir + "/" + r.Name + ".md"
+		if !files[r.Name] {
+			c.put(packFound{"pack-role-file", workspace.PackFile, fmt.Sprintf("%s declares the role %s, and the plugin has no %s, so Claude Code "+
+				"has no role %s:%s to start", workspace.PackFile, quote(r.Name), rel, pf.id, r.Name),
+				"add " + rel + " to the pack (the role's own file, its maxTurns equal to max_turns), or take the role out of " + workspace.PackFile})
+			continue
+		}
+		raw, _, e := c.read(rel)
+		if e != nil {
+			return e
+		}
+		turns, line, problem := maxTurnsOf(textLines(raw))
+		want := "none"
+		if r.MaxTurns != nil {
+			want = strconv.FormatInt(*r.MaxTurns, 10)
+		}
+		switch {
+		case problem != "":
+			c.put(packFound{"pack-role-turns", rel, fmt.Sprintf("%s: maxTurns %s, so it cannot equal the max_turns %s declares for the "+
+				"role (%s)", at(rel, line), problem, workspace.PackFile, want), "write maxTurns in " + rel + "'s frontmatter as a whole number, " +
+				"the role's max_turns in " + workspace.PackFile})
+		case (turns == nil) != (r.MaxTurns == nil) || turns != nil && *turns != *r.MaxTurns:
+			got := "none"
+			if turns != nil {
+				got = strconv.FormatInt(*turns, 10)
+			}
+			c.put(packFound{"pack-role-turns", rel, fmt.Sprintf("%s: maxTurns is %s, and %s declares max_turns %s for the role %s: the two are "+
+				"one number (Claude Code's backstop where the guard does not run)", at(rel, line), got, workspace.PackFile, want, quote(r.Name)),
+				"make " + rel + "'s maxTurns and the role's max_turns in " + workspace.PackFile + " the same (both left out for none)"})
+		}
+	}
+	if len(pf.roles) == 0 {
+		return nil
+	}
+	for _, name := range names {
+		if declared[name] {
+			continue
+		}
+		rel := agentsDir + "/" + name + ".md"
+		c.put(packFound{"pack-role-undeclared", rel, fmt.Sprintf("%s is a role of the plugin that %s does not declare: in a pack that "+
+			"declares roles, every role file is one (its kind, writes, max_turns and limits)", rel, workspace.PackFile),
+			"declare the role " + name + " in " + workspace.PackFile + "'s roles, or take " + rel + " out of the pack"})
+	}
+	return nil
+}
+
+// maxTurnsOf reads a role file's maxTurns from its frontmatter (its lines between the first --- and the next): the
+// top-level key, read line by line; nil when it has none. problem says why a value there is not a whole number.
+func maxTurnsOf(lines []string) (turns *int64, line int, problem string) {
+	if len(lines) == 0 || strings.TrimSpace(lines[0]) != "---" {
+		return nil, 0, ""
+	}
+	for i := 1; i < len(lines) && strings.TrimSpace(lines[i]) != "---"; i++ {
+		v, ok := strings.CutPrefix(lines[i], "maxTurns:")
+		if !ok {
+			continue
+		}
+		if j := strings.Index(v, " #"); j >= 0 {
+			v = v[:j]
+		}
+		v = strings.Trim(strings.TrimSpace(v), `"'`)
+		if v == "" || v == "null" || v == "~" {
+			return nil, i + 1, ""
+		}
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || n < 1 {
+			return nil, i + 1, "is " + strconv.QuoteToASCII(v) + ", not a whole number from 1 up"
+		}
+		return &n, i + 1, ""
+	}
+	return nil, 0, ""
 }
 
 // sources finds the first file pack.yaml names that the pack does not hold: its block, then each files entry's source,

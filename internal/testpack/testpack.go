@@ -454,10 +454,12 @@ func SetRef(t *testing.T, root, from, to string) {
 
 // DocumentedPack is a pack folder's files (a path in the folder, forward slashes, to its content) that every rule of
 // bonsai check --pack reaches and that passes them all (step 5.1.9): a pack.yaml with a comment on every key and every
-// field written (a files entry the hook line runs, listed in its runs; a deny rule with its why; the document kind
-// note; a protected glob), a labels.yaml (one choice label) and a lanes.yaml (light and full), each key commented, a
-// block.md, a plugin.json with no version, a plugin hook, and two template skills: note (the pack's own kind) and task
-// (bonsai.task/1, its fields table equal to the schema's fields). Each test case changes one file to break one rule.
+// field written (a files entry the hook line runs, listed in its runs; a deny rule with its why, its path from the
+// project's top folder; the document kind note; a protected glob; one declared role, helper, from step 5.5.0), a
+// labels.yaml (one choice label) and a lanes.yaml (light and full), each key commented, a block.md, a plugin.json
+// with no version, a plugin hook, the declared role's file agents/helper.md (its maxTurns the role's max_turns), and two
+// template skills: note (the pack's own kind) and task (bonsai.task/1, its fields table equal to the schema's fields).
+// Each test case changes one file to break one rule.
 func DocumentedPack() map[string]string {
 	return map[string]string{
 		".claude-plugin/plugin.json": "{\"name\": \"docs-pack\", \"description\": \"A fixture pack, documented in full.\"}\n",
@@ -485,7 +487,7 @@ hooks:                                # hook lines
     # why: the line in the preview, too long to share its line
     why: "Runs the pack's greeting when a session starts; it blocks nothing."
 deny:                                 # deny rules
-  - rule: "Read(docs/secret.txt)"     # an example rule
+  - rule: "Read(/docs/secret.txt)"    # an example rule, from the project's top folder
     why: "Agents cannot read docs/secret.txt."  # the preview's sentence
 documents:                            # the kinds it declares
   - kind: note                        # a note
@@ -500,8 +502,23 @@ documents:                            # the kinds it declares
       done: finished                  # finished: set at done
     task_field: null                  # it belongs to no task
 protected: ["work/notes/**"]          # paths an agent changes only with a grant
-roles: []                             # the roles it declares: none
+roles:                                # the roles it declares
+  - name: helper                      # its file: agents/helper.md
+    kind: helper                      # it calls no one
+    session: false                    # not the person's own session
+    writes: false                     # it changes no file
+    max_turns: 600                    # its file's maxTurns, the same number
+    minutes:                          # minutes since its first call
+      default: 30                     # when its brief names none
+      max: 30                         # the most a brief may give
+    actions:                          # its tool calls
+      default: 150                    # when its brief names none
+      max: 150                        # the most a brief may give
+    red_runs:                         # failed climbs in a row
+      default: null                   # no limit
+      max: null                       # no limit
 `,
+		"agents/helper.md": "---\nname: helper\ndescription: \"Answers one scoped question.\"\nmaxTurns: 600\n---\n\nAnswer the question your brief asks.\n",
 		"bonsai/labels.yaml": `# bonsai/labels.yaml: the documented fixture pack's labels (bonsai.labels/1).
 format: bonsai.labels/1               # the format
 namespace: docs-pack                  # the pack's own id
