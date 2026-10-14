@@ -9,10 +9,10 @@
   proven"; §17 Rohan's steps), `design/contract.md` (the formats), `design/one-pager.md`, `design/format-review.md`.
 - **Builds on:** `design/plan.md` (part 0 and the walking skeleton, approved 8 Oct, done) and
   `records/gate-skeleton.md` (the gate report: section 1 the measured pace, section 5 the findings step 5 inherits).
-- **Hours** (AI hours, verification included, spec §14): 5.1 30-47, 5.2 25-37, 5.3 18-29, 5.4 28-44, 5.5 61-101
-  (19-30 until its re-plan on Rohan's redesign of 12-14 Oct), 5.6 13-20, 5.7 9.5-18.75 (the spec's 6-11 and the trial
-  of Bonsai on itself Rohan asked for on 10 Oct); in all 184.5-296.75 (142.5-225.75 before 5.5's re-plan). Each part
-  stops and comes back to Rohan at its own re-ask line (below).
+- **Hours** (AI hours, verification included, spec §14): 5.1 30-47, 5.2 25-37, 5.3 18-29, 5.4 28-44, 5.5 63.5-106 (19-30
+  until its re-plan on Rohan's redesign of 12-14 Oct), 5.6 13-20, 5.7 9.5-18.75 (the spec's 6-11 and the trial of Bonsai
+  on itself Rohan asked for on 10 Oct); in all 187-301.75 (142.5-225.75 before 5.5's re-plan). Each part stops and comes
+  back to Rohan at its own re-ask line (below).
 - **Records:** `STATE.md`; run reports in `records/runs/`.
 
 Two readers. **Rohan** reads down to "Size" and reads no code. The **orchestrator, builders and verifiers** read the
@@ -28,10 +28,10 @@ rest. 5.1 to 5.7 are planned in full here.
 | 5.2 Recorder, logs, asks | Every session in a linked project leaves a log inside the project, with secrets hidden as it is written. Agents can ask you typed questions and read your answers. Old records are cleaned by rules you set. A table of sessions and hours per task. | 25-37 | 48 |
 | 5.3 Guards | The full guard: an agent may change a protected file only while its running task allows it; files only you may grant stay yours; a recursive delete that does not name what it deletes is refused; a builder cannot stop before its proof is green. You run one real Windows session (about 10 minutes). | 18-29 | 38 |
 | 5.4 Ladder runner | `bonsai ladder` proves a task's work, on WSL and Windows. From here Bonsai proves and guards its own repo with it, on a pre-release you install in WSL (about 5 minutes, your password). | 28-44 | 57 |
-| 5.5 Packs | Bonsai's `base` pack and your `workflow` pack (your six roles, lanes, protocols and templates) as public Claude Code plugins, each with its own checks on GitHub; a template for new packs; the walls round your key and token files; briefs and reports between agents as files Bonsai lists; each role's budget and who may call whom, held by the guard; Bonsai's own team working by `workflow` from 5.5's end. Re-planned 14 Oct on your redesign (19-30 h, re-ask 39 before). | 61-101 | 131 |
+| 5.5 Packs | Bonsai's `base` pack and your `workflow` pack (your six roles, lanes, protocols and templates) as public Claude Code plugins, each with its own checks on GitHub; a template for new packs; the walls round your key and token files; briefs and reports between agents as files Bonsai lists; each role's budget and who may call whom, held by the guard; Bonsai's own team working by `workflow` from 5.5's end. Re-planned 14 Oct on your redesign (19-30 h, re-ask 39 before). | 63.5-106 | 138 |
 | 5.6 Machine pieces | Bonsai's settings for each project on this computer, and the label files the studio attaches (set by you or the studio, never by an agent); your personal memory, which every Claude session on this computer reads; Bonsai's part of the status line; installers for both sides; and Bonsai telling you when a newer release exists, with the exact lines to install it. | 13-20 | 26 |
 | 5.7 Release | The release path made safe and switched back on with you; a pre-release you install, and a trial of Bonsai on itself on it, analysed for you; your own trial on a fresh project; on your word, Bonsai 1.0. | 9.5-18.75 (the spec's 6-11, plus the trial) | 24 |
-| **Step 5** | | **184.5-296.75** (142.5-225.75 before 5.5's re-plan) | each part its own |
+| **Step 5** | | **187-301.75** (142.5-225.75 before 5.5's re-plan) | each part its own |
 
 **What Bonsai is, and what the studio is** (your 7 Oct split, which you confirmed on 9 Oct). Bonsai is everything
 that lives inside one project: its rules, its guard, the record of what happened, and the proof that work is done. It
@@ -91,7 +91,7 @@ such pair.
   `bonsai.yaml`; your own Claude sessions there refused on its protected files; the floor numbers in a line at each
   part's end (nothing to answer); the way back only if the guard breaks.
 - **In 5.5:** approve its section (approved 9 Oct; re-planned on your redesign of 12-14 Oct, so its new section comes to
-  you again, with six questions of yours, each in "Step 5.5"'s "For Rohan"). It makes your way of working
+  you again, with seven questions of yours, each in "Step 5.5"'s "For Rohan"). It makes your way of working
   public in a new repo, `LastStep/bonsai-workflow`, written around the six roles you chose on 14 Oct, and puts three of
   your templates (task, run report, STATE), reworded and naming no one, into Bonsai's own public `base` pack; your
   approval is your word for those three, which go public when their pieces land, each after a fresh agent's check for
@@ -198,10 +198,10 @@ this one:
   you inside one part; or step 5's own work changes anything in Mimas or the studio's repo (the studio now works in its
   own repo at the same time, so only step 5's own commands count). Your choice is written down before any more work.
 
-**Size.** The spec's hours: 139-218 AI hours for step 5, 142.5-225.75 with 5.7's trial, 184.5-296.75 with 5.5's re-plan
-on your redesign (295-475 on the studio's record of estimates growing 1.6 times), each part with its own re-ask line
-(the table above). The skeleton's measured pace: 6 h 17 min of agent runs against its 30-47 h, a ratio of 0.1337-0.2094
-(gate report section 2.2). At that ratio step 5 would take 24.7-62.1 h (19.1-47.3 before 5.5's re-plan). **That is not a
+**Size.** The spec's hours: 139-218 AI hours for step 5, 142.5-225.75 with 5.7's trial, 187-301.75 with 5.5's re-plan on
+your redesign (299-483 on the studio's record of estimates growing 1.6 times), each part with its own re-ask line (the
+table above). The skeleton's measured pace: 6 h 17 min of agent runs against its 30-47 h, a ratio of 0.1337-0.2094 (gate
+report section 2.2). At that ratio step 5 would take 25-63.2 h (19.1-47.3 before 5.5's re-plan). **That is not a
 promise**, for four reasons (gate report section 1): it counts only the agents' own runs, not the orchestrating session,
 your sittings or waiting; it comes from six parts over two days; it swung by part from 0.06-0.09 (the engine) to
 0.32-0.53 (the hook path), and the parts that dealt with Windows and Claude Code ran highest, which is more of step 5;
@@ -7184,7 +7184,7 @@ agent's dry run of the README's first-project steps (1-1.75), and rc.2, which al
 parts checked again (1-2). Low 6 + 3.5 = 9.5; high 11 + 7.75 = 18.75; re-ask 18.75 x 1.3 = 24.4, so 24. Each further fix
 round (`rc.3` and on) is 1-2 hours more: at the high figures two more fit under 24 (18.75 + 2 + 2 = 22.75) and a third
 would cross it, when you get the numbers and the three choices. A second feature is not part of a round: if you want
-one, it is sized and told to you first. Step 5 becomes 142.5-225.75 hours (184.5-296.75 since 5.5's re-plan of 14 Oct).
+one, it is sized and told to you first. Step 5 becomes 142.5-225.75 hours (187-301.75 since 5.5's re-plan of 14 Oct).
 This section's planning and review count in the figures. If a stop line were crossed, the smaller cut's "half of 5.7"
 would be the packs' move (5.7.6) and further fix rounds: 1.0 would still go out with every check, and projects would
 keep naming the packs by commit. Your time: about 10 minutes for batch 1, 3 for batch 2, 15 for batch 3 with your pick,
@@ -8111,8 +8111,8 @@ Oct.
   (Rohan):** before 1.0, a trial of Bonsai on itself on a public pre-release, `v1.0.0-rc.1`, which he installs: a small
   real feature he picks, built through the whole pipeline on Bonsai's own repo, its results analysed for him, fixes as
   further pre-releases; then his own trial on a fresh project; then his word for 1.0 on the same code. 5.7 becomes
-  9.5-18.75 hours, re-ask at 24 (the trial adds 3.5-7.75); step 5 184.5-296.75." (`design/plan-5.md`, "Step 5.7"; step
-  5's total as 5.5's re-plan of 14 Oct left it, 142.5-225.75 before it.)
+  9.5-18.75 hours, re-ask at 24 (the trial adds 3.5-7.75); step 5 187-301.75." (`design/plan-5.md`, "Step 5.7"; step 5's
+  total as 5.5's re-plan of 14 Oct left it, 142.5-225.75 before it.)
 - **§5, the pack's CI step 2, and §5 and §6's examples `ref: base-v1.0.0`, `ref: v1.0.0`:** done at 5.7.6, no note
   needed beyond the plan's; `init`'s template still names no pack (note 5.7.4, 8).
 - **§3, "No agent installs or replaces it":** unchanged; from 1.0 the installers and Bonsai's printed lines replace
@@ -8272,9 +8272,9 @@ Each gets its detailed section, in 5.1's shape, before it starts ("What changes"
 
 Judged by each part's end verifier, not the builder. Done means **no line crossed without Rohan's recorded choice, or,
 past a line, his recorded choice to go on.**
-1. **A part's hours over its re-ask line:** 5.1 61, 5.2 48, 5.3 38, 5.4 57, 5.5 131, 5.6 26, 5.7 24 (spec §14: 1.3 times
-   each part's high estimate, rounded: 47 x 1.3 = 61.1; 37 x 1.3 = 48.1; 29 x 1.3 = 37.7; 44 x 1.3 = 57.2; 5.5's 101,
-   its re-plan of 14 Oct on Rohan's redesign, x 1.3 = 131.3 (39 before, from 30); 20 x 1.3 = 26; 5.7's 18.75, the spec's
+1. **A part's hours over its re-ask line:** 5.1 61, 5.2 48, 5.3 38, 5.4 57, 5.5 138, 5.6 26, 5.7 24 (spec §14: 1.3 times
+   each part's high estimate, rounded: 47 x 1.3 = 61.1; 37 x 1.3 = 48.1; 29 x 1.3 = 37.7; 44 x 1.3 = 57.2; 5.5's 106,
+   its re-plan of 14 Oct on Rohan's redesign, x 1.3 = 137.8 (39 before, from 30); 20 x 1.3 = 26; 5.7's 18.75, the spec's
    11 and the trial Rohan asked for on 10 Oct, x 1.3 = 24.4). A part that ends under its line passes nothing on to the
    next.
 2. **Windows-only failures over 8 hours in step 5**, carried over from the skeleton's line 2 ("more than a day lost
