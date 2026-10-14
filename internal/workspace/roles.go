@@ -15,7 +15,7 @@ package workspace
 // else the pack's; null (nil here) is no limit. A default above its max (no limit is above any number) has the max
 // hold: the default in force is then the max, from where the max came (check names it, role-default-over-max). A
 // brief's value, up to the max in force, is the brief's reader's (bonsai message, the guard), never this function's.
-// Raising a default or a max is never a loosening of the checks (Rohan, 14 Oct): the settings record's compare
+// Raising a default or a max is never a loosening of the checks (the director, 14 Oct): the settings record's compare
 // (checks.go) reads neither roles nor messages.
 //
 // Two packs declaring one role's name each keep their own (a role is <pack>:<name>, as Claude Code names it), so a

@@ -58,7 +58,7 @@ func TestReadPackProtocols(t *testing.T) {
 func TestResolveFilePath(t *testing.T) {
 	for _, c := range []struct{ path, folder, want string }{
 		{"<protocols>/s.md", "work/protocols", "work/protocols/s.md"},
-		{"<protocols>/s.md", "studio/protocols/", "studio/protocols/s.md"},
+		{"<protocols>/s.md", "team/protocols/", "team/protocols/s.md"},
 		{"<protocols>/a/s.md", "p", "p/a/s.md"},
 		{"docs/s.md", "", "docs/s.md"}, // no placeholder: as written, whatever the folder
 	} {

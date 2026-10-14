@@ -94,27 +94,27 @@ func TestProtocolsAtTheDefaultFolder(t *testing.T) {
 	}
 }
 
-// A project whose protocols folder is its own (the studio keeps studio/protocols): the file goes there at a first
-// link, and nothing under init's default.
+// A project whose protocols folder is its own (team/protocols here): the file goes there at a first link, and nothing
+// under init's default.
 func TestProtocolsAtTheProjectsFolder(t *testing.T) {
 	e := setup(t)
 	src, shas := protoPack(t, e.tmp, "proto", "")
 	root := testpack.Project(t, e.tmp, "proto-own")
-	writeFile(t, root, "bonsai.yaml", protoConfig(t, "proto", src, shas[0], "studio/protocols"))
+	writeFile(t, root, "bonsai.yaml", protoConfig(t, "proto", src, shas[0], "team/protocols"))
 	e.apply(t, root, Request{Command: "init"})
-	if got := read(t, root, "studio/protocols/proto-start.md"); !strings.HasPrefix(got, "# Session start") {
+	if got := read(t, root, "team/protocols/proto-start.md"); !strings.HasPrefix(got, "# Session start") {
 		t.Errorf("the protocol file: %q", got)
 	}
 	if _, exists, _ := readFile(root, "work/protocols/proto-start.md"); exists {
 		t.Error("a file under init's default folder")
 	}
-	if claude := read(t, root, "CLAUDE.md"); !strings.Contains(claude, "@studio/protocols/proto-start.md") || strings.Contains(claude, "work/protocols") {
+	if claude := read(t, root, "CLAUDE.md"); !strings.Contains(claude, "@team/protocols/proto-start.md") || strings.Contains(claude, "work/protocols") {
 		t.Errorf("the block:\n%s", claude)
 	}
 	// The pack's next commit changes the file, at the project's folder.
 	testpack.SetRef(t, root, shas[0], shas[1])
 	e.apply(t, root, Request{})
-	if got := read(t, root, "studio/protocols/proto-start.md"); !strings.Contains(got, "then the task") {
+	if got := read(t, root, "team/protocols/proto-start.md"); !strings.Contains(got, "then the task") {
 		t.Errorf("after update: %q", got)
 	}
 }

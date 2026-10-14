@@ -221,9 +221,9 @@ const ProtocolsPlaceholder = "<protocols>"
 
 // PathPlaceholders are the placeholders a files entry's path in a pack's bonsai/pack.yaml may start with, each as its
 // first segment only, and what the engine puts in its place when it links the pack: their one home, on the reference
-// page (a later placeholder is an addition here). A pack cannot know a project's folders (the studio keeps its
-// protocols in studio/protocols, bonsai init's default is work/protocols), so a pack names the folder this way and the
-// engine writes the file under the project's own; the lock records the path it resolved to. No other <...> may
+// page (a later placeholder is an addition here). A pack cannot know a project's folders (each project names its own
+// protocols folder; bonsai init's default is work/protocols), so a pack names the folder this way and the engine
+// writes the file under the project's own; the lock records the path it resolved to. No other <...> may
 // appear anywhere in a path: CheckRelPath refuses < and >, which no Windows folder name holds, so a placeholder never
 // reads as a real folder.
 var PathPlaceholders = []format.Word{

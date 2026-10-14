@@ -194,7 +194,7 @@ func TestMessageThreshold(t *testing.T) {
 }
 
 // The settings record's compare (checks.go) reads neither a packs entry's roles nor messages: a raised default or max,
-// a lowered one, and new thresholds are never config-looser (Rohan, 14 Oct: "raising a budget does not count as
+// a lowered one, and new thresholds are never config-looser (the director, 14 Oct: "raising a budget does not count as
 // loosening the checks"), and the record's checks stay the same.
 func TestRolesAndMessagesAreNoLoosening(t *testing.T) {
 	was := ChecksOf(configWith(t, ""))
