@@ -4331,6 +4331,9 @@ measures each route on the Claude Code of the day first (note 5.5.11, 1). **The 
    named session, counted by its session);
 4. else the person's own session, which plays the `session` role.
 
+So an agent a `Workflow` script starts (its type measured, note 5.5.11, 1) runs as its declared role where its type
+names one, and otherwise as an undeclared type that changes nothing: a workflow that must write names a declared role.
+
 **Who may call whom**, on `Agent` and `Task` (the requested `subagent_type`), `SendMessage` (its `to`, resolved below)
 and `Workflow`:
 
@@ -4690,7 +4693,8 @@ Opus builder, VG after it.
    with `--settings` that saves its standard input to a file): what a hook's payload carries for a call from the main
    session, a subagent, a subagent's own subagent, an `--agent` session (`claude -p --agent`), a fork, a subagent
    resumed with `SendMessage`, a background subagent, a top-level `claude -p` started from an agent's shell (with and
-   without `--agent`, with and without `BONSAI_ROLE`), and a `Workflow` call from an `--agent` session; whether
+   without `--agent`, with and without `BONSAI_ROLE`), a `Workflow` call from an `--agent` session, and an agent a
+   `Workflow` script starts; whether
    `session_id` inside a subagent is its parent's; the Agent call's `tool_input` (`subagent_type`, `name`, `prompt`) and
    what its PostToolUse gives (`agentId`); `SendMessage`'s `to` in each form (an id, a name, `main`, another session);
    what SubagentStart carries; which payload first ties a new subagent's id to the Agent call that started it (that
