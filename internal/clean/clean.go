@@ -2,17 +2,18 @@
 // design/plan-5.md, 5.2.6b): it deletes the generated files and table rows that bonsai.yaml's generated: rules say
 // may go, and nothing else, and logs each one it deletes as a clean record.
 //
-// The kinds it cleans (format.GeneratedKinds is their one home; docs/reference/generated-files.md says the same in
-// plain words): log files (.bonsai/local/log/), asks day files (.bonsai/local/asks/) and ladder results
-// (.bonsai/local/ladder/), by file; and the sessions table's rows (.bonsai/sessions.md), by row. Run reports are never
-// deleted by Bonsai, and the tasks table is a rebuild.
+// The kinds it cleans (format.GeneratedKinds is their one home; skill base:generated-files says the same in plain
+// words): log files (.bonsai/local/log/), asks day files (.bonsai/local/asks/) and ladder results
+// (.bonsai/local/ladder/), by file; the messages between agents (.bonsai/local/messages/), by thread; and the sessions
+// table's rows (.bonsai/sessions.md), by row. Run reports are never deleted by Bonsai, and the tasks table is a
+// rebuild.
 //
 // The rule, per kind (generated.<kind> in the main checkout's bonsai.yaml, read leanly from the file as read: rule.go):
 // a file or row goes when it is older than keep_days, or beyond the newest keep_newest of its kind, either one
 // cleaning; null keeps. A kind left out, or generated: left out, takes its default: format.GeneratedKinds holds each
-// kind's default numbers, their one home, and docs/reference/generated-files.md prints them in words. Age is a log or
-// asks file's last record's at (its modification time when no record reads), a ladder result's finished (its
-// modification time when the result does not read), and a row's end.
+// kind's default numbers, their one home, and skill base:generated-files prints them in words. Age is a log or asks
+// file's last record's at (its modification time when no record reads), a ladder result's finished (its modification
+// time when the result does not read), a thread's last message's created, and a row's end.
 //
 // The protections come first and always win, and a protected file or row still counts among the newest:
 //   - a log file holding an open span (internal/sessions: the one rule that says "open"), or an ended session or
@@ -23,16 +24,18 @@
 //     one whose file does not read, counts as not done;
 //   - a row whose task is not done or cut (none is never protected), or whose span is still in the log (check --write
 //     would only add it again).
+//   - an open thread of messages (a brief with no report after it), whatever its age (messages.go).
 //
 // Only Bonsai's own files: the names it writes (s-<session>.ndjson and w-<date>.ndjson in log/, <date>.ndjson in
 // asks/, <task id>.json in ladder/), regular files only, at the top of the kind's folder in the main checkout's
-// .bonsai/local/, that folder and the two above it real folders, not links (a link is never followed). Anything else
-// is left alone and never named.
+// .bonsai/local/, that folder and the two above it real folders, not links (a link is never followed); and messages
+// that read, each <id>.md in its recipient's folder of messages/ (internal/message's reader). Anything else is left
+// alone and never named.
 //
-// When: at a session's end, after its session_end line (internal/recorder, SessionEnd: ladder, asks and log within
-// SessionEndBudget, oldest first; the budget is checked before each step of the listing and the judging, a run ends
-// within it and one step, and what it leaves waits for the next end: files.go); in check --write, the sessions rows
-// (internal/engine, Rows and Record: the table's only writer); and by the ladder runner after each run (step 5.4,
+// When: at a session's end, after its session_end line (internal/recorder, SessionEnd: ladder, asks, messages and log
+// within SessionEndBudget, oldest first; the budget is checked before each step of the listing and the judging, a run
+// ends within it and one step, and what it leaves waits for the next end: files.go); in check --write, the sessions
+// rows (internal/engine, Rows and Record: the table's only writer); and by the ladder runner after each run (step 5.4,
 // Ladder). No process outlives its caller. The cleaner reads the main checkout's local/ only (workspace.FindLocal).
 //
 // The clean record (contract §8.2): one per file or row, written after the delete succeeded (for a row, after the
@@ -50,6 +53,7 @@
 //   - rule.go: generated.<kind> read from bonsai.yaml, and the reasons.
 //   - files.go: a kind's folder, its files' ages, the order they are judged in, and the budget.
 //   - log.go, asks.go, ladder.go: each file kind's names, clock and protections.
+//   - messages.go: the messages kind, by thread.
 //   - rows.go: the sessions table's rows, for check --write.
 package clean
 
@@ -71,6 +75,7 @@ const (
 	Log      = "log"
 	Asks     = "asks"
 	Ladder   = "ladder"
+	Messages = "messages"
 	Sessions = "sessions"
 )
 
@@ -104,7 +109,7 @@ type Options struct {
 
 // Item is one file or row cleaned, or left for a later run.
 type Item struct {
-	Kind   string // log, asks, ladder or sessions
+	Kind   string // log, asks, ladder, messages or sessions
 	Target string // the project-relative path, forward slashes; a row: .bonsai/sessions.md# and its key
 	Reason string // the rule: generated.log.keep_days=30
 }
@@ -175,8 +180,8 @@ func start(o Options) (*run, *Done) {
 	return r, d
 }
 
-// Files cleans the files of the kinds given (Log, Asks, Ladder), each in turn, within the budget. A kind whose rule
-// keeps (null) reads nothing. It never fails: what it could not do is in Done.
+// Files cleans the files of the kinds given (Log, Asks, Ladder, Messages), each in turn, within the budget. A kind
+// whose rule keeps (null) reads nothing. It never fails: what it could not do is in Done.
 func Files(o Options, kinds ...string) *Done {
 	r, d := start(o)
 	if r == nil {
@@ -193,6 +198,8 @@ func Files(o Options, kinds ...string) *Done {
 			r.files(asksKind)
 		case Ladder:
 			r.files(ladderKind)
+		case Messages:
+			r.messages()
 		default:
 			d.Errs = append(d.Errs, fmt.Errorf("clean: %q is not a kind of file the cleaner cleans", k))
 		}
@@ -201,12 +208,13 @@ func Files(o Options, kinds ...string) *Done {
 }
 
 // SessionEnd is the cleaning at a session's end (internal/recorder, after the session_end line): ladder results,
-// asks and the log, the cheap kinds first, within SessionEndBudget unless o.Budget is set.
+// asks, the messages between agents and the log, the cheap kinds first, within SessionEndBudget unless o.Budget is
+// set.
 func SessionEnd(o Options) *Done {
 	if o.Budget <= 0 {
 		o.Budget = SessionEndBudget
 	}
-	return Files(o, Ladder, Asks, Log)
+	return Files(o, Ladder, Asks, Messages, Log)
 }
 
 // LadderResults is the ladder runner's call after each run (step 5.4): the ladder kind alone. The runner names its own
