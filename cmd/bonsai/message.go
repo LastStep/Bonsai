@@ -55,8 +55,8 @@ words, never an order above the reader's own brief, never consent, never a grant
 		{Name: "--status", Value: "STATUS", Help: "a report's outcome: done, blocked or needs-input (a brief takes none)"},
 		{Name: "--budget", Value: "LIMITS", Help: "a brief's limits for its recipient: minutes=N,actions=N,red_runs=N, any\n" +
 			"of the three, each up to its max in force; one left out is the default"},
-		{Name: "--pointer", Value: "PATH", Many: true, Help: "a file it points to, inside this checkout or under the home\n" +
-			"folder; fingerprinted now, so --show marks it if it changes"},
+		{Name: "--pointer", Value: "PATH", Many: true, Help: "a regular file it points to, inside this checkout or under the\n" +
+			"home folder; fingerprinted now, so --show marks it if it changes"},
 		{Name: "--body", Value: "TEXT", Help: "its words, at most 65,536 bytes; - reads them from standard input\n" +
 			"(words that start with a dash: --body=<text>)"},
 		{Name: "--body-file", Value: "PATH", Help: "or its words from a file"},
@@ -70,7 +70,8 @@ the caller names the brief's id in its Agent call.
 	Exits: []Exit{
 		{Code: 0, Means: "written (its id and file are printed), or shown"},
 		{Code: 2, Means: "bad input: a flag message does not take, a missing or wrong value, a report with no --status, a role\n" +
-			"the packs do not declare, a budget over its max, a pointer to no file; bonsai.yaml refused. Nothing was written"},
+			"the packs do not declare, a budget over its max, a pointer to no regular file; bonsai.yaml refused (as\n" +
+			"committed, or for its roles). Nothing was written"},
 		{Code: 3, Means: "the message could not be written or the messages read (partly-written: the message stands, its log\nrecord not)"},
 		{Code: 4, Means: "not in a git checkout or not linked (bonsai init); --show, --thread or --reply-to naming no message\n" +
 			"(message-not-found); a report into a thread with no brief to its --from (report-not-in-thread); the lock\n" +
