@@ -10,6 +10,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/engine"
@@ -195,8 +196,9 @@ func messagePlace(site *asksSite) message.Place {
 }
 
 // messageRules are what the site's project holds its messages to (internal/message's Rules), from the lock and
-// bonsai.yaml as committed at the main checkout's HEAD (messageCopies). With roles, each limit's max in force for a
-// role comes from workspace.RolesInForce, the one function every reader of a role's limits uses; a role two linked
+// bonsai.yaml as committed at the main checkout's HEAD (messageCopies). With roles, the roles the lock declares, in its
+// order (where it declares any, --from and --to must name one: role-not-declared), and each limit's max in force for
+// a role, both from workspace.RolesInForce, the one function every reader of a role's limits uses; a role two linked
 // packs both declare is held to the lower of their maxes (an address names a role, not its pack), and a lock whose
 // declares do not read is refused (bad-lock). Without roles (--show, bonsai messages), the lock is not read.
 func messageRules(site *asksSite, roles bool) (message.Rules, *engine.Error) {
@@ -212,6 +214,11 @@ func messageRules(site *asksSite, roles bool) (message.Rules, *engine.Error) {
 	if err != nil {
 		return r, &engine.Error{Code: "bad-lock", Exit: engine.ExitState, What: engine.ASCII(err.Error()),
 			Next: "restore the committed lock (git checkout -- .bonsai/lock.json), or run bonsai update"}
+	}
+	for _, ri := range in {
+		if !slices.Contains(r.Roles, ri.Role.Name) {
+			r.Roles = append(r.Roles, ri.Role.Name)
+		}
 	}
 	r.Max = func(role, limit string) *int64 {
 		var max *int64

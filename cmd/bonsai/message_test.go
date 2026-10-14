@@ -327,3 +327,28 @@ func TestMessageBudgetMax(t *testing.T) {
 	}
 	c.messagesDoc(0, "messages")
 }
+
+// Where the lock declares roles, --from and --to must name one of them (role-not-declared, naming the declared ones);
+// where it declares none, any role is taken.
+func TestMessageDeclaredRoles(t *testing.T) {
+	c := newCLI(t)
+	t.Setenv(asks.SessionEnv, "")
+	src, shas := rolesPack(t, c.tmp)
+	c.linkTo(src, shas[0])
+	c.commit("link")
+	msg := func(from, to string) []string {
+		return []string{"message", "--from", from, "--to", to, "--kind", "brief", "--body", "Go."}
+	}
+	e := errorIn(c.messagesDoc(2, msg("orchestrator", "planner@T-0901")...), "messages")
+	if e.String("code") != "role-not-declared" || !strings.Contains(e.String("message"), "--to names the role planner, which the linked packs do not declare (they declare orchestrator, builder, auditor)") {
+		t.Errorf("an undeclared --to: %s", schema.Show(e))
+	}
+	wantRefusal(t, messageWord, msg("tester@T-0901", "builder@T-0901"), 2, "role-not-declared")
+	c.messagesDoc(0, msg("orchestrator", "builder@T-0901#2")...)
+	c.messagesDoc(0, msg("builder@T-0901", "auditor@T-0901")...)
+	// The plain test pack declares no role: any role is taken.
+	p := newCLI(t)
+	p.link()
+	p.commit("link")
+	p.messagesDoc(0, msg("tester@T-0901", "planner")...)
+}
