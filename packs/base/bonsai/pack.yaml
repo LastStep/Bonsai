@@ -1,0 +1,321 @@
+# bonsai/pack.yaml: base's Bonsai manifest, format bonsai.pack/1. Base is Bonsai's own pack: the templates of Bonsai's
+# documents (skills), the walls round the files that hold keys, tokens and logins, Bonsai's four labels
+# (labels.yaml) and a short block (block.md). Bonsai's engine reads this file when a project links base (bonsai init,
+# bonsai update) and when CI runs bonsai check --pack on it; Claude Code never reads it. Base carries no code: no hook
+# line, no file the engine writes, nothing in the plugin that runs (packs/packs_test.go holds that). Every key carries
+# its comment, at its line's end or on the line just above; bonsai check --pack fails a key without one. Every
+# field's full meaning, type and allowed values: bonsai check --schema bonsai.pack. Text that does not start with a
+# letter is quoted (format-1 YAML).
+format: bonsai.pack/1                 # the format and its version, always the first key; only bonsai.pack/1
+id: base                              # the pack's id, equal to "name" in .claude-plugin/plugin.json; skills load as base:<name>
+# version: base's version, quoted, as X.Y.Z; its release tag is base- and this (base-v0.1.0), never a bare v tag, so
+# Bonsai's own release never fires. plugin.json carries none: a project pins base by commit
+version: "0.1.0"
+needs:                                # what a machine needs for base; bonsai status --json lists each
+  claude_code: "2.1.294"              # the oldest Claude Code base works with, quoted: Bonsai's own floor
+block: block.md                       # base's part of the block in a project's CLAUDE.md: bonsai/block.md, a few lines
+files: []                             # files the engine writes into a project: none (base's templates are skills)
+hooks: []                             # hook lines the engine writes into .claude/settings.json: none (base runs no code)
+# deny: the walls, the deny rules the engine writes into every linked project's .claude/settings.json, each with its
+# why, the sentence bonsai update's preview prints (this list is their one home; README.md says what they are for and
+# what they leave out). What is walled, one rule for all: Read, the files and folders that commonly hold keys, tokens
+# or logins; Edit, the person's own Claude Code files and the files whose change starts code (an Edit rule also stops
+# Write and a shell redirect). An exact file where one is enough, a folder (a recursive glob) only where a tool keeps
+# several. Each wall has its twins: ~/ is the session's own home (on Windows the Windows home); //mnt/c/Users/*/ is the
+# Windows home seen from WSL; //wsl.localhost/*/home/*/ and //wsl$/*/home/*/ are WSL's home seen from Windows. A twin
+# is left out only where no common program keeps that file in that home, as each group's comment says. Bonsai's own
+# rules (.bonsai/local/, the two tables, ~/.bonsai/) are the engine's, never repeated here. Each entry:
+#   rule: a Claude Code permission rule, quoted: Read(<path>) or Edit(<path>), the path from ~/ (the home) or //
+#         (the disk's root), never relative
+#   why:  one plain sentence, what the rule stops, as the preview prints it after "base: "
+deny:
+  # READ: files and folders that commonly hold keys, tokens or logins
+  # SSH's keys
+  - rule: "Read(~/.ssh/**)"                                              # this home
+    why: "Agents cannot read ~/.ssh/, where SSH keeps private keys."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.ssh/**)"                                # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .ssh/, where SSH keeps private keys."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.ssh/**)"                       # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.ssh/ by its wsl.localhost path, where SSH keeps private keys."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.ssh/**)"                                # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.ssh/ by its wsl$ path, where SSH keeps private keys."   # the preview's sentence
+  # AWS's keys
+  - rule: "Read(~/.aws/**)"                                              # this home
+    why: "Agents cannot read ~/.aws/, where the AWS command line keeps its keys."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.aws/**)"                                # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .aws/, where the AWS command line keeps its keys."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.aws/**)"                       # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.aws/ by its wsl.localhost path, where the AWS command line keeps its keys."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.aws/**)"                                # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.aws/ by its wsl$ path, where the AWS command line keeps its keys."   # the preview's sentence
+  # Azure's logins
+  - rule: "Read(~/.azure/**)"                                            # this home
+    why: "Agents cannot read ~/.azure/, where Azure's command line keeps its logins."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.azure/**)"                              # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .azure/, where Azure's command line keeps its logins."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.azure/**)"                     # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.azure/ by its wsl.localhost path, where Azure's command line keeps its logins."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.azure/**)"                              # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.azure/ by its wsl$ path, where Azure's command line keeps its logins."   # the preview's sentence
+  # Google Cloud's logins; on Windows they are in AppData/Roaming/gcloud/ (below)
+  - rule: "Read(~/.config/gcloud/**)"                                    # this home
+    why: "Agents cannot read ~/.config/gcloud/, where Google Cloud's command line keeps its logins."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.config/gcloud/**)"             # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.config/gcloud/ by its wsl.localhost path, where Google Cloud's command line keeps its logins."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.config/gcloud/**)"                      # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.config/gcloud/ by its wsl$ path, where Google Cloud's command line keeps its logins."   # the preview's sentence
+  # Google Cloud's logins on Windows; a Windows place, with no twin in WSL's home
+  - rule: "Read(~/AppData/Roaming/gcloud/**)"                            # this home
+    why: "Agents cannot read ~/AppData/Roaming/gcloud/, where Google Cloud's command line keeps its logins on Windows."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/AppData/Roaming/gcloud/**)"              # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's AppData/Roaming/gcloud/, where Google Cloud's command line keeps its logins on Windows."   # the preview's sentence
+  # gh's login token; on Windows it is in AppData/Roaming/GitHub CLI/ (below)
+  - rule: "Read(~/.config/gh/hosts.yml)"                                 # this home
+    why: "Agents cannot read ~/.config/gh/hosts.yml, where GitHub's gh keeps its login token."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.config/gh/hosts.yml)"          # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.config/gh/hosts.yml by its wsl.localhost path, where GitHub's gh keeps its login token."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.config/gh/hosts.yml)"                   # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.config/gh/hosts.yml by its wsl$ path, where GitHub's gh keeps its login token."   # the preview's sentence
+  # gh's login token on Windows; a Windows place, with no twin in WSL's home
+  - rule: "Read(~/AppData/Roaming/GitHub CLI/hosts.yml)"                 # this home
+    why: "Agents cannot read ~/AppData/Roaming/GitHub CLI/hosts.yml, where GitHub's gh keeps its login token on Windows."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/AppData/Roaming/GitHub CLI/hosts.yml)"   # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's AppData/Roaming/GitHub CLI/hosts.yml, where GitHub's gh keeps its login token on Windows."   # the preview's sentence
+  # GnuPG's keys (Git for Windows' own GnuPG keeps them in the Windows home's .gnupg/ too)
+  - rule: "Read(~/.gnupg/**)"                                            # this home
+    why: "Agents cannot read ~/.gnupg/, where GnuPG keeps private keys."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.gnupg/**)"                              # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .gnupg/, where GnuPG keeps private keys."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.gnupg/**)"                     # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.gnupg/ by its wsl.localhost path, where GnuPG keeps private keys."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.gnupg/**)"                              # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.gnupg/ by its wsl$ path, where GnuPG keeps private keys."   # the preview's sentence
+  # GnuPG's keys on Windows; a Windows place, with no twin in WSL's home
+  - rule: "Read(~/AppData/Roaming/gnupg/**)"                             # this home
+    why: "Agents cannot read ~/AppData/Roaming/gnupg/, where GnuPG keeps private keys on Windows."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/AppData/Roaming/gnupg/**)"               # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's AppData/Roaming/gnupg/, where GnuPG keeps private keys on Windows."   # the preview's sentence
+  # git's stored logins
+  - rule: "Read(~/.git-credentials)"                                     # this home
+    why: "Agents cannot read ~/.git-credentials, where git's store helper keeps passwords and tokens."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.git-credentials)"                       # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .git-credentials, where git's store helper keeps passwords and tokens."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.git-credentials)"              # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.git-credentials by its wsl.localhost path, where git's store helper keeps passwords and tokens."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.git-credentials)"                       # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.git-credentials by its wsl$ path, where git's store helper keeps passwords and tokens."   # the preview's sentence
+  # git's other file of stored logins
+  - rule: "Read(~/.config/git/credentials)"                              # this home
+    why: "Agents cannot read ~/.config/git/credentials, git's other file of stored passwords and tokens."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.config/git/credentials)"                # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .config/git/credentials, git's other file of stored passwords and tokens."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.config/git/credentials)"       # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.config/git/credentials by its wsl.localhost path, git's other file of stored passwords and tokens."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.config/git/credentials)"                # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.config/git/credentials by its wsl$ path, git's other file of stored passwords and tokens."   # the preview's sentence
+  # logins for curl, git and others
+  - rule: "Read(~/.netrc)"                                               # this home
+    why: "Agents cannot read ~/.netrc, where curl, git and other tools keep logins."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.netrc)"                                 # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .netrc, where curl, git and other tools keep logins."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.netrc)"                        # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.netrc by its wsl.localhost path, where curl, git and other tools keep logins."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.netrc)"                                 # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.netrc by its wsl$ path, where curl, git and other tools keep logins."   # the preview's sentence
+  # the same file's Windows name; a Windows name, with no twin in WSL's home
+  - rule: "Read(~/_netrc)"                                               # this home
+    why: "Agents cannot read ~/_netrc, the name Windows tools give the same login file as .netrc."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/_netrc)"                                 # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's _netrc, the name Windows tools give the same login file as .netrc."   # the preview's sentence
+  # npm's tokens
+  - rule: "Read(~/.npmrc)"                                               # this home
+    why: "Agents cannot read ~/.npmrc, where npm keeps registry tokens."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.npmrc)"                                 # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .npmrc, where npm keeps registry tokens."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.npmrc)"                        # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.npmrc by its wsl.localhost path, where npm keeps registry tokens."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.npmrc)"                                 # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.npmrc by its wsl$ path, where npm keeps registry tokens."   # the preview's sentence
+  # Python package index logins
+  - rule: "Read(~/.pypirc)"                                              # this home
+    why: "Agents cannot read ~/.pypirc, where Python's upload tools keep package index logins."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.pypirc)"                                # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .pypirc, where Python's upload tools keep package index logins."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.pypirc)"                       # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.pypirc by its wsl.localhost path, where Python's upload tools keep package index logins."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.pypirc)"                                # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.pypirc by its wsl$ path, where Python's upload tools keep package index logins."   # the preview's sentence
+  # Kubernetes logins
+  - rule: "Read(~/.kube/config)"                                         # this home
+    why: "Agents cannot read ~/.kube/config, where kubectl keeps cluster logins."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.kube/config)"                           # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .kube/config, where kubectl keeps cluster logins."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.kube/config)"                  # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.kube/config by its wsl.localhost path, where kubectl keeps cluster logins."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.kube/config)"                           # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.kube/config by its wsl$ path, where kubectl keeps cluster logins."   # the preview's sentence
+  # Docker's registry logins
+  - rule: "Read(~/.docker/config.json)"                                  # this home
+    why: "Agents cannot read ~/.docker/config.json, where Docker keeps registry logins."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.docker/config.json)"                    # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .docker/config.json, where Docker keeps registry logins."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.docker/config.json)"           # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.docker/config.json by its wsl.localhost path, where Docker keeps registry logins."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.docker/config.json)"                    # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.docker/config.json by its wsl$ path, where Docker keeps registry logins."   # the preview's sentence
+  # Claude Code's login
+  - rule: "Read(~/.claude/.credentials.json)"                            # this home
+    why: "Agents cannot read ~/.claude/.credentials.json, Claude Code's login."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.claude/.credentials.json)"              # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .claude/.credentials.json, Claude Code's login."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.claude/.credentials.json)"     # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.claude/.credentials.json by its wsl.localhost path, Claude Code's login."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.claude/.credentials.json)"              # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.claude/.credentials.json by its wsl$ path, Claude Code's login."   # the preview's sentence
+  # Claude Code's own file
+  - rule: "Read(~/.claude.json)"                                         # this home
+    why: "Agents cannot read ~/.claude.json, Claude Code's own file, whose MCP servers' settings often hold tokens."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.claude.json)"                           # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .claude.json, Claude Code's own file, whose MCP servers' settings often hold tokens."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.claude.json)"                  # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.claude.json by its wsl.localhost path, Claude Code's own file, whose MCP servers' settings often hold tokens."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.claude.json)"                           # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.claude.json by its wsl$ path, Claude Code's own file, whose MCP servers' settings often hold tokens."   # the preview's sentence
+  # Bonsai's salt (the rest of Bonsai's home is the engine's own rule, never base's)
+  - rule: "Read(~/.bonsai/salt)"                                         # this home
+    why: "Agents cannot read ~/.bonsai/salt, Bonsai's secret salt for this machine."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.bonsai/salt)"                           # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .bonsai/salt, Bonsai's secret salt for this machine."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.bonsai/salt)"                  # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.bonsai/salt by its wsl.localhost path, Bonsai's secret salt for this machine."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.bonsai/salt)"                           # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.bonsai/salt by its wsl$ path, Bonsai's secret salt for this machine."   # the preview's sentence
+  # EDIT: the person's own Claude Code files
+  # Claude Code's local settings, in any folder: they beat the project's, so an agent could turn the walls off
+  - rule: "Edit(//**/.claude/settings.local.json)"                       # any folder, on any disk
+    why: "Agents cannot edit a .claude/settings.local.json anywhere: the person's own Claude Code settings, which beat the project's."   # the preview's sentence
+  # the person's Claude Code settings
+  - rule: "Edit(~/.claude/settings.json)"                                # this home
+    why: "Agents cannot edit ~/.claude/settings.json, the person's own Claude Code settings."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.claude/settings.json)"                  # the Windows home, from WSL
+    why: "Agents in WSL cannot edit the Windows home's .claude/settings.json, the person's own Claude Code settings."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.claude/settings.json)"         # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.claude/settings.json by its wsl.localhost path, the person's own Claude Code settings."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.claude/settings.json)"                  # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.claude/settings.json by its wsl$ path, the person's own Claude Code settings."   # the preview's sentence
+  # Claude Code's own file
+  - rule: "Edit(~/.claude.json)"                                         # this home
+    why: "Agents cannot edit ~/.claude.json, whose MCP servers are code Claude Code starts on its own."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.claude.json)"                           # the Windows home, from WSL
+    why: "Agents in WSL cannot edit the Windows home's .claude.json, whose MCP servers are code Claude Code starts on its own."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.claude.json)"                  # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.claude.json by its wsl.localhost path, whose MCP servers are code Claude Code starts on its own."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.claude.json)"                           # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.claude.json by its wsl$ path, whose MCP servers are code Claude Code starts on its own."   # the preview's sentence
+  # the person's memory file
+  - rule: "Edit(~/.claude/CLAUDE.md)"                                    # this home
+    why: "Agents cannot edit ~/.claude/CLAUDE.md, the person's own memory file, which every project loads."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.claude/CLAUDE.md)"                      # the Windows home, from WSL
+    why: "Agents in WSL cannot edit the Windows home's .claude/CLAUDE.md, the person's own memory file, which every project loads."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.claude/CLAUDE.md)"             # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.claude/CLAUDE.md by its wsl.localhost path, the person's own memory file, which every project loads."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.claude/CLAUDE.md)"                      # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.claude/CLAUDE.md by its wsl$ path, the person's own memory file, which every project loads."   # the preview's sentence
+  # EDIT: files whose change starts code
+  # Go's programs
+  - rule: "Edit(~/go/bin/**)"                                            # this home
+    why: "Agents cannot write in ~/go/bin/, where a copy could shadow the installed bonsai."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/go/bin/**)"                              # the Windows home, from WSL
+    why: "Agents in WSL cannot write in the Windows home's go/bin/, where a copy could shadow the installed bonsai."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/go/bin/**)"                     # WSL's home, from Windows
+    why: "Agents on Windows cannot write in WSL's ~/go/bin/ by its wsl.localhost path, where a copy could shadow the installed bonsai."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/go/bin/**)"                              # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot write in WSL's ~/go/bin/ by its wsl$ path, where a copy could shadow the installed bonsai."   # the preview's sentence
+  # a bonsai on the PATH
+  - rule: "Edit(~/.local/bin/bonsai*)"                                   # this home
+    why: "Agents cannot write a bonsai in ~/.local/bin/, where a copy could shadow the installed bonsai."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.local/bin/bonsai*)"                     # the Windows home, from WSL
+    why: "Agents in WSL cannot write a bonsai in the Windows home's .local/bin/, where a copy could shadow the installed bonsai."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.local/bin/bonsai*)"            # WSL's home, from Windows
+    why: "Agents on Windows cannot write a bonsai in WSL's ~/.local/bin/ by its wsl.localhost path, where a copy could shadow the installed bonsai."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.local/bin/bonsai*)"                     # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot write a bonsai in WSL's ~/.local/bin/ by its wsl$ path, where a copy could shadow the installed bonsai."   # the preview's sentence
+  # SSH's settings and keys: a Read wall stops a read, not the write of a new file
+  - rule: "Edit(~/.ssh/**)"                                              # this home
+    why: "Agents cannot write in ~/.ssh/: its config can run a command at every connection, and authorized_keys lets someone in."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.ssh/**)"                                # the Windows home, from WSL
+    why: "Agents in WSL cannot write in the Windows home's .ssh/: its config can run a command at every connection, and authorized_keys lets someone in."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.ssh/**)"                       # WSL's home, from Windows
+    why: "Agents on Windows cannot write in WSL's ~/.ssh/ by its wsl.localhost path: its config can run a command at every connection, and authorized_keys lets someone in."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.ssh/**)"                                # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot write in WSL's ~/.ssh/ by its wsl$ path: its config can run a command at every connection, and authorized_keys lets someone in."   # the preview's sentence
+  # git's settings
+  - rule: "Edit(~/.gitconfig)"                                           # this home
+    why: "Agents cannot edit ~/.gitconfig: its aliases, hooks path and helpers run commands in every repository."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.gitconfig)"                             # the Windows home, from WSL
+    why: "Agents in WSL cannot edit the Windows home's .gitconfig: its aliases, hooks path and helpers run commands in every repository."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.gitconfig)"                    # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.gitconfig by its wsl.localhost path: its aliases, hooks path and helpers run commands in every repository."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.gitconfig)"                             # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.gitconfig by its wsl$ path: its aliases, hooks path and helpers run commands in every repository."   # the preview's sentence
+  # git's other settings file
+  - rule: "Edit(~/.config/git/config)"                                   # this home
+    why: "Agents cannot edit ~/.config/git/config, git's other settings file, which can run commands in every repository."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.config/git/config)"                     # the Windows home, from WSL
+    why: "Agents in WSL cannot edit the Windows home's .config/git/config, git's other settings file, which can run commands in every repository."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.config/git/config)"            # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.config/git/config by its wsl.localhost path, git's other settings file, which can run commands in every repository."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.config/git/config)"                     # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.config/git/config by its wsl$ path, git's other settings file, which can run commands in every repository."   # the preview's sentence
+  # bash's start files (Git Bash reads them in the Windows home)
+  - rule: "Edit(~/.bashrc)"                                              # this home
+    why: "Agents cannot edit ~/.bashrc: it runs at every bash start."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.bashrc)"                                # the Windows home, from WSL
+    why: "Agents in WSL cannot edit the Windows home's .bashrc: it runs at every bash start."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.bashrc)"                       # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.bashrc by its wsl.localhost path: it runs at every bash start."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.bashrc)"                                # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.bashrc by its wsl$ path: it runs at every bash start."   # the preview's sentence
+  - rule: "Edit(~/.bash_profile)"                                        # this home
+    why: "Agents cannot edit ~/.bash_profile: it runs at every login shell's start."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.bash_profile)"                          # the Windows home, from WSL
+    why: "Agents in WSL cannot edit the Windows home's .bash_profile: it runs at every login shell's start."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.bash_profile)"                 # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.bash_profile by its wsl.localhost path: it runs at every login shell's start."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.bash_profile)"                          # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.bash_profile by its wsl$ path: it runs at every login shell's start."   # the preview's sentence
+  - rule: "Edit(~/.profile)"                                             # this home
+    why: "Agents cannot edit ~/.profile: it runs at every login shell's start."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/.profile)"                               # the Windows home, from WSL
+    why: "Agents in WSL cannot edit the Windows home's .profile: it runs at every login shell's start."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.profile)"                      # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.profile by its wsl.localhost path: it runs at every login shell's start."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.profile)"                               # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.profile by its wsl$ path: it runs at every login shell's start."   # the preview's sentence
+  # zsh's start files; no common Windows shell reads them, so no Windows twin
+  - rule: "Edit(~/.zshrc)"                                               # this home
+    why: "Agents cannot edit ~/.zshrc: it runs at every zsh start."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.zshrc)"                        # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.zshrc by its wsl.localhost path: it runs at every zsh start."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.zshrc)"                                 # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.zshrc by its wsl$ path: it runs at every zsh start."   # the preview's sentence
+  - rule: "Edit(~/.zprofile)"                                            # this home
+    why: "Agents cannot edit ~/.zprofile: it runs at every zsh login's start."   # the preview's sentence
+  - rule: "Edit(//wsl.localhost/*/home/*/.zprofile)"                     # WSL's home, from Windows
+    why: "Agents on Windows cannot edit WSL's ~/.zprofile by its wsl.localhost path: it runs at every zsh login's start."   # the preview's sentence
+  - rule: "Edit(//wsl$/*/home/*/.zprofile)"                              # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot edit WSL's ~/.zprofile by its wsl$ path: it runs at every zsh login's start."   # the preview's sentence
+  # PowerShell's profiles and modules; a Windows place, with no twin in WSL's home
+  - rule: "Edit(~/Documents/PowerShell/**)"                              # this home
+    why: "Agents cannot write in ~/Documents/PowerShell/, where PowerShell's profiles and modules run at its start."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/Documents/PowerShell/**)"                # the Windows home, from WSL
+    why: "Agents in WSL cannot write in the Windows home's Documents/PowerShell/, where PowerShell's profiles and modules run at its start."   # the preview's sentence
+  - rule: "Edit(~/Documents/WindowsPowerShell/**)"                       # this home
+    why: "Agents cannot write in ~/Documents/WindowsPowerShell/, where Windows PowerShell's profiles and modules run at its start."   # the preview's sentence
+  - rule: "Edit(//mnt/c/Users/*/Documents/WindowsPowerShell/**)"         # the Windows home, from WSL
+    why: "Agents in WSL cannot write in the Windows home's Documents/WindowsPowerShell/, where Windows PowerShell's profiles and modules run at its start."   # the preview's sentence
+documents: []                         # document kinds base declares: none (Bonsai's own kinds are built into Bonsai)
+# protected: the paths an agent changes only while its running task grants them (bonsai.allows): Bonsai's settings
+# and its lock, whose change would loosen the checks agents are held to
+protected: ["bonsai.yaml", ".bonsai/lock.json"]
+roles: []                             # roles base declares: none (base has no roles and no lanes)
