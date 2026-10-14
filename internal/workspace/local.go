@@ -57,11 +57,14 @@ const LocalDir = ".bonsai/local"
 
 // GitignoreFile and GitignoreText are .bonsai/.gitignore, written by Bonsai (spec §6, contract §3): bonsai init and
 // update write it, bonsai check finds it missing or changed, and every writer of .bonsai/local/ restores it when it
-// is missing (EnsureGitignore). This is the text's one home.
+// is missing (EnsureGitignore). This is the text's one home. Its comment names what local/ holds (step 5.5.0 added the
+// messages between agents and each agent's counts): a project linked before takes the new text at its next update,
+// which check's gitignore finding names until then.
 const (
 	GitignoreFile = ".bonsai/.gitignore"
 	GitignoreText = "# .bonsai/.gitignore: written by Bonsai (spec section 6). .bonsai/local/ holds this checkout's log, questions\n" +
-		"# and ladder results, never committed. Bonsai writes this file again when it is missing or changed.\n" +
+		"# and their answers, ladder results, messages between agents and each agent's counts, never committed. Bonsai\n" +
+		"# writes this file again when it is missing or changed.\n" +
 		"local/\n"
 )
 
