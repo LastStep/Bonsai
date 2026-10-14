@@ -29,7 +29,9 @@ type Next struct {
 // usually takes the next step (Who: agent or person, the error object's next.who); a refusal may name the other
 // when its own next step is the other's. A later piece adds a word by adding an entry here (step 5.2.0 added
 // 5.2's four: ask-not-open, answer-own-session, label-not-defined and session-not-found; step 5.4.0 added the
-// ladder's four: ladder-busy, no-task, rung-not-defined and main-not-verified); a word is added, never renamed or taken out (format review 4.5: adding one is an addition).
+// ladder's four: ladder-busy, no-task, rung-not-defined and main-not-verified; set 8, step 5.5.9, added bonsai
+// message's six: role-not-declared, budget-over-max, report-no-status, report-not-in-thread, pointer-missing and
+// message-not-found); a word is added, never renamed or taken out (format review 4.5: adding one is an addition).
 var ErrorWords = []Word{
 	// The command line (exit 2).
 	{Word: "unknown-command", Who: "agent", Means: "no command word was given, or one this Bonsai does not have"},
@@ -81,6 +83,15 @@ var ErrorWords = []Word{
 	{Word: "main-not-verified", Who: "person", Means: "the project's main checkout is not verified on this machine, or it is not on the workspace's base branch this machine recorded for it, so no result can be written where the stop gate reads it, and nothing was run (exit 4); the person's step is bonsai update in the main checkout, or switching it back to its base branch (contract section 13; the guard's rule of the same name)"},
 	{Word: "config-uncommitted", Who: "person", Means: "the main checkout's bonsai.yaml differs from the one committed at its HEAD, or its HEAD holds none: the ladder reads its rungs, floor, ratchets and ci_marked_tests from the committed one only, so nothing was run (exit 4); the person's step is to commit the change in the main checkout or revert it"},
 	{Word: "config-looser", Who: "person", Means: "the main checkout's bonsai.yaml, as committed at its HEAD, sets the checks looser than the settings this machine last accepted for the workspace (a rung out of the floor or the ladder, a rung's check changed, a ratchet's floor lowered, a CI mark added, a path out of protected, person_only or never_edit, a document moved; the message names each), or this machine's record holds none yet: nothing was run (exit 4); the person's step is bonsai update in the main checkout, which records them as accepted, or a commit that puts the settings back"},
+	// Messages between agents (set 8; the command is step 5.5.10's): a refusal of bonsai message. An address of the wrong
+	// form is bad-value; a flag its kind does not take (a brief's --status) is bad-flag. Who may write a brief to whom,
+	// and whether --from is the writer's own address, are the guard's rules (step 5.5.11), not these words.
+	{Word: "role-not-declared", Who: "agent", Means: "bonsai message's --from or --to names a role the lock does not declare, in a project whose linked packs declare roles: the message names the declared roles, and nothing was written (exit 2)"},
+	{Word: "budget-over-max", Who: "agent", Means: "a brief's --budget gives a limit above that limit's max in force for its recipient's role (bonsai.yaml's, else the pack's): the message names the max, and nothing was written (exit 2); a person may raise the max in bonsai.yaml"},
+	{Word: "report-no-status", Who: "agent", Means: "bonsai message --kind report was given no --status (done, blocked or needs-input): nothing was written (exit 2)"},
+	{Word: "report-not-in-thread", Who: "agent", Means: "a report names a thread that holds no brief to its --from, or a --to that is not that brief's from (only a brief's own writer may close its dropped thread, blocked, to the brief's to): nothing was written (exit 4)"},
+	{Word: "pointer-missing", Who: "agent", Means: "a --pointer names a file that does not exist, or one outside the project and the home: nothing was written (exit 2)"},
+	{Word: "message-not-found", Who: "agent", Means: "bonsai message --show, --thread or --reply-to names an id that no message under .bonsai/local/messages/ has: nothing was written or shown (exit 4)"},
 	// Part-way, and the unexpected (exit 3).
 	{Word: "partly-written", Who: "agent", Means: "the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest"},
 	{Word: "unexpected", Who: "agent", Means: "something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats"},

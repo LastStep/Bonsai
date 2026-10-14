@@ -1,0 +1,9 @@
+{
+  "about": "BONSAI_TASK names a task file holding only garbage: [ (no frontmatter block, which format 0 reads as an empty mapping naming no id, status or title, so it is no task): there is none, never the running task beside it, and the stop gate blocks.",
+  "layout": "plain",
+  "checkout": "main",
+  "session": "main",
+  "task": null,
+  "env": "T-0902",
+  "does_not_parse": []
+}

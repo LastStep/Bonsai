@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.pack/1",
-  "description": "A pack's manifest, bonsai/pack.yaml (spec §5; format review 6.1): what Bonsai's engine reads from a pack beside what Claude Code loads from the plugin itself. Its id and version, what a machine needs, the files and settings lines the engine writes into a project, and what the pack declares besides its labels.yaml (bonsai.labels/1) and lanes.yaml (bonsai.lanes/1): its document kinds and its protected paths. At each update the engine copies the four declarations into the lock's declares (spec §6), so bonsai check runs with no pack fetched. Lives in the pack's repository at bonsai/pack.yaml, beside the plugin's own folders. Written by the pack's maker; as a pack file it documents itself in # comments (contract §2.8), which bonsai check --pack keeps in step with the fields (step 5.1.9). Read by bonsai init and update at the locked commit, and by check --pack. Format-1 YAML (contract §2.4); this schema describes the file as a reader returns it (JSON). A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key. A hook entry with no runs reads as [] (step 5.1.1).",
+  "description": "A pack's manifest, bonsai/pack.yaml (spec §5; format review 6.1): what Bonsai's engine reads from a pack beside what Claude Code loads from the plugin itself. Its id and version, what a machine needs, the files and settings lines the engine writes into a project, and what the pack declares besides its labels.yaml (bonsai.labels/1) and lanes.yaml (bonsai.lanes/1): its document kinds, its protected paths and, from set 8, its roles. At each update the engine copies its declarations into the lock's declares (spec §6), so bonsai check runs with no pack fetched. Lives in the pack's repository at bonsai/pack.yaml, beside the plugin's own folders. Written by the pack's maker; as a pack file it documents itself in # comments (contract §2.8), which bonsai check --pack keeps in step with the fields (step 5.1.9). Read by bonsai init and update at the locked commit, and by check --pack. Format-1 YAML (contract §2.4); this schema describes the file as a reader returns it (JSON). A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key. A hook entry with no runs reads as [] (step 5.1.1).",
   "type": "object",
   "required": [
     "format",
@@ -13,7 +13,8 @@
     "hooks",
     "deny",
     "documents",
-    "protected"
+    "protected",
+    "roles"
   ],
   "properties": {
     "format": {
@@ -98,9 +99,10 @@
         ],
         "properties": {
           "path": {
-            "description": "Where the file goes in the project: project-relative, forward slashes, no leading slash.",
+            "description": "Where the file goes in the project: project-relative, forward slashes, no leading slash. It may start with <protocols>/ as its first segment only (set 8; plan-5 5.5.0 note 1): the engine then writes the file under bonsai.yaml's documents.protocols, the folder the instruction block imports, and the lock records the resolved path, held to every rule another path is; no other <...> may appear anywhere in a path (bonsai check --pack refuses one). A pack cannot know a project's folder, so this is how an always-on protocol file reaches it.",
             "examples": [
-              "work/protocols/session-start.md"
+              "work/protocols/session-start.md",
+              "<protocols>/session-start.md"
             ],
             "type": "string",
             "pattern": "^[^/\\\\:][^\\\\:]*$"
@@ -427,6 +429,229 @@
       "items": {
         "type": "string",
         "pattern": "^[^/\\\\:][^\\\\:]*$"
+      }
+    },
+    "roles": {
+      "description": "The roles the pack declares (set 8; Claude Code only: each role is a subagent of the plugin's, agents/<name>.md, which Claude Code loads as <pack id>:<name>): each one's name, its kind, whether the person's own session plays it, whether it may change files, Claude Code's maxTurns backstop, and its three limits, each with a default and a max. Copied into the lock's declares (roles), where the guard, bonsai message, status and check read them offline. A project sets its own default and max for any limit under the pack's entry in bonsai.yaml (bonsai.workspace/1's packs[].roles), and a brief any value up to the max in force (bonsai.message/1's budget). At most one role with session true across the packs a project links. bonsai check --pack holds each role to its file: agents/<name>.md is there, each file in agents/ is a declared role, and its maxTurns equals max_turns. A pack that declares none writes roles: [] (check --pack holds pack.yaml as its writer's file, contract §2.2).",
+      "examples": [
+        [
+          {
+            "name": "builder",
+            "kind": "lead",
+            "session": false,
+            "writes": true,
+            "max_turns": 2400,
+            "minutes": {
+              "default": 180,
+              "max": 180
+            },
+            "actions": {
+              "default": 600,
+              "max": 600
+            },
+            "red_runs": {
+              "default": 4,
+              "max": 4
+            }
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "session",
+          "writes",
+          "max_turns",
+          "minutes",
+          "actions",
+          "red_runs"
+        ],
+        "properties": {
+          "name": {
+            "description": "The role's name: its file's in the plugin's agents/ folder (agents/<name>.md), so Claude Code loads it as <pack id>:<name>: a lower-case letter, then lower-case letters, digits and dashes. A message's address names it (bonsai.message/1's from and to).",
+            "examples": [
+              "builder",
+              "orchestrator"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "kind": {
+            "description": "A lead, which may call helpers (through Claude Code's Agent tool, and resume one with SendMessage), or a helper, which calls no one: a closed list. The person's own session may call either.",
+            "examples": [
+              "lead",
+              "helper"
+            ],
+            "enum": [
+              "lead",
+              "helper"
+            ]
+          },
+          "session": {
+            "description": "true only for the role the person's own session plays (workflow's orchestrator): it is never a subagent, has no budget, and its address is the role's name alone; false for every other role.",
+            "examples": [
+              false,
+              true
+            ],
+            "type": "boolean"
+          },
+          "writes": {
+            "description": "false for a role that changes nothing: the guard refuses it Claude Code's file tools (Edit, Write, MultiEdit, NotebookEdit) and the shell writes into the checkout it can read; true for a role that builds.",
+            "examples": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "max_turns": {
+            "description": "Claude Code's maxTurns for the role, as its agents/<name>.md says it (check --pack holds the two equal): a backstop where the guard does not run (hooks turned off), set well above the limits (workflow sets four times the role's default actions), never the limit itself; null for none.",
+            "examples": [
+              2400,
+              null
+            ],
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "minutes": {
+            "description": "The role's minutes limit: minutes since the agent's first call, or since it tied its newest brief (its thinking before its first call is not counted; time idle between calls is). Its default is what an agent of the role gets when its brief names none, and its max the most a brief may give it; each a whole number, or null for no limit. A pack ships max equal to default; a project sets its own (bonsai.workspace/1's packs[].roles).",
+            "examples": [
+              {
+                "default": 180,
+                "max": 180
+              },
+              {
+                "default": null,
+                "max": null
+              }
+            ],
+            "type": "object",
+            "required": [
+              "default",
+              "max"
+            ],
+            "properties": {
+              "default": {
+                "description": "What an agent of this role gets when its brief names none; null for no limit.",
+                "examples": [
+                  180,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "max": {
+                "description": "The most a brief may give it; null for no limit.",
+                "examples": [
+                  180,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            }
+          },
+          "actions": {
+            "description": "The role's actions limit: tool calls the agent makes, refused ones counted, from the same start. Its default is what an agent of the role gets when its brief names none, and its max the most a brief may give it; each a whole number, or null for no limit. A pack ships max equal to default; a project sets its own (bonsai.workspace/1's packs[].roles).",
+            "examples": [
+              {
+                "default": 600,
+                "max": 600
+              },
+              {
+                "default": null,
+                "max": null
+              }
+            ],
+            "type": "object",
+            "required": [
+              "default",
+              "max"
+            ],
+            "properties": {
+              "default": {
+                "description": "What an agent of this role gets when its brief names none; null for no limit.",
+                "examples": [
+                  600,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "max": {
+                "description": "The most a brief may give it; null for no limit.",
+                "examples": [
+                  600,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            }
+          },
+          "red_runs": {
+            "description": "The role's red_runs limit: failed ladder runs in a row (a green climb sets the count back to 0; a new brief does not). Its default is what an agent of the role gets when its brief names none, and its max the most a brief may give it; each a whole number, or null for no limit. A pack ships max equal to default; a project sets its own (bonsai.workspace/1's packs[].roles).",
+            "examples": [
+              {
+                "default": 4,
+                "max": 4
+              },
+              {
+                "default": null,
+                "max": null
+              }
+            ],
+            "type": "object",
+            "required": [
+              "default",
+              "max"
+            ],
+            "properties": {
+              "default": {
+                "description": "What an agent of this role gets when its brief names none; null for no limit.",
+                "examples": [
+                  4,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "max": {
+                "description": "The most a brief may give it; null for no limit.",
+                "examples": [
+                  4,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            }
+          }
+        }
       }
     }
   }

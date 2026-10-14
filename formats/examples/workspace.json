@@ -7,13 +7,22 @@
       "id": "base",
       "source": "https://example.com/packs/bonsai.git",
       "path": "packs/base",
-      "ref": "base-v1.0.0"
+      "ref": "base-v1.0.0",
+      "roles": null
     },
     {
       "id": "workflow",
       "source": "https://example.com/packs/workflow.git",
       "path": null,
-      "ref": "v1.2.0"
+      "ref": "v1.2.0",
+      "roles": {
+        "builder": {
+          "minutes": {
+            "default": 240,
+            "max": 480
+          }
+        }
+      }
     }
   ],
   "documents": {
@@ -113,6 +122,15 @@
     "sessions": {
       "keep_days": null,
       "keep_newest": null
+    },
+    "messages": {
+      "keep_days": 30,
+      "keep_newest": null
+    },
+    "agents": {
+      "keep_days": 30,
+      "keep_newest": null
     }
-  }
+  },
+  "messages": null
 }

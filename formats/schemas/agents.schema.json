@@ -1,0 +1,773 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.agents/1",
+  "description": "bonsai agents --json (set 8; plan-5 5.5.12): the one published view of what Bonsai has recorded about each agent in a project, for the studio's agent screen: each agent's role, parent, task, brief, last call, counts and limits, report and token counts, copied as recorded. Its rule: it interprets nothing, predicts nothing and does no needless arithmetic: no derived state, share, cost or estimate, and no minutes worked out against the clock; the studio computes those from last_call.at, ended, the counts and the limits. Bonsai's own state files under .bonsai/local/agents/ stay internal, with no format; this is their only published shape. It reads only and never acts: it never starts, wakes or stops an agent. Printed, never stored. What was recorded under each agent's name is attributed, not authenticated: not proof that agent did it. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "workspace",
+    "agents",
+    "skipped",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.agents/1"
+      ],
+      "const": "bonsai.agents/1"
+    },
+    "workspace": {
+      "description": "The workspace: its id and name from bonsai.yaml, and the main checkout's absolute path, forward slashes (printed locally, never stored or forwarded); null when the command refused before reading bonsai.yaml.",
+      "examples": [
+        {
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "root": "/srv/projects/example"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "name",
+        "root"
+      ],
+      "properties": {
+        "id": {
+          "description": "The workspace id (contract §3).",
+          "examples": [
+            "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+          ],
+          "type": "string",
+          "pattern": "^ws-[a-z0-9]{26}$"
+        },
+        "name": {
+          "description": "The workspace's name (contract §3).",
+          "examples": [
+            "example"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        },
+        "root": {
+          "description": "The checkout's absolute path, forward slashes.",
+          "examples": [
+            "/srv/projects/example"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "agents": {
+      "description": "Every agent the generated kind agents still keeps, the person's own sessions among them, sorted by started, then id; each copied as recorded, field by field. [] when none is recorded; in a project whose packs declare no roles, the person's sessions alone.",
+      "examples": [
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "session",
+          "parent",
+          "role",
+          "type",
+          "task",
+          "brief",
+          "model",
+          "started",
+          "ended",
+          "last_call",
+          "counts",
+          "limits",
+          "spent",
+          "report",
+          "log",
+          "thread",
+          "usage"
+        ],
+        "properties": {
+          "id": {
+            "description": "The agent's id: Claude Code's agent_id for a subagent, the session's id for a top-level session (the person's own, or a named session).",
+            "examples": [
+              "a1b2c3d4",
+              "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a"
+            ],
+            "type": "string"
+          },
+          "session": {
+            "description": "The session it ran in: a top-level session's own id, or the session that started a subagent.",
+            "examples": [
+              "6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a"
+            ],
+            "type": "string"
+          },
+          "parent": {
+            "description": "Who started it, as its spawn record names it: session for an agent the person's own session started (and for one a Workflow script started, whose Workflow call only that session makes), the starting agent's id for one a lead started; null for the person's own session and for a named session, whose starter Bonsai does not see. The tree of agents is rebuilt from parent alone.",
+            "examples": [
+              "session",
+              "a1b2c3d4",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "description": "The declared role it plays (bonsai.pack/1's roles[].name), or null for a type no linked pack declares (Explore, Plan, general-purpose, a fork), which the guard holds as a helper.",
+            "examples": [
+              "builder",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "type": {
+            "description": "Claude Code's agent type, as its hooks gave it; null for a top-level session started with no agent.",
+            "examples": [
+              "workflow:builder",
+              "Explore",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "task": {
+            "description": "The task it served: its tied brief's, or a named session's BONSAI_TASK; null for none.",
+            "examples": [
+              "T-5510",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^T-[0-9]{4,6}$"
+          },
+          "brief": {
+            "description": "The id of the brief tied to it, the one in force; null for none.",
+            "examples": [
+              "M-2026-10-16-3f9a01bc",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^M-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9a-f]{8}$"
+          },
+          "model": {
+            "description": "The model, where a record names one (the session's start, the newest usage record); null where none does.",
+            "examples": [
+              "claude-opus-5-5",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "started": {
+            "description": "When the guard first saw it (its first call), or a top-level session's start: ISO-8601 UTC with milliseconds; null where no record holds it.",
+            "examples": [
+              "2026-10-16T09:12:04.120Z",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          },
+          "ended": {
+            "description": "When it ended, from its stop record (subagent_stop, or its session's session_end); null while none is recorded.",
+            "examples": [
+              "2026-10-16T10:01:33.500Z",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          },
+          "last_call": {
+            "description": "Its last tool call, as the log records it; null before its first.",
+            "examples": [
+              {
+                "at": "2026-10-16T09:58:12.004Z",
+                "tool": "Bash",
+                "category": "Shell"
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "at",
+              "tool",
+              "category"
+            ],
+            "properties": {
+              "at": {
+                "description": "When the call was made: ISO-8601 UTC with milliseconds.",
+                "examples": [
+                  "2026-10-16T09:58:12.004Z"
+                ],
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+              },
+              "tool": {
+                "description": "The tool called.",
+                "examples": [
+                  "Bash"
+                ],
+                "type": "string"
+              },
+              "category": {
+                "description": "The tool's category, the log's open list (bonsai.log/1's category); null where the record names none.",
+                "examples": [
+                  "Shell",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "counts": {
+            "description": "Its counts as the guard wrote them (step 5.5.11): minutes, the figure on its last call line; actions, the call lines since its window's start (its first call, or its newest brief's tie); red_runs, from its last red or reset line. Never worked out again here. null for the person's own session, which the guard never counts.",
+            "examples": [
+              {
+                "minutes": 42,
+                "actions": 87,
+                "red_runs": 0
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "minutes",
+              "actions",
+              "red_runs"
+            ],
+            "properties": {
+              "minutes": {
+                "description": "Minutes, as the guard measured them when it judged the agent's last call; null before its first call line.",
+                "examples": [
+                  42,
+                  null
+                ],
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "actions": {
+                "description": "Tool calls since its window's start, refused ones counted.",
+                "examples": [
+                  87,
+                  0
+                ],
+                "type": "integer",
+                "minimum": 0
+              },
+              "red_runs": {
+                "description": "Failed ladder runs in a row, as its last red or reset line says.",
+                "examples": [
+                  0,
+                  2
+                ],
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "limits": {
+            "description": "The limits that bound it, as the guard wrote them on its start or last tie line: the brief's where it gave one (a brief's actions: 5 shows 5), else the role's defaults in force then, never today's. null for the person's own session, which has none.",
+            "examples": [
+              {
+                "minutes": {
+                  "value": 180,
+                  "max": 180
+                },
+                "actions": {
+                  "value": 5,
+                  "max": 600
+                },
+                "red_runs": {
+                  "value": 4,
+                  "max": 4
+                }
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "minutes",
+              "actions",
+              "red_runs"
+            ],
+            "properties": {
+              "minutes": {
+                "description": "The minutes limit that bounded it (minutes since the agent's first call, or since it tied its newest brief (its thinking before its first call is not counted; time idle between calls is)): its value in force and its max.",
+                "examples": [
+                  {
+                    "value": 180,
+                    "max": 180
+                  },
+                  {
+                    "value": null,
+                    "max": null
+                  }
+                ],
+                "type": "object",
+                "required": [
+                  "value",
+                  "max"
+                ],
+                "properties": {
+                  "value": {
+                    "description": "The value in force: the brief's where it gave one, else the default in force; null for no limit.",
+                    "examples": [
+                      180,
+                      null
+                    ],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "max": {
+                    "description": "The max in force when it was written; null for no limit.",
+                    "examples": [
+                      180,
+                      null
+                    ],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              },
+              "actions": {
+                "description": "The actions limit that bounded it (tool calls the agent makes, refused ones counted, from the same start): its value in force and its max.",
+                "examples": [
+                  {
+                    "value": 5,
+                    "max": 5
+                  },
+                  {
+                    "value": null,
+                    "max": null
+                  }
+                ],
+                "type": "object",
+                "required": [
+                  "value",
+                  "max"
+                ],
+                "properties": {
+                  "value": {
+                    "description": "The value in force: the brief's where it gave one, else the default in force; null for no limit.",
+                    "examples": [
+                      5,
+                      null
+                    ],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "max": {
+                    "description": "The max in force when it was written; null for no limit.",
+                    "examples": [
+                      5,
+                      null
+                    ],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              },
+              "red_runs": {
+                "description": "The red_runs limit that bounded it (failed ladder runs in a row (a green climb sets the count back to 0; a new brief does not)): its value in force and its max.",
+                "examples": [
+                  {
+                    "value": 4,
+                    "max": 4
+                  },
+                  {
+                    "value": null,
+                    "max": null
+                  }
+                ],
+                "type": "object",
+                "required": [
+                  "value",
+                  "max"
+                ],
+                "properties": {
+                  "value": {
+                    "description": "The value in force: the brief's where it gave one, else the default in force; null for no limit.",
+                    "examples": [
+                      4,
+                      null
+                    ],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "max": {
+                    "description": "The max in force when it was written; null for no limit.",
+                    "examples": [
+                      4,
+                      null
+                    ],
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "spent": {
+            "description": "true once the guard has recorded its budget spent; false otherwise. A recorded fact, never worked out here.",
+            "examples": [
+              false,
+              true
+            ],
+            "type": "boolean"
+          },
+          "report": {
+            "description": "Its report: the newest report whose from is its own address (its tied brief's to), by its id and status; a report written from another address is never shown. null for none.",
+            "examples": [
+              {
+                "id": "M-2026-10-16-7c0d2e91",
+                "status": "done"
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "id",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "description": "The report's id.",
+                "examples": [
+                  "M-2026-10-16-7c0d2e91"
+                ],
+                "type": "string",
+                "pattern": "^M-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9a-f]{8}$"
+              },
+              "status": {
+                "description": "The report's status, bonsai.message/1's closed list but null.",
+                "examples": [
+                  "done",
+                  "blocked"
+                ],
+                "enum": [
+                  "done",
+                  "blocked",
+                  "needs-input"
+                ]
+              }
+            }
+          },
+          "log": {
+            "description": "Its log file, project-relative in the main checkout, forward slashes; null when none is kept.",
+            "examples": [
+              ".bonsai/local/log/s-6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a.ndjson",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "thread": {
+            "description": "The thread of its tied brief; null for none.",
+            "examples": [
+              "M-2026-10-16-3f9a01bc",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^M-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9a-f]{8}$"
+          },
+          "usage": {
+            "description": "Its token counts, raw, as its newest usage records hold them: one item a model, the whole transcript's totals at its newest end, copied and never summed across records (a resumed agent's newest records hold its whole transcript); or one item, kind unknown with its reason, when that end's transcript could not be read. null until its first usage record exists. No cost and no estimate.",
+            "examples": [
+              [
+                {
+                  "model": "claude-opus-5-5",
+                  "input": 10240,
+                  "output": 2048,
+                  "cache_read": 512000,
+                  "cache_write": 30720,
+                  "kind": null,
+                  "reason": null
+                }
+              ],
+              null
+            ],
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "required": [
+                "model",
+                "input",
+                "output",
+                "cache_read",
+                "cache_write",
+                "kind",
+                "reason"
+              ],
+              "properties": {
+                "model": {
+                  "description": "The model, as Claude Code named it in the transcript; null on an unknown item.",
+                  "examples": [
+                    "claude-opus-5-5",
+                    null
+                  ],
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "input": {
+                  "description": "The input tokens, summed over the whole transcript, as the usage record holds them; null on an unknown item.",
+                  "examples": [
+                    10240,
+                    null
+                  ],
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "output": {
+                  "description": "The output tokens, summed over the whole transcript, as the usage record holds them; null on an unknown item.",
+                  "examples": [
+                    10240,
+                    null
+                  ],
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "cache_read": {
+                  "description": "The tokens read from the cache, summed over the whole transcript, as the usage record holds them; null on an unknown item.",
+                  "examples": [
+                    10240,
+                    null
+                  ],
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "cache_write": {
+                  "description": "The tokens written to the cache, summed over the whole transcript, as the usage record holds them; null on an unknown item.",
+                  "examples": [
+                    10240,
+                    null
+                  ],
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "kind": {
+                  "description": "null for counts read from the transcript; unknown when it could not be read: the usage record's kind.",
+                  "examples": [
+                    null,
+                    "unknown"
+                  ],
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "reason": {
+                  "description": "Why the transcript could not be read, the usage record's reason; null otherwise.",
+                  "examples": [
+                    null,
+                    "the transcript's layout is not one Bonsai reads"
+                  ],
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "skipped": {
+      "description": "Each state file under .bonsai/local/agents/ that could not be read: its path and why. It is skipped, never an error for the rest, and never shown with counts it does not hold. [] for none.",
+      "examples": [
+        [
+          {
+            "path": ".bonsai/local/agents/6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a/a1b2c3d4",
+            "reason": "its first line is not a start line"
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "reason"
+        ],
+        "properties": {
+          "path": {
+            "description": "The state file, project-relative in the main checkout, forward slashes.",
+            "examples": [
+              ".bonsai/local/agents/6d1e2f3a-4b5c-4d6e-8f7a-9b0c1d2e3f4a/a1b2c3d4"
+            ],
+            "type": "string",
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "reason": {
+            "description": "Why it could not be read, one sentence.",
+            "examples": [
+              "its first line is not a start line"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

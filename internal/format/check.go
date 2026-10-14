@@ -168,16 +168,34 @@ var LadderCheckWords = []Word{
 	{Word: "tests-unknown", Kind: "warning", Who: "person", Means: "a rung's tests is a word Bonsai does not know, so its tests are not read: the warning names the known ones (TestForms, bonsai check --schema bonsai.workspace)"},
 }
 
-// CheckWord finds a word in CheckWords, or in LadderCheckWords.
+// RoleCheckWords are the known words of a finding's code about the roles' limits a project sets in bonsai.yaml
+// (packs[].roles; set 8, plan-5 5.5.9; the checks themselves are step 5.5.0's, note 8): their one home, beside
+// CheckWords in the same bonsai.check/1 document and the same open list (bonsai check --schema bonsai.check prints
+// every table; no word is in two). A table of its own, as LadderCheckWords is, so that this file is final before
+// 5.5.0 writes the checks: cmd/bonsai's TestCheckTable and engine's TestCheckWordsInTheCode walk CheckWords, and
+// 5.5.0 walks this table the same way with its checks. Each is a finding whose next step is an agent's (note 8); none
+// is about this machine. CheckWord finds these too.
+var RoleCheckWords = []Word{
+	{Word: "role-undeclared", Kind: "finding", Who: "agent", Means: "bonsai.yaml sets a limit under a pack's roles for a role that pack does not declare: the finding names the pack's roles"},
+	{Word: "role-default-over-max", Kind: "finding", Who: "agent", Means: "a role's limit in force has its default above its max (bonsai.yaml's or the pack's): the max then holds, and the finding names both"},
+	{Word: "role-actions-over-turns", Kind: "finding", Who: "agent", Means: "a role's max of actions in force is above the role's max_turns, so Claude Code would stop the agent before the guard's budget does: lower the max, or move to a pack whose role allows more"},
+}
+
+// MessageCheckWords are the known words of a warning's code about the messages between agents in
+// .bonsai/local/messages/ (set 8; the check is step 5.5.10's, note 5): their one home, beside CheckWords in the same
+// open list, in a table of their own for the reason RoleCheckWords is. A warning never changes the exit code: one bad
+// file never blocks the rest. Machine: the messages live in .bonsai/local/, never committed. CheckWord finds these too.
+var MessageCheckWords = []Word{
+	{Word: "message-malformed", Kind: "warning", Who: "agent", Machine: true, Means: "a message file under .bonsai/local/messages/ does not read as bonsai.message/1 (its frontmatter, a field, a report with no status, a newer major): the warning names the file and why, and bonsai messages lists it as malformed"},
+}
+
+// CheckWord finds a word in CheckWords, or in LadderCheckWords, RoleCheckWords or MessageCheckWords.
 func CheckWord(code string) (Word, bool) {
-	for _, w := range CheckWords {
-		if w.Word == code {
-			return w, true
-		}
-	}
-	for _, w := range LadderCheckWords {
-		if w.Word == code {
-			return w, true
+	for _, table := range [][]Word{CheckWords, LadderCheckWords, RoleCheckWords, MessageCheckWords} {
+		for _, w := range table {
+			if w.Word == code {
+				return w, true
+			}
 		}
 	}
 	return Word{}, false
@@ -205,11 +223,26 @@ var PackCheckWords = []Word{
 	{Word: "pack-runs", Kind: "finding", Who: "agent", Means: "a hook command in bonsai/pack.yaml names a file the pack writes (by its path in the project or its file name) that its runs does not list, so a change to that file would run unseen (step 5.1.1)"},
 }
 
-// PackCheckWord finds a word in PackCheckWords.
+// PackRoleCheckWords are the known words of a finding's code from bonsai check --pack <folder> about what step 5.5
+// adds to a pack (set 8; the rules are step 5.5.0's, note 9): its roles against its agents/ folder, and the form of its
+// deny rules on project paths. Their one home, beside PackCheckWords in the same open list, in a table of their own so
+// that this file is final before 5.5.0 writes the rules (cmd/bonsai's TestCheckPackTable and engine's
+// TestCheckWordsInTheCode walk PackCheckWords; 5.5.0 walks this table the same way). Every one is a finding whose next
+// step is an agent's. PackCheckWord finds these too.
+var PackRoleCheckWords = []Word{
+	{Word: "pack-role-file", Kind: "finding", Who: "agent", Means: "a role bonsai/pack.yaml declares has no agents/<name>.md in the plugin"},
+	{Word: "pack-role-undeclared", Kind: "finding", Who: "agent", Means: "a file in the plugin's agents/ folder is not a role bonsai/pack.yaml declares"},
+	{Word: "pack-role-turns", Kind: "finding", Who: "agent", Means: "a role file's maxTurns is not the max_turns bonsai/pack.yaml declares for it (missing on one side, or another number)"},
+	{Word: "pack-deny-relative", Kind: "finding", Who: "agent", Means: "a deny rule in bonsai/pack.yaml on a project path is written without its leading / or //, so it would not hold after a shell cd (step 5.3.5): the finding names the form that holds"},
+}
+
+// PackCheckWord finds a word in PackCheckWords, or in PackRoleCheckWords.
 func PackCheckWord(code string) (Word, bool) {
-	for _, w := range PackCheckWords {
-		if w.Word == code {
-			return w, true
+	for _, table := range [][]Word{PackCheckWords, PackRoleCheckWords} {
+		for _, w := range table {
+			if w.Word == code {
+				return w, true
+			}
 		}
 	}
 	return Word{}, false

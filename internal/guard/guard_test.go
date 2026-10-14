@@ -187,8 +187,14 @@ func records(t *testing.T, dir, file string) []schema.Object {
 		}
 		o := v.(schema.Object)
 		keys := o.Keys()
-		if n := len(keys); n < 2 || keys[n-2] != "bonsai_path" || keys[n-1] != "bonsai_sha256" {
-			t.Errorf("record %d does not end in bonsai_path, bonsai_sha256: %v", i, keys)
+		if n := len(keys); n < 4 || strings.Join(keys[n-4:], " ") != "bonsai_path bonsai_sha256 parent usage" {
+			t.Errorf("record %d does not end in bonsai_path, bonsai_sha256, parent, usage (set 8): %v", i, keys)
+		}
+		if p, _ := o.Get("parent"); p != nil {
+			t.Errorf("record %d: a guard record's parent is %s, want null", i, schema.Show(p))
+		}
+		if u, _ := o.Get("usage"); u != nil {
+			t.Errorf("record %d: a guard record's usage is %s, want null", i, schema.Show(u))
 		}
 		out = append(out, o)
 	}

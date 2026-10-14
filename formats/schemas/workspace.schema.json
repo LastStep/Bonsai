@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.workspace/1",
-  "description": "bonsai.yaml (spec §6; format review 1.4, R2.5, R2.6): a project's Bonsai settings, the Bonsai half of a studio's project file: which packs it uses, where its documents live, which paths are protected, its ladder and how long generated files are kept. Lives at the root of the project's main checkout, committed, person-only (contract §14), the one Bonsai file a person edits. Written by bonsai init from a documented template, a comment on every line (format review 1.4), then changed only by a person, or by an agent whose running task a person granted it (contract §5.5); read by every Bonsai command, bonsai check (in CI too), the ladder runner and, through status --json, the studio. The guard keeps its own lean read of the fields it judges. Format-1 YAML (contract §2.4); this schema describes the file as a reader returns it (JSON). Writers keep comments; check does not require them in a project. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "description": "bonsai.yaml (spec §6; format review 1.4, R2.5, R2.6): a project's Bonsai settings, the Bonsai half of a studio's project file: which packs it uses, where its documents live, which paths are protected, its ladder, how long generated files are kept and, from set 8, its own limits for the packs' roles and the thresholds of bonsai messages' flags. Lives at the root of the project's main checkout, committed, person-only (contract §14), the one Bonsai file a person edits. Written by bonsai init from a documented template, a comment on every line (format review 1.4), then changed only by a person, or by an agent whose running task a person granted it (contract §5.5); read by every Bonsai command, bonsai check (in CI too), the ladder runner and, through status --json, the studio. The guard keeps its own lean read of the fields it judges. Format-1 YAML (contract §2.4); this schema describes the file as a reader returns it (JSON). Writers keep comments; check does not require them in a project. A writer writes every field below, in this order, null, [] or {} where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
   "type": "object",
   "required": [
     "format",
@@ -16,7 +16,8 @@
     "ladder",
     "ratchets",
     "ci_marked_tests",
-    "generated"
+    "generated",
+    "messages"
   ],
   "properties": {
     "format": {
@@ -50,7 +51,8 @@
             "id": "base",
             "source": "https://example.com/packs/bonsai.git",
             "path": "packs/base",
-            "ref": "base-v1.0.0"
+            "ref": "base-v1.0.0",
+            "roles": null
           }
         ]
       ],
@@ -61,7 +63,8 @@
           "id",
           "source",
           "path",
-          "ref"
+          "ref",
+          "roles"
         ],
         "properties": {
           "id": {
@@ -101,6 +104,149 @@
             ],
             "type": "string",
             "pattern": "^[^-]"
+          },
+          "roles": {
+            "description": "This project's own limits for the pack's roles (set 8: limits a project sets for itself, any time, as decided on 14 Oct): a map from a role the pack declares (its pack.yaml's roles) to any of its three limits, each with its default, its max or both, each a whole number or null for no limit; what is left out keeps the pack's. null keeps the pack's for every role, as bonsai init writes it. In force for each limit: a brief's value, up to the max, else the project's default, else the pack's; the max the project's, else the pack's. The guard reads it as committed at the main checkout's HEAD, so a change counts for agents started or briefed after its commit. Changed any time: a raised default or max is never a loosening of the checks. bonsai check finds a limit for a role the pack does not declare, a default above its max (the max then holds) and a max of actions above the role's max_turns.",
+            "examples": [
+              {
+                "builder": {
+                  "minutes": {
+                    "default": 240,
+                    "max": 480
+                  }
+                }
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "propertyNames": {
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "minutes": {
+                  "description": "This project's minutes limit for the role (minutes since the agent's first call, or since it tied its newest brief (its thinking before its first call is not counted; time idle between calls is)): its default, its max or both; a field left out keeps the pack's.",
+                  "examples": [
+                    {
+                      "default": 240,
+                      "max": 480
+                    },
+                    {
+                      "max": 600
+                    }
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "default": {
+                      "description": "What an agent of the role gets when its brief names none; null for no limit.",
+                      "examples": [
+                        240,
+                        null
+                      ],
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    },
+                    "max": {
+                      "description": "The most a brief may give it; null for no limit.",
+                      "examples": [
+                        480,
+                        null
+                      ],
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    }
+                  }
+                },
+                "actions": {
+                  "description": "This project's actions limit for the role (tool calls the agent makes, refused ones counted, from the same start): its default, its max or both; a field left out keeps the pack's.",
+                  "examples": [
+                    {
+                      "default": 240,
+                      "max": 480
+                    },
+                    {
+                      "max": 600
+                    }
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "default": {
+                      "description": "What an agent of the role gets when its brief names none; null for no limit.",
+                      "examples": [
+                        240,
+                        null
+                      ],
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    },
+                    "max": {
+                      "description": "The most a brief may give it; null for no limit.",
+                      "examples": [
+                        480,
+                        null
+                      ],
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    }
+                  }
+                },
+                "red_runs": {
+                  "description": "This project's red_runs limit for the role (failed ladder runs in a row (a green climb sets the count back to 0; a new brief does not)): its default, its max or both; a field left out keeps the pack's.",
+                  "examples": [
+                    {
+                      "default": 240,
+                      "max": 480
+                    },
+                    {
+                      "max": 600
+                    }
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "default": {
+                      "description": "What an agent of the role gets when its brief names none; null for no limit.",
+                      "examples": [
+                        240,
+                        null
+                      ],
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    },
+                    "max": {
+                      "description": "The most a brief may give it; null for no limit.",
+                      "examples": [
+                        480,
+                        null
+                      ],
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -437,6 +583,14 @@
           "sessions": {
             "keep_days": null,
             "keep_newest": null
+          },
+          "messages": {
+            "keep_days": 30,
+            "keep_newest": null
+          },
+          "agents": {
+            "keep_days": 30,
+            "keep_newest": null
           }
         }
       ],
@@ -446,7 +600,9 @@
         "asks",
         "ladder",
         "run",
-        "sessions"
+        "sessions",
+        "messages",
+        "agents"
       ],
       "properties": {
         "log": {
@@ -648,6 +804,130 @@
               "minimum": 0
             }
           }
+        },
+        "messages": {
+          "description": "Messages between agents, .bonsai/local/messages/ (set 8; bonsai.message/1): a thread goes keep_days after its last message (default 30); never an open thread (a brief with no report after it), whatever its age, so a dropped thread stays listed until a report answers it.",
+          "examples": [
+            {
+              "keep_days": 30,
+              "keep_newest": null
+            }
+          ],
+          "type": "object",
+          "required": [
+            "keep_days",
+            "keep_newest"
+          ],
+          "properties": {
+            "keep_days": {
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule. Any whole number from 0 up: no maximum is set, since a bound added later would be a new major, and a number past what a duration counts back (106,751 days, about 292 years) cleans nothing by age, so a huge number reads as keep.",
+              "examples": [
+                30,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "keep_newest": {
+              "description": "Keep only this many of the newest, cleaning the rest; 0 keeps none the protections do not hold (they always win); null for no count rule.",
+              "examples": [
+                100,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "agents": {
+          "description": "Each agent's state as the guard keeps it, .bonsai/local/agents/ (set 8): a session's folder goes keep_days after its last line (default 30), and a brief's tie file with its thread; never while the session's log file or a brief one of its agents tied is still kept, so bonsai agents shows an agent as long as its log and its briefs last.",
+          "examples": [
+            {
+              "keep_days": 30,
+              "keep_newest": null
+            }
+          ],
+          "type": "object",
+          "required": [
+            "keep_days",
+            "keep_newest"
+          ],
+          "properties": {
+            "keep_days": {
+              "description": "Clean a file (or row) older than this many days, by the kind's own clock; 0 cleans it as soon as the protections allow (they always win); null for no age rule. Any whole number from 0 up: no maximum is set, since a bound added later would be a new major, and a number past what a duration counts back (106,751 days, about 292 years) cleans nothing by age, so a huge number reads as keep.",
+              "examples": [
+                30,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "keep_newest": {
+              "description": "Keep only this many of the newest, cleaning the rest; 0 keeps none the protections do not hold (they always win); null for no count rule.",
+              "examples": [
+                100,
+                null
+              ],
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "messages": {
+      "description": "The thresholds of bonsai messages' flags (set 8): unanswered_minutes and circling_briefs, each null for Bonsai's default; null for both, as bonsai init writes it. The defaults are Bonsai's table of message thresholds, which bonsai check --schema bonsai.messages prints with the flags. Changed any time: it sets when bonsai messages flags a thread, never a check, so a change is not a loosening.",
+      "examples": [
+        null,
+        {
+          "unanswered_minutes": 120,
+          "circling_briefs": null
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "unanswered_minutes",
+        "circling_briefs"
+      ],
+      "properties": {
+        "unanswered_minutes": {
+          "description": "The minutes after which a brief with no report is flagged unanswered, once its recipient's agent has stopped or made no call for that long; null for Bonsai's default.",
+          "examples": [
+            120,
+            null
+          ],
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "circling_briefs": {
+          "description": "How many briefs each way between the same two addresses in one thread a thread may hold before it is flagged circling; null for Bonsai's default.",
+          "examples": [
+            3,
+            null
+          ],
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
         }
       }
     }

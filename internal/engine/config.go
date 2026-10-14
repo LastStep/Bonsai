@@ -80,6 +80,7 @@ var Comments = map[string]string{
 	"packs[].source":      "the git repository the pack comes from, fetched with this machine's git",
 	"packs[].path":        "the pack's folder inside that repository; null for the repository's top",
 	"packs[].ref":         "the release tag or a 40-character commit; change it, then run bonsai update to take it",
+	"packs[].roles":       "this project's limits for the pack's roles; null keeps the pack's; changed any time",
 	"documents":           "where this project keeps the documents Bonsai knows: a folder (one file each) or one file",
 	"documents.task":      "the tasks' folder: one file per task, named <id>-<slug>.md (bonsai.task/1)",
 	"documents.run":       "the run reports' folder: one report per agent session (bonsai.run/1)",
@@ -106,6 +107,11 @@ var Comments = map[string]string{
 	"ratchets":            "counts that may only rise, by name, each the floor a rung's count may not fall below; e.g. tests: 120",
 	"ci_marked_tests":     `tests allowed to skip in CI only, each by its name in the test output; e.g. ["TestNeedsADisplay"]`,
 	"generated":           "how long generated files are kept; null keeps all; docs/reference/generated-files.md in LastStep/Bonsai",
+	"messages":            "when bonsai messages flags a thread; null for Bonsai's defaults (bonsai check --schema bonsai.messages)",
+
+	// Set 8: messages' two thresholds, written only when a person sets messages (init writes it null).
+	"messages.unanswered_minutes": "minutes a brief may go with no report once its agent is quiet; null for the default",
+	"messages.circling_briefs":    "briefs each way one thread may hold before it is flagged circling; null for the default",
 }
 
 // comment gives a line's comment by its field's path ("packs[0].ref"): Comments' entry for the path with its list

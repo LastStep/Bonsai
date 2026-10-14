@@ -43,7 +43,19 @@ type Log struct {
 	Remote       *string       `json:"remote"`        // the Remote Control id
 	BonsaiPath   *string       `json:"bonsai_path"`   // the bonsai binary's path, forward slashes, from ~/ under the home (set 6); the guard writes it only on the record that made the file
 	BonsaiSHA256 *string       `json:"bonsai_sha256"` // the binary's SHA-256, 64 lower-case hex (set 6)
+	Parent       *string       `json:"parent"`        // on a spawn record, the agent that started it, or "session" (set 8)
+	Usage        *LogUsage     `json:"usage"`         // on a usage record, one model's token counts (set 8)
 	Extra        schema.Object `json:"-"`             // fields this Bonsai does not know, kept as read
+}
+
+// LogUsage is a usage record's token counts (set 8): one model's, summed over an agent's whole transcript at its end,
+// as Claude Code saved them with each reply; never a difference from an earlier record.
+type LogUsage struct {
+	Input      int64         `json:"input"`
+	Output     int64         `json:"output"`
+	CacheRead  int64         `json:"cache_read"`
+	CacheWrite int64         `json:"cache_write"`
+	Extra      schema.Object `json:"-"`
 }
 
 // LogEvents are the known words of a log record's event: an open list (contract section 8.2; a reader shows a word it
@@ -67,6 +79,9 @@ var LogEvents = []Word{
 	{Word: "ask", Means: "an ask was filed, resolved or answered; the target is its key and the kind its op"},
 	{Word: "event", Means: "an outside event, written by bonsai log append with its labels (contract section 8.4)"},
 	{Word: "clean", Means: "a generated file Bonsai deleted; the target is its project-relative path and the reason the rule that cleaned it (contract section 8.5)"},
+	{Word: "message", Means: "a message between agents was written by bonsai message (set 8, bonsai.message/1); the target is its id, the text its kind, its recipient and a report's status, and the task its task, so who said what survives a cleaned file"},
+	{Word: "spawn", Means: "an agent was started (set 8; Claude Code only): the subagent's id and type, its parent (the agent that started it, or session for the person's own session) and the tool_use_id of the call that started it, so the tree of agents survives a cleaned state file"},
+	{Word: "usage", Means: "an agent's token counts at its end (set 8; Claude Code only): one record for each model in its transcript, its totals over the whole transcript in usage and the model in model; kind unknown with its reason when the transcript could not be read"},
 }
 
 // LogCategories are the known words of a log record's category: an open list (contract section 8.2), whose one home

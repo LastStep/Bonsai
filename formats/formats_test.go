@@ -46,14 +46,16 @@ var sourceExamples = map[string]string{
 	"tasks":     "examples/tasks.md",
 	"sessions":  "examples/sessions.md",
 	"memory":    "examples/memory.md",
+	"message":   "examples/message.md",
 }
 
-// bodyFields are, for the two generated tables, the fields a reader reads from the markdown body rather than the
-// frontmatter (README.md, "The examples"): they come after the frontmatter's, and the case's format-1 value is the
-// example without them.
+// bodyFields are, for the two generated tables and a message, the fields a reader reads from the markdown body (or,
+// for a message's trust, makes) rather than the frontmatter (README.md, "The examples"): they come after the
+// frontmatter's, and the case's format-1 value is the example without them.
 var bodyFields = map[string][]string{
 	"tasks":    {"active", "tasks"},
 	"sessions": {"sessions", "hours"},
+	"message":  {"body", "trust"},
 }
 
 // The rules of contract §2.4 (and the format-0 oddities and dispatch cases plan part 0 names). Every rule here needs
@@ -85,6 +87,8 @@ var rules = []string{
 	"dispatch-not-first", "dispatch-tab", "format-too-new",
 	// The order of codes on one line.
 	"code-order",
+	// bonsai.message/1's reader (set 8): a case under trick/message-1/, its message outcome in expect.json.
+	"message-report-status", "message-budget-type", "message-id-form", "message-unknown-field", "message-address",
 }
 
 // Files whose bytes are the point of their case, checked as checked out.
@@ -276,6 +280,7 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 		default:
 			t.Errorf("%s: format0 outcome %q, want accepted or refused", where, str(f0, "outcome"))
 		}
+		checkMessageOutcome(t, o, path, where)
 		f1 := mustObject(t, f1v, where+" format1")
 		switch str(f1, "outcome") {
 		case "accepted":
@@ -335,12 +340,57 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 			t.Errorf("expect.json has a case for %s, which is neither a trick file nor an example source", p)
 		}
 	}
-	// Each trick file sits alone in its case folder, as trick/yaml-1/<case>/case.yaml or case.md.
-	caseFile := regexp.MustCompile(`^trick/yaml-[01]/[a-z0-9-]+/case\.(yaml|md)$`)
+	// Each trick file sits alone in its case folder, as trick/yaml-1/<case>/case.yaml or case.md, or (set 8) a
+	// message's as trick/message-1/<case>/case.md.
+	caseFile := regexp.MustCompile(`^trick/(yaml-[01]/[a-z0-9-]+/case\.(yaml|md)|message-1/[a-z0-9-]+/case\.md)$`)
 	for _, p := range sortedKeys(want) {
 		if strings.HasPrefix(p, "trick/") && !caseFile.MatchString(p) {
-			t.Errorf("%s is not laid out as trick/yaml-<0|1>/<case>/case.<yaml|md>", p)
+			t.Errorf("%s is not laid out as trick/yaml-<0|1>/<case>/case.<yaml|md> or trick/message-1/<case>/case.md", p)
 		}
+	}
+}
+
+// checkMessageOutcome holds a case's message outcome (set 8): a case under trick/message-1/ has one, every other
+// case none. Accepted, its value is the message as bonsai message --show --json prints it, valid under
+// bonsai.message/1 and in its order; refused, it names the field refused, one the schema has.
+func checkMessageOutcome(t *testing.T, o schema.Object, path, where string) {
+	t.Helper()
+	mv, has := o.Get("message")
+	if !strings.HasPrefix(path, "trick/message-1/") {
+		if has {
+			t.Errorf("%s: only a case under trick/message-1/ has a message outcome", where)
+		}
+		return
+	}
+	if !has {
+		t.Errorf("%s: a message's trick file has a message outcome", where)
+		return
+	}
+	m := mustObject(t, mv, where+" message")
+	s := loadSchema(t, "message")
+	switch str(m, "outcome") {
+	case "accepted":
+		v, ok := m.Get("value")
+		if !ok {
+			t.Errorf("%s: message accepted with no value", where)
+			return
+		}
+		for _, msg := range append(schema.Validate(s, v), schema.CheckOrder(s, v)...) {
+			t.Errorf("%s: its message value does not fit bonsai.message/1: %s", where, msg)
+		}
+	case "refused":
+		var at any = s
+		for _, k := range strings.Split(str(m, "field"), ".") {
+			props, _ := at.(schema.Object).Get("properties")
+			po, _ := props.(schema.Object)
+			at, _ = po.Get(k)
+			if at == nil {
+				t.Errorf("%s: message refused for the field %q, which bonsai.message/1 does not have", where, str(m, "field"))
+				return
+			}
+		}
+	default:
+		t.Errorf("%s: message outcome %q, want accepted or refused", where, str(m, "outcome"))
 	}
 }
 
@@ -489,12 +539,12 @@ func sameShape(t *testing.T, copyOf, home schema.Object, where string) {
 func TestCopiesAreTheirHomes(t *testing.T) {
 	errorSchema := loadSchema(t, "error")
 	next := schemaAt(t, errorSchema, "error", "properties", "next")
-	for _, name := range []string{"status", "check", "changes", "asks", "logs", "climb"} {
+	for _, name := range []string{"status", "check", "changes", "asks", "logs", "climb", "messages", "agents"} {
 		sameShape(t, schemaAt(t, loadSchema(t, name), name, "properties", "error"), errorSchema, name+"'s error")
 	}
-	// The workspace object of the set 6 and 7 outputs is changes', their home (the schema checker has no $ref).
+	// The workspace object of the set 6 to 8 outputs is changes', their home (the schema checker has no $ref).
 	changesWorkspace := schemaAt(t, loadSchema(t, "changes"), "changes", "properties", "workspace")
-	for _, name := range []string{"asks", "logs", "climb"} {
+	for _, name := range []string{"asks", "logs", "climb", "messages", "agents"} {
 		sameShape(t, schemaAt(t, loadSchema(t, name), name, "properties", "workspace"), changesWorkspace, name+"'s workspace")
 	}
 	check := loadSchema(t, "check")
@@ -506,6 +556,18 @@ func TestCopiesAreTheirHomes(t *testing.T) {
 		next, "changes' plugins[].next")
 	// A climb's next step is the error object's next (set 7); its type adds null for a green climb.
 	sameShape(t, schemaAt(t, loadSchema(t, "climb"), "climb", "properties", "next"), next, "climb's next")
+	// Set 8: a thread's recipient holds an agent's counts and limits as bonsai.agents/1 has them, their home; status
+	// --json's role kind is the pack's closed list.
+	agent := schemaAt(t, loadSchema(t, "agents"), "agents", "properties", "agents", "items", "properties")
+	recipient := schemaAt(t, loadSchema(t, "messages"), "messages", "properties", "threads", "items", "properties", "recipient", "properties")
+	for _, k := range []string{"counts", "limits"} {
+		sameShape(t, schemaAt(t, recipient, "messages", k), schemaAt(t, agent, "agents", k), "messages' threads[].recipient."+k)
+	}
+	roleKind := schemaAt(t, loadSchema(t, "status"), "status", "properties", "roles", "items", "properties", "kind")
+	packKind := schemaAt(t, loadSchema(t, "pack"), "pack", "properties", "roles", "items", "properties", "kind")
+	if a, _ := roleKind.Get("enum"); schema.Show(a) != func() string { b, _ := packKind.Get("enum"); return schema.Show(b) }() {
+		t.Errorf("status's roles[].kind is %s, the pack's roles[].kind another list: one list", schema.Show(a))
+	}
 	rung := schemaAt(t, loadSchema(t, "workspace"), "workspace", "properties", "ladder", "items", "properties", "kind")
 	home := schemaAt(t, loadSchema(t, "ladder"), "ladder", "properties", "rungs", "items", "properties", "kind")
 	a, _ := rung.Get("enum")

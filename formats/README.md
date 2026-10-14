@@ -2,9 +2,11 @@
 
 This folder holds Bonsai's formats as files any program can test against: a JSON Schema for each of the ten formats
 of the formats contract (`design/contract.md` §2), the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row 29),
-the one that set 5 added (`help`, plan-5 5.1.10), the two that set 6 added (`asks` and `logs`, plan-5 5.2.0) and the
-one that set 7 added (`climb`, plan-5 5.4.0), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files, each with the one
-right outcome a reader must reach (accepted with this value, or refused for this reason), and contract §13's
+the one that set 5 added (`help`, plan-5 5.1.10), the two that set 6 added (`asks` and `logs`, plan-5 5.2.0), the
+one that set 7 added (`climb`, plan-5 5.4.0) and the three that set 8 added (`message`, `messages` and `agents`, plan-5
+5.5.9), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
+from set 8, message files), each with the one right outcome a reader must reach (accepted with this value, or refused
+for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
 file's bytes.
 
@@ -23,12 +25,13 @@ formats/
   embed.go                  embeds the schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
                                 status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help;
-                                asks, logs; climb
+                                asks, logs; climb; message, messages, agents
   examples/<name>.json      one valid document per format, as a reader returns it
-  examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory (markdown) and labels, lanes,
+  examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory, message (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
   trick/yaml-1/<case>/case.md|.yaml   a case for one rule of the format-1 YAML grammar (contract §2.4)
   trick/yaml-0/<case>/case.md|.yaml   one of today's format-0 oddities
+  trick/message-1/<case>/case.md      a message file for one rule of bonsai.message/1's reader (set 8)
   active-task/<case>/       one of contract §13's fixtures: case.json and the project folders it names
   active-task/answers.json  every reader's answer for every fixture (below)
 ```
@@ -47,7 +50,11 @@ every command word with its flags, exit codes and examples, the exit codes every
 with its meaning and usual `who`, so an agent learns the tool without reading a page); and, from set 6, `asks`
 (`bonsai.asks/1`, the `--json` of `ask`, `answer` and `asks`) and `logs` (`bonsai.logs/1`, the `--json` of `logs` and
 `log append`); and, from set 7, `climb` (`bonsai.climb/1`, the `--json` of `bonsai ladder`: one climb of the ladder,
-named for the act, since `bonsai.ladder/1` is the result's name). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
+named for the act, since `bonsai.ladder/1` is the result's name); and, from set 8, `message` (`bonsai.message/1`, a
+message between agents: a brief or a report, one markdown file each in `.bonsai/local/messages/`, the schema being
+the message as `bonsai message --show --json` prints it), `messages` (`bonsai.messages/1`, the `--json` of `bonsai
+messages` and of `bonsai message`) and `agents` (`bonsai.agents/1`, the `--json` of `bonsai agents`, the one
+published view of what Bonsai has recorded about each agent). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
 where it lives) and a `description` and `examples` on every property. Later steps add their commands' outputs
 the same way, each a new schema file: an addition.
 
@@ -69,9 +76,12 @@ the same way, each a new schema file: an addition.
   and a test holds the copy equal to its home: the `error` object, inline in `status`, `check`, `changes`, `asks` and
   `logs`, is `error.schema.json`'s (its `required` and `properties`, word for word), and so is every `next` object (a
   finding's, a warning's, the plugin step's); a ladder rung's `kind` in `bonsai.yaml` is the ladder result's closed
-  list; the `workspace` object of `asks` and `logs` is `changes`'. The records `asks` and `logs` carry
+  list; the `workspace` object of `asks` and `logs` is `changes`'. From set 8: `messages` and `agents` hold the
+  `error` and `workspace` copies too; a thread's `recipient` holds an agent's `counts` and `limits` as `agents` has
+  them, their home; `status --json`'s role `kind` is `pack`'s closed list. The records `asks` and `logs` carry
   (`bonsai.ask/1`, `bonsai.log/1`) are not copied: they are open `object`s there, whose descriptions name their home,
-  because a full copy would make the writer refuse an older or hand-written record.
+  because a full copy would make the writer refuse an older or hand-written record; so are the messages
+  `bonsai.messages/1` holds (`bonsai.message/1`).
 - **Spec §16's additions** are in from the start: the lock's `declares` (row 18), the ladder's third rung kind
   `ver-git` (row 23), and `status --json`'s additions (row 24), which arrive as values, not new fields: a `needs`
   entry of kind `plugin` for a pack not installed on the machine, the Claude Code floor as a `needs` entry of kind
@@ -83,8 +93,11 @@ the same way, each a new schema file: an addition.
   - `status`: `mode` (`offline`, or `full` with `--full`; an open list), each `documents` entry (only `kind` and `from`
     required: contract §7.3 says `format` is absent for a pack's kind and a kind has `path` or `file`), and `checks`
     (an object or `null`; with `--full` it holds `packs`, `plugins`, `claude_code` and `mcp`).
-  - `lock`: each pack's `declares` (an object: its kinds are `format.DeclaresKeys`, seven today, their key names and
-    inner layout are not fixed; format review 6.3).
+  - `lock`: each pack's `declares` (an object: its kinds are `format.DeclaresKeys`, eight from set 8, their key names
+    and inner layout are not fixed; format review 6.3).
+  - `workspace`: a `packs` entry's `roles` (set 8) is a map from a role's name to any of its limits, each with
+    `default`, `max` or both: the one place in the set where a field may be left out, since a person sets only what
+    they change and what is left out keeps the pack's.
   - `ask`: `data` (an object or `null`: a pack type's own payload).
   - `workspace`: a ladder rung's `ratchet` and `capture` have no `type` at all, so any value reads, and a rung's
     `tests` is an open string. Set 7 fixes their shape **by description**, held by Bonsai's reader and `bonsai
@@ -234,6 +247,52 @@ the same way, each a new schema file: an addition.
     whole number from 0 up, **no maximum**: a bound is a new major, and a number past what a duration counts back,
     about 292 years, cleans nothing by age); `never_edit`'s rule `Edit(/<path>)`; the hook line the `help` and `changes`
     examples quote, in today's form.
+- **Set 8** (plan-5 5.5.9, step 5.5's shapes and lists, set before the code that writes them; the 14 Oct design of
+  roles, messages and agents), every change an addition:
+  - **`bonsai.message/1`**, a new schema with its example (`message.md`, the file, and `message.json`, what `--show
+    --json` prints) and five trick files (below): a brief or a report, `format`, `id` (`M-`, the UTC date, a dash and
+    8 random hex), `thread`, `reply_to`, `task`, `kind` (`brief` or `report`, closed), `from` and `to` (addresses:
+    `<role>`, `<role>@<task>`, `<role>@<task>#<n>`, held to a form a Windows folder can hold), `status` (`done`,
+    `blocked`, `needs-input`, or null for a brief; closed), `budget` (a brief's `minutes`, `actions`, `red_runs`; null
+    for a report), `pointers` (`path`, project-relative or from a tilde and a slash, and `sha256`), `created`,
+    `labels`, then `body` and `trust`, the two a reader adds (the file's body, and the trust line the reader makes from
+    `from`, never read from the file). Beside the schema the reader refuses a report with no status, a brief with one
+    and a report with a budget (`format.ReadMessage`). The trust line's words have one home, `format.TrustLine`.
+  - **`bonsai.messages/1`**: `format`, `workspace`, `threads` (each `id`, `task`, `from`, `to`, `state` (`open`,
+    `answered`; closed), `last_at`, `flags` (open: `format.MessageFlags`), `messages` (each message's frontmatter, an
+    open object) and `recipient` (the agent tied to the newest brief, its counts and limits as the guard wrote them, or
+    null)), `malformed` (`path`, `thread`, `reason`), `message` (the one message `bonsai message` wrote or showed, an
+    open object), `path` and `error`. One document for `bonsai message` and `bonsai messages`, as `bonsai.asks/1` is
+    for `ask`, `answer` and `asks`: the plan names only the list's, and a command that refuses needs an `error`.
+  - **`bonsai.agents/1`**: `format`, `workspace`, `agents` (each `id`, `session`, `parent`, `role`, `type`, `task`,
+    `brief`, `model`, `started`, `ended`, `last_call`, `counts`, `limits`, `spent`, `report`, `log`, `thread`,
+    `usage`; every one as recorded, none derived), `skipped` (`path`, `reason`) and `error`. `usage` is null, or one
+    item a model as the newest `usage` records hold them, or one item `kind` `unknown` with its `reason`.
+  - **Roles:** `pack.yaml` gains `roles` (each `name`, `kind` `lead` or `helper`, `session`, `writes`, `max_turns`,
+    and `minutes`, `actions`, `red_runs`, each with `default` and `max`), so a pack with none writes `roles: []`; the
+    lock's `declares` gains `roles`, its eighth kind; `bonsai.yaml`'s `packs` entry gains `roles` (null, or the
+    project's own limits for the pack's roles), and the file gains `messages` (`unanswered_minutes`,
+    `circling_briefs`, each null for the default; null for both), at its end. `status --json` gains `roles` and then
+    `messages` at its end, null until steps 5.5.0 and 5.5.10 fill them, as set 7's `ladder` was.
+  - **The log** gains `parent` (on a `spawn` record, the agent that started this one, `session` for the person's own
+    session) and then `usage` (on a `usage` record, one model's token counts over an agent's whole transcript:
+    `input`, `output`, `cache_read`, `cache_write`) at its end, each null elsewhere; its events gain `message`, `spawn`
+    and `usage`.
+  - **Generated kinds:** `messages` and `agents` (each 30 days by default; never an open thread, nor an agent's state
+    while its log or its briefs last) join `generated`, the schema and `format.GeneratedKinds` alike.
+  - **Go tables**, each listed on the reference page: the message flags (`format.MessageFlags`, which `bonsai check
+    --schema bonsai.messages` prints with their thresholds' defaults) and the thresholds (`format.MessageThresholds`),
+    the role limits (`format.RoleLimits`, held to every schema that lists them) and Bonsai's fixed helper limits
+    (`format.HelperLimits`), `bonsai message`'s six error words, and the check words steps 5.5.0 and 5.5.10 raise,
+    each in a table of its own so this set is final before those steps write the checks: `format.RoleCheckWords`,
+    `format.MessageCheckWords` and `format.PackRoleCheckWords` (`bonsai check --schema bonsai.check` prints them). The closed lists (a message's kind and status, a thread's state, a role's kind, where a
+    limit came from) live in the schemas, as every closed list does.
+  - **Descriptions only:** a pack file's `path` may start with `<protocols>/` (step 5.5.0, note 1); the lock's
+    `declares` names its eight kinds; a ladder result's `leftovers` is Bonsai's `{checkout, ms}`, `{unknown, ms}`, a
+    text or null; `check`'s codes name every table.
+  - **One more active-task fixture**, `named-garbage`: the named task's file holds only `garbage: [`, which format 0
+    reads as an empty mapping, so it is no task (step 5.4.3's fix, now shared by every reader). Its `does_not_parse`
+    is `[]`: the file reads under format 0, and is broken only as a task.
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,
@@ -246,11 +305,12 @@ the same way, each a new schema file: an addition.
 ## The examples
 
 `examples/<name>.json` is one made-up, valid document per format, stored as the JSON a reader returns; its schema
-validates it, and its fields keep the schema's order. For the ten YAML and markdown formats (`task`, `labels`,
-`lanes`, `run`, `state`, `workspace`, `pack`, `tasks`, `sessions`, `memory`) the source sits beside it (`<name>.md`
-or `<name>.yaml`) and is also a case in `expect.json`: its format-1 value is exactly `<name>.json`, except for the
-two tables, whose format-1 value is their frontmatter, `<name>.json` without the fields a reader reads from the body
-(`active` and `tasks`; `sessions` and `hours`), which come last. So the test checks every schema without a reader,
+validates it, and its fields keep the schema's order. For the eleven YAML and markdown formats (`task`, `labels`,
+`lanes`, `run`, `state`, `workspace`, `pack`, `tasks`, `sessions`, `memory`, `message`) the source sits beside it
+(`<name>.md` or `<name>.yaml`) and is also a case in `expect.json`: its format-1 value is exactly `<name>.json`,
+except for the two tables and a message, whose format-1 value is their frontmatter, `<name>.json` without the fields a
+reader reads from the body or makes (`active` and `tasks`; `sessions` and `hours`; `body` and `trust`), which come
+last. So the test checks every schema without a reader,
 and a reader proves the YAML. The pack files (`labels.yaml`, `lanes.yaml`, `pack.yaml`) document themselves in `#`
 comments, as every pack file does (contract §2.8), and `workspace.yaml` has a comment on every line, as `init`
 writes `bonsai.yaml` (format review 1.4); the markdown examples carry the one-line pointer on their `format:` line
@@ -284,6 +344,10 @@ file), with made-up content only.
 - `trick/yaml-0/<case>/`: today's format-0 oddities (contract §2.4: a plain value holding `: `, unquoted hashes,
   `TRUE`, the last of two duplicate keys, document markers skipped). They have no `format:` line, so a format-1
   reader sends them to format 0.
+- `trick/message-1/<case>/`: from set 8, a message file (`case.md`) for one rule of `bonsai.message/1`'s reader: a
+  report with no status, a brief whose budget has a field of the wrong type, an id of the wrong shape, an unknown field
+  kept (the major's rule), an address with a character a Windows folder name cannot hold. Their YAML reads under
+  both formats (their `format0` and `format1` are accepted); their third outcome, `message`, is the message reader's.
 - The CRLF case (`trick/yaml-1/lines-crlf/case.md`) ends every line in CRLF, the lone-CR case
   (`trick/yaml-1/lines-cr/case.yaml`) every line in a CR alone, with no LF anywhere, and two cases start with a BOM
   (`bom-frontmatter`, `bom-definition`). The repo's `.gitattributes` sets `formats/** -text`, so no checkout changes
@@ -315,14 +379,15 @@ One file, UTF-8, LF, giving every case two outcomes. Example (one case, shortene
 | Field | Meaning |
 |---|---|
 | `about` | What the file is. |
-| `cases` | One entry per case, sorted by `path`; every file under `trick/` and the ten example sources has one. |
+| `cases` | One entry per case, sorted by `path`; every file under `trick/` and the eleven example sources has one. |
 | `path` | The input file, relative to `formats/`, forward slashes. |
-| `rule` | The rule the case tests: one of the rule names the Go test lists (`rules` in `formats_test.go`), or `example`. |
+| `rule` | The rule the case tests: one of the rule names the Go test lists (`rules` in `formats_test.go`; a message's start with `message-`), or `example`. |
 | `settled_by` | `rule` when contract §2.4's words decide the format-1 outcome; `libraries` when they do not and §2.4's own test decides it: accepted only if a YAML 1.1 and a YAML 1.2 library both read the file and read the same value, otherwise refused (plan part 0). |
 | `about` | One sentence: what the case tests. |
 | `format0` | What the studio's frozen format-0 reader reaches, which reads every file as format 0, `format:` line or not: `{"outcome": "accepted", "value": <JSON>}` or `{"outcome": "refused", "message": "<the reader's own message>"}`. |
 | `format1` | What a reader that dispatches as §2.4 says reaches: `{"outcome": "accepted", "value": <JSON>}`; `{"outcome": "refused", "reason": "<code>"}` with a code from the table below; or `{"outcome": "format-0"}` when the file has no top-level `format:` key, which sends it to format 0. |
 | `value` | The YAML file's mapping, or for markdown the frontmatter's mapping (the body is not compared), as JSON. Under format 1 a date stays text and an integer has at most 15 digits. |
+| `message` | Only for a case under `trick/message-1/` (set 8): what `bonsai.message/1`'s reader reaches (`format.ReadMessage`, which `bonsai message` and every reader of messages read through): `{"outcome": "accepted", "value": <the message as bonsai message --show --json prints it>}` or `{"outcome": "refused", "field": "<the field refused, as budget.minutes>"}`. |
 
 ## Reason codes
 
@@ -474,7 +539,9 @@ every schema is JSON with no duplicate key, declares draft 2020-12 and documents
 validates under the schema checker (`internal/schema`, moved out of this test in plan part 2 so Bonsai's code uses the
 same one: it implements the keywords the schemas use, skips only `title`, `description` and `examples`, and fails on
 any other keyword) and keeps the schema's field order; that each YAML or markdown example's format-1 value equals its
-`<name>.json` (a table's, its frontmatter); that each copy of a shared shape is its home's (above); that the schemas
+`<name>.json` (a table's or a message's, its frontmatter); that a message's trick file has its `message` outcome, an
+accepted value valid under `bonsai.message/1` and a refused field one it has; that each copy of a shared shape is its
+home's (above); that the schemas
 `embed.go` embeds are exactly the files in `schemas/`; and that no file in the set holds a private string: an absolute
 home-folder path, a WSL drive path, a path from a home folder's tilde, a Windows drive letter, an email address or a
 tailnet host name. `fixtures_test.go` checks the active-task fixtures and `answers.json` against the tables above:
@@ -482,7 +549,8 @@ every case has its `case.json` and the folders it names, none holds a `.git`, ev
 order, every field has its form, every reason is in the table and every reason in the table is given, and rung 0's
 answer is the function's named task. `compare_test.go` is the schema-compare test (below). Run them with `go test
 ./formats/`. Bonsai's reader (`internal/reader`) is held to every case's two outcomes by its own tests, and reads every
-task file and `bonsai.yaml` of the fixtures as `case.json` says.
+task file and `bonsai.yaml` of the fixtures as `case.json` says; from set 8, `internal/format`'s `TestMessageTrickFiles`
+holds the message reader (`format.ReadMessage`) to each message case's third outcome.
 
 ## How the set changes
 

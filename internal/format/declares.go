@@ -18,13 +18,17 @@ package format
 //	hooks      its pack.yaml hook lines, each as bonsai.pack/1 writes it (event, matcher, command, runs, why)
 //	deny       its pack.yaml deny rules (rule, why)
 //	needs      its pack.yaml needs, as bonsai.pack/1 writes it, when it names any: {"claude_code": "2.1.300"}
+//	roles      its pack.yaml roles, each as bonsai.pack/1 writes it (name, kind, session, writes, max_turns, minutes,
+//	           actions, red_runs; set 8): [{"name": "builder", "kind": "lead", "session": false, ...}]
 //
 // The first four are the spec's four kinds. hooks and deny are what bonsai check needs besides them to tell Bonsai's
 // lines in .claude/settings.json from the project's own with no pack at hand, and needs what it needs to know the
 // Claude Code floor (a pack's needs.claude_code raises Bonsai's own, spec §7) and status --json its needs (spec §5:
 // "the engine copies what checks need into the lock"; format review 6.3: "a new kind of declaration is an
-// addition"). A lock written before step 5.1.6 has no needs: such a pack reads as needing nothing until the next
-// update writes it. A key this Bonsai does not know (a newer Bonsai's kind) is kept, after the known ones.
+// addition"). roles (set 8) is what the guard, bonsai message, status and check read of a pack's roles, offline (plan-5
+// 5.5.0 note 7: the engine copies them in, as it does lanes and labels). A lock written before step 5.1.6 has no
+// needs, and one written before set 8 no roles: such a pack reads as needing nothing and declaring no role until the
+// next update writes them. A key this Bonsai does not know (a newer Bonsai's kind) is kept, after the known ones.
 
 import (
 	"fmt"
@@ -33,7 +37,7 @@ import (
 )
 
 // DeclaresKeys are the keys of a pack's declares, in the order Bonsai writes them: their one home.
-var DeclaresKeys = []string{"lanes", "documents", "labels", "protected", "hooks", "deny", "needs"}
+var DeclaresKeys = []string{"lanes", "documents", "labels", "protected", "hooks", "deny", "needs", "roles"}
 
 // Declares is what one pack declared at its locked commit.
 type Declares struct {
@@ -44,6 +48,7 @@ type Declares struct {
 	Hooks     []PackHook     // pack.yaml's hooks
 	Deny      []PackDeny     // pack.yaml's deny
 	Needs     *PackNeeds     // pack.yaml's needs when it names any (Declares.NeedsAny); nil for none
+	Roles     []PackRole     // pack.yaml's roles (set 8); none for a pack that declares none
 	Extra     schema.Object  // keys this Bonsai does not know, kept as read
 }
 
@@ -69,7 +74,8 @@ func (d *Declares) Object() (schema.Object, error) {
 	if NeedsAny(d.Needs) {
 		needs = *d.Needs
 	}
-	pack, err := MustLookup("pack").Document(&Pack{Documents: d.Documents, Protected: d.Protected, Hooks: d.Hooks, Deny: d.Deny, Needs: needs})
+	pack, err := MustLookup("pack").Document(&Pack{Documents: d.Documents, Protected: d.Protected, Hooks: d.Hooks, Deny: d.Deny,
+		Needs: needs, Roles: d.Roles})
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +104,10 @@ func (d *Declares) Object() (schema.Object, error) {
 	if NeedsAny(d.Needs) {
 		v, _ := pack.Get("needs")
 		out = append(out, schema.Member{Key: "needs", Value: v})
+	}
+	if len(d.Roles) > 0 {
+		v, _ := pack.Get("roles")
+		out = append(out, schema.Member{Key: "roles", Value: v})
 	}
 	for _, m := range d.Extra {
 		if out.Index(m.Key) >= 0 {
@@ -142,7 +152,7 @@ func ReadDeclares(o schema.Object) (*Declares, error) {
 				return nil, declaresError("labels", err)
 			}
 			d.Labels = l
-		case "documents", "protected", "hooks", "deny", "needs":
+		case "documents", "protected", "hooks", "deny", "needs", "roles":
 			packDoc = append(packDoc, m)
 		default:
 			d.Extra = append(d.Extra, m)
@@ -158,7 +168,7 @@ func ReadDeclares(o schema.Object) (*Declares, error) {
 		if err := f.Bind(doc, p); err != nil {
 			return nil, declaresError("", err)
 		}
-		d.Documents, d.Protected, d.Hooks, d.Deny = p.Documents, p.Protected, p.Hooks, p.Deny
+		d.Documents, d.Protected, d.Hooks, d.Deny, d.Roles = p.Documents, p.Protected, p.Hooks, p.Deny, p.Roles
 		if NeedsAny(&p.Needs) {
 			needs := p.Needs
 			d.Needs = &needs

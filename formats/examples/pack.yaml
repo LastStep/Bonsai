@@ -3,7 +3,8 @@
 # Purpose: what Bonsai's engine reads from the pack and writes into a linked project, beside what Claude Code
 # loads from the plugin itself (agents/, skills/), and what the pack declares besides labels.yaml and lanes.yaml.
 # When to use: every pack has one, at bonsai/pack.yaml. bonsai init and update read it at the locked commit and copy
-# its declarations (document kinds, protected paths) into the lock; bonsai check --pack checks it and its comments.
+# its declarations (document kinds, protected paths, roles) into the lock; bonsai check --pack checks it and its
+# comments.
 # Format-1 YAML (contract section 2.4): format first; quote every text value that does not start with a letter.
 # Every field and its allowed values: bonsai check --schema bonsai.pack
 # Fields of the file (each key below also has its own comment):
@@ -14,7 +15,8 @@
 #     claude_code  the oldest Claude Code the pack works with, quoted, or null; older gets a check warning.
 #   block        the pack's part of the instruction block, a file in bonsai/, or null for none.
 #   files        the files the engine writes into a project, each from bonsai/files/; [] for none.
-#     path         where it goes: project-relative, forward slashes. Example work/protocols/session-start.md.
+#     path         where it goes: project-relative, forward slashes, or starting <protocols>/ for the project's
+#                  protocols folder (documents.protocols). Example work/protocols/session-start.md.
 #     from         its source in bonsai/files/. Example session-start.md.
 #     kind         pack (Bonsai's; an edit is a conflict) or once (written once, then the project's).
 #   hooks        hook lines for the project's .claude/settings.json; [] for none. Each runs code, so init and
@@ -38,6 +40,15 @@
 #     stamp        {status: field} set to the day's date when a document reaches the status; {} for none.
 #     task_field   the field naming the task a document belongs to, or null.
 #   protected    paths the pack declares protected, as globs, quoted; [] for none.
+#   roles        the roles the pack declares, each an agents/<name>.md of the plugin; [] for none.
+#     name         the role's name, its file's in agents/. Example builder.
+#     kind         lead (may call helpers) or helper (calls no one).
+#     session      true only for the role the person's own session plays.
+#     writes       false for a role that changes nothing (the guard refuses it the file tools).
+#     max_turns    its file's maxTurns, a backstop above the limits, or null for none.
+#     minutes      minutes since its first call or its newest brief: default and max, each a number or null.
+#     actions      tool calls from the same start: default and max, each a number or null.
+#     red_runs     failed ladder runs in a row: default and max, each a number or null.
 format: bonsai.pack/1                    # the format and its version; always the first key
 id: workflow                             # the pack's id; roles load as workflow:<role>
 version: "1.2.0"                         # the pack's version; its release tag is v1.2.0
@@ -83,3 +94,46 @@ documents:                               # the document kinds this pack declares
     stamp: {}                            # nothing stamped
     task_field: null                     # it belongs to no one task
 protected: ["work/protocols/**"]         # paths an agent changes only with a grant
+roles:                                   # the roles this pack declares, each an agents/<name>.md
+  - name: orchestrator                   # the person's own session plays it
+    kind: lead                           # it may call helpers and leads
+    session: true                        # the person's session: no budget, never a subagent
+    writes: true                         # it may change files
+    max_turns: null                      # no backstop: it is no subagent
+    minutes:                             # minutes: none for the person's session
+      default: null                      # no limit
+      max: null                          # no limit
+    actions:                             # tool calls: none for the person's session
+      default: null                      # no limit
+      max: null                          # no limit
+    red_runs:                            # failed climbs in a row: none
+      default: null                      # no limit
+      max: null                          # no limit
+  - name: builder                        # one task in its own worktree
+    kind: lead                           # it may call helpers
+    session: false                       # a subagent or a named session
+    writes: true                         # it builds
+    max_turns: 2400                      # four times its default actions: a backstop, never the limit
+    minutes:                             # minutes since its first call or its newest brief
+      default: 180                       # what a brief that names none gives it
+      max: 180                           # the most a brief may give it; a project may raise it
+    actions:                             # tool calls from the same start
+      default: 600                       # its default
+      max: 600                           # its max
+    red_runs:                            # failed climbs in a row
+      default: 4                         # it stops and reports blocked at the fourth
+      max: 4                             # its max
+  - name: auditor                        # one scoped question about code or documents
+    kind: helper                         # it calls no one
+    session: false                       # a subagent
+    writes: false                        # it changes nothing
+    max_turns: 600                       # four times its default actions
+    minutes:                             # minutes since its first call or its newest brief
+      default: 30                        # its default
+      max: 30                            # its max
+    actions:                             # tool calls from the same start
+      default: 150                       # its default
+      max: 150                           # its max
+    red_runs:                            # it runs no ladder
+      default: null                      # no limit
+      max: null                          # no limit

@@ -23,6 +23,7 @@ type Workspace struct {
 	Ratchets      schema.Object   `json:"ratchets"` // a count's name to its floor (a number)
 	CIMarkedTests []string        `json:"ci_marked_tests"`
 	Generated     Generated       `json:"generated"`
+	Messages      *Thresholds     `json:"messages"` // set 8: the thresholds of bonsai messages' flags, or null for the defaults
 	Extra         schema.Object   `json:"-"`
 }
 
@@ -32,6 +33,7 @@ type WorkspacePack struct {
 	Source string        `json:"source"`
 	Path   *string       `json:"path"` // the pack's folder in its repository, or null for the root
 	Ref    string        `json:"ref"`
+	Roles  schema.Object `json:"roles"` // set 8: this project's limits for the pack's roles, role name to limits, or null
 	Extra  schema.Object `json:"-"`
 }
 
@@ -69,7 +71,17 @@ type Generated struct {
 	Ladder   Keep          `json:"ladder"`
 	Run      Keep          `json:"run"`
 	Sessions Keep          `json:"sessions"`
+	Messages Keep          `json:"messages"` // set 8
+	Agents   Keep          `json:"agents"`   // set 8
 	Extra    schema.Object `json:"-"`
+}
+
+// Thresholds are bonsai.yaml's messages (set 8): the thresholds of bonsai messages' flags, each nil for its default
+// (MessageThresholds).
+type Thresholds struct {
+	UnansweredMinutes *int64        `json:"unanswered_minutes"`
+	CirclingBriefs    *int64        `json:"circling_briefs"`
+	Extra             schema.Object `json:"-"`
 }
 
 // Keep is one kind's cleaning rule: null keeps.

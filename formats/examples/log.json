@@ -29,5 +29,7 @@
   "labels": {},
   "remote": null,
   "bonsai_path": null,
-  "bonsai_sha256": null
+  "bonsai_sha256": null,
+  "parent": null,
+  "usage": null
 }

@@ -1,4 +1,4 @@
-// Package format holds a Go type for each of Bonsai's twenty-one formats (contract §2; formats sets 4 to 6), held to the
+// Package format holds a Go type for each of Bonsai's twenty-five formats (contract §2; formats sets 4 to 8), held to the
 // format's schema in formats/schemas, embedded by package formats: the schemas are the one home of every field and
 // of every closed list, and this package keeps no second copy of either.
 //
@@ -102,6 +102,7 @@ const (
 	nextLadder     = "run the ladder again to write a new result (bonsai check --schema %s lists every field)"
 	nextOutput     = "run the command again with --json: Bonsai's writer never prints that document (bonsai check --schema %s lists every field)"
 	nextLock       = "restore .bonsai/lock.json from git (git checkout -- .bonsai/lock.json); the lock is Bonsai's to write"
+	nextMessage    = "leave the file as it is: only bonsai message writes one; write a new message with it if one is needed (bonsai check --schema %s lists every field)"
 )
 
 // errorCode is the error object's code in the formats that carry it as their error field: the open list of
@@ -109,8 +110,8 @@ const (
 var errorCode = []List{{Field: "error.code", Table: "format.ErrorWords", Words: &ErrorWords}}
 
 // All is every format, in formats.Names' order (the ten of contract §2, the eight of set 4, set 5's help, then set 6's
-// asks and logs, then set 7's climb). Its test holds it to formats.Names and to the schemas, so a schema with no entry here, or an entry
-// with no schema, fails.
+// asks and logs, then set 7's climb, then set 8's message, messages and agents). Its test holds it to formats.Names and
+// to the schemas, so a schema with no entry here, or an entry with no schema, fails.
 //
 // To add a format: its schema in formats/ (a new set), its Go file here, and an entry below. To add an open list's
 // table (as the log's events and categories, set 6): the table beside its format's Go type, and a List in its entry.
@@ -146,6 +147,9 @@ var All = []*Format{
 			{Field: "findings[].code", Table: "format.PackCheckWords", Words: &PackCheckWords},
 			{Field: "warnings[].code", Table: "format.CheckWords", Words: &CheckWords},
 			{Field: "warnings[].code", Table: "format.LadderCheckWords", Words: &LadderCheckWords},
+			{Field: "findings[].code", Table: "format.RoleCheckWords", Words: &RoleCheckWords},
+			{Field: "warnings[].code", Table: "format.MessageCheckWords", Words: &MessageCheckWords},
+			{Field: "findings[].code", Table: "format.PackRoleCheckWords", Words: &PackRoleCheckWords},
 		}, errorCode...)},
 	{Name: "changes", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Changes", Next: nextOutput, Lists: errorCode},
 	{Name: "help", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Help", Next: nextOutput,
@@ -153,6 +157,10 @@ var All = []*Format{
 	{Name: "asks", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Asks", Next: nextOutput, Lists: errorCode},
 	{Name: "logs", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Logs", Next: nextOutput, Lists: errorCode},
 	{Name: "climb", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Climb", Next: nextOutput, Lists: errorCode},
+	{Name: "message", Major: 1, Shape: Markdown, Writes: true, GoType: "format.Message", Next: nextMessage},
+	{Name: "messages", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Messages", Next: nextOutput,
+		Lists: append([]List{{Field: "threads[].flags", Table: "format.MessageFlags", Words: &MessageFlags}}, errorCode...)},
+	{Name: "agents", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Agents", Next: nextOutput, Lists: errorCode},
 }
 
 // Lookup finds a format by its short name ("task"), its name ("bonsai.task") or its name and major

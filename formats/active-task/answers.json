@@ -44,6 +44,12 @@
       "why": null
     },
     {
+      "case": "named-garbage",
+      "id": null,
+      "how": null,
+      "why": "named-broken"
+    },
+    {
       "case": "named-missing",
       "id": null,
       "how": null,
@@ -128,6 +134,10 @@
       "grants": "T-0901"
     },
     {
+      "case": "named-garbage",
+      "grants": null
+    },
+    {
       "case": "named-missing",
       "grants": null
     },
@@ -192,6 +202,10 @@
     {
       "case": "named-env",
       "grants": "T-0901"
+    },
+    {
+      "case": "named-garbage",
+      "grants": null
     },
     {
       "case": "named-missing",
@@ -272,6 +286,12 @@
       "engages": true,
       "task": "ok",
       "ladder": "main/.bonsai/local/ladder/T-0901.json"
+    },
+    {
+      "case": "named-garbage",
+      "engages": true,
+      "task": "blocks",
+      "ladder": null
     },
     {
       "case": "named-missing",

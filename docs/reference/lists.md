@@ -17,11 +17,18 @@ error words.
 - Check words
 - Check words about the ladder's shape
 - Check --pack words
+- Check words about the roles' limits
+- Check words about messages
+- Check --pack words about roles and deny rules
 - Check words later steps build
 - Rung statuses
 - Tests forms
 - Test files by tests form
 - Git integrity findings
+- Message flags
+- Message thresholds
+- Role limits
+- Fixed helper limits
 - Ask types
 - Active task: reasons there is none
 - Generated kinds
@@ -58,7 +65,9 @@ error words.
 - Status: a pack's state
 - Status: status_writes
 - Active task: how it was found
+- Status: where a role's limit came from
 - Lock file kinds
+- Role kinds
 - Sessions: a row's kind
 - Sessions: an hours row's kind
 - Memory kinds
@@ -67,6 +76,9 @@ error words.
 - Changes: a settings line's change
 - Changes: a code item's change
 - Asks: an ask's state
+- Message kinds
+- Message statuses
+- Messages: a thread's state
 
 ## Exit codes
 
@@ -135,6 +147,12 @@ error words.
 | `main-not-verified` | person | the project's main checkout is not verified on this machine, or it is not on the workspace's base branch this machine recorded for it, so no result can be written where the stop gate reads it, and nothing was run (exit 4); the person's step is bonsai update in the main checkout, or switching it back to its base branch (contract section 13; the guard's rule of the same name) |
 | `config-uncommitted` | person | the main checkout's bonsai.yaml differs from the one committed at its HEAD, or its HEAD holds none: the ladder reads its rungs, floor, ratchets and ci_marked_tests from the committed one only, so nothing was run (exit 4); the person's step is to commit the change in the main checkout or revert it |
 | `config-looser` | person | the main checkout's bonsai.yaml, as committed at its HEAD, sets the checks looser than the settings this machine last accepted for the workspace (a rung out of the floor or the ladder, a rung's check changed, a ratchet's floor lowered, a CI mark added, a path out of protected, person_only or never_edit, a document moved; the message names each), or this machine's record holds none yet: nothing was run (exit 4); the person's step is bonsai update in the main checkout, which records them as accepted, or a commit that puts the settings back |
+| `role-not-declared` | agent | bonsai message's --from or --to names a role the lock does not declare, in a project whose linked packs declare roles: the message names the declared roles, and nothing was written (exit 2) |
+| `budget-over-max` | agent | a brief's --budget gives a limit above that limit's max in force for its recipient's role (bonsai.yaml's, else the pack's): the message names the max, and nothing was written (exit 2); a person may raise the max in bonsai.yaml |
+| `report-no-status` | agent | bonsai message --kind report was given no --status (done, blocked or needs-input): nothing was written (exit 2) |
+| `report-not-in-thread` | agent | a report names a thread that holds no brief to its --from, or a --to that is not that brief's from (only a brief's own writer may close its dropped thread, blocked, to the brief's to): nothing was written (exit 4) |
+| `pointer-missing` | agent | a --pointer names a file that does not exist, or one outside the project and the home: nothing was written (exit 2) |
+| `message-not-found` | agent | bonsai message --show, --thread or --reply-to names an id that no message under .bonsai/local/messages/ has: nothing was written or shown (exit 4) |
 | `partly-written` | agent | the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest |
 | `unexpected` | agent | something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats |
 
@@ -227,6 +245,44 @@ error words.
 | `pack-bash` | finding | agent | a hook command calls bash by name (spec section 3): a hook line in bonsai/pack.yaml, or a hook of the plugin itself |
 | `pack-runs` | finding | agent | a hook command in bonsai/pack.yaml names a file the pack writes (by its path in the project or its file name) that its runs does not list, so a change to that file would run unseen (step 5.1.1) |
 
+## Check words about the roles' limits
+
+- Open list.
+- Defined in: format.RoleCheckWords (internal/format/check.go).
+- Printed in a project by: `bonsai check --schema bonsai.check`.
+- The code of a finding about the limits a project sets for its packs' roles in bonsai.yaml (`packs[].roles`; set 8, the checks step 5.5.0's), in the same open list as the check words above; who is who usually takes the next step.
+
+| Word | Kind | Who | Machine | Means |
+|---|---|---|---|---|
+| `role-undeclared` | finding | agent | - | bonsai.yaml sets a limit under a pack's roles for a role that pack does not declare: the finding names the pack's roles |
+| `role-default-over-max` | finding | agent | - | a role's limit in force has its default above its max (bonsai.yaml's or the pack's): the max then holds, and the finding names both |
+| `role-actions-over-turns` | finding | agent | - | a role's max of actions in force is above the role's max_turns, so Claude Code would stop the agent before the guard's budget does: lower the max, or move to a pack whose role allows more |
+
+## Check words about messages
+
+- Open list.
+- Defined in: format.MessageCheckWords (internal/format/check.go).
+- Printed in a project by: `bonsai check --schema bonsai.check`.
+- The code of a warning about the messages between agents in `.bonsai/local/messages/` (set 8, the check step 5.5.10's), in the same open list; a warning never changes the exit code.
+
+| Word | Kind | Who | Machine | Means |
+|---|---|---|---|---|
+| `message-malformed` | warning | agent | yes | a message file under .bonsai/local/messages/ does not read as bonsai.message/1 (its frontmatter, a field, a report with no status, a newer major): the warning names the file and why, and bonsai messages lists it as malformed |
+
+## Check --pack words about roles and deny rules
+
+- Open list.
+- Defined in: format.PackRoleCheckWords (internal/format/check.go).
+- Printed in a project by: `bonsai check --schema bonsai.check`.
+- The code of a finding from `bonsai check --pack <folder>` about a pack's roles against its `agents/` folder and the form of its deny rules (set 8, the rules step 5.5.0's); every one is a finding.
+
+| Word | Kind | Who | Means |
+|---|---|---|---|
+| `pack-role-file` | finding | agent | a role bonsai/pack.yaml declares has no agents/<name>.md in the plugin |
+| `pack-role-undeclared` | finding | agent | a file in the plugin's agents/ folder is not a role bonsai/pack.yaml declares |
+| `pack-role-turns` | finding | agent | a role file's maxTurns is not the max_turns bonsai/pack.yaml declares for it (missing on one side, or another number) |
+| `pack-deny-relative` | finding | agent | a deny rule in bonsai/pack.yaml on a project path is written without its leading / or //, so it would not hold after a shell cd (step 5.3.5): the finding names the form that holds |
+
 ## Check words later steps build
 
 - Closed list.
@@ -302,6 +358,58 @@ error words.
 | `untracked-gitignore` | a file or folder present that git ignores by a .gitignore git does not track (one that ignores itself too), so git status does not show it: it hides a change, and the run counts as dirty |
 | `filter-local` | the repository's own git config defines a filter driver (filter.<name>.clean, smudge or process), which can change what git compares, so git status may not show a change |
 
+## Message flags
+
+- Open list.
+- Defined in: format.MessageFlags (internal/format/message.go).
+- Printed in a project by: `bonsai check --schema bonsai.messages`.
+- What `bonsai messages` noticed about a thread, in `threads[].flags` (set 8); it reports and never acts, and a reader shows a word it does not know as other.
+
+| Word | Means |
+|---|---|
+| `unanswered` | a brief with no report after it, whose recipient's agent has stopped or has made no call for the threshold's minutes (messages.unanswered_minutes in bonsai.yaml, default 60); until Bonsai reads the agents' state (step 5.5.11), a brief that old with no report |
+| `circling` | the same two addresses have exchanged more briefs each way in the thread than the threshold (messages.circling_briefs in bonsai.yaml, default 3) |
+| `budget-spent` | the agent tied to the thread's newest brief is past its budget, as the guard recorded it |
+| `malformed` | a message file of the thread does not read as bonsai.message/1: it is listed under malformed, and check warns (message-malformed) |
+
+## Message thresholds
+
+- Closed list.
+- Defined in: format.MessageThresholds (internal/format/message.go), held to bonsai.workspace/1's `messages` properties.
+- Printed in a project by: `bonsai check --schema bonsai.messages` (with the flags).
+- The thresholds two flags are judged by, each with its default; a project sets its own under `messages` in bonsai.yaml, any time (never a check, so never a loosening).
+
+| Setting | Flag | Default | Means |
+|---|---|---|---|
+| `unanswered_minutes` | `unanswered` | 60 | the minutes a brief may go with no report after it, once its recipient's agent has stopped or made no call for that long, before it is flagged unanswered |
+| `circling_briefs` | `circling` | 3 | how many briefs each way between the same two addresses one thread may hold before it is flagged circling |
+
+## Role limits
+
+- Closed list.
+- Defined in: format.RoleLimits (internal/format/agents.go), held to every schema that lists them.
+- Printed in a project by: `bonsai check --schema bonsai.pack` (roles[]), `bonsai check --schema bonsai.workspace` (packs[].roles).
+- The three limits of a role (set 8): pack.yaml gives each a default and a max, bonsai.yaml may set its own, a brief any value up to the max in force; each a whole number, or null for none.
+
+| Word | Means |
+|---|---|
+| `minutes` | minutes since the agent's first call, or since it tied its newest brief: its thinking before its first call is not counted, time idle between calls is |
+| `actions` | tool calls the agent makes, refused ones counted, from the same start |
+| `red_runs` | failed ladder runs in a row, read from each climb's own result: a green climb sets the count back to 0, a new brief does not |
+
+## Fixed helper limits
+
+- Closed list.
+- Defined in: format.HelperLimits (internal/format/agents.go).
+- Printed in a project by: none.
+- Bonsai's own limits for an agent of a type no linked pack declares, where no linked pack declares a helper either (set 8); where one does, such an agent runs on the limits of the declared helper with the smallest default actions.
+
+| Limit | Default | Max |
+|---|---|---|
+| `minutes` | 30 | 30 |
+| `actions` | 150 | 150 |
+| `red_runs` | none | none |
+
 ## Ask types
 
 - Open list.
@@ -348,6 +456,8 @@ error words.
 | `ladder` | .bonsai/local/ladder/ | ladder results, one per task | the ladder runner (step 5.4), one file per task | 7 days after the result's finished | the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done) | at a session's end, and by the ladder runner after each run | yes |
 | `run` | the run reports' folder (documents.run) | run reports, committed history | the agent that did the work, in the run report format | kept | any, by Bonsai: past a rule, bonsai check lists them and a person deletes them | never, by Bonsai | yes |
 | `sessions` | .bonsai/sessions.md | rows of the sessions table | bonsai check --write, from the log | kept | rows of a task that is not done or cut (none is never protected), and rows whose span is still in the log (the next write would add them again) | in bonsai check --write, the only writer of the table | yes |
+| `messages` | .bonsai/local/messages/ | messages between agents (set 8) | bonsai message (step 5.5.10), one file per message, one folder per recipient, created new and never overwritten | 30 days after a thread's last message | an open thread (a brief with no report after it), whatever its age: it stays listed until a report answers it | at a session's end, with the log, within the same budget (step 5.5.10) | yes |
+| `agents` | .bonsai/local/agents/ | each agent's state (set 8) | the guard (step 5.5.11): one folder per session, one file per agent with one line a call, and a tie file per brief | 30 days after a session folder's last line | a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept | at a session's end, with the log, within the same budget (step 5.5.11) | yes |
 | `tasks` | .bonsai/tasks.md | the tasks table | bonsai check --write, from the task files | a rebuild: nothing to clean | - | never: the table is rebuilt whole | no |
 
 ## Bonsai's document kinds
@@ -492,6 +602,9 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `ask` | an ask was filed, resolved or answered; the target is its key and the kind its op |
 | `event` | an outside event, written by bonsai log append with its labels (contract section 8.4) |
 | `clean` | a generated file Bonsai deleted; the target is its project-relative path and the reason the rule that cleaned it (contract section 8.5) |
+| `message` | a message between agents was written by bonsai message (set 8, bonsai.message/1); the target is its id, the text its kind, its recipient and a report's status, and the task its task, so who said what survives a cleaned file |
+| `spawn` | an agent was started (set 8; Claude Code only): the subagent's id and type, its parent (the agent that started it, or session for the person's own session) and the tool_use_id of the call that started it, so the tree of agents survives a cleaned state file |
+| `usage` | an agent's token counts at its end (set 8; Claude Code only): one record for each model in its transcript, its totals over the whole transcript in usage and the model in model; kind unknown with its reason when the transcript could not be read |
 
 ## Log categories
 
@@ -824,6 +937,14 @@ Values: `agents`, `command`, `null`.
 
 Values: `named`, `running`, `null`.
 
+## Status: where a role's limit came from
+
+- Closed list.
+- Defined in: formats/schemas/status.schema.json (`roles[].minutes.default_from`).
+- Printed in a project by: `bonsai check --schema bonsai.status`.
+
+Values: `pack`, `bonsai.yaml`.
+
 ## Lock file kinds
 
 - Closed list.
@@ -831,6 +952,14 @@ Values: `named`, `running`, `null`.
 - Printed in a project by: `bonsai check --schema bonsai.lock`.
 
 Values: `pack`, `once`, `block`, `keys`, `kept`.
+
+## Role kinds
+
+- Closed list.
+- Defined in: formats/schemas/pack.schema.json (`roles[].kind`).
+- Printed in a project by: `bonsai check --schema bonsai.pack`.
+
+Values: `lead`, `helper`.
 
 ## Sessions: a row's kind
 
@@ -895,3 +1024,27 @@ Values: `add`, `change`, `remove`.
 - Printed in a project by: `bonsai check --schema bonsai.asks`.
 
 Values: `open`, `answered`, `resolved`.
+
+## Message kinds
+
+- Closed list.
+- Defined in: formats/schemas/message.schema.json (`kind`).
+- Printed in a project by: `bonsai check --schema bonsai.message`.
+
+Values: `brief`, `report`.
+
+## Message statuses
+
+- Closed list.
+- Defined in: formats/schemas/message.schema.json (`status`).
+- Printed in a project by: `bonsai check --schema bonsai.message`.
+
+Values: `done`, `blocked`, `needs-input`, `null`.
+
+## Messages: a thread's state
+
+- Closed list.
+- Defined in: formats/schemas/messages.schema.json (`threads[].state`).
+- Printed in a project by: `bonsai check --schema bonsai.messages`.
+
+Values: `open`, `answered`.

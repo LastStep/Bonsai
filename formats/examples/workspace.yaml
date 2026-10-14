@@ -9,10 +9,16 @@ packs:                                # the packs this project uses, applied in 
     source: "https://example.com/packs/bonsai.git"   # the git repo the pack comes from
     path: packs/base                  # the pack's folder inside that repo
     ref: base-v1.0.0                  # the release tag; change it and run bonsai update to take a new release
+    roles: null                       # null: the pack's limits for its roles
   - id: workflow                      # roles, lanes, protocols and templates
     source: "https://example.com/packs/workflow.git" # its own repo
     path: null                        # null: the pack is the whole repo
     ref: v1.2.0                       # its release tag
+    roles:                            # this project's limits for the pack's roles, changed any time
+      builder:                        # a role the pack declares
+        minutes:                      # minutes since its first call or its newest brief
+          default: 240                # what a brief that names none gives it
+          max: 480                    # the most a brief may give it
 documents:                            # where this project keeps the documents Bonsai knows
   task: work/tasks                    # one file per task
   run: work/runs                      # one run report per agent session
@@ -80,3 +86,10 @@ generated:                            # how long generated files are kept, per k
   sessions:                           # rows of .bonsai/sessions.md
     keep_days: null                   # kept; if set, never the rows of a task not done or cut, nor rows still in the log
     keep_newest: null                 # kept
+  messages:                           # messages between agents, in .bonsai/local/messages/
+    keep_days: 30                     # a thread goes 30 days after its last message; never an open one
+    keep_newest: null                 # no limit on how many are kept
+  agents:                             # each agent's state, in .bonsai/local/agents/
+    keep_days: 30                     # a session's folder goes 30 days after its last line, never before its log
+    keep_newest: null                 # no limit on how many are kept
+messages: null                        # null: Bonsai's thresholds for bonsai messages' flags

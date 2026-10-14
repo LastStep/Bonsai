@@ -89,8 +89,9 @@ func TestLogListsHaveOneHome(t *testing.T) {
 	}
 	check("event", LogEvents, []string{"session_start", "session_end", "tool_start", "tool_end", "tool_fail", "subagent_start", "subagent_stop"})
 	check("category", LogCategories, []string{"Search", "Shell", "Ladder", "MCP", "Agent", "Web", "Other"})
-	if len(LogEvents) != 16 || len(LogCategories) != 10 {
-		t.Errorf("contract section 8.2 has sixteen events and ten categories, the tables %d and %d", len(LogEvents), len(LogCategories))
+	if len(LogEvents) != 19 || len(LogCategories) != 10 {
+		t.Errorf("contract section 8.2 has nineteen events (set 8 added message, spawn and usage) and ten categories, "+
+			"the tables %d and %d", len(LogEvents), len(LogCategories))
 	}
 }
 

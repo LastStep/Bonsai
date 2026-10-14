@@ -27,8 +27,38 @@ type Status struct {
 	Problems      []string         `json:"problems"`
 	Checks        schema.Object    `json:"checks"` // with --full only: typed open
 	Error         *ErrorObject     `json:"error"`
-	Ladder        *StatusLadder    `json:"ladder"` // the active task's last ladder result, or null (set 7; the ladder runner fills it)
+	Ladder        *StatusLadder    `json:"ladder"`   // the active task's last ladder result, or null (set 7; the ladder runner fills it)
+	Roles         []StatusRole     `json:"roles"`    // the roles in force, or null (set 8; step 5.5.0 fills it)
+	Messages      *StatusMessages  `json:"messages"` // the messages between agents, counted, or null (set 8; step 5.5.10 fills it)
 	Extra         schema.Object    `json:"-"`
+}
+
+// StatusRole is one role the linked packs declare, with each limit in force (set 8).
+type StatusRole struct {
+	Pack    string        `json:"pack"`
+	Name    string        `json:"name"`
+	Kind    string        `json:"kind"` // lead or helper
+	Writes  bool          `json:"writes"`
+	Minutes StatusLimit   `json:"minutes"`
+	Actions StatusLimit   `json:"actions"`
+	RedRuns StatusLimit   `json:"red_runs"`
+	Extra   schema.Object `json:"-"`
+}
+
+// StatusLimit is one limit in force: its default and its max, each with where it came from (pack or bonsai.yaml).
+type StatusLimit struct {
+	Default     *int64        `json:"default"`
+	DefaultFrom string        `json:"default_from"`
+	Max         *int64        `json:"max"`
+	MaxFrom     string        `json:"max_from"`
+	Extra       schema.Object `json:"-"`
+}
+
+// StatusMessages counts the messages between agents (set 8): open threads, and threads bonsai messages flags.
+type StatusMessages struct {
+	Open    int64         `json:"open"`
+	Flagged int64         `json:"flagged"`
+	Extra   schema.Object `json:"-"`
 }
 
 // StatusLadder is the active task's last ladder result at a glance (set 7): where its proof stands, without running

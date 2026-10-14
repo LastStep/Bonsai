@@ -24,7 +24,7 @@ var goTypes = map[string]any{
 	"task": Task{}, "labels": Labels{}, "lanes": Lanes{}, "run": Run{}, "state": State{}, "log": Log{}, "ask": Ask{},
 	"ladder": Ladder{}, "status": Status{}, "workspace": Workspace{}, "pack": Pack{}, "tasks": Tasks{},
 	"sessions": Sessions{}, "memory": Memory{}, "error": ErrorObject{}, "check": Check{}, "changes": Changes{}, "help": Help{},
-	"asks": Asks{}, "logs": Logs{}, "climb": Climb{},
+	"asks": Asks{}, "logs": Logs{}, "climb": Climb{}, "message": Message{}, "messages": Messages{}, "agents": Agents{},
 }
 
 // readers read each format's example source into its Go type.
@@ -50,6 +50,9 @@ var readers = map[string]func([]byte) (any, error){
 	"asks":      func(b []byte) (any, error) { return ReadAsks(b) },
 	"logs":      func(b []byte) (any, error) { return ReadLogs(b) },
 	"climb":     func(b []byte) (any, error) { return ReadClimb(b) },
+	"message":   func(b []byte) (any, error) { return ReadMessage(b) },
+	"messages":  func(b []byte) (any, error) { return ReadMessages(b) },
+	"agents":    func(b []byte) (any, error) { return ReadAgents(b) },
 }
 
 func example(t *testing.T, file string) []byte {
@@ -177,6 +180,9 @@ func TestWritersWriteTheExamples(t *testing.T) {
 				out, err = x.Encode()
 			case *Sessions:
 				out, err = x.Encode()
+			case *Message:
+				// A message's file (set 8): its frontmatter and its body, the trust line never written.
+				out, err = x.EncodeFile()
 			case *Workspace:
 				// bonsai.yaml's comments are init's template (step 5.1.5): the writer is held to the value.
 				out, err = x.EncodeYAML(nil)
@@ -259,7 +265,7 @@ func TestKeepsAnUnknownField(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.HasSuffix(out, []byte(`"bonsai_sha256":null,"newer":{"b":1.50,"a":[true]}}`+"\n")) {
+	if !bytes.HasSuffix(out, []byte(`"bonsai_sha256":null,"parent":null,"usage":null,"newer":{"b":1.50,"a":[true]}}`+"\n")) {
 		t.Errorf("the unknown field is not kept, value for value, after the known ones: %s", out)
 	}
 	ws, err := ReadWorkspace([]byte("format: bonsai.workspace/1\nid: ws-7kq2m4xw5r3t6y2u7p4a5c3e2b\nname: x\nlater: [1, 2]\n" +

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.log/1",
-  "description": "The log record (contract §8.1): one JSON line, at most 2,048 bytes, per thing an agent did or Bonsai recorded (a tool call, a guard decision, a ladder result, an ask, an outside event, a cleaned file). Records are appended whole to the main checkout's .bonsai/local/log/ (s-<session>.ndjson per session, w-<YYYY-MM-DD>.ndjson outside one), never committed, redacted as written. Written by Bonsai's recorder (the hooks) and its own commands; read by bonsai logs and the studio's forwarder (Bonsai has no screens of its own). A writer writes every field below, in this order, null where it does not apply (contract §2.2, §2.5); a reader treats a missing field as null, keeps an unknown one, and refuses a duplicate key. The last two fields, bonsai_path and bonsai_sha256, name the bonsai binary that wrote a session's records (spec §16 row 27); they are the names the guard has written since part 5, added to the schema in set 6.",
+  "description": "The log record (contract §8.1): one JSON line, at most 2,048 bytes, per thing an agent did or Bonsai recorded (a tool call, a guard decision, a ladder result, an ask, an outside event, a cleaned file, a message between agents, an agent started, an agent's token counts). Records are appended whole to the main checkout's .bonsai/local/log/ (s-<session>.ndjson per session, w-<YYYY-MM-DD>.ndjson outside one), never committed, redacted as written. Written by Bonsai's recorder (the hooks) and its own commands; read by bonsai logs and the studio's forwarder (Bonsai has no screens of its own). A writer writes every field below, in this order, null where it does not apply (contract §2.2, §2.5); a reader treats a missing field as null, keeps an unknown one, and refuses a duplicate key. The last two fields, bonsai_path and bonsai_sha256, name the bonsai binary that wrote a session's records (spec §16 row 27); they are the names the guard has written since part 5, added to the schema in set 6. Set 8 adds parent and usage after them, the last two: the agent that started a spawn record's agent, and a usage record's token counts.",
   "type": "object",
   "required": [
     "format",
@@ -34,7 +34,9 @@
     "labels",
     "remote",
     "bonsai_path",
-    "bonsai_sha256"
+    "bonsai_sha256",
+    "parent",
+    "usage"
   ],
   "properties": {
     "format": {
@@ -110,7 +112,7 @@
       "type": "string"
     },
     "subagent_id": {
-      "description": "Claude Code only: the subagent that acted, or null. Today's spool field: agent_id.",
+      "description": "Claude Code only: the subagent that acted, or null. Today's spool field: agent_id. On a spawn record, the agent started; on a usage record, the agent whose transcript was read (null for a session's own).",
       "examples": [
         "a1b2c3d4",
         null
@@ -121,7 +123,7 @@
       ]
     },
     "subagent_type": {
-      "description": "Claude Code only: the subagent's type, or null. Today's spool field: agent_type.",
+      "description": "Claude Code only: the subagent's type, or null. Today's spool field: agent_type. On a spawn record, the type the agent was started as.",
       "examples": [
         "workflow:builder",
         null
@@ -132,7 +134,7 @@
       ]
     },
     "tool_use_id": {
-      "description": "Claude Code only: the tool call's id, pairing its start and end records; null when no tool call.",
+      "description": "Claude Code only: the tool call's id, pairing its start and end records; null when no tool call. On a spawn record, the Agent call that started the agent, the same as that call's guard record.",
       "examples": [
         "toolu_01ABCDEFGHJKMNPQRSTUVWXY",
         null
@@ -178,7 +180,7 @@
       ]
     },
     "task": {
-      "description": "The task the session's environment names (BONSAI_TASK), raw, as given and redacted like every free-text field; null when unset. For a ladder record, the result's task. The recorder decides nothing from it. Today's spool field: task_env.",
+      "description": "The task the session's environment names (BONSAI_TASK), raw, as given and redacted like every free-text field; null when unset. For a ladder record, the result's task. The recorder decides nothing from it. Today's spool field: task_env. For message, the message's task.",
       "examples": [
         "T-0901",
         null
@@ -222,7 +224,7 @@
       ]
     },
     "target": {
-      "description": "What the tool acted on, redacted, at most 200 characters; a path outside the checkout is null, never written. For session_start and subagent_start the active task the recorder found (contract §13), or null; for clean the project-relative path deleted; for ask the ask's key; for ladder the result's project-relative path.",
+      "description": "What the tool acted on, redacted, at most 200 characters; a path outside the checkout is null, never written. For session_start and subagent_start the active task the recorder found (contract §13), or null; for clean the project-relative path deleted; for ask the ask's key; for ladder the result's project-relative path. For message, the message's id (bonsai.message/1).",
       "examples": [
         "src/settings/theme.go",
         null
@@ -245,7 +247,7 @@
       ]
     },
     "kind": {
-      "description": "What kind of the event it is, or null: a prompt's user or task-notification; a failure's interrupt or error; a notice's type (Claude Code's notification type); for an ask record, its op (file, resolve or answer); for a ladder record, the result's mode (local or ci).",
+      "description": "What kind of the event it is, or null: a prompt's user or task-notification; a failure's interrupt or error; a notice's type (Claude Code's notification type); for an ask record, its op (file, resolve or answer); for a ladder record, the result's mode (local or ci). For a usage record, null when the transcript was read and unknown when it could not be (its reason in reason).",
       "examples": [
         "idle_prompt",
         null
@@ -256,7 +258,7 @@
       ]
     },
     "text": {
-      "description": "Short text, redacted, at most 300 characters: a notice's message, or an ask record's question, or for a ladder record sha256: and the result file's SHA-256 in hex; never the words of a prompt (a prompt record's text is null). null where it does not apply.",
+      "description": "Short text, redacted, at most 300 characters: a notice's message, or an ask record's question, or for a ladder record sha256: and the result file's SHA-256 in hex; never the words of a prompt (a prompt record's text is null). null where it does not apply. For message, its kind, its recipient's address and, for a report, its status.",
       "examples": [
         "Claude is waiting for your input",
         null
@@ -279,7 +281,7 @@
       ]
     },
     "model": {
-      "description": "As today: the session's model, as the agent names it, or null.",
+      "description": "As today: the session's model, as the agent names it, or null. For a usage record, the model whose token counts it holds, as the transcript names it.",
       "examples": [
         "claude-opus-5-5",
         null
@@ -290,7 +292,7 @@
       ]
     },
     "reason": {
-      "description": "As today: why a session ended (Claude Code's SessionEnd reason); for clean, the rule that cleaned the file (contract §8.2); or null.",
+      "description": "As today: why a session ended (Claude Code's SessionEnd reason); for clean, the rule that cleaned the file (contract §8.2); or null. For a usage record whose transcript could not be read (kind unknown), why.",
       "examples": [
         "prompt_input_exit",
         null
@@ -385,6 +387,78 @@
         "null"
       ],
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "parent": {
+      "description": "Claude Code only: on a spawn record, the agent that started this one: its subagent id, or session for the person's own session (and for an agent a Workflow script started, whose Workflow call only that session makes); null on every other record. With subagent_id and tool_use_id it rebuilds the tree of agents after their state files are cleaned (set 8).",
+      "examples": [
+        "session",
+        "a1b2c3d4",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "usage": {
+      "description": "Claude Code only: on a usage record, one model's token counts as Claude Code saved them in an agent's transcript at its end (a subagent's SubagentStop, a session's SessionEnd), each summed over the whole transcript as recorded: input, output, cache_read and cache_write, the model in model (set 8: raw counts, as decided on 14 Oct). Each record holds the whole transcript's totals at that end, never a difference from an earlier record, so a resumed agent's newest records are its whole; no cost and no estimate. Only the counts and the model are read, never any text. null on every other record, and on a usage record whose transcript could not be read (kind unknown, its reason in reason).",
+      "examples": [
+        {
+          "input": 10240,
+          "output": 2048,
+          "cache_read": 512000,
+          "cache_write": 30720
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "properties": {
+        "input": {
+          "description": "The input tokens Claude Code saved with each reply of the record's model, summed over the whole transcript.",
+          "examples": [
+            10240,
+            0
+          ],
+          "type": "integer",
+          "minimum": 0
+        },
+        "output": {
+          "description": "The output tokens Claude Code saved with each reply of the record's model, summed over the whole transcript.",
+          "examples": [
+            10240,
+            0
+          ],
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache_read": {
+          "description": "The tokens read from the cache Claude Code saved with each reply of the record's model, summed over the whole transcript.",
+          "examples": [
+            10240,
+            0
+          ],
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache_write": {
+          "description": "The tokens written to the cache Claude Code saved with each reply of the record's model, summed over the whole transcript.",
+          "examples": [
+            10240,
+            0
+          ],
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   }
 }

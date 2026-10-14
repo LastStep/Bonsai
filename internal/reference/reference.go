@@ -51,6 +51,15 @@ func Page() []byte {
 	p.section("Check --pack words", "open", "format.PackCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
 		"The code of a finding from `bonsai check --pack <folder>`; every one is a finding, and none appears in a project's check.")
 	p.words(format.PackCheckWords, "Kind", "Who")
+	p.section("Check words about the roles' limits", "open", "format.RoleCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
+		"The code of a finding about the limits a project sets for its packs' roles in bonsai.yaml (`packs[].roles`; set 8, the checks step 5.5.0's), in the same open list as the check words above; who is who usually takes the next step.")
+	p.words(format.RoleCheckWords, "Kind", "Who", "Machine")
+	p.section("Check words about messages", "open", "format.MessageCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
+		"The code of a warning about the messages between agents in `.bonsai/local/messages/` (set 8, the check step 5.5.10's), in the same open list; a warning never changes the exit code.")
+	p.words(format.MessageCheckWords, "Kind", "Who", "Machine")
+	p.section("Check --pack words about roles and deny rules", "open", "format.PackRoleCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
+		"The code of a finding from `bonsai check --pack <folder>` about a pack's roles against its `agents/` folder and the form of its deny rules (set 8, the rules step 5.5.0's); every one is a finding.")
+	p.words(format.PackRoleCheckWords, "Kind", "Who")
 	p.section("Check words later steps build", "closed", "engine.checkLater (internal/engine/check.go)", "none",
 		"Spec section 6's findings and warnings that are not built yet; each joins the check words above when its step lands.")
 	p.later()
@@ -66,6 +75,20 @@ func Page() []byte {
 	p.section("Git integrity findings", "open", "format.GitFindings (internal/format/ladder.go)", "`bonsai check --schema bonsai.ladder`",
 		"The names a `ver-git` rung gives what it found, as keys of the rung's `captures`; the rung informs a verifier and never turns red for one.")
 	p.words(format.GitFindings)
+	p.section("Message flags", "open", "format.MessageFlags (internal/format/message.go)", "`bonsai check --schema bonsai.messages`",
+		"What `bonsai messages` noticed about a thread, in `threads[].flags` (set 8); it reports and never acts, and a reader shows a word it does not know as other.")
+	p.words(format.MessageFlags)
+	p.section("Message thresholds", "closed", "format.MessageThresholds (internal/format/message.go), held to bonsai.workspace/1's `messages` properties",
+		"`bonsai check --schema bonsai.messages` (with the flags)",
+		"The thresholds two flags are judged by, each with its default; a project sets its own under `messages` in bonsai.yaml, any time (never a check, so never a loosening).")
+	p.thresholds()
+	p.section("Role limits", "closed", "format.RoleLimits (internal/format/agents.go), held to every schema that lists them",
+		"`bonsai check --schema bonsai.pack` (roles[]), `bonsai check --schema bonsai.workspace` (packs[].roles)",
+		"The three limits of a role (set 8): pack.yaml gives each a default and a max, bonsai.yaml may set its own, a brief any value up to the max in force; each a whole number, or null for none.")
+	p.words(format.RoleLimits)
+	p.section("Fixed helper limits", "closed", "format.HelperLimits (internal/format/agents.go)", "none",
+		"Bonsai's own limits for an agent of a type no linked pack declares, where no linked pack declares a helper either (set 8); where one does, such an agent runs on the limits of the declared helper with the smallest default actions.")
+	p.helperLimits()
 	p.section("Ask types", "open", "format.AskTypes (internal/format/ask.go), held to the ask schema's description of `type`",
 		"`bonsai check --schema bonsai.ask`", "A pack may define its own type (contract section 9.1).")
 	p.words(format.AskTypes)
@@ -208,6 +231,28 @@ func (p *page) words(ws []format.Word, extra ...string) {
 	}
 }
 
+func (p *page) thresholds() {
+	p.line("| Setting | Flag | Default | Means |")
+	p.line("|---|---|---|---|")
+	for _, t := range format.MessageThresholds {
+		p.line("| `%s` | `%s` | %d | %s |", t.Setting, t.Flag, t.Default, cell(t.Means))
+	}
+}
+
+func (p *page) helperLimits() {
+	p.line("| Limit | Default | Max |")
+	p.line("|---|---|---|")
+	num := func(n *int64) string {
+		if n == nil {
+			return "none"
+		}
+		return strconv.FormatInt(*n, 10)
+	}
+	for _, h := range format.HelperLimits {
+		p.line("| `%s` | %s | %s |", h.Limit, num(h.Default), num(h.Max))
+	}
+}
+
 func (p *page) testFiles() {
 	p.line("| Form | Patterns | Means |")
 	p.line("|---|---|---|")
@@ -343,6 +388,12 @@ var listNames = map[string]string{
 	"labels:labels[].items":      "Label items kinds",
 	"ask:verdict":                "Ask verdicts",
 	"asks:asks[].state":          "Asks: an ask's state",
+	// Set 8.
+	"message:kind":                        "Message kinds",
+	"message:status":                      "Message statuses",
+	"messages:threads[].state":            "Messages: a thread's state",
+	"pack:roles[].kind":                   "Role kinds",
+	"status:roles[].minutes.default_from": "Status: where a role's limit came from",
 }
 
 // skipped are the enums the page does not list again: a copy of a list shown at its home (the formats test holds each
@@ -365,6 +416,16 @@ var skipped = map[string]string{
 	"ask:answer.verdict":         "a copy of ask:verdict",
 	"asks:error.next.who":        "a copy of error:next.who",
 	"logs:error.next.who":        "a copy of error:next.who",
+	// Set 8.
+	"messages:error.next.who":              "a copy of error:next.who",
+	"agents:error.next.who":                "a copy of error:next.who",
+	"status:roles[].kind":                  "a copy of pack:roles[].kind",
+	"agents:agents[].report.status":        "message:status's list without null",
+	"status:roles[].minutes.max_from":      "a copy of status:roles[].minutes.default_from",
+	"status:roles[].actions.default_from":  "a copy of status:roles[].minutes.default_from",
+	"status:roles[].actions.max_from":      "a copy of status:roles[].minutes.default_from",
+	"status:roles[].red_runs.default_from": "a copy of status:roles[].minutes.default_from",
+	"status:roles[].red_runs.max_from":     "a copy of status:roles[].minutes.default_from",
 }
 
 type enum struct {

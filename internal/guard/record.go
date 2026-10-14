@@ -27,6 +27,9 @@ package guard
 // guard rarely hashes itself; it still does wherever no hook start made the file (a worktree session's first call
 // when the file is main's and new, a project without the start line, a payload with no session). The path is written
 // from ~/ under the user's home folder (contract §2.6: no user name in the log), else as it is, forward slashes.
+//
+// parent and usage (set 8) close the line: parent names the agent that started a spawn record's agent, null on every
+// other record; usage is a usage record's token counts, which the recorder writes and the guard never does, so null.
 
 import (
 	"fmt"
@@ -102,6 +105,7 @@ func line(l *format.Log) ([]byte, error) {
 		{Key: "reason", Value: orNull(l.Reason)}, {Key: "decision", Value: orNull(l.Decision)}, {Key: "rule", Value: orNull(l.Rule)},
 		{Key: "labels", Value: schema.Object{}}, {Key: "remote", Value: orNull(l.Remote)},
 		{Key: "bonsai_path", Value: orNull(l.BonsaiPath)}, {Key: "bonsai_sha256", Value: orNull(l.BonsaiSHA256)},
+		{Key: "parent", Value: orNull(l.Parent)}, {Key: "usage", Value: nil},
 	}
 	for i := 0; i < 64; i++ {
 		b, err := schema.EncodeLine(rec)

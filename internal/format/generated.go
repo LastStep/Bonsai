@@ -84,6 +84,16 @@ var GeneratedKinds = []GeneratedKind{
 		Writer: "bonsai check --write, from the log",
 		Never:  "rows of a task that is not done or cut (none is never protected), and rows whose span is still in the log (the next write would add them again)",
 		When:   "in bonsai check --write, the only writer of the table", Rule: true},
+	{Kind: "messages", Where: ".bonsai/local/messages/", What: "messages between agents (set 8)", KeepDays: days(30),
+		Writer: "bonsai message (step 5.5.10), one file per message, one folder per recipient, created new and never overwritten",
+		Age:    "after a thread's last message",
+		Never:  "an open thread (a brief with no report after it), whatever its age: it stays listed until a report answers it",
+		When:   "at a session's end, with the log, within the same budget (step 5.5.10)", Rule: true},
+	{Kind: "agents", Where: ".bonsai/local/agents/", What: "each agent's state (set 8)", KeepDays: days(30),
+		Writer: "the guard (step 5.5.11): one folder per session, one file per agent with one line a call, and a tie file per brief",
+		Age:    "after a session folder's last line",
+		Never:  "a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept",
+		When:   "at a session's end, with the log, within the same budget (step 5.5.11)", Rule: true},
 	{Kind: "tasks", Where: ".bonsai/tasks.md", What: "the tasks table",
 		Writer: "bonsai check --write, from the task files",
 		Never:  "-", When: "never: the table is rebuilt whole", Rule: false},
@@ -105,6 +115,10 @@ func DefaultGenerated() Generated {
 			g.Run = keep
 		case "sessions":
 			g.Sessions = keep
+		case "messages":
+			g.Messages = keep
+		case "agents":
+			g.Agents = keep
 		}
 	}
 	return g

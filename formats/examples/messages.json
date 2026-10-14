@@ -1,0 +1,87 @@
+{
+  "format": "bonsai.messages/1",
+  "workspace": {
+    "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+    "name": "example",
+    "root": "/srv/projects/example"
+  },
+  "threads": [
+    {
+      "id": "M-2026-10-16-3f9a01bc",
+      "task": "T-5510",
+      "from": "orchestrator",
+      "to": "builder@T-5510",
+      "state": "answered",
+      "last_at": "2026-10-16T11:40:07.250Z",
+      "flags": [],
+      "messages": [
+        {
+          "format": "bonsai.message/1",
+          "id": "M-2026-10-16-3f9a01bc",
+          "thread": "M-2026-10-16-3f9a01bc",
+          "reply_to": null,
+          "task": "T-5510",
+          "kind": "brief",
+          "from": "orchestrator",
+          "to": "builder@T-5510",
+          "status": null,
+          "budget": {
+            "minutes": 240,
+            "actions": null,
+            "red_runs": null
+          },
+          "pointers": [],
+          "created": "2026-10-16T09:12:00.000Z",
+          "labels": {}
+        },
+        {
+          "format": "bonsai.message/1",
+          "id": "M-2026-10-16-7c0d2e91",
+          "thread": "M-2026-10-16-3f9a01bc",
+          "reply_to": "M-2026-10-16-3f9a01bc",
+          "task": "T-5510",
+          "kind": "report",
+          "from": "builder@T-5510",
+          "to": "orchestrator",
+          "status": "blocked",
+          "budget": null,
+          "pointers": [
+            {
+              "path": "work/runs/R-2026-10-16-T-5510-dark-mode.md",
+              "sha256": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0"
+            }
+          ],
+          "created": "2026-10-16T11:40:07.250Z",
+          "labels": {}
+        }
+      ],
+      "recipient": {
+        "agent": "a1b2c3d4",
+        "counts": {
+          "minutes": 148,
+          "actions": 412,
+          "red_runs": 3
+        },
+        "limits": {
+          "minutes": {
+            "value": 240,
+            "max": 480
+          },
+          "actions": {
+            "value": 600,
+            "max": 600
+          },
+          "red_runs": {
+            "value": 4,
+            "max": 4
+          }
+        },
+        "spent": false
+      }
+    }
+  ],
+  "malformed": [],
+  "message": null,
+  "path": null,
+  "error": null
+}

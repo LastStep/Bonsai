@@ -31,3 +31,10 @@ generated:
   sessions:
     keep_days: null
     keep_newest: null
+  messages:
+    keep_days: 30
+    keep_newest: null
+  agents:
+    keep_days: 30
+    keep_newest: null
+messages: null

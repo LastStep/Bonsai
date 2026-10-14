@@ -23,6 +23,7 @@ type Pack struct {
 	Deny      []PackDeny     `json:"deny"`
 	Documents []PackDocument `json:"documents"`
 	Protected []string       `json:"protected"`
+	Roles     []PackRole     `json:"roles"` // set 8: the roles the pack declares, [] for none
 	Extra     schema.Object  `json:"-"`
 }
 
@@ -69,6 +70,28 @@ type PackDocument struct {
 	Stamp     schema.Object `json:"stamp"`
 	TaskField *string       `json:"task_field"`
 	Extra     schema.Object `json:"-"`
+}
+
+// PackRole is one role the pack declares (set 8; plan-5 step 5.5, "The six roles"): its name (its agents/<name>.md),
+// its kind, whether the person's own session plays it, whether it may change files, Claude Code's maxTurns backstop,
+// and its three limits (RoleLimits), each with a default and a max.
+type PackRole struct {
+	Name     string        `json:"name"`
+	Kind     string        `json:"kind"`    // the closed list: lead, helper
+	Session  bool          `json:"session"` // true only for the role the person's own session plays
+	Writes   bool          `json:"writes"`  // false: Claude's file tools are refused to it
+	MaxTurns *int64        `json:"max_turns"`
+	Minutes  RoleLimit     `json:"minutes"`
+	Actions  RoleLimit     `json:"actions"`
+	RedRuns  RoleLimit     `json:"red_runs"`
+	Extra    schema.Object `json:"-"`
+}
+
+// RoleLimit is one of a role's limits as pack.yaml declares it: its default and its max, nil for no limit.
+type RoleLimit struct {
+	Default *int64        `json:"default"`
+	Max     *int64        `json:"max"`
+	Extra   schema.Object `json:"-"`
 }
 
 // ReadPack reads a pack.yaml's bytes in full.

@@ -45,7 +45,7 @@
         ],
         "properties": {
           "code": {
-            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's tables of findings and warnings, which bonsai check --schema bonsai.check prints: CheckWords (a project's findings and warnings) and PackCheckWords (a pack's findings, under --pack). This schema does not copy them, and a reader shows a word it does not know as other.",
+            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's tables of findings and warnings, which bonsai check --schema bonsai.check prints: CheckWords (a project's findings and warnings), LadderCheckWords (the ladder's shape in bonsai.yaml), RoleCheckWords (the roles' limits in bonsai.yaml), MessageCheckWords (the messages between agents), PackCheckWords and PackRoleCheckWords (a pack's findings, under --pack). This schema does not copy them, and a reader shows a word it does not know as other.",
             "examples": [
               "changed",
               "plugin"
@@ -138,7 +138,7 @@
         ],
         "properties": {
           "code": {
-            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's tables of findings and warnings, which bonsai check --schema bonsai.check prints: CheckWords (a project's findings and warnings) and PackCheckWords (a pack's findings, under --pack). This schema does not copy them, and a reader shows a word it does not know as other.",
+            "description": "What it is, a fixed word: an open list. Its known words live in Bonsai's tables of findings and warnings, which bonsai check --schema bonsai.check prints: CheckWords (a project's findings and warnings), LadderCheckWords (the ladder's shape in bonsai.yaml), RoleCheckWords (the roles' limits in bonsai.yaml), MessageCheckWords (the messages between agents), PackCheckWords and PackRoleCheckWords (a pack's findings, under --pack). This schema does not copy them, and a reader shows a word it does not know as other.",
             "examples": [
               "changed",
               "plugin"

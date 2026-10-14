@@ -117,5 +117,35 @@
     "sha": "5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
     "finished": "2026-10-08T15:03:40.012Z",
     "stale": false
+  },
+  "roles": [
+    {
+      "pack": "workflow",
+      "name": "builder",
+      "kind": "lead",
+      "writes": true,
+      "minutes": {
+        "default": 240,
+        "default_from": "bonsai.yaml",
+        "max": 480,
+        "max_from": "bonsai.yaml"
+      },
+      "actions": {
+        "default": 600,
+        "default_from": "pack",
+        "max": 600,
+        "max_from": "pack"
+      },
+      "red_runs": {
+        "default": 4,
+        "default_from": "pack",
+        "max": 4,
+        "max_from": "pack"
+      }
+    }
+  ],
+  "messages": {
+    "open": 1,
+    "flagged": 0
   }
 }

@@ -92,7 +92,7 @@
             "pattern": "^[0-9a-f]{64}$"
           },
           "declares": {
-            "description": "What the pack declared at the locked commit, copied in so bonsai check runs in CI with no pack fetched (spec §6, §16 row 18): its kinds are the seven of format.DeclaresKeys (bonsai check --schema bonsai.lock prints them with the rest): lanes, documents, labels, protected, hooks, deny and needs, in that order, and a key a newer Bonsai adds is kept. Their inner layout is not fixed, so it is typed open (formats/README.md). {} for a pack that declares nothing; a lock written before step 5.1.6 has no needs, which reads as the pack needing nothing.",
+            "description": "What the pack declared at the locked commit, copied in so bonsai check runs in CI with no pack fetched (spec §6, §16 row 18): its kinds are the eight of format.DeclaresKeys (bonsai check --schema bonsai.lock prints them with the rest): lanes, documents, labels, protected, hooks, deny, needs and roles (set 8: pack.yaml's roles, each as bonsai.pack/1 writes it), in that order, and a key a newer Bonsai adds is kept. Their inner layout is not fixed, so it is typed open (formats/README.md). {} for a pack that declares nothing; a lock written before step 5.1.6 has no needs, which reads as the pack needing nothing, and one written before set 8 no roles, which reads as the pack declaring none.",
             "examples": [
               {},
               {

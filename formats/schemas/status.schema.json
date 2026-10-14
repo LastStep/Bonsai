@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.status/1",
-  "description": "bonsai status --json (contract §12): one workspace at a glance, for the studio's bridge and an assistant (Bonsai has no screens of its own: every visual is the studio's). Printed, never stored. Written by bonsai status --json (cheap and offline; --full adds checks); read by the studio's bridge and agents. Spec §16 row 24's additions arrive as values, not new fields: a pack not installed on this machine is a needs entry of kind plugin, the Claude Code floor a needs entry of kind tool (never a problem, warn only), plugin drift and a bonsai on the PATH that is not the installed one are problems; --line prints the statusline's workspace half instead of this document. A writer writes every field below, in this order (contract §2.2); when Bonsai cannot read the workspace at all it exits 3 and fills format, bonsai, problems and error, with every other field null. Absolute paths appear only here, printed locally, and the bridge never forwards them (contract §2.6). A reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "description": "bonsai status --json (contract §12): one workspace at a glance, for the studio's bridge and an assistant (Bonsai has no screens of its own: every visual is the studio's). Printed, never stored. Written by bonsai status --json (cheap and offline; --full adds checks); read by the studio's bridge and agents. Spec §16 row 24's additions arrive as values, not new fields: a pack not installed on this machine is a needs entry of kind plugin, the Claude Code floor a needs entry of kind tool (never a problem, warn only), plugin drift and a bonsai on the PATH that is not the installed one are problems; --line prints the statusline's workspace half instead of this document. A writer writes every field below, in this order (contract §2.2); when Bonsai cannot read the workspace at all it exits 3 and fills format, bonsai, problems and error, with every other field null. Absolute paths appear only here, printed locally, and the bridge never forwards them (contract §2.6). A reader treats a missing field as null, keeps an unknown one and refuses a duplicate key. Set 8 adds roles and then messages at the end: the roles in force, and the messages between agents counted.",
   "type": "object",
   "required": [
     "format",
@@ -24,7 +24,9 @@
     "problems",
     "checks",
     "error",
-    "ladder"
+    "ladder",
+    "roles",
+    "messages"
   ],
   "properties": {
     "format": {
@@ -995,6 +997,328 @@
             true
           ],
           "type": "boolean"
+        }
+      }
+    },
+    "roles": {
+      "description": "Each role the linked packs declare (set 8; from the lock's declares, and bonsai.yaml's packs[].roles as committed): its pack, name, kind and writes, and each of its three limits' default and max in force, with where each came from. [] when no linked pack declares a role; null on exit 3, and from a Bonsai that does not fill it yet (set 8 adds the field; step 5.5.0 its value).",
+      "examples": [
+        [
+          {
+            "pack": "workflow",
+            "name": "builder",
+            "kind": "lead",
+            "writes": true,
+            "minutes": {
+              "default": 240,
+              "default_from": "bonsai.yaml",
+              "max": 480,
+              "max_from": "bonsai.yaml"
+            },
+            "actions": {
+              "default": 600,
+              "default_from": "pack",
+              "max": 600,
+              "max_from": "pack"
+            },
+            "red_runs": {
+              "default": 4,
+              "default_from": "pack",
+              "max": 4,
+              "max_from": "pack"
+            }
+          }
+        ],
+        [],
+        null
+      ],
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "required": [
+          "pack",
+          "name",
+          "kind",
+          "writes",
+          "minutes",
+          "actions",
+          "red_runs"
+        ],
+        "properties": {
+          "pack": {
+            "description": "The id of the pack that declares the role.",
+            "examples": [
+              "workflow"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "name": {
+            "description": "The role's name, as its pack declares it (bonsai.pack/1's roles[].name).",
+            "examples": [
+              "builder"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "kind": {
+            "description": "lead or helper, as its pack declares it: bonsai.pack/1's closed list.",
+            "examples": [
+              "lead",
+              "helper"
+            ],
+            "enum": [
+              "lead",
+              "helper"
+            ]
+          },
+          "writes": {
+            "description": "false for a role that changes nothing, as its pack declares it.",
+            "examples": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "minutes": {
+            "description": "The minutes limit in force (minutes since the agent's first call, or since it tied its newest brief (its thinking before its first call is not counted; time idle between calls is)): its default and its max, each with where it came from; each a whole number, or null for no limit.",
+            "examples": [
+              {
+                "default": 240,
+                "default_from": "bonsai.yaml",
+                "max": 600,
+                "max_from": "pack"
+              }
+            ],
+            "type": "object",
+            "required": [
+              "default",
+              "default_from",
+              "max",
+              "max_from"
+            ],
+            "properties": {
+              "default": {
+                "description": "The default in force: what an agent of the role gets when its brief names none.",
+                "examples": [
+                  240,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "default_from": {
+                "description": "Where it came from: pack (the pack's pack.yaml, through the lock) or bonsai.yaml (the project's own, packs[].roles). A closed list.",
+                "examples": [
+                  "pack",
+                  "bonsai.yaml"
+                ],
+                "enum": [
+                  "pack",
+                  "bonsai.yaml"
+                ]
+              },
+              "max": {
+                "description": "The max in force: the most a brief may give.",
+                "examples": [
+                  600,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "max_from": {
+                "description": "Where it came from: pack (the pack's pack.yaml, through the lock) or bonsai.yaml (the project's own, packs[].roles). A closed list.",
+                "examples": [
+                  "pack",
+                  "bonsai.yaml"
+                ],
+                "enum": [
+                  "pack",
+                  "bonsai.yaml"
+                ]
+              }
+            }
+          },
+          "actions": {
+            "description": "The actions limit in force (tool calls the agent makes, refused ones counted, from the same start): its default and its max, each with where it came from; each a whole number, or null for no limit.",
+            "examples": [
+              {
+                "default": 240,
+                "default_from": "bonsai.yaml",
+                "max": 600,
+                "max_from": "pack"
+              }
+            ],
+            "type": "object",
+            "required": [
+              "default",
+              "default_from",
+              "max",
+              "max_from"
+            ],
+            "properties": {
+              "default": {
+                "description": "The default in force: what an agent of the role gets when its brief names none.",
+                "examples": [
+                  240,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "default_from": {
+                "description": "Where it came from: pack (the pack's pack.yaml, through the lock) or bonsai.yaml (the project's own, packs[].roles). A closed list.",
+                "examples": [
+                  "pack",
+                  "bonsai.yaml"
+                ],
+                "enum": [
+                  "pack",
+                  "bonsai.yaml"
+                ]
+              },
+              "max": {
+                "description": "The max in force: the most a brief may give.",
+                "examples": [
+                  600,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "max_from": {
+                "description": "Where it came from: pack (the pack's pack.yaml, through the lock) or bonsai.yaml (the project's own, packs[].roles). A closed list.",
+                "examples": [
+                  "pack",
+                  "bonsai.yaml"
+                ],
+                "enum": [
+                  "pack",
+                  "bonsai.yaml"
+                ]
+              }
+            }
+          },
+          "red_runs": {
+            "description": "The red_runs limit in force (failed ladder runs in a row (a green climb sets the count back to 0; a new brief does not)): its default and its max, each with where it came from; each a whole number, or null for no limit.",
+            "examples": [
+              {
+                "default": 240,
+                "default_from": "bonsai.yaml",
+                "max": 600,
+                "max_from": "pack"
+              }
+            ],
+            "type": "object",
+            "required": [
+              "default",
+              "default_from",
+              "max",
+              "max_from"
+            ],
+            "properties": {
+              "default": {
+                "description": "The default in force: what an agent of the role gets when its brief names none.",
+                "examples": [
+                  240,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "default_from": {
+                "description": "Where it came from: pack (the pack's pack.yaml, through the lock) or bonsai.yaml (the project's own, packs[].roles). A closed list.",
+                "examples": [
+                  "pack",
+                  "bonsai.yaml"
+                ],
+                "enum": [
+                  "pack",
+                  "bonsai.yaml"
+                ]
+              },
+              "max": {
+                "description": "The max in force: the most a brief may give.",
+                "examples": [
+                  600,
+                  null
+                ],
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "max_from": {
+                "description": "Where it came from: pack (the pack's pack.yaml, through the lock) or bonsai.yaml (the project's own, packs[].roles). A closed list.",
+                "examples": [
+                  "pack",
+                  "bonsai.yaml"
+                ],
+                "enum": [
+                  "pack",
+                  "bonsai.yaml"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "messages": {
+      "description": "The messages between agents, counted (set 8): open, the threads whose newest brief has no report, and flagged, the threads bonsai messages flags (bonsai.messages/1 lists them, and why). null on exit 3, and from a Bonsai that does not fill it yet (set 8 adds the field; step 5.5.10 its value).",
+      "examples": [
+        {
+          "open": 2,
+          "flagged": 1
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "open",
+        "flagged"
+      ],
+      "properties": {
+        "open": {
+          "description": "Threads whose newest brief has no report after it.",
+          "examples": [
+            2,
+            0
+          ],
+          "type": "integer",
+          "minimum": 0
+        },
+        "flagged": {
+          "description": "Threads with at least one flag.",
+          "examples": [
+            1,
+            0
+          ],
+          "type": "integer",
+          "minimum": 0
         }
       }
     }

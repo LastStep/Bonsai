@@ -496,13 +496,13 @@
       }
     },
     "leftovers": {
-      "description": "As today: what the end-of-run check found still running from this checkout, or why it could not tell. Today: an object ({checkout: [...], shared_deploy: [...], ms} or {unknown, ms}), a text (\"not checked (<platform>)\"), or absent (here null) when not checked (a --ci run). Typed open (formats/README.md).",
+      "description": "What the end-of-run check found still running from this checkout, or why it could not tell, as Bonsai's runner writes it: an object {checkout, ms}, checkout listing each process found ({pid, name, head}, head the command's start or null) and ms the check's time; an object {unknown, ms}, unknown saying why it could not tell; a text \"not checked (<why>)\"; or null when not checked (a --ci run, a nested climb). Typed open (formats/README.md). Today's studio runner also wrote shared_deploy, which a reader keeps as an unknown field.",
       "examples": [
         {
           "checkout": [],
-          "shared_deploy": [],
           "ms": 212
         },
+        "not checked (windows)",
         null
       ],
       "type": [
