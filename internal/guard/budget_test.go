@@ -42,12 +42,12 @@ func briefProject(t *testing.T) string {
 
 // tinyFrom is a call from a tiny helper.
 func tinyFrom(dir, id, tool string, input schema.Object) string {
-	return call{session: sessA, agentID: id, agentType: "workflow:tiny", tool: tool, input: input}.payload(dir)
+	return hookCall{session: sessA, agentID: id, agentType: "workflow:tiny", tool: tool, input: input}.payload(dir)
 }
 
 // start is the session's Agent call starting a tiny with a prompt.
 func start(dir, use, prompt string) string {
-	return call{session: sessA, tool: "Agent", use: use, input: in("subagent_type", "workflow:tiny", "prompt", prompt)}.payload(dir)
+	return hookCall{session: sessA, tool: "Agent", use: use, input: in("subagent_type", "workflow:tiny", "prompt", prompt)}.payload(dir)
 }
 
 func readOf(dir, rel string) schema.Object {
@@ -100,7 +100,7 @@ func TestTheBudgetOfActions(t *testing.T) {
 		t.Errorf("after the report: spent %v reported %v", st.Spent(), st.Reported())
 	}
 	// Re-briefed by a newer brief named in the SendMessage that resumes it: a fresh window of 5, working again.
-	wantAnswer(t, dir, call{session: sessA, tool: "SendMessage", input: in("to", "t1", "message", "Read "+b2+" and go on")}.payload(dir), 0, RuleCallAllowed)
+	wantAnswer(t, dir, hookCall{session: sessA, tool: "SendMessage", input: in("to", "t1", "message", "Read "+b2+" and go on")}.payload(dir), 0, RuleCallAllowed)
 	for i := 1; i <= 5; i++ {
 		wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, "free.txt")), 0, RuleOtherTool)
 	}
@@ -119,21 +119,21 @@ func TestTheBudgetOfActions(t *testing.T) {
 func TestNoAddressNoReport(t *testing.T) {
 	dir := briefProject(t)
 	for i := 1; i <= 3; i++ {
-		wantAnswer(t, dir, call{session: sessA, agentID: "x1", agentType: "Explore", tool: "Read", input: readOf(dir, "free.txt")}.payload(dir), 0, RuleOtherTool)
+		wantAnswer(t, dir, hookCall{session: sessA, agentID: "x1", agentType: "Explore", tool: "Read", input: readOf(dir, "free.txt")}.payload(dir), 0, RuleOtherTool)
 	}
-	s := wantAnswer(t, dir, call{session: sessA, agentID: "x1", agentType: "Explore", tool: "Bash",
+	s := wantAnswer(t, dir, hookCall{session: sessA, agentID: "x1", agentType: "Explore", tool: "Bash",
 		input: bash("bonsai message --kind report --from x --to orchestrator --status done --body 'x'")}.payload(dir), 2, RuleBudgetSpent)
 	if !strings.Contains(s, "you have no address") || !strings.Contains(s, "your last reply is your report") {
 		t.Errorf("%s", s)
 	}
-	wantAnswer(t, dir, call{session: sessA, agentID: "x1", agentType: "Explore", tool: "SubagentHandback", input: in()}.payload(dir), 0, RuleBudgetExempt)
+	wantAnswer(t, dir, hookCall{session: sessA, agentID: "x1", agentType: "Explore", tool: "SubagentHandback", input: in()}.payload(dir), 0, RuleBudgetExempt)
 }
 
 func TestTheBudgetOfMinutes(t *testing.T) {
 	dir := briefProject(t)
 	t0 := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
 	lead := func(cmd string) string {
-		return call{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Bash", input: bash(cmd)}.payload(dir)
+		return hookCall{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Bash", input: bash(cmd)}.payload(dir)
 	}
 	for _, c := range []struct {
 		at   time.Duration
@@ -159,7 +159,7 @@ func TestTheBudgetOfRedRuns(t *testing.T) {
 	dir := briefProject(t)
 	t0 := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
 	tiny := func(cmd string) string {
-		return call{session: sessA, agentID: "r1", agentType: "workflow:fragile", tool: "Bash", input: bash(cmd)}.payload(dir)
+		return hookCall{session: sessA, agentID: "r1", agentType: "workflow:fragile", tool: "Bash", input: bash(cmd)}.payload(dir)
 	}
 	result := func(green bool, started time.Time) {
 		raw := fmt.Sprintf(`{"format":"bonsai.ladder/1","task":"T-0001","workspace":"%s","mode":"local","started":"%s",`+
@@ -262,7 +262,7 @@ func TestCallsSideBySideLoseNoCount(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			runs(t, dir, call{session: sessA, agentID: "p1", agentType: "workflow:lead", tool: "Read", input: readOf(dir, "free.txt")}.payload(dir))
+			runs(t, dir, hookCall{session: sessA, agentID: "p1", agentType: "workflow:lead", tool: "Read", input: readOf(dir, "free.txt")}.payload(dir))
 		}()
 	}
 	wg.Wait()
@@ -295,7 +295,7 @@ func TestParallelSpawnsAreJoinedByTheMetaFile(t *testing.T) {
 	meta("cc", uses[2])
 	meta("cb", uses[1])
 	for _, a := range []string{"ca", "cc", "cb"} {
-		p := call{session: sessA, agentID: a, agentType: "workflow:tiny", tool: "Read", transcript: filepath.ToSlash(transcript),
+		p := hookCall{session: sessA, agentID: a, agentType: "workflow:tiny", tool: "Read", transcript: filepath.ToSlash(transcript),
 			input: readOf(dir, "free.txt")}.payload(dir)
 		wantAnswer(t, dir, p, 0, RuleOtherTool)
 	}
@@ -362,7 +362,7 @@ func TestTheSecondLine(t *testing.T) {
 func TestALiveLockEditChangesNoRule(t *testing.T) {
 	dir := briefProject(t)
 	edit := func(id string) string {
-		return call{session: sessA, agentID: id, agentType: "workflow:helper", tool: "Edit",
+		return hookCall{session: sessA, agentID: id, agentType: "workflow:helper", tool: "Edit",
 			input: in("file_path", filepath.Join(dir, "free.txt"), "old_string", "f", "new_string", "g")}.payload(dir)
 	}
 	wantAnswer(t, dir, edit("h1"), 2, RuleRoleWritesNothing)

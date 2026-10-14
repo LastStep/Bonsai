@@ -18,7 +18,7 @@ func shellAs(dir, agentID, typ, command string, ps bool) string {
 	if ps {
 		tool = "PowerShell"
 	}
-	return call{session: sessA, agentID: agentID, agentType: typ, tool: tool, input: bash(command)}.payload(dir)
+	return hookCall{session: sessA, agentID: agentID, agentType: typ, tool: tool, input: bash(command)}.payload(dir)
 }
 
 func TestAStartOfClaudeCode(t *testing.T) {
@@ -115,11 +115,11 @@ func TestBonsaiMessageFrom(t *testing.T) {
 	dir := rolesProject(t, map[string]string{".bonsai/local/messages/lead-T-0001/M-2026-10-15-0000000a.md": briefFile(
 		"M-2026-10-15-0000000a", "M-2026-10-15-0000000a", "orchestrator", "lead@T-0001", "2026-10-15T03:00:00.000Z", "")})
 	agent := func(id, typ, command string) string {
-		return call{session: sessA, agentID: id, agentType: typ, tool: "Bash", input: bash(command)}.payload(dir)
+		return hookCall{session: sessA, agentID: id, agentType: typ, tool: "Bash", input: bash(command)}.payload(dir)
 	}
 	// The session starts a lead with the brief named in its prompt; the lead's first call ties it: its address is
 	// lead@T-0001.
-	wantAnswer(t, dir, call{session: sessA, tool: "Agent", use: "toolu_01LEAD", input: in("subagent_type", "workflow:lead",
+	wantAnswer(t, dir, hookCall{session: sessA, tool: "Agent", use: "toolu_01LEAD", input: in("subagent_type", "workflow:lead",
 		"prompt", "Your brief is M-2026-10-15-0000000a.")}.payload(dir), 0, RuleCallAllowed)
 	wantAnswer(t, dir, agent("a1", "workflow:lead", "git status"), 0, RuleShell)
 	if w := stateOf(t, dir, sessA, "a1").Window(); w.Tie == nil || w.Tie.To != "lead@T-0001" {

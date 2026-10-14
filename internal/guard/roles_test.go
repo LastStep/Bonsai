@@ -123,14 +123,14 @@ func fixture(t *testing.T, rel, dir, transcripts string) string {
 	return strings.ReplaceAll(s, "~/proj", filepath.ToSlash(dir))
 }
 
-// call is a PreToolUse payload of the routes the fixtures show, made fresh: session, an agent's id and type ("" for
-// none), the tool and its input.
-type call struct {
+// hookCall is a PreToolUse payload of the routes the fixtures show, made fresh: session, an agent's id and type ("" for
+// none), the tool and its input. (Not call: guard_windows_test.go has a func call.)
+type hookCall struct {
 	session, agentID, agentType, tool, use, transcript string
 	input                                              schema.Object
 }
 
-func (c call) payload(dir string) string {
+func (c hookCall) payload(dir string) string {
 	o := schema.Object{{Key: "session_id", Value: c.session}, {Key: "transcript_path", Value: c.transcript},
 		{Key: "cwd", Value: dir}, {Key: "permission_mode", Value: "bypassPermissions"}}
 	if c.agentID != "" {
@@ -395,7 +395,7 @@ func TestTheMeasuredRoutes(t *testing.T) {
 	if _, err := (agents.Store{Main: dir}).Read(stop.Session, stop.Agent); err != agents.ErrNoState {
 		t.Errorf("state for an internal agent: %v", err)
 	}
-	internal := call{session: stop.Session, agentID: stop.Agent, tool: "Read", input: in("file_path", filepath.Join(dir, "free.txt"))}.payload(dir)
+	internal := hookCall{session: stop.Session, agentID: stop.Agent, tool: "Read", input: in("file_path", filepath.Join(dir, "free.txt"))}.payload(dir)
 	wantAnswer(t, dir, internal, 0, RuleOtherTool)
 	if st := stateOf(t, dir, stop.Session, stop.Agent); st.Header.Role != "" || st.Header.Type != "" {
 		t.Errorf("an internal agent's header %+v", st.Header)
@@ -407,10 +407,10 @@ func TestTheMeasuredRoutes(t *testing.T) {
 func TestWhoMayCallWhom(t *testing.T) {
 	dir := rolesProject(t, nil)
 	session := func(tool string, input schema.Object) string {
-		return call{session: sessA, tool: tool, input: input}.payload(dir)
+		return hookCall{session: sessA, tool: tool, input: input}.payload(dir)
 	}
 	agent := func(id, typ, tool string, input schema.Object) string {
-		return call{session: sessA, agentID: id, agentType: typ, tool: tool, input: input}.payload(dir)
+		return hookCall{session: sessA, agentID: id, agentType: typ, tool: tool, input: input}.payload(dir)
 	}
 	cases := []struct {
 		name    string
@@ -460,15 +460,15 @@ func TestWhoMayCallWhom(t *testing.T) {
 func init() {
 	ruleTests[RuleCallAllowed] = func(t *testing.T) {
 		dir := rolesProject(t, nil)
-		wantAnswer(t, dir, call{session: sessA, tool: "Agent", input: in("subagent_type", "workflow:helper", "prompt", "go")}.payload(dir), 0, RuleCallAllowed)
-		recs := sessionRecords(t, dir, call{session: sessA}.payload(dir))
+		wantAnswer(t, dir, hookCall{session: sessA, tool: "Agent", input: in("subagent_type", "workflow:helper", "prompt", "go")}.payload(dir), 0, RuleCallAllowed)
+		recs := sessionRecords(t, dir, hookCall{session: sessA}.payload(dir))
 		if last := recs[len(recs)-1]; last.String("target") != "workflow:helper" || last.String("tool_use_id") != "toolu_01CALL" {
 			t.Errorf("the record does not name the type asked for and the call: %v", last)
 		}
 	}
 	ruleTests[RuleCallRefused] = func(t *testing.T) {
 		dir := rolesProject(t, nil)
-		s := wantAnswer(t, dir, call{session: sessA, agentID: "h1", agentType: "workflow:helper", tool: "Agent",
+		s := wantAnswer(t, dir, hookCall{session: sessA, agentID: "h1", agentType: "workflow:helper", tool: "Agent",
 			input: in("subagent_type", "workflow:helper", "prompt", "go")}.payload(dir), 2, RuleCallRefused)
 		if !strings.Contains(s, "a helper, and every type no pack declares, calls no one") || !strings.Contains(s, "next: ") {
 			t.Errorf("%s", s)
@@ -477,13 +477,13 @@ func init() {
 	}
 	ruleTests[RuleRoleWritesNothing] = func(t *testing.T) {
 		dir := rolesProject(t, nil)
-		wantAnswer(t, dir, call{session: sessA, agentID: "v1", agentType: "workflow:verifier", tool: "Write",
+		wantAnswer(t, dir, hookCall{session: sessA, agentID: "v1", agentType: "workflow:verifier", tool: "Write",
 			input: in("file_path", filepath.Join(dir, "a.txt"), "content", "x")}.payload(dir), 2, RuleRoleWritesNothing)
 		wantAnswer(t, dir, shellAs(dir, "v1", "workflow:verifier", "echo x > a.txt", false), 2, RuleRoleWritesNothing)
 	}
 	ruleTests[RuleBudgetSpent] = func(t *testing.T) {
 		dir := rolesProject(t, nil)
-		p := call{session: sessA, agentID: "t1", agentType: "workflow:tiny", tool: "Glob", input: in("pattern", "*")}.payload(dir)
+		p := hookCall{session: sessA, agentID: "t1", agentType: "workflow:tiny", tool: "Glob", input: in("pattern", "*")}.payload(dir)
 		for i := 0; i < 3; i++ {
 			wantAnswer(t, dir, p, 0, RuleOtherTool)
 		}
@@ -491,18 +491,18 @@ func init() {
 	}
 	ruleTests[RuleBudgetExempt] = func(t *testing.T) {
 		dir := rolesProject(t, nil)
-		p := call{session: sessA, agentID: "t1", agentType: "workflow:tiny", tool: "Glob", input: in("pattern", "*")}.payload(dir)
+		p := hookCall{session: sessA, agentID: "t1", agentType: "workflow:tiny", tool: "Glob", input: in("pattern", "*")}.payload(dir)
 		for i := 0; i < 4; i++ {
 			runs(t, dir, p)
 		}
-		wantAnswer(t, dir, call{session: sessA, agentID: "t1", agentType: "workflow:tiny", tool: "SubagentHandback",
+		wantAnswer(t, dir, hookCall{session: sessA, agentID: "t1", agentType: "workflow:tiny", tool: "SubagentHandback",
 			input: in("message", "done")}.payload(dir), 0, RuleBudgetExempt)
 	}
 	ruleTests[RuleBriefNotTied] = func(t *testing.T) {
 		dir := rolesProject(t, nil)
-		wantAnswer(t, dir, call{session: sessA, tool: "Agent", use: "toolu_01X", input: in("subagent_type", "workflow:lead",
+		wantAnswer(t, dir, hookCall{session: sessA, tool: "Agent", use: "toolu_01X", input: in("subagent_type", "workflow:lead",
 			"prompt", "M-2026-10-15-aaaaaaaa")}.payload(dir), 0, RuleCallAllowed)
-		p := call{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Glob", input: in("pattern", "*")}.payload(dir)
+		p := hookCall{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Glob", input: in("pattern", "*")}.payload(dir)
 		wantAnswer(t, dir, p, 0, RuleOtherTool)
 		found := false
 		for _, r := range sessionRecords(t, dir, p) {
@@ -516,7 +516,7 @@ func init() {
 	ruleTests[RuleStateUnreadable] = func(t *testing.T) {
 		dir := rolesProject(t, nil)
 		writeFile(t, filepath.Join(dir, ".bonsai", "local", "agents", sessA, "l1.state"), "not a header")
-		p := call{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Glob", input: in("pattern", "*")}.payload(dir)
+		p := hookCall{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Glob", input: in("pattern", "*")}.payload(dir)
 		wantAnswer(t, dir, p, 0, RuleOtherTool)
 		found := false
 		for _, r := range sessionRecords(t, dir, p) {
@@ -536,7 +536,7 @@ func init() {
 		if _, err := workspace.RecordCheckout(home, dir, rolesWS, time.Now()); err != nil {
 			t.Fatal(err)
 		}
-		p := call{session: sessA, agentID: "h1", agentType: "workflow:helper", tool: "Write",
+		p := hookCall{session: sessA, agentID: "h1", agentType: "workflow:helper", tool: "Write",
 			input: in("file_path", filepath.Join(dir, "a.txt"), "content", "x")}.payload(dir)
 		wantAnswer(t, dir, p, 2, RuleRoleWritesNothing)
 		found := false
