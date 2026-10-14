@@ -277,6 +277,17 @@ injected into the subagent's context at startup"). So the workflow pack keeps to
 
 How a role names a plugin skill (with or without the `workflow:` prefix) is checked in step 5.5.
 
+> **Changed 14 Oct (Rohan):** `workflow` holds six roles in two kinds, declared in its `pack.yaml` (`roles`, formats
+> set 8), not the five above: the `orchestrator` (the person's own session, `session: true`, a lead), the `builder` and
+> the `verifier` (leads), and the `researcher`, the `auditor` and the `runner` (helpers, which call no one); the
+> producer and the playtest analyst become the orchestrator's skills (`brief`, `interview`). Each role declares its
+> kind, whether it may change files (`writes`), Claude Code's `maxTurns` backstop (`max_turns`, held equal to its
+> `agents/<role>.md` by `check --pack`) and its three limits, `minutes`, `actions` and `red_runs`, each with a
+> `default` and a `max` (the pack ships the max equal to the default; a project sets its own in `bonsai.yaml`, §6's
+> note, and a brief any value up to the max in force). The engine copies them into the lock's `declares` (`roles`), as
+> it does lanes and labels. The preload table above is now "The six roles"'s, which decides what each role loads at its
+> start. `design/plan-5.md`, step 5.5, "The six roles, written once".
+
 **Every template and pack file documents itself** (Rohan, 7 Oct: "any kind of template file that bonsai will have,
 inside that file there should be proper official level documentation, so any person and ai agent can easily know the
 use and purpose of it"; contract §2.8). It applies to every file Bonsai or a pack ships: the templates for a task, a
@@ -448,6 +459,19 @@ installed binary is protected by its owner, §3); Rohan confirmed it on 7 Oct. `
 dropped `boot_budget_kb` (7 Oct: "Don't use boot_budget_kb"); the fixed caps stay: the instruction block's 40 lines,
 the memory index's 120 lines and 12 KB, a memory note's 4 KB (§10). Writers keep the comments (contract §2.4); `check`
 does not require them in a project.
+
+> **Changed 14 Oct (Rohan):** two more settings, both changed any time and neither a loosening of the checks (a raised
+> limit is never `config-looser`). A `packs` entry gains `roles`: `null` keeps the pack's limits, or a map from a role
+> the pack declares to any of its limits, each with its own `default`, `max` or both ("make sure that agent limits are
+> configurable project wise anytime"; "Under the pack in bonsai.yaml"; at approval, "option B. where bonsai.yaml sets
+> default and max for each limit, and then the agent giving the brief can decide"); `check` finds a limit for a role
+> the pack does not declare, a default above its max, and a max of actions above the role's `max_turns`. The file
+> gains `messages` at its end: `unanswered_minutes` and `circling_briefs`, the thresholds of `bonsai messages`' flags,
+> each `null` for Bonsai's default; `null` for both, as `init` writes it. The guard reads both as committed at the
+> main checkout's HEAD. And two generated kinds join the table below: `messages` (`.bonsai/local/messages/`, 30 days
+> after a thread's last message, never an open thread) and `agents` (`.bonsai/local/agents/`, each agent's state as
+> the guard keeps it, 30 days, never while its log or its briefs are kept). `design/plan-5.md`, step 5.5, "Role rules
+> and stall stops, written once" and note 5.5.9.
 
 **`.bonsai/`, Bonsai's folder in each project** (Rohan, 7 Oct, round 1; the tree is contract §3's): `bonsai.yaml` stays
 at the root; everything else Bonsai keeps in a project sits in `.bonsai/`: `.gitignore` (written by Bonsai: `local/`),
@@ -673,6 +697,21 @@ the machine-wide file the same day (question B), so every wall here is a project
 cannot read blocks. The guard keeps its own timer under the hook's `timeout`, since a hook that times out does not block
 (vision A.4). Every guard decision is a `guard` record in the log (contract §8.1).
 
+> **Changed 14 Oct (Rohan):** in a project whose packs declare roles, the guard has two lines ("A. Two lines"): the
+> blocking line above, its matcher widened to the tools that start agents (`Agent`, `Task`, `SendMessage`,
+> `Workflow`), and a second on every other tool, in the form that never blocks for a missing or broken `bonsai`, so a
+> session can still read, search and ask. Where no roles are declared the one line stays as it is. Claude Code only,
+> from its hook payload's `agent_id` and `agent_type`, the guard holds the role rules: who may call whom (the person's
+> session any role; a lead its helpers and the types no pack declares, held as helpers; a helper no one); a role that
+> changes nothing refused the file tools and the shell writes it can read; a session started from an agent's shell
+> refused; agents' readable shell writes into Bonsai's own records and the lock refused; a message's `from` held to its
+> writer's address. And the stall stops: each agent's budget (its limits in force, its brief's where it gave one,
+> counted from its first call or its newest brief), past which every call but its report is refused, and a named
+> session's stop gate lets it stop once its budget is spent and its report written. Like every guard here they are a
+> tripwire, never a wall (decision D): what they cannot do is said with them (an agent gone quiet, which Bonsai has no
+> clock to see; a session or a write the guard cannot read; records attributed, not authenticated), and the backstop is
+> the landing rule. `design/plan-5.md`, step 5.5, "Role rules and stall stops, written once".
+
 **What the guard judges.**
 - **File tools:** the active task's grants (contract §13: tasks read from main, grants only while `running`), the
   person-only list (contract §5.5), and in `command` mode the tripwires of contract §10.1. It also refuses an agent's
@@ -816,6 +855,19 @@ machine's definitions (contract §8.4).
   the managed file (question B, 7 Oct); a project is recorded from the day it links.
 - A missing binary loses records silently (recorder lines never block); the studio sees a heartbeat gap. OpenTelemetry
   stays an optional second record, later (vision A.11).
+
+> **Changed 14 Oct (Rohan):** three more records (contract §8.2's note of 14 Oct). `bonsai message` writes a `message`
+> record for each message between agents (contract §22). The guard writes a `spawn` record for each agent it lets
+> start, its `parent` the agent or the person's `session` that started it, so the tree of agents survives a cleaned
+> state file. The recorder writes `usage` records at each agent's end (SubagentStop, and a session's SessionEnd): it
+> reads the token counts and the model Claude Code saved with each reply in the transcript whose path the payload
+> gives, never any text, line by line within the hook's budget, and writes one record per model with the whole
+> transcript's totals ("Yes, raw counts"); a transcript it cannot read gives `kind: unknown` with its reason, and
+> nothing fails or blocks. Claude Code's transcript layout is not published and may change, so the counts rest on it.
+> And three words: `bonsai message` (write a brief or a report; `--show` one, its trust line first), `bonsai messages`
+> (the threads, headers only, with their flags) and `bonsai agents` (each agent as recorded, `bonsai.agents/1`), each
+> reading or writing only Bonsai's own records and never acting on an agent. `design/plan-5.md`, step 5.5, "Messages
+> between agents, written once" and notes 5.5.10 to 5.5.12.
 
 **Asks.** Contract §9, implemented as written: `bonsai ask`, `answer`, `asks`, `ask --status`; types `Answer`, `Decide`,
 `Look`, `Play` from agents and `Bless` from the runner only; an answer from the asking session refused
@@ -1048,6 +1100,11 @@ merge, waits included, so it overstates session time. A studio-day covers about 
 > follows part 0 in Bonsai's repo and waits on nothing in the studio. Row 6's records move came early, on 8 Oct; Bonsai
 > still registers as its own studio project at row 6.
 
+> **Changed 14 Oct (Rohan, decision 6):** row 6's "then links its packs (5.5)" means `base` and `workflow`: Bonsai's
+> own team works by `workflow`'s roles, and its `CLAUDE.md` keeps what is Bonsai's own (the 9 Oct line "`base` only" is
+> overtaken). Row 5 grows with 5.5's re-plan, to 187-301.75 (the note below path (a)'s table). `design/plan-5.md`, step
+> 5.5, note 5.5.7.
+
 **The skeleton (step 3), re-costed.** The 25-35 h came from the skeptic's review: the engine, the lock, a private fetch,
 CI on both OSes and one pack, "No hooks yet". This one also proves the hook path on Windows and plugin delivery. The log
 and asks, which the contract first put here, moved to step 5.2 on Rohan's word (question D (a), 7 Oct; contract §15.1
@@ -1155,6 +1212,14 @@ dropped, C (c), D (a), and his format review (+16-23 h, below):
 > after rc.1); then his own trial on a fresh project; then his word for 1.0 on the same code as the last pre-release.
 > 5.7 becomes 9.5-18.75 hours, re-ask at 24 (the trial adds 3.5-7.75); step 5 becomes 142.5-225.75, and this path's
 > 139-218 and the totals below grow by the same. `design/plan-5.md`, "Step 5.7".
+
+> **Changed 14 Oct (Rohan, step 5.5's section, approved):** 5.5 is re-planned round his 14 Oct design of the roles,
+> their messages and their limits: the formats set that carries them, the message format and its commands, the guard's
+> role rules and stall stops, `bonsai agents`, each limit's default and max from the pack and `bonsai.yaml`, `workflow`
+> written around six roles, Bonsai linking `workflow` with a new pre-release, the three CI flakes, and their verifiers.
+> 5.5 becomes **63.5-106 hours, re-ask at 138** (it was 19-30, re-ask at 39), and step 5 becomes **187-301.75**
+> (142.5-225.75 before); this path's totals below grow by the same (+44.5 to +76). `design/plan-5.md`, "Step 5.5: the
+> packs, the roles and their messages", "Hours, order and your other steps".
 
 Rohan's answer B took out `walls --print` (5.6, about 1 h) and the probe script for pin raises (5.7, about 2-3 h), and
 the uncosted work round the managed file: the orchestrator writing and checking it, the second batch's probe, and
@@ -1528,6 +1593,11 @@ The recheck's open minors, decided here on 7 Oct (technical, so not Rohan's):
 - **18, are 5.x builds releases for §3's installs:** no; before 1.0 Rohan installs one pre-release at 5.4, in WSL only,
   where Bonsai's checkout and tasks live, and again only if a later 5.x step changes the guard, the stop gate or the
   ladder (§3, §17 step 8).
+
+> **Changed 14 Oct (Rohan, step 5.5's section, approved):** 5.5 changes the guard, the stop gate and the ladder runner
+> (the role rules and stall stops, the stop gate's exit for a spent and reported named session), so a second
+> pre-release, built from a clean clone once its verifiers have passed and installed by Rohan in WSL as at 5.4; the one
+> he had is kept with its install lines, his way back. `design/plan-5.md`, step 5.5, note 5.5.7.
 - **10, the administrators' bypass on Bonsai's `main`:** Rohan's optional step, default left on (§17 step 5).
 
 Decided inside Rohan's format review (7 Oct, round 1, and the second recheck; technical, so not his; each reason is in
