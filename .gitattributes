@@ -15,5 +15,7 @@ formats/** -text
 # code builds: LF on every checkout, Windows' core.autocrlf included.
 docs/reference/lists.md text eol=lf
 
-# The generated-files page (docs/reference/generated-files.md) is generated the same way and kept LF the same way.
-docs/reference/generated-files.md text eol=lf
+# Every pack file in this repository (packs/: base, the template) is LF on every checkout, Windows' core.autocrlf
+# included: the engine writes a pack's files into projects as committed, and base's generated skills are compared byte
+# for byte with what the code builds.
+packs/** text eol=lf
