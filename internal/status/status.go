@@ -476,7 +476,7 @@ func Text(doc schema.Object) string {
 	fmt.Fprintf(&b, "In this project, %s:\n", ascii(w.String("root")))
 	b.WriteString("  bonsai.yaml      this project's Bonsai settings. You edit it; it is committed.\n")
 	b.WriteString("  .bonsai/         the lock, STATE and two tables Bonsai rebuilds (tasks; sessions and hours). Committed.\n")
-	b.WriteString("  .bonsai/local/   the log, questions for you and their answers, ladder results. Never committed.\n")
+	b.WriteString("  .bonsai/local/   the log, questions for you and their answers, ladder results, messages between agents.\n                   Never committed.\n")
 	b.WriteString("On this machine:\n")
 	fmt.Fprintf(&b, "  %s\n", ascii(home.String("path")))
 	b.WriteString("    Bonsai's home: a secret salt, this machine's settings for each project, label files attached\n")

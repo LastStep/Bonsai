@@ -316,6 +316,7 @@ func TestStatusIsByteStableAndASCII(t *testing.T) {
 		t.Errorf("the non-ASCII path is not escaped:\n%s\n%s", first, text)
 	}
 	for _, want := range []string{"Workspace example, id ws-7kq2m4xw5r3t6y2u7p4a5c3e2b", "  bonsai.yaml      this project's",
+		"  .bonsai/local/   the log, questions for you and their answers, ladder results, messages between agents.\n",
 		"Person-only paths: .claude/**, bonsai.yaml", "Problems:\n  .bonsai/lock.json: is missing; next: link the project again from bonsai.yaml",
 		"This project's machine folder: workspaces/r-", "Packs: none locked\n", "A copy meant as a new project needs its own id: bonsai init --new-id\n"} {
 		if !strings.Contains(text, want) {

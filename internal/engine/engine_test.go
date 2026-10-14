@@ -316,6 +316,7 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 	}
 	words := ClosingWords(p.Config, e.home)
 	if !strings.HasPrefix(words, "Linked demo. Workspace id: "+p.Config.ID) || !strings.Contains(words, filepath.ToSlash(e.home)) ||
+		!strings.Contains(words, "\n  .bonsai/local/   the log, questions for you and their answers, ladder results, messages between agents.\n") ||
 		!strings.Contains(words, "\nStart Claude Code in the project's top folder, and do not /cd out of it: a session started or\n"+
 			"moved elsewhere loads none of the project's Claude Code settings, so no Bonsai hook guards it.\n") ||
 		!strings.HasSuffix(words, "A copy meant as a new project needs its own id: bonsai init --new-id\n") {
