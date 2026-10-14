@@ -65,6 +65,15 @@ type shWord struct {
 type shFeed struct {
 	text   string
 	nested []shNest // the substitutions in an unquoted here-document's body, which run whatever reads it
+	doc    bool     // a here-document (not a here-string)
+	quoted bool     // a here-document whose delimiter is quoted: its body is not expanded
+}
+
+// shRedir is a redirection that writes: its operator (>, >>, >|, &>, &>>, >&, <>; with a leading number or, in
+// PowerShell, *) and its target word. A redirection to another stream (2>&1, >&2) is none.
+type shRedir struct {
+	op     string
+	target shWord
 }
 
 // shNest is a list split from text nested in a command: a substitution, a group, a block.
@@ -82,6 +91,7 @@ type shCommand struct {
 	piped  bool      // fed by a pipe from the command before it
 	nested []shNest  // substitutions, process substitutions, groups and blocks inside its words
 	feeds  []*shFeed // its here-documents and here-strings
+	redirs []shRedir // its redirections that write to a file (the roles' write check, rolecmds.go)
 }
 
 // shList is a command list.
@@ -478,7 +488,7 @@ func (sc *shScan) redirect(cmd *shCommand) bool {
 		}
 		sc.skip(false)
 		w := sc.word(cmd)
-		feed := &shFeed{}
+		feed := &shFeed{doc: true, quoted: w.quoted}
 		cmd.feeds = append(cmd.feeds, feed)
 		sc.docs = append(sc.docs, shDoc{feed: feed, delim: w.text, strip: strip, quoted: w.quoted})
 		return true
@@ -497,7 +507,25 @@ func (sc *shScan) redirect(cmd *shCommand) bool {
 	}
 	sc.skip(false)
 	if sc.i < len(s) && !sc.ends(cmd, 0) {
-		_ = sc.word(cmd)
+		w := sc.word(cmd)
+		op := s[i:k]
+		dup := strings.HasSuffix(op, ">&") && !strings.HasPrefix(op, "&") && (w.text == "-" || shDigits(w.text))
+		if strings.Contains(op, ">") && !dup && !(strings.HasSuffix(op, "<&")) {
+			cmd.redirs = append(cmd.redirs, shRedir{op: op, target: w})
+		}
+	}
+	return true
+}
+
+// shDigits reports a word of digits alone: a stream's number.
+func shDigits(t string) bool {
+	if t == "" {
+		return false
+	}
+	for i := 0; i < len(t); i++ {
+		if t[i] < '0' || t[i] > '9' {
+			return false
+		}
 	}
 	return true
 }
