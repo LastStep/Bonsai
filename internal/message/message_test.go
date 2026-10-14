@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -789,6 +790,38 @@ func TestAddresses(t *testing.T) {
 		if a, ok := AddressOf(bad); ok {
 			t.Errorf("the folder %q reads as %q", bad, a)
 		}
+	}
+}
+
+// Two recipient folders that differ only in case (VM's D6): a role's address ending in -t- and a task's digits has,
+// case aside, a task's address's folder, which on Windows is one folder; it is refused on every system, naming the
+// task's address, and nothing is written. On Windows the test shows why: the task's folder is found by the other
+// name. Addresses that only look alike, and a role ending so that is given a task of its own, are taken.
+func TestAddressesFoldedOntoAnother(t *testing.T) {
+	for _, bad := range []string{"builder-t-0901", "a--t-123456", "x-y-t-0001"} {
+		if why := CheckAddress(bad); !strings.Contains(why, "where the case of a name does not count") {
+			t.Errorf("%s: %q", bad, why)
+		}
+	}
+	for _, good := range []string{"builder-t-090", "builder-t-0901x", "builder-t-0901@T-0902", "builder-t-1234567", "t-0901", "builder@T-0901"} {
+		if why := CheckAddress(good); why != "" {
+			t.Errorf("%s: %q", good, why)
+		}
+	}
+	f := newFixture(t)
+	f.write(Writing{From: "orchestrator", To: "builder@T-0901", Kind: "brief"}, DefaultRules())
+	e := f.refused(Writing{From: "orchestrator", To: "builder-t-0901", Kind: "brief"}, DefaultRules(), "bad-value")
+	if !strings.Contains(e.What, "write builder@T-0901") {
+		t.Errorf("the refusal: %s", e.What)
+	}
+	f.refused(Writing{From: "builder-t-0901", To: "orchestrator", Kind: "brief"}, DefaultRules(), "bad-value")
+	folded := filepath.Join(f.main, ".bonsai", "local", "messages", "builder-t-0901")
+	_, err := os.Stat(folded)
+	if runtime.GOOS == "windows" && err != nil {
+		t.Errorf("on Windows builder-T-0901's folder is not found as builder-t-0901 (%v): the refusal's reason is gone", err)
+	}
+	if st := f.read(); len(st.Messages) != 1 || len(st.Malformed) != 0 {
+		t.Errorf("the messages: %+v", st)
 	}
 }
 
