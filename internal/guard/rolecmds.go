@@ -13,8 +13,8 @@ package guard
 //   - bonsai ladder --task <id>: noted, once the call is allowed, so the agent's next call reads the climb's result
 //     (budget.go's readClimbs).
 //   - Shell writes the guard can read (writeTargets): a redirect (>, >>, >|, &>, &>>, <> and their numbered forms; in
-//     PowerShell *> too), tee, cp, ln and sed -i or --in-place onto a path, PowerShell's Set-Content, Add-Content,
-//     Out-File, Tee-Object, Copy-Item and New-Item, and cmd's copy and xcopy; with a role that changes nothing, rm and mv
+//     PowerShell *> too), tee, cp, ln and sed -i or --in-place onto a path (and install, touch, truncate and dd's of=),
+//     PowerShell's Set-Content, Add-Content, Out-File, Tee-Object, Copy-Item and New-Item, and cmd's copy and xcopy; with a role that changes nothing, rm and mv
 //     too (the delete check's words, shell.go), git's words that change the checkout or its history (GitWriteWords),
 //     and bonsai init, update, unlink and check --write (commands.go). Each written path is judged in every folder the
 //     command may run in (mayWrite): from every agent (all but the person's session), one in Bonsai's own files (the
@@ -26,8 +26,8 @@ package guard
 // Known limits for the roles that change nothing, said again here as shell.go says them for the delete check: what the
 // splitter cannot read is not judged: an interpreter's write (python -c, node -e), a script run by name, a path built
 // in a variable or a substitution whose output is not a literal, a program's own writes (make, a test run, git's hooks),
-// a link made earlier in the line and written through, and programs outside the tables (install, rsync's copies,
-// dd's of=, unzip, tar -x, patch); and an MCP tool whose server writes. They are caught after: by the lead's read of
+// a link made earlier in the line and written through, and programs outside the tables (rsync's copies, unzip, tar -x,
+// patch, a compiler's -o); and an MCP tool whose server writes. They are caught after: by the lead's read of
 // the diff, and by the ladder's git.dirty and rung 0 at the next climb.
 
 import (
@@ -166,6 +166,13 @@ var (
 	sedOpts = delOpt{short: "nrEsuz", shortVal: "efl", shortOpt: "i", long: []string{"quiet", "silent", "debug",
 		"posix", "regexp-extended", "separate", "sandbox", "unbuffered", "null-data", "follow-symlinks"},
 		longVal: []string{"expression", "file", "line-length"}, longOpt: []string{"in-place"}, permute: true}
+	installOpts = delOpt{short: "bcCdDpsTv", shortVal: "gmoStZ", long: []string{"compare", "directory", "preserve-timestamps",
+		"strip", "no-target-directory", "verbose", "preserve-context", "debug"}, longVal: []string{"group", "mode", "owner",
+		"suffix", "target-directory", "strip-program"}, longOpt: []string{"backup", "context"}, permute: true}
+	touchOpts = delOpt{short: "acfhm", shortVal: "dtr", long: []string{"no-create", "no-dereference"},
+		longVal: []string{"date", "reference", "time"}, permute: true}
+	truncateOpts = delOpt{short: "co", shortVal: "rs", long: []string{"no-create", "io-blocks"},
+		longVal: []string{"reference", "size"}, permute: true}
 )
 
 // PowerShell's write cmdlets, their parameters as delPSBind reads them.
@@ -291,13 +298,34 @@ func writeTargets(name string, native bool, x delExec) []writeTarget {
 			if len(ws) < 2 {
 				return nil
 			}
-			return []writeTarget{{op: ops(ws[len(ws)-1:])[0], srcs: ops(ws[:len(ws)-1]), destDir: true, word: name}}
+			var out []writeTarget
+			for _, op := range ops(ws[len(ws)-1:]) {
+				out = append(out, writeTarget{op: op, srcs: ops(ws[:len(ws)-1]), destDir: true, word: name})
+			}
+			return out
 		}
 		return nil
 	}
 	switch name {
 	case "tee":
 		return one("tee", delParse(words, teeOpts).ops)
+	case "touch":
+		return one("touch", delParse(words, touchOpts).ops)
+	case "truncate":
+		return one("truncate", delParse(words, truncateOpts).ops)
+	case "install":
+		if g := delParse(words, installOpts); g.has("d", "directory") {
+			return one("install -d", g.ops)
+		}
+		return copyLike("install", installOpts)
+	case "dd":
+		var outs []shWord
+		for _, w := range words {
+			if v, ok := strings.CutPrefix(w.text, "of="); ok {
+				outs = append(outs, delValue(w, v))
+			}
+		}
+		return one("dd of=", outs)
 	case "cp":
 		return copyLike("cp", cpOpts)
 	case "ln":

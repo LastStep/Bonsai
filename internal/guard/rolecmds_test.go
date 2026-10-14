@@ -52,7 +52,9 @@ func TestWritesOfARoleThatChangesNothing(t *testing.T) {
 		"sed -i s/a/b/ free.txt", "sed --in-place=.bak -e s/a/b/ free.txt", "rm free.txt", "mv free.txt moved.txt",
 		"git commit -m x", "git -C . add -A", "git checkout -- free.txt", "git stash", "git branch new", "git tag v1",
 		"git reset --hard", "bonsai check --write", "bonsai update --yes", "cd sub && echo x > y.txt",
-		"echo x > " + filepath.Join(dir, "abs.txt"), "{ echo x; } > grouped.txt"}
+		"echo x > " + filepath.Join(dir, "abs.txt"), "{ echo x; } > grouped.txt", "touch new.txt", "truncate -s 0 free.txt",
+		"install -m 644 free.txt inst.txt", "install -d newdir", "dd if=/dev/zero of=free.txt count=1",
+		"bash -c 'echo x > nested.txt'", "x=$(echo y > sub.txt)", "eval 'cp free.txt e.txt'"}
 	for i, line := range refused {
 		// A fresh agent each time: an undeclared type runs on the smallest helper's budget (tiny's 3 actions).
 		wantAnswer(t, dir, shellAs(dir, fmt.Sprint("h", i), "workflow:helper", line, false), 2, RuleRoleWritesNothing)
@@ -65,7 +67,7 @@ func TestWritesOfARoleThatChangesNothing(t *testing.T) {
 	allowed := []string{"echo x > " + filepath.Join(out, "a.txt"), "go build -o " + out + "/b ./...", "git status", "git diff HEAD~1",
 		"git log --oneline", "git show HEAD", "git branch", "git branch -a", "git tag -l", "git stash list", "cat free.txt",
 		"grep -r x .", "echo x 2>&1", "ls >&2", "cp free.txt " + out, "sed s/a/b/ free.txt", "bonsai check", "bonsai status --json",
-		"echo x > /dev/null"}
+		"echo x > /dev/null", "touch " + filepath.Join(out, "t"), "dd if=free.txt of=" + filepath.Join(out, "d")}
 	for _, line := range allowed {
 		wantAnswer(t, dir, shellAs(dir, "h1", "workflow:helper", line, false), 0, "")
 	}
