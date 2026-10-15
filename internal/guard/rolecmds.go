@@ -593,13 +593,17 @@ func cmdletName(name string) string {
 
 // mayWrite judges one path a shell call writes, read against the folder dir (this file's comment): bonsai-files from
 // every agent, then, with role set, role-writes-nothing from a role that changes nothing; else allowed.
-func (s *shellRole) mayWrite(dir, p, word string, role bool) Decision {
+func (s *shellRole) mayWrite(dir, p, word string, role, attr bool) Decision {
+	writes, into := "writes", "writes into"
+	if attr {
+		writes, into = "changes the permissions, owner, ACL or attributes of", "changes the permissions or attributes of a file in"
+	}
 	j := s.rr.j
 	forms, err := pathForms(dir, dir, p)
 	if err != nil {
 		if role && s.changesNothing() {
-			return deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s writes %s, which the guard cannot place (%s), and this "+
-				"role changes nothing", s.rr.in.Tool, word, quote(j.shown(p), 120), oneLine(err.Error())),
+			return deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s %s %s, which the guard cannot place (%s), and this "+
+				"role changes nothing", s.rr.in.Tool, word, writes, quote(j.shown(p), 120), oneLine(err.Error())),
 				"put what you would write in your report instead")
 		}
 		return allow(RuleShell, "")
@@ -609,8 +613,8 @@ func (s *shellRole) mayWrite(dir, p, word string, role bool) Decision {
 			continue
 		}
 		if home := j.inHome(abs); home != "" {
-			return deny(RuleBonsaiFiles, fmt.Sprintf("%s refused: %s writes into Bonsai's home (%s), which only Bonsai's own "+
-				"commands write", s.rr.in.Tool, word, quote(j.shown(home), 120)), "leave Bonsai's home as it is")
+			return deny(RuleBonsaiFiles, fmt.Sprintf("%s refused: %s %s Bonsai's home (%s), which only Bonsai's own "+
+				"commands write", s.rr.in.Tool, word, into, quote(j.shown(home), 120)), "leave Bonsai's home as it is")
 		}
 		chain := j.chain(abs)
 		for _, proj := range chain {
@@ -619,17 +623,17 @@ func (s *shellRole) mayWrite(dir, p, word string, role bool) Decision {
 				continue
 			}
 			if f := floorOf(rel, caseInsensitive(proj.root), false); f != nil && (f.Class == RuleBonsaiFiles || f.Glob == ".bonsai/lock.json") {
-				d := deny(RuleBonsaiFiles, fmt.Sprintf("%s refused: %s writes %s, one of Bonsai's own files (%s): no agent writes "+
-					"there by a shell line, whatever its task grants, so no count, brief, report or log line is reset or planted",
-					s.rr.in.Tool, word, quote(rel, 120), f.Why), "write through Bonsai's own command (bonsai message, bonsai "+
+				d := deny(RuleBonsaiFiles, fmt.Sprintf("%s refused: %s %s %s, one of Bonsai's own files (%s): no agent "+
+					"changes it by a shell line, whatever its task grants, so no count, brief, report or log line is reset or planted",
+					s.rr.in.Tool, word, writes, quote(rel, 120), f.Why), "write through Bonsai's own command (bonsai message, bonsai "+
 					"ladder), or put it in your report")
 				d.Target = target(j.session, []string{abs})
 				return d
 			}
 		}
 		if role && s.changesNothing() && len(chain) > 0 {
-			d := deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s writes %s, inside a linked project, and %s changes nothing "+
-				"(its role's writes: false)", s.rr.in.Tool, word, quote(j.shown(abs), 120), s.w.shown()),
+			d := deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s %s %s, inside a linked project, and %s changes nothing "+
+				"(its role's writes: false)", s.rr.in.Tool, word, writes, quote(j.shown(abs), 120), s.w.shown()),
 				"put what you would change in your report; write scratch files outside the project")
 			d.Target = target(j.session, []string{abs})
 			return d
@@ -691,7 +695,7 @@ func (r *delRun) writePath(rs *shellRole, x delExec, t writeTarget, role bool) {
 			dirs = appendNew(dirs, r.base)
 		}
 		for _, dir := range dirs {
-			if d := rs.mayWrite(dir, text, word, role); !d.Allow {
+			if d := rs.mayWrite(dir, text, word, role, t.attr); !d.Allow {
 				r.refuse(d)
 				return
 			}

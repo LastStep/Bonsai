@@ -62,11 +62,11 @@ func TestM1AChangedModeLeavesTheCountAsItWas(t *testing.T) {
 			if (agents.Store{Main: dir}).Asides(sessA, "c1") != 0 {
 				t.Error("the state was moved aside: a window afresh")
 			}
-			if fi, err := os.Stat(f); err != nil || modesBite() && fi.Mode().Perm()&0o600 != 0o600 {
-				t.Errorf("the owner's access was not set back: %v %v", fi.Mode(), err)
-			}
 			if !modesBite() || target == "state" && runtime.GOOS == "windows" {
 				return // nothing was stopped, so nothing needed setting back
+			}
+			if fi, err := os.Stat(f); err != nil || fi.Mode().Perm()&0o600 != 0o600 {
+				t.Errorf("the owner's access was not set back: %v %v", fi.Mode(), err)
 			}
 			found := false
 			for _, r := range sessionRecords(t, dir, tinyFrom(dir, "c1", "Read", in("file_path", "x"))) {
