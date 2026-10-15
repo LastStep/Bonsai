@@ -425,6 +425,14 @@ func (r *delRun) simple(c *shCommand, d shDialect, depth int, dirs delDirs, loop
 			}
 		}
 	case shPower:
+		if rs := r.j.roleShell(); rs.agent() {
+			// (Get-Item x).IsReadOnly = $true: a change of x's attributes (attrwords.go), read before the left side goes.
+			if ts := psMemberSet(words, depth); len(ts) > 0 {
+				if r.writes(rs, x, ts); r.deny != nil {
+					return delCd{}
+				}
+			}
+		}
 		r.envPSAssign(words)
 		words = delPSAssign(words)
 		for len(words) > 0 && !words[0].quoted && (words[0].text == "&" || words[0].text == ".") {
@@ -678,7 +686,7 @@ func (r *delRun) judge(a delAct, x delExec) {
 	// own judgment of each path above.
 	if rs := r.j.roleShell(); rs.changesNothing() {
 		for _, op := range append(append([]delOp(nil), a.ops...), a.dests...) {
-			if r.writePath(rs, x, op, a.word, true); r.deny != nil {
+			if r.writePath(rs, x, writeTarget{op: op, word: a.word}, true); r.deny != nil {
 				return
 			}
 		}

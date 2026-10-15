@@ -61,6 +61,7 @@ type shellRole struct {
 	// taskAssign is a literal BONSAI_TASK=<id> before the command being read (bash), the task a bonsai ladder with no
 	// --task climbs for; "" for none.
 	taskAssign string
+	own        []string // Bonsai's own files a change of permissions may reach (attrwords.go's bonsaiOwn); nil until read
 }
 
 // noteTaskAssign keeps a line's literal assignment of BONSAI_TASK (bash), for a bonsai ladder with no --task
@@ -356,11 +357,15 @@ type writeTarget struct {
 	srcs    []delOp
 	destDir bool
 	word    string // the write word, as a refusal names it
+	attr    bool   // a change of its permissions, owner, ACL or attributes (attrwords.go): judged by what it reaches too
 }
 
 // writeTargets gives the paths a write word writes (this file's comment), for a command whose program name and
 // native-ness delName gives; none for a command that is no write word.
 func writeTargets(name string, native bool, x delExec) []writeTarget {
+	if ts := attrTargets(name, native, x); len(ts) > 0 {
+		return ts
+	}
 	words := x.words[1:]
 	d := x.d
 	ops := func(ws []shWord) []delOp { return delOps(ws, d, false, false) }
@@ -649,17 +654,19 @@ func (r *delRun) writes(rs *shellRole, x delExec, ts []writeTarget) {
 	}
 	for _, role := range []bool{false, true} {
 		for _, t := range all {
-			if r.writePath(rs, x, t.op, t.word, role); r.deny != nil {
+			if r.writePath(rs, x, t, role); r.deny != nil {
 				return
 			}
 		}
 	}
 }
 
-// writePath judges one written path in each folder the command may run in; a path held in a variable or a
-// substitution the check cannot read is not judged (a known limit, this file's comment).
-func (r *delRun) writePath(rs *shellRole, x delExec, op delOp, word string, role bool) {
-	ops := delLiterals([]delOp{op}, x)
+// writePath judges one written path in each folder the command may run in, and a change of its permissions or
+// attributes by what it reaches too (attrReach); a path held in a variable or a substitution the check cannot read is
+// not judged (a known limit, this file's comment).
+func (r *delRun) writePath(rs *shellRole, x delExec, t writeTarget, role bool) {
+	word := t.word
+	ops := delLiterals([]delOp{t.op}, x)
 	for _, op := range ops {
 		if op.text == "" || op.expand || op.item {
 			continue
@@ -680,6 +687,13 @@ func (r *delRun) writePath(rs *shellRole, x delExec, op delOp, word string, role
 		}
 		for _, dir := range dirs {
 			if d := rs.mayWrite(dir, text, word, role); !d.Allow {
+				r.refuse(d)
+				return
+			}
+			if !t.attr || role {
+				continue
+			}
+			if d := rs.attrReach(dir, text, word, op.glob && !op.literal, x.d); !d.Allow {
 				r.refuse(d)
 				return
 			}
