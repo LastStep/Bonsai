@@ -923,6 +923,22 @@ func minutesSince(start, now time.Time) int64 {
 	return int64(now.Sub(start) / time.Minute)
 }
 
+// minutesBegun is the minutes from start to now counted up, each minute begun a whole one (0 when now is not after
+// start): it passes a limit of whole minutes exactly when the time since start does (V1's should-fix 1, 16 Oct: the
+// whole minutes since start passed a limit of 1 only at 2:00), so a budget is spent at its limit, and its spent line
+// reads "minutes: 181 of 180" a second past three hours.
+func minutesBegun(start, now time.Time) int64 {
+	if !now.After(start) {
+		return 0
+	}
+	d := now.Sub(start)
+	m := int64(d / time.Minute)
+	if d%time.Minute != 0 {
+		m++
+	}
+	return m
+}
+
 // firstLineTool reports a tool the guard's first line judges where the lock declares roles (engine.GuardTools, which a
 // test holds this to): the file tools, the shells, and the tools that start or resume an agent.
 func firstLineTool(tool string) bool {

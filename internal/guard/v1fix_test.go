@@ -5,7 +5,11 @@ package guard
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/LastStep/Bonsai/internal/agents"
 )
 
 // git rm's last --cached or --no-cached wins, so --no-cached (or a prefix git takes for it) after --cached deletes
@@ -94,5 +98,29 @@ func TestCommandStringRunnersAreRead(t *testing.T) {
 		if code, s := runs(t, dir, person(c), ChildSessionEnv, "1"); code != 0 {
 			t.Errorf("the person's session, %s: exit %d: %s", c, code, s)
 		}
+	}
+}
+
+// A minutes budget is spent once the time since its window started passes the limit, not a whole minute after it
+// (V1's should-fix 1: with minutes: 1, calls passed until 2:00); the refusal counts the minutes begun.
+func TestAMinutesBudgetIsSpentOnceTheLimitPasses(t *testing.T) {
+	dir := briefProject(t)
+	t0 := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
+	startedAt(t, dir, sessA, "workflow:lead", t0)
+	lead := func(cmd string) string {
+		return hookCall{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Bash", input: bash(cmd)}.payload(dir)
+	}
+	for _, at := range []time.Duration{0, 180 * time.Minute} {
+		if code, s := runAt(t, dir, lead("git status"), t0.Add(at), false); code != 0 {
+			t.Fatalf("at %v: exit %d: %s", at, code, s)
+		}
+	}
+	code, s := runAt(t, dir, lead("git status"), t0.Add(180*time.Minute+time.Second), false)
+	if code != 2 || !strings.Contains(s, "budget spent (minutes: 181 of 180)") {
+		t.Fatalf("a second past the limit: exit %d: %s", code, s)
+	}
+	// The call line keeps the whole minutes elapsed.
+	if _, m, ok := (agents.Store{Main: dir}).LastCall(sessA, "l1"); !ok || m != 180 {
+		t.Errorf("the last call line's minutes %d %v", m, ok)
 	}
 }

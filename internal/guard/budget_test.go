@@ -168,8 +168,8 @@ func TestANamedSessionsMinutesFromABriefReadInALine(t *testing.T) {
 		*w.Limits.Minutes.Value != 1 {
 		t.Fatalf("the brief read in a line did not tie: %+v", w)
 	}
-	step(time.Minute+59*time.Second, "git status", 0)
-	s := step(2*time.Minute, "git status", 2)
+	step(time.Minute, "git status", 0)
+	s := step(time.Minute+time.Second, "git status", 2)
 	if !strings.Contains(s, "budget spent (minutes: 2 of 1)") {
 		t.Errorf("%s", s)
 	}
@@ -211,7 +211,7 @@ func TestTheBudgetOfMinutes(t *testing.T) {
 	for _, c := range []struct {
 		at   time.Duration
 		code int
-	}{{0, 0}, {179 * time.Minute, 0}, {180*time.Minute + 59*time.Second, 0}, {181 * time.Minute, 2}} {
+	}{{0, 0}, {179 * time.Minute, 0}, {180 * time.Minute, 0}, {180*time.Minute + time.Second, 2}, {181 * time.Minute, 2}} {
 		code, s := runAt(t, dir, lead("git status"), t0.Add(c.at), false)
 		if code != c.code {
 			t.Fatalf("at %v: exit %d: %s", c.at, code, s)

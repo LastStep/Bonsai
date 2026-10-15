@@ -390,7 +390,7 @@ func (rr *roleRun) count(w *who, reads []string) counted {
 		name  string
 		count int64
 		limit *int64
-	}{{"minutes", minutes, win.Limits.Minutes.Value}, {"actions", actions, win.Limits.Actions.Value},
+	}{{"minutes", minutesBegun(win.Start, rr.now), win.Limits.Minutes.Value}, {"actions", actions, win.Limits.Actions.Value},
 		{"red_runs", red, win.Limits.RedRuns.Value}} {
 		if e == nil && m.limit != nil && m.count > *m.limit {
 			e = &agents.Event{E: agents.EventSpent, At: agents.StampMilli(rr.now), Measure: m.name, Count: m.count, Of: *m.limit}
