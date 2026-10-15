@@ -39,10 +39,17 @@ package guard
 // the hand-back still let through. A state that cannot be read is moved aside and the agent counted afresh (step 5.5's
 // "starts a fresh count"), once: a state moved aside a second time holds the window spent (roles.go's holdSpent), so
 // a repeated fault resets no budget. A red or reset line, or a climb's note, that cannot be written refuses the call
-// too. This is the count's own reading; the shell lines that would change a file's mode are refused besides
-// (attrwords.go). Not covered, as step 5.5's "attributed, not authenticated" says: a state or a calls file removed
-// (or, once, rewritten) where the guard cannot read the line (an interpreter's, a script's) still starts a count
-// afresh, and a climb's result removed or made unreadable so leaves its red run uncounted until a result appears.
+// too. A calls file rewritten under the count holds the window spent the same way (callsRewritten, measure
+// rewritten_calls; VG's third check: an rsync of an empty file over it had started a fresh count): one holding fewer
+// call lines than when its window started, or none once its agent's first call is older than that call's guard run can
+// take. This is the count's own reading; the shell lines that would change a file's mode are refused besides
+// (attrwords.go). Not covered, as step 5.5's "attributed, not authenticated" says: a write the guard does not read as
+// one onto Bonsai's files (a write word outside its tables on a line it reads, as rsync, tar -x, unzip, curl -o and
+// wget -O are; an interpreter's; a script's) can still rewrite a calls file with an earlier copy of itself at least as
+// long as at its window's start, or empty it within its agent's first 11 seconds (when an empty file cannot be told
+// from a call side by side with the first), or put a state that reads in the state's place, or remove the state, and
+// each starts a count afresh (a state that does not read is moved aside, and counted afresh once only); and a climb's
+// result removed or made unreadable so leaves its red run uncounted until a result appears.
 
 import (
 	"fmt"
@@ -375,13 +382,17 @@ func (rr *roleRun) count(w *who, reads string) counted {
 	actions := total - win.Calls
 	red := w.st.RedRuns()
 	var e *agents.Event
+	if why := callsRewritten(w.st, win, total, rr.now); why != "" {
+		rr.note(RuleStateUnreadable, why+", so it was rewritten and its window is held spent: a rewritten count resets no budget")
+		e = &agents.Event{E: agents.EventSpent, At: agents.StampMilli(rr.now), Measure: measureRewritten, Count: total - 1, Of: win.Calls}
+	}
 	for _, m := range []struct {
 		name  string
 		count int64
 		limit *int64
 	}{{"minutes", minutes, win.Limits.Minutes.Value}, {"actions", actions, win.Limits.Actions.Value},
 		{"red_runs", red, win.Limits.RedRuns.Value}} {
-		if m.limit != nil && m.count > *m.limit {
+		if e == nil && m.limit != nil && m.count > *m.limit {
 			e = &agents.Event{E: agents.EventSpent, At: agents.StampMilli(rr.now), Measure: m.name, Count: m.count, Of: *m.limit}
 			break
 		}
@@ -400,6 +411,34 @@ func (rr *roleRun) count(w *who, reads string) counted {
 		w.st = st
 	}
 	return counted{spent: e, newSpent: true}
+}
+
+// measureRewritten is the spent line's measure for a window held spent because its calls file was rewritten under its
+// count (callsRewritten): Count the call lines before the call that found it, Of those before its window started.
+const measureRewritten = "rewritten_calls"
+
+// firstCallRun bounds an agent's first call's guard run, from its state made to its call line written: the hook line's
+// timeout (engine.GuardTimeout, 10 s), when Claude Code ends the hook, and the second its first call's stamp drops
+// (agents.Stamp).
+const firstCallRun = 11 * time.Second
+
+// callsRewritten says why an agent's calls file reads as rewritten under its count (VG's third check, 15 Oct: an rsync
+// of an empty file over it, a write word outside the guard's tables, took its count from 2 to 0), "" when it does not:
+// it holds fewer call lines before this call's own (total less one) than when its window started, as the window's tie
+// counted them; or none at all once the agent's first call is older than that call's guard run can take
+// (firstCallRun), so its line must be there. Before then an empty file cannot be told from a call side by side with
+// the first, whose line is still to come, so it reads as kept.
+func callsRewritten(st *agents.State, win agents.Window, total int64, now time.Time) string {
+	before := total - 1
+	if before < win.Calls {
+		return fmt.Sprintf("this agent's calls file holds %d call lines before this call's, fewer than the %d before its "+
+			"window started", before, win.Calls)
+	}
+	if first, err := agents.ParseStamp(st.Header.First); err == nil && before == 0 && now.Sub(first) > firstCallRun {
+		return "this agent's calls file holds no call line before this call's, though its first call was made at " +
+			st.Header.First
+	}
+	return ""
 }
 
 // maxResult caps a ladder result the guard reads for an agent's red runs, in bytes.
@@ -489,9 +528,13 @@ func (rr *roleRun) noteClimbs(w *who) string {
 func (rr *roleRun) spentRefusal(w *who, c counted) Decision {
 	e := c.spent
 	head := fmt.Sprintf("budget spent (%s: %d of %d)", strings.ReplaceAll(e.Measure, "_", " "), e.Count, e.Of)
-	if e.Measure == measureUnreadable {
+	switch e.Measure {
+	case measureUnreadable:
 		head = "budget held spent (this agent's state could not be read a second time and was moved aside again, so its " +
 			"count is not to be trusted)"
+	case measureRewritten:
+		head = "budget held spent (this agent's calls file holds fewer calls than the guard had counted, so it was rewritten " +
+			"and its count is not to be trusted)"
 	}
 	addr := rr.address(w)
 	waiting := ""
