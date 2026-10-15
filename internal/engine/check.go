@@ -496,6 +496,10 @@ func (r *CheckResult) checkGitignore() {
 	}
 }
 
+// UntrackLocal is the command check's finding for a tracked .bonsai/local/ names (who: agent): it takes the files out of
+// git's index only, and the guard lets an agent run it (internal/guard's localIndex; its tests run this text).
+const UntrackLocal = "git rm -r -q --cached -- " + LocalDir
+
 // checkLocal finds files from .bonsai/local/ in git's index: tracked, or staged to be (contract §3).
 func (r *CheckResult) checkLocal() {
 	cmd := exec.Command("git", "-C", r.Root, "ls-files", "-z", "--", LocalDir)
@@ -514,7 +518,7 @@ func (r *CheckResult) checkLocal() {
 	}
 	if len(files) > 0 {
 		r.add("local", LocalDir, "", "git tracks or has staged "+strings.Join(files, ", ")+" from .bonsai/local/, which is never committed",
-			"take them out of git's index (the files stay on disk), run: git rm -r -q --cached -- "+LocalDir+"; then commit")
+			"take them out of git's index (the files stay on disk), run: "+UntrackLocal+"; then commit")
 	}
 }
 

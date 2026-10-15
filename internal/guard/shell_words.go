@@ -1553,7 +1553,7 @@ func (r *delRun) git(x delExec) (delExec, []delAct) {
 		if dry(g) {
 			return x, nil
 		}
-		a := delAct{word: "git rm", recursive: g.has("r"), tree: g.has("r"), ops: gitOps(g.ops)}
+		a := delAct{word: "git rm", recursive: g.has("r"), tree: g.has("r"), ops: gitOps(g.ops), cached: g.has("cached")}
 		if len(g.val("pathspec-from-file")) > 0 {
 			a.unnamed = "it takes its paths from a file (--pathspec-from-file)"
 			a.next = "name the paths in the command"

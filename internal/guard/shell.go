@@ -28,7 +28,9 @@ package guard
 //     read in the command's folder and judged by the guard's one function for a delete (may.go's mayDelete); a
 //     recursive delete or a move of a folder also against the guarded paths under it, found from the guarded globs
 //     (may.go's judgedRoots, read only once a delete needs them: it reads this machine's records) without reading
-//     the folder's tree (shell_paths.go).
+//     the folder's tree (shell_paths.go). One exception: git rm --cached of .bonsai/local/, or a path in it, at its
+//     checkout's top, named plainly, changes git's index only and is let through (localIndex): check's finding for a
+//     tracked one names it (engine.UntrackLocal).
 //
 // What it leaves (note 5; question A): a shell write to a guarded path (a redirect, cp or ln over it, an
 // interpreter such as python -c or node -e) is not judged, nor a delete inside a script run by name, nor, in
@@ -80,6 +82,7 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/redact"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // delJudge is what the delete check asks of the guard's rules (plan-5 5.3.2 notes 1, 7 and 8); the guard's judge
@@ -129,6 +132,7 @@ type delAct struct {
 	dests     []delOp // a move's destinations
 	destDir   bool    // a destination may be a folder the sources go into (dest/<name> is judged too)
 	rename    bool    // Rename-Item, ren: the destination is a new name beside the source
+	cached    bool    // git rm --cached: it takes its operands out of git's index only, and the files stay on disk
 }
 
 // shellDecide judges one shell call by the delete check: tool is Bash, Monitor or PowerShell (any other name is read
@@ -652,7 +656,7 @@ func (r *delRun) judge(a delAct, x delExec) {
 		}
 	}
 	for _, op := range a.ops {
-		if op.text == "" || op.expand || op.item {
+		if op.text == "" || op.expand || op.item || a.cached && r.localIndex(x, op) {
 			continue
 		}
 		r.path(x, op, a.tree, verb)
@@ -1013,6 +1017,37 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 			}
 		}
 	}
+}
+
+// localIndex reports an operand of git rm --cached that is .bonsai/local/, or a path inside it, at the top of the
+// checkout of each folder it may be read in: taking it out of git's index changes no file (they stay on disk), and
+// .bonsai/local/ is never committed (contract §3), so check's finding for a tracked one names exactly this command
+// (T-5505's S1, 16 Oct: the guard refused it, and an agent could not clear the finding). Any other guarded path is
+// judged as before: untracked, then committed, it is a deletion in git. A plain operand only (no glob, variable, git
+// pathspec magic or folder the check cannot tell), in letters as written.
+func (r *delRun) localIndex(x delExec, op delOp) bool {
+	text := op.text
+	if x.d != shBash {
+		text = strings.ReplaceAll(text, `\`, "/")
+	}
+	if op.glob || op.away || op.top || op.pipeVar || delPlain(op) != "" || strings.HasPrefix(text, ":") || x.dirs.unknown {
+		return false
+	}
+	dirs := r.dirsFor(x.dirs, text)
+	if len(dirs) == 0 {
+		return false
+	}
+	for _, dir := range dirs {
+		abs := filepath.FromSlash(text)
+		if !filepath.IsAbs(abs) {
+			abs = filepath.Join(dir, abs)
+		}
+		rel, err := filepath.Rel(checkoutTop(dir), filepath.Clean(abs))
+		if rel = filepath.ToSlash(rel); err != nil || rel != workspace.LocalDir && !strings.HasPrefix(rel, workspace.LocalDir+"/") {
+			return false
+		}
+	}
+	return true
 }
 
 // protected refuses a delete of a guarded path: the operand, and the guarded path under it when that decided.

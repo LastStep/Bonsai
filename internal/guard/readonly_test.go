@@ -6,8 +6,11 @@ package guard
 // refused as a delete of a guarded path.
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/LastStep/Bonsai/internal/engine"
 )
 
 // A --help of any command, and a preview of init or update, are not writes: let through to every caller, a role that
@@ -51,4 +54,35 @@ func TestReadOnlyBonsaiCallsAreNotWrites(t *testing.T) {
 	}
 	wantAnswer(t, dir, verifier("bonsai check --write"), 2, RuleRoleWritesNothing, agent, "1")
 	wantAnswer(t, dir, lead("bonsai message --kind report --from lead --to orchestrator --body x"), 2, RuleCallRefused, agent, "1")
+}
+
+// check's finding for a tracked .bonsai/local/ (who: agent) names git rm -r -q --cached -- .bonsai/local: an index-only
+// untracking of .bonsai/local/ is let through; a delete of it, an untracking of any other guarded path (a deletion in
+// git once committed), and one the check cannot read plainly are refused as before.
+func TestUntrackingBonsaiLocal(t *testing.T) {
+	dir := briefProject(t)
+	writeFile(t, filepath.Join(dir, "sub", "x.txt"), "x\n")
+	started(t, dir, sessA, "workflow:lead")
+	lead := func(cmd string) string { return shellAs(dir, "l1", "workflow:lead", cmd, false) }
+	person := func(cmd string) string { return hookCall{session: sessA, tool: "Bash", input: bash(cmd)}.payload(dir) }
+	for _, c := range []string{engine.UntrackLocal, engine.UntrackLocal + "; git commit -m untrack",
+		"git rm --cached .bonsai/local/log/w-2026-10-15.ndjson", "git rm -r --cached .bonsai/local/", "cd .bonsai && git rm -r --cached local",
+		"git rm -r --cached ./.bonsai/local", "cd sub && git rm -r --cached ../.bonsai/local", "git -C sub rm -r --cached ../.bonsai/local",
+		"git rm -r --cached " + filepath.ToSlash(dir) + "/.bonsai/local"} {
+		if code, s := runs(t, dir, person(c)); code != 0 {
+			t.Errorf("the person's session, %s: exit %d: %s", c, code, s)
+		}
+		if code, s := runs(t, dir, lead(c)); code != 0 {
+			t.Errorf("a lead, %s: exit %d: %s", c, code, s)
+		}
+	}
+	for _, c := range []string{"git rm -r .bonsai/local", "git rm -r -q -- .bonsai/local", "git rm -r --cached .bonsai",
+		"git rm --cached bonsai.yaml", "git rm --cached .bonsai/lock.json", "git rm --cached .bonsai/local/../lock.json",
+		"git rm --cached .bonsai/local protected.txt", "git rm -r --cached '.bonsai/loc*'", "git rm -r --cached $L",
+		"git rm -r --cached :/.bonsai/lock.json", "git rm -r --cached --dry-run .bonsai; rm -r .bonsai/local",
+		"rm -r .bonsai/local", "git rm -r --cached .bonsai/local && rm -rf .bonsai/local"} {
+		if code, s := runs(t, dir, person(c)); code != 2 {
+			t.Errorf("the person's session, %s: exit %d, want a refusal: %s", c, code, s)
+		}
+	}
 }
