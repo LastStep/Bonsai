@@ -4,7 +4,7 @@ package engine
 // one has a word in format.CheckWords, their one home, which says whether it is a finding (exit 1, and a problem in
 // status --json) or a warning (never the exit code), and who usually takes its next step. Each next step is the exact
 // command that fixes it, written "run: <command>", wherever one exists, and the step in plain words where a person
-// must judge (Rohan, 9 Oct: Bonsai is run by agents inside projects); cmd/bonsai's TestCheckTable holds every command
+// must judge (the director, 9 Oct: Bonsai is run by agents inside projects); cmd/bonsai's TestCheckTable holds every command
 // a next step names to Bonsai's words and flags.
 //
 // Check reads, fetches nothing and writes nothing (CI runs it offline, spec section 5: "CI needs no pack"): the lock

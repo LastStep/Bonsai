@@ -1,6 +1,6 @@
 package engine
 
-// The form of Bonsai's own hook lines (design/plan-5.md, 5.3.6 note 2, under Rohan's answer (a) to step 5.3's first
+// The form of Bonsai's own hook lines (design/plan-5.md, 5.3.6 note 2, under the director's answer (a) to step 5.3's first
 // question, 9 Oct; spec §3 and §7's 8 Oct note): every line calls the installed bonsai at a fixed place no file an
 // agent edits can redirect, and never reads the PATH. The guard's line, as the engine writes it:
 //

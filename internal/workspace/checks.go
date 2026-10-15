@@ -1,6 +1,6 @@
 package workspace
 
-// The checks' settings this machine last accepted for a workspace (5.4's second fix round, K1; Rohan, 13 Oct: make
+// The checks' settings this machine last accepted for a workspace (5.4's second fix round, K1; the director, 13 Oct: make
 // "stricter only" code). The ladder runner and the stop gate read bonsai.yaml as committed at the main checkout's HEAD
 // (stopgate.CommittedConfig), and a commit on the base branch is history: an agent that committed a lowered floor
 // there, or moved the branch to such a commit (git reset --hard, a ref moved by hand), made a red branch climb green

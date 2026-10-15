@@ -1,6 +1,6 @@
 package ladder
 
-// V2b's K1 (its reproducer m2b-base-commit; Rohan, 13 Oct: fix now): settings for the checks committed on the base
+// V2b's K1 (its reproducer m2b-base-commit; the director, 13 Oct: fix now): settings for the checks committed on the base
 // branch itself are history the runner and the stop gate read, so an agent that lowers the floor there must not make
 // a red branch climb green. Three ways to put a looser bonsai.yaml at the main checkout's HEAD: a commit on the base
 // branch (from the agent's worktree, git -C), git reset --hard to a looser commit, and the branch's ref moved to one

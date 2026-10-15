@@ -1,4 +1,4 @@
-// Package newtests checks that a climb's new tests fail on the base (spec §9, "New tests must fail on the base", Rohan
+// Package newtests checks that a climb's new tests fail on the base (spec §9, "New tests must fail on the base", the director
 // 7 Oct; design/plan-5.md 5.4.5): when a rung's test count rose, it runs the rung on the code from before the change,
 // once as it is and once with the branch's changed test files copied in, and tells apart the new tests that failed
 // there (they prove something), those that passed there (they prove nothing new) and those whose check was not run.
@@ -49,7 +49,7 @@
 // runs.
 //
 // Counts: count = failed_on_base + passed_on_base + not_run, always. The rise is offered for Bless whatever the
-// numbers (spec §9: "ratchets are Rohan's"); the caller carries them into the result and the ask.
+// numbers (spec §9: "ratchets are [the director's]"); the caller carries them into the result and the ask.
 //
 // Known limits, for the verifier:
 //   - A new test that reads a file the branch added outside the form's test-file convention (a fixture beside the

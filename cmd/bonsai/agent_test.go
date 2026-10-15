@@ -1,6 +1,6 @@
 package main
 
-// Bonsai's own commands refusing an agent (design/plan-5.md, 5.3.6 note 8, under Rohan's answer (ii)), and a project
+// Bonsai's own commands refusing an agent (design/plan-5.md, 5.3.6 note 8, under the director's answer (ii)), and a project
 // linked by the build before taking the new lines only with --allow-exec --yes (note 2, "Whichever"). Every test here
 // sets or clears CLAUDE_CODE_CHILD_SESSION itself (newCLI's testpack.Isolate clears it; asAgent sets it), so the suite
 // behaves the same inside an agent's session, where Claude Code sets it, and in CI.

@@ -23,7 +23,7 @@ package engine
 // So after init and update write, Bonsai asks Claude Code to install each locked plugin at project scope, never user
 // (InstallPlugins), and only a project's own packs' plugins: PluginCLI can list plugins and marketplaces, install and
 // uninstall, and nothing else, and Bonsai never installs, removes or changes a plugin that is not one of the project's
-// own packs (Rohan, 9 Oct: "it shouldn't install or remove other plugins").
+// own packs (the director, 9 Oct: "it shouldn't install or remove other plugins").
 //
 // Taking a pack out (step 5.1.7: unlink, or update with a pack gone from bonsai.yaml) removes Claude Code's record of
 // the pack's install for this checkout (UninstallPlugins): `claude plugin uninstall <id> --scope project` in the
@@ -42,7 +42,7 @@ package engine
 // step reports waiting, check warns plugin-trust and status --full says so, each naming the person's step (open
 // Claude Code in the checkout and accept its trust question) and then the command. A plugin that carries code parts (consent.go: hooks, MCP and LSP
 // servers, monitors, mods) runs code on this machine once installed, so it is installed only with --allow-exec, on
-// each machine (Rohan, 9 Oct, S2: "Ask on each machine"): without it the result is waiting, naming the plugin and its
+// each machine (the director, 9 Oct, S2: "Ask on each machine"): without it the result is waiting, naming the plugin and its
 // code parts, with the same command and --allow-exec as the person's next step; a plugin Claude Code already reports
 // installed at the locked commit for the checkout is not asked about again. Like every result of this step, waiting
 // never changes the command's exit code. A plugin with no code part (roles, skills, commands) installs with no flag; check compares what Claude Code reports with the lock (ComparePlugins), and reads, offline, the
@@ -276,7 +276,7 @@ type PluginResult struct {
 }
 
 // PluginConsent is what the install step needs to keep a plugin that carries code off this machine until a person
-// consents (Rohan, 9 Oct: "Ask on each machine"): each locked pack's plugin code parts at its locked commit (by pack
+// consents (the director, 9 Oct: "Ask on each machine"): each locked pack's plugin code parts at its locked commit (by pack
 // id; Plan.PluginConsent fills them), whether --allow-exec was given, and the command that repeats the run with it.
 type PluginConsent struct {
 	Code      map[string][]CodePart

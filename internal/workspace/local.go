@@ -19,7 +19,7 @@ package workspace
 //     or a file that cannot be read. Paths are compared case-blind on Windows.
 //
 // An agent can rewrite those files (a worktree's .git file, a commondir file), so the main checkout they name is used
-// only when it is verified (VerifyMain; Rohan's 8 Oct rule, spec §7: whatever the guard trusts to find the main
+// only when it is verified (VerifyMain; the director's 8 Oct rule, spec §7: whatever the guard trusts to find the main
 // checkout "cannot be rewritten by an agent without the guard noticing (fail closed)"; design/plan-5.md, 5.3.1 note
 // 2). A worktree's main checkout is verified when all three hold:
 //

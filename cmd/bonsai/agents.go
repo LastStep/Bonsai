@@ -1,6 +1,6 @@
 package main
 
-// bonsai agents (contract §12's note of 14 Oct; design/plan-5.md, step 5.5, note 5.5.12; Rohan, 14 Oct: "bonsai agent
+// bonsai agents (contract §12's note of 14 Oct; design/plan-5.md, step 5.5, note 5.5.12; the director, 14 Oct: "bonsai agent
 // status is just a quick way to poll data created by bonsai itself"): every agent Bonsai has recorded in the project,
 // the person's sessions and every subagent the guard kept state for, each copied as recorded from the guard's state
 // under .bonsai/local/agents/, the log and the messages (internal/agents' View). It reads only, never acts (it never

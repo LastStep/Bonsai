@@ -4,7 +4,7 @@ package main
 // case here that makes a project (or this machine) where check finds it, and the test runs bonsai check on it, as an
 // agent would, with --json and without. A word with no case fails, and so does a case for a word not in the table.
 // For each, the word is in its own list (findings, or warnings, which never change the exit code), the output fits
-// bonsai.check/1, and every next step names only commands that exist (agents first, Rohan 9 Oct): each "run: <command>"
+// bonsai.check/1, and every next step names only commands that exist (agents first, the director 9 Oct): each "run: <command>"
 // is a bonsai word with only flags its table has and has built, or a git or claude command of the few Bonsai names,
 // and every "bonsai <word>" a next step mentions is a word Bonsai has.
 

@@ -404,7 +404,7 @@ func TestForCheckout(t *testing.T) {
 	}
 }
 
-// A pack's plugin that carries code parts is installed on this machine only with --allow-exec (Rohan, 9 Oct: "Ask on
+// A pack's plugin that carries code parts is installed on this machine only with --allow-exec (the director, 9 Oct: "Ask on
 // each machine"): without it, waiting, naming the plugin and its code parts, the next step the same command with
 // --allow-exec, and no install asked of Claude Code; with it, installed; already installed at the locked commit for
 // this checkout, left as it is with no question; a plugin with no code part installs with no flag.

@@ -7,7 +7,7 @@ package clean
 //   - A thread goes once its last message (its newest created, the messages' own clock) is older than keep_days, or it
 //     is beyond the newest keep_newest threads (by their last message, then their id), and it is not open.
 //   - An open thread (its newest brief with no report after it) is never cleaned, whatever its age, and still counts
-//     among the newest (Rohan, 14 Oct: "A. Local, 30 days"): it stays listed until a report answers it.
+//     among the newest (the director, 14 Oct: "A. Local, 30 days"): it stays listed until a report answers it.
 //   - Only messages that read are cleaned, each its own file under its recipient's folder. A file that does not read
 //     (bonsai messages lists it as malformed, check warns of it), a staged write (.<id>.md.tmp-*), and anything else
 //     there are left alone and never named, as are the recipients' folders themselves (a writer may be about to write

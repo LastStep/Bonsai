@@ -1,6 +1,6 @@
 package main
 
-// Bonsai's own commands refusing an agent (design/plan-5.md, 5.3.6 note 8; Rohan's answer (ii) to step 5.3's second
+// Bonsai's own commands refusing an agent (design/plan-5.md, 5.3.6 note 8; the director's answer (ii) to step 5.3's second
 // question, 9 Oct: who may consent to code, and take the guard out). In an agent's session, which Claude Code marks by
 // setting CLAUDE_CODE_CHILD_SESSION in every process its Bash, PowerShell and Monitor tools and its hooks start (its
 // env-vars reference), so scripts, xargs and subprocesses inherit it, init, update and unlink refuse a person's

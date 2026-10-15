@@ -1,6 +1,6 @@
 package main
 
-// The hook lines' form (design/plan-5.md, 5.3.6 note 2, under Rohan's answer (a)): the shipped lines' exact text, the
+// The hook lines' form (design/plan-5.md, 5.3.6 note 2, under the director's answer (a)): the shipped lines' exact text, the
 // line run through the hook shell (sh on Linux, Git Bash on Windows) with its places swapped for temporary folders by
 // the function that makes it, and test builds stamped with their own place and scratch folder.
 

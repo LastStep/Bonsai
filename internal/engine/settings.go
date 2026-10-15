@@ -99,7 +99,7 @@ const (
 	RecordEndTimeout = "5"
 )
 
-// The installed bonsai's two places (spec §3; Rohan's answer (a) to step 5.3's first question, 9 Oct; plan-5 5.3.6
+// The installed bonsai's two places (spec §3; the director's answer (a) to step 5.3's first question, 9 Oct; plan-5 5.3.6
 // note 2), as the shell that runs a hook line names them, in the order the lines try them: Windows' place first,
 // C:\Program Files\Bonsai\bonsai.exe as Git Bash names it, which only an administrator can place; then WSL's and
 // Linux's, which only root can place. Windows' comes first because on Linux a /c folder at the root needs root to make,
@@ -126,7 +126,7 @@ type GuardTool struct {
 // their own tool calls, which this line meets). MultiEdit is not on the 2.1.296 page; it stays for a Claude Code that
 // still has it, since the hook adapter reads it and a name no tool has matches nothing.
 //
-// Where the lock declares roles (step 5.5, "Role rules and stall stops"; Rohan's "A. Two lines", 14 Oct), the line
+// Where the lock declares roles (step 5.5, "Role rules and stall stops"; the director's "A. Two lines", 14 Oct), the line
 // also matches the tools that start or resume an agent (Roles): Agent, its older name Task, SendMessage and Workflow,
 // so the guard judges who may call whom; its form, timeout and onFailure are the same. Everywhere else the line is as
 // before, and such a project pays nothing new.
