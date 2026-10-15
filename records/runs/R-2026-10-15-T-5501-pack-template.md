@@ -75,6 +75,8 @@ labels: {}
   96, `not_run` 96, against base `2deaf2e`, though this branch adds no test: 96 is the tests landed since 5.4's
   closing record (4284 - 4188), so the count reads against the floors' last recorded names rather than the base's own,
   and none runs on the base (`base_setup` null). It goes away when the floors are raised at the part's end.
+- 04:14 CI on `c641c15` green, all six jobs (the new `packs` job and the `windows` step among them; validate needed no
+  login on the runner).
 
 ## Runs
 

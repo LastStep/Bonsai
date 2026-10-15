@@ -1,12 +1,12 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 15 Oct 2026 at 04:15. **Step 5.5 is building, overnight on Rohan's word**
-("im leaving the session running for the night. work autonomosly", 15 Oct about 01:50). Landed on `main`: **5.5.8**
-(`8a3cfa8`), **5.5.9** (`f239f8f`), **5.5.0** (`e1437d0`), `T-5591` (`CLAUDE.md`'s Safety line), **5.5.1** (`c641c15`) and
-**5.5.10** (`298ed35`); each at `verify` until its verifier passes. **`workflow`** (5.5.4) passed P and is pushed to
-the new **private** `LastStep/bonsai-workflow` (`f8add62`), its CI green on both sides; public only on Rohan's word.
-**Running:** 5.5.11 phase B (a fresh builder), 5.5.2 (`base`), `T-5592` (two Windows CI flakes on `e1437d0`), and VM
-(`T-5593`). The morning batch is in "Waiting on Rohan". Every change lands by `CLAUDE.md`'s rules "from the link".
+Rewritten, never appended. Last rewritten 15 Oct 2026 at 10:20. **Step 5.5 is building; this session wrapped up on
+Rohan's word** ("wrap up after current agents are done", 15 Oct about 09:00). On `main` at `53fca0a`: **5.5.8, 5.5.9,
+5.5.0, 5.5.1, 5.5.10, 5.5.11, 5.5.12 and 5.5.2 (`base`)**, with `T-5591`, `T-5592` (two Windows flakes) and `T-5594`
+(VM's fixes). **VM passed** 5.5.9, 5.5.0 and 5.5.10. **VG failed 5.5.11 on six must-fixes (A-F) and 5.5.8's item 4
+(H)**, and passed 5.5.12. **`workflow`** (5.5.4) passed P and is pushed **private** to `LastStep/bonsai-workflow`, its
+CI green. **Next session, first: VG's fix round** ("Now: step 5.5" below). About 46 h of 5.5's 63.5-106 (re-ask 138)
+logged. Every change lands by `CLAUDE.md`'s rules "from the link".
 
 ## In short
 
@@ -34,14 +34,22 @@ approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5
   `R-2026-10-13-T-5491-named-session-tests.md`. Tasks: `T-5407`, `T-5490`, `T-5491`, all `done`.
 - **Step 5.5, the packs, the roles and their messages: building** (approved 14 Oct, 17:52; `T-5590` `done`): the
   section on `main` at `c64f50a`; the design in the artifact "Workflow Pack Redesign"
-  (https://claude.ai/artifact/4j5RgCaPQs9QDh8sShbKNN, version 4). **Landed:** 5.5.8 (`8a3cfa8`, run report
-  `R-2026-10-14-T-5508-ci-green.md`) and 5.5.9 (`89aa3a6`..`f239f8f`, `R-2026-10-14-T-5509-formats-set-8.md`; formats
-  set 8; the public test pack at H, `19e3ca5`). Both tasks at `verify` until their verifiers (VG, VM) pass.
+  (https://claude.ai/artifact/4j5RgCaPQs9QDh8sShbKNN, version 4). **Landed (each by the landing rule, CI green):**
+  5.5.8 `8a3cfa8`, 5.5.9 `f239f8f` (formats set 8; the test pack at H, `19e3ca5`), 5.5.0 `e1437d0`, `T-5591` `2deaf2e`,
+  5.5.1 `c641c15`, 5.5.10 `298ed35`, `T-5592` `dd73670`, 5.5.11 `728a0e5`, `T-5594` `80b5bf7`, 5.5.12 `7615ec7`, 5.5.2
+  `53fca0a`. **Done:** `T-5509`, `T-5510`, `T-5512`, `T-5591`, `T-5592`, `T-5593` (VM), `T-5594`. **At `verify`:**
+  `T-5500`, `T-5501`, `T-5502` (V1), `T-5508` and `T-5511` (VG's fix round). **Running:** `T-5504` (Rohan's read; a link
+  test with `base`), `T-5595` (held, not landed), `T-5596` (VG, round 2 to come). Run reports
+  `records/runs/R-2026-10-1[45]-T-55*.md`.
 
 Hours (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min. **5.1: 866 minutes. 5.2:
 1,061 minutes. 5.3: about 2,013 minutes (33 h 33 min). 5.4: about 2,372 minutes (39 h 32 min) of its 28-44 h
 estimate, under its 57 h re-ask line** (the verifier's count, 2,362, plus `T-5491`'s 10; its 79 minutes of planning
-included; the orchestrator's own time between runs only partly in them). **5.5's pieces so far** (their run reports' rows; the two ran side by side): **5.5.8 214 minutes** against its 1.5-2.5 h (git built from source twice for item 1, and fix round 1's full Windows half), **5.5.9 209** against its 2-3.5 h. Later parts' planning: 5.5 84 (9 Oct) plus
+included; the orchestrator's own time between runs only partly in them). **5.5's building so far: about 2,776 minutes (46.3 h)** of its 63.5-106 h (re-ask 138), from its run reports' rows
+(builders, helpers, verifiers and the orchestrator's landings; runs side by side each counted): 5.5.8 214, 5.5.9 209,
+5.5.0 106, 5.5.1 67, 5.5.2 574 (seven Windows runs, after each move of `main`), 5.5.4 61, 5.5.10 159, 5.5.11 350,
+5.5.12 207, `T-5591` 1, `T-5592` 146, VM 223, `T-5594` 216, `T-5595` 136, VG 107. Left: VG's fix round and round 2,
+`T-5595`'s landing, 5.5.3, 5.5.5, 5.5.6, V1, 5.5.7, the end verifier and the floors. Later parts' planning: 5.5 84 (9 Oct) plus
 its 14 Oct re-plan (the orchestrator's session 11:13-15:00; planner 34, reviewers 17 and 13, fixers 35 and 42 minutes,
 the planner's three helpers about 5; the 12-13 Oct research and design runs also counted in 5.5's planning row), 5.6
 67, 5.7 117. **Questions put to Rohan in 5.5 so far: seventeen**, stop line 3 crossed in the open (the plan says so;
@@ -54,6 +62,14 @@ repo.
 
 ## Rohan's decisions
 
+- **15 Oct, about 09:00: "wrap up after current agents are done"**; at 06:28 and 10:00 "close any unnecessary
+  process left running" (dead and duplicate wait loops stopped; live runs kept).
+- **15 Oct, 06:31: Windows sessions, "Allow the size check"** (asked with three options, this one recommended): he adds
+  one permission rule in his user settings through `/permissions`, `Bash(stat -c %s
+  /mnt/c/Users/droha/.claude/.credentials.json)`, so agents run `rules.md`'s login warm-up check themselves; `rules.md`
+  names that exact command. **Not yet confirmed added** (see "Waiting on Rohan").
+- **15 Oct, about 01:50: "im leaving the session running for the night. work autonomosly"**; 01:44 "go" for the wave
+  after 5.5.8 and 5.5.9.
 - **14 Oct, about 19:00: "take a pause once 5.5.9 and 5.5.8 are done, wait for my go".** Both done 21:48; the next
   wave waits for his word.
 - **14 Oct, 20:47: Defender, "CI counts for those"** (asked with three options; the scratch-folder exclusion was
@@ -229,38 +245,41 @@ repo.
 
 ## Now: step 5.5, the packs, building
 
-`design/plan-5.md`, "### Step 5.5: the packs, the roles and their messages (63.5-106 h, re-ask at 138)", lines
-3437-5967 (the section's line numbers as at `c64f50a`; later commits did not change `design/plan-5.md`); "For Rohan, in
-plain words" at 3494-3803; "Notes per piece" from 4577. **Approved by Rohan 14 Oct, 17:52.** **Tasks** in
-`records/tasks/`: `T-5508` and `T-5509` at `verify` (landed; each `done` once its verifier passes: VG re-reads 5.5.8's
-gate and runner lines, VM covers 5.5.9 with 5.5.0 and 5.5.10); `T-5500`, `T-5510`, `T-5511`, `T-5512`, `T-5501` to
-`T-5507` and `T-5591` at `todo`. Outside-piece work takes `T-5592` on in the order it starts (`T-5592` the Windows flakes, `T-5593` VM). Grants: `T-5509` the contract, spec and `formats/active-task/**/bonsai.yaml` (the
-orchestrator's grant at 21:33, a change the section names); `T-5500` `.gitattributes`; `T-5501`
-`packs/template/.gitattributes` and `ci.yml`; `T-5591` `CLAUDE.md`; `T-5507` the link's files (each such commit made
-with no other task `running`).
+`design/plan-5.md`, "### Step 5.5" (lines 3437-5967); "Notes per piece" from 4577; "5.5 done" from 5726. Tasks in
+`records/tasks/`; outside-piece work takes `T-5597` next. **The next session, in this order (parallel where marked):**
 
-**Now (Rohan's go, 15 Oct 01:44): 5.5.0 (`T-5500`), 5.5.10 (`T-5510`) and 5.5.1 (`T-5501`) side by side** (the section's order, item 2;
-Opus builders; briefs as `~/bonsai-checks/briefs/brief-T-5508.md` and `brief-T-5509.md` were). 5.5.10's and 5.5.1's
-last commits wait for 5.5.0's landing; each protected-path commit made with its task the only one `running` (5.5.0's
-`.gitattributes`, 5.5.1's template `.gitattributes` and `ci.yml`). 5.5.11's payload measurement may start now that
-5.5.8 has landed (order item 3). **For 5.5.0's brief, the orchestrator's call (18:51, told to Rohan):** its
-`check --pack` rule "each file in `agents/` is declared" applies only to a pack whose `roles` is not empty, so the test
-pack's H (`roles: []` beside `agents/marker.md`) stays "H none", as the section says (the T-5509 builder found the
-tension). **From 5.5.9 for the next pieces:** the check and pack-check words 5.5.0 and 5.5.10 raise are in their own
-tables (`RoleCheckWords`, `MessageCheckWords`, `PackRoleCheckWords`), so `TestCheckTable` stays green until each piece
-builds its case; `status --json` writes `roles` and `messages` null until 5.5.0 and 5.5.10 fill them;
-`docs/reference/generated-files.md` holds the `messages` and `agents` kinds (5.5.0 moves the page); `needs.mcp` and
-the lock's `ref` are after 1.0 (T-5509's run report says why).
+1. **VG's fix round** (round 1 of two; its report in `R-2026-10-15-T-5596-verify-vg.md`, 09:42), a new task under
+   5.5.11 (`T-5597`), a **fresh Opus fixer** (guard code), its brief pointing at VG's report and 5.5.11's run report:
+   **A** a declared role given only to a child joined to an allowed Agent or Task call for it (else an undeclared
+   type), or Skill calls that fork into a declared role judged; **B** role types matched case-insensitively; **C** the
+   stop gate finds the report message itself; **D** past a budget, only the installed place or a bare `bonsai` counts
+   as the report or a brief's read; **E** a climb with no `--task` noted as `BONSAI_TASK`'s; **F** `internal/agents`'
+   readers open regular files only, `mkfifo` and `mknod` among the bonsai-files writes; **H** (5.5.8 item 4)
+   `rungEnv(c.o.Env)` for the new-tests reruns, with a test; **I** a state that does not read moved aside and counted
+   afresh; and where they fit **G** (`recorded.go:118` through `message.AtLeastMinutes`), **J** (the missing literal
+   forms), **K**, the recorder's settle wait written as a limit or checked against `last_assistant_message`. Then
+   **VG's round 2** by a **fresh verifier** with a hand-over (the first VG reached about 540k tokens). `T-5511` and
+   `T-5508` stay at `verify` until it passes.
+2. **Beside it: `T-5595`** (held at `01ae3c1` on `7615ec7`, its worktree `~/Servers/Bonsai-t5595` kept): rebase onto
+   `main`, check 10 on both sides, climb, land. It gives the Windows timing tests their own limits (they reddened most
+   landings' Windows halves on 15 Oct).
+3. **Beside it: 5.5.3, the operating skill** (`T-5503`): all it waits for has landed (5.5.2, 5.5.10, 5.5.11, 5.5.12);
+   its text names the guard's refusals, so it reads VG's fix round's outcome before its last commit.
+4. **`workflow`'s link with `base`** (`T-5504`'s `done_when`: block under 40 lines), now that `base` is on `main`; then
+   Rohan's read and his public line.
+5. **The Windows Claude Code sessions, once Rohan's size-check rule is in:** 5.5.11's Windows payload measurement
+   (`~/bonsai-checks/briefs/brief-T-5511-measure.md`, Windows half), then 5.5.5 and 5.5.6 (after 5.5.3, VM and VG pass
+   and `workflow`'s CI is green); then V1; then 5.5.7 (the pre-release, Rohan's sitting); then the end verifier and the
+   floors.
 
-**5.5's order** (the section's "The pieces and their order"): **5.5.8 first** (`T-5508`: the three CI flakes, the
-runner clearing `BONSAI_TASK`/`BONSAI_ROLE` from the rungs, O1); 5.5.9 (formats set 8: `bonsai.message/1`,
-`bonsai.messages/1`, `bonsai.agents/1`, roles in pack, workspace and lock, the contract's section and the spec's notes,
-the protected files in a lone window); 5.5.0 (the engine's part, roles and limits in force, `status`'s `roles`);
-5.5.10 (messages); 5.5.11 (the guard: two lines, who may call whom, writes into Bonsai's records refused, stall stops;
-its own verifier VG); 5.5.12 (`bonsai agents`, the `spawn` event, `usage` records); 5.5.1 (template); 5.5.2 (`base`);
-5.5.3 (operating skill); 5.5.4 (`workflow`, the six roles, privacy check P, Rohan's read); 5.5.5-5.5.6 (real sessions,
-walls); 5.5.7 (the new pre-release, Rohan's sitting, Bonsai takes both packs, `CLAUDE.md` shrinks); verifiers VM, VG,
-P, V1, the end verifier. Read the section's order for what runs side by side and each piece's Owns.
+**Calls made this session, logged and told to Rohan:** 5.5.0's `pack-role-undeclared` only where `roles` is not empty;
+the test pack's H keeps one `pack-deny-relative` (no commit I); `formats/active-task/**/bonsai.yaml` granted to T-5509 as
+test data; the `workflow` brief's "no person's name" was wrong and the plan's rule restored; D2's choice (b) (VM: it fits
+contract 2.2); `.zshenv` and `.bash_login` join base's walls in its first fix round, after 5.5.6; a task with a verifier
+in its `done_when` stays `verify` until that verifier passes. **Found, for later:** D1b (a message pointer streamed with
+no size bound: `--show` can run for hours on a huge sparse file; `internal/message/pointer.go`); `format.messageComment`
+could name `skill base:message`; the ladder's `new_tests` reads against the floors' recorded names until the floors are
+raised; `internal/engine`'s `TestFolderChangeIsCode` once lost its temp folder on Windows (green alone).
 
 **How work runs from here** (`CLAUDE.md`, "from the link"): every piece a task `T-55yy` in `records/tasks/` (the
 orchestrator alone writes and moves them), its run report `R-<date>-T-55yy-<topic>.md` in format 1; builders are
@@ -268,7 +287,8 @@ subagents in plain worktrees from `main`, climbing `/usr/local/bin/bonsai ladder
 on a green local result at its HEAD whose record names the installed `bonsai`, plus check 10's Windows half before the
 push (back from 5.5: `~/bonsai-checks/briefs/rules.md`) and CI after it; the part's end verifier audits every landing.
 The builders' rules: `~/bonsai-checks/briefs/rules.md` (**update its `Claude-Session` line to the new session's
-first**; 14 Oct it gained the Defender rule and "stop a load you start by its parent's PID, check `uptime`"). The floors are raised once a part, after its last records commit: **they stand at `go_tests` 4188 and `go_tests_tagged` 4194** (5.4's close); 5.5.9's climb at `f239f8f` saw 4241 and 4247.
+first**; 14-15 Oct it gained the Defender rule, the load rule, "a guard refusal is never worked round" and the exact
+size-check command). The floors are raised once a part, after its last records commit: **they stand at `go_tests` 4188 and `go_tests_tagged` 4194** (5.4's close); 5.5.9's climb at `f239f8f` saw 4241 and 4247.
 
 **5.4's carry-overs are placed in the section:** the runner clearing `BONSAI_TASK` and `BONSAI_ROLE` and O1 in 5.5.8;
 D2 written into `CLAUDE.md` at 5.5.7; **the next pre-release** at 5.5.7, built from a clean clone, the current one first
@@ -299,15 +319,11 @@ the main checkout's `.bonsai/local/` is the guard's: an agent's `cp` out of it i
 
 ## Waiting on Rohan
 
-- **In the morning (15 Oct), one batch:** (1) the Windows half of 5.5.11's payload measurement and its Windows
-  scripted sessions: the auto-mode permission classifier refuses the size check of
-  `%USERPROFILE%\.claude\.credentials.json` that `rules.md`'s login warm-up needs, so no Windows Claude Code session
-  runs; allow that one check, run it himself, or let the Windows half rest on WSL's facts and CI. (2) His read of
-  `workflow` (private at `LastStep/bonsai-workflow`; the builder's file-by-file list in `T-5504`'s run report), then
-  his public line. Told, nothing to answer: the test pack's relative deny rule meets 5.5.0's `pack-deny-relative`
-  (one finding at H, kept); CI's `windows` red on `e1437d0` from two Windows pid-timing flakes, fixed forward in
-  `T-5592`; the orchestrator's brief for `workflow` wrongly said "no person's name", and the plan's rule (his name and
-  game wording kept in `workflow`'s prose) was restored in a fix round.
+- **The `/permissions` rule** (his 06:31 answer): add `Bash(stat -c %s /mnt/c/Users/droha/.claude/.credentials.json)`
+  to his user settings and say so; every Windows Claude Code session waits for it.
+- **His read of `workflow`** (private at https://github.com/LastStep/bonsai-workflow; the builder's file-by-file list in
+  `T-5504`'s run report; worth his eye: decision records start "proposed" and he accepts them; his 08:00 brief and
+  weekly rituals kept, marked [WEEK]), then his public line.
 - **Whenever he likes:** whether to allow deleting git's own lock files by exact name (`rm -f .git/index.lock`, a
   common agent fix, refused because the project's `.git` is guarded for deletes; told 11 Oct 16:34, left as planned);
   whether the redactor's shared `=>` and `:=` limits go in a named part before the release; turn GitHub Pages off (the
@@ -321,6 +337,10 @@ the main checkout's `.bonsai/local/` is the guard's: an agent's `cp` out of it i
 
 ## Loose ends
 
+**15 Oct:** the stop gate's 4 s git limit met a loaded (and once an idle) Windows run four times; `T-5595` gives the tests
+their own limit, the gate's limit stays a known limit (Rohan, 13 Oct). Landings in parallel each forced the others to
+rebase and run the Windows half again (`base` ran it seven times): land in a fixed order and keep records commits for
+the ends of waves.
 **Load-sensitive tests seen 14 Oct** (not yet a CI flake; each green alone): `internal/redact`'s `TestLinearTime`
 (`one_line_of_names_behind_names_[1_MB]`, 1.15-1.31 s against its 1.024 s limit at load 25-30) and `internal/clean`'s
 `TestStoppedAnywhereLeavesAWholeState` ("stopped true", Windows, the session-end budget under load, as `TestEveryKind`

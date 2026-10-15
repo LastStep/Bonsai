@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5592
 title: "Two Windows CI flakes on e1437d0: an exited process read as a job member, and a reused pid in TestSweep"
-status: running
+status: done
 lane:
 done_when:
   - "internal/rungjob's member skips a pid whose process has exited (its exit code is no longer STILL_ACTIVE) as well as one OpenProcess can no longer open, and still reports a live member it cannot describe; a Windows Go test stages an exited process whose handle is still held and shows it skipped"
@@ -12,7 +12,7 @@ depends_on: [T-5508]
 blocked_by:
 created: 2026-10-15
 started: 2026-10-15
-finished:
+finished: 2026-10-15
 labels:
   bonsai.branch: "t5592"
   bonsai.ladder: []

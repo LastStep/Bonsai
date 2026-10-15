@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5510
 title: "Messages between agents: the reader, bonsai message and bonsai messages (5.5.10)"
-status: verify
+status: done
 lane:
 done_when:
   - "internal/message reads bonsai.message/1; bonsai message writes a brief or a report into its recipient's folder, its pointers fingerprinted; bonsai messages lists them"
@@ -14,7 +14,7 @@ depends_on: [T-5509]
 blocked_by:
 created: 2026-10-14
 started: 2026-10-15
-finished:
+finished: 2026-10-15
 labels:
   bonsai.branch: "t5510"
   bonsai.ladder: []

@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5509
 title: Formats set 8, the contract's new section and the spec's notes (5.5.9)
-status: verify
+status: done
 lane:
 done_when:
   - "Formats set 8: bonsai.message/1, bonsai.messages/1 and bonsai.agents/1 with their examples and trick files; roles in pack, workspace and lock; messages in workspace; roles and messages at the end of status --json; the message, spawn and usage log events and the log's parent and usage fields; the manifest and README"
@@ -15,7 +15,7 @@ depends_on: [T-5590]
 blocked_by:
 created: 2026-10-14
 started: 2026-10-14
-finished:
+finished: 2026-10-15
 labels:
   bonsai.branch: "t5509"
   bonsai.ladder: []

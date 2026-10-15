@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5502
 title: "base, Bonsai's own pack: the walls, the labels, the block and the template skills (5.5.2)"
-status: running
+status: verify
 lane:
 done_when:
   - "base in packs/base/: the plugin manifest; pack.yaml with the walls, each with its why, and base's protected paths; labels.yaml with contract section 5.6's four labels; block.md; README; the template skills"

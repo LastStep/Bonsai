@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5593
 title: "VM: a fresh verifier on formats set 8, the engine's roles and limits, and messages between agents (5.5.9, 5.5.0, 5.5.10)"
-status: running
+status: done
 lane:
 done_when:
   - "A fresh Opus verifier, its bar adversarial, reads note 5.5.9, 5.5.0 and 5.5.10, the section's shapes and the three diffs, re-runs check 10 itself on both sides, and runs 5.5 done's checks 2, 3 (roles and limits) and 4, and check 15 for their refusals"
@@ -11,7 +11,7 @@ depends_on: [T-5509, T-5500, T-5510]
 blocked_by:
 created: 2026-10-15
 started: 2026-10-15
-finished:
+finished: 2026-10-15
 labels:
   bonsai.branch: null
   bonsai.ladder: []

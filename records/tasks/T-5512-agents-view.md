@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5512
 title: bonsai agents, the studio's view of every agent, and the usage records (5.5.12)
-status: todo
+status: done
 lane:
 done_when:
   - "bonsai agents [--json] (bonsai.agents/1) lists every agent seen in the project, the person's sessions and every subagent, with recorded facts only and its usage token counts; it reads only and never acts, derives no state and reads no setting"
@@ -13,8 +13,8 @@ done_when:
 depends_on: [T-5511]
 blocked_by:
 created: 2026-10-14
-started:
-finished:
+started: 2026-10-15
+finished: 2026-10-15
 labels:
   bonsai.branch: "t5512"
   bonsai.ladder: []

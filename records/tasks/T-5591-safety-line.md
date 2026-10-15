@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5591
 title: CLAUDE.md's Safety line names the workflow pack's repository among the places Bonsai's work writes
-status: verify
+status: done
 lane:
 done_when:
   - "CLAUDE.md's Safety line names LastStep/bonsai-workflow (its local copy in the scratch folder, then GitHub from P on) among the places Bonsai's work writes, and nothing else in CLAUDE.md changes"
@@ -11,7 +11,7 @@ depends_on: [T-5590]
 blocked_by:
 created: 2026-10-14
 started: 2026-10-15
-finished:
+finished: 2026-10-15
 labels:
   bonsai.branch: null
   bonsai.ladder: []

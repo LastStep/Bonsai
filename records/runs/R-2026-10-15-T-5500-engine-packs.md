@@ -94,6 +94,8 @@ labels: {}
   for the placeholder, each refusal naming its next step). P0 passed before it. `main` fast-forwarded
   `60545a7..e1437d0` and pushed; the worktree removed with `git worktree remove`, the branch deleted. **`T-5500` to
   `verify`, until VM (roles and limits) and V1 (`<protocols>/`) pass.**
+- 07:30 T-5594 landed at `80b5bf7` (VM's fixes); `T-5500` stays at `verify` until VM's round 2 and V1.
+- 08:48 **VM PASS on 5.5.0** (round 2). `T-5500` stays at `verify` until V1 (its `<protocols>/` part).
 
 ## Runs
 
