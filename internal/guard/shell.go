@@ -29,8 +29,9 @@ package guard
 //     recursive delete or a move of a folder also against the guarded paths under it, found from the guarded globs
 //     (may.go's judgedRoots, read only once a delete needs them: it reads this machine's records) without reading
 //     the folder's tree (shell_paths.go). One exception: git rm --cached of .bonsai/local/, or a path in it, at its
-//     checkout's top, named plainly, changes git's index only and is let through (localIndex): check's finding for a
-//     tracked one names it (engine.UntrackLocal).
+//     checkout's top, named plainly, with engine.UntrackLocal's own flags only (-r, -q, --cached, --: delUntracks,
+//     since a later --no-cached deletes from disk), changes git's index only and is let through (localIndex): check's
+//     finding for a tracked one names it (engine.UntrackLocal).
 //
 // What it leaves (note 5; question A): a shell write to a guarded path (a redirect, cp or ln over it, an
 // interpreter such as python -c or node -e) is not judged, nor a delete inside a script run by name, nor, in

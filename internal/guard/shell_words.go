@@ -1556,7 +1556,7 @@ func (r *delRun) git(x delExec) (delExec, []delAct) {
 		if dry(g) {
 			return x, nil
 		}
-		a := delAct{word: "git rm", recursive: g.has("r"), tree: g.has("r"), ops: gitOps(g.ops), cached: g.has("cached")}
+		a := delAct{word: "git rm", recursive: g.has("r"), tree: g.has("r"), ops: gitOps(g.ops), cached: delUntracks(args, g)}
 		if len(g.val("pathspec-from-file")) > 0 {
 			a.unnamed = "it takes its paths from a file (--pathspec-from-file)"
 			a.next = "name the paths in the command"
@@ -1609,6 +1609,32 @@ func (r *delRun) git(x delExec) (delExec, []delAct) {
 		return x, []delAct{a}
 	}
 	return x, nil
+}
+
+// delUntracks reports a git rm that takes its operands out of git's index only, as engine.UntrackLocal does: --cached
+// (or a prefix git takes for it) among engine.UntrackLocal's own flags alone (-r, -q, --cached, --), every word
+// literal. Any other option is judged as a delete, as before: git takes the last of --cached and --no-cached (or a
+// prefix of either, --no-c), so --no-cached after --cached deletes the files from disk (V1's M1, 16 Oct).
+func delUntracks(args []shWord, g delGot) bool {
+	for _, w := range args {
+		if w.expand {
+			return false
+		}
+	}
+	cached := false
+	for k, o := range g.on {
+		switch o {
+		case "cached":
+			if strings.Contains(args[g.at[k]].text, "=") {
+				return false
+			}
+			cached = true
+		case "r", "q":
+		default:
+			return false
+		}
+	}
+	return cached
 }
 
 // delPSCmdlet is a PowerShell cmdlet's parameters, lower case.
