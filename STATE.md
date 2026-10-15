@@ -4,7 +4,7 @@ Rewritten, never appended. Last rewritten 15 Oct 2026 at 17:00. **Step 5.5 is bu
 every piece but 5.5.4-5.5.7 has landed; this session closed **5.5.8, 5.5.3 and 5.5.11** (VG passed 5.5.11 after its
 fix rounds `T-5598`, `T-5513`, `T-5514`), landed `T-5595` (the Windows timing tests) and took the director's name out
 of the product, `CLAUDE.md` and `workflow` (`T-5599`). `workflow` (5.5.4) is **public** at `fed3bbf` (the director
-made it public, 15 Oct). **Next session, first: 5.5.4's link test with `base`, then 5.5.5 and 5.5.6** ("Now: step 5.5"
+made it public, 15 Oct). **5.5.4 closed 16 Oct 00:29 (the link with `base`: 21 block lines); next 5.5.5, then 5.5.6** ("Now: step 5.5"
 below). About 61 h of 5.5's 63.5-106 (re-ask 138) logged. Every change lands by `CLAUDE.md`'s rules "from the link".
 
 **No person's name** goes into any file or commit message (the director, 15 Oct; `CLAUDE.md`'s Safety section): "the
@@ -36,7 +36,7 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
 | 5.5.1 the pack template, its CI | `T-5501` | verify | landed `c641c15`; waits for V1 |
 | 5.5.2 `base` | `T-5502` | verify | landed `53fca0a`; waits for V1 |
 | 5.5.3 the operating skill | `T-5503` | **done** | landed `9370976` (batch 1), CI green |
-| 5.5.4 `workflow` | `T-5504` | blocked | public at `fed3bbf`, CI green; left: the scratch link with `base` (block under 40 lines) |
+| 5.5.4 `workflow` | `T-5504` | **done** | public at `c48d534`, CI green; the link with `base` 21 block lines (16 Oct) |
 | 5.5.5 real sessions | `T-5505` | todo | after 5.5.3 and 5.5.4 |
 | 5.5.6 the walls | `T-5506` | todo | after 5.5.5 |
 | 5.5.7 Bonsai takes the packs | `T-5507` | todo | after V1: the new pre-release, the director's sitting |
