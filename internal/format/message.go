@@ -287,7 +287,7 @@ func thresholdWords(setting string) string {
 // reference page of lists reads it. bonsai messages reports them and never acts on one.
 var MessageFlags = []Word{
 	{Word: "unanswered", Means: "a brief with no report after it, whose recipient's agent has stopped or has made no call for the threshold's minutes (" +
-		thresholdWords("unanswered_minutes") + "); until Bonsai reads the agents' state (step 5.5.11), a brief that old with no report"},
+		thresholdWords("unanswered_minutes") + "), as the guard recorded its calls; a brief no agent has tied, once it is that old"},
 	{Word: "circling", Means: "the same two addresses have exchanged more briefs each way in the thread than the threshold (" +
 		thresholdWords("circling_briefs") + ")"},
 	{Word: "budget-spent", Means: "the agent tied to the thread's newest brief is past its budget, as the guard recorded it"},

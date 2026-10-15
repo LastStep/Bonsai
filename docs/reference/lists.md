@@ -371,7 +371,7 @@ error words.
 
 | Word | Means |
 |---|---|
-| `unanswered` | a brief with no report after it, whose recipient's agent has stopped or has made no call for the threshold's minutes (messages.unanswered_minutes in bonsai.yaml, default 60); until Bonsai reads the agents' state (step 5.5.11), a brief that old with no report |
+| `unanswered` | a brief with no report after it, whose recipient's agent has stopped or has made no call for the threshold's minutes (messages.unanswered_minutes in bonsai.yaml, default 60), as the guard recorded its calls; a brief no agent has tied, once it is that old |
 | `circling` | the same two addresses have exchanged more briefs each way in the thread than the threshold (messages.circling_briefs in bonsai.yaml, default 3) |
 | `budget-spent` | the agent tied to the thread's newest brief is past its budget, as the guard recorded it |
 | `malformed` | a message file of the thread does not read as bonsai.message/1: it is listed under malformed, and check warns (message-malformed) |

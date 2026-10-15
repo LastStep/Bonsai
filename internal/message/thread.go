@@ -12,15 +12,18 @@ package message
 //     written in the brief's own millisecond still answers it); answered once a report comes after it, its caller's own
 //     blocked report closing a dropped thread among them. A thread with no brief left is answered.
 //   - Its flags, in format.MessageFlags' order, reported and never acted on:
-//     unanswered, an open thread whose newest brief is the threshold's minutes old or older (until step 5.5.11 reads
-//     the agents' state, a brief's age alone), compared without overflow however large the threshold (AtLeastMinutes);
+//     unanswered, an open thread whose newest brief is the threshold's minutes old or older, compared without overflow
+//     however large the threshold (AtLeastMinutes); where an agent tied that brief, internal/agents' Store.Thread reads
+//     that agent's last call in its place, from the guard's records;
 //     circling, more briefs one way between the same two addresses (from one to the other) than the threshold, so
 //     the threshold is how many each way a thread may hold before it is flagged: at the default 3, the fourth brief
 //     one way flags it;
-//     budget-spent, read from the guard's records from step 5.5.11, never raised before;
+//     budget-spent, never raised by the folding: internal/agents' Store.Thread raises it while the agent tied to the
+//     newest brief is past its budget, as the guard recorded it;
 //     malformed, a file naming the thread does not read (it is listed apart, and check warns of it).
-//   - Its messages, headers only (each frontmatter, never a body), oldest first; its recipient null until step 5.5.11
-//     reads the guard's records.
+//   - Its messages, headers only (each frontmatter, never a body), oldest first; its recipient null from the folding,
+//     filled by internal/agents' Store.Thread from the guard's records of the agent tied to the newest brief. Every
+//     reader that prints a thread (bonsai messages, bonsai message --json, status's messages) calls both.
 //
 // Threads are listed oldest first, by their first brief's created, then the thread's id.
 

@@ -56,3 +56,31 @@ func TestErrorWordsInTheCode(t *testing.T) {
 		}
 	}
 }
+
+// No word waits on a step that has landed (5.5.11's follow-up): the guard's records are read since step 5.5.11, so
+// neither this package's code nor format.MessageFlags' text says a flag or the recipient waits "until" it.
+func TestNoWordWaitsOnTheGuardsRecords(t *testing.T) {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".go") || strings.HasSuffix(e.Name(), "_test.go") {
+			continue
+		}
+		raw, err := os.ReadFile(e.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, stale := range []string{"until step 5.5.11", "from step 5.5.11, never raised", "until 5.5.11"} {
+			if strings.Contains(string(raw), stale) {
+				t.Errorf("%s still says %q", e.Name(), stale)
+			}
+		}
+	}
+	for _, f := range format.MessageFlags {
+		if strings.Contains(f.Means, "until") || strings.Contains(f.Means, "5.5.11") {
+			t.Errorf("format.MessageFlags' %s: %s", f.Word, f.Means)
+		}
+	}
+}
