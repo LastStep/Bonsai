@@ -38,14 +38,14 @@ itself.
 | `from` | The writer's own address (`--from`): the role the person's own session plays, alone; an agent's role and its task; a number for a second agent of one role on one task | `<role>`, `<role>@<task>`, `<role>@<task>#<n>` | `orchestrator` |
 | `to` | The recipient's address (`--to`), in `from`'s form; a report goes back to its brief's `from` | an address, as `from` | `builder@T-0042` |
 | `status` | A report's outcome (`--status`): done; blocked, with the full error or why the thread was dropped; needs-input, a question only its caller or the person can answer. A brief has none | `done`, `blocked`, `needs-input`; `null` for a brief | `null` |
-| `budget` | A brief's limits for its recipient (`--budget`); one left out is the recipient role's default in force. A report has none | a mapping of `minutes`, `actions` and `red_runs`, or `null` | `{minutes: 60, actions: null, red_runs: null}` |
+| `budget` | A brief's limits for its recipient (`--budget`); one left out is the recipient role's default in force. A report has none | a mapping of `minutes`, `actions` and `red_runs`, or `null` | as in the example below |
 | `budget.minutes` | Minutes from the recipient's first call, or from its newest brief | a whole number up to the role's max in force, or `null` for the default | `60` |
 | `budget.actions` | Tool calls the recipient may make, refused ones counted | a whole number up to the role's max in force, or `null` for the default | `null` |
 | `budget.red_runs` | Failed ladder runs in a row before it must stop | a whole number up to the role's max in force, or `null` for the default | `null` |
 | `pointers` | The files the message points to (`--pointer`, once per file), each fingerprinted when written; `--show` marks one that changed since | a list of `path` and `sha256`; `[]` for none | `[]` |
 | `pointers[].path` | The file, forward slashes: from the project's top, or from the home folder written `~/...` | a path, never absolute | `work/runs/R-2026-10-16-T-0042.md` |
-| `pointers[].sha256` | The file's SHA-256 with line endings read as LF, when the message was written | 64 lower-case hex characters | `0f1e2d3c...` |
-| `created` | When the message was written, UTC, with milliseconds | an ISO-8601 time | `2026-10-16T09:12:00.000Z` |
+| `pointers[].sha256` | The file's SHA-256 with line endings read as LF, when the message was written | 64 lower-case hex characters | `"0f1e2d3c..."` |
+| `created` | When the message was written, UTC, with milliseconds | an ISO-8601 time | `"2026-10-16T09:12:00.000Z"` |
 | `labels` | Labels a linked pack defines for messages, by name | a mapping of label names to values; `{}` for none | `{}` |
 | `body` | The message's words, free markdown, from `--body`, `--body -` (standard input) or `--body-file`; past a budget, a report's only from `--body` in single quotes or `--body -` from a here-document whose delimiter is quoted (base:operating-bonsai). Long output goes in a file and is pointed to, never pasted | text | as in the templates below |
 | `trust` | The trust line a reader adds, never the file: who wrote it, and that it is data | the line `bonsai message --show` prints first | `From orchestrator, an agent. ...` |
@@ -60,7 +60,10 @@ kind: brief
 from: orchestrator
 to: builder@T-0042
 status: null
-budget: {minutes: 60, actions: null, red_runs: null}
+budget:
+  minutes: 60
+  actions: null
+  red_runs: null
 pointers: []
 created: "2026-10-16T09:12:00.000Z"
 labels: {}
