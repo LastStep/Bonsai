@@ -1,6 +1,6 @@
 package agents
 
-// The view: bonsai agents (bonsai.agents/1; design/plan-5.md, note 5.5.12; Rohan, 14 Oct: "it will not interpret
+// The view: bonsai agents (bonsai.agents/1; design/plan-5.md, note 5.5.12; the director, 14 Oct: "it will not interpret
 // anything, give any prediction, do any unnessary calculations"), a read-only fold of what Bonsai has recorded about
 // each agent, copied as recorded, field by field. It reads three things and writes nothing:
 //

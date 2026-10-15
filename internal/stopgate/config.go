@@ -6,7 +6,7 @@ package stopgate
 // write in an agent's session is not judged by the guard in agents mode, so an uncommitted edit there could lower a
 // floor or drop a rung for one climb and one gate.
 //
-// And no looser than this machine accepted (5.4's second fix round, K1; Rohan, 13 Oct): a commit on the base branch is
+// And no looser than this machine accepted (5.4's second fix round, K1; the director, 13 Oct): a commit on the base branch is
 // history, which an agent could make too (a shell commit in the main checkout, git reset --hard to a looser commit, a
 // branch ref moved by hand), so the settings committed there are compared with the ones this machine's record of the
 // main checkout last accepted (Accepted; workspace/checks.go says what is compared and what reads as looser), and

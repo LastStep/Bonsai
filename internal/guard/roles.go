@@ -742,7 +742,7 @@ func mayCall(w *who, c callee) string {
 	case c.session:
 		return "the person's session is never a subagent"
 	case (c.main || c.unresolved) && w.h.SessRole:
-		return "" // the person's session to main, another session, or a name it gave (Rohan's "A. Only your sessions")
+		return "" // the person's session to main, another session, or a name it gave (the director's "A. Only your sessions")
 	case c.main || c.unresolved:
 		return "only the person's session may write to main or another session, or to an agent the guard never saw started"
 	case w.h.SessRole:

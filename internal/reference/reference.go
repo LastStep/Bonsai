@@ -570,7 +570,7 @@ func (p *page) hookLines() {
 	p.section("Installed places", "closed", "engine.PlaceWindows and engine.PlaceLinux (internal/engine/settings.go)",
 		"`bonsai hook guard --help` (the line), `bonsai init --help`",
 		"Where Bonsai's hook lines run bonsai from, in this order, as the shell that runs a hook line names them (spec "+
-			"section 3; Rohan's answer (a)): the PATH is never read, and with neither there the guard's line refuses every "+
+			"section 3): the PATH is never read, and with neither there the guard's line refuses every "+
 			"call and the stop gate's every session's end. Check 2's one named exception: the same on every machine, naming "+
 			"no user. A test build stamped with its own place writes that place alone.")
 	p.line("| Order | Place | Where |")

@@ -2,7 +2,7 @@ package guard
 
 // The delete check (spec §7, "Shell commands"; plan-5 5.3.3): in a Bash, Monitor or PowerShell call, a recursive or
 // bulk delete that does not name what it deletes is refused (delete-unnamed), and a delete or move of a guarded
-// path is judged by the guard's rules as an edit of that path (delete-protected). Rohan's answer to question A
+// path is judged by the guard's rules as an edit of that path (delete-protected). The director's answer to question A
 // (spec §19) is no shell reader: the check splits a command line into words and reads only what it needs to find
 // a delete word and its operands. Nothing is expanded or run.
 //
@@ -40,7 +40,7 @@ package guard
 // or function defined outside it; and a link made earlier in the same line and deleted through (ln -s .git g && rm
 // -rf g/), since the check reads the disk as it is before the line runs.
 //
-// Known limits, fixed after 1.0 (Rohan, 11 Oct; V2c's items 3 and 6), each adversarial; the commands' own refusal
+// Known limits, fixed after 1.0 (the director, 11 Oct; V2c's items 3 and 6), each adversarial; the commands' own refusal
 // (5.3.6b) and rung 0 (5.4) stand behind them:
 //   - env's own -S splitting rules: \_ (env's space) is read as bash reads it, and a -S text holding ;, |, && or ( is
 //     read as a command line, not as env's words;

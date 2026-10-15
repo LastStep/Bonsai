@@ -1,6 +1,6 @@
 package recorder
 
-// The usage record (contract §8.2's note of 14 Oct; design/plan-5.md, note 5.5.12, 4; Rohan, 14 Oct: "Yes, raw
+// The usage record (contract §8.2's note of 14 Oct; design/plan-5.md, note 5.5.12, 4; the director, 14 Oct: "Yes, raw
 // counts"): at an agent's end, a subagent's SubagentStop and a session's own SessionEnd, after that end's own record,
 // hook record reads the transcript whose path the payload gives (SubagentStop's agent_transcript_path, the subagent's
 // own file; SessionEnd's transcript_path) and writes one usage record for each model in it: model the model, usage
