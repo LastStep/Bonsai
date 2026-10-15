@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/message"
 )
 
 // An agent's state as recorded: its limits from its last tie line, else its start line; minutes from its last call
@@ -61,5 +64,42 @@ func TestRecorded(t *testing.T) {
 	}
 	if _, _, ok := s.TiedTo("M-2026-10-15-0000000b"); ok {
 		t.Error("a tie file naming no agent read as a tie")
+	}
+}
+
+// The unanswered flag read from an agent's last call is compared without overflow (VG's item G): a threshold of more
+// minutes than any duration holds (bonsai.yaml may set up to 15 digits) is never reached, never read as a negative one.
+func TestThreadUnansweredWithoutOverflow(t *testing.T) {
+	s := store(t)
+	if _, err := s.Create(header()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Call(sess, agent, t0, 0); err != nil {
+		t.Fatal(err)
+	}
+	const brief = "M-2026-10-15-0000000a"
+	if ok, err := s.Tie(brief, sess, agent); !ok || err != nil {
+		t.Fatal(ok, err)
+	}
+	flagged := func(minutes int64, now time.Time) bool {
+		th := &message.Thread{Entries: []message.Entry{{Msg: &format.Message{ID: brief, Kind: format.KindBrief}}}}
+		th.State = message.Open
+		s.Thread(th, minutes, now)
+		for _, f := range th.Flags {
+			if f == "unanswered" {
+				return true
+			}
+		}
+		return false
+	}
+	for _, c := range []struct {
+		minutes int64
+		after   time.Duration
+		want    bool
+	}{{5, 5 * time.Minute, true}, {5, 4 * time.Minute, false}, {999999999999999, time.Minute, false},
+		{153722867280913, time.Minute, false}, {1 << 62, time.Minute, false}} {
+		if got := flagged(c.minutes, t0.Add(c.after)); got != c.want {
+			t.Errorf("threshold %d minutes, last call %v ago: unanswered %v, want %v", c.minutes, c.after, got, c.want)
+		}
 	}
 }

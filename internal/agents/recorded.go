@@ -78,7 +78,8 @@ func (s Store) TiedTo(brief string) (session, agent string, ok bool) {
 // Thread fills a thread's recipient (bonsai.messages/1's: the agent tied to its newest brief, its counts and limits as
 // the guard recorded them, spent or not) and the two flags that read an agent's state: budget-spent, raised while that
 // agent's window is spent; and unanswered, which for an open thread whose newest brief an agent tied reads that
-// agent's last call, raised once it is the threshold's minutes old or older (an agent that stopped, or went quiet,
+// agent's last call, raised once it is the threshold's minutes old or older, compared without overflow
+// (message.AtLeastMinutes: a threshold beyond any duration is never reached; an agent that stopped, or went quiet,
 // makes no call: Bonsai has no clock of its own). A thread whose newest brief no agent tied keeps the recipient null
 // and the folding's flags (unanswered by its brief's age alone). The flags stay in format.MessageFlags' order.
 func (s Store) Thread(t *message.Thread, unansweredMinutes int64, now time.Time) {
@@ -115,7 +116,7 @@ func (s Store) Thread(t *message.Thread, unansweredMinutes int64, now time.Time)
 	}
 	raised["budget-spent"] = r.Spent
 	if t.State == message.Open && !r.LastCall.IsZero() {
-		raised["unanswered"] = now.Sub(r.LastCall) >= time.Duration(unansweredMinutes)*time.Minute
+		raised["unanswered"] = message.AtLeastMinutes(now.Sub(r.LastCall), unansweredMinutes)
 	}
 	t.Flags = []string{}
 	for _, f := range format.MessageFlags {
