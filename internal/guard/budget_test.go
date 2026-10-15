@@ -88,7 +88,7 @@ func TestTheBudgetOfActions(t *testing.T) {
 	// The fourth: spent, its refusal in full; the fifth, short.
 	s := wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, "free.txt")), 2, RuleBudgetSpent)
 	// b2, a newer brief to its address in its thread, is already waiting: the refusal names it.
-	waiting := "a newer brief to you is waiting: read it with bonsai message --show " + b2
+	waiting := "a newer brief to you is waiting: read it with /usr/local/bin/bonsai message --show " + b2
 	for _, want := range []string{"budget spent (actions: 4 of 3): report what you have and what is left",
 		"bonsai message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1, "<<'EOF'", waiting} {
 		if !strings.Contains(s, want) {
@@ -100,7 +100,7 @@ func TestTheBudgetOfActions(t *testing.T) {
 		t.Errorf("the later refusal: %s", s)
 	}
 	// Past it: every call refused but its report, its brief and the hand-back.
-	report := "bonsai message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1 + " --status blocked --body 'what I have'"
+	report := "/usr/local/bin/bonsai message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1 + " --status blocked --body 'what I have'"
 	for _, p := range []string{
 		tinyFrom(dir, "t1", "Bash", bash("git status")),
 		tinyFrom(dir, "t1", "Bash", bash(report+"; echo done")),
@@ -113,7 +113,9 @@ func TestTheBudgetOfActions(t *testing.T) {
 		wantAnswer(t, dir, p, 2, RuleBudgetSpent)
 	}
 	wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, ".bonsai/local/messages/tiny-T-0001/"+b1+".md")), 0, RuleBudgetExempt)
-	wantAnswer(t, dir, tinyFrom(dir, "t1", "Bash", bash("bonsai message --show "+b1+" --json")), 0, RuleBudgetExempt)
+	wantAnswer(t, dir, tinyFrom(dir, "t1", "Bash", bash("/usr/local/bin/bonsai message --show "+b1+" --json")), 0, RuleBudgetExempt)
+	// A bare bonsai runs whatever the PATH finds first: past a budget it reads nothing (VG round 2's S2).
+	wantAnswer(t, dir, tinyFrom(dir, "t1", "Bash", bash("bonsai message --show "+b1+" --json")), 2, RuleBudgetSpent)
 	wantAnswer(t, dir, tinyFrom(dir, "t1", "SubagentHandback", in("message", "x")), 0, RuleBudgetExempt)
 	if stateOf(t, dir, sessA, "t1").Reported() {
 		t.Error("reported before the report")
@@ -135,7 +137,7 @@ func TestTheBudgetOfActions(t *testing.T) {
 		t.Errorf("after the re-brief: %+v", w)
 	}
 	// Every call counted, refused ones among them.
-	if n, _ := (agents.Store{Main: dir}).Calls(sessA, "t1"); n != 3+13+5+1 {
+	if n, _ := (agents.Store{Main: dir}).Calls(sessA, "t1"); n != 3+14+5+1 {
 		t.Errorf("%d calls counted", n)
 	}
 }

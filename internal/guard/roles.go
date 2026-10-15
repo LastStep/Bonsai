@@ -18,10 +18,14 @@ package guard
 // top-level session, BONSAI_ROLE where it names a declared role other than the session's (a named session, counted by
 // its session id); else the person's own session, which plays the session's role. A type names a role by its scoped
 // name (<pack>:<role>, as Claude Code names a plugin's agent), or by its bare name where one pack alone declares it,
-// letter case folded in every lookup (typeKey), as Claude Code matches a subagent_type. An agent's role, its facts and
-// its limits are read once, at its first call, and kept in its state (internal/agents), so a later edit of the lock or
-// of bonsai.yaml, committed or not, changes nothing for it; a new brief re-reads them. A state that does not read is
-// moved aside, kept, and the agent counted afresh from that call (moveAside), joined again to the call it held.
+// letter case folded and the spaces round it dropped in every lookup (typeKey), as Claude Code matches a subagent_type.
+// An agent's role, its facts and its limits are read once, at its first call, and kept in its state (internal/agents),
+// so a later edit of the lock or of bonsai.yaml, committed or not, changes nothing for it; a new brief re-reads them. A
+// state that does not read has its owner's access set back first (agents.Store.Repair: a mode taken away, by any
+// route), and counts on where it was; else it is moved aside, kept, and the agent counted afresh from that call
+// (moveAside), joined again to the call it held, once: moved aside a second time, its window is held spent
+// (holdSpent), so a repeated fault resets no budget. A state that cannot be kept, made or read back fails closed:
+// every call refused as one past a budget is, but its report, a brief's read and the hand-back (budget.go).
 //
 // Who may call whom (mayCall), on Agent and Task (the type asked for), SendMessage (its to, resolved), Workflow and
 // Skill (the type a skill's frontmatter forks into, skill.go): the person's session any declared role but its own, any
@@ -322,6 +326,10 @@ type who struct {
 	h       agents.Header // its role and facts (a plain session's: SessRole)
 	st      *agents.State // its state; nil for the person's session
 	counted bool          // an agent or a named session: counted and held to its budget
+	// fault says why its calls cannot be counted (its state cannot be made or read back, or the call names no id a
+	// state can be kept under): each is refused as a call past a budget is (VG round 2's M1: fail closed); "" for none.
+	fault string
+	held  bool // its window was held spent at this call (holdSpent): this call's refusal is the first, in full
 }
 
 // lead reports a caller of kind lead (a declared lead, a named session of one).
@@ -420,13 +428,23 @@ func (rr *roleRun) resolve() (*who, error) {
 		key = in.Session
 	}
 	keep := in.Session != "" && hookin.ID(key) != "" // a state can be kept for it (Claude Code names every session)
+	held := false                                    // its state was moved aside a second time (holdSpent)
 	if keep {
 		st, err := rr.store.ReadWait(in.Session, key, stateWait)
+		if err != nil && !errors.Is(err, agents.ErrNoState) {
+			if mended := rr.store.Repair(in.Session, key); len(mended) > 0 {
+				first := err
+				if st, err = rr.store.ReadWait(in.Session, key, stateWait); err == nil || errors.Is(err, agents.ErrNoState) {
+					rr.note(RuleStateUnreadable, "the state of this agent could not be read ("+oneLine(first.Error())+"): the "+
+						"guard set back its own access to "+mendedList(mended)+", and counts on where it was")
+				}
+			}
+		}
 		switch {
 		case err == nil:
 			return &who{key: key, h: st.Header, st: st, counted: !st.Header.SessRole}, nil
 		case !errors.Is(err, agents.ErrNoState):
-			rr.moveAside(key, err)
+			held = rr.moveAside(key, err)
 		}
 	}
 	rs, err := rr.roles()
@@ -472,40 +490,87 @@ func (rr *roleRun) resolve() (*who, error) {
 	if h.Named {
 		h.Task = rr.j.getenv(workspace.TaskEnv)
 	}
+	// A call that cannot be counted never passes unjudged (VG round 2's M1): where its state cannot be kept, made or
+	// read back, even after its own access is set back (Repair), each call is refused as one past a budget is.
+	faulted := func(why string) (*who, error) {
+		rr.note(RuleStateUnreadable, why+", so the guard cannot count this agent's calls: each is refused as a call past "+
+			"a budget is (fail closed), but for its report, a brief's read and the hand-back")
+		return &who{key: key, h: h, counted: !h.SessRole, fault: why}, nil
+	}
 	if !keep {
-		rr.note(RuleStateUnreadable, "the call names no session or agent id a state can be kept under, so it is not counted")
-		return &who{key: key, h: h}, nil
+		return faulted("the call names no session or agent id a state can be kept under")
 	}
 	made, err := rr.store.Create(h)
+	if err != nil && len(rr.store.Repair(in.Session, key)) > 0 {
+		made, err = rr.store.Create(h)
+	}
 	if err != nil {
-		rr.note(RuleStateUnreadable, "the state of this agent cannot be written ("+oneLine(err.Error())+"), so it is not counted")
-		return &who{key: key, h: h, counted: false}, nil
+		return faulted("the state of this agent cannot be written (" + oneLine(err.Error()) + ")")
 	}
 	st, err := rr.store.ReadWait(in.Session, key, stateWait)
+	if err != nil && len(rr.store.Repair(in.Session, key)) > 0 {
+		st, err = rr.store.ReadWait(in.Session, key, stateWait)
+	}
 	if err != nil {
-		rr.note(RuleStateUnreadable, "the state of this agent cannot be read back ("+oneLine(err.Error())+"), so it is not counted")
-		return &who{key: key, h: h, counted: false}, nil
+		return faulted("the state of this agent cannot be read back (" + oneLine(err.Error()) + ")")
 	}
 	w := &who{key: key, h: st.Header, st: st, counted: !st.Header.SessRole}
 	if made && picked != nil {
 		rr.link(w, picked)
 	}
+	if made && held && w.counted {
+		rr.holdSpent(w)
+	}
 	return w, nil
 }
 
-// moveAside answers an agent's state that cannot be read (VG's item I): it is moved aside, kept and named
-// (agents.MoveAside), and the agent counted afresh from this call, with a state-unreadable record saying so; where it
-// cannot be moved, the record says that, and the call is not counted.
-func (rr *roleRun) moveAside(key string, readErr error) {
+// mendedList names the files Repair set right, for a record.
+func mendedList(mended []string) string {
+	shown := make([]string, len(mended))
+	for i, m := range mended {
+		shown[i] = workspace.LocalDir + "/" + m
+	}
+	return strings.Join(shown, ", ")
+}
+
+// holdSpent ends the window of an agent whose state was moved aside a second time, at once (VG round 2's M1: a
+// repeated fault must not reset a budget; the first counts afresh, step 5.5's "starts a fresh count"): a spent line
+// of the measure unreadable_state, so only its report, a brief's read and the hand-back pass until its caller opens a
+// fresh window with a newer brief. A line that cannot be written leaves the agent faulted (fail closed).
+func (rr *roleRun) holdSpent(w *who) {
+	e := agents.Event{E: agents.EventSpent, At: agents.StampMilli(rr.now), Measure: measureUnreadable,
+		Count: int64(rr.store.Asides(rr.in.Session, w.key)), Of: 1}
+	if err := rr.appendEvent(w, e); err != nil {
+		w.fault = "its held-spent line cannot be written (" + oneLine(err.Error()) + ")"
+		return
+	}
+	if st, err := rr.store.Read(rr.in.Session, w.key); err == nil {
+		w.st = st
+	}
+	w.held = true
+	rr.note(RuleStateUnreadable, "the state of this agent was moved aside a second time, so its window is held spent: a "+
+		"repeated fault resets no budget")
+}
+
+// measureUnreadable is the spent line's measure for a window held spent (holdSpent).
+const measureUnreadable = "unreadable_state"
+
+// moveAside answers an agent's state that cannot be read, even with its own access set back (VG's item I): it is moved
+// aside, kept and named (agents.MoveAside), and the agent counted afresh from this call, with a state-unreadable record
+// saying so; where it cannot be moved, the record says that, and the state's next read fails the call closed (resolve).
+// held is true when it moved this agent's state aside before too (holdSpent).
+func (rr *roleRun) moveAside(key string, readErr error) (held bool) {
 	aside, err := rr.store.MoveAside(rr.in.Session, key, rr.now)
 	switch {
 	case err != nil:
 		rr.note(RuleStateUnreadable, "the state of this agent cannot be read ("+oneLine(readErr.Error())+") nor moved aside ("+
-			oneLine(err.Error())+"), so this call is not counted")
+			oneLine(err.Error())+")")
 	case aside != "":
 		rr.note(RuleStateUnreadable, "the state of this agent cannot be read ("+oneLine(readErr.Error())+"), so it was moved "+
 			"aside, kept, to "+workspace.LocalDir+"/"+aside+", and the agent is counted afresh from this call")
+		return rr.store.Asides(rr.in.Session, key) > 1
 	}
+	return false
 }
 
 // backs reports whether the allowed call that started a subagent was a call for the declared role its type names: an
@@ -887,13 +952,16 @@ func (j *judge) roleDecide(rr *roleRun, in *hookin.Payload, base string) (d Deci
 	case in.Tool == "Read":
 		reads = rr.briefPath(in.ReadPath)
 	case shellTool(in.Tool):
-		reads = briefShow(in.Tool, in.Command)
+		reads, _ = briefShow(in.Tool, in.Command)
 	}
 	if w.counted {
 		c := rr.count(w, reads)
-		if c.spent != nil {
+		if c.spent != nil || c.fault != "" {
 			ok, report := rr.exempt(w, reads)
-			if !ok {
+			switch {
+			case !ok && c.fault != "":
+				return rr.faultRefusal(w, c.fault), j.session, true
+			case !ok:
 				return rr.spentRefusal(w, c), j.session, true
 			}
 			d, rec := j.plainDecide(in, base)
@@ -919,7 +987,10 @@ func (j *judge) roleDecide(rr *roleRun, in *hookin.Payload, base string) (d Deci
 	}
 	d, rec = j.plainDecide(in, base)
 	if d.Allow {
-		rr.noteClimbs(w)
+		if why := rr.noteClimbs(w); why != "" {
+			rr.note(RuleStateUnreadable, why)
+			return rr.faultRefusal(w, why), j.session, true
+		}
 	}
 	return d, rec, true
 }

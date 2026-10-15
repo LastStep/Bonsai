@@ -20,18 +20,31 @@ package guard
 //
 // Past a limit (more minutes, actions or red runs than its value): every call is refused (budget-spent) but three
 // (budget-exempt): its report in its exact form (rolecmds.go's reportCall), reading its tied brief or a newer one to
-// its address, each by the installed bonsai (a bare bonsai or the hook lines' place, never another program of that
-// name), and Claude Code's hand-back tool. The first refusal says what to report and how; later ones are short; each
-// names a newer brief to its address already waiting, if one is (waitingBrief). Of calls side by side past it, one
-// alone writes the window's spent line (agents.MarkSpent) and gives the first refusal. The report's call let through
-// is noted (reported) and never trusted: the stop gate finds the report itself (agents.ReportAfter).
-// An agent with no address (no tied brief, or an undeclared type) has no report call: its last reply is its report.
+// its address (a Read of its file, or bonsai message --show), each shell call by the installed bonsai at the place the
+// hook lines run it from (installedBonsai; VG round 2's S2: a bare bonsai runs whatever the PATH finds first, so it
+// is not taken, and neither is any other program of that name), and Claude Code's hand-back tool. The first refusal
+// says what to report and its next step gives the exact command, by that place (hookPlace); later ones are short;
+// each names a newer brief to its address already waiting, if one is (waitingBrief). A bare bonsai message --show of
+// a newer brief still ties it (its file is what the tie reads), opening a fresh window. Of calls side by side past it,
+// one alone writes the window's spent line (agents.MarkSpent) and gives the first refusal. The report's call let
+// through is noted (reported) and never trusted: the stop gate finds the report itself (agents.ReportAfter). An
+// agent with no address (no tied brief, or an undeclared type) has no report call: its last reply is its report.
+//
+// A call the guard cannot count never passes unjudged (VG round 2's M1, 15 Oct: chmod a-w on an agent's calls file
+// left it uncounted, a budget escaped). Where its line, or its state, cannot be written or read, the guard first sets
+// back the agent's own access to its files (agents.Store.Repair: a mode or a read-only attribute taken away), and
+// counts on where it was; where that does not mend it (an ACL, an immutable flag, something planted in a file's
+// place), the call is refused as one past a budget is (budget-spent, faultRefusal), its report, a brief's read and
+// the hand-back still let through. A state that cannot be read is moved aside and the agent counted afresh (step 5.5's
+// "starts a fresh count"), once: a state moved aside a second time holds the window spent (roles.go's holdSpent), so
+// a repeated fault resets no budget.
 
 import (
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -275,7 +288,7 @@ func (rr *roleRun) tie(w *who, id, how string) bool {
 	calls, _ := rr.store.Calls(in.Session, w.key)
 	e := agents.Event{E: agents.EventTie, At: agents.StampMilli(rr.now), Brief: id, To: b.to, Thread: b.thread, From: b.from,
 		Limits: &limits, Calls: calls}
-	if err := rr.store.Append(in.Session, w.key, e); err != nil {
+	if err := rr.appendEvent(w, e); err != nil {
 		return not("its tie line cannot be written (" + oneLine(err.Error()) + ")")
 	}
 	if st, err := rr.store.Read(in.Session, w.key); err == nil {
@@ -300,12 +313,21 @@ func briefValue(v *int64, l agents.Limit) *int64 {
 type counted struct {
 	spent    *agents.Event // the window's spent line; nil while within the budget
 	newSpent bool          // this call found it spent
+	fault    string        // why this call cannot be counted: it is refused as a call past a budget is (faultRefusal)
 }
 
+// countCall appends one call line for an agent (agents.Store.Call); a variable for the tests, which make it fail.
+var countCall = agents.Store.Call
+
 // count ties the briefs offered or read, reads the open climbs' results, appends this call's line and judges the
-// budget (this file's comment). reads is the brief this call reads, "" for none.
+// budget (this file's comment). reads is the brief this call reads, "" for none. A call whose line cannot be written,
+// even with the agent's own access to its files set back (agents.Store.Repair), is not counted and so is refused as a
+// call past a budget is (VG round 2's M1: chmod a-w on its calls file had left an agent uncounted).
 func (rr *roleRun) count(w *who, reads string) counted {
 	in := rr.in
+	if w.fault != "" {
+		return counted{fault: w.fault}
+	}
 	if w.st != nil {
 		for _, o := range w.st.Offers() {
 			rr.tie(w, o.Brief, "a SendMessage resuming this agent")
@@ -319,18 +341,31 @@ func (rr *roleRun) count(w *who, reads string) counted {
 		w.st = st
 	}
 	rr.readClimbs(w)
-	if w.st == nil {
-		return counted{}
+	switch {
+	case w.fault != "":
+		return counted{fault: w.fault}
+	case w.st == nil:
+		return counted{fault: "its state cannot be read"}
 	}
 	win := w.st.Window()
 	minutes := minutesSince(win.Start, rr.now)
-	total, err := rr.store.Call(in.Session, w.key, rr.now, minutes)
+	total, err := countCall(rr.store, in.Session, w.key, rr.now, minutes)
 	if err != nil {
-		rr.note(RuleStateUnreadable, "this call's line cannot be written ("+oneLine(err.Error())+"), so it is not counted")
-		return counted{spent: w.st.Spent()}
+		if mended := rr.store.Repair(in.Session, w.key); len(mended) > 0 {
+			first := err
+			if total, err = countCall(rr.store, in.Session, w.key, rr.now, minutes); err == nil {
+				rr.note(RuleStateUnreadable, "this call's line could not be written ("+oneLine(first.Error())+"): the guard set "+
+					"back its own access to "+mendedList(mended)+", and counted the call")
+			}
+		}
+	}
+	if err != nil {
+		why := "this call's line cannot be written (" + oneLine(err.Error()) + ")"
+		rr.note(RuleStateUnreadable, why+", so the guard cannot count it: it is refused as a call past a budget is (fail closed)")
+		return counted{fault: why}
 	}
 	if sp := w.st.Spent(); sp != nil {
-		return counted{spent: sp}
+		return counted{spent: sp, newSpent: w.held}
 	}
 	actions := total - win.Calls
 	red := w.st.RedRuns()
@@ -352,8 +387,9 @@ func (rr *roleRun) count(w *who, reads string) counted {
 	if made, err := rr.store.MarkSpent(in.Session, w.key, win.Start.UnixMilli()); err == nil && !made {
 		return counted{spent: e} // another call side by side found this window spent first, and writes its one line
 	}
-	if err := rr.store.Append(in.Session, w.key, *e); err != nil {
-		rr.note(RuleStateUnreadable, "this agent's spent line cannot be written ("+oneLine(err.Error())+")")
+	if err := rr.appendEvent(w, *e); err != nil {
+		rr.note(RuleStateUnreadable, "this agent's spent line cannot be written ("+oneLine(err.Error())+"), so each later "+
+			"call finds the window spent again")
 	}
 	if st, err := rr.store.Read(in.Session, w.key); err == nil {
 		w.st = st
@@ -364,9 +400,24 @@ func (rr *roleRun) count(w *who, reads string) counted {
 // maxResult caps a ladder result the guard reads for an agent's red runs, in bytes.
 const maxResult = 64 << 20
 
+// appendEvent appends an event to an agent's state; where its line cannot be written, it sets back the agent's own
+// access to its files (agents.Store.Repair) and tries once more.
+func (rr *roleRun) appendEvent(w *who, e agents.Event) error {
+	err := stateAppend(rr.store, rr.in.Session, w.key, e)
+	if err != nil && len(rr.store.Repair(rr.in.Session, w.key)) > 0 {
+		err = stateAppend(rr.store, rr.in.Session, w.key, e)
+	}
+	return err
+}
+
+// stateAppend appends one event to an agent's state (agents.Store.Append); a variable for the tests, which make it fail.
+var stateAppend = agents.Store.Append
+
 // readClimbs reads, at a later call, the result of each climb the guard passed for this agent: a ladder result for
 // its task written after the note (.bonsai/local/ladder/<task>.json, its started time not before the note's) appends
-// a red line (the count in a row) or a reset; with none yet, the note stays open, and a later call looks again.
+// a red line (the count in a row) or a reset; with none yet, the note stays open, and a later call looks again. A red
+// or reset line that cannot be written leaves the agent faulted (fail closed: a read-only state would count no red
+// run).
 func (rr *roleRun) readClimbs(w *who) {
 	if w.st == nil {
 		return
@@ -396,69 +447,108 @@ func (rr *roleRun) readClimbs(w *who) {
 		} else {
 			red = 0
 		}
-		_ = rr.store.Append(rr.in.Session, w.key, e)
+		if err := rr.appendEvent(w, e); err != nil {
+			w.fault = "its " + e.E + " line, for the climb of " + c.Task + ", cannot be written (" + oneLine(err.Error()) + ")"
+			return
+		}
 	}
 	if st, err := rr.store.Read(rr.in.Session, w.key); err == nil {
 		w.st = st
 	}
 }
 
-// noteClimbs notes, once the call is allowed, each bonsai ladder --task <id> its shell line runs.
-func (rr *roleRun) noteClimbs(w *who) {
+// noteClimbs notes, once the call is allowed, each bonsai ladder --task <id> its shell line runs; why a note cannot be
+// written, "" when each is (the call is then refused: a climb not noted would count no red run).
+func (rr *roleRun) noteClimbs(w *who) string {
 	if w == nil || !w.counted {
-		return
+		return ""
 	}
 	for _, task := range rr.climbs {
-		_ = rr.store.Append(rr.in.Session, w.key, agents.Event{E: agents.EventClimb, At: agents.StampMilli(rr.now), Task: task})
+		if err := rr.appendEvent(w, agents.Event{E: agents.EventClimb, At: agents.StampMilli(rr.now), Task: task}); err != nil {
+			return "its climb of " + task + " cannot be noted (" + oneLine(err.Error()) + "), so its red runs could not be counted"
+		}
 	}
+	return ""
 }
 
 // spentRefusal is the refusal past a budget: the first one in full, later ones short; each names a newer brief to
-// the agent's address already waiting (waitingBrief).
+// the agent's address already waiting (waitingBrief). Every command it names runs the installed bonsai by the hook
+// lines' place (hookPlace), the one program past a budget counts as the report or a brief's read (VG round 2's S2).
 func (rr *roleRun) spentRefusal(w *who, c counted) Decision {
 	e := c.spent
-	measure := strings.ReplaceAll(e.Measure, "_", " ")
+	head := fmt.Sprintf("budget spent (%s: %d of %d)", strings.ReplaceAll(e.Measure, "_", " "), e.Count, e.Of)
+	if e.Measure == measureUnreadable {
+		head = "budget held spent (this agent's state could not be read a second time and was moved aside again, so its " +
+			"count is not to be trusted)"
+	}
 	addr := rr.address(w)
 	waiting := ""
 	if addr != "" {
 		if id := rr.waitingBrief(w); id != "" {
-			waiting = "; a newer brief to you is waiting: read it with bonsai message --show " + id
+			waiting = "; a newer brief to you is waiting: read it with " + hookPlace(false) + " message --show " + id
 		}
 	}
 	if !c.newSpent {
-		why := "budget spent (" + measure + ": " + fmt.Sprint(e.Count) + " of " + fmt.Sprint(e.Of) + "): only your report, " +
-			"reading your brief, and the hand-back are allowed now" + waiting
-		next := "write your report as the first refusal said, then stop"
+		why := head + ": only your report, reading your brief, and the hand-back are allowed now" + waiting
+		next := "write your report, one shell call holding only: " + rr.reportCommand(w, addr) + "; then stop"
 		if waiting != "" {
-			next = "read the newer brief, which gives you a fresh window; or write your report as the first refusal said, then stop"
+			next = "read the newer brief, which gives you a fresh window; or write your report, one shell call holding only: " +
+				rr.reportCommand(w, addr)
 		}
 		if addr == "" {
-			why = "budget spent (" + measure + ": " + fmt.Sprint(e.Count) + " of " + fmt.Sprint(e.Of) + "): every call is refused"
+			why = head + ": every call is refused"
 			next = "end your turn now with your last reply, which is your report"
 		}
 		return deny(RuleBudgetSpent, why, next)
 	}
-	why := fmt.Sprintf("budget spent (%s: %d of %d): report what you have and what is left", measure, e.Count, e.Of)
+	why := head + ": report what you have and what is left"
 	if addr == "" {
 		return deny(RuleBudgetSpent, why+"; you have no address (no brief tied to you), so every call is refused and your "+
 			"last reply is your report", "end your turn now with a reply saying what you have and what is left")
 	}
+	why += "; your report is one shell call holding only the command below (the body in single quotes, or --body - with a " +
+		"here-document whose delimiter is quoted, <<'EOF'), run by the installed bonsai at its place, as written" + waiting
+	next := "write that report now: " + rr.reportCommand(w, addr) + "; your caller re-briefs you, hands the work on, or " +
+		"asks the person"
+	if waiting != "" {
+		next = "read the newer brief, which gives you a fresh window; or write that report now: " + rr.reportCommand(w, addr)
+	}
+	return deny(RuleBudgetSpent, why, next)
+}
+
+// faultRefusal is the refusal of a call the guard cannot count (count, resolve: fail closed): as past a budget, its
+// report, a brief's read and the hand-back still pass.
+func (rr *roleRun) faultRefusal(w *who, why string) Decision {
+	head := "the guard cannot count this call: " + why + ", so it is refused as a call past a budget is (a call it " +
+		"cannot count never passes unjudged)"
+	addr := rr.address(w)
+	if addr == "" {
+		return deny(RuleBudgetSpent, head+"; you have no address (no brief tied to you), so your last reply is your report",
+			"try the call once more (a file busy for a moment passes then); if it is refused again, end your turn with a reply "+
+				"saying what you have and what is left, and that the guard could not count your calls")
+	}
+	return deny(RuleBudgetSpent, head+"; only your report, reading your brief and the hand-back are allowed",
+		"try the call once more (a file busy for a moment passes then); if it is refused again, write your report, saying "+
+			"the guard could not count your calls: "+rr.reportCommand(w, addr))
+}
+
+// reportCommand is the report an agent past its budget writes, as one shell call: the installed bonsai at the hook
+// lines' place, from its own address to its tied brief's from, in that brief's thread; on Windows, PowerShell's form
+// after it.
+func (rr *roleRun) reportCommand(w *who, addr string) string {
 	to, thread := "<the brief's from>", "<the brief's thread>"
 	if w.st != nil {
 		if t := w.st.Window().Tie; t != nil {
 			to, thread = t.From, t.Thread
 		}
 	}
-	cmd := "bonsai message --kind report --from " + addr + " --to " + to + " --thread " + thread +
+	args := " message --kind report --from " + addr + " --to " + to + " --thread " + thread +
 		" --status blocked --body '<what you have and what is left>'"
-	why += "; your report is one shell call holding only: " + cmd + " (the body in single quotes, or --body - with a " +
-		"here-document whose delimiter is quoted, <<'EOF')"
-	why += waiting
-	next := "write that report now; your caller re-briefs you, hands the work on, or asks the person"
-	if waiting != "" {
-		next = "read the newer brief, which gives you a fresh window; or write that report now"
+	cmd := hookPlace(false) + args
+	if runtime.GOOS == "windows" {
+		cmd += " (in PowerShell: " + hookPlace(true) + args + ")"
 	}
-	return deny(RuleBudgetSpent, why, next)
+	return cmd
 }
 
 // briefPath reports the brief id a Read of a path reads, "" for a path that is no message file in the main checkout's
@@ -486,7 +576,8 @@ func (rr *roleRun) briefPath(p string) string {
 
 // exempt reports whether a call past the budget is one of the three it may still make (budget-exempt), and whether it
 // is the report: the hand-back tool; reading a brief to its own address (its tied brief, or a newer one, which ties at
-// its read before the budget is judged); the report in its exact form (reportCall).
+// its read before the budget is judged), by a Read of its file or by the installed bonsai at its place; the report in
+// its exact form (reportCall).
 func (rr *roleRun) exempt(w *who, reads string) (ok, report bool) {
 	in := rr.in
 	if listHas(HandBackTools, in.Tool) {
@@ -498,7 +589,9 @@ func (rr *roleRun) exempt(w *who, reads string) (ok, report bool) {
 	}
 	if reads != "" {
 		if b, why := readBrief(rr.main, reads); why == "" && b.kind == format.KindBrief && b.to == addr {
-			return true, false // its tied brief, or another to its address (a newer one ties at its read, count)
+			if _, atPlace := briefShow(in.Tool, in.Command); !shellTool(in.Tool) || atPlace {
+				return true, false // its tied brief, or another to its address (a newer one ties at its read, count)
+			}
 		}
 	}
 	if shellTool(in.Tool) && in.Tool != "Monitor" && reportCall(in.Tool, in.Command, addr) {

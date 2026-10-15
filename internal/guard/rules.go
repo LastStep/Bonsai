@@ -162,19 +162,23 @@ var Rules = []Rule{
 		"or from an agent with none"},
 	{RuleRoleWritesNothing, false, "where the lock declares roles: a role that changes nothing (writes: false, every undeclared type " +
 		"among them) calling Edit, Write, MultiEdit or NotebookEdit, or a shell write the guard can read into a linked project " +
-		"(a redirect, tee, cp, ln or sed -i onto a path there; rm or mv of one; git's words that change the checkout or its " +
-		"history; bonsai init, update, unlink, check --write)"},
-	{RuleBudgetSpent, false, "where the lock declares roles: an agent past a limit in force (its minutes, actions or red runs), every " +
-		"call but the three budget-exempt names; the first refusal says what to report and how, later ones are short"},
+		"(a redirect, tee, cp, ln or sed -i onto a path there; rm or mv of one; a change of its permissions, owner, ACL or " +
+		"attributes; git's words that change the checkout or its history; bonsai init, update, unlink, check --write)"},
+	{RuleBudgetSpent, false, "where the lock declares roles: an agent past a limit in force (its minutes, actions or red runs), or " +
+		"whose window is held spent (its state moved aside a second time), or whose call the guard cannot count (its line or " +
+		"state cannot be written or read, even with its access set back: fail closed), every call but the three budget-exempt " +
+		"names; the first refusal says what to report, its next step the exact command by the installed bonsai's place"},
 	{RuleBudgetExempt, true, "past an agent's budget, one of the three calls it may still make: its report, one shell call holding one " +
 		"bonsai message --kind report from its own address and nothing else; reading its tied brief or a newer one to its address " +
-		"(bonsai message --show <id>, or a Read of the brief's file); Claude Code's hand-back tool"},
+		"(bonsai message --show <id>, or a Read of the brief's file); Claude Code's hand-back tool; each shell call by the " +
+		"installed bonsai at the place the hook lines run it from, never a bare bonsai"},
 	{RuleBriefNotTied, true, "an agent's brief named at its start, by a SendMessage, or read by it, ties nothing (a record beside the " +
 		"call's own): no message file holds it, it is not a brief to the agent's address, its from may not call the agent's role, " +
 		"it is not newer than the tied one in its thread, or another agent tied it"},
-	{RuleStateUnreadable, true, "an agent's state under .bonsai/local/agents/ cannot be read or written: one that cannot be read is " +
-		"moved aside, kept and named, and the agent counted afresh from this call (a record beside the call's own: a budget bounds " +
-		"time, not proof)"},
+	{RuleStateUnreadable, true, "an agent's state under .bonsai/local/agents/ cannot be read or written (a record beside the call's " +
+		"own): where its own access was taken away, set back and counted on; else one that cannot be read is moved aside, kept and " +
+		"named, and the agent counted afresh from this call, once (a second time holds its window spent); a call that still " +
+		"cannot be counted is refused (budget-spent)"},
 	{RuleRoleUnbacked, true, "an agent's type names a declared role, but no Agent, Task or Skill call the guard allowed for that " +
 		"role started it, so it is held as a type no pack declares: it changes nothing, calls no one, and runs on a helper's " +
 		"budget (a record beside its first call's own)"},

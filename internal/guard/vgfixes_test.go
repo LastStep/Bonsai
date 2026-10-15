@@ -1,12 +1,14 @@
 package guard
 
-// VG's items D, E, F and J (15 Oct), each reproducer a test: past a budget only the installed bonsai counts as the
-// report or a brief's read (D); a climb with no --task counts against BONSAI_TASK (E); mkfifo and mknod are writes into
-// Bonsai's files (F); the literal write forms VG listed, and Claude Code's native binary by its path (J).
+// VG's items D, E, F and J (15 Oct), each reproducer a test: past a budget only the installed bonsai at its place
+// counts as the report or a brief's read (D, and VG round 2's S2); a climb with no --task counts against BONSAI_TASK
+// (E); mkfifo and mknod are writes into Bonsai's files (F); the literal write forms VG listed, and Claude Code's native
+// binary by its path (J).
 
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -22,33 +24,47 @@ func spentTiny(t *testing.T, dir, id string) {
 	wantAnswer(t, dir, tinyFrom(dir, id, "Read", readOf(dir, "free.txt")), 2, RuleBudgetSpent)
 }
 
-// D, VG's reproducer: past a budget, a program named bonsai at another place (a stand-in on the agent's own path, one
-// in the folder it runs in) is neither its report nor a brief's read; the installed bonsai at its place, in each form
-// a shell names it, and a bare bonsai are.
+// D, VG's reproducer, and VG round 2's S2: past a budget, a program named bonsai at another place (a stand-in on the
+// agent's own path, one in the folder it runs in) is neither its report nor a brief's read, and nor is a bare bonsai
+// (it runs whatever the PATH finds first); the installed bonsai at the hook lines' place, in each form a shell names
+// it, is. Each refusal's next step names that place.
 func TestDOnlyTheInstalledBonsaiPastABudget(t *testing.T) {
 	dir := briefProject(t)
 	spentTiny(t, dir, "d1")
 	report := " message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1 + " --status blocked --body 'left'"
 	for _, prog := range []string{filepath.ToSlash(t.TempDir()) + "/fakebin/bonsai", "./bonsai", "../bonsai", "bin/bonsai",
-		"/usr/bin/bonsai", "/usr/local/bin/bonsai.sh", "/tmp/Program Files/Bonsai/bonsai.exe", "Bonsai"} {
-		wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+report)), 2, RuleBudgetSpent)
+		"/usr/bin/bonsai", "/usr/local/bin/bonsai.sh", "/tmp/Program Files/Bonsai/bonsai.exe", "Bonsai", "bonsai", "bonsai.exe"} {
+		s := wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+report)), 2, RuleBudgetSpent)
+		if !strings.Contains(s, "one shell call holding only: "+hookPlace(false)+" message --kind report --from tiny@T-0001") {
+			t.Errorf("the refusal does not name the place:\n%s", s)
+		}
 		wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+" message --show "+b1)), 2, RuleBudgetSpent)
 	}
-	for _, prog := range []string{"bonsai", "/usr/local/bin/bonsai", `"/c/Program Files/Bonsai/bonsai.exe"`,
+	for _, prog := range []string{"/usr/local/bin/bonsai", `"/c/Program Files/Bonsai/bonsai.exe"`,
 		`"C:/Program Files/Bonsai/bonsai.exe"`, `"C:\Program Files\Bonsai\bonsai.exe"`, `"c:/program files/bonsai/BONSAI"`} {
 		wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+" message --show "+b1)), 0, RuleBudgetExempt)
 		wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+report)), 0, RuleBudgetExempt)
 	}
+	wantAnswer(t, dir, tinyFrom(dir, "d1", "PowerShell", bash(`& "C:/Program Files/Bonsai/bonsai.exe"`+report)), 0, RuleBudgetExempt)
+	wantAnswer(t, dir, tinyFrom(dir, "d1", "PowerShell", bash("bonsai"+report)), 2, RuleBudgetSpent)
 	// The forms the word reader holds to the place, one by one.
-	for word, want := range map[string]bool{"bonsai": true, "bonsai.exe": true, "BONSAI.EXE": true, "/usr/local/bin/bonsai": true,
+	for word, want := range map[string]bool{"bonsai": false, "bonsai.exe": false, "BONSAI.EXE": false, "/usr/local/bin/bonsai": true,
 		"/usr/local/bin/Bonsai": false, "/usr/local/bin//bonsai": false, "/c/Program Files/Bonsai/bonsai.exe": true,
 		`C:\Program Files\Bonsai\bonsai`: true, "D:/Program Files/Bonsai/bonsai.exe": false, "bonsai.com": false} {
 		if got := installedBonsai(shWord{text: word}); got != want {
 			t.Errorf("%q: installed %v, want %v", word, got, want)
 		}
 	}
-	if installedBonsai(shWord{text: "bonsai", expand: true}) {
+	if installedBonsai(shWord{text: "/usr/local/bin/bonsai", expand: true}) {
 		t.Error("a word a variable stands for read as the installed bonsai")
+	}
+	// The place as a next step names it, on this system.
+	want := "/usr/local/bin/bonsai"
+	if runtime.GOOS == "windows" {
+		want = `"C:/Program Files/Bonsai/bonsai.exe"`
+	}
+	if hookPlace(false) != want || hookPlace(true) != "& "+want {
+		t.Errorf("the place shown: %s, %s", hookPlace(false), hookPlace(true))
 	}
 }
 

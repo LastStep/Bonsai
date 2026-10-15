@@ -167,15 +167,18 @@ func briefFile(id, thread, from, to, created, budget string) string {
 		"\npointers: []\ncreated: \"" + created + "\"\nlabels: {}\n---\nThe brief's body.\n"
 }
 
-// The report's exact form, past a budget.
+// The report's exact form, past a budget: the installed bonsai at the hook lines' place (VG round 2's S2), one
+// command, its body by --body in single quotes or a quoted here-document.
 func TestReportCall(t *testing.T) {
 	addr := "helper@T-0001"
 	ok := []string{
-		"bonsai message --kind report --from helper@T-0001 --to lead@T-0001 --thread M-2026-10-15-0000000a --status blocked --body 'what I have; what is left'",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead@T-0001 --thread M-2026-10-15-0000000a --status blocked --body 'what I have; what is left'",
 		"/usr/local/bin/bonsai message --kind=report --from=helper@T-0001 --to lead --status done --body 'a $HOME `x` $(y)'",
-		"bonsai message --kind report --from helper@T-0001 --to lead --status done --body - <<'EOF'\nline $HOME $(rm -rf x)\nEOF\n",
-		"bonsai message --kind report --from helper@T-0001 --to lead --status done --body - <<\"EOF\"\nline\nEOF\n",
-		"bonsai message --kind report --from helper@T-0001 --to lead --status done --pointer notes.md --body 'x'",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --status done --body - <<'EOF'\nline $HOME $(rm -rf x)\nEOF\n",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --status done --body - <<\"EOF\"\nline\nEOF\n",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --status done --pointer notes.md --body 'x'",
+		"\"C:/Program Files/Bonsai/bonsai.exe\" message --kind report --from helper@T-0001 --to lead --body 'x'",
+		"'/c/Program Files/Bonsai/bonsai.exe' message --kind report --from helper@T-0001 --to lead --body 'x'",
 	}
 	for _, c := range ok {
 		if !reportCall("Bash", c, addr) {
@@ -183,42 +186,61 @@ func TestReportCall(t *testing.T) {
 		}
 	}
 	bad := []string{
-		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x'; rm -rf y",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x' && true",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x' | cat",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body \"$(cat x)\"",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body \"x\"",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body x",
-		"bonsai message --kind report --from helper@T-0001 --to $LEAD --body 'x'",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body - <<EOF\n$(rm x)\nEOF\n",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body-file notes.md",
-		"bonsai message --kind report --from helper@T-0002 --to lead --body 'x'",
-		"bonsai message --kind brief --from helper@T-0001 --to lead --body 'x'",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x' > out.txt",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x' &",
-		"(bonsai message --kind report --from helper@T-0001 --to lead --body 'x')",
-		"bonsai message --kind report --kind report --from helper@T-0001 --to lead --body 'x'",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x' --body 'y'",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body - <<< 'x'",
-		"echo x | bonsai message --kind report --from helper@T-0001 --to lead --body -",
-		"sh -c \"bonsai message --kind report --from helper@T-0001 --to lead --body 'x'\"",
-		"bonsai ladder --task T-0001",
-		"bonsai message --show M-2026-10-15-0000000a",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x'; rm -rf y",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x' && true",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x' | cat",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body \"$(cat x)\"",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body \"x\"",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body x",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to $LEAD --body 'x'",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body - <<EOF\n$(rm x)\nEOF\n",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body-file notes.md",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0002 --to lead --body 'x'",
+		"/usr/local/bin/bonsai message --kind brief --from helper@T-0001 --to lead --body 'x'",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x' > out.txt",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x' &",
+		"(/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x')",
+		"/usr/local/bin/bonsai message --kind report --kind report --from helper@T-0001 --to lead --body 'x'",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x' --body 'y'",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body - <<< 'x'",
+		"echo x | /usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body -",
+		"sh -c \"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x'\"",
+		"/usr/local/bin/bonsai ladder --task T-0001",
+		"/usr/local/bin/bonsai message --show M-2026-10-15-0000000a",
+		// A bare bonsai runs whatever the PATH finds first (S2).
+		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x'",
+		"bonsai.exe message --kind report --from helper@T-0001 --to lead --body 'x'",
 	}
 	for _, c := range bad {
 		if reportCall("Bash", c, addr) {
 			t.Errorf("read as the report: %s", c)
 		}
 	}
-	if !reportCall("PowerShell", "bonsai message --kind report --from helper@T-0001 --to lead --status done --body 'it''s done'", addr) {
-		t.Error("PowerShell's single-quoted body")
+	for _, c := range []string{"& 'C:\\Program Files\\Bonsai\\bonsai.exe' message --kind report --from helper@T-0001 --to lead --status done --body 'it''s done'",
+		"& \"C:/Program Files/Bonsai/bonsai.exe\" message --kind report --from helper@T-0001 --to lead --body 'x'",
+		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x'"} {
+		if !reportCall("PowerShell", c, addr) {
+			t.Errorf("PowerShell's form: %s", c)
+		}
 	}
-	if reportCall("PowerShell", "bonsai message --kind report --from helper@T-0001 --to lead --body \"$x\"", addr) {
-		t.Error("PowerShell's double-quoted body")
+	for _, c := range []string{"& \"C:/Program Files/Bonsai/bonsai.exe\" message --kind report --from helper@T-0001 --to lead --body \"$x\"",
+		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x'", "& bonsai message --kind report --from helper@T-0001 --to lead --body 'x'",
+		"& $b message --kind report --from helper@T-0001 --to lead --body 'x'"} {
+		if reportCall("PowerShell", c, addr) {
+			t.Errorf("read as PowerShell's report: %s", c)
+		}
 	}
-	if briefShow("Bash", "bonsai message --show M-2026-10-15-0000000a --json") != "M-2026-10-15-0000000a" ||
-		briefShow("Bash", "bonsai message --show M-2026-10-15-0000000a; rm x") != "" || briefShow("Bash", "bonsai message --show $ID") != "" {
-		t.Error("briefShow")
+	for _, c := range []struct {
+		tool, line, id string
+		atPlace        bool
+	}{{"Bash", "bonsai message --show M-2026-10-15-0000000a --json", "M-2026-10-15-0000000a", false},
+		{"Bash", "/usr/local/bin/bonsai message --show M-2026-10-15-0000000a", "M-2026-10-15-0000000a", true},
+		{"PowerShell", "& 'C:/Program Files/Bonsai/bonsai.exe' message --show=M-2026-10-15-0000000a", "M-2026-10-15-0000000a", true},
+		{"Bash", "/usr/local/bin/bonsai message --show M-2026-10-15-0000000a; rm x", "", false},
+		{"Bash", "bonsai message --show $ID", "", false}, {"Bash", "./bonsai message --show M-2026-10-15-0000000a", "", false}} {
+		if id, at := briefShow(c.tool, c.line); id != c.id || at != c.atPlace {
+			t.Errorf("briefShow %s: %q %v", c.line, id, at)
+		}
 	}
 }
 

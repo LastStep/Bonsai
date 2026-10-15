@@ -11,23 +11,27 @@ package guard
 //   - bonsai message (commands.go hands each call here, messageCall): one that writes a message from a caller with no
 //     address, or with a --from other than its own address, refused; a --kind brief to a role the writer may not call,
 //     refused (call-refused). --show and bonsai messages read, and are free. Past a budget, only the installed bonsai
-//     (installedBonsai: a bare bonsai, or the place the hook lines run it from) is the report or a brief's read.
+//     at the place the hook lines run it from (installedBonsai; in PowerShell after its call operator, &) is the report
+//     or a brief's read; a bare bonsai is not (it runs whatever the PATH finds first).
 //   - bonsai ladder: noted, once the call is allowed, so the agent's next call reads the climb's result (budget.go's
 //     readClimbs), for its --task <id>, or, with none the guard can read, for BONSAI_TASK as the ladder reads it (an
 //     assignment of it on the line, export's, else the session's own).
 //   - Shell writes the guard can read (writeTargets): a redirect (>, >>, >|, &>, &>>, <> and their numbered forms; in
-//     PowerShell *> too), tee, cp, ln and sed -i or --in-place onto a path (and install, touch, truncate, mkfifo,
-//     mknod and dd's of=), git's own output files (diff, log and show --output, archive -o, format-patch -o),
-//     PowerShell's Set-Content, Add-Content, Clear-Content, Set-Item, Clear-Item, Out-File, Tee-Object, Copy-Item,
-//     New-Item, Export-Csv, Start-Transcript and Invoke-WebRequest or Invoke-RestMethod -OutFile, and cmd's copy and
-//     xcopy; with a role that changes nothing, rm and mv too (the delete check's words, shell.go), git's words that
-//     change the checkout or its history (GitWriteWords), and bonsai init, update, unlink and check --write
+//     PowerShell *> too), tee, cp, ln and sed -i or --in-place onto a path (and install, touch, truncate, mkfifo, mknod
+//     and dd's of=), git's own output files (diff, log and show --output, archive -o, format-patch -o), PowerShell's
+//     Set-Content, Add-Content, Clear-Content, Set-Item, Clear-Item, Out-File, Tee-Object, Copy-Item, New-Item,
+//     Export-Csv, Start-Transcript and Invoke-WebRequest or Invoke-RestMethod -OutFile, and cmd's copy and xcopy; a
+//     change of a path's permissions, owner, ACL or attributes (attrwords.go: chmod, chown, chgrp, chattr, setfacl,
+//     setfattr, chcon, chflags, attrib, icacls, cacls, takeown, Set-ItemProperty, Clear-ItemProperty, Set-Acl, and a
+//     member set on a Get-Item result), judged by what it reaches too (a folder holding Bonsai's files, a glob that may
+//     name them); with a role that changes nothing, rm and mv too (the delete check's words, shell.go), git's words
+//     that change the checkout or its history (GitWriteWords), and bonsai init, update, unlink and check --write
 //     (commands.go). Each written path is judged in every folder the command may run in (mayWrite): from every agent
 //     (all but the person's session), one in Bonsai's own files (the floor's bonsai-files entries in any linked
-//     project, .bonsai/local/ in a worktree's main checkout among them, the lock at a checkout's top, Bonsai's home)
-//     is refused (bonsai-files); from a role that changes nothing, one inside any linked project is refused
-//     (role-writes-nothing). Writes outside every linked project (a scratch build, a Windows checkout under the
-//     user's folder) stay allowed, as do Bonsai's own message and ladder.
+//     project, .bonsai/local/ in a worktree's main checkout among them, the lock at a checkout's top, Bonsai's home) is
+//     refused (bonsai-files); from a role that changes nothing, one inside any linked project is refused
+//     (role-writes-nothing). Writes outside every linked project (a scratch build, a Windows checkout under the user's
+//     folder) stay allowed, as do Bonsai's own message and ladder.
 //
 // Known limits for the roles that change nothing, said again here as shell.go says them for the delete check: what the
 // splitter cannot read is not judged: an interpreter's write (python -c, node -e), a script run by name, a path built
@@ -46,6 +50,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
@@ -856,20 +861,17 @@ func (s *shellRole) messageCall(argv []string) Decision {
 	return allow(RuleBonsaiCommand, "")
 }
 
-// installedBonsai reports a program word that runs the installed bonsai (VG's item D, 15 Oct: past a budget any
-// program named bonsai passed as the report): a bare bonsai (or bonsai.exe), which the shell finds on its PATH as the
-// person set it up, or the very place the hook lines run bonsai from (engine's PlaceWindows and PlaceLinux, or a test
-// build's stamped place), in any form a shell names it: forward or back slashes, a Windows place as C:/... or /c/...,
-// its letter case and its .exe ignored. Any other path to a program named bonsai is not the installed one, so it is
-// neither the report past a budget nor a brief's read. Its word is literal (no variable, no substitution, no glob).
+// installedBonsai reports a program word that runs the installed bonsai by the very place the hook lines run it from
+// (engine's PlaceWindows and PlaceLinux, or a test build's stamped place), in any form a shell names it: forward or
+// back slashes, a Windows place as C:/... or /c/..., its letter case and its .exe ignored. Past a budget only it is the
+// report or a brief's read (VG's item D; VG round 2's S2, 15 Oct: a bare bonsai runs whatever the PATH finds first,
+// ~/go/bin or ~/.local/bin before /usr/local/bin, so it is no longer taken). Any other program named bonsai is not the
+// installed one. Its word is literal (no variable, no substitution, no glob).
 func installedBonsai(w shWord) bool {
 	if w.expand || w.glob || w.splat || w.alts != nil {
 		return false
 	}
 	t := w.text
-	if t == "bonsai" || strings.EqualFold(t, "bonsai.exe") {
-		return true
-	}
 	norm := func(p string, windows bool) string {
 		p = strings.ReplaceAll(p, `\`, "/")
 		if len(p) >= 2 && p[1] == ':' && isLetter(p[0]) {
@@ -880,11 +882,7 @@ func installedBonsai(w shWord) bool {
 		}
 		return p
 	}
-	places := []string{engine.PlaceWindows, engine.PlaceLinux}
-	if stamped, _ := engine.TestBuild(); stamped != "" {
-		places = []string{filepath.ToSlash(stamped)}
-	}
-	for _, p := range places {
+	for _, p := range hookPlaces() {
 		windows := strings.HasSuffix(strings.ToLower(p), ".exe") || (len(p) >= 3 && p[0] == '/' && p[2] == '/') ||
 			(len(p) >= 2 && p[1] == ':')
 		if norm(t, windows) == norm(p, windows) {
@@ -892,6 +890,45 @@ func installedBonsai(w shWord) bool {
 		}
 	}
 	return false
+}
+
+// hookPlaces are the places the hook lines run bonsai from: a test build's stamped place alone, else engine's two.
+func hookPlaces() []string {
+	if stamped, _ := engine.TestBuild(); stamped != "" {
+		return []string{filepath.ToSlash(stamped)}
+	}
+	return []string{engine.PlaceWindows, engine.PlaceLinux}
+}
+
+// hookPlace is the installed bonsai as a next step names it (VG round 2's S2, as the stop gate's next steps name it):
+// the place this system's hook lines run it from (engine.PlaceLinux; engine.PlaceWindows written C:/...; a test
+// build's stamped place), in double quotes when it holds a space, after PowerShell's call operator (& ) for ps.
+func hookPlace(ps bool) string {
+	windows := runtime.GOOS == "windows"
+	place := engine.PlaceLinux
+	if windows {
+		place = engine.PlaceWindows
+	}
+	if stamped, _ := engine.TestBuild(); stamped != "" {
+		place = filepath.ToSlash(stamped)
+	}
+	if windows && len(place) >= 3 && place[0] == '/' && place[2] == '/' {
+		place = strings.ToUpper(place[1:2]) + ":" + place[2:]
+	}
+	if strings.Contains(place, " ") {
+		place = `"` + place + `"`
+	}
+	if ps {
+		place = "& " + place
+	}
+	return place
+}
+
+// bareBonsai reports a program word that is a bare bonsai (or bonsai.exe), as the shell finds it on its PATH: a
+// brief's read by it ties the brief (the tie reads the brief's own file, so which program ran does not count there),
+// but past a budget it is neither the report nor an exempt read (installedBonsai).
+func bareBonsai(w shWord) bool {
+	return !w.expand && !w.glob && !w.splat && w.alts == nil && (w.text == "bonsai" || strings.EqualFold(w.text, "bonsai.exe"))
 }
 
 // orNone writes an address for a refusal: itself, or "none".
@@ -917,19 +954,20 @@ func reportCall(tool, command, addr string) bool {
 		return false
 	}
 	c := l.cmds[0]
+	words := programWords(d, c.words)
 	// One command: a line end (or ;) may close it, nothing may follow it.
-	if c.group != nil || len(c.nested) > 0 || len(c.redirs) > 0 || (c.op != "" && c.op != ";") || c.piped || len(c.words) < 2 {
+	if c.group != nil || len(c.nested) > 0 || len(c.redirs) > 0 || (c.op != "" && c.op != ";") || c.piped || len(words) < 2 {
 		return false
 	}
 	if len(c.feeds) > 1 || (len(c.feeds) == 1 && (!c.feeds[0].doc || !c.feeds[0].quoted || len(c.feeds[0].nested) > 0)) {
 		return false
 	}
-	if !installedBonsai(c.words[0]) {
+	if !installedBonsai(words[0]) {
 		return false
 	}
 	kind, from, body, bodyDash := "", "", false, false
-	for i := 1; i < len(c.words); i++ {
-		w := c.words[i]
+	for i := 1; i < len(words); i++ {
+		w := words[i]
 		if w.expand || w.glob || w.splat || w.alts != nil {
 			return false
 		}
@@ -938,11 +976,11 @@ func reportCall(tool, command, addr string) bool {
 			if hasVal {
 				return val, true
 			}
-			if i+1 >= len(c.words) {
+			if i+1 >= len(words) {
 				return "", false
 			}
 			i++
-			nw := c.words[i]
+			nw := words[i]
 			if nw.expand || nw.splat || nw.alts != nil {
 				return "", false
 			}
@@ -972,11 +1010,11 @@ func reportCall(tool, command, addr string) bool {
 			if hasVal {
 				return false // --body=... : written as two words, its quoting seen
 			}
-			if i+1 >= len(c.words) {
+			if i+1 >= len(words) {
 				return false
 			}
 			i++
-			bw := c.words[i]
+			bw := words[i]
 			if bw.text == "-" && !bw.quoted {
 				bodyDash = true
 				continue
@@ -999,42 +1037,44 @@ func reportCall(tool, command, addr string) bool {
 	return true
 }
 
-// briefShow gives the id a shell call reads with bonsai message --show <id> as its one command, "" for any other call.
-func briefShow(tool, command string) string {
+// briefShow gives the id a shell call reads with bonsai message --show <id> as its one command, "" for any other call,
+// and whether it runs the installed bonsai at its place (installedBonsai); a bare bonsai reads too (bareBonsai).
+func briefShow(tool, command string) (id string, atPlace bool) {
 	d := shBash
 	if tool == "PowerShell" {
 		d = shPower
 	}
 	l, why := shSplit(command, d, 0)
 	if why != "" || l == nil || len(l.cmds) != 1 {
-		return ""
+		return "", false
 	}
 	c := l.cmds[0]
-	if c.group != nil || len(c.nested) > 0 || len(c.redirs) > 0 || len(c.feeds) > 0 || (c.op != "" && c.op != ";") || len(c.words) < 3 {
-		return ""
+	words := programWords(d, c.words)
+	if c.group != nil || len(c.nested) > 0 || len(c.redirs) > 0 || len(c.feeds) > 0 || (c.op != "" && c.op != ";") || len(words) < 3 {
+		return "", false
 	}
-	if !installedBonsai(c.words[0]) || c.words[1].text != "message" {
-		return ""
+	atPlace = installedBonsai(words[0])
+	if !atPlace && !bareBonsai(words[0]) || words[1].text != "message" {
+		return "", false
 	}
-	id := ""
-	for i := 2; i < len(c.words); i++ {
-		w := c.words[i]
+	for i := 2; i < len(words); i++ {
+		w := words[i]
 		if w.expand || w.glob {
-			return ""
+			return "", false
 		}
 		switch {
-		case w.text == "--show" && i+1 < len(c.words):
+		case w.text == "--show" && i+1 < len(words):
 			i++
-			id = c.words[i].text
+			id = words[i].text
 		case strings.HasPrefix(w.text, "--show="):
 			id = strings.TrimPrefix(w.text, "--show=")
 		case w.text == "--json":
 		default:
-			return ""
+			return "", false
 		}
 	}
 	if !message.IsID(id) {
-		return ""
+		return "", false
 	}
-	return id
+	return id, atPlace
 }
