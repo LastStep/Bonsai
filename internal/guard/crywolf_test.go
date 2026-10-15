@@ -91,7 +91,7 @@ func TestOrdinaryWorkPasses(t *testing.T) {
 		j := judgeIn(dir)
 		for _, argv := range [][]string{{"bonsai", "status", "--json"}, {"bonsai", "check", "--json"}, {"bonsai", "logs"},
 			{"bonsai", "asks", "--json"}, {"bonsai", "ask", "--status", "k"}, {"bonsai", "settings", "show"}, {"bonsai", "--help"}} {
-			if d := j.ownCommand(dir, argv); !d.Allow {
+			if d := j.ownCommand(dir, argv, true); !d.Allow {
 				t.Errorf("%q: %+v", argv, d)
 			}
 		}

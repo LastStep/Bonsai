@@ -13,7 +13,12 @@ package guard
 //     grant; in command mode only a person's tap puts a person-only path there, tripwire.go).
 //   - bonsai init, update and unlink are judged as one edit of bonsai.yaml and .bonsai/lock.json at the top of the
 //     checkout they run in (may), so an agent's update needs a grant of both, as any edit of them does.
-//   - Every other word is allowed (bonsai-command).
+//   - Every other word is allowed (bonsai-command), and so is a call that writes nothing whatever its word (T-5505's
+//     findings, 16 Oct: bonsai message --help and a preview of bonsai update were refused as writes): one holding
+//     --help or -h among its words, which prints the word's help and runs nothing (runWord stops at it, and no flag
+//     takes it as a value: a flag's value may not start with a dash), and a preview, bonsai init or update with
+//     neither --yes nor --allow-exec, its words literal, in an agent's session (CLAUDE_CODE_CHILD_SESSION set, so the
+//     command asks no y/N and writes neither bonsai.yaml nor the lock: it prints the preview and exits 4).
 //
 // The command itself refuses too (step 5.3.6 note 8), since a variable, xargs, a script or a subprocess can hide a
 // flag from the guard: the guard is the second layer. ownCommand judges one bonsai call's words, found by step 5.3.3's
@@ -95,12 +100,15 @@ func ownOpen(argv []string) string {
 // ownCommand judges one bonsai call: argv its words as the shell gives them to the program (argv[0] the program),
 // dir the folder it runs in (absolute; the session's project folder when it cannot be told). Its record goes in the
 // session's project (rule 8: a shell call is judged there).
-func (j *judge) ownCommand(dir string, argv []string) Decision {
-	if len(argv) < 2 {
+func (j *judge) ownCommand(dir string, argv []string, literal bool) Decision {
+	if len(argv) < 2 || helpArg(argv[1:]) {
 		return allow(RuleBonsaiCommand, "")
 	}
 	args := argv[1:]
 	word, _ := ownWord(args)
+	if j.preview(word, args, literal) {
+		return allow(RuleBonsaiCommand, "")
+	}
 	shown := "bonsai " + oneLine(word) // the word alone: the call's other words may name paths or values (contract §2.6)
 	if allowExec(args) {
 		shown += " --allow-exec"
@@ -158,6 +166,35 @@ func (j *judge) ownCommand(dir string, argv []string) Decision {
 		}
 	}
 	return allow(RuleBonsaiCommand, "")
+}
+
+// helpArg reports --help or -h among a bonsai call's words (as the shell gives them, so literal): the command prints
+// its help and runs nothing (cmd/bonsai's runWord and runSub; bonsai alone with more words refuses), so the call writes
+// nothing whatever its other words say.
+func helpArg(args []string) bool {
+	for _, a := range args {
+		if a == "--help" || a == "-h" {
+			return true
+		}
+	}
+	return false
+}
+
+// preview reports a bonsai init or update that only previews: no --yes (in any form) and no --allow-exec among its
+// words, every word literal (a variable could stand for --yes), in an agent's session (CLAUDE_CODE_CHILD_SESSION set in
+// the hook's environment, so the command has no terminal to ask y/N at: cmd/bonsai's interactive). It prints the
+// preview and writes neither bonsai.yaml nor the lock (a line that changes the variable is a person's step, judged
+// apart: shell_env.go).
+func (j *judge) preview(word string, args []string, literal bool) bool {
+	if word != "init" && word != "update" || !literal || allowExec(args) || j.getenv == nil || j.getenv(ChildSessionEnv) == "" {
+		return false
+	}
+	for _, a := range args {
+		if strings.HasPrefix(strings.ToLower(strings.TrimLeft(a, "-")), "yes") && strings.HasPrefix(a, "-") {
+			return false
+		}
+	}
+	return true
 }
 
 // roleCommand judges a bonsai call for the roles' rules (rolecmds.go): bonsai message's --from and --kind brief; bonsai

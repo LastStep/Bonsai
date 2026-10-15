@@ -462,15 +462,19 @@ func delBonsai(t string) bool {
 // is not a person's (delFedBonsai); else it is a person's step.
 func (r *delRun) bonsaiCall(x delExec) {
 	argv := make([]string, len(x.words))
+	literal := true
 	for k, w := range x.words {
 		argv[k] = w.text
+		if k > 0 && (w.expand || w.splat || w.glob || w.alts != nil) {
+			literal = false
+		}
 	}
 	dirs := append([]string(nil), x.dirs.known...)
 	if (x.dirs.unknown || len(dirs) == 0) && r.own != "" {
 		dirs = appendNew(dirs, r.own)
 	}
 	for _, dir := range dirs {
-		if d := r.j.ownCommand(dir, argv); !d.Allow {
+		if d := r.j.ownCommand(dir, argv, literal); !d.Allow {
 			r.refuse(d)
 			return
 		}

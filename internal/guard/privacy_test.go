@@ -65,7 +65,7 @@ func TestRefusalsNameNoUserFolder(t *testing.T) {
 	if text := recs[len(recs)-1].String("text"); strings.Contains(text, "secret") || strings.Contains(text, "cp ") {
 		t.Errorf("the line in the record: %q", text)
 	}
-	d := judgeIn(dir).ownCommand(dir, []string{"bonsai", "labels", "attach", filepath.Join(user, "acme.yaml")})
+	d := judgeIn(dir).ownCommand(dir, []string{"bonsai", "labels", "attach", filepath.Join(user, "acme.yaml")}, true)
 	if d.Rule != RuleHomeCommand || strings.Contains(d.Why, "acme") || !strings.HasPrefix(d.Why, `"bonsai labels" refused`) &&
 		!strings.HasPrefix(d.Why, "bonsai labels refused") {
 		t.Errorf("a bonsai call's reason: %+v", d)

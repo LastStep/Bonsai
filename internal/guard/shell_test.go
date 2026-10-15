@@ -41,7 +41,7 @@ func (s *delStub) judgedRoots() []judgedRoot {
 
 // ownCommand stands in for commands.go's in a project in agents mode: --allow-exec and unlink refused, settings set
 // and labels attach or detach refused, any other word allowed. It counts the calls and keeps the last.
-func (s *delStub) ownCommand(dir string, argv []string) Decision {
+func (s *delStub) ownCommand(dir string, argv []string, literal bool) Decision {
 	s.commands = append(s.commands, dir+" "+strings.Join(argv, " "))
 	for _, a := range argv[1:] {
 		if strings.HasPrefix(strings.TrimLeft(strings.ToLower(a), "-"), "allow-exec") && strings.HasPrefix(a, "-") || a == "unlink" {

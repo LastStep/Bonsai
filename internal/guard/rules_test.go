@@ -446,7 +446,7 @@ var ruleTests = map[string]func(t *testing.T){
 		j := judgeIn(dir)
 		for _, argv := range [][]string{{"bonsai", "update", "--allow-exec", "--yes"}, {"bonsai", "unlink", "--yes"},
 			{"bonsai", "init", "--allow-exec"}, {"/usr/local/bin/bonsai", "update", "--ALLOW-EXEC=true"}, {"bonsai", "check", "-allow-exec"}} {
-			if d := j.ownCommand(dir, argv); d.Rule != RulePersonCommand || !strings.Contains(d.Why, "status_writes agents") ||
+			if d := j.ownCommand(dir, argv, true); d.Rule != RulePersonCommand || !strings.Contains(d.Why, "status_writes agents") ||
 				!strings.HasPrefix(d.Next, "a person runs this command") {
 				t.Errorf("%q in agents mode: %+v", argv, d)
 			}
@@ -465,7 +465,7 @@ var ruleTests = map[string]func(t *testing.T){
 		commandMode(t, dir)
 		j = judgeIn(dir)
 		for _, argv := range [][]string{{"bonsai", "update", "--allow-exec", "--yes"}, {"bonsai", "unlink", "--yes"}} {
-			if d := j.ownCommand(dir, argv); !d.Allow {
+			if d := j.ownCommand(dir, argv, true); !d.Allow {
 				t.Errorf("%q under a person's grant in command mode: %+v", argv, d)
 			}
 		}
@@ -473,7 +473,7 @@ var ruleTests = map[string]func(t *testing.T){
 		// In command mode with no such grant: refused, the reason naming the grant missing.
 		writeFile(t, filepath.Join(dir, "work", "tasks", "T-0001-the-task.md"), taskText("T-0001", "running", "light", "bonsai.yaml"))
 		j = judgeIn(dir)
-		if d := j.ownCommand(dir, []string{"bonsai", "unlink", "--yes"}); d.Rule != RulePersonCommand ||
+		if d := j.ownCommand(dir, []string{"bonsai", "unlink", "--yes"}, true); d.Rule != RulePersonCommand ||
 			!strings.Contains(d.Why, "for .bonsai/lock.json: the running task T-0001 does not grant it") {
 			t.Errorf("unlink with bonsai.yaml alone granted: %+v", d)
 		}
@@ -484,11 +484,11 @@ var ruleTests = map[string]func(t *testing.T){
 		j := judgeIn(dir)
 		for _, argv := range [][]string{{"bonsai", "settings", "set", "status_writes=agents"}, {"bonsai", "settings", "--machine", "set", "x=1"},
 			{"bonsai", "labels", "attach", "acme.yaml"}, {"bonsai.exe", "labels", "detach", "acme"}} {
-			if d := j.ownCommand(dir, argv); d.Rule != RuleHomeCommand || d.Why == "" || d.Next == "" {
+			if d := j.ownCommand(dir, argv, true); d.Rule != RuleHomeCommand || d.Why == "" || d.Next == "" {
 				t.Errorf("%q: %+v", argv, d)
 			}
 		}
-		if d := j.ownCommand(dir, []string{"bonsai", "settings", "show", "--json"}); !d.Allow {
+		if d := j.ownCommand(dir, []string{"bonsai", "settings", "show", "--json"}, true); !d.Allow {
 			t.Errorf("settings show: %+v", d)
 		}
 	},
@@ -497,22 +497,22 @@ var ruleTests = map[string]func(t *testing.T){
 		j := judgeIn(dir)
 		for _, argv := range [][]string{{"bonsai", "status", "--json"}, {"bonsai", "check", "--write"}, {"bonsai", "hook", "guard"},
 			{"bonsai"}, {"bonsai", "--version"}} {
-			if d := j.ownCommand(dir, argv); !d.Allow || d.Rule != RuleBonsaiCommand {
+			if d := j.ownCommand(dir, argv, true); !d.Allow || d.Rule != RuleBonsaiCommand {
 				t.Errorf("%q: %+v", argv, d)
 			}
 		}
 		// update and init are judged as an edit of bonsai.yaml and the lock: no grant, refused; granted, allowed.
-		if d := j.ownCommand(filepath.Join(dir, "work"), []string{"bonsai", "update", "--yes"}); d.Rule != RulePersonOnly ||
+		if d := j.ownCommand(filepath.Join(dir, "work"), []string{"bonsai", "update", "--yes"}, true); d.Rule != RulePersonOnly ||
 			!strings.HasPrefix(d.Why, "bonsai update writes bonsai.yaml and .bonsai/lock.json, so it is judged as an edit of them") {
 			t.Errorf("update with no grant: %+v", d)
 		}
 		dir = withTask(t, "running", "bonsai.yaml", ".bonsai/lock.json")
-		if d := judgeIn(dir).ownCommand(dir, []string{"bonsai", "update", "--yes"}); !d.Allow || d.Rule != RuleBonsaiCommand {
+		if d := judgeIn(dir).ownCommand(dir, []string{"bonsai", "update", "--yes"}, true); !d.Allow || d.Rule != RuleBonsaiCommand {
 			t.Errorf("update under a grant: %+v", d)
 		}
 		// init in a folder no linked project holds: nothing to judge.
 		fresh := t.TempDir()
-		if d := judgeIn(dir).ownCommand(fresh, []string{"bonsai", "init", "--yes"}); !d.Allow {
+		if d := judgeIn(dir).ownCommand(fresh, []string{"bonsai", "init", "--yes"}, true); !d.Allow {
 			t.Errorf("init outside every project: %+v", d)
 		}
 	},

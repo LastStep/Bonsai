@@ -91,8 +91,9 @@ type delJudge interface {
 	// judgedRoots gives the folders whose guarded paths a delete can take (judgedRoot): the projects a shell call is
 	// judged in and Bonsai's home. It reads this machine's records, so it is asked only once a delete needs it.
 	judgedRoots() []judgedRoot
-	// ownCommand judges one bonsai call: argv its words, dir the folder it runs in (commands.go).
-	ownCommand(dir string, argv []string) Decision
+	// ownCommand judges one bonsai call: argv its words, dir the folder it runs in, literal true when every word
+	// after the program is literal (no variable, substitution, glob or brace list) (commands.go).
+	ownCommand(dir string, argv []string, literal bool) Decision
 	// personStep judges a person's step the check found (commands.go): a change of CLAUDE_CODE_CHILD_SESSION
 	// (shell_env.go), a bonsai call whose words it cannot see.
 	personStep(tool, what string) Decision
