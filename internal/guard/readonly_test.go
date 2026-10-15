@@ -53,6 +53,22 @@ func TestReadOnlyBonsaiCallsAreNotWrites(t *testing.T) {
 		t.Errorf("a preview with no agent's session named: exit %d: %s", code, s)
 	}
 	wantAnswer(t, dir, verifier("bonsai check --write"), 2, RuleRoleWritesNothing, agent, "1")
+	// The sweep: git's own help of a write word, --help first after the subcommand (git turns it into git help <sub>)
+	// or -h alone, is no write for a role that changes nothing, and git clean --help no delete; --help elsewhere may be
+	// a value or a path, and is judged as before.
+	for _, c := range []string{"git commit --help", "git clean --help", "git stash -h", "git rm --help", "git -C . checkout --help",
+		"git mv --help -f"} {
+		if code, s := runs(t, dir, verifier(c), agent, "1"); code != 0 {
+			t.Errorf("a verifier, %s: exit %d: %s", c, code, s)
+		}
+		if code, s := runs(t, dir, person(c), agent, "1"); code != 0 {
+			t.Errorf("the person's session, %s: exit %d: %s", c, code, s)
+		}
+	}
+	for _, c := range []string{"git commit -m --help", "git rm -- --help", "git commit -h -a", "git commit $H", "git commit '--he'*"} {
+		wantAnswer(t, dir, verifier(c), 2, RuleRoleWritesNothing, agent, "1")
+	}
+	wantAnswer(t, dir, person("git clean -f"), 2, RuleDeleteUnnamed, agent, "1")
 	wantAnswer(t, dir, lead("bonsai message --kind report --from lead --to orchestrator --body x"), 2, RuleCallRefused, agent, "1")
 }
 

@@ -1544,6 +1544,9 @@ func (r *delRun) git(x delExec) (delExec, []delAct) {
 		return x, nil
 	}
 	args := words[i+1:]
+	if gitHelp(args) {
+		return x, nil // it prints the subcommand's help and deletes nothing
+	}
 	gitOps := func(ws []shWord) []delOp { return delOps(ws, x.d, false, true) }
 	dry := func(g delGot) bool { return g.has("n", "dry-run") && !g.has("no-dry-run") }
 	switch words[i].text {

@@ -221,11 +221,26 @@ var GitWriteWords = []struct {
 		Writes: "-d --delete -f --force -a --annotate -s --sign -u --local-user -m --message -F --file -e --edit --cleanup", Lists: true},
 }
 
+// gitHelp reports a git call that only prints a subcommand's help (T-5515's sweep, 16 Oct: git commit --help was
+// refused to a role that changes nothing, and git clean --help as a delete that names nothing): --help as the first
+// word after the subcommand, which git itself turns into git help <subcommand> before the subcommand runs, or -h as its
+// one word, which prints its usage. Elsewhere on the line --help may be an option's value (git commit -m --help) or a
+// path after --, so it counts only there. rest are the words after the subcommand.
+func gitHelp(rest []shWord) bool {
+	if len(rest) == 0 || rest[0].expand || rest[0].glob || rest[0].alts != nil {
+		return false
+	}
+	return rest[0].text == "--help" || len(rest) == 1 && rest[0].text == "-h"
+}
+
 // gitWrite says which of git's write words a git call's subcommand is, "" for one that only reads (GitWriteWords'
 // comment). sub is its subcommand, rest the words after it. A word is matched as written, its value after = cut off
 // (--set-upstream-to=x), and a short cluster (-dr) by each of its letters. Anything the table does not read as a
 // listing or a dry run is a write.
 func gitWrite(sub string, rest []shWord) string {
+	if gitHelp(rest) {
+		return ""
+	}
 	for _, g := range GitWriteWords {
 		if g.Sub != sub {
 			continue
