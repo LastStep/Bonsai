@@ -131,8 +131,12 @@ func writeUsage(o Options, p *hookin.Payload, cfg *workspace.Config, local works
 var settleWait = settle
 
 // settle waits until a transcript's size has not changed for settleQuiet, at most settleMax, by the wall clock (this
-// file's comment). A file that is not there counts as one size, so one that appears is waited for too.
+// file's comment). A file that is not there counts as one size, so one that appears is waited for too; a path that
+// is none, or not absolute, is not waited for (readUsage says why it is not read).
 func settle(path string) {
+	if path == "" || !filepath.IsAbs(path) {
+		return
+	}
 	size := func() int64 {
 		fi, err := os.Stat(path)
 		if err != nil {
