@@ -13,9 +13,11 @@ import (
 	"slices"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/message"
+	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/redact"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -134,10 +136,12 @@ func runMessage(c *call) int {
 		if e != nil {
 			return c.messageFail(site, e)
 		}
-		shown, me := message.Show(p, st, c.value("--show"), rules, messageNow())
+		now := messageNow()
+		shown, me := message.Show(p, st, c.value("--show"), rules, now)
 		if me != nil {
 			return c.messageFail(site, messageError(me))
 		}
+		withAgent(p, &shown.Thread, rules, now)
 		if c.json {
 			return c.messageOut(site, shown.Entry.Msg, shown.Entry.Path, shown.Thread)
 		}
@@ -162,6 +166,9 @@ func runMessage(c *call) int {
 	written, me := message.Write(p, w, rules)
 	if me != nil {
 		return c.messageFail(site, messageError(me))
+	}
+	if at, err := time.Parse(record.AtLayout, written.Message.Created); err == nil {
+		withAgent(p, &written.Thread, rules, at) // as of its writing, the clock the thread was folded at
 	}
 	if c.json {
 		return c.messageOut(site, written.Message, written.Path, written.Thread)
@@ -199,6 +206,13 @@ func (c *call) messageBody() (string, *engine.Error) {
 		return body, nil
 	}
 	return c.value("--body"), nil
+}
+
+// withAgent fills a thread's recipient and the flags that read the agents' state (budget-spent; unanswered by the
+// tied agent's last call) from the guard's records, through internal/agents' Store.Thread, as bonsai messages and
+// status read them, so --json's thread is the one bonsai messages lists.
+func withAgent(p message.Place, t *message.Thread, rules message.Rules, now time.Time) {
+	agents.Store{Main: p.Local.Main}.Thread(t, rules.UnansweredMinutes, now)
 }
 
 // messagePlace is where the messages of the site's workspace are kept, and who writes.

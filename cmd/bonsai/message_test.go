@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/record"
@@ -644,5 +645,61 @@ func TestMessageCommittedCopyUnread(t *testing.T) {
 	problems, roles, _ = c.problemsOf()
 	if !strings.Contains(strings.Join(problems, "\n"), "the lock as committed at the main checkout's HEAD does not read") || schema.Show(roles) != "[]" {
 		t.Errorf("status with the committed lock unread: roles %s, problems %q", schema.Show(roles), problems)
+	}
+}
+
+// bonsai message --json's thread is the one bonsai messages lists (5.5.11's follow-up): once an agent tied the brief,
+// --show's thread carries its recipient (the agent, its counts and limits as the guard recorded them) and the flags
+// that read its state (budget-spent while it is past its budget), through internal/agents' Store.Thread; before any
+// tie, the recipient is null.
+func TestMessageShowRecipient(t *testing.T) {
+	c := newCLI(t)
+	t.Setenv(asks.SessionEnv, "")
+	start := time.Date(2026, 10, 16, 9, 0, 0, 0, time.UTC)
+	old := messageNow
+	t.Cleanup(func() { messageNow = old })
+	messageNow = func() time.Time { return start }
+	c.link()
+	c.commit("link")
+	_, out, _ := c.run("", "message", "--from", "orchestrator", "--to", "builder@T-0901", "--kind", "brief", "--body", "Go.")
+	id := strings.Split(out, "\n")[0]
+	shown := func() schema.Object {
+		t.Helper()
+		th := threadsIn(c.messagesDoc(0, "message", "--show", id))
+		if len(th) != 1 {
+			t.Fatalf("%d threads", len(th))
+		}
+		return th[0]
+	}
+	if r, _ := shown().Get("recipient"); r != nil {
+		t.Errorf("a recipient before any tie: %s", schema.Show(r))
+	}
+	s := agents.Store{Main: c.root}
+	n := func(v int64) *int64 { return &v }
+	h := agents.Header{Agent: "a1", Session: "s1", Type: "workflow:builder", Role: "builder", Pack: "workflow", Kind: "lead",
+		Writes: true, Limits: agents.Limits{Actions: agents.Limit{Value: n(3), Max: n(3)}}, First: agents.Stamp(start)}
+	if _, err := s.Create(h); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.Tie(id, "s1", "a1"); !ok || err != nil {
+		t.Fatal(ok, err)
+	}
+	if _, err := s.Call("s1", "a1", start.Add(time.Minute), 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Append("s1", "a1", agents.Event{E: agents.EventSpent, At: agents.StampMilli(start.Add(2 * time.Minute)),
+		Measure: "actions", Count: 4, Of: 3}); err != nil {
+		t.Fatal(err)
+	}
+	th := shown()
+	r, _ := th.Get("recipient")
+	f, _ := th.Get("flags")
+	if ro, ok := r.(schema.Object); !ok || ro.String("agent") != "a1" || !strings.HasSuffix(schema.Show(r), `"spent":true}`) ||
+		schema.Show(f) != `["budget-spent"]` {
+		t.Errorf("--show's thread once tied and spent: recipient %s, flags %s", schema.Show(r), schema.Show(f))
+	}
+	listed := threadsIn(c.messagesDoc(0, "messages"))
+	if len(listed) != 1 || schema.Show(listed[0]) != schema.Show(th) {
+		t.Errorf("--show's thread is not the one bonsai messages lists:\n%s\n%s", schema.Show(th), schema.Show(listed))
 	}
 }
