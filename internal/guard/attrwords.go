@@ -7,8 +7,8 @@ package guard
 // refused to a role that changes nothing (role-writes-nothing). Beyond a write, such a change reaches what a folder
 // holds, so each path is judged against Bonsai's own files too (attrReach): one that is one of them, a folder that
 // holds one (the main checkout's .bonsai/local/, .bonsai/.gitignore, the generated tables and the lock, and Bonsai's
-// home: a folder's mode stops Bonsai reaching what is in it, so chmod 000 .bonsai or chmod -R a-w . is refused), or a
-// glob that may name either is refused as bonsai-files.
+// home: a folder's mode stops Bonsai reaching what is in it, so chmod 000 .bonsai, chmod -R a-w . or chmod -R a-w / is
+// refused), or a glob that may name either is refused as bonsai-files.
 //
 // The words, read in every shell (Windows' programs from Git Bash, PowerShell or cmd; the Unix ones from pwsh too):
 //   - chmod (a mode written -w is the mode, not an option; --reference=<file> names no mode), chown and chgrp (the
@@ -21,8 +21,9 @@ package guard
 //     Git Bash passes it, //x;
 //   - PowerShell's Set-ItemProperty (sp), Clear-ItemProperty (clp) and Set-Acl, by -Path or -LiteralPath, and an
 //     assignment to a member of a Get-Item (gi) or Get-ChildItem (gci, ls, dir) result written in parentheses
-//     ((Get-Item x).IsReadOnly = $true, (gi x).Attributes += 'ReadOnly', with $( ) too), or a call of its set_... or
-//     Set... method ((gi x).SetAccessControl($acl)).
+//     ((Get-Item x).IsReadOnly = $true, (gi x).Attributes += 'ReadOnly', with $( ) too, nested, $((gi x)), and after a
+//     chain of assignments, $x = (gi x).IsReadOnly = $true), or a call of its set_... or Set... method
+//     ((gi x).SetAccessControl($acl)).
 //
 // Known limits, beside rolecmds.go's (a path in a variable or a substitution, an interpreter's change, a script run by
 // name): an item a pipeline gives a cmdlet (Get-Item x | Set-ItemProperty -Name IsReadOnly -Value $true), a member set
@@ -290,8 +291,24 @@ func programWords(d shDialect, words []shWord) []shWord {
 var psGetters = []string{"get-item", "gi", "get-childitem", "gci", "ls", "dir"}
 
 // psMemberSet reads a PowerShell command that sets a member of a Get-Item result written in parentheses, or calls its
-// set_... or Set... method (this file's comment): the paths it names, as attribute changes; none for any other.
+// set_... or Set... method (this file's comment): the paths it names, as attribute changes; none for any other. The
+// result may be in parentheses or a subexpression again ($((gi x)).IsReadOnly = $true), and the set may follow a
+// chain of assignments' left sides ($x = (gi x).IsReadOnly = $true; VG's third check).
 func psMemberSet(words []shWord, depth int) []writeTarget {
+	for {
+		if ts := psMemberSetOne(words, depth); len(ts) > 0 {
+			return ts
+		}
+		next, ok := delPSAssignOne(words)
+		if !ok {
+			return nil
+		}
+		words = next
+	}
+}
+
+// psMemberSetOne is psMemberSet for a command whose first word is the member set or call.
+func psMemberSetOne(words []shWord, depth int) []writeTarget {
 	if len(words) == 0 || words[0].quoted {
 		return nil
 	}
@@ -304,6 +321,13 @@ func psMemberSet(words []shWord, depth int) []writeTarget {
 		return nil
 	}
 	inner, rest := raw[1:end], raw[end+2:]
+	for {
+		in := strings.TrimPrefix(strings.TrimSpace(inner), "$")
+		if !strings.HasPrefix(in, "(") || psClose(in) != len(in)-1 {
+			break
+		}
+		inner = in[1 : len(in)-1]
+	}
 	k := 0
 	for k < len(rest) && shNameChar(rest[k]) {
 		k++
@@ -418,10 +442,14 @@ func (s *shellRole) attrReach(dir, p, word string, glob bool, d shDialect) Decis
 
 // mayReach reports whether a path (a glob with glob set) is, holds or lies in the folder own: each of the segments the
 // two share matched, a glob's by path.Match (a pattern that does not read matches: fail closed), letter case folded
-// with fold, and with dots a bash glob's * or ? never stands for a leading dot.
+// with fold, and with dots a bash glob's * or ? never stands for a leading dot. A root folder (/, C:/) holds every
+// path under it: its one slash is dropped before the split, which would read it as two empty segments (VG's third
+// check: chmod -R a-w / and icacls C:/ /deny ... passed).
 func mayReach(p, own string, glob, fold, dots bool) bool {
-	ps := strings.Split(filepath.ToSlash(filepath.Clean(p)), "/")
-	owns := strings.Split(filepath.ToSlash(filepath.Clean(own)), "/")
+	split := func(f string) []string {
+		return strings.Split(strings.TrimSuffix(filepath.ToSlash(filepath.Clean(f)), "/"), "/")
+	}
+	ps, owns := split(p), split(own)
 	for i := 0; i < len(ps) && i < len(owns); i++ {
 		a, b := ps[i], owns[i]
 		if fold {

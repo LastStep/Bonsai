@@ -2,7 +2,9 @@ package guard
 
 // VG's third check of 5.5.11 (15 Oct), each reproducer a test: S2, past a budget only this system's installed place
 // (s2plain.py on Linux, replay-w4.ps1 on Windows, both with a plain build, whose places are the installed ones, as a
-// go test build's are); a calls file rewritten under its count holding the window spent (rewrite.py).
+// go test build's are); a calls file rewritten under its count holding the window spent (rewrite.py); the root folder
+// reached by a change of permissions (m1root.py), and PowerShell's member sets in parentheses again or after a chain
+// of assignments.
 
 import (
 	"os"
@@ -236,5 +238,43 @@ func TestAnEmptyCallsFileBesideTheFirstCallIsCounted(t *testing.T) {
 	}
 	if n, _ := (agents.Store{Main: dir}).Calls(sessA, "q1"); n != 6 {
 		t.Errorf("%d calls counted, want 6", n)
+	}
+}
+
+// m1root.py: a change of permissions, owner or ACL at the file system's root, which holds Bonsai's files, is refused
+// as bonsai-files (mayReach read / as two empty segments); and PowerShell's member set on a Get-Item result in
+// parentheses again, or after a chain of assignments, is read as the attribute change it is.
+func TestM1TheRootFolderAndPowerShellsMemberSets(t *testing.T) {
+	dir := rolesProject(t, nil)
+	started(t, dir, sessA, "workflow:lead")
+	bashLines := []string{"chmod -R a-w /", "chmod -R a-w //", "chmod -R a-w /.", "chown -R nobody /", "setfacl -R -m u::r /",
+		"icacls / //deny Everyone:W //t", "chmod 000 /", "chattr -R +i /"}
+	psLines := []string{"icacls / /deny Everyone:W /t"}
+	if runtime.GOOS == "windows" {
+		bashLines = append(bashLines, "icacls C:/ //deny Everyone:W //t", `icacls 'C:\' //deny Everyone:W //t`, "chmod -R a-w /c/")
+		psLines = append(psLines, `icacls C:\ /deny Everyone:W /t`, "icacls C:/ /deny Everyone:W /t", `Set-Acl -Path C:\ -AclObject $acl`)
+	}
+	calls := ".bonsai/local/agents/" + sessA + "/x.calls"
+	psLines = append(psLines, "$((gi "+calls+")).IsReadOnly = $true", "$($(Get-Item "+calls+")).Attributes = 'ReadOnly'",
+		"(( gi "+calls+" )).IsReadOnly = $true", "$x = (gi "+calls+").IsReadOnly = $true", "$x=(gi "+calls+").IsReadOnly=$true",
+		"$a = $b = (Get-Item "+calls+").Attributes += 'ReadOnly'", "$x = $((gi "+calls+")).set_IsReadOnly($true)")
+	// One lead (joined to the session's allowed call, so it writes) throughout.
+	for _, line := range bashLines {
+		wantAnswer(t, dir, shellAs(dir, "rl", "workflow:lead", line, false), 2, RuleBonsaiFiles)
+	}
+	for _, line := range psLines {
+		wantAnswer(t, dir, shellAs(dir, "rl", "workflow:lead", line, true), 2, RuleBonsaiFiles)
+	}
+	// Reads stay reads, and a lead's own files keep their changes.
+	for _, line := range []string{"ls -l /", "icacls /", "stat /", "chmod 755 src", "chmod -R u+w src/*"} {
+		wantAnswer(t, dir, shellAs(dir, "rl", "workflow:lead", line, false), 0, "")
+	}
+	for _, line := range []string{"$x = (gi free.txt).IsReadOnly", "$x = (Get-Item free.txt).Length", "$ro = $((gi free.txt)).IsReadOnly -eq $true",
+		"$x = (gi free.txt).IsReadOnly = $true"} {
+		wantAnswer(t, dir, shellAs(dir, "rl", "workflow:lead", line, true), 0, "")
+	}
+	// A role that changes nothing is refused the member set on its project's file, in the new forms too.
+	for _, line := range []string{"$((gi free.txt)).IsReadOnly = $true", "$x = (gi free.txt).IsReadOnly = $true"} {
+		wantAnswer(t, dir, shellAs(dir, "rh", "workflow:helper", line, true), 2, RuleRoleWritesNothing)
 	}
 }
