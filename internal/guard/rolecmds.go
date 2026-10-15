@@ -4,32 +4,43 @@ package guard
 // 5.5.11 notes 3, 3a and 4), read by the shell judge's own word splitting (shell.go): nothing is expanded or run.
 //
 //   - A command starting Claude Code (ClaudeStartWords: claude, claude-here, by any path and with .exe, .cmd, .bat or
-//     .ps1; npx, pnpx or bunx of @anthropic-ai/claude-code, npm exec, pnpm dlx and yarn dlx too, any version; node
-//     running Claude Code's cli.js), from every role but the session's: refused (call-refused), since a top-level
-//     session started from an agent's shell carries no agent_id and would read as the person's own.
+//     .ps1; a program run by a path in Claude Code's native versions folder, ClaudeVersions; npx, pnpx or bunx of
+//     @anthropic-ai/claude-code, npm exec, pnpm dlx and yarn dlx too, any version; node running Claude Code's cli.js),
+//     from every role but the session's: refused (call-refused), since a top-level session started from an agent's
+//     shell carries no agent_id and would read as the person's own.
 //   - bonsai message (commands.go hands each call here, messageCall): one that writes a message from a caller with no
 //     address, or with a --from other than its own address, refused; a --kind brief to a role the writer may not call,
-//     refused (call-refused). --show and bonsai messages read, and are free.
-//   - bonsai ladder --task <id>: noted, once the call is allowed, so the agent's next call reads the climb's result
-//     (budget.go's readClimbs).
+//     refused (call-refused). --show and bonsai messages read, and are free. Past a budget, only the installed bonsai
+//     (installedBonsai: a bare bonsai, or the place the hook lines run it from) is the report or a brief's read.
+//   - bonsai ladder: noted, once the call is allowed, so the agent's next call reads the climb's result (budget.go's
+//     readClimbs), for its --task <id>, or, with none the guard can read, for BONSAI_TASK as the ladder reads it (an
+//     assignment of it on the line, export's, else the session's own).
 //   - Shell writes the guard can read (writeTargets): a redirect (>, >>, >|, &>, &>>, <> and their numbered forms; in
-//     PowerShell *> too), tee, cp, ln and sed -i or --in-place onto a path (and install, touch, truncate and dd's of=),
-//     PowerShell's Set-Content, Add-Content, Out-File, Tee-Object, Copy-Item and New-Item, and cmd's copy and xcopy; with a role that changes nothing, rm and mv
-//     too (the delete check's words, shell.go), git's words that change the checkout or its history (GitWriteWords),
-//     and bonsai init, update, unlink and check --write (commands.go). Each written path is judged in every folder the
-//     command may run in (mayWrite): from every agent (all but the person's session), one in Bonsai's own files (the
-//     floor's bonsai-files entries in any linked project, .bonsai/local/ in a worktree's main checkout among them, the
-//     lock at a checkout's top, Bonsai's home) is refused (bonsai-files); from a role that changes nothing, one inside
-//     any linked project is refused (role-writes-nothing). Writes outside every linked project (a scratch build, a
-//     Windows checkout under the user's folder) stay allowed, as do Bonsai's own message and ladder.
+//     PowerShell *> too), tee, cp, ln and sed -i or --in-place onto a path (and install, touch, truncate, mkfifo,
+//     mknod and dd's of=), git's own output files (diff, log and show --output, archive -o, format-patch -o),
+//     PowerShell's Set-Content, Add-Content, Clear-Content, Set-Item, Clear-Item, Out-File, Tee-Object, Copy-Item,
+//     New-Item, Export-Csv, Start-Transcript and Invoke-WebRequest or Invoke-RestMethod -OutFile, and cmd's copy and
+//     xcopy; with a role that changes nothing, rm and mv too (the delete check's words, shell.go), git's words that
+//     change the checkout or its history (GitWriteWords), and bonsai init, update, unlink and check --write
+//     (commands.go). Each written path is judged in every folder the command may run in (mayWrite): from every agent
+//     (all but the person's session), one in Bonsai's own files (the floor's bonsai-files entries in any linked
+//     project, .bonsai/local/ in a worktree's main checkout among them, the lock at a checkout's top, Bonsai's home)
+//     is refused (bonsai-files); from a role that changes nothing, one inside any linked project is refused
+//     (role-writes-nothing). Writes outside every linked project (a scratch build, a Windows checkout under the
+//     user's folder) stay allowed, as do Bonsai's own message and ladder.
 //
 // Known limits for the roles that change nothing, said again here as shell.go says them for the delete check: what the
 // splitter cannot read is not judged: an interpreter's write (python -c, node -e), a script run by name, a path built
 // in a variable or a substitution whose output is not a literal, a program's own writes (make, a test run, git's hooks,
-// a git alias already in git's config files, git's subcommands outside GitWriteWords),
-// a link made earlier in the line and written through, and programs outside the tables (rsync's copies, unzip, tar -x,
-// patch, a compiler's -o); and an MCP tool whose server writes. They are caught after: by the lead's read of
-// the diff, and by the ladder's git.dirty and rung 0 at the next climb.
+// a git alias already in git's config files), a link made earlier in the line and written through, and the programs
+// and words these tables do not hold, each a write the guard lets through: rsync, unzip, tar -x, patch, curl -o, wget
+// -O, scp, a compiler's -o, a formatter's -w (gofmt -w, prettier --write), git's words outside GitWriteWords that
+// write only its own store (gc, prune, repack, fetch, hash-object -w, commit-tree, mktag, write-tree, pack-refs,
+// reflog expire), git -C <folder> before an output option (the file is read in the command's folder), and
+// PowerShell cmdlets outside the list above (Rename-Item and Move-Item are the delete check's); and an MCP tool
+// whose server writes. They are caught after: by the lead's read of the diff, and by the ladder's git.dirty and rung 0
+// at the next climb. A BONSAI_TASK changed where the guard cannot read it (a script, PowerShell's $env:, a nested
+// shell) is not followed: a climb so is noted for the session's own task, and counts once a result for it appears.
 
 import (
 	"fmt"

@@ -13,16 +13,18 @@ package guard
 // tie the address it has, in the tied brief's thread, written after it), its from names a role that may call the
 // agent's, bonsai message wrote it (its message log record is there, found by its id: messageRecorded, read only at a
 // tie), and no other agent tied it (an exclusive tie file). Anything else ties nothing, with a guard record saying why
-// (brief-not-tied). A
-// brief ties at the agent's first call from its starting call's prompt (link, roles.go), when a SendMessage resuming
-// it names one (an offer, tried at its next call), and when it reads one (bonsai message --show <id>, or a Read of the
-// brief's file). Its budget is then in force, each limit the brief's value up to the max in force, else the role's
-// default, counted afresh from the tie.
+// (brief-not-tied). A brief ties at the agent's first call from its starting call's prompt (link, roles.go), when a
+// SendMessage resuming it names one (an offer, tried at its next call), and when it reads one (bonsai message --show
+// <id>, or a Read of the brief's file). Its budget is then in force, each limit the brief's value up to the max in
+// force, else the role's default, counted afresh from the tie.
 //
 // Past a limit (more minutes, actions or red runs than its value): every call is refused (budget-spent) but three
 // (budget-exempt): its report in its exact form (rolecmds.go's reportCall), reading its tied brief or a newer one to
-// its address, and Claude Code's hand-back tool. The first refusal says what to report and how; later ones are short;
-// each names a newer brief to its address already waiting, if one is (waitingBrief).
+// its address, each by the installed bonsai (a bare bonsai or the hook lines' place, never another program of that
+// name), and Claude Code's hand-back tool. The first refusal says what to report and how; later ones are short; each
+// names a newer brief to its address already waiting, if one is (waitingBrief). Of calls side by side past it, one
+// alone writes the window's spent line (agents.MarkSpent) and gives the first refusal. The report's call let through
+// is noted (reported) and never trusted: the stop gate finds the report itself (agents.ReportAfter).
 // An agent with no address (no tied brief, or an undeclared type) has no report call: its last reply is its report.
 
 import (

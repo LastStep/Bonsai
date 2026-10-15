@@ -24,7 +24,12 @@ package recorder
 // after its SubagentStop hook starts (measured 15 Oct on WSL, a real session of a lead and a helper: each one's final
 // reply was missing from its file when its records were written at once, and in the file after the session), so the
 // recorder first waits until the file has not grown for settleQuiet, at most settleMax (settle). The hook is async, so
-// the agent's end never waits for it. A session's transcript was whole at its SessionEnd in the same session (its
+// the agent's end never waits for it. Known limit (VG, 15 Oct): the wait is a heuristic, read on the file's size alone.
+// A final reply that reaches the file after settleMax, or after a pause longer than settleQuiet, is missed without a
+// word: the records are written from the replies before it, their kind the model's, not unknown, and its tokens are
+// not counted (a resumed agent's later end writes whole records again). The payload's last_assistant_message, the
+// final reply's text, could tell, but the payload reader (internal/hookin) keeps no such field, so the file is not
+// checked against it. A session's transcript was whole at its SessionEnd in the same session (its
 // records equal its file's replies, and with its subagents' files its own closing totals), and is read at once: that
 // line is synchronous, and the person's exit waits for it.
 //

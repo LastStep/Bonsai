@@ -11,32 +11,47 @@ package guard
 // message (its address is its role's name).
 //
 // The caller's role (caller), in this order: its agent_type where that names a declared role (a subagent, or a
-// top-level --agent session; a subagent naming the session's role is read as an undeclared type); else, inside a
-// subagent (agent_id set), an undeclared type, held as a helper; else, for a top-level session, BONSAI_ROLE where it
-// names a declared role other than the session's (a named session, counted by its session id); else the person's own
-// session, which plays the session's role. A type names a role by its scoped name (<pack>:<role>, as Claude Code names
-// a plugin's agent), or by its bare name where one pack alone declares it. An agent's role, its facts and its limits
-// are read once, at its first call, and kept in its state (internal/agents), so a later edit of the lock or of
-// bonsai.yaml, committed or not, changes nothing for it; a new brief re-reads them.
+// top-level --agent session; a subagent naming the session's role is read as an undeclared type), for a subagent only
+// when it is joined to an Agent, Task or Skill call the guard allowed for that role (backs; VG's item A, 15 Oct: a
+// skill's fork started a writing role behind no allowed call), else it is held as an undeclared type with a
+// role-unbacked record; else, inside a subagent (agent_id set), an undeclared type, held as a helper; else, for a
+// top-level session, BONSAI_ROLE where it names a declared role other than the session's (a named session, counted by
+// its session id); else the person's own session, which plays the session's role. A type names a role by its scoped
+// name (<pack>:<role>, as Claude Code names a plugin's agent), or by its bare name where one pack alone declares it,
+// letter case folded in every lookup (typeKey), as Claude Code matches a subagent_type. An agent's role, its facts and
+// its limits are read once, at its first call, and kept in its state (internal/agents), so a later edit of the lock or
+// of bonsai.yaml, committed or not, changes nothing for it; a new brief re-reads them. A state that does not read is
+// moved aside, kept, and the agent counted afresh from that call (moveAside), joined again to the call it held.
 //
-// Who may call whom (mayCall), on Agent and Task (the type asked for), SendMessage (its to, resolved) and Workflow:
-// the person's session any declared role but its own, any undeclared type, Workflow, and by SendMessage main or
-// another session; a lead (a declared role of kind lead) a declared helper or an undeclared type, and by SendMessage
-// one of them it may resume; a helper or an undeclared type no one. Each allowed Agent, Task or Workflow call is kept
-// for the session (agents.Spawn), so the agent it starts is joined to it at its first call (link): by Claude Code's
-// own meta file beside the agent's transcript, which names the starting call's tool_use_id (hookin.SpawnCall: present
-// at 36 of 36 first calls measured, three calls side by side among them), else the oldest call of its type not yet
-// joined (an agent a Workflow script starts: the newest Workflow call, since the guard sees no Workflow call end); the
-// join writes a spawn record (bonsai.log/1) naming its parent, so the tree survives a cleaned state file.
+// Who may call whom (mayCall), on Agent and Task (the type asked for), SendMessage (its to, resolved), Workflow and
+// Skill (the type a skill's frontmatter forks into, skill.go): the person's session any declared role but its own, any
+// undeclared type, Workflow, and by SendMessage main or another session; a lead (a declared role of kind lead) a
+// declared helper or an undeclared type, and by SendMessage one of them it started itself; a helper or an undeclared
+// type no one. Each allowed Agent, Task, Skill or Workflow call is kept for the session (agents.Spawn), so the agent it
+// starts is joined to it at its first call (pick, link): by Claude Code's own meta file beside the agent's transcript,
+// which names the starting call's tool_use_id (hookin.SpawnCall: present at 36 of 36 first calls measured, three calls
+// side by side among them), and then only that call; where the meta file names no call (a skill's fork), the oldest
+// Skill call of its type not joined to another agent; where there is no meta file, the oldest call of its type not
+// joined to another (an agent a Workflow script starts: the newest Workflow call, since the guard sees no Workflow call
+// end); the join writes a spawn record (bonsai.log/1) naming its parent, so the tree survives a cleaned state file.
 //
 // Known limits, said once (step 5.5's "What it cannot do"): an agent gone quiet makes no call, so nothing stops it; a
-// session started where the shell judge cannot read the command reads as the person's own; Bonsai's records are
-// attributed, not authenticated; a role that changes nothing can still write through what the guard cannot read (an
-// interpreter, a script, an MCP tool's server); a named session can spend its budget on purpose to be let stop;
-// agent teams' teammates are not covered; with bonsai missing or broken, the second line lets reads through with no
-// budget; Claude Code's own internal agents (prompt suggestions, /btw) fire no tool call and are never seen; one that
-// did would run as an undeclared type. A SendMessage resuming an agent that never made a tool call (so no state names
-// it) does not resolve, and is refused from every caller but the person's session.
+// session started where the shell judge cannot read the command (a script, a variable, an interpreter, a copy of
+// Claude Code's binary under another name) reads as the person's own; Bonsai's records are attributed, not
+// authenticated: a write the guard cannot read can still forge a state, a brief, a report or a log line; a role that
+// changes nothing can still write through what the guard cannot read (an interpreter, a script, an MCP tool's server);
+// a named session can spend its budget on purpose to be let stop, its ladder red, but only once its report is there,
+// a message file of the kind report from its own address with bonsai message's record (the stop gate finds it itself),
+// so a report command that failed, or a stand-in for bonsai, leaves it held; agent teams' teammates are not covered;
+// with bonsai missing or broken, the second line lets reads and skills through with no budget, and a skill's fork it
+// did not judge runs as an undeclared type; a skill's frontmatter is read only where skill.go says (a plugin's skill,
+// a nested .claude/skills folder or an --add-dir folder is not), and what such a skill forks into is never given a
+// role's rights; a subagent with no meta file to read, or a fork whose meta file names no call, is joined to the
+// oldest open call of its type, so one started by a route the guard does not judge, side by side with an allowed call
+// for its role, could take that call (the allowed call's own child then runs as an undeclared type); Claude Code's own
+// internal agents (prompt suggestions, /btw) fire no tool call and are never seen; one that did would run as an
+// undeclared type. A SendMessage resuming an agent that never made a tool call (so no state names it) does not
+// resolve, and is refused from every caller but the person's session.
 
 import (
 	"errors"
