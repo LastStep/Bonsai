@@ -3,9 +3,8 @@ name: operating-bonsai
 description: "How an agent runs Bonsai unattended, every refusal by its next step. Open it before you link or update a project, act on a bonsai check finding, read bonsai status, edit bonsai.yaml, prove a task with bonsai ladder, ask the person, brief or report to another agent, and whenever Bonsai or its guard refuses anything."
 ---
 
-<!-- skills/operating-bonsai/SKILL.md, loaded as base:operating-bonsai: no template, no fields table, and no copy of
-a list (bonsai --help --json and bonsai check --schema hold them). Its frontmatter: base's README.md, "Skill files".
-Bonsai's cmd/bonsai/operating_test.go holds every bonsai line here to the command table. -->
+<!-- skills/operating-bonsai/SKILL.md (base:operating-bonsai): no template, and no copy of a list. Its frontmatter:
+base's README.md, "Skill files". Bonsai's cmd/bonsai/operating_test.go holds its bonsai lines to the command table. -->
 
 # Operating Bonsai
 
@@ -107,7 +106,7 @@ bonsai ladder --task <id> --json
 Read the climb's `next`; run each failing test alone by its `run` line; fix the code (never the test, the ladder or
 `bonsai.yaml` to get green); climb again. A green local result at HEAD is the proof the stop gate reads; a `--ci`
 result proves nothing. The proof that counts is made by the installed copy the hook lines name:
-`/usr/local/bin/bonsai` on Linux, `C:\Program Files\Bonsai\bonsai.exe` on Windows. On `ladder-busy`, run it again
+`/usr/local/bin/bonsai` on Linux, `C:/Program Files/Bonsai/bonsai.exe` on Windows. On `ladder-busy`, run it again
 after the time it names.
 
 ## Ask the person
@@ -147,31 +146,34 @@ Fields and templates: `base:message`. An address is `<role>@<task>`; the person'
 
 The guard's refusal says why first, then `next`; `bonsai logs` shows its rule.
 
-- `budget-spent` ("budget spent (minutes: 181 of 180) ..."): write your report now with the report command the
-  refusal writes out, run exactly as written (its program the installed `bonsai`, as the refusal names it), one
-  shell call with nothing chained to it; then end the turn. Its form, on Linux:
+- `budget-spent` ("budget spent (minutes: 181 of 180) ..."): write your report now by the command its `next.do`
+  names, exactly as written, as one shell call with nothing else on the line; then end the turn. It runs the
+  installed `bonsai` by the hook lines' place, never a bare `bonsai`. On Linux and WSL:
 
   ```sh
   /usr/local/bin/bonsai message --kind report --from <your address> --to <the brief's from> --thread <thread> --status blocked --body '<what you have and what is left>'
   ```
 
-  The body in single quotes, or `--body -` with a here-document whose delimiter is quoted (`<<'EOF'`); never
-  `--body-file` or a redirect. Once it is written, a named session may stop (`stop-budget`). Where the refusal names
-  a newer brief, read it first, as the refusal writes it: it gives a fresh window. With no address (no brief tied to
-  you) every call is refused, and your last reply is your report.
+  On Windows, Git Bash: `"C:/Program Files/Bonsai/bonsai.exe" message --kind report ...`; PowerShell:
+  `& "C:/Program Files/Bonsai/bonsai.exe" message --kind report ...`. The body in single quotes, or `--body -` with a
+  here-document whose delimiter is quoted (`<<'EOF'`); never `--body-file` or a redirect. Once it is written, a named
+  session may stop (`stop-budget`). A newer brief the refusal names gives a fresh window: read it first by the
+  same place (`<place> message --show <id>`, or a Read of its file). With no address (no brief tied to you), every
+  call is refused and your last reply is your report. A call the guard cannot count is refused the same way: try it
+  once more, else report.
 - `call-refused`: hand the work back to your caller in your report, naming what is left.
 - `role-writes-nothing`: your role changes nothing; put the change in your report.
 - `bonsai-files` (on a shell line): Bonsai's own files (`.bonsai/local/`, the lock, the tables, Bonsai's home) are
-  written only by its commands, and their permissions are never changed.
+  written only by its commands; never change their permissions, owner, ACL or attributes.
 
 Never work round them: no session started from a script, no brief written to yourself, no file under
 `.bonsai/local/` written by hand. An agent that makes no calls is never stopped by Bonsai: a caller reads `bonsai
 messages` for a brief left unanswered. Agent teams' teammates (Claude Code's experimental setting) are not held by
-these rules: a project that turns it on knows its roles are not held there.
+these rules.
 
 ## The guard
 
-A refused edit or command says why first. A protected path (`protected`, `person-only`) needs the running task's
+A protected path (`protected`, `person-only`) needs the running task's
 grant: never write it another way (a shell redirect, a script), and never set `disableAllHooks`. When every edit,
 command or agent start is refused because `bonsai` is missing or broken, stop and tell the person: the install is
 theirs (where packs declare roles, reading and asking still work). `bonsai hook guard`, `bonsai hook start`, `bonsai
@@ -195,5 +197,5 @@ Each lets new code run on the person's machine, takes the guard out, or loosens 
 `bonsai logs --json`; `bonsai agents --json` (each agent's recorded facts: parent, role, brief, last call, counts
 and limits, spent, report); an outside event with `bonsai log append --label <namespace>.<name>=<value>
 --json`. `.bonsai/STATE.md` says where the project stands (add one from `base:state` if missing). The tables are
-rebuilt, never edited. How long things are kept: `base:generated-files`. Templates: `base:task`, `base:run`,
-`base:memory`, `base:message`, `base:workspace`, `base:state`, `base:ci`.
+rebuilt, never edited. How long things are kept: `base:generated-files`. The documents' templates: the base skills
+the block names.

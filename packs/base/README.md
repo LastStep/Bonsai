@@ -5,6 +5,8 @@
 - **The templates of Bonsai's documents**, as skills: a task, a run report, a memory note and its index, a message
   between agents, STATE, `bonsai.yaml`, and a CI workflow that runs `bonsai check`; and the page on what Bonsai
   generates in a project and how long it keeps each kind. Each loads as `base:<name>` when an agent opens it.
+- **The operating skill**, `base:operating-bonsai`: how an agent runs Bonsai unattended, every command read by its
+  `--json` and each refusal by its next step, and the steps that stay the person's.
 - **The walls**: deny rules that stop agents reading the files that commonly hold keys, tokens and logins, and
   editing the person's own Claude Code files and the files whose change starts code.
 - **Bonsai's four labels** (`bonsai.allows`, `bonsai.wants`, `bonsai.ladder`, `bonsai.branch`), whose definitions a
@@ -71,7 +73,7 @@ Each file in `skills/` has its row here, and each row names a file there (Bonsai
   table and the template's fields equal, both ways, and, for a Bonsai format, equal to the format's schema, with each
   allowed-values cell that lists values equal to the schema's list. A file made from a template keeps only the
   pointer comment on its `format:` line (`# fields: bonsai check --schema bonsai.task; how to fill: skill base:task`).
-- **A skill that is no template** (generated-files, ci): an HTML comment after the frontmatter, or the generator's
+- **A skill that is no template** (generated-files, ci, operating-bonsai): an HTML comment after the frontmatter, or the generator's
   note, saying what it is and where its fields are documented.
 - **A YAML file** (`pack.yaml`, `labels.yaml`): a short header, and a `#` comment on every key.
 - **`block.md`**: its leading HTML comment. **`plugin.json`**: this page.
