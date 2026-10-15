@@ -360,6 +360,10 @@ func TestUsageWaitsForTheLastReply(t *testing.T) {
 		_, _ = f.WriteString(replyLine("msg_b", "m", 2, 20, 200, 2000) + "\n")
 		_ = f.Close()
 	}()
+	var waited []string
+	old := settleWait
+	settleWait = func(p string) { waited = append(waited, p); old(p) }
+	t.Cleanup(func() { settleWait = old })
 	start := time.Now()
 	Record(opts(root, subagentStop(root, sess, "a2", filepath.ToSlash(path)), nil))
 	took := time.Since(start)
@@ -370,10 +374,9 @@ func TestUsageWaitsForTheLastReply(t *testing.T) {
 	if took < 100*time.Millisecond+settleQuiet || took > Budget {
 		t.Errorf("the end took %s", took)
 	}
-	// A session's end is read at once.
-	start = time.Now()
+	// A session's end is read at once: its transcript is not waited for.
 	Record(opts(root, sessionEnd(root, sess, filepath.ToSlash(path)), nil))
-	if took := time.Since(start); took >= settleQuiet {
-		t.Errorf("a session's end took %s", took)
+	if len(waited) != 1 || waited[0] != filepath.ToSlash(path) {
+		t.Errorf("waited for %v", waited)
 	}
 }

@@ -107,7 +107,7 @@ func usageFrom(p *hookin.Payload) (path string, ok bool) {
 // fail or block an agent's end.
 func writeUsage(o Options, p *hookin.Payload, cfg *workspace.Config, local workspace.Local, path string) {
 	if p.Event == "SubagentStop" {
-		settle(path)
+		settleWait(path)
 	}
 	models, reason := readUsage(path, o.Now().Add(usageBudget), o.Now)
 	at := o.Now()
@@ -126,6 +126,9 @@ func writeUsage(o Options, p *hookin.Payload, cfg *workspace.Config, local works
 		}
 	}
 }
+
+// settleWait is settle (a variable for the tests).
+var settleWait = settle
 
 // settle waits until a transcript's size has not changed for settleQuiet, at most settleMax, by the wall clock (this
 // file's comment). A file that is not there counts as one size, so one that appears is waited for too.
