@@ -300,7 +300,9 @@ func write(t *testing.T, path, content string) {
 	}
 }
 
-// snapshot is every file under a folder with its content's hash: what a read must leave as it was.
+// snapshot is every path under a folder with its type, and each file's content hash: what a read must leave as it
+// was. Times are not compared: NTFS updates a folder's modification time lazily, after the writes that made the
+// fixture (measured on Windows, 15 Oct).
 func snapshot(t *testing.T, root string) string {
 	t.Helper()
 	var lines []string
@@ -308,11 +310,7 @@ func snapshot(t *testing.T, root string) string {
 		if err != nil {
 			return err
 		}
-		fi, err := d.Info()
-		if err != nil {
-			return err
-		}
-		line := filepath.ToSlash(p) + " " + fi.Mode().String() + " " + fi.ModTime().UTC().Format(time.RFC3339Nano)
+		line := filepath.ToSlash(p) + " " + d.Type().String()
 		if d.Type().IsRegular() {
 			raw, err := os.ReadFile(p)
 			if err != nil {
