@@ -1,6 +1,6 @@
 ---
 name: operating-bonsai
-description: "How an agent runs Bonsai unattended: every answer read as --json, each refusal's next step by its who, and the person's gates. Open it before you link or update a project, act on a bonsai check finding, read bonsai status, edit bonsai.yaml, prove a task with bonsai ladder, ask the person, brief or report to another agent, and whenever Bonsai or its guard refuses anything."
+description: "How an agent runs Bonsai unattended, every refusal by its next step. Open it before you link or update a project, act on a bonsai check finding, read bonsai status, edit bonsai.yaml, prove a task with bonsai ladder, ask the person, brief or report to another agent, and whenever Bonsai or its guard refuses anything."
 ---
 
 <!-- skills/operating-bonsai/SKILL.md, loaded as base:operating-bonsai: no template, no fields table, and no copy of
@@ -9,8 +9,7 @@ Bonsai's cmd/bonsai/operating_test.go holds every bonsai line here to the comman
 
 # Operating Bonsai
 
-Bonsai gives this project formats, guards, a recorder and a ladder; it never moves a task, approves or starts an
-agent. This skill describes the `bonsai` of base's pinned commit; the copy you run describes itself:
+This skill describes the `bonsai` of base's pinned commit; the copy you run describes itself:
 
 ```sh
 bonsai --help --json
@@ -18,7 +17,7 @@ bonsai check --schema bonsai.error
 ```
 
 The first lists every word, flag, exit code and error word with its usual `who`; `bonsai check --schema <format>`
-prints any format's fields. Read them instead of guessing; each word's `--help` has an example.
+prints any format's fields. Read them instead of guessing.
 
 ## Every answer is --json
 
@@ -148,27 +147,27 @@ Fields and templates: `base:message`. An address is `<role>@<task>`; the person'
 
 The guard's refusal says why first, then `next`; `bonsai logs` shows its rule.
 
-- `budget-spent` ("budget spent (minutes: 181 of 180) ..."): write your report now, one shell call holding one
-  `bonsai message` run by the installed `bonsai` and nothing chained to it, then end the turn:
+- `budget-spent` ("budget spent (minutes: 181 of 180) ..."): write your report now with the report command the
+  refusal writes out, run exactly as written (its program the installed `bonsai`, as the refusal names it), one
+  shell call with nothing chained to it; then end the turn. Its form, on Linux:
 
   ```sh
-  bonsai message --kind report --from <your address> --to <the brief's from> --thread <thread> --status blocked --body '<what you have and what is left>'
+  /usr/local/bin/bonsai message --kind report --from <your address> --to <the brief's from> --thread <thread> --status blocked --body '<what you have and what is left>'
   ```
 
-  Or `--body -` with a here-document whose delimiter is quoted (`<<'EOF'`); never `--body-file` or a redirect. Once
-  it is written, a named session may stop (`stop-budget`). Where the refusal names a newer brief, read it first
-  (`bonsai message --show <id>`): it gives a fresh window. With no address (no brief tied to you) every call is
-  refused, and your last reply is your report.
+  The body in single quotes, or `--body -` with a here-document whose delimiter is quoted (`<<'EOF'`); never
+  `--body-file` or a redirect. Once it is written, a named session may stop (`stop-budget`). Where the refusal names
+  a newer brief, read it first, as the refusal writes it: it gives a fresh window. With no address (no brief tied to
+  you) every call is refused, and your last reply is your report.
 - `call-refused`: hand the work back to your caller in your report, naming what is left.
 - `role-writes-nothing`: your role changes nothing; put the change in your report.
 - `bonsai-files` (on a shell line): Bonsai's own files (`.bonsai/local/`, the lock, the tables, Bonsai's home) are
-  written only by its commands.
+  written only by its commands, and their permissions are never changed.
 
 Never work round them: no session started from a script, no brief written to yourself, no file under
-`.bonsai/local/` written by hand. A role's default or max is the project's, in `bonsai.yaml` (above). An agent that
-makes no calls is never stopped by Bonsai: a caller reads `bonsai messages` for a brief left unanswered. Agent teams'
-teammates (Claude Code's experimental setting) are not held by these rules: a project that turns it on knows its
-roles are not held there.
+`.bonsai/local/` written by hand. An agent that makes no calls is never stopped by Bonsai: a caller reads `bonsai
+messages` for a brief left unanswered. Agent teams' teammates (Claude Code's experimental setting) are not held by
+these rules: a project that turns it on knows its roles are not held there.
 
 ## The guard
 
@@ -194,7 +193,7 @@ Each lets new code run on the person's machine, takes the guard out, or loosens 
 ## Records
 
 `bonsai logs --json`; `bonsai agents --json` (each agent's recorded facts: parent, role, brief, last call, counts
-beside its limits, spent, report); an outside event with `bonsai log append --label <namespace>.<name>=<value>
+and limits, spent, report); an outside event with `bonsai log append --label <namespace>.<name>=<value>
 --json`. `.bonsai/STATE.md` says where the project stands (add one from `base:state` if missing). The tables are
 rebuilt, never edited. How long things are kept: `base:generated-files`. Templates: `base:task`, `base:run`,
 `base:memory`, `base:message`, `base:workspace`, `base:state`, `base:ci`.
