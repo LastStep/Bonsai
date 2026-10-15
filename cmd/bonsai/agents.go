@@ -29,16 +29,16 @@ var agentsWord = &Word{
 	Summary: "list every agent Bonsai has recorded, as recorded",
 	Args:    "[flags]",
 	About: `It reads the main checkout's .bonsai/local/ (a worktree reads its main checkout's) and writes nothing: the
-guard's state of each agent (agents/), the log (log/) and the messages (messages/). One line an agent, oldest
-first: its id, its session and its parent's id (session for an agent the person's own session started; the
-tree is drawn from parent alone), its role and type, its task, tied brief and thread, its model, when it
-started and ended, its last call, its counts and limits as the guard wrote them, spent where the guard
-recorded it, its report (only one from its own address), its log file and its token counts (usage) from
-its newest end. The person's own sessions are listed from the log, with no counts or limits. Nothing is
-worked out: no state such as working or quiet, no share of a budget, no estimate; the limits are the ones
-that bound each agent, never today's settings. A state file that does not read is listed as skipped and
-never blocks the rest. What is recorded under an agent's name is attributed, not authenticated. It never
-starts, wakes or stops an agent.
+guard's state of each agent (agents/), the log (log/) and the messages (messages/). One line an agent, by when
+it started (one with no start recorded last): its id, its session and its parent's id (session for an agent
+the person's own session started; the tree is drawn from parent alone), its role and type, its task, tied
+brief and thread, its model, when it started and ended, its last call, its counts and limits as the guard
+wrote them, spent where the guard recorded it, its report (only one from its own address), its log file and
+its token counts (usage) from its newest end. The person's own sessions are listed from the log, with no
+counts or limits. Nothing is worked out: no state such as working or quiet, no share of a budget, no estimate;
+the limits are the ones that bound each agent, never today's settings. A state file that does not read is
+listed as skipped and never blocks the rest. What is recorded under an agent's name is attributed, not
+authenticated. It never starts, wakes or stops an agent.
 `,
 	Flags: []Flag{
 		{Name: "--json", Help: "print the bonsai.agents/1 document (for programs) instead of plain text"},
