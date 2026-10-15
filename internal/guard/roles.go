@@ -29,29 +29,32 @@ package guard
 // declared helper or an undeclared type, and by SendMessage one of them it started itself; a helper or an undeclared
 // type no one. Each allowed Agent, Task, Skill or Workflow call is kept for the session (agents.Spawn), so the agent it
 // starts is joined to it at its first call (pick, link): by Claude Code's own meta file beside the agent's transcript,
-// which names the starting call's tool_use_id (hookin.SpawnCall: present at 36 of 36 first calls measured, three calls
+// which names the starting call's tool_use_id (hookin.SpawnInfo: present at 36 of 36 first calls measured, three calls
 // side by side among them), and then only that call; where the meta file names no call (a skill's fork), the oldest
-// Skill call of its type not joined to another agent; where there is no meta file, the oldest call of its type not
-// joined to another (an agent a Workflow script starts: the newest Workflow call, since the guard sees no Workflow call
-// end); the join writes a spawn record (bonsai.log/1) naming its parent, so the tree survives a cleaned state file.
+// Skill call of its type not joined to another agent made by its own caller (the file's parentAgentId, else the
+// top-level session at a spawnDepth of 1; VG round 2's S1); where there is no meta file, the oldest call of its type
+// not joined to another made at most openCallLife before (an agent a Workflow script starts: the newest Workflow
+// call, since the guard sees no Workflow call end); a meta file that does not read joins none. The join writes a
+// spawn record (bonsai.log/1) naming its parent, so the tree survives a cleaned state file.
 //
 // Known limits, said once (step 5.5's "What it cannot do"): an agent gone quiet makes no call, so nothing stops it; a
-// session started where the shell judge cannot read the command (a script, a variable, an interpreter, a copy of
-// Claude Code's binary under another name) reads as the person's own; Bonsai's records are attributed, not
-// authenticated: a write the guard cannot read can still forge a state, a brief, a report or a log line; a role that
-// changes nothing can still write through what the guard cannot read (an interpreter, a script, an MCP tool's server);
-// a named session can spend its budget on purpose to be let stop, its ladder red, but only once its report is there,
-// a message file of the kind report from its own address with bonsai message's record (the stop gate finds it itself),
-// so a report command that failed, or a stand-in for bonsai, leaves it held; agent teams' teammates are not covered;
-// with bonsai missing or broken, the second line lets reads and skills through with no budget, and a skill's fork it
-// did not judge runs as an undeclared type; a skill's frontmatter is read only where skill.go says (a plugin's skill,
-// a nested .claude/skills folder or an --add-dir folder is not), and what such a skill forks into is never given a
-// role's rights; a subagent with no meta file to read, or a fork whose meta file names no call, is joined to the
-// oldest open call of its type, so one started by a route the guard does not judge, side by side with an allowed call
-// for its role, could take that call (the allowed call's own child then runs as an undeclared type); Claude Code's own
-// internal agents (prompt suggestions, /btw) fire no tool call and are never seen; one that did would run as an
-// undeclared type. A SendMessage resuming an agent that never made a tool call (so no state names it) does not
-// resolve, and is refused from every caller but the person's session.
+// session started where the shell judge cannot read the command (a script, a variable, an interpreter, a copy of Claude
+// Code's binary under another name) reads as the person's own; Bonsai's records are attributed, not authenticated: a
+// write the guard cannot read can still forge a state, a brief, a report or a log line; a role that changes nothing can
+// still write through what the guard cannot read (an interpreter, a script, an MCP tool's server); a named session can
+// spend its budget on purpose to be let stop, its ladder red, but only once its report is there, a message file of the
+// kind report from its own address with bonsai message's record (the stop gate finds it itself), so a report command
+// that failed, or a stand-in for bonsai, leaves it held; agent teams' teammates are not covered; with bonsai missing or
+// broken, the second line lets reads and skills through with no budget, and a skill's fork it did not judge runs as an
+// undeclared type; a skill's frontmatter is read only where skill.go says (a plugin's skill, a nested .claude/skills
+// folder or an --add-dir folder is not), and what such a skill forks into is given a role's rights only by an open
+// Skill call its own caller made for that role (a forked skill whose fork made no call), which that caller could have
+// started itself; a subagent with no meta file to read (none was seen in any measured route) is joined to the oldest
+// open call of its type made within openCallLife, so one started by a route the guard does not judge, in that while
+// beside an allowed call for its role whose child has not called yet, could take that call (the allowed call's own
+// child then runs as an undeclared type); Claude Code's own internal agents (prompt suggestions, /btw) fire no tool
+// call and are never seen; one that did would run as an undeclared type. A SendMessage resuming an agent that never
+// made a tool call (so no state names it) does not resolve, and is refused from every caller but the person's session.
 
 import (
 	"errors"
@@ -520,11 +523,13 @@ func orGeneral(t string) string {
 
 // pick finds, at a subagent's first call, the allowed call that started it (this file's comment), claiming it so one
 // call starts one agent: an agent a Workflow script starts, the newest Workflow call (no claim: one script starts
-// many); else the call Claude Code's meta file beside its transcript names (hookin.SpawnCall), and only that one; where
-// the meta file names no call (a skill's fork, measured: its file holds agentType and parentAgentId, no toolUseId), the
-// oldest Skill call of its type not joined to another agent; where there is no meta file to read, the oldest Agent,
-// Task or Skill call of its type not joined to another. A call already claimed by this agent (its state moved aside
-// and started afresh) is its own again. nil for none.
+// many); else by Claude Code's meta file beside its transcript (hookin.SpawnInfo): the call it names, and only that
+// one; where it names no call (a skill's fork, measured: agentType and spawnDepth, no toolUseId), the oldest Skill call
+// of its type not joined to another agent made by its own caller (callerOf: the meta file's parentAgentId, else the
+// top-level session for a spawnDepth of 1; VG round 2's S1: a helper's fork took the session's stale Skill call); where
+// there is no meta file to read, the oldest Agent, Task or Skill call of its type not joined to another made at most
+// openCallLife before this call (open calls expire); a meta file that is there but does not read joins it to none. A
+// call already claimed by this agent (its state moved aside and started afresh) is its own again. nil for none.
 func (rr *roleRun) pick(key string) *agents.Spawn {
 	in := rr.in
 	spawns, err := rr.store.Spawns(in.Session)
@@ -551,10 +556,11 @@ func (rr *roleRun) pick(key string) *agents.Spawn {
 		ok, _ := rr.store.Claim(in.Session, sp.Use, key)
 		return ok
 	}
-	use, _, err := hookin.SpawnCall(in.TranscriptPath, in.Session, in.AgentID)
-	if err == nil {
+	meta, err := hookin.SpawnInfo(in.TranscriptPath, in.Session, in.AgentID)
+	switch {
+	case err == nil && meta.Call != "":
 		for i := range spawns {
-			if spawns[i].Use == use {
+			if spawns[i].Use == meta.Call {
 				if claim(&spawns[i]) {
 					return &spawns[i]
 				}
@@ -562,10 +568,24 @@ func (rr *roleRun) pick(key string) *agents.Spawn {
 			}
 		}
 		return nil
+	case err == nil:
+		callers, ok := rr.callerOf(meta)
+		if !ok {
+			return nil
+		}
+		for i := range spawns {
+			if spawns[i].Tool == "Skill" && listHas(callers, spawns[i].Caller) && claim(&spawns[i]) {
+				return &spawns[i]
+			}
+		}
+		return nil
+	case !errors.Is(err, fs.ErrNotExist):
+		rr.note(RuleStateUnreadable, "Claude Code's meta file for this agent cannot be read ("+oneLine(err.Error())+"), so it "+
+			"is joined to no call")
+		return nil
 	}
-	skillsOnly := !errors.Is(err, fs.ErrNotExist) && strings.Contains(err.Error(), "names no call")
 	for i := range spawns {
-		if skillsOnly && spawns[i].Tool != "Skill" {
+		if at, err := agents.ParseStamp(spawns[i].At); err != nil || rr.now.Sub(at) > openCallLife {
 			continue
 		}
 		if claim(&spawns[i]) {
@@ -573,6 +593,24 @@ func (rr *roleRun) pick(key string) *agents.Spawn {
 		}
 	}
 	return nil
+}
+
+// openCallLife is how long an allowed call stays open to an agent with no meta file to read (pick): a child makes its
+// first call soon after the call that starts it, so an older call whose child never called is stale, and no agent
+// started by a route the guard does not judge takes it.
+const openCallLife = 10 * time.Minute
+
+// callerOf gives the callers a spawn call of a skill's fork was made by, as its meta file says (pick): the subagent
+// its parentAgentId names; for none and a spawnDepth of 1, the top-level session (the person's, "", or a named
+// session, its own session id); ok false where the file tells neither (no parent at another depth, or none given).
+func (rr *roleRun) callerOf(m hookin.SpawnMeta) ([]string, bool) {
+	switch {
+	case m.Parent != "":
+		return []string{m.Parent}, true
+	case m.Depth == 1:
+		return []string{"", rr.in.Session}, true
+	}
+	return nil, false
 }
 
 // link joins a subagent, at its first call, to the call that started it (pick), notes the link in its state, writes

@@ -16,8 +16,11 @@ package guard
 // Known limits: a plugin's skill (<plugin>:<name>), a skill in a nested .claude/skills folder Claude Code finds below
 // the session's folder or in an --add-dir folder, and a file changed between this read and Claude Code's own are not
 // read here, nor is frontmatter Bonsai's line reading cannot follow (a block scalar, a flow mapping). What such a skill
-// forks is never given a role's rights: its agent has no allowed call for that role behind it, so it runs as a type no
-// pack declares (roles.go's backs): it changes nothing, calls no one, and runs on a helper's budget.
+// forks is given no role's rights from another caller's call: its fork joins only a Skill call its own caller made
+// (roles.go's pick, by the fork's meta file: VG round 2's S1), so with none behind it, it runs as a type no pack
+// declares (roles.go's backs): it changes nothing, calls no one, and runs on a helper's budget. Only where its own
+// caller left an open Skill call for that role (an allowed fork that made no call) does it take that call, which the
+// caller could have started itself.
 
 import (
 	"fmt"

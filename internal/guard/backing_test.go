@@ -43,8 +43,8 @@ func wantSecond(t *testing.T, dir, payload string, code int, rule string) string
 	return stderr
 }
 
-// metaFile writes Claude Code's meta file beside a subagent's transcript, as measured for a skill's fork (agentType
-// and parentAgentId, no toolUseId) or an Agent call's child (toolUseId given).
+// metaFile writes Claude Code's meta file beside a subagent's transcript, as measured for a skill's fork (agentType and
+// spawnDepth, no toolUseId; parentAgentId where a subagent made the call) or an Agent call's child (toolUseId given).
 func metaFile(t *testing.T, transcripts, session, agent, typ, parent, use string) {
 	t.Helper()
 	body := `{"agentType":"` + typ + `"`
@@ -54,7 +54,11 @@ func metaFile(t *testing.T, transcripts, session, agent, typ, parent, use string
 	if parent != "" {
 		body += `,"parentAgentId":"` + parent + `"`
 	}
-	writeFile(t, filepath.Join(transcripts, session, "subagents", "agent-"+agent+".meta.json"), body+`,"spawnDepth":2}`)
+	depth := "2" // a subagent's own subagent, as measured
+	if parent == "" {
+		depth = "1" // the top-level session's, a skill's fork among them, as measured
+	}
+	writeFile(t, filepath.Join(transcripts, session, "subagents", "agent-"+agent+".meta.json"), body+`,"spawnDepth":`+depth+`}`)
 }
 
 // A1, VG's reproducer: a helper started by the person's session runs the forked skill; the guard refuses it, and the

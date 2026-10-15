@@ -170,6 +170,16 @@ func started(t *testing.T, dir, session, typ string) {
 		RuleCallAllowed)
 }
 
+// startedAt is started at a time: the call an agent with no meta file joins is one made at most openCallLife before
+// its first call (VG round 2's S1), so a test whose agent calls at another clock starts it at that clock.
+func startedAt(t *testing.T, dir, session, typ string, at time.Time) {
+	t.Helper()
+	p := hookCall{session: session, tool: "Agent", input: in("subagent_type", typ, "prompt", "go")}.payload(dir)
+	if code, s := runAt(t, dir, p, at, false); code != 0 {
+		t.Fatalf("the Agent call for %s: exit %d: %s", typ, code, s)
+	}
+}
+
 func in(kv ...string) schema.Object {
 	var o schema.Object
 	for i := 0; i+1 < len(kv); i += 2 {

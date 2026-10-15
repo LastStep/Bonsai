@@ -157,7 +157,7 @@ func TestNoAddressNoReport(t *testing.T) {
 func TestTheBudgetOfMinutes(t *testing.T) {
 	dir := briefProject(t)
 	t0 := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
-	started(t, dir, sessA, "workflow:lead")
+	startedAt(t, dir, sessA, "workflow:lead", t0)
 	lead := func(cmd string) string {
 		return hookCall{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Bash", input: bash(cmd)}.payload(dir)
 	}
@@ -184,7 +184,7 @@ func TestTheBudgetOfMinutes(t *testing.T) {
 func TestTheBudgetOfRedRuns(t *testing.T) {
 	dir := briefProject(t)
 	t0 := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
-	started(t, dir, sessA, "workflow:fragile")
+	startedAt(t, dir, sessA, "workflow:fragile", t0)
 	tiny := func(cmd string) string {
 		return hookCall{session: sessA, agentID: "r1", agentType: "workflow:fragile", tool: "Bash", input: bash(cmd)}.payload(dir)
 	}

@@ -11,53 +11,71 @@ package hookin
 // message among them. An agent a Workflow script starts has its file under subagents/workflows/<run>/ with no
 // toolUseId; Claude Code's own internal agents have none read here (they make no tool call).
 //
+// A skill's fork (measured on WSL, 15 Oct, a context: fork skill run by the session) has a file holding agentType and
+// spawnDepth 1 and no toolUseId; a subagent's own subagent has parentAgentId, the id of the subagent that started it,
+// and spawnDepth 2 (VG round 2's scripted sessions). SpawnInfo gives all four, so the guard joins a fork only to a call
+// of its own caller (VG round 2's S1: a helper's fork took the session's stale Skill call).
+//
 // The file is Claude Code's internal layout, which it does not publish and may change in any release: a file that is
-// not there, does not read, or names no call gives "", and the guard then joins the subagent to the oldest open Agent
-// call of its type in its session (internal/guard). The path is built from the payload's transcript_path, session_id
-// and agent_id alone (each id held to ID's rule, so none can leave the folder), and the file is read capped at
-// maxMeta bytes.
+// not there gives an error that is fs.ErrNotExist, and the guard then joins the subagent to the oldest open call of its
+// type in its session made a short while before (internal/guard); one that does not read, or names an id that is not
+// one, gives another error, and the guard joins it to none. The path is built from the payload's transcript_path,
+// session_id and agent_id alone (each id held to ID's rule, so none can leave the folder), and the file is read only
+// when it is a regular file, capped at maxMeta bytes (agents.ReadRegular: a FIFO or a device there is named, never
+// opened, so it stalls nothing).
 
 import (
 	"encoding/json"
 	"errors"
-	"io"
-	"os"
+	"fmt"
+	"io/fs"
 	"path/filepath"
+
+	"github.com/LastStep/Bonsai/internal/agents"
 )
 
 // maxMeta caps the subagent meta file read, in bytes (the measured ones are about 200).
 const maxMeta = 64 << 10
 
-// SpawnCall gives the tool_use_id of the call that started the subagent agentID, and its agent type, as Claude Code's
-// meta file beside its transcript holds them (this file's comment); "" and an error when it cannot be told.
-// transcript is the payload's transcript_path (the session's transcript), session its session_id.
-func SpawnCall(transcript, session, agentID string) (toolUseID, agentType string, err error) {
+// SpawnMeta is what Claude Code's meta file beside a subagent's transcript says of its start (this file's comment).
+type SpawnMeta struct {
+	Call   string // the starting call's tool_use_id (toolUseId); "" where the file names none (a skill's fork)
+	Type   string // its agent type (agentType)
+	Parent string // the subagent that started it (parentAgentId); "" where the file names none
+	Depth  int    // spawnDepth: 1 for one the top-level session started; 0 where the file gives none
+}
+
+// SpawnInfo reads the meta file of the subagent agentID (this file's comment): transcript is the payload's
+// transcript_path (the session's transcript), session its session_id. Its error is fs.ErrNotExist when there is no
+// file to read (none there, or no transcript, session or agent id to find it by).
+func SpawnInfo(transcript, session, agentID string) (SpawnMeta, error) {
 	if transcript == "" || ID(session) == "" || ID(agentID) == "" {
-		return "", "", errors.New("no transcript, session or agent id to find it by")
+		return SpawnMeta{}, fmt.Errorf("no transcript, session or agent id to find it by: %w", fs.ErrNotExist)
 	}
 	dir := filepath.Dir(filepath.FromSlash(transcript))
-	p := filepath.Join(dir, session, "subagents", "agent-"+agentID+".meta.json")
-	f, err := os.Open(p)
+	raw, err := agents.ReadRegular(filepath.Join(dir, session, "subagents", "agent-"+agentID+".meta.json"), maxMeta)
 	if err != nil {
-		return "", "", err
-	}
-	defer func() { _ = f.Close() }()
-	raw, err := io.ReadAll(io.LimitReader(f, maxMeta+1))
-	if err != nil {
-		return "", "", err
-	}
-	if len(raw) > maxMeta {
-		return "", "", errors.New("the meta file is too large")
+		return SpawnMeta{}, err
 	}
 	var m struct {
-		ToolUseID string `json:"toolUseId"`
-		AgentType string `json:"agentType"`
+		ToolUseID *string `json:"toolUseId"`
+		AgentType string  `json:"agentType"`
+		Parent    *string `json:"parentAgentId"`
+		Depth     int     `json:"spawnDepth"`
 	}
 	if err := json.Unmarshal(raw, &m); err != nil {
-		return "", "", err
+		return SpawnMeta{}, err
 	}
-	if ID(m.ToolUseID) == "" {
-		return "", "", errors.New("the meta file names no call")
+	out := SpawnMeta{Type: m.AgentType, Depth: m.Depth}
+	if m.ToolUseID != nil {
+		if out.Call = ID(*m.ToolUseID); out.Call == "" {
+			return SpawnMeta{}, errors.New("the meta file's toolUseId is not an id")
+		}
 	}
-	return m.ToolUseID, m.AgentType, nil
+	if m.Parent != nil {
+		if out.Parent = ID(*m.Parent); out.Parent == "" {
+			return SpawnMeta{}, errors.New("the meta file's parentAgentId is not an id")
+		}
+	}
+	return out, nil
 }
