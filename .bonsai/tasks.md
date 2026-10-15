@@ -5,7 +5,7 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
-| T-5599 | No person's name in Bonsai's files: the director's name, user name and email replaced by a generic designation | verify | | 2026-10-15 | |
+| T-5599 | No person's name in Bonsai's files: the director's name, user name and email replaced by a generic designation | done | | 2026-10-15 | 2026-10-15 |
 | T-5598 | VG's fix round for 5.5.11 and 5.5.8's item 4: role rights only behind an allowed call, case-free types, the report found by the gate | done | | 2026-10-15 | 2026-10-15 |
 | T-5597 | CLAUDE.md's landing rule: pieces ready together land as one batch, with one Windows check at the batch's top | done | | 2026-10-15 | 2026-10-15 |
 | T-5596 | VG: a fresh verifier on the guard's role rules and stall stops, bonsai agents, and 5.5.8's gate and runner lines (5.5.11, 5.5.12, 5.5.8) | done | | 2026-10-15 | 2026-10-15 |

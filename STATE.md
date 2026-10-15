@@ -1,6 +1,6 @@
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 15 Oct 2026 at 17:00. **Step 5.5 is building.** On `main` at `8d151a6`:
+Rewritten, never appended. Last rewritten 15 Oct 2026 at 17:00. **Step 5.5 is building.** On `main` at `d81f5d4` (code at `8d151a6`):
 every piece but 5.5.4-5.5.7 has landed; this session closed **5.5.8, 5.5.3 and 5.5.11** (VG passed 5.5.11 after its
 fix rounds `T-5598`, `T-5513`, `T-5514`), landed `T-5595` (the Windows timing tests) and took the director's name out
 of the product, `CLAUDE.md` and `workflow` (`T-5599`). `workflow` (5.5.4) is **public** at `fed3bbf` (the director
@@ -43,14 +43,14 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
 | 5.5.8 CI green, carry-overs | `T-5508` | **done** | H fixed in `T-5598`; VG round 2 re-read items 4 and 5 |
 | 5.5.9 formats set 8 | `T-5509` | done | `f239f8f` |
 | 5.5.10 messages | `T-5510` | done | `298ed35` |
-| 5.5.11 the guard's role rules | `T-5511` | verify -> done on CI green at `8d151a6` | VG passed it (VG3's re-run, 16:12) |
+| 5.5.11 the guard's role rules | `T-5511` | **done** | VG passed it (VG3's re-run, 16:12); CI green at `8d151a6` |
 | 5.5.11b M1 (permissions) | `T-5513` | **done** | landed `d3a00bd` (batch 1) |
-| 5.5.11c S2 (this system's place) | `T-5514` | verify -> done on CI green | landed `8d151a6` |
+| 5.5.11c S2 (this system's place) | `T-5514` | **done** | landed `8d151a6`, CI green |
 | 5.5.12 `bonsai agents` | `T-5512` | done | `7615ec7` |
 
 Outside the pieces: `T-5590`-`T-5597` done (the re-plan, the safety line, two Windows flakes, VM and its fixes,
 the Windows timing tests, the batch rule), `T-5598` done (VG's first fix round), `T-5596` done (VG, three rounds),
-`T-5599` (the name out of the files) done once its fresh check and records commit are in. Run reports
+`T-5599` done (the name out of the product, `CLAUDE.md`, `STATE.md` and `workflow`; its fresh check found none). Run reports
 `records/runs/R-2026-10-1[45]-T-55*.md`.
 
 **Hours** (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min; 5.1 866 minutes; 5.2

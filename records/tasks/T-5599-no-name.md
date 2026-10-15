@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5599
 title: "No person's name in Bonsai's files: the director's name, user name and email replaced by a generic designation"
-status: verify
+status: done
 lane:
 done_when:
   - "A Sonnet inventory of every hit (name, family name, Windows user name, email) in Bonsai's tracked and untracked files, the branches in flight, workflow, the test pack, the history's counts and GitHub, read by the orchestrator"
@@ -16,7 +16,7 @@ depends_on: []
 blocked_by:
 created: 2026-10-15
 started: 2026-10-15
-finished:
+finished: 2026-10-15
 labels:
   bonsai.branch: "t5599"
   bonsai.ladder: []
