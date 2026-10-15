@@ -57,8 +57,8 @@ func TestSessionEndCleans(t *testing.T) {
 		t.Errorf("the old result of a done task is still there: %v", err)
 	}
 	got := records(t, root, sess)
-	if len(got) != 2 || got[1].Event != "session_end" {
-		t.Fatalf("the session's records: %+v", got)
+	if len(got) != 3 || got[1].Event != "session_end" || got[2].Event != "usage" || s(got[2].Reason) != "the hook input names no transcript" {
+		t.Fatalf("the session's records (its end's usage record unknown, no transcript named): %+v", got)
 	}
 	lf, err := record.ReadLog(filepath.Join(root, ".bonsai", "local", "log", "w-"+time.Now().UTC().Format("2006-01-02")+".ndjson"))
 	if err != nil {

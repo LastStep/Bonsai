@@ -1,6 +1,7 @@
 // Package recorder is Bonsai's recorder (spec §8; contract §8; design/plan-5.md, 5.2.4): `bonsai hook record`, which
-// writes one bonsai.log/1 record for each of ten of Claude Code's hook events, and `bonsai hook start`, which prints a
-// session's opening context and writes its session_start record, with the bonsai binary's path and SHA-256.
+// writes one bonsai.log/1 record for each of ten of Claude Code's hook events, and at an agent's end its usage records
+// (note 5.5.12, 4), and `bonsai hook start`, which prints a session's opening context and writes its session_start
+// record, with the bonsai binary's path and SHA-256.
 //
 // Where: the project is found from CLAUDE_PROJECT_DIR, else the payload's cwd (never a later cd), as the guard finds
 // it (hookin.FindProject): the folder itself or the nearest one above it holding bonsai.yaml, walking past any .git.
@@ -28,12 +29,16 @@
 //
 //   - recorder.go (this file): Options, Record and Start, the project and its config.
 //   - record.go: one payload as one record: the events, the categories, the input hash.
+//   - usage.go: an agent's token counts at its end, read from its transcript (the usage records).
 //   - start.go: bonsai hook start's opening context and the binary's path and hash.
 //   - pipe_unix.go, pipe_other.go: SIGPIPE ignored, so a write to a closed pipe is an error, not the process's end.
 //
-// At a session's end, after its session_end line is written, `hook record` runs the cleaner (internal/clean,
-// SessionEnd: the main checkout's ladder results, asks and log by bonsai.yaml's generated: rules, within 1 s of the
-// line's 5 s timeout and the hook's own 4 s budget). A session_end line that cannot be written cleans nothing.
+// At an agent's end (a subagent's SubagentStop, a session's SessionEnd), after that end's own record, `hook record`
+// writes its usage records: its token counts read from its own transcript, never its text, within 2 s (usage.go). At a
+// session's end it then runs the cleaner (internal/clean, SessionEnd: the main checkout's ladder results, asks, the
+// messages between agents, the log and the agents' state, by bonsai.yaml's generated: rules, within 1 s and one step:
+// the session_end line, the reading and the cleaning together within the hook's own 4 s budget and the line's 5 s
+// timeout). An end whose own line cannot be written reads and cleans nothing.
 package recorder
 
 import (
@@ -48,7 +53,8 @@ import (
 )
 
 // Budget is each hook's own time limit. SessionEnd's line has a timeout of 5 s, which also raises Claude Code's 1.5 s
-// budget for SessionEnd hooks; hook start's has 10 s. Past Budget the hook exits 0 with what it has done.
+// budget for SessionEnd hooks; hook start's has 10 s. Past Budget the hook exits 0 with what it has done. Within it,
+// reading a transcript at an agent's end has 2 s of its own (usage.go) and the cleaning at a session's end 1 s.
 const Budget = 4 * time.Second
 
 // Options are what a hook needs besides its payload.
@@ -121,7 +127,11 @@ func work(o Options) {
 		return
 	}
 	if _, err := writeLog(local.Main, l); err != nil {
-		return // a log that cannot be written takes no clean record either: nothing is cleaned
+		return // a log that cannot be written takes no usage or clean record either: nothing is read or cleaned
+	}
+	if path, ok := usageFrom(p); ok {
+		// At an agent's end, its token counts from its own transcript (usage.go), within usageBudget.
+		writeUsage(o, p, cfg, local, path)
 	}
 	if p.Event == "SessionEnd" {
 		// After the session_end line, the cleaning (internal/clean): ladder results, asks and the log of the main

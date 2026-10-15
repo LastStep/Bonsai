@@ -125,7 +125,8 @@ func TestEveryEvent(t *testing.T) {
 	write(t, root, "work/tasks/T-0901-x.md", "---\nformat: bonsai.task/1\nid: T-0901\ntitle: Make it\nstatus: running\nlane: null\n"+
 		"done_when: []\ndepends_on: []\nblocked_by: null\ncreated: null\nstarted: null\nfinished: null\nlabels: {}\n---\n")
 	sess := "0f1e2d3c-aaaa-4bbb-8ccc-000000000001"
-	base := `"session_id":"` + sess + `","transcript_path":"/tmp/t.jsonl","cwd":"` + filepath.ToSlash(root) + `","permission_mode":"default"`
+	gone := filepath.ToSlash(filepath.Join(t.TempDir(), "gone")) // transcripts that are not there: each end's usage is unknown
+	base := `"session_id":"` + sess + `","transcript_path":"` + gone + `/t.jsonl","cwd":"` + filepath.ToSlash(root) + `","permission_mode":"default"`
 	bash := `"tool_name":"Bash","tool_input":{"command":"DEPLOY_TOKEN=` + fakeToken() + ` git push origin main","description":"push"}`
 	cases := []struct {
 		payload string
@@ -157,7 +158,7 @@ func TestEveryEvent(t *testing.T) {
 		{`{` + base + `,"hook_event_name":"SubagentStart","agent_id":"a1b2c3","agent_type":"workflow:builder"}`, "subagent_start",
 			func(l *format.Log) string { return s(l.SubagentID) + " " + s(l.SubagentType) + " " + s(l.Target) }},
 		{`{` + base + `,"hook_event_name":"SubagentStop","agent_id":"a1b2c3","agent_type":"workflow:builder","stop_hook_active":false,` +
-			`"agent_transcript_path":"/tmp/a.jsonl","last_assistant_message":"done"}`, "subagent_stop",
+			`"agent_transcript_path":"` + gone + `/a.jsonl","last_assistant_message":"done"}`, "subagent_stop",
 			func(l *format.Log) string { return s(l.SubagentID) + " " + s(l.Target) }},
 		{`{` + base + `,"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"all done"}`, "stop",
 			func(l *format.Log) string { return s(l.Text) + " " + s(l.Kind) }},
@@ -183,9 +184,32 @@ func TestEveryEvent(t *testing.T) {
 			t.Fatalf("exit %d", code)
 		}
 	}
-	got := records(t, root, sess)
+	all := records(t, root, sess)
+	// Each agent's end is followed by its usage record: here unknown, its transcript not there (usage_test.go reads
+	// transcripts).
+	var got, usage []*format.Log
+	for _, l := range all {
+		if l.Event == "usage" {
+			usage = append(usage, l)
+			continue
+		}
+		got = append(got, l)
+	}
 	if len(got) != len(cases) {
 		t.Fatalf("%d records for %d payloads", len(got), len(cases))
+	}
+	if len(usage) != 2 || s(usage[0].AgentEvent) != "SubagentStop" || s(usage[0].SubagentID) != "a1b2c3" ||
+		s(usage[1].AgentEvent) != "SessionEnd" || usage[1].SubagentID != nil {
+		t.Fatalf("the usage records: %+v", usage)
+	}
+	for _, u := range usage {
+		if s(u.Kind) != "unknown" || s(u.Reason) != "the transcript is not there" || u.Usage != nil || u.Model != nil ||
+			s(u.Task) != "T-0901" || s(u.Session) != sess {
+			t.Errorf("a usage record: %+v", u)
+		}
+	}
+	if all[len(all)-1] != usage[1] || all[len(all)-2].Event != "session_end" {
+		t.Errorf("the session's usage record is not written right after its session_end")
 	}
 	raw, _ := os.ReadFile(filepath.Join(root, ".bonsai", "local", "log", "s-"+sess+".ndjson"))
 	if bytes.Contains(raw, []byte(fakeToken()[4:])) || bytes.Contains(raw, []byte("please use")) || bytes.Contains(raw, []byte("all done")) {

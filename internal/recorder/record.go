@@ -21,6 +21,9 @@ package recorder
 //	Stop                           stop                       nothing more
 //	SessionEnd                     session_end                reason
 //
+// After a SubagentStop's or a SessionEnd's record, the agent's usage records: its token counts read from its own
+// transcript, one record for each model, or one unknown with its reason (usage.go).
+//
 // The input hash (contract §8.1) is hookin.InputHash, keyed by the home's salt, over the tool input the hook adapter
 // decoded; a call's events carry the same input, so a call's records pair. With no salt (workspace.Salt failed) it is
 // null and the record is still written; a tool input the strict decoder refuses (a duplicate key, bad UTF-8) has no
@@ -29,6 +32,7 @@ package recorder
 import (
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -58,9 +62,9 @@ var Events = []Event{
 	{"PostToolUseFailure", "tool_fail", "each tool call that failed or was interrupted"},
 	{"Notification", "notice", "each notice Claude Code gives a person (redacted)"},
 	{"SubagentStart", "subagent_start", "each subagent run's start and the active task it found"},
-	{"SubagentStop", "subagent_stop", "each subagent run's end"},
+	{"SubagentStop", "subagent_stop", "each subagent run's end, and its token counts read from its transcript (never its text)"},
 	{"Stop", "stop", "the end of each turn"},
-	{"SessionEnd", "session_end", "the session's end"},
+	{"SessionEnd", "session_end", "the session's end, and its token counts read from its transcript (never its text)"},
 }
 
 // logEvent gives the log's event for a Claude Code event, "" for one Bonsai does not record.
@@ -98,16 +102,7 @@ func build(o Options, p *hookin.Payload, proj string, cfg *workspace.Config, loc
 	if ev == "" {
 		return nil
 	}
-	l := record.New(ev, record.Common{Workspace: cfg.ID, Local: local, Session: p.Session, Agent: "claude-code",
-		Getenv: o.Getenv, Redact: redact.Text, At: o.Now()})
-	l.AgentEvent = ptr(p.Event)
-	l.SubagentID = ptr(hookin.ID(p.AgentID))
-	l.SubagentType = text(p.AgentType)
-	l.Checkout = text(str(l.Checkout))
-	l.Branch = text(str(l.Branch))
-	if r := o.Getenv(RemoteEnv); remotePattern.MatchString(r) {
-		l.Remote = ptr(r)
-	}
+	l := base(o, p, cfg, local, ev, o.Now())
 	switch {
 	case p.Event == "UserPromptSubmit":
 		kind := "user"
@@ -128,6 +123,23 @@ func build(o Options, p *hookin.Payload, proj string, cfg *workspace.Config, loc
 		l.Target = act.target()
 	case p.Event == "SessionEnd":
 		l.Reason = text(p.Reason)
+	}
+	return l
+}
+
+// base lays out a record of the log's event ev for a payload, at the time given, with the fields every record of a
+// hook's payload has: the common fields (record.New), agent_event, the subagent's id and type when the payload names
+// them, checkout and branch redacted, and remote. build and the usage records (usage.go) start from it.
+func base(o Options, p *hookin.Payload, cfg *workspace.Config, local workspace.Local, ev string, at time.Time) *format.Log {
+	l := record.New(ev, record.Common{Workspace: cfg.ID, Local: local, Session: p.Session, Agent: "claude-code",
+		Getenv: o.Getenv, Redact: redact.Text, At: at})
+	l.AgentEvent = ptr(p.Event)
+	l.SubagentID = ptr(hookin.ID(p.AgentID))
+	l.SubagentType = text(p.AgentType)
+	l.Checkout = text(str(l.Checkout))
+	l.Branch = text(str(l.Branch))
+	if r := o.Getenv(RemoteEnv); remotePattern.MatchString(r) {
+		l.Remote = ptr(r)
 	}
 	return l
 }
