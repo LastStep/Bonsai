@@ -806,6 +806,12 @@ Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps
 | `stdbuf` | bash | its options skipped |
 | `time` | bash | its options skipped |
 | `timeout` | bash | its options and its duration skipped |
+| `chrt` | bash | its options and the priority skipped |
+| `taskset` | bash | its options and the mask skipped |
+| `chroot` | bash | its options and the new root skipped; the folder the program runs in cannot be told |
+| `pkexec` | bash | its options skipped; the folder the program runs in cannot be told |
+| `unshare` | bash | its options skipped; -w (--wd) names the folder |
+| `dbus-run-session` | bash | its options skipped |
 | `xargs` | bash | its options skipped; a delete it runs takes its operands from input, so it does not name them; a bonsai call it runs is a person's step unless its own words settle a command that is not a person's |
 | `busybox` | bash | skipped: the word after it is the program |
 | `chronic` | bash | skipped |

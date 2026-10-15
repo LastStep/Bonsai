@@ -179,6 +179,8 @@ type RunnerWord struct {
 	in   int      // where it is read
 	opt  delOpt   // its options (options stop at the program it runs)
 	dir  []string // the options naming the folder the program runs in
+	skip int      // the words after its options that come before the program (timeout's duration, chroot's root)
+	away bool     // the program runs in a folder the check cannot tell (chroot's root, pkexec's /)
 }
 
 // Shells names where a runner word is read, for the reference page.
@@ -233,7 +235,26 @@ var RunnerWords = []RunnerWord{
 			"version"}, longVal: []string{"format", "output"}}},
 	{Word: "timeout", in: delInBash, Does: "its options and its duration skipped",
 		opt: delOpt{short: "v", shortVal: "sk", long: []string{"preserve-status", "foreground", "verbose"},
-			longVal: []string{"signal", "kill-after"}}},
+			longVal: []string{"signal", "kill-after"}}, skip: 1},
+	{Word: "chrt", in: delInBash, Does: "its options and the priority skipped",
+		opt: delOpt{short: "abdefiomprRvhV", shortVal: "TPD", long: []string{"all-tasks", "batch", "deadline", "ext",
+			"fifo", "idle", "other", "rr", "max", "pid", "reset-on-fork", "verbose", "help", "version"},
+			longVal: []string{"sched-runtime", "sched-period", "sched-deadline"}}, skip: 1},
+	{Word: "taskset", in: delInBash, Does: "its options and the mask skipped",
+		opt: delOpt{short: "acphV", long: []string{"all-tasks", "cpu-list", "pid", "help", "version"}}, skip: 1},
+	{Word: "chroot", in: delInBash, Does: "its options and the new root skipped; the folder the program runs in cannot be told",
+		opt: delOpt{long: []string{"skip-chdir", "help", "version"}, longVal: []string{"groups", "userspec"}}, skip: 1, away: true},
+	{Word: "pkexec", in: delInBash, Does: "its options skipped; the folder the program runs in cannot be told",
+		opt: delOpt{long: []string{"disable-internal-agent", "keep-cwd", "help", "version"}, longVal: []string{"user"}}, away: true},
+	{Word: "unshare", in: delInBash, Does: "its options skipped; -w (--wd) names the folder",
+		opt: delOpt{short: "frchV", shortOpt: "muinpUCT", shortVal: "RwSG", long: []string{"fork", "map-root-user",
+			"map-current-user", "map-auto", "keep-caps", "load-interp", "help", "version"}, longVal: []string{"propagation",
+			"setgroups", "map-user", "map-group", "root", "wd", "setuid", "setgid", "monotonic", "boottime"},
+			longOpt: []string{"mount", "uts", "ipc", "net", "pid", "user", "cgroup", "time", "kill-child", "mount-proc",
+				"map-users", "map-groups"}},
+		dir: []string{"w", "wd"}},
+	{Word: "dbus-run-session", in: delInBash, Does: "its options skipped",
+		opt: delOpt{long: []string{"help", "version"}, longVal: []string{"config-file", "dbus-daemon"}}},
 	{Word: "xargs", in: delInBash, Does: "its options skipped; a delete it runs takes its operands from input, so it does not name them; " +
 		"a bonsai call it runs is a person's step unless its own words settle a command that is not a person's",
 		opt: delOpt{short: "0prtxo", shortOpt: "eil", shortVal: "adEILnPs", long: []string{"null", "no-run-if-empty",
@@ -599,12 +620,16 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 			x.dirs = r.cdTo(x.dirs, v, x.d)
 		}
 	}
+	if rn.away {
+		x.dirs.unknown = true
+	}
 	rest := words[g.rest:]
+	if len(rest) > rn.skip {
+		rest = rest[rn.skip:] // timeout's duration, chrt's priority, taskset's mask, chroot's root
+	} else {
+		rest = nil
+	}
 	switch rn.Word {
-	case "timeout":
-		if len(rest) > 0 {
-			rest = rest[1:] // the duration
-		}
 	case "xargs":
 		x.feed = "xargs"
 		bare := 0 // -i and --replace given with no text of their own: {} is theirs
@@ -709,15 +734,8 @@ func (r *delRun) shell(name string, x delExec) bool {
 		if len(args) >= 2 && args[0].text != "-" {
 			r.shellText(args[0], shBash, x)
 		}
-	case (name == "su" || name == "script" || name == "flock" || name == "runuser") && x.d == shBash:
-		args := x.words[1:]
-		for k, w := range args {
-			if (w.text == "-c" || w.text == "--command") && k+1 < len(args) {
-				r.shellText(args[k+1], shBash, x)
-			} else if strings.HasPrefix(w.text, "--command=") {
-				r.text(strings.TrimPrefix(w.text, "--command="), shBash, x.depth+1, x.dirs, x.loop)
-			}
-		}
+	case delCmdRunners[name] != nil && x.d == shBash:
+		r.cmdRunner(name, delCmdRunners[name], x)
 	case (name == "source" || name == ".") && x.d == shBash:
 		if args := x.words[1:]; len(args) > 0 {
 			if text, ok := delLiteral(args[0], x.d, x.depth); ok {
@@ -746,6 +764,98 @@ func (r *delRun) shell(name string, x delExec) bool {
 		return false
 	}
 	return true
+}
+
+// delCmdRunner is a program that runs a command string as sh -c does, or a program and its words, past options of
+// its own: all reads them as getopt does, anywhere among its words, for the command string; lead up to its first
+// operand, for the program.
+type delCmdRunner struct {
+	all, lead delOpt
+	cmd       []string // the options whose value is a command string
+}
+
+// delCmdRunners are the programs that run a command string other than the shells (V1's M2, 16 Oct: script -qec
+// 'bonsai update --yes' /dev/null ran for every role): script in util-linux's spelling (-c, --command) and BSD's
+// (script [file [command ...]]), su and runuser (-c, --command, --session-command, a shell's words after the user,
+// its input; runuser -u runs a program), flock (lockfile -c text, or lockfile program) and sg (group [-c] text).
+var delCmdRunners = func() map[string]*delCmdRunner {
+	su := delOpt{short: "flmpPhV", shortVal: "cgGswu", long: []string{"login", "preserve-environment", "pty", "fast",
+		"help", "version"}, longVal: []string{"command", "session-command", "group", "supp-group", "shell",
+		"whitelist-environment", "user"}}
+	flock := delOpt{short: "sexnoFuhV", shortVal: "wEc", long: []string{"shared", "exclusive", "unlock", "nonblock",
+		"nb", "no-fork", "close", "verbose", "help", "version"}, longVal: []string{"timeout", "wait", "conflict-exit-code",
+		"command"}}
+	script := delOpt{short: "adefkpqrhVwF", shortVal: "cEIOBTmo", shortOpt: "t", long: []string{"append", "return",
+		"flush", "force", "quiet", "help", "version"}, longVal: []string{"command", "echo", "log-in", "log-out", "log-io",
+		"log-timing", "logging-format", "output-limit"}, longOpt: []string{"timing"}}
+	bsd := script
+	bsd.shortVal, bsd.shortOpt = "cEIOBTmot", ""
+	permute := func(o delOpt) delOpt { o.permute = true; return o }
+	return map[string]*delCmdRunner{
+		"script":  {all: permute(script), lead: bsd, cmd: []string{"c", "command"}},
+		"su":      {all: permute(su), lead: su, cmd: []string{"c", "command", "session-command"}},
+		"runuser": {all: permute(su), lead: su, cmd: []string{"c", "command", "session-command"}},
+		"flock":   {all: permute(flock), lead: flock, cmd: []string{"c", "command"}},
+		"sg":      {},
+	}
+}()
+
+// cmdRunner reads what a delCmdRunners program runs: its command strings split again as sh -c's are, and the program
+// it runs (with its words) as any command is, failing closed where its spellings differ (both are read).
+func (r *delRun) cmdRunner(name string, c *delCmdRunner, x delExec) {
+	args := x.words[1:]
+	all := delParse(args, c.all)
+	for _, n := range c.cmd {
+		for _, v := range all.vals[n] {
+			r.shellText(v, shBash, x)
+		}
+	}
+	lead := delParse(args, c.lead)
+	rest := args[lead.rest:]
+	for len(rest) > 0 && rest[0].text == "-" && !rest[0].quoted {
+		rest = rest[1:] // su's and sg's -: a login shell
+	}
+	run := func(words []shWord) {
+		y := x
+		y.words = words
+		r.exec(y)
+	}
+	switch name {
+	case "script", "flock":
+		// BSD's script file command ..., flock's lockfile command ... (lockfile -c text is read above).
+		if len(rest) >= 2 {
+			run(rest[1:])
+		}
+	case "su", "runuser":
+		if all.has("u", "user") && name == "runuser" {
+			run(rest) // runuser -u user [--] program ...
+			return
+		}
+		// The user, then the words its shell is given (su user -- -c text), or with none and no -c, its input.
+		sh := []shWord{{text: "sh", raw: "sh"}}
+		if len(rest) > 1 {
+			more := rest[1:]
+			if more[0].text == "--" && !more[0].quoted {
+				more = more[1:] // getopt's end of su's options, before the shell's own
+			}
+			y := x
+			y.words = append(sh, more...)
+			r.bashShell(y)
+		} else if len(all.val("c", "command", "session-command")) == 0 {
+			y := x
+			y.words = sh
+			r.bashShell(y)
+		}
+	case "sg":
+		// sg group [-c] text: the text runs as sh -c's.
+		if len(rest) >= 2 {
+			if rest[1].text == "-c" && len(rest) >= 3 {
+				r.shellText(rest[2], shBash, x)
+			} else {
+				r.text(delJoin(rest[1:], false), shBash, x.depth+1, x.dirs, x.loop)
+			}
+		}
+	}
 }
 
 // shellText splits again the text a shell is given in one word: the word's own text, or, when the word is a
@@ -1410,12 +1520,14 @@ func delProbe(words []shWord, d shDialect) bool {
 				continue
 			}
 			words = words[1:][g.rest:]
-			if rn.Word == "timeout" && len(words) > 0 {
-				words = words[1:]
+			if len(words) > rn.skip {
+				words = words[rn.skip:]
+			} else {
+				words = nil
 			}
 			continue
 		}
-		if delBashNames[name] || name == "cmd" || name == "powershell" || name == "pwsh" || name == "eval" {
+		if delBashNames[name] || delCmdRunners[name] != nil || name == "cmd" || name == "powershell" || name == "pwsh" || name == "eval" {
 			return true
 		}
 		if name == "git" {

@@ -12,7 +12,8 @@ package guard
 //     depth of three. A line it cannot split is refused only when it holds a delete word (delete-unsplit).
 //   - shell_words.go: past NAME=value words and the words that run another program (RunnerWords: sudo, env, xargs,
 //     ...), the program; a command still not read after 256 of them (delSteps) is refused (delete-unsplit). A shell
-//     given text (bash -c, eval, cmd /c, powershell -Command, a here-document fed to bash) has that text split again;
+//     given text (bash -c, eval, cmd /c, powershell -Command, a here-document fed to bash, and script, su, runuser,
+//     flock and sg's command strings: delCmdRunners) has that text split again;
 //     a delete word (DeleteWords, the list's one home) gives what it deletes; a bonsai call goes to the guard's
 //     judgment of Bonsai's own commands (commands.go's ownCommand).
 //   - shell_env.go: CLAUDE_CODE_CHILD_SESSION read on the words of every simple command, at every depth; a change of
