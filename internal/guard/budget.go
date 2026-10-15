@@ -408,8 +408,15 @@ const maxResult = 64 << 20
 // access to its files (agents.Store.Repair) and tries once more.
 func (rr *roleRun) appendEvent(w *who, e agents.Event) error {
 	err := stateAppend(rr.store, rr.in.Session, w.key, e)
-	if err != nil && len(rr.store.Repair(rr.in.Session, w.key)) > 0 {
-		err = stateAppend(rr.store, rr.in.Session, w.key, e)
+	if err == nil {
+		return nil
+	}
+	if mended := rr.store.Repair(rr.in.Session, w.key); len(mended) > 0 {
+		first := err
+		if err = stateAppend(rr.store, rr.in.Session, w.key, e); err == nil {
+			rr.note(RuleStateUnreadable, "this agent's "+e.E+" line could not be written ("+oneLine(first.Error())+"): the "+
+				"guard set back its own access to "+mendedList(mended)+", and wrote it")
+		}
 	}
 	return err
 }

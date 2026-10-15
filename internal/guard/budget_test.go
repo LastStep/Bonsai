@@ -88,9 +88,9 @@ func TestTheBudgetOfActions(t *testing.T) {
 	// The fourth: spent, its refusal in full; the fifth, short.
 	s := wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, "free.txt")), 2, RuleBudgetSpent)
 	// b2, a newer brief to its address in its thread, is already waiting: the refusal names it.
-	waiting := "a newer brief to you is waiting: read it with /usr/local/bin/bonsai message --show " + b2
+	waiting := "a newer brief to you is waiting: read it with " + hookPlace(false) + " message --show " + b2
 	for _, want := range []string{"budget spent (actions: 4 of 3): report what you have and what is left",
-		"bonsai message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1, "<<'EOF'", waiting} {
+		hookPlace(false) + " message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1, "<<'EOF'", waiting} {
 		if !strings.Contains(s, want) {
 			t.Errorf("the first refusal has no %q:\n%s", want, s)
 		}
