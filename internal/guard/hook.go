@@ -34,8 +34,9 @@ type Options struct {
 	Now           func() time.Time    // the clock; nil means time.Now
 
 	// Second runs the guard as its second line (bonsai hook guard --second; engine.SecondCommand, where the lock declares
-	// roles): on every tool the first line does not match, it refuses only past an agent's budget (budget-spent), and
-	// lets the call through on any fault of its own (second-line-fault), as its line does while bonsai is missing.
+	// roles): on every tool the first line does not match, it refuses only past an agent's budget (budget-spent) and a
+	// Skill that forks into a type its caller may not call (call-refused, skill.go), and lets the call through on any
+	// fault of its own (second-line-fault), as its line does while bonsai is missing.
 	Second bool
 }
 
@@ -74,18 +75,23 @@ func Main(o Options) int {
 	})
 }
 
-// secondFault is the second line's answer in place of a refusal other than budget-spent: the call goes through, and
-// the record says why it was not judged (second-line-fault).
+// secondRefuses reports the refusals the second line answers as refusals: past a budget (budget-spent), and against
+// a role rule (call-refused: a Skill whose frontmatter forks into a type its caller may not call, skill.go). Every
+// other refusal there is a fault of its own, and lets the call through (secondFault).
+func secondRefuses(rule string) bool { return rule == RuleBudgetSpent || rule == RuleCallRefused }
+
+// secondFault is the second line's answer in place of a refusal other than its own two (secondRefuses): the call goes
+// through, and the record says why it was not judged (second-line-fault).
 func secondFault(d Decision) Decision {
 	f := allow(RuleSecondLineFault, d.Target)
 	f.Why = "the guard's second line could not judge this call (" + d.Rule + ": " + d.Why + "), so it lets it through"
 	return f
 }
 
-// faultFor gives the decision a run answers with: the second line turns a refusal other than budget-spent into
-// second-line-fault.
+// faultFor gives the decision a run answers with: the second line turns a refusal other than its own two
+// (secondRefuses) into second-line-fault.
 func (r *run) faultFor(d Decision) Decision {
-	if r.o.Second && !d.Allow && d.Rule != RuleBudgetSpent {
+	if r.o.Second && !d.Allow && !secondRefuses(d.Rule) {
 		return secondFault(d)
 	}
 	return d
@@ -110,7 +116,7 @@ func panicked(p any) Decision {
 // judges a file tool's path in a linked one, and allows and records nothing otherwise (spec §7).
 func (r *run) work() (d Decision) {
 	defer func() {
-		if r.o.Second && !d.Allow && d.Rule != RuleBudgetSpent {
+		if r.o.Second && !d.Allow && !secondRefuses(d.Rule) {
 			d = allow(RuleSecondLineFault, "") // a fault before any record could be written: let through, unrecorded
 		}
 	}()

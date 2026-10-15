@@ -26,23 +26,16 @@ package guard
 // An agent with no address (no tied brief, or an undeclared type) has no report call: its last reply is its report.
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/message"
-	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -96,7 +89,7 @@ var readBrief = func(main, id string) (*brief, string) {
 	case fi.Size() > message.MaxFile:
 		return nil, "its message file is larger than any bonsai message writes"
 	}
-	raw, err := os.ReadFile(path)
+	raw, err := agents.ReadRegular(path, message.MaxFile)
 	if err != nil {
 		return nil, "its message file cannot be read"
 	}
@@ -111,95 +104,10 @@ var readBrief = func(main, id string) (*brief, string) {
 	return &brief{id: m.ID, thread: m.Thread, from: m.From, to: m.To, kind: m.Kind, created: created, budget: m.Budget}, ""
 }
 
-// recordScanCap is the most of the log a tie reads to find a brief's message record, in bytes.
-const recordScanCap = 64 << 20
-
-// messageRecorded finds the message record bonsai message wrote with a message (contract §8.2: event message, target
-// its id), read only at a tie (budget.go's comment): the session's own log file first, then the day file of its
-// created (a message written outside a session), then each other log file written to since it was created, newest
-// first, at most recordScanCap bytes in all. A variable for the tests.
+// messageRecorded finds the message record bonsai message wrote with a message, read only at a tie
+// (agents.MessageRecorded, which the stop gate reads a report by too). A variable for the tests.
 var messageRecorded = func(main, session string, b *brief) bool {
-	dir := filepath.Join(main, filepath.FromSlash(workspace.LocalDir), record.LogFolder)
-	var order []string
-	if name, err := record.LogFileName(session, b.created); err == nil && session != "" {
-		order = append(order, name)
-	}
-	day, _ := record.LogFileName("", b.created)
-	order = append(order, day)
-	if entries, err := os.ReadDir(dir); err == nil {
-		type cand struct {
-			name string
-			mod  time.Time
-		}
-		var rest []cand
-		for _, e := range entries {
-			n := e.Name()
-			if listHas(order, n) || !strings.HasSuffix(n, ".ndjson") || !(strings.HasPrefix(n, "s-") || strings.HasPrefix(n, "w-")) {
-				continue
-			}
-			fi, err := e.Info()
-			if err != nil || !fi.Mode().IsRegular() || fi.ModTime().Before(b.created.Add(-time.Second)) {
-				continue // a file last written before the message was made cannot hold its record
-			}
-			rest = append(rest, cand{n, fi.ModTime()})
-		}
-		sort.Slice(rest, func(i, j int) bool {
-			if !rest[i].mod.Equal(rest[j].mod) {
-				return rest[i].mod.After(rest[j].mod)
-			}
-			return rest[i].name < rest[j].name
-		})
-		for _, c := range rest {
-			order = append(order, c.name)
-		}
-	}
-	budget := int64(recordScanCap)
-	needle := []byte(`"` + b.id + `"`)
-	for _, name := range order {
-		if budget <= 0 {
-			return false
-		}
-		found, read := scanForRecord(filepath.Join(dir, name), needle, b.id, budget)
-		if found {
-			return true
-		}
-		budget -= read
-	}
-	return false
-}
-
-// scanForRecord reads one log file, at most budget bytes, for a message record whose target is id: found, and the
-// bytes read.
-func scanForRecord(path string, needle []byte, id string, budget int64) (found bool, read int64) {
-	f, err := os.Open(path)
-	if err != nil {
-		return false, 0
-	}
-	defer func() { _ = f.Close() }()
-	r := bufio.NewReaderSize(io.LimitReader(f, budget), 64<<10)
-	for {
-		line, err := r.ReadSlice('\n')
-		read += int64(len(line))
-		if errors.Is(err, bufio.ErrBufferFull) {
-			for errors.Is(err, bufio.ErrBufferFull) { // a line longer than any record: passed over
-				line, err = r.ReadSlice('\n')
-				read += int64(len(line))
-			}
-			line = nil
-		}
-		if len(line) > 0 && bytes.Contains(line, needle) {
-			var rec struct {
-				Event  string  `json:"event"`
-				Target *string `json:"target"`
-			}
-			if json.Unmarshal(line, &rec) == nil && rec.Event == "message" && rec.Target != nil && *rec.Target == id {
-				return true, read
-			}
-		}
-		if err != nil {
-			return false, read
-		}
-	}
+	return agents.MessageRecorded(main, session, b.id, b.created)
 }
 
 // waitingBrief gives the newest brief to the agent's address in the thread of the brief it has tied, written after it
@@ -236,7 +144,7 @@ func (rr *roleRun) waitingBrief(w *who) string {
 		if err != nil || fi.Size() > message.MaxFile {
 			continue
 		}
-		raw, err := os.ReadFile(filepath.Join(dir, e.Name()))
+		raw, err := agents.ReadRegular(filepath.Join(dir, e.Name()), message.MaxFile)
 		if err != nil {
 			continue
 		}
@@ -275,9 +183,7 @@ func (rr *roleRun) address(w *who) string {
 		return ""
 	}
 	if w.st != nil {
-		if t := w.st.Window().Tie; t != nil {
-			return t.To
-		}
+		return w.st.Address()
 	}
 	if w.h.Named {
 		if w.h.Task == "" {
@@ -441,17 +347,20 @@ func (rr *roleRun) count(w *who, reads string) counted {
 	if e == nil {
 		return counted{}
 	}
+	if made, err := rr.store.MarkSpent(in.Session, w.key, w.st.Ties()); err == nil && !made {
+		return counted{spent: e} // another call side by side found this window spent first, and writes its one line
+	}
 	if err := rr.store.Append(in.Session, w.key, *e); err != nil {
 		rr.note(RuleStateUnreadable, "this agent's spent line cannot be written ("+oneLine(err.Error())+")")
 	}
 	if st, err := rr.store.Read(in.Session, w.key); err == nil {
 		w.st = st
-		if sp := st.Spent(); sp != nil && sp.At != e.At {
-			return counted{spent: sp} // another call side by side found it spent first
-		}
 	}
 	return counted{spent: e, newSpent: true}
 }
+
+// maxResult caps a ladder result the guard reads for an agent's red runs, in bytes.
+const maxResult = 64 << 20
 
 // readClimbs reads, at a later call, the result of each climb the guard passed for this agent: a ladder result for
 // its task written after the note (.bonsai/local/ladder/<task>.json, its started time not before the note's) appends
@@ -466,7 +375,7 @@ func (rr *roleRun) readClimbs(w *who) {
 		if err != nil {
 			continue
 		}
-		raw, err := os.ReadFile(filepath.Join(rr.main, filepath.FromSlash(workspace.LocalDir), "ladder", c.Task+".json"))
+		raw, err := agents.ReadRegular(filepath.Join(rr.main, filepath.FromSlash(workspace.LocalDir), "ladder", c.Task+".json"), maxResult)
 		if err != nil {
 			continue
 		}

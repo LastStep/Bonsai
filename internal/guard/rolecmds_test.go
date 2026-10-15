@@ -23,6 +23,7 @@ func shellAs(dir, agentID, typ, command string, ps bool) string {
 
 func TestAStartOfClaudeCode(t *testing.T) {
 	dir := rolesProject(t, nil)
+	started(t, dir, sessA, "workflow:lead")
 	starts := []string{"claude -p hi", "/usr/local/bin/claude --agent workflow:lead -p x", "CLAUDE.EXE -p x",
 		`"C:\Users\x\.local\bin\claude.exe" -p x`, "claude-here -p x", "claude-here.cmd -p x", "env BONSAI_ROLE=lead claude -p x",
 		"npx @anthropic-ai/claude-code -p x", "npx -y @anthropic-ai/claude-code@2.1.300 -p x", "pnpx @anthropic-ai/claude-code",
@@ -46,6 +47,7 @@ func TestAStartOfClaudeCode(t *testing.T) {
 
 func TestWritesOfARoleThatChangesNothing(t *testing.T) {
 	dir := rolesProject(t, nil)
+	started(t, dir, sessA, "workflow:lead")
 	// Paths on a Bash line in forward slashes: Git Bash reads a backslash as an escape (C:\Users\x is C:Usersx, a
 	// name in the folder the command runs in), so Windows' own form would name a file inside the project.
 	out := filepath.ToSlash(t.TempDir())
@@ -73,15 +75,16 @@ func TestWritesOfARoleThatChangesNothing(t *testing.T) {
 		"grep -r x .", "echo x 2>&1", "ls >&2", "cp free.txt " + out, "sed s/a/b/ free.txt", "bonsai check", "bonsai status --json",
 		"echo x > /dev/null", "touch " + slash(out, "t"), "dd if=free.txt of=" + slash(out, "d"),
 		"git config --get user.name", "git -c core.pager=cat log -1"}
+	started(t, dir, sessA, "workflow:helper") // hx, a declared helper: its 150 actions
 	for _, line := range allowed {
-		wantAnswer(t, dir, shellAs(dir, "h1", "workflow:helper", line, false), 0, "")
+		wantAnswer(t, dir, shellAs(dir, "hx", "workflow:helper", line, false), 0, "")
 	}
 	// PowerShell's forms.
 	for _, line := range []string{"Set-Content -Path free.txt -Value x", "'x' | Out-File notes.txt", "Add-Content free.txt x",
 		"Copy-Item free.txt -Destination c.txt", "New-Item -Path n.txt", "echo x > p.txt", "Remove-Item free.txt"} {
-		wantAnswer(t, dir, shellAs(dir, "h1", "workflow:helper", line, true), 2, RuleRoleWritesNothing)
+		wantAnswer(t, dir, shellAs(dir, "hx", "workflow:helper", line, true), 2, RuleRoleWritesNothing)
 	}
-	wantAnswer(t, dir, shellAs(dir, "h1", "workflow:helper", "Get-Content free.txt", true), 0, "")
+	wantAnswer(t, dir, shellAs(dir, "hx", "workflow:helper", "Get-Content free.txt", true), 0, "")
 }
 
 func TestBonsaiFilesOnAnAgentsShellLine(t *testing.T) {

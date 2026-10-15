@@ -157,6 +157,7 @@ func TestNoAddressNoReport(t *testing.T) {
 func TestTheBudgetOfMinutes(t *testing.T) {
 	dir := briefProject(t)
 	t0 := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
+	started(t, dir, sessA, "workflow:lead")
 	lead := func(cmd string) string {
 		return hookCall{session: sessA, agentID: "l1", agentType: "workflow:lead", tool: "Bash", input: bash(cmd)}.payload(dir)
 	}
@@ -183,6 +184,7 @@ func TestTheBudgetOfMinutes(t *testing.T) {
 func TestTheBudgetOfRedRuns(t *testing.T) {
 	dir := briefProject(t)
 	t0 := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
+	started(t, dir, sessA, "workflow:fragile")
 	tiny := func(cmd string) string {
 		return hookCall{session: sessA, agentID: "r1", agentType: "workflow:fragile", tool: "Bash", input: bash(cmd)}.payload(dir)
 	}
@@ -268,6 +270,7 @@ func TestABriefTiesOnlyIfSound(t *testing.T) {
 	if w := stateOf(t, dir, sessA, "t2").Window(); w.Tie == nil || w.Tie.Brief != b5 || *w.Limits.Actions.Value != 10 {
 		t.Fatalf("the read did not tie b5 (its 50 actions held to the max of 10): %+v", w)
 	}
+	wantAnswer(t, dir, start(dir, "toolu_01T3", "go"), 0, RuleCallAllowed)
 	p = tinyFrom(dir, "t3", "Read", readOf(dir, ".bonsai/local/messages/tiny-T-0004/"+b5+".md"))
 	wantAnswer(t, dir, p, 0, RuleOtherTool)
 	if !strings.Contains(strings.Join(notes(p), "\n"), b5+", named by this agent's read of it, ties nothing: another agent tied it") {
@@ -283,6 +286,7 @@ func TestABriefTiesOnlyIfSound(t *testing.T) {
 // Calls side by side lose no count, and of an agent's first calls side by side one alone makes its state.
 func TestCallsSideBySideLoseNoCount(t *testing.T) {
 	dir := briefProject(t)
+	started(t, dir, sessA, "workflow:lead")
 	var wg sync.WaitGroup
 	for i := 0; i < 12; i++ {
 		wg.Add(1)
@@ -296,8 +300,8 @@ func TestCallsSideBySideLoseNoCount(t *testing.T) {
 		t.Errorf("%d calls counted, want 12", n)
 	}
 	raw, _ := os.ReadFile(filepath.Join(dir, ".bonsai", "local", "agents", sessA, "p1.state"))
-	if strings.Count(string(raw), "\n") != 1 {
-		t.Errorf("the state holds %d lines, want its header alone:\n%s", strings.Count(string(raw), "\n"), raw)
+	if strings.Count(string(raw), "\n") != 2 || strings.Count(string(raw), `"e":"link"`) != 1 {
+		t.Errorf("the state holds %d lines, want its header and its one link line:\n%s", strings.Count(string(raw), "\n"), raw)
 	}
 }
 

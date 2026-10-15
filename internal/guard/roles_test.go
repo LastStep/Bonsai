@@ -15,12 +15,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -140,7 +142,11 @@ func (c hookCall) payload(dir string) string {
 		o = append(o, schema.Member{Key: "agent_type", Value: c.agentType})
 	}
 	use := c.use
-	if use == "" {
+	switch {
+	case use == "" && (hookin.SpawnTool(c.tool) || c.tool == "Skill"):
+		// A call that starts an agent: a use of its own, so each agent it starts is joined to its own call.
+		use = fmt.Sprintf("toolu_01CALL%06d", atomic.AddInt64(&callUses, 1))
+	case use == "":
 		use = "toolu_01CALL"
 	}
 	o = append(o, schema.Member{Key: "hook_event_name", Value: "PreToolUse"}, schema.Member{Key: "tool_name", Value: c.tool},
@@ -150,6 +156,18 @@ func (c hookCall) payload(dir string) string {
 		panic(err)
 	}
 	return string(b)
+}
+
+// callUses numbers the uses hookCall gives the calls that start an agent.
+var callUses int64
+
+// started runs the person's session's Agent call for an agent of type typ, so the next agent of that type to make
+// its first call is joined to a call the guard allowed for its role, and plays it (VG's item A: a declared role's
+// rights go only to an agent joined to such a call).
+func started(t *testing.T, dir, session, typ string) {
+	t.Helper()
+	wantAnswer(t, dir, hookCall{session: session, tool: "Agent", input: in("subagent_type", typ, "prompt", "go")}.payload(dir), 0,
+		RuleCallAllowed)
 }
 
 func in(kv ...string) schema.Object {
@@ -462,7 +480,7 @@ func init() {
 		dir := rolesProject(t, nil)
 		wantAnswer(t, dir, hookCall{session: sessA, tool: "Agent", input: in("subagent_type", "workflow:helper", "prompt", "go")}.payload(dir), 0, RuleCallAllowed)
 		recs := sessionRecords(t, dir, hookCall{session: sessA}.payload(dir))
-		if last := recs[len(recs)-1]; last.String("target") != "workflow:helper" || last.String("tool_use_id") != "toolu_01CALL" {
+		if last := recs[len(recs)-1]; last.String("target") != "workflow:helper" || !strings.HasPrefix(last.String("tool_use_id"), "toolu_01CALL") {
 			t.Errorf("the record does not name the type asked for and the call: %v", last)
 		}
 	}

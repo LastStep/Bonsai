@@ -41,6 +41,7 @@ package guard
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -107,7 +108,7 @@ func rolesMayApply(main string) bool {
 	if (agents.Store{Main: main}).Exists() {
 		return true
 	}
-	raw, err := os.ReadFile(filepath.Join(main, filepath.FromSlash(workspace.LockFile)))
+	raw, err := agents.ReadRegular(filepath.Join(main, filepath.FromSlash(workspace.LockFile)), maxResult)
 	return err == nil && strings.Contains(string(raw), `"roles"`)
 }
 
@@ -182,15 +183,22 @@ func lockRoles(l *workspace.Lock) bool {
 	return false
 }
 
-// byType gives the declared role an agent type names: <pack>:<role>, or a bare <role> one pack alone declares; nil
-// for none.
+// typeKey is an agent type, a role's or a pack's name as every lookup compares them: letter case folded, as Claude
+// Code matches a subagent_type to its agents (VG, 15 Oct: "Builder" started the builder agent). The fold's one home.
+func typeKey(t string) string { return strings.ToLower(t) }
+
+// sameType reports two agent types, or names, that are one under typeKey.
+func sameType(a, b string) bool { return typeKey(a) == typeKey(b) }
+
+// byType gives the declared role an agent type names, letter case folded (typeKey): <pack>:<role>, or a bare <role>
+// one pack alone declares; nil for none.
 func (rs *roleSet) byType(t string) *workspace.RoleInForce {
 	if t == "" {
 		return nil
 	}
 	if pack, name, scoped := strings.Cut(t, ":"); scoped {
 		for i := range rs.roles {
-			if rs.roles[i].Pack == pack && rs.roles[i].Role.Name == name {
+			if sameType(rs.roles[i].Pack, pack) && sameType(rs.roles[i].Role.Name, name) {
 				return &rs.roles[i]
 			}
 		}
@@ -198,7 +206,7 @@ func (rs *roleSet) byType(t string) *workspace.RoleInForce {
 	}
 	var found *workspace.RoleInForce
 	for i := range rs.roles {
-		if rs.roles[i].Role.Name == t {
+		if sameType(rs.roles[i].Role.Name, t) {
 			if found != nil {
 				return nil // two packs declare it: a bare name names neither
 			}
@@ -275,6 +283,8 @@ type callee struct {
 	main       bool                   // a SendMessage's to naming main or another session
 	unresolved bool                   // a SendMessage's to that names no agent the guard recorded
 	shown      string                 // as a refusal names it
+	agent      bool                   // a SendMessage's to resolved to an agent the guard recorded
+	parent     string                 // that agent's parent, as its link names it ("session", an agent's id); "" for none
 }
 
 // headerOf gives the header an agent of a role (nil: an undeclared type) starts with.
@@ -302,6 +312,9 @@ func (w *who) shown() string {
 	switch {
 	case w.h.SessRole:
 		return "the person's session"
+	case w.h.Role == "" && w.h.Unbacked:
+		return "an agent of the type " + quote(w.h.Type, 60) + ", which no call the guard allowed for that role started " +
+			"(held as a helper)"
 	case w.h.Role == "":
 		t := w.h.Type
 		if t == "" {
@@ -393,7 +406,7 @@ func (rr *roleRun) resolve() (*who, error) {
 		case err == nil:
 			return &who{key: key, h: st.Header, st: st, counted: !st.Header.SessRole}, nil
 		case !errors.Is(err, agents.ErrNoState):
-			rr.note(RuleStateUnreadable, "the state of this agent cannot be read ("+oneLine(err.Error())+"), so its count starts afresh")
+			rr.moveAside(key, err)
 		}
 	}
 	rs, err := rr.roles()
@@ -403,10 +416,26 @@ func (rr *roleRun) resolve() (*who, error) {
 	if len(rs.roles) == 0 {
 		return nil, nil
 	}
+	var picked *agents.Spawn // the allowed call that started a subagent, joined at its first call (pick)
+	if keep && in.AgentID != "" {
+		picked = rr.pick(key)
+	}
 	h := agents.Header{SessRole: true}
 	switch r := rs.byType(in.AgentType); {
 	case in.AgentID != "" && (r == nil || r.Role.Session):
 		h = headerOf(rs, nil) // a subagent of a type no pack declares, or naming the session's role
+	case in.AgentID != "" && !backs(picked, r):
+		// A subagent whose type names a declared role, with no call the guard allowed for that role behind it (a
+		// skill's fork it could not read, a route it does not judge): its role's rights are not given (VG's item A).
+		h = headerOf(rs, nil)
+		h.Unbacked = true
+		why := "no Agent, Task or Skill call the guard allowed for that role started it"
+		if picked != nil {
+			why = "the call that started it (" + picked.Use + ") asked for " + quote(orGeneral(picked.Type), 60)
+		}
+		rr.note(RuleRoleUnbacked, "the agent's type "+quote(in.AgentType, 60)+" names the "+r.Role.Kind+" role "+
+			quote(r.Pack+":"+r.Role.Name, 60)+", but "+why+", so it is held as a type no pack declares: it changes nothing, "+
+			"calls no one, and runs on a helper's budget")
 	case r != nil:
 		h = headerOf(rs, r)
 		h.Named = in.AgentID == "" && !r.Role.Session
@@ -438,56 +467,103 @@ func (rr *roleRun) resolve() (*who, error) {
 		return &who{key: key, h: h, counted: false}, nil
 	}
 	w := &who{key: key, h: st.Header, st: st, counted: !st.Header.SessRole}
-	if made && in.AgentID != "" {
-		rr.link(w)
+	if made && picked != nil {
+		rr.link(w, picked)
 	}
 	return w, nil
 }
 
-// link joins a subagent, at its first call, to the call that started it (this file's comment), notes the link in its
-// state, writes the spawn record, and ties the first sound brief that call's prompt names.
-func (rr *roleRun) link(w *who) {
+// moveAside answers an agent's state that cannot be read (VG's item I): it is moved aside, kept and named
+// (agents.MoveAside), and the agent counted afresh from this call, with a state-unreadable record saying so; where it
+// cannot be moved, the record says that, and the call is not counted.
+func (rr *roleRun) moveAside(key string, readErr error) {
+	aside, err := rr.store.MoveAside(rr.in.Session, key, rr.now)
+	switch {
+	case err != nil:
+		rr.note(RuleStateUnreadable, "the state of this agent cannot be read ("+oneLine(readErr.Error())+") nor moved aside ("+
+			oneLine(err.Error())+"), so this call is not counted")
+	case aside != "":
+		rr.note(RuleStateUnreadable, "the state of this agent cannot be read ("+oneLine(readErr.Error())+"), so it was moved "+
+			"aside, kept, to "+workspace.LocalDir+"/"+aside+", and the agent is counted afresh from this call")
+	}
+}
+
+// backs reports whether the allowed call that started a subagent was a call for the declared role its type names: an
+// Agent, Task or Skill call whose type asked for is that role (childOf, letter case folded). A Workflow call starts no
+// declared role.
+func backs(sp *agents.Spawn, r *workspace.RoleInForce) bool {
+	return sp != nil && r != nil && sp.Tool != "Workflow" && sp.Role != "" && sameType(sp.Role, r.Role.Name)
+}
+
+// orGeneral names a type asked for: as written, or Claude Code's general-purpose agent for none.
+func orGeneral(t string) string {
+	if t == "" {
+		return generalType
+	}
+	return t
+}
+
+// pick finds, at a subagent's first call, the allowed call that started it (this file's comment), claiming it so one
+// call starts one agent: an agent a Workflow script starts, the newest Workflow call (no claim: one script starts
+// many); else the call Claude Code's meta file beside its transcript names (hookin.SpawnCall), and only that one; where
+// the meta file names no call (a skill's fork, measured: its file holds agentType and parentAgentId, no toolUseId), the
+// oldest Skill call of its type not joined to another agent; where there is no meta file to read, the oldest Agent,
+// Task or Skill call of its type not joined to another. A call already claimed by this agent (its state moved aside
+// and started afresh) is its own again. nil for none.
+func (rr *roleRun) pick(key string) *agents.Spawn {
 	in := rr.in
 	spawns, err := rr.store.Spawns(in.Session)
 	if err != nil {
 		rr.note(RuleStateUnreadable, "the session's spawn calls cannot be read ("+oneLine(err.Error())+"), so this agent is "+
 			"joined to none")
-		return
+		return nil
 	}
-	var picked *agents.Spawn
-	if w.h.Type == workflowType {
-		for i := len(spawns) - 1; i >= 0 && picked == nil; i-- {
+	if sameType(in.AgentType, workflowType) {
+		for i := len(spawns) - 1; i >= 0; i-- {
 			if spawns[i].Tool == "Workflow" {
-				picked = &spawns[i]
+				return &spawns[i]
 			}
 		}
-	} else {
-		if use, _, err := hookin.SpawnCall(in.TranscriptPath, in.Session, in.AgentID); err == nil {
-			for i := range spawns {
-				if spawns[i].Use == use && spawns[i].Tool != "Workflow" && childOf(&spawns[i], w.h.Type) {
-					if ok, _ := rr.store.Claim(in.Session, use, w.key); ok {
-						picked = &spawns[i]
-					}
-					break
-				}
-			}
+		return nil
+	}
+	claim := func(sp *agents.Spawn) bool {
+		if sp.Tool == "Workflow" || !childOf(sp, in.AgentType) {
+			return false
 		}
+		if holder := rr.store.ClaimHolder(in.Session, sp.Use); holder != "" && holder != key {
+			return false
+		}
+		ok, _ := rr.store.Claim(in.Session, sp.Use, key)
+		return ok
+	}
+	use, _, err := hookin.SpawnCall(in.TranscriptPath, in.Session, in.AgentID)
+	if err == nil {
 		for i := range spawns {
-			if picked != nil {
-				break
-			}
-			sp := &spawns[i]
-			if sp.Tool == "Workflow" || !childOf(sp, w.h.Type) || rr.store.Claimed(in.Session, sp.Use) {
-				continue
-			}
-			if ok, _ := rr.store.Claim(in.Session, sp.Use, w.key); ok {
-				picked = sp
+			if spawns[i].Use == use {
+				if claim(&spawns[i]) {
+					return &spawns[i]
+				}
+				return nil
 			}
 		}
+		return nil
 	}
-	if picked == nil {
-		return
+	skillsOnly := !errors.Is(err, fs.ErrNotExist) && strings.Contains(err.Error(), "names no call")
+	for i := range spawns {
+		if skillsOnly && spawns[i].Tool != "Skill" {
+			continue
+		}
+		if claim(&spawns[i]) {
+			return &spawns[i]
+		}
 	}
+	return nil
+}
+
+// link joins a subagent, at its first call, to the call that started it (pick), notes the link in its state, writes
+// the spawn record, and ties the first sound brief that call's prompt names.
+func (rr *roleRun) link(w *who, picked *agents.Spawn) {
+	in := rr.in
 	e := agents.Event{E: agents.EventLink, At: agents.Stamp(rr.now), Parent: picked.Parent, Call: picked.Use, Briefs: picked.Briefs}
 	if err := rr.store.Append(in.Session, w.key, e); err != nil {
 		rr.note(RuleStateUnreadable, "this agent's link to its starting call cannot be written ("+oneLine(err.Error())+")")
@@ -495,7 +571,7 @@ func (rr *roleRun) link(w *who) {
 	}
 	rr.records = append(rr.records, extraRecord{spawn: &spawnRecord{child: in.AgentID, childType: in.AgentType,
 		use: picked.Use, tool: picked.Tool, parent: picked.Parent}, in: in, atTime: rr.now})
-	if w.h.Type == workflowType {
+	if sameType(w.h.Type, workflowType) {
 		return // a Workflow script's agents have no brief of their own: no role, so no address
 	}
 	for _, id := range picked.Briefs {
@@ -508,17 +584,18 @@ func (rr *roleRun) link(w *who) {
 	}
 }
 
-// childOf reports whether an agent of type t is what a spawn call asked for: the same type; Claude Code's
-// general-purpose agent for a call naming none; or, for a bare name one pack declares, that pack's scoped type.
+// childOf reports whether an agent of type t is what a spawn call asked for, letter case folded (typeKey): the same
+// type; Claude Code's general-purpose agent for a call naming none; or, for a bare name one pack declares, that pack's
+// scoped type.
 func childOf(sp *agents.Spawn, t string) bool {
 	switch {
-	case sp.Type == t:
+	case sameType(sp.Type, t):
 		return true
-	case sp.Type == "" && t == generalType:
+	case sp.Type == "" && sameType(t, generalType):
 		return true
 	case sp.Role != "" && !strings.Contains(sp.Type, ":"):
 		_, name, scoped := strings.Cut(t, ":")
-		return scoped && name == sp.Type
+		return scoped && sameType(name, sp.Type)
 	}
 	return false
 }
@@ -594,6 +671,10 @@ func (rr *roleRun) spawnCall(w *who) Decision {
 		if why := mayCall(w, c); why != "" {
 			return refuse(c.shown, why)
 		}
+		if w.lead() && c.agent && c.parent != w.key {
+			// VG's item K: a lead resumes, and so re-briefs, only an agent it started itself, never another lead's.
+			return refuse(c.shown, "a lead resumes only an agent it started itself, never one another caller started")
+		}
 		if target != "" {
 			from := w.h.Role
 			if w.h.SessRole {
@@ -664,18 +745,23 @@ func (rr *roleRun) resolveTo(rs *roleSet, to string) (callee, string) {
 	if hookin.ID(to) != "" && session != "" {
 		if st, err := rr.store.Read(session, to); err == nil {
 			h := st.Header
+			parent := ""
+			if l := st.Link(); l != nil {
+				parent = l.Parent
+			}
 			switch {
 			case h.SessRole || h.Named:
 				return callee{main: true, shown: "another session"}, ""
 			case h.Role == "":
-				return callee{shown: "the agent " + quote(to, 40) + " of a type no pack declares"}, to
+				return callee{shown: "the agent " + quote(to, 40) + " of a type no pack declares", agent: true, parent: parent}, to
 			}
 			r := rs.byType(h.Pack + ":" + h.Role)
 			if r == nil {
 				// The role went from the lock since it started: judged by the facts it started with.
 				r = &workspace.RoleInForce{Pack: h.Pack, Role: format.PackRole{Name: h.Role, Kind: h.Kind}}
 			}
-			return callee{role: r, shown: "the agent " + quote(to, 40) + " of the " + h.Kind + " role " + quote(h.Role, 40)}, to
+			return callee{role: r, shown: "the agent " + quote(to, 40) + " of the " + h.Kind + " role " + quote(h.Role, 40),
+				agent: true, parent: parent}, to
 		}
 	}
 	if spawns, err := rr.store.Spawns(session); err == nil && to != "" {
@@ -686,6 +772,7 @@ func (rr *roleRun) resolveTo(rs *roleSet, to string) (callee, string) {
 			}
 			c := rr.resolveCallee(rs, sp.Type)
 			c.shown = "the agent named " + quote(to, 40) + " (" + c.shown + ")"
+			c.agent, c.parent = true, sp.Parent
 			return c, rr.claimedBy(sp.Use)
 		}
 	}
@@ -697,11 +784,7 @@ func (rr *roleRun) claimedBy(use string) string {
 	if hookin.ID(use) == "" || rr.in.Session == "" {
 		return ""
 	}
-	raw, err := os.ReadFile(filepath.Join(rr.store.SessionDir(rr.in.Session), agents.ClaimsFolder, use))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(raw))
+	return rr.store.ClaimHolder(rr.in.Session, use)
 }
 
 // clock gives the run's time.
@@ -727,8 +810,9 @@ func firstLineTool(tool string) bool {
 }
 
 // judgedTool reports a tool whose input the guard reads (hookin.ReadJudged): every other tool's is passed over, so a
-// tool Claude Code adds later, or an input the strict decoder refuses, is counted, not blocked.
-func judgedTool(tool string) bool { return firstLineTool(tool) || tool == "Read" }
+// tool Claude Code adds later, or an input the strict decoder refuses, is counted, not blocked. Read's path names a
+// brief it reads; Skill's name the skill whose frontmatter may fork (skill.go).
+func judgedTool(tool string) bool { return firstLineTool(tool) || tool == "Read" || tool == "Skill" }
 
 // roleDecide is decide's part where the roles apply (this file's comment, budget.go's): the caller found and counted,
 // its budget judged, the spawn tools judged by who may call whom, the file tools refused to a role that changes
@@ -770,6 +854,8 @@ func (j *judge) roleDecide(rr *roleRun, in *hookin.Payload, base string) (d Deci
 	switch {
 	case hookin.SpawnTool(in.Tool):
 		return rr.spawnCall(w), j.session, true
+	case in.Tool == "Skill":
+		return rr.skillCall(w), j.session, true
 	case hookin.FileTool(in.Tool) && !w.h.SessRole && !w.h.Writes:
 		d := deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s changes nothing (its role's writes: false), so the file "+
 			"tools are refused to it", in.Tool, w.shown()), "put what you would change in your report; your caller, or a role "+
