@@ -1,6 +1,6 @@
 # Contributing to Bonsai
 
-Bonsai is being rebuilt from scratch (see [`README.md`](README.md)). The rebuild is run by its director, Rohan, with
+Bonsai is being rebuilt from scratch (see [`README.md`](README.md)). The rebuild is run by its director, with
 Claude Code agents as the team, in the order [`design/plan.md`](design/plan.md) sets. Work lands on `main` directly,
 in small commits, each pushed only after its proof passes; there are no pull requests while the rebuild runs. To
 report a problem or suggest something, open an [issue](https://github.com/LastStep/Bonsai/issues); for a security
