@@ -18,7 +18,11 @@ package guard
 //     --help or -h among its words, which prints the word's help and runs nothing (runWord stops at it, and no flag
 //     takes it as a value: a flag's value may not start with a dash), and a preview, bonsai init or update with
 //     neither --yes nor --allow-exec, its words literal, in an agent's session (CLAUDE_CODE_CHILD_SESSION set, so the
-//     command asks no y/N and writes neither bonsai.yaml nor the lock: it prints the preview and exits 4).
+//     command asks no y/N and writes neither bonsai.yaml nor the lock: it prints the preview and exits 4). Such a
+//     preview still writes outside the project's files (V1's should-fix 2, 16 Oct): its fetch fills the Bonsai home's
+//     cache, and with nothing to change it records this machine's record of the checkout and asks Claude Code to
+//     install the locked packs' plugins (claude plugin install), as update's help says; in Bonsai's own repo that is
+//     the person's own plugin state. None of it changes bonsai.yaml, the lock or a guarded path.
 //
 // The command itself refuses too (step 5.3.6 note 8), since a variable, xargs, a script or a subprocess can hide a
 // flag from the guard: the guard is the second layer. ownCommand judges one bonsai call's words, found by step 5.3.3's

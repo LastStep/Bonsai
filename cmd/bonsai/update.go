@@ -12,11 +12,13 @@ var updateWord = &Word{
 	Title:   "bring this project's packs to the refs in bonsai.yaml (spec section 6).",
 	Summary: "bring the packs to the refs in bonsai.yaml",
 	Args:    "[flags]",
-	About: `It fetches each pack, then decides per file from three fingerprints (what the lock says Bonsai wrote, what is on
-disk, what the pack now gives): unchanged, updated, created, adopted, changed (your edit, left alone) or conflict.
+	About: `It fetches each pack (into the Bonsai home's cache, a preview's too), then decides per file from three
+fingerprints (what the lock says Bonsai wrote, what is on disk, what the pack now gives): unchanged, updated, created,
+adopted, changed (your edit, left alone) or conflict.
 The preview names every file and every line of .claude/settings.json it adds, changes or removes, with a sentence.
 All or nothing: every file is staged, then renamed, the lock last.
-Then, written or with nothing to change, it brings this machine's plugins to the lock: for each pack it runs
+Then, written, or with nothing to change, with or without --yes, it records this machine's record of the checkout
+(in the Bonsai home) and brings this machine's plugins to the lock: for each pack it runs
 claude plugin install <pack>@<marketplace> --scope project in this checkout (a no-op once installed; the first time,
 Claude Code may write .claude/settings.json again in its own key order). A pack's plugin that carries code parts
 (hooks, MCP and LSP servers, monitors, mods) is installed on this machine only with --allow-exec, on each machine:
