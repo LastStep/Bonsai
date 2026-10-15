@@ -18,7 +18,7 @@ description: "STATE, the one page that says where a project stands (.bonsai/STAT
 | `format` | The format and its version, always the first line; its comment points back to these docs | `bonsai.state/1` | `"bonsai.state/1"` |
 | `updated` | The day the page was last rewritten, as text: rewrite it with the page | text matching `^[0-9]{4}-[0-9]{2}-[0-9]{2}$` | `"2026-10-08"` |
 | `updated_by` | Who rewrote it: a role and its model, a person's name, or bonsai init for the first page | text | `"orchestrator (opus)"` |
-| `labels` | The labels the page carries, by name (a label definition in force says which go on STATE); {} for none | a mapping | as below |
+| `labels` | The labels the page carries, by name (a label definition in force says which go on STATE); {} for none | a mapping | under Mappings, below |
 
 ## The template
 

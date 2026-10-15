@@ -10,7 +10,7 @@ package packs
 //   - each fenced markdown block's frontmatter reads with reader.ReadMarkdown, unrefused;
 //   - each example cell of a fields table (| Field | Meaning | Allowed values | Example |) that is one code span reads
 //     as that field's value, "<key>: <example>", with reader.ReadYAML, unrefused; a cell in words ("as in the
-//     template", "as below") points to a block the first item reads.
+//     template", "under Mappings, below") points to a block the first item reads.
 // A template's blanks (<what goes here>) are read as words, and an example with no format: key (a part of a file) is
 // read under format 1 too, so a flow mapping, which format 1 refuses, is caught wherever it is.
 

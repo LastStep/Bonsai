@@ -15,9 +15,9 @@ package engine
 // schema's enum or const, as check --pack reads them: schemaList), else the field's type in words (a pattern in
 // backquotes); the example the schema's first, as JSON, or "as in the template" where that is long. A mapping with
 // content is never shown as JSON, which Bonsai's reader refuses (a flow mapping: an agent that copied one into
-// bonsai.yaml locked every call out, 5.5.5's S4): its cell reads "as below", and a section at the skill's end,
-// Mappings, shows each as the file holds it, indented key: value lines nested by the field's path. Byte-stable: LF,
-// ASCII, no map-order iteration.
+// bonsai.yaml locked every call out, 5.5.5's S4): its cell reads "under Mappings, below", and a section at the
+// skill's end, Mappings, shows each as the file holds it, indented key: value lines nested by the field's path.
+// Byte-stable: LF, ASCII, no map-order iteration.
 
 import (
 	"fmt"
@@ -266,7 +266,7 @@ func tableRow(f *format.Format, path, meaning string, ps schema.Object) (string,
 		if list, ok := ex.([]any); ok && len(list) > 0 {
 			if s := schema.Show(list[0]); len(s) <= 60 {
 				if o, ok := list[0].(schema.Object); ok && len(o) > 0 {
-					example, mapping = "as below", o
+					example, mapping = "under Mappings, below", o
 				} else {
 					example = "`" + s + "`"
 				}
