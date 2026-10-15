@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5501
 title: The pack template, its checks and Bonsai's CI job for packs (5.5.1)
-status: verify
+status: done
 lane:
 done_when:
   - "packs/template/ with one role declared with its budget, one skill, one documented template, pack.yaml, labels.yaml, README and .gitattributes; its checks in ci/check.sh; its pack.yml"
@@ -14,7 +14,7 @@ depends_on: [T-5509]
 blocked_by:
 created: 2026-10-14
 started: 2026-10-15
-finished:
+finished: 2026-10-16
 labels:
   bonsai.branch: "t5501"
   bonsai.ladder: []

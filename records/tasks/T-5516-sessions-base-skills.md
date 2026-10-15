@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5516
 title: "5.5.5's fix round for base's skills (5.5.5c): the workspace skill's roles example in block form; the operating skill's person's steps held on a chat request"
-status: running
+status: done
 lane:
 done_when:
   - "packs/base/skills/workspace/SKILL.md's packs[].roles example written as indented key: value lines Bonsai's YAML reads, and every other example in base's skills read by Bonsai's own reader (a Go test that parses each yaml example, failing first on the flow mapping)"
@@ -12,7 +12,7 @@ depends_on: [T-5505]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-16
 labels:
   bonsai.branch: "t5516"
   bonsai.ladder: []
