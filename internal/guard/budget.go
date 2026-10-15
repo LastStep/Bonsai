@@ -37,7 +37,11 @@ package guard
 // place), the call is refused as one past a budget is (budget-spent, faultRefusal), its report, a brief's read and
 // the hand-back still let through. A state that cannot be read is moved aside and the agent counted afresh (step 5.5's
 // "starts a fresh count"), once: a state moved aside a second time holds the window spent (roles.go's holdSpent), so
-// a repeated fault resets no budget.
+// a repeated fault resets no budget. A red or reset line, or a climb's note, that cannot be written refuses the call
+// too. This is the count's own reading; the shell lines that would change a file's mode are refused besides
+// (attrwords.go). Not covered, as step 5.5's "attributed, not authenticated" says: a state or a calls file removed
+// (or, once, rewritten) where the guard cannot read the line (an interpreter's, a script's) still starts a count
+// afresh, and a climb's result removed or made unreadable so leaves its red run uncounted until a result appears.
 
 import (
 	"fmt"
