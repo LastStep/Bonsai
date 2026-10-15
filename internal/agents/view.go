@@ -58,9 +58,6 @@ type Viewed struct {
 	Skipped []format.AgentSkipped
 }
 
-// maxState caps a state file the view reads, in bytes.
-const maxState = 1 << 20
-
 // View reads every agent of the main checkout (this file's comment). msgs is its messages as read (message.Read). Only
 // an agents or log folder that is there and cannot be listed is an error; everything below them that does not read is
 // skipped.
@@ -220,18 +217,15 @@ func reportOf(msgs *message.Store, thread, own string) *format.AgentReport {
 // strict reads an agent's state whole, or says why it does not read (this file's comment): its state, its call lines'
 // count, and the minutes figure on its last call line (nil for none).
 func (s Store) strict(session, agent string) (*State, int64, *int64, string) {
-	path := s.statePath(session, agent)
-	fi, err := os.Lstat(path)
-	switch {
-	case err != nil:
-		return nil, 0, nil, "it cannot be read (" + fault(err) + ")"
-	case !fi.Mode().IsRegular():
-		return nil, 0, nil, "it is not a regular file"
-	case fi.Size() > maxState:
-		return nil, 0, nil, fmt.Sprintf("it is larger than %d bytes", maxState)
+	if strings.Contains(agent, asideMark) {
+		return nil, 0, nil, "the guard moved it aside, kept as it was, when it could not read it: that agent was counted " +
+			"afresh in a state of its own"
 	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
+	raw, err := ReadRegular(s.statePath(session, agent), maxState)
+	switch {
+	case errors.Is(err, ErrNotRegular):
+		return nil, 0, nil, oneLine(err) + ", so it is not opened"
+	case err != nil:
 		return nil, 0, nil, "it cannot be read (" + fault(err) + ")"
 	}
 	if !bytes.HasSuffix(raw, []byte("\n")) {
@@ -317,7 +311,7 @@ func (s Store) strictCalls(session, agent string) (int64, *int64, string) {
 	case err != nil:
 		return 0, nil, "its calls file cannot be read (" + fault(err) + ")"
 	case !fi.Mode().IsRegular():
-		return 0, nil, "its calls file is not a regular file"
+		return 0, nil, "its calls file is not a regular file (" + kindOf(fi.Mode()) + "), so it is not opened"
 	case fi.Size()%CallLen != 0:
 		return 0, nil, fmt.Sprintf("its calls file is not whole call lines (%d bytes)", fi.Size())
 	case fi.Size() == 0:
@@ -437,7 +431,7 @@ func (s Store) readLogs() (map[string]*logFacts, error) {
 
 // read reads one session's log file, line by line.
 func (lf *logFacts) read(path, session string) error {
-	f, err := os.Open(path)
+	f, _, err := openRegular(path) // a FIFO or a device named as a log file is never opened (regular.go)
 	if err != nil {
 		return err
 	}

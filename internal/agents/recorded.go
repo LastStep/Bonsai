@@ -13,7 +13,6 @@ package agents
 import (
 	"bytes"
 	"encoding/json"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -64,7 +63,7 @@ func (s Store) TiedTo(brief string) (session, agent string, ok bool) {
 	if validName(brief) != nil {
 		return "", "", false
 	}
-	raw, err := os.ReadFile(filepath.Join(s.Dir(), TiesFolder, brief))
+	raw, err := ReadRegular(filepath.Join(s.Dir(), TiesFolder, brief), maxLine)
 	if err != nil || !bytes.HasSuffix(raw, []byte("\n")) {
 		return "", "", false
 	}

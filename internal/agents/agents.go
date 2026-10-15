@@ -24,8 +24,12 @@
 // (<session>/<agent>), so a brief is tied by one agent only.
 //
 // Every write goes through internal/record's one append path (Windows' busy errors retried, a missing
-// .bonsai/.gitignore restored) or an exclusive create retried the same way. A file that cannot be read starts a fresh
-// count (the guard says so in a guard record): a budget bounds time, not proof (step 5.5's "What it cannot do").
+// .bonsai/.gitignore restored) or an exclusive create retried the same way, each after a look that the file is not
+// there yet or is a regular file; every read opens regular files only (regular.go), so a FIFO, a device, a folder or a
+// link planted here is named, never opened. An agent's state that cannot be read (MoveAside) is moved aside under
+// a name of its own in its session's folder, kept and listed (bonsai agents names it in skipped), and the agent is
+// counted afresh from its next call (the guard says so in a guard record): a budget bounds time, not proof (step
+// 5.5's "What it cannot do").
 package agents
 
 import (
@@ -57,8 +61,13 @@ const (
 	callsExt     = ".calls"
 )
 
-// maxLine caps a state, spawn or tie line, in bytes.
-const maxLine = 4096
+// maxLine caps a state, spawn or tie line, in bytes; maxState a state file, and maxSpawns a session's spawn calls,
+// as a reader reads them whole.
+const (
+	maxLine   = 4096
+	maxState  = 1 << 20
+	maxSpawns = 4 << 20
+)
 
 // Store is one main checkout's agents folder.
 type Store struct {
@@ -123,6 +132,9 @@ type Header struct {
 	First    string `json:"first"`        // the time of its first call, UTC (Stamp)
 	ReadFrom string `json:"read_from"`    // where its role facts were read: "HEAD" (as committed) or "files" (HEAD held neither)
 	Note     string `json:"note"`         // why the facts were read from the files, or ""
+	// Unbacked: its type names a declared role, but no call the guard allowed for that role started it, so it is held as
+	// a type no pack declares (Role ""); false for every other agent.
+	Unbacked bool `json:"unbacked,omitempty"`
 }
 
 // The events of an agent's state, after its header.
@@ -134,7 +146,7 @@ const (
 	EventRed      = "red"      // a climb's result read red: N, the count in a row
 	EventReset    = "reset"    // a climb's result read green: the count back to 0
 	EventSpent    = "spent"    // past a limit: Measure, Count, Of
-	EventReported = "reported" // its report call passed the guard past its budget
+	EventReported = "reported" // its report call passed the guard past its budget: a note only, which the stop gate never trusts (it finds the report itself, ReportAfter)
 	EventTried    = "tried"    // an offered brief was tried at a later call (tied or not): Brief
 )
 
@@ -239,6 +251,9 @@ func (s Store) Append(session, agent string, e Event) error {
 	if err != nil {
 		return err
 	}
+	if err := appendable(s.statePath(session, agent)); err != nil {
+		return err
+	}
 	_, err = record.Append(s.Main, rel(session, agent+stateExt), append(line, '\n'), maxLine)
 	return err
 }
@@ -270,37 +285,43 @@ func (s Store) Call(session, agent string, at time.Time, minutes int64) (int64, 
 	if err := validName(agent); err != nil {
 		return 0, err
 	}
+	if err := appendable(s.callsPath(session, agent)); err != nil {
+		return 0, err
+	}
 	if _, err := record.Append(s.Main, rel(session, agent+callsExt), CallLine(at, minutes), CallLen); err != nil {
 		return 0, err
 	}
 	return s.Calls(session, agent)
 }
 
-// Calls gives the count of an agent's call lines: its calls file's length over CallLen (0 when there is none).
+// Calls gives the count of an agent's call lines: its calls file's length over CallLen (0 when there is none), with
+// one look and no open; a calls file that is not a regular file is an error.
 func (s Store) Calls(session, agent string) (int64, error) {
-	fi, err := os.Stat(s.callsPath(session, agent))
+	fi, err := os.Lstat(s.callsPath(session, agent))
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, nil
 	}
 	if err != nil {
 		return 0, err
 	}
+	if !fi.Mode().IsRegular() {
+		return 0, notRegular(fi.Mode())
+	}
 	return fi.Size() / CallLen, nil
 }
 
 // LastCall gives an agent's last call line's time and minutes figure; ok false when it has none that reads.
 func (s Store) LastCall(session, agent string) (at time.Time, minutes int64, ok bool) {
-	f, err := os.Open(s.callsPath(session, agent))
+	f, size, err := openRegular(s.callsPath(session, agent))
 	if err != nil {
 		return time.Time{}, 0, false
 	}
 	defer func() { _ = f.Close() }()
-	fi, err := f.Stat()
-	if err != nil || fi.Size() < CallLen {
+	if size < CallLen {
 		return time.Time{}, 0, false
 	}
 	b := make([]byte, CallLen)
-	if _, err := f.ReadAt(b, (fi.Size()/CallLen-1)*CallLen); err != nil && !errors.Is(err, io.EOF) {
+	if _, err := f.ReadAt(b, (size/CallLen-1)*CallLen); err != nil && !errors.Is(err, io.EOF) {
 		return time.Time{}, 0, false
 	}
 	at, err = ParseStamp(string(b[:20]))
@@ -324,8 +345,9 @@ type State struct {
 var ErrNoState = errors.New("no state")
 
 // Read reads an agent's state: ErrNoState when it has none, another error when its file does not read (its header
-// is not whole yet when another call is still writing it: the caller may read again). An event line that does not
-// read is passed over.
+// is not whole yet when another call is still writing it: the caller may read again), is not a regular file or is
+// larger than maxState, or when its calls file is there and is not a regular file (regular.go). An event line that
+// does not read is passed over.
 func (s Store) Read(session, agent string) (*State, error) {
 	if err := validName(session); err != nil {
 		return nil, err
@@ -333,12 +355,15 @@ func (s Store) Read(session, agent string) (*State, error) {
 	if err := validName(agent); err != nil {
 		return nil, err
 	}
-	raw, err := os.ReadFile(s.statePath(session, agent))
+	raw, err := ReadRegular(s.statePath(session, agent), maxState)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, ErrNoState
 	}
 	if err != nil {
 		return nil, err
+	}
+	if err := appendable(s.callsPath(session, agent)); err != nil {
+		return nil, fmt.Errorf("its calls file: %v", err)
 	}
 	first, rest, ok := bytes.Cut(raw, []byte("\n"))
 	if !ok {
@@ -441,7 +466,8 @@ func (st *State) Spent() *Event {
 	return spent
 }
 
-// Reported reports a reported line after the spent line of the window in force.
+// Reported reports a reported line after the spent line of the window in force: that the report's call was let
+// through, not that the report was written (the stop gate reads the report itself, ReportAfter).
 func (st *State) Reported() bool {
 	spent := false
 	reported := false
@@ -526,6 +552,9 @@ func (s Store) AddSpawn(session string, sp Spawn) error {
 			return err
 		}
 	}
+	if err := appendable(filepath.Join(s.SessionDir(session), spawnsFile)); err != nil {
+		return err
+	}
 	_, err = record.Append(s.Main, rel(session, spawnsFile), append(line, '\n'), maxLine)
 	return err
 }
@@ -535,7 +564,7 @@ func (s Store) Spawns(session string) ([]Spawn, error) {
 	if err := validName(session); err != nil {
 		return nil, err
 	}
-	raw, err := os.ReadFile(filepath.Join(s.SessionDir(session), spawnsFile))
+	raw, err := ReadRegular(filepath.Join(s.SessionDir(session), spawnsFile), maxSpawns)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
@@ -575,19 +604,56 @@ func (s Store) Claimed(session, use string) bool {
 	if validName(session) != nil || validName(use) != nil {
 		return false
 	}
-	_, err := os.Stat(filepath.Join(s.SessionDir(session), ClaimsFolder, use))
+	_, err := os.Lstat(filepath.Join(s.SessionDir(session), ClaimsFolder, use))
 	return err == nil
 }
 
-// holder reads the agent a claim or tie file names, waiting briefly for one being written.
+// MarkSpent marks an agent's budget window spent, by an exclusive create of claims/spent-<agent>-<window> (window
+// the count of ties before it, State.Ties), so of calls made side by side exactly one writes the window's spent line
+// (VG's item K): made is false when another call marked it first.
+func (s Store) MarkSpent(session, agent string, window int) (made bool, err error) {
+	if err := validName(session); err != nil {
+		return false, err
+	}
+	if err := validName(agent); err != nil {
+		return false, err
+	}
+	name := fmt.Sprintf("spent-%s-%d", agent, window)
+	if len(name) > 128 {
+		name = fmt.Sprintf("spent-%s-%d", agent[:128-len(name)+len(agent)], window)
+	}
+	return s.exclusive(filepath.Join(s.SessionDir(session), ClaimsFolder, name), []byte(agent+"\n"))
+}
+
+// Ties counts the tie lines in an agent's state: the windows before the one in force.
+func (st *State) Ties() int {
+	n := 0
+	for _, e := range st.Events {
+		if e.E == EventTie {
+			n++
+		}
+	}
+	return n
+}
+
+// ClaimHolder gives the agent that claimed a call, "" when none has (or its claim does not read).
+func (s Store) ClaimHolder(session, use string) string {
+	if validName(session) != nil || validName(use) != nil || !s.Claimed(session, use) {
+		return ""
+	}
+	return s.holder(filepath.Join(s.SessionDir(session), ClaimsFolder, use))
+}
+
+// holder reads the agent a claim or tie file names, waiting briefly for one being written; "" for a file that is not
+// a regular file (regular.go), or does not read.
 func (s Store) holder(path string) string {
 	deadline := time.Now().Add(200 * time.Millisecond)
 	for {
-		raw, err := os.ReadFile(path)
+		raw, err := ReadRegular(path, maxLine)
 		if err == nil && bytes.HasSuffix(raw, []byte("\n")) {
 			return strings.TrimSuffix(string(raw), "\n")
 		}
-		if time.Now().After(deadline) {
+		if errors.Is(err, ErrNotRegular) || time.Now().After(deadline) {
 			return ""
 		}
 		time.Sleep(2 * time.Millisecond)
@@ -617,13 +683,15 @@ func (s Store) TiedBy(brief string) string {
 		return ""
 	}
 	path := filepath.Join(s.Dir(), TiesFolder, brief)
-	if _, err := os.Stat(path); err != nil {
+	if _, err := os.Lstat(path); err != nil {
 		return ""
 	}
 	return s.holder(path)
 }
 
-// Agents lists the agents with state in a session's folder, by name order (none when it has none).
+// Agents lists the agents with state in a session's folder, by name order (none when it has none): every name
+// <agent>.state there, whatever it is, so a reader names one that is not a regular file (a folder, a FIFO) rather than
+// pass it over unseen.
 func (s Store) Agents(session string) ([]string, error) {
 	if err := validName(session); err != nil {
 		return nil, err
@@ -637,7 +705,7 @@ func (s Store) Agents(session string) ([]string, error) {
 	}
 	var out []string
 	for _, e := range entries {
-		if name, ok := strings.CutSuffix(e.Name(), stateExt); ok && !e.IsDir() && validName(name) == nil {
+		if name, ok := strings.CutSuffix(e.Name(), stateExt); ok && validName(name) == nil {
 			out = append(out, name)
 		}
 	}

@@ -559,10 +559,11 @@ func TestViewStrict(t *testing.T) {
 			write(t, filepath.Join(s.SessionDir(personS), "x1.calls"), strings.Repeat("x", CallLen))
 		}, "its calls file's last line does not read"},
 		{"a state that is a folder's name for a file", func(t *testing.T, s Store) {
+			// VG's item K: named in skipped, never passed over unseen, and never opened.
 			if err := os.MkdirAll(filepath.Join(s.SessionDir(personS), "x1.state"), 0o755); err != nil {
 				t.Fatal(err)
 			}
-		}, ""},
+		}, "it is a folder, not a regular file, so it is not opened"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -571,12 +572,6 @@ func TestViewStrict(t *testing.T) {
 			v, err := s.View(&message.Store{})
 			if err != nil {
 				t.Fatal(err)
-			}
-			if c.wantR == "" { // a folder named like a state file is not one of Bonsai's files: never named
-				if len(v.Agents) != 0 || len(v.Skipped) != 0 {
-					t.Errorf("%+v", v)
-				}
-				return
 			}
 			if len(v.Agents) != 0 || len(v.Skipped) != 1 || v.Skipped[0].Reason != c.wantR ||
 				v.Skipped[0].Path != ".bonsai/local/agents/"+personS+"/x1.state" {
