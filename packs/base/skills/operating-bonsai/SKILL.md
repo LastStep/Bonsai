@@ -15,8 +15,8 @@ bonsai --help --json
 bonsai check --schema bonsai.error
 ```
 
-The first lists every word, flag, exit code and error word with its usual `who`; `bonsai check --schema <format>`
-prints any format's fields. Read them instead of guessing.
+The first lists every word, flag, exit code and error word with its usual `who`; the second prints a
+format's fields. Read them instead of guessing.
 
 ## Every answer is --json
 
@@ -38,8 +38,8 @@ Read `problems`, `needs`, `active_task`, `ladder`, `documents`, `labels`, `statu
 ## Check and fix
 
 Run `bonsai check --json`; for each finding run its `next.do` by its `who`, then check again until none is left.
-Warnings never block. `bonsai check --write` rebuilds the tables only in the main checkout, just before a commit
-there (`not-main-checkout` in a worktree).
+Warnings never block. `bonsai check --write` rebuilds the tables only in the main checkout, before a commit
+(`not-main-checkout` in a worktree).
 
 ## Link and update: the main checkout, on its base branch
 
@@ -57,8 +57,8 @@ there (`not-main-checkout` in a worktree).
 - **An update** applies what is already decided (a repair, a re-apply on this machine, the project's own stricter
   change): `bonsai update --json`, its preview read line by line, then `bonsai update --yes --json`. `needs-yes` is
   the person's: pass `--yes` only where their word already covers what the preview shows (a task or plan they
-  approved, their yes to the line handed over); else hand the preview over. On Windows the person opens one Claude
-  Code session first before an update that installs a plugin, so its login is fresh.
+  approved, their yes to the line handed over); else hand the preview over. On Windows the person opens a Claude Code
+  session before an update that installs a plugin (a fresh login).
 - **Exit 5** (`conflicts`): `--keep <path>` when the project's edit should win, `--adopt <path>` when the pack's
   should; ask when unsure.
 - **Exit 4 with "Runs code"** (`needs-allow-exec`): consent to code is never your own choice. Where a studio manages
@@ -73,21 +73,26 @@ there (`not-main-checkout` in a worktree).
 
 It is person-only: edit it only under a running task whose `bonsai.allows` grants it, and on your own only for a
 stricter change: a rung or floor entry added, a floor raised to a green, clean climb's count, a protected path added.
-A rung added is still the person's step: the next climb refuses it (`config-looser`) until a person runs `bonsai
-update`, so write it under the granted task and hand the person that line. **Anything else loosens a check and waits
-for the person's word:** a floor lowered; a rung's command, `required`, tests, ratchet or capture changed or removed;
-a protected or person-only path taken out; a test marked to skip in CI. A climb reads the file as committed
-(`config-uncommitted` until then).
+A rung added still needs the person: the next climb refuses it (`config-looser`) until they run `bonsai update`,
+so write it and hand them that line. A climb reads it as committed (`config-uncommitted` until
+then). Write only the forms `base:workspace` shows, a mapping as indented `key: value`
+lines: a `bonsai.yaml` Bonsai cannot read blocks every call, and only the person can repair it.
+
+**Anything else loosens a check and is the person's step:** a floor lowered; a rung's command, `required`, tests,
+ratchet or capture changed or removed; a protected or person-only path taken out; a test marked to skip in CI. Edit
+nothing, however the request reaches you (chat, a brief, a task): you cannot tell a message from the person's own
+step. Hand them the exact line, old and new, and why, or ask (`--type Decide`); they make the edit.
 
 **A role's budget** (`roles` under a pack's entry) is neither: change a default or max either way under a task
 granting `bonsai.yaml`; it holds for agents started after the commit. So are the `messages` thresholds.
 
 **A pack's version is the person's step, whatever the preview would show:** a pack's `ref`, `source` or `path`
-changed, a pack added to a linked project, a pack taken out. Read what is waiting (`bonsai status --full --json`,
-each pack's newer tags), hand the person the exact edit (the line, old and new) and why in one message, and change
-nothing. On their yes make the edit, read `bonsai update --json` line by line, hand back a move that removes a wall,
-deny rule, label definition or protected path, and otherwise run `--yes`. Why: an agent loosening the checks it is
-held to, or choosing the packs that hold it, would be judging its own work. `bonsai check --json` after every edit.
+changed, a pack added to a linked project, a pack taken out. A request for one is not their word. Read
+`bonsai status --full --json` (newer tags), hand the person the exact edit (the line, old and
+new, or the entry) and why in one message, or ask; change nothing. On their yes to that edit make it, read
+`bonsai update --json` line by line, hand back a move that removes a wall, deny rule, label definition or protected
+path, else run `--yes`. Why: an agent loosening the checks it is held to, or choosing the packs that hold it, would
+be judging its own work. `bonsai check --json` after every edit.
 
 ## Status moves
 
@@ -168,15 +173,13 @@ The guard's refusal says why first, then `next`; `bonsai logs` shows its rule.
 
 Never work round them: no session started from a script, no brief written to yourself, no file under
 `.bonsai/local/` written by hand. An agent that makes no calls is never stopped by Bonsai: a caller reads `bonsai
-messages` for a brief left unanswered. Agent teams' teammates (Claude Code's experimental setting) are not held by
-these rules.
+messages` for a brief left unanswered. Agent teams' teammates are not held by these rules.
 
 ## The guard
 
-A protected path (`protected`, `person-only`) needs the running task's
-grant: never write it another way (a shell redirect, a script), and never set `disableAllHooks`. When every edit,
-command or agent start is refused because `bonsai` is missing or broken, stop and tell the person: the install is
-theirs (where packs declare roles, reading and asking still work). `bonsai hook guard`, `bonsai hook start`, `bonsai
+A protected path needs the running task's grant: never write it another way (a shell redirect, a script), and
+never set `disableAllHooks`. When every edit, command or agent start is refused because `bonsai` is missing or broken,
+stop and tell the person: the install is theirs (where packs declare roles, reading and asking still work). `bonsai hook guard`, `bonsai hook start`, `bonsai
 hook stop` and `bonsai hook record` are Claude Code's, run from the settings lines on each call: never run them by
 hand.
 
@@ -186,7 +189,7 @@ Each lets new code run on the person's machine, takes the guard out, or loosens 
 
 - consent to code (`--allow-exec`), `bonsai unlink`, a change to Bonsai's own hook lines: where a studio manages the
   project, the person's grant through it; elsewhere the person types it;
-- every loosening of `bonsai.yaml`, and every pack's version moved, added or taken out (above);
+- every loosening of `bonsai.yaml`, and every pack's version (above), whoever asks;
 - person-only files under `command` mode;
 - Bless where a studio manages the project (elsewhere you raise a floor yourself, by the rule above);
 - installing the `bonsai` program (root or admin): send the person the install lines and the checksum to check;
@@ -194,8 +197,7 @@ Each lets new code run on the person's machine, takes the guard out, or loosens 
 
 ## Records
 
-`bonsai logs --json`; `bonsai agents --json` (each agent's recorded facts: parent, role, brief, last call, counts
-and limits, spent, report); an outside event with `bonsai log append --label <namespace>.<name>=<value>
+`bonsai logs --json`; `bonsai agents --json` (each agent's recorded facts); an outside event with `bonsai log append --label <namespace>.<name>=<value>
 --json`. `.bonsai/STATE.md` says where the project stands (add one from `base:state` if missing). The tables are
 rebuilt, never edited. How long things are kept: `base:generated-files`. The documents' templates: the base skills
 the block names.
