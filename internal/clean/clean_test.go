@@ -287,7 +287,7 @@ func TestNullKeeps(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			l := project(t, gen)
 			fixture(t, l)
-			d := SessionEnd(opts(l))
+			d := SessionEnd(patient(l))
 			if len(d.Cleaned) != 0 || len(d.Errs) != 0 {
 				t.Errorf("cleaned %v, errors %v", d.Cleaned, d.Errs)
 			}
@@ -297,7 +297,7 @@ func TestNullKeeps(t *testing.T) {
 		l := project(t, "")
 		write(t, l.Main, "bonsai.yaml", "format: bonsai.workspace/1\nid: "+testID+"\nname: demo\ndocuments:\n  task: work/tasks\ngenerated: null\n")
 		fixture(t, l)
-		if d := SessionEnd(opts(l)); len(d.Cleaned) != 0 || len(d.Errs) != 0 {
+		if d := SessionEnd(patient(l)); len(d.Cleaned) != 0 || len(d.Errs) != 0 {
 			t.Errorf("cleaned %v, errors %v", d.Cleaned, d.Errs)
 		}
 	})
@@ -307,7 +307,7 @@ func TestNullKeeps(t *testing.T) {
 func TestDefaultsWhenLeftOut(t *testing.T) {
 	l := project(t, "")
 	fixture(t, l)
-	d := SessionEnd(opts(l))
+	d := SessionEnd(patient(l))
 	if len(d.Errs) > 0 {
 		t.Fatal(d.Errs)
 	}
@@ -324,7 +324,7 @@ func TestDefaultsWhenLeftOut(t *testing.T) {
 func TestABadRuleCleansNothingOfItsKind(t *testing.T) {
 	l := project(t, "  log:\n    keep_days: soon\n  ladder:\n    keep_days: 7\n")
 	fixture(t, l)
-	d := SessionEnd(opts(l))
+	d := SessionEnd(patient(l))
 	if len(d.Errs) != 1 || !strings.Contains(d.Errs[0].Error(), "generated.log.keep_days") {
 		t.Errorf("errors %v", d.Errs)
 	}

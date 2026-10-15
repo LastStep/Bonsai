@@ -117,8 +117,9 @@ import (
 // before the timeout could let the session end.
 const Budget = 5 * time.Second
 
-// gitWait is the limit of the gate's one git call (CommittedConfig), inside Budget.
-const gitWait = 4 * time.Second
+// gitWait is the limit of the gate's one git call (CommittedConfig), inside Budget. A variable only so that a test of
+// something else can raise it on a loaded runner; nothing else changes it.
+var gitWait = 4 * time.Second
 
 // The rules a stop gate decision names: the record's rule field (contract §8.1). Their one home is the guard's rules
 // table (guard.Rules, internal/guard/rules.go), which the reference page lists; this package cannot import the guard,

@@ -195,10 +195,12 @@ func TestLockOfADeadHolder(t *testing.T) {
 	}
 	_ = cmd.Process.Kill()
 	_ = cmd.Wait()
-	start := time.Now()
+	// Judged by what a wait would leave, not by the clock: a climb that waited for the dead holder would have told of
+	// it ("waiting while it runs") and ended busy or late; this one took the lock at once, so its notice is empty. How
+	// long the whole climb takes is a loaded runner's business (a 5 s limit failed at 6.8 s under load).
 	a := f.climb("", Options{Task: "T-0901"})
-	if a.Exit != 0 || strings.Contains(f.notice.String(), "waiting") || time.Since(start) > 5*time.Second {
-		t.Fatalf("exit %d after %v, %+v\n%s", a.Exit, time.Since(start), a.Error, f.notice.String())
+	if a.Exit != 0 || strings.Contains(f.notice.String(), "waiting") || f.notice.Len() != 0 {
+		t.Fatalf("exit %d, %+v\n%s", a.Exit, a.Error, f.notice.String())
 	}
 }
 

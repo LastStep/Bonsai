@@ -135,7 +135,7 @@ func TestMessagesNullAndSessionEnd(t *testing.T) {
 	}
 	l = project(t, "")
 	old = thread(t, l, daysAgo(60), true)
-	d := SessionEnd(opts(l))
+	d := SessionEnd(patient(l))
 	if has(left(t, l), old[0]) || len(d.Cleaned) != 2 {
 		t.Errorf("the session's end: %+v, left %v", d, left(t, l))
 	}

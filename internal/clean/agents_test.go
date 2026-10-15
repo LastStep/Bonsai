@@ -168,7 +168,7 @@ func TestAgentsNullAndSessionEnd(t *testing.T) {
 	old = agentsSession(t, l, "s-old", daysAgo(60))
 	lf := write(t, l.Main, ".bonsai/local/log/s-s-old.ndjson", "")
 	stamp(t, lf, daysAgo(60))
-	d := SessionEnd(opts(l))
+	d := SessionEnd(patient(l))
 	if has(leftIn(t, l), old[3]) {
 		t.Errorf("the session's end: %+v, left %v", d, leftIn(t, l))
 	}

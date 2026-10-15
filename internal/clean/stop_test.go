@@ -345,7 +345,7 @@ func folderTargets(t *testing.T, l workspace.Local) map[string]bool {
 func TestStoppedAnywhereLeavesAWholeState(t *testing.T) {
 	l := project(t, allRules)
 	fixture(t, l)
-	if d := SessionEnd(opts(l)); d.Stopped || len(d.Errs) != 0 {
+	if d := SessionEnd(patient(l)); d.Stopped || len(d.Errs) != 0 {
 		t.Fatalf("the uninterrupted run: stopped %v, errors %v", d.Stopped, d.Errs)
 	}
 	full := cleanRecords(t, l)

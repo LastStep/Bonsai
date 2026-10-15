@@ -213,9 +213,19 @@ const untimed = time.Minute
 // gate runs Main and gives its exit code and stderr. Its clock is testNow.
 func gate(t *testing.T, getenv func(string) string, stdin io.Reader, budget time.Duration) (int, string) {
 	t.Helper()
+	patientGit(t)
 	var stderr bytes.Buffer
 	code := Main(Options{Stdin: stdin, Stderr: &stderr, Getenv: getenv, Budget: budget, Now: func() time.Time { return testNow }})
 	return code, stderr.String()
+}
+
+// patientGit raises the gate's git limit for a test that judges what the gate decides, not how fast git answers: on a
+// loaded runner the real 4 s can pass first and the gate blocks with "git did not answer in time".
+func patientGit(t *testing.T) {
+	t.Helper()
+	was := gitWait
+	gitWait = time.Minute
+	t.Cleanup(func() { gitWait = was })
 }
 
 // gateFor runs the gate for the session s1 in root, with BONSAI_TASK naming task.

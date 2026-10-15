@@ -20,7 +20,7 @@ func TestAHugeKeepDaysCleansNothing(t *testing.T) {
 			l := project(t, strings.ReplaceAll("  log:\n    keep_days: D\n  asks:\n    keep_days: D\n  ladder:\n"+
 				"    keep_days: D\n  sessions:\n    keep_days: D\n", "D", days))
 			fixture(t, l)
-			if d := SessionEnd(opts(l)); len(d.Cleaned) != 0 || len(d.Errs) != 0 {
+			if d := SessionEnd(patient(l)); len(d.Cleaned) != 0 || len(d.Errs) != 0 {
 				t.Errorf("the files: cleaned %v, errors %v", targets(d.Cleaned), d.Errs)
 			}
 			table := &format.Sessions{Sessions: []format.SessionRow{

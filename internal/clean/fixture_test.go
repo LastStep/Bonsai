@@ -78,6 +78,14 @@ func opts(l workspace.Local) Options {
 	return Options{Local: l, Now: func() time.Time { return now }, Getenv: func(string) string { return "" }}
 }
 
+// patient is opts with a generous budget, for a test of a session end that judges what is cleaned, not how fast: a
+// slow runner cannot stop its run (the budget's own behaviour is budget_test.go's and stop_test.go's).
+func patient(l workspace.Local) Options {
+	o := opts(l)
+	o.Budget = everyKindBudget
+	return o
+}
+
 // rec is one log record to write: its event, when, and what else it fills.
 type rec struct {
 	event    string
