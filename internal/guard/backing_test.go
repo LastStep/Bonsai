@@ -126,6 +126,8 @@ func TestAForkedSkillFromTheSession(t *testing.T) {
 		input: in("skill", "forkcmd")}.payload(dir), 2, RuleCallRefused)
 	wantSecond(t, dir, hookCall{session: sessA, agentID: "al1", agentType: "workflow:lead", tool: "Skill",
 		input: in("skill", "forky")}.payload(dir), 2, RuleCallRefused)
+	wantSecond(t, dir, hookCall{session: sessA, agentID: "al1", agentType: "workflow:lead", tool: "Skill",
+		input: in("skill", "/forky", "args", "x")}.payload(dir), 2, RuleCallRefused)
 	// A skill that runs inline, one named nowhere, and a plugin's (not read here) are let through to anyone.
 	for _, name := range []string{"inline", "nowhere", "workflow:forky", "../forky"} {
 		wantSecond(t, dir, hookCall{session: sessA, agentID: "al1", agentType: "workflow:lead", tool: "Skill",

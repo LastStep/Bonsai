@@ -43,7 +43,7 @@ func (rr *roleRun) skillCall(w *who) Decision {
 			args, _ = v.(string)
 		}
 	}
-	forks := rr.skillForks(name)
+	forks := rr.skillForks(strings.TrimPrefix(name, "/")) // a slash command's name, written as typed
 	if len(forks) == 0 {
 		return allow(RuleOtherTool, "")
 	}
