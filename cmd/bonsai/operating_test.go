@@ -75,8 +75,10 @@ func TestOperatingSkillCatchesDrift(t *testing.T) {
 		"a bad flag on a continued line": {block("bonsai ladder --task T-0001 \\\n  --quick"), "bonsai ladder takes no --quick"},
 	}
 	for _, w := range helpEntries() {
-		// Every mention, a line break inside a code span included: bonsai, then the word's own words.
-		mention := regexp.MustCompile(`bonsai\s+` + strings.ReplaceAll(regexp.QuoteMeta(w.Name), " ", `\s+`) + `([^a-z-]|$)`)
+		// Every mention, a line break inside a code span included: bonsai (or bonsai.exe, quoted as a place may be),
+		// then the word's own words.
+		mention := regexp.MustCompile(`bonsai(?:\.exe)?"?\s+` + strings.ReplaceAll(regexp.QuoteMeta(w.Name), " ", `\s+`) +
+			`([^a-z-]|$)`)
 		if !mention.MatchString(skill) {
 			continue // TestOperatingSkill reports it
 		}
@@ -291,8 +293,8 @@ func parseSkillCommand(line string, fenced bool, named map[string]bool) (problem
 		a := strings.TrimSuffix(strings.TrimSuffix(strings.TrimLeft(args[j], "[("), "..."), "]")
 		a = strings.TrimSuffix(a, ")")
 		switch {
-		case a == "--help" || a == "-h":
-			continue
+		case a == "--help" || a == "-h" || a == "":
+			continue // "" was an elision, ...: the same flags as above
 		case strings.HasPrefix(a, "--"):
 		case strings.HasPrefix(a, "-") && a != "-":
 			return "bonsai " + w.Name + " takes no " + a, true
@@ -325,7 +327,7 @@ func parseSkillCommand(line string, fenced bool, named map[string]bool) (problem
 
 // skillTokens splits a command line into its words, as a shell would, up to its first operator (a pipe, a redirect,
 // &&, ||, ;, a comment): single and double quotes kept together; a placeholder in angle brackets (<the brief's from>)
-// one word, whatever it holds. heredoc is the delimiter of a here-document the line starts (<<'EOF'), "" for none.
+// one word, whatever it holds; PowerShell's call operator & before the program passed over. heredoc is the delimiter of a here-document the line starts (<<'EOF'), "" for none.
 func skillTokens(s string) (toks []string, heredoc string) {
 	var cur strings.Builder
 	in := false
@@ -350,6 +352,8 @@ func skillTokens(s string) (toks []string, heredoc string) {
 			cur.WriteString(s[i+1 : i+1+end])
 			in = true
 			i += end + 1
+		case ch == '&' && start && len(toks) == 0 && strings.TrimSpace(s[:i]) == "" && i+1 < len(s) && s[i+1] == ' ':
+			// PowerShell's call operator before the program: & "C:/Program Files/Bonsai/bonsai.exe" message ...
 		case ch == '<' && start && i+1 < len(s) && s[i+1] == '<':
 			flush()
 			rest := strings.Fields(s[i+2:])
