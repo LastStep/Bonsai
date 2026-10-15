@@ -247,9 +247,13 @@ func TestAnEmptyCallsFileBesideTheFirstCallIsCounted(t *testing.T) {
 func TestM1TheRootFolderAndPowerShellsMemberSets(t *testing.T) {
 	dir := rolesProject(t, nil)
 	started(t, dir, sessA, "workflow:lead")
-	bashLines := []string{"chmod -R a-w /", "chmod -R a-w //", "chmod -R a-w /.", "chown -R nobody /", "setfacl -R -m u::r /",
+	bashLines := []string{"chmod -R a-w /", "chmod -R a-w /.", "chown -R nobody /", "setfacl -R -m u::r /",
 		"icacls / //deny Everyone:W //t", "chmod 000 /", "chattr -R +i /"}
 	psLines := []string{"icacls / /deny Everyone:W /t"}
+	if runtime.GOOS != "windows" {
+		// On Linux // is the root; on Windows it starts a network path (//server/share), which holds no drive's files.
+		bashLines = append(bashLines, "chmod -R a-w //")
+	}
 	if runtime.GOOS == "windows" {
 		bashLines = append(bashLines, "icacls C:/ //deny Everyone:W //t", `icacls 'C:\' //deny Everyone:W //t`, "chmod -R a-w /c/")
 		psLines = append(psLines, `icacls C:\ /deny Everyone:W /t`, "icacls C:/ /deny Everyone:W /t", `Set-Acl -Path C:\ -AclObject $acl`)
