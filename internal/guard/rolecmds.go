@@ -11,8 +11,9 @@ package guard
 //   - bonsai message (commands.go hands each call here, messageCall): one that writes a message from a caller with no
 //     address, or with a --from other than its own address, refused; a --kind brief to a role the writer may not call,
 //     refused (call-refused). --show and bonsai messages read, and are free. Past a budget, only the installed bonsai
-//     at the place the hook lines run it from (installedBonsai; in PowerShell after its call operator, &) is the report
-//     or a brief's read; a bare bonsai is not (it runs whatever the PATH finds first).
+//     at the place this system's hook lines run it from (installedBonsai; in PowerShell after its call operator, &) is
+//     the report or a brief's read; a bare bonsai is not (it runs whatever the PATH finds first), nor the other system's
+//     place.
 //   - bonsai ladder: noted, once the call is allowed, so the agent's next call reads the climb's result (budget.go's
 //     readClimbs), for its --task <id>, or, with none the guard can read, for BONSAI_TASK as the ladder reads it (an
 //     assignment of it on the line, export's, else the session's own).
@@ -865,57 +866,63 @@ func (s *shellRole) messageCall(argv []string) Decision {
 	return allow(RuleBonsaiCommand, "")
 }
 
-// installedBonsai reports a program word that runs the installed bonsai by the very place the hook lines run it from
-// (engine's PlaceWindows and PlaceLinux, or a test build's stamped place), in any form a shell names it: forward or
-// back slashes, a Windows place as C:/... or /c/..., its letter case and its .exe ignored. Past a budget only it is the
-// report or a brief's read (VG's item D; VG round 2's S2, 15 Oct: a bare bonsai runs whatever the PATH finds first,
-// ~/go/bin or ~/.local/bin before /usr/local/bin, so it is no longer taken). Any other program named bonsai is not the
-// installed one. Its word is literal (no variable, no substitution, no glob).
-func installedBonsai(w shWord) bool {
+// installedBonsai reports a program word that runs the installed bonsai by the one place this system's hook lines run
+// it from (thisPlace), in any form the shell d names that place by (namesPlace). Past a budget only it is the report or a
+// brief's read (VG's item D; VG round 2's S2, 15 Oct: a bare bonsai runs whatever the PATH finds first, ~/go/bin or
+// ~/.local/bin before /usr/local/bin, so it is no longer taken; VG's third check's S2, 15 Oct: neither is the other
+// system's place, which here names a file an ordinary user may make: on Linux C:/Program Files/Bonsai/bonsai.exe is a
+// path relative to the shell's folder, and in PowerShell on Windows /usr/local/bin/bonsai is C:\usr\local\bin\bonsai).
+// Any other program named bonsai is not the installed one. Its word is literal (no variable, no substitution, no glob).
+func installedBonsai(w shWord, d shDialect) bool {
 	if w.expand || w.glob || w.splat || w.alts != nil {
 		return false
 	}
-	t := w.text
-	norm := func(p string, windows bool) string {
-		p = strings.ReplaceAll(p, `\`, "/")
-		if len(p) >= 2 && p[1] == ':' && isLetter(p[0]) {
-			p = "/" + strings.ToLower(p[:1]) + p[2:]
-		}
-		if windows {
-			p = strings.TrimSuffix(strings.ToLower(p), ".exe")
-		}
-		return p
-	}
-	for _, p := range hookPlaces() {
-		windows := strings.HasSuffix(strings.ToLower(p), ".exe") || (len(p) >= 3 && p[0] == '/' && p[2] == '/') ||
-			(len(p) >= 2 && p[1] == ':')
-		if norm(t, windows) == norm(p, windows) {
-			return true
-		}
-	}
-	return false
+	place, windows := thisPlace()
+	return namesPlace(w.text, place, windows, d)
 }
 
-// hookPlaces are the places the hook lines run bonsai from: a test build's stamped place alone, else engine's two.
-func hookPlaces() []string {
-	if stamped, _ := engine.TestBuild(); stamped != "" {
-		return []string{filepath.ToSlash(stamped)}
-	}
-	return []string{engine.PlaceWindows, engine.PlaceLinux}
-}
-
-// hookPlace is the installed bonsai as a next step names it (VG round 2's S2, as the stop gate's next steps name it):
-// the place this system's hook lines run it from (engine.PlaceLinux; engine.PlaceWindows written C:/...; a test
-// build's stamped place), in double quotes when it holds a space, after PowerShell's call operator (& ) for ps.
-func hookPlace(ps bool) string {
-	windows := runtime.GOOS == "windows"
-	place := engine.PlaceLinux
+// thisPlace is the one place this system's hook lines run bonsai from, the one home of it for the guard (installedBonsai
+// reads it, hookPlace shows it): a test build's stamped place alone; else engine.PlaceWindows on Windows and
+// engine.PlaceLinux on every other system. windows is true on Windows, where its forms are read as Windows reads a path.
+func thisPlace() (place string, windows bool) {
+	windows = runtime.GOOS == "windows"
+	place = engine.PlaceLinux
 	if windows {
 		place = engine.PlaceWindows
 	}
 	if stamped, _ := engine.TestBuild(); stamped != "" {
 		place = filepath.ToSlash(stamped)
 	}
+	return place, windows
+}
+
+// namesPlace reports a program path t that names place in the shell d: on Windows (windows) with either slash, the drive
+// written C:/ or C:\ (in Git Bash also /c/, its mount of the drive, written with forward slashes and the letter in
+// lower case as the mount names it), the letter case and the .exe ignored; on any other system exactly as written. In
+// PowerShell /c/... is a folder at the drive's root, as \c\... is in either shell, so neither is the place there.
+func namesPlace(t, place string, windows bool, d shDialect) bool {
+	if !windows {
+		return t == place
+	}
+	key := func(p string, mount bool) string {
+		switch {
+		case len(p) >= 3 && isLetter(p[0]) && p[1] == ':' && (p[2] == '/' || p[2] == '\\'):
+		case mount && len(p) >= 3 && p[0] == '/' && p[1] >= 'a' && p[1] <= 'z' && p[2] == '/':
+			p = p[1:2] + ":" + p[2:]
+		default:
+			return ""
+		}
+		return strings.TrimSuffix(strings.ToLower(strings.ReplaceAll(p, `\`, "/")), ".exe")
+	}
+	k := key(t, d == shBash)
+	return k != "" && k == key(strings.ToLower(place), true)
+}
+
+// hookPlace is the installed bonsai as a next step names it (VG round 2's S2, as the stop gate's next steps name it):
+// the place this system's hook lines run it from (thisPlace; engine.PlaceWindows written C:/...), in double quotes when
+// it holds a space, after PowerShell's call operator (& ) for ps.
+func hookPlace(ps bool) string {
+	place, windows := thisPlace()
 	if windows && len(place) >= 3 && place[0] == '/' && place[2] == '/' {
 		place = strings.ToUpper(place[1:2]) + ":" + place[2:]
 	}
@@ -966,7 +973,7 @@ func reportCall(tool, command, addr string) bool {
 	if len(c.feeds) > 1 || (len(c.feeds) == 1 && (!c.feeds[0].doc || !c.feeds[0].quoted || len(c.feeds[0].nested) > 0)) {
 		return false
 	}
-	if !installedBonsai(words[0]) {
+	if !installedBonsai(words[0], d) {
 		return false
 	}
 	kind, from, body, bodyDash := "", "", false, false
@@ -1057,7 +1064,7 @@ func briefShow(tool, command string) (id string, atPlace bool) {
 	if c.group != nil || len(c.nested) > 0 || len(c.redirs) > 0 || len(c.feeds) > 0 || (c.op != "" && c.op != ";") || len(words) < 3 {
 		return "", false
 	}
-	atPlace = installedBonsai(words[0])
+	atPlace = installedBonsai(words[0], d)
 	if !atPlace && !bareBonsai(words[0]) || words[1].text != "message" {
 		return "", false
 	}

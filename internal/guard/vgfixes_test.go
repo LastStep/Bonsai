@@ -26,36 +26,38 @@ func spentTiny(t *testing.T, dir, id string) {
 
 // D, VG's reproducer, and VG round 2's S2: past a budget, a program named bonsai at another place (a stand-in on the
 // agent's own path, one in the folder it runs in) is neither its report nor a brief's read, and nor is a bare bonsai
-// (it runs whatever the PATH finds first); the installed bonsai at the hook lines' place, in each form a shell names
-// it, is. Each refusal's next step names that place.
+// (it runs whatever the PATH finds first), nor the other system's place (VG's third check's S2, vg3_test.go); the
+// installed bonsai at this system's hook lines' place, in each form its shells name it, is. Each refusal's next step
+// names that place.
 func TestDOnlyTheInstalledBonsaiPastABudget(t *testing.T) {
 	dir := briefProject(t)
 	spentTiny(t, dir, "d1")
 	report := " message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1 + " --status blocked --body 'left'"
-	for _, prog := range []string{filepath.ToSlash(t.TempDir()) + "/fakebin/bonsai", "./bonsai", "../bonsai", "bin/bonsai",
-		"/usr/bin/bonsai", "/usr/local/bin/bonsai.sh", "/tmp/Program Files/Bonsai/bonsai.exe", "Bonsai", "bonsai", "bonsai.exe"} {
+	linux := []string{"/usr/local/bin/bonsai"}
+	windows := []string{`"/c/Program Files/Bonsai/bonsai.exe"`, `"C:/Program Files/Bonsai/bonsai.exe"`,
+		`"C:\Program Files\Bonsai\bonsai.exe"`, `"c:/program files/bonsai/BONSAI"`}
+	psHere, psThere := "& /usr/local/bin/bonsai", `& "C:/Program Files/Bonsai/bonsai.exe"`
+	here, there := linux, windows
+	if runtime.GOOS == "windows" {
+		here, there = windows, linux
+		psHere, psThere = psThere, psHere
+	}
+	for _, prog := range append([]string{filepath.ToSlash(t.TempDir()) + "/fakebin/bonsai", "./bonsai", "../bonsai", "bin/bonsai",
+		"/usr/bin/bonsai", "/usr/local/bin/bonsai.sh", "/tmp/Program Files/Bonsai/bonsai.exe", "Bonsai", "bonsai", "bonsai.exe"}, there...) {
 		s := wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+report)), 2, RuleBudgetSpent)
 		if !strings.Contains(s, "one shell call holding only: "+hookPlace(false)+" message --kind report --from tiny@T-0001") {
 			t.Errorf("the refusal does not name the place:\n%s", s)
 		}
 		wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+" message --show "+b1)), 2, RuleBudgetSpent)
 	}
-	for _, prog := range []string{"/usr/local/bin/bonsai", `"/c/Program Files/Bonsai/bonsai.exe"`,
-		`"C:/Program Files/Bonsai/bonsai.exe"`, `"C:\Program Files\Bonsai\bonsai.exe"`, `"c:/program files/bonsai/BONSAI"`} {
+	for _, prog := range here {
 		wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+" message --show "+b1)), 0, RuleBudgetExempt)
 		wantAnswer(t, dir, tinyFrom(dir, "d1", "Bash", bash(prog+report)), 0, RuleBudgetExempt)
 	}
-	wantAnswer(t, dir, tinyFrom(dir, "d1", "PowerShell", bash(`& "C:/Program Files/Bonsai/bonsai.exe"`+report)), 0, RuleBudgetExempt)
+	wantAnswer(t, dir, tinyFrom(dir, "d1", "PowerShell", bash(psHere+report)), 0, RuleBudgetExempt)
+	wantAnswer(t, dir, tinyFrom(dir, "d1", "PowerShell", bash(psThere+report)), 2, RuleBudgetSpent)
 	wantAnswer(t, dir, tinyFrom(dir, "d1", "PowerShell", bash("bonsai"+report)), 2, RuleBudgetSpent)
-	// The forms the word reader holds to the place, one by one.
-	for word, want := range map[string]bool{"bonsai": false, "bonsai.exe": false, "BONSAI.EXE": false, "/usr/local/bin/bonsai": true,
-		"/usr/local/bin/Bonsai": false, "/usr/local/bin//bonsai": false, "/c/Program Files/Bonsai/bonsai.exe": true,
-		`C:\Program Files\Bonsai\bonsai`: true, "D:/Program Files/Bonsai/bonsai.exe": false, "bonsai.com": false} {
-		if got := installedBonsai(shWord{text: word}); got != want {
-			t.Errorf("%q: installed %v, want %v", word, got, want)
-		}
-	}
-	if installedBonsai(shWord{text: "/usr/local/bin/bonsai", expand: true}) {
+	if installedBonsai(shWord{text: thisPlaceWord(), expand: true}, shBash) {
 		t.Error("a word a variable stands for read as the installed bonsai")
 	}
 	// The place as a next step names it, on this system.
@@ -66,6 +68,12 @@ func TestDOnlyTheInstalledBonsaiPastABudget(t *testing.T) {
 	if hookPlace(false) != want || hookPlace(true) != "& "+want {
 		t.Errorf("the place shown: %s, %s", hookPlace(false), hookPlace(true))
 	}
+}
+
+// thisPlaceWord is this system's place as a program word, unquoted.
+func thisPlaceWord() string {
+	p, _ := thisPlace()
+	return p
 }
 
 // ladderResult writes the ladder's own result for a task, red or green, started at a time.

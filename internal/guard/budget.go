@@ -20,9 +20,10 @@ package guard
 //
 // Past a limit (more minutes, actions or red runs than its value): every call is refused (budget-spent) but three
 // (budget-exempt): its report in its exact form (rolecmds.go's reportCall), reading its tied brief or a newer one to
-// its address (a Read of its file, or bonsai message --show), each shell call by the installed bonsai at the place the
-// hook lines run it from (installedBonsai; VG round 2's S2: a bare bonsai runs whatever the PATH finds first, so it
-// is not taken, and neither is any other program of that name), and Claude Code's hand-back tool. The first refusal
+// its address (a Read of its file, or bonsai message --show), each shell call by the installed bonsai at the place
+// this system's hook lines run it from (installedBonsai; VG round 2's S2: a bare bonsai runs whatever the PATH finds
+// first, so it is not taken, and neither is any other program of that name, nor the other system's place, which here
+// names a file an ordinary user may make: VG's third check), and Claude Code's hand-back tool. The first refusal
 // says what to report and its next step gives the exact command, by that place (hookPlace); later ones are short;
 // each names a newer brief to its address already waiting, if one is (waitingBrief). A bare bonsai message --show of
 // a newer brief still ties it (its file is what the tie reads), opening a fresh window. Of calls side by side past it,

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -167,25 +168,46 @@ func briefFile(id, thread, from, to, created, budget string) string {
 		"\npointers: []\ncreated: \"" + created + "\"\nlabels: {}\n---\nThe brief's body.\n"
 }
 
-// The report's exact form, past a budget: the installed bonsai at the hook lines' place (VG round 2's S2), one
-// command, its body by --body in single quotes or a quoted here-document.
+// The report's exact form, past a budget: the installed bonsai at this system's hook lines' place (VG round 2's S2),
+// one command, its body by --body in single quotes or a quoted here-document. The other system's place is no report
+// here (VG's third check's S2): on Linux the Windows place is a path relative to the shell's folder; on Windows the
+// Linux place, and in PowerShell /c/... too, a folder at the drive's root.
 func TestReportCall(t *testing.T) {
 	addr := "helper@T-0001"
-	ok := []string{
+	place := hookPlace(false)
+	at := func(lines ...string) []string {
+		out := make([]string, len(lines))
+		for i, l := range lines {
+			out[i] = strings.ReplaceAll(l, "/usr/local/bin/bonsai", place)
+		}
+		return out
+	}
+	linux := []string{"/usr/local/bin/bonsai"}
+	gitBash := []string{`"C:/Program Files/Bonsai/bonsai.exe"`, `'/c/Program Files/Bonsai/bonsai.exe'`, `'c:\program files\bonsai\BONSAI'`}
+	powerShell := []string{`& 'C:\Program Files\Bonsai\bonsai.exe'`, `& "C:/Program Files/Bonsai/bonsai.exe"`, `& 'c:/PROGRAM FILES/bonsai/bonsai'`}
+	bashHere, bashThere := linux, gitBash
+	psHere, psThere := []string{"/usr/local/bin/bonsai", "& /usr/local/bin/bonsai"}, append(powerShell, `& '/c/Program Files/Bonsai/bonsai.exe'`)
+	if runtime.GOOS == "windows" {
+		bashHere, bashThere = gitBash, linux
+		psHere, psThere = powerShell, []string{"/usr/local/bin/bonsai", "& /usr/local/bin/bonsai", `& '/c/Program Files/Bonsai/bonsai.exe'`,
+			`& '\c\Program Files\Bonsai\bonsai.exe'`}
+	}
+	ok := at(
 		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead@T-0001 --thread M-2026-10-15-0000000a --status blocked --body 'what I have; what is left'",
 		"/usr/local/bin/bonsai message --kind=report --from=helper@T-0001 --to lead --status done --body 'a $HOME `x` $(y)'",
 		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --status done --body - <<'EOF'\nline $HOME $(rm -rf x)\nEOF\n",
 		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --status done --body - <<\"EOF\"\nline\nEOF\n",
 		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --status done --pointer notes.md --body 'x'",
-		"\"C:/Program Files/Bonsai/bonsai.exe\" message --kind report --from helper@T-0001 --to lead --body 'x'",
-		"'/c/Program Files/Bonsai/bonsai.exe' message --kind report --from helper@T-0001 --to lead --body 'x'",
+	)
+	for _, p := range bashHere {
+		ok = append(ok, p+" message --kind report --from helper@T-0001 --to lead --body 'x'")
 	}
 	for _, c := range ok {
 		if !reportCall("Bash", c, addr) {
 			t.Errorf("not read as the report: %s", c)
 		}
 	}
-	bad := []string{
+	bad := at(
 		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x'; rm -rf y",
 		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x' && true",
 		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x' | cat",
@@ -210,22 +232,27 @@ func TestReportCall(t *testing.T) {
 		// A bare bonsai runs whatever the PATH finds first (S2).
 		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x'",
 		"bonsai.exe message --kind report --from helper@T-0001 --to lead --body 'x'",
+	)
+	for _, p := range bashThere {
+		bad = append(bad, p+" message --kind report --from helper@T-0001 --to lead --body 'x'")
 	}
 	for _, c := range bad {
 		if reportCall("Bash", c, addr) {
 			t.Errorf("read as the report: %s", c)
 		}
 	}
-	for _, c := range []string{"& 'C:\\Program Files\\Bonsai\\bonsai.exe' message --kind report --from helper@T-0001 --to lead --status done --body 'it''s done'",
-		"& \"C:/Program Files/Bonsai/bonsai.exe\" message --kind report --from helper@T-0001 --to lead --body 'x'",
-		"/usr/local/bin/bonsai message --kind report --from helper@T-0001 --to lead --body 'x'"} {
+	for _, p := range psHere {
+		c := p + " message --kind report --from helper@T-0001 --to lead --status done --body 'it''s done'"
 		if !reportCall("PowerShell", c, addr) {
 			t.Errorf("PowerShell's form: %s", c)
 		}
 	}
-	for _, c := range []string{"& \"C:/Program Files/Bonsai/bonsai.exe\" message --kind report --from helper@T-0001 --to lead --body \"$x\"",
-		"bonsai message --kind report --from helper@T-0001 --to lead --body 'x'", "& bonsai message --kind report --from helper@T-0001 --to lead --body 'x'",
-		"& $b message --kind report --from helper@T-0001 --to lead --body 'x'"} {
+	psBad := []string{"bonsai message --kind report --from helper@T-0001 --to lead --body 'x'", "& bonsai message --kind report --from helper@T-0001 --to lead --body 'x'",
+		"& $b message --kind report --from helper@T-0001 --to lead --body 'x'", psHere[0] + " message --kind report --from helper@T-0001 --to lead --body \"$x\""}
+	for _, p := range psThere {
+		psBad = append(psBad, p+" message --kind report --from helper@T-0001 --to lead --body 'x'")
+	}
+	for _, c := range psBad {
 		if reportCall("PowerShell", c, addr) {
 			t.Errorf("read as PowerShell's report: %s", c)
 		}
@@ -234,9 +261,11 @@ func TestReportCall(t *testing.T) {
 		tool, line, id string
 		atPlace        bool
 	}{{"Bash", "bonsai message --show M-2026-10-15-0000000a --json", "M-2026-10-15-0000000a", false},
-		{"Bash", "/usr/local/bin/bonsai message --show M-2026-10-15-0000000a", "M-2026-10-15-0000000a", true},
-		{"PowerShell", "& 'C:/Program Files/Bonsai/bonsai.exe' message --show=M-2026-10-15-0000000a", "M-2026-10-15-0000000a", true},
-		{"Bash", "/usr/local/bin/bonsai message --show M-2026-10-15-0000000a; rm x", "", false},
+		{"Bash", place + " message --show M-2026-10-15-0000000a", "M-2026-10-15-0000000a", true},
+		{"PowerShell", psHere[0] + " message --show=M-2026-10-15-0000000a", "M-2026-10-15-0000000a", true},
+		{"Bash", bashThere[0] + " message --show M-2026-10-15-0000000a", "", false},
+		{"PowerShell", psThere[0] + " message --show M-2026-10-15-0000000a", "", false},
+		{"Bash", place + " message --show M-2026-10-15-0000000a; rm x", "", false},
 		{"Bash", "bonsai message --show $ID", "", false}, {"Bash", "./bonsai message --show M-2026-10-15-0000000a", "", false}} {
 		if id, at := briefShow(c.tool, c.line); id != c.id || at != c.atPlace {
 			t.Errorf("briefShow %s: %q %v", c.line, id, at)

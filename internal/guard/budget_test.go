@@ -100,7 +100,7 @@ func TestTheBudgetOfActions(t *testing.T) {
 		t.Errorf("the later refusal: %s", s)
 	}
 	// Past it: every call refused but its report, its brief and the hand-back.
-	report := "/usr/local/bin/bonsai message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1 + " --status blocked --body 'what I have'"
+	report := hookPlace(false) + " message --kind report --from tiny@T-0001 --to orchestrator --thread " + b1 + " --status blocked --body 'what I have'"
 	for _, p := range []string{
 		tinyFrom(dir, "t1", "Bash", bash("git status")),
 		tinyFrom(dir, "t1", "Bash", bash(report+"; echo done")),
@@ -113,7 +113,7 @@ func TestTheBudgetOfActions(t *testing.T) {
 		wantAnswer(t, dir, p, 2, RuleBudgetSpent)
 	}
 	wantAnswer(t, dir, tinyFrom(dir, "t1", "Read", readOf(dir, ".bonsai/local/messages/tiny-T-0001/"+b1+".md")), 0, RuleBudgetExempt)
-	wantAnswer(t, dir, tinyFrom(dir, "t1", "Bash", bash("/usr/local/bin/bonsai message --show "+b1+" --json")), 0, RuleBudgetExempt)
+	wantAnswer(t, dir, tinyFrom(dir, "t1", "Bash", bash(hookPlace(false)+" message --show "+b1+" --json")), 0, RuleBudgetExempt)
 	// A bare bonsai runs whatever the PATH finds first: past a budget it reads nothing (VG round 2's S2).
 	wantAnswer(t, dir, tinyFrom(dir, "t1", "Bash", bash("bonsai message --show "+b1+" --json")), 2, RuleBudgetSpent)
 	wantAnswer(t, dir, tinyFrom(dir, "t1", "SubagentHandback", in("message", "x")), 0, RuleBudgetExempt)
