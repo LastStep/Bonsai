@@ -344,3 +344,36 @@ func TestUsageCost(t *testing.T) {
 		t.Errorf("a %d-byte transcript took %s", b.Len(), took)
 	}
 }
+
+// A subagent's last reply written a moment after its SubagentStop (as measured on WSL, 15 Oct) is counted: the
+// transcript is read once it has settled. One that never grows is read after settleQuiet.
+func TestUsageWaitsForTheLastReply(t *testing.T) {
+	_, root := project(t)
+	sess := "0f1e2d3c-aaaa-4bbb-8ccc-0000000000a2"
+	path := transcript(t, userLine, replyLine("msg_a", "m", 1, 10, 100, 1000))
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0)
+		if err != nil {
+			return
+		}
+		_, _ = f.WriteString(replyLine("msg_b", "m", 2, 20, 200, 2000) + "\n")
+		_ = f.Close()
+	}()
+	start := time.Now()
+	Record(opts(root, subagentStop(root, sess, "a2", filepath.ToSlash(path)), nil))
+	took := time.Since(start)
+	got := usageRecords(t, root, sess)
+	if len(got) != 1 || usageOf(got[0]) != "SubagentStop a2 m 3/30/300/3000 <null> <null>" {
+		t.Fatalf("the records: %+v", got)
+	}
+	if took < 100*time.Millisecond+settleQuiet || took > Budget {
+		t.Errorf("the end took %s", took)
+	}
+	// A session's end is read at once.
+	start = time.Now()
+	Record(opts(root, sessionEnd(root, sess, filepath.ToSlash(path)), nil))
+	if took := time.Since(start); took >= settleQuiet {
+		t.Errorf("a session's end took %s", took)
+	}
+}

@@ -13,10 +13,20 @@ package recorder
 // The layout read is the one measured on Claude Code 2.1.300 (WSL, 15 Oct; step 5.5.11's run report): one JSON object
 // a line; a reply's token counts in message.usage (input_tokens, output_tokens, cache_read_input_tokens as cache_read,
 // cache_creation_input_tokens as cache_write), on lines whose type is assistant, with message.id and message.model. One
-// reply is written as several lines, one per content block, each repeating its message.id and usage, so each reply is
-// counted once, by its message.id (its last line's counts). A session's file holds its main agent's replies only (a
-// subagent's are in the subagent's own file), so a session's records never count its subagents'; the file's last line,
-// cost-state, is not read. Only the counts, the model and the reply's id are read, never any text.
+// reply is written as several lines, one per content block, each repeating its message.id and the usage as it stood
+// when that block was written (a reply's two tool calls, measured: 16 output tokens on its first line, 153 on its
+// last), so each reply is counted once, by its message.id, with its last line's counts. A session's file holds its main
+// agent's replies only (a subagent's are in the subagent's own file), so a session's records never count its
+// subagents'; the file's last line, cost-state, is not read. Only the counts, the model and the reply's id are read,
+// never any text.
+//
+// At a subagent's end the transcript is read once it has settled: Claude Code writes a subagent's last lines a moment
+// after its SubagentStop hook starts (measured 15 Oct on WSL, a real session of a lead and a helper: each one's final
+// reply was missing from its file when its records were written at once, and in the file after the session), so the
+// recorder first waits until the file has not grown for settleQuiet, at most settleMax (settle). The hook is async, so
+// the agent's end never waits for it. A session's transcript was whole at its SessionEnd in the same session (its
+// records equal its file's replies, and with its subagents' files its own closing totals), and is read at once: that
+// line is synchronous, and the person's exit waits for it.
 //
 // The transcript is read as it streams, line by line: a line costs memory for itself alone, up to transcriptLineCap
 // (8 MiB); a longer line is read through without being held (typeScanner: its top-level type, and nothing else), and
@@ -52,8 +62,17 @@ import (
 
 // usageBudget is how long reading a transcript at an agent's end may take (a variable for the tests). SessionEnd's
 // line has 5 s and the hook's own Budget is 4 s: its session_end line takes milliseconds, the reading at most this,
-// and the cleaning after it clean.SessionEndBudget and one step.
+// and the cleaning after it clean.SessionEndBudget and one step. At a SubagentStop (async, no cleaning) the wait for
+// the transcript to settle comes first, at most settleMax: together within the Budget.
 var usageBudget = 2 * time.Second
+
+// settleQuiet, settleMax and settlePoll are how a subagent's transcript is waited for (settle): read once its size has
+// not changed for settleQuiet, looked at every settlePoll, waited for at most settleMax (variables for the tests).
+var (
+	settleQuiet = 300 * time.Millisecond
+	settleMax   = 1500 * time.Millisecond
+	settlePoll  = 25 * time.Millisecond
+)
 
 // transcriptLineCap caps the memory one transcript line may take, in bytes (a variable for the tests); maxModels caps
 // the models one end's records may name.
@@ -87,6 +106,9 @@ func usageFrom(p *hookin.Payload) (path string, ok bool) {
 // unknown with its reason. A record that cannot be written ends the writing; nothing is returned, since nothing may
 // fail or block an agent's end.
 func writeUsage(o Options, p *hookin.Payload, cfg *workspace.Config, local workspace.Local, path string) {
+	if p.Event == "SubagentStop" {
+		settle(path)
+	}
 	models, reason := readUsage(path, o.Now().Add(usageBudget), o.Now)
 	at := o.Now()
 	if reason != "" {
@@ -100,6 +122,30 @@ func writeUsage(o Options, p *hookin.Payload, cfg *workspace.Config, local works
 		l.Model = text(m.Model)
 		l.Usage = &format.LogUsage{Input: m.Input, Output: m.Output, CacheRead: m.CacheRead, CacheWrite: m.CacheWrite}
 		if _, err := writeLog(local.Main, l); err != nil {
+			return
+		}
+	}
+}
+
+// settle waits until a transcript's size has not changed for settleQuiet, at most settleMax, by the wall clock (this
+// file's comment). A file that is not there counts as one size, so one that appears is waited for too.
+func settle(path string) {
+	size := func() int64 {
+		fi, err := os.Stat(path)
+		if err != nil {
+			return -1
+		}
+		return fi.Size()
+	}
+	start := time.Now()
+	last, quiet := size(), start
+	for time.Since(start) < settleMax {
+		time.Sleep(settlePoll)
+		if n := size(); n != last {
+			last, quiet = n, time.Now()
+			continue
+		}
+		if time.Since(quiet) >= settleQuiet {
 			return
 		}
 	}
