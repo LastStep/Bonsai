@@ -142,6 +142,51 @@ func TestTheBudgetOfActions(t *testing.T) {
 	}
 }
 
+// T-5505's R8c (16 Oct): a named builder session read its brief (minutes: 1) at its first call in a line with other
+// commands, "bonsai message --show <id>; echo ---; cat ...", and the brief tied nothing, so its minutes stayed its
+// role's default and 2.5 minutes of calls passed. A brief read by any command of the line ties: past its minutes every
+// call but the report is refused, and the log says budget-spent.
+func TestANamedSessionsMinutesFromABriefReadInALine(t *testing.T) {
+	const b7 = "M-2026-10-16-00000007"
+	dir := rolesProject(t, map[string]string{
+		".bonsai/local/messages/lead-T-0006/" + b7 + ".md": briefFile(b7, b7, "orchestrator", "lead@T-0006",
+			"2026-10-15T02:00:00.000Z", "  minutes: 1\n  actions: null\n  red_runs: null"),
+		".bonsai/local/log/w-2026-10-15.ndjson": messageRecords(b7),
+	})
+	t0 := time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)
+	named := func(cmd string) string { return hookCall{session: sessB, tool: "Bash", input: bash(cmd)}.payload(dir) }
+	step := func(at time.Duration, cmd string, code int) string {
+		t.Helper()
+		got, out := runAt(t, dir, named(cmd), t0.Add(at), false, RoleEnv, "lead", "BONSAI_TASK", "T-0006")
+		if got != code {
+			t.Fatalf("at %v, %s: exit %d, want %d: %s", at, cmd, got, code, out)
+		}
+		return out
+	}
+	step(0, "bonsai message --show "+b7+"; echo ---; cat free.txt; git status --short", 0)
+	if w := stateOf(t, dir, sessB, sessB).Window(); w.Tie == nil || w.Tie.Brief != b7 || w.Limits.Minutes.Value == nil ||
+		*w.Limits.Minutes.Value != 1 {
+		t.Fatalf("the brief read in a line did not tie: %+v", w)
+	}
+	step(time.Minute+59*time.Second, "git status", 0)
+	s := step(2*time.Minute, "git status", 2)
+	if !strings.Contains(s, "budget spent (minutes: 2 of 1)") {
+		t.Errorf("%s", s)
+	}
+	if r := lastRule(t, dir, named("git status")); r != RuleBudgetSpent {
+		t.Errorf("the log's last guard record: %q, want %s", r, RuleBudgetSpent)
+	}
+	step(2*time.Minute, "cat free.txt", 2)
+	// Past it, a line that reads the brief and does more is no exempt read; the report in its exact form passes.
+	step(2*time.Minute, "bonsai message --show "+b7+"; git status", 2)
+	report := hookPlace(false) + " message --kind report --from lead@T-0006 --to orchestrator --thread " + b7 +
+		" --status blocked --body 'what I have'"
+	step(2*time.Minute, report, 0)
+	if st := stateOf(t, dir, sessB, sessB); !st.Reported() || st.Spent() == nil {
+		t.Errorf("after the report: spent %v reported %v", st.Spent(), st.Reported())
+	}
+}
+
 // An agent with no address (no brief tied: an undeclared type) has no report call: every call is refused past it.
 func TestNoAddressNoReport(t *testing.T) {
 	dir := briefProject(t)

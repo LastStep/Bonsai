@@ -1049,7 +1049,9 @@ func reportCall(tool, command, addr string) bool {
 }
 
 // briefShow gives the id a shell call reads with bonsai message --show <id> as its one command, "" for any other call,
-// and whether it runs the installed bonsai at its place (installedBonsai); a bare bonsai reads too (bareBonsai).
+// and whether it runs the installed bonsai at its place (installedBonsai); a bare bonsai reads too (bareBonsai). Past
+// a budget only this exact form is a brief's exempt read (exempt); a brief's tie reads any command of the line
+// (briefReads).
 func briefShow(tool, command string) (id string, atPlace bool) {
 	d := shBash
 	if tool == "PowerShell" {
@@ -1060,8 +1062,49 @@ func briefShow(tool, command string) (id string, atPlace bool) {
 		return "", false
 	}
 	c := l.cmds[0]
+	if c.group != nil || len(c.nested) > 0 || len(c.redirs) > 0 || len(c.feeds) > 0 || (c.op != "" && c.op != ";") {
+		return "", false
+	}
+	return showCommand(c, d)
+}
+
+// briefReads gives the ids of the briefs a shell call reads with bonsai message --show <id>, each a command of its
+// line or of a group in it, in the order written, each once: what ties a brief by its read (T-5505's R8c, 16 Oct: a
+// named session's first call read its brief with "bonsai message --show <id>; echo ---; cat ..." and the brief tied
+// nothing, so its minutes stayed its role's default). A tie reads the brief's own file and holds it to the agent's
+// address, so the form of the line around the read counts for nothing there; past a budget only briefShow's exact
+// form is let through.
+func briefReads(tool, command string) []string {
+	d := shBash
+	if tool == "PowerShell" {
+		d = shPower
+	}
+	l, why := shSplit(command, d, 0)
+	if why != "" || l == nil {
+		return nil
+	}
+	var ids []string
+	var walk func(l *shList)
+	walk = func(l *shList) {
+		for _, c := range l.cmds {
+			if c.group != nil {
+				walk(c.group)
+				continue
+			}
+			if id, _ := showCommand(c, d); id != "" && !listHas(ids, id) {
+				ids = append(ids, id)
+			}
+		}
+	}
+	walk(l)
+	return ids
+}
+
+// showCommand gives the id one simple command reads with bonsai message --show <id> (its other words --json alone,
+// every word literal), "" for any other command, and whether it runs the installed bonsai at its place.
+func showCommand(c shCommand, d shDialect) (id string, atPlace bool) {
 	words := programWords(d, c.words)
-	if c.group != nil || len(c.nested) > 0 || len(c.redirs) > 0 || len(c.feeds) > 0 || (c.op != "" && c.op != ";") || len(words) < 3 {
+	if c.group != nil || len(words) < 3 {
 		return "", false
 	}
 	atPlace = installedBonsai(words[0], d)

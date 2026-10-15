@@ -271,6 +271,22 @@ func TestReportCall(t *testing.T) {
 			t.Errorf("briefShow %s: %q %v", c.line, id, at)
 		}
 	}
+	// The briefs a line reads, which tie (T-5505's R8c): any command of it, or of a group in it, each once.
+	const m1, m2 = "M-2026-10-15-0000000a", "M-2026-10-15-0000000b"
+	for _, c := range []struct {
+		tool, line string
+		ids        []string
+	}{{"Bash", "bonsai message --show " + m1 + "; echo ---; cat STATE.md", []string{m1}},
+		{"Bash", "git status && " + place + " message --show " + m1 + " --json | head; bonsai message --show " + m2 +
+			"; bonsai message --show " + m1, []string{m1, m2}},
+		{"Bash", "{ bonsai message --show=" + m2 + "; }", []string{m2}},
+		{"PowerShell", psHere[0] + " message --show " + m1 + "; Get-Date", []string{m1}},
+		{"Bash", "echo bonsai message --show " + m1, nil}, {"Bash", "bonsai message --show $ID; true", nil},
+		{"Bash", "bonsai message --show " + m1 + " --body x", nil}} {
+		if got := briefReads(c.tool, c.line); strings.Join(got, ",") != strings.Join(c.ids, ",") {
+			t.Errorf("briefReads %s: %v, want %v", c.line, got, c.ids)
+		}
+	}
 }
 
 // Every word of the tables is documented, and the git words' read forms read.

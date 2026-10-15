@@ -15,7 +15,7 @@ package guard
 // tie), and no other agent tied it (an exclusive tie file). Anything else ties nothing, with a guard record saying why
 // (brief-not-tied). A brief ties at the agent's first call from its starting call's prompt (link, roles.go), when a
 // SendMessage resuming it names one (an offer, tried at its next call), and when it reads one (bonsai message --show
-// <id>, or a Read of the brief's file). Its budget is then in force, each limit the brief's value up to the max in
+// <id> as any command of its line, briefReads, or a Read of the brief's file). Its budget is then in force, each limit the brief's value up to the max in
 // force, else the role's default, counted afresh from the tie.
 //
 // Past a limit (more minutes, actions or red runs than its value): every call is refused (budget-spent) but three
@@ -332,10 +332,10 @@ type counted struct {
 var countCall = agents.Store.Call
 
 // count ties the briefs offered or read, reads the open climbs' results, appends this call's line and judges the
-// budget (this file's comment). reads is the brief this call reads, "" for none. A call whose line cannot be written,
+// budget (this file's comment). reads are the briefs this call reads, in the order its line reads them. A call whose line cannot be written,
 // even with the agent's own access to its files set back (agents.Store.Repair), is not counted and so is refused as a
 // call past a budget is (VG round 2's M1: chmod a-w on its calls file had left an agent uncounted).
-func (rr *roleRun) count(w *who, reads string) counted {
+func (rr *roleRun) count(w *who, reads []string) counted {
 	in := rr.in
 	if w.fault != "" {
 		return counted{fault: w.fault}
@@ -346,8 +346,8 @@ func (rr *roleRun) count(w *who, reads string) counted {
 			_ = rr.store.Append(in.Session, w.key, agents.Event{E: agents.EventTried, At: agents.StampMilli(rr.now), Brief: o.Brief})
 		}
 	}
-	if reads != "" {
-		rr.tie(w, reads, "this agent's read of it")
+	for _, id := range reads {
+		rr.tie(w, id, "this agent's read of it")
 	}
 	if st, err := rr.store.Read(in.Session, w.key); err == nil {
 		w.st = st

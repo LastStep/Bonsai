@@ -947,17 +947,22 @@ func (j *judge) roleDecide(rr *roleRun, in *hookin.Payload, base string) (d Deci
 	}
 	rr.caller = w
 	j.sh = &shellRole{rr: rr, w: w}
-	reads := ""
+	// reads are the briefs this call reads, each tied (count); shown is its exact read, the only one exempt past a budget.
+	var reads []string
+	shown := ""
 	switch {
 	case in.Tool == "Read":
-		reads = rr.briefPath(in.ReadPath)
+		if shown = rr.briefPath(in.ReadPath); shown != "" {
+			reads = []string{shown}
+		}
 	case shellTool(in.Tool):
-		reads, _ = briefShow(in.Tool, in.Command)
+		reads = briefReads(in.Tool, in.Command)
+		shown, _ = briefShow(in.Tool, in.Command)
 	}
 	if w.counted {
 		c := rr.count(w, reads)
 		if c.spent != nil || c.fault != "" {
-			ok, report := rr.exempt(w, reads)
+			ok, report := rr.exempt(w, shown)
 			switch {
 			case !ok && c.fault != "":
 				return rr.faultRefusal(w, c.fault), j.session, true
