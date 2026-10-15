@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5595
 title: "Windows timing tests that fail under load: their own budgets and limits, so they judge what they test, not how fast"
-status: blocked
+status: done
 lane:
 done_when:
   - "internal/clean's TestDefaultsWhenLeftOut (and any other test of SessionEnd that leaves the 1 s budget to chance) sets its own Budget, as TestEveryKind does since 5.5.8"
@@ -10,10 +10,10 @@ done_when:
   - "internal/stopgate's tests that met the gate's 4 s git limit under load (TestStopGateFixtures/env-other-project, TestTheRecordHoldsNoUserFolder) and the guard's TestAnAllowItCannotRecordIsBlocked run with a generous git limit of their own; the gate's own limit and behaviour unchanged"
   - "Each shown failing first under a held clock or a tiny limit in a temporary copy where it can be; 20 runs green natively on Windows; check 10 on both sides; the installed bonsai's ladder green at the branch's HEAD; landed by the landing rule; CI green"
 depends_on: [T-5508]
-blocked_by: "Held at 01ae3c1: rebased, re-checked and landed in the next session's first batch."
+blocked_by:
 created: 2026-10-15
 started: 2026-10-15
-finished:
+finished: 2026-10-15
 labels:
   bonsai.branch: "t5595"
   bonsai.ladder: []

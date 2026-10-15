@@ -1,6 +1,6 @@
 name: Release
 
-# Build-only until spec step 5.7, which is Rohan's (design/plan.md, "CI and release after part 1"). A manual run
+# Build-only until spec step 5.7, which is the director's (design/plan.md, "CI and release after part 1"). A manual run
 # builds every target in .goreleaser.yaml as a snapshot and publishes nothing: no tag trigger, no inputs, a read-only
 # token and no secret, so the brews: block is never reached. The workflow also stays switched off on GitHub.
 on:

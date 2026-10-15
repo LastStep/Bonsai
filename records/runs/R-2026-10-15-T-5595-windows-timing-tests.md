@@ -5,9 +5,9 @@ task: T-5595
 role: orchestrator
 model: opus
 started: 2026-10-15 07:46
-finished:
-outcome:
-commits: []
+finished: 2026-10-15 13:01
+outcome: merged
+commits: ['ad85f24']
 labels: {}
 ---
 
@@ -42,9 +42,25 @@ labels: {}
 - 10:03 **Held, not landed:** `base` (5.5.2) lands first (a plan piece 5.5.3 waits for), and landing this first would
   send `base` through another rebase and Windows run in the wrap-up Rohan asked for. `t5595` stays as it is, in its
   worktree; the next session rebases it onto `main` (tests only), re-runs check 10 and the climb, and lands it.
+- 10:49 **The next session:** a Sonnet landing helper rebases `t5595` onto `main` at `2b9d09f`, re-runs check 10 on
+  both sides and climbs (brief `~/bonsai-checks/briefs/brief-T-5595-land.md`). Landed alone, before `T-5598`'s
+  Windows check, so the fix round's Windows halves meet these budgets, not the flakes.
+- 11:37 **The helper's report** (Sonnet, 10:47-11:37): rebase clean, `ad85f24` on `2b9d09f`. Check 10: WSL plain 4485
+  pass, 0 fail, 3 skips (Windows-only, each saying so), tagged 4491, 0 fail; vet clean; lint 0 issues. Windows
+  natively from a CRLF checkout at `ad85f24`: plain and tagged 29 packages ok, no FAIL; vet clean; Defender nothing.
+  Climb green (2.4/1.1/0.5/72.1/92.8/0.06 s; `go_tests` 4188->4485, tagged 4194->4491; `new_tests` 0, base `2b9d09f`).
+- 11:40 **Landed by the landing rule** (a batch of one: `T-5598` not ready): `.bonsai/local/ladder/T-5595.json` mode
+  local, green, `git.sha` `ad85f248ff754e9782a2da4c4d17d3fc919dae93` (the branch's HEAD), dirty false, rungs 0-5
+  green; its `ladder` record (05:30:26Z) names `/usr/local/bin/bonsai` and
+  `sha256:c35c822f2fe84faa50aca70970c29fcbc64bfcdb394d1af0065897d8484ed271`. The diff: nine files, inside Owns.
+  `main` fast-forwarded `2b9d09f..ad85f24` and pushed; the worktree removed, the branch deleted. `T-5595` to `verify`
+  until CI is green at `ad85f24`.
+- 13:01 **CI green at `ad85f24`** (run 38692545835: `test`, `lint`, `packs`, `govulncheck`, `windows` 26 min, CodeQL).
+  **`T-5595` to `done`.**
 
 ## Runs
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
 | Builder | Sonnet | 07:46 | 10:02 | 136 |
+| Landing helper: rebase, check 10, climb | Sonnet | 10:47 | 11:37 | 50 |

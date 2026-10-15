@@ -7,7 +7,7 @@ model: opus
 started: 2026-10-15 10:33
 finished: 2026-10-15 10:36
 outcome: merged
-commits: []
+commits: ['2b9d09f']
 labels: {}
 ---
 
@@ -28,6 +28,10 @@ labels: {}
 - 10:33 `CLAUDE.md`'s landing rule gains the batch sentence (pieces ready together: each rebased onto the one before,
   climbed at its own tip, one Windows check at the top, one push); the diff read: one sentence, 1 line out, 4 in.
   `STATE.md`, `rules.md` and the orchestrator's memory record it. The records commit; `T-5597` to `verify`, `done` on CI.
+- 11:41 **CI at `2b9d09f`:** the first run red on GitHub's side (every job but `test` failed in "Set up job":
+  "An action could not be found at the URI ... actions/setup-go ..."); the failed jobs re-run at 10:44, then `test`,
+  `lint`, `packs`, `govulncheck` and `windows` green. CodeQL failed the same way three times (05:03Z, 05:14Z, 05:18Z),
+  a GitHub download, not the commit; watched on the next push. **`T-5597` to `done`.**
 
 ## Runs
 

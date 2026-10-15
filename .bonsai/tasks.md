@@ -5,24 +5,28 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
-| T-5597 | CLAUDE.md's landing rule: pieces ready together land as one batch, with one Windows check at the batch's top | verify | | 2026-10-15 | |
-| T-5596 | VG: a fresh verifier on the guard's role rules and stall stops, bonsai agents, and 5.5.8's gate and runner lines (5.5.11, 5.5.12, 5.5.8) | blocked | | 2026-10-15 | |
-| T-5595 | Windows timing tests that fail under load: their own budgets and limits, so they judge what they test, not how fast | blocked | | 2026-10-15 | |
+| T-5599 | No person's name in Bonsai's files: the director's name, user name and email replaced by a generic designation | verify | | 2026-10-15 | |
+| T-5598 | VG's fix round for 5.5.11 and 5.5.8's item 4: role rights only behind an allowed call, case-free types, the report found by the gate | done | | 2026-10-15 | 2026-10-15 |
+| T-5597 | CLAUDE.md's landing rule: pieces ready together land as one batch, with one Windows check at the batch's top | done | | 2026-10-15 | 2026-10-15 |
+| T-5596 | VG: a fresh verifier on the guard's role rules and stall stops, bonsai agents, and 5.5.8's gate and runner lines (5.5.11, 5.5.12, 5.5.8) | done | | 2026-10-15 | 2026-10-15 |
+| T-5595 | Windows timing tests that fail under load: their own budgets and limits, so they judge what they test, not how fast | done | | 2026-10-15 | 2026-10-15 |
 | T-5594 | VM's fix round for 5.5.0 and 5.5.10: a pointer read only from a regular file, and an unknown limit name named | done | | 2026-10-15 | 2026-10-15 |
 | T-5593 | VM: a fresh verifier on formats set 8, the engine's roles and limits, and messages between agents (5.5.9, 5.5.0, 5.5.10) | done | | 2026-10-15 | 2026-10-15 |
 | T-5592 | Two Windows CI flakes on e1437d0: an exited process read as a job member, and a reused pid in TestSweep | done | | 2026-10-15 | 2026-10-15 |
 | T-5591 | CLAUDE.md's Safety line names the workflow pack's repository among the places Bonsai's work writes | done | | 2026-10-15 | 2026-10-15 |
 | T-5590 | Step 5.5 re-planned on the agent-pipelines redesign and Rohan's six decisions of 14 Oct | done | | 2026-10-14 | 2026-10-14 |
+| T-5514 | VG's third check's fix for 5.5.11 (5.5.11c): past a budget only this system's installed place, and a rewritten count held spent | done | | 2026-10-15 | 2026-10-15 |
+| T-5513 | VG's second fix round for 5.5.11 (5.5.11b): permission changes on Bonsai's files refused, a call never passed uncounted | done | | 2026-10-15 | 2026-10-15 |
 | T-5512 | bonsai agents, the studio's view of every agent, and the usage records (5.5.12) | done | | 2026-10-15 | 2026-10-15 |
-| T-5511 | The guard's role rules and stall stops (5.5.11) | verify | | 2026-10-15 | |
+| T-5511 | The guard's role rules and stall stops (5.5.11) | done | | 2026-10-15 | 2026-10-15 |
 | T-5510 | Messages between agents: the reader, bonsai message and bonsai messages (5.5.10) | done | | 2026-10-15 | 2026-10-15 |
 | T-5509 | Formats set 8, the contract's new section and the spec's notes (5.5.9) | done | | 2026-10-14 | 2026-10-15 |
-| T-5508 | CI green and 5.4's carry-overs: three flakes, the rungs' environment, the stop gate's installed path (5.5.8) | verify | | 2026-10-14 | |
+| T-5508 | CI green and 5.4's carry-overs: three flakes, the rungs' environment, the stop gate's installed path (5.5.8) | done | | 2026-10-14 | 2026-10-15 |
 | T-5507 | Bonsai takes base and workflow: the new pre-release, Rohan's sitting, CLAUDE.md shrinks (5.5.7) | todo | | | |
 | T-5506 | The walls, each tried once on both sides (5.5.6) | todo | | | |
 | T-5505 | The packs in real Claude Code sessions, on both sides (5.5.5) | todo | | | |
 | T-5504 | workflow, its own repository, written around the six roles (5.5.4) | blocked | | 2026-10-15 | |
-| T-5503 | The operating Bonsai skill in base, kept in step with the commands by a test (5.5.3) | todo | | | |
+| T-5503 | The operating Bonsai skill in base, kept in step with the commands by a test (5.5.3) | done | | 2026-10-15 | 2026-10-15 |
 | T-5502 | base, Bonsai's own pack: the walls, the labels, the block and the template skills (5.5.2) | verify | | 2026-10-15 | |
 | T-5501 | The pack template, its checks and Bonsai's CI job for packs (5.5.1) | verify | | 2026-10-15 | |
 | T-5500 | The engine's part for packs: protocols paths, roles and limits in force, status's roles (5.5.0) | verify | | 2026-10-15 | |

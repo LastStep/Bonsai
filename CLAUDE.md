@@ -1,7 +1,8 @@
 # Bonsai: guide for Claude Code
 
 Bonsai is being rebuilt from scratch. 0.4.3 (May 2026) is the old product's last release, kept at its tag and in git
-history; everything in this repo now serves the rebuild. Rohan is the director; Claude agents are the team.
+history; everything in this repo now serves the rebuild. A person directs it (below, "the director"); Claude agents are
+the team.
 
 **From the link** (step 5.4's switch: the installed `bonsai` links this repo), Bonsai guards its own checkout and proves
 its own work. A rule below marked "from the link" holds once that commit is on `main`; until then the rules before it
@@ -14,9 +15,9 @@ hold. The block `bonsai init` writes into this file sits apart, between its mark
   that keeps a clean log; a ladder that proves work is done. One Go program, nothing else to install, on Linux and
   Windows.
 - **Is not:** anything that applies an action. It never moves a task, applies an approval or starts an agent. No daemon,
-  no network service, no terminal UI, and no screens or web page of its own (Rohan, 9 Oct: a pure command-line tool;
+  no network service, no terminal UI, and no screens or web page of its own (the director, 9 Oct: a pure command-line tool;
   every visual is the studio's). Registries, dashboards, notifications and deploys belong to its users.
-- **Its first user** is Rohan's studio, Trinetra, which adopts the formats when it links (step 7). This repo names no studio file in its code.
+- **Its first user** is the director's studio, Trinetra, which adopts the formats when it links (step 7). This repo names no studio file in its code.
 
 ## Where the truth lives
 
@@ -26,7 +27,7 @@ hold. The block `bonsai init` writes into this file sits apart, between its mark
 | What do we build, in what order, proved how? | `design/plan.md` |
 | What is Bonsai, exactly? | `design/bonsai-spec.md` (130 KB). Grep its `## N.` sections; never read it whole |
 | What do the formats say? | `design/contract.md` (100 KB). The same: by section |
-| What did Rohan decide on each format? | `design/format-review.md` (confirmed 7 Oct: the formats are final) |
+| What did the director decide on each format? | `design/format-review.md` (confirmed 7 Oct: the formats are final) |
 | What is it for; what does correct mean? | `design/one-pager.md` |
 | What happened before? | `records/runs/`. Read one only when `STATE.md` or the plan points to it |
 | The shared formats, schemas and trick files | `formats/` (from part 0) |
@@ -36,7 +37,7 @@ The specs were written in the studio's repo: their "this repo" means the studio'
 
 ## How a session works
 
-- **Rohan opens a session in `~/Servers/Bonsai`** (the main checkout, on `main`). It is the **orchestrator**: it reads
+- **The director opens a session in `~/Servers/Bonsai`** (the main checkout, on `main`). It is the **orchestrator**: it reads
   `STATE.md` and the plan, keeps its own context lean, and dispatches builder and verifier subagents. Bonsai has no role
   files, so every brief carries the job, the plan's part, the sections to read and the rules below that apply. It reads
   the agents' reports, not their file dumps.
@@ -45,7 +46,7 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   From the link, a worktree is made from `main` at or after the link commit (a branch from before it has no
   `bonsai.yaml`, so rung 0 cannot check it), and is removed only with `git worktree remove` (a recursive delete of a
   checkout's folder is a guarded delete).
-- **Builders stay subagents of the orchestrator's session, unnamed** (Rohan, 12 Oct). A subagent shares its session's
+- **Builders stay subagents of the orchestrator's session, unnamed** (the director, 12 Oct). A subagent shares its session's
   environment and cannot carry a task of its own: the guard grants by the one task reading `running`, the ladder is
   named by `--task`, and the stop gate runs neither for a subagent nor for the orchestrator. Their gate is the landing
   rule below, the lock on what reaches `main`. How builders start changes only with 5.5's agent pipelines.
@@ -69,8 +70,8 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   - `bonsai.wants`: the person-only paths among them, copied into `bonsai.allows` under the stricter-only rule.
   - `bonsai.ladder`: rungs the task climbs beyond the floor; `[]` here, since the floor holds every rung.
   - `bonsai.branch`: the piece's branch.
-- **A plan is reviewed by a fresh Opus agent** before it reaches Rohan.
-- **A fresh verifier** (Opus, fresh context) for big or risky work only (Rohan's rule): part 0, the reader, guards and
+- **A plan is reviewed by a fresh Opus agent** before it reaches the director.
+- **A fresh verifier** (Opus, fresh context) for big or risky work only (the director's rule): part 0, the reader, guards and
   hooks, CI and release, security, and the end of each plan step; other parts close on green tests and CI plus the
   orchestrator's read of the diff, which the run report says. Related light parts share one verifier. A verifier
   reads the plan's part, the cited sections and the diff, re-runs the tests itself, and
@@ -84,7 +85,7 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   log, not a summary. Each lists every run with its model, start, end and minutes; those rows are the hours the stop
   lines count. From the link, one per task, named `R-<date>-<task id>-<topic>.md`, with `bonsai.run/1` frontmatter
   (`id` R-(date)-(task id), `task`, `role: orchestrator`, `model`, `started`, `finished`, `outcome`, `commits`,
-  `labels`). Past run reports, logs and tasks are left as they are (Rohan, 12 Oct): no lock, edit or cleanup.
+  `labels`). Past run reports, logs and tasks are left as they are (the director, 12 Oct): no lock, edit or cleanup.
 - **Proof** until the link: `go test ./...` and `go vet ./...` in WSL and natively on Windows, CI green on Linux and
   Windows, and a fresh verifier.
 - **Proof from the link: the landing rule**, the lock on `main`. The orchestrator fast-forwards a piece only when
@@ -92,7 +93,7 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   `git.dirty` false, every rung of the floor and of the task's `bonsai.ladder` green, and its `ladder` record in the
   log names `/usr/local/bin/bonsai` with the result's `sha256`; plus check 10's Windows half (`go test ./...` and
   `go vet ./...`, plain and tagged, natively on Windows) before the push, and CI after it. **Pieces ready together land
-  as one batch** (Rohan, 15 Oct: "land in batches"): each rebased in turn onto the one before, each climbed at its own
+  as one batch** (the director, 15 Oct: "land in batches"): each rebased in turn onto the one before, each climbed at its own
   tip, check 10's Windows half run once at the batch's top commit, `main` fast-forwarded to it and pushed once; a piece
   in flight is not rebased and re-checked for each other landing, but joins the next batch. It also reads the branch's
   diff against the section's "Owns" list for the piece and refuses one that leaves it: `records/tasks/`, `design/` and
@@ -106,7 +107,8 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   where a refusal's `next.who` says `person`.
 - **`STATE.md`** is rewritten, never appended, whenever where Bonsai stands changes.
 - **Claude Code's memory, from the link:** the link writes `autoMemoryEnabled: false` into `.claude/settings.json`; by
-  Rohan's word of 13 Oct ("A. Keep them on"), his sitting adds `"autoMemoryEnabled": true` to his own local settings
+  the director's word of 13 Oct ("A. Keep them on"), their sitting adds `"autoMemoryEnabled": true` to their own local
+  settings
   file (.claude/settings.local.json in the main checkout, out of git, read by no Bonsai check), so this repo's Claude
   Code memory notes keep loading until 5.6's personal layer takes them over. No agent copies the notes anywhere or
   edits that file (the guard refuses it).
@@ -116,30 +118,30 @@ The specs were written in the studio's repo: their "this repo" means the studio'
 - `bonsai.yaml`, the lock and Claude Code's settings (and the release files) are person-only, and in Bonsai's mode a
   person-only path is grantable as written, so the rule is the orchestrator's: a task may hold one of them in
   `bonsai.allows` only for a change of a stricter kind (a floor raised to a green climb's count; a rung, a floor entry or
-  a protected path added) or one a section Rohan approved names. **Any other change loosens the checks and waits for
-  Rohan's word**, marked in the run report: a floor lowered or `ratchets` emptied; a rung's `command`, `required`,
+  a protected path added) or one a section the director approved names. **Any other change loosens the checks and waits
+  for the director's word**, marked in the run report: a floor lowered or `ratchets` emptied; a rung's `command`, `required`,
   `tests`, `ratchet` or `capture` changed; a rung, floor entry, protected or person-only path taken out; a name added to
   `ci_marked_tests`; a release file changed beyond its section. Why: an agent loosening the checks it is held to would
   be judging its own work. Each part's end verifier reads every change to `bonsai.yaml` in the part against this rule.
 - **A `bonsai.yaml` change reaches the ladder only once committed on `main`:** a climb reads the rungs, floor, ratchets
   and `ci_marked_tests` from main's committed copy, and refuses while the main checkout's file differs from it
   (`config-uncommitted`, a person's step: commit or revert it).
-- **Loosening is refused in code until Rohan re-records it:** a climb whose committed settings loosen any check (a
+- **Loosening is refused in code until the director re-records it:** a climb whose committed settings loosen any check (a
   floor, a rung, a ratchet, a protected or person-only path, `ci_marked_tests`) against what this machine last accepted
-  is refused (`config-looser`) until Rohan runs `bonsai update` in the main checkout; tightening is accepted and
+  is refused (`config-looser`) until the director runs `bonsai update` in the main checkout; tightening is accepted and
   recorded automatically, so raising floors needs no person.
 - **`main` stays on its branch:** the main checkout keeps the base branch this machine recorded at the link checked
   out; a climb (and the stop gate) refuses while it holds another branch or a detached HEAD.
 - **The floors, once a part:** after the part's last records commit, the orchestrator climbs `main` once under the
   part's last task, raises the floors to that climb's counts under a task (`T-5x9N`) granting `bonsai.yaml`, records the
-  Bless numbers in its run report and gives Rohan the floors in the part's last line, with nothing to answer.
+  Bless numbers in its run report and gives the director the floors in the part's last line, with nothing to answer.
 
-## Commands that stay Rohan's, from the link
+## Commands that stay the director's, from the link
 
 In Bonsai's repo an agent never passes `--allow-exec`, never runs `bonsai unlink`, and never runs an update that removes
-or changes Bonsai's guard or stop line; the command itself refuses. Rohan types them in his own terminal, in
+or changes Bonsai's guard or stop line; the command itself refuses. The director types them in their own terminal, in
 `~/Servers/Bonsai`: `bonsai update --allow-exec --yes` when a part changes one of Bonsai's own hook lines (the
-orchestrator says when), and `bonsai unlink` only if he decides to take Bonsai out of its own repo. Every other
+orchestrator says when), and `bonsai unlink` only if they decide to take Bonsai out of its own repo. Every other
 update of Bonsai's link (one that adds no code and leaves Bonsai's lines as they are, such as base's link in 5.5) is
 the orchestrator's, in the main checkout only (rung 0 refuses a branch that changes `.claude/settings.json`), under a
 task granting `bonsai.yaml` and the lock.
@@ -147,8 +149,9 @@ task granting `bonsai.yaml` and the lock.
 ## The way back, if the installed `bonsai` blocks work
 
 If Bonsai's guard breaks, every edit and command in a Claude Code session here is refused: it fails closed, on purpose.
-Then Rohan, in a plain WSL terminal, quits Claude Code and starts it like this instead, for as many sessions as the fix
-takes (the conversation is kept; that session runs with no guard, no stop gate, no log, and without his status line):
+Then the director, in a plain WSL terminal, quits Claude Code and starts it like this instead, for as many sessions as
+the fix takes (the conversation is kept; that session runs with no guard, no stop gate, no log, and without their status
+line):
 
 ```bash
 cd ~/Servers/Bonsai
@@ -157,8 +160,8 @@ claude --continue --settings '{"disableAllHooks": true}'
 
 The orchestrator in it fixes the problem and lands the fix on the proof used before the link (the installed copy may be
 the broken part): `go test ./...` and `go vet ./...` in WSL and natively on Windows, CI, and a fresh verifier. Then it
-builds a new pre-release from a clean clone and sends Rohan its install lines and number; from the second pre-release on,
-the one he had is kept in `~/bonsai-checks/prerelease/previous/`, and its install lines are the way back to it.
+builds a new pre-release from a clean clone and sends the director its install lines and number; from the second
+pre-release on, the one they had is kept in `~/bonsai-checks/prerelease/previous/`, and its install lines are the way back to it.
 
 ## Rules for every change
 
@@ -188,32 +191,35 @@ the one he had is kept in `~/bonsai-checks/prerelease/previous/`, and its instal
 
 ## GitHub (`LastStep/Bonsai`, public)
 
-- Agents act on GitHub as `LastStep`, Rohan's admin account, so guards there stop accidents, not intent.
+- Agents act on GitHub as `LastStep`, the director's admin account, so guards there stop accidents, not intent.
 - **Builders never push.** The orchestrator fast-forwards `main` and pushes it only after the work's proof passes, then checks
   CI for that commit after every push:
   `gh api repos/LastStep/Bonsai/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
   (or `gh run list -R LastStep/Bonsai -L 10`; this machine's gh has no `--branch`). Red CI is fixed forward.
 - Work lands on `main` directly: no pull requests, no long-lived branches. Force pushes and deletion are blocked.
-- **Nobody tags or releases.** `release.yml` stays disabled; releases are Rohan's word at spec step 5.7. No agent changes
+- **Nobody tags or releases.** `release.yml` stays disabled; releases are the director's word at spec step 5.7. No agent changes
   a setting, secret, ruleset or workflow switch, or merges or closes a pull request.
 
-## Working with Rohan
+## Working with the director
 
-- He is the director and writes, reviews and verifies no code. Agents own the code end to end: never leave a code
-  problem for him to catch.
-- Hand checks go to a Sonnet agent wherever an agent can run them; Rohan is asked only for what needs a person.
+- The director writes, reviews and verifies no code. Agents own the code end to end: never leave a code problem for
+  them to catch.
+- Hand checks go to a Sonnet agent wherever an agent can run them; the director is asked only for what needs a person.
 - Ask in plain words, context first, one question at a time, with two to four options and a recommendation. Never ask
   what a file answers.
-- Hand him manual work (hand checks, settings, installs) in one batch with exact commands: bash for WSL, one command per
-  line; PowerShell 5.1 for Windows, one command per line, no `&&`.
+- Hand them manual work (hand checks, settings, installs) in one batch with exact commands: bash for WSL, one command
+  per line; PowerShell 5.1 for Windows, one command per line, no `&&`.
 - A small fix stays small; ask before chasing edge cases.
-- Write for him in plain words: what he can now do, with evidence (test counts, the CI run, the command to try). Never
-  claim something is good for him; he judges that.
+- Write for them in plain words: what they can now do, with evidence (test counts, the CI run, the command to try).
+  Never claim something is good for them; they judge that.
 
 ## Safety
 
 - **No secrets anywhere: the repo is public.** No home-folder path, machine or tailnet name, email address, token or server
   address in any file or commit message; write `~/...` and `%USERPROFILE%`.
+- **No person's name** in any file, comment or commit message (the director, 15 Oct: Bonsai is a general product used
+  by everyone): write "the director" in this project's own files and "the person" in the product (code, formats, docs,
+  packs); a person's pronouns are "they". Files already under `records/` and `design/` keep what they hold.
 - Never touch `~/ZenGarden/Bonsai` (an old clone with branches on no remote).
 - Tests use temp folders (`t.TempDir()`), never a real home (`~/.bonsai`, `~/.claude`) or a real project.
 - Bonsai's work changes nothing outside this repo, its test pack, the workflow pack's repository

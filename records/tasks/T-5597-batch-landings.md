@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5597
 title: "CLAUDE.md's landing rule: pieces ready together land as one batch, with one Windows check at the batch's top"
-status: verify
+status: done
 lane:
 done_when:
   - "CLAUDE.md's landing rule says that pieces ready together land as a batch: each rebased in turn onto the one before, each climbed at its own tip, check 10's Windows half run once at the batch's top commit, main fast-forwarded to it and pushed once, CI after it; and nothing else in CLAUDE.md changes"
@@ -11,7 +11,7 @@ depends_on: [T-5590]
 blocked_by:
 created: 2026-10-15
 started: 2026-10-15
-finished:
+finished: 2026-10-15
 labels:
   bonsai.branch: null
   bonsai.ladder: []
