@@ -13,7 +13,10 @@ package engine
 // generated kind's two fields once for every kind (generated.<kind>.keep_days); the meaning is the template's own
 // comment for the field (Comments, StateFields); the allowed values a closed list's values in backquotes (the
 // schema's enum or const, as check --pack reads them: schemaList), else the field's type in words (a pattern in
-// backquotes); the example the schema's first, as JSON, or "as in the template" where that is long. Byte-stable: LF,
+// backquotes); the example the schema's first, as JSON, or "as in the template" where that is long. A mapping with
+// content is never shown as JSON, which Bonsai's reader refuses (a flow mapping: an agent that copied one into
+// bonsai.yaml locked every call out, 5.5.5's S4): its cell reads "as below", and a section at the skill's end,
+// Mappings, shows each as the file holds it, indented key: value lines nested by the field's path. Byte-stable: LF,
 // ASCII, no map-order iteration.
 
 import (
@@ -117,7 +120,8 @@ func WorkspaceSkill() []byte {
 	line("")
 	line("| Field | Meaning | Allowed values | Example |")
 	line("|---|---|---|---|")
-	for _, r := range fieldRows(f, c) {
+	rows, maps := fieldRows(f, c)
+	for _, r := range rows {
 		line(r)
 	}
 	line("")
@@ -138,6 +142,7 @@ func WorkspaceSkill() []byte {
 	line("```yaml")
 	b.WriteString(exampleLadder)
 	line("```")
+	b.WriteString(mappingsSection("`bonsai.yaml`", maps))
 	return []byte(b.String())
 }
 
@@ -175,7 +180,8 @@ func StateSkill() []byte {
 	line("")
 	line("| Field | Meaning | Allowed values | Example |")
 	line("|---|---|---|---|")
-	for _, r := range fieldRows(f, func(path string) string { return meaning[path] }) {
+	rows, maps := fieldRows(f, func(path string) string { return meaning[path] })
+	for _, r := range rows {
 		line(r)
 	}
 	line("")
@@ -186,13 +192,22 @@ func StateSkill() []byte {
 	line("```markdown")
 	b.Write(StateTemplate("YYYY-MM-DD"))
 	line("```")
+	b.WriteString(mappingsSection("STATE's frontmatter", maps))
 	return []byte(b.String())
 }
 
 // fieldRows are a format's fields table rows: one per field of its schema (nested ones by path; a generated kind's
 // two fields once, as generated.<kind>.keep_days), with meaning's words.
-func fieldRows(f *format.Format, meaning func(path string) string) []string {
+func fieldRows(f *format.Format, meaning func(path string) string) ([]string, []mappingExample) {
 	var rows []string
+	var maps []mappingExample
+	add := func(path, meaning string, ps schema.Object) {
+		r, m := tableRow(f, path, meaning, ps)
+		rows = append(rows, r)
+		if m != nil {
+			maps = append(maps, mappingExample{path: path, value: m})
+		}
+	}
 	kindDone := false
 	var walk func(o schema.Object, at string)
 	walk = func(o schema.Object, at string) {
@@ -206,20 +221,20 @@ func fieldRows(f *format.Format, meaning func(path string) string) []string {
 			ps := m.Value.(schema.Object)
 			if at == "generated" && path != "generated."+format.GeneratedKinds[0].Kind {
 				// Each generated kind has the same two fields: its own row, and the fields' rows once, below the first.
-				rows = append(rows, tableRow(f, path, meaning(path), ps))
+				add(path, meaning(path), ps)
 				continue
 			}
 			if at == "generated" && !kindDone {
 				kindDone = true
-				rows = append(rows, tableRow(f, path, meaning(path), ps))
+				add(path, meaning(path), ps)
 				kp, _ := ps.Get("properties")
 				for _, k := range kp.(schema.Object) {
 					p := "generated.<kind>." + k.Key
-					rows = append(rows, tableRow(f, p, meaning("generated."+format.GeneratedKinds[0].Kind+"."+k.Key), k.Value.(schema.Object)))
+					add(p, meaning("generated."+format.GeneratedKinds[0].Kind+"."+k.Key), k.Value.(schema.Object))
 				}
 				continue
 			}
-			rows = append(rows, tableRow(f, path, meaning(path), ps))
+			add(path, meaning(path), ps)
 			if items, ok := ps.Get("items"); ok {
 				if io, ok := items.(schema.Object); ok {
 					if _, ok := io.Get("properties"); ok {
@@ -231,11 +246,11 @@ func fieldRows(f *format.Format, meaning func(path string) string) []string {
 		}
 	}
 	walk(f.Schema(), "")
-	return rows
+	return rows, maps
 }
 
-// tableRow is one row of a fields table.
-func tableRow(f *format.Format, path, meaning string, ps schema.Object) string {
+// tableRow is one row of a fields table, and its example when that is a mapping with content (shown under Mappings).
+func tableRow(f *format.Format, path, meaning string, ps schema.Object) (string, schema.Object) {
 	allowed := ""
 	if vals := schemaList(f.Schema(), path); len(vals) > 0 {
 		allowed = backquote(vals)
@@ -246,10 +261,15 @@ func tableRow(f *format.Format, path, meaning string, ps schema.Object) string {
 		allowed = typeWords(ps)
 	}
 	example := "as in the template"
+	var mapping schema.Object
 	if ex, ok := ps.Get("examples"); ok {
 		if list, ok := ex.([]any); ok && len(list) > 0 {
 			if s := schema.Show(list[0]); len(s) <= 60 {
-				example = "`" + s + "`"
+				if o, ok := list[0].(schema.Object); ok && len(o) > 0 {
+					example, mapping = "as below", o
+				} else {
+					example = "`" + s + "`"
+				}
 			}
 		}
 	}
@@ -257,7 +277,96 @@ func tableRow(f *format.Format, path, meaning string, ps schema.Object) string {
 		meaning = "-"
 	}
 	cell := func(s string) string { return strings.ReplaceAll(s, "|", `\|`) }
-	return "| `" + path + "` | " + cell(upperFirst(meaning)) + " | " + cell(allowed) + " | " + cell(example) + " |"
+	return "| `" + path + "` | " + cell(upperFirst(meaning)) + " | " + cell(allowed) + " | " + cell(example) + " |", mapping
+}
+
+// mappingExample is a field whose example is a mapping with content: its path in the fields table and the example.
+type mappingExample struct {
+	path  string
+	value schema.Object
+}
+
+// mappingsSection is the section at a template skill's end (check --pack reads its first yaml or markdown block as
+// the template) showing each mapping example as the file holds it, or "" when there is none: one yaml block, each
+// example nested by its field's path (a list's [] as one item), in the table's order, so the block reads as the
+// file's own lines do.
+func mappingsSection(file string, maps []mappingExample) string {
+	if len(maps) == 0 {
+		return ""
+	}
+	type node struct {
+		key      string
+		list     bool
+		value    schema.Object // a leaf's example
+		children []*node
+	}
+	root := &node{}
+	for _, m := range maps {
+		at := root
+		parts := strings.Split(m.path, ".")
+		for i, part := range parts {
+			key, list := strings.TrimSuffix(part, "[]"), strings.HasSuffix(part, "[]")
+			var next *node
+			for _, c := range at.children {
+				if c.key == key {
+					next = c
+				}
+			}
+			if next == nil {
+				next = &node{key: key, list: list}
+				at.children = append(at.children, next)
+			}
+			if i == len(parts)-1 {
+				next.value = m.value
+			}
+			at = next
+		}
+	}
+	var b strings.Builder
+	var value func(o schema.Object, indent string)
+	value = func(o schema.Object, indent string) {
+		for _, m := range o {
+			if c, ok := m.Value.(schema.Object); ok && len(c) > 0 {
+				b.WriteString(indent + m.Key + ":\n")
+				value(c, indent+"  ")
+				continue
+			}
+			b.WriteString(indent + m.Key + ": " + schema.Show(m.Value) + "\n")
+		}
+	}
+	var tree func(n *node, indent string)
+	tree = func(n *node, indent string) {
+		for _, c := range n.children {
+			b.WriteString(indent + c.key + ":\n")
+			inner := indent + "  "
+			if c.list {
+				// The list's one item: its first line starts "- ", the rest under it.
+				inner = indent + "    "
+				b.WriteString(indent + "  - ")
+			}
+			start := b.Len()
+			if c.value != nil {
+				value(c.value, inner)
+			} else {
+				tree(c, inner)
+			}
+			if c.list {
+				s := b.String()
+				rest := strings.TrimPrefix(s[start:], inner)
+				b.Reset()
+				b.WriteString(s[:start] + rest)
+			}
+		}
+	}
+	tree(root, "")
+	var out strings.Builder
+	out.WriteString("\n## Mappings\n\n")
+	out.WriteString("The fields whose example is a mapping, written as " + file + " holds them: indented `key: value` lines, " +
+		"nested by the field's path. Never write a mapping with content on one line in braces (a flow mapping): Bonsai " +
+		"refuses the file, and in `bonsai.yaml` that stops every call until a person repairs it; `{}` alone is an empty " +
+		"mapping.\n\n")
+	out.WriteString("```yaml\n" + b.String() + "```\n")
+	return out.String()
 }
 
 // typeWords says a field's type in words: text (matching a pattern), a whole number (from its minimum), true or false,

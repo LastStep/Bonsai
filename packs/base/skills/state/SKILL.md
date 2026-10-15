@@ -18,7 +18,7 @@ description: "STATE, the one page that says where a project stands (.bonsai/STAT
 | `format` | The format and its version, always the first line; its comment points back to these docs | `bonsai.state/1` | `"bonsai.state/1"` |
 | `updated` | The day the page was last rewritten, as text: rewrite it with the page | text matching `^[0-9]{4}-[0-9]{2}-[0-9]{2}$` | `"2026-10-08"` |
 | `updated_by` | Who rewrote it: a role and its model, a person's name, or bonsai init for the first page | text | `"orchestrator (opus)"` |
-| `labels` | The labels the page carries, by name (a label definition in force says which go on STATE); {} for none | a mapping | `{"workflow.milestone":"v1"}` |
+| `labels` | The labels the page carries, by name (a label definition in force says which go on STATE); {} for none | a mapping | as below |
 
 ## The template
 
@@ -43,4 +43,13 @@ Rewritten whole whenever where the project stands changes; never appended to. A 
 ## Open questions
 
 ## Decided lately
+```
+
+## Mappings
+
+The fields whose example is a mapping, written as STATE's frontmatter holds them: indented `key: value` lines, nested by the field's path. Never write a mapping with content on one line in braces (a flow mapping): Bonsai refuses the file, and in `bonsai.yaml` that stops every call until a person repairs it; `{}` alone is an empty mapping.
+
+```yaml
+labels:
+  workflow.milestone: "v1"
 ```

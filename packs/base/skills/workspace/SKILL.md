@@ -25,7 +25,7 @@ description: "bonsai.yaml, this project's Bonsai settings: what each field means
 | `packs[].source` | The git repository the pack comes from, fetched with this machine's git | text matching `^[^-]` | `"https://example.com/packs/workflow.git"` |
 | `packs[].path` | The pack's folder inside that repository; null for the repository's top | text matching `^[^/\\:][^\\:]*$`, or null | `"packs/base"` |
 | `packs[].ref` | The release tag or a 40-character commit; change it, then run bonsai update to take it | text matching `^[^-]` | `"base-v1.0.0"` |
-| `packs[].roles` | This project's limits for the pack's roles; null keeps the pack's; changed any time | a mapping, or null | `{"builder":{"minutes":{"default":240,"max":480}}}` |
+| `packs[].roles` | This project's limits for the pack's roles; null keeps the pack's; changed any time | a mapping, or null | as below |
 | `documents` | Where this project keeps the documents Bonsai knows: a folder (one file each) or one file | a mapping (its fields below) | as in the template |
 | `documents.task` | The tasks' folder: one file per task, named <id>-<slug>.md (bonsai.task/1) | text matching `^[^/\\:][^\\:]*$` | `"work/tasks"` |
 | `documents.run` | The run reports' folder: one report per agent session (bonsai.run/1) | text matching `^[^/\\:][^\\:]*$` | `"work/runs"` |
@@ -44,22 +44,22 @@ description: "bonsai.yaml, this project's Bonsai settings: what each field means
 | `ladder[].required` | True: a red result here skips the rungs after it | true or false | `true` |
 | `ladder[].timeout_s` | The longest it may run, in seconds; null for the runner's default | a whole number from 1, or null | `600` |
 | `ladder[].ratchet` | The ratchet count it feeds (see ratchets); null for none | any value | `"tests"` |
-| `ladder[].capture` | The patterns that pick numbers or text out of its output, by name; null for none | any value | `{"tests":"([0-9]+) passed"}` |
+| `ladder[].capture` | The patterns that pick numbers or text out of its output, by name; null for none | any value | as below |
 | `ladder[].means` | One line: what it proves when green; null for none | text, or null | `"Every unit test passes."` |
 | `ladder[].tests` | The form of its test output: TAP, go test -json or JUnit; null when it prints no tests | text, or null | `null` |
 | `ladder[].base_setup` | The command run first in a worktree at the merge base (installing dependencies); null for none | text, or null | `"npm ci"` |
-| `ratchets` | Counts that may only rise, by name, each the floor a rung's count may not fall below; e.g. tests: 120 | a mapping | `{"tests":120}` |
+| `ratchets` | Counts that may only rise, by name, each the floor a rung's count may not fall below; e.g. tests: 120 | a mapping | as below |
 | `ci_marked_tests` | Tests allowed to skip in CI only, each by its name in the test output; e.g. ["TestNeedsADisplay"] | a list of text | `["TestNeedsADisplay"]` |
 | `generated` | How long generated files are kept, per kind; null keeps all (skill base:generated-files) | a mapping (its fields below) | as in the template |
-| `generated.log` | The log, one file per session, in .bonsai/local/log/; default: 30 days after a file's last line | a mapping (its fields below) | `{"keep_days":30,"keep_newest":null}` |
+| `generated.log` | The log, one file per session, in .bonsai/local/log/; default: 30 days after a file's last line | a mapping (its fields below) | as below |
 | `generated.<kind>.keep_days` | Clean what is older than this many days; null: no age rule | a whole number from 0, or null | `30` |
 | `generated.<kind>.keep_newest` | Keep only this many of the newest; null: no count rule | a whole number from 0, or null | `100` |
-| `generated.asks` | Questions for a person and their answers, in .bonsai/local/asks/; default: kept | a mapping (its fields below) | `{"keep_days":null,"keep_newest":null}` |
-| `generated.ladder` | Ladder results, one per task, in .bonsai/local/ladder/; default: 7 days after the result's finished | a mapping (its fields below) | `{"keep_days":7,"keep_newest":null}` |
-| `generated.run` | Run reports, committed history, in the run reports' folder (documents.run); default: kept | a mapping (its fields below) | `{"keep_days":null,"keep_newest":null}` |
-| `generated.sessions` | Rows of the sessions table, in .bonsai/sessions.md; default: kept | a mapping (its fields below) | `{"keep_days":null,"keep_newest":null}` |
-| `generated.messages` | Messages between agents (set 8), in .bonsai/local/messages/; default: 30 days after a thread's last message | a mapping (its fields below) | `{"keep_days":30,"keep_newest":null}` |
-| `generated.agents` | Each agent's state (set 8), in .bonsai/local/agents/; default: 30 days after a session folder's last line | a mapping (its fields below) | `{"keep_days":30,"keep_newest":null}` |
+| `generated.asks` | Questions for a person and their answers, in .bonsai/local/asks/; default: kept | a mapping (its fields below) | as below |
+| `generated.ladder` | Ladder results, one per task, in .bonsai/local/ladder/; default: 7 days after the result's finished | a mapping (its fields below) | as below |
+| `generated.run` | Run reports, committed history, in the run reports' folder (documents.run); default: kept | a mapping (its fields below) | as below |
+| `generated.sessions` | Rows of the sessions table, in .bonsai/sessions.md; default: kept | a mapping (its fields below) | as below |
+| `generated.messages` | Messages between agents (set 8), in .bonsai/local/messages/; default: 30 days after a thread's last message | a mapping (its fields below) | as below |
+| `generated.agents` | Each agent's state (set 8), in .bonsai/local/agents/; default: 30 days after a session folder's last line | a mapping (its fields below) | as below |
 | `messages` | When bonsai messages flags a thread; null for Bonsai's defaults (bonsai check --schema bonsai.messages) | a mapping (its fields below), or null | `null` |
 | `messages.unanswered_minutes` | Minutes a brief may go with no report once its agent is quiet; null for the default | a whole number from 0, or null | `120` |
 | `messages.circling_briefs` | Briefs each way one thread may hold before it is flagged circling; null for the default | a whole number from 0, or null | `3` |
@@ -174,4 +174,44 @@ ladder:                               # the rungs, cheapest first
     base_setup: null                  # nothing to set up on the base
 ratchets:                             # counts that may only rise
   tests: 0                            # raised to a green climb's count once there is one
+```
+
+## Mappings
+
+The fields whose example is a mapping, written as `bonsai.yaml` holds them: indented `key: value` lines, nested by the field's path. Never write a mapping with content on one line in braces (a flow mapping): Bonsai refuses the file, and in `bonsai.yaml` that stops every call until a person repairs it; `{}` alone is an empty mapping.
+
+```yaml
+packs:
+  - roles:
+      builder:
+        minutes:
+          default: 240
+          max: 480
+ladder:
+  - capture:
+      tests: "([0-9]+) passed"
+ratchets:
+  tests: 120
+generated:
+  log:
+    keep_days: 30
+    keep_newest: null
+  asks:
+    keep_days: null
+    keep_newest: null
+  ladder:
+    keep_days: 7
+    keep_newest: null
+  run:
+    keep_days: null
+    keep_newest: null
+  sessions:
+    keep_days: null
+    keep_newest: null
+  messages:
+    keep_days: 30
+    keep_newest: null
+  agents:
+    keep_days: 30
+    keep_newest: null
 ```
