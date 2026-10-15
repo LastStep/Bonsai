@@ -46,13 +46,16 @@ func TestAStartOfClaudeCode(t *testing.T) {
 
 func TestWritesOfARoleThatChangesNothing(t *testing.T) {
 	dir := rolesProject(t, nil)
-	out := t.TempDir()
+	// Paths on a Bash line in forward slashes: Git Bash reads a backslash as an escape (C:\Users\x is C:Usersx, a
+	// name in the folder the command runs in), so Windows' own form would name a file inside the project.
+	out := filepath.ToSlash(t.TempDir())
+	slash := func(parts ...string) string { return filepath.ToSlash(filepath.Join(parts...)) }
 	refused := []string{"echo x > notes.txt", "echo x >> free.txt", "echo x &> log.txt", "echo x 2> err.txt", "echo x >| f",
 		"printf x | tee a.txt", "tee -a free.txt < /dev/null", "cp free.txt copy.txt", "cp /etc/hosts .", "ln -s free.txt l",
 		"sed -i s/a/b/ free.txt", "sed --in-place=.bak -e s/a/b/ free.txt", "rm free.txt", "mv free.txt moved.txt",
 		"git commit -m x", "git -C . add -A", "git checkout -- free.txt", "git stash", "git branch new", "git tag v1",
 		"git reset --hard", "bonsai check --write", "bonsai update --yes", "cd sub && echo x > y.txt",
-		"echo x > " + filepath.Join(dir, "abs.txt"), "{ echo x; } > grouped.txt", "touch new.txt", "truncate -s 0 free.txt",
+		"echo x > " + slash(dir, "abs.txt"), "{ echo x; } > grouped.txt", "touch new.txt", "truncate -s 0 free.txt",
 		"install -m 644 free.txt inst.txt", "install -d newdir", "dd if=/dev/zero of=free.txt count=1",
 		"bash -c 'echo x > nested.txt'", "x=$(echo y > sub.txt)", "eval 'cp free.txt e.txt'", "git branch -v new",
 		"git config alias.ci commit", "git -c alias.ci=commit ci -m x", "git stash push -m list"}
@@ -65,10 +68,10 @@ func TestWritesOfARoleThatChangesNothing(t *testing.T) {
 			t.Errorf("a lead: %s: %s", line, s)
 		}
 	}
-	allowed := []string{"echo x > " + filepath.Join(out, "a.txt"), "go build -o " + out + "/b ./...", "git status", "git diff HEAD~1",
+	allowed := []string{"echo x > " + slash(out, "a.txt"), "go build -o " + out + "/b ./...", "git status", "git diff HEAD~1",
 		"git log --oneline", "git show HEAD", "git branch", "git branch -a", "git tag -l", "git stash list", "cat free.txt",
 		"grep -r x .", "echo x 2>&1", "ls >&2", "cp free.txt " + out, "sed s/a/b/ free.txt", "bonsai check", "bonsai status --json",
-		"echo x > /dev/null", "touch " + filepath.Join(out, "t"), "dd if=free.txt of=" + filepath.Join(out, "d"),
+		"echo x > /dev/null", "touch " + slash(out, "t"), "dd if=free.txt of=" + slash(out, "d"),
 		"git config --get user.name", "git -c core.pager=cat log -1"}
 	for _, line := range allowed {
 		wantAnswer(t, dir, shellAs(dir, "h1", "workflow:helper", line, false), 0, "")
@@ -107,7 +110,7 @@ func TestBonsaiFilesOnAnAgentsShellLine(t *testing.T) {
 	if err := os.MkdirAll(wt, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	line := "cd " + wt + " && echo x > ../proj/.bonsai/local/agents/x"
+	line := "cd " + filepath.ToSlash(wt) + " && echo x > ../proj/.bonsai/local/agents/x" // forward slashes: Git Bash's form
 	wantAnswer(t, dir, shellAs(dir, "a1", "workflow:lead", line, false), 2, RuleBonsaiFiles)
 }
 

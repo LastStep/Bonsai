@@ -33,7 +33,7 @@ func TestTheBudgetExit(t *testing.T) {
 	gateRed := func() {
 		t.Helper()
 		code, stderr := gateFor(t, root, "T-0901")
-		blocks(t, code, stderr, root, RuleRed, "is not green", "bonsai ladder --task T-0901")
+		blocks(t, code, stderr, root, RuleRed, "is not green", installed+" ladder --task T-0901")
 	}
 	// Not spent: as before. Reported in an earlier window (a tie after it): as before.
 	gateRed()
