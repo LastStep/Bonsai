@@ -4,6 +4,8 @@ package engine
 // whose folder is its own, a folder moved, and each refusal.
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -289,6 +291,61 @@ func TestProtocolsFolderThatIsAFile(t *testing.T) {
 	root := project(t, "docs")
 	e.apply(t, root, Request{Command: "init"})
 	if got := read(t, root, "docs/proto-start.md"); !strings.HasPrefix(got, "# Session start") {
+		t.Errorf("the protocol file: %q", got)
+	}
+}
+
+// A documents.protocols that is, or runs through, a file Bonsai writes at the project's top (CLAUDE.md, bonsai.yaml),
+// in any letter case, is refused as bad-config before anything is written, even where that file is not there yet: at a
+// first link with no CLAUDE.md (V1's second round, proto-cases2.sh case r1-first: the link was left written part-way
+// and CLAUDE.md made a folder), and at update with CLAUDE.md taken away.
+func TestProtocolsFolderThatIsATopTarget(t *testing.T) {
+	e := setup(t)
+	src, shas := protoPack(t, e.tmp, "proto", "")
+	n := 0
+	refused := func(t *testing.T, root string, req Request, words string) {
+		t.Helper()
+		before := snapshot(t, root)
+		_, err := e.try(root, req)
+		wantRefused(t, err, "bad-config", ExitInput, words)
+		ee := err.(*Error)
+		if !strings.Contains(ee.Next, "documents.protocols in bonsai.yaml") || ee.Object().Next.Who != "person" {
+			t.Errorf("next %q, who %s", ee.Next, ee.Object().Next.Who)
+		}
+		sameSnapshot(t, "a refusal", before, snapshot(t, root))
+	}
+	project := func(t *testing.T, folder string) string {
+		t.Helper()
+		n++
+		root := testpack.Project(t, e.tmp, "proto-top-"+strings.Repeat("x", n))
+		writeFile(t, root, "bonsai.yaml", protoConfig(t, "proto", src, shas[0], folder))
+		return root
+	}
+	for _, c := range []struct{ folder, words string }{
+		{"CLAUDE.md", `names "CLAUDE.md", which is "CLAUDE.md", a file Bonsai writes at the project's top`},
+		{"Claude.md", `names "Claude.md", which is "CLAUDE.md", a file Bonsai writes at the project's top`},
+		{"claude.md/protocols", `names "claude.md/protocols", inside "CLAUDE.md", a file Bonsai writes at the project's top`},
+		// Where letter case is aside (Windows, macOS), bonsai.yaml is found as the file it is: refused either way.
+		{"Bonsai.yaml", `names "Bonsai.yaml", `},
+	} {
+		t.Run(c.folder, func(t *testing.T) {
+			// A first link, with no CLAUDE.md in the project yet.
+			refused(t, project(t, `"`+c.folder+`"`), Request{Command: "init"}, c.words)
+			// At update, CLAUDE.md taken away after the link.
+			root := project(t, "work/protocols")
+			e.apply(t, root, Request{Command: "init"})
+			if err := os.Remove(filepath.Join(root, "CLAUDE.md")); err != nil {
+				t.Fatal(err)
+			}
+			raw := read(t, root, "bonsai.yaml")
+			writeFile(t, root, "bonsai.yaml", strings.Replace(raw, "  protocols: work/protocols", `  protocols: "`+c.folder+`"`, 1))
+			refused(t, root, Request{}, c.words)
+		})
+	}
+	// A folder of that name below the top is the project's own: linked there.
+	root := project(t, "docs/CLAUDE.md")
+	e.apply(t, root, Request{Command: "init"})
+	if got := read(t, root, "docs/CLAUDE.md/proto-start.md"); !strings.HasPrefix(got, "# Session start") {
 		t.Errorf("the protocol file: %q", got)
 	}
 }

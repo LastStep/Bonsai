@@ -12,6 +12,8 @@ package engine
 //     line of bonsai.yaml to set;
 //   - a documents.protocols that names a file of the project, or a path through one (CLAUDE.md, bonsai.yaml), is
 //     refused before anything is written (protocolsFolder), at a first link and at update alike: bad-config, as above;
+//     so is one whose first segment is a file Bonsai writes at the project's top (topTargets), in any letter case,
+//     even where that file is not there yet;
 //   - two files of one pack that resolve to one path are refused (bad-config: the folder makes them one); two packs
 //     writing one path are refused as before (packs-overlap, plan.go);
 //   - the lock records the resolved path (plan.go keys each file by it), and the block imports it as it imports every
@@ -76,12 +78,20 @@ func protocolsWhere(cfg *workspace.Config) (protocols, where, next string) {
 	return protocols, where, next
 }
 
+// topTargets are the files Bonsai writes at the project's top, which no documents.protocols may name or run through:
+// the instruction block's CLAUDE.md and bonsai.yaml (init writes it). The folders it writes there, .claude/ and
+// .bonsai/, are refused by resolveFiles (checkPackTarget), as for any pack file's path.
+var topTargets = []string{BlockFile, workspace.ConfigFile}
+
 // protocolsFolder refuses a documents.protocols that names a file of the project, or a path through one, before
 // anything is written, at a first link and at update alike (V1's should-fix 3, 16 Oct: CLAUDE.md there left a link
 // written part-way, and bonsai.yaml failed as a file that cannot be read): bad-config, naming the line to set. Each
 // segment of the folder is looked at in the checkout, as it stands; one that is there and is not a folder (a file, a
-// link) is refused. A folder that is not there yet, or one of the project's own, passes; a value the packs' paths
-// cannot take (.., an absolute path, .claude) is left to resolveFiles, which names why.
+// link) is refused. Then a folder whose first segment is one of topTargets, letter case aside (as Windows sees it), is
+// refused whether it is there or not (V1's second round, 16 Oct: CLAUDE.md at a first link, before the block is
+// written, made CLAUDE.md a folder and left the link part-way). Any other folder that is not there yet, or one of the
+// project's own, passes; a value the packs' paths cannot take (.., an absolute path, .claude) is left to resolveFiles,
+// which names why.
 func protocolsFolder(root string, cfg *workspace.Config) error {
 	protocols, where, next := protocolsWhere(cfg)
 	if protocols == "" || workspace.CheckRelPath(protocols) != nil {
@@ -92,7 +102,7 @@ func protocolsFolder(root string, cfg *workspace.Config) error {
 		at := strings.Join(parts[:i+1], "/")
 		fi, err := os.Lstat(filepath.Join(root, filepath.FromSlash(at)))
 		if err != nil {
-			return nil // not there yet: what is below it is made as a folder
+			break // not there yet: what is below it is made as a folder
 		}
 		if fi.IsDir() {
 			continue
@@ -107,6 +117,19 @@ func protocolsFolder(root string, cfg *workspace.Config) error {
 		}
 		return errorf("bad-config", ExitInput, next, "%s names %s, inside %s, %s, not a folder for the packs' always-on "+
 			"protocol files: nothing was written", where, quote(protocols), quote(at), what)
+	}
+	for _, top := range topTargets {
+		if !strings.EqualFold(parts[0], top) {
+			continue
+		}
+		if len(parts) == 1 {
+			return errorf("bad-config", ExitInput, next, "%s names %s, which is %s, a file Bonsai writes at the project's "+
+				"top (letter case aside, as Windows sees it), not a folder for the packs' always-on protocol files: nothing "+
+				"was written", where, quote(protocols), quote(top))
+		}
+		return errorf("bad-config", ExitInput, next, "%s names %s, inside %s, a file Bonsai writes at the project's top "+
+			"(letter case aside, as Windows sees it), not a folder for the packs' always-on protocol files: nothing was "+
+			"written", where, quote(protocols), quote(top))
 	}
 	return nil
 }
