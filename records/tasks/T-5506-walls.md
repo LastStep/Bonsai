@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5506
 title: The walls, each tried once on both sides (5.5.6)
-status: todo
+status: running
 lane:
 done_when:
   - "A Sonnet agent tries each wall once on both sides: the secret files listed again on each side (names only), each rule's form tried on decoys, each real rule tried where no secret can be shown"
@@ -11,7 +11,7 @@ done_when:
 depends_on: [T-5505]
 blocked_by:
 created: 2026-10-14
-started:
+started: 2026-10-16
 finished:
 labels:
   bonsai.branch: null
