@@ -202,8 +202,10 @@ func lockRoles(l *workspace.Lock) bool {
 }
 
 // typeKey is an agent type, a role's or a pack's name as every lookup compares them: letter case folded, as Claude
-// Code matches a subagent_type to its agents (VG, 15 Oct: "Builder" started the builder agent). The fold's one home.
-func typeKey(t string) string { return strings.ToLower(t) }
+// Code matches a subagent_type to its agents (VG, 15 Oct: "Builder" started the builder agent), and the spaces round
+// it (and round a scoped name's two parts) dropped, so " builder" is the builder and a lead's call for it is refused
+// (VG round 2's can-wait item: it passed as an undeclared type). The fold's one home.
+func typeKey(t string) string { return strings.ToLower(strings.TrimSpace(t)) }
 
 // sameType reports two agent types, or names, that are one under typeKey.
 func sameType(a, b string) bool { return typeKey(a) == typeKey(b) }
@@ -211,7 +213,7 @@ func sameType(a, b string) bool { return typeKey(a) == typeKey(b) }
 // byType gives the declared role an agent type names, letter case folded (typeKey): <pack>:<role>, or a bare <role>
 // one pack alone declares; nil for none.
 func (rs *roleSet) byType(t string) *workspace.RoleInForce {
-	if t == "" {
+	if typeKey(t) == "" {
 		return nil
 	}
 	if pack, name, scoped := strings.Cut(t, ":"); scoped {
@@ -644,7 +646,7 @@ func childOf(sp *agents.Spawn, t string) bool {
 	switch {
 	case sameType(sp.Type, t):
 		return true
-	case sp.Type == "" && sameType(t, generalType):
+	case typeKey(sp.Type) == "" && sameType(t, generalType):
 		return true
 	case sp.Role != "" && !strings.Contains(sp.Type, ":"):
 		_, name, scoped := strings.Cut(t, ":")
@@ -656,7 +658,7 @@ func childOf(sp *agents.Spawn, t string) bool {
 // resolveCallee reads what an Agent or Task call asks for.
 func (rr *roleRun) resolveCallee(rs *roleSet, asked string) callee {
 	t := asked
-	if t == "" {
+	if typeKey(t) == "" {
 		t = generalType
 	}
 	r := rs.byType(t)

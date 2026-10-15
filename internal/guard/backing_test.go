@@ -250,3 +250,20 @@ func init() {
 		}
 	}
 }
+
+// The can-wait item: a type written with spaces round it is the type: a lead's call for " lead " is a lead calling a
+// lead (refused), as Claude Code would match it.
+func TestATypeWithSpacesIsTheType(t *testing.T) {
+	dir := rolesProject(t, nil)
+	started(t, dir, sessA, "workflow:lead")
+	lead := func(tool string, input schema.Object) string {
+		return hookCall{session: sessA, agentID: "sp1", agentType: "workflow:lead", tool: tool, input: input}.payload(dir)
+	}
+	wantAnswer(t, dir, lead("Read", in("file_path", "x")), 0, RuleOtherTool)
+	for _, typ := range []string{" lead", "lead ", " workflow:lead ", "workflow: lead", "\tLead"} {
+		wantAnswer(t, dir, lead("Agent", in("subagent_type", typ, "prompt", "x")), 2, RuleCallRefused)
+	}
+	if !sameType(" workflow:Lead\t", "workflow:lead") {
+		t.Error("typeKey keeps the spaces")
+	}
+}
