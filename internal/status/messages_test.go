@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/message"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
@@ -79,5 +80,62 @@ func TestStatusMessages(t *testing.T) {
 	testpack.Git(t, root, "commit", "-q", "-m", "thresholds")
 	if got := counts(t); got != `{"open":1,"flagged":1}` {
 		t.Errorf("circling_briefs 1, committed: %s", got)
+	}
+}
+
+// status's flagged reads the agents' state as bonsai messages does (5.5.11's follow-up): a thread whose newest brief an
+// agent tied counts as flagged while that agent is past its budget (budget-spent), and its unanswered reads the
+// agent's last call, not the brief's age, both through internal/agents' Store.Thread.
+func TestStatusMessagesReadTheAgents(t *testing.T) {
+	root, _ := project(t, cfg)
+	root = real(t, root)
+	testpack.Git(t, root, "add", "bonsai.yaml")
+	testpack.Git(t, root, "commit", "-q", "-m", "bonsai.yaml")
+	start := time.Date(2026, 10, 16, 9, 0, 0, 0, time.UTC)
+	now := start
+	defer func(f func() time.Time) { messagesNow = f }(messagesNow)
+	messagesNow = func() time.Time { return now }
+	counts := func(t *testing.T) string {
+		t.Helper()
+		doc, code := Build(root, "dev")
+		if code != ExitOK {
+			t.Fatalf("exit %d: %s", code, schema.Show(doc))
+		}
+		v, _ := doc.Get("messages")
+		return schema.Show(v)
+	}
+	p := message.Place{Workspace: "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b", Local: workspace.Local{Root: root, Main: root},
+		Now: func() time.Time { return start }, Getenv: func(string) string { return "" }}
+	out, e := message.Write(p, message.Writing{From: "orchestrator", To: "builder@T-0901", Kind: "brief", Body: "Go.", WorkDir: root},
+		message.DefaultRules())
+	if e != nil {
+		t.Fatal(e)
+	}
+	id := out.Message.ID
+	s := agents.Store{Main: root}
+	n := func(v int64) *int64 { return &v }
+	h := agents.Header{Agent: "a1", Session: "s1", Type: "workflow:builder", Role: "builder", Pack: "workflow", Kind: "lead",
+		Writes: true, Limits: agents.Limits{Actions: agents.Limit{Value: n(3), Max: n(3)}}, First: agents.Stamp(start)}
+	if _, err := s.Create(h); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.Tie(id, "s1", "a1"); !ok || err != nil {
+		t.Fatal(ok, err)
+	}
+	if _, err := s.Call("s1", "a1", start.Add(50*time.Minute), 1); err != nil {
+		t.Fatal(err)
+	}
+	// An hour after the brief, its agent's last call ten minutes old: not unanswered (the brief's age alone would be).
+	now = start.Add(60 * time.Minute)
+	if got := counts(t); got != `{"open":1,"flagged":0}` {
+		t.Errorf("the agent called ten minutes ago: %s", got)
+	}
+	// The agent past its budget: budget-spent, so flagged.
+	if err := s.Append("s1", "a1", agents.Event{E: agents.EventSpent, At: agents.StampMilli(start.Add(51 * time.Minute)),
+		Measure: "actions", Count: 4, Of: 3}); err != nil {
+		t.Fatal(err)
+	}
+	if got := counts(t); got != `{"open":1,"flagged":1}` {
+		t.Errorf("the agent spent: %s", got)
 	}
 }

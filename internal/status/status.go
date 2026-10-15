@@ -50,6 +50,7 @@ import (
 	"time"
 
 	"github.com/LastStep/Bonsai/formats"
+	"github.com/LastStep/Bonsai/internal/agents"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/message"
@@ -317,11 +318,14 @@ var messagesNow = time.Now
 // messagesOf is status --json's messages (bonsai.status/1, set 8; plan-5 5.5.10 note 5): the threads of messages
 // between agents counted, open (a brief with no report after it) and flagged (any of bonsai messages' flags), as
 // bonsai messages folds them (internal/message, the one reader), with the flags' thresholds from bonsai.yaml as
-// committed (w, committedConfig's; workspace.MessageThreshold), as the guard and bonsai messages read them. The
+// committed (w, committedConfig's; workspace.MessageThreshold), as the guard and bonsai messages read them, and the
+// two flags that read the agents' state (budget-spent; unanswered by the tied agent's last call) from the guard's
+// records, through internal/agents' Store.Thread, as bonsai messages reads them. The
 // messages are where every writer of .bonsai/local/ writes (workspace.FindLocal). A messages folder that cannot be
 // listed gives null and a problem naming the next step; a file that does not read is check's warning, never a problem.
 func messagesOf(co *workspace.Checkout, cfg *workspace.Config, w *format.Workspace) (any, string) {
-	st, err := message.Read(workspace.FindLocal(co.Root, cfg.ID).Main)
+	main := workspace.FindLocal(co.Root, cfg.ID).Main
+	st, err := message.Read(main)
 	if err != nil {
 		return nil, message.Dir + " cannot be listed: " + ascii(err.Error()) + "; next: check that it can be read, then run: bonsai messages"
 	}
@@ -329,7 +333,9 @@ func messagesOf(co *workspace.Checkout, cfg *workspace.Config, w *format.Workspa
 	r.UnansweredMinutes, _ = workspace.MessageThreshold(w, "unanswered_minutes")
 	r.CirclingBriefs, _ = workspace.MessageThreshold(w, "circling_briefs")
 	var open, flagged int64
-	for _, t := range message.Fold(st, r, messagesNow()) {
+	now, store := messagesNow(), agents.Store{Main: main}
+	for _, t := range message.Fold(st, r, now) {
+		store.Thread(&t, r.UnansweredMinutes, now) // the flags that read the agents' state, as bonsai messages reads them
 		if t.State == message.Open {
 			open++
 		}
