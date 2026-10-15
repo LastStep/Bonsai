@@ -54,6 +54,15 @@ package guard
 //   - a planted .git folder holding HEAD, objects and refs whose HEAD git does not take: it ends the walk up to a
 //     checkout's top (gitEntry) where git walks on;
 //   - parallel as a runner word (GNU parallel ... ::: x): what it runs is not read;
+//   - other runners that start a command of their own, confirmed unread by V1's second round (16 Oct): tmux and
+//     screen (a session's command or send-keys), expect -c (its script's spawn), systemd-run, nsenter, ssh (to this
+//     machine or another), strace and ltrace (the traced command), at (the queued job), firejail and bwrap (the
+//     sandboxed command): each is a program outside the tables, its command not read. They are left, not chased: the
+//     guard is a tripwire against an agent's accidents, not a wall against intent (spec section 7, decision D), and
+//     rung 0 and the landing rule stand behind it;
+//   - a git alias defined in the line (git -c 'alias.x=!rm -rf .bonsai/local' x, or one set through
+//     GIT_CONFIG_PARAMETERS): the alias's shell text is not read, and x is judged as a git subcommand of that name;
+//     left for the same reason;
 //   - bonsai's words from a variable, a substitution, or a positional parameter outside xargs (bonsai $X);
 //   - env -C or sudo -D given twice, or env -C and a -S text's -C: read together, where the program takes the last;
 //   - ~-, ~N and ~-N after a line's own cd or pushd: judged in the payload's folder only, not every folder the line
