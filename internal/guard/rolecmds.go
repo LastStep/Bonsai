@@ -37,7 +37,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/message"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 // shellRole is the roles' part of one shell call's judgment: nil where no role rule applies (the roles do not apply,
@@ -45,6 +47,36 @@ import (
 type shellRole struct {
 	rr *roleRun
 	w  *who
+	// taskAssign is a literal BONSAI_TASK=<id> before the command being read (bash), the task a bonsai ladder with no
+	// --task climbs for; "" for none.
+	taskAssign string
+}
+
+// noteTaskAssign keeps a line's literal assignment of BONSAI_TASK (bash), for a bonsai ladder with no --task
+// (commands.go's roleCommand): among the assignments before a command's program, or as an argument of export; the
+// line's last one is kept (an assignment alone changes the exported variable for the commands after it).
+func (s *shellRole) noteTaskAssign(words []shWord) {
+	if s == nil {
+		return
+	}
+	set := func(w shWord) {
+		if name, val, ok := strings.Cut(w.text, "="); ok && strings.EqualFold(name, workspace.TaskEnv) && !w.expand {
+			s.taskAssign = val
+		}
+	}
+	for i, w := range words {
+		switch {
+		case w.assign:
+			set(w)
+		case w.text == "export" || w.text == "declare" || w.text == "typeset":
+			for _, a := range words[i+1:] {
+				set(a)
+			}
+			return
+		default:
+			return
+		}
+	}
 }
 
 // agent reports a caller other than the person's session.
@@ -58,6 +90,10 @@ func (s *shellRole) changesNothing() bool { return s.agent() && !s.w.h.Writes }
 var (
 	ClaudeStartWords = []string{"claude", "claude-here"}
 	ClaudePackage    = "@anthropic-ai/claude-code"
+	// ClaudeVersions is the folder Claude Code's native installer keeps each version's binary in, named by its
+	// version (~/.local/share/claude/versions/2.1.300, the file claude links to): a program run by a path holding it
+	// starts Claude Code, whatever its name.
+	ClaudeVersions = "/claude/versions/"
 )
 
 // claudeName drops a program name's Windows endings, for ClaudeStartWords.
@@ -74,6 +110,9 @@ func claudeStart(name string, words []shWord) string {
 	n := claudeName(name)
 	if listHas(ClaudeStartWords, n) {
 		return "it starts Claude Code (" + n + ")"
+	}
+	if p := strings.ToLower(strings.ReplaceAll(words[0].text, `\`, "/")); strings.Contains(p, ClaudeVersions) {
+		return "it starts Claude Code's native binary by its path (" + ClaudeVersions + "<version>)"
 	}
 	args := words[1:]
 	pkg := func(ws []shWord) bool {
@@ -120,7 +159,8 @@ func claudeStart(name string, words []shWord) string {
 // GitWriteWords are git's subcommands that change the checkout or its history, refused to a role that changes
 // nothing, each with the forms that only read, which stay allowed (gitWrite): their one home, on the reference page.
 // Measured on git 2.x (15 Oct): git branch -v <name> and git tag --sort=<key> <name> make the ref, so a listing flag
-// counts only where it puts the call in its listing mode.
+// counts only where it puts the call in its listing mode. git symbolic-ref given two names sets the first, whatever
+// else is there (gitWrite), so it only reads with one name and --short or -q.
 var GitWriteWords = []struct {
 	Sub   string
 	Reads string // the words after the subcommand that make the call only read ("" for none): a listing or a dry run
@@ -129,7 +169,7 @@ var GitWriteWords = []struct {
 	Writes string // options that make the call write whatever Reads it holds ("" for none)
 	Lists  bool   // with no word of Reads or Writes, it only reads when it names nothing: options alone list (branch -v)
 }{
-	{Sub: "add"}, {Sub: "am"},
+	{Sub: "add"}, {Sub: "stage"}, {Sub: "am"},
 	{Sub: "apply", Reads: "--check --stat --numstat --summary", Writes: "--apply"},
 	{Sub: "checkout"}, {Sub: "cherry-pick"},
 	{Sub: "clean", Reads: "-n --dry-run"},
@@ -149,7 +189,8 @@ var GitWriteWords = []struct {
 	{Sub: "clone"}, {Sub: "init"},
 	{Sub: "submodule", Reads: "status summary", First: true},
 	{Sub: "sparse-checkout", Reads: "list", First: true},
-	{Sub: "read-tree"}, {Sub: "checkout-index"},
+	{Sub: "read-tree"}, {Sub: "checkout-index"}, {Sub: "fast-import"},
+	{Sub: "symbolic-ref", Reads: "--short -q --quiet", Writes: "-d --delete -m"},
 	{Sub: "merge-file", Reads: "-p --stdout"},
 	{Sub: "format-patch", Reads: "--stdout"},
 	{Sub: "rerere", Reads: "status diff remaining", First: true},
@@ -206,12 +247,29 @@ func gitWrite(sub string, rest []shWord) string {
 				read = true
 			}
 		}
+		if sub == "symbolic-ref" && gitOperands(rest) > 1 {
+			return "git " + sub // two names: it sets the first, --short or not
+		}
 		if read || (g.Lists && !named) {
 			return ""
 		}
 		return "git " + sub
 	}
 	return ""
+}
+
+// gitOperands counts a git subcommand's words that are not options (all of them after --).
+func gitOperands(rest []shWord) int {
+	n, dashes := 0, false
+	for _, w := range rest {
+		switch {
+		case dashes || !strings.HasPrefix(w.text, "-") || w.text == "-":
+			n++
+		case w.text == "--":
+			dashes = true
+		}
+	}
+	return n
 }
 
 // writeOpts are the GNU options of the write words: tee, cp, ln, sed.
@@ -235,6 +293,8 @@ var (
 		longVal: []string{"date", "reference", "time"}, permute: true}
 	truncateOpts = delOpt{short: "co", shortVal: "rs", long: []string{"no-create", "io-blocks"},
 		longVal: []string{"reference", "size"}, permute: true}
+	mkfifoOpts = delOpt{short: "Z", shortVal: "m", long: []string{"help", "version"}, longVal: []string{"mode"},
+		longOpt: []string{"context"}, permute: true}
 )
 
 // PowerShell's write cmdlets, their parameters as delPSBind reads them.
@@ -256,6 +316,26 @@ var (
 	psNewItem = delPSCmdlet{params: []string{"path", "name", "itemtype", "value", "force", "credential", "whatif", "confirm"},
 		switches: []string{"force", "whatif", "confirm", "verbose", "debug"}, aliases: map[string]string{"type": "itemtype", "wi": "whatif", "cf": "confirm"},
 		positional: []string{"path"}}
+	psItem = delPSCmdlet{params: []string{"path", "literalpath", "value", "filter", "include", "exclude", "force", "passthru",
+		"credential", "stream", "whatif", "confirm"}, switches: []string{"force", "passthru", "whatif", "confirm", "verbose", "debug"},
+		aliases: map[string]string{"pspath": "literalpath", "lp": "literalpath", "wi": "whatif", "cf": "confirm"}, positional: []string{"path", "value"}}
+	psExportCsv = delPSCmdlet{params: []string{"path", "literalpath", "inputobject", "force", "noclobber", "encoding", "append",
+		"delimiter", "useculture", "notypeinformation", "includetypeinformation", "quotefields", "usequotes", "noheader", "whatif",
+		"confirm"}, switches: []string{"force", "noclobber", "append", "useculture", "notypeinformation", "includetypeinformation",
+		"noheader", "whatif", "confirm", "verbose", "debug"}, aliases: map[string]string{"pspath": "literalpath", "lp": "literalpath",
+		"nti": "notypeinformation", "wi": "whatif", "cf": "confirm"}, positional: []string{"path", "delimiter"}}
+	psTranscript = delPSCmdlet{params: []string{"path", "literalpath", "outputdirectory", "append", "force", "noclobber",
+		"includeinvocationheader", "useminimalheader", "whatif", "confirm"}, switches: []string{"append", "force", "noclobber",
+		"includeinvocationheader", "useminimalheader", "whatif", "confirm", "verbose", "debug"},
+		aliases: map[string]string{"pspath": "literalpath", "lp": "literalpath", "wi": "whatif", "cf": "confirm"}, positional: []string{"path"}}
+	psWeb = delPSCmdlet{params: []string{"uri", "outfile", "method", "body", "headers", "contenttype", "infile", "usebasicparsing",
+		"usedefaultcredentials", "credential", "certificate", "certificatethumbprint", "useragent", "disablekeepalive",
+		"timeoutsec", "maximumredirection", "proxy", "proxycredential", "proxyusedefaultcredentials", "sessionvariable",
+		"websession", "passthru", "transferencoding", "skipcertificatecheck", "skipheadervalidation", "resume", "form",
+		"authentication", "token", "maximumretrycount", "retryintervalsec", "statuscodevariable", "responseheaderstvariable"},
+		switches: []string{"usebasicparsing", "usedefaultcredentials", "disablekeepalive", "proxyusedefaultcredentials", "passthru",
+			"skipcertificatecheck", "skipheadervalidation", "resume", "verbose", "debug"},
+		aliases: map[string]string{"sv": "sessionvariable"}, positional: []string{"uri"}}
 )
 
 // writeTarget is one path a command writes, and whether it may be a folder its sources land in (cp, ln, Copy-Item:
@@ -346,6 +426,18 @@ func writeTargets(name string, native bool, x delExec) []writeTarget {
 				out = append(out, one("New-Item", b.vals["name"])...)
 			}
 			return out
+		case "clear-content", "clc", "set-item", "si", "clear-item", "cli":
+			b := delPSBind(words, psItem)
+			return one(cmdletName(name), append(append([]shWord(nil), b.vals["path"]...), b.vals["literalpath"]...))
+		case "export-csv", "epcsv":
+			b := delPSBind(words, psExportCsv)
+			return one("Export-Csv", append(append([]shWord(nil), b.vals["path"]...), b.vals["literalpath"]...))
+		case "start-transcript":
+			b := delPSBind(words, psTranscript)
+			return one("Start-Transcript", append(append(append([]shWord(nil), b.vals["path"]...), b.vals["literalpath"]...),
+				b.vals["outputdirectory"]...))
+		case "invoke-webrequest", "iwr", "invoke-restmethod", "irm", "curl", "wget":
+			return one(cmdletName(name)+" -OutFile", delPSBind(words, psWeb).vals["outfile"])
 		}
 		return nil
 	case d == shCmd && !native:
@@ -380,6 +472,15 @@ func writeTargets(name string, native bool, x delExec) []writeTarget {
 			return one("install -d", g.ops)
 		}
 		return copyLike("install", installOpts)
+	case "mkfifo":
+		return one("mkfifo", delParse(words, mkfifoOpts).ops)
+	case "mknod":
+		if g := delParse(words, mkfifoOpts); len(g.ops) > 0 {
+			return one("mknod", g.ops[:1]) // its name; the type and numbers after it are no path
+		}
+		return nil
+	case "git":
+		return gitOutputs(words, ops)
 	case "dd":
 		var outs []shWord
 		for _, w := range words {
@@ -406,6 +507,48 @@ func writeTargets(name string, native bool, x delExec) []writeTarget {
 	return nil
 }
 
+// gitOutputs gives the files a git call writes by an option of its own, outside its write words: --output=<file> of
+// the diff family (diff, log, show and their kind) and of archive (and archive's -o <file>), and format-patch's -o or
+// --output-directory <folder>. words are git's own from its options on.
+func gitOutputs(words []shWord, ops func([]shWord) []delOp) []writeTarget {
+	sub, rest := gitSub(words)
+	var outs []shWord
+	take := func(names ...string) {
+		for i := 0; i < len(rest); i++ {
+			t := rest[i].text
+			if t == "--" {
+				return
+			}
+			for _, n := range names {
+				switch {
+				case t == n && i+1 < len(rest):
+					outs = append(outs, rest[i+1])
+					i++
+				case strings.HasPrefix(n, "--") && strings.HasPrefix(t, n+"="):
+					outs = append(outs, delValue(rest[i], strings.TrimPrefix(t, n+"=")))
+				case len(n) == 2 && strings.HasPrefix(t, n) && len(t) > 2 && !strings.HasPrefix(t, "--"):
+					outs = append(outs, delValue(rest[i], t[2:]))
+				}
+			}
+		}
+	}
+	switch sub {
+	case "diff", "diff-files", "diff-index", "diff-tree", "log", "show", "whatchanged", "range-diff":
+		take("--output")
+	case "archive":
+		take("--output", "-o")
+	case "format-patch":
+		take("--output-directory", "-o")
+	default:
+		return nil
+	}
+	var out []writeTarget
+	for _, op := range ops(outs) {
+		out = append(out, writeTarget{op: op, word: "git " + sub + " --output"})
+	}
+	return out
+}
+
 // cmdletName names a content cmdlet by its full name, for a refusal.
 func cmdletName(name string) string {
 	switch name {
@@ -413,6 +556,16 @@ func cmdletName(name string) string {
 		return "Set-Content"
 	case "add-content", "ac":
 		return "Add-Content"
+	case "clear-content", "clc":
+		return "Clear-Content"
+	case "set-item", "si":
+		return "Set-Item"
+	case "clear-item", "cli":
+		return "Clear-Item"
+	case "invoke-webrequest", "iwr", "curl", "wget":
+		return "Invoke-WebRequest"
+	case "invoke-restmethod", "irm":
+		return "Invoke-RestMethod"
 	}
 	return name
 }
@@ -678,6 +831,44 @@ func (s *shellRole) messageCall(argv []string) Decision {
 	return allow(RuleBonsaiCommand, "")
 }
 
+// installedBonsai reports a program word that runs the installed bonsai (VG's item D, 15 Oct: past a budget any
+// program named bonsai passed as the report): a bare bonsai (or bonsai.exe), which the shell finds on its PATH as the
+// person set it up, or the very place the hook lines run bonsai from (engine's PlaceWindows and PlaceLinux, or a test
+// build's stamped place), in any form a shell names it: forward or back slashes, a Windows place as C:/... or /c/...,
+// its letter case and its .exe ignored. Any other path to a program named bonsai is not the installed one, so it is
+// neither the report past a budget nor a brief's read. Its word is literal (no variable, no substitution, no glob).
+func installedBonsai(w shWord) bool {
+	if w.expand || w.glob || w.splat || w.alts != nil {
+		return false
+	}
+	t := w.text
+	if t == "bonsai" || strings.EqualFold(t, "bonsai.exe") {
+		return true
+	}
+	norm := func(p string, windows bool) string {
+		p = strings.ReplaceAll(p, `\`, "/")
+		if len(p) >= 2 && p[1] == ':' && isLetter(p[0]) {
+			p = "/" + strings.ToLower(p[:1]) + p[2:]
+		}
+		if windows {
+			p = strings.TrimSuffix(strings.ToLower(p), ".exe")
+		}
+		return p
+	}
+	places := []string{engine.PlaceWindows, engine.PlaceLinux}
+	if stamped, _ := engine.TestBuild(); stamped != "" {
+		places = []string{filepath.ToSlash(stamped)}
+	}
+	for _, p := range places {
+		windows := strings.HasSuffix(strings.ToLower(p), ".exe") || (len(p) >= 3 && p[0] == '/' && p[2] == '/') ||
+			(len(p) >= 2 && p[1] == ':')
+		if norm(t, windows) == norm(p, windows) {
+			return true
+		}
+	}
+	return false
+}
+
 // orNone writes an address for a refusal: itself, or "none".
 func orNone(addr string) string {
 	if addr == "" {
@@ -708,7 +899,7 @@ func reportCall(tool, command, addr string) bool {
 	if len(c.feeds) > 1 || (len(c.feeds) == 1 && (!c.feeds[0].doc || !c.feeds[0].quoted || len(c.feeds[0].nested) > 0)) {
 		return false
 	}
-	if !delBonsai(c.words[0].text) || c.words[0].expand {
+	if !installedBonsai(c.words[0]) {
 		return false
 	}
 	kind, from, body, bodyDash := "", "", false, false
@@ -797,7 +988,7 @@ func briefShow(tool, command string) string {
 	if c.group != nil || len(c.nested) > 0 || len(c.redirs) > 0 || len(c.feeds) > 0 || (c.op != "" && c.op != ";") || len(c.words) < 3 {
 		return ""
 	}
-	if !delBonsai(c.words[0].text) || c.words[1].text != "message" {
+	if !installedBonsai(c.words[0]) || c.words[1].text != "message" {
 		return ""
 	}
 	id := ""

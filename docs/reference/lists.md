@@ -837,6 +837,7 @@ The npm package: `@anthropic-ai/claude-code`.
 | Subcommand | Words that make it only read | Read where | Options that make it write | Options alone list |
 |---|---|---|---|---|
 | `add` | none | - | none | no |
+| `stage` | none | - | none | no |
 | `am` | none | - | none | no |
 | `apply` | `--check`, `--stat`, `--numstat`, `--summary` | anywhere | `--apply` | no |
 | `checkout` | none | - | none | no |
@@ -867,6 +868,8 @@ The npm package: `@anthropic-ai/claude-code`.
 | `sparse-checkout` | `list` | first word | none | no |
 | `read-tree` | none | - | none | no |
 | `checkout-index` | none | - | none | no |
+| `fast-import` | none | - | none | no |
+| `symbolic-ref` | `--short`, `-q`, `--quiet` | anywhere | `-d`, `--delete`, `-m` | no |
 | `merge-file` | `-p`, `--stdout` | anywhere | none | no |
 | `format-patch` | `--stdout` | anywhere | none | no |
 | `rerere` | `status`, `diff`, `remaining` | first word | none | no |

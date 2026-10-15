@@ -377,6 +377,9 @@ func (r *delRun) exec(x delExec) delCd {
 		w := x.words
 		if x.d == shBash {
 			r.envAssignWords(w)
+			if steps == 0 {
+				r.j.roleShell().noteTaskAssign(w)
+			}
 		}
 		for len(w) > 0 && w[0].assign {
 			w = w[1:]

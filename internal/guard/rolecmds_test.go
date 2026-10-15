@@ -263,6 +263,8 @@ func TestTheRoleWordTables(t *testing.T) {
 		{"format-patch -1", true}, {"rerere status", false}, {"rerere forget x", true},
 		{"config --get user.name", false}, {"config -l", false}, {"config get user.name", false}, {"config list", false},
 		{"config alias.ci commit", true}, {"config user.name", true}, {"config --get-all x --unset x", true}, {"config set a b", true},
+		{"stage x", true}, {"fast-import", true}, {"symbolic-ref HEAD", true}, {"symbolic-ref --short HEAD", false},
+		{"symbolic-ref -q HEAD", false}, {"symbolic-ref --short HEAD refs/heads/x", true}, {"symbolic-ref -d HEAD", true},
 	} {
 		sub, rest := gitSub(words(c.line))
 		if got := gitWrite(sub, rest) != ""; got != c.write {
@@ -277,5 +279,9 @@ func TestTheRoleWordTables(t *testing.T) {
 	}
 	if claudeStart("claude", []shWord{{text: "claude"}}) == "" || claudeStart("claudette", []shWord{{text: "claudette"}}) != "" {
 		t.Error("claudeStart")
+	}
+	if claudeStart("2.1.300", []shWord{{text: "/home/x/.local/share/claude/versions/2.1.300"}}) == "" ||
+		claudeStart("versions", []shWord{{text: "/opt/versions/x"}}) != "" {
+		t.Error("claudeStart by the native binary's path")
 	}
 }

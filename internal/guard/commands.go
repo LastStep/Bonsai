@@ -172,17 +172,33 @@ func (j *judge) roleCommand(rs *shellRole, word string, argv []string) Decision 
 		return deny(RuleRoleWritesNothing, fmt.Sprintf("bonsai %s refused: it writes the project's files, and %s changes nothing "+
 			"(its role's writes: false)", oneLine(word), rs.w.shown()), "put what you would change in your report")
 	case word == "ladder" && rs.w.counted:
-		for i, a := range args {
-			task := ""
-			switch {
-			case a == "--task" && i+1 < len(args):
-				task = args[i+1]
-			case strings.HasPrefix(a, "--task="):
-				task = strings.TrimPrefix(a, "--task=")
-			}
-			if task != "" && validTask(task) && !listHas(rs.rr.climbs, task) {
+		note := func(task string) {
+			if validTask(task) && !listHas(rs.rr.climbs, task) {
 				rs.rr.climbs = append(rs.rr.climbs, task)
 			}
+		}
+		literal := false
+		for i, a := range args {
+			task, named := "", false
+			switch {
+			case a == "--task" && i+1 < len(args):
+				task, named = args[i+1], true
+			case strings.HasPrefix(a, "--task="):
+				task, named = strings.TrimPrefix(a, "--task="), true
+			}
+			if named && validTask(task) {
+				literal = true
+				note(task)
+			}
+		}
+		if !literal {
+			// No --task the guard can read (none, or one in a variable): the ladder climbs for BONSAI_TASK, as it reads
+			// it (VG's item E): an assignment of it before the command on this line, else the session's own.
+			task := rs.taskAssign
+			if task == "" {
+				task = j.getenv(workspace.TaskEnv)
+			}
+			note(task)
 		}
 	}
 	return allow(RuleBonsaiCommand, "")
