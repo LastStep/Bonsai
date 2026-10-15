@@ -194,3 +194,20 @@ func TestMoveAside(t *testing.T) {
 		t.Errorf("a long id moved to %q %v", aside, err)
 	}
 }
+
+// One spent mark a window: a second call side by side finds it made; a new window (a tie, or a fresh state after
+// MoveAside, each a later start) marks afresh.
+func TestMarkSpent(t *testing.T) {
+	s := store(t)
+	for _, c := range []struct {
+		window int64
+		want   bool
+	}{{t0.UnixMilli(), true}, {t0.UnixMilli(), false}, {t0.Add(time.Minute).UnixMilli(), true}} {
+		if made, err := s.MarkSpent(sess, agent, c.window); made != c.want || err != nil {
+			t.Errorf("window %d: made %v %v, want %v", c.window, made, err, c.want)
+		}
+	}
+	if files, _ := s.SessionFiles(sess); len(files) != 2 || !strings.HasPrefix(files[0], ClaimsFolder+"/spent-") {
+		t.Errorf("the marks are not among the session's files the cleaning takes: %v", files)
+	}
+}

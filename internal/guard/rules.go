@@ -147,14 +147,16 @@ var Rules = []Rule{
 	{RuleShell, true, "a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, " +
 		"no bonsai command, CLAUDE_CODE_CHILD_SESSION left as it is"},
 	{RuleOtherTool, true, "a tool other than the file tools and the shells"},
-	{RuleCallAllowed, true, "where the lock declares roles: an Agent, Task, SendMessage or Workflow call the caller's role may make " +
-		"(the person's session any role but its own; a lead a declared helper or a type no pack declares; SendMessage from the " +
-		"person's session to main or another session); the record's target is the type asked for, or the message's to"},
+	{RuleCallAllowed, true, "where the lock declares roles: an Agent, Task, SendMessage or Workflow call the caller's role may make, " +
+		"or a Skill whose frontmatter forks into a type it may call (the person's session any role but its own; a lead a declared " +
+		"helper or a type no pack declares; SendMessage from the person's session to main or another session); the record's " +
+		"target is the type asked for, or the message's to"},
 	{RuleCallRefused, false, "where the lock declares roles: an Agent, Task, SendMessage or Workflow call the caller's role may not " +
-		"make (a helper or an undeclared type calls no one; a lead no lead, no Workflow, no main or other session; no one the " +
-		"session's role); a SendMessage from an agent whose to names no agent the guard recorded; on an agent's shell line, a " +
-		"command starting Claude Code, a bonsai message --kind brief to a role it may not call, and a bonsai message from a " +
-		"--from other than its own address or from an agent with none"},
+		"make, or a Skill whose frontmatter forks into such a type (a helper or an undeclared type calls no one; a lead no lead, " +
+		"no Workflow, no main or other session, and resumes only an agent it started; no one the session's role); a SendMessage " +
+		"from an agent whose to names no agent the guard recorded; on an agent's shell line, a command starting Claude Code, a " +
+		"bonsai message --kind brief to a role it may not call, and a bonsai message from a --from other than its own address " +
+		"or from an agent with none"},
 	{RuleRoleWritesNothing, false, "where the lock declares roles: a role that changes nothing (writes: false, every undeclared type " +
 		"among them) calling Edit, Write, MultiEdit or NotebookEdit, or a shell write the guard can read into a linked project " +
 		"(a redirect, tee, cp, ln or sed -i onto a path there; rm or mv of one; git's words that change the checkout or its " +

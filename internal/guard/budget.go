@@ -349,7 +349,7 @@ func (rr *roleRun) count(w *who, reads string) counted {
 	if e == nil {
 		return counted{}
 	}
-	if made, err := rr.store.MarkSpent(in.Session, w.key, w.st.Ties()); err == nil && !made {
+	if made, err := rr.store.MarkSpent(in.Session, w.key, win.Start.UnixMilli()); err == nil && !made {
 		return counted{spent: e} // another call side by side found this window spent first, and writes its one line
 	}
 	if err := rr.store.Append(in.Session, w.key, *e); err != nil {

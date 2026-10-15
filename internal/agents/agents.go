@@ -609,9 +609,10 @@ func (s Store) Claimed(session, use string) bool {
 }
 
 // MarkSpent marks an agent's budget window spent, by an exclusive create of claims/spent-<agent>-<window> (window
-// the count of ties before it, State.Ties), so of calls made side by side exactly one writes the window's spent line
-// (VG's item K): made is false when another call marked it first.
-func (s Store) MarkSpent(session, agent string, window int) (made bool, err error) {
+// the window's start, Window().Start, in Unix milliseconds: a tie, or a fresh state after MoveAside, opens a new one),
+// so of calls made side by side exactly one writes the window's spent line (VG's item K): made is false when another
+// call marked it first.
+func (s Store) MarkSpent(session, agent string, window int64) (made bool, err error) {
 	if err := validName(session); err != nil {
 		return false, err
 	}
@@ -623,17 +624,6 @@ func (s Store) MarkSpent(session, agent string, window int) (made bool, err erro
 		name = fmt.Sprintf("spent-%s-%d", agent[:128-len(name)+len(agent)], window)
 	}
 	return s.exclusive(filepath.Join(s.SessionDir(session), ClaimsFolder, name), []byte(agent+"\n"))
-}
-
-// Ties counts the tie lines in an agent's state: the windows before the one in force.
-func (st *State) Ties() int {
-	n := 0
-	for _, e := range st.Events {
-		if e.E == EventTie {
-			n++
-		}
-	}
-	return n
 }
 
 // ClaimHolder gives the agent that claimed a call, "" when none has (or its claim does not read).
