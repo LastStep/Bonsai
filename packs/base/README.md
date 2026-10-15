@@ -107,7 +107,8 @@ after Bonsai's own rules. This page says what they are for and what they leave o
 
 **What is walled, one rule for all.** Read: the files and folders that commonly hold keys, tokens or logins (SSH,
 GnuPG, cloud command lines, git's stored logins, package registries, Docker, Kubernetes, Claude Code's login and its
-own file, Bonsai's salt). Edit: the person's own Claude Code files (their settings, their local settings in any
+own file, other AI and ML tools' logins (OpenAI's Codex, Gemini's command line, Hugging Face, CLIProxyAPI, the pi
+coding agent), Bonsai's salt). Edit: the person's own Claude Code files (their settings, their local settings in any
 folder, their memory file, Claude Code's own file whose MCP servers it starts), and the files whose change starts code
 (a folder where a copy could shadow the installed `bonsai`, SSH's settings, git's settings, the shells' start files,
 PowerShell's profiles). An Edit rule also stops a Write and a shell redirect into the file. A rule names an exact file
@@ -135,10 +136,23 @@ session past them, and a mod can approve a call they would refuse. Narrow rules 
 sandbox, where it is used, stays small: each folder rule is a recursive glob, which the sandbox turns into one rule per
 file in that folder.
 
-**Not yet tried on Windows: the WSL home's network-path forms.** Whether Claude Code on Windows holds a rule written
-`//wsl.localhost/...` or `//wsl$/...` is tried before base's first release; a form that does not hold is replaced by
-one that does, or, if none holds, this page says plainly that a native Windows session can read WSL's key files by
-that path and the walls do not stop it.
+**What holds where, as tried on both sides** (16 Oct 2026, Claude Code 2.1.301, each rule form over decoy files).
+In WSL every wall held: the Read, Edit and Write tools, `cat`, `head`, `tail` and a shell redirect were all refused.
+On Windows the walls hold for the Read, Edit and Write tools in every form, and for Git Bash on `~/` paths. Two things
+they do not stop there, because Claude Code's deny rules do not reach them, and no rule form was found that does:
+
+- **The PowerShell tool ignores Read and Edit deny rules entirely.** `Get-Content` read a walled file and
+  `Add-Content` changed one, on every form, `~/` included. A person on Windows who does not need the PowerShell tool
+  can take it away in their own Claude Code settings with a deny rule on the tool's name,
+  `"permissions": {"deny": ["PowerShell"]}` (Claude Code's form for a whole tool; not part of these tries). Base does
+  not, since a pack cannot know which projects need the tool.
+- **Git Bash passes the WSL home's network paths.** `cat "//wsl.localhost/<distro>/home/<user>/..."` read a walled
+  file and a redirect `>>` changed one, the same with `//wsl$/`; the file tools on the same path refuse. Eight rule
+  spellings were tried (a single, double and triple leading slash, a backslash path, `**` in place of the distro and
+  user, the literal distro and user, and a bare `**/` tail): none stopped the shell; Claude Code does not seem to
+  match a network path in a shell command against these rules. So a native Windows session can read WSL's key files through
+  Git Bash by that path, and the walls do not stop it. The `//wsl.localhost/` and `//wsl$/` twins are kept for the
+  file tools, which they hold.
 
 **Places left out, and why:**
 

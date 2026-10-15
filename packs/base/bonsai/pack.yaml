@@ -181,6 +181,60 @@ deny:
     why: "Agents on Windows cannot read WSL's ~/.claude.json by its wsl.localhost path, Claude Code's own file, whose MCP servers' settings often hold tokens."   # the preview's sentence
   - rule: "Read(//wsl$/*/home/*/.claude.json)"                           # WSL's home, from Windows (wsl$)
     why: "Agents on Windows cannot read WSL's ~/.claude.json by its wsl$ path, Claude Code's own file, whose MCP servers' settings often hold tokens."   # the preview's sentence
+  # OpenAI's Codex command line's login
+  - rule: "Read(~/.codex/auth.json)"                                     # this home
+    why: "Agents cannot read ~/.codex/auth.json, where OpenAI's Codex command line keeps its login."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.codex/auth.json)"                       # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .codex/auth.json, where OpenAI's Codex command line keeps its login."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.codex/auth.json)"              # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.codex/auth.json by its wsl.localhost path, where OpenAI's Codex command line keeps its login."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.codex/auth.json)"                       # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.codex/auth.json by its wsl$ path, where OpenAI's Codex command line keeps its login."   # the preview's sentence
+  # Gemini's command line's login
+  - rule: "Read(~/.gemini/oauth_creds.json)"                             # this home
+    why: "Agents cannot read ~/.gemini/oauth_creds.json, where Google's Gemini command line keeps its login."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.gemini/oauth_creds.json)"               # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .gemini/oauth_creds.json, where Google's Gemini command line keeps its login."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.gemini/oauth_creds.json)"      # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.gemini/oauth_creds.json by its wsl.localhost path, where Google's Gemini command line keeps its login."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.gemini/oauth_creds.json)"               # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.gemini/oauth_creds.json by its wsl$ path, where Google's Gemini command line keeps its login."   # the preview's sentence
+  # Hugging Face's tokens, in its default home ~/.cache/huggingface/: two files by name, since the folder also holds
+  # every model it downloads
+  - rule: "Read(~/.cache/huggingface/token)"                             # this home
+    why: "Agents cannot read ~/.cache/huggingface/token, where Hugging Face's tools keep the access token."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.cache/huggingface/token)"               # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .cache/huggingface/token, where Hugging Face's tools keep the access token."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.cache/huggingface/token)"      # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.cache/huggingface/token by its wsl.localhost path, where Hugging Face's tools keep the access token."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.cache/huggingface/token)"               # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.cache/huggingface/token by its wsl$ path, where Hugging Face's tools keep the access token."   # the preview's sentence
+  - rule: "Read(~/.cache/huggingface/stored_tokens)"                     # this home
+    why: "Agents cannot read ~/.cache/huggingface/stored_tokens, where Hugging Face's tools keep every saved access token."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.cache/huggingface/stored_tokens)"       # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .cache/huggingface/stored_tokens, where Hugging Face's tools keep every saved access token."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.cache/huggingface/stored_tokens)" # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.cache/huggingface/stored_tokens by its wsl.localhost path, where Hugging Face's tools keep every saved access token."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.cache/huggingface/stored_tokens)"       # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.cache/huggingface/stored_tokens by its wsl$ path, where Hugging Face's tools keep every saved access token."   # the preview's sentence
+  # CLIProxyAPI's folder: its accounts' logins, one file each, and its keys
+  - rule: "Read(~/.cli-proxy-api/**)"                                    # this home
+    why: "Agents cannot read ~/.cli-proxy-api/, where CLIProxyAPI keeps its accounts' logins and its keys."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.cli-proxy-api/**)"                      # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .cli-proxy-api/, where CLIProxyAPI keeps its accounts' logins and its keys."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.cli-proxy-api/**)"             # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.cli-proxy-api/ by its wsl.localhost path, where CLIProxyAPI keeps its accounts' logins and its keys."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.cli-proxy-api/**)"                      # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.cli-proxy-api/ by its wsl$ path, where CLIProxyAPI keeps its accounts' logins and its keys."   # the preview's sentence
+  # the pi coding agent's login
+  - rule: "Read(~/.pi/agent/auth.json)"                                  # this home
+    why: "Agents cannot read ~/.pi/agent/auth.json, where the pi coding agent keeps its logins."   # the preview's sentence
+  - rule: "Read(//mnt/c/Users/*/.pi/agent/auth.json)"                    # the Windows home, from WSL
+    why: "Agents in WSL cannot read the Windows home's .pi/agent/auth.json, where the pi coding agent keeps its logins."   # the preview's sentence
+  - rule: "Read(//wsl.localhost/*/home/*/.pi/agent/auth.json)"           # WSL's home, from Windows
+    why: "Agents on Windows cannot read WSL's ~/.pi/agent/auth.json by its wsl.localhost path, where the pi coding agent keeps its logins."   # the preview's sentence
+  - rule: "Read(//wsl$/*/home/*/.pi/agent/auth.json)"                    # WSL's home, from Windows (wsl$)
+    why: "Agents on Windows cannot read WSL's ~/.pi/agent/auth.json by its wsl$ path, where the pi coding agent keeps its logins."   # the preview's sentence
   # Bonsai's salt (the rest of Bonsai's home is the engine's own rule, never base's)
   - rule: "Read(~/.bonsai/salt)"                                         # this home
     why: "Agents cannot read ~/.bonsai/salt, Bonsai's secret salt for this machine."   # the preview's sentence
