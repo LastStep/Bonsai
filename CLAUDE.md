@@ -91,7 +91,10 @@ The specs were written in the studio's repo: their "this repo" means the studio'
   `.bonsai/local/ladder/<task>.json` in the main checkout reads `mode: local`, green, `git.sha` the branch's HEAD,
   `git.dirty` false, every rung of the floor and of the task's `bonsai.ladder` green, and its `ladder` record in the
   log names `/usr/local/bin/bonsai` with the result's `sha256`; plus check 10's Windows half (`go test ./...` and
-  `go vet ./...`, plain and tagged, natively on Windows) before the push, and CI after it. It also reads the branch's
+  `go vet ./...`, plain and tagged, natively on Windows) before the push, and CI after it. **Pieces ready together land
+  as one batch** (Rohan, 15 Oct: "land in batches"): each rebased in turn onto the one before, each climbed at its own
+  tip, check 10's Windows half run once at the batch's top commit, `main` fast-forwarded to it and pushed once; a piece
+  in flight is not rebased and re-checked for each other landing, but joins the next batch. It also reads the branch's
   diff against the section's "Owns" list for the piece and refuses one that leaves it: `records/tasks/`, `design/` and
   `STATE.md` above all, free paths that rung 0 never judges. The ladder is always run by its installed path,
   `/usr/local/bin/bonsai ladder --task <id>`, so no other `bonsai` can make a proof. The run report quotes each landing's

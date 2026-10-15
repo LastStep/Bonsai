@@ -38,8 +38,8 @@ approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5
   5.5.8 `8a3cfa8`, 5.5.9 `f239f8f` (formats set 8; the test pack at H, `19e3ca5`), 5.5.0 `e1437d0`, `T-5591` `2deaf2e`,
   5.5.1 `c641c15`, 5.5.10 `298ed35`, `T-5592` `dd73670`, 5.5.11 `728a0e5`, `T-5594` `80b5bf7`, 5.5.12 `7615ec7`, 5.5.2
   `53fca0a`. **Done:** `T-5509`, `T-5510`, `T-5512`, `T-5591`, `T-5592`, `T-5593` (VM), `T-5594`. **At `verify`:**
-  `T-5500`, `T-5501`, `T-5502` (V1), `T-5508` and `T-5511` (VG's fix round). **Running:** `T-5504` (Rohan's read; a link
-  test with `base`), `T-5595` (held, not landed), `T-5596` (VG, round 2 to come). Run reports
+  `T-5500`, `T-5501`, `T-5502` (V1), `T-5508` and `T-5511` (VG's fix round). **Blocked, each truly waiting:** `T-5504`
+  (Rohan's read; a link test with `base`), `T-5595` (held for the next batch), `T-5596` (VG's fix round). Run reports
   `records/runs/R-2026-10-1[45]-T-55*.md`.
 
 Hours (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min. **5.1: 866 minutes. 5.2:
@@ -62,6 +62,10 @@ repo.
 
 ## Rohan's decisions
 
+- **15 Oct, 10:3x: "land in batches"** (on a side agent's note that every landing made each other piece in flight
+  rebase and re-run its 35-60 minute Windows check; `base` ran it seven times). Written into `CLAUDE.md`'s landing rule
+  under `T-5597`: pieces ready together land as one batch, each rebased in turn onto the one before and climbed at its
+  own tip, check 10's Windows half once at the batch's top, `main` fast-forwarded and pushed once.
 - **15 Oct, about 09:00: "wrap up after current agents are done"**; at 06:28 and 10:00 "close any unnecessary
   process left running" (dead and duplicate wait loops stopped; live runs kept).
 - **15 Oct, 06:31: Windows sessions, "Allow the size check"** (asked with three options, this one recommended): he adds
@@ -246,10 +250,11 @@ repo.
 ## Now: step 5.5, the packs, building
 
 `design/plan-5.md`, "### Step 5.5" (lines 3437-5967); "Notes per piece" from 4577; "5.5 done" from 5726. Tasks in
-`records/tasks/`; outside-piece work takes `T-5597` next. **The next session, in this order (parallel where marked):**
+`records/tasks/`; outside-piece work takes `T-5598` next (`T-5597` was the batch rule). **Land in batches**
+(`CLAUDE.md`): pieces ready together go as one batch with one Windows check at its top. **The next session, in this order (parallel where marked):**
 
 1. **VG's fix round** (round 1 of two; its report in `R-2026-10-15-T-5596-verify-vg.md`, 09:42), a new task under
-   5.5.11 (`T-5597`), a **fresh Opus fixer** (guard code), its brief pointing at VG's report and 5.5.11's run report:
+   5.5.11 (`T-5598`), a **fresh Opus fixer** (guard code), its brief pointing at VG's report and 5.5.11's run report:
    **A** a declared role given only to a child joined to an allowed Agent or Task call for it (else an undeclared
    type), or Skill calls that fork into a declared role judged; **B** role types matched case-insensitively; **C** the
    stop gate finds the report message itself; **D** past a budget, only the installed place or a bare `bonsai` counts
@@ -339,8 +344,8 @@ the main checkout's `.bonsai/local/` is the guard's: an agent's `cp` out of it i
 
 **15 Oct:** the stop gate's 4 s git limit met a loaded (and once an idle) Windows run four times; `T-5595` gives the tests
 their own limit, the gate's limit stays a known limit (Rohan, 13 Oct). Landings in parallel each forced the others to
-rebase and run the Windows half again (`base` ran it seven times): land in a fixed order and keep records commits for
-the ends of waves.
+rebase and run the Windows half again (`base` ran it seven times): now "land in batches" (Rohan, 15 Oct; `CLAUDE.md`), and records commits
+kept for the ends of waves.
 **Load-sensitive tests seen 14 Oct** (not yet a CI flake; each green alone): `internal/redact`'s `TestLinearTime`
 (`one_line_of_names_behind_names_[1_MB]`, 1.15-1.31 s against its 1.024 s limit at load 25-30) and `internal/clean`'s
 `TestStoppedAnywhereLeavesAWholeState` ("stopped true", Windows, the session-end budget under load, as `TestEveryKind`
