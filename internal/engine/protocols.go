@@ -10,6 +10,8 @@ package engine
 //     at a folder change alike; so is a project with no documents.protocols (bonsai.yaml's own reader refuses a null
 //     or empty one, naming its line; the line left out is refused here). Each is bad-config, a person's, naming the
 //     line of bonsai.yaml to set;
+//   - a documents.protocols that names a file of the project, or a path through one (CLAUDE.md, bonsai.yaml), is
+//     refused before anything is written (protocolsFolder), at a first link and at update alike: bad-config, as above;
 //   - two files of one pack that resolve to one path are refused (bad-config: the folder makes them one); two packs
 //     writing one path are refused as before (packs-overlap, plan.go);
 //   - the lock records the resolved path (plan.go keys each file by it), and the block imports it as it imports every
@@ -18,6 +20,8 @@ package engine
 //     (removed when unedited, a conflict when edited: plan.go's table) and the new one written: nothing new for the move.
 
 import (
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -28,21 +32,7 @@ import (
 // (their manifest's files entries and the bytes read for each), in place. Its error is bad-config, naming the line of
 // bonsai.yaml to set.
 func resolveFiles(cfg *workspace.Config, packs []*PackData) error {
-	protocols, line := "", 0
-	if cfg.Full != nil {
-		protocols = cfg.Full.Documents.Protocols
-	}
-	for _, d := range cfg.Documents {
-		if d.Kind == "protocols" {
-			line = d.Line
-		}
-	}
-	where := "documents.protocols in bonsai.yaml"
-	if line > 0 {
-		where += " (line " + strconv.Itoa(line) + ")"
-	}
-	next := "set " + where + " to a folder of the project's own for the packs' always-on protocol files, such as " +
-		DefaultDocuments.Protocols + " (not inside .claude, .git or .bonsai), then run the command again"
+	protocols, _, next := protocolsWhere(cfg)
 	for _, pd := range packs {
 		files := make(map[string][]byte, len(pd.Files))
 		seen := map[string]string{} // a resolved path, letter case aside, to the pack's own path for it
@@ -61,6 +51,62 @@ func resolveFiles(cfg *workspace.Config, packs []*PackData) error {
 			pd.Manifest.Files[i].Path = resolved
 		}
 		pd.Files = files
+	}
+	return nil
+}
+
+// protocolsWhere gives the project's documents.protocols, the words naming its line in bonsai.yaml, and the next step
+// of a refusal of it (a person's: bonsai.yaml is theirs).
+func protocolsWhere(cfg *workspace.Config) (protocols, where, next string) {
+	line := 0
+	if cfg.Full != nil {
+		protocols = cfg.Full.Documents.Protocols
+	}
+	for _, d := range cfg.Documents {
+		if d.Kind == "protocols" {
+			line = d.Line
+		}
+	}
+	where = "documents.protocols in bonsai.yaml"
+	if line > 0 {
+		where += " (line " + strconv.Itoa(line) + ")"
+	}
+	next = "set " + where + " to a folder of the project's own for the packs' always-on protocol files, such as " +
+		DefaultDocuments.Protocols + " (not inside .claude, .git or .bonsai), then run the command again"
+	return protocols, where, next
+}
+
+// protocolsFolder refuses a documents.protocols that names a file of the project, or a path through one, before
+// anything is written, at a first link and at update alike (V1's should-fix 3, 16 Oct: CLAUDE.md there left a link
+// written part-way, and bonsai.yaml failed as a file that cannot be read): bad-config, naming the line to set. Each
+// segment of the folder is looked at in the checkout, as it stands; one that is there and is not a folder (a file, a
+// link) is refused. A folder that is not there yet, or one of the project's own, passes; a value the packs' paths
+// cannot take (.., an absolute path, .claude) is left to resolveFiles, which names why.
+func protocolsFolder(root string, cfg *workspace.Config) error {
+	protocols, where, next := protocolsWhere(cfg)
+	if protocols == "" || workspace.CheckRelPath(protocols) != nil {
+		return nil
+	}
+	parts := strings.Split(protocols, "/")
+	for i := range parts {
+		at := strings.Join(parts[:i+1], "/")
+		fi, err := os.Lstat(filepath.Join(root, filepath.FromSlash(at)))
+		if err != nil {
+			return nil // not there yet: what is below it is made as a folder
+		}
+		if fi.IsDir() {
+			continue
+		}
+		what := "a file of the project"
+		if fi.Mode()&os.ModeSymlink != 0 {
+			what = "a link in the project"
+		}
+		if at == protocols {
+			return errorf("bad-config", ExitInput, next, "%s names %s, %s, not a folder for the packs' always-on protocol "+
+				"files: nothing was written", where, quote(protocols), what)
+		}
+		return errorf("bad-config", ExitInput, next, "%s names %s, inside %s, %s, not a folder for the packs' always-on "+
+			"protocol files: nothing was written", where, quote(protocols), quote(at), what)
 	}
 	return nil
 }

@@ -242,3 +242,53 @@ func TestProtocolsRefused(t *testing.T) {
 		refused(t, root, Request{Command: "init"}, `the pack twice writes one path twice under documents.protocols "work/protocols": "<protocols>/a.md" and "Work/Protocols/A.md"`)
 	})
 }
+
+// A documents.protocols that names a file of the project, or a path through one, is refused as bad-config before
+// anything is written, at a first link and at update (V1's should-fix 3, 16 Oct: CLAUDE.md there left a link
+// partly written and bonsai.yaml failed as read-failed).
+func TestProtocolsFolderThatIsAFile(t *testing.T) {
+	e := setup(t)
+	src, shas := protoPack(t, e.tmp, "proto", "")
+	n := 0
+	refused := func(t *testing.T, root string, req Request, words string) {
+		t.Helper()
+		before := snapshot(t, root)
+		_, err := e.try(root, req)
+		wantRefused(t, err, "bad-config", ExitInput, words)
+		ee := err.(*Error)
+		if !strings.Contains(ee.Next, "documents.protocols in bonsai.yaml") || ee.Object().Next.Who != "person" {
+			t.Errorf("next %q, who %s", ee.Next, ee.Object().Next.Who)
+		}
+		sameSnapshot(t, "a refusal", before, snapshot(t, root))
+	}
+	project := func(t *testing.T, folder string) string {
+		t.Helper()
+		n++
+		root := testpack.Project(t, e.tmp, "proto-file-"+strings.Repeat("x", n))
+		writeFile(t, root, "bonsai.yaml", protoConfig(t, "proto", src, shas[0], folder))
+		writeFile(t, root, "CLAUDE.md", "# Demo\n")
+		writeFile(t, root, "docs/notes.txt", "notes\n")
+		return root
+	}
+	for _, c := range []struct{ folder, words string }{
+		{"CLAUDE.md", `names "CLAUDE.md", a file of the project, not a folder`},
+		{"bonsai.yaml", `names "bonsai.yaml", a file of the project, not a folder`},
+		{"docs/notes.txt", `names "docs/notes.txt", a file of the project, not a folder`},
+		{"docs/notes.txt/protocols", `names "docs/notes.txt/protocols", inside "docs/notes.txt", a file of the project`},
+	} {
+		t.Run(c.folder, func(t *testing.T) {
+			refused(t, project(t, `"`+c.folder+`"`), Request{Command: "init"}, c.words)
+			root := project(t, "work/protocols")
+			e.apply(t, root, Request{Command: "init"})
+			raw := read(t, root, "bonsai.yaml")
+			writeFile(t, root, "bonsai.yaml", strings.Replace(raw, "  protocols: work/protocols", `  protocols: "`+c.folder+`"`, 1))
+			refused(t, root, Request{}, c.words)
+		})
+	}
+	// An existing folder is no file: linked there.
+	root := project(t, "docs")
+	e.apply(t, root, Request{Command: "init"})
+	if got := read(t, root, "docs/proto-start.md"); !strings.HasPrefix(got, "# Session start") {
+		t.Errorf("the protocol file: %q", got)
+	}
+}

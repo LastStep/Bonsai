@@ -351,6 +351,10 @@ func Build(req Request) (_ *Plan, err error) {
 		p.NewConfig = true
 	}
 	p.Config = cfg
+	// A documents.protocols that is a file of the project is refused before anything is written (protocols.go).
+	if err := protocolsFolder(co.Root, cfg); err != nil {
+		return nil, err
+	}
 	origConfig := rawConfig
 	if req.NewID {
 		if co.Root != co.Main {
