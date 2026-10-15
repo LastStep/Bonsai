@@ -246,17 +246,21 @@ func init() {
 		{rule: RuleStopRungNotGreen, task: "T-0901", result: func(l *format.Ladder) { l.Rungs[1].Status = "pending" }},
 		{rule: RuleStopBudget, task: "T-0901", result: func(l *format.Ladder) { l.Green, l.Rungs[1].Status = false, "red" },
 			change: func(t *testing.T, dir string) {
-				// The named session s1, past its budget, its report written: it may stop, its ladder red.
+				// The named session s1, past its budget, its report written since (the message file bonsai message
+				// wrote, with its message record in the session's log): it may stop, its ladder red.
 				s := agents.Store{Main: dir}
 				at := agents.Stamp(testNow)
-				if _, err := s.Create(agents.Header{Agent: "s1", Session: "s1", Role: "builder", Kind: "lead", Named: true, First: at}); err != nil {
+				if _, err := s.Create(agents.Header{Agent: "s1", Session: "s1", Role: "builder", Kind: "lead", Named: true,
+					Task: "T-0901", First: at}); err != nil {
 					t.Fatal(err)
 				}
-				for _, e := range []agents.Event{{E: agents.EventSpent, At: at}, {E: agents.EventReported, At: at}} {
-					if err := s.Append("s1", "s1", e); err != nil {
-						t.Fatal(err)
-					}
+				if err := s.Append("s1", "s1", agents.Event{E: agents.EventSpent, At: at}); err != nil {
+					t.Fatal(err)
 				}
+				const id = "M-2026-10-12-0000000a"
+				writeFile(t, filepath.Join(dir, ".bonsai", "local", "messages", "orchestrator", id+".md"),
+					reportFile(id, id, "builder@T-0901", "orchestrator", "2026-10-12T00:00:01.000Z"))
+				writeFile(t, filepath.Join(dir, ".bonsai", "local", "log", "s-s1.ndjson"), messageRecords(id))
 			}},
 	}
 	for _, c := range cases {
@@ -283,4 +287,10 @@ func init() {
 			}
 		}
 	}
+}
+
+// reportFile is a report's message file, from from to to in the thread thread.
+func reportFile(id, thread, from, to, created string) string {
+	return strings.Replace(strings.Replace(briefFile(id, thread, from, to, created, ""), "kind: brief", "kind: report", 1),
+		"status: null", "status: blocked", 1)
 }
