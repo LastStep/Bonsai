@@ -351,7 +351,7 @@ func riseStep(c *Climb) {
 		c.say("")
 		c.say("  new tests, %s: checking them on the base (the rung runs there twice, in a temporary worktree)", what)
 		got := newTests(ratchet.RiseInput{Name: rt.Name, Was: rt.Was, Now: rt.Now, Rung: s.Rung, Tests: s.Tests, Root: c.Root,
-			Main: c.Main, Task: c.TaskID(), Head: c.git.SHA, Base: c.Base, MergeBase: c.MergeBase, Prior: c.Prior, Env: c.o.Env,
+			Main: c.Main, Task: c.TaskID(), Head: c.git.SHA, Base: c.Base, MergeBase: c.MergeBase, Prior: c.Prior, Env: rungEnv(c.o.Env),
 			Timeout: rungTimeout(s.Rung), Stop: c.o.Stop})
 		s.rise = &got
 		rt.NewTests = got.NewTests

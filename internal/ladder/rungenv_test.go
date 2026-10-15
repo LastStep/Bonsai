@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/LastStep/Bonsai/internal/ratchet"
+	"github.com/LastStep/Bonsai/internal/testpack"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -45,6 +47,38 @@ func TestRungsEnvironmentHasNoTaskOrRole(t *testing.T) {
 	}
 	if !strings.Contains(string(raw), "BONSAI_LADDER=1") {
 		t.Errorf("the runner's own LadderEnv is missing:\n%s", raw)
+	}
+}
+
+// The new-tests check's reruns on the base (kinds.go's riseStep) run with the rungs' own environment too: neither
+// BONSAI_TASK nor BONSAI_ROLE while the caller's holds both, the rest passed through (VG's item H, 5.5.8 item 4).
+func TestNewTestsRerunsHaveNoTaskOrRole(t *testing.T) {
+	ntGo.need(t)
+	f, tmp := ntGo.project(t, "")
+	wt := filepath.Join(f.tmp, "wt")
+	testpack.Git(t, f.root, "worktree", "add", "-q", "-b", "t0901", wt)
+	ntGo.lay(t, wt)
+	defer func(saved func(ratchet.RiseInput) ratchet.Checked) { newTests = saved }(newTests)
+	var seen [][]string
+	newTests = func(in ratchet.RiseInput) ratchet.Checked {
+		seen = append(seen, append([]string(nil), in.Env...))
+		return ratchet.NewTests(in)
+	}
+	caller := append(os.Environ(), workspace.TaskEnv+"=T-0901", "BONSAI_ROLE=builder", "BONSAI_PASSES_THROUGH=yes")
+	a := climbClean(t, f, tmp, wt, Options{Task: "T-0901", Env: caller})
+	if a.Exit != 0 || len(seen) != 1 {
+		t.Fatalf("exit %d, %d new-tests checks\n%s", a.Exit, len(seen), f.out.String())
+	}
+	through := false
+	for _, kv := range seen[0] {
+		name, _, _ := strings.Cut(strings.ToUpper(kv), "=")
+		if name == workspace.TaskEnv || name == "BONSAI_ROLE" {
+			t.Errorf("the reruns' environment holds %s", kv)
+		}
+		through = through || kv == "BONSAI_PASSES_THROUGH=yes"
+	}
+	if !through {
+		t.Error("the rest of the caller's environment did not reach the reruns")
 	}
 }
 
