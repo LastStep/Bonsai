@@ -776,8 +776,9 @@ type delCmdRunner struct {
 
 // delCmdRunners are the programs that run a command string other than the shells (V1's M2, 16 Oct: script -qec
 // 'bonsai update --yes' /dev/null ran for every role): script in util-linux's spelling (-c, --command) and BSD's
-// (script [file [command ...]]), su and runuser (-c, --command, --session-command, a shell's words after the user,
-// its input; runuser -u runs a program), flock (lockfile -c text, or lockfile program) and sg (group [-c] text).
+// (script [file [command ...]]), or with neither its input; su and runuser (-c, --command, --session-command, a
+// shell's words after the user, its input; runuser -u runs a program), flock (lockfile -c text, or lockfile program)
+// and sg (group [-c] text).
 var delCmdRunners = func() map[string]*delCmdRunner {
 	su := delOpt{short: "flmpPhV", shortVal: "cgGswu", long: []string{"login", "preserve-environment", "pty", "fast",
 		"help", "version"}, longVal: []string{"command", "session-command", "group", "supp-group", "shell",
@@ -825,6 +826,11 @@ func (r *delRun) cmdRunner(name string, c *delCmdRunner, x delExec) {
 		// BSD's script file command ..., flock's lockfile command ... (lockfile -c text is read above).
 		if len(rest) >= 2 {
 			run(rest[1:])
+		} else if name == "script" && len(all.val("c", "command")) == 0 {
+			// script with no command runs a shell, which reads its input: read as sh's is.
+			y := x
+			y.words = []shWord{{text: "sh", raw: "sh"}}
+			r.bashShell(y)
 		}
 	case "su", "runuser":
 		if all.has("u", "user") && name == "runuser" {

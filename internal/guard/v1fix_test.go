@@ -72,7 +72,7 @@ func TestCommandStringRunnersAreRead(t *testing.T) {
 			"script -c " + q, "script -qec " + q + " /dev/null", "script -qc " + q + " /dev/null",
 			"script -q -e -c " + q + " /dev/null", "script --command=" + q + " /dev/null", "script --comm " + q + " /dev/null",
 			"script -a -t -q /dev/null -c " + q, "script -c" + q + " /dev/null", "script -q /dev/null " + inner,
-			"script -q -t 0 /dev/null " + inner,
+			"script -q -t 0 /dev/null " + inner, "echo " + q + " | script -q /dev/null", "script -q <<< " + q,
 			"su -c " + q, "su -lc " + q, "su - root -c " + q, "su root -- -c " + q, "su --session-command=" + q + " root",
 			"su -s /bin/sh -c " + q + " root", "echo " + q + " | su root",
 			"runuser -c " + q + " root", "runuser -lc " + q + " root", "runuser -u root -- " + inner, "runuser -u root " + inner,
