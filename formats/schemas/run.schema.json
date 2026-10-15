@@ -80,7 +80,7 @@
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$"
     },
     "outcome": {
-      "description": "How the session ended, a closed list (contract §7.1). A format-0 report keeps its words: needs-rohan reads as needs-person, needs-review as needs-verifier, anything else as other.",
+      "description": "How the session ended, a closed list (contract §7.1). A format-0 report keeps its words: format 0's old person-named outcome reads as needs-person, needs-review as needs-verifier, anything else as other.",
       "examples": [
         "running",
         "needs-verifier"

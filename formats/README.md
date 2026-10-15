@@ -128,7 +128,7 @@ the same way, each a new schema file: an addition.
   lists a major cannot grow); the status `packs[].state`, `status_writes` and `active_task.how`; the lock's file
   `kind`.
 - A field that does not apply is `[]` when it holds a list (`values`, `options`, `skipped`) and `null` otherwise; a
-  label definition writes every field, `grants: false` among them. Rohan, 8 Oct: label-definition fields stay
+  label definition writes every field, `grants: false` among them. The director, 8 Oct: label-definition fields stay
   required, because Bonsai's packs write every field; the contract's short examples (§5.2, §5.6, and the format
   review's 2.2), which leave out fields that do not apply, are out of date. A reader still reads a missing field as
   `null` (`grants` as `false`).

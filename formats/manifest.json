@@ -1,10 +1,10 @@
 {
   "about": "The formats set's manifest: the set version and the SHA-256 of every file's raw bytes in formats/, all but this file and the Go files, sorted by path. Every field is described in README.md.",
-  "set": 8,
+  "set": 9,
   "files": [
     {
       "path": "README.md",
-      "sha256": "acdd78e7bf9cce23d9a3e92a95f82a7987fa4c8cb274970979c4f16bba93e7d4"
+      "sha256": "ade53f93416538e320d00198bb65e3276cc9355f83f33f5dd94e1974dc8a3eb4"
     },
     {
       "path": "active-task/answers.json",
@@ -456,7 +456,7 @@
     },
     {
       "path": "schemas/help.schema.json",
-      "sha256": "e8016c3a764a69253131aad1bb088ff339008bb8ebbe5c7e76cd2cb7c216069d"
+      "sha256": "7049672816ef66d9e50b5158107fd13abb18e8e4e64924de2235b43599ede0ad"
     },
     {
       "path": "schemas/labels.schema.json",
@@ -500,7 +500,7 @@
     },
     {
       "path": "schemas/run.schema.json",
-      "sha256": "c45ff151ee013971bd8c893b1c4e279cf64a100cc54e45d882abeab818ff6071"
+      "sha256": "f9b3e1b28be9ed46652c78cfb328401a6dfc4228fe82c65f8b8bca932f3b21c6"
     },
     {
       "path": "schemas/sessions.schema.json",
