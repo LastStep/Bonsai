@@ -168,6 +168,9 @@ session when it changes Bonsai's own guard line; a rung added is refused `config
 ## Waiting on the director
 
 - **This morning:** the batch above (`~/bonsai-checks/morning-2026-10-16.md`).
+- **Next session, first:** ask how they want `bonsai`'s human output to look (the director, 16 Oct: "our cli outputs are not nice
+  looking, its like the text is just thrown on the screen ... improve this cli ui later, ask me during next session"); e.g.
+  `update`'s plugin lines ran together ("bonsai updatewaiting"). Within `CLAUDE.md`'s rules: ASCII, standard library, `--json` unchanged.
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than
   the code; a talk on Cursor's pstack after 5.5, before 5.6 builds.
