@@ -238,7 +238,8 @@ Labels a document may carry under its labels: field (name: the value it takes; t
 - workflow.estimate_h: a number; on task; agents set it. The task's estimate in hours, written with the task.
 Bonsai's documents have their templates in base's skills; open the one you need before writing or checking such a file: base:task, base:run (a run report), base:memory (a memory note and its index), base:message (a brief or a report, written with bonsai message), base:state (.bonsai/STATE.md), base:workspace (bonsai.yaml), base:ci (a CI workflow that runs bonsai check).
 What Bonsai generates in this project, and how long it keeps each kind: base:generated-files.
-Open base:operating-bonsai before you run a bonsai command or edit bonsai.yaml, and whenever Bonsai or its guard refuses something.
+Open base:operating-bonsai before you run any bonsai command, and whenever Bonsai or its guard refuses something.
+Open base:operating-setup before you link or update a project, edit bonsai.yaml or change a pack's version.
 Roles (workflow): the session the person talks to is the orchestrator and opens `workflow:orchestrate` when work starts; builder and verifier (leads) and researcher, auditor and runner (helpers) are called with their brief, or started as `claude --agent workflow:<role>`.
 Lanes light, full and director, each with its pipeline: `workflow:lanes`. Document templates: `workflow:plan`, `workflow:feature`, `workflow:decision`, `workflow:options`, `workflow:spec`, `workflow:playtest`, `workflow:bugs`, and the daily brief's in `workflow:brief`.
 <!-- bonsai:block end -->
