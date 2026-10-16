@@ -6,6 +6,9 @@ Active task when none is named: none (no task reads running)
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
 | T-5690 | 5.6's section amended by the director's 16 Oct decisions: the prototype skill first, the CLI redesign, operating-bonsai split, workflow's additions | done | | 2026-10-16 | 2026-10-16 |
+| T-5609 | operating-bonsai split in two: a core every agent reads and a second skill for linking, updating and settings (5.6.9) | done | | 2026-10-16 | 2026-10-16 |
+| T-5608 | The CLI redesign in style C: colour on a terminal, laid out to its width with golang.org/x/term (5.6.8) | verify | | 2026-10-16 | |
+| T-5607 | workflow:prototype and its first run, the CLI look in five styles (5.6.7) | done | | 2026-10-16 | 2026-10-16 |
 | T-5599 | No person's name in Bonsai's files: the director's name, user name and email replaced by a generic designation | done | | 2026-10-15 | 2026-10-15 |
 | T-5598 | VG's fix round for 5.5.11 and 5.5.8's item 4: role rights only behind an allowed call, case-free types, the report found by the gate | done | | 2026-10-15 | 2026-10-15 |
 | T-5597 | CLAUDE.md's landing rule: pieces ready together land as one batch, with one Windows check at the batch's top | done | | 2026-10-15 | 2026-10-15 |
