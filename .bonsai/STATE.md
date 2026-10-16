@@ -7,8 +7,10 @@ labels: {}
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 16 Oct 2026 at 11:45. **Step 5.5 is done** (the end verifier passed it
-in its second round, 11:28). **Next: step 5.6, the machine pieces** (`design/plan-5.md` "### Step 5.6", from 5968). On `main` at
+Rewritten, never appended (`base:state`). Last rewritten 16 Oct 2026 at 13:08. **Step 5.5 is done** (the end verifier passed it
+in its second round, 11:28). **Next: step 5.6, the machine pieces** (`design/plan-5.md` "### Step 5.6", from 5968),
+**amended 16 Oct by the director's decisions** (its subsection "Added 16 Oct, before the build"; `T-5690`): four pieces
+added, 5.6 now 24.5-39.5 h, re-ask 51; **its first step is `workflow:prototype` and the CLI prototype (5.6.7)**. On `main` at
 `0b99023d` (code at `bf7cc3d`, the installed pre-release). Bonsai's own repo now takes its packs `base` and `workflow` (5.5.7):
 sessions here start agents by their `workflow:` roles; an undeclared agent type (`general-purpose`) is held as a read-only
 helper. The floors: `go_tests` 4600, `go_tests_tagged` 4606. Every change lands by `CLAUDE.md`'s rules.
@@ -54,7 +56,13 @@ helpers (about 6 h, side by side).
   5.5.6's rows**; **the Windows login size check dropped** ("Skip the check": agents never touch the credentials file; the
   warm-up stays); ran `bonsai update --allow-exec --yes` and the plugin installs; one history item left as is (their word);
   check 5 run by a builder, its Windows half on payload replays plus 5.5.5's Windows sessions; **the human CLI output to be
-  improved: ask them first thing next session**.
+  improved**. **Then, in the 5.6 talk (`T-5690`, on a private artifact "Bonsai 5.6 Ideas Board"; decisions in
+  `~/bonsai-checks/5.6-prep/decisions-2026-10-16.md`):** from pstack, `workflow:correct`, observe-don't-ask with
+  `workflow:prototype`, and four short skill lines into 5.6; **playbooks after 1.0** ("playbook we will consider after
+  1.0 is done"), hillclimb and pickup with them; **a changelog skill, a skill only** ("i dont want a command line
+  feature, just a normal skill"), in `workflow`, in 5.6; **`operating-bonsai` split in two**; **the CLI look prototyped
+  first, under the new skill, shown as images** ("i dont need to test it myself"; "the prototype can happen as the first
+  step"); the library, colour and the redesign's place asked after they see the images.
 - **15 Oct, this session:**
   - About 10:45: "for now just finish all the steps which are at verify". Asked whether to split V1 so 5.5.0-5.5.2
     close today (split recommended): **"Keep the plan"**: one V1 after 5.5.6.
@@ -120,13 +128,18 @@ helpers (about 6 h, side by side).
 
 ## Now: step 5.6, the machine pieces
 
-`design/plan-5.md`, "### Step 5.6" (from 5968), approved 10 Oct with the director's (A) on notes about them. **Next session,
-in this order:**
+`design/plan-5.md`, "### Step 5.6" (from 5968), approved 10 Oct with the director's (A) on notes about them, and amended 16 Oct
+(the subsection "Added 16 Oct, before the build", reviewed by a fresh Opus verifier in two rounds, its last findings fixed
+and read in the diff). The CLI-output and pstack talks are done (above). **Next, in this order** (the subsection's "The order"):
 
-1. **Ask the director how they want `bonsai`'s human output to look** (their 16 Oct ask; a memory note too): within
-   `CLAUDE.md`'s rules (ASCII, the standard library, `--json` unchanged); `update`'s plugin lines ran together.
-2. **The pstack talk** (Cursor's plugin, surveyed 16 Oct), before 5.6 builds.
-3. **5.6's tasks** written from its section (`T-56yy`), the plan's pieces in its order, builders as `workflow:builder`.
+1. **5.6.7 and 5.6.9 side by side:** `workflow:prototype` (Sonnet) then the CLI spike briefed from it (a Fable builder,
+   `~/bonsai-checks/T-5607/spike/`, five styles of `status` and the `init` preview from real `--json`, sizes and start
+   times), its outputs shown to the director as images in the artifact; `operating-bonsai` split (Sonnet). Tasks `T-5607`,
+   `T-5609`. The stopped first spike's partial `~/bonsai-checks/cli-proto/` is not reused.
+2. **The director's choice** from the images (style, library or none, colour, Unicode, 5.6.8's place), then the ref moves'
+   yes (`T-5691` onward).
+3. **5.6.0**, then **5.6.8** (the redesign), then the four lanes with **5.6.10** (`correct`, `changelog`, the four lines)
+   beside them, as the subsection orders.
 
 **How work runs now:** agents by role (`workflow:builder`, `workflow:verifier`, `workflow:runner`, `workflow:auditor`),
 briefed with `bonsai message` (a brief's id in the Agent call's prompt; a newer brief in the thread resets a budget);
@@ -142,7 +155,7 @@ the checkout comes before `update` installs. The guard's added cost a call: abou
 
 ## Waiting on the director
 
-- **Next session, first:** how `bonsai`'s human output should look (above).
+- **Next, in 5.6.7:** their choice from the CLI prototype's images (style, library, colour, Unicode, where 5.6.8 sits).
 - **Can wait:** V1's design question: an agent past its budget cannot stop a process it started (exempt it, or accept).
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than

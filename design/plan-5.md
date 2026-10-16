@@ -5965,7 +5965,11 @@ both sides where a check names them, and passes or fails 5.5:
 - **§5's table: `asset-safety` and `unity-live-editor` "in a later game pack":** not built in 5.5 and not in its hours.
 - **§17 step 6 still names `/agents`:** outside step 5's parts (`STATE.md`); the orchestrator's dated note.
 
-### Step 5.6: the machine pieces (13-20 h, re-ask at 26)
+### Step 5.6: the machine pieces (13-20 h, re-ask at 26; with the 16 Oct additions 24.5-39.5 h, re-ask at 51)
+
+**16 Oct:** "Added 16 Oct, before the build" (below "For Rohan") adds four pieces, steps of the director's and hours.
+Where the text approved on 10 Oct says otherwise (his steps in 5.6 "none", "nothing else of his changes", 13-20 hours,
+re-ask 26, the tasks from `T-5690`), that subsection wins.
 
 **Rohan's (B), and what else of his changes.** This section comes to Rohan, because it changes his steps and held one
 choice of his, made inside his approval (no option round); he approved it on 10 Oct. The one step on his list for 5.6, a
@@ -6111,6 +6115,79 @@ from 5.6: this machine's settings and the studio's label files are yours or the 
 is yours to install, from the lines an agent hands you; under (A), notes about you are yours to save. At 5.7: your
 memory line, with the 1.0 installs.
 
+#### Added 16 Oct, before the build: the director's decisions
+
+**Where this comes from.** Before 5.6 started, the director held the talks STATE had queued (how `bonsai`'s human output
+should look; Cursor's pstack) in a session of its own, on a private artifact of theirs, "Bonsai 5.6 Ideas Board", built from a Sonnet researcher's write-up
+(`~/bonsai-checks/research/pstack/pstack-vs-bonsai.md`, every quote fetched at `cursor/plugins` `f713f14`) and a Sonnet
+runner's 19 captures of today's output (`~/bonsai-checks/cli-look/`). Task `T-5690`. Their decisions, each one asked on
+its own:
+- **From pstack, three things into 5.6:** `workflow:correct` (a mistake seen twice is fixed at the highest level that
+  works, the new check proved to fail on the real past mistake); observe, don't ask, with `workflow:prototype` (a
+  question a run can answer is settled by a throwaway spike before the director is asked; a builder writes the spike,
+  since a runner writes nothing); and four short lines (a
+  "how sure" grade on claims; "a missing result is a gap, not a pass"; a parallel-work checkpoint in the plan
+  template; restate the goal first). **Playbooks after 1.0** ("playbook we will consider after 1.0 is done"), and
+  pstack's hillclimb and pickup with them. Not taken: patch-id verdicts, the principle set, memory mining, arena and
+  cross-model review.
+- **A changelog skill, a skill only** ("i dont want a command line feature, just a normal skill which agents can use to
+  create the document"), in `workflow`, built in 5.6.
+- **`operating-bonsai` split in two** (it is at 12,262 of its 12,288-byte cap, and 5.6 adds four words' lines to it).
+- **The CLI's look prototyped first, under the new prototype skill, as 5.6's first step** ("i think we should first
+  establish the new skill. and then you can queue up agents for building this prototype, and show me the final output
+  images, i dont need to test it myself"; then "the prototype can happen as the first step"). Which style, whether a
+  library (`CLAUDE.md` says the standard library only and ASCII output), colour, and where the redesign sits are asked
+  after the director has seen the images.
+
+**Four new pieces.** Numbered after 5.6.6 (tasks `T-5607` to `T-5610`); their order is below, not their numbers.
+
+| # | What is built | What proves it | Hours | Model |
+|---|---|---|---|---|
+| 5.6.7 | **`workflow:prototype` and its first run.** The skill in `workflow` (when a question is a run's to answer; a builder writes the spike, a runner may run it; the spike in `~/bonsai-checks/<task>/spike/`, never the repo; the variants behind one switch; the output is evidence for a decision, never code that lands; the result in the options or the artifact) and the observe-don't-ask paragraph in `workflow:orchestrate` and `workflow:lanes`. Then the CLI prototype, briefed from the skill: a throwaway Go program in its own module under `~/bonsai-checks/T-5607/spike/` (fresh; the stopped spike's partial `~/bonsai-checks/cli-proto/` is not reused) rendering the real `status --json` and `init --json` preview in five styles (A standard library, ASCII, no colour; B A with colour; C B with `golang.org/x/term`'s width; D lipgloss; E B with Unicode marks), with `init --explain`'s detail view; each style's module count, binary growth and start time (spec §3's bound: under 5 ms); the outputs rendered as images in the artifact, which the director judges without running anything | `workflow`'s CI; the spike's brief cites the skill's steps; every image from a real run of the spike on real data; the sizes from `go list -m all` and the built binaries; the director's answers recorded | 2.5-4 | Sonnet for the skill; Fable for the spike (visual design) |
+| 5.6.8 | **The CLI redesign**, as the director chooses from 5.6.7: every word's human output in the chosen style (summary first, columns for lists, one what/why/next shape for refusals, no repeated footers, `init`'s deny rules as counts with a new `--explain` flag, an addition), through one small package for the styling; every `--json` but `--help --json` (which gains `--explain`), exit codes and error words unchanged; before/after captures of each word's human output kept in `~/bonsai-checks/T-5608/captures/`; colour, if chosen, only on a terminal and off under `NO_COLOR`; piped output byte-stable. A library, colour or Unicode changes `CLAUDE.md`'s rules and the spec's (§3: "No terminal-UI library", "Human output is ASCII") on the director's word first; moving the text assertions to the new text is this task's job, in its `done_when` | Every `--json` output but `--help --json` byte-identical before and after on fixture projects, and `--help --json` differing only by `--explain` (with `docs/reference/lists.md` regenerated); each changed text assertion moved to the new text, none dropped (the 5.6 end verifier reads them, check 15); with a library linked, the start still under 5 ms; piped output stable on two runs and both sides; `NO_COLOR` and a Windows console's colour; the operating skill's test; check 10, the ladder, CI | 5-9 | Opus builder, the spike's chosen style its reference |
+| 5.6.9 | **`operating-bonsai` split**: a core every agent reads before any `bonsai` call (`--json` and refusals, status, check, the ladder, asks, briefs and budgets, the guard, the person's gates) and a second skill opened for linking, updating, editing `bonsai.yaml`, status moves and this machine's settings; base's block line names both; `cmd/bonsai/operating_test.go` holds every word to one of the two and each to its cap | The operating test, and its failing copies (a word in neither; either past its cap); `bonsai check` clean after Bonsai's `base` ref moves to it; check 10, the ladder, CI | 1-2 | Sonnet builder |
+| 5.6.10 | **`workflow`'s additions**: `workflow:correct` (its first run at 5.6's end, below, then at each part's end); `workflow:changelog` (a range by commits, tags or dates; four forms, text in the Keep a Changelog layout, visual with before/after images, short, plain words for the person; sources in order: tasks done in the range, their commits, run reports and decisions, ladder results; every line traced to a task or commit in the range; no person's name, home path or secret, images checked; the range written in the file so a later run continues from it; written where the person names, else `CHANGELOG.md` at the project's top, continuing one that exists; not a document kind of Bonsai's; Bonsai's own old `CHANGELOG.md` is 5.7's to settle); the four short lines in `workflow:reporting`, `workflow:lenses`, `workflow:plan` and `workflow:orchestrate` | `workflow`'s CI; `workflow:changelog` tried by a builder in scratch on 5.5's range (text form) and on 5.6.8's before/after captures (visual form), the results read by the orchestrator; `workflow:correct` tried on 5.5's fix rounds, its proposals read | 3-4.5 | Sonnet builder |
+
+**Owns.** 5.6.7: in `LastStep/bonsai-workflow`, `skills/prototype/SKILL.md`, the paragraph in `skills/orchestrate/` and
+`skills/lanes/`, the README's skill list; the scratch folder `~/bonsai-checks/T-5607/spike/`; the artifact. 5.6.8: the human
+writers in `cmd/bonsai/` and the text lines in `internal/status/` and `internal/engine/` that print them, a new
+`internal/textui/` (its name the builder's), the tests that assert human text, `go.mod` and `go.sum` only if a library is
+chosen, and `CLAUDE.md`'s rule lines and `design/bonsai-spec.md`'s §3 lines only on the director's word. 5.6.9: `packs/base/skills/operating-bonsai/SKILL.md`, the
+new skill's folder, `packs/base/bonsai/block.md`, base's README, `cmd/bonsai/operating_test.go`, and every base skill line that names
+`operating-bonsai` (`packs/base/skills/message/SKILL.md`'s two). 5.6.10: in `workflow`,
+`skills/correct/`, `skills/changelog/`, `skills/reporting/`, `skills/lenses/`, `skills/plan/`, `skills/orchestrate/`, the
+README. **Every later "operating skill"** in this plan (5.6.0's lines for both words, 5.6.3's memory line, 5.6.5's and 5.7.3's install line, `packs/base/skills/operating-bonsai/SKILL.md` in 5.7.3's owns) means the half 5.6.9 gives that subject; **5.6.1 to
+5.6.5's human text** is written in 5.6.8's style.
+
+**The order, with these pieces** (it replaces step 1 of "The order" below; steps 2 to 5 follow as written there):
+1. **5.6.7 and 5.6.9 side by side, first.** 5.6.7 changes only `workflow` and scratch; 5.6.9 only base's files in this
+   repository. Then **the director's choice** from 5.6.7's images: the style, a library or none, colour, Unicode, and
+   where 5.6.8 sits (recommended: next, before 5.6.0's words get their text).
+2. **5.6.0**, alone, as planned (its operating lines go into 5.6.9's halves).
+3. **5.6.8**, alone: it touches every word's human text, which lane A, 5.6.2 and 5.6.4 also print.
+4. Then "The order"'s step 2 (the four at once) with **5.6.10** beside them: it changes only `workflow`, sharing no file.
+5. At 5.6's end, after the floors and before the end verifier: **`workflow:correct`'s first run** over 5.6's fix rounds,
+   verifier findings and the guard's refusals; its proposals become tasks (a small one fixed in 5.6 under the
+   stricter-only rule; the rest placed in 5.7). Its first known case: briefs to write-nothing roles that named output
+   files (refused `role-writes-nothing`, 16 Oct).
+
+**The ref moves.** Bonsai's repository links `workflow` at `ef5b5ae` and `base` at a commit of its own; 5.6.7 and 5.6.10
+change `workflow`, 5.6.9 changes `base`. Each move is a task, `T-5691` onward in order, granting `bonsai.yaml`,
+`.bonsai/lock.json`, `.claude/**` (`.claude/settings.json` pins each pack's commit) and `CLAUDE.md` (its block), with the
+person-only ones in `bonsai.wants` (as 5.5.7's `T-5507`): on the
+director's yes the orchestrator edits the ref in the main checkout, reads `bonsai update --json` line by line, runs it
+with `--yes` and commits; `bonsai check` clean, a climb. V1, the floors and the end verification take the next numbers
+after the last move's task.
+
+**The director's steps these add:** the choice from 5.6.7's images (one sitting, about 15 minutes, no install); the yes
+to each ref move (after 5.6.7 and 5.6.9, which may fall together, and after 5.6.10), a pack's version being the
+person's step (`base:operating-bonsai`), handed over as one batch where they fall together; a `CLAUDE.md` and spec §3 rule change if
+the choice needs one. Still no install and no Windows sitting.
+
+**Hours.** The four pieces add 11.5-19.5 h: low 2.5+5+1+3 = 11.5, high 4+9+2+4.5 = 19.5. **5.6 becomes 24.5-39.5 h,
+re-ask at 51** (39.5 x 1.3 = 51.35). This session's discussion and planning (`T-5690`, about 2.7 h by 13:00) count in it, as section planning always has. The machine pieces'
+13-20 stand as estimated; 5.3 to 5.5 each ran past their low figure, so the re-read at 5.6.0 says if they still hold.
+
 #### What exists, and what 5.1 to 5.5 will have added
 
 **On `main` at `3d8a7f3`** (5.1.0 to 5.1.6 landed, 5.1.7 under way; read each package's doc comment):
@@ -6186,7 +6263,8 @@ install over a running copy, the cross-side home rules, the release lines' versi
 5.6.6's ranges, not past their highs, so the figures stand. Under Rohan's (B), not chosen on 10 Oct (note 5.6.3, 2),
 5.6.3 would become 3-5: low 14, high 22, re-ask 29 (22 x 1.3 = 28.6). This section's planning and review runs count in
 5.6's hours, carried in 5.6.0's run report ("What changes", item 3). Tasks (5.4's rule): piece 5.6.y is `T-560y`;
-`T-5690` onward, in order, for V1, the floors and the end verification.
+`T-5690` onward, in order, for V1, the floors and the end verification (from 16 Oct: `T-5690` is this section's
+amendment and `T-5691` onward the ref moves; V1 and the rest follow them).
 
 | # | What is built | What proves it | Hours | Reads |
 |---|---|---|---|---|
@@ -6777,15 +6855,29 @@ both sides where a check names them, and passes or fails 5.6:
 13. **Check 10, the ladder and CI:** `go test ./...` and `go vet ./...`, plain and tagged, in WSL and natively on
     Windows, run by the verifier; `/usr/local/bin/bonsai ladder --task <its task>` green on the final commit; CI green
     on it.
-14. **Stop lines and records:** 5.6's hours under 26, this section's planning and review included; step 5's Windows-only
-    tally; option rounds (none planned); nothing written or run in the studio's checkout (its files read with `git show`
+14. **Stop lines and records:** 5.6's hours under 51 (26 before the 16 Oct additions), this section's planning and review included; step 5's Windows-only
+    tally; option rounds (none planned; the director's choice from 5.6.7's images is one question round, not an options
+    write-up); nothing written or run in the studio's checkout (its files read with `git show`
     only) or in Mimas; nothing written outside the repo and the scratch folders but `~/.bonsai/` by the orchestrator's
-    own real commands and Claude Code's accepted writes; no `install.json`, `personal/`, home `settings.json`, machine
+    own real commands and Claude Code's accepted writes, and the director's own private artifacts the orchestrator
+    publishes at their request; no `install.json`, `personal/`, home `settings.json`, machine
     `settings.json`, `labels/`, `cache/release.json` or `cache/personal-copy.json` in the real home written by a 5.6
     run; the user settings hashes around every Claude Code run; every landing matched to its green `ladder` record and
-    each task's `bonsai.allows` to this section's "Owns"; `bonsai.yaml` changed only by the floors; the Haiku audit of
+    each task's `bonsai.allows` to this section's "Owns"; `bonsai.yaml` changed only by the floors and the
+    ref moves' tasks (`T-5691` onward); the Haiku audit of
     `.bonsai/sessions.md` against the run reports. **Nothing private:** a grep of the diff, the commit messages and the
     task files.
+15. **The new look (5.6.8):** every word's `--json` byte-identical to the commit before 5.6.8 on the fixture projects,
+    `--help --json` differing only by `init`'s `--explain`;
+    each changed human-text assertion read against its old one, none dropped or loosened; piped output byte-stable on
+    two runs and both sides; colour, if chosen, absent when piped and under `NO_COLOR`, and shown in a Windows console;
+    the director's choice from 5.6.7 matched by the built output; `CLAUDE.md`'s and the spec's §3 rules as the director
+    worded them; with a library linked, the start under 5 ms on both sides.
+16. **The split (5.6.9):** the operating test passes and fails on its copies (a word in neither half; either past its
+    cap); base's block names both; `bonsai check` clean in Bonsai's repository at the moved `base` ref.
+17. **`workflow`'s additions (5.6.7, 5.6.10):** `workflow`'s CI green at the ref Bonsai's repository links; the
+    prototype, changelog and correct skills read against this section's rows; the changelog's two tries and correct's
+    first run in their run reports; the four short lines present where the row puts them.
 
 #### Risk in the code, 5.6
 
