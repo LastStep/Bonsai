@@ -166,8 +166,8 @@ pre-release on, the one they had is kept in `~/bonsai-checks/prerelease/previous
   field change updates its docs in the same commit.
 - **Every list has one home** (Bonsai's schemas or a pack's declarations); the reference page is regenerated with any
   list change.
-- Every command runs unattended: `--json` everywhere but `hook`, no prompt without a terminal, ASCII human output, and
-  every refusal names the next step.
+- Every command runs unattended: `--json` everywhere but `hook`, no prompt without a terminal, ASCII human output,
+  coloured only on a terminal (off under `NO_COLOR` and in pipes), and every refusal names the next step.
 - **`formats/` changes** only with its manifest.
 - **Windows:** Windows Go cannot build from WSL's disk. Windows runs happen under `%USERPROFILE%\bonsai-checks\` with
   `"/mnt/c/Program Files/Go/bin/go.exe"`. Every Windows-side repo, worktree and CRLF checkout is made with Windows git by

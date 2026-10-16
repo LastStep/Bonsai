@@ -161,7 +161,8 @@ word: other agents and `AGENTS.md` (Q5), polish for strangers, layer overrides, 
   > Each of Bonsai's hook lines names Windows' installed file, then WSL's (`/usr/local/bin/bonsai`), and refuses with a
   > person's next step if neither is there; the PATH is never read. Check 2 gains one named exception: those two
   > places, the same on every machine and naming no user. `design/plan-5.md`, "Step 5.3", the question for Rohan.
-- **Output.** Human output is ASCII (PowerShell 5.1 garbles UTF-8); `--json` for programs. Exit codes (vision A.1): 0 ok,
+- **Output.** Human output is ASCII (PowerShell 5.1 garbles UTF-8), coloured only on a terminal (off under `NO_COLOR`
+  and in pipes, where it is laid out at 100 columns, byte-stable; the director, 16 Oct, style C); `--json` for programs. Exit codes (vision A.1): 0 ok,
   1 check findings, 2 bad input, 3 runtime, 4 wrong state or no `--yes`, 5 conflicts. `bonsai hook` exits 0 (allow) or
   2 (block); in a project with no `bonsai.yaml` it exits 0 at once and records nothing (§7).
 - **Every command runs unattended** (Rohan, 7 Oct: "completely and easily useable by any ai agent"). No command waits

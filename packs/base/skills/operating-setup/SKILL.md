@@ -25,7 +25,8 @@ guard and the person's gates are there, and what follows assumes them. The `bons
 - **A first link**, at the packs and refs the person named (by these flags, or in `bonsai.yaml` first); where no ref
   is named, hand them the one you propose (the newest tag, else the default branch's head commit) and link on their
   yes. Without `--yes` it is a preview: nothing written, exit 4 (`needs-yes`). Read each settings line, then run it
-  again with `--yes`.
+  again with `--yes`. `--json` lists every line; the text preview counts them by kind, and `--explain` (on `init`
+  and `update`) lists each with where it comes from and why.
 
   ```sh
   bonsai init --name <name> --source <url> --path <folder> --ref <tag or commit> --json
