@@ -135,8 +135,10 @@ task granting `bonsai.yaml` and the lock.
 
 ## The way back, if the installed `bonsai` blocks work
 
-If Bonsai's guard breaks, every edit and command in a Claude Code session here is refused: it fails closed, on purpose.
-Then the director, in a plain WSL terminal, quits Claude Code and starts it like this instead, for as many sessions as
+If Bonsai's guard breaks (the installed `bonsai` missing or failing to start), every edit, shell command and agent start
+in a Claude Code session here is refused: Edit, Write, Bash, PowerShell and Monitor, and Agent, Task, SendMessage and
+Workflow calls; it fails closed, on purpose. Reads, searches, skills and questions still go through (the second hook
+line lets every other call pass while `bonsai` cannot run), so a session can still read and explain. Then the director, in a plain WSL terminal, quits Claude Code and starts it like this instead, for as many sessions as
 the fix takes (the conversation is kept; that session runs with no guard, no stop gate, no log, and without their status
 line):
 

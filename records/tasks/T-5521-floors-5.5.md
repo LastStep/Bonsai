@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5521
 title: "5.5's floors raised to the last climb's counts"
-status: running
+status: done
 lane:
 done_when:
   - "After 5.5's last records commit, main climbed once under T-5507 by the installed bonsai, green"
@@ -12,7 +12,7 @@ depends_on: [T-5507]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-16
 labels:
   bonsai.ladder: []
   bonsai.allows: ["bonsai.yaml"]
