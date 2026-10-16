@@ -197,27 +197,6 @@ func flagShown(f Flag) string {
 	return f.Name + " " + f.Value
 }
 
-// wrapWords wraps space-separated words at width, each line starting with indent.
-func wrapWords(text, indent string, width int) string {
-	var b strings.Builder
-	line := ""
-	for _, word := range strings.Fields(text) {
-		if line != "" && len(line)+1+len(word) > width {
-			b.WriteString(line + "\n")
-			line = ""
-		}
-		if line == "" {
-			line = indent + word
-		} else {
-			line += " " + word
-		}
-	}
-	if line != "" {
-		b.WriteString(line + "\n")
-	}
-	return b.String()
-}
-
 // call is one run of a word: its command line as read against its table, where it prints, and whether --json was
 // asked for.
 type call struct {

@@ -218,14 +218,6 @@ func (l *line) pad(n int) {
 	}
 }
 
-func (l *line) cols() int {
-	n := 0
-	for _, p := range l.parts {
-		n += width(p.Text)
-	}
-	return n
-}
-
 func (l *line) write(b *strings.Builder, look Look) {
 	parts := l.parts
 	for len(parts) > 0 {
