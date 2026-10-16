@@ -7,18 +7,41 @@
 format: bonsai.workspace/1            # the format and its version; a newer one is refused, never guessed
 id: ws-ncmncsfhnhgrfd4ac42jigtccy     # this repository's id, made once; a copy meant as a new project: init --new-id
 name: bonsai                          # the workspace's short name
-packs: []                             # no pack yet: Bonsai's base pack is linked here in step 5.5
+packs:                                # the packs this repository takes (step 5.5.7, 16 Oct)
+  - id: base                          # Bonsai's own pack: its skills, the walls on secret files, the four labels
+    source: "https://github.com/LastStep/Bonsai.git"   # this repository, public
+    path: packs/base                  # the pack's folder in it
+    ref: "bf7cc3d124f1e1d7304a302c01e587a52c5dc0ca"     # main at the pre-release installed 16 Oct; a move is the director's step
+    roles: null                       # base declares no roles
+  - id: workflow                      # the six roles, lanes and templates (the director's yes, 16 Oct 09:30)
+    source: "https://github.com/LastStep/bonsai-workflow.git"   # its own public repository
+    path: null                        # the pack is the repository's top
+    ref: "ef5b5ae36e6fb6ae47008c5b77a97bcaa0814c19"     # main, CI green on both sides; a move is the director's step
+    roles:                            # Bonsai's own limits where the pack's would cut a run it needed; the rest the pack's
+      builder:
+        minutes:                      # builders ran 230 and 416 minutes in 5.4-5.5 (the log's count, 16 Oct)
+          default: 240                # four hours unless a brief names another
+          max: 480                    # the most a brief may give
 documents:                            # where this repository keeps the documents Bonsai knows
   task: records/tasks                 # one file per task, T-<number>-<slug>.md; every file there is a task
   run: records/runs                   # the run reports (bonsai.run/1 from the switch); the older ones stay as they are
   answers: records/answers.md         # answers to questions that name no file; nothing there yet
   memory: records/memory              # memory notes and their INDEX.md; nothing there yet
-  protocols: records/protocols        # the packs' always-on protocol files; none until a pack brings them
+  protocols: records/protocols        # the packs' always-on protocol files (workflow's session-start)
+  plan: records/plans                 # workflow's kinds, kept under records/ (Bonsai's own plans stay in design/)
+  feature: records/features          # workflow's one-pagers
+  decision: records/decisions        # workflow's decision records
+  options: records/options           # workflow's options write-ups
+  spec: records/specs                # workflow's design specs
+  playtest: records/playtests        # workflow's play-session records
+  brief: records/briefs              # workflow's daily briefs
+  bugs: records/bugs.md              # workflow's register of known bugs, one file
 # protected: the paths an agent changes only while its running task lists them in bonsai.allows. Left off on
 # purpose: formats/ (the schema compare and the manifest test hold it), design/plan*.md, STATE.md, records/ and
 # every code folder (the rungs prove them). The guard's floor adds .git, .bonsai/ and any nested bonsai.yaml.
 protected:                            # the protected paths, as globs from the top folder
   - "bonsai.yaml"                     # this file: the checks every task is held to
+  - "packs/base/bonsai/pack.yaml"     # base's walls, which every linked project takes: a change is a granted task
   - ".bonsai/lock.json"               # the lock: what Bonsai wrote at the link
   - ".claude/**"                      # Claude Code's settings: Bonsai's hook lines and deny rules
   - ".github/**"                      # CI, CodeQL and the release workflow
@@ -115,7 +138,7 @@ ratchets:                             # the floors: counts that may only rise, f
   go_tests: 4188                      # rung 3's tests that passed, at 5a38f9a (13 Oct, T-5407)
   go_tests_tagged: 4194               # rung 4's tests that passed with the fault switch, at 5a38f9a (13 Oct, T-5407)
 ci_marked_tests: []                   # no test may skip in CI
-generated:                            # how long generated files are kept, per kind (docs/reference/generated-files.md)
+generated:                            # how long generated files are kept, per kind (skill base:generated-files)
   log:                                # the log, in .bonsai/local/log/
     keep_days: 30                     # a file goes 30 days after its last line; never an open session's, nor before its rows are in
     keep_newest: null                 # no limit on how many are kept
@@ -131,3 +154,10 @@ generated:                            # how long generated files are kept, per k
   sessions:                           # rows of .bonsai/sessions.md
     keep_days: null                   # kept
     keep_newest: null                 # kept
+  messages:                           # messages between agents, in .bonsai/local/messages/
+    keep_days: 30                     # 30 days, the default
+    keep_newest: null                 # no limit on how many are kept
+  agents:                             # each agent's state, in .bonsai/local/agents/
+    keep_days: 30                     # 30 days after a session folder's last line, the default
+    keep_newest: null                 # no limit on how many are kept
+messages: null                        # when bonsai messages flags a thread: Bonsai's defaults

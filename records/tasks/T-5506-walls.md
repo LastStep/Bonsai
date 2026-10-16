@@ -2,17 +2,17 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5506
 title: The walls, each tried once on both sides (5.5.6)
-status: blocked
+status: done
 lane:
 done_when:
   - "A Sonnet agent tries each wall once on both sides: the secret files listed again on each side (names only), each rule's form tried on decoys, each real rule tried where no secret can be shown"
   - "The run report's table, one row per rule and side; the user settings hashes"
   - "Run after T-5505, by the same agent; Windows half at Rohan's sitting; V1 passes"
 depends_on: [T-5505]
-blocked_by: "Waits for the director: accept 5.5.6's Windows rows, or allow the size check once for V1's Windows re-run."
+blocked_by:
 created: 2026-10-14
 started: 2026-10-16
-finished:
+finished: 2026-10-16
 labels:
   bonsai.branch: null
   bonsai.ladder: []
