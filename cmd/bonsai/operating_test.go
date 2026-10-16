@@ -1,21 +1,23 @@
 package main
 
-// The operating skill kept in step with this command (design/plan-5.md, note 5.5.3 item 4): base's
-// skills/operating-bonsai/SKILL.md, loaded as base:operating-bonsai, teaches every agent in a linked project to run
-// Bonsai unattended, so a word, flag or error word it names that this build does not have would send an agent wrong.
-// Read as committed (LF), it holds:
-//   - every bonsai command line it shows parses against the word registry (word.go): each line of a fenced code block
-//     and each inline code span that runs bonsai (bare, as bonsai.exe, or by a path such as /usr/local/bin/bonsai,
-//     after any NAME=value assignments) names a word the registry has (a sub-word under its word: bonsai hook guard),
-//     built, and every flag on it is that word's, built, with its value where it takes one, given once unless it may
-//     repeat; bonsai --help --json and bonsai --version are bonsai's own;
-//   - every fixed word it names in backquotes (a code span that is one kebab-case word, such as `needs-yes`) is a
+// The operating skills kept in step with this command (design/plan-5.md, note 5.5.3 item 4, and 5.6.9's split): base's
+// skills/operating-bonsai/SKILL.md (base:operating-bonsai, the core every agent reads before any bonsai call) and
+// skills/operating-setup/SKILL.md (base:operating-setup, linking, updating, bonsai.yaml, status moves and this
+// machine's settings) teach every agent in a linked project to run Bonsai unattended, so a word, flag or error word
+// either names that this build does not have would send an agent wrong. Read as committed (LF), the two hold:
+//   - every bonsai command line each shows parses against the word registry (word.go): each line of a fenced code
+//     block and each inline code span that runs bonsai (bare, as bonsai.exe, or by a path such as
+//     /usr/local/bin/bonsai, after any NAME=value assignments) names a word the registry has (a sub-word under its
+//     word: bonsai hook guard), built, and every flag on it is that word's, built, with its value where it takes one,
+//     given once unless it may repeat; bonsai --help --json and bonsai --version are bonsai's own;
+//   - every fixed word either names in backquotes (a code span that is one kebab-case word, such as `needs-yes`) is a
 //     word Bonsai has: an error word (format.ErrorWords, error.code's one home) or a rule of the guard and the stop
 //     gate (guard.Rules, a guard record's rule: budget-spent, call-refused), each table the word's one home;
-//   - every word the registry has is named at least once in such a line, the hook words among them (the skill names
-//     them as Claude Code's, never run by hand), so a new word fails here until the skill teaches it;
-//   - its size is at most 12 KB, so an agent reads it whole (note 5.5.3 item 3).
-// A word, flag or error word changed in this command changes the skill in the same commit.
+//   - every word the registry has is named at least once in such a line of one of the two, the hook words among them
+//     (named as Claude Code's, never run by hand), so a new word fails here until a skill teaches it;
+//   - each is at most 12 KB, so an agent reads it whole (note 5.5.3 item 3), and each names the other by its load
+//     name, so an agent in one knows where the rest is.
+// A word, flag or error word changed in this command changes the skill that holds its subject in the same commit.
 
 import (
 	"fmt"
@@ -30,62 +32,89 @@ import (
 	"github.com/LastStep/Bonsai/internal/guard"
 )
 
-// operatingSkillMax is the skill's largest size, in bytes as committed: 12 KB.
+// operatingSkillMax is each skill's largest size, in bytes as committed: 12 KB.
 const operatingSkillMax = 12 * 1024
 
-// readOperatingSkill reads the skill as committed, its line endings LF.
-func readOperatingSkill(t *testing.T) string {
+// operatingSkillNames are the two skills' folder names, which are their load names after "base:": the core first.
+var operatingSkillNames = [2]string{"operating-bonsai", "operating-setup"}
+
+// readOperatingSkills reads the two skills as committed, their line endings LF.
+func readOperatingSkills(t *testing.T) [2]string {
 	t.Helper()
-	p := filepath.Join(packageDir, "..", "..", "packs", "base", "skills", "operating-bonsai", "SKILL.md")
-	raw, err := os.ReadFile(p)
-	if err != nil {
-		t.Fatalf("base's operating skill cannot be read: %v", err)
+	var out [2]string
+	for i, name := range operatingSkillNames {
+		p := filepath.Join(packageDir, "..", "..", "packs", "base", "skills", name, "SKILL.md")
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			t.Fatalf("base's %s skill cannot be read: %v", name, err)
+		}
+		out[i] = strings.ReplaceAll(string(raw), "\r\n", "\n")
 	}
-	return strings.ReplaceAll(string(raw), "\r\n", "\n")
+	return out
 }
 
-// TestOperatingSkill: the skill as committed has none of the problems the file's comment lists.
+// TestOperatingSkill: the two skills as committed have none of the problems the file's comment lists.
 func TestOperatingSkill(t *testing.T) {
-	for _, p := range operatingProblems(readOperatingSkill(t)) {
-		t.Errorf("packs/base/skills/operating-bonsai/SKILL.md: %s", p)
+	for _, p := range operatingProblems(readOperatingSkills(t)) {
+		t.Errorf("packs/base/skills: %s", p)
 	}
 }
 
-// TestOperatingSkillCatchesDrift: copies of the skill, each broken one way, are each caught: a flag no word takes, a
+// TestOperatingSkillCatchesDrift: copies of the skills, each broken one way, are each caught: a flag no word takes, a
 // flag of another word, a flag not built yet, a word Bonsai does not have, an error word it does not have, every
-// mention of each word in the registry taken out, and a skill past its size.
+// mention of each word in the registry taken out of both, either skill past its size, and either without its pointer
+// to the other.
 func TestOperatingSkillCatchesDrift(t *testing.T) {
-	skill := readOperatingSkill(t)
-	block := func(line string) string { return skill + "\n```sh\n" + line + "\n```\n" }
+	skills := readOperatingSkills(t)
+	// in puts a fenced line or a sentence at the end of the skill i; the other is as committed.
+	in := func(i int, add string) [2]string {
+		c := skills
+		c[i] += add
+		return c
+	}
+	block := func(i int, line string) [2]string { return in(i, "\n```sh\n"+line+"\n```\n") }
 	cases := map[string]struct {
-		text string
+		text [2]string
 		want string
 	}{
-		"an unknown flag":                {block("bonsai ladder --task T-0001 --quick --json"), "bonsai ladder takes no --quick"},
-		"a flag of another word":         {block("bonsai status --yes --json"), "bonsai status takes no --yes"},
-		"a flag not built":               {block("bonsai status --line"), "bonsai status --line is not built yet"},
-		"an unknown word":                {block("bonsai lint --json"), "bonsai lint is not a word Bonsai has"},
-		"an unknown sub-word":            {block("bonsai hook nudge"), "bonsai hook nudge is not a word Bonsai has"},
-		"a value missing":                {block("bonsai ladder --json --task"), "bonsai ladder --task needs a value"},
-		"a flag given twice":             {block("bonsai ladder --task T-0001 --task T-0002"), "bonsai ladder takes --task once"},
-		"an unknown error word":          {skill + "\nA refusal `budget-gone` means stop.\n", "`budget-gone` is not a word Bonsai has"},
-		"a bad flag in a code span":      {skill + "\nRun `bonsai check --fix --json`.\n", "bonsai check takes no --fix"},
-		"past its size":                  {skill + strings.Repeat("x", operatingSkillMax), "bytes, past"},
-		"a line after a here-doc":        {block("bonsai message --kind report --body - <<'EOF'\nbonsai lint\nEOF\nbonsai ask --soon"), "bonsai ask takes no --soon"},
-		"a bad flag on a continued line": {block("bonsai ladder --task T-0001 \\\n  --quick"), "bonsai ladder takes no --quick"},
+		"an unknown flag":                {block(0, "bonsai ladder --task T-0001 --quick --json"), "bonsai ladder takes no --quick"},
+		"a flag of another word":         {block(0, "bonsai status --yes --json"), "bonsai status takes no --yes"},
+		"a flag not built":               {block(0, "bonsai status --line"), "bonsai status --line is not built yet"},
+		"an unknown word":                {block(0, "bonsai lint --json"), "bonsai lint is not a word Bonsai has"},
+		"an unknown sub-word":            {block(0, "bonsai hook nudge"), "bonsai hook nudge is not a word Bonsai has"},
+		"a value missing":                {block(0, "bonsai ladder --json --task"), "bonsai ladder --task needs a value"},
+		"a flag given twice":             {block(0, "bonsai ladder --task T-0001 --task T-0002"), "bonsai ladder takes --task once"},
+		"an unknown error word":          {in(0, "\nA refusal `budget-gone` means stop.\n"), "`budget-gone` is not a word Bonsai has"},
+		"a bad flag in a code span":      {in(0, "\nRun `bonsai check --fix --json`.\n"), "bonsai check takes no --fix"},
+		"the core past its size":         {in(0, strings.Repeat("x", operatingSkillMax)), "operating-bonsai is"},
+		"the setup past its size":        {in(1, strings.Repeat("x", operatingSkillMax)), "operating-setup is"},
+		"a bad line in the setup":        {block(1, "bonsai init --nope"), "operating-setup line"},
+		"a line after a here-doc":        {block(0, "bonsai message --kind report --body - <<'EOF'\nbonsai lint\nEOF\nbonsai ask --soon"), "bonsai ask takes no --soon"},
+		"a bad flag on a continued line": {block(0, "bonsai ladder --task T-0001 \\\n  --quick"), "bonsai ladder takes no --quick"},
+		"the core without its pointer": {
+			[2]string{strings.ReplaceAll(skills[0], "base:operating-setup", "the other skill"), skills[1]},
+			"operating-bonsai never names base:operating-setup",
+		},
+		"the setup without its pointer": {
+			[2]string{skills[0], strings.ReplaceAll(skills[1], "base:operating-bonsai", "the other skill")},
+			"operating-setup never names base:operating-bonsai",
+		},
 	}
 	for _, w := range helpEntries() {
 		// Every mention, a line break inside a code span included: bonsai (or bonsai.exe, quoted as a place may be),
-		// then the word's own words.
+		// then the word's own words. Taken out of both skills: a word in neither.
 		mention := regexp.MustCompile(`bonsai(?:\.exe)?"?\s+` + strings.ReplaceAll(regexp.QuoteMeta(w.Name), " ", `\s+`) +
 			`([^a-z-]|$)`)
-		if !mention.MatchString(skill) {
+		if !mention.MatchString(skills[0]) && !mention.MatchString(skills[1]) {
 			continue // TestOperatingSkill reports it
 		}
 		cases["no "+w.Name] = struct {
-			text string
+			text [2]string
 			want string
-		}{mention.ReplaceAllString(skill, "bonsai --version$1"), "bonsai " + w.Name + " is never named"}
+		}{[2]string{
+			mention.ReplaceAllString(skills[0], "bonsai --version$1"),
+			mention.ReplaceAllString(skills[1], "bonsai --version$1"),
+		}, "bonsai " + w.Name + " is never named"}
 	}
 	names := make([]string, 0, len(cases))
 	for name := range cases {
@@ -100,38 +129,44 @@ func TestOperatingSkillCatchesDrift(t *testing.T) {
 				found = found || strings.Contains(p, c.want)
 			}
 			if !found {
-				t.Errorf("a copy of the skill with %s is not caught (no problem says %q); it says: %q", name, c.want,
+				t.Errorf("a copy of the skills with %s is not caught (no problem says %q); it says: %q", name, c.want,
 					operatingProblems(c.text))
 			}
 		})
 	}
 }
 
-// operatingProblems lists what is wrong with the skill's text, each with its line: its size, each bonsai line that
-// does not parse against the registry, each fixed word Bonsai does not have, and each word the registry has that it
-// never names.
-func operatingProblems(text string) []string {
+// operatingProblems lists what is wrong with the two skills' texts, each with its skill and line: each one's size
+// and pointer to the other, each bonsai line that does not parse against the registry, each fixed word Bonsai does
+// not have, and each word the registry has that neither names.
+func operatingProblems(texts [2]string) []string {
 	var out []string
-	if n := len(text); n > operatingSkillMax {
-		out = append(out, fmt.Sprintf("the skill is %d bytes, past its %d: an agent reads it whole", n, operatingSkillMax))
-	}
 	named := map[string]bool{}
-	for _, l := range skillCommandLines(text) {
-		p, ok := parseSkillCommand(l.text, l.fenced, named)
-		if ok && p != "" {
-			out = append(out, fmt.Sprintf("line %d: %s (in %q)", l.line, p, l.text))
+	for i, text := range texts {
+		name, other := operatingSkillNames[i], operatingSkillNames[1-i]
+		if n := len(text); n > operatingSkillMax {
+			out = append(out, fmt.Sprintf("%s is %d bytes, past its %d: an agent reads it whole", name, n, operatingSkillMax))
 		}
-	}
-	for _, s := range skillSpans(text) {
-		if kebabWord.MatchString(s.text) && !bonsaiHasWord(s.text) {
-			out = append(out, fmt.Sprintf("line %d: `%s` is not a word Bonsai has: no error word (format.ErrorWords) "+
-				"and no rule of the guard (guard.Rules)", s.line, s.text))
+		if !strings.Contains(text, "base:"+other) {
+			out = append(out, fmt.Sprintf("%s never names base:%s: each half points to the other", name, other))
+		}
+		for _, l := range skillCommandLines(text) {
+			p, ok := parseSkillCommand(l.text, l.fenced, named)
+			if ok && p != "" {
+				out = append(out, fmt.Sprintf("%s line %d: %s (in %q)", name, l.line, p, l.text))
+			}
+		}
+		for _, s := range skillSpans(text) {
+			if kebabWord.MatchString(s.text) && !bonsaiHasWord(s.text) {
+				out = append(out, fmt.Sprintf("%s line %d: `%s` is not a word Bonsai has: no error word "+
+					"(format.ErrorWords) and no rule of the guard (guard.Rules)", name, s.line, s.text))
+			}
 		}
 	}
 	for _, w := range helpEntries() {
 		if w.Later == "" && !named[w.Name] {
-			out = append(out, "bonsai "+w.Name+" is never named in a bonsai line: the skill teaches every word the "+
-				"registry has (the hook words as Claude Code's, never run by hand)")
+			out = append(out, "bonsai "+w.Name+" is never named in a bonsai line of either skill: together they teach "+
+				"every word the registry has (the hook words as Claude Code's, never run by hand)")
 		}
 	}
 	return out
