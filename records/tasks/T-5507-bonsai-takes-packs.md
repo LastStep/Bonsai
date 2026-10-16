@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5507
 title: "Bonsai takes base and workflow: the new pre-release, Rohan's sitting, CLAUDE.md shrinks (5.5.7)"
-status: running
+status: done
 lane:
 done_when:
   - "The new pre-release built from a clean clone once every code fix has landed, the current one first kept in ~/bonsai-checks/prerelease/previous/, its install lines handed to Rohan in one batch"
@@ -15,7 +15,7 @@ depends_on: [T-5506]
 blocked_by:
 created: 2026-10-14
 started: 2026-10-16
-finished:
+finished: 2026-10-16
 labels:
   bonsai.ladder: []
   bonsai.allows: ["bonsai.yaml", ".bonsai/lock.json", ".claude/**", "CLAUDE.md", ".bonsai/.gitignore"]

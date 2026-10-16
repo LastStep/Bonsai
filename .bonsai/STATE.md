@@ -7,14 +7,11 @@ labels: {}
 
 # Bonsai: where it stands
 
-Rewritten, never appended (moved here from the top folder at 5.5.7, 16 Oct). Last rewritten 16 Oct 2026 at 06:00. **Step 5.5 is at its last piece, 5.5.7, waiting on the director's
-morning sitting.** On `main` at `bf7cc3d` (code): overnight (the director's "im leaving the session running for the night" rule)
-5.5.4 closed; 5.5.5 ran its real sessions and its three fix rounds landed (`T-5515` the guard, `T-5516` base's skills, `T-5517`
-`workflow`'s wording); 5.5.6 tried the walls on both sides and its fix round landed (`T-5518`); **V1 passed** the walls on WSL, the
-packs' CI and release, and `<protocols>/`, failed `T-5515` once (fixed by `T-5519`, passed in its second round) and left should-fixes
-(`T-5520`, landed). The **new pre-release** is built and tried (fingerprint `70516eb8...a2478`, `main` at `bf7cc3d`). Left: the
-director's morning list (`~/bonsai-checks/morning-2026-10-16.md`, below), then 5.5.7's link, `CLAUDE.md`'s shrink, the end verifier and
-the floors. About 73 h of 5.5's 63.5-106 (re-ask 138) logged. Every change lands by `CLAUDE.md`'s rules "from the link".
+Rewritten, never appended (`base:state`). Last rewritten 16 Oct 2026 at 11:45. **Step 5.5 is done** (the end verifier passed it
+in its second round, 11:28). **Next: step 5.6, the machine pieces** (`design/plan-5.md` "### Step 5.6", from 5968). On `main` at
+`0b99023d` (code at `bf7cc3d`, the installed pre-release). Bonsai's own repo now takes its packs `base` and `workflow` (5.5.7):
+sessions here start agents by their `workflow:` roles; an undeclared agent type (`general-purpose`) is held as a read-only
+helper. The floors: `go_tests` 4600, `go_tests_tagged` 4606. Every change lands by `CLAUDE.md`'s rules.
 
 **No person's name** goes into any file or commit message (the director, 15 Oct; `CLAUDE.md`'s Safety section): "the
 director" in this project's files, "the person" in the product. Files already under `records/` and `design/` keep
@@ -36,47 +33,28 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
 - **Step 5.3, the guards: done** (code at `750ca07`).
 - **Step 5.4, the ladder runner and the switch: done** (13 Oct). The pre-release installed at `/usr/local/bin/bonsai`
   (binary at `a88436a`), the link `c1bb21f`, the floors `6f25dd6` (`go_tests` 4188, `go_tests_tagged` 4194).
-- **Step 5.5, the packs, the roles and their messages: building** (approved 14 Oct, 17:52). The design in the artifact
-  "Workflow Pack Redesign" (https://claude.ai/artifact/4j5RgCaPQs9QDh8sShbKNN, version 4).
-
-| Piece | Task | Status | Where |
-|---|---|---|---|
-| 5.5.0 the engine's part for packs | `T-5500` | **done** | V1 passed `<protocols>/` (16 Oct) |
-| 5.5.1 the pack template, its CI | `T-5501` | **done** | V1 passed the packs' CI and release |
-| 5.5.2 `base` | `T-5502` | verify | V1 passed the walls on WSL; waits for the walls' Windows half (the director's choice) |
-| 5.5.3 the operating skill | `T-5503` | **done** | landed `9370976` (batch 1), CI green |
-| 5.5.4 `workflow` | `T-5504` | **done** | public at `c48d534`, CI green; the link with `base` 21 block lines (16 Oct) |
-| 5.5.5 real sessions | `T-5505` | blocked | WSL all passed after the fix rounds; Windows S1 at the fixed commit waits for the director's step |
-| 5.5.6 the walls | `T-5506` | blocked | tried on both sides; fix round `T-5518` done; the Windows half of V1 waits for the director's choice |
-| 5.5.7 Bonsai takes the packs | `T-5507` | running | pre-release built (`70516eb8...`) and tried; CLAUDE.md audited; the director's sitting next |
-| 5.5.8 CI green, carry-overs | `T-5508` | **done** | H fixed in `T-5598`; VG round 2 re-read items 4 and 5 |
-| 5.5.9 formats set 8 | `T-5509` | done | `f239f8f` |
-| 5.5.10 messages | `T-5510` | done | `298ed35` |
-| 5.5.11 the guard's role rules | `T-5511` | **done** | VG passed it (VG3's re-run, 16:12); CI green at `8d151a6` |
-| 5.5.11b M1 (permissions) | `T-5513` | **done** | landed `d3a00bd` (batch 1) |
-| 5.5.11c S2 (this system's place) | `T-5514` | **done** | landed `8d151a6`, CI green |
-| 5.5.12 `bonsai agents` | `T-5512` | done | `7615ec7` |
-| 5.5.5b the guard's fixes from the sessions | `T-5515` | **done** | landed `8a38941` (batch 2); V1 round 2 passed |
-| 5.5.5c base's skills | `T-5516` | **done** | landed `977be7d` (batch 2), CI green |
-| 5.5.5d `workflow`'s wording | `T-5517` | **done** | `workflow` `c983bd1`, CI green |
-| 5.5.6b the walls' fixes | `T-5518` | **done** | landed `cce9633` (batch 2); `workflow` `ef5b5ae` |
-| 5.5.5e V1's fixes | `T-5519` | **done** | landed `0aee21a`; V1 round 2 PASS |
-| 5.5.5f V1's should-fixes | `T-5520` | **done** | landed `bf7cc3d`, CI green |
-
-Outside the pieces: `T-5590`-`T-5597` done (the re-plan, the safety line, two Windows flakes, VM and its fixes,
-the Windows timing tests, the batch rule), `T-5598` done (VG's first fix round), `T-5596` done (VG, three rounds),
-`T-5599` done (the name out of the product, `CLAUDE.md`, `STATE.md` and `workflow`; its fresh check found none). Run reports
-`records/runs/R-2026-10-1[45]-T-55*.md`.
+- **Step 5.5, the packs, the roles and their messages: done** (16 Oct). `base` in Bonsai's repo (`packs/base`) and
+  `workflow` public at `LastStep/bonsai-workflow` (`ef5b5ae`); both linked in Bonsai's repo (`16fb557b`), both plugins installed;
+  the pre-release at `bf7cc3d` installed (sha256 `70516eb8...a2478`; the way back in `~/bonsai-checks/prerelease/previous/`);
+  the floors `92de82c8`; the end verifier `T-5522` (report `~/bonsai-checks/verify-5.5-end/report.md` and `report-r2.md`).
+  Every 5.5 task `T-5500`-`T-5522` and `T-5590`-`T-5599` is `done`; run reports `records/runs/R-2026-10-1[456]-T-55*.md`.
 
 **Hours** (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min; 5.1 866 minutes; 5.2
-1,061; 5.3 about 2,013 (33 h 33 min); 5.4 about 2,372 (39 h 32 min). **5.5's building so far: about 4,369 minutes (72.8 h)**
-of its 63.5-106 h (re-ask 138): 3,635 before this session and this session's runs about 734 (16 Oct, 00:24-06:00: `T-5504` 7,
-`T-5505` 90, `T-5506` 22, `T-5515` 133, `T-5516` 116, `T-5517` 7, `T-5518` 77, batch 2 76, V1 25, `T-5519` 79, `T-5520` 95,
-`T-5507` 7), runs side by side each counted. **Questions put to the director in 5.5 so far: twenty-three**, and the morning
-list's (below). Step 5's Windows-only tally: about 143 minutes plus tonight's Windows check-10 helpers (about 6 h, side by side).
+1,061; 5.3 about 2,013 (33 h 33 min); 5.4 about 2,372 (39 h 32 min); **5.5 about 78 h** with its planning and reviews (the end
+verifier's count, under its re-ask line of 138). Questions put to the director in 5.5: twenty-three before 16 Oct, and on 16 Oct
+eight (the workflow limits, the walls' Windows half, the login check, the history, check 5, check 5 on Windows, and the
+morning's install and Windows steps as asks). Step 5's Windows-only tally: about 143 minutes plus 16 Oct's Windows check-10
+helpers (about 6 h, side by side).
 
 ## The director's decisions
 
+- **16 Oct:** overnight run on their word; Cursor's pstack surveyed, to discuss after 5.5 and before 5.6 builds; the
+  Windows trust sitting; installed the pre-release (09:28); **`workflow` added** with builder minutes 240 by default and 480
+  at most ("option 1"; limits are lines in `bonsai.yaml`, a set command noted for 5.6-5.7); **the walls' Windows half on
+  5.5.6's rows**; **the Windows login size check dropped** ("Skip the check": agents never touch the credentials file; the
+  warm-up stays); ran `bonsai update --allow-exec --yes` and the plugin installs; one history item left as is (their word);
+  check 5 run by a builder, its Windows half on payload replays plus 5.5.5's Windows sessions; **the human CLI output to be
+  improved: ask them first thing next session**.
 - **15 Oct, this session:**
   - About 10:45: "for now just finish all the steps which are at verify". Asked whether to split V1 so 5.5.0-5.5.2
     close today (split recommended): **"Keep the plan"**: one V1 after 5.5.6.
@@ -140,53 +118,46 @@ list's (below). Step 5's Windows-only tally: about 143 minutes plus tonight's Wi
 - `LastStep/bonsai-test-pack`: public, `main` at H (`19e3ca5`).
 - The old website stays on GitHub Pages until the director turns Pages off.
 
-## Now: step 5.5, its last piece
+## Now: step 5.6, the machine pieces
 
-`design/plan-5.md`, "### Step 5.5" (lines 3437-5967); note 5.5.7 from 5612; "5.5 done" from 5726. **The morning, in this order:**
+`design/plan-5.md`, "### Step 5.6" (from 5968), approved 10 Oct with the director's (A) on notes about them. **Next session,
+in this order:**
 
-1. **The director's batch** (`~/bonsai-checks/morning-2026-10-16.md`, sent to them in one message): the pre-release's install
-   lines with its fingerprint; the yes to `workflow` in `bonsai.yaml` with Bonsai's own role limits (the Haiku count in
-   `~/bonsai-checks/T-5507/limits-notes.md`: a builder ran 230 and 416 minutes, past the pack's 180); the Windows S1 step
-   (`~/bonsai-checks/T-5505/rerun/windows-sitting.md`); the walls' Windows half (accept 5.5.6's rows, recommended, or allow
-   the size check once); the Windows login check after the walls (a script that prints only the size, or another way);
-   V1's design question (a spent agent cannot stop its own process).
-2. **The link** (`T-5507`, running alone; `T-5505` and `T-5506` are `blocked` on the director): `bonsai.yaml` written (base,
-   `workflow` on the yes, the limits, `protected` gains `packs/base/bonsai/pack.yaml`, `documents` places, `generated`'s
-   `messages` and `agents`), committed; the preview read line by line; the director's `bonsai update --allow-exec --yes`;
-   read back; `check` clean; a climb.
-3. **`CLAUDE.md` shrinks** by the audit (`~/bonsai-checks/T-5507/claude-md-audit.md`: 70 kept, 21 in a pack, 5 dropped, 13 rows
-   kept because the pack says less); `STATE.md` moves to `.bonsai/STATE.md`; an auditor subagent meets a wall.
-4. **The end verifier** of 5.5, then the floors (climbs at `bf7cc3d` see about 4604 and 4610 tests).
+1. **Ask the director how they want `bonsai`'s human output to look** (their 16 Oct ask; a memory note too): within
+   `CLAUDE.md`'s rules (ASCII, the standard library, `--json` unchanged); `update`'s plugin lines ran together.
+2. **The pstack talk** (Cursor's plugin, surveyed 16 Oct), before 5.6 builds.
+3. **5.6's tasks** written from its section (`T-56yy`), the plan's pieces in its order, builders as `workflow:builder`.
 
-**How work runs** (`CLAUDE.md`, "from the link"): every piece a task in `records/tasks/` (the orchestrator alone writes and
-moves them); builders are subagents in plain worktrees from `main`, climbing `/usr/local/bin/bonsai ladder --task <id> --json`;
-a piece lands only on a green local result at its HEAD whose record names the installed `bonsai`, plus check 10's Windows half
-before the push and CI after it. Tonight's briefs share `~/bonsai-checks/briefs/common-2026-10-16.md` (the session's closing
-lines and the no-name rule; rules.md's `Claude-Session` line is still an earlier session's). **PowerShell 5.1 writes `>` output
-as UTF-16**: count from the files with NULs and the byte-order mark stripped. A subagent's hand-back sometimes arrives empty or
-twice: read its files when it does.
+**How work runs now:** agents by role (`workflow:builder`, `workflow:verifier`, `workflow:runner`, `workflow:auditor`),
+briefed with `bonsai message` (a brief's id in the Agent call's prompt; a newer brief in the thread resets a budget);
+`general-purpose` agents write nothing. The Windows login size check is gone: a Windows run does the warm-up session
+first and stops if a session reports no login. The briefs' shared rules: `~/bonsai-checks/briefs/common-2026-10-16.md`
+(its closing lines name an earlier session). A verifier or runner cannot make a scratch repository (`git init`/`clone` are
+refused to a role that writes nothing): give those steps to a builder.
 
-**Facts measured tonight that later work rests on:** Claude Code 2.1.301 on both sides. `--agent <role>` does not preload a
-role's `skills:` (the role opens them by name). On Windows the PowerShell tool ignores Read and Edit deny rules, and Git Bash
-passes the WSL home's network-path forms (base's README). The exact credentials size check is refused under base's Read walls
-and, in one session, by the auto-mode classifier ("Credential Exploration"). A plain build refuses `update` in an agent's
-session when it changes Bonsai's own guard line; a rung added is refused `config-looser` until a person's `update` (K1).
+**Facts measured that later work rests on:** Claude Code 2.1.301 on both sides. `--agent <role>` does not preload a role's
+`skills:`. On Windows the PowerShell tool ignores Read and Edit deny rules, and Git Bash passes the WSL home's
+network-path forms (base's README). Adding a pack renames a project's plugin marketplace, so a fresh Claude Code start in
+the checkout comes before `update` installs. The guard's added cost a call: about 8 ms on WSL, about 49 ms on Windows.
 
 ## Waiting on the director
 
-- **This morning:** the batch above (`~/bonsai-checks/morning-2026-10-16.md`).
-- **Next session, first:** ask how they want `bonsai`'s human output to look (the director, 16 Oct: "our cli outputs are not nice
-  looking, its like the text is just thrown on the screen ... improve this cli ui later, ask me during next session"); e.g.
-  `update`'s plugin lines ran together ("bonsai updatewaiting"). Within `CLAUDE.md`'s rules: ASCII, standard library, `--json` unchanged.
+- **Next session, first:** how `bonsai`'s human output should look (above).
+- **Can wait:** V1's design question: an agent past its budget cannot stop a process it started (exempt it, or accept).
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than
-  the code; a talk on Cursor's pstack after 5.5, before 5.6 builds.
+  the code.
 - **Later, as the plan has them:** at 5.6 taking their `"autoMemoryEnabled": true` line out; at 5.7 the release settings, the
   `rc.1` tag, the installs, the trial, their word for 1.0, **and first the records-database idea**; and `base`'s tags: Bonsai's
   old `v0.1.1`-`v0.4.3` tags read as newer versions of `base` in `bonsai status` (a pack-scoped tag form, before the 1.0 tag).
 
 ## Loose ends
 
+**From 5.5's end verifier, after 5.5:** `workflow`'s interview skill drops the studio's "Before you stop" paragraph (a
+`workflow` change, then a ref move, the director's step); the guard reads a `~/` redirect target as relative to the working
+folder (refuses more, not less); `check`'s missing-path finding counts a path git ignores; `update`'s human output runs two
+plugin lines together; the verifier and runner roles cannot make scratch repositories; one Windows skip of
+`TestMemberGonePid` in 20.
 **From tonight, after 1.0 unless the director says otherwise:** the guard's unread runners and a git alias in the line (written
 in shell.go's limits, `T-5520`); a spent agent cannot stop its own process (the director's design question); `script -q /dev/null
 < cmds.txt`; the packs' release job could run only on push; `check.sh validate`'s "ok" wording; Bonsai's CI pins actions by tag;

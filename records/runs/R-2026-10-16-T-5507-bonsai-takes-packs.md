@@ -5,8 +5,8 @@ task: T-5507
 role: orchestrator
 model: opus
 started: 2026-10-16 05:51
-finished:
-outcome:
+finished: 2026-10-16 11:57
+outcome: merged
 commits: []
 labels: {}
 ---
@@ -52,6 +52,7 @@ labels: {}
 - 09:46 **`CLAUDE.md` shrinks** by the audit: "How a session works" opens by pointing at `workflow`'s and base's skills and keeps only what is Bonsai's own and what the packs say less (the orchestrator's place, agents started by role and why an undeclared type writes nothing, builders and named sessions, task numbering and moves with the four labels' use here, every plan reviewed and the verifier list, the model lines, the run rows, the landing rule in full, agents first, STATE's rule, the memory line); the old label definitions, "Bonsai has no role files" and "proof until the link" go; the opening paragraph says the link and the packs are in; "Where the truth lives" names `.bonsai/STATE.md` and `bonsai status --json`; Safety names both packs' installs in Claude Code's plugin folder. D2 (a scratch link typed on the line refused) stays in "Rules for every change". `STATE.md` moved to `.bonsai/STATE.md` (`git mv`) with its `bonsai.state/1` frontmatter; `CHANGELOG.md` and `bonsai.yaml`'s comment point there; `check` reads STATE's body: no finding.
 - 09:48 **A fresh session** (the director: `claude --continue`; the six `workflow:` roles and base's and `workflow`'s skills loaded). **The auditor's wall test**: a brief `M-2026-10-16-789664be` (`actions=20`) to `auditor@T-5507`, a `workflow:auditor` subagent (Haiku): its Read of `~/.ssh/bonsai-wall-probe` refused ("File is in a directory that is denied by your permission settings."), `cat` of it refused ("Permission to use Bash with command cat ~/.ssh/bonsai-wall-probe has been denied."), its Agent call of `workflow:runner` refused (`call-refused`: "an agent of the helper role \"auditor\" may not call the helper role \"workflow:runner\" ..."); its report `M-2026-10-16-fa2bc8d3` `done`; `bonsai agents --json`: type `workflow:auditor`, its brief tied, actions 5 of 20 (max 150), minutes 0 of 30, not spent.
 - 10:52 **The end verifier's must-fixes 2 and 3, the part that is `T-5507`'s**: `CLAUDE.md`'s way back now says what a broken guard refuses (Edit, Write, Bash, PowerShell, Monitor, Agent, Task, SendMessage, Workflow) and lets through (reads, searches, skills, questions: the second line passes while `bonsai` cannot run). `bonsai.allows` holds `.claude/**` as note 5.5.7 item 2 names it ("its `bonsai.allows`: `bonsai.yaml`, `.bonsai/lock.json`, `.claude/**`, `CLAUDE.md`, and `.bonsai/.gitignore`"); the task's Owns line named only the file the update writes; the diff stayed inside it. The user settings hashes around 5.5.7's Claude Code runs (the director's `claude` opens, the auditor's and the verifier's sessions): WSL `~/.claude/settings.json` `0c1dabaa411a175006fb1babc2856719640c50ff0dacca2790189f1b73295297` and Windows `2b6295c106d5431228453aa2c4a51371a3637ded402d330f5ad53d30ca4ff6c9` at 10:52, equal to the values 5.5.5 and 5.5.6 recorded before every session since 00:28 (no change).
+- 11:57 **CI green at `0b99023d` and `06c77b92`** (windows, lint, test, packs, CodeQL, govulncheck). With the end verifier's PASS, `T-5507` and `T-5522` `done`: **5.5 is done.**
 
 ## Runs
 
