@@ -257,7 +257,8 @@ func TestStatusExit3(t *testing.T) {
 				(c.name == "format: and a tab" && strings.Contains(list[0].(string), "no format: line first")) {
 				t.Errorf("problems %s, want one holding %q and a next step", schema.Show(p), c.want)
 			}
-			if text := Text(doc); !strings.HasPrefix(text, "bonsai status: cannot read this workspace.\n  ") {
+			if text := Text(doc); !strings.HasPrefix(text, "bonsai status  cannot read this workspace\nProblems  ") ||
+				!strings.Contains(flat(text), c.want) {
 				t.Errorf("text %q", text)
 			}
 			if e, _ := doc.Get("error"); e.(schema.Object).String("code") != c.code {
@@ -315,11 +316,11 @@ func TestStatusIsByteStableAndASCII(t *testing.T) {
 	if !strings.Contains(string(first), `proj-caf\u00e9`) || !strings.Contains(text, `proj-caf\u00e9`) {
 		t.Errorf("the non-ASCII path is not escaped:\n%s\n%s", first, text)
 	}
-	for _, want := range []string{"Workspace example, id ws-7kq2m4xw5r3t6y2u7p4a5c3e2b", "  bonsai.yaml      this project's",
-		"  .bonsai/local/   the log, questions for you and their answers, ladder results, messages between agents.\n",
-		"Person-only paths: .claude/**, bonsai.yaml", "Problems:\n  .bonsai/lock.json: is missing; next: link the project again from bonsai.yaml",
-		"This project's machine folder: workspaces/r-", "Packs: none locked\n", "A copy meant as a new project needs its own id: bonsai init --new-id\n"} {
-		if !strings.Contains(text, want) {
+	for _, want := range []string{"Workspace example ws-7kq2m4xw5r3t6y2u7p4a5c3e2b ", " bonsai.yaml this project's",
+		" .bonsai/local/ the log, questions for you and their answers, ladder results, messages between agents. Never committed. ",
+		"Person-only .claude/** bonsai.yaml", "Problems .bonsai/lock.json: is missing; next: link the project again from bonsai.yaml",
+		" workspaces/r-", " this project's machine folder ", "Packs none locked ", " a copy meant as a new project needs its own id: bonsai init --new-id"} {
+		if !strings.Contains(flat(text), want) {
 			t.Errorf("the text lacks %q:\n%s", want, text)
 		}
 	}
@@ -372,7 +373,7 @@ func TestStatusOfAProjectTheEngineLinked(t *testing.T) {
 		t.Errorf("files %s", schema.Show(v))
 	}
 	text := Text(doc)
-	if !strings.Contains(text, "Packs: demo-pack 0.1.0 at "+pack.A[:7]+" (changed)\n") || !strings.Contains(text, "demo/guide.md was edited") {
+	if !strings.Contains(flat(text), "Packs demo-pack 0.1.0 at "+pack.A[:7]+" changed ") || !strings.Contains(flat(text), "demo/guide.md was edited") {
 		t.Errorf("text:\n%s", text)
 	}
 }
@@ -449,7 +450,7 @@ func TestStatusFromTheLockAndTheMachine(t *testing.T) {
 	if v, _ := doc.Get("active_task"); schema.Show(v) != want["active_task"] {
 		t.Errorf("another project's session: %s", schema.Show(v))
 	}
-	if txt := Text(doc); !strings.Contains(txt, "Active task: T-0901 (running)") || !strings.Contains(txt, "Status writes: command") {
+	if txt := Text(doc); !strings.Contains(txt, "\nActive task      T-0901  running\n") || !strings.Contains(txt, "\nStatus writes    command  ") {
 		t.Errorf("text:\n%s", txt)
 	}
 }
@@ -680,3 +681,6 @@ func TestStatusHistoryOnlyWithFull(t *testing.T) {
 		t.Errorf("--full: %s", schema.Show(v))
 	}
 }
+
+// flat is text with its line breaks and runs of spaces made single spaces: the human text wraps to its width.
+func flat(s string) string { return strings.Join(strings.Fields(s), " ") }

@@ -20,6 +20,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -299,13 +300,20 @@ func TestUpdateNamesWhatCheckFinds(t *testing.T) {
 	testpack.SetRef(t, root, e.pack.C, e.pack.D)
 	p := e.plan(t, root, Request{})
 	r, _ := Check(root, e.home)
-	if !p.Nothing() || !strings.Contains(p.LeftAlone(), SettingsFile+" [keys]") || !strings.Contains(p.LeftAlone(), "--adopt "+SettingsFile) ||
+	if !p.Nothing() || !strings.Contains(flat(leftAlone(p)), SettingsFile+" [keys] ") || !strings.Contains(flat(leftAlone(p)), "--adopt "+SettingsFile) ||
 		!strings.Contains(findingsOf(r), "changed "+SettingsFile) {
-		t.Errorf("update:\n%s\ncheck: %s", p.LeftAlone(), findingsOf(r))
+		t.Errorf("update:\n%s\ncheck: %s", leftAlone(p), findingsOf(r))
 	}
-	if p := e.plan(t, other, Request{}); p.LeftAlone() != "" {
-		t.Errorf("nothing edited, yet: %s", p.LeftAlone())
+	if p := e.plan(t, other, Request{}); leftAlone(p) != "" {
+		t.Errorf("nothing edited, yet: %s", leftAlone(p))
 	}
+}
+
+// leftAlone is the plan's LeftAloneTo drawn for a pipe.
+func leftAlone(p *Plan) string {
+	var d textui.Doc
+	p.LeftAloneTo(&d)
+	return d.String()
 }
 
 // A pack whose plugin.json carries a version is refused when it is linked (spec §5): a plugin pinned by its commit

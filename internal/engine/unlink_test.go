@@ -96,10 +96,11 @@ func TestUnlink(t *testing.T) {
 	if len(lines) != 7+len(ownHooks)+len(ownDeny) || strings.Contains(got, "secrets") || strings.Contains(got, "lint-staged") {
 		t.Errorf("the settings lines:\n%s", got)
 	}
-	preview := p.Preview(false)
-	for _, want := range []string{"  demo-pack 0.1.0  " + e.pack.A[:7] + " -> taken out  (", "  removed      demo/guide.md [pack]: a pack file nobody edited",
-		"  released     demo/start.md [once]: the project's file: it stays", "  removed      .bonsai/lock.json: removed last",
-		fmt.Sprintf(".claude/settings.json: %d lines\n  remove  key", 7+len(ownHooks)+len(ownDeny)), "Left in place:\n  .bonsai/STATE.md: the project's STATE\n  .bonsai/local/: this checkout's log"} {
+	preview := flat(p.Preview(false))
+	for _, want := range []string{"Packs demo-pack 0.1.0 " + e.pack.A[:7] + " -> taken out ", " removed demo/guide.md [pack] a pack file nobody edited",
+		" released demo/start.md [once] the project's file: it stays", " removed .bonsai/lock.json removed last",
+		fmt.Sprintf("Settings .claude/settings.json: %d lines, each with where it comes from and why change kind from line, and why remove key ", 7+len(ownHooks)+len(ownDeny)),
+		"Left in place .bonsai/STATE.md: the project's STATE .bonsai/local/: this checkout's log"} {
 		if !strings.Contains(preview, want) {
 			t.Errorf("the preview lacks %q:\n%s", want, preview)
 		}

@@ -108,13 +108,13 @@ func TestConsentCases(t *testing.T) {
 				t.Fatalf("runs code\n  %s\nwant\n  %s\n%s", got, c.want, p.Preview(false))
 			}
 			if c.want == "" {
-				if !strings.Contains(p.Preview(false), "Runs code: nothing that needs --allow-exec") {
+				if !strings.Contains(flat(p.Preview(false)), "Runs code nothing that needs --allow-exec") {
 					t.Errorf("preview:\n%s", p.Preview(false))
 				}
 				e.apply(t, root, c.req)
 				return
 			}
-			if pv := p.Preview(false); !strings.Contains(pv, "which needs --allow-exec as well as --yes") &&
+			if pv := flat(p.Preview(false)); !strings.Contains(pv, "which needs --allow-exec as well as --yes") &&
 				!strings.Contains(pv, "which need --allow-exec as well as --yes") {
 				t.Errorf("preview:\n%s", pv)
 			}
@@ -180,8 +180,8 @@ func TestRelinkNamesTheHookLinesItLeaves(t *testing.T) {
 	testpack.SetRef(t, root, e.pack.C, e.pack.D)
 	p = e.plan(t, root, Request{Command: "init", Init: &InitValues{}})
 	if strings.Join(p.LeftHooks, "; ") != "SessionStart (startup): echo demo hook A" ||
-		!strings.Contains(p.Preview(false), "Left in place as the project's own (the lock is missing") ||
-		!strings.Contains(p.Preview(false), "  keep    hook        SessionStart (startup): echo demo hook A\n") {
+		!strings.Contains(flat(p.Preview(false)), "Left hooks Left in place as the project's own (the lock is missing") ||
+		!strings.Contains(flat(p.Preview(false)), " keep hook SessionStart (startup): echo demo hook A ") {
 		t.Errorf("left %v:\n%s", p.LeftHooks, p.Preview(false))
 	}
 	// A first link (no bonsai.yaml) names none: a project's own hooks are its own there.
@@ -207,9 +207,8 @@ func TestOwnHookLines(t *testing.T) {
 	if strings.Join(own, "\n") != strings.Join(OwnHookLines(), "\n") || len(own) != 13 || p.NeedsExec() {
 		t.Fatalf("own hooks %+v, runs code %+v", p.OwnHooks, p.RunsCode)
 	}
-	if pv := p.Preview(false); !strings.Contains(pv, "Bonsai's own hook lines, written with --yes (linking the project is your consent to them):\n"+
-		"  add     hook        "+ownHooks[0].Text()+"\n  add     hook        "+ownHooks[1].Text()+
-		"\n  add     hook        "+ownHooks[2].Text()+"\n") {
+	if pv := flat(p.Preview(false)); !strings.Contains(pv, "Own hooks Bonsai's own hook lines, written with --yes (linking the project is your consent to them): "+
+		"add hook "+flat(ownHooks[0].Text())+" add hook "+flat(ownHooks[1].Text())+" add hook "+flat(ownHooks[2].Text())+" ") {
 		t.Errorf("preview:\n%s", pv)
 	}
 	if err := Apply(p); err != nil {

@@ -93,7 +93,7 @@ func TestStatusLadder(t *testing.T) {
 		t.Errorf("fresh: %s\nwant %s", got, want)
 	}
 	doc, _ := Build(root, "dev")
-	if text := Text(doc); !strings.Contains(text, "Its last ladder result: green at commit "+head[:12]+" (local)") || strings.Contains(text, "stale") {
+	if text := Text(doc); !strings.Contains(flat(text), "Last ladder green at commit "+head[:12]+" (local), finished ") || strings.Contains(text, "stale") {
 		t.Errorf("the text:\n%s", text)
 	}
 	gitRun(t, root, "commit", "-q", "--allow-empty", "-m", "y")
@@ -101,7 +101,7 @@ func TestStatusLadder(t *testing.T) {
 		t.Errorf("stale: %s", got)
 	}
 	doc, _ = Build(root, "dev")
-	if text := Text(doc); !strings.Contains(text, "stale: it proves another commit than HEAD") {
+	if text := Text(doc); !strings.Contains(flat(text), " stale it proves another commit than HEAD, so climb again") {
 		t.Errorf("the stale text:\n%s", text)
 	}
 }

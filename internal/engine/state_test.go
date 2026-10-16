@@ -24,7 +24,7 @@ func TestStateAtInit(t *testing.T) {
 
 	root := testpack.Project(t, e.tmp, "state")
 	p := e.plan(t, root, Request{Command: "init", Init: e.values(e.pack.A), AllowExec: true})
-	if !strings.Contains(p.Preview(false), "  created      .bonsai/STATE.md [once]: where the project stands, from Bonsai's template") {
+	if !strings.Contains(flat(p.Preview(false)), " created .bonsai/STATE.md [once] where the project stands, from Bonsai's template") {
 		t.Errorf("the preview does not name STATE:\n%s", p.Preview(false))
 	}
 	if err := Apply(p); err != nil {
@@ -84,7 +84,7 @@ func TestStateAtInit(t *testing.T) {
 	}
 	// unlink leaves it, and names it.
 	up := unlinkPlan(t, e, root)
-	if !strings.Contains(up.Preview(false), "Left in place:\n  .bonsai/STATE.md: the project's STATE\n") || up.lists(workspace.StateFile) {
+	if !strings.Contains(up.Preview(false), "\nLeft in place  .bonsai/STATE.md: the project's STATE\n") || up.lists(workspace.StateFile) {
 		t.Errorf("unlink's preview:\n%s", up.Preview(false))
 	}
 	if err := Apply(up); err != nil {

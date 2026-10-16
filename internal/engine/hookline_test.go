@@ -182,7 +182,7 @@ func TestAStampedBuildIsConfined(t *testing.T) {
 	}
 	inside := testpack.Project(t, root, "inside")
 	outside := testpack.Project(t, e.tmp, "outside")
-	if p := e.plan(t, inside, Request{Command: "init", Init: e.values(e.pack.A), AllowExec: true}); !strings.Contains(p.Preview(false), GuardCommand) {
+	if p := e.plan(t, inside, Request{Command: "init", Init: e.values(e.pack.A), AllowExec: true}); !strings.Contains(flat(p.Preview(false)), flat(GuardCommand)) {
 		t.Errorf("inside its scratch root, no line naming its place:\n%s", p.Preview(false))
 	}
 	for _, build := range []func() error{

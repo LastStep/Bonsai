@@ -79,10 +79,11 @@ func TestTakeAPackOut(t *testing.T) {
 	if strings.Contains(got, "demo hook A") || strings.Contains(got, "demo/never.txt") {
 		t.Errorf("the remaining pack's lines changed:\n%s", got)
 	}
-	preview := p.Preview(false)
-	for _, want := range []string{"  side-pack 0.2.0  " + sc[0][:7] + " -> taken out  (", "Taken out of bonsai.yaml: side-pack. Its files nobody edited go (side/a.md);",
+	preview := flat(p.Preview(false))
+	for _, want := range []string{"Packs demo-pack 0.1.0 at ", " side-pack 0.2.0 " + sc[0][:7] + " -> taken out ",
+		"Taken out side-pack Taken out of bonsai.yaml. Its files nobody edited go (side/a.md);",
 		"its lock entry and declares go;", "Left in place, the project's now (edited here, or written once): side/b.md, side/once.md",
-		"released     side/b.md [pack]: its pack is taken out; you edited it, so it stays"} {
+		"released side/b.md [pack] its pack is taken out; you edited it, so it stays"} {
 		if !strings.Contains(preview, want) {
 			t.Errorf("the preview lacks %q:\n%s", want, preview)
 		}

@@ -64,7 +64,7 @@ func TestTheGuardsTwoLines(t *testing.T) {
 		!strings.Contains(got, "hook add "+ownRolesHooks[1].Text()+" (bonsai)") {
 		t.Fatalf("runs code: %s", got)
 	}
-	if pv := p.Preview(false); !strings.Contains(pv, ownRolesHooks[1].Text()) {
+	if pv := p.Preview(false); !strings.Contains(flat(pv), flat(ownRolesHooks[1].Text())) {
 		t.Errorf("the preview does not name the second line:\n%s", pv)
 	}
 	if err := Apply(p); err == nil {

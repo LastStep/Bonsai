@@ -31,7 +31,7 @@ func TestFormat0ListedAtAFirstLink(t *testing.T) {
 	writeFile(t, root, ".bonsai/STATE.md", "---\nupdated: 2026-10-01\n---\n# State\n")
 	writeFile(t, root, "work/memory/M-note.md", "---\ntitle: not a format-0 kind\n---\n")
 	p := e.apply(t, root, Request{Command: "init", AllowExec: true})
-	if p.Format0 != 3 || !strings.Contains(p.Preview(false), "listed       3 task, run report and STATE files with no format: line") {
+	if p.Format0 != 3 || !strings.Contains(flat(p.Preview(false)), "listed 3 task, run report and STATE files with no format: line") {
 		t.Errorf("format0 %d\n%s", p.Format0, p.Preview(false))
 	}
 	l, err := workspace.LoadLock(root)

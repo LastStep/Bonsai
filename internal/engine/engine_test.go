@@ -18,6 +18,7 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/testpack"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -311,15 +312,18 @@ func TestCheck1InitIntoADriftedProject(t *testing.T) {
 		strings.Repeat("add hook, ", len(ownHooks)+1)+"add marketplace, add plugin, remove hook" {
 		t.Errorf("settings lines %s", got)
 	}
-	if !strings.Contains(p.Preview(false), "remove  hook        PreToolUse (Edit|Write): /opt/bonsai-0.4/bin/bonsai hook guard") {
+	if !strings.Contains(flat(p.Preview(false)), "remove hook old PreToolUse (Edit|Write): /opt/bonsai-0.4/bin/bonsai hook guard") {
 		t.Errorf("preview:\n%s", p.Preview(false))
 	}
-	words := ClosingWords(p.Config, e.home)
-	if !strings.HasPrefix(words, "Linked demo. Workspace id: "+p.Config.ID) || !strings.Contains(words, filepath.ToSlash(e.home)) ||
-		!strings.Contains(words, "\n  .bonsai/local/   the log, questions for you and their answers, ladder results, messages between agents.\n") ||
-		!strings.Contains(words, "\nStart Claude Code in the project's top folder, and do not /cd out of it: a session started or\n"+
-			"moved elsewhere loads none of the project's Claude Code settings, so no Bonsai hook guards it.\n") ||
-		!strings.HasSuffix(words, "A copy meant as a new project needs its own id: bonsai init --new-id\n") {
+	var d textui.Doc
+	ClosingTo(&d, p.Config, e.home)
+	words := d.String()
+	if fw := flat(words); !strings.HasPrefix(fw, "Linked demo "+p.Config.ID+" every clone and worktree of this project shares this workspace id In this project ") ||
+		!strings.Contains(words, filepath.ToSlash(e.home)) ||
+		!strings.Contains(fw, ".bonsai/local/ the log, questions for you and their answers, ladder results, messages between agents. Never committed.") ||
+		!strings.Contains(fw, "Sessions Start Claude Code in the project's top folder, and do not /cd out of it: a session started or "+
+			"moved elsewhere loads none of the project's Claude Code settings, so no Bonsai hook guards it.") ||
+		!strings.HasSuffix(words, "\n  a copy meant as a new project needs its own id: bonsai init --new-id\n") {
 		t.Errorf("closing words:\n%s", words)
 	}
 }
@@ -422,7 +426,7 @@ func TestCheck5UpdateAToB(t *testing.T) {
 	if strings.Join(lines, ", ") != "change marketplace, change plugin" || p.NeedsExec() {
 		t.Errorf("settings lines %v, runs code %+v", lines, p.RunsCode)
 	}
-	if pv := p.Preview(false); !strings.Contains(pv, "was: bonsai-demo-") || !strings.Contains(pv, "Runs code: nothing that needs --allow-exec") {
+	if pv := flat(p.Preview(false)); !strings.Contains(pv, "was: bonsai-demo-") || !strings.Contains(pv, "Runs code nothing that needs --allow-exec") {
 		t.Errorf("preview:\n%s", pv)
 	}
 	if err := Apply(p); err != nil {

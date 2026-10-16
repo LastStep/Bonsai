@@ -208,7 +208,7 @@ func TestStopLineOfAProjectLinkedBefore(t *testing.T) {
 	quiet, qc := testpack.QuietPack(t, e.tmp)
 	root := testpack.Project(t, e.tmp, "stop")
 	p := e.linkTo(t, root, "stop", quiet, qc[0], false)
-	if p.NeedsExec() || !strings.Contains(p.Preview(false), "  add     hook        Stop: "+StopCommand+"\n          "+stop.Why+"\n") {
+	if p.NeedsExec() || !strings.Contains(flat(p.Preview(false)), " add hook Bonsai Stop: "+flat(StopCommand)+" "+flat(stop.Why)+" ") {
 		t.Fatalf("a first link, the stop line on --yes alone:\n%s", p.Preview(false))
 	}
 	if err := Apply(p); err != nil {
@@ -345,7 +345,7 @@ func TestOwnDenyRules(t *testing.T) {
 	preview := p.Preview(false)
 	changes := p.Changes("applied", nil)
 	for _, l := range ownDeny {
-		if !strings.Contains(preview, "  add     deny        "+l.Rule+"\n          "+l.Why+"\n") {
+		if !strings.Contains(flat(preview), " add deny Bonsai "+l.Rule+" "+flat(l.Why)+" ") {
 			t.Errorf("the preview lacks %s with its sentence:\n%s", l.Rule, preview)
 		}
 		found := false

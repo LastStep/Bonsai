@@ -174,7 +174,7 @@ func TestFolderChangeWithTheSameBlobs(t *testing.T) {
 	if got := items(p); got != "plugin add hooks (twin)" {
 		t.Errorf("runs code %q, want the submodule named\n%s", got, p.Preview(false))
 	}
-	if !strings.Contains(p.Preview(false), "Unverified: the pack twin's folder in bonsai.yaml is not the lock's") {
+	if !strings.Contains(flat(p.Preview(false)), "Unverified the pack twin's folder in bonsai.yaml is not the lock's") {
 		t.Errorf("the preview does not say why the pack is unverified:\n%s", p.Preview(false))
 	}
 	if err := Apply(p); err == nil {
