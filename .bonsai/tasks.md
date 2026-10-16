@@ -15,6 +15,8 @@ Active task when none is named: none (no task reads running)
 | T-5592 | Two Windows CI flakes on e1437d0: an exited process read as a job member, and a reused pid in TestSweep | done | | 2026-10-15 | 2026-10-15 |
 | T-5591 | CLAUDE.md's Safety line names the workflow pack's repository among the places Bonsai's work writes | done | | 2026-10-15 | 2026-10-15 |
 | T-5590 | Step 5.5 re-planned on the agent-pipelines redesign and Rohan's six decisions of 14 Oct | done | | 2026-10-14 | 2026-10-14 |
+| T-5522 | 5.5's end verifier: "5.5 done", checks 1 to 17 | todo | | | |
+| T-5521 | 5.5's floors raised to the last climb's counts | todo | | | |
 | T-5520 | V1's second round's should-fixes (5.5.5f): the unread runners and a git alias in the line written as known limits; a protocols folder that is CLAUDE.md refused at a first link | done | | 2026-10-16 | 2026-10-16 |
 | T-5519 | V1's fix round (5.5.5e): git rm's --no-cached, a bonsai call inside script -c, the minutes count, a protocols folder that is a file | done | | 2026-10-16 | 2026-10-16 |
 | T-5518 | 5.5.6's fix round for the walls (5.5.6b): the unwalled credential files walled; each side's limits written in the README | done | | 2026-10-16 | 2026-10-16 |
