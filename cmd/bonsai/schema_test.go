@@ -61,10 +61,10 @@ func TestCheckSchema(t *testing.T) {
 			t.Errorf("%v: exit %d, stdout %q", c.args, code, stdout.String())
 		}
 		asciiOnly(t, "the refusal", stderr.String())
-		if !strings.Contains(stderr.String(), c.says) || !strings.Contains(stderr.String(), "\nnext: ") {
+		if !strings.Contains(flat(stderr.String()), c.says) || !hasNext(stderr.String()) {
 			t.Errorf("%v: %s", c.args, stderr.String())
 		}
-		if c.says != "check takes --schema once" && !strings.Contains(stderr.String(), strings.Join(format.Names(), ", ")) {
+		if c.says != "check takes --schema once" && !strings.Contains(nextOf(stderr.String()), strings.Join(format.Names(), ", ")) {
 			t.Errorf("%v: the refusal does not list every name: %s", c.args, stderr.String())
 		}
 		// With --json, the refusal is check's document, its error object naming the same (step 5.1.4b).
@@ -83,10 +83,13 @@ func TestCheckSchema(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	run([]string{"check", "--help"}, &stdout, &stderr)
 	help := stdout.String()
-	for _, want := range []string{"--schema <format>", "Example: bonsai check --schema bonsai.task", "a format Bonsai does not know"} {
+	for _, want := range []string{"--schema <format>", "a format Bonsai does not know"} {
 		if !strings.Contains(strings.Join(strings.Fields(help), " "), strings.Join(strings.Fields(want), " ")) {
 			t.Errorf("check --help does not say %q", want)
 		}
+	}
+	if i := strings.Index(help, "\nExample  "); i < 0 || !strings.Contains(help[i:], " bonsai check --schema bonsai.task\n") {
+		t.Errorf("check --help has no example of --schema:\n%s", help)
 	}
 	for _, line := range strings.Split(help, "\n") {
 		if len(line) > 120 {

@@ -16,9 +16,9 @@ func TestUpdateAgreesWithCheck(t *testing.T) {
 	c.link()
 	c.write("demo/guide.md", "mine\n")
 	code, out, _ := c.run("", "update", "--yes")
-	if code != 0 || !strings.HasPrefix(out, "bonsai update: nothing to change; demo-pack at ") ||
-		!strings.Contains(out, "Left as they are, edited here (bonsai check reports each as changed until it is settled):\n  demo/guide.md [pack]: ") ||
-		!strings.Contains(out, "next: to keep the edit, run: bonsai update --yes --keep demo/guide.md; to take the pack's copy back, run: bonsai update --yes --adopt demo/guide.md") {
+	if code != 0 || !strings.HasPrefix(out, "bonsai update  nothing to change; demo-pack at ") ||
+		!strings.Contains(flat(out), "Edited here Left as they are, edited here (bonsai check reports each as changed until it is settled): demo/guide.md [pack] ") ||
+		!strings.Contains(flat(out), " next: to keep the edit, run: bonsai update --yes --keep demo/guide.md; to take the pack's copy back, run: bonsai update --yes --adopt demo/guide.md") {
 		t.Errorf("update with an edited file: %d\n%s", code, out)
 	}
 	if code, out, _ := c.run("", "check"); code != 1 || !strings.Contains(out, "demo/guide.md was edited") {

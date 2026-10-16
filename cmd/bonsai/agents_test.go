@@ -8,6 +8,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,7 +44,7 @@ func (c *cli) record(payload string, at time.Time) {
 func TestAgentsCommand(t *testing.T) {
 	c := newCLI(t)
 	// Not linked: exit 4, not-linked naming bonsai init, the workspace null.
-	if code, _, errOut := c.run("", "agents"); code != 4 || !strings.Contains(errOut, "next: run bonsai init") {
+	if code, _, errOut := c.run("", "agents"); code != 4 || !strings.Contains(nextOf(errOut), "run bonsai init") {
 		t.Errorf("not linked: %d %q", code, errOut)
 	}
 	doc, _ := c.agentsDoc(4)
@@ -52,7 +53,7 @@ func TestAgentsCommand(t *testing.T) {
 	}
 	c.link()
 	// No agent recorded yet.
-	if code, out, _ := c.run("", "agents"); code != 0 || out != "no agents recorded in .bonsai/local/agents/ or .bonsai/local/log/\n" {
+	if code, out, _ := c.run("", "agents"); code != 0 || out != "bonsai agents  no agents recorded in .bonsai/local/agents/ or .bonsai/local/log/\n" {
 		t.Errorf("no agents: %d %q", code, out)
 	}
 	doc, _ = c.agentsDoc(0)
@@ -145,17 +146,39 @@ func TestAgentsCommand(t *testing.T) {
 	}
 	// The human lines: one an agent, every field as recorded, then the skipped file.
 	_, text, _ := c.run("", "agents")
-	wantText := "a1  session " + sess + "  parent session  role builder  type workflow:builder  task -  brief -  model -  " +
-		"started 2026-10-16T09:00:00.000Z  ended -  last_call -  counts minutes - actions 0 red_runs 0  limits minutes 30 (max 30) " +
-		"actions 150 (max 150) red_runs - (max -)  spent false  report -  log .bonsai/local/log/s-" + sess + ".ndjson  thread -  usage -\n" +
-		helper + "  session " + sess + "  parent a1  role auditor  type workflow:auditor  task -  brief -  model claude-opus-5-5  " +
-		"started 2026-10-16T09:01:00.000Z  ended 2026-10-16T09:03:00.000Z  last_call -  counts minutes 1 actions 1 red_runs 0  " +
-		"limits minutes 30 (max 30) actions 150 (max 150) red_runs - (max -)  spent false  report -  log .bonsai/local/log/s-" + sess +
-		".ndjson  thread -  usage claude-opus-5-5 input 4 output 186 cache_read 6637 cache_write 9363\n" +
-		sess + "  session " + sess + "  parent -  role -  type -  task -  brief -  model claude-opus-5-5  started -  " +
-		"ended 2026-10-16T09:04:00.000Z  last_call -  counts -  limits -  spent false  report -  log .bonsai/local/log/s-" + sess +
-		".ndjson  thread -  usage claude-opus-5-5 input 4 output 383 cache_read 38638 cache_write 14439\n" +
-		"skipped  .bonsai/local/agents/" + sess + "/a2.state: its first line is not a start line the guard writes\n"
+	// Each agent a card: its id in the gutter (on a line of its own when wider than the gutter can hold), every field
+	// a row, name then value.
+	g := len(helper) + 2 // the gutter: the widest label it holds, the helper's id
+	card := func(label string, fields ...string) string {
+		var b strings.Builder
+		b.WriteString("\n")
+		if len(label) > g-2 {
+			b.WriteString(label + "\n")
+			label = ""
+		}
+		for i, f := range fields {
+			name, value, _ := strings.Cut(f, " ")
+			if i > 0 {
+				label = ""
+			}
+			fmt.Fprintf(&b, "%-*s%-11s%s\n", g, label, name, value)
+		}
+		return b.String()
+	}
+	wantText := "bonsai agents  3 recorded\n" +
+		card("a1", "session "+sess, "parent session", "role builder", "type workflow:builder", "task -", "brief -", "model -",
+			"started 2026-10-16T09:00:00.000Z", "ended -", "last_call -", "counts minutes - actions 0 red_runs 0",
+			"limits minutes 30 (max 30) actions 150 (max 150) red_runs - (max -)", "spent false", "report -",
+			"log .bonsai/local/log/s-"+sess+".ndjson", "thread -", "usage -") +
+		card(helper, "session "+sess, "parent a1", "role auditor", "type workflow:auditor", "task -", "brief -", "model claude-opus-5-5",
+			"started 2026-10-16T09:01:00.000Z", "ended 2026-10-16T09:03:00.000Z", "last_call -", "counts minutes 1 actions 1 red_runs 0",
+			"limits minutes 30 (max 30) actions 150 (max 150) red_runs - (max -)", "spent false", "report -",
+			"log .bonsai/local/log/s-"+sess+".ndjson", "thread -", "usage claude-opus-5-5 input 4 output 186 cache_read 6637 cache_write 9363") +
+		card(sess, "session "+sess, "parent -", "role -", "type -", "task -", "brief -", "model claude-opus-5-5", "started -",
+			"ended 2026-10-16T09:04:00.000Z", "last_call -", "counts -", "limits -", "spent false", "report -",
+			"log .bonsai/local/log/s-"+sess+".ndjson", "thread -", "usage claude-opus-5-5 input 4 output 383 cache_read 38638 cache_write 14439") +
+		fmt.Sprintf("%-*s%s\n%s%s\n", g, "skipped", ".bonsai/local/agents/"+sess+"/a2.state", strings.Repeat(" ", g+4),
+			"its first line is not a start line the guard writes")
 	if text != wantText {
 		t.Errorf("the human lines:\n%s\nwant\n%s", text, wantText)
 	}

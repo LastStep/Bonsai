@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -26,8 +27,8 @@ func TestCheckWrite(t *testing.T) {
 		t.Fatalf("a stale table: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "check", "--write")
-	if code != 0 || !strings.Contains(out, "bonsai check: 1 finding.\n") || !strings.Contains(out, "note: wrote .bonsai/tasks.md\n") ||
-		strings.Contains(out, "warning:") {
+	if code != 0 || !strings.HasPrefix(out, "bonsai check  1 finding\n") || !regexp.MustCompile(`\n(Notes| ) +wrote \.bonsai/tasks\.md\n`).MatchString(out) ||
+		strings.Contains(out, "\nWarnings  ") {
 		t.Errorf("check --write: %d\n%s", code, out)
 	}
 	table := c.read(".bonsai/tasks.md")
@@ -42,7 +43,7 @@ func TestCheckWrite(t *testing.T) {
 			t.Errorf("check --write --json, run %d: %d\n%s", i, code, out)
 		}
 	}
-	if code, out, _ = c.run("", "check", "--write"); code != 0 || !strings.Contains(out, "note: .bonsai/tasks.md is already as a rebuild gives it\n") {
+	if code, out, _ = c.run("", "check", "--write"); code != 0 || !regexp.MustCompile(`\n(Notes| ) +\.bonsai/tasks\.md is already as a rebuild gives it\n`).MatchString(out) {
 		t.Errorf("a second check --write: %d\n%s", code, out)
 	}
 	// A stale table is never a status problem.
@@ -65,8 +66,9 @@ func TestCheckWrite(t *testing.T) {
 	}
 	c.write(".bonsai/tasks.md/keep", "x")
 	code, out, errOut := c.run("", "check", "--write")
-	if code != 3 || !strings.Contains(out, "bonsai check: 1 finding.\n") || !strings.Contains(errOut, "bonsai check: .bonsai/tasks.md cannot be written") ||
-		!strings.Contains(errOut, "\nnext: ") {
+	if code != 3 || !strings.HasPrefix(out, "bonsai check  1 finding\n") || !strings.HasPrefix(errOut, "bonsai check: refused  [") ||
+		!strings.Contains(flat(errOut), "why .bonsai/tasks.md cannot be written") ||
+		!hasNext(errOut) {
 		t.Errorf("a write that fails: %d\n%s%s", code, out, errOut)
 	}
 	code, out, _ = c.run("", "check", "--write", "--json")
@@ -85,8 +87,8 @@ func TestCheckWriteInAWorktree(t *testing.T) {
 	t.Chdir(wt)
 	before, _ := os.ReadFile(filepath.Join(wt, ".bonsai", "tasks.md"))
 	code, out, errOut := c.run("", "check", "--write")
-	if code != 4 || out != "" || !strings.Contains(errOut, "this is a worktree of "+filepath.ToSlash(c.root)) ||
-		!strings.Contains(errOut, "next: run it in the main checkout, "+filepath.ToSlash(c.root)+": bonsai check --write\n") {
+	if code != 4 || out != "" || !strings.Contains(flat(errOut), "this is a worktree of "+filepath.ToSlash(c.root)) ||
+		nextOf(errOut) != "run it in the main checkout, "+filepath.ToSlash(c.root)+": bonsai check --write" {
 		t.Errorf("check --write in a worktree: %d\n%s%s", code, out, errOut)
 	}
 	code, out, _ = c.run("", "check", "--write", "--json")

@@ -12,6 +12,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -114,15 +115,16 @@ func TestWordTables(t *testing.T) {
 			if code != 0 || errOut != "" {
 				t.Fatalf("--help: exit %d, stderr %q", code, errOut)
 			}
-			if out != w.Help() || !strings.HasPrefix(out, "bonsai "+w.Name+": ") {
+			if out != w.Help() || (!strings.HasPrefix(out, "bonsai "+w.Name+"\n") && !strings.HasPrefix(out, "bonsai "+w.Name+"  ")) ||
+				!strings.HasPrefix(flat(out), "bonsai "+w.Name+" "+flat(w.Title)) {
 				t.Errorf("--help is not the table's help:\n%s", out)
 			}
 			for _, f := range append(w.Flags, Flag{Name: "--help"}) {
-				want := "\n  " + flagShown(f) + "  "
+				listed := regexp.MustCompile(`(?m)^(Flags)? +` + regexp.QuoteMeta(flagShown(f)) + `  `).MatchString(out)
 				if f.Later != "" {
-					want = flagShown(f) + " (" + f.Later + ")"
+					listed = strings.Contains(flat(out), flagShown(f)+" ("+f.Later+")")
 				}
-				if !strings.Contains(out, want) {
+				if !listed {
 					t.Errorf("the help does not list %s", flagShown(f))
 				}
 			}
@@ -131,16 +133,17 @@ func TestWordTables(t *testing.T) {
 			}
 			last := -1
 			for _, e := range w.Exits {
-				if !strings.Contains(out, "\n  "+strconv.Itoa(e.Code)+"  ") || e.Means == "" || e.Code <= last {
+				if !regexp.MustCompile(`(?m)^(Exit codes)? +`+strconv.Itoa(e.Code)+`  \S`).MatchString(out) ||
+					!strings.Contains(flat(out), strconv.Itoa(e.Code)+" "+flat(e.Means)) || e.Means == "" || e.Code <= last {
 					t.Errorf("exit code %d is not listed once, in order, with its meaning", e.Code)
 				}
 				last = e.Code
 			}
-			if !strings.Contains(out, "\nExample: bonsai "+line[0]) && !strings.Contains(out, "bonsai "+w.Name+" < ") {
+			if !regexp.MustCompile(`(?m)^Example +bonsai `+line[0]).MatchString(out) && !strings.Contains(out, "bonsai "+w.Name+" < ") {
 				t.Errorf("no example:\n%s", out)
 			}
 			for _, l := range strings.Split(out, "\n") {
-				if len(l) > 120 && !strings.HasPrefix(l, "Example: ") {
+				if len(l) > 120 {
 					t.Errorf("a help line of %d characters: %q", len(l), l)
 				}
 			}
@@ -167,7 +170,7 @@ func TestWordTables(t *testing.T) {
 	// bonsai --help lists every word, with its usage and summary.
 	_, out, _ := runArgs("--help")
 	for _, w := range wordList() {
-		if !strings.Contains(out, "  bonsai "+w.Name) || !strings.Contains(out, w.Summary+" ("+w.Name+" --help)") {
+		if !strings.Contains(out, "  bonsai "+w.Name) || !strings.Contains(flat(out), w.Summary+" ("+w.Name+" --help)") {
 			t.Errorf("bonsai --help does not list %s", w.Name)
 		}
 	}
@@ -185,7 +188,7 @@ func runArgs(args ...string) (int, string, string) {
 func wantRefusal(t *testing.T, w *Word, args []string, exit int, word string) {
 	t.Helper()
 	code, out, errOut := runArgs(args...)
-	if code != exit || !strings.Contains(out+errOut, "\nnext: ") {
+	if code != exit || !hasNext(out+errOut) {
 		t.Errorf("%v: exit %d, want %d, and a next step:\n%s%s", args, code, exit, out, errOut)
 	}
 	if !w.takesJSON() {
@@ -383,7 +386,7 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 					t.Errorf("a refusal wrote something")
 				}
 				if !asJSON {
-					if !strings.Contains(out+errOut, "next: ") { // status names it in its problem line
+					if !hasNext(out + errOut) {
 						t.Errorf("no next step:\n%s%s", out, errOut)
 					}
 					return
@@ -436,7 +439,7 @@ const linkedYAML = "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaa
 func TestHookRefusals(t *testing.T) {
 	for _, args := range [][]string{{"hook"}, {"hook", "nap"}, {"hook", "stop", "now"}, {"hook", "guard", "now"}, {"hook", "guard", "--json"}} {
 		code, out, errOut := runArgs(args...)
-		if code != 2 || out != "" || !strings.Contains(errOut, "\nnext: ") || strings.Contains(errOut, "{") {
+		if code != 2 || out != "" || !hasNext(errOut) || strings.Contains(errOut, "{") {
 			t.Errorf("%v: exit %d, %q %q", args, code, out, errOut)
 		}
 	}
@@ -476,8 +479,8 @@ func TestPartialWriteFails(t *testing.T) {
 			t.Fatalf("%v: exit %d\n%s%s", args, code, out, errOut)
 		}
 		if !asJSON {
-			if !strings.Contains(errOut, "bonsai update: .bonsai/lock.json cannot be written") ||
-				!strings.Contains(errOut, "\nnext: run the same command again: it finishes the rest") {
+			if !strings.HasPrefix(errOut, "bonsai update: refused  [partly-written]\n") || !strings.Contains(flat(errOut), "why .bonsai/lock.json cannot be written") ||
+				!strings.HasPrefix(nextOf(errOut), "run the same command again: it finishes the rest") {
 				t.Errorf("the human lines:\n%s", errOut)
 			}
 			continue
@@ -507,7 +510,7 @@ func TestPartialWriteFails(t *testing.T) {
 	if err := os.WriteFile(lock, saved, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if code, out, _ := c.run("", "update", "--yes"); code != 0 || !strings.Contains(out, "bonsai update: written") {
+	if code, out, _ := c.run("", "update", "--yes"); code != 0 || !strings.Contains(out, "\nbonsai update  written") {
 		t.Errorf("the same command again: %d\n%s", code, out)
 	}
 	if code, out, _ := c.run("", "update", "--json"); code != 0 || fits(t, out, "changes").String("result") != "nothing" {

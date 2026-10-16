@@ -563,7 +563,7 @@ func TestCheckTable(t *testing.T) {
 					checkNext(t, fo.String("code"), next.(schema.Object).String("do"))
 				}
 			}
-			if textCode, text, _ := c.run("", "check"); textCode != code || !strings.Contains(text, "next: ") {
+			if textCode, text, _ := c.run("", "check"); textCode != code || !findingNext.MatchString(text) {
 				t.Errorf("check's text exits %d, its --json %d:\n%s", textCode, code, text)
 			}
 			if more := checkMore[w.Word]; more != nil {
@@ -953,8 +953,8 @@ func TestCheckPackTable(t *testing.T) {
 	}
 	t.Run("the documented pack", func(t *testing.T) {
 		code, findings, text := check(t, testpack.DocumentedPack())
-		if code != 0 || len(findings) != 0 || !strings.HasPrefix(text, "bonsai check: no findings.\n") ||
-			!strings.Contains(text, "bonsai/pack.yaml, bonsai/labels.yaml, bonsai/lanes.yaml; 2 template skills (skills/note, skills/task)") {
+		if code != 0 || len(findings) != 0 || !strings.HasPrefix(text, "bonsai check  no findings\n") ||
+			!strings.Contains(flat(text), "bonsai/pack.yaml, bonsai/labels.yaml, bonsai/lanes.yaml; 2 template skills (skills/note, skills/task)") {
 			t.Fatalf("exit %d, %d findings:\n%s", code, len(findings), text)
 		}
 	})
@@ -997,7 +997,7 @@ func TestCheckPackTable(t *testing.T) {
 				files := testpack.DocumentedPack()
 				pc(t, files)
 				code, findings, text := check(t, files)
-				if code != 1 || len(findings) == 0 || !strings.Contains(text, "\n    next: ") {
+				if code != 1 || len(findings) == 0 || !findingNext.MatchString(text) {
 					t.Errorf("case %d: exit %d, %d findings, want 1 and its own:\n%s", i+1, code, len(findings), text)
 				}
 				for _, f := range findings {
@@ -1044,3 +1044,6 @@ func TestCheckPackTestPack(t *testing.T) {
 		}
 	}
 }
+
+// findingNext is a finding's or a warning's next step in check's text: its own row, under the finding.
+var findingNext = regexp.MustCompile(`(?m)^ +next: \S`)

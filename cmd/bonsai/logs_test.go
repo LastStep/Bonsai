@@ -96,7 +96,7 @@ func TestLogs(t *testing.T) {
 
 	// A log with no files.
 	code, out, _ = c.run("", "logs")
-	if code != 0 || out != "no log files in .bonsai/local/log/\n" {
+	if code != 0 || out != "bonsai logs  no log files in .bonsai/local/log/\n" {
 		t.Errorf("no files: %d %q", code, out)
 	}
 	code, out, _ = c.run("", "logs", "--json")
@@ -112,20 +112,23 @@ func TestLogs(t *testing.T) {
 	c.write(".bonsai/local/log/notes.txt", "not a log file\n")
 	before := c.files()
 
-	// The listing: newest first in the text, one line per file; oldest first in --json, which fits the schema.
+	// The listing: newest first in the text, a table of sessions (each with its times on a row under it) and one of
+	// days; oldest first in --json, which fits the schema.
 	code, out, _ = c.run("", "logs")
 	lines := strings.Split(strings.TrimSuffix(out, "\n"), "\n")
-	if code != 0 || len(lines) != 5 {
+	if code != 0 || len(lines) != 12 || lines[0] != "bonsai logs  5 files, newest first" || flat(lines[1]) != "Sessions session state task role records" ||
+		flat(lines[10]) != "Days day records first to last" {
 		t.Fatalf("the listing: %d\n%s", code, out)
 	}
-	if !strings.HasPrefix(lines[0], "session "+idD) || !strings.HasPrefix(lines[1], "session "+idB+"  ") || !strings.HasPrefix(lines[2], "session "+idC) ||
-		!strings.HasPrefix(lines[3], "session "+idA) || !strings.HasPrefix(lines[4], "day 2026-10-08") {
+	if !strings.HasPrefix(flat(lines[2]), idD+" ") || !strings.HasPrefix(flat(lines[4]), idB+" ") || !strings.HasPrefix(flat(lines[6]), idC+" ") ||
+		!strings.HasPrefix(flat(lines[8]), idA+" ") || !strings.HasPrefix(flat(lines[11]), "2026-10-08 ") {
 		t.Errorf("the listing is not newest first:\n%s", out)
 	}
-	if !strings.Contains(lines[1], "open  task T-0902  role orchestrator  2 records, 0 unreadable") ||
-		!strings.Contains(lines[2], "open  task none  role verifier  1 records, 1 unreadable") ||
-		!strings.Contains(lines[3], "ended  task T-0901  role builder  3 records, 0 unreadable") ||
-		!strings.Contains(lines[4], "2026-10-08T16:00:00.000Z to 2026-10-08T16:00:00.000Z  1 records, 0 unreadable") {
+	if flat(lines[4]) != idB+" open T-0902 orchestrator 2 records, 0 unreadable" ||
+		flat(lines[5]) != "2026-10-08T11:00:00.000Z to 2026-10-08T11:20:00.000Z" ||
+		flat(lines[6]) != idC+" open none verifier 1 records, 1 unreadable" ||
+		flat(lines[8]) != idA+" ended T-0901 builder 3 records, 0 unreadable" ||
+		flat(lines[11]) != "2026-10-08 1 records, 0 unreadable 2026-10-08T16:00:00.000Z to 2026-10-08T16:00:00.000Z" {
 		t.Errorf("the listing's lines:\n%s", out)
 	}
 	code, out, _ = c.run("", "logs", "--json")
@@ -171,7 +174,7 @@ func TestLogs(t *testing.T) {
 	}
 	// An ambiguous prefix and one that matches none: exit 4, session-not-found, naming the matches.
 	code, out, errOut := c.run("", "logs", "--session", "6d1e2f3a")
-	if code != 4 || out != "" || !strings.Contains(errOut, idA) || !strings.Contains(errOut, idC) || !strings.Contains(errOut, "next: ") {
+	if code != 4 || out != "" || !strings.Contains(errOut, idA) || !strings.Contains(errOut, idC) || !hasNext(errOut) {
 		t.Errorf("an ambiguous prefix: %d %q %q", code, out, errOut)
 	}
 	code, out, _ = c.run("", "logs", "--session", "6d1e2f3a", "--json")
@@ -187,7 +190,7 @@ func TestLogs(t *testing.T) {
 	// A prefix under 8 characters, both filters, a bad date, a flag without its value, an unknown flag.
 	for _, args := range [][]string{{"--session", "6d1e"}, {"--session", idA, "--day", "2026-10-08"}, {"--day", "2026-13-40"}, {"--day"}, {"--since", "x"}, {"extra"}} {
 		code, out, errOut = c.run("", append([]string{"logs"}, args...)...)
-		if code != 2 || out != "" || !strings.Contains(errOut, "next: ") {
+		if code != 2 || out != "" || !hasNext(errOut) {
 			t.Errorf("logs %v: %d %q %q", args, code, out, errOut)
 		}
 	}
@@ -212,7 +215,7 @@ func TestLogs(t *testing.T) {
 	if recs, _ = doc.Get("records"); code != 0 || len(files) != 0 || len(recs.([]any)) != 0 {
 		t.Errorf("--day with no file: %d\n%s", code, out)
 	}
-	if code, out, _ = c.run("", "logs", "--day", "2026-10-07"); code != 0 || out != "no log file for 2026-10-07\n" {
+	if code, out, _ = c.run("", "logs", "--day", "2026-10-07"); code != 0 || out != "bonsai logs  no log file for 2026-10-07\n" {
 		t.Errorf("--day with no file, text: %d %q", code, out)
 	}
 

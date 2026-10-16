@@ -209,8 +209,8 @@ func TestLayoutCases(t *testing.T) {
 	if lines := strings.Split(out, "\n"); len(lines) < 3 || !strings.HasPrefix(lines[1], strings.Repeat(" ", 14)+"because") {
 		t.Errorf("the last column is not under the others:\n%s", out)
 	}
-	if Wrap("", 10)[0] != "" || len(Wrap("a\nb", 10)) != 2 || Wrap("abcdefghijklmnop", 8)[1] != "ijklmnop" {
-		t.Errorf("wrap: %q %q %q", Wrap("", 10), Wrap("a\nb", 10), Wrap("abcdefghijklmnop", 8))
+	if Wrap("", 10)[0] != "" || len(Wrap("a\nb", 10)) != 2 || strings.Join(Wrap("ab abcdefghijklmnop cd", 8), "|") != "ab|abcdefghijklmnop|cd" {
+		t.Errorf("wrap: %q %q %q", Wrap("", 10), Wrap("a\nb", 10), Wrap("ab abcdefghijklmnop cd", 8))
 	}
 	var empty Doc
 	if !empty.Empty() || empty.String() != "" {

@@ -298,7 +298,7 @@ func TestConsentCommand(t *testing.T) {
 				if strings.Contains(out, "[y/N]") != asks {
 					t.Errorf("the y/N question (asked: %v):\n%s", strings.Contains(out, "[y/N]"), out)
 				}
-				if cc.items != "" && !strings.Contains(out, "Runs code: ") {
+				if cc.items != "" && !strings.Contains(out, "\nRuns code  ") {
 					t.Errorf("the preview has no Runs code:\n%s", out)
 				}
 				for _, it := range strings.Split(cc.items, "; ") {
@@ -308,11 +308,11 @@ func TestConsentCommand(t *testing.T) {
 					parts := strings.SplitN(it, " ", 3) // kind change item (pack)
 					line := strings.TrimSuffix(parts[2], ")")
 					line = line[:strings.LastIndex(line, " (")]
-					if !strings.Contains(out, parts[1]) || !strings.Contains(out, line) {
+					if !strings.Contains(out, parts[1]) || !strings.Contains(flat(out), flat(line)) {
 						t.Errorf("the preview does not name %s:\n%s", it, out)
 					}
 				}
-				if next != "" && !strings.HasSuffix(out, next+"\n") {
+				if next != "" && !strings.HasSuffix(" "+nextOf(out), next) {
 					t.Errorf("the next step does not end %q:\n%s", next, out)
 				}
 				if cc.items == "" && !hasFlag(f, "--allow-exec") && strings.Contains(out, " --allow-exec --yes") {
@@ -367,22 +367,24 @@ func TestConsentWithConflicts(t *testing.T) {
 		writes   bool
 		has      []string
 	}{
-		{edited, []string{"update", "--yes"}, "", 4, false, []string{"Conflicts: 1.", "Runs code: 1 item, which needs --allow-exec",
-			"next: read each item under Runs code, and settle the conflicts: to keep your edits, run: bonsai update --allow-exec --yes --keep demo/guide.md\n" +
-				"  or, to take the pack's copies (yours are saved in the Bonsai home's cache, never in the repo), run: bonsai update --allow-exec --yes --adopt demo/guide.md\n"}},
-		{edited, []string{"update", "--yes", "--allow-exec"}, "", 5, false, []string{"Stopped: 1 conflict (demo/guide.md): nothing was written.",
-			"run: bonsai update --allow-exec --yes --keep demo/guide.md\n"}},
-		{edited, []string{"update", "--allow-exec"}, "y\n", 5, false, []string{"Write these changes? [y/N] Stopped: 1 conflict"}},
+		{edited, []string{"update", "--yes"}, "", 4, false, []string{"Conflicts 1. Nothing can be written", "Runs code 1 item, which needs --allow-exec",
+			"next a person: read each item under Runs code, and settle the conflicts: to keep your edits, run: bonsai update --allow-exec --yes --keep demo/guide.md" +
+				" or, to take the pack's copies (yours are saved in the Bonsai home's cache, never in the repo), run: bonsai update --allow-exec --yes --adopt demo/guide.md"}},
+		{edited, []string{"update", "--yes", "--allow-exec"}, "", 5, false, []string{"bonsai update: refused [conflicts]",
+			"why 1 conflict (demo/guide.md): nothing was written", "run: bonsai update --allow-exec --yes --keep demo/guide.md "}},
+		{edited, []string{"update", "--allow-exec"}, "y\n", 5, false, []string{"Write these changes? [y/N] bonsai update: refused [conflicts]",
+			"why 1 conflict (demo/guide.md)"}},
 		{edited, []string{"update", "--yes", "--keep", "demo/guide.md"}, "", 4, false,
-			[]string{"to write them with the rest, run: bonsai update --keep demo/guide.md --allow-exec --yes\n"}},
-		{edited, []string{"update", "--yes", "--keep", "demo/guide.md"}, "y\n", 4, false, []string{"Refused: this update writes code"}},
-		{edited, []string{"update", "--yes", "--allow-exec", "--keep", "demo/guide.md"}, "", 0, true, []string{"kept         demo/guide.md"}},
-		{edited, []string{"update", "--yes", "--allow-exec", "--adopt", "demo/guide.md"}, "", 0, true, []string{"replaced     demo/guide.md"}},
+			[]string{"to write them with the rest, run: bonsai update --keep demo/guide.md --allow-exec --yes"}},
+		{edited, []string{"update", "--yes", "--keep", "demo/guide.md"}, "y\n", 4, false, []string{"bonsai update: refused [needs-allow-exec]",
+			"why this update writes code"}},
+		{edited, []string{"update", "--yes", "--allow-exec", "--keep", "demo/guide.md"}, "", 0, true, []string{"Written kept demo/guide.md"}},
+		{edited, []string{"update", "--yes", "--allow-exec", "--adopt", "demo/guide.md"}, "", 0, true, []string{"Written replaced demo/guide.md"}},
 		{edited, []string{"update", "--json", "--yes", "--adopt", "demo/guide.md"}, "", 4, false, []string{`"result": "refused"`, `"item": "SessionStart (startup): echo demo hook E"`}},
-		{hookRun, []string{"update", "--yes"}, "", 4, false, []string{"change  file    run/hello.sh  (run-pack)",
+		{hookRun, []string{"update", "--yes"}, "", 4, false, []string{"change file run/hello.sh (run-pack)",
 			"A file the pack run-pack's hook line runs; a conflict: --adopt would write the pack's copy.",
 			"bonsai update --allow-exec --yes --keep run/hello.sh"}},
-		{hookRun, []string{"update", "--yes", "--keep", "run/hello.sh"}, "", 0, true, []string{"Runs code: nothing that needs --allow-exec"}},
+		{hookRun, []string{"update", "--yes", "--keep", "run/hello.sh"}, "", 0, true, []string{"Runs code nothing that needs --allow-exec"}},
 		{hookRun, []string{"update", "--yes", "--adopt", "run/hello.sh"}, "", 4, false, []string{"bonsai update --adopt run/hello.sh --allow-exec --yes"}},
 		{hookRun, []string{"update", "--yes", "--allow-exec", "--adopt", "run/hello.sh"}, "", 0, true, []string{"consented to with --allow-exec"}},
 	}
@@ -398,7 +400,7 @@ func TestConsentWithConflicts(t *testing.T) {
 				t.Fatalf("exit %d, want %d\n%s%s", code, cc.exit, out, errOut)
 			}
 			for _, h := range cc.has {
-				if !strings.Contains(out, h) {
+				if !strings.Contains(flat(out), h) {
 					t.Errorf("the output lacks %q:\n%s", h, out)
 				}
 			}
@@ -429,7 +431,7 @@ func TestStopLineConsentCommand(t *testing.T) {
 		!strings.Contains(out, "not this build's: 1 to add ("+jsonText(engine.OwnHookLines()[1])+")") {
 		t.Errorf("check: exit %d\n%s", code, out)
 	}
-	if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(out, "add     hook    Stop: "+engine.StopCommand+"  (bonsai)") ||
+	if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(flat(out), "add hook Stop: "+flat(engine.StopCommand)+" (bonsai)") ||
 		!strings.Contains(out, "--allow-exec") {
 		t.Errorf("update --yes: exit %d\n%s", code, out)
 	}

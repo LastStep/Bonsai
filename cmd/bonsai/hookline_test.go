@@ -246,7 +246,7 @@ func TestStampedBuild(t *testing.T) {
 	}
 	normal, _ := bonsaiBuilds(t)
 	if code, out, _ := runBin(t, normal, inside, []string{"CLAUDE_CODE_CHILD_SESSION="}, "update", "--yes"); code != 4 ||
-		!strings.Contains(out, "change  hook    Stop: "+engine.StopCommand) || !strings.Contains(out, "needs --allow-exec") {
+		!strings.Contains(flat(out), "change hook Stop: "+flat(engine.StopCommand)) || !strings.Contains(flat(out), "needs --allow-exec") {
 		t.Errorf("a plain update of a stamped link, --yes alone: exit %d\n%s", code, out)
 	}
 	if code, out, errOut := runBin(t, normal, inside, []string{"CLAUDE_CODE_CHILD_SESSION="}, "update", "--allow-exec", "--yes"); code != 0 {

@@ -23,7 +23,7 @@ func TestCheckJSONHasNotesAndUnlinkJSONHasLeft(t *testing.T) {
 	if code > 1 || !ok || len(list) == 0 || !strings.Contains(list[0].(string), "install.json") {
 		t.Errorf("check --json: %d, notes %v\n%s", code, notes, out)
 	}
-	if _, text, _ := c.run("", "check"); !strings.Contains(text, "note: "+list[0].(string)) {
+	if _, text, _ := c.run("", "check"); !strings.Contains(flat(text), "Notes "+list[0].(string)) {
 		t.Errorf("the text output does not say the note the JSON carries:\n%s", text)
 	}
 
@@ -40,7 +40,7 @@ func TestCheckJSONHasNotesAndUnlinkJSONHasLeft(t *testing.T) {
 		t.Fatalf("unlink --json has no left lines:\n%s", out)
 	}
 	for _, l := range items {
-		if !strings.Contains(text, "  "+l.(string)+"\n") {
+		if !strings.Contains(flat(text), " "+flat(l.(string))+" ") {
 			t.Errorf("the left line %q is not in the text output:\n%s", l, text)
 		}
 	}

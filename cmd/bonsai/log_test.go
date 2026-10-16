@@ -120,7 +120,7 @@ func TestLogAppend(t *testing.T) {
 	} {
 		args := append([]string{"log", "append"}, r.args...)
 		code, _, errOut := c.run("", args...)
-		if code != 2 || !strings.Contains(errOut, r.in) || !strings.Contains(errOut, "\nnext: ") {
+		if code != 2 || !strings.Contains(flat(errOut), r.in) || !hasNext(errOut) {
 			t.Errorf("%v: %d %q, want 2 and %q", r.args, code, errOut, r.in)
 		}
 		wantRefusal(t, logAppendWord, args, 2, r.word)
@@ -137,7 +137,7 @@ func TestLogAppend(t *testing.T) {
 	code, out, errOut := c.run("", "log", "append", "--label", "ops.event=deploy", "--label", "ops.ref=c6ba392", "--label", "ops.cost=-12.50",
 		"--label", "ops.counts=1,2", "--label", "bonsai.allows=docs/**,assets/*.png", "--label", "ops.note=hello token=MadeUpLog0",
 		"--target", "T-0901 password=MadeUpLogSecret1", "--text", "deployed with api_key=MadeUpLogSecret2 "+strings.Repeat("x", 400))
-	if code != 0 || out != "written: .bonsai/local/log/w-2026-10-08.ndjson (an event record, 6 labels)\n" {
+	if code != 0 || out != "bonsai log append  written\nWritten   .bonsai/local/log/w-2026-10-08.ndjson  an event record, 6 labels\n" {
 		t.Fatalf("log append: %d %q %q", code, out, errOut)
 	}
 	code, out, _ = c.run("", "log", "append", "--label", "ops.event=applied", "--json")
@@ -177,12 +177,12 @@ func TestLogAppend(t *testing.T) {
 func TestLogAppendNothingInForce(t *testing.T) {
 	c := newCLI(t)
 	code, _, errOut := c.run("", "log", "append", "--label", "ops.event=deploy")
-	if code != 4 || !strings.Contains(errOut, "next: run bonsai init") {
+	if code != 4 || !strings.Contains(nextOf(errOut), "run bonsai init") {
 		t.Errorf("not linked: %d %q", code, errOut)
 	}
 	c.link()
 	code, _, errOut = c.run("", "log", "append", "--label", "ops.event=deploy")
-	if code != 2 || !strings.Contains(errOut, `no label definition in force has "ops.event" (none is in force)`) {
+	if code != 2 || !strings.Contains(flat(errOut), `no label definition in force has "ops.event" (none is in force)`) {
 		t.Errorf("none in force: %d %q", code, errOut)
 	}
 	code, _, errOut = c.run("", "log")

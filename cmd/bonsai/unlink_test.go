@@ -23,9 +23,10 @@ func TestUnlinkCommand(t *testing.T) {
 
 	// No --yes and no terminal: the preview, exit 4, nothing written, nothing asked of Claude Code.
 	code, out, _ := c.run("", "unlink")
-	if code != 4 || !strings.HasPrefix(out, "bonsai unlink: the preview.\nPacks:\n  demo-pack 0.1.0  "+c.pack.A[:7]+" -> taken out") ||
-		!strings.Contains(out, "  removed      bonsai.yaml: removed even if a person edited it") || !strings.Contains(out, "\nLeft in place:\n") ||
-		!strings.HasSuffix(out, "Nothing written yet.\nnext: to write it, run: bonsai unlink --yes\n") || len(f.asked) != 0 ||
+	if code != 4 || !strings.HasPrefix(flat(out), "bonsai unlink the preview Packs demo-pack 0.1.0 "+c.pack.A[:7]+" -> taken out ") ||
+		!strings.Contains(flat(out), " removed bonsai.yaml removed even if a person edited it") || !strings.Contains(out, "\nLeft in place  ") ||
+		!strings.Contains(flat(out), "why no --yes, and no terminal to ask at: nothing was written") ||
+		nextOf(out) != "a person: to write it, run: bonsai unlink --yes" || len(f.asked) != 0 ||
 		strings.Join(c.files(), " ") != files {
 		t.Errorf("unlink with no --yes: %d %v\n%s", code, f.asked, out)
 	}
@@ -36,7 +37,7 @@ func TestUnlinkCommand(t *testing.T) {
 		t.Errorf("unlink --json: %d\n%s", code, out)
 	}
 	// At a terminal: n declines; y writes.
-	if code, out, _ := c.run("n\n", "unlink"); code != 4 || !strings.Contains(out, "Take Bonsai out of this checkout? [y/N] Nothing written.") ||
+	if code, out, _ := c.run("n\n", "unlink"); code != 4 || !strings.Contains(out, "Take Bonsai out of this checkout? [y/N] bonsai unlink  nothing written\n") ||
 		strings.Join(c.files(), " ") != files {
 		t.Errorf("unlink, n: %d\n%s", code, out)
 	}
@@ -51,22 +52,22 @@ func TestUnlinkCommand(t *testing.T) {
 	// Again: nothing to change, nothing asked.
 	f.asked = nil
 	code, out, _ = c.run("", "unlink")
-	if code != 0 || out != "bonsai unlink: nothing to change: no bonsai.yaml and no lock here, so this checkout is not linked.\n" || len(f.asked) != 0 {
+	if code != 0 || out != "bonsai unlink  nothing to change: no bonsai.yaml and no lock here, so this checkout is not linked\n" || len(f.asked) != 0 {
 		t.Errorf("a second unlink: %d %v\n%s", code, f.asked, out)
 	}
 	if code, out, _ := c.run("", "unlink", "--json"); code != 0 || fits(t, out, "changes").String("result") != "nothing" {
 		t.Errorf("a second unlink --json: %d\n%s", code, out)
 	}
 	// init links again.
-	if code, out, errOut := c.run("", append(c.linkArgs(c.pack.A), "--yes")...); code != 0 || !strings.Contains(out, "found        demo/start.md") {
+	if code, out, errOut := c.run("", append(c.linkArgs(c.pack.A), "--yes")...); code != 0 || !strings.Contains(flat(out), " found demo/start.md ") {
 		t.Errorf("init after unlink: %d\n%s%s", code, out, errOut)
 	}
 	// And unlink at a terminal, y: the text names what was removed and the plugin step.
 	f.asked = nil
 	code, out, _ = c.run("y\n", "unlink")
-	if code != 0 || !strings.Contains(out, "bonsai unlink: done.\n") || !strings.Contains(out, "  removed      .bonsai/lock.json\n") ||
-		!strings.Contains(out, "This machine's plugins (Claude Code, scope project: this checkout's .claude/settings.json):\n  uninstalled  demo-pack@"+market) ||
-		!strings.Contains(out, "To link this project again: bonsai init") {
+	if code != 0 || !strings.Contains(out, "[y/N] bonsai unlink  done\n") || !strings.Contains(flat(written(out)), " removed .bonsai/lock.json ") ||
+		!strings.Contains(flat(out), "Plugins This machine's plugins (Claude Code, scope project: this checkout's .claude/settings.json): uninstalled demo-pack@"+market) ||
+		!strings.Contains(flat(out), "to link this project again: bonsai init") {
 		t.Errorf("unlink, y: %d\n%s", code, out)
 	}
 }

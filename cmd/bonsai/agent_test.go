@@ -108,8 +108,8 @@ func TestAgentRefusedPersonCommands(t *testing.T) {
 	for _, args := range [][]string{{"update", "--allow-exec", "--yes"}, {"update", "--allow-exec"}, {"init", "--allow-exec", "--yes"},
 		{"unlink", "--yes"}, {"unlink"}, {"update", "--yes", "--allow-exec", "--json"}, {"unlink", "--json"}} {
 		code, out, errOut := c.run("", args...)
-		if code != 4 || !strings.Contains(out+errOut, "a person runs it in a terminal of their own, not one Claude Code started: bonsai ") ||
-			!strings.Contains(out+errOut, "CLAUDE_CODE_CHILD_SESSION is set") || !strings.Contains(out+errOut, "status_writes agents") {
+		if code != 4 || !strings.Contains(flat(out+errOut), "a person runs it in a terminal of their own, not one Claude Code started: bonsai ") ||
+			!strings.Contains(flat(out+errOut), "CLAUDE_CODE_CHILD_SESSION is set") || !strings.Contains(flat(out+errOut), "status_writes agents") {
 			t.Errorf("%v as an agent: exit %d\n%s%s", args, code, out, errOut)
 		}
 		if args[len(args)-1] == "--json" {
@@ -129,7 +129,7 @@ func TestAgentRefusedPersonCommands(t *testing.T) {
 		}
 	}
 	// What is no person's command still runs: update with nothing to change, and init without --allow-exec.
-	if code, out, errOut := c.run("", "update", "--yes"); code != 0 || !strings.Contains(out, "nothing to change") {
+	if code, out, errOut := c.run("", "update", "--yes"); code != 0 || !strings.Contains(flat(out), "nothing to change") {
 		t.Errorf("update --yes as an agent, nothing to change: exit %d\n%s%s", code, out, errOut)
 	}
 	// A person: written.
@@ -177,8 +177,8 @@ func TestAgentRecordingAnotherBase(t *testing.T) {
 			}
 			text = e.String("message") + "\n" + next.String("do")
 		}
-		if code != 4 || !strings.Contains(text, `it would record the main checkout's branch "loose" as the workspace's base branch `+
-			`in place of "main"`) || !strings.Contains(text, "a person runs it in a terminal of their own, not one Claude Code "+
+		if code != 4 || !strings.Contains(flat(text), `it would record the main checkout's branch "loose" as the workspace's base branch `+
+			`in place of "main"`) || !strings.Contains(flat(text), "a person runs it in a terminal of their own, not one Claude Code "+
 			"started: bonsai update --yes") {
 			t.Errorf("%v as an agent: exit %d\n%s", args, code, text)
 		}
@@ -237,9 +237,9 @@ func TestAgentRecordingLooserChecks(t *testing.T) {
 			}
 			text = e.String("message") + "\n" + next.String("do")
 		}
-		if code != 4 || !strings.Contains(text, "it would record settings for the checks looser than the ones this machine last "+
+		if code != 4 || !strings.Contains(flat(text), "it would record settings for the checks looser than the ones this machine last "+
 			`accepted for the workspace: protected no longer holds ".claude/**"; protected no longer holds "more/**"`) ||
-			!strings.Contains(text, "a person runs it in a terminal of their own, not one Claude Code started: bonsai update --yes "+
+			!strings.Contains(flat(text), "a person runs it in a terminal of their own, not one Claude Code started: bonsai update --yes "+
 				"(or put bonsai.yaml's settings back)") {
 			t.Errorf("%v as an agent: exit %d\n%s", args, code, text)
 		}
@@ -249,7 +249,7 @@ func TestAgentRecordingLooserChecks(t *testing.T) {
 	}
 	asPerson(c)
 	code, out, errOut := c.run("", "update", "--yes")
-	if code != 0 || accepted() == stricter || !strings.Contains(out, "note: this machine now accepts bonsai.yaml's settings for the "+
+	if code != 0 || accepted() == stricter || !strings.Contains(flat(out), "note this machine now accepts bonsai.yaml's settings for the "+
 		`checks, looser than the ones it accepted before: protected no longer holds ".claude/**"`) {
 		t.Errorf("a person's update: exit %d\n%s%s", code, out, errOut)
 	}
@@ -266,8 +266,8 @@ func TestNewLinesForAProjectLinkedBefore(t *testing.T) {
 	c.commit("linked by the build before")
 	before := tree(t, c.root)
 
-	if code, out, _ := c.run("", "check", "--json"); code > 1 || !strings.Contains(out, `"code": "own-hooks"`) ||
-		!strings.Contains(out, "13 to add") || !strings.Contains(out, "13 to take out") || strings.Contains(out, `"code": "changed"`) {
+	if code, out, _ := c.run("", "check", "--json"); code > 1 || !strings.Contains(flat(out), `"code": "own-hooks"`) ||
+		!strings.Contains(flat(out), "13 to add") || !strings.Contains(flat(out), "13 to take out") || strings.Contains(flat(out), `"code": "changed"`) {
 		t.Errorf("check: exit %d\n%s", code, out)
 	}
 
@@ -275,9 +275,9 @@ func TestNewLinesForAProjectLinkedBefore(t *testing.T) {
 	asAgent(c)
 	for _, args := range [][]string{{"update", "--yes"}, {"update"}, {"init", "--yes"}} {
 		code, out, errOut := c.run("", args...)
-		if code != 4 || !strings.Contains(out, "bonsai "+args[0]+": the preview.") ||
-			!strings.Contains(out, "changes or takes out Bonsai's own guard or stop line (change Stop; remove PreToolUse ("+oldGuardMatcher+"))") ||
-			!strings.Contains(out, "next: a person runs it in a terminal of their own, not one Claude Code started: bonsai "+args[0]+" --allow-exec --yes") {
+		if code != 4 || !strings.HasPrefix(out, "bonsai "+args[0]+"  the preview\n") ||
+			!strings.Contains(flat(out), "changes or takes out Bonsai's own guard or stop line (change Stop; remove PreToolUse ("+oldGuardMatcher+"))") ||
+			nextOf(out) != "a person runs it in a terminal of their own, not one Claude Code started: bonsai "+args[0]+" --allow-exec --yes" {
 			t.Errorf("%v as an agent: exit %d\n%s%s", args, code, out, errOut)
 		}
 	}
@@ -292,8 +292,8 @@ func TestNewLinesForAProjectLinkedBefore(t *testing.T) {
 
 	// A person: --yes alone is the consent refusal; --allow-exec --yes writes every new line.
 	asPerson(c)
-	if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(out, "needs --allow-exec as well as --yes") ||
-		!strings.Contains(out, "add     hook    "+engine.OwnHookLines()[0]+"  (bonsai)") {
+	if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(flat(out), "needs --allow-exec as well as --yes") ||
+		!strings.Contains(flat(out), "add hook "+flat(engine.OwnHookLines()[0])+" (bonsai)") {
 		t.Errorf("update --yes as a person: exit %d\n%s", code, out)
 	}
 	if tree(t, c.root) != before {
@@ -312,7 +312,7 @@ func TestNewLinesForAProjectLinkedBefore(t *testing.T) {
 		strings.Contains(s, `"bonsai hook `) || strings.Contains(s, `"matcher": "`+oldGuardMatcher+`"`) {
 		t.Errorf("after the update:\n%s", s)
 	}
-	if _, out, _ := c.run("", "check", "--json"); strings.Contains(out, `"code": "own-hooks"`) || strings.Contains(out, `"code": "changed"`) {
+	if _, out, _ := c.run("", "check", "--json"); strings.Contains(flat(out), `"code": "own-hooks"`) || strings.Contains(flat(out), `"code": "changed"`) {
 		t.Errorf("check after the update:\n%s", out)
 	}
 }
@@ -351,15 +351,15 @@ func TestAgentUpdateTakingOutAStopLine(t *testing.T) {
 	before := tree(t, c.root)
 
 	asAgent(c)
-	if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(out, "(remove Stop)") || !strings.Contains(out, "person-command") &&
-		!strings.Contains(out, "a person runs it in a terminal of their own") {
+	if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(flat(out), "(remove Stop)") || !strings.Contains(flat(out), "person-command") &&
+		!strings.Contains(flat(out), "a person runs it in a terminal of their own") {
 		t.Errorf("an agent's update taking out a stop line: exit %d\n%s", code, out)
 	}
 	if tree(t, c.root) != before {
 		t.Fatal("an agent's refused update wrote")
 	}
 	asPerson(c)
-	if code, out, errOut := c.run("", "update", "--yes"); code != 0 || !strings.Contains(out, "remove  hook        Stop: bonsai hook stop || exit 2") {
+	if code, out, errOut := c.run("", "update", "--yes"); code != 0 || !strings.Contains(flat(out), "remove hook Stop: bonsai hook stop || exit 2") {
 		t.Errorf("a person's update --yes: exit %d\n%s%s", code, out, errOut)
 	}
 	if strings.Contains(c.read(".claude/settings.json"), `"bonsai hook stop || exit 2"`) || !strings.Contains(c.read(".claude/settings.json"), jsonCmd(engine.StopCommand)) {
@@ -390,7 +390,7 @@ func TestAgentUnderAPersonsGrant(t *testing.T) {
 	asAgent(c)
 	before := tree(t, c.root)
 	if code, out, errOut := c.run("", "update", "--allow-exec", "--yes"); code != 4 ||
-		!strings.Contains(errOut, "for .bonsai/lock.json: the running task T-0001 does not grant it") {
+		!strings.Contains(flat(errOut), "for .bonsai/lock.json: the running task T-0001 does not grant it") {
 		t.Errorf("update --allow-exec with the lock not granted: exit %d\n%s%s", code, out, errOut)
 	}
 	if tree(t, c.root) != before {
@@ -453,7 +453,7 @@ func TestAgentRefusedThroughTheShell(t *testing.T) {
 			want = 123 // xargs's own exit when the command it ran ended with 1 to 125
 		}
 		code, out, errOut := runShell(t, c.root, line, "CLAUDE_CODE_CHILD_SESSION=1")
-		if code != want || !strings.Contains(out+errOut, "is a person's command") {
+		if code != want || !strings.Contains(flat(out+errOut), "is a person's command") {
 			t.Errorf("%s as an agent: exit %d\n%s%s", line, code, out, errOut)
 		}
 	}

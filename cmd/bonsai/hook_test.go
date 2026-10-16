@@ -423,12 +423,12 @@ func TestHookCommand(t *testing.T) {
 		{[]string{"hook", "start", "--help"}, 0, engine.ShownLine(engine.StartCommand) + "on SessionStart", ""},
 		{[]string{"hook", "record", "--help"}, 0, engine.ShownLine(engine.RecordCommand) + "on UserPromptSubmit", ""},
 		{[]string{"hook", "--help"}, 0, "never one on the PATH", ""},
-		{[]string{"hook"}, 2, "", "bonsai: bonsai hook needs a hook name.\nnext: run `bonsai hook --help`"},
-		{[]string{"hook", "guard", "--json"}, 2, "", `bonsai: hook guard takes no "--json".`},
+		{[]string{"hook"}, 2, "", "bonsai hook: refused  [missing-value]\n  what  exit 2, block\n  why   bonsai hook needs a hook name\n  next  run `bonsai hook --help`\n"},
+		{[]string{"hook", "guard", "--json"}, 2, "", "bonsai hook guard: refused  [bad-flag]\n  what  exit 2, block\n  why   hook guard takes no \"--json\"\n"},
 		{[]string{"hook", "stop", "--help"}, 0, engine.ShownLine(engine.StopCommand) + "on Stop (no matcher), timeout 10 s.\n", ""},
 		{[]string{"hook", "stop", "--help"}, 0, engine.HookPlaceWords(), ""},
-		{[]string{"hook", "stop", "now"}, 2, "", `bonsai: hook stop takes no "now".`},
-		{[]string{"hook", "nap"}, 2, "", `bonsai: "nap" is not a hook.`},
+		{[]string{"hook", "stop", "now"}, 2, "", "bonsai hook stop: refused  [bad-flag]\n  what  exit 2, block\n  why   hook stop takes no \"now\"\n"},
+		{[]string{"hook", "nap"}, 2, "", "bonsai hook: refused  [bad-value]\n  what  exit 2, block\n  why   \"nap\" is not a hook\n"},
 	}
 	for _, c := range cases {
 		var stdout, stderr bytes.Buffer
@@ -438,7 +438,7 @@ func TestHookCommand(t *testing.T) {
 		}
 		asciiOnly(t, "stdout", stdout.String())
 		asciiOnly(t, "stderr", stderr.String())
-		if code != 0 && !strings.Contains(stderr.String(), "\nnext: ") {
+		if code != 0 && !hasNext(stderr.String()) {
 			t.Errorf("%v: a refusal with no next step", c.args)
 		}
 	}

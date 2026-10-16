@@ -58,7 +58,7 @@ func init() {
 		}
 		// update --yes alone is refused (a hook line added runs code), writing nothing.
 		before := c.read(".claude/settings.json")
-		if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(out, "add     hook    "+engine.OwnHookLines()[2]+"  (bonsai)") {
+		if code, out, _ := c.run("", "update", "--yes"); code != 4 || !strings.Contains(flat(out), "add hook "+flat(engine.OwnHookLines()[2])+" (bonsai)") {
 			t.Errorf("update --yes: exit %d\n%s", code, out)
 		}
 		if c.read(".claude/settings.json") != before {

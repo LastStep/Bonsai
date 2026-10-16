@@ -180,23 +180,15 @@ func (d *Doc) String() string { return d.Render(Piped()) }
 // width is a text's width in columns: one per character.
 func width(s string) int { return utf8.RuneCountInString(s) }
 
-// Wrap breaks text into lines of at most w columns at spaces; a \n starts a new line, and a word wider than w is
-// split. It always gives at least one line.
+// Wrap breaks text into lines of at most w columns at spaces; a \n starts a new line. A word wider than w (a long
+// path, a URL) stands whole on a line of its own, wider than w, so it can still be copied. It always gives at least
+// one line.
 func Wrap(text string, w int) []string {
 	w = max(w, 8)
 	var lines []string
 	for _, para := range strings.Split(text, "\n") {
 		line := ""
 		for _, word := range strings.Fields(para) {
-			for width(word) > w {
-				if line != "" {
-					lines = append(lines, line)
-					line = ""
-				}
-				r := []rune(word)
-				lines = append(lines, string(r[:w]))
-				word = string(r[w:])
-			}
 			switch {
 			case line == "":
 				line = word
@@ -391,16 +383,21 @@ func section(b *strings.Builder, look Look, bl block, gutter int) {
 	}
 	start := colStart(ncol - 1)
 	avail := look.Width - start
-	maxLast := 0
+	maxLast, maxWord := 0, 0 // the widest cell of the last column, and its widest word, in columns
 	for _, r := range bl.rows {
 		if len(r) == ncol {
 			maxLast = max(maxLast, width(r[ncol-1].Text))
+			for _, w := range strings.Fields(r[ncol-1].Text) {
+				maxWord = max(maxWord, width(w))
+			}
 		}
 	}
 	// The first columns alone do not fit: each row's cells one after another, wrapped as one text.
 	stack := ncol > 1 && avail < 4
-	// Too little room for the last column beside the others: it goes under them, indented, in every row.
-	under := !stack && ncol > 1 && avail < 40 && maxLast > avail
+	// Too little room for the last column beside the others (under 24 columns; a word of it wider than the room; or
+	// under 40 columns, with a cell of it that would take more than three lines there): it goes under them, indented,
+	// in every row.
+	under := !stack && ncol > 1 && maxLast > avail && (avail < 24 || maxWord > avail || (avail < 40 && maxLast > 3*avail))
 	for i, r := range bl.rows {
 		toneOf := func(j int) Tone { return r[j].Tone }
 		if bl.kind == kTable && i == 0 {

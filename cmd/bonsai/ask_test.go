@@ -57,7 +57,7 @@ func TestAskCommands(t *testing.T) {
 	asksNow = func() time.Time { tick = tick.Add(time.Second); return tick }
 	// Not linked: exit 4, not-linked naming bonsai init, the workspace null.
 	code, out, errOut := c.run("", "asks")
-	if code != 4 || !strings.Contains(errOut, "next: run bonsai init") {
+	if code != 4 || !strings.Contains(nextOf(errOut), "run bonsai init") {
 		t.Errorf("not linked: %d %q", code, errOut)
 	}
 	doc, _ := c.asksDoc(4, "ask", "--status", "agent:x")
@@ -100,9 +100,9 @@ func TestAskCommands(t *testing.T) {
 
 	// --status: open, then the answer.
 	code, out, _ = c.run("", "ask", "--status", "agent:colour")
-	if code != 0 || !strings.Contains(out, "agent:colour: open\ntype: Decide\nabout: task T-0901\nfiled: ") ||
-		!strings.Contains(out, "\nwhy: Both pass.\n  The check passes for both.\n") || !strings.Contains(out, "\noption 2: Darker password=[redacted]\n") ||
-		!strings.HasSuffix(out, "no answer yet\n") {
+	if code != 0 || !strings.HasPrefix(out, "agent:colour  open\ntype          Decide\nabout         task T-0901\nfiled         ") ||
+		!strings.Contains(out, "\nwhy           Both pass.\n              The check passes for both.\n") ||
+		!strings.Contains(out, "\noption 2      Darker password=[redacted]\n") || !strings.HasSuffix(out, "\n  no answer yet\n") {
 		t.Errorf("--status, open: %d\n%s", code, out)
 	}
 	// A terminal's answer, then the same answer again: written once. The answer restores a missing .bonsai/.gitignore
@@ -111,7 +111,7 @@ func TestAskCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, out, _ = c.run("", "answer", "agent:colour", "--choice", "Darker password=MadeUpAskSecret2", "--words", "Darker. secret=MadeUpAskSecret3")
-	if code != 0 || out != "agent:colour: answered\n" {
+	if code != 0 || out != "agent:colour  answered\n" {
 		t.Errorf("the answer: %d %q", code, out)
 	}
 	doc, entry = c.asksDoc(0, "answer", "agent:colour", "--choice", "Lighter")
@@ -119,7 +119,8 @@ func TestAskCommands(t *testing.T) {
 		t.Errorf("the same answer again: %s", schema.Show(doc))
 	}
 	code, out, _ = c.run("", "ask", "--status", "agent:colour")
-	if code != 0 || !strings.Contains(out, "agent:colour: answered\n") || !strings.Contains(out, ", by terminal\nchoice: Darker password=[redacted]\nwords: Darker. secret=[redacted]\n") {
+	if code != 0 || !strings.HasPrefix(out, "agent:colour  answered\n") ||
+		!strings.Contains(out, ", by terminal\nchoice        Darker password=[redacted]\nwords         Darker. secret=[redacted]\n") {
 		t.Errorf("--status, answered: %d\n%s", code, out)
 	}
 	_, entry = c.asksDoc(0, "ask", "--status", "agent:colour")
@@ -140,7 +141,7 @@ func TestAskCommands(t *testing.T) {
 	}
 	// Withdrawn, and withdrawn again.
 	code, out, _ = c.run("", "ask", "--resolve", "agent:play")
-	if code != 0 || out != "agent:play: resolved\n" {
+	if code != 0 || out != "agent:play  resolved\n" {
 		t.Errorf("--resolve: %d %q", code, out)
 	}
 	code, _, errOut = c.run("", "ask", "--resolve", "agent:play")
@@ -150,7 +151,9 @@ func TestAskCommands(t *testing.T) {
 
 	// The list: the open asks, then every key, newest first.
 	code, out, _ = c.run("", "asks")
-	if code != 0 || strings.Count(out, "\n") != 1 || !strings.HasPrefix(out, "open      ") || !strings.Contains(out, "  Answer  "+answerKey+"  Is the old theme") {
+	if lines := strings.Split(out, "\n"); code != 0 || len(lines) != 5 || lines[0] != "bonsai asks  1 open asks" ||
+		flat(lines[1]) != "state filed type key title" || !strings.HasPrefix(flat(lines[2]), "open 2026-") ||
+		!strings.Contains(flat(out), " Answer "+answerKey+" Is the old theme still wanted?") {
 		t.Errorf("asks: %d\n%s", code, out)
 	}
 	doc, _ = c.asksDoc(0, "asks", "--all")

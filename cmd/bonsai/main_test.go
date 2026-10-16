@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -31,6 +32,7 @@ func asciiOnly(t *testing.T, what, s string) {
 func TestRun(t *testing.T) {
 	defer func(r func() (*debug.BuildInfo, bool)) { readBuildInfo = r }(readBuildInfo)
 	readBuildInfo = func() (*debug.BuildInfo, bool) { return &debug.BuildInfo{}, true }
+	const what2 = "  what  exit 2, bad input\n  why   "
 	cases := []struct {
 		name     string
 		args     []string
@@ -40,14 +42,16 @@ func TestRun(t *testing.T) {
 		next     string
 	}{
 		{"version", []string{"--version"}, 0, "bonsai dev (no commit stamp)\n", "", ""},
-		{"no command", nil, 2, "", "bonsai: no command given:", "\nnext: run `bonsai --help`"},
-		{"unknown command", []string{"serve"}, 2, "", `bonsai: "serve" is not a command yet:`, "\nnext: run `bonsai --help`"},
-		{"version with more", []string{"--version", "now"}, 2, "", "bonsai: --version takes no other argument:", "\nnext: run `bonsai --help`"},
-		{"help with more", []string{"--help", "status"}, 2, "", "bonsai: --help takes no other argument:", "\nnext: run `bonsai --help`"},
-		{"non-ASCII argument", []string{"b\xc3\xb6nsai"}, 2, "", `bonsai: "b\` + `u00f6nsai" is not a command yet:`, "\nnext: run `bonsai --help`"},
-		{"status --line", []string{"status", "--line", "--help"}, 2, "", "bonsai: status --line is not built yet", "\nnext: run `bonsai status --help` without --line"},
-		{"status --active --full", []string{"status", "--active", "--full"}, 2, "", "bonsai: status --active prints only the active task", "\nnext: run `bonsai status --active`"},
-		{"status with a word", []string{"status", "now"}, 2, "", `bonsai: status takes no "now"`, "\nnext: run `bonsai status --help`"},
+		{"no command", nil, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + "no command given:", "run `bonsai --help`"},
+		{"unknown command", []string{"serve"}, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + `"serve" is not a command yet:`, "run `bonsai --help`"},
+		{"version with more", []string{"--version", "now"}, 2, "", "bonsai: refused  [bad-flag]\n" + what2 + "--version takes no other argument:", "run `bonsai --help`"},
+		{"help with more", []string{"--help", "status"}, 2, "", "bonsai: refused  [bad-flag]\n" + what2 + "--help takes no other argument:", "run `bonsai --help`"},
+		{"non-ASCII argument", []string{"b\xc3\xb6nsai"}, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + `"b\` + `u00f6nsai" is not a command yet:`, "run `bonsai --help`"},
+		{"status --line", []string{"status", "--line", "--help"}, 2, "", "bonsai status: refused  [not-built]\n" + what2 + "status --line is not built yet",
+			"run `bonsai status --help` without --line"},
+		{"status --active --full", []string{"status", "--active", "--full"}, 2, "", "bonsai status: refused  [bad-flag]\n" + what2 + "status --active prints only the active task",
+			"run `bonsai status --active`"},
+		{"status with a word", []string{"status", "now"}, 2, "", "bonsai status: refused  [bad-flag]\n" + what2 + `status takes no "now"`, "run `bonsai status --help`"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -69,7 +73,7 @@ func TestRun(t *testing.T) {
 			if !strings.HasPrefix(out, c.inStderr) {
 				t.Errorf("stderr %q, want it to start with %q", out, c.inStderr)
 			}
-			if !strings.Contains(out, c.next) {
+			if !strings.HasPrefix(nextOf(out), c.next) {
 				t.Errorf("stderr %q names no next step %q", out, c.next)
 			}
 			asciiOnly(t, "stderr", out)
@@ -162,39 +166,40 @@ func TestHelp(t *testing.T) {
 		}
 		out := stdout.String()
 		asciiOnly(t, "help", out)
-		if !strings.Contains(out, "Exit codes") || !strings.Contains(out, "Example: bonsai status --json") {
+		if !strings.Contains(out, "\nExit codes  ") || !regexp.MustCompile(`(?m)^Example +bonsai status --json$`).MatchString(out) {
 			t.Errorf("%v: the help names no exit codes or example:\n%s", args, out)
 		}
 	}
 }
 
 // The help's commands keep their words in one column, at least two spaces after the longest command (bonsai answer
-// <key> [flags] is 27 characters).
+// <key> [flags] is 27 characters), the commands themselves in one column after the label.
 func TestHelpColumn(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	if code := run([]string{"--help"}, &stdout, &stderr); code != 0 {
 		t.Fatalf("exit %d", code)
 	}
 	col, lines := -1, 0
+	start := len("Commands     ")
 	for _, line := range strings.Split(stdout.String(), "\n") {
-		if !strings.HasPrefix(line, "  bonsai ") {
+		if len(line) <= start || !strings.HasPrefix(line[start:], "bonsai ") || strings.TrimSpace(line[:start]) != "" && line[:start] != "Commands     " {
 			continue
 		}
 		lines++
-		i := strings.Index(line[2:], "  ")
+		i := strings.Index(line[start:], "  ")
 		if i < 0 {
 			t.Errorf("no two spaces before the words: %q", line)
 			continue
 		}
-		rest := line[2+i:]
-		at := 2 + i + len(rest) - len(strings.TrimLeft(rest, " "))
+		rest := line[start+i:]
+		at := start + i + len(rest) - len(strings.TrimLeft(rest, " "))
 		if col == -1 {
 			col = at
 		} else if at != col {
 			t.Errorf("%q: its words at column %d, the first line's at %d", line, at, col)
 		}
 	}
-	if lines < 10 || !strings.Contains(stdout.String(), "  bonsai answer <key> [flags]  answer an open ask") {
+	if lines < 10 || !strings.Contains(stdout.String(), " bonsai answer <key> [flags]  answer an open ask") {
 		t.Errorf("the help's commands:\n%s", stdout.String())
 	}
 }
@@ -265,7 +270,7 @@ func TestStatus(t *testing.T) {
 		t.Fatalf("exit %d, stderr %q", code, stderr.String())
 	}
 	asciiOnly(t, "status", stdout.String())
-	if !strings.HasPrefix(stdout.String(), "Workspace demo, id ws-aaaaaaaaaaaaaaaaaaaaaaaaaa") {
+	if !strings.HasPrefix(stdout.String(), "bonsai status\nWorkspace        demo  ws-aaaaaaaaaaaaaaaaaaaaaaaaaa  ") {
 		t.Errorf("status:\n%s", stdout.String())
 	}
 }
@@ -292,8 +297,8 @@ func TestStatusExit3(t *testing.T) {
 	if code := run([]string{"status"}, &stdout, &stderr); code != 3 || stdout.Len() != 0 {
 		t.Fatalf("exit %d, stdout %q", code, stdout.String())
 	}
-	if !strings.HasPrefix(stderr.String(), "bonsai status: cannot read this workspace.\n") ||
-		!strings.Contains(stderr.String(), "next: run bonsai init") {
+	if !strings.HasPrefix(stderr.String(), "bonsai status  cannot read this workspace\n") ||
+		!strings.Contains(flat(stderr.String()), "next: run bonsai init") {
 		t.Errorf("stderr %q", stderr.String())
 	}
 	asciiOnly(t, "stderr", stderr.String())

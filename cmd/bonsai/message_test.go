@@ -48,7 +48,7 @@ func TestMessageCommands(t *testing.T) {
 	messageClock(t)
 	// Not linked: exit 4, not-linked naming bonsai init, the workspace null.
 	code, _, errOut := c.run("", "messages")
-	if code != 4 || !strings.Contains(errOut, "next: run bonsai init") {
+	if code != 4 || !strings.Contains(nextOf(errOut), "run bonsai init") {
 		t.Errorf("not linked: %d %q", code, errOut)
 	}
 	doc := c.messagesDoc(4, "message", "--show", "M-2026-10-16-3f9a01bc")
@@ -131,13 +131,13 @@ func TestMessageCommands(t *testing.T) {
 	}
 	code, out, _ = c.run("", "messages")
 	want := []string{
-		"answered  " + brief + "  orchestrator -> builder@T-0901  T-0901  2 messages, last ",
-		"  flags: malformed\n",
-		"open      " + second + "  orchestrator -> verifier@T-0902  -  1 messages, last ",
-		"malformed  .bonsai/local/messages/builder-T-0901/M-2026-10-16-0a0b0c0d.md: it does not read as bonsai.message/1",
+		"answered " + brief + " T-0901 2 messages orchestrator -> builder@T-0901 last 2026-",
+		" flags: malformed ",
+		"open " + second + " - 1 messages orchestrator -> verifier@T-0902 last 2026-",
+		"malformed .bonsai/local/messages/builder-T-0901/M-2026-10-16-0a0b0c0d.md it does not read as bonsai.message/1",
 	}
 	for _, w := range want {
-		if code != 0 || !strings.Contains(out, w) {
+		if code != 0 || !strings.Contains(flat(out), w) {
 			t.Errorf("messages: %d, want %q in\n%s", code, w, out)
 		}
 	}
@@ -165,7 +165,7 @@ func TestMessageCommands(t *testing.T) {
 			t.Errorf("messages %v: %v", f.args, ids)
 		}
 	}
-	if _, out, _ = c.run("", "messages", "--to", "auditor"); !strings.HasPrefix(out, "no threads that the filters keep in .bonsai/local/messages/\n") {
+	if _, out, _ = c.run("", "messages", "--to", "auditor"); !strings.HasPrefix(out, "bonsai messages  no threads that the filters keep in .bonsai/local/messages/\n") {
 		t.Errorf("none kept: %q", out)
 	}
 	// Nothing changed but the messages and the log; one message record for each message.
@@ -493,7 +493,7 @@ func TestMessageCheckWarning(t *testing.T) {
 		if findings, _ := doc.Get("findings"); hasCode(findings.([]any), w.Word) {
 			t.Errorf("%s is a finding", w.Word)
 		}
-		if _, out, _ := c.run("", "check"); !strings.Contains(out, "\nwarning: .bonsai/local/messages/"+rel+" does not read as a message between agents") {
+		if _, out, _ := c.run("", "check"); !strings.Contains(flat(out), "Warnings .bonsai/local/messages/"+rel+" does not read as a message between agents") {
 			t.Errorf("check's text does not name it:\n%s", out)
 		}
 	}

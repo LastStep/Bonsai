@@ -89,7 +89,8 @@ func TestMessagesAgentColumn(t *testing.T) {
 		t.Errorf("its agent's last call an hour old: %q", got)
 	}
 	_, text, _ := c.run("", "messages")
-	if !strings.Contains(text, "  flags: unanswered  agent a1: minutes 2 of 240, actions 2 of 3, red runs 0 of no limit\n") {
+	if !strings.Contains(flat(text), " flags: unanswered agent a1: minutes 2 of 240, actions 2 of 3, red runs 0 of no limit") ||
+		!strings.HasSuffix(text, "\n"+strings.Repeat(" ", 17)+"agent a1: minutes 2 of 240, actions 2 of 3, red runs 0 of no limit\n") {
 		t.Errorf("the line's agent column:\n%s", text)
 	}
 	// Spent: budget-spent, and the recipient says so.

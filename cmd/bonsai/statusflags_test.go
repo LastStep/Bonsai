@@ -29,8 +29,9 @@ func TestStatusFullCommand(t *testing.T) {
 		t.Errorf("status --full --json: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "status", "--full")
-	if code != 0 || !strings.Contains(out, "Checks (--full):\n") || !strings.Contains(out, "  Claude Code: 2.1.300, ok (the floor "+engine.ClaudeCodeFloor) ||
-		!strings.Contains(out, "Needs from this machine: claude-code >="+engine.ClaudeCodeFloor) {
+	if code != 0 || !strings.HasPrefix(out, "bonsai status  with the machine's checks (--full)\n") || !strings.Contains(out, "\nChecks           pack ") ||
+		!strings.Contains(flat(out), " tool Claude Code 2.1.300, ok (the floor "+engine.ClaudeCodeFloor) ||
+		!strings.Contains(out, "\nNeeds            claude-code  tool    >="+engine.ClaudeCodeFloor+"\n") {
 		t.Errorf("status --full: %d\n%s", code, out)
 	}
 	// Without --full, Claude Code is never asked.
@@ -48,7 +49,7 @@ func TestStatusActiveCommand(t *testing.T) {
 	t.Setenv("CLAUDE_PROJECT_DIR", "")
 	c.task("T-0901", "running", "", "")
 	code, out, _ := c.run("", "status", "--active")
-	if code != 0 || out != "Active task: T-0901 (running)\n" {
+	if code != 0 || out != "Active task  T-0901  running\n" {
 		t.Errorf("status --active: %d %q", code, out)
 	}
 	code, out, _ = c.run("", "status", "--active", "--json")
@@ -56,7 +57,7 @@ func TestStatusActiveCommand(t *testing.T) {
 		t.Errorf("status --active --json: %d %q", code, out)
 	}
 	c.task("T-0902", "running", "", "")
-	if code, out, _ := c.run("", "status", "--active"); code != 0 || out != "Active task: none (two or more tasks read running (T-0901, T-0902))\n" {
+	if code, out, _ := c.run("", "status", "--active"); code != 0 || out != "Active task  none  two or more tasks read running (T-0901, T-0902)\n" {
 		t.Errorf("two running: %d %q", code, out)
 	}
 	// Outside a checkout: exit 3, the error object alone with --json, a next step on stderr without.
@@ -68,7 +69,7 @@ func TestStatusActiveCommand(t *testing.T) {
 	if code != 3 || e.String("code") != "not-a-checkout" {
 		t.Errorf("outside: %d\n%s", code, out)
 	}
-	if code, out, errOut := c.run("", "status", "--active"); code != 3 || out != "" || !strings.Contains(errOut, "\nnext: ") {
+	if code, out, errOut := c.run("", "status", "--active"); code != 3 || out != "" || !hasNext(errOut) {
 		t.Errorf("outside, text: %d %q %q", code, out, errOut)
 	}
 }

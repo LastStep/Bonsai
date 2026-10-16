@@ -74,14 +74,15 @@ func (c *cli) files() []string {
 func TestInitCommand(t *testing.T) {
 	c := newCLI(t)
 	code, out, errOut := c.run("", "init")
-	if code != 2 || out != "" || !strings.Contains(errOut, "init needs --name, --source and --ref") || !strings.Contains(errOut, "\nnext: run bonsai init --name") {
+	if code != 2 || out != "" || !strings.Contains(errOut, "init needs --name, --source and --ref") || !strings.HasPrefix(nextOf(errOut), "run bonsai init --name") {
 		t.Errorf("init with no values: %d %q %q", code, out, errOut)
 	}
 	// No terminal, no --yes: the preview, exit 4, nothing written, the command with --yes named.
 	code, out, _ = c.run("", c.linkArgs(c.pack.A)...)
-	if code != 4 || !strings.Contains(out, "bonsai init: the preview.") || !strings.Contains(out, "add     hook        PreToolUse") ||
-		!strings.Contains(out, "next: to write it, run: bonsai init --name demo --source ") ||
-		!strings.HasSuffix(out, "--never-edit ledger.json --allow-exec --yes\n") {
+	if code != 4 || !strings.HasPrefix(out, "bonsai init  the preview\n") || !strings.Contains(flat(out), " add hook PreToolUse") ||
+		!strings.Contains(flat(out), " add hook 14 Bonsai 13, demo-pack 1 ") ||
+		!strings.Contains(flat(out), "next a person: to write it, run: bonsai init --name demo --source ") ||
+		!strings.HasSuffix(nextOf(out), "--never-edit ledger.json --allow-exec --yes") {
 		t.Errorf("init without --yes: %d\n%s", code, out)
 	}
 	if len(c.files()) != 0 {
@@ -90,24 +91,25 @@ func TestInitCommand(t *testing.T) {
 	// Without --allow-exec, the pack's hook line refuses the link, at a terminal too: no y/N for code.
 	noExec := c.linkArgs(c.pack.A)[:len(c.linkArgs(c.pack.A))-1]
 	code, out, _ = c.run("y\n", noExec...)
-	if code != 4 || strings.Contains(out, "[y/N]") || !strings.Contains(out, "Runs code: 1 item, which needs --allow-exec as well as --yes") ||
-		!strings.Contains(out, "add     hook    SessionStart (startup): echo demo hook A  (demo-pack)") ||
-		!strings.HasSuffix(out, "--never-edit ledger.json --allow-exec --yes\n") || len(c.files()) != 0 {
+	if code != 4 || strings.Contains(out, "[y/N]") || !strings.Contains(flat(out), "Runs code 1 item, which needs --allow-exec as well as --yes") ||
+		!strings.Contains(flat(out), "add hook SessionStart (startup): echo demo hook A (demo-pack)") ||
+		!strings.HasSuffix(nextOf(out), "--never-edit ledger.json --allow-exec --yes") || len(c.files()) != 0 {
 		t.Errorf("init without --allow-exec at a terminal: %d\n%s", code, out)
 	}
 	// At a terminal: y/N; n writes nothing.
 	code, out, _ = c.run("n\n", c.linkArgs(c.pack.A)...)
-	if code != 4 || !strings.Contains(out, "Write these changes? [y/N] Nothing written.\n") || len(c.files()) != 0 {
+	if code != 4 || !strings.Contains(out, "Write these changes? [y/N] bonsai init  nothing written\n  run the command again when you want it written\n") ||
+		len(c.files()) != 0 {
 		t.Errorf("init answered n: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("y\n", c.linkArgs(c.pack.A)...)
-	if code != 0 || !strings.Contains(out, "bonsai init: written; demo-pack at ") || !strings.Contains(out, "Linked demo. Workspace id: ws-") ||
-		!strings.HasSuffix(out, "A copy meant as a new project needs its own id: bonsai init --new-id\n") {
+	if code != 0 || !strings.Contains(out, "Write these changes? [y/N] bonsai init  written; demo-pack at ") || !strings.Contains(out, "\nLinked           demo  ws-") ||
+		!strings.HasSuffix(out, "\n  a copy meant as a new project needs its own id: bonsai init --new-id\n") {
 		t.Errorf("init answered y: %d\n%s", code, out)
 	}
 	// Again, with --yes: nothing to change, and the closing words.
 	code, out, _ = c.run("", append(c.linkArgs(c.pack.A), "--yes")...)
-	if code != 0 || !strings.HasPrefix(out, "bonsai init: nothing to change; demo-pack at ") || !strings.Contains(out, "Linked demo.") {
+	if code != 0 || !strings.HasPrefix(out, "bonsai init  nothing to change; demo-pack at ") || !strings.Contains(out, "\nLinked           demo  ws-") {
 		t.Errorf("init again: %d\n%s", code, out)
 	}
 	// --json: one document, ASCII, the same facts.
@@ -125,7 +127,7 @@ func TestUpdateCommand(t *testing.T) {
 	}
 	testpack.SetRef(t, c.root, c.pack.A, c.pack.B)
 	code, out, _ := c.run("", "update")
-	if code != 4 || !strings.Contains(out, "change  marketplace bonsai-demo-") || !strings.HasSuffix(out, "next: to write it, run: bonsai update --yes\n") {
+	if code != 4 || !strings.Contains(out, "\n           change  marketplace  1      Bonsai 1\n") || nextOf(out) != "a person: to write it, run: bonsai update --yes" {
 		t.Errorf("update without --yes: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "update", "--diff")
@@ -148,23 +150,24 @@ func TestUpdateCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, out, _ = c.run("", "update")
-	if code != 4 || !strings.HasSuffix(out, "Nothing written yet.\nnext: to keep your edits, run: bonsai update --yes --keep demo/guide.md\n"+
-		"  or, to take the pack's copies (yours are saved in the Bonsai home's cache, never in the repo), run: bonsai update --yes --adopt demo/guide.md\n") {
+	if code != 4 || !strings.Contains(flat(out), "why no --yes, and no terminal to ask at: nothing was written") ||
+		nextOf(out) != "a person: to keep your edits, run: bonsai update --yes --keep demo/guide.md"+
+			" or, to take the pack's copies (yours are saved in the Bonsai home's cache, never in the repo), run: bonsai update --yes --adopt demo/guide.md" {
 		t.Errorf("a conflict without --yes: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "update", "--yes")
-	if code != 5 || !strings.Contains(out, "Stopped: 1 conflict (demo/guide.md): nothing was written.") ||
-		!strings.Contains(out, "run: bonsai update --yes --keep demo/guide.md\n") {
+	if code != 5 || !strings.Contains(flat(out), "bonsai update: refused [conflicts] what exit 5, conflicts why 1 conflict (demo/guide.md): nothing was written") ||
+		!strings.Contains(nextOf(out), "run: bonsai update --yes --keep demo/guide.md or,") {
 		t.Errorf("a conflict: %d\n%s", code, out)
 	}
 	// At a terminal: the preview ends in y/N; y then stops on the conflict.
 	code, out, _ = c.run("y\n", "update")
-	if code != 5 || !strings.Contains(out, "Write these changes? [y/N] Stopped: 1 conflict") {
+	if code != 5 || !strings.Contains(out, "Write these changes? [y/N] bonsai update: refused  [conflicts]\n") {
 		t.Errorf("a conflict at a terminal: %d\n%s", code, out)
 	}
 	// The pasted command works.
 	code, out, _ = c.run("", "update", "--yes", "--keep", "demo/guide.md")
-	if code != 0 || !strings.Contains(out, "kept         demo/guide.md") {
+	if code != 0 || !strings.Contains(flat(written(out)), " kept demo/guide.md ") {
 		t.Errorf("--keep: %d\n%s", code, out)
 	}
 	if code, out, _ := c.run("", "check"); code != 1 || !onlySource(out) {
@@ -178,15 +181,15 @@ func TestUpdateCommand(t *testing.T) {
 	testpack.SetRef(t, c.root, c.pack.C, c.pack.D)
 	before := c.snapshot()
 	code, out, _ = c.run("", "update", "--yes")
-	if code != 4 || !strings.Contains(out, "Refused: this update writes code that runs on this machine (1 item under Runs code), which needs --allow-exec as well as --yes: nothing was written.") ||
-		!strings.Contains(out, "next: read each item under Runs code; to write them with the rest, run: bonsai update --allow-exec --yes\n") {
+	if code != 4 || !strings.Contains(flat(out), "why this update writes code that runs on this machine (1 item under Runs code), which needs --allow-exec as well as --yes: nothing was written") ||
+		nextOf(out) != "a person: read each item under Runs code; to write them with the rest, run: bonsai update --allow-exec --yes" {
 		t.Errorf("a hook-line change: %d\n%s", code, out)
 	}
 	if after := c.snapshot(); after != before {
 		t.Errorf("a refused hook-line change wrote something")
 	}
 	code, out, _ = c.run("", "update", "--yes", "--allow-exec")
-	if code != 0 || !strings.Contains(out, "Runs code: 1 item, consented to with --allow-exec") || !strings.Contains(out, "bonsai update: written") ||
+	if code != 0 || !strings.Contains(flat(out), "Runs code 1 item, consented to with --allow-exec") || !strings.Contains(out, "\nbonsai update  written") ||
 		!strings.Contains(c.snapshot(), "echo demo hook D") {
 		t.Errorf("--allow-exec: %d\n%s", code, out)
 	}
@@ -195,8 +198,8 @@ func TestUpdateCommand(t *testing.T) {
 // onlySource reports whether check's text holds one finding, and no warning: the one every test project has, its
 // bonsai.yaml naming the test pack by a local folder, an absolute path (absolute-path; spec §14 check 2).
 func onlySource(out string) bool {
-	return strings.HasPrefix(out, "bonsai check: 1 finding.\n  bonsai.yaml's field packs[0].source holds the absolute path ") &&
-		strings.Contains(out, "next: a person names the pack's remote URL") && !strings.Contains(out, "warning:")
+	return strings.HasPrefix(out, "bonsai check  1 finding\nFindings  bonsai.yaml's field packs[0].source holds the absolute path") &&
+		strings.Contains(flat(out), " next: a person names the pack's remote URL") && !strings.Contains(out, "\nWarnings  ")
 }
 
 // codesIn lists the codes of check --json's findings or warnings, space-separated.
@@ -221,7 +224,7 @@ func (c *cli) snapshot() string {
 func TestCheckCommand(t *testing.T) {
 	c := newCLI(t)
 	code, _, errOut := c.run("", "check")
-	if code != 4 || !strings.Contains(errOut, "next: run bonsai init") {
+	if code != 4 || !strings.Contains(nextOf(errOut), "run bonsai init") {
 		t.Errorf("check unlinked: %d %q", code, errOut)
 	}
 	c.run("", append(c.linkArgs(c.pack.A), "--yes")...)
@@ -237,7 +240,7 @@ func TestCheckCommand(t *testing.T) {
 		t.Errorf("check --json: %d %s", code, out)
 	}
 	for _, args := range [][]string{{"check", "now"}} {
-		if code, _, errOut := c.run("", args...); code != 2 || !strings.Contains(errOut, "\nnext: ") {
+		if code, _, errOut := c.run("", args...); code != 2 || !hasNext(errOut) {
 			t.Errorf("%v: %d %q", args, code, errOut)
 		}
 	}
@@ -251,13 +254,13 @@ func TestEngineHelpAndFlags(t *testing.T) {
 		}
 		out := stdout.String()
 		asciiOnly(t, word+" --help", out)
-		if !strings.Contains(out, "Exit codes:") || !strings.Contains(out, "Example: bonsai "+word) || !strings.Contains(out, "--json") {
+		if !strings.Contains(out, "\nExit codes  ") || !strings.Contains(out, "\nExample     bonsai "+word) || !strings.Contains(out, "--json") {
 			t.Errorf("%s --help:\n%s", word, out)
 		}
 	}
 	for _, args := range [][]string{{"update", "--name", "x"}, {"init", "--name"}, {"update", "--yes=1"}, {"update", "now"}, {"init", "--keep"}} {
 		var stdout, stderr bytes.Buffer
-		if code := run(args, &stdout, &stderr); code != 2 || !strings.Contains(stderr.String(), "\nnext: ") {
+		if code := run(args, &stdout, &stderr); code != 2 || !hasNext(stderr.String()) {
 			t.Errorf("%v: %d %q", args, code, stderr.String())
 		}
 	}
@@ -332,9 +335,9 @@ func TestPluginStep(t *testing.T) {
 	}
 	code, out, _ := c.run("", append(c.linkArgs(c.pack.A), "--yes")...)
 	if code != 0 || strings.Join(f.asked, ",") != "install demo-pack@"+marketA+",list" ||
-		!strings.Contains(out, "This machine's plugins (Claude Code, scope project: this checkout's .claude/settings.json):\n  waiting      demo-pack@"+marketA+": ") ||
-		!strings.Contains(out, "\n               next: a person opens Claude Code in this checkout and accepts its trust question") ||
-		!strings.Contains(out, "; then run: bonsai update\n") || c.exists(".claude/settings.local.json") {
+		!strings.Contains(flat(out), "Plugins This machine's plugins (Claude Code, scope project: this checkout's .claude/settings.json): waiting demo-pack@"+marketA+" ") ||
+		!strings.Contains(flat(out), " next: a person opens Claude Code in this checkout and accepts its trust question") ||
+		!strings.Contains(flat(out), "; then run: bonsai update Linked ") || c.exists(".claude/settings.local.json") {
 		t.Errorf("init --yes: %d %v\n%s", code, f.asked, out)
 	}
 	// Nothing to change: installed now.
@@ -420,8 +423,8 @@ func TestPluginStepWithCode(t *testing.T) {
 	}
 	f.asked = nil
 	code, out, _ := c.run("", "update")
-	if code != 0 || !strings.Contains(out, "  waiting      "+want+": the plugin carries code Claude Code runs on its own (hooks/hooks.json)") ||
-		!strings.Contains(out, "next: if you consent to that code running on this machine, run: bonsai update --allow-exec\n") ||
+	if code != 0 || !strings.Contains(flat(out), " waiting "+want+" the plugin carries code Claude Code runs on its own (hooks/hooks.json)") ||
+		!strings.HasSuffix(flat(out), " next: if you consent to that code running on this machine, run: bonsai update --allow-exec") ||
 		strings.Join(f.asked, ",") != "list" {
 		t.Errorf("update without --allow-exec: %d, asked %v\n%s", code, f.asked, out)
 	}
@@ -430,12 +433,12 @@ func TestPluginStepWithCode(t *testing.T) {
 		t.Errorf("update --json: %d %v %s", code, err, schema.Show(doc))
 	}
 	f.asked = nil
-	if code, out, _ := c.run("", "update", "--allow-exec"); code != 0 || !strings.Contains(out, "installed    "+want) ||
+	if code, out, _ := c.run("", "update", "--allow-exec"); code != 0 || !strings.Contains(flat(out), " installed "+want+" ") ||
 		strings.Join(f.asked, ",") != "install "+want {
 		t.Errorf("update --allow-exec: %d, asked %v\n%s", code, f.asked, out)
 	}
 	f.asked, f.list = nil, []engine.InstalledPlugin{{ID: want, Version: c.pack.F[:12], Scope: "project", Enabled: true, ProjectPath: c.root}}
-	if code, out, _ := c.run("", "update"); code != 0 || !strings.Contains(out, "already installed for this checkout") ||
+	if code, out, _ := c.run("", "update"); code != 0 || !strings.Contains(flat(out), "already installed for this checkout") ||
 		strings.Join(f.asked, ",") != "list" {
 		t.Errorf("update once installed: %d, asked %v\n%s", code, f.asked, out)
 	}
@@ -465,7 +468,7 @@ func TestUpdateTakesAPackOut(t *testing.T) {
 	c.write("bonsai.yaml", cfg[:strings.Index(cfg, "  - id: side-pack")])
 
 	code, out, _ := c.run("", "update")
-	if code != 4 || !strings.Contains(out, "side-pack 0.2.0  "+sc[0][:7]+" -> taken out") || !strings.Contains(out, "next: to write it, run: bonsai update --yes") ||
+	if code != 4 || !strings.Contains(flat(out), "side-pack 0.2.0 "+sc[0][:7]+" -> taken out") || nextOf(out) != "a person: to write it, run: bonsai update --yes" ||
 		len(f.asked) != 0 || !c.exists("side/a.md") {
 		t.Errorf("update with no --yes: %d %v\n%s", code, f.asked, out)
 	}
@@ -483,4 +486,12 @@ func TestUpdateTakesAPackOut(t *testing.T) {
 	if code, out, _ := c.run("", "check"); code != 1 || !onlySource(out) {
 		t.Errorf("check after: %d\n%s", code, out)
 	}
+}
+
+// written is a write's text from its Written section on: what was written, after the preview.
+func written(out string) string {
+	if i := strings.Index(out, "\nWritten "); i >= 0 {
+		return out[i:]
+	}
+	return ""
 }
