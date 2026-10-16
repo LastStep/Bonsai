@@ -211,7 +211,8 @@ func (sf *StrandedFolder) describe(home, main, key, goos string) {
 		"; or, in a workspace a studio manages, registers this checkout with the studio again (contract section 15.2)"
 }
 
-// shQuote quotes a word for a POSIX shell: single quotes, a ' inside written '\''.
+// shQuote quotes a word for a POSIX shell: single quotes, each quote inside it ends the quoting, is escaped with a
+// backslash, and starts it again.
 func shQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
 
 // psQuote quotes a word for PowerShell: single quotes, a ' inside doubled.
