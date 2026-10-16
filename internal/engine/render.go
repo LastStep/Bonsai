@@ -15,71 +15,79 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// Preview is the plan as text: what the command would write, and why.
-func (p *Plan) Preview(diff bool) string {
-	var b strings.Builder
+// resultTone is what a file's or a plugin's result means for the reader.
+func resultTone(result string) textui.Tone {
+	switch result {
+	case Created, "added", "installed", "uninstalled", "written":
+		return textui.New
+	case Unchanged, "skipped":
+		return textui.Dim
+	case Conflict, "failed":
+		return textui.Bad
+	case Changed, Removed, Released, Dropped, LeftMissing, "waiting":
+		return textui.Warn
+	}
+	return textui.Plain
+}
+
+// flat is text with its line breaks and runs of spaces made single spaces, for a paragraph the Doc wraps itself.
+func flat(s string) string { return strings.Join(strings.Fields(s), " ") }
+
+// PreviewTo adds the plan to d: what the command would write, and why. explain lists every settings line with
+// where it comes from and why (unlink's preview always does); else they are counted by change and kind.
+func (p *Plan) PreviewTo(d *textui.Doc, diff, explain bool) {
 	if len(p.Packs) > 0 {
-		b.WriteString("Packs:\n")
+		var rows []textui.Row
 		for _, m := range p.Packs {
-			move := "at " + short(m.To)
+			move, tone := "at "+short(m.To), textui.Plain
 			switch {
 			case m.To == "":
-				move = short(m.From) + " -> taken out"
+				move, tone = short(m.From)+" -> taken out", textui.Warn
 			case m.From == "":
-				move = "new, at " + short(m.To)
+				move, tone = "new, at "+short(m.To), textui.New
 			case m.From != m.To:
-				move = short(m.From) + " -> " + short(m.To)
+				move, tone = short(m.From)+" -> "+short(m.To), textui.New
 			}
-			fmt.Fprintf(&b, "  %s %s  %s  (%s)\n", m.ID, ascii(m.Version), move, ascii(m.Source))
+			rows = append(rows, textui.R(textui.T(m.ID, textui.Key), textui.C(ascii(m.Version)), textui.T(move, tone), textui.T(ascii(m.Source), textui.Path)))
 		}
+		d.Section("Packs", rows...)
 	}
-	b.WriteString(p.TakenOutText())
-	b.WriteString("Files:\n")
+	p.takenOutTo(d)
+	var files []textui.Row
 	for _, f := range p.Files {
 		kind := ""
 		if f.Kind != "" {
-			kind = " [" + f.Kind + "]"
+			kind = "[" + f.Kind + "]"
 		}
-		why := ""
-		if f.Why != "" {
-			why = ": " + f.Why
-		}
-		fmt.Fprintf(&b, "  %-12s %s%s%s\n", f.Result, ascii(f.Path), kind, ascii(why))
+		files = append(files, textui.R(textui.T(f.Result, resultTone(f.Result)), textui.T(ascii(f.Path), textui.Path), textui.T(kind, textui.Dim),
+			textui.C(ascii(f.Why))))
 	}
 	switch {
 	case p.LockRemove:
-		fmt.Fprintf(&b, "  %-12s %s: removed last\n", Removed, workspace.LockFile)
+		files = append(files, textui.R(textui.T(Removed, resultTone(Removed)), textui.T(workspace.LockFile, textui.Path), textui.C(""), textui.C("removed last")))
 	case p.LockWrite:
-		fmt.Fprintf(&b, "  %-12s %s: written last\n", map[bool]string{true: Created, false: Updated}[p.FirstLink], workspace.LockFile)
+		r := map[bool]string{true: Created, false: Updated}[p.FirstLink]
+		files = append(files, textui.R(textui.T(r, resultTone(r)), textui.T(workspace.LockFile, textui.Path), textui.C(""), textui.C("written last")))
 	default:
-		fmt.Fprintf(&b, "  %-12s %s\n", Unchanged, workspace.LockFile)
+		files = append(files, textui.R(textui.T(Unchanged, textui.Dim), textui.T(workspace.LockFile, textui.Path)))
 	}
-	if p.Format0 > 0 {
-		fmt.Fprintf(&b, "  %-12s %d %s with no format: line (format 0), each fixed in the lock by its hash: an agent gives one\n"+
-			"               format: bonsai.<kind>/1 before changing it (bonsai check finds a format-0 file new or changed)\n",
-			"listed", p.Format0, plural(p.Format0, "task, run report or STATE file", "task, run report and STATE files"))
-	}
+	files = append(files, p.format0Rows()...)
 	if p.EmptyLocal > 0 {
-		fmt.Fprintf(&b, "  %-12s %s/: its %d files removed (init --new-id: a copy keeps none of the original's log, asks and ladder results)\n",
-			"emptied", LocalDir, p.EmptyLocal)
+		files = append(files, textui.R(textui.T("emptied", textui.Warn), textui.T(LocalDir+"/", textui.Path), textui.C(""),
+			textui.C(fmt.Sprintf("its %d files removed (init --new-id: a copy keeps none of the original's log, asks and ladder results)", p.EmptyLocal))))
 	}
+	d.Section("Files", files...)
 	if len(p.Settings) > 0 {
-		fmt.Fprintf(&b, "%s: %d %s\n", SettingsFile, len(p.Settings), plural(len(p.Settings), "line", "lines"))
-		for _, c := range p.Settings {
-			fmt.Fprintf(&b, "  %-7s %-11s %s\n", c.Change, c.Kind, ascii(c.Line))
-			if c.Was != "" {
-				fmt.Fprintf(&b, "          was: %s\n", ascii(c.Was))
-			}
-			fmt.Fprintf(&b, "          %s\n", ascii(c.Why))
-		}
+		p.settingsTo(d, explain || p.Command == "unlink")
 	}
 	if p.Command == "unlink" {
-		b.WriteString(p.LeftText())
+		p.LeftTo(d)
 	} else {
-		b.WriteString(p.RunsCodeText())
+		p.RunsCodeTo(d)
 	}
 	if diff {
 		for _, f := range p.Files {
@@ -88,28 +96,122 @@ func (p *Plan) Preview(diff bool) string {
 				if !f.remove {
 					nb = f.write
 				}
-				b.WriteString(Diff(f.Path, f.old, nb))
+				d.Raw(Diff(f.Path, f.old, nb))
 			}
 		}
 	}
 	if len(p.Conflicts) > 0 {
-		fmt.Fprintf(&b, "Conflicts: %d. Nothing can be written until each is settled:\n", len(p.Conflicts))
+		d.Para("Conflicts", fmt.Sprintf("%d. Nothing can be written until each is settled:", len(p.Conflicts)), textui.Bad)
+		var rows []textui.Row
 		for _, f := range p.Conflicts {
-			fmt.Fprintf(&b, "  %s: %s\n", ascii(f.Path), ascii(f.Why))
+			rows = append(rows, textui.R(textui.T(ascii(f.Path), textui.Path), textui.C(ascii(f.Why))))
 		}
+		d.Section("", rows...)
 	}
-	return b.String()
 }
 
-// TakenOutText names, for each pack the plan takes out (Plan.Removed), everything it wrote and what becomes of it
+// Preview is the plan as text, every settings line listed: what the command would write, and why.
+func (p *Plan) Preview(diff bool) string {
+	var d textui.Doc
+	p.PreviewTo(&d, diff, true)
+	return d.String()
+}
+
+// format0Rows is the Files row for the format-0 files the lock lists; none when there are none.
+func (p *Plan) format0Rows() []textui.Row {
+	if p.Format0 <= 0 {
+		return nil
+	}
+	return []textui.Row{textui.R(textui.C("listed"), textui.T(fmt.Sprintf("%d %s", p.Format0,
+		plural(p.Format0, "task, run report or STATE file", "task, run report and STATE files")), textui.Path), textui.C(""),
+		textui.C("with no format: line (format 0), each fixed in the lock by its hash: an agent gives one format: bonsai.<kind>/1 "+
+			"before changing it (bonsai check finds a format-0 file new or changed)"))}
+}
+
+// settingsTo adds the settings lines: with explain each line, where it comes from and why (and the line it
+// replaces); else one row per change and kind, with how many lines each origin gives.
+func (p *Plan) settingsTo(d *textui.Doc, explain bool) {
+	n := len(p.Settings)
+	if explain {
+		d.Para("Settings", fmt.Sprintf("%s: %d %s, each with where it comes from and why", SettingsFile, n, plural(n, "line", "lines")), textui.Plain)
+		var rows []textui.Row
+		for _, c := range p.Settings {
+			rows = append(rows, textui.R(textui.T(c.Change, changeTone(c.Change)), textui.C(c.Kind), textui.T(origin(c.Origin), textui.Dim),
+				textui.T(ascii(c.Line), textui.Path)))
+			if c.Was != "" {
+				rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.C(""), textui.T("was: "+ascii(c.Was), textui.Dim)))
+			}
+			rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.C(""), textui.C(ascii(c.Why))))
+		}
+		d.Table("", textui.R(textui.C("change"), textui.C("kind"), textui.C("from"), textui.C("line, and why")), rows...)
+		return
+	}
+	d.Para("Settings", fmt.Sprintf("%s: %d %s; bonsai %s --explain lists each with where it comes from and why", SettingsFile, n,
+		plural(n, "line", "lines"), p.Command), textui.Plain)
+	type group struct {
+		change, kind string
+		n            int
+		origins      []string
+		count        map[string]int
+	}
+	var groups []*group
+	byKey := map[string]*group{}
+	for _, c := range p.Settings {
+		g := byKey[c.Change+" "+c.Kind]
+		if g == nil {
+			g = &group{change: c.Change, kind: c.Kind, count: map[string]int{}}
+			byKey[c.Change+" "+c.Kind] = g
+			groups = append(groups, g)
+		}
+		o := origin(c.Origin)
+		if g.count[o] == 0 {
+			g.origins = append(g.origins, o)
+		}
+		g.count[o]++
+		g.n++
+	}
+	var rows []textui.Row
+	for _, g := range groups {
+		from := make([]string, len(g.origins))
+		for i, o := range g.origins {
+			from[i] = fmt.Sprintf("%s %d", o, g.count[o])
+		}
+		rows = append(rows, textui.R(textui.T(g.change, changeTone(g.change)), textui.C(g.kind), textui.C(fmt.Sprint(g.n)),
+			textui.T(ascii(strings.Join(from, ", ")), textui.Dim)))
+	}
+	d.Table("", textui.R(textui.C("change"), textui.C("kind"), textui.C("lines"), textui.C("from")), rows...)
+}
+
+// origin names where a settings line comes from: Bonsai, bonsai.yaml, a pack by its id, or the project's own file.
+func origin(o string) string {
+	switch o {
+	case "":
+		return "the project"
+	case "bonsai":
+		return "Bonsai"
+	}
+	return o
+}
+
+func changeTone(change string) textui.Tone {
+	switch change {
+	case "add":
+		return textui.New
+	case "change", "remove":
+		return textui.Warn
+	}
+	return textui.Plain
+}
+
+// takenOutTo names, for each pack the plan takes out (Plan.Removed), everything it wrote and what becomes of it
 // (step 5.1.7): its files (each listed under Files: removed when nobody edited it, else released and named here), its
 // part of the block, its settings lines (listed under .claude/settings.json), its lock entry and declares, and its
-// plugin's install record, removed after the write. "" when the plan takes none out.
-func (p *Plan) TakenOutText() string {
+// plugin's install record, removed after the write. Nothing when the plan takes none out.
+func (p *Plan) takenOutTo(d *textui.Doc) {
 	if len(p.Removed) == 0 || p.Command == "unlink" {
-		return ""
+		return
 	}
-	var b strings.Builder
+	var rows []textui.Row
 	for _, lp := range p.Removed {
 		var removed, left []string
 		for _, f := range p.Files {
@@ -123,15 +225,14 @@ func (p *Plan) TakenOutText() string {
 				left = append(left, f.Path)
 			}
 		}
-		fmt.Fprintf(&b, "%s: %s. Its files nobody edited go (%s); its part of Bonsai's block in %s goes; its hook lines, deny rules "+
+		rows = append(rows, textui.R(textui.T(ascii(lp.ID), textui.Warn), textui.C(fmt.Sprintf("Taken out of bonsai.yaml. Its files nobody edited go (%s); its part of Bonsai's block in %s goes; its hook lines, deny rules "+
 			"and plugin wiring leave %s; its lock entry and declares go; once written, Claude Code's record of its plugin's install "+
-			"for this checkout is removed (claude plugin uninstall, scope %s).\n", "Taken out of bonsai.yaml", ascii(lp.ID), listOrNone(removed), BlockFile,
-			SettingsFile, PluginScope)
+			"for this checkout is removed (claude plugin uninstall, scope %s).", listOrNone(removed), BlockFile, SettingsFile, PluginScope))))
 		if len(left) > 0 {
-			fmt.Fprintf(&b, "  Left in place, the project's now (edited here, or written once): %s\n", ascii(strings.Join(left, ", ")))
+			rows = append(rows, textui.R(textui.C(""), textui.C("Left in place, the project's now (edited here, or written once): "+ascii(strings.Join(left, ", ")))))
 		}
 	}
-	return b.String()
+	d.Section("Taken out", rows...)
 }
 
 func listOrNone(paths []string) string {
@@ -141,52 +242,56 @@ func listOrNone(paths []string) string {
 	return ascii(strings.Join(paths, ", "))
 }
 
-// RunsCodeText is the preview's "Runs code" part (consent.go): each item, and whether --allow-exec is needed; at a
+// RunsCodeTo adds the preview's "Runs code" part (consent.go): each item, and whether --allow-exec is needed; at a
 // first link, Bonsai's own hook lines, which --yes writes.
-func (p *Plan) RunsCodeText() string {
-	var b strings.Builder
+func (p *Plan) RunsCodeTo(d *textui.Doc) {
 	if len(p.OwnHooks) > 0 {
-		fmt.Fprintf(&b, "Bonsai's own hook %s, written with --yes (linking the project is your consent to %s):\n",
-			plural(len(p.OwnHooks), "line", "lines"), plural(len(p.OwnHooks), "it", "them"))
+		d.Para("Own hooks", fmt.Sprintf("Bonsai's own hook %s, written with --yes (linking the project is your consent to %s):",
+			plural(len(p.OwnHooks), "line", "lines"), plural(len(p.OwnHooks), "it", "them")), textui.Plain)
+		var rows []textui.Row
 		for _, c := range p.OwnHooks {
-			fmt.Fprintf(&b, "  %-7s %-11s %s\n", c.Change, c.Kind, ascii(c.Line))
+			rows = append(rows, textui.R(textui.T(c.Change, changeTone(c.Change)), textui.C(c.Kind), textui.T(ascii(c.Line), textui.Path)))
 		}
+		d.Section("", rows...)
 	}
 	for _, id := range p.Unverified {
-		fmt.Fprintf(&b, "Unverified: the pack %s's folder in bonsai.yaml is not the lock's, or the lock's record of it does not match "+
-			"its locked commit (a lock edited by hand), so its hook lines and plugin count as at a first link.\n", ascii(id))
+		d.Para("Unverified", fmt.Sprintf("the pack %s's folder in bonsai.yaml is not the lock's, or the lock's record of it does not match "+
+			"its locked commit (a lock edited by hand), so its hook lines and plugin count as at a first link.", ascii(id)), textui.Warn)
 	}
 	if len(p.LeftHooks) > 0 {
 		why := "the lock is missing"
 		if !p.FirstLink {
 			why = "the lock does not record them as its own"
 		}
-		b.WriteString("Left in place as the project's own (" + why + ", so Bonsai cannot tell them from its own; " +
-			"take out by hand any you do not want):\n")
+		d.Para("Left hooks", "Left in place as the project's own ("+why+", so Bonsai cannot tell them from its own; "+
+			"take out by hand any you do not want):", textui.Warn)
+		var rows []textui.Row
 		for _, l := range p.LeftHooks {
-			fmt.Fprintf(&b, "  %-7s %-11s %s\n", "keep", "hook", ascii(l))
+			rows = append(rows, textui.R(textui.C("keep"), textui.C("hook"), textui.T(ascii(l), textui.Path)))
 		}
+		d.Section("", rows...)
 	}
 	n := len(p.RunsCode)
 	switch {
 	case n == 0:
-		b.WriteString("Runs code: nothing that needs --allow-exec (no pack hook line, file a hook runs or plugin code part is " +
-			"added or changed, and no change to a hook line).\n")
-		return b.String()
+		d.Para("Runs code", "nothing that needs --allow-exec (no pack hook line, file a hook runs or plugin code part is "+
+			"added or changed, and no change to a hook line)", textui.Ok)
+		return
 	case p.AllowExec:
-		fmt.Fprintf(&b, "Runs code: %d %s, consented to with --allow-exec (spec section 6):\n", n, plural(n, "item", "items"))
+		d.Para("Runs code", fmt.Sprintf("%d %s, consented to with --allow-exec (spec section 6):", n, plural(n, "item", "items")), textui.Warn)
 	default:
-		fmt.Fprintf(&b, "Runs code: %d %s, which %s --allow-exec as well as --yes (spec section 6):\n", n,
-			plural(n, "item", "items"), plural(n, "needs", "need"))
+		d.Para("Runs code", fmt.Sprintf("%d %s, which %s --allow-exec as well as --yes (spec section 6):", n,
+			plural(n, "item", "items"), plural(n, "needs", "need")), textui.Warn)
 	}
+	var rows []textui.Row
 	for _, c := range p.RunsCode {
-		fmt.Fprintf(&b, "  %-7s %-7s %s  (%s)\n", c.Change, c.Kind, ascii(c.Item), ascii(c.Pack))
+		rows = append(rows, textui.R(textui.T(c.Change, changeTone(c.Change)), textui.C(c.Kind), textui.T(ascii(c.Item)+"  ("+ascii(c.Pack)+")", textui.Path)))
 		if c.Was != "" {
-			fmt.Fprintf(&b, "          was: %s\n", ascii(c.Was))
+			rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("was: "+ascii(c.Was), textui.Dim)))
 		}
-		fmt.Fprintf(&b, "          %s\n", ascii(c.Why))
+		rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.C(ascii(c.Why))))
 	}
-	return b.String()
+	d.Section("", rows...)
 }
 
 func plural(n int, one, many string) string {
@@ -225,50 +330,44 @@ func ShellArg(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
-// Applied is the text after a plan was written: each file that changed, and where each adopted copy went.
-func (p *Plan) Applied() string {
-	var b strings.Builder
-	n := 0
+// AppliedTo adds what was written: each file that changed, and where each adopted copy went. Nothing when nothing
+// was.
+func (p *Plan) AppliedTo(d *textui.Doc) {
+	var rows []textui.Row
 	for _, f := range p.Files {
 		if f.Result == Unchanged {
 			continue
 		}
-		n++
-		line := fmt.Sprintf("  %-12s %s", f.Result, ascii(f.Path))
+		note := ""
 		if f.Kind == "keys" && len(p.Settings) > 0 {
-			line += fmt.Sprintf(" (%d %s)", len(p.Settings), plural(len(p.Settings), "line", "lines"))
+			note = fmt.Sprintf("%d %s", len(p.Settings), plural(len(p.Settings), "line", "lines"))
 		}
 		if f.Saved != "" {
-			line += "; your copy: " + ascii(f.Saved)
+			note = strings.TrimPrefix(note+"; your copy: "+ascii(f.Saved), "; ")
 		}
-		b.WriteString(line + "\n")
+		rows = append(rows, textui.R(textui.T(f.Result, resultTone(f.Result)), textui.T(ascii(f.Path), textui.Path), textui.C(note)))
 	}
 	if p.LockWrite {
-		fmt.Fprintf(&b, "  %-12s %s\n", "written", workspace.LockFile)
+		rows = append(rows, textui.R(textui.T("written", textui.New), textui.T(workspace.LockFile, textui.Path)))
 	}
 	if p.LockRemove {
-		fmt.Fprintf(&b, "  %-12s %s\n", Removed, workspace.LockFile)
+		rows = append(rows, textui.R(textui.T(Removed, resultTone(Removed)), textui.T(workspace.LockFile, textui.Path)))
 	}
-	if p.Format0 > 0 {
-		fmt.Fprintf(&b, "  %-12s %d %s with no format: line (format 0), each fixed in the lock by its hash: an agent gives one\n"+
-			"               format: bonsai.<kind>/1 before changing it (bonsai check finds a format-0 file new or changed)\n",
-			"listed", p.Format0, plural(p.Format0, "task, run report or STATE file", "task, run report and STATE files"))
-	}
+	rows = append(rows, p.format0Rows()...)
 	if p.EmptyLocal > 0 {
-		fmt.Fprintf(&b, "  %-12s %s/ (%d files)\n", "emptied", LocalDir, p.EmptyLocal)
+		rows = append(rows, textui.R(textui.T("emptied", textui.Warn), textui.T(LocalDir+"/", textui.Path), textui.C(fmt.Sprintf("%d files", p.EmptyLocal))))
 	}
-	if n == 0 && !p.LockWrite && !p.LockRemove && p.EmptyLocal <= 0 {
-		return ""
+	if len(rows) > 0 {
+		d.Section("Written", rows...)
 	}
-	return b.String()
 }
 
-// LeftAlone is what a plan leaves as it is that bonsai check reports as a finding: each file edited here that the
+// LeftAloneTo adds what a plan leaves as it is that bonsai check reports as a finding: each file edited here that the
 // pack did not change (spec §6's table: "left alone; check reports it changed"), with how to settle it, so update's
 // "nothing to change" and check's findings agree (step 5.1.1's verifier: a forged lock left update saying "nothing to
-// change" beside check's findings). "" when there is none.
-func (p *Plan) LeftAlone() string {
-	var b strings.Builder
+// change" beside check's findings). Nothing when there is none.
+func (p *Plan) LeftAloneTo(d *textui.Doc) {
+	var rows []textui.Row
 	for _, f := range p.Files {
 		if f.Result != Changed {
 			continue
@@ -279,12 +378,14 @@ func (p *Plan) LeftAlone() string {
 			next = "to keep the edit, run: bonsai " + p.Command + " --yes --keep " + path + "; to take the pack's copy back, run: bonsai " +
 				p.Command + " --yes --adopt " + path
 		}
-		fmt.Fprintf(&b, "  %s [%s]: %s\n    next: %s\n", ascii(f.Path), f.Kind, ascii(f.Why), ascii(next))
+		rows = append(rows, textui.R(textui.T(ascii(f.Path), textui.Path), textui.T("["+f.Kind+"]", textui.Dim), textui.C(ascii(f.Why))),
+			textui.R(textui.C(""), textui.C(""), textui.T("next: "+ascii(next), textui.Path)))
 	}
-	if b.Len() == 0 {
-		return ""
+	if len(rows) == 0 {
+		return
 	}
-	return "Left as they are, edited here (bonsai check reports each as changed until it is settled):\n" + b.String()
+	d.Para("Edited here", "Left as they are, edited here (bonsai check reports each as changed until it is settled):", textui.Warn)
+	d.Section("", rows...)
 }
 
 // SessionFolderWords say where a session must start for Bonsai's hook lines to run (design/plan-5.md, 5.3.1 note 1):
@@ -297,22 +398,30 @@ func (p *Plan) LeftAlone() string {
 const SessionFolderWords = "Start Claude Code in the project's top folder, and do not /cd out of it: a session started or\n" +
 	"moved elsewhere loads none of the project's Claude Code settings, so no Bonsai hook guards it.\n"
 
-// ClosingWords are what init ends with and status shows (spec §6, "Said in plain words").
-func ClosingWords(cfg *workspace.Config, home string) string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "Linked %s. Workspace id: %s (every clone and worktree of this project shares it).\n", ascii(cfg.Name), ascii(cfg.ID))
-	b.WriteString("In this project:\n")
-	b.WriteString("  bonsai.yaml      this project's Bonsai settings. You edit it; it is committed.\n")
-	b.WriteString("  .bonsai/         the lock, STATE and two tables Bonsai rebuilds (tasks; sessions and hours). Committed.\n")
-	b.WriteString("  .bonsai/local/   the log, questions for you and their answers, ladder results, messages between agents.\n                   Never committed.\n")
-	b.WriteString("On this machine:\n")
-	fmt.Fprintf(&b, "  %s\n", ascii(filepath.ToSlash(home)))
-	b.WriteString("    Bonsai's home: a secret salt, this machine's settings for each project, label files attached\n")
-	b.WriteString("    on this machine, your personal memory, the pack cache. None of it enters git.\n")
-	b.WriteString(SessionFolderWords)
-	b.WriteString(HookPlaceWords())
-	b.WriteString("A copy meant as a new project needs its own id: bonsai init --new-id\n")
-	return b.String()
+// ClosingTo adds what init ends with and status shows (spec §6, "Said in plain words").
+func ClosingTo(d *textui.Doc, cfg *workspace.Config, home string) {
+	d.Section("Linked", textui.R(textui.T(ascii(cfg.Name), textui.Key), textui.T(ascii(cfg.ID), textui.Path),
+		textui.T("every clone and worktree of this project shares this workspace id", textui.Dim)))
+	WhereTo(d, "")
+	d.Section("On this machine", textui.R(textui.T(ascii(filepath.ToSlash(home)), textui.Path), textui.C("Bonsai's home: a secret salt, this "+
+		"machine's settings for each project, label files attached on this machine, your personal memory, the pack cache. None of it enters git.")))
+	d.Para("Sessions", flat(SessionFolderWords), textui.Plain)
+	d.Para("Hook lines", flat(HookPlaceWords()), textui.Plain)
+	d.Hint("a copy meant as a new project needs its own id: bonsai init --new-id")
+}
+
+// WhereTo adds the project's Bonsai files and folders and what each holds, under the label "In this project" (with
+// the checkout's path when root is not "").
+func WhereTo(d *textui.Doc, root string) {
+	var rows []textui.Row
+	if root != "" {
+		rows = append(rows, textui.R(textui.T(ascii(root), textui.Path)))
+	}
+	rows = append(rows,
+		textui.R(textui.T("bonsai.yaml", textui.Path), textui.C("this project's Bonsai settings. You edit it; it is committed.")),
+		textui.R(textui.T(".bonsai/", textui.Path), textui.C("the lock, STATE and two tables Bonsai rebuilds (tasks; sessions and hours). Committed.")),
+		textui.R(textui.T(".bonsai/local/", textui.Path), textui.C("the log, questions for you and their answers, ladder results, messages between agents. Never committed.")))
+	d.Section("In this project", rows...)
 }
 
 // WorkspaceRef is the plan's workspace as the changes output names it: bonsai.yaml's id and name (init --new-id:
@@ -402,21 +511,21 @@ func whoOr(who string) string {
 	return "agent"
 }
 
-// PluginsText is what InstallPlugins did, for a person: one line per pack's plugin, and its next step when this
-// machine still needs one. "" when nothing was asked of Claude Code.
-func (p *Plan) PluginsText() string {
+// PluginsTo adds what InstallPlugins did, for a person: one row per pack's plugin, and its next step when this
+// machine still needs one. Nothing when nothing was asked of Claude Code.
+func (p *Plan) PluginsTo(d *textui.Doc) {
 	if len(p.Plugins) == 0 {
-		return ""
+		return
 	}
-	var b strings.Builder
-	fmt.Fprintf(&b, "This machine's plugins (Claude Code, scope %s: this checkout's %s):\n", PluginScope, SettingsFile)
+	d.Para("Plugins", fmt.Sprintf("This machine's plugins (Claude Code, scope %s: this checkout's %s):", PluginScope, SettingsFile), textui.Plain)
+	var rows []textui.Row
 	for _, r := range p.Plugins {
-		fmt.Fprintf(&b, "  %-12s %s: %s\n", r.Result, ascii(r.Plugin), ascii(r.Message))
+		rows = append(rows, textui.R(textui.T(r.Result, resultTone(r.Result)), textui.T(ascii(r.Plugin), textui.Path), textui.C(ascii(r.Message))))
 		if r.Next != "" {
-			fmt.Fprintf(&b, "               next: %s\n", ascii(r.Next))
+			rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("next: "+ascii(r.Next), textui.Path)))
 		}
 	}
-	return b.String()
+	d.Section("", rows...)
 }
 
 // Doc is check's result as check --json prints it (bonsai.check/1, written by format.Check.Encode): every finding
@@ -440,22 +549,37 @@ func (r *CheckResult) Doc() *format.Check {
 // CheckRefused is check --json when check could not run: no findings, no warnings, and the error.
 func CheckRefused(e *Error) *format.Check { return &format.Check{Error: e.Object()} }
 
-// Text is check's result for a person.
-func (r *CheckResult) Text() string {
-	var b strings.Builder
+// TextTo adds check's result for a person: the count first, then each finding and warning with its next step, and
+// the notes.
+func (r *CheckResult) TextTo(d *textui.Doc) {
 	if len(r.Findings) == 0 {
-		b.WriteString("bonsai check: no findings.\n")
+		d.Title("bonsai check", "no findings")
 	} else {
-		fmt.Fprintf(&b, "bonsai check: %d %s.\n", len(r.Findings), plural(len(r.Findings), "finding", "findings"))
-		for _, f := range r.Findings {
-			fmt.Fprintf(&b, "  %s\n    next: %s\n", ascii(f.Message), ascii(f.Next))
+		d.Title("bonsai check", fmt.Sprintf("%d %s", len(r.Findings), plural(len(r.Findings), "finding", "findings")))
+	}
+	add := func(label string, fs []Finding, tone textui.Tone) {
+		var rows []textui.Row
+		for _, f := range fs {
+			rows = append(rows, textui.R(textui.T(ascii(f.Message), tone)), textui.R(textui.T("  next: "+ascii(f.Next), textui.Path)))
+		}
+		if len(rows) > 0 {
+			d.Section(label, rows...)
 		}
 	}
-	for _, w := range r.Warnings {
-		fmt.Fprintf(&b, "warning: %s\n    next: %s\n", ascii(w.Message), ascii(w.Next))
+	add("Findings", r.Findings, textui.Bad)
+	add("Warnings", r.Warnings, textui.Warn)
+	if len(r.Notes) > 0 {
+		var rows []textui.Row
+		for _, n := range r.Notes {
+			rows = append(rows, textui.R(textui.C(ascii(n))))
+		}
+		d.Section("Notes", rows...)
 	}
-	for _, n := range r.Notes {
-		fmt.Fprintf(&b, "note: %s\n", ascii(n))
-	}
-	return b.String()
+}
+
+// Text is check's result for a person, drawn for a pipe.
+func (r *CheckResult) Text() string {
+	var d textui.Doc
+	r.TextTo(&d)
+	return d.String()
 }

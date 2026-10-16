@@ -56,6 +56,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/message"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/stopgate"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -461,167 +462,193 @@ func allowsList(prop schema.Object) bool {
 	return false
 }
 
-// Text renders the document for a person: plain ASCII, the same facts as the JSON (spec §6's closing words of
-// init, which status shows too). On exit 3 it gives the problems alone.
+// Text renders the document for a person, drawn for a pipe (TextTo).
 func Text(doc schema.Object) string {
-	var b strings.Builder
+	var d textui.Doc
+	TextTo(&d, doc)
+	return d.String()
+}
+
+// TextTo adds the document for a person: the same facts as the JSON (spec §6's closing words of init, which status
+// shows too), what needs a look first. On exit 3 it gives the problems alone.
+func TextTo(d *textui.Doc, doc schema.Object) {
 	problems, _ := doc.Get("problems")
 	ws, _ := doc.Get("workspace")
 	w, ok := ws.(schema.Object)
 	if !ok {
-		b.WriteString("bonsai status: cannot read this workspace.\n")
+		d.Title("bonsai status", "cannot read this workspace")
+		var rows []textui.Row
 		for _, p := range problems.([]any) {
-			b.WriteString("  " + ascii(p.(string)) + "\n")
+			rows = append(rows, textui.R(textui.T(ascii(p.(string)), textui.Bad)))
 		}
-		return b.String()
+		if len(rows) > 0 {
+			d.Section("Problems", rows...)
+		}
+		return
 	}
-	hv, _ := doc.Get("home")
-	home := hv.(schema.Object)
-	fmt.Fprintf(&b, "Workspace %s, id %s (every clone and worktree of this project shares it).\n",
-		ascii(w.String("name")), ascii(w.String("id")))
-	fmt.Fprintf(&b, "In this project, %s:\n", ascii(w.String("root")))
-	b.WriteString("  bonsai.yaml      this project's Bonsai settings. You edit it; it is committed.\n")
-	b.WriteString("  .bonsai/         the lock, STATE and two tables Bonsai rebuilds (tasks; sessions and hours). Committed.\n")
-	b.WriteString("  .bonsai/local/   the log, questions for you and their answers, ladder results, messages between agents.\n                   Never committed.\n")
-	b.WriteString("On this machine:\n")
-	fmt.Fprintf(&b, "  %s\n", ascii(home.String("path")))
-	b.WriteString("    Bonsai's home: a secret salt, this machine's settings for each project, label files attached\n")
-	b.WriteString("    on this machine, your personal memory, the pack cache. None of it enters git.\n")
-	fmt.Fprintf(&b, "    This project's machine folder: workspaces/%s\n", ascii(home.String("key")))
-	po, _ := doc.Get("person_only")
-	var globs []string
-	for _, g := range po.([]any) {
-		globs = append(globs, ascii(g.(string)))
+	note := ""
+	if cv, _ := doc.Get("checks"); cv != nil {
+		note = "with the machine's checks (--full)"
 	}
-	if len(globs) == 0 {
-		globs = []string{"none"}
+	d.Title("bonsai status", note)
+	d.Section("Workspace", textui.R(textui.T(ascii(w.String("name")), textui.Key), textui.T(ascii(w.String("id")), textui.Path),
+		textui.T("every clone and worktree of this project shares this id", textui.Dim)))
+	list := problems.([]any)
+	if len(list) == 0 {
+		d.Section("Problems", textui.R(textui.T("none", textui.Ok)))
+	} else {
+		var rows []textui.Row
+		for _, p := range list {
+			rows = append(rows, textui.R(textui.T(ascii(p.(string)), textui.Bad)))
+		}
+		d.Section("Problems", rows...)
 	}
-	fmt.Fprintf(&b, "Person-only paths: %s\n", strings.Join(globs, ", "))
+	if at, ok := doc.Get("active_task"); ok {
+		if a, ok := at.(schema.Object); ok {
+			if id := a.String("id"); id != "" {
+				d.Section("Active task", textui.R(textui.T(ascii(id), textui.Path), textui.C(ascii(a.String("how")))))
+			} else {
+				d.Section("Active task", textui.R(textui.T("none", textui.Dim), textui.C(ascii(strings.TrimPrefix(a.String("why"), "no active task: ")))))
+			}
+		}
+	}
+	if lv, _ := doc.Get("ladder"); lv != nil {
+		l := lv.(schema.Object)
+		green, tone := "not green", textui.Bad
+		if g, _ := l.Get("green"); g == true {
+			green, tone = "green", textui.Ok
+		}
+		sha := l.String("sha")
+		if len(sha) > 12 {
+			sha = sha[:12]
+		}
+		rows := []textui.Row{textui.R(textui.T(green, tone), textui.C(fmt.Sprintf("at commit %s (%s), finished %s", ascii(sha), ascii(l.String("mode")),
+			ascii(l.String("finished")))), textui.T(ascii(l.String("path")), textui.Path))}
+		if s, _ := l.Get("stale"); s == true {
+			rows = append(rows, textui.R(textui.T("stale", textui.Warn), textui.C("it proves another commit than HEAD, so climb again")))
+		}
+		d.Section("Last ladder", rows...)
+	}
+	d.Gap()
 	pv, _ := doc.Get("packs")
-	var packs []string
+	var packs []textui.Row
 	for _, p := range pv.([]any) {
 		po := p.(schema.Object)
 		commit := po.String("commit")
 		if len(commit) > 7 {
 			commit = commit[:7]
 		}
-		packs = append(packs, ascii(po.String("id")+" "+po.String("version")+" at "+commit+" ("+po.String("state")+")"))
+		state, tone := po.String("state"), textui.Warn
+		if state == "ok" {
+			tone = textui.Ok
+		}
+		packs = append(packs, textui.R(textui.T(ascii(po.String("id")), textui.Key), textui.C(ascii(po.String("version"))),
+			textui.C("at "+ascii(commit)), textui.T(ascii(state), tone)))
 	}
 	if len(packs) == 0 {
-		packs = []string{"none locked"}
+		packs = []textui.Row{textui.R(textui.T("none locked", textui.Dim))}
 	}
-	fmt.Fprintf(&b, "Packs: %s\n", strings.Join(packs, ", "))
-	list := problems.([]any)
-	if len(list) == 0 {
-		b.WriteString("Problems: none.\n")
-	} else {
-		b.WriteString("Problems:\n")
-		for _, p := range list {
-			b.WriteString("  " + ascii(p.(string)) + "\n")
-		}
-	}
-	if at, ok := doc.Get("active_task"); ok {
-		if a, ok := at.(schema.Object); ok {
-			if id := a.String("id"); id != "" {
-				fmt.Fprintf(&b, "Active task: %s (%s)\n", ascii(id), ascii(a.String("how")))
-			} else {
-				fmt.Fprintf(&b, "Active task: none (%s)\n", ascii(strings.TrimPrefix(a.String("why"), "no active task: ")))
+	d.Section("Packs", packs...)
+	if nv, _ := doc.Get("needs"); nv != nil {
+		var needs []textui.Row
+		for _, n := range nv.([]any) {
+			no := n.(schema.Object)
+			switch no.String("kind") {
+			case "tool":
+				needs = append(needs, textui.R(textui.C(ascii(no.String("name"))), textui.C("tool"), textui.C(ascii(no.String("version")))))
+			case "plugin":
+				needs = append(needs, textui.R(textui.C(ascii(no.String("id"))), textui.C("plugin"), textui.C(ascii(no.String("version"))),
+					textui.T("not installed here: bonsai update installs it", textui.Warn)))
+			default:
+				needs = append(needs, textui.R(textui.C(ascii(no.String("id"))), textui.C(ascii(no.String("kind"))), textui.C(ascii(no.String("version")))))
 			}
 		}
+		if len(needs) > 0 {
+			d.Section("Needs", needs...)
+		}
 	}
-	if lv, _ := doc.Get("ladder"); lv != nil {
-		l := lv.(schema.Object)
-		green, stale := "not green", ""
-		if g, _ := l.Get("green"); g == true {
-			green = "green"
-		}
-		if s, _ := l.Get("stale"); s == true {
-			stale = "; stale: it proves another commit than HEAD, so climb again"
-		}
-		sha := l.String("sha")
-		if len(sha) > 12 {
-			sha = sha[:12]
-		}
-		fmt.Fprintf(&b, "Its last ladder result: %s at commit %s (%s), finished %s, %s%s\n", green, ascii(sha), ascii(l.String("mode")),
-			ascii(l.String("finished")), ascii(l.String("path")), stale)
+	if cv, _ := doc.Get("checks"); cv != nil {
+		checksTo(d, cv.(schema.Object))
 	}
+	d.Gap()
+	hv, _ := doc.Get("home")
+	home := hv.(schema.Object)
+	engine.WhereTo(d, ascii(w.String("root")))
+	d.Section("On this machine", textui.R(textui.T(ascii(home.String("path")), textui.Path), textui.C("Bonsai's home: a secret salt, this "+
+		"machine's settings for each project, label files attached on this machine, your personal memory, the pack cache. None of it enters git.")),
+		textui.R(textui.T("workspaces/"+ascii(home.String("key")), textui.Path), textui.C("this project's machine folder")))
+	po, _ := doc.Get("person_only")
+	var globs []textui.Row
+	for _, g := range po.([]any) {
+		globs = append(globs, textui.R(textui.T(ascii(g.(string)), textui.Path)))
+	}
+	if len(globs) == 0 {
+		globs = []textui.Row{textui.R(textui.T("none", textui.Dim))}
+	}
+	d.Section("Person-only", globs...)
 	if sw, _ := doc.Get("status_writes"); sw != nil {
 		line := "agents move task statuses themselves"
 		if sw == workspace.StatusWritesCommand {
 			sc, _ := doc.Get("status_command")
 			line = "moves go through " + schema.Show(sc) + " (a managed workspace)"
 		}
-		fmt.Fprintf(&b, "Status writes: %s (%s)\n", ascii(fmt.Sprint(sw)), ascii(line))
+		d.Section("Status writes", textui.R(textui.T(ascii(fmt.Sprint(sw)), textui.Key), textui.C(ascii(line))))
 	}
-	if nv, _ := doc.Get("needs"); nv != nil {
-		var needs []string
-		for _, n := range nv.([]any) {
-			no := n.(schema.Object)
-			switch no.String("kind") {
-			case "tool":
-				needs = append(needs, no.String("name")+" "+no.String("version"))
-			case "plugin":
-				needs = append(needs, "the plugin of "+no.String("id")+" "+no.String("version")+" (not installed here: bonsai update installs it)")
-			default:
-				needs = append(needs, no.String("kind")+" "+no.String("id")+" "+no.String("version"))
-			}
-		}
-		fmt.Fprintf(&b, "Needs from this machine: %s\n", ascii(strings.Join(needs, "; ")))
-	}
-	if cv, _ := doc.Get("checks"); cv != nil {
-		b.WriteString(checksText(cv.(schema.Object)))
-	}
-	b.WriteString("A copy meant as a new project needs its own id: bonsai init --new-id\n")
-	b.WriteString("Every field, documents, labels and lanes among them: bonsai status --json\n")
-	return b.String()
+	d.Gap()
+	d.Hint("every field, documents, labels and lanes among them: bonsai status --json")
+	d.Hint("a copy meant as a new project needs its own id: bonsai init --new-id")
 }
 
-// checksText is --full's checks for a person.
-func checksText(c schema.Object) string {
-	var b strings.Builder
-	b.WriteString("Checks (--full):\n")
+// checksTo adds --full's checks for a person.
+func checksTo(d *textui.Doc, c schema.Object) {
+	var rows []textui.Row
 	pv, _ := c.Get("packs")
 	for _, p := range pv.([]any) {
 		po := p.(schema.Object)
-		line := "none newer"
+		line, tone := "none newer", textui.Ok
 		if why := po.String("why"); why != "" {
-			line = "newer releases unknown: " + why
+			line, tone = "newer releases unknown: "+why, textui.Warn
 		} else if nv, _ := po.Get("newer"); len(nv.([]any)) > 0 {
 			var tags []string
 			for _, t := range nv.([]any) {
 				tags = append(tags, t.(string))
 			}
-			line = "newer: " + strings.Join(tags, ", ")
+			line, tone = "newer: "+strings.Join(tags, ", "), textui.Warn
 		}
-		fmt.Fprintf(&b, "  pack %s %s: %s\n", ascii(po.String("id")), ascii(po.String("version")), ascii(line))
+		rows = append(rows, textui.R(textui.C("pack"), textui.C(ascii(po.String("id")+" "+po.String("version"))), textui.T(ascii(line), tone)))
 	}
 	plv, _ := c.Get("plugins")
 	for _, p := range plv.([]any) {
 		po := p.(schema.Object)
-		state := "unknown: " + po.String("why")
+		state, tone := "unknown: "+po.String("why"), textui.Warn
 		switch v, _ := po.Get("installed"); v {
 		case true:
-			state = "installed for this checkout"
+			state, tone = "installed for this checkout", textui.Ok
 		case false:
 			state = "not installed for this checkout (bonsai update installs it)"
 		}
-		fmt.Fprintf(&b, "  plugin %s: %s\n", ascii(po.String("plugin")), ascii(state))
+		rows = append(rows, textui.R(textui.C("plugin"), textui.C(ascii(po.String("plugin"))), textui.T(ascii(state), tone)))
 	}
 	cc, _ := c.Get("claude_code")
 	co := cc.(schema.Object)
 	line := co.String("state")
+	tone := textui.Warn
+	if line == "ok" {
+		tone = textui.Ok
+	}
 	if v := co.String("version"); v != "" {
 		line = v + ", " + line
 	}
 	if why := co.String("why"); why != "" {
 		line += ": " + why
 	}
-	fmt.Fprintf(&b, "  Claude Code: %s (the floor %s, from %s)\n", ascii(line), ascii(co.String("floor")), ascii(co.String("from")))
+	rows = append(rows, textui.R(textui.C("tool"), textui.C("Claude Code"), textui.T(ascii(line)+" (the floor "+ascii(co.String("floor"))+", from "+
+		ascii(co.String("from"))+")", tone)))
 	mv, _ := c.Get("mcp")
 	if len(mv.([]any)) == 0 {
-		b.WriteString("  MCP servers: none named by the packs' needs\n")
+		rows = append(rows, textui.R(textui.C("mcp"), textui.C("MCP servers"), textui.T("none named by the packs' needs", textui.Dim)))
 	}
-	return b.String()
+	d.Section("Checks", rows...)
 }
 
 // ascii keeps printable ASCII and writes any other character as a Go escape, so the text prints unbroken in

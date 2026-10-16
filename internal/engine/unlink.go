@@ -32,6 +32,7 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -285,15 +286,14 @@ func (d *blockDoc) withoutBlock() []byte {
 	return append(out, after...)
 }
 
-// LeftText is what unlink leaves that is not among its files, for a person: "" when there is nothing.
-func (p *Plan) LeftText() string {
+// LeftTo adds what unlink leaves that is not among its files, for a person: nothing when there is nothing.
+func (p *Plan) LeftTo(d *textui.Doc) {
 	if len(p.Left) == 0 {
-		return ""
+		return
 	}
-	var b strings.Builder
-	b.WriteString("Left in place:\n")
+	var rows []textui.Row
 	for _, l := range p.Left {
-		b.WriteString("  " + ascii(l) + "\n")
+		rows = append(rows, textui.R(textui.C(ascii(l))))
 	}
-	return b.String()
+	d.Section("Left in place", rows...)
 }
