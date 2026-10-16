@@ -133,9 +133,10 @@ func (c cache) has(source, commit string) bool {
 }
 
 // fetch brings source at ref into the cache and returns the 40-character commit it resolves to. A ref that is a
-// 40-character commit already in the cache fetches nothing.
+// 40-character commit already in the cache fetches nothing. Either way it marks the clone used (cacheclean.go).
 func (c cache) fetch(source, ref string) (string, error) {
 	dir := c.dir(source)
+	defer markUsed(dir)
 	if _, err := os.Stat(filepath.Join(dir, "HEAD")); err != nil {
 		if err := os.MkdirAll(filepath.Dir(dir), 0o755); err != nil {
 			return "", errorf("bad-home", ExitRuntime, "check that the Bonsai home can be written (BONSAI_HOME), then run again",
@@ -269,6 +270,7 @@ type treeEntry struct {
 // packAt reads the pack ref names at commit, from the cache (which must hold the commit).
 func (c cache) packAt(ref workspace.PackRef, commit string) (*PackData, error) {
 	dir := c.dir(ref.Source)
+	markUsed(dir)
 	where := ref.Source + " at " + short(commit)
 	nextPack := "check the pack's source, path and ref in bonsai.yaml; a pack's maker fixes the pack itself"
 	out, err := git(dir, nil, "ls-tree", "-r", "-z", "--full-tree", commit)
