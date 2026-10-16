@@ -508,3 +508,13 @@ func TestStatusLineAsksMatch(t *testing.T) {
 		t.Errorf("with a garbled cache: %d", l.Asks)
 	}
 }
+
+// notBuilt adds a flag with Later set to the status word for the test, so the not-built refusal has a case of its
+// own: no word's real flag stays not built for ever.
+func notBuilt(t *testing.T) string {
+	t.Helper()
+	saved := statusWord.Flags
+	statusWord.Flags = append(append([]Flag{}, saved...), Flag{Name: "--later", Help: "a flag that is not built yet (tests)", Later: "step 9"})
+	t.Cleanup(func() { statusWord.Flags = saved })
+	return "--later"
+}

@@ -347,7 +347,7 @@ func TestRefusalsCarryTheirWord(t *testing.T) {
 		{"status outside a checkout", outside, []string{"status"}, 3, "not-a-checkout", ""},
 		{"status, a bonsai.yaml Bonsai does not read", write("bonsai.yaml", "id: x\n"), []string{"status"}, 3, "bad-config", ""},
 		{"status with no home", then(write("bonsai.yaml", linkedYAML), noHome), []string{"status"}, 3, "bad-home", ""},
-		{"status --line", nil, []string{"status", "--line"}, 2, "not-built", ""},
+		{"status --later", func(c *cli) { notBuilt(c.t) }, []string{"status", "--later"}, 2, "not-built", ""},
 		{"status --active --full", nil, []string{"status", "--active", "--full"}, 2, "bad-flag", ""},
 		{"status, a word left over", nil, []string{"status", "now"}, 2, "bad-flag", ""},
 

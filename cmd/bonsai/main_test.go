@@ -33,6 +33,7 @@ func TestRun(t *testing.T) {
 	defer func(r func() (*debug.BuildInfo, bool)) { readBuildInfo = r }(readBuildInfo)
 	readBuildInfo = func() (*debug.BuildInfo, bool) { return &debug.BuildInfo{}, true }
 	const what2 = "  what  exit 2, bad input\n  why   "
+	notBuilt(t)
 	cases := []struct {
 		name     string
 		args     []string
@@ -47,8 +48,8 @@ func TestRun(t *testing.T) {
 		{"version with more", []string{"--version", "now"}, 2, "", "bonsai: refused  [bad-flag]\n" + what2 + "--version takes no other argument:", "run `bonsai --help`"},
 		{"help with more", []string{"--help", "status"}, 2, "", "bonsai: refused  [bad-flag]\n" + what2 + "--help takes no other argument:", "run `bonsai --help`"},
 		{"non-ASCII argument", []string{"b\xc3\xb6nsai"}, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + `"b\` + `u00f6nsai" is not a command yet:`, "run `bonsai --help`"},
-		{"status --line", []string{"status", "--line", "--help"}, 2, "", "bonsai status: refused  [not-built]\n" + what2 + "status --line is not built yet",
-			"run `bonsai status --help` without --line"},
+		{"status --later", []string{"status", "--later", "--help"}, 2, "", "bonsai status: refused  [not-built]\n" + what2 + "status --later is not built yet",
+			"run `bonsai status --help` without --later"},
 		{"status --active --full", []string{"status", "--active", "--full"}, 2, "", "bonsai status: refused  [bad-flag]\n" + what2 + "status --active prints only the active task",
 			"run `bonsai status --active`"},
 		{"status with a word", []string{"status", "now"}, 2, "", "bonsai status: refused  [bad-flag]\n" + what2 + `status takes no "now"`, "run `bonsai status --help`"},

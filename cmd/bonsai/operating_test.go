@@ -66,6 +66,7 @@ func TestOperatingSkill(t *testing.T) {
 // to the other.
 func TestOperatingSkillCatchesDrift(t *testing.T) {
 	skills := readOperatingSkills(t)
+	later := notBuilt(t)
 	// in puts a fenced line or a sentence at the end of the skill i; the other is as committed.
 	in := func(i int, add string) [2]string {
 		c := skills
@@ -79,7 +80,7 @@ func TestOperatingSkillCatchesDrift(t *testing.T) {
 	}{
 		"an unknown flag":                {block(0, "bonsai ladder --task T-0001 --quick --json"), "bonsai ladder takes no --quick"},
 		"a flag of another word":         {block(0, "bonsai status --yes --json"), "bonsai status takes no --yes"},
-		"a flag not built":               {block(0, "bonsai status --line"), "bonsai status --line is not built yet"},
+		"a flag not built":               {block(0, "bonsai status "+later), "bonsai status " + later + " is not built yet"},
 		"an unknown word":                {block(0, "bonsai lint --json"), "bonsai lint is not a word Bonsai has"},
 		"an unknown sub-word":            {block(0, "bonsai hook nudge"), "bonsai hook nudge is not a word Bonsai has"},
 		"a value missing":                {block(0, "bonsai ladder --json --task"), "bonsai ladder --task needs a value"},
