@@ -21,6 +21,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/sessions"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -116,7 +117,9 @@ func runLogs(c *call) int {
 			if c.json {
 				return c.printDoc(doc, exitOK)
 			}
-			return c.print("no log file for " + c.value("--day") + "\n")
+			var d textui.Doc
+			d.Title("bonsai logs", "no log file for "+engine.ASCII(c.value("--day")))
+			return c.show(&d)
 		}
 		return c.records(doc, logDir, name, now)
 	}
@@ -128,7 +131,7 @@ func runLogs(c *call) int {
 	if c.json {
 		return c.printDoc(doc, exitOK)
 	}
-	return c.print(filesText(files))
+	return c.show(filesText(files))
 }
 
 func readFailed(err error) *engine.Error {
@@ -267,12 +270,16 @@ func listFiles(logDir string, names record.LogFiles, now time.Time) ([]format.Lo
 	return out, nil
 }
 
-// filesText is the plain listing, newest first, one line per file.
-func filesText(files []format.LogFile) string {
+// filesText is the listing, newest first: the sessions' files in one table, the days' in another.
+func filesText(files []format.LogFile) *textui.Doc {
+	d := &textui.Doc{}
 	if len(files) == 0 {
-		return "no log files in .bonsai/local/log/\n"
+		d.Title("bonsai logs", "no log files in .bonsai/local/log/")
+		return d
 	}
-	var b strings.Builder
+	d.Title("bonsai logs", fmt.Sprintf("%d %s, newest first", len(files), map[bool]string{true: "file", false: "files"}[len(files) == 1]))
+	var sessions, days []textui.Row
+	a := engine.ASCII
 	for i := len(files) - 1; i >= 0; i-- {
 		f := files[i]
 		counts := fmt.Sprintf("%d records, %d unreadable", f.Records, f.Unreadable)
@@ -281,13 +288,19 @@ func filesText(files []format.LogFile) string {
 			if f.Ended != nil {
 				state = map[bool]string{true: "ended", false: "open"}[*f.Ended]
 			}
-			fmt.Fprintf(&b, "session %s  %s to %s  %s  task %s  role %s  %s\n", *f.Session, dash(f.First), dash(f.Last), state,
-				dash(f.Task), dash(f.Role), counts)
+			sessions = append(sessions, textui.R(textui.T(a(*f.Session), textui.Path), textui.C(state), textui.C(a(dash(f.Task))),
+				textui.C(a(dash(f.Role))), textui.C(counts)), textui.R(textui.T(a(dash(f.First)+" to "+dash(f.Last)), textui.Dim)))
 			continue
 		}
-		fmt.Fprintf(&b, "day %s  %s to %s  %s\n", *f.Day, dash(f.First), dash(f.Last), counts)
+		days = append(days, textui.R(textui.T(a(*f.Day), textui.Path), textui.C(counts), textui.T(a(dash(f.First)+" to "+dash(f.Last)), textui.Dim)))
 	}
-	return engine.ASCII(b.String())
+	if len(sessions) > 0 {
+		d.Table("Sessions", textui.R(textui.C("session"), textui.C("state"), textui.C("task"), textui.C("role"), textui.C("records")), sessions...)
+	}
+	if len(days) > 0 {
+		d.Table("Days", textui.R(textui.C("day"), textui.C("records"), textui.C("first to last")), days...)
+	}
+	return d
 }
 
 func dash(s *string) string {

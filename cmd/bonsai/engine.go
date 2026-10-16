@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -42,21 +43,21 @@ var pluginCLI engine.PluginCLI
 
 // engineFlags are init's or update's flags, read from the word's table.
 type engineFlags struct {
-	yes, diff, newID, allowExec bool
-	keep, adopt                 []string
-	values                      engine.InitValues
-	typed                       []string // the flags as typed that a next step repeats (not --yes, --diff or --json)
+	yes, diff, explain, newID, allowExec bool
+	keep, adopt                          []string
+	values                               engine.InitValues
+	typed                                []string // the flags as typed that a next step repeats (not --yes, --diff, --explain or --json)
 }
 
 func readEngineFlags(c *call) *engineFlags {
-	f := &engineFlags{yes: c.has("--yes"), diff: c.has("--diff"), newID: c.has("--new-id"), allowExec: c.has("--allow-exec"),
+	f := &engineFlags{yes: c.has("--yes"), diff: c.has("--diff"), explain: c.has("--explain"), newID: c.has("--new-id"), allowExec: c.has("--allow-exec"),
 		keep: c.all("--keep"), adopt: c.all("--adopt")}
 	f.values = engine.InitValues{Name: c.value("--name"), Source: c.value("--source"), Ref: c.value("--ref"), Path: c.value("--path"),
 		NeverEdit: c.all("--never-edit")}
 	exec := false
 	for _, g := range c.given {
 		switch g.name {
-		case "--yes", "--diff", "--json":
+		case "--yes", "--diff", "--explain", "--json":
 		case "--new-id":
 			f.typed = append(f.typed, g.name)
 		case "--allow-exec":
@@ -115,22 +116,38 @@ func runEngine(c *call) int {
 		return c.fail(engine.Unexpected(err))
 	}
 	// out prints the plan's outcome: with --json the changes output (its error object filled from refusal), else
-	// text on stdout.
-	out := func(result string, exit int, refusal *engine.Error, text string) int {
+	// the Doc on stdout, ending in the refusal's block when there is one.
+	out := func(result string, exit int, refusal *engine.Error, d *textui.Doc) int {
 		if refusal != nil {
 			noted(c.word, refusal)
 		}
 		if c.json {
 			return c.printDoc(plan.Changes(result, refusal), exit)
 		}
-		if write(c.stdout, text) != exitOK {
+		if refusal != nil {
+			if !d.Empty() {
+				d.Gap()
+			}
+			d.Refuse(refusalOf(c.word, refusal))
+		}
+		if write(c.stdout, d.Render(textui.For(c.stdout))) != exitOK {
 			return exitRuntime
 		}
 		return exit
 	}
-	closing := ""
-	if word == "init" {
-		closing = engine.ClosingWords(plan.Config, home)
+	// closing adds init's closing words.
+	closing := func(d *textui.Doc) {
+		if word == "init" {
+			d.Gap()
+			engine.ClosingTo(d, plan.Config, home)
+		}
+	}
+	// preview is the plan's preview, its title first.
+	preview := func() *textui.Doc {
+		d := &textui.Doc{}
+		d.Title("bonsai "+word, "the preview")
+		plan.PreviewTo(d, f.diff, f.explain)
+		return d
 	}
 	// In an agent's session, recording another base branch for the workspace is a person's command (agent.go): the
 	// ladder and the stop gate hold the main checkout to the base this machine recorded, and an agent that could
@@ -139,7 +156,7 @@ func runEngine(c *call) int {
 		if e := personCommand(dir, home, cmdline, "it would record the main checkout's branch "+strconv.QuoteToASCII(now)+
 			" as the workspace's base branch in place of "+strconv.QuoteToASCII(was)+", the branch the ladder and the stop gate "+
 			"hold the main checkout to", cmdline+" --yes (or switch the main checkout back: git switch "+was+")"); e != nil {
-			return out("refused", e.Exit, e, "Refused: "+e.What+".\nnext: "+e.Next+"\n")
+			return out("refused", e.Exit, e, &textui.Doc{})
 		}
 	}
 	// So is recording settings for the checks looser than the ones this machine accepted (workspace/checks.go): the
@@ -148,7 +165,7 @@ func runEngine(c *call) int {
 	if looser := engine.ChecksLooser(plan); len(looser) > 0 {
 		if e := personCommand(dir, home, cmdline, "it would record settings for the checks looser than the ones this machine "+
 			"last accepted for the workspace: "+looserList(looser), cmdline+" --yes (or put bonsai.yaml's settings back)"); e != nil {
-			return out("refused", e.Exit, e, "Refused: "+e.What+".\nnext: "+e.Next+"\n")
+			return out("refused", e.Exit, e, &textui.Doc{})
 		}
 	}
 	// The command that installs a plugin carrying code on this machine, a person's step: once the files are written
@@ -157,11 +174,14 @@ func runEngine(c *call) int {
 	again := "bonsai " + word + " --allow-exec"
 	if plan.Nothing() {
 		plan.Plugins = pluginStep(plan, again, false)
-		return out("nothing", engine.ExitOK, nil, "bonsai "+word+": nothing to change"+packsAt(plan)+".\n"+plan.LeftAlone()+
-			recorded(plan)+plan.PluginsText()+closing)
+		d := &textui.Doc{}
+		d.Title("bonsai "+word, "nothing to change"+packsAt(plan))
+		plan.LeftAloneTo(d)
+		recorded(d, plan)
+		plan.PluginsTo(d)
+		closing(d)
+		return out("nothing", engine.ExitOK, nil, d)
 	}
-	head := "bonsai " + word + ": the preview.\n"
-	preview := head + plan.Preview(f.diff)
 	// In an agent's session, a change or removal of Bonsai's own guard or stop line is a person's command (agent.go):
 	// refused with the preview, whatever else the command says.
 	if touched := plan.OwnGuardChanges(); len(touched) > 0 {
@@ -175,7 +195,7 @@ func runEngine(c *call) int {
 		}
 		if e := personCommand(dir, home, cmdline, "this "+word+" changes or takes out Bonsai's own guard or stop line ("+
 			strings.Join(lines, "; ")+"), which is what guards this project", person+" --yes"); e != nil {
-			return out("refused", e.Exit, e, preview+"Refused: "+e.What+".\nnext: "+e.Next+"\n")
+			return out("refused", e.Exit, e, preview())
 		}
 	}
 	// Code is consented to separately (spec §6): without --allow-exec, a plan that runs code is refused whole, at a
@@ -198,16 +218,16 @@ func runEngine(c *call) int {
 			What: fmt.Sprintf("this %s writes code that runs on this machine (%d %s under Runs code), which needs --allow-exec as well as --yes: nothing was written",
 				word, n, map[bool]string{true: "item", false: "items"}[n == 1]),
 			Next: next}
-		return out("refused", e.Exit, e, preview+"Refused: "+e.What+".\nnext: "+e.Next+"\n")
+		return out("refused", e.Exit, e, preview())
 	}
 	conflict := func(printed bool) int {
 		e := &engine.Error{Code: "conflicts", Exit: engine.ExitConflict, What: conflictWhat(plan) + ": nothing was written",
 			Next: plan.ConflictNext(cmdline)}
-		text := "Stopped: " + e.What + ".\nnext: " + e.Next + "\n"
+		d := &textui.Doc{}
 		if !printed {
-			text = preview + text
+			d = preview()
 		}
-		return out("conflict", e.Exit, e, text)
+		return out("conflict", e.Exit, e, d)
 	}
 	if !f.yes {
 		if c.json || !interactive() {
@@ -216,14 +236,17 @@ func runEngine(c *call) int {
 				next = plan.ConflictNext(cmdline)
 			}
 			e := &engine.Error{Code: "needs-yes", Exit: engine.ExitState, What: "no --yes, and no terminal to ask at: nothing was written", Next: next}
-			return out("preview", e.Exit, e, preview+"Nothing written yet.\nnext: "+next+"\n")
+			return out("preview", e.Exit, e, preview())
 		}
 		// At a terminal (never with --json): the person answers.
-		if write(c.stdout, preview+"Write these changes? [y/N] ") != exitOK {
+		if write(c.stdout, preview().Render(textui.For(c.stdout))+"Write these changes? [y/N] ") != exitOK {
 			return exitRuntime
 		}
 		if !yesAnswer() {
-			return out("declined", engine.ExitState, nil, "Nothing written.\nnext: run the command again when you want it written\n")
+			d := &textui.Doc{}
+			d.Title("bonsai "+word, "nothing written")
+			d.Hint("run the command again when you want it written")
+			return out("declined", engine.ExitState, nil, d)
 		}
 		if len(plan.Conflicts) > 0 {
 			return conflict(true)
@@ -240,17 +263,23 @@ func runEngine(c *call) int {
 			result = "failed"
 		}
 		if c.json {
-			return out(result, e.Exit, e, "")
+			return out(result, e.Exit, e, &textui.Doc{})
 		}
 		return c.fail(e)
 	}
 	plan.Plugins = pluginStep(plan, again, true)
-	text := ""
+	d := &textui.Doc{}
 	if f.yes {
-		text = preview
+		d = preview()
+		d.Gap()
 	}
-	text += "bonsai " + word + ": written" + packsAt(plan) + ".\n" + plan.Applied() + plan.LeftAlone() + recorded(plan) + plan.PluginsText() + closing
-	return out("applied", engine.ExitOK, nil, text)
+	d.Title("bonsai "+word, "written"+packsAt(plan))
+	plan.AppliedTo(d)
+	plan.LeftAloneTo(d)
+	recorded(d, plan)
+	plan.PluginsTo(d)
+	closing(d)
+	return out("applied", engine.ExitOK, nil, d)
 }
 
 // pluginStep brings this machine's plugins to the plan once it is written (or has nothing to write;
@@ -268,19 +297,19 @@ func pluginStep(plan *engine.Plan, again string, written bool) []engine.PluginRe
 }
 
 // recorded writes this machine's record of the checkout (engine.RecordCheckout) once init or update ended without a
-// refusal, and gives a line for the text when it could not: the project's files are written either way. When it
-// recorded settings for the checks looser than the ones accepted before (a person's update: an agent's is refused
-// first), the line names each loosening.
-func recorded(plan *engine.Plan) string {
+// refusal, and adds a note when it could not: the project's files are written either way. When it recorded settings
+// for the checks looser than the ones accepted before (a person's update: an agent's is refused first), the note
+// names each loosening.
+func recorded(d *textui.Doc, plan *engine.Plan) {
 	looser := engine.ChecksLooser(plan)
 	if err := engine.RecordCheckout(plan); err != nil {
-		return "note: this machine's record of the checkout was not written: " + engine.ASCII(err.Error()) + "\n"
+		d.Para("note", "this machine's record of the checkout was not written: "+engine.ASCII(err.Error()), textui.Warn)
+		return
 	}
 	if len(looser) > 0 {
-		return "note: this machine now accepts bonsai.yaml's settings for the checks, looser than the ones it accepted before: " +
-			looserList(looser) + "\n"
+		d.Para("note", "this machine now accepts bonsai.yaml's settings for the checks, looser than the ones it accepted before: "+
+			looserList(looser), textui.Warn)
 	}
-	return ""
 }
 
 // maxLoosenings caps the loosenings a line names; the rest are counted.

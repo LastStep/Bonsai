@@ -7,12 +7,14 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -138,12 +140,14 @@ func runCheck(c *call) int {
 		}
 		return c.printDoc(doc, exit)
 	}
-	if write(c.stdout, r.Text()) != exitOK {
+	var d textui.Doc
+	r.TextTo(&d)
+	if write(c.stdout, d.Render(textui.For(c.stdout))) != exitOK {
 		return exitRuntime
 	}
 	if werr != nil {
 		noted(c.word, werr)
-		_, _ = fmt.Fprintf(c.stderr, "bonsai check: %s.\nnext: %s\n", strings.TrimSuffix(werr.What, "."), werr.Next)
+		_, _ = io.WriteString(c.stderr, refusalText(c.word, werr, c.stderr))
 	}
 	return exit
 }
@@ -161,7 +165,9 @@ func runPack(c *call, dir string) int {
 	if c.json {
 		return c.printDoc(r.Doc(), exit)
 	}
-	if write(c.stdout, r.Text()) != exitOK {
+	var d textui.Doc
+	r.TextTo(&d)
+	if write(c.stdout, d.Render(textui.For(c.stdout))) != exitOK {
 		return exitRuntime
 	}
 	return exit

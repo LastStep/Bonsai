@@ -11,6 +11,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/status"
+	"github.com/LastStep/Bonsai/internal/textui"
 )
 
 func init() { register(statusWord) }
@@ -81,12 +82,20 @@ func runStatus(c *call) int {
 	if c.json {
 		return c.printDoc(statusDoc(doc), code)
 	}
-	text := status.Text(doc)
+	var d textui.Doc
+	status.TextTo(&d, doc)
 	if code != status.ExitOK {
-		_, _ = io.WriteString(c.stderr, text)
+		if e, ok := doc.Get("error"); ok && e != nil {
+			eo := e.(schema.Object)
+			next, _ := eo.Get("next")
+			no, _ := next.(schema.Object)
+			d.Refuse(refusalOf(c.word, &engine.Error{Code: eo.String("code"), Exit: code, What: eo.String("message"), Next: no.String("do"),
+				Who: no.String("who")}))
+		}
+		_, _ = io.WriteString(c.stderr, d.Render(textui.For(c.stderr)))
 		return code
 	}
-	if write(c.stdout, text) != exitOK {
+	if write(c.stdout, d.Render(textui.For(c.stdout))) != exitOK {
 		return exitRuntime
 	}
 	return code
@@ -102,16 +111,19 @@ func runActive(c *call, dir string) int {
 		if c.json {
 			return c.printDoc(errorOnly{e}, e.Exit)
 		}
-		_, _ = fmt.Fprintf(c.stderr, "bonsai status: %s.\nnext: %s\n", strings.TrimSuffix(e.What, "."), e.Next)
+		_, _ = io.WriteString(c.stderr, refusalText(c.word, e, c.stderr))
 		return e.Exit
 	}
 	if c.json {
 		return c.printDoc(activeDoc(a.Object()), exitOK)
 	}
+	var d textui.Doc
 	if a.ID != "" {
-		return c.print(fmt.Sprintf("Active task: %s (%s)\n", a.ID, a.How))
+		d.Section("Active task", textui.R(textui.T(a.ID, textui.Path), textui.C(a.How)))
+	} else {
+		d.Section("Active task", textui.R(textui.T("none", textui.Dim), textui.C(engine.ASCII(strings.TrimPrefix(a.Sentence(), "no active task: ")))))
 	}
-	return c.print("Active task: none (" + engine.ASCII(strings.TrimPrefix(a.Sentence(), "no active task: ")) + ")\n")
+	return c.show(&d)
 }
 
 // activeDoc is status --active --json's object, held to bonsai.status/1's active_task before it is printed.

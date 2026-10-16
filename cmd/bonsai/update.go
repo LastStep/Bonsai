@@ -42,6 +42,7 @@ Claude Code's record of the plugin's install here (each checkout's record is its
 		{Name: "--yes", Help: "write without asking"},
 		{Name: "--allow-exec", Help: "consent to what the preview lists under \"Runs code\" (needed as well as --yes; see below)"},
 		{Name: "--diff", Help: "show each file's changes as a diff in the preview"},
+		{Name: "--explain", Help: "list every settings line in the preview with where it comes from and why (else they are counted)"},
 		{Name: "--keep", Value: "P", Many: true, Help: "settle a conflict on P by keeping your edit (the file becomes kind kept; a later pack change to it\nis a conflict again)"},
 		{Name: "--adopt", Value: "P", Many: true, Help: "settle a conflict on P by taking the pack's copy; yours is saved in the Bonsai home's cache"},
 		{Name: "--json", Help: "print the changes document (bonsai.changes/1) instead of text; never asks"},

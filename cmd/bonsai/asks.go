@@ -6,12 +6,12 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/redact"
+	"github.com/LastStep/Bonsai/internal/textui"
 )
 
 func init() { register(asksWord) }
@@ -61,23 +61,32 @@ func runAsks(c *call) int {
 		}
 		return c.printDoc(doc, exitOK)
 	}
-	var b strings.Builder
-	for _, en := range entries {
-		typ := "-"
-		if en.Filed.Type != nil {
-			typ = *en.Filed.Type
-		}
-		fmt.Fprintf(&b, "%-8s  %s  %-6s  %s  %s\n", en.State, en.Filed.At, typ, en.Key, text0(en.Filed.Title))
+	which := "open asks"
+	if c.has("--all") {
+		which = "asks"
 	}
+	var d textui.Doc
 	if len(entries) == 0 {
-		which := "open asks"
-		if c.has("--all") {
-			which = "asks"
+		d.Title("bonsai asks", "no "+which+" in .bonsai/local/asks/")
+	} else {
+		d.Title("bonsai asks", fmt.Sprintf("%d %s", len(entries), which))
+		var rows []textui.Row
+		for _, en := range entries {
+			typ := "-"
+			if en.Filed.Type != nil {
+				typ = *en.Filed.Type
+			}
+			tone := textui.Dim
+			if en.State == asks.Open {
+				tone = textui.Warn
+			}
+			rows = append(rows, textui.R(textui.T(en.State, tone), textui.T(en.Filed.At, textui.Dim), textui.C(typ), textui.T(engine.ASCII(en.Key), textui.Path),
+				textui.C(engine.ASCII(text0(en.Filed.Title)))))
 		}
-		b.WriteString("no " + which + " in .bonsai/local/asks/\n")
+		d.Table("", textui.R(textui.C("state"), textui.C("filed"), textui.C("type"), textui.C("key"), textui.C("title")), rows...)
 	}
 	if unreadable > 0 {
-		fmt.Fprintf(&b, "%d lines of .bonsai/local/asks/ did not read as ask records and were skipped\n", unreadable)
+		d.Para("note", fmt.Sprintf("%d lines of .bonsai/local/asks/ did not read as ask records and were skipped", unreadable), textui.Warn)
 	}
-	return c.print(engine.ASCII(b.String()))
+	return c.show(&d)
 }

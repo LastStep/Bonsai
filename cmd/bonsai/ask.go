@@ -10,13 +10,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/asks"
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/redact"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -129,7 +129,10 @@ func runAsk(c *call) int {
 	if ae != nil {
 		return c.fail(askError(ae))
 	}
-	return c.asksOut(site, done, done.Entry.Key+"\n")
+	// The key alone, as it is: a script reads it (key=$(bonsai ask ...)).
+	d := &textui.Doc{}
+	d.Raw(done.Entry.Key + "\n")
+	return c.asksOut(site, done, d)
 }
 
 // asksSite is where an ask, answer or asks command runs: its checkout, bonsai.yaml as read, and where the asks are
@@ -200,38 +203,42 @@ func askError(e *asks.Error) *engine.Error {
 }
 
 // asksOut prints a command's answer: with --json the asks document (the key's entry, and the record written), else
-// text.
-func (c *call) asksOut(site *asksSite, done *asks.Done, text string) int {
+// the Doc.
+func (c *call) asksOut(site *asksSite, done *asks.Done, d *textui.Doc) int {
 	if c.json {
 		doc := &format.Asks{Workspace: site.ref, Asks: []format.AskEntry{done.Entry.Entry()}, Written: done.Written}
 		return c.printDoc(doc, exitOK)
 	}
-	return c.print(text)
+	return c.show(d)
 }
 
-// doneText is the human line of a resolve or an answer: the key and what was done, or why nothing was.
-func doneText(done *asks.Done, did string) string {
+// doneText is the human answer of a resolve or an answer: the key and what was done, or why nothing was.
+func doneText(done *asks.Done, did string) *textui.Doc {
+	d := &textui.Doc{}
 	if done.Nothing != "" {
-		return engine.ASCII(done.Nothing) + "\n"
+		d.Title("bonsai "+map[bool]string{true: "answer", false: "ask"}[did == "answered"], "nothing done")
+		d.Section(done.Entry.Key, textui.R(textui.C(engine.ASCII(done.Nothing))))
+		return d
 	}
-	return done.Entry.Key + ": " + did + "\n"
+	d.Section(done.Entry.Key, textui.R(textui.T(did, textui.Ok)))
+	return d
 }
 
 // statusText is an ask as ask --status prints it: its state, the ask, and the record that closed it.
-func statusText(e *asks.Entry) string {
-	var b strings.Builder
+func statusText(e *asks.Entry) *textui.Doc {
+	d := &textui.Doc{}
 	f := e.Filed
 	line := func(label, s string) {
 		if s == "" {
 			return
 		}
-		lines := strings.Split(s, "\n")
-		b.WriteString(label + ": " + engine.ASCII(lines[0]) + "\n")
-		for _, l := range lines[1:] {
-			b.WriteString("  " + engine.ASCII(l) + "\n")
-		}
+		d.Para(label, engine.ASCII(s), textui.Plain)
 	}
-	b.WriteString(e.Key + ": " + e.State + "\n")
+	tone := textui.Ok
+	if e.State == asks.Open {
+		tone = textui.Warn
+	}
+	d.Section(e.Key, textui.R(textui.T(e.State, tone)))
 	about := "the answers file (no task or document)"
 	switch {
 	case f.Task != nil:
@@ -255,13 +262,13 @@ func statusText(e *asks.Entry) string {
 	line("verdict", text0(f.Verdict))
 	if e.Closed == nil {
 		if e.State == asks.Open {
-			b.WriteString("no answer yet\n")
+			d.Hint("no answer yet")
 		}
-		return b.String()
+		return d
 	}
 	if e.Closed.Op == asks.OpResolve {
 		line("resolved", e.Closed.At)
-		return b.String()
+		return d
 	}
 	if a := e.Closed.Answer; a != nil {
 		via := ""
@@ -273,7 +280,7 @@ func statusText(e *asks.Entry) string {
 		line("their verdict", text0(a.Verdict))
 		line("words", text0(a.Words))
 	}
-	return b.String()
+	return d
 }
 
 func text0(s *string) string {

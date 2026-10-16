@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -76,35 +77,51 @@ func runUnlink(c *call) int {
 	if err != nil {
 		return c.fail(engine.Unexpected(err))
 	}
-	out := func(result string, exit int, refusal *engine.Error, text string) int {
+	out := func(result string, exit int, refusal *engine.Error, d *textui.Doc) int {
 		if refusal != nil {
 			noted(c.word, refusal)
 		}
 		if c.json {
 			return c.printDoc(plan.Changes(result, refusal), exit)
 		}
-		if write(c.stdout, text) != exitOK {
+		if refusal != nil {
+			if !d.Empty() {
+				d.Gap()
+			}
+			d.Refuse(refusalOf(c.word, refusal))
+		}
+		if write(c.stdout, d.Render(textui.For(c.stdout))) != exitOK {
 			return exitRuntime
 		}
 		return exit
 	}
 	if plan.Nothing() {
-		return out("nothing", engine.ExitOK, nil, "bonsai unlink: nothing to change: no bonsai.yaml and no lock here, so this checkout "+
-			"is not linked.\n"+plan.LeftText())
+		d := &textui.Doc{}
+		d.Title("bonsai unlink", "nothing to change: no bonsai.yaml and no lock here, so this checkout is not linked")
+		plan.LeftTo(d)
+		return out("nothing", engine.ExitOK, nil, d)
 	}
-	preview := "bonsai unlink: the preview.\n" + plan.Preview(false)
+	preview := func() *textui.Doc {
+		d := &textui.Doc{}
+		d.Title("bonsai unlink", "the preview")
+		plan.PreviewTo(d, false, true)
+		return d
+	}
 	yes := c.has("--yes")
 	if !yes {
 		if c.json || !interactive() {
 			next := "to write it, run: bonsai unlink --yes"
 			e := &engine.Error{Code: "needs-yes", Exit: engine.ExitState, What: "no --yes, and no terminal to ask at: nothing was written", Next: next}
-			return out("preview", e.Exit, e, preview+"Nothing written yet.\nnext: "+next+"\n")
+			return out("preview", e.Exit, e, preview())
 		}
-		if write(c.stdout, preview+"Take Bonsai out of this checkout? [y/N] ") != exitOK {
+		if write(c.stdout, preview().Render(textui.For(c.stdout))+"Take Bonsai out of this checkout? [y/N] ") != exitOK {
 			return exitRuntime
 		}
 		if !yesAnswer() {
-			return out("declined", engine.ExitState, nil, "Nothing written.\nnext: run the command again when you want it written\n")
+			d := &textui.Doc{}
+			d.Title("bonsai unlink", "nothing written")
+			d.Hint("run the command again when you want it written")
+			return out("declined", engine.ExitState, nil, d)
 		}
 	}
 	if err := applyPlan(plan); err != nil {
@@ -114,7 +131,7 @@ func runUnlink(c *call) int {
 			result = "failed"
 		}
 		if c.json {
-			return out(result, e.Exit, e, "")
+			return out(result, e.Exit, e, &textui.Doc{})
 		}
 		return c.fail(e)
 	}
@@ -123,11 +140,14 @@ func runUnlink(c *call) int {
 		name = plan.Config.Name
 	}
 	plan.Plugins = engine.UninstallPlugins(plan.Root, name, plan.OldMarket, plan.Removed, pluginCLI)
-	text := ""
+	d := &textui.Doc{}
 	if yes {
-		text = preview
+		d = preview()
+		d.Gap()
 	}
-	text += "bonsai unlink: done.\n" + plan.Applied() + plan.PluginsText() +
-		"To link this project again: bonsai init (it reads no bonsai.yaml now, so give it --name, --source and --ref).\n"
-	return out("applied", engine.ExitOK, nil, text)
+	d.Title("bonsai unlink", "done")
+	plan.AppliedTo(d)
+	plan.PluginsTo(d)
+	d.Hint("to link this project again: bonsai init (it reads no bonsai.yaml now, so give it --name, --source and --ref)")
+	return out("applied", engine.ExitOK, nil, d)
 }

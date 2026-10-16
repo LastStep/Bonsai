@@ -26,6 +26,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/record"
 	"github.com/LastStep/Bonsai/internal/redact"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -198,8 +199,11 @@ func runLogAppend(c *call) int {
 	}
 	at, _ := time.Parse(record.AtLayout, l.At)
 	name, _ := record.LogFileName("", at)
-	return c.print("written: " + filepath.ToSlash(filepath.Join(workspace.LocalDir, record.LogFolder, name)) + " (an event record, " +
-		plural(len(labels), "label") + ")\n")
+	var d textui.Doc
+	d.Title("bonsai log append", "written")
+	d.Section("Written", textui.R(textui.T(filepath.ToSlash(filepath.Join(workspace.LocalDir, record.LogFolder, name)), textui.Path),
+		textui.C("an event record, "+plural(len(labels), "label"))))
+	return c.show(&d)
 }
 
 // labelValue reads a label's value from the command line by its definition's kind (contract section 5.2): the value

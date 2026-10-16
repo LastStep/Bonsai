@@ -17,6 +17,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/message"
 	"github.com/LastStep/Bonsai/internal/redact"
+	"github.com/LastStep/Bonsai/internal/textui"
 )
 
 func init() { register(messagesWord) }
@@ -108,33 +109,44 @@ func runMessages(c *call) int {
 		}
 		return c.printDoc(doc, exitOK)
 	}
-	var b strings.Builder
-	for _, t := range kept {
-		task := "-"
-		if t.Task != nil {
-			task = *t.Task
-		}
-		flags := ""
-		if len(t.Flags) > 0 {
-			flags = "  flags: " + strings.Join(t.Flags, ", ")
-		}
-		fmt.Fprintf(&b, "%-8s  %s  %s -> %s  %s  %d messages, last %s%s%s\n", t.State, t.ID, t.From, t.To, task,
-			len(t.Messages), t.LastAt, flags, recipientText(t.Recipient))
+	which := "threads"
+	if f.Open {
+		which = "open threads"
 	}
+	if f.To != "" || f.Task != "" {
+		which += " that the filters keep"
+	}
+	var d textui.Doc
 	if len(kept) == 0 {
-		which := "threads"
-		if f.Open {
-			which = "open threads"
+		d.Title("bonsai messages", "no "+which+" in "+message.Dir+"/")
+	} else {
+		d.Title("bonsai messages", fmt.Sprintf("%d %s", len(kept), which))
+		var rows []textui.Row
+		for _, t := range kept {
+			task := "-"
+			if t.Task != nil {
+				task = *t.Task
+			}
+			tone := textui.Dim
+			if t.State == "open" {
+				tone = textui.Warn
+			}
+			rows = append(rows, textui.R(textui.T(t.State, tone), textui.T(t.ID, textui.Path), textui.C(engine.ASCII(task)),
+				textui.C(fmt.Sprintf("%d messages", len(t.Messages))), textui.C(engine.ASCII(t.From+" -> "+t.To))),
+				textui.R(textui.C(""), textui.T("last "+t.LastAt, textui.Dim)))
+			if len(t.Flags) > 0 {
+				rows = append(rows, textui.R(textui.C(""), textui.T("flags: "+engine.ASCII(strings.Join(t.Flags, ", ")), textui.Warn)))
+			}
+			if r := recipientText(t.Recipient); r != "" {
+				rows = append(rows, textui.R(textui.C(""), textui.C(engine.ASCII(r))))
+			}
 		}
-		if f.To != "" || f.Task != "" {
-			which += " that the filters keep"
-		}
-		b.WriteString("no " + which + " in " + message.Dir + "/\n")
+		d.Table("", textui.R(textui.C("state"), textui.C("thread"), textui.C("task"), textui.C("messages"), textui.C("from -> to")), rows...)
 	}
 	for _, m := range st.Malformed {
-		fmt.Fprintf(&b, "malformed  %s: %s\n", m.Path, m.Reason)
+		d.Section("malformed", textui.R(textui.T(engine.ASCII(m.Path), textui.Path), textui.T(engine.ASCII(m.Reason), textui.Bad)))
 	}
-	return c.print(engine.ASCII(b.String()))
+	return c.show(&d)
 }
 
 // recipientText is the agent column of a thread's line: the agent tied to its newest brief, its counts against its
@@ -153,7 +165,7 @@ func recipientText(r *format.ThreadRecipient) string {
 	if r.Counts.Minutes != nil {
 		minutes = r.Counts.Minutes.String()
 	}
-	s := fmt.Sprintf("  agent %s: minutes %s of %s, actions %d of %s, red runs %d of %s", r.Agent, minutes,
+	s := fmt.Sprintf("agent %s: minutes %s of %s, actions %d of %s, red runs %d of %s", r.Agent, minutes,
 		limit(r.Limits.Minutes), r.Counts.Actions, limit(r.Limits.Actions), r.Counts.RedRuns, limit(r.Limits.RedRuns))
 	if r.Spent {
 		s += ", spent"

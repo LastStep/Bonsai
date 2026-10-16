@@ -22,9 +22,12 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/textui"
 )
 
 // Word is one command word: its help, its flags and exit codes, and how it runs.
@@ -125,68 +128,67 @@ func (w *Word) exits(code int) bool {
 	return false
 }
 
-// Help is the word's --help, from its table: its title and text, its usage, its sub-words, every flag with its help,
-// the flags not built yet, every exit code and an example.
-func (w *Word) Help() string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "bonsai %s: %s\n", w.Name, w.Title)
-	b.WriteString(w.About)
-	fmt.Fprintf(&b, "Usage: %s\n", strings.TrimSpace("bonsai "+w.Name+" "+w.Args))
+// Help is the word's --help, from its table, drawn for a pipe (HelpDoc).
+func (w *Word) Help() string { return w.HelpDoc().String() }
+
+// HelpDoc is the word's --help, from its table: its title and text, its usage, its sub-words, every flag with its
+// help, the flags not built yet, every exit code and an example. Its text (About, Notes) is printed as written.
+func (w *Word) HelpDoc() *textui.Doc {
+	d := &textui.Doc{}
+	d.Title("bonsai "+w.Name, w.Title)
+	d.Raw(w.About)
+	d.Section("Usage", textui.R(textui.T(strings.TrimSpace("bonsai "+w.Name+" "+w.Args), textui.Path)))
 	if len(w.Subs) > 0 {
-		b.WriteString("This build answers:\n")
+		var rows []textui.Row
 		var later []string
 		for _, s := range w.Subs {
 			if s.Later != "" {
 				later = append(later, strings.TrimPrefix(s.Name, w.Name+" ")+" ("+s.Later+")")
 				continue
 			}
-			fmt.Fprintf(&b, "  %-20s %s (bonsai %s --help)\n", "bonsai "+s.Name, s.Summary, s.Name)
+			rows = append(rows, textui.R(textui.T("bonsai "+s.Name, textui.Path), textui.C(s.Summary+" (bonsai "+s.Name+" --help)")))
 		}
+		d.Section("Answers", rows...)
 		if len(later) > 0 {
-			fmt.Fprintf(&b, "Not built yet: %s.\n", strings.Join(later, ", "))
+			d.Para("Not built", "not built yet: "+strings.Join(later, ", ")+".", textui.Dim)
 		}
 	}
-	b.WriteString("Flags:\n")
 	flags := append([]Flag{}, w.Flags...)
 	flags = append(flags, Flag{Name: "--help", Help: "print this help"})
-	width := 0
-	for _, f := range flags {
-		if n := len(flagShown(f)); n > width {
-			width = n
-		}
-	}
+	var rows []textui.Row
 	var later []string
 	for _, f := range flags {
 		if f.Later != "" {
 			later = append(later, flagShown(f)+" ("+f.Later+")")
 			continue
 		}
-		lines := strings.Split(f.Help, "\n")
-		fmt.Fprintf(&b, "  %-*s  %s\n", width, flagShown(f), lines[0])
-		for _, l := range lines[1:] {
-			fmt.Fprintf(&b, "  %-*s  %s\n", width, "", l)
-		}
+		rows = append(rows, textui.R(textui.T(flagShown(f), textui.Key), textui.C(flatText(f.Help))))
 		if f.More != nil {
-			b.WriteString(wrapWords(f.More(), strings.Repeat(" ", width+4), 100))
+			rows = append(rows, textui.R(textui.C(""), textui.T(f.More(), textui.Dim)))
 		}
 	}
-	b.WriteString(w.Notes)
+	d.Section("Flags", rows...)
+	d.Raw(w.Notes)
 	if len(later) > 0 {
-		fmt.Fprintf(&b, "Not built yet in this build: %s.\n", strings.Join(later, ", "))
+		d.Para("Not built", "not built yet in this build: "+strings.Join(later, ", ")+".", textui.Dim)
 	}
-	b.WriteString("Exit codes:\n")
+	rows = nil
 	for _, e := range w.Exits {
-		lines := strings.Split(e.Means, "\n")
-		fmt.Fprintf(&b, "  %d  %s\n", e.Code, lines[0])
-		for _, l := range lines[1:] {
-			fmt.Fprintf(&b, "     %s\n", l)
-		}
+		rows = append(rows, textui.R(textui.T(strconv.Itoa(e.Code), textui.Key), textui.C(flatText(e.Means))))
 	}
+	d.Section("Exit codes", rows...)
+	rows = nil
 	for _, ex := range w.Examples {
-		fmt.Fprintf(&b, "Example: %s\n", ex)
+		rows = append(rows, textui.R(textui.T(ex, textui.Path)))
 	}
-	return b.String()
+	if len(rows) > 0 {
+		d.Section("Example", rows...)
+	}
+	return d
 }
+
+// flatText is a table's text with its line breaks made spaces: the Doc wraps it to the width.
+func flatText(s string) string { return strings.Join(strings.Fields(s), " ") }
 
 func flagShown(f Flag) string {
 	if f.Value == "" {
@@ -279,7 +281,7 @@ func runWord(w *Word, args []string, stdout, stderr io.Writer) int {
 	for i := 0; i < len(args); i++ {
 		a := args[i]
 		if a == "--help" || a == "-h" {
-			return c.print(w.Help())
+			return c.show(w.HelpDoc())
 		}
 		if !strings.HasPrefix(a, "-") || a == "-" {
 			c.rest = append(c.rest, a)
@@ -330,7 +332,7 @@ func runWord(w *Word, args []string, stdout, stderr io.Writer) int {
 func (c *call) runSub(args []string) int {
 	w := c.word
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
-		return c.print(w.Help())
+		return c.show(w.HelpDoc())
 	}
 	if len(args) == 0 {
 		return c.refuse(&engine.Error{Code: "missing-value", Exit: exitInput, What: "bonsai " + w.Name + " needs a " + w.Name + " " + strings.Trim(w.Args, "<>"),
@@ -386,26 +388,58 @@ func (c *call) print(s string) int {
 	return exitOK
 }
 
+// show prints a Doc on stdout, drawn for where stdout goes (textui.For), like print.
+func (c *call) show(d *textui.Doc) int { return c.print(d.Render(textui.For(c.stdout))) }
+
 // refuse prints a refusal and returns its exit code: with --json the word's document with the error object filled,
-// else the sentence and its next step on stderr ("bonsai: " for the command line, "bonsai <word>: " once the word
-// runs).
+// else the refusal block on stderr (refusalText).
 func (c *call) refuse(e *engine.Error) int {
 	noted(c.word, e)
 	if c.json {
 		return c.printDoc(c.word.Refused(c, e), e.Exit)
 	}
-	_, _ = fmt.Fprintf(c.stderr, "bonsai: %s.\nnext: %s\n", strings.TrimSuffix(e.What, "."), e.Next)
+	_, _ = io.WriteString(c.stderr, refusalText(c.word, e, c.stderr))
 	return e.Exit
 }
 
-// fail is refuse for a failure once the word runs: the human line names the word.
+// fail is refuse for a failure once the word runs (today the same as refuse, kept apart for the words that call it).
 func (c *call) fail(e *engine.Error) int {
 	noted(c.word, e)
 	if c.json {
 		return c.printDoc(c.word.Refused(c, e), e.Exit)
 	}
-	_, _ = fmt.Fprintf(c.stderr, "bonsai %s: %s.\nnext: %s\n", c.word.Name, strings.TrimSuffix(e.What, "."), e.Next)
+	_, _ = io.WriteString(c.stderr, refusalText(c.word, e, c.stderr))
 	return e.Exit
+}
+
+// refusalText is a refusal for a person, in the one shape every word's refusal takes (internal/textui): the command
+// refused with its error word, then what (the exit code), why (the sentence) and next (who takes it, and the step),
+// laid out for where it is written.
+func refusalText(w *Word, e *engine.Error, to io.Writer) string {
+	var d textui.Doc
+	d.Refuse(refusalOf(w, e))
+	return d.Render(textui.For(to))
+}
+
+// refusalOf is a refusal as the one block every word's refusal takes.
+func refusalOf(w *Word, e *engine.Error) textui.Refusal {
+	o := e.Object()
+	command := "bonsai " + w.Name
+	if w == bonsaiWord {
+		command = "bonsai"
+	}
+	applies := format.ExitEveryWord
+	if w.Name == "hook" || strings.HasPrefix(w.Name, "hook ") {
+		applies = format.ExitHook
+	}
+	means := ""
+	for _, x := range format.ExitCodes {
+		if x.Code == e.Exit && x.Applies == applies {
+			means = x.Short
+		}
+	}
+	return textui.Refusal{Command: command, Code: o.Code, Exit: e.Exit, Means: means,
+		Why: strings.TrimSuffix(e.What, "."), Who: o.Next.Who, Next: e.Next}
 }
 
 // printDoc prints a --json document through its format's writer and returns exit. A document that does not fit its

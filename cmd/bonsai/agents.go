@@ -18,6 +18,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/message"
 	"github.com/LastStep/Bonsai/internal/redact"
+	"github.com/LastStep/Bonsai/internal/textui"
 )
 
 func init() { register(agentsWord) }
@@ -81,22 +82,29 @@ func runAgents(c *call) int {
 	if c.json {
 		return c.printDoc(&format.Agents{Workspace: site.ref, Agents: v.Agents, Skipped: v.Skipped}, exitOK)
 	}
-	var b strings.Builder
-	for i := range v.Agents {
-		b.WriteString(agentLine(&v.Agents[i]))
-		b.WriteByte('\n')
-	}
+	var d textui.Doc
 	if len(v.Agents) == 0 {
-		b.WriteString("no agents recorded in .bonsai/local/agents/ or .bonsai/local/log/\n")
+		d.Title("bonsai agents", "no agents recorded in .bonsai/local/agents/ or .bonsai/local/log/")
+	} else {
+		d.Title("bonsai agents", fmt.Sprintf("%d recorded", len(v.Agents)))
+	}
+	for i := range v.Agents {
+		var rows []textui.Row
+		for _, f := range agentFields(&v.Agents[i]) {
+			rows = append(rows, textui.R(textui.T(f[0], textui.Dim), textui.C(engine.ASCII(f[1]))))
+		}
+		d.Gap()
+		d.Section(engine.ASCII(v.Agents[i].ID), rows...)
 	}
 	for _, s := range v.Skipped {
-		fmt.Fprintf(&b, "skipped  %s: %s\n", s.Path, s.Reason)
+		d.Section("skipped", textui.R(textui.T(engine.ASCII(s.Path), textui.Path), textui.T(engine.ASCII(s.Reason), textui.Warn)))
 	}
-	return c.print(engine.ASCII(b.String()))
+	return c.show(&d)
 }
 
-// agentLine is one agent's line: every field of its entry, in bonsai.agents/1's order, "-" for null, as recorded.
-func agentLine(a *format.Agent) string {
+// agentFields are one agent's fields but its id, each its name and value: every field of its entry, in
+// bonsai.agents/1's order, "-" for null, as recorded.
+func agentFields(a *format.Agent) [][2]string {
 	or := func(p *string) string {
 		if p == nil {
 			return "-"
@@ -109,7 +117,7 @@ func agentLine(a *format.Agent) string {
 		}
 		return strconv.FormatInt(*p, 10)
 	}
-	f := []string{a.ID, "session " + a.Session, "parent " + or(a.Parent), "role " + or(a.Role), "type " + or(a.Type),
+	f := []string{"session " + a.Session, "parent " + or(a.Parent), "role " + or(a.Role), "type " + or(a.Type),
 		"task " + or(a.Task), "brief " + or(a.Brief), "model " + or(a.Model), "started " + or(a.Started), "ended " + or(a.Ended)}
 	if c := a.LastCall; c != nil {
 		f = append(f, "last_call "+c.At+" "+c.Tool+" "+or(c.Category))
@@ -153,5 +161,10 @@ func agentLine(a *format.Agent) string {
 		}
 		f = append(f, "usage "+strings.Join(items, "; "))
 	}
-	return strings.Join(f, "  ")
+	out := make([][2]string, len(f))
+	for i, x := range f {
+		name, value, _ := strings.Cut(x, " ")
+		out[i] = [2]string{name, value}
+	}
+	return out
 }

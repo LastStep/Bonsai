@@ -96,7 +96,9 @@ func runLadder(c *call) int {
 		return c.printDoc(climbDoc{a.Doc}, a.Exit)
 	}
 	if a.Error != nil {
-		_, _ = io.WriteString(c.stderr, "bonsai ladder: "+engine.ASCII(trimStop(a.Error.What))+".\nnext: "+engine.ASCII(a.Error.Next)+"\n")
+		e := *a.Error
+		e.What, e.Next = engine.ASCII(trimStop(e.What)), engine.ASCII(e.Next)
+		_, _ = io.WriteString(c.stderr, refusalText(c.word, &e, c.stderr))
 	}
 	return a.Exit
 }

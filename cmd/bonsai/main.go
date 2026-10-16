@@ -19,6 +19,7 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/textui"
 )
 
 // version is the build's version. GoReleaser sets it with `-ldflags "-X main.version=<version>"`
@@ -82,43 +83,35 @@ const (
 )
 
 // usage is bonsai --help: every word in the registry, in spec §4's order.
-func usage() string {
-	var b strings.Builder
-	b.WriteString("bonsai: the structure inside each project (formats, packs, guards, a recorder, a ladder).\n")
-	b.WriteString("This build is Bonsai's rebuild in progress; it answers:\n")
-	// The left column is as wide as its longest entry and one more, so every line keeps two spaces before its words.
-	left := [][2]string{
-		{"bonsai --version", "print this build's version"},
-		{"bonsai --help", "print this help"},
-		{"bonsai --help --json", "print this help as one JSON document (bonsai.help/1)"},
+func usage() *textui.Doc {
+	d := &textui.Doc{}
+	d.Title("bonsai", "the structure inside each project (formats, packs, guards, a recorder, a ladder)")
+	d.Raw("This build is Bonsai's rebuild in progress; it answers:\n")
+	rows := []textui.Row{
+		textui.R(textui.T("bonsai --version", textui.Path), textui.C("print this build's version")),
+		textui.R(textui.T("bonsai --help", textui.Path), textui.C("print this help")),
+		textui.R(textui.T("bonsai --help --json", textui.Path), textui.C("print this help as one JSON document (bonsai.help/1)")),
 	}
 	for _, w := range wordList() {
-		left = append(left, [2]string{strings.TrimSpace("bonsai " + w.Name + " " + w.Args), w.Summary + " (" + w.Name + " --help)"})
+		rows = append(rows, textui.R(textui.T(strings.TrimSpace("bonsai "+w.Name+" "+w.Args), textui.Path), textui.C(w.Summary+" ("+w.Name+" --help)")))
 	}
-	width := 0
-	for _, l := range left {
-		width = max(width, len(l[0])+1)
-	}
-	for _, l := range left {
-		fmt.Fprintf(&b, "  %-*s %s\n", width, l[0], l[1])
-	}
-	b.WriteString(commonNotes)
-	b.WriteString("Exit codes: ")
-	var every, hook []string
+	d.Section("Commands", rows...)
+	d.Raw(commonNotes)
+	var every, hook []textui.Row
 	for _, e := range format.ExitCodes {
-		item := strconv.Itoa(e.Code) + " " + e.Short
+		r := textui.R(textui.T(strconv.Itoa(e.Code), textui.Key), textui.C(e.Short))
 		if e.Applies == format.ExitHook {
-			hook = append(hook, item)
+			hook = append(hook, r)
 		} else {
-			every = append(every, item)
+			every = append(every, r)
 		}
 	}
-	b.WriteString(strings.Join(every, ", ") + ";\nbonsai hook: " + strings.Join(hook, ", ") + ".\n")
-	b.WriteString("Example: bonsai status --json\n")
-	return b.String()
+	d.Section("Exit codes", every...)
+	d.Section("bonsai hook", hook...)
+	d.Section("Example", textui.R(textui.T("bonsai status --json", textui.Path)))
+	return d
 }
 
-// commonNotes is what every word shares, as bonsai --help prints it and bonsai --help --json says it in about.
 const commonNotes = `Every word takes --help, which lists its flags, its exit codes and an example; every word but hook takes
 --json. A word that writes previews first and writes with --yes; without a terminal it never asks: it prints the
 preview and exits 4. Every refusal names the next step; with --json it is the error object of the word's document
@@ -178,7 +171,7 @@ func runBonsai(args []string, stdout, stderr io.Writer) int {
 	case len(args) == 1 && args[0] == "--version":
 		return write(stdout, versionLine())
 	case len(args) == 1 && (args[0] == "--help" || args[0] == "-h"):
-		return write(stdout, usage())
+		return write(stdout, usage().Render(textui.For(stdout)))
 	}
 	what, code := "no command given", "unknown-command"
 	switch {
