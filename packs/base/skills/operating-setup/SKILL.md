@@ -79,3 +79,17 @@ between the open statuses but never to `approved`, to `done` only in a `close: a
 `blocked_by` filled. Under `command` (a studio manages the project) the guard refuses an agent's edit of a status
 line (`status-line`), a lane line (`lane-line`), a task file outside the main checkout (`task-outside-main`) and a
 person-only path put into `bonsai.allows` (`grant-person-only`): run the command `status_command` names instead.
+
+## This machine's settings and attached labels
+
+They live in the Bonsai home, never in the project: `status_writes` and `status_command` for the workspace, and with
+`--machine` the home's own. `bonsai settings --help` and `bonsai labels --help` show both words; until this build has
+their actions, each refuses `not-built` and names the step that brings it.
+
+- **Read** them with `settings show` (`--json`; `--machine` for the home's): every key, its value in force and where
+  it came from. Agents may run it.
+- **`settings set`, `labels attach` and `labels detach` are a person's**: in an agent's session each refuses itself
+  (`person-command`) and the guard refuses them too. Hand the person the exact line, to type in a terminal of their
+  own, not inside Claude (its `!` lines count as an agent's session).
+- **An attach adds, never redefines:** a namespace that is `bonsai` or a locked pack's is refused (`namespace-taken`),
+  and a changed or removed definition (`label-redefined`): the person detaches the namespace, then attaches again.
