@@ -20,7 +20,7 @@ import (
 
 func TestSettingsAndLabelsArePlaced(t *testing.T) {
 	want := map[string][]string{"settings": {"settings show", "settings set"}, "labels": {"labels attach", "labels detach"}}
-	later := map[string]string{"settings": "step 5.6.1", "labels": "step 5.6.2"}
+	later := map[string]string{"settings": "step 5.6.1", "labels": ""} // labels is built (step 5.6.2): its sub-words carry no Later
 	for _, name := range []string{"settings", "labels"} {
 		w := words[name]
 		if w == nil {
@@ -38,6 +38,9 @@ func TestSettingsAndLabelsArePlaced(t *testing.T) {
 				if !s.exits(code) {
 					t.Errorf("%s has no exit %d", s.Name, code)
 				}
+			}
+			if later[name] == "" {
+				continue // built: its own tests (labels_test.go) run it
 			}
 			// Refused as not built, before anything else, the --json given or not.
 			var stdout, stderr bytes.Buffer
@@ -83,7 +86,8 @@ func TestSettingsAndLabelsArePlaced(t *testing.T) {
 				t.Errorf("--help --json: %s's subs %v", w.Name, w.Subs)
 			}
 		case "settings show", "settings set", "labels attach", "labels detach":
-			if w.Later == nil || !strings.HasPrefix(*w.Later, "step 5.6.") || len(w.Flags) == 0 || len(w.Exits) != 4 {
+			built := strings.HasPrefix(w.Name, "labels ") // step 5.6.2 built both labels sub-words
+			if (w.Later == nil) != built || (w.Later != nil && !strings.HasPrefix(*w.Later, "step 5.6.")) || len(w.Flags) == 0 || len(w.Exits) != 4 {
 				t.Errorf("--help --json: %s: later %v, %d flags, %d exits", w.Name, w.Later, len(w.Flags), len(w.Exits))
 			}
 		}

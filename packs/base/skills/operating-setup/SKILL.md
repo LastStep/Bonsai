@@ -89,7 +89,8 @@ their actions, each refuses `not-built` and names the step that brings it.
 - **Read** them with `settings show` (`--json`; `--machine` for the home's): every key, its value in force and where
   it came from. Agents may run it.
 - **`settings set`, `labels attach` and `labels detach` are a person's**: in an agent's session each refuses itself
-  (`person-command`) and the guard refuses them too. Hand the person the exact line, to type in a terminal of their
-  own, not inside Claude (its `!` lines count as an agent's session).
+  (`person-command`) and the guard refuses them too. Hand the person the exact line (`bonsai labels attach <file>`,
+  `bonsai labels detach <namespace>`), to type in a terminal of their own, not inside Claude (its `!` lines count as
+  an agent's session).
 - **An attach adds, never redefines:** a namespace that is `bonsai` or a locked pack's is refused (`namespace-taken`),
   and a changed or removed definition (`label-redefined`): the person detaches the namespace, then attaches again.
