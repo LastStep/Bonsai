@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5515
 title: "5.5.5's fix round for the guard and the commands (5.5.5b): a finding's own next step allowed, read-only commands not judged as writes, a named session's minutes budget"
-status: verify
+status: done
 lane:
 done_when:
   - "S1's finding: the `.bonsai/local` tracked finding's next.do (who: agent) is a command the guard lets an agent run, or its who and next change to what an agent may do; a Go test that fails first"
@@ -13,7 +13,7 @@ depends_on: [T-5505]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-16
 labels:
   bonsai.branch: "t5515"
   bonsai.ladder: []

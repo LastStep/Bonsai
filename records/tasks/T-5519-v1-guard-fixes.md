@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5519
 title: "V1's fix round (5.5.5e): git rm's --no-cached, a bonsai call inside script -c, the minutes count, a protocols folder that is a file"
-status: running
+status: done
 lane:
 done_when:
   - "M1: `git rm --cached` with `--no-cached` or any prefix of it, in either order, judged as a deletion of .bonsai/local again (git's last-wins); V1's TestV1Adversarial cases as Go tests that fail first"
@@ -13,7 +13,7 @@ depends_on: [T-5515]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-16
 labels:
   bonsai.branch: "t5519"
   bonsai.ladder: []
