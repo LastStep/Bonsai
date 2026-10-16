@@ -1,0 +1,13 @@
+{
+  "format": "bonsai.attach/1",
+  "command": "attach",
+  "namespace": "studio",
+  "version": 2,
+  "file": "/srv/bonsai-home/workspaces/r-0123456789abcdef/labels/studio.yaml",
+  "result": "updated",
+  "labels": [
+    "studio.area",
+    "studio.reviewer"
+  ],
+  "error": null
+}

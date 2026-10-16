@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "bonsai.status/1",
-  "description": "bonsai status --json (contract §12): one workspace at a glance, for the studio's bridge and an assistant (Bonsai has no screens of its own: every visual is the studio's). Printed, never stored. Written by bonsai status --json (cheap and offline; --full adds checks); read by the studio's bridge and agents. Spec §16 row 24's additions arrive as values, not new fields: a pack not installed on this machine is a needs entry of kind plugin, the Claude Code floor a needs entry of kind tool (never a problem, warn only), plugin drift and a bonsai on the PATH that is not the installed one are problems; --line prints the statusline's workspace half instead of this document. A writer writes every field below, in this order (contract §2.2); when Bonsai cannot read the workspace at all it exits 3 and fills format, bonsai, problems and error, with every other field null. Absolute paths appear only here, printed locally, and the bridge never forwards them (contract §2.6). A reader treats a missing field as null, keeps an unknown one and refuses a duplicate key. Set 8 adds roles and then messages at the end: the roles in force, and the messages between agents counted.",
+  "description": "bonsai status --json (contract §12): one workspace at a glance, for the studio's bridge and an assistant (Bonsai has no screens of its own: every visual is the studio's). Printed, never stored. Written by bonsai status --json (cheap and offline; --full adds checks); read by the studio's bridge and agents. Spec §16 row 24's additions arrive as values, not new fields: a pack not installed on this machine is a needs entry of kind plugin, the Claude Code floor a needs entry of kind tool (never a problem, warn only), plugin drift and a bonsai on the PATH that is not the installed one are problems; --line prints the statusline's workspace half instead of this document (bonsai.line/1, from set 10). A writer writes every field below, in this order (contract §2.2); when Bonsai cannot read the workspace at all it exits 3 and fills format, bonsai, problems and error, with every other field null. Absolute paths appear only here, printed locally, and the bridge never forwards them (contract §2.6). A reader treats a missing field as null, keeps an unknown one and refuses a duplicate key. Set 8 adds roles and then messages at the end: the roles in force, and the messages between agents counted. Set 10 adds bonsai_release at the end: Bonsai's newer releases, as last read.",
   "type": "object",
   "required": [
     "format",
@@ -26,7 +26,8 @@
     "error",
     "ladder",
     "roles",
-    "messages"
+    "messages",
+    "bonsai_release"
   ],
   "properties": {
     "format": {
@@ -1319,6 +1320,146 @@
           ],
           "type": "integer",
           "minimum": 0
+        }
+      }
+    },
+    "bonsai_release": {
+      "description": "Bonsai's newer releases, as the home's last online read found them (set 10; plan-5 5.6.5): the version compared, the newest read, and when newer, the command lines that install it on each side. Offline: status reads the home's record and never the network (status --full reads it again). null on exit 3, and from a Bonsai that does not fill it yet (set 10 adds the field; step 5.6.5 its value).",
+      "examples": [
+        {
+          "version": "1.0.0",
+          "newest": "1.0.1",
+          "state": "newer",
+          "read": "2026-11-02T08:15:00Z",
+          "why": null,
+          "lines": {
+            "linux": [
+              "curl -fsSL https://example.org/install.sh | sh"
+            ],
+            "windows": [
+              "irm https://example.org/install.ps1 | iex"
+            ]
+          }
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "version",
+        "newest",
+        "state",
+        "read",
+        "why",
+        "lines"
+      ],
+      "properties": {
+        "version": {
+          "description": "The version compared: this Bonsai's own; null when it has none to compare (a build from source).",
+          "examples": [
+            "1.0.0",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "newest": {
+          "description": "The newest release the last read found; null when none was read.",
+          "examples": [
+            "1.0.1",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "description": "A closed list: current (no newer release), newer (newest is newer than version), unknown (no read yet, or the last read failed: why says which), not-a-release (this Bonsai is not a release build, so nothing is compared).",
+          "examples": [
+            "newer",
+            "current"
+          ],
+          "enum": [
+            "current",
+            "newer",
+            "unknown",
+            "not-a-release"
+          ]
+        },
+        "read": {
+          "description": "When the releases were last read successfully, RFC 3339 in UTC; null when never.",
+          "examples": [
+            "2026-11-02T08:15:00Z",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "why": {
+          "description": "One line saying why the state is unknown; null for every other state.",
+          "examples": [
+            "the releases have not been read on this machine yet (bonsai status --full reads them)",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lines": {
+          "description": "When state is newer, the command lines that install the newest release, each a list of lines run in order: linux (install.sh serves Linux and WSL alike) and windows (PowerShell); null for every other state.",
+          "examples": [
+            {
+              "linux": [
+                "curl -fsSL https://example.org/install.sh | sh"
+              ],
+              "windows": [
+                "irm https://example.org/install.ps1 | iex"
+              ]
+            },
+            null
+          ],
+          "type": [
+            "object",
+            "null"
+          ],
+          "required": [
+            "linux",
+            "windows"
+          ],
+          "properties": {
+            "linux": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The lines for Linux and WSL, in order.",
+              "examples": [
+                [
+                  "curl -fsSL https://example.org/install.sh | sh"
+                ]
+              ]
+            },
+            "windows": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The lines for Windows PowerShell, in order.",
+              "examples": [
+                [
+                  "irm https://example.org/install.ps1 | iex"
+                ]
+              ]
+            }
+          }
         }
       }
     }

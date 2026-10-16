@@ -226,6 +226,8 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 		"ladder":      lastLadder(co, known.activeID),
 		"roles":       roles,
 		"messages":    messages,
+		// Bonsai's newer releases (set 10): null until step 5.6.5 reads them (plan-5 note 5.6.0, 3).
+		"bonsai_release": nil,
 	}, nil
 }
 

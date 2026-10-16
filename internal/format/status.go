@@ -27,10 +27,29 @@ type Status struct {
 	Problems      []string         `json:"problems"`
 	Checks        schema.Object    `json:"checks"` // with --full only: typed open
 	Error         *ErrorObject     `json:"error"`
-	Ladder        *StatusLadder    `json:"ladder"`   // the active task's last ladder result, or null (set 7; the ladder runner fills it)
-	Roles         []StatusRole     `json:"roles"`    // the roles in force, or null (set 8; step 5.5.0 fills it)
-	Messages      *StatusMessages  `json:"messages"` // the messages between agents, counted, or null (set 8; step 5.5.10 fills it)
+	Ladder        *StatusLadder    `json:"ladder"`         // the active task's last ladder result, or null (set 7; the ladder runner fills it)
+	Roles         []StatusRole     `json:"roles"`          // the roles in force, or null (set 8; step 5.5.0 fills it)
+	Messages      *StatusMessages  `json:"messages"`       // the messages between agents, counted, or null (set 8; step 5.5.10 fills it)
+	BonsaiRelease *StatusRelease   `json:"bonsai_release"` // Bonsai's newer releases as last read, or null (set 10; step 5.6.5 fills it)
 	Extra         schema.Object    `json:"-"`
+}
+
+// StatusRelease is Bonsai's newer releases, as the home's last online read found them (set 10).
+type StatusRelease struct {
+	Version *string       `json:"version"` // the version compared, or null
+	Newest  *string       `json:"newest"`  // the newest release read, or null
+	State   string        `json:"state"`   // the closed list: current, newer, unknown, not-a-release
+	Read    *string       `json:"read"`    // when last read successfully, RFC 3339 UTC, or null
+	Why     *string       `json:"why"`     // one line when unknown, else null
+	Lines   *ReleaseLines `json:"lines"`   // when newer, the install lines; else null
+	Extra   schema.Object `json:"-"`
+}
+
+// ReleaseLines are the command lines that install a release, each side's in order.
+type ReleaseLines struct {
+	Linux   []string      `json:"linux"` // Linux and WSL alike (install.sh)
+	Windows []string      `json:"windows"`
+	Extra   schema.Object `json:"-"`
 }
 
 // StatusRole is one role the linked packs declare, with each limit in force (set 8).

@@ -385,8 +385,9 @@ func TestSetEightWordsAndFormats(t *testing.T) {
 		t.Errorf("status --json's roles writes %s, want null", schema.Show(v))
 	}
 	keys := st.Keys()
-	if strings.Join(keys[len(keys)-3:], " ") != "ladder roles messages" {
-		t.Errorf("status --json ends %v, want ladder, roles, messages", keys[len(keys)-3:])
+	// Set 10 adds bonsai_release after them (set10_test.go holds it).
+	if strings.Join(keys[len(keys)-4:len(keys)-1], " ") != "ladder roles messages" {
+		t.Errorf("status --json's set 7 and 8 fields are %v, want ladder, roles, messages", keys[len(keys)-4:len(keys)-1])
 	}
 	lg, err := MustLookup("log").Document(&Log{})
 	if err != nil {

@@ -35,6 +35,7 @@ var doesNotApply = map[string]string{
 	"error":          "null", // nothing refused
 	"ladder":         "null", // no result yet: the ladder runner (step 5.4.2) fills it
 	"roles":          "[]",   // no linked pack declares a role (set 8; step 5.5.0)
+	"bonsai_release": "null", // not built yet: step 5.6.5 reads Bonsai's releases and fills it (set 10)
 }
 
 const cfg = `format: bonsai.workspace/1   # comments are fine

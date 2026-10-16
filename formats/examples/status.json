@@ -147,5 +147,20 @@
   "messages": {
     "open": 1,
     "flagged": 0
+  },
+  "bonsai_release": {
+    "version": "1.0.0",
+    "newest": "1.0.1",
+    "state": "newer",
+    "read": "2026-11-02T08:15:00Z",
+    "why": null,
+    "lines": {
+      "linux": [
+        "curl -fsSL https://example.org/install.sh | sh"
+      ],
+      "windows": [
+        "irm https://example.org/install.ps1 | iex"
+      ]
+    }
   }
 }

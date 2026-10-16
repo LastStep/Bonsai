@@ -70,6 +70,7 @@ error words.
 - Status: status_writes
 - Active task: how it was found
 - Status: where a role's limit came from
+- status: bonsai_release.state
 - Lock file kinds
 - Role kinds
 - Sessions: a row's kind
@@ -83,6 +84,14 @@ error words.
 - Message kinds
 - Message statuses
 - Messages: a thread's state
+- settings: scope
+- settings: settings[].from
+- settings: error.next.who
+- attach: command
+- attach: result
+- attach: error.next.who
+- line: ladder
+- line: error.next.who
 
 ## Exit codes
 
@@ -157,6 +166,8 @@ error words.
 | `report-not-in-thread` | agent | a report names a thread that holds no brief to its --from, or a --to that is not that brief's from (only a brief's own writer may close its dropped thread, blocked, to the brief's to): nothing was written (exit 4) |
 | `pointer-missing` | agent | a --pointer names a file that does not exist, or one outside the project and the home: nothing was written (exit 2) |
 | `message-not-found` | agent | bonsai message --show, --thread or --reply-to names an id that no message under .bonsai/local/messages/ has: nothing was written or shown (exit 4) |
+| `namespace-taken` | person | bonsai labels attach was given definitions whose namespace is bonsai or a locked pack's, which only that pack defines (contract section 5.1): nothing was written (exit 4) |
+| `label-redefined` | person | bonsai labels attach would change a definition already attached: a definition changed or removed, or other content at the same or an older version (contract section 5.1: a definition may be added, never redefined). Nothing was written (exit 4); the person's step is bonsai labels detach <namespace> and then the attach again |
 | `partly-written` | agent | the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest |
 | `unexpected` | agent | something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats |
 
@@ -1051,6 +1062,14 @@ Values: `named`, `running`, `null`.
 
 Values: `pack`, `bonsai.yaml`.
 
+## status: bonsai_release.state
+
+- Closed list.
+- Defined in: formats/schemas/status.schema.json (`bonsai_release.state`).
+- Printed in a project by: `bonsai check --schema bonsai.status`.
+
+Values: `current`, `newer`, `unknown`, `not-a-release`.
+
 ## Lock file kinds
 
 - Closed list.
@@ -1154,3 +1173,67 @@ Values: `done`, `blocked`, `needs-input`, `null`.
 - Printed in a project by: `bonsai check --schema bonsai.messages`.
 
 Values: `open`, `answered`.
+
+## settings: scope
+
+- Closed list.
+- Defined in: formats/schemas/settings.schema.json (`scope`).
+- Printed in a project by: `bonsai check --schema bonsai.settings`.
+
+Values: `workspace`, `machine`.
+
+## settings: settings[].from
+
+- Closed list.
+- Defined in: formats/schemas/settings.schema.json (`settings[].from`).
+- Printed in a project by: `bonsai check --schema bonsai.settings`.
+
+Values: `file`, `default`.
+
+## settings: error.next.who
+
+- Closed list.
+- Defined in: formats/schemas/settings.schema.json (`error.next.who`).
+- Printed in a project by: `bonsai check --schema bonsai.settings`.
+
+Values: `agent`, `person`.
+
+## attach: command
+
+- Closed list.
+- Defined in: formats/schemas/attach.schema.json (`command`).
+- Printed in a project by: `bonsai check --schema bonsai.attach`.
+
+Values: `attach`, `detach`.
+
+## attach: result
+
+- Closed list.
+- Defined in: formats/schemas/attach.schema.json (`result`).
+- Printed in a project by: `bonsai check --schema bonsai.attach`.
+
+Values: `attached`, `updated`, `unchanged`, `detached`, `nothing`, `null`.
+
+## attach: error.next.who
+
+- Closed list.
+- Defined in: formats/schemas/attach.schema.json (`error.next.who`).
+- Printed in a project by: `bonsai check --schema bonsai.attach`.
+
+Values: `agent`, `person`.
+
+## line: ladder
+
+- Closed list.
+- Defined in: formats/schemas/line.schema.json (`ladder`).
+- Printed in a project by: `bonsai check --schema bonsai.line`.
+
+Values: `green`, `red`, `old`, `none`, `null`.
+
+## line: error.next.who
+
+- Closed list.
+- Defined in: formats/schemas/line.schema.json (`error.next.who`).
+- Printed in a project by: `bonsai check --schema bonsai.line`.
+
+Values: `agent`, `person`.

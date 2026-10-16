@@ -1,0 +1,22 @@
+{
+  "format": "bonsai.settings/1",
+  "scope": "workspace",
+  "file": "/srv/bonsai-home/workspaces/r-0123456789abcdef/settings.json",
+  "settings": [
+    {
+      "key": "status_writes",
+      "value": "command",
+      "from": "file"
+    },
+    {
+      "key": "status_command",
+      "value": "studio task move",
+      "from": "file"
+    }
+  ],
+  "changed": [
+    "status_writes",
+    "status_command"
+  ],
+  "error": null
+}

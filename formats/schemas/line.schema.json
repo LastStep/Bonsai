@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.line/1",
+  "description": "bonsai status --line --json (spec §4; contract §12; plan-5 5.6.0 and 5.6.4): the statusline's workspace half as fields, with the line itself, so a studio's statusline draws it its own way and a plain one prints line. Cheap and offline, like status --json; printed, never stored. Written by bonsai status --line with --json; read by the studio's statusline and agents. Outside a linked folder it is not an error: workspace and task are null and line is \"\". A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "workspace",
+    "task",
+    "running",
+    "ladder",
+    "verify",
+    "asks",
+    "release",
+    "line",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.line/1"
+      ],
+      "const": "bonsai.line/1"
+    },
+    "workspace": {
+      "description": "The workspace's id and name from bonsai.yaml; null when the folder is not linked.",
+      "examples": [
+        {
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "description": "The workspace id (contract §3).",
+          "examples": [
+            "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+          ],
+          "type": "string",
+          "pattern": "^ws-[a-z0-9]{26}$"
+        },
+        "name": {
+          "description": "The workspace's name (contract §3).",
+          "examples": [
+            "example"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        }
+      }
+    },
+    "task": {
+      "description": "The active task (contract §13): its id, title and status; null when there is none.",
+      "examples": [
+        {
+          "id": "T-0901",
+          "title": "Rooms with a code",
+          "status": "running"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "title",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "description": "The task's id.",
+          "examples": [
+            "T-0901"
+          ],
+          "type": "string"
+        },
+        "title": {
+          "description": "The task's title, as its file has it.",
+          "examples": [
+            "Rooms with a code"
+          ],
+          "type": "string"
+        },
+        "status": {
+          "description": "The task's status, as its file has it (bonsai.task/1's status).",
+          "examples": [
+            "running"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "running": {
+      "description": "How many tasks read running when no one task is active (none, or two or more); null when one is active, or the folder is not linked.",
+      "examples": [
+        2,
+        null
+      ],
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "ladder": {
+      "description": "Where the active task's proof stands, a closed list: green (its last result is green at this checkout's HEAD), red (red at HEAD), old (its last result is for another commit), none (no result yet); null with no active task.",
+      "examples": [
+        "green",
+        "old",
+        null
+      ],
+      "enum": [
+        "green",
+        "red",
+        "old",
+        "none",
+        null
+      ]
+    },
+    "verify": {
+      "description": "How many tasks read verify; 0 when the folder is not linked.",
+      "examples": [
+        1,
+        0
+      ],
+      "type": "integer",
+      "minimum": 0
+    },
+    "asks": {
+      "description": "How many asks are open (bonsai.asks/1 lists them); 0 when the folder is not linked.",
+      "examples": [
+        0,
+        3
+      ],
+      "type": "integer",
+      "minimum": 0
+    },
+    "release": {
+      "description": "A newer Bonsai release's version, as the home's last read of the releases found it (status --json's bonsai_release); null when none is newer, or none was read.",
+      "examples": [
+        "1.0.1",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "line": {
+      "description": "The line itself, one line of ASCII as status --line prints it without --json; \"\" when the folder is not linked.",
+      "examples": [
+        "example T-0901 running ladder green verify 1",
+        ""
+      ],
+      "type": "string"
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

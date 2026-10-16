@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.attach/1",
+  "description": "bonsai labels attach --json and bonsai labels detach --json (spec §4; contract §5.1-§5.3; plan-5 5.6.0 and 5.6.2): label definitions attached on this machine for one workspace, a bonsai.labels/1 file copied into the workspace's machine folder (labels/<namespace>.yaml in the Bonsai home), or taken out of it. An attached set counts as a definition in force like a locked pack's (status --json lists it with from machine). A definition may be added, never redefined: attaching again with a newer version that only adds is updated, and anything else that changes the file is refused (label-redefined); a namespace that is bonsai or a locked pack's is refused (namespace-taken). Printed, never stored. Written by bonsai labels with --json, always whole; read by agents and the studio's bridge, which attaches its own definitions. Both commands refuse themselves in an agent's session (person-command): attaching definitions is a person's step. A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "command",
+    "namespace",
+    "version",
+    "file",
+    "result",
+    "labels",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.attach/1"
+      ],
+      "const": "bonsai.attach/1"
+    },
+    "command": {
+      "description": "Which command printed it, a closed list: attach or detach.",
+      "examples": [
+        "attach",
+        "detach"
+      ],
+      "enum": [
+        "attach",
+        "detach"
+      ]
+    },
+    "namespace": {
+      "description": "The namespace attached or detached (contract §5.1); null when the command refused before it read one (a file it cannot read, say).",
+      "examples": [
+        "studio",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "version": {
+      "description": "The definitions' own version (bonsai.labels/1's version): the file's for an attach, the detached file's for a detach; null when there is none to read (a detach of a namespace with no file, a refusal before reading).",
+      "examples": [
+        2,
+        null
+      ],
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "file": {
+      "description": "The attached file's absolute place in the machine folder, labels/<namespace>.yaml, forward slashes (printed locally, never committed or forwarded, contract §2.6); null when the command refused before it knew the place.",
+      "examples": [
+        "/srv/bonsai-home/workspaces/r-0123456789abcdef/labels/studio.yaml",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "result": {
+      "description": "What the command did, a closed list: attached (a namespace not attached before), updated (a newer version that only adds definitions), unchanged (the same content again: nothing written), detached (the file taken out), nothing (a detach with no file to take out); null when the command refused.",
+      "examples": [
+        "attached",
+        "unchanged",
+        null
+      ],
+      "enum": [
+        "attached",
+        "updated",
+        "unchanged",
+        "detached",
+        "nothing",
+        null
+      ]
+    },
+    "labels": {
+      "description": "The names the namespace has attached after the command, in the file's order: [] after a detach and on a refusal.",
+      "examples": [
+        [
+          "studio.area",
+          "studio.reviewer"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+      }
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

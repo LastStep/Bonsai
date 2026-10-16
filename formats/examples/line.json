@@ -1,0 +1,19 @@
+{
+  "format": "bonsai.line/1",
+  "workspace": {
+    "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+    "name": "example"
+  },
+  "task": {
+    "id": "T-0901",
+    "title": "Rooms with a code",
+    "status": "running"
+  },
+  "running": null,
+  "ladder": "green",
+  "verify": 1,
+  "asks": 0,
+  "release": "1.0.1",
+  "line": "example T-0901 running ladder green verify 1 release 1.0.1",
+  "error": null
+}

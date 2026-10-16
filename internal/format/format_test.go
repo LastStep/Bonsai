@@ -25,6 +25,7 @@ var goTypes = map[string]any{
 	"ladder": Ladder{}, "status": Status{}, "workspace": Workspace{}, "pack": Pack{}, "tasks": Tasks{},
 	"sessions": Sessions{}, "memory": Memory{}, "error": ErrorObject{}, "check": Check{}, "changes": Changes{}, "help": Help{},
 	"asks": Asks{}, "logs": Logs{}, "climb": Climb{}, "message": Message{}, "messages": Messages{}, "agents": Agents{},
+	"settings": Settings{}, "attach": Attach{}, "line": Line{},
 }
 
 // readers read each format's example source into its Go type.
@@ -53,6 +54,9 @@ var readers = map[string]func([]byte) (any, error){
 	"message":   func(b []byte) (any, error) { return ReadMessage(b) },
 	"messages":  func(b []byte) (any, error) { return ReadMessages(b) },
 	"agents":    func(b []byte) (any, error) { return ReadAgents(b) },
+	"settings":  func(b []byte) (any, error) { return ReadSettings(b) },
+	"attach":    func(b []byte) (any, error) { return ReadAttach(b) },
+	"line":      func(b []byte) (any, error) { return ReadLine(b) },
 }
 
 func example(t *testing.T, file string) []byte {

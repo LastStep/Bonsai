@@ -20,10 +20,11 @@ var schemas embed.FS
 // the eight set 4 added (bonsai.yaml, pack.yaml, the two tables, memory, the error object, and the --json of check
 // and of init, update and unlink), then set 5's help (bonsai --help --json), then set 6's two command outputs: asks
 // (bonsai ask, answer and asks) and logs (bonsai logs and log append), then set 7's climb (bonsai ladder), then set 8's
-// message (a message between agents), messages (bonsai message and messages) and agents (bonsai agents).
+// message (a message between agents), messages (bonsai message and messages) and agents (bonsai agents), then set 10's
+// settings (bonsai settings), attach (bonsai labels attach and detach) and line (bonsai status --line).
 var Names = []string{"task", "labels", "lanes", "run", "state", "log", "ask", "ladder", "status", "lock",
 	"workspace", "pack", "tasks", "sessions", "memory", "error", "check", "changes", "help", "asks", "logs", "climb",
-	"message", "messages", "agents"}
+	"message", "messages", "agents", "settings", "attach", "line"}
 
 // Schema returns the committed bytes of one format's schema, by its short name ("lock", "status").
 func Schema(name string) ([]byte, error) {

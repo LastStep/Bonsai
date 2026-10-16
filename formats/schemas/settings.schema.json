@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.settings/1",
+  "description": "bonsai settings show --json and bonsai settings set --json (spec §4, §6; contract §3, §10.1; plan-5 5.6.0 and 5.6.1): this machine's settings, for the workspace (its machine folder's settings.json in the Bonsai home) or, with --machine, for the home itself (the home's settings.json). Every key of the scope is listed with the value in force and where it came from, so an agent reads them without opening the file. Printed, never stored; the settings files themselves are Bonsai's own, read by Bonsai alone, and have no format (the Go file that writes them documents them). Written by bonsai settings with --json, always whole; read by agents and the studio's bridge. The keys, their rules and their defaults have one home in Bonsai's code, which bonsai settings --help and the reference page of lists (docs/reference/lists.md) show; this schema does not copy them. A command that refused has settings and changed [] and error saying why with the next step: settings set refuses itself in an agent's session (person-command), since a machine's settings are a person's. A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "scope",
+    "file",
+    "settings",
+    "changed",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.settings/1"
+      ],
+      "const": "bonsai.settings/1"
+    },
+    "scope": {
+      "description": "Whose settings these are, a closed list: workspace (this checkout's workspace on this machine, the default) or machine (the Bonsai home's own, with --machine).",
+      "examples": [
+        "workspace",
+        "machine"
+      ],
+      "enum": [
+        "workspace",
+        "machine"
+      ]
+    },
+    "file": {
+      "description": "The settings file's absolute place, forward slashes, whether or not it exists yet (printed locally, never committed or forwarded, contract §2.6); null when the command refused before it knew the place (outside a linked checkout, a Bonsai home it cannot find).",
+      "examples": [
+        "/srv/bonsai-home/workspaces/r-0123456789abcdef/settings.json",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "settings": {
+      "description": "One entry per key of the scope, in the keys' table order: after settings set, the values in force once it wrote. [] when the command refused.",
+      "examples": [
+        [
+          {
+            "key": "status_writes",
+            "value": "command",
+            "from": "file"
+          },
+          {
+            "key": "status_command",
+            "value": "studio task move",
+            "from": "file"
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "from"
+        ],
+        "properties": {
+          "key": {
+            "description": "The key, as settings set takes it: one of the scope's keys (the keys' table in Bonsai's code, their one home).",
+            "examples": [
+              "status_writes",
+              "cache_keep_days"
+            ],
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "value": {
+            "description": "The value in force: a text, or a whole number for a key that takes one (cache_keep_days); null when the key has none (unset with no default, or set to none).",
+            "examples": [
+              "command",
+              30,
+              null
+            ],
+            "type": [
+              "string",
+              "integer",
+              "null"
+            ]
+          },
+          "from": {
+            "description": "Where the value came from, a closed list: file (the settings file sets it) or default (the file does not, and the key's default holds).",
+            "examples": [
+              "file",
+              "default"
+            ],
+            "enum": [
+              "file",
+              "default"
+            ]
+          }
+        }
+      }
+    },
+    "changed": {
+      "description": "The keys settings set changed, in the keys' table order: [] for settings show, for a set whose every value was already in force (it wrote nothing), and for a refusal.",
+      "examples": [
+        [
+          "status_writes",
+          "status_command"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      }
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

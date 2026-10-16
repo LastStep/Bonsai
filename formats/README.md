@@ -3,8 +3,8 @@
 This folder holds Bonsai's formats as files any program can test against: a JSON Schema for each of the ten formats
 of the formats contract (`design/contract.md` §2), the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row 29),
 the one that set 5 added (`help`, plan-5 5.1.10), the two that set 6 added (`asks` and `logs`, plan-5 5.2.0), the
-one that set 7 added (`climb`, plan-5 5.4.0) and the three that set 8 added (`message`, `messages` and `agents`, plan-5
-5.5.9), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
+one that set 7 added (`climb`, plan-5 5.4.0), the three that set 8 added (`message`, `messages` and `agents`, plan-5
+5.5.9) and the three that set 10 added (`settings`, `attach` and `line`, plan-5 5.6.0), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
 from set 8, message files), each with the one right outcome a reader must reach (accepted with this value, or refused
 for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
@@ -25,7 +25,7 @@ formats/
   embed.go                  embeds the schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
                                 status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help;
-                                asks, logs; climb; message, messages, agents
+                                asks, logs; climb; message, messages, agents; settings, attach, line
   examples/<name>.json      one valid document per format, as a reader returns it
   examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory, message (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
@@ -54,7 +54,10 @@ named for the act, since `bonsai.ladder/1` is the result's name); and, from set 
 message between agents: a brief or a report, one markdown file each in `.bonsai/local/messages/`, the schema being
 the message as `bonsai message --show --json` prints it), `messages` (`bonsai.messages/1`, the `--json` of `bonsai
 messages` and of `bonsai message`) and `agents` (`bonsai.agents/1`, the `--json` of `bonsai agents`, the one
-published view of what Bonsai has recorded about each agent). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
+published view of what Bonsai has recorded about each agent); and, from set 10, `settings` (`bonsai.settings/1`,
+the `--json` of `bonsai settings show` and `set`: this machine's settings, for the workspace or the home), `attach`
+(`bonsai.attach/1`, the `--json` of `bonsai labels attach` and `detach`: label definitions attached on this machine)
+and `line` (`bonsai.line/1`, the `--json` of `bonsai status --line`: the statusline's workspace half as fields). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
 where it lives) and a `description` and `examples` on every property. Later steps add their commands' outputs
 the same way, each a new schema file: an addition.
 
@@ -293,6 +296,32 @@ the same way, each a new schema file: an addition.
   - **One more active-task fixture**, `named-garbage`: the named task's file holds only `garbage: [`, which format 0
     reads as an empty mapping, so it is no task (step 5.4.3's fix, now shared by every reader). Its `does_not_parse`
     is `[]`: the file reads under format 0, and is broken only as a task.
+- **Set 10** (plan-5 5.6.0, step 5.6's shapes, set before the code that writes them; set 9 changed three descriptions
+  only), every change an addition:
+  - **`bonsai.settings/1`**: `format`; `scope` (`workspace` or `machine`, closed); `file` (the settings file's place,
+    forward slashes, printed locally; null when the command refused before it knew it); `settings` (one entry per key
+    of the scope: `key`, `value`, a text, a whole number or null, and `from`, `file` or `default`, closed); `changed`
+    (the keys `settings set` changed, `[]` for `show` and for a set that changed nothing); `error`. The keys, their
+    rules and defaults are a Go table, their one home (step 5.6.1), not a list in the schema.
+  - **`bonsai.attach/1`**: `format`; `command` (`attach` or `detach`, closed); `namespace`; `version` (the
+    definitions' own, or null); `file` (the machine folder's `labels/<namespace>.yaml`, forward slashes); `result`
+    (`attached`, `updated`, `unchanged`, `detached`, `nothing`, closed, or null on a refusal); `labels` (the names
+    attached after the command, `[]` after a detach); `error`.
+  - **`bonsai.line/1`**: `format`; `workspace` (`id` and `name`, or null when the folder is not linked); `task` (`id`,
+    `title`, `status`, or null); `running` (how many tasks read `running` when no one task is active, else null);
+    `ladder` (`green`, `red`, `old`, `none`, closed, or null with no task); `verify` and `asks` (counts); `release` (a
+    newer release's version, or null); `line` (the text, `""` when not linked); `error`.
+  - **`status --json` gains `bonsai_release`** at its end, null until step 5.6.5 fills it: `version`, `newest`,
+    `state` (`current`, `newer`, `unknown`, `not-a-release`; closed), `read` (RFC 3339 UTC, or null), `why` (one line
+    when `unknown`) and `lines` (`linux` and `windows`, each a list of command lines, when `newer`).
+  - **Descriptions only:** the memory schema says the personal layer is written by a person (an agent drafts and hands
+    the note over), each layer has its own caps, named on the reference page rather than in the schema, and a
+    project's notes are written through base's `memory` skill; `status`'s names `bonsai.line/1` for `--line`.
+  - **Not given a schema**, each Bonsai's own file on one machine, read by Bonsai alone and documented in the Go file
+    that writes it (as `workspace.json` is): the machine folder's and the home's `settings.json`, `install.json`, the
+    home's release record, the Windows copy's record and the line's cache.
+  - **Go**: the three outputs' types and writers (`format.Settings`, `format.Attach`, `format.Line`), status's
+    `format.StatusRelease`, and two error words, `namespace-taken` and `label-redefined` (`format.ErrorWords`).
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,
@@ -330,7 +359,8 @@ that a file made from a template carries, and the tables a line saying they are 
   finding (spec §6), and the active line says none, naming it (contract §13: such a file makes the answer none).
 
 `examples/status.json` and `examples/changes.json` print absolute paths, as `status --json` and `init`, `update` and
-`unlink` with `--json` do (printed locally, never forwarded). The contract's own example (§12) uses a path under a
+`unlink` with `--json` do (printed locally, never forwarded); so do `examples/settings.json` and
+`examples/attach.json` (from set 10), for the files in the home. The contract's own example (§12) uses a path under a
 home folder; these use `/srv/projects/example` and `/srv/bonsai-home`, made-up absolute paths that the set's
 private-string check (below) does not flag.
 

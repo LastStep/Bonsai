@@ -31,7 +31,7 @@ type Next struct {
 // 5.2's four: ask-not-open, answer-own-session, label-not-defined and session-not-found; step 5.4.0 added the
 // ladder's four: ladder-busy, no-task, rung-not-defined and main-not-verified; set 8, step 5.5.9, added bonsai
 // message's six: role-not-declared, budget-over-max, report-no-status, report-not-in-thread, pointer-missing and
-// message-not-found); a word is added, never renamed or taken out (format review 4.5: adding one is an addition).
+// message-not-found; set 10, step 5.6.0, added bonsai labels' two: namespace-taken and label-redefined); a word is added, never renamed or taken out (format review 4.5: adding one is an addition).
 var ErrorWords = []Word{
 	// The command line (exit 2).
 	{Word: "unknown-command", Who: "agent", Means: "no command word was given, or one this Bonsai does not have"},
@@ -92,6 +92,10 @@ var ErrorWords = []Word{
 	{Word: "report-not-in-thread", Who: "agent", Means: "a report names a thread that holds no brief to its --from, or a --to that is not that brief's from (only a brief's own writer may close its dropped thread, blocked, to the brief's to): nothing was written (exit 4)"},
 	{Word: "pointer-missing", Who: "agent", Means: "a --pointer names a file that does not exist, or one outside the project and the home: nothing was written (exit 2)"},
 	{Word: "message-not-found", Who: "agent", Means: "bonsai message --show, --thread or --reply-to names an id that no message under .bonsai/local/messages/ has: nothing was written or shown (exit 4)"},
+	// Labels attached on this machine (set 10; the commands are step 5.6.2's): a refusal of bonsai labels attach. A file
+	// that does not read as bonsai.labels/1 is bad-value; an agent's session is person-command.
+	{Word: "namespace-taken", Who: "person", Means: "bonsai labels attach was given definitions whose namespace is bonsai or a locked pack's, which only that pack defines (contract section 5.1): nothing was written (exit 4)"},
+	{Word: "label-redefined", Who: "person", Means: "bonsai labels attach would change a definition already attached: a definition changed or removed, or other content at the same or an older version (contract section 5.1: a definition may be added, never redefined). Nothing was written (exit 4); the person's step is bonsai labels detach <namespace> and then the attach again"},
 	// Part-way, and the unexpected (exit 3).
 	{Word: "partly-written", Who: "agent", Means: "the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest"},
 	{Word: "unexpected", Who: "agent", Means: "something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats"},
