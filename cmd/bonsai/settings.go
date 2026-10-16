@@ -2,21 +2,30 @@ package main
 
 // bonsai settings show and set (spec section 4, section 6; contract section 3, section 10.1; plan-5 5.6.0 and 5.6.1):
 // this machine's settings for the workspace, in its machine folder's settings.json in the Bonsai home, or with
-// --machine the home's own, in the home's settings.json. Step 5.6.0 places the word: its table, its sub-words' full
-// flag tables, exit codes and examples, so bonsai --help and bonsai --help --json show its final shape; both sub-words
-// are marked Later until step 5.6.1 builds them, and refused as not-built till then. With --json each prints
-// bonsai.settings/1 (format.Settings). settings show never refuses in an agent's session; settings set refuses itself
-// there (personOnly, agent.go), since a machine's settings are a person's.
+// --machine the home's own, in the home's settings.json. Step 5.6.0 placed the word; step 5.6.1 builds both
+// sub-words on internal/workspace's settings files (homesettings.go: the keys' table, their one home, its rules,
+// the reader and the writer). With --json each prints bonsai.settings/1 (format.Settings). settings show never
+// refuses in an agent's session; settings set refuses itself there (personOnly, agent.go), since a machine's
+// settings are a person's.
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/textui"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-func init() { register(settingsWord) }
-
-// settingsLater names the step that builds both sub-words.
-const settingsLater = "step 5.6.1"
+func init() {
+	register(settingsWord)
+	settingsShowWord.Notes = settingsKeysText()
+	settingsSetWord.Notes = settingsKeysText()
+}
 
 var settingsWord = &Word{
 	Name:    "settings",
@@ -74,9 +83,8 @@ Windows). It writes nothing, and agents may run it.
 		{Code: 4, Means: "outside a linked checkout without --machine (not-linked)"},
 	},
 	Examples: []string{"bonsai settings show --json", "bonsai settings show --machine --json"},
-	Later:    settingsLater,
 	Refused:  settingsRefused,
-	Run:      func(c *call) int { return c.refuse(notBuiltYet("settings show", settingsLater)) },
+	Run:      runSettingsShow,
 }
 
 var settingsSetWord = &Word{
@@ -102,18 +110,185 @@ a person types it in a terminal of their own, not inside Claude (its ! lines cou
 		`bonsai settings set status_writes=command "status_command=studio task move"`,
 		"bonsai settings set cache_keep_days=90 --machine --json",
 	},
-	Later:   settingsLater,
 	Refused: settingsRefused,
 	Run:     runSettingsSet,
 }
 
-// runSettingsSet is settings set's run: the agent's-session refusal first, then the command, which step 5.6.1 builds.
-// It is not reached while the sub-word is marked Later (the not-built refusal comes first).
+// runSettingsSet is settings set's run: the agent's-session refusal first, then every value checked, then all
+// written or none.
 func runSettingsSet(c *call) int {
 	if e := personOnly("bonsai settings set", "it changes this machine's settings", c.line()); e != nil {
 		return c.refuse(e)
 	}
-	return c.refuse(notBuiltYet("settings set", settingsLater))
+	f, e := settingsFile(c)
+	if e != nil {
+		return c.refuse(e)
+	}
+	changed, err := f.Set(c.rest)
+	if err != nil {
+		return c.refuse(settingsError(err))
+	}
+	return settingsOut(c, f, changed)
+}
+
+// runSettingsShow is settings show's run: it reads and prints, and writes nothing.
+func runSettingsShow(c *call) int {
+	if len(c.rest) > 0 {
+		return c.refuse(c.flagError("settings show takes no argument, and %+q was given", c.rest[0]))
+	}
+	f, e := settingsFile(c)
+	if e != nil {
+		return c.refuse(e)
+	}
+	return settingsOut(c, f, []string{})
+}
+
+// settingsFile opens the call's settings file: the home's with --machine, else the workspace's, in the main
+// checkout's machine folder (from a worktree too), which needs a linked checkout.
+func settingsFile(c *call) (*workspace.SettingsFile, *engine.Error) {
+	home, err := workspace.Home()
+	if err != nil {
+		e := engine.HomeError(err)
+		e.Exit = exitRuntime
+		return nil, e
+	}
+	main := ""
+	scope := workspace.ScopeMachine
+	if !c.has("--machine") {
+		scope = workspace.ScopeWorkspace
+		co, err := workspace.Find(".")
+		if err != nil {
+			e := engine.FindError(err)
+			e.Code, e.Exit = "not-linked", engine.ExitState
+			return nil, e
+		}
+		if _, err := os.Stat(filepath.Join(co.Root, workspace.ConfigFile)); err != nil {
+			return nil, &engine.Error{Code: "not-linked", Exit: engine.ExitState,
+				What: "bonsai.yaml is not in this checkout, so it is not linked to Bonsai: the workspace's settings need a linked checkout",
+				Next: "run it in a linked project's checkout, or give --machine for the Bonsai home's own settings"}
+		}
+		main = co.Main
+	}
+	f, err := workspace.OpenSettings(scope, home, main)
+	if err != nil {
+		return nil, settingsError(err)
+	}
+	return f, nil
+}
+
+// settingsError gives a settings file's error, or settings set's refusal of its input, with its word.
+func settingsError(err error) *engine.Error {
+	var se *workspace.SettingError
+	if errors.As(err, &se) {
+		return &engine.Error{Code: "bad-value", Exit: exitInput, What: engine.ASCII(se.Msg) + ": nothing was written", Next: engine.ASCII(se.Next)}
+	}
+	var we *workspace.Error
+	if errors.As(err, &we) {
+		code := we.Code
+		if code != "write-failed" {
+			code = "read-failed"
+		}
+		return &engine.Error{Code: code, Exit: exitRuntime, What: engine.ASCII(we.File + ": " + we.Msg), Next: engine.ASCII(we.Next)}
+	}
+	e := engine.Unexpected(err)
+	return e
+}
+
+// settingsOut prints the scope's settings in force, and what set changed.
+func settingsOut(c *call, f *workspace.SettingsFile, changed []string) int {
+	in, err := f.InForce()
+	if err != nil {
+		return c.refuse(settingsError(err))
+	}
+	show := f.Show()
+	if c.json {
+		doc := &format.Settings{Scope: f.Scope, File: &show, Settings: []format.SettingValue{}, Changed: changed}
+		for _, s := range in {
+			doc.Settings = append(doc.Settings, format.SettingValue{Key: s.Key, Value: s.Value, From: s.From})
+		}
+		return c.printDoc(doc, exitOK)
+	}
+	d := &textui.Doc{}
+	whose := "this workspace on this machine"
+	if f.Scope == workspace.ScopeMachine {
+		whose = "the Bonsai home (--machine)"
+	}
+	if c.word.Name == "settings set" {
+		note := "nothing changed: every value was already in force"
+		if len(changed) > 0 {
+			note = "written: " + strings.Join(changed, ", ")
+		}
+		d.Title("bonsai settings set", note)
+	} else {
+		d.Title("bonsai settings show", whose)
+	}
+	var rows []textui.Row
+	for _, s := range in {
+		value, tone := "none", textui.Dim
+		switch v := s.Value.(type) {
+		case string:
+			value, tone = v, textui.Path
+		case int64:
+			value, tone = strconv.FormatInt(v, 10), textui.Path
+		}
+		from := "from the file"
+		if s.From == workspace.FromDefault {
+			from = "the default"
+		}
+		rows = append(rows, textui.R(textui.T(s.Key, textui.Key), textui.T(engine.ASCII(value), tone), textui.T(from, textui.Dim)))
+	}
+	d.Section("Settings", rows...)
+	where := "not written yet: every key holds its default"
+	if f.Exists {
+		where = "this machine's settings for " + whose
+	}
+	d.Section("File", textui.R(textui.T(engine.ASCII(show), textui.Path), textui.C(where)))
+	d.Gap()
+	d.Hint("every key, its values and its default: bonsai settings set --help")
+	if c.word.Name == "settings show" {
+		d.Hint("a person changes one in a terminal of their own: bonsai settings set <key>=<value>" + map[bool]string{true: " --machine", false: ""}[f.Scope == workspace.ScopeMachine])
+	}
+	return c.show(d)
+}
+
+// settingsKeysText is the keys' table (workspace.SettingKeys, their one home) for both sub-words' --help.
+func settingsKeysText() string {
+	var b strings.Builder
+	for _, scope := range []string{workspace.ScopeWorkspace, workspace.ScopeMachine} {
+		title := "The workspace's keys (without --machine):"
+		if scope == workspace.ScopeMachine {
+			title = "The home's own keys (with --machine):"
+		}
+		b.WriteString(title + "\n")
+		for _, k := range workspace.SettingKeys {
+			if k.Scope != scope {
+				continue
+			}
+			only := ""
+			if k.Windows {
+				only = " (Windows only)"
+			}
+			wrapTo(&b, "  ", k.Key+only+": "+k.Values+"; default "+k.Default+".")
+			wrapTo(&b, "      ", k.Means+".")
+		}
+	}
+	return b.String()
+}
+
+// wrapTo writes text in lines of at most 116 characters, each starting with indent.
+func wrapTo(b *strings.Builder, indent, text string) {
+	line := indent
+	for _, w := range strings.Fields(text) {
+		if len(line) > len(indent) && len(line)+1+len(w) > 116 {
+			b.WriteString(line + "\n")
+			line = indent
+		}
+		if len(line) > len(indent) {
+			line += " "
+		}
+		line += w
+	}
+	b.WriteString(line + "\n")
 }
 
 // notBuiltYet is the refusal of a sub-word whose step has not built it yet.

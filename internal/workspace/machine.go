@@ -10,8 +10,8 @@ package workspace
 //
 // Read here: the settings (LoadMachineSettings) and the attached labels (LabelsInForce, with the packs' from the
 // lock's declares). Both are written only by Bonsai's commands run outside an agent session (contract §3, §10.6):
-// bonsai settings set and the attach command come with step 5.6. With no settings file, agents move statuses
-// themselves (status_writes agents), as in any workspace no studio manages.
+// bonsai settings set (homesettings.go: the keys' table, their rules and the writer) and bonsai labels attach. With no
+// settings file, agents move statuses themselves (status_writes agents), as in any workspace no studio manages.
 
 import (
 	"bytes"
@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -57,7 +58,8 @@ type MachineSettings struct {
 // LoadMachineSettings reads <machine folder>/settings.json: a JSON object whose status_writes is agents or command
 // and whose status_command, with command, is the command's text. A missing file (or one with neither key) is
 // status_writes agents; status_command is "" unless status_writes is command. A key this Bonsai does not know is
-// left as it is. Its error is an *Error naming the file and the next step.
+// left as it is. A status_command outside its rule (StatusCommandOK) is refused as a file Bonsai does not read is.
+// Its error is an *Error naming the file, the key and the next step.
 func LoadMachineSettings(home, main string) (MachineSettings, error) {
 	out := MachineSettings{StatusWrites: StatusWritesAgents}
 	dir, err := MachineDir(home, main)
@@ -91,6 +93,12 @@ func LoadMachineSettings(home, main string) (MachineSettings, error) {
 		s, _ := c.(string)
 		if strings.TrimSpace(s) == "" {
 			return out, &Error{File: show, Msg: "status_writes is command, but status_command names no command", Next: next}
+		}
+		if !StatusCommandOK(s) {
+			// The guard prints it in every command-mode refusal and agents run it as told: a hand-edited or forged
+			// file never puts ;, $(...), a quote or a line break there (plan-5 5.6.1, 1).
+			return out, &Error{File: show, Msg: "status_command is " + strconv.QuoteToASCII(s) + ", outside its rule (" +
+				settingKey("status_command").Values + ")", Next: next}
 		}
 		out.StatusCommand = s
 	}

@@ -148,7 +148,9 @@ func (w *Word) HelpDoc() *textui.Doc {
 			}
 			rows = append(rows, textui.R(textui.T("bonsai "+s.Name, textui.Path), textui.C(s.Summary+" (bonsai "+s.Name+" --help)")))
 		}
-		d.Section("Answers", rows...)
+		if len(rows) > 0 {
+			d.Section("Answers", rows...) // a word whose sub-words are all Later lists them under Not built alone
+		}
 		if len(later) > 0 {
 			d.Para("Not built", "not built yet: "+strings.Join(later, ", ")+".", textui.Dim)
 		}
@@ -320,6 +322,9 @@ func (c *call) runSub(args []string) int {
 	for _, s := range w.Subs {
 		if s.Name != w.Name+" "+args[0] {
 			continue
+		}
+		if s.Later != "" && len(args) == 2 && (args[1] == "--help" || args[1] == "-h") {
+			return c.show(s.HelpDoc()) // a sub-word not built yet still shows its table's help, which says so
 		}
 		if s.Later != "" {
 			next := s.LaterNext

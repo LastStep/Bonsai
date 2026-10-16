@@ -1,13 +1,14 @@
 package main
 
-// The words settings and labels as step 5.6.0 places them (plan-5 note 5.6.0, 2): registered with their sub-words
-// marked Later and refused as not-built, their full tables in bonsai --help --json, each refusal's --json document
-// held to its format; and personOnly, the agent's-session refusal the sub-words call, with the stamped build's
-// confinement to its scratch root (agent.go).
+// The words settings and labels as step 5.6.0 placed them (plan-5 note 5.6.0, 2): registered with their full tables
+// in bonsai --help --json, their sub-words built (settings' by step 5.6.1, TestSettingsCommand; labels' by step 5.6.2,
+// labels_test.go), a sub-word still marked Later refused as not-built; each refusal's --json document held to its format; and personOnly, the
+// agent's-session refusal the sub-words call, with the stamped build's confinement to its scratch root (agent.go).
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,11 +17,13 @@ import (
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/guard"
+	"github.com/LastStep/Bonsai/internal/testpack"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 func TestSettingsAndLabelsArePlaced(t *testing.T) {
 	want := map[string][]string{"settings": {"settings show", "settings set"}, "labels": {"labels attach", "labels detach"}}
-	later := map[string]string{"settings": "step 5.6.1", "labels": ""} // labels is built (step 5.6.2): its sub-words carry no Later
+	later := map[string]string{"settings": "", "labels": ""} // both built: settings in step 5.6.1, labels in step 5.6.2
 	for _, name := range []string{"settings", "labels"} {
 		w := words[name]
 		if w == nil {
@@ -40,7 +43,7 @@ func TestSettingsAndLabelsArePlaced(t *testing.T) {
 				}
 			}
 			if later[name] == "" {
-				continue // built: its own tests (labels_test.go) run it
+				continue // built: its own tests (TestSettingsCommand, labels_test.go) run it
 			}
 			// Refused as not built, before anything else, the --json given or not.
 			var stdout, stderr bytes.Buffer
@@ -86,8 +89,7 @@ func TestSettingsAndLabelsArePlaced(t *testing.T) {
 				t.Errorf("--help --json: %s's subs %v", w.Name, w.Subs)
 			}
 		case "settings show", "settings set", "labels attach", "labels detach":
-			built := strings.HasPrefix(w.Name, "labels ") // step 5.6.2 built both labels sub-words
-			if (w.Later == nil) != built || (w.Later != nil && !strings.HasPrefix(*w.Later, "step 5.6.")) || len(w.Flags) == 0 || len(w.Exits) != 4 {
+			if w.Later != nil || len(w.Flags) == 0 || len(w.Exits) != 4 { // all four built (steps 5.6.1 and 5.6.2)
 				t.Errorf("--help --json: %s: later %v, %d flags, %d exits", w.Name, w.Later, len(w.Flags), len(w.Exits))
 			}
 		}
@@ -237,5 +239,122 @@ func TestCallLine(t *testing.T) {
 		given: []given{{name: "--machine"}, {name: "--json"}}}
 	if got, want := c.line(), "bonsai settings set status_writes=command 'status_command=studio task move' --machine --json"; got != want {
 		t.Errorf("line %q, want %q", got, want)
+	}
+}
+
+// TestSettingsCommand: settings show and set on a t.TempDir() home and project, as a person (the variable cleared):
+// every key, a bad value and an unknown key refused with nothing written, all or nothing, the byte-stable file, a
+// value already in force writing nothing, the workspace's file read from a worktree too; and settings set refused
+// in an agent's session with nothing written, settings show not.
+func TestSettingsCommand(t *testing.T) {
+	c := newCLI(t)
+	home := os.Getenv("BONSAI_HOME")
+	asPerson(c)
+	// Not linked: no bonsai.yaml yet. --machine needs none.
+	if code, out, _ := c.run("", "settings", "show", "--json"); code != engine.ExitState || !strings.Contains(out, `"code": "not-linked"`) ||
+		!strings.Contains(out, `"file": null`) {
+		t.Errorf("not linked: exit %d\n%s", code, out)
+	}
+	if code, out, errOut := c.run("", "settings", "show", "--machine"); code != exitOK || !strings.Contains(out, "cache_keep_days") ||
+		!strings.Contains(out, "the default") {
+		t.Errorf("--machine: exit %d\n%s%s", code, out, errOut)
+	}
+	c.write(workspace.ConfigFile, "name: demo\n")
+	settings := func(args ...string) (int, *format.Settings) {
+		t.Helper()
+		code, out, errOut := c.run("", append(append([]string{"settings"}, args...), "--json")...)
+		doc, err := format.ReadSettings([]byte(out))
+		if err != nil {
+			t.Fatalf("settings %v: exit %d: %v\n%s%s", args, code, err, out, errOut)
+		}
+		return code, doc
+	}
+	key, _ := workspace.MachineKey(c.root)
+	file := filepath.ToSlash(filepath.Join(home, "workspaces", key, "settings.json"))
+	code, doc := settings("show")
+	if code != exitOK || doc.Scope != "workspace" || doc.File == nil || *doc.File != file || len(doc.Settings) != 2 ||
+		doc.Settings[0].Value != "agents" || doc.Settings[0].From != "default" || doc.Settings[1].Value != nil || len(doc.Changed) != 0 {
+		t.Fatalf("show: exit %d %+v", code, doc)
+	}
+	for _, bad := range [][]string{
+		{"set", "status_writes=sometimes"},
+		{"set", "status_writes=command"},
+		{"set", "status_writes=command", "status_command=move; rm -rf x"},
+		{"set", "status_writes=command", "status_command=move", "nothing=1"},
+		{"set", "cache_keep_days=30"},
+		{"set", "cache_keep_days=0", "--machine"},
+		{"set", "cache_keep_days=3651", "--machine"},
+		{"set", "status_writes=agents", "--machine"},
+		{"set", "novalue"},
+		{"set"},
+	} {
+		code, doc := settings(bad...)
+		if code != exitInput || doc.Error == nil || doc.Error.Code != "bad-value" || len(doc.Settings) != 0 {
+			t.Errorf("%v: exit %d %+v", bad, code, doc.Error)
+		}
+	}
+	if _, err := os.Stat(filepath.FromSlash(file)); err == nil {
+		t.Fatalf("a refused set wrote %s", file)
+	}
+	if _, err := os.Stat(filepath.Join(home, "settings.json")); err == nil {
+		t.Fatal("a refused set wrote the home's settings.json")
+	}
+	code, doc = settings("set", "status_writes=command", "status_command=studio task move")
+	if code != exitOK || strings.Join(doc.Changed, ",") != "status_writes,status_command" || doc.Settings[1].Value != "studio task move" ||
+		doc.Settings[1].From != "file" {
+		t.Fatalf("set: exit %d %+v", code, doc)
+	}
+	if raw, _ := os.ReadFile(filepath.FromSlash(file)); string(raw) != "{\n  \"status_writes\": \"command\",\n  \"status_command\": \"studio task move\"\n}\n" {
+		t.Errorf("the file:\n%s", raw)
+	}
+	// Again: nothing changed, nothing written.
+	if code, doc = settings("set", "status_command=studio task move"); code != exitOK || len(doc.Changed) != 0 {
+		t.Errorf("again: exit %d %+v", code, doc)
+	}
+	// The text, for a person.
+	if code, out, _ := c.run("", "settings", "show"); code != exitOK || !strings.Contains(out, "studio task move") ||
+		!strings.Contains(out, "from the file") || !strings.Contains(out, file) {
+		t.Errorf("show's text: exit %d\n%s", code, out)
+	}
+	if code, out, _ := c.run("", "settings", "set", "status_writes=agents"); code != exitOK ||
+		!strings.Contains(out, "written: status_writes, status_command") {
+		t.Errorf("set's text: exit %d\n%s", code, out)
+	}
+	// The home's own: cache_keep_days.
+	if code, doc = settings("set", "cache_keep_days=90", "--machine"); code != exitOK || doc.Scope != "machine" ||
+		strings.Join(doc.Changed, ",") != "cache_keep_days" || fmt.Sprint(doc.Settings[0].Value) != "90" {
+		t.Errorf("--machine: exit %d %+v", code, doc)
+	}
+	// A worktree reads the main checkout's machine folder.
+	testpack.Git(t, c.root, "add", "-A")
+	testpack.Git(t, c.root, "commit", "-q", "-m", "linked")
+	wt := filepath.Join(c.tmp, "wt")
+	testpack.Git(t, c.root, "worktree", "add", "-q", wt)
+	t.Chdir(wt)
+	if code, doc = settings("show"); code != exitOK || doc.File == nil || *doc.File != file {
+		t.Errorf("from a worktree: exit %d %+v", code, doc)
+	}
+	t.Chdir(c.root)
+	// A file outside its rule: read-failed, exit 3, naming the file and the key.
+	if err := os.WriteFile(filepath.FromSlash(file), []byte(`{"status_writes": "command", "status_command": "move $(id)"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code, doc = settings("show"); code != exitRuntime || doc.Error == nil || doc.Error.Code != "read-failed" ||
+		!strings.Contains(doc.Error.Message, file) || !strings.Contains(doc.Error.Message, "status_command") {
+		t.Errorf("a forged file: exit %d %+v", code, doc.Error)
+	}
+	// An agent's session: settings set refused, exit 4, nothing written; settings show still runs.
+	asAgent(c)
+	before, _ := os.ReadFile(filepath.Join(home, "settings.json"))
+	code, doc = settings("set", "cache_keep_days=5", "--machine")
+	if code != engine.ExitState || doc.Error == nil || doc.Error.Code != "person-command" || doc.Error.Next.Who != "person" ||
+		doc.Error.Next.Do != "bonsai settings set cache_keep_days=5 --machine --json" {
+		t.Errorf("an agent's set: exit %d %+v", code, doc.Error)
+	}
+	if after, _ := os.ReadFile(filepath.Join(home, "settings.json")); string(after) != string(before) {
+		t.Errorf("an agent's set wrote:\n%s", after)
+	}
+	if code, doc = settings("show", "--machine"); code != exitOK || fmt.Sprint(doc.Settings[0].Value) != "90" {
+		t.Errorf("an agent's show: exit %d %+v", code, doc)
 	}
 }
