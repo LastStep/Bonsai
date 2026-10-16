@@ -97,7 +97,7 @@ reports through `bonsai message`, the lanes and their pipelines, the lenses and 
 - **`.bonsai/STATE.md`** is rewritten, never appended, whenever where Bonsai stands changes (`base:state`); `bonsai
   check` runs before its records commit (a path it names that is gone is a finding).
 - **Claude Code's memory:** the link writes `autoMemoryEnabled: false` into `.claude/settings.json`; by the director's word
-  of 13 Oct ("A. Keep them on"), their own `.claude/settings.local.json` (out of git) adds `"autoMemoryEnabled": true`
+  of 13 Oct ("A. Keep them on"), their own local settings file (settings.local.json in .claude, out of git) adds `"autoMemoryEnabled": true`
   until 5.6's personal layer takes the notes over. No agent copies the notes anywhere or edits that file.
 
 ## `bonsai.yaml`: stricter only, from the link

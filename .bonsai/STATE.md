@@ -227,7 +227,7 @@ added moves a pack's place; the redactor's (5.2's L1 and the shared forms); the 
   "Workflow Pack Redesign" (version 4).
 - Another of the director's sessions may also work in `~/Servers/Bonsai`: read `origin/main`'s new commits before each
   push, and never stage a file this session did not write.
-- The director's own `.claude/settings.local.json` holds their `skillOverrides` and `"autoMemoryEnabled": true` (out of
+- The director's own local settings file (settings.local.json in .claude, out of git) holds their `skillOverrides` and `"autoMemoryEnabled": true` (out of
   git; the guard refuses agents' edits of it).
 - Scratch under `~/bonsai-checks/` and `%USERPROFILE%\bonsai-checks\`: every piece's and verifier's folder (this
   session's: `T-5503`, `T-5511`, `T-5513`, `T-5514`, `T-5595`, `T-5598`, `T-5599`, `batch-1`, `verify-5.5-VG2`,

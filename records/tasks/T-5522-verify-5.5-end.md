@@ -9,7 +9,7 @@ done_when:
   - "Its report saved and read; each must-fix fixed forward and re-run by the same verifier (two rounds at most, a third only if necessary)"
   - "Then T-5500 to T-5522 done, STATE rewritten for 5.6, and the director given 5.5's close with the floors"
 depends_on: [T-5507, T-5521]
-blocked_by: "Paused while T-5507 changes CLAUDE.md (the end verifier's must-fix 2)."
+blocked_by: "Paused while T-5507 rewords CLAUDE.md (check 13: a fresh worktree)."
 created: 2026-10-16
 started: 2026-10-16
 finished:
