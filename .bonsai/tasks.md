@@ -29,11 +29,11 @@ Active task when none is named: T-5507
 | T-5509 | Formats set 8, the contract's new section and the spec's notes (5.5.9) | done | | 2026-10-14 | 2026-10-15 |
 | T-5508 | CI green and 5.4's carry-overs: three flakes, the rungs' environment, the stop gate's installed path (5.5.8) | done | | 2026-10-14 | 2026-10-15 |
 | T-5507 | Bonsai takes base and workflow: the new pre-release, Rohan's sitting, CLAUDE.md shrinks (5.5.7) | running | | 2026-10-16 | |
-| T-5506 | The walls, each tried once on both sides (5.5.6) | blocked | | 2026-10-16 | |
+| T-5506 | The walls, each tried once on both sides (5.5.6) | done | | 2026-10-16 | 2026-10-16 |
 | T-5505 | The packs in real Claude Code sessions, on both sides (5.5.5) | blocked | | 2026-10-16 | |
 | T-5504 | workflow, its own repository, written around the six roles (5.5.4) | done | | 2026-10-15 | 2026-10-16 |
 | T-5503 | The operating Bonsai skill in base, kept in step with the commands by a test (5.5.3) | done | | 2026-10-15 | 2026-10-15 |
-| T-5502 | base, Bonsai's own pack: the walls, the labels, the block and the template skills (5.5.2) | verify | | 2026-10-15 | |
+| T-5502 | base, Bonsai's own pack: the walls, the labels, the block and the template skills (5.5.2) | done | | 2026-10-15 | 2026-10-16 |
 | T-5501 | The pack template, its checks and Bonsai's CI job for packs (5.5.1) | done | | 2026-10-15 | 2026-10-16 |
 | T-5500 | The engine's part for packs: protocols paths, roles and limits in force, status's roles (5.5.0) | done | | 2026-10-15 | 2026-10-16 |
 | T-5491 | Tests that read the caller's BONSAI_TASK set their own, so a named session's climb is green (D1) | done | | 2026-10-13 | 2026-10-13 |

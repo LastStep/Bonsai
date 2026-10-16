@@ -14,7 +14,6 @@ created: 2026-10-14
 started: 2026-10-16
 finished:
 labels:
-  bonsai.branch: null
   bonsai.ladder: []
   bonsai.allows: []
   bonsai.wants: []
