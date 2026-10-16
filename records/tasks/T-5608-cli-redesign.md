@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5608
 title: "The CLI redesign in style C: colour on a terminal, laid out to its width with golang.org/x/term (5.6.8)"
-status: verify
+status: done
 lane:
 done_when:
   - "Every word's human output in style C (the director, 16 Oct, from T-5607's images): summary first, columns for lists fitted to the terminal's width through golang.org/x/term, one what/why/next shape for refusals, no repeated footers, init's deny rules as counts with a new --explain flag (an addition); all drawn by one small package the words describe to"
@@ -14,7 +14,7 @@ depends_on: [T-5607]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-16
 labels:
   bonsai.ladder: []
   bonsai.allows: ["CLAUDE.md", "design/bonsai-spec.md"]
