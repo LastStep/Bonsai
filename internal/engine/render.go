@@ -129,7 +129,8 @@ func (p *Plan) format0Rows() []textui.Row {
 }
 
 // settingsTo adds the settings lines: with explain each line, where it comes from and why (and the line it
-// replaces); else one row per change and kind, with how many lines each origin gives.
+// replaces); else one row per change and kind, with how many lines each origin gives, then each line changed or taken
+// out in full.
 func (p *Plan) settingsTo(d *textui.Doc, explain bool) {
 	n := len(p.Settings)
 	if explain {
@@ -180,6 +181,22 @@ func (p *Plan) settingsTo(d *textui.Doc, explain bool) {
 			textui.T(ascii(strings.Join(from, ", ")), textui.Dim)))
 	}
 	d.Table("", textui.R(textui.C("change"), textui.C("kind"), textui.C("lines"), textui.C("from")), rows...)
+	// A line changed or taken out is named whatever the count: few, and each one matters.
+	rows = nil
+	for _, c := range p.Settings {
+		if c.Change == "add" {
+			continue
+		}
+		rows = append(rows, textui.R(textui.T(c.Change, changeTone(c.Change)), textui.C(c.Kind), textui.T(ascii(c.Line), textui.Path)))
+		if c.Was != "" {
+			rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("was: "+ascii(c.Was), textui.Dim)))
+		}
+		rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.C(ascii(c.Why))))
+	}
+	if len(rows) > 0 {
+		d.Para("", "Each line changed or taken out:", textui.Plain)
+		d.Section("", rows...)
+	}
 }
 
 // origin names where a settings line comes from: Bonsai, bonsai.yaml, a pack by its id, or the project's own file.
