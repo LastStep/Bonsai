@@ -579,6 +579,16 @@ func TextTo(d *textui.Doc, doc schema.Object) {
 	d.Section("On this machine", textui.R(textui.T(ascii(home.String("path")), textui.Path), textui.C("Bonsai's home: a secret salt, this "+
 		"machine's settings for each project, label files attached on this machine, your personal memory, the pack cache. None of it enters git.")),
 		textui.R(textui.T("workspaces/"+ascii(home.String("key")), textui.Path), textui.C("this project's machine folder")))
+	// A machine folder stranded under an old path (contract section 3: check and status report it): named here, its
+	// lines in check's warning; status --json carries no warning (check's warnings are never problems).
+	var stranded []textui.Row
+	for _, sf := range engine.Stranded(filepath.FromSlash(home.String("path")), filepath.FromSlash(w.String("root")), w.String("id"), runtime.GOOS) {
+		stranded = append(stranded, textui.R(textui.T(ascii(sf.Folder), textui.Path), textui.T("stranded under "+ascii(sf.OldPath)+
+			", with settings or labels this checkout does not get: bonsai check gives the lines that bring them over", textui.Warn)))
+	}
+	if len(stranded) > 0 {
+		d.Section("Stranded", stranded...)
+	}
 	po, _ := doc.Get("person_only")
 	var globs []textui.Row
 	for _, g := range po.([]any) {

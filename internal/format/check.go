@@ -34,7 +34,7 @@ type Finding struct {
 // problem). Who is who usually takes the next step; a finding names the other when its own step is the other's.
 // cmd/bonsai's TestCheckTable walks this table: a word with no test case fails, and so does a next step naming a
 // command Bonsai does not have or a flag its word does not take. A later piece adds a word by adding an entry here
-// with its case (5.6 the stranded machine folder: engine's checkLater names it); a word is added, never renamed or
+// with its case (as step 5.6.1 added stranded, which engine's checkLater named till then); a word is added, never renamed or
 // taken out.
 //
 // Machine marks a word that is about this machine rather than the commit (set 7, plan-5 5.4.3 note 4): the home, the
@@ -79,6 +79,7 @@ var CheckWords = []Word{
 	{Word: "claude-code-old", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7)"},
 	{Word: "claude-code-unknown", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read)"},
 	{Word: "same-id", Kind: "warning", Who: "person", Machine: true, Means: "another checkout on this machine holds the same workspace id (contract section 3)"},
+	{Word: "stranded", Kind: "warning", Who: "person", Machine: true, Means: "a machine folder of this workspace in Bonsai's home is stranded under an old checkout path that holds no bonsai.yaml now (moved or gone), with settings or attached labels this checkout does not get; the next step gives a person's lines that bring them over and remove the old folder (contract section 3)"},
 	{Word: "run-reports", Kind: "warning", Who: "person", Means: "run reports are past bonsai.yaml's generated.run rule, listed for a person to delete (spec section 6)"},
 	{Word: "approve-first-unchecked", Kind: "warning", Who: "agent", Means: "approve_first was not checked: git history is not available (a shallow clone) or could not be read; never passed"},
 	{Word: "plugin-missing", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has)"},

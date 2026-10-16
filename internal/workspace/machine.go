@@ -20,7 +20,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -61,11 +60,17 @@ type MachineSettings struct {
 // left as it is. A status_command outside its rule (StatusCommandOK) is refused as a file Bonsai does not read is.
 // Its error is an *Error naming the file, the key and the next step.
 func LoadMachineSettings(home, main string) (MachineSettings, error) {
-	out := MachineSettings{StatusWrites: StatusWritesAgents}
 	dir, err := MachineDir(home, main)
 	if err != nil {
-		return out, err
+		return MachineSettings{StatusWrites: StatusWritesAgents}, err
 	}
+	return MachineSettingsIn(dir)
+}
+
+// MachineSettingsIn is LoadMachineSettings for a machine folder given by its path: check reads a stranded folder's
+// with it, whose checkout is gone.
+func MachineSettingsIn(dir string) (MachineSettings, error) {
+	out := MachineSettings{StatusWrites: StatusWritesAgents}
 	path := filepath.Join(dir, MachineSettingsFile)
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -97,8 +102,8 @@ func LoadMachineSettings(home, main string) (MachineSettings, error) {
 		if !StatusCommandOK(s) {
 			// The guard prints it in every command-mode refusal and agents run it as told: a hand-edited or forged
 			// file never puts ;, $(...), a quote or a line break there (plan-5 5.6.1, 1).
-			return out, &Error{File: show, Msg: "status_command is " + strconv.QuoteToASCII(s) + ", outside its rule (" +
-				settingKey("status_command").Values + ")", Next: next}
+			return out, &Error{File: show, Msg: "status_command is outside its rule (" + settingKey("status_command").Values +
+				"), so it is not repeated here", Next: next}
 		}
 		out.StatusCommand = s
 	}
@@ -185,4 +190,24 @@ func LabelsInForce(lock *Lock, home, main string) ([]LabelSet, []error) {
 		}
 	}
 	return sets, problems
+}
+
+// AttachedIn lists the namespaces attached in a machine folder (its labels/<namespace>.yaml files, by name), as the
+// files are named: a stranded folder's, which check names for a person to attach again. A name that is not a
+// namespace's form (letters, digits and -, ASCII) is left out.
+func AttachedIn(dir string) []string {
+	entries, err := os.ReadDir(filepath.Join(dir, MachineLabelsDir))
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, e := range entries {
+		ns, ok := strings.CutSuffix(e.Name(), ".yaml")
+		if !e.Type().IsRegular() || !ok || ns == "" || strings.Trim(ns, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-") != "" {
+			continue
+		}
+		out = append(out, ns)
+	}
+	sort.Strings(out)
+	return out
 }

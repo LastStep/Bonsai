@@ -69,9 +69,7 @@ func (f Finding) Sentence() string {
 
 // checkLater are spec section 6's findings and warnings that later steps build (5.1.8's tables is built), each with
 // its step: their words join format.CheckWords when they are built (TestCheckTable holds that none is there before).
-var checkLater = []struct{ Code, Step, What string }{
-	{"stranded", "step 5.6", "a machine folder stranded under an old path (contract section 3)"},
-}
+var checkLater = []struct{ Code, Step, What string }{}
 
 // run writes a next step that is one command: "run: <command>" (bonsai.check/1's next.do).
 func run(command string) string { return "run: " + command }

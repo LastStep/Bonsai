@@ -8,7 +8,11 @@ package engine
 //     clone, CI) has nothing to compare, and gives nothing;
 //   - same-id (a warning): another checkout on this machine holds the same id: another machine folder's record whose
 //     last id is this one, at a path that still holds a bonsai.yaml with it (a record whose checkout moved or changed
-//     its id is left alone: the stranded folder is step 5.6's);
+//     its id is left alone: that is the stranded folder's, below);
+//   - stranded (a warning; step 5.6.1, contract section 3 "Moved checkouts"): another machine folder whose record's
+//     last id is this one, whose recorded path holds no bonsai.yaml at all (the checkout moved or is gone), and which
+//     still holds settings or attached labels, which this checkout no longer gets. Its next step is a person's exact
+//     lines that bring them over and clear the old folder (Stranded);
 //   - machine-record: a record of a checkout in the Bonsai home that Bonsai does not read (workspace/record.go): one
 //     such record un-verifies every main checkout on the machine (FirstClaim cannot name the first claim while it might
 //     hold it), so the guard honours no task's grant anywhere here until a person mends it (step 5.3.1's verifier);
@@ -27,6 +31,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -73,8 +79,143 @@ func (r *CheckResult) checkMachine() {
 					"own id: in that copy's main checkout, run: bonsai init --new-id")
 		}
 	}
+	if id != "" {
+		for _, sf := range Stranded(r.Home, r.Main, id, runtime.GOOS) {
+			r.add("stranded", "", "", sf.Message, sf.Next)
+		}
+	}
 	r.checkInstalled()
 }
+
+// StrandedFolder is one machine folder stranded under an old path: what it holds, and the person's lines.
+type StrandedFolder struct {
+	Folder     string   // <home>/workspaces/r-<16 hex>, forward slashes
+	OldPath    string   // the checkout's path its record holds, forward slashes
+	Command    string   // its status_command when its status_writes is command and the file keeps its rules; "" else
+	Unread     string   // why its settings.json is not read, "" when it is (or there is none)
+	Namespaces []string // the namespaces attached there
+	Lines      []string // the person's lines, in order: bring each over, then remove the folder
+	Message    string   // check's sentence
+	Next       string   // check's next step (who: person)
+}
+
+// machineFolderName is a machine folder's name as Bonsai makes it: the only name a removal line is built from.
+var machineFolderName = regexp.MustCompile(`^r-[0-9a-f]{16}$`)
+
+// Stranded lists the home's machine folders stranded under an old path for the workspace id whose main checkout
+// is main (contract section 3, "Moved checkouts"), by folder name: each other folder whose record holds id as its
+// last, whose recorded path holds no bonsai.yaml (a path holding one with another id is that checkout's own folder,
+// whose check gives id-changed), and which holds a settings.json or attached labels (a folder holding only its record
+// loses nothing). goos says which shell the lines are for: PowerShell on windows, a POSIX shell else.
+func Stranded(home, main, id, goos string) []StrandedFolder {
+	if home == "" || id == "" {
+		return nil
+	}
+	own, _ := workspace.MachineKey(main)
+	var out []StrandedFolder
+	for _, kr := range workspace.MachineRecords(home) {
+		if kr.Key == own || kr.Record.Current() != id {
+			continue
+		}
+		old := filepath.FromSlash(kr.Record.Path)
+		if samePath(old, main) {
+			continue
+		}
+		if _, err := os.Lstat(filepath.Join(old, workspace.ConfigFile)); !errors.Is(err, fs.ErrNotExist) {
+			continue // a bonsai.yaml there (or a path that cannot be looked at): not stranded
+		}
+		dir := filepath.Join(home, "workspaces", kr.Key)
+		sf := StrandedFolder{Folder: filepath.ToSlash(dir), OldPath: kr.Record.Path, Namespaces: workspace.AttachedIn(dir)}
+		_, settingsErr := os.Lstat(filepath.Join(dir, workspace.MachineSettingsFile))
+		hasSettings := settingsErr == nil
+		if !hasSettings && len(sf.Namespaces) == 0 {
+			continue
+		}
+		if hasSettings {
+			ms, err := workspace.MachineSettingsIn(dir)
+			switch {
+			case err != nil:
+				sf.Unread = oneLine(err.Error())
+			case ms.StatusWrites == workspace.StatusWritesCommand:
+				sf.Command = ms.StatusCommand
+			}
+		}
+		sf.describe(home, main, kr.Key, goos)
+		out = append(out, sf)
+	}
+	return out
+}
+
+// describe writes the folder's sentence, against what this checkout has now, and the person's lines.
+func (sf *StrandedFolder) describe(home, main, key, goos string) {
+	quote := shQuote
+	if goos == "windows" {
+		quote = psQuote
+	}
+	var held []string
+	switch {
+	case sf.Unread != "":
+		held = append(held, "a settings.json Bonsai does not read ("+sf.Unread+")")
+	case sf.Command != "":
+		held = append(held, "status_writes command, its status_command "+sf.Command)
+	}
+	if len(sf.Namespaces) > 0 {
+		held = append(held, "the attached labels "+strings.Join(sf.Namespaces, ", "))
+	}
+	if len(held) == 0 {
+		held = append(held, "a settings.json with status_writes agents, the default")
+	}
+	now := "status_writes agents"
+	if ms, err := workspace.LoadMachineSettings(home, main); err != nil {
+		now = "settings Bonsai does not read"
+	} else if ms.StatusWrites == workspace.StatusWritesCommand {
+		now = "status_writes command (" + ms.StatusCommand + ")"
+	}
+	if dir, err := workspace.MachineDir(home, main); err == nil {
+		if ns := workspace.AttachedIn(dir); len(ns) > 0 {
+			now += " and the attached labels " + strings.Join(ns, ", ")
+		} else {
+			now += " and no attached labels"
+		}
+	}
+	sf.Message = "a machine folder of this workspace, " + sf.Folder + ", is stranded under its old checkout " + sf.OldPath +
+		", which holds no bonsai.yaml now (moved or gone): it still holds " + strings.Join(held, "; ") +
+		", which this checkout does not get; this checkout has " + now
+	var steps []string
+	if sf.Unread != "" {
+		steps = append(steps, "read "+sf.Folder+"/"+workspace.MachineSettingsFile+" and set what it means to hold here with bonsai settings set")
+	} else if sf.Command != "" {
+		sf.Lines = append(sf.Lines, `bonsai settings set status_writes=command "status_command=`+sf.Command+`"`)
+	}
+	for _, ns := range sf.Namespaces {
+		sf.Lines = append(sf.Lines, "bonsai labels attach "+quote(sf.Folder+"/"+workspace.MachineLabelsDir+"/"+ns+".yaml"))
+	}
+	// The removal's path is built from the folder's own name alone, once it is a machine folder's, directly under
+	// <home>/workspaces/: never from the record, never the home or workspaces/ itself.
+	if machineFolderName.MatchString(key) {
+		gone := filepath.ToSlash(filepath.Join(home, "workspaces", key))
+		if goos == "windows" {
+			sf.Lines = append(sf.Lines, "Remove-Item -Recurse -LiteralPath "+quote(gone))
+		} else {
+			sf.Lines = append(sf.Lines, "rm -r "+quote(gone))
+		}
+	}
+	shell := "a shell"
+	if goos == "windows" {
+		shell = "PowerShell"
+	}
+	if len(sf.Lines) > 0 {
+		steps = append(steps, "run in this checkout, in "+shell+", in order: "+strings.Join(sf.Lines, " ; "))
+	}
+	sf.Next = "a person, in a terminal of their own: " + strings.Join(steps, "; then ") +
+		"; or, in a workspace a studio manages, registers this checkout with the studio again (contract section 15.2)"
+}
+
+// shQuote quotes a word for a POSIX shell: single quotes, a ' inside written '\''.
+func shQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
+
+// psQuote quotes a word for PowerShell: single quotes, a ' inside doubled.
+func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
 
 // checkMachineRecords gives a machine-record finding for each record of a checkout in the home that Bonsai does not
 // read (a folder workspaces/r-* holding a workspace.json that workspace.MachineRecords leaves out), in the folders'

@@ -246,7 +246,7 @@ func storedProblem(key string, v any, home, goos string) (any, string) {
 		}
 		val, why := CheckSetting(key, s, home, goos)
 		if why != "" {
-			return nil, key + " is " + strconv.QuoteToASCII(s) + ", outside its rule (" + settingKey(key).Values + ")"
+			return nil, key + " is outside its rule (" + settingKey(key).Values + "), so it is not repeated here"
 		}
 		return val, ""
 	}
