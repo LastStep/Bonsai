@@ -212,6 +212,7 @@ error words.
 | `claude-code-old` | warning | person | yes | Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7) |
 | `claude-code-unknown` | warning | person | yes | Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read) |
 | `same-id` | warning | person | yes | another checkout on this machine holds the same workspace id (contract section 3) |
+| `stranded` | warning | person | yes | a machine folder of this workspace in Bonsai's home is stranded under an old checkout path that holds no bonsai.yaml now (moved or gone), with settings or attached labels this checkout does not get; the next step gives a person's lines that bring them over and remove the old folder (contract section 3) |
 | `run-reports` | warning | person | - | run reports are past bonsai.yaml's generated.run rule, listed for a person to delete (spec section 6) |
 | `approve-first-unchecked` | warning | agent | - | approve_first was not checked: git history is not available (a shallow clone) or could not be read; never passed |
 | `plugin-missing` | warning | person | yes | Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has) |
@@ -307,7 +308,6 @@ error words.
 
 | Word | Built in | Means |
 |---|---|---|
-| `stranded` | step 5.6 | a machine folder stranded under an old path (contract section 3) |
 
 ## Rung statuses
 

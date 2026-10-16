@@ -86,8 +86,19 @@ They live in the Bonsai home, never in the project: `status_writes` and `status_
 `--machine` the home's own. `bonsai settings --help` and `bonsai labels --help` show both words; until this build has
 their actions, each refuses `not-built` and names the step that brings it.
 
-- **Read** them with `settings show` (`--json`; `--machine` for the home's): every key, its value in force and where
-  it came from. Agents may run it.
+- **Read** them with `bonsai settings show --json` (`--machine` for the home's): every key, its value in force and where
+  it came from (`file` or `default`), and the file's place. Agents may run it; from a worktree it reads the main
+  checkout's. The keys, their values and defaults are in `bonsai settings set --help`: the workspace's
+  `status_writes` (`agents` or `command`) and `status_command` (with `command` only: letters, digits, spaces and
+  `-_./:`, at most 100 characters); the home's `cache_keep_days` (1 to 3650, or `none`: `update --yes` then removes
+  pack clones unused that long, never one the lock or `bonsai.yaml` names, never an `--adopt` copy) and, on Windows,
+  `personal_from`. A settings file holding a value outside its rule is refused (`read-failed`, naming the file and the
+  key), by the guard too: tell the person the file to fix.
+- **`bonsai settings set k=v ...`** checks every `key=value` first, then writes all or none (`bad-value`, exit 2, names the values a
+  key takes); a value already in force writes nothing (`changed: []`).
+- **A `stranded` warning** from `check` is a machine folder left under a checkout's old path (it moved) with settings
+  or labels this checkout no longer gets. Its `next.do` holds the person's exact lines, in order; hand them over as
+  they are.
 - **`settings set`, `labels attach` and `labels detach` are a person's**: in an agent's session each refuses itself
   (`person-command`) and the guard refuses them too. Hand the person the exact line (`bonsai labels attach <file>`,
   `bonsai labels detach <namespace>`), to type in a terminal of their own, not inside Claude (its `!` lines count as
