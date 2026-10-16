@@ -266,8 +266,8 @@ func TestNewLinesForAProjectLinkedBefore(t *testing.T) {
 	c.commit("linked by the build before")
 	before := tree(t, c.root)
 
-	if code, out, _ := c.run("", "check", "--json"); code > 1 || !strings.Contains(flat(out), `"code": "own-hooks"`) ||
-		!strings.Contains(flat(out), "13 to add") || !strings.Contains(flat(out), "13 to take out") || strings.Contains(flat(out), `"code": "changed"`) {
+	if code, out, _ := c.run("", "check", "--json"); code > 1 || !strings.Contains(out, `"code": "own-hooks"`) ||
+		!strings.Contains(out, "13 to add") || !strings.Contains(out, "13 to take out") || strings.Contains(out, `"code": "changed"`) {
 		t.Errorf("check: exit %d\n%s", code, out)
 	}
 
@@ -312,7 +312,7 @@ func TestNewLinesForAProjectLinkedBefore(t *testing.T) {
 		strings.Contains(s, `"bonsai hook `) || strings.Contains(s, `"matcher": "`+oldGuardMatcher+`"`) {
 		t.Errorf("after the update:\n%s", s)
 	}
-	if _, out, _ := c.run("", "check", "--json"); strings.Contains(flat(out), `"code": "own-hooks"`) || strings.Contains(flat(out), `"code": "changed"`) {
+	if _, out, _ := c.run("", "check", "--json"); strings.Contains(out, `"code": "own-hooks"`) || strings.Contains(out, `"code": "changed"`) {
 		t.Errorf("check after the update:\n%s", out)
 	}
 }
