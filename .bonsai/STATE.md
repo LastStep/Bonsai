@@ -1,6 +1,13 @@
+---
+format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
+updated: 2026-10-16
+updated_by: orchestrator
+labels: {}
+---
+
 # Bonsai: where it stands
 
-Rewritten, never appended. Last rewritten 16 Oct 2026 at 06:00. **Step 5.5 is at its last piece, 5.5.7, waiting on the director's
+Rewritten, never appended (moved here from the top folder at 5.5.7, 16 Oct). Last rewritten 16 Oct 2026 at 06:00. **Step 5.5 is at its last piece, 5.5.7, waiting on the director's
 morning sitting.** On `main` at `bf7cc3d` (code): overnight (the director's "im leaving the session running for the night" rule)
 5.5.4 closed; 5.5.5 ran its real sessions and its three fix rounds landed (`T-5515` the guard, `T-5516` base's skills, `T-5517`
 `workflow`'s wording); 5.5.6 tried the walls on both sides and its fix round landed (`T-5518`); **V1 passed** the walls on WSL, the

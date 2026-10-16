@@ -4,9 +4,9 @@ Bonsai is being rebuilt from scratch. 0.4.3 (May 2026) is the old product's last
 history; everything in this repo now serves the rebuild. A person directs it (below, "the director"); Claude agents are
 the team.
 
-**From the link** (step 5.4's switch: the installed `bonsai` links this repo), Bonsai guards its own checkout and proves
-its own work. A rule below marked "from the link" holds once that commit is on `main`; until then the rules before it
-hold. The block `bonsai init` writes into this file sits apart, between its markers.
+**Bonsai guards its own checkout and proves its own work** (linked at 5.4's switch, 13 Oct; its packs `base` and
+`workflow` taken at 5.5.7, 16 Oct). Rules below marked "from the link" hold now. The block `bonsai update` writes into
+this file sits apart, between its markers: it holds the label definitions, the packs' skills and the roles.
 
 ## What Bonsai is, and is not
 
@@ -23,95 +23,82 @@ hold. The block `bonsai init` writes into this file sits apart, between its mark
 
 | Question | File |
 |---|---|
-| Where does Bonsai stand, and what is next? | `STATE.md`. Read it first, every session |
+| Where does Bonsai stand, and what is next? | `.bonsai/STATE.md`. Read it first, every session |
 | What do we build, in what order, proved how? | `design/plan.md` |
 | What is Bonsai, exactly? | `design/bonsai-spec.md` (130 KB). Grep its `## N.` sections; never read it whole |
 | What do the formats say? | `design/contract.md` (100 KB). The same: by section |
 | What did the director decide on each format? | `design/format-review.md` (confirmed 7 Oct: the formats are final) |
 | What is it for; what does correct mean? | `design/one-pager.md` |
-| What happened before? | `records/runs/`. Read one only when `STATE.md` or the plan points to it |
+| What happened before? | `records/runs/`. Read one only when `.bonsai/STATE.md` or the plan points to it |
 | The shared formats, schemas and trick files | `formats/` (from part 0) |
-| What does Bonsai check here, and what may each task change? | `bonsai.yaml`; `records/tasks/` (from the link) |
+| What does Bonsai check here, and what may each task change? | `bonsai.yaml`; `records/tasks/`; `bonsai status --json` |
 
 The specs were written in the studio's repo: their "this repo" means the studio's, and the paths they cite are its.
 
 ## How a session works
 
-- **The director opens a session in `~/Servers/Bonsai`** (the main checkout, on `main`). It is the **orchestrator**: it reads
-  `STATE.md` and the plan, keeps its own context lean, and dispatches builder and verifier subagents. Bonsai has no role
-  files, so every brief carries the job, the plan's part, the sections to read and the rules below that apply. It reads
-  the agents' reports, not their file dumps.
-- **Builders** work in a plain git worktree beside the clone (`git -C ~/Servers/Bonsai worktree add
-  ~/Servers/Bonsai-<part> -b <part> main`), never the Agent tool's isolation worktrees. They commit; they never push.
-  From the link, a worktree is made from `main` at or after the link commit (a branch from before it has no
-  `bonsai.yaml`, so rung 0 cannot check it), and is removed only with `git worktree remove` (a recursive delete of a
-  checkout's folder is a guarded delete).
-- **Builders stay subagents of the orchestrator's session, unnamed** (the director, 12 Oct). A subagent shares its session's
-  environment and cannot carry a task of its own: the guard grants by the one task reading `running`, the ladder is
-  named by `--task`, and the stop gate runs neither for a subagent nor for the orchestrator. Their gate is the landing
-  rule below, the lock on what reaches `main`. How builders start changes only with 5.5's agent pipelines.
-- **A named session** (a builder started as its own `claude -p` through `claude-here` in its worktree, with
-  `BONSAI_TASK=<id>` and `BONSAI_ROLE=builder`): its task and its run report are committed on `main` before its worktree
-  is made, so the guard grants by its task and the stop gate holds it until its result is green at its HEAD.
-- **Tasks, from the link.** One task per piece, `records/tasks/T-5xyy-<slug>.md` in `bonsai.task/1`: piece 5.x.y is
-  `T-5x` and `y` in two digits (5.4.7 is T-5407, 5.5.12 T-5512); a part's planning and other work outside its pieces take
-  T-5x90 to T-5x99 in order; a piece with a letter takes the next free number, named in its title. `lane` empty;
-  `done_when` from the section's proof. **The orchestrator alone writes and moves task files**, in the main checkout:
-  `todo` when a part's section is approved, `running` when the piece's builder starts, `verify` when its result is
-  green, `done` once it has landed with CI green (or `cut`). The moves stay uncommitted until the records commit after
-  the landing, with the run report, `STATE.md` and the tables from `bonsai check --write`. Builders never edit a task
-  file. Every file in `records/tasks/` is a task: no template or note goes there (one that does not parse makes no task
-  active, for every reader).
-- **Tasks side by side.** Two tasks reading `running` make no task active, so the guard refuses a protected path to
-  both. A task whose `bonsai.allows` is not empty runs with no other task `running`; the section's order says when.
-- **Bonsai's four labels** (no definition is in force until base links in 5.5; the guard, rung 0, the runner and the
-  stop gate read them by contract section 5.6's meaning, and a value of another kind grants or adds nothing):
-  - `bonsai.allows`: the protected paths the task may change, as globs: those its section's "Owns" list names.
-  - `bonsai.wants`: the person-only paths among them, copied into `bonsai.allows` under the stricter-only rule.
-  - `bonsai.ladder`: rungs the task climbs beyond the floor; `[]` here, since the floor holds every rung.
-  - `bonsai.branch`: the piece's branch.
-- **A plan is reviewed by a fresh Opus agent** before it reaches the director.
-- **A fresh verifier** (Opus, fresh context) for big or risky work only (the director's rule): part 0, the reader, guards and
-  hooks, CI and release, security, and the end of each plan step; other parts close on green tests and CI plus the
-  orchestrator's read of the diff, which the run report says. Related light parts share one verifier. A verifier
-  reads the plan's part, the cited sections and the diff, re-runs the tests itself, and
-  passes or fails the work. It fixes nothing. Nothing is done because an agent says so.
+The way of working is the `workflow` pack's, linked here since 5.5.7 (16 Oct): the six roles, who calls whom, briefs and
+reports through `bonsai message`, the lanes and their pipelines, the lenses and the models (`workflow:orchestrate`,
+`workflow:lanes`, `workflow:lenses`, `workflow:reporting`, `workflow:brief`); run reports and tasks by `base:run` and
+`base:task`. Open those skills; what follows is Bonsai's own, where it says more than the pack.
+
+- **The director opens a session in `~/Servers/Bonsai`** (the main checkout, on `main`). It is the **orchestrator**: it
+  reads `.bonsai/STATE.md` and the plan, keeps its own context lean, dispatches builders and verifiers, and reads their
+  reports, not their file dumps. A brief carries the job, the plan's part, the sections to read and the rules below that
+  apply.
+- **Agents are started by their role** (`workflow:builder`, `workflow:verifier`, `workflow:researcher`,
+  `workflow:auditor`, `workflow:runner`): an agent of a type no pack declares (`general-purpose`, `Explore`) is held as
+  a helper, writes nothing and has a helper's budget. A session started before the plugins loaded cannot start a role:
+  quit and resume it (`claude --continue`).
+- **Builders** are `workflow:builder` subagents of the orchestrator's session, unnamed (the director, 12 Oct), each in a
+  plain git worktree beside the clone (`git -C ~/Servers/Bonsai worktree add ~/Servers/Bonsai-<part> -b <part> main`,
+  from `main` at or after the link commit), never the Agent tool's isolation worktrees, removed only with `git worktree
+  remove`. They commit; they never push; they never edit a task file. A subagent shares its session's environment and
+  carries no task of its own: the guard grants by the one task reading `running`, the ladder is named by `--task`, and
+  the landing rule below is their gate. **A named session** (`claude -p --agent workflow:builder` through `claude-here`
+  in its worktree, with `BONSAI_TASK=<id>` and `BONSAI_ROLE=builder`) has its task and run report committed on `main`
+  before its worktree is made, so the guard grants by its task and the stop gate holds it until its result is green.
+- **Tasks.** One per piece, `records/tasks/T-5xyy-<slug>.md` (`base:task`): piece 5.x.y is `T-5x` and `y` in two digits
+  (5.4.7 is T-5407, 5.5.12 T-5512); a part's planning and other work outside its pieces take T-5x90 to T-5x99 in order;
+  a piece with a letter takes the next free number, named in its title. `lane` empty; `done_when` from the section's
+  proof; `bonsai.allows` the protected paths the section's "Owns" list names, `bonsai.wants` the person-only ones among
+  them (under the stricter-only rule), `bonsai.ladder` `[]` (the floor holds every rung), `bonsai.branch` the piece's
+  branch or no line. **The orchestrator alone writes and moves task files**, in the main checkout: `todo` when a part's
+  section is approved, `running` when the piece's builder starts, `verify` when its result is green, `done` once it has
+  landed with CI green, or `cut`. The moves stay uncommitted until the records commit after the landing, with the run
+  report, `.bonsai/STATE.md` and the tables from `bonsai check --write`. Every file in `records/tasks/` is a task. Two
+  tasks reading `running` make none active; a task whose `bonsai.allows` is not empty runs with no other `running`.
+- **Every plan is reviewed by a fresh Opus agent** before it reaches the director. **A fresh verifier** (Opus) for big or
+  risky work only (the director's rule): part 0, the reader, guards and hooks, CI and release, security, and the end of
+  each plan step; other parts close on green tests and CI plus the orchestrator's read of the diff, which the run report
+  says. Related light parts share one verifier. Nothing is done because an agent says so.
 - **Models:** only the latest Opus, Sonnet, Haiku and Fable. Opus for verifiers, plan reviews, security, guards, release
   and decisions, and builders on risky code; Sonnet for sweeps, drafts and mechanical runs; Haiku for small bookkeeping
   and audit jobs (listing files, sorting or counting things, checking a list against a source, filling a run report's
-  rows); Fable for visual design. Haiku reports facts; it judges nothing and its findings are read before they count.
-  Every report says which model ran what.
-- **Run reports** in `records/runs/R-<date>-<topic>.md`, opened before the first edit and appended as the work goes: a
-  log, not a summary. Each lists every run with its model, start, end and minutes; those rows are the hours the stop
-  lines count. From the link, one per task, named `R-<date>-<task id>-<topic>.md`, with `bonsai.run/1` frontmatter
-  (`id` R-(date)-(task id), `task`, `role: orchestrator`, `model`, `started`, `finished`, `outcome`, `commits`,
-  `labels`). Past run reports, logs and tasks are left as they are (the director, 12 Oct): no lock, edit or cleanup.
-- **Proof** until the link: `go test ./...` and `go vet ./...` in WSL and natively on Windows, CI green on Linux and
-  Windows, and a fresh verifier.
-- **Proof from the link: the landing rule**, the lock on `main`. The orchestrator fast-forwards a piece only when
+  rows), reporting facts and judging nothing; Fable for visual design. Every report says which model ran what.
+- **Run reports** (`base:run`), one per task, `records/runs/R-<date>-<task id>-<topic>.md`, opened before the first edit
+  and appended as the work goes: a log, not a summary, with a row for every run (model, start, end, minutes): those rows
+  are the hours the stop lines count. Past run reports, logs and tasks are left as they are (the director, 12 Oct).
+- **The landing rule**, the lock on `main`. The orchestrator fast-forwards a piece only when
   `.bonsai/local/ladder/<task>.json` in the main checkout reads `mode: local`, green, `git.sha` the branch's HEAD,
   `git.dirty` false, every rung of the floor and of the task's `bonsai.ladder` green, and its `ladder` record in the
   log names `/usr/local/bin/bonsai` with the result's `sha256`; plus check 10's Windows half (`go test ./...` and
   `go vet ./...`, plain and tagged, natively on Windows) before the push, and CI after it. **Pieces ready together land
-  as one batch** (the director, 15 Oct: "land in batches"): each rebased in turn onto the one before, each climbed at its own
-  tip, check 10's Windows half run once at the batch's top commit, `main` fast-forwarded to it and pushed once; a piece
-  in flight is not rebased and re-checked for each other landing, but joins the next batch. It also reads the branch's
-  diff against the section's "Owns" list for the piece and refuses one that leaves it: `records/tasks/`, `design/` and
-  `STATE.md` above all, free paths that rung 0 never judges. The ladder is always run by its installed path,
-  `/usr/local/bin/bonsai ladder --task <id>`, so no other `bonsai` can make a proof. The run report quotes each landing's
-  `git.sha`, the result's `sha256` and `green`, and the climb's counts and rung times in place of check 10's WSL output.
-  Each part's end verifier matches every landed commit to a green local `ladder` record naming `/usr/local/bin/bonsai`
-  with that `sha256`, and reads every task's `bonsai.allows` against its section's "Owns".
-- **Agents first, from the link.** A builder climbs once its work is done and again after each fix, not after every
-  edit: it runs the ladder with `--json`, reads the result, fixes what is red and climbs again, and asks a person only
-  where a refusal's `next.who` says `person`.
-- **`STATE.md`** is rewritten, never appended, whenever where Bonsai stands changes.
-- **Claude Code's memory, from the link:** the link writes `autoMemoryEnabled: false` into `.claude/settings.json`; by
-  the director's word of 13 Oct ("A. Keep them on"), their sitting adds `"autoMemoryEnabled": true` to their own local
-  settings
-  file (.claude/settings.local.json in the main checkout, out of git, read by no Bonsai check), so this repo's Claude
-  Code memory notes keep loading until 5.6's personal layer takes them over. No agent copies the notes anywhere or
-  edits that file (the guard refuses it).
+  as one batch** (the director, 15 Oct): each rebased in turn onto the one before, each climbed at its own tip, check
+  10's Windows half run once at the batch's top commit, `main` fast-forwarded to it and pushed once. It also reads the
+  branch's diff against the section's "Owns" list and refuses one that leaves it: `records/tasks/`, `design/` and
+  `.bonsai/STATE.md` above all, free paths that rung 0 never judges. The ladder is always run by its installed path,
+  `/usr/local/bin/bonsai ladder --task <id>`. The run report quotes each landing's `git.sha`, the result's `sha256` and
+  `green`, and the climb's counts and rung times. Each part's end verifier matches every landed commit to a green local
+  `ladder` record naming `/usr/local/bin/bonsai` with that `sha256`, and reads every task's `bonsai.allows` against its
+  section's "Owns".
+- **Agents first.** A builder climbs once its work is done and again after each fix, not after every edit, with
+  `--json`, and asks a person only where a refusal's `next.who` says `person`.
+- **`.bonsai/STATE.md`** is rewritten, never appended, whenever where Bonsai stands changes (`base:state`); `bonsai
+  check` runs before its records commit (a path it names that is gone is a finding).
+- **Claude Code's memory:** the link writes `autoMemoryEnabled: false` into `.claude/settings.json`; by the director's word
+  of 13 Oct ("A. Keep them on"), their own `.claude/settings.local.json` (out of git) adds `"autoMemoryEnabled": true`
+  until 5.6's personal layer takes the notes over. No agent copies the notes anywhere or edits that file.
 
 ## `bonsai.yaml`: stricter only, from the link
 
@@ -225,7 +212,8 @@ pre-release on, the one they had is kept in `~/bonsai-checks/prerelease/previous
 - Bonsai's work changes nothing outside this repo, its test pack, the workflow pack's repository
   (`LastStep/bonsai-workflow`: its local copy in `~/bonsai-checks/bonsai-workflow`, then GitHub once its privacy check
   P has passed) and the scratch folders (`~/bonsai-checks`, `%USERPROFILE%\bonsai-checks`), and, from the link,
-  Bonsai's own home `~/.bonsai/` (its salt, this machine's record of the repo, the ladder's lock). Sessions and climbs
+  Bonsai's own home `~/.bonsai/` (its salt, this machine's record of the repo, the ladder's lock), and Claude Code's
+  plugin folder, where both packs are installed for this repo (`~/.claude/plugins/`). Sessions and climbs
   in the real repo and its worktrees run with `BONSAI_HOME` unset: on a scratch home the guard finds no record of the
   real main checkout and grants nothing. Scratch projects keep their scratch homes.
 - **Stop every process you start** (builds, tests, test sessions, watchers) and check with `ps -eo pid,etime,cmd` before

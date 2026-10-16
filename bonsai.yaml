@@ -37,7 +37,7 @@ documents:                            # where this repository keeps the document
   brief: records/briefs              # workflow's daily briefs
   bugs: records/bugs.md              # workflow's register of known bugs, one file
 # protected: the paths an agent changes only while its running task lists them in bonsai.allows. Left off on
-# purpose: formats/ (the schema compare and the manifest test hold it), design/plan*.md, STATE.md, records/ and
+# purpose: formats/ (the schema compare and the manifest test hold it), design/plan*.md, .bonsai/STATE.md, records/ and
 # every code folder (the rungs prove them). The guard's floor adds .git, .bonsai/ and any nested bonsai.yaml.
 protected:                            # the protected paths, as globs from the top folder
   - "bonsai.yaml"                     # this file: the checks every task is held to

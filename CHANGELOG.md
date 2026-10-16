@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Bonsai is being rebuilt from scratch.** 0.4.3 is the old product's last release; its code stays at tag `v0.4.3`
 > and in git history. The 0.5.0 changes below were never released, and the rebuild does not carry them. The design is
-> in `design/`, and `STATE.md` says where the rebuild stands.
+> in `design/`, and `.bonsai/STATE.md` says where the rebuild stands.
 
 ### Added
 - **The formats set** (`formats/`): a JSON Schema and an example for each of the contract's ten formats, trick files
