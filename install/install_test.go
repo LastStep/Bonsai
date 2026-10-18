@@ -750,6 +750,17 @@ func TestPs1ChildRightsBeforeCopy(t *testing.T) {
 	}
 }
 
+// The elevated child compiles and loads no code: Windows PowerShell 5.1's Add-Type writes its source and its DLL in
+// the person's %TEMP%, a folder their unelevated programs can write, and then loads the DLL. Neither script uses it,
+// so the elevated child reads no user-writable file but the one it copies (plan 5.6.6, note 3).
+func TestPs1CompilesNothing(t *testing.T) {
+	for _, word := range []string{"Add-Type", "CompileAssembly", "csc.exe", "[Reflection.Assembly]::Load"} {
+		if strings.Contains(strings.ToLower(read(t, "install.ps1")), strings.ToLower(word)) {
+			t.Errorf("install.ps1 holds %s", word)
+		}
+	}
+}
+
 // The child's text holds each value as a single-quoted literal, a path with a ' and a space among them, and refuses
 // a bad hash or a path with no drive before building anything.
 func TestPs1ChildText(t *testing.T) {

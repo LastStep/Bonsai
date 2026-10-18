@@ -11,12 +11,12 @@ by an earlier install removed; the old bonsai.exe, which a hook may be running, 
 (Windows lets a running program be renamed, not overwritten), the new copy renamed into place (a hook starting between
 the two renames finds no file and refuses, never runs another) and the old one deleted unless it is still running
 (then the next install deletes it); C:\Program Files\Bonsai added once to the machine's PATH (its %...% entries kept as
-they are) and the change announced to running programs. The child's code is inline (-EncodedCommand), never a file.
-Then, as you, it checks the installed file's
-SHA-256 again and writes the installed copy's record, install.json, in the Bonsai home ($env:BONSAI_HOME, else
-%USERPROFILE%\.bonsai): its full path (with forward slashes; a short name in it, such as RUNNER~1, made long), version
-and sha256, the record bonsai check and bonsai status compare the bonsai on the PATH with. It prints the fingerprint,
-every bonsai on the PATH in order and --version.
+they are) and the change announced to running programs. The child's code is inline (-EncodedCommand), never a file,
+and it compiles and loads no code. Then, as you, it checks the installed file's SHA-256 again and writes the
+installed copy's record, install.json, in the Bonsai home ($env:BONSAI_HOME, else %USERPROFILE%\.bonsai): its full path
+(with forward slashes; a short name in it, such as RUNNER~1, made long), version and sha256, the record bonsai check
+and bonsai status compare the bonsai on the PATH with. It prints the fingerprint, every bonsai on the PATH in order
+and --version.
 
 When to run it: once per Bonsai release, by the person, in a normal PowerShell, from the release's folder:
   powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
@@ -147,10 +147,12 @@ function Test-Rights([string]$p) {
     }
     return $false
 }
+# Send-SettingChange announces the environment's change (WM_SETTINGCHANGE "Environment" to every window) through .NET's
+# own call, compiling nothing: SetEnvironmentVariable at the machine's level sends that message itself after it writes
+# the key, and here it deletes a value never made, so the key is left as it was (the PATH is written by
+# Set-MachinePath, raw, never through this call, which would write it expanded).
 function Send-SettingChange {
-    Add-Type -Namespace BonsaiInstall -Name Native -MemberDefinition '[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint msg, UIntPtr wParam, string lParam, uint flags, uint timeout, out UIntPtr result);'
-    $r = [UIntPtr]::Zero
-    [void][BonsaiInstall.Native]::SendMessageTimeout([IntPtr]0xffff, 0x1A, [UIntPtr]::Zero, 'Environment', 2, 5000, [ref]$r)
+    [Environment]::SetEnvironmentVariable('BONSAI_INSTALL_NOTICE', [NullString]::Value, [EnvironmentVariableTarget]::Machine)
 }
 try {
     $dir = [IO.Path]::GetDirectoryName($dst)
