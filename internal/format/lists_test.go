@@ -320,7 +320,7 @@ func TestLadderCheckWordsAndTheMachineMark(t *testing.T) {
 		}
 	}
 	want := "plugin id-changed bonsai-path git-bash git-user machine-record claude-code-old claude-code-unknown " +
-		"same-id plugin-missing plugin-trust plugin-unchecked cache own-hooks"
+		"same-id stranded plugin-missing plugin-trust plugin-unchecked cache own-hooks"
 	if strings.Join(machine, " ") != want {
 		t.Errorf("machine-marked check words %v, want %s", machine, want)
 	}
