@@ -189,7 +189,8 @@ func (s *scratch) record(t *testing.T) map[string]string {
 
 // recorded is the target's path as its installer records it in install.json (record's comment says why).
 func (s *scratch) recorded() string {
-	return filepath.ToSlash(engine.RealPath(s.target))
+	real, _ := engine.RealPath(s.target) // "" when the walk fails, which no record holds: the comparison fails
+	return filepath.ToSlash(real)
 }
 
 // checkReads proves check's reader reads the record: with the target first on the PATH, no bonsai-path finding and no

@@ -1,8 +1,9 @@
 //go:build windows
 
-package guard
+package engine
 
-// The path Windows itself reaches, asked of Windows (paths.go's package comment says why the guard needs it).
+// The path Windows itself reaches, asked of Windows: RealPath's last step, and every form the guard reads a path in
+// (internal/guard/paths.go's package comment says why it needs it).
 
 import (
 	"errors"
@@ -19,17 +20,19 @@ import (
 // and the hook starts once per tool call.
 var procGetFinalPathNameByHandle = syscall.NewLazyDLL("kernel32.dll").NewProc("GetFinalPathNameByHandleW")
 
-// finalPath gives the path a write to p reaches on Windows: the longest part of p that exists, opened (following
+// FinalPath gives the path a write to p reaches on Windows: the longest part of p that exists, opened (following
 // every junction, symbolic link and mount point) and named by GetFinalPathNameByHandle in its drive-letter form and
 // its case on disk, then the rest of p as written. ok is false when no part of p opens. err is set when a part opens
 // but Windows cannot give it a drive-letter name (a volume with none), or when the longest part that exists is a
 // junction or symbolic link that does not open (a dangling one, gate report section 5): the guard then cannot tell
 // where p leads, and Windows would fail the write through it anyway. It opens each part with no access asked for, so
 // it reads and locks nothing.
-func finalPath(p string) (final string, ok bool, err error) {
+// It walks up name by name to the longest part that opens, with no limit but the path's own length: a limit would
+// leave a junction above a long tail of folders not made yet unread.
+func FinalPath(p string) (final string, ok bool, err error) {
 	var rest []string
 	cur := p
-	for i := 0; i < 256; i++ {
+	for {
 		name, opened, err := finalName(cur)
 		if opened {
 			if err != nil {
@@ -38,20 +41,19 @@ func finalPath(p string) (final string, ok bool, err error) {
 			return filepath.Join(append([]string{name}, rest...)...), true, nil
 		}
 		if dangling(cur) {
-			return "", false, errDangling
+			return "", false, ErrDangling
 		}
 		parent := filepath.Dir(cur)
 		if parent == cur {
-			break
+			return "", false, nil
 		}
 		rest = append([]string{filepath.Base(cur)}, rest...)
 		cur = parent
 	}
-	return "", false, nil
 }
 
-// errDangling is finalPath's error for a path through a junction or link that does not resolve.
-var errDangling = errors.New("a junction or symbolic link on the path leads nowhere that exists")
+// ErrDangling is FinalPath's error for a path through a junction or link that does not resolve.
+var ErrDangling = errors.New("a junction or symbolic link on the path leads nowhere that exists")
 
 // dangling reports whether p is itself a reparse point (a junction, a symbolic link, a mount point) that does not
 // open: finalName could not open p, yet p is there. Anything else that does not open is not there.

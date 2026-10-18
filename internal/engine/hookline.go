@@ -31,11 +31,13 @@ package engine
 // cmd/bonsai) is skipped by a stamped build: its scratch root confines it.
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 )
 
 // The test build's stamps (this file's comment), set only by the linker's -X: empty in every plain build.
@@ -248,44 +250,128 @@ func Confine(dirs ...string) error {
 
 // FolderHolds reports whether p is folder or lies inside it, each resolved by RealPath first, so a path not made yet
 // is read in the same form as the folder it would be made in; letter case is ignored on Windows. Confine and the
-// stamped build's home confinement (cmd/bonsai's personOnly) both judge by it.
+// stamped build's home confinement (cmd/bonsai's personOnly) both judge by it. Either path that RealPath cannot walk
+// (a link loop, more links than it follows) is held by nothing: false, which both callers refuse.
 func FolderHolds(folder, p string) bool {
-	return insideFolder(RealPath(folder), RealPath(p))
+	f, err := RealPath(folder)
+	if err != nil {
+		return false
+	}
+	q, err := RealPath(p)
+	if err != nil {
+		return false
+	}
+	return insideFolder(f, q)
 }
 
-// RealPath is the path a write to p would reach: made absolute and clean, the links in the part of it that exists
-// resolved (and, on Windows, an 8.3 short name there made long), a link whose target is not made yet followed, the
-// rest kept as written. Resolving only a path that exists would read a folder and a path not made yet inside it in
-// two forms (CI's Windows runner reaches its temporary folder as RUNNER~1, which resolves to its long name only where
-// it exists). The guard's resolve (internal/guard/paths.go) is the same walk.
-func RealPath(p string) string {
+// RealPath is the path a write to p would reach: made absolute and clean, its links walked (WalkLinks), and on
+// Windows the part of it that exists named as Windows names it (FinalPath: junctions, mount points and 8.3 short
+// names, which Go's own link calls no longer follow), the rest kept as written. Resolving only a path that exists
+// would read a folder and a path not made yet inside it in two forms (CI's Windows runner reaches its temporary
+// folder as RUNNER~1, which resolves to its long name only where it exists). It never gives the path as written when
+// it cannot walk it: its error says why (a link loop, more than MaxLinkHops links, a link that cannot be read, or on
+// Windows a junction or link that leads nowhere). The guard (internal/guard/paths.go) walks every path it judges with
+// the same WalkLinks and FinalPath.
+func RealPath(p string) (string, error) {
 	abs, err := filepath.Abs(p)
 	if err != nil {
 		abs = filepath.Clean(p)
 	}
-	var rest []string
-	cur := abs
-	for hops := 0; hops < 64; hops++ {
-		if real, err := filepath.EvalSymlinks(cur); err == nil {
-			return filepath.Join(append([]string{real}, rest...)...)
-		}
-		if fi, err := os.Lstat(cur); err == nil && fi.Mode()&fs.ModeSymlink != 0 {
-			if t, err := os.Readlink(cur); err == nil {
-				if !filepath.IsAbs(t) {
-					t = filepath.Join(filepath.Dir(cur), t)
-				}
-				cur = filepath.Clean(t)
-				continue
-			}
-		}
-		parent := filepath.Dir(cur)
-		if parent == cur {
-			break
-		}
-		rest = append([]string{filepath.Base(cur)}, rest...)
-		cur = parent
+	real, err := WalkLinks(abs)
+	if err != nil {
+		return "", err
 	}
-	return abs
+	if f, ok, err := FinalPath(real); err != nil {
+		return "", err
+	} else if ok {
+		real = f
+	}
+	return real, nil
+}
+
+// MaxLinkHops is how many symbolic links WalkLinks follows on one path before it gives up (Linux itself follows 40).
+// Only links count: the folders of a path are bounded by its own length.
+const MaxLinkHops = 64
+
+// ErrLinkHops is WalkLinks' error for a path through more than MaxLinkHops links, a loop among them.
+var ErrLinkHops = errors.New("the path runs through more than 64 symbolic links (a loop of links, or a chain too long " +
+	"to follow), so where a write through it lands cannot be told")
+
+// WalkLinks gives the path a write to the path abs (made absolute) would reach, read name by name as the system reads it:
+// a name that exists and is a symbolic link is replaced by its target (an absolute one from its volume's root, a
+// relative one from the link's own real folder, so a `..` in it is read where the link really is); `..` goes up from
+// the real folder reached so far; from the first name that does not exist, the rest is kept as written. The part that
+// exists is then named by filepath.EvalSymlinks (its letter case and, on Windows, its long names). Its error is
+// ErrLinkHops past MaxLinkHops links, or a link that cannot be read, or a name that cannot be looked at for another
+// reason than its absence: the caller then cannot tell where abs leads, and refuses it. Junctions and mount points on
+// Windows are not links to Go's os.Lstat (since Go 1.23): FinalPath names them.
+func WalkLinks(abs string) (string, error) {
+	if a, err := filepath.Abs(abs); err == nil {
+		abs = a // a relative path is read from the working folder, never from the volume's root
+	} else {
+		abs = filepath.Clean(abs)
+	}
+	if real, err := filepath.EvalSymlinks(abs); err == nil {
+		return real, nil
+	}
+	vol := filepath.VolumeName(abs)
+	done := vol + string(filepath.Separator) // the real folder reached so far: no link in it
+	todo := splitNames(abs[len(vol):])
+	hops := 0
+	for len(todo) > 0 {
+		name := todo[0]
+		todo = todo[1:]
+		switch name {
+		case ".":
+			continue
+		case "..":
+			done = filepath.Dir(done)
+			continue
+		}
+		next := filepath.Join(done, name)
+		fi, err := os.Lstat(next)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, syscall.ENOTDIR) {
+				// Not made yet: the rest as written, from here.
+				return filepath.Join(append([]string{realFolder(done), name}, todo...)...), nil
+			}
+			return "", err
+		}
+		if fi.Mode()&fs.ModeSymlink == 0 {
+			done = next
+			continue
+		}
+		if hops++; hops > MaxLinkHops {
+			return "", ErrLinkHops
+		}
+		t, err := os.Readlink(next)
+		if err != nil {
+			return "", err
+		}
+		if tv := filepath.VolumeName(t); tv != "" || t != "" && os.IsPathSeparator(t[0]) {
+			if tv == "" {
+				tv = vol // /x, or \x on Windows: from the root of the link's own volume
+			}
+			done = tv + string(filepath.Separator)
+			t = t[len(filepath.VolumeName(t)):]
+		}
+		todo = append(splitNames(t), todo...)
+	}
+	return realFolder(done), nil
+}
+
+// splitNames gives a path's names, separators of either kind on Windows, empty names dropped.
+func splitNames(p string) []string {
+	return strings.FieldsFunc(p, func(r rune) bool { return r < 0x80 && os.IsPathSeparator(uint8(r)) })
+}
+
+// realFolder is a folder that exists and holds no symbolic link, named by filepath.EvalSymlinks (its case on disk,
+// and on Windows its long names), else as it is.
+func realFolder(d string) string {
+	if r, err := filepath.EvalSymlinks(d); err == nil {
+		return r
+	}
+	return d
 }
 
 // insideFolder reports whether p is root or lies inside it; letter case is ignored on Windows.

@@ -57,7 +57,11 @@ func (j *judge) homes() [][]string {
 	j.homeForms = [][]string{}
 	for _, d := range dirs {
 		forms := []string{d}
-		forms = appendNew(forms, resolve(d))
+		// A home whose links cannot be walked adds no resolved form and refuses nothing (a folder this machine set,
+		// not a path an agent chose); an agent's path through it is refused by its own walk (pathForms).
+		if r, err := resolve(d); err == nil {
+			forms = appendNew(forms, r)
+		}
 		if f, ok, err := finalPath(d); err == nil && ok {
 			forms = appendNew(forms, f)
 		}

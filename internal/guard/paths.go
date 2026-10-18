@@ -14,8 +14,8 @@ package guard
 //     a name dropped (protected.txt. is protected.txt); and a path through this machine's own administrative share
 //     (\\localhost\C$\..., \\127.0.0.1\C$\..., \\?\UNC\localhost\C$\..., and the machine's own name) read as
 //     its drive, C:\... (adminShare);
-//   - on Windows, also as Windows itself names it (finalPath, final_windows.go): the longest part of the path that
-//     exists, opened and named by GetFinalPathNameByHandle, which resolves junctions, symbolic links, mount points,
+//   - on Windows, also as Windows itself names it (finalPath, engine's final_windows.go): the longest part of the path
+//     that exists, opened and named by GetFinalPathNameByHandle, which resolves junctions, symbolic links, mount points,
 //     short (8.3) names, streams and device or volume forms (\\?\GLOBALROOT\Device\..., \\?\Volume{...}\...) to the
 //     drive-letter path and letter case on disk, then the rest of the path.
 //
@@ -25,8 +25,9 @@ package guard
 // BONSAI.YAML too (a folder on /mnt/c in WSL).
 //
 // On Windows, a path whose longest existing part is a junction or symbolic link that does not resolve is refused
-// (bad-path, final_windows.go): Windows would fail the write through it anyway, so nothing is lost, and the guard
-// cannot tell where it leads.
+// (bad-path, engine's final_windows.go): Windows would fail the write through it anyway, so nothing is lost, and the
+// guard cannot tell where it leads. So is a path whose symbolic links cannot be followed to their end (a loop, or more
+// than 64 links: engine.WalkLinks), on every system: it is never judged as written.
 //
 // Not covered, the limits of a hook that runs before the call (gate report section 5; 5.3.1 note 6): a junction or
 // link swapped between the guard's check and Claude Code's write (a race no such hook can close: it needs a second
@@ -39,6 +40,7 @@ package guard
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -47,6 +49,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -67,7 +70,13 @@ func pathForms(base, cwd, p string) ([]string, error) {
 	var targets []string
 	for _, w := range written {
 		a := absolute(cwd, base, w)
-		r := resolve(a)
+		if intoProc(a, a, runtime.GOOS) {
+			return nil, errProc // before its walk: /proc's links may not be readable from the guard's process
+		}
+		r, err := resolve(a)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", errUnwalked, err.Error())
+		}
 		if intoProc(a, r, runtime.GOOS) {
 			return nil, errProc
 		}
@@ -217,33 +226,23 @@ func absolute(cwd, root, p string) string {
 	return filepath.Join(base, p)
 }
 
-// resolve gives the path a write to a would reach: the symbolic links in the part of a that exists resolved, a link
-// whose target does not exist yet followed, the rest kept as written. It gives a itself when nothing resolves.
-func resolve(a string) string {
-	var rest []string
-	cur := a
-	for hops := 0; hops < 64; hops++ {
-		if real, err := filepath.EvalSymlinks(cur); err == nil {
-			return filepath.Join(append([]string{real}, rest...)...)
-		}
-		if fi, err := os.Lstat(cur); err == nil && fi.Mode()&fs.ModeSymlink != 0 {
-			if t, err := os.Readlink(cur); err == nil {
-				if !filepath.IsAbs(t) {
-					t = filepath.Join(filepath.Dir(cur), t)
-				}
-				cur = filepath.Clean(t)
-				continue
-			}
-		}
-		parent := filepath.Dir(cur)
-		if parent == cur {
-			break
-		}
-		rest = append([]string{filepath.Base(cur)}, rest...)
-		cur = parent
-	}
-	return a
+// resolve gives the path a write to the absolute path a would reach: its symbolic links followed name by name, a
+// link whose target does not exist yet followed too, the rest kept as written (engine.WalkLinks, the one walk Bonsai
+// has: engine.RealPath, which a test build's confinement judges by, walks with it as well). Its error (a link loop,
+// more than engine.MaxLinkHops links, a link that cannot be read) says the guard cannot tell where a leads: it is
+// never a reason to judge a as written.
+func resolve(a string) (string, error) {
+	return engine.WalkLinks(a)
 }
+
+// finalPath is Windows' own name for a path, engine.FinalPath (final_windows.go there); elsewhere it gives nothing.
+func finalPath(p string) (string, bool, error) {
+	return engine.FinalPath(p)
+}
+
+// errUnwalked is pathForms' error for a path whose links cannot be walked to their end.
+var errUnwalked = errors.New("its symbolic links cannot be followed to their end (a loop of links, or more than 64 " +
+	"of them)")
 
 // windowsForms gives the other forms Windows reads a written path as (the package comment lists them). It works on
 // the string alone, so its tests run on any system.

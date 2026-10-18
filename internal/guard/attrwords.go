@@ -399,7 +399,12 @@ func (s *shellRole) bonsaiOwn() []string {
 	s.own = []string{}
 	add := func(p string) {
 		s.own = appendNew(s.own, filepath.Clean(p))
-		s.own = appendNew(s.own, resolve(filepath.Clean(p)))
+		// One of Bonsai's own folders whose links cannot be walked (a loop the person made) adds no resolved form and
+		// refuses nothing: it is a folder of this machine, not a path an agent chose, and an agent's path through it
+		// is refused by its own walk (pathForms).
+		if r, err := resolve(filepath.Clean(p)); err == nil {
+			s.own = appendNew(s.own, r)
+		}
 	}
 	for _, f := range Floor {
 		if f.Class == RuleBonsaiFiles || f.Glob == ".bonsai/lock.json" {
@@ -420,7 +425,10 @@ func (s *shellRole) bonsaiOwn() []string {
 func (s *shellRole) attrReach(dir, p, word string, glob bool, d shDialect) Decision {
 	forms, err := pathForms(dir, dir, p)
 	if err != nil {
-		return allow(RuleShell, "") // judged by mayWrite already
+		// mayWrite refuses it first; refused here too, so this check never lets through a path it cannot place.
+		return deny(RuleBadPath, fmt.Sprintf("%s refused: %s changes the permissions or attributes of %s, and the guard "+
+			"cannot tell where it leads (%s), so it cannot tell whether it is Bonsai's own", s.rr.in.Tool, word,
+			quote(s.rr.j.shown(p), 120), oneLine(err.Error())), "give the path in its plain form, without the links, or tell the person")
 	}
 	fold := caseInsensitive(s.rr.main)
 	for _, own := range s.bonsaiOwn() {
