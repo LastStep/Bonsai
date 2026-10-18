@@ -3,7 +3,8 @@ package engine
 // The path walk's failing closed (V1's B1 on 5.6, M-2026-10-18-8ba15229): a path deeper than the old 64-step limit
 // behind a link out of the folder, a link loop, and a relative link target not made yet whose `..` must be read from
 // the link's real folder (V1's N1). The links are symbolic links, which need a privilege on Windows: each case skips
-// where none can be made (realpath_windows_test.go holds Windows' junctions, which need none).
+// where none can be made (realpath_windows_test.go holds Windows' junctions, which need none). Each spells its temporary
+// folder by its short (8.3) name where Windows gives it one (shortTemp), as CI's runner does.
 
 import (
 	"os"
@@ -30,7 +31,7 @@ func deep(base string, n int) string {
 }
 
 func TestFolderHoldsPastTheOldLimit(t *testing.T) {
-	tmp := t.TempDir()
+	tmp := shortTemp(t)
 	root, outside := filepath.Join(tmp, "root"), filepath.Join(tmp, "outside")
 	for _, d := range []string{root, outside} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
@@ -100,7 +101,7 @@ func TestRealPathFailsClosed(t *testing.T) {
 // V1's N1: root/L -> outside/deep, and outside/deep/dang -> ../x, x not made. The write reaches outside/x; read by
 // spelling from the link's folder as written, it was root/x.
 func TestARelativeLinkTargetIsReadFromTheLinksRealFolder(t *testing.T) {
-	tmp := t.TempDir()
+	tmp := shortTemp(t)
 	root, outside := filepath.Join(tmp, "root"), filepath.Join(tmp, "outside")
 	if err := os.MkdirAll(filepath.Join(outside, "deep"), 0o755); err != nil {
 		t.Fatal(err)
