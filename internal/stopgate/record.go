@@ -20,8 +20,6 @@ package stopgate
 import (
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/hookin"
@@ -79,24 +77,13 @@ func claimFile(path string) bool {
 var userHome = os.UserHomeDir
 
 // fromHome writes a path from ~/ when it lies under the user's home folder (letter case ignored on Windows), else as
-// it is; forward slashes either way.
+// it is; forward slashes either way: record.FromHome, the rule's one home.
 func fromHome(path string) string {
-	if path == "" {
-		return ""
-	}
-	p := filepath.ToSlash(filepath.Clean(path))
 	h, err := userHome()
-	if err != nil || h == "" {
-		return p
+	if err != nil {
+		h = ""
 	}
-	prefix := strings.TrimSuffix(filepath.ToSlash(filepath.Clean(h)), "/") + "/"
-	if len(p) > len(prefix) {
-		head := p[:len(prefix)]
-		if head == prefix || (runtime.GOOS == "windows" && strings.EqualFold(head, prefix)) {
-			return "~/" + p[len(prefix):]
-		}
-	}
-	return p
+	return record.FromHome(path, h)
 }
 
 // text gives a free-text field as written: redacted, or nil for "".

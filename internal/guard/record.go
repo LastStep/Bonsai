@@ -228,24 +228,14 @@ func buildRecord(at *place, in *hookin.Payload, d Decision, getenv func(string) 
 var userHome = os.UserHomeDir
 
 // fromHome writes a path from ~/ when it lies under the user's home folder (letter case ignored on Windows), else as
-// it is; forward slashes either way. The recorder writes hook start's bonsai_path the same way.
+// it is; forward slashes either way: record.FromHome, the rule's one home, which the recorder's hook start and the
+// stop gate write bonsai_path through too.
 func fromHome(path string) string {
-	if path == "" {
-		return ""
-	}
-	p := filepath.ToSlash(filepath.Clean(path))
 	home, err := userHome()
-	if err != nil || home == "" {
-		return p
+	if err != nil {
+		home = ""
 	}
-	prefix := strings.TrimSuffix(filepath.ToSlash(filepath.Clean(home)), "/") + "/"
-	if len(p) > len(prefix) {
-		head := p[:len(prefix)]
-		if head == prefix || (runtime.GOOS == "windows" && strings.EqualFold(head, prefix)) {
-			return "~/" + p[len(prefix):]
-		}
-	}
-	return p
+	return record.FromHome(path, home)
 }
 
 // userless keeps user names out of a record's text (contract §2.6; as bonsai_path, written from ~/): the user's home

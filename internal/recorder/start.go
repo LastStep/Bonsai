@@ -21,7 +21,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -86,22 +85,9 @@ func self(o Options) (string, string) {
 	return path, sum
 }
 
-// underHome writes path from ~/ when it lies under home (case-blind on Windows), else as it is, with forward slashes.
-func underHome(path, home string) string {
-	p := filepath.ToSlash(filepath.Clean(path))
-	h := strings.TrimSuffix(filepath.ToSlash(filepath.Clean(home)), "/")
-	if h == "" {
-		return p
-	}
-	prefix := h + "/"
-	if len(p) > len(prefix) {
-		head := p[:len(prefix)]
-		if head == prefix || (runtime.GOOS == "windows" && strings.EqualFold(head, prefix)) {
-			return "~/" + p[len(prefix):]
-		}
-	}
-	return p
-}
+// underHome writes path from ~/ when it lies under home (case-blind on Windows), else as it is, with forward slashes:
+// record.FromHome, the rule's one home.
+func underHome(path, home string) string { return record.FromHome(path, home) }
 
 // openingContext is the context hook start prints (this file's comment); act is the run's active task.
 func openingContext(cfg *workspace.Config, local workspace.Local, act *active) string {

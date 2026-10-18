@@ -44,8 +44,8 @@ func Self(executable func() (string, error), hash bool) (path, sum string) {
 
 // FromHome writes path as a record keeps a binary's path (the log schema's bonsai_path; contract §2.6: no user name
 // in the log): from ~/ when it lies under home (letter case ignored on Windows), else as it is, forward slashes either
-// way. home "" writes it as it is. The recorder, the guard and the stop gate keep copies of this rule of their own
-// (STATE.md, "One home, later"); the ladder runner writes through this one.
+// way. home "" writes it as it is. The rule's one home: the recorder, the guard, the stop gate and the ladder runner
+// all write through it.
 func FromHome(path, home string) string {
 	if path == "" {
 		return ""
