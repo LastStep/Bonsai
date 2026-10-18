@@ -110,6 +110,9 @@ if [ -d "$dir" ]; then
 	dir=$(CDPATH='' cd -P -- "$dir" && pwd -P) || refuse "could not read the target's folder" "check you can enter it, then run it again"
 	target=${dir%/}/$base
 fi
+if [ -d "$target" ]; then
+	refuse "the target $target is a folder, not a file's path" "run it again with the file's path in it, as: --target $target/bonsai, or another target"
+fi
 real=no
 placedir=$(CDPATH='' cd -P -- "${place%/*}" 2>/dev/null && pwd -P) || placedir=${place%/*}
 [ "$dir" = "$placedir" ] && [ "$base" = "${place##*/}" ] && real=yes

@@ -466,6 +466,12 @@ func TestShRefusals(t *testing.T) {
 				s.target = filepath.Join(s.tmp, "link", "bonsai")
 			},
 			after: func(t *testing.T, s *scratch) { empty(t, filepath.Join(s.tmp, "linked to")) }},
+		{name: "a target that is a folder", want: "is a folder", src: real,
+			prepare: func(t *testing.T, s *scratch) {
+				if err := os.Mkdir(s.target, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			s := newScratch(t, "install.sh", c.src)
@@ -477,7 +483,16 @@ func TestShRefusals(t *testing.T) {
 			if code != 1 || !strings.Contains(out, c.want) || !strings.Contains(out, "\nnext: ") {
 				t.Fatalf("exit %d; want 1 with %q and its next step:\n%s", code, c.want, out)
 			}
-			noFile(t, filepath.Join(s.tmp, "bin it's", "bonsai"))
+			if fi, err := os.Stat(s.target); err == nil && fi.IsDir() {
+				empty(t, s.target) // a target that is a folder: nothing copied into it
+				code, out := s.sh(t, "--remove")
+				if code != 1 || !strings.Contains(out, c.want) || !strings.Contains(out, "\nnext: ") {
+					t.Fatalf("--remove: exit %d; want 1 with %q and its next step:\n%s", code, c.want, out)
+				}
+				empty(t, s.target)
+			} else {
+				noFile(t, filepath.Join(s.tmp, "bin it's", "bonsai"))
+			}
 			noFile(t, filepath.Join(s.home, engine.InstallFile), called)
 			if c.after != nil {
 				c.after(t, s)
@@ -636,6 +651,19 @@ func TestPs1Refusals(t *testing.T) {
 		}
 		noFile(t, s.target, filepath.Join(s.home, engine.InstallFile))
 	})
+	t.Run("a target that is a folder", func(t *testing.T) {
+		s := newScratch(t, "install.ps1", src)
+		if err := os.Mkdir(s.target, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		for _, args := range [][]string{nil, {"-Remove"}} {
+			if code, out := s.ps1(t, ps, args...); code != 1 || !strings.Contains(out, "is a folder") || !strings.Contains(out, "next: ") {
+				t.Fatalf("%v: exit %d:\n%s", args, code, out)
+			}
+			empty(t, s.target)
+		}
+		noFile(t, filepath.Join(s.home, engine.InstallFile))
+	})
 	t.Run("a relative target", func(t *testing.T) {
 		s := newScratch(t, "install.ps1", src)
 		s.target = `bin\bonsai.exe`
@@ -663,6 +691,22 @@ func TestPs1Refusals(t *testing.T) {
 			t.Fatalf("the child left: %v", l)
 		}
 	})
+}
+
+// install.ps1 refuses a target that is a folder in its main part, before the child's text is built for an install or
+// a remove (read here on every system; TestPs1Refusals runs it on Windows).
+func TestPs1FolderTargetRefusedFirst(t *testing.T) {
+	ps := read(t, "install.ps1")
+	check := strings.Index(ps, "[IO.Directory]::Exists($Target)")
+	main := strings.Index(ps, "\n# Main.")
+	if check < 0 || main < 0 || check < main {
+		t.Fatal("install.ps1's main part does not refuse a target that is a folder ([IO.Directory]::Exists($Target))")
+	}
+	for _, call := range []string{"New-ChildText -Source $Target", "New-ChildText -Source $src"} {
+		if i := strings.Index(ps, call); i < 0 || i < check {
+			t.Errorf("install.ps1 builds the child's text (%s) before it refuses a folder target", call)
+		}
+	}
 }
 
 // The child's text holds each value as a single-quoted literal, a path with a ' and a space among them, and refuses

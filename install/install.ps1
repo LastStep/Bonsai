@@ -243,6 +243,9 @@ if ($Target -notmatch '^[A-Za-z]:\\') {
     Stop-Install "the target $Target is not an absolute path with a drive letter" 'run it again with one, as: -Target C:\scratch\bonsai.exe'
 }
 try { $Target = [IO.Path]::GetFullPath($Target) } catch { Stop-Install "the target $Target is not a path Windows reads" 'run it again with another -Target' }
+if ([IO.Directory]::Exists($Target)) {
+    Stop-Install "the target $Target is a folder, not a file's path" "run it again with the file's path in it, as: -Target $Target\bonsai.exe, or another target"
+}
 $real = $Target -ieq $Place
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if ($ForceChild -and -not $admin) {
