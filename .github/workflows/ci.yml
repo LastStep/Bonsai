@@ -15,14 +15,18 @@ jobs:
       # Full history: the formats' schema-compare test (formats/compare_test.go) reads each schema at the set's base
       # commit with git show, and fails under CI when that commit is missing, as it is in a shallow clone.
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
           go-version-file: go.mod
+
+      - name: Print the Go version
+        run: go version
 
       - name: Run tests
         run: go test -timeout 20m ./...
@@ -49,14 +53,18 @@ jobs:
     steps:
       # Full history, for the schema-compare test (as in test).
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
           go-version-file: go.mod
+
+      - name: Print the Go version
+        run: go version
 
       - name: Run tests
         run: go test -timeout 20m ./...
@@ -97,15 +105,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
           go-version-file: go.mod
 
+      - name: Print the Go version
+        run: go version
+
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
         with:
           node-version: "22"
 
@@ -132,32 +145,56 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
           go-version-file: go.mod
+
+      - name: Print the Go version
+        run: go version
 
       # verify: false switches off the action's config check (golangci-lint config verify), which downloads a JSON
       # schema from golangci-lint's website on every run and failed CI twice on the network (8 and 9 Oct); the lint
       # itself still reads .golangci.yml and fails on a config it cannot read.
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a  # v9.3.0
         with:
           version: v2.14.0
           verify: false
+
+      # The same lint over the files the fault tag compiles in (internal/guard/fault_on.go and the tests beside it);
+      # both steps are required.
+      - name: golangci-lint with the fault tag
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a  # v9.3.0
+        with:
+          version: v2.14.0
+          verify: false
+          args: --build-tags=bonsai_test_fault
+
+      # actionlint at an exact version through go run, so Go's checksum database checks what it fetches. It reads the
+      # workflows here and the pack template's; internal/selfcheck/workflows_test.go holds their pins.
+      - name: actionlint
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 .github/workflows/*.yml packs/template/.github/workflows/*.yml
 
   govulncheck:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
           go-version-file: go.mod
+
+      - name: Print the Go version
+        run: go version
 
       # Pinned exactly, so a new release cannot change what CI checks on its own. v1.8.0 is the newest release; its go.mod
       # says go 1.26.0, which the go.mod toolchain (Go 1.27) satisfies. CI runs that toolchain with GOTOOLCHAIN=local.
@@ -180,12 +217,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
           go-version-file: go.mod
+
+      - name: Print the Go version
+        run: go version
 
       - name: Install, check, again while a copy runs, remove (Linux)
         if: runner.os == 'Linux'
@@ -228,7 +270,9 @@ jobs:
           sh dist/install.sh --remove
           test ! -e /usr/local/bin/bonsai
           test ! -e "$rec"
-          ls -a /usr/local/bin | grep -c '^\.bonsai\.new\.' && exit 1 || true
+          for left in /usr/local/bin/.bonsai.new.*; do
+            if [ -e "$left" ]; then echo "left behind: $left"; exit 1; fi
+          done
 
       - name: Install through the elevated child, check, again while a copy runs, a wrong hash, remove (Windows)
         if: runner.os == 'Windows'
