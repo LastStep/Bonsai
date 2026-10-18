@@ -104,7 +104,7 @@ func openingContext(cfg *workspace.Config, local workspace.Local, act *active) s
 		t := a.Task
 		add("Active task: %s %s (%s), status %s, lane %s, branch %s.", a.ID, strconv.Quote(t.Title), a.File, t.Status,
 			orNone(str(t.Lane)), orNone(taskBranch(t)))
-		add("Its grants (bonsai.allows): %s.", orNone(strings.Join(taskAllows(t), ", ")))
+		add("Its grants (bonsai.allows): %s.", taskAllows(t))
 		add("Its last ladder result: %s.", lastLadder(local, a.ID))
 	}
 	out = append(out, attachedLabels(local)...)
@@ -145,20 +145,20 @@ func taskBranch(t *format.Task) string {
 	return ""
 }
 
-// taskAllows lists the task's bonsai.allows label (contract §5.5), or its format-0 allows_assets field.
-func taskAllows(t *format.Task) []string {
-	v, ok := t.Labels.Get("bonsai.allows")
-	if !ok && t.Format0 != nil {
-		v, _ = t.Format0.Get("allows_assets")
+// taskAllows says the task's bonsai.allows label (contract §5.5), or its format-0 allows_assets field, as the guard
+// reads it (format.Task.Allows): its globs, "none", or that it grants nothing when it is not a list of text.
+func taskAllows(t *format.Task) string {
+	globs, ok := t.Allows()
+	if !ok {
+		return "not a list of text, so it grants nothing"
 	}
-	list, _ := v.([]any)
 	var out []string
-	for _, e := range list {
-		if s, ok := e.(string); ok && s != "" {
-			out = append(out, s)
+	for _, g := range globs {
+		if g != "" {
+			out = append(out, g)
 		}
 	}
-	return out
+	return orNone(strings.Join(out, ", "))
 }
 
 // lastLadder says the task's last ladder result, read from the main checkout's .bonsai/local/ladder/<task>.json

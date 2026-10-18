@@ -95,35 +95,9 @@ func (j *judge) readGrant(p *linkedProject) *taskGrant {
 	return &taskGrant{task: at.ID, globs: globs}
 }
 
-// allowsOf gives a task's bonsai.allows (contract §5.6), or its format-0 allows_assets (contract §4.3); false when the
-// value is there but is not a list of text (contract §5.2: a granting label of the wrong kind grants nothing).
-func allowsOf(t *format.Task) ([]string, bool) {
-	v, ok := t.Labels.Get("bonsai.allows")
-	if !ok && t.Format0 != nil {
-		v, ok = t.Format0.Get("allows_assets")
-	}
-	if !ok || v == nil {
-		return nil, true
-	}
-	return textList(v)
-}
-
-// textList reads a list of text, false for anything else.
-func textList(v any) ([]string, bool) {
-	list, ok := v.([]any)
-	if !ok {
-		return nil, false
-	}
-	out := make([]string, 0, len(list))
-	for _, e := range list {
-		s, ok := e.(string)
-		if !ok {
-			return nil, false
-		}
-		out = append(out, s)
-	}
-	return out, true
-}
+// allowsOf gives a task's bonsai.allows, or its format-0 allows_assets; false when the value is not a list of text
+// (format.Task.Allows, the read's one home).
+func allowsOf(t *format.Task) ([]string, bool) { return t.Allows() }
 
 // docPlace is the place bonsai.yaml's documents names for a kind, "" for none.
 func docPlace(cfg *workspace.Config, kind string) string {

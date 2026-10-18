@@ -30,6 +30,32 @@ type Task struct {
 	Format0 *reader.Map `json:"-"`
 }
 
+// Allows gives the task's bonsai.allows (contract §5.6), or its format-0 allows_assets (contract §4.3); false when the
+// value is there but is not a list of text (contract §5.2: a granting label of the wrong kind grants nothing). Its one
+// home: the guard's grants and the recorder's opening context read it here.
+func (t *Task) Allows() ([]string, bool) {
+	v, ok := t.Labels.Get("bonsai.allows")
+	if !ok && t.Format0 != nil {
+		v, ok = t.Format0.Get("allows_assets")
+	}
+	if !ok || v == nil {
+		return nil, true
+	}
+	list, ok := v.([]any)
+	if !ok {
+		return nil, false
+	}
+	out := make([]string, 0, len(list))
+	for _, e := range list {
+		s, ok := e.(string)
+		if !ok {
+			return nil, false
+		}
+		out = append(out, s)
+	}
+	return out, true
+}
+
 // ReadTask reads a task file's bytes, under format 1 or format 0.
 func ReadTask(raw []byte) (*Task, error) {
 	t := &Task{}
