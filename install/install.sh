@@ -89,10 +89,30 @@ esac
 case $target in
 *[!\ -~]* | */) refuse "the target must be a file's path in plain ASCII letters" "run it again with another target, as: --target /usr/local/bin/bonsai" ;;
 esac
+base=${target##*/}
+case $base in
+. | ..) refuse "the target $target names no file" "run it again with a file's path, as: --target /usr/local/bin/bonsai" ;;
+esac
 dir=${target%/*}
+while :; do
+	case $dir in
+	?*/) dir=${dir%/} ;;
+	*) break ;;
+	esac
+done
 [ -n "$dir" ] || dir=/
+# The folder is judged as given first (a link there is refused, never followed), then read as it resolves, so another
+# spelling of a place (a doubled /, a /./ or a /../ in it) is that place, the real place's checks included.
+if [ -L "$dir" ]; then
+	refuse "the target's folder $dir is a link, so the file would land wherever it points" "run it again with the folder the link points to, as: --target /usr/local/bin/bonsai"
+fi
+if [ -d "$dir" ]; then
+	dir=$(CDPATH='' cd -P -- "$dir" && pwd -P) || refuse "could not read the target's folder" "check you can enter it, then run it again"
+	target=${dir%/}/$base
+fi
 real=no
-[ "$target" = "$place" ] && real=yes
+placedir=$(CDPATH='' cd -P -- "${place%/*}" 2>/dev/null && pwd -P) || placedir=${place%/*}
+[ "$dir" = "$placedir" ] && [ "$base" = "${place##*/}" ] && real=yes
 sudo=
 [ -w "$dir" ] || sudo=sudo
 home=${BONSAI_HOME:-$HOME/.bonsai}

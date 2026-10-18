@@ -169,10 +169,10 @@ func sum(b []byte) string {
 	return hex.EncodeToString(h[:])
 }
 
-// record reads install.json: exactly the three keys, the path with forward slashes. install.sh records the target as
-// it was given; install.ps1 records its full path with an 8.3 short name in it made long (Windows PowerShell's
-// GetFullPath does), the path a person sees. CI's Windows runner reaches its temporary folder as RUNNER~1, so the path
-// wanted there is the target's long form, engine.RealPath's.
+// record reads install.json: exactly the three keys, the path with forward slashes. install.sh records the target in
+// its folder as that folder resolves (pwd -P); install.ps1 records its full path with an 8.3 short name in it made long
+// (Windows PowerShell's GetFullPath does), the path a person sees. CI's Windows runner reaches its temporary folder as
+// RUNNER~1, so the path wanted is the target's resolved form, engine.RealPath's, on both.
 func (s *scratch) record(t *testing.T) map[string]string {
 	t.Helper()
 	var m map[string]string
@@ -186,12 +186,9 @@ func (s *scratch) record(t *testing.T) map[string]string {
 	return m
 }
 
-// recorded is the target's path as its installer records it in install.json (record's comment says why the two differ).
+// recorded is the target's path as its installer records it in install.json (record's comment says why).
 func (s *scratch) recorded() string {
-	if runtime.GOOS == "windows" {
-		return filepath.ToSlash(engine.RealPath(s.target))
-	}
-	return filepath.ToSlash(s.target)
+	return filepath.ToSlash(engine.RealPath(s.target))
 }
 
 // checkReads proves check's reader reads the record: with the target first on the PATH, no bonsai-path finding and no
@@ -338,6 +335,18 @@ func noFile(t *testing.T, paths ...string) {
 	}
 }
 
+// empty fails the test unless the folder holds nothing.
+func empty(t *testing.T, dir string) {
+	t.Helper()
+	des, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(des) > 0 {
+		t.Errorf("%s holds %d entries (the first %s); want none", dir, len(des), des[0].Name())
+	}
+}
+
 func leftovers(t *testing.T, dir, pattern string) []string {
 	t.Helper()
 	m, err := filepath.Glob(filepath.Join(dir, pattern))
@@ -401,6 +410,26 @@ func TestShInstallAgainRunningRemove(t *testing.T) {
 	noFile(t, called)
 }
 
+// The target is read as its folder resolves, so another spelling of a place is that place (the real place's checks
+// then hold however it is typed): the record holds the clean path.
+func TestShTargetSpellings(t *testing.T) {
+	linuxOnly(t)
+	src := readFile(t, bonsai(t))
+	for _, spell := range []string{"%s//bonsai", "%s/./bonsai", "%s/../bin it's/bonsai"} {
+		t.Run(strings.ReplaceAll(spell, "%s", "bin"), func(t *testing.T) {
+			s := newScratch(t, "install.sh", src)
+			s.stubs(t, nil)
+			clean := s.target
+			s.target = strings.Replace(spell, "%s", s.bin, 1)
+			if code, out := s.sh(t); code != 0 {
+				t.Fatalf("install through %s: exit %d\n%s", s.target, code, out)
+			}
+			s.target = clean
+			s.record(t)
+		})
+	}
+}
+
 func TestShRefusals(t *testing.T) {
 	linuxOnly(t)
 	real := readFile(t, bonsai(t))
@@ -409,6 +438,7 @@ func TestShRefusals(t *testing.T) {
 		src        []byte
 		stubs      map[string]string
 		prepare    func(t *testing.T, s *scratch)
+		after      func(t *testing.T, s *scratch)
 	}{
 		{name: "a bonsai that does not run", want: "does not run", src: []byte("#!/bin/sh\nexit 1\n")},
 		{name: "a target folder others can write", want: "can be written by a group or by other users", src: real,
@@ -423,6 +453,19 @@ func TestShRefusals(t *testing.T) {
 			stubs: map[string]string{"install": "#!/bin/sh\nfor a in \"$@\"; do last=$a; done\nprintf 'another file' >\"$last\"\n"}},
 		{name: "a relative target", want: "not an absolute path", src: real,
 			prepare: func(t *testing.T, s *scratch) { s.target = "bin/bonsai" }},
+		// The link is judged as given, before the folder is resolved: a linked folder is refused, its target untouched.
+		{name: "a target folder that is a link", want: "is a link", src: real,
+			prepare: func(t *testing.T, s *scratch) {
+				dest := filepath.Join(s.tmp, "linked to")
+				if err := os.Mkdir(dest, 0o700); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink(dest, filepath.Join(s.tmp, "link")); err != nil {
+					t.Fatal(err)
+				}
+				s.target = filepath.Join(s.tmp, "link", "bonsai")
+			},
+			after: func(t *testing.T, s *scratch) { empty(t, filepath.Join(s.tmp, "linked to")) }},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			s := newScratch(t, "install.sh", c.src)
@@ -434,7 +477,11 @@ func TestShRefusals(t *testing.T) {
 			if code != 1 || !strings.Contains(out, c.want) || !strings.Contains(out, "\nnext: ") {
 				t.Fatalf("exit %d; want 1 with %q and its next step:\n%s", code, c.want, out)
 			}
-			noFile(t, filepath.Join(s.tmp, "bin it's", "bonsai"), filepath.Join(s.home, engine.InstallFile), called)
+			noFile(t, filepath.Join(s.tmp, "bin it's", "bonsai"))
+			noFile(t, filepath.Join(s.home, engine.InstallFile), called)
+			if c.after != nil {
+				c.after(t, s)
+			}
 			if l := leftovers(t, filepath.Join(s.tmp, "bin it's"), ".bonsai.new.*"); len(l) > 0 {
 				t.Fatalf("temporary copies left: %v", l)
 			}
