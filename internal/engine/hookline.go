@@ -31,6 +31,7 @@ package engine
 // cmd/bonsai) is skipped by a stamped build: its scratch root confines it.
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -232,12 +233,11 @@ func Confine(dirs ...string) error {
 		return errorf("test-build", ExitState, "build it again with both stamps, or build it plain",
 			"this bonsai is a test build, and %s, so it links, updates, unlinks and climbs the ladder nowhere", why)
 	}
-	root := realFolder(scratchRoot)
 	for _, d := range dirs {
 		if d == "" {
 			continue
 		}
-		if p := realFolder(d); !insideFolder(root, p) {
+		if !FolderHolds(scratchRoot, d) {
 			return errorf("test-build", ExitState, next, "this bonsai is a test build: its hook lines run %s, and it links, updates, "+
 				"unlinks and climbs the ladder only inside its scratch folder %s, which %s is not in", ASCII(filepath.ToSlash(hookPlace)),
 				ASCII(filepath.ToSlash(scratchRoot)), ASCII(filepath.ToSlash(d)))
@@ -246,14 +246,44 @@ func Confine(dirs ...string) error {
 	return nil
 }
 
-// realFolder is a folder's absolute path with its links resolved, as far as it exists.
-func realFolder(p string) string {
+// FolderHolds reports whether p is folder or lies inside it, each resolved by RealPath first, so a path not made yet
+// is read in the same form as the folder it would be made in; letter case is ignored on Windows. Confine and the
+// stamped build's home confinement (cmd/bonsai's personOnly) both judge by it.
+func FolderHolds(folder, p string) bool {
+	return insideFolder(RealPath(folder), RealPath(p))
+}
+
+// RealPath is the path a write to p would reach: made absolute and clean, the links in the part of it that exists
+// resolved (and, on Windows, an 8.3 short name there made long), a link whose target is not made yet followed, the
+// rest kept as written. Resolving only a path that exists would read a folder and a path not made yet inside it in
+// two forms (CI's Windows runner reaches its temporary folder as RUNNER~1, which resolves to its long name only where
+// it exists). The guard's resolve (internal/guard/paths.go) is the same walk.
+func RealPath(p string) string {
 	abs, err := filepath.Abs(p)
 	if err != nil {
 		abs = filepath.Clean(p)
 	}
-	if r, err := filepath.EvalSymlinks(abs); err == nil {
-		return r
+	var rest []string
+	cur := abs
+	for hops := 0; hops < 64; hops++ {
+		if real, err := filepath.EvalSymlinks(cur); err == nil {
+			return filepath.Join(append([]string{real}, rest...)...)
+		}
+		if fi, err := os.Lstat(cur); err == nil && fi.Mode()&fs.ModeSymlink != 0 {
+			if t, err := os.Readlink(cur); err == nil {
+				if !filepath.IsAbs(t) {
+					t = filepath.Join(filepath.Dir(cur), t)
+				}
+				cur = filepath.Clean(t)
+				continue
+			}
+		}
+		parent := filepath.Dir(cur)
+		if parent == cur {
+			break
+		}
+		rest = append([]string{filepath.Base(cur)}, rest...)
+		cur = parent
 	}
 	return abs
 }

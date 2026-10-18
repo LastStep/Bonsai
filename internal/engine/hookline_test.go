@@ -217,6 +217,33 @@ func TestAStampedBuildIsConfined(t *testing.T) {
 	}
 }
 
+// A scratch root reached through a link confines a project folder not made yet to the root it names (CI's Windows
+// runner reaches its temporary folder by an 8.3 short name, which resolves the same way); a link inside the root to a
+// folder outside it, its target not made yet, stays outside.
+func TestConfineLinkedRoot(t *testing.T) {
+	real, outside := t.TempDir(), t.TempDir()
+	link := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skipf("no link can be made here (on Windows it needs a privilege): %v", err)
+	}
+	stampAs(t, "/srv/scratch/bonsai", link)
+	for _, d := range []string{filepath.Join(link, "new"), filepath.Join(link, "a", "new"), filepath.Join(real, "new"), link} {
+		if err := Confine(d); err != nil {
+			t.Errorf("%s, inside the linked root: %v", d, err)
+		}
+	}
+	away := filepath.Join(real, "away")
+	if err := os.Symlink(filepath.Join(outside, "not-made"), away); err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range []string{away, filepath.Join(away, "new"), filepath.Join(link, "..", "elsewhere")} {
+		var ee *Error
+		if err := Confine(d); !errors.As(err, &ee) || ee.Code != "test-build" {
+			t.Errorf("%s, outside the root: %v, want test-build", d, err)
+		}
+	}
+}
+
 // The plan's changes of Bonsai's own guard or stop line (OwnGuardChanges): a change or a removal of either, never an
 // addition, never the recorder's lines on the same events.
 func TestOwnGuardChanges(t *testing.T) {
