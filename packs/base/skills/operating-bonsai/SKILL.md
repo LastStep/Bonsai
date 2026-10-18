@@ -49,6 +49,10 @@ Run `bonsai check --json`; for each finding run its `next.do` by its `who`, then
 Warnings never block. `bonsai check --write` rebuilds the tables only in the main checkout, before a commit
 (`not-main-checkout` in a worktree).
 
+Memory: you write the project's notes (`base:memory`). The personal layer in Bonsai's home is the person's: never
+write it; draft a note about them with `base:memory` and hand it over. Its personal warnings in `bonsai check` are
+theirs to act on: name them in your report.
+
 ## Prove a task
 
 ```sh
