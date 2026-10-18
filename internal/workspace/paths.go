@@ -5,6 +5,7 @@ package workspace
 
 import (
 	"errors"
+	"io/fs"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -94,4 +95,18 @@ func asciiOnly(s string) string {
 		b.WriteString(q[1 : len(q)-1])
 	}
 	return b.String()
+}
+
+// OSWords says why a file or folder could not be read by the error's kind, never by its text, which names it by its
+// whole path (contract §2.6: no user's folder in what is kept) and is the system's own words: "it is not there",
+// "permission denied", else "the system could not read it". Its one home for the readers that say only the kind
+// (VerifyMain, internal/vergit); the stop gate's own adds the kinds it meets.
+func OSWords(err error) string {
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return "it is not there"
+	case errors.Is(err, fs.ErrPermission):
+		return "permission denied"
+	}
+	return "the system could not read it"
 }

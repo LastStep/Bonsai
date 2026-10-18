@@ -516,3 +516,15 @@ func TestEnsureGitignore(t *testing.T) {
 		t.Errorf(".bonsai a file: wrote %v, %v", wrote, err)
 	}
 }
+
+// A main checkout whose folder cannot be resolved is not verified, and the reason says why by the error's kind, never
+// the system's words, which name the folder by its whole path (Trust.Why: never a path outside the home).
+func TestVerifyMainSaysTheErrorByItsKind(t *testing.T) {
+	gone := filepath.Join(t.TempDir(), "gone")
+	g := GitLayout{Root: gone, GitDir: filepath.Join(gone, ".git"), Common: filepath.Join(gone, ".git"), Main: gone}
+	got := VerifyMain(t.TempDir(), g, verifyID, verifyID)
+	wantTrust(t, "a main checkout that is not there", got, false, "the main checkout's folder cannot be resolved (it is not there)")
+	if strings.Contains(filepath.ToSlash(got.Why), filepath.ToSlash(gone)) || strings.Contains(got.Why, gone) {
+		t.Errorf("the reason names the folder: %s", got.Why)
+	}
+}

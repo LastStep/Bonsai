@@ -360,16 +360,9 @@ func sameDir(a, b string) bool {
 	return a == b || (os.PathSeparator == '\\' && strings.EqualFold(a, b))
 }
 
-// osWords says why a file could not be read by the error's kind, never its text (which names a whole path).
-func osWords(err error) string {
-	switch {
-	case errors.Is(err, fs.ErrPermission):
-		return "permission denied"
-	case errors.Is(err, fs.ErrNotExist):
-		return "it is not there"
-	}
-	return "the system could not read it"
-}
+// osWords says why a file could not be read by the error's kind, never its text (which names a whole path):
+// workspace.OSWords.
+func osWords(err error) string { return workspace.OSWords(err) }
 
 // hidingInSubmodules are the findings a submodule's own index and ignore rules can hide a change by: each submodule
 // checked out is judged for them as the top checkout is, and what it finds counts in the top's findings.

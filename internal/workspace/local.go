@@ -225,7 +225,7 @@ func VerifyMain(home string, g GitLayout, id, mainID string) Trust {
 	}
 	real, err := realPath(g.Main)
 	if err != nil {
-		return notVerified("the main checkout's folder cannot be resolved ("+oneLine(err)+")", updateNext)
+		return notVerified("the main checkout's folder cannot be resolved ("+OSWords(err)+")", updateNext)
 	}
 	key := machineKey(real, runtime.GOOS)
 	rec, err := readMachineRecord(filepath.Join(home, "workspaces", key, MachineRecordFile))
