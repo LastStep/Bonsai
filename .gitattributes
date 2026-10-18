@@ -19,3 +19,7 @@ docs/reference/lists.md text eol=lf
 # included: the engine writes a pack's files into projects as committed, and base's generated skills are compared byte
 # for byte with what the code builds.
 packs/** text eol=lf
+
+# The installers (install/): install.sh is LF through *.sh above; install.ps1 is LF too, on every checkout, Windows'
+# core.autocrlf included, since install/install_test.go holds both scripts to ASCII with LF line ends.
+install/install.ps1 text eol=lf
