@@ -21,6 +21,7 @@ error words.
 - Check words about messages
 - Check --pack words about roles and deny rules
 - Check words later steps build
+- Memory caps
 - Rung statuses
 - Tests forms
 - Test files by tests form
@@ -213,6 +214,11 @@ error words.
 | `claude-code-unknown` | warning | person | yes | Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read) |
 | `same-id` | warning | person | yes | another checkout on this machine holds the same workspace id (contract section 3) |
 | `stranded` | warning | person | yes | a machine folder of this workspace in Bonsai's home is stranded under an old checkout path that holds no bonsai.yaml now (moved or gone), with settings or attached labels this checkout does not get; the next step gives a person's lines that bring them over and remove the old folder (contract section 3) |
+| `personal-format` | warning | person | yes | the personal memory index (INDEX.md in the Bonsai home's personal/) or a note in its notes/ does not read as bonsai.memory/1, or the index's kind is not index |
+| `personal-budget` | warning | person | yes | the personal memory index or a personal note is over its cap (the memory caps on the reference page of lists) |
+| `personal-index` | warning | person | yes | a line of the personal memory index names a note that does not exist, or a note in personal/notes/ has no line in the index |
+| `personal-secret` | warning | person | yes | the personal memory index or a personal note holds a secret-shaped string, as Bonsai's redactor finds one, in the layer that loads into every session on the machine: the warning names the file, the line and the kind of secret, never the value |
+| `personal-copy` | warning | person | yes | on Windows, the personal memory copy is not known to match WSL's (the home setting personal_from): never refreshed since it was set, its last refresh failed, or the copy changed since that refresh; read from the last refresh's record, never from WSL |
 | `run-reports` | warning | person | - | run reports are past bonsai.yaml's generated.run rule, listed for a person to delete (spec section 6) |
 | `approve-first-unchecked` | warning | agent | - | approve_first was not checked: git history is not available (a shallow clone) or could not be read; never passed |
 | `plugin-missing` | warning | person | yes | Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has) |
@@ -308,6 +314,19 @@ error words.
 
 | Word | Built in | Means |
 |---|---|---|
+
+## Memory caps
+
+- Closed list.
+- Defined in: engine.MemoryCaps (internal/engine/checkdocs.go).
+- Printed in a project by: none.
+- The most a memory file may hold (spec section 10), fixed, not settings: the project's caps are check's findings memory-index-size and memory-note-size, the personal layer's (in the Bonsai home's personal/) its warning personal-budget. Base's memory skill is held to these numbers.
+
+| Cap | File | Lines | Bytes |
+|---|---|---|---|
+| `project-index` | the project's memory index (INDEX.md in the folder bonsai.yaml names under documents.memory) | 120 | 12288 (12 KB) |
+| `personal-index` | the personal layer's index, INDEX.md in the Bonsai home's personal/ | 40 | 4096 (4 KB) |
+| `note` | a memory note, in either layer | - | 4096 (4 KB) |
 
 ## Rung statuses
 

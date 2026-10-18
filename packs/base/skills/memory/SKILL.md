@@ -23,7 +23,20 @@ on. **Never a secret:** no key, token, password or login, nor where a secret's v
 
 **The budgets** (`bonsai check` finds a note or an index over them): a note at most 4 KB; the index at most 120 lines
 and 12 KB, since every session loads it whole. When the index nears its budget, merge notes that say the same thing
-and drop the ones no longer true.
+and drop the ones no longer true. These caps' one home is Bonsai's table of memory caps, on its reference page of
+lists.
+
+**The personal layer: notes about the person, written by the person.** Beside the project's memory, each machine keeps
+a personal layer in Bonsai's home: `personal/INDEX.md` and `personal/notes/`, in the same format, imported into every
+session on the machine from the person's own Claude Code memory file, never in a project and never committed.
+`bonsai init --yes` and `bonsai update --yes` write its empty index when there is none. Agents never write it: Bonsai's
+guard and its deny rules refuse an agent's file-tool write anywhere in the home, since a note there loads into every
+session in every project. When you learn a fact about the person (how they like replies, a tool they use everywhere),
+draft the note with this template and hand it to them in your report, with the index line to add; they save it by
+hand. A fact about how the person wants work done in this project goes in this project's memory, which you write.
+Its caps: the personal index at most 40 lines and 4 KB, a note at most 4 KB. `bonsai check` warns, never fails, on the
+layer: a file not in the format, one over its cap, an index line naming no note or a note with no line, a
+secret-shaped string, and on Windows a copy of WSL's layer that is not known to match it.
 
 ## Fields
 

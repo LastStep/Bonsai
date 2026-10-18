@@ -63,6 +63,9 @@ func Page() []byte {
 	p.section("Check words later steps build", "closed", "engine.checkLater (internal/engine/check.go)", "none",
 		"Spec section 6's findings and warnings that are not built yet; each joins the check words above when its step lands.")
 	p.later()
+	p.section("Memory caps", "closed", "engine.MemoryCaps (internal/engine/checkdocs.go)", "none",
+		"The most a memory file may hold (spec section 10), fixed, not settings: the project's caps are check's findings memory-index-size and memory-note-size, the personal layer's (in the Bonsai home's personal/) its warning personal-budget. Base's memory skill is held to these numbers.")
+	p.memoryCaps()
 	p.section("Rung statuses", "open", "format.RungStatuses (internal/format/ladder.go)", "`bonsai check --schema bonsai.ladder`",
 		"How a rung of a ladder result ended, in `rungs[].status`; a reader shows a word it does not know as other.")
 	p.words(format.RungStatuses)
@@ -561,6 +564,19 @@ func (p *page) schemaLists() {
 			p.section(name, "closed", "formats/schemas/"+f.Name+".schema.json (`"+e.path+"`)", "`bonsai check --schema "+f.ID()+"`", "")
 			p.line("Values: %s.", strings.Join(vs, ", "))
 		}
+	}
+}
+
+// memoryCaps lists the memory caps.
+func (p *page) memoryCaps() {
+	p.line("| Cap | File | Lines | Bytes |")
+	p.line("|---|---|---|---|")
+	for _, c := range engine.MemoryCaps {
+		lines := "-"
+		if c.Lines > 0 {
+			lines = strconv.Itoa(c.Lines)
+		}
+		p.line("| `%s` | %s | %s | %d (%s) |", c.Name, cell(c.What), lines, c.Bytes, engine.KB(c.Bytes))
 	}
 }
 

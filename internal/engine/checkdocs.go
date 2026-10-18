@@ -20,7 +20,8 @@ package engine
 //     whose step is a person's (only a person knows the pack's remote URL). Left out: the lock, Bonsai's copy of
 //     bonsai.yaml and the packs, so a path there is found at its source; a format-0 file, frozen as it is (contract
 //     §2.3); and markdown bodies, which are prose, not fields;
-//   - block-size, memory-index-size, memory-note-size: the fixed budgets (spec §6, §10);
+//   - block-size, memory-index-size, memory-note-size: the fixed budgets (spec §6, §10; the memory caps' one home is
+//     MemoryCaps);
 //   - missing-path: a project path that CLAUDE.md, STATE or a memory note names and that does not exist (doc
 //     freshness): an @import, a markdown link, or a path in backticks whose first part is in the project. Bonsai's own
 //     block in CLAUDE.md is left out: the lock checks it, its protocol imports are pack files the lock lists, and its
@@ -50,12 +51,46 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// The budgets (spec §6, §10): fixed, not settings.
-const (
-	MaxIndexLines = 120
-	MaxIndexBytes = 12 * 1024
-	MaxNoteBytes  = 4 * 1024
-)
+// MemoryCap is one of the memory caps: the most a memory file of one place may hold. Lines 0 means no line cap.
+type MemoryCap struct {
+	Name  string // the cap's name, as the reference page lists it
+	What  string // the file it holds, in words
+	Lines int    // the most lines, 0 for none
+	Bytes int    // the most bytes
+}
+
+// MemoryCaps are the memory caps (spec section 10; plan-5 5.6.3, 3): their one home. check reads them (the project's
+// memory-index-size and memory-note-size findings, the personal layer's personal-budget warning), the reference page
+// of lists prints them, and a test holds base's memory skill and the check words' meanings to them. Fixed, not
+// settings. The personal index is 40 lines at the project index's own rate (120 lines in 12 KB, about 100 bytes a
+// line), so a few overlong lines cannot hide under its line count.
+var MemoryCaps = []MemoryCap{
+	{Name: "project-index", What: "the project's memory index (INDEX.md in the folder bonsai.yaml names under documents.memory)", Lines: 120, Bytes: 12 * 1024},
+	{Name: "personal-index", What: "the personal layer's index, INDEX.md in the Bonsai home's personal/", Lines: 40, Bytes: 4 * 1024},
+	{Name: "note", What: "a memory note, in either layer", Bytes: 4 * 1024},
+}
+
+// memoryCap finds a cap by its name; a name not in the table is a bug.
+func memoryCap(name string) MemoryCap {
+	for _, c := range MemoryCaps {
+		if c.Name == name {
+			return c
+		}
+	}
+	panic("engine: no memory cap " + name)
+}
+
+// KB writes a cap's bytes in KB, as people read them: "12 KB".
+func KB(n int) string { return strconv.Itoa(n/1024) + " KB" }
+
+// capLines counts a file's lines as the caps count them: line ends, and a last line with none.
+func capLines(raw []byte) int {
+	n := bytes.Count(raw, []byte("\n"))
+	if len(raw) > 0 && !bytes.HasSuffix(raw, []byte("\n")) {
+		n++
+	}
+	return n
+}
 
 // now is check's clock (a variable, so a test can set the day).
 var now = time.Now
@@ -187,9 +222,9 @@ func (r *CheckResult) checkDocument(short, kind, p string, raw []byte, defs map[
 	if fields != nil {
 		r.checkAbsolute(p, fields)
 	}
-	if short == "memory" && len(raw) > MaxNoteBytes && path.Base(p) != MemoryIndex {
-		r.add("memory-note-size", p, "", fmt.Sprintf("the memory note %s is %d bytes, over its %d (spec section 10)", p, len(raw), MaxNoteBytes),
-			"shorten the note to at most 4 KB, or split it into two notes (and their two lines in "+MemoryIndex+")")
+	if note := memoryCap("note"); short == "memory" && len(raw) > note.Bytes && path.Base(p) != MemoryIndex {
+		r.add("memory-note-size", p, "", fmt.Sprintf("the memory note %s is %d bytes, over its %d (spec section 10)", p, len(raw), note.Bytes),
+			"shorten the note to at most "+KB(note.Bytes)+", or split it into two notes (and their two lines in "+MemoryIndex+")")
 	}
 }
 
@@ -435,7 +470,7 @@ func firstWord(s string) string {
 	return s
 }
 
-// checkBudgets finds the block over its 40 lines and the memory index over 120 lines or 12 KB (spec §6, §10).
+// checkBudgets finds the block over its 40 lines and the memory index over its cap (MemoryCaps; spec §6, §10).
 func (r *CheckResult) checkBudgets() {
 	if bd, err := readBlock(r.Root); err == nil && bd.found {
 		if n := strings.Count(bd.region(), "\n"); n > MaxBlockLines {
@@ -455,13 +490,10 @@ func (r *CheckResult) checkBudgets() {
 	if !exists {
 		return
 	}
-	lines := bytes.Count(raw, []byte("\n"))
-	if len(raw) > 0 && !bytes.HasSuffix(raw, []byte("\n")) {
-		lines++
-	}
-	if lines > MaxIndexLines || len(raw) > MaxIndexBytes {
-		r.add("memory-index-size", index, "", fmt.Sprintf("the memory index %s is %d lines and %d bytes, over its fixed %d lines or 12 KB (spec section 10)",
-			index, lines, len(raw), MaxIndexLines), "shorten it to one short line per note, at most 120 lines and 12 KB: merge notes, or move a note's detail into the note")
+	lines, c := capLines(raw), memoryCap("project-index")
+	if lines > c.Lines || len(raw) > c.Bytes {
+		r.add("memory-index-size", index, "", fmt.Sprintf("the memory index %s is %d lines and %d bytes, over its fixed %d lines or %s (spec section 10)",
+			index, lines, len(raw), c.Lines, KB(c.Bytes)), fmt.Sprintf("shorten it to one short line per note, at most %d lines and %s: merge notes, or move a note's detail into the note", c.Lines, KB(c.Bytes)))
 	}
 }
 

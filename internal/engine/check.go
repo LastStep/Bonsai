@@ -161,7 +161,8 @@ func (r *CheckResult) missingLockNext() string {
 }
 
 // checkProject runs the checks that need no lock: the ladder's shape, the documents, the settings files, this machine's record and the
-// PATH, Git Bash on Windows, .bonsai/.gitignore, .bonsai/local/ and the messages in it.
+// PATH, the personal memory layer in the home (checkpersonal.go), Git Bash on Windows, .bonsai/.gitignore, .bonsai/local/ and
+// the messages in it.
 func (r *CheckResult) checkProject() {
 	r.checkLadder()
 	r.checkDocuments()
@@ -172,6 +173,7 @@ func (r *CheckResult) checkProject() {
 	}
 	r.checkSettingsFiles()
 	r.checkMachine()
+	r.checkPersonal()
 	r.checkGitBash()
 	r.checkGitignore()
 	r.checkLocal()

@@ -21,6 +21,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/textui"
@@ -182,6 +183,9 @@ func runEngine(c *call) int {
 		if word == "update" && f.yes {
 			cacheCleanTo(d, home, plan)
 		}
+		if f.yes {
+			personalTo(d, home)
+		}
 		closing(d)
 		return out("nothing", engine.ExitOK, nil, d)
 	}
@@ -284,6 +288,7 @@ func runEngine(c *call) int {
 	if word == "update" {
 		cacheCleanTo(d, home, plan)
 	}
+	personalTo(d, home)
 	closing(d)
 	return out("applied", engine.ExitOK, nil, d)
 }
@@ -309,6 +314,20 @@ func cacheCleanTo(d *textui.Doc, home string, plan *engine.Plan) {
 			tone = textui.Warn
 		}
 		d.Para("Cache", line, tone)
+	}
+}
+
+// personalTo runs init's and update's step on the personal memory layer once they wrote, or had nothing to change
+// with --yes, never in a preview (engine.PersonalAfterWrite: the Windows copy refreshed from personal_from, then the
+// empty index when the home has none), and adds its lines to the text. It never changes the exit code or the result;
+// with --json nothing is added (bonsai.changes/1 has no field for it).
+func personalTo(d *textui.Doc, home string) {
+	for _, l := range engine.PersonalAfterWrite(home, time.Now) {
+		tone := textui.Dim
+		if l.Warn {
+			tone = textui.Warn
+		}
+		d.Para("Memory", l.Text, tone)
 	}
 }
 
