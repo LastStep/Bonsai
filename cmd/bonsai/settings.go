@@ -290,10 +290,3 @@ func wrapTo(b *strings.Builder, indent, text string) {
 	}
 	b.WriteString(line + "\n")
 }
-
-// notBuiltYet is the refusal of a sub-word whose step has not built it yet.
-func notBuiltYet(name, step string) *engine.Error {
-	return &engine.Error{Code: "not-built", Exit: exitInput,
-		What: "bonsai " + name + " is not built yet (it comes with a later part of the rebuild: " + step + ")",
-		Next: "run `bonsai " + name + " --help`"}
-}
