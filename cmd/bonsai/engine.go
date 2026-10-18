@@ -179,12 +179,12 @@ func runEngine(c *call) int {
 		d.Title("bonsai "+word, "nothing to change"+packsAt(plan))
 		plan.LeftAloneTo(d)
 		recorded(d, plan)
+		if f.yes {
+			personalTo(d, home)
+		}
 		plan.PluginsTo(d)
 		if word == "update" && f.yes {
 			cacheCleanTo(d, home, plan)
-		}
-		if f.yes {
-			personalTo(d, home)
 		}
 		closing(d)
 		return out("nothing", engine.ExitOK, nil, d)
@@ -284,11 +284,11 @@ func runEngine(c *call) int {
 	plan.AppliedTo(d)
 	plan.LeftAloneTo(d)
 	recorded(d, plan)
+	personalTo(d, home)
 	plan.PluginsTo(d)
 	if word == "update" {
 		cacheCleanTo(d, home, plan)
 	}
-	personalTo(d, home)
 	closing(d)
 	return out("applied", engine.ExitOK, nil, d)
 }
