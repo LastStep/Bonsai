@@ -62,7 +62,7 @@ func needsOf(lock *workspace.Lock, installed map[string]bool) []any {
 func fullChecks(r *engine.CheckResult, cfg *workspace.Config, lock *workspace.Lock, o Options) (schema.Object, map[string]bool) {
 	tags := o.Tags
 	if tags == nil {
-		tags = engine.RemoteTags
+		tags = func(source string) ([]string, error) { return engine.RemoteTags(source, engine.PackTagsTimeout) }
 	}
 	refs := map[string]string{}
 	for _, p := range cfg.Packs {

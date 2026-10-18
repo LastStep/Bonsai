@@ -76,7 +76,7 @@ type Options struct {
 	Full    bool                                  // --full: the checks
 	Plugins engine.PluginCLI                      // claude plugin list
 	Claude  func() (string, error)                // claude --version's first line
-	Tags    func(source string) ([]string, error) // a source's tags (engine.RemoteTags when nil)
+	Tags    func(source string) ([]string, error) // a pack source's tags (engine.RemoteTags, 30 s, when nil)
 	GitBash func() engine.GitBash                 // how check looks for Git Bash (engine.FindGitBash when nil)
 }
 

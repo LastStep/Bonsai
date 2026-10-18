@@ -18,18 +18,20 @@ import (
 	"time"
 )
 
-// lsRemoteTimeout is the longest git ls-remote may take.
-const lsRemoteTimeout = 30 * time.Second
+// PackTagsTimeout is the longest a pack source's git ls-remote may take (status --full's packs); Bonsai's own release
+// read gives its read less (ReleaseTimeout, release.go).
+const PackTagsTimeout = 30 * time.Second
 
-// RemoteTags lists a source's tag names with git ls-remote, prompts off.
-func RemoteTags(source string) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), lsRemoteTimeout)
+// RemoteTags lists a source's tag names with git ls-remote, prompts off, giving it up after timeout: the one reader
+// of a source's tags, for the packs' newer releases and Bonsai's own.
+func RemoteTags(source string, timeout time.Duration) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "git", "-c", "protocol.ext.allow=never", "ls-remote", "--tags", "--refs", "--", source)
 	cmd.Env = gitEnv()
 	out, err := cmd.Output()
 	if ctx.Err() != nil {
-		return nil, errors.New("git ls-remote took longer than " + lsRemoteTimeout.String())
+		return nil, errors.New("git ls-remote took longer than " + timeout.String())
 	}
 	if err != nil {
 		msg := "git ls-remote failed"
