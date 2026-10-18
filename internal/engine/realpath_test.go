@@ -21,6 +21,17 @@ func symlinkOr(t *testing.T, target, link string) {
 	}
 }
 
+// named is the folder p, which exists, as the system names it (filepath.EvalSymlinks: its links resolved, and on
+// Windows its long names): the form RealPath gives, whatever p's spelling (shortTemp's short one on Windows).
+func named(t *testing.T, p string) string {
+	t.Helper()
+	r, err := filepath.EvalSymlinks(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r
+}
+
 // deep is base with n folders named d0, d1, ... below it.
 func deep(base string, n int) string {
 	parts := []string{base}
@@ -48,8 +59,8 @@ func TestFolderHoldsPastTheOldLimit(t *testing.T) {
 			t.Errorf("%d folders not made yet inside the root: not held", n)
 		}
 		got, err := RealPath(deep(link, n))
-		if err != nil || got != deep(outside, n) {
-			t.Errorf("RealPath of a link out, then %d folders: %q, %v; want %q", n, got, err, deep(outside, n))
+		if want := deep(named(t, outside), n); err != nil || got != want {
+			t.Errorf("RealPath of a link out, then %d folders: %q, %v; want %q", n, got, err, want)
 		}
 	}
 }
@@ -116,8 +127,8 @@ func TestARelativeLinkTargetIsReadFromTheLinksRealFolder(t *testing.T) {
 			t.Errorf("%s: held inside the root, but the write reaches %s", p, filepath.Join(outside, "x"))
 		}
 	}
-	if got, err := RealPath(filepath.Join(root, "L", "dang", "new")); err != nil || got != filepath.Join(outside, "x", "new") {
-		t.Errorf("RealPath: %q, %v; want %q", got, err, filepath.Join(outside, "x", "new"))
+	if got, err := RealPath(filepath.Join(root, "L", "dang", "new")); err != nil || got != filepath.Join(named(t, outside), "x", "new") {
+		t.Errorf("RealPath: %q, %v; want %q", got, err, filepath.Join(named(t, outside), "x", "new"))
 	}
 	// A target's own `..` after a link in it: outside/deep/up -> sub/../.. where sub is a link to outside/deep/a/b:
 	// the kernel reads sub/.. as outside/deep/a, so the target is outside/deep; by spelling it would be outside.
@@ -126,7 +137,7 @@ func TestARelativeLinkTargetIsReadFromTheLinksRealFolder(t *testing.T) {
 	}
 	symlinkOr(t, filepath.Join(outside, "deep", "a", "b"), filepath.Join(outside, "deep", "sub"))
 	symlinkOr(t, strings.Join([]string{"sub", "..", "..", "gone"}, string(filepath.Separator)), filepath.Join(outside, "deep", "up"))
-	if got, err := RealPath(filepath.Join(outside, "deep", "up")); err != nil || got != filepath.Join(outside, "deep", "gone") {
-		t.Errorf("RealPath through sub/..: %q, %v; want %q", got, err, filepath.Join(outside, "deep", "gone"))
+	if got, err := RealPath(filepath.Join(outside, "deep", "up")); err != nil || got != filepath.Join(named(t, outside), "deep", "gone") {
+		t.Errorf("RealPath through sub/..: %q, %v; want %q", got, err, filepath.Join(named(t, outside), "deep", "gone"))
 	}
 }
