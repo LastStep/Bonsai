@@ -302,3 +302,24 @@ func TestLabelsRefuseInAnAgentsSession(t *testing.T) {
 		t.Errorf("as a person: %s", schema.Show(d))
 	}
 }
+
+// Detach needs only a git checkout: with bonsai.yaml gone, a project taken out can still be unregistered.
+func TestLabelsDetachWithoutTheConfig(t *testing.T) {
+	c := newCLI(t)
+	c.declaring()
+	c.commit("link")
+	good := c.source("good.yaml", studioLabels("studio", "1", studioLabel("size", "How big.")))
+	if d := c.attachDoc(0, "labels", "attach", good); resultOf(d) != "attached" {
+		t.Fatalf("attach: %s", schema.Show(d))
+	}
+	file := c.attachedFile("studio")
+	if err := os.Remove(filepath.Join(c.root, "bonsai.yaml")); err != nil {
+		t.Fatal(err)
+	}
+	if d := c.attachDoc(0, "labels", "detach", "studio"); resultOf(d) != "detached" {
+		t.Errorf("detach, no bonsai.yaml: %s", schema.Show(d))
+	}
+	if _, err := os.Stat(file); err == nil {
+		t.Errorf("the attached file is still there")
+	}
+}
