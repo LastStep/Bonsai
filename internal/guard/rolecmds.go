@@ -608,7 +608,8 @@ func cmdletName(name string) string {
 }
 
 // mayWrite judges one path a shell call writes, read against the folder dir (this file's comment): bonsai-files from
-// every agent, then, with role set, role-writes-nothing from a role that changes nothing; else allowed.
+// every agent, then, with role set, role-writes-nothing from a role that changes nothing; else allowed. A path whose
+// forms cannot be read (pathForms' error) is refused: role-writes-nothing for such a role, else bad-path.
 func (s *shellRole) mayWrite(dir, p, word string, role, attr bool) Decision {
 	writes, into := "writes", "writes into"
 	if attr {
@@ -617,12 +618,19 @@ func (s *shellRole) mayWrite(dir, p, word string, role, attr bool) Decision {
 	j := s.rr.j
 	forms, err := pathForms(dir, dir, p)
 	if err != nil {
-		if role && s.changesNothing() {
+		if !role {
+			return allow(RuleShell, "") // judged once, in the role pass (writes' second), so a role keeps its own refusal
+		}
+		if s.changesNothing() {
 			return deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s %s %s, which the guard cannot place (%s), and this "+
 				"role changes nothing", s.rr.in.Tool, word, writes, quote(j.shown(p), 120), oneLine(err.Error())),
 				"put what you would write in your report instead")
 		}
-		return allow(RuleShell, "")
+		// Fail closed: a target the guard cannot place (a link loop, more than 64 links, a path into /proc, on Windows
+		// a junction that leads nowhere) is never judged as written, so it is refused, not let through.
+		return deny(RuleBadPath, fmt.Sprintf("%s refused: %s %s %s, and the guard cannot tell where it leads (%s), so it "+
+			"cannot tell whether it is Bonsai's own", s.rr.in.Tool, word, writes, quote(j.shown(p), 120), oneLine(err.Error())),
+			"give the path in its plain form, without the links, or tell the person")
 	}
 	for _, abs := range forms {
 		if devicePath(abs) || adminShare(abs) != "" {
