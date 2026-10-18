@@ -83,8 +83,8 @@ person-only path put into `bonsai.allows` (`grant-person-only`): run the command
 ## This machine's settings and attached labels
 
 They live in the Bonsai home, never in the project: `status_writes` and `status_command` for the workspace, and with
-`--machine` the home's own. `bonsai settings --help` and `bonsai labels --help` show both words; until this build has
-their actions, each refuses `not-built` and names the step that brings it.
+`--machine` the home's own. `bonsai settings --help` and `bonsai labels --help` show both words; a sub-word a build
+does not have yet refuses `not-built` and names the step that brings it.
 
 - **Read** them with `bonsai settings show --json` (`--machine` for the home's): every key, its value in force and where
   it came from (`file` or `default`), and the file's place. Agents may run it; from a worktree it reads the main
@@ -94,8 +94,8 @@ their actions, each refuses `not-built` and names the step that brings it.
   pack clones unused that long, never one the lock or `bonsai.yaml` names, never an `--adopt` copy) and, on Windows,
   `personal_from`. A settings file holding a value outside its rule is refused (`read-failed`, naming the file and the
   key), by the guard too: tell the person the file to fix.
-- **`bonsai settings set k=v ...`** checks every `key=value` first, then writes all or none (`bad-value`, exit 2, names the values a
-  key takes); a value already in force writes nothing (`changed: []`).
+- **`bonsai settings set k=v ...`** checks every `key=value` first, then writes all or none (`bad-value`, exit 2,
+  names the values a key takes); a value already in force writes nothing (`changed: []`).
 - **A `stranded` warning** from `check` is a machine folder left under a checkout's old path (it moved) with settings
   or labels this checkout no longer gets. Its `next.do` holds the person's exact lines, in order; hand them over as
   they are.
