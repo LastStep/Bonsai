@@ -167,3 +167,126 @@ jobs:
 
       - name: Run govulncheck
         run: govulncheck ./...
+
+  # The installers at their real places (design/plan-5.md, 5.6.6), on GitHub's throwaway machines only: no agent runs
+  # either at a real place on a person's machine (spec section 3). ubuntu-latest's runner has passwordless sudo;
+  # windows-latest's is an administrator, elevated with UAC off, so -ForceChild makes install.ps1 take its elevated
+  # child's path (Start-Process -Verb RunAs) there, the code a person's install runs behind the prompt.
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install, check, again while a copy runs, remove (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir dist
+          go build -o dist/bonsai ./cmd/bonsai
+          cp install/install.sh dist/
+          want=$(sha256sum dist/bonsai | cut -d' ' -f1)
+          sh dist/install.sh
+          test "$(stat -c '%U %G %a' /usr/local/bin/bonsai)" = "root root 755"
+          test "$(stat -c '%U' /usr/local/bin)" = root
+          case "$(stat -c '%A' /usr/local/bin)" in ?????w????|????????w?) echo "/usr/local/bin is writable by others"; exit 1;; esac
+          rec="$HOME/.bonsai/install.json"
+          test "$(jq -r .path "$rec")" = /usr/local/bin/bonsai
+          test "$(jq -r .sha256 "$rec")" = "$want"
+          test "$(jq -r 'keys | join(",")' "$rec")" = "path,sha256,version"
+          test "$(jq -r .version "$rec")" = "$(/usr/local/bin/bonsai --version | head -n1 | cut -d' ' -f2)"
+          which -a bonsai
+          test "$(env -i HOME="$HOME" PATH=/usr/local/bin:/usr/bin:/bin bash -lc 'command -v bonsai')" = /usr/local/bin/bonsai
+          env -i HOME="$HOME" PATH=/usr/local/bin:/usr/bin:/bin bash -lc 'bonsai --version'
+          cp "$rec" first.json
+          sh dist/install.sh
+          cmp "$rec" first.json
+          (sleep 4 | CLAUDE_PROJECT_DIR="$PWD" /usr/local/bin/bonsai hook guard > guard.out 2>&1; echo $? > guard.rc) &
+          sleep 1
+          pgrep -f 'bonsai hook guard' > guard.pid
+          sh dist/install.sh
+          kill -0 "$(head -n1 guard.pid)"
+          wait
+          echo "the running copy ended with $(cat guard.rc): $(cat guard.out)"
+          sh dist/install.sh --remove
+          test ! -e /usr/local/bin/bonsai
+          test ! -e "$rec"
+          ls -a /usr/local/bin | grep -c '^\.bonsai\.new\.' && exit 1 || true
+
+      - name: Install through the elevated child, check, again while a copy runs, a wrong hash, remove (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $place = 'C:\Program Files\Bonsai\bonsai.exe'
+          $dir = 'C:\Program Files\Bonsai'
+          $envKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment'
+          function Get-RawPath { $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($envKey); try { [string]$k.GetValue('Path', '', 'DoNotExpandEnvironmentNames') } finally { $k.Close() } }
+          function Get-PathKind { $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($envKey); try { $k.GetValueKind('Path') } finally { $k.Close() } }
+          function Fail([string]$m) { Write-Host "FAIL: $m"; exit 1 }
+          function Run-Install([string[]]$a) { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File dist\install.ps1 @a; if ($LASTEXITCODE -ne 0) { Fail "install.ps1 $a exit $LASTEXITCODE" } }
+          New-Item -ItemType Directory dist | Out-Null
+          go build -o dist\bonsai.exe .\cmd\bonsai
+          if ($LASTEXITCODE -ne 0) { Fail 'build' }
+          Copy-Item install\install.ps1 dist\
+          $want = (Get-FileHash dist\bonsai.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $before = Get-RawPath
+          if ($before -notmatch '%') { Write-Host 'note: the runner''s machine PATH holds no %...% entry' }
+          Run-Install @('-ForceChild')
+          if ((Get-FileHash $place -Algorithm SHA256).Hash.ToLowerInvariant() -ne $want) { Fail 'installed hash' }
+          $after = Get-RawPath
+          if ((Get-PathKind) -ne 'ExpandString') { Fail 'the machine PATH is no longer ExpandString' }
+          $entries = @($after -split ';' | Where-Object { $_ -ne '' })
+          if (@($entries | Where-Object { $_.TrimEnd('\') -ieq $dir }).Count -ne 1) { Fail "the folder is not on the machine PATH once: $after" }
+          $kept = @($before -split ';' | Where-Object { $_ -ne '' })
+          if ((@($entries | Where-Object { $_.TrimEnd('\') -ine $dir }) -join ';') -cne ($kept -join ';')) { Fail "the other PATH entries changed: $before -> $after" }
+          $bad = @('S-1-5-32-545', 'S-1-5-11', 'S-1-1-0')
+          foreach ($a in (Get-Acl $dir).GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
+            if ($a.AccessControlType -eq 'Allow' -and $bad -contains $a.IdentityReference.Value -and ($a.FileSystemRights -band 0x50000046) -ne 0 -and ($a.PropagationFlags -band 2) -eq 0) { Fail "the folder is writable by $($a.IdentityReference)" }
+          }
+          $rec = Join-Path $env:USERPROFILE '.bonsai\install.json'
+          $r = Get-Content -Raw $rec | ConvertFrom-Json
+          if ($r.path -cne 'C:/Program Files/Bonsai/bonsai.exe' -or $r.sha256 -cne $want -or -not $r.version) { Fail "install.json: $(Get-Content -Raw $rec)" }
+          if ((@($r.PSObject.Properties.Name) | Sort-Object) -join ',' -cne 'path,sha256,version') { Fail 'install.json keys' }
+          $fresh = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+          $found = & powershell.exe -NoProfile -Command "`$env:Path = '$($fresh -replace "'", "''")'; (Get-Command bonsai -All -CommandType Application | ForEach-Object Source) -join ';'; bonsai --version"
+          Write-Host $found
+          if (-not ($found[0] -split ';' -contains $place)) { Fail "Get-Command from a fresh shell: $found" }
+          $first = Get-Content -Raw $rec
+          Run-Install @('-ForceChild')
+          if ((Get-Content -Raw $rec) -cne $first) { Fail 'a second install changed install.json' }
+          $psi = New-Object Diagnostics.ProcessStartInfo $place, 'hook guard'
+          $psi.UseShellExecute = $false; $psi.RedirectStandardInput = $true; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true
+          $psi.EnvironmentVariables['CLAUDE_PROJECT_DIR'] = (Get-Location).Path
+          $p = [Diagnostics.Process]::Start($psi)
+          Start-Sleep -Milliseconds 500
+          Run-Install @('-ForceChild')
+          if ($p.HasExited) { Fail 'the running copy ended during the install' }
+          if (@(Get-ChildItem $dir -Filter 'bonsai.exe.old-*').Count -ne 1) { Fail 'the running copy was not set aside' }
+          $p.StandardInput.Close(); $p.WaitForExit()
+          Write-Host "the running copy ended with $($p.ExitCode)"
+          Run-Install @('-ForceChild')
+          if (@(Get-ChildItem $dir -Filter 'bonsai.exe.*').Count -ne 0) { Fail 'the next install left the copy set aside' }
+          $ast = [Management.Automation.Language.Parser]::ParseFile((Resolve-Path dist\install.ps1).Path, [ref]$null, [ref]$null)
+          foreach ($f in $ast.FindAll({ param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] }, $false)) { . ([scriptblock]::Create($f.Extent.Text)) }
+          $text = New-ChildText -Source (Resolve-Path dist\bonsai.exe).Path -Target $place -Hash ('0' * 64) -Real $true -Remove $false
+          $code = Invoke-Child $text $true
+          if ($code -ne 12) { Fail "the forced child with a wrong hash exited $code, not 12" }
+          if (Test-Path "$place.new") { Fail 'the wrong-hash copy was left' }
+          if ((Get-FileHash $place -Algorithm SHA256).Hash.ToLowerInvariant() -ne $want) { Fail 'the wrong-hash child changed the installed file' }
+          Run-Install @('-Remove', '-ForceChild')
+          if (Test-Path $dir) { Fail 'the folder is still there' }
+          if (Test-Path $rec) { Fail 'install.json is still there' }
+          $gone = Get-RawPath
+          if ((@($gone -split ';' | Where-Object { $_ -ne '' }) -join ';') -cne ($kept -join ';')) { Fail "the PATH after remove: $gone" }
+          Write-Host 'install.ps1 at its real place: installed, checked, again, again while running, wrong hash refused, removed'
