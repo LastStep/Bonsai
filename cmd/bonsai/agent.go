@@ -30,8 +30,6 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/guard"
@@ -93,7 +91,7 @@ func personOnly(shown, what, command string) *engine.Error {
 // personOnlyAt is personOnly with the stamps, the home and the variable given, for its tests.
 func personOnlyAt(place, root, home string, getenv func(string) string, shown, what, command string) *engine.Error {
 	if place != "" || root != "" {
-		if place != "" && root != "" && home != "" && filepath.IsAbs(root) && folderHolds(root, home) {
+		if place != "" && root != "" && home != "" && filepath.IsAbs(root) && engine.FolderHolds(root, home) {
 			return nil
 		}
 		return &engine.Error{Code: "test-build", Exit: engine.ExitState, Who: "agent",
@@ -111,28 +109,6 @@ func personOnlyAt(place, root, home string, getenv func(string) string, shown, w
 			" is set): type it in a terminal of your own, not inside Claude (its ! lines count as an agent's session); " +
 			"nothing was written",
 		Next: command}
-}
-
-// folderHolds reports whether p is folder or lies inside it, each made absolute and its links resolved as far as it
-// exists; letter case is ignored on Windows.
-func folderHolds(folder, p string) bool {
-	folder, p = realPath(folder), realPath(p)
-	if runtime.GOOS == "windows" {
-		folder, p = strings.ToLower(folder), strings.ToLower(p)
-	}
-	return p == folder || strings.HasPrefix(p, strings.TrimSuffix(folder, string(os.PathSeparator))+string(os.PathSeparator))
-}
-
-// realPath is a path made absolute and clean, its links resolved when it exists.
-func realPath(p string) string {
-	abs, err := filepath.Abs(p)
-	if err != nil {
-		abs = filepath.Clean(p)
-	}
-	if r, err := filepath.EvalSymlinks(abs); err == nil {
-		return r
-	}
-	return abs
 }
 
 // line is the call's command line again, for a person to type: the word, its arguments, then its flags as given,

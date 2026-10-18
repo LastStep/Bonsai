@@ -8,6 +8,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -192,6 +193,37 @@ func TestPersonOnly(t *testing.T) {
 	t.Setenv(guard.ChildSessionEnv, "")
 	if e := personOnly(shown, what, line); e != nil {
 		t.Errorf("a person's: %+v", e)
+	}
+}
+
+// TestPersonOnlyLinkedRoot: a scratch root reached through a link, its home not made yet, is the home inside it (CI's
+// Windows runner reaches its temporary folder by an 8.3 short name, which resolves the same way); a link inside the
+// root to a folder outside it, its target not made yet, is outside.
+func TestPersonOnlyLinkedRoot(t *testing.T) {
+	const shown, what, line = "bonsai settings set", "it changes this machine's settings", "bonsai settings set status_writes=agents"
+	agent := func(string) string { return "1" }
+	real, outside := t.TempDir(), t.TempDir()
+	link := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skipf("no link can be made here (on Windows it needs a privilege): %v", err)
+	}
+	place := filepath.Join(real, "bonsai")
+	for _, home := range []string{filepath.Join(link, "home"), filepath.Join(link, "a", "home"), filepath.Join(real, "home")} {
+		if e := personOnlyAt(place, link, home, agent, shown, what, line); e != nil {
+			t.Errorf("the root %s, the home %s: refused: %s: %s", link, home, e.Code, e.What)
+		}
+		if e := personOnlyAt(place, real, home, agent, shown, what, line); e != nil {
+			t.Errorf("the root %s, the home %s: refused: %s: %s", real, home, e.Code, e.What)
+		}
+	}
+	away := filepath.Join(real, "away")
+	if err := os.Symlink(filepath.Join(outside, "not-made"), away); err != nil {
+		t.Fatal(err)
+	}
+	for _, home := range []string{away, filepath.Join(away, "home")} {
+		if e := personOnlyAt(place, link, home, agent, shown, what, line); e == nil || e.Code != "test-build" {
+			t.Errorf("the home %s, through a link to outside the root: %+v, want test-build", home, e)
+		}
 	}
 }
 
