@@ -1,14 +1,13 @@
 # Contributing to Bonsai
 
-Bonsai is being rebuilt from scratch (see [`README.md`](README.md)). The rebuild is run by its director, with
-Claude Code agents as the team, in the order [`design/plan.md`](design/plan.md) sets. Work lands on `main` directly,
-in small commits, each pushed only after its proof passes; there are no pull requests while the rebuild runs. To
-report a problem or suggest something, open an [issue](https://github.com/LastStep/Bonsai/issues); for a security
-problem, follow [`SECURITY.md`](SECURITY.md).
+Bonsai is built here by its maintainer, with Claude Code agents as the team (see [`README.md`](README.md)). Work lands
+on `main` directly, in small commits, each pushed only after its proof passes; there are no pull requests. To report a
+problem or suggest something, open an [issue](https://github.com/LastStep/Bonsai/issues); for a security problem,
+follow [`SECURITY.md`](SECURITY.md). Releases are the maintainer's tags; no one else tags or releases.
 
 ## Bonsai guards its own repository
 
-From step 5.4's switch, when this repository links itself, Bonsai runs on its own work. Its committed
+This repository is linked to Bonsai, so Bonsai runs on its own work. Its committed
 `.claude/settings.json` runs the installed `bonsai` (`C:\Program Files\Bonsai\bonsai.exe`, then `/usr/local/bin/bonsai`)
 on every edit and shell command in a Claude Code session here, and **refuses the call when neither is there**, on
 purpose (fail closed): a guard that a missing program switched off would guard nothing. Git, editors and Go are not
@@ -40,8 +39,9 @@ To work here with Claude Code, either:
 Read these first, in this order:
 
 1. [`CLAUDE.md`](CLAUDE.md): how a session works, the rules for every change, GitHub and safety. Every agent follows it.
-2. [`STATE.md`](STATE.md): where Bonsai stands and the one thing to do next. It is rewritten, never appended.
-3. [`design/plan.md`](design/plan.md): what is built, in what order, and how each part is proved.
+2. [`.bonsai/STATE.md`](.bonsai/STATE.md): where Bonsai stands and what is next. It is rewritten, never appended.
+3. [`design/plan.md`](design/plan.md) and [`design/plan-5.md`](design/plan-5.md): what is built, in what order, and how
+   each part is proved.
 
 Each piece of the plan is a task, a file in [`records/tasks/`](records/tasks/) saying what it may change and what
 proves it. It is built in its own git worktree and branch, recorded in a run report under
@@ -49,8 +49,9 @@ proves it. It is built in its own git worktree and branch, recorded in a run rep
 
 ## Building and testing
 
-Go 1.25: the module's `go` and `toolchain` lines say which; an older `go` downloads that toolchain itself. The code
-uses the standard library only (Windows calls go through `syscall`).
+Go: the module's `go` and `toolchain` lines in [`go.mod`](go.mod) say which; an older `go` (1.21 or newer) downloads
+that toolchain itself. The program has no dependency outside Go's standard library: Windows calls go through
+`syscall`, loaded lazily, and `golang.org/x/sys` is not used.
 
 ```bash
 go build -o ~/bonsai-checks/bin/bonsai ./cmd/bonsai
@@ -59,7 +60,7 @@ go test ./...
 go vet ./...
 ```
 
-`make build OUT=~/bonsai-checks/bin/bonsai` does the same build. Never `go install`: it puts a `bonsai` in front of
+`make build OUT=~/bonsai-checks/bin/bonsai` builds with `-trimpath`, as the release does. Never `go install`: it puts a `bonsai` in front of
 the installed one on the PATH.
 
 The proof of a change is `bonsai ladder --task <id>` green, run by the installed `bonsai`: the rungs in
