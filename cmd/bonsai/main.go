@@ -1,11 +1,10 @@
-// Command bonsai is Bonsai's one program. During the rebuild it answers what has been built so far: `bonsai
-// --version`, `bonsai --help`, and the words in the registry (word.go), each in a file of its own: init and update
-// (init.go, update.go, engine.go), unlink (unlink.go), check (check.go), status (status.go) and hook (hook.go). Any
-// other word is refused, naming the next step.
+// Command bonsai is Bonsai's one program. It answers `bonsai --version`, `bonsai --help` and the words in the registry
+// (word.go), each in a file of its own: init and update (init.go, update.go, engine.go), unlink (unlink.go), check
+// (check.go), status (status.go), hook (hook.go) and the rest. Any other word is refused, naming the next step.
 //
 // Exit codes follow the spec's (design/bonsai-spec.md, section 3): 0 ok, 1 check findings, 2 bad input, 3 runtime,
 // 4 wrong state or no --yes, 5 conflicts; each word's table lists the ones it returns. Human output is ASCII; --json
-// prints a document for programs, its error object filled on a refusal (step 5.1.4b).
+// prints a document for programs, its error object filled on a refusal.
 package main
 
 import (
@@ -86,7 +85,6 @@ const (
 func usage() *textui.Doc {
 	d := &textui.Doc{}
 	d.Title("bonsai", "the structure inside each project (formats, packs, guards, a recorder, a ladder)")
-	d.Raw("This build is Bonsai's rebuild in progress; it answers:\n")
 	rows := []textui.Row{
 		textui.R(textui.T("bonsai --version", textui.Path), textui.C("print this build's version")),
 		textui.R(textui.T("bonsai --help", textui.Path), textui.C("print this help")),
@@ -178,7 +176,7 @@ func runBonsai(args []string, stdout, stderr io.Writer) int {
 	case len(args) > 0 && (args[0] == "--version" || args[0] == "--help" || args[0] == "-h"):
 		what, code = args[0]+" takes no other argument", "bad-flag"
 	case len(args) > 0:
-		what = fmt.Sprintf("%+q is not a command yet", args[0]) // %+q keeps the line ASCII
+		what = fmt.Sprintf("%+q is not a command", args[0]) // %+q keeps the line ASCII
 	}
 	var names []string
 	for _, w := range wordList() {
@@ -189,8 +187,8 @@ func runBonsai(args []string, stdout, stderr io.Writer) int {
 		c.json = c.json || a == "--json"
 	}
 	return c.refuse(&engine.Error{Code: code, Exit: exitInput,
-		What: what + ": this build of the rebuild answers --version, --help, " + strings.Join(names, ", "),
-		Next: "run `bonsai --help`, or use the old product at tag v0.4.3"})
+		What: what + ": bonsai answers --version, --help, " + strings.Join(names, ", "),
+		Next: "run `bonsai --help`"})
 }
 
 // write prints an answer; one that cannot be written exits 3 (runtime).

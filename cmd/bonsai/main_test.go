@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"debug/buildinfo"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -44,10 +45,10 @@ func TestRun(t *testing.T) {
 	}{
 		{"version", []string{"--version"}, 0, "bonsai dev (no commit stamp)\n", "", ""},
 		{"no command", nil, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + "no command given:", "run `bonsai --help`"},
-		{"unknown command", []string{"serve"}, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + `"serve" is not a command yet:`, "run `bonsai --help`"},
+		{"unknown command", []string{"serve"}, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + `"serve" is not a command:`, "run `bonsai --help`"},
 		{"version with more", []string{"--version", "now"}, 2, "", "bonsai: refused  [bad-flag]\n" + what2 + "--version takes no other argument:", "run `bonsai --help`"},
 		{"help with more", []string{"--help", "status"}, 2, "", "bonsai: refused  [bad-flag]\n" + what2 + "--help takes no other argument:", "run `bonsai --help`"},
-		{"non-ASCII argument", []string{"b\xc3\xb6nsai"}, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + `"b\` + `u00f6nsai" is not a command yet:`, "run `bonsai --help`"},
+		{"non-ASCII argument", []string{"b\xc3\xb6nsai"}, 2, "", "bonsai: refused  [unknown-command]\n" + what2 + `"b\` + `u00f6nsai" is not a command:`, "run `bonsai --help`"},
 		{"status --later", []string{"status", "--later", "--help"}, 2, "", "bonsai status: refused  [not-built]\n" + what2 + "status --later is not built yet",
 			"run `bonsai status --help` without --later"},
 		{"status --active --full", []string{"status", "--active", "--full"}, 2, "", "bonsai status: refused  [bad-flag]\n" + what2 + "status --active prints only the active task",
@@ -305,5 +306,30 @@ func TestStatusExit3(t *testing.T) {
 	asciiOnly(t, "stderr", stderr.String())
 	if code := run([]string{"status", "--json"}, failingWriter{}, &stderr); code != 3 {
 		t.Errorf("an unwritable status exits %d, want 3", code)
+	}
+}
+
+// bonsai --help and its document speak of the finished program: no word of a build in progress, and the same
+// words in the refusal of an unknown command.
+func TestHelpIsNotAWorkInProgress(t *testing.T) {
+	var text, doc, errText bytes.Buffer
+	if code := run([]string{"--help"}, &text, io.Discard); code != 0 {
+		t.Fatalf("--help exit %d", code)
+	}
+	if code := run([]string{"--help", "--json"}, &doc, io.Discard); code != 0 {
+		t.Fatalf("--help --json exit %d", code)
+	}
+	if code := run([]string{"serve"}, io.Discard, &errText); code != 2 {
+		t.Fatalf("unknown command exit %d", code)
+	}
+	for name, out := range map[string]string{"--help": text.String(), "--help --json": doc.String(), "a refusal": errText.String()} {
+		for _, stale := range []string{"rebuild in progress", "built so far", "not a command yet", "of the rebuild answers", "old product"} {
+			if strings.Contains(out, stale) {
+				t.Errorf("%s says %q", name, stale)
+			}
+		}
+	}
+	if !strings.Contains(text.String(), "bonsai status [flags]") {
+		t.Errorf("--help lacks the word list: %q", text.String())
 	}
 }
