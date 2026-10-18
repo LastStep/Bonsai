@@ -144,8 +144,10 @@ Each lets new code run on the person's machine, takes the guard out, or loosens 
 - person-only files under `command` mode;
 - Bless where a studio manages the project (elsewhere you raise a floor yourself, by the rule in
   `base:operating-setup`);
-- installing the `bonsai` program (root or admin): send the person the install lines and the checksum to check;
-  never install it.
+- installing the `bonsai` program (root or admin): when `bonsai check` warns of a newer release (bonsai-newer),
+  hand the person both sides' lines from `bonsai status --full --json` (`bonsai_release.lines`, exactly as Bonsai
+  wrote them, run one at a time; the fourth prints `OK`, or `True` in PowerShell) with the release's notes link;
+  never run them.
 
 ## Records
 
