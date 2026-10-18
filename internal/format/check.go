@@ -61,7 +61,7 @@ var CheckWords = []Word{
 	{Word: "block-size", Kind: "finding", Who: "person", Means: "Bonsai's block in CLAUDE.md is over its fixed 40 lines (spec section 6)"},
 	{Word: "memory-index-size", Kind: "finding", Who: "agent", Means: "the memory index is over its fixed 120 lines or 12 KB (spec section 10)"},
 	{Word: "memory-note-size", Kind: "finding", Who: "agent", Means: "a memory note is over 4 KB (spec section 10)"},
-	{Word: "missing-path", Kind: "finding", Who: "agent", Means: "a project path named in CLAUDE.md, STATE or a memory note does not exist (Bonsai's own block left out: the lock checks it)"},
+	{Word: "missing-path", Kind: "finding", Who: "agent", Means: "a project path named in CLAUDE.md, STATE or a memory note does not exist, or exists here only because git ignores it, so a clone does not have it (Bonsai's own block left out: the lock checks it)"},
 	{Word: "secret", Kind: "finding", Who: "agent", Means: "a memory note or the memory index in the working tree holds a secret-shaped string, as Bonsai's redactor finds one: the finding names the note, the line and the kind of secret (the secret kinds' list), never the value; a person decides whether to rotate it (spec section 6)"},
 	// Claude Code's settings in the project (spec sections 5 and 7).
 	{Word: "settings-rule", Kind: "finding", Who: "person", Means: "a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own"},

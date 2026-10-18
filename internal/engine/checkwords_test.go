@@ -375,3 +375,28 @@ func mustKey(t *testing.T, main string) string {
 	}
 	return k
 }
+
+// A path that git ignores is there in this checkout only: a clone, a fresh worktree or CI does not have it, so check
+// counts it as missing, as they would. A path git tracks, and one that is simply there, are not findings.
+func TestAPathGitIgnoresIsMissing(t *testing.T) {
+	e := setup(t)
+	root := testpack.Project(t, e.tmp, "ignored")
+	e.link(t, root, e.pack.A)
+	writeFile(t, root, "notes/kept.md", "kept\n")
+	writeFile(t, root, "local-only/notes.md", "mine\n")
+	writeFile(t, root, ".gitignore", "local-only/\n")
+	writeFile(t, root, BlockFile, read(t, root, BlockFile)+"\nSee `notes/kept.md`.\n")
+	if r, err := checkLocal(t, root, e.home); err != nil || findingsOf(r) != "" {
+		t.Fatalf("a path that is there: %v %s", err, findingsOf(r))
+	}
+	writeFile(t, root, BlockFile, read(t, root, BlockFile)+"\nSee `local-only/notes.md` and [the folder](local-only).\n")
+	r, err := checkLocal(t, root, e.home)
+	if err != nil || findingsOf(r) != "missing-path CLAUDE.md, missing-path CLAUDE.md" {
+		t.Fatalf("a path git ignores: %v %s", err, findingsOf(r))
+	}
+	for _, f := range r.Findings {
+		if !strings.Contains(f.Message, "local-only") || !strings.Contains(f.Message, "git ignores") {
+			t.Errorf("the finding does not say git ignores the path: %s", f.Message)
+		}
+	}
+}

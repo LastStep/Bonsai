@@ -23,7 +23,8 @@ package engine
 //   - block-size, memory-index-size, memory-note-size: the fixed budgets (spec §6, §10; the memory caps' one home is
 //     MemoryCaps);
 //   - missing-path: a project path that CLAUDE.md, STATE or a memory note names and that does not exist (doc
-//     freshness): an @import, a markdown link, or a path in backticks whose first part is in the project. Bonsai's own
+//     freshness), or that exists here only because git ignores it, so a clone does not have it: an @import, a
+//     markdown link, or a path in backticks whose first part is in the project. Bonsai's own
 //     block in CLAUDE.md is left out: the lock checks it, its protocol imports are pack files the lock lists, and its
 //     memory-index import is written before the index exists, by design (spec §6, §10: the memory skill writes the
 //     index), so a project linked a moment ago has no finding for it;
@@ -34,8 +35,10 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -505,8 +508,15 @@ var (
 )
 
 // checkNamedPaths finds project paths that CLAUDE.md (outside Bonsai's block), STATE and the memory notes name and
-// that do not exist.
+// that do not exist, or exist only here because git ignores them (gitIgnored): a clone, a fresh worktree or CI does
+// not have such a path, so it is missing there.
 func (r *CheckResult) checkNamedPaths(files []string) {
+	type named struct {
+		file, ref, target string
+		line              int
+		there             bool
+	}
+	var refsFound []named
 	check := func(file string, text string, firstLine int) {
 		dir := path.Dir(file)
 		inFence := false
@@ -550,11 +560,8 @@ func (r *CheckResult) checkNamedPaths(files []string) {
 				if !ok {
 					continue
 				}
-				if _, err := os.Stat(filepath.Join(r.Root, filepath.FromSlash(target))); err == nil {
-					continue
-				}
-				r.add("missing-path", file, "", fmt.Sprintf("%s line %d names %s, which does not exist in the project", file, n, ascii(ref.p)),
-					fmt.Sprintf("fix line %d of %s: name the path that exists now, or take the reference out", n, file))
+				_, err := os.Stat(filepath.Join(r.Root, filepath.FromSlash(target)))
+				refsFound = append(refsFound, named{file: file, ref: ref.p, target: target, line: n, there: err == nil})
 			}
 		}
 	}
@@ -576,6 +583,48 @@ func (r *CheckResult) checkNamedPaths(files []string) {
 			check(f, strings.ReplaceAll(string(raw), "\r\n", "\n"), 1)
 		}
 	}
+	var there []string
+	for _, f := range refsFound {
+		if f.there {
+			there = append(there, f.target)
+		}
+	}
+	ignored := gitIgnored(r.Root, there)
+	for _, f := range refsFound {
+		switch {
+		case !f.there:
+			r.add("missing-path", f.file, "", fmt.Sprintf("%s line %d names %s, which does not exist in the project", f.file, f.line, ascii(f.ref)),
+				fmt.Sprintf("fix line %d of %s: name the path that exists now, or take the reference out", f.line, f.file))
+		case ignored[f.target]:
+			r.add("missing-path", f.file, "", fmt.Sprintf("%s line %d names %s, which git ignores, so a clone of the project does not have it",
+				f.file, f.line, ascii(f.ref)),
+				fmt.Sprintf("fix line %d of %s: name a path the project commits, or say the file in words", f.line, f.file))
+		}
+	}
+}
+
+// gitIgnored gives the paths among paths (project-relative, forward slashes) that git ignores in the checkout at root,
+// by one git check-ignore: a path git tracks is never among them. When git cannot answer (no git, no checkout), none:
+// the paths are judged by the files alone, as before.
+func gitIgnored(root string, paths []string) map[string]bool {
+	out := map[string]bool{}
+	if len(paths) == 0 {
+		return out
+	}
+	cmd := exec.Command("git", "-C", root, "check-ignore", "-z", "--stdin")
+	cmd.Env = gitEnv()
+	cmd.Stdin = strings.NewReader(strings.Join(paths, "\x00") + "\x00")
+	raw, err := cmd.Output()
+	var ee *exec.ExitError
+	if err != nil && !(errors.As(err, &ee) && ee.ExitCode() == 1) { // 1: none of them is ignored
+		return out
+	}
+	for _, p := range bytes.Split(raw, []byte{0}) {
+		if len(p) > 0 {
+			out[filepath.ToSlash(string(p))] = true
+		}
+	}
+	return out
 }
 
 // projectRef gives a reference's project-relative path when it names a project path Bonsai can judge: no URL, no
