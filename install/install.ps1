@@ -12,8 +12,9 @@ deleted unless it is still running (then the next install deletes it); C:\Progra
 the change announced to running programs; the folder's rights checked (no write for Users, Authenticated Users or
 Everyone). The child's code is inline (-EncodedCommand), never a file. Then, as you, it checks the installed file's
 SHA-256 again and writes the installed copy's record, install.json, in the Bonsai home ($env:BONSAI_HOME, else
-%USERPROFILE%\.bonsai): its path (with forward slashes), version and sha256, the record bonsai check and bonsai status
-compare the bonsai on the PATH with. It prints the fingerprint, every bonsai on the PATH in order and --version.
+%USERPROFILE%\.bonsai): its full path (with forward slashes; a short name in it, such as RUNNER~1, made long), version
+and sha256, the record bonsai check and bonsai status compare the bonsai on the PATH with. It prints the fingerprint,
+every bonsai on the PATH in order and --version.
 
 When to run it: once per Bonsai release, by the person, in a normal PowerShell, from the release's folder:
   powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1

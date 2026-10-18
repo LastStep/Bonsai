@@ -169,17 +169,29 @@ func sum(b []byte) string {
 	return hex.EncodeToString(h[:])
 }
 
-// record reads install.json: exactly the three keys, the path with forward slashes.
+// record reads install.json: exactly the three keys, the path with forward slashes. install.sh records the target as
+// it was given; install.ps1 records its full path with an 8.3 short name in it made long (Windows PowerShell's
+// GetFullPath does), the path a person sees. CI's Windows runner reaches its temporary folder as RUNNER~1, so the path
+// wanted there is the target's long form, engine.RealPath's.
 func (s *scratch) record(t *testing.T) map[string]string {
 	t.Helper()
 	var m map[string]string
 	if err := json.Unmarshal(readFile(t, filepath.Join(s.home, engine.InstallFile)), &m); err != nil {
 		t.Fatalf("install.json: %v", err)
 	}
-	if len(m) != 3 || m["path"] != filepath.ToSlash(s.target) || m["sha256"] != sum(readFile(t, s.src)) || m["version"] == "" {
-		t.Fatalf("install.json is %v; want path %s, the source's sha256 and a version", m, filepath.ToSlash(s.target))
+	want := s.recorded()
+	if len(m) != 3 || m["path"] != want || m["sha256"] != sum(readFile(t, s.src)) || m["version"] == "" {
+		t.Fatalf("install.json is %v; want path %s, the source's sha256 and a version", m, want)
 	}
 	return m
+}
+
+// recorded is the target's path as its installer records it in install.json (record's comment says why the two differ).
+func (s *scratch) recorded() string {
+	if runtime.GOOS == "windows" {
+		return filepath.ToSlash(engine.RealPath(s.target))
+	}
+	return filepath.ToSlash(s.target)
 }
 
 // checkReads proves check's reader reads the record: with the target first on the PATH, no bonsai-path finding and no
@@ -214,7 +226,7 @@ func (s *scratch) checkReads(t *testing.T) {
 	}
 	found := false
 	for _, f := range r.Findings {
-		found = found || (f.Code == "bonsai-path" && strings.Contains(f.Message, filepath.ToSlash(s.target)))
+		found = found || (f.Code == "bonsai-path" && strings.Contains(f.Message, s.recorded()))
 	}
 	if !found {
 		t.Fatalf("check gave no bonsai-path finding naming %s with another bonsai first on the PATH: %+v", s.target, r.Findings)
