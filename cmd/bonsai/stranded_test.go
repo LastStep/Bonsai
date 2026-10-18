@@ -4,7 +4,8 @@ package main
 // and a checkout moved for real: its machine folder written (settings and an attached labels file), the folder renamed,
 // the checkout recorded again there; then check warns, status's text names it, and the person's lines, run as printed
 // through the system's own shell (a POSIX shell, or PowerShell on Windows) with the variable cleared, bring the
-// settings over and clear the old folder, so the warning is gone. The Bonsai home's path holds a space and a quote.
+// settings and the labels over and clear the old folder, so the warning is gone. The Bonsai home's path holds a space
+// and a quote.
 
 import (
 	"bytes"
@@ -157,10 +158,6 @@ func TestStrandedMoved(t *testing.T) {
 	for _, line := range sf[0].Lines {
 		if strings.HasPrefix(line, "bonsai ") {
 			args := throughShell(t, line)
-			if later := subLater(args[0], args[1]); later != "" {
-				t.Logf("bonsai %s %s is not built in this build (%s): the line is not run", args[0], args[1], later)
-				continue
-			}
 			var stdout, stderr bytes.Buffer
 			if code := run(args, &stdout, &stderr); code != exitOK {
 				t.Fatalf("%v: exit %d\n%s%s", args, code, stdout.String(), stderr.String())
@@ -180,6 +177,9 @@ func TestStrandedMoved(t *testing.T) {
 	}
 	if s, err := workspace.LoadMachineSettings(home, moved); err != nil || s.StatusCommand != "studio task move" {
 		t.Errorf("the settings were not brought over: %+v %v", s, err)
+	}
+	if dir, err := workspace.MachineDir(home, moved); err != nil || strings.Join(workspace.AttachedIn(dir), ",") != "studio" {
+		t.Errorf("the labels were not brought over: %v", err)
 	}
 	if _, out, _ := c.run("", "check", "--json"); strings.Contains(out, `"code": "stranded"`) {
 		t.Errorf("the warning is still there:\n%s", out)
@@ -215,16 +215,4 @@ func throughShell(t *testing.T, line string) []string {
 		t.Fatalf("%s: read as %q", line, args)
 	}
 	return args[1:]
-}
-
-// subLater is a sub-word's Later, "" when it is built (or not a sub-word).
-func subLater(word, sub string) string {
-	if w := words[word]; w != nil {
-		for _, s := range w.Subs {
-			if s.Name == word+" "+sub {
-				return s.Later
-			}
-		}
-	}
-	return ""
 }
