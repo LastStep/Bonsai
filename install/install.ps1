@@ -84,7 +84,7 @@ function Get-Sha256 {
 function Merge-MachinePath {
     param([string]$Current, [string]$Folder, [bool]$Remove)
     $want = $Folder.Trim().TrimEnd('\')
-    $kept = New-Object System.Collections.Generic.List[string]
+    $kept = [System.Collections.Generic.List[string]]::new()
     $found = $false
     $changed = $false
     foreach ($e in ($Current -split ';')) {
@@ -115,15 +115,17 @@ function New-ChildText {
     $merge = 'function Merge-MachinePath {' + ${function:Merge-MachinePath}.ToString() + "}`n"
     $body = @'
 $ErrorActionPreference = 'Stop'
+# Only .NET calls and the functions defined here run in this child, no cmdlet: a cmdlet's module is loaded from the
+# first folder on PSModulePath that holds one of its name, and the person's own Modules folder comes first.
 $step = 10
 function Move-Busy([string]$a, [string]$b) {
     for ($i = 0; ; $i++) {
-        try { [IO.File]::Move($a, $b); return } catch { if ($i -ge 50) { throw }; Start-Sleep -Milliseconds 100 }
+        try { [IO.File]::Move($a, $b); return } catch { if ($i -ge 50) { throw }; [Threading.Thread]::Sleep(100) }
     }
 }
 function Remove-Busy([string]$a) {
     for ($i = 0; ; $i++) {
-        try { [IO.File]::Delete($a); return } catch { if ($i -ge 50) { throw }; Start-Sleep -Milliseconds 100 }
+        try { [IO.File]::Delete($a); return } catch { if ($i -ge 50) { throw }; [Threading.Thread]::Sleep(100) }
     }
 }
 function Set-MachinePath([bool]$out) {
@@ -161,12 +163,10 @@ try {
         $step = 20
         if ([IO.Directory]::Exists($dir)) {
             [Environment]::CurrentDirectory = $dir
-            Set-Location -LiteralPath $dir
             foreach ($f in [IO.Directory]::GetFiles($dir)) {
                 $n = [IO.Path]::GetFileName($f)
                 if ($n -ieq $name -or $n -ieq ($name + '.new') -or $n.StartsWith($name + '.old-', [StringComparison]::OrdinalIgnoreCase)) { Remove-Busy $f }
             }
-            Set-Location -LiteralPath ([Environment]::SystemDirectory)
             [Environment]::CurrentDirectory = [Environment]::SystemDirectory
             if ($real -and [IO.Directory]::GetFileSystemEntries($dir).Length -eq 0) { [IO.Directory]::Delete($dir) }
         }
@@ -175,7 +175,6 @@ try {
     }
     [void][IO.Directory]::CreateDirectory($dir)
     [Environment]::CurrentDirectory = $dir
-    Set-Location -LiteralPath $dir
     # At the real place the rights are checked before anything lands: the folder before the copy, the copy (with what
     # it inherits) before the rename, so a folder others can write gets no file and no PATH entry.
     if ($real) { $step = 18; if (Test-Rights $dir) { exit 18 } }

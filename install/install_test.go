@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -757,6 +758,27 @@ func TestPs1CompilesNothing(t *testing.T) {
 	for _, word := range []string{"Add-Type", "CompileAssembly", "csc.exe", "[Reflection.Assembly]::Load"} {
 		if strings.Contains(strings.ToLower(read(t, "install.ps1")), strings.ToLower(word)) {
 			t.Errorf("install.ps1 holds %s", word)
+		}
+	}
+}
+
+// The child runs no cmdlet: one from a module (Start-Sleep, Set-Location, New-Object) is loaded from the first folder
+// on PSModulePath that holds a module of its name, and the person's Documents\WindowsPowerShell\Modules comes first.
+// Only the functions its own text defines, and .NET calls, run in it.
+func TestPs1ChildRunsNoCmdlet(t *testing.T) {
+	text := childBody(t)
+	ps := read(t, "install.ps1")
+	if i := strings.Index(ps, "\nfunction Merge-MachinePath {"); i >= 0 {
+		end := strings.Index(ps[i+1:], "\n}\n")
+		text += ps[i : i+1+end] // the child holds Merge-MachinePath's body too
+	}
+	own := map[string]bool{}
+	for _, m := range regexp.MustCompile(`(?m)^\s*function ([A-Za-z]+-[A-Za-z]+)`).FindAllStringSubmatch(text, -1) {
+		own[strings.ToLower(m[1])] = true
+	}
+	for _, m := range regexp.MustCompile(`\b([A-Z][a-z]+-[A-Z][A-Za-z]+)\b`).FindAllStringSubmatch(text, -1) {
+		if !own[strings.ToLower(m[1])] {
+			t.Errorf("the child's text runs %s, a cmdlet, not a function it defines", m[1])
 		}
 	}
 }
