@@ -1,8 +1,8 @@
 package main
 
-// update's clean of the pack cache (plan-5 5.6.1, 6; engine.CleanCache): with the home's cache_keep_days set, an
-// update that wrote removes each pack clone unused for longer than that, never one the lock or bonsai.yaml names,
-// never an --adopt copy, and says so in one line; a preview removes nothing.
+// update's clean of the pack cache (plan-5 5.6.1, 6; engine.CleanCache): with the home's cache_keep_days set, update
+// --yes (written, or with nothing to change) removes each pack clone unused for longer than that, never one the lock
+// or bonsai.yaml names, never an --adopt copy, and says so in one line; a preview removes nothing.
 
 import (
 	"os"
@@ -105,5 +105,22 @@ func TestUpdateCleansTheCache(t *testing.T) {
 	}
 	if _, err := os.Stat(second); err == nil {
 		t.Errorf("update --json cleaned nothing: %s", second)
+	}
+
+	// Nothing to change: update without --yes cleans nothing; update --yes cleans still.
+	third := agedClone(t, home, "00112233aabbccdd.git", old)
+	if code, out, errOut := c.run("", "update"); code != 0 || strings.Contains(out, "pack clone") {
+		t.Fatalf("update, nothing to change: %d\n%s%s", code, out, errOut)
+	}
+	if _, err := os.Stat(third); err != nil {
+		t.Fatalf("update without --yes removed a clone: %v", err)
+	}
+	code, out, errOut = c.run("", "update", "--yes")
+	if code != 0 || !strings.Contains(out, "nothing to change") ||
+		!strings.Contains(flat(out), "removed 1 pack clone unused for over 30 days from the cache (cache_keep_days)") {
+		t.Errorf("update --yes, nothing to change:\n%d\n%s%s", code, out, errOut)
+	}
+	if _, err := os.Stat(third); err == nil {
+		t.Errorf("update --yes with nothing to change cleaned nothing: %s", third)
 	}
 }

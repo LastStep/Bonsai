@@ -179,6 +179,9 @@ func runEngine(c *call) int {
 		plan.LeftAloneTo(d)
 		recorded(d, plan)
 		plan.PluginsTo(d)
+		if word == "update" && f.yes {
+			cacheCleanTo(d, home, plan)
+		}
 		closing(d)
 		return out("nothing", engine.ExitOK, nil, d)
 	}
@@ -285,9 +288,10 @@ func runEngine(c *call) int {
 	return out("applied", engine.ExitOK, nil, d)
 }
 
-// cacheCleanTo cleans the pack cache after a written update (engine.CleanCache: the home's cache_keep_days, never a
-// clone the lock or bonsai.yaml names, never an --adopt copy) and adds its one line to update's text. It never changes
-// the exit code or the result; with --json nothing is added (bonsai.changes/1 has no field for it).
+// cacheCleanTo cleans the pack cache after update --yes, written or with nothing to change, never a preview
+// (engine.CleanCache: the home's cache_keep_days, never a clone the lock or bonsai.yaml names, never an --adopt copy)
+// and adds its one line to update's text. It never changes the exit code or the result; with --json nothing is added
+// (bonsai.changes/1 has no field for it).
 func cacheCleanTo(d *textui.Doc, home string, plan *engine.Plan) {
 	var keep []string
 	for _, p := range plan.Config.Packs {
