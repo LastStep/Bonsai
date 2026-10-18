@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5610
 title: "workflow's additions: workflow:correct, workflow:changelog and four short lines (5.6.10)"
-status: verify
+status: done
 lane:
 done_when:
   - "workflow:correct in workflow (a mistake seen twice fixed at the highest level that works; a new check proved to fail on the real past mistake); its first run is at 5.6's end"
@@ -13,7 +13,7 @@ depends_on: [T-5607]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-16
 labels:
   bonsai.ladder: []
   bonsai.allows: []

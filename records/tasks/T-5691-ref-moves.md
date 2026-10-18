@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5691
 title: "Bonsai's own packs moved: workflow to a42a4f4, base to main at 4b41790b (5.6's first ref moves)"
-status: running
+status: done
 lane:
 done_when:
   - "bonsai.yaml's refs: workflow a42a4f4 (5.6.7 and 5.6.10), base 4b41790b (5.6.9, 5.6.8's --explain lines, 5.6.0's settings and labels lines), on the director's yes (16 Oct)"
@@ -12,7 +12,7 @@ depends_on: [T-5600, T-5610]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-18
 labels:
   bonsai.ladder: []
   bonsai.allows: ["bonsai.yaml", ".bonsai/lock.json", ".claude/**", "CLAUDE.md"]

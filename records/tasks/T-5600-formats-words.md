@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5600
 title: "The formats set and the two words' places: settings, attach and line formats, bonsai_release, settings and labels registered (5.6.0)"
-status: verify
+status: done
 lane:
 done_when:
   - "One formats set after the last landed: bonsai.settings/1, bonsai.attach/1, bonsai.line/1, bonsai_release at the end of status, the memory schema's words on the personal layer; their Go types and writers; status writing bonsai_release: null"
@@ -13,7 +13,7 @@ depends_on: [T-5608]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-18
 labels:
   bonsai.ladder: []
   bonsai.allows: []
