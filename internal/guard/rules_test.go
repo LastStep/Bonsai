@@ -135,6 +135,9 @@ func wantRule(t *testing.T, dir, in, rule string, kv ...string) string {
 	if got := recs[len(recs)-1].String("rule"); got != rule {
 		t.Fatalf("want %s, recorded %s (stderr %q)", rule, got, stderr)
 	}
+	if refuses && !strings.HasSuffix(stderr, "\nrule: "+rule+".\n") {
+		t.Fatalf("want %s: the refusal does not end with its rule word (stderr %q)", rule, stderr)
+	}
 	return stderr
 }
 

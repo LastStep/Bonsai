@@ -10,7 +10,9 @@ package hookin
 // Past the budget the hook's over-time refusal answers, and the writer of its record is awaited for Wait at most (the
 // log then holds the refusal that counted; a record not written by then may land after the answer, or never if the
 // process has exited). The answer is the exit code (spec §3): 0 allows, 2 blocks, with the reason and the next step
-// on stderr, which Claude Code shows the agent. A refusal that cannot be printed still blocks: the code is the answer.
+// on stderr, which Claude Code shows the agent, and the rule word when the hook gives one (the guard does), so an
+// agent can act on the refusal by its rule without reading the log. A refusal that cannot be printed still blocks:
+// the code is the answer.
 
 import (
 	"fmt"
@@ -23,7 +25,7 @@ const RecordWait = 500 * time.Millisecond
 
 // Frame is the run of one call of a hook that blocks.
 type Frame struct {
-	Name   string        // the hook in its refusal: "guard" prints "bonsai guard: <why>.\nnext: <next>.\n"
+	Name   string        // the hook in its refusal: "guard" prints "bonsai guard: <why>.\nnext: <next>.\n" (and "rule: <rule>.\n")
 	Budget time.Duration // the hook's own time limit, under its hook line's timeout; past it the over-time answer counts
 	Wait   time.Duration // how long the over-time answer waits for its record; 0 means RecordWait
 	Stderr io.Writer     // where a block's reason and next step go
@@ -34,6 +36,7 @@ type Answer struct {
 	Block bool   // true: exit 2, the call is blocked; false: exit 0, it goes on
 	Why   string // a block's reason, said first (spec §7); ASCII, no final full stop
 	Next  string // a block's next step (spec §3: every refusal names one); ASCII, no final full stop
+	Rule  string // a block's rule word, as its record keeps it, printed on a line of its own after the next step; "" for none
 }
 
 // Job is the hook's part of a run.
@@ -93,6 +96,9 @@ func (f Frame) answer(a Answer) int {
 	}
 	if f.Stderr != nil {
 		_, _ = fmt.Fprintf(f.Stderr, "bonsai %s: %s.\nnext: %s.\n", f.Name, a.Why, a.Next)
+		if a.Rule != "" {
+			_, _ = fmt.Fprintf(f.Stderr, "rule: %s.\n", a.Rule)
+		}
 	}
 	return 2
 }

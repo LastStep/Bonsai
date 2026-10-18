@@ -99,7 +99,7 @@ through on a fault of its own.
 	FlagNext: "use the hook line bonsai init writes (bonsai hook guard --help quotes it)",
 	Exits: []Exit{
 		{Code: 0, Means: "allow: the call goes on (nothing printed)"},
-		{Code: 2, Means: "block: the reason and the next step on stderr, which Claude Code shows to the agent"},
+		{Code: 2, Means: "block: the reason, the next step and the rule word on stderr, which Claude Code shows to the agent"},
 	},
 	Examples: []string{"CLAUDE_PROJECT_DIR=. bonsai hook guard < payload.json"},
 	Run: func(c *call) int {

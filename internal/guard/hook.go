@@ -97,9 +97,9 @@ func (r *run) faultFor(d Decision) Decision {
 	return d
 }
 
-// answer gives a decision as the frame's answer.
+// answer gives a decision as the frame's answer: a refusal prints its rule word on its last line.
 func (d Decision) answer() hookin.Answer {
-	return hookin.Answer{Block: !d.Allow, Why: d.Why, Next: d.Next}
+	return hookin.Answer{Block: !d.Allow, Why: d.Why, Next: d.Next, Rule: d.Rule}
 }
 
 // panicked is the refusal of a guard that failed inside.

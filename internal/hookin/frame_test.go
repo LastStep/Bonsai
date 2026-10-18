@@ -124,3 +124,18 @@ func TestFrameDefaultWait(t *testing.T) {
 		t.Errorf("exit %d after %v; want 2 after RecordWait (%v)", code, took, RecordWait)
 	}
 }
+
+// A block with a rule word prints it on a line of its own after the next step; one without prints none.
+func TestFrameRuleWord(t *testing.T) {
+	for _, c := range []struct{ rule, want string }{
+		{"bad-path", "bonsai test-hook: no.\nnext: ask.\nrule: bad-path.\n"},
+		{"", "bonsai test-hook: no.\nnext: ask.\n"},
+	} {
+		var stderr bytes.Buffer
+		f := Frame{Name: "test-hook", Budget: time.Minute, Stderr: &stderr}
+		code := f.Run(Job{Work: func() Answer { return Answer{Block: true, Why: "no", Next: "ask", Rule: c.rule} }})
+		if code != 2 || stderr.String() != c.want {
+			t.Errorf("rule %q: exit %d, %q; want 2, %q", c.rule, code, stderr.String(), c.want)
+		}
+	}
+}
