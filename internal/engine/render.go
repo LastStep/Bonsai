@@ -529,14 +529,18 @@ func whoOr(who string) string {
 }
 
 // PluginsTo adds what InstallPlugins did, for a person: one row per pack's plugin, and its next step when this
-// machine still needs one. Nothing when nothing was asked of Claude Code.
+// machine still needs one, an empty line between one plugin's rows and the next's (so one plugin's last words never
+// run on into the next plugin's result). Nothing when nothing was asked of Claude Code.
 func (p *Plan) PluginsTo(d *textui.Doc) {
 	if len(p.Plugins) == 0 {
 		return
 	}
 	d.Para("Plugins", fmt.Sprintf("This machine's plugins (Claude Code, scope %s: this checkout's %s):", PluginScope, SettingsFile), textui.Plain)
 	var rows []textui.Row
-	for _, r := range p.Plugins {
+	for i, r := range p.Plugins {
+		if i > 0 {
+			rows = append(rows, textui.R())
+		}
 		rows = append(rows, textui.R(textui.T(r.Result, resultTone(r.Result)), textui.T(ascii(r.Plugin), textui.Path), textui.C(ascii(r.Message))))
 		if r.Next != "" {
 			rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("next: "+ascii(r.Next), textui.Path)))
