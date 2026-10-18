@@ -5,6 +5,7 @@ package engine
 // it, at any depth; a junction that leads nowhere fails closed.
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -106,5 +107,49 @@ func TestRealPathReadsAShortName(t *testing.T) {
 	}
 	if FolderHolds(filepath.Join(short, "made"), filepath.Join(long, "other")) {
 		t.Error("a path beside the folder, spelled long: held inside it, spelled short")
+	}
+}
+
+// A symbolic link whose target names a drive and no root (C:foo) is read by Windows from that drive's current folder
+// in the process that writes, which RealPath cannot know: the walk refuses it (ErrDriveRelative), never reading it as
+// from the drive's root. A link to C:\... with a root is followed. Links need a privilege here: it skips without one.
+func TestALinkToADriveWithNoRootFailsClosed(t *testing.T) {
+	tmp := t.TempDir()
+	vol := filepath.VolumeName(tmp) // C:
+	for i, target := range []string{vol + "foo", vol, vol + `foo\bar`} {
+		link := filepath.Join(tmp, "l"+string(rune('a'+i)))
+		if i == 0 {
+			symlinkOr(t, target, link) // no privilege: skip
+		} else if err := os.Symlink(target, link); err != nil {
+			t.Logf("no link to %s: %v", target, err)
+			continue
+		}
+		if got, err := os.Readlink(link); err != nil || got != target {
+			if i == 0 {
+				t.Skipf("the link to %s reads back as %q, %v: Windows did not keep the target as written", target, got, err)
+			}
+			t.Logf("the link to %s reads back as %q, %v", target, got, err)
+			continue
+		}
+		for _, p := range []string{link, filepath.Join(link, "x.txt")} {
+			if got, err := WalkLinks(p); !errors.Is(err, ErrDriveRelative) {
+				t.Errorf("WalkLinks(%s), %s a link to %s: %q, %v; want ErrDriveRelative", p, link, target, got, err)
+			}
+			if got, err := RealPath(p); err == nil {
+				t.Errorf("RealPath(%s) through a link to %s: %q, no error", p, target, got)
+			}
+			if FolderHolds(tmp, p) || FolderHolds(vol+`\`, p) {
+				t.Errorf("%s, through a link to %s: held", p, target)
+			}
+		}
+	}
+	// With a root: followed.
+	made := filepath.Join(tmp, "made")
+	if err := os.Mkdir(made, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	symlinkOr(t, made, filepath.Join(tmp, "rooted"))
+	if got, err := RealPath(filepath.Join(tmp, "rooted", "new")); err != nil || got != filepath.Join(named(t, made), "new") {
+		t.Errorf("a link to %s: %q, %v; want %q", made, got, err, filepath.Join(named(t, made), "new"))
 	}
 }

@@ -269,7 +269,7 @@ func FolderHolds(folder, p string) bool {
 // would read a folder and a path not made yet inside it in two forms (CI's Windows runner reaches its temporary
 // folder as RUNNER~1, which resolves to its long name only where it exists). It never gives the path as written when
 // it cannot walk it: its error says why (a link loop, more than MaxLinkHops links, a link that cannot be read, or on
-// Windows a junction or link that leads nowhere). The guard (internal/guard/paths.go) walks every path it judges with
+// Windows a junction or link that leads nowhere or a link to a drive with no root). The guard (internal/guard/paths.go) walks every path it judges with
 // the same WalkLinks and FinalPath.
 func RealPath(p string) (string, error) {
 	abs, err := filepath.Abs(p)
@@ -301,8 +301,8 @@ var ErrLinkHops = errors.New("the path runs through more than 64 symbolic links 
 // root, a relative one from the link's own real folder, so a `..` in it is read where the link really is); `..` goes
 // up from the real folder reached so far; from the first name that does not exist, the rest is kept as written. The
 // part that exists is then named by filepath.EvalSymlinks (its letter case and, on Windows, its long names). Its
-// error is ErrLinkHops past MaxLinkHops links, or a link that cannot be read: the caller then cannot tell where abs
-// leads, and refuses it. Junctions and mount points on Windows are not links to Go's os.Lstat (since Go 1.23):
+// error is ErrLinkHops past MaxLinkHops links, ErrDriveRelative for a link to a drive with no root (C:foo, on
+// Windows), or a link that cannot be read: the caller then cannot tell where abs leads, and refuses it. Junctions and mount points on Windows are not links to Go's os.Lstat (since Go 1.23):
 // FinalPath names them.
 func WalkLinks(abs string) (string, error) {
 	if a, err := filepath.Abs(abs); err == nil {
@@ -310,8 +310,13 @@ func WalkLinks(abs string) (string, error) {
 	} else {
 		abs = filepath.Clean(abs)
 	}
-	if real, err := filepath.EvalSymlinks(abs); err == nil {
-		return real, nil
+	// A path that exists in full is named by EvalSymlinks alone, except on Windows: there EvalSymlinks reads a link to
+	// a drive with no root (C:foo) from that drive's current folder in this process, not the writer's, so the walk,
+	// which refuses such a link, reads every path.
+	if runtime.GOOS != "windows" {
+		if real, err := filepath.EvalSymlinks(abs); err == nil {
+			return real, nil
+		}
 	}
 	vol := filepath.VolumeName(abs)
 	done := vol + string(filepath.Separator) // the real folder reached so far: no link in it
@@ -345,6 +350,9 @@ func WalkLinks(abs string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		if driveRelative(t) {
+			return "", ErrDriveRelative
+		}
 		if tv := filepath.VolumeName(t); tv != "" || t != "" && os.IsPathSeparator(t[0]) {
 			if tv == "" {
 				tv = vol // /x, or \x on Windows: from the root of the link's own volume
@@ -355,6 +363,20 @@ func WalkLinks(abs string) (string, error) {
 		todo = append(splitNames(t), todo...)
 	}
 	return realFolder(done), nil
+}
+
+// ErrDriveRelative is WalkLinks' error for a link whose target is a drive with no root after it (C:foo, or C: alone).
+var ErrDriveRelative = errors.New("a symbolic link on the path leads to a drive with no folder from its root (like C:foo), " +
+	"which Windows reads from that drive's current folder in the process that writes, so where a write through it lands " +
+	"cannot be told")
+
+// driveRelative reports, on Windows, a link target that names a drive but no root on it (C:foo, C:): read from that
+// drive's current folder, which belongs to the process that writes and which the guard, in its own process, cannot
+// know. A target with a root (C:\foo) or none (foo, ..\foo) is not one; nor is any target elsewhere, where a colon is a
+// name's.
+func driveRelative(t string) bool {
+	v := filepath.VolumeName(t)
+	return len(v) == 2 && v[1] == ':' && (len(t) == 2 || !os.IsPathSeparator(t[2]))
 }
 
 // splitNames gives a path's names, separators of either kind on Windows, empty names dropped.

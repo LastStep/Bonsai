@@ -26,8 +26,9 @@ package guard
 //
 // On Windows, a path whose longest existing part is a junction or symbolic link that does not resolve is refused
 // (bad-path, engine's final_windows.go): Windows would fail the write through it anyway, so nothing is lost, and the
-// guard cannot tell where it leads. So is a path whose symbolic links cannot be followed to their end (a loop, or more
-// than 64 links: engine.WalkLinks), on every system: it is never judged as written.
+// guard cannot tell where it leads. So is a path whose symbolic links cannot be followed to their end (a loop, more
+// than 64 links, or on Windows a link to a drive with no root, C:foo: engine.WalkLinks), on every system: it is never
+// judged as written.
 //
 // Not covered, the limits of a hook that runs before the call (gate report section 5; 5.3.1 note 6): a junction or
 // link swapped between the guard's check and Claude Code's write (a race no such hook can close: it needs a second
@@ -241,8 +242,7 @@ func finalPath(p string) (string, bool, error) {
 }
 
 // errUnwalked is pathForms' error for a path whose links cannot be walked to their end.
-var errUnwalked = errors.New("its symbolic links cannot be followed to their end (a loop of links, or more than 64 " +
-	"of them)")
+var errUnwalked = errors.New("its symbolic links cannot be followed to their end")
 
 // windowsForms gives the other forms Windows reads a written path as (the package comment lists them). It works on
 // the string alone, so its tests run on any system.
