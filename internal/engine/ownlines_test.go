@@ -304,7 +304,8 @@ func hasWarning(r *CheckResult, code string) bool {
 }
 
 // Bonsai's own deny rules (step 5.3.5): one over .bonsai/local/ at any depth, one for each table check --write
-// rebuilds (from format.GeneratedKinds), one over Bonsai's home; each valid as Claude Code reads a rule, each with
+// rebuilds (from format.GeneratedKinds), one over Bonsai's home and its three twins over the other side's home (step
+// 5.6.3); each valid as Claude Code reads a rule, each with
 // its sentence. A first link to a pack with no hook line writes them on --yes alone, Bonsai's own deny rules first,
 // then never_edit's (in the form anchored at the project's top folder), each named in the preview with its sentence
 // and none under runs code; check is quiet after.
@@ -323,7 +324,8 @@ func TestOwnDenyRules(t *testing.T) {
 			t.Errorf("%s: %s", l.Rule, why)
 		}
 	}
-	want := "Edit(//**/.bonsai/local/**) Edit(//**/.bonsai/sessions.md) Edit(//**/.bonsai/tasks.md) Edit(~/.bonsai/**)"
+	want := "Edit(//**/.bonsai/local/**) Edit(//**/.bonsai/sessions.md) Edit(//**/.bonsai/tasks.md) Edit(~/.bonsai/**) " +
+		"Edit(//mnt/c/Users/*/.bonsai/**) Edit(//wsl.localhost/*/home/*/.bonsai/**) Edit(//wsl$/*/home/*/.bonsai/**)"
 	if got := strings.Join(rules, " "); got != want {
 		t.Fatalf("own deny rules\n  %s\nwant\n  %s", got, want)
 	}

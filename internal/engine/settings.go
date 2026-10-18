@@ -293,9 +293,29 @@ func buildOwnDeny() []Line {
 		ls = append(ls, Line{Kind: "deny", Origin: "bonsai", Own: true, Rule: "Edit(//**/" + t + ")",
 			Why: "Agents can never edit " + t + " by hand: Bonsai rebuilds that table, run: bonsai check --write."})
 	}
-	return append(ls, Line{Kind: "deny", Origin: "bonsai", Own: true, Rule: "Edit(~/" + homeFolder + "/**)",
+	ls = append(ls, Line{Kind: "deny", Origin: "bonsai", Own: true, Rule: "Edit(~/" + homeFolder + "/**)",
 		Why: "Agents can never write in Bonsai's home, ~/" + homeFolder + "/ (this machine's records and settings for each " +
 			"workspace, which the guard trusts): only Bonsai's own commands write there."})
+	for _, t := range otherHomes {
+		ls = append(ls, Line{Kind: "deny", Origin: "bonsai", Own: true, Rule: "Edit(" + t.root + homeFolder + "/**)",
+			Why: "Agents " + t.who + " can never write in " + t.what + "'s Bonsai home by its " + t.path + " path (its records, settings " +
+				"and the personal memory the Windows copy is refreshed from): only Bonsai's own commands and the person write there."})
+	}
+	return ls
+}
+
+// otherHomes are the other side's Bonsai home on a machine with WSL and Windows (plan-5 5.6.3, 6), the twins of
+// Edit(~/.bonsai/**) as base's walls have theirs (packs/base/bonsai/pack.yaml; 5.5.2 note 2): the Windows home seen
+// from a WSL session, and WSL's home seen from a native Windows session by its two network paths. The Windows copy of
+// the personal layer makes WSL's home a source of what loads on Windows, and a session on either side could otherwise
+// write the other side's settings and personal layer by that path. Each form was tried once in a session on its side,
+// on a decoy rule of the same form over a scratch folder (the run report of step 5.6.3); a form that holds on no side
+// is left out. As base's README says of its twins, Git Bash on Windows passes the network paths to a shell command
+// unchecked, and the twins name the usual places only.
+var otherHomes = []struct{ root, who, what, path string }{
+	{root: "//mnt/c/Users/*/", who: "in WSL", what: "the Windows home", path: "/mnt/c"},
+	{root: "//wsl.localhost/*/home/*/", who: "on Windows", what: "WSL", path: "wsl.localhost"},
+	{root: "//wsl$/*/home/*/", who: "on Windows", what: "WSL", path: "wsl$"},
 }
 
 // neverEditRule is the deny rule for a never_edit path of bonsai.yaml (spec §7, "Deny rules the engine writes"):
