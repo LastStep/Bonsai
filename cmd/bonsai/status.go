@@ -17,6 +17,10 @@ import (
 
 func init() { register(statusWord) }
 
+// releaseTags reads Bonsai's own release tags for status --full. This package's tests replace it before any test runs
+// (release_test.go's init), so no test reaches the network.
+var releaseTags = engine.RemoteTags
+
 var statusWord = &Word{
 	Name:    "status",
 	Order:   4,
@@ -31,11 +35,14 @@ lists the Claude Code floor and each locked pack. Fields that do not apply print
 		{Name: "--json", Help: "print the bonsai.status/1 document (for programs) instead of plain text; with --active,\nthe active_task object alone"},
 		{Name: "--full", Help: "add checks (mode full): each pack's newer release tags (git ls-remote), its plugin as Claude\n" +
 			"Code reports it (claude plugin list), Claude Code's version against the floor (claude --version),\n" +
-			"and the MCP servers the packs' needs name; a pack whose plugin is not installed here becomes a\nneeds entry of kind plugin"},
+			"and the MCP servers the packs' needs name; a pack whose plugin is not installed here becomes a\nneeds entry of kind plugin. " +
+			"It also reads Bonsai's own release tags (git ls-remote, at most daily, 10 s) into the home's\ncache/release.json, which " +
+			"every status, check and --line then read offline (bonsai_release)"},
 		{Name: "--active", Help: "print only the active task (contract section 13): its id and how it was found (named, or the\n" +
 			"one task reading running), or none and why; it reads bonsai.yaml and the task files only"},
 		{Name: "--line", Help: "print the statusline's workspace half: one line of ASCII (the active task and its title, its ladder, verify:N,\n" +
-			"asks:N), or with --json the bonsai.line/1 document. It runs in the folder it is started in, never reads stdin,\n" +
+			"asks:N, bonsai:vX.Y.Z when a newer release is recorded), or with --json the bonsai.line/1 document. It runs in the\n" +
+			"folder it is started in, never reads stdin,\n" +
 			"runs no git, Claude Code or network, and never fails: outside a linked folder it prints nothing, and a\n" +
 			"bonsai.yaml it cannot read prints `bonsai.yaml unreadable` (exit 0 either way). To use it alone, add to your own\n" +
 			"Claude settings: {\"statusLine\": {\"type\": \"command\", \"command\": \"bonsai status --line\"}}. Claude Code starts the\n" +
@@ -86,7 +93,8 @@ func runStatus(c *call) int {
 	}
 	o := status.Options{Full: c.has("--full"), GitBash: gitBash}
 	if o.Full {
-		o.Plugins, o.Claude = pluginCLI, claudeVersion
+		o.Plugins, o.Claude, o.Release = pluginCLI, claudeVersion, releaseTags
+		o.NotKept = func(line string) { _, _ = io.WriteString(c.stderr, engine.ASCII(line)+"\n") }
 	}
 	doc, code := status.BuildWith(dir, version, o)
 	if code != status.ExitOK {
@@ -162,7 +170,7 @@ func runStatusLine(c *call) int {
 	if err != nil {
 		dir = "."
 	}
-	l := status.BuildLine(dir)
+	l := status.BuildLineWith(dir, version)
 	if c.json {
 		return c.printDoc(lineDoc{l}, exitOK)
 	}

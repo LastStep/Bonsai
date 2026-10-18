@@ -3,7 +3,8 @@ package status
 // bonsai status --line (spec §4, plan-5 5.6.4): the statusline's workspace half, one line of ASCII that a status-line
 // command prints at every refresh. So it is cheap and it never breaks the line it sits in: no git process (the
 // checkout is found by walking up to a .git, the main checkout and HEAD read from git's own files), no Claude Code, no
-// network, no stdin; it reads bonsai.yaml, the task files, the asks folder and the active task's last ladder result.
+// network, no stdin; it reads bonsai.yaml, the task files, the asks folder, the active task's last ladder result and the
+// home's record of Bonsai's releases (step 5.6.5's marker).
 // Outside a linked folder it is empty; a bonsai.yaml it cannot read gives LineUnreadable; nothing here fails.
 
 import (
@@ -47,7 +48,13 @@ const (
 
 // BuildLine reads the line for the folder dir, with this process's environment (BONSAI_TASK, CLAUDE_PROJECT_DIR).
 // It never fails: a folder that is not linked gives the empty line, an unreadable bonsai.yaml its sentence in error.
-func BuildLine(dir string) *format.Line {
+// It compares no running version: the release marker comes from the installed copy's alone (BuildLineWith).
+func BuildLine(dir string) *format.Line { return BuildLineWith(dir, "") }
+
+// BuildLineWith is BuildLine for a bonsai of the given version: bonsai:vX.Y.Z when the home's record of Bonsai's
+// releases holds one newer than the installed copy's version, else this one's (engine's release.go; two small file
+// reads, no network).
+func BuildLineWith(dir, version string) *format.Line {
 	l := &format.Line{}
 	co, ok := findNoGit(dir)
 	if !ok {
@@ -100,6 +107,11 @@ func BuildLine(dir string) *format.Line {
 	}
 	l.Asks = cache.openAsks(co.Main)
 	cache.save()
+	if home, err := workspace.Home(); err == nil {
+		if s := engine.LoadRelease(home).State(home, engine.ComparedVersion(home, version)); s.State == engine.ReleaseNewer {
+			l.Release = s.Newest
+		}
+	}
 	l.Line = lineText(l)
 	return l
 }

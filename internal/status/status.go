@@ -29,6 +29,8 @@
 //     internal/message's reader and its folding, the flags' thresholds from bonsai.yaml as committed). A committed
 //     bonsai.yaml that does not read is a problem naming it, roles [] and messages null: neither is read from this
 //     checkout's copy in its place (message.CommittedConfig, the reading bonsai message shares);
+//   - bonsai_release (set 10; step 5.6.5): Bonsai's newer releases, from the home's cache/release.json alone, which
+//     --full reads again first when a read is due (releaseOf; engine's release.go);
 //   - error: null unless status refused (step 5.1.4b).
 //
 // The default is cheap and offline (contract §12: for the bridge to run often): it runs git and reads files, and
@@ -78,6 +80,11 @@ type Options struct {
 	Claude  func() (string, error)                // claude --version's first line
 	Tags    func(source string) ([]string, error) // a pack source's tags (engine.RemoteTags, 30 s, when nil)
 	GitBash func() engine.GitBash                 // how check looks for Git Bash (engine.FindGitBash when nil)
+	// Release reads Bonsai's own release tags for --full (engine.RemoteTags, given engine.ReleaseTimeout); nil reads
+	// nothing, and bonsai_release is the home's record as it stands.
+	Release func(source string, timeout time.Duration) ([]string, error)
+	// NotKept is told, in one line, that --full's release read could not be written to the home (never a failure).
+	NotKept func(line string)
 }
 
 var (
@@ -111,7 +118,7 @@ func Build(dir, version string) (schema.Object, int) { return BuildWith(dir, ver
 
 // BuildWith is Build with its options: --full's checks.
 func BuildWith(dir, version string, o Options) (schema.Object, int) {
-	built, problem := gather(dir, o)
+	built, problem := gather(dir, version, o)
 	if problem != nil {
 		return Refused(version, problem, []any{problem.Error()}), ExitRuntime
 	}
@@ -131,7 +138,7 @@ func Refused(version string, e *engine.Error, problems []any) schema.Object {
 }
 
 // gather reads every field. A problem is an error with its word, its sentence and its next step.
-func gather(dir string, o Options) (map[string]any, *engine.Error) {
+func gather(dir, version string, o Options) (map[string]any, *engine.Error) {
 	co, err := workspace.Find(dir)
 	if err != nil {
 		return nil, engine.FindError(err)
@@ -219,16 +226,49 @@ func gather(dir string, o Options) (map[string]any, *engine.Error) {
 			{Key: "asks", Value: root + "/.bonsai/local/asks"},
 			{Key: "ladder", Value: root + "/.bonsai/local/ladder"},
 		},
-		"packs":       packs,
-		"files":       files,
-		"person_only": personOnly,
-		"problems":    problems,
-		"ladder":      lastLadder(co, known.activeID),
-		"roles":       roles,
-		"messages":    messages,
-		// Bonsai's newer releases (set 10): null until step 5.6.5 reads them (plan-5 note 5.6.0, 3).
-		"bonsai_release": nil,
+		"packs":          packs,
+		"files":          files,
+		"person_only":    personOnly,
+		"problems":       problems,
+		"ladder":         lastLadder(co, known.activeID),
+		"roles":          roles,
+		"messages":       messages,
+		"bonsai_release": releaseOf(home, version, o),
 	}, nil
+}
+
+// releaseOf is bonsai_release: with --full the home's record read again when a read is due (a write that fails told
+// to o.NotKept, never a failure), then the record's state for the version compared (the installed copy's, else this
+// bonsai's).
+func releaseOf(home, version string, o Options) schema.Object {
+	rr := engine.LoadRelease(home)
+	if o.Full && o.Release != nil {
+		rr = engine.RefreshRelease(home, o.Release)
+		if rr.NotKept != nil && o.NotKept != nil {
+			o.NotKept("Bonsai's release read was not kept in " + engine.ReleasePath(home) + " (" + ascii(rr.NotKept.Error()) +
+				"): the answer below is this run's alone")
+		}
+	}
+	s := rr.State(home, engine.ComparedVersion(home, version))
+	str := func(p *string) any {
+		if p == nil {
+			return nil
+		}
+		return *p
+	}
+	var lines any
+	if s.Lines != nil {
+		linux, windows := make([]any, len(s.Lines.Linux)), make([]any, len(s.Lines.Windows))
+		for i, l := range s.Lines.Linux {
+			linux[i] = l
+		}
+		for i, l := range s.Lines.Windows {
+			windows[i] = l
+		}
+		lines = schema.Object{{Key: "linux", Value: linux}, {Key: "windows", Value: windows}}
+	}
+	return schema.Object{{Key: "version", Value: str(s.Version)}, {Key: "newest", Value: str(s.Newest)}, {Key: "state", Value: s.State},
+		{Key: "read", Value: str(s.Read)}, {Key: "why", Value: str(s.Why)}, {Key: "lines", Value: lines}}
 }
 
 // lastLadder is the active task's last ladder result (bonsai.status/1's ladder, set 7; plan-5 5.4.2 note 12), so an
@@ -572,6 +612,9 @@ func TextTo(d *textui.Doc, doc schema.Object) {
 	if cv, _ := doc.Get("checks"); cv != nil {
 		checksTo(d, cv.(schema.Object))
 	}
+	if rv, _ := doc.Get("bonsai_release"); rv != nil {
+		d.Section("Bonsai", releaseRow(rv.(schema.Object)))
+	}
 	d.Gap()
 	hv, _ := doc.Get("home")
 	home := hv.(schema.Object)
@@ -609,6 +652,32 @@ func TextTo(d *textui.Doc, doc schema.Object) {
 	d.Gap()
 	d.Hint("every field, documents, labels and lanes among them: bonsai status --json")
 	d.Hint("a copy meant as a new project needs its own id: bonsai init --new-id")
+}
+
+// releaseRow is bonsai_release's one line for a person.
+func releaseRow(r schema.Object) textui.Row {
+	version, newest, read := ascii(r.String("version")), ascii(r.String("newest")), ascii(r.String("read"))
+	switch r.String("state") {
+	case engine.ReleaseNewer:
+		return textui.R(textui.T("v"+newest+" is released", textui.Warn), textui.C("this machine's is v"+version+": a person installs it on each side, "+
+			"with the lines in bonsai status --json (bonsai_release.lines); an agent hands them over and never runs them"))
+	case engine.ReleaseCurrent:
+		line := "v" + version + ", no newer release (read " + read + ")"
+		if newest == "" {
+			line = "v" + version + ", no release at or above 1.0.0 yet (read " + read + ")"
+		}
+		return textui.R(textui.T("current", textui.Ok), textui.C(line))
+	case engine.ReleaseNotRelease:
+		if version == "" {
+			version = "a build from source"
+		}
+		line := "this bonsai is " + version + ", so nothing is compared; the newest release is v" + newest
+		if newest == "" {
+			line = "this bonsai is " + version + ", so nothing is compared; no release at or above 1.0.0 yet"
+		}
+		return textui.R(textui.T("not a release", textui.Dim), textui.C(line))
+	}
+	return textui.R(textui.T("newer releases unknown", textui.Dim), textui.C(ascii(r.String("why"))))
 }
 
 // checksTo adds --full's checks for a person.
