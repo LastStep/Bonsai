@@ -37,7 +37,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 )
 
 // The test build's stamps (this file's comment), set only by the linker's -X: empty in every plain build.
@@ -297,14 +296,14 @@ const MaxLinkHops = 64
 var ErrLinkHops = errors.New("the path runs through more than 64 symbolic links (a loop of links, or a chain too long " +
 	"to follow), so where a write through it lands cannot be told")
 
-// WalkLinks gives the path a write to the path abs (made absolute) would reach, read name by name as the system reads it:
-// a name that exists and is a symbolic link is replaced by its target (an absolute one from its volume's root, a
-// relative one from the link's own real folder, so a `..` in it is read where the link really is); `..` goes up from
-// the real folder reached so far; from the first name that does not exist, the rest is kept as written. The part that
-// exists is then named by filepath.EvalSymlinks (its letter case and, on Windows, its long names). Its error is
-// ErrLinkHops past MaxLinkHops links, or a link that cannot be read, or a name that cannot be looked at for another
-// reason than its absence: the caller then cannot tell where abs leads, and refuses it. Junctions and mount points on
-// Windows are not links to Go's os.Lstat (since Go 1.23): FinalPath names them.
+// WalkLinks gives the path a write to the path abs (made absolute) would reach, read name by name as the system
+// reads it: a name that exists and is a symbolic link is replaced by its target (an absolute one from its volume's
+// root, a relative one from the link's own real folder, so a `..` in it is read where the link really is); `..` goes
+// up from the real folder reached so far; from the first name that does not exist, the rest is kept as written. The
+// part that exists is then named by filepath.EvalSymlinks (its letter case and, on Windows, its long names). Its
+// error is ErrLinkHops past MaxLinkHops links, or a link that cannot be read: the caller then cannot tell where abs
+// leads, and refuses it. Junctions and mount points on Windows are not links to Go's os.Lstat (since Go 1.23):
+// FinalPath names them.
 func WalkLinks(abs string) (string, error) {
 	if a, err := filepath.Abs(abs); err == nil {
 		abs = a // a relative path is read from the working folder, never from the volume's root
@@ -331,11 +330,9 @@ func WalkLinks(abs string) (string, error) {
 		next := filepath.Join(done, name)
 		fi, err := os.Lstat(next)
 		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, syscall.ENOTDIR) {
-				// Not made yet: the rest as written, from here.
-				return filepath.Join(append([]string{realFolder(done), name}, todo...)...), nil
-			}
-			return "", err
+			// Not there (or not to be looked at: a name Windows refuses, a folder this user cannot search, where a
+			// write fails too): no link can be on the rest, which is kept as written from the real folder reached.
+			return filepath.Join(append([]string{realFolder(done), name}, todo...)...), nil
 		}
 		if fi.Mode()&fs.ModeSymlink == 0 {
 			done = next
