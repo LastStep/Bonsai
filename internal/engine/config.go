@@ -79,7 +79,7 @@ var Comments = map[string]string{
 	"packs[].id":          "the pack's id, as its bonsai/pack.yaml says",
 	"packs[].source":      "the git repository the pack comes from, fetched with this machine's git",
 	"packs[].path":        "the pack's folder inside that repository; null for the repository's top",
-	"packs[].ref":         "the release tag or a 40-character commit; change it, then run bonsai update to take it",
+	"packs[].ref":         "a release tag (base-v1.0.0 for base) or a 40-character commit; change it, then run bonsai update",
 	"packs[].roles":       "this project's limits for the pack's roles; null keeps the pack's; changed any time",
 	"documents":           "where this project keeps the documents Bonsai knows: a folder (one file each) or one file",
 	"documents.task":      "the tasks' folder: one file per task, named <id>-<slug>.md (bonsai.task/1)",

@@ -24,7 +24,7 @@ description: "bonsai.yaml, this project's Bonsai settings: what each field means
 | `packs[].id` | The pack's id, as its bonsai/pack.yaml says | text matching `^[a-z][a-z0-9-]*$` | `"base"` |
 | `packs[].source` | The git repository the pack comes from, fetched with this machine's git | text matching `^[^-]` | `"https://example.com/packs/workflow.git"` |
 | `packs[].path` | The pack's folder inside that repository; null for the repository's top | text matching `^[^/\\:][^\\:]*$`, or null | `"packs/base"` |
-| `packs[].ref` | The release tag or a 40-character commit; change it, then run bonsai update to take it | text matching `^[^-]` | `"base-v1.0.0"` |
+| `packs[].ref` | A release tag (base-v1.0.0 for base) or a 40-character commit; change it, then run bonsai update | text matching `^[^-]` | `"base-v1.0.0"` |
 | `packs[].roles` | This project's limits for the pack's roles; null keeps the pack's; changed any time | a mapping, or null | under Mappings, below |
 | `documents` | Where this project keeps the documents Bonsai knows: a folder (one file each) or one file | a mapping (its fields below) | as in the template |
 | `documents.task` | The tasks' folder: one file per task, named <id>-<slug>.md (bonsai.task/1) | text matching `^[^/\\:][^\\:]*$` | `"work/tasks"` |
@@ -85,7 +85,7 @@ packs:
     # the git repository the pack comes from, fetched with this machine's git
     source: "https://example.com/packs/example-pack.git"
     path: null                        # the pack's folder inside that repository; null for the repository's top
-    # the release tag or a 40-character commit; change it, then run bonsai update to take it
+    # a release tag (base-v1.0.0 for base) or a 40-character commit; change it, then run bonsai update
     ref: "v1.0.0"
     # this project's limits for the pack's roles; null keeps the pack's; changed any time
     roles: null
