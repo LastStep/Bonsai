@@ -38,8 +38,9 @@ lock entry and declares. A removed hook line runs nothing, so --yes is enough un
 code. Once written, it runs claude plugin uninstall <pack>@<marketplace> --scope project in this checkout, removing
 Claude Code's record of the plugin's install here (each checkout's record is its own).
 The pack cache: with the home's cache_keep_days set (bonsai settings set cache_keep_days=<days> --machine), update
---yes (written, or with nothing to change) then removes each pack clone in the home's cache unused for longer than that, never one the lock or
-bonsai.yaml names, and never a copy --adopt saved; one line says what it removed. A preview removes nothing.
+--yes (written, or with nothing to change) then removes each pack clone in the home's cache unused for longer than
+that, never one the lock or bonsai.yaml names, and never a copy --adopt saved; one line says what it removed.
+A preview removes nothing.
 `,
 	Flags: []Flag{
 		{Name: "--yes", Help: "write without asking"},
