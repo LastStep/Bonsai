@@ -19,7 +19,10 @@ package engine
 //   - bonsai-path: the bonsai found on the PATH is not the installed one (spec §3, "A tripwire, not a wall"): the home's
 //     install.json, which Bonsai's installer writes from step 5.6 (its path, version and SHA-256, spec §3), names
 //     another file, or the installed file is not the one it recorded. With no install.json there is nothing to compare
-//     with, and check says so in a note to a person, never a finding or a warning.
+//     with, and check says so in a note to a person, never a finding or a warning;
+//   - bonsai-newer (a warning; step 5.6.5, release.go's checkRelease): the home's record of Bonsai's releases holds one
+//     newer than the installed copy's version (else the running binary's); a record missing or over 7 days old is a
+//     note naming bonsai status --full, never a warning.
 
 import (
 	"bytes"
@@ -85,6 +88,7 @@ func (r *CheckResult) checkMachine() {
 		}
 	}
 	r.checkInstalled()
+	r.checkRelease()
 }
 
 // StrandedFolder is one machine folder stranded under an old path: what it holds, and the person's lines.

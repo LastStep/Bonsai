@@ -214,6 +214,7 @@ error words.
 | `claude-code-unknown` | warning | person | yes | Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read) |
 | `same-id` | warning | person | yes | another checkout on this machine holds the same workspace id (contract section 3) |
 | `stranded` | warning | person | yes | a machine folder of this workspace in Bonsai's home is stranded under an old checkout path that holds no bonsai.yaml now (moved or gone), with settings or attached labels this checkout does not get; the next step gives a person's lines that bring them over and remove the old folder (contract section 3) |
+| `bonsai-newer` | warning | person | yes | the Bonsai home's record of Bonsai's releases (cache/release.json, which bonsai status --full reads at most daily) holds a release newer than the installed copy's version (install.json's, else the running bonsai's); its next step points at the install lines, which a person runs on each side (step 5.6.5) |
 | `personal-format` | warning | person | yes | the personal memory index (INDEX.md in the Bonsai home's personal/) or a note in its notes/ does not read as bonsai.memory/1, or the index's kind is not index |
 | `personal-budget` | warning | person | yes | the personal memory index or a personal note is over its cap (the memory caps on the reference page of lists) |
 | `personal-index` | warning | person | yes | a line of the personal memory index names a note that does not exist, or a note in personal/notes/ has no line in the index |

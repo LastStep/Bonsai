@@ -95,6 +95,7 @@ type CheckResult struct {
 
 	history bool           // CheckOptions.History
 	gitBash func() GitBash // CheckOptions.GitBash
+	version string         // CheckOptions.Version
 }
 
 // Check checks the workspace holding dir, every finding and warning but the two that ask Claude Code. Its error is
@@ -111,6 +112,9 @@ type CheckOptions struct {
 	// GitBash: how to look for Git Bash (checkgitbash.go); nil looks where Claude Code does, FindGitBash. A test gives
 	// a lookup that finds nothing, on either side.
 	GitBash func() GitBash
+	// Version: the running bonsai's own version, compared with the newest release the home's record holds when the
+	// home has no install.json (release.go); "" compares nothing.
+	Version string
 }
 
 // CheckWith is Check with its options.
@@ -119,7 +123,7 @@ func CheckWith(dir, home string, o CheckOptions) (*CheckResult, error) {
 	if err != nil {
 		return nil, findError(err)
 	}
-	r := &CheckResult{Root: co.Root, Main: co.Main, Home: home, history: o.History, gitBash: o.GitBash}
+	r := &CheckResult{Root: co.Root, Main: co.Main, Home: home, history: o.History, gitBash: o.GitBash, version: o.Version}
 	cfg, err := workspace.LoadConfigFull(co.Root)
 	if err != nil {
 		var we *workspace.Error

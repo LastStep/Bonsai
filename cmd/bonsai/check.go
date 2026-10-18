@@ -115,7 +115,7 @@ func runCheck(c *call) int {
 			return c.fail(werr)
 		}
 	}
-	r, err := engine.CheckWith(dir, home, engine.CheckOptions{History: true, GitBash: gitBash})
+	r, err := engine.CheckWith(dir, home, engine.CheckOptions{History: true, GitBash: gitBash, Version: version})
 	if err != nil {
 		return c.fail(engine.Unexpected(err))
 	}

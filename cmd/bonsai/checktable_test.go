@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
@@ -284,6 +285,21 @@ var checkCases = map[string]func(c *cli){
 			c.t.Fatal(err)
 		}
 		fakeBonsai(c.t, filepath.Join(c.tmp, "elsewhere"))
+	},
+	// A newer release recorded by status --full's read, this bonsai a release older than it (step 5.6.5).
+	"bonsai-newer": func(c *cli) {
+		c.link()
+		old := version
+		version = "1.0.0"
+		c.t.Cleanup(func() { version = old })
+		home, _ := workspace.Home()
+		raw := `{"newest": "1.0.1", "read": "` + time.Now().UTC().Format(time.RFC3339) + `", "source": "` + engine.ReleaseSource + `", "failed": null}`
+		if err := os.MkdirAll(filepath.Join(home, "cache"), 0o755); err != nil {
+			c.t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(home, filepath.FromSlash(engine.ReleaseFile)), []byte(raw), 0o644); err != nil {
+			c.t.Fatal(err)
+		}
 	},
 	// Git Bash not found where Claude Code looks, as a lookup on Windows without it says: proved on both sides.
 	"git-bash": func(c *cli) {
