@@ -93,7 +93,9 @@ func init() {
 			t.Fatal(err)
 		}
 		odd := filepath.Join(filepath.Dir(dir), "r-not-a-hex-name")
-		moveFolder(t, dir, odd)
+		if err := os.Rename(dir, odd); err != nil {
+			t.Fatal(err)
+		}
 		_, out, _ = c.run("", "check", "--json")
 		if strings.Count(out, `"code": "stranded"`) != 2 || strings.Contains(out, "r-not-a-hex-name'") ||
 			!strings.Contains(out, filepath.ToSlash(odd)+", is stranded") {
@@ -125,7 +127,9 @@ func TestStrandedMoved(t *testing.T) {
 	writeFile(t, filepath.Join(oldDir, "labels", "studio.yaml"), "format: bonsai.labels/1\nnamespace: studio\nversion: 1\nlabels: []\n")
 	moved := filepath.Join(c.tmp, "moved")
 	t.Chdir(c.tmp)
-	moveFolder(t, c.root, moved)
+	if err := os.Rename(c.root, moved); err != nil {
+		t.Fatal(err)
+	}
 	c.root = moved
 	t.Chdir(moved)
 	if code, out, errOut := c.run("", "update", "--yes"); code != exitOK {
@@ -179,32 +183,6 @@ func TestStrandedMoved(t *testing.T) {
 	}
 	if _, out, _ := c.run("", "check", "--json"); strings.Contains(out, `"code": "stranded"`) {
 		t.Errorf("the warning is still there:\n%s", out)
-	}
-}
-
-// moveFolder moves a folder as a person moves a checkout, retrying for up to 10 seconds while Windows says another
-// process holds something in it: the files link and check just wrote are opened by the system's own scanners (an
-// antivirus, a search indexer) for a moment after they are made, and a folder holding one cannot be renamed. The
-// commands this test runs before the move leave nothing open there (each file they open is closed before the command
-// returns; each git or claude they start is waited for), and a holder of Bonsai's own would never let go, so it would
-// still fail here after the retries.
-func moveFolder(t *testing.T, from, to string) {
-	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
-	tries := 0
-	for {
-		tries++
-		err := os.Rename(from, to)
-		if err == nil {
-			if tries > 1 {
-				t.Logf("moved %s after %d tries: another process held it", filepath.Base(from), tries)
-			}
-			return
-		}
-		if !workspace.IsBusy(err) || time.Now().After(deadline) {
-			t.Fatalf("after %d tries: %v", tries, err)
-		}
-		time.Sleep(50 * time.Millisecond)
 	}
 }
 
