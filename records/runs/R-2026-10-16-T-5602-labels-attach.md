@@ -22,6 +22,13 @@ labels: {}
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
+| Builder, brief M-2026-10-16-0316597c | sonnet | 2026-10-16 19:03 | not written [18 Oct 12:26 line: session ended, builder cut off] | not written |
+| Builder, brief M-2026-10-18-8143be51, report f9bb77dd | sonnet | 2026-10-18 12:29 | 2026-10-18 13:05 | 36 |
+| Audit M-2026-10-18-cde7accd | not written | not written [read at 12:33] | not written | not written |
+| Rebase and re-climb, brief M-2026-10-18-283b0e5f, report 73cb3298 | not written | not written [briefed 13:09] | 2026-10-18 13:33 | not written |
+| Batch 1 Windows runner M-2026-10-18-f6d59384 (shared) | sonnet | not written | 2026-10-18 14:16 [landing line] | not written |
+
+> Runs rows for 16-18 Oct filled on 19 Oct from the log by the count `M-2026-10-18-e11266d9` (haiku); "not written" where the log names no time.
 
 ## Log
 

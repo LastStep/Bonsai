@@ -22,6 +22,13 @@ labels: {}
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
+| Builder, brief M-2026-10-16-0c6380c8 | opus | 2026-10-16 19:03 | not written [18 Oct 12:26 line: the 16 Oct session ended with this builder cut off] | not written |
+| Builder, brief M-2026-10-18-03cb8733 | opus | 2026-10-18 12:29 | 2026-10-18 12:52 | 23 |
+| Audit M-2026-10-18-170e4b8d | opus | 2026-10-18 12:27 | 2026-10-18 12:47 | 20 |
+| Builder resumed, report M-2026-10-18-cf290541 | opus | 2026-10-18 14:12 | 2026-10-18 14:32 | 20 |
+| Fix round 1 builder, report M-2026-10-18-e60a57d1 | opus | 2026-10-18 14:56 | 2026-10-18 15:05 | 9 |
+
+> Runs rows for 16-18 Oct filled on 19 Oct from the log by the count `M-2026-10-18-e11266d9` (haiku); "not written" where the log names no time.
 
 ## Log
 

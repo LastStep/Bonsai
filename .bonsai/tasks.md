@@ -5,7 +5,11 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
-| T-5694 | V1 round 1, B1: engine.RealPath and the guard's resolve fail closed past their 64-step limit | verify | | 2026-10-18 | |
+| T-5704 | 5.7.4, the words for 1.0 (drafted on its branch; lands after 5.6 closes and the records-database talk) | verify | | 2026-10-19 | 2026-10-19 |
+| T-5698 | Small fixes from the bugs register: BUG-010, 012, 024, 030-032, 082 (code side), 084, 085 | done | | 2026-10-19 | 2026-10-19 |
+| T-5697 | CLAUDE.md's "Where the truth lives" names the bugs register | done | | 2026-10-19 | 2026-10-19 |
+| T-5696 | CI's windows job red since 43e8b5fb: RealPath and the guard on 8.3 short names | done | | 2026-10-19 | 2026-10-19 |
+| T-5694 | V1 round 1, B1: engine.RealPath and the guard's resolve fail closed past their 64-step limit | done | | 2026-10-18 | 2026-10-19 |
 | T-5693 | V1: a fresh Opus verifier on 5.6's installers, the machine's tripwires, the settings reader the guard shares, and T-5692's confinement | done | | 2026-10-18 | 2026-10-18 |
 | T-5692 | Windows CI fixed forward: TestPersonOnly's two stamped-home cases, red since 5.6.0 (4b41790b) | done | | 2026-10-18 | 2026-10-18 |
 | T-5691 | Bonsai's own packs moved: workflow to a42a4f4, base to main at 4b41790b (5.6's first ref moves) | done | | 2026-10-16 | 2026-10-18 |
@@ -14,8 +18,8 @@ Active task when none is named: none (no task reads running)
 | T-5609 | operating-bonsai split in two: a core every agent reads and a second skill for linking, updating and settings (5.6.9) | done | | 2026-10-16 | 2026-10-16 |
 | T-5608 | The CLI redesign in style C: colour on a terminal, laid out to its width with golang.org/x/term (5.6.8) | done | | 2026-10-16 | 2026-10-16 |
 | T-5607 | workflow:prototype and its first run, the CLI look in five styles (5.6.7) | done | | 2026-10-16 | 2026-10-16 |
-| T-5606 | The installers and `install.json` (5.6.6) | verify | | 2026-10-16 | |
-| T-5605 | A newer release, known and handed over (5.6.5) | verify | | 2026-10-18 | |
+| T-5606 | The installers and `install.json` (5.6.6) | done | | 2026-10-16 | 2026-10-19 |
+| T-5605 | A newer release, known and handed over (5.6.5) | done | | 2026-10-18 | 2026-10-19 |
 | T-5604 | `status --line` (5.6.4) | done | | 2026-10-16 | 2026-10-18 |
 | T-5603 | The personal memory layer and its check (5.6.3) | verify | | 2026-10-18 | |
 | T-5602 | `labels attach` and `detach` (5.6.2) | done | | 2026-10-16 | 2026-10-18 |

@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5606
 title: "The installers and `install.json` (5.6.6)"
-status: verify
+status: done
 lane:
 done_when:
   - "install/install.sh and install/install.ps1, each held to the two installed places and the record's keys; the Windows elevated child's code inline; an install over a running copy; scratch targets in tests"
@@ -12,7 +12,7 @@ depends_on: [T-5600]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-19
 labels:
   bonsai.ladder: []
   bonsai.allows: [".github/workflows/ci.yml"]

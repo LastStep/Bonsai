@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5605
 title: "A newer release, known and handed over (5.6.5)"
-status: verify
+status: done
 lane:
 done_when:
   - "status --full reads Bonsai's release tags (at most daily, 10 s), the answer kept in the home's cache; bonsai_release in status --json, a check warning (bonsai-newer) and the line's marker, offline from it; both sides' install lines written by Bonsai"
@@ -12,7 +12,7 @@ depends_on: [T-5603, T-5604]
 blocked_by:
 created: 2026-10-18
 started: 2026-10-18
-finished:
+finished: 2026-10-19
 labels:
   bonsai.ladder: []
   bonsai.allows: []

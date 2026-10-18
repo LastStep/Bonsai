@@ -22,6 +22,11 @@ labels: {}
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
+| Builder, brief M-2026-10-18-f8ba9d8c, report 9b6f4d99 | opus | 2026-10-18 15:20 | 2026-10-18 15:50 | 30 |
+| Audit M-2026-10-18-fd2c4800 | opus | 2026-10-18 15:20 | 2026-10-18 15:25 | 5 |
+| Runner, sonnet, with three haiku sessions | sonnet (haiku x3) | not written | not written | not written |
+
+> Runs rows for 16-18 Oct filled on 19 Oct from the log by the count `M-2026-10-18-e11266d9` (haiku); "not written" where the log names no time.
 
 ## Log
 

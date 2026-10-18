@@ -22,6 +22,11 @@ labels: {}
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
+| Builder, brief M-2026-10-18-851a78dc, report ac78bb66 | opus | 2026-10-18 12:25 | 2026-10-18 13:08 | 43 |
+| Audit M-2026-10-18-7371b037 | opus | 2026-10-18 12:25 | 2026-10-18 12:38 | 13 |
+| Batch 1 Windows runner M-2026-10-18-f6d59384 (shared) | sonnet | not written | 2026-10-18 14:16 | not written |
+
+> Runs rows for 16-18 Oct filled on 19 Oct from the log by the count `M-2026-10-18-e11266d9` (haiku); "not written" where the log names no time.
 
 ## Log
 

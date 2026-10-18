@@ -22,6 +22,11 @@ labels: {}
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
+| Builder, brief M-2026-10-18-ef64dca3, report c3af4758 | opus | 2026-10-18 16:04 | 2026-10-18 16:43 | 39 |
+| Audit M-2026-10-18-412e8ad9 | opus | 2026-10-18 16:03 | 2026-10-18 16:11 | 8 |
+| Rebase and climb, report 582f5445 | not written | not written [after the 16:43 report] | 2026-10-18 17:02 | not written |
+
+> Runs rows for 16-18 Oct filled on 19 Oct from the log by the count `M-2026-10-18-e11266d9` (haiku); "not written" where the log names no time.
 
 ## Log
 

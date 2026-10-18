@@ -29,6 +29,7 @@ this file sits apart, between its markers: it holds the label definitions, the p
 | What do the formats say? | `design/contract.md` (100 KB). The same: by section |
 | What did the director decide on each format? | `design/format-review.md` (confirmed 7 Oct: the formats are final) |
 | What is it for; what does correct mean? | `design/one-pager.md` |
+| What bugs are known, open and fixed? | `records/bugs.md`, the one register (skill `workflow:bugs`); STATE keeps no bug list |
 | What happened before? | `records/runs/`. Read one only when `.bonsai/STATE.md` or the plan points to it |
 | The shared formats, schemas and trick files | `formats/` (from part 0) |
 | What does Bonsai check here, and what may each task change? | `bonsai.yaml`; `records/tasks/`; `bonsai status --json` |

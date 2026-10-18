@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5694
 title: "V1 round 1, B1: engine.RealPath and the guard's resolve fail closed past their 64-step limit"
-status: verify
+status: done
 lane:
 done_when:
   - "engine.RealPath (internal/engine/hookline.go) and guard.resolve (internal/guard/paths.go) never return a path as written when the walk runs out: the limit counts link hops only, and a walk past it fails closed (FolderHolds false; the guard refuses), each with a test holding a path deeper than the old limit behind a link out of the root (shown failing first, V1's try in M-2026-10-18-8ba15229)"
@@ -12,7 +12,7 @@ depends_on: [T-5692, T-5693]
 blocked_by:
 created: 2026-10-18
 started: 2026-10-18
-finished:
+finished: 2026-10-19
 labels:
   bonsai.ladder: []
   bonsai.allows: []
