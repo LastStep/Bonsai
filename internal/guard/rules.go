@@ -188,7 +188,8 @@ var Rules = []Rule{
 		"committed, an agent's state, its own time limit) and lets the call through, as its line does while bonsai is missing"},
 	{RuleBadInput, false, "the hook's payload cannot be read (for the stop gate, or it is not a Stop payload)"},
 	{RuleBadGlob, false, "a glob on a list is not a glob the guard reads"},
-	{RuleBadPath, false, "Windows cannot name where the path leads, or it runs through a junction or link that does not resolve"},
+	{RuleBadPath, false, "the guard cannot tell where the path leads: its symbolic links loop or run past 64, it runs through " +
+		"a junction or link that does not resolve or into /proc (Linux), or Windows cannot name it"},
 	{RuleBadLock, false, "the lock's declares cannot be read (or the lock is missing while bonsai.yaml names packs)"},
 	{RuleBadConfig, false, "a bonsai.yaml is there but cannot be read (the session's own: blocked with no record)"},
 	{RuleNoProject, false, "CLAUDE_PROJECT_DIR is not set, or its folder cannot be read (blocked with no record)"},

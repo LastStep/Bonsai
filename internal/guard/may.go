@@ -66,9 +66,11 @@ func (j *judge) may(c change) (Decision, *linkedProject) {
 		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: %s, so the guard cannot tell whether it is guarded", c.tool,
 			quote(j.shown(c.path), 120), err.Error()), "write to the file by its plain path inside the project, not through /proc"), j.session
 	case err != nil:
-		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: on Windows the guard cannot tell where the path leads (%s), "+
+		// err names the walk's own cause: a loop of links or too many of them (any system), a junction or link that
+		// leads nowhere, or a part Windows opens but cannot name (Windows).
+		return deny(RuleBadPath, fmt.Sprintf("%s of %s refused: the guard cannot tell where the path leads (%s), "+
 			"so it cannot tell whether it is guarded", c.tool, quote(j.shown(c.path), 120), oneLine(err.Error())),
-			"write to the file by its plain path inside the project (a drive letter and folders), or tell the person"), j.session
+			"write to the file by its plain path inside the project, with no link loop or broken link on the way, or tell the person"), j.session
 	}
 	var first []*linkedProject // the chain of the first form a project holds: an allow is recorded there
 	granted := false

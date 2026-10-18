@@ -723,7 +723,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `second-line-fault` | allow | the guard's second line could not read or decide (its input, bonsai.yaml, the lock, the roles as committed, an agent's state, its own time limit) and lets the call through, as its line does while bonsai is missing |
 | `bad-input` | deny | the hook's payload cannot be read (for the stop gate, or it is not a Stop payload) |
 | `bad-glob` | deny | a glob on a list is not a glob the guard reads |
-| `bad-path` | deny | Windows cannot name where the path leads, or it runs through a junction or link that does not resolve |
+| `bad-path` | deny | the guard cannot tell where the path leads: its symbolic links loop or run past 64, it runs through a junction or link that does not resolve or into /proc (Linux), or Windows cannot name it |
 | `bad-lock` | deny | the lock's declares cannot be read (or the lock is missing while bonsai.yaml names packs) |
 | `bad-config` | deny | a bonsai.yaml is there but cannot be read (the session's own: blocked with no record) |
 | `no-project` | deny | CLAUDE_PROJECT_DIR is not set, or its folder cannot be read (blocked with no record) |
