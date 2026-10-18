@@ -15,9 +15,9 @@ started: 2026-10-16
 finished:
 labels:
   bonsai.ladder: []
-  bonsai.allows: [".gitattributes", ".github/workflows/ci.yml"]
+  bonsai.allows: [".github/workflows/ci.yml"]
   bonsai.wants: []
-  bonsai.branch: T-5606
+  bonsai.branch: T-5606-fix1
 ---
 
 # The installers and `install.json` (5.6.6)

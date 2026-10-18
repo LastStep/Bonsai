@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5603
 title: "The personal memory layer and its check (5.6.3)"
-status: running
+status: verify
 lane:
 done_when:
   - "the empty personal index made by init and update; the five warnings (form, budgets, index and notes, secrets, the Windows copy); the Windows copy refreshed from WSL's; base's memory skill and the operating skill's memory line on who writes it; the memory caps in one table; the engine's deny rules over the other side's Bonsai home; the import line's form measured"
@@ -30,5 +30,6 @@ and reads its rules.
   them in `internal/engine/`; `internal/engine/checkdocs.go` (the budgets become the caps' table); the engine's `Own`
   deny lines (5.3.5's table beside `ownHooks`, `internal/engine/`); `internal/format/check.go` (its five words);
   `packs/base/skills/memory/SKILL.md` and the operating skill's memory line; `docs/reference/lists.md`; their tests.
+- **Added 18 Oct (the audit `M-2026-10-18-fd2c4800`):** `cmd/bonsai/engine.go` (init's and update's after-write steps, beside the cache clean); `internal/engine/check.go` (the one call to the new check); `internal/reference/reference.go` (the caps' section the reference page is generated from); `cmd/bonsai/personal_test.go` and `internal/format/lists_test.go`.
 - **Grants:** none (no protected path).
 - **Proof:** the lines of `done_when`.

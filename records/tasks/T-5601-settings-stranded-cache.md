@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5601
 title: "`settings`, the stranded folder and the cache (5.6.1)"
-status: verify
+status: done
 lane:
 done_when:
   - "settings show and set, --machine, the keys in one Go table; the refusal in an agent session (5.6.0's personOnly); the stranded warning with a person's exact lines; update cleaning old pack clones by cache_keep_days"
@@ -12,7 +12,7 @@ depends_on: [T-5600]
 blocked_by:
 created: 2026-10-16
 started: 2026-10-16
-finished:
+finished: 2026-10-18
 labels:
   bonsai.ladder: []
   bonsai.allows: []

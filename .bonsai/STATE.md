@@ -7,15 +7,15 @@ labels: {}
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 18 Oct 2026 at 15:25. **Step 5.6, the machine pieces, is under
-way** (`design/plan-5.md` "### Step 5.6", from 5968, amended 16 Oct; 24.5-39.5 h, re-ask 51). **Done:** 5.6.0, 5.6.2,
-5.6.4, 5.6.7-5.6.10, the ref moves `T-5691` and the Windows CI fix `T-5692`. **Landed, at `verify`:** 5.6.1 and 5.6.6
-(CI to read). **Running:** 5.6.3. **Not started:** 5.6.5, V1, the floors, the end verifier. `main` at `fee4262f`; the
-installed pre-release is still `bf7cc3d`. Bonsai's own repo takes `base` (`4b41790b`) and `workflow` (`a42a4f4`); their
-plugins are installed under the marketplace `bonsai-bonsai-299659af` (a session started before 18 Oct 12:24 sees no
-`workflow:` role: resume it). The floors: `go_tests` 4600, `go_tests_tagged` 4606 (the ladder raises its recorded counts
-as climbs pass). Every change lands by `CLAUDE.md`'s rules, with the director's 18 Oct waiver of the per-landing Windows half
-for 5.6 (below).
+Rewritten, never appended (`base:state`). Last rewritten 18 Oct 2026 at 17:20. **Step 5.6's builds are all on `main`**
+(`192a29dc`): 5.6.0-5.6.10, the Windows CI fix `T-5692`, and V1's fixes `T-5694` (path walks) and 5.6.6's two fix rounds.
+**V1 passed in its second round.** **Left for 5.6:** CI's result on `204aa212`, `43e8b5fb`, `192a29dc` (5.6.5, 5.6.6,
+T-5694 to `done` when green; 5.6.3 at `verify` until the end verifier); **the end Windows run** (the director, 18 Oct:
+"Not today"; the runbook `~/bonsai-checks/end-5.6/runbook.md`); the floors; the Haiku audit; the 5.6 end verifier; then
+the cleanup the director chose (below). The installed pre-release is still `bf7cc3d`. Bonsai's own repo takes `base`
+(`4b41790b`) and `workflow` (`a42a4f4`), plugins under the marketplace `bonsai-bonsai-299659af`. The floors: `go_tests`
+4600, `go_tests_tagged` 4606 (the ladder's recorded counts are higher: 4750 and 4756 at `192a29dc`). Every change lands by
+`CLAUDE.md`'s rules, with the director's 18 Oct waiver of the per-landing Windows half for 5.6.
 
 **No person's name** goes into any file or commit message (the director, 15 Oct; `CLAUDE.md`'s Safety section): "the
 director" in this project's files, "the person" in the product. Files already under `records/` and `design/` keep
@@ -62,6 +62,11 @@ helpers (about 6 h, side by side).
   one combined Windows check at 5.6's end (every piece's Windows steps listed in its run report); `TestStrandedMoved`'s
   Windows failure counted as passed (its cause since found and fixed in `84533b07`; GitHub CI's windows job is its proof).
 
+  Later: "you can now queue up parallel work if possible" (V1 started beside 5.6.5); the cleanup **"Parts + caches,
+  after 5.6"** (the 5.1-5.5 scratch folders on both sides, ~27 GB, the 5.3.7 worktree by `git worktree remove`, and both
+  Go build caches, ~28 GB; the rest kept until they look); the end Windows run **"Not today"**. The orchestrator's calls:
+  5.6.5's published-only check not built (Go's `net` would break 5.3's `TestTheBinaryLinksNoResolver`): a known risk,
+  **to raise with the director at 5.7** (plan-5.md:8231's hand-off).
 - **16 Oct:** overnight run on their word; Cursor's pstack surveyed, to discuss after 5.5 and before 5.6 builds; the
   Windows trust sitting; installed the pre-release (09:28); **`workflow` added** with builder minutes 240 by default and 480
   at most ("option 1"; limits are lines in `bonsai.yaml`, a set command noted for 5.6-5.7); **the walls' Windows half on
@@ -142,34 +147,36 @@ helpers (about 6 h, side by side).
 
 | Piece | Task | State | Where |
 |---|---|---|---|
-| 5.6.0 formats set 10, the two words | `T-5600` | done | `4b41790b`; its Windows CI red fixed by `T-5692` |
-| 5.6.1 settings, stranded, cache | `T-5601` | verify | landed `84533b07`; CI to read. The audit found the cache clean never called (wired, `e1cea958`) |
-| 5.6.2 labels attach/detach | `T-5602` | done | landed in batch 1 (`f0d9c6e2`), CI green at `b5995ea5` |
-| 5.6.3 personal memory | `T-5603` | running | opus builder, audit first; worktree `~/Servers/Bonsai-T-5603` |
-| 5.6.4 status --line | `T-5604` | done | batch 1 (`b5995ea5`); Windows via Git Bash p50 55.5 ms, p95 60.4 ms |
-| 5.6.5 newer release | none yet | not started | after 5.6.3 (`T-5605` to write) |
-| 5.6.6 installers | `T-5606` | verify | landed `fee4262f` with the `.gitattributes` line and CI's `install` job; done once that job is green |
-| 5.6.7-5.6.10 | `T-5607`-`T-5610` | done | 16 Oct |
-| ref moves | `T-5691` | done | plugins installed 18 Oct 12:24 |
-| Windows CI fix | `T-5692` | done | `engine.RealPath`: an 8.3 short name or a link before a path not made yet; also refuses a link inside the scratch root to a target outside it |
+| 5.6.0, 5.6.1, 5.6.2, 5.6.4, 5.6.7-5.6.10 | `T-5600`-`T-5610` | done | CI green |
+| 5.6.3 personal memory | `T-5603` | verify | `7f2d76c0`; the end verifier and the end Windows run (its copy, the cross-side rule) |
+| 5.6.5 newer release | `T-5605` | verify | `192a29dc`; CI to read |
+| 5.6.6 installers | `T-5606` | verify | fix rounds to `204aa212`; CI's install jobs green on both sides; the windows job to read |
+| ref moves, Windows CI fix | `T-5691`, `T-5692` | done | |
+| V1 | `T-5693` | done | round 1 FAIL (B1, B2), round 2 PASS (`M-2026-10-18-53079714`) |
+| V1's B1 | `T-5694` | verify | `43e8b5fb`: one walk `engine.WalkLinks`, fail closed; the guard refuses a shell write it cannot place; junctions |
 
-**Next, in this order:** read CI at `84533b07` and `fee4262f` (5.6.1 and 5.6.6 to `done`); **V1** (fresh Opus verifier:
-the installers, 5.6.1's and 5.6.2's refusals, the machine settings reader the guard shares, and `T-5692`'s confinement
-change) once CI's `install` job is green, beside 5.6.3; **5.6.5** after 5.6.3; then **5.6's end Windows run** (one
-combined check 10's Windows half at `main`'s top, the installers' and 5.6.3's Windows steps, 5.6.4's native timing, each
-piece's listed steps in its run report), alone; then the floors, the Haiku audit and the 5.6 end verifier.
+**Next, in this order:** read CI on the three commits (a background wait may have ended; `gh api
+repos/LastStep/Bonsai/commits/<sha>/check-runs`); **the end Windows run** from `~/bonsai-checks/end-5.6/runbook.md`
+(ask the director first how: the agent part ~2 h alone, theirs ~1.5 h: two Windows sessions with the login check, the
+elevated installer tries on a throwaway machine, Windows Sandbox suggested); the floors (`T-5695`, 5.4's "once a part");
+the Haiku audit of `.bonsai/sessions.md` against the run reports; the 5.6 end verifier (fresh Opus); then the cleanup;
+then `workflow:correct`'s first run (5.6.10). **Small follow-ups for the end:** the guard's bad-path text names only
+Windows (`internal/guard/may.go:68-70`, `rules.go:191`; TestEveryRule's case Windows-only); `TestUsageWaitsForTheLastReply`
+failed once on CI's Windows (fix if it repeats); the three new deny lines reach this repo's settings at the next
+pre-release's `update`; the run reports' Runs tables are not filled for 16-18 Oct (5.6's hours not yet totalled).
 
-**How work runs now:** agents by role, briefed with `bonsai message`; the shared rules for today's briefs:
-`~/bonsai-checks/briefs/common-2026-10-18.md` (audit first; no Windows run until 5.6's end; load kept modest). A
-verifier or runner cannot make a scratch repository: give those steps to a builder. The landing rule's local climb,
-`bonsai.allows` running alone, and batches as before.
+**How work runs now:** agents by role, briefed with `bonsai message`; today's shared rules
+`~/bonsai-checks/briefs/common-2026-10-18.md` (audit first; Windows runs by the orchestrator only, one at a time; load
+modest). A verifier or runner cannot make a scratch repository: give those steps to a builder.
 
 **Facts measured that later work rests on:** Claude Code 2.1.301-2.1.302. `--agent <role>` does not preload a role's
-`skills:`. On Windows the PowerShell tool ignores Read and Edit deny rules, and Git Bash passes the WSL home's
-network-path forms (base's README). Adding a pack, or moving its ref, renames a project's plugin marketplace: a fresh
-Claude Code start in the checkout comes before `update` installs. The guard's added cost a call: about 8 ms on WSL,
-about 49 ms on Windows. Go's `testing.T.Chdir` keeps the folder it leaves open until cleanup: Windows then renames no
-such folder. The auto-mode classifier refuses an orchestrator's `taskkill` of another agent's Windows run: ask that agent.
+`skills:`. On Windows the PowerShell tool ignores Read and Edit deny rules. Moving a pack's ref renames the plugin
+marketplace: a fresh Claude Code start before `update` installs. The guard's cost a call: ~8 ms WSL, ~49 ms Windows. Go's
+`testing.T.Chdir` keeps the folder it leaves open (Windows renames no such folder). GitHub's ubuntu runner leaves
+`/usr/local/bin` writable by others (the install job readies it). PowerShell's `-Filter 'x.*'` matches `x` itself.
+Windows PowerShell 5.1's Add-Type compiles into %TEMP%. The auto-mode classifier refuses an orchestrator's `taskkill` of
+another agent's Windows run, and an agent's `pgrep -f` loop can match itself. Status line through Git Bash: p50 55.5 ms,
+p95 60.4 ms.
 
 ## Waiting on the director
 
