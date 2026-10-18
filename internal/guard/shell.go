@@ -90,6 +90,7 @@ package guard
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/redact"
@@ -985,7 +986,7 @@ func (r *delRun) path(x delExec, op delOp, tree bool, verb string) {
 			r.refuse(Decision{Rule: RuleBadPath, Target: delRel(r.own, dir, text),
 				Why: fmt.Sprintf("%s refused: %s %s %s, and the check cannot tell where it leads (%s), so it cannot "+
 					"tell what it %s (rule %s)", r.tool, r.head(x), verb, r.shownText(text), oneLine(err.Error()), verb, RuleBadPath),
-				Next: "give the path in its plain form inside the project (a drive letter and folders), or tell the person"})
+				Next: badDeleteNext("")})
 			return
 		}
 		for k, root := range r.roots {
@@ -1126,4 +1127,17 @@ func delProvider(p string) string {
 		return p[k+2:]
 	}
 	return p
+}
+
+// badDeleteNext is the next step of a delete the guard cannot place: the path in its plain form inside the project,
+// in the words of the system goos names ("" for this one): a drive letter and folders on Windows, folders elsewhere.
+func badDeleteNext(goos string) string {
+	if goos == "" {
+		goos = runtime.GOOS
+	}
+	form := "folders, with no link loop or broken link on the way"
+	if goos == "windows" {
+		form = "a drive letter and folders"
+	}
+	return "give the path in its plain form inside the project (" + form + "), or tell the person"
 }

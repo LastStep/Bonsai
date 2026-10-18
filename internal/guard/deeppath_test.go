@@ -140,3 +140,21 @@ func TestAShellWriteTheGuardCannotPlaceIsRefused(t *testing.T) {
 	started(t, dir, sessA, "workflow:lead")
 	wantAnswer(t, dir, shellAs(dir, "wz", "workflow:lead", "echo x > "+filepath.ToSlash(filepath.Join(away, "plain.txt")), false), 0, "")
 }
+
+// A delete the guard cannot place gives a next step that speaks of paths as the system writes them: a drive letter on
+// Windows only (shell.go's delete loop; the refusal is reached on Windows, through a link to a drive with no root,
+// which a link elsewhere cannot make, so the words are held here for both systems).
+func TestPlainPathWordsPerSystem(t *testing.T) {
+	for _, goos := range []string{"windows", "linux", "darwin"} {
+		next := badDeleteNext(goos)
+		if drive := strings.Contains(next, "drive letter"); drive != (goos == "windows") {
+			t.Errorf("%s: the next step names a drive letter %v: %s", goos, drive, next)
+		}
+		if !strings.HasPrefix(next, "give the path in its plain form inside the project") || !strings.HasSuffix(next, "or tell the person") {
+			t.Errorf("%s: the next step lost its words: %s", goos, next)
+		}
+	}
+	if badDeleteNext(runtime.GOOS) != badDeleteNext("") {
+		t.Errorf("no system named does not give this system's words")
+	}
+}
