@@ -282,7 +282,7 @@ func runWord(w *Word, args []string, stdout, stderr io.Writer) int {
 				drop = 2
 			}
 			return c.refuse(&engine.Error{Code: "not-built", Exit: exitInput,
-				What: fmt.Sprintf("%s %s is not built yet (it comes with %s of the rebuild)", w.Name, f.Name, f.Later),
+				What: fmt.Sprintf("%s %s is not built yet (it comes with %s)", w.Name, f.Name, f.Later),
 				Next: "run `" + c.without(args, i, drop) + "` without " + f.Name})
 		case f.Value == "" && hasValue:
 			return c.refuse(c.flagError("%s takes no value for %+q", w.Name, name))
@@ -332,7 +332,7 @@ func (c *call) runSub(args []string) int {
 				next = "run `bonsai " + w.Name + " --help`"
 			}
 			return c.refuse(&engine.Error{Code: "not-built", Exit: exitInput,
-				What: "bonsai " + s.Name + " is not built yet (it comes with a later part of the rebuild: " + s.Later + ")", Next: next})
+				What: "bonsai " + s.Name + " is not built yet (it comes later: " + s.Later + ")", Next: next})
 		}
 		return runWord(s, args[1:], c.stdout, c.stderr)
 	}

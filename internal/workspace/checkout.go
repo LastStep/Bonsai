@@ -4,8 +4,8 @@ package workspace
 // main checkout through git (git rev-parse --git-common-dir), as the hooks do today").
 //
 // Not for the guard: git takes its answer from files an agent may edit (a worktree's .git file, a commondir file),
-// so spec step 5.3 must find the main checkout another way for the hook path (design/plan.md, "What still links
-// Bonsai and the studio", item 5). Status and the engine use this.
+// so the hooks find the main checkout another way, with no git process, and trust it only once it is verified
+// (ReadGitLayout and VerifyMain, local.go). Status and the engine use this.
 
 import (
 	"bytes"

@@ -127,7 +127,7 @@ error words.
 | `bad-value` | agent | a value was given in a form the command refuses (one of init's values; a --keep or --adopt path that names no conflict or edited file, or names one twice) |
 | `values-differ` | person | init was given values that say otherwise than the bonsai.yaml already in the checkout |
 | `unknown-format` | agent | check --schema names a format Bonsai does not know |
-| `not-built` | agent | a word, flag or step this build of Bonsai does not have yet (the rebuild adds it in a later step) |
+| `not-built` | agent | a word, flag or step this build of Bonsai does not have yet (a later version adds it) |
 | `not-a-checkout` | agent | the folder is not inside a git checkout |
 | `not-linked` | person | the checkout has no bonsai.yaml, so it is not linked to Bonsai |
 | `old-workspace` | person | the checkout is a Bonsai 0.4.3 workspace, which this Bonsai neither reads nor changes |

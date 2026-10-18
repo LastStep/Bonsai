@@ -40,7 +40,7 @@ var ErrorWords = []Word{
 	{Word: "bad-value", Who: "agent", Means: "a value was given in a form the command refuses (one of init's values; a --keep or --adopt path that names no conflict or edited file, or names one twice)"},
 	{Word: "values-differ", Who: "person", Means: "init was given values that say otherwise than the bonsai.yaml already in the checkout"},
 	{Word: "unknown-format", Who: "agent", Means: "check --schema names a format Bonsai does not know"},
-	{Word: "not-built", Who: "agent", Means: "a word, flag or step this build of Bonsai does not have yet (the rebuild adds it in a later step)"},
+	{Word: "not-built", Who: "agent", Means: "a word, flag or step this build of Bonsai does not have yet (a later version adds it)"},
 	// Where the command runs (exit 4, or 3 for status).
 	{Word: "not-a-checkout", Who: "agent", Means: "the folder is not inside a git checkout"},
 	{Word: "not-linked", Who: "person", Means: "the checkout has no bonsai.yaml, so it is not linked to Bonsai"},
