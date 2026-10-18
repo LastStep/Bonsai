@@ -3,14 +3,16 @@ install.ps1: installs the bonsai.exe beside this script as this machine's Bonsai
 
 What it does: checks that the bonsai.exe in this script's folder runs (bonsai.exe --version) and takes its SHA-256.
 At the real place, C:\Program Files\Bonsai\bonsai.exe, the administrator's steps then run in one elevated child (one
-Windows prompt), or with no prompt when this PowerShell is already elevated: the folder made; the file copied in as
-bonsai.exe.new and that copy's SHA-256 checked against the one taken here (a source changed meanwhile is caught, and
-the copy removed); old copies set aside by an earlier install removed; the old bonsai.exe, which a hook may be running,
-renamed aside to bonsai.exe.old-<n> (Windows lets a running program be renamed, not overwritten), the new copy renamed
-into place (a hook starting between the two renames finds no file and refuses, never runs another) and the old one
-deleted unless it is still running (then the next install deletes it); C:\Program Files\Bonsai added once to the machine's PATH (its %...% entries kept as they are) and
-the change announced to running programs; the folder's rights checked (no write for Users, Authenticated Users or
-Everyone). The child's code is inline (-EncodedCommand), never a file. Then, as you, it checks the installed file's
+Windows prompt), or with no prompt when this PowerShell is already elevated: the folder made and its rights checked
+(no right that writes for Users, Authenticated Users or Everyone); the file copied in as bonsai.exe.new, that copy's
+SHA-256 checked against the one taken here (a source changed meanwhile is caught, and the copy removed) and its rights
+checked the same way (a copy that fails is removed: nothing lands in a folder others can write); old copies set aside
+by an earlier install removed; the old bonsai.exe, which a hook may be running, renamed aside to bonsai.exe.old-<n>
+(Windows lets a running program be renamed, not overwritten), the new copy renamed into place (a hook starting between
+the two renames finds no file and refuses, never runs another) and the old one deleted unless it is still running
+(then the next install deletes it); C:\Program Files\Bonsai added once to the machine's PATH (its %...% entries kept as
+they are) and the change announced to running programs. The child's code is inline (-EncodedCommand), never a file.
+Then, as you, it checks the installed file's
 SHA-256 again and writes the installed copy's record, install.json, in the Bonsai home ($env:BONSAI_HOME, else
 %USERPROFILE%\.bonsai): its full path (with forward slashes; a short name in it, such as RUNNER~1, made long), version
 and sha256, the record bonsai check and bonsai status compare the bonsai on the PATH with. It prints the fingerprint,
@@ -56,7 +58,7 @@ $Steps = @{
     15 = 'renaming the new copy into place'
     16 = 'adding the folder to the machine''s PATH'
     17 = 'announcing the PATH change to running programs'
-    18 = 'checking the folder''s rights: Users, Authenticated Users or Everyone can write the folder or the file'
+    18 = 'checking the folder''s rights: Users, Authenticated Users or Everyone can write the folder or the copy, so nothing was installed'
     20 = 'removing the installed file or a copy set aside (one may still be running)'
     21 = 'taking the folder off the machine''s PATH'
 }
@@ -132,6 +134,19 @@ function Set-MachinePath([bool]$out) {
         if ($new -cne $raw) { $key.SetValue('Path', $new, [Microsoft.Win32.RegistryValueKind]::ExpandString) }
     } finally { $key.Close() }
 }
+# Test-Rights says whether Users, Authenticated Users or Everyone holds any right that writes on the folder or file:
+# write, append, its extended attributes or attributes, delete (its own or a child's), its rights or its owner.
+function Test-Rights([string]$p) {
+    $bad = @('S-1-5-32-545', 'S-1-5-11', 'S-1-1-0')
+    $mask = 0x2 -bor 0x4 -bor 0x10 -bor 0x40 -bor 0x100 -bor 0x10000 -bor 0x40000 -bor 0x80000 -bor 0x10000000 -bor 0x40000000
+    if ([IO.Directory]::Exists($p)) { $acl = [IO.Directory]::GetAccessControl($p) } else { $acl = [IO.File]::GetAccessControl($p) }
+    foreach ($a in $acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
+        if ($a.AccessControlType -ne 'Allow') { continue }
+        if (($a.PropagationFlags -band [Security.AccessControl.PropagationFlags]::InheritOnly) -ne 0) { continue }
+        if ($bad -contains $a.IdentityReference.Value -and (([long][int]$a.FileSystemRights) -band $mask) -ne 0) { return $true }
+    }
+    return $false
+}
 function Send-SettingChange {
     Add-Type -Namespace BonsaiInstall -Name Native -MemberDefinition '[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint msg, UIntPtr wParam, string lParam, uint flags, uint timeout, out UIntPtr result);'
     $r = [UIntPtr]::Zero
@@ -159,6 +174,9 @@ try {
     [void][IO.Directory]::CreateDirectory($dir)
     [Environment]::CurrentDirectory = $dir
     Set-Location -LiteralPath $dir
+    # At the real place the rights are checked before anything lands: the folder before the copy, the copy (with what
+    # it inherits) before the rename, so a folder others can write gets no file and no PATH entry.
+    if ($real) { $step = 18; if (Test-Rights $dir) { exit 18 } }
     $step = 11
     $new = $dst + '.new'
     [IO.File]::Copy($src, $new, $true)
@@ -166,6 +184,7 @@ try {
     $s = [IO.File]::OpenRead($new)
     try { $h = [Security.Cryptography.SHA256]::Create().ComputeHash($s) } finally { $s.Dispose() }
     if (([BitConverter]::ToString($h) -replace '-', '').ToLowerInvariant() -cne $want) { Remove-Busy $new; exit 12 }
+    if ($real) { $step = 18; if (Test-Rights $new) { Remove-Busy $new; exit 18 } }
     foreach ($f in [IO.Directory]::GetFiles($dir)) {
         if ([IO.Path]::GetFileName($f).StartsWith($name + '.old-', [StringComparison]::OrdinalIgnoreCase)) {
             try { [IO.File]::Delete($f) } catch { }  # one still running stays until the next install
@@ -187,17 +206,6 @@ try {
         Set-MachinePath $false
         $step = 17
         Send-SettingChange
-        $step = 18
-        $bad = @('S-1-5-32-545', 'S-1-5-11', 'S-1-1-0')
-        $mask = 0x2 -bor 0x4 -bor 0x40 -bor 0x10000 -bor 0x40000 -bor 0x80000 -bor 0x10000000 -bor 0x40000000
-        $acls = @([IO.Directory]::GetAccessControl($dir), [IO.File]::GetAccessControl($dst))
-        foreach ($acl in $acls) {
-            foreach ($a in $acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) {
-                if ($a.AccessControlType -ne 'Allow') { continue }
-                if (($a.PropagationFlags -band [Security.AccessControl.PropagationFlags]::InheritOnly) -ne 0) { continue }
-                if ($bad -contains $a.IdentityReference.Value -and (([long][int]$a.FileSystemRights) -band $mask) -ne 0) { exit 18 }
-            }
-        }
     }
     exit 0
 } catch {

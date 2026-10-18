@@ -709,6 +709,47 @@ func TestPs1FolderTargetRefusedFirst(t *testing.T) {
 	}
 }
 
+// childBody is the elevated child's fixed text in install.ps1 (New-ChildText's here-string), read on every system.
+func childBody(t *testing.T) string {
+	t.Helper()
+	ps := read(t, "install.ps1")
+	start := strings.Index(ps, "$body = @'\n")
+	end := strings.Index(ps, "\n'@")
+	if start < 0 || end < start {
+		t.Fatal("install.ps1 holds no child's text ($body = @' ... '@)")
+	}
+	return ps[start+len("$body = @'\n") : end]
+}
+
+// The child checks the folder's rights before it copies anything in, and the copy's before it renames it into place,
+// so a folder others can write never gets the file or the PATH entry; every right that writes counts.
+func TestPs1ChildRightsBeforeCopy(t *testing.T) {
+	b := childBody(t)
+	folder, copyIn := strings.Index(b, "Test-Rights $dir"), strings.Index(b, "[IO.File]::Copy($src")
+	file, swap := strings.Index(b, "Test-Rights $new"), strings.Index(b, "Move-Busy $new $dst")
+	if folder < 0 || copyIn < 0 || folder > copyIn {
+		t.Error("the child does not check the folder's rights (Test-Rights $dir) before its copy")
+	}
+	if file < 0 || swap < 0 || file < copyIn || file > swap {
+		t.Error("the child does not check the copy's rights (Test-Rights $new) between the copy and the rename")
+	}
+	line := ""
+	for _, l := range strings.Split(b, "\n") {
+		if strings.Contains(l, "$mask = ") {
+			line = l
+		}
+	}
+	for _, bit := range []string{"0x2", "0x4", "0x10", "0x40", "0x100", "0x10000", "0x40000", "0x80000", "0x10000000", "0x40000000"} {
+		found := false
+		for _, f := range strings.Fields(line) {
+			found = found || f == bit
+		}
+		if !found {
+			t.Errorf("the child's write mask (%q) leaves out %s", strings.TrimSpace(line), bit)
+		}
+	}
+}
+
 // The child's text holds each value as a single-quoted literal, a path with a ' and a space among them, and refuses
 // a bad hash or a path with no drive before building anything.
 func TestPs1ChildText(t *testing.T) {
