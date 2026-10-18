@@ -126,7 +126,11 @@ func TestStrandedMoved(t *testing.T) {
 	oldDir, _ := workspace.MachineDir(home, c.root)
 	writeFile(t, filepath.Join(oldDir, "labels", "studio.yaml"), "format: bonsai.labels/1\nnamespace: studio\nversion: 1\nlabels: []\n")
 	moved := filepath.Join(c.tmp, "moved")
-	t.Chdir(c.tmp)
+	// Out of the checkout with os.Chdir, not t.Chdir: t.Chdir keeps the folder it leaves open until the test ends (to
+	// come back to it), and Windows renames no folder a process holds open. newCLI's t.Chdir brings the test back.
+	if err := os.Chdir(c.tmp); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.Rename(c.root, moved); err != nil {
 		t.Fatal(err)
 	}
