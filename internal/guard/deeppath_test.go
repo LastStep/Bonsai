@@ -109,6 +109,12 @@ func TestAShellWriteTheGuardCannotPlaceIsRefused(t *testing.T) {
 	guardSymlink(t, filepath.Join(away, "a"), filepath.Join(away, "b"))
 	loop := filepath.ToSlash(filepath.Join(away, "a", "x"))
 	// A link to the main checkout's .bonsai/local, then 70 folders: Bonsai's own records, reached past the old limit.
+	// The folder is made first: on Windows a link made to a target not there yet is a file link, which Windows cannot
+	// go through to a folder made later, and the guard refuses a path through it as bad-path
+	// (TestAFileLinkToAFolderIsBadPath, deeppath_windows_test.go).
+	if err := os.MkdirAll(filepath.Join(dir, ".bonsai", "local"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	guardSymlink(t, filepath.Join(dir, ".bonsai", "local"), filepath.Join(away, "rec"))
 	far := filepath.ToSlash(filepath.Join(deepUnder(filepath.Join(away, "rec"), 70), "x"))
 	lines := []struct{ line, rule string }{
