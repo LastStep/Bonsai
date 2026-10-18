@@ -5,32 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Rebuild - Unreleased
+## [1.0.0] - Unreleased
 
-> **Bonsai is being rebuilt from scratch.** 0.4.3 is the old product's last release; its code stays at tag `v0.4.3`
-> and in git history. The 0.5.0 changes below were never released, and the rebuild does not carry them. The design is
-> in `design/`, and `.bonsai/STATE.md` says where the rebuild stands.
+> **Bonsai 1.0 is a new product.** It gives a project the structure Claude Code agents work inside: formats, packs,
+> guards, a recorder and a ladder that proves work is done, from one Go program on Linux (and WSL) and Windows. It
+> shares no code with 0.4.3, the old product's last release, which stays at tag `v0.4.3`.
 
 ### Added
-- **The formats set** (`formats/`): a JSON Schema and an example for each of the contract's ten formats, trick files
-  for readers with their expected outcomes in `expect.json`, a manifest of every file's bytes, and a Go test.
-- **A stub `bonsai`** (`cmd/bonsai`): it answers `bonsai --version` and refuses anything else with exit 2 and the next
-  step. The commands come with the rebuild's next parts.
-- **A `windows` CI job**: `go test ./...` and `go vet ./...` on `windows-latest`, beside the Linux `test` job.
+- **The `bonsai` program** (`cmd/bonsai`), with these words: `init`, `update` and `unlink` (link a project to packs,
+  bring them to the refs in `bonsai.yaml`, take Bonsai out again), `status` and `check` (one workspace at a glance;
+  findings on the lock and the files), `hook` (what Claude Code's hook lines call), `ladder`, `ask`, `answer` and
+  `asks`, `logs` and `log`, `message` and `messages`, `agents`, `settings` and `labels`. Every word takes `--help`;
+  every word but `hook` takes `--json`; without a terminal none prompts; each refusal names its next step.
+  `bonsai --help --json` prints every word, flag and exit code as one document.
+- **The formats** (`formats/`): 28 JSON Schemas (`bonsai check --schema <format>` prints any), examples, trick files
+  for readers with their expected outcomes, a manifest of every file's bytes, and a Go test.
+- **Packs**: `base` (`packs/base/`, Bonsai's own: the templates of its documents as skills, the operating skills, the
+  walls and Bonsai's four labels; it carries no code) and a template for a new pack (`packs/template/`). The
+  `workflow` pack (roles, lanes and protocols) lives in its own repository.
+- **The guard**: Bonsai's hook lines run the `bonsai` installed at `/usr/local/bin/bonsai` (Linux and WSL) or
+  `C:\Program Files\Bonsai\bonsai.exe` (Windows), never one found on the `PATH`, and refuse every edit and shell
+  command while it is missing.
+- **The installers** (`install/install.sh`, `install/install.ps1`) for those two places.
+- **The ladder**: `bonsai ladder --task <id>` runs the project's rungs and writes the result a named session's stop
+  gate reads before the session may end.
+- **A `windows` CI job**: the tests and `go vet` on `windows-latest`, beside the Linux `test` job.
+- Where to start: [`README.md`](README.md), and `docs/install.md` for the install lines.
 
 ### Changed
-- **`release.yml` builds only**: a manual run of `goreleaser build --snapshot --clean`, with a read-only token and no
-  secret. No tag starts it, it cannot re-release a tag, and it publishes nothing. It stays switched off until the
-  first new release.
-- **govulncheck is pinned to v1.7.0** in CI, the newest release that builds with the Go 1.25 CI runs.
-- **`go.mod`** needs only the standard library: every old dependency is gone.
+- **`go.mod`** needs only the standard library.
+- **`make build`** builds with `-trimpath`.
 
 ### Removed
-- **The old product's code**: the commands (`cmd/`), `internal/`, the embedded `catalog/` and guides (`embed.go`,
-  `docs/`), the documentation site (`website/`) and its deploy workflow (`.github/workflows/docs.yml`). The site already
-  published stays on GitHub Pages until Pages is turned off.
-- **`make install`**: `go install` would put a `bonsai` in front of the installed one on the PATH. `make build`
-  writes to `OUT` (default `./bonsai`).
+- **The old product's code** (the commands, the embedded catalog and guides, the documentation site and its deploy
+  workflow) and **`make install`**: `go install` would put a `bonsai` in front of the installed one on the `PATH`.
+
+### A 0.4.3 workspace
+`bonsai init`, `update` and `unlink` refuse a checkout that holds 0.4.3's `.bonsai.yaml` or `.bonsai-lock.yaml`
+(`old-workspace`, exit 4) and change nothing in it. Moving a 0.4.3 workspace to this Bonsai is not part of 1.0: keep it
+on 0.4.3, whose binaries and `brew install LastStep/tap/bonsai` stay where they are.
+
+The sections below are the old product's. The 0.5.0 section was never released, and 1.0 carries none of them.
 
 ## [0.5.0] - Unreleased
 
