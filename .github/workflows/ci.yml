@@ -196,6 +196,13 @@ jobs:
           go build -o dist/bonsai ./cmd/bonsai
           cp install/install.sh dist/
           want=$(sha256sum dist/bonsai | cut -d' ' -f1)
+          # The runner's image leaves /usr/local/bin writable by a group or others, and install.sh rightly refuses a
+          # target folder anyone but root can write (and, at the real place, one that is not root's). A person's
+          # machine has it root's and writable by root alone; the runner is made so here, its state logged first.
+          stat -c '/usr/local/bin before: %U:%G %A' /usr/local/bin
+          sudo chown root:root /usr/local/bin
+          sudo chmod go-w /usr/local/bin
+          stat -c '/usr/local/bin now: %U:%G %A' /usr/local/bin
           sh dist/install.sh
           test "$(stat -c '%U %G %a' /usr/local/bin/bonsai)" = "root root 755"
           test "$(stat -c '%U' /usr/local/bin)" = root
@@ -276,7 +283,12 @@ jobs:
           $p.StandardInput.Close(); $p.WaitForExit()
           Write-Host "the running copy ended with $($p.ExitCode)"
           Run-Install @('-ForceChild')
-          if (@(Get-ChildItem $dir -Filter 'bonsai.exe.*').Count -ne 0) { Fail 'the next install left the copy set aside' }
+          # PowerShell's own -like, not -Filter: Windows' name matching lets 'bonsai.exe.*' match bonsai.exe itself.
+          $left = @(Get-ChildItem -LiteralPath $dir | Where-Object { $_.Name -like 'bonsai.exe.*' })
+          if ($left.Count -ne 0) {
+            Get-ChildItem -LiteralPath $dir -Force | Format-Table Name, Length, LastWriteTime -AutoSize | Out-String | Write-Host
+            Fail "the next install left the copy set aside: $(($left | ForEach-Object Name) -join ', ')"
+          }
           $ast = [Management.Automation.Language.Parser]::ParseFile((Resolve-Path dist\install.ps1).Path, [ref]$null, [ref]$null)
           foreach ($f in $ast.FindAll({ param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] }, $false)) { . ([scriptblock]::Create($f.Extent.Text)) }
           $text = New-ChildText -Source (Resolve-Path dist\bonsai.exe).Path -Target $place -Hash ('0' * 64) -Real $true -Remove $false
