@@ -13,9 +13,9 @@ asleep). **Step 5.6's builds are all on `main`, CI green at `9124cdc7`** (every 
 5.6.3 is at `verify` until the end verifier. Tonight also: **the bugs register `records/bugs.md`** (the director's word),
 nine small bugs fixed (`T-5698`), and **5.7.4 drafted on its branch** (`T-5704`, green, not landed: the director, 19 Oct,
 "5.7.0 lands, 5.7.4 drafted"). **Left for 5.6:** the end Windows run (agent half, then the director's half; the runbook
-`~/bonsai-checks/end-5.6/runbook.md`); the floors; the 5.6 end verifier; the cleanup the director chose (below). The installed pre-release is still `bf7cc3d`. Bonsai's own repo takes `base`
-(`4b41790b`) and `workflow` (`a42a4f4`), plugins under the marketplace `bonsai-bonsai-299659af`. The floors: `go_tests`
-4600, `go_tests_tagged` 4606 (the ladder's recorded counts are higher: 4750 and 4756 at `192a29dc`). Every change lands by
+`~/bonsai-checks/end-5.6/runbook.md`); the 5.6 end verifier; the cleanup the director chose (below). The installed pre-release is still `bf7cc3d`. Bonsai's own repo takes `base`
+(`4b41790b`) and `workflow` (`a42a4f4`), plugins under the marketplace `bonsai-bonsai-299659af`. The floors (19 Oct, `T-5695`): `go_tests`
+4756, `go_tests_tagged` 4762 (raised 19 Oct, `a4dfa5ed`). Every change lands by
 `CLAUDE.md`'s rules, with the director's 18 Oct waiver of the per-landing Windows half for 5.6.
 
 **No person's name** goes into any file or commit message (the director, 15 Oct; `CLAUDE.md`'s Safety section): "the
@@ -164,10 +164,9 @@ helpers (about 6 h, side by side).
 | 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`, CI green; the pin test's one exception `release.yml` (5.7.2's, with the director) |
 | 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`, climb green; held until 5.6's end verifier passes and the records-database talk |
 
-**Next, in this order:** the end Windows run's agent half from the runbook, at `main`'s top, one Windows run at a time;
-5.7.0 (CI's action pins, lint, actionlint, a new selfcheck package), run alone (it grants `.github/**`), landed after 5.6's
-work by the director's 19 Oct word; the floors (`T-5695`); the 5.6 end verifier (fresh Opus); the cleanup; then
-`workflow:correct`'s first run (5.6.10). **Small follow-ups:** the three new deny lines reach this repo's settings at the
+**Next, in this order:** the 5.6 end verifier (fresh Opus, `T-5611`, at `a4dfa5ed`; the end Windows run's agent
+half passed, `T-5699`; the director's runbook steps 4, 5, 7 and 10 named open); the director's half of the end Windows
+run; the cleanup; then `workflow:correct`'s first run (5.6.10). **Small follow-ups:** the three new deny lines reach this repo's settings at the
 next pre-release's `update`. Every known bug: `records/bugs.md`.
 
 **How work runs now:** agents by role, briefed with `bonsai message`; today's shared rules

@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5695
 title: "5.6's floors: go_tests and go_tests_tagged raised to main's climb"
-status: running
+status: done
 lane:
 done_when:
   - "main climbed once by the installed bonsai's ladder --task T-5695, green, clean, at main's top"
@@ -11,7 +11,7 @@ depends_on: [T-5700]
 blocked_by:
 created: 2026-10-19
 started: 2026-10-19
-finished:
+finished: 2026-10-19
 labels:
   bonsai.ladder: []
   bonsai.allows: ["bonsai.yaml"]
