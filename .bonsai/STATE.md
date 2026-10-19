@@ -7,16 +7,17 @@ labels: {}
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 19 Oct 2026 at 04:20 (an overnight session, the director
-asleep). **Step 5.6's builds are all on `main`, CI green at `a4dfa5ed`** (every job, the windows job red since
-`43e8b5fb` fixed by `T-5696`; one install (windows) flake passed on its re-run). 5.6.5, 5.6.6 and `T-5694` are `done`;
-5.6.3 is at `verify` until the end verifier. Tonight also: **the bugs register `records/bugs.md`** (the director's word),
-nine small bugs fixed (`T-5698`), and **5.7.4 drafted on its branch** (`T-5704`, green, not landed: the director, 19 Oct,
-"5.7.0 lands, 5.7.4 drafted"). **Left for 5.6:** the end verifier's open items (below, "Waiting on the director"); the director's half of the end
-Windows run (`~/bonsai-checks/end-5.6/runbook.md`; the agent half passed); the cleanup the director chose (below). The installed pre-release is still `bf7cc3d`. Bonsai's own repo takes `base`
-(`4b41790b`) and `workflow` (`a42a4f4`), plugins under the marketplace `bonsai-bonsai-299659af`. The floors (19 Oct, `T-5695`): `go_tests`
-4756, `go_tests_tagged` 4762 (raised 19 Oct, `a4dfa5ed`). Every change lands by
-`CLAUDE.md`'s rules, with the director's 18 Oct waiver of the per-landing Windows half for 5.6.
+Rewritten, never appended (`base:state`). Last rewritten 19 Oct 2026 at 12:00 (a day session, the director present).
+**Step 5.6 is done** (its end re-check `T-5616` passed every check; its two rounds' findings were this page's lines, fixed). Code
+on `main` at `7a05c12d`, CI green on every job. Today: the director's Windows half passed (`T-5614`: steps 4, 5, 10
+and check 8's WSL half); step 7a-7d moved into CI and proved there (`T-5613`, 12 of 12 broken copies caught), 7e to
+5.7, since this computer runs Windows 11 Home and has no Windows Sandbox; the end records (`T-5615`: the tally, the
+sessions table, `workflow:correct`'s first run). **Next: CI's windows job as two parallel jobs** (`T-5617`, the
+director's word; Defender untouched), then the cleanup (to confirm with the director), then 5.7. The installed
+pre-release is still `bf7cc3d`. Bonsai's own repo takes `base` (`4b41790b`) and `workflow` (`a42a4f4`), plugins under
+the marketplace `bonsai-bonsai-299659af`. The floors: `go_tests` 4756, `go_tests_tagged` 4762 (19 Oct, `T-5695`); every
+climb since counts 4756 and 4762 against them, so 5.6's close raises nothing. Every change lands by `CLAUDE.md`'s
+rules, with the director's 18 Oct waiver of the per-landing Windows half for 5.6.
 
 **No person's name** goes into any file or commit message (the director, 15 Oct; `CLAUDE.md`'s Safety section): "the
 director" in this project's files, "the person" in the product. Files already under `records/` and `design/` keep
@@ -43,16 +44,26 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
   the pre-release at `bf7cc3d` installed (sha256 `70516eb8...a2478`; the way back in `~/bonsai-checks/prerelease/previous/`);
   the floors `92de82c8`; the end verifier `T-5522` (report `~/bonsai-checks/verify-5.5-end/report.md` and `report-r2.md`).
   Every 5.5 task `T-5500`-`T-5522` and `T-5590`-`T-5599` is `done`; run reports `records/runs/R-2026-10-1[456]-T-55*.md`.
+- **Step 5.6, the machine pieces: done** (19 Oct). Settings and labels, personal memory, the status line, the release
+  read, the installers, the CLI look, the operating split, `workflow`'s changelog, prototype and correct skills; the
+  end verifier `T-5611` (FAIL on records), then `T-5616`'s re-check. Tasks `T-5600`-`T-5617`, `T-5690`-`T-5699`; run
+  reports `records/runs/R-2026-10-1[689]-T-56*.md`.
 
 **Hours** (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min; 5.1 866 minutes; 5.2
 1,061; 5.3 about 2,013 (33 h 33 min); 5.4 about 2,372 (39 h 32 min); **5.5 about 78 h** with its planning and reviews (the end
 verifier's count, under its re-ask line of 138). Questions put to the director in 5.5: twenty-three before 16 Oct, and on 16 Oct
 eight (the workflow limits, the walls' Windows half, the login check, the history, check 5, check 5 on Windows, and the
-morning's install and Windows steps as asks). Step 5's Windows-only tally: about 143 minutes plus 16 Oct's Windows check-10
-helpers (about 6 h, side by side).
+morning's install and Windows steps as asks). **5.6 about 21 h** (T-5611's count of about 19 h, a floor since many rows
+were not written, plus about 2 h on 19 Oct's day session), under its re-ask line of 51. **Step 5's Windows-only tally:**
+5.5's "about 143 minutes plus 16 Oct's Windows check-10 helpers (about 6 h, side by side)", plus **5.6's about 187
+minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in `R-2026-10-19-T-5615`).
 
 ## The director's decisions
 
+- **19 Oct (day session):** "we will finish up 5.6 in this session"; step 7 asked about ("why do we need the
+  sandbox?"): Windows 11 Home has no Sandbox, so **7a-7d into CI's throwaway runner, 7e (declining the admin prompt) at
+  their real install in 5.7** ("yes, go ahead"); ran steps 4, 5, 10 themselves; "update the roadmap artifact" (version
+  39); on CI's windows job **"Both 1 and 2", then "actually dont turn off defender scanning"**: the parallel jobs only.
 - **19 Oct (overnight, then asleep):** "i opened this session to be running overnight"; on 5.7 tonight, **"5.7.0 lands,
   5.7.4 drafted"** (5.7.0 built and landed after 5.6's work; 5.7.4 on its branch until the records-database talk and
   5.6's close); "also check for any other known bugs, and if they can be clubbed"; **one bugs register** ("record all
@@ -145,36 +156,37 @@ helpers (about 6 h, side by side).
 
 ## GitHub
 
-- `LastStep/Bonsai`: `main` the only branch, at `bf7cc3d` (records after it); the newest tag `v0.4.3`; no open pull request;
-  `release.yml` disabled and build-only; ruleset `main-protection` blocks force pushes and deletion. CI green at `bf7cc3d`.
-- `LastStep/bonsai-workflow`: **public**, `main` at `ef5b5ae`, CI green on both sides.
+- `LastStep/Bonsai`: `main` the only branch, at `7a05c12d` (records after it), CI green there on every job; the newest tag `v0.4.3`; no open pull request;
+  `release.yml` disabled and build-only; ruleset `main-protection` blocks force pushes and deletion.
+- `LastStep/bonsai-workflow`: **public**, `main` at `a42a4f4`, CI green on both sides.
 - `LastStep/bonsai-test-pack`: public, `main` at H (`19e3ca5`).
 - The old website stays on GitHub Pages until the director turns Pages off.
 
-## Now: step 5.6, the machine pieces
+## Now: closing 5.6, then 5.7
 
 | Piece | Task | State | Where |
 |---|---|---|---|
-| 5.6.0-5.6.2, 5.6.4-5.6.10 | `T-5600`-`T-5610` but 5.6.3 | done | CI green at `9124cdc7` |
-| 5.6.3 personal memory | `T-5603` | verify | `7f2d76c0`; the end verifier and the end Windows run (its copy, the cross-side rule) |
-| ref moves, Windows CI fixes | `T-5691`, `T-5692`, `T-5696` | done | T-5696: two engine tests' want; the guard test's folder; bad-path words; `C:foo` fails closed; a file link to a folder still bad-path (BUG-086, verifier round 2's junction case) |
-| V1, its B1 | `T-5693`, `T-5694` | done | |
-| The floors | `T-5695` | done | 4756 / 4762 at `a4dfa5ed` |
-| The end Windows run, agent half | `T-5699` | done | steps 1-3, 6, 8, 9 passed (TestStrandedMoved with PowerShell on Path) |
-| 5.6's end verifier | `T-5611` | done | **FAIL** on checks 8, 14, 15, 17 (records and the director's questions); code checks pass on both sides |
-| The bugs register's row in CLAUDE.md | `T-5697` | done | uncommitted until tonight's records commit |
-| Small fixes | `T-5698` | done | BUG-001-004, 010, 012, 024, 030-032, 082 (code), 084, 085; verifier PASS `M-2026-10-18-0f2afe05` |
-| 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`, CI green; the pin test's one exception `release.yml` (5.7.2's, with the director) |
-| 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`, climb green; held until 5.6's end verifier passes and the records-database talk |
+| 5.6.0-5.6.10 | `T-5600`-`T-5610` | done | CI green at `9124cdc7`; 5.6.3 closed by the director's step 5 and check 8 |
+| ref moves, Windows CI fixes, V1, floors | `T-5691`-`T-5696` | done | floors 4756 / 4762 at `a4dfa5ed` |
+| The bugs register's row; small fixes | `T-5697`, `T-5698` | done | |
+| The end Windows run | `T-5699`, `T-5614`, `T-5613` | done | agent half; the director's 4, 5, 10 and check 8 WSL; 7a-7d in CI (`7a05c12d`, 12 of 12 caught) |
+| The end verifier, its fixes, re-check | `T-5611`, `T-5612`, `T-5615`, `T-5616` | done | `T-5616`'s findings were this page's lines, fixed |
+| CI's windows job as two parallel jobs | `T-5617` | running | branch `T-5617` at `47c9bce4`, climbing; was 53 min on `7a05c12d` |
+| 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`; the pin test's one exception `release.yml` (5.7.2's, with the director) |
+| 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`; held until the records-database talk |
 
-**Next, in this order:** the 5.6 end verifier failed 5.6 on records and three of the director's questions
-(`T-5611`, `M-2026-10-19-c7306085`; see "Waiting on the director"); the orchestrator's items (the Windows-only tally, the
-sessions table, `workflow:correct`'s first run, check 8's scripted WSL session); the director's half of the end Windows
-run; the end verifier's short re-check; then the cleanup. **Small follow-ups:** the three new deny lines reach this repo's settings at the
-next pre-release's `update`. Every known bug: `records/bugs.md`.
+**Next, in this order:** `T-5617` landed with CI read; the cleanup the director chose on 18 Oct ("Parts + caches,
+after 5.6": the 5.1-5.5 scratch folders on both sides, ~27 GB, the 5.3.7 worktree by `git worktree remove`, and both Go
+build caches, ~28 GB), confirmed with them before anything is deleted; the three questions from `workflow:correct`
+(below); then 5.7, opening with the records-database talk. **Proposed for 5.7's planning** (`workflow:correct`, all
+unproven until shown failing on the old input named in `R-2026-10-19-T-5615`): a test that fails when a test restates a
+list's entries (C3); a rung comparing assertion counts base to head (C4); a `bonsai check` finding for a done task whose
+run report is open (C5); a rung and CI step running `bonsai check` on this repo (C6). **Small follow-ups:** the three new
+deny lines reach this repo's settings at the next pre-release's `update`; T-5614's step10.ps1:71 judged an existing
+file as "changed" (scratch only, read past from the guard's log). Every known bug: `records/bugs.md`.
 
 **How work runs now:** agents by role, briefed with `bonsai message`; today's shared rules
-`~/bonsai-checks/briefs/common-2026-10-19.md` (over `common-2026-10-18.md`) (audit first; Windows runs by the orchestrator only, one at a time; load
+`~/bonsai-checks/briefs/common-2026-10-19-day.md` (over `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first; Windows runs by the orchestrator only, one at a time; load
 modest). A verifier or runner cannot make a scratch repository or a Windows clone (BUG-013): the orchestrator or a builder makes it.
 
 **Facts measured that later work rests on:** Claude Code 2.1.301-2.1.302. `--agent <role>` does not preload a role's
@@ -183,23 +195,17 @@ marketplace: a fresh Claude Code start before `update` installs. The guard's cos
 `testing.T.Chdir` keeps the folder it leaves open (Windows renames no such folder). GitHub's ubuntu runner leaves
 `/usr/local/bin` writable by others (the install job readies it). PowerShell's `-Filter 'x.*'` matches `x` itself.
 Windows PowerShell 5.1's Add-Type compiles into %TEMP%. The auto-mode classifier refuses an orchestrator's `taskkill` of
-another agent's Windows run, and an agent's `pgrep -f` loop can match itself. Status line through Git Bash: p50 55.5 ms,
+another agent's Windows run, and an agent's `pgrep -f` loop can match itself. The guard refuses a builder starting `claude` (a runner runs scripted sessions). Claude Code 2.1.301 on Windows refuses an edit of a `\\\\wsl` path under acceptEdits as "a sensitive file" with no rule set. CI's windows test job: 53 min on `7a05c12d` (plain 26.5, tagged 25.5). Status line through Git Bash: p50 55.5 ms,
 p95 60.4 ms.
 
 ## Waiting on the director
 
-- **Next session, ask first** (the director, 19 Oct: "next session ask me again"): the end Windows run's half that needs
-  them, runbook steps 4, 5, 7, 10 (`~/bonsai-checks/end-5.6/runbook.md`), with the three ways put to them on 19 Oct:
-  today with Windows Sandbox (recommended), steps 4, 5, 10 now and 7 later, or later. 5.6 closes only after them.
-  Settled 19 Oct: check 15, "A. Tighten all 11" (`T-5612`, done at `90158ade`, CI green), `update`'s `--explain` accepted; check 14's missing
-  settings hashes, "option B" (the user settings file holds nothing of Bonsai's, last changed before 5.6's runs).
-  Still the orchestrator's: the 5.6 Windows-only tally, the sessions table against the run reports, correct's first
-  run, check 8's scripted WSL session; then the end verifier's short re-check. Also for them to read: the pin test's
-  one exception, `release.yml` (5.7.2's).
-- **Proposed, for their word next session:** CI's windows job takes ~30 min (the plain and tagged passes in a row;
-  `cmd/bonsai` ~11 min, `internal/engine` ~9 min there): (1) the two passes as parallel jobs, ~14 min saved, no
-  coverage lost; (2) Defender's real-time scan off on the throwaway runner, likely 20-40% more; both a CI change under
-  its own task. Not proposed without their word: running the tagged pass on fewer packages (it narrows a check).
+- **After 5.6, one at a time** (from `workflow:correct`'s first run, `R-2026-10-19-T-5615`): (1) Windows-only CI red
+  after a landing in 5 of 5.6's tasks, with the per-landing Windows half waived: bring it back from 5.7 on, or name CI's
+  windows job the gate; (2) the Owns lists missed files in 7 of 16 pieces; (3) a sanctioned scratch folder for roles that
+  write nothing, or leave it. Then: confirm the cleanup before deleting. At 5.6's close, their own step: take the
+  `"autoMemoryEnabled": true` line out of their local settings file (theirs only; the guard refuses agents).
+  Also for them to read: the pin test's one exception, `release.yml` (5.7.2's).
 - **Can wait:** V1's design question: an agent past its budget cannot stop a process it started (exempt it, or accept).
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than
@@ -215,7 +221,7 @@ p95 60.4 ms.
 --allow-exec` and `update` run `claude plugin install` on the person's machine (on Windows a warm session first).
 
 **Housekeeping:**
-- The roadmap artifact ("Trinetra Roadmap"): Bonsai's cards updated at 5.4's end, next at 5.5's end. The agent design:
+- The roadmap artifact ("Trinetra Roadmap"): Bonsai's cards updated 19 Oct (version 39: 5.5 done, 5.6 closing, 5.7 begun), next at 5.7's planning. The agent design:
   "Workflow Pack Redesign" (version 4).
 - Another of the director's sessions may also work in `~/Servers/Bonsai`: read `origin/main`'s new commits before each
   push, and never stage a file this session did not write.

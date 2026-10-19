@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5603
 title: "The personal memory layer and its check (5.6.3)"
-status: verify
+status: done
 lane:
 done_when:
   - "the empty personal index made by init and update; the five warnings (form, budgets, index and notes, secrets, the Windows copy); the Windows copy refreshed from WSL's; base's memory skill and the operating skill's memory line on who writes it; the memory caps in one table; the engine's deny rules over the other side's Bonsai home; the import line's form measured"
@@ -12,7 +12,7 @@ depends_on: [T-5601]
 blocked_by:
 created: 2026-10-18
 started: 2026-10-18
-finished:
+finished: 2026-10-19
 labels:
   bonsai.ladder: []
   bonsai.allows: []
