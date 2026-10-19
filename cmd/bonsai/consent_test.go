@@ -312,7 +312,7 @@ func TestConsentCommand(t *testing.T) {
 						t.Errorf("the preview does not name %s:\n%s", it, out)
 					}
 				}
-				if next != "" && !strings.HasSuffix(" "+nextOf(out), next) {
+				if next != "" && (!strings.HasSuffix(" "+nextOf(out), next) || !endsWith(out, next)) {
 					t.Errorf("the next step does not end %q:\n%s", next, out)
 				}
 				if cc.items == "" && !hasFlag(f, "--allow-exec") && strings.Contains(out, " --allow-exec --yes") {
@@ -375,7 +375,7 @@ func TestConsentWithConflicts(t *testing.T) {
 		{edited, []string{"update", "--allow-exec"}, "y\n", 5, false, []string{"Write these changes? [y/N] bonsai update: refused [conflicts]",
 			"why 1 conflict (demo/guide.md)"}},
 		{edited, []string{"update", "--yes", "--keep", "demo/guide.md"}, "", 4, false,
-			[]string{"to write them with the rest, run: bonsai update --keep demo/guide.md --allow-exec --yes"}},
+			[]string{"to write them with the rest, run: bonsai update --keep demo/guide.md --allow-exec --yes\n"}},
 		{edited, []string{"update", "--yes", "--keep", "demo/guide.md"}, "y\n", 4, false, []string{"bonsai update: refused [needs-allow-exec]",
 			"why this update writes code"}},
 		{edited, []string{"update", "--yes", "--allow-exec", "--keep", "demo/guide.md"}, "", 0, true, []string{"Written kept demo/guide.md"}},
@@ -400,7 +400,12 @@ func TestConsentWithConflicts(t *testing.T) {
 				t.Fatalf("exit %d, want %d\n%s%s", code, cc.exit, out, errOut)
 			}
 			for _, h := range cc.has {
-				if !strings.Contains(flat(out), h) {
+				// An entry ending in a line break must end the output's last row (a longer command would not pass).
+				if strings.HasSuffix(h, "\n") {
+					if !endsWith(out, h) {
+						t.Errorf("the output does not end %q:\n%s", h, out)
+					}
+				} else if !strings.Contains(flat(out), h) {
 					t.Errorf("the output lacks %q:\n%s", h, out)
 				}
 			}

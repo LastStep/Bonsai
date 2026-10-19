@@ -132,9 +132,13 @@ func TestMessageCommands(t *testing.T) {
 	code, out, _ = c.run("", "messages")
 	want := []string{
 		"answered " + brief + " T-0901 2 messages orchestrator -> builder@T-0901 last 2026-",
-		" flags: malformed ",
+		"flags: malformed",
 		"open " + second + " - 1 messages orchestrator -> verifier@T-0902 last 2026-",
 		"malformed .bonsai/local/messages/builder-T-0901/M-2026-10-16-0a0b0c0d.md it does not read as bonsai.message/1",
+	}
+	// The flag sits on its own row, under the thread's, in the table's column, and ends its row.
+	if !strings.Contains(out, "\n                     flags: malformed\n") {
+		t.Errorf("the malformed thread's flags row:\n%s", out)
 	}
 	for _, w := range want {
 		if code != 0 || !strings.Contains(flat(out), w) {

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -313,13 +314,24 @@ func TestStatusIsByteStableAndASCII(t *testing.T) {
 			}
 		}
 	}
+	// The workspace row: its label, its name, its id and the words that say what the id is, each in its own column; the
+	// person-only paths one to a row; the machine folder's name right beside its words.
+	for _, raw := range []string{"\nWorkspace        example  ws-7kq2m4xw5r3t6y2u7p4a5c3e2b  every clone and worktree of this project\n",
+		"\nPerson-only      .claude/**\n                 bonsai.yaml\n"} {
+		if !strings.Contains(text, raw) {
+			t.Errorf("the text lacks %q:\n%s", raw, text)
+		}
+	}
+	if !regexp.MustCompile(`workspaces/r-[0-9a-f]+\s+this project's machine folder\n`).MatchString(text) {
+		t.Errorf("the machine folder's row:\n%s", text)
+	}
 	if !strings.Contains(string(first), `proj-caf\u00e9`) || !strings.Contains(text, `proj-caf\u00e9`) {
 		t.Errorf("the non-ASCII path is not escaped:\n%s\n%s", first, text)
 	}
-	for _, want := range []string{"Workspace example ws-7kq2m4xw5r3t6y2u7p4a5c3e2b ", " bonsai.yaml this project's",
+	for _, want := range []string{" bonsai.yaml this project's",
 		" .bonsai/local/ the log, questions for you and their answers, ladder results, messages between agents. Never committed. ",
-		"Person-only .claude/** bonsai.yaml", "Problems .bonsai/lock.json: is missing; next: link the project again from bonsai.yaml",
-		" workspaces/r-", " this project's machine folder ", "Packs none locked ", " a copy meant as a new project needs its own id: bonsai init --new-id"} {
+		"Problems .bonsai/lock.json: is missing; next: link the project again from bonsai.yaml",
+		"Packs none locked ", " a copy meant as a new project needs its own id: bonsai init --new-id"} {
 		if !strings.Contains(flat(text), want) {
 			t.Errorf("the text lacks %q:\n%s", want, text)
 		}

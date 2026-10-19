@@ -200,7 +200,7 @@ func TestHelpColumn(t *testing.T) {
 			t.Errorf("%q: its words at column %d, the first line's at %d", line, at, col)
 		}
 	}
-	if lines < 10 || !strings.Contains(stdout.String(), " bonsai answer <key> [flags]  answer an open ask") {
+	if lines < 10 || !strings.Contains(stdout.String(), "\n"+strings.Repeat(" ", start)+"bonsai answer <key> [flags]  answer an open ask") {
 		t.Errorf("the help's commands:\n%s", stdout.String())
 	}
 }
@@ -271,7 +271,7 @@ func TestStatus(t *testing.T) {
 		t.Fatalf("exit %d, stderr %q", code, stderr.String())
 	}
 	asciiOnly(t, "status", stdout.String())
-	if !strings.HasPrefix(stdout.String(), "bonsai status\nWorkspace        demo  ws-aaaaaaaaaaaaaaaaaaaaaaaaaa  ") {
+	if !strings.HasPrefix(stdout.String(), "bonsai status\nWorkspace        demo  ws-aaaaaaaaaaaaaaaaaaaaaaaaaa  every clone and worktree of this project\n") {
 		t.Errorf("status:\n%s", stdout.String())
 	}
 }

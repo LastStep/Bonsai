@@ -1061,5 +1061,6 @@ func TestCheckPackTestPack(t *testing.T) {
 	}
 }
 
-// findingNext is a finding's or a warning's next step in check's text: its own row, under the finding.
-var findingNext = regexp.MustCompile(`(?m)^ +next: \S`)
+// findingNext is a finding's or a warning's next step in check's text: its own row, under the finding, in the column
+// of the words (the label "Findings" or "Warnings" and two spaces make ten).
+var findingNext = regexp.MustCompile(`(?m)^ {10}next: \S`)

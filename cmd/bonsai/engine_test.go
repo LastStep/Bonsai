@@ -104,6 +104,7 @@ func TestInitCommand(t *testing.T) {
 	}
 	code, out, _ = c.run("y\n", c.linkArgs(c.pack.A)...)
 	if code != 0 || !strings.Contains(out, "Write these changes? [y/N] bonsai init  written; demo-pack at ") || !strings.Contains(out, "\nLinked           demo  ws-") ||
+		!strings.Contains(flat(out), "Linked demo ws-") || !strings.Contains(flat(out), " every clone and worktree of this project shares this workspace id ") ||
 		!strings.HasSuffix(out, "\n  a copy meant as a new project needs its own id: bonsai init --new-id\n") {
 		t.Errorf("init answered y: %d\n%s", code, out)
 	}
@@ -127,7 +128,8 @@ func TestUpdateCommand(t *testing.T) {
 	}
 	testpack.SetRef(t, c.root, c.pack.A, c.pack.B)
 	code, out, _ := c.run("", "update")
-	if code != 4 || !strings.Contains(out, "\n           change  marketplace  1      Bonsai 1\n") || nextOf(out) != "a person: to write it, run: bonsai update --yes" {
+	if code != 4 || !strings.Contains(out, "\n           change  marketplace  1      Bonsai 1\n") ||
+		!strings.Contains(out, "\n           change  marketplace  bonsai-demo-") || !strings.Contains(flat(out), "was: bonsai-demo-") || nextOf(out) != "a person: to write it, run: bonsai update --yes" {
 		t.Errorf("update without --yes: %d\n%s", code, out)
 	}
 	code, out, _ = c.run("", "update", "--diff")
