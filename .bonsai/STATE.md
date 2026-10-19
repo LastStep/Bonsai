@@ -7,7 +7,7 @@ labels: {}
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 19 Oct 2026 at 04:50 (an overnight session, the director
+Rewritten, never appended (`base:state`). Last rewritten 19 Oct 2026 at 04:20 (an overnight session, the director
 asleep). **Step 5.6's builds are all on `main`, CI green at `9124cdc7`** (every job, the windows job red since
 `43e8b5fb` fixed by `T-5696`; one install (windows) flake passed on its re-run). 5.6.5, 5.6.6 and `T-5694` are `done`;
 5.6.3 is at `verify` until the end verifier. Tonight also: **the bugs register `records/bugs.md`** (the director's word),
@@ -161,6 +161,7 @@ helpers (about 6 h, side by side).
 | V1, its B1 | `T-5693`, `T-5694` | done | |
 | The bugs register's row in CLAUDE.md | `T-5697` | done | uncommitted until tonight's records commit |
 | Small fixes | `T-5698` | done | BUG-001-004, 010, 012, 024, 030-032, 082 (code), 084, 085; verifier PASS `M-2026-10-18-0f2afe05` |
+| 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`, CI green; the pin test's one exception `release.yml` (5.7.2's, with the director) |
 | 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`, climb green; held until 5.6's end verifier passes and the records-database talk |
 
 **Next, in this order:** the end Windows run's agent half from the runbook, at `main`'s top, one Windows run at a time;

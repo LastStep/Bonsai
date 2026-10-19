@@ -74,6 +74,7 @@ director".
 | **BUG-087** | The text layout prints a stray blank line before a next step at widths 60 to 80 | internal/textui (said by T-5698's builder); 71176d92 | M-2026-10-18-d46672d6 (T-5698) |
 | **BUG-088** | operating-bonsai says only `bonsai logs` shows a refusal's rule; once T-5698 lands the refusal line shows it too | packs/base/skills/operating-bonsai/SKILL.md:103; 71176d92 (said) | M-2026-10-18-d46672d6 (T-5698) |
 | **BUG-089** | The stop gate's refusal prints no rule word, and its error words do not use workspace.OSWords | internal/stopgate; 71176d92 (said) | M-2026-10-18-d46672d6 (T-5698) |
+| **BUG-090** | The installed govulncheck (v1.2.0) and golangci-lint (built with go1.25) cannot read Go 1.27 code; agents run the pinned versions through `go run` instead | this machine's tools, not the repo; a82d18b5 (said by T-5700's builder) | M-2026-10-18-dce878aa (T-5700) |
 
 ## Fixed
 

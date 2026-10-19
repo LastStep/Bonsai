@@ -4,8 +4,8 @@ id: R-2026-10-19-T-5696
 task: T-5696
 role: orchestrator
 model: opus
-started: 2026-10-19 00:20
-finished: 2026-10-19 04:50
+started: 2026-10-19 01:41
+finished: 2026-10-19 03:20
 outcome: merged
 commits: []
 labels: {}
@@ -22,14 +22,15 @@ labels: {}
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
-| Auditor, known bugs M-2026-10-18-fe6df4ce | sonnet | 2026-10-19 00:30 | 2026-10-19 00:35 | 5 |
-| Builder, round 0, M-2026-10-18-21221e7b | opus | 2026-10-19 00:30 | 2026-10-19 02:02 | 92 |
-| Hours count M-2026-10-18-897ca454 | haiku | 2026-10-19 00:47 | 2026-10-19 00:54 | 7 |
-| Auditor, register draft M-2026-10-18-6a1bdc2d | sonnet | 2026-10-19 00:58 | 2026-10-19 01:02 | 4 |
-| Windows runner M-2026-10-18-2262b0c9 | sonnet | 2026-10-19 02:10 | 2026-10-19 02:35 | 25 |
-| Verifier rounds 1-2 M-2026-10-18-b8390909 | opus | 2026-10-19 02:10 | 2026-10-19 03:19 | 21 |
-| Builder, fix round 1 | opus | 2026-10-19 02:52 | 2026-10-19 03:04 | 12 |
-| Builder, fix round 2 | opus | 2026-10-19 03:21 | 2026-10-19 03:30 | 9 |
+| Auditor, known bugs M-2026-10-18-fe6df4ce | sonnet | 2026-10-19 01:41 | 2026-10-19 01:45 | 4 |
+| Builder, round 0, M-2026-10-18-21221e7b | opus | 2026-10-19 01:41 | 2026-10-19 02:01 | 20 |
+| Hours count M-2026-10-18-897ca454 | haiku | 2026-10-19 01:47 | 2026-10-19 01:50 | 3 |
+| Auditor, register draft M-2026-10-18-6a1bdc2d | sonnet | 2026-10-19 01:53 | 2026-10-19 01:55 | 2 |
+| Windows runner M-2026-10-18-2262b0c9 | sonnet | 2026-10-19 02:02 | 2026-10-19 02:22 | 20 |
+| Verifier round 1 M-2026-10-18-b8390909 | opus | 2026-10-19 02:02 | 2026-10-19 02:10 | 8 |
+| Builder, fix round 1 M-2026-10-18-d3f54df9 | opus | 2026-10-19 02:42 | 2026-10-19 02:55 | 13 |
+| Verifier round 2 M-2026-10-18-56dadd66 | opus | 2026-10-19 02:55 | 2026-10-19 03:00 | 5 |
+| Builder, fix round 2 M-2026-10-18-bea90183 | opus | 2026-10-19 03:01 | 2026-10-19 03:10 | 9 |
 
 ## Log
 
@@ -123,3 +124,4 @@ labels: {}
   s), 4756 (67.1 s). Lands in one batch with T-5698 once its verifier passes.
 - 04:00 Landed in the batch: 6b02441d (climb sha256 `eb40b365...0f45`, its log record names `/usr/local/bin/bonsai`),
   under T-5698's 9124cdc7; `main` `fe1e8f9d..9124cdc7` pushed. T-5696 to `verify` until CI's windows job reads green.
+- **Times corrected, 04:45 (the clock read):** the orchestrator's own times in this log were estimates, off by up to 80 minutes (the session opened about 01:35, not 00:20). The Runs table is rebuilt from the messages' `created` stamps (IST); the message ids in each line are the record of order.
