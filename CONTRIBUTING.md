@@ -65,7 +65,7 @@ the installed one on the PATH.
 The proof of a change is `bonsai ladder --task <id>` green, run by the installed `bonsai`: the rungs in
 [`bonsai.yaml`](bonsai.yaml) (the guard's check of what the task changed, `go vet`, the schema compare, every test plain
 and with the test fault switch, and git integrity). Beside it, the tests run natively on Windows, and CI is green on
-both sides (`.github/workflows/ci.yml`: `test`, `windows`, `lint`, `govulncheck`).
+both sides (`.github/workflows/ci.yml`: `test`, `windows`, `windows (fault tag)`, `lint`, `govulncheck`).
 
 ## Rules every change follows
 

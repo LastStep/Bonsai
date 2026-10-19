@@ -46,8 +46,10 @@ jobs:
         run: GOOS=windows GOARCH=amd64 go build ./...
 
   # Its own job, not a matrix on test: a matrix would rename the check "test (ubuntu-latest)" (design/plan.md).
-  # -timeout 20m in both jobs: on windows-latest cmd/bonsai and internal/engine take about 10 minutes each, past go
-  # test's default limit per package (step 5.4).
+  # -timeout 20m in the Windows jobs: on windows-latest cmd/bonsai and internal/engine take about 10 minutes each, past
+  # go test's default limit per package (step 5.4). The plain and the fault-tag passes are two jobs that run at once
+  # (each took about 26 minutes in a row; T-5617): the plain pass keeps the name "windows" and holds the packs check,
+  # which runs once for both; the tagged pass is "windows (fault tag)".
   windows:
     runs-on: windows-latest
     steps:
@@ -72,12 +74,6 @@ jobs:
       - name: Run vet
         run: go vet ./...
 
-      - name: Run tests with the fault tag
-        run: go test -timeout 20m -tags bonsai_test_fault ./...
-
-      - name: Run vet with the fault tag
-        run: go vet -tags bonsai_test_fault ./...
-
       # The packs' checks on Windows, as the packs job runs them on Linux: packs/template/ci/check.sh check (bonsai
       # check --pack, the README's rows, a scratch project linked to the pack at this commit, bonsai check there) on
       # each packs/*/ folder holding bonsai/pack.yaml. Git Bash runs the script, as each pack's own CI does on
@@ -94,6 +90,33 @@ jobs:
             n=$((n + 1))
           done
           [ "$n" -gt 0 ] || { echo "no pack folder under packs/"; exit 1; }
+
+  # The windows job's second pass: the same tests and vet with the guard's test fault switch (see test), on a runner of
+  # its own so the two passes run at once.
+  windows-fault-tag:
+    name: windows (fault tag)
+    runs-on: windows-latest
+    steps:
+      # Full history, for the schema-compare test (as in test).
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - name: Print the Go version
+        run: go version
+
+      - name: Run tests with the fault tag
+        run: go test -timeout 20m -tags bonsai_test_fault ./...
+
+      - name: Run vet with the fault tag
+        run: go vet -tags bonsai_test_fault ./...
 
   # The packs in this repository, each packs/*/ folder holding bonsai/pack.yaml, checked by the pack template's own
   # script, packs/template/ci/check.sh, exactly as each pack's CI runs it (spec section 5, "The pack template"): bonsai
