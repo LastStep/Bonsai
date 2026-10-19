@@ -5,7 +5,7 @@ title: "5.6's floors: go_tests and go_tests_tagged raised to main's climb"
 status: running
 lane:
 done_when:
-  - "main climbed once by /usr/local/bin/bonsai ladder --task T-5695, green, clean, at main's top"
+  - "main climbed once by the installed bonsai's ladder --task T-5695, green, clean, at main's top"
   - "bonsai.yaml's ratchets raised to that climb's two counts (stricter only), committed on main; a climb after it green"
 depends_on: [T-5700]
 blocked_by:
