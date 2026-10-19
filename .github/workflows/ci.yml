@@ -36,11 +36,14 @@ jobs:
 
       # The guard's test fault switch is compiled only with this tag (internal/guard/fault_on.go); a normal build
       # has none, which cmd/bonsai's TestNormalBuildHasNoFaultCode checks in the runs above.
+      # The tagged steps here and in windows (fault tag) and lint run only the packages the tag can change (the tagged
+      # files and every package that reaches them); the rest would repeat the plain pass. internal/selfcheck's
+      # faulttag_test.go works the list out from go list and fails on any copy that differs, here or in bonsai.yaml.
       - name: Run tests with the fault tag
-        run: go test -timeout 20m -tags bonsai_test_fault ./...
+        run: go test -timeout 20m -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate
 
       - name: Run vet with the fault tag
-        run: go vet -tags bonsai_test_fault ./...
+        run: go vet -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate
 
       - name: Cross-compile (windows/amd64)
         run: GOOS=windows GOARCH=amd64 go build ./...
@@ -113,10 +116,10 @@ jobs:
         run: go version
 
       - name: Run tests with the fault tag
-        run: go test -timeout 20m -tags bonsai_test_fault ./...
+        run: go test -timeout 20m -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate
 
       - name: Run vet with the fault tag
-        run: go vet -tags bonsai_test_fault ./...
+        run: go vet -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate
 
   # The packs in this repository, each packs/*/ folder holding bonsai/pack.yaml, checked by the pack template's own
   # script, packs/template/ci/check.sh, exactly as each pack's CI runs it (spec section 5, "The pack template"): bonsai
@@ -196,7 +199,7 @@ jobs:
         with:
           version: v2.14.0
           verify: false
-          args: --build-tags=bonsai_test_fault
+          args: --build-tags=bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate
 
       # actionlint at an exact version through go run, so Go's checksum database checks what it fetches. It reads the
       # workflows here and the pack template's; internal/selfcheck/workflows_test.go holds their pins.

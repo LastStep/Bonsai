@@ -82,7 +82,7 @@ ladder:                               # the rungs, cheapest first; each command 
   - rung: 1                           # go vet
     name: vet                         # its short name
     kind: command                     # a shell command
-    command: "go vet ./... && go vet -tags bonsai_test_fault ./..."   # plain, then with the test fault switch
+    command: "go vet ./... && go vet -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate"   # plain, then with the test fault switch in the packages it reaches (internal/selfcheck holds the list)
     required: true                    # red here skips the rungs after it
     timeout_s: 180                    # three minutes: 3x a cold build (13 s) after a Go toolchain download (42 s, spec 3)
     ratchet: null                     # no count to keep from falling
@@ -115,7 +115,7 @@ ladder:                               # the rungs, cheapest first; each command 
   - rung: 4                           # every test, with the test fault switch
     name: tests with the fault switch   # its short name
     kind: command                     # a shell command
-    command: "go test -json -count=1 -tags bonsai_test_fault ./..."   # the same, with the guard's test faults built in
+    command: "go test -json -count=1 -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate"   # the same, with the guard's test faults built in, in the packages they reach
     required: true                    # red here skips the rungs after it
     timeout_s: 300                    # five minutes: about 3x the slowest seen in WSL (89 s, in a climb)
     ratchet: go_tests_tagged          # its count, the tests that passed, may not fall below the floor in ratchets
@@ -136,7 +136,7 @@ ladder:                               # the rungs, cheapest first; each command 
     base_setup: null                  # nothing to set up on the base
 ratchets:                             # the floors: counts that may only rise, from the first green climb after the link
   go_tests: 4756                      # rung 3's tests that passed, at b6623308 (19 Oct, 5.6, T-5695)
-  go_tests_tagged: 4762               # rung 4's tests that passed with the fault switch, at b6623308 (19 Oct, T-5695)
+  go_tests_tagged: 2120               # rung 4's tests that passed, its 7 packages, at the audit of 5fc46343 (19 Oct, T-5790; the director's word)
 ci_marked_tests: []                   # no test may skip in CI
 generated:                            # how long generated files are kept, per kind (skill base:generated-files)
   log:                                # the log, in .bonsai/local/log/
