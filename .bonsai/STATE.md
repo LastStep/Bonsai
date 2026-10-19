@@ -8,12 +8,12 @@ labels: {}
 # Bonsai: where it stands
 
 Rewritten, never appended (`base:state`). Last rewritten 19 Oct 2026 at 04:20 (an overnight session, the director
-asleep). **Step 5.6's builds are all on `main`, CI green at `9124cdc7`** (every job, the windows job red since
+asleep). **Step 5.6's builds are all on `main`, CI green at `a4dfa5ed`** (every job, the windows job red since
 `43e8b5fb` fixed by `T-5696`; one install (windows) flake passed on its re-run). 5.6.5, 5.6.6 and `T-5694` are `done`;
 5.6.3 is at `verify` until the end verifier. Tonight also: **the bugs register `records/bugs.md`** (the director's word),
 nine small bugs fixed (`T-5698`), and **5.7.4 drafted on its branch** (`T-5704`, green, not landed: the director, 19 Oct,
-"5.7.0 lands, 5.7.4 drafted"). **Left for 5.6:** the end Windows run (agent half, then the director's half; the runbook
-`~/bonsai-checks/end-5.6/runbook.md`); the 5.6 end verifier; the cleanup the director chose (below). The installed pre-release is still `bf7cc3d`. Bonsai's own repo takes `base`
+"5.7.0 lands, 5.7.4 drafted"). **Left for 5.6:** the end verifier's open items (below, "Waiting on the director"); the director's half of the end
+Windows run (`~/bonsai-checks/end-5.6/runbook.md`; the agent half passed); the cleanup the director chose (below). The installed pre-release is still `bf7cc3d`. Bonsai's own repo takes `base`
 (`4b41790b`) and `workflow` (`a42a4f4`), plugins under the marketplace `bonsai-bonsai-299659af`. The floors (19 Oct, `T-5695`): `go_tests`
 4756, `go_tests_tagged` 4762 (raised 19 Oct, `a4dfa5ed`). Every change lands by
 `CLAUDE.md`'s rules, with the director's 18 Oct waiver of the per-landing Windows half for 5.6.
@@ -159,14 +159,18 @@ helpers (about 6 h, side by side).
 | 5.6.3 personal memory | `T-5603` | verify | `7f2d76c0`; the end verifier and the end Windows run (its copy, the cross-side rule) |
 | ref moves, Windows CI fixes | `T-5691`, `T-5692`, `T-5696` | done | T-5696: two engine tests' want; the guard test's folder; bad-path words; `C:foo` fails closed; a file link to a folder still bad-path (BUG-086, verifier round 2's junction case) |
 | V1, its B1 | `T-5693`, `T-5694` | done | |
+| The floors | `T-5695` | done | 4756 / 4762 at `a4dfa5ed` |
+| The end Windows run, agent half | `T-5699` | done | steps 1-3, 6, 8, 9 passed (TestStrandedMoved with PowerShell on Path) |
+| 5.6's end verifier | `T-5611` | done | **FAIL** on checks 8, 14, 15, 17 (records and the director's questions); code checks pass on both sides |
 | The bugs register's row in CLAUDE.md | `T-5697` | done | uncommitted until tonight's records commit |
 | Small fixes | `T-5698` | done | BUG-001-004, 010, 012, 024, 030-032, 082 (code), 084, 085; verifier PASS `M-2026-10-18-0f2afe05` |
 | 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`, CI green; the pin test's one exception `release.yml` (5.7.2's, with the director) |
 | 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`, climb green; held until 5.6's end verifier passes and the records-database talk |
 
-**Next, in this order:** the 5.6 end verifier (fresh Opus, `T-5611`, at `a4dfa5ed`; the end Windows run's agent
-half passed, `T-5699`; the director's runbook steps 4, 5, 7 and 10 named open); the director's half of the end Windows
-run; the cleanup; then `workflow:correct`'s first run (5.6.10). **Small follow-ups:** the three new deny lines reach this repo's settings at the
+**Next, in this order:** the 5.6 end verifier failed 5.6 on records and three of the director's questions
+(`T-5611`, `M-2026-10-19-c7306085`; see "Waiting on the director"); the orchestrator's items (the Windows-only tally, the
+sessions table, `workflow:correct`'s first run, check 8's scripted WSL session); the director's half of the end Windows
+run; the end verifier's short re-check; then the cleanup. **Small follow-ups:** the three new deny lines reach this repo's settings at the
 next pre-release's `update`. Every known bug: `records/bugs.md`.
 
 **How work runs now:** agents by role, briefed with `bonsai message`; today's shared rules
@@ -184,7 +188,13 @@ p95 60.4 ms.
 
 ## Waiting on the director
 
-- **Next:** nothing; 5.6's end Windows run is the orchestrator's, alone, when the machine is quiet.
+- **Next (19 Oct morning), for 5.6 to close** (the end verifier `M-2026-10-19-c7306085` failed 5.6 on these, not on
+  code): (1) the end Windows run's half that needs the director: runbook steps 4, 5, 7, 10; (2) check 15: accept
+  `update`'s `--explain` beside `init`'s and the 11 narrowed human-text assertions (`M-2026-10-19-ec5723dd`), or have
+  them tightened; (3) check 14: whether the user settings hashes missing around 5.6's Claude Code runs stand as a known
+  gap. The orchestrator's own, no word needed: the 5.6 Windows-only tally, the sessions table against the run reports,
+  correct's first run, and check 8's scripted WSL session (decoy rule, `--add-dir` control); then the end verifier's
+  short re-check. Also to read: the pin test's one exception, `release.yml` (5.7.2's, with the director).
 - **Can wait:** V1's design question: an agent past its budget cannot stop a process it started (exempt it, or accept).
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than

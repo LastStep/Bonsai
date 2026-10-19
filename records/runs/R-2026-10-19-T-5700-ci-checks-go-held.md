@@ -4,8 +4,8 @@ id: R-2026-10-19-T-5700
 task: T-5700
 role: orchestrator
 model: opus
-started: 2026-10-19 04:50
-finished: 2026-10-19 05:55
+started: 2026-10-19 04:43
+finished: 2026-10-19 05:40
 outcome: merged
 commits: []
 labels: {}
@@ -23,6 +23,7 @@ labels: {}
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
+| Builder M-2026-10-18-c231b583 | sonnet | 2026-10-19 04:43 | 2026-10-19 04:55 | 12 |
 
 ## Log
 
@@ -46,3 +47,4 @@ labels: {}
   log record names `/usr/local/bin/bonsai`. `main` `8013f78f..a82d18b5` pushed; T-5700 to `verify` until CI. Noted:
   the installed govulncheck v1.2.0 and golangci-lint (go1.25) cannot read Go 1.27 (BUG-090).
 - 05:55 CI green on a82d18b5, every job (windows 05:5x). T-5700 `done`.
+- **Times corrected (the clock read at 06:48):** the orchestrator's own times in this log were estimates and ran ahead of the clock; the Runs table is from the messages' `created` stamps and the commits' times (IST).

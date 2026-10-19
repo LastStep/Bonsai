@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5611
 title: "5.6's end verifier (T-5690-T-5699 being full, the next free number after 5.6's pieces)"
-status: running
+status: done
 lane:
 done_when:
   - "a fresh Opus verifier runs plan-5.md's \"5.6 done\" checks 1-17 itself on main a4dfa5ed, both sides where a check names them, and passes or fails 5.6 with evidence"
@@ -12,7 +12,7 @@ depends_on: [T-5695, T-5699]
 blocked_by:
 created: 2026-10-19
 started: 2026-10-19
-finished:
+finished: 2026-10-19
 labels:
   bonsai.ladder: []
   bonsai.allows: []

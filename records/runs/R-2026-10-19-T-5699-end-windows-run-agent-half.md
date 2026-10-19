@@ -5,7 +5,7 @@ task: T-5699
 role: orchestrator
 model: opus
 started: 2026-10-19 04:17
-finished: 2026-10-19 04:45
+finished: 2026-10-19 04:43
 outcome: merged
 commits: []
 labels: {}
@@ -46,3 +46,4 @@ labels: {}
 - 04:55 Order after this: plan-5.md's "5.6 done" has the end verifier "after 5.6.5 and the floors"; the floors grant
   `bonsai.yaml` and run with no other task `running`, and T-5700 is. So: T-5700 lands, then the floors (`T-5695`) on
   main's top, then the 5.6 end verifier there (the director's runbook steps 4, 5, 7, 10 named open).
+- **Times corrected (the clock read at 06:48):** the orchestrator's own times in this log were estimates and ran ahead of the clock; the Runs table is from the messages' `created` stamps and the commits' times (IST).
