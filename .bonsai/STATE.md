@@ -7,16 +7,18 @@ labels: {}
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 19 Oct 2026 at 12:00 (a day session, the director present).
+Rewritten, never appended (`base:state`). Last rewritten 19 Oct 2026 at 13:05 (a day session, the director present).
 **Step 5.6 is done** (its end re-check `T-5616` passed every check; its two rounds' findings were this page's lines, fixed). Code
 on `main` at `7a05c12d`, CI green on every job. Today: the director's Windows half passed (`T-5614`: steps 4, 5, 10
 and check 8's WSL half); step 7a-7d moved into CI and proved there (`T-5613`, 12 of 12 broken copies caught), 7e to
 5.7, since this computer runs Windows 11 Home and has no Windows Sandbox; the end records (`T-5615`: the tally, the
-sessions table, `workflow:correct`'s first run). **Next: CI's windows job as two parallel jobs** (`T-5617`, the
-director's word; Defender untouched), then the cleanup (to confirm with the director), then 5.7. The installed
+sessions table, `workflow:correct`'s first run). Since then: **CI's windows job split in two parallel jobs** (`T-5617`;
+Defender untouched, the director's word), **the tagged pass narrowed to the 7 packages the tag can reach** (`T-5790`,
+held by `internal/selfcheck/faulttag_test.go`), and **the cleanup** (WSL 40 GB, Windows 27 GB freed). CI's longest
+job is now `windows`, 26 min (was 53). **Next: 5.7**, opening with the director's three questions and the records-database talk. The installed
 pre-release is still `bf7cc3d`. Bonsai's own repo takes `base` (`4b41790b`) and `workflow` (`a42a4f4`), plugins under
-the marketplace `bonsai-bonsai-299659af`. The floors: `go_tests` 4756, `go_tests_tagged` 4762 (19 Oct, `T-5695`); every
-climb since counts 4756 and 4762 against them, so 5.6's close raises nothing. Every change lands by `CLAUDE.md`'s
+the marketplace `bonsai-bonsai-299659af`. The floors: `go_tests` 4756 (19 Oct, `T-5695`); `go_tests_tagged` **2120** (19 Oct,
+`T-5790`: the narrowed pass, lowered on the director's word, re-recorded by their `bonsai update`). Every change lands by `CLAUDE.md`'s
 rules, with the director's 18 Oct waiver of the per-landing Windows half for 5.6.
 
 **No person's name** goes into any file or commit message (the director, 15 Oct; `CLAUDE.md`'s Safety section): "the
@@ -63,7 +65,8 @@ minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in `
 - **19 Oct (day session):** "we will finish up 5.6 in this session"; step 7 asked about ("why do we need the
   sandbox?"): Windows 11 Home has no Sandbox, so **7a-7d into CI's throwaway runner, 7e (declining the admin prompt) at
   their real install in 5.7** ("yes, go ahead"); ran steps 4, 5, 10 themselves; "update the roadmap artifact" (version
-  39); on CI's windows job **"Both 1 and 2", then "actually dont turn off defender scanning"**: the parallel jobs only.
+  39); on CI's windows job **"Both 1 and 2", then "actually dont turn off defender scanning"**: the parallel jobs only. The cleanup: "option 1" (done). On the tagged pass: "yes look into that so we don't
+  do same work twice", then **"Yes, narrow it"** (`T-5790`; they ran `bonsai update` to accept it).
 - **19 Oct (overnight, then asleep):** "i opened this session to be running overnight"; on 5.7 tonight, **"5.7.0 lands,
   5.7.4 drafted"** (5.7.0 built and landed after 5.6's work; 5.7.4 on its branch until the records-database talk and
   5.6's close); "also check for any other known bugs, and if they can be clubbed"; **one bugs register** ("record all
@@ -171,14 +174,13 @@ minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in `
 | The bugs register's row; small fixes | `T-5697`, `T-5698` | done | |
 | The end Windows run | `T-5699`, `T-5614`, `T-5613` | done | agent half; the director's 4, 5, 10 and check 8 WSL; 7a-7d in CI (`7a05c12d`, 12 of 12 caught) |
 | The end verifier, its fixes, re-check | `T-5611`, `T-5612`, `T-5615`, `T-5616` | done | `T-5616`'s findings were this page's lines, fixed |
-| CI's windows job as two parallel jobs | `T-5617` | running | branch `T-5617` at `47c9bce4`, climbing; was 53 min on `7a05c12d` |
+| CI's windows job as two parallel jobs | `T-5617` | done | `5fc46343`; windows 23 min and windows (fault tag) 27.5 min side by side (was 53) |
+| The tagged pass narrowed | `T-5790` | done | `e85aa6e6`; rungs 1 and 4 and CI's tagged lines name the 7 packages; windows (fault tag) 16 min |
 | 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`; the pin test's one exception `release.yml` (5.7.2's, with the director) |
 | 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`; held until the records-database talk |
 
-**Next, in this order:** `T-5617` landed with CI read; the cleanup the director chose on 18 Oct ("Parts + caches,
-after 5.6": the 5.1-5.5 scratch folders on both sides, ~27 GB, the 5.3.7 worktree by `git worktree remove`, and both Go
-build caches, ~28 GB), confirmed with them before anything is deleted; the three questions from `workflow:correct`
-(below); then 5.7, opening with the records-database talk. **Proposed for 5.7's planning** (`workflow:correct`, all
+**Next, in this order:** the three questions from `workflow:correct` (below), one at a time; then 5.7, opening with the
+records-database talk. **Proposed for 5.7's planning** (`workflow:correct`, all
 unproven until shown failing on the old input named in `R-2026-10-19-T-5615`): a test that fails when a test restates a
 list's entries (C3); a rung comparing assertion counts base to head (C4); a `bonsai check` finding for a done task whose
 run report is open (C5); a rung and CI step running `bonsai check` on this repo (C6). **Small follow-ups:** the three new
@@ -195,7 +197,7 @@ marketplace: a fresh Claude Code start before `update` installs. The guard's cos
 `testing.T.Chdir` keeps the folder it leaves open (Windows renames no such folder). GitHub's ubuntu runner leaves
 `/usr/local/bin` writable by others (the install job readies it). PowerShell's `-Filter 'x.*'` matches `x` itself.
 Windows PowerShell 5.1's Add-Type compiles into %TEMP%. The auto-mode classifier refuses an orchestrator's `taskkill` of
-another agent's Windows run, and an agent's `pgrep -f` loop can match itself. The guard refuses a builder starting `claude` (a runner runs scripted sessions). Claude Code 2.1.301 on Windows refuses an edit of a `\\\\wsl` path under acceptEdits as "a sensitive file" with no rule set. CI's windows test job: 53 min on `7a05c12d` (plain 26.5, tagged 25.5). Status line through Git Bash: p50 55.5 ms,
+another agent's Windows run, and an agent's `pgrep -f` loop can match itself. The guard refuses a builder starting `claude` (a runner runs scripted sessions). Claude Code 2.1.301 on Windows refuses an edit of a `\\\\wsl` path under acceptEdits as "a sensitive file" with no rule set. CI's windows test job: 53 min on `7a05c12d` (plain 26.5, tagged 25.5); after T-5617 and T-5790, windows 26 min and windows (fault tag) 16 min. The fault tag changes only `internal/guard`'s files; 7 packages reach it; a package reaching guard only on Windows is caught by Windows runs only. The Go build cache grows ~20 GB per side in 5 days of this work (worktrees, two tags, two systems; trimmed after 5 days unused). Status line through Git Bash: p50 55.5 ms,
 p95 60.4 ms.
 
 ## Waiting on the director
@@ -203,7 +205,7 @@ p95 60.4 ms.
 - **After 5.6, one at a time** (from `workflow:correct`'s first run, `R-2026-10-19-T-5615`): (1) Windows-only CI red
   after a landing in 5 of 5.6's tasks, with the per-landing Windows half waived: bring it back from 5.7 on, or name CI's
   windows job the gate; (2) the Owns lists missed files in 7 of 16 pieces; (3) a sanctioned scratch folder for roles that
-  write nothing, or leave it. Then: confirm the cleanup before deleting. At 5.6's close, their own step: take the
+  write nothing, or leave it. At 5.6's close, their own step: take the
   `"autoMemoryEnabled": true` line out of their local settings file (theirs only; the guard refuses agents).
   Also for them to read: the pin test's one exception, `release.yml` (5.7.2's).
 - **Can wait:** V1's design question: an agent past its budget cannot stop a process it started (exempt it, or accept).

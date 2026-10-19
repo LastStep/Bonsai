@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5617
 title: "CI's windows job faster: the plain and tagged passes as parallel jobs"
-status: running
+status: done
 lane:
 done_when:
   - "CI's windows test job split in two jobs running side by side, one the plain pass and one the tagged pass (-tags bonsai_test_fault), each running every package and every test the single job ran (no package, test, vet or flag dropped), the job names readable in the check-runs list"
@@ -12,7 +12,7 @@ depends_on: [T-5613]
 blocked_by:
 created: 2026-10-19
 started: 2026-10-19
-finished:
+finished: 2026-10-19
 labels:
   bonsai.ladder: []
   bonsai.allows: [".github/workflows/ci.yml"]
