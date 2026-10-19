@@ -188,13 +188,18 @@ p95 60.4 ms.
 
 ## Waiting on the director
 
-- **Next (19 Oct morning), for 5.6 to close** (the end verifier `M-2026-10-19-c7306085` failed 5.6 on these, not on
-  code): (1) the end Windows run's half that needs the director: runbook steps 4, 5, 7, 10; (2) check 15: accept
-  `update`'s `--explain` beside `init`'s and the 11 narrowed human-text assertions (`M-2026-10-19-ec5723dd`), or have
-  them tightened; (3) check 14: whether the user settings hashes missing around 5.6's Claude Code runs stand as a known
-  gap. The orchestrator's own, no word needed: the 5.6 Windows-only tally, the sessions table against the run reports,
-  correct's first run, and check 8's scripted WSL session (decoy rule, `--add-dir` control); then the end verifier's
-  short re-check. Also to read: the pin test's one exception, `release.yml` (5.7.2's, with the director).
+- **Next session, ask first** (the director, 19 Oct: "next session ask me again"): the end Windows run's half that needs
+  them, runbook steps 4, 5, 7, 10 (`~/bonsai-checks/end-5.6/runbook.md`), with the three ways put to them on 19 Oct:
+  today with Windows Sandbox (recommended), steps 4, 5, 10 now and 7 later, or later. 5.6 closes only after them.
+  Settled 19 Oct: check 15, "A. Tighten all 11" (`T-5612`, done at `90158ade`, CI green), `update`'s `--explain` accepted; check 14's missing
+  settings hashes, "option B" (the user settings file holds nothing of Bonsai's, last changed before 5.6's runs).
+  Still the orchestrator's: the 5.6 Windows-only tally, the sessions table against the run reports, correct's first
+  run, check 8's scripted WSL session; then the end verifier's short re-check. Also for them to read: the pin test's
+  one exception, `release.yml` (5.7.2's).
+- **Proposed, for their word next session:** CI's windows job takes ~30 min (the plain and tagged passes in a row;
+  `cmd/bonsai` ~11 min, `internal/engine` ~9 min there): (1) the two passes as parallel jobs, ~14 min saved, no
+  coverage lost; (2) Defender's real-time scan off on the throwaway runner, likely 20-40% more; both a CI change under
+  its own task. Not proposed without their word: running the tagged pass on fewer packages (it narrows a check).
 - **Can wait:** V1's design question: an agent past its budget cannot stop a process it started (exempt it, or accept).
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than

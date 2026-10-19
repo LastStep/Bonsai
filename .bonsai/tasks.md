@@ -17,6 +17,7 @@ Active task when none is named: none (no task reads running)
 | T-5692 | Windows CI fixed forward: TestPersonOnly's two stamped-home cases, red since 5.6.0 (4b41790b) | done | | 2026-10-18 | 2026-10-18 |
 | T-5691 | Bonsai's own packs moved: workflow to a42a4f4, base to main at 4b41790b (5.6's first ref moves) | done | | 2026-10-16 | 2026-10-18 |
 | T-5690 | 5.6's section amended by the director's 16 Oct decisions: the prototype skill first, the CLI redesign, operating-bonsai split, workflow's additions | done | | 2026-10-16 | 2026-10-16 |
+| T-5612 | 5.6 end check 15: the 11 narrowed human-text assertions held to the full new wording | done | | 2026-10-19 | 2026-10-19 |
 | T-5611 | 5.6's end verifier (T-5690-T-5699 being full, the next free number after 5.6's pieces) | done | | 2026-10-19 | 2026-10-19 |
 | T-5610 | workflow's additions: workflow:correct, workflow:changelog and four short lines (5.6.10) | done | | 2026-10-16 | 2026-10-16 |
 | T-5609 | operating-bonsai split in two: a core every agent reads and a second skill for linking, updating and settings (5.6.9) | done | | 2026-10-16 | 2026-10-16 |
