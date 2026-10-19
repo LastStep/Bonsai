@@ -367,7 +367,8 @@ jobs:
       # - A folder given as -Target (with and without a trailing backslash, and the real place's folder) refused with
       #   exit 1 and its sentence, nothing written beside it. Broken: the folder refusal taken out.
       # - An install and -Remove, at a scratch -Target and at the real place, leave no file, no PATH entry (machine or
-      #   user) and no install.json. Broken: -Remove keeping install.json; -Remove keeping the PATH entry.
+      #   user) and no install.json. Broken: -Remove keeping install.json; -Remove keeping the PATH entry; -Remove keeping
+      #   the file.
       - name: Elevated cases, each with a broken copy it must catch (Windows)
         if: runner.os == 'Windows'
         shell: powershell
@@ -640,6 +641,7 @@ jobs:
             Test-Remove $good $false; Test-Remove $good $true; Assert-Clean 'an install and -Remove, scratch and real: no file, no PATH entry, no record'
             Test-Remove (New-Broken 'record-kept' 'if ([IO.File]::Exists($record)) { [IO.File]::Delete($record) }' '$null = $record') $false; Assert-Caught 'record-kept' 'remove'
             Test-Remove (New-Broken 'path-kept' 'Set-MachinePath $true' '$null = $true') $true; Assert-Caught 'path-kept' 'remove'
+            Test-Remove (New-Broken 'file-kept' '{ Remove-Busy $f }' '{ }') $false; Assert-Caught 'file-kept' 'remove'
           } finally {
             $env:PSModulePath = $psModulePath
             try { if (Test-Path -LiteralPath $stubRoot) { Remove-Item -LiteralPath $stubRoot -Recurse -Force } } catch { Write-Host "cleanup: $_" }
