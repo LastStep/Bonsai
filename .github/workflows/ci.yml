@@ -346,3 +346,304 @@ jobs:
           $gone = Get-RawPath
           if ((@($gone -split ';' | Where-Object { $_ -ne '' }) -join ';') -cne ($kept -join ';')) { Fail "the PATH after remove: $gone" }
           Write-Host 'install.ps1 at its real place: installed, checked, again, again while running, wrong hash refused, removed'
+
+      # The elevated cases beside the run above, each check run first against install.ps1 (it must pass) and then
+      # against a copy of install.ps1 with one line broken, which it must catch (the job fails if a broken copy
+      # passes). Each copy is made by one literal replace that must match exactly once, so a later edit of install.ps1
+      # that moves the line fails here loudly, never passes quietly: that edit updates the copy's line here too.
+      # - Nothing compiled: no new .cs, .dll or .tmp file in %TEMP% (each spelling of it, its top level) during an
+      #   install, seen by a watcher while it runs and by a listing after it. Broken: the child compiles code (Add-Type).
+      # - The machine PATH: still REG_EXPAND_SZ (broken: written as REG_SZ); its %...% entries kept as written, with a
+      #   %SystemRoot% entry put in first so the check is never empty (broken: the PATH read expanded).
+      # - A fresh process finds bonsai by the machine PATH alone: where.exe started with the environment Windows builds
+      #   for a new logon from the registry (CreateEnvironmentBlock, system variables only). Broken: the PATH not set.
+      # - No BONSAI_INSTALL_NOTICE left at the machine or user level. Broken: the notice set to a value.
+      # - A Microsoft.PowerShell.Utility module of its own ahead on PSModulePath is never loaded by the elevated child
+      #   (a marker line holding -EncodedCommand). Broken: the child calls one of its cmdlets.
+      # - A pre-made C:\Program Files\Bonsai that Users can modify, then one where Users can only write attributes:
+      #   install.ps1 exits 1 with the rights sentence, the child alone exits 18, and nothing is installed (no file, no
+      #   PATH entry, no install.json). Broken: the write-attributes bit left out of the rights mask; the rights check
+      #   always passing.
+      # - A folder given as -Target (with and without a trailing backslash, and the real place's folder) refused with
+      #   exit 1 and its sentence, nothing written beside it. Broken: the folder refusal taken out.
+      # - An install and -Remove, at a scratch -Target and at the real place, leave no file, no PATH entry (machine or
+      #   user) and no install.json. Broken: -Remove keeping install.json; -Remove keeping the PATH entry.
+      - name: Elevated cases, each with a broken copy it must catch (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = (Get-Location).Path
+          $place = 'C:\Program Files\Bonsai\bonsai.exe'
+          $dir = 'C:\Program Files\Bonsai'
+          $envKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment'
+          $rec = Join-Path $env:USERPROFILE '.bonsai\install.json'
+          $good = Join-Path $root 'dist\install.ps1'
+          $exe = Join-Path $root 'dist\bonsai.exe'
+          $ci = Join-Path $root 'elevated'
+          $found = New-Object 'System.Collections.Generic.List[string]'
+          function Fail([string]$m) { Write-Host "FAIL: $m"; exit 1 }
+          function Add-Finding([string]$m) { $found.Add($m) }
+          function Get-RawPath { $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($envKey); try { [string]$k.GetValue('Path', '', 'DoNotExpandEnvironmentNames') } finally { $k.Close() } }
+          function Get-PathKind { $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($envKey); try { [string]$k.GetValueKind('Path') } finally { $k.Close() } }
+          function Set-RawPath([string]$v) { $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($envKey, $true); try { $k.SetValue('Path', $v, [Microsoft.Win32.RegistryValueKind]::ExpandString) } finally { $k.Close() } }
+          function Get-Others([string]$v) { (@($v -split ';' | Where-Object { $_ -ne '' -and $_.TrimEnd('\') -ine $dir })) -join ';' }
+          function Test-OnPath([string]$v) { @($v -split ';' | Where-Object { $_.TrimEnd('\') -ieq $dir }).Count -gt 0 }
+          function Get-Listing([string]$p) { (@([IO.Directory]::GetFileSystemEntries($p)) | Sort-Object) -join '|' }
+          function Reset-Machine {
+            foreach ($p in @($dir, $rec)) { if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p -Recurse -Force } }
+            Set-RawPath $base
+            $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($envKey, $true); try { $k.DeleteValue('BONSAI_INSTALL_NOTICE', $false) } finally { $k.Close() }
+          }
+          function Invoke-Install([string]$script, [string[]]$a) {
+            $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+            try { $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script @a 2>&1 } finally { $ErrorActionPreference = $eap }
+            $code = $LASTEXITCODE
+            $text = (@($out) | ForEach-Object { [string]$_ }) -join "`n"
+            Write-Host "  $(Split-Path -Leaf (Split-Path $script)) install.ps1 $a -> exit $code"
+            return New-Object PSObject -Property @{ Code = $code; Text = $text; TempNew = @() }
+          }
+          # A broken copy: install.ps1 with one literal replaced, the line asserted to be there exactly once.
+          $source = [IO.File]::ReadAllText($good)
+          function New-Broken([string]$name, [string]$old, [string]$new) {
+            $n = ([regex]::Matches($source, [regex]::Escape($old))).Count
+            if ($n -ne 1) { Fail "broken copy ${name}: the text it replaces is in install.ps1 $n times, not once: $old" }
+            $d = Join-Path $ci "broken\$name"
+            [void][IO.Directory]::CreateDirectory($d)
+            Copy-Item -LiteralPath $exe -Destination $d
+            $p = Join-Path $d 'install.ps1'
+            [IO.File]::WriteAllText($p, $source.Replace($old, $new), (New-Object Text.UTF8Encoding $false))
+            return $p
+          }
+          function Assert-Clean([string]$what) {
+            if ($found.Count -ne 0) { Fail "${what}: $($found -join ' | ')" }
+            Write-Host "${what}: passed"
+          }
+          function Assert-Caught([string]$name, [string]$tag) {
+            $hits = @($found | Where-Object { $_.StartsWith("${tag}:") })
+            if ($hits.Count -eq 0) { Fail "broken copy ${name} passed the ${tag} check, so that check catches nothing (all findings: $($found -join ' | '))" }
+            Write-Host "broken copy ${name} caught: $($hits -join ' | ')"
+            $found.Clear()
+          }
+
+          if (-not (Test-Path -LiteralPath $good) -or -not (Test-Path -LiteralPath $exe)) { Fail 'dist\install.ps1 or dist\bonsai.exe is missing (the step above makes them)' }
+          if (Test-Path -LiteralPath $dir) { Fail 'C:\Program Files\Bonsai is there before these cases (the step above removes it)' }
+          $want = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $orig = Get-RawPath
+          $base = $orig.TrimEnd(';') + ';%SystemRoot%\bonsai-ci-probe'
+          $userPath = [string][Environment]::GetEnvironmentVariable('Path', 'User')
+          $psModulePath = $env:PSModulePath
+          $stubRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'WindowsPowerShell\Modules\Microsoft.PowerShell.Utility'
+          if (Test-Path -LiteralPath $stubRoot) { Fail "$stubRoot is there before these cases" }
+          [void][IO.Directory]::CreateDirectory((Join-Path $ci 'scratch'))
+          [void][IO.Directory]::CreateDirectory((Join-Path $ci 'folder'))
+
+          # The environment Windows gives a new logon, from the registry: system variables only (no token).
+          Add-Type -TypeDefinition @'
+          using System;
+          using System.Collections.Generic;
+          using System.Runtime.InteropServices;
+          public static class BonsaiCiLogonEnv {
+              [DllImport("userenv.dll", SetLastError = true)]
+              static extern bool CreateEnvironmentBlock(out IntPtr block, IntPtr token, bool inherit);
+              [DllImport("userenv.dll", SetLastError = true)]
+              static extern bool DestroyEnvironmentBlock(IntPtr block);
+              public static string[] Machine() {
+                  IntPtr block;
+                  if (!CreateEnvironmentBlock(out block, IntPtr.Zero, false)) { throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error()); }
+                  try {
+                      List<string> all = new List<string>();
+                      IntPtr p = block;
+                      while (true) {
+                          string s = Marshal.PtrToStringUni(p);
+                          if (String.IsNullOrEmpty(s)) { break; }
+                          all.Add(s);
+                          p = new IntPtr(p.ToInt64() + (s.Length + 1) * 2);
+                      }
+                      return all.ToArray();
+                  } finally { DestroyEnvironmentBlock(block); }
+              }
+          }
+          '@
+          function Get-FreshWhere {
+            $psi = New-Object Diagnostics.ProcessStartInfo (Join-Path ([Environment]::SystemDirectory) 'where.exe'), 'bonsai'
+            $psi.UseShellExecute = $false; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true
+            $psi.WorkingDirectory = [Environment]::SystemDirectory
+            $psi.EnvironmentVariables.Clear()
+            foreach ($kv in [BonsaiCiLogonEnv]::Machine()) { $i = $kv.IndexOf('='); if ($i -gt 0) { $psi.EnvironmentVariables[$kv.Substring(0, $i)] = $kv.Substring($i + 1) } }
+            $p = [Diagnostics.Process]::Start($psi)
+            $o = $p.StandardOutput.ReadToEnd(); [void]$p.StandardError.ReadToEnd(); $p.WaitForExit()
+            return @($o -split "`r?`n" | Where-Object { $_ -ne '' })
+          }
+
+          # Every spelling of the temporary folder the install or its child may use; only their top level is read.
+          $temps = @()
+          foreach ($t in @([IO.Path]::GetTempPath(), $env:TEMP, $env:TMP, [Environment]::GetEnvironmentVariable('TEMP', 'User'), (Join-Path $env:LOCALAPPDATA 'Temp'))) {
+            if (-not $t) { continue }
+            $f = [IO.Path]::GetFullPath($t).TrimEnd('\')
+            if ([IO.Directory]::Exists($f) -and @($temps | Where-Object { $_ -ieq $f }).Count -eq 0) { $temps += $f }
+          }
+          Write-Host "watching: $($temps -join ', ')"
+          $tempRx = '\.(cs|dll|tmp)$'
+          function Get-TempNames { $n = @{}; foreach ($t in $temps) { foreach ($f in [IO.Directory]::GetFiles($t)) { if ($f -match $tempRx) { $n[$f.ToLowerInvariant()] = $true } } }; return $n }
+          # An install with a watcher on each temporary folder for its whole run: the .cs, .dll and .tmp files created
+          # or renamed into it while the install ran, and those new in a listing after it, made since it started.
+          function Invoke-Watched([string]$script, [string[]]$a) {
+            $pre = Get-TempNames
+            $start = [DateTime]::UtcNow
+            $ws = @()
+            for ($i = 0; $i -lt $temps.Count; $i++) {
+              $w = [IO.FileSystemWatcher]::new($temps[$i])
+              $w.IncludeSubdirectories = $false
+              $w.InternalBufferSize = 65536
+              $null = Register-ObjectEvent -InputObject $w -EventName Created -SourceIdentifier "bonsai-temp-c$i"
+              $null = Register-ObjectEvent -InputObject $w -EventName Renamed -SourceIdentifier "bonsai-temp-r$i"
+              $w.EnableRaisingEvents = $true
+              $ws += $w
+            }
+            try { $r = Invoke-Install $script $a } finally {
+              Start-Sleep -Milliseconds 500
+              foreach ($w in $ws) { $w.EnableRaisingEvents = $false }
+            }
+            $new = @()
+            for ($i = 0; $i -lt $ws.Count; $i++) {
+              foreach ($sid in @("bonsai-temp-c$i", "bonsai-temp-r$i")) {
+                foreach ($e in @(Get-Event -SourceIdentifier $sid -ErrorAction SilentlyContinue)) {
+                  $p = [string]$e.SourceEventArgs.FullPath
+                  if ($p -match $tempRx) { $new += $p }
+                  Remove-Event -EventIdentifier $e.EventIdentifier
+                }
+                Unregister-Event -SourceIdentifier $sid
+              }
+              $ws[$i].Dispose()
+            }
+            $post = Get-TempNames
+            foreach ($k in $post.Keys) {
+              if ($pre.ContainsKey($k)) { continue }
+              try { if ([IO.File]::GetCreationTimeUtc($k) -ge $start.AddSeconds(-1)) { $new += $k } } catch { }  # gone again meanwhile
+            }
+            $r.TempNew = @($new | Sort-Object -Unique)
+            return $r
+          }
+
+          # Nothing compiled, the machine PATH, a fresh process, no notice left.
+          function Test-Install([string]$script) {
+            Reset-Machine
+            $r = Invoke-Watched $script @('-ForceChild')
+            if ($r.Code -ne 0) { Add-Finding "setup: install exit $($r.Code): $($r.Text)" }
+            if ($r.TempNew.Count -ne 0) { Add-Finding "temp: made in %TEMP% during the install: $($r.TempNew -join ', ')" }
+            if ((Get-PathKind) -ne 'ExpandString') { Add-Finding "kind: the machine PATH is $(Get-PathKind), not ExpandString" }
+            $raw = Get-RawPath
+            if ((Get-Others $raw) -cne (Get-Others $base)) { Add-Finding "kept: the other machine PATH entries changed: $base -> $raw" }
+            $where = @(Get-FreshWhere)
+            if ($where.Count -eq 0 -or $where[0] -ine $place) { Add-Finding "fresh: where.exe bonsai in a new logon's environment found: $($where -join ', ')" }
+            $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($envKey); try { $m = $k.GetValue('BONSAI_INSTALL_NOTICE') } finally { $k.Close() }
+            $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment'); try { $u = $k.GetValue('BONSAI_INSTALL_NOTICE') } finally { $k.Close() }
+            if ($null -ne $m -or $null -ne $u) { Add-Finding "notice: BONSAI_INSTALL_NOTICE is left: machine '$m', user '$u'" }
+          }
+          # A Utility module of its own, first on PSModulePath, writes a marker line when it loads or runs.
+          $marker = Join-Path $ci 'stub-marker.txt'
+          function Test-Stub([string]$script) {
+            Reset-Machine
+            if (Test-Path -LiteralPath $marker) { Remove-Item -LiteralPath $marker -Force }
+            $r = Invoke-Install $script @('-ForceChild')
+            if ($r.Code -ne 0) { Add-Finding "setup: install exit $($r.Code): $($r.Text)" }
+            $lines = @()
+            if (Test-Path -LiteralPath $marker) { $lines = @([IO.File]::ReadAllLines($marker)) }
+            Write-Host "  the stub's marker: $($lines.Count) line(s)"
+            $child = @($lines | Where-Object { $_ -match '-EncodedCommand' })
+            if ($child.Count -ne 0) { Add-Finding "stub: the elevated child loaded the stub module: $($child[0].Substring(0, [Math]::Min(160, $child[0].Length)))" }
+          }
+          # A pre-made folder Users can write: install.ps1 exits 1 with its sentence, the child alone 18, nothing installed.
+          function Test-Loose([string]$script, [string]$grant) {
+            Reset-Machine
+            [void][IO.Directory]::CreateDirectory($dir)
+            & icacls.exe $dir /grant "*S-1-5-32-545:$grant" | Out-Host
+            if ($LASTEXITCODE -ne 0) { Fail "icacls $grant exit $LASTEXITCODE" }
+            $r = Invoke-Install $script @('-ForceChild')
+            if ($r.Code -ne 1) { Add-Finding "refused: install.ps1 exit $($r.Code), not 1 ($grant)" }
+            if (-not $r.Text.Contains('install.ps1: the install stopped at checking the folder''s rights') -or -not $r.Text.Contains('next: ')) { Add-Finding "refused: not the rights sentence ($grant): $($r.Text)" }
+            $ast = [Management.Automation.Language.Parser]::ParseFile($script, [ref]$null, [ref]$null)
+            foreach ($fn in $ast.FindAll({ param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] }, $false)) { . ([scriptblock]::Create($fn.Extent.Text)) }
+            $text = New-ChildText -Source (Join-Path (Split-Path $script) 'bonsai.exe') -Target $place -Hash $want -Real $true -Remove $false
+            $code = Invoke-Child $text $true
+            Write-Host "  the child alone ($grant) -> exit $code"
+            if ($code -ne 18) { Add-Finding "refused: the child alone exit $code, not 18 ($grant)" }
+            $left = Get-Listing $dir
+            if ($left -ne '') { Add-Finding "refused: the folder holds $left ($grant)" }
+            if (Test-OnPath (Get-RawPath)) { Add-Finding "refused: the folder is on the machine PATH ($grant)" }
+            if (Test-Path -LiteralPath $rec) { Add-Finding "refused: install.json was written ($grant)" }
+          }
+          # A folder as -Target: exit 1 with its sentence, nothing written in it or beside it, no record.
+          function Test-FolderTarget([string]$script, [string]$target) {
+            $folder = $target.TrimEnd('\')
+            $parent = Split-Path $folder
+            $in = Get-Listing $folder; $beside = Get-Listing $parent
+            $r = Invoke-Install $script @('-Target', $target)
+            if ($r.Code -ne 1) { Add-Finding "folder: exit $($r.Code), not 1 ($target)" }
+            if (-not $r.Text.Contains("install.ps1: the target $target is a folder, not a file's path") -or -not $r.Text.Contains('next: ')) { Add-Finding "folder: not the folder sentence ($target): $($r.Text)" }
+            if ((Get-Listing $folder) -cne $in -or (Get-Listing $parent) -cne $beside) { Add-Finding "folder: something was written in or beside $folder" }
+            if (Test-Path -LiteralPath $rec) { Add-Finding "folder: install.json was written ($target)" }
+          }
+          # An install and -Remove leave no file, no PATH entry and no record.
+          function Test-Remove([string]$script, [bool]$real) {
+            Reset-Machine
+            if ($real) { $a = @('-ForceChild'); $t = $place } else { $t = Join-Path $ci 'scratch\bonsai.exe'; $a = @('-Target', $t) }
+            $r = Invoke-Install $script $a
+            if ($r.Code -ne 0 -or -not (Test-Path -LiteralPath $t) -or -not (Test-Path -LiteralPath $rec)) { Add-Finding "setup: install exit $($r.Code): $($r.Text)" }
+            $r = Invoke-Install $script ($a + '-Remove')
+            if ($r.Code -ne 0) { Add-Finding "remove: -Remove exit $($r.Code): $($r.Text)" }
+            if ($real) { if (Test-Path -LiteralPath $dir) { Add-Finding "remove: the folder is left: $(Get-Listing $dir)" } } elseif ((Get-Listing (Split-Path $t)) -ne '') { Add-Finding "remove: left: $(Get-Listing (Split-Path $t))" }
+            $raw = Get-RawPath
+            if ((Get-Others $raw) -cne (Get-Others $base) -or (Test-OnPath $raw)) { Add-Finding "remove: the machine PATH is not as before: $raw" }
+            if ([string][Environment]::GetEnvironmentVariable('Path', 'User') -cne $userPath) { Add-Finding 'remove: the user PATH changed' }
+            if (Test-Path -LiteralPath $rec) { Add-Finding 'remove: install.json is left' }
+          }
+
+          try {
+            Set-RawPath $base
+            Write-Host "the machine PATH, with a %SystemRoot% entry put in: $base"
+
+            Test-Install $good; Assert-Clean 'an install: nothing compiled, the PATH kind and entries, a fresh process, no notice'
+            Test-Install (New-Broken 'compiles' '    [Environment]::SetEnvironmentVariable(''BONSAI_INSTALL_NOTICE'', [NullString]::Value, [EnvironmentVariableTarget]::Machine)' '    Add-Type -Namespace BonsaiCiBroken -Name Native -MemberDefinition ''[DllImport("user32.dll")] public static extern IntPtr GetDesktopWindow();'''); Assert-Caught 'compiles' 'temp'
+            Test-Install (New-Broken 'path-sz' '[Microsoft.Win32.RegistryValueKind]::ExpandString' '[Microsoft.Win32.RegistryValueKind]::String'); Assert-Caught 'path-sz' 'kind'
+            Test-Install (New-Broken 'path-expanded' '[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames' '[Microsoft.Win32.RegistryValueOptions]::None'); Assert-Caught 'path-expanded' 'kept'
+            Test-Install (New-Broken 'path-unset' 'Set-MachinePath $false' '$null = $false'); Assert-Caught 'path-unset' 'fresh'
+            Test-Install (New-Broken 'notice-left' '[NullString]::Value, [EnvironmentVariableTarget]::Machine' '''1'', [EnvironmentVariableTarget]::Machine'); Assert-Caught 'notice-left' 'notice'
+
+            [void][IO.Directory]::CreateDirectory((Join-Path $stubRoot '9.9.9'))
+            [IO.File]::WriteAllText((Join-Path $stubRoot '9.9.9\Microsoft.PowerShell.Utility.psd1'), "@{ ModuleVersion = '9.9.9'; RootModule = 'Microsoft.PowerShell.Utility.psm1'; FunctionsToExport = @('Get-FileHash'); CmdletsToExport = @(); AliasesToExport = @() }`r`n")
+            [IO.File]::WriteAllText((Join-Path $stubRoot '9.9.9\Microsoft.PowerShell.Utility.psm1'), "[IO.File]::AppendAllText('$marker', 'loaded ' + [Environment]::CommandLine + [Environment]::NewLine)`r`nfunction Get-FileHash { [IO.File]::AppendAllText('$marker', 'Get-FileHash ' + [Environment]::CommandLine + [Environment]::NewLine) }`r`nExport-ModuleMember -Function Get-FileHash`r`n")
+            $env:PSModulePath = (Split-Path $stubRoot) + ';' + $psModulePath
+            Test-Stub $good; Assert-Clean 'a Utility module of its own ahead on PSModulePath: not loaded by the child'
+            Test-Stub (New-Broken 'child-cmdlet' '$step = 12' '$step = 12; $null = Get-FileHash -LiteralPath $new'); Assert-Caught 'child-cmdlet' 'stub'
+            $env:PSModulePath = $psModulePath
+            Remove-Item -LiteralPath $stubRoot -Recurse -Force
+
+            Test-Loose $good '(OI)(CI)M'; Assert-Clean 'a pre-made folder Users can modify: refused, exit 1 and 18, nothing installed'
+            Test-Loose $good '(WA)'; Assert-Clean 'a pre-made folder Users can write attributes of: refused, exit 1 and 18, nothing installed'
+            Test-Loose (New-Broken 'mask-no-wa' '0x40 -bor 0x100 -bor 0x10000' '0x40 -bor 0x10000') '(WA)'; Assert-Caught 'mask-no-wa' 'refused'
+            Test-Loose (New-Broken 'rights-pass' 'function Test-Rights([string]$p) {' 'function Test-Rights([string]$p) { return $false') '(OI)(CI)M'; Assert-Caught 'rights-pass' 'refused'
+
+            Reset-Machine
+            $folder = Join-Path $ci 'folder'
+            Test-FolderTarget $good $folder
+            Test-FolderTarget $good ($folder + '\')
+            [void][IO.Directory]::CreateDirectory($dir)
+            Test-FolderTarget $good $dir
+            Assert-Clean 'a folder as -Target: refused, exit 1, nothing written'
+            Reset-Machine
+            Test-FolderTarget (New-Broken 'folder-taken' 'if ([IO.Directory]::Exists($Target)) {' 'if ($false) {') $folder; Assert-Caught 'folder-taken' 'folder'
+            # PowerShell's own -like, not -Filter: Windows' name matching lets 'folder.*' match the folder itself.
+            Get-ChildItem -LiteralPath $ci | Where-Object { $_.Name -like 'folder.*' } | Remove-Item -Force
+
+            Test-Remove $good $false; Test-Remove $good $true; Assert-Clean 'an install and -Remove, scratch and real: no file, no PATH entry, no record'
+            Test-Remove (New-Broken 'record-kept' 'if ([IO.File]::Exists($record)) { [IO.File]::Delete($record) }' '$null = $record') $false; Assert-Caught 'record-kept' 'remove'
+            Test-Remove (New-Broken 'path-kept' 'Set-MachinePath $true' '$null = $true') $true; Assert-Caught 'path-kept' 'remove'
+          } finally {
+            $env:PSModulePath = $psModulePath
+            try { if (Test-Path -LiteralPath $stubRoot) { Remove-Item -LiteralPath $stubRoot -Recurse -Force } } catch { Write-Host "cleanup: $_" }
+            try { Reset-Machine; Set-RawPath $orig } catch { Write-Host "cleanup: $_" }
+          }
+          Write-Host 'the elevated cases: each passed, and each broken copy was caught'
+          exit 0
