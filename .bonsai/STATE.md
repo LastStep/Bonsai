@@ -1,25 +1,24 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-19
-updated_by: orchestrator
+updated: 2026-10-20
+updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 19 Oct 2026 at 13:05 (a day session, the director present).
-**Step 5.6 is done** (its end re-check `T-5616` passed every check; its two rounds' findings were this page's lines, fixed). Code
-on `main` at `7a05c12d`, CI green on every job. Today: the director's Windows half passed (`T-5614`: steps 4, 5, 10
-and check 8's WSL half); step 7a-7d moved into CI and proved there (`T-5613`, 12 of 12 broken copies caught), 7e to
-5.7, since this computer runs Windows 11 Home and has no Windows Sandbox; the end records (`T-5615`: the tally, the
-sessions table, `workflow:correct`'s first run). Since then: **CI's windows job split in two parallel jobs** (`T-5617`;
-Defender untouched, the director's word), **the tagged pass narrowed to the 7 packages the tag can reach** (`T-5790`,
-held by `internal/selfcheck/faulttag_test.go`), and **the cleanup** (WSL 40 GB, Windows 27 GB freed). CI's longest
-job is now `windows`, 26 min (was 53). **Next: 5.7**, opening with the director's three questions and the records-database talk. The installed
-pre-release is still `bf7cc3d`. Bonsai's own repo takes `base` (`4b41790b`) and `workflow` (`a42a4f4`), plugins under
-the marketplace `bonsai-bonsai-299659af`. The floors: `go_tests` 4756 (19 Oct, `T-5695`); `go_tests_tagged` **2120** (19 Oct,
-`T-5790`: the narrowed pass, lowered on the director's word, re-recorded by their `bonsai update`). Every change lands by `CLAUDE.md`'s
-rules, with the director's 18 Oct waiver of the per-landing Windows half for 5.6.
+Rewritten, never appended (`base:state`). Last rewritten 20 Oct 2026 (a day session, the director present).
+**Step 5.6 is done; 5.7 has begun.** Code on `main` at `e85aa6e6` (records after it), CI green on every job at
+`ba2f4c5e`. This morning: the director's Windows half passed (`T-5614`); step 7a-7d moved into CI (`T-5613`, 12 of 12
+broken copies caught), 7e to 5.7; the end records (`T-5615`); CI's windows job split in two parallel jobs (`T-5617`);
+the tagged pass narrowed to the 7 packages the tag can reach (`T-5790`); the cleanup (WSL 40 GB, Windows 27 GB).
+That afternoon `workflow:correct`'s three questions were answered (below). **20 Oct: the team-work research is the
+studio's, not Bonsai's** (the director): its task, run report and decision moved to the studio's
+research folder (solo-to-team-ai, 19 Oct), and its unpushed records commit undone. **Next: 5.7's pieces in the plan's
+order, first CI on the branch.** The installed pre-release is still `bf7cc3d`. Bonsai's own
+repo takes `base` (`4b41790b`) and `workflow` (`a42a4f4`), plugins under the marketplace `bonsai-bonsai-299659af`. The
+floors: `go_tests` 4756 (19 Oct, `T-5695`); `go_tests_tagged` **2120** (19 Oct, `T-5790`: the narrowed pass, lowered on
+the director's word, re-recorded by their `bonsai update`).
 
 **No person's name** goes into any file or commit message (the director, 15 Oct; `CLAUDE.md`'s Safety section): "the
 director" in this project's files, "the person" in the product. Files already under `records/` and `design/` keep
@@ -50,18 +49,41 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
   read, the installers, the CLI look, the operating split, `workflow`'s changelog, prototype and correct skills; the
   end verifier `T-5611` (FAIL on records), then `T-5616`'s re-check. Tasks `T-5600`-`T-5617`, `T-5690`-`T-5699`; run
   reports `records/runs/R-2026-10-1[689]-T-56*.md`.
+- **Step 5.7, the release: begun** (19 Oct). 5.7.0 done (`T-5700`); 5.7.4 drafted and held (`T-5704`); the tagged pass
+  narrowed (`T-5790`).
 
 **Hours** (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min; 5.1 866 minutes; 5.2
 1,061; 5.3 about 2,013 (33 h 33 min); 5.4 about 2,372 (39 h 32 min); **5.5 about 78 h** with its planning and reviews (the end
 verifier's count, under its re-ask line of 138). Questions put to the director in 5.5: twenty-three before 16 Oct, and on 16 Oct
 eight (the workflow limits, the walls' Windows half, the login check, the history, check 5, check 5 on Windows, and the
 morning's install and Windows steps as asks). **5.6 about 21 h** (T-5611's count of about 19 h, a floor since many rows
-were not written, plus about 2 h on 19 Oct's day session), under its re-ask line of 51. **Step 5's Windows-only tally:**
-5.5's "about 143 minutes plus 16 Oct's Windows check-10 helpers (about 6 h, side by side)", plus **5.6's about 187
-minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in `R-2026-10-19-T-5615`).
+were not written, plus about 2 h on 19 Oct's day session), under its re-ask line of 51. **5.7 so far about 1 h**
+(`T-5700` 12 minutes, `T-5704` 16, `T-5790` 24), under its re-ask line of 24. **Step 5's Windows-only tally:** 5.5's "about 143 minutes plus 16 Oct's Windows check-10 helpers (about 6 h, side
+by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in
+`R-2026-10-19-T-5615`); 5.7 none yet.
 
 ## The director's decisions
 
+- **20 Oct:** **"in a previous conversation i discussed about converting bonsai for team development along with the
+  studio, move that research item in the studio research folder, as we wont be focusing on that here"**; undo the
+  commits of the files it made; **"then we just fully focus on the current planned bonsai release order"**; the aim
+  for the session, **"finish 5.7"**. The research, its task and run report, and OPT-0001 now live in the studio's
+  repo, in its research folder (solo-to-team-ai, 19 Oct); the freeze review it proposed is not a 5.7 piece.
+- **19 Oct (afternoon):**
+  - On "show me the status board for 5.7": **"no i dont want a page, just show me a table here"** (status boards as a
+    table in the session, not an artifact).
+  - `workflow:correct`'s three questions (saved in `~/bonsai-checks/5.7-prep/decisions-2026-10-19.md`): (1) Windows
+    before a landing, **"C: CI on branch"**: the batch's branch pushed, CI (its windows jobs among them) green on it,
+    then `main` fast-forwarded; needs `ci.yml` to run on pushed branches and `CLAUDE.md`'s landing rule reworded, a
+    task before 5.7's first landing; (2) files outside a piece's Owns, **"B: strict, stop and ask"**: a builder stops
+    with `needs-input` and the orchestrator amends Owns in the run report first; (3) a scratch folder for the roles that
+    write nothing, A, with **"if we go with option A, then we also need some sort of new agent like a cleaner"**, then
+    **"1: A now, cleaner after 1.0"**: write-nothing roles may write, clone and build in a scratch folder outside every
+    linked project, named in the brief; a briefed runner cleans at each batch's and the part's end; a cleaner role is
+    the first piece after 1.0. The orchestrator first said the guard needs no change for A; the guard refused an
+    auditor's writes there, so A needs a guard change (an Opus builder and a verifier).
+  - The records-database talk (work files when many people's AI agents share a project; the studio as the team
+    layer; an enterprise product): researched as `T-5791` and moved to the studio on 20 Oct (above).
 - **19 Oct (day session):** "we will finish up 5.6 in this session"; step 7 asked about ("why do we need the
   sandbox?"): Windows 11 Home has no Sandbox, so **7a-7d into CI's throwaway runner, 7e (declining the admin prompt) at
   their real install in 5.7** ("yes, go ahead"); ran steps 4, 5, 10 themselves; "update the roadmap artifact" (version
@@ -117,10 +139,7 @@ minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in `
     bonsai-workflow authors"; formats set 9 for three descriptions.
   - About 11:45: **`records/` stays in git "for now"** (asked whether it should be local; the take: tasks hold the
     guard's grants, the stop gate reads a named session's run report from its checkout, the contract says committed).
-    **At step 5.7, raise with the director first:** they are thinking of putting records in some form of database,
-    and maybe Bonsai's local logs and tasks too, so a project's agentic work is private yet shareable with a team and
-    across devices (to weigh: `CLAUDE.md`'s "no daemon, no network service", and that a shared store may be the
-    studio's).
+    At step 5.7 the director's records-database idea was raised first: researched on 19 Oct as `T-5791`, moved to the studio on 20 Oct.
   - About 12:10: "are we good to start 5.5.3 in parallel? if so, then go".
   - About 13:05: VG round 2 found M1; asked (fix and a short third check, recommended; fix without one; a known
     limit): **"A: fix + short 3rd check"**. VG3's must-fix (S2's other-system place) was fixed and re-checked by the
@@ -159,37 +178,38 @@ minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in `
 
 ## GitHub
 
-- `LastStep/Bonsai`: `main` the only branch, at `7a05c12d` (records after it), CI green there on every job; the newest tag `v0.4.3`; no open pull request;
-  `release.yml` disabled and build-only; ruleset `main-protection` blocks force pushes and deletion.
+- `LastStep/Bonsai`: `main` the only branch. On GitHub at `ba2f4c5e` (code at `e85aa6e6`), CI green on every job. The newest tag `v0.4.3`; no open pull request; `release.yml` disabled and build-only; ruleset
+  `main-protection` blocks force pushes and deletion.
 - `LastStep/bonsai-workflow`: **public**, `main` at `a42a4f4`, CI green on both sides.
 - `LastStep/bonsai-test-pack`: public, `main` at H (`19e3ca5`).
 - The old website stays on GitHub Pages until the director turns Pages off.
 
-## Now: closing 5.6, then 5.7
+## Now: 5.7
 
 | Piece | Task | State | Where |
 |---|---|---|---|
-| 5.6.0-5.6.10 | `T-5600`-`T-5610` | done | CI green at `9124cdc7`; 5.6.3 closed by the director's step 5 and check 8 |
-| ref moves, Windows CI fixes, V1, floors | `T-5691`-`T-5696` | done | floors 4756 / 4762 at `a4dfa5ed` |
-| The bugs register's row; small fixes | `T-5697`, `T-5698` | done | |
-| The end Windows run | `T-5699`, `T-5614`, `T-5613` | done | agent half; the director's 4, 5, 10 and check 8 WSL; 7a-7d in CI (`7a05c12d`, 12 of 12 caught) |
-| The end verifier, its fixes, re-check | `T-5611`, `T-5612`, `T-5615`, `T-5616` | done | `T-5616`'s findings were this page's lines, fixed |
-| CI's windows job as two parallel jobs | `T-5617` | done | `5fc46343`; windows 23 min and windows (fault tag) 27.5 min side by side (was 53) |
+| 5.6, every piece, its end verifier and records | `T-5600`-`T-5617`, `T-5690`-`T-5699` | done | CI green at `ba2f4c5e`; `T-5616`'s re-check passed |
 | The tagged pass narrowed | `T-5790` | done | `e85aa6e6`; rungs 1 and 4 and CI's tagged lines name the 7 packages; windows (fault tag) 16 min |
 | 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`; the pin test's one exception `release.yml` (5.7.2's, with the director) |
-| 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`; held until the records-database talk |
+| 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`, 7 commits ahead of `main` and behind its last 26 (to rebase); lands after CI on the branch |
 
-**Next, in this order:** the three questions from `workflow:correct` (below), one at a time; then 5.7, opening with the
-records-database talk. **Proposed for 5.7's planning** (`workflow:correct`, all
-unproven until shown failing on the old input named in `R-2026-10-19-T-5615`): a test that fails when a test restates a
-list's entries (C3); a rung comparing assertion counts base to head (C4); a `bonsai check` finding for a done task whose
-run report is open (C5); a rung and CI step running `bonsai check` on this repo (C6). **Small follow-ups:** the three new
-deny lines reach this repo's settings at the next pre-release's `update`; T-5614's step10.ps1:71 judged an existing
-file as "changed" (scratch only, read past from the guard's log). Every known bug: `records/bugs.md`.
+**Next, in this order:** 5.7's pieces by its section, with the director's 19 Oct rules: **first a task for CI on the
+branch** (`ci.yml` on pushed branches; `CLAUDE.md`'s landing rule reworded), before any 5.7 landing; every builder's
+brief says **strict Owns, stop and ask**; **the scratch folder for write-nothing roles** (a guard change, an Opus builder
+and a verifier; first find out why the guard refused the first auditor's Write and shell redirect there while three
+researchers' shell writes went through); a cleaner role after 1.0. **Proposed for 5.7's planning** (`workflow:correct`,
+all unproven until shown failing on the old input named in `R-2026-10-19-T-5615`): a test that fails when a test
+restates a list's entries (C3); a rung comparing assertion counts base to head (C4); a `bonsai check` finding for a done
+task whose run report is open (C5); a rung and CI step running `bonsai check` on this repo (C6). **Small follow-ups:**
+the three new deny lines reach this repo's settings at the next pre-release's `update`; T-5614's step10.ps1:71 judged an
+existing file as "changed" (scratch only, read past from the guard's log). Every known bug: `records/bugs.md`.
 
-**How work runs now:** agents by role, briefed with `bonsai message`; today's shared rules
-`~/bonsai-checks/briefs/common-2026-10-19-day.md` (over `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first; Windows runs by the orchestrator only, one at a time; load
-modest). A verifier or runner cannot make a scratch repository or a Windows clone (BUG-013): the orchestrator or a builder makes it.
+**How work runs now:** agents by role, briefed with `bonsai message`; the shared rules
+`~/bonsai-checks/briefs/common-2026-10-19-day.md` (over `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
+Windows runs by the orchestrator only, one at a time; load modest), plus the director's 19 Oct afternoon rules above. A
+verifier, runner or auditor cannot yet write a scratch file by the Write tool (BUG-013; the sanctioned folder is not
+built): it returns its work in its final reply, or the orchestrator or a builder makes the scratch. Run reports' times
+come from the messages' `created` stamps, never estimates (5.6's M26 recurred on 19 Oct and was corrected).
 
 **Facts measured that later work rests on:** Claude Code 2.1.301-2.1.302. `--agent <role>` does not preload a role's
 `skills:`. On Windows the PowerShell tool ignores Read and Edit deny rules. Moving a pack's ref renames the plugin
@@ -198,23 +218,21 @@ marketplace: a fresh Claude Code start before `update` installs. The guard's cos
 `/usr/local/bin` writable by others (the install job readies it). PowerShell's `-Filter 'x.*'` matches `x` itself.
 Windows PowerShell 5.1's Add-Type compiles into %TEMP%. The auto-mode classifier refuses an orchestrator's `taskkill` of
 another agent's Windows run, and an agent's `pgrep -f` loop can match itself. The guard refuses a builder starting `claude` (a runner runs scripted sessions). Claude Code 2.1.301 on Windows refuses an edit of a `\\\\wsl` path under acceptEdits as "a sensitive file" with no rule set. CI's windows test job: 53 min on `7a05c12d` (plain 26.5, tagged 25.5); after T-5617 and T-5790, windows 26 min and windows (fault tag) 16 min. The fault tag changes only `internal/guard`'s files; 7 packages reach it; a package reaching guard only on Windows is caught by Windows runs only. The Go build cache grows ~20 GB per side in 5 days of this work (worktrees, two tags, two systems; trimmed after 5 days unused). Status line through Git Bash: p50 55.5 ms,
-p95 60.4 ms.
+p95 60.4 ms. Bonsai's production Go names no Anthropic model and imports no `net`; a tool name the guard does not know is
+allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the guard granting nothing
+(`internal/workspace/active.go:175`), while a named session skips that rule (`internal/workspace/active.go:131-150`).
 
 ## Waiting on the director
 
-- **After 5.6, one at a time** (from `workflow:correct`'s first run, `R-2026-10-19-T-5615`): (1) Windows-only CI red
-  after a landing in 5 of 5.6's tasks, with the per-landing Windows half waived: bring it back from 5.7 on, or name CI's
-  windows job the gate; (2) the Owns lists missed files in 7 of 16 pieces; (3) a sanctioned scratch folder for roles that
-  write nothing, or leave it. At 5.6's close, their own step: take the
-  `"autoMemoryEnabled": true` line out of their local settings file (theirs only; the guard refuses agents).
-  Also for them to read: the pin test's one exception, `release.yml` (5.7.2's).
+- **Their own step, from 5.6's close:** take the `"autoMemoryEnabled": true` line out of their local settings file
+  (theirs only; the guard refuses agents). Also for them to read: the pin test's one exception, `release.yml` (5.7.2's).
 - **Can wait:** V1's design question: an agent past its budget cannot stop a process it started (exempt it, or accept).
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than
   the code.
-- **Later, as the plan has them:** at 5.6 taking their `"autoMemoryEnabled": true` line out; at 5.7 the release settings, the
-  `rc.1` tag, the installs, the trial, their word for 1.0, **and first the records-database idea**; and `base`'s tags: Bonsai's
-  old `v0.1.1`-`v0.4.3` tags read as newer versions of `base` in `bonsai status` (a pack-scoped tag form, before the 1.0 tag).
+- **Later, as the plan has them:** at 5.7 the release settings, the `rc.1` tag, the installs, the trial, their word for
+  1.0; and `base`'s tags: Bonsai's old `v0.1.1`-`v0.4.3` tags read as newer versions of `base` in `bonsai status` (a
+  pack-scoped tag form, before the 1.0 tag).
 
 ## Known bugs
 
@@ -224,7 +242,8 @@ p95 60.4 ms.
 
 **Housekeeping:**
 - The roadmap artifact ("Trinetra Roadmap"): Bonsai's cards updated 19 Oct (version 39: 5.5 done, 5.6 closing, 5.7 begun), next at 5.7's planning. The agent design:
-  "Workflow Pack Redesign" (version 4).
+  "Workflow Pack Redesign" (version 4). The work-files research's page, "Solo to Team AI" (private), is the
+  studio's now (a copy in its research folder, solo-to-team-ai).
 - Another of the director's sessions may also work in `~/Servers/Bonsai`: read `origin/main`'s new commits before each
   push, and never stage a file this session did not write.
 - The director's own local settings file (settings.local.json in .claude, out of git) holds their `skillOverrides` and `"autoMemoryEnabled": true` (out of
@@ -233,4 +252,5 @@ p95 60.4 ms.
   session's: `T-5503`, `T-5511`, `T-5513`, `T-5514`, `T-5595`, `T-5598`, `T-5599`, `batch-1`, `verify-5.5-VG2`,
   `verify-5.5-VG3`), the launchers, the pre-release's source clone and build. Some hold the Windows user name or raw
   payloads (`%USERPROFILE%\bonsai-checks\T-5511\win2\raw\`): never paste from them. `T-5599`'s unused backup and script
-  stay in `~/bonsai-checks/T-5599/`.
+  stay in `~/bonsai-checks/T-5599/`. 19 Oct's: `~/bonsai-checks/5.7-prep/decisions-2026-10-19.md` (the three
+  answers) and `~/bonsai-checks/T-5791/` (the team research's scratch; its findings copied to the studio, the rest to clean).
