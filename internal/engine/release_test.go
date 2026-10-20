@@ -2,8 +2,8 @@ package engine
 
 // Bonsai's newer releases (release.go, plan-5 5.6.5): read from a local repository with tags through a stamped
 // source (no test reaches GitHub), the record's times faked; no read within a day of one that worked, nor within an
-// hour of one that failed; the states; the lines' exact text, their origin check's place (5.7.3) and their names held to .goreleaser.yaml; a forged
-// record giving no lines; check's warning and note.
+// hour of one that failed; the states; the lines' exact text, their origin check's place (5.7.3) and their names held
+// to .goreleaser.yaml; a forged record giving no lines; check's warning and note.
 
 import (
 	"encoding/json"
