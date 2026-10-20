@@ -935,7 +935,10 @@ var errFolder = errors.New("it is a folder, not a file")
 // osWords says why something failed in the gate's own words. An operating system's error is said by its kind, never
 // by its text, which names the file by its whole path (contract §2.6: a record names no user's folder) and may hold the
 // words safe takes out; a Bonsai error that wraps one (a *workspace.Error) is said by the file it names, when that is
-// relative to the project, and the kind. Any other error is Bonsai's own words, said as they are.
+// relative to the project, and the kind. Any other error is Bonsai's own words, said as they are. The kinds every
+// reader says (not there, permission denied, and the rest as the system could not read it) are workspace.OSWords',
+// their one home (BUG-089, the director's B of 20 Oct); the gate adds the two it meets that the others do not (a folder
+// where a file belongs, and a file where a folder belongs), in the same order as before, so its words are unchanged.
 func osWords(err error) string {
 	if !isOS(err) {
 		return oneLine(err.Error())
@@ -946,16 +949,13 @@ func osWords(err error) string {
 		file = filepath.ToSlash(we.File) + ": "
 	}
 	switch {
-	case errors.Is(err, fs.ErrNotExist):
-		return file + "it is not there"
-	case errors.Is(err, fs.ErrPermission):
-		return file + "permission denied"
+	case errors.Is(err, fs.ErrNotExist), errors.Is(err, fs.ErrPermission):
 	case errors.Is(err, errFolder), errors.Is(err, syscall.EISDIR):
 		return file + "it is a folder, not a file"
 	case errors.Is(err, syscall.ENOTDIR):
 		return file + "a file stands where a folder belongs"
 	}
-	return file + "the system could not read it"
+	return file + workspace.OSWords(err)
 }
 
 // isOS reports whether err is, or wraps, an operating system's error, or errFolder.
