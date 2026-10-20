@@ -1,34 +1,277 @@
 name: Release
 
-# Build-only until spec step 5.7, which is the director's (design/plan.md, "CI and release after part 1"). A manual run
-# builds every target in .goreleaser.yaml as a snapshot and publishes nothing: no tag trigger, no inputs, a read-only
-# token and no secret, so the brews: block is never reached. The workflow also stays switched off on GitHub.
-on:
-  workflow_dispatch:
+# release.yml: builds, signs and publishes one Bonsai release from a version tag (design/plan-5.md, note 5.7.2).
+#
+# What starts it: a pushed tag vX.Y.Z or vX.Y.Z-rc.N, and nothing else. No manual run, no input and no other event,
+# so nothing but a version tag can build or publish a release; a packs' tag (base-v1.0.0) matches neither pattern.
+# Who switches it on, tags and approves: the director alone (gh workflow enable release.yml; the tag; "Approve and
+# deploy" on the run). No agent tags, approves, re-runs or cancels a run (CLAUDE.md, GitHub).
+#
+# Two jobs, so nothing the build makes runs where a release can be written or a record signed:
+#   build    no environment; a read-only token (contents, checks, actions: read). It checks the tag and its commit's
+#            checks, runs the tests, builds every release file with GoReleaser, runs the dist checks on them and hands
+#            the files over as one artifact. Nothing in it can write to GitHub or ask for a signing token.
+#   publish  inside the environment release, which admits v* tags only and holds the job until the director approves
+#            it, before any step runs; contents, id-token and attestations: write. It runs no file from the build: it
+#            checks the files' SHA-256s, signs them (GitHub's attestation), makes a draft release, checks the draft,
+#            publishes it and checks it as published. On a failure before publishing it deletes its own draft.
+#
+# Why no run from another ref can ever sign a release: this file starts only on the two tag patterns; id-token: write
+# is only in publish, which only a run whose GITHUB_REF the environment's tag rule admits (v*) can enter, and only
+# once the director approves; and the signed record names the workflow and the ref it ran from, which the install
+# lines check (gh attestation verify --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref
+# refs/tags/v<version>): a record made from any other ref fails them.
+#
+# Tokens: the jobs' tokens are what permissions below gives each; a step gets GH_TOKEN in its own env only, on the steps
+# that call gh. The checkout and the attestation action take the job's token by their own default (read-only in build).
+# No secret is named anywhere; no cache is read or written.
 
-permissions:
-  contents: read
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+
+# No permission at all unless a job names it.
+permissions: {}
+
+# One run per tag at a time, and a running one never cancelled: a second run of the same tag waits until the first
+# ends. (GitHub replaces a waiting run with a newer one of the same group; its queue: max would keep both, but
+# actionlint v1.7.12, CI's, does not know the key yet.)
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  build:
+    # GitHub's own machines: the signed record names the runner, and the install lines refuse a self-hosted one.
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # the checkout
+      checks: read    # the tag check: the commit's check runs
+      actions: read   # the tag check: this run's own check suite, left out
+    outputs:
+      # checksums.txt's SHA-256, which publish compares with the file it downloads.
+      checksums: ${{ steps.handover.outputs.checksums }}
+    env:
+      # GoReleaser by its module path at the version .goreleaser.yaml's header names, so Go's checksum database checks
+      # it (as in ci.yml's release-check).
+      GORELEASER: github.com/goreleaser/goreleaser/v2@v2.18.3
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      # The tag's commit with full history: the tag check reads origin/main, GoReleaser the tags, and the schema
+      # compare test older commits.
+      - name: Checkout the tag
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
+      # The tag's name again, its commit on main, and that commit's CI and CodeQL jobs green
+      # (.github/scripts/release-tag-check.sh). The jobs are named as GitHub reports them, ten in all: the matrix job
+      # install once per system, and windows (fault tag) apart from windows. The one step in build given a token.
+      - name: Check the tag, its commit and its commit's checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: sh .github/scripts/release-tag-check.sh
+
+      # No cache: nothing another run could have written reaches the release build.
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
         with:
           go-version-file: go.mod
+          cache: false
+
+      - name: Print the Go version
+        run: go version
 
       - name: Run tests
-        run: go test ./...
+        run: go test -timeout 20m ./...
 
-      - name: Build with GoReleaser (snapshot, nothing published)
-        uses: goreleaser/goreleaser-action@v7
+      - name: Run vet
+        run: go vet ./...
+
+      # Every package with the guard's test fault switch (ci.yml narrows this pass to the packages the tag can change;
+      # the release runs it whole, so no package list here can drift from internal/selfcheck/faulttag_test.go's).
+      - name: Run tests with the fault tag
+        run: go test -timeout 20m -tags bonsai_test_fault ./...
+
+      - name: Run vet with the fault tag
+        run: go vet -tags bonsai_test_fault ./...
+
+      # The tag's section of CHANGELOG.md, written outside the checkout so the tree GoReleaser builds stays clean.
+      - name: The notes
+        run: sh .github/scripts/release-notes.sh "$GITHUB_REF_NAME" "$RUNNER_TEMP/notes.md"
+
+      # Every program, archive and checksums.txt into dist/. No token is in this step's environment, and
+      # .goreleaser.yaml disables the release: GoReleaser publishes nothing. The current tag is the pushed one, so a
+      # packs' base-v tag on the same commit is never taken for the version.
+      - name: Build every release file
+        run: GORELEASER_CURRENT_TAG="$GITHUB_REF_NAME" go run "$GORELEASER" release --clean
+
+      # The dist checks (internal/selfcheck/dist_test.go) on the files just built, the programs' commit held to this
+      # one. They run the built program and install.sh: here, where nothing can be written to GitHub.
+      - name: The dist checks
+        run: BONSAI_CHECK_DIST="$GITHUB_WORKSPACE/dist" BONSAI_CHECK_COMMIT="$GITHUB_SHA" go test -count=1 -run TestDist -v ./internal/selfcheck/
+
+      # The files handed over: the archives and checksums.txt (the release's assets), each program in a folder named
+      # after its system (signed, not uploaded to the release), and the notes. checksums.txt's SHA-256 is the job's
+      # output.
+      - name: Gather the files to hand over
+        id: handover
+        run: |
+          set -eu
+          out="$RUNNER_TEMP/release"
+          mkdir -p "$out/assets" "$out/programs"
+          cp dist/*.tar.gz dist/*.zip dist/checksums.txt "$out/assets/"
+          for d in dist/bonsai_*_*/; do
+            name=$(basename "$d")
+            mkdir "$out/programs/$name"
+            cp "$d"bonsai* "$out/programs/$name/"
+          done
+          cp "$RUNNER_TEMP/notes.md" "$out/notes.md"
+          find "$out" -type f | LC_ALL=C sort
+          echo "checksums=$(sha256sum "$out/assets/checksums.txt" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Hand the files over
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
-          distribution: goreleaser
-          version: "~> v2"
-          args: build --snapshot --clean
+          name: release
+          path: ${{ runner.temp }}/release/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # Waits for the director's approval before any step runs; admits only a run whose ref the environment's v* tag
+    # rule matches (batch 1's settings).
+    environment: release
+    permissions:
+      contents: write      # the draft, its files and publishing it
+      id-token: write      # the attestation's signing certificate
+      attestations: write  # the attestation stored in this repository
+    steps:
+      # gh 2.97 or newer: it reads a draft release by its tag, has release verify and verify-asset, and fixed
+      # GHSA-mm27-mwq9-fr5g in attestation verify's signer match.
+      - name: Check gh's version
+        run: |
+          set -eu
+          gh --version
+          v=$(gh --version | sed -n 's/^gh version \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p')
+          major=${v%%.*}; minor=${v#*.}
+          [ "$major" -gt 2 ] || { [ "$major" -eq 2 ] && [ "$minor" -ge 97 ]; } || { echo "gh $v is older than 2.97"; exit 1; }
+
+      - name: Take the files over
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+
+      # checksums.txt as build wrote it, and each archive as checksums.txt says; nothing in hand is run.
+      - name: Check the files' SHA-256s
+        env:
+          WANT: ${{ needs.build.outputs.checksums }}
+        working-directory: ${{ runner.temp }}/release/assets
+        run: |
+          set -eu
+          got=$(sha256sum checksums.txt | cut -d' ' -f1)
+          [ "$got" = "$WANT" ] || { echo "checksums.txt is $got, build wrote $WANT"; exit 1; }
+          sha256sum --strict -c checksums.txt
+          n=0
+          for f in *; do [ "$f" = checksums.txt ] || n=$((n + 1)); done
+          [ "$n" -eq "$(wc -l < checksums.txt)" ] || { echo "$n archives, $(wc -l < checksums.txt) lines in checksums.txt"; exit 1; }
+
+      # GitHub's signed record (SLSA build provenance) over every archive, checksums.txt and every program.
+      - name: Sign the files
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6  # v4.2.2
+        with:
+          subject-path: |
+            ${{ runner.temp }}/release/assets/*
+            ${{ runner.temp }}/release/programs/*/*
+
+      # A draft holding every archive and checksums.txt. It is refused if any release of this tag exists already
+      # (a draft too), so the draft this step leaves is surely this run's own, the one Delete this run's draft may
+      # remove. A pre-release tag is marked so, and never as the latest release.
+      - name: Make a draft release
+        id: draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        working-directory: ${{ runner.temp }}/release
+        run: |
+          set -eu
+          n=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --jq "[.[] | select(.tag_name == \"$GITHUB_REF_NAME\")] | length" | awk '{s += $1} END {print s + 0}')
+          [ "$n" -eq 0 ] || { echo "$n release(s) of $GITHUB_REF_NAME already exist; none is made"; exit 1; }
+          echo "made=true" >> "$GITHUB_OUTPUT"
+          version=${GITHUB_REF_NAME#v}
+          set -- assets/*
+          case $GITHUB_REF_NAME in
+            *-rc.*) gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "Bonsai $version" --notes-file notes.md --prerelease --latest=false "$@" ;;
+            *) gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "Bonsai $version" --notes-file notes.md "$@" ;;
+          esac
+
+      # Before anyone sees it: every file as GitHub holds it equal, by SHA-256, to the one in hand (gh reads a draft by
+      # its tag and fetches each file through the API with the token), and nothing more; then the signed record of
+      # each archive and program checked as the install lines check it.
+      - name: Check the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        working-directory: ${{ runner.temp }}/release
+        run: |
+          set -eu
+          mkdir "$RUNNER_TEMP/held"
+          gh release download "$GITHUB_REF_NAME" --dir "$RUNNER_TEMP/held"
+          (cd assets && for f in *; do echo "$f"; done) > "$RUNNER_TEMP/want.txt"
+          (cd "$RUNNER_TEMP/held" && for f in *; do echo "$f"; done) > "$RUNNER_TEMP/held.txt"
+          diff "$RUNNER_TEMP/want.txt" "$RUNNER_TEMP/held.txt" || { echo "the draft's files differ from the files in hand (above)"; exit 1; }
+          for f in assets/*; do
+            a=$(sha256sum "$f" | cut -d' ' -f1)
+            b=$(sha256sum "$RUNNER_TEMP/held/$(basename "$f")" | cut -d' ' -f1)
+            [ "$a" = "$b" ] || { echo "$(basename "$f"): GitHub holds $b, in hand $a"; exit 1; }
+            echo "$(basename "$f"): $a"
+          done
+          for f in assets/*.tar.gz assets/*.zip programs/*/*; do
+            gh attestation verify "$f" -R "$GH_REPO" --signer-workflow "$GH_REPO/.github/workflows/release.yml" --source-ref "$GITHUB_REF" --deny-self-hosted-runners
+          done
+
+      # Published: from here GitHub's lock (immutable releases) holds the tag and the files.
+      - name: Publish the release
+        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false
+
+      # GitHub's own record of the release, checked, and each archive and checksums.txt against it; retried for up to
+      # a minute while GitHub writes it. This run's log is the release's first record.
+      - name: Check the release as published
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        working-directory: ${{ runner.temp }}/release/assets
+        run: |
+          set -eu
+          i=0
+          until gh release verify "$GITHUB_REF_NAME"; do
+            i=$((i + 1))
+            [ "$i" -lt 6 ] || { echo "gh release verify $GITHUB_REF_NAME failed for a minute"; exit 1; }
+            sleep 10
+          done
+          for f in *; do
+            gh release verify-asset "$GITHUB_REF_NAME" "$f"
+          done
+
+      # A failure before publishing leaves no half-made release: this run's own draft (the only release of the tag,
+      # made by Make a draft release) is deleted, never a published release and never the tag.
+      - name: Delete this run's draft
+        if: failure() && steps.draft.outputs.made == 'true' && steps.publish.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          for id in $(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\" and .draft) | .id"); do
+            gh api -X DELETE "repos/$GH_REPO/releases/$id"
+            echo "deleted draft release $id of $GITHUB_REF_NAME"
+          done
