@@ -88,3 +88,15 @@ labels: {}
   (recommended) no rule line for those two only, the log names them, the skill says so, stopgate.go only; B rename the
   two rules everywhere (outside Owns, changes the log's words); C print them anyway and loosen the safety test (not a
   builder's call). The first ask, agent:h-639ab913f88a: open. Waiting on both, checking every few minutes.
+- 16:54 Finding: ending a turn to wait on the asks is a stop, and the gate blocks it (stop-red, the same words as probe 1, second block of the session). A named session waiting on an ask has no way to idle but to keep making calls; each idle turn end spends one of Claude Code's eight blocks in a row. I wait with foreground checks instead.
+- 17:01 Both asks answered, `by: terminal`, each as words "B" (choice null; the record's `source` reads "agent"):
+  agent:h-639ab913f88a at 11:30:43Z, agent:h-ae479b969f78 at 11:31:34Z.
+- 17:03 Ask 1, B, done: commit 3b390caa. The gate's osWords takes "not there", "permission denied" and "the system
+  could not read it" from workspace.OSWords and keeps its two folder kinds, in the same order; its words are unchanged.
+  `go test ./internal/stopgate/`: only the 5 "missing" cases still fail.
+- 17:05 Ask 2, B (rename the two rules): needs files outside this task's Owns. stop-task-missing and stop-rung-missing
+  appear in internal/guard/rules.go:76,92 (constants and the rules table, their one home), docs/reference/lists.md:735,751
+  (generated from it: `go generate ./internal/reference`), internal/stopgate/stopgate.go (owned) and tests (by
+  constant). None is protected. The rule list is open (lists.md "Guard rules"), so new names are allowed; old log
+  records keep the old words. Stopped as `needs-input` to the orchestrator for the Owns amendment and the two names
+  (proposed: stop-task-unknown, stop-rung-not-asked).
