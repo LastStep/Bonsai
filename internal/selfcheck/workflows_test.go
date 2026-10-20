@@ -14,9 +14,7 @@ var workflowFolders = []string{".github/workflows", "packs/template/.github/work
 
 // unpinned lists the workflow files the pin rule does not yet hold, each with its reason. A file here is read by no
 // check below; take it out when its reason is gone.
-var unpinned = map[string]string{
-	".github/workflows/release.yml": "5.7.2 pins it, with the director",
-}
+var unpinned = map[string]string{}
 
 var (
 	usesLine = regexp.MustCompile(`^(\s*)(?:-\s+)?uses:\s*(\S+)(.*)$`)
