@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5705
 title: "5.7.5, the releases checked: batch 1 read back, each pre-release's and 1.0's files checked on both sides, V2, the director's installs read back"
-status: running
+status: verify
 lane:
 done_when:
   - "batch 1's settings read back by an agent, changing nothing, each as the plan's batch 1 says"
