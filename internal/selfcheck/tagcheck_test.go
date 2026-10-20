@@ -142,7 +142,6 @@ func without(t *testing.T, answer map[string]any, name string) map[string]any {
 // runTagCheck writes the answers one after another (as gh api --paginate writes pages) and runs the script on them.
 func runTagCheck(t *testing.T, dir, tag, sha string, own string, answers ...map[string]any) (int, string) {
 	t.Helper()
-	file := filepath.Join(t.TempDir(), "answer.json")
 	var b []byte
 	for _, a := range answers {
 		j, err := json.Marshal(a)
@@ -151,7 +150,14 @@ func runTagCheck(t *testing.T, dir, tag, sha string, own string, answers ...map[
 		}
 		b = append(append(b, j...), '\n')
 	}
-	if err := os.WriteFile(file, b, 0o644); err != nil {
+	return runTagCheckRaw(t, dir, tag, sha, own, b)
+}
+
+// runTagCheckRaw runs the script on a saved answer of exactly these bytes.
+func runTagCheckRaw(t *testing.T, dir, tag, sha string, own string, answer []byte) (int, string) {
+	t.Helper()
+	file := filepath.Join(t.TempDir(), "answer.json")
+	if err := os.WriteFile(file, answer, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	script, err := filepath.Abs(filepath.Join("..", "..", filepath.FromSlash(tagCheckScript)))
@@ -245,6 +251,37 @@ func TestTagCheckOnSavedAnswer(t *testing.T) {
 			code, out := runTagCheck(t, dir, c.tag, c.sha, ownArg, c.answers...)
 			if code != c.code || !strings.Contains(out, c.want) {
 				t.Errorf("exit %d, want %d with %q; output:\n%s", code, c.code, c.want, out)
+			}
+		})
+	}
+}
+
+// TestTagCheckUnreadableAnswer shows an answer that is not the check-runs endpoint's refused, naming why: GitHub's
+// error object, text that is not JSON, nothing at all, and a page with no check_runs list among good pages.
+func TestTagCheckUnreadableAnswer(t *testing.T) {
+	needTagCheckTools(t)
+	dir, onMain, _ := tagCheckRepo(t)
+	good, err := os.ReadFile(filepath.Join("testdata", "check-runs-137e419f.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name   string
+		answer []byte
+		want   string
+	}{
+		{"not found", []byte(`{"message":"Not Found","documentation_url":"https://docs.github.com/rest","status":"404"}` + "\n"),
+			"is not an answer of the check-runs endpoint"},
+		{"not JSON", []byte("<html>502 Bad Gateway</html>\n"), "is not JSON"},
+		{"empty", nil, "is empty"},
+		{"a bad page after a good one", append(append([]byte{}, good...), []byte("\n{\"message\":\"Not Found\"}\n")...),
+			"is not an answer of the check-runs endpoint"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			code, out := runTagCheckRaw(t, dir, "v1.0.0", onMain, ownSuite, c.answer)
+			if code != 1 || !strings.Contains(out, c.want) {
+				t.Errorf("exit %d, want 1 with %q; output:\n%s", code, c.want, out)
 			}
 		})
 	}

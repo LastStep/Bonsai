@@ -116,8 +116,18 @@ case $own in
 esac
 echo "this run's own check suite, left out: $own"
 
+# The answer read before it is judged: one or more JSON objects (pages), each with a check_runs list. A pipeline's
+# status is its last command's in sh, so every jq call below writes to a file and its own status is tested; a jq
+# failure never reaches a sort that would hide it.
+[ -s "$tmp" ] || fail "the answer of the check-runs endpoint is empty"
+jq empty "$tmp" >/dev/null 2>&1 || fail "the answer of the check-runs endpoint is not JSON"
+jq -ne '[inputs] | length > 0 and all(.[]; type == "object" and (.check_runs | type) == "array")' "$tmp" >/dev/null 2>&1 ||
+	fail "the answer is not an answer of the check-runs endpoint: a page has no check_runs list (GitHub's message: $(jq -nc '[inputs | .message? // empty] | first // "none"' "$tmp" 2>/dev/null))"
+
 # One line per problem, sorted, so the output is the same for the same answer.
-problems=$(jq -nr --arg own "$own" --arg named "$named" '
+found="$tmp.problems"
+trap 'rm -f "$tmp" "$found"' EXIT
+jq -nr --arg own "$own" --arg named "$named" '
 	($named | split("\n")) as $names
 	| [inputs | .check_runs[] | select((.check_suite.id | tostring) != $own)] as $runs
 	| (
@@ -131,7 +141,8 @@ problems=$(jq -nr --arg own "$own" --arg named "$named" '
 			| select(.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out")
 			| "\(.name): \(.conclusion)")
 	)
-' "$tmp" | LC_ALL=C sort -u) || fail "cannot read the check runs (not the answer of the check-runs endpoint?)"
+' "$tmp" >"$found" || fail "cannot read the check runs in the answer"
+problems=$(LC_ALL=C sort -u "$found") || fail "cannot sort the problems found"
 if [ -n "$problems" ]; then
 	printf '%s\n' "$problems" | sed 's/^/  /' >&2
 	fail "the checks of $sha do not allow a release (above)"
