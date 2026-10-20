@@ -146,8 +146,10 @@ Each lets new code run on the person's machine, takes the guard out, or loosens 
   `base:operating-setup`);
 - installing the `bonsai` program (root or admin): when `bonsai check` warns of a newer release (bonsai-newer),
   hand the person both sides' lines from `bonsai status --full --json` (`bonsai_release.lines`, exactly as Bonsai
-  wrote them, run one at a time; the fourth prints `OK`, or `True` in PowerShell) with the release's notes link;
-  never run them.
+  wrote them, run one at a time; the fourth prints `OK`, or `True` in PowerShell; the fifth prints
+  `Verification succeeded` and needs `gh` 2.97 or newer, logged in) with the release's notes link and Bonsai's
+  `docs/install.md` (https://github.com/LastStep/Bonsai/blob/main/docs/install.md: what each line proves, the way
+  out); never run them.
 
 ## Records
 

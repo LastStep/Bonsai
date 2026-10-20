@@ -60,6 +60,48 @@ func TestOperatingSkill(t *testing.T) {
 	}
 }
 
+// operatingInstallNames are what the core skill's install item names (plan-5 note 5.7.3, 4): where the lines are,
+// the page that says what each proves (by its address, since a linked project has no docs/install.md of its own),
+// and the origin check's words.
+var operatingInstallNames = []string{"`bonsai_release.lines`", "`docs/install.md`",
+	"https://github.com/LastStep/Bonsai/blob/main/docs/install.md", "`Verification succeeded`", "never run them"}
+
+// installItemProblems lists what the core skill's install item lacks: the list item that starts "- installing the
+// `bonsai` program", up to the next item or blank line.
+func installItemProblems(core string) []string {
+	start := strings.Index(core, "\n- installing the `bonsai` program")
+	if start < 0 {
+		return []string{"operating-bonsai has no item \"- installing the `bonsai` program\""}
+	}
+	item := core[start+1:]
+	if end := regexp.MustCompile(`\n(- |\n)`).FindStringIndex(item); end != nil {
+		item = item[:end[0]]
+	}
+	item = strings.Join(strings.Fields(item), " ")
+	var out []string
+	for _, name := range operatingInstallNames {
+		if !strings.Contains(item, name) {
+			out = append(out, "operating-bonsai's install item never names "+name)
+		}
+	}
+	return out
+}
+
+// TestOperatingSkillInstallLine: the core skill's install item names the lines, the page and the origin check, and a
+// copy without each is caught.
+func TestOperatingSkillInstallLine(t *testing.T) {
+	core := readOperatingSkills(t)[0]
+	for _, p := range installItemProblems(core) {
+		t.Errorf("packs/base/skills: %s", p)
+	}
+	for _, name := range operatingInstallNames {
+		got := strings.Join(installItemProblems(strings.ReplaceAll(core, name, "elsewhere")), "\n")
+		if !strings.Contains(got, "never names "+name) {
+			t.Errorf("a copy without %s is not caught: %q", name, got)
+		}
+	}
+}
+
 // TestOperatingSkillCatchesDrift: copies of the skills, each broken one way, are each caught: a flag no word takes, a
 // flag of another word, a flag not built yet, a word Bonsai does not have, an error word it does not have, every
 // mention of each word in the registry taken out of both, either skill past its size, and either without its pointer
