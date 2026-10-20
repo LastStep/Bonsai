@@ -100,7 +100,8 @@ Fields and templates: `base:message`. An address is `<role>@<task>`; the person'
 
 ## Budgets and calls
 
-The guard's refusal says why first, then `next`; `bonsai logs` shows its rule.
+A refusal of the guard or a block of the stop gate says why first, then `next`, then `rule:` and its rule's word on a
+line of its own (the one the log keeps; `bonsai logs` shows it too). Act on the rule by its word:
 
 - `budget-spent` ("budget spent (minutes: 181 of 180) ..."): write your report now by the command its `next.do`
   names, exactly as written, as one shell call with nothing else on the line; then end the turn. It runs the
