@@ -1,17 +1,19 @@
 ---
-name: Feature Request
-about: Suggest a feature
+name: Feature request
+about: Something Bonsai should do that it does not
 labels: enhancement
 ---
 
-## Problem / Use Case
+<!-- The feature request form. Fill each section; delete these comments. -->
 
-What problem does this solve? Why do you need it?
+## What you are trying to do
 
-## Proposed Solution
+The work you were doing when you missed it, and why it matters to you.
 
-Describe what you'd like to see — a new command, a behavior change, etc.
+## What you would like Bonsai to do
 
-## Alternatives Considered
+A new command, a flag, a check, a change to what a command prints: as plainly as you can.
 
-Any other approaches you've thought about.
+## What you do today instead
+
+Any way round it you use now, or other tools you have tried.

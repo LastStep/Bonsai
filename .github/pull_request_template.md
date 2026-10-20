@@ -1,18 +1,17 @@
-## Summary
+<!-- The pull request form. Bonsai's own work lands on main directly, with no pull requests (CONTRIBUTING.md), so open
+an issue first for anything bigger than a small fix. Delete these comments. -->
 
-What changed and why.
+## What it changes
 
-## Changes
+What a person using Bonsai can do now, or what no longer goes wrong, in a few plain sentences.
 
-- `path/file` — what changed
+## How you proved it
 
-## Test Plan
-
-How you tested this — commands run, scenarios verified.
+The commands you ran and what they printed: the tests and vet, and the command that shows the change.
 
 ## Checklist
 
-- [ ] `make build` passes
-- [ ] `gofmt -s` clean (no formatting issues)
-- [ ] Tested affected commands manually
-- [ ] Updated docs if behavior changed
+- [ ] `go test ./...` and `go vet ./...` pass
+- [ ] `gofmt -l .` prints nothing
+- [ ] Every page, template or help text the change touches says the same as the code
+- [ ] No path from your machine, no name, no token or address in any file or commit message

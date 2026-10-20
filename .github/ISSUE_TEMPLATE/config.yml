@@ -1,1 +1,3 @@
+# The issue forms' settings: every issue starts from one of the templates beside this file (bug_report.md,
+# feature_request.md), never blank. A security problem goes by SECURITY.md, never an issue.
 blank_issues_enabled: false

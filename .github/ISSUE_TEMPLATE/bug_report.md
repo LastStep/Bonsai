@@ -1,30 +1,31 @@
 ---
-name: Bug Report
-about: Report a bug in Bonsai
+name: Bug report
+about: Something in Bonsai does not do what its documentation says
 labels: bug
 ---
 
-## Description
+<!-- The bug report form. Fill each section; delete these comments. A security problem goes by SECURITY.md instead,
+never in a public issue. -->
 
-A clear description of the bug.
+## What happened
 
-## Steps to Reproduce
+What Bonsai did, with the command you ran and its full output (paste it, or the `--json` output where the command has
+one).
 
-1. Run `bonsai ...`
-2. Select ...
-3. See error
+## What you expected
 
-## Expected Behavior
+What should have happened, and where it says so if you know (a page in `docs/`, `bonsai --help`).
 
-What you expected to happen.
+## How to see it again
 
-## Actual Behavior
+1. 
+2. 
+3. 
 
-What actually happened. Include error messages or unexpected output.
+## Where it ran
 
-## Environment
-
-- **Bonsai version:** (`bonsai --version`)
-- **OS:** (e.g., macOS 15, Ubuntu 24.04, Windows 11)
-- **Install method:** (Homebrew / binary download / `go install`)
-- **Go version** (if built from source): (`go version`)
+- **Bonsai:** the output of `bonsai --version`
+- **Side:** WSL, Linux or Windows, and its version
+- **Installed by:** the installer from a release archive (`install.sh` or `install.ps1`), or by hand (built from
+  this repository: say which commit)
+- **Claude Code:** the output of `claude --version`, if the problem shows in a Claude Code session
