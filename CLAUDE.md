@@ -82,17 +82,22 @@ reports through `bonsai message`, the lanes and their pipelines, the lenses and 
   are the hours the stop lines count. Past run reports, logs and tasks are left as they are (the director, 12 Oct).
 - **The landing rule**, the lock on `main`. The orchestrator fast-forwards a piece only when
   `.bonsai/local/ladder/<task>.json` in the main checkout reads `mode: local`, green, `git.sha` the branch's HEAD,
-  `git.dirty` false, every rung of the floor and of the task's `bonsai.ladder` green, and its `ladder` record in the
-  log names `/usr/local/bin/bonsai` with the result's `sha256`; plus check 10's Windows half (`go test ./...` and
-  `go vet ./...`, plain and tagged, natively on Windows) before the push, and CI after it. **Pieces ready together land
-  as one batch** (the director, 15 Oct): each rebased in turn onto the one before, each climbed at its own tip, check
-  10's Windows half run once at the batch's top commit, `main` fast-forwarded to it and pushed once. It also reads the
-  branch's diff against the section's "Owns" list and refuses one that leaves it: `records/tasks/`, `design/` and
-  `.bonsai/STATE.md` above all, free paths that rung 0 never judges. The ladder is always run by its installed path,
-  `/usr/local/bin/bonsai ladder --task <id>`. The run report quotes each landing's `git.sha`, the result's `sha256` and
-  `green`, and the climb's counts and rung times. Each part's end verifier matches every landed commit to a green local
-  `ladder` record naming `/usr/local/bin/bonsai` with that `sha256`, and reads every task's `bonsai.allows` against its
-  section's "Owns".
+  `git.dirty` false, every rung of the floor and of the task's `bonsai.ladder` green, and its `ladder` record in the log
+  names `/usr/local/bin/bonsai` with the result's `sha256`; then, **CI on the branch** (the director, 19 Oct): the
+  orchestrator pushes the branch (builders never push), waits for CI on that exact commit to finish green, every job of
+  it, the two windows jobs among them, and only then fast-forwards `main` to it, pushes `main` and deletes the branch on
+  GitHub (`git push origin --delete <branch>`). Red CI on the branch stops the landing: the fix goes on as new commits
+  on that branch, climbed again and pushed again, never force-pushed. Check 10's Windows half (`go test ./...` and
+  `go vet ./...`, plain and tagged, natively on Windows) is the fallback for what CI cannot run: a landing while GitHub
+  Actions cannot run the branch (an outage, or its minutes spent), and a proof that needs a checkout made with Windows
+  git (check 3's CRLF checkout). **Pieces ready together land as one batch** (the director, 15 Oct): each rebased in
+  turn onto the one before, each climbed at its own tip, the top branch pushed once and CI green on its top commit,
+  `main` fast-forwarded to it and pushed once. It also reads the branch's diff against the section's "Owns" list and
+  refuses one that leaves it: `records/tasks/`, `design/` and `.bonsai/STATE.md` above all, free paths that rung 0 never
+  judges. The ladder is always run by its installed path, `/usr/local/bin/bonsai ladder --task <id>`. The run report
+  quotes each landing's `git.sha`, the result's `sha256` and `green`, and the climb's counts and rung times. Each part's
+  end verifier matches every landed commit to a green local `ladder` record naming `/usr/local/bin/bonsai` with that
+  `sha256`, and reads every task's `bonsai.allows` against its section's "Owns".
 - **Agents first.** A builder climbs once its work is done and again after each fix, not after every edit, with
   `--json`, and asks a person only where a refusal's `next.who` says `person`.
 - **`.bonsai/STATE.md`** is rewritten, never appended, whenever where Bonsai stands changes (`base:state`); `bonsai
@@ -182,11 +187,14 @@ pre-release on, the one they had is kept in `~/bonsai-checks/prerelease/previous
 ## GitHub (`LastStep/Bonsai`, public)
 
 - Agents act on GitHub as `LastStep`, the director's admin account, so guards there stop accidents, not intent.
-- **Builders never push.** The orchestrator fast-forwards `main` and pushes it only after the work's proof passes, then checks
-  CI for that commit after every push:
+- **Builders never push.** The orchestrator pushes only to land work, by the landing rule: the batch's top branch
+  first, then `main` once CI on that commit is green, and it deletes the branch on GitHub once `main` holds it. It
+  checks CI for every commit it pushes:
   `gh api repos/LastStep/Bonsai/commits/<sha>/check-runs --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv'`
-  (or `gh run list -R LastStep/Bonsai -L 10`; this machine's gh has no `--branch`). Red CI is fixed forward.
-- Work lands on `main` directly: no pull requests, no long-lived branches. Force pushes and deletion are blocked.
+  (or `gh run list -R LastStep/Bonsai -L 10`; this machine's gh has no `--branch`). Red CI on a branch stops its
+  landing; red CI on `main` is fixed forward.
+- Work lands on `main` directly: no pull requests, no long-lived branches (a pushed branch lives only until its
+  landing). Force pushes and deletion are blocked on `main`; a pushed branch is never force-pushed.
 - **Nobody tags or releases.** `release.yml` stays disabled; releases are the director's word at spec step 5.7. No agent changes
   a setting, secret, ruleset or workflow switch, or merges or closes a pull request.
 
