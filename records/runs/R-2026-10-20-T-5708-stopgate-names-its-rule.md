@@ -100,3 +100,5 @@ labels: {}
   constant). None is protected. The rule list is open (lists.md "Guard rules"), so new names are allowed; old log
   records keep the old words. Stopped as `needs-input` to the orchestrator for the Owns amendment and the two names
   (proposed: stop-task-unknown, stop-rung-not-asked).
+- 17:03 Orchestrator's second brief M-2026-10-20-2c8bee1f: Owns amended (internal/guard/rules.go, internal/guard/stop_test.go, docs/reference/lists.md by its generator); names mine. Chosen: stop-task-unknown, stop-rung-not-asked.
+- 17:05 Rename done: ed22223a, the two rules and their Go constants in stopgate.go, guard/rules.go, and the tests; lists.md by `go generate ./internal/reference` (2 lines). go vet ./internal/... clean; go test stopgate, guard, reference, cmd/bonsai: ok. Climbing.
