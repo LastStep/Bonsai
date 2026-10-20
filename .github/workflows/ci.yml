@@ -2,8 +2,16 @@ name: CI
 
 on:
   pull_request:
+  # Every branch, not only main: the orchestrator pushes a batch's branch and lands it only once every job here is green
+  # on that commit (CLAUDE.md's landing rule). Only branches is named, so a tag push runs nothing here.
   push:
-    branches: [main]
+    branches: ['**']
+
+# A newer push to a branch cancels the run it supersedes. On main the group is the commit, so no run there is ever
+# cancelled or dropped from the queue: every commit main holds keeps its full result.
+concurrency:
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
