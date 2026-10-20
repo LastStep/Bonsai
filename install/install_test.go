@@ -449,6 +449,8 @@ func TestShRefusals(t *testing.T) {
 					t.Fatal(err)
 				}
 			}},
+		{name: "a system that is not Linux", want: "runs Darwin, not Linux", src: real,
+			stubs: map[string]string{"uname": "#!/bin/sh\necho Darwin\n"}},
 		{name: "run as root", want: "runs as root", src: real,
 			stubs: map[string]string{"id": "#!/bin/sh\necho 0\n"}},
 		{name: "a source changed between the hash and the copy", want: "SHA-256 differs", src: real,

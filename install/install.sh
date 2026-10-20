@@ -11,6 +11,8 @@
 # bonsai on the PATH with. It prints the fingerprint, every bonsai on the PATH in order (naming any that comes before
 # the installed one) and the installed --version.
 #
+# Where: Linux and WSL only; on any other system (uname -s not Linux) it refuses before anything else.
+#
 # When to run it: once per Bonsai release, by the person, as themselves, from the release's folder. Never under sudo:
 # it refuses to run as root, since install.json would then land in root's home. No agent runs it at the real place.
 #
@@ -34,6 +36,13 @@ refuse() {
 	printf 'install.sh: %s\nnext: %s\n' "$1" "$2" >&2
 	exit 1
 }
+
+# Linux only, before anything else (--remove too): macOS builds are untested and have no installer (spec section 3).
+system=$(uname -s 2>/dev/null)
+if [ "$system" != Linux ]; then
+	refuse "this machine runs ${system:-a system uname does not name}, not Linux: install.sh is Linux's and WSL's installer, and macOS builds are untested and have no installer" \
+		"copy bonsai by hand to a folder only root writes, as: sudo cp bonsai /usr/local/bin/bonsai"
+fi
 
 # sha256 prints a file's SHA-256 in lowercase hex.
 sha256() {
