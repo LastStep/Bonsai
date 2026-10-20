@@ -80,8 +80,8 @@
 // deny, through internal/record's one append path, in the verified main checkout's .bonsai/local/log/ (the session's own
 // checkout's while main is not verified); an allow it cannot record is blocked (log-failed), as the guard's is.
 //
-// What it prints: nothing on an allow; on a block, "bonsai stop gate: <why>.\nnext: <next>.\n" on stderr, one ASCII
-// line each, never words that say a file is missing as the operating system says it ("No such file or directory"):
+// What it prints: nothing on an allow; on a block, "bonsai stop gate: <why>.\nnext: <next>.\nrule: <rule>.\n" on
+// stderr, one ASCII line each (the rule word the record keeps, as the guard's refusals print theirs), never words that say a file is missing as the operating system says it ("No such file or directory"):
 // Claude Code reads a Stop hook's exit 2 with such words on stderr as a hook that failed to start, and lets the
 // session end (its hooks reference, read on 2.1.296; measured in a -p session on WSL the same day, while "bonsai: not
 // found" still kept the session going). The reason is the one the record keeps (cut to the record's text cap), so it
@@ -225,9 +225,11 @@ func Main(o Options) int {
 	})
 }
 
-// answer gives a decision as the frame's answer, its words made safe to print (safe).
+// answer gives a decision as the frame's answer, its words made safe to print (safe), and its rule word, which the
+// frame prints on a line of its own after the next step, as the guard's refusals do (BUG-089). A rule is one of this
+// file's constants: ASCII, with no word safe takes out.
 func (d Decision) answer() hookin.Answer {
-	return hookin.Answer{Block: !d.Allow, Why: safe(oneLine(d.Why)), Next: safe(oneLine(d.Next))}
+	return hookin.Answer{Block: !d.Allow, Why: safe(oneLine(d.Why)), Next: safe(oneLine(d.Next)), Rule: d.Rule}
 }
 
 // panicked is the block of a gate that failed inside.
