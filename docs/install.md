@@ -95,9 +95,15 @@ whoever looks after your setup (or the project's issues). Nothing from the archi
 
 **Linux and WSL.** While a project relies on Bonsai's guard, never remove the installed program
 (`sh install.sh --remove`): with no `bonsai` there, every edit and shell command in that project's Claude Code
-sessions is refused. Go back to the build you had before instead: keep a copy of it before you install (`cp
-/usr/local/bin/bonsai ~/bonsai-previous`), and to go back, put it in place and check its fingerprint against the one
-you noted:
+sessions is refused. Go back to the build you had before instead. Before you install, keep a copy of it and note the
+fingerprint the second line prints:
+
+```bash
+cp /usr/local/bin/bonsai ~/bonsai-previous
+sha256sum ~/bonsai-previous
+```
+
+To go back, put the copy in place; the second line must print the fingerprint you noted:
 
 ```bash
 sudo install -o root -g root -m 0755 ~/bonsai-previous /usr/local/bin/bonsai
