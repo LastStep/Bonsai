@@ -2,7 +2,7 @@ package engine
 
 // Bonsai's newer releases (release.go, plan-5 5.6.5): read from a local repository with tags through a stamped
 // source (no test reaches GitHub), the record's times faked; no read within a day of one that worked, nor within an
-// hour of one that failed; the states; the lines' exact text and their names held to .goreleaser.yaml; a forged
+// hour of one that failed; the states; the lines' exact text, their origin check's place (5.7.3) and their names held to .goreleaser.yaml; a forged
 // record giving no lines; check's warning and note.
 
 import (
@@ -256,6 +256,7 @@ func TestReleaseLinesExact(t *testing.T) {
 		`curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/bonsai_1.0.1_linux_amd64.tar.gz`,
 		`curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/checksums.txt`,
 		`sha256sum -c --ignore-missing checksums.txt`,
+		`gh attestation verify bonsai_1.0.1_linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.1 --deny-self-hosted-runners`,
 		`tar -xzf bonsai_1.0.1_linux_amd64.tar.gz`,
 		`sh install.sh`,
 	}
@@ -264,6 +265,7 @@ func TestReleaseLinesExact(t *testing.T) {
 		`curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/bonsai_1.0.1_windows_amd64.zip`,
 		`curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/checksums.txt`,
 		`(Get-FileHash bonsai_1.0.1_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.0.1_windows_amd64.zip).Line -split ' ')[0]`,
+		`gh attestation verify bonsai_1.0.1_windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.1 --deny-self-hosted-runners`,
 		`Expand-Archive bonsai_1.0.1_windows_amd64.zip -DestinationPath . -Force`,
 		`powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`,
 	}
@@ -283,6 +285,37 @@ func TestReleaseLinesExact(t *testing.T) {
 	if arm := ReleaseLines("2.3.4", "arm64"); !strings.HasSuffix(arm.Linux[1], "/v2.3.4/bonsai_2.3.4_linux_arm64.tar.gz") ||
 		!strings.HasSuffix(arm.Windows[1], "/v2.3.4/bonsai_2.3.4_windows_arm64.zip") {
 		t.Errorf("arm64's lines: %v %v", arm.Linux, arm.Windows)
+	}
+}
+
+// The origin check (plan-5 note 5.7.3): on each side the fifth of seven lines, after the fingerprint and before
+// unpacking, the same words on both sides but for the archive's name, its tag the checked version's and nothing else.
+func TestReleaseLinesVerifyOrigin(t *testing.T) {
+	for _, c := range []struct{ version, arch string }{{"1.0.1", "amd64"}, {"2.3.4", "arm64"}, {"10.20.30", "amd64"}} {
+		l := ReleaseLines(c.version, c.arch)
+		if l == nil || len(l.Linux) != 7 || len(l.Windows) != 7 {
+			t.Fatalf("%s %s: not seven lines a side: %+v", c.version, c.arch, l)
+		}
+		for goos, lines := range map[string][]string{"linux": l.Linux, "windows": l.Windows} {
+			archive := ReleaseArchive(c.version, goos, c.arch)
+			want := "gh attestation verify " + archive + " -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml" +
+				" --source-ref refs/tags/v" + c.version + " --deny-self-hosted-runners"
+			if lines[4] != want {
+				t.Errorf("%s %s %s: the fifth line is %q, want %q", c.version, c.arch, goos, lines[4], want)
+			}
+			for i, line := range lines {
+				if i != 4 && strings.Contains(line, "attestation") {
+					t.Errorf("%s %s %s: line %d also checks the origin: %s", c.version, c.arch, goos, i+1, line)
+				}
+			}
+			if !strings.Contains(lines[3], "checksums.txt") || !strings.Contains(lines[5], archive) || strings.HasPrefix(lines[5], "gh ") {
+				t.Errorf("%s %s %s: the origin check is not between the fingerprint and the unpacking: %q", c.version, c.arch, goos, lines)
+			}
+		}
+		if strings.Replace(l.Linux[4], ReleaseArchive(c.version, "linux", c.arch), "X", 1) !=
+			strings.Replace(l.Windows[4], ReleaseArchive(c.version, "windows", c.arch), "X", 1) {
+			t.Errorf("%s %s: the two sides' origin checks differ beyond the archive: %q %q", c.version, c.arch, l.Linux[4], l.Windows[4])
+		}
 	}
 }
 

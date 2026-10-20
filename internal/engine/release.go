@@ -26,7 +26,8 @@ package engine
 // whose run failed before publishing, gives lines that fail to download); checking the release's own files would take
 // an HTTPS request from Go, which would link the resolver the binary keeps out (TestTheBinaryLinksNoResolver), so
 // that gap is left to 5.7's release path. The lines' fingerprint check proves the archive matches the release's own
-// checksums.txt, not that the release is genuine (5.7.3 adds that check).
+// checksums.txt, not that the release is genuine; the line after it (gh attestation verify, 5.7.3) checks that, before
+// anything from the archive runs.
 //
 // cache/release.json, Bonsai's own file, read by Bonsai alone (formats/README.md: not given a schema). Its fields:
 //
@@ -55,10 +56,13 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// Where Bonsai's releases are read from and downloaded.
+// Where Bonsai's releases are read from and downloaded, and who builds them: ReleaseRepo is the repository and
+// ReleaseWorkflow the workflow the install lines' gh attestation verify holds an archive to.
 const (
 	ReleaseSource   = "https://github.com/LastStep/Bonsai.git"
 	ReleaseDownload = "https://github.com/LastStep/Bonsai/releases/download/v"
+	ReleaseRepo     = "LastStep/Bonsai"
+	ReleaseWorkflow = "LastStep/Bonsai/.github/workflows/release.yml"
 )
 
 // ReleaseFile is the home's record of the last release read, relative to the home.
@@ -295,15 +299,22 @@ func (rr ReleaseRead) State(home, version string) *format.StatusRelease {
 
 // releaseLines is the one table of the install lines, for a release V on architecture A (each side's archive named
 // as .goreleaser.yaml's archives name_template makes it, bonsai_V_<os>_A, and checksum's checksums.txt): bash for
-// Linux and WSL, PowerShell 5.1 for Windows, one command per line, no &&, run one at a time. The fourth line prints OK
-// (PowerShell: True) when the archive matches the release's checksums.txt; anything else, the person stops. The
-// installer sits at the archive's top beside the binary (5.7 puts it there).
+// Linux and WSL, PowerShell 5.1 for Windows, one command per line, no &&, run one at a time: seven lines a side,
+// every part fixed but the checked version. The fourth line prints OK (PowerShell: True) when the archive matches the
+// release's checksums.txt. The fifth, the same words on both sides, exits 0 and prints Verification succeeded only when
+// the archive was built by ReleaseWorkflow in ReleaseRepo, for the tag v<version>, on GitHub's own machines
+// (--deny-self-hosted-runners: without it a record made on anyone's own machine would pass); it needs gh 2.97 or
+// newer, logged in (no login exits 4, the wrong origin 1). It comes before unpacking because the installer is inside
+// the archive and runs as root or administrator, so nothing from the archive runs before its origin is checked.
+// Anything else from either, the person stops. The installer sits at the archive's top beside the binary (5.7 puts it
+// there). docs/install.md shows these lines for 1.0.0, held to this table by internal/selfcheck's test.
 var releaseLines = struct{ linux, windows []string }{
 	linux: []string{
 		`cd "$(mktemp -d)"`,
 		`curl -fsSLO {url}/{archive}`,
 		`curl -fsSLO {url}/checksums.txt`,
 		`sha256sum -c --ignore-missing checksums.txt`,
+		releaseVerify,
 		`tar -xzf {archive}`,
 		`sh install.sh`,
 	},
@@ -312,10 +323,15 @@ var releaseLines = struct{ linux, windows []string }{
 		`curl.exe -fsSLO {url}/{archive}`,
 		`curl.exe -fsSLO {url}/checksums.txt`,
 		`(Get-FileHash {archive} -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch {archive}).Line -split ' ')[0]`,
+		releaseVerify,
 		`Expand-Archive {archive} -DestinationPath . -Force`,
 		`powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`,
 	},
 }
+
+// releaseVerify is the fifth line on each side, the same words in bash and PowerShell.
+const releaseVerify = `gh attestation verify {archive} -R ` + ReleaseRepo + ` --signer-workflow ` + ReleaseWorkflow +
+	` --source-ref refs/tags/v{version} --deny-self-hosted-runners`
 
 // ReleaseArchive is a release's archive name on one side, as .goreleaser.yaml names it.
 func ReleaseArchive(version, goos, arch string) string {
@@ -334,7 +350,7 @@ func ReleaseLines(version, arch string) *format.ReleaseLines {
 	}
 	fill := func(lines []string, goos string) []string {
 		out := make([]string, len(lines))
-		r := strings.NewReplacer("{url}", ReleaseDownload+version, "{archive}", ReleaseArchive(version, goos, arch))
+		r := strings.NewReplacer("{url}", ReleaseDownload+version, "{archive}", ReleaseArchive(version, goos, arch), "{version}", version)
 		for i, l := range lines {
 			out[i] = r.Replace(l)
 		}
