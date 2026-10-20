@@ -6,7 +6,7 @@ role: builder
 model: opus
 started: 2026-10-20 16:46
 finished: 2026-10-20 17:14
-outcome: needs-verifier
+outcome: merged
 commits: ["6ef7e56d", "7871d8c4", "eff3f02a", "5a20aa87", "ecb3ac1c", "9cce2756", "3b390caa", "aad94865", "ed22223a", "b18448cc"]
 labels: {}
 ---
@@ -161,3 +161,4 @@ One session, Opus 5.5, 16:46-17:15 (29 minutes, about 17 of them waiting on the 
 
 None of mine: my two wait scripts ended (one by its answer, one never started), the climbs and test runs ended;
 checked with `ps -eo pid,etime,cmd` at 17:13. The orchestrator's launcher of this session (`run.sh`) is its own.
+- 17:48 (the orchestrator) Verifier M-2026-10-20-57b77ed9 PASS; CI on the branch green; landed 7afb9faa; task `done`.

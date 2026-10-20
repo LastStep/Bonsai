@@ -1,6 +1,6 @@
 ---
 title: Known bugs   # the bugs register; every field and how to fill it: skill workflow:bugs
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Known bugs
@@ -72,8 +72,6 @@ director".
 | **BUG-083** | The pack template's workflow says "Bonsai has no release yet" (5.7.6 changes it) | packs/template/.github/workflows/pack.yml:19; 91d8a972 (pointed) | M-2026-10-18-ade22b5c |
 | **BUG-086** | On Windows the guard refuses a write through a file link to a folder (and a Write naming a file link to a file not made yet) as bad-path, though Windows writes through it: an over-refusal, kept because naming such a link by its target is wrong behind a junction (a write into Bonsai's records read as a decoy outside every project, verifier round 2) | internal/engine/final_windows.go, FinalPath (ErrDangling); fe1e8f9d (pointed) | CI run 39165347544; M-2026-10-18-937e348f, M-2026-10-18-c6ee1078 (T-5696) |
 | **BUG-087** | The text layout prints a stray blank line before a next step at widths 60 to 80 | internal/textui (said by T-5698's builder); 71176d92 | M-2026-10-18-d46672d6 (T-5698) |
-| **BUG-088** | operating-bonsai says only `bonsai logs` shows a refusal's rule; once T-5698 lands the refusal line shows it too | packs/base/skills/operating-bonsai/SKILL.md:103; 71176d92 (said) | M-2026-10-18-d46672d6 (T-5698) |
-| **BUG-089** | The stop gate's refusal prints no rule word, and its error words do not use workspace.OSWords | internal/stopgate; 71176d92 (said) | M-2026-10-18-d46672d6 (T-5698) |
 | **BUG-090** | The installed govulncheck (v1.2.0) and golangci-lint (built with go1.25) cannot read Go 1.27 code; agents run the pinned versions through `go run` instead | this machine's tools, not the repo; a82d18b5 (said by T-5700's builder) | M-2026-10-18-dce878aa (T-5700) |
 | **BUG-091** | Several next-step checks in engine_test.go use `HasSuffix(nextOf(out), ...)`, which a trailing row after the next step would not fail; `endsWith` (T-5612) holds the end | cmd/bonsai/engine_test.go; 90158ade (said by T-5612's builder) | M-2026-10-19-a1efbe1c (T-5612) |
 
@@ -113,6 +111,8 @@ director".
 | **BUG-032** | workspace.VerifyMain quotes a system error in its message | 41e0f1e4 (rebased) | T-5698 |
 | **BUG-084** | A delete the guard cannot place gives "(a drive letter and folders)" as its next step on every system | 9ac0c401 (rebased) | T-5698 |
 | **BUG-085** | The reference generator takes any one argument as the repository's root, so `go run ./gen -h` writes every generated file under a folder named `-h` | cc840072 (rebased) | T-5698 |
+| **BUG-088** | operating-bonsai said only `bonsai logs` shows a refusal's rule | 5a20aa87 | T-5708 (the trial on rc.1) |
+| **BUG-089** | The stop gate's refusal printed no rule word, and its error words did not use workspace.OSWords; two rule names held the word the gate never prints (renamed stop-task-unknown, stop-rung-not-asked, the director's B) | ecb3ac1c, 3b390caa, ed22223a | T-5708 (verifier M-2026-10-20-57b77ed9 PASS) |
 
 ## Known, not bugs
 

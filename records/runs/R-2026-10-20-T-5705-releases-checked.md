@@ -23,6 +23,10 @@ labels: {}
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
 | Orchestrator, batch 1 read back | opus | 2026-10-20 16:06 | 2026-10-20 16:06 | 2 |
+| Runner M-2026-10-20-8b4f4162 (rc.1, WSL) | sonnet | 2026-10-20 16:10 | 2026-10-20 16:15 | 5 |
+| Orchestrator, rc.1's Windows side and the LF rebuild | opus | 2026-10-20 16:16 | 2026-10-20 16:22 | 6 |
+| V2 M-2026-10-20-aea4c214 (two rounds) | opus | 2026-10-20 16:10 | 2026-10-20 16:27 | 17 |
+| Orchestrator, the install read-backs | opus | 2026-10-20 16:38 | 2026-10-20 16:40 | 2 |
 
 ## Log
 
@@ -74,3 +78,4 @@ labels: {}
   back: Get-Command names C:\Program Files\Bonsai\bonsai.exe first, "bonsai 1.0.0-rc.1 (commit 73919ddcc546)", sha256
   06b7a457... (the release's), install.json the same, gh attestation verify exit 0. Check 10's Windows half after rc.1
   (note 5.7.5, 8): still to run.
+- 17:48 Left for later releases (T-5705 stays `verify`): check 10's Windows half after rc.1 (note 5.7.5, 8); rc.2's and 1.0's checks.
