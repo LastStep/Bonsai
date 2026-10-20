@@ -239,6 +239,54 @@ jobs:
       - name: Run govulncheck
         run: govulncheck ./...
 
+  # The release build rehearsed on every push (design/plan-5.md, 5.7.1): GoReleaser builds every release file as a
+  # snapshot from this commit, the notes script reads CHANGELOG.md's newest section, and the dist checks
+  # (internal/selfcheck/dist_test.go) hold the files to what a release must be. It publishes and uploads nothing, and
+  # runs with the workflow's read-only token and no secret.
+  release-check:
+    runs-on: ubuntu-latest
+    env:
+      # GoReleaser by its module path at the version .goreleaser.yaml's header names, so Go's checksum database checks
+      # it (the goreleaser action checks its download only against a checksums file from the same release page).
+      GORELEASER: github.com/goreleaser/goreleaser/v2@v2.18.3
+    steps:
+      # Full history: GoReleaser reads the tags for the version.
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - name: Print the Go version
+        run: go version
+
+      - name: Check .goreleaser.yaml
+        run: go run "$GORELEASER" check
+
+      # The current tag is set here, the newest v-tag before this commit: GoReleaser's open-source build would take a
+      # packs' base-v tag on this commit for the version (.goreleaser.yaml's git section).
+      - name: Build every release file as a snapshot
+        run: |
+          tag=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || echo v0.0.0)
+          echo "current tag: $tag"
+          GORELEASER_CURRENT_TAG=$tag go run "$GORELEASER" release --snapshot --clean
+
+      # The newest section's notes, written outside the checkout, so a broken changelog shows on the push that broke it.
+      - name: The notes for CHANGELOG.md's newest version
+        run: |
+          version=$(sed -n 's/^## \[\([0-9][0-9.]*\)\].*/\1/p' CHANGELOG.md | head -n 1)
+          [ -n "$version" ] || { echo "CHANGELOG.md has no ## [X.Y.Z] heading"; exit 1; }
+          sh .github/scripts/release-notes.sh "v$version" "$RUNNER_TEMP/notes.md"
+          echo "notes for v$version: $(wc -l < "$RUNNER_TEMP/notes.md") lines"
+
+      - name: The dist checks
+        run: BONSAI_CHECK_DIST="$GITHUB_WORKSPACE/dist" BONSAI_CHECK_COMMIT="$GITHUB_SHA" go test -count=1 -run TestDist -v ./internal/selfcheck/
+
   # The installers at their real places (design/plan-5.md, 5.6.6), on GitHub's throwaway machines only: no agent runs
   # either at a real place on a person's machine (spec section 3). ubuntu-latest's runner has passwordless sudo;
   # windows-latest's is an administrator, elevated with UAC off, so -ForceChild makes install.ps1 take its elevated

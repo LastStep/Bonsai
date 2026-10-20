@@ -68,7 +68,7 @@ The proof of a change is `bonsai ladder --task <id>` green, run by the installed
 [`bonsai.yaml`](bonsai.yaml) (the guard's check of what the task changed, `go vet`, the schema compare, every test plain
 and then with the test fault switch in the packages it can change, and git integrity; that package list is written
 into each tagged command, and `internal/selfcheck/faulttag_test.go` fails when a copy differs from what `go list`
-shows). Beside it, CI runs on the pushed branch, its two Windows jobs among them, and every job must be green there before `main` moves (`.github/workflows/ci.yml`: `test`, `windows`, `windows (fault tag)`, `packs`, `lint`, `govulncheck`, `install`). The tests run natively on Windows by hand only when CI cannot run the branch.
+shows). Beside it, CI runs on the pushed branch, its two Windows jobs among them, and every job must be green there before `main` moves (`.github/workflows/ci.yml`: `test`, `windows`, `windows (fault tag)`, `packs`, `lint`, `govulncheck`, `release-check`, `install`). The tests run natively on Windows by hand only when CI cannot run the branch.
 
 ## Rules every change follows
 
