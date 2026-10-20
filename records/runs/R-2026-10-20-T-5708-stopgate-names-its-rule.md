@@ -5,9 +5,9 @@ task: T-5708
 role: builder
 model: opus
 started: 2026-10-20 16:46
-finished:
-outcome:
-commits: []
+finished: 2026-10-20 17:14
+outcome: needs-verifier
+commits: ["6ef7e56d", "7871d8c4", "eff3f02a", "5a20aa87", "ecb3ac1c", "9cce2756", "3b390caa", "aad94865", "ed22223a", "b18448cc"]
 labels: {}
 ---
 
@@ -24,7 +24,7 @@ labels: {}
 
 | Run | Model | Start | End | Minutes |
 |---|---|---|---|---|
-| builder (named session) | opus | 16:46 | | |
+| builder (named session) | opus | 16:46 | 17:15 | 29 |
 
 ## Log
 
@@ -102,3 +102,62 @@ labels: {}
   (proposed: stop-task-unknown, stop-rung-not-asked).
 - 17:03 Orchestrator's second brief M-2026-10-20-2c8bee1f: Owns amended (internal/guard/rules.go, internal/guard/stop_test.go, docs/reference/lists.md by its generator); names mine. Chosen: stop-task-unknown, stop-rung-not-asked.
 - 17:05 Rename done: ed22223a, the two rules and their Go constants in stopgate.go, guard/rules.go, and the tests; lists.md by `go generate ./internal/reference` (2 lines). go vet ./internal/... clean; go test stopgate, guard, reference, cmd/bonsai: ok. Climbing.
+- 17:11 Climb 2 at b18448cc, dirty false: **green**. sha256 628463d2d572cf9e40dfa1c7b70f6166deedb7e2e303ac78416f718b6c0514d7;
+  started 11:35:11Z, finished 11:41:37Z. Rungs: 0 guard 3804 ms; 1 vet 1194 ms; 2 schemas 414 ms; 3 tests 59003 ms (seen
+  4807, skipped 9, none failed); 4 tests with the fault switch 53581 ms (seen 2125, skipped 3); 5 git integrity 35 ms.
+  No Bless asked (`bless: []`). The climb's wall time (6.4 min) is well above its rungs' sum (2 min): not looked into.
+- 17:14 This report finished and committed; one more climb follows it (the stop gate wants the result at the final
+  HEAD). Its numbers are in the report to the orchestrator.
+
+## What is different now
+
+- Every stop-gate block now ends with a third line, `rule: <word>.`, the rule the log keeps, as the guard's refusals
+  do (BUG-089). It shows from rc.2: this trial's own blocks, by rc.1, print none (probe 1's words).
+- Two rules renamed so a printed rule never holds the word the gate must not print: `stop-task-missing` is now
+  `stop-task-unknown`, `stop-rung-missing` is now `stop-rung-not-asked` (the director's B on ask 2). Old log records
+  keep the old words.
+- The gate's error words take their shared kinds from workspace.OSWords (the director's B on ask 1); no word changes.
+- base's operating-bonsai skill says where a refusal's rule shows (BUG-088).
+
+## Deviations
+
+- No separate "Audit" report first (16:48 above): the brief's ordered steps read as go straight on.
+- Owns grew, by the orchestrator, for ask 2's answer: internal/guard/rules.go, internal/guard/stop_test.go,
+  docs/reference/lists.md (generated).
+- plan-5.md's 5.7.8 wants a line in the changelog's 1.0 section; the changelog is outside this task's Owns, so it is
+  not written here (the orchestrator's, at the landing).
+- A second ask, not in the brief, came from the work itself (the "missing" rule words).
+
+## Evidence, by done_when
+
+1. Rule word on every block: `blocks` (stopgate_test.go) wants `rule: <rule>.` as the third line; it is used by every
+   block case (24 calls: each rule of TestEachCase, no-project, bad-input, over-time, internal-error). Red on the code
+   before it (climb 1: 83 failed), green after (climb 2). The frame (hookin/frame.go:99-101) needed no change.
+2. osWords: commit 3b390caa, the director's B; the gate's tests of its words pass unchanged.
+3. SKILL.md:103 corrected (5a20aa87); TestOperatingSkill, ...InstallLine, ...CatchesDrift pass; operating_test.go
+   unchanged.
+4. Named session under rc.1's guard; climbs by /usr/local/bin/bonsai (rc.1); probes 1 and 2 recorded above with their
+   words. Verifier, landing rule and CI: the orchestrator's.
+
+## What did not work, and findings for the trial
+
+- The rule line could not simply be added: two rule names held "missing", which the gate's own safety rule (and its
+  test) forbids on its stderr. Asked; renamed by the director's word.
+- Waiting on an ask: a named session that ends its turn to wait is blocked by the stop gate (stop-red, 16:54), and
+  each such stop spends one of Claude Code's eight blocks in a row. I waited with foreground checks instead.
+- Both answers came as words "B" (`choice` null) though the asks were Decide with options; the answer records read
+  `source: "agent"` with `by: terminal`. Worth a look in the analysis.
+- My first log lines' minutes were guessed ahead of the clock; corrected at 16:51.
+
+## Proposed tasks
+
+- None beyond the changelog line above.
+
+## Cost
+
+One session, Opus 5.5, 16:46-17:15 (29 minutes, about 17 of them waiting on the answers and the climbs); 3 climbs.
+
+## Processes left running
+
+None of mine: my two wait scripts ended (one by its answer, one never started), the climbs and test runs ended;
+checked with `ps -eo pid,etime,cmd` at 17:13. The orchestrator's launcher of this session (`run.sh`) is its own.
