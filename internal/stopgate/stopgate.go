@@ -44,7 +44,7 @@
 //     The gate only compares: a local climb brings the record up to stricter settings (config.go says why the gate
 //     need not);
 //  4. the named task: exactly one file in main's task folder has the id, and it parses under its format (the active-task
-//     function, workspace.Active: stop-task-missing, stop-task-twice, stop-task-broken; stop-task-unreadable when the
+//     function, workspace.Active: stop-task-unknown, stop-task-twice, stop-task-broken; stop-task-unreadable when the
 //     folder cannot be read), and its bonsai.ladder label (format 0's ladder) reads as rung numbers (stop-bad-rungs);
 //  5. a run report for the task in the session's own checkout's run folder (main's documents.run), named
 //     R-<date>-<task id>[-<more>].md by the run kind's id pattern (stop-no-run-report): today's gate's first check,
@@ -55,7 +55,7 @@
 //     session's checkout's HEAD (stop-other-commit; HEAD read from the checkout's git files with no git process,
 //     head.go, and a HEAD it cannot read blocks: stop-head-unreadable), made on a clean tree (stop-dirty), its
 //     requested rungs holding the workspace's ladder_floor and the task's bonsai.ladder (contract §5.6:
-//     stop-rung-missing), each of them green among its rungs (stop-rung-not-green).
+//     stop-rung-not-asked), each of them green among its rungs (stop-rung-not-green).
 //
 // When every check holds it allows (stop-proven). Unlike today's gate, the ladder result is needed whatever the task's
 // status says, as spec §7 and the plan's note 2 have it. It starts one git process, to read bonsai.yaml at the main
@@ -81,9 +81,10 @@
 // checkout's while main is not verified); an allow it cannot record is blocked (log-failed), as the guard's is.
 //
 // What it prints: nothing on an allow; on a block, "bonsai stop gate: <why>.\nnext: <next>.\nrule: <rule>.\n" on
-// stderr, one ASCII line each (the rule word the record keeps, as the guard's refusals print theirs), never words that say a file is missing as the operating system says it ("No such file or directory"):
-// Claude Code reads a Stop hook's exit 2 with such words on stderr as a hook that failed to start, and lets the
-// session end (its hooks reference, read on 2.1.296; measured in a -p session on WSL the same day, while "bonsai: not
+// stderr, one ASCII line each (the rule word the record keeps, as the guard's refusals print theirs, so no rule word
+// holds an unsafe word: stop-task-unknown and stop-rung-not-asked were named for it, BUG-089), never words that say a
+// file is missing as the operating system says it ("No such file or directory"): Claude Code reads a Stop hook's
+// exit 2 with such words on stderr as a hook that failed to start, and lets the session end (its hooks reference, read on 2.1.296; measured in a -p session on WSL the same day, while "bonsai: not
 // found" still kept the session going). The reason is the one the record keeps (cut to the record's text cap), so it
 // names no user's folder (contract §2.6): a path relative to the project when it lies inside it, else where it lies in
 // plain words; an operating system's error by its kind, never its text (osWords); and any whole path still in it
@@ -137,7 +138,7 @@ const (
 
 	RuleProven            = "stop-proven"             // allow: a green local ladder result proves the checkout's HEAD
 	RuleBudget            = "stop-budget"             // allow: a named session past its budget has written its report
-	RuleTaskMissing       = "stop-task-missing"       // deny: no task file has the named id
+	RuleTaskUnknown       = "stop-task-unknown"       // deny: no task file has the named id
 	RuleTaskTwice         = "stop-task-twice"         // deny: two or more task files have the named id
 	RuleTaskBroken        = "stop-task-broken"        // deny: the named task's file does not parse under its format
 	RuleTaskUnreadable    = "stop-task-unreadable"    // deny: the main checkout's task folder or a file in it cannot be read
@@ -153,7 +154,7 @@ const (
 	RuleDirty             = "stop-dirty"              // deny: the ladder result was made on a tree with uncommitted changes
 	RuleConfigUncommitted = "stop-config-uncommitted" // deny: the main checkout's bonsai.yaml differs from the one committed at its HEAD, or HEAD holds none
 	RuleConfigLooser      = "stop-config-looser"      // deny: the committed bonsai.yaml sets the checks looser than this machine accepted, or the record holds none
-	RuleRungMissing       = "stop-rung-missing"       // deny: the result did not ask for a rung of the floor or of the task's bonsai.ladder
+	RuleRungNotAsked      = "stop-rung-not-asked"     // deny: the result did not ask for a rung of the floor or of the task's bonsai.ladder
 	RuleRungNotGreen      = "stop-rung-not-green"     // deny: a rung of the floor or of the task's bonsai.ladder is not green in the result
 
 	// Allowed with no record: the gate does not engage.
@@ -523,7 +524,7 @@ func judge(local workspace.Local, layout workspace.GitLayout, also *untied, name
 		return taskRefusal(act, named, taskDir)
 	}
 	if !taskIDPattern().MatchString(act.ID) {
-		return deny(RuleTaskMissing, "", workspace.TaskEnv+" names "+quote(named)+", which is not a task id (T- and 4 to 6 digits)",
+		return deny(RuleTaskUnknown, "", workspace.TaskEnv+" names "+quote(named)+", which is not a task id (T- and 4 to 6 digits)",
 			"check that "+workspace.TaskEnv+" names this session's task; then "+ladder)
 	}
 	want, err := RungsWanted(w.LadderFloor, act.Task)
@@ -551,7 +552,7 @@ func taskRefusal(act workspace.ActiveTask, named, taskDir string) Decision {
 		return deny(RuleTaskBroken, taskDir, why+", so the stop gate cannot read the rungs it needs",
 			"fix the task file so it parses (bonsai check names the line) in the main checkout"+ladder)
 	}
-	return deny(RuleTaskMissing, taskDir, why, "check that "+workspace.TaskEnv+" names this session's task; its file belongs in "+
+	return deny(RuleTaskUnknown, taskDir, why, "check that "+workspace.TaskEnv+" names this session's task; its file belongs in "+
 		"the main checkout's "+taskDir+", where "+ladderCommand(named)+" reads it too")
 }
 
@@ -724,7 +725,7 @@ func result(local workspace.Local, layout workspace.GitLayout, also *untied, nam
 		}
 	}
 	if len(lacks) > 0 {
-		return deny(RuleRungMissing, rel, "the ladder result for "+named+" did not ask for rung "+strings.Join(lacks, ", ")+
+		return deny(RuleRungNotAsked, rel, "the ladder result for "+named+" did not ask for rung "+strings.Join(lacks, ", ")+
 			", which the workspace's ladder_floor and the task's bonsai.ladder require ("+rungList(want)+")",
 			ladder+" (it asks for the floor and the task's rungs in one run, on the final code)")
 	}

@@ -732,7 +732,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `internal-error` | deny | the guard or the stop gate failed inside (a panic) |
 | `not-linked` | allow | neither the session's folder nor the path is in a linked project: allowed with no record (spec section 7); for the stop gate, the session's folder is in no linked project |
 | `stop-not-named` | allow | the stop gate: BONSAI_TASK names no task, so it does not engage: the session ends, with no record |
-| `stop-task-missing` | deny | the stop gate: no task file in the main checkout has the id BONSAI_TASK names |
+| `stop-task-unknown` | deny | the stop gate: no task file in the main checkout has the id BONSAI_TASK names |
 | `stop-task-twice` | deny | the stop gate: two or more task files have the named id |
 | `stop-task-broken` | deny | the stop gate: the named task's file does not parse under its format |
 | `stop-task-unreadable` | deny | the stop gate: the main checkout's task folder, or a file in it, cannot be read |
@@ -748,7 +748,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `stop-dirty` | deny | the stop gate: the ladder result was made on a tree with uncommitted changes |
 | `stop-config-uncommitted` | deny | the stop gate: the main checkout's bonsai.yaml differs from the one committed at its HEAD, or its HEAD holds none, so the ladder's settings there are not trusted |
 | `stop-config-looser` | deny | the stop gate: the main checkout's bonsai.yaml, as committed at its HEAD, sets the checks looser than the settings this machine last accepted for the workspace (a rung out of the floor or the ladder, a rung added to the ladder, whose command runs inside the climb, a rung's check changed, a ratchet's floor lowered, a CI mark added, a path out of protected, person_only or never_edit, a document moved), or this machine's record holds none: a person records them with bonsai update |
-| `stop-rung-missing` | deny | the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the task's bonsai.ladder |
+| `stop-rung-not-asked` | deny | the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the task's bonsai.ladder |
 | `stop-rung-not-green` | deny | the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result |
 | `stop-proven` | allow | the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the task's rungs green: the session ends |
 | `stop-budget` | allow | the stop gate: a named session whose budget is spent has written its report: it may stop, its ladder red or not (step 5.5's stall stops) |

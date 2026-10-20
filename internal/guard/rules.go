@@ -73,7 +73,7 @@ const (
 
 	// The stop gate's own (internal/stopgate), in the order it checks.
 	RuleStopNotNamed          = "stop-not-named"
-	RuleStopTaskMissing       = "stop-task-missing"
+	RuleStopTaskUnknown       = "stop-task-unknown"
 	RuleStopTaskTwice         = "stop-task-twice"
 	RuleStopTaskBroken        = "stop-task-broken"
 	RuleStopTaskUnreadable    = "stop-task-unreadable"
@@ -89,7 +89,7 @@ const (
 	RuleStopDirty             = "stop-dirty"
 	RuleStopConfigUncommitted = "stop-config-uncommitted"
 	RuleStopConfigLooser      = "stop-config-looser"
-	RuleStopRungMissing       = "stop-rung-missing"
+	RuleStopRungNotAsked      = "stop-rung-not-asked"
 	RuleStopRungNotGreen      = "stop-rung-not-green"
 	RuleStopProven            = "stop-proven"
 	RuleStopBudget            = "stop-budget"
@@ -199,7 +199,7 @@ var Rules = []Rule{
 	{RuleNotLinked, true, "neither the session's folder nor the path is in a linked project: allowed with no record (spec section 7); " +
 		"for the stop gate, the session's folder is in no linked project"},
 	{RuleStopNotNamed, true, "the stop gate: BONSAI_TASK names no task, so it does not engage: the session ends, with no record"},
-	{RuleStopTaskMissing, false, "the stop gate: no task file in the main checkout has the id BONSAI_TASK names"},
+	{RuleStopTaskUnknown, false, "the stop gate: no task file in the main checkout has the id BONSAI_TASK names"},
 	{RuleStopTaskTwice, false, "the stop gate: two or more task files have the named id"},
 	{RuleStopTaskBroken, false, "the stop gate: the named task's file does not parse under its format"},
 	{RuleStopTaskUnreadable, false, "the stop gate: the main checkout's task folder, or a file in it, cannot be read"},
@@ -224,7 +224,7 @@ var Rules = []Rule{
 		"to the ladder, whose command runs inside the climb, a rung's check changed, a ratchet's floor lowered, a CI mark " +
 		"added, a path out of protected, person_only or never_edit, a document moved), or this machine's record holds none: " +
 		"a person records them with bonsai update"},
-	{RuleStopRungMissing, false, "the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the " +
+	{RuleStopRungNotAsked, false, "the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the " +
 		"task's bonsai.ladder"},
 	{RuleStopRungNotGreen, false, "the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result"},
 	{RuleStopProven, true, "the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the " +

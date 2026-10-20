@@ -147,7 +147,7 @@ func TestStopGateFixtures(t *testing.T) {
 					t.Fatalf("a task that blocks: exit %d %q", code, stderr)
 				}
 				switch r := lastRecord(t, main); r.String("rule") {
-				case RuleTaskMissing, RuleTaskTwice, RuleTaskBroken:
+				case RuleTaskUnknown, RuleTaskTwice, RuleTaskBroken:
 					if !strings.Contains(stderr, "BONSAI_TASK names "+task+", and ") || unsafeOut.MatchString(stderr) {
 						t.Errorf("the reason: %q", stderr)
 					}

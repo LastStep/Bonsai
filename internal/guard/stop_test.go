@@ -177,7 +177,7 @@ func init() {
 	}{
 		{rule: RuleStopProven, task: "T-0901"},
 		{rule: RuleStopNotNamed},
-		{rule: RuleStopTaskMissing, task: "T-0999"},
+		{rule: RuleStopTaskUnknown, task: "T-0999"},
 		{rule: RuleStopTaskTwice, task: "T-0901", change: func(t *testing.T, dir string) {
 			writeFile(t, filepath.Join(dir, "work", "tasks", "T-0901-again.md"), stopTask)
 		}},
@@ -186,7 +186,7 @@ func init() {
 		}},
 		{rule: RuleStopTaskUnreadable, task: "T-0901", change: func(t *testing.T, dir string) {
 			if runtime.GOOS == "windows" {
-				// A file where the folder goes reads as no folder there (stop-task-missing), and any other unreadable
+				// A file where the folder goes reads as no folder there (stop-task-unknown), and any other unreadable
 				// folder needs a permission change; the stop gate's own tests say so too, and the Linux run holds it.
 				t.Skip("on Windows a file where the task folder goes reads as no folder; the Linux run holds this rule")
 			}
@@ -242,7 +242,7 @@ func init() {
 		}},
 		{rule: RuleStopOtherCommit, task: "T-0901", result: func(l *format.Ladder) { l.Git.SHA = stopOther }},
 		{rule: RuleStopDirty, task: "T-0901", result: func(l *format.Ladder) { l.Git.Dirty = true }},
-		{rule: RuleStopRungMissing, task: "T-0901", result: func(l *format.Ladder) { l.Requested = []int64{0} }},
+		{rule: RuleStopRungNotAsked, task: "T-0901", result: func(l *format.Ladder) { l.Requested = []int64{0} }},
 		{rule: RuleStopRungNotGreen, task: "T-0901", result: func(l *format.Ladder) { l.Rungs[1].Status = "pending" }},
 		{rule: RuleStopBudget, task: "T-0901", result: func(l *format.Ladder) { l.Green, l.Rungs[1].Status = false, "red" },
 			change: func(t *testing.T, dir string) {

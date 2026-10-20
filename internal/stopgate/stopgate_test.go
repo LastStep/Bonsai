@@ -388,13 +388,13 @@ func TestEachCase(t *testing.T) {
 				l.Mode, l.Proof = "ci", ptr("none: a CI result is never a task's proof")
 				writeResult(t, root, "T-0901", l)
 			}},
-		{name: "a floor rung not asked for", rule: RuleRungMissing, why: "did not ask for rung 1, which the workspace's ladder_floor and the task's bonsai.ladder require (0, 1, 2)",
+		{name: "a floor rung not asked for", rule: RuleRungNotAsked, why: "did not ask for rung 1, which the workspace's ladder_floor and the task's bonsai.ladder require (0, 1, 2)",
 			next: ladder, change: func(t *testing.T, root string) {
 				l := greenResult(headSHA)
 				l.Requested, l.Rungs = []int64{0, 2}, []format.LadderRung{rung(0, "green"), rung(2, "green")}
 				writeResult(t, root, "T-0901", l)
 			}},
-		{name: "a task rung not asked for", rule: RuleRungMissing, why: "did not ask for rung 2", next: ladder,
+		{name: "a task rung not asked for", rule: RuleRungNotAsked, why: "did not ask for rung 2", next: ladder,
 			change: func(t *testing.T, root string) {
 				l := greenResult(headSHA)
 				l.Requested, l.Rungs = []int64{0, 1}, []format.LadderRung{rung(0, "green"), rung(1, "green")}
@@ -449,7 +449,7 @@ func TestEachCase(t *testing.T) {
 				remove(t, root, workspace.LocalDir+"/ladder/T-0901.json")
 				write(t, root, workspace.LocalDir+"/ladder/T-0901.json/x", "")
 			}},
-		{name: "a task no file holds", rule: RuleTaskMissing, why: "BONSAI_TASK names T-0999, and no task file has the named id (T-0999) in the main checkout's task folder work/tasks",
+		{name: "a task no file holds", rule: RuleTaskUnknown, why: "BONSAI_TASK names T-0999, and no task file has the named id (T-0999) in the main checkout's task folder work/tasks",
 			next: "where " + installed + " ladder --task T-0999 reads it too", task: "T-0999"},
 		{name: "a task named twice", rule: RuleTaskTwice, why: "two or more task files have the named id", next: ladder,
 			change: func(t *testing.T, root string) { write(t, root, "work/tasks/T-0901-again.md", testTask) }},
@@ -611,7 +611,7 @@ func TestEachCase(t *testing.T) {
 		allows(t, code, stderr, root)
 		write(t, root, "work/tasks/T-0901-gated.md", "---\nid: T-0901\ntitle: Today's task\nstatus: running\nladder: [3]\n---\n")
 		code, stderr = gateFor(t, root, "T-0901")
-		blocks(t, code, stderr, root, RuleRungMissing, "did not ask for rung 3", installed+" ladder --task T-0901")
+		blocks(t, code, stderr, root, RuleRungNotAsked, "did not ask for rung 3", installed+" ladder --task T-0901")
 	})
 	t.Run("a session started in a subfolder", func(t *testing.T) {
 		root := project(t)
@@ -774,9 +774,9 @@ func TestAnAllowItCannotRecordIsBlocked(t *testing.T) {
 
 // unreadableOnWindows is why a task folder that cannot be read is tried on Linux alone: on Windows a file where the
 // folder goes reads as no folder at all (the system reports the path not found, which the task folder's reader takes
-// as an empty folder, and the gate blocks with stop-task-missing), and any other way needs a permission change, which
+// as an empty folder, and the gate blocks with stop-task-unknown), and any other way needs a permission change, which
 // no test may need there.
-const unreadableOnWindows = "on Windows a file where the task folder goes reads as no folder (stop-task-missing), and " +
+const unreadableOnWindows = "on Windows a file where the task folder goes reads as no folder (stop-task-unknown), and " +
 	"any other unreadable folder needs a permission change; the Linux run holds this case"
 
 // The gate's rule names are copies of rows of the guard's rules table, their one home: each the same name with the
