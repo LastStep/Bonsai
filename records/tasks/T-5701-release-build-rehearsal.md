@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5701
 title: "5.7.1, the release build and its rehearsal: .goreleaser.yaml, the release-check job, the notes script, the dist checks"
-status: todo
+status: done
 lane:
 done_when:
   - "GoReleaser pinned to an exact v2 version, its fetch checked (or go run by the module path); goreleaser check passes; .goreleaser.yaml as note 5.7.1, 2 (trimpath, installers at each archive's top, changelog and release disabled, base-v* ignored, no brews)"
@@ -13,8 +13,8 @@ done_when:
 depends_on: [T-5792, T-5704]
 blocked_by:
 created: 2026-10-20
-started:
-finished:
+started: 2026-10-20
+finished: 2026-10-20
 labels:
   bonsai.ladder: []
   bonsai.allows: [".goreleaser.yaml", ".github/workflows/ci.yml", ".github/scripts/release-notes.sh"]

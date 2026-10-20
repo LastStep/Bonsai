@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5703
 title: "5.7.3, the stronger check in the install lines: gh attestation verify before unpacking, and docs/install.md"
-status: running
+status: done
 lane:
 done_when:
   - "5.6.5's lines table gains, on each side after the fingerprint line and before unpacking, gh attestation verify <archive> -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v<version> --deny-self-hosted-runners; its exact-text test built only from the checked version (plan-5.md note 5.7.3, 1-2)"
@@ -13,7 +13,7 @@ depends_on: [T-5792]
 blocked_by:
 created: 2026-10-20
 started: 2026-10-20
-finished:
+finished: 2026-10-20
 labels:
   bonsai.ladder: []
   bonsai.allows: []

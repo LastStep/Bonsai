@@ -14,8 +14,8 @@ broken copies caught), 7e to 5.7; the end records (`T-5615`); CI's windows job s
 the tagged pass narrowed to the 7 packages the tag can reach (`T-5790`); the cleanup (WSL 40 GB, Windows 27 GB).
 That afternoon `workflow:correct`'s three questions were answered (below). **20 Oct: the team-work research is the
 studio's, not Bonsai's** (the director): its task, run report and decision moved to the studio's
-research folder (solo-to-team-ai, 19 Oct), and its unpushed records commit undone. **CI on the branch landed (`T-5792`,
-`aa866b3a`); 5.7.3 building (`T-5703`).** The installed pre-release is still `bf7cc3d`. Bonsai's own
+research folder (solo-to-team-ai, 19 Oct), and its unpushed records commit undone. **20 Oct: 5.7.1-5.7.4 and CI on the branch
+landed (`main` at `4ec5c432`, CI green); V1 passed the release path. Next: the director's batch 1.** The installed pre-release is still `bf7cc3d`. Bonsai's own
 repo takes `base` (`4b41790b`) and `workflow` (`a42a4f4`), plugins under the marketplace `bonsai-bonsai-299659af`. The
 floors: `go_tests` 4756 (19 Oct, `T-5695`); `go_tests_tagged` **2120** (19 Oct, `T-5790`: the narrowed pass, lowered on
 the director's word, re-recorded by their `bonsai update`).
@@ -57,8 +57,9 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
 verifier's count, under its re-ask line of 138). Questions put to the director in 5.5: twenty-three before 16 Oct, and on 16 Oct
 eight (the workflow limits, the walls' Windows half, the login check, the history, check 5, check 5 on Windows, and the
 morning's install and Windows steps as asks). **5.6 about 21 h** (T-5611's count of about 19 h, a floor since many rows
-were not written, plus about 2 h on 19 Oct's day session), under its re-ask line of 51. **5.7 so far about 1 h**
-(`T-5700` 12 minutes, `T-5704` 16, `T-5790` 24), under its re-ask line of 24. **Step 5's Windows-only tally:** 5.5's "about 143 minutes plus 16 Oct's Windows check-10 helpers (about 6 h, side
+were not written, plus about 2 h on 19 Oct's day session), under its re-ask line of 51. **5.7 so far about 6.5 h**
+(19 Oct: `T-5700` 12 minutes, `T-5704` 16, `T-5790` 24; 20 Oct: `T-5792` 15, `T-5703` 53, `T-5704` 30, `T-5701` 37,
+`T-5702` 73 with V1 twice, the scratch planning 7; many side by side), under its re-ask line of 24. **Step 5's Windows-only tally:** 5.5's "about 143 minutes plus 16 Oct's Windows check-10 helpers (about 6 h, side
 by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in
 `R-2026-10-19-T-5615`); 5.7 none yet.
 
@@ -194,15 +195,15 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | 5.6, every piece, its end verifier and records | `T-5600`-`T-5617`, `T-5690`-`T-5699` | done | CI green at `ba2f4c5e`; `T-5616`'s re-check passed |
 | The tagged pass narrowed | `T-5790` | done | `e85aa6e6`; rungs 1 and 4 and CI's tagged lines name the 7 packages; windows (fault tag) 16 min |
 | 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`; the pin test's one exception `release.yml` (5.7.2's, with the director) |
-| CI on the branch | `T-5792` | done | `aa866b3a`; the first landing by it (CI run 39380622161 green on the branch) |
-| 5.7.3, the signed check in the install lines | `T-5703` | running | builder (opus) on branch `T-5703` from `aa866b3a` |
-| 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`, 7 commits ahead of `main` and behind it (to rebase), beside 5.7.3 |
-| 5.7.1, the release build | `T-5701` | todo | after 5.7.3 and 5.7.4 (its notes script reads 5.7.4's changelog) |
-| 5.7.2, the release workflow | `T-5702` | todo | after 5.7.1 |
+| CI on the branch | `T-5792` | done | `aa866b3a`; the first landing by it |
+| 5.7.3, the signed check in the install lines | `T-5703` | done | `11943f30`; seven lines a side, `docs/install.md` |
+| 5.7.4, the words for 1.0 | `T-5704` | done | `4ebee8cc` (batch with 5.7.3) |
+| 5.7.1, the release build | `T-5701` | done | `137e419f`; GoReleaser v2.18.3 by `go run`; `release-check` on every push |
+| 5.7.2, the release workflow | `T-5702` | done | `4ec5c432`; V1 failed b93dd719 (the tag check passed an unreadable answer), fixed, V1 again PASS |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Next, in this order** (plan-5.md's 5.7 order): 5.7.3 and 5.7.4 side by side, then 5.7.1 alone, then 5.7.2 alone,
-then V1 and the director's batch 1. Every landing by CI on the branch; every builder's brief says **strict Owns, stop
+**Next, in this order:** the director's batch 1 (`~/bonsai-checks/5.7-batches/batch1.md`), its settings read back by an
+agent; batch 2, `1.0.0-rc.1` on `4ec5c432` or a records commit after it; 5.7.5 and V2; batch 3; the trial (5.7.7-5.7.9). Every landing by CI on the branch; every builder's brief says **strict Owns, stop
 and ask**; the scratch folder and a cleaner role after 1.0. **Proposed for 5.7's planning** (`workflow:correct`,
 all unproven until shown failing on the old input named in `R-2026-10-19-T-5615`): a test that fails when a test
 restates a list's entries (C3); a rung comparing assertion counts base to head (C4); a `bonsai check` finding for a done

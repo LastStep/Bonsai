@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5702
 title: "5.7.2, the release workflow: release.yml in two jobs, the tag check, the templates, CLAUDE.md's release lines"
-status: todo
+status: done
 lane:
 done_when:
   - "release.yml as note 5.7.2, 1-2: started only by the two tag patterns; build (read-only, no environment) and publish (environment release, runs nothing from the build: attestation, draft, draft checked, publish, published release checked, its own draft deleted on failure); every action pinned"
@@ -12,8 +12,8 @@ done_when:
 depends_on: [T-5701]
 blocked_by:
 created: 2026-10-20
-started:
-finished:
+started: 2026-10-20
+finished: 2026-10-20
 labels:
   bonsai.ladder: []
   bonsai.allows: [".github/workflows/release.yml", ".github/scripts/release-tag-check.sh", ".github/ISSUE_TEMPLATE/**", ".github/pull_request_template.md", "CLAUDE.md"]

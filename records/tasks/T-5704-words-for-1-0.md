@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5704
 title: "5.7.4, the words for 1.0 (drafted on its branch; lands after 5.6 closes and the records-database talk)"
-status: verify
+status: done
 lane:
 done_when:
   - "README, CONTRIBUTING, CHANGELOG, SECURITY, .gitattributes, bonsai --help and main.go's doc comment, the Makefile's -trimpath and init's bonsai.yaml template comment as plan-5.md's note 5.7.4, 1-8 says"
@@ -13,7 +13,7 @@ depends_on: []
 blocked_by:
 created: 2026-10-19
 started: 2026-10-19
-finished: 2026-10-19
+finished: 2026-10-20
 labels:
   bonsai.ladder: []
   bonsai.allows: [".gitattributes"]
