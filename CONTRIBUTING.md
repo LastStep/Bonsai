@@ -1,7 +1,8 @@
 # Contributing to Bonsai
 
 Bonsai is built here by its maintainer, with Claude Code agents as the team (see [`README.md`](README.md)). Work lands
-on `main` directly, in small commits, each pushed only after its proof passes; there are no pull requests. To report a
+on `main` directly, in small commits, with no pull requests: a change is pushed on a branch first and reaches `main`
+only once its proof passes and CI is green on that exact commit, and the branch is deleted once `main` holds it. To report a
 problem or suggest something, open an [issue](https://github.com/LastStep/Bonsai/issues); for a security problem,
 follow [`SECURITY.md`](SECURITY.md). Releases are the maintainer's tags; no one else tags or releases.
 
@@ -67,7 +68,7 @@ The proof of a change is `bonsai ladder --task <id>` green, run by the installed
 [`bonsai.yaml`](bonsai.yaml) (the guard's check of what the task changed, `go vet`, the schema compare, every test plain
 and then with the test fault switch in the packages it can change, and git integrity; that package list is written
 into each tagged command, and `internal/selfcheck/faulttag_test.go` fails when a copy differs from what `go list`
-shows). Beside it, the tests run natively on Windows, and CI is green on both sides (`.github/workflows/ci.yml`: `test`, `windows`, `windows (fault tag)`, `lint`, `govulncheck`).
+shows). Beside it, CI runs on the pushed branch, its two Windows jobs among them, and every job must be green there before `main` moves (`.github/workflows/ci.yml`: `test`, `windows`, `windows (fault tag)`, `packs`, `lint`, `govulncheck`, `install`). The tests run natively on Windows by hand only when CI cannot run the branch.
 
 ## Rules every change follows
 
