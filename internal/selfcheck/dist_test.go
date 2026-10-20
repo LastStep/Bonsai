@@ -168,7 +168,7 @@ func unpack(path, dir string) (unpacked, []string, error) {
 		if err != nil {
 			return u, nil, err
 		}
-		defer z.Close()
+		defer func() { _ = z.Close() }()
 		for _, f := range z.File {
 			r, err := f.Open()
 			if err != nil {
@@ -186,7 +186,7 @@ func unpack(path, dir string) (unpacked, []string, error) {
 	if err != nil {
 		return u, nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	gz, err := gzip.NewReader(f)
 	if err != nil {
 		return u, nil, err
