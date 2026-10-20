@@ -303,16 +303,20 @@ func lastRecord(t *testing.T, main string) schema.Object {
 var unsafeOut = regexp.MustCompile(`(?i)no such file|cannot find|not found|missing|enoent`)
 
 // blocks checks a run kept the session going by rule, its reason first naming want, its next step naming
-// next, in one ASCII line each and with no unsafe word, and recorded in main's log.
+// next, then its rule word on a line of its own as the guard's refusals print it (BUG-089), in one ASCII line each and
+// with no unsafe word, and recorded in main's log.
 func blocks(t *testing.T, code int, stderr, main, rule, want, next string) {
 	t.Helper()
 	if code != 2 {
 		t.Fatalf("exit %d, want 2 (%s): %q", code, rule, stderr)
 	}
 	lines := strings.Split(strings.TrimSuffix(stderr, "\n"), "\n")
-	if len(lines) != 2 || !strings.HasPrefix(lines[0], "bonsai stop gate: ") || !strings.HasPrefix(lines[1], "next: ") ||
+	if len(lines) != 3 || !strings.HasPrefix(lines[0], "bonsai stop gate: ") || !strings.HasPrefix(lines[1], "next: ") ||
 		!strings.HasSuffix(lines[0], ".") || !strings.HasSuffix(lines[1], ".") {
-		t.Fatalf("stderr is not the reason and the next step: %q", stderr)
+		t.Fatalf("stderr is not the reason, the next step and the rule: %q", stderr)
+	}
+	if lines[2] != "rule: "+rule+"." {
+		t.Errorf("stderr's last line is %q, want %q", lines[2], "rule: "+rule+".")
 	}
 	if !strings.Contains(lines[0], want) || !strings.Contains(lines[1], next) {
 		t.Errorf("%s: stderr %q, want %q in the reason and %q in the next step", rule, stderr, want, next)
