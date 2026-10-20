@@ -229,3 +229,51 @@ func TestReleaseLookalikeCheckFailsOnACopy(t *testing.T) {
 		t.Errorf("lookalikes found: %q, want %q", got, want)
 	}
 }
+
+// releaseShellProblems returns what keeps every run step of release.yml under bash with pipefail: the workflow-level
+// block "defaults:\n  run:\n    shell: bash", and no other shell: line that could name another. GitHub runs an unnamed
+// shell on Linux as bash -e {0}, where a pipeline's status is its last command's; a named bash runs as
+// bash --noprofile --norc -eo pipefail {0}, so a failing gh before a pipe fails the step.
+func releaseShellProblems(content string) []string {
+	var out []string
+	if !strings.Contains(content, "\ndefaults:\n  run:\n    shell: bash\n") {
+		out = append(out, "release.yml: no workflow-level \"defaults: run: shell: bash\" block")
+	}
+	for i, l := range strings.Split(content, "\n") {
+		if strings.TrimSpace(strings.SplitN(l, "#", 2)[0]) == "" {
+			continue
+		}
+		if strings.HasPrefix(strings.TrimSpace(l), "shell:") && l != "    shell: bash" {
+			out = append(out, fmt.Sprintf("release.yml:%d: a shell other than the workflow's default bash", i+1))
+		}
+	}
+	return out
+}
+
+// TestReleaseRunsUnderPipefail holds release.yml's run steps to bash with pipefail.
+func TestReleaseRunsUnderPipefail(t *testing.T) {
+	for _, p := range releaseShellProblems(read(t, ".github/workflows/release.yml")) {
+		t.Error(p)
+	}
+}
+
+// TestReleaseShellCheckFailsOnCopies shows the check failing on copies of the real release.yml: one without the
+// defaults block, one with a step naming sh.
+func TestReleaseShellCheckFailsOnCopies(t *testing.T) {
+	good := read(t, ".github/workflows/release.yml")
+	const block = "\ndefaults:\n  run:\n    shell: bash\n"
+	if !strings.Contains(good, block) {
+		t.Fatal("the real release.yml has no defaults block; TestReleaseRunsUnderPipefail says more")
+	}
+	if p := releaseShellProblems(strings.Replace(good, block, "\n", 1)); len(p) != 1 || !strings.Contains(p[0], "no workflow-level") {
+		t.Errorf("a copy without the block: want one problem naming it, got %v", p)
+	}
+	const step = "      - name: Print the Go version\n        run: go version\n"
+	if !strings.Contains(good, step) {
+		t.Fatalf("release.yml no longer holds %q; update this test", step)
+	}
+	bad := strings.Replace(good, step, "      - name: Print the Go version\n        shell: sh\n        run: go version\n", 1)
+	if p := releaseShellProblems(bad); len(p) != 1 || !strings.Contains(p[0], "a shell other than") {
+		t.Errorf("a copy with shell: sh on a step: want one problem naming it, got %v", p)
+	}
+}

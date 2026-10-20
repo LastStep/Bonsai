@@ -35,6 +35,14 @@ on:
 # No permission at all unless a job names it.
 permissions: {}
 
+# Every run step under bash with pipefail. GitHub runs a step whose shell is named bash as bash --noprofile --norc -eo
+# pipefail {0}, but an unnamed one on Linux as bash -e {0}, where a pipeline's status is its last command's: a failing
+# gh before a pipe would then pass unseen (workflow syntax, "jobs.<job_id>.steps[*].shell", read 20 Oct 2026).
+# internal/selfcheck/workflows_test.go holds this file to this block, and to no other shell.
+defaults:
+  run:
+    shell: bash
+
 # One run per tag at a time, and a running one never cancelled: a second run of the same tag waits until the first
 # ends. (GitHub replaces a waiting run with a newer one of the same group; its queue: max would keep both, but
 # actionlint v1.7.12, CI's, does not know the key yet.)
