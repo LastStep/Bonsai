@@ -73,6 +73,11 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
   the scratch folder: on the first audit's options, **"we need a proper structure which decides what a scratch folder
   is and what type of authority it can contain. it should be declared in bonsai.yaml ... bonsai local maybe?"**; asked
   when, **"okay we will tackle this idea after 1.0"** (`T-5793`, `todo`; facts and a draft shape kept).
+  Later: **"add a step before 1.0 release, i want to improve the readme, and create some demo videos showcasing how
+  bonsai works (and does for a project)"**; the demos' form: **"we will discuss it thorughly when the time comes"**
+  (`T-5711`, before rc.2). Go for rc.1: **"Stay on 1.27.2"** (go1.27.3 breaks govulncheck; its fixes are to
+  crypto/x509, which bonsai does not link; checked again before rc.2 and 1.0). Batch 1 done (read back), batch 2 done:
+  v1.0.0-rc.1 published from 73919ddc.
 - **19 Oct (afternoon):**
   - On "show me the status board for 5.7": **"no i dont want a page, just show me a table here"** (status boards as a
     table in the session, not an artifact).
@@ -200,6 +205,7 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | 5.7.4, the words for 1.0 | `T-5704` | done | `4ebee8cc` (batch with 5.7.3) |
 | 5.7.1, the release build | `T-5701` | done | `137e419f`; GoReleaser v2.18.3 by `go run`; `release-check` on every push |
 | 5.7.2, the release workflow | `T-5702` | done | `4ec5c432`; V1 failed b93dd719 (the tag check passed an unreadable answer), fixed, V1 again PASS |
+| The README improved and demo videos (the director's added step) | `T-5711` | todo | after the trial's analysis, before rc.2; to talk through first |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
 **Next, in this order:** the director's batch 1 (`~/bonsai-checks/5.7-batches/batch1.md`), its settings read back by an
