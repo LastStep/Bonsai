@@ -1,60 +1,98 @@
+# .goreleaser.yaml: how Bonsai's release files are built: the programs, one archive per system and checksums.txt.
+#
+# GoReleaser is pinned to v2.18.3 and always run by its module path, so Go's checksum database checks what runs:
+#   go run github.com/goreleaser/goreleaser/v2@v2.18.3 release --snapshot --clean
+# (the goreleaser action checks its download only against a checksums file from the same release page). It runs in
+# CI's release-check job on every push (a snapshot, then the dist checks: internal/selfcheck/dist_test.go) and in the
+# release workflow's build job at a version tag. It publishes nothing and needs no token: no GitHub release, no
+# changelog, no Homebrew formula. The release itself, with notes from CHANGELOG.md (.github/scripts/release-notes.sh),
+# is made by the release workflow with gh. Keys read in GoReleaser's documentation at v2.18.3.
+#
+# Indent every comment inside a section: internal/engine/release_test.go reads the archives section as text, up to
+# the next line that starts at the margin.
+
+# The configuration format, GoReleaser v2's.
 version: 2
 
+# The project's name: the archives' names start with it.
 project_name: bonsai
 
+# Which git tags GoReleaser may take for the current and the previous version.
+git:
+  # The packs' tags (base-v1.0.0 and on) are never Bonsai's version. GoReleaser's open-source build passes this
+  # pattern to git describe --exclude, which covers a tag on an older commit, but compares tags on the commit being
+  # built exactly, so a base-v tag there would still be taken (measured at v2.18.3): each job that runs GoReleaser
+  # also sets GORELEASER_CURRENT_TAG itself (release-check from git describe --match 'v[0-9]*'; the release job the
+  # pushed tag).
+  ignore_tags:
+    - "base-v*"
+
+# The programs: one bonsai per system and processor, built in the checkout so Go stamps the commit (vcs.revision) and
+# a clean tree (vcs.modified=false).
 builds:
-  - id: bonsai
+  - # This build's name.
+    id: bonsai
+    # The package holding main.
     main: ./cmd/bonsai
+    # The program's file name (bonsai.exe on Windows).
     binary: bonsai
+    # No C: a program that runs with nothing else installed.
     env:
       - CGO_ENABLED=0
+    # Linux (and WSL) and Windows, tested; macOS built as before, untested (spec section 3).
     goos:
       - linux
       - darwin
       - windows
+    # Both processors on each system.
     goarch:
       - amd64
       - arm64
+    # No folder of the building machine in the program.
+    flags:
+      - -trimpath
+    # -s -w: no symbol table or debug data. main.version is the version without its leading v, which --version
+    # prints and the install lines read.
     ldflags:
       - -s -w -X main.version={{.Version}}
+    # Each program's file time is the commit's, so a build from one commit is the same file.
     mod_timestamp: "{{ .CommitTimestamp }}"
 
+# The archives: one per program, holding it, both installers, the README and the LICENSE, all at the archive's top.
 archives:
-  - id: default
+  - # This archive set's name.
+    id: default
+    # tar.gz everywhere but Windows, which gets a zip (the install lines unpack these).
     formats:
       - tar.gz
     format_overrides:
       - goos: windows
         formats:
           - zip
+    # bonsai_<version>_<os>_<arch>; the install lines and their test (internal/engine/release_test.go) read it.
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    # The files beside the program. strip_parent puts the installers at the top, not under install/; install.sh is
+    # 0755 in the tar archives so it runs as it is. Every archive carries both installers (a zip's install.sh is
+    # harmless, and one entry keeps one name template).
     files:
-      - LICENSE*
-      - README*
+      - LICENSE
+      - README.md
+      - src: install/install.sh
+        strip_parent: true
+        info:
+          mode: 0755
+      - src: install/install.ps1
+        strip_parent: true
 
+# checksums.txt: one SHA-256 line per archive, which the install lines check.
 checksum:
   name_template: "checksums.txt"
 
+# No changelog from commit titles: the release notes are CHANGELOG.md's section for the version.
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
-      - "^ci:"
+  disable: true
 
-brews:
-  - name: bonsai
-    repository:
-      owner: LastStep
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: "https://github.com/LastStep/Bonsai"
-    description: "CLI tool for scaffolding Claude Code agent workspaces"
-    license: "MIT"
-    directory: Formula
-    install: |
-      bin.install "bonsai"
-    test: |
-      system "#{bin}/bonsai", "--version"
+# No GitHub release from GoReleaser: the release workflow's publish job makes it with gh, so GoReleaser never runs
+# where a release can be written, and asks for no token.
+release:
+  disable: true
