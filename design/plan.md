@@ -329,7 +329,9 @@ on its dashboard. No committed fixture names Mimas, the studio or any one projec
 **Check 10, natively on Windows**, at the end of parts 2, 3, 4 and 5 and on the final commit, before the push:
 `go test ./...` and `go vet ./...` with Windows Go in `%USERPROFILE%\bonsai-checks\src`, a copy of the builder's tree
 (`cp -a` of the worktree without `.git`) or a Windows-git clone of the builder's branch (from a `git bundle`, as in
-part 0). CI does not replace that run: check 10 needs both.
+part 0). CI does not replace that run: check 10 needs both. (From 5.7, 20 Oct, `T-5792`: a landing waits for CI on the pushed
+branch, its windows jobs among them; the native run is the fallback for what CI cannot run, as `CLAUDE.md`'s landing
+rule says.)
 
 **The twelve checks** are spec §14's, with these readings: check 7 as "What still links" item 3 says (Bonsai's half is
 "every trick file's format-1 outcome"; the skeleton has no format 0); check 3's CRLF checkout is made with Windows git;

@@ -14,8 +14,8 @@ broken copies caught), 7e to 5.7; the end records (`T-5615`); CI's windows job s
 the tagged pass narrowed to the 7 packages the tag can reach (`T-5790`); the cleanup (WSL 40 GB, Windows 27 GB).
 That afternoon `workflow:correct`'s three questions were answered (below). **20 Oct: the team-work research is the
 studio's, not Bonsai's** (the director): its task, run report and decision moved to the studio's
-research folder (solo-to-team-ai, 19 Oct), and its unpushed records commit undone. **Next: 5.7's pieces in the plan's
-order, first CI on the branch.** The installed pre-release is still `bf7cc3d`. Bonsai's own
+research folder (solo-to-team-ai, 19 Oct), and its unpushed records commit undone. **CI on the branch landed (`T-5792`,
+`aa866b3a`); 5.7.3 building (`T-5703`).** The installed pre-release is still `bf7cc3d`. Bonsai's own
 repo takes `base` (`4b41790b`) and `workflow` (`a42a4f4`), plugins under the marketplace `bonsai-bonsai-299659af`. The
 floors: `go_tests` 4756 (19 Oct, `T-5695`); `go_tests_tagged` **2120** (19 Oct, `T-5790`: the narrowed pass, lowered on
 the director's word, re-recorded by their `bonsai update`).
@@ -68,7 +68,10 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
   studio, move that research item in the studio research folder, as we wont be focusing on that here"**; undo the
   commits of the files it made; **"then we just fully focus on the current planned bonsai release order"**; the aim
   for the session, **"finish 5.7"**. The research, its task and run report, and OPT-0001 now live in the studio's
-  repo, in its research folder (solo-to-team-ai, 19 Oct); the freeze review it proposed is not a 5.7 piece.
+  repo, in its research folder (solo-to-team-ai, 19 Oct); the freeze review it proposed is not a 5.7 piece. Then
+  the scratch folder: on the first audit's options, **"we need a proper structure which decides what a scratch folder
+  is and what type of authority it can contain. it should be declared in bonsai.yaml ... bonsai local maybe?"**; asked
+  when, **"okay we will tackle this idea after 1.0"** (`T-5793`, `todo`; facts and a draft shape kept).
 - **19 Oct (afternoon):**
   - On "show me the status board for 5.7": **"no i dont want a page, just show me a table here"** (status boards as a
     table in the session, not an artifact).
@@ -191,13 +194,16 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | 5.6, every piece, its end verifier and records | `T-5600`-`T-5617`, `T-5690`-`T-5699` | done | CI green at `ba2f4c5e`; `T-5616`'s re-check passed |
 | The tagged pass narrowed | `T-5790` | done | `e85aa6e6`; rungs 1 and 4 and CI's tagged lines name the 7 packages; windows (fault tag) 16 min |
 | 5.7.0, CI's own checks | `T-5700` | done | `a82d18b5`; the pin test's one exception `release.yml` (5.7.2's, with the director) |
-| 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`, 7 commits ahead of `main` and behind its last 26 (to rebase); lands after CI on the branch |
+| CI on the branch | `T-5792` | done | `aa866b3a`; the first landing by it (CI run 39380622161 green on the branch) |
+| 5.7.3, the signed check in the install lines | `T-5703` | running | builder (opus) on branch `T-5703` from `aa866b3a` |
+| 5.7.4, the words for 1.0 | `T-5704` | verify | branch `T-5704` at `3fc559c6`, 7 commits ahead of `main` and behind it (to rebase), beside 5.7.3 |
+| 5.7.1, the release build | `T-5701` | todo | after 5.7.3 and 5.7.4 (its notes script reads 5.7.4's changelog) |
+| 5.7.2, the release workflow | `T-5702` | todo | after 5.7.1 |
+| Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Next, in this order:** 5.7's pieces by its section, with the director's 19 Oct rules: **first a task for CI on the
-branch** (`ci.yml` on pushed branches; `CLAUDE.md`'s landing rule reworded), before any 5.7 landing; every builder's
-brief says **strict Owns, stop and ask**; **the scratch folder for write-nothing roles** (a guard change, an Opus builder
-and a verifier; first find out why the guard refused the first auditor's Write and shell redirect there while three
-researchers' shell writes went through); a cleaner role after 1.0. **Proposed for 5.7's planning** (`workflow:correct`,
+**Next, in this order** (plan-5.md's 5.7 order): 5.7.3 and 5.7.4 side by side, then 5.7.1 alone, then 5.7.2 alone,
+then V1 and the director's batch 1. Every landing by CI on the branch; every builder's brief says **strict Owns, stop
+and ask**; the scratch folder and a cleaner role after 1.0. **Proposed for 5.7's planning** (`workflow:correct`,
 all unproven until shown failing on the old input named in `R-2026-10-19-T-5615`): a test that fails when a test
 restates a list's entries (C3); a rung comparing assertion counts base to head (C4); a `bonsai check` finding for a done
 task whose run report is open (C5); a rung and CI step running `bonsai check` on this repo (C6). **Small follow-ups:**
@@ -205,7 +211,7 @@ the three new deny lines reach this repo's settings at the next pre-release's `u
 existing file as "changed" (scratch only, read past from the guard's log). Every known bug: `records/bugs.md`.
 
 **How work runs now:** agents by role, briefed with `bonsai message`; the shared rules
-`~/bonsai-checks/briefs/common-2026-10-19-day.md` (over `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
+`~/bonsai-checks/briefs/common-2026-10-20.md` (over `common-2026-10-19-day.md`, `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
 Windows runs by the orchestrator only, one at a time; load modest), plus the director's 19 Oct afternoon rules above. A
 verifier, runner or auditor cannot yet write a scratch file by the Write tool (BUG-013; the sanctioned folder is not
 built): it returns its work in its final reply, or the orchestrator or a builder makes the scratch. Run reports' times
