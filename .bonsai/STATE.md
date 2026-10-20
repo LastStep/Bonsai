@@ -82,6 +82,9 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
   (`T-5711`, before rc.2). Go for rc.1: **"Stay on 1.27.2"** (go1.27.3 breaks govulncheck; its fixes are to
   crypto/x509, which bonsai does not link; checked again before rc.2 and 1.0). Batch 1 done (read back), batch 2 done:
   v1.0.0-rc.1 published from 73919ddc.
+  At the session's end, two pointers for rc.2's list (`T-5710`, items 10-11): **"bonsai agents command shows all agents
+  at once, need some filter there"**; **"bonsai answer needs to have an options key, like where we can answer just A,
+  B etc; currently we use words"**.
 - **19 Oct (afternoon):**
   - On "show me the status board for 5.7": **"no i dont want a page, just show me a table here"** (status boards as a
     table in the session, not an artifact).

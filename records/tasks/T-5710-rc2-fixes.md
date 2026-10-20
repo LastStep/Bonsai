@@ -35,3 +35,11 @@ Gathered on 20 Oct; rc.2 always follows (note 5.7.10). Each becomes its own task
    trial's finding); "being rebuilt" at line 3 (for 1.0).
 8. **The README and demos** (T-5711), talked through with the director first.
 9. Check 10's Windows half after rc.1 (note 5.7.5, 8): not yet run.
+10. **`bonsai agents` filters** (the director, 20 Oct: "bonsai agents command shows all agents at once, need some
+    filter there"): it lists every agent at once; filters to add (by session, task, role, state or age; to plan with
+    the director).
+11. **`bonsai answer` by option letter** (the director, 20 Oct: "bonsai answer needs to have an options key, like where
+    we can answer just A, B etc; currently we use words"): a Decide answered by the option's letter or number, written
+    as the option's full text in `choice` (the format's field unchanged); the trial's ask 1 and 2 were answered with
+    `--words "B"` because `--choice` needs the option's whole text.
+
