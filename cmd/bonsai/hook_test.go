@@ -15,6 +15,7 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/selfcheck"
 )
 
 // builds holds the two binaries this package's hook tests run, built once: a normal build and a build with the
@@ -78,8 +79,9 @@ func bonsaiBuilds(t *testing.T) (normal, fault string) {
 	return builds.normal, builds.fault
 }
 
-// A normal build holds no fault code: none of the switch's words, rules or functions is in its bytes, and each is
-// in the fault build's, so the check can see them.
+// A normal build holds no fault code: none of the switch's words, rules or functions (selfcheck.FaultMarkers, their one
+// home, which the release's dist checks read too) is in its bytes, and each is in the fault build's, so the check can
+// see them.
 func TestNormalBuildHasNoFaultCode(t *testing.T) {
 	normal, fault := bonsaiBuilds(t)
 	nb, err := os.ReadFile(normal)
@@ -90,8 +92,7 @@ func TestNormalBuildHasNoFaultCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, m := range []string{"BONSAI_TEST" + "_FAULT", "fault-" + "crash", "fault-" + "unknown", "minimal" + "-path", "test fault " + "crash",
-		"internal/guard." + "crashHard"} {
+	for _, m := range selfcheck.FaultMarkers() {
 		if bytes.Contains(nb, []byte(m)) {
 			t.Errorf("the normal build holds %q", m)
 		}
