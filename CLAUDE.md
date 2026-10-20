@@ -195,8 +195,12 @@ pre-release on, the one they had is kept in `~/bonsai-checks/prerelease/previous
   landing; red CI on `main` is fixed forward.
 - Work lands on `main` directly: no pull requests, no long-lived branches (a pushed branch lives only until its
   landing). Force pushes and deletion are blocked on `main`; a pushed branch is never force-pushed.
-- **Nobody tags or releases.** `release.yml` stays disabled; releases are the director's word at spec step 5.7. No agent changes
-  a setting, secret, ruleset or workflow switch, or merges or closes a pull request.
+- **Only the director tags and releases.** They alone push a tag (Bonsai's `v*`, the packs' `base-v*`, the workflow
+  repo's `v*`) and approve a release run. `release.yml` runs only on their version tag, and its publishing only inside
+  the `release` environment, once they approve; a release is published by that workflow, never by hand. No agent
+  tags, approves, re-runs or cancels a release run, or changes a setting, secret, ruleset or workflow switch, or
+  merges or closes a pull request. Until the director switches it on (5.7's batch 1), `release.yml` stays disabled
+  on GitHub.
 
 ## Working with the director
 
