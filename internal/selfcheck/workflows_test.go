@@ -152,3 +152,80 @@ func TestPinCheckFailsOnBadCopies(t *testing.T) {
 		t.Errorf("a local action must pass: %v", p)
 	}
 }
+
+// releaseLookalikes returns every name in a workflows folder, other than release.yml itself, that starts with
+// "release.yml". gh attestation verify's --signer-workflow matches the signing workflow's path by its start, so a
+// workflow named, say, release.yml.extra.yml could make records the install lines' check would take for the release
+// workflow's.
+func releaseLookalikes(names []string) []string {
+	var out []string
+	for _, n := range names {
+		if n != "release.yml" && strings.HasPrefix(n, "release.yml") {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+// workflowNames lists every entry of a folder by name, files of any kind and folders alike.
+func workflowNames(t *testing.T, dir string) []string {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read %s: %v", dir, err)
+	}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	return names
+}
+
+// TestNoReleaseWorkflowLookalike holds .github/workflows/ to one name starting with release.yml: release.yml.
+func TestNoReleaseWorkflowLookalike(t *testing.T) {
+	names := workflowNames(t, filepath.Join("..", "..", ".github", "workflows"))
+	found := false
+	for _, n := range names {
+		found = found || n == "release.yml"
+	}
+	if !found {
+		t.Fatal(".github/workflows/release.yml is missing; the install lines name it as the signer")
+	}
+	for _, n := range releaseLookalikes(names) {
+		t.Errorf(".github/workflows/%s starts with release.yml: gh attestation verify --signer-workflow "+
+			"LastStep/Bonsai/.github/workflows/release.yml would match records it signs; rename it", n)
+	}
+}
+
+// TestReleaseLookalikeCheckFailsOnACopy shows the check failing on a scratch copy of the folder with a lookalike
+// added, and passing on names that only resemble it.
+func TestReleaseLookalikeCheckFailsOnACopy(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join("..", "..", ".github", "workflows")
+	for _, n := range workflowNames(t, src) {
+		b, err := os.ReadFile(filepath.Join(src, n))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, n), b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := releaseLookalikes(workflowNames(t, dir)); len(got) != 0 {
+		t.Fatalf("the copy of the real folder has lookalikes: %v", got)
+	}
+	for _, n := range []string{"release.yml.yml", "release.yml-old.yaml", "release.ymlx"} {
+		if err := os.WriteFile(filepath.Join(dir, n), []byte("name: x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, n := range []string{"release-check.yml", "releases.yml", "a-release.yml"} {
+		if err := os.WriteFile(filepath.Join(dir, n), []byte("name: x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got := strings.Join(releaseLookalikes(workflowNames(t, dir)), " ")
+	if want := "release.yml-old.yaml release.yml.yml release.ymlx"; got != want {
+		t.Errorf("lookalikes found: %q, want %q", got, want)
+	}
+}
