@@ -46,3 +46,9 @@ labels: {}
   package comment's "What it prints"; SKILL.md:103 the stale line; cmd/bonsai/operating_test.go only if its checks need
   it. frame.go needs no change (it already prints the rule).
 - 16:49 Commit 6ef7e56d: `blocks` in stopgate_test.go wants a third line `rule: <rule>.`; `go test ./internal/stopgate/` on today's code: FAIL (91 failing test lines, every block case, among them TestOverTimeAndPanicBlock).
+- 16:50 Climb 1 (`/usr/local/bin/bonsai ladder --task T-5708 --json`, rc.1), at 7871d8c4, dirty false: **red**, as
+  wanted. sha256 db8a477c2be404d3807441ce7d9d60791b604908c93c20a573cdcf2a079d733c. Rungs: 0 guard green 3720 ms; 1 vet
+  green 2269 ms; 2 schemas green 515 ms; 3 tests red 61198 ms (seen 4807, 83 failed, all in internal/stopgate, skipped
+  9; "go_tests went backwards: 4756 -> 4707"); 4 and 5 skipped (an earlier required rung failed).
+- 16:51 Probe 1, the stop gate: ending the turn with the ladder red, on purpose ("stopping with the ladder red, as a
+  probe"). Its words follow on the next line.
