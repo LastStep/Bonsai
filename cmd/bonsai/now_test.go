@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 	_ "time/tzdata" // tests only: Go on Windows ignores TZ, so each test injects its zone
+
+	"github.com/LastStep/Bonsai/internal/format"
 )
 
 // withClock fixes bonsai now's clock and zone for one test.
@@ -57,6 +59,12 @@ func TestNowForms(t *testing.T) {
 			}
 		}
 		asciiOnly(t, "bonsai now --json", out)
+		// Held to bonsai.now/1 as the schema says it, every field in order, and read back by the format's reader.
+		fits(t, out, "now")
+		n, err := format.ReadNow([]byte(out))
+		if err != nil || n.Error != nil || n.UTC == nil || *n.UTC != "2026-10-21 07:19" || *n.Local != c.local {
+			t.Errorf("%s: bonsai.now/1 reads as %+v, %v", c.zone, n, err)
+		}
 	}
 }
 
@@ -85,5 +93,6 @@ func TestNowRefusals(t *testing.T) {
 		if code != 2 || errOut != "" || !strings.Contains(out, `"error": {`) || !strings.Contains(out, `"utc": null`) {
 			t.Errorf("%v --json: exit %d, out %q, stderr %q", args, code, out, errOut)
 		}
+		fits(t, out, "now")
 	}
 }

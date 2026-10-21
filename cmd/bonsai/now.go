@@ -5,7 +5,6 @@ package main
 // not. The forms are internal/timefmt's. Its table of flags and exit codes is nowWord.
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/engine"
@@ -51,7 +50,7 @@ from it). It reads the clock and this machine's zone and nothing else: no worksp
 	},
 	Examples: []string{"bonsai now", "bonsai now --day", "bonsai now --iso", "bonsai now --local", "bonsai now --json"},
 	Refused: func(c *call, e *engine.Error) encoder {
-		return &nowDoc{Error: e.Object()}
+		return &format.Now{Error: e.Object()}
 	},
 	Run: runNow,
 }
@@ -74,7 +73,7 @@ func runNow(c *call) int {
 	t, loc := nowClock(), nowZone()
 	if c.json {
 		abbr, _ := t.In(loc).Zone()
-		return c.printDoc(&nowDoc{
+		return c.printDoc(&format.Now{
 			UTC: strp(timefmt.Record(t)), Day: strp(timefmt.RecordDay(t)), ISO: strp(timefmt.UTC(t)),
 			Local: strp(timefmt.Doc(t, loc)), Offset: strp(timefmt.Offset(t, loc)), Zone: strp(engine.ASCII(abbr)),
 		}, exitOK)
@@ -91,22 +90,3 @@ func runNow(c *call) int {
 }
 
 func strp(s string) *string { return &s }
-
-// nowDoc is bonsai.now/1's document, as written until format.Now takes its place (piece A's schema).
-type nowDoc struct {
-	UTC    *string             `json:"utc"`
-	Day    *string             `json:"day"`
-	ISO    *string             `json:"iso"`
-	Local  *string             `json:"local"`
-	Offset *string             `json:"offset"`
-	Zone   *string             `json:"zone"`
-	Error  *format.ErrorObject `json:"error"`
-}
-
-func (d *nowDoc) Encode() ([]byte, error) {
-	b, err := json.MarshalIndent(struct {
-		Format string `json:"format"`
-		*nowDoc
-	}{"bonsai.now/1", d}, "", "  ")
-	return append(b, '\n'), err
-}
