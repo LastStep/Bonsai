@@ -155,6 +155,9 @@ func TestFreshStamps(t *testing.T) {
 		{"a day that is no day", func(d string) string {
 			return editIn(d, stampTask, "started:\n", "started: 21 Oct\n")
 		}, stampNow, true, []string{"not a day (YYYY-MM-DD, the UTC day)"}},
+		{"a value that opens a structure is the format's, not a stamp", func(d string) string {
+			return editIn(d, stampTask, "started:\n", "started: [\n")
+		}, stampNow, false, nil},
 		{"a new task created today", func(d string) string {
 			return writeOf(d, "work/tasks/T-0002-new.md", strings.Replace(taskText("T-0002", "todo", "light"),
 				"created: 2026-10-11", "created: 2026-10-21", 1))
@@ -186,6 +189,9 @@ func TestFreshStamps(t *testing.T) {
 	// answers for it (tripwire.go), in agents mode time-not-now.
 	wrongForm := map[string]bool{"a time with a zone name": true, "a quoted time with a zone name": true,
 		"a day that is no day": true}
+	// A file that does not read at all (an open [) is its format's alone: agents mode allows it as before, command
+	// mode refuses it as bad-format, so the guard and rung 0 still agree (internal/rung0's agree_test.go).
+	const brokenFile = "a value that opens a structure is the format's, not a stamp"
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			for _, mode := range []string{"agents", "command"} {
@@ -194,7 +200,7 @@ func TestFreshStamps(t *testing.T) {
 				if c.refused {
 					want = RuleTimeNotNow
 				}
-				if c.refused && mode == "command" && wrongForm[c.name] {
+				if mode == "command" && (c.refused && wrongForm[c.name] || c.name == brokenFile) {
 					want = RuleBadFormat // the file fails its format too: command mode's plainer refusal answers
 				}
 				s := stampAnswer(t, dir, c.payload(dir), c.now, want)

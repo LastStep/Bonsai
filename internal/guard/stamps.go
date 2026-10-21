@@ -225,7 +225,9 @@ func frontValues(raw []byte) (map[string]string, bool) {
 }
 
 // scanValues reads the top-level key: value lines of a frontmatter that does not read, as text: a comment after " #"
-// and one pair of quotes taken off, null and ~ as "".
+// and one pair of quotes taken off, null and ~ as "". A value that opens a structure or a block ([, {, |, >) or is an
+// anchor, alias or tag (&, *, !) is no stamp typed in a wrong form but a broken file, its kind's format's to judge
+// (command mode's bad-format): it is left out, so the guard and rung 0 still agree on it in agents mode.
 func scanValues(raw []byte) (map[string]string, bool) {
 	lines := strings.Split(lf(string(bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf")))), "\n")
 	if len(lines) == 0 || strings.TrimRight(lines[0], " ") != "---" {
@@ -244,6 +246,9 @@ func scanValues(raw []byte) (map[string]string, bool) {
 			val = val[:i]
 		}
 		val = strings.TrimSpace(val)
+		if val != "" && strings.ContainsRune("[{|>&*!", rune(val[0])) {
+			continue
+		}
 		if len(val) >= 2 && (val[0] == '"' || val[0] == '\'') && val[len(val)-1] == val[0] {
 			val = val[1 : len(val)-1]
 		}
