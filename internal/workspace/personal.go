@@ -80,7 +80,7 @@ func PersonalIndexText(today time.Time) []byte {
 		"id: null\n" +
 		"title: Personal memory\n" +
 		"kind: index\n" +
-		"updated: " + today.Format("2006-01-02") + "\n" +
+		"updated: " + today.UTC().Format("2006-01-02") + "\n" +
 		"source: null\n" +
 		"labels: {}\n" +
 		"---\n\n" +

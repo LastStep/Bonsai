@@ -51,8 +51,11 @@ func StateTemplate(day string) []byte {
 		stateBody)
 }
 
-// today is the day init writes into a new STATE's updated: the local date, YYYY-MM-DD. Tests set it.
-var today = func() string { return time.Now().Format("2006-01-02") }
+// today is the day init writes into a new STATE's updated: the UTC date, YYYY-MM-DD (Bonsai records in UTC). Tests set it.
+var today = func() string { return stateClock().UTC().Format("2006-01-02") }
+
+// stateClock is the clock today reads; a test replaces it.
+var stateClock = time.Now
 
 // stateFile is STATE in a plan (note 2): written at init when it is missing, found when init meets one, kept as the
 // lock holds it, left missing at update; nil when update meets a project whose lock has no STATE (linked before step

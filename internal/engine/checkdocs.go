@@ -659,6 +659,12 @@ func projectRef(root, dir, ref string, fromFile bool) (string, bool) {
 	return p, true
 }
 
+// runCutoff is the oldest day a run report may carry in its id and be kept: today less keep_days, both UTC days, as a
+// report id's day is the UTC day (Bonsai records in UTC; P-T-5795's Amendment 2).
+func runCutoff(at time.Time, keepDays int64) string {
+	return at.UTC().AddDate(0, 0, -int(keepDays)).Format("2006-01-02")
+}
+
 var runDate = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^R-([0-9]{4}-[0-9]{2}-[0-9]{2})-`) })
 
 // checkRunReports lists the run reports past bonsai.yaml's generated.run rule (spec §6): keep_days by the date in a
@@ -693,7 +699,7 @@ func (r *CheckResult) checkRunReports(kinds []workspace.DocKind) {
 	})
 	cutoff := ""
 	if rule.KeepDays != nil {
-		cutoff = now().AddDate(0, 0, -int(*rule.KeepDays)).Format("2006-01-02")
+		cutoff = runCutoff(now(), *rule.KeepDays)
 	}
 	var past []string
 	for i, rep := range reports {
