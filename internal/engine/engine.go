@@ -40,9 +40,9 @@
 // Code's own key order (settings.go), so Claude Code's write leaves it as it is.
 //
 // Consent to code, for a reviewer (plan-5, piece 5.1.1, rules 1-8; the verifier reads it):
-//   - what is written: settings.go, ownHooks (Bonsai's own 13 lines, each by name in shell form: the guard's
+//   - what is written: settings.go, ownHooks (Bonsai's own 15 lines, each by name in shell form: the guard's
 //     `bonsai hook guard || exit 2` on PreToolUse, the stop gate's `bonsai hook stop || exit 2` on Stop, hook start's
-//     and hook record's ten, from recorder.Events) and
+//     and hook record's ten, from recorder.Events, and the two time lines' `bonsai hook now || exit 0`) and
 //     buildLines (each pack's hooks entries, as its pack.yaml gives them); applyLines puts them in the file, one group
 //     per event and matcher, beside the project's own hooks; Bonsai's own deny rules (ownDeny, step 5.3.5) and
 //     never_edit's are written too, but a deny rule runs no code, so --yes alone writes them;

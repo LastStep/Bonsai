@@ -10,7 +10,10 @@ package engine
 //
 // (one line). The stop gate's line is the same with its own words; the start line's, the recorder's and the guard's
 // second line's (step 5.5.11, where the lock declares roles: `hook guard --second`) end `[ -x "$b" ] || exit 0; "$b"
-// hook <word>`, with no `|| exit 2`, so they print nothing and never block when Bonsai is not there. `[`, `echo` and `exit` are built into sh and Git Bash, so a line starts no process but bonsai.
+// hook <word>`, with no `|| exit 2`, so they print nothing and never block when Bonsai is not there. The time line
+// (`hook now`, on UserPromptSubmit, where an exit 2 would block the prompt) ends `"$b" hook now || exit 0`
+// (OpenHookCommand), so no ending of bonsai blocks it either: a bonsai older than the word (which answers exit 2), a
+// panic (exit 2), or any other exit. `[`, `echo` and `exit` are built into sh and Git Bash, so a line starts no process but bonsai.
 //
 // Two things measured before this form, and how it meets them:
 //   - Claude Code reads a Stop hook's exit 2 whose stderr says a file is missing ("No such file or directory") as a
@@ -79,6 +82,15 @@ func HookCommand(word string, blocks bool, places ...string) string {
 	}
 	b.WriteString(`[ -x "$b" ] || { echo "` + notInstalledWords(word, places) + `" >&2; exit 2; }; "$b" hook ` + word + " || exit 2")
 	return b.String()
+}
+
+// OpenHookCommand gives the hook line for `bonsai hook <word>` that fails open on every ending: HookCommand's line
+// that does not block, then ` || exit 0`, so bonsai's own exit 2 (a build that does not have the word, or a panic)
+// turns into exit 0 too. Claude Code reads exit 0 with its stdout as the hook's output, and any stderr only into its
+// debug log. Under Git Bash on Windows the line is the same; a line that cannot start (PowerShell, no Git Bash) is a
+// failure Claude Code lets through, since the line carries no onFailure.
+func OpenHookCommand(word string, places ...string) string {
+	return HookCommand(word, false, places...) + " || exit 0"
 }
 
 // notInstalledWords are a blocking line's words when bonsai is at none of its places: what is refused, and the
@@ -197,7 +209,12 @@ func parseHookForm(c string) (places []string, word string, ok bool) {
 	if i < 0 {
 		return nil, "", false
 	}
-	word = strings.TrimSuffix(rest[i+len(call):], " || exit 2")
+	word = rest[i+len(call):]
+	if w, cut := strings.CutSuffix(word, " || exit 2"); cut {
+		word = w
+	} else {
+		word = strings.TrimSuffix(word, " || exit 0")
+	}
 	if !validWord(word) {
 		return nil, "", false
 	}
@@ -418,7 +435,7 @@ func HookPlaceWords() string {
 	}
 	return wrapText(where+" While it is not there, the guard's line refuses every edit and shell command, and the stop "+
 		"gate's refuses each session's end until Claude Code ends the turn after its cap of blocks (eight in a row); "+
-		"the start and recorder lines do nothing.", 116)
+		"the start, recorder and time lines do nothing.", 116)
 }
 
 // wrapText wraps words at width, each line ending in a line feed.

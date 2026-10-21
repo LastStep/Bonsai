@@ -192,8 +192,8 @@ func TestRelinkNamesTheHookLinesItLeaves(t *testing.T) {
 	}
 }
 
-// A first link writes Bonsai's own hook lines on --yes alone (the guard's, the stop gate's, start's and the recorder's
-// ten), naming them apart from Runs code; a pack's needs --allow-exec. A changed own line is code even at a first link
+// A first link writes Bonsai's own hook lines on --yes alone (the guard's, the stop gate's, start's, the recorder's
+// ten and the two time lines), naming them apart from Runs code; a pack's needs --allow-exec. A changed own line is code even at a first link
 // (rule 7).
 func TestOwnHookLines(t *testing.T) {
 	e := setup(t)
@@ -204,7 +204,7 @@ func TestOwnHookLines(t *testing.T) {
 	for _, c := range p.OwnHooks {
 		own = append(own, c.Line)
 	}
-	if strings.Join(own, "\n") != strings.Join(OwnHookLines(), "\n") || len(own) != 13 || p.NeedsExec() {
+	if strings.Join(own, "\n") != strings.Join(OwnHookLines(), "\n") || len(own) != 15 || p.NeedsExec() {
 		t.Fatalf("own hooks %+v, runs code %+v", p.OwnHooks, p.RunsCode)
 	}
 	if pv := flat(p.Preview(false)); !strings.Contains(pv, "Own hooks Bonsai's own hook lines, written with --yes (linking the project is your consent to them): "+

@@ -97,6 +97,15 @@ const (
 	// with 5 s: its timeout also raises Claude Code's 1.5 s budget for SessionEnd hooks to 5 s.
 	RecordEndEvent   = "SessionEnd"
 	RecordEndTimeout = "5"
+
+	// The time lines (plan P-T-5795 step 5, piece E): bonsai hook now, synchronous, on each prompt (its plain stdout
+	// is added to the model's context) and each subagent's start (through hookSpecificOutput.additionalContext, the
+	// one channel SubagentStart has), so an agent writes times from the clock, never from memory. An async line's
+	// output would reach the model a turn late. They never block: the line fails open on every ending
+	// (OpenHookCommand), carries no onFailure, and a timeout lets the prompt run without the line.
+	NowPromptEvent   = "UserPromptSubmit"
+	NowSubagentEvent = "SubagentStart"
+	NowTimeout       = "5"
 )
 
 // The installed bonsai's two places (spec §3; the director's answer (a) to step 5.3's first question, 9 Oct; plan-5 5.3.6
@@ -188,20 +197,23 @@ func secondMatcher() string {
 }
 
 // The command of each of Bonsai's own hook lines, in this build's form: GuardCommand and StopCommand block (exit 2
-// when bonsai is not at its place), SecondCommand, StartCommand and RecordCommand never do.
+// when bonsai is not at its place), SecondCommand, StartCommand and RecordCommand never do, and NowCommand never
+// blocks on any ending of bonsai (OpenHookCommand).
 var (
 	GuardCommand  = HookCommand("guard", true, hookPlaces()...)
 	SecondCommand = HookCommand(SecondWord, false, hookPlaces()...)
 	StopCommand   = HookCommand("stop", true, hookPlaces()...)
 	StartCommand  = HookCommand("start", false, hookPlaces()...)
 	RecordCommand = HookCommand("record", false, hookPlaces()...)
+	NowCommand    = OpenHookCommand("now", hookPlaces()...)
 )
 
 // ownHooks is this build's table of Bonsai's own hook lines, in spec §7's order, where the lock declares no roles;
 // ownRolesHooks where it does (step 5.5.11: the guard's line matching the roles' tools too, and the second line after
 // it). Spec §7 lists four kinds, and this build writes each: the guard (PreToolUse), the stop gate (Stop, step 5.3.4),
 // start (SessionStart) and the recorder (step 5.2.4): SessionStart's record is written by hook start itself, so the
-// recorder's lines are ten, nine async and SessionEnd's synchronous. A project linked before a line was added gets it
+// recorder's lines are ten, nine async and SessionEnd's synchronous; then the two time lines (bonsai hook now, plan
+// P-T-5795 step 5). A project linked before a line was added gets it
 // at its next update only with --allow-exec (a hook line added runs code, step 5.1.1); bonsai check warns until then
 // (own-hooks). A project's first pack with roles changes the guard's line and adds the second: a change to Bonsai's
 // own lines, listed under "Runs code".
@@ -254,6 +266,14 @@ func buildOwnHooks(roles bool) []Line {
 				Async: true, Why: "Records " + e.What + " in the project's log, .bonsai/local/log/ (never committed), in the background; never blocks."})
 		}
 	}
+	// The time lines come after the recorder's, so the lines of a project linked before them keep their slots and an
+	// update shows two lines added.
+	ls = append(ls,
+		Line{Kind: "hook", Origin: "bonsai", Own: true, Event: NowPromptEvent, Command: NowCommand, Timeout: NowTimeout,
+			Why: "Tells the model the time with each prompt (UTC, the local time beside it), so it records times from the clock; " +
+				"never blocks, even when bonsai is missing or fails."},
+		Line{Kind: "hook", Origin: "bonsai", Own: true, Event: NowSubagentEvent, Command: NowCommand, Timeout: NowTimeout,
+			Why: "Tells each subagent the time when it starts (UTC, the local time beside it); never blocks."})
 	return ls
 }
 
@@ -900,7 +920,7 @@ func isBonsaiHook(command string) bool {
 		return true
 	}
 	places, word, ok := parseHookForm(c)
-	return ok && (HookCommand(word, true, places...) == c || HookCommand(word, false, places...) == c)
+	return ok && (HookCommand(word, true, places...) == c || HookCommand(word, false, places...) == c || OpenHookCommand(word, places...) == c)
 }
 
 // isOldBonsaiHook reports an old Bonsai hook line, one that calls Bonsai by an absolute path: a bonsai binary by

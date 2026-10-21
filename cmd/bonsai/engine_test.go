@@ -80,7 +80,7 @@ func TestInitCommand(t *testing.T) {
 	// No terminal, no --yes: the preview, exit 4, nothing written, the command with --yes named.
 	code, out, _ = c.run("", c.linkArgs(c.pack.A)...)
 	if code != 4 || !strings.HasPrefix(out, "bonsai init  the preview\n") || !strings.Contains(flat(out), " add hook PreToolUse") ||
-		!strings.Contains(flat(out), " add hook 14 Bonsai 13, demo-pack 1 ") ||
+		!strings.Contains(flat(out), " add hook 16 Bonsai 15, demo-pack 1 ") ||
 		!strings.Contains(flat(out), "next a person: to write it, run: bonsai init --name demo --source ") ||
 		!strings.HasSuffix(nextOf(out), "--never-edit ledger.json --allow-exec --yes") {
 		t.Errorf("init without --yes: %d\n%s", code, out)

@@ -52,7 +52,7 @@ func init() {
 	checkMore["own-hooks"] = func(t *testing.T, c *cli) {
 		_, out, _ := c.run("", "check", "--json")
 		own := engine.OwnHookLines()
-		if !strings.Contains(out, "12 to add ("+jsonText(own[1]+"; "+own[2]+"; "+own[3])) ||
+		if !strings.Contains(out, "14 to add ("+jsonText(own[1]+"; "+own[2]+"; "+own[3])) ||
 			!strings.Contains(out, `"do": "run: bonsai update --allow-exec --yes"`) || strings.Contains(out, `"code": "changed"`) {
 			t.Errorf("the warning:\n%s", out)
 		}

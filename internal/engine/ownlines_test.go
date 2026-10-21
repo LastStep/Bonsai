@@ -102,7 +102,7 @@ func TestOwnLinesOfAProjectLinkedBefore(t *testing.T) {
 		}
 	}
 	if warned == nil || warned.Next != "run: bonsai update --allow-exec --yes" || warned.Who != "person" || warned.File != SettingsFile ||
-		!strings.Contains(warned.Message, "12 to add ("+ownHooks[1].Text()+"; "+ownHooks[2].Text()+"; "+ownHooks[3].Text()+";") {
+		!strings.Contains(warned.Message, "14 to add ("+ownHooks[1].Text()+"; "+ownHooks[2].Text()+"; "+ownHooks[3].Text()+";") {
 		t.Fatalf("the own-hooks warning: %+v", r.Warnings)
 	}
 	for _, f := range r.Findings {
@@ -559,5 +559,31 @@ func TestDisableAllHooksHeld(t *testing.T) {
 	}
 	if p := e.plan(t, root, Request{}); !p.Nothing() || read(t, root, LocalSettingsFile) != `{"disableAllHooks": true}`+"\n" {
 		t.Errorf("an update with the local file's true:\n%s", p.Preview(false))
+	}
+}
+
+// The time lines (plan P-T-5795 step 5): bonsai hook now on UserPromptSubmit and SubagentStart, synchronous, 5 s, no
+// matcher and no onFailure, in the form that fails open on every ending, after the recorder's lines in both tables, so
+// the recorder's lines on those events keep slot 0 and a project linked before them sees two lines added, none changed.
+func TestTheTimeLines(t *testing.T) {
+	for _, roles := range []bool{false, true} {
+		ls := slotted(append([]Line(nil), ownHooksFor(roles)...))
+		n := len(ls)
+		prompt, sub := ls[n-2], ls[n-1]
+		for i, l := range []Line{prompt, sub} {
+			want := []string{NowPromptEvent, NowSubagentEvent}[i]
+			if l.Event != want || l.Command != NowCommand || l.Timeout != "5" || l.Async || l.OnFailure != "" || l.Matcher != "" || !l.Own ||
+				l.Slot != "hook:@own:"+want+"::1" {
+				t.Errorf("roles %v: time line %d: %+v", roles, i, l)
+			}
+		}
+		for _, l := range ls[:n-2] {
+			if (l.Event == NowPromptEvent || l.Event == NowSubagentEvent) && (l.Command != RecordCommand || !strings.HasSuffix(l.Slot, "::0")) {
+				t.Errorf("roles %v: %+v", roles, l)
+			}
+		}
+	}
+	if NowCommand != OpenHookCommand("now", PlaceWindows, PlaceLinux) || !strings.HasSuffix(NowCommand, `"$b" hook now || exit 0`) {
+		t.Errorf("NowCommand: %s", NowCommand)
 	}
 }

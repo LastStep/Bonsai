@@ -23,6 +23,7 @@ func stampAs(t *testing.T, place, root string) {
 		StopCommand = HookCommand("stop", true, hookPlaces()...)
 		StartCommand = HookCommand("start", false, hookPlaces()...)
 		RecordCommand = HookCommand("record", false, hookPlaces()...)
+		NowCommand = OpenHookCommand("now", hookPlaces()...)
 		ownHooks, ownRolesHooks = buildOwnHooks(false), buildOwnHooks(true)
 	}
 	hookPlace, scratchRoot = place, root
@@ -33,18 +34,24 @@ func stampAs(t *testing.T, place, root string) {
 func TestTheFormIsClaimedExactly(t *testing.T) {
 	installed := []string{PlaceWindows, PlaceLinux}
 	claimed := map[string]bool{
-		GuardCommand: true, StopCommand: true, StartCommand: true, RecordCommand: true, SecondCommand: true,
-		HookCommand("guard --second", true, installed...):                 true, // a flag after the word: still Bonsai's form
-		HookCommand("guard --Second", false, installed...):                false,
-		HookCommand("guard --second --x", false, installed...):            false,
-		HookCommand("guard -- second", false, installed...):               false,
-		HookCommand("guard --", false, installed...):                      false,
-		HookCommand("guard", true, "/home/a b/bonsai-checks/x/bonsai"):    true, // a test build's one place, with a space
-		HookCommand("guard", true, "C:/Users/a/bonsai-checks/bonsai.exe"): true,
-		HookCommand("guard", true, "/c/one/bonsai", "/c/two/bonsai"):      true,
-		HookCommand("ladder", true, installed...):                         true, // a word this build does not write: Bonsai's still
-		"bonsai hook guard || exit 2":                                     true, // the form before step 5.3.6
-		"bonsai hook record":                                              true,
+		GuardCommand: true, StopCommand: true, StartCommand: true, RecordCommand: true, SecondCommand: true, NowCommand: true,
+		OpenHookCommand("now", "/home/a b/bonsai-checks/x/bonsai"):           true, // the open form, a test build's one place
+		OpenHookCommand("ladder", installed...):                              true, // the open form, any word
+		strings.Replace(NowCommand, " || exit 0", " || exit 1", 1):           false,
+		strings.Replace(NowCommand, " || exit 0", " || exit 0 || exit 0", 1): false,
+		strings.Replace(NowCommand, "[ -x \"$b\" ] || exit 0; ", "", 1):      false,
+		NowCommand + "; rm -rf x":                                            false,
+		HookCommand("guard --second", true, installed...):                    true, // a flag after the word: still Bonsai's form
+		HookCommand("guard --Second", false, installed...):                   false,
+		HookCommand("guard --second --x", false, installed...):               false,
+		HookCommand("guard -- second", false, installed...):                  false,
+		HookCommand("guard --", false, installed...):                         false,
+		HookCommand("guard", true, "/home/a b/bonsai-checks/x/bonsai"):       true, // a test build's one place, with a space
+		HookCommand("guard", true, "C:/Users/a/bonsai-checks/bonsai.exe"):    true,
+		HookCommand("guard", true, "/c/one/bonsai", "/c/two/bonsai"):         true,
+		HookCommand("ladder", true, installed...):                            true, // a word this build does not write: Bonsai's still
+		"bonsai hook guard || exit 2":                                        true, // the form before step 5.3.6
+		"bonsai hook record":                                                 true,
 		// Not Bonsai's: the form with anything changed.
 		strings.Replace(GuardCommand, "a person installs Bonsai there", "anyone may", 1):                                     false,
 		strings.Replace(GuardCommand, `b="/c/Program Files/Bonsai/bonsai.exe"`, `b='/c/Program Files/Bonsai/bonsai.exe'`, 1): false,

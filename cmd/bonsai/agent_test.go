@@ -267,7 +267,7 @@ func TestNewLinesForAProjectLinkedBefore(t *testing.T) {
 	before := tree(t, c.root)
 
 	if code, out, _ := c.run("", "check", "--json"); code > 1 || !strings.Contains(out, `"code": "own-hooks"`) ||
-		!strings.Contains(out, "13 to add") || !strings.Contains(out, "13 to take out") || strings.Contains(out, `"code": "changed"`) {
+		!strings.Contains(out, "15 to add") || !strings.Contains(out, "15 to take out") || strings.Contains(out, `"code": "changed"`) {
 		t.Errorf("check: exit %d\n%s", code, out)
 	}
 
