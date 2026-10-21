@@ -300,8 +300,10 @@ func TestStart(t *testing.T) {
 		"    grants: false\n    description: What the task cost.\n")
 	o.Stdin = strings.NewReader(`{"session_id":"` + sess + `","hook_event_name":"SessionStart","source":"clear"}`)
 	out.Reset()
+	startZone = time.FixedZone("test", 5*3600+1800)
+	defer func() { startZone = nil }()
 	Start(o, &out)
-	for _, w := range []string{"Its last ladder result: green at commit 0123456789ab (local), finished 2026-10-10T10:00:01.000Z.",
+	for _, w := range []string{"Its last ladder result: green at commit 0123456789ab (local), finished 2026-10-10 15:30 +05:30.",
 		"Label definitions attached on this machine (contract section 5.3):", "  tracker.cost (number; set by outside; version 3): What the task cost."} {
 		if !strings.Contains(out.String(), w+"\n") {
 			t.Errorf("the context lacks %q:\n%s", w, out.String())
@@ -640,5 +642,22 @@ func TestUnreadPayloads(t *testing.T) {
 	}
 	if got[3].InputHash == nil || s(got[3].Category) != "Shell" {
 		t.Errorf("a command of the wrong type: %+v", got[3])
+	}
+}
+
+// TestShownFinish: the opening context shows the stored instant in the person's zone with its offset, across a UTC
+// midnight, and prints a string that is no instant as it is.
+func TestShownFinish(t *testing.T) {
+	startZone = time.FixedZone("test", 5*3600+1800)
+	defer func() { startZone = nil }()
+	for in, want := range map[string]string{
+		"2026-10-10T23:00:01.000Z": "2026-10-11 04:30 +05:30",
+		"2026-10-10T10:00:01Z":     "2026-10-10 15:30 +05:30",
+		"yesterday":                "yesterday",
+		"":                         "",
+	} {
+		if got := shownFinish(in); got != want {
+			t.Errorf("shownFinish(%q) = %q, want %q", in, got, want)
+		}
 	}
 }

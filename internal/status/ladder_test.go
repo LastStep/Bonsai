@@ -9,9 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/textui"
 )
 
 const ladderCfg = `format: bonsai.workspace/1
@@ -95,6 +97,13 @@ func TestStatusLadder(t *testing.T) {
 	doc, _ := Build(root, "dev")
 	if text := Text(doc); !strings.Contains(flat(text), "Last ladder green at commit "+head[:12]+" (local), finished ") || strings.Contains(text, "stale") {
 		t.Errorf("the text:\n%s", text)
+	}
+	// Shown for a person: in the zone with its offset (across a UTC midnight), or as stored with utc.
+	var local, stored textui.Doc
+	TextToIn(&local, doc, time.FixedZone("test", -(5*3600)), false)
+	TextToIn(&stored, doc, time.FixedZone("test", -(5*3600)), true)
+	if !strings.Contains(flat(local.String()), "finished 2026-10-12 20:02 -05:00") || !strings.Contains(flat(stored.String()), "finished 2026-10-13T01:02:00.000Z") {
+		t.Errorf("the zone:\n%s\n%s", local.String(), stored.String())
 	}
 	gitRun(t, root, "commit", "-q", "--allow-empty", "-m", "y")
 	if got := ladderOf(t, root); got != strings.Replace(want, `"stale":false`, `"stale":true`, 1) {

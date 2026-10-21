@@ -59,6 +59,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/stopgate"
 	"github.com/LastStep/Bonsai/internal/textui"
+	"github.com/LastStep/Bonsai/internal/timefmt"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -513,7 +514,16 @@ func Text(doc schema.Object) string {
 
 // TextTo adds the document for a person: the same facts as the JSON (spec §6's closing words of init, which status
 // shows too), what needs a look first. On exit 3 it gives the problems alone.
-func TextTo(d *textui.Doc, doc schema.Object) {
+func TextTo(d *textui.Doc, doc schema.Object) { TextToIn(d, doc, nil, true) }
+
+// TextToIn is TextTo with the times shown for the person: each stored instant (the last ladder's finish, a release
+// check's read) in loc with its offset, or as stored when utc. A nil loc means time.Local; a string that is not a
+// stored instant is printed as it is.
+func TextToIn(d *textui.Doc, doc schema.Object, loc *time.Location, utc bool) {
+	if loc == nil {
+		loc = time.Local
+	}
+	shown := func(s string) string { return shownTime(s, loc, utc) }
 	problems, _ := doc.Get("problems")
 	ws, _ := doc.Get("workspace")
 	w, ok := ws.(schema.Object)
@@ -565,7 +575,7 @@ func TextTo(d *textui.Doc, doc schema.Object) {
 			sha = sha[:12]
 		}
 		rows := []textui.Row{textui.R(textui.T(green, tone), textui.C(fmt.Sprintf("at commit %s (%s), finished %s", ascii(sha), ascii(l.String("mode")),
-			ascii(l.String("finished")))), textui.T(ascii(l.String("path")), textui.Path))}
+			ascii(shown(l.String("finished"))))), textui.T(ascii(l.String("path")), textui.Path))}
 		if s, _ := l.Get("stale"); s == true {
 			rows = append(rows, textui.R(textui.T("stale", textui.Warn), textui.C("it proves another commit than HEAD, so climb again")))
 		}
@@ -613,7 +623,7 @@ func TextTo(d *textui.Doc, doc schema.Object) {
 		checksTo(d, cv.(schema.Object))
 	}
 	if rv, _ := doc.Get("bonsai_release"); rv != nil {
-		d.Section("Bonsai", releaseRow(rv.(schema.Object)))
+		d.Section("Bonsai", releaseRow(rv.(schema.Object), shown))
 	}
 	d.Gap()
 	hv, _ := doc.Get("home")
@@ -655,8 +665,8 @@ func TextTo(d *textui.Doc, doc schema.Object) {
 }
 
 // releaseRow is bonsai_release's one line for a person.
-func releaseRow(r schema.Object) textui.Row {
-	version, newest, read := ascii(r.String("version")), ascii(r.String("newest")), ascii(r.String("read"))
+func releaseRow(r schema.Object, shown func(string) string) textui.Row {
+	version, newest, read := ascii(r.String("version")), ascii(r.String("newest")), ascii(shown(r.String("read")))
 	switch r.String("state") {
 	case engine.ReleaseNewer:
 		return textui.R(textui.T("v"+newest+" is released", textui.Warn), textui.C("this machine's is v"+version+": a person installs it on each side, "+
@@ -751,4 +761,17 @@ func ascii(s string) string {
 // encoded byte-stable (internal/format).
 func Encode(doc schema.Object) ([]byte, error) {
 	return format.MustLookup("status").Encode(doc)
+}
+
+// shownTime is a stored instant as printed for a person (timefmt.Show), or s itself when utc or when it is not an
+// instant.
+func shownTime(s string, loc *time.Location, utc bool) string {
+	if utc {
+		return s
+	}
+	t, err := timefmt.ParseUTC(s)
+	if err != nil {
+		return s
+	}
+	return timefmt.Show(t, loc, false)
 }

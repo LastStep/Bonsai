@@ -23,9 +23,11 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/record"
+	"github.com/LastStep/Bonsai/internal/timefmt"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -161,6 +163,24 @@ func taskAllows(t *format.Task) string {
 	return orNone(strings.Join(out, ", "))
 }
 
+// startZone is the zone the opening context shows times in; nil means time.Local. A test sets it (Go on Windows
+// ignores TZ). The context is read by an agent, which records times in UTC: so it says the zone with the offset.
+var startZone *time.Location
+
+// shownFinish is a ladder result's stored instant as the opening context prints it: in the person's zone with its
+// offset (timefmt.Show), or as stored when it is not an instant.
+func shownFinish(s string) string {
+	t, err := timefmt.ParseUTC(s)
+	if err != nil {
+		return s
+	}
+	loc := startZone
+	if loc == nil {
+		loc = time.Local
+	}
+	return timefmt.Show(t, loc, false)
+}
+
 // lastLadder says the task's last ladder result, read from the main checkout's .bonsai/local/ladder/<task>.json
 // (contract §11): green or not, its commit, when; "none yet" when there is none.
 func lastLadder(local workspace.Local, task string) string {
@@ -183,7 +203,7 @@ func lastLadder(local workspace.Local, task string) string {
 	if len(sha) > 12 {
 		sha = sha[:12]
 	}
-	return fmt.Sprintf("%s at commit %s (%s), finished %s", green, sha, l.Mode, l.Finished)
+	return fmt.Sprintf("%s at commit %s (%s), finished %s", green, sha, l.Mode, shownFinish(l.Finished))
 }
 
 // attachedLabels lists the label definitions attached on this machine (contract §5.3), one line each, after a line
