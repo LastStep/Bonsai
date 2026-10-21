@@ -2,7 +2,7 @@ package main
 
 // bonsai hook <name>: the hook entry point (spec §4, §7). This build answers `bonsai hook guard` (plan part 5,
 // internal/guard), `bonsai hook stop` (step 5.3.4, internal/stopgate), `bonsai hook start` and `bonsai hook record`
-// (step 5.2.4, internal/recorder). Its tables are hookWord and its sub-words'. A hook speaks Claude Code's hook format:
+// (step 5.2.4, internal/recorder), and `bonsai hook now` (plan P-T-5795 step 5, hooknow.go). Its tables are hookWord and its sub-words'. A hook speaks Claude Code's hook format:
 // it takes no --json, and its refusals are lines on stderr. Each sub-word's help quotes its line as bonsai init writes
 // it (engine.GuardCommand and the others, in Bonsai's form: internal/engine/hookline.go), so help and line cannot
 // drift.
@@ -37,6 +37,7 @@ var hookWord = &Word{
 		startWord,
 		stopWord,
 		recordWord,
+		hookNowWord,
 	},
 }
 

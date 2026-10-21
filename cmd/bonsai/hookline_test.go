@@ -46,7 +46,10 @@ func TestTheShippedLines(t *testing.T) {
 		!strings.HasSuffix(engine.StopCommand, `"$b" hook stop || exit 2`) || !strings.Contains(engine.StopCommand, "bonsai stop: no bonsai is installed at") {
 		t.Errorf("the start and stop lines:\n%s\n%s", engine.StartCommand, engine.StopCommand)
 	}
-	for _, l := range []string{engine.GuardCommand, engine.StopCommand, engine.StartCommand, engine.RecordCommand} {
+	if want := `b="/c/Program Files/Bonsai/bonsai.exe"; [ -x "$b" ] || b=/usr/local/bin/bonsai; [ -x "$b" ] || exit 0; "$b" hook now || exit 0`; engine.NowCommand != want {
+		t.Errorf("the time line: %s", engine.NowCommand)
+	}
+	for _, l := range []string{engine.GuardCommand, engine.StopCommand, engine.StartCommand, engine.RecordCommand, engine.NowCommand} {
 		if failedToStart(l) || strings.Contains(l, "PATH") || strings.Contains(l, "bash") {
 			t.Errorf("a line holds words read as a hook that failed to start, reads the PATH or names bash: %s", l)
 		}

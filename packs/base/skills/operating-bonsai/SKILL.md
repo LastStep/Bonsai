@@ -132,7 +132,7 @@ messages` for a brief left unanswered. Agent teams' teammates are not held by th
 A protected path needs the running task's grant: never write it another way (a shell redirect, a script), and
 never set `disableAllHooks`. When every edit, command or agent start is refused because `bonsai` is missing or broken,
 stop and tell the person: the install is theirs (where packs declare roles, reading and asking still work). `bonsai hook guard`, `bonsai hook start`, `bonsai
-hook stop` and `bonsai hook record` are Claude Code's, run from the settings lines on each call: never run them by
+hook stop`, `bonsai hook record` and `bonsai hook now` are Claude Code's, run from the settings lines on each call: never run them by
 hand.
 
 ## The person's gates, and why
@@ -158,6 +158,7 @@ Every time you write in a file comes from `bonsai now` (`bonsai now --day` for a
 record's instant), never from memory or a guess: Bonsai records in UTC, and `bonsai now --local` shows a person's own time.
 A fresh stamp (a task's, run report's, STATE's or memory note's date or time, set where it was empty) far from Bonsai's
 clock is refused (`time-not-now`): run the `bonsai now` its `next` names and write what it prints.
+Each prompt and each subagent's start brings a `Now: <UTC> UTC (local ...)` line; a long `-p` run with no new prompt runs `bonsai now`.
 
 `bonsai logs --json`; `bonsai agents --json` (each agent's recorded facts); an outside event with `bonsai log append --label <namespace>.<name>=<value>
 --json`. `.bonsai/STATE.md` says where the project stands (add one from `base:state` if missing). The tables are
