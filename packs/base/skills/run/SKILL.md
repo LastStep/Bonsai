@@ -26,8 +26,8 @@ template below and keep only the pointer comment on the `format:` line: the docs
 | `task` | The task the session works on, by id: the link between the two (the task holds no pointer back) | a task id | `T-0042` |
 | `role` | The role the agent runs as: a role a linked pack declares (`bonsai status --json` lists them), or the plain word for the session's job where none is declared | text | `builder` |
 | `model` | The model the agent runs on, as the agent names it | text | `sonnet` |
-| `started` | When the session started | `YYYY-MM-DD HH:MM`, as text | `2026-10-15 14:08` |
-| `finished` | When it finished | `YYYY-MM-DD HH:MM`, or `null` while it runs | `null` |
+| `started` | When the session started, in UTC: write what `bonsai now` prints as you open the report | `YYYY-MM-DD HH:MM`, as text | `2026-10-15 14:08` |
+| `finished` | When the report was closed, in UTC: what `bonsai now` prints then | `YYYY-MM-DD HH:MM`, or `null` while it runs | `null` |
 | `outcome` | How the session ended: `running` while it runs; `verify` when its work waits for its proof; `needs-verifier` when it waits for a verifier; `needs-person` when it waits for a person's word; `merged` when the work landed; `blocked` when it cannot go on; `abandoned` when the work was dropped | `running`, `verify`, `needs-verifier`, `needs-person`, `merged`, `blocked`, `abandoned` | `running` |
 | `commits` | The commits the session made, each hash quoted | a list of quoted commit hashes; `[]` for none | `["1a2b3c4"]` |
 | `labels` | Labels a linked pack defines for run reports, by name | a mapping of label names to values; `{}` for none | `{}` |
@@ -93,7 +93,9 @@ process ids and why.
 
 ## What it cost
 
-The session's cost where it is known, and where the figure comes from; "not known" otherwise.
+The session's cost where it is known, and where the figure comes from; "not known" otherwise. The hours are the task's
+rows in `.bonsai/sessions.md` (Bonsai's sessions table, from the log): name each run's message id and model, and type
+no table of run times by hand.
 
 ## Left for next time
 
@@ -103,6 +105,10 @@ Concrete, with a task id if one was written.
 
 > Added by the verifier, in a fresh context. Pass or fail, with reasons.
 ```
+
+**Times.** Every time and day you write comes from `bonsai now` (`--day` for a day), in UTC, never from memory:
+the guard refuses a fresh one far from Bonsai's clock (`time-not-now`). A `finished` set later is still the time you
+set it, taken from `bonsai now` then. Times written before formats set 11 were local, their offset unknown: leave them.
 
 **Before you finish the session:** set `finished` and `outcome`, list every commit in `commits`, and check that
 `bonsai check --json` reports no finding for the file.

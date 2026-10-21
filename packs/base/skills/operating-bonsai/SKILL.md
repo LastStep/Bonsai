@@ -156,6 +156,8 @@ Each lets new code run on the person's machine, takes the guard out, or loosens 
 
 Every time you write in a file comes from `bonsai now` (`bonsai now --day` for a day, `bonsai now --iso` for a machine
 record's instant), never from memory or a guess: Bonsai records in UTC, and `bonsai now --local` shows a person's own time.
+A fresh stamp (a task's, run report's, STATE's or memory note's date or time, set where it was empty) far from Bonsai's
+clock is refused (`time-not-now`): run the `bonsai now` its `next` names and write what it prints.
 
 `bonsai logs --json`; `bonsai agents --json` (each agent's recorded facts); an outside event with `bonsai log append --label <namespace>.<name>=<value>
 --json`. `.bonsai/STATE.md` says where the project stands (add one from `base:state` if missing). The tables are

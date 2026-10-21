@@ -29,9 +29,9 @@ yet is written `null` or `[]`, never left out.
 | `done_when` | Checkable statements a verifier can test without having built the work | a list of text, each quoted; `[]` until written | `["The settings page shows a dark mode switch"]` |
 | `depends_on` | Tasks that must be done first, by id | a list of task ids; `[]` for none | `[T-0041]` |
 | `blocked_by` | What blocks the task, in one sentence, while its status is `blocked` | text, or `null` otherwise | `null` |
-| `created` | The day the task was written | a date, `YYYY-MM-DD` | `2026-10-15` |
-| `started` | The day work started, set when the task first reads `running` | a date, or `null` before | `null` |
-| `finished` | The day the task reached `done` or `cut` | a date, or `null` before | `null` |
+| `created` | The day the task was written, the UTC day from `bonsai now --day` | a date, `YYYY-MM-DD` | `2026-10-15` |
+| `started` | The day work started, set when the task first reads `running`: the UTC day, from `bonsai now --day` | a date, or `null` before | `null` |
+| `finished` | The day the task reached `done` or `cut`: the UTC day, from `bonsai now --day` | a date, or `null` before | `null` |
 | `labels` | Everything else, by label name: Bonsai's four below, and any label a linked pack defines (the block in `CLAUDE.md` lists each with its kind) | a mapping of label names to values; `{}` for none | as in the template |
 | `labels.bonsai.branch` | The branch the task is built on | text matching `^[A-Za-z0-9._/-]{1,100}$`; leave the label out to build on the base branch (an empty or null value is a check finding) | `t0042-dark-mode` |
 | `labels.bonsai.ladder` | The rungs this task climbs beyond the project's floor; it adds rungs and never drops one | a list of rung numbers; `[]` for the floor alone | `[]` |

@@ -46,7 +46,7 @@ secret-shaped string, and on Windows a copy of WSL's layer that is not known to 
 | `id` | The note's id, unique in the folder; the file is named after it. The index has none | `M-` and a slug of lower-case letters, digits and dashes, the pattern `^M-[a-z0-9][a-z0-9-]*$`; `null` for the index | `M-fewer-verifications` |
 | `title` | What the note is about, in one line; the index line repeats it | text, one line | `Fewer verifications` |
 | `kind` | What kind of fact: about the project; how the person wants the work done; where something is found. `index` is the index's alone | `project`, `feedback`, `reference`, `index` | `feedback` |
-| `updated` | The day the note last changed | a date, `YYYY-MM-DD` | `2026-10-15` |
+| `updated` | The day the note last changed: the UTC day, from `bonsai now --day` | a date, `YYYY-MM-DD` | `2026-10-15` |
 | `source` | Who said it, and when, so a later session can weigh it | text; `null` for the index | `"the person, 15 Oct"` |
 | `labels` | Labels a linked pack defines for memory notes, by name | a mapping of label names to values; `{}` for none | `{}` |
 
