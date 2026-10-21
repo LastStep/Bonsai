@@ -30,13 +30,14 @@ var nowWord = &Word{
 	Summary: "print the current time to write in a document",
 	Args:    "[flags]",
 	About: `Bonsai is the only clock: take every time you write in a file from here, never from memory or a guess. By
-default it prints the document time, your zone with its numeric offset ("2026-10-21 12:49 +05:30"), the form of a run
-report's started and finished and of a new .bonsai/sessions.md row. --day prints the local day ("2026-10-21"), the
+default it prints the time for a person to read, your zone with its numeric offset ("2026-10-21 12:49 +05:30").
+A run report's started and finished hold the time alone ("2026-10-21 12:49") and the report's offset field the
+offset ("+05:30"): take them apart from --json (local and offset). --day prints the local day ("2026-10-21"), the
 form of a task's created, started and finished, STATE's and a memory note's updated. --utc prints the instant as a
-machine record stores it, UTC with milliseconds ("2026-10-21T07:19:04.325Z"). --json prints all of them in the
-bonsai.now/1 document: local (the time with no offset, as a run report's started holds it), utc, day, offset (its own field, "+05:30") and zone (the zone's abbreviation, for a person's eye: never write
-it in a file, and never read a time from it). It reads the clock and this machine's zone and nothing else: no
-workspace, no file, no network.
+machine record stores it, UTC with milliseconds ("2026-10-21T07:19:04.325Z"). --json prints every form in the
+bonsai.now/1 document: local (the time with no offset), utc, day, offset (its own field) and zone (the zone's
+abbreviation, for a person's eye: never write it in a file, and never read a time from it). It reads the clock
+and this machine's zone and nothing else: no workspace, no file, no network.
 `,
 	Flags: []Flag{
 		{Name: "--utc", Help: "print the instant in UTC with milliseconds, the form machine records store"},
