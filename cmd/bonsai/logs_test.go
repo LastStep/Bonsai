@@ -114,7 +114,7 @@ func TestLogs(t *testing.T) {
 
 	// The listing: newest first in the text, a table of sessions (each with its times on a row under it) and one of
 	// days; oldest first in --json, which fits the schema.
-	code, out, _ = c.run("", "logs")
+	code, out, _ = c.run("", "logs", "--utc")
 	lines := strings.Split(strings.TrimSuffix(out, "\n"), "\n")
 	if code != 0 || len(lines) != 12 || lines[0] != "bonsai logs  5 files, newest first" || flat(lines[1]) != "Sessions session state task role records" ||
 		flat(lines[10]) != "Days day records first to last" {

@@ -74,10 +74,16 @@ func TestMessageCommands(t *testing.T) {
 	}
 	brief := lines[0]
 	// --show: the trust line first, then the file as written.
-	code, out, _ = c.run("", "message", "--show", brief)
+	code, out, _ = c.run("", "message", "--show", brief, "--utc")
 	if code != 0 || !strings.HasPrefix(out, format.TrustLine("orchestrator")+"\n---\nformat: bonsai.message/1") ||
 		!strings.HasSuffix(out, "---\n\nObjective: dark mode.\nBoundaries: the settings screen.\n") || !strings.Contains(out, "path: work/plan.md\n") {
 		t.Errorf("--show: %d\n%s", code, out)
+	}
+	// Without --utc the trust line is followed by the created time in the person's zone; the file stays as stored.
+	code, out, _ = c.run("", "message", "--show", brief)
+	if second := strings.Split(out, "\n")[1]; code != 0 || !strings.HasPrefix(second, "created 2026-10-16 14:30 +05:30 (") ||
+		!strings.Contains(out, "\ncreated: \"2026-10-16T09:00:01.000Z\"\n") {
+		t.Errorf("--show, local: %d\n%s", code, out)
 	}
 	doc = c.messagesDoc(0, "message", "--show", brief)
 	msg, _ := doc.Get("message")

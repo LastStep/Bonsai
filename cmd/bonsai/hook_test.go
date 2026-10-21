@@ -31,6 +31,8 @@ var builds struct {
 var pkgDir, _ = os.Getwd()
 
 func TestMain(m *testing.M) {
+	// Printed times are shown in the person's zone: tests use one zone whatever the machine's (Go on Windows ignores TZ).
+	nowZone = func() *time.Location { return time.FixedZone("test", 5*3600+1800) }
 	code := m.Run()
 	if builds.dir != "" {
 		_ = os.RemoveAll(builds.dir)

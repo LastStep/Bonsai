@@ -43,6 +43,7 @@ authenticated. It never starts, wakes or stops an agent.
 `,
 	Flags: []Flag{
 		{Name: "--json", Help: "print the bonsai.agents/1 document (for programs) instead of plain text"},
+		utcFlag,
 	},
 	Exits: []Exit{
 		{Code: 0, Means: "the agents were read (none prints a line saying so; a state file that does not read is listed as skipped)"},
@@ -90,7 +91,7 @@ func runAgents(c *call) int {
 	}
 	for i := range v.Agents {
 		var rows []textui.Row
-		for _, f := range agentFields(&v.Agents[i]) {
+		for _, f := range agentFields(&v.Agents[i], c.when) {
 			rows = append(rows, textui.R(textui.T(f[0], textui.Dim), textui.C(engine.ASCII(f[1]))))
 		}
 		d.Gap()
@@ -104,7 +105,7 @@ func runAgents(c *call) int {
 
 // agentFields are one agent's fields but its id, each its name and value: every field of its entry, in
 // bonsai.agents/1's order, "-" for null, as recorded.
-func agentFields(a *format.Agent) [][2]string {
+func agentFields(a *format.Agent, when func(string) string) [][2]string {
 	or := func(p *string) string {
 		if p == nil {
 			return "-"
@@ -118,9 +119,9 @@ func agentFields(a *format.Agent) [][2]string {
 		return strconv.FormatInt(*p, 10)
 	}
 	f := []string{"session " + a.Session, "parent " + or(a.Parent), "role " + or(a.Role), "type " + or(a.Type),
-		"task " + or(a.Task), "brief " + or(a.Brief), "model " + or(a.Model), "started " + or(a.Started), "ended " + or(a.Ended)}
+		"task " + or(a.Task), "brief " + or(a.Brief), "model " + or(a.Model), "started " + when(or(a.Started)), "ended " + when(or(a.Ended))}
 	if c := a.LastCall; c != nil {
-		f = append(f, "last_call "+c.At+" "+c.Tool+" "+or(c.Category))
+		f = append(f, "last_call "+when(c.At)+" "+c.Tool+" "+or(c.Category))
 	} else {
 		f = append(f, "last_call -")
 	}

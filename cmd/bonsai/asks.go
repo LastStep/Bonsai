@@ -30,6 +30,7 @@ counted.
 	Flags: []Flag{
 		{Name: "--all", Help: "every key, answered and resolved too, not only the open asks"},
 		{Name: "--json", Help: "print the bonsai.asks/1 document (for programs) instead of plain text"},
+		utcFlag,
 	},
 	Exits: []Exit{
 		{Code: 0, Means: "the asks were read (none prints a line saying so)"},
@@ -80,7 +81,7 @@ func runAsks(c *call) int {
 			if en.State == asks.Open {
 				tone = textui.Warn
 			}
-			rows = append(rows, textui.R(textui.T(en.State, tone), textui.T(en.Filed.At, textui.Dim), textui.C(typ), textui.T(engine.ASCII(en.Key), textui.Path),
+			rows = append(rows, textui.R(textui.T(en.State, tone), textui.T(c.when(en.Filed.At), textui.Dim), textui.C(typ), textui.T(engine.ASCII(en.Key), textui.Path),
 				textui.C(engine.ASCII(text0(en.Filed.Title)))))
 		}
 		d.Table("", textui.R(textui.C("state"), textui.C("filed"), textui.C("type"), textui.C("key"), textui.C("title")), rows...)

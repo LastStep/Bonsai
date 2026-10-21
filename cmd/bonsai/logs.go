@@ -22,6 +22,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/sessions"
 	"github.com/LastStep/Bonsai/internal/textui"
+	"github.com/LastStep/Bonsai/internal/timefmt"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -43,14 +44,16 @@ var logsWord = &Word{
 nothing. With no filter it lists the files, newest first: a session's id, its first and last time, whether it ended
 or is open, its task and role, and how many records and unreadable lines it holds; a day's file (outside events,
 clean records) by its date and records. With --session or --day it prints that file's records, one JSON line each,
-as stored: they were redacted when they were written.
+as stored (UTC): they were redacted when they were written. The listing's times are in
+your zone with their offset, or as stored with --utc.
 `,
 	Flags: []Flag{
+		utcFlag,
 		{Name: "--json", Help: "print the bonsai.logs/1 document (for programs) instead of plain text"},
 		{Name: "--session", Value: "<id>", Need: "a session's id, or a prefix of at least 8 characters",
 			Help: "print one session's records; <id> is a full session id or a prefix of at least 8 characters\n(the sessions table's); none or several matching is an error naming them"},
-		{Name: "--day", Value: "<date>", Need: "a UTC date (YYYY-MM-DD)",
-			Help: "print the records of one UTC day's file: the events outside a session and the clean\nrecords. A day with no file prints none"},
+		{Name: "--day", Value: "<date>", Need: "a day (YYYY-MM-DD) of your zone, or with --utc a UTC day",
+			Help: "print the records of one day: the events outside a session and the clean records. The day is yours (the\nlog's files are UTC days, so it reads the one or two files that span it and keeps the records whose\ninstants fall in it); with --utc it is a UTC day, one file. A day with no file prints none"},
 	},
 	Exits: []Exit{
 		{Code: 0, Means: "the log was read (a log with no files prints none)"},
@@ -76,9 +79,9 @@ func runLogs(c *call) int {
 			Next: "run `bonsai logs` to list the sessions, then give --session at least their first 8 characters"})
 	}
 	if c.has("--day") {
-		if _, err := time.Parse("2006-01-02", c.value("--day")); err != nil {
+		if _, err := timefmt.ParseDay(c.value("--day"), time.UTC); err != nil {
 			return c.refuse(&engine.Error{Code: "bad-value", Exit: exitInput, What: fmt.Sprintf("--day %+q is not a date", c.value("--day")),
-				Next: "give --day a UTC date as YYYY-MM-DD, such as 2026-10-08"})
+				Next: "give --day a day as YYYY-MM-DD, such as 2026-10-08: a day of your zone, or with --utc a UTC day (the log's files are UTC days)"})
 		}
 	}
 	dir, err := os.Getwd()
@@ -109,19 +112,9 @@ func runLogs(c *call) int {
 		if e != nil {
 			return c.fail(e)
 		}
-		return c.records(doc, logDir, "s-"+id+".ndjson", now)
+		return c.records(doc, logDir, []string{"s-" + id + ".ndjson"}, now, nil)
 	case c.has("--day"):
-		name := "w-" + c.value("--day") + ".ndjson"
-		if !contains(names.Days, name) {
-			doc.Files, doc.Records = []format.LogFile{}, []schema.Object{}
-			if c.json {
-				return c.printDoc(doc, exitOK)
-			}
-			var d textui.Doc
-			d.Title("bonsai logs", "no log file for "+engine.ASCII(c.value("--day")))
-			return c.show(&d)
-		}
-		return c.records(doc, logDir, name, now)
+		return c.dayRecords(doc, logDir, names, now)
 	}
 	files, err := listFiles(logDir, names, now)
 	if err != nil {
@@ -131,7 +124,7 @@ func runLogs(c *call) int {
 	if c.json {
 		return c.printDoc(doc, exitOK)
 	}
-	return c.show(filesText(files))
+	return c.show(filesText(files, c.when))
 }
 
 func readFailed(err error) *engine.Error {
@@ -174,16 +167,45 @@ func matchSession(files []string, want string) (string, *engine.Error) {
 }
 
 // records prints one file's records: its entry in files, and each record as stored.
-func (c *call) records(doc *format.Logs, logDir, name string, now time.Time) int {
-	entry, lf, err := fileEntry(logDir, name, now)
-	if err != nil {
-		return c.fail(readFailed(err))
-	}
-	doc.Files = []format.LogFile{entry}
+// With keep, only the records it accepts (given the file's name) are printed, and each entry's records, first and last
+// are those of the records kept.
+func (c *call) records(doc *format.Logs, logDir string, names []string, now time.Time, keep func(file string, r *format.Log) bool) int {
+	doc.Files = []format.LogFile{}
 	doc.Records = []schema.Object{}
 	logf := format.MustLookup("log")
-	var text strings.Builder
-	for _, r := range lf.Records {
+	var lines strings.Builder
+	for _, name := range names {
+		entry, lf, err := fileEntry(logDir, name, now)
+		if err != nil {
+			return c.fail(readFailed(err))
+		}
+		kept := lf.Records
+		if keep != nil {
+			kept = nil
+			for _, r := range lf.Records {
+				if keep(name, r) {
+					kept = append(kept, r)
+				}
+			}
+			entry.Records, entry.First, entry.Last = int64(len(kept)), nil, nil
+			if len(kept) > 0 {
+				entry.First, entry.Last = text(kept[0].At), text(kept[len(kept)-1].At)
+			}
+		}
+		doc.Files = append(doc.Files, entry)
+		if e := c.addRecords(doc, logf, kept, &lines); e != 0 {
+			return e
+		}
+	}
+	if c.json {
+		return c.printDoc(doc, exitOK)
+	}
+	return c.print(lines.String())
+}
+
+// addRecords adds the records to the document, and in plain text as one line each.
+func (c *call) addRecords(doc *format.Logs, logf *format.Format, recs []*format.Log, out *strings.Builder) int {
+	for _, r := range recs {
 		o, err := logf.Document(r)
 		if err != nil {
 			return c.fail(engine.Unexpected(err))
@@ -194,13 +216,10 @@ func (c *call) records(doc *format.Logs, logDir, name string, now time.Time) int
 			if err != nil {
 				return c.fail(engine.Unexpected(err))
 			}
-			text.Write(line)
+			out.Write(line)
 		}
 	}
-	if c.json {
-		return c.printDoc(doc, exitOK)
-	}
-	return c.print(text.String())
+	return 0
 }
 
 // fileEntry reads one log file and gives its entry for the listing, with the records it was read from.
@@ -271,7 +290,7 @@ func listFiles(logDir string, names record.LogFiles, now time.Time) ([]format.Lo
 }
 
 // filesText is the listing, newest first: the sessions' files in one table, the days' in another.
-func filesText(files []format.LogFile) *textui.Doc {
+func filesText(files []format.LogFile, when func(string) string) *textui.Doc {
 	d := &textui.Doc{}
 	if len(files) == 0 {
 		d.Title("bonsai logs", "no log files in .bonsai/local/log/")
@@ -289,10 +308,10 @@ func filesText(files []format.LogFile) *textui.Doc {
 				state = map[bool]string{true: "ended", false: "open"}[*f.Ended]
 			}
 			sessions = append(sessions, textui.R(textui.T(a(*f.Session), textui.Path), textui.C(state), textui.C(a(dash(f.Task))),
-				textui.C(a(dash(f.Role))), textui.C(counts)), textui.R(textui.T(a(dash(f.First)+" to "+dash(f.Last)), textui.Dim)))
+				textui.C(a(dash(f.Role))), textui.C(counts)), textui.R(textui.T(a(whenDash(f.First, when)+" to "+whenDash(f.Last, when)), textui.Dim)))
 			continue
 		}
-		days = append(days, textui.R(textui.T(a(*f.Day), textui.Path), textui.C(counts), textui.T(a(dash(f.First)+" to "+dash(f.Last)), textui.Dim)))
+		days = append(days, textui.R(textui.T(a(*f.Day), textui.Path), textui.C(counts), textui.T(a(whenDash(f.First, when)+" to "+whenDash(f.Last, when)), textui.Dim)))
 	}
 	if len(sessions) > 0 {
 		d.Table("Sessions", textui.R(textui.C("session"), textui.C("state"), textui.C("task"), textui.C("role"), textui.C("records")), sessions...)
@@ -303,9 +322,58 @@ func filesText(files []format.LogFile) *textui.Doc {
 	return d
 }
 
+// whenDash is a stored instant as printed (when), or "-" for none.
+func whenDash(s *string, when func(string) string) string {
+	if s == nil || *s == "" {
+		return "-"
+	}
+	return when(*s)
+}
+
 func dash(s *string) string {
 	if s == nil || *s == "" {
 		return "-"
 	}
 	return *s
+}
+
+// dayRecords prints one day's records. The day is the person's: from its first instant in their zone to the next
+// day's, so it reads the one or two UTC-day files that span it and keeps the records whose instants fall in it. With
+// --utc the day is a UTC day, which is one file.
+func (c *call) dayRecords(doc *format.Logs, logDir string, names record.LogFiles, now time.Time) int {
+	day := c.value("--day")
+	loc := shownZone()
+	if c.has("--utc") || loc == nil {
+		loc = time.UTC
+	}
+	start, _ := timefmt.ParseDay(day, loc)
+	d, _ := time.Parse("2006-01-02", day)
+	end, _ := timefmt.ParseDay(d.AddDate(0, 0, 1).Format("2006-01-02"), loc)
+	var files []string
+	for u := start.UTC().Format("2006-01-02"); u <= end.Add(-time.Nanosecond).UTC().Format("2006-01-02"); u = nextDay(u) {
+		if name := "w-" + u + ".ndjson"; contains(names.Days, name) {
+			files = append(files, name)
+		}
+	}
+	if len(files) == 0 {
+		doc.Files, doc.Records = []format.LogFile{}, []schema.Object{}
+		if c.json {
+			return c.printDoc(doc, exitOK)
+		}
+		var dd textui.Doc
+		dd.Title("bonsai logs", "no log file for "+engine.ASCII(day))
+		return c.show(&dd)
+	}
+	return c.records(doc, logDir, files, now, func(file string, r *format.Log) bool {
+		t, err := timefmt.ParseUTC(r.At)
+		if err != nil {
+			return record.DayOf(file) == day // no instant to place: kept with the file whose day is the one asked for
+		}
+		return !t.Before(start) && t.Before(end)
+	})
+}
+
+func nextDay(u string) string {
+	d, _ := time.Parse("2006-01-02", u)
+	return d.AddDate(0, 0, 1).Format("2006-01-02")
 }

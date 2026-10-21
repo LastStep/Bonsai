@@ -42,6 +42,7 @@ no hidden or control character (refused, not stripped), every secret taken out b
 refused when over (never cut). CLAUDE_CODE_SESSION_ID names the asking session, whose own answer is refused.
 `,
 	Flags: []Flag{
+		utcFlag,
 		{Name: "--type", Value: "TYPE", Help: "the ask's type: Answer, Decide, Look or Play (Bless is the ladder's)"},
 		{Name: "--title", Value: "TEXT", Help: "the question, one line, at most 300 characters"},
 		{Name: "--why", Value: "TEXT", Help: "why it is asked, at most 600 characters (it may hold line feeds)"},
@@ -111,7 +112,7 @@ func runAsk(c *call) int {
 		if ae != nil {
 			return c.fail(askError(ae))
 		}
-		return c.asksOut(site, &asks.Done{Entry: entry}, statusText(entry))
+		return c.asksOut(site, &asks.Done{Entry: entry}, statusText(entry, c.when))
 	case "--resolve":
 		done, ae := asks.Resolve(site.place, c.value("--resolve"))
 		if ae != nil {
@@ -225,7 +226,7 @@ func doneText(done *asks.Done, did string) *textui.Doc {
 }
 
 // statusText is an ask as ask --status prints it: its state, the ask, and the record that closed it.
-func statusText(e *asks.Entry) *textui.Doc {
+func statusText(e *asks.Entry, when func(string) string) *textui.Doc {
 	d := &textui.Doc{}
 	f := e.Filed
 	line := func(label, s string) {
@@ -252,7 +253,7 @@ func statusText(e *asks.Entry) *textui.Doc {
 	}
 	line("type", text0(f.Type))
 	line("about", about)
-	line("filed", f.At+", "+session)
+	line("filed", when(f.At)+", "+session)
 	line("title", text0(f.Title))
 	line("why", text0(f.Why))
 	line("then", text0(f.ThenText))
@@ -267,7 +268,7 @@ func statusText(e *asks.Entry) *textui.Doc {
 		return d
 	}
 	if e.Closed.Op == asks.OpResolve {
-		line("resolved", e.Closed.At)
+		line("resolved", when(e.Closed.At))
 		return d
 	}
 	if a := e.Closed.Answer; a != nil {
@@ -275,7 +276,7 @@ func statusText(e *asks.Entry) *textui.Doc {
 		if a.Via != nil {
 			via = ", via " + *a.Via
 		}
-		line("answered", e.Closed.At+", by "+a.By+via)
+		line("answered", when(e.Closed.At)+", by "+a.By+via)
 		line("choice", text0(a.Choice))
 		line("their verdict", text0(a.Verdict))
 		line("words", text0(a.Words))

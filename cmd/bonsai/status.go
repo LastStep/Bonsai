@@ -33,6 +33,7 @@ lists the Claude Code floor and each locked pack. Fields that do not apply print
 `,
 	Flags: []Flag{
 		{Name: "--json", Help: "print the bonsai.status/1 document (for programs) instead of plain text; with --active,\nthe active_task object alone"},
+		utcFlag,
 		{Name: "--full", Help: "add checks (mode full): each pack's newer release tags (git ls-remote), its plugin as Claude\n" +
 			"Code reports it (claude plugin list), Claude Code's version against the floor (claude --version),\n" +
 			"and the MCP servers the packs' needs name; a pack whose plugin is not installed here becomes a\nneeds entry of kind plugin. " +
@@ -106,7 +107,7 @@ func runStatus(c *call) int {
 		return c.printDoc(statusDoc(doc), code)
 	}
 	var d textui.Doc
-	status.TextTo(&d, doc)
+	status.TextToIn(&d, doc, shownZone(), c.has("--utc"))
 	if code != status.ExitOK {
 		if e, ok := doc.Get("error"); ok && e != nil {
 			eo := e.(schema.Object)

@@ -145,7 +145,7 @@ func TestAgentsCommand(t *testing.T) {
 		t.Errorf("skipped: %s", schema.Show(skipped))
 	}
 	// The human lines: one an agent, every field as recorded, then the skipped file.
-	_, text, _ := c.run("", "agents")
+	_, text, _ := c.run("", "agents", "--utc")
 	// Each agent a card: its id in the gutter (on a line of its own when wider than the gutter can hold), every field
 	// a row, name then value.
 	g := len(helper) + 2 // the gutter: the widest label it holds, the helper's id
@@ -179,6 +179,10 @@ func TestAgentsCommand(t *testing.T) {
 			"log .bonsai/local/log/s-"+sess+".ndjson", "thread -", "usage claude-opus-5-5 input 4 output 383 cache_read 38638 cache_write 14439") +
 		fmt.Sprintf("%-*s%s\n%s%s\n", g, "skipped", ".bonsai/local/agents/"+sess+"/a2.state", strings.Repeat(" ", g+4),
 			"its first line is not a start line the guard writes")
+	if _, local, _ := c.run("", "agents"); !strings.Contains(local, "started    2026-10-16 14:30 +05:30\n") ||
+		!strings.Contains(local, "ended      2026-10-16 14:33 +05:30\n") {
+		t.Errorf("the local lines:\n%s", local)
+	}
 	if text != wantText {
 		t.Errorf("the human lines:\n%s\nwant\n%s", text, wantText)
 	}

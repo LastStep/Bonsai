@@ -37,6 +37,7 @@ that does not read is listed as malformed and skipped; it never blocks the rest.
 an agent.
 `,
 	Flags: []Flag{
+		utcFlag,
 		{Name: "--to", Value: "ADDRESS", Help: "only threads holding a message to this address"},
 		{Name: "--task", Value: "ID", Help: "only threads holding a message serving this task"},
 		{Name: "--open", Help: "only open threads: a brief with no report after it"},
@@ -133,7 +134,7 @@ func runMessages(c *call) int {
 			}
 			rows = append(rows, textui.R(textui.T(t.State, tone), textui.T(t.ID, textui.Path), textui.C(engine.ASCII(task)),
 				textui.C(fmt.Sprintf("%d messages", len(t.Messages))), textui.C(engine.ASCII(t.From+" -> "+t.To))),
-				textui.R(textui.C(""), textui.T("last "+t.LastAt, textui.Dim)))
+				textui.R(textui.C(""), textui.T("last "+c.when(t.LastAt), textui.Dim)))
 			if len(t.Flags) > 0 {
 				rows = append(rows, textui.R(textui.C(""), textui.T("flags: "+engine.ASCII(strings.Join(t.Flags, ", ")), textui.Warn)))
 			}
