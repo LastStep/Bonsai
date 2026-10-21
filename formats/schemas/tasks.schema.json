@@ -122,7 +122,7 @@
             ]
           },
           "started": {
-            "description": "The day work started, as the task file gives it; null before.",
+            "description": "The day work started, as the task file gives it (YYYY-MM-DD, the UTC day from set 11, contract §23; written before set 11, the writer's local day, offset unknown; a format-0 task's text as it stands); null before.",
             "examples": [
               "2026-10-09",
               null
@@ -133,7 +133,7 @@
             ]
           },
           "finished": {
-            "description": "The day the task reached done or cut, as the task file gives it; null before.",
+            "description": "The day the task reached done or cut, as the task file gives it (YYYY-MM-DD, the UTC day from set 11, contract §23; written before set 11, the writer's local day, offset unknown; a format-0 task's text as it stands); null before.",
             "examples": [
               "2026-10-09",
               null

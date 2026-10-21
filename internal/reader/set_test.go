@@ -19,8 +19,9 @@ import (
 var setDir = filepath.Join("..", "..", "formats")
 
 // setCases is how many cases the set this reader is held to has (set 8: set 4's 125, then set 8's message example and
-// its five message trick files); a case dropped or added fails the test until this follows.
-const setCases = 131
+// its five message trick files; set 11: its four run report trick files); a case dropped or added fails the test until
+// this follows.
+const setCases = 135
 
 // readCase reads one input file of the set the way its extension says.
 func readCase(raw []byte, path string) Result {

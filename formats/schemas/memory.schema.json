@@ -55,7 +55,7 @@
       ]
     },
     "updated": {
-      "description": "The day the note was last changed, YYYY-MM-DD as text (contract §2.4).",
+      "description": "The day the note was last changed, YYYY-MM-DD as text (contract §2.4): the UTC day from set 11 (contract §23; written before set 11, the writer's local day, offset unknown), taken from bonsai now --day.",
       "examples": [
         "2026-10-06"
       ],

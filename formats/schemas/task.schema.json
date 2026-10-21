@@ -110,7 +110,7 @@
       ]
     },
     "created": {
-      "description": "The day the task was created, YYYY-MM-DD, as text (a date stays text to every contract reader, contract §2.4); null when unknown.",
+      "description": "The day the task was created, YYYY-MM-DD, as text (a date stays text to every contract reader, contract §2.4): the UTC day from set 11 (contract §23; written before set 11, the writer's local day, offset unknown), taken from bonsai now --day; null when unknown.",
       "examples": [
         "2026-10-08",
         null
@@ -122,7 +122,7 @@
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
     },
     "started": {
-      "description": "The day work started (stamped when the task first reads running, contract §7.3), YYYY-MM-DD as text; null before.",
+      "description": "The day work started (stamped when the task first reads running, contract §7.3), YYYY-MM-DD as text: the UTC day from set 11 (contract §23; written before set 11, the writer's local day, offset unknown); null before.",
       "examples": [
         "2026-10-08",
         null
@@ -134,7 +134,7 @@
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
     },
     "finished": {
-      "description": "The day the task reached done or cut (contract §7.3), YYYY-MM-DD as text; null before.",
+      "description": "The day the task reached done or cut (contract §7.3), YYYY-MM-DD as text: the UTC day from set 11 (contract §23; written before set 11, the writer's local day, offset unknown); null before.",
       "examples": [
         "2026-10-09",
         null

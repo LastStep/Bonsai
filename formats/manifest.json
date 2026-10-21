@@ -1,10 +1,10 @@
 {
   "about": "The formats set's manifest: the set version and the SHA-256 of every file's raw bytes in formats/, all but this file and the Go files, sorted by path. Every field is described in README.md.",
-  "set": 10,
+  "set": 11,
   "files": [
     {
       "path": "README.md",
-      "sha256": "fdaacfc59450e565945019a3ae6a3b4f5db6b96c91dbdc306739736f7798f469"
+      "sha256": "13fdecf352ca61da769c0f35b34e135d183fb6b9bb2ca0ddd3c8a87d9fd8a23c"
     },
     {
       "path": "active-task/answers.json",
@@ -371,6 +371,10 @@
       "sha256": "0b7506d2e20c12579e5302344edd5fac9b71b70f695f7d16b998ecc381106afc"
     },
     {
+      "path": "examples/now.json",
+      "sha256": "83f4f7667635c2b86574fae62174bfb80456758b40b4b402903956f6ffc5c632"
+    },
+    {
       "path": "examples/pack.json",
       "sha256": "0bb081df61f0d57da3f157bb2aa8e45609933521a3703304b1a5bea2147a3205"
     },
@@ -436,11 +440,11 @@
     },
     {
       "path": "expect.json",
-      "sha256": "4ca7098ece111e5ee9cfb793af9d1f9b635cdae365953fc376825a7e6af0a502"
+      "sha256": "b9f3918a91c207df76b99a17f8ba5e3f68abf488823773081184db1403a8080a"
     },
     {
       "path": "schemas/agents.schema.json",
-      "sha256": "34c78d1252a2ca379f4b3d8f54805deb4832bb047cc9a8e660305d79b4d2950a"
+      "sha256": "bb5edeb96539ee80eccf8a6b52030c3a84c2a7cb35fe78b40945fbc7b1bbee9e"
     },
     {
       "path": "schemas/ask.schema.json",
@@ -500,31 +504,35 @@
     },
     {
       "path": "schemas/logs.schema.json",
-      "sha256": "fda9bbe4b02315156c3222ee947bba561b7cd1b1e9be9a9617fae7a28ec42740"
+      "sha256": "d63375434b79b9e2a6d1ebd5009bc212a9c40e716b2d2017ffdbb393e2c62ff9"
     },
     {
       "path": "schemas/memory.schema.json",
-      "sha256": "c44e7c9dc974e10125e64e647bdd2eb27aa3f6fd1f5d768599f2db9c45a33248"
+      "sha256": "f62baf36328a0b5367b2778604cf58911933deb656853fc5e7862ece9c14150b"
     },
     {
       "path": "schemas/message.schema.json",
-      "sha256": "0f61513d697941e7d0bf35e2544c138f0f8650df6273e4aa6924c52f701b2200"
+      "sha256": "1e4daba0c74e976596e743773f4b8cce038fedddd98f80e1c13c7d5150770750"
     },
     {
       "path": "schemas/messages.schema.json",
-      "sha256": "33ee50df52e79c1c83f0b2e7bc3a23a3bce56488e0eea375ad15b213a29c7967"
+      "sha256": "a2c429488238389c2cfeef7531811881f4ecb89a2b3aac611d4fb8167879e7de"
+    },
+    {
+      "path": "schemas/now.schema.json",
+      "sha256": "bdc660f01147409a85259a882ba7c26abced522090895f0428b1ecb9f82ef407"
     },
     {
       "path": "schemas/pack.schema.json",
-      "sha256": "6099ba1f7f4881a9257ae273bb81fb68be1128a91ad4d3102841951e6a5eec5c"
+      "sha256": "fc6c57d1b20dc36be85bd48d7f0c866ccbb9fc9f058ad2b569e342ecbb4ee0ff"
     },
     {
       "path": "schemas/run.schema.json",
-      "sha256": "f9b3e1b28be9ed46652c78cfb328401a6dfc4228fe82c65f8b8bca932f3b21c6"
+      "sha256": "4eb508f973ca34c796185532ab6eea004cced74c671934232ffa50443754a594"
     },
     {
       "path": "schemas/sessions.schema.json",
-      "sha256": "99fa52b1ff44821bada51a9bc68b18119d03292b3fc5a80edee4449c6b27fb2e"
+      "sha256": "ac84d851c179e898f91a5bf4a1e5ecd533b22ef07b84f6705acfc433d139d834"
     },
     {
       "path": "schemas/settings.schema.json",
@@ -532,19 +540,19 @@
     },
     {
       "path": "schemas/state.schema.json",
-      "sha256": "12c716d843ba76ca50f2b2eec7d53c0582796cfb44db70b4fa368faa160d65ce"
+      "sha256": "7d5c3ae46b888a5a0a8c33b28f0c271dc79fe2c50a27000f9a491d1d9e86462a"
     },
     {
       "path": "schemas/status.schema.json",
-      "sha256": "379b8b488d6de91f78fcfaee75576150af6072a74efbef8d2533023ea330299a"
+      "sha256": "3783afea2f2066a99be618825637d4e1dd5b121f2db86bad1ea4c4ed7ad67336"
     },
     {
       "path": "schemas/task.schema.json",
-      "sha256": "d7931ccb37dd44718760ffc43dd82d4501c52c4a9d42b5c5c136db0214077d39"
+      "sha256": "b2e6ce89505f5c1e96deb7ebae70a591ff3832a9b0ca3c5a7a1ca5c1fe0a8286"
     },
     {
       "path": "schemas/tasks.schema.json",
-      "sha256": "45a12becc5b78c4a77a6afe97b688e6f86186ca32b3f5009d457c857d3f7f1c4"
+      "sha256": "69bb8112bb9ba3ea9f67775f3c81d6771bb646667280ee2bc5d2e19800aa536d"
     },
     {
       "path": "schemas/workspace.schema.json",
@@ -569,6 +577,22 @@
     {
       "path": "trick/message-1/message-unknown-field/case.md",
       "sha256": "e3824500b33fcb5b49186700b284461488b6e41dda0dcb5c61bed6ddb64cc091"
+    },
+    {
+      "path": "trick/run-1/run-time-offset-plain/case.md",
+      "sha256": "4faa26fdbe3c8fb93aae90a67305f2c0a77f753a35079f3de0d588525df25511"
+    },
+    {
+      "path": "trick/run-1/run-time-offset/case.md",
+      "sha256": "feae7c47b3d349c42656fb2861cefc818c5ddef43234fa6d9db6579fd160c7c2"
+    },
+    {
+      "path": "trick/run-1/run-time-utc/case.md",
+      "sha256": "4509b3246ebff4fb75b6e77dd1039082f84a40e49247af4506512e7aed55b135"
+    },
+    {
+      "path": "trick/run-1/run-time-zone-name/case.md",
+      "sha256": "cefb43168cbeb4f2068802ecece75301cf1a4359a3ebfce71ee5b053d05bcd86"
     },
     {
       "path": "trick/yaml-0/colon-in-value/case.md",

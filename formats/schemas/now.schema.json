@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.now/1",
+  "description": "bonsai now --json (contract §23; plan P-T-5795 step 2 and its Amendment 2): the time now, as Bonsai's clock gives it, in the form every record takes (UTC) and, for a person, in the local zone, so an agent copies a time instead of guessing one. Printed, never stored. Written by bonsai now with --json; read by agents and the hook line that tells them the time. On a refusal every field but format and error is null. A writer writes every field below, in this order, null where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "utc",
+    "day",
+    "iso",
+    "local",
+    "offset",
+    "zone",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.now/1"
+      ],
+      "const": "bonsai.now/1"
+    },
+    "utc": {
+      "description": "The time now in UTC, YYYY-MM-DD HH:MM: the record form, what a run report's started and finished hold (contract §23); null on a refusal.",
+      "examples": [
+        "2026-10-21 08:19",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$"
+    },
+    "day": {
+      "description": "The UTC day, YYYY-MM-DD: what a task's created, started and finished and STATE's and a memory note's updated hold (contract §23); null on a refusal.",
+      "examples": [
+        "2026-10-21",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "iso": {
+      "description": "The same instant, ISO-8601 UTC with milliseconds and Z: the form of the log's at and a message's created (contract §23); null on a refusal.",
+      "examples": [
+        "2026-10-21T08:19:04.325Z",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "local": {
+      "description": "The same instant in the local zone with its offset, YYYY-MM-DD HH:MM +HH:MM: the display form, for a person to read, never recorded (contract §23); null on a refusal.",
+      "examples": [
+        "2026-10-21 13:49 +05:30",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2} [+-][0-9]{2}:[0-9]{2}$"
+    },
+    "offset": {
+      "description": "The local zone's offset from UTC now, +HH:MM or -HH:MM, the one local shows; for display only (contract §23); null on a refusal.",
+      "examples": [
+        "+05:30",
+        "-04:00",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[+-][0-9]{2}:[0-9]{2}$"
+    },
+    "zone": {
+      "description": "The local zone's abbreviation as Go prints it (IST, CEST; +0530 where the zone has none), for a person's eye only: never parsed and never recorded, since one abbreviation can name more than one zone (contract §23). null on a refusal.",
+      "examples": [
+        "IST",
+        "CEST",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

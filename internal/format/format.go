@@ -110,7 +110,7 @@ const (
 var errorCode = []List{{Field: "error.code", Table: "format.ErrorWords", Words: &ErrorWords}}
 
 // All is every format, in formats.Names' order (the ten of contract §2, the eight of set 4, set 5's help, then set 6's
-// asks and logs, then set 7's climb, then set 8's message, messages and agents, then set 10's settings, attach and line). Its test holds it to formats.Names and
+// asks and logs, then set 7's climb, then set 8's message, messages and agents, then set 10's settings, attach and line, then set 11's now). Its test holds it to formats.Names and
 // to the schemas, so a schema with no entry here, or an entry with no schema, fails.
 //
 // To add a format: its schema in formats/ (a new set), its Go file here, and an entry below. To add an open list's
@@ -164,6 +164,7 @@ var All = []*Format{
 	{Name: "settings", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Settings", Next: nextOutput, Lists: errorCode},
 	{Name: "attach", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Attach", Next: nextOutput, Lists: errorCode},
 	{Name: "line", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Line", Next: nextOutput, Lists: errorCode},
+	{Name: "now", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Now", Next: nextOutput, Lists: errorCode},
 }
 
 // Lookup finds a format by its short name ("task"), its name ("bonsai.task") or its name and major

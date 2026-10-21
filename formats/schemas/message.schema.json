@@ -29,7 +29,7 @@
       "const": "bonsai.message/1"
     },
     "id": {
-      "description": "The message's id, made by bonsai message: M-, the UTC date it was written, a dash and 8 lower-case hex characters from 4 random bytes. Its file is <id>.md in its recipient's folder.",
+      "description": "The message's id, made by bonsai message: M-, the UTC day it was written (YYYY-MM-DD; contract §23), a dash and 8 lower-case hex characters from 4 random bytes. Its file is <id>.md in its recipient's folder.",
       "examples": [
         "M-2026-10-16-3f9a01bc"
       ],
@@ -37,7 +37,7 @@
       "pattern": "^M-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9a-f]{8}$"
     },
     "thread": {
-      "description": "The thread's id: the id of its first brief, so a thread's first brief carries its own id; a report and a follow-up brief carry their thread's.",
+      "description": "The thread's id: the id of its first brief, so a thread's first brief carries its own id; a report and a follow-up brief carry their thread's. Its date (M-<YYYY-MM-DD>-) is the UTC day the first brief was written (contract §23).",
       "examples": [
         "M-2026-10-16-3f9a01bc"
       ],
@@ -45,7 +45,7 @@
       "pattern": "^M-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9a-f]{8}$"
     },
     "reply_to": {
-      "description": "The message this one answers (a report's brief, a follow-up brief's report), or null for a thread's first brief.",
+      "description": "The message this one answers (a report's brief, a follow-up brief's report), or null for a thread's first brief. Its date (M-<YYYY-MM-DD>-) is the UTC day that message was written (contract §23).",
       "examples": [
         "M-2026-10-16-3f9a01bc",
         null

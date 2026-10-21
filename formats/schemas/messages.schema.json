@@ -86,7 +86,7 @@
         ],
         "properties": {
           "id": {
-            "description": "The thread's id: its first brief's.",
+            "description": "The thread's id: its first brief's (M-<YYYY-MM-DD>-<hex>, its date the UTC day it was written, contract §23).",
             "examples": [
               "M-2026-10-16-3f9a01bc"
             ],
@@ -133,7 +133,7 @@
             ]
           },
           "last_at": {
-            "description": "When its newest message was written (that message's created).",
+            "description": "When its newest message was written (that message's created): ISO-8601 UTC with milliseconds.",
             "examples": [
               "2026-10-16T09:12:00.000Z"
             ],
@@ -465,7 +465,7 @@
             "pattern": "^[^/\\\\:][^\\\\:]*$"
           },
           "thread": {
-            "description": "The thread its frontmatter names, where that still reads; else null.",
+            "description": "The thread its frontmatter names, where that still reads (M-<YYYY-MM-DD>-<hex>, its date the UTC day it was written, contract §23); else null.",
             "examples": [
               "M-2026-10-16-3f9a01bc",
               null

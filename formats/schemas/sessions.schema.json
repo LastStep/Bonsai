@@ -99,7 +99,7 @@
             ]
           },
           "start": {
-            "description": "When it started, UTC, YYYY-MM-DD HH:MM as text.",
+            "description": "When it started: YYYY-MM-DD HH:MM as text, in UTC (contract §23: every recorded time is UTC; the sessions table always was).",
             "examples": [
               "2026-10-08 09:05"
             ],
@@ -107,7 +107,7 @@
             "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$"
           },
           "end": {
-            "description": "When it ended, UTC, YYYY-MM-DD HH:MM as text.",
+            "description": "When it ended: YYYY-MM-DD HH:MM as text, in UTC (contract §23).",
             "examples": [
               "2026-10-08 10:35"
             ],

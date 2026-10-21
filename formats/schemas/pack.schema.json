@@ -389,7 +389,7 @@
             }
           },
           "stamp": {
-            "description": "Fields set to the day's date when a document reaches a status, as {status: field}; {} for none.",
+            "description": "Fields set to the day's date (YYYY-MM-DD, the UTC day from set 11, contract §23) when a document reaches a status, as {status: field}; {} for none.",
             "examples": [
               {
                 "approved": "approved"

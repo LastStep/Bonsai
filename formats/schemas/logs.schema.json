@@ -135,7 +135,7 @@
             ]
           },
           "day": {
-            "description": "The UTC date, for a day file; null for a session's file.",
+            "description": "The UTC day, YYYY-MM-DD, of a day file (its name is w-<day>; a machine-record day, contract §23); null for a session's file.",
             "examples": [
               "2026-10-08",
               null
@@ -147,7 +147,7 @@
             "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
           },
           "first": {
-            "description": "The first readable record's time, as the log writes it; null when the file holds none.",
+            "description": "The first readable record's time, as the log writes it: ISO-8601 UTC with milliseconds; null when the file holds none.",
             "examples": [
               "2026-10-08T14:08:00.000Z",
               null
@@ -159,7 +159,7 @@
             "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
           },
           "last": {
-            "description": "The last readable record's time; null when the file holds none.",
+            "description": "The last readable record's time: ISO-8601 UTC with milliseconds; null when the file holds none.",
             "examples": [
               "2026-10-08T14:31:02.113Z",
               null

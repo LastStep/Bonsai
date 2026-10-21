@@ -13,6 +13,8 @@
 //     and a rung's kind in bonsai.yaml is the ladder result's list (copies held to their one home);
 //   - contract §13's fixtures and their answers file are well formed and agree (fixtures_test.go);
 //   - each schema changed from the set's base commit only by additions (compare_test.go);
+//   - a run report's trick file reaches its schema outcome, and every time field's description names its zone and
+//     form (set 11, contract §23);
 //   - the embedded schemas (embed.go) are exactly the files in schemas/, byte for byte;
 //   - no file in the set holds a private string: an absolute home path, a drive letter, an email address, a tailnet
 //     host.
@@ -89,6 +91,9 @@ var rules = []string{
 	"code-order",
 	// bonsai.message/1's reader (set 8): a case under trick/message-1/, its message outcome in expect.json.
 	"message-report-status", "message-budget-type", "message-id-form", "message-unknown-field", "message-address",
+	// A run report's recorded time (set 11, contract §23: UTC, no zone written): a case under trick/run-1/, its schema
+	// outcome in expect.json.
+	"run-time-utc", "run-time-offset", "run-time-offset-plain", "run-time-zone-name",
 }
 
 // Files whose bytes are the point of their case, checked as checked out.
@@ -281,6 +286,7 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 			t.Errorf("%s: format0 outcome %q, want accepted or refused", where, str(f0, "outcome"))
 		}
 		checkMessageOutcome(t, o, path, where)
+		checkSchemaOutcome(t, o, path, where)
 		f1 := mustObject(t, f1v, where+" format1")
 		switch str(f1, "outcome") {
 		case "accepted":
@@ -341,11 +347,11 @@ func TestEveryRuleHasACaseWithBothOutcomes(t *testing.T) {
 		}
 	}
 	// Each trick file sits alone in its case folder, as trick/yaml-1/<case>/case.yaml or case.md, or (set 8) a
-	// message's as trick/message-1/<case>/case.md.
-	caseFile := regexp.MustCompile(`^trick/(yaml-[01]/[a-z0-9-]+/case\.(yaml|md)|message-1/[a-z0-9-]+/case\.md)$`)
+	// message's as trick/message-1/<case>/case.md, or (set 11) a run report's as trick/run-1/<case>/case.md.
+	caseFile := regexp.MustCompile(`^trick/(yaml-[01]/[a-z0-9-]+/case\.(yaml|md)|(message|run)-1/[a-z0-9-]+/case\.md)$`)
 	for _, p := range sortedKeys(want) {
 		if strings.HasPrefix(p, "trick/") && !caseFile.MatchString(p) {
-			t.Errorf("%s is not laid out as trick/yaml-<0|1>/<case>/case.<yaml|md> or trick/message-1/<case>/case.md", p)
+			t.Errorf("%s is not laid out as trick/yaml-<0|1>/<case>/case.<yaml|md>, trick/message-1/<case>/case.md or trick/run-1/<case>/case.md", p)
 		}
 	}
 }
@@ -391,6 +397,59 @@ func checkMessageOutcome(t *testing.T, o schema.Object, path, where string) {
 		}
 	default:
 		t.Errorf("%s: message outcome %q, want accepted or refused", where, str(m, "outcome"))
+	}
+}
+
+// checkSchemaOutcome holds a case's schema outcome (set 11): a case under trick/run-1/ that format 1 accepts has one,
+// every other case none. It says whether bonsai.run/1 accepts the format-1 value, read as a reader reads it (a missing
+// field as null, contract §2.2): accepted, the schema checker finds nothing; refused, it names the field refused, and
+// the checker refuses that field and no other.
+func checkSchemaOutcome(t *testing.T, o schema.Object, path, where string) {
+	t.Helper()
+	sv, has := o.Get("schema")
+	f1v, _ := o.Get("format1")
+	f1, _ := f1v.(schema.Object)
+	wants := strings.HasPrefix(path, "trick/run-1/") && f1.String("outcome") == "accepted"
+	if !wants {
+		if has {
+			t.Errorf("%s: only a case under trick/run-1/ that format 1 accepts has a schema outcome", where)
+		}
+		return
+	}
+	if !has {
+		t.Errorf("%s: a run report's trick file that format 1 accepts has a schema outcome", where)
+		return
+	}
+	s := loadSchema(t, "run")
+	vv, _ := f1.Get("value")
+	value, _ := vv.(schema.Object)
+	value = append(schema.Object{}, value...)
+	req, _ := s.Get("required")
+	reqList, _ := req.([]any)
+	for _, r := range reqList {
+		if k, _ := r.(string); value.Index(k) < 0 {
+			value = append(value, schema.Member{Key: k, Value: nil})
+		}
+	}
+	got := schema.Validate(s, value)
+	m := mustObject(t, sv, where+" schema")
+	switch str(m, "outcome") {
+	case "accepted":
+		for _, msg := range got {
+			t.Errorf("%s: schema accepted, but bonsai.run/1 refuses its value: %s", where, msg)
+		}
+	case "refused":
+		field := str(m, "field")
+		if len(got) == 0 {
+			t.Errorf("%s: schema refused for %q, but bonsai.run/1 accepts its value", where, field)
+		}
+		for _, msg := range got {
+			if !strings.HasPrefix(msg, "#/"+field+" ") && !strings.HasPrefix(msg, "#/"+field+":") {
+				t.Errorf("%s: schema refused for %q, but bonsai.run/1 refuses: %s", where, field, msg)
+			}
+		}
+	default:
+		t.Errorf("%s: schema outcome %q, want accepted or refused", where, str(m, "outcome"))
 	}
 }
 
@@ -539,7 +598,7 @@ func sameShape(t *testing.T, copyOf, home schema.Object, where string) {
 func TestCopiesAreTheirHomes(t *testing.T) {
 	errorSchema := loadSchema(t, "error")
 	next := schemaAt(t, errorSchema, "error", "properties", "next")
-	for _, name := range []string{"status", "check", "changes", "asks", "logs", "climb", "messages", "agents", "settings", "attach", "line"} {
+	for _, name := range []string{"status", "check", "changes", "asks", "logs", "climb", "messages", "agents", "settings", "attach", "line", "now"} {
 		sameShape(t, schemaAt(t, loadSchema(t, name), name, "properties", "error"), errorSchema, name+"'s error")
 	}
 	// The workspace object of the set 6 to 8 outputs is changes', their home (the schema checker has no $ref).
@@ -574,6 +633,67 @@ func TestCopiesAreTheirHomes(t *testing.T) {
 	b, _ := home.Get("enum")
 	if b == nil || schema.Show(a) != schema.Show(b) {
 		t.Errorf("workspace's ladder[].kind is %s, the ladder result's rung kind %s: one list", schema.Show(a), schema.Show(b))
+	}
+}
+
+// unpatternedTimes are the time fields whose schema holds no pattern (set 11 adds none, contract §23: no narrowing),
+// by schema and JSON pointer; every other time field is found by its pattern.
+var unpatternedTimes = map[string][]string{
+	"status": {"#/properties/ladder/properties/finished", "#/properties/bonsai_release/properties/read"},
+	"tasks":  {"#/properties/tasks/items/properties/started", "#/properties/tasks/items/properties/finished"},
+}
+
+// Set 11 (contract §23): every time field's description names its zone, UTC or the writer's local one, and its form.
+// A time field is a property whose pattern holds a date (YYYY-MM-DD), an id with a day in it among them, or one listed
+// in unpatternedTimes.
+func TestEveryTimeFieldNamesItsZone(t *testing.T) {
+	date := "[0-9]{4}-[0-9]{2}-[0-9]{2}"
+	zone := regexp.MustCompile(`\bUTC\b|\blocal\b`)
+	form := regexp.MustCompile(`YYYY-MM-DD|ISO-8601|RFC 3339`)
+	found := 0
+	for _, name := range Names {
+		listed := map[string]bool{}
+		for _, p := range unpatternedTimes[name] {
+			listed[p] = true
+		}
+		seen := map[string]bool{}
+		var walk func(n any, at string)
+		walk = func(n any, at string) {
+			o, ok := n.(schema.Object)
+			if !ok {
+				if l, ok := n.([]any); ok {
+					for i, v := range l {
+						walk(v, fmt.Sprintf("%s/%d", at, i))
+					}
+				}
+				return
+			}
+			if strings.Contains(o.String("pattern"), date) || listed[at] {
+				seen[at] = true
+				found++
+				d := o.String("description")
+				if !zone.MatchString(d) {
+					t.Errorf("schemas/%s.schema.json %s: a time field whose description names no zone (UTC or local, contract §23): %q", name, at, d)
+				}
+				if !form.MatchString(d) {
+					t.Errorf("schemas/%s.schema.json %s: a time field whose description names no form (YYYY-MM-DD, ISO-8601 or RFC 3339): %q", name, at, d)
+				}
+			}
+			for _, m := range o {
+				if m.Key != "examples" {
+					walk(m.Value, at+"/"+m.Key)
+				}
+			}
+		}
+		walk(loadSchema(t, name), "#")
+		for p := range listed {
+			if !seen[p] {
+				t.Errorf("schemas/%s.schema.json has no %s, which unpatternedTimes lists", name, p)
+			}
+		}
+	}
+	if found == 0 {
+		t.Fatal("no time field found in any schema")
 	}
 }
 

@@ -93,6 +93,7 @@ error words.
 - attach: error.next.who
 - line: ladder
 - line: error.next.who
+- now: error.next.who
 
 ## Exit codes
 
@@ -1255,5 +1256,13 @@ Values: `green`, `red`, `old`, `none`, `null`.
 - Closed list.
 - Defined in: formats/schemas/line.schema.json (`error.next.who`).
 - Printed in a project by: `bonsai check --schema bonsai.line`.
+
+Values: `agent`, `person`.
+
+## now: error.next.who
+
+- Closed list.
+- Defined in: formats/schemas/now.schema.json (`error.next.who`).
+- Printed in a project by: `bonsai check --schema bonsai.now`.
 
 Values: `agent`, `person`.

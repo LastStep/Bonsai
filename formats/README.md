@@ -4,8 +4,9 @@ This folder holds Bonsai's formats as files any program can test against: a JSON
 of the formats contract (`design/contract.md` §2), the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row 29),
 the one that set 5 added (`help`, plan-5 5.1.10), the two that set 6 added (`asks` and `logs`, plan-5 5.2.0), the
 one that set 7 added (`climb`, plan-5 5.4.0), the three that set 8 added (`message`, `messages` and `agents`, plan-5
-5.5.9) and the three that set 10 added (`settings`, `attach` and `line`, plan-5 5.6.0), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
-from set 8, message files), each with the one right outcome a reader must reach (accepted with this value, or refused
+5.5.9) the three that set 10 added (`settings`, `attach` and `line`, plan-5 5.6.0) and the one that set 11 added (`now`,
+plan P-T-5795, contract §23), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
+from set 8, message files; from set 11, run reports), each with the one right outcome a reader must reach (accepted with this value, or refused
 for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
 file's bytes.
@@ -25,13 +26,14 @@ formats/
   embed.go                  embeds the schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
                                 status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help;
-                                asks, logs; climb; message, messages, agents; settings, attach, line
+                                asks, logs; climb; message, messages, agents; settings, attach, line; now
   examples/<name>.json      one valid document per format, as a reader returns it
   examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory, message (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
   trick/yaml-1/<case>/case.md|.yaml   a case for one rule of the format-1 YAML grammar (contract §2.4)
   trick/yaml-0/<case>/case.md|.yaml   one of today's format-0 oddities
   trick/message-1/<case>/case.md      a message file for one rule of bonsai.message/1's reader (set 8)
+  trick/run-1/<case>/case.md          a run report for its recorded time and bonsai.run/1's schema (set 11)
   active-task/<case>/       one of contract §13's fixtures: case.json and the project folders it names
   active-task/answers.json  every reader's answer for every fixture (below)
 ```
@@ -57,7 +59,9 @@ messages` and of `bonsai message`) and `agents` (`bonsai.agents/1`, the `--json`
 published view of what Bonsai has recorded about each agent); and, from set 10, `settings` (`bonsai.settings/1`,
 the `--json` of `bonsai settings show` and `set`: this machine's settings, for the workspace or the home), `attach`
 (`bonsai.attach/1`, the `--json` of `bonsai labels attach` and `detach`: label definitions attached on this machine)
-and `line` (`bonsai.line/1`, the `--json` of `bonsai status --line`: the statusline's workspace half as fields). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
+and `line` (`bonsai.line/1`, the `--json` of `bonsai status --line`: the statusline's workspace half as fields); and,
+from set 11, `now` (`bonsai.now/1`, the `--json` of `bonsai now`: the time now in every form a document or a record
+takes, contract §23). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
 where it lives) and a `description` and `examples` on every property. Later steps add their commands' outputs
 the same way, each a new schema file: an addition.
 
@@ -322,6 +326,22 @@ the same way, each a new schema file: an addition.
     home's release record, the Windows copy's record and the line's cache.
   - **Go**: the three outputs' types and writers (`format.Settings`, `format.Attach`, `format.Line`), status's
     `format.StatusRelease`, and two error words, `namespace-taken` and `label-redefined` (`format.ErrorWords`).
+- **Set 11** (plan P-T-5795 step 1 and its Amendment 2, contract §23 "Time": the director's rule, every recorded time
+  is UTC and display converts), every change an addition; no field and no pattern changes:
+  - **`bonsai.now/1`**: `format`; `utc` (the time now in UTC, `YYYY-MM-DD HH:MM`, the record form a run report's
+    `started` and `finished` hold); `day` (the UTC day); `iso` (ISO-8601 UTC with milliseconds, the log's form);
+    `local` (`YYYY-MM-DD HH:MM +HH:MM`, the display form for a person, never recorded); `offset` (`+05:30`, for
+    display); `zone` (the abbreviation Go prints, for a person's eye only, never parsed); `error`. All but `format` and
+    `error` null on a refusal.
+  - **Descriptions only:** every time field names its form and its zone (§23): machine records UTC, as always; a run
+    report's `started` and `finished`, its id's day, and every day field (a task's dates, STATE's and a memory note's
+    `updated`, the packs' stamps) UTC from set 11, the writer's local time with its offset unknown in a file written
+    before it, never rewritten; the sessions table UTC, as it always was. The two unpatterned status times stay
+    unpatterned.
+  - **Trick files** under `trick/run-1/` (above), with their `schema` outcome.
+  - **Go**: the output's type, reader and writer (`format.Now`) and the registry's row.
+  - **Dropped before release:** Amendment 1's run `offset` field and the sessions table's offset column (the installed
+    release refuses a tenth column); neither ever left a released set.
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,
@@ -378,6 +398,11 @@ file), with made-up content only.
   report with no status, a brief whose budget has a field of the wrong type, an id of the wrong shape, an unknown field
   kept (the major's rule), an address with a character a Windows folder name cannot hold. Their YAML reads under
   both formats (their `format0` and `format1` are accepted); their third outcome, `message`, is the message reader's.
+- `trick/run-1/<case>/`: from set 11, a run report (`case.md`) for its recorded time (contract §23: UTC, no zone
+  written): `started` in the record form (accepted); with an offset, quoted (its YAML reads; bonsai.run/1 refuses
+  it); with a zone name, `IST`, quoted (the same); with an offset, unquoted (format 1 refuses the plain value). A case
+  that format 1 accepts has a third outcome, `schema`: whether bonsai.run/1 accepts the value, read as a reader reads
+  it (a missing field as null).
 - The CRLF case (`trick/yaml-1/lines-crlf/case.md`) ends every line in CRLF, the lone-CR case
   (`trick/yaml-1/lines-cr/case.yaml`) every line in a CR alone, with no LF anywhere, and two cases start with a BOM
   (`bom-frontmatter`, `bom-definition`). The repo's `.gitattributes` sets `formats/** -text`, so no checkout changes
@@ -388,7 +413,7 @@ what it tests, and both outcomes are in `expect.json`.
 
 ## expect.json
 
-One file, UTF-8, LF, giving every case two outcomes. Example (one case, shortened):
+One file, UTF-8, LF, giving every case two outcomes (and a message's or a run report's trick file a third). Example (one case, shortened):
 
 ```json
 {
@@ -417,6 +442,7 @@ One file, UTF-8, LF, giving every case two outcomes. Example (one case, shortene
 | `format0` | What the studio's frozen format-0 reader reaches, which reads every file as format 0, `format:` line or not: `{"outcome": "accepted", "value": <JSON>}` or `{"outcome": "refused", "message": "<the reader's own message>"}`. |
 | `format1` | What a reader that dispatches as §2.4 says reaches: `{"outcome": "accepted", "value": <JSON>}`; `{"outcome": "refused", "reason": "<code>"}` with a code from the table below; or `{"outcome": "format-0"}` when the file has no top-level `format:` key, which sends it to format 0. |
 | `value` | The YAML file's mapping, or for markdown the frontmatter's mapping (the body is not compared), as JSON. Under format 1 a date stays text and an integer has at most 15 digits. |
+| `schema` | Only for a case under `trick/run-1/` that format 1 accepts (set 11): whether `bonsai.run/1` accepts the format-1 value, a missing field read as null (contract §2.2): `{"outcome": "accepted"}` or `{"outcome": "refused", "field": "<the field refused, as started>"}`; the schema checker refuses that field and no other. |
 | `message` | Only for a case under `trick/message-1/` (set 8): what `bonsai.message/1`'s reader reaches (`format.ReadMessage`, which `bonsai message` and every reader of messages read through): `{"outcome": "accepted", "value": <the message as bonsai message --show --json prints it>}` or `{"outcome": "refused", "field": "<the field refused, as budget.minutes>"}`. |
 
 ## Reason codes
@@ -570,7 +596,9 @@ validates under the schema checker (`internal/schema`, moved out of this test in
 same one: it implements the keywords the schemas use, skips only `title`, `description` and `examples`, and fails on
 any other keyword) and keeps the schema's field order; that each YAML or markdown example's format-1 value equals its
 `<name>.json` (a table's or a message's, its frontmatter); that a message's trick file has its `message` outcome, an
-accepted value valid under `bonsai.message/1` and a refused field one it has; that each copy of a shared shape is its
+accepted value valid under `bonsai.message/1` and a refused field one it has; that a run report's trick file that format 1
+accepts has its `schema` outcome and the schema checker agrees (set 11); that every time field's description names its
+zone, UTC or local, and its form (set 11, contract §23: a field whose pattern holds a date, or one the test lists); that each copy of a shared shape is its
 home's (above); that the schemas
 `embed.go` embeds are exactly the files in `schemas/`; and that no file in the set holds a private string: an absolute
 home-folder path, a WSL drive path, a path from a home folder's tilde, a Windows drive letter, an email address or a
