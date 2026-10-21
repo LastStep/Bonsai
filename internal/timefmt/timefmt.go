@@ -1,6 +1,8 @@
-// Package timefmt owns every form a time takes in Bonsai (design/contract.md, section 23, "Time"): the document time
-// a person reads in a file ("2026-10-21 12:49 +05:30"), the day ("2026-10-21"), and the instant a machine record
-// holds ("2026-10-21T07:19:04.325Z", UTC). Bonsai is the only clock: the guard checks fresh stamps against what
+// Package timefmt owns every form a time takes in Bonsai (design/contract.md, section 23, "Time"; P-T-5795's
+// Amendment 2: every recorded time is UTC, and display converts). The recorded forms are UTC: the time in a file
+// ("2026-10-21 08:19", Record), the day ("2026-10-21", RecordDay) and the instant a machine record holds
+// ("2026-10-21T08:19:04.325Z", UTC). The display form converts to a person's zone with its offset
+// ("2026-10-21 13:49 +05:30", Doc, Show). Bonsai is the only clock: the guard checks fresh stamps against what
 // `bonsai now` prints, which is this package's output.
 //
 // Every function that depends on a zone takes a *time.Location: production code passes time.Local, a test passes one
@@ -31,13 +33,27 @@ const (
 // is UTC ("+00:00").
 func Doc(t time.Time, loc *time.Location) string { return t.In(zone(loc)).Format(docLayout) }
 
-// DocTime is the time of t in loc to the minute with no offset: "2026-10-21 12:49". It is what a run report's started
-// and finished hold, and a new sessions row's start and end; the offset goes beside it in its own field (Offset), the
-// way design/plan P-T-5795's Amendment 1 says.
-func DocTime(t time.Time, loc *time.Location) string { return t.In(zone(loc)).Format(legacyLayout) }
-
-// Day is the day of t in loc: "2026-10-21".
+// Day is the day of t in loc: "2026-10-21". A day Bonsai records is the UTC day (RecordDay); this one is for
+// display and for reading a person's local day.
 func Day(t time.Time, loc *time.Location) string { return t.In(zone(loc)).Format(dayLayout) }
+
+// Record is the time Bonsai records in a file a person opens, always UTC, to the minute: "2026-10-21 08:19". A run
+// report's started and finished and a sessions row's start and end hold it; Doc shows the same instant for a person.
+func Record(t time.Time) string { return t.UTC().Format(legacyLayout) }
+
+// RecordDay is the day Bonsai records, the UTC day: "2026-10-21" (a task's dates, STATE's and a memory note's updated).
+func RecordDay(t time.Time) string { return t.UTC().Format(dayLayout) }
+
+// ParseRecord reads a recorded time, "2026-10-21 08:19", as UTC. A time written before formats set 11 was local with
+// the offset unknown and reads the same way: its digits as UTC, so a caller that needs to say "unknown" checks the
+// report's date against the cutover.
+func ParseRecord(s string) (time.Time, error) {
+	t, err := time.Parse(legacyLayout, s)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("%q is not a recorded time (YYYY-MM-DD HH:MM, UTC)", s)
+	}
+	return t, nil
+}
 
 // UTC is the instant form of t with milliseconds, in UTC: "2026-10-21T07:19:04.325Z".
 func UTC(t time.Time) string { return t.UTC().Format(milliLayout) }
@@ -69,27 +85,6 @@ func ParseDoc(s string) (t time.Time, known bool, err error) {
 		return t, false, nil
 	}
 	return time.Time{}, false, fmt.Errorf("%q is not a document time (YYYY-MM-DD HH:MM +HH:MM, a numeric offset; or the legacy YYYY-MM-DD HH:MM)", s)
-}
-
-// ParseAt reads a stored time and the offset field beside it. With an offset ("+05:30") the time is local at that
-// offset and known is true; with offset "" the time is legacy: its digits read as UTC, known false (a run report with
-// no offset field means "offset unknown"; a sessions row with none is UTC). A zone name ("IST"), a "Z" or an
-// offset out of range is refused.
-func ParseAt(s, offset string) (t time.Time, known bool, err error) {
-	if offset == "" {
-		t, err = time.Parse(legacyLayout, s)
-		if err != nil {
-			return time.Time{}, false, fmt.Errorf("%q is not a stored time (YYYY-MM-DD HH:MM)", s)
-		}
-		return t, false, nil
-	}
-	if _, err = time.Parse("-07:00", offset); err != nil || len(offset) != 6 {
-		return time.Time{}, false, fmt.Errorf("%q is not an offset (+HH:MM or -HH:MM, numeric)", offset)
-	}
-	if t, err = time.Parse(docLayout, s+" "+offset); err != nil {
-		return time.Time{}, false, fmt.Errorf("%q is not a stored time (YYYY-MM-DD HH:MM)", s)
-	}
-	return t, true, nil
 }
 
 // ParseSession reads a time of .bonsai/sessions.md: an old row has no offset and is UTC, a new one carries its

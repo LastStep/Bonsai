@@ -34,9 +34,6 @@ func TestFormsInThreeZones(t *testing.T) {
 		if got := Day(at, l); got != c.day {
 			t.Errorf("%s Day = %q, want %q", c.zone, got, c.day)
 		}
-		if got := DocTime(at, l); got+" "+c.off != c.doc {
-			t.Errorf("%s DocTime = %q", c.zone, got)
-		}
 		if got := Offset(at, l); got != c.off {
 			t.Errorf("%s Offset = %q, want %q", c.zone, got, c.off)
 		}
@@ -192,22 +189,26 @@ func TestParseUTC(t *testing.T) {
 	}
 }
 
-func TestParseAt(t *testing.T) {
+func TestRecordIsUTCWhateverTheZone(t *testing.T) {
+	// 18:30 UTC on the 21st is already the 22nd in Kolkata: the recorded time and day stay UTC.
+	at := time.Date(2026, 10, 21, 18, 30, 5, 0, time.UTC)
+	if Record(at) != "2026-10-21 18:30" || RecordDay(at) != "2026-10-21" {
+		t.Errorf("Record %q, RecordDay %q", Record(at), RecordDay(at))
+	}
 	ist := loc(t, "Asia/Kolkata")
-	at := time.Date(2026, 10, 21, 7, 19, 0, 0, time.UTC)
-	got, known, err := ParseAt(DocTime(at, ist), Offset(at, ist))
-	if err != nil || !known || !got.Equal(at) {
-		t.Fatalf("with offset: %v %v %v", got, known, err)
+	if Record(at.In(ist)) != "2026-10-21 18:30" || RecordDay(at.In(ist)) != "2026-10-21" {
+		t.Errorf("a time held in Kolkata records %q, %q", Record(at.In(ist)), RecordDay(at.In(ist)))
 	}
-	got, known, err = ParseAt("2026-10-21 07:19", "")
-	if err != nil || known || !got.Equal(at) {
-		t.Fatalf("legacy: %v %v %v", got, known, err)
+	if Doc(at, ist) != "2026-10-22 00:00 +05:30" {
+		t.Errorf("display = %q", Doc(at, ist))
 	}
-	for _, c := range [][2]string{{"2026-10-21 12:49", "IST"}, {"2026-10-21 12:49", "Z"}, {"2026-10-21 12:49", "+0530"},
-		{"2026-10-21 12:49", "5:30"}, {"2026-10-21 12:49", "+05:30 "}, {"2026-10-21 12:49 +05:30", "+05:30"},
-		{"2026-10-21", "+05:30"}, {"2026-10-21 12:49", "+25:00"}, {"2026-10-21 12:49 IST", ""}, {"", ""}} {
-		if _, _, err := ParseAt(c[0], c[1]); err == nil {
-			t.Errorf("ParseAt(%q, %q) was accepted", c[0], c[1])
+	got, err := ParseRecord("2026-10-21 18:30")
+	if err != nil || !got.Equal(at.Truncate(time.Minute)) {
+		t.Errorf("ParseRecord = %v, %v", got, err)
+	}
+	for _, bad := range []string{"", "2026-10-21", "2026-10-21 18:30 +05:30", "2026-10-21 18:30 IST", "2026-10-21T18:30:00Z", "2026-10-21 24:00"} {
+		if _, err := ParseRecord(bad); err == nil {
+			t.Errorf("ParseRecord(%q) was accepted", bad)
 		}
 	}
 }
