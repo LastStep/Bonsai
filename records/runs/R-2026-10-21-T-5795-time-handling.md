@@ -103,3 +103,18 @@ labels: {}
   `/usr/local/bin/bonsai`. T-5712, T-5713 written `done`.
 - Contract section 23 rewritten to amendment 2 (UTC only) under T-5795's grant of `design/contract.md`, the one
   running task while it ran; the grant emptied after. T-5795 stays `running` (its pieces) with no grant.
+- Batch 2 started (C and F side by side: disjoint files; F's plan dependency on the cut D dropped): T-5714 (sonnet) `M-2026-10-21-fba78500`, T-5716 (opus) `M-2026-10-21-79d933cc`; worktrees from `b11665b8`; both audit first.
+- Piece C's audit `M-2026-10-21-7cb6833e`: go, its four rulings yes.
+- Piece F's audit `M-2026-10-21-4400c928`: go; rung 0 skips the clock window (a branch's stamps are hours old at its climb); no new check word now (`stamp-form` proposed for after 1.0); memory joins the stamp check only (command mode's tripwire unchanged); a stamped build for the runner's session; `operating-bonsai` one line granted; no exemption for a late `finished`.
+- Piece C done `M-2026-10-21-dcbb2cc0`: `07ef4f7e`, climb green (sha256 `c5672655...a6a1`; rung 3 4,829 seen; rung 4 2,130 seen). Waits to land with F as one batch.
+- Piece F `M-2026-10-21-d0bc6736`: `500a08f3` (7 commits), climb green (sha256 `7e02b76a...ed5e`; rung 3 4,871 seen; rung 4 2,166 seen; one red climb before, fixed in code); `internal/engine/state.go`'s base:state row granted; told to rebase on C (`07ef4f7e`) for the batch. Runner (sonnet) `M-2026-10-21-80cacaca` on its scripted session (a guessed stamp refused, then accepted from `bonsai now`).
+- 15:21 Runner's session (`~/bonsai-checks/T-5716/session/`, read by the orchestrator): the guessed `started: 2026-10-21 15:20` (India time typed as UTC) refused `time-not-now` ("5 h 29 min from Bonsai's clock ... Bonsai's UTC now: 2026-10-21 09:50", next "run: bonsai now"); `bonsai now` printed `2026-10-21 09:51`; the rewrite allowed. PASS both.
+- Piece F rebased on C, `M-2026-10-21-1964a146`: `f0ba50c9`, climb green (sha256 `346cdc1d...09c3`; rung 3 4,874 seen; rung 4 2,168). Batch 2 (C+F) pushed as `T-5716`; a fresh verifier (opus) `M-2026-10-21-e50dfdde` (tests and correctness; security on the guard) beside CI. Piece E started early (its files apart from F's; it rebases on batch 2 at the end): T-5717 running, builder (opus) `M-2026-10-21-acd47a2c`.
+- 15:36 Batch 2's verifier: **PASS**, `M-2026-10-21-eeeddb2b` (opus, 15:28-15:36): its own go test/vet at f0ba50c9, Windows vet and test builds, the touched packages under UTC+14; 26 bypass probes a mode, all refused in agents mode; no fail-open; no test weakened. Notes: a stale stamp passes only inside a file that fails its format (refused `bad-format` in command mode, a `document` finding in check); a new file with an old day is refused (as the contract says); the workflow pack's templates wait for its next version.
+- Piece E's audit `M-2026-10-21-481101c2`: rc.1 answers `hook now` with exit 2, which would block every prompt on a machine whose bonsai predates the line: go on A (the line fails open on any exit); five count tests, `hookline.go` and `engine.go:43` granted; spike cost ~3.2 ms a call on WSL.
+- **Batch 2 landed.** CI run 39581058467 on `f0ba50c9` green on every job, both windows jobs among them (21 min), and
+  the verifier's PASS; `main` fast-forwarded `b11665b8..f0ba50c9` and pushed; branch `T-5716` deleted on GitHub; both
+  worktrees removed. Proofs: T-5714 `07ef4f7e` sha256 `c56726552bb9b7348d1a0f612ffe4030568042614a807f4e859451217fe1a6a1`;
+  T-5716 `f0ba50c9` sha256 `346cdc1dbd5abf3376020b750df8038df2081487c74fe1e4fa9eb78d5f0c09c3`; both green, clean,
+  logged by `/usr/local/bin/bonsai`. T-5714, T-5716 written `done`. Proposed for after 1.0 (piece F): a check word
+  `stamp-form` for pack documents' stamp fields an uncommitted change wrote.

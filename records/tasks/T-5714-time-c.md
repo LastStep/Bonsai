@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5714
 title: "Time, piece C: printed times in local time with their offset"
-status: approved
+status: done
 lane:
 done_when:
   - "every printed time in the inventory's part 3 through timefmt.Show, --utc on each command, --json unchanged (plan step 3)"
@@ -11,8 +11,8 @@ done_when:
 depends_on: [T-5713]
 blocked_by:
 created: 2026-10-21
-started:
-finished:
+started: 2026-10-21
+finished: 2026-10-21
 labels:
   bonsai.ladder: []
   bonsai.allows: []
