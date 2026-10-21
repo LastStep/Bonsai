@@ -25,7 +25,7 @@ const StatePointer = "fields: bonsai check --schema bonsai.state; how to fill: s
 // both ways.
 var StateFields = []struct{ Field, Meaning string }{
 	{"format", "The format and its version, always the first line; its comment points back to these docs"},
-	{"updated", "The day the page was last rewritten, as text: rewrite it with the page"},
+	{"updated", "The day the page was last rewritten, as text: rewrite it with the page, the UTC day from `bonsai now --day`"},
 	{"updated_by", "Who rewrote it: a role and its model, a person's name, or bonsai init for the first page"},
 	{"labels", "The labels the page carries, by name (a label definition in force says which go on STATE); {} for none"},
 }
