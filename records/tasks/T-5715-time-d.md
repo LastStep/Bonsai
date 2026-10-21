@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5715
 title: "Time, piece D: the sessions table: new rows with an offset, compared by instant"
-status: approved
+status: cut
 lane:
 done_when:
   - "new rows in timefmt.Doc, old rows untouched; Key, Missing, the sort and clean/rows.go compare by instant (plan step 4)"
@@ -12,7 +12,7 @@ depends_on: [T-5713]
 blocked_by:
 created: 2026-10-21
 started:
-finished:
+finished: 2026-10-21
 labels:
   bonsai.ladder: []
   bonsai.allows: []

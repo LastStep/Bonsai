@@ -1480,35 +1480,37 @@ its writer put (Bonsai spec §7, "What it cannot do").
 ## 23. Time
 
 > **Added 21 Oct (the director):** from the trial on rc.1's analysis (`records/trial-rc1.md`, rough 11, "three clocks
-> to line up"). The director chose "Full: script + stamps + now" and "option 1" (local time with its offset in the
-> files a person opens), and the guard's check of fresh stamps over a move command; the plan is
-> `records/plans/P-T-5795.md` (approved 21 Oct). An addition within §2.2's rules: formats set 11; no field removed,
-> renamed or narrowed.
+> to line up"). The director chose "Full: script + stamps + now", the guard's check of fresh stamps over a move
+> command, and then amended the rule: **"anyplace we record time, i want it to be in utc only. whenever we need to
+> display, we can always convert it to whatever timezone we need to. by always recording in utc we ensure that we have
+> a consistent timestamp everywhere"**. The plan is `records/plans/P-T-5795.md` (approved 21 Oct; amendment 2). An
+> addition within §2.2's rules: formats set 11 changes descriptions and adds `bonsai.now/1`; no field or pattern
+> changes.
 
-**Bonsai is the only clock.** No agent invents a time: it takes one from `bonsai now`, and the guard checks every
-fresh stamp it writes (below). A person reads every time in their own zone, with the offset shown.
+**Bonsai is the only clock, and every recorded time is UTC.** No agent invents a time: it takes one from `bonsai now`,
+and the guard checks every fresh stamp it writes (below). A person reads every time in their own zone: Bonsai converts
+when it prints.
 
-| Kind | Form | Zone | Fields |
-|---|---|---|---|
-| **Instant**, in a machine record | RFC 3339 with `Z`: milliseconds where the record has them today (`2026-10-21T07:19:04.325Z`), seconds where it has seconds | UTC | the log's `at`; an ask's `at`; a message's `created`; the ladder result's `started`, `finished`; the agents view; the messages view's `last_at`; the machine record, the personal refresh and the release record (seconds) |
-| **Document time**, in a file a person opens | `YYYY-MM-DD HH:MM ±HH:MM` (`2026-10-21 12:49 +05:30`) | the writer's local zone, as a numeric offset, never a zone name | a run report's `started`, `finished`; a new row's `start`, `end` in `.bonsai/sessions.md` |
-| **Day** | `YYYY-MM-DD` | the writer's local day | a task's `created`, `started`, `finished`; STATE's and a memory note's `updated`; the packs' dates; a run report id's day |
-| **Machine-record day** | `YYYY-MM-DD` | the UTC day | the log's `w-<day>` files; the asks' day files; a message id's day |
+| Kind | Form | Fields |
+|---|---|---|
+| **Instant**, in a machine record | RFC 3339 with `Z`: milliseconds where the record has them (`2026-10-21T07:19:04.325Z`), seconds where it has seconds | the log's `at`; an ask's `at`; a message's `created`; the ladder result's `started`, `finished`; the agents view; the messages view's `last_at`; the machine record, the personal refresh and the release record (seconds) |
+| **Record time**, in a document | `YYYY-MM-DD HH:MM`, UTC | a run report's `started`, `finished`; `.bonsai/sessions.md`'s `start`, `end` |
+| **Day** | `YYYY-MM-DD`, the UTC day | a task's `created`, `started`, `finished`; STATE's and a memory note's `updated`; the packs' dates; a run report id's day; the log's `w-<day>` files; the asks' day files; a message id's day |
 
-- **Legacy.** A document time with no offset, written before set 11, still reads and is never rewritten. In a run
-  report it means "offset unknown"; in `.bonsai/sessions.md` it is UTC, as that table always was. The sessions table
-  stays append-only: old rows keep their form, new rows take the offset, and readers compare rows by instant.
-- **`bonsai now`** prints the time in the document form; `--utc` in the instant form; `--day` the local day; `--json`
-  the output `bonsai.now/1` (`local`, `utc`, `day`, `offset`, `zone`).
-- **Printed output** shows every time in the local zone with its offset; `--utc` shows the stored form; `--json`
-  output keeps the stored form.
-- **Now, told:** a hook on each of the person's prompts and at each subagent's start gives the agent the current time
-  in the document form.
+- **Legacy.** A run report's times, a task's or STATE's days and a pack document's dates written before set 11 hold the
+  writer's local time, its offset unknown. They are never rewritten, and `check` judges only new writes. The sessions
+  table was always UTC.
+- **`bonsai now`** prints the record time in UTC (`2026-10-21 08:19`); `--day` the UTC day; `--iso` the instant;
+  `--local` the person's own time with its offset (`2026-10-21 13:49 +05:30`), for display only; `--json` the output
+  `bonsai.now/1` (`utc`, `day`, `iso`, `local`, `offset`, `zone`).
+- **Printed output** shows every time converted to the local zone with its offset; `--utc` shows the stored form;
+  `--json` output keeps the stored form.
+- **Now, told:** a hook on each of the person's prompts and at each subagent's start gives the agent the current time,
+  UTC first and the local time beside it.
 - **Fresh stamps checked:** the guard refuses (`time-not-now`, next: `bonsai now`) an Edit or Write that writes a
   fresh stamp not of Bonsai's clock: a task's, run report's, memory note's or STATE's date or time field, or a pack
   kind's field named in its `stamp`, going from empty to a value, or set in a new file (and any change to STATE's or
-  a memory note's `updated`). A time must carry its offset and lie within 10 minutes of now; a day must not be after
-  today nor more than 2 days before it. A correction of a value already there, and an offset added to a legacy time,
-  pass. `bonsai check` flags a document time with no offset in a field an uncommitted change wrote.
-- **Not caught:** a time written by a shell command, by git or in a person's editor (until `check` sees it); a wrong
-  value typed as a correction.
+  a memory note's `updated`). A time must lie within 10 minutes of the UTC now; a day must not be after the UTC today
+  nor more than 2 days before it. A correction of a value already there passes.
+- **Not caught:** a time written by a shell command, by git or in a person's editor; a wrong value typed as a
+  correction.

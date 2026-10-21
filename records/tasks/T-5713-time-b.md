@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5713
 title: "Time, piece B: bonsai now and internal/timefmt"
-status: approved
+status: done
 lane:
 done_when:
   - "internal/timefmt as plan P-T-5795 step 2 says, every function taking a *time.Location, tests with injected locations (Asia/Kolkata, UTC, a DST zone) via time/tzdata in tests only"
@@ -11,8 +11,8 @@ done_when:
 depends_on: [T-5712]
 blocked_by:
 created: 2026-10-21
-started:
-finished:
+started: 2026-10-21
+finished: 2026-10-21
 labels:
   bonsai.ladder: []
   bonsai.allows: []

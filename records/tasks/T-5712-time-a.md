@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5712
 title: "Time, piece A: formats set 11: document times with an offset, now.schema.json"
-status: approved
+status: done
 lane:
 done_when:
   - "formats set 11 as plan P-T-5795 step 1 says: the run and sessions patterns widened (a strict superset), every time field's description naming its form and zone, now.schema.json with its example, three trick files, manifest and README"
@@ -11,8 +11,8 @@ done_when:
 depends_on: []
 blocked_by:
 created: 2026-10-21
-started:
-finished:
+started: 2026-10-21
+finished: 2026-10-21
 labels:
   bonsai.ladder: []
   bonsai.allows: []

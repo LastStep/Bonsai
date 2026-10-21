@@ -72,3 +72,34 @@ labels: {}
   "Time" written under T-5795's grant of `design/contract.md` (granted while the step ran, then emptied). The six
   pieces written `approved` on the director's approval: T-5712 (A), T-5713 (B), T-5714 (C), T-5715 (D), T-5716 (F),
   T-5717 (E). Batch 1 next: T-5712 (opus) and T-5713 (sonnet) side by side.
+- Records commit `79adf118` pushed (contract section 23, the six pieces, STATE). Batch 1 started: T-5712 and T-5713
+  written `running`; worktrees `~/Servers/Bonsai-T-5712` and `-T-5713` from `79adf118`; builder (opus)
+  `M-2026-10-21-97863d0c` on A (Owns `formats/**`), builder (sonnet) `M-2026-10-21-b6585b76` on B (Owns
+  `internal/timefmt/**`, `cmd/bonsai/now.go`, its registration, `docs/reference/**`; rebases on A for the schema test).
+  Both audit first.
+- Piece B's audit `M-2026-10-21-431d0b66`: go given (`internal/format/format.go`'s one row added to B's Owns; A's now.schema.json to carry the refusal object, told to A; `Show` utc form in milliseconds).
+- Piece B at `6552ae4d` (`M-2026-10-21-2c31099c`), waiting on A; Owns amended: `internal/format/now.go`, one line in `packs/base/skills/operating-bonsai/SKILL.md` (its skill test needs it); `zone` described to A as an abbreviation never parsed.
+- about 13:50 Piece A's audit `M-2026-10-21-22870bde`: widening the patterns breaks contract 2.2 (the schema-compare gate; old readers, rc.1 included, would refuse). Asked, the director: **"A separate offset field"**. Plan amendment 1 written (run `offset`, sessions row `offset`, no pattern change; registry to A). A given go; B told the registry is A's and to split time and offset in timefmt.
+- Piece B at `43b6d20e`: timefmt gives time and offset apart (`DocTime`, `Offset`, `ParseAt`); `now --json` `local` is the time alone; told to A.
+- Piece A `M-2026-10-21-7929e33d`: rc.1 accepts a run report with a quoted `offset` (an unquoted `+05:30` is refused `quote-this-value`: the offset is written quoted); granted `internal/format/task.go`, `internal/format/format_test.go`, a fourth trick file; `internal/format/table.go` (a tenth sessions column) held until rc.1 is tested on a 10-column table.
+- Piece A at `229a6432` (`M-2026-10-21-1335688e`): set 11 built (run `offset`, now, 30 descriptions, four trick files); climb red on one count test (`internal/schema`, 28 to 29 examples), its file granted. **rc.1 refuses a 10-column sessions table** ("line 4: the line is not the table's header"): the column is left out of set 11; to the director.
+- about 14:20 Asked how the sessions table takes local time (rc.1 refuses a tenth column), the director amended the
+  rule: "anyplace we record time, i want it to be in utc only. whenever we need to display, we can always convert it to
+  whatever timezone we need to. by always recording in utc we ensure that we have a consistent timestamp everywhere".
+  Plan amendment 2 written: every recorded time UTC (run reports' times and every day field from set 11), display
+  converts; the `offset` field dropped before landing; piece D (T-5715) cut on this word; `bonsai now` prints UTC.
+- Piece B at `a1159797`: UTC rework (`Record`, `RecordDay`, `ParseRecord`; `bonsai now` UTC by default, `--day`, `--iso`, `--local`; the three local-day writers to UTC, a test shown failing without the change); waiting on A.
+- Piece A done `M-2026-10-21-45ea9934`: `3f9bba58` (2 commits: set 11 as one formats commit, the examples count), climb green (sha256 `6214c451...3731`; rung 3 4,820 seen, 9 skipped; rung 4 2,126 seen, 3 skipped); no field or pattern changed, descriptions UTC; the compare gate untouched and passing. B told to rebase on it.
+- Piece B done `M-2026-10-21-b534be39`: `97be0d99`, rebased on A, climb green (sha256 `a0267dc2...4866`; rung 3 4,835
+  seen; rung 4 2,131 seen). Orchestrator's read of both diffs: A descriptions only, no field or pattern changed; the
+  compare gate's base moved to set 10's commit `ee1cbc9f` by its documented rule (gate logic unchanged); count tests
+  29 and 135; B inside its amended Owns (timefmt, now, the three UTC writers, the skill line, its run report). Both
+  ladder records name `/usr/local/bin/bonsai` with the results' sha256. Batch pushed: `T-5713` (top); CI on
+  `97be0d99` running.
+- **Batch 1 landed.** CI run 39571482935 on `97be0d99` green on every job, both windows jobs among them (26.6 min);
+  `main` fast-forwarded `79adf118..97be0d99` and pushed; branch `T-5713` deleted on GitHub; both worktrees removed.
+  Proofs: T-5712 `3f9bba58` sha256 `6214c451b6cf33c959358c5ef2ab198e8d127de053e9b7ab55ff3eb912063731`; T-5713
+  `97be0d99` sha256 `a0267dc29a24931eadc00544f014a0293ba69ba71ff1cd113b622e6ef4854866`; both green, clean, logged by
+  `/usr/local/bin/bonsai`. T-5712, T-5713 written `done`.
+- Contract section 23 rewritten to amendment 2 (UTC only) under T-5795's grant of `design/contract.md`, the one
+  running task while it ran; the grant emptied after. T-5795 stays `running` (its pieces) with no grant.
