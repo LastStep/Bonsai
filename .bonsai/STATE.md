@@ -1,15 +1,20 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-20
+updated: 2026-10-21
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 20 Oct 2026 (a day session, the director present).
-**Step 5.7: rc.1 is out and the trial on it has landed; next, the trial's analysis.** `main` at `7afb9faa` plus this
-session's records commit, CI green. **20 Oct (a day session, the director present):** the team-work research moved to
+Rewritten, never appended (`base:state`). Last rewritten 21 Oct 2026 (a day session, the director present).
+**Step 5.7: the trial's analysis has landed; batch 4 (the director's read of it) is next.** `main` at `578a8724` plus
+this session's records commit, CI green. **21 Oct:** `T-5709` built: `records/trial-rc1.md` (the trial on rc.1, every
+claim sourced; a Haiku source check, 6 of 7 mismatches held and fixed), landed `578a8724` by CI on the branch (run
+39555994155); the README's first-project dry run on rc.1 done (a builder, after a runner was refused by BUG-013; the
+director ran step 6's `bonsai update --yes`; the climb green; 13 fixes proposed, in the page); BUG-092 to BUG-096
+added; the director asked for README research (kept at `~/bonsai-checks/T-5711/readme-research.md`, for T-5711).
+**20 Oct (a day session, the director present):** the team-work research moved to
 the studio's research folder (solo-to-team-ai) and its unpushed commit undone; CI on the branch (`T-5792`); 5.7.3,
 5.7.4, 5.7.1 and 5.7.2 landed (`11943f30`, `4ebee8cc`, `137e419f`, `4ec5c432`); V1 failed the release path once (the tag
 check passed an unreadable answer), fixed, passed; the director's batch 1 (settings, read back) and batch 2:
@@ -219,13 +224,13 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | Batch 1, the settings; batch 2, rc.1 | `T-5705` | verify | read back; rc.1 run 39410125869; V2 PASS; installs read back; check 10's Windows half after rc.1 not yet run |
 | 5.7.7, the trial on rc.1 | `T-5707` | done | climb of main by rc.1 green; proposals; the pick B |
 | 5.7.8, the trial's feature | `T-5708` | done | `7afb9faa`; verifier PASS |
-| **5.7.9, the trial's analysis** | `T-5709` | todo | **next session's first work**; evidence named in the task |
+| 5.7.9, the trial's analysis | `T-5709` | verify | `578a8724`; `records/trial-rc1.md`; **waits on the director's reply (batch 4)** |
 | rc.2's fixes (BUG-014 first; the notes' line; Go; CLAUDE.md's stale lines; ...) | `T-5710` | todo | the list in the task |
-| The README improved and demo videos (the director's added step) | `T-5711` | todo | after the trial's analysis, before rc.2; to talk through first |
+| The README improved and demo videos (the director's added step) | `T-5711` | todo | before rc.2; to talk through first; research `~/bonsai-checks/T-5711/readme-research.md`; the dry run's README fixes in `records/trial-rc1.md` |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Next, in this order:** `T-5709`, the analysis (a new records page, trial-rc1, and an agent's dry run of the README's
-first-project steps on rc.1) for the director's batch 4; then the README and demos talk (`T-5711`); rc.2's fixes
+**Next, in this order:** the director's batch 4 (read `records/trial-rc1.md`; "happy" or what to fix, each a 5.7.10
+task; then `T-5709` is `done`); then the README and demos talk (`T-5711`); rc.2's fixes
 (`T-5710`, each its own task, BUG-014 before 1.0); rc.2 (note 5.7.10: the director's tag, approval and WSL install;
 the stages the changes touched re-run as probes); the director's own trial on a fresh project; 5.7.6; batch 5. Every
 landing by CI on the branch; in a batch the one piece that changes protected files goes on top (rung 0 judges the
@@ -235,7 +240,7 @@ workflow:builder` in its worktree (`claude-here` is scratch only), launcher `~/b
 `R-2026-10-19-T-5615` names them. Every known bug: `records/bugs.md`.
 
 **How work runs now:** agents by role, briefed with `bonsai message`; the shared rules
-`~/bonsai-checks/briefs/common-2026-10-20.md` (over `common-2026-10-19-day.md`, `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
+`~/bonsai-checks/briefs/common-2026-10-21.md` (over `common-2026-10-20.md`, `common-2026-10-19-day.md`, `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
 Windows runs by the orchestrator only, one at a time; load modest), plus the director's 19 Oct afternoon rules above. A
 verifier, runner or auditor cannot yet write a scratch file by the Write tool (BUG-013; the sanctioned folder is not
 built): it returns its work in its final reply, or the orchestrator or a builder makes the scratch. Run reports' times
@@ -260,7 +265,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than
   the code.
-- **Next session:** batch 4, the trial's analysis (about 30 minutes to read); the README and demos talk; BUG-014's
+- **Now:** batch 4, the trial's analysis, `records/trial-rc1.md` (about 30 minutes to read); the README and demos talk; BUG-014's
   rule (which tags count as a pack's versions); then rc.2's tag, approval and WSL install; their own trial; their word
   for 1.0.
 

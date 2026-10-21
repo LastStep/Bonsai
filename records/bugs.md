@@ -1,6 +1,6 @@
 ---
 title: Known bugs   # the bugs register; every field and how to fill it: skill workflow:bugs
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Known bugs
@@ -22,7 +22,7 @@ director".
 | **BUG-008** | The packs' release job could run only on push (it runs on more events) | the workflow pack's release workflow in LastStep/bonsai-workflow; 91d8a972 (said; the repo is outside my folders) | STATE "Loose ends, from tonight" |
 | **BUG-009** | check.sh validate prints "ok" in words that mislead | ~/bonsai-checks/bonsai-workflow/check.sh (workflow pack ci); 91d8a972 (said; not re-read) | STATE "Loose ends, from tonight" |
 | **BUG-011** | The guard may read a `~/` redirect target as relative to the working folder (refuses more, not less). Not confirmed: shell_paths.go:107,495 (delAbs) read ~/ against the home, so it may hold for the redirect form only | internal/guard shell_paths.go delAbs; shell_words.go:1132; 91d8a972 (said; not confirmed) | ~/bonsai-checks/verify-5.5-end/report-r2.md:53-60 |
-| **BUG-013** | The verifier and runner roles cannot make scratch repositories, so those steps go to a builder | the workflow pack's role files (agents/verifier.md, runner.md); 91d8a972 (said) | 5.5 end verifier (report-r2.md); STATE "How work runs now" |
+| **BUG-013** | The verifier and runner roles cannot make scratch repositories, so those steps go to a builder; the guard is uneven there: a runner's `mkdir -p` under ~/bonsai-checks/ passed while its `git init` and `rmdir` in the same tree were refused (21 Oct, M-2026-10-21-9ea8e432's thread) | the workflow pack's role files (agents/verifier.md, runner.md); 91d8a972 (said) | 5.5 end verifier (report-r2.md); STATE "How work runs now" |
 | **BUG-014** | Bonsai's old tags v0.1.1-v0.4.3 read as newer versions of base in bonsai status (no pack-scoped tag form yet) | internal/engine tag reading (newer.go/release.go), cmd/bonsai/status.go; 91d8a972 (said) | STATE "Waiting on the director, Later" |
 | **BUG-015** | A tag whose release is not published yet (waiting for approval, or its run failed) counts as a release, and its install lines fail to download. The orchestrator decided against a published-only check (Go's net would break TestTheBinaryLinksNoResolver) | internal/engine release.go, limits comment at line 25 (pointed) | M-2026-10-18-c3af4758; M-2026-10-18-412e8ad9; T-5605 |
 | **BUG-016** | status_command's rule (letters, spaces, - and /) allows a plain harmful command such as `rm -rf /`; the plan bars only metacharacters | internal/workspace/homesettings.go, StatusCommandOK (lines 108-120, pointed) | M-2026-10-18-8ba15229 (N5); T-5693 |
@@ -36,7 +36,7 @@ director".
 | **BUG-025** | A pack's relative deny rule does not hold after a shell `cd` | Claude Code deny rules as written by the pack; 91d8a972 (said) | STATE "Placed for later, 5.5" |
 | **BUG-026** | The operating skill's line on an added rung says a person's step (since K1); the plan's text near line ~4031 does not | packs/base/skills/operating-bonsai/SKILL.md vs design/plan-5.md ~4031; 91d8a972 (said; skill since split, not re-read) | STATE "Placed for later, 5.5" |
 | **BUG-028** | A shared active-task fixture for a task file holding only `garbage: [` is missing | formats/ fixtures; 91d8a972 (said) | STATE "Placed for later, the next formats set" |
-| **BUG-029** | ladder.schema.json's `leftovers` description is wrong or stale | formats/schemas/ladder.schema.json; 91d8a972 (said) | STATE "Placed for later, the next formats set" |
+| **BUG-029** | ladder.schema.json's `leftovers` description is wrong or stale; seen 20 Oct: a climb inside a named session listed that session's own connector processes (npm, shell, node) as leftovers (records/trial-rc1.md, rough 9) | formats/schemas/ladder.schema.json; 91d8a972 (said) | STATE "Placed for later, the next formats set" |
 | **BUG-033** | The plan's text on 5.5.11's limits is looser than the code | design/plan-5.md (5.5.11) vs internal/guard/roles.go, budget.go; 91d8a972 (said) | STATE "Whenever they like" |
 | **BUG-034** | 2,167 subagent ids in the log carry only a stop record | the log under .bonsai/local/log (recorder); 91d8a972 (said; STATE: "the recorder's look before 1.0") | STATE "Loose ends, from tonight" |
 | **BUG-035** | ~/.pi/agent/models.json and Gemini's other files are not walled | internal/guard walls (said); 91d8a972 | STATE "Loose ends, from tonight, after 1.0 unless the director says otherwise" |
@@ -74,6 +74,11 @@ director".
 | **BUG-087** | The text layout prints a stray blank line before a next step at widths 60 to 80 | internal/textui (said by T-5698's builder); 71176d92 | M-2026-10-18-d46672d6 (T-5698) |
 | **BUG-090** | The installed govulncheck (v1.2.0) and golangci-lint (built with go1.25) cannot read Go 1.27 code; agents run the pinned versions through `go run` instead | this machine's tools, not the repo; a82d18b5 (said by T-5700's builder) | M-2026-10-18-dce878aa (T-5700) |
 | **BUG-091** | Several next-step checks in engine_test.go use `HasSuffix(nextOf(out), ...)`, which a trailing row after the next step would not fail; `endsWith` (T-5612) holds the end | cmd/bonsai/engine_test.go; 90158ade (said by T-5612's builder) | M-2026-10-19-a1efbe1c (T-5612) |
+| **BUG-092** | A named session that ends its turn to wait for an answer to its ask is a stop, so the stop gate blocks it (the ladder is red); Claude Code allows eight blocks in a row; after 1.0 | internal/stopgate; the log of s-64096e53 :126 (pointed) | records/trial-rc1.md, rough 3 (T-5709) |
+| **BUG-093** | A builder started as `claude -p --agent workflow:builder` takes on every connector of the person's account (the trial's: 6 servers, 65 tools, mail and calendar among them); rc.2 item 7 tries `--strict-mcp-config` | ~/bonsai-checks/T-5708/stream.jsonl, the init line (pointed) | records/trial-rc1.md, rough 8 (T-5709) |
+| **BUG-094** | The trial builder's climbs took 6.4 and 6.5 minutes of wall time for about 2 minutes of rungs (the climb of main: 2.2 for 2.0); not explained; after 1.0 unless it recurs | .bonsai/local/ladder/T-5708.json, T-5707.json (pointed) | records/trial-rc1.md, rough 12 (T-5709) |
+| **BUG-095** | .bonsai/sessions.md files a helper briefed before its task read running under another task (the trial's proposals auditor under T-5705, its brief from auditor@T-5707); after 1.0 | .bonsai/sessions.md:429 (pointed) | records/trial-rc1.md, gaps (T-5709) |
+| **BUG-096** | A session started from inside another Claude Code session records that session's id in every log record's `remote` field (inherited `CLAUDE_CODE_BRIDGE_SESSION_ID`); after 1.0 | the README dry run's demo log (pointed, since removed) | M-2026-10-21-8afc2b72 (T-5709) |
 
 ## Fixed
 

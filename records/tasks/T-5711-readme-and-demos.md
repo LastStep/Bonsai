@@ -24,3 +24,8 @@ showcasing how bonsai works (and does for a project)". Asked the demos' form: "w
 time comes". Not in plan-5.md's 5.7 section: a step the director added. From the last pre-release's tag to v1.0.0,
 main takes only records (note 5.7.10, 4), so it lands before the last pre-release; the trial on rc.1 can give real
 footage.
+
+**Research (21 Oct, the director's ask):** how good READMEs explain a project, with sources, 13 examples measured, the
+terminal-demo tools and what GitHub renders, and a proposed outline: `~/bonsai-checks/T-5711/readme-research.md`
+(researcher, Sonnet, `M-2026-10-21-297b7c71`). The README dry run's ten README fixes: `records/trial-rc1.md`, "The
+README's dry run".
