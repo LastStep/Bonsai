@@ -5,13 +5,20 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-5795 | Before 1.0: one system for time (stored with its zone, shown in local time, never typed by hand), planned with the director | approved | full | 2026-10-21 | |
 | T-5794 | Go held before rc.1: go.mod's toolchain to go1.27.3, govulncheck clean on it | cut | | 2026-10-20 | 2026-10-20 |
 | T-5793 | Scratch folders, declared in bonsai.yaml: what one is, where it lives, which roles may use it and with what authority | todo | full | | |
 | T-5792 | CI on the branch: a batch's branch pushed and green on CI (its windows jobs among them) before main moves | done | | 2026-10-20 | 2026-10-20 |
 | T-5790 | The tagged pass narrowed to the packages the bonsai_test_fault tag can reach, held there by a test | done | | 2026-10-19 | 2026-10-19 |
+| T-5717 | Time, piece E: now told on each prompt and each subagent start | approved | | | |
+| T-5716 | Time, piece F: the guard checks fresh stamps against Bonsai's clock | approved | | | |
+| T-5715 | Time, piece D: the sessions table: new rows with an offset, compared by instant | approved | | | |
+| T-5714 | Time, piece C: printed times in local time with their offset | approved | | | |
+| T-5713 | Time, piece B: bonsai now and internal/timefmt | approved | | | |
+| T-5712 | Time, piece A: formats set 11: document times with an offset, now.schema.json | approved | | | |
 | T-5711 | Before 1.0: the README improved, and demo videos showing how Bonsai works for a project | todo | full | | |
 | T-5710 | rc.2's fixes: the list gathered on 20 Oct (each its own task when it starts, T-5712 on) | todo | | | |
-| T-5709 | 5.7.9, the trial's analysis: records/trial-rc1.md for the director, and an agent's dry run of the README's first-project steps | verify | | 2026-10-21 | |
+| T-5709 | 5.7.9, the trial's analysis: records/trial-rc1.md for the director, and an agent's dry run of the README's first-project steps | done | | 2026-10-21 | 2026-10-21 |
 | T-5708 | The trial's feature: the stop gate names its rule when it blocks (BUG-089, with BUG-088) | done | | 2026-10-20 | 2026-10-20 |
 | T-5707 | 5.7.7, Bonsai on itself on rc.1: the repo brought to rc.1, the proposals, the director's pick run end to end, its records | done | | 2026-10-20 | 2026-10-20 |
 | T-5705 | 5.7.5, the releases checked: batch 1 read back, each pre-release's and 1.0's files checked on both sides, V2, the director's installs read back | verify | | 2026-10-20 | |

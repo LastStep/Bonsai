@@ -15,7 +15,7 @@ started: 2026-10-21
 finished:
 labels:
   bonsai.ladder: []
-  bonsai.allows: ["design/contract.md"]
+  bonsai.allows: []
 ---
 
 # One system for time, before 1.0 (T-5795)
@@ -34,3 +34,9 @@ example?"**
 The orchestrator's first sketch (to be bettered, not assumed): store UTC with the zone everywhere; show the machine's
 local zone, named, wherever a person reads; agents never type a time (run reports' rows filled from the log); any time
 still typed carries its zone. Run report: `records/runs/R-2026-10-21-T-5795-time-handling.md`.
+
+**Approved 21 Oct.** The plan `records/plans/P-T-5795.md` (revision 2; reviews `M-2026-10-21-979a667b` FAIL,
+`M-2026-10-21-b5a38f91` PASS); the director chose the guard's check of fresh stamps ("Guard checks the stamp") and
+approved it ("Approved"). Step 0 done: `design/contract.md` section 23 "Time". Pieces: `T-5712` (A, formats set 11),
+`T-5713` (B, `bonsai now`), `T-5714` (C, printed output), `T-5715` (D, the sessions table), `T-5716` (F, the guard),
+`T-5717` (E, now on prompts and subagents). This task closes when the six have landed and the verifier has passed.

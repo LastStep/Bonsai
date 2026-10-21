@@ -8,7 +8,7 @@ labels: {}
 # Bonsai: where it stands
 
 Rewritten, never appended (`base:state`). Last rewritten 21 Oct 2026 (a day session, the director present).
-**Step 5.7: the trial's analysis has landed; batch 4 (the director's read of it) is next.** `main` at `578a8724` plus
+**Step 5.7: the trial's analysis landed and the director read it (batch 4: "looks good overall"); time handling (`T-5795`) planned and approved (`records/plans/P-T-5795.md`, contract section 23), six pieces `T-5712`-`T-5717` before rc.2; batch 1 building.** `main` at `578a8724` plus
 this session's records commit, CI green. **21 Oct:** `T-5709` built: `records/trial-rc1.md` (the trial on rc.1, every
 claim sourced; a Haiku source check, 6 of 7 mismatches held and fixed), landed `578a8724` by CI on the branch (run
 39555994155); the README's first-project dry run on rc.1 done (a builder, after a runner was refused by BUG-013; the
@@ -224,13 +224,14 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | Batch 1, the settings; batch 2, rc.1 | `T-5705` | verify | read back; rc.1 run 39410125869; V2 PASS; installs read back; check 10's Windows half after rc.1 not yet run |
 | 5.7.7, the trial on rc.1 | `T-5707` | done | climb of main by rc.1 green; proposals; the pick B |
 | 5.7.8, the trial's feature | `T-5708` | done | `7afb9faa`; verifier PASS |
-| 5.7.9, the trial's analysis | `T-5709` | verify | `578a8724`; `records/trial-rc1.md`; **waits on the director's reply (batch 4)** |
+| 5.7.9, the trial's analysis | `T-5709` | done | `578a8724`; `records/trial-rc1.md`; batch 4: "looks good overall" |
+| **One system for time** (the trial's rough 11; the director: "option 3", before 1.0) | `T-5795` | approved | plan `records/plans/P-T-5795.md` approved; pieces A `T-5712`, B `T-5713`, C `T-5714`, D `T-5715`, F `T-5716`, E `T-5717`, four batches (A+B, C+D, F, E); then the director's `bonsai update --allow-exec --yes` |
 | rc.2's fixes (BUG-014 first; the notes' line; Go; CLAUDE.md's stale lines; ...) | `T-5710` | todo | the list in the task |
 | The README improved and demo videos (the director's added step) | `T-5711` | todo | before rc.2; to talk through first; research `~/bonsai-checks/T-5711/readme-research.md`; the dry run's README fixes in `records/trial-rc1.md` |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Next, in this order:** the director's batch 4 (read `records/trial-rc1.md`; "happy" or what to fix, each a 5.7.10
-task; then `T-5709` is `done`); then the README and demos talk (`T-5711`); rc.2's fixes
+**Next, in this order:** `T-5795`'s four batches (A+B, C+D, F, E), a fresh Opus verifier, the director's `bonsai
+update --allow-exec --yes` after E; then the README and demos talk (`T-5711`); rc.2's fixes
 (`T-5710`, each its own task, BUG-014 before 1.0); rc.2 (note 5.7.10: the director's tag, approval and WSL install;
 the stages the changes touched re-run as probes); the director's own trial on a fresh project; 5.7.6; batch 5. Every
 landing by CI on the branch; in a batch the one piece that changes protected files goes on top (rung 0 judges the
@@ -265,7 +266,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than
   the code.
-- **Now:** batch 4, the trial's analysis, `records/trial-rc1.md` (about 30 minutes to read); the README and demos talk; BUG-014's
+- **After piece E lands:** `bonsai update --allow-exec --yes` in the main checkout (the orchestrator gives the line); the README and demos talk; BUG-014's
   rule (which tags count as a pack's versions); then rc.2's tag, approval and WSL install; their own trial; their word
   for 1.0.
 

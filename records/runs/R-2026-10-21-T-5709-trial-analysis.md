@@ -110,3 +110,9 @@ labels: {}
   and pushed; the branch deleted on GitHub; the worktree removed. No fresh verifier: a records page, not code (the
   facts lens ran as the Haiku source check, above).
 - T-5709 written `verify`: done_when's third line, the director's reply (batch 4), is still to come.
+- about 12:45 **Batch 4, the director's reply:** "looks good overall. one thing that worries me is the three clocks to line
+  up thing. what is going on there exactly? and do we need a better system of handling time overall? how can we
+  solve this on a higher level?" Explained (the table of who writes which clock); asked when; the director: "option 3.
+  also try to once see if there is a better way to fix this for good than what you suggested. like maybe a simple time
+  script to run for example?" Rough 11 moves from "after 1.0" to before 1.0, as its own task `T-5795` (full lane,
+  planning first). T-5709 written `done`.

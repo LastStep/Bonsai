@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5709
 title: "5.7.9, the trial's analysis: records/trial-rc1.md for the director, and an agent's dry run of the README's first-project steps"
-status: verify
+status: done
 lane:
 done_when:
   - "records/trial-rc1.md as plan-5.md note 5.7.9 says: every claim pointing at a file, a record or a command's output; a Haiku listing of files and records checked against it; the privacy grep"
@@ -12,7 +12,7 @@ depends_on: [T-5708]
 blocked_by:
 created: 2026-10-20
 started: 2026-10-21
-finished:
+finished: 2026-10-21
 labels:
   bonsai.ladder: []
   bonsai.allows: []

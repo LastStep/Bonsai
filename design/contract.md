@@ -1476,3 +1476,39 @@ message as a grant or as the person's word (grants come from tasks, §5.5); answ
 person stay `bonsai ask`, §9). Messages are attributed, not authenticated: `from` is held to the writer's own address
 where the guard reads the shell line that runs `bonsai message`, and a message written where it cannot says whatever
 its writer put (Bonsai spec §7, "What it cannot do").
+
+## 23. Time
+
+> **Added 21 Oct (the director):** from the trial on rc.1's analysis (`records/trial-rc1.md`, rough 11, "three clocks
+> to line up"). The director chose "Full: script + stamps + now" and "option 1" (local time with its offset in the
+> files a person opens), and the guard's check of fresh stamps over a move command; the plan is
+> `records/plans/P-T-5795.md` (approved 21 Oct). An addition within §2.2's rules: formats set 11; no field removed,
+> renamed or narrowed.
+
+**Bonsai is the only clock.** No agent invents a time: it takes one from `bonsai now`, and the guard checks every
+fresh stamp it writes (below). A person reads every time in their own zone, with the offset shown.
+
+| Kind | Form | Zone | Fields |
+|---|---|---|---|
+| **Instant**, in a machine record | RFC 3339 with `Z`: milliseconds where the record has them today (`2026-10-21T07:19:04.325Z`), seconds where it has seconds | UTC | the log's `at`; an ask's `at`; a message's `created`; the ladder result's `started`, `finished`; the agents view; the messages view's `last_at`; the machine record, the personal refresh and the release record (seconds) |
+| **Document time**, in a file a person opens | `YYYY-MM-DD HH:MM ±HH:MM` (`2026-10-21 12:49 +05:30`) | the writer's local zone, as a numeric offset, never a zone name | a run report's `started`, `finished`; a new row's `start`, `end` in `.bonsai/sessions.md` |
+| **Day** | `YYYY-MM-DD` | the writer's local day | a task's `created`, `started`, `finished`; STATE's and a memory note's `updated`; the packs' dates; a run report id's day |
+| **Machine-record day** | `YYYY-MM-DD` | the UTC day | the log's `w-<day>` files; the asks' day files; a message id's day |
+
+- **Legacy.** A document time with no offset, written before set 11, still reads and is never rewritten. In a run
+  report it means "offset unknown"; in `.bonsai/sessions.md` it is UTC, as that table always was. The sessions table
+  stays append-only: old rows keep their form, new rows take the offset, and readers compare rows by instant.
+- **`bonsai now`** prints the time in the document form; `--utc` in the instant form; `--day` the local day; `--json`
+  the output `bonsai.now/1` (`local`, `utc`, `day`, `offset`, `zone`).
+- **Printed output** shows every time in the local zone with its offset; `--utc` shows the stored form; `--json`
+  output keeps the stored form.
+- **Now, told:** a hook on each of the person's prompts and at each subagent's start gives the agent the current time
+  in the document form.
+- **Fresh stamps checked:** the guard refuses (`time-not-now`, next: `bonsai now`) an Edit or Write that writes a
+  fresh stamp not of Bonsai's clock: a task's, run report's, memory note's or STATE's date or time field, or a pack
+  kind's field named in its `stamp`, going from empty to a value, or set in a new file (and any change to STATE's or
+  a memory note's `updated`). A time must carry its offset and lie within 10 minutes of now; a day must not be after
+  today nor more than 2 days before it. A correction of a value already there, and an offset added to a legacy time,
+  pass. `bonsai check` flags a document time with no offset in a field an uncommitted change wrote.
+- **Not caught:** a time written by a shell command, by git or in a person's editor (until `check` sees it); a wrong
+  value typed as a correction.
