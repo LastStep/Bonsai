@@ -53,7 +53,7 @@ func TestOrdinaryWorkPasses(t *testing.T) {
 		commandMode(t, dir)
 		task := "work/tasks/T-0001-the-task.md"
 		run := "---\nformat: bonsai.run/1\nid: R-2026-10-11-T-0001\ntask: T-0001\nrole: builder\nmodel: a-model\nstarted: " +
-			"2026-10-11 09:00\nfinished:\noutcome: running\ncommits: []\nlabels: {}\n---\n\n# Run\n"
+			"2026-10-11 23:55\nfinished:\noutcome: running\ncommits: []\nlabels: {}\n---\n\n# Run\n"
 		state := "---\nformat: bonsai.state/1\nupdated: 2026-10-11\nupdated_by: an agent\nlabels: {}\n---\n\n# Where it stands\n"
 		for _, in := range []string{
 			editIn(dir, task, "# A made-up task", "# A made-up task\n\nNotes from the builder."),

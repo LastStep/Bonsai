@@ -24,8 +24,9 @@ package guard
 // existing document's status line (it cannot be shown to stay) and passes a new one (a shell write, question A).
 //
 // Only documents are read this way (documentOf: a task or run report in bonsai.yaml's task or run folder, named by
-// its kind's id; .bonsai/STATE.md; a document of a kind a pack declares, at its place), so every other call pays
-// nothing; the mode is read only for a document. The lock is read in full, and this machine's labels, only when a
+// its kind's id; .bonsai/STATE.md; a memory note in the memory folder, named by its id, judged for its stamp only; a
+// document of a kind a pack declares, at its place), so every other call pays nothing; the mode is read only for a
+// document. Before the mode is read, every document's fresh stamps are judged in every mode (stamps.go, time-not-now). The lock is read in full, and this machine's labels, only when a
 // document's labels change, or a new document of a pack's kind needs its kind's first status.
 
 import (
@@ -94,6 +95,11 @@ func (j *judge) documentOf(x judged) *docKind {
 	}
 	if same(x.rel, workspace.StateFile, x.fold) {
 		return &docKind{kind: "state"}
+	}
+	if dir := docPlace(l.cfg, "memory"); dir != "" && inFolder(x.rel, dir, x.fold) {
+		if re := idPatterns()["memory"]; re != nil && workspace.NameID(path.Base(x.rel), re) != "" {
+			return &docKind{kind: "memory"}
+		}
 	}
 	for _, d := range l.declared {
 		for _, dp := range d.Documents {
@@ -165,6 +171,15 @@ func (j *judge) tripwire(c change, x judged) (Decision, bool) {
 	if doc == nil {
 		return Decision{}, true
 	}
+	// Every mode: section 23's fresh stamps (stamps.go). A refusal whose file also fails its format waits for the mode:
+	// in command mode bad-format answers for it below; in agents mode it stands.
+	stamp, stampOK, broken := j.freshStamps(c, x, doc)
+	if !stampOK && !broken {
+		return stamp, false
+	}
+	if doc.kind == "memory" {
+		return stamp, stampOK // a memory note is judged for its stamp only, never by command mode's tripwires
+	}
 	ms, err := j.modeOf(x.p)
 	if err != nil {
 		next := "tell the person: a person fixes this machine's settings for the workspace"
@@ -176,7 +191,7 @@ func (j *judge) tripwire(c change, x judged) (Decision, bool) {
 			"), so the guard cannot tell whether command mode's tripwires apply to this document", oneLine(next)), false
 	}
 	if ms.StatusWrites != workspace.StatusWritesCommand {
-		return Decision{}, true
+		return stamp, stampOK
 	}
 	next := "run this workspace's status command (" + quote(ms.StatusCommand, 80) + ") for status moves, lane changes, grants " +
 		"and outside labels, and keep the edit to the file's other lines"

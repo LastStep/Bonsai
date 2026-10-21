@@ -3,7 +3,7 @@ package guard
 // Rung 0's call into the guard (design/plan-5.md, 5.4.3 notes 2 and 6; contract §13; spec §9): rung 0
 // (internal/rung0) judges each path a checkout changed by this package's one function (may.go), so rung 0 and the
 // guard never disagree. Nothing here holds a rule of its own; what rung 0 gives the function differs from what a hook
-// call gives it in four ways, each set on the judge (rule.go) and unset for the guard:
+// call gives it in five ways, each set on the judge (rule.go) and unset for the guard:
 //
 //   - The grants (taskGrants): the named task's bonsai.allows at any status, contract §13's "rung 0 judges the diff
 //     against the named task's grants at any status: it judges finished work", read by the guard's own reader of the
@@ -19,6 +19,8 @@ package guard
 //     Write of those bytes; a deleted path is judged as a delete (may's del), what it holds after unknown.
 //   - Where the change was made (outside): a change made in a worktree meets command mode's task-outside-main for a
 //     task file, as the guard's edit there would; one made in the main checkout, on any branch, does not.
+//   - The clock (noClock): the fresh-stamp check (stamps.go, time-not-now) is not run. It judges a stamp against the
+//     clock as it is written; rung 0 judges finished work hours later, and each kind's format holds the form.
 //
 // Nothing is recorded: rung 0's answer is a rung of the ladder result (step 5.4.2), not a guard record.
 
@@ -72,6 +74,7 @@ func NewChangeJudge(home, main string, named NamedGrants, outside bool) *ChangeJ
 	j := newJudge(home)
 	j.getenv = func(string) string { return "" } // the environment names nothing: the grants are rung 0's own
 	j.outside = outside
+	j.noClock = true // a fresh stamp is judged against the clock when it is written, not at the climb
 	c := &ChangeJudge{j: j, main: main, named: named}
 	j.session = j.project(main)
 	j.taskGrants = c.grantsOf

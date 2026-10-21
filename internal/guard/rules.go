@@ -32,6 +32,7 @@ const (
 	RuleOutsideLabel    = "outside-label"
 	RuleBadFormat       = "bad-format"
 	RuleBadSettings     = "bad-settings"
+	RuleTimeNotNow      = "time-not-now"
 
 	// The delete check in a shell call (shell.go).
 	RuleDeleteUnnamed   = "delete-unnamed"
@@ -132,6 +133,10 @@ var Rules = []Rule{
 	{RuleOutsideLabel, false, "command mode: an edit that sets a label whose definition reads set_by: outside"},
 	{RuleBadFormat, false, "command mode: a write of a task, run report or STATE that fails its format"},
 	{RuleBadSettings, false, "this machine's settings for the workspace cannot be read when a judgment needs its mode"},
+	{RuleTimeNotNow, false, "every mode: an Edit or Write of a fresh stamp not of Bonsai's clock (a task's created, started " +
+		"or finished, a run report's started or finished, STATE's or a memory note's updated, a pack kind's stamp field): " +
+		"a time more than 10 minutes from the UTC now, a day after the UTC today or more than 2 days before it, or one " +
+		"that does not read in its form (contract section 23)"},
 	{RuleDeleteUnnamed, false, "a shell call's recursive or bulk delete that does not name what it deletes (an operand " +
 		"holding a glob, a variable or a substitution, or one that is ., .., /, ~ or a drive's root; xargs, a pipeline or a " +
 		"loop feeding it; git clean with no path; a delete of several files by a glob; a git pathspec with magic other than " +

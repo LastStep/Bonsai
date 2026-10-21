@@ -417,6 +417,18 @@ var ruleTests = map[string]func(t *testing.T){
 		wantRule(t, dir, editIn(dir, task, "labels:\n", "labels:\n  acme.cost: 3\n"), RuleOutsideLabel)
 		wantRule(t, dir, editIn(dir, task, "labels:\n", "labels:\n  acme.owner: builder\n"), RuleNotProtected)
 	},
+	RuleTimeNotNow: func(t *testing.T) {
+		// A task's started written fresh with a guessed day, in agents mode (the mode with no other tripwire): refused,
+		// naming the value and Bonsai's UTC now; the day from the clock passes (stamps_test.go holds the rest).
+		dir := withTask(t, "todo")
+		task := "work/tasks/T-0001-the-task.md"
+		s := wantRule(t, dir, editIn(dir, task, "started:\n", "started: 2026-10-01\n"), RuleTimeNotNow)
+		if !strings.Contains(s, `"2026-10-01"`) || !strings.Contains(s, "Bonsai's UTC now: 2026-10-11") ||
+			!strings.Contains(s, "next: run: bonsai now --day") {
+			t.Errorf("the refusal: %s", s)
+		}
+		wantRule(t, dir, editIn(dir, task, "started:\n", "started: 2026-10-11\n"), RuleNotProtected)
+	},
 	RuleBadFormat: func(t *testing.T) {
 		dir := withTask(t, "todo")
 		commandMode(t, dir)
