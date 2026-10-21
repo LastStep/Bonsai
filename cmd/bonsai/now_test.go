@@ -47,7 +47,7 @@ func TestNowForms(t *testing.T) {
 		if code != 0 || errOut != "" {
 			t.Fatalf("%s --json: exit %d, stderr %q", c.zone, code, errOut)
 		}
-		for _, line := range []string{`"format": "bonsai.now/1"`, `"local": "` + c.doc + `"`, `"utc": "2026-10-21T07:19:04.325Z"`,
+		for _, line := range []string{`"format": "bonsai.now/1"`, `"local": "` + strings.TrimSuffix(c.doc, " "+c.off) + `"`, `"utc": "2026-10-21T07:19:04.325Z"`,
 			`"day": "` + c.day + `"`, `"offset": "` + c.off + `"`, `"zone": "` + c.abbr + `"`, `"error": null`} {
 			if !strings.Contains(out, line) {
 				t.Errorf("%s --json lacks %s:\n%s", c.zone, line, out)

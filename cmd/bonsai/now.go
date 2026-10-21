@@ -34,7 +34,7 @@ default it prints the document time, your zone with its numeric offset ("2026-10
 report's started and finished and of a new .bonsai/sessions.md row. --day prints the local day ("2026-10-21"), the
 form of a task's created, started and finished, STATE's and a memory note's updated. --utc prints the instant as a
 machine record stores it, UTC with milliseconds ("2026-10-21T07:19:04.325Z"). --json prints all of them in the
-bonsai.now/1 document: local, utc, day, offset and zone (the zone's abbreviation, for a person's eye: never write
+bonsai.now/1 document: local (the time with no offset, as a run report's started holds it), utc, day, offset (its own field, "+05:30") and zone (the zone's abbreviation, for a person's eye: never write
 it in a file, and never read a time from it). It reads the clock and this machine's zone and nothing else: no
 workspace, no file, no network.
 `,
@@ -68,7 +68,7 @@ func runNow(c *call) int {
 	if c.json {
 		abbr, _ := t.In(loc).Zone()
 		return c.printDoc(&nowDoc{
-			Local: strp(timefmt.Doc(t, loc)), UTC: strp(timefmt.UTC(t)), Day: strp(timefmt.Day(t, loc)),
+			Local: strp(timefmt.DocTime(t, loc)), UTC: strp(timefmt.UTC(t)), Day: strp(timefmt.Day(t, loc)),
 			Offset: strp(timefmt.Offset(t, loc)), Zone: strp(engine.ASCII(abbr)),
 		}, exitOK)
 	}

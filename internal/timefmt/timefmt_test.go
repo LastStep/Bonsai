@@ -34,6 +34,9 @@ func TestFormsInThreeZones(t *testing.T) {
 		if got := Day(at, l); got != c.day {
 			t.Errorf("%s Day = %q, want %q", c.zone, got, c.day)
 		}
+		if got := DocTime(at, l); got+" "+c.off != c.doc {
+			t.Errorf("%s DocTime = %q", c.zone, got)
+		}
 		if got := Offset(at, l); got != c.off {
 			t.Errorf("%s Offset = %q, want %q", c.zone, got, c.off)
 		}
@@ -185,6 +188,26 @@ func TestParseUTC(t *testing.T) {
 	for _, bad := range []string{"", "2026-10-21T12:49:04+05:30", "2026-10-21 07:19", "2026-10-21T07:19:04", "2026-10-21T07:19Z"} {
 		if _, err := ParseUTC(bad); err == nil {
 			t.Errorf("ParseUTC(%q) was accepted", bad)
+		}
+	}
+}
+
+func TestParseAt(t *testing.T) {
+	ist := loc(t, "Asia/Kolkata")
+	at := time.Date(2026, 10, 21, 7, 19, 0, 0, time.UTC)
+	got, known, err := ParseAt(DocTime(at, ist), Offset(at, ist))
+	if err != nil || !known || !got.Equal(at) {
+		t.Fatalf("with offset: %v %v %v", got, known, err)
+	}
+	got, known, err = ParseAt("2026-10-21 07:19", "")
+	if err != nil || known || !got.Equal(at) {
+		t.Fatalf("legacy: %v %v %v", got, known, err)
+	}
+	for _, c := range [][2]string{{"2026-10-21 12:49", "IST"}, {"2026-10-21 12:49", "Z"}, {"2026-10-21 12:49", "+0530"},
+		{"2026-10-21 12:49", "5:30"}, {"2026-10-21 12:49", "+05:30 "}, {"2026-10-21 12:49 +05:30", "+05:30"},
+		{"2026-10-21", "+05:30"}, {"2026-10-21 12:49", "+25:00"}, {"2026-10-21 12:49 IST", ""}, {"", ""}} {
+		if _, _, err := ParseAt(c[0], c[1]); err == nil {
+			t.Errorf("ParseAt(%q, %q) was accepted", c[0], c[1])
 		}
 	}
 }

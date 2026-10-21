@@ -31,6 +31,11 @@ const (
 // is UTC ("+00:00").
 func Doc(t time.Time, loc *time.Location) string { return t.In(zone(loc)).Format(docLayout) }
 
+// DocTime is the time of t in loc to the minute with no offset: "2026-10-21 12:49". It is what a run report's started
+// and finished hold, and a new sessions row's start and end; the offset goes beside it in its own field (Offset), the
+// way design/plan P-T-5795's Amendment 1 says.
+func DocTime(t time.Time, loc *time.Location) string { return t.In(zone(loc)).Format(legacyLayout) }
+
 // Day is the day of t in loc: "2026-10-21".
 func Day(t time.Time, loc *time.Location) string { return t.In(zone(loc)).Format(dayLayout) }
 
@@ -64,6 +69,27 @@ func ParseDoc(s string) (t time.Time, known bool, err error) {
 		return t, false, nil
 	}
 	return time.Time{}, false, fmt.Errorf("%q is not a document time (YYYY-MM-DD HH:MM +HH:MM, a numeric offset; or the legacy YYYY-MM-DD HH:MM)", s)
+}
+
+// ParseAt reads a stored time and the offset field beside it. With an offset ("+05:30") the time is local at that
+// offset and known is true; with offset "" the time is legacy: its digits read as UTC, known false (a run report with
+// no offset field means "offset unknown"; a sessions row with none is UTC). A zone name ("IST"), a "Z" or an
+// offset out of range is refused.
+func ParseAt(s, offset string) (t time.Time, known bool, err error) {
+	if offset == "" {
+		t, err = time.Parse(legacyLayout, s)
+		if err != nil {
+			return time.Time{}, false, fmt.Errorf("%q is not a stored time (YYYY-MM-DD HH:MM)", s)
+		}
+		return t, false, nil
+	}
+	if _, err = time.Parse("-07:00", offset); err != nil || len(offset) != 6 {
+		return time.Time{}, false, fmt.Errorf("%q is not an offset (+HH:MM or -HH:MM, numeric)", offset)
+	}
+	if t, err = time.Parse(docLayout, s+" "+offset); err != nil {
+		return time.Time{}, false, fmt.Errorf("%q is not a stored time (YYYY-MM-DD HH:MM)", s)
+	}
+	return t, true, nil
 }
 
 // ParseSession reads a time of .bonsai/sessions.md: an old row has no offset and is UTC, a new one carries its
