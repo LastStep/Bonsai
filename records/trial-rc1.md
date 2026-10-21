@@ -67,15 +67,15 @@ Compared name by name, every difference is under `.bonsai/local/`:
 
 The home holds five kinds of thing: `cache/` (the packs' git copies), `install.json` (which build is installed),
 `locks/`, `salt` and `workspaces/` (this machine's record of each linked repo). There is no `personal/` folder, so no
-personal `INDEX.md` [`ls -a ~/.bonsai/`, 21 Oct]. The before and after lists cover only `cache/`: 88 entries before
-and 88 after, with the same names and sizes [the two lists, sorted by name]. **T-5707's report is wrong here**: its
+personal `INDEX.md` [`ls -a ~/.bonsai/`, 21 Oct]. The before and after lists cover only `cache/`: 89 entries before
+and 89 after, with the same names and sizes [the two lists, sorted by name]. **T-5707's report is wrong here**: its
 line 75 says the cache's git folders were "rewritten by a fetch", but the lists show no file added, removed or
 resized in the home. Only the order the files were listed in changed. (Same names and sizes cannot rule out a file
 rewritten byte for byte; nothing in the lists shows one.)
 
 ## What the log and the tables hold
 
-The session's log has 196 records [the log; counted by kind]:
+The session's log has 198 records [the log; `wc -l`, and counted by kind]:
 
 | Records | Count |
 |---|---|
@@ -88,9 +88,10 @@ The session's log has 196 records [the log; counted by kind]:
 | guard: allowed the final stop (`stop-proven`) | 1 |
 | ladder climbs | 3 |
 | stops; asks filed; messages | 3; 2; 2 |
-| session start, end, the prompt, a task notification, token usage | 1 each |
+| prompts: the brief, and a task notification | 2 |
+| session start, end, token usage | 1 each |
 
-None of the 196 lines holds a home-folder path [a count of home-folder paths in the log: 0]. A few lines, shortened to their
+None of the 198 lines holds a home-folder path [a count of home-folder paths in the log: 0]. A few lines, shortened to their
 telling fields (the log keeps more: the workspace id, the session id, the checkout `Bonsai-T-5708`, the branch):
 
 ```
@@ -109,25 +110,28 @@ its sha256 (17:18), and the stop gate letting the session end (17:19).
 16:47 to 17:19, 32 minutes, and the verifier, 17:20 to 17:25, 5 minutes [`.bonsai/sessions.md:430-431`; the table
 prints UTC]. Its per-task sum gives T-5708 0.5 h for the builder and 0.1 h for the verifier [`.bonsai/sessions.md:491-492`].
 `.bonsai/tasks.md` lists T-5707 and T-5708 as `done` [`.bonsai/tasks.md:15-16`]. Today `bonsai check` reports no
-findings and two warnings: both tables lag behind the files (tasks.md differs from a rebuild; sessions.md lacks 2
-rows), each with `next: run: bonsai check --write` [`bonsai check`, 21 Oct].
+findings and two warnings: both tables lag behind the files (tasks.md differs from a rebuild; sessions.md lacks rows for
+sessions that ended later), each with `next: run: bonsai check --write` [`bonsai check`, 21 Oct].
 
 ## How the agents worked, run by run
 
 | Run | Who, model | Time | Minutes | Source |
 |---|---|---|---|---|
-| Set-up climb of `main` | the orchestrator, Opus | 16:42-16:45 | 2 (the climb) | `.bonsai/local/ladder/T-5707.json` |
-| The proposals | an auditor, Opus | 16:37-16:41 | 4 | T-5707's report :25; `M-2026-10-20-392e067a` |
+| Set-up climb of `main` | the orchestrator, Opus | 16:42:24-16:44:38 | 2 (the climb) | `.bonsai/local/ladder/T-5707.json` |
+| The proposals | an auditor, Opus | 16:37-16:41 | 4 | `.bonsai/sessions.md:429`; `M-2026-10-20-392e067a` |
 | The feature | a named builder session, Opus 5.5 | 16:47:57-17:19:40 | 32 by its launcher (28.5 by Claude Code's own count) | `~/bonsai-checks/T-5708/start.txt`, `exit.txt`; `stream.jsonl`'s result |
-| The check | a fresh verifier, Opus | 17:20-17:25 | 5 | T-5707's report :27; `.bonsai/sessions.md:431` |
+| The check | a fresh verifier, Opus | 17:20-17:25 | 5 | `.bonsai/sessions.md:431` |
 | The landing | the orchestrator | to 17:48 | | T-5707's report :70-73 |
+
+The times for the auditor and the verifier come from the sessions table. T-5707's report, written by hand, gives them
+a minute or two apart: 16:36-16:40 and 17:22-17:27 [T-5707's report :25, :27].
 
 ### 1. Set up on rc.1
 
 `bonsai check --json` in the main checkout found nothing, so Bonsai's own hook lines were already rc.1's and no update
 was needed [T-5707's report :31-32]. A climb of `main` by rc.1 under T-5707 was green at `67fa1ea3`: rung 0 3.8 s,
-1 2.3 s, 2 0.5 s, 3 60.8 s, 4 55.2 s, 5 green; sha256 `5bc9da27...e194a` [`.bonsai/local/ladder/T-5707.json`; its
-`sha256sum` matches T-5707's report :33]. Tests: 4,807 seen, 9 skipped, so 4,798 passed against the floor of 4,756;
+1 2.3 s, 2 0.5 s, 3 60.8 s, 4 55.2 s, 5 green; the result file's sha256sum `5bc9da27...e194a`
+[`sha256sum .bonsai/local/ladder/T-5707.json`, matching T-5707's report :33]. Tests: 4,807 seen, 9 skipped, so 4,798 passed against the floor of 4,756;
 with the fault switch 2,125 seen, 3 skipped, 2,122 passed against 2,120 [the same file, `tests`; `bonsai.yaml:110`
 counts the tests that passed]. The result reads `dirty: true`: the orchestrator's task moves were not yet committed
 [T-5707's report :34].
@@ -214,7 +218,7 @@ the log :186].
 | the ladder, a new test failing first | reached | climb 1 red, climbs 2 and 3 green |
 | its Bless | not reached: no floor to raise in this task (`bless: []`) | T-5708's report :108 |
 | the stop gate blocking a red stop | **probe 1** (and once more while waiting) | the log :60, :126 |
-| the recorder's log | reached | 196 records |
+| the recorder's log | reached | 198 records |
 | the tables by `check --write` | reached | `8fdf63d2` |
 | an ask to you and your answer | reached, twice | the asks file |
 | the verifier | reached | `M-2026-10-20-57b77ed9` |
