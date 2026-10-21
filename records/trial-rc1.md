@@ -1,7 +1,7 @@
 # The trial on rc.1: what happened, from the records
 
-A draft for the director (T-5709, plan-5.md note 5.7.9). Nothing here asks anything of you: read it, then reply
-"happy" or say what to fix (note 5.7.9, item 3).
+For the director (T-5709, plan-5.md note 5.7.9). Nothing here asks anything of you: read it, then reply "happy" or
+say what to fix (note 5.7.9, item 3).
 
 **Times.** Every time on this page is India time (IST, UTC+5:30), the clock the run reports use. Bonsai's own records
 (the log, the asks, the ladder results, `.bonsai/sessions.md`) keep UTC; each such time here has had 5 h 30 min added.
@@ -26,9 +26,14 @@ fresh verifier passed it, CI on the branch was green on every job, and it landed
 show no rule line [T-5708's report :62, :114-115].
 
 Twelve rough edges came out of it: seven noted at the time and five found while gathering the evidence for this
-page. Each one is listed under "What was rough", with what the plan proposes. Of the twelve, two are already on rc.2's
-list (`records/tasks/T-5710-rc2-fixes.md`). One more turned up while writing the page; it is listed as a gap in the
-records.
+page. Each is listed under "What was rough" with where it goes. **Four are fixed in rc.2** (items 1, 2, 4 and 8, all
+on `records/tasks/T-5710-rc2-fixes.md`), **three wait until after 1.0** (items 3, 11 and 12, each a row in
+`records/bugs.md`), and **five need nothing in code** (items 5, 6, 7, 9 and 10). One more, found while writing the
+page, waits until after 1.0 too (a gap in the records, BUG-095).
+
+A separate dry run, an agent following the README's "A first project" steps on the installed rc.1, went green at its
+last step and proposed 13 fixes for rc.2, most to the README and three to Bonsai's own words. One more finding waits
+until after 1.0 (below, "The README's dry run").
 
 ## What Bonsai created and changed, and why each exists
 
@@ -217,53 +222,59 @@ the log :186].
 
 ## What was rough
 
-"rc.2" means an item already on `records/tasks/T-5710-rc2-fixes.md`. **For the orchestrator to place** means that no
-row in `records/bugs.md` and no rc.2 item holds it yet.
+"rc.2" means an item on `records/tasks/T-5710-rc2-fixes.md`, fixed before rc.2 is cut. "After 1.0" means a row in
+`records/bugs.md`, left for after the release. BUG-092 to BUG-096 are the rows the orchestrator adds with this task's
+records.
 
 ### Noted during the trial (T-5707's report :86-89)
 
 1. **`CLAUDE.md` says a named session starts through `claude-here`**, but that launcher refuses any folder outside the
    scratch area, so no real named session has ever started that way [T-5707's report :40-45; `CLAUDE.md:59`].
-   **rc.2**, item 7 [`T-5710-rc2-fixes.md:33-35`].
+   **rc.2, item 7** [`T-5710-rc2-fixes.md:33-35`].
 2. **You could not see the named session** in your Claude Code agent list: it is a separate `claude -p` process. You
-   were told to watch it through `ps`, `git log`, the run report and the stream [T-5707's report :56]. **For the
-   orchestrator to place.** Related but not the same: rc.2 item 10, filters for `bonsai agents`
-   [`T-5710-rc2-fixes.md:38-40`].
+   were told to watch it through `ps`, `git log`, the run report and the stream [T-5707's report :56]. **rc.2, item
+   7:** the rewritten named-session line in `CLAUDE.md` says how to watch one (`ps`, `git log`, the run report, the
+   stream); a view of it in `bonsai agents` goes with item 10's filters [`T-5710-rc2-fixes.md:33-35`, `:38-40`].
 3. **Waiting on a question spends stop-gate blocks.** A named session that ends its turn to wait is a stop, and
    the gate blocks it; Claude Code allows eight blocks in a row. The builder waited by making foreground checks instead
    [T-5708's report :91, :146-147; the log :126]. Note 5.7.7 item 4 expected exactly this to be recorded
-   [`design/plan-5.md:7931`]. **For the orchestrator to place.**
+   [`design/plan-5.md:7931`]. **After 1.0**, BUG-092: the gate could let a stop pass while the running task has an
+   open question. That changes how the gate behaves, which is too big for a release candidate.
 4. **Answering by option was too long to type.** `--choice` needs the option's whole text, so you typed `--words "B"`
-   twice, and the records keep `choice` empty [T-5707's report :47-48; the asks file, records 3-4]. **rc.2**, item 11
+   twice, and the records keep `choice` empty [T-5707's report :47-48; the asks file, records 3-4]. **rc.2, item 11**
    [`T-5710-rc2-fixes.md:41-44`].
 5. **`source: "agent"` on your answers** reads as if an agent answered. It names who filed the question; who answered
-   is `by: terminal` [T-5707's report :68, citing `internal/format/ask.go:15`]. Judged at the time a naming note, not a
-   bug. **For the orchestrator to place** (a line in the docs, or nothing).
+   is `by: terminal` [T-5707's report :68, citing `internal/format/ask.go:15`]. **Nothing in code:** one sentence in
+   the asks' docs, written with rc.2 item 11, which rewrites the same answer path.
 6. **The orchestrator missed your second question** until you said "done": its watch ended at the first
-   [T-5707's report :52-53]. **For the orchestrator to place.**
+   [T-5707's report :52-53]. **Nothing in code:** the orchestrator now watches until every open question of the task
+   is answered (this task's run report); if it happens again, it becomes a `workflow:correct` case.
 7. **The builder skipped its "audit first" stop.** It read the brief's ordered steps as go straight on, and a named
-   session cannot stop before its ladder is green anyway [T-5708's report :35-38]. The two rules pull against each
-   other. **For the orchestrator to place.**
+   session cannot stop before its ladder is green anyway [T-5708's report :35-38]. **Nothing in code:** the brief
+   rules of 21 Oct say a named session goes straight on, its ladder being its gate.
 
 ### Found while gathering this page's evidence
 
 8. **The named session loaded your own connectors**: 6 servers, among them mail and calendar, 65 tools in all
    [`stream.jsonl`, the `init` line]. A `claude -p` builder takes on every connector of your account. It used none of
-   them [the log: no such tool call]. **For the orchestrator to place.**
+   them [the log: its tool calls are Bash, Edit, Read and ToolSearch only]. **rc.2, item 7:** the named-session launch
+   line tries Claude Code's `--strict-mcp-config` with no servers. rc.2's work has still to prove that this also keeps
+   out your account's connectors. BUG-093.
 9. **The ladder counted one of those connectors' processes as leftovers in the checkout**: three processes, a
    connector server started through npm and its shell and node [`.bonsai/local/ladder/T-5708.json`, `leftovers`]. They
-   belonged to the session's own Claude Code, not to anything the builder left behind. Related: BUG-029, whose subject
-   is the `leftovers` description [`records/bugs.md:39`]. **For the orchestrator to place.**
+   belonged to the session's own Claude Code, not to anything the builder left behind. **Nothing more:** it goes with
+   8's fix; a line is added to BUG-029, the row about the `leftovers` description [`records/bugs.md:39`].
 10. **A wrong line in T-5707's report:** "rewritten by a fetch" for the home's cache, where the lists show no change
-    (above, "In the Bonsai home"). A records error, not Bonsai's. **For the orchestrator to place** (past run reports
-    stay as they are, so a note in this task's report).
+    (above, "In the Bonsai home"). A records error, not Bonsai's. **Placed:** noted in this task's run report; past
+    run reports stay as they are.
 11. **Three clocks to line up:** `.bonsai/sessions.md`, the log and the asks keep UTC; the run reports and the
     launcher keep local time [`.bonsai/sessions.md:430`, 11:17; `start.txt`, 16:47:57]. This page converts them by
-    hand. **For the orchestrator to place.**
+    hand. **After 1.0:** UTC in the log and the tables is the formats' rule (`design/contract.md`). A local-time view
+    would change only how they are shown, so it is for later. A change to a format comes to you first.
 12. **The builder's climbs took three times their rungs**: 6.4 and 6.5 minutes of wall time against about 2 minutes
     of rungs, while the set-up climb on `main` took 2.2 minutes for 2.0 of rungs [`T-5708.json` and `T-5707.json`,
-    `started`/`finished` and `duration_ms`; T-5708's report :108, "not looked into"]. **For the orchestrator to
-    place.**
+    `started`/`finished` and `duration_ms`; T-5708's report :108, "not looked into"]. **After 1.0 unless it recurs**,
+    BUG-094: not yet explained; the climbs in rc.2's work will show whether it repeats.
 
 ### Gaps in the trial's own records
 
@@ -276,7 +287,7 @@ row in `records/bugs.md` and no rc.2 item holds it yet.
   T-5708's report alone [the log :48, :173].
 - **`.bonsai/sessions.md:429` files the proposals' auditor (16:37-16:41) under T-5705**, though its message comes from
   `auditor@T-5707` [`M-2026-10-20-392e067a`]. Its records in the orchestrator's log carry no task: T-5707 did not
-  read `running` until 16:47 [the orchestrator's log :3293 on; `ecb65520`]. **For the orchestrator to place.**
+  read `running` until 16:47 [the orchestrator's log :3293 on; `ecb65520`]. **After 1.0**, BUG-095.
 
 ### Already placed
 
@@ -290,7 +301,45 @@ row in `records/bugs.md` and no rc.2 item holds it yet.
 
 ## The README's dry run
 
-The orchestrator fills this in from the dry run's report (note 5.7.9, item 4).
+**Who, and on what.** A builder agent (Sonnet) followed the README's "A first project" steps exactly as written, with
+the installed rc.1 (`1.0.0-rc.1`, commit `73919ddc`), in a scratch folder with a scratch Bonsai home, from 11:44:54 to
+11:51:32 on 21 Oct, about 7 minutes of work. A runner was tried first and refused at step 1, because a runner may not
+make a repository (BUG-013, `records/bugs.md:25`). [`M-2026-10-21-8afc2b72`]
+
+| Step | What happened | Exit | Source |
+|---|---|---|---|
+| 1. make a folder, `git init` | worked; git printed its long hint about the branch name | 0 | the report, step 1 |
+| 2. `bonsai init` | no `base-v*` tag exists yet, so it used `main`'s commit, which the README gives no way to find. The preview with no terminal ended in a refusal, `needs-yes`, writing nothing; with `--yes` it wrote `bonsai.yaml`, `CLAUDE.md`, `.claude/settings.json`, `.bonsai/`, and a personal memory index in the scratch home | 4, then 0 | `step12.out:75-81`, `:151`, `:196` |
+| 3. `bonsai check`, `bonsai status` | "no findings" plus the plugin warning; no problems, as the README says | 0 | `step3.out:3`, `:13`, `:45` |
+| 4. open Claude Code, `bonsai update --yes` | the session ran; update said "nothing to change", and the `base` plugin still read "waiting" | 0 | `step4.out:4`; `step4b.out:23-26` |
+| 5. ask Claude Code for an edit | first refused by Claude Code's own permission setting (no one to grant it in a scripted session; not Bonsai's guard); with edits allowed, `README.md` got its line and the log recorded the guard allowing it (`not-protected`) | 0 | `step5.out:3`; `step5b.out:3`; the report, step 5 |
+| 6. a rung, a task, `bonsai ladder` | refused `config-looser`, with its next step, as the README warns. The agent's own `bonsai update --yes` was refused as a person's command. Once the director ran `bonsai update --yes` in their own terminal (11:50, as the README says it must), the climb went **green**: 1 of 1 rungs, 0.1 s, and `check --write` wrote both tables | 4, then 0 | `step6.out:31-56`; `step6b.out:17-42` |
+
+**What it could not see.** Claude Code's question about trusting the folder, and the `base` plugin's install, never
+happen in a scripted session. So steps 4 and 5 are checked in the director's own trial [the report, "Launcher versus a
+new user"; `step4b.out:26`].
+
+**The 13 proposed fixes** [the report, "README fixes"; line numbers are the README's at that commit]:
+1. Step 1: use `git init -b main`, so git prints no branch-name hint. *rc.2, with the README work (T-5711).*
+2. Step 2: say how to find `main`'s commit (`git ls-remote ... refs/heads/main`) until a `base-v1.0.0` tag exists. *rc.2, with the README work (T-5711).*
+3. Step 2: say that the preview with no terminal ends in a refusal (exit 4) and writes nothing. *rc.2, with the README work (T-5711).*
+4. Step 2: list everything `init` writes: `STATE.md`, the two tables, `.bonsai/.gitignore`, and the personal memory index in Bonsai's home. *rc.2, with the README work (T-5711).*
+5. Step 3/4: make the README and `check`'s next step agree on `bonsai update` with or without `--yes`. *rc.2, with the README work (T-5711).*
+6. Step 4: say what to look for ("installed" against "waiting"), and what to do if it still says waiting. *rc.2, with the README work (T-5711).*
+7. Step 5: say that the question before an edit is Claude Code's own, and that Bonsai's guard is a separate check. *rc.2, with the README work (T-5711).*
+8. Step 5: mention `check`'s warning that the tables lag, and `bonsai check --write`. *rc.2, with the README work (T-5711).*
+9. Step 6: say where a task file goes (`work/tasks/`), how it is named, and where its template is. *rc.2, with the README work (T-5711).*
+10. Step 6: show the one-rung example that passed (`test -s README.md`, `ladder_floor: [1]`). *rc.2, with the README work (T-5711).*
+11. Step 6: `update` leads with "nothing to change" though it has just recorded the looser settings; it should lead with what it recorded. *rc.2, Bonsai's words.* (The README's half, a line explaining the output today, goes with T-5711.)
+12. Step 6: tell a fresh machine to set `git config user.name` and `user.email` first. *rc.2, with the README work (T-5711).*
+13. `check`'s note names a plan step ("from step 5.6") a new user cannot know, and the ladder prints its result's path in full rather than relative. *rc.2, Bonsai's words.*
+
+Items 11 and 13 hold the three changes to Bonsai's own words (13 holds two). The other eleven items are README
+lines, and item 11 carries a README line too.
+
+**The launcher's `remote` finding.** A session started from inside another Claude Code session records that
+session's id in the log's `remote` field, taken from its environment. A person in a plain terminal would see it empty
+(not tested). **After 1.0**, BUG-096 [the report, step 5 and "Launcher versus a new user"].
 
 ## Sources
 
@@ -304,4 +353,5 @@ the messages `M-2026-10-20-392e067a`, `M-2026-10-20-306324a4`, `M-2026-10-20-2c8
 `ladder/T-5707.json`, `ladder/T-5708.json`; `.bonsai/sessions.md`, `.bonsai/tasks.md`; in `~/bonsai-checks/T-5708/`:
 `stream.jsonl`, `files-before.txt`, `files-after.txt`, `start.txt`, `exit.txt`, `stderr.txt`; the commits
 `67fa1ea3`, `ecb65520`, `6ef7e56d` to `7afb9faa`, `8fdf63d2`; CI run 39417827040; the commands `bonsai check` and
-`ls -a ~/.bonsai/` (21 Oct).
+`ls -a ~/.bonsai/` (21 Oct); for the dry run, the message `M-2026-10-21-8afc2b72`, `~/bonsai-checks/T-5709/step12.out`
+to `step6b.out` and the scripts in `~/bonsai-checks/scripts/T-5709/`, and `README.md`'s "A first project".
